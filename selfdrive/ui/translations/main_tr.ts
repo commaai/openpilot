@@ -338,18 +338,6 @@
         <source>Installing...</source>
         <translation>Yükleniyor...</translation>
     </message>
-    <message>
-        <source>Receiving objects: </source>
-        <translation type="vanished">Objeler alınıyor: </translation>
-    </message>
-    <message>
-        <source>Resolving deltas: </source>
-        <translation type="vanished">Delta verileri çözümleniyor: </translation>
-    </message>
-    <message>
-        <source>Updating files: </source>
-        <translation type="vanished">Dosyalar güncelleniyor: </translation>
-    </message>
 </context>
 <context>
     <name>MapETA</name>
@@ -391,44 +379,6 @@
     <message>
         <source> ft</source>
         <translation> ft</translation>
-    </message>
-</context>
-<context>
-    <name>MapPanel</name>
-    <message>
-        <source>Current Destination</source>
-        <translation type="vanished">Mevcut hedef</translation>
-    </message>
-    <message>
-        <source>CLEAR</source>
-        <translation type="vanished">TEMİZLE</translation>
-    </message>
-    <message>
-        <source>Recent Destinations</source>
-        <translation type="vanished">Son gidilen yerler</translation>
-    </message>
-    <message>
-        <source>Try the Navigation Beta</source>
-        <translation type="vanished">Nagivasyon Betayı dene!</translation>
-    </message>
-    <message>
-        <source>Get turn-by-turn directions displayed and more with a comma
-prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation type="vanished">adım-adım yol tarifi ve daha fazlası için comma prime aboneliğine kayıt olun : https://connect.comma.ai </translation>
-    </message>
-    <message>
-        <source>No home
-location set</source>
-        <translation type="vanished">Ev adresi yok</translation>
-    </message>
-    <message>
-        <source>No work
-location set</source>
-        <translation type="vanished">İş adresi yok</translation>
-    </message>
-    <message>
-        <source>no recent destinations</source>
-        <translation type="vanished">son gidilen bir sonraki başlatılışında çekilir. yer yok</translation>
     </message>
 </context>
 <context>
@@ -485,29 +435,6 @@ location set</source>
     <message>
         <source>Wrong password</source>
         <translation>Yalnış parola</translation>
-    </message>
-</context>
-<context>
-    <name>NvgWindow</name>
-    <message>
-        <source>km/h</source>
-        <translation type="vanished">km/h</translation>
-    </message>
-    <message>
-        <source>mph</source>
-        <translation type="vanished">mph</translation>
-    </message>
-    <message>
-        <source>MAX</source>
-        <translation type="vanished">MAX</translation>
-    </message>
-    <message>
-        <source>SPEED</source>
-        <translation type="vanished">HIZ</translation>
-    </message>
-    <message>
-        <source>LIMIT</source>
-        <translation type="vanished">LİMİT</translation>
     </message>
 </context>
 <context>
@@ -630,14 +557,6 @@ location set</source>
         <translation>Uzaktan erişim</translation>
     </message>
     <message>
-        <source>1 year of storage</source>
-        <translation type="vanished">kayıtları 1 yıl boyunca depolama</translation>
-    </message>
-    <message>
-        <source>Developer perks</source>
-        <translation type="vanished">Geliştirici özellikleri</translation>
-    </message>
-    <message>
         <source>24/7 LTE connectivity</source>
         <translation type="unfinished"></translation>
     </message>
@@ -659,14 +578,6 @@ location set</source>
     <message>
         <source>comma prime</source>
         <translation>comma prime</translation>
-    </message>
-    <message>
-        <source>CONNECT.COMMA.AI</source>
-        <translation type="vanished">CONNECT.COMMA.AI</translation>
-    </message>
-    <message>
-        <source>COMMA POINTS</source>
-        <translation type="vanished">COMMA PUANI</translation>
     </message>
 </context>
 <context>
@@ -717,16 +628,8 @@ location set</source>
         <translation>Cihazı sıfırlamak istediğinizden eminmisiniz ?</translation>
     </message>
     <message>
-        <source>Resetting device...</source>
-        <translation type="vanished">Cihaz sıfırlanıyor...</translation>
-    </message>
-    <message>
         <source>System Reset</source>
         <translation>Sistemi sıfırla</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation type="vanished">Sistem sıfırlamayı başlatmak için onayla butonuna basın</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -741,10 +644,6 @@ location set</source>
         <translation>Onayla</translation>
     </message>
     <message>
-        <source>Unable to mount data partition. Press confirm to reset your device.</source>
-        <translation type="vanished">Veri bölme yapılamıyor. Cihazın sıfırlanması gerek lütfen onaylaya basın </translation>
-    </message>
-    <message>
         <source>Resetting device...
 This may take up to a minute.</source>
         <translation type="unfinished"></translation>
@@ -756,13 +655,6 @@ This may take up to a minute.</source>
     <message>
         <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
         <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>RichTextDialog</name>
-    <message>
-        <source>Ok</source>
-        <translation type="vanished">Tamam</translation>
     </message>
 </context>
 <context>
@@ -786,10 +678,6 @@ This may take up to a minute.</source>
     <message>
         <source>Software</source>
         <translation>Yazılım</translation>
-    </message>
-    <message>
-        <source>Navigation</source>
-        <translation type="vanished">Nagivasyon</translation>
     </message>
 </context>
 <context>
@@ -833,18 +721,6 @@ This may take up to a minute.</source>
     <message>
         <source>Waiting for internet</source>
         <translation>İnternet bağlantısı bekleniyor.</translation>
-    </message>
-    <message>
-        <source>Choose Software to Install</source>
-        <translation type="vanished">Yüklenecek Yazılımı Seçin</translation>
-    </message>
-    <message>
-        <source>Dashcam</source>
-        <translation type="vanished">Araç yol kamerası</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation type="vanished">Özel Yazılım</translation>
     </message>
     <message>
         <source>Enter URL</source>
@@ -983,54 +859,6 @@ This may take up to a minute.</source>
 </context>
 <context>
     <name>SoftwarePanel</name>
-    <message>
-        <source>Git Branch</source>
-        <translation type="vanished">Git Branch</translation>
-    </message>
-    <message>
-        <source>Git Commit</source>
-        <translation type="vanished">Git commit</translation>
-    </message>
-    <message>
-        <source>OS Version</source>
-        <translation type="vanished">İşletim sistemi versiyonu</translation>
-    </message>
-    <message>
-        <source>Version</source>
-        <translation type="vanished">Versiyon</translation>
-    </message>
-    <message>
-        <source>Last Update Check</source>
-        <translation type="vanished">Son Güncelleme Kontrolü</translation>
-    </message>
-    <message>
-        <source>The last time openpilot successfully checked for an update. The updater only runs while the car is off.</source>
-        <translation type="vanished">Openpilot güncellemeyi kontrolü işlemini başarıyla kontrol etti. Güncelleyici yalnızca araç kapalıyken çalışır.</translation>
-    </message>
-    <message>
-        <source>Check for Update</source>
-        <translation type="vanished">Güncellemeyi Kontrol Et </translation>
-    </message>
-    <message>
-        <source>CHECKING</source>
-        <translation type="vanished">KONTROL EDİLİYOR</translation>
-    </message>
-    <message>
-        <source>Switch Branch</source>
-        <translation type="vanished">Sürüm değiştir</translation>
-    </message>
-    <message>
-        <source>ENTER</source>
-        <translation type="vanished">GİR</translation>
-    </message>
-    <message>
-        <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation type="vanished">Yeni sürüm var ise eğer, cihazın bir sonraki başlatılışında çekilir.</translation>
-    </message>
-    <message>
-        <source>Enter branch name</source>
-        <translation type="vanished">Sürüm kodunu girin</translation>
-    </message>
     <message>
         <source>Uninstall %1</source>
         <translation>Kaldır %1</translation>
@@ -1204,10 +1032,6 @@ This may take up to a minute.</source>
         <translation>Sürücüye bakan kamera verisini yükleyin ve Cihazın algoritmasını geliştirmemize yardımcı olun.</translation>
     </message>
     <message>
-        <source>Disengage On Accelerator Pedal</source>
-        <translation type="vanished">Gaz Pedalına basınca Devreden Çıkarma</translation>
-    </message>
-    <message>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
         <translation>Aktifleştirilirse eğer gaz pedalına basınca openpilot devre dışı kalır.</translation>
     </message>
@@ -1226,14 +1050,6 @@ This may take up to a minute.</source>
     <message>
         <source>Show map on left side when in split screen view.</source>
         <translation>Bölünmüş ekran görünümündeyken haritayı sol tarafta göster.</translation>
-    </message>
-    <message>
-        <source>openpilot Longitudinal Control</source>
-        <translation type="vanished">openpilot boylamasına kontrol</translation>
-    </message>
-    <message>
-        <source>openpilot will disable the car&apos;s radar and will take over control of gas and brakes. Warning: this disables AEB!</source>
-        <translation type="vanished">openpilot, otomabilin sensörlerini devre dışı bırakır ve gaz, fren kontrolunu devir alır. Uyarı: AEB devre dışı kalır.</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
