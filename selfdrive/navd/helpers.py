@@ -9,8 +9,8 @@ from common.numpy_fast import clip
 from common.params import Params
 
 DIRECTIONS = ('left', 'right', 'straight')
-MODIFIABLE_DIRECTIONS = ('left', 'right'
-                                 '')
+MODIFIABLE_DIRECTIONS = ('left', 'right')
+
 EARTH_MEAN_RADIUS = 6371007.2
 SPEED_CONVERSIONS = {
     'km/h': Conversions.KPH_TO_MS,
