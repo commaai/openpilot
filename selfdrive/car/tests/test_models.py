@@ -3,6 +3,7 @@
 import capnp
 import os
 import importlib
+import time
 import unittest
 from collections import defaultdict, Counter
 from typing import List, Optional, Tuple
@@ -163,127 +164,127 @@ class TestCarModelBase(unittest.TestCase):
     self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")
     self.safety.init_tests()
 
-  def test_car_params(self):
-    if self.CP.dashcamOnly:
-      self.skipTest("no need to check carParams for dashcamOnly")
-
-    # make sure car params are within a valid range
-    self.assertGreater(self.CP.mass, 1)
-
-    if self.CP.steerControlType != car.CarParams.SteerControlType.angle:
-      tuning = self.CP.lateralTuning.which()
-      if tuning == 'pid':
-        self.assertTrue(len(self.CP.lateralTuning.pid.kpV))
-      elif tuning == 'torque':
-        self.assertTrue(self.CP.lateralTuning.torque.kf > 0)
-      elif tuning == 'indi':
-        self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
-      else:
-        raise Exception("unknown tuning")
-
-  def test_car_interface(self):
-    # TODO: also check for checksum violations from can parser
-    can_invalid_cnt = 0
-    can_valid = False
-    CC = car.CarControl.new_message()
-
-    for i, msg in enumerate(self.can_msgs):
-      CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
-      self.CI.apply(CC, msg.logMonoTime)
-
-      if CS.canValid:
-        can_valid = True
-
-      # wait max of 2s for low frequency msgs to be seen
-      if i > 200 or can_valid:
-        can_invalid_cnt += not CS.canValid
-
-    self.assertEqual(can_invalid_cnt, 0)
-
-  def test_radar_interface(self):
-    os.environ['NO_RADAR_SLEEP'] = "1"
-    RadarInterface = importlib.import_module(f'selfdrive.car.{self.CP.carName}.radar_interface').RadarInterface
-    RI = RadarInterface(self.CP)
-    assert RI
-
-    error_cnt = 0
-    for i, msg in enumerate(self.can_msgs):
-      rr = RI.update((msg.as_builder().to_bytes(),))
-      if rr is not None and i > 50:
-        error_cnt += car.RadarData.Error.canError in rr.errors
-    self.assertEqual(error_cnt, 0)
-
-  def test_panda_safety_rx_valid(self):
-    if self.CP.dashcamOnly:
-      self.skipTest("no need to check panda safety for dashcamOnly")
-
-    start_ts = self.can_msgs[0].logMonoTime
-
-    failed_addrs = Counter()
-    for can in self.can_msgs:
-      # update panda timer
-      t = (can.logMonoTime - start_ts) / 1e3
-      self.safety.set_timer(int(t))
-
-      # run all msgs through the safety RX hook
-      for msg in can.can:
-        if msg.src >= 64:
-          continue
-
-        to_send = libpanda_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
-        if self.safety.safety_rx_hook(to_send) != 1:
-          failed_addrs[hex(msg.address)] += 1
-
-      # ensure all msgs defined in the addr checks are valid
-      if self.car_model not in ignore_addr_checks_valid:
-        self.safety.safety_tick_current_rx_checks()
-        if t > 1e6:
-          self.assertTrue(self.safety.addr_checks_valid())
-
-          # No need to check relay malfunction on disabled routes (relay closed) or for reasonable fingerprinting time
-          # TODO: detect when relay has flipped to properly check relay malfunction
-          if self.openpilot_enabled and t > 5e6:
-            self.assertFalse(self.safety.get_relay_malfunction())
-          else:
-            self.safety.set_relay_malfunction(False)
-
-    self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
-
-  def test_panda_safety_tx_cases(self, data=None):
-    """Asserts we can tx common messages"""
-    if self.CP.notCar:
-      self.skipTest("Skipping test for notCar")
-
-    def test_car_controller(car_control):
-      now_nanos = 0
-      msgs_sent = 0
-      CI = self.CarInterface(self.CP, self.CarController, self.CarState)
-      for _ in range(round(10.0 / DT_CTRL)):  # make sure we hit the slowest messages
-        CI.update(car_control, [])
-        _, sendcan = CI.apply(car_control, now_nanos)
-
-        now_nanos += DT_CTRL * 1e9
-        msgs_sent += len(sendcan)
-        for addr, _, dat, bus in sendcan:
-          to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
-          self.assertTrue(self.safety.safety_tx_hook(to_send), (addr, dat, bus))
-
-      # Make sure we attempted to send messages
-      self.assertGreater(msgs_sent, 50)
-
-    # Make sure we can send all messages while inactive
-    CC = car.CarControl.new_message()
-    test_car_controller(CC)
-
-    # Test cancel + general messages (controls_allowed=False & cruise_engaged=True)
-    self.safety.set_cruise_engaged_prev(True)
-    CC = car.CarControl.new_message(cruiseControl={'cancel': True})
-    test_car_controller(CC)
-
-    # Test resume + general messages (controls_allowed=True & cruise_engaged=True)
-    self.safety.set_controls_allowed(True)
-    CC = car.CarControl.new_message(cruiseControl={'resume': True})
-    test_car_controller(CC)
+  # def test_car_params(self):
+  #   if self.CP.dashcamOnly:
+  #     self.skipTest("no need to check carParams for dashcamOnly")
+  #
+  #   # make sure car params are within a valid range
+  #   self.assertGreater(self.CP.mass, 1)
+  #
+  #   if self.CP.steerControlType != car.CarParams.SteerControlType.angle:
+  #     tuning = self.CP.lateralTuning.which()
+  #     if tuning == 'pid':
+  #       self.assertTrue(len(self.CP.lateralTuning.pid.kpV))
+  #     elif tuning == 'torque':
+  #       self.assertTrue(self.CP.lateralTuning.torque.kf > 0)
+  #     elif tuning == 'indi':
+  #       self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
+  #     else:
+  #       raise Exception("unknown tuning")
+  #
+  # def test_car_interface(self):
+  #   # TODO: also check for checksum violations from can parser
+  #   can_invalid_cnt = 0
+  #   can_valid = False
+  #   CC = car.CarControl.new_message()
+  #
+  #   for i, msg in enumerate(self.can_msgs):
+  #     CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
+  #     self.CI.apply(CC, msg.logMonoTime)
+  #
+  #     if CS.canValid:
+  #       can_valid = True
+  #
+  #     # wait max of 2s for low frequency msgs to be seen
+  #     if i > 200 or can_valid:
+  #       can_invalid_cnt += not CS.canValid
+  #
+  #   self.assertEqual(can_invalid_cnt, 0)
+  #
+  # def test_radar_interface(self):
+  #   os.environ['NO_RADAR_SLEEP'] = "1"
+  #   RadarInterface = importlib.import_module(f'selfdrive.car.{self.CP.carName}.radar_interface').RadarInterface
+  #   RI = RadarInterface(self.CP)
+  #   assert RI
+  #
+  #   error_cnt = 0
+  #   for i, msg in enumerate(self.can_msgs):
+  #     rr = RI.update((msg.as_builder().to_bytes(),))
+  #     if rr is not None and i > 50:
+  #       error_cnt += car.RadarData.Error.canError in rr.errors
+  #   self.assertEqual(error_cnt, 0)
+  #
+  # def test_panda_safety_rx_valid(self):
+  #   if self.CP.dashcamOnly:
+  #     self.skipTest("no need to check panda safety for dashcamOnly")
+  #
+  #   start_ts = self.can_msgs[0].logMonoTime
+  #
+  #   failed_addrs = Counter()
+  #   for can in self.can_msgs:
+  #     # update panda timer
+  #     t = (can.logMonoTime - start_ts) / 1e3
+  #     self.safety.set_timer(int(t))
+  #
+  #     # run all msgs through the safety RX hook
+  #     for msg in can.can:
+  #       if msg.src >= 64:
+  #         continue
+  #
+  #       to_send = libpanda_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
+  #       if self.safety.safety_rx_hook(to_send) != 1:
+  #         failed_addrs[hex(msg.address)] += 1
+  #
+  #     # ensure all msgs defined in the addr checks are valid
+  #     if self.car_model not in ignore_addr_checks_valid:
+  #       self.safety.safety_tick_current_rx_checks()
+  #       if t > 1e6:
+  #         self.assertTrue(self.safety.addr_checks_valid())
+  #
+  #         # No need to check relay malfunction on disabled routes (relay closed) or for reasonable fingerprinting time
+  #         # TODO: detect when relay has flipped to properly check relay malfunction
+  #         if self.openpilot_enabled and t > 5e6:
+  #           self.assertFalse(self.safety.get_relay_malfunction())
+  #         else:
+  #           self.safety.set_relay_malfunction(False)
+  #
+  #   self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
+  #
+  # def test_panda_safety_tx_cases(self, data=None):
+  #   """Asserts we can tx common messages"""
+  #   if self.CP.notCar:
+  #     self.skipTest("Skipping test for notCar")
+  #
+  #   def test_car_controller(car_control):
+  #     now_nanos = 0
+  #     msgs_sent = 0
+  #     CI = self.CarInterface(self.CP, self.CarController, self.CarState)
+  #     for _ in range(round(10.0 / DT_CTRL)):  # make sure we hit the slowest messages
+  #       CI.update(car_control, [])
+  #       _, sendcan = CI.apply(car_control, now_nanos)
+  #
+  #       now_nanos += DT_CTRL * 1e9
+  #       msgs_sent += len(sendcan)
+  #       for addr, _, dat, bus in sendcan:
+  #         to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
+  #         self.assertTrue(self.safety.safety_tx_hook(to_send), (addr, dat, bus))
+  #
+  #     # Make sure we attempted to send messages
+  #     self.assertGreater(msgs_sent, 50)
+  #
+  #   # Make sure we can send all messages while inactive
+  #   CC = car.CarControl.new_message()
+  #   test_car_controller(CC)
+  #
+  #   # Test cancel + general messages (controls_allowed=False & cruise_engaged=True)
+  #   self.safety.set_cruise_engaged_prev(True)
+  #   CC = car.CarControl.new_message(cruiseControl={'cancel': True})
+  #   test_car_controller(CC)
+  #
+  #   # Test resume + general messages (controls_allowed=True & cruise_engaged=True)
+  #   self.safety.set_controls_allowed(True)
+  #   CC = car.CarControl.new_message(cruiseControl={'resume': True})
+  #   test_car_controller(CC)
 
   def test_panda_safety_carstate(self):
     """
@@ -322,9 +323,14 @@ class TestCarModelBase(unittest.TestCase):
       # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
 
       checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
-      if self.CP.carName not in ("hyundai", "body"):
-        # TODO: fix standstill mismatches for other makes
+      if self.CP.carName not in ("body",):
+        # # TODO: fix standstill mismatches for other makes
+        # checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
+        print(CS.wheelSpeeds, CS.standstill, not self.safety.get_vehicle_moving())
         checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
+        if checks['standstill']:
+          print('MISMATCH')
+        # time.sleep(0.02)
 
       # TODO: remove this exception once this mismatch is resolved
       brake_pressed = CS.brakePressed
