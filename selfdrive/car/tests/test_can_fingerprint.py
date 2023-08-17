@@ -18,7 +18,7 @@ class TestCanFingerprint(unittest.TestCase):
 
       fingerprint_iter = iter([can])
       empty_can = messaging.new_message('can', 0)
-      car_fingerprint, finger = can_fingerprint(lambda: next(fingerprint_iter, empty_can))
+      car_fingerprint, finger = can_fingerprint(lambda: next(fingerprint_iter, empty_can))  # noqa: B023
 
       self.assertEqual(car_fingerprint, car_model)
 
