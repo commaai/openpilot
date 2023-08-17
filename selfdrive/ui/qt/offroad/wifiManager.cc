@@ -103,7 +103,7 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
 
     // Add entry for each seen SSID
     if (!seenNetworks.contains(ssid)) {
-      seenNetworks[ssid] = {};
+      seenNetworks[ssid] = {ssid};
     }
 
     seenNetworks[ssid].security_type = getSecurityType(properties);
