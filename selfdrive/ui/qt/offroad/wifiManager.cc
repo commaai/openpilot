@@ -103,10 +103,9 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
 
     // Add entry for each seen SSID
     if (!seenNetworks.contains(ssid)) {
-      seenNetworks[ssid] = {ssid};
+      seenNetworks[ssid] = {ssid, 0U, ConnectedType::DISCONNECTED, getSecurityType(properties)};
     }
 
-    seenNetworks[ssid].security_type = getSecurityType(properties);
     if (path.path() == activeAp) {
       seenNetworks[ssid].connected = (ssid == connecting_to_network) ? ConnectedType::CONNECTING : ConnectedType::CONNECTED;
     }
