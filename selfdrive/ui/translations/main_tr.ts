@@ -607,7 +607,7 @@
     <message numerus="yes">
         <source>%n hour(s) ago</source>
         <translation>
-            <numerusform>% saat önce</numerusform>
+            <numerusform>%n saat önce</numerusform>
         </translation>
     </message>
     <message numerus="yes">
