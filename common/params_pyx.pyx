@@ -80,7 +80,7 @@ cdef class Params:
     """
     Warning: This function blocks until the param is written to disk!
     In very rare cases this can take over a second, and your code will hang.
-    Use the put_non_blocking, put_bool_non_blocking, or the put_nonblocking helper function in time sensitive code, but
+    Use the put_nonblocking, put_bool_nonblocking in time sensitive code, but
     in general try to avoid writing params as much as possible.
     """
     cdef string k = self.check_key(key)
@@ -93,13 +93,13 @@ cdef class Params:
     with nogil:
       self.p.putBool(k, val)
 
-  def put_non_blocking(self, key, dat):
+  def put_nonblocking(self, key, dat):
     cdef string k = self.check_key(key)
     cdef string dat_bytes = ensure_bytes(dat)
     with nogil:
       self.p.putNonBlocking(k, dat_bytes)
 
-  def put_bool_non_blocking(self, key, bool val):
+  def put_bool_nonblocking(self, key, bool val):
     cdef string k = self.check_key(key)
     with nogil:
       self.p.putBoolNonBlocking(k, val)

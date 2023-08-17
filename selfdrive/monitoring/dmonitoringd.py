@@ -4,7 +4,7 @@ import gc
 import cereal.messaging as messaging
 from cereal import car
 from cereal import log
-from openpilot.common.params import Params, put_bool_nonblocking
+from openpilot.common.params import Params
 from openpilot.common.realtime import set_realtime_priority
 from openpilot.selfdrive.controls.lib.events import Events
 from openpilot.selfdrive.monitoring.driver_monitor import DriverStatus
@@ -87,7 +87,7 @@ def dmonitoringd_thread(sm=None, pm=None):
     if (sm['driverStateV2'].frameId % 6000 == 0 and
      driver_status.wheelpos_learner.filtered_stat.n > driver_status.settings._WHEELPOS_FILTER_MIN_COUNT and
      driver_status.wheel_on_right == (driver_status.wheelpos_learner.filtered_stat.M > driver_status.settings._WHEELPOS_THRESHOLD)):
-      put_bool_nonblocking("IsRhdDetected", driver_status.wheel_on_right)
+      Params().put_bool_nonblocking("IsRhdDetected", driver_status.wheel_on_right)
 
 def main(sm=None, pm=None):
   dmonitoringd_thread(sm, pm)
