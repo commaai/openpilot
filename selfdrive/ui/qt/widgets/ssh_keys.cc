@@ -5,10 +5,6 @@
 #include "selfdrive/ui/qt/widgets/input.h"
 
 SshControl::SshControl() : ButtonControl(tr("SSH Keys"), "", tr("Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.")) {
-  username_label.setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-  username_label.setStyleSheet("color: #aaaaaa");
-  hlayout->insertWidget(1, &username_label);
-
   QObject::connect(this, &ButtonControl::clicked, [=]() {
     if (text() == tr("ADD")) {
       QString username = InputDialog::getText(tr("Enter your GitHub username"), this);
@@ -30,10 +26,10 @@ SshControl::SshControl() : ButtonControl(tr("SSH Keys"), "", tr("Warning: This g
 void SshControl::refresh() {
   QString param = QString::fromStdString(params.get("GithubSshKeys"));
   if (param.length()) {
-    username_label.setText(QString::fromStdString(params.get("GithubUsername")));
+    setValue(QString::fromStdString(params.get("GithubUsername")));
     setText(tr("REMOVE"));
   } else {
-    username_label.setText("");
+    setValue("");
     setText(tr("ADD"));
   }
   setEnabled(true);

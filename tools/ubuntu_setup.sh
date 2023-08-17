@@ -4,13 +4,23 @@ set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT="$(cd $DIR/../ && pwd)"
+SUDO=""
 
 # NOTE: this is used in a docker build, so do not run any scripts here.
 
+# Use sudo if not root
+if [[ ! $(id -u) -eq 0 ]]; then
+  if [[ -z $(which sudo) ]]; then
+    echo "Please install sudo or run as root"
+    exit 1
+  fi
+  SUDO="sudo"
+fi
+
 # Install packages present in all supported versions of Ubuntu
 function install_ubuntu_common_requirements() {
-  sudo apt-get update
-  sudo apt-get install -y --no-install-recommends \
+  $SUDO apt-get update
+  $SUDO apt-get install -y --no-install-recommends \
     autoconf \
     build-essential \
     ca-certificates \
@@ -43,9 +53,12 @@ function install_ubuntu_common_requirements() {
     libgles2-mesa-dev \
     libglfw3-dev \
     libglib2.0-0 \
+    libncurses5-dev \
+    libncursesw5-dev \
     libomp-dev \
     libopencv-dev \
     libpng16-16 \
+    libportaudio2 \
     libssl-dev \
     libsqlite3-dev \
     libusb-1.0-0-dev \
@@ -56,6 +69,7 @@ function install_ubuntu_common_requirements() {
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
     clinfo \
+    portaudio19-dev \
     qml-module-qtquick2 \
     qtmultimedia5-dev \
     qtlocation5-dev \
@@ -63,6 +77,7 @@ function install_ubuntu_common_requirements() {
     qttools5-dev-tools \
     libqt5sql5-sqlite \
     libqt5svg5-dev \
+    libqt5charts5-dev \
     libqt5x11extras5-dev \
     libreadline-dev \
     libdw1 \
@@ -70,10 +85,11 @@ function install_ubuntu_common_requirements() {
 }
 
 # Install Ubuntu 22.04 LTS packages
-function install_ubuntu_jammy_requirements() {
+function install_ubuntu_lts_latest_requirements() {
   install_ubuntu_common_requirements
 
-  sudo apt-get install -y --no-install-recommends \
+  $SUDO apt-get install -y --no-install-recommends \
+    g++-12 \
     qtbase5-dev \
     qtchooser \
     qt5-qmake \
@@ -85,7 +101,7 @@ function install_ubuntu_jammy_requirements() {
 function install_ubuntu_focal_requirements() {
   install_ubuntu_common_requirements
 
-  sudo apt-get install -y --no-install-recommends \
+  $SUDO apt-get install -y --no-install-recommends \
     libavresample-dev \
     qt5-default \
     python-dev
@@ -96,7 +112,10 @@ if [ -f "/etc/os-release" ]; then
   source /etc/os-release
   case "$VERSION_CODENAME" in
     "jammy")
-      install_ubuntu_jammy_requirements
+      install_ubuntu_lts_latest_requirements
+      ;;
+    "kinetic")
+      install_ubuntu_lts_latest_requirements
       ;;
     "focal")
       install_ubuntu_focal_requirements
@@ -108,8 +127,8 @@ if [ -f "/etc/os-release" ]; then
       if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         exit 1
       fi
-      if [ "$UBUNTU_CODENAME" = "jammy" ]; then
-        install_ubuntu_jammy_requirements
+      if [ "$UBUNTU_CODENAME" = "jammy" ] || [ "$UBUNTU_CODENAME" = "kinetic" ]; then
+        install_ubuntu_lts_latest_requirements
       else
         install_ubuntu_focal_requirements
       fi
@@ -119,9 +138,8 @@ else
   exit 1
 fi
 
-
-# install python dependencies
-$ROOT/update_requirements.sh
+# python setup
+$DIR/install_python_dependencies.sh
 
 source ~/.bashrc
 if [ -z "$OPENPILOT_ENV" ]; then

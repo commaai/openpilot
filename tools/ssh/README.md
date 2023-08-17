@@ -24,13 +24,11 @@ The `id_rsa` key in this directory only works while your device is in the setup 
 See the [community wiki](https://github.com/commaai/openpilot/wiki/SSH) for more detailed instructions and information.
 
 # Connecting to ssh.comma.ai
-SSH into your comma device from anywhere with `ssh.comma.ai`.
+SSH into your comma device from anywhere with `ssh.comma.ai`. Requires a [comma prime subscription](https://comma.ai/connect).
 
 ## Setup
 
 With software version 0.6.1 or newer, enter your GitHub username on your device under Developer Settings. Your GitHub authorized public keys will become your authorized SSH keys for `ssh.comma.ai`. You can add any additional keys in `/system/comma/home/.ssh/authorized_keys.persist`.
-
-Requires [comma SIM with comma prime](https://comma.ai/shop) activated with comma connect, available on iOS and Android. comma two and EON ship with a pre-inserted comma SIM.
 
 ## Recommended .ssh/config
 

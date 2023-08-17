@@ -29,9 +29,8 @@ def eliminate_incompatible_cars(msg, candidate_cars):
     car_fingerprints = _FINGERPRINTS[car_name]
 
     for fingerprint in car_fingerprints:
-      fingerprint.update(_DEBUG_ADDRESS)  # add alien debug address
-
-      if is_valid_for_fingerprint(msg, fingerprint):
+      # add alien debug address
+      if is_valid_for_fingerprint(msg, fingerprint | _DEBUG_ADDRESS):
         compatible_cars.append(car_name)
         break
 

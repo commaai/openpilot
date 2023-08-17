@@ -13,11 +13,17 @@ def get_pt_bus(car_fingerprint):
 
 
 def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
-  if radar_disabled:
+  no_radar = car_fingerprint in HONDA_BOSCH_RADARLESS
+  if radar_disabled or no_radar:
     # when radar is disabled, steering commands are sent directly to powertrain bus
     return get_pt_bus(car_fingerprint)
   # normally steering commands are sent to radar, which forwards them to powertrain bus
   return 0
+
+
+def get_cruise_speed_conversion(car_fingerprint: str, is_metric: bool) -> float:
+  # on certain cars, CRUISE_SPEED changes to imperial with car's unit setting
+  return CV.MPH_TO_MS if car_fingerprint in HONDA_BOSCH_RADARLESS and not is_metric else CV.KPH_TO_MS
 
 
 def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake):
@@ -45,7 +51,7 @@ def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_
   return packer.make_can_msg("BRAKE_COMMAND", bus, values)
 
 
-def create_acc_commands(packer, enabled, active, accel, gas, stopping, car_fingerprint):
+def create_acc_commands(packer, enabled, active, accel, gas, stopping_counter, car_fingerprint):
   commands = []
   bus = get_pt_bus(car_fingerprint)
   min_gas_accel = CarControllerParams.BOSCH_GAS_LOOKUP_BP[0]
@@ -54,30 +60,39 @@ def create_acc_commands(packer, enabled, active, accel, gas, stopping, car_finge
   gas_command = gas if active and accel > min_gas_accel else -30000
   accel_command = accel if active else 0
   braking = 1 if active and accel < min_gas_accel else 0
-  standstill = 1 if active and stopping else 0
-  standstill_release = 1 if active and not stopping else 0
+  standstill = 1 if active and stopping_counter > 0 else 0
+  standstill_release = 1 if active and stopping_counter == 0 else 0
 
+  # common ACC_CONTROL values
   acc_control_values = {
-    # setting CONTROL_ON causes car to set POWERTRAIN_DATA->ACC_STATUS = 1
-    "CONTROL_ON": control_on,
-    "GAS_COMMAND": gas_command,  # used for gas
-    "ACCEL_COMMAND": accel_command,  # used for brakes
-    "BRAKE_LIGHTS": braking,
-    "BRAKE_REQUEST": braking,
-    "STANDSTILL": standstill,
-    "STANDSTILL_RELEASE": standstill_release,
+    'ACCEL_COMMAND': accel_command,
+    'STANDSTILL': standstill,
   }
+
+  if car_fingerprint in HONDA_BOSCH_RADARLESS:
+    acc_control_values.update({
+      "CONTROL_ON": enabled,
+      "IDLESTOP_ALLOW": stopping_counter > 200,  # allow idle stop after 4 seconds (50 Hz)
+    })
+  else:
+    acc_control_values.update({
+      # setting CONTROL_ON causes car to set POWERTRAIN_DATA->ACC_STATUS = 1
+      "CONTROL_ON": control_on,
+      "GAS_COMMAND": gas_command,  # used for gas
+      "BRAKE_LIGHTS": braking,
+      "BRAKE_REQUEST": braking,
+      "STANDSTILL_RELEASE": standstill_release,
+    })
+    acc_control_on_values = {
+      "SET_TO_3": 0x03,
+      "CONTROL_ON": enabled,
+      "SET_TO_FF": 0xff,
+      "SET_TO_75": 0x75,
+      "SET_TO_30": 0x30,
+    }
+    commands.append(packer.make_can_msg("ACC_CONTROL_ON", bus, acc_control_on_values))
+
   commands.append(packer.make_can_msg("ACC_CONTROL", bus, acc_control_values))
-
-  acc_control_on_values = {
-    "SET_TO_3": 0x03,
-    "CONTROL_ON": enabled,
-    "SET_TO_FF": 0xff,
-    "SET_TO_75": 0x75,
-    "SET_TO_30": 0x30,
-  }
-  commands.append(packer.make_can_msg("ACC_CONTROL_ON", bus, acc_control_on_values))
-
   return commands
 
 
@@ -104,13 +119,13 @@ def create_bosch_supplemental_1(packer, car_fingerprint):
 def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, acc_hud, lkas_hud):
   commands = []
   bus_pt = get_pt_bus(CP.carFingerprint)
-  radar_disabled = CP.carFingerprint in HONDA_BOSCH and CP.openpilotLongitudinalControl
+  radar_disabled = CP.carFingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS) and CP.openpilotLongitudinalControl
   bus_lkas = get_lkas_cmd_bus(CP.carFingerprint, radar_disabled)
 
   if CP.openpilotLongitudinalControl:
     acc_hud_values = {
       'CRUISE_SPEED': hud.v_cruise,
-      'ENABLE_MINI_CAR': 1,
+      'ENABLE_MINI_CAR': 1 if enabled else 0,
       'HUD_DISTANCE': 0,  # max distance setting on display
       'IMPERIAL_UNIT': int(not is_metric),
       'HUD_LEAD': 2 if enabled and hud.lead_visible else 1 if enabled else 0,
@@ -153,7 +168,7 @@ def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, acc_hud, 
   else:
     commands.append(packer.make_can_msg('LKAS_HUD', bus_lkas, lkas_hud_values))
 
-  if radar_disabled and CP.carFingerprint in HONDA_BOSCH:
+  if radar_disabled:
     radar_hud_values = {
       'CMBS_OFF': 0x01,
       'SET_TO_1': 0x01,

@@ -16,10 +16,8 @@ with open(os.path.join(BASEDIR, "selfdrive/controls/lib/alerts_offroad.json")) a
 
 def set_offroad_alert(alert: str, show_alert: bool, extra_text: Optional[str] = None) -> None:
   if show_alert:
-    a = OFFROAD_ALERTS[alert]
-    if extra_text is not None:
-      a = copy.copy(OFFROAD_ALERTS[alert])
-      a['text'] += extra_text
+    a = copy.copy(OFFROAD_ALERTS[alert])
+    a['extra'] = extra_text or ''
     Params().put(alert, json.dumps(a))
   else:
     Params().remove(alert)

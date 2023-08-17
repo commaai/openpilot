@@ -14,20 +14,8 @@ def get_radar_can_parser(CP):
   if DBC[CP.carFingerprint]['radar'] is None:
     return None
 
-  signals = []
-  checks = []
-
-  for addr in range(RADAR_START_ADDR, RADAR_START_ADDR + RADAR_MSG_COUNT):
-    msg = f"RADAR_TRACK_{addr:x}"
-    signals += [
-      ("STATE", msg),
-      ("AZIMUTH", msg),
-      ("LONG_DIST", msg),
-      ("REL_ACCEL", msg),
-      ("REL_SPEED", msg),
-    ]
-    checks += [(msg, 50)]
-  return CANParser(DBC[CP.carFingerprint]['radar'], signals, checks, 1)
+  messages = [(f"RADAR_TRACK_{addr:x}", 50) for addr in range(RADAR_START_ADDR, RADAR_START_ADDR + RADAR_MSG_COUNT)]
+  return CANParser(DBC[CP.carFingerprint]['radar'], messages, 1)
 
 
 class RadarInterface(RadarInterfaceBase):
@@ -37,12 +25,12 @@ class RadarInterface(RadarInterfaceBase):
     self.trigger_msg = RADAR_START_ADDR + RADAR_MSG_COUNT - 1
     self.track_id = 0
 
-    self.radar_off_can = CP.radarOffCan
+    self.radar_off_can = CP.radarUnavailable
     self.rcp = get_radar_can_parser(CP)
 
   def update(self, can_strings):
     if self.radar_off_can or (self.rcp is None):
-      return super().update(None)
+      return None
 
     vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)

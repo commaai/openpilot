@@ -20,7 +20,7 @@ QGeoCoordinate to_QGeoCoordinate(const QMapbox::Coordinate &in);
 QMapbox::CoordinatesCollections model_to_collection(
   const cereal::LiveLocationKalman::Measurement::Reader &calibratedOrientationECEF,
   const cereal::LiveLocationKalman::Measurement::Reader &positionECEF,
-  const cereal::ModelDataV2::XYZTData::Reader &line);
+  const cereal::XYZTData::Reader &line);
 QMapbox::CoordinatesCollections coordinate_to_collection(const QMapbox::Coordinate &c);
 QMapbox::CoordinatesCollections capnp_coordinate_list_to_collection(const capnp::List<cereal::NavRoute::Coordinate>::Reader &coordinate_list);
 QMapbox::CoordinatesCollections coordinate_list_to_collection(const QList<QGeoCoordinate> &coordinate_list);

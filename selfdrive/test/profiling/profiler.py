@@ -2,8 +2,8 @@
 import os
 import sys
 import cProfile  # pylint: disable=import-error
-import pprofile  # pylint: disable=import-error
-import pyprof2calltree  # pylint: disable=import-error
+import pprofile
+import pyprof2calltree
 
 from common.params import Params
 from tools.lib.logreader import LogReader
@@ -25,7 +25,7 @@ CARS = {
 def get_inputs(msgs, process, fingerprint):
   for config in CONFIGS:
     if config.proc_name == process:
-      sub_socks = list(config.pub_sub.keys())
+      sub_socks = list(config.pubs)
       trigger = sub_socks[0]
       break
 
@@ -53,6 +53,7 @@ def profile(proc, func, car='toyota'):
   msgs = list(LogReader(rlog_url)) * int(os.getenv("LOOP", "1"))
 
   os.environ['FINGERPRINT'] = fingerprint
+  os.environ['SKIP_FW_QUERY'] = "1"
   os.environ['REPLAY'] = "1"
 
   def run(sm, pm, can_sock):
