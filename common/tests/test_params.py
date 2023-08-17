@@ -91,21 +91,23 @@ class TestParams(unittest.TestCase):
 
   def test_put_non_blocking_with_get_block(self):
     q = Params(self.tmpdir)
-    def _delayed_writer():
-      time.sleep(0.1)
-      q.put_nonblocking("CarParams", "test")
-    threading.Thread(target=_delayed_writer).start()
+    q.put_nonblocking("CarParams", "test")
     assert q.get("CarParams") is None
+    q.put_nonblocking("IsMetric", "1")
+    assert q.get("IsMetric") is None
+
     assert q.get("CarParams", True) == b"test"
+    assert q.get("IsMetric", True) == b"1"
 
   def test_put_bool_non_blocking_with_get_block(self):
     q = Params(self.tmpdir)
-    def _delayed_writer():
-      time.sleep(0.1)
-      q.put_bool_nonblocking("CarParams", True)
-    threading.Thread(target=_delayed_writer).start()
+    q.put_bool_nonblocking("CarParams", True)
     assert q.get("CarParams") is None
+    q.put_bool_nonblocking("IsMetric", True)
+    assert q.get("IsMetric") is None
+
     assert q.get("CarParams", True) == b"1"
+    assert q.get("IsMetric", True) == b"1"
 
   def test_params_all_keys(self):
     keys = Params().all_keys()
