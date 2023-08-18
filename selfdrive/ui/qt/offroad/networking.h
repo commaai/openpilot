@@ -12,8 +12,9 @@ public:
   void setItem(const Network& n, const QPixmap &icon, bool show_forget_btn, const QPixmap &strength);
 
 signals:
-  void connectToNetwork(const Network &n);
-  void forgotNetwork(const Network &n);
+  // Cannot pass Network by reference. it may change after the signal is sent.
+  void connectToNetwork(const Network n);
+  void forgotNetwork(const Network n);
 
 protected:
   ElidedLabel* ssidLabel;
@@ -43,7 +44,7 @@ private:
   std::vector<WifiItem*> wifi_items;
 
 signals:
-  void connectToNetwork(const Network &n);
+  void connectToNetwork(const Network n);
 
 public slots:
   void refresh();
@@ -91,6 +92,6 @@ public slots:
   void refresh();
 
 private slots:
-  void connectToNetwork(const Network &n);
+  void connectToNetwork(const Network n);
   void wrongPassword(const QString &ssid);
 };

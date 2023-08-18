@@ -672,8 +672,8 @@ def _replay_multi_process(
     containers = []
     for cfg in cfgs:
       container = ProcessContainer(cfg)
-      container.start(params_config, env_config, all_msgs, fingerprint, captured_output_store is not None)
       containers.append(container)
+      container.start(params_config, env_config, all_msgs, fingerprint, captured_output_store is not None)
 
     all_pubs = {pub for container in containers for pub in container.pubs}
     all_subs = {sub for container in containers for sub in container.subs}
