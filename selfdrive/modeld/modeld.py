@@ -26,6 +26,7 @@ DESIRE_LEN = 8
 TRAFFIC_CONVENTION_LEN = 2
 DRIVING_STYLE_LEN = 12
 NAV_FEATURE_LEN = 256
+NAV_INSTRUCTION_LEN = 150
 OUTPUT_SIZE = 5990
 MODEL_OUTPUT_SIZE = 6120
 MODEL_FREQ = 20
@@ -78,6 +79,7 @@ class ModelState:
       'desire_pulse': np.zeros(DESIRE_LEN * (HISTORY_BUFFER_LEN+1), dtype=np.float32),
       'traffic_convention': np.zeros(TRAFFIC_CONVENTION_LEN, dtype=np.float32),
       'nav_features': np.zeros(NAV_FEATURE_LEN, dtype=np.float32),
+      'nav_instructions': np.zeros(NAV_INSTRUCTION_LEN, dtype=np.float32),
       'feature_buffer': np.zeros(HISTORY_BUFFER_LEN * FEATURE_LEN, dtype=np.float32),
     }
 
@@ -98,6 +100,7 @@ class ModelState:
 
     self.inputs['traffic_convention'][:] = inputs['traffic_convention']
     self.inputs['nav_features'][:] = inputs['nav_features']
+    self.inputs['nav_instructions'][:] = inputs['nav_instructions']
     # self.inputs['driving_style'][:] = inputs['driving_style']
 
     # if getCLBuffer is not None, frame will be None
@@ -158,7 +161,7 @@ def main():
 
   # messaging
   pm = PubMaster(["modelV2", "cameraOdometry"])
-  sm = SubMaster(["lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel"])
+  sm = SubMaster(["lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel", "navInstruction"])
 
   state = PublishState()
   params = Params()
@@ -177,6 +180,7 @@ def main():
   live_calib_seen = False
   driving_style = np.array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], dtype=np.float32)
   nav_features = np.zeros(NAV_FEATURE_LEN, dtype=np.float32)
+  nav_instructions = np.zeros(NAV_INSTRUCTION_LEN, dtype=np.float32)
   buf_main, buf_extra = None, None
   meta_main = FrameMeta()
   meta_extra = FrameMeta()
@@ -241,10 +245,23 @@ def main():
       nav_enabled = True
     elif nav_enabled and not use_nav:
       nav_features[:] = 0
+      nav_instructions[:] = 0
       nav_enabled = False
 
     if nav_enabled and sm.updated["navModel"]:
       nav_features = np.array(sm["navModel"].features)
+
+    if nav_enabled and sm.updated["navInstruction"]:
+      nav_instructions[:] = 0
+      for maneuver in sm["navInstruction"].allManeuvers:
+        distance_idx = 25 + maneuver.distance / 20
+        direction_idx = 0
+        if maneuver.modifier in ("left", "slight left", "sharp left"):
+          direction_idx = 1
+        if maneuver.modifier in ("right", "slight right", "sharp right"):
+          direction_idx = 2
+        if 0 <= distance_idx < 50:
+          nav_instructions[distance_idx*3 + direction_idx] = 1
 
     # tracked dropped frames
     vipc_dropped_frames = max(0, meta_main.frame_id - last_vipc_frame_id - 1)
@@ -263,7 +280,8 @@ def main():
       'desire_pulse': vec_desire,
       'traffic_convention': traffic_convention,
       'driving_style': driving_style,
-      'nav_features': nav_features}
+      'nav_features': nav_features,
+      'nav_instructions': nav_instructions}
 
     mt1 = time.perf_counter()
     model_output = model.run(buf_main, buf_extra, model_transform_main, model_transform_extra, inputs, prepare_only)
