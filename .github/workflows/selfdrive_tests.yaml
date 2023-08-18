@@ -118,6 +118,8 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
+          .env
+          .venv
           ~/github_brew_cache_entries.txt
           ~/.pyenv
           ~/Library/Caches/pypoetry
@@ -150,7 +152,6 @@ jobs:
     - name: Build openpilot
       run: |
         eval "$(pyenv init --path)"
-        ls ~/Library/Caches/pypoetry/virtualenvs
         poetry run scons -j$(nproc)
     - name: Run tests
       run: |
