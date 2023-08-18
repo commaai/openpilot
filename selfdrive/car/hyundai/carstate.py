@@ -333,6 +333,9 @@ class CarState(CarStateBase):
     if CP.flags & HyundaiFlags.CANFD_HDA2:
       if CP.carFingerprint not in CANFD_CAR_ALT_LKAS:
         messages += [("CAM_0x2a4", 20)]
+      else:
+        # TODO: find new cam signal to disable HDA
+        ...
     elif CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
       messages += [
         ("SCC_CONTROL", 50),
