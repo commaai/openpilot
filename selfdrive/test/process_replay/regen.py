@@ -6,7 +6,8 @@ import capnp
 
 from typing import Union, Iterable, Optional, List, Any, Dict, Tuple
 
-from selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, replay_process, get_process_config, check_openpilot_enabled, get_custom_params_from_lr
+from selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, replay_process, get_process_config, \
+                                                        check_openpilot_enabled, get_custom_params_from_lr
 from selfdrive.test.update_ci_routes import upload_route
 from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
@@ -15,7 +16,7 @@ from tools.lib.helpers import save_log
 
 
 def regen_segment(
-  lr: Union[LogReader, List[capnp._DynamicStructReader]], frs: Optional[Dict[str, Any]] = None, 
+  lr: Union[LogReader, List[capnp._DynamicStructReader]], frs: Optional[Dict[str, Any]] = None,
   daemons: Union[str, Iterable[str]] = "all", disable_tqdm: bool = False
 ) -> List[capnp._DynamicStructReader]:
   if not isinstance(daemons, str) and not hasattr(daemons, "__iter__"):

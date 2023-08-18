@@ -6,11 +6,16 @@ import ssl
 import uuid
 import time
 
-from common.basedir import BASEDIR
+# aiortc and its dependencies have lots of internal warnings :(
+import warnings
+warnings.resetwarnings()
+warnings.simplefilter("always")
+
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 
 import cereal.messaging as messaging
+from common.basedir import BASEDIR
 from tools.bodyteleop.bodyav import BodyMic, WebClientSpeaker, force_codec, play_sound, MediaBlackhole, EncodedBodyVideo
 
 logger = logging.getLogger("pc")
@@ -181,7 +186,8 @@ def main():
   cert_path = TELEOPDIR + '/cert.pem'
   key_path = TELEOPDIR + '/key.pem'
   if (not os.path.exists(cert_path)) or (not os.path.exists(key_path)):
-    asyncio.run(run(f'openssl req -x509 -newkey rsa:4096 -nodes -out {cert_path} -keyout {key_path} -days 365 -subj "/C=US/ST=California/O=commaai/OU=comma body"'))
+    asyncio.run(run(f'openssl req -x509 -newkey rsa:4096 -nodes -out {cert_path} -keyout {key_path} \
+                     -days 365 -subj "/C=US/ST=California/O=commaai/OU=comma body"'))
   else:
     logger.info("Certificate exists!")
   ssl_context = ssl.SSLContext()

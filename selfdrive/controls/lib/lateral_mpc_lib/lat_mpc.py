@@ -10,7 +10,7 @@ from selfdrive.modeld.constants import T_IDXS
 if __name__ == '__main__':  # generating code
   from third_party.acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 else:
-  from selfdrive.controls.lib.lateral_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverCython  # pylint: disable=no-name-in-module, import-error
+  from selfdrive.controls.lib.lateral_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverCython
 
 LAT_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
 EXPORT_DIR = os.path.join(LAT_MPC_DIR, "c_generated_code")
@@ -129,11 +129,15 @@ def gen_lat_ocp():
 
 
 class LateralMpc():
-  def __init__(self, x0=np.zeros(X_DIM)):
+  def __init__(self, x0=None):
+    if x0 is None:
+      x0 = np.zeros(X_DIM)
     self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.reset(x0)
 
-  def reset(self, x0=np.zeros(X_DIM)):
+  def reset(self, x0=None):
+    if x0 is None:
+      x0 = np.zeros(X_DIM)
     self.x_sol = np.zeros((N+1, X_DIM))
     self.u_sol = np.zeros((N, 1))
     self.yref = np.zeros((N+1, COST_DIM))

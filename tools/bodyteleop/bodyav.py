@@ -63,7 +63,8 @@ class WebClientSpeaker(MediaBlackhole):
     self.p = pyaudio.PyAudio()
     self.buffer = io.BytesIO()
     self.channels = 2
-    self.stream = self.p.open(format=pyaudio.paInt16, channels=self.channels, rate=48000, frames_per_buffer=9600, output=True, stream_callback=self.pyaudio_callback)
+    self.stream = self.p.open(format=pyaudio.paInt16, channels=self.channels, rate=48000, frames_per_buffer=9600,
+                              output=True, stream_callback=self.pyaudio_callback)
 
   def pyaudio_callback(self, in_data, frame_count, time_info, status):
     if self.buffer.getbuffer().nbytes < frame_count * self.channels * 2:

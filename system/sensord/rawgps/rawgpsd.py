@@ -446,7 +446,7 @@ def main() -> NoReturn:
         report.source = 1  # glonass
         measurement_status_fields = (measurementStatusFields.items(), measurementStatusGlonassFields.items())
       else:
-        assert False
+        raise RuntimeError(f"invalid log_type: {log_type}")
 
       for k,v in dat.items():
         if k == "version":

@@ -168,7 +168,7 @@ if __name__ == "__main__":
   if not os.path.exists(PLOTJUGGLER_BIN):
     print("PlotJuggler is missing. Downloading...")
     install()
-  
+
   if get_plotjuggler_version() < MINIMUM_PLOTJUGGLER_VERSION:
     print("PlotJuggler is out of date. Installing update...")
     install()

@@ -130,7 +130,7 @@ class TestLoggerd(unittest.TestCase):
 
     # check params
     logged_params = {entry.key: entry.value for entry in initData.params.entries}
-    expected_params = set(k for k, _, __ in fake_params) | {'LaikadEphemerisV3'}
+    expected_params = {k for k, _, __ in fake_params} | {'LaikadEphemerisV3'}
     assert set(logged_params.keys()) == expected_params, set(logged_params.keys()) ^ expected_params
     assert logged_params['LaikadEphemerisV3'] == b'', f"DONT_LOG param value was logged: {repr(logged_params['LaikadEphemerisV3'])}"
     for param_key, initData_key, v in fake_params:
@@ -210,7 +210,8 @@ class TestLoggerd(unittest.TestCase):
     for fn in ["console-ramoops", "pmsg-ramoops-0"]:
       path = Path(os.path.join("/sys/fs/pstore/", fn))
       if path.is_file():
-        expected_val = open(path, "rb").read()
+        with open(path, "rb") as f:
+          expected_val = f.read()
         bootlog_val = [e.value for e in boot.pstore.entries if e.key == fn][0]
         self.assertEqual(expected_val, bootlog_val)
 

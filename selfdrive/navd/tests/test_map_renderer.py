@@ -30,7 +30,7 @@ class MapBoxInternetDisabledRequestHandler(http.server.BaseHTTPRequestHandler):
   def setup(self):
     if self.INTERNET_ACTIVE:
       super().setup()
-  
+
   def handle(self):
     if self.INTERNET_ACTIVE:
       super().handle()
@@ -38,7 +38,7 @@ class MapBoxInternetDisabledRequestHandler(http.server.BaseHTTPRequestHandler):
   def finish(self):
     if self.INTERNET_ACTIVE:
       super().finish()
-    
+
   def do_GET(self):
     url = f'https://api.mapbox.com{self.path}'
 
@@ -50,7 +50,7 @@ class MapBoxInternetDisabledRequestHandler(http.server.BaseHTTPRequestHandler):
     self.send_response(r.status_code)
     self.end_headers()
     self.wfile.write(r.content)
-  
+
   def log_message(self, *args: Any) -> None:
     return
 
@@ -62,13 +62,13 @@ class MapBoxInternetDisabledServer(threading.Thread):
   def run(self):
     self.server = http.server.HTTPServer(("127.0.0.1", 5000), MapBoxInternetDisabledRequestHandler)
     self.server.serve_forever()
-  
+
   def stop(self):
     self.server.shutdown()
 
   def disable_internet(self):
     MapBoxInternetDisabledRequestHandler.INTERNET_ACTIVE = False
-  
+
   def enable_internet(self):
     MapBoxInternetDisabledRequestHandler.INTERNET_ACTIVE = True
 
@@ -110,7 +110,7 @@ class TestMapRenderer(unittest.TestCase):
     assert self.vipc.connect(False)
     self.vipc.recv()
 
-  
+
   def _run_test(self, expect_valid, location=LOCATION1):
     starting_frame_id = None
 
@@ -127,7 +127,7 @@ class TestMapRenderer(unittest.TestCase):
       else:
         prev_valid = self.sm.valid['mapRenderState']
         prev_frame_id = self.sm['mapRenderState'].frameId
-      
+
       if starting_frame_id is None:
         starting_frame_id = prev_frame_id
 
@@ -172,7 +172,7 @@ class TestMapRenderer(unittest.TestCase):
     self.server.disable_internet()
     self._setup_test()
     self._run_test(False)
-    
+
   def test_recover_from_no_internet(self):
     self._setup_test()
     self._run_test(True)

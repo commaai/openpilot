@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from collections import defaultdict
+
 from cereal import car
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import RadarInterfaceBase
@@ -7,12 +9,8 @@ from selfdrive.car.honda.values import DBC
 
 def _create_nidec_can_parser(car_fingerprint):
   radar_messages = [0x400] + list(range(0x430, 0x43A)) + list(range(0x440, 0x446))
-  signals = list(zip(['RADAR_STATE'] +
-                     ['LONG_DIST'] * 16 + ['NEW_TRACK'] * 16 + ['LAT_DIST'] * 16 +
-                     ['REL_SPEED'] * 16,
-                     [0x400] + radar_messages[1:] * 4))
-  checks = [(s[1], 20) for s in signals]
-  return CANParser(DBC[car_fingerprint]['radar'], signals, checks, 1)
+  messages = [(m, 20) for m in radar_messages]
+  return CANParser(DBC[car_fingerprint]['radar'], messages, 1)
 
 
 class RadarInterface(RadarInterfaceBase):
@@ -32,7 +30,7 @@ class RadarInterface(RadarInterfaceBase):
     else:
       self.rcp = _create_nidec_can_parser(CP.carFingerprint)
     self.trigger_msg = 0x445
-    self.updated_messages = set()
+    self.updated_values = defaultdict(lambda: defaultdict(list))
 
   def update(self, can_strings):
     # in Bosch radar and we are only steering for now, so sleep 0.05s to keep
@@ -40,24 +38,28 @@ class RadarInterface(RadarInterfaceBase):
     if self.radar_off_can:
       return None
 
-    vls = self.rcp.update_strings(can_strings)
-    self.updated_messages.update(vls)
+    addresses = self.rcp.update_strings(can_strings)
+    for addr in addresses:
+      vals_dict = self.rcp.vl_all[addr]
+      for sig_name, vals in vals_dict.items():
+        self.updated_values[addr][sig_name].extend(vals)
 
-    if self.trigger_msg not in self.updated_messages:
+    if self.trigger_msg not in self.updated_values:
       return None
 
-    rr = self._update(self.updated_messages)
-    self.updated_messages.clear()
-    return rr
+    radar_data = self._radar_msg_from_buffer(self.updated_values, self.rcp.can_valid)
+    self.updated_values.clear()
 
-  def _update(self, updated_messages):
+    return radar_data
+
+  def _radar_msg_from_buffer(self, updated_values, can_valid):
     ret = car.RadarData.new_message()
 
-    for ii in sorted(updated_messages):
-      combined_vals = self.rcp.vl_all[ii]
-      n_vals_per_addr = len(list(combined_vals.values())[0])
+    for ii in sorted(updated_values):
+      msgs = updated_values[ii]
+      n_vals_per_addr = len(list(msgs.values())[0])
       cpts = [
-        {k: v[i] for k, v in  combined_vals.items()}
+        {k: v[i] for k, v in  msgs.items()}
         for i in range(n_vals_per_addr)
       ]
 
@@ -82,7 +84,7 @@ class RadarInterface(RadarInterfaceBase):
             del self.pts[ii]
 
     errors = []
-    if not self.rcp.can_valid:
+    if not can_valid:
       errors.append("canError")
     if self.radar_fault:
       errors.append("fault")

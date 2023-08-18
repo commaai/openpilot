@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 from enum import IntFlag
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Union

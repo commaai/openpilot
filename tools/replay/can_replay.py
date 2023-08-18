@@ -14,7 +14,6 @@ from tools.plotjuggler.juggle import load_segment
 from tools.lib.logreader import logreader_from_route_or_segment
 from panda import Panda, PandaJungle
 
-
 def send_thread(s, flock):
   if "Jungle" in str(type(s)):
     if "FLASH" in os.environ:

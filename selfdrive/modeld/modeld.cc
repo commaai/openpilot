@@ -60,7 +60,7 @@ mat3 update_calibration(Eigen::Vector3d device_from_calib_euler, bool wide_camer
 void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcClient &vipc_client_extra, bool main_wide_camera, bool use_extra_client) {
   // messaging
   PubMaster pm({"modelV2", "cameraOdometry"});
-  SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel"});
+  SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel", "navInstruction"});
 
   Params params;
   PublishState ps = {};
@@ -78,6 +78,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
   bool live_calib_seen = false;
   float driving_style[DRIVING_STYLE_LEN] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0};
   float nav_features[NAV_FEATURE_LEN] = {0};
+  float nav_instructions[NAV_INSTRUCTION_LEN] = {0};
 
   VisionBuf *buf_main = nullptr;
   VisionBuf *buf_extra = nullptr;
@@ -148,6 +149,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       nav_enabled = true;
     } else if (nav_enabled && !use_nav) {
       memset(nav_features, 0, sizeof(float)*NAV_FEATURE_LEN);
+      memset(nav_instructions, 0, sizeof(float)*NAV_INSTRUCTION_LEN);
       nav_enabled = false;
     }
 
@@ -155,6 +157,21 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       auto nav_model_features = sm["navModel"].getNavModel().getFeatures();
       for (int i=0; i<NAV_FEATURE_LEN; i++) {
         nav_features[i] = nav_model_features[i];
+      }
+    }
+
+    if (nav_enabled && sm.updated("navInstruction")) {
+      memset(nav_instructions, 0, sizeof(float)*NAV_INSTRUCTION_LEN);
+      auto maneuvers = sm["navInstruction"].getNavInstruction().getAllManeuvers();
+      for (int i=0; i<maneuvers.size(); i++) {
+        int distance_idx = 25 + (int)(maneuvers[i].getDistance() / 20);
+        std::string direction = maneuvers[i].getModifier();
+        int direction_idx = 0;
+        if (direction == "left" || direction == "slight left" || direction == "sharp left") direction_idx = 1;
+        if (direction == "right" || direction == "slight right" || direction == "sharp right") direction_idx = 2;
+        if (distance_idx >= 0 && distance_idx < 50) {
+          nav_instructions[distance_idx*3 + direction_idx] = 1;
+        }
       }
     }
 
@@ -175,7 +192,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     }
 
     double mt1 = millis_since_boot();
-    ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire, is_rhd, driving_style, nav_features, prepare_only);
+    ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire, is_rhd, driving_style, nav_features, nav_instructions, prepare_only);
     double mt2 = millis_since_boot();
     float model_execution_time = (mt2 - mt1) / 1000.0;
 

@@ -93,7 +93,10 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   ],
   CAR.F_150_MK14: FordCarInfo("Ford F-150 2023", "Co-Pilot360 Active 2.0"),
   CAR.FOCUS_MK4: FordCarInfo("Ford Focus 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS]),
-  CAR.MAVERICK_MK1: FordCarInfo("Ford Maverick 2022-23", "Co-Pilot360 Assist"),
+  CAR.MAVERICK_MK1: [
+    FordCarInfo("Ford Maverick 2022", "LARIAT Luxury"),
+    FordCarInfo("Ford Maverick 2023", "Co-Pilot360 Assist"),
+  ],
 }
 
 FW_QUERY_CONFIG = FwQueryConfig(
@@ -198,6 +201,7 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7E0, None): [
       b'LB5A-14C204-ATJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'LB5A-14C204-AUJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LB5A-14C204-AZL\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LB5A-14C204-BUJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LB5A-14C204-EAC\x00\x00\x00\x00\x00\x00\x00\x00\x00',
