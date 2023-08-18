@@ -93,9 +93,34 @@ jobs:
         path: ~/scons_cache
         key: scons-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
 
+  build_mac_matrix:
+    name: setup macos build matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set_matrix.outputs.matrix }} 
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          setup_scripts:
+            - tools/mac_setup.sh
+            - tools/install_python_dependencies.sh
+      - name: setup matrix
+        id: set_matrix
+        run: |
+          if [[ ${{ steps.filter.outputs.setup_scripts }} == true ]]; then
+            echo "matrix='{\"iterations\": [0, 1]}'" >> "$GITHUB_OUTPUT"
+          else
+            echo "matrix='{\"iterations\": [0]}'" >> "$GITHUB_OUTPUT"
+          fi
+
   build_mac:
     name: build macos
     runs-on: macos-latest
+    needs: build_mac_matrix
+    strategy:
+      matrix: ${{fromJson(needs.build_mac_matrix.outputs.matrix)}}
     steps:
     - uses: actions/checkout@v3
       with:
