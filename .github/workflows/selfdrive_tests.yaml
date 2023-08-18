@@ -118,8 +118,6 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
-          .env
-          */.env
           ~/github_brew_cache_entries.txt
           ~/.pyenv
           ~/Library/Caches/pypoetry
@@ -130,6 +128,8 @@ jobs:
           /opt/homebrew/opt
           /opt/homebrew/Caskroom/gcc-arm-*
           /Applications/ArmGNUToolchain/*/*/*
+          .env
+          */.env
         key: macos_deps-${{ hashFiles('tools/mac_setup.sh', 'tools/install_python_dependencies.sh', 'poetry.lock') }}
         restore-keys: macos_deps-
     - name: Brew link restored dependencies
