@@ -112,10 +112,10 @@ jobs:
         run: |
           if [[ ${{ steps.filter.outputs.setup_scripts }} == true ]]; then
             # setup scripts have changed, run the build_mac job twice
-            echo "matrix='{\"iterations\": [0, 1]}'" >> "$GITHUB_OUTPUT"
+            echo "matrix={"iterations": [0, 1]}" >> "$GITHUB_OUTPUT"
           else
             # run it once
-            echo "matrix='{\"iterations\": [0]}'" >> "$GITHUB_OUTPUT"
+            echo "matrix={"iterations": [0]}" >> "$GITHUB_OUTPUT"
           fi
 
   build_mac:
