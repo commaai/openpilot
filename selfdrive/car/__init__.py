@@ -41,7 +41,7 @@ def gen_empty_fingerprint():
 
 
 # these params were derived for the Civic and used to calculate params for other cars
-class ReferenceCarParams:
+class VehicleDynamicsParams:
   MASS = 1326. + STD_CARGO_KG
   WHEELBASE = 2.70
   CENTER_TO_FRONT = WHEELBASE * 0.4
@@ -54,18 +54,18 @@ class ReferenceCarParams:
 # TODO: get actual value, for now starting with reasonable value for
 # civic and scaling by mass and wheelbase
 def scale_rot_inertia(mass, wheelbase):
-  return ReferenceCarParams.ROTATIONAL_INERTIA * mass * wheelbase ** 2 / (ReferenceCarParams.MASS * ReferenceCarParams.WHEELBASE ** 2)
+  return VehicleDynamicsParams.ROTATIONAL_INERTIA * mass * wheelbase ** 2 / (VehicleDynamicsParams.MASS * VehicleDynamicsParams.WHEELBASE ** 2)
 
 
 # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
 # mass and CG position, so all cars will have approximately similar dyn behaviors
 def scale_tire_stiffness(mass, wheelbase, center_to_front, tire_stiffness_factor):
   center_to_rear = wheelbase - center_to_front
-  tire_stiffness_front = (ReferenceCarParams.TIRE_STIFFNESS_FRONT * tire_stiffness_factor) * mass / ReferenceCarParams.MASS * \
-                         (center_to_rear / wheelbase) / (ReferenceCarParams.CENTER_TO_REAR / ReferenceCarParams.WHEELBASE)
+  tire_stiffness_front = (VehicleDynamicsParams.TIRE_STIFFNESS_FRONT * tire_stiffness_factor) * mass / VehicleDynamicsParams.MASS * \
+                         (center_to_rear / wheelbase) / (VehicleDynamicsParams.CENTER_TO_REAR / VehicleDynamicsParams.WHEELBASE)
 
-  tire_stiffness_rear = (ReferenceCarParams.TIRE_STIFFNESS_REAR * tire_stiffness_factor) * mass / ReferenceCarParams.MASS * \
-                        (center_to_front / wheelbase) / (ReferenceCarParams.CENTER_TO_FRONT / ReferenceCarParams.WHEELBASE)
+  tire_stiffness_rear = (VehicleDynamicsParams.TIRE_STIFFNESS_REAR * tire_stiffness_factor) * mass / VehicleDynamicsParams.MASS * \
+                        (center_to_front / wheelbase) / (VehicleDynamicsParams.CENTER_TO_FRONT / VehicleDynamicsParams.WHEELBASE)
 
   return tire_stiffness_front, tire_stiffness_rear
 
