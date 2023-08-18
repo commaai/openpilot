@@ -5,6 +5,7 @@ from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus, SubaruFlags
+from selfdrive.car import CanSignalRateCalculator
 
 
 class CarState(CarStateBase):
@@ -12,6 +13,8 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["Transmission"]["Gear"]
+
+    self.angle_rate_calulator = CanSignalRateCalculator(50)
 
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
@@ -47,6 +50,11 @@ class CarState(CarStateBase):
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
     ret.steeringAngleDeg = cp.vl["Steering_Torque"]["Steering_Angle"]
+
+    if self.car_fingerprint not in PREGLOBAL_CARS:
+      # ideally we get this from the car, but unclear if it exists. diagnostic software doesn't even have it
+      ret.steeringRateDeg = self.angle_rate_calulator.update(ret.steeringAngleDeg, cp.vl["Steering_Torque"]["COUNTER"])
+
     ret.steeringTorque = cp.vl["Steering_Torque"]["Steer_Torque_Sensor"]
     ret.steeringTorqueEps = cp.vl["Steering_Torque"]["Steer_Torque_Output"]
 
@@ -83,6 +91,12 @@ class CarState(CarStateBase):
       ret.stockAeb = (cp_es_distance.vl["ES_Brake"]["AEB_Status"] == 8) and \
                      (cp_es_distance.vl["ES_Brake"]["Brake_Pressure"] != 0)
       self.es_lkas_state_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
+      cp_es_brake = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
+      self.es_brake_msg = copy.copy(cp_es_brake.vl["ES_Brake"])
+      cp_es_status = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
+      self.es_status_msg = copy.copy(cp_es_status.vl["ES_Status"])
+      self.cruise_control_msg = copy.copy(cp_cruise.vl["CruiseControl"])
+      self.brake_status_msg = copy.copy(cp_brakes.vl["Brake_Status"])
 
     self.es_distance_msg = copy.copy(cp_es_distance.vl["ES_Distance"])
     self.es_dashstatus_msg = copy.copy(cp_cam.vl["ES_DashStatus"])
@@ -106,6 +120,8 @@ class CarState(CarStateBase):
     messages = [
       ("ES_Brake", 20),
       ("ES_Distance", 20),
+      ("ES_Status", 20),
+      ("ES_Brake", 20),
     ]
 
     return messages

@@ -353,33 +353,6 @@
         <source>hr</source>
         <translation>時間</translation>
     </message>
-    <message>
-        <source>km</source>
-        <translation>ｷﾛﾒｰﾄﾙ</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>ﾏｲﾙ</translation>
-    </message>
-</context>
-<context>
-    <name>MapInstructions</name>
-    <message>
-        <source> km</source>
-        <translation> ｷﾛﾒｰﾄﾙ</translation>
-    </message>
-    <message>
-        <source> m</source>
-        <translation> ﾒｰﾄﾙ</translation>
-    </message>
-    <message>
-        <source> mi</source>
-        <translation> ﾏｲﾙ</translation>
-    </message>
-    <message>
-        <source> ft</source>
-        <translation> ﾌｨｰﾄ</translation>
-    </message>
 </context>
 <context>
     <name>MapSettings</name>
@@ -615,6 +588,22 @@
         <translation>
             <numerusform>%n 日前</numerusform>
         </translation>
+    </message>
+    <message>
+        <source>km</source>
+        <translation>ｷﾛﾒｰﾄﾙ</translation>
+    </message>
+    <message>
+        <source>m</source>
+        <translation>ﾒｰﾄﾙ</translation>
+    </message>
+    <message>
+        <source>mi</source>
+        <translation>ﾏｲﾙ</translation>
+    </message>
+    <message>
+        <source>ft</source>
+        <translation>ﾌｨｰﾄ</translation>
     </message>
 </context>
 <context>

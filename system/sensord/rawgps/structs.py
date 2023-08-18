@@ -317,8 +317,7 @@ def parse_struct(ss):
     elif typ in ["uint64", "uint64_t"]:
       st += "Q"
     else:
-      print("unknown type", typ)
-      assert False
+      raise RuntimeError(f"unknown type {typ}")
     if '[' in nam:
       cnt = int(nam.split("[")[1].split("]")[0])
       st += st[-1]*(cnt-1)
@@ -333,7 +332,7 @@ def dict_unpacker(ss, camelcase = False):
   if camelcase:
     nams = [name_to_camelcase(x) for x in nams]
   sz = calcsize(st)
-  return lambda x: dict(zip(nams, unpack_from(st, x))), sz
+  return lambda x: dict(zip(nams, unpack_from(st, x), strict=True)), sz
 
 def relist(dat):
   list_keys = set()
