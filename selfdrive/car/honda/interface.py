@@ -5,7 +5,7 @@ from common.conversions import Conversions as CV
 from common.numpy_fast import interp
 from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, HondaFlags, CAR, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, \
                                                                                             HONDA_BOSCH_ALT_BRAKE_SIGNAL, HONDA_BOSCH_RADARLESS
-from selfdrive.car import STD_CARGO_KG, CivicParams, create_button_event, get_safety_config
+from selfdrive.car import STD_CARGO_KG, create_button_event, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.disable_ecu import disable_ecu
 
@@ -89,9 +89,9 @@ class CarInterface(CarInterfaceBase):
         eps_modified = True
 
     if candidate == CAR.CIVIC:
-      ret.mass = CivicParams.MASS
-      ret.wheelbase = CivicParams.WHEELBASE
-      ret.centerToFront = CivicParams.CENTER_TO_FRONT
+      ret.mass = 1326. + STD_CARGO_KG
+      ret.wheelbase = 2.70
+      ret.centerToFront = ret.wheelbase * 0.4
       ret.steerRatio = 15.38  # 10.93 is end-to-end spec
       if eps_modified:
         # stock request input values:     0x0000, 0x00DE, 0x014D, 0x01EF, 0x0290, 0x0377, 0x0454, 0x0610, 0x06EE
@@ -107,9 +107,9 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[1.1], [0.33]]
 
     elif candidate in (CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CIVIC_2022):
-      ret.mass = CivicParams.MASS
-      ret.wheelbase = CivicParams.WHEELBASE
-      ret.centerToFront = CivicParams.CENTER_TO_FRONT
+      ret.mass = 1326. + STD_CARGO_KG
+      ret.wheelbase = 2.70
+      ret.centerToFront = ret.wheelbase * 0.4
       ret.steerRatio = 15.38  # 10.93 is end-to-end spec
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
