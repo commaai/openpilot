@@ -50,7 +50,6 @@ private:
   void setError(const QString &err_str);
 
   bool loaded_once = false;
-  bool allow_open = true;
 
   // Panning
   QPointF m_lastPos;
@@ -58,6 +57,7 @@ private:
   int zoom_counter = 0;
 
   // Position
+  std::optional<QMapbox::Coordinate> last_valid_nav_dest;
   std::optional<QMapbox::Coordinate> last_position;
   std::optional<float> last_bearing;
   FirstOrderFilter velocity_filter;

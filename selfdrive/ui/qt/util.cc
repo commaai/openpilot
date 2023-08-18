@@ -51,19 +51,6 @@ QMap<QString, QString> getSupportedLanguages() {
   return map;
 }
 
-void clearLayout(QLayout* layout) {
-  while (layout->count() > 0) {
-    QLayoutItem* item = layout->takeAt(0);
-    if (QWidget* widget = item->widget()) {
-      widget->deleteLater();
-    }
-    if (QLayout* childLayout = item->layout()) {
-      clearLayout(childLayout);
-    }
-    delete item;
-  }
-}
-
 QString timeAgo(const QDateTime &date) {
   int diff = date.secsTo(QDateTime::currentDateTimeUtc());
 

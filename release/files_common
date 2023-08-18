@@ -418,8 +418,6 @@ selfdrive/assets/navigation/*
 third_party/.gitignore
 third_party/SConscript
 
-third_party/cluster/*
-
 third_party/linux/**
 third_party/opencl/**
 
