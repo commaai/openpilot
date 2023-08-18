@@ -24,6 +24,7 @@ class TestCanFingerprint(unittest.TestCase):
       self.assertEqual(car_fingerprint, car_model)
       self.assertEqual(finger[0], fingerprint)
       self.assertEqual(finger[1], fingerprint)
+      self.assertEqual(finger[2], {})
 
   def test_timing(self):
     # just pick any CAN fingerprinting car
