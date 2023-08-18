@@ -107,7 +107,7 @@ jobs:
             setup_scripts:
               - tools/mac_setup.sh
               - tools/install_python_dependencies.sh
-      - name: setup matrix
+      - name: Setup matrix
         id: set_matrix
         run: |
           if [[ ${{ steps.filter.outputs.setup_scripts }} == true ]]; then
