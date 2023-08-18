@@ -7,17 +7,6 @@ from selfdrive.car.car_helpers import FRAME_FINGERPRINT, can_fingerprint
 from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS
 
 
-def create_can_iter(fingerprint):
-  can = messaging.new_message('can', 1)
-  can.can = [log.CanData(address=address, dat=b'\x00' * length)
-             for address, length in fingerprint.items()]
-
-  fingerprint_iter = iter([can])
-  empty_can = messaging.new_message('can', 0)
-
-  return lambda: next(fingerprint_iter, empty_can)
-
-
 class TestCanFingerprint(unittest.TestCase):
   @parameterized.expand([(c, f) for c, f in FINGERPRINTS.items()])
   def test_can_fingerprint(self, car_model, fingerprints):
