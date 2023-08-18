@@ -103,15 +103,18 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: filter
         with:
-          setup_scripts:
-            - tools/mac_setup.sh
-            - tools/install_python_dependencies.sh
+          filters: |
+            setup_scripts:
+              - tools/mac_setup.sh
+              - tools/install_python_dependencies.sh
       - name: setup matrix
         id: set_matrix
         run: |
           if [[ ${{ steps.filter.outputs.setup_scripts }} == true ]]; then
+            # setup scripts have changed, run the build_mac job twice
             echo "matrix='{\"iterations\": [0, 1]}'" >> "$GITHUB_OUTPUT"
           else
+            # run it once
             echo "matrix='{\"iterations\": [0]}'" >> "$GITHUB_OUTPUT"
           fi
 
