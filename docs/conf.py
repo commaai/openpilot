@@ -100,7 +100,7 @@ breathe_projects_source = {}
 
 # only document files that have accompanying .cc files next to them
 print("searching for c_docs...")
-for root, dirs, files in os.walk(BASEDIR):
+for root, _, files in os.walk(BASEDIR):
   found = False
   breath_src = {}
   breathe_srcs_list = []

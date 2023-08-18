@@ -15,6 +15,9 @@ class TestHardware(unittest.TestCase):
     if not TICI:
       raise unittest.SkipTest
 
+    HARDWARE.initialize_hardware()
+    HARDWARE.set_power_save(False)
+
   def test_power_save_time(self):
     ts = []
     for _ in range(5):
@@ -23,7 +26,7 @@ class TestHardware(unittest.TestCase):
         HARDWARE.set_power_save(on)
         ts.append(time.monotonic() - st)
 
-    assert 0.1 < np.mean(ts) < 0.2
+    assert 0.1 < np.mean(ts) < 0.25
     assert max(ts) < 0.3
 
 

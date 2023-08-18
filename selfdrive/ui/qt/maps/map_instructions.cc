@@ -11,7 +11,7 @@ const QString ICON_SUFFIX = ".png";
 MapInstructions::MapInstructions(QWidget *parent) : QWidget(parent) {
   is_rhd = Params().getBool("IsRhdDetected");
   QHBoxLayout *main_layout = new QHBoxLayout(this);
-  main_layout->setContentsMargins(11, 50, 11, 11);
+  main_layout->setContentsMargins(11, UI_BORDER_SIZE, 11, 11);
   main_layout->addWidget(icon_01 = new QLabel, 0, Qt::AlignTop);
 
   QWidget *right_container = new QWidget(this);
@@ -91,6 +91,8 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     icon_01->setPixmap(pixmap_cache[!rhd ? fn : "rhd_" + fn]);
     icon_01->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     icon_01->setVisible(true);
+  } else {
+    icon_01->setVisible(false);
   }
 
   // Hide distance after arrival

@@ -29,6 +29,29 @@ class CarControllerParams:
     else:
       self.STEER_MAX = 2047
 
+  THROTTLE_MIN = 808
+  THROTTLE_MAX = 3400
+
+  THROTTLE_INACTIVE     = 1818   # corresponds to zero acceleration
+  THROTTLE_ENGINE_BRAKE = 808    # while braking, eyesight sets throttle to this, probably for engine braking
+
+  BRAKE_MIN = 0
+  BRAKE_MAX = 600                # about -3.5m/s2 from testing
+
+  RPM_MIN = 0
+  RPM_MAX = 2400
+
+  RPM_INACTIVE = 600             # a good base rpm for zero acceleration
+
+  THROTTLE_LOOKUP_BP = [0, 1]
+  THROTTLE_LOOKUP_V = [THROTTLE_INACTIVE, THROTTLE_MAX]
+
+  RPM_LOOKUP_BP = [0, 1]
+  RPM_LOOKUP_V = [RPM_INACTIVE, RPM_MAX]
+
+  BRAKE_LOOKUP_BP = [-1, 0]
+  BRAKE_LOOKUP_V = [BRAKE_MAX, BRAKE_MIN]
+
 
 class SubaruFlags(IntFlag):
   SEND_INFOTAINMENT = 1
@@ -288,6 +311,7 @@ FW_VERSIONS = {
       b'\xe6!fp\x07',
       b'\xf3"fp\x07',
       b'\xe6"f0\x07',
+      b'\xe6"fp\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xe6\xf5\004\000\000',
