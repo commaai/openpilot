@@ -4,7 +4,7 @@ from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_angle_limits
 from selfdrive.car.ford.fordcan import CanBus, create_acc_msg, create_acc_ui_msg, create_button_msg, \
                                        create_lat_ctl_msg, create_lat_ctl2_msg, create_lka_msg, create_lkas_ui_msg
-from selfdrive.car.ford.values import CANFD_CARS, CarControllerParams
+from selfdrive.car.ford.values import CANFD_CAR, CarControllerParams
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -69,7 +69,7 @@ class CarController:
 
       self.apply_curvature_last = apply_curvature
 
-      if self.CP.carFingerprint in CANFD_CARS:
+      if self.CP.carFingerprint in CANFD_CAR:
         # TODO: extended mode
         mode = 1 if CC.latActive else 0
         counter = (self.frame // CarControllerParams.STEER_STEP) % 0xF

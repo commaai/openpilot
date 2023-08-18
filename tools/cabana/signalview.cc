@@ -275,7 +275,7 @@ QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QMo
   int width = option.widget->size().width() / 2;
   if (index.column() == 0) {
     int spacing = option.widget->style()->pixelMetric(QStyle::PM_TreeViewIndentation) + color_label_width + 8;
-    auto text = index.data(Qt::DisplayRole).toString();;
+    auto text = index.data(Qt::DisplayRole).toString();
     auto item = (SignalModel::Item *)index.internalPointer();
     if (item->type == SignalModel::Item::Sig && item->sig->type != cabana::Signal::Type::Normal) {
       text += item->sig->type == cabana::Signal::Type::Multiplexor ? QString(" M ") : QString(" m%1 ").arg(item->sig->multiplex_value);

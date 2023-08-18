@@ -36,7 +36,8 @@ DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect 
 PANDA_STATES_TIMEOUT = int(1000 * 1.5 * DT_TRML)  # 1.5x the expected pandaState frequency
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
-HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'network_strength', 'network_stats', 'network_metered', 'nvme_temps', 'modem_temps'])
+HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'network_strength', 'network_stats',
+                                             'network_metered', 'nvme_temps', 'modem_temps'])
 
 # List of thermal bands. We will stay within this region as long as we are within the bounds.
 # When exiting the bounds, we'll jump to the lower or higher band. Bands are ordered in the dict.
@@ -60,7 +61,7 @@ def populate_tz_by_type():
     if not n.startswith("thermal_zone"):
       continue
     with open(os.path.join("/sys/devices/virtual/thermal", n, "type")) as f:
-      tz_by_type[f.read().strip()] = int(n.lstrip("thermal_zone"))
+      tz_by_type[f.read().strip()] = int(n.removeprefix("thermal_zone"))
 
 def read_tz(x):
   if x is None:
@@ -103,6 +104,8 @@ def hw_state_thread(end_event, hw_queue):
   modem_version = None
   modem_nv = None
   modem_configured = False
+  modem_restarted = False
+  modem_missing_count = 0
 
   while not end_event.is_set():
     # these are expensive calls. update every 10s
@@ -120,6 +123,16 @@ def hw_state_thread(end_event, hw_queue):
 
           if (modem_version is not None) and (modem_nv is not None):
             cloudlog.event("modem version", version=modem_version, nv=modem_nv)
+          else:
+            if not modem_restarted:
+              # TODO: we may be able to remove this with a MM update
+              # ModemManager's probing on startup can fail
+              # rarely, restart the service to probe again.
+              modem_missing_count += 1
+              if modem_missing_count > 3:
+                modem_restarted = True
+                cloudlog.event("restarting ModemManager")
+                os.system("sudo systemctl restart --no-block ModemManager")
 
         tx, rx = HARDWARE.get_modem_data_usage()
 
@@ -199,6 +212,7 @@ def thermald_thread(end_event, hw_queue):
 
     pandaStates = sm['pandaStates']
     peripheralState = sm['peripheralState']
+    peripheral_panda_present = peripheralState.pandaType != log.PandaState.PandaType.unknown
 
     msg = read_thermal(thermal_config)
 
@@ -212,7 +226,7 @@ def thermald_thread(end_event, hw_queue):
       in_car = pandaState.harnessStatus != log.PandaState.HarnessStatus.notConnected
 
       # Setup fan handler on first connect to panda
-      if fan_controller is None and peripheralState.pandaType != log.PandaState.PandaType.unknown:
+      if fan_controller is None and peripheral_panda_present:
         if TICI:
           fan_controller = TiciFanController()
 
@@ -277,7 +291,7 @@ def thermald_thread(end_event, hw_queue):
     # Ensure date/time are valid
     now = datetime.datetime.utcnow()
     startup_conditions["time_valid"] = now > MIN_DATE
-    set_offroad_alert_if_changed("Offroad_InvalidTime", (not startup_conditions["time_valid"]))
+    set_offroad_alert_if_changed("Offroad_InvalidTime", (not startup_conditions["time_valid"]) and peripheral_panda_present)
 
     startup_conditions["up_to_date"] = params.get("Offroad_ConnectivityNeeded") is None or params.get_bool("DisableUpdates") or params.get_bool("SnoozeUpdate")
     startup_conditions["not_uninstalling"] = not params.get_bool("DoUninstall")

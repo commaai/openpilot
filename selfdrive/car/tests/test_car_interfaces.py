@@ -7,9 +7,11 @@ import importlib
 from parameterized import parameterized
 
 from cereal import car
+from common.realtime import DT_CTRL
 from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import all_known_cars
+from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
 
@@ -87,7 +89,7 @@ class TestCarInterfaces(unittest.TestCase):
       car_interface.update(CC, [])
       car_interface.apply(CC, now_nanos)
       car_interface.apply(CC, now_nanos)
-      now_nanos += 10e6  # 10 ms
+      now_nanos += DT_CTRL * 1e9  # 10 ms
 
     CC = car.CarControl.new_message(**cc_msg)
     CC.enabled = True
@@ -95,7 +97,7 @@ class TestCarInterfaces(unittest.TestCase):
       car_interface.update(CC, [])
       car_interface.apply(CC, now_nanos)
       car_interface.apply(CC, now_nanos)
-      now_nanos += 10e6  # 10ms
+      now_nanos += DT_CTRL * 1e9  # 10ms
 
     # Test radar interface
     RadarInterface = importlib.import_module(f'selfdrive.car.{car_params.carName}.radar_interface').RadarInterface
@@ -107,6 +109,32 @@ class TestCarInterfaces(unittest.TestCase):
     if not car_params.radarUnavailable and radar_interface.rcp is not None and \
        hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
       radar_interface._update([radar_interface.trigger_msg])
+
+  def test_interface_attrs(self):
+    """Asserts basic behavior of interface attribute getter"""
+    num_brands = len(get_interface_attr('CAR'))
+    self.assertGreaterEqual(num_brands, 13)
+
+    # Should return value for all brands when not combining, even if attribute doesn't exist
+    ret = get_interface_attr('FAKE_ATTR')
+    self.assertEqual(len(ret), num_brands)
+
+    # Make sure we can combine dicts
+    ret = get_interface_attr('DBC', combine_brands=True)
+    self.assertGreaterEqual(len(ret), 170)
+
+    # We don't support combining non-dicts
+    ret = get_interface_attr('CAR', combine_brands=True)
+    self.assertEqual(len(ret), 0)
+
+    # If brand has None value, it shouldn't return when ignore_none=True is specified
+    none_brands = {b for b, v in get_interface_attr('FINGERPRINTS').items() if v is None}
+    self.assertGreaterEqual(len(none_brands), 1)
+
+    ret = get_interface_attr('FINGERPRINTS', ignore_none=True)
+    none_brands_in_ret = none_brands.intersection(ret)
+    self.assertEqual(len(none_brands_in_ret), 0, f'Brands with None values in ignore_none=True result: {none_brands_in_ret}')
+
 
 if __name__ == "__main__":
   unittest.main()

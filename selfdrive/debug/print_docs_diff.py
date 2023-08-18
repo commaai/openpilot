@@ -9,7 +9,8 @@ from selfdrive.car.docs_definitions import Column
 
 FOOTNOTE_TAG = "<sup>{}</sup>"
 STAR_ICON = '<a href="##"><img valign="top" src="https://raw.githubusercontent.com/commaai/openpilot/master/docs/assets/icon-star-{}.svg" width="22" /></a>'
-VIDEO_ICON = '<a href="{}" target="_blank"><img height="18px" src="https://raw.githubusercontent.com/commaai/openpilot/master/docs/assets/icon-youtube.svg"></img></a>'
+VIDEO_ICON = '<a href="{}" target="_blank">\
+                          <img height="18px" src="https://raw.githubusercontent.com/commaai/openpilot/master/docs/assets/icon-youtube.svg"></img></a>'
 COLUMNS = "|" + "|".join([column.value for column in Column]) + "|"
 COLUMN_HEADER = "|---|---|---|{}|".format("|".join([":---:"] * (len(Column) - 3)))
 ARROW_SYMBOL = "➡️"
@@ -99,7 +100,8 @@ def print_car_info_diff(path):
   if any(len(c) for c in changes.values()):
     markdown_builder = ["### ⚠️ This PR makes changes to [CARS.md](../blob/master/docs/CARS.md) ⚠️"]
 
-    for title, category in (("## 🔀 Column Changes", "column"), ("## ❌ Removed", "removals"), ("## ➕ Added", "additions"), ("## 📖 Detail Sentence Changes", "detail")):
+    for title, category in (("## 🔀 Column Changes", "column"), ("## ❌ Removed", "removals"),
+                            ("## ➕ Added", "additions"), ("## 📖 Detail Sentence Changes", "detail")):
       if len(changes[category]):
         markdown_builder.append(title)
         if category not in ("detail",):

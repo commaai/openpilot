@@ -9,7 +9,7 @@ ARCH=$(uname -m)
 if [[ $SHELL == "/bin/zsh" ]]; then
   RC_FILE="$HOME/.zshrc"
 elif [[ $SHELL == "/bin/bash" ]]; then
-  RC_FILE="$HOME/.bashrc"
+  RC_FILE="$HOME/.bash_profile"
 fi
 
 # Install brew if required
@@ -28,7 +28,6 @@ if [[ $(command -v brew) == "" ]]; then
   fi
 fi
 
-# TODO: remove protobuf,protobuf-c,swig when casadi can be pip installed
 brew bundle --file=- <<-EOS
 brew "catch2"
 brew "cmake"
@@ -49,11 +48,9 @@ brew "openssl@3.0"
 brew "pyenv"
 brew "qt@5"
 brew "zeromq"
-brew "protobuf"
-brew "protobuf-c"
-brew "swig"
 brew "gcc@12"
 cask "gcc-arm-embedded"
+brew "portaudio"
 EOS
 
 echo "[ ] finished brew install t=$SECONDS"
@@ -80,7 +77,7 @@ if [ -z "$OPENPILOT_ENV" ] && [ -n "$RC_FILE" ] && [ -z "$CI" ]; then
 fi
 
 # install python dependencies
-$ROOT/update_requirements.sh
+$DIR/install_python_dependencies.sh
 eval "$(pyenv init --path)"
 echo "[ ] installed python dependencies t=$SECONDS"
 

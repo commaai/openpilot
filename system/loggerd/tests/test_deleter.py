@@ -3,9 +3,11 @@ import time
 import threading
 import unittest
 from collections import namedtuple
+from pathlib import Path
+from typing import Sequence
 
-from common.timeout import Timeout, TimeoutException
 import system.loggerd.deleter as deleter
+from common.timeout import Timeout, TimeoutException
 from system.loggerd.tests.loggerd_tests_common import UploaderTestCase
 
 Stats = namedtuple("Stats", ['f_bavail', 'f_blocks', 'f_frsize'])
@@ -37,30 +39,59 @@ class TestDeleter(UploaderTestCase):
 
     self.start_thread()
 
-    with Timeout(5, "Timeout waiting for file to be deleted"):
-      while f_path.exists():
-        time.sleep(0.01)
-    self.join_thread()
+    try:
+      with Timeout(2, "Timeout waiting for file to be deleted"):
+        while f_path.exists():
+          time.sleep(0.01)
+    finally:
+      self.join_thread()
 
-    self.assertFalse(f_path.exists(), "File not deleted")
-
-  def test_delete_files_in_create_order(self):
-    f_path_1 = self.make_file_with_data(self.seg_dir, self.f_type)
-    time.sleep(1)
-    self.seg_num += 1
-    self.seg_dir = self.seg_format.format(self.seg_num)
-    f_path_2 = self.make_file_with_data(self.seg_dir, self.f_type)
+  def assertDeleteOrder(self, f_paths: Sequence[Path], timeout: int = 5) -> None:
+    deleted_order = []
 
     self.start_thread()
+    try:
+      with Timeout(timeout, "Timeout waiting for files to be deleted"):
+        while True:
+          for f in f_paths:
+            if not f.exists() and f not in deleted_order:
+              deleted_order.append(f)
+          if len(deleted_order) == len(f_paths):
+            break
+          time.sleep(0.01)
+    except TimeoutException:
+      print("Not deleted:", [f for f in f_paths if f not in deleted_order])
+      raise
+    finally:
+      self.join_thread()
 
-    with Timeout(5, "Timeout waiting for file to be deleted"):
-      while f_path_1.exists() and f_path_2.exists():
-        time.sleep(0.01)
+    self.assertEqual(deleted_order, f_paths, "Files not deleted in expected order")
 
-    self.join_thread()
+  def test_delete_order(self):
+    self.assertDeleteOrder([
+      self.make_file_with_data(self.seg_format.format(0), self.f_type),
+      self.make_file_with_data(self.seg_format.format(1), self.f_type),
+      self.make_file_with_data(self.seg_format2.format(0), self.f_type),
+    ])
 
-    self.assertFalse(f_path_1.exists(), "Older file not deleted")
-    self.assertTrue(f_path_2.exists(), "Newer file deleted before older file")
+  def test_delete_many_preserved(self):
+    self.assertDeleteOrder([
+      self.make_file_with_data(self.seg_format.format(0), self.f_type),
+      self.make_file_with_data(self.seg_format.format(1), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE),
+      self.make_file_with_data(self.seg_format.format(2), self.f_type),
+    ] + [
+      self.make_file_with_data(self.seg_format2.format(i), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE)
+      for i in range(5)
+    ])
+
+  def test_delete_last(self):
+    self.assertDeleteOrder([
+      self.make_file_with_data(self.seg_format.format(1), self.f_type),
+      self.make_file_with_data(self.seg_format2.format(0), self.f_type),
+      self.make_file_with_data(self.seg_format.format(0), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE),
+      self.make_file_with_data("boot", self.seg_format[:-4]),
+      self.make_file_with_data("crash", self.seg_format2[:-4]),
+    ])
 
   def test_no_delete_when_available_space(self):
     f_path = self.make_file_with_data(self.seg_dir, self.f_type)
@@ -70,15 +101,10 @@ class TestDeleter(UploaderTestCase):
     self.fake_stats = Stats(f_bavail=available, f_blocks=10, f_frsize=block_size)
 
     self.start_thread()
-
-    try:
-      with Timeout(2, "Timeout waiting for file to be deleted"):
-        while f_path.exists():
-          time.sleep(0.01)
-    except TimeoutException:
-      pass
-    finally:
-      self.join_thread()
+    start_time = time.monotonic()
+    while f_path.exists() and time.monotonic() - start_time < 2:
+      time.sleep(0.01)
+    self.join_thread()
 
     self.assertTrue(f_path.exists(), "File deleted with available space")
 
@@ -86,15 +112,10 @@ class TestDeleter(UploaderTestCase):
     f_path = self.make_file_with_data(self.seg_dir, self.f_type, lock=True)
 
     self.start_thread()
-
-    try:
-      with Timeout(2, "Timeout waiting for file to be deleted"):
-        while f_path.exists():
-          time.sleep(0.01)
-    except TimeoutException:
-      pass
-    finally:
-      self.join_thread()
+    start_time = time.monotonic()
+    while f_path.exists() and time.monotonic() - start_time < 2:
+      time.sleep(0.01)
+    self.join_thread()
 
     self.assertTrue(f_path.exists(), "File deleted when locked")
 
