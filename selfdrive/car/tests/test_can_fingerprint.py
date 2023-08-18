@@ -55,7 +55,7 @@ class TestCanFingerprint(unittest.TestCase):
         def test():
           nonlocal frames
           frames += 1
-          return can
+          return can  # noqa: B023
 
         car_fingerprint, _ = can_fingerprint(test)
         self.assertEqual(car_fingerprint, car_model)
