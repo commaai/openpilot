@@ -141,6 +141,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
     }
   commands.append(packer.make_can_msg("SCC11", 0, scc11_values))
 
+  # TODO: add AEB_Status?
   scc12_values = {
     "ACCMode": 2 if enabled and long_override else 1 if enabled else 0,
     "StopReq": 1 if stopping else 0,
@@ -189,6 +190,7 @@ def create_acc_opt(packer):
   }
   commands.append(packer.make_can_msg("SCC13", 0, scc13_values))
 
+  # TODO: ensure this is enough to show the light on cars without FCA11
   fca12_values = {
     "FCA_DrvSetState": 2,
     "FCA_USM": 1, # AEB disabled
