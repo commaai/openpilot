@@ -40,7 +40,7 @@ class TestCanFingerprint(unittest.TestCase):
 
     # case 2 - no matches, make sure we keep going for 100 frames
     can = messaging.new_message('can', 1)
-    can.can = [log.CanData(address=1, dat=b'\x00' * 1, src=src) for src in (0, 1)]  # weird address
+    can.can = [log.CanData(address=1, dat=b'\x00' * 1, src=src) for src in (0, 1)]  # uncommon address
     cases.append((FRAME_FINGERPRINT, None, can))
 
     # case 3 - multiple matches, make sure we keep going for 200 frames to try to eliminate some
