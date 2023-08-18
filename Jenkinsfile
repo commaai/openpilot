@@ -158,7 +158,7 @@ pipeline {
             sh "git lfs pull"
             // tests that our build system's dependencies are configured properly, needs a machine with lots of cores
             sh "scons --clean && scons --no-cache --random -j42"
-            sh "INTERNAL_SEG_CNT=400 INTERNAL_SEG_LIST=selfdrive/car/tests/test_models_segs.txt FILEREADER_CACHE=1 \
+            sh "INTERNAL_SEG_CNT=500 INTERNAL_SEG_LIST=selfdrive/car/tests/test_models_segs.txt FILEREADER_CACHE=1 \
                 pytest -n42 --dist=loadscope selfdrive/car/tests/test_models.py"
           }
 
