@@ -132,7 +132,7 @@ std::optional<QMapbox::Coordinate> coordinate_from_param(const std::string &para
 // return {distance, unit}
 std::pair<QString, QString> map_format_distance(float d, bool is_metric) {
   auto round_distance = [](float d) -> float {
-    return d > 10 ? std::nearbyint(d) : std::nearbyint(d * 10) / 10.0;
+    return (d > 10) ? std::nearbyint(d) : std::nearbyint(d * 10) / 10.0;
   };
 
   d = std::max(d, 0.0f);
