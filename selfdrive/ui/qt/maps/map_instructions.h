@@ -11,6 +11,8 @@ static std::map<cereal::NavInstruction::Direction, QString> DIRECTIONS = {
   {cereal::NavInstruction::Direction::LEFT, "left"},
   {cereal::NavInstruction::Direction::RIGHT, "right"},
   {cereal::NavInstruction::Direction::STRAIGHT, "straight"},
+  {cereal::NavInstruction::Direction::SLIGHT_LEFT, "slight_left"},
+  {cereal::NavInstruction::Direction::SLIGHT_RIGHT, "slight_right"},
 };
 
 class MapInstructions : public QWidget {
