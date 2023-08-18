@@ -2,7 +2,7 @@
 
 ## System Requirements
 
-openpilot is developed and tested on **Ubuntu 20.04**, which is the primary development target aside from the [supported embedded hardware](https://github.com/commaai/openpilot#running-on-pc). We also have a CI test to verify that openpilot builds on macOS, but the tools are untested. For the best experience, stick to Ubuntu 20.04, otherwise openpilot and the tools should work with minimal to no modifications on macOS and other Linux systems.
+openpilot is developed and tested on **Ubuntu 20.04**, which is the primary development target aside from the [supported embedded hardware](https://github.com/commaai/openpilot#running-on-a-dedicated-device-in-a-car). We also have a CI test to verify that openpilot builds on macOS, but the tools are untested. For the best experience, stick to Ubuntu 20.04, otherwise openpilot and the tools should work with minimal to no modifications on macOS and other Linux systems.
 
 ## Setup your PC
 
@@ -38,12 +38,11 @@ scons -u -j$(nproc)
 
 ### Windows
 
-Neither openpilot nor any of the tools are developed or tested on Windows, but the [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about) should get Windows users a similar experience to Ubuntu. [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/compare-versions) specifically has been reported by several users to be a seamless experience.
+Neither openpilot nor any of the tools are developed or tested on Windows, but the [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about) should provide a similar experience to native Ubuntu. [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/compare-versions) specifically has been reported by several users to be a seamless experience.
 
-Follow [these instructions](https://docs.microsoft.com/en-us/windows/wsl/install) to setup the WSL and install the `Ubuntu-20.04` distribution. Once your Ubuntu WSL environment is setup, follow the Linux setup instructions to finish setting up your environment.
+Follow [these instructions](https://docs.microsoft.com/en-us/windows/wsl/install) to setup the WSL and install the `Ubuntu-20.04` distribution. Once your Ubuntu WSL environment is setup, follow the Linux setup instructions to finish setting up your environment. See [these instructions](https://learn.microsoft.com/en-us/windows/wsl/tutorials/gui-apps) for running GUI apps.
 
-GUI applications do not work with WSL out of the box. You will have to either [upgrade your system to Windows 11](https://docs.microsoft.com/en-us/windows/wsl/tutorials/gui-apps) or [set up an Xorg server](https://techcommunity.microsoft.com/t5/windows-dev-appconsult/running-wsl-gui-apps-on-windows-10/ba-p/1493242).
-
+**NOTE**: If you are running WSL and any GUIs are failing (segfaulting or other strange issues) even after following the steps above, you may need to enable software rendering with `LIBGL_ALWAYS_SOFTWARE=1`, e.g. `LIBGL_ALWAYS_SOFTWARE=1 selfdrive/ui/ui`.
 
 ## CTF
 Learn about the openpilot ecosystem and tools by playing our [CTF](/tools/CTF.md).
@@ -53,6 +52,7 @@ Learn about the openpilot ecosystem and tools by playing our [CTF](/tools/CTF.md
 ```
 ├── ubuntu_setup.sh     # Setup script for Ubuntu
 ├── mac_setup.sh        # Setup script for macOS
+├── cabana/             # View and plot CAN messages from drives or in realtime
 ├── joystick/           # Control your car with a joystick
 ├── lib/                # Libraries to support the tools and reading openpilot logs
 ├── plotjuggler/        # A tool to plot openpilot logs

@@ -1,70 +1,18 @@
 #include "tools/cabana/util.h"
 
-#include <QApplication>
+#include <array>
+#include <csignal>
+#include <sys/socket.h>
+#include <unistd.h>
+
+#include <QDebug>
+#include <QColor>
 #include <QFontDatabase>
+#include <QLocale>
 #include <QPainter>
 #include <QPixmapCache>
-#include <cmath>
-#include <limits>
 
 #include "selfdrive/ui/qt/util.h"
-
-static inline QColor blend(const QColor &a, const QColor &b) {
-  return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
-}
-
-void ChangeTracker::compute(const QByteArray &dat, double ts, uint32_t freq) {
-  if (prev_dat.size() != dat.size()) {
-    colors.resize(dat.size());
-    last_change_t.resize(dat.size());
-    bit_change_counts.resize(dat.size());
-    std::fill(colors.begin(), colors.end(), QColor(0, 0, 0, 0));
-    std::fill(last_change_t.begin(), last_change_t.end(), ts);
-  } else {
-    int factor = settings.theme == DARK_THEME ? 135 : 0;
-    QColor cyan = QColor(0, 187, 255, start_alpha).lighter(factor);
-    QColor red = QColor(255, 0, 0, start_alpha).lighter(factor);
-    QColor greyish_blue = QColor(102, 86, 169, start_alpha / 2).lighter(factor);
-
-    for (int i = 0; i < dat.size(); ++i) {
-      const uint8_t last = prev_dat[i];
-      const uint8_t cur = dat[i];
-
-      if (last != cur) {
-        double delta_t = ts - last_change_t[i];
-        if (delta_t * freq > periodic_threshold) {
-          // Last change was while ago, choose color based on delta up or down
-          colors[i] = (cur > last) ? cyan : red;
-        } else {
-          // Periodic changes
-          colors[i] = blend(colors[i], greyish_blue);
-        }
-
-        // Track bit level changes
-        for (int bit = 0; bit < 8; bit++) {
-          if ((cur ^ last) & (1 << bit)) {
-            bit_change_counts[i][bit] += 1;
-          }
-        }
-
-        last_change_t[i] = ts;
-      } else {
-        // Fade out
-        float alpha_delta = 1.0 / (freq + 1) / fade_time;
-        colors[i].setAlphaF(std::max(0.0, colors[i].alphaF() - alpha_delta));
-      }
-    }
-  }
-
-  prev_dat = dat;
-}
-
-void ChangeTracker::clear() {
-  prev_dat.clear();
-  last_change_t.clear();
-  bit_change_counts.clear();
-  colors.clear();
-}
 
 // SegmentTree
 
@@ -101,47 +49,135 @@ std::pair<double, double> SegmentTree::get_minmax(int n, int left, int right, in
 
 // MessageBytesDelegate
 
-MessageBytesDelegate::MessageBytesDelegate(QObject *parent) : QStyledItemDelegate(parent) {
+MessageBytesDelegate::MessageBytesDelegate(QObject *parent, bool multiple_lines) : multiple_lines(multiple_lines), QStyledItemDelegate(parent) {
   fixed_font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-  byte_width = QFontMetrics(fixed_font).width("00 ");
+  byte_size = QFontMetrics(fixed_font).size(Qt::TextSingleLine, "00 ") + QSize(0, 2);
+}
+
+int MessageBytesDelegate::widthForBytes(int n) const {
+  int h_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
+  return n * byte_size.width() + h_margin * 2;
+}
+
+QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  int v_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameVMargin) + 1;
+  auto data = index.data(BytesRole);
+  if (!data.isValid()) {
+    return {1, byte_size.height() + 2 * v_margin};
+  }
+  int n = data.toByteArray().size();
+  assert(n >= 0 && n <= 64);
+  return !multiple_lines ? QSize{widthForBytes(n), byte_size.height() + 2 * v_margin}
+                         : QSize{widthForBytes(8), byte_size.height() * std::max(1, n / 8) + 2 * v_margin};
 }
 
 void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  auto data = index.data(BytesRole);
+  if (!data.isValid()) {
+    return QStyledItemDelegate::paint(painter, option, index);
+  }
+
+  auto byte_list = data.toByteArray();
   auto colors = index.data(ColorsRole).value<QVector<QColor>>();
-  auto byte_list = index.data(BytesRole).toByteArray();
 
   int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
   int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
-  QRect rc{option.rect.left() + h_margin, option.rect.top() + v_margin, byte_width, option.rect.height() - 2 * v_margin};
+  if (option.state & QStyle::State_Selected) {
+    painter->fillRect(option.rect, option.palette.brush(QPalette::Normal, QPalette::Highlight));
+  }
 
-  auto color_role = option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text;
-  painter->setPen(option.palette.color(color_role));
+  const QPoint pt{option.rect.left() + h_margin, option.rect.top() + v_margin};
+  QFont old_font = painter->font();
+  QPen old_pen = painter->pen();
   painter->setFont(fixed_font);
   for (int i = 0; i < byte_list.size(); ++i) {
+    int row = !multiple_lines ? 0 : i / 8;
+    int column = !multiple_lines ? i : i % 8;
+    QRect r = QRect({pt.x() + column * byte_size.width(), pt.y() + row * byte_size.height()}, byte_size);
     if (i < colors.size() && colors[i].alpha() > 0) {
-      painter->fillRect(rc, colors[i]);
+      if (option.state & QStyle::State_Selected) {
+        painter->setPen(option.palette.color(QPalette::Text));
+        painter->fillRect(r, option.palette.color(QPalette::Window));
+      }
+      painter->fillRect(r, colors[i]);
+    } else if (option.state & QStyle::State_Selected) {
+      painter->setPen(option.palette.color(QPalette::HighlightedText));
     }
-    painter->drawText(rc, Qt::AlignCenter, toHex(byte_list[i]));
-    rc.moveLeft(rc.right() + 1);
+    painter->drawText(r, Qt::AlignCenter, toHex(byte_list[i]));
+  }
+  painter->setFont(old_font);
+  painter->setPen(old_pen);
+}
+
+// TabBar
+
+int TabBar::addTab(const QString &text) {
+  int index = QTabBar::addTab(text);
+  QToolButton *btn = new ToolButton("x", tr("Close Tab"));
+  int width = style()->pixelMetric(QStyle::PM_TabCloseIndicatorWidth, nullptr, btn);
+  int height = style()->pixelMetric(QStyle::PM_TabCloseIndicatorHeight, nullptr, btn);
+  btn->setFixedSize({width, height});
+  setTabButton(index, QTabBar::RightSide, btn);
+  QObject::connect(btn, &QToolButton::clicked, this, &TabBar::closeTabClicked);
+  return index;
+}
+
+void TabBar::closeTabClicked() {
+  QObject *object = sender();
+  for (int i = 0; i < count(); ++i) {
+    if (tabButton(i, QTabBar::RightSide) == object) {
+      emit tabCloseRequested(i);
+      break;
+    }
   }
 }
 
-QColor getColor(const cabana::Signal *sig) {
-  float h = 19 * (float)sig->lsb / 64.0;
-  h = fmod(h, 1.0);
+// UnixSignalHandler
 
-  size_t hash = qHash(sig->name);
-  float s = 0.25 + 0.25 * (float)(hash & 0xff) / 255.0;
-  float v = 0.75 + 0.25 * (float)((hash >> 8) & 0xff) / 255.0;
+UnixSignalHandler::UnixSignalHandler(QObject *parent) : QObject(nullptr) {
+  if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sig_fd)) {
+    qFatal("Couldn't create TERM socketpair");
+  }
 
-  return QColor::fromHsvF(h, s, v);
+  sn = new QSocketNotifier(sig_fd[1], QSocketNotifier::Read, this);
+  connect(sn, &QSocketNotifier::activated, this, &UnixSignalHandler::handleSigTerm);
+  std::signal(SIGINT, signalHandler);
+  std::signal(SIGTERM, UnixSignalHandler::signalHandler);
 }
+
+UnixSignalHandler::~UnixSignalHandler() {
+  ::close(sig_fd[0]);
+  ::close(sig_fd[1]);
+}
+
+void UnixSignalHandler::signalHandler(int s) {
+  ::write(sig_fd[0], &s, sizeof(s));
+}
+
+void UnixSignalHandler::handleSigTerm() {
+  sn->setEnabled(false);
+  int tmp;
+  ::read(sig_fd[1], &tmp, sizeof(tmp));
+
+  printf("\nexiting...\n");
+  qApp->closeAllWindows();
+  qApp->exit();
+}
+
+// NameValidator
 
 NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) {}
 
 QValidator::State NameValidator::validate(QString &input, int &pos) const {
   input.replace(' ', '_');
   return QRegExpValidator::validate(input, pos);
+}
+
+DoubleValidator::DoubleValidator(QObject *parent) : QDoubleValidator(parent) {
+  // Match locale of QString::toDouble() instead of system
+  QLocale locale(QLocale::C);
+  locale.setNumberOptions(QLocale::RejectGroupSeparator);
+  setLocale(locale);
 }
 
 namespace utils {
@@ -185,8 +221,8 @@ void setTheme(int theme) {
       new_palette.setColor(QPalette::BrightText, QColor("#f0f0f0"));
       new_palette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor("#777777"));
       new_palette.setColor(QPalette::Disabled, QPalette::WindowText, QColor("#777777"));
-      new_palette.setColor(QPalette::Disabled, QPalette::Text, QColor("#777777"));;
-      new_palette.setColor(QPalette::Light, QColor("#3c3f41"));
+      new_palette.setColor(QPalette::Disabled, QPalette::Text, QColor("#777777"));
+      new_palette.setColor(QPalette::Light, QColor("#777777"));
       new_palette.setColor(QPalette::Dark, QColor("#353535"));
     } else {
       new_palette = style->standardPalette();
@@ -212,10 +248,16 @@ QString toHex(uint8_t byte) {
 
 int num_decimals(double num) {
   const QString string = QString::number(num);
-  const QStringList split = string.split('.');
-  if (split.size() == 1) {
-    return 0;
-  } else {
-    return split[1].size();
-  }
+  auto dot_pos = string.indexOf('.');
+  return dot_pos == -1 ? 0 : string.size() - dot_pos - 1;
+}
+
+QString signalToolTip(const cabana::Signal *sig) {
+  return QObject::tr(R"(
+    %1<br /><span font-size:small">
+    Start Bit: %2 Size: %3<br />
+    MSB: %4 LSB: %5<br />
+    Little Endian: %6 Signed: %7</span>
+  )").arg(sig->name).arg(sig->start_bit).arg(sig->size).arg(sig->msb).arg(sig->lsb)
+     .arg(sig->is_little_endian ? "Y" : "N").arg(sig->is_signed ? "Y" : "N");
 }

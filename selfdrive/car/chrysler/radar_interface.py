@@ -22,18 +22,12 @@ def _create_radar_can_parser(car_fingerprint):
   #  ('LONG_DIST', 1074),
   #  ('LONG_DIST', 1075),
 
-  signals = list(zip(['LONG_DIST'] * msg_n +
-                     ['LAT_DIST'] * msg_n +
-                     ['REL_SPEED'] * msg_n,
-                     RADAR_MSGS_C * 2 +  # LONG_DIST, LAT_DIST
-                     RADAR_MSGS_D))  # REL_SPEED
+  messages = list(zip(RADAR_MSGS_C +
+                      RADAR_MSGS_D,
+                      [20] * msg_n +  # 20Hz (0.05s)
+                      [20] * msg_n, strict=True))  # 20Hz (0.05s)
 
-  checks = list(zip(RADAR_MSGS_C +
-                    RADAR_MSGS_D,
-                    [20] * msg_n +  # 20Hz (0.05s)
-                    [20] * msg_n))  # 20Hz (0.05s)
-
-  return CANParser(DBC[car_fingerprint]['radar'], signals, checks, 1)
+  return CANParser(DBC[car_fingerprint]['radar'], messages, 1)
 
 def _address_to_track(address):
   if address in RADAR_MSGS_C:
@@ -52,7 +46,7 @@ class RadarInterface(RadarInterfaceBase):
 
   def update(self, can_strings):
     if self.rcp is None or self.CP.radarUnavailable:
-      return super().update(None)
+      return None
 
     vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)

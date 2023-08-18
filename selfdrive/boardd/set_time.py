@@ -3,7 +3,7 @@ import os
 import datetime
 from panda import Panda
 
-MIN_DATE = datetime.datetime(year=2023, month=4, day=1)
+from common.time import MIN_DATE
 
 def set_time(logger):
   sys_time = datetime.datetime.today()
@@ -24,7 +24,6 @@ def set_time(logger):
 
         # Set system time from panda RTC time
         panda_time = p.get_datetime()
-        logger.info(f"adjusting time from '{sys_time}' to '{panda_time}'")
         if panda_time > MIN_DATE:
           logger.info(f"adjusting time from '{sys_time}' to '{panda_time}'")
           os.system(f"TZ=UTC date -s '{panda_time}'")

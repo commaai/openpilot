@@ -69,6 +69,7 @@ function install_ubuntu_common_requirements() {
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
     clinfo \
+    portaudio19-dev \
     qml-module-qtquick2 \
     qtmultimedia5-dev \
     qtlocation5-dev \
@@ -137,9 +138,8 @@ else
   exit 1
 fi
 
-
-# install python dependencies
-$ROOT/update_requirements.sh
+# python setup
+$DIR/install_python_dependencies.sh
 
 source ~/.bashrc
 if [ -z "$OPENPILOT_ENV" ]; then

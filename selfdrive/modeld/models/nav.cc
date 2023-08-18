@@ -10,17 +10,19 @@
 
 void navmodel_init(NavModelState* s) {
   #ifdef USE_ONNX_MODEL
-    s->m = new ONNXModel("models/navmodel.onnx", &s->output[0], NAV_NET_OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
+    s->m = new ONNXModel("models/navmodel.onnx", &s->output[0], NAV_NET_OUTPUT_SIZE, USE_DSP_RUNTIME, true);
   #else
-    s->m = new SNPEModel("models/navmodel_q.dlc", &s->output[0], NAV_NET_OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
+    s->m = new SNPEModel("models/navmodel_q.dlc", &s->output[0], NAV_NET_OUTPUT_SIZE, USE_DSP_RUNTIME, true);
   #endif
+
+  s->m->addInput("map", NULL, 0);
 }
 
 NavModelResult* navmodel_eval_frame(NavModelState* s, VisionBuf* buf) {
   memcpy(s->net_input_buf, buf->addr, NAV_INPUT_SIZE);
 
   double t1 = millis_since_boot();
-  s->m->addImage((float*)s->net_input_buf, NAV_INPUT_SIZE/sizeof(float));
+  s->m->setInputBuffer("map", (float*)s->net_input_buf, NAV_INPUT_SIZE/sizeof(float));
   s->m->execute();
   double t2 = millis_since_boot();
 
@@ -47,11 +49,14 @@ void fill_plan(cereal::NavModelData::Builder &framed, const NavModelOutputPlan &
   position.setYStd(to_kj_array_ptr(pos_y_std));
 }
 
-void navmodel_publish(PubMaster &pm, uint32_t frame_id, const NavModelResult &model_res, float execution_time) {
+void navmodel_publish(PubMaster &pm, VisionIpcBufExtra &extra, const NavModelResult &model_res, float execution_time, bool route_valid) {
   // make msg
   MessageBuilder msg;
-  auto framed = msg.initEvent().initNavModel();
-  framed.setFrameId(frame_id);
+  auto evt = msg.initEvent();
+  auto framed = evt.initNavModel();
+  evt.setValid(extra.valid && route_valid);
+  framed.setFrameId(extra.frame_id);
+  framed.setLocationMonoTime(extra.timestamp_sof);
   framed.setModelExecutionTime(execution_time);
   framed.setDspExecutionTime(model_res.dsp_execution_time);
   framed.setFeatures(to_kj_array_ptr(model_res.features.values));

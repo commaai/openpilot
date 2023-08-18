@@ -54,6 +54,9 @@ protected:
   void vipcThread();
   void clearFrames();
 
+  int glWidth();
+  int glHeight();
+
   bool zoomed_view;
   GLuint frame_vao, frame_vbo, frame_ibo;
   GLuint textures[2];
@@ -80,7 +83,7 @@ protected:
   float y_offset = 0;
   float zoom = 1.0;
   mat3 calibration = DEFAULT_CALIBRATION;
-  mat3 intrinsic_matrix = fcam_intrinsic_matrix;
+  mat3 intrinsic_matrix = FCAM_INTRINSIC_MATRIX;
 
   std::recursive_mutex frame_lock;
   std::deque<std::pair<uint32_t, VisionBuf*>> frames;

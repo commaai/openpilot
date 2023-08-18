@@ -1,6 +1,5 @@
 import yaml
 import os
-import time
 from abc import abstractmethod, ABC
 from typing import Any, Dict, Optional, Tuple, List, Callable
 
@@ -10,7 +9,7 @@ from common.conversions import Conversions as CV
 from common.kalman.simple_kalman import KF1D
 from common.numpy_fast import clip
 from common.realtime import DT_CTRL
-from selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness
+from selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, STD_CARGO_KG
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_friction
 from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -93,29 +92,27 @@ class CarInterfaceBase(ABC):
     """
     Parameters essential to controlling the car may be incomplete or wrong without FW versions or fingerprints.
     """
-    return cls.get_params(candidate, gen_empty_fingerprint(), list(), False)
+    return cls.get_params(candidate, gen_empty_fingerprint(), list(), False, False)
 
   @classmethod
-  def get_params(cls, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], experimental_long: bool):
+  def get_params(cls, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], experimental_long: bool, docs: bool):
     ret = CarInterfaceBase.get_std_params(candidate)
-    ret = cls._get_params(ret, candidate, fingerprint, car_fw, experimental_long)
+    ret = cls._get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs)
 
-    # Set common params using fields set by the car interface
-    # TODO: get actual value, for now starting with reasonable value for
-    # civic and scaling by mass and wheelbase
+    # Vehicle mass is published curb weight plus assumed payload such as a human driver; notCars have no assumed payload
+    if not ret.notCar:
+      ret.mass = ret.mass + STD_CARGO_KG
+
+    # Set params dependent on values set by the car interface
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
-
-    # TODO: some car interfaces set stiffness factor
-    if ret.tireStiffnessFront == 0 or ret.tireStiffnessRear == 0:
-      # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
-      # mass and CG position, so all cars will have approximately similar dyn behaviors
-      ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront)
+    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront, ret.tireStiffnessFactor)
 
     return ret
 
   @staticmethod
   @abstractmethod
-  def _get_params(ret: car.CarParams, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], experimental_long: bool):
+  def _get_params(ret: car.CarParams, candidate: str, fingerprint: Dict[int, Dict[int, int]],
+                  car_fw: List[car.CarParams.CarFw], experimental_long: bool, docs: bool):
     raise NotImplementedError
 
   @staticmethod
@@ -131,8 +128,7 @@ class CarInterfaceBase(ABC):
   def get_steer_feedforward_function(self):
     return self.get_steer_feedforward_default
 
-  @staticmethod
-  def torque_from_lateral_accel_linear(lateral_accel_value: float, torque_params: car.CarParams.LateralTorqueTuning,
+  def torque_from_lateral_accel_linear(self, lateral_accel_value: float, torque_params: car.CarParams.LateralTorqueTuning,
                                        lateral_accel_error: float, lateral_accel_deadzone: float, friction_compensation: bool) -> float:
     # The default is a linear relationship between torque and lateral acceleration (accounting for road roll and steering friction)
     friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
@@ -152,6 +148,7 @@ class CarInterfaceBase(ABC):
     ret.autoResumeSng = True  # describes whether car can resume from a stop automatically
 
     # standard ALC params
+    ret.tireStiffnessFactor = 1.0
     ret.steerControlType = car.CarParams.SteerControlType.torque
     ret.minSteerSpeed = 0.
     ret.wheelSpeedFactor = 1.0
@@ -312,14 +309,9 @@ class RadarInterfaceBase(ABC):
     self.rcp = None
     self.pts = {}
     self.delay = 0
-    self.radar_ts = CP.radarTimeStep
-    self.no_radar_sleep = 'NO_RADAR_SLEEP' in os.environ
 
   def update(self, can_strings):
-    ret = car.RadarData.new_message()
-    if not self.no_radar_sleep:
-      time.sleep(self.radar_ts)  # radard runs on RI updates
-    return ret
+    pass
 
 
 class CarStateBase(ABC):

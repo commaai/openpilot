@@ -1,14 +1,14 @@
 #pragma once
 
-#include <array>
 #include <cmath>
 
 #include <QApplication>
 #include <QByteArray>
 #include <QDateTime>
-#include <QColor>
+#include <QDoubleValidator>
 #include <QFont>
 #include <QRegExpValidator>
+#include <QSocketNotifier>
 #include <QStringBuilder>
 #include <QStyledItemDelegate>
 #include <QToolButton>
@@ -17,27 +17,11 @@
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/settings.h"
 
-class ChangeTracker {
-public:
-  void compute(const QByteArray &dat, double ts, uint32_t freq);
-  void clear();
-
-  QVector<double> last_change_t;
-  QVector<QColor> colors;
-  QVector<std::array<uint32_t, 8>> bit_change_counts;
-
-private:
-  const int periodic_threshold = 10;
-  const int start_alpha = 128;
-  const float fade_time = 2.0;
-  QByteArray prev_dat;
-};
-
 class LogSlider : public QSlider {
   Q_OBJECT
 
 public:
-  LogSlider(double factor, Qt::Orientation orientation, QWidget *parent = nullptr) : factor(factor), QSlider(orientation, parent) {};
+  LogSlider(double factor, Qt::Orientation orientation, QWidget *parent = nullptr) : factor(factor), QSlider(orientation, parent) {}
 
   void setRange(double min, double max) {
     log_min = factor * std::log10(min);
@@ -80,29 +64,40 @@ private:
 class MessageBytesDelegate : public QStyledItemDelegate {
   Q_OBJECT
 public:
-  MessageBytesDelegate(QObject *parent);
+  MessageBytesDelegate(QObject *parent, bool multiple_lines = false);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  bool multipleLines() const { return multiple_lines; }
+  void setMultipleLines(bool v) { multiple_lines = v; }
+  int widthForBytes(int n) const;
+
+private:
   QFont fixed_font;
-  int byte_width;
+  QSize byte_size = {};
+  bool multiple_lines = false;
 };
 
 inline QString toHex(const QByteArray &dat) { return dat.toHex(' ').toUpper(); }
 QString toHex(uint8_t byte);
-QColor getColor(const cabana::Signal *sig);
 
 class NameValidator : public QRegExpValidator {
   Q_OBJECT
-
 public:
   NameValidator(QObject *parent=nullptr);
   QValidator::State validate(QString &input, int &pos) const override;
+};
+
+class DoubleValidator : public QDoubleValidator {
+  Q_OBJECT
+public:
+  DoubleValidator(QObject *parent = nullptr);
 };
 
 namespace utils {
 QPixmap icon(const QString &id);
 void setTheme(int theme);
 inline QString formatSeconds(int seconds) {
-  return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
+  return QDateTime::fromSecsSinceEpoch(seconds, Qt::UTC).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
 }
 }
 
@@ -129,4 +124,32 @@ private:
   int theme;
 };
 
+class TabBar : public QTabBar {
+  Q_OBJECT
+
+public:
+  TabBar(QWidget *parent) : QTabBar(parent) {}
+  int addTab(const QString &text);
+
+private:
+  void closeTabClicked();
+};
+
+class UnixSignalHandler : public QObject {
+  Q_OBJECT
+
+public:
+  UnixSignalHandler(QObject *parent = nullptr);
+  ~UnixSignalHandler();
+  static void signalHandler(int s);
+
+public slots:
+  void handleSigTerm();
+
+private:
+  inline static int sig_fd[2] = {};
+  QSocketNotifier *sn;
+};
+
 int num_decimals(double num);
+QString signalToolTip(const cabana::Signal *sig);

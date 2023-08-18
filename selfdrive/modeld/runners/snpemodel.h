@@ -11,7 +11,7 @@
 #include <SNPE/SNPEBuilder.hpp>
 #include <SNPE/SNPEFactory.hpp>
 
-#include "runmodel.h"
+#include "selfdrive/modeld/runners/runmodel.h"
 
 #define USE_CPU_RUNTIME 0
 #define USE_GPU_RUNTIME 1
@@ -21,17 +21,20 @@
 #include "selfdrive/modeld/thneed/thneed.h"
 #endif
 
+struct SNPEModelInput : public ModelInput {
+  std::unique_ptr<zdl::DlSystem::IUserBuffer> snpe_buffer;
+
+  SNPEModelInput(const std::string _name, float *_buffer, int _size, std::unique_ptr<zdl::DlSystem::IUserBuffer> _snpe_buffer) : ModelInput(_name, _buffer, _size), snpe_buffer(std::move(_snpe_buffer)) {}
+  void setBuffer(float *_buffer, int _size) {
+    ModelInput::setBuffer(_buffer, _size);
+    assert(snpe_buffer->setBufferAddress(_buffer) == true);
+  }
+};
+
 class SNPEModel : public RunModel {
 public:
-  SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra = false, bool use_tf8 = false, cl_context context = NULL);
-  void addRecurrent(float *state, int state_size);
-  void addTrafficConvention(float *state, int state_size);
-  void addCalib(float *state, int state_size);
-  void addDesire(float *state, int state_size);
-  void addDrivingStyle(float *state, int state_size);
-  void addNavFeatures(float *state, int state_size);
-  void addImage(float *image_buf, int buf_size);
-  void addExtra(float *image_buf, int buf_size);
+  SNPEModel(const std::string path, float *_output, size_t _output_size, int runtime, bool use_tf8 = false, cl_context context = NULL);
+  void addInput(const std::string name, float *buffer, int size);
   void execute();
 
 #ifdef USE_THNEED
@@ -43,44 +46,16 @@ private:
   std::string model_data;
 
 #ifdef QCOM2
-  zdl::DlSystem::Runtime_t Runtime;
+  zdl::DlSystem::Runtime_t snpe_runtime;
 #endif
 
   // snpe model stuff
   std::unique_ptr<zdl::SNPE::SNPE> snpe;
+  zdl::DlSystem::UserBufferMap input_map;
+  zdl::DlSystem::UserBufferMap output_map;
+  std::unique_ptr<zdl::DlSystem::IUserBuffer> output_buffer;
 
-  // snpe input stuff
-  zdl::DlSystem::UserBufferMap inputMap;
-  std::unique_ptr<zdl::DlSystem::IUserBuffer> inputBuffer;
-  float *input;
-  size_t input_size;
   bool use_tf8;
-
-  // snpe output stuff
-  zdl::DlSystem::UserBufferMap outputMap;
-  std::unique_ptr<zdl::DlSystem::IUserBuffer> outputBuffer;
   float *output;
   size_t output_size;
-
-  // extra input stuff
-  std::unique_ptr<zdl::DlSystem::IUserBuffer> extraBuffer;
-  float *extra;
-  size_t extra_size;
-  bool use_extra;
-
-  // recurrent and desire
-  std::unique_ptr<zdl::DlSystem::IUserBuffer> addExtra(float *state, int state_size, int idx);
-  float *recurrent;
-  size_t recurrent_size;
-  std::unique_ptr<zdl::DlSystem::IUserBuffer> recurrentBuffer;
-  float *trafficConvention;
-  std::unique_ptr<zdl::DlSystem::IUserBuffer> trafficConventionBuffer;
-  float *desire;
-  std::unique_ptr<zdl::DlSystem::IUserBuffer> desireBuffer;
-  float *navFeatures;
-  std::unique_ptr<zdl::DlSystem::IUserBuffer> navFeaturesBuffer;
-  float *drivingStyle;
-  std::unique_ptr<zdl::DlSystem::IUserBuffer> drivingStyleBuffer;
-  float *calib;
-  std::unique_ptr<zdl::DlSystem::IUserBuffer> calibBuffer;
 };

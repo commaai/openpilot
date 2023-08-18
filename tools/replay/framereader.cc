@@ -68,14 +68,20 @@ FrameReader::~FrameReader() {
 bool FrameReader::load(const std::string &url, bool no_hw_decoder, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
   FileReader f(local_cache, chunk_size, retries);
   std::string data = f.read(url, abort);
-  if (data.empty()) return false;
+  if (data.empty()) {
+    rWarning("URL %s returned no data", url.c_str());
+    return false;
+  }
 
   return load((std::byte *)data.data(), data.size(), no_hw_decoder, abort);
 }
 
 bool FrameReader::load(const std::byte *data, size_t size, bool no_hw_decoder, std::atomic<bool> *abort) {
   input_ctx = avformat_alloc_context();
-  if (!input_ctx) return false;
+  if (!input_ctx) {
+    rError("Error calling avformat_alloc_context");
+    return false;
+  }
 
   struct buffer_data bd = {
     .data = (const uint8_t*)data,
@@ -121,7 +127,10 @@ bool FrameReader::load(const std::byte *data, size_t size, bool no_hw_decoder, s
   }
 
   ret = avcodec_open2(decoder_ctx, decoder, nullptr);
-  if (ret < 0) return false;
+  if (ret < 0) {
+    rError("avcodec_open2 failed %d", ret);
+    return false;
+  }
 
   packets.reserve(60 * 20);  // 20fps, one minute
   while (!(abort && *abort)) {

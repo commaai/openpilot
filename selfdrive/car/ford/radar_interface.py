@@ -3,7 +3,8 @@ from math import cos, sin
 from cereal import car
 from opendbc.can.parser import CANParser
 from common.conversions import Conversions as CV
-from selfdrive.car.ford.values import CANBUS, DBC, RADAR
+from selfdrive.car.ford.fordcan import CanBus
+from selfdrive.car.ford.values import DBC, RADAR
 from selfdrive.car.interfaces import RadarInterfaceBase
 
 DELPHI_ESR_RADAR_MSGS = list(range(0x500, 0x540))
@@ -12,32 +13,21 @@ DELPHI_MRR_RADAR_START_ADDR = 0x120
 DELPHI_MRR_RADAR_MSG_COUNT = 64
 
 
-def _create_delphi_esr_radar_can_parser():
+def _create_delphi_esr_radar_can_parser(CP) -> CANParser:
   msg_n = len(DELPHI_ESR_RADAR_MSGS)
-  signals = list(zip(['X_Rel'] * msg_n + ['Angle'] * msg_n + ['V_Rel'] * msg_n,
-                     DELPHI_ESR_RADAR_MSGS * 3))
-  checks = list(zip(DELPHI_ESR_RADAR_MSGS, [20] * msg_n))
+  messages = list(zip(DELPHI_ESR_RADAR_MSGS, [20] * msg_n, strict=True))
 
-  return CANParser(RADAR.DELPHI_ESR, signals, checks, CANBUS.radar)
+  return CANParser(RADAR.DELPHI_ESR, messages, CanBus(CP).radar)
 
 
-def _create_delphi_mrr_radar_can_parser():
-  signals = []
-  checks = []
+def _create_delphi_mrr_radar_can_parser(CP) -> CANParser:
+  messages = []
 
   for i in range(1, DELPHI_MRR_RADAR_MSG_COUNT + 1):
     msg = f"MRR_Detection_{i:03d}"
-    signals += [
-      (f"CAN_DET_VALID_LEVEL_{i:02d}", msg),
-      (f"CAN_DET_AZIMUTH_{i:02d}", msg),
-      (f"CAN_DET_RANGE_{i:02d}", msg),
-      (f"CAN_DET_RANGE_RATE_{i:02d}", msg),
-      (f"CAN_DET_AMPLITUDE_{i:02d}", msg),
-      (f"CAN_SCAN_INDEX_2LSB_{i:02d}", msg),
-    ]
-    checks += [(msg, 20)]
+    messages += [(msg, 20)]
 
-  return CANParser(RADAR.DELPHI_MRR, signals, checks, CANBUS.radar)
+  return CANParser(RADAR.DELPHI_MRR, messages, CanBus(CP).radar)
 
 
 class RadarInterface(RadarInterfaceBase):
@@ -50,18 +40,18 @@ class RadarInterface(RadarInterfaceBase):
     if self.radar is None or CP.radarUnavailable:
       self.rcp = None
     elif self.radar == RADAR.DELPHI_ESR:
-      self.rcp = _create_delphi_esr_radar_can_parser()
+      self.rcp = _create_delphi_esr_radar_can_parser(CP)
       self.trigger_msg = DELPHI_ESR_RADAR_MSGS[-1]
       self.valid_cnt = {key: 0 for key in DELPHI_ESR_RADAR_MSGS}
     elif self.radar == RADAR.DELPHI_MRR:
-      self.rcp = _create_delphi_mrr_radar_can_parser()
+      self.rcp = _create_delphi_mrr_radar_can_parser(CP)
       self.trigger_msg = DELPHI_MRR_RADAR_START_ADDR + DELPHI_MRR_RADAR_MSG_COUNT - 1
     else:
       raise ValueError(f"Unsupported radar: {self.radar}")
 
   def update(self, can_strings):
     if self.rcp is None:
-      return super().update(None)
+      return None
 
     vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)

@@ -4,7 +4,7 @@ from common.numpy_fast import interp
 from system.swaglog import cloudlog
 from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc
 from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import N as LAT_MPC_N
-from selfdrive.controls.lib.drive_helpers import CONTROL_N, MIN_SPEED
+from selfdrive.controls.lib.drive_helpers import CONTROL_N, MIN_SPEED, get_speed_error
 from selfdrive.controls.lib.desire_helper import DesireHelper
 import cereal.messaging as messaging
 from cereal import log
@@ -25,7 +25,7 @@ STEERING_RATE_COST = 700.0
 
 
 class LateralPlanner:
-  def __init__(self, CP):
+  def __init__(self, CP, debug=False):
     self.DH = DesireHelper()
 
     # Vehicle model parameters used to calculate lateral movement of car
@@ -39,18 +39,27 @@ class LateralPlanner:
     self.plan_yaw = np.zeros((TRAJECTORY_SIZE,))
     self.plan_yaw_rate = np.zeros((TRAJECTORY_SIZE,))
     self.t_idxs = np.arange(TRAJECTORY_SIZE)
-    self.y_pts = np.zeros(TRAJECTORY_SIZE)
+    self.y_pts = np.zeros((TRAJECTORY_SIZE,))
+    self.v_plan = np.zeros((TRAJECTORY_SIZE,))
+    self.v_ego = 0.0
+    self.l_lane_change_prob = 0.0
+    self.r_lane_change_prob = 0.0
+
+    self.debug_mode = debug
 
     self.lat_mpc = LateralMpc()
     self.reset_mpc(np.zeros(4))
 
-  def reset_mpc(self, x0=np.zeros(4)):
+  def reset_mpc(self, x0=None):
+    if x0 is None:
+      x0 = np.zeros(4)
     self.x0 = x0
     self.lat_mpc.reset(x0=self.x0)
 
   def update(self, sm):
     # clip speed , lateral planning is not possible at 0 speed
     measured_curvature = sm['controlsState'].curvature
+    v_ego_car = sm['carState'].vEgo
 
     # Parse model predictions
     md = sm['modelV2']
@@ -60,7 +69,7 @@ class LateralPlanner:
       self.plan_yaw = np.array(md.orientation.z)
       self.plan_yaw_rate = np.array(md.orientationRate.z)
       self.velocity_xyz = np.column_stack([md.velocity.x, md.velocity.y, md.velocity.z])
-      car_speed = np.linalg.norm(self.velocity_xyz, axis=1)
+      car_speed = np.linalg.norm(self.velocity_xyz, axis=1) - get_speed_error(md, v_ego_car)
       self.v_plan = np.clip(car_speed, MIN_SPEED, np.inf)
       self.v_ego = self.v_plan[0]
 
@@ -107,7 +116,7 @@ class LateralPlanner:
         self.last_cloudlog_t = t
         cloudlog.warning("Lateral mpc - nan: True")
 
-    if self.lat_mpc.cost > 20000. or mpc_nans:
+    if self.lat_mpc.cost > 1e6 or mpc_nans:
       self.solution_invalid_cnt += 1
     else:
       self.solution_invalid_cnt = 0
@@ -123,10 +132,15 @@ class LateralPlanner:
     lateralPlan.psis = self.lat_mpc.x_sol[0:CONTROL_N, 2].tolist()
 
     lateralPlan.curvatures = (self.lat_mpc.x_sol[0:CONTROL_N, 3]/self.v_ego).tolist()
-    lateralPlan.curvatureRates = [float(x/self.v_ego) for x in self.lat_mpc.u_sol[0:CONTROL_N - 1]] + [0.0]
+    lateralPlan.curvatureRates = [float(x.item() / self.v_ego) for x in self.lat_mpc.u_sol[0:CONTROL_N - 1]] + [0.0]
 
     lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
     lateralPlan.solverExecutionTime = self.lat_mpc.solve_time
+    if self.debug_mode:
+      lateralPlan.solverCost = self.lat_mpc.cost
+      lateralPlan.solverState = log.LateralPlan.SolverState.new_message()
+      lateralPlan.solverState.x = self.lat_mpc.x_sol.tolist()
+      lateralPlan.solverState.u = self.lat_mpc.u_sol.flatten().tolist()
 
     lateralPlan.desire = self.DH.desire
     lateralPlan.useLaneLines = False

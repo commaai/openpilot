@@ -42,6 +42,12 @@
         ],
         "sim_method_newton_iter": [
             "int"
+        ],
+        "sim_method_newton_tol": [
+            "float"
+        ],
+        "ext_fun_compile_flags": [
+            "str"
         ]
     }
 }
