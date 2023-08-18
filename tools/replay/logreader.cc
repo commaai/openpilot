@@ -29,8 +29,7 @@ Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(a
 LogReader::LogReader(size_t memory_pool_block_size) {
 #ifdef HAS_MEMORY_RESOURCE
   const size_t buf_size = sizeof(Event) * memory_pool_block_size;
-  pool_buffer_ = ::operator new(buf_size);
-  mbr_ = new std::pmr::monotonic_buffer_resource(pool_buffer_, buf_size);
+  mbr_ = std::make_unique<std::pmr::monotonic_buffer_resource>(buf_size);
 #endif
   events.reserve(memory_pool_block_size);
 }
@@ -39,11 +38,6 @@ LogReader::~LogReader() {
   for (Event *e : events) {
     delete e;
   }
-
-#ifdef HAS_MEMORY_RESOURCE
-  delete mbr_;
-  ::operator delete(pool_buffer_);
-#endif
 }
 
 bool LogReader::load(const std::string &url, std::atomic<bool> *abort,
@@ -69,7 +63,7 @@ bool LogReader::parse(const std::set<cereal::Event::Which> &allow, std::atomic<b
     kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
     while (words.size() > 0 && !(abort && *abort)) {
 #ifdef HAS_MEMORY_RESOURCE
-      Event *evt = new (mbr_) Event(words);
+      Event *evt = new (mbr_.get()) Event(words);
 #else
       Event *evt = new Event(words);
 #endif
@@ -85,7 +79,7 @@ bool LogReader::parse(const std::set<cereal::Event::Which> &allow, std::atomic<b
           evt->which == cereal::Event::WIDE_ROAD_ENCODE_IDX) {
 
 #ifdef HAS_MEMORY_RESOURCE
-        Event *frame_evt = new (mbr_) Event(words, true);
+        Event *frame_evt = new (mbr_.get()) Event(words, true);
 #else
         Event *frame_evt = new Event(words, true);
 #endif
