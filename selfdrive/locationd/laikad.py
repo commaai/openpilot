@@ -81,7 +81,8 @@ class Laikad:
     valid_ephem_types: Valid ephemeris types to be used by AstroDog
     save_ephemeris: If true saves and loads nav and orbit ephemeris to cache.
     """
-    self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types, clear_old_ephemeris=True, cache_dir=DOWNLOADS_CACHE_FOLDER)
+    self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types,
+                              clear_old_ephemeris=True, cache_dir=DOWNLOADS_CACHE_FOLDER)
     self.gnss_kf = GNSSKalman(GENERATED_DIR, cython=True, erratic_clock=use_qcom)
 
     self.auto_fetch_navs = auto_fetch_navs
@@ -98,10 +99,13 @@ class Laikad:
     self.velfix_function = get_velfix_sympy_func()
     self.last_fix_pos = None
     self.last_fix_t = None
-    self.gps_week = None
     self.use_qcom = use_qcom
     self.first_log_time = None
     self.ttff = -1
+
+    # qcom specific stuff
+    self.qcom_reports_received = 1
+    self.qcom_reports = []
 
   def load_cache(self):
     if not self.save_ephemeris:
@@ -113,9 +117,9 @@ class Laikad:
 
     nav_dict = {}
     try:
-      ephem_cache = ephemeris_structs.EphemerisCache.from_bytes(cache_bytes)
-      glonass_navs = [GLONASSEphemeris(data_struct, file_name=EPHEMERIS_CACHE) for data_struct in ephem_cache.glonassEphemerides]
-      gps_navs = [GPSEphemeris(data_struct, file_name=EPHEMERIS_CACHE) for data_struct in ephem_cache.gpsEphemerides]
+      with ephemeris_structs.EphemerisCache.from_bytes(cache_bytes) as ephem_cache:
+        glonass_navs = [GLONASSEphemeris(data_struct, file_name=EPHEMERIS_CACHE) for data_struct in ephem_cache.glonassEphemerides]
+        gps_navs = [GPSEphemeris(data_struct, file_name=EPHEMERIS_CACHE) for data_struct in ephem_cache.gpsEphemerides]
       for e in sum([glonass_navs, gps_navs], []):
         if e.prn not in nav_dict:
           nav_dict[e.prn] = []
@@ -133,8 +137,8 @@ class Laikad:
       #TODO this only saves currently valid ephems, when we download future ephems we should save them too
       valid_navs = [e for e in nav_list if e.valid(self.last_report_time)]
       if len(valid_navs) > 0:
-        ephem_cache = ephemeris_structs.EphemerisCache(**{'glonassEphemerides': [e.data for e in valid_navs if e.prn[0]=='R'],
-                                                          'gpsEphemerides': [e.data for e in valid_navs if e.prn[0]=='G']})
+        ephem_cache = ephemeris_structs.EphemerisCache(glonassEphemerides=[e.data for e in valid_navs if e.prn[0]=='R'],
+                                                       gpsEphemerides=[e.data for e in valid_navs if e.prn[0]=='G'])
         put_nonblocking(EPHEMERIS_CACHE, ephem_cache.to_bytes())
         cloudlog.debug("Cache saved")
       self.last_cached_t = self.last_report_time
@@ -211,18 +215,19 @@ class Laikad:
 
   def read_report(self, gnss_msg):
     if self.use_qcom:
-      # QCOM reports are per constellation, should always send 3 reports
+      # QCOM reports are per constellation, so we need to aggregate them
       report = gnss_msg.drMeasurementReport
       report_time = self.gps_time_from_qcom_report(gnss_msg)
 
       if report_time - self.last_report_time > 0:
+        self.qcom_reports_received = max(1, len(self.qcom_reports))
         self.qcom_reports = [report]
       else:
         self.qcom_reports.append(report)
       self.last_report_time = report_time
 
       new_meas = []
-      if len(self.qcom_reports) == 3:
+      if len(self.qcom_reports) == self.qcom_reports_received:
         for report in self.qcom_reports:
           new_meas.extend(read_raw_qcom(report))
 
@@ -240,11 +245,8 @@ class Laikad:
 
   def read_ephemeris(self, gnss_msg):
     if self.use_qcom:
-      # TODO this is not robust to gps week rollover
-      if self.gps_week is None:
-        return
       try:
-        ephem = parse_qcom_ephem(gnss_msg.drSvPoly, self.gps_week)
+        ephem = parse_qcom_ephem(gnss_msg.drSvPoly)
         self.astro_dog.add_qcom_polys({ephem.prn: [ephem]})
       except Exception:
         cloudlog.exception("Error parsing qcom svPoly ephemeris from qcom module")
@@ -305,7 +307,6 @@ class Laikad:
       self.read_ephemeris(gnss_msg)
     elif self.is_good_report(gnss_msg):
       report_t, new_meas = self.read_report(gnss_msg)
-      self.gps_week = report_t.week
       if report_t.week > 0:
         if self.auto_fetch_navs:
           self.fetch_navs(report_t, block)
@@ -448,7 +449,7 @@ def clear_tmp_cache():
 def main(sm=None, pm=None):
   #clear_tmp_cache()
 
-  use_qcom = not Params().get_bool("UbloxAvailable", block=True)
+  use_qcom = not Params().get_bool("UbloxAvailable")
   if use_qcom:
     raw_name = "qcomGnss"
   else:

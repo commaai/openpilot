@@ -60,13 +60,16 @@ mat3 update_calibration(Eigen::Vector3d device_from_calib_euler, bool wide_camer
 void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcClient &vipc_client_extra, bool main_wide_camera, bool use_extra_client) {
   // messaging
   PubMaster pm({"modelV2", "cameraOdometry"});
-  SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "mapRenderState", "navInstruction", "navModel"});
+  SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel", "navInstruction"});
+
+  Params params;
+  PublishState ps = {};
 
   // setup filter to track dropped frames
   FirstOrderFilter frame_dropped_filter(0., 10., 1. / MODEL_FREQ);
 
   uint32_t frame_id = 0, last_vipc_frame_id = 0;
-  double last = 0;
+  // double last = 0;
   uint32_t run_count = 0;
 
   mat3 model_transform_main = {};
@@ -75,6 +78,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
   bool live_calib_seen = false;
   float driving_style[DRIVING_STYLE_LEN] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0};
   float nav_features[NAV_FEATURE_LEN] = {0};
+  float nav_instructions[NAV_INSTRUCTION_LEN] = {0};
 
   VisionBuf *buf_main = nullptr;
   VisionBuf *buf_extra = nullptr;
@@ -138,14 +142,14 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     }
 
     // Enable/disable nav features
-    double tsm = (float)(nanos_since_boot() - sm["mapRenderState"].getMapRenderState().getLocationMonoTime()) / 1e6;
-    bool route_valid = sm["navInstruction"].getValid() && (tsm < 1000);
-    bool render_valid = sm["mapRenderState"].getValid() && (sm["navModel"].getNavModel().getFrameId() == sm["mapRenderState"].getMapRenderState().getFrameId());
-    bool nav_valid = route_valid && render_valid;
-    if (!nav_enabled && nav_valid) {
+    uint64_t timestamp_llk = sm["navModel"].getNavModel().getLocationMonoTime();
+    bool nav_valid = sm["navModel"].getValid() && (nanos_since_boot() - timestamp_llk < 1e9);
+    bool use_nav = nav_valid && params.getBool("ExperimentalMode");
+    if (!nav_enabled && use_nav) {
       nav_enabled = true;
-    } else if (nav_enabled && !nav_valid) {
+    } else if (nav_enabled && !use_nav) {
       memset(nav_features, 0, sizeof(float)*NAV_FEATURE_LEN);
+      memset(nav_instructions, 0, sizeof(float)*NAV_INSTRUCTION_LEN);
       nav_enabled = false;
     }
 
@@ -153,6 +157,21 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       auto nav_model_features = sm["navModel"].getNavModel().getFeatures();
       for (int i=0; i<NAV_FEATURE_LEN; i++) {
         nav_features[i] = nav_model_features[i];
+      }
+    }
+
+    if (nav_enabled && sm.updated("navInstruction")) {
+      memset(nav_instructions, 0, sizeof(float)*NAV_INSTRUCTION_LEN);
+      auto maneuvers = sm["navInstruction"].getNavInstruction().getAllManeuvers();
+      for (int i=0; i<maneuvers.size(); i++) {
+        int distance_idx = 25 + (int)(maneuvers[i].getDistance() / 20);
+        std::string direction = maneuvers[i].getModifier();
+        int direction_idx = 0;
+        if (direction == "left" || direction == "slight left" || direction == "sharp left") direction_idx = 1;
+        if (direction == "right" || direction == "slight right" || direction == "sharp right") direction_idx = 2;
+        if (distance_idx >= 0 && distance_idx < 50) {
+          nav_instructions[distance_idx*3 + direction_idx] = 1;
+        }
       }
     }
 
@@ -173,18 +192,18 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     }
 
     double mt1 = millis_since_boot();
-    ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire, is_rhd, driving_style, nav_features, prepare_only);
+    ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire, is_rhd, driving_style, nav_features, nav_instructions, prepare_only);
     double mt2 = millis_since_boot();
     float model_execution_time = (mt2 - mt1) / 1000.0;
 
     if (model_output != nullptr) {
-      model_publish(&model, pm, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio, *model_output, meta_main.timestamp_eof, model_execution_time,
+      model_publish(pm, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio, *model_output, model, ps, meta_main.timestamp_eof, timestamp_llk, model_execution_time,
                     nav_enabled, live_calib_seen);
       posenet_publish(pm, meta_main.frame_id, vipc_dropped_frames, *model_output, meta_main.timestamp_eof, live_calib_seen);
     }
 
-    //printf("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f\n", mt2 - mt1, mt1 - last, extra.frame_id, frame_id, frame_drop_ratio);
-    last = mt1;
+    // printf("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f\n", mt2 - mt1, mt1 - last, extra.frame_id, frame_id, frame_drop_ratio);
+    // last = mt1;
     last_vipc_frame_id = meta_main.frame_id;
   }
 }
@@ -236,11 +255,11 @@ int main(int argc, char **argv) {
   // vipc_client.connected is false only when do_exit is true
   if (!do_exit) {
     const VisionBuf *b = &vipc_client_main.buffers[0];
-    LOGW("connected main cam with buffer size: %d (%d x %d)", b->len, b->width, b->height);
+    LOGW("connected main cam with buffer size: %zu (%zu x %zu)", b->len, b->width, b->height);
 
     if (use_extra_client) {
       const VisionBuf *wb = &vipc_client_extra.buffers[0];
-      LOGW("connected extra cam with buffer size: %d (%d x %d)", wb->len, wb->width, wb->height);
+      LOGW("connected extra cam with buffer size: %zu (%zu x %zu)", wb->len, wb->width, wb->height);
     }
 
     run_model(model, vipc_client_main, vipc_client_extra, main_wide_camera, use_extra_client);

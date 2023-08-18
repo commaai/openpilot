@@ -150,7 +150,7 @@ int BMX055_Magn::shutdown() {
   // move to suspend mode
   int ret = set_register(BMX055_MAGN_I2C_REG_PWR_0, 0);
   if (ret < 0) {
-    LOGE("Could not move BMX055 MAGN in suspend mode!")
+    LOGE("Could not move BMX055 MAGN in suspend mode!");
   }
 
   return ret;

@@ -47,6 +47,19 @@ private:
   bool engageable;
 };
 
+
+class MapSettingsButton : public QPushButton {
+  Q_OBJECT
+
+public:
+  explicit MapSettingsButton(QWidget *parent = 0);
+
+private:
+  void paintEvent(QPaintEvent *event) override;
+
+  QPixmap settings_img;
+};
+
 // container window for the NVG UI
 class AnnotatedCameraWidget : public CameraWidget {
   Q_OBJECT
@@ -60,7 +73,7 @@ class AnnotatedCameraWidget : public CameraWidget {
   Q_PROPERTY(bool is_metric MEMBER is_metric);
 
   Q_PROPERTY(bool dmActive MEMBER dmActive);
-  Q_PROPERTY(bool hideDM MEMBER hideDM);
+  Q_PROPERTY(bool hideBottomIcons MEMBER hideBottomIcons);
   Q_PROPERTY(bool rightHandDM MEMBER rightHandDM);
   Q_PROPERTY(int status MEMBER status);
 
@@ -68,10 +81,12 @@ public:
   explicit AnnotatedCameraWidget(VisionStreamType type, QWidget* parent = 0);
   void updateState(const UIState &s);
 
+  MapSettingsButton *map_settings_btn;
+
 private:
-  void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity);
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
 
+  QVBoxLayout *main_layout;
   ExperimentalButton *experimental_btn;
   QPixmap dm_img;
   float speed;
@@ -81,7 +96,7 @@ private:
   bool is_cruise_set = false;
   bool is_metric = false;
   bool dmActive = false;
-  bool hideDM = false;
+  bool hideBottomIcons = false;
   bool rightHandDM = false;
   float dm_fade_state = 1.0;
   bool has_us_speed_limit = false;
@@ -117,9 +132,10 @@ class OnroadWindow : public QWidget {
 public:
   OnroadWindow(QWidget* parent = 0);
   bool isMapVisible() const { return map && map->isVisible(); }
+  void showMapPanel(bool show) { if (map) map->setVisible(show); }
 
 signals:
-  void mapWindowShown();
+  void mapPanelRequested();
 
 private:
   void paintEvent(QPaintEvent *event);
@@ -129,7 +145,6 @@ private:
   QColor bg = bg_colors[STATUS_DISENGAGED];
   QWidget *map = nullptr;
   QHBoxLayout* split;
-  bool navDisabled = false;
 
 private slots:
   void offroadTransition(bool offroad);

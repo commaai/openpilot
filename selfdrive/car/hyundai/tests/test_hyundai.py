@@ -52,6 +52,20 @@ class TestHyundaiFingerprint(unittest.TestCase):
       self.assertEqual(len(ecus_not_in_whitelist), 0,
                        f"{car_model}: Car model has ECUs not in auxiliary request whitelists: {ecu_strings}")
 
+  def test_blacklisted_parts(self):
+    # Asserts no ECUs known to be shared across platforms exist in the database.
+    # Tucson having Santa Cruz camera and EPS for example
+    for car_model, ecus in FW_VERSIONS.items():
+      with self.subTest(car_model=car_model):
+        if car_model == CAR.SANTA_CRUZ_1ST_GEN:
+          raise unittest.SkipTest("Skip checking Santa Cruz for its parts")
+
+        for code, _ in get_platform_codes(ecus[(Ecu.fwdCamera, 0x7c4, None)]):
+          if b"-" not in code:
+            continue
+          part = code.split(b"-")[1]
+          self.assertFalse(part.startswith(b'CW'), "Car has bad part number")
+
   # Tests for platform codes, part numbers, and FW dates which Hyundai will use to fuzzy
   # fingerprint in the absence of full FW matches:
   def test_platform_code_ecus_available(self):
@@ -88,16 +102,16 @@ class TestHyundaiFingerprint(unittest.TestCase):
             codes |= result
 
           if ecu[0] not in DATE_FW_ECUS or car_model in NO_DATES_PLATFORMS:
-            self.assertTrue(all({date is None for _, date in codes}))
+            self.assertTrue(all(date is None for _, date in codes))
           else:
-            self.assertTrue(all({date is not None for _, date in codes}))
+            self.assertTrue(all(date is not None for _, date in codes))
 
           if car_model == CAR.HYUNDAI_GENESIS:
             raise unittest.SkipTest("No part numbers for car model")
 
           # Hyundai places the ECU part number in their FW versions, assert all parsable
           # Some examples of valid formats: b"56310-L0010", b"56310L0010", b"56310/M6300"
-          self.assertTrue(all({b"-" in code for code, _ in codes}),
+          self.assertTrue(all(b"-" in code for code, _ in codes),
                           f"FW does not have part number: {fw}")
 
   def test_platform_codes_spot_check(self):

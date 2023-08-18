@@ -55,7 +55,8 @@ else:
     del libs[libs.index('OpenCL')]
     lenv['FRAMEWORKS'] = ['OpenCL']
 
-    # no SNPE on Mac
+  if arch == "Darwin" or arch == "aarch64":
+    # no SNPE on Mac and ARM Linux
     del libs[libs.index('SNPE')]
     del common_src[common_src.index('runners/snpemodel.cc')]
 

@@ -20,13 +20,13 @@ def migrate_cameraStates(lr):
   for msg in lr:
     if msg.which() not in ["roadEncodeIdx", "wideRoadEncodeIdx", "driverEncodeIdx"]:
       continue
-    
+
     encode_index = getattr(msg, msg.which())
     meta = meta_from_encode_index(msg.which())
 
     assert encode_index.segmentId < 1200, f"Encoder index segmentId greater that 1200: {msg.which()} {encode_index.segmentId}"
     frame_to_encode_id[meta.camera_state][encode_index.frameId] = encode_index.segmentId
-  
+
   for msg in lr:
     if msg.which() not in ["roadCameraState", "wideRoadCameraState", "driverCameraState"]:
       all_msgs.append(msg)
