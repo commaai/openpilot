@@ -7,7 +7,7 @@ from common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from selfdrive.car.hyundai.hyundaicanfd import CanBus
-from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CAN_GEARS, CAMERA_SCC_CAR, CANFD_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams
+from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CAN_GEARS, CAMERA_SCC_CAR, CANFD_CAR, CANFD_CAR_ALT_LKAS, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams
 from selfdrive.car.interfaces import CarStateBase
 
 PREV_BUTTON_SAMPLES = 8
@@ -227,8 +227,8 @@ class CarState(CarStateBase):
     self.buttons_counter = cp.vl[self.cruise_btns_msg_canfd]["COUNTER"]
     ret.accFaulted = cp.vl["TCS"]["ACCEnable"] != 0  # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
 
-    # if self.CP.flags & HyundaiFlags.CANFD_HDA2:
-    #   self.cam_0x2a4 = copy.copy(cp_cam.vl["CAM_0x2a4"])
+    if self.CP.flags & HyundaiFlags.CANFD_HDA2 and self.CP.carFingerprint not in CANFD_CAR_ALT_LKAS:
+      self.cam_0x2a4 = copy.copy(cp_cam.vl["CAM_0x2a4"])
 
     return ret
 
@@ -331,8 +331,8 @@ class CarState(CarStateBase):
   def get_cam_can_parser_canfd(CP):
     messages = []
     if CP.flags & HyundaiFlags.CANFD_HDA2:
-      pass
-      # messages += [("CAM_0x2a4", 20)]
+      if CP.carFingerprint not in CANFD_CAR_ALT_LKAS:
+        messages += [("CAM_0x2a4", 20)]
     elif CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
       messages += [
         ("SCC_CONTROL", 50),

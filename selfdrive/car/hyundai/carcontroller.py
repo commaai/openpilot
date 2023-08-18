@@ -6,7 +6,7 @@ from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_driver_steer_torque_limits, common_fault_avoidance
 from selfdrive.car.hyundai import hyundaicanfd, hyundaican
 from selfdrive.car.hyundai.hyundaicanfd import CanBus
-from selfdrive.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CANFD_CAR, CAR
+from selfdrive.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CANFD_CAR, CANFD_CAR_ALT_LKAS, CAR
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
@@ -110,9 +110,9 @@ class CarController:
       # steering control
       can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_steer))
 
-      # # disable LFA on HDA2
-      # if self.frame % 5 == 0 and hda2:
-      #   can_sends.append(hyundaicanfd.create_cam_0x2a4(self.packer, self.CAN, CS.cam_0x2a4))
+      # disable LFA on HDA2
+      if self.frame % 5 == 0 and hda2 and self.CP.carFingerprint not in CANFD_CAR_ALT_LKAS:
+        can_sends.append(hyundaicanfd.create_cam_0x2a4(self.packer, self.CAN, CS.cam_0x2a4))
 
       # LFA and HDA icons
       if self.frame % 5 == 0 and (not hda2 or hda2_long):
