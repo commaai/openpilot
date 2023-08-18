@@ -28,54 +28,36 @@ class TestCanFingerprint(unittest.TestCase):
     car_model = 'CHEVROLET BOLT EUV 2022'
     fingerprint = FINGERPRINTS[car_model][0]
 
+    cases = []
+
+    # case 1 - one match, make sure we keep going for 100 frames
     can = messaging.new_message('can', 1)
-    can.can = [log.CanData(address=address, dat=b'\x00' * length)
-               for address, length in fingerprint.items()]
+    can.can = [log.CanData(address=address, dat=b'\x00' * length, src=src)
+               for address, length in fingerprint.items() for src in (0, 1)]
+    cases.append((FRAME_FINGERPRINT, car_model, can))
 
-    frames = 0
-
-    def test():
-      nonlocal frames
-      frames += 1
-      return can
-
-    car_fingerprint, _ = can_fingerprint(test)
-    # if one match, make sure we keep going for 100 frames
-    self.assertEqual(frames, FRAME_FINGERPRINT + 2)  # TODO: not sure why weird offset
-
-    # test 2 - no matches
+    # case 2 - no matches, make sure we keep going for 100 frames
     can = messaging.new_message('can', 1)
     can.can = [log.CanData(address=1, dat=b'\x00' * 1, src=src) for src in (0, 1)]  # weird address
+    cases.append((FRAME_FINGERPRINT, None, can))
 
-    frames = 0
-
-    def test():
-      nonlocal frames
-      frames += 1
-      return can
-
-    # print(fingerprint)
-    print(car_model, car_fingerprint, frames)
-    car_fingerprint, _ = can_fingerprint(test)
-    # if no matches, make sure we keep going for 100 frames
-    self.assertEqual(frames, FRAME_FINGERPRINT + 2)  # TODO: not sure why weird offset
-
-    # test 3 - multiple matches
+    # case 3 - multiple matches, make sure we keep going for 200 frames to try to eliminate some
     can = messaging.new_message('can', 1)
-    can.can = [log.CanData(address=2016, dat=b'\x00' * 8)]  # common address
+    can.can = [log.CanData(address=2016, dat=b'\x00' * 8, src=src) for src in (0, 1)]  # common address
+    cases.append((FRAME_FINGERPRINT * 2, None, can))
 
-    frames = 0
+    for expected_frames, car_model, can in cases:
+      with self.subTest(expected_frames=expected_frames, car_model=car_model):
+        frames = 0
 
-    def test():
-      nonlocal frames
-      frames += 1
-      return can
+        def test():
+          nonlocal frames
+          frames += 1
+          return can
 
-    # print(fingerprint)
-    print(car_model, car_fingerprint, frames)
-    car_fingerprint, _ = can_fingerprint(test)
-    # if multiple matches, make sure we keep going for 200 frames to try to eliminate some
-    self.assertEqual(frames, FRAME_FINGERPRINT * 2 + 2)  # TODO: not sure why weird offset
+        car_fingerprint, _ = can_fingerprint(test)
+        self.assertEqual(car_fingerprint, car_model)
+        self.assertEqual(frames, expected_frames + 2)  # TODO: fix extra frames
 
 
 if __name__ == "__main__":
