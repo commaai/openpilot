@@ -38,7 +38,7 @@ BUF_SIZE = MODEL_FRAME_SIZE * 2
 
 MODEL_PATH = str(Path(__file__).parent / f"models/supercombo.{'thneed' if USE_THNEED else 'onnx'}")
 
-# NOTE: numpy matmuls doesn't seem to perfectly match the eigen matmuls so the ref test fails, but we should switch to this after checking compare_runtime
+# NOTE: numpy matmuls don't seem to perfectly match eigen matmuls so the ref test fails, but we should switch to the np version after checking compare_runtime
 # from common.transformations.orientation import rot_from_euler
 # from common.transformations.model import medmodel_frame_from_calib_frame, sbigmodel_frame_from_calib_frame
 # from common.transformations.camera import view_frame_from_device_frame, tici_fcam_intrinsics, tici_ecam_intrinsics
@@ -167,7 +167,6 @@ def main():
   params = Params()
 
   # setup filter to track dropped frames
-  # TODO: I don't think the python version of FirstOrderFilter matches the c++ version exactly
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / MODEL_FREQ)
   frame_id = 0
   last_vipc_frame_id = 0
@@ -267,7 +266,7 @@ def main():
     vipc_dropped_frames = max(0, meta_main.frame_id - last_vipc_frame_id - 1)
     frames_dropped = frame_dropped_filter.update(min(vipc_dropped_frames, 10))
     if run_count < 10: # let frame drops warm up
-      # frame_dropped_filter.reset(0)
+      frame_dropped_filter.x = 0.
       frames_dropped = 0.
     run_count = run_count + 1
 
