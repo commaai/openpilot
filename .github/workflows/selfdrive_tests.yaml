@@ -124,6 +124,8 @@ jobs:
     needs: build_mac_matrix
     strategy:
       matrix: ${{fromJson(needs.build_mac_matrix.outputs.matrix)}}
+      fail-fast: true
+      max-parallel: 1
     steps:
     - uses: actions/checkout@v3
       with:
