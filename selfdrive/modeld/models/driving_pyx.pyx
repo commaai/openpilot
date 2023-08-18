@@ -1,15 +1,26 @@
 # distutils: language = c++
 # cython: c_string_encoding=ascii, language_level=3
 
+import numpy as np
+cimport numpy as cnp
 from libcpp cimport bool
+from libc.string cimport memcpy
 from libc.stdint cimport uint32_t, uint64_t
+from .commonmodel cimport mat3
 from .driving cimport MessageBuilder, PublishState as cppPublishState, CPP_USE_THNEED
-from .driving cimport fill_model_msg, fill_pose_msg
+from .driving cimport fill_model_msg, fill_pose_msg, update_calibration as cpp_update_calibration
 
 USE_THNEED = CPP_USE_THNEED
 
 cdef class PublishState:
   cdef cppPublishState state
+
+def update_calibration(float[:] device_from_calib_euler, bool wide_camera, bool bigmodel_frame):
+  cdef mat3 result = cpp_update_calibration(&device_from_calib_euler[0], wide_camera, bigmodel_frame)
+  np_result = np.empty(9, dtype=np.float32)
+  cdef float[:] np_result_view = np_result
+  memcpy(&np_result_view[0], &result.v[0], 9*sizeof(float))
+  return np_result.reshape(3, 3)
 
 def create_model_msg(float[:] model_outputs, PublishState ps, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
                      uint64_t timestamp_eof, uint64_t timestamp_llk, float model_execution_time, bool nav_enabled, bool valid):
