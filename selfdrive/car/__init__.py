@@ -40,8 +40,7 @@ def gen_empty_fingerprint():
   return {i: {} for i in range(0, 8)}
 
 
-# FIXME: hardcoding honda civic 2016 touring params so they can be used to
-# scale unknown params for other cars
+# these params were derived for the Civic and used to calculate params for other cars
 class ReferenceCarParams:
   MASS = 1326. + STD_CARGO_KG
   WHEELBASE = 2.70
