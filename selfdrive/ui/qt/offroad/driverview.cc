@@ -20,10 +20,10 @@ DriverViewWindow::DriverViewWindow(QWidget* parent) : QWidget(parent) {
   layout->addWidget(scene);
   layout->setCurrentWidget(scene);
 
-  QObject::connect(device(), &Device::interactiveTimeout, this, &DriverViewWindow::requestDone);
+  QObject::connect(device(), &Device::interactiveTimeout, this, &DriverViewWindow::closeView);
 }
 
-void DriverViewWindow::requestDone() {
+void DriverViewWindow::closeView() {
   if (isVisible()) {
     cameraView->stopVipcThread();
     emit done();
@@ -31,7 +31,7 @@ void DriverViewWindow::requestDone() {
 }
 
 void DriverViewWindow::mouseReleaseEvent(QMouseEvent* e) {
-  requestDone();
+  closeView();
 }
 
 DriverViewScene::DriverViewScene(QWidget* parent) : sm({"driverStateV2"}), QWidget(parent) {

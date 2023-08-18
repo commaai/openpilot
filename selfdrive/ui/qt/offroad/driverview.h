@@ -37,7 +37,7 @@ signals:
 
 protected:
   void mouseReleaseEvent(QMouseEvent* e) override;
-  void requestDone();
+  void closeView();
 
   CameraWidget *cameraView;
   DriverViewScene *scene;
