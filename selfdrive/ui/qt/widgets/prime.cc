@@ -172,13 +172,6 @@ PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QFrame(parent) {
     l->setStyleSheet("font-size: 50px; margin-bottom: 15px;");
     main_layout->addWidget(l, 0, Qt::AlignBottom);
   }
-
-  setStyleSheet(R"(
-    PrimeAdWidget {
-      border-radius: 10px;
-      background-color: #333333;
-    }
-  )");
 }
 
 
@@ -246,13 +239,6 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   primeUser->setVisible(uiState()->primeType());
   mainLayout->setCurrentIndex(1);
-
-  setStyleSheet(R"(
-    #primeWidget {
-      border-radius: 10px;
-      background-color: #333333;
-    }
-  )");
 
   // Retain size while hidden
   QSizePolicy sp_retain = sizePolicy();

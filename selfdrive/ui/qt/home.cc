@@ -2,7 +2,6 @@
 
 #include <QHBoxLayout>
 #include <QMouseEvent>
-#include <QStackedWidget>
 #include <QVBoxLayout>
 
 #include "selfdrive/ui/qt/offroad/experimental_mode.h"
@@ -142,44 +141,43 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   center_layout = new QStackedLayout();
 
   QWidget *home_widget = new QWidget(this);
+  home_widget->setObjectName("home_widget");
   {
     QHBoxLayout *home_layout = new QHBoxLayout(home_widget);
     home_layout->setContentsMargins(0, 0, 0, 0);
     home_layout->setSpacing(30);
 
     // left: MapSettings/PrimeAdWidget
-    QStackedWidget *left_widget = new QStackedWidget(this);
+    QStackedLayout *left_columm = new QStackedLayout();
 #ifdef ENABLE_MAPS
-    left_widget->addWidget(new MapSettings);
+    left_columm->addWidget(new MapSettings);
 #else
-    left_widget->addWidget(new DriveStats);
+    left_columm->addWidget(new DriveStats);
 #endif
-    left_widget->addWidget(new PrimeAdWidget);
-    left_widget->setStyleSheet("border-radius: 10px;");
+    left_columm->addWidget(new PrimeAdWidget);
 
-    left_widget->setCurrentIndex(uiState()->primeType() ? 0 : 1);
+    left_columm->setCurrentIndex(uiState()->primeType() ? 0 : 1);
     connect(uiState(), &UIState::primeTypeChanged, [=](int prime_type) {
-      left_widget->setCurrentIndex(prime_type ? 0 : 1);
+      left_columm->setCurrentIndex(prime_type ? 0 : 1);
     });
 
-    home_layout->addWidget(left_widget, 1);
+    home_layout->addLayout(left_columm);
 
     // right: ExperimentalModeButton, SetupWidget
-    QWidget* right_widget = new QWidget(this);
-    QVBoxLayout* right_column = new QVBoxLayout(right_widget);
+    QVBoxLayout* right_column = new QVBoxLayout();
     right_column->setContentsMargins(0, 0, 0, 0);
-    right_widget->setFixedWidth(750);
     right_column->setSpacing(30);
 
     ExperimentalModeButton *experimental_mode = new ExperimentalModeButton(this);
+    experimental_mode->setFixedWidth(750);
     QObject::connect(experimental_mode, &ExperimentalModeButton::openSettings, this, &OffroadHome::openSettings);
-    right_column->addWidget(experimental_mode, 1);
+    right_column->addWidget(experimental_mode);
 
     SetupWidget *setup_widget = new SetupWidget;
     QObject::connect(setup_widget, &SetupWidget::openSettings, this, &OffroadHome::openSettings);
     right_column->addWidget(setup_widget, 1);
 
-    home_layout->addWidget(right_widget, 1);
+    home_layout->addLayout(right_column);
   }
   center_layout->addWidget(home_widget);
 
@@ -212,6 +210,10 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     }
     OffroadHome > QLabel {
       font-size: 55px;
+    }
+    #home_widget > QWidget {
+      border-radius: 10px;
+      background-color: #333333;
     }
   )");
 }

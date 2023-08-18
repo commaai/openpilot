@@ -52,11 +52,6 @@ DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
   }
 
   setStyleSheet(R"(
-    DriveStats {
-      background-color: #333333;
-      border-radius: 10px;
-    }
-
     QLabel[type="title"] { font-size: 51px; font-weight: 500; }
     QLabel[type="number"] { font-size: 78px; font-weight: 500; }
     QLabel[type="unit"] { font-size: 51px; font-weight: 300; color: #A0A0A0; }
