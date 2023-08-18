@@ -3,7 +3,6 @@ from selfdrive.car.hyundai.values import CAR, CHECKSUM, CAMERA_SCC_CAR
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
-
 def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
                   torque_fault, lkas11, sys_warning, sys_state, enabled,
                   left_lane, right_lane,
@@ -126,8 +125,7 @@ def create_lfahda_mfc(packer, enabled, hda_set_speed=0):
   }
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
-
-def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, set_speed, stopping, long_override, has_fca):
+def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, set_speed, stopping, long_override, use_fca):
   commands = []
 
   scc11_values = {
@@ -150,12 +148,6 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
     "aReqValue": accel,  # stock ramps up and down respecting jerk limit until it reaches aReqRaw
     "CR_VSM_Alive": idx % 0xF,
   }
-
-  # For cars that do not broadcast FCA messages, send CF_VSM_ConfMode = 1 and AEB_Status = 1 to prevent TCS13|ACCEnable fault
-  if not has_fca:
-    scc12_values["CF_VSM_ConfMode"] = 1
-    scc12_values["AEB_Status"] = 1  # AEB disabled
-
   scc12_dat = packer.make_can_msg("SCC12", 0, scc12_values)[2]
   scc12_values["CR_VSM_ChkSum"] = 0x10 - sum(sum(divmod(i, 16)) for i in scc12_dat) % 0x10
 
@@ -171,8 +163,8 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
   }
   commands.append(packer.make_can_msg("SCC14", 0, scc14_values))
 
-  # For cars that do not broadcast FCA messages, do not send FCA messages to prevent TCS13|ACCEnable fault
-  if has_fca:
+  # Only send FCA11 on cars where it exists on the bus
+  if use_fca:
     # note that some vehicles most likely have an alternate checksum/counter definition
     # https://github.com/commaai/opendbc/commit/9ddcdb22c4929baf310295e832668e6e7fcfa602
     fca11_values = {
@@ -187,8 +179,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
 
   return commands
 
-
-def create_acc_opt(packer, has_fca):
+def create_acc_opt(packer):
   commands = []
 
   scc13_values = {
@@ -198,16 +189,13 @@ def create_acc_opt(packer, has_fca):
   }
   commands.append(packer.make_can_msg("SCC13", 0, scc13_values))
 
-  # For cars that do not broadcast FCA messages, do not send FCA messages to prevent TCS13|ACCEnable fault
-  if has_fca:
-    fca12_values = {
-      "FCA_DrvSetState": 2,
-      "FCA_USM": 1,  # AEB disabled
-    }
-    commands.append(packer.make_can_msg("FCA12", 0, fca12_values))
+  fca12_values = {
+    "FCA_DrvSetState": 2,
+    "FCA_USM": 1, # AEB disabled
+  }
+  commands.append(packer.make_can_msg("FCA12", 0, fca12_values))
 
   return commands
-
 
 def create_frt_radar_opt(packer):
   frt_radar11_values = {
