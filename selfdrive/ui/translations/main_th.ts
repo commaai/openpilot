@@ -592,19 +592,19 @@
     </message>
     <message>
         <source>km</source>
-        <translation type="unfinished">กม.</translation>
+        <translation>กม.</translation>
     </message>
     <message>
         <source>m</source>
-        <translation type="unfinished"></translation>
+        <translation>ม.</translation>
     </message>
     <message>
         <source>mi</source>
-        <translation type="unfinished">ไมล์</translation>
+        <translation>ไมล์</translation>
     </message>
     <message>
         <source>ft</source>
-        <translation type="unfinished"></translation>
+        <translation>ฟุต</translation>
     </message>
 </context>
 <context>
