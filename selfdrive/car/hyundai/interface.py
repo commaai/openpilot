@@ -4,7 +4,8 @@ from panda import Panda
 from common.conversions import Conversions as CV
 from selfdrive.car.hyundai.hyundaicanfd import CanBus
 from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, CANFD_RADAR_SCC_CAR, \
-                                                            EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons
+                                         EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, UNSUPPORTED_LONGITUDINAL_CAR, \
+                                         Buttons
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from selfdrive.car import create_button_event, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -247,7 +248,7 @@ class CarInterface(CarInterfaceBase):
     else:
       ret.longitudinalTuning.kpV = [0.5]
       ret.longitudinalTuning.kiV = [0.0]
-      ret.experimentalLongitudinalAvailable = candidate not in (LEGACY_SAFETY_MODE_CAR | CAMERA_SCC_CAR)
+      ret.experimentalLongitudinalAvailable = candidate not in (UNSUPPORTED_LONGITUDINAL_CAR | CAMERA_SCC_CAR)
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
     ret.pcmCruise = not ret.openpilotLongitudinalControl
 
