@@ -55,7 +55,7 @@ source_list = ['lat_mpc.py',
 lenv = env.Clone()
 lenv.Clean(generated_files, Dir(gen))
 
-generated_lat = lenv.Command(generated_files,
+generated_lat = lenv.Command(build_files,
                              source_list,
                              f"cd {Dir('.').abspath} && python3 lat_mpc.py")
 lenv.Depends(generated_lat, "#common")

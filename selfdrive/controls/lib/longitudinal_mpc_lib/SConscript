@@ -62,7 +62,7 @@ source_list = ['long_mpc.py',
 lenv = env.Clone()
 lenv.Clean(generated_files, Dir(gen))
 
-generated_long = lenv.Command(generated_files,
+generated_long = lenv.Command(build_files,
                               source_list,
                               f"cd {Dir('.').abspath} && python3 long_mpc.py")
 lenv.Depends(generated_long, "#cereal")
