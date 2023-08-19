@@ -5,7 +5,7 @@ from cereal import car
 from selfdrive.car.fw_versions import build_fw_dict
 from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
                                          EV_CAR, FW_QUERY_CONFIG, FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, \
-                                         PLATFORM_CODE_ECUS, get_platform_codes
+                                         UNSUPPORTED_LONGITUDINAL_CAR, PLATFORM_CODE_ECUS, get_platform_codes
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
@@ -37,7 +37,7 @@ NO_DATES_PLATFORMS = {
 
 class TestHyundaiFingerprint(unittest.TestCase):
   def test_canfd_not_in_can_features(self):
-    can_specific_feature_list = set.union(*CAN_GEARS.values(), *CHECKSUM.values(), LEGACY_SAFETY_MODE_CAR, CAMERA_SCC_CAR)
+    can_specific_feature_list = set.union(*CAN_GEARS.values(), *CHECKSUM.values(), LEGACY_SAFETY_MODE_CAR, UNSUPPORTED_LONGITUDINAL_CAR, CAMERA_SCC_CAR)
     for car_model in CANFD_CAR:
       self.assertNotIn(car_model, can_specific_feature_list, "CAN FD car unexpectedly found in a CAN feature list")
 
@@ -102,16 +102,16 @@ class TestHyundaiFingerprint(unittest.TestCase):
             codes |= result
 
           if ecu[0] not in DATE_FW_ECUS or car_model in NO_DATES_PLATFORMS:
-            self.assertTrue(all({date is None for _, date in codes}))
+            self.assertTrue(all(date is None for _, date in codes))
           else:
-            self.assertTrue(all({date is not None for _, date in codes}))
+            self.assertTrue(all(date is not None for _, date in codes))
 
           if car_model == CAR.HYUNDAI_GENESIS:
             raise unittest.SkipTest("No part numbers for car model")
 
           # Hyundai places the ECU part number in their FW versions, assert all parsable
           # Some examples of valid formats: b"56310-L0010", b"56310L0010", b"56310/M6300"
-          self.assertTrue(all({b"-" in code for code, _ in codes}),
+          self.assertTrue(all(b"-" in code for code, _ in codes),
                           f"FW does not have part number: {fw}")
 
   def test_platform_codes_spot_check(self):

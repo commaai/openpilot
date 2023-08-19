@@ -46,7 +46,7 @@ class FakeResponse:
 UploadResponse = Union[requests.Response, FakeResponse]
 
 def get_directory_sort(d: str) -> List[str]:
-  return list(map(lambda s: s.rjust(10, '0'), d.rsplit('--', 1)))
+  return [s.rjust(10, '0') for s in d.rsplit('--', 1)]
 
 def listdir_by_creation(d: str) -> List[str]:
   try:
@@ -211,7 +211,8 @@ class Uploader:
         else:
           content_length = int(stat.request.headers.get("Content-Length", 0))
           self.last_speed = (content_length / 1e6) / self.last_time
-          cloudlog.event("upload_success", key=key, fn=fn, sz=sz, content_length=content_length, network_type=network_type, metered=metered, speed=self.last_speed)
+          cloudlog.event("upload_success", key=key, fn=fn, sz=sz, content_length=content_length,
+                         network_type=network_type, metered=metered, speed=self.last_speed)
         success = True
       else:
         success = False

@@ -15,14 +15,9 @@ def _create_radar_can_parser(car_fingerprint):
 
   msg_a_n = len(RADAR_A_MSGS)
   msg_b_n = len(RADAR_B_MSGS)
+  messages = list(zip(RADAR_A_MSGS + RADAR_B_MSGS, [20] * (msg_a_n + msg_b_n), strict=True))
 
-  signals = list(zip(['LONG_DIST'] * msg_a_n + ['NEW_TRACK'] * msg_a_n + ['LAT_DIST'] * msg_a_n +
-                     ['REL_SPEED'] * msg_a_n + ['VALID'] * msg_a_n + ['SCORE'] * msg_b_n,
-                     RADAR_A_MSGS * 5 + RADAR_B_MSGS))
-
-  checks = list(zip(RADAR_A_MSGS + RADAR_B_MSGS, [20] * (msg_a_n + msg_b_n)))
-
-  return CANParser(DBC[car_fingerprint]['radar'], signals, checks, 1)
+  return CANParser(DBC[car_fingerprint]['radar'], messages, 1)
 
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
