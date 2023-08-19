@@ -154,6 +154,7 @@ class CarState(CarStateBase):
     self.pcm_neutral_force = cp.vl["PCM_CRUISE"]["NEUTRAL_FORCE"]
     self.GVC = cp.vl["VSC1S07"]["GVC"]
     self.GL1X = cp.vl["KINEMATICS"]["ACCEL_X"]
+    ret.engineRpm = cp.vl["ENGINE_RPM"]["RPM"]
 
     ret.genericToggle = bool(cp.vl["LIGHT_STALK"]["AUTO_HIGH_BEAM"])
     ret.espDisabled = cp.vl["ESP_CONTROL"]["TC_DISABLED"] != 0

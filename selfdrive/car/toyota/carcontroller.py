@@ -116,21 +116,28 @@ class CarController:
     else:
       interceptor_gas_cmd = 0.
 
-    # # account for pitch, anything we can do feedforward reduces work for controller
-    # # and improves response and smoothness
-    # if len(CC.orientationNED) and CS.out.vEgo > 1:
-    #   self.pitch_compensation = ACCELERATION_DUE_TO_GRAVITY * math.sin(CC.orientationNED[1])
+    # # # account for pitch, anything we can do feedforward reduces work for controller
+    # # # and improves response and smoothness
+    # # if len(CC.orientationNED) and CS.out.vEgo > 1:
+    # #   self.pitch_compensation = ACCELERATION_DUE_TO_GRAVITY * math.sin(CC.orientationNED[1])
+    #
+    # # force applied when not actuating anything converted to acceleration
+    # # (engine propulsion at low speed, engine braking at high speed)
+    # # TODO: PCM only applies coasting accel if engine is on!
+    # coasting_accel = CS.pcm_neutral_force / self.CP.mass
+    # grade_accel = CS.GVC - CS.GL1X  # this is very noisy, good thing we have smoothing
+    # # the PCM should be outputting this
+    # desired_pcm_accel = actuators.accel - coasting_accel - grade_accel  # + self.pitch_compensation
+    # # if not, we compensate (PCM is dumb and cares too much about our rate of change or other unknown factors)
+    # self.pcm_accel_compensation.update(CS.pcm_accel_net - desired_pcm_accel)
+    # pcm_accel_cmd = clip(actuators.accel - self.pcm_accel_compensation.x,
+    #                      CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
-    # force applied when not actuating anything converted to acceleration
-    # (engine propulsion at low speed, engine braking at high speed)
-    # TODO: PCM only applies coasting accel if engine is on!
-    coasting_accel = CS.pcm_neutral_force / self.CP.mass
-    grade_accel = CS.GVC - CS.GL1X  # this is very noisy, good thing we have smoothing
-    # the PCM should be outputting this
-    desired_pcm_accel = actuators.accel - coasting_accel - grade_accel  # + self.pitch_compensation
-    # if not, we compensate (PCM is dumb and cares too much about our rate of change or other unknown factors)
-    self.pcm_accel_compensation.update(CS.pcm_accel_net - desired_pcm_accel)
-    pcm_accel_cmd = clip(actuators.accel - self.pcm_accel_compensation.x,
+    accel_offset = 0
+    # PCM behaves differently when engine is off on hybrid, try some things
+    if abs(CS.out.engineRpm) < 1e-3:
+      accel_offset = CS.pcm_neutral_force / self.CP.mass
+    pcm_accel_cmd = clip(actuators.accel + accel_offset,
                          CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
     if not CC.longActive:
