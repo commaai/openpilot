@@ -152,8 +152,12 @@ struct unique_fd {
 class FirstOrderFilter {
 public:
   FirstOrderFilter(float x0, float ts, float dt) {
-    k_ = (dt / ts) / (1.0 + dt / ts);
     x_ = x0;
+    dt_ = dt;
+    updateAlpha(ts);
+  }
+  inline void updateAlpha(float ts) {
+    k_ = (dt_ / ts) / (1.0 + dt_ / ts);
   }
   inline float update(float x) {
     x_ = (1. - k_) * x_ + k_ * x;
@@ -163,7 +167,7 @@ public:
   inline float x(){ return x_; }
 
 private:
-  float x_, k_;
+  float x_, k_, dt_;
 };
 
 template<typename T>
