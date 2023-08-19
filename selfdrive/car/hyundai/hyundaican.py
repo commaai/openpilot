@@ -188,7 +188,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
   return commands
 
 
-def create_acc_opt(packer, use_fca):
+def create_acc_opt(packer):
   commands = []
 
   scc13_values = {
@@ -198,13 +198,11 @@ def create_acc_opt(packer, use_fca):
   }
   commands.append(packer.make_can_msg("SCC13", 0, scc13_values))
 
-  # only send FCA12 to cars that accept FCA messages, otherwise TCS13|ACCEnable would fault
-  if use_fca:
-    fca12_values = {
-      "FCA_DrvSetState": 2,
-      "FCA_USM": 1,  # AEB disabled
-    }
-    commands.append(packer.make_can_msg("FCA12", 0, fca12_values))
+  fca12_values = {
+    "FCA_DrvSetState": 2,
+    "FCA_USM": 1,  # AEB disabled
+  }
+  commands.append(packer.make_can_msg("FCA12", 0, fca12_values))
 
   return commands
 
