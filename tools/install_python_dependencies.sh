@@ -50,6 +50,7 @@ pip install pip==23.2.1
 pip install poetry==1.5.1
 
 poetry config virtualenvs.prefer-active-python true --local
+poetry config virtualenvs.in-project true --local
 
 echo "PYTHONPATH=${PWD}" > $ROOT/.env
 poetry self add poetry-dotenv-plugin@^0.1.0

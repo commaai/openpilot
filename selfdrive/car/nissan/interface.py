@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
-from selfdrive.car import STD_CARGO_KG, get_safety_config
+from selfdrive.car import get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.nissan.values import CAR
 
@@ -22,17 +22,17 @@ class CarInterface(CarInterfaceBase):
     ret.radarUnavailable = True
 
     if candidate in (CAR.ROGUE, CAR.XTRAIL):
-      ret.mass = 1610 + STD_CARGO_KG
+      ret.mass = 1610
       ret.wheelbase = 2.705
       ret.centerToFront = ret.wheelbase * 0.44
     elif candidate in (CAR.LEAF, CAR.LEAF_IC):
-      ret.mass = 1610 + STD_CARGO_KG
+      ret.mass = 1610
       ret.wheelbase = 2.705
       ret.centerToFront = ret.wheelbase * 0.44
     elif candidate == CAR.ALTIMA:
       # Altima has EPS on C-CAN unlike the others that have it on V-CAN
       ret.safetyConfigs[0].safetyParam = 1 # EPS is on alternate bus
-      ret.mass = 1492 + STD_CARGO_KG
+      ret.mass = 1492
       ret.wheelbase = 2.824
       ret.centerToFront = ret.wheelbase * 0.44
 

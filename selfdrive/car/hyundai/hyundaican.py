@@ -171,7 +171,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
   }
   commands.append(packer.make_can_msg("SCC14", 0, scc14_values))
 
-  # only send FCA11 to cars that accept FCA messages, otherwise TCS13|ACCEnable would fault
+  # Only send FCA11 on cars where it exists on the bus
   if use_fca:
     # note that some vehicles most likely have an alternate checksum/counter definition
     # https://github.com/commaai/opendbc/commit/9ddcdb22c4929baf310295e832668e6e7fcfa602
@@ -179,7 +179,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
       "CR_FCA_Alive": idx % 0xF,
       "PAINT1_Status": 1,
       "FCA_DrvSetStatus": 1,
-      "FCA_Status": 1,  # AEB disabled
+      "FCA_Status": 1, # AEB disabled
     }
     fca11_dat = packer.make_can_msg("FCA11", 0, fca11_values)[2]
     fca11_values["CR_FCA_ChkSum"] = hyundai_checksum(fca11_dat[:7])
@@ -198,6 +198,7 @@ def create_acc_opt(packer):
   }
   commands.append(packer.make_can_msg("SCC13", 0, scc13_values))
 
+  # TODO: this needs to be detected and conditionally sent on unsupported long cars
   fca12_values = {
     "FCA_DrvSetState": 2,
     "FCA_USM": 1,  # AEB disabled
