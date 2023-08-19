@@ -32,7 +32,7 @@ public:
 
   QString newMsgName(const MessageId &id);
   QString newSignalName(const MessageId &id);
-  const QList<uint8_t>& mask(const MessageId &id);
+  const std::vector<uint8_t>& mask(const MessageId &id);
 
   const std::map<uint32_t, cabana::Msg> &getMessages(uint8_t source);
   cabana::Msg *msg(const MessageId &id);
@@ -57,6 +57,7 @@ signals:
   void msgUpdated(MessageId id);
   void msgRemoved(MessageId id);
   void DBCFileChanged();
+  void maskUpdated();
 
 private:
   std::map<int, std::shared_ptr<DBCFile>> dbc_files;

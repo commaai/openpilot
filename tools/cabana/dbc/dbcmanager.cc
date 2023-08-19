@@ -58,6 +58,7 @@ void DBCManager::addSignal(const MessageId &id, const cabana::Signal &sig) {
   if (auto m = msg(id)) {
     if (auto s = m->addSignal(sig)) {
       emit signalAdded(id, s);
+      emit maskUpdated();
     }
   }
 }
@@ -66,6 +67,7 @@ void DBCManager::updateSignal(const MessageId &id, const QString &sig_name, cons
   if (auto m = msg(id)) {
     if (auto s = m->updateSignal(sig_name, sig)) {
       emit signalUpdated(s);
+      emit maskUpdated();
     }
   }
 }
@@ -75,6 +77,7 @@ void DBCManager::removeSignal(const MessageId &id, const QString &sig_name) {
     if (auto s = m->sig(sig_name)) {
       emit signalRemoved(s);
       m->removeSignal(sig_name);
+      emit maskUpdated();
     }
   }
 }
@@ -91,6 +94,7 @@ void DBCManager::removeMsg(const MessageId &id) {
   assert(dbc_file);  // This should be impossible
   dbc_file->removeMsg(id);
   emit msgRemoved(id);
+  emit maskUpdated();
 }
 
 QString DBCManager::newMsgName(const MessageId &id) {
@@ -102,8 +106,8 @@ QString DBCManager::newSignalName(const MessageId &id) {
   return m ? m->newSignalName() : "";
 }
 
-const QList<uint8_t> &DBCManager::mask(const MessageId &id) {
-  static QList<uint8_t> empty_mask;
+const std::vector<uint8_t> &DBCManager::mask(const MessageId &id) {
+  static std::vector<uint8_t> empty_mask;
   auto m = msg(id);
   return m ? m->mask : empty_mask;
 }

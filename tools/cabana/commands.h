@@ -37,6 +37,7 @@ public:
 
 private:
   const MessageId id;
+  bool msg_created = false;
   cabana::Signal signal = {};
 };
 

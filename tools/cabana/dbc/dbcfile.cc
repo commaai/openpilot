@@ -117,6 +117,7 @@ void DBCFile::parse(const QString &content) {
       current_msg->address = address;
       current_msg->name = match.captured(2);
       current_msg->size = match.captured(3).toULong();
+      current_msg->transmitter = match.captured(4).trimmed();
     } else if (line.startsWith("SG_ ")) {
       int offset = 0;
       auto match = sg_regexp.match(line);
@@ -136,7 +137,6 @@ void DBCFile::parse(const QString &content) {
           dbc_assert(++multiplexor_cnt < 2, "Multiple multiplexor");
           s.type = cabana::Signal::Type::Multiplexor;
         } else {
-          dbc_assert(multiplexor_cnt == 1, "No multiplexor");
           s.type = cabana::Signal::Type::Multiplexed;
           s.multiplex_value = indicator.mid(1).toInt();
         }
@@ -148,16 +148,11 @@ void DBCFile::parse(const QString &content) {
       s.is_signed = match.captured(offset + 5) == "-";
       s.factor = match.captured(offset + 6).toDouble();
       s.offset = match.captured(offset + 7).toDouble();
-      if (s.is_little_endian) {
-        s.lsb = s.start_bit;
-        s.msb = s.start_bit + s.size - 1;
-      } else {
-        s.lsb = bigEndianStartBitsIndex(bigEndianBitIndex(s.start_bit) + s.size - 1);
-        s.msb = s.start_bit;
-      }
       s.min = match.captured(8 + offset).toDouble();
       s.max = match.captured(9 + offset).toDouble();
       s.unit = match.captured(10 + offset);
+      s.receiver_name = match.captured(11 + offset).trimmed();
+
       current_msg->sigs.push_back(new cabana::Signal(s));
     } else if (line.startsWith("VAL_ ")) {
       auto match = val_regexp.match(line);
@@ -203,7 +198,7 @@ void DBCFile::parse(const QString &content) {
 QString DBCFile::generateDBC() {
   QString dbc_string, signal_comment, message_comment, val_desc;
   for (const auto &[address, m] : msgs) {
-    dbc_string += QString("BO_ %1 %2: %3 XXX\n").arg(address).arg(m.name).arg(m.size);
+    dbc_string += QString("BO_ %1 %2: %3 %4\n").arg(address).arg(m.name).arg(m.size).arg(m.transmitter.isEmpty() ? "XXX" : m.transmitter);
     if (!m.comment.isEmpty()) {
       message_comment += QString("CM_ BO_ %1 \"%2\";\n").arg(address).arg(m.comment);
     }
@@ -214,7 +209,7 @@ QString DBCFile::generateDBC() {
       } else if (sig->type == cabana::Signal::Type::Multiplexed) {
         multiplexer_indicator = QString("m%1 ").arg(sig->multiplex_value);
       }
-      dbc_string += QString(" SG_ %1 %2: %3|%4@%5%6 (%7,%8) [%9|%10] \"%11\" XXX\n")
+      dbc_string += QString(" SG_ %1 %2: %3|%4@%5%6 (%7,%8) [%9|%10] \"%11\" %12\n")
                         .arg(sig->name)
                         .arg(multiplexer_indicator)
                         .arg(sig->start_bit)
@@ -225,7 +220,8 @@ QString DBCFile::generateDBC() {
                         .arg(doubleToString(sig->offset))
                         .arg(doubleToString(sig->min))
                         .arg(doubleToString(sig->max))
-                        .arg(sig->unit);
+                        .arg(sig->unit)
+                        .arg(sig->receiver_name.isEmpty() ? "XXX" : sig->receiver_name);
       if (!sig->comment.isEmpty()) {
         signal_comment += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(address).arg(sig->name).arg(sig->comment);
       }

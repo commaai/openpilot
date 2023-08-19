@@ -110,14 +110,8 @@ int main(int argc, char *argv[]) {
     if (onroad) {
       auto cs = sm["controlsState"].getControlsState();
       UIStatus status = cs.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
-      if (cs.getAlertStatus() == cereal::ControlsState::AlertStatus::USER_PROMPT) {
-        status = STATUS_WARNING;
-      } else if (cs.getAlertStatus() == cereal::ControlsState::AlertStatus::CRITICAL) {
-        status = STATUS_ALERT;
-      }
-
       auto lp = sm["lateralPlan"].getLateralPlan();
-      if (lp.getLaneChangeState() == cereal::LateralPlan::LaneChangeState::PRE_LANE_CHANGE || status == STATUS_ALERT) {
+      if (lp.getLaneChangeState() == cereal::LateralPlan::LaneChangeState::PRE_LANE_CHANGE) {
         status_bar->blinkingColor(bg_colors[status]);
       } else if (lp.getLaneChangeState() == cereal::LateralPlan::LaneChangeState::LANE_CHANGE_STARTING ||
                  lp.getLaneChangeState() == cereal::LateralPlan::LaneChangeState::LANE_CHANGE_FINISHING) {

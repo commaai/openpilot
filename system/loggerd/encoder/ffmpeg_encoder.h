@@ -15,14 +15,9 @@ extern "C" {
 #include "system/loggerd/loggerd.h"
 
 class FfmpegEncoder : public VideoEncoder {
- public:
-  FfmpegEncoder(const char* filename, CameraType type, int in_width, int in_height, int fps,
-
-                int bitrate, cereal::EncodeIndex::Type codec, int out_width, int out_height,
-                const char* publish_name) :
-                VideoEncoder(filename, type, in_width, in_height, fps, bitrate, cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS, out_width, out_height, publish_name) { encoder_init(); }
+public:
+  FfmpegEncoder(const EncoderInfo &encoder_info, int in_width, int in_height);
   ~FfmpegEncoder();
-  void encoder_init();
   int encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra);
   void encoder_open(const char* path);
   void encoder_close();

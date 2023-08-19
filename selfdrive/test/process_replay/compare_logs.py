@@ -60,7 +60,7 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
   default_tolerance = EPSILON if tolerance is None else tolerance
 
   log1, log2 = (
-    sorted((m for m in log if m.which() not in ignore_msgs), key=lambda m: (m.logMonoTime, m.which()))
+    [m for m in log if m.which() not in ignore_msgs]
     for log in (log1, log2)
   )
 
@@ -70,7 +70,7 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
     raise Exception(f"logs are not same length: {len(log1)} VS {len(log2)}\n\t\t{cnt1}\n\t\t{cnt2}")
 
   diff = []
-  for msg1, msg2 in zip(log1, log2):
+  for msg1, msg2 in zip(log1, log2, strict=True):
     if msg1.which() != msg2.which():
       raise Exception("msgs not aligned between logs")
 

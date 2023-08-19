@@ -92,7 +92,11 @@ int OffroadAlert::refresh() {
     std::string bytes = params.get(key);
     if (bytes.size()) {
       auto doc_par = QJsonDocument::fromJson(bytes.c_str());
-      text = doc_par["text"].toString();
+      text = tr(doc_par["text"].toString().toUtf8().data());
+      auto extra = doc_par["extra"].toString();
+      if (!extra.isEmpty()) {
+        text = text.arg(extra);
+      }
     }
     label->setText(text);
     label->setVisible(!text.isEmpty());

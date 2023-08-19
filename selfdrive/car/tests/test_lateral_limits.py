@@ -95,7 +95,8 @@ if __name__ == "__main__":
                 _jerks["down_jerk"] > MAX_LAT_JERK_DOWN
     violation_str = " - VIOLATION" if violation else ""
 
-    print(f"{car_model:{max_car_model_len}} - up jerk: {round(_jerks['up_jerk'], 2):5} m/s^3, down jerk: {round(_jerks['down_jerk'], 2):5} m/s^3{violation_str}")
+    print(f"{car_model:{max_car_model_len}} - up jerk: {round(_jerks['up_jerk'], 2):5} \
+              m/s^3, down jerk: {round(_jerks['down_jerk'], 2):5} m/s^3{violation_str}")
 
   # exit with test result
   sys.exit(not result.result.wasSuccessful())

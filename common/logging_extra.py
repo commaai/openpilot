@@ -65,7 +65,7 @@ class SwagFormatter(logging.Formatter):
 
     return record_dict
 
-  def format(self, record):
+  def format(self, record): # noqa: A003
     if self.swaglogger is None:
       raise Exception("must set swaglogger before calling format()")
     return json_robust_dumps(self.format_dict(record))
@@ -95,7 +95,7 @@ class SwagLogFileFormatter(SwagFormatter):
       k += "$a"
     return k, v
 
-  def format(self, record):
+  def format(self, record): # noqa: A003
     if isinstance(record, str):
       v = json.loads(record)
     else:
