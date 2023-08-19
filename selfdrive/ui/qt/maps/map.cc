@@ -190,6 +190,7 @@ void MapWindow::updateState(const UIState &s) {
     QVariantMap carPosSource;
     carPosSource["type"] = "geojson";
     carPosSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature1);
+    if(last_bearing) m_map->setLayoutProperty("carPosLayer", "icon-rotate", (double)*last_bearing-m_map->bearing());
     m_map->updateSource("carPosSource", carPosSource);
   }
 
