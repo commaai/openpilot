@@ -53,8 +53,7 @@ private:
 
   // Panning
   QPointF m_lastPos;
-  int pan_counter = 0;
-  int zoom_counter = 0;
+  int interaction_counter = 0;
 
   // Position
   std::optional<QMapbox::Coordinate> last_valid_nav_dest;
