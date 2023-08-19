@@ -46,7 +46,6 @@ void DriverViewScene::showEvent(QShowEvent* event) {
 
 void DriverViewScene::hideEvent(QHideEvent* event) {
   params.putBool("IsDriverViewEnabled", false);
-  device()->resetInteractiveTimeout();
 }
 
 void DriverViewScene::frameUpdated() {
