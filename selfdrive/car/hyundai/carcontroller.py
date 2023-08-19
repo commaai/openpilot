@@ -106,12 +106,13 @@ class CarController:
     if self.CP.carFingerprint in CANFD_CAR:
       hda2 = self.CP.flags & HyundaiFlags.CANFD_HDA2
       hda2_long = hda2 and self.CP.openpilotLongitudinalControl
+      hda2_alt_steering = self.CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING
 
       # steering control
       can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_steer))
 
       # disable LFA on HDA2
-      if self.frame % 5 == 0 and hda2:
+      if self.frame % 5 == 0 and hda2 and not hda2_alt_steering:
         can_sends.append(hyundaicanfd.create_cam_0x2a4(self.packer, self.CAN, CS.cam_0x2a4))
 
       # LFA and HDA icons
