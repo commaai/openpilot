@@ -77,7 +77,7 @@ void Networking::refresh() {
   an->refresh();
 }
 
-void Networking::connectToNetwork(const Network &n) {
+void Networking::connectToNetwork(const Network n) {
   if (wifi->isKnownConnection(n.ssid)) {
     wifi->activateWifiConnection(n.ssid);
     wifiWidget->refresh();
@@ -310,7 +310,7 @@ WifiItem *WifiUI::getItem(int n) {
   auto item = n < wifi_items.size() ? wifi_items[n] : wifi_items.emplace_back(new WifiItem(tr("CONNECTING..."), tr("FORGET")));
   if (!item->parentWidget()) {
     QObject::connect(item, &WifiItem::connectToNetwork, this, &WifiUI::connectToNetwork);
-    QObject::connect(item, &WifiItem::forgotNetwork, [this](const Network &n) {
+    QObject::connect(item, &WifiItem::forgotNetwork, [this](const Network n) {
       if (ConfirmationDialog::confirm(tr("Forget Wi-Fi Network \"%1\"?").arg(QString::fromUtf8(n.ssid)), tr("Forget"), this))
         wifi->forgetConnection(n.ssid);
     });

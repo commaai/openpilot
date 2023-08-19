@@ -1,119 +1,119 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="de_DE">
+<TS version="2.1" language="tr_TR">
 <context>
     <name>AbstractAlert</name>
     <message>
         <source>Close</source>
-        <translation>Schließen</translation>
+        <translation>Kapat</translation>
     </message>
     <message>
         <source>Snooze Update</source>
-        <translation>Update pausieren</translation>
+        <translation>Güncellemeyi sessize al</translation>
     </message>
     <message>
         <source>Reboot and Update</source>
-        <translation>Aktualisieren und neu starten</translation>
+        <translation>Güncelle ve Yeniden başlat</translation>
     </message>
 </context>
 <context>
     <name>AdvancedNetworking</name>
     <message>
         <source>Back</source>
-        <translation>Zurück</translation>
+        <translation>Geri dön</translation>
     </message>
     <message>
         <source>Enable Tethering</source>
-        <translation>Tethering aktivieren</translation>
+        <translation>Kişisel erişim noktasını aç</translation>
     </message>
     <message>
         <source>Tethering Password</source>
-        <translation>Tethering Passwort</translation>
+        <translation>Kişisel erişim noktasının parolası</translation>
     </message>
     <message>
         <source>EDIT</source>
-        <translation>ÄNDERN</translation>
+        <translation>DÜZENLE</translation>
     </message>
     <message>
         <source>Enter new tethering password</source>
-        <translation>Neues tethering Passwort eingeben</translation>
+        <translation>Erişim noktasına yeni bir sonraki başlatılışında çekilir. parola belirleyin.</translation>
     </message>
     <message>
         <source>IP Address</source>
-        <translation>IP Adresse</translation>
+        <translation>IP Adresi</translation>
     </message>
     <message>
         <source>Enable Roaming</source>
-        <translation>Roaming aktivieren</translation>
+        <translation>Hücresel veri aç</translation>
     </message>
     <message>
         <source>APN Setting</source>
-        <translation>APN Einstellungen</translation>
+        <translation>APN Ayarları</translation>
     </message>
     <message>
         <source>Enter APN</source>
-        <translation>APN eingeben</translation>
+        <translation>APN Gir</translation>
     </message>
     <message>
         <source>leave blank for automatic configuration</source>
-        <translation>für automatische Konfiguration leer lassen</translation>
+        <translation>otomatik yapılandırma için boş bırakın</translation>
     </message>
     <message>
         <source>Cellular Metered</source>
-        <translation>Getaktete Verbindung</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Prevent large data uploads when on a metered connection</source>
-        <translation>Hochladen großer Dateien über getaktete Verbindungen unterbinden</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>AnnotatedCameraWidget</name>
     <message>
         <source>km/h</source>
-        <translation>km/h</translation>
+        <translation type="unfinished">km/h</translation>
     </message>
     <message>
         <source>mph</source>
-        <translation>mph</translation>
+        <translation type="unfinished">mph</translation>
     </message>
     <message>
         <source>MAX</source>
-        <translation>MAX</translation>
+        <translation type="unfinished">MAX</translation>
     </message>
     <message>
         <source>SPEED</source>
-        <translation>Geschwindigkeit</translation>
+        <translation type="unfinished">HIZ</translation>
     </message>
     <message>
         <source>LIMIT</source>
-        <translation>LIMIT</translation>
+        <translation type="unfinished">LİMİT</translation>
     </message>
 </context>
 <context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
-        <translation>Ok</translation>
+        <translation>Tamam</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Abbrechen</translation>
+        <translation>Vazgeç</translation>
     </message>
 </context>
 <context>
     <name>DeclinePage</name>
     <message>
         <source>You must accept the Terms and Conditions in order to use openpilot.</source>
-        <translation>Du musst die Nutzungsbedingungen akzeptieren, um Openpilot zu benutzen.</translation>
+        <translation>Openpilotu kullanmak için Kullanıcı Koşullarını kabul etmelisiniz.</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation>Zurück</translation>
+        <translation>Geri</translation>
     </message>
     <message>
         <source>Decline, uninstall %1</source>
-        <translation>Ablehnen, deinstallieren %1</translation>
+        <translation>Reddet, Kurulumu kaldır. %1</translation>
     </message>
 </context>
 <context>
@@ -131,10 +131,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>No %1 location set</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>home</source>
         <translation type="unfinished"></translation>
     </message>
@@ -142,155 +138,159 @@
         <source>work</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>No %1 location set</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
-        <translation>Dongle ID</translation>
+        <translation>Adaptör ID</translation>
     </message>
     <message>
         <source>N/A</source>
-        <translation>Nicht verfügbar</translation>
+        <translation>N/A</translation>
     </message>
     <message>
         <source>Serial</source>
-        <translation>Seriennummer</translation>
+        <translation>Seri Numara</translation>
     </message>
     <message>
         <source>Driver Camera</source>
-        <translation>Fahrerkamera</translation>
+        <translation>Sürücü Kamerası</translation>
     </message>
     <message>
         <source>PREVIEW</source>
-        <translation>VORSCHAU</translation>
+        <translation>ÖN İZLEME</translation>
     </message>
     <message>
         <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
-        <translation>Vorschau der auf den Fahrer gerichteten Kamera, um sicherzustellen, dass die Fahrerüberwachung eine gute Sicht hat. (Fahrzeug muss aus sein)</translation>
+        <translation>Sürücü kamerasının görüş açısını test etmek için kamerayı önizleyin (Araç kapalı olmalıdır.) </translation>
     </message>
     <message>
         <source>Reset Calibration</source>
-        <translation>Neu kalibrieren</translation>
+        <translation>Kalibrasyonu sıfırla</translation>
     </message>
     <message>
         <source>RESET</source>
-        <translation>RESET</translation>
+        <translation>SIFIRLA</translation>
     </message>
     <message>
         <source>Are you sure you want to reset calibration?</source>
-        <translation>Bist du sicher, dass du die Kalibrierung zurücksetzen möchtest?</translation>
+        <translation>Kalibrasyon ayarını sıfırlamak istediğinizden emin misiniz? </translation>
     </message>
     <message>
         <source>Review Training Guide</source>
-        <translation>Trainingsanleitung wiederholen</translation>
+        <translation>Eğitim kılavuzunu inceleyin</translation>
     </message>
     <message>
         <source>REVIEW</source>
-        <translation>TRAINING</translation>
+        <translation>GÖZDEN GEÇİR</translation>
     </message>
     <message>
         <source>Review the rules, features, and limitations of openpilot</source>
-        <translation>Wiederhole die Regeln, Fähigkeiten und Limitierungen von Openpilot</translation>
+        <translation>openpilot sisteminin kurallarını ve sınırlamalarını gözden geçirin.</translation>
     </message>
     <message>
         <source>Are you sure you want to review the training guide?</source>
-        <translation>Bist du sicher, dass du die Trainingsanleitung wiederholen möchtest?</translation>
+        <translation>Eğitim kılavuzunu incelemek istediğinizden emin misiniz?</translation>
     </message>
     <message>
         <source>Regulatory</source>
-        <translation>Rechtliche Hinweise</translation>
+        <translation>Mevzuat</translation>
     </message>
     <message>
         <source>VIEW</source>
-        <translation>ANSEHEN</translation>
+        <translation>BAK</translation>
     </message>
     <message>
         <source>Change Language</source>
-        <translation>Sprache ändern</translation>
+        <translation>Dili değiştir</translation>
     </message>
     <message>
         <source>CHANGE</source>
-        <translation>ÄNDERN</translation>
+        <translation>DEĞİŞTİR</translation>
     </message>
     <message>
         <source>Select a language</source>
-        <translation>Sprache wählen</translation>
+        <translation>Dil seçin</translation>
     </message>
     <message>
         <source>Reboot</source>
-        <translation>Neustart</translation>
+        <translation>Yeniden başlat</translation>
     </message>
     <message>
         <source>Power Off</source>
-        <translation>Ausschalten</translation>
+        <translation>Sistemi kapat</translation>
     </message>
     <message>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>Damit Openpilot funktioniert, darf die Installationsposition nicht mehr als 4° nach rechts/links, 5° nach oben und 8° nach unten abweichen. Openpilot kalibriert sich durchgehend, ein Zurücksetzen ist selten notwendig.</translation>
+        <translation>openpilot, cihazın 4° sola veya 5° yukarı yada 8° aşağı bakıcak şekilde monte edilmesi gerekmektedir. openpilot sürekli kendisini kalibre edilmektedir ve nadiren sıfırlama gerebilir.</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
-        <translation> Deine Geräteausrichtung ist %1° %2 und %3° %4.</translation>
+        <translation> Cihazınız %1° %2 ve %3° %4 yönünde ayarlı</translation>
     </message>
     <message>
         <source>down</source>
-        <translation>unten</translation>
+        <translation>aşağı</translation>
     </message>
     <message>
         <source>up</source>
-        <translation>oben</translation>
+        <translation>yukarı</translation>
     </message>
     <message>
         <source>left</source>
-        <translation>links</translation>
+        <translation>sol</translation>
     </message>
     <message>
         <source>right</source>
-        <translation>rechts</translation>
+        <translation>sağ</translation>
     </message>
     <message>
         <source>Are you sure you want to reboot?</source>
-        <translation>Bist du sicher, dass du das Gerät neu starten möchtest?</translation>
+        <translation>Cihazı Tekrar başlatmak istediğinizden eminmisiniz?</translation>
     </message>
     <message>
         <source>Disengage to Reboot</source>
-        <translation>Für Neustart deaktivieren</translation>
+        <translation>Bağlantıyı kes ve Cihazı Yeniden başlat</translation>
     </message>
     <message>
         <source>Are you sure you want to power off?</source>
-        <translation>Bist du sicher, dass du das Gerät ausschalten möchtest?</translation>
+        <translation>Cihazı kapatmak istediğizden eminmisiniz?</translation>
     </message>
     <message>
         <source>Disengage to Power Off</source>
-        <translation>Zum Ausschalten deaktivieren</translation>
+        <translation>Bağlantıyı kes ve Cihazı kapat</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>Zurücksetzen</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Review</source>
-        <translation>Überprüfen</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>DriveStats</name>
     <message>
         <source>Drives</source>
-        <translation>Fahrten</translation>
+        <translation>Sürücüler</translation>
     </message>
     <message>
         <source>Hours</source>
-        <translation>Stunden</translation>
+        <translation>Saat</translation>
     </message>
     <message>
         <source>ALL TIME</source>
-        <translation>Gesamtzeit</translation>
+        <translation>TÜM ZAMANLAR</translation>
     </message>
     <message>
         <source>PAST WEEK</source>
-        <translation>Letzte Woche</translation>
+        <translation>GEÇEN HAFTA</translation>
     </message>
     <message>
         <source>KM</source>
@@ -298,38 +298,37 @@
     </message>
     <message>
         <source>Miles</source>
-        <translation>Meilen</translation>
+        <translation>Mil</translation>
     </message>
 </context>
 <context>
     <name>DriverViewScene</name>
     <message>
         <source>camera starting</source>
-        <translation>Kamera startet</translation>
+        <translation>kamera başlatılıyor</translation>
     </message>
 </context>
 <context>
     <name>ExperimentalModeButton</name>
     <message>
         <source>EXPERIMENTAL MODE ON</source>
-        <translation>EXPERIMENTELLER MODUS AN</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>CHILL MODE ON</source>
-        <translation>ENTSPANNTER MODUS AN</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>InputDialog</name>
     <message>
         <source>Cancel</source>
-        <translation>Abbrechen</translation>
+        <translation>Kapat</translation>
     </message>
     <message numerus="yes">
         <source>Need at least %n character(s)!</source>
         <translation>
-            <numerusform>Mindestens %n Buchstabe benötigt!</numerusform>
-            <numerusform>Mindestens %n Buchstaben benötigt!</numerusform>
+            <numerusform>En az %n karakter gerekli!</numerusform>
         </translation>
     </message>
 </context>
@@ -337,22 +336,22 @@
     <name>Installer</name>
     <message>
         <source>Installing...</source>
-        <translation>Installiere...</translation>
+        <translation>Yükleniyor...</translation>
     </message>
 </context>
 <context>
     <name>MapETA</name>
     <message>
         <source>eta</source>
-        <translation>Ankunft</translation>
+        <translation>tahmini varış süresi</translation>
     </message>
     <message>
         <source>min</source>
-        <translation>min</translation>
+        <translation>dk</translation>
     </message>
     <message>
         <source>hr</source>
-        <translation>std</translation>
+        <translation>saat</translation>
     </message>
 </context>
 <context>
@@ -370,11 +369,11 @@
     <name>MapWindow</name>
     <message>
         <source>Map Loading</source>
-        <translation>Karte wird geladen</translation>
+        <translation>Harita yükleniyor</translation>
     </message>
     <message>
         <source>Waiting for GPS</source>
-        <translation>Warten auf GPS</translation>
+        <translation>GPS verisi bekleniyor...</translation>
     </message>
     <message>
         <source>Waiting for route</source>
@@ -385,34 +384,38 @@
     <name>MultiOptionDialog</name>
     <message>
         <source>Select</source>
-        <translation>Auswählen</translation>
+        <translation>Seç</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Abbrechen</translation>
+        <translation>İptal et</translation>
     </message>
 </context>
 <context>
     <name>Networking</name>
     <message>
         <source>Advanced</source>
-        <translation>Erweitert</translation>
+        <translation>Gelişmiş Seçenekler</translation>
     </message>
     <message>
         <source>Enter password</source>
-        <translation>Passwort eingeben</translation>
+        <translation>Parolayı girin</translation>
     </message>
     <message>
         <source>for &quot;%1&quot;</source>
-        <translation>für &quot;%1&quot;</translation>
+        <translation>için &quot;%1&quot;</translation>
     </message>
     <message>
         <source>Wrong password</source>
-        <translation>Falsches Passwort</translation>
+        <translation>Yalnış parola</translation>
     </message>
 </context>
 <context>
     <name>OffroadAlert</name>
+    <message>
+        <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won&apos;t engage in %1</source>
         <translation type="unfinished"></translation>
@@ -462,84 +465,80 @@
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>OffroadHome</name>
     <message>
         <source>UPDATE</source>
-        <translation>Aktualisieren</translation>
+        <translation>GÜNCELLE</translation>
     </message>
     <message>
         <source> ALERTS</source>
-        <translation> HINWEISE</translation>
+        <translation> UYARILAR</translation>
     </message>
     <message>
         <source> ALERT</source>
-        <translation> HINWEIS</translation>
+        <translation> UYARI</translation>
     </message>
 </context>
 <context>
     <name>PairingPopup</name>
     <message>
         <source>Pair your device to your comma account</source>
-        <translation>Verbinde dein Gerät mit deinem comma Konto</translation>
+        <translation>comma.ai hesabınız ile cihazı eşleştirin</translation>
     </message>
     <message>
         <source>Go to https://connect.comma.ai on your phone</source>
-        <translation>Gehe zu https://connect.comma.ai auf deinem Handy</translation>
+        <translation>Telefonuzdan https://connect.comma.ai sitesine gidin</translation>
     </message>
     <message>
         <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
-        <translation>Klicke auf &quot;neues Gerät hinzufügen&quot; und scanne den QR code rechts</translation>
+        <translation>Yeni cihaz eklemek için sağdaki QR kodunu okutun</translation>
     </message>
     <message>
         <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
-        <translation>Füge connect.comma.ai als Lesezeichen auf deinem Homescreen hinzu um es wie eine App zu verwenden</translation>
+        <translation>Uygulama gibi kullanmak için connect.comma.ai sitesini yer işaretlerine ekleyin.</translation>
     </message>
 </context>
 <context>
     <name>ParamControl</name>
     <message>
-        <source>Cancel</source>
-        <translation>Abbrechen</translation>
+        <source>Enable</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enable</source>
-        <translation>Aktivieren</translation>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>PrimeAdWidget</name>
     <message>
         <source>Upgrade Now</source>
-        <translation>Jetzt abonieren</translation>
+        <translation>Hemen yükselt</translation>
     </message>
     <message>
         <source>Become a comma prime member at connect.comma.ai</source>
-        <translation>Werde Comma Prime Mitglied auf connect.comma.ai</translation>
+        <translation>connect.comma.ai üzerinden comma prime üyesi olun</translation>
     </message>
     <message>
         <source>PRIME FEATURES:</source>
-        <translation>PRIME FUNKTIONEN:</translation>
+        <translation>PRIME ABONELİĞİNİN ÖZELLİKLERİ:</translation>
     </message>
     <message>
         <source>Remote access</source>
-        <translation>Fernzugriff</translation>
+        <translation>Uzaktan erişim</translation>
     </message>
     <message>
         <source>24/7 LTE connectivity</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
+        <source>1 year of drive storage</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>1 year of drive storage</source>
+        <source>Turn-by-turn navigation</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -547,7 +546,7 @@
     <name>PrimeUserWidget</name>
     <message>
         <source>✓ SUBSCRIBED</source>
-        <translation>✓ ABBONIERT</translation>
+        <translation>✓ ABONE</translation>
     </message>
     <message>
         <source>comma prime</source>
@@ -558,15 +557,15 @@
     <name>QObject</name>
     <message>
         <source>Reboot</source>
-        <translation>Neustart</translation>
+        <translation>Yeniden başlat</translation>
     </message>
     <message>
         <source>Exit</source>
-        <translation>Verlassen</translation>
+        <translation>Çık</translation>
     </message>
     <message>
         <source>dashcam</source>
-        <translation>dashcam</translation>
+        <translation>araç yol kamerası</translation>
     </message>
     <message>
         <source>openpilot</source>
@@ -575,22 +574,19 @@
     <message numerus="yes">
         <source>%n minute(s) ago</source>
         <translation>
-            <numerusform>vor %n Minute</numerusform>
-            <numerusform>vor %n Minuten</numerusform>
+            <numerusform>%n dakika önce</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n hour(s) ago</source>
         <translation>
-            <numerusform>vor %n Stunde</numerusform>
-            <numerusform>vor %n Stunden</numerusform>
+            <numerusform>%n saat önce</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n day(s) ago</source>
         <translation>
-            <numerusform>vor %n Tag</numerusform>
-            <numerusform>vor %n Tagen</numerusform>
+            <numerusform>%n gün önce</numerusform>
         </translation>
     </message>
     <message>
@@ -603,41 +599,42 @@
     </message>
     <message>
         <source>mi</source>
-        <translation>mi</translation>
+        <translation>mil</translation>
     </message>
     <message>
         <source>ft</source>
-        <translation>fuß</translation>
+        <translation>ft</translation>
     </message>
 </context>
 <context>
     <name>Reset</name>
     <message>
         <source>Reset failed. Reboot to try again.</source>
-        <translation>Zurücksetzen fehlgeschlagen. Starte das Gerät neu und versuche es wieder.</translation>
+        <translation>Sıfırlama başarız oldu. Cihazı yeniden başlatın ve tekrar deneyin.</translation>
     </message>
     <message>
         <source>Are you sure you want to reset your device?</source>
-        <translation>Bist du sicher, dass du das Gerät auf Werkseinstellungen zurücksetzen möchtest?</translation>
+        <translation>Cihazı sıfırlamak istediğinizden eminmisiniz ?</translation>
     </message>
     <message>
         <source>System Reset</source>
-        <translation>System auf Werkseinstellungen zurücksetzen</translation>
+        <translation>Sistemi sıfırla</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Abbrechen</translation>
+        <translation>İptal</translation>
     </message>
     <message>
         <source>Reboot</source>
-        <translation>Neustart</translation>
+        <translation>Yeniden başlat</translation>
     </message>
     <message>
         <source>Confirm</source>
-        <translation>Bestätigen</translation>
+        <translation>Onayla</translation>
     </message>
     <message>
-        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
+        <source>Resetting device...
+This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -645,8 +642,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Resetting device...
-This may take up to a minute.</source>
+        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -658,97 +654,97 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Device</source>
-        <translation>Gerät</translation>
+        <translation>Cihaz</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation>Netzwerk</translation>
+        <translation>Ağ</translation>
     </message>
     <message>
         <source>Toggles</source>
-        <translation>Schalter</translation>
+        <translation>Değiştirme</translation>
     </message>
     <message>
         <source>Software</source>
-        <translation>Software</translation>
+        <translation>Yazılım</translation>
     </message>
 </context>
 <context>
     <name>Setup</name>
     <message>
         <source>WARNING: Low Voltage</source>
-        <translation>Warnung: Batteriespannung niedrig</translation>
+        <translation>UYARI: Düşük voltaj</translation>
     </message>
     <message>
         <source>Power your device in a car with a harness or proceed at your own risk.</source>
-        <translation>Versorge dein Gerät über einen Kabelbaum im Auto mit Strom, oder fahre auf eigene Gefahr fort.</translation>
+        <translation>Cihazınızı emniyet kemeri olan bir arabada çalıştırın veya riski kabul ederek devam edin.</translation>
     </message>
     <message>
         <source>Power off</source>
-        <translation>Ausschalten</translation>
+        <translation>Sistemi kapat</translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation>Fortsetzen</translation>
+        <translation>Devam et</translation>
     </message>
     <message>
         <source>Getting Started</source>
-        <translation>Loslegen</translation>
+        <translation>Başlarken</translation>
     </message>
     <message>
         <source>Before we get on the road, let’s finish installation and cover some details.</source>
-        <translation>Bevor wir uns auf die Straße begeben, lass uns die Installation fertigstellen und einige Details prüfen.</translation>
+        <translation>Yola çıkmadan önce kurulumu bitirin ve bazı detayları gözden geçirin..</translation>
     </message>
     <message>
         <source>Connect to Wi-Fi</source>
-        <translation>Mit WLAN verbinden</translation>
+        <translation>Wi-Fi ile bağlan</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation>Zurück</translation>
+        <translation>Geri</translation>
     </message>
     <message>
         <source>Continue without Wi-Fi</source>
-        <translation>Ohne WLAN fortsetzen</translation>
+        <translation>Wi-Fi bağlantısı olmadan devam edin</translation>
     </message>
     <message>
         <source>Waiting for internet</source>
-        <translation>Auf Internet warten</translation>
+        <translation>İnternet bağlantısı bekleniyor.</translation>
     </message>
     <message>
         <source>Enter URL</source>
-        <translation>URL eingeben</translation>
+        <translation>URL girin</translation>
     </message>
     <message>
         <source>for Custom Software</source>
-        <translation>für spezifische Software</translation>
+        <translation>özel yazılım için</translation>
     </message>
     <message>
         <source>Downloading...</source>
-        <translation>Herunterladen...</translation>
+        <translation>İndiriliyor...</translation>
     </message>
     <message>
         <source>Download Failed</source>
-        <translation>Herunterladen fehlgeschlagen</translation>
+        <translation>İndirme başarısız.</translation>
     </message>
     <message>
         <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>Stelle sicher, dass die eingegebene URL korrekt ist und dein Gerät eine stabile Internetverbindung hat.</translation>
+        <translation>Girilen URL nin geçerli olduğundan ve cihazın internet bağlantısının olduğunu kontrol edin</translation>
     </message>
     <message>
         <source>Reboot device</source>
-        <translation>Gerät neustarten</translation>
+        <translation>Cihazı yeniden başlat</translation>
     </message>
     <message>
         <source>Start over</source>
-        <translation>Von neuem beginnen</translation>
-    </message>
-    <message>
-        <source>No custom software found at this URL.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zacznij od początku</translation>
     </message>
     <message>
         <source>Something went wrong. Reboot the device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No custom software found at this URL.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -756,59 +752,58 @@ This may take up to a minute.</source>
     <name>SetupWidget</name>
     <message>
         <source>Finish Setup</source>
-        <translation>Einrichtung beenden</translation>
+        <translation>Kurulumu bitir</translation>
     </message>
     <message>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation>Koppele dein Gerät mit Comma Connect (connect.comma.ai) und sichere dir dein Comma Prime Angebot.</translation>
+        <translation>Cihazınızı comma connect (connect.comma.ai) ile eşleştirin ve comma prime aboneliğine göz atın.</translation>
     </message>
     <message>
         <source>Pair device</source>
-        <translation>Gerät koppeln</translation>
+        <translation>Cihazı eşleştirme</translation>
     </message>
 </context>
 <context>
     <name>Sidebar</name>
     <message>
         <source>CONNECT</source>
-        <translatorcomment>This is a brand/service name for comma connect, don&apos;t translate</translatorcomment>
-        <translation>CONNECT</translation>
+        <translation>BAĞLANTI</translation>
     </message>
     <message>
         <source>OFFLINE</source>
-        <translation>OFFLINE</translation>
+        <translation>ÇEVRİMDIŞI</translation>
     </message>
     <message>
         <source>ONLINE</source>
-        <translation>ONLINE</translation>
+        <translation>ÇEVRİMİÇİ</translation>
     </message>
     <message>
         <source>ERROR</source>
-        <translation>FEHLER</translation>
+        <translation>HATA</translation>
     </message>
     <message>
         <source>TEMP</source>
-        <translation>TEMP</translation>
+        <translation>SICAKLIK</translation>
     </message>
     <message>
         <source>HIGH</source>
-        <translation>HOCH</translation>
+        <translation>YÜKSEK</translation>
     </message>
     <message>
         <source>GOOD</source>
-        <translation>GUT</translation>
+        <translation>İYİ</translation>
     </message>
     <message>
         <source>OK</source>
-        <translation>OK</translation>
+        <translation>TAMAM</translation>
     </message>
     <message>
         <source>VEHICLE</source>
-        <translation>FAHRZEUG</translation>
+        <translation>ARAÇ</translation>
     </message>
     <message>
         <source>NO</source>
-        <translation>KEIN</translation>
+        <translation>HAYIR</translation>
     </message>
     <message>
         <source>PANDA</source>
@@ -820,7 +815,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>SEARCH</source>
-        <translation>SUCHEN</translation>
+        <translation>ARA</translation>
     </message>
     <message>
         <source>--</source>
@@ -828,11 +823,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Wi-Fi</source>
-        <translation>WLAN</translation>
+        <translation>Wi-FI</translation>
     </message>
     <message>
         <source>ETH</source>
-        <translation>LAN</translation>
+        <translation>ETH</translation>
     </message>
     <message>
         <source>2G</source>
@@ -854,64 +849,59 @@ This may take up to a minute.</source>
 <context>
     <name>SoftwarePanel</name>
     <message>
-        <source>UNINSTALL</source>
-        <translatorcomment>Too long for UI</translatorcomment>
-        <translation>DEINSTALL</translation>
+        <source>Uninstall %1</source>
+        <translation>Kaldır %1</translation>
     </message>
     <message>
-        <source>Uninstall %1</source>
-        <translation>Deinstalliere %1</translation>
+        <source>UNINSTALL</source>
+        <translation>KALDIR</translation>
     </message>
     <message>
         <source>Are you sure you want to uninstall?</source>
-        <translation>Bist du sicher, dass du Openpilot entfernen möchtest?</translation>
+        <translation>Kaldırmak istediğinden eminmisin?</translation>
     </message>
     <message>
         <source>CHECK</source>
-        <translation>ÜBERPRÜFEN</translation>
+        <translation>KONTROL ET</translation>
     </message>
     <message>
         <source>Updates are only downloaded while the car is off.</source>
-        <translation>Updates werden nur heruntergeladen, wenn das Auto aus ist.</translation>
-    </message>
-    <message>
-        <source>Current Version</source>
-        <translation>Aktuelle Version</translation>
-    </message>
-    <message>
-        <source>Download</source>
-        <translation>Download</translation>
-    </message>
-    <message>
-        <source>Install Update</source>
-        <translation>Update installieren</translation>
-    </message>
-    <message>
-        <source>INSTALL</source>
-        <translation>INSTALLIEREN</translation>
-    </message>
-    <message>
-        <source>Target Branch</source>
-        <translation>Ziel Branch</translation>
-    </message>
-    <message>
-        <source>SELECT</source>
-        <translation>AUSWÄHLEN</translation>
-    </message>
-    <message>
-        <source>Select a branch</source>
-        <translation>Wähle einen Branch</translation>
-    </message>
-    <message>
-        <source>Uninstall</source>
-        <translation>Deinstallieren</translation>
-    </message>
-    <message>
-        <source>failed to check for update</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>up to date, last checked %1</source>
+        <source>Current Version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install Update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>INSTALL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Target Branch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SELECT</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a branch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Uninstall</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>failed to check for update</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -926,155 +916,129 @@ This may take up to a minute.</source>
         <source>never</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>up to date, last checked %1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SshControl</name>
     <message>
         <source>SSH Keys</source>
-        <translation>SSH Schlüssel</translation>
+        <translation>SSH Anahtarları</translation>
     </message>
     <message>
         <source>Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.</source>
-        <translation>Warnung: Dies ermöglicht SSH zugriff für alle öffentlichen Schlüssel in deinen Github Einstellungen. Gib niemals einen anderen Benutzernamen, als deinen Eigenen an. Comma Angestellte fragen dich niemals danach ihren Github Benutzernamen hinzuzufügen.</translation>
+        <translation>UYARI: Bu, GitHub ayarlarınızdaki tüm ortak anahtarlara SSH erişimi sağlar. Asla kendi kullanıcı adınız dışında bir sonraki başlatılışında çekilir. GitHub kullanıcı adı girmeyin.</translation>
     </message>
     <message>
         <source>ADD</source>
-        <translation>HINZUFÜGEN</translation>
+        <translation>EKLE</translation>
     </message>
     <message>
         <source>Enter your GitHub username</source>
-        <translation>Gib deinen GitHub Benutzernamen ein</translation>
+        <translation>Github kullanıcı adınızı giriniz</translation>
     </message>
     <message>
         <source>LOADING</source>
-        <translation>LADEN</translation>
+        <translation>YÜKLENİYOR</translation>
     </message>
     <message>
         <source>REMOVE</source>
-        <translation>LÖSCHEN</translation>
+        <translation>KALDIR</translation>
     </message>
     <message>
         <source>Username &apos;%1&apos; has no keys on GitHub</source>
-        <translation>Benutzername &apos;%1&apos; hat keine Schlüssel auf GitHub</translation>
+        <translation>Kullanısının &apos;%1&apos; Github erişim anahtarı yok</translation>
     </message>
     <message>
         <source>Request timed out</source>
-        <translation>Zeitüberschreitung der Anforderung</translation>
+        <translation>İstek zaman aşımına uğradı</translation>
     </message>
     <message>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
-        <translation>Benutzername &apos;%1&apos; existiert nicht auf GitHub</translation>
+        <translation>Github kullanıcısı %1 bulunamadı</translation>
     </message>
 </context>
 <context>
     <name>SshToggle</name>
     <message>
         <source>Enable SSH</source>
-        <translation>SSH aktivieren</translation>
+        <translation>SSH aç</translation>
     </message>
 </context>
 <context>
     <name>TermsPage</name>
     <message>
         <source>Terms &amp; Conditions</source>
-        <translation>Benutzungsbedingungen</translation>
+        <translation>Şartlar ve Koşullar</translation>
     </message>
     <message>
         <source>Decline</source>
-        <translation>Ablehnen</translation>
+        <translation>Reddet</translation>
     </message>
     <message>
         <source>Scroll to accept</source>
-        <translation>Scrolle herunter um zu akzeptieren</translation>
+        <translation>Kabul etmek için kaydırın</translation>
     </message>
     <message>
         <source>Agree</source>
-        <translation>Zustimmen</translation>
+        <translation>Kabul et</translation>
     </message>
 </context>
 <context>
     <name>TogglesPanel</name>
     <message>
         <source>Enable openpilot</source>
-        <translation>Openpilot aktivieren</translation>
+        <translation>openpilot&apos;u aktifleştir</translation>
     </message>
     <message>
         <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>Benutze das Openpilot System als adaptiven Tempomaten und Spurhalteassistenten. Deine Aufmerksamkeit ist jederzeit erforderlich, um diese Funktion zu nutzen. Diese Einstellung wird übernommen, wenn das Auto aus ist.</translation>
+        <translation>Ayarlanabilir hız sabitleyici ve şeritte kalma yardımı için openpilot sistemini kullanın. Bu özelliği kullanırken her zaman dikkatli olmanız gerekiyor. Bu ayarın değiştirilmesi için araç kapatılıp açılması gerekiyor.</translation>
     </message>
     <message>
         <source>Enable Lane Departure Warnings</source>
-        <translation>Spurverlassenswarnungen aktivieren</translation>
+        <translation>Şerit ihlali uyarı alın</translation>
     </message>
     <message>
         <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
-        <translation>Erhalte Warnungen, zurück in die Spur zu lenken, wenn dein Auto über eine erkannte Fahrstreifenmarkierung ohne aktivierten Blinker mit mehr als 50 km/h fährt.</translation>
+        <translation>50 km/s (31 mph) hızın üzerinde sürüş sırasında aracınız dönüş sinyali vermeden algılanan bir sonraki başlatılışında çekilir. şerit çizgisi ihlalinde şeride geri dönmek için uyarılar alın.</translation>
     </message>
     <message>
         <source>Use Metric System</source>
-        <translation>Benutze das metrische System</translation>
+        <translation>Metrik sistemi kullan</translation>
     </message>
     <message>
         <source>Display speed in km/h instead of mph.</source>
-        <translation>Zeige die Geschwindigkeit in km/h anstatt von mph.</translation>
+        <translation>Hızı mph yerine km/h şeklinde görüntüleyin.</translation>
     </message>
     <message>
         <source>Record and Upload Driver Camera</source>
-        <translation>Fahrerkamera aufnehmen und hochladen</translation>
+        <translation>Sürücü kamerasını kayıt et.</translation>
     </message>
     <message>
         <source>Upload data from the driver facing camera and help improve the driver monitoring algorithm.</source>
-        <translation>Lade Daten der Fahreraufmerksamkeitsüberwachungskamera hoch, um die Fahreraufmerksamkeitsüberwachungsalgorithmen zu verbessern.</translation>
+        <translation>Sürücüye bakan kamera verisini yükleyin ve Cihazın algoritmasını geliştirmemize yardımcı olun.</translation>
     </message>
     <message>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>Wenn aktiviert, deaktiviert sich Openpilot sobald das Gaspedal betätigt wird.</translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation>Benutze das 24Stunden Format anstatt am/pm</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translatorcomment>Too long for UI</translatorcomment>
-        <translation>Zeige die Karte auf der linken Seite</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation>Zeige die Karte auf der linken Seite der Benutzeroberfläche bei geteilten Bildschirm.</translation>
+        <translation>Aktifleştirilirse eğer gaz pedalına basınca openpilot devre dışı kalır.</translation>
     </message>
     <message>
         <source>Show ETA in 24h Format</source>
-        <translatorcomment>Too long for UI</translatorcomment>
-        <translation>Zeige die Ankunftszeit im 24 Stunden Format</translation>
+        <translation>Tahmini varış süresini 24 saat formatı şeklinde göster</translation>
     </message>
     <message>
-        <source>Experimental Mode</source>
-        <translation>Experimenteller Modus</translation>
+        <source>Use 24h format instead of am/pm</source>
+        <translation>24 saat formatını kullan</translation>
     </message>
     <message>
-        <source>Disengage on Accelerator Pedal</source>
-        <translation>Bei Gasbetätigung ausschalten</translation>
+        <source>Show Map on Left Side of UI</source>
+        <translation>Haritayı arayüzün sol tarafında göster</translation>
     </message>
     <message>
-        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
-        <translation>Openpilot fährt standardmäßig im &lt;b&gt;entspannten Modus&lt;/b&gt;. Der Experimentelle Modus aktiviert&lt;b&gt;Alpha-level Funktionen&lt;/b&gt;, die noch nicht für den entspannten Modus bereit sind. Die experimentellen Funktionen sind die Folgenden:</translation>
-    </message>
-    <message>
-        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
-        <translation>Lass das Fahrmodell Gas und Bremse kontrollieren. Openpilot wird so fahren, wie es dies von einem Menschen erwarten würde; inklusive des Anhaltens für Ampeln und Stoppschildern. Da das Fahrmodell entscheidet wie schnell es fährt stellt die gesetzte Geschwindigkeit lediglich das obere Limit dar. Dies ist ein Alpha-level Funktion. Fehler sind zu erwarten.</translation>
-    </message>
-    <message>
-        <source>New Driving Visualization</source>
-        <translation>Neue Fahrvisualisierung</translation>
-    </message>
-    <message>
-        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
-        <translation>Der experimentelle Modus ist momentan für dieses Auto nicht verfügbar da es den eingebauten adaptiven Tempomaten des Autos benutzt.</translation>
-    </message>
-    <message>
-        <source>openpilot longitudinal control may come in a future update.</source>
-        <translation type="unfinished"></translation>
+        <source>Show map on left side when in split screen view.</source>
+        <translation>Bölünmüş ekran görünümündeyken haritayı sol tarafta göster.</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
@@ -1086,6 +1050,14 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Experimental Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disengage on Accelerator Pedal</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1109,15 +1081,7 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Navigate on openpilot</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1125,11 +1089,39 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Navigate on openpilot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>New Driving Visualization</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1137,35 +1129,35 @@ This may take up to a minute.</source>
     <name>Updater</name>
     <message>
         <source>Update Required</source>
-        <translation>Aktualisierung notwendig</translation>
+        <translation>Güncelleme yapılması gerekli</translation>
     </message>
     <message>
         <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>Eine Aktualisierung des Betriebssystems ist notwendig. Verbinde dein Gerät mit WLAN für ein schnelleres Update. Die Download Größe ist ungefähr 1GB.</translation>
+        <translation>İşletim sistemi güncellemesi gerekmektedir. Lütfen Cihazı daha hızlı günceleyebilmesi için bir sonraki başlatılışında çekilir. Wi-Fi ağına bağlayın. Dosyanın boyutu yaklaşık 1GB dır. </translation>
     </message>
     <message>
         <source>Connect to Wi-Fi</source>
-        <translation>Mit WLAN verbinden</translation>
+        <translation>Wi-Fi ağına bağlan</translation>
     </message>
     <message>
         <source>Install</source>
-        <translation>Installieren</translation>
+        <translation>Yükle</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation>Zurück</translation>
+        <translation>Geri</translation>
     </message>
     <message>
         <source>Loading...</source>
-        <translation>Laden...</translation>
+        <translation>Yükleniyor...</translation>
     </message>
     <message>
         <source>Reboot</source>
-        <translation>Neustart</translation>
+        <translation>Yeniden başlat</translation>
     </message>
     <message>
         <source>Update failed</source>
-        <translation>Aktualisierung fehlgeschlagen</translation>
+        <translation>Güncelleme başarız oldu</translation>
     </message>
 </context>
 <context>
@@ -1195,23 +1187,23 @@ This may take up to a minute.</source>
     <name>WifiUI</name>
     <message>
         <source>Scanning for networks...</source>
-        <translation>Suche nach Netzwerken...</translation>
+        <translation>Ağ aranıyor...</translation>
     </message>
     <message>
         <source>CONNECTING...</source>
-        <translation>VERBINDEN...</translation>
+        <translation>BAĞLANILIYOR...</translation>
     </message>
     <message>
         <source>FORGET</source>
-        <translation>VERGESSEN</translation>
+        <translation>UNUT</translation>
     </message>
     <message>
         <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
-        <translation>WLAN Netzwerk &quot;%1&quot; vergessen?</translation>
+        <translation>Wi-Fi ağını unut &quot;%1&quot;?</translation>
     </message>
     <message>
         <source>Forget</source>
-        <translation>Vergessen</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>
