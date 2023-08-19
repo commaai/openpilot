@@ -59,7 +59,7 @@ if __name__ == "__main__":
       logs = [args.route[0]]
     else:
       r = Route(args.route[0])
-      logs = [q_log if r_log is None else r_log for (q_log, r_log) in zip(r.qlog_paths(), r.log_paths())]
+      logs = [q_log if r_log is None else r_log for (q_log, r_log) in zip(r.qlog_paths(), r.log_paths(), strict=True)]
 
   if len(args.route) == 2 and logs:
     n = int(args.route[1])

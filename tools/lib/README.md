@@ -6,7 +6,7 @@ Route is a class for conveniently accessing all the [logs](/system/loggerd/) fro
 from tools.lib.route import Route
 from tools.lib.logreader import LogReader
 
-r = Route("4cf7a6ad03080c90|2021-09-29--13-46-36")
+r = Route("a2a0ccea32023010|2023-07-27--13-01-19")
 
 # get a list of paths for the route's rlog files
 print(r.log_paths())
@@ -41,7 +41,7 @@ from tools.lib.route import Route
 from tools.lib.logreader import MultiLogIterator
 
 # setup a MultiLogIterator to read all the logs in the route
-r = Route("4cf7a6ad03080c90|2021-09-29--13-46-36")
+r = Route("a2a0ccea32023010|2023-07-27--13-01-19")
 lr = MultiLogIterator(r.log_paths())
 
 # print all the steering angles values from all the logs in the route
