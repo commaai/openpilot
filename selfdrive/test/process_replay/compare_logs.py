@@ -77,31 +77,30 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
     msg1 = remove_ignored_fields(msg1, ignore_fields)
     msg2 = remove_ignored_fields(msg2, ignore_fields)
 
-    if msg1.to_bytes() != msg2.to_bytes():
-      msg1_dict = msg1.as_reader().to_dict(verbose=True)
-      msg2_dict = msg2.as_reader().to_dict(verbose=True)
+    msg1_dict = msg1.as_reader().to_dict(verbose=True)
+    msg2_dict = msg2.as_reader().to_dict(verbose=True)
 
-      dd = dictdiffer.diff(msg1_dict, msg2_dict, ignore=ignore_fields)
+    dd = dictdiffer.diff(msg1_dict, msg2_dict, ignore=ignore_fields)
 
-      # Dictdiffer only supports relative tolerance, we also want to check for absolute
-      # TODO: add this to dictdiffer
-      def outside_tolerance(diff):
-        try:
-          if diff[0] == "change":
-            field_tolerance = default_tolerance
-            if (tol := get_field_tolerance(diff[1], field_tolerances)) is not None:
-              field_tolerance = tol
-            a, b = diff[2]
-            finite = math.isfinite(a) and math.isfinite(b)
-            if finite and isinstance(a, numbers.Number) and isinstance(b, numbers.Number):
-              return abs(a - b) > max(field_tolerance, field_tolerance * max(abs(a), abs(b)))
-        except TypeError:
-          pass
-        return True
+    # Dictdiffer only supports relative tolerance, we also want to check for absolute
+    # TODO: add this to dictdiffer
+    def outside_tolerance(diff):
+      try:
+        if diff[0] == "change":
+          field_tolerance = default_tolerance
+          if (tol := get_field_tolerance(diff[1], field_tolerances)) is not None:
+            field_tolerance = tol
+          a, b = diff[2]
+          finite = math.isfinite(a) and math.isfinite(b)
+          if finite and isinstance(a, numbers.Number) and isinstance(b, numbers.Number):
+            return abs(a - b) > max(field_tolerance, field_tolerance * max(abs(a), abs(b)))
+      except TypeError:
+        pass
+      return True
 
-      dd = list(filter(outside_tolerance, dd))
+    dd = list(filter(outside_tolerance, dd))
 
-      diff.extend(dd)
+    diff.extend(dd)
   return diff
 
 
