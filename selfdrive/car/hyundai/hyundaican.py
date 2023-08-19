@@ -148,6 +148,12 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
     "aReqValue": accel,  # stock ramps up and down respecting jerk limit until it reaches aReqRaw
     "CR_VSM_Alive": idx % 0xF,
   }
+
+  # send CF_VSM_ConfMode and AEB_Status to cars that do not accept FCA messages, otherwise TCS13|ACCEnable would fault
+  if not use_fca:
+    scc12_values["CF_VSM_ConfMode"] = 1
+    scc12_values["AEB_Status"] = 1  # AEB disabled
+
   scc12_dat = packer.make_can_msg("SCC12", 0, scc12_values)[2]
   scc12_values["CR_VSM_ChkSum"] = 0x10 - sum(sum(divmod(i, 16)) for i in scc12_dat) % 0x10
 
