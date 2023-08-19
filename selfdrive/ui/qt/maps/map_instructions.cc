@@ -33,11 +33,7 @@ MapInstructions::MapInstructions(QWidget *parent) : QWidget(parent) {
   main_layout->addLayout(top_layout);
   main_layout->addLayout(lane_layout = new QHBoxLayout);
   lane_layout->setAlignment(Qt::AlignHCenter);
-  qDebug() << "spacing" << lane_layout->spacing();
   lane_layout->setSpacing(10);
-  qDebug() << "spacing" << lane_layout->spacing();
-//  lane_layout->addStretch(0);
-//  lane_layout->addStretch(0);
 
   setStyleSheet("color:white");
   QPalette pal = palette();
@@ -132,7 +128,6 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
 
     QLabel *label = (i < lane_labels.size()) ? lane_labels[i] : lane_labels.emplace_back(new QLabel);
     if (!label->parentWidget()) {
-//      lane_layout->insertWidget(lane_layout->count() - 1, label);
       lane_layout->addWidget(label);
     }
     label->setPixmap(pixmap_cache[fn]);
