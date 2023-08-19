@@ -193,12 +193,12 @@ void MapWindow::updateState(const UIState &s) {
     m_map->updateSource("carPosSource", carPosSource);
   }
 
-  if (interaction_counter != 0){
-    interaction_counter--;
-  } else {
+  if (interaction_counter == 0) {
     if (last_position) m_map->setCoordinate(*last_position);
     if (last_bearing) m_map->setBearing(*last_bearing);
     m_map->setZoom(util::map_val<float>(velocity_filter.x(), 0, 30, MAX_ZOOM, MIN_ZOOM));
+  } else {
+    interaction_counter--;
   }
 
   if (sm.updated("navInstruction")) {
