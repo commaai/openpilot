@@ -9,7 +9,10 @@ openpilot is developed and tested on **Ubuntu 20.04**, which is the primary deve
 First, clone openpilot:
 ``` bash
 cd ~
-git clone --filter=blob:none --recurse-submodules https://github.com/commaai/openpilot.git
+git clone https://github.com/commaai/openpilot.git
+
+# optionally, do a partial clone instead for a speedup
+git clone --filter=blob:none --recurse-submodules --also-filter-submodules https://github.com/commaai/openpilot.git
 
 cd openpilot
 ```
