@@ -11,7 +11,7 @@ First, clone openpilot:
 cd ~
 git clone https://github.com/commaai/openpilot.git
 
-# optionally, do a partial clone instead for a speedup
+# or do a partial clone instead for a faster clone and smaller repo size
 git clone --filter=blob:none --recurse-submodules --also-filter-submodules https://github.com/commaai/openpilot.git
 
 cd openpilot
