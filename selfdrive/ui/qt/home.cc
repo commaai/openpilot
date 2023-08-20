@@ -158,8 +158,8 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     left_widget->setStyleSheet("border-radius: 10px;");
 
     left_widget->setCurrentIndex(uiState()->primeType() ? 0 : 1);
-    connect(uiState(), &UIState::primeTypeChanged, [=](int prime_type) {
-      left_widget->setCurrentIndex(prime_type ? 0 : 1);
+    connect(uiState(), &UIState::primeTypeChanged, [=](PrimeType prime_type) {
+      left_widget->setCurrentIndex((prime_type != PrimeType::NONE) ? 0 : 1);
     });
 
     home_layout->addWidget(left_widget, 1);
