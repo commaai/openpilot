@@ -41,13 +41,14 @@ class CarControllerParams:
   RPM_MIN = 0
   RPM_MAX = 2400
 
-  RPM_INACTIVE = 600             # a good base rpm for zero acceleration
+  RPM_INACTIVE = 0
+  RPM_BASE = 600             # a good base rpm for zero acceleration
 
   THROTTLE_LOOKUP_BP = [0, 1]
   THROTTLE_LOOKUP_V = [THROTTLE_INACTIVE, THROTTLE_MAX]
 
   RPM_LOOKUP_BP = [0, 1]
-  RPM_LOOKUP_V = [RPM_INACTIVE, RPM_MAX]
+  RPM_LOOKUP_V = [RPM_BASE, RPM_MAX]
 
   BRAKE_LOOKUP_BP = [-1, 0]
   BRAKE_LOOKUP_V = [BRAKE_MAX, BRAKE_MIN]
