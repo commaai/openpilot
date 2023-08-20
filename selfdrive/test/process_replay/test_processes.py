@@ -110,7 +110,7 @@ def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=Non
       return f"Route did not enable at all or for long enough: {new_log_path}", log_msgs
 
   try:
-    return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance, cfg.field_tolerances), log_msgs
+    return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance), log_msgs
   except Exception as e:
     return str(e), log_msgs
 
