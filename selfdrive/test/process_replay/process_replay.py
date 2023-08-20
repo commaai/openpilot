@@ -123,7 +123,6 @@ class ProcessConfig:
   should_recv_callback: Optional[Callable] = None
   tolerance: Optional[float] = None
   processing_time: float = 0.001
-  field_tolerances: Dict[str, float] = field(default_factory=dict)
   timeout: int = 30
   simulation: bool = True
   main_pub: Optional[str] = None
