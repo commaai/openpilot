@@ -209,7 +209,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.TUCSON_HYBRID_4TH_GEN: HyundaiCarInfo("Hyundai Tucson Hybrid 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_n])),
   CAR.SANTA_CRUZ_1ST_GEN: HyundaiCarInfo("Hyundai Santa Cruz 2022-23", car_parts=CarParts.common([CarHarness.hyundai_n])),
   CAR.CUSTIN: HyundaiCarInfo("Hyundai Custin 2023", car_parts=CarParts.common([CarHarness.hyundai_k])), #Asia only, Named Custo in China
-0
+  
   # Kia
   CAR.KIA_FORTE: [
     HyundaiCarInfo("Kia Forte 2019-21", car_parts=CarParts.common([CarHarness.hyundai_g])),
