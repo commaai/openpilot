@@ -93,7 +93,6 @@ jobs:
   devcontainer:
     name: devcontainer
     runs-on: ubuntu-latest
-    if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v3
       with:
@@ -104,3 +103,5 @@ jobs:
       run: devcontainer build --workspace-folder .
     - name: Run dev container
       run: devcontainer up --workspace-folder .
+    - name: Test environment
+      run: devcontainer exec --workspace-folder . scons --dry-run
