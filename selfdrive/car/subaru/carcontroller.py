@@ -55,7 +55,7 @@ class CarController:
       cruise_brake = clip(apply_brake, CarControllerParams.BRAKE_MIN, CarControllerParams.BRAKE_MAX)
     else:
       cruise_throttle = CarControllerParams.THROTTLE_INACTIVE
-      cruise_rpm = CarControllerParams.RPM_INACTIVE
+      cruise_rpm = CarControllerParams.RPM_MIN
       cruise_brake = CarControllerParams.BRAKE_MIN
 
     # *** alerts and pcm cancel ***
