@@ -18,7 +18,7 @@ from openpilot.selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from openpilot.selfdrive.car.hyundai.values import CAR as HYUNDAI
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from openpilot.selfdrive.test.openpilotci import get_url
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.logreader import LogReader, FileReader
 from openpilot.tools.lib.route import Route, SegmentName, RouteName
 
 from panda.tests.libpanda import libpanda_py
@@ -114,8 +114,11 @@ class TestCarModelBase(unittest.TestCase):
     for seg in test_segs:
       try:
         lr = LogReader(get_segment_url(cls.test_route.route, seg, cls.ci))
+        # lr = FileReader(get_segment_url(cls.test_route.route, seg, cls.ci))
       except Exception:
         continue
+      if PULL_ONLY:
+        break
 
       car_fw = []
       can_msgs = []
@@ -148,6 +151,9 @@ class TestCarModelBase(unittest.TestCase):
         break
     else:
       raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded?")
+
+    if PULL_ONLY:
+      raise unittest.SkipTest
 
     # if relay is expected to be open in the route
     cls.openpilot_enabled = enabled_toggle and not dashcam_only
@@ -382,4 +388,19 @@ class TestCarModel(TestCarModelBase):
 
 
 if __name__ == "__main__":
-  unittest.main()
+  if not PULL_ONLY:
+    unittest.main()
+  else:
+    for car_model, test_route in get_test_cases():
+      if test_route is None:
+        continue
+      test_segs = (2, 1, 0)
+      if test_route.segment is not None:
+        test_segs = (test_route.segment,)
+
+      for seg in test_segs:
+        url = get_segment_url(test_route.route, seg, True)
+        try:
+          FileReader(url).read()
+        except AssertionError:
+          continue
