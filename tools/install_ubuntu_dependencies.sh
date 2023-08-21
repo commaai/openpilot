@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+set -e
+
 SUDO=""
 
 # Use sudo if not root
