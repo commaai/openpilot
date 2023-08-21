@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-from collections import namedtuple
+from typing import NamedTuple, Optional
 
-from selfdrive.car.chrysler.values import CAR as CHRYSLER
-from selfdrive.car.gm.values import CAR as GM
-from selfdrive.car.ford.values import CAR as FORD
-from selfdrive.car.honda.values import CAR as HONDA
-from selfdrive.car.hyundai.values import CAR as HYUNDAI
-from selfdrive.car.nissan.values import CAR as NISSAN
-from selfdrive.car.mazda.values import CAR as MAZDA
-from selfdrive.car.subaru.values import CAR as SUBARU
-from selfdrive.car.toyota.values import CAR as TOYOTA
-from selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
-from selfdrive.car.tesla.values import CAR as TESLA
-from selfdrive.car.body.values import CAR as COMMA
+from openpilot.selfdrive.car.chrysler.values import CAR as CHRYSLER
+from openpilot.selfdrive.car.gm.values import CAR as GM
+from openpilot.selfdrive.car.ford.values import CAR as FORD
+from openpilot.selfdrive.car.honda.values import CAR as HONDA
+from openpilot.selfdrive.car.hyundai.values import CAR as HYUNDAI
+from openpilot.selfdrive.car.nissan.values import CAR as NISSAN
+from openpilot.selfdrive.car.mazda.values import CAR as MAZDA
+from openpilot.selfdrive.car.subaru.values import CAR as SUBARU
+from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
+from openpilot.selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
+from openpilot.selfdrive.car.tesla.values import CAR as TESLA
+from openpilot.selfdrive.car.body.values import CAR as COMMA
 
 # TODO: add routes for these cars
 non_tested_cars = [
@@ -30,7 +30,12 @@ non_tested_cars = [
   TOYOTA.RAV4H_TSS2_2023,
 ]
 
-CarTestRoute = namedtuple('CarTestRoute', ['route', 'car_model', 'segment'], defaults=(None,))
+
+class CarTestRoute(NamedTuple):
+  route: str
+  car_model: Optional[str]
+  segment: Optional[int] = None
+
 
 routes = [
   CarTestRoute("efdf9af95e71cd84|2022-05-13--19-03-31", COMMA.BODY),
@@ -165,7 +170,6 @@ routes = [
   CarTestRoute("5f5afb36036506e4|2019-05-14--02-09-54", TOYOTA.COROLLA_TSS2),
   CarTestRoute("5ceff72287a5c86c|2019-10-19--10-59-02", TOYOTA.COROLLAH_TSS2),
   CarTestRoute("d2525c22173da58b|2021-04-25--16-47-04", TOYOTA.PRIUS),
-  CarTestRoute("b14c5b4742e6fc85|2020-07-28--19-50-11", TOYOTA.RAV4),
   CarTestRoute("32a7df20486b0f70|2020-02-06--16-06-50", TOYOTA.RAV4H),
   CarTestRoute("cdf2f7de565d40ae|2019-04-25--03-53-41", TOYOTA.RAV4_TSS2),
   CarTestRoute("a5c341bb250ca2f0|2022-05-18--16-05-17", TOYOTA.RAV4_TSS2_2022),
@@ -191,6 +195,7 @@ routes = [
   CarTestRoute("80d16a262e33d57f|2021-05-23--20-01-43", TOYOTA.HIGHLANDERH),
   CarTestRoute("eb6acd681135480d|2019-06-20--20-00-00", TOYOTA.SIENNA),
   CarTestRoute("2e07163a1ba9a780|2019-08-25--13-15-13", TOYOTA.LEXUS_IS),
+  CarTestRoute("649bf2997ada6e3a|2023-08-08--18-04-22", TOYOTA.LEXUS_IS_TSS2),
   CarTestRoute("0a0de17a1e6a2d15|2020-09-21--21-24-41", TOYOTA.PRIUS_TSS2),
   CarTestRoute("9b36accae406390e|2021-03-30--10-41-38", TOYOTA.MIRAI),
   CarTestRoute("cd9cff4b0b26c435|2021-05-13--15-12-39", TOYOTA.CHR),

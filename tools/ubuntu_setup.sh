@@ -138,16 +138,8 @@ else
   exit 1
 fi
 
-
-# install python dependencies
-$ROOT/update_requirements.sh
-
-source ~/.bashrc
-if [ -z "$OPENPILOT_ENV" ]; then
-  printf "\nsource %s/tools/openpilot_env.sh" "$ROOT" >> ~/.bashrc
-  source ~/.bashrc
-  echo "added openpilot_env to bashrc"
-fi
+# python setup
+$DIR/install_python_dependencies.sh
 
 echo
 echo "----   OPENPILOT SETUP DONE   ----"

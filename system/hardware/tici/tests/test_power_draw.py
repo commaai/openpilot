@@ -9,11 +9,11 @@ from typing import List
 
 import cereal.messaging as messaging
 from cereal.services import service_list
-from system.hardware import HARDWARE, TICI
-from system.hardware.tici.power_monitor import get_power
-from selfdrive.manager.process_config import managed_processes
-from selfdrive.manager.manager import manager_cleanup
-from selfdrive.navd.tests.test_map_renderer import gen_llk
+from openpilot.system.hardware import HARDWARE, TICI
+from openpilot.system.hardware.tici.power_monitor import get_power
+from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.manager.manager import manager_cleanup
+from openpilot.selfdrive.navd.tests.test_map_renderer import gen_llk
 
 SAMPLE_TIME = 8   # seconds to sample power
 
