@@ -58,10 +58,14 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup
+      with:
+        setup_docker_scons_cache: true
     - name: Build base cl image
       run: eval "$BUILD_CL"
     - name: Build simulator image
-      run: DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/sim/Dockerfile.sim .
+      run: |
+        docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest
+        DOCKER_BUILDKIT=1 docker build --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/sim/Dockerfile.sim .
     - name: Push to container registry
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       run: |
@@ -74,14 +78,15 @@ jobs:
     timeout-minutes: 45
     env:
       BUILD: |
-        DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/openpilot-docs-base:latest -t $DOCKER_REGISTRY/openpilot-docs-base:latest -f docs/docker/Dockerfile --target openpilot-docs-base .
-        DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/openpilot-docs-base:latest --cache-from $DOCKER_REGISTRY/openpilot-docs:latest -t $DOCKER_REGISTRY/openpilot-docs:latest -f docs/docker/Dockerfile .
+        docker pull $DOCKER_REGISTRY/openpilot-docs:latest
+        DOCKER_BUILDKIT=1 docker build --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/openpilot-docs:latest -t $DOCKER_REGISTRY/openpilot-docs:latest -f docs/docker/Dockerfile .
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: true
     - uses: ./.github/workflows/setup
       with:
+        setup_docker_scons_cache: true
         git_lfs: false
     - name: Push docker container
       if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
