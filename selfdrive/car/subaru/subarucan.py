@@ -1,5 +1,5 @@
 from cereal import car
-from selfdrive.car.subaru.values import CanBus
+from openpilot.selfdrive.car.subaru.values import CanBus
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 

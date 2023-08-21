@@ -64,7 +64,6 @@ jobs:
       run: |
         cd $GITHUB_WORKSPACE
         cp .pre-commit-config.yaml $STRIPPED_DIR
-        cp mypy.ini $STRIPPED_DIR
         cp pyproject.toml $STRIPPED_DIR
         cp poetry.lock $STRIPPED_DIR
         cd $STRIPPED_DIR
@@ -276,6 +275,7 @@ jobs:
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         ./selfdrive/ui/tests/test_translations.py && \
                         ./common/tests/test_util && \
+                        ./common/tests/test_ratekeeper && \
                         ./common/tests/test_swaglog && \
                         ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
                         ./system/loggerd/tests/test_logger &&\
@@ -306,7 +306,7 @@ jobs:
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run replay
-      timeout-minutes: 20
+      timeout-minutes: 30
       run: |
         ${{ env.RUN }} "CI=1 coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
                         coverage xml"

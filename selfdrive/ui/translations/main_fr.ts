@@ -354,33 +354,6 @@
         <source>hr</source>
         <translation>h</translation>
     </message>
-    <message>
-        <source>km</source>
-        <translation>km</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>mi</translation>
-    </message>
-</context>
-<context>
-    <name>MapInstructions</name>
-    <message>
-        <source> km</source>
-        <translation> km</translation>
-    </message>
-    <message>
-        <source> m</source>
-        <translation> m</translation>
-    </message>
-    <message>
-        <source> mi</source>
-        <translation> mi</translation>
-    </message>
-    <message>
-        <source> ft</source>
-        <translation> ft</translation>
-    </message>
 </context>
 <context>
     <name>MapSettings</name>
@@ -620,6 +593,22 @@
             <numerusform>il y a %n jour</numerusform>
             <numerusform>il y a %n jours</numerusform>
         </translation>
+    </message>
+    <message>
+        <source>km</source>
+        <translation>km</translation>
+    </message>
+    <message>
+        <source>m</source>
+        <translation>m</translation>
+    </message>
+    <message>
+        <source>mi</source>
+        <translation>mi</translation>
+    </message>
+    <message>
+        <source>ft</source>
+        <translation>ft</translation>
     </message>
 </context>
 <context>
