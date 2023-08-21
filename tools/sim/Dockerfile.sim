@@ -14,6 +14,7 @@ RUN mkdir -p $HOME/openpilot
 
 COPY SConstruct $HOME/openpilot/
 
+COPY ./openpilot $HOME/openpilot/openpilot
 COPY ./body $HOME/openpilot/body
 COPY ./third_party $HOME/openpilot/third_party
 COPY ./site_scons $HOME/openpilot/site_scons
@@ -30,4 +31,4 @@ COPY ./tools $HOME/openpilot/tools
 WORKDIR $HOME/openpilot
 RUN scons --cache-readonly -j12
 
-RUN python -c "from selfdrive.test.helpers import set_params_enabled; set_params_enabled()"
+RUN python -c "from openpilot.selfdrive.test.helpers import set_params_enabled; set_params_enabled()"

@@ -2,7 +2,7 @@
 import time
 import unittest
 from cereal import log
-from common.params import Params
+from openpilot.common.params import Params
 from datetime import datetime
 from unittest import mock
 
@@ -13,11 +13,11 @@ from laika.ephemeris import EphemerisType
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, read_raw_ublox, read_raw_qcom
-from selfdrive.locationd.laikad import EPHEMERIS_CACHE, Laikad
-from selfdrive.test.openpilotci import get_url
-from tools.lib.logreader import LogReader
+from openpilot.selfdrive.locationd.laikad import EPHEMERIS_CACHE, Laikad
+from openpilot.selfdrive.test.openpilotci import get_url
+from openpilot.tools.lib.logreader import LogReader
 
-from selfdrive.test.process_replay.process_replay import get_process_config, replay_process
+from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process
 
 GPS_TIME_PREDICTION_ORBITS_RUSSIAN_SRC = GPSTime.from_datetime(datetime(2022, month=1, day=29, hour=12))
 UBLOX_TEST_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36"

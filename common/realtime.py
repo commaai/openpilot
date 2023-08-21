@@ -5,10 +5,9 @@ import time
 from collections import deque
 from typing import Optional, List, Union
 
-from setproctitle import getproctitle  # pylint: disable=no-name-in-module
+from setproctitle import getproctitle
 
-from common.clock import sec_since_boot  # pylint: disable=no-name-in-module, import-error
-from system.hardware import PC
+from openpilot.system.hardware import PC
 
 
 # time step for each process
@@ -50,13 +49,13 @@ class Ratekeeper:
   def __init__(self, rate: float, print_delay_threshold: Optional[float] = 0.0) -> None:
     """Rate in Hz for ratekeeping. print_delay_threshold must be nonnegative."""
     self._interval = 1. / rate
-    self._next_frame_time = sec_since_boot() + self._interval
+    self._next_frame_time = time.monotonic() + self._interval
     self._print_delay_threshold = print_delay_threshold
     self._frame = 0
     self._remaining = 0.0
     self._process_name = getproctitle()
     self._dts = deque([self._interval], maxlen=100)
-    self._last_monitor_time = sec_since_boot()
+    self._last_monitor_time = time.monotonic()
 
   @property
   def frame(self) -> int:
@@ -82,11 +81,11 @@ class Ratekeeper:
   # this only monitor the cumulative lag, but does not enforce a rate
   def monitor_time(self) -> bool:
     prev = self._last_monitor_time
-    self._last_monitor_time = sec_since_boot()
+    self._last_monitor_time = time.monotonic()
     self._dts.append(self._last_monitor_time - prev)
 
     lagged = False
-    remaining = self._next_frame_time - sec_since_boot()
+    remaining = self._next_frame_time - time.monotonic()
     self._next_frame_time += self._interval
     if self._print_delay_threshold is not None and remaining < -self._print_delay_threshold:
       print(f"{self._process_name} lagging by {-remaining * 1000:.2f} ms")

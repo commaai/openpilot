@@ -8,8 +8,8 @@ if len(sys.argv) < 4:
 
 import requests
 from PIL import Image
-from tools.lib.auth_config import get_token
-from tools.lib.framereader import FrameReader
+from openpilot.tools.lib.auth_config import get_token
+from openpilot.tools.lib.framereader import FrameReader
 
 jwt = get_token()
 

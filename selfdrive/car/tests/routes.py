@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 from typing import NamedTuple, Optional
 
-from selfdrive.car.chrysler.values import CAR as CHRYSLER
-from selfdrive.car.gm.values import CAR as GM
-from selfdrive.car.ford.values import CAR as FORD
-from selfdrive.car.honda.values import CAR as HONDA
-from selfdrive.car.hyundai.values import CAR as HYUNDAI
-from selfdrive.car.nissan.values import CAR as NISSAN
-from selfdrive.car.mazda.values import CAR as MAZDA
-from selfdrive.car.subaru.values import CAR as SUBARU
-from selfdrive.car.toyota.values import CAR as TOYOTA
-from selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
-from selfdrive.car.tesla.values import CAR as TESLA
-from selfdrive.car.body.values import CAR as COMMA
+from openpilot.selfdrive.car.chrysler.values import CAR as CHRYSLER
+from openpilot.selfdrive.car.gm.values import CAR as GM
+from openpilot.selfdrive.car.ford.values import CAR as FORD
+from openpilot.selfdrive.car.honda.values import CAR as HONDA
+from openpilot.selfdrive.car.hyundai.values import CAR as HYUNDAI
+from openpilot.selfdrive.car.nissan.values import CAR as NISSAN
+from openpilot.selfdrive.car.mazda.values import CAR as MAZDA
+from openpilot.selfdrive.car.subaru.values import CAR as SUBARU
+from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
+from openpilot.selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
+from openpilot.selfdrive.car.tesla.values import CAR as TESLA
+from openpilot.selfdrive.car.body.values import CAR as COMMA
 
 # TODO: add routes for these cars
 non_tested_cars = [

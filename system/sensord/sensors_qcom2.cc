@@ -9,6 +9,7 @@
 
 #include "cereal/messaging/messaging.h"
 #include "common/i2c.h"
+#include "common/ratekeeper.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
 #include "common/util.h"
@@ -17,7 +18,6 @@
 #include "system/sensord/sensors/bmx055_magn.h"
 #include "system/sensord/sensors/bmx055_temp.h"
 #include "system/sensord/sensors/constants.h"
-#include "system/sensord/sensors/light_sensor.h"
 #include "system/sensord/sensors/lsm6ds3_accel.h"
 #include "system/sensord/sensors/lsm6ds3_gyro.h"
 #include "system/sensord/sensors/lsm6ds3_temp.h"
@@ -100,8 +100,6 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
 
   MMC5603NJ_Magn mmc5603nj_magn(i2c_bus_imu);
 
-  LightSensor light("/sys/class/i2c-adapter/i2c-2/2-0038/iio:device1/in_intensity_both_raw");
-
   std::map<Sensor*, std::string> sensor_service = {
     {&bmx055_accel, "accelerometer2"},
     {&bmx055_gyro, "gyroscope2"},
@@ -113,7 +111,6 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
     {&lsm6ds3_temp, "temperatureSensor"},
 
     {&mmc5603nj_magn, "magnetometer"},
-    {&light, "lightSensor"}
   };
 
   // Sensor init
@@ -128,8 +125,6 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
   sensors_init.push_back({&lsm6ds3_temp, true});
 
   sensors_init.push_back({&mmc5603nj_magn, false});
-
-  sensors_init.push_back({&light, true});
 
   bool has_magnetometer = false;
 
@@ -164,8 +159,7 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
   util::set_core_affinity({1});
   std::system("sudo su -c 'echo 1 > /proc/irq/336/smp_affinity_list'");
 
-  PubMaster pm_non_int({"gyroscope2", "accelerometer2", "temperatureSensor",
-                        "lightSensor", "magnetometer"});
+  PubMaster pm_non_int({"gyroscope2", "accelerometer2", "temperatureSensor", "magnetometer"});
   init_ts = nanos_since_boot();
 
   // thread for reading events via interrupts
@@ -173,10 +167,10 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
   std::thread lsm_interrupt_thread(&interrupt_loop, std::ref(lsm_interrupt_sensors),
                                    std::ref(sensor_service));
 
+  RateKeeper rk("sensord", 100);
+
   // polling loop for non interrupt handled sensors
   while (!do_exit) {
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
     for (Sensor *sensor : sensors) {
       MessageBuilder msg;
       if (!sensor->get_event(msg)) {
@@ -190,8 +184,7 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
       pm_non_int.send(sensor_service[sensor].c_str(), msg);
     }
 
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::this_thread::sleep_for(std::chrono::milliseconds(10) - (end - begin));
+    rk.keepTime();
   }
 
   for (Sensor *sensor : sensors) {
