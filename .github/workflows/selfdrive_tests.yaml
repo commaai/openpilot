@@ -405,6 +405,10 @@ jobs:
         run: |
           ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/debug/dump_car_info.py --path /tmp/openpilot_cache/base_car_info"
           sudo chown -R $USER:$USER ${{ github.workspace }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: my-artifact
+          path: ~/openpilot_cache/base_car_info
       - uses: actions/checkout@v3
         with:
           submodules: true
