@@ -96,6 +96,7 @@ typedef enum UIStatus {
 } UIStatus;
 
 enum PrimeType {
+  UNKNOWN = -1,
   NONE = 0,
   MAGENTA = 1,
   LITE = 2,
@@ -185,7 +186,7 @@ private slots:
 private:
   QTimer *timer;
   bool started_prev = false;
-  PrimeType prime_type = PrimeType::NONE;
+  PrimeType prime_type = PrimeType::UNKNOWN;
 };
 
 UIState *uiState();
