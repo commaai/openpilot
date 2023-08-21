@@ -9,6 +9,7 @@
 
 #include "cereal/messaging/messaging.h"
 #include "common/i2c.h"
+#include "common/ratekeeper.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
 #include "common/util.h"
@@ -173,10 +174,10 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
   std::thread lsm_interrupt_thread(&interrupt_loop, std::ref(lsm_interrupt_sensors),
                                    std::ref(sensor_service));
 
+  RateKeeper rk("sensord", 100);
+
   // polling loop for non interrupt handled sensors
   while (!do_exit) {
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
     for (Sensor *sensor : sensors) {
       MessageBuilder msg;
       if (!sensor->get_event(msg)) {
@@ -190,8 +191,7 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
       pm_non_int.send(sensor_service[sensor].c_str(), msg);
     }
 
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::this_thread::sleep_for(std::chrono::milliseconds(10) - (end - begin));
+    rk.keepTime();
   }
 
   for (Sensor *sensor : sensors) {
