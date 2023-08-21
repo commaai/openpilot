@@ -20,7 +20,6 @@ common/__init__.py
 common/conversions.py
 common/gpio.py
 common/realtime.py
-common/clock.pyx
 common/timeout.py
 common/ffi_wrapper.py
 common/file_helpers.py
