@@ -11,6 +11,7 @@ WORKDIR ${OPENPILOT_PATH}
 
 COPY SConstruct ${OPENPILOT_PATH}
 
+COPY ./openpilot ${OPENPILOT_PATH}/openpilot
 COPY ./body ${OPENPILOT_PATH}/body
 COPY ./third_party ${OPENPILOT_PATH}/third_party
 COPY ./site_scons ${OPENPILOT_PATH}/site_scons
