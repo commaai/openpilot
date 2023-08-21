@@ -5,7 +5,7 @@
 class RateKeeper {
 public:
   RateKeeper(const std::string &name, float rate, float print_delay_threshold = 0);
-  ~RateKeeper();
+  ~RateKeeper() {}
   bool keepTime();
   bool monitorTime();
   inline double frame() const { return frame_; }

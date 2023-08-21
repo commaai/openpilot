@@ -12,8 +12,6 @@ RateKeeper::RateKeeper(const std::string &name, float rate, float print_delay_th
   next_frame_time = last_monitor_time + interval;
 }
 
-RateKeeper::~RateKeeper() {}
-
 bool RateKeeper::keepTime() {
   bool lagged = monitorTime();
   if (remaining_ > 0) {
