@@ -6,10 +6,10 @@ from typing import Dict, List, Optional, Set, Tuple, Union
 
 from cereal import car
 from panda.python import uds
-from common.conversions import Conversions as CV
-from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
+from openpilot.common.conversions import Conversions as CV
+from openpilot.selfdrive.car import dbc_dict
+from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
 
@@ -1941,6 +1941,9 @@ EV_CAR = {CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV, CAR
 LEGACY_SAFETY_MODE_CAR = {CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.IONIQ_PHEV, CAR.IONIQ, CAR.KONA_EV,
                           CAR.KIA_SORENTO, CAR.SONATA_LF, CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL, CAR.VELOSTER,
                           CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.KIA_CEED, CAR.ELANTRA, CAR.IONIQ_HEV_2022}
+
+# these cars have not been verified to work with longitudinal yet - radar disable, sending correct messages, etc
+UNSUPPORTED_LONGITUDINAL_CAR = LEGACY_SAFETY_MODE_CAR | {CAR.KIA_NIRO_PHEV}
 
 # If 0x500 is present on bus 1 it probably has a Mando radar outputting radar points.
 # If no points are outputted by default it might be possible to turn it on using  selfdrive/debug/hyundai_enable_radar_points.py

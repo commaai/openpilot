@@ -15,14 +15,14 @@ from struct import unpack_from, calcsize, pack
 
 from cereal import log
 import cereal.messaging as messaging
-from common.gpio import gpio_init, gpio_set
+from openpilot.common.gpio import gpio_init, gpio_set
 from laika.gps_time import GPSTime, utc_to_gpst, get_leap_seconds
 from laika.helpers import get_prn_from_nmea_id
 from laika.constants import SECS_IN_HR, SECS_IN_DAY, SECS_IN_WEEK
-from system.hardware.tici.pins import GPIO
-from system.swaglog import cloudlog
-from system.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
-from system.sensord.rawgps.structs import (dict_unpacker, position_report, relist,
+from openpilot.system.hardware.tici.pins import GPIO
+from openpilot.system.swaglog import cloudlog
+from openpilot.system.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
+from openpilot.system.sensord.rawgps.structs import (dict_unpacker, position_report, relist,
                                               gps_measurement_report, gps_measurement_report_sv,
                                               glonass_measurement_report, glonass_measurement_report_sv,
                                               oemdre_measurement_report, oemdre_measurement_report_sv, oemdre_svpoly_report,
