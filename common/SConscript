@@ -31,5 +31,4 @@ if GetOption('test'):
   env.Program('tests/test_swaglog', ['tests/test_swaglog.cc'], LIBS=[_common, 'json11', 'zmq', 'pthread'])
 
 # Cython
-envCython.Program('clock.so', 'clock.pyx')
 envCython.Program('params_pyx.so', 'params_pyx.pyx', LIBS=envCython['LIBS'] + [_common, 'zmq', 'json11'])

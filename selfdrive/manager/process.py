@@ -15,7 +15,6 @@ import selfdrive.sentry as sentry
 from cereal import car
 from common.basedir import BASEDIR
 from common.params import Params
-from common.realtime import sec_since_boot
 from system.swaglog import cloudlog
 from cereal import log
 
@@ -104,7 +103,7 @@ class ManagerProcess(ABC):
     except Exception:
       pass
 
-    dt = sec_since_boot() - self.last_watchdog_time / 1e9
+    dt = time.monotonic() - self.last_watchdog_time / 1e9
 
     if dt > self.watchdog_max_dt:
       if self.watchdog_seen and ENABLE_WATCHDOG:
