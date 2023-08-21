@@ -10,8 +10,8 @@ import cereal.messaging as messaging
 def can_printer(bus, max_msg, addr, ascii_decode):
   logcan = messaging.sub_sock('can', addr=addr)
 
-  start = time.monotonic()()
-  lp = time.monotonic()()
+  start = time.monotonic()
+  lp = time.monotonic()
   msgs = defaultdict(list)
   while 1:
     can_recv = messaging.drain_sock(logcan, wait_for_one=True)
@@ -20,17 +20,17 @@ def can_printer(bus, max_msg, addr, ascii_decode):
         if y.src == bus:
           msgs[y.address].append(y.dat)
 
-    if time.monotonic()() - lp > 0.1:
+    if time.monotonic() - lp > 0.1:
       dd = chr(27) + "[2J"
-      dd += f"{time.monotonic()() - start:5.2f}\n"
+      dd += f"{time.monotonic() - start:5.2f}\n"
       for addr in sorted(msgs.keys()):
         a = f"\"{msgs[addr][-1].decode('ascii', 'backslashreplace')}\"" if ascii_decode else ""
         x = binascii.hexlify(msgs[addr][-1]).decode('ascii')
-        freq = len(msgs[addr]) / (time.monotonic()() - start)
+        freq = len(msgs[addr]) / (time.monotonic() - start)
         if max_msg is None or addr < max_msg:
           dd += "%04X(%4d)(%6d)(%3dHz) %s %s\n" % (addr, addr, len(msgs[addr]), freq, x.ljust(20), a)
       print(dd)
-      lp = time.monotonic()()
+      lp = time.monotonic()
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="simple CAN data viewer",

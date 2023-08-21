@@ -103,7 +103,7 @@ class ManagerProcess(ABC):
     except Exception:
       pass
 
-    dt = time.monotonic()() - self.last_watchdog_time / 1e9
+    dt = time.monotonic() - self.last_watchdog_time / 1e9
 
     if dt > self.watchdog_max_dt:
       if self.watchdog_seen and ENABLE_WATCHDOG:

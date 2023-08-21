@@ -182,9 +182,9 @@ class LateralMpc():
     self.solver.set(N, "p", p_cp[N])
     self.solver.cost_set(N, "yref", self.yref[N][:COST_E_DIM])
 
-    t = time.monotonic()()
+    t = time.monotonic()
     self.solution_status = self.solver.solve()
-    self.solve_time = time.monotonic()() - t
+    self.solve_time = time.monotonic() - t
 
     for i in range(N+1):
       self.x_sol[i] = self.solver.get(i, 'x')

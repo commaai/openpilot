@@ -41,7 +41,7 @@ class PowerMonitoring:
   # Calculation tick
   def calculate(self, voltage: Optional[int], ignition: bool):
     try:
-      now = time.monotonic()()
+      now = time.monotonic()
 
       # If peripheralState is None, we're probably not in a car, so we don't care
       if voltage is None:
@@ -113,7 +113,7 @@ class PowerMonitoring:
     if offroad_timestamp is None:
       return False
 
-    now = time.monotonic()()
+    now = time.monotonic()
     should_shutdown = False
     offroad_time = (now - offroad_timestamp)
     low_voltage_shutdown = (self.car_voltage_mV < (VBATT_PAUSE_CHARGING * 1e3) and

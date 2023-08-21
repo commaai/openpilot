@@ -12,12 +12,12 @@ def waste(core):
   m2 = np.zeros((200, 200)) + 1.2
 
   i = 1
-  st = time.monotonic()()
+  st = time.monotonic()
   j = 0
   while 1:
     if (i % 100) == 0:
       setproctitle("%3d: %8d" % (core, i))
-      lt = time.monotonic()()
+      lt = time.monotonic()
       print("%3d: %8d %f  %.2f" % (core, i, lt-st, j))
       st = lt
     i += 1

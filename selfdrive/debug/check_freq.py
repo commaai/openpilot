@@ -22,7 +22,7 @@ if __name__ == "__main__":
   rcv_times: DefaultDict[str, MutableSequence[float]] = defaultdict(lambda: deque(maxlen=100))
   valids: DefaultDict[str, Deque[bool]] = defaultdict(lambda: deque(maxlen=100))
 
-  t = time.monotonic()()
+  t = time.monotonic()
   for name in socket_names:
     sock = messaging.sub_sock(name, poller=poller)
     sockets[sock] = name
@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
       name = msg.which()
 
-      t = time.monotonic()()
+      t = time.monotonic()
       rcv_times[name].append(msg.logMonoTime / 1e9)
       valids[name].append(msg.valid)
 
