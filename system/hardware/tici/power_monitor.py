@@ -27,6 +27,18 @@ def get_power(seconds=5):
   pwrs = sample_power(seconds)
   return np.mean(pwrs)
 
+def wait_for_power(min_pwr, max_pwr, min_secs_in_range, timeout=20):
+  within_bounds_cnt = 0
+  start_time = time.monotonic()
+  while (time.monotonic() - start_time < timeout) and within_bounds_cnt < min_secs_in_range:
+    pwr = get_power(1)
+    if min_pwr <= pwr <= max_pwr:
+      within_bounds_cnt += 1
+    else:
+      within_bounds_cnt = 0
+  print("took", round(time.monotonic() - start_time))
+  return pwr
+
 
 if __name__ == "__main__":
   duration = None
