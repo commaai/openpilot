@@ -8,7 +8,7 @@ import unittest
 from cereal import log
 from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
 from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
-import selfdrive.test.process_replay.process_replay as pr
+import openpilot.selfdrive.test.process_replay.process_replay as pr
 
 # These processes currently fail because of unrealistic data breaking assumptions
 # that openpilot makes causing error with NaN, inf, int size, array indexing ...

@@ -6,7 +6,7 @@ from collections import namedtuple
 from pathlib import Path
 from typing import Sequence
 
-import system.loggerd.deleter as deleter
+import openpilot.system.loggerd.deleter as deleter
 from openpilot.common.timeout import Timeout, TimeoutException
 from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase
 

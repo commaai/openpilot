@@ -7,8 +7,8 @@ import unittest
 from pathlib import Path
 from typing import Optional
 
-import system.loggerd.deleter as deleter
-import system.loggerd.uploader as uploader
+import openpilot.system.loggerd.deleter as deleter
+import openpilot.system.loggerd.uploader as uploader
 from openpilot.system.loggerd.xattr_cache import setxattr
 
 

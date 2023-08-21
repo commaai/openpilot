@@ -4,7 +4,7 @@ import time
 import unittest
 
 import cereal.messaging as messaging
-import system.sensord.pigeond as pd
+import openpilot.system.sensord.pigeond as pd
 
 from openpilot.common.params import Params
 from openpilot.system.hardware import TICI

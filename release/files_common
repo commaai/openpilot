@@ -15,6 +15,9 @@ docs/INTEGRATION.md
 docs/LIMITATIONS.md
 site_scons/site_tools/cython.py
 
+openpilot/__init__.py
+openpilot/**
+
 common/.gitignore
 common/__init__.py
 common/conversions.py
