@@ -4,6 +4,7 @@
     "dockerfile": "Dockerfile"
   },
   "postCreateCommand": "bash -c 'if [[ $DISPLAY == *xquartz* ]]; then echo \"export DISPLAY=host.docker.internal:0\" >> /root/.bashrc; fi'",
+  "postStartCommand": "git config --file .gitmodules --get-regexp path | awk '{ print $2 }' | xargs -I{} git config --global --add safe.directory \"$PWD/{}\"",
   "privileged": true,
   "containerEnv": {
     "DISPLAY": "${localEnv:DISPLAY}",
