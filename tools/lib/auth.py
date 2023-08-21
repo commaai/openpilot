@@ -29,8 +29,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any, Dict
 from urllib.parse import parse_qs, urlencode
 
-from tools.lib.api import APIError, CommaApi, UnauthorizedError
-from tools.lib.auth_config import set_token, get_token
+from openpilot.tools.lib.api import APIError, CommaApi, UnauthorizedError
+from openpilot.tools.lib.auth_config import set_token, get_token
 
 PORT = 3000
 

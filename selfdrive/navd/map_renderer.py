@@ -7,8 +7,8 @@ import numpy as np
 import polyline
 from cffi import FFI
 
-from common.ffi_wrapper import suffix
-from common.basedir import BASEDIR
+from openpilot.common.ffi_wrapper import suffix
+from openpilot.common.basedir import BASEDIR
 
 HEIGHT = WIDTH = SIZE = 256
 METERS_PER_PIXEL = 2

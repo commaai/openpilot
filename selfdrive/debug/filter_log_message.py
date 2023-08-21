@@ -4,8 +4,8 @@ import argparse
 import json
 
 import cereal.messaging as messaging
-from tools.lib.logreader import LogReader
-from tools.lib.route import Route
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.route import Route
 
 LEVELS = {
   "DEBUG": 10,

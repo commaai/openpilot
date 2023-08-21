@@ -10,7 +10,7 @@
 #include "selfdrive/ui/ui.h"
 
 
-const int PAN_TIMEOUT = 100;
+const int INTERACTION_TIMEOUT = 100;
 
 const float MAX_ZOOM = 17;
 const float MIN_ZOOM = 14;
@@ -156,13 +156,15 @@ void MapWindow::updateState(const UIState &s) {
   }
 
   if (sm.updated("navRoute") && sm["navRoute"].getNavRoute().getCoordinates().size()) {
+    auto nav_dest = coordinate_from_param("NavDestination");
+    bool allow_open = std::exchange(last_valid_nav_dest, nav_dest) != nav_dest &&
+                      nav_dest && !isVisible();
     qWarning() << "Got new navRoute from navd. Opening map:" << allow_open;
 
-    // Only open the map on setting destination the first time
+    // Show map on destination set/change
     if (allow_open) {
       emit requestSettings(false);
-      emit requestVisible(true); // Show map on destination set/change
-      allow_open = false;
+      emit requestVisible(true);
     }
   }
 
@@ -191,17 +193,12 @@ void MapWindow::updateState(const UIState &s) {
     m_map->updateSource("carPosSource", carPosSource);
   }
 
-  if (pan_counter == 0) {
+  if (interaction_counter == 0) {
     if (last_position) m_map->setCoordinate(*last_position);
     if (last_bearing) m_map->setBearing(*last_bearing);
-  } else {
-    pan_counter--;
-  }
-
-  if (zoom_counter == 0) {
     m_map->setZoom(util::map_val<float>(velocity_filter.x(), 0, 30, MAX_ZOOM, MIN_ZOOM));
   } else {
-    zoom_counter--;
+    interaction_counter--;
   }
 
   if (sm.updated("navInstruction")) {
@@ -291,7 +288,7 @@ void MapWindow::clearRoute() {
 
   map_instructions->setVisible(false);
   map_eta->setVisible(false);
-  allow_open = true;
+  last_valid_nav_dest = std::nullopt;
 }
 
 void MapWindow::mousePressEvent(QMouseEvent *ev) {
@@ -305,15 +302,14 @@ void MapWindow::mouseDoubleClickEvent(QMouseEvent *ev) {
   m_map->setZoom(util::map_val<float>(velocity_filter.x(), 0, 30, MAX_ZOOM, MIN_ZOOM));
   update();
 
-  pan_counter = 0;
-  zoom_counter = 0;
+  interaction_counter = 0;
 }
 
 void MapWindow::mouseMoveEvent(QMouseEvent *ev) {
   QPointF delta = ev->localPos() - m_lastPos;
 
   if (!delta.isNull()) {
-    pan_counter = PAN_TIMEOUT;
+    interaction_counter = INTERACTION_TIMEOUT;
     m_map->moveBy(delta / MAP_SCALE);
     update();
   }
@@ -335,7 +331,7 @@ void MapWindow::wheelEvent(QWheelEvent *ev) {
   m_map->scaleBy(1 + factor, ev->pos() / MAP_SCALE);
   update();
 
-  zoom_counter = PAN_TIMEOUT;
+  interaction_counter = INTERACTION_TIMEOUT;
   ev->accept();
 }
 
@@ -360,7 +356,7 @@ void MapWindow::pinchTriggered(QPinchGesture *gesture) {
     // TODO: figure out why gesture centerPoint doesn't work
     m_map->scaleBy(gesture->scaleFactor(), {width() / 2.0 / MAP_SCALE, height() / 2.0 / MAP_SCALE});
     update();
-    zoom_counter = PAN_TIMEOUT;
+    interaction_counter = INTERACTION_TIMEOUT;
   }
 }
 
@@ -377,8 +373,6 @@ void MapWindow::offroadTransition(bool offroad) {
 }
 
 void MapWindow::updateDestinationMarker() {
-  m_map->setPaintProperty("pinLayer", "visibility", "none");
-
   auto nav_dest = coordinate_from_param("NavDestination");
   if (nav_dest.has_value()) {
     auto point = coordinate_to_collection(*nav_dest);
@@ -388,5 +382,7 @@ void MapWindow::updateDestinationMarker() {
     pinSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
     m_map->updateSource("pinSource", pinSource);
     m_map->setPaintProperty("pinLayer", "visibility", "visible");
+  } else {
+    m_map->setPaintProperty("pinLayer", "visibility", "none");
   }
 }
