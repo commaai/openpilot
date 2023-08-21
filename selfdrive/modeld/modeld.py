@@ -5,6 +5,7 @@ import logging
 import numpy as np
 from pathlib import Path
 from typing import Dict, Optional
+from setproctitle import setproctitle  # pylint: disable=no-name-in-module
 from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from system.hardware import PC
@@ -127,6 +128,7 @@ class ModelState:
 
 
 def main():
+  setproctitle("selfdrive.modeld.modeld")
   if not PC:
     set_realtime_priority(54)
     set_core_affinity([7])
