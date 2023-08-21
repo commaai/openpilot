@@ -27,6 +27,7 @@ PandaType = log.PandaState.PandaType
 
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
+PULL_ONLY = bool(os.environ.get("PULL_ONLY", ""))
 INTERNAL_SEG_LIST = os.environ.get("INTERNAL_SEG_LIST", "")
 INTERNAL_SEG_CNT = int(os.environ.get("INTERNAL_SEG_CNT", "0"))
 
@@ -63,6 +64,16 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
   return test_cases
 
 
+def get_segment_url(route: str, seg: int, ci: bool):
+  if len(INTERNAL_SEG_LIST):
+    route_name = RouteName(route)
+    return f"cd:/{route_name.dongle_id}/{route_name.time_str}/{seg}/rlog.bz2"
+  elif ci:
+    return get_url(route, seg)
+  else:
+    return Route(route).log_paths()[seg]
+
+
 SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
 
@@ -95,13 +106,7 @@ class TestCarModelBase(unittest.TestCase):
 
     for seg in test_segs:
       try:
-        if len(INTERNAL_SEG_LIST):
-          route_name = RouteName(cls.test_route.route)
-          lr = LogReader(f"cd:/{route_name.dongle_id}/{route_name.time_str}/{seg}/rlog.bz2")
-        elif cls.ci:
-          lr = LogReader(get_url(cls.test_route.route, seg))
-        else:
-          lr = LogReader(Route(cls.test_route.route).log_paths()[seg])
+        lr = LogReader(get_segment_url(cls.test_route.route, seg, cls.ci))
       except Exception:
         continue
 
