@@ -593,7 +593,7 @@ def log_handler(end_event: threading.Event) -> None:
     return
 
   log_files = []
-  last_scan = 0
+  last_scan = 0.
   while not end_event.is_set():
     try:
       curr_scan = time.monotonic()
