@@ -65,6 +65,13 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
 
 
 def get_segment_url(route: str, seg: int, ci: bool) -> str:
+  """
+  Returns URL to access segment for the following cases:
+  - Internal segment list
+  - Public CI bucket
+  - Private route bucket for testing your own routes with selfdrive/debug/test_car_model.py
+  """
+
   if len(INTERNAL_SEG_LIST):
     route_name = RouteName(route)
     return f"cd:/{route_name.dongle_id}/{route_name.time_str}/{seg}/rlog.bz2"
