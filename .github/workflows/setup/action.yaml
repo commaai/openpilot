@@ -1,6 +1,10 @@
 name: 'openpilot env setup'
 
 inputs:
+  setup_docker_scons_cache:
+    description: 'Whether or not to build the scons-cache docker image'
+    required: false
+    default: 'false'
   git_lfs:
     description: 'Whether or not to pull the git lfs'
     required: false
@@ -28,7 +32,14 @@ runs:
         restore-keys: |
           scons-${{ env.CACHE_COMMIT_DATE }}-
           scons-
-
+    - id: setup-scons-cache-docker
+      name: Sets up a docker image with scons cache that can by mounted as a buildkit cache mount
+      shell: bash
+      if: ${{ inputs.setup_docker_scons_cache == 'true' }}
+      run: |
+        cp selfdrive/test/Dockerfile.scons_cache ~
+        cd ~
+        DOCKER_BUILDKIT=1 docker build -t scons-cache -f Dockerfile.scons_cache .
     # build our docker image
     - shell: bash
       run: eval ${{ env.BUILD }}
