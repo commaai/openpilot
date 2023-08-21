@@ -4,6 +4,7 @@ import time
 import datetime
 import numpy as np
 from typing import List
+from collections import deque
 
 from common.realtime import Ratekeeper
 from common.filter_simple import FirstOrderFilter
@@ -27,17 +28,17 @@ def get_power(seconds=5):
   pwrs = sample_power(seconds)
   return np.mean(pwrs)
 
-def wait_for_power(min_pwr, max_pwr, min_secs_in_range, timeout=20):
-  within_bounds_cnt = 0
+def wait_for_power(min_pwr, max_pwr, min_secs_in_range, timeout):
   start_time = time.monotonic()
-  while (time.monotonic() - start_time < timeout) and within_bounds_cnt < min_secs_in_range:
+  pwrs = deque([min_pwr - 1.]*min_secs_in_range, maxlen=min_secs_in_range)
+  while (time.monotonic() - start_time < timeout):
     pwr = get_power(1)
-    if min_pwr <= pwr <= max_pwr:
-      within_bounds_cnt += 1
-    else:
-      within_bounds_cnt = 0
+    pwrs.append(pwr)
+    if all(min_pwr <= p <= max_pwr for p in pwrs):
+      break
+    print(pwrs, [min_pwr <= p <= max_pwr for p in pwrs])
   print("took", round(time.monotonic() - start_time))
-  return pwr
+  return np.mean(pwrs)
 
 
 if __name__ == "__main__":
