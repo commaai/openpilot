@@ -64,7 +64,7 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
   return test_cases
 
 
-def get_segment_url(route: str, seg: int, ci: bool):
+def get_segment_url(route: str, seg: int, ci: bool) -> str:
   if len(INTERNAL_SEG_LIST):
     route_name = RouteName(route)
     return f"cd:/{route_name.dongle_id}/{route_name.time_str}/{seg}/rlog.bz2"
