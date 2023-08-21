@@ -7,12 +7,12 @@ params = Params()
 
 # Create fake time
 ssb = 0
-def mock_sec_since_boot():
+def mock_time_monotonic():
   global ssb
   ssb += 1
   return ssb
 
-with patch("common.realtime.sec_since_boot", new=mock_sec_since_boot):
+with patch("time.monotonic", new=mock_time_monotonic):
   with patch("common.params.put_nonblocking", new=params.put):
     from openpilot.selfdrive.thermald.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
                                                     CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING, DELAY_SHUTDOWN_TIME_S

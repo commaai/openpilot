@@ -10,14 +10,12 @@ from multiprocessing import Process
 
 from setproctitle import setproctitle  # pylint: disable=no-name-in-module
 
+from cereal import car, log
 import cereal.messaging as messaging
 import openpilot.selfdrive.sentry as sentry
-from cereal import car
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
-from openpilot.common.realtime import sec_since_boot
 from openpilot.system.swaglog import cloudlog
-from cereal import log
 
 WATCHDOG_FN = "/dev/shm/wd_"
 ENABLE_WATCHDOG = os.getenv("NO_WATCHDOG") is None
@@ -104,7 +102,7 @@ class ManagerProcess(ABC):
     except Exception:
       pass
 
-    dt = sec_since_boot() - self.last_watchdog_time / 1e9
+    dt = time.monotonic() - self.last_watchdog_time / 1e9
 
     if dt > self.watchdog_max_dt:
       if self.watchdog_seen and ENABLE_WATCHDOG:
