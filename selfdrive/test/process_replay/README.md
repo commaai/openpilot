@@ -104,7 +104,7 @@ output_logs = replay_process_with_name('calibrationd', lr, custom_params=custom_
 Replaying processes that use VisionIPC (e.g. modeld, dmonitoringmodeld) require additional `frs` dictionary with camera states as keys and `FrameReader` objects as values.
 
 ```py
-from tools.lib.framereader import FrameReader
+from openpilot.tools.lib.framereader import FrameReader
 
 frs = {
   'roadCameraState': FrameReader(...),
