@@ -44,23 +44,7 @@ Dev containers are supported in [multiple editors and IDEs](https://containers.d
 
 #### X11 forwarding on macOS
 
-GUI apps like `ui` or `cabana` can also run inside the container by leveraging X11 forwarding. To make use of it on macOS, additional configuration steps must be taken. First of all, install [XQuartz](https://formulae.brew.sh/cask/xquartz#default):
-```sh
-brew install --cask xquartz
-```
-
-Open XQuartz, go to `XQuartz` > `Settings...` > `Security` and check "Authenticate connections" and "Allow connections from network clients" boxes. Then allow for connections from localhost with:
-```sh
-xhost +localhost
-```
-Note that this is temporary and only affects current XQuartz session. To make it permanent, add the above line to shell rc file.
-
-`.Xauthority` file is used for authentication with X11 server. It's typically stored in user's `$HOME` directory. Openpilot's dev container is using `XAUTHORITY` env var to locate such file in host file system. If it's not set already, run following lines to set it up (and again, to make it permanent, add it to rc file):
-
-```sh
-XAUTH_FILE_ROW=($(xauth info | head -n 1))
-export XAUTHORITY="${XAUTH_FILE_ROW[@]:2}"
-```
+GUI apps like `ui` or `cabana` can also run inside the container by leveraging X11 forwarding. To make use of it on macOS, additional configuration steps must be taken. Follow [these](https://gist.github.com/sorny/969fe55d85c9b0035b0109a31cbcb088) steps to setup X11 forwarding on macOS.
 
 ### Windows
 
