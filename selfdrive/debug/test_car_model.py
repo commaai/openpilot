@@ -4,9 +4,9 @@ import sys
 from typing import List
 import unittest
 
-from selfdrive.car.tests.routes import CarTestRoute
-from selfdrive.car.tests.test_models import TestCarModel
-from tools.lib.route import SegmentName
+from openpilot.selfdrive.car.tests.routes import CarTestRoute
+from openpilot.selfdrive.car.tests.test_models import TestCarModel
+from openpilot.tools.lib.route import SegmentName
 
 
 def create_test_models_suite(routes: List[CarTestRoute], ci=False) -> unittest.TestSuite:

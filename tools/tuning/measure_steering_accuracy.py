@@ -8,7 +8,7 @@ import signal
 from collections import defaultdict
 
 import cereal.messaging as messaging
-from tools.lib.logreader import logreader_from_route_or_segment
+from openpilot.tools.lib.logreader import logreader_from_route_or_segment
 
 def sigint_handler(signal, frame):
   exit(0)

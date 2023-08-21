@@ -5,7 +5,7 @@ from typing import Dict, Optional
 import capnp
 
 from cereal import car
-from common.numpy_fast import clip, interp
+from openpilot.common.numpy_fast import clip, interp
 
 
 # kg of standard extra cargo to count for drive, gas, etc...

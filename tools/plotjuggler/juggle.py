@@ -10,11 +10,11 @@ import tempfile
 import requests
 import argparse
 
-from common.basedir import BASEDIR
-from selfdrive.test.openpilotci import get_url
-from tools.lib.logreader import LogReader
-from tools.lib.route import Route, SegmentName
-from tools.lib.helpers import save_log
+from openpilot.common.basedir import BASEDIR
+from openpilot.selfdrive.test.openpilotci import get_url
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.route import Route, SegmentName
+from openpilot.tools.lib.helpers import save_log
 from urllib.parse import urlparse, parse_qs
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
@@ -129,7 +129,7 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
   if dbc is None:
     for cp in [m for m in all_data if m.which() == 'carParams']:
       try:
-        DBC = __import__(f"selfdrive.car.{cp.carParams.carName}.values", fromlist=['DBC']).DBC
+        DBC = __import__(f"openpilot.selfdrive.car.{cp.carParams.carName}.values", fromlist=['DBC']).DBC
         dbc = DBC[cp.carParams.carFingerprint]['pt']
       except Exception:
         pass

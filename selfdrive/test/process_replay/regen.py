@@ -6,13 +6,13 @@ import capnp
 
 from typing import Union, Iterable, Optional, List, Any, Dict, Tuple
 
-from selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, replay_process, get_process_config, \
+from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, replay_process, get_process_config, \
                                                         check_openpilot_enabled, get_custom_params_from_lr
-from selfdrive.test.update_ci_routes import upload_route
-from tools.lib.route import Route
-from tools.lib.framereader import FrameReader
-from tools.lib.logreader import LogReader
-from tools.lib.helpers import save_log
+from openpilot.selfdrive.test.update_ci_routes import upload_route
+from openpilot.tools.lib.route import Route
+from openpilot.tools.lib.framereader import FrameReader
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.helpers import save_log
 
 
 def regen_segment(

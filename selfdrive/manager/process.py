@@ -10,13 +10,12 @@ from multiprocessing import Process
 
 from setproctitle import setproctitle  # pylint: disable=no-name-in-module
 
+from cereal import car, log
 import cereal.messaging as messaging
-import selfdrive.sentry as sentry
-from cereal import car
-from common.basedir import BASEDIR
-from common.params import Params
-from system.swaglog import cloudlog
-from cereal import log
+import openpilot.selfdrive.sentry as sentry
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.params import Params
+from openpilot.system.swaglog import cloudlog
 
 WATCHDOG_FN = "/dev/shm/wd_"
 ENABLE_WATCHDOG = os.getenv("NO_WATCHDOG") is None

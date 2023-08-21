@@ -3,12 +3,12 @@ from cereal import car
 from math import fabs, exp
 from panda import Panda
 
-from common.conversions import Conversions as CV
-from selfdrive.car import create_button_event, get_safety_config
-from selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
-from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus
-from selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD
-from selfdrive.controls.lib.drive_helpers import get_friction
+from openpilot.common.conversions import Conversions as CV
+from openpilot.selfdrive.car import create_button_event, get_safety_config
+from openpilot.selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
+from openpilot.selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus
+from openpilot.selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD
+from openpilot.selfdrive.controls.lib.drive_helpers import get_friction
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName

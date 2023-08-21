@@ -5,9 +5,9 @@ import unittest
 import numpy as np
 from control import StateSpace
 
-from selfdrive.car.honda.interface import CarInterface
-from selfdrive.car.honda.values import CAR
-from selfdrive.controls.lib.vehicle_model import VehicleModel, dyn_ss_sol, create_dyn_state_matrices
+from openpilot.selfdrive.car.honda.interface import CarInterface
+from openpilot.selfdrive.car.honda.values import CAR
+from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel, dyn_ss_sol, create_dyn_state_matrices
 
 
 class TestVehicleModel(unittest.TestCase):

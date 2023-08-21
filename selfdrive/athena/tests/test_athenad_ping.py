@@ -6,11 +6,11 @@ import unittest
 from typing import Callable, cast, Optional
 from unittest.mock import MagicMock
 
-from common.params import Params
-from common.timeout import Timeout
-from selfdrive.athena import athenad
-from selfdrive.manager.helpers import write_onroad_params
-from system.hardware import TICI
+from openpilot.common.params import Params
+from openpilot.common.timeout import Timeout
+from openpilot.selfdrive.athena import athenad
+from openpilot.selfdrive.manager.helpers import write_onroad_params
+from openpilot.system.hardware import TICI
 
 
 def wifi_radio(on: bool) -> None:
