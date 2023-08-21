@@ -1,9 +1,7 @@
 Import('env', 'arch', 'common', 'cereal', 'messaging')
 
 sensors = [
-  'sensors/file_sensor.cc',
   'sensors/i2c_sensor.cc',
-  'sensors/light_sensor.cc',
   'sensors/bmx055_accel.cc',
   'sensors/bmx055_gyro.cc',
   'sensors/bmx055_magn.cc',
