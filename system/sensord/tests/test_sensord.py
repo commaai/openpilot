@@ -29,24 +29,16 @@ MMC = {
   ('mmc5603nj', 'magneticUncalibrated'),
 }
 
-RPR = {
-  ('rpr0521', 'light'),
-}
-
 SENSOR_CONFIGURATIONS = (
-  (BMX | LSM | RPR),
-  (MMC | LSM | RPR),
-  (BMX | LSM_C | RPR),
-  (MMC| LSM_C | RPR),
+  (BMX | LSM),
+  (MMC | LSM),
+  (BMX | LSM_C),
+  (MMC| LSM_C),
 )
 
 Sensor = log.SensorEventData.SensorSource
 SensorConfig = namedtuple('SensorConfig', ['type', 'sanity_min', 'sanity_max', 'expected_freq'])
 ALL_SENSORS = {
-  Sensor.rpr0521: {
-    SensorConfig("light", 0, 1023, 100),
-  },
-
   Sensor.lsm6ds3: {
     SensorConfig("acceleration", 5, 15, 100),
     SensorConfig("gyroUncalibrated", 0, .2, 100),
@@ -79,7 +71,7 @@ def get_irq_count(irq: int):
 
 def read_sensor_events(duration_sec):
   sensor_types = ['accelerometer', 'gyroscope', 'magnetometer', 'accelerometer2',
-                  'gyroscope2', 'lightSensor', 'temperatureSensor']
+                  'gyroscope2', 'temperatureSensor']
   esocks = {}
   events = defaultdict(list)
   for stype in sensor_types:
