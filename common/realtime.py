@@ -7,7 +7,7 @@ from typing import Optional, List, Union
 
 from setproctitle import getproctitle
 
-from system.hardware import PC
+from openpilot.system.hardware import PC
 
 
 # time step for each process

@@ -30,17 +30,17 @@ from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutExce
 import cereal.messaging as messaging
 from cereal import log
 from cereal.services import service_list
-from common.api import Api
-from common.basedir import PERSIST
-from common.file_helpers import CallbackReader
-from common.params import Params
-from common.realtime import set_core_affinity
-from system.hardware import HARDWARE, PC, AGNOS
-from system.loggerd.config import ROOT
-from system.loggerd.xattr_cache import getxattr, setxattr
-from selfdrive.statsd import STATS_DIR
-from system.swaglog import SWAGLOG_DIR, cloudlog
-from system.version import get_commit, get_origin, get_short_branch, get_version
+from openpilot.common.api import Api
+from openpilot.common.basedir import PERSIST
+from openpilot.common.file_helpers import CallbackReader
+from openpilot.common.params import Params
+from openpilot.common.realtime import set_core_affinity
+from openpilot.system.hardware import HARDWARE, PC, AGNOS
+from openpilot.system.loggerd.config import ROOT
+from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
+from openpilot.selfdrive.statsd import STATS_DIR
+from openpilot.system.swaglog import SWAGLOG_DIR, cloudlog
+from openpilot.system.version import get_commit, get_origin, get_short_branch, get_version
 
 
 # TODO: use socket constant when mypy recognizes this as a valid attribute
@@ -552,7 +552,7 @@ def getNetworks():
 
 @dispatcher.add_method
 def takeSnapshot() -> Optional[Union[str, Dict[str, str]]]:
-  from system.camerad.snapshot.snapshot import jpeg_write, snapshot
+  from openpilot.system.camerad.snapshot.snapshot import jpeg_write, snapshot
   ret = snapshot()
   if ret is not None:
     def b64jpeg(x):

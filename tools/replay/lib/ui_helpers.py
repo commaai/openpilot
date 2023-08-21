@@ -7,10 +7,10 @@ import pygame  # pylint: disable=import-error
 
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
-from common.transformations.camera import (eon_f_frame_size, eon_f_focal_length,
+from openpilot.common.transformations.camera import (eon_f_frame_size, eon_f_focal_length,
                                            tici_f_frame_size, tici_f_focal_length,
                                            get_view_frame_from_calib_frame)
-from selfdrive.controls.radard import RADAR_TO_CAMERA
+from openpilot.selfdrive.controls.radard import RADAR_TO_CAMERA
 
 
 RED = (255, 0, 0)

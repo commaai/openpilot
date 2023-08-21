@@ -1,13 +1,15 @@
 from collections import defaultdict
 
 from cereal import car
-from common.conversions import Conversions as CV
-from common.numpy_fast import interp
+from openpilot.common.conversions import Conversions as CV
+from openpilot.common.numpy_fast import interp
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
-from selfdrive.car.honda.hondacan import get_cruise_speed_conversion, get_pt_bus
-from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL, HONDA_BOSCH_RADARLESS
-from selfdrive.car.interfaces import CarStateBase
+from openpilot.selfdrive.car.honda.hondacan import get_cruise_speed_conversion, get_pt_bus
+from openpilot.selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, \
+                                                 HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL, \
+                                                 HONDA_BOSCH_RADARLESS
+from openpilot.selfdrive.car.interfaces import CarStateBase
 
 TransmissionType = car.CarParams.TransmissionType
 

@@ -8,8 +8,8 @@ import warnings
 
 
 from cereal import log as capnp_log
-from tools.lib.filereader import FileReader
-from tools.lib.route import Route, SegmentName
+from openpilot.tools.lib.filereader import FileReader
+from openpilot.tools.lib.route import Route, SegmentName
 
 # this is an iterator itself, and uses private variables from LogReader
 class MultiLogIterator:
