@@ -4,6 +4,37 @@ addopts = "--ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --igno
 python_files = "test_*.py"
 timeout = "30"  # you get this long by default
 
+[tool.mypy]
+python_version = "3.11"
+plugins = [
+  "numpy.typing.mypy_plugin",
+]
+exclude = [
+  "body/",
+  "cereal/",
+  "opendbc/",
+  "panda/",
+  "laika/",
+  "laika_repo/",
+  "rednose/",
+  "rednose_repo/",
+  "tinygrad/",
+  "tinygrad_repo/",
+  "third_party/",
+]
+
+# third-party packages
+ignore_missing_imports=true
+
+# helpful warnings
+warn_redundant_casts=true
+warn_unreachable=true
+warn_unused_ignores=true
+
+# restrict dynamic typing
+warn_return_any=true
+
+
 [tool.poetry]
 name = "openpilot"
 version = "0.1.0"
