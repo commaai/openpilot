@@ -652,7 +652,7 @@ def log_handler(end_event: threading.Event) -> None:
 
 def stat_handler(end_event: threading.Event) -> None:
   while not end_event.is_set():
-    last_scan = 0
+    last_scan = 0.
     curr_scan = time.monotonic()
     try:
       if curr_scan - last_scan > 10:
