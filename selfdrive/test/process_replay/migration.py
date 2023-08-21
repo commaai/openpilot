@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 from cereal import messaging
-from selfdrive.test.process_replay.vision_meta import meta_from_encode_index
+from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
 
 
 def migrate_all(lr, old_logtime=False, camera_states=False):

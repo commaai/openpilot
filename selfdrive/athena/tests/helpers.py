@@ -6,7 +6,7 @@ import time
 from functools import wraps
 from multiprocessing import Process
 
-from common.timeout import Timeout
+from openpilot.common.timeout import Timeout
 
 
 class MockResponse:

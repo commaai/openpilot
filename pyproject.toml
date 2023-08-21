@@ -4,6 +4,37 @@ addopts = "--ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --igno
 python_files = "test_*.py"
 timeout = "30"  # you get this long by default
 
+[tool.mypy]
+python_version = "3.11"
+plugins = [
+  "numpy.typing.mypy_plugin",
+]
+exclude = [
+  "body/",
+  "cereal/",
+  "opendbc/",
+  "panda/",
+  "laika/",
+  "laika_repo/",
+  "rednose/",
+  "rednose_repo/",
+  "tinygrad/",
+  "tinygrad_repo/",
+  "third_party/",
+]
+
+# third-party packages
+ignore_missing_imports=true
+
+# helpful warnings
+warn_redundant_casts=true
+warn_unreachable=true
+warn_unused_ignores=true
+
+# restrict dynamic typing
+warn_return_any=true
+
+
 [tool.poetry]
 name = "openpilot"
 version = "0.1.0"
@@ -31,7 +62,7 @@ hexdump = "*"
 Jinja2 = "*"
 json-rpc = "*"
 libusb1 = "*"
-numpy = "~1.23"  # pinned for acados
+numpy = "*"
 onnx = ">=1.14.0"
 onnxruntime-gpu = { version = ">=1.15.1", platform = "linux", markers = "platform_machine == 'x86_64'" }
 pillow = "*"
@@ -101,7 +132,7 @@ types-pycurl = "*"
 types-PyYAML = "*"
 types-requests = "*"
 types-tabulate = "*"
-pyqt5 = "*"
+pyqt5 = { version = "*", markers = "platform_machine == 'x86_64'" } # no aarch64 wheels for macOS/linux
 
 
 [build-system]

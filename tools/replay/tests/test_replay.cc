@@ -147,7 +147,7 @@ TEST_CASE("Route") {
 // helper class for unit tests
 class TestReplay : public Replay {
  public:
-  TestReplay(const QString &route, uint8_t flags = REPLAY_FLAG_NO_FILE_CACHE) : Replay(route, {}, {}, {}, nullptr, flags) {}
+  TestReplay(const QString &route, uint32_t flags = REPLAY_FLAG_NO_FILE_CACHE | REPLAY_FLAG_NO_VIPC) : Replay(route, {}, {}, {}, nullptr, flags) {}
   void test_seek();
   void testSeekTo(int seek_to);
 };
@@ -191,7 +191,7 @@ void TestReplay::test_seek() {
   QEventLoop loop;
   std::thread thread = std::thread([&]() {
     for (int i = 0; i < 10; ++i) {
-      testSeekTo(util::random_int(0, 1 * 60));
+      testSeekTo(util::random_int(0, 2 * 60));
     }
     loop.quit();
   });
