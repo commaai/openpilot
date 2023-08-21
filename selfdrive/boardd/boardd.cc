@@ -23,6 +23,7 @@
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/messaging/messaging.h"
 #include "common/params.h"
+#include "common/ratekeeper.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
 #include "common/util.h"
@@ -248,8 +249,7 @@ void can_recv_thread(std::vector<Panda *> pandas) {
   PubMaster pm({"can"});
 
   // run at 100Hz
-  const uint64_t dt = 10000000ULL;
-  uint64_t next_frame_time = nanos_since_boot() + dt;
+  RateKeeper rk("boardd_can_recv", 100);
   std::vector<can_frame> raw_can_data;
 
   while (!do_exit && check_all_connected(pandas)) {
@@ -271,18 +271,7 @@ void can_recv_thread(std::vector<Panda *> pandas) {
     }
     pm.send("can", msg);
 
-    uint64_t cur_time = nanos_since_boot();
-    int64_t remaining = next_frame_time - cur_time;
-    if (remaining > 0) {
-      std::this_thread::sleep_for(std::chrono::nanoseconds(remaining));
-    } else {
-      if (ignition) {
-        LOGW("missed cycles (%lu) %lld", (unsigned long)(-1*remaining/dt), (long long)remaining);
-      }
-      next_frame_time = cur_time;
-    }
-
-    next_frame_time += dt;
+    rk.keepTime();
   }
 }
 
@@ -483,9 +472,9 @@ void panda_state_thread(std::vector<Panda *> pandas, bool spoofing_started) {
   LOGD("start panda state thread");
 
   // run at 2hz
-  while (!do_exit && check_all_connected(pandas)) {
-    uint64_t start_time = nanos_since_boot();
+  RateKeeper rk("panda_state_thread", 2);
 
+  while (!do_exit && check_all_connected(pandas)) {
     // send out peripheralState
     send_peripheral_state(&pm, peripheral_panda);
     auto ignition_opt = send_panda_states(&pm, pandas, spoofing_started);
@@ -543,8 +532,7 @@ void panda_state_thread(std::vector<Panda *> pandas, bool spoofing_started) {
       panda->send_heartbeat(engaged);
     }
 
-    uint64_t dt = nanos_since_boot() - start_time;
-    util::sleep_for(500 - dt / 1000000ULL);
+    rk.keepTime();
   }
 }
 

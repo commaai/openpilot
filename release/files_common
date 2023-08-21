@@ -162,6 +162,8 @@ common/clutil.cc
 common/clutil.h
 common/params.h
 common/params.cc
+common/ratekeeper.cc
+common/ratekeeper.h
 common/watchdog.cc
 common/watchdog.h
 
