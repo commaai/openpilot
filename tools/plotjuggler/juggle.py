@@ -129,7 +129,7 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
   if dbc is None:
     for cp in [m for m in all_data if m.which() == 'carParams']:
       try:
-        DBC = __import__(f"selfdrive.car.{cp.carParams.carName}.values", fromlist=['DBC']).DBC
+        DBC = __import__(f"openpilot.selfdrive.car.{cp.carParams.carName}.values", fromlist=['DBC']).DBC
         dbc = DBC[cp.carParams.carFingerprint]['pt']
       except Exception:
         pass
