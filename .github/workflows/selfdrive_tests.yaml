@@ -117,6 +117,8 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
+          .env
+          .venv
           ~/github_brew_cache_entries.txt
           ~/.pyenv
           ~/Library/Caches/pypoetry
@@ -148,18 +150,17 @@ jobs:
         PYTHONWARNINGS: default
     - name: Build openpilot
       run: |
-        source tools/openpilot_env.sh
+        eval "$(pyenv init --path)"
         poetry run scons -j$(nproc)
     - name: Run tests
       run: |
-        source tools/openpilot_env.sh
-        export PYTHONPATH=$PWD
+        eval "$(pyenv init --path)"
         poetry run tools/plotjuggler/test_plotjuggler.py
     - name: Pre Cache - Cleanup scons cache
       if: github.ref == 'refs/heads/master'
       run: |
-        source tools/openpilot_env.sh
         rm -rf /tmp/scons_cache/*
+        eval "$(pyenv init --path)"
         poetry run scons -j$(nproc) --cache-populate
     - name: Save scons cache
       id: scons-save-cache
