@@ -29,8 +29,6 @@ def get_all_car_info() -> List[CarInfo]:
   all_car_info: List[CarInfo] = []
   footnotes = get_all_footnotes()
   for model, car_info in get_interface_attr("CAR_INFO", combine_brands=True).items():
-    print(model, car_info)
-
     # If available, uses experimental longitudinal limits for the docs
     CP = interfaces[model][0].get_params(model, fingerprint=gen_empty_fingerprint(),
                                          car_fw=[car.CarParams.CarFw(ecu="unknown")], experimental_long=True, docs=True)
@@ -50,7 +48,6 @@ def get_all_car_info() -> List[CarInfo]:
 
   # Sort cars by make and model + year
   sorted_cars: List[CarInfo] = natsorted(all_car_info, key=lambda car: car.name.lower())
-  print(sorted_cars)
   return sorted_cars
 
 
