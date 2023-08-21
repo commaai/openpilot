@@ -23,8 +23,9 @@ def pm_patch(name, value, constant=False):
     return patch(f"openpilot.selfdrive.thermald.power_monitoring.{name}", value)
   return patch(f"openpilot.selfdrive.thermald.power_monitoring.{name}", return_value=value)
 
+
 @patch("time.monotonic", new=mock_time_monotonic)
-@patch("openpilot.common.params.put_nonblocking", new=lambda x, y: Params().put(x, y))
+@patch("openpilot.selfdrive.thermald.power_monitoring.put_nonblocking", new=lambda x, y: Params().put(x, y))
 class TestPowerMonitoring(unittest.TestCase):
   def setUp(self):
     self.params = Params()
