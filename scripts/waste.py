@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
+import time
 import numpy as np
-from common.realtime import sec_since_boot
 from multiprocessing import Process
 from setproctitle import setproctitle  # pylint: disable=no-name-in-module
 
@@ -12,12 +12,12 @@ def waste(core):
   m2 = np.zeros((200, 200)) + 1.2
 
   i = 1
-  st = sec_since_boot()
+  st = time.monotonic()
   j = 0
   while 1:
     if (i % 100) == 0:
       setproctitle("%3d: %8d" % (core, i))
-      lt = sec_since_boot()
+      lt = time.monotonic()
       print("%3d: %8d %f  %.2f" % (core, i, lt-st, j))
       st = lt
     i += 1

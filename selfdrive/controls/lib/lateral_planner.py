@@ -1,6 +1,7 @@
+import time
 import numpy as np
-from common.realtime import sec_since_boot, DT_MDL
 from common.numpy_fast import interp
+from common.realtime import DT_MDL
 from system.swaglog import cloudlog
 from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc
 from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import N as LAT_MPC_N
@@ -108,7 +109,7 @@ class LateralPlanner:
 
     #  Check for infeasible MPC solution
     mpc_nans = np.isnan(self.lat_mpc.x_sol[:, 3]).any()
-    t = sec_since_boot()
+    t = time.monotonic()
     if mpc_nans or self.lat_mpc.solution_status != 0:
       self.reset_mpc()
       self.x0[3] = measured_curvature * self.v_ego
