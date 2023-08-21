@@ -3,10 +3,10 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import linear_model  # pylint: disable=import-error
-from selfdrive.car.toyota.values import STEER_THRESHOLD
+from openpilot.selfdrive.car.toyota.values import STEER_THRESHOLD
 
-from tools.lib.route import Route
-from tools.lib.logreader import MultiLogIterator
+from openpilot.tools.lib.route import Route
+from openpilot.tools.lib.logreader import MultiLogIterator
 
 MIN_SAMPLES = 30 * 100
 

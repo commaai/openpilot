@@ -3,10 +3,10 @@ import os
 import time
 import numpy as np
 from multiprocessing import Process
-from setproctitle import setproctitle  # pylint: disable=no-name-in-module
+from setproctitle import setproctitle
 
 def waste(core):
-  os.sched_setaffinity(0, [core,])  # pylint: disable=no-member
+  os.sched_setaffinity(0, [core,])
 
   m1 = np.zeros((200, 200)) + 0.8
   m2 = np.zeros((200, 200)) + 1.2

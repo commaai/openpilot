@@ -4,9 +4,9 @@ import time
 from tqdm import tqdm
 
 from cereal import car
-from selfdrive.car.tests.routes import CarTestRoute
-from selfdrive.car.tests.test_models import TestCarModelBase
-from tools.plotjuggler.juggle import DEMO_ROUTE
+from openpilot.selfdrive.car.tests.routes import CarTestRoute
+from openpilot.selfdrive.car.tests.test_models import TestCarModelBase
+from openpilot.tools.plotjuggler.juggle import DEMO_ROUTE
 
 N_RUNS = 10
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 from cereal import car
 from panda import Panda
-from common.conversions import Conversions as CV
-from selfdrive.car import get_safety_config
-from selfdrive.car.ford.fordcan import CanBus
-from selfdrive.car.ford.values import CANFD_CAR, CAR, Ecu
-from selfdrive.car.interfaces import CarInterfaceBase
+from openpilot.common.conversions import Conversions as CV
+from openpilot.selfdrive.car import get_safety_config
+from openpilot.selfdrive.car.ford.fordcan import CanBus
+from openpilot.selfdrive.car.ford.values import CANFD_CAR, CAR, Ecu
+from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 TransmissionType = car.CarParams.TransmissionType
 GearShifter = car.CarState.GearShifter

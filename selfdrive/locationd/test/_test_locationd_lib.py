@@ -10,7 +10,7 @@ from cffi import FFI
 import cereal.messaging as messaging
 from cereal import log
 
-from common.ffi_wrapper import suffix
+from openpilot.common.ffi_wrapper import suffix
 
 SENSOR_DECIMATION = 1
 VISION_DECIMATION = 1

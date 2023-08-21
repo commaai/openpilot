@@ -13,19 +13,19 @@ import psutil
 
 import cereal.messaging as messaging
 from cereal import log
-from common.dict_helpers import strip_deprecated_keys
-from common.time import MIN_DATE
-from common.filter_simple import FirstOrderFilter
-from common.params import Params
-from common.realtime import DT_TRML
-from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from system.hardware import HARDWARE, TICI, AGNOS
-from system.loggerd.config import get_available_percent
-from selfdrive.statsd import statlog
-from system.swaglog import cloudlog
-from selfdrive.thermald.power_monitoring import PowerMonitoring
-from selfdrive.thermald.fan_controller import TiciFanController
-from system.version import terms_version, training_version
+from openpilot.common.dict_helpers import strip_deprecated_keys
+from openpilot.common.time import MIN_DATE
+from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.params import Params
+from openpilot.common.realtime import DT_TRML
+from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
+from openpilot.system.hardware import HARDWARE, TICI, AGNOS
+from openpilot.system.loggerd.config import get_available_percent
+from openpilot.selfdrive.statsd import statlog
+from openpilot.system.swaglog import cloudlog
+from openpilot.selfdrive.thermald.power_monitoring import PowerMonitoring
+from openpilot.selfdrive.thermald.fan_controller import TiciFanController
+from openpilot.system.version import terms_version, training_version
 
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType

@@ -8,9 +8,9 @@ import numpy as np
 import pygame  # pylint: disable=import-error
 
 import cereal.messaging as messaging
-from common.numpy_fast import clip
-from common.basedir import BASEDIR
-from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, UP,
+from openpilot.common.numpy_fast import clip
+from openpilot.common.basedir import BASEDIR
+from openpilot.tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, UP,
                                          _INTRINSICS, BLACK, GREEN,
                                          YELLOW, Calibration,
                                          get_blank_lid_overlay, init_plots,
