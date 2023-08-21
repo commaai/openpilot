@@ -4,11 +4,11 @@ import numpy as np
 
 from cereal import log
 import cereal.messaging as messaging
-from common.realtime import Ratekeeper, DT_MDL
-from selfdrive.controls.lib.longcontrol import LongCtrlState
-from selfdrive.modeld.constants import T_IDXS
-from selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
-from selfdrive.controls.radard import _LEAD_ACCEL_TAU
+from openpilot.common.realtime import Ratekeeper, DT_MDL
+from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
+from openpilot.selfdrive.modeld.constants import T_IDXS
+from openpilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
+from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU
 
 
 class Plant:
@@ -46,8 +46,8 @@ class Plant:
     time.sleep(1)
     self.sm = messaging.SubMaster(['longitudinalPlan'])
 
-    from selfdrive.car.honda.values import CAR
-    from selfdrive.car.honda.interface import CarInterface
+    from openpilot.selfdrive.car.honda.values import CAR
+    from openpilot.selfdrive.car.honda.interface import CarInterface
 
     self.planner = LongitudinalPlanner(CarInterface.get_non_essential_params(CAR.CIVIC), init_v=self.speed)
 

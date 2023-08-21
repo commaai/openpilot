@@ -7,7 +7,7 @@ signal.signal(signal.SIGTERM, signal.SIG_DFL)
 
 from PyQt5.QtCore import QTimer  # pylint: disable=no-name-in-module, import-error
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel # pylint: disable=no-name-in-module, import-error
-from selfdrive.ui.qt.python_helpers import set_main_window
+from openpilot.selfdrive.ui.qt.python_helpers import set_main_window
 
 class Window(QWidget):
   def __init__(self, parent=None):

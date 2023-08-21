@@ -1,8 +1,8 @@
 from cereal import car
 from opendbc.can.packer import CANPacker
-from selfdrive.car import apply_std_steer_angle_limits
-from selfdrive.car.nissan import nissancan
-from selfdrive.car.nissan.values import CAR, CarControllerParams
+from openpilot.selfdrive.car import apply_std_steer_angle_limits
+from openpilot.selfdrive.car.nissan import nissancan
+from openpilot.selfdrive.car.nissan.values import CAR, CarControllerParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 

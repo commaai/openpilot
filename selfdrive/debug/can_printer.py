@@ -4,7 +4,7 @@ import binascii
 from collections import defaultdict
 
 import cereal.messaging as messaging
-from common.realtime import sec_since_boot
+from openpilot.common.realtime import sec_since_boot
 
 
 def can_printer(bus, max_msg, addr, ascii_decode):

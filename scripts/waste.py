@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import numpy as np
-from common.realtime import sec_since_boot
+from openpilot.common.realtime import sec_since_boot
 from multiprocessing import Process
 from setproctitle import setproctitle  # pylint: disable=no-name-in-module
 

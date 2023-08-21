@@ -15,8 +15,8 @@ from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 
 import cereal.messaging as messaging
-from common.basedir import BASEDIR
-from tools.bodyteleop.bodyav import BodyMic, WebClientSpeaker, force_codec, play_sound, MediaBlackhole, EncodedBodyVideo
+from openpilot.common.basedir import BASEDIR
+from openpilot.tools.bodyteleop.bodyav import BodyMic, WebClientSpeaker, force_codec, play_sound, MediaBlackhole, EncodedBodyVideo
 
 logger = logging.getLogger("pc")
 logging.basicConfig(level=logging.INFO)

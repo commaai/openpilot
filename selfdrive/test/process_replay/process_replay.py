@@ -16,17 +16,17 @@ import cereal.messaging as messaging
 from cereal import car
 from cereal.services import service_list
 from cereal.visionipc import VisionIpcServer, get_endpoint_name as vipc_get_endpoint_name
-from common.params import Params
-from common.timeout import Timeout
-from common.realtime import DT_CTRL
+from openpilot.common.params import Params
+from openpilot.common.timeout import Timeout
+from openpilot.common.realtime import DT_CTRL
 from panda.python import ALTERNATIVE_EXPERIENCE
-from selfdrive.car.car_helpers import get_car, interfaces
-from selfdrive.manager.process_config import managed_processes
-from selfdrive.test.process_replay.helpers import OpenpilotPrefix, DummySocket
-from selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
-from selfdrive.test.process_replay.migration import migrate_all
-from selfdrive.test.process_replay.capture import ProcessOutputCapture
-from tools.lib.logreader import LogReader
+from openpilot.selfdrive.car.car_helpers import get_car, interfaces
+from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.test.process_replay.helpers import OpenpilotPrefix, DummySocket
+from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
+from openpilot.selfdrive.test.process_replay.migration import migrate_all
+from openpilot.selfdrive.test.process_replay.capture import ProcessOutputCapture
+from openpilot.tools.lib.logreader import LogReader
 
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7

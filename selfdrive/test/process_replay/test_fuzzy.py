@@ -6,8 +6,8 @@ from parameterized import parameterized
 import unittest
 
 from cereal import log
-from selfdrive.car.toyota.values import CAR as TOYOTA
-from selfdrive.test.fuzzy_generation import FuzzyGenerator
+from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
+from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
 import selfdrive.test.process_replay.process_replay as pr
 
 # These processes currently fail because of unrealistic data breaking assumptions
