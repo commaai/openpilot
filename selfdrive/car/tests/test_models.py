@@ -64,7 +64,7 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
   return test_cases
 
 
-def get_segment_url(route: str, seg: int, ci: bool) -> str:
+def get_segment_url(route: str, seg: int, ci: bool) -> Optional[str]:
   """
   Returns URL to access segment for the following cases:
   - Internal segment list

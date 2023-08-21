@@ -7,7 +7,7 @@ BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 TOKEN_PATH = "/data/azure_token"
 
 
-def get_url(route_name, segment_num, log_type="rlog"):
+def get_url(route_name, segment_num, log_type="rlog") -> str:
   ext = "hevc" if log_type.endswith('camera') else "bz2"
   return BASE_URL + f"{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
 

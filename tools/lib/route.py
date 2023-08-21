@@ -3,7 +3,7 @@ import re
 from urllib.parse import urlparse
 from collections import defaultdict
 from itertools import chain
-from typing import Optional
+from typing import List, Optional
 
 from openpilot.tools.lib.auth_config import get_token
 from openpilot.tools.lib.api import CommaApi
@@ -34,7 +34,7 @@ class Route:
   def segments(self):
     return self._segments
 
-  def log_paths(self):
+  def log_paths(self) -> List[Optional[str]]:
     log_path_by_seg_num = {s.name.segment_num: s.log_path for s in self._segments}
     return [log_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
 
