@@ -378,6 +378,8 @@ jobs:
       with:
         path: ~/comma_download_cache
         key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'selfdrive/car/tests/routes.py') }}-${{ matrix.job }}
+    - name: Test
+      run: ls -lah ~/comma_download_cache
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test car models
