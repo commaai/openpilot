@@ -348,10 +348,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QVBoxLayout *sidebar_layout = new QVBoxLayout(sidebar_widget);
   sidebar_layout->setMargin(0);
   panel_widget = new QStackedWidget();
-  panel_widget->setStyleSheet(R"(
-    border-radius: 30px;
-    background-color: #292929;
-  )");
 
   // close button
   QPushButton *close_btn = new QPushButton(tr("×"));
@@ -439,6 +435,10 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     }
     SettingsWindow {
       background-color: black;
+    }
+    QStackedWidget, ScrollView {
+      background-color: #292929;
+      border-radius: 30px;
     }
   )");
 }
