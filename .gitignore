@@ -6,7 +6,6 @@ venv/
 .tags
 .ipynb_checkpoints
 .idea
-.moc_files
 .overlay_init
 .overlay_consistent
 .sconsign.dblite
