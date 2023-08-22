@@ -30,7 +30,7 @@ def ublox(started, params, CP: car.CarParams) -> bool:
   use_ublox = ublox_available()
   if use_ublox != params.get_bool("UbloxAvailable"):
     params.put_bool("UbloxAvailable", use_ublox)
-  return started and use_ublox
+  return use_ublox
 
 def qcomgps(started, params, CP: car.CarParams) -> bool:
   return ublox_available()
@@ -67,8 +67,8 @@ procs = [
   PythonProcess("navd", "selfdrive.navd.navd"),
   PythonProcess("pandad", "selfdrive.boardd.pandad", offroad_callback=enabled_callback),
   PythonProcess("paramsd", "selfdrive.locationd.paramsd"),
-  NativeProcess("ubloxd", "system/ubloxd", ["./ubloxd"], enabled=TICI, onroad_callback=disabled_callback, callback=ublox),
-  PythonProcess("pigeond", "system.sensord.pigeond", enabled=TICI, onroad_callback=disabled_callback, callback=ublox),
+  NativeProcess("ubloxd", "system/ubloxd", ["./ubloxd"], enabled=TICI, onroad_callback=ublox),
+  PythonProcess("pigeond", "system.sensord.pigeond", enabled=TICI, onroad_callback=ublox),
   PythonProcess("plannerd", "selfdrive.controls.plannerd"),
   PythonProcess("radard", "selfdrive.controls.radard"),
   PythonProcess("thermald", "selfdrive.thermald.thermald", offroad_callback=enabled_callback),
