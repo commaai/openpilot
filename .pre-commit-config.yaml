@@ -35,7 +35,7 @@ repos:
         args: ['--explicit-package-bases']
         exclude: '^(third_party/)|(cereal/)|(opendbc/)|(panda/)|(laika/)|(laika_repo/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(xx/)'
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.284
+    rev: v0.0.285
     hooks:
     -   id: ruff
         exclude: '^(third_party/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(laika_repo/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)'
@@ -61,7 +61,7 @@ repos:
         language: script
         pass_filenames: false
 -   repo: https://github.com/python-poetry/poetry
-    rev: '1.5.0'
+    rev: '1.6.0'
     hooks:
     -   id: poetry-check
     -   id: poetry-lock
