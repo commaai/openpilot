@@ -82,9 +82,8 @@ jobs:
       run: ${{ env.RUN }} "scons -j$(nproc) --extras && release/check-dirty.sh"
     - name: Cleanup scons cache and rebuild
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 2 || 30) }} # allow more time when we missed the scons cache
-      run: |
-          ${{ env.RUN }} "rm -rf /tmp/scons_cache/* && \
-                          scons -j$(nproc) --cache-populate"
+      if: github.ref == 'refs/heads/master'
+      run: ${{ env.RUN }} "release/clean-cache.sh"
     - name: Save scons cache
       uses: actions/cache/save@v3
       if: github.ref == 'refs/heads/master'
@@ -159,9 +158,8 @@ jobs:
     - name: Pre Cache - Cleanup scons cache
       if: github.ref == 'refs/heads/master'
       run: |
-        rm -rf /tmp/scons_cache/*
         eval "$(pyenv init --path)"
-        poetry run scons -j$(nproc) --cache-populate
+        poetry run release/clean-cache.sh
     - name: Save scons cache
       id: scons-save-cache
       uses: actions/cache/save@v3
