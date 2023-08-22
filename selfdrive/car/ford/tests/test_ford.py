@@ -65,6 +65,7 @@ class TestFordFW(unittest.TestCase):
       for fw in fws:
         self.assertEqual(len(fw), 24, "Expected ECU response to be 24 bytes")
 
+        # TODO: parse with regex
         fw_parts = fw.rstrip(b'\x00').split(b'-')
         self.assertEqual(len(fw_parts), 3, "Expected FW to be in format: prefix-core-suffix")
 
