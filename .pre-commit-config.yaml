@@ -53,6 +53,16 @@ repos:
         - --quiet
         - --force
         - -j8
+-   repo: https://github.com/cpplint/cpplint
+    rev: 1.6.1
+    hooks:
+    -   id: cpplint
+        args:
+        - --quiet
+        - --counting=detailed
+        - --linelength=240
+        - --filter=-legal,-build/include_order,-readability/casting,-whitespace/braces,-whitespace/indent,-whitespace/operators,-build/c++11,-readability/todo,-runtime/explicit,-runtime/int,-whitespace/comments,-readability/braces,-runtime/arrays,-runtime/references
+
 -   repo: local
     hooks:
     -   id: test_translations
