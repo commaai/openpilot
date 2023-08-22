@@ -22,7 +22,6 @@
 #include "system/sensord/sensors/lsm6ds3_gyro.h"
 #include "system/sensord/sensors/lsm6ds3_temp.h"
 #include "system/sensord/sensors/mmc5603nj_magn.h"
-#include "system/sensord/sensors/sensor.h"
 
 #define I2C_BUS_IMU 1
 
