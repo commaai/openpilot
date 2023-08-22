@@ -57,14 +57,14 @@ repos:
     rev: 1.6.1
     hooks:
     -   id: cpplint
-        exclude: '^(third_party/)|(cereal/)|(body/)|(rednose/)|(rednose_repo/)|(opendbc/)|(panda/)|(tools/)|(selfdrive/modeld/thneed/debug/)|(selfdrive/modeld/test/)|(selfdrive/camerad/test/)|(installer/)'
+        exclude: '^(third_party/)|(cereal/)|(body/)|(rednose/)|(rednose_repo/)|(opendbc/)|(panda/)|(tools/)|(selfdrive/modeld/thneed/debug/)|(selfdrive/modeld/test/)|(selfdrive/camerad/test/)|(installer/)|(generated/)'
         args:
         - --quiet
         - --counting=total
         - --linelength=240
         # https://google.github.io/styleguide/cppguide.html
         # relevant rules are whitelisted, see all options with: cpplint --filter=
-        - --filter=-build,-legal,-readability,-runtime,-whitespace,+build/forward_decl,+build/deprecated,+whitespace/line_length
+        - --filter=-build,-legal,-readability,-runtime,-whitespace,+build/forward_decl,+build/deprecated,+whitespace/line_length,+whitespace/empty_if_body,+whitespace/empty_loop_body,+whitespace/empty_conditional_body
 -   repo: local
     hooks:
     -   id: test_translations
@@ -78,5 +78,5 @@ repos:
     -   id: poetry-check
     -   id: poetry-lock
         name: validate poetry lock
-        args: 
+        args:
         - --check
