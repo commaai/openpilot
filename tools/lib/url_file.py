@@ -14,8 +14,10 @@ from openpilot.common.file_helpers import mkdirs_exists_ok, atomic_write_in_dir
 K = 1000
 CHUNK_SIZE = 1000 * K
 
-CACHE_DIR = os.environ.get("COMMA_CACHE", "/tmp/comma_download_cache/")
+def get_cache_dir():
+  return os.environ.get("COMMA_CACHE", "/tmp/comma_download_cache/")
 
+CACHE_DIR = get_cache_dir()
 
 def hash_256(link):
   hsh = str(sha256((link.split("?")[0]).encode('utf-8')).hexdigest())

@@ -4,7 +4,9 @@ import shutil
 import unittest
 
 os.environ["COMMA_CACHE"] = "/tmp/__test_cache__"
-from openpilot.tools.lib.url_file import URLFile, CACHE_DIR
+from openpilot.tools.lib.url_file import URLFile, get_cache_dir
+
+CACHE_DIR = get_cache_dir()
 
 
 class TestFileDownload(unittest.TestCase):
