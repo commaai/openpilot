@@ -206,6 +206,6 @@ def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
   CP.carFw = car_fw
   CP.fingerprintSource = source
   CP.fuzzyFingerprint = not exact_match
-  CP.fingerprintingTime = fw_query_time
+  CP.fwQueryTime = fw_query_time
 
   return CarInterface(CP, CarController, CarState), CP
