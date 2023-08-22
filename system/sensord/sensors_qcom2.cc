@@ -123,7 +123,7 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
     {&bmx055_accel, "accelerometer2"},
     {&bmx055_gyro, "gyroscope2"},
     {&bmx055_magn, "magnetometer"},
-    {&bmx055_temp, "temperatureSensor"},
+    {&bmx055_temp, "temperatureSensor2"},
 
     {&lsm6ds3_accel, "accelerometer"},
     {&lsm6ds3_gyro, "gyroscope"},
@@ -134,16 +134,16 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
 
   // Sensor init
   std::vector<std::tuple<Sensor *, bool, int>> sensors_init; // Sensor, required
-  sensors_init.push_back({&bmx055_accel, false, SENSOR_FREQ});
-  sensors_init.push_back({&bmx055_gyro, false, SENSOR_FREQ});
-  sensors_init.push_back({&bmx055_magn, false, MAG_FREQ});
-  sensors_init.push_back({&bmx055_temp, false, SENSOR_FREQ});
+  sensors_init.push_back({&bmx055_accel, false, 100});
+  sensors_init.push_back({&bmx055_gyro, false, 100});
+  sensors_init.push_back({&bmx055_magn, false, 25});
+  sensors_init.push_back({&bmx055_temp, false, 2});
 
-  sensors_init.push_back({&lsm6ds3_accel, true, SENSOR_FREQ});
-  sensors_init.push_back({&lsm6ds3_gyro, true, SENSOR_FREQ});
-  sensors_init.push_back({&lsm6ds3_temp, true, SENSOR_FREQ});
+  sensors_init.push_back({&lsm6ds3_accel, true, 100});
+  sensors_init.push_back({&lsm6ds3_gyro, true, 100});
+  sensors_init.push_back({&lsm6ds3_temp, true, 2});
 
-  sensors_init.push_back({&mmc5603nj_magn, false, MAG_FREQ});
+  sensors_init.push_back({&mmc5603nj_magn, false, 25});
 
   bool has_magnetometer = false;
 
