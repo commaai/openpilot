@@ -64,7 +64,6 @@ jobs:
       run: eval "$BUILD_CL"
     - name: Build simulator image
       run: |
-        docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest
         DOCKER_BUILDKIT=1 docker build --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/sim/Dockerfile.sim .
     - name: Push to container registry
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
