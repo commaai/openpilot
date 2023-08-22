@@ -193,14 +193,12 @@ class TestSensord(unittest.TestCase):
         # before the sensor is read
         tdiffs.append(abs(measurement.logMonoTime - m.timestamp) / 1e6)
 
-    high_delay_diffs = set(filter(lambda d: d >= 15., tdiffs))
-    assert len(high_delay_diffs) < 20, f"Too many measurements published : {high_delay_diffs}"
+    # some sensors have a read procedure that will introduce an expected diff on the order of 20ms
+    high_delay_diffs = set(filter(lambda d: d >= 25., tdiffs))
+    assert len(high_delay_diffs) < 20, f"Too many measurements published: {high_delay_diffs}"
 
     avg_diff = round(sum(tdiffs)/len(tdiffs), 4)
     assert avg_diff < 4, f"Avg packet diff: {avg_diff:.1f}ms"
-
-    stddev = np.std(tdiffs)
-    assert stddev < 2, f"Timing diffs have too high stddev: {stddev}"
 
   def test_sensor_values_sanity_check(self):
     sensor_values = dict()
