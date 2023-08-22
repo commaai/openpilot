@@ -167,7 +167,7 @@ def fingerprint(logcan, sendcan, num_pandas):
   set_obd_multiplexing(params, False)
   params.put_bool("FirmwareQueryDone", True)
 
-  fingerprinting_time = time.monotonic() - start_time
+  fw_query_time = time.monotonic() - start_time
 
   # CAN fingerprint
   # drain CAN socket so we get the latest messages
@@ -190,11 +190,11 @@ def fingerprint(logcan, sendcan, num_pandas):
   cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match, cached=cached,
                  fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, fingerprints=finger,
                  error=True)
-  return car_fingerprint, finger, vin, car_fw, source, exact_match, fingerprinting_time
+  return car_fingerprint, finger, vin, car_fw, source, exact_match, fw_query_time
 
 
 def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
-  candidate, fingerprints, vin, car_fw, source, exact_match, fingerprinting_time = fingerprint(logcan, sendcan, num_pandas)
+  candidate, fingerprints, vin, car_fw, source, exact_match, fw_query_time = fingerprint(logcan, sendcan, num_pandas)
 
   if candidate is None:
     cloudlog.event("car doesn't match any fingerprints", fingerprints=fingerprints, error=True)
@@ -206,6 +206,6 @@ def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
   CP.carFw = car_fw
   CP.fingerprintSource = source
   CP.fuzzyFingerprint = not exact_match
-  CP.fingerprintingTime = fingerprinting_time
+  CP.fingerprintingTime = fw_query_time
 
   return CarInterface(CP, CarController, CarState), CP
