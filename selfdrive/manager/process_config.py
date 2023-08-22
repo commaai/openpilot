@@ -35,16 +35,16 @@ def qcomgps(started, params, CP: car.CarParams) -> bool:
   return ublox_available()
 
 procs = [
-  NativeProcess("camerad", "system/camerad", ["./camerad"], callback=driverview),
+  NativeProcess("camerad", "system/camerad", ["./camerad"], offroad_callback=driverview),
   NativeProcess("clocksd", "system/clocksd", ["./clocksd"]),
   NativeProcess("logcatd", "system/logcatd", ["./logcatd"]),
   NativeProcess("proclogd", "system/proclogd", ["./proclogd"]),
   PythonProcess("logmessaged", "system.logmessaged", offroad_callback=enabled_callback),
-  PythonProcess("micd", "system.micd", callback=iscar),
+  PythonProcess("micd", "system.micd", onroad_callback=iscar),
   PythonProcess("timezoned", "system.timezoned", enabled=not PC, offroad_callback=enabled_callback),
 
   DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
-  NativeProcess("dmonitoringmodeld", "selfdrive/modeld", ["./dmonitoringmodeld"], enabled=(not PC or WEBCAM), callback=driverview),
+  NativeProcess("dmonitoringmodeld", "selfdrive/modeld", ["./dmonitoringmodeld"], enabled=(not PC or WEBCAM), offroad_callback=driverview),
   NativeProcess("encoderd", "system/loggerd", ["./encoderd"]),
   NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], onroad_callback=notcar),
   NativeProcess("loggerd", "system/loggerd", ["./loggerd"], onroad_callback=logging),
@@ -60,7 +60,7 @@ procs = [
   PythonProcess("torqued", "selfdrive.locationd.torqued"),
   PythonProcess("controlsd", "selfdrive.controls.controlsd"),
   PythonProcess("deleter", "system.loggerd.deleter", offroad_callback=enabled_callback),
-  PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", enabled=(not PC or WEBCAM), callback=driverview),
+  PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", enabled=(not PC or WEBCAM), offroad_callback=driverview),
   PythonProcess("laikad", "selfdrive.locationd.laikad"),
   PythonProcess("rawgpsd", "system.sensord.rawgps.rawgpsd", enabled=TICI, onroad_callback=qcomgps),
   PythonProcess("navd", "selfdrive.navd.navd"),
