@@ -38,6 +38,16 @@ Build openpilot with this command:
 scons -u -j$(nproc)
 ```
 
+### Dev Container
+
+openpilot supports [Dev Containers](https://containers.dev/). Dev containers provide customizable and consistent development environment wrapped inside a container. This means you can develop in a designated environment matching our primary development target, regardless of your local setup.
+
+Dev containers are supported in [multiple editors and IDEs](https://containers.dev/supporting), including [Visual Studio Code](https://code.visualstudio.com/docs/devcontainers/containers).
+
+#### X11 forwarding on macOS
+
+GUI apps like `ui` or `cabana` can also run inside the container by leveraging X11 forwarding. To make use of it on macOS, additional configuration steps must be taken. Follow [these](https://gist.github.com/sorny/969fe55d85c9b0035b0109a31cbcb088) steps to setup X11 forwarding on macOS.
+
 ### Windows
 
 Neither openpilot nor any of the tools are developed or tested on Windows, but the [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about) should provide a similar experience to native Ubuntu. [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/compare-versions) specifically has been reported by several users to be a seamless experience.
