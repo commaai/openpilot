@@ -205,7 +205,8 @@ void loggerd_thread() {
   // subscribe to all socks
   for (const auto& it : services) {
     const bool encoder = strcmp(it.name+strlen(it.name)-strlen("EncodeData"), "EncodeData") == 0;
-    if (!it.should_log && !encoder) continue;
+    const bool livestream_encoder = strncmp(it.name, "livestream", strlen("livestream")) == 0;
+    if (!it.should_log && (!encoder || livestream_encoder)) continue;
     LOGD("logging %s (on port %d)", it.name, it.port);
 
     SubSocket * sock = SubSocket::create(ctx.get(), it.name);
@@ -264,7 +265,7 @@ void loggerd_thread() {
 
         if ((++msg_count % 1000) == 0) {
           double seconds = (millis_since_boot() - start_ts) / 1000.0;
-          LOGD("%lu messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count / seconds, bytes_count * 0.001 / seconds);
+          LOGD("%" PRIu64 " messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count / seconds, bytes_count * 0.001 / seconds);
         }
 
         count++;
