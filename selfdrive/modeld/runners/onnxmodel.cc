@@ -20,8 +20,7 @@ ONNXModel::ONNXModel(const std::string path, float *_output, size_t _output_size
   err = pipe(pipeout);
   assert(err == 0);
 
-  std::string exe_dir = util::dir_name(util::readlink("/proc/self/exe"));
-  std::string onnx_runner = exe_dir + "/runners/onnx_runner.py";
+  std::string onnx_runner = ONNXRUNNER_PATH;
   std::string tf8_arg = use_tf8 ? "--use_tf8" : "";
 
   proc_pid = fork();
@@ -35,6 +34,7 @@ ONNXModel::ONNXModel(const std::string path, float *_output, size_t _output_size
     close(pipeout[0]);
     close(pipeout[1]);
     execvp(onnx_runner.c_str(), argv);
+    exit(1); // exit if the exec fails
   }
 
   // parent
@@ -71,7 +71,7 @@ void ONNXModel::pread(float *buf, int size) {
     int err;
     err = poll(fds, 1, 10000);  // 10 second timeout
     assert(err == 1 || (err == -1 && errno == EINTR));
-    LOGD("host read remaining %d/%d poll %d", tr, size*sizeof(float), err);
+    LOGD("host read remaining %d/%lu poll %d", tr, size*sizeof(float), err);
     err = read(pipeout[0], cbuf, tr);
     assert(err > 0 || (err == 0 && errno == EINTR));
     cbuf += err;

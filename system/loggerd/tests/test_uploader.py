@@ -8,10 +8,10 @@ import json
 from pathlib import Path
 from typing import List, Optional
 
-from system.swaglog import cloudlog
-from system.loggerd.uploader import uploader_fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE
+from openpilot.system.swaglog import cloudlog
+from openpilot.system.loggerd.uploader import uploader_fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE
 
-from system.loggerd.tests.loggerd_tests_common import UploaderTestCase
+from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase
 
 
 class TestLogHandler(logging.Handler):

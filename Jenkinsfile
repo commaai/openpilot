@@ -6,6 +6,7 @@ ssh -tt -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' /usr/bin/bash <
 set -e
 
 export CI=1
+export PYTHONWARNINGS=error
 export LOGPRINT=debug
 export TEST_DIR=${env.TEST_DIR}
 export SOURCE_DIR=${env.SOURCE_DIR}
@@ -65,6 +66,7 @@ pipeline {
   agent none
   environment {
     CI = "1"
+    PYTHONWARNINGS = "error"
     TEST_DIR = "/data/openpilot"
     SOURCE_DIR = "/data/openpilot_source/"
     AZURE_TOKEN = credentials('azure_token')
@@ -143,18 +145,21 @@ pipeline {
         }
         */
 
-        stage('scons build test') {
+        stage('PC tests') {
           agent {
             dockerfile {
               filename 'Dockerfile.openpilot_base'
-              args '--user=root'
+              args '--user=root -v /tmp/comma_download_cache:/tmp/comma_download_cache'
             }
           }
           steps {
             sh "git config --global --add safe.directory '*'"
             sh "git submodule update --init --depth=1 --recursive"
-            sh "scons --clean && scons --no-cache -j42"
+            sh "git lfs pull"
+            // tests that our build system's dependencies are configured properly, needs a machine with lots of cores
             sh "scons --clean && scons --no-cache --random -j42"
+            sh "INTERNAL_SEG_CNT=500 INTERNAL_SEG_LIST=selfdrive/car/tests/test_models_segs.txt FILEREADER_CACHE=1 \
+                pytest -n42 --dist=loadscope selfdrive/car/tests/test_models.py"
           }
 
           post {
@@ -189,7 +194,7 @@ pipeline {
           }
           steps {
             phone_steps("tici-needs-can", [
-              ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR EXTRA_FILES='tools/' ./build_devel.sh"],
+              ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR ./build_devel.sh"],
               ["build openpilot", "cd selfdrive/manager && ./build.py"],
               ["check dirty", "release/check-dirty.sh"],
               ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
@@ -215,7 +220,6 @@ pipeline {
               ["build", "cd selfdrive/manager && ./build.py"],
               ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
               ["test power draw", "pytest system/hardware/tici/tests/test_power_draw.py"],
-              ["test loggerd", "pytest system/loggerd/tests/test_loggerd.py"],
               ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
               ["test pigeond", "pytest system/sensord/tests/test_pigeond.py"],
               ["test manager", "pytest selfdrive/manager/test/test_manager.py"],

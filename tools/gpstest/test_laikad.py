@@ -4,12 +4,12 @@ import time
 import unittest
 
 import cereal.messaging as messaging
-import system.sensord.pigeond as pd
+import openpilot.system.sensord.pigeond as pd
 
-from common.params import Params
-from system.hardware import TICI
-from selfdrive.manager.process_config import managed_processes
-from selfdrive.test.helpers import with_processes
+from openpilot.common.params import Params
+from openpilot.system.hardware import TICI
+from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.test.helpers import with_processes
 
 
 def wait_for_location(sm, timeout, con=10):

@@ -4,10 +4,10 @@ from enum import Enum
 from typing import Dict, List, Union
 
 from cereal import car
-from selfdrive.car import AngleRateLimit, dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
+from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
+from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
                                            Device
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
 
@@ -93,7 +93,10 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   ],
   CAR.F_150_MK14: FordCarInfo("Ford F-150 2023", "Co-Pilot360 Active 2.0"),
   CAR.FOCUS_MK4: FordCarInfo("Ford Focus 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS]),
-  CAR.MAVERICK_MK1: FordCarInfo("Ford Maverick 2022-23", "Co-Pilot360 Assist"),
+  CAR.MAVERICK_MK1: [
+    FordCarInfo("Ford Maverick 2022", "LARIAT Luxury"),
+    FordCarInfo("Ford Maverick 2023", "Co-Pilot360 Assist"),
+  ],
 }
 
 FW_QUERY_CONFIG = FwQueryConfig(
@@ -153,6 +156,7 @@ FW_VERSIONS = {
       b'LX6C-2D053-NT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LX6C-2D053-NY\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LX6C-2D053-SA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'LX6C-2D053-SD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x764, None): [
       b'LB5T-14D049-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -160,11 +164,13 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x706, None): [
       b'LJ6T-14F397-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LJ6T-14F397-AE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'LV4T-14F397-GG\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7E0, None): [
       b'LX6A-14C204-BJV\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LX6A-14C204-BJX\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LX6A-14C204-CNG\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'LX6A-14C204-DPK\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LX6A-14C204-ESG\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'MX6A-14C204-BEF\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'MX6A-14C204-BEJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -198,6 +204,7 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7E0, None): [
       b'LB5A-14C204-ATJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'LB5A-14C204-AUJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LB5A-14C204-AZL\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LB5A-14C204-BUJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LB5A-14C204-EAC\x00\x00\x00\x00\x00\x00\x00\x00\x00',

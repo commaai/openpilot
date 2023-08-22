@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import sys
 import sysconfig
@@ -64,18 +65,23 @@ AddOption('--no-test',
           default=os.path.islink(Dir('#laika/').abspath),
           help='skip building test files')
 
+## Architecture name breakdown (arch)
+## - larch64: linux tici aarch64
+## - aarch64: linux pc aarch64
+## - x86_64:  linux pc x64
+## - Darwin:  mac x64 or arm64
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
   brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
-
-if arch == "aarch64" and AGNOS:
+elif arch == "aarch64" and AGNOS:
   arch = "larch64"
+assert arch in ["larch64", "aarch64", "x86_64", "Darwin"]
 
 lenv = {
   "PATH": os.environ['PATH'],
   "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").abspath],
-  "PYTHONPATH": Dir("#").abspath,
+  "PYTHONPATH": Dir("#").abspath + ':' + Dir(f"#third_party/acados").abspath,
 
   "ACADOS_SOURCE_DIR": Dir("#third_party/acados").abspath,
   "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
@@ -132,21 +138,25 @@ else:
       f"{brew_prefix}/opt/openssl@3.0/include",
     ]
     lenv["DYLD_LIBRARY_PATH"] = lenv["LD_LIBRARY_PATH"]
-  # Linux 86_64
+  # Linux
   else:
     libpath = [
-      "#third_party/acados/x86_64/lib",
-      "#third_party/snpe/x86_64-linux-clang",
-      "#third_party/libyuv/x64/lib",
-      "#third_party/mapbox-gl-native-qt/x86_64",
+      f"#third_party/acados/{arch}/lib",
+      f"#third_party/libyuv/{arch}/lib",
+      f"#third_party/mapbox-gl-native-qt/{arch}",
       "#cereal",
       "#common",
       "/usr/lib",
       "/usr/local/lib",
     ]
-    rpath += [
-      Dir("#third_party/snpe/x86_64-linux-clang").abspath,
-    ]
+
+    if arch == "x86_64":
+      libpath += [
+        f"#third_party/snpe/{arch}"
+      ]
+      rpath += [
+        Dir(f"#third_party/snpe/{arch}").abspath,
+      ]
 
 if GetOption('asan'):
   ccflags = ["-fsanitize=address", "-fno-omit-frame-pointer"]
@@ -192,7 +202,6 @@ env = Environment(
     "#third_party/catch2/include",
     "#third_party/libyuv/include",
     "#third_party/json11",
-    "#third_party/curl/include",
     "#third_party/linux/include",
     "#third_party/snpe/include",
     "#third_party/mapbox-gl-native-qt/include",
@@ -267,9 +276,6 @@ envCython["CCFLAGS"].remove("-Werror")
 envCython["LIBS"] = []
 if arch == "Darwin":
   envCython["LINKFLAGS"] = ["-bundle", "-undefined", "dynamic_lookup"] + darwin_rpath_link_flags
-elif arch == "aarch64":
-  envCython["LINKFLAGS"] = ["-shared"]
-  envCython["LIBS"] = [os.path.basename(py_include)]
 else:
   envCython["LINKFLAGS"] = ["-pthread", "-shared"]
 
@@ -329,7 +335,18 @@ qt_flags = [
 qt_env['CXXFLAGS'] += qt_flags
 qt_env['LIBPATH'] += ['#selfdrive/ui']
 qt_env['LIBS'] = qt_libs
-qt_env['QT_MOCHPREFIX'] = cache_dir + '/moc_files/moc_'
+
+# Have to respect cache-readonly
+if GetOption('cache_readonly'):
+  local_moc_files_dir = Dir("#.moc_files").abspath
+  cache_moc_files_dir = cache_dir + "/moc_files"
+  if os.path.exists(local_moc_files_dir):
+    shutil.rmtree(local_moc_files_dir)
+  if os.path.exists(cache_moc_files_dir):
+    shutil.copytree(cache_moc_files_dir, local_moc_files_dir)
+  qt_env['QT3_MOCHPREFIX'] = local_moc_files_dir + "/moc_"
+else:
+  qt_env['QT3_MOCHPREFIX'] = cache_dir + '/moc_files/moc_'
 
 if GetOption("clazy"):
   checks = [
@@ -432,7 +449,7 @@ SConscript(['selfdrive/navd/SConscript'])
 SConscript(['selfdrive/modeld/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
 
-if (arch in ['x86_64', 'Darwin'] and Dir('#tools/cabana/').exists()) or GetOption('extras'):
+if (arch in ['x86_64', 'aarch64', 'Darwin'] and Dir('#tools/cabana/').exists()) or GetOption('extras'):
   SConscript(['tools/replay/SConscript'])
   SConscript(['tools/cabana/SConscript'])
 

@@ -7,7 +7,7 @@ import time
 import numpy as np
 
 import cereal.messaging as messaging
-from selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.manager.process_config import managed_processes
 
 
 N = int(os.getenv("N", "5"))
@@ -35,6 +35,6 @@ if __name__ == "__main__":
 
   print("\n\n")
   print(f"ran modeld {N} times for {TIME}s each")
-  for n, t in enumerate(execution_times):
+  for _, t in enumerate(execution_times):
     print(f"\tavg: {sum(t)/len(t):0.2f}ms, min: {min(t):0.2f}ms, max: {max(t):0.2f}ms")
   print("\n\n")
