@@ -112,6 +112,49 @@ void MapWindow::initLayers() {
     // TODO: remove, symbol-sort-key does not seem to matter outside of each layer
     m_map->setLayoutProperty("carPosLayer", "symbol-sort-key", 0);
   }
+  if (!m_map->layerExists("buildingsLayer")) { // Could put this behind the cellular metered toggle in case it increases data usage
+    qDebug() << "Initializing buildingsLayer";
+    QVariantMap buildings;
+    buildings["id"] = "buildingsLayer";
+    buildings["source"] = "composite";
+    buildings["source-layer"] = "building";
+    buildings["type"] = "fill-extrusion";
+    buildings["minzoom"] = 15;
+    m_map->addLayer(buildings);
+    m_map->setFilter("buildingsLayer", QVariantList({"==", "extrude", "true"}));
+
+    QVariantList fillExtrusionHight = { // scale buildings as you zoom in
+      "interpolate",
+      QVariantList{"linear"},
+      QVariantList{"zoom"},
+      15, 0,
+      15.05, QVariantList{"get", "height"}
+    };
+
+    QVariantList fillExtrusionBase = {
+      "interpolate",
+      QVariantList{"linear"},
+      QVariantList{"zoom"},
+      15, 0,
+      15.05, QVariantList{"get", "min_height"}
+    };
+
+    QVariantList fillExtrusionOpacity = {
+      "interpolate", 
+      QVariantList{"linear"},
+      QVariantList{"zoom"},
+      15, 0, // transparent at zoom level 15
+      15.5, .6, // fade in
+      17, .6, // begin fading out
+      20, 0 // fade out when zoomed in
+    };
+
+    m_map->setPaintProperty("buildingsLayer", "fill-extrusion-color", QColor("grey"));
+    m_map->setPaintProperty("buildingsLayer", "fill-extrusion-opacity", fillExtrusionOpacity);
+    m_map->setPaintProperty("buildingsLayer", "fill-extrusion-height", fillExtrusionHight);
+    m_map->setPaintProperty("buildingsLayer", "fill-extrusion-base", fillExtrusionBase);
+    m_map->setLayoutProperty("buildingsLayer", "visibility", "visible");
+  }
 }
 
 void MapWindow::updateState(const UIState &s) {
