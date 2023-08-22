@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import math
 import unittest
-import pytest
 import numpy as np
 from control import StateSpace
 
@@ -10,7 +9,6 @@ from openpilot.selfdrive.car.honda.values import CAR
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel, dyn_ss_sol, create_dyn_state_matrices
 
 
-@pytest.mark.skip(reason="ignore this for now")
 class TestVehicleModel(unittest.TestCase):
   def setUp(self):
     CP = CarInterface.get_non_essential_params(CAR.CIVIC)
