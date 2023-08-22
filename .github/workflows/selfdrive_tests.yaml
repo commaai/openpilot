@@ -383,8 +383,7 @@ jobs:
     - name: Test car models
       timeout-minutes: 25
       run: |
-        ${{ env.RUN }} "coverage run -m pytest selfdrive/car/tests/test_models.py && \
-                        coverage xml && \
+        ${{ env.RUN }} "pytest --cov --cov-report=xml -n auto --dist=loadscope selfdrive/car/tests/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
         NUM_JOBS: 5
