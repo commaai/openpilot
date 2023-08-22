@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-from collections import defaultdict
-
 from opendbc.can.parser import CANParser
 from cereal import car
-from selfdrive.car.toyota.values import DBC, TSS2_CAR
-from selfdrive.car.interfaces import RadarInterfaceBase
+from openpilot.selfdrive.car.toyota.values import DBC, TSS2_CAR
+from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 
 
 def _create_radar_can_parser(car_fingerprint):
@@ -38,47 +36,34 @@ class RadarInterface(RadarInterfaceBase):
 
     self.rcp = None if CP.radarUnavailable else _create_radar_can_parser(CP.carFingerprint)
     self.trigger_msg = self.RADAR_B_MSGS[-1]
-    self.updated_values = defaultdict(lambda: defaultdict(list))
+    self.updated_messages = set()
 
   def update(self, can_strings):
     if self.rcp is None:
+      return super().update(None)
+
+    vls = self.rcp.update_strings(can_strings)
+    self.updated_messages.update(vls)
+
+    if self.trigger_msg not in self.updated_messages:
       return None
 
-    addresses = self.rcp.update_strings(can_strings)
-    for addr in addresses:
-      vals_dict = self.rcp.vl_all[addr]
-      for sig_name, vals in vals_dict.items():
-        self.updated_values[addr][sig_name].extend(vals)
+    rr = self._update(self.updated_messages)
+    self.updated_messages.clear()
 
-    if self.trigger_msg not in self.updated_values:
-      return None
+    return rr
 
-    radar_data = self._radar_msg_from_buffer(self.updated_values, self.rcp.can_valid)
-    self.updated_values.clear()
-
-    return radar_data
-
-  def _radar_msg_from_buffer(self, updated_values, can_valid):
+  def _update(self, updated_messages):
     ret = car.RadarData.new_message()
     errors = []
-    if not can_valid:
+    if not self.rcp.can_valid:
       errors.append("canError")
     ret.errors = errors
 
-    for ii in sorted(updated_values):
-      if ii not in self.RADAR_A_MSGS:
-        continue
+    for ii in sorted(updated_messages):
+      if ii in self.RADAR_A_MSGS:
+        cpt = self.rcp.vl[ii]
 
-      radar_a_msgs = updated_values[ii]
-      radar_b_msgs = updated_values[ii+16]
-
-      n_vals_per_addr = len(list(radar_a_msgs.values())[0])
-      cpts = [
-        {k: v[i] for k, v in  radar_a_msgs.items()}
-        for i in range(n_vals_per_addr)
-      ]
-
-      for index, cpt in enumerate(cpts):
         if cpt['LONG_DIST'] >= 255 or cpt['NEW_TRACK']:
           self.valid_cnt[ii] = 0    # reset counter
         if cpt['VALID'] and cpt['LONG_DIST'] < 255:
@@ -86,15 +71,11 @@ class RadarInterface(RadarInterfaceBase):
         else:
           self.valid_cnt[ii] = max(self.valid_cnt[ii] - 1, 0)
 
-        n_b_scores = len(radar_b_msgs['SCORE'])
-        if n_b_scores > 0:
-          score_index = min(index, n_b_scores - 1)
-          score = radar_b_msgs['SCORE'][score_index]
-        else:
-          score = None
+        score = self.rcp.vl[ii+16]['SCORE']
+        # print ii, self.valid_cnt[ii], score, cpt['VALID'], cpt['LONG_DIST'], cpt['LAT_DIST']
 
         # radar point only valid if it's a valid measurement and score is above 50
-        if cpt['VALID'] or (score and score > 50 and cpt['LONG_DIST'] < 255 and self.valid_cnt[ii] > 0):
+        if cpt['VALID'] or (score > 50 and cpt['LONG_DIST'] < 255 and self.valid_cnt[ii] > 0):
           if ii not in self.pts or cpt['NEW_TRACK']:
             self.pts[ii] = car.RadarData.RadarPoint.new_message()
             self.pts[ii].trackId = self.track_id

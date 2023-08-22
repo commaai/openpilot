@@ -387,9 +387,7 @@ version = "0.9.14"
 description = "Python API for communicating with the CARLA server."
 optional = false
 python-versions = "*"
-files = [
-    {file = "carla-0.9.14-cp311-cp311-linux_x86_64.whl", hash = "sha256:f0a8ce0c760d1fef3577e2ef90e9d468e3d85e65bd6d68b44bce51f0d5a0723a"},
-]
+files = []
 
 [package.source]
 type = "url"
@@ -3106,6 +3104,24 @@ pluggy = ">=0.12,<2.0"
 testing = ["argcomplete", "attrs (>=19.2.0)", "hypothesis (>=3.56)", "mock", "nose", "pygments (>=2.7.2)", "requests", "setuptools", "xmlschema"]
 
 [[package]]
+name = "pytest-cov"
+version = "4.1.0"
+description = "Pytest plugin for measuring coverage."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "pytest-cov-4.1.0.tar.gz", hash = "sha256:3904b13dfbfec47f003b8e77fd5b589cd11904a21ddf1ab38a64f204d6a10ef6"},
+    {file = "pytest_cov-4.1.0-py3-none-any.whl", hash = "sha256:6ba70b9e97e69fcc3fb45bfeab2d0a138fb65c4d0d6a41ef33983ad114be8c3a"},
+]
+
+[package.dependencies]
+coverage = {version = ">=5.2.1", extras = ["toml"]}
+pytest = ">=4.6"
+
+[package.extras]
+testing = ["fields", "hunter", "process-tests", "pytest-xdist", "six", "virtualenv"]
+
+[[package]]
 name = "pytest-xdist"
 version = "3.3.1"
 description = "pytest xdist plugin for distributed testing, most importantly across multiple CPUs"
@@ -4161,4 +4177,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "4b2510f1465520a9dc757f64861f4fcea9d9663c0ecdebd23b329ef5e0205863"
+content-hash = "587fe0b312a1d4a0be2e13fdd4626683227f6c9038d3efacf9866c431d9453b1"

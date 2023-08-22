@@ -2,9 +2,9 @@
 import argparse
 import os
 import sys
-from common.basedir import BASEDIR
-from tools.lib.logreader import MultiLogIterator
-from tools.lib.route import Route
+from openpilot.common.basedir import BASEDIR
+from openpilot.tools.lib.logreader import MultiLogIterator
+from openpilot.tools.lib.route import Route
 
 os.environ['BASEDIR'] = BASEDIR
 

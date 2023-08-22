@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 from abc import ABC, abstractmethod
 
-from common.realtime import DT_TRML
-from common.numpy_fast import interp
-from system.swaglog import cloudlog
-from selfdrive.controls.lib.pid import PIDController
+from openpilot.common.realtime import DT_TRML
+from openpilot.common.numpy_fast import interp
+from openpilot.system.swaglog import cloudlog
+from openpilot.selfdrive.controls.lib.pid import PIDController
 
 class BaseFanController(ABC):
   @abstractmethod

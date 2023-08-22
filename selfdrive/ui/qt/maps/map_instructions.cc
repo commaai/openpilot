@@ -10,27 +10,30 @@ const QString ICON_SUFFIX = ".png";
 
 MapInstructions::MapInstructions(QWidget *parent) : QWidget(parent) {
   is_rhd = Params().getBool("IsRhdDetected");
-  QHBoxLayout *main_layout = new QHBoxLayout(this);
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(11, UI_BORDER_SIZE, 11, 11);
-  main_layout->addWidget(icon_01 = new QLabel, 0, Qt::AlignTop);
 
-  QWidget *right_container = new QWidget(this);
-  right_container->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  QVBoxLayout *layout = new QVBoxLayout(right_container);
+  QHBoxLayout *top_layout = new QHBoxLayout;
+  top_layout->addWidget(icon_01 = new QLabel, 0, Qt::AlignTop);
 
-  layout->addWidget(distance = new QLabel);
+  QVBoxLayout *right_layout = new QVBoxLayout;
+  right_layout->addWidget(distance = new QLabel);
   distance->setStyleSheet(R"(font-size: 90px;)");
 
-  layout->addWidget(primary = new QLabel);
+  right_layout->addWidget(primary = new QLabel);
   primary->setStyleSheet(R"(font-size: 60px;)");
   primary->setWordWrap(true);
 
-  layout->addWidget(secondary = new QLabel);
+  right_layout->addWidget(secondary = new QLabel);
   secondary->setStyleSheet(R"(font-size: 50px;)");
   secondary->setWordWrap(true);
 
-  layout->addLayout(lane_layout = new QHBoxLayout);
-  main_layout->addWidget(right_container);
+  top_layout->addLayout(right_layout);
+
+  main_layout->addLayout(top_layout);
+  main_layout->addLayout(lane_layout = new QHBoxLayout);
+  lane_layout->setAlignment(Qt::AlignHCenter);
+  lane_layout->setSpacing(10);
 
   setStyleSheet("color:white");
   QPalette pal = palette();

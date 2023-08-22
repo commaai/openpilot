@@ -62,8 +62,8 @@ def replay_process(
 
 Example usage:
 ```py
-from selfdrive.test.process_replay import replay_process_with_name
-from tools.lib.logreader import LogReader
+from openpilot.selfdrive.test.process_replay import replay_process_with_name
+from openpilot.tools.lib.logreader import LogReader
 
 lr = LogReader(...)
 
@@ -91,7 +91,7 @@ Supported processes:
 Certain processes may require an initial state, which is usually supplied within `Params` and persisting from segment to segment (e.g CalibrationParams, LiveParameters). The `custom_params` is dictionary  used to prepopulate `Params` with arbitrary values. The `get_custom_params_from_lr` helper is provided to fetch meaningful values from log files.
 
 ```py
-from selfdrive.test.process_replay import get_custom_params_from_lr
+from openpilot.selfdrive.test.process_replay import get_custom_params_from_lr
 
 previous_segment_lr = LogReader(...)
 current_segment_lr = LogReader(...)
@@ -104,7 +104,7 @@ output_logs = replay_process_with_name('calibrationd', lr, custom_params=custom_
 Replaying processes that use VisionIPC (e.g. modeld, dmonitoringmodeld) require additional `frs` dictionary with camera states as keys and `FrameReader` objects as values.
 
 ```py
-from tools.lib.framereader import FrameReader
+from openpilot.tools.lib.framereader import FrameReader
 
 frs = {
   'roadCameraState': FrameReader(...),
