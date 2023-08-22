@@ -160,7 +160,7 @@ jobs:
       run: |
         eval "$(pyenv init --path)"
         echo "$PWD"
-        ls
+        ls release/
         poetry run release/clean-cache.sh
     - name: Save scons cache
       id: scons-save-cache
