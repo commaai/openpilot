@@ -63,12 +63,16 @@ def join_process(process: Process, timeout: float) -> None:
     time.sleep(0.001)
 
 
+def default_callback(started: bool, params: Params, CP: car.CarParams) -> bool:
+  return started
+
+
 class ManagerProcess(ABC):
   daemon = False
   sigkill = False
   onroad = True
   offroad = False
-  callback: Optional[Callable[[bool, Params, car.CarParams], bool]] = None
+  callback: Optional[Callable[[bool, Params, car.CarParams], bool]] = default_callback
   proc: Optional[Process] = None
   enabled = True
   name = ""
@@ -292,7 +296,7 @@ def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None
       p.onroad and started,
     ))
     if p.callback is not None and None not in (params, CP):
-      run = run and p.callback(started, params, CP)
+      run = run or p.callback(started, params, CP)
 
     # Conditions that block a process from starting
     run = run and not any((
