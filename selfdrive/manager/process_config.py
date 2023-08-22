@@ -33,7 +33,7 @@ def ublox(started, params, CP: car.CarParams) -> bool:
   return started and use_ublox
 
 def qcomgps(started, params, CP: car.CarParams) -> bool:
-  return started and not ublox_available()
+  return ublox_available()
 
 procs = [
   NativeProcess("camerad", "system/camerad", ["./camerad"], callback=driverview),
@@ -63,7 +63,7 @@ procs = [
   PythonProcess("deleter", "system.loggerd.deleter", offroad_callback=enabled_callback),
   PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", enabled=(not PC or WEBCAM), callback=driverview),
   PythonProcess("laikad", "selfdrive.locationd.laikad"),
-  PythonProcess("rawgpsd", "system.sensord.rawgps.rawgpsd", enabled=TICI, onroad_callback=disabled_callback, callback=qcomgps),
+  PythonProcess("rawgpsd", "system.sensord.rawgps.rawgpsd", enabled=TICI, onroad_callback=qcomgps),
   PythonProcess("navd", "selfdrive.navd.navd"),
   PythonProcess("pandad", "selfdrive.boardd.pandad", offroad_callback=enabled_callback),
   PythonProcess("paramsd", "selfdrive.locationd.paramsd"),
