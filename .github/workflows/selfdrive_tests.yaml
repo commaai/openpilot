@@ -255,7 +255,7 @@ jobs:
       timeout-minutes: 40
       run: |
         ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
-                        pytest -c pytest-ci.ini --continue-on-collection-errors --cov --cov-report=xml --cov-append --junitxml junit.xml && \
+                        pytest -c pytest-ci.ini --continue-on-collection-errors --cov --cov-report=xml --cov-append --junitxml=report.xml --html=report.html --self-contained-html && \
                         selfdrive/locationd/test/_test_locationd_lib.py && \
                         ./system/ubloxd/tests/test_glonass_runner && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
@@ -273,14 +273,13 @@ jobs:
                         ./selfdrive/test/process_replay/test_fuzzy.py"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
-    - name: Test Report
-      uses: dorny/test-reporter@v1
-      if: success() || failure()    # run this step even if previous step failed
+    - name: "Upload unittest artifacts"
+      uses: actions/upload-artifact@v3
       with:
-        name: Unit Tests            # Name of the check run which will be created
-        path: junit.xml             # Path to test results
-        reporter: java-junit        # Format of test results
-
+        name: unittest-artifacts
+        path: |
+          report.xml
+          report.html
   process_replay:
     name: process replay
     runs-on: ubuntu-20.04
