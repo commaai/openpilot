@@ -1,0 +1,3 @@
+FROM alpine:3
+
+COPY ./scons_cache /tmp/scons_cache

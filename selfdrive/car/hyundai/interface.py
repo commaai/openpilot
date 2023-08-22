@@ -196,11 +196,13 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1767.  # SX Prestige trim support only
       ret.wheelbase = 2.756
       ret.steerRatio = 13.6
-    elif candidate in (CAR.KIA_SORENTO_4TH_GEN, CAR.KIA_SORENTO_PHEV_4TH_GEN):
+    elif candidate in (CAR.KIA_SORENTO_4TH_GEN, CAR.KIA_SORENTO_HEV_4TH_GEN, CAR.KIA_SORENTO_PHEV_4TH_GEN):
       ret.wheelbase = 2.81
       ret.steerRatio = 13.5  # average of the platforms
       if candidate == CAR.KIA_SORENTO_4TH_GEN:
         ret.mass = 3957 * CV.LB_TO_KG
+      elif candidate == CAR.KIA_SORENTO_HEV_4TH_GEN:
+        ret.mass = 4255 * CV.LB_TO_KG
       else:
         ret.mass = 4537 * CV.LB_TO_KG
     elif candidate == CAR.KIA_CARNIVAL_4TH_GEN:
