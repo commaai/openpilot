@@ -4,9 +4,8 @@ from openpilot.common.conversions import Conversions as CV
 from panda import Panda
 from openpilot.selfdrive.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
                                         MIN_ACC_SPEED, EPS_SCALE, EV_HYBRID_CAR, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR
-from selfdrive.car import STD_CARGO_KG, scale_tire_stiffness, get_safety_config
-from selfdrive.car.interfaces import CarInterfaceBase
-from selfdrive.car.disable_ecu import disable_ecu
+from openpilot.selfdrive.car import get_safety_config
+from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 EventName = car.CarEvent.EventName
 SteerControlType = car.CarParams.SteerControlType
@@ -206,8 +205,7 @@ class CarInterface(CarInterfaceBase):
 
     # No radar dbc for cars without DSU which are not TSS 2.0
     # TODO: make an adas dbc file for dsu-less models
-    # ret.radarUnavailable = DBC[candidate]['radar'] is None or candidate in (NO_DSU_CAR - TSS2_CAR)
-    ret.radarUnavailable = True
+    ret.radarUnavailable = DBC[candidate]['radar'] is None or candidate in (NO_DSU_CAR - TSS2_CAR)
 
     # In TSS2 cars, the camera does long control
     found_ecus = [fw.ecu for fw in car_fw]
@@ -218,12 +216,9 @@ class CarInterface(CarInterfaceBase):
     # if the smartDSU is detected, openpilot can send ACC_CONTROL and the smartDSU will block it from the DSU or radar.
     # since we don't yet parse radar on TSS2 radar-based ACC cars, gate longitudinal behind experimental toggle
     use_sdsu = bool(ret.flags & ToyotaFlags.SMART_DSU)
-    # if candidate in RADAR_ACC_CAR:
-    #   ret.experimentalLongitudinalAvailable = use_sdsu
-    #   use_sdsu = use_sdsu and experimental_long
-
-    if ret.radarUnavailable:
-      ret.experimentalLongitudinalAvailable = True
+    if candidate in RADAR_ACC_CAR:
+      ret.experimentalLongitudinalAvailable = use_sdsu
+      use_sdsu = use_sdsu and experimental_long
 
     # openpilot longitudinal enabled by default:
     #  - non-(TSS2 radar ACC cars) w/ smartDSU installed
@@ -231,7 +226,7 @@ class CarInterface(CarInterfaceBase):
     #  - TSS2 cars with camera sending ACC_CONTROL where we can block it
     # openpilot longitudinal behind experimental long toggle:
     #  - TSS2 radar ACC cars w/ smartDSU installed
-    ret.openpilotLongitudinalControl = True  # use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR) or experimental_long
+    ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
 
     if not ret.openpilotLongitudinalControl:
@@ -265,14 +260,6 @@ class CarInterface(CarInterfaceBase):
       tune.kiV = [0.54, 0.36]
 
     return ret
-
-  @staticmethod
-  def init(CP, logcan, sendcan):
-    # a diagnostic mode of SESSION_TYPE.PROGRAMMING disabled the ECU on its own. car did not accept DISABLE_RX_DISABLE_TX, but it did not matter.
-    # a diagnostic mode of SESSION_TYPE.EXTENDED_DIAGNOSTIC and CONTROL_TYPE.ENABLE_RX_DISABLE_TX did work, so use that
-    # TODO: add a flag, radarUnavailable shouldn't be used as "radar acc" right now
-    if CP.openpilotLongitudinalControl and CP.radarUnavailable:
-      disable_ecu(logcan, sendcan, bus=0, addr=0x750, sub_addr=0xf, com_cont_req=b'\x28\x01\x01')
 
   # returns a car.CarState
   def _update(self, c):
