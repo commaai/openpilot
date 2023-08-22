@@ -38,6 +38,7 @@ generated_files = [
   f'{gen}/lat_model/lat_expl_vde_adj.c',
 
   f'{gen}/lat_model/lat_model.h',
+  f'{gen}/lat_cost/lat_cost.h',
   f'{gen}/lat_constraints/lat_constraints.h',
 ] + build_files
 
