@@ -63,19 +63,16 @@ def join_process(process: Process, timeout: float) -> None:
     time.sleep(0.001)
 
 
-def enabled_callback(params: Params, CP: car.CarParams) -> bool:
-  return True
-
-
-def disabled_callback(params: Params, CP: car.CarParams) -> bool:
-  return False
+def default_callback(started: bool, params: Params, CP: car.CarParams) -> bool:
+  return started
 
 
 class ManagerProcess(ABC):
   daemon = False
   sigkill = False
-  onroad_callback: Callable[[Params, car.CarParams], bool] = enabled_callback
-  offroad_callback: Callable[[Params, car.CarParams], bool] = disabled_callback
+  onroad = True
+  offroad = False
+  callback: Optional[Callable[[bool, Params, car.CarParams], bool]] = default_callback
   proc: Optional[Process] = None
   enabled = True
   name = ""
@@ -177,14 +174,14 @@ class ManagerProcess(ABC):
 
 
 class NativeProcess(ManagerProcess):
-  def __init__(self, name, cwd, cmdline, enabled=True, onroad_callback=enabled_callback, offroad_callback=disabled_callback,
-               unkillable=False, sigkill=False, watchdog_max_dt=None):
+  def __init__(self, name, cwd, cmdline, enabled=True, onroad=True, offroad=False, callback=None, unkillable=False, sigkill=False, watchdog_max_dt=None):
     self.name = name
     self.cwd = cwd
     self.cmdline = cmdline
     self.enabled = enabled
-    self.onroad_callback = onroad_callback
-    self.offroad_callback = offroad_callback
+    self.onroad = onroad
+    self.offroad = offroad
+    self.callback = callback
     self.unkillable = unkillable
     self.sigkill = sigkill
     self.watchdog_max_dt = watchdog_max_dt
@@ -210,13 +207,13 @@ class NativeProcess(ManagerProcess):
 
 
 class PythonProcess(ManagerProcess):
-  def __init__(self, name, module, enabled=True, onroad_callback=enabled_callback, offroad_callback=disabled_callback,
-               unkillable=False, sigkill=False, watchdog_max_dt=None):
+  def __init__(self, name, module, enabled=True, onroad=True, offroad=False, callback=None, unkillable=False, sigkill=False, watchdog_max_dt=None):
     self.name = name
     self.module = module
     self.enabled = enabled
-    self.onroad_callback = onroad_callback
-    self.offroad_callback = offroad_callback
+    self.onroad = onroad
+    self.offroad = offroad
+    self.callback = callback
     self.unkillable = unkillable
     self.sigkill = sigkill
     self.watchdog_max_dt = watchdog_max_dt
@@ -250,8 +247,8 @@ class DaemonProcess(ManagerProcess):
     self.module = module
     self.param_name = param_name
     self.enabled = enabled
-    self.onroad_callback = enabled_callback
-    self.offroad_callback = enabled_callback
+    self.onroad = True
+    self.offroad = True
     self.params = None
 
   def prepare(self) -> None:
@@ -295,9 +292,11 @@ def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None
   for p in procs:
     # Conditions that make a process run
     run = any((
-      p.offroad_callback(params, CP) and not started,
-      p.onroad_callback(params, CP) and started,
+      p.offroad and not started,
+      p.onroad and started,
     ))
+    if p.callback is not None and None not in (params, CP):
+      run = run or p.callback(started, params, CP)
 
     # Conditions that block a process from starting
     run = run and not any((
