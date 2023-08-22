@@ -1,3 +1,5 @@
+FROM scons-cache as scons-cache
+
 FROM ghcr.io/commaai/openpilot-base-cl:latest
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -14,6 +16,7 @@ RUN mkdir -p $HOME/openpilot
 
 COPY SConstruct $HOME/openpilot/
 
+COPY ./openpilot $HOME/openpilot/openpilot
 COPY ./body $HOME/openpilot/body
 COPY ./third_party $HOME/openpilot/third_party
 COPY ./site_scons $HOME/openpilot/site_scons
@@ -28,6 +31,6 @@ COPY ./system $HOME/openpilot/system
 COPY ./tools $HOME/openpilot/tools
 
 WORKDIR $HOME/openpilot
-RUN scons --cache-readonly -j12
+RUN --mount=type=bind,from=scons-cache,source=/tmp/scons_cache,target=/tmp/scons_cache,rw scons -j12
 
-RUN python -c "from selfdrive.test.helpers import set_params_enabled; set_params_enabled()"
+RUN python -c "from openpilot.selfdrive.test.helpers import set_params_enabled; set_params_enabled()"

@@ -6,9 +6,9 @@ from collections import namedtuple
 from pathlib import Path
 from typing import Sequence
 
-import system.loggerd.deleter as deleter
-from common.timeout import Timeout, TimeoutException
-from system.loggerd.tests.loggerd_tests_common import UploaderTestCase
+import openpilot.system.loggerd.deleter as deleter
+from openpilot.common.timeout import Timeout, TimeoutException
+from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase
 
 Stats = namedtuple("Stats", ['f_bavail', 'f_blocks', 'f_frsize'])
 

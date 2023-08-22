@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 from cereal import car
 from panda import Panda
-from common.conversions import Conversions as CV
-from selfdrive.car.hyundai.hyundaicanfd import CanBus
-from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, CANFD_RADAR_SCC_CAR, \
-                                                            EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons
-from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
-from selfdrive.car import create_button_event, get_safety_config
-from selfdrive.car.interfaces import CarInterfaceBase
-from selfdrive.car.disable_ecu import disable_ecu
+from openpilot.common.conversions import Conversions as CV
+from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
+from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, CANFD_RADAR_SCC_CAR, \
+                                         EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, UNSUPPORTED_LONGITUDINAL_CAR, \
+                                         Buttons
+from openpilot.selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
+from openpilot.selfdrive.car import create_button_event, get_safety_config
+from openpilot.selfdrive.car.interfaces import CarInterfaceBase
+from openpilot.selfdrive.car.disable_ecu import disable_ecu
 
 Ecu = car.CarParams.Ecu
 ButtonType = car.CarState.ButtonEvent.Type
@@ -195,11 +196,13 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1767.  # SX Prestige trim support only
       ret.wheelbase = 2.756
       ret.steerRatio = 13.6
-    elif candidate in (CAR.KIA_SORENTO_4TH_GEN, CAR.KIA_SORENTO_PHEV_4TH_GEN):
+    elif candidate in (CAR.KIA_SORENTO_4TH_GEN, CAR.KIA_SORENTO_HEV_4TH_GEN, CAR.KIA_SORENTO_PHEV_4TH_GEN):
       ret.wheelbase = 2.81
       ret.steerRatio = 13.5  # average of the platforms
       if candidate == CAR.KIA_SORENTO_4TH_GEN:
         ret.mass = 3957 * CV.LB_TO_KG
+      elif candidate == CAR.KIA_SORENTO_HEV_4TH_GEN:
+        ret.mass = 4255 * CV.LB_TO_KG
       else:
         ret.mass = 4537 * CV.LB_TO_KG
     elif candidate == CAR.KIA_CARNIVAL_4TH_GEN:
@@ -247,7 +250,7 @@ class CarInterface(CarInterfaceBase):
     else:
       ret.longitudinalTuning.kpV = [0.5]
       ret.longitudinalTuning.kiV = [0.0]
-      ret.experimentalLongitudinalAvailable = candidate not in (LEGACY_SAFETY_MODE_CAR | CAMERA_SCC_CAR)
+      ret.experimentalLongitudinalAvailable = candidate not in (UNSUPPORTED_LONGITUDINAL_CAR | CAMERA_SCC_CAR)
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
     ret.pcmCruise = not ret.openpilotLongitudinalControl
 

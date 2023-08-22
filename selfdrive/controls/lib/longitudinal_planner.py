@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 import math
 import numpy as np
-from common.numpy_fast import clip, interp
-from common.params import Params
+from openpilot.common.numpy_fast import clip, interp
+from openpilot.common.params import Params
 from cereal import log
 
 import cereal.messaging as messaging
-from common.conversions import Conversions as CV
-from common.filter_simple import FirstOrderFilter
-from common.realtime import DT_MDL
-from selfdrive.modeld.constants import T_IDXS
-from selfdrive.car.interfaces import ACCEL_MIN, ACCEL_MAX
-from selfdrive.controls.lib.longcontrol import LongCtrlState
-from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc
-from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
-from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N, get_speed_error
-from system.swaglog import cloudlog
+from openpilot.common.conversions import Conversions as CV
+from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.realtime import DT_MDL
+from openpilot.selfdrive.modeld.constants import T_IDXS
+from openpilot.selfdrive.car.interfaces import ACCEL_MIN, ACCEL_MAX
+from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
+from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc
+from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
+from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N, get_speed_error
+from openpilot.system.swaglog import cloudlog
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
 A_CRUISE_MIN = -1.2

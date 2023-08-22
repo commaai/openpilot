@@ -1,13 +1,13 @@
 from collections import namedtuple
 
 from cereal import car
-from common.numpy_fast import clip, interp
-from common.realtime import DT_CTRL
+from openpilot.common.numpy_fast import clip, interp
+from openpilot.common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
-from selfdrive.car import create_gas_interceptor_command
-from selfdrive.car.honda import hondacan
-from selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
-from selfdrive.controls.lib.drive_helpers import rate_limit
+from openpilot.selfdrive.car import create_gas_interceptor_command
+from openpilot.selfdrive.car.honda import hondacan
+from openpilot.selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
+from openpilot.selfdrive.controls.lib.drive_helpers import rate_limit
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState

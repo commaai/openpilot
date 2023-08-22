@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 import os
+import time
 import numpy as np
 
 from casadi import SX, vertcat, sin, cos
-from common.realtime import sec_since_boot
 # WARNING: imports outside of constants will not trigger a rebuild
-from selfdrive.modeld.constants import T_IDXS
+from openpilot.selfdrive.modeld.constants import T_IDXS
 
 if __name__ == '__main__':  # generating code
-  from third_party.acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
+  from openpilot.third_party.acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 else:
-  from selfdrive.controls.lib.lateral_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverCython
+  from openpilot.selfdrive.controls.lib.lateral_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverCython
 
 LAT_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
 EXPORT_DIR = os.path.join(LAT_MPC_DIR, "c_generated_code")
@@ -182,9 +182,9 @@ class LateralMpc():
     self.solver.set(N, "p", p_cp[N])
     self.solver.cost_set(N, "yref", self.yref[N][:COST_E_DIM])
 
-    t = sec_since_boot()
+    t = time.monotonic()
     self.solution_status = self.solver.solve()
-    self.solve_time = sec_since_boot() - t
+    self.solve_time = time.monotonic() - t
 
     for i in range(N+1):
       self.x_sol[i] = self.solver.get(i, 'x')

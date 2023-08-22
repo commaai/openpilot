@@ -9,17 +9,17 @@ from typing import List, Optional, Tuple
 from parameterized import parameterized_class
 
 from cereal import log, car
-from common.basedir import BASEDIR
-from common.realtime import DT_CTRL
-from selfdrive.car.fingerprints import all_known_cars
-from selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
-from selfdrive.car.gm.values import CAR as GM
-from selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
-from selfdrive.car.hyundai.values import CAR as HYUNDAI
-from selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
-from selfdrive.test.openpilotci import get_url
-from tools.lib.logreader import LogReader
-from tools.lib.route import Route, SegmentName, RouteName
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.realtime import DT_CTRL
+from openpilot.selfdrive.car.fingerprints import all_known_cars
+from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
+from openpilot.selfdrive.car.gm.values import CAR as GM
+from openpilot.selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
+from openpilot.selfdrive.car.hyundai.values import CAR as HYUNDAI
+from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
+from openpilot.selfdrive.test.openpilotci import get_url
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.route import Route, SegmentName, RouteName
 
 from panda.tests.libpanda import libpanda_py
 

@@ -2,20 +2,17 @@
 import unittest
 from unittest.mock import patch
 
-from common.params import Params
-params = Params()
+from openpilot.common.params import Params
+from openpilot.selfdrive.thermald.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
+                                                CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING, DELAY_SHUTDOWN_TIME_S
+
 
 # Create fake time
-ssb = 0
-def mock_sec_since_boot():
+ssb = 0.
+def mock_time_monotonic():
   global ssb
-  ssb += 1
+  ssb += 1.
   return ssb
-
-with patch("common.realtime.sec_since_boot", new=mock_sec_since_boot):
-  with patch("common.params.put_nonblocking", new=params.put):
-    from selfdrive.thermald.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
-                                                    CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING, DELAY_SHUTDOWN_TIME_S
 
 TEST_DURATION_S = 50
 GOOD_VOLTAGE = 12 * 1e3
@@ -23,14 +20,17 @@ VOLTAGE_BELOW_PAUSE_CHARGING = (VBATT_PAUSE_CHARGING - 1) * 1e3
 
 def pm_patch(name, value, constant=False):
   if constant:
-    return patch(f"selfdrive.thermald.power_monitoring.{name}", value)
-  return patch(f"selfdrive.thermald.power_monitoring.{name}", return_value=value)
+    return patch(f"openpilot.selfdrive.thermald.power_monitoring.{name}", value)
+  return patch(f"openpilot.selfdrive.thermald.power_monitoring.{name}", return_value=value)
 
+
+@patch("time.monotonic", new=mock_time_monotonic)
+@patch("openpilot.selfdrive.thermald.power_monitoring.put_nonblocking", new=lambda x, y: Params().put(x, y))
 class TestPowerMonitoring(unittest.TestCase):
   def setUp(self):
-    # Clear stored capacity before each test
-    params.remove("CarBatteryCapacity")
-    params.remove("DisablePowerDown")
+    self.params = Params()
+    self.params.remove("CarBatteryCapacity")
+    self.params.remove("DisablePowerDown")
 
   # Test to see that it doesn't do anything when pandaState is None
   def test_pandaState_present(self):
@@ -139,7 +139,7 @@ class TestPowerMonitoring(unittest.TestCase):
   def test_disable_power_down(self):
     POWER_DRAW = 0 # To stop shutting down for other reasons
     TEST_TIME = 100
-    params.put_bool("DisablePowerDown", True)
+    self.params.put_bool("DisablePowerDown", True)
     with pm_patch("HARDWARE.get_current_power_draw", POWER_DRAW):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
