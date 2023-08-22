@@ -20,8 +20,7 @@ def iscar(started: bool, params: Params, CP: car.CarParams) -> bool:
   return not CP.notCar
 
 def logging(started, params, CP: car.CarParams) -> bool:
-  run = (not CP.notCar) or not params.get_bool("DisableLogging")
-  return started and run
+  return (not CP.notCar) or not params.get_bool("DisableLogging")
 
 def ublox_available() -> bool:
   return os.path.exists('/dev/ttyHS0') and not os.path.exists('/persist/comma/use-quectel-gps')
@@ -47,8 +46,8 @@ procs = [
   DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
   NativeProcess("dmonitoringmodeld", "selfdrive/modeld", ["./dmonitoringmodeld"], enabled=(not PC or WEBCAM), callback=driverview),
   NativeProcess("encoderd", "system/loggerd", ["./encoderd"]),
-  NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], onroad_callback=disabled_callback, callback=notcar),
-  NativeProcess("loggerd", "system/loggerd", ["./loggerd"], onroad_callback=disabled_callback, callback=logging),
+  NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], onroad_callback=notcar),
+  NativeProcess("loggerd", "system/loggerd", ["./loggerd"], onroad_callback=logging),
   NativeProcess("modeld", "selfdrive/modeld", ["./modeld"]),
   NativeProcess("mapsd", "selfdrive/navd", ["./mapsd"]),
   NativeProcess("navmodeld", "selfdrive/modeld", ["./navmodeld"]),
@@ -78,8 +77,8 @@ procs = [
   PythonProcess("statsd", "selfdrive.statsd", offroad_callback=enabled_callback),
 
   # debug procs
-  NativeProcess("bridge", "cereal/messaging", ["./bridge"], onroad_callback=disabled_callback, callback=notcar),
-  PythonProcess("webjoystick", "tools.bodyteleop.web", onroad_callback=disabled_callback, callback=notcar),
+  NativeProcess("bridge", "cereal/messaging", ["./bridge"], onroad_callback=notcar),
+  PythonProcess("webjoystick", "tools.bodyteleop.web", onroad_callback=notcar),
 ]
 
 managed_processes = {p.name: p for p in procs}
