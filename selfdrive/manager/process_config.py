@@ -3,7 +3,7 @@ import os
 from cereal import car
 from openpilot.common.params import Params
 from openpilot.system.hardware import PC, TICI
-from openpilot.selfdrive.manager.process import ProcessCallback, PythonProcess, NativeProcess, DaemonProcess, enabled_callback, disabled_callback
+from openpilot.selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess, enabled_callback, disabled_callback
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None
 
@@ -31,15 +31,12 @@ def ublox(params, CP: car.CarParams) -> bool:
 def qcomgps(params, CP: car.CarParams) -> bool:
   return ublox_available()
 
-
 procs = [
-  # NativeProcess("camerad", "system/camerad", ["./camerad"], offroad_callback=driverview),
-  NativeProcess("camerad", "system/camerad", ["./camerad"], callback=ProcessCallback(offroad=driverview)),
+  NativeProcess("camerad", "system/camerad", ["./camerad"], offroad_callback=driverview),
   NativeProcess("clocksd", "system/clocksd", ["./clocksd"]),
   NativeProcess("logcatd", "system/logcatd", ["./logcatd"]),
   NativeProcess("proclogd", "system/proclogd", ["./proclogd"]),
-  # PythonProcess("logmessaged", "system.logmessaged", offroad_callback=enabled_callback),
-  PythonProcess("logmessaged", "system.logmessaged", callback=ProcessCallback(offroad=enabled_callback)),
+  PythonProcess("logmessaged", "system.logmessaged", offroad_callback=enabled_callback),
   PythonProcess("micd", "system.micd", onroad_callback=iscar),
   PythonProcess("timezoned", "system.timezoned", enabled=not PC, offroad_callback=enabled_callback),
 
