@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="3" skipped="8" tests="77" time="110.170" timestamp="2023-08-22T10:13:25.289636" hostname="workstation-justin"><testcase classname="common.kalman.tests.test_simple_kalman.TestSimpleKalman" name="test_getter_setter" time="0.003" /><testcase classname="common.kalman.tests.test_simple_kalman.TestSimpleKalman" name="test_new_is_faster" time="0.074" /><testcase classname="common.kalman.tests.test_simple_kalman.TestSimpleKalman" name="test_old_equal_new" time="0.362" /><testcase classname="common.tests.test_file_helpers.TestFileHelpers" name="test_atomic_write_in_dir" time="0.013" /><testcase classname="common.tests.test_file_helpers.TestFileHelpers" name="test_atomic_write_on_fs_tmp" time="0.017" /><testcase classname="common.tests.test_numpy_fast.InterpTest" name="test_correctness_controls" time="0.007" /><testcase classname="common.tests.test_params.TestParams" name="test_get_bool" time="0.041" /><testcase classname="common.tests.test_params.TestParams" name="test_params_all_keys" time="0.002" /><testcase classname="common.tests.test_params.TestParams" name="test_params_get_block" time="0.204" /><testcase classname="common.tests.test_params.TestParams" name="test_params_get_cleared_manager_start" time="0.028" /><testcase classname="common.tests.test_params.TestParams" name="test_params_non_ascii" time="0.012" /><testcase classname="common.tests.test_params.TestParams" name="test_params_put_and_get" time="0.013" /><testcase classname="common.tests.test_params.TestParams" name="test_params_two_things" time="0.022" /><testcase classname="common.tests.test_params.TestParams" name="test_params_unknown_key_fails" time="0.003" /><testcase classname="common.tests.test_params.TestParams" name="test_put_bool_non_blocking_with_get_block" time="0.205" /><testcase classname="common.tests.test_params.TestParams" name="test_put_non_blocking_with_get_block" time="0.206" /><testcase classname="common.tests.test_params.TestParams" name="test_remove_not_there" time="0.006" /><testcase classname="common.transformations.tests.test_coordinates.TestNED" name="test_ecef_geodetic" time="0.007" /><testcase classname="common.transformations.tests.test_coordinates.TestNED" name="test_ned" time="0.010" /><testcase classname="common.transformations.tests.test_coordinates.TestNED" name="test_ned_batch" time="0.004" /><testcase classname="common.transformations.tests.test_coordinates.TestNED" name="test_ned_saved_results" time="0.005" /><testcase classname="common.transformations.tests.test_coordinates.TestNED" name="test_small_distances" time="0.002" /><testcase classname="common.transformations.tests.test_orientation.TestOrientation" name="test_euler_ned" time="0.003" /><testcase classname="common.transformations.tests.test_orientation.TestOrientation" name="test_quat_euler" time="0.007" /><testcase classname="common.transformations.tests.test_orientation.TestOrientation" name="test_rot_euler" time="0.005" /><testcase classname="common.transformations.tests.test_orientation.TestOrientation" name="test_rot_quat" time="0.005" /><testcase classname="opendbc.can.tests.test_checksums.TestCanChecksums" name="test_honda_checksum" time="0.005" /><testcase classname="opendbc.can.tests.test_dbc_exceptions.TestCanParserPackerExceptions" name="test_civic_exceptions" time="0.004" /><testcase classname="opendbc.can.tests.test_dbc_parser.TestDBCParser" name="test_enough_dbcs" time="0.002" /><testcase classname="opendbc.can.tests.test_dbc_parser.TestDBCParser" name="test_parse_all_dbcs" time="0.214" /><testcase classname="opendbc.can.tests.test_define.TestCADNDefine" name="test_all_dbcs" time="0.017" /><testcase classname="opendbc.can.tests.test_define.TestCADNDefine" name="test_civic" time="0.001" /><testcase classname="opendbc.can.tests.test_packer_parser.TestCanParserPacker" name="test_bus_timeout" time="0.052" /><testcase classname="opendbc.can.tests.test_packer_parser.TestCanParserPacker" name="test_nonexistent_messages" time="0.002" /><testcase classname="opendbc.can.tests.test_packer_parser.TestCanParserPacker" name="test_packer" time="0.013" /><testcase classname="opendbc.can.tests.test_packer_parser.TestCanParserPacker" name="test_packer_counter" time="0.041" /><testcase classname="opendbc.can.tests.test_packer_parser.TestCanParserPacker" name="test_packer_parser" time="0.091" /><testcase classname="opendbc.can.tests.test_packer_parser.TestCanParserPacker" name="test_parser_can_valid" time="0.006" /><testcase classname="opendbc.can.tests.test_packer_parser.TestCanParserPacker" name="test_scale_offset" time="0.005" /><testcase classname="opendbc.can.tests.test_packer_parser.TestCanParserPacker" name="test_subaru" time="0.040" /><testcase classname="opendbc.can.tests.test_packer_parser.TestCanParserPacker" name="test_timestamp_nanos" time="0.004" /><testcase classname="opendbc.can.tests.test_packer_parser.TestCanParserPacker" name="test_track_all_signals" time="0.001" /><testcase classname="opendbc.can.tests.test_packer_parser.TestCanParserPacker" name="test_updated" time="0.003" /><testcase classname="opendbc.can.tests.test_parser_performance.TestParser" name="test_performance_all_signals" time="0.002"><skipped type="pytest.skip" message="TODO: varies too much between machines">/home/batman/xx/openpilot/opendbc/can/tests/test_parser_performance.py:49: TODO: varies too much between machines</skipped></testcase><testcase classname="selfdrive.boardd.tests.test_boardd_loopback.TestBoardd" name="test_loopback" time="0.002"><skipped type="pytest.skip" message="This test is not meant to run on PC">/home/batman/xx/openpilot/openpilot/selfdrive/boardd/tests/test_boardd_loopback.py:27: This test is not meant to run on PC</skipped></testcase><testcase classname="selfdrive.boardd.tests.test_pandad.TestPandad" name="test_best_case_startup_time" time="0.002"><skipped type="pytest.skip" message="This test is not meant to run on PC">/home/batman/xx/openpilot/openpilot/selfdrive/boardd/tests/test_pandad.py:93: This test is not meant to run on PC</skipped></testcase><testcase classname="selfdrive.boardd.tests.test_pandad.TestPandad" name="test_in_bootstub" time="0.001"><skipped type="pytest.skip" message="This test is not meant to run on PC">/home/batman/xx/openpilot/openpilot/selfdrive/boardd/tests/test_pandad.py:73: This test is not meant to run on PC</skipped></testcase><testcase classname="selfdrive.boardd.tests.test_pandad.TestPandad" name="test_in_dfu" time="0.002"><skipped type="pytest.skip" message="This test is not meant to run on PC">/home/batman/xx/openpilot/openpilot/selfdrive/boardd/tests/test_pandad.py:67: This test is not meant to run on PC</skipped></testcase><testcase classname="selfdrive.boardd.tests.test_pandad.TestPandad" name="test_internal_panda_reset" time="0.001"><skipped type="pytest.skip" message="This test is not meant to run on PC">/home/batman/xx/openpilot/openpilot/selfdrive/boardd/tests/test_pandad.py:81: This test is not meant to run on PC</skipped></testcase><testcase classname="selfdrive.boardd.tests.test_pandad.TestPandad" name="test_protocol_version_check" time="0.001"><skipped type="pytest.skip" message="This test is not meant to run on PC">/home/batman/xx/openpilot/openpilot/selfdrive/boardd/tests/test_pandad.py:104: This test is not meant to run on PC</skipped></testcase><testcase classname="selfdrive.boardd.tests.test_pandad.TestPandad" name="test_release_to_devel_bootstub" time="0.001"><skipped type="pytest.skip" message="This test is not meant to run on PC">/home/batman/xx/openpilot/openpilot/selfdrive/boardd/tests/test_pandad.py:113: This test is not meant to run on PC</skipped></testcase><testcase classname="selfdrive.controls.lib.tests.test_alertmanager.TestAlertManager" name="test_duration" time="0.102" /><testcase classname="selfdrive.controls.lib.tests.test_latcontrol.TestLatControl" name="test_saturation_0_HONDA_CIVIC_2016" time="0.014"><failure message="AttributeError: capnp/schema.c++:498: failed: struct has no such member; name = get_steer_from_curvature&#10;stack: 7fd3df3b845d 7fd3df3d7574 7fd3df2ac4ce 7fd3df26a70d 7fd400d642da 7fd400d64645 7fd400cacc7e 7fd400e17468 7fd400d0a9e8 7fd400cab857 7fd400e17468 7fd400d0dddf 7fd400d0aa43 7fd400cab857 7fd400e17468 7fd400d0ae4f 7fd400d0b0e3 7fd400d856a0 7fd400d0ac56 7fd400cac6cd 7fd400e17468 7fd400d0a9e8 7fd400cab857 7fd400e17468 7fd400d0ae4f 7fd400d0b0e3 7fd400d856a0 7fd400d0a987 7fd400cab857 7fd400e17468 7fd400d0a9e8">&gt;   ???
+
+capnp/lib/capnp.pyx:1365: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+&gt;   ???
+E   capnp.lib.capnp.KjException: capnp/schema.c++:498: failed: struct has no such member; name = get_steer_from_curvature
+E   stack: 7fd3df3b845d 7fd3df3d7574 7fd3df2ac4ce 7fd3df26a70d 7fd400d642da 7fd400d64645 7fd400cacc7e 7fd400e17468 7fd400d0a9e8 7fd400cab857 7fd400e17468 7fd400d0dddf 7fd400d0aa43 7fd400cab857 7fd400e17468 7fd400d0ae4f 7fd400d0b0e3 7fd400d856a0 7fd400d0ac56 7fd400cac6cd 7fd400e17468 7fd400d0a9e8 7fd400cab857 7fd400e17468 7fd400d0ae4f 7fd400d0b0e3 7fd400d856a0 7fd400d0a987 7fd400cab857 7fd400e17468 7fd400d0a9e8
+
+capnp/lib/capnp.pyx:1358: KjException
+
+During handling of the above exception, another exception occurred:
+
+a = (&lt;test_latcontrol.TestLatControl testMethod=test_saturation_0_HONDA_CIVIC_2016&gt;,)
+
+    @wraps(func)
+    def standalone_func(*a):
+&gt;       return func(*(a + p.args), **p.kwargs)
+
+../../.pyenv/versions/3.11.4/lib/python3.11/site-packages/parameterized/parameterized.py:533: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+openpilot/selfdrive/controls/lib/tests/test_latcontrol.py:36: in test_saturation
+    _, _, lac_log = controller.update(True, CS, CP, VM, params, last_actuators, True, 1, 0)
+openpilot/selfdrive/controls/lib/latcontrol_pid.py:25: in update
+    angle_steers_des_no_offset = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))
+capnp/lib/capnp.pyx:1367: in capnp.lib.capnp._DynamicStructBuilder.__getattr__
+    ???
+capnp/lib/capnp.pyx:1365: in capnp.lib.capnp._DynamicStructBuilder.__getattr__
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+&gt;   ???
+E   AttributeError: capnp/schema.c++:498: failed: struct has no such member; name = get_steer_from_curvature
+E   stack: 7fd3df3b845d 7fd3df3d7574 7fd3df2ac4ce 7fd3df26a70d 7fd400d642da 7fd400d64645 7fd400cacc7e 7fd400e17468 7fd400d0a9e8 7fd400cab857 7fd400e17468 7fd400d0dddf 7fd400d0aa43 7fd400cab857 7fd400e17468 7fd400d0ae4f 7fd400d0b0e3 7fd400d856a0 7fd400d0ac56 7fd400cac6cd 7fd400e17468 7fd400d0a9e8 7fd400cab857 7fd400e17468 7fd400d0ae4f 7fd400d0b0e3 7fd400d856a0 7fd400d0a987 7fd400cab857 7fd400e17468 7fd400d0a9e8
+
+capnp/lib/capnp.pyx:1358: AttributeError</failure></testcase><testcase classname="selfdrive.controls.lib.tests.test_latcontrol.TestLatControl" name="test_saturation_1_TOYOTA_RAV4_2017" time="0.025"><failure message="AttributeError: capnp/schema.c++:498: failed: struct has no such member; name = calc_curvature&#10;stack: 7fd3df3b845d 7fd3df3d7574 7fd3df2ac4ce 7fd3df26a70d 7fd400d642da 7fd400d64645 7fd400cacc7e 7fd400e17468 7fd400d0a9e8 7fd400cab857 7fd400e17468 7fd400d0dddf 7fd400d0aa43 7fd400cab857 7fd400e17468 7fd400d0ae4f 7fd400d0b0e3 7fd400d856a0 7fd400d0ac56 7fd400cac6cd 7fd400e17468 7fd400d0a9e8 7fd400cab857 7fd400e17468 7fd400d0ae4f 7fd400d0b0e3 7fd400d856a0 7fd400d0a987 7fd400cab857 7fd400e17468 7fd400d0a9e8">&gt;   ???
+
+capnp/lib/capnp.pyx:1365: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+&gt;   ???
+E   capnp.lib.capnp.KjException: capnp/schema.c++:498: failed: struct has no such member; name = calc_curvature
+E   stack: 7fd3df3b845d 7fd3df3d7574 7fd3df2ac4ce 7fd3df26a70d 7fd400d642da 7fd400d64645 7fd400cacc7e 7fd400e17468 7fd400d0a9e8 7fd400cab857 7fd400e17468 7fd400d0dddf 7fd400d0aa43 7fd400cab857 7fd400e17468 7fd400d0ae4f 7fd400d0b0e3 7fd400d856a0 7fd400d0ac56 7fd400cac6cd 7fd400e17468 7fd400d0a9e8 7fd400cab857 7fd400e17468 7fd400d0ae4f 7fd400d0b0e3 7fd400d856a0 7fd400d0a987 7fd400cab857 7fd400e17468 7fd400d0a9e8
+
+capnp/lib/capnp.pyx:1358: KjException
+
+During handling of the above exception, another exception occurred:
+
+a = (&lt;test_latcontrol.TestLatControl testMethod=test_saturation_1_TOYOTA_RAV4_2017&gt;,)
+
+    @wraps(func)
+    def standalone_func(*a):
+&gt;       return func(*(a + p.args), **p.kwargs)
+
+../../.pyenv/versions/3.11.4/lib/python3.11/site-packages/parameterized/parameterized.py:533: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+openpilot/selfdrive/controls/lib/tests/test_latcontrol.py:36: in test_saturation
+    _, _, lac_log = controller.update(True, CS, CP, VM, params, last_actuators, True, 1, 0)
+openpilot/selfdrive/controls/lib/latcontrol_torque.py:47: in update
+    actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
+capnp/lib/capnp.pyx:1367: in capnp.lib.capnp._DynamicStructBuilder.__getattr__
+    ???
+capnp/lib/capnp.pyx:1365: in capnp.lib.capnp._DynamicStructBuilder.__getattr__
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+&gt;   ???
+E   AttributeError: capnp/schema.c++:498: failed: struct has no such member; name = calc_curvature
+E   stack: 7fd3df3b845d 7fd3df3d7574 7fd3df2ac4ce 7fd3df26a70d 7fd400d642da 7fd400d64645 7fd400cacc7e 7fd400e17468 7fd400d0a9e8 7fd400cab857 7fd400e17468 7fd400d0dddf 7fd400d0aa43 7fd400cab857 7fd400e17468 7fd400d0ae4f 7fd400d0b0e3 7fd400d856a0 7fd400d0ac56 7fd400cac6cd 7fd400e17468 7fd400d0a9e8 7fd400cab857 7fd400e17468 7fd400d0ae4f 7fd400d0b0e3 7fd400d856a0 7fd400d0a987 7fd400cab857 7fd400e17468 7fd400d0a9e8
+
+capnp/lib/capnp.pyx:1358: AttributeError</failure></testcase><testcase classname="selfdrive.controls.lib.tests.test_latcontrol.TestLatControl" name="test_saturation_2_NISSAN_LEAF_2018" time="0.012"><failure message="AttributeError: capnp/schema.c++:498: failed: struct has no such member; name = get_steer_from_curvature&#10;stack: 7fd3df3b845d 7fd3df3d7574 7fd3df2ac4ce 7fd3df26a70d 7fd400d642da 7fd400d64645 7fd400cacc7e 7fd400e17468 7fd400d0a9e8 7fd400cab857 7fd400e17468 7fd400d0dddf 7fd400d0aa43 7fd400cab857 7fd400e17468 7fd400d0ae4f 7fd400d0b0e3 7fd400d856a0 7fd400d0ac56 7fd400cac6cd 7fd400e17468 7fd400d0a9e8 7fd400cab857 7fd400e17468 7fd400d0ae4f 7fd400d0b0e3 7fd400d856a0 7fd400d0a987 7fd400cab857 7fd400e17468 7fd400d0a9e8">&gt;   ???
+
+capnp/lib/capnp.pyx:1365: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+&gt;   ???
+E   capnp.lib.capnp.KjException: capnp/schema.c++:498: failed: struct has no such member; name = get_steer_from_curvature
+E   stack: 7fd3df3b845d 7fd3df3d7574 7fd3df2ac4ce 7fd3df26a70d 7fd400d642da 7fd400d64645 7fd400cacc7e 7fd400e17468 7fd400d0a9e8 7fd400cab857 7fd400e17468 7fd400d0dddf 7fd400d0aa43 7fd400cab857 7fd400e17468 7fd400d0ae4f 7fd400d0b0e3 7fd400d856a0 7fd400d0ac56 7fd400cac6cd 7fd400e17468 7fd400d0a9e8 7fd400cab857 7fd400e17468 7fd400d0ae4f 7fd400d0b0e3 7fd400d856a0 7fd400d0a987 7fd400cab857 7fd400e17468 7fd400d0a9e8
+
+capnp/lib/capnp.pyx:1358: KjException
+
+During handling of the above exception, another exception occurred:
+
+a = (&lt;test_latcontrol.TestLatControl testMethod=test_saturation_2_NISSAN_LEAF_2018&gt;,)
+
+    @wraps(func)
+    def standalone_func(*a):
+&gt;       return func(*(a + p.args), **p.kwargs)
+
+../../.pyenv/versions/3.11.4/lib/python3.11/site-packages/parameterized/parameterized.py:533: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+openpilot/selfdrive/controls/lib/tests/test_latcontrol.py:36: in test_saturation
+    _, _, lac_log = controller.update(True, CS, CP, VM, params, last_actuators, True, 1, 0)
+openpilot/selfdrive/controls/lib/latcontrol_angle.py:22: in update
+    angle_steers_des = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))
+capnp/lib/capnp.pyx:1367: in capnp.lib.capnp._DynamicStructBuilder.__getattr__
+    ???
+capnp/lib/capnp.pyx:1365: in capnp.lib.capnp._DynamicStructBuilder.__getattr__
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+&gt;   ???
+E   AttributeError: capnp/schema.c++:498: failed: struct has no such member; name = get_steer_from_curvature
+E   stack: 7fd3df3b845d 7fd3df3d7574 7fd3df2ac4ce 7fd3df26a70d 7fd400d642da 7fd400d64645 7fd400cacc7e 7fd400e17468 7fd400d0a9e8 7fd400cab857 7fd400e17468 7fd400d0dddf 7fd400d0aa43 7fd400cab857 7fd400e17468 7fd400d0ae4f 7fd400d0b0e3 7fd400d856a0 7fd400d0ac56 7fd400cac6cd 7fd400e17468 7fd400d0a9e8 7fd400cab857 7fd400e17468 7fd400d0ae4f 7fd400d0b0e3 7fd400d856a0 7fd400d0a987 7fd400cab857 7fd400e17468 7fd400d0a9e8
+
+capnp/lib/capnp.pyx:1358: AttributeError</failure></testcase><testcase classname="selfdrive.controls.lib.tests.test_vehicle_model.TestVehicleModel" name="test_dyn_ss_sol_against_yaw_rate" time="0.102" /><testcase classname="selfdrive.controls.lib.tests.test_vehicle_model.TestVehicleModel" name="test_round_trip_yaw_rate" time="0.040" /><testcase classname="selfdrive.controls.lib.tests.test_vehicle_model.TestVehicleModel" name="test_syn_ss_sol_simulate" time="1.004" /><testcase classname="selfdrive.controls.tests.test_alerts.TestAlerts" name="test_alert_sanity_check" time="0.004" /><testcase classname="selfdrive.controls.tests.test_alerts.TestAlerts" name="test_alert_text_length" time="0.380" /><testcase classname="selfdrive.controls.tests.test_alerts.TestAlerts" name="test_events_defined" time="0.001" /><testcase classname="selfdrive.controls.tests.test_alerts.TestAlerts" name="test_offroad_alerts" time="0.226" /><testcase classname="selfdrive.controls.tests.test_alerts.TestAlerts" name="test_offroad_alerts_extra_text" time="0.514" /><testcase classname="selfdrive.controls.tests.test_cruise_speed.TestCruiseSpeed" name="test_cruise_speed" time="20.196" /><testcase classname="selfdrive.controls.tests.test_cruise_speed.TestVCruiseHelper_0" name="test_adjust_speed" time="0.003" /><testcase classname="selfdrive.controls.tests.test_cruise_speed.TestVCruiseHelper_0" name="test_initialize_v_cruise" time="0.013" /><testcase classname="selfdrive.controls.tests.test_cruise_speed.TestVCruiseHelper_0" name="test_resume_in_standstill" time="0.002" /><testcase classname="selfdrive.controls.tests.test_cruise_speed.TestVCruiseHelper_0" name="test_rising_edge_enable" time="0.002" /><testcase classname="selfdrive.controls.tests.test_cruise_speed.TestVCruiseHelper_0" name="test_set_gas_pressed" time="0.021" /><testcase classname="selfdrive.controls.tests.test_following_distance.TestFollowingDistance" name="test_following_distance" time="76.466" /><testcase classname="selfdrive.controls.tests.test_lateral_mpc.TestLateralMpc" name="test_curvature_symmetry" time="0.014" /><testcase classname="selfdrive.controls.tests.test_lateral_mpc.TestLateralMpc" name="test_no_overshoot" time="0.008" /><testcase classname="selfdrive.controls.tests.test_lateral_mpc.TestLateralMpc" name="test_poly_symmetry" time="0.014" /><testcase classname="selfdrive.controls.tests.test_lateral_mpc.TestLateralMpc" name="test_psi_symmetry" time="0.014" /><testcase classname="selfdrive.controls.tests.test_lateral_mpc.TestLateralMpc" name="test_straight" time="0.008" /><testcase classname="selfdrive.controls.tests.test_lateral_mpc.TestLateralMpc" name="test_switch_convergence" time="0.013" /><testcase classname="selfdrive.controls.tests.test_lateral_mpc.TestLateralMpc" name="test_y_symmetry" time="0.014" /><testcase time="0.001" /></testsuite></testsuites>

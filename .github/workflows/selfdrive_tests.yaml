@@ -255,23 +255,9 @@ jobs:
       timeout-minutes: 40
       run: |
         ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
-                        $UNIT_TEST common && \
-                        $UNIT_TEST opendbc/can && \
-                        $UNIT_TEST selfdrive/boardd && \
-                        $UNIT_TEST selfdrive/controls && \
-                        $UNIT_TEST selfdrive/monitoring && \
-                        $UNIT_TEST system/loggerd && \
-                        $UNIT_TEST selfdrive/car && \
-                        $UNIT_TEST selfdrive/locationd && \
-                        $UNIT_TEST selfdrive/test/longitudinal_maneuvers && \
-                        $UNIT_TEST system/tests && \
-                        $UNIT_TEST system/ubloxd && \
+                        pytest -c pytest-ci.ini --cov --cov-report=xml --cov-append --junitxml junit.xml && \
                         selfdrive/locationd/test/_test_locationd_lib.py && \
                         ./system/ubloxd/tests/test_glonass_runner && \
-                        $UNIT_TEST selfdrive/athena && \
-                        $UNIT_TEST selfdrive/thermald && \
-                        $UNIT_TEST system/hardware/tici && \
-                        $UNIT_TEST tools/lib/tests && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         ./selfdrive/ui/tests/test_translations.py && \
@@ -284,10 +270,16 @@ jobs:
                         ./tools/replay/tests/test_replay && \
                         ./tools/cabana/tests/test_cabana && \
                         ./system/camerad/test/ae_gray_test && \
-                        ./selfdrive/test/process_replay/test_fuzzy.py && \
-                        coverage xml"
+                        ./selfdrive/test/process_replay/test_fuzzy.py"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: success() || failure()    # run this step even if previous step failed
+      with:
+        name: Unit Tests            # Name of the check run which will be created
+        path: junit.xml             # Path to test results
+        reporter: jest-junit        # Format of test results
 
   process_replay:
     name: process replay
@@ -355,8 +347,7 @@ jobs:
       timeout-minutes: 4
       run: |
         ${{ env.RUN_CL }} "unset PYTHONWARNINGS && \
-                           $UNIT_TEST selfdrive/modeld && \
-                           coverage xml"
+                           $UNIT_TEST selfdrive/modeld"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
 
