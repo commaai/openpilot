@@ -30,12 +30,9 @@
 #define MAG_FREQ 25
 
 ExitHandler do_exit;
-uint64_t init_ts = 0;
 
-void interrupt_loop(std::vector<Sensor *>& sensors,
-                    std::map<Sensor*, std::string>& sensor_service)
-{
-  PubMaster pm_int({"gyroscope", "accelerometer"});
+void interrupt_loop(std::vector<Sensor *>& sensors, std::map<Sensor*, std::string>& sensor_service) {
+  PubMaster pm({"gyroscope", "accelerometer"});
 
   int fd = sensors[0]->gpio_fd;
   struct pollfd fd_list[1] = {0};
@@ -77,11 +74,11 @@ void interrupt_loop(std::vector<Sensor *>& sensors,
         continue;
       }
 
-      if (!sensor->is_data_valid(init_ts, ts)) {
+      if (!sensor->is_data_valid(ts)) {
         continue;
       }
 
-      pm_int.send(sensor_service[sensor].c_str(), msg);
+      pm.send(sensor_service[sensor].c_str(), msg);
     }
   }
 
@@ -91,25 +88,23 @@ void interrupt_loop(std::vector<Sensor *>& sensors,
   }
 }
 
-void polling_loop(Sensor *sensor,
-                  PubMaster& pm_int,
-                  std::string msg_name,
-                  int poll_frequency) {
-  RateKeeper rk(msg_name, poll_frequency);
+void polling_loop(Sensor *sensor, std::string msg_name, int frequency) {
+  PubMaster pm({msg_name.c_str(), });
+  RateKeeper rk(msg_name, frequency);
   while (!do_exit) {
     MessageBuilder msg;
     if (!sensor->get_event(msg)) {
       continue;
     }
 
-    if (!sensor->is_data_valid(init_ts, nanos_since_boot())) {
+    if (!sensor->is_data_valid(nanos_since_boot())) {
       continue;
     }
 
-    pm_int.send(msg_name.c_str(), msg);
+    pm.send(msg_name.c_str(), msg);
     rk.keepTime();
   }
-  
+
   sensor->shutdown();
 }
 
@@ -153,9 +148,6 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
 
   bool has_magnetometer = false;
 
-  PubMaster pm_non_int({"gyroscope2", "accelerometer2", "temperatureSensor", "magnetometer"});
-  init_ts = nanos_since_boot();
-
   // Initialize sensors
   std::vector<std::thread> sensor_threads;
   for (auto &[sensor, required, polling_freq] : sensors_init) {
@@ -166,13 +158,12 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
         return -1;
       }
     } else {
-
       if (sensor == &bmx055_magn || sensor == &mmc5603nj_magn) {
         has_magnetometer = true;
       }
       if (!sensor->has_interrupt_enabled()) {
         std::string msg_name = sensor_service[sensor];
-        sensor_threads.emplace_back(polling_loop, sensor, std::ref(pm_non_int), msg_name, polling_freq);
+        sensor_threads.emplace_back(polling_loop, sensor, msg_name, polling_freq);
       }
     }
   }
