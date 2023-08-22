@@ -151,6 +151,7 @@ void MapWindow::updateState(const UIState &s) {
     if (locationd_valid) {
       last_position = QMapbox::Coordinate(locationd_pos.getValue()[0], locationd_pos.getValue()[1]);
       last_bearing = RAD2DEG(locationd_orientation.getValue()[2]);
+      velocity_filter.updateAlpha(abs(locationd_velocity.getValue()[0])/3);
       velocity_filter.update(locationd_velocity.getValue()[0]);
     }
   }
