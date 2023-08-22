@@ -20,8 +20,7 @@ ONNXModel::ONNXModel(const std::string path, float *_output, size_t _output_size
   err = pipe(pipeout);
   assert(err == 0);
 
-  std::string exe_dir = util::dir_name(util::readlink("/proc/self/exe"));
-  std::string onnx_runner = exe_dir + "/runners/onnx_runner.py";
+  std::string onnx_runner = ONNXRUNNER_PATH;
   std::string tf8_arg = use_tf8 ? "--use_tf8" : "";
 
   proc_pid = fork();
