@@ -92,3 +92,19 @@ jobs:
       run: |
         $DOCKER_LOGIN
         docker push $DOCKER_REGISTRY/openpilot-docs:latest
+
+  devcontainer:
+    name: devcontainer
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+    - name: Setup Dev Container CLI
+      run: npm install -g @devcontainers/cli
+    - name: Build dev container image
+      run: devcontainer build --workspace-folder .
+    - name: Run dev container
+      run: devcontainer up --workspace-folder .
+    - name: Test environment
+      run: devcontainer exec --workspace-folder . scons --dry-run
