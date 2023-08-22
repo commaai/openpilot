@@ -147,9 +147,9 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
 
   sensors_init.push_back({&lsm6ds3_accel, true, SENSOR_FREQ});
   sensors_init.push_back({&lsm6ds3_gyro, true, SENSOR_FREQ});
-  sensors_init.push_back({&lsm6ds3_temp, true, MAG_FREQ});
+  sensors_init.push_back({&lsm6ds3_temp, true, SENSOR_FREQ});
 
-  sensors_init.push_back({&mmc5603nj_magn, false, 25});
+  sensors_init.push_back({&mmc5603nj_magn, false, MAG_FREQ});
 
   bool has_magnetometer = false;
 
@@ -171,7 +171,8 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
         has_magnetometer = true;
       }
       if (!sensor->has_interrupt_enabled()) {
-        sensor_threads.emplace_back(polling_loop, sensor, pm_non_int, sensor_service[sensor], polling_freq);
+        std::string msg_name = sensor_service[sensor];
+        sensor_threads.emplace_back(polling_loop, sensor, std::ref(pm_non_int), msg_name, polling_freq);
       }
     }
   }
