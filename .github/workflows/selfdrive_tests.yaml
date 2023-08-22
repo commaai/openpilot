@@ -255,7 +255,7 @@ jobs:
       timeout-minutes: 40
       run: |
         ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
-                        pytest -c pytest-ci.ini --cov --cov-report=xml --cov-append --junitxml junit.xml && \
+                        pytest -c pytest-ci.ini --continue-on-collection-errors --cov --cov-report=xml --cov-append --junitxml junit.xml && \
                         selfdrive/locationd/test/_test_locationd_lib.py && \
                         ./system/ubloxd/tests/test_glonass_runner && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
@@ -347,7 +347,8 @@ jobs:
       timeout-minutes: 4
       run: |
         ${{ env.RUN_CL }} "unset PYTHONWARNINGS && \
-                           $UNIT_TEST selfdrive/modeld"
+                           $UNIT_TEST selfdrive/modeld && \
+                           coverage xml"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
 
