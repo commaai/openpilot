@@ -159,8 +159,6 @@ jobs:
       # if: github.ref == 'refs/heads/master'
       run: |
         eval "$(pyenv init --path)"
-        echo "$PWD"
-        ls release/
         poetry run release/clean-cache.sh
     - name: Save scons cache
       id: scons-save-cache
