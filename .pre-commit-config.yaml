@@ -57,12 +57,13 @@ repos:
     rev: 1.6.1
     hooks:
     -   id: cpplint
+        exclude: '^(third_party/)|(cereal/)|(body/)|(rednose/)|(rednose_repo/)|(opendbc/)|(panda/)|(tools/)|(selfdrive/modeld/thneed/debug/)|(selfdrive/modeld/test/)|(selfdrive/camerad/test/)|(installer/)'
         args:
         - --quiet
-        - --counting=detailed
+        - --counting=total
         - --linelength=240
-        - --filter=-legal,-build/include_order,-readability/casting,-whitespace/braces,-whitespace/indent,-whitespace/operators,-build/c++11,-readability/todo,-runtime/explicit,-runtime/int,-whitespace/comments,-readability/braces,-runtime/arrays,-runtime/references
-
+        #- --filter=-legal,-build/include_order,-readability/casting,-whitespace/braces,-whitespace/indent,-whitespace/operators,-build/c++11,-readability/todo,-runtime/explicit,-runtime/int,-whitespace/comments,-readability/braces,-runtime/arrays,-runtime/references
+        - --filter=-build,-legal,-readability,-runtime,-whitespace,+build/include_what_you_use
 -   repo: local
     hooks:
     -   id: test_translations
