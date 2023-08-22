@@ -13,4 +13,4 @@ rm /tmp/tasktrace.log
 rm -rf $(find /tmp/scons_cache -maxdepth 1 ! -name moc_files ! -name scons_cache)
 
 # repopulate cache 
-scons -j$(nproc) --cache-populate
+scons --dry-run --cache-populate >/dev/null
