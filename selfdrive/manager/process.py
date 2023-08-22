@@ -74,9 +74,6 @@ def disabled_callback(started: bool, params: Params, CP: car.CarParams) -> bool:
 class ManagerProcess(ABC):
   daemon = False
   sigkill = False
-  onroad = True
-  offroad = False
-  callback: Optional[Callable[[bool, Params, car.CarParams], bool]] = None
   onroad_callback: Callable[[bool, Params, car.CarParams], bool] = enabled_callback
   offroad_callback: Callable[[bool, Params, car.CarParams], bool] = disabled_callback
   proc: Optional[Process] = None
@@ -180,15 +177,12 @@ class ManagerProcess(ABC):
 
 
 class NativeProcess(ManagerProcess):
-  def __init__(self, name, cwd, cmdline, enabled=True, onroad=True, offroad=False, callback=None, onroad_callback=enabled_callback,
-               offroad_callback=disabled_callback, unkillable=False, sigkill=False, watchdog_max_dt=None):
+  def __init__(self, name, cwd, cmdline, enabled=True, onroad_callback=enabled_callback, offroad_callback=disabled_callback,
+               unkillable=False, sigkill=False, watchdog_max_dt=None):
     self.name = name
     self.cwd = cwd
     self.cmdline = cmdline
     self.enabled = enabled
-    self.onroad = onroad
-    self.offroad = offroad
-    self.callback = callback
     self.onroad_callback = onroad_callback
     self.offroad_callback = offroad_callback
     self.unkillable = unkillable
@@ -216,14 +210,11 @@ class NativeProcess(ManagerProcess):
 
 
 class PythonProcess(ManagerProcess):
-  def __init__(self, name, module, enabled=True, onroad=True, offroad=False, callback=None, onroad_callback=enabled_callback,
-               offroad_callback=disabled_callback, unkillable=False, sigkill=False, watchdog_max_dt=None):
+  def __init__(self, name, module, enabled=True, onroad_callback=enabled_callback, offroad_callback=disabled_callback,
+               unkillable=False, sigkill=False, watchdog_max_dt=None):
     self.name = name
     self.module = module
     self.enabled = enabled
-    self.onroad = onroad
-    self.offroad = offroad
-    self.callback = callback
     self.onroad_callback = onroad_callback
     self.offroad_callback = offroad_callback
     self.unkillable = unkillable
@@ -259,8 +250,8 @@ class DaemonProcess(ManagerProcess):
     self.module = module
     self.param_name = param_name
     self.enabled = enabled
-    self.onroad = True
-    self.offroad = True
+    self.onroad_callback = enabled_callback
+    self.offroad_callback = enabled_callback
     self.params = None
 
   def prepare(self) -> None:
@@ -307,15 +298,6 @@ def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None
       p.offroad_callback(started, params, CP) and not started,
       p.onroad_callback(started, params, CP) and started,
     ))
-    # run = any((
-    #   p.offroad and not started,
-    #   p.onroad and started,
-    # ))
-    # if p.callback is not None and None not in (params, CP):
-    #   if run == p.callback(started, params, CP):
-    #     print(p.name)
-    #     # assert False
-    #   run = run or p.callback(started, params, CP)
 
     # Conditions that block a process from starting
     run = run and not any((
