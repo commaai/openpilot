@@ -10,28 +10,28 @@ WEBCAM = os.getenv("USE_WEBCAM") is not None
 # def started(started: bool, params: Params, CP: car.CarParams):
 
 
-def driverview(started: bool, params: Params, CP: car.CarParams) -> bool:
+def driverview(params: Params, CP: car.CarParams) -> bool:
   return params.get_bool("IsDriverViewEnabled")  # type: ignore
 
-def notcar(started: bool, params: Params, CP: car.CarParams) -> bool:
+def notcar(params: Params, CP: car.CarParams) -> bool:
   return CP.notCar  # type: ignore
 
-def iscar(started: bool, params: Params, CP: car.CarParams) -> bool:
+def iscar(params: Params, CP: car.CarParams) -> bool:
   return not CP.notCar
 
-def logging(started, params, CP: car.CarParams) -> bool:
+def logging(params, CP: car.CarParams) -> bool:
   return (not CP.notCar) or not params.get_bool("DisableLogging")
 
 def ublox_available() -> bool:
   return os.path.exists('/dev/ttyHS0') and not os.path.exists('/persist/comma/use-quectel-gps')
 
-def ublox(started, params, CP: car.CarParams) -> bool:
+def ublox(params, CP: car.CarParams) -> bool:
   use_ublox = ublox_available()
   if use_ublox != params.get_bool("UbloxAvailable"):
     params.put_bool("UbloxAvailable", use_ublox)
   return use_ublox
 
-def qcomgps(started, params, CP: car.CarParams) -> bool:
+def qcomgps(params, CP: car.CarParams) -> bool:
   return ublox_available()
 
 procs = [

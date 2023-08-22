@@ -63,19 +63,19 @@ def join_process(process: Process, timeout: float) -> None:
     time.sleep(0.001)
 
 
-def enabled_callback(started: bool, params: Params, CP: car.CarParams) -> bool:
+def enabled_callback(params: Params, CP: car.CarParams) -> bool:
   return True
 
 
-def disabled_callback(started: bool, params: Params, CP: car.CarParams) -> bool:
+def disabled_callback(params: Params, CP: car.CarParams) -> bool:
   return False
 
 
 class ManagerProcess(ABC):
   daemon = False
   sigkill = False
-  onroad_callback: Callable[[bool, Params, car.CarParams], bool] = enabled_callback
-  offroad_callback: Callable[[bool, Params, car.CarParams], bool] = disabled_callback
+  onroad_callback: Callable[[Params, car.CarParams], bool] = enabled_callback
+  offroad_callback: Callable[[Params, car.CarParams], bool] = disabled_callback
   proc: Optional[Process] = None
   enabled = True
   name = ""
@@ -295,8 +295,8 @@ def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None
   for p in procs:
     # Conditions that make a process run
     run = any((
-      p.offroad_callback(started, params, CP) and not started,
-      p.onroad_callback(started, params, CP) and started,
+      p.offroad_callback(params, CP) and not started,
+      p.onroad_callback(params, CP) and started,
     ))
 
     # Conditions that block a process from starting
