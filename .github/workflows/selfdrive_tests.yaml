@@ -275,6 +275,7 @@ jobs:
       uses: codecov/codecov-action@v3
     - name: "Upload unittest artifacts"
       uses: actions/upload-artifact@v3
+      if: always()
       with:
         name: unittest-artifacts
         path: |
