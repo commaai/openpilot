@@ -87,4 +87,5 @@ build/
 
 poetry.toml
 Pipfile
-junit.xml
+report.xml
+report.html
