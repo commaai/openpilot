@@ -105,6 +105,8 @@ jobs:
     - name: Build dev container image
       run: devcontainer build --workspace-folder .
     - name: Run dev container
-      run: devcontainer up --workspace-folder .
+      run: |
+        export XAUTHORITY="$HOME/.Xauthority"
+        devcontainer up --workspace-folder .
     - name: Test environment
       run: devcontainer exec --workspace-folder . scons --dry-run
