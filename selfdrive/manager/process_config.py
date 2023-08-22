@@ -7,9 +7,6 @@ from openpilot.selfdrive.manager.process import PythonProcess, NativeProcess, Da
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None
 
-# def started(started: bool, params: Params, CP: car.CarParams):
-
-
 def driverview(params: Params, CP: car.CarParams) -> bool:
   return params.get_bool("IsDriverViewEnabled")  # type: ignore
 
