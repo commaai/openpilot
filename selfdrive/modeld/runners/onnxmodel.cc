@@ -35,6 +35,7 @@ ONNXModel::ONNXModel(const std::string path, float *_output, size_t _output_size
     close(pipeout[0]);
     close(pipeout[1]);
     execvp(onnx_runner.c_str(), argv);
+    exit(1); // exit if the exec fails
   }
 
   // parent
