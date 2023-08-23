@@ -28,11 +28,11 @@
 
 ExitHandler do_exit;
 
-void interrupt_loop(std::vector<std::tuple<Sensor *, std::string, bool>> sensors) {
+void interrupt_loop(std::vector<std::tuple<Sensor *, std::string>> sensors) {
   PubMaster pm({"gyroscope", "accelerometer"});
 
   int fd = -1;
-  for (auto &[sensor, msg_name, required] : sensors) {
+  for (auto &[sensor, msg_name] : sensors) {
     if (sensor->has_interrupt_enabled()) {
       fd = sensor->gpio_fd;
       break;
@@ -72,7 +72,7 @@ void interrupt_loop(std::vector<std::tuple<Sensor *, std::string, bool>> sensors
     uint64_t offset = nanos_since_epoch() - nanos_since_boot();
     uint64_t ts = evdata[num_events - 1].timestamp - offset;
 
-    for (auto &[sensor, msg_name, required] : sensors) {
+    for (auto &[sensor, msg_name] : sensors) {
       if (!sensor->has_interrupt_enabled()) {
         continue;
       }
@@ -89,13 +89,6 @@ void interrupt_loop(std::vector<std::tuple<Sensor *, std::string, bool>> sensors
       pm.send(msg_name.c_str(), msg);
     }
   }
-
-  // poweroff sensors, disable interrupts
-  for (auto &[sensor, msg_name, required] : sensors) {
-    if (sensor->has_interrupt_enabled()) {
-      sensor->shutdown();
-    }
-  }
 }
 
 void polling_loop(Sensor *sensor, std::string msg_name) {
@@ -108,34 +101,28 @@ void polling_loop(Sensor *sensor, std::string msg_name) {
     }
     rk.keepTime();
   }
-
-  sensor->shutdown();
 }
 
 int sensor_loop(I2CBus *i2c_bus_imu) {
   // Sensor init
-  std::vector<std::tuple<Sensor *, std::string, bool>> sensors_init = {
-    {new BMX055_Accel(i2c_bus_imu), "accelerometer2", false},
-    {new BMX055_Gyro(i2c_bus_imu), "gyroscope2", false},
-    {new BMX055_Magn(i2c_bus_imu), "magnetometer", false},
-    {new BMX055_Temp(i2c_bus_imu), "temperatureSensor2", false},
+  std::vector<std::tuple<Sensor *, std::string>> sensors_init = {
+    {new BMX055_Accel(i2c_bus_imu), "accelerometer2"},
+    {new BMX055_Gyro(i2c_bus_imu), "gyroscope2"},
+    {new BMX055_Magn(i2c_bus_imu), "magnetometer"},
+    {new BMX055_Temp(i2c_bus_imu), "temperatureSensor2"},
 
-    {new LSM6DS3_Accel(i2c_bus_imu, GPIO_LSM_INT), "accelerometer", true},
-    {new LSM6DS3_Gyro(i2c_bus_imu, GPIO_LSM_INT, true), "gyroscope", true},
-    {new LSM6DS3_Temp(i2c_bus_imu), "temperatureSensor", true},
+    {new LSM6DS3_Accel(i2c_bus_imu, GPIO_LSM_INT), "accelerometer"},
+    {new LSM6DS3_Gyro(i2c_bus_imu, GPIO_LSM_INT, true), "gyroscope"},
+    {new LSM6DS3_Temp(i2c_bus_imu), "temperatureSensor"},
 
-    {new MMC5603NJ_Magn(i2c_bus_imu), "magnetometer", false},
+    {new MMC5603NJ_Magn(i2c_bus_imu), "magnetometer"},
   };
 
   // Initialize sensors
   std::vector<std::thread> threads;
-  for (auto &[sensor, msg_name, required] : sensors_init) {
+  for (auto &[sensor, msg_name] : sensors_init) {
     int err = sensor->init();
     if (err < 0) {
-      if (required) {
-        LOGE("Error initializing sensors");
-        return -1;
-      }
       continue;
     }
 
@@ -157,7 +144,8 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
     t.join();
   }
 
-  for (auto &[sensor, msg_name, required] : sensors_init) {
+  for (auto &[sensor, msg_name] : sensors_init) {
+    sensor->shutdown();
     delete sensor;
   }
   return 0;
