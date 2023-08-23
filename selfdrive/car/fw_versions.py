@@ -185,13 +185,11 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
         if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
           a = (addr, sub_addr, r.bus)
           # Build set of queries
-          # Add first sub-address to parallel queries since there will be no conflicts
-          sub_addr_in_parallel_addrs = any(p[1] is not None for p in parallel_queries[r.obd_multiplexing])
-          if sub_addr is None or not sub_addr_in_parallel_addrs:
+          if sub_addr is None:
             if a not in parallel_queries[r.obd_multiplexing]:
               parallel_queries[r.obd_multiplexing].append(a)
           else:  # subaddresses must be queried one by one
-            if [a] not in queries[r.obd_multiplexing] and a not in parallel_queries[r.obd_multiplexing]:
+            if [a] not in queries[r.obd_multiplexing]:
               queries[r.obd_multiplexing].append([a])
 
           # Build set of expected responses to filter
@@ -284,13 +282,11 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
         if a not in ecu_types:
           ecu_types[a] = ecu_type
 
-        # Add first sub-address to parallel queries since there will be no conflicts
-        sub_addr_in_parallel_addrs = any(p[2] is not None for p in parallel_addrs)
-        if sub_addr is None or not sub_addr_in_parallel_addrs:
+        if sub_addr is None:
           if a not in parallel_addrs:
             parallel_addrs.append(a)
         else:
-          if [a] not in addrs and a not in parallel_addrs:
+          if [a] not in addrs:
             addrs.append([a])
 
   addrs.insert(0, parallel_addrs)
