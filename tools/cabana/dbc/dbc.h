@@ -2,7 +2,7 @@
 
 #include <limits>
 #include <string>
-#include <utility>  // for pair<>
+#include <utility>
 #include <vector>
 
 #include <QColor>

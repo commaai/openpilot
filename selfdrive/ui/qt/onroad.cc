@@ -1,6 +1,6 @@
 #include "selfdrive/ui/qt/onroad.h"
 
-#include <algorithm>  // for min
+#include <algorithm>
 #include <cmath>
 #include <map>
 #include <memory>

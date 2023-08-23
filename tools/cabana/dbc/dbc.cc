@@ -1,6 +1,6 @@
 #include "tools/cabana/dbc/dbc.h"
 
-#include <algorithm>  // for max
+#include <algorithm>
 
 #include "tools/cabana/util.h"
 

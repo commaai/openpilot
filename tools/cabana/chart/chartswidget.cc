@@ -1,6 +1,6 @@
 #include "tools/cabana/chart/chartswidget.h"
 
-#include <algorithm>  // for max
+#include <algorithm>
 
 #include <QApplication>
 #include <QFutureSynchronizer>

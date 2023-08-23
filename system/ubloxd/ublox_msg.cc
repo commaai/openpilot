@@ -2,7 +2,7 @@
 
 #include <unistd.h>
 
-#include <algorithm>  // for min
+#include <algorithm>
 #include <cassert>
 #include <chrono>
 #include <cmath>
@@ -10,7 +10,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <unordered_map>
-#include <utility>  // for pair<>
+#include <utility>
 
 #include "common/swaglog.h"
 

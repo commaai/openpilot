@@ -12,7 +12,7 @@
 #include <map>
 #include <mutex>
 #include <numeric>
-#include <utility>  // for pair<>
+#include <utility>
 
 #include "common/timing.h"
 #include "common/util.h"

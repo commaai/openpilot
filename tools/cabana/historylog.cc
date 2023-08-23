@@ -1,6 +1,6 @@
 #include "tools/cabana/historylog.h"
 
-#include <functional>  // for less<>
+#include <functional>
 
 #include <QPainter>
 #include <QPushButton>

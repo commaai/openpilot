@@ -3,7 +3,7 @@
 
 #include <memory>
 #include <string>
-#include <utility>  // for move
+#include <utility>
 
 #include <DlContainer/IDlContainer.hpp>
 #include <DlSystem/DlError.hpp>

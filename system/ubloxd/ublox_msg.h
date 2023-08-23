@@ -6,7 +6,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <utility>  // for pair
+#include <utility>
 
 #include "cereal/messaging/messaging.h"
 #include "common/util.h"

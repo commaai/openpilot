@@ -2,8 +2,8 @@
 
 #include <unistd.h>
 
-#include <memory>   // for unique_ptr<>
-#include <utility>  // for pair<>
+#include <memory>
+#include <utility>
 
 #include "cereal/visionipc/visionipc_server.h"
 #include "common/queue.h"

@@ -1,6 +1,6 @@
 #include "tools/cabana/mainwin.h"
 
-#include <algorithm>  // for min
+#include <algorithm>
 #include <iostream>
 #include <string>
 

@@ -1,9 +1,9 @@
 #include "selfdrive/ui/qt/widgets/offroad_alerts.h"
 
-#include <algorithm>  // for sort
+#include <algorithm>
 #include <string>
 #include <vector>
-#include <utility> // for pair
+#include <utility>
 
 #include <QHBoxLayout>
 #include <QJsonDocument>

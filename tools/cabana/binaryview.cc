@@ -1,6 +1,6 @@
 #include "tools/cabana/binaryview.h"
 
-#include <algorithm>  // for min
+#include <algorithm>
 
 #include <QFontDatabase>
 #include <QHeaderView>

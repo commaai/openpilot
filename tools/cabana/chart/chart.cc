@@ -1,7 +1,7 @@
 #include "tools/cabana/chart/chart.h"
 
-#include <algorithm>  // for max
-#include <limits>  // for numeric_limits<>
+#include <algorithm>
+#include <limits>
 
 #include <QActionGroup>
 #include <QApplication>

@@ -7,7 +7,7 @@
 #include <QRegExp>
 #include <QtConcurrent>
 #include <array>
-#include <memory>  // for make_unique<>
+#include <memory>
 #include <set>
 #include <string>
 

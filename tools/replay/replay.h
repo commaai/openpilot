@@ -1,6 +1,6 @@
 #pragma once
 
-#include <algorithm>  // for max
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <optional>
@@ -8,7 +8,7 @@
 #include <string>
 #include <tuple>
 #include <vector>
-#include <utility>  // for pair<>
+#include <utility>
 
 #include <QThread>
 

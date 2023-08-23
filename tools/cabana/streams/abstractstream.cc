@@ -1,6 +1,6 @@
 #include "tools/cabana/streams/abstractstream.h"
 
-#include <algorithm>  // for max
+#include <algorithm>
 #include <vector>
 
 #include <QTimer>

@@ -1,6 +1,6 @@
 #include "tools/cabana/chart/tiplabel.h"
 
-#include <utility>  // for move
+#include <utility>
 
 #include <QApplication>
 #include <QStylePainter>

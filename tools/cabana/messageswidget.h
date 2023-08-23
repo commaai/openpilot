@@ -1,7 +1,7 @@
 #pragma once
 
-#include <algorithm>  // for sort
-#include <utility>  // for pair<>
+#include <algorithm>
+#include <utility>
 #include <vector>
 
 #include <QAbstractTableModel>

@@ -6,7 +6,7 @@
 #include <mutex>
 #include <set>
 #include <string>
-#include <utility>  // for pair<>
+#include <utility>
 
 #include <QOpenGLFunctions>
 #include <QOpenGLShaderProgram>

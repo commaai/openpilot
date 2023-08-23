@@ -1,6 +1,6 @@
 #include "map_settings.h"
 
-#include <utility>  // for swap
+#include <utility>
 
 #include <QApplication>
 #include <QDebug>

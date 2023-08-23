@@ -3,7 +3,7 @@
 #include <initializer_list>
 #include <string>
 #include <tuple>
-#include <utility>  // for move
+#include <utility>
 
 #include <QApplication>
 

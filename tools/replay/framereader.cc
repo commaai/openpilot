@@ -2,7 +2,7 @@
 #include "tools/replay/util.h"
 
 #include <cassert>
-#include <algorithm>  // for min
+#include <algorithm>
 #include "libyuv.h"
 
 #include "cereal/visionipc/visionbuf.h"

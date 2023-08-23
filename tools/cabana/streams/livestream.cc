@@ -1,6 +1,6 @@
 #include "tools/cabana/streams/livestream.h"
 
-#include <algorithm>  // for min
+#include <algorithm>
 #include <memory>
 
 struct LiveStream::Logger {

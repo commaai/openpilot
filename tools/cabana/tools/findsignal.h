@@ -1,7 +1,7 @@
 #pragma once
 
-#include <algorithm>  // for min
-#include <limits>  // for numeric_limits<>
+#include <algorithm>
+#include <limits>
 
 #include <QAbstractTableModel>
 #include <QLabel>

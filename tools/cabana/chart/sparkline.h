@@ -1,6 +1,6 @@
 #pragma once
 
-#include <algorithm>  // for max
+#include <algorithm>
 
 #include <QPixmap>
 #include <QPointF>

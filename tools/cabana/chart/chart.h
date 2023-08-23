@@ -1,7 +1,7 @@
 #pragma once
 
 #include <tuple>
-#include <utility>  // for std::pair
+#include <utility>
 
 #include <QGraphicsPixmapItem>
 #include <QGraphicsProxyWidget>

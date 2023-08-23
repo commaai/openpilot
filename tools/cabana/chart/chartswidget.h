@@ -1,7 +1,7 @@
 #pragma once
 
 #include <unordered_map>
-#include <utility>  // for pair<>
+#include <utility>
 
 #include <QGridLayout>
 #include <QLabel>
