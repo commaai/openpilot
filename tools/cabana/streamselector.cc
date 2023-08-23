@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QPushButton>
 
+#include "streams/socketcanstream.h"
 #include "tools/cabana/streams/devicestream.h"
 #include "tools/cabana/streams/pandastream.h"
 #include "tools/cabana/streams/replaystream.h"
@@ -41,7 +42,9 @@ StreamSelector::StreamSelector(AbstractStream **stream, QWidget *parent) : QDial
 
   addStreamWidget(ReplayStream::widget(stream));
   addStreamWidget(PandaStream::widget(stream));
-  addStreamWidget(SocketCanStream::widget(stream));
+  if (SocketCanStream::available()) {
+    addStreamWidget(SocketCanStream::widget(stream));
+  }
   addStreamWidget(DeviceStream::widget(stream));
 
   QObject::connect(btn_box, &QDialogButtonBox::rejected, this, &QDialog::reject);

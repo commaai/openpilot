@@ -21,6 +21,8 @@ public:
   SocketCanStream(QObject *parent, SocketCanStreamConfig config_ = {});
   static AbstractOpenStreamWidget *widget(AbstractStream **stream);
 
+  static bool available();
+
   inline QString routeName() const override {
     return QString("Live Streaming From Socket CAN %1").arg(config.device);
   }

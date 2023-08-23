@@ -1,11 +1,12 @@
 #include "tools/cabana/streams/socketcanstream.h"
+#include "socketcanstream.h"
 
 #include <QLabel>
 #include <QMessageBox>
 #include <QPushButton>
 
 SocketCanStream::SocketCanStream(QObject *parent, SocketCanStreamConfig config_) : config(config_), LiveStream(parent) {
-  if (!QCanBus::instance()->plugins().contains("socketcan")) {
+  if (!available()) {
     throw std::runtime_error("SocketCAN plugin not available");
   }
 
@@ -13,6 +14,10 @@ SocketCanStream::SocketCanStream(QObject *parent, SocketCanStreamConfig config_)
   if (!connect()) {
     throw std::runtime_error("Failed to connect to SocketCAN device");
   }
+}
+
+bool SocketCanStream::available() {
+  return QCanBus::instance()->plugins().contains("socketcan");
 }
 
 bool SocketCanStream::connect() {

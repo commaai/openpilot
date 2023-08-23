@@ -29,7 +29,9 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"stream", "read can messages from live streaming"});
   cmd_parser.addOption({"panda", "read can messages from panda"});
   cmd_parser.addOption({"panda-serial", "read can messages from panda with given serial", "panda-serial"});
-  cmd_parser.addOption({"socketcan", "read can messages from given SocketCAN device", "socketcan"});
+  if (SocketCanStream::available()) {
+    cmd_parser.addOption({"socketcan", "read can messages from given SocketCAN device", "socketcan"});
+  }
   cmd_parser.addOption({"zmq", "the ip address on which to receive zmq messages", "zmq"});
   cmd_parser.addOption({"data_dir", "local directory with routes", "data_dir"});
   cmd_parser.addOption({"no-vipc", "do not output video"});
