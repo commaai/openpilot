@@ -17,6 +17,7 @@ MapInstructions::MapInstructions(QWidget *parent) : QWidget(parent) {
   top_layout->addWidget(icon_01 = new QLabel, 0, Qt::AlignTop);
 
   QVBoxLayout *right_layout = new QVBoxLayout;
+  right_layout->setContentsMargins(6, 6, 6, 6);
   right_layout->addWidget(distance = new QLabel);
   distance->setStyleSheet(R"(font-size: 90px;)");
 
