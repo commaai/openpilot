@@ -12,7 +12,6 @@
 
 struct SocketCanStreamConfig {
   QString device = ""; // TODO: support multiple devices/buses at once
-  std::vector<BusConfig> bus_config;
 };
 
 class SocketCanStream : public LiveStream {
