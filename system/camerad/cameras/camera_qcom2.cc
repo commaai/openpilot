@@ -508,7 +508,7 @@ void CameraState::enqueue_buffer(int i, bool dp) {
 }
 
 void CameraState::enqueue_req_multi(int start, int n, bool dp) {
-  for (int i=start;i<start+n;++i) {
+  for (int i = start; i < start + n; ++i) {
     request_ids[(i - 1) % FRAME_BUF_COUNT] = i;
     enqueue_buffer((i - 1) % FRAME_BUF_COUNT, dp);
   }
@@ -531,7 +531,7 @@ void CameraState::camera_set_parameters() {
     analog_gain_cost_delta = ANALOG_GAIN_COST_DELTA_AR0231;
     analog_gain_cost_low = ANALOG_GAIN_COST_LOW_AR0231;
     analog_gain_cost_high = ANALOG_GAIN_COST_HIGH_AR0231;
-    for (int i=0; i<=analog_gain_max_idx; i++) {
+    for (int i = 0; i <= analog_gain_max_idx; i++) {
       sensor_analog_gains[i] = sensor_analog_gains_AR0231[i];
     }
     min_ev = exposure_time_min * sensor_analog_gains[analog_gain_min_idx];
@@ -550,7 +550,7 @@ void CameraState::camera_set_parameters() {
     analog_gain_cost_delta = ANALOG_GAIN_COST_DELTA_OX03C10;
     analog_gain_cost_low = ANALOG_GAIN_COST_LOW_OX03C10;
     analog_gain_cost_high = ANALOG_GAIN_COST_HIGH_OX03C10;
-    for (int i=0; i<=analog_gain_max_idx; i++) {
+    for (int i = 0; i <= analog_gain_max_idx; i++) {
       sensor_analog_gains[i] = sensor_analog_gains_OX03C10[i];
     }
     min_ev = (exposure_time_min + VS_TIME_MIN_OX03C10) * sensor_analog_gains[analog_gain_min_idx];

@@ -19,7 +19,7 @@ struct NED {
 
 struct Geodetic {
   double lat, lon, alt;
-  bool radians=false;
+  bool radians = false;
 };
 
 ECEF geodetic2ecef(Geodetic g);

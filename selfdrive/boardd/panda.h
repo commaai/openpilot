@@ -47,7 +47,7 @@ private:
   std::unique_ptr<PandaCommsHandle> handle;
 
 public:
-  Panda(std::string serial="", uint32_t bus_offset=0);
+  Panda(std::string serial = "", uint32_t bus_offset = 0);
 
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
   bool has_rtc = false;
@@ -58,11 +58,11 @@ public:
   std::string hw_serial();
 
   // Static functions
-  static std::vector<std::string> list(bool usb_only=false);
+  static std::vector<std::string> list(bool usb_only = false);
 
   // Panda functionality
   cereal::PandaState::PandaType get_hw_type();
-  void set_safety_model(cereal::CarParams::SafetyModel safety_model, uint16_t safety_param=0U);
+  void set_safety_model(cereal::CarParams::SafetyModel safety_model, uint16_t safety_param = 0U);
   void set_alternative_experience(uint16_t alternative_experience);
   void set_rtc(struct tm sys_time);
   struct tm get_rtc();

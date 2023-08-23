@@ -69,7 +69,7 @@ static void log(int levelnum, const char* filename, int lineno, const char* func
 }
 
 static void cloudlog_common(int levelnum, const char* filename, int lineno, const char* func,
-                            char* msg_buf, const json11::Json::object &msg_j={}) {
+                            char* msg_buf, const json11::Json::object &msg_j = {}) {
   std::lock_guard lk(s.lock);
   if (!s.initialized) s.initialize();
 

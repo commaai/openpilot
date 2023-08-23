@@ -40,7 +40,7 @@ kj::Array<capnp::word> logger_build_init_data() {
   }
 
   auto lkernel_args = init.initKernelArgs(kernel_args.size());
-  for (int i=0; i<kernel_args.size(); i++) {
+  for (int i = 0; i < kernel_args.size(); i++) {
     lkernel_args.set(i, kernel_args[i]);
   }
 
@@ -134,7 +134,7 @@ void logger_init(LoggerState *s, bool has_qlog) {
 
 static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   LoggerHandle *h = NULL;
-  for (int i=0; i<LOGGER_MAX_HANDLES; i++) {
+  for (int i = 0; i < LOGGER_MAX_HANDLES; i++) {
     if (s->handles[i].refcnt == 0) {
       h = &s->handles[i];
       break;

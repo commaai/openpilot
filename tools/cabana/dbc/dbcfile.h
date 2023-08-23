@@ -11,8 +11,8 @@ class DBCFile : public QObject {
   Q_OBJECT
 
 public:
-  DBCFile(const QString &dbc_file_name, QObject *parent=nullptr);
-  DBCFile(const QString &name, const QString &content, QObject *parent=nullptr);
+  DBCFile(const QString &dbc_file_name, QObject *parent = nullptr);
+  DBCFile(const QString &name, const QString &content, QObject *parent = nullptr);
   ~DBCFile() {}
 
   bool save();

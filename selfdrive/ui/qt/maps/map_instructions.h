@@ -32,7 +32,7 @@ private:
   QHash<QString, QPixmap> pixmap_cache;
 
 public:
-  MapInstructions(QWidget * parent=nullptr);
+  MapInstructions(QWidget * parent = nullptr);
   void buildPixmapCache();
   void updateInstructions(cereal::NavInstruction::Reader instruction);
 };

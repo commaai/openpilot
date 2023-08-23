@@ -127,7 +127,7 @@ void fill_lead(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelOutputL
   lead.setProbTime(prob_t);
   std::array<float, LEAD_TRAJ_LEN> lead_x, lead_y, lead_v, lead_a;
   std::array<float, LEAD_TRAJ_LEN> lead_x_std, lead_y_std, lead_v_std, lead_a_std;
-  for (int i=0; i<LEAD_TRAJ_LEN; i++) {
+  for (int i = 0; i < LEAD_TRAJ_LEN; i++) {
     lead_x[i] = best_prediction.mean[i].x;
     lead_y[i] = best_prediction.mean[i].y;
     lead_v[i] = best_prediction.mean[i].velocity;
@@ -153,14 +153,14 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMet
   softmax(meta_data.desire_state_prob.array.data(), desire_state_softmax.data(), DESIRE_LEN);
 
   std::array<float, DESIRE_PRED_LEN * DESIRE_LEN> desire_pred_softmax;
-  for (int i=0; i<DESIRE_PRED_LEN; i++) {
+  for (int i = 0; i < DESIRE_PRED_LEN; i++) {
     softmax(meta_data.desire_pred_prob[i].array.data(), desire_pred_softmax.data() + (i * DESIRE_LEN), DESIRE_LEN);
   }
 
   std::array<float, DISENGAGE_LEN> lat_long_t = {2,4,6,8,10};
   std::array<float, DISENGAGE_LEN> gas_disengage_sigmoid, brake_disengage_sigmoid, steer_override_sigmoid,
                                    brake_3ms2_sigmoid, brake_4ms2_sigmoid, brake_5ms2_sigmoid;
-  for (int i=0; i<DISENGAGE_LEN; i++) {
+  for (int i = 0; i < DISENGAGE_LEN; i++) {
     gas_disengage_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].gas_disengage);
     brake_disengage_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].brake_disengage);
     steer_override_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].steer_override);
@@ -176,11 +176,11 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMet
   ps.prev_brake_3ms2_probs[2] = brake_3ms2_sigmoid[0];
 
   bool above_fcw_threshold = true;
-  for (int i=0; i<ps.prev_brake_5ms2_probs.size(); i++) {
+  for (int i = 0; i < ps.prev_brake_5ms2_probs.size(); i++) {
     float threshold = i < 2 ? FCW_THRESHOLD_5MS2_LOW : FCW_THRESHOLD_5MS2_HIGH;
     above_fcw_threshold = above_fcw_threshold && ps.prev_brake_5ms2_probs[i] > threshold;
   }
-  for (int i=0; i<ps.prev_brake_3ms2_probs.size(); i++) {
+  for (int i = 0; i < ps.prev_brake_3ms2_probs.size(); i++) {
     above_fcw_threshold = above_fcw_threshold && ps.prev_brake_3ms2_probs[i] > FCW_THRESHOLD_3MS2;
   }
 
@@ -264,7 +264,7 @@ void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelOutputPlanPredic
   std::array<float, TRAJECTORY_SIZE> acc_x, acc_y, acc_z;
   std::array<float, TRAJECTORY_SIZE> rot_rate_x, rot_rate_y, rot_rate_z;
 
-  for(int i=0; i<TRAJECTORY_SIZE; i++) {
+  for (int i = 0; i < TRAJECTORY_SIZE; i++) {
     pos_x[i] = plan.mean[i].position.x;
     pos_y[i] = plan.mean[i].position.y;
     pos_z[i] = plan.mean[i].position.z;
@@ -298,7 +298,7 @@ void fill_lane_lines(cereal::ModelDataV2::Builder &framed, const std::array<floa
   std::array<float, TRAJECTORY_SIZE> left_near_y, left_near_z;
   std::array<float, TRAJECTORY_SIZE> right_near_y, right_near_z;
   std::array<float, TRAJECTORY_SIZE> right_far_y, right_far_z;
-  for (int j=0; j<TRAJECTORY_SIZE; j++) {
+  for (int j = 0; j < TRAJECTORY_SIZE; j++) {
     left_far_y[j] = lanes.mean.left_far[j].y;
     left_far_z[j] = lanes.mean.left_far[j].z;
     left_near_y[j] = lanes.mean.left_near[j].y;
@@ -334,7 +334,7 @@ void fill_road_edges(cereal::ModelDataV2::Builder &framed, const std::array<floa
                      const ModelOutputRoadEdges &edges) {
   std::array<float, TRAJECTORY_SIZE> left_y, left_z;
   std::array<float, TRAJECTORY_SIZE> right_y, right_z;
-  for (int j=0; j<TRAJECTORY_SIZE; j++) {
+  for (int j = 0; j < TRAJECTORY_SIZE; j++) {
     left_y[j] = edges.mean.left[j].y;
     left_z[j] = edges.mean.left[j].z;
     right_y[j] = edges.mean.right[j].y;
@@ -356,7 +356,7 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
   std::array<float, TRAJECTORY_SIZE> plan_t;
   std::fill_n(plan_t.data(), plan_t.size(), NAN);
   plan_t[0] = 0.0;
-  for (int xidx=1, tidx=0; xidx<TRAJECTORY_SIZE; xidx++) {
+  for (int xidx = 1, tidx = 0; xidx < TRAJECTORY_SIZE; xidx++) {
     // increment tidx until we find an element that's further away than the current xidx
     for (int next_tid = tidx + 1; next_tid < TRAJECTORY_SIZE && best_plan.mean[next_tid].position.x < X_IDXS[xidx]; next_tid++) {
       tidx++;
@@ -387,7 +387,7 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
   // leads
   auto leads = framed.initLeadsV3(LEAD_MHP_SELECTION);
   std::array<float, LEAD_MHP_SELECTION> t_offsets = {0.0, 2.0, 4.0};
-  for (int i=0; i<LEAD_MHP_SELECTION; i++) {
+  for (int i = 0; i < LEAD_MHP_SELECTION; i++) {
     fill_lead(leads[i], net_outputs.leads, i, t_offsets[i]);
   }
 

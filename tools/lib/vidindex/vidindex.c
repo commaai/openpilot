@@ -131,7 +131,7 @@ static void hevc_index(const uint8_t *data, size_t file_size, FILE *of_prefix, F
         }
 
         if (!dependent_slice_segments_enabled_flag) {
-          for (int i=0; i<num_extra_slice_header_bits; i++) {
+          for (int i = 0; i < num_extra_slice_header_bits; i++) {
             bs_get(&bs, 1);
           }
           uint32_t slice_type = bs_ue(&bs);

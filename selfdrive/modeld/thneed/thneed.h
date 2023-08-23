@@ -90,9 +90,9 @@ class CachedCommand: public CachedIoctl {
 
 class Thneed {
   public:
-    Thneed(bool do_clinit=false, cl_context _context = NULL);
+    Thneed(bool do_clinit = false, cl_context _context = NULL);
     void stop();
-    void execute(float **finputs, float *foutput, bool slow=false);
+    void execute(float **finputs, float *foutput, bool slow = false);
     void wait();
 
     vector<cl_mem> input_clmem;
@@ -117,7 +117,7 @@ class Thneed {
 #endif
 
     // all CL kernels
-    void copy_inputs(float **finputs, bool internal=false);
+    void copy_inputs(float **finputs, bool internal = false);
     void copy_output(float *foutput);
     cl_int clexec();
     vector<shared_ptr<CLQueuedKernel> > kq;

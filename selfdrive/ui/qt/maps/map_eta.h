@@ -10,7 +10,7 @@ class MapETA : public QWidget {
   Q_OBJECT
 
 public:
-  MapETA(QWidget * parent=nullptr);
+  MapETA(QWidget * parent = nullptr);
   void updateETA(float seconds, float seconds_typical, float distance);
 
 private:

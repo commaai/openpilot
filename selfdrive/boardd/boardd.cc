@@ -187,7 +187,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   return true;
 }
 
-Panda *connect(std::string serial="", uint32_t index=0) {
+Panda *connect(std::string serial = "", uint32_t index = 0) {
   std::unique_ptr<Panda> panda;
   try {
     panda = std::make_unique<Panda>(serial, (index * PANDA_BUS_CNT));
@@ -264,7 +264,7 @@ void can_recv_thread(std::vector<Panda *> pandas) {
     auto evt = msg.initEvent();
     evt.setValid(comms_healthy);
     auto canData = evt.initCan(raw_can_data.size());
-    for (uint i = 0; i<raw_can_data.size(); i++) {
+    for (uint i = 0; i < raw_can_data.size(); i++) {
       canData[i].setAddress(raw_can_data[i].address);
       canData[i].setBusTime(raw_can_data[i].busTime);
       canData[i].setDat(kj::arrayPtr((uint8_t*)raw_can_data[i].dat.data(), raw_can_data[i].dat.size()));

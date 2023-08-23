@@ -29,7 +29,7 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
       QTransform transform;
       transform.translate((width()- image.width()) / 2.0, (height()- image.height()) / 2.0);
       transform.scale(image.width() / (float)image_raw_size.width(), image.height() / (float)image_raw_size.height());
-      r= transform.mapRect(r);
+      r = transform.mapRect(r);
     }
     return r.contains(pt);
   };

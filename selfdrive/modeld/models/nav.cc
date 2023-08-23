@@ -35,7 +35,7 @@ void fill_plan(cereal::NavModelData::Builder &framed, const NavModelOutputPlan &
   std::array<float, TRAJECTORY_SIZE> pos_x, pos_y;
   std::array<float, TRAJECTORY_SIZE> pos_x_std, pos_y_std;
 
-  for (int i=0; i<TRAJECTORY_SIZE; i++) {
+  for (int i = 0; i < TRAJECTORY_SIZE; i++) {
     pos_x[i] = plan.mean[i].x;
     pos_y[i] = plan.mean[i].y;
     pos_x_std[i] = exp(plan.std[i].x);

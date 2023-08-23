@@ -85,7 +85,7 @@ QString toHex(uint8_t byte);
 class NameValidator : public QRegExpValidator {
   Q_OBJECT
 public:
-  NameValidator(QObject *parent=nullptr);
+  NameValidator(QObject *parent = nullptr);
   QValidator::State validate(QString &input, int &pos) const override;
 };
 

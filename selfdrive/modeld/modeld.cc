@@ -50,7 +50,7 @@ mat3 update_calibration(Eigen::Vector3d device_from_calib_euler, bool wide_camer
   auto warp_matrix = camera_from_calib * calib_from_model;
 
   mat3 transform = {};
-  for (int i=0; i<3*3; i++) {
+  for (int i = 0; i < 3*3; i++) {
     transform.v[i] = warp_matrix(i / 3, i % 3);
   }
   return transform;
@@ -128,7 +128,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     if (sm.updated("liveCalibration")) {
       auto rpy_calib = sm["liveCalibration"].getLiveCalibration().getRpyCalib();
       Eigen::Vector3d device_from_calib_euler;
-      for (int i=0; i<3; i++) {
+      for (int i = 0; i < 3; i++) {
         device_from_calib_euler(i) = rpy_calib[i];
       }
       model_transform_main = update_calibration(device_from_calib_euler, main_wide_camera, false);
@@ -155,7 +155,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
 
     if (nav_enabled && sm.updated("navModel")) {
       auto nav_model_features = sm["navModel"].getNavModel().getFeatures();
-      for (int i=0; i<NAV_FEATURE_LEN; i++) {
+      for (int i = 0; i < NAV_FEATURE_LEN; i++) {
         nav_features[i] = nav_model_features[i];
       }
     }
@@ -163,7 +163,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     if (nav_enabled && sm.updated("navInstruction")) {
       memset(nav_instructions, 0, sizeof(float)*NAV_INSTRUCTION_LEN);
       auto maneuvers = sm["navInstruction"].getNavInstruction().getAllManeuvers();
-      for (int i=0; i<maneuvers.size(); i++) {
+      for (int i = 0; i < maneuvers.size(); i++) {
         int distance_idx = 25 + (int)(maneuvers[i].getDistance() / 20);
         std::string direction = maneuvers[i].getModifier();
         int direction_idx = 0;

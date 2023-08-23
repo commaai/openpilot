@@ -9,7 +9,7 @@
 
 #include <media/cam_req_mgr.h>
 
-std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data, uint32_t num_resources=1);
+std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data, uint32_t num_resources = 1);
 int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t packet_handle);
 int device_control(int fd, int op_code, int session_handle, int dev_handle);
 int do_cam_control(int fd, int op_code, void *handle, int size);
