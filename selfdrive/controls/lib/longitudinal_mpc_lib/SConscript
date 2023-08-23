@@ -46,7 +46,6 @@ generated_files = [
   f'{gen}/long_model/long_model.h',
   f'{gen}/long_constraints/long_constraints.h',
   f'{gen}/long_cost/long_cost.h',
-
 ] + build_files
 
 acados_dir = '#third_party/acados'
