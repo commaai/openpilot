@@ -13,7 +13,7 @@ from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import gen_empty_fingerprint
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import all_known_cars
-from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
+from openpilot.selfdrive.car.interfaces import RadarInterfaceBase, get_interface_attr
 from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
 
