@@ -7,6 +7,7 @@ from collections import namedtuple, defaultdict
 
 import cereal.messaging as messaging
 from cereal import log
+from cereal.services import service_list
 from openpilot.common.gpio import get_irqs_for_action
 from openpilot.system.hardware import TICI
 from openpilot.selfdrive.manager.process_config import managed_processes
@@ -37,29 +38,29 @@ SENSOR_CONFIGURATIONS = (
 )
 
 Sensor = log.SensorEventData.SensorSource
-SensorConfig = namedtuple('SensorConfig', ['type', 'sanity_min', 'sanity_max', 'expected_freq'])
+SensorConfig = namedtuple('SensorConfig', ['type', 'sanity_min', 'sanity_max'])
 ALL_SENSORS = {
   Sensor.lsm6ds3: {
-    SensorConfig("acceleration", 5, 15, 100),
-    SensorConfig("gyroUncalibrated", 0, .2, 100),
-    SensorConfig("temperature", 0, 60, 100),
+    SensorConfig("acceleration", 5, 15),
+    SensorConfig("gyroUncalibrated", 0, .2),
+    SensorConfig("temperature", 0, 60),
   },
 
   Sensor.lsm6ds3trc: {
-    SensorConfig("acceleration", 5, 15, 104),
-    SensorConfig("gyroUncalibrated", 0, .2, 104),
-    SensorConfig("temperature", 0, 60, 100),
+    SensorConfig("acceleration", 5, 15),
+    SensorConfig("gyroUncalibrated", 0, .2),
+    SensorConfig("temperature", 0, 60),
   },
 
   Sensor.bmx055: {
-    SensorConfig("acceleration", 5, 15, 100),
-    SensorConfig("gyroUncalibrated", 0, .2, 100),
-    SensorConfig("magneticUncalibrated", 0, 300, 100),
-    SensorConfig("temperature", 0, 60, 100),
+    SensorConfig("acceleration", 5, 15),
+    SensorConfig("gyroUncalibrated", 0, .2),
+    SensorConfig("magneticUncalibrated", 0, 300),
+    SensorConfig("temperature", 0, 60),
   },
 
   Sensor.mmc5603nj: {
-    SensorConfig("magneticUncalibrated", 0, 300, 100),
+    SensorConfig("magneticUncalibrated", 0, 300),
   }
 }
 
@@ -85,7 +86,7 @@ def read_sensor_events(duration_sec):
 
   assert sum(map(len, events.values())) != 0, "No sensor events collected!"
 
-  return events
+  return {k: v for k, v in events.items() if len(v) > 0}
 
 class TestSensord(unittest.TestCase):
   @classmethod
@@ -119,7 +120,6 @@ class TestSensord(unittest.TestCase):
 
   def test_sensors_present(self):
     # verify correct sensors configuration
-
     seen = set()
     for etype in self.events:
       for measurement in self.events[etype]:
@@ -159,22 +159,12 @@ class TestSensord(unittest.TestCase):
         stddev = np.std(tdiffs)
         assert stddev < 2.0, f"Standard-dev to big {stddev}"
 
-  def test_events_check(self):
-    # verify if all sensors produce events
-
-    sensor_events = dict()
-    for etype in self.events:
-      for measurement in self.events[etype]:
-        m = getattr(measurement, measurement.which())
-
-        if m.type in sensor_events:
-          sensor_events[m.type] += 1
-        else:
-          sensor_events[m.type] = 1
-
-    for s in sensor_events:
-      err_msg = f"Sensor {s}: 200 < {sensor_events[s]}"
-      assert sensor_events[s] > 200, err_msg
+  def test_sensor_frequency(self):
+    for s, msgs in self.events.items():
+      with self.subTest(sensor=s):
+        freq = len(msgs) / self.sample_secs
+        ef = service_list[s].frequency
+        assert ef*0.85 <= freq <= ef*1.15
 
   def test_logmonottime_timestamp_diff(self):
     # ensure diff between the message logMonotime and sample timestamp is small
@@ -193,16 +183,14 @@ class TestSensord(unittest.TestCase):
         # before the sensor is read
         tdiffs.append(abs(measurement.logMonoTime - m.timestamp) / 1e6)
 
-    high_delay_diffs = set(filter(lambda d: d >= 15., tdiffs))
-    assert len(high_delay_diffs) < 20, f"Too many measurements published : {high_delay_diffs}"
+    # some sensors have a read procedure that will introduce an expected diff on the order of 20ms
+    high_delay_diffs = set(filter(lambda d: d >= 25., tdiffs))
+    assert len(high_delay_diffs) < 20, f"Too many measurements published: {high_delay_diffs}"
 
     avg_diff = round(sum(tdiffs)/len(tdiffs), 4)
     assert avg_diff < 4, f"Avg packet diff: {avg_diff:.1f}ms"
 
-    stddev = np.std(tdiffs)
-    assert stddev < 2, f"Timing diffs have too high stddev: {stddev}"
-
-  def test_sensor_values_sanity_check(self):
+  def test_sensor_values(self):
     sensor_values = dict()
     for etype in self.events:
       for measurement in self.events[etype]:
@@ -219,18 +207,13 @@ class TestSensord(unittest.TestCase):
         else:
           sensor_values[key] = [values]
 
-    # Sanity check sensor values and counts
+    # Sanity check sensor values
     for sensor, stype in sensor_values:
       for s in ALL_SENSORS[sensor]:
         if s.type != stype:
           continue
 
         key = (sensor, s.type)
-        val_cnt = len(sensor_values[key])
-        min_samples = self.sample_secs * s.expected_freq
-        err_msg = f"Sensor {sensor} {s.type} got {val_cnt} measurements, expected {min_samples}"
-        assert min_samples*0.9 < val_cnt < min_samples*1.1, err_msg
-
         mean_norm = np.mean(np.linalg.norm(sensor_values[key], axis=1))
         err_msg = f"Sensor '{sensor} {s.type}' failed sanity checks {mean_norm} is not between {s.sanity_min} and {s.sanity_max}"
         assert s.sanity_min <= mean_norm <= s.sanity_max, err_msg

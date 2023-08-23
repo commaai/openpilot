@@ -359,7 +359,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
 
 void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements::Reader& log) {
 
-  if(!log.getPositionECEF().getValid() || !log.getVelocityECEF().getValid()) {
+  if (!log.getPositionECEF().getValid() || !log.getVelocityECEF().getValid()) {
     this->determine_gps_mode(current_time);
     return;
   }

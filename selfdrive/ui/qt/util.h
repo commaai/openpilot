@@ -23,7 +23,7 @@ void sigTermHandler(int s);
 QString timeAgo(const QDateTime &date);
 void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 void initApp(int argc, char *argv[], bool disable_hidpi = true);
-QWidget* topWidget (QWidget* widget);
+QWidget* topWidget(QWidget* widget);
 QPixmap loadPixmap(const QString &fileName, const QSize &size = {}, Qt::AspectRatioMode aspectRatioMode = Qt::KeepAspectRatio);
 QPixmap bootstrapPixmap(const QString &id);
 
