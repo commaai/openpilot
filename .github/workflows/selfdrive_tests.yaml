@@ -255,7 +255,7 @@ jobs:
       timeout-minutes: 40
       run: |
         ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
-                        pytest -c pytest-ci.ini --continue-on-collection-errors --cov --cov-report=xml --cov-append --junitxml=report.xml --html=report.html --self-contained-html && \
+                        pytest -c selfdrive/test/pytest-ci.ini --continue-on-collection-errors --cov --cov-report=xml --cov-append && \
                         selfdrive/locationd/test/_test_locationd_lib.py && \
                         ./system/ubloxd/tests/test_glonass_runner && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
@@ -273,14 +273,6 @@ jobs:
                         ./selfdrive/test/process_replay/test_fuzzy.py"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
-    - name: "Upload unittest artifacts"
-      uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: unittest-artifacts
-        path: |
-          report.xml
-          report.html
 
   process_replay:
     name: process replay
