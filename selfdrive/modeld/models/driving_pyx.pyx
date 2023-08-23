@@ -7,9 +7,23 @@ from libcpp cimport bool
 from libc.string cimport memcpy
 from libc.stdint cimport uint32_t, uint64_t
 from .commonmodel cimport mat3
-from .driving cimport MessageBuilder, PublishState as cppPublishState, CPP_USE_THNEED
+from .driving cimport FEATURE_LEN as CPP_FEATURE_LEN, HISTORY_BUFFER_LEN as CPP_HISTORY_BUFFER_LEN, DESIRE_LEN as CPP_DESIRE_LEN, \
+                      TRAFFIC_CONVENTION_LEN as CPP_TRAFFIC_CONVENTION_LEN, DRIVING_STYLE_LEN as CPP_DRIVING_STYLE_LEN, \
+                      NAV_FEATURE_LEN as CPP_NAV_FEATURE_LEN, NAV_INSTRUCTION_LEN as CPP_NAV_INSTRUCTION_LEN, \
+                      OUTPUT_SIZE as CPP_OUTPUT_SIZE, NET_OUTPUT_SIZE as CPP_NET_OUTPUT_SIZE, MODEL_FREQ as CPP_MODEL_FREQ, CPP_USE_THNEED
+from .driving cimport MessageBuilder, PublishState as cppPublishState
 from .driving cimport fill_model_msg, fill_pose_msg, update_calibration as cpp_update_calibration
 
+FEATURE_LEN = CPP_FEATURE_LEN
+HISTORY_BUFFER_LEN = CPP_HISTORY_BUFFER_LEN
+DESIRE_LEN = CPP_DESIRE_LEN
+TRAFFIC_CONVENTION_LEN = CPP_TRAFFIC_CONVENTION_LEN
+DRIVING_STYLE_LEN = CPP_DRIVING_STYLE_LEN
+NAV_FEATURE_LEN = CPP_NAV_FEATURE_LEN
+NAV_INSTRUCTION_LEN = CPP_NAV_INSTRUCTION_LEN
+OUTPUT_SIZE = CPP_OUTPUT_SIZE
+NET_OUTPUT_SIZE = CPP_NET_OUTPUT_SIZE
+MODEL_FREQ = CPP_MODEL_FREQ
 USE_THNEED = CPP_USE_THNEED
 
 cdef class PublishState:

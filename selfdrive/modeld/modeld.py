@@ -13,29 +13,15 @@ from common.params import Params
 from common.filter_simple import FirstOrderFilter
 from common.realtime import set_core_affinity, set_realtime_priority
 from selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext, Runtime # pylint: disable=import-error, no-name-in-module
-from selfdrive.modeld.models.driving_pyx import USE_THNEED, PublishState # pylint: disable=import-error, no-name-in-module
-from selfdrive.modeld.models.driving_pyx import create_model_msg, create_pose_msg, update_calibration # pylint: disable=import-error, no-name-in-module
+from selfdrive.modeld.models.driving_pyx import (
+  PublishState, create_model_msg, create_pose_msg, update_calibration,
+  FEATURE_LEN, HISTORY_BUFFER_LEN, DESIRE_LEN, TRAFFIC_CONVENTION_LEN, NAV_FEATURE_LEN, NAV_INSTRUCTION_LEN,
+  OUTPUT_SIZE, NET_OUTPUT_SIZE, MODEL_FREQ, USE_THNEED) # pylint: disable=import-error, no-name-in-module
 
 if USE_THNEED:
   from selfdrive.modeld.runners.thneedmodel_pyx import ThneedModel as ModelRunner # pylint: disable=import-error, no-name-in-module
 else:
   from selfdrive.modeld.runners.onnxmodel_pyx import ONNXModel as ModelRunner # pylint: disable=import-error, no-name-in-module
-
-FEATURE_LEN = 128
-HISTORY_BUFFER_LEN = 99
-DESIRE_LEN = 8
-TRAFFIC_CONVENTION_LEN = 2
-DRIVING_STYLE_LEN = 12
-NAV_FEATURE_LEN = 256
-NAV_INSTRUCTION_LEN = 150
-OUTPUT_SIZE = 5990
-MODEL_OUTPUT_SIZE = 6120
-MODEL_FREQ = 20
-
-MODEL_WIDTH = 512
-MODEL_HEIGHT = 256
-MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 // 2
-BUF_SIZE = MODEL_FRAME_SIZE * 2
 
 MODEL_PATH = str(Path(__file__).parent / f"models/supercombo.{'thneed' if USE_THNEED else 'onnx'}")
 
@@ -75,7 +61,7 @@ class ModelState:
     self.frame = ModelFrame(context)
     self.wide_frame = ModelFrame(context)
     self.prev_desire = np.zeros(DESIRE_LEN, dtype=np.float32)
-    self.output = np.zeros(MODEL_OUTPUT_SIZE, dtype=np.float32)
+    self.output = np.zeros(NET_OUTPUT_SIZE, dtype=np.float32)
     self.inputs = {
       'desire_pulse': np.zeros(DESIRE_LEN * (HISTORY_BUFFER_LEN+1), dtype=np.float32),
       'traffic_convention': np.zeros(TRAFFIC_CONVENTION_LEN, dtype=np.float32),

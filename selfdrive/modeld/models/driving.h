@@ -19,6 +19,8 @@ constexpr int FEATURE_LEN = 128;
 constexpr int HISTORY_BUFFER_LEN = 99;
 constexpr int DESIRE_LEN = 8;
 constexpr int DESIRE_PRED_LEN = 4;
+constexpr int TRAFFIC_CONVENTION_LEN = 2;
+constexpr int DRIVING_STYLE_LEN = 12;
 constexpr int MODEL_FREQ = 20;
 
 constexpr int DISENGAGE_LEN = 5;
@@ -28,7 +30,6 @@ constexpr int META_STRIDE = 7;
 constexpr int PLAN_MHP_N = 5;
 constexpr int LEAD_MHP_N = 2;
 constexpr int LEAD_TRAJ_LEN = 6;
-constexpr int LEAD_PRED_DIM = 4;
 constexpr int LEAD_MHP_SELECTION = 3;
 // Padding to get output shape as multiple of 4
 constexpr int PAD_SIZE = 2;
