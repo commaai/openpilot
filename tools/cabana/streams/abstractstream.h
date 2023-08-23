@@ -34,12 +34,18 @@ struct CanEvent {
   uint8_t dat[];
 };
 
+struct BusConfig {
+  int can_speed_kbps = 500;
+  int data_speed_kbps = 2000;
+  bool can_fd = false;
+};
+
 class AbstractStream : public QObject {
   Q_OBJECT
 
 public:
   AbstractStream(QObject *parent);
-  virtual ~AbstractStream() {};
+  virtual ~AbstractStream() {}
   virtual void start() = 0;
   inline bool liveStreaming() const { return route() == nullptr; }
   virtual void seekTo(double ts) {}

@@ -73,6 +73,7 @@ function install_ubuntu_common_requirements() {
     libqt5sql5-sqlite \
     libqt5svg5-dev \
     libqt5charts5-dev \
+    libqt5serialbus5-dev  \
     libqt5x11extras5-dev \
     libreadline-dev \
     libdw1 \
