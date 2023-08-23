@@ -68,7 +68,7 @@ static void request_buffers(int fd, v4l2_buf_type buf_type, unsigned int count) 
 }
 
 void V4LEncoder::dequeue_handler(V4LEncoder *e) {
-  std::string dequeue_thread_name = "dq-"+std::string(e->filename);
+  std::string dequeue_thread_name = "dq-"+std::string(e->encoder_info.filename);
   util::set_thread_name(dequeue_thread_name.c_str());
 
   e->segment_num++;
@@ -88,7 +88,7 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
     if (!rc) { LOGE("encoder dequeue poll timeout"); continue; }
 
     if (env_debug_encoder >= 2) {
-      printf("%20s poll %x at %.2f ms\n", e->filename, pfd.revents, millis_since_boot());
+      printf("%20s poll %x at %.2f ms\n", e->encoder_info.filename, pfd.revents, millis_since_boot());
     }
 
     int frame_id = -1;
@@ -116,7 +116,7 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
 
       if (env_debug_encoder) {
         printf("%20s got(%d) %6d bytes flags %8x idx %3d/%4d id %8d ts %ld lat %.2f ms (%lu frames free)\n",
-          e->filename, index, bytesused, flags, e->segment_num, idx, frame_id, ts, millis_since_boot()-(ts/1000.), e->free_buf_in.size());
+          e->encoder_info.filename, index, bytesused, flags, e->segment_num, idx, frame_id, ts, millis_since_boot()-(ts/1000.), e->free_buf_in.size());
       }
 
       // requeue the buffer
@@ -131,7 +131,8 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
   }
 }
 
-void V4LEncoder::encoder_init() {
+V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_height)
+    : VideoEncoder(encoder_info, in_width, in_height) {
   fd = open("/dev/v4l/by-path/platform-aa00000.qcom_vidc-video-index1", O_RDWR|O_NONBLOCK);
   assert(fd >= 0);
 
@@ -146,9 +147,9 @@ void V4LEncoder::encoder_init() {
     .fmt = {
       .pix_mp = {
         // downscales are free with v4l
-        .width = (unsigned int)out_width,
-        .height = (unsigned int)out_height,
-        .pixelformat = (codec == cereal::EncodeIndex::Type::FULL_H_E_V_C) ? V4L2_PIX_FMT_HEVC : V4L2_PIX_FMT_H264,
+        .width = (unsigned int)encoder_info.frame_width,
+        .height = (unsigned int)encoder_info.frame_height,
+        .pixelformat = (encoder_info.encode_type == cereal::EncodeIndex::Type::FULL_H_E_V_C) ? V4L2_PIX_FMT_HEVC : V4L2_PIX_FMT_H264,
         .field = V4L2_FIELD_ANY,
         .colorspace = V4L2_COLORSPACE_DEFAULT,
       }
@@ -192,7 +193,7 @@ void V4LEncoder::encoder_init() {
   {
     struct v4l2_control ctrls[] = {
       { .id = V4L2_CID_MPEG_VIDEO_HEADER_MODE, .value = V4L2_MPEG_VIDEO_HEADER_MODE_SEPARATE},
-      { .id = V4L2_CID_MPEG_VIDEO_BITRATE, .value = bitrate},
+      { .id = V4L2_CID_MPEG_VIDEO_BITRATE, .value = encoder_info.bitrate},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_RATE_CONTROL, .value = V4L2_CID_MPEG_VIDC_VIDEO_RATE_CONTROL_VBR_CFR},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_PRIORITY, .value = V4L2_MPEG_VIDC_VIDEO_PRIORITY_REALTIME_DISABLE},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_IDR_PERIOD, .value = 1},
@@ -202,10 +203,11 @@ void V4LEncoder::encoder_init() {
     }
   }
 
-  if (codec == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
+  if (encoder_info.encode_type == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
     struct v4l2_control ctrls[] = {
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_HEVC_PROFILE, .value = V4L2_MPEG_VIDC_VIDEO_HEVC_PROFILE_MAIN},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_HEVC_TIER_LEVEL, .value = V4L2_MPEG_VIDC_VIDEO_HEVC_LEVEL_HIGH_TIER_LEVEL_5},
+      { .id = V4L2_CID_MPEG_VIDC_VIDEO_VUI_TIMING_INFO, .value = V4L2_MPEG_VIDC_VIDEO_VUI_TIMING_INFO_ENABLED},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_NUM_P_FRAMES, .value = 29},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_NUM_B_FRAMES, .value = 0},
     };
@@ -249,8 +251,6 @@ void V4LEncoder::encoder_init() {
   for (unsigned int i = 0; i < BUF_IN_COUNT; i++) {
     free_buf_in.push(i);
   }
-
-  publisher_init();
 }
 
 void V4LEncoder::encoder_open(const char* path) {

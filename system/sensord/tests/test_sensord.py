@@ -7,9 +7,9 @@ from collections import namedtuple, defaultdict
 
 import cereal.messaging as messaging
 from cereal import log
-from common.gpio import get_irq_for_action
-from system.hardware import TICI
-from selfdrive.manager.process_config import managed_processes
+from openpilot.common.gpio import get_irqs_for_action
+from openpilot.system.hardware import TICI
+from openpilot.selfdrive.manager.process_config import managed_processes
 
 BMX = {
   ('bmx055', 'acceleration'),
@@ -29,45 +29,37 @@ MMC = {
   ('mmc5603nj', 'magneticUncalibrated'),
 }
 
-RPR = {
-  ('rpr0521', 'light'),
-}
-
 SENSOR_CONFIGURATIONS = (
-  (BMX | LSM | RPR),
-  (MMC | LSM | RPR),
-  (BMX | LSM_C | RPR),
-  (MMC| LSM_C | RPR),
+  (BMX | LSM),
+  (MMC | LSM),
+  (BMX | LSM_C),
+  (MMC| LSM_C),
 )
 
 Sensor = log.SensorEventData.SensorSource
-SensorConfig = namedtuple('SensorConfig', ['type', 'sanity_min', 'sanity_max'])
+SensorConfig = namedtuple('SensorConfig', ['type', 'sanity_min', 'sanity_max', 'expected_freq'])
 ALL_SENSORS = {
-  Sensor.rpr0521: {
-    SensorConfig("light", 0, 1023),
-  },
-
   Sensor.lsm6ds3: {
-    SensorConfig("acceleration", 5, 15),
-    SensorConfig("gyroUncalibrated", 0, .2),
-    SensorConfig("temperature", 0, 60),
+    SensorConfig("acceleration", 5, 15, 100),
+    SensorConfig("gyroUncalibrated", 0, .2, 100),
+    SensorConfig("temperature", 0, 60, 100),
   },
 
   Sensor.lsm6ds3trc: {
-    SensorConfig("acceleration", 5, 15),
-    SensorConfig("gyroUncalibrated", 0, .2),
-    SensorConfig("temperature", 0, 60),
+    SensorConfig("acceleration", 5, 15, 104),
+    SensorConfig("gyroUncalibrated", 0, .2, 104),
+    SensorConfig("temperature", 0, 60, 100),
   },
 
   Sensor.bmx055: {
-    SensorConfig("acceleration", 5, 15),
-    SensorConfig("gyroUncalibrated", 0, .2),
-    SensorConfig("magneticUncalibrated", 0, 300),
-    SensorConfig("temperature", 0, 60),
+    SensorConfig("acceleration", 5, 15, 100),
+    SensorConfig("gyroUncalibrated", 0, .2, 100),
+    SensorConfig("magneticUncalibrated", 0, 300, 100),
+    SensorConfig("temperature", 0, 60, 100),
   },
 
   Sensor.mmc5603nj: {
-    SensorConfig("magneticUncalibrated", 0, 300),
+    SensorConfig("magneticUncalibrated", 0, 300, 100),
   }
 }
 
@@ -79,7 +71,7 @@ def get_irq_count(irq: int):
 
 def read_sensor_events(duration_sec):
   sensor_types = ['accelerometer', 'gyroscope', 'magnetometer', 'accelerometer2',
-                  'gyroscope2', 'lightSensor', 'temperatureSensor']
+                  'gyroscope2', 'temperatureSensor']
   esocks = {}
   events = defaultdict(list)
   for stype in sensor_types:
@@ -113,7 +105,7 @@ class TestSensord(unittest.TestCase):
       cls.events = read_sensor_events(cls.sample_secs)
 
       # determine sensord's irq
-      cls.sensord_irq = get_irq_for_action("sensord")[0]
+      cls.sensord_irq = get_irqs_for_action("sensord")[0]
     finally:
       # teardown won't run if this doesn't succeed
       managed_processes["sensord"].stop()
@@ -235,7 +227,7 @@ class TestSensord(unittest.TestCase):
 
         key = (sensor, s.type)
         val_cnt = len(sensor_values[key])
-        min_samples = self.sample_secs * 100  # Hz
+        min_samples = self.sample_secs * s.expected_freq
         err_msg = f"Sensor {sensor} {s.type} got {val_cnt} measurements, expected {min_samples}"
         assert min_samples*0.9 < val_cnt < min_samples*1.1, err_msg
 

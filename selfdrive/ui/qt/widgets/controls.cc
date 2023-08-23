@@ -3,18 +3,6 @@
 #include <QPainter>
 #include <QStyleOption>
 
-QFrame *horizontal_line(QWidget *parent) {
-  QFrame *line = new QFrame(parent);
-  line->setFrameShape(QFrame::StyledPanel);
-  line->setStyleSheet(R"(
-    border-width: 1px;
-    border-bottom-style: solid;
-    border-color: gray;
-  )");
-  line->setFixedHeight(2);
-  return line;
-}
-
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, QWidget *parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setMargin(0);
@@ -35,7 +23,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   // title
   title_label = new QPushButton(title);
   title_label->setFixedHeight(120);
-  title_label->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left");
+  title_label->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left; border: none;");
   hlayout->addWidget(title_label, 1);
 
   // value next to control button

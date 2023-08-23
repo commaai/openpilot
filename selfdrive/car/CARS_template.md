@@ -58,7 +58,7 @@ All the cars that openpilot supports use a [CAN bus](https://en.wikipedia.org/wi
 ### Toyota Security
 
 openpilot does not yet support these Toyota models due to a new message authentication method.
-[Vote](https://comma.ai/shop/products/vote) if you'd like to see openpilot support on these models.
+[Vote](https://comma.ai/shop#toyota-security) if you'd like to see openpilot support on these models.
 
 * Toyota RAV4 Prime 2021+
 * Toyota Sienna 2021+

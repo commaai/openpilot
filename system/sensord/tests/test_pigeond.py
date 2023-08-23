@@ -4,11 +4,11 @@ import unittest
 
 import cereal.messaging as messaging
 from cereal.services import service_list
-from common.gpio import gpio_read
-from selfdrive.test.helpers import with_processes
-from selfdrive.manager.process_config import managed_processes
-from system.hardware import TICI
-from system.hardware.tici.pins import GPIO
+from openpilot.common.gpio import gpio_read
+from openpilot.selfdrive.test.helpers import with_processes
+from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.hardware import TICI
+from openpilot.system.hardware.tici.pins import GPIO
 
 
 # TODO: test TTFF when we have good A-GNSS

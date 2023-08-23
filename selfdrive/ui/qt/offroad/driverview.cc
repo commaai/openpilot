@@ -33,10 +33,12 @@ DriverViewScene::DriverViewScene(QWidget* parent) : sm({"driverStateV2"}), QWidg
 void DriverViewScene::showEvent(QShowEvent* event) {
   frame_updated = false;
   params.putBool("IsDriverViewEnabled", true);
+  device()->resetInteractiveTimeout(60);
 }
 
 void DriverViewScene::hideEvent(QHideEvent* event) {
   params.putBool("IsDriverViewEnabled", false);
+  device()->resetInteractiveTimeout();
 }
 
 void DriverViewScene::frameUpdated() {
@@ -52,7 +54,7 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
   if (!frame_updated) {
     p.setPen(Qt::white);
     p.setRenderHint(QPainter::TextAntialiasing);
-    configFont(p, "Inter", 100, "Bold");
+    p.setFont(InterFont(100, QFont::Bold));
     p.drawText(geometry(), Qt::AlignCenter, tr("camera starting"));
     return;
   }

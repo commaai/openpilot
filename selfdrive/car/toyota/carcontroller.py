@@ -1,12 +1,12 @@
 from cereal import car
-from common.numpy_fast import clip, interp
-from selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, \
+from openpilot.common.numpy_fast import clip, interp
+from openpilot.selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance, \
                           create_gas_interceptor_command, make_can_msg
-from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
+from openpilot.selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
-from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
-                                        MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams, \
+from openpilot.selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
+                                        MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams, ToyotaFlags, \
                                         UNSUPPORTED_DSU_CAR
 from opendbc.can.packer import CANPacker
 
@@ -24,6 +24,7 @@ MAX_USER_TORQUE = 500
 # LTA limits
 # EPS ignores commands above this angle and causes PCS to fault
 MAX_STEER_ANGLE = 94.9461  # deg
+MAX_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some resistance when changing lanes
 
 
 class CarController:
@@ -55,25 +56,18 @@ class CarController:
     new_steer = int(round(actuators.steer * self.params.STEER_MAX))
     apply_steer = apply_meas_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.params)
 
-    # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
-    if lat_active and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
-      self.steer_rate_counter += 1
-    else:
-      self.steer_rate_counter = 0
+    # >100 degree/sec steering fault prevention
+    self.steer_rate_counter, apply_steer_req = common_fault_avoidance(abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE, CC.latActive,
+                                                                      self.steer_rate_counter, MAX_STEER_RATE_FRAMES)
 
-    apply_steer_req = 1
-    if not lat_active:
+    if not CC.latActive:
       apply_steer = 0
-      apply_steer_req = 0
-    elif self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
-      apply_steer_req = 0
-      self.steer_rate_counter = 0
 
     # *** steer angle ***
     if self.CP.steerControlType == SteerControlType.angle:
       # If using LTA control, disable LKA and set steering angle command
       apply_steer = 0
-      apply_steer_req = 0
+      apply_steer_req = False
       if self.frame % 2 == 0:
         # EPS uses the torque sensor angle to control with, offset to compensate
         apply_angle = actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
@@ -81,7 +75,7 @@ class CarController:
         # Angular rate limit based on speed
         apply_angle = apply_std_steer_angle_limits(apply_angle, self.last_angle, CS.out.vEgo, self.params)
 
-        if not CC.latActive:
+        if not lat_active:
           apply_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
 
         self.last_angle = clip(apply_angle, -MAX_STEER_ANGLE, MAX_STEER_ANGLE)
@@ -93,8 +87,11 @@ class CarController:
     # on consecutive messages
     can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req))
     if self.frame % 2 == 0 and self.CP.carFingerprint in TSS2_CAR:
-      lta_active = CC.latActive and self.CP.steerControlType == SteerControlType.angle
-      can_sends.append(create_lta_steer_command(self.packer, self.last_angle, lta_active, self.frame // 2))
+      lta_active = lat_active and self.CP.steerControlType == SteerControlType.angle
+      full_torque_condition = (abs(CS.out.steeringTorqueEps) < self.params.STEER_MAX and
+                               abs(CS.out.steeringTorque) < MAX_DRIVER_TORQUE_ALLOWANCE)
+      setme_x64 = 100 if lta_active and full_torque_condition else 0
+      can_sends.append(create_lta_steer_command(self.packer, self.last_angle, lta_active, self.frame // 2, setme_x64))
 
     # *** gas and brake ***
     if self.CP.enableGasInterceptor and CC.longActive:
@@ -169,13 +166,17 @@ class CarController:
                                            hud_control.rightLaneVisible, hud_control.leftLaneDepart,
                                            hud_control.rightLaneDepart, CC.enabled, CS.lkas_hud))
 
-      if (self.frame % 100 == 0 or send_ui) and self.CP.enableDsu:
+      if (self.frame % 100 == 0 or send_ui) and (self.CP.enableDsu or self.CP.flags & ToyotaFlags.DISABLE_RADAR.value):
         can_sends.append(create_fcw_command(self.packer, fcw_alert))
 
     # *** static msgs ***
     for addr, cars, bus, fr_step, vl in STATIC_DSU_MSGS:
       if self.frame % fr_step == 0 and self.CP.enableDsu and self.CP.carFingerprint in cars:
         can_sends.append(make_can_msg(addr, vl, bus))
+
+    # keep radar disabled
+    if self.frame % 20 == 0 and self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
+      can_sends.append([0x750, 0, b"\x0F\x02\x3E\x00\x00\x00\x00\x00", 0])
 
     new_actuators = actuators.copy()
     new_actuators.steer = apply_steer / self.params.STEER_MAX

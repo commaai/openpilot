@@ -4,14 +4,15 @@ import unittest
 from parameterized import parameterized
 
 from cereal import car, log
-from selfdrive.car.car_helpers import interfaces
-from selfdrive.car.honda.values import CAR as HONDA
-from selfdrive.car.toyota.values import CAR as TOYOTA
-from selfdrive.car.nissan.values import CAR as NISSAN
-from selfdrive.controls.lib.latcontrol_pid import LatControlPID
-from selfdrive.controls.lib.latcontrol_torque import LatControlTorque
-from selfdrive.controls.lib.latcontrol_angle import LatControlAngle
-from selfdrive.controls.lib.vehicle_model import VehicleModel
+from openpilot.selfdrive.car.car_helpers import interfaces
+from openpilot.selfdrive.car.honda.values import CAR as HONDA
+from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
+from openpilot.selfdrive.car.nissan.values import CAR as NISSAN
+from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
+from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
+from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
+from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
+from selfdrive.navd.tests.test_map_renderer import gen_llk
 
 
 class TestLatControl(unittest.TestCase):
@@ -27,13 +28,15 @@ class TestLatControl(unittest.TestCase):
 
     CS = car.CarState.new_message()
     CS.vEgo = 30
+    CS.steeringPressed = False
 
     last_actuators = car.CarControl.Actuators.new_message()
 
     params = log.LiveParametersData.new_message()
 
+    llk = gen_llk()
     for _ in range(1000):
-      _, _, lac_log = controller.update(True, CS, CP, VM, params, last_actuators, True, 1, 0)
+      _, _, lac_log = controller.update(True, CS, VM, params, last_actuators, False, 1, 0, llk)
 
     self.assertTrue(lac_log.saturated)
 
