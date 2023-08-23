@@ -9,9 +9,11 @@ base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
 if arch == "Darwin":
   base_frameworks.append('OpenCL')
   base_frameworks.append('QtCharts')
+  base_frameworks.append('QtSerialBus')
 else:
   base_libs.append('OpenCL')
   base_libs.append('Qt5Charts')
+  base_libs.append('Qt5SerialBus')
 
 qt_libs = ['qt_util'] + base_libs
 
@@ -27,7 +29,7 @@ assets_src = "assets/assets.qrc"
 cabana_env.Command(assets, assets_src, f"rcc $SOURCES -o $TARGET")
 cabana_env.Depends(assets, Glob('/assets/*', exclude=[assets, assets_src, "assets/assets.o"]))
 
-cabana_lib = cabana_env.Library("cabana_lib", ['mainwin.cc', 'streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc', 'binaryview.cc', 'historylog.cc', 'videowidget.cc', 'signalview.cc',
+cabana_lib = cabana_env.Library("cabana_lib", ['mainwin.cc', 'streams/socketcanstream.cc', 'streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc', 'binaryview.cc', 'historylog.cc', 'videowidget.cc', 'signalview.cc',
                                                'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc',
                                                'chart/chartswidget.cc', 'chart/chart.cc', 'chart/signalselector.cc', 'chart/tiplabel.cc', 'chart/sparkline.cc',
                                                'commands.cc', 'messageswidget.cc', 'streamselector.cc', 'settings.cc', 'util.cc', 'detailwidget.cc', 'tools/findsimilarbits.cc', 'tools/findsignal.cc'], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)

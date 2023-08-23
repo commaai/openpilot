@@ -295,8 +295,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
         continue;
       if (glonass_string_superframes[msg->freq_id()][i] == 0 || gl_string.superframe_number() == 0) {
         superframe_unknown = true;
-      }
-      else if (glonass_string_superframes[msg->freq_id()][i] != gl_string.superframe_number()) {
+      } else if (glonass_string_superframes[msg->freq_id()][i] != gl_string.superframe_number()) {
         needs_clear = true;
       }
       // Check if string times add up to being from the same frame
