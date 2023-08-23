@@ -63,6 +63,10 @@ def join_process(process: Process, timeout: float) -> None:
     time.sleep(0.001)
 
 
+def onroad_callback(started, params, CP: car.CarParams) -> bool:
+  return started
+
+
 class ManagerProcess(ABC):
   daemon = False
   sigkill = False
@@ -170,7 +174,7 @@ class ManagerProcess(ABC):
 
 
 class NativeProcess(ManagerProcess):
-  def __init__(self, name, cwd, cmdline, enabled=True, onroad=True, offroad=False, callback=None, unkillable=False, sigkill=False, watchdog_max_dt=None):
+  def __init__(self, name, cwd, cmdline, enabled=True, onroad=True, offroad=False, callback=onroad_callback, sigkill=False, watchdog_max_dt=None):
     self.name = name
     self.cwd = cwd
     self.cmdline = cmdline
@@ -178,7 +182,6 @@ class NativeProcess(ManagerProcess):
     self.onroad = onroad
     self.offroad = offroad
     self.callback = callback
-    self.unkillable = unkillable
     self.sigkill = sigkill
     self.watchdog_max_dt = watchdog_max_dt
     self.launcher = nativelauncher
@@ -203,14 +206,11 @@ class NativeProcess(ManagerProcess):
 
 
 class PythonProcess(ManagerProcess):
-  def __init__(self, name, module, enabled=True, onroad=True, offroad=False, callback=None, unkillable=False, sigkill=False, watchdog_max_dt=None):
+  def __init__(self, name, module, enabled=True, callback=onroad_callback, sigkill=False, watchdog_max_dt=None):
     self.name = name
     self.module = module
     self.enabled = enabled
-    self.onroad = onroad
-    self.offroad = offroad
     self.callback = callback
-    self.unkillable = unkillable
     self.sigkill = sigkill
     self.watchdog_max_dt = watchdog_max_dt
     self.launcher = launcher
@@ -243,8 +243,6 @@ class DaemonProcess(ManagerProcess):
     self.module = module
     self.param_name = param_name
     self.enabled = enabled
-    self.onroad = True
-    self.offroad = True
     self.params = None
 
   def prepare(self) -> None:
@@ -286,21 +284,7 @@ def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None
 
   running = []
   for p in procs:
-    # Conditions that make a process run
-    run = any((
-      p.offroad and not started,
-      p.onroad and started,
-    ))
-    if p.callback is not None and None not in (params, CP):
-      run = run or p.callback(started, params, CP)
-
-    # Conditions that block a process from starting
-    run = run and not any((
-      not p.enabled,
-      p.name in not_run,
-    ))
-
-    if run:
+    if p.enabled and p.callback():
       p.start()
       running.append(p)
     else:
