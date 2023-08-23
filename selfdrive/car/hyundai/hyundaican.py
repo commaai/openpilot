@@ -149,7 +149,8 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
     "CR_VSM_Alive": idx % 0xF,
   }
 
-  # send CF_VSM_ConfMode and AEB_Status to cars that do not accept FCA messages, otherwise TCS13|ACCEnable would fault
+  # show AEB disabled indicator on dash with SCC12 if not sending FCA messages.
+  # these signals also prevent a TCS fault on non-FCA cars with alpha longitudinal
   if not use_fca:
     scc12_values["CF_VSM_ConfMode"] = 1
     scc12_values["AEB_Status"] = 1  # AEB disabled
@@ -177,7 +178,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
       "CR_FCA_Alive": idx % 0xF,
       "PAINT1_Status": 1,
       "FCA_DrvSetStatus": 1,
-      "FCA_Status": 1, # AEB disabled
+      "FCA_Status": 1,  # AEB disabled
     }
     fca11_dat = packer.make_can_msg("FCA11", 0, fca11_values)[2]
     fca11_values["CR_FCA_ChkSum"] = hyundai_checksum(fca11_dat[:7])
