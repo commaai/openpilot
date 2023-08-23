@@ -2,9 +2,11 @@
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
 from panda import Panda
+from panda.python import uds
 from openpilot.selfdrive.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
                                         MIN_ACC_SPEED, EPS_SCALE, EV_HYBRID_CAR, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR
 from openpilot.selfdrive.car import get_safety_config
+from openpilot.selfdrive.car.disable_ecu import disable_ecu
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 EventName = car.CarEvent.EventName
@@ -261,14 +263,12 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  # uncomment to disable radar:
-  # @staticmethod
-  # def init(CP, logcan, sendcan):
-  #   # a diagnostic mode of SESSION_TYPE.PROGRAMMING disabled the ECU on its own. car did not accept DISABLE_RX_DISABLE_TX, but it did not matter.
-  #   # a diagnostic mode of SESSION_TYPE.EXTENDED_DIAGNOSTIC and CONTROL_TYPE.ENABLE_RX_DISABLE_TX did work, so use that
-  #   # TODO: add a flag, radarUnavailable shouldn't be used as "radar acc" right now
-  #   if CP.openpilotLongitudinalControl and CP.radarUnavailable:
-  #     disable_ecu(logcan, sendcan, bus=0, addr=0x750, sub_addr=0xf, com_cont_req=b'\x28\x01\x01')
+  @staticmethod
+  def init(CP, logcan, sendcan):
+    # disable radar if alpha longitudinal toggled on radar-ACC car without CAN filter/smartDSU
+    if CP.openpilotLongitudinalControl and CP.carFingerprint in RADAR_ACC_CAR and not use_sdsu:
+      communication_control = bytes([uds.SERVICE_TYPE.COMMUNICATION_CONTROL, uds.CONTROL_TYPE.ENABLE_RX_DISABLE_TX, uds.MESSAGE_TYPE.NORMAL])
+      disable_ecu(logcan, sendcan, bus=0, addr=0x750, sub_addr=0xf, com_cont_req=communication_control)
 
   # returns a car.CarState
   def _update(self, c):
