@@ -88,7 +88,7 @@ class FwQueryConfig:
         new_request.bus += 4
         self.requests.append(new_request)
 
-  def get_all_addrs(self, versions, extra_ecus=True) -> Set[Tuple[int, int, Optional[int]]]:
+  def get_ecus(self, versions, extra_ecus=True) -> Set[Tuple[int, int, Optional[int]]]:
     ecu_addrs = [addr for ecus in versions.values() for addr in ecus]
     # Each brand can define extra ECUs to query for data collection
     if extra_ecus:
