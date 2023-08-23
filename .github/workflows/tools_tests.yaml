@@ -75,10 +75,6 @@ jobs:
     name: build docs
     runs-on: ubuntu-20.04
     timeout-minutes: 45
-    env:
-      BUILD: |
-        docker pull $DOCKER_REGISTRY/openpilot-docs:latest
-        DOCKER_BUILDKIT=1 docker build --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/openpilot-docs:latest -t $DOCKER_REGISTRY/openpilot-docs:latest -f docs/docker/Dockerfile .
     steps:
     - uses: actions/checkout@v3
       with:
@@ -87,6 +83,9 @@ jobs:
       with:
         setup_docker_scons_cache: true
         git_lfs: false
+    - name: Build docs image
+      run: |
+        DOCKER_BUILDKIT=1 docker build --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/openpilot-docs:latest -t $DOCKER_REGISTRY/openpilot-docs:latest -f docs/docker/Dockerfile .
     - name: Push docker container
       if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
