@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <vector>
 
 #include "common/swaglog.h"
 #include "common/timing.h"

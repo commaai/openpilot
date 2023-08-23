@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "system/sensord/sensors/i2c_sensor.h"
 
 // Address of the chip on the bus
