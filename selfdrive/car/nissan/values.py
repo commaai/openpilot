@@ -7,7 +7,7 @@ from panda.python import uds
 from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarInfo, CarHarness, CarParts
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
-from selfdrive.car.interfaces import CarControllerParamsBase
+from openpilot.selfdrive.car.interfaces import CarControllerParamsBase
 
 Ecu = car.CarParams.Ecu
 

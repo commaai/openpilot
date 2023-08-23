@@ -1,11 +1,11 @@
 from cereal import car
 from openpilot.common.numpy_fast import clip
-from selfdrive.car import apply_std_steer_angle_limits
+from openpilot.selfdrive.car import apply_std_steer_angle_limits
 from openpilot.selfdrive.car.ford.carstate import CarState
 from openpilot.selfdrive.car.ford.fordcan import CanBus, create_acc_msg, create_acc_ui_msg, create_button_msg, \
                                        create_lat_ctl_msg, create_lat_ctl2_msg, create_lka_msg, create_lkas_ui_msg
 from openpilot.selfdrive.car.ford.values import CANFD_CAR, CarControllerParams
-from selfdrive.car.interfaces import CarControllerBase
+from openpilot.selfdrive.car.interfaces import CarControllerBase
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 VisualAlert = car.CarControl.HUDControl.VisualAlert

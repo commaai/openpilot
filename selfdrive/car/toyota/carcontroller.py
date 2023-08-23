@@ -2,8 +2,8 @@ from cereal import car
 from openpilot.common.numpy_fast import clip, interp
 from openpilot.selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance, \
                           create_gas_interceptor_command, make_can_msg
-from selfdrive.car.interfaces import CarControllerBase
-from selfdrive.car.toyota.carstate import CarState
+from openpilot.selfdrive.car.interfaces import CarControllerBase
+from openpilot.selfdrive.car.toyota.carstate import CarState
 from openpilot.selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
