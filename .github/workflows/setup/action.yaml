@@ -32,6 +32,9 @@ runs:
         restore-keys: |
           scons-${{ env.CACHE_COMMIT_DATE }}-
           scons-
+    # build our docker image
+    - shell: bash
+      run: eval ${{ env.BUILD }}
     - id: setup-scons-cache-docker
       name: Sets up a docker image with scons cache that can by mounted as a buildkit cache mount
       shell: bash
@@ -40,6 +43,3 @@ runs:
         cp selfdrive/test/Dockerfile.scons_cache ~
         cd ~
         DOCKER_BUILDKIT=1 docker build -t scons-cache -f Dockerfile.scons_cache .
-    # build our docker image
-    - shell: bash
-      run: eval ${{ env.BUILD }}
