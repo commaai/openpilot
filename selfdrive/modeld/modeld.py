@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 import sys
 import time
-import logging
 import numpy as np
 from pathlib import Path
 from typing import Dict, Optional
 from setproctitle import setproctitle  # pylint: disable=no-name-in-module
 from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
-from system.hardware import PC
-from common.params import Params
-from common.filter_simple import FirstOrderFilter
-from common.realtime import set_core_affinity, set_realtime_priority
-from selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext, Runtime # pylint: disable=import-error, no-name-in-module
-from selfdrive.modeld.models.driving_pyx import (
+from openpilot.system.hardware import PC
+from openpilot.system.swaglog import cloudlog
+from openpilot.common.params import Params
+from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.realtime import set_core_affinity, set_realtime_priority
+from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext, Runtime # pylint: disable=import-error, no-name-in-module
+from openpilot.selfdrive.modeld.models.driving_pyx import (
   PublishState, create_model_msg, create_pose_msg, update_calibration,
   FEATURE_LEN, HISTORY_BUFFER_LEN, DESIRE_LEN, TRAFFIC_CONVENTION_LEN, NAV_FEATURE_LEN, NAV_INSTRUCTION_LEN,
   OUTPUT_SIZE, NET_OUTPUT_SIZE, MODEL_FREQ, USE_THNEED) # pylint: disable=import-error, no-name-in-module
@@ -83,7 +83,7 @@ class ModelState:
     self.inputs['desire_pulse'][:-DESIRE_LEN] = self.inputs['desire_pulse'][DESIRE_LEN:]
     self.inputs['desire_pulse'][-DESIRE_LEN:] = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
     self.prev_desire[:] = inputs['desire_pulse']
-    logging.info("Desire enqueued")
+    cloudlog.info("Desire enqueued")
 
     self.inputs['traffic_convention'][:] = inputs['traffic_convention']
     self.inputs['nav_features'][:] = inputs['nav_features']
@@ -93,27 +93,28 @@ class ModelState:
     # if getCLBuffer is not None, frame will be None
     frame = self.frame.prepare(buf, transform.astype(np.float32).flatten(), self.model.getCLBuffer("input_imgs"))
     self.model.setInputBuffer("input_imgs", frame)
-    logging.info("Image added")
+    cloudlog.info("Image added")
 
     if wbuf is not None:
       wide_frame = self.wide_frame.prepare(wbuf, transform_wide.astype(np.float32).flatten(), self.model.getCLBuffer("big_input_imgs"))
       self.model.setInputBuffer("big_input_imgs", wide_frame)
-      logging.info("Extra image added")
+      cloudlog.info("Extra image added")
 
     if prepare_only:
       return None
 
     self.model.execute()
-    logging.info("Execution finished")
+    cloudlog.info("Execution finished")
 
     self.inputs['feature_buffer'][:-FEATURE_LEN] = self.inputs['feature_buffer'][FEATURE_LEN:]
     self.inputs['feature_buffer'][-FEATURE_LEN:] = self.output[OUTPUT_SIZE:OUTPUT_SIZE+FEATURE_LEN]
-    logging.info("Features enqueued")
+    cloudlog.info("Features enqueued")
 
     return self.output
 
 
 def main():
+  cloudlog.bind(daemon="selfdrive.modeld.modeld")
   setproctitle("selfdrive.modeld.modeld")
   if not PC:
     set_realtime_priority(54)
@@ -121,7 +122,7 @@ def main():
 
   cl_context = CLContext()
   model = ModelState(cl_context)
-  logging.warning("models loaded, modeld starting")
+  cloudlog.warning("models loaded, modeld starting")
 
   # visionipc clients
   while True:
@@ -135,7 +136,7 @@ def main():
   vipc_client_main_stream = VisionStreamType.VISION_STREAM_WIDE_ROAD if main_wide_camera else VisionStreamType.VISION_STREAM_ROAD
   vipc_client_main = VisionIpcClient("camerad", vipc_client_main_stream, True, cl_context)
   vipc_client_extra = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, False, cl_context)
-  logging.warning(f"vision stream set up, main_wide_camera: {main_wide_camera}, use_extra_client: {use_extra_client}")
+  cloudlog.warning(f"vision stream set up, main_wide_camera: {main_wide_camera}, use_extra_client: {use_extra_client}")
 
   # TODO: Is it safe to use blocking=True here?
   while not vipc_client_main.connect(False):
@@ -143,9 +144,9 @@ def main():
   while not vipc_client_extra.connect(False):
     time.sleep(0.1)
 
-  logging.warning(f"connected main cam with buffer size: {vipc_client_main.buffer_len} ({vipc_client_main.width} x {vipc_client_main.height})")
+  cloudlog.warning(f"connected main cam with buffer size: {vipc_client_main.buffer_len} ({vipc_client_main.width} x {vipc_client_main.height})")
   if use_extra_client:
-    logging.warning(f"connected extra cam with buffer size: {vipc_client_extra.buffer_len} ({vipc_client_extra.width} x {vipc_client_extra.height})")
+    cloudlog.warning(f"connected extra cam with buffer size: {vipc_client_extra.buffer_len} ({vipc_client_extra.width} x {vipc_client_extra.height})")
 
   # messaging
   pm = PubMaster(["modelV2", "cameraOdometry"])
@@ -181,7 +182,7 @@ def main():
         break
 
     if buf_main is None:
-      logging.error("vipc_client_main no frame")
+      cloudlog.error("vipc_client_main no frame")
       continue
 
     if use_extra_client:
@@ -193,11 +194,11 @@ def main():
           break
 
       if buf_extra is None:
-        logging.error("vipc_client_extra no frame")
+        cloudlog.error("vipc_client_extra no frame")
         continue
 
       if abs(meta_main.timestamp_sof - meta_extra.timestamp_sof) > 10000000:
-        logging.error("frames out of sync! main: {} ({:.5f}), extra: {} ({:.5f})".format(
+        cloudlog.error("frames out of sync! main: {} ({:.5f}), extra: {} ({:.5f})".format(
           meta_main.frame_id, meta_main.timestamp_sof / 1e9,
           meta_extra.frame_id, meta_extra.timestamp_sof / 1e9))
 
@@ -261,7 +262,7 @@ def main():
     frame_drop_ratio = frames_dropped / (1 + frames_dropped)
     prepare_only = vipc_dropped_frames > 0
     if prepare_only:
-      logging.error(f"skipping model eval. Dropped {vipc_dropped_frames} frames")
+      cloudlog.error(f"skipping model eval. Dropped {vipc_dropped_frames} frames")
 
     inputs:Dict[str, np.ndarray] = {
       'desire_pulse': vec_desire,
