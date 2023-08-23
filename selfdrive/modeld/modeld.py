@@ -83,7 +83,6 @@ class ModelState:
     self.inputs['desire_pulse'][:-DESIRE_LEN] = self.inputs['desire_pulse'][DESIRE_LEN:]
     self.inputs['desire_pulse'][-DESIRE_LEN:] = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
     self.prev_desire[:] = inputs['desire_pulse']
-    cloudlog.info("Desire enqueued")
 
     self.inputs['traffic_convention'][:] = inputs['traffic_convention']
     self.inputs['nav_features'][:] = inputs['nav_features']
@@ -91,25 +90,16 @@ class ModelState:
     # self.inputs['driving_style'][:] = inputs['driving_style']
 
     # if getCLBuffer is not None, frame will be None
-    frame = self.frame.prepare(buf, transform.astype(np.float32).flatten(), self.model.getCLBuffer("input_imgs"))
-    self.model.setInputBuffer("input_imgs", frame)
-    cloudlog.info("Image added")
-
+    self.model.setInputBuffer("input_imgs", self.frame.prepare(buf, transform.flatten(), self.model.getCLBuffer("input_imgs")))
     if wbuf is not None:
-      wide_frame = self.wide_frame.prepare(wbuf, transform_wide.astype(np.float32).flatten(), self.model.getCLBuffer("big_input_imgs"))
-      self.model.setInputBuffer("big_input_imgs", wide_frame)
-      cloudlog.info("Extra image added")
+      self.model.setInputBuffer("big_input_imgs", self.wide_frame.prepare(wbuf, transform_wide.flatten(), self.model.getCLBuffer("big_input_imgs")))
 
     if prepare_only:
       return None
 
     self.model.execute()
-    cloudlog.info("Execution finished")
-
     self.inputs['feature_buffer'][:-FEATURE_LEN] = self.inputs['feature_buffer'][FEATURE_LEN:]
     self.inputs['feature_buffer'][-FEATURE_LEN:] = self.output[OUTPUT_SIZE:OUTPUT_SIZE+FEATURE_LEN]
-    cloudlog.info("Features enqueued")
-
     return self.output
 
 
