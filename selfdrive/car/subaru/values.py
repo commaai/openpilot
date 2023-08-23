@@ -329,7 +329,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.CROSSTREK_HYBRID: {
-    (Ecu.esp, 0x7b0, None): [
+    (Ecu.abs, 0x7b0, None): [
       b'\xa2 \x19e\x01',
     ],
     (Ecu.eps, 0x746, None): [
