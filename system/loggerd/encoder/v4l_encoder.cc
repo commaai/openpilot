@@ -27,21 +27,39 @@ static void checked_ioctl(int fd, unsigned long request, void *argp) {
   }
 }
 
-static void dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=NULL, unsigned int *bytesused=NULL, unsigned int *flags=NULL, struct timeval *timestamp=NULL) {
-  v4l2_plane plane = {0};
-  v4l2_buffer v4l_buf = {
-    .type = buf_type,
-    .memory = V4L2_MEMORY_USERPTR,
-    .m = { .planes = &plane, },
-    .length = 1,
-  };
-  checked_ioctl(fd, VIDIOC_DQBUF, &v4l_buf);
+static bool dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=NULL, unsigned int *bytesused=NULL, unsigned int *flags=NULL, struct timeval *timestamp=NULL) {
+  struct v4l2_buffer v4l_buf;
+  memset(&v4l_buf, 0, sizeof(v4l_buf));
+  // WARNING: do not change this to something smaller than VIDEO_MAX_PLANES
+  // The element overhead is small and may avoid memory corruption bugs.
+  struct v4l2_plane planes[VIDEO_MAX_PLANES];
+  memset(planes, 0, sizeof(planes));
+  v4l_buf.type = buf_type;
+  v4l_buf.memory = V4L2_MEMORY_USERPTR;
+  v4l_buf.m.planes = planes;
+  v4l_buf.length = 1;
+  int ret = HANDLE_EINTR(ioctl(fd, VIDIOC_DQBUF, &v4l_buf));
+  if (ret != 0) {
+    if (errno == EAGAIN) {
+      // EAGAIN if we're just out of buffers to dequeue.
+      // This is not an error so we'll need to continue polling but won't provide a buffer.
+      return false;
+    }
+    LOGE("VIDIOC_DQBUF failed with error: %d", errno);
+    assert(0);
+  }
+
+  if (v4l_buf.flags & V4L2_BUF_FLAG_ERROR) {
+    LOGE("Dequeued v4l2 buffer contains corrupted data (%d bytes)", v4l_buf.m.planes[0].bytesused);
+  }
 
   if (index) *index = v4l_buf.index;
   if (bytesused) *bytesused = v4l_buf.m.planes[0].bytesused;
   if (flags) *flags = v4l_buf.flags;
   if (timestamp) *timestamp = v4l_buf.timestamp;
   assert(v4l_buf.m.planes[0].data_offset == 0);
+
+  return true;
 }
 
 static void queue_buffer(int fd, v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, struct timeval timestamp={}) {
@@ -112,7 +130,10 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
     if (pfd.revents & POLLIN) {
       unsigned int bytesused, flags, index;
       struct timeval timestamp;
-      dequeue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, &index, &bytesused, &flags, &timestamp);
+      if (!dequeue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, &index, &bytesused, &flags, &timestamp)) {
+        continue;
+      }
+
       e->buf_out[index].sync(VISIONBUF_SYNC_FROM_DEVICE);
       uint8_t *buf = (uint8_t*)e->buf_out[index].addr;
       int64_t ts = timestamp.tv_sec * 1000000 + timestamp.tv_usec;
@@ -142,8 +163,9 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
 
     if (pfd.revents & POLLOUT) {
       unsigned int index;
-      dequeue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, &index);
-      e->free_buf_in.push(index);
+      if (dequeue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, &index)) {
+        e->free_buf_in.push(index);
+      }
     }
   }
 }
