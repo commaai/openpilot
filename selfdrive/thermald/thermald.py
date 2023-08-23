@@ -177,10 +177,10 @@ def thermald_thread(end_event, hw_queue) -> None:
   startup_conditions: Dict[str, bool] = {}
   startup_conditions_prev: Dict[str, bool] = {}
 
-  off_ts = None
-  started_ts = None
+  off_ts: Optional[float] = None
+  started_ts: Optional[float] = None
   started_seen = False
-  startup_blocked_ts = None
+  startup_blocked_ts: Optional[float] = None
   thermal_status = ThermalStatus.yellow
 
   last_hw_state = HardwareState(
