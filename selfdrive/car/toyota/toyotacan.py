@@ -54,7 +54,7 @@ def create_acc_cancel_command(packer):
   return packer.make_can_msg("PCM_CRUISE", 0, values)
 
 
-def create_fcw_command(packer, fcw):
+def create_fcw_command(packer, fcw, stock_pcs_hud):
   values = {
     "PCS_INDICATOR": 1,
     "FCW": fcw,
@@ -63,6 +63,19 @@ def create_fcw_command(packer, fcw):
     "PCS_OFF": 1,
     "PCS_SENSITIVITY": 0,
   }
+
+  # stock pcs message
+  # update with camera values if available
+  if len(stock_pcs_hud):
+    values.update({stock_pcs: stock_pcs_hud[stock_pcs] for stock_pcs in [
+      "PCS_INDICATOR",
+      "FCW",
+      "SET_ME_X20",
+      "SET_ME_X10",
+      "PCS_OFF",
+      "PCS_SENSITIVITY",
+    ]})
+
   return packer.make_can_msg("PCS_HUD", 0, values)
 
 
@@ -100,7 +113,7 @@ def create_ui_command(packer, steer, chime, left_line, right_line, left_lane_dep
   # lane sway functionality
   # not all cars have LKAS_HUD — update with camera values if available
   if len(stock_lkas_hud):
-    values.update({s: stock_lkas_hud[s] for s in [
+    values.update({stock_lkas: stock_lkas_hud[stock_lkas] for stock_lkas in [
       "LANE_SWAY_FLD",
       "LANE_SWAY_BUZZER",
       "LANE_SWAY_WARNING",

@@ -43,6 +43,7 @@ class CarState(CarStateBase):
     self.low_speed_lockout = False
     self.acc_type = 1
     self.lkas_hud = {}
+    self.pcs_hud = {}
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -162,6 +163,9 @@ class CarState(CarStateBase):
 
     if self.CP.carFingerprint != CAR.PRIUS_V:
       self.lkas_hud = copy.copy(cp_cam.vl["LKAS_HUD"])
+
+    if self.CP.carFingerprint in TSS2_CAR - RADAR_ACC_CAR: # this message comes from the RADAR on TSS 2.0 RADAR ACC cars
+      self.pcs_hud = copy.copy(cp_cam.vl["PCS_HUD"])
 
     return ret
 

@@ -168,10 +168,10 @@ class CarController:
                                            hud_control.rightLaneDepart, CC.enabled, CS.lkas_hud))
 
       # *** pre-collision ui ***
-      # only send when DSU is unplugged or radar is disabled
-      # uncomment (self.CP.enableDsu or self.CP.radarUnavailable) when ready to disable
-      if (self.frame % 100 == 0 or send_ui) and self.CP.enableDsu: # (self.CP.enableDsu or self.CP.radarUnavailable):
-        can_sends.append(create_fcw_command(self.packer, fcw_alert))
+      # do not send on TSS-P cars with DSU
+      # uncomment "or self.CP.radarUnavailable)" when ready to disable
+      if (self.frame % 100 == 0 or send_ui) and (self.CP.enableDsu or self.CP.carFingerprint in TSS2_CAR): # or self.CP.radarUnavailable):
+        can_sends.append(create_fcw_command(self.packer, fcw_alert, CS.pcs_hud))
 
     # *** static msgs ***
     for addr, cars, bus, fr_step, vl in STATIC_DSU_MSGS:
