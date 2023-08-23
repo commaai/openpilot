@@ -60,8 +60,7 @@ def build(spinner: Spinner, dirty: bool = False) -> None:
   if scons.returncode != 0:
     # Read remaining output
     if scons.stderr is not None:
-      r = scons.stderr.read().split(b'\n')
-      compile_output += r
+      compile_output += scons.stderr.read().split(b'\n')
 
     # Build failed log errors
     errors = [line.decode('utf8', 'replace') for line in compile_output
