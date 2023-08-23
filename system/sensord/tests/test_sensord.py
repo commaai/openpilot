@@ -86,7 +86,7 @@ def read_sensor_events(duration_sec):
 
   assert sum(map(len, events.values())) != 0, "No sensor events collected!"
 
-  return events
+  return {k: v for k, v in events.items() if len(v) > 0}
 
 class TestSensord(unittest.TestCase):
   @classmethod
