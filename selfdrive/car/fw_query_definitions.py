@@ -86,10 +86,8 @@ class FwQueryConfig:
     for request in self.requests:
       # Except for bus 1 with obd_multiplexing enabled, offset bus to run on highest panda number available
       new_request = copy.deepcopy(request)
-      # TODO: test for bus 1
       if request.auxiliary:
-        if not request.obd_multiplexing or request.bus != 1:
-          new_request.bus += ((num_pandas - 1) * 4)
+        new_request.bus += ((num_pandas - 1) * 4)
 
       requests.append(new_request)
     return requests
