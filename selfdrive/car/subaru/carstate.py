@@ -217,7 +217,7 @@ class CarState(CarStateBase):
     messages = []
 
     if CP.carFingerprint in GLOBAL_GEN2:
-      messages = CarState.get_common_global_body_messages()
+      messages = CarState.get_common_global_body_messages(CP)
       messages += CarState.get_common_global_es_messages()
 
     if CP.carFingerprint in HYBRID_CARS:
