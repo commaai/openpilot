@@ -63,7 +63,7 @@ class TermsPage : public QFrame {
   Q_OBJECT
 
 public:
-  explicit TermsPage(QWidget *parent = 0) : QFrame(parent) {};
+  explicit TermsPage(QWidget *parent = 0) : QFrame(parent) {}
 
 public slots:
   void enableAccept();
@@ -82,7 +82,7 @@ class DeclinePage : public QFrame {
   Q_OBJECT
 
 public:
-  explicit DeclinePage(QWidget *parent = 0) : QFrame(parent) {};
+  explicit DeclinePage(QWidget *parent = 0) : QFrame(parent) {}
 
 private:
   void showEvent(QShowEvent *event) override;

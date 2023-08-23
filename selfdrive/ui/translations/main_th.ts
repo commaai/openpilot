@@ -353,33 +353,6 @@
         <source>hr</source>
         <translation>ชม.</translation>
     </message>
-    <message>
-        <source>km</source>
-        <translation>กม.</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>ไมล์</translation>
-    </message>
-</context>
-<context>
-    <name>MapInstructions</name>
-    <message>
-        <source> km</source>
-        <translation> กม.</translation>
-    </message>
-    <message>
-        <source> m</source>
-        <translation> ม.</translation>
-    </message>
-    <message>
-        <source> mi</source>
-        <translation> ไมล์</translation>
-    </message>
-    <message>
-        <source> ft</source>
-        <translation> ฟุต</translation>
-    </message>
 </context>
 <context>
     <name>MapSettings</name>
@@ -616,6 +589,22 @@
         <translation>
             <numerusform>%n วันที่แล้ว</numerusform>
         </translation>
+    </message>
+    <message>
+        <source>km</source>
+        <translation>กม.</translation>
+    </message>
+    <message>
+        <source>m</source>
+        <translation>ม.</translation>
+    </message>
+    <message>
+        <source>mi</source>
+        <translation>ไมล์</translation>
+    </message>
+    <message>
+        <source>ft</source>
+        <translation>ฟุต</translation>
     </message>
 </context>
 <context>

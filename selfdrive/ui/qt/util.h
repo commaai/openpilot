@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <vector>
 
 #include <QDateTime>
 #include <QFileSystemWatcher>

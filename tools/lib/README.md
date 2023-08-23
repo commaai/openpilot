@@ -3,8 +3,8 @@
 Route is a class for conveniently accessing all the [logs](/system/loggerd/) from your routes. The LogReader class reads the non-video logs, i.e. rlog.bz2 and qlog.bz2. There's also a matching FrameReader class for reading the videos.
 
 ```python
-from tools.lib.route import Route
-from tools.lib.logreader import LogReader
+from openpilot.tools.lib.route import Route
+from openpilot.tools.lib.logreader import LogReader
 
 r = Route("a2a0ccea32023010|2023-07-27--13-01-19")
 
@@ -37,8 +37,8 @@ for msg in lr:
 `MultiLogIterator` is similar to `LogReader`, but reads multiple logs. 
 
 ```python
-from tools.lib.route import Route
-from tools.lib.logreader import MultiLogIterator
+from openpilot.tools.lib.route import Route
+from openpilot.tools.lib.logreader import MultiLogIterator
 
 # setup a MultiLogIterator to read all the logs in the route
 r = Route("a2a0ccea32023010|2023-07-27--13-01-19")
