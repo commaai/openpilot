@@ -130,7 +130,7 @@ class CarState(CarStateBase):
 
     cp_acc = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
 
-    if self.CP.carFingerprint in (TSS2_CAR | RADAR_ACC_CAR) and not self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
+    if self.CP.carFingerprint in TSS2_CAR and not self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
       if not (self.CP.flags & ToyotaFlags.SMART_DSU.value):
         self.acc_type = cp_acc.vl["ACC_CONTROL"]["ACC_TYPE"]
       ret.stockFcw = bool(cp_acc.vl["PCS_HUD"]["FCW"])
