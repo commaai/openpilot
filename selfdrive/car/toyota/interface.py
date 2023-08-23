@@ -219,10 +219,13 @@ class CarInterface(CarInterfaceBase):
     # since we don't yet parse radar on TSS2 radar-based ACC cars, gate longitudinal behind experimental toggle
     use_sdsu = bool(ret.flags & ToyotaFlags.SMART_DSU)
     if candidate in RADAR_ACC_CAR:
-      ret.experimentalLongitudinalAvailable = True  # use_sdsu
-      use_sdsu = use_sdsu and experimental_long
-      if not use_sdsu and experimental_long:
-        ret.flags |= ToyotaFlags.DISABLE_RADAR.value
+      ret.experimentalLongitudinalAvailable = use_sdsu
+
+      if not use_sdsu:
+        if experimental_long and False:  # TODO: disabling radar isn't supported yet
+          ret.flags |= ToyotaFlags.DISABLE_RADAR.value
+      else:
+        use_sdsu = use_sdsu and experimental_long
 
     # openpilot longitudinal enabled by default:
     #  - non-(TSS2 radar ACC cars) w/ smartDSU installed
@@ -230,7 +233,8 @@ class CarInterface(CarInterfaceBase):
     #  - TSS2 cars with camera sending ACC_CONTROL where we can block it
     # openpilot longitudinal behind experimental long toggle:
     #  - TSS2 radar ACC cars w/ smartDSU installed
-    ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
+    #  - TSS2 radar ACC cars w/ alpha longitudinal toggle (disable radar)
+    ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR) or (ret.flags & ToyotaFlags.DISABLE_RADAR.value)
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
 
     if not ret.openpilotLongitudinalControl:
@@ -268,8 +272,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def init(CP, logcan, sendcan):
     # disable radar if alpha longitudinal toggled on radar-ACC car without CAN filter/smartDSU
-    use_sdsu = bool(CP.flags & ToyotaFlags.SMART_DSU)
-    if CP.openpilotLongitudinalControl and CP.carFingerprint in RADAR_ACC_CAR and not use_sdsu:
+    if CP.flags & ToyotaFlags.DISABLE_RADAR.value:
       communication_control = bytes([uds.SERVICE_TYPE.COMMUNICATION_CONTROL, uds.CONTROL_TYPE.ENABLE_RX_DISABLE_TX, uds.MESSAGE_TYPE.NORMAL])
       disable_ecu(logcan, sendcan, bus=0, addr=0x750, sub_addr=0xf, com_cont_req=communication_control)
 

@@ -177,7 +177,7 @@ class CarController:
 
     # keep radar disabled
     if self.frame % 20 == 0:
-      if self.CP.openpilotLongitudinalControl and self.CP.carFingerprint in RADAR_ACC_CAR and not bool(self.CP.flags & ToyotaFlags.SMART_DSU):
+      if self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
         can_sends.append([0x750, 0, b"\x0F\x02\x3E\x00\x00\x00\x00\x00", 0])
 
     new_actuators = actuators.copy()
