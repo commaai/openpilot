@@ -25,15 +25,19 @@
 
 #define I2C_BUS_IMU 1
 
-#define SENSOR_FREQ 100
-#define MAG_FREQ 25
-
 ExitHandler do_exit;
 
-void interrupt_loop(std::vector<Sensor *>& sensors, std::map<Sensor*, std::string>& sensor_service) {
+void interrupt_loop(std::vector<std::tuple<Sensor *, std::string, bool, int>> sensors) {
   PubMaster pm({"gyroscope", "accelerometer"});
 
-  int fd = sensors[0]->gpio_fd;
+  int fd = -1;
+  for (auto &[sensor, msg_name, required, polling_freq] : sensors) {
+    if (sensor->has_interrupt_enabled()) {
+      fd = sensor->gpio_fd;
+      break;
+    }
+  }
+
   struct pollfd fd_list[1] = {0};
   fd_list[0].fd = fd;
   fd_list[0].events = POLLIN | POLLPRI;
@@ -67,7 +71,11 @@ void interrupt_loop(std::vector<Sensor *>& sensors, std::map<Sensor*, std::strin
     uint64_t offset = nanos_since_epoch() - nanos_since_boot();
     uint64_t ts = evdata[num_events - 1].timestamp - offset;
 
-    for (Sensor *sensor : sensors) {
+    for (auto &[sensor, msg_name, required, polling_freq] : sensors) {
+      if (!sensor->has_interrupt_enabled()) {
+        continue;
+      }
+
       MessageBuilder msg;
       if (!sensor->get_event(msg, ts)) {
         continue;
@@ -77,13 +85,15 @@ void interrupt_loop(std::vector<Sensor *>& sensors, std::map<Sensor*, std::strin
         continue;
       }
 
-      pm.send(sensor_service[sensor].c_str(), msg);
+      pm.send(msg_name.c_str(), msg);
     }
   }
 
   // poweroff sensors, disable interrupts
-  for (Sensor *sensor : sensors) {
-    sensor->shutdown();
+  for (auto &[sensor, msg_name, required, polling_freq] : sensors) {
+    if (sensor->has_interrupt_enabled()) {
+      sensor->shutdown();
+    }
   }
 }
 
@@ -119,37 +129,24 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
 
   MMC5603NJ_Magn mmc5603nj_magn(i2c_bus_imu);
 
-  std::map<Sensor*, std::string> sensor_service = {
-    {&bmx055_accel, "accelerometer2"},
-    {&bmx055_gyro, "gyroscope2"},
-    {&bmx055_magn, "magnetometer"},
-    {&bmx055_temp, "temperatureSensor2"},
-
-    {&lsm6ds3_accel, "accelerometer"},
-    {&lsm6ds3_gyro, "gyroscope"},
-    {&lsm6ds3_temp, "temperatureSensor"},
-
-    {&mmc5603nj_magn, "magnetometer"},
-  };
-
   // Sensor init
-  std::vector<std::tuple<Sensor *, bool, int>> sensors_init; // Sensor, required
-  sensors_init.push_back({&bmx055_accel, false, 100});
-  sensors_init.push_back({&bmx055_gyro, false, 100});
-  sensors_init.push_back({&bmx055_magn, false, 25});
-  sensors_init.push_back({&bmx055_temp, false, 2});
+  std::vector<std::tuple<Sensor *, std::string, bool, int>> sensors_init; // Sensor, required
+  sensors_init.push_back({&bmx055_accel, "accelerometer2", false, 100});
+  sensors_init.push_back({&bmx055_gyro, "gyroscope2", false, 100});
+  sensors_init.push_back({&bmx055_magn, "magnetometer", false, 100});
+  sensors_init.push_back({&bmx055_temp, "temperatureSensor2", false, 2});
 
-  sensors_init.push_back({&lsm6ds3_accel, true, 100});
-  sensors_init.push_back({&lsm6ds3_gyro, true, 100});
-  sensors_init.push_back({&lsm6ds3_temp, true, 2});
+  sensors_init.push_back({&lsm6ds3_accel, "accelerometer", true, 100});
+  sensors_init.push_back({&lsm6ds3_gyro, "gyroscope", true, 100});
+  sensors_init.push_back({&lsm6ds3_temp, "temperatureSensor", true, 2});
 
-  sensors_init.push_back({&mmc5603nj_magn, false, 25});
+  sensors_init.push_back({&mmc5603nj_magn, "magnetometer", false, 25});
 
   bool has_magnetometer = false;
 
   // Initialize sensors
   std::vector<std::thread> sensor_threads;
-  for (auto &[sensor, required, polling_freq] : sensors_init) {
+  for (auto &[sensor, msg_name, required, polling_freq] : sensors_init) {
     int err = sensor->init();
     if (err < 0) {
       if (required) {
@@ -161,7 +158,6 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
         has_magnetometer = true;
       }
       if (!sensor->has_interrupt_enabled()) {
-        std::string msg_name = sensor_service[sensor];
         sensor_threads.emplace_back(polling_loop, sensor, msg_name, polling_freq);
       }
     }
@@ -178,9 +174,7 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
   std::system("sudo su -c 'echo 1 > /proc/irq/336/smp_affinity_list'");
 
   // thread for reading events via interrupts
-  std::vector<Sensor *> lsm_interrupt_sensors = {&lsm6ds3_accel, &lsm6ds3_gyro};
-  std::thread lsm_interrupt_thread(&interrupt_loop, std::ref(lsm_interrupt_sensors),
-                                   std::ref(sensor_service));
+  std::thread lsm_interrupt_thread(&interrupt_loop, std::ref(sensors_init));
 
   lsm_interrupt_thread.join();
   for (auto &thread : sensor_threads) {

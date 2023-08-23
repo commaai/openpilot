@@ -164,7 +164,8 @@ class TestSensord(unittest.TestCase):
       with self.subTest(sensor=s):
         freq = len(msgs) / self.sample_secs
         ef = service_list[s].frequency
-        print(s, freq, ef)
+        if s == "magnetometer" and msgs[0].magnetometer.source == Sensor.bmx055:
+          ef = 100
         assert ef*0.85 <= freq <= ef*1.15
 
   def test_logmonottime_timestamp_diff(self):
