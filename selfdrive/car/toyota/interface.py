@@ -261,6 +261,15 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
+  # uncomment to disable radar:
+  # @staticmethod
+  # def init(CP, logcan, sendcan):
+  #   # a diagnostic mode of SESSION_TYPE.PROGRAMMING disabled the ECU on its own. car did not accept DISABLE_RX_DISABLE_TX, but it did not matter.
+  #   # a diagnostic mode of SESSION_TYPE.EXTENDED_DIAGNOSTIC and CONTROL_TYPE.ENABLE_RX_DISABLE_TX did work, so use that
+  #   # TODO: add a flag, radarUnavailable shouldn't be used as "radar acc" right now
+  #   if CP.openpilotLongitudinalControl and CP.radarUnavailable:
+  #     disable_ecu(logcan, sendcan, bus=0, addr=0x750, sub_addr=0xf, com_cont_req=b'\x28\x01\x01')
+
   # returns a car.CarState
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam)

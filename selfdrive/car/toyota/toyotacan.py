@@ -56,7 +56,7 @@ def create_acc_cancel_command(packer):
 
 def create_fcw_command(packer, fcw):
   values = {
-    "PCS_INDICATOR": 1,
+    "PCS_INDICATOR": 1,  # PCS turned off
     "FCW": fcw,
     "SET_ME_X20": 0x20,
     "SET_ME_X10": 0x10,
