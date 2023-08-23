@@ -166,8 +166,7 @@ class CarController:
                                            hud_control.rightLaneVisible, hud_control.leftLaneDepart,
                                            hud_control.rightLaneDepart, CC.enabled, CS.lkas_hud))
 
-      # TODO: send when disabling the radar to avoid a fault
-      if (self.frame % 100 == 0 or send_ui) and self.CP.enableDsu:
+      if (self.frame % 100 == 0 or send_ui) and (self.CP.enableDsu or (self.CP.flags & ToyotaFlags.DISABLE_RADAR.value)):
         can_sends.append(create_fcw_command(self.packer, fcw_alert))
 
     # *** static msgs ***
