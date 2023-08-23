@@ -77,6 +77,8 @@ float getenv(const char* key, float default_val);
 
 std::string hexdump(const uint8_t* in, const size_t size);
 std::string dir_name(std::string const& path);
+bool starts_with(const std::string &s1, const std::string &s2);
+bool ends_with(const std::string &s1, const std::string &s2);
 
 // ***** random helpers *****
 int random_int(int min, int max);

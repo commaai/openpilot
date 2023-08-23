@@ -207,11 +207,11 @@ void loggerd_thread() {
   std::unique_ptr<Poller> poller(Poller::create());
 
   // subscribe to all socks
-  for (const auto& it : services) {
-    const bool encoder = strcmp(it.name+strlen(it.name)-strlen("EncodeData"), "EncodeData") == 0;
-    const bool livestream_encoder = strncmp(it.name, "livestream", strlen("livestream")) == 0;
+  for (const auto& [_, it] : services) {
+    const bool encoder = util::ends_with(it.name, "EncodeData");
+    const bool livestream_encoder = util::starts_with(it.name, "livestream");
     if (!it.should_log && (!encoder || livestream_encoder)) continue;
-    LOGD("logging %s (on port %d)", it.name, it.port);
+    LOGD("logging %s (on port %d)", it.name.c_str(), it.port);
 
     SubSocket * sock = SubSocket::create(ctx.get(), it.name);
     assert(sock != NULL);
@@ -221,7 +221,7 @@ void loggerd_thread() {
       .counter = 0,
       .freq = it.decimation,
       .encoder = encoder,
-      .user_flag = (strcmp(it.name, "userFlag") == 0),
+      .user_flag = it.name == "userFlag",
     };
   }
 
