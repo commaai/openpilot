@@ -7,6 +7,7 @@
 #include <poll.h>
 #include <linux/gpio.h>
 
+#include "cereal/services.h"
 #include "cereal/messaging/messaging.h"
 #include "common/i2c.h"
 #include "common/ratekeeper.h"
@@ -27,11 +28,11 @@
 
 ExitHandler do_exit;
 
-void interrupt_loop(std::vector<std::tuple<Sensor *, std::string, bool, int>> sensors) {
+void interrupt_loop(std::vector<std::tuple<Sensor *, std::string, bool>> sensors) {
   PubMaster pm({"gyroscope", "accelerometer"});
 
   int fd = -1;
-  for (auto &[sensor, msg_name, required, polling_freq] : sensors) {
+  for (auto &[sensor, msg_name, required] : sensors) {
     if (sensor->has_interrupt_enabled()) {
       fd = sensor->gpio_fd;
       break;
@@ -71,7 +72,7 @@ void interrupt_loop(std::vector<std::tuple<Sensor *, std::string, bool, int>> se
     uint64_t offset = nanos_since_epoch() - nanos_since_boot();
     uint64_t ts = evdata[num_events - 1].timestamp - offset;
 
-    for (auto &[sensor, msg_name, required, polling_freq] : sensors) {
+    for (auto &[sensor, msg_name, required] : sensors) {
       if (!sensor->has_interrupt_enabled()) {
         continue;
       }
@@ -90,16 +91,16 @@ void interrupt_loop(std::vector<std::tuple<Sensor *, std::string, bool, int>> se
   }
 
   // poweroff sensors, disable interrupts
-  for (auto &[sensor, msg_name, required, polling_freq] : sensors) {
+  for (auto &[sensor, msg_name, required] : sensors) {
     if (sensor->has_interrupt_enabled()) {
       sensor->shutdown();
     }
   }
 }
 
-void polling_loop(Sensor *sensor, std::string msg_name, int frequency) {
+void polling_loop(Sensor *sensor, std::string msg_name) {
   PubMaster pm({msg_name.c_str()});
-  RateKeeper rk(msg_name, frequency);
+  RateKeeper rk(msg_name, services.at(msg_name).frequency);
   while (!do_exit) {
     MessageBuilder msg;
     if (sensor->get_event(msg) && sensor->is_data_valid(nanos_since_boot())) {
@@ -113,22 +114,22 @@ void polling_loop(Sensor *sensor, std::string msg_name, int frequency) {
 
 int sensor_loop(I2CBus *i2c_bus_imu) {
   // Sensor init
-  std::vector<std::tuple<Sensor *, std::string, bool, int>> sensors_init = {
-    {new BMX055_Accel(i2c_bus_imu), "accelerometer2", false, 100},
-    {new BMX055_Gyro(i2c_bus_imu), "gyroscope2", false, 100},
-    {new BMX055_Magn(i2c_bus_imu), "magnetometer", false, 100},
-    {new BMX055_Temp(i2c_bus_imu), "temperatureSensor2", false, 100},
+  std::vector<std::tuple<Sensor *, std::string, bool>> sensors_init = {
+    {new BMX055_Accel(i2c_bus_imu), "accelerometer2", false},
+    {new BMX055_Gyro(i2c_bus_imu), "gyroscope2", false},
+    {new BMX055_Magn(i2c_bus_imu), "magnetometer", false},
+    {new BMX055_Temp(i2c_bus_imu), "temperatureSensor2", false},
 
-    {new LSM6DS3_Accel(i2c_bus_imu, GPIO_LSM_INT), "accelerometer", true, 100},
-    {new LSM6DS3_Gyro(i2c_bus_imu, GPIO_LSM_INT, true), "gyroscope", true, 100},
-    {new LSM6DS3_Temp(i2c_bus_imu), "temperatureSensor", true, 100},
+    {new LSM6DS3_Accel(i2c_bus_imu, GPIO_LSM_INT), "accelerometer", true},
+    {new LSM6DS3_Gyro(i2c_bus_imu, GPIO_LSM_INT, true), "gyroscope", true},
+    {new LSM6DS3_Temp(i2c_bus_imu), "temperatureSensor", true},
 
-    {new MMC5603NJ_Magn(i2c_bus_imu), "magnetometer", false, 100},
+    {new MMC5603NJ_Magn(i2c_bus_imu), "magnetometer", false},
   };
 
   // Initialize sensors
   std::vector<std::thread> threads;
-  for (auto &[sensor, msg_name, required, polling_freq] : sensors_init) {
+  for (auto &[sensor, msg_name, required] : sensors_init) {
     int err = sensor->init();
     if (err < 0) {
       if (required) {
@@ -139,7 +140,7 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
     }
 
     if (!sensor->has_interrupt_enabled()) {
-      threads.emplace_back(polling_loop, sensor, msg_name, polling_freq);
+      threads.emplace_back(polling_loop, sensor, msg_name);
     }
   }
 
@@ -156,7 +157,7 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
     t.join();
   }
 
-  for (auto &[sensor, msg_name, required, polling_freq] : sensors_init) {
+  for (auto &[sensor, msg_name, required] : sensors_init) {
     delete sensor;
   }
   return 0;
