@@ -1,3 +1,5 @@
+#include <tuple>
+
 #include <QMap>
 #include <QSoundEffect>
 #include <QString>

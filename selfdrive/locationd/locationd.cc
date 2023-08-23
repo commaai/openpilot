@@ -1,7 +1,9 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
+#include <algorithm>
 #include <cmath>
+#include <vector>
 
 #include "locationd.h"
 
@@ -240,8 +242,7 @@ void Localizer::handle_sensor(double current_time, const cereal::SensorEventData
     LOGE("Sensor reading ignored, sensor timestamp more than 100ms off from log time");
     this->observation_timings_invalid = true;
     return;
-  }
-  else if (!this->is_timestamp_valid(sensor_time)) {
+  } else if (!this->is_timestamp_valid(sensor_time)) {
     this->observation_timings_invalid = true;
     return;
   }
@@ -258,8 +259,7 @@ void Localizer::handle_sensor(double current_time, const cereal::SensorEventData
     if (meas.norm() < ROTATION_SANITY_CHECK) {
       this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_GYRO, { meas });
       this->observation_values_invalid["gyroscope"] *= DECAY;
-    }
-    else{
+    } else {
       this->observation_values_invalid["gyroscope"] += 1.0;
     }
   }
@@ -277,8 +277,7 @@ void Localizer::handle_sensor(double current_time, const cereal::SensorEventData
     if (meas.norm() < ACCEL_SANITY_CHECK) {
       this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_ACCEL, { meas });
       this->observation_values_invalid["accelerometer"] *= DECAY;
-    }
-    else{
+    } else {
       this->observation_values_invalid["accelerometer"] += 1.0;
     }
   }
@@ -360,7 +359,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
 
 void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements::Reader& log) {
 
-  if(!log.getPositionECEF().getValid() || !log.getVelocityECEF().getValid()) {
+  if (!log.getPositionECEF().getValid() || !log.getVelocityECEF().getValid()) {
     this->determine_gps_mode(current_time);
     return;
   }
@@ -414,8 +413,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   orientation_reset &= !this->standstill;
   if (orientation_reset) {
     this->orientation_reset_count++;
-  }
-  else {
+  } else {
     this->orientation_reset_count = 0;
   }
 
@@ -649,8 +647,7 @@ void Localizer::determine_gps_mode(double current_time) {
     if (this->gps_mode){
       this->gps_mode = false;
       this->reset_kalman(current_time);
-    }
-    else{
+    } else {
       this->input_fake_gps_observations(current_time);
     }
   }

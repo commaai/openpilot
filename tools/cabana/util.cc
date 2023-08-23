@@ -1,7 +1,10 @@
 #include "tools/cabana/util.h"
 
+#include <algorithm>
 #include <array>
 #include <csignal>
+#include <limits>
+#include <string>
 #include <sys/socket.h>
 #include <unistd.h>
 

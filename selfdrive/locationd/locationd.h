@@ -1,6 +1,7 @@
 #pragma once
 
 #include <eigen3/Eigen/Dense>
+#include <deque>
 #include <fstream>
 #include <memory>
 #include <map>
