@@ -4,17 +4,14 @@ import shutil
 import unittest
 
 os.environ["COMMA_CACHE"] = "/tmp/__test_cache__"
-from openpilot.tools.lib.url_file import URLFile, get_cache_dir
-
-CACHE_DIR = get_cache_dir()
+from openpilot.tools.lib.url_file import URLFile, CACHE_DIR
 
 
 class TestFileDownload(unittest.TestCase):
 
   def compare_loads(self, url, start=0, length=None):
     """Compares range between cached and non cached version"""
-    if os.path.exists(CACHE_DIR):
-      shutil.rmtree(CACHE_DIR)
+    shutil.rmtree(CACHE_DIR)
 
     file_cached = URLFile(url, cache=True)
     file_downloaded = URLFile(url, cache=False)
