@@ -20,10 +20,8 @@ class CarState(CarStateBase):
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
 
-    if self.car_fingerprint in HYBRID_CARS:
-      ret.gas = cp_body.vl["Throttle_Hybrid"]["Throttle_Pedal"] / 255.
-    else:
-      ret.gas = cp.vl["Throttle"]["Throttle_Pedal"] / 255.
+    throttle_msg = cp_body.vl["Throttle"] if self.car_fingerprint not in HYBRID_CARS else cp_body.vl["Throttle_Hybrid"]
+    ret.gas = throttle_msg["Throttle_Pedal"] / 255.
 
     ret.gasPressed = ret.gas > 1e-5
     if self.car_fingerprint in PREGLOBAL_CARS:
@@ -51,7 +49,8 @@ class CarState(CarStateBase):
       ret.leftBlindspot = (cp.vl["BSD_RCTA"]["L_ADJACENT"] == 1) or (cp.vl["BSD_RCTA"]["L_APPROACHING"] == 1)
       ret.rightBlindspot = (cp.vl["BSD_RCTA"]["R_ADJACENT"] == 1) or (cp.vl["BSD_RCTA"]["R_APPROACHING"] == 1)
 
-    can_gear = int(cp.vl["Transmission"]["Gear"])
+    cp_transmission = cp_body if self.car_fingerprint in HYBRID_CARS else cp
+    can_gear = int(cp_transmission.vl["Transmission"]["Gear"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
     ret.steeringAngleDeg = cp.vl["Steering_Torque"]["Steering_Angle"]
@@ -103,11 +102,12 @@ class CarState(CarStateBase):
       cp_es_brake = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
       self.es_brake_msg = copy.copy(cp_es_brake.vl["ES_Brake"])
       cp_es_status = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
-      self.es_status_msg = copy.copy(cp_es_status.vl["ES_Status"])
-      self.cruise_control_msg = copy.copy(cp_cruise.vl["CruiseControl"])
-      self.brake_status_msg = copy.copy(cp_brakes.vl["Brake_Status"])
 
-    self.es_distance_msg = copy.copy(cp_es_distance.vl["ES_Distance"])
+      if self.car_fingerprint not in HYBRID_CARS:
+        self.es_status_msg = copy.copy(cp_es_status.vl["ES_Status"])
+        self.cruise_control_msg = copy.copy(cp_cruise.vl["CruiseControl"])
+        self.es_distance_msg = copy.copy(cp_es_distance.vl["ES_Distance"])
+
     self.es_dashstatus_msg = copy.copy(cp_cam.vl["ES_DashStatus"])
     if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
       self.es_infotainment_msg = copy.copy(cp_cam.vl["ES_Infotainment"])
@@ -117,7 +117,6 @@ class CarState(CarStateBase):
   @staticmethod
   def get_common_global_body_messages(CP):
     messages = [
-      ("CruiseControl", 20),
       ("Wheel_Speeds", 50),
       ("Brake_Status", 50),
     ]
@@ -128,13 +127,16 @@ class CarState(CarStateBase):
     return messages
 
   @staticmethod
-  def get_common_global_es_messages():
+  def get_common_global_es_messages(CP):
     messages = [
       ("ES_Brake", 20),
-      ("ES_Distance", 20),
-      ("ES_Status", 20),
-      ("ES_Brake", 20),
     ]
+
+    if CP.carFingerprint not in HYBRID_CARS:
+      messages.extend([
+        ("ES_Distance", 20),
+        ("ES_Status", 20)
+      ])
 
     return messages
 
@@ -145,18 +147,13 @@ class CarState(CarStateBase):
       ("Dashlights", 10),
       ("Steering_Torque", 50),
       ("BodyInfo", 1),
+      ("Brake_Pedal", 50),
     ]
 
     if CP.carFingerprint not in HYBRID_CARS:
       messages.extend([
         ("Throttle", 100),
-        ("Brake_Pedal", 50),
         ("Transmission", 100)
-      ])
-    else:
-      messages.extend([
-        ("Throttle_Hybrid", 50),
-        ("Brake_Hybrid", 40),
       ])
 
     if CP.enableBsm:
@@ -205,7 +202,7 @@ class CarState(CarStateBase):
       ]
 
       if CP.carFingerprint not in GLOBAL_GEN2:
-        messages += CarState.get_common_global_es_messages()
+        messages += CarState.get_common_global_es_messages(CP)
 
       if CP.flags & SubaruFlags.SEND_INFOTAINMENT:
         messages.append(("ES_Infotainment", 10))
@@ -218,10 +215,11 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint in GLOBAL_GEN2:
       messages = CarState.get_common_global_body_messages(CP)
-      messages += CarState.get_common_global_es_messages()
+      messages += CarState.get_common_global_es_messages(CP)
 
     if CP.carFingerprint in HYBRID_CARS:
       messages.extend([
+        ("Throttle_Hybrid", 40),
         ("Transmission", 100)
       ])
 

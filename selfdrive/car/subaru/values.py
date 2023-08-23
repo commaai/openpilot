@@ -331,9 +331,11 @@ FW_VERSIONS = {
   CAR.CROSSTREK_HYBRID: {
     (Ecu.abs, 0x7b0, None): [
       b'\xa2 \x19e\x01',
+      b'\xa2 !e\x01',
     ],
     (Ecu.eps, 0x746, None): [
       b'\x9a\xc2\x01\x00',
+      b'\n\xc2\x01\x00',
     ],
     (Ecu.fwdCamera, 0x787, None): [
       b'\x00\x00el\x1f@ #',
@@ -341,6 +343,7 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\xd7!`@\x07',
       b'\xd7!`p\a',
+      b'\xf4!`0\x07',
     ],
   },
   CAR.FORESTER: {
@@ -646,7 +649,7 @@ DBC = {
   CAR.FORESTER: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER_2022: dbc_dict('subaru_global_2017_generated', None),
   CAR.OUTBACK: dbc_dict('subaru_global_2017_generated', None),
-  CAR.CROSSTREK_HYBRID: dbc_dict('subaru_global_2017_generated', None),
+  CAR.CROSSTREK_HYBRID: dbc_dict('subaru_global_2020_hybrid_generated', None),
   CAR.OUTBACK_2023: dbc_dict('subaru_global_2017_generated', None),
   CAR.LEGACY: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER_PREGLOBAL: dbc_dict('subaru_forester_2017_generated', None),
