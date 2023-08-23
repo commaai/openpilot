@@ -81,9 +81,26 @@ class FwQueryConfig:
   # returns set of candidates. Only will match if one candidate is returned
   match_fw_to_car_fuzzy: Optional[Callable[[Dict[AddrType, Set[bytes]]], Set[str]]] = None
 
-  def __post_init__(self):
-    for i in range(len(self.requests)):
-      if self.requests[i].auxiliary:
-        new_request = copy.deepcopy(self.requests[i])
-        new_request.bus += 4
-        self.requests.append(new_request)
+  def get_requests(self, num_pandas: int):
+    requests = []
+    for request in self.requests:
+      # Except for bus 1 with obd_multiplexing enabled, offset bus to run on highest panda number available
+      new_request = copy.deepcopy(request)
+      if request.auxiliary:
+        if not request.obd_multiplexing or request.bus != 1:
+          new_request.bus += ((num_pandas - 1) * 4)
+      # new_request.bus = new_bus
+      # if request.bus <= num_pandas * 4 - 1:
+      #   new_request = copy.deepcopy(request)
+      #   if req
+      #   new_bus = new_request.bus + ((num_pandas - 1) * 4)
+
+      requests.append(new_request)
+    return requests
+
+  # def __post_init__(self):
+  #   for i in range(len(self.requests)):
+  #     if self.requests[i].auxiliary:
+  #       new_request = copy.deepcopy(self.requests[i])
+  #       new_request.bus += 4
+  #       self.requests.append(new_request)
