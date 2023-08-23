@@ -5,15 +5,15 @@ from abc import abstractmethod, ABC
 from typing import Any, Dict, Optional, Tuple, List, Callable
 
 from cereal import car
-from common.basedir import BASEDIR
-from common.conversions import Conversions as CV
-from common.kalman.simple_kalman import KF1D
-from common.numpy_fast import clip
-from common.realtime import DT_CTRL
-from selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, STD_CARGO_KG
-from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_friction
-from selfdrive.controls.lib.events import Events
-from selfdrive.controls.lib.vehicle_model import VehicleModel
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.conversions import Conversions as CV
+from openpilot.common.kalman.simple_kalman import KF1D
+from openpilot.common.numpy_fast import clip
+from openpilot.common.realtime import DT_CTRL
+from openpilot.selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, STD_CARGO_KG
+from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_friction
+from openpilot.selfdrive.controls.lib.events import Events
+from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 
 ButtonType = car.CarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter
@@ -441,7 +441,7 @@ def get_interface_attr(attr: str, combine_brands: bool = False, ignore_none: boo
   for car_folder in sorted([x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]):
     try:
       brand_name = car_folder.split('/')[-1]
-      brand_values = __import__(f'selfdrive.car.{brand_name}.values', fromlist=[attr])
+      brand_values = __import__(f'openpilot.selfdrive.car.{brand_name}.values', fromlist=[attr])
       if hasattr(brand_values, attr) or not ignore_none:
         attr_data = getattr(brand_values, attr, None)
       else:

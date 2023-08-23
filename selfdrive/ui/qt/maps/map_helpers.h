@@ -1,6 +1,8 @@
 #pragma once
 
 #include <optional>
+#include <string>
+#include <utility>
 #include <eigen3/Eigen/Dense>
 #include <QMapboxGL>
 #include <QGeoCoordinate>

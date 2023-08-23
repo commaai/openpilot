@@ -60,6 +60,13 @@ else:
     del libs[libs.index('SNPE')]
     del common_src[common_src.index('runners/snpemodel.cc')]
 
+onnxrunner_path = File("runners/onnx_runner.py").abspath
+transform_path = File("transforms/transform.cl").abspath
+loadyuv_path = File("transforms/loadyuv.cl").abspath
+lenv['CXXFLAGS'].append(f'-DTRANSFORM_PATH=\\"{transform_path}\\"')
+lenv['CXXFLAGS'].append(f'-DLOADYUV_PATH=\\"{loadyuv_path}\\"')
+lenv['CXXFLAGS'].append(f'-DONNXRUNNER_PATH=\\"{onnxrunner_path}\\"')
+
 common_model = lenv.Object(common_src)
 
 lenv.Program('_dmonitoringmodeld', [
