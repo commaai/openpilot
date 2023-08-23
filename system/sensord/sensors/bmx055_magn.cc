@@ -77,7 +77,7 @@ int BMX055_Magn::init() {
 
   // suspend -> sleep
   int ret = set_register(BMX055_MAGN_I2C_REG_PWR_0, 0x01);
-  if(ret < 0) {
+  if (ret < 0) {
     LOGE("Enabling power failed: %d", ret);
     goto fail;
   }
@@ -90,21 +90,21 @@ int BMX055_Magn::init() {
 
   // Load magnetometer trim
   ret = read_register(BMX055_MAGN_I2C_REG_DIG_X1, trim_x1y1, 2);
-  if(ret < 0) goto fail;
+  if (ret < 0) goto fail;
   ret = read_register(BMX055_MAGN_I2C_REG_DIG_X2, trim_x2y2, 2);
-  if(ret < 0) goto fail;
+  if (ret < 0) goto fail;
   ret = read_register(BMX055_MAGN_I2C_REG_DIG_XY2, trim_xy1xy2, 2);
-  if(ret < 0) goto fail;
+  if (ret < 0) goto fail;
   ret = read_register(BMX055_MAGN_I2C_REG_DIG_Z1_LSB, trim_z1, 2);
-  if(ret < 0) goto fail;
+  if (ret < 0) goto fail;
   ret = read_register(BMX055_MAGN_I2C_REG_DIG_Z2_LSB, trim_z2, 2);
-  if(ret < 0) goto fail;
+  if (ret < 0) goto fail;
   ret = read_register(BMX055_MAGN_I2C_REG_DIG_Z3_LSB, trim_z3, 2);
-  if(ret < 0) goto fail;
+  if (ret < 0) goto fail;
   ret = read_register(BMX055_MAGN_I2C_REG_DIG_Z4_LSB, trim_z4, 2);
-  if(ret < 0) goto fail;
+  if (ret < 0) goto fail;
   ret = read_register(BMX055_MAGN_I2C_REG_DIG_XYZ1_LSB, trim_xyz1, 2);
-  if(ret < 0) goto fail;
+  if (ret < 0) goto fail;
 
   // Read trim data
   trim_data.dig_x1 = trim_x1y1[0];
