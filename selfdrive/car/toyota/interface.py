@@ -219,8 +219,12 @@ class CarInterface(CarInterfaceBase):
     # since we don't yet parse radar on TSS2 radar-based ACC cars, gate longitudinal behind experimental toggle
     use_sdsu = bool(ret.flags & ToyotaFlags.SMART_DSU)
     if candidate in RADAR_ACC_CAR:
-      ret.experimentalLongitudinalAvailable = use_sdsu
-      use_sdsu = use_sdsu and experimental_long
+      ret.experimentalLongitudinalAvailable = True  # use_sdsu  # always alpha long if radar acc car (sdsu or radar disable)
+      if not experimental_long:
+        use_sdsu = False
+      else:
+        if not use_sdsu:
+          ret.flags |= ToyotaFlags.DISABLE_RADAR.value
 
     # openpilot longitudinal enabled by default:
     #  - non-(TSS2 radar ACC cars) w/ smartDSU installed
