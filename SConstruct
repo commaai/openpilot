@@ -1,5 +1,4 @@
 import os
-import shutil
 import subprocess
 import sys
 import sysconfig
@@ -335,18 +334,6 @@ qt_flags = [
 qt_env['CXXFLAGS'] += qt_flags
 qt_env['LIBPATH'] += ['#selfdrive/ui']
 qt_env['LIBS'] = qt_libs
-
-# Have to respect cache-readonly
-if GetOption('cache_readonly'):
-  local_moc_files_dir = Dir("#.moc_files").abspath
-  cache_moc_files_dir = cache_dir + "/moc_files"
-  if os.path.exists(local_moc_files_dir):
-    shutil.rmtree(local_moc_files_dir)
-  if os.path.exists(cache_moc_files_dir):
-    shutil.copytree(cache_moc_files_dir, local_moc_files_dir)
-  qt_env['QT3_MOCHPREFIX'] = local_moc_files_dir + "/moc_"
-else:
-  qt_env['QT3_MOCHPREFIX'] = cache_dir + '/moc_files/moc_'
 
 if GetOption("clazy"):
   checks = [
