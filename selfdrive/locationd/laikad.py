@@ -24,6 +24,7 @@ from openpilot.selfdrive.locationd.models.constants import GENERATED_DIR, Observ
 from openpilot.selfdrive.locationd.models.gnss_kf import GNSSKalman
 from openpilot.selfdrive.locationd.models.gnss_kf import States as GStates
 from openpilot.system.swaglog import cloudlog
+from openpilot.common.file_helpers import mkdirs_exists_ok
 
 MAX_TIME_GAP = 10
 EPHEMERIS_CACHE = 'LaikadEphemerisV3'
@@ -81,6 +82,7 @@ class Laikad:
     valid_ephem_types: Valid ephemeris types to be used by AstroDog
     save_ephemeris: If true saves and loads nav and orbit ephemeris to cache.
     """
+    mkdirs_exists_ok(DOWNLOADS_CACHE_FOLDER)
     self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types,
                               clear_old_ephemeris=True, cache_dir=DOWNLOADS_CACHE_FOLDER)
     self.gnss_kf = GNSSKalman(GENERATED_DIR, cython=True, erratic_clock=use_qcom)
