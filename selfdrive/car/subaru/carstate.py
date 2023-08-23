@@ -6,6 +6,7 @@ from openpilot.selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus, SubaruFlags
 from openpilot.selfdrive.car import CanSignalRateCalculator
+from selfdrive.car.subaru.values import HYBRID_CARS
 
 
 class CarState(CarStateBase):
@@ -19,7 +20,11 @@ class CarState(CarStateBase):
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
 
-    ret.gas = cp.vl["Throttle"]["Throttle_Pedal"] / 255.
+    if self.car_fingerprint in HYBRID_CARS:
+      ret.gas = cp_body.vl["Throttle_Hybrid"]["Throttle_Pedal"] / 255.
+    else:
+      ret.gas = cp.vl["Throttle"]["Throttle_Pedal"] / 255.
+
     ret.gasPressed = ret.gas > 1e-5
     if self.car_fingerprint in PREGLOBAL_CARS:
       ret.brakePressed = cp.vl["Brake_Pedal"]["Brake_Pedal"] > 2
@@ -106,12 +111,15 @@ class CarState(CarStateBase):
     return ret
 
   @staticmethod
-  def get_common_global_body_messages():
+  def get_common_global_body_messages(CP):
     messages = [
       ("CruiseControl", 20),
       ("Wheel_Speeds", 50),
       ("Brake_Status", 50),
     ]
+
+    if CP.carFingerprint not in HYBRID_CARS:
+      messages.append(("CruiseControl", 20))
 
     return messages
 
@@ -130,20 +138,29 @@ class CarState(CarStateBase):
   def get_can_parser(CP):
     messages = [
       # sig_address, frequency
-      ("Throttle", 100),
       ("Dashlights", 10),
-      ("Brake_Pedal", 50),
-      ("Transmission", 100),
       ("Steering_Torque", 50),
       ("BodyInfo", 1),
     ]
+
+    if CP.carFingerprint not in HYBRID_CARS:
+      messages.extend([
+        ("Throttle", 100),
+        ("Brake_Pedal", 50),
+        ("Transmission", 100)
+      ])
+    else:
+      messages.extend([
+        ("Throttle_Hybrid", 50),
+        ("Brake_Hybrid", 40),
+      ])
 
     if CP.enableBsm:
       messages.append(("BSD_RCTA", 17))
 
     if CP.carFingerprint not in PREGLOBAL_CARS:
       if CP.carFingerprint not in GLOBAL_GEN2:
-        messages += CarState.get_common_global_body_messages()
+        messages += CarState.get_common_global_body_messages(CP)
 
       messages += [
         ("Dashlights", 10),
@@ -193,9 +210,16 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_body_can_parser(CP):
+    messages = []
+
     if CP.carFingerprint in GLOBAL_GEN2:
       messages = CarState.get_common_global_body_messages()
       messages += CarState.get_common_global_es_messages()
-      return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus.alt)
 
-    return None
+    if CP.carFingerprint in HYBRID_CARS:
+      messages.extend([
+        ("Transmission", 100)
+      ])
+
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus.alt)
+

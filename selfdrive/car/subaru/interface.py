@@ -12,6 +12,7 @@ class CarInterface(CarInterfaceBase):
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "subaru"
     ret.radarUnavailable = True
+    # HYBRID_CARS and LKAS_ANGLE need a new cruise_activated bit, and panda safety setup to un-dashcam
     ret.dashcamOnly = candidate in (PREGLOBAL_CARS | LKAS_ANGLE | HYBRID_CARS)
     ret.autoResumeSng = False
 
