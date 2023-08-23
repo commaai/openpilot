@@ -161,7 +161,7 @@ void testrun(char* modelfile) {
   const auto &inputShape = *inputDims_opt;
   std::cout << "winkwink" << std::endl;
 
-  for (int i=0;i<10000;i++) {
+  for (int i=0; i<10000; i++) {
     std::unique_ptr<zdl::DlSystem::ITensor> input;
     input = zdl::SNPE::SNPEFactory::getTensorFactory().createTensor(inputShape);
     get_testframe(i,input);
