@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 from cereal import car
-from system.swaglog import cloudlog
+from openpilot.system.swaglog import cloudlog
 import cereal.messaging as messaging
-from selfdrive.car import get_safety_config
-from selfdrive.car.interfaces import CarInterfaceBase
+from openpilot.selfdrive.car import get_safety_config
+from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 
 # mocked car interface to work with chffrplus
@@ -26,8 +26,6 @@ class CarInterface(CarInterfaceBase):
     ret.wheelbase = 2.70
     ret.centerToFront = ret.wheelbase * 0.5
     ret.steerRatio = 13.  # reasonable
-    ret.tireStiffnessFront = 1e6    # very stiff to neglect slip
-    ret.tireStiffnessRear = 1e6     # very stiff to neglect slip
 
     return ret
 

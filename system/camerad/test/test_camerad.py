@@ -7,8 +7,8 @@ from collections import defaultdict
 import cereal.messaging as messaging
 from cereal import log
 from cereal.services import service_list
-from selfdrive.manager.process_config import managed_processes
-from system.hardware import TICI
+from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.hardware import TICI
 
 TEST_TIMESPAN = 30
 LAG_FRAME_TOLERANCE = {log.FrameData.ImageSensor.ar0231: 0.5, # ARs use synced pulses for frame starts

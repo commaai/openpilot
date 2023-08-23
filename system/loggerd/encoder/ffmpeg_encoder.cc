@@ -40,8 +40,6 @@ FfmpegEncoder::FfmpegEncoder(const EncoderInfo &encoder_info, int in_width, int 
   if (in_width != encoder_info.frame_width || in_height != encoder_info.frame_height) {
     downscale_buf.resize(encoder_info.frame_width * encoder_info.frame_height * 3 / 2);
   }
-
-  publisher_init();
 }
 
 FfmpegEncoder::~FfmpegEncoder() {

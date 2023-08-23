@@ -6,8 +6,8 @@ import time
 import unittest
 
 import cereal.messaging as messaging
-from selfdrive.manager.process_config import managed_processes
-from system.swaglog import cloudlog, SWAGLOG_DIR
+from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.swaglog import cloudlog, SWAGLOG_DIR
 
 
 class TestLogmessaged(unittest.TestCase):

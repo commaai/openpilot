@@ -1,10 +1,7 @@
-#include <cassert>
 #include "system/loggerd/encoder/encoder.h"
 
-VideoEncoder::~VideoEncoder() {}
-
-void VideoEncoder::publisher_init() {
-  // publish
+VideoEncoder::VideoEncoder(const EncoderInfo &encoder_info, int in_width, int in_height)
+    : encoder_info(encoder_info), in_width(in_width), in_height(in_height) {
   pm.reset(new PubMaster({encoder_info.publish_name}));
 }
 

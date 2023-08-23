@@ -44,6 +44,7 @@ namespace util {
 void set_thread_name(const char* name);
 int set_realtime_priority(int level);
 int set_core_affinity(std::vector<int> cores);
+int set_file_descriptor_limit(uint64_t limit);
 
 // ***** Time helpers *****
 struct tm get_time();
@@ -75,10 +76,13 @@ int getenv(const char* key, int default_val);
 float getenv(const char* key, float default_val);
 
 std::string hexdump(const uint8_t* in, const size_t size);
-std::string random_string(std::string::size_type length);
 std::string dir_name(std::string const& path);
 
-// **** file fhelpers *****
+// ***** random helpers *****
+int random_int(int min, int max);
+std::string random_string(std::string::size_type length);
+
+// **** file helpers *****
 std::string read_file(const std::string& fn);
 std::map<std::string, std::string> read_files_in_dir(const std::string& path);
 int write_file(const char* path, const void* data, size_t size, int flags = O_WRONLY, mode_t mode = 0664);

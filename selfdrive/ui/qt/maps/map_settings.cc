@@ -7,13 +7,9 @@
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
-static QString shorten(const QString &str, int max_len) {
-  return str.size() > max_len ? str.left(max_len).trimmed() + "…" : str;
-}
-
 MapSettings::MapSettings(bool closeable, QWidget *parent) : QFrame(parent) {
-  close_icon = loadPixmap("../assets/icons/close.svg", {100, 100});
   setContentsMargins(0, 0, 0, 0);
+  setAttribute(Qt::WA_NoMousePropagation);
 
   auto *frame = new QVBoxLayout(this);
   frame->setContentsMargins(40, 40, 40, 0);
@@ -91,11 +87,6 @@ MapSettings::MapSettings(bool closeable, QWidget *parent) : QFrame(parent) {
   QObject::connect(NavigationRequest::instance(), &NavigationRequest::nextDestinationUpdated, this, &MapSettings::updateCurrentRoute);
 
   current_locations = NavigationRequest::instance()->currentLocations();
-}
-
-void MapSettings::mousePressEvent(QMouseEvent *ev) {
-  // Prevent mouse event from propagating up
-  ev->accept();
 }
 
 void MapSettings::showEvent(QShowEvent *event) {
@@ -253,9 +244,8 @@ void DestinationWidget::set(const QJsonObject &destination, bool current) {
 
   icon->setPixmap(icon_pixmap);
 
-  // TODO: onroad and offroad have different dimensions
-  title->setText(shorten(title_text, 26));
-  subtitle->setText(shorten(subtitle_text, 26));
+  title->setText(title_text);
+  subtitle->setText(subtitle_text);
   subtitle->setVisible(true);
 
   // TODO: use pixmap

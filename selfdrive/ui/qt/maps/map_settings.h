@@ -50,7 +50,6 @@ public:
   void updateCurrentRoute();
 
 private:
-  void mousePressEvent(QMouseEvent *ev) override;
   void showEvent(QShowEvent *event) override;
   void refresh();
 
@@ -62,7 +61,6 @@ private:
   DestinationWidget *home_widget;
   DestinationWidget *work_widget;
   std::vector<DestinationWidget *> widgets;
-  QPixmap close_icon;
 
 signals:
   void closeSettings();

@@ -2,9 +2,9 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Union
 
 from cereal import car
-from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from openpilot.selfdrive.car import dbc_dict
+from openpilot.selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
 
@@ -88,6 +88,7 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'PX2G-188K2-H\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PX2H-188K2-H\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'PX2H-188K2-J\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PX85-188K2-E\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'SH54-188K2-D\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PXFG-188K2-C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -105,6 +106,7 @@ FW_VERSIONS = {
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'PYB2-21PS1-H\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'PYB2-21PS1-J\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'SH51-21PS1-C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PXDL-21PS1-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PXFG-21PS1-A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',

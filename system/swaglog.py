@@ -1,13 +1,14 @@
 import logging
 import os
 import time
+import warnings
 from pathlib import Path
 from logging.handlers import BaseRotatingHandler
 
 import zmq
 
-from common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
-from system.hardware import PC
+from openpilot.common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
+from openpilot.system.hardware import PC
 
 if PC:
   SWAGLOG_DIR = os.path.join(str(Path.home()), ".comma", "log")
@@ -90,6 +91,8 @@ class UnixDomainSocketHandler(logging.Handler):
 
   def emit(self, record):
     if os.getpid() != self.pid:
+      # TODO suppresses warning about forking proc with zmq socket, fix root cause
+      warnings.filterwarnings("ignore", category=ResourceWarning, message="unclosed.*<zmq.*>")
       self.connect()
 
     msg = self.format(record).rstrip('\n')

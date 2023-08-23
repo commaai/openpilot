@@ -3,8 +3,8 @@ from collections import defaultdict
 from functools import partial
 
 import cereal.messaging as messaging
-from system.swaglog import cloudlog
-from selfdrive.boardd.boardd import can_list_to_can_capnp
+from openpilot.system.swaglog import cloudlog
+from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_addr_for_tx_addr
 
 
@@ -115,7 +115,13 @@ class IsoTpParallelQuery:
           addrs_responded.add(tx_addr)
           response_timeouts[tx_addr] = time.monotonic() + timeout
 
-        if not dat:
+        if dat is None:
+          continue
+
+        # Log unexpected empty responses
+        if len(dat) == 0:
+          cloudlog.error(f"iso-tp query empty response: {tx_addr}")
+          request_done[tx_addr] = True
           continue
 
         counter = request_counter[tx_addr]

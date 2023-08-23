@@ -7,11 +7,12 @@ from parameterized import parameterized
 import threading
 
 from cereal import car
-from common.params import Params
-from selfdrive.car.car_helpers import interfaces
-from selfdrive.car.fingerprints import FW_VERSIONS
-from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, match_fw_to_car, get_fw_versions, get_present_ecus
-from selfdrive.car.vin import get_vin
+from openpilot.common.params import Params
+from openpilot.selfdrive.car.car_helpers import interfaces
+from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
+from openpilot.selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, \
+                                                match_fw_to_car, get_fw_versions, get_present_ecus
+from openpilot.selfdrive.car.vin import get_vin
 
 CarFw = car.CarParams.CarFw
 Ecu = car.CarParams.Ecu
@@ -220,17 +221,17 @@ class TestFwFingerprintTiming(unittest.TestCase):
     print(f'get_vin, query time={vin_time / self.N} seconds')
 
   def test_fw_query_timing(self):
-    total_ref_time = 6.1
+    total_ref_time = 6.2
     brand_ref_times = {
       1: {
         'body': 0.1,
         'chrysler': 0.3,
-        'ford': 0.3,
+        'ford': 0.2,
         'honda': 0.5,
         'hyundai': 0.7,
         'mazda': 0.2,
-        'nissan': 0.9,
-        'subaru': 0.1,
+        'nissan': 0.4,
+        'subaru': 0.2,
         'tesla': 0.2,
         'toyota': 1.6,
         'volkswagen': 0.2,
