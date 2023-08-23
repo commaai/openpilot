@@ -115,7 +115,7 @@ public:
 #ifndef __APPLE__
     std::signal(SIGPWR, (sighandler_t)set_do_exit);
 #endif
-  };
+  }
   inline static std::atomic<bool> power_failure = false;
   inline static std::atomic<int> signal = 0;
   inline operator bool() { return do_exit; }

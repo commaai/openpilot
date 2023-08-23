@@ -194,7 +194,7 @@ static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
   unconditional_wait->delay = delay_ms;
   unconditional_wait->op_code = CAMERA_SENSOR_WAIT_OP_SW_UCND;
   return (struct cam_cmd_power *)(unconditional_wait + 1);
-};
+}
 
 int CameraState::sensors_init() {
   uint32_t cam_packet_handle = 0;
