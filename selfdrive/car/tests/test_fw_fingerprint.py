@@ -225,7 +225,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
     print(f'get_vin, query time={vin_time / self.N} seconds')
 
   def test_fw_query_timing(self):
-    total_ref_time = 6.2
+    total_ref_time = 5.6
     brand_ref_times = {
       1: {
         'body': 0.1,
@@ -241,8 +241,8 @@ class TestFwFingerprintTiming(unittest.TestCase):
         'volkswagen': 0.2,
       },
       2: {
-        'ford': 0.4,
-        'hyundai': 1.1,
+        'ford': 0.3,
+        'hyundai': 0.7,
       }
     }
 
@@ -250,7 +250,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
     for num_pandas in (1, 2):
       for brand, config in FW_QUERY_CONFIGS.items():
         with self.subTest(brand=brand, num_pandas=num_pandas):
-          multi_panda_requests = [r for r in config.requests if r.bus > 3]
+          multi_panda_requests = [r for r in config.get_requests(2) if r.bus > 3]
           if not len(multi_panda_requests) and num_pandas > 1:
             raise unittest.SkipTest("No multi-panda FW queries")
 
