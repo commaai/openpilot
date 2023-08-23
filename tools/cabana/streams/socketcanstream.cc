@@ -84,7 +84,7 @@ OpenSocketCanWidget::OpenSocketCanWidget(AbstractStream **stream) : AbstractOpen
   QPushButton *refresh = new QPushButton(tr("Refresh"));
   refresh->setFixedWidth(100);
   device_layout->addWidget(refresh);
-  form_layout->addRow(tr("Serial"), device_layout);
+  form_layout->addRow(tr("Device"), device_layout);
   main_layout->addLayout(form_layout);
 
   main_layout->addStretch(1);
