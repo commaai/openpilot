@@ -89,18 +89,6 @@ class FwQueryConfig:
       if request.auxiliary:
         if not request.obd_multiplexing or request.bus != 1:
           new_request.bus += ((num_pandas - 1) * 4)
-      # new_request.bus = new_bus
-      # if request.bus <= num_pandas * 4 - 1:
-      #   new_request = copy.deepcopy(request)
-      #   if req
-      #   new_bus = new_request.bus + ((num_pandas - 1) * 4)
 
       requests.append(new_request)
     return requests
-
-  # def __post_init__(self):
-  #   for i in range(len(self.requests)):
-  #     if self.requests[i].auxiliary:
-  #       new_request = copy.deepcopy(self.requests[i])
-  #       new_request.bus += 4
-  #       self.requests.append(new_request)
