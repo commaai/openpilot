@@ -207,8 +207,7 @@ class CarInterface(CarInterfaceBase):
 
     # No radar dbc for cars without DSU which are not TSS 2.0
     # TODO: make an adas dbc file for dsu-less models
-    # ret.radarUnavailable = DBC[candidate]['radar'] is None or candidate in (NO_DSU_CAR - TSS2_CAR)
-    ret.radarUnavailable = True
+    ret.radarUnavailable = DBC[candidate]['radar'] is None or candidate in (NO_DSU_CAR - TSS2_CAR)
 
     # In TSS2 cars, the camera does long control
     found_ecus = [fw.ecu for fw in car_fw]
@@ -220,7 +219,7 @@ class CarInterface(CarInterfaceBase):
     # since we don't yet parse radar on TSS2 radar-based ACC cars, gate longitudinal behind experimental toggle
     use_sdsu = bool(ret.flags & ToyotaFlags.SMART_DSU)
     if candidate in RADAR_ACC_CAR:
-      ret.experimentalLongitudinalAvailable = True  # use_sdsu
+      ret.experimentalLongitudinalAvailable = True
 
       if not use_sdsu:
         if experimental_long:
