@@ -177,10 +177,10 @@ def thermald_thread(end_event, hw_queue) -> None:
   startup_conditions: Dict[str, bool] = {}
   startup_conditions_prev: Dict[str, bool] = {}
 
-  off_ts = None
-  started_ts = None
+  off_ts: None | float = None
+  started_ts: None | float = None
   started_seen = False
-  startup_blocked_ts = None
+  startup_blocked_ts: float | None = None
   thermal_status = ThermalStatus.yellow
 
   last_hw_state = HardwareState(
@@ -273,7 +273,16 @@ def thermald_thread(end_event, hw_queue) -> None:
     if fan_controller is not None:
       msg.deviceState.fanSpeedPercentDesired = fan_controller.update(all_comp_temp, onroad_conditions["ignition"])
 
-    is_offroad_for_5_min = (started_ts is None) and ((not started_seen) or (off_ts is None) or (time.monotonic() - off_ts > 60 * 5))
+    is_offroad_for_5_min = False
+    if started_ts is not None:
+      is_offroad_for_5_min = False
+    else:
+      if (not started_seen) or (off_ts is None) or (time.monotonic() - off_ts > 60 * 5):
+        is_offroad_for_5_min = True
+
+    # is_offroad_for_5_min = (started_ts is None) and ((not started_seen) or (off_ts is None) or (time.monotonic() - off_ts > 60 * 5))
+    # if started_seen and off_ts is not None:
+    #   print('hi')
     if is_offroad_for_5_min and offroad_comp_temp > OFFROAD_DANGER_TEMP:
       # if device is offroad and already hot without the extra onroad load,
       # we want to cool down first before increasing load
