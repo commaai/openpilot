@@ -49,9 +49,7 @@ def get_brand_addrs() -> Dict[str, Set[AddrType]]:
   brand_addrs: DefaultDict[str, Set[AddrType]] = defaultdict(set)
   for brand, cars in VERSIONS.items():
     # Add ecus in database + extra ecus to match against
-    brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in FW_QUERY_CONFIGS[brand].extra_ecus}
-    for fw in cars.values():
-      brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in fw.keys()}
+    brand_addrs[brand] = {(addr, sub_addr) for _, addr, sub_addr in FW_QUERY_CONFIGS[brand].get_all_addrs(cars)}
   return dict(brand_addrs)
 
 
