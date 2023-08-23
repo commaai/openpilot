@@ -117,28 +117,19 @@ PairingPopup::PairingPopup(QWidget *parent) : QDialogBase(parent) {
 }
 
 
-PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QFrame(parent) {
+PrimeUserWidget::PrimeUserWidget(QWidget *parent) : QFrame(parent) {
+  setObjectName("primeWidget");
   QVBoxLayout *mainLayout = new QVBoxLayout(this);
-  mainLayout->setContentsMargins(0, 0, 0, 0);
-  mainLayout->setSpacing(30);
-
-  // subscribed prime layout
-  QWidget *primeWidget = new QWidget;
-  primeWidget->setObjectName("primeWidget");
-  QVBoxLayout *primeLayout = new QVBoxLayout(primeWidget);
-  primeLayout->setContentsMargins(56, 40, 56, 40);
-  primeLayout->setSpacing(20);
+  mainLayout->setContentsMargins(56, 40, 56, 40);
+  mainLayout->setSpacing(20);
 
   QLabel *subscribed = new QLabel(tr("✓ SUBSCRIBED"));
   subscribed->setStyleSheet("font-size: 41px; font-weight: bold; color: #86FF4E;");
-  primeLayout->addWidget(subscribed);
+  mainLayout->addWidget(subscribed);
 
   QLabel *commaPrime = new QLabel(tr("comma prime"));
   commaPrime->setStyleSheet("font-size: 75px; font-weight: bold;");
-  primeLayout->addWidget(commaPrime);
-
-  mainLayout->addWidget(primeWidget);
-  mainLayout->addStretch();
+  mainLayout->addWidget(commaPrime);
 }
 
 
