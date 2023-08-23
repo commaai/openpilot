@@ -71,7 +71,7 @@ def get_irq_count(irq: int):
 
 def read_sensor_events(duration_sec):
   sensor_types = ['accelerometer', 'gyroscope', 'magnetometer', 'accelerometer2',
-                  'gyroscope2', 'temperatureSensor']
+                  'gyroscope2', 'temperatureSensor', 'temperatureSensor2']
   esocks = {}
   events = defaultdict(list)
   for stype in sensor_types:

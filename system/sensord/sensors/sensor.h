@@ -5,6 +5,7 @@
 class Sensor {
 public:
   int gpio_fd = -1;
+  uint64_t start_ts = 0;
   uint64_t init_delay = 500e6; // default dealy 500ms
   virtual ~Sensor() {}
   virtual int init() = 0;
@@ -12,7 +13,10 @@ public:
   virtual bool has_interrupt_enabled() = 0;
   virtual int shutdown() = 0;
 
-  virtual bool is_data_valid(uint64_t st, uint64_t ct) {
-    return (ct - st) > init_delay;
+  virtual bool is_data_valid(uint64_t current_ts) {
+    if (start_ts == 0) {
+      start_ts = current_ts;
+    }
+    return (current_ts - start_ts) > init_delay;
   }
 };
