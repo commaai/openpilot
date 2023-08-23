@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import unittest
-from common.params import Params
+from openpilot.common.params import Params
 from cereal import log
 
-from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import desired_follow_distance, get_T_FOLLOW
-from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
+from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import desired_follow_distance, get_T_FOLLOW
+from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
 
 def run_following_distance_simulation(v_lead, t_end=100.0, e2e=False):

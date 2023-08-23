@@ -3,12 +3,12 @@ from cereal import car
 from math import fabs, exp
 from panda import Panda
 
-from common.conversions import Conversions as CV
-from selfdrive.car import create_button_event, get_safety_config
-from selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
-from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus
-from selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD
-from selfdrive.controls.lib.drive_helpers import get_friction
+from openpilot.common.conversions import Conversions as CV
+from openpilot.selfdrive.car import create_button_event, get_safety_config
+from openpilot.selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
+from openpilot.selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus
+from openpilot.selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD
+from openpilot.selfdrive.controls.lib.drive_helpers import get_friction
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -21,7 +21,8 @@ BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.D
 
 NON_LINEAR_TORQUE_PARAMS = {
   CAR.BOLT_EUV: [2.6531724862969748, 1.0, 0.1919764879840985, 0.009054123646805178],
-  CAR.ACADIA: [4.78003305, 1.0, 0.3122, 0.05591772]
+  CAR.ACADIA: [4.78003305, 1.0, 0.3122, 0.05591772],
+  CAR.SILVERADO: [3.29974374, 1.0, 0.25571356, 0.0465122]
 }
 
 

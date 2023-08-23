@@ -7,10 +7,10 @@ import capnp
 
 import cereal.messaging as messaging
 from cereal.services import service_list
-from common.params import Params
-from common.transformations.coordinates import ecef2geodetic
+from openpilot.common.params import Params
+from openpilot.common.transformations.coordinates import ecef2geodetic
 
-from selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.manager.process_config import managed_processes
 
 
 class TestLocationdProc(unittest.TestCase):

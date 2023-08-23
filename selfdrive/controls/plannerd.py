@@ -2,12 +2,12 @@
 import os
 import numpy as np
 from cereal import car
-from common.params import Params
-from common.realtime import Priority, config_realtime_process
-from system.swaglog import cloudlog
-from selfdrive.modeld.constants import T_IDXS
-from selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
-from selfdrive.controls.lib.lateral_planner import LateralPlanner
+from openpilot.common.params import Params
+from openpilot.common.realtime import Priority, config_realtime_process
+from openpilot.system.swaglog import cloudlog
+from openpilot.selfdrive.modeld.constants import T_IDXS
+from openpilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
+from openpilot.selfdrive.controls.lib.lateral_planner import LateralPlanner
 import cereal.messaging as messaging
 
 def cumtrapz(x, t):

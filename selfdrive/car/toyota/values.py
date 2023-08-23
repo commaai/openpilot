@@ -4,10 +4,10 @@ from enum import Enum, IntFlag
 from typing import Dict, List, Union
 
 from cereal import car
-from common.conversions import Conversions as CV
-from selfdrive.car import AngleRateLimit, dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, CarParts, CarHarness
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from openpilot.common.conversions import Conversions as CV
+from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
+from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, CarParts, CarHarness
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
 MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
@@ -42,6 +42,7 @@ class CarControllerParams:
 class ToyotaFlags(IntFlag):
   HYBRID = 1
   SMART_DSU = 2
+  DISABLE_RADAR = 4
 
 
 class CAR:
