@@ -168,6 +168,10 @@ class TestFwFingerprint(unittest.TestCase):
         for request_obj in config.requests:
           self.assertEqual(len(request_obj.request), len(request_obj.response))
 
+          # No request on the OBD port (bus 1, multiplexed) should be run in an aux panda
+          self.assertFalse(request_obj.auxiliary and request_obj.bus == 1 and request_obj.obd_multiplexing,
+                           f"{brand.title()}: OBD multiplexed request is marked auxiliary: {request_obj}")
+
 
 class TestFwFingerprintTiming(unittest.TestCase):
   N: int = 5
