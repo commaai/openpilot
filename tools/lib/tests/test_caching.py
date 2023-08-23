@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 import os
+import sys
 import shutil
 import unittest
 
 os.environ["COMMA_CACHE"] = "/tmp/__test_cache__"
+
+if "openpilot.tools.lib.url_file" in sys.modules:
+  del sys.modules["openpilot.tools.lib.url_file"]
+
 from openpilot.tools.lib.url_file import URLFile, CACHE_DIR
 
 
