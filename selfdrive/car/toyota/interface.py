@@ -2,9 +2,11 @@
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
 from panda import Panda
+from panda.python import uds
 from openpilot.selfdrive.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
                                         MIN_ACC_SPEED, EPS_SCALE, EV_HYBRID_CAR, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR
 from openpilot.selfdrive.car import get_safety_config
+from openpilot.selfdrive.car.disable_ecu import disable_ecu
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 EventName = car.CarEvent.EventName
@@ -218,7 +220,12 @@ class CarInterface(CarInterfaceBase):
     use_sdsu = bool(ret.flags & ToyotaFlags.SMART_DSU)
     if candidate in RADAR_ACC_CAR:
       ret.experimentalLongitudinalAvailable = use_sdsu
-      use_sdsu = use_sdsu and experimental_long
+
+      if not use_sdsu:
+        if experimental_long and False:  # TODO: disabling radar isn't supported yet
+          ret.flags |= ToyotaFlags.DISABLE_RADAR.value
+      else:
+        use_sdsu = use_sdsu and experimental_long
 
     # openpilot longitudinal enabled by default:
     #  - non-(TSS2 radar ACC cars) w/ smartDSU installed
@@ -226,7 +233,8 @@ class CarInterface(CarInterfaceBase):
     #  - TSS2 cars with camera sending ACC_CONTROL where we can block it
     # openpilot longitudinal behind experimental long toggle:
     #  - TSS2 radar ACC cars w/ smartDSU installed
-    ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
+    #  - TSS2 radar ACC cars w/o smartDSU installed (disables radar)
+    ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR) or bool(ret.flags & ToyotaFlags.DISABLE_RADAR.value)
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
 
     if not ret.openpilotLongitudinalControl:
@@ -260,6 +268,13 @@ class CarInterface(CarInterfaceBase):
       tune.kiV = [0.54, 0.36]
 
     return ret
+
+  @staticmethod
+  def init(CP, logcan, sendcan):
+    # disable radar if alpha longitudinal toggled on radar-ACC car without CAN filter/smartDSU
+    if CP.flags & ToyotaFlags.DISABLE_RADAR.value:
+      communication_control = bytes([uds.SERVICE_TYPE.COMMUNICATION_CONTROL, uds.CONTROL_TYPE.ENABLE_RX_DISABLE_TX, uds.MESSAGE_TYPE.NORMAL])
+      disable_ecu(logcan, sendcan, bus=0, addr=0x750, sub_addr=0xf, com_cont_req=communication_control)
 
   # returns a car.CarState
   def _update(self, c):
