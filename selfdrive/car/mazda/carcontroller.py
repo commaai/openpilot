@@ -1,9 +1,9 @@
 from cereal import car
 from selfdrive.car import apply_driver_steer_torque_limits
-from selfdrive.car.interfaces import CarControllerBase
-from selfdrive.car.mazda import mazdacan
+from openpilot.selfdrive.car.interfaces import CarControllerBase
+from openpilot.selfdrive.car.mazda import mazdacan
 from selfdrive.car.mazda.carstate import CarState
-from selfdrive.car.mazda.values import CarControllerParams, Buttons
+from openpilot.selfdrive.car.mazda.values import CarControllerParams, Buttons
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 

@@ -2,7 +2,7 @@
 from cereal import car
 import unittest
 
-from selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, FW_VERSIONS
+from openpilot.selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, FW_VERSIONS
 
 Ecu = car.CarParams.Ecu
 

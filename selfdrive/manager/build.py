@@ -5,17 +5,17 @@ import textwrap
 from pathlib import Path
 
 # NOTE: Do NOT import anything here that needs be built (e.g. params)
-from common.basedir import BASEDIR
-from common.spinner import Spinner
-from common.text_window import TextWindow
-from system.hardware import AGNOS
-from system.swaglog import cloudlog, add_file_handler
-from system.version import is_dirty
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.spinner import Spinner
+from openpilot.common.text_window import TextWindow
+from openpilot.system.hardware import AGNOS
+from openpilot.system.swaglog import cloudlog, add_file_handler
+from openpilot.system.version import is_dirty
 
 MAX_CACHE_SIZE = 4e9 if "CI" in os.environ else 2e9
 CACHE_DIR = Path("/data/scons_cache" if AGNOS else "/tmp/scons_cache")
 
-TOTAL_SCONS_NODES = 2460
+TOTAL_SCONS_NODES = 2560
 MAX_BUILD_PROGRESS = 100
 PREBUILT = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 

@@ -2,6 +2,7 @@
 
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <sys/resource.h>
 #include <dirent.h>
 
 #include <cassert>
@@ -58,6 +59,20 @@ int set_core_affinity(std::vector<int> cores) {
 #else
   return -1;
 #endif
+}
+
+int set_file_descriptor_limit(uint64_t limit_val) {
+  struct rlimit limit;
+  int status;
+
+  if ((status = getrlimit(RLIMIT_NOFILE, &limit)) < 0)
+    return status;
+
+  limit.rlim_cur = limit_val;
+  if ((status = setrlimit(RLIMIT_NOFILE, &limit)) < 0)
+    return status;
+
+  return 0;
 }
 
 std::string read_file(const std::string& fn) {
@@ -213,10 +228,17 @@ std::string hexdump(const uint8_t* in, const size_t size) {
   return ss.str();
 }
 
+int random_int(int min, int max) {
+  std::random_device dev;
+  std::mt19937 rng(dev());
+  std::uniform_int_distribution<std::mt19937::result_type> dist(min, max);
+  return dist(rng);
+}
+
 std::string random_string(std::string::size_type length) {
-  const char* chrs = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const std::string chrs = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
   std::mt19937 rg{std::random_device{}()};
-  std::uniform_int_distribution<std::string::size_type> pick(0, sizeof(chrs) - 2);
+  std::uniform_int_distribution<std::string::size_type> pick(0, chrs.length() - 1);
   std::string s;
   s.reserve(length);
   while (length--) {

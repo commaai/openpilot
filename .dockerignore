@@ -16,6 +16,9 @@
 *.so
 *.a
 
+venv/
+.venv/
+
 notebooks
 phone
 massivemap
