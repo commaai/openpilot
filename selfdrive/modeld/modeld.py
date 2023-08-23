@@ -163,7 +163,6 @@ def main():
 
   model_transform_main = np.zeros((3, 3), dtype=np.float32)
   model_transform_extra = np.zeros((3, 3), dtype=np.float32)
-  nav_enabled = False
   live_calib_seen = False
   driving_style = np.array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], dtype=np.float32)
   nav_features = np.zeros(NAV_FEATURE_LEN, dtype=np.float32)
@@ -227,13 +226,11 @@ def main():
     # Enable/disable nav features
     timestamp_llk = sm["navModel"].locationMonoTime
     nav_valid = sm.valid["navModel"] # and (nanos_since_boot() - timestamp_llk < 1e9)
-    use_nav = nav_valid and params.get_bool("ExperimentalMode")
-    if not nav_enabled and use_nav:
-      nav_enabled = True
-    elif nav_enabled and not use_nav:
+    nav_enabled = nav_valid and params.get_bool("ExperimentalMode")
+
+    if not nav_enabled:
       nav_features[:] = 0
       nav_instructions[:] = 0
-      nav_enabled = False
 
     if nav_enabled and sm.updated["navModel"]:
       nav_features = np.array(sm["navModel"].features)
