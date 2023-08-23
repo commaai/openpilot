@@ -2,6 +2,7 @@
 
 #include <unistd.h>
 
+#include <algorithm>
 #include <cassert>
 #include <chrono>
 #include <cmath>
@@ -9,6 +10,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <unordered_map>
+#include <utility>
 
 #include "common/swaglog.h"
 

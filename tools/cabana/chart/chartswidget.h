@@ -1,5 +1,8 @@
 #pragma once
 
+#include <unordered_map>
+#include <utility>
+
 #include <QGridLayout>
 #include <QLabel>
 #include <QScrollArea>

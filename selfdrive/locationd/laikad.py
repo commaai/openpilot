@@ -269,6 +269,11 @@ class Laikad:
       est_pos = self.gnss_kf.x[GStates.ECEF_POS].tolist()
       correct_delay = False
     corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog, correct_delay=correct_delay)
+    # If many measurements weren't corrected, position may be garbage, so reset
+    if len(processed_measurements) >= 8 and len(corrected_measurements) < 5:
+      cloudlog.error("Didn't correct enough measurements, resetting estimate position")
+      self.last_fix_pos = None
+      self.last_fix_t = None
     return corrected_measurements
 
   def calc_fix(self, t, measurements):

@@ -1,5 +1,9 @@
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 
+#include <algorithm>
+#include <string>
+#include <utility>
+
 #include <QJsonDocument>
 #include <QJsonObject>
 
