@@ -34,6 +34,12 @@ struct CanEvent {
   uint8_t dat[];
 };
 
+struct BusConfig {
+  int can_speed_kbps = 500;
+  int data_speed_kbps = 2000;
+  bool can_fd = false;
+};
+
 class AbstractStream : public QObject {
   Q_OBJECT
 
