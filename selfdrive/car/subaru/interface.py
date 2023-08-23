@@ -12,7 +12,10 @@ class CarInterface(CarInterfaceBase):
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "subaru"
     ret.radarUnavailable = True
-    # HYBRID_CARS and LKAS_ANGLE need a new cruise_activated bit, and panda safety setup to un-dashcam
+    # for HYBRID CARS to be upstreamed, we need:
+    #   - replacement for ES_Distance so we can cancel the cruise control
+    #   - to find the Cruise_Activated bit from the car
+    #   - proper panda safety setup (use the correct cruise_activated bit, throttle from Throttle_Hybrid, etc)
     ret.dashcamOnly = candidate in (PREGLOBAL_CARS | LKAS_ANGLE | HYBRID_CARS)
     ret.autoResumeSng = False
 
