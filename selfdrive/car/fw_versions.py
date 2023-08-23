@@ -179,22 +179,21 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
     if r.bus > num_pandas * 4 - 1:
       continue
 
-    for brand_versions in VERSIONS[brand].values():
-      for ecu_type, addr, sub_addr in list(brand_versions) + config.extra_ecus:
-        # Only query ecus in whitelist if whitelist is not empty
-        if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
-          a = (addr, sub_addr, r.bus)
-          # Build set of queries
-          if sub_addr is None:
-            if a not in parallel_queries[r.obd_multiplexing]:
-              parallel_queries[r.obd_multiplexing].append(a)
-          else:  # subaddresses must be queried one by one
-            if [a] not in queries[r.obd_multiplexing]:
-              queries[r.obd_multiplexing].append([a])
+    for ecu_type, addr, sub_addr in config.get_all_addrs(VERSIONS[brand].values()):
+      # Only query ecus in whitelist if whitelist is not empty
+      if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
+        a = (addr, sub_addr, r.bus)
+        # Build set of queries
+        if sub_addr is None:
+          if a not in parallel_queries[r.obd_multiplexing]:
+            parallel_queries[r.obd_multiplexing].append(a)
+        else:  # subaddresses must be queried one by one
+          if [a] not in queries[r.obd_multiplexing]:
+            queries[r.obd_multiplexing].append([a])
 
-          # Build set of expected responses to filter
-          response_addr = uds.get_rx_addr_for_tx_addr(addr, r.rx_offset)
-          responses.add((response_addr, sub_addr, r.bus))
+        # Build set of expected responses to filter
+        response_addr = uds.get_rx_addr_for_tx_addr(addr, r.rx_offset)
+        responses.add((response_addr, sub_addr, r.bus))
 
   for obd_multiplexing in queries:
     queries[obd_multiplexing].insert(0, parallel_queries[obd_multiplexing])
@@ -275,7 +274,6 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
   for brand, brand_versions in versions.items():
     config = FW_QUERY_CONFIGS[brand]
-
     for ecu_type, addr, sub_addr in config.get_all_addrs(brand_versions):
       a = (brand, addr, sub_addr)
       if a not in ecu_types:
