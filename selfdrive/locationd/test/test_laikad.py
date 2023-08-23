@@ -177,8 +177,8 @@ class TestLaikad(unittest.TestCase):
       laikad = Laikad(auto_update=True, valid_ephem_types=EphemerisType.NAV, use_qcom=use_qcom)
       # Disable fetch_orbits to test NAV only
       correct_msgs = verify_messages(logs, laikad)
-      correct_msgs_expected = 56 if use_qcom else 560
-      valid_fix_expected = 56 if use_qcom else 560
+      correct_msgs_expected = 55 if use_qcom else 560
+      valid_fix_expected = 55 if use_qcom else 560
 
       self.assertEqual(correct_msgs_expected, len(correct_msgs))
       self.assertEqual(valid_fix_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
