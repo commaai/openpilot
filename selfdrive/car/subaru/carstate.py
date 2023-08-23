@@ -133,10 +133,10 @@ class CarState(CarStateBase):
     ]
 
     if CP.carFingerprint not in HYBRID_CARS:
-      messages.extend([
+      messages += [
         ("ES_Distance", 20),
         ("ES_Status", 20)
-      ])
+      ]
 
     return messages
 
@@ -151,10 +151,10 @@ class CarState(CarStateBase):
     ]
 
     if CP.carFingerprint not in HYBRID_CARS:
-      messages.extend([
+      messages += [
         ("Throttle", 100),
         ("Transmission", 100)
-      ])
+      ]
 
     if CP.enableBsm:
       messages.append(("BSD_RCTA", 17))
@@ -214,14 +214,14 @@ class CarState(CarStateBase):
     messages = []
 
     if CP.carFingerprint in GLOBAL_GEN2:
-      messages = CarState.get_common_global_body_messages(CP)
+      messages += CarState.get_common_global_body_messages(CP)
       messages += CarState.get_common_global_es_messages(CP)
 
     if CP.carFingerprint in HYBRID_CARS:
-      messages.extend([
+      messages += [
         ("Throttle_Hybrid", 40),
         ("Transmission", 100)
-      ])
+      ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus.alt)
 
