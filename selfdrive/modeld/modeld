@@ -3,6 +3,5 @@
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 cd "$DIR/../../"
 
-PYTHON=$(pyenv which python)
 export LD_PRELOAD="$DIR/libthneed.so"
-exec $PYTHON "$DIR/modeld.py"
+exec "$DIR/modeld.py"
