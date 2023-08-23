@@ -39,7 +39,7 @@ class AbstractStream : public QObject {
 
 public:
   AbstractStream(QObject *parent);
-  virtual ~AbstractStream() {};
+  virtual ~AbstractStream() {}
   virtual void start() = 0;
   inline bool liveStreaming() const { return route() == nullptr; }
   virtual void seekTo(double ts) {}
