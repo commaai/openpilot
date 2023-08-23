@@ -293,7 +293,6 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
   # Get versions and build capnp list to put into CarParams
   car_fw = []
-  requests = [(brand, config, r) for brand, config, r in REQUESTS if is_brand(brand, query_brand)]
   for addr in tqdm(addrs, disable=not progress):
     for addr_chunk in chunks(addr):
       for brand, config in FW_QUERY_CONFIGS.items():
@@ -304,7 +303,6 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
           # Toggle OBD multiplexing for each request
           if r.bus % 4 == 1:
             set_obd_multiplexing(params, r.obd_multiplexing)
-          print(brand, r)
 
           try:
             query_addrs = [(a, s) for (b, a, s) in addr_chunk if b in (brand, 'any') and
