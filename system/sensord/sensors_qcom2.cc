@@ -98,19 +98,13 @@ void interrupt_loop(std::vector<std::tuple<Sensor *, std::string, bool, int>> se
 }
 
 void polling_loop(Sensor *sensor, std::string msg_name, int frequency) {
-  PubMaster pm({msg_name.c_str(), });
+  PubMaster pm({msg_name.c_str()});
   RateKeeper rk(msg_name, frequency);
   while (!do_exit) {
     MessageBuilder msg;
-    if (!sensor->get_event(msg)) {
-      continue;
+    if (sensor->get_event(msg) && sensor->is_data_valid(nanos_since_boot())) {
+      pm.send(msg_name.c_str(), msg);
     }
-
-    if (!sensor->is_data_valid(nanos_since_boot())) {
-      continue;
-    }
-
-    pm.send(msg_name.c_str(), msg);
     rk.keepTime();
   }
 
@@ -133,7 +127,7 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
   std::vector<std::tuple<Sensor *, std::string, bool, int>> sensors_init; // Sensor, required
   sensors_init.push_back({&bmx055_accel, "accelerometer2", false, 100});
   sensors_init.push_back({&bmx055_gyro, "gyroscope2", false, 100});
-  sensors_init.push_back({&bmx055_magn, "magnetometer", false, 100});
+  sensors_init.push_back({&bmx055_magn, "magnetometer", false, 25});
   sensors_init.push_back({&bmx055_temp, "temperatureSensor2", false, 2});
 
   sensors_init.push_back({&lsm6ds3_accel, "accelerometer", true, 100});
