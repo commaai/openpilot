@@ -284,9 +284,6 @@ Export('envCython')
 qt_env = env.Clone()
 qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets", "Location", "Positioning", "DBus", "Xml"]
 
-if arch != "larch64":
-  qt_modules += ["SerialBus"] # SocketCAN support
-
 qt_libs = []
 if arch == "Darwin":
   qt_env['QTDIR'] = f"{brew_prefix}/opt/qt@5"
