@@ -13,7 +13,8 @@ class TestFileDownload(unittest.TestCase):
 
   def compare_loads(self, url, start=0, length=None):
     """Compares range between cached and non cached version"""
-    shutil.rmtree(CACHE_DIR)
+    if os.path.exists(CACHE_DIR):
+      shutil.rmtree(CACHE_DIR)
 
     file_cached = URLFile(url, cache=True)
     file_downloaded = URLFile(url, cache=False)
