@@ -2,6 +2,8 @@
 
 #include <cstdlib>
 #include <fstream>
+#include <map>
+#include <string>
 
 #include "common/params.h"
 #include "common/util.h"

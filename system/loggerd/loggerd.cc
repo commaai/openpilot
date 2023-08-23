@@ -1,6 +1,10 @@
 #include <sys/xattr.h>
 
+#include <map>
+#include <memory>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "system/loggerd/encoder/encoder.h"
 #include "system/loggerd/loggerd.h"
