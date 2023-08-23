@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>  // for max
+
 #include <QPixmap>
 #include <QPointF>
 #include <vector>

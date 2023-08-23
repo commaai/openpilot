@@ -1,5 +1,6 @@
 #include "selfdrive/ui/ui.h"
 
+#include <algorithm>  // for max
 #include <cassert>
 #include <cmath>
 

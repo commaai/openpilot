@@ -1,5 +1,7 @@
 #include "tools/cabana/signalview.h"
 
+#include <algorithm>  // for min
+
 #include <QCompleter>
 #include <QDialogButtonBox>
 #include <QHBoxLayout>

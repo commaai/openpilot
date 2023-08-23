@@ -1,5 +1,8 @@
 #include "tools/cabana/streams/abstractstream.h"
 
+#include <algorithm>  // for max
+#include <vector>
+
 #include <QTimer>
 
 AbstractStream *can = nullptr;

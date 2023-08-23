@@ -1,7 +1,10 @@
 #include "tools/cabana/util.h"
 
+#include <algorithm>  // for max
 #include <array>
 #include <csignal>
+#include <limits>  // for numeric_limits<>
+#include <string>
 #include <sys/socket.h>
 #include <unistd.h>
 

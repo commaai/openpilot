@@ -1,5 +1,8 @@
 #pragma once
 
+#include <algorithm>  // for min
+#include <limits>  // for numeric_limits<>
+
 #include <QAbstractTableModel>
 #include <QLabel>
 #include <QPushButton>

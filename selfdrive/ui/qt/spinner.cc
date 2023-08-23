@@ -1,5 +1,6 @@
 #include "selfdrive/ui/qt/spinner.h"
 
+#include <algorithm>  // for transform
 #include <cstdio>
 #include <iostream>
 #include <string>

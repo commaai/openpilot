@@ -1,7 +1,9 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
+#include <algorithm>  // for max
 #include <cmath>
+#include <vector>
 
 #include "locationd.h"
 

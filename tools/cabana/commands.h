@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>  // for pair
+
 #include <QUndoCommand>
 #include <QUndoStack>
 

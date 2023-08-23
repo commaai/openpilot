@@ -1,6 +1,14 @@
 #pragma once
 
+#include <algorithm>  // for max
+#include <map>
+#include <memory>
 #include <optional>
+#include <set>
+#include <string>
+#include <tuple>
+#include <vector>
+#include <utility>  // for pair<>
 
 #include <QThread>
 

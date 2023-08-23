@@ -1,10 +1,14 @@
 #pragma once
 
+#include <limits>
+#include <string>
+#include <utility>  // for pair<>
+#include <vector>
+
 #include <QColor>
 #include <QList>
 #include <QMetaType>
 #include <QString>
-#include <limits>
 
 #include "opendbc/can/common_dbc.h"
 

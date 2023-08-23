@@ -3,6 +3,8 @@
 #include <cassert>
 #include <cmath>
 #include <string>
+#include <tuple>
+#include <vector>
 
 #include <QDebug>
 

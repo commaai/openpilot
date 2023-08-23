@@ -1,5 +1,7 @@
 #include "map_settings.h"
 
+#include <utility>  // for swap
+
 #include <QApplication>
 #include <QDebug>
 

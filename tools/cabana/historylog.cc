@@ -1,5 +1,7 @@
 #include "tools/cabana/historylog.h"
 
+#include <functional>  // for less<>
+
 #include <QPainter>
 #include <QPushButton>
 #include <QVBoxLayout>

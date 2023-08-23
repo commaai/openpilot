@@ -1,5 +1,8 @@
 #pragma once
 
+#include <tuple>
+#include <utility>  // for std::pair
+
 #include <QGraphicsPixmapItem>
 #include <QGraphicsProxyWidget>
 #include <QtCharts/QChartView>

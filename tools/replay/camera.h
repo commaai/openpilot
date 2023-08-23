@@ -1,6 +1,10 @@
 #pragma once
 
 #include <unistd.h>
+
+#include <memory>   // for unique_ptr<>
+#include <utility>  // for pair<>
+
 #include "cereal/visionipc/visionipc_server.h"
 #include "common/queue.h"
 #include "tools/replay/framereader.h"

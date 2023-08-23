@@ -1,5 +1,9 @@
 #pragma once
 
+#include <algorithm>  // for sort
+#include <utility>  // for pair<>
+#include <vector>
+
 #include <QAbstractTableModel>
 #include <QCheckBox>
 #include <QContextMenuEvent>

@@ -1,4 +1,10 @@
 #include "tools/cabana/messageswidget.h"
+
+#include <algorithm>  // for max
+#include <limits>     // for numeric_limits<>
+#include <utility>    // for move
+#include <vector>
+
 #include <QHBoxLayout>
 #include <QPainter>
 #include <QPushButton>

@@ -1,5 +1,10 @@
 #include "tools/cabana/videowidget.h"
 
+#include <algorithm>
+#include <memory>
+#include <string>
+#include <utility>
+
 #include <QButtonGroup>
 #include <QHBoxLayout>
 #include <QMouseEvent>
