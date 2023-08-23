@@ -166,7 +166,7 @@ class CarController:
                                            hud_control.rightLaneVisible, hud_control.leftLaneDepart,
                                            hud_control.rightLaneDepart, CC.enabled, CS.lkas_hud))
 
-      if (self.frame % 100 == 0 or send_ui) and (self.CP.enableDsu or (self.CP.flags & ToyotaFlags.DISABLE_RADAR.value)):
+      if (self.frame % 100 == 0 or send_ui) and (self.CP.enableDsu or self.CP.flags & ToyotaFlags.DISABLE_RADAR.value):
         can_sends.append(create_fcw_command(self.packer, fcw_alert))
 
     # *** static msgs ***
@@ -175,9 +175,8 @@ class CarController:
         can_sends.append(make_can_msg(addr, vl, bus))
 
     # keep radar disabled
-    if self.frame % 20 == 0:
-      if self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
-        can_sends.append([0x750, 0, b"\x0F\x02\x3E\x00\x00\x00\x00\x00", 0])
+    if self.frame % 20 == 0 and self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
+      can_sends.append([0x750, 0, b"\x0F\x02\x3E\x00\x00\x00\x00\x00", 0])
 
     new_actuators = actuators.copy()
     new_actuators.steer = apply_steer / self.params.STEER_MAX
