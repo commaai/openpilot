@@ -264,7 +264,7 @@ void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelOutputPlanPredic
   std::array<float, TRAJECTORY_SIZE> acc_x, acc_y, acc_z;
   std::array<float, TRAJECTORY_SIZE> rot_rate_x, rot_rate_y, rot_rate_z;
 
-  for(int i=0; i<TRAJECTORY_SIZE; i++) {
+  for (int i=0; i<TRAJECTORY_SIZE; i++) {
     pos_x[i] = plan.mean[i].position.x;
     pos_y[i] = plan.mean[i].position.y;
     pos_z[i] = plan.mean[i].position.z;
