@@ -56,8 +56,6 @@ acados_templates_dir = '#third_party/acados/acados_template/c_templates_tera'
 source_list = ['long_mpc.py',
   '#/selfdrive/modeld/constants.py',
   f'{acados_dir}/include/acados_c/ocp_nlp_interface.h',
-  f'{acados_dir}/x86_64/lib/libacados.so',
-  f'{acados_dir}/larch64/lib/libacados.so',
   f'{acados_templates_dir}/acados_solver.in.c',
 ]
 

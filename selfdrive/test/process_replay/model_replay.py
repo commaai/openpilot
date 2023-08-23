@@ -6,18 +6,18 @@ from collections import defaultdict
 from typing import Any
 
 import cereal.messaging as messaging
-from common.params import Params
-from common.spinner import Spinner
-from system.hardware import PC
-from selfdrive.manager.process_config import managed_processes
-from selfdrive.test.openpilotci import BASE_URL, get_url
-from selfdrive.test.process_replay.compare_logs import compare_logs
-from selfdrive.test.process_replay.test_processes import format_diff
-from selfdrive.test.process_replay.process_replay import get_process_config, replay_process
-from system.version import get_commit
-from tools.lib.framereader import FrameReader
-from tools.lib.logreader import LogReader
-from tools.lib.helpers import save_log
+from openpilot.common.params import Params
+from openpilot.common.spinner import Spinner
+from openpilot.system.hardware import PC
+from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.test.openpilotci import BASE_URL, get_url
+from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs
+from openpilot.selfdrive.test.process_replay.test_processes import format_diff
+from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process
+from openpilot.system.version import get_commit
+from openpilot.tools.lib.framereader import FrameReader
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.helpers import save_log
 
 TEST_ROUTE = "2f4452b03ccb98f0|2022-12-03--13-45-30"
 SEGMENT = 6
@@ -161,7 +161,7 @@ if __name__ == "__main__":
     import requests
     import threading
     import http.server
-    from selfdrive.test.openpilotci import upload_bytes
+    from openpilot.selfdrive.test.openpilotci import upload_bytes
     os.environ['MAPS_HOST'] = 'http://localhost:5000'
 
     class HTTPRequestHandler(http.server.BaseHTTPRequestHandler):
@@ -244,7 +244,7 @@ if __name__ == "__main__":
 
   # upload new refs
   if (update or failed) and not PC:
-    from selfdrive.test.openpilotci import upload_file
+    from openpilot.selfdrive.test.openpilotci import upload_file
 
     print("Uploading new refs")
 

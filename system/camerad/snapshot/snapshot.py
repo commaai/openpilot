@@ -7,11 +7,11 @@ from PIL import Image
 
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcClient, VisionStreamType
-from common.params import Params
-from common.realtime import DT_MDL
-from system.hardware import PC
-from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from selfdrive.manager.process_config import managed_processes
+from openpilot.common.params import Params
+from openpilot.common.realtime import DT_MDL
+from openpilot.system.hardware import PC
+from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
+from openpilot.selfdrive.manager.process_config import managed_processes
 
 LM_THRESH = 120  # defined in system/camerad/imgproc/utils.h
 
@@ -43,10 +43,10 @@ def yuv_to_rgb(y, u, v):
   return rgb.astype(np.uint8)
 
 
-def extract_image(buf, w, h, stride, uv_offset):
-  y = np.array(buf[:uv_offset], dtype=np.uint8).reshape((-1, stride))[:h, :w]
-  u = np.array(buf[uv_offset::2], dtype=np.uint8).reshape((-1, stride//2))[:h//2, :w//2]
-  v = np.array(buf[uv_offset+1::2], dtype=np.uint8).reshape((-1, stride//2))[:h//2, :w//2]
+def extract_image(buf):
+  y = np.array(buf.data[:buf.uv_offset], dtype=np.uint8).reshape((-1, buf.stride))[:buf.height, :buf.width]
+  u = np.array(buf.data[buf.uv_offset::2], dtype=np.uint8).reshape((-1, buf.stride//2))[:buf.height//2, :buf.width//2]
+  v = np.array(buf.data[buf.uv_offset+1::2], dtype=np.uint8).reshape((-1, buf.stride//2))[:buf.height//2, :buf.width//2]
 
   return yuv_to_rgb(y, u, v)
 
@@ -67,10 +67,10 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState"):
   rear, front = None, None
   if frame is not None:
     c = vipc_clients[frame]
-    rear = extract_image(c.recv(), c.width, c.height, c.stride, c.uv_offset)
+    rear = extract_image(c.recv())
   if front_frame is not None:
     c = vipc_clients[front_frame]
-    front = extract_image(c.recv(), c.width, c.height, c.stride, c.uv_offset)
+    front = extract_image(c.recv())
   return rear, front
 
 

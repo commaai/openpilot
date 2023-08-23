@@ -11,7 +11,7 @@ from typing import List, Optional, Dict, Any
 import numpy as np
 
 from cereal import log, messaging
-from common.params import Params, put_nonblocking
+from openpilot.common.params import Params, put_nonblocking
 from laika import AstroDog
 from laika.constants import SECS_IN_HR, SECS_IN_MIN
 from laika.downloader import DownloadFailed
@@ -20,10 +20,10 @@ from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId, get_sv_id
 from laika.raw_gnss import GNSSMeasurement, correct_measurements, process_measurements, read_raw_ublox, read_raw_qcom
 from laika.opt import calc_pos_fix, get_posfix_sympy_fun, calc_vel_fix, get_velfix_sympy_func
-from selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
-from selfdrive.locationd.models.gnss_kf import GNSSKalman
-from selfdrive.locationd.models.gnss_kf import States as GStates
-from system.swaglog import cloudlog
+from openpilot.selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
+from openpilot.selfdrive.locationd.models.gnss_kf import GNSSKalman
+from openpilot.selfdrive.locationd.models.gnss_kf import States as GStates
+from openpilot.system.swaglog import cloudlog
 
 MAX_TIME_GAP = 10
 EPHEMERIS_CACHE = 'LaikadEphemerisV3'
@@ -81,7 +81,8 @@ class Laikad:
     valid_ephem_types: Valid ephemeris types to be used by AstroDog
     save_ephemeris: If true saves and loads nav and orbit ephemeris to cache.
     """
-    self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types, clear_old_ephemeris=True, cache_dir=DOWNLOADS_CACHE_FOLDER)
+    self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types,
+                              clear_old_ephemeris=True, cache_dir=DOWNLOADS_CACHE_FOLDER)
     self.gnss_kf = GNSSKalman(GENERATED_DIR, cython=True, erratic_clock=use_qcom)
 
     self.auto_fetch_navs = auto_fetch_navs
@@ -136,8 +137,8 @@ class Laikad:
       #TODO this only saves currently valid ephems, when we download future ephems we should save them too
       valid_navs = [e for e in nav_list if e.valid(self.last_report_time)]
       if len(valid_navs) > 0:
-        ephem_cache = ephemeris_structs.EphemerisCache(**{'glonassEphemerides': [e.data for e in valid_navs if e.prn[0]=='R'],
-                                                          'gpsEphemerides': [e.data for e in valid_navs if e.prn[0]=='G']})
+        ephem_cache = ephemeris_structs.EphemerisCache(glonassEphemerides=[e.data for e in valid_navs if e.prn[0]=='R'],
+                                                       gpsEphemerides=[e.data for e in valid_navs if e.prn[0]=='G'])
         put_nonblocking(EPHEMERIS_CACHE, ephem_cache.to_bytes())
         cloudlog.debug("Cache saved")
       self.last_cached_t = self.last_report_time

@@ -5,9 +5,9 @@ from collections import defaultdict
 from itertools import chain
 from typing import Optional
 
-from tools.lib.auth_config import get_token
-from tools.lib.api import CommaApi
-from tools.lib.helpers import RE
+from openpilot.tools.lib.auth_config import get_token
+from openpilot.tools.lib.api import CommaApi
+from openpilot.tools.lib.helpers import RE
 
 QLOG_FILENAMES = ['qlog', 'qlog.bz2']
 QCAMERA_FILENAMES = ['qcamera.ts']

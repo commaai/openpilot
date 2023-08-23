@@ -13,10 +13,6 @@
 
 #include "selfdrive/modeld/runners/runmodel.h"
 
-#define USE_CPU_RUNTIME 0
-#define USE_GPU_RUNTIME 1
-#define USE_DSP_RUNTIME 2
-
 #ifdef USE_THNEED
 #include "selfdrive/modeld/thneed/thneed.h"
 #endif

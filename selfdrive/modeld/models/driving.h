@@ -39,6 +39,10 @@ constexpr int LEAD_MHP_SELECTION = 3;
 // Padding to get output shape as multiple of 4
 constexpr int PAD_SIZE = 2;
 
+constexpr float FCW_THRESHOLD_5MS2_HIGH = 0.15;
+constexpr float FCW_THRESHOLD_5MS2_LOW = 0.05;
+constexpr float FCW_THRESHOLD_3MS2 = 0.7;
+
 struct ModelOutputXYZ {
   float x;
   float y;
@@ -262,7 +266,6 @@ struct ModelState {
   ModelFrame *frame = nullptr;
   ModelFrame *wide_frame = nullptr;
   std::array<float, HISTORY_BUFFER_LEN * FEATURE_LEN> feature_buffer = {};
-  std::array<float, DISENGAGE_LEN * DISENGAGE_LEN> disengage_buffer = {};
   std::array<float, NET_OUTPUT_SIZE> output = {};
   std::unique_ptr<RunModel> m;
 #ifdef DESIRE
@@ -277,15 +280,22 @@ struct ModelState {
 #endif
 #ifdef NAV
   float nav_features[NAV_FEATURE_LEN] = {};
+  float nav_instructions[NAV_INSTRUCTION_LEN] = {};
 #endif
 };
 
+struct PublishState {
+  std::array<float, DISENGAGE_LEN * DISENGAGE_LEN> disengage_buffer = {};
+  std::array<float, 5> prev_brake_5ms2_probs = {};
+  std::array<float, 3> prev_brake_3ms2_probs = {};
+};
+
 void model_init(ModelState* s, cl_device_id device_id, cl_context context);
-ModelOutput *model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* buf_wide,
-                              const mat3 &transform, const mat3 &transform_wide, float *desire_in, bool is_rhd, float *driving_style, float *nav_features, bool prepare_only);
+ModelOutput *model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* buf_wide, const mat3 &transform, const mat3 &transform_wide,
+                              float *desire_in, bool is_rhd, float *driving_style, float *nav_features, float *nav_instructions, bool prepare_only);
 void model_free(ModelState* s);
-void model_publish(ModelState* s, PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
-                   const ModelOutput &net_outputs, uint64_t timestamp_eof, uint64_t timestamp_llk,
+void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
+                   const ModelOutput &net_outputs, ModelState &s, PublishState &ps, uint64_t timestamp_eof, uint64_t timestamp_llk,
                    float model_execution_time, const bool nav_enabled, const bool valid);
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
                      const ModelOutput &net_outputs, uint64_t timestamp_eof, const bool valid);

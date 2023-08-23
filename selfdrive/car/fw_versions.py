@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List, Optional, Set, Tuple
+from typing import Any, DefaultDict, Dict, List, Optional, Set
 from tqdm import tqdm
 import capnp
 
 import panda.python.uds as uds
 from cereal import car
-from common.params import Params
-from selfdrive.car.ecu_addrs import EcuAddrBusType, get_ecu_addrs
-from selfdrive.car.interfaces import get_interface_attr
-from selfdrive.car.fingerprints import FW_VERSIONS
-from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
-from system.swaglog import cloudlog
+from openpilot.common.params import Params
+from openpilot.selfdrive.car.ecu_addrs import get_ecu_addrs
+from openpilot.selfdrive.car.fw_query_definitions import AddrType, EcuAddrBusType
+from openpilot.selfdrive.car.interfaces import get_interface_attr
+from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
+from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
+from openpilot.system.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
 ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
@@ -35,8 +36,8 @@ def is_brand(brand: str, filter_brand: Optional[str]) -> bool:
 
 
 def build_fw_dict(fw_versions: List[capnp.lib.capnp._DynamicStructBuilder],
-                  filter_brand: Optional[str] = None) -> Dict[Tuple[int, Optional[int]], Set[bytes]]:
-  fw_versions_dict = defaultdict(set)
+                  filter_brand: Optional[str] = None) -> Dict[AddrType, Set[bytes]]:
+  fw_versions_dict: DefaultDict[AddrType, Set[bytes]] = defaultdict(set)
   for fw in fw_versions:
     if is_brand(fw.brand, filter_brand) and not fw.logging:
       sub_addr = fw.subAddress if fw.subAddress != 0 else None
@@ -44,8 +45,8 @@ def build_fw_dict(fw_versions: List[capnp.lib.capnp._DynamicStructBuilder],
   return dict(fw_versions_dict)
 
 
-def get_brand_addrs() -> Dict[str, Set[Tuple[int, Optional[int]]]]:
-  brand_addrs: DefaultDict[str, Set[Tuple[int, Optional[int]]]] = defaultdict(set)
+def get_brand_addrs() -> Dict[str, Set[AddrType]]:
+  brand_addrs: DefaultDict[str, Set[AddrType]] = defaultdict(set)
   for brand, cars in VERSIONS.items():
     # Add ecus in database + extra ecus to match against
     brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in FW_QUERY_CONFIGS[brand].extra_ecus}
@@ -54,7 +55,7 @@ def get_brand_addrs() -> Dict[str, Set[Tuple[int, Optional[int]]]]:
   return dict(brand_addrs)
 
 
-def match_fw_to_car_fuzzy(live_fw_versions, log=True, exclude=None):
+def match_fw_to_car_fuzzy(live_fw_versions, match_brand=None, log=True, exclude=None):
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
   the match is rejected."""
@@ -62,6 +63,9 @@ def match_fw_to_car_fuzzy(live_fw_versions, log=True, exclude=None):
   # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
   all_fw_versions = defaultdict(list)
   for candidate, fw_by_addr in FW_VERSIONS.items():
+    if not is_brand(MODEL_TO_BRAND[candidate], match_brand):
+      continue
+
     if candidate == exclude:
       continue
 
@@ -101,13 +105,14 @@ def match_fw_to_car_fuzzy(live_fw_versions, log=True, exclude=None):
     return set()
 
 
-def match_fw_to_car_exact(live_fw_versions, log=True) -> Set[str]:
+def match_fw_to_car_exact(live_fw_versions, match_brand=None, log=True) -> Set[str]:
   """Do an exact FW match. Returns all cars that match the given
   FW versions for a list of "essential" ECUs. If an ECU is not considered
   essential the FW version can be missing to get a fingerprint, but if it's present it
   needs to match the database."""
   invalid = set()
-  candidates = FW_VERSIONS
+  candidates = {c: f for c, f in FW_VERSIONS.items() if
+                is_brand(MODEL_TO_BRAND[c], match_brand)}
 
   for candidate, fws in candidates.items():
     config = FW_QUERY_CONFIGS[MODEL_TO_BRAND[candidate]]
@@ -129,7 +134,7 @@ def match_fw_to_car_exact(live_fw_versions, log=True) -> Set[str]:
       if ecu_type == Ecu.debug:
         continue
 
-      if not any([found_version in expected_versions for found_version in found_versions]):
+      if not any(found_version in expected_versions for found_version in found_versions):
         invalid.add(candidate)
         break
 
@@ -149,7 +154,7 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True, log=True):
     matches = set()
     for brand in VERSIONS.keys():
       fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
-      matches |= match_func(fw_versions_dict, log=log)
+      matches |= match_func(fw_versions_dict, match_brand=brand, log=log)
 
       # If specified and no matches so far, fall back to brand's fuzzy fingerprinting function
       config = FW_QUERY_CONFIGS[brand]
@@ -208,7 +213,7 @@ def get_brand_ecu_matches(ecu_rx_addrs):
   brand_addrs = get_brand_addrs()
   brand_matches = {brand: set() for brand, _, _ in REQUESTS}
 
-  brand_rx_offsets = set((brand, r.rx_offset) for brand, _, r in REQUESTS)
+  brand_rx_offsets = {(brand, r.rx_offset) for brand, _, r in REQUESTS}
   for addr, sub_addr, _ in ecu_rx_addrs:
     # Since we can't know what request an ecu responded to, add matches for all possible rx offsets
     for brand, rx_offset in brand_rx_offsets:
@@ -242,8 +247,9 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
 
     car_fw = get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, num_pandas=num_pandas, debug=debug, progress=progress)
     all_car_fw.extend(car_fw)
-    # Try to match using FW returned from this brand only
-    matches = match_fw_to_car_exact(build_fw_dict(car_fw))
+
+    # If there is a match using this brand's FW alone, finish querying early
+    _, matches = match_fw_to_car(car_fw, log=False)
     if len(matches) == 1:
       break
 
@@ -332,7 +338,7 @@ if __name__ == "__main__":
   import time
   import argparse
   import cereal.messaging as messaging
-  from selfdrive.car.vin import get_vin
+  from openpilot.selfdrive.car.vin import get_vin
 
   parser = argparse.ArgumentParser(description='Get firmware version of ECUs')
   parser.add_argument('--scan', action='store_true')

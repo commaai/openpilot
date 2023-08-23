@@ -8,7 +8,7 @@ import signal
 from collections import defaultdict
 
 import cereal.messaging as messaging
-from tools.lib.logreader import logreader_from_route_or_segment
+from openpilot.tools.lib.logreader import logreader_from_route_or_segment
 
 def sigint_handler(signal, frame):
   exit(0)
@@ -105,7 +105,10 @@ class SteeringAccuracyTool:
           print(f"  {'-'*118}")
           for k in sorted(self.speed_group_stats[group].keys()):
             v = self.speed_group_stats[group][k]
-            print(f'  {k:#2}° | actuator:{int(v["steer"] / v["cnt"] * 100):#3}% | error: {round(v["err"] / v["cnt"], 2):2.2f}° | -:{int(v["-"] / v["cnt"] * 100):#3}% | =:{int(v["="] / v["cnt"] * 100):#3}% | +:{int(v["+"] / v["cnt"] * 100):#3}% | lim:{v["limited"]:#5} | sat:{v["saturated"]:#5} | path dev: {round(v["dpp"] / v["cnt"], 2):2.2f}m | total: {v["cnt"]:#5}')
+            print(f'  {k:#2}° | actuator:{int(v["steer"] / v["cnt"] * 100):#3}% \
+                              | error: {round(v["err"] / v["cnt"], 2):2.2f}° | -:{int(v["-"] / v["cnt"] * 100):#3}% \
+                              | =:{int(v["="] / v["cnt"] * 100):#3}% | +:{int(v["+"] / v["cnt"] * 100):#3}% | lim:{v["limited"]:#5} \
+                              | sat:{v["saturated"]:#5} | path dev: {round(v["dpp"] / v["cnt"], 2):2.2f}m | total: {v["cnt"]:#5}')
           print("")
 
 
