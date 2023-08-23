@@ -11,7 +11,7 @@ from openpilot.system.hardware import PC
 from openpilot.system.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.filter_simple import FirstOrderFilter
-from openpilot.common.realtime import set_core_affinity, set_realtime_priority
+from openpilot.common.realtime import config_realtime_process
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext, Runtime
 from openpilot.selfdrive.modeld.models.driving_pyx import (
   PublishState, create_model_msg, create_pose_msg, update_calibration,
@@ -117,8 +117,7 @@ def main():
   cloudlog.bind(daemon="selfdrive.modeld.modeld")
   setproctitle("selfdrive.modeld.modeld")
   if not PC:
-    set_realtime_priority(54)
-    set_core_affinity([7])
+    config_realtime_process(7, 54)
 
   cl_context = CLContext()
   model = ModelState(cl_context)
