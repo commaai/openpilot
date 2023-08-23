@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+
 #include <QPixmap>
 #include <QPointF>
 #include <vector>

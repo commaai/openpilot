@@ -14,11 +14,11 @@ from typing import List, NoReturn, Optional
 
 from cereal import log
 import cereal.messaging as messaging
-from common.conversions import Conversions as CV
-from common.params import Params, put_nonblocking
-from common.realtime import set_realtime_priority
-from common.transformations.orientation import rot_from_euler, euler_from_rot
-from system.swaglog import cloudlog
+from openpilot.common.conversions import Conversions as CV
+from openpilot.common.params import Params, put_nonblocking
+from openpilot.common.realtime import set_realtime_priority
+from openpilot.common.transformations.orientation import rot_from_euler, euler_from_rot
+from openpilot.system.swaglog import cloudlog
 
 MIN_SPEED_FILTER = 15 * CV.MPH_TO_MS
 MAX_VEL_ANGLE_STD = np.radians(0.25)
