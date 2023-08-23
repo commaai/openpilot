@@ -4,7 +4,7 @@ import time
 import numpy as np
 from pathlib import Path
 from typing import Dict, Optional
-from setproctitle import setproctitle  # pylint: disable=no-name-in-module
+from setproctitle import setproctitle
 from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.system.hardware import PC
@@ -12,16 +12,16 @@ from openpilot.system.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import set_core_affinity, set_realtime_priority
-from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext, Runtime # pylint: disable=import-error, no-name-in-module
+from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext, Runtime
 from openpilot.selfdrive.modeld.models.driving_pyx import (
   PublishState, create_model_msg, create_pose_msg, update_calibration,
   FEATURE_LEN, HISTORY_BUFFER_LEN, DESIRE_LEN, TRAFFIC_CONVENTION_LEN, NAV_FEATURE_LEN, NAV_INSTRUCTION_LEN,
-  OUTPUT_SIZE, NET_OUTPUT_SIZE, MODEL_FREQ, USE_THNEED) # pylint: disable=import-error, no-name-in-module
+  OUTPUT_SIZE, NET_OUTPUT_SIZE, MODEL_FREQ, USE_THNEED)
 
 if USE_THNEED:
-  from selfdrive.modeld.runners.thneedmodel_pyx import ThneedModel as ModelRunner # pylint: disable=import-error, no-name-in-module
+  from selfdrive.modeld.runners.thneedmodel_pyx import ThneedModel as ModelRunner
 else:
-  from selfdrive.modeld.runners.onnxmodel_pyx import ONNXModel as ModelRunner # pylint: disable=import-error, no-name-in-module
+  from selfdrive.modeld.runners.onnxmodel_pyx import ONNXModel as ModelRunner
 
 MODEL_PATH = str(Path(__file__).parent / f"models/supercombo.{'thneed' if USE_THNEED else 'onnx'}")
 
@@ -138,7 +138,6 @@ def main():
   vipc_client_extra = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, False, cl_context)
   cloudlog.warning(f"vision stream set up, main_wide_camera: {main_wide_camera}, use_extra_client: {use_extra_client}")
 
-  # TODO: Is it safe to use blocking=True here?
   while not vipc_client_main.connect(False):
     time.sleep(0.1)
   while not vipc_client_extra.connect(False):
