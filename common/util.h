@@ -171,7 +171,7 @@ private:
 template<typename T>
 void update_max_atomic(std::atomic<T>& max, T const& value) {
   T prev = max;
-  while(prev < value && !max.compare_exchange_weak(prev, value)) {}
+  while (prev < value && !max.compare_exchange_weak(prev, value)) {}
 }
 
 class LogState {

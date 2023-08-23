@@ -85,7 +85,7 @@ void HttpRequest::sendRequest(const QString &requestURL, const HttpRequest::Meth
     return;
   }
   QString token;
-  if(create_jwt) {
+  if (create_jwt) {
     token = CommaApi::create_jwt();
   } else {
     QString token_json = QString::fromStdString(util::read_file(util::getenv("HOME") + "/.comma/auth.json"));
