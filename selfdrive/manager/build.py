@@ -31,8 +31,7 @@ def build(spinner: Spinner, dirty: bool = False) -> None:
   compile_output: List[bytes] = []
   for n in (nproc, nproc/2, 1):
     compile_output.clear()
-    j_flag = "" if nproc is None else f"-j{int(n)}"
-    scons: subprocess.Popen = subprocess.Popen(["scons", j_flag, "--cache-populate"], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
+    scons: subprocess.Popen = subprocess.Popen(["scons", f"-j{int(n)}", "--cache-populate"], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
     assert scons.stderr is not None
 
     # Read progress from stderr and update spinner
