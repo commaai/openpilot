@@ -183,7 +183,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
     switch (index.column()) {
       case Column::NAME: return msgName(id);
-      case Column::SOURCE: return id.source != INVALID_SOURCE ? QString::number(id.source) : "N/A" ;
+      case Column::SOURCE: return id.source != INVALID_SOURCE ? QString::number(id.source) : "N/A";
       case Column::ADDRESS: return QString::number(id.address, 16);
       case Column::FREQ: return id.source != INVALID_SOURCE ? getFreq(can_data) : "N/A";
       case Column::COUNT: return id.source != INVALID_SOURCE ? QString::number(can_data.count) : "N/A";
