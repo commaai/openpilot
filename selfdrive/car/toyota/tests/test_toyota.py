@@ -2,14 +2,15 @@
 from cereal import car
 import unittest
 
-from openpilot.selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, FW_VERSIONS
+from openpilot.selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, RADAR_ACC_CAR, FW_VERSIONS
 
 Ecu = car.CarParams.Ecu
 
 
 class TestToyotaInterfaces(unittest.TestCase):
-  def test_angle_car_set(self):
+  def test_car_sets(self):
     self.assertTrue(len(ANGLE_CONTROL_CAR - TSS2_CAR) == 0)
+    self.assertTrue(len(RADAR_ACC_CAR - TSS2_CAR) == 0)
 
   def test_tss2_dbc(self):
     # We make some assumptions about TSS2 platforms,
