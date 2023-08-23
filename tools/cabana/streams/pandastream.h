@@ -10,7 +10,6 @@
 const uint32_t speeds[] = {10U, 20U, 50U, 100U, 125U, 250U, 500U, 1000U};
 const uint32_t data_speeds[] = {10U, 20U, 50U, 100U, 125U, 250U, 500U, 1000U, 2000U, 5000U};
 
-
 struct PandaStreamConfig {
   QString serial = "";
   std::vector<BusConfig> bus_config;

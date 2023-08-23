@@ -1,5 +1,9 @@
 #include "tools/cabana/streams/socketcanstream.h"
 
+#include <QLabel>
+#include <QMessageBox>
+#include <QPushButton>
+
 SocketCanStream::SocketCanStream(QObject *parent, SocketCanStreamConfig config_) : config(config_), LiveStream(parent) {
   if (!QCanBus::instance()->plugins().contains("socketcan")) {
     throw std::runtime_error("SocketCAN plugin not available");
@@ -31,7 +35,6 @@ bool SocketCanStream::connect() {
 }
 
 void SocketCanStream::streamThread() {
-
   while (!QThread::currentThread()->isInterruptionRequested()) {
     QThread::msleep(1);
 
@@ -56,4 +59,52 @@ void SocketCanStream::streamThread() {
     auto bytes = msg.toBytes();
     handleEvent((const char*)bytes.begin(), bytes.size());
   }
+}
+
+AbstractOpenStreamWidget *SocketCanStream::widget(AbstractStream **stream) {
+  return new OpenSocketCanWidget(stream);
+}
+
+OpenSocketCanWidget::OpenSocketCanWidget(AbstractStream **stream) : AbstractOpenStreamWidget(stream) {
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->addStretch(1);
+
+  QFormLayout *form_layout = new QFormLayout();
+
+  QHBoxLayout *device_layout = new QHBoxLayout();
+  device_edit = new QComboBox();
+  device_edit->setFixedWidth(300);
+  device_layout->addWidget(device_edit);
+
+  QPushButton *refresh = new QPushButton(tr("Refresh"));
+  refresh->setFixedWidth(100);
+  device_layout->addWidget(refresh);
+  form_layout->addRow(tr("Serial"), device_layout);
+  main_layout->addLayout(form_layout);
+
+  main_layout->addStretch(1);
+
+  QObject::connect(refresh, &QPushButton::clicked, this, &OpenSocketCanWidget::refreshDevices);
+  QObject::connect(device_edit, &QComboBox::currentTextChanged, this, [=]{ config.device = device_edit->currentText(); });
+
+  // Populate devices
+  refreshDevices();
+}
+
+void OpenSocketCanWidget::refreshDevices() {
+  device_edit->clear();
+  for (auto device : QCanBus::instance()->availableDevices(QStringLiteral("socketcan"))) {
+    device_edit->addItem(device.name());
+  }
+}
+
+
+bool OpenSocketCanWidget::open() {
+  try {
+    *stream = new SocketCanStream(qApp, config);
+  } catch (std::exception &e) {
+    QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to connect to SocketCAN device: '%1'").arg(e.what()));
+    return false;
+  }
+  return true;
 }

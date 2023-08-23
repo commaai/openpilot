@@ -9,6 +9,7 @@
 #include "tools/cabana/streams/devicestream.h"
 #include "tools/cabana/streams/pandastream.h"
 #include "tools/cabana/streams/replaystream.h"
+#include "tools/cabana/streams/socketcanstream.h"
 
 StreamSelector::StreamSelector(AbstractStream **stream, QWidget *parent) : QDialog(parent) {
   setWindowTitle(tr("Open stream"));
@@ -40,6 +41,7 @@ StreamSelector::StreamSelector(AbstractStream **stream, QWidget *parent) : QDial
 
   addStreamWidget(ReplayStream::widget(stream));
   addStreamWidget(PandaStream::widget(stream));
+  addStreamWidget(SocketCanStream::widget(stream));
   addStreamWidget(DeviceStream::widget(stream));
 
   QObject::connect(btn_box, &QDialogButtonBox::rejected, this, &QDialog::reject);

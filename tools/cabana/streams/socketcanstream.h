@@ -2,7 +2,11 @@
 
 #include <QtSerialBus/QCanBus>
 #include <QtSerialBus/QCanBusDevice>
-#include <QtSerialBus/QCanBusFrame>
+#include <QtSerialBus/QCanBusDeviceInfo>
+
+#include <QComboBox>
+#include <QFormLayout>
+#include <QVBoxLayout>
 
 #include "tools/cabana/streams/livestream.h"
 
@@ -15,6 +19,7 @@ class SocketCanStream : public LiveStream {
   Q_OBJECT
 public:
   SocketCanStream(QObject *parent, SocketCanStreamConfig config_ = {});
+  static AbstractOpenStreamWidget *widget(AbstractStream **stream);
 
   inline QString routeName() const override {
     return QString("Live Streaming From Socket CAN %1").arg(config.device);
@@ -26,4 +31,19 @@ protected:
 
   SocketCanStreamConfig config = {};
   std::unique_ptr<QCanBusDevice> device;
+};
+
+class OpenSocketCanWidget : public AbstractOpenStreamWidget {
+  Q_OBJECT
+
+public:
+  OpenSocketCanWidget(AbstractStream **stream);
+  bool open() override;
+  QString title() override { return tr("&SocketCAN"); }
+
+private:
+  void refreshDevices();
+
+  QComboBox *device_edit;
+  SocketCanStreamConfig config = {};
 };
