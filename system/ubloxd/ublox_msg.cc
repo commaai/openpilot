@@ -34,7 +34,7 @@ inline int UbloxMsgParser::needed_bytes() {
 
 inline bool UbloxMsgParser::valid_cheksum() {
   uint8_t ck_a = 0, ck_b = 0;
-  for (int i = 2; i < bytes_in_parse_buf - ublox::UBLOX_CHECKSUM_SIZE;i++) {
+  for (int i = 2; i < bytes_in_parse_buf - ublox::UBLOX_CHECKSUM_SIZE; i++) {
     ck_a = (ck_a + msg_parse_buf[i]) & 0xFF;
     ck_b = (ck_b + ck_a) & 0xFF;
   }
