@@ -275,7 +275,6 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
   for brand, brand_versions in versions.items():
     config = FW_QUERY_CONFIGS[brand]
-    addrs, parallel_addrs, ecu_types = config.get_addrs(versions)
 
     for ecu_type, addr, sub_addr in config.get_all_addrs(brand_versions):
       a = (brand, addr, sub_addr)
@@ -290,8 +289,6 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
           addrs.append([a])
 
   addrs.insert(0, parallel_addrs)
-
-  # addrs, parallel_addrs, ecu_types = config.get_addrs(versions)
 
   # Get versions and build capnp list to put into CarParams
   car_fw = []

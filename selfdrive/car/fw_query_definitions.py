@@ -94,28 +94,3 @@ class FwQueryConfig:
     if extra_ecus:
       ecu_addrs += self.extra_ecus
     return set(ecu_addrs)
-
-
-  def get_addrs(self, versions, addrs, parallel_addrs, ecu_types):
-    # addrs = []
-    # parallel_addrs: List[Tuple[str, int, Optional[int]]] = []
-    # ecu_types = {}
-
-    for brand, brand_versions in versions.items():
-      # config = FW_QUERY_CONFIGS[brand]
-      for ecu in brand_versions.values():
-        # Each brand can define extra ECUs to query for data collection
-        for ecu_type, addr, sub_addr in list(ecu) + self.extra_ecus:
-          a = (brand, addr, sub_addr)
-          if a not in ecu_types:
-            ecu_types[a] = ecu_type
-
-          if sub_addr is None:
-            if a not in parallel_addrs:
-              parallel_addrs.append(a)
-          else:
-            if [a] not in addrs:
-              addrs.append([a])
-
-    # addrs.insert(0, parallel_addrs)
-    return addrs, parallel_addrs, ecu_types
