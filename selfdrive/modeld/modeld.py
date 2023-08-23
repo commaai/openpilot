@@ -237,7 +237,7 @@ def main():
     if nav_enabled and sm.updated["navInstruction"]:
       nav_instructions[:] = 0
       for maneuver in sm["navInstruction"].allManeuvers:
-        distance_idx = 25 + maneuver.distance / 20
+        distance_idx = 25 + int(maneuver.distance / 20)
         direction_idx = 0
         if maneuver.modifier in ("left", "slight left", "sharp left"):
           direction_idx = 1
