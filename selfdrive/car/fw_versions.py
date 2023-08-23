@@ -278,11 +278,9 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
         ecu_types[a] = ecu_type
 
       if sub_addr is None:
-        if a not in parallel_addrs:
-          parallel_addrs.append(a)
+        parallel_addrs.append(a)
       else:
-        if [a] not in addrs:
-          addrs.append([a])
+        addrs.append([a])
 
   addrs.insert(0, parallel_addrs)
 
