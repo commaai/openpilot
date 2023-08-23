@@ -1,4 +1,10 @@
 #include "tools/cabana/messageswidget.h"
+
+#include <algorithm>
+#include <limits>
+#include <utility>
+#include <vector>
+
 #include <QHBoxLayout>
 #include <QPainter>
 #include <QPushButton>

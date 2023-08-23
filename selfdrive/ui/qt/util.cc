@@ -1,5 +1,9 @@
 #include "selfdrive/ui/qt/util.h"
 
+#include <map>
+#include <string>
+#include <vector>
+
 #include <QApplication>
 #include <QFile>
 #include <QFileInfo>

@@ -3,6 +3,10 @@
 #include "selfdrive/modeld/runners/snpemodel.h"
 
 #include <cstring>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "common/util.h"
 #include "common/timing.h"

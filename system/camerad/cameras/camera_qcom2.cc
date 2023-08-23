@@ -6,12 +6,15 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include <algorithm>
 #include <atomic>
 #include <cassert>
 #include <cerrno>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <string>
+#include <vector>
 
 #include "media/cam_defs.h"
 #include "media/cam_isp.h"

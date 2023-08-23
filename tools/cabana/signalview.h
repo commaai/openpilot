@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include <QAbstractItemModel>
 #include <QLabel>
 #include <QLineEdit>
