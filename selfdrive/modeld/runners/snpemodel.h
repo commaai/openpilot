@@ -1,6 +1,10 @@
 #pragma once
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
+#include <memory>
+#include <string>
+#include <utility>
+
 #include <DlContainer/IDlContainer.hpp>
 #include <DlSystem/DlError.hpp>
 #include <DlSystem/ITensor.hpp>

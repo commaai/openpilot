@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstdio>
 #include <chrono>
+#include <string>
 #include <thread>
 
 #include "libyuv.h"

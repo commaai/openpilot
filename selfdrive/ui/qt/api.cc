@@ -12,6 +12,8 @@
 #include <QJsonDocument>
 #include <QNetworkRequest>
 
+#include <string>
+
 #include "common/params.h"
 #include "common/util.h"
 #include "system/hardware/hw.h"

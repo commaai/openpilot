@@ -1,5 +1,7 @@
 #include "common/gpio.h"
 
+#include <string>
+
 #ifdef __APPLE__
 int gpio_init(int pin_nr, bool output) {
   return 0;
