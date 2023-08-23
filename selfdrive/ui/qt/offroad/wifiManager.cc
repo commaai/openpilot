@@ -8,11 +8,8 @@
 #include "selfdrive/ui/qt/util.h"
 
 bool compare_by_strength(const Network &a, const Network &b) {
-  if (a.connected == ConnectedType::CONNECTED) return true;
-  if (b.connected == ConnectedType::CONNECTED) return false;
-  if (a.connected == ConnectedType::CONNECTING) return true;
-  if (b.connected == ConnectedType::CONNECTING) return false;
-  return a.strength > b.strength;
+  return std::tuple(a.connected, strengthLevel(a.strength), b.ssid) >
+         std::tuple(b.connected, strengthLevel(b.strength), a.ssid);
 }
 
 template <typename T = QDBusMessage, typename... Args>
@@ -102,15 +99,22 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
     auto properties = replay.value();
 
     const QByteArray ssid = properties["Ssid"].toByteArray();
-    uint32_t strength = properties["Strength"].toUInt();
-    if (ssid.isEmpty() || (seenNetworks.contains(ssid) && strength <= seenNetworks[ssid].strength)) continue;
+    if (ssid.isEmpty()) continue;
 
-    SecurityType security = getSecurityType(properties);
-    ConnectedType ctype = ConnectedType::DISCONNECTED;
-    if (path.path() == activeAp) {
-      ctype = (ssid == connecting_to_network) ? ConnectedType::CONNECTING : ConnectedType::CONNECTED;
+    // May be multiple access points for each SSID.
+    // Use first for ssid and security type, then update connected status and strength using all
+    if (!seenNetworks.contains(ssid)) {
+      seenNetworks[ssid] = {ssid, 0U, ConnectedType::DISCONNECTED, getSecurityType(properties)};
     }
-    seenNetworks[ssid] = {ssid, strength, ctype, security};
+
+    if (path.path() == activeAp) {
+      seenNetworks[ssid].connected = (ssid == connecting_to_network) ? ConnectedType::CONNECTING : ConnectedType::CONNECTED;
+    }
+
+    uint32_t strength = properties["Strength"].toUInt();
+    if (seenNetworks[ssid].strength < strength) {
+      seenNetworks[ssid].strength = strength;
+    }
   }
 
   emit refreshSignal();
@@ -345,7 +349,7 @@ NetworkType WifiManager::currentNetworkType() {
   return NetworkType::NONE;
 }
 
-void WifiManager::updateGsmSettings(bool roaming, QString apn) {
+void WifiManager::updateGsmSettings(bool roaming, QString apn, bool metered) {
   if (!lteConnectionPath.path().isEmpty()) {
     bool changes = false;
     bool auto_config = apn.isEmpty();
@@ -365,6 +369,13 @@ void WifiManager::updateGsmSettings(bool roaming, QString apn) {
     if (settings.value("gsm").value("home-only").toBool() == roaming) {
       qWarning() << "Changing gsm.home-only to" << !roaming;
       settings["gsm"]["home-only"] = !roaming;
+      changes = true;
+    }
+
+    int meteredInt = metered ? NM_METERED_UNKNOWN : NM_METERED_NO;
+    if (settings.value("connection").value("metered").toInt() != meteredInt) {
+      qWarning() << "Changing connection.metered to" << meteredInt;
+      settings["connection"]["metered"] = meteredInt;
       changes = true;
     }
 
@@ -408,16 +419,16 @@ void WifiManager::addTetheringConnection() {
 }
 
 void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
-    int prime_type = uiState()->prime_type;
-    int ipv4_forward = (prime_type == PrimeType::NONE || prime_type == PrimeType::LITE);
+  int prime_type = uiState()->primeType();
+  int ipv4_forward = (prime_type == PrimeType::NONE || prime_type == PrimeType::LITE);
 
-    if (!ipv4_forward) {
-      QTimer::singleShot(5000, this, [=] {
-        qWarning() << "net.ipv4.ip_forward = 0";
-        std::system("sudo sysctl net.ipv4.ip_forward=0");
-      });
-    }
-    call->deleteLater();
+  if (!ipv4_forward) {
+    QTimer::singleShot(5000, this, [=] {
+      qWarning() << "net.ipv4.ip_forward = 0";
+      std::system("sudo sysctl net.ipv4.ip_forward=0");
+    });
+  }
+  call->deleteLater();
 }
 
 void WifiManager::setTetheringEnabled(bool enabled) {

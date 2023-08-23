@@ -79,10 +79,6 @@ class HardwareBase(ABC):
     pass
 
   @abstractmethod
-  def get_usb_present(self):
-    pass
-
-  @abstractmethod
   def get_current_power_draw(self):
     pass
 
@@ -138,6 +134,9 @@ class HardwareBase(ABC):
   @abstractmethod
   def get_networks(self):
     pass
+
+  def has_internal_panda(self) -> bool:
+    return False
 
   def reset_internal_panda(self):
     pass

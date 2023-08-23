@@ -15,10 +15,8 @@ public:
 
 private:
   bool eventFilter(QObject *obj, QEvent *event) override;
-  void openSettings();
+  void openSettings(int index = 0, const QString &param = "");
   void closeSettings();
-
-  Device device;
 
   QStackedLayout *main_layout;
   HomeWindow *homeWindow;

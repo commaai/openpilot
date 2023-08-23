@@ -8,8 +8,8 @@ if len(sys.argv) < 4:
 
 import requests
 from PIL import Image
-from tools.lib.auth_config import get_token
-from tools.lib.framereader import FrameReader
+from openpilot.tools.lib.auth_config import get_token
+from openpilot.tools.lib.framereader import FrameReader
 
 jwt = get_token()
 
@@ -18,7 +18,7 @@ segment = int(sys.argv[2])
 frame = int(sys.argv[3])
 
 url = 'https://api.commadotai.com/v1/route/'+sys.argv[1]+"/files"
-r = requests.get(url, headers={"Authorization": "JWT "+jwt})
+r = requests.get(url, headers={"Authorization": "JWT "+jwt}, timeout=10)
 assert r.status_code == 200
 print("got api response")
 

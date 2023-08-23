@@ -107,7 +107,7 @@ void Installer::doInstall() {
     qDebug() << "Waiting for valid time";
   }
 
-  // cleanup previous install attemps
+  // cleanup previous install attempts
   run("rm -rf " TMP_INSTALL_PATH " " INSTALL_PATH);
 
   // do the install
@@ -141,9 +141,9 @@ void Installer::cachedFetch(const QString &cache) {
 void Installer::readProgress() {
   const QVector<QPair<QString, int>> stages = {
     // prefix, weight in percentage
-    {tr("Receiving objects: "), 91},
-    {tr("Resolving deltas: "), 2},
-    {tr("Updating files: "), 7},
+    {"Receiving objects: ", 91},
+    {"Resolving deltas: ", 2},
+    {"Updating files: ", 7},
   };
 
   auto line = QString(proc.readAllStandardError());
@@ -182,7 +182,6 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
   std::map<std::string, std::string> params = {
     {"SshEnabled", "1"},
     {"RecordFrontLock", "1"},
-    {"DisableRadar_Allow", "1"},
     {"GithubSshKeys", SSH_KEYS},
   };
   for (const auto& [key, value] : params) {

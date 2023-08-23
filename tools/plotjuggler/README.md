@@ -4,7 +4,7 @@
 
 ## Installation
 
-Once you've cloned and are in openpilot, this command will download PlotJuggler and install our plugins:
+Once you've [set up the openpilot environment](../README.md), this command will download PlotJuggler and install our plugins:
 
 `cd tools/plotjuggler && ./juggle.py --install`
 
@@ -38,11 +38,11 @@ optional arguments:
 
 Examples using route name:
 
-`./juggle.py "4cf7a6ad03080c90|2021-09-29--13-46-36"`
+`./juggle.py "a2a0ccea32023010|2023-07-27--13-01-19"`
 
 Examples using segment name:
 
-`./juggle.py "4cf7a6ad03080c90|2021-09-29--13-46-36--1"`
+`./juggle.py "a2a0ccea32023010|2023-07-27--13-01-19--1"`
 
 ## Streaming
 

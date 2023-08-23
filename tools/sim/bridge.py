@@ -16,20 +16,20 @@ import pyopencl.array as cl_array
 import cereal.messaging as messaging
 from cereal import log
 from cereal.visionipc import VisionIpcServer, VisionStreamType
-from common.basedir import BASEDIR
-from common.numpy_fast import clip
-from common.params import Params
-from common.realtime import DT_DMON, Ratekeeper
-from selfdrive.car.honda.values import CruiseButtons
-from selfdrive.test.helpers import set_params_enabled
-from tools.sim.lib.can import can_function
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.numpy_fast import clip
+from openpilot.common.params import Params
+from openpilot.common.realtime import DT_DMON, Ratekeeper
+from openpilot.selfdrive.car.honda.values import CruiseButtons
+from openpilot.selfdrive.test.helpers import set_params_enabled
+from openpilot.tools.sim.lib.can import can_function
 
 W, H = 1928, 1208
 REPEAT_COUNTER = 5
 PRINT_DECIMATION = 100
 STEER_RATIO = 15.
 
-pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'sensorEvents', 'can', "gpsLocationExternal"])
+pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'accelerometer', 'gyroscope', 'can', "gpsLocationExternal"])
 sm = messaging.SubMaster(['carControl', 'controlsState'])
 
 def parse_args(add_args=None):
@@ -39,6 +39,8 @@ def parse_args(add_args=None):
   parser.add_argument('--dual_camera', action='store_true')
   parser.add_argument('--town', type=str, default='Town04_Opt')
   parser.add_argument('--spawn_point', dest='num_selected_spawn_point', type=int, default=16)
+  parser.add_argument('--host', dest='host', type=str, default='127.0.0.1')
+  parser.add_argument('--port', dest='port', type=int, default=2000)
 
   return parser.parse_args(add_args)
 
@@ -66,13 +68,14 @@ def steer_rate_limit(old, new):
 
 
 class Camerad:
-  def __init__(self):
+  def __init__(self, dual_camera):
     self.frame_road_id = 0
     self.frame_wide_id = 0
     self.vipc_server = VisionIpcServer("camerad")
 
     self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 5, False, W, H)
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 5, False, W, H)
+    if dual_camera:
+      self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 5, False, W, H)
     self.vipc_server.start_listener()
 
     # set up for pyopencl rgb to yuv conversion
@@ -80,11 +83,10 @@ class Camerad:
     self.queue = cl.CommandQueue(self.ctx)
     cl_arg = f" -DHEIGHT={H} -DWIDTH={W} -DRGB_STRIDE={W * 3} -DUV_WIDTH={W // 2} -DUV_HEIGHT={H // 2} -DRGB_SIZE={W * H} -DCL_DEBUG "
 
-    # TODO: move rgb_to_yuv.cl to local dir once the frame stream camera is removed
-    kernel_fn = os.path.join(BASEDIR, "system", "camerad", "transforms", "rgb_to_yuv.cl")
+    kernel_fn = os.path.join(BASEDIR, "tools/sim/rgb_to_nv12.cl")
     with open(kernel_fn) as f:
       prg = cl.Program(self.ctx, f.read()).build(cl_arg)
-      self.krnl = prg.rgb_to_yuv
+      self.krnl = prg.rgb_to_nv12
     self.Wdiv4 = W // 4 if (W % 4 == 0) else (W + (4 - W % 4)) // 4
     self.Hdiv4 = H // 4 if (H % 4 == 0) else (H + (4 - H % 4)) // 4
 
@@ -122,18 +124,26 @@ class Camerad:
     pm.send(pub_type, dat)
 
 def imu_callback(imu, vehicle_state):
-  vehicle_state.bearing_deg = math.degrees(imu.compass)
-  dat = messaging.new_message('sensorEvents', 2)
-  dat.sensorEvents[0].sensor = 4
-  dat.sensorEvents[0].type = 0x10
-  dat.sensorEvents[0].init('acceleration')
-  dat.sensorEvents[0].acceleration.v = [imu.accelerometer.x, imu.accelerometer.y, imu.accelerometer.z]
-  # copied these numbers from locationd
-  dat.sensorEvents[1].sensor = 5
-  dat.sensorEvents[1].type = 0x10
-  dat.sensorEvents[1].init('gyroUncalibrated')
-  dat.sensorEvents[1].gyroUncalibrated.v = [imu.gyroscope.x, imu.gyroscope.y, imu.gyroscope.z]
-  pm.send('sensorEvents', dat)
+  # send 5x since 'sensor_tick' doesn't seem to work. limited by the world tick?
+  for _ in range(5):
+    vehicle_state.bearing_deg = math.degrees(imu.compass)
+    dat = messaging.new_message('accelerometer')
+    dat.accelerometer.sensor = 4
+    dat.accelerometer.type = 0x10
+    dat.accelerometer.timestamp = dat.logMonoTime  # TODO: use the IMU timestamp
+    dat.accelerometer.init('acceleration')
+    dat.accelerometer.acceleration.v = [imu.accelerometer.x, imu.accelerometer.y, imu.accelerometer.z]
+    pm.send('accelerometer', dat)
+
+    # copied these numbers from locationd
+    dat = messaging.new_message('gyroscope')
+    dat.gyroscope.sensor = 5
+    dat.gyroscope.type = 0x10
+    dat.gyroscope.timestamp = dat.logMonoTime  # TODO: use the IMU timestamp
+    dat.gyroscope.init('gyroUncalibrated')
+    dat.gyroscope.gyroUncalibrated.v = [imu.gyroscope.x, imu.gyroscope.y, imu.gyroscope.z]
+    pm.send('gyroscope', dat)
+    time.sleep(0.01)
 
 
 def panda_state_function(vs: VehicleState, exit_event: threading.Event):
@@ -202,7 +212,10 @@ def fake_driver_monitoring(exit_event: threading.Event):
   while not exit_event.is_set():
     # dmonitoringmodeld output
     dat = messaging.new_message('driverStateV2')
+    dat.driverStateV2.leftDriverData.faceOrientation = [0., 0., 0.]
     dat.driverStateV2.leftDriverData.faceProb = 1.0
+    dat.driverStateV2.rightDriverData.faceOrientation = [0., 0., 0.]
+    dat.driverStateV2.rightDriverData.faceProb = 1.0
     pm.send('driverStateV2', dat)
 
     # dmonitoringd output
@@ -225,8 +238,8 @@ def can_function_runner(vs: VehicleState, exit_event: threading.Event):
     i += 1
 
 
-def connect_carla_client():
-  client = carla.Client("127.0.0.1", 2000)
+def connect_carla_client(host: str, port: int):
+  client = carla.Client(host, port)
   client.set_timeout(5)
   return client
 
@@ -236,11 +249,13 @@ class CarlaBridge:
   def __init__(self, arguments):
     set_params_enabled()
 
+    self.params = Params()
+
     msg = messaging.new_message('liveCalibration')
     msg.liveCalibration.validBlocks = 20
     msg.liveCalibration.rpyCalib = [0.0, 0.0, 0.0]
-    Params().put("CalibrationParams", msg.to_bytes())
-    Params().put_bool("WideCameraOnly", not arguments.dual_camera)
+    self.params.put("CalibrationParams", msg.to_bytes())
+    self.params.put_bool("DisengageOnAccelerator", True)
 
     self._args = arguments
     self._carla_objects = []
@@ -281,7 +296,7 @@ class CarlaBridge:
       self.close()
 
   def _run(self, q: Queue):
-    client = connect_carla_client()
+    client = connect_carla_client(self._args.host, self._args.port)
     world = client.load_world(self._args.town)
 
     settings = world.get_settings()
@@ -335,25 +350,26 @@ class CarlaBridge:
       camera.listen(callback)
       return camera
 
-    self._camerad = Camerad()
+    self._camerad = Camerad(self._args.dual_camera)
 
     if self._args.dual_camera:
-      road_camera = create_camera(fov=40, callback=self._camerad.cam_callback_road)
-      self._carla_objects.append(road_camera)
-
-    road_wide_camera = create_camera(fov=120, callback=self._camerad.cam_callback_wide_road)  # fov bigger than 120 shows unwanted artifacts
-    self._carla_objects.append(road_wide_camera)
+      road_wide_camera = create_camera(fov=120, callback=self._camerad.cam_callback_wide_road)  # fov bigger than 120 shows unwanted artifacts
+      self._carla_objects.append(road_wide_camera)
+    road_camera = create_camera(fov=40, callback=self._camerad.cam_callback_road)
+    self._carla_objects.append(road_camera)
 
     vehicle_state = VehicleState()
 
-    # reenable IMU
+    # re-enable IMU
     imu_bp = blueprint_library.find('sensor.other.imu')
+    imu_bp.set_attribute('sensor_tick', '0.01')
     imu = world.spawn_actor(imu_bp, transform, attach_to=vehicle)
     imu.listen(lambda imu: imu_callback(imu, vehicle_state))
 
     gps_bp = blueprint_library.find('sensor.other.gnss')
     gps = world.spawn_actor(gps_bp, transform, attach_to=vehicle)
     gps.listen(lambda gps: gps_callback(gps, vehicle_state))
+    self.params.put_bool("UbloxAvailable", True)
 
     self._carla_objects.extend([imu, gps])
     # launch fake car threads
@@ -529,23 +545,17 @@ if __name__ == "__main__":
   q: Any = Queue()
   args = parse_args()
 
-  try:
-    carla_bridge = CarlaBridge(args)
-    p = carla_bridge.run(q)
+  carla_bridge = CarlaBridge(args)
+  p = carla_bridge.run(q)
 
-    if args.joystick:
-      # start input poll for joystick
-      from tools.sim.lib.manual_ctrl import wheel_poll_thread
+  if args.joystick:
+    # start input poll for joystick
+    from openpilot.tools.sim.lib.manual_ctrl import wheel_poll_thread
 
-      wheel_poll_thread(q)
-    else:
-      # start input poll for keyboard
-      from tools.sim.lib.keyboard_ctrl import keyboard_poll_thread
+    wheel_poll_thread(q)
+  else:
+    # start input poll for keyboard
+    from openpilot.tools.sim.lib.keyboard_ctrl import keyboard_poll_thread
 
-      keyboard_poll_thread(q)
-    p.join()
-
-  finally:
-    # Try cleaning up the wide camera param
-    # in case users want to use replay after
-    Params().delete("WideCameraOnly")
+    keyboard_poll_thread(q)
+  p.join()

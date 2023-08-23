@@ -12,7 +12,7 @@
 // TODO: detect when we can't play sounds
 // TODO: detect when we can't display the UI
 
-Sound::Sound(QObject *parent) : sm({"carState", "controlsState", "deviceState"}) {
+Sound::Sound(QObject *parent) : sm({"controlsState", "microphone"}) {
   qInfo() << "default audio device: " << QAudioDeviceInfo::defaultOutputDevice().deviceName();
 
   for (auto &[alert, fn, loops] : sound_list) {
@@ -20,7 +20,6 @@ Sound::Sound(QObject *parent) : sm({"carState", "controlsState", "deviceState"})
     QObject::connect(s, &QSoundEffect::statusChanged, [=]() {
       assert(s->status() != QSoundEffect::Error);
     });
-    s->setVolume(Hardware::MIN_VOLUME);
     s->setSource(QUrl::fromLocalFile("../../assets/sounds/" + fn));
     sounds[alert] = {s, loops};
   }
@@ -31,33 +30,19 @@ Sound::Sound(QObject *parent) : sm({"carState", "controlsState", "deviceState"})
 };
 
 void Sound::update() {
-  const bool started_prev = sm["deviceState"].getDeviceState().getStarted();
   sm.update(0);
 
-  const bool started = sm["deviceState"].getDeviceState().getStarted();
-  if (started && !started_prev) {
-    started_frame = sm.frame;
-  }
-
-  // no sounds while offroad
-  // also no sounds if nothing is alive in case thermald crashes while offroad
-  const bool crashed = (sm.frame - std::max(sm.rcv_frame("deviceState"), sm.rcv_frame("controlsState"))) > 10*UI_FREQ;
-  if (!started || crashed) {
-    setAlert({});
-    return;
-  }
-
-  // scale volume with speed
-  if (sm.updated("carState")) {
-    float volume = util::map_val(sm["carState"].getCarState().getVEgo(), 11.f, 20.f, 0.f, 1.0f);
+  // scale volume using ambient noise level
+  if (sm.updated("microphone")) {
+    float volume = util::map_val(sm["microphone"].getMicrophone().getFilteredSoundPressureWeightedDb(), 30.f, 60.f, 0.f, 1.f);
     volume = QAudio::convertVolume(volume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
-    volume = util::map_val(volume, 0.f, 1.f, Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
-    for (auto &[s, loops] : sounds) {
-      s->setVolume(std::round(100 * volume) / 100);
+    // set volume on changes
+    if (std::exchange(current_volume, std::nearbyint(volume * 10)) != current_volume) {
+      Hardware::set_volume(volume);
     }
   }
 
-  setAlert(Alert::get(sm, started_frame));
+  setAlert(Alert::get(sm, 0));
 }
 
 void Sound::setAlert(const Alert &alert) {
