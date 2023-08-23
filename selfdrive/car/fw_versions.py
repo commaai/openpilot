@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List, Optional, Set
+from typing import Any, Tuple, DefaultDict, Dict, List, Optional, Set
 from tqdm import tqdm
 import capnp
 
@@ -270,26 +270,28 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   # Extract ECU addresses to query from fingerprints
   # ECUs using a subaddress need be queried one by one, the rest can be done in parallel
   addrs = []
-  parallel_addrs = []
+  parallel_addrs: List[Tuple[str, int, Optional[int]]] = []
   ecu_types = {}
 
   for brand, brand_versions in versions.items():
     config = FW_QUERY_CONFIGS[brand]
-    for ecu in brand_versions.values():
-      # Each brand can define extra ECUs to query for data collection
-      for ecu_type, addr, sub_addr in list(ecu) + config.extra_ecus:
-        a = (brand, addr, sub_addr)
-        if a not in ecu_types:
-          ecu_types[a] = ecu_type
+    addrs, parallel_addrs, ecu_types = config.get_addrs(versions)
 
-        if sub_addr is None:
-          if a not in parallel_addrs:
-            parallel_addrs.append(a)
-        else:
-          if [a] not in addrs:
-            addrs.append([a])
+    for ecu_type, addr, sub_addr in config.get_all_addrs(brand_versions):
+      a = (brand, addr, sub_addr)
+      if a not in ecu_types:
+        ecu_types[a] = ecu_type
+
+      if sub_addr is None:
+        if a not in parallel_addrs:
+          parallel_addrs.append(a)
+      else:
+        if [a] not in addrs:
+          addrs.append([a])
 
   addrs.insert(0, parallel_addrs)
+
+  # addrs, parallel_addrs, ecu_types = config.get_addrs(versions)
 
   # Get versions and build capnp list to put into CarParams
   car_fw = []
