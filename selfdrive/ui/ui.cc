@@ -245,8 +245,11 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   });
 
   Params params;
-  prime_type = std::atoi(params.get("PrimeType").c_str());
   language = QString::fromStdString(params.get("LanguageSetting"));
+  auto prime_value = params.get("PrimeType");
+  if (!prime_value.empty()) {
+    prime_type = static_cast<PrimeType>(std::atoi(prime_value.c_str()));
+  }
 
   // update timer
   timer = new QTimer(this);
@@ -265,7 +268,7 @@ void UIState::update() {
   emit uiUpdate(*this);
 }
 
-void UIState::setPrimeType(int type) {
+void UIState::setPrimeType(PrimeType type) {
   if (type != prime_type) {
     prime_type = type;
     Params().put("PrimeType", std::to_string(prime_type));
