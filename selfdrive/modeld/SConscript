@@ -13,12 +13,15 @@ common_src = [
   "transforms/transform.cc"
 ]
 
-thneed_src = [
+thneed_src_common = [
   "thneed/thneed_common.cc",
-  "thneed/thneed_qcom2.cc",
   "thneed/serialize.cc",
   "runners/thneedmodel.cc",
 ]
+
+thneed_src_qcom = thneed_src_common + ["thneed/thneed_qcom2.cc"]
+thneed_src_pc = thneed_src_common + ["thneed/thneed_pc.cc"]
+thneed_src = thneed_src_qcom if arch == "larch64" else thneed_src_pc
 
 use_thneed = not GetOption('no_thneed')
 
@@ -26,7 +29,7 @@ if arch == "larch64":
   libs += ['gsl', 'CB', 'pthread', 'dl']
 
   if use_thneed:
-    common_src += thneed_src
+    common_src += thneed_src_qcom
     lenv['CXXFLAGS'].append("-DUSE_THNEED")
 else:
   libs += ['pthread']
@@ -80,15 +83,9 @@ if (use_thneed and arch == "larch64") or GetOption('pc_thneed'):
 
 llenv = lenv.Clone()
 if GetOption('pc_thneed'):
-  pc_thneed_src = [
-    "thneed/thneed_common.cc",
-    "thneed/thneed_pc.cc",
-    "thneed/serialize.cc",
-    "runners/thneedmodel.cc",
-  ]
   llenv['CFLAGS'].append("-DUSE_THNEED")
   llenv['CXXFLAGS'].append("-DUSE_THNEED")
-  common_model += llenv.Object(pc_thneed_src)
+  common_model += llenv.Object(thneed_src_pc)
   libs += ['dl']
 
 llenv.Program('_modeld', [
