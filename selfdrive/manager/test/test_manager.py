@@ -34,7 +34,7 @@ class TestManager(unittest.TestCase):
     manager.main()
 
   def test_blacklisted_procs(self):
-    # TODO: ensure blacklisted procs until we have a dedicated test
+    # TODO: ensure there are blacklisted procs until we have a dedicated test
     self.assertTrue(len(BLACKLIST_PROCS), "No blacklisted procs to test not_run")
 
   def test_startup_time(self):
@@ -64,7 +64,7 @@ class TestManager(unittest.TestCase):
         self.assertTrue(state.running, f"{p.name} not running")
         exit_code = p.stop(retry=False)
 
-        self.assertNotIn(p.name, BLACKLIST_PROCS)
+        self.assertNotIn(p.name, BLACKLIST_PROCS, f"{p.name} was started")
 
         # TODO: mapsd should exit cleanly
         if p.name == "mapsd":
