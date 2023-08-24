@@ -16,6 +16,7 @@ os.environ['FAKEUPLOAD'] = "1"
 MAX_STARTUP_TIME = 3
 BLACKLIST_PROCS = ['manage_athenad', 'pandad', 'pigeond']
 
+
 class TestManager(unittest.TestCase):
   def setUp(self):
     os.environ['PASSIVE'] = '0'
@@ -50,6 +51,7 @@ class TestManager(unittest.TestCase):
 
     CP = car.CarParams.new_message()
     procs = ensure_running(managed_processes.values(), True, Params(), CP, not_run=BLACKLIST_PROCS)
+    print('RUNNING', procs)
 
     time.sleep(10)
 
@@ -58,6 +60,8 @@ class TestManager(unittest.TestCase):
         state = p.get_process_state_msg()
         self.assertTrue(state.running, f"{p.name} not running")
         exit_code = p.stop(retry=False)
+
+        self.assertNotIn(p.name, BLACKLIST_PROCS)
 
         # TODO: mapsd should exit cleanly
         if p.name == "mapsd":
