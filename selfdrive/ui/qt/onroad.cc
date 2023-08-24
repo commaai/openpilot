@@ -1,6 +1,9 @@
 #include "selfdrive/ui/qt/onroad.h"
 
+#include <algorithm>
 #include <cmath>
+#include <map>
+#include <memory>
 
 #include <QDebug>
 #include <QMouseEvent>

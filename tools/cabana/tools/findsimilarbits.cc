@@ -1,5 +1,7 @@
 #include "tools/cabana/tools/findsimilarbits.h"
 
+#include <algorithm>
+
 #include <QGridLayout>
 #include <QHeaderView>
 #include <QHBoxLayout>

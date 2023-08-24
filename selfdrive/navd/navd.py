@@ -9,15 +9,15 @@ import numpy as np
 
 import cereal.messaging as messaging
 from cereal import log
-from common.api import Api
-from common.params import Params
-from common.realtime import Ratekeeper
-from common.transformations.coordinates import ecef2geodetic
-from selfdrive.navd.helpers import (Coordinate, coordinate_from_param,
+from openpilot.common.api import Api
+from openpilot.common.params import Params
+from openpilot.common.realtime import Ratekeeper
+from openpilot.common.transformations.coordinates import ecef2geodetic
+from openpilot.selfdrive.navd.helpers import (Coordinate, coordinate_from_param,
                                     distance_along_geometry, maxspeed_to_ms,
                                     minimum_distance,
                                     parse_banner_instructions)
-from system.swaglog import cloudlog
+from openpilot.system.swaglog import cloudlog
 
 REROUTE_DISTANCE = 25
 MANEUVER_TRANSITION_THRESHOLD = 10

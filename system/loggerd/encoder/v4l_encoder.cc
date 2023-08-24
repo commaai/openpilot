@@ -1,4 +1,5 @@
 #include <cassert>
+#include <string>
 #include <sys/ioctl.h>
 #include <poll.h>
 
@@ -6,11 +7,11 @@
 #include "common/util.h"
 #include "common/timing.h"
 
-#include "libyuv.h"
-#include "msm_media_info.h"
+#include "third_party/libyuv/include/libyuv.h"
+#include "third_party/linux/include/msm_media_info.h"
 
 // has to be in this order
-#include "v4l2-controls.h"
+#include "third_party/linux/include/v4l2-controls.h"
 #include <linux/videodev2.h>
 #define V4L2_QCOM_BUF_FLAG_CODECCONFIG 0x00020000
 #define V4L2_QCOM_BUF_FLAG_EOS 0x02000000

@@ -77,6 +77,8 @@ float getenv(const char* key, float default_val);
 
 std::string hexdump(const uint8_t* in, const size_t size);
 std::string dir_name(std::string const& path);
+bool starts_with(const std::string &s1, const std::string &s2);
+bool ends_with(const std::string &s1, const std::string &s2);
 
 // ***** random helpers *****
 int random_int(int min, int max);
@@ -115,7 +117,7 @@ public:
 #ifndef __APPLE__
     std::signal(SIGPWR, (sighandler_t)set_do_exit);
 #endif
-  };
+  }
   inline static std::atomic<bool> power_failure = false;
   inline static std::atomic<int> signal = 0;
   inline operator bool() { return do_exit; }
@@ -169,7 +171,7 @@ private:
 template<typename T>
 void update_max_atomic(std::atomic<T>& max, T const& value) {
   T prev = max;
-  while(prev < value && !max.compare_exchange_weak(prev, value)) {}
+  while (prev < value && !max.compare_exchange_weak(prev, value)) {}
 }
 
 class LogState {

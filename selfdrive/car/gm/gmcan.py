@@ -1,5 +1,5 @@
-from selfdrive.car import make_can_msg
-from selfdrive.car.gm.values import CAR
+from openpilot.selfdrive.car import make_can_msg
+from openpilot.selfdrive.car.gm.values import CAR
 
 
 def create_buttons(packer, bus, idx, button):

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 from cereal import car
-from common.conversions import Conversions as CV
-from selfdrive.car.mazda.values import CAR, LKAS_LIMITS
-from selfdrive.car import STD_CARGO_KG, get_safety_config
-from selfdrive.car.interfaces import CarInterfaceBase
+from openpilot.common.conversions import Conversions as CV
+from openpilot.selfdrive.car.mazda.values import CAR, LKAS_LIMITS
+from openpilot.selfdrive.car import get_safety_config
+from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -25,19 +25,19 @@ class CarInterface(CarInterfaceBase):
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     if candidate in (CAR.CX5, CAR.CX5_2022):
-      ret.mass = 3655 * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 3655 * CV.LB_TO_KG
       ret.wheelbase = 2.7
       ret.steerRatio = 15.5
     elif candidate in (CAR.CX9, CAR.CX9_2021):
-      ret.mass = 4217 * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 4217 * CV.LB_TO_KG
       ret.wheelbase = 3.1
       ret.steerRatio = 17.6
     elif candidate == CAR.MAZDA3:
-      ret.mass = 2875 * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 2875 * CV.LB_TO_KG
       ret.wheelbase = 2.7
       ret.steerRatio = 14.0
     elif candidate == CAR.MAZDA6:
-      ret.mass = 3443 * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 3443 * CV.LB_TO_KG
       ret.wheelbase = 2.83
       ret.steerRatio = 15.5
 
