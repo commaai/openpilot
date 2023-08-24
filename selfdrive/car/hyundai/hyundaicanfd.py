@@ -67,6 +67,12 @@ def create_cam_0x2a4(packer, CAN, cam_0x2a4):
   values["BYTE7"] = 0
   return packer.make_can_msg("CAM_0x2a4", CAN.ACAN, values)
 
+def create_cam_0x230(packer, CAN, cam_0x230):
+  values = {f"BYTE{i}": cam_0x230[f"BYTE{i}"] for i in range(3, 16)}
+  values['COUNTER'] = cam_0x230['COUNTER']
+  values["BYTE4"] = 0
+  return packer.make_can_msg("CAM_0x230", CAN.ACAN, values)
+
 def create_buttons(packer, CP, CAN, cnt, btn):
   values = {
     "COUNTER": cnt,
