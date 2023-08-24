@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 import subprocess
 import sys
+from datetime import datetime, timedelta
 from functools import lru_cache
-from typing import Optional
+from typing import Iterable, Optional, Tuple
 
-from azure.identity import DefaultAzureCredential
-from azure.storage.blob import BlobServiceClient
+from azure.identity import AzureCliCredential
+from azure.storage.blob import (BlobServiceClient, ContainerClient, ContainerSasPermissions,
+                                generate_container_sas, UserDelegationKey)
 from tqdm import tqdm
 
 from openpilot.selfdrive.car.tests.routes import routes as test_car_models_routes
@@ -22,30 +24,40 @@ SOURCES = [
 ]
 
 
-def get_user_token(account_name, container_name):
-  try:
-    subprocess.check_call(["az", "account", "show"], stdout=subprocess.DEVNULL)
-  except (subprocess.CalledProcessError, FileNotFoundError):
-    raise Exception('Must run `az login` before calling get_user_token') from None
-
-  cli = "az storage container generate-sas "
-  cli += "--account-name " + account_name + " --name " + container_name + " "
-  cli += "--https-only --permissions lrw --expiry $(date -u '+%Y-%m-%dT%H:%M:%SZ' -d '+1 hour') --auth-mode login --as-user --output tsv"
-  sas_token = subprocess.check_output(cli, shell=True, stderr=subprocess.DEVNULL).decode().strip("\n")
-
-  return sas_token
+@lru_cache
+def get_blob_service(account_name: str) -> BlobServiceClient:
+  account_url = f"https://{account_name}.blob.core.windows.net"
+  return BlobServiceClient(account_url, credential=AzureCliCredential())
 
 
 @lru_cache
-def get_azure_keys():
-  dest_key = get_user_token(_DATA_ACCOUNT_CI, "openpilotci")
-  source_keys = [get_user_token(account, bucket) for account, bucket in SOURCES]
-  service = BlockBlobService(_DATA_ACCOUNT_CI, sas_token=dest_key)
-  return dest_key, source_keys, service
+def get_user_delegation_key(account_name: str) -> UserDelegationKey:
+  start_time = datetime.utcnow()
+  expiry_time = start_time + timedelta(hours=1)
+  return get_blob_service(account_name).get_user_delegation_key(start_time, expiry_time)
 
 
-def upload_route(path, exclude_patterns=None):
-  dest_key, _, _ = get_azure_keys()
+@lru_cache
+def get_container_sas(account_name: str, container_name: str):
+  return generate_container_sas(
+    account_name,
+    container_name,
+    user_delegation_key=get_user_delegation_key(account_name),
+    permission=ContainerSasPermissions(read=True, write=True, list=True),
+    expiry=datetime.utcnow() + timedelta(hours=1),
+  )
+
+
+@lru_cache
+def get_azure_keys() -> Tuple[str, Iterable[Tuple[str, str]], ContainerClient]:
+  dest_key = get_container_sas(_DATA_ACCOUNT_CI, "openpilotci")
+  source_keys = [get_container_sas(account, bucket) for account, bucket in SOURCES]
+  container = get_blob_service(_DATA_ACCOUNT_CI).get_container_client("openpilotci")
+  return dest_key, source_keys, container
+
+
+def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) -> None:
+  dest_key = get_container_sas(_DATA_ACCOUNT_CI, "openpilotci")
   if exclude_patterns is None:
     exclude_patterns = ['*/dcamera.hevc']
 
@@ -62,26 +74,13 @@ def upload_route(path, exclude_patterns=None):
   ] + [f"--exclude-pattern={p}" for p in exclude_patterns]
   subprocess.check_call(cmd)
 
-def list_all_blobs(blob_service: BlobServiceClient, container: str, prefix: Optional[str] = None):
-  marker = None
-  count = 0
-  while True:
-    batch = blob_service.list_blobs(container, prefix=prefix, marker=marker)
-    for blob in batch:
-      yield blob
-      count += 1
-    # note that it is extremely important that you grab the next marker after iterating
-    # (because list_blobs makes multiple requests and updates the marker after each request)
-    marker = batch.next_marker
-    if not marker:
-      break
 
-def sync_to_ci_public(route):
-  dest_key, source_keys, service = get_azure_keys()
+def sync_to_ci_public(route: str) -> bool:
+  dest_key, source_keys, container = get_azure_keys()
   key_prefix = route.replace('|', '/')
   dongle_id = key_prefix.split('/')[0]
 
-  if next(list_all_blobs(service, "openpilotci", prefix=key_prefix), None) is not None:
+  if next(container.list_blob_names(name_starts_with=key_prefix), None) is not None:
     return True
 
   print(f"Uploading {route}")
