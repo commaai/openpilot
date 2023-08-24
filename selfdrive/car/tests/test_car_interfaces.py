@@ -18,9 +18,7 @@ from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
 ALL_ECUS = list({ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()})
 
-
 MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '5'))
-ALL_ECUS = list({ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()})
 
 
 def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
@@ -40,8 +38,6 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
 
   params: dict = draw(params_strategy)
   params['car_fw'] = [car.CarParams.CarFw(ecu=fw[0], address=fw[1], subAddress=fw[2] or 0) for fw in params['car_fw']]
-  print(params)
-  print()
   return params
 
 
@@ -53,11 +49,9 @@ class TestCarInterfaces(unittest.TestCase):
 
   # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
   #  many generated examples to overrun when max_examples > ~20, don't run it
-  @parameterized.expand([(car,) for car in sorted(all_known_cars()) if car.startswith('SUBARU CROSSTREK HYBRID')])
-  @settings(max_examples=100,
-            phases=(Phase.reuse, Phase.generate, Phase.shrink),
-            # suppress_health_check=list(HealthCheck),
-            )
+  @parameterized.expand([(car,) for car in sorted(all_known_cars())])
+  @settings(max_examples=MAX_EXAMPLES, deadline=500,
+            phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
   def test_car_interfaces(self, car_name, data):
     CarInterface, CarController, CarState = interfaces[car_name]
@@ -69,7 +63,6 @@ class TestCarInterfaces(unittest.TestCase):
     car_interface = CarInterface(car_params, CarController, CarState)
     assert car_params
     assert car_interface
-    # return
 
     self.assertGreater(car_params.mass, 1)
     self.assertGreater(car_params.wheelbase, 0)
