@@ -169,15 +169,15 @@ static void update_state(UIState *s) {
     Eigen::Matrix3d device_from_calib = euler2rot(rpy);
     Eigen::Matrix3d wide_from_device = euler2rot(wfde);
     Eigen::Matrix3d view_from_device;
-    view_from_device << 0,1,0,
-                        0,0,1,
-                        1,0,0;
+    view_from_device << 0, 1, 0,
+                        0, 0, 1,
+                        1, 0, 0;
     Eigen::Matrix3d view_from_calib = view_from_device * device_from_calib;
     Eigen::Matrix3d view_from_wide_calib = view_from_device * wide_from_device * device_from_calib;
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++) {
-        scene.view_from_calib.v[i*3 + j] = view_from_calib(i,j);
-        scene.view_from_wide_calib.v[i*3 + j] = view_from_wide_calib(i,j);
+        scene.view_from_calib.v[i*3 + j] = view_from_calib(i, j);
+        scene.view_from_wide_calib.v[i*3 + j] = view_from_wide_calib(i, j);
       }
     }
     scene.calibration_valid = live_calib.getCalStatus() == cereal::LiveCalibrationData::Status::CALIBRATED;

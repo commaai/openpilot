@@ -157,7 +157,7 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMet
     softmax(meta_data.desire_pred_prob[i].array.data(), desire_pred_softmax.data() + (i * DESIRE_LEN), DESIRE_LEN);
   }
 
-  std::array<float, DISENGAGE_LEN> lat_long_t = {2,4,6,8,10};
+  std::array<float, DISENGAGE_LEN> lat_long_t = {2, 4, 6, 8, 10};
   std::array<float, DISENGAGE_LEN> gas_disengage_sigmoid, brake_disengage_sigmoid, steer_override_sigmoid,
                                    brake_3ms2_sigmoid, brake_4ms2_sigmoid, brake_5ms2_sigmoid;
   for (int i=0; i<DISENGAGE_LEN; i++) {
