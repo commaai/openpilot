@@ -3,7 +3,7 @@ from functools import lru_cache
 import sys
 import subprocess
 from tqdm import tqdm
-from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
+from azure.storage.blob import BlobServiceClient
 
 from openpilot.selfdrive.car.tests.routes import routes as test_car_models_routes
 from openpilot.selfdrive.locationd.test.test_laikad import UBLOX_TEST_ROUTE, QCOM_TEST_ROUTE
