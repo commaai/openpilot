@@ -200,11 +200,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.centerToFront = ret.wheelbase * 0.44
 
-    # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
-    # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
-                                                                         tire_stiffness_factor=tire_stiffness_factor)
-
     # TODO: find a way to automatically determine if the BSM signals are flipped
     ret.enableBsm = 0x3F6 in fingerprint[0] and candidate in TSS2_CAR # (TSS2_CAR or candidate in (CAR.CHR, CAR.CHRH))
 
