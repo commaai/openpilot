@@ -1,4 +1,4 @@
-#include "tools/lib/vidindex/bitstream.h"
+#include "./bitstream.h"
 
 #include <stdbool.h>
 #include <assert.h>

@@ -9,7 +9,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 
-#include "tools/lib/vidindex/bitstream.h"
+#include "./bitstream.h"
 
 #define START_CODE 0x000001
 
