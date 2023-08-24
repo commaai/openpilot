@@ -3,7 +3,7 @@ import os
 import math
 import unittest
 import hypothesis.strategies as st
-from hypothesis import given, settings
+from hypothesis import Phase, given, settings
 import importlib
 from parameterized import parameterized
 
@@ -17,6 +17,8 @@ from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
 ALL_ECUS = list({ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()})
+
+MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '5'))
 
 
 def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
@@ -45,8 +47,11 @@ class TestCarInterfaces(unittest.TestCase):
   def setUpClass(cls):
     os.environ['NO_RADAR_SLEEP'] = '1'
 
+  # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
+  #  many generated examples to overrun when max_examples > ~20, don't use it
   @parameterized.expand([(car,) for car in sorted(all_known_cars())])
-  @settings(max_examples=5)
+  @settings(max_examples=MAX_EXAMPLES, deadline=500,
+            phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
   def test_car_interfaces(self, car_name, data):
     CarInterface, CarController, CarState = interfaces[car_name]
