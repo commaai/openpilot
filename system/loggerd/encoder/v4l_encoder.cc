@@ -75,15 +75,15 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
   uint32_t idx = -1;
   bool exit = false;
 
+  // POLLIN is capture, POLLOUT is frame
+  struct pollfd pfd;
+  pfd.events = POLLIN | POLLOUT;
+  pfd.fd = e->fd;
+
   // save the header
   kj::Array<capnp::byte> header;
 
   while (!exit) {
-    // POLLIN is capture, POLLOUT is frame
-    struct pollfd pfd = {
-      .events = POLLIN | POLLOUT,
-      .fd = e->fd,
-    };
     int rc = poll(&pfd, 1, 1000);
     if (rc < 0) {
       if (errno != EINTR) {
