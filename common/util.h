@@ -153,12 +153,18 @@ struct unique_fd {
 
 class FirstOrderFilter {
 public:
-  FirstOrderFilter(float x0, float ts, float dt) {
+  FirstOrderFilter(float x0, float ts, float dt, bool initialized = true) {
     k_ = (dt / ts) / (1.0 + dt / ts);
     x_ = x0;
+    initialized_ = initialized;
   }
   inline float update(float x) {
-    x_ = (1. - k_) * x_ + k_ * x;
+    if (initialized_) {
+      x_ = (1. - k_) * x_ + k_ * x;
+    } else {
+      initialized_ = true;
+      x_ = x;
+    }
     return x_;
   }
   inline void reset(float x) { x_ = x; }
@@ -166,6 +172,7 @@ public:
 
 private:
   float x_, k_;
+  bool initialized_;
 };
 
 template<typename T>
