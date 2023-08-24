@@ -753,7 +753,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Select a language</source>
-        <translation type="unfinished">Sprache wählen</translation>
+        <translation>Sprache wählen</translation>
     </message>
 </context>
 <context>

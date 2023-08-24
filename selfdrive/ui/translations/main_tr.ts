@@ -749,7 +749,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Select a language</source>
-        <translation type="unfinished">Dil seçin</translation>
+        <translation>Dil seçin</translation>
     </message>
 </context>
 <context>

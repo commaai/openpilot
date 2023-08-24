@@ -755,7 +755,7 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     </message>
     <message>
         <source>Select a language</source>
-        <translation type="unfinished">Choisir une langue</translation>
+        <translation>Choisir une langue</translation>
     </message>
 </context>
 <context>

@@ -751,7 +751,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Select a language</source>
-        <translation type="unfinished">选择语言</translation>
+        <translation>选择语言</translation>
     </message>
 </context>
 <context>
