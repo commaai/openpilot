@@ -12,20 +12,17 @@ concurrency:
 
 env:
   PYTHONWARNINGS: error
-
   BASE_IMAGE: openpilot-base
   CL_BASE_IMAGE: openpilot-base-cl
-  DOCKER_REGISTRY: ghcr.io/commaai
   AZURE_TOKEN: ${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}
 
   DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-  BUILD: |
-      DOCKER_BUILDKIT=1 docker build --pull --cache-to type=inline --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
+  BUILD: selfdrive/test/docker_build.sh base
 
   RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONWARNINGS=error -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v ~/scons_cache:/tmp/scons_cache -v ~/comma_download_cache:/tmp/comma_download_cache -v ~/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/sh -c
 
-  BUILD_CL: |
-      DOCKER_BUILDKIT=1 docker build --cache-to type=inline --cache-from $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $CL_BASE_IMAGE:latest -f Dockerfile.openpilot_base_cl .
+  BUILD_CL: selfdrive/test/docker_build.sh cl
+
   RUN_CL: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONWARNINGS=error -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v ~/scons_cache:/tmp/scons_cache -v ~/comma_download_cache:/tmp/comma_download_cache -v ~/openpilot_cache:/tmp/openpilot_cache $CL_BASE_IMAGE /bin/sh -c
 
   UNIT_TEST: coverage run --append -m unittest discover
@@ -190,6 +187,8 @@ jobs:
     name: docker push
     runs-on: ubuntu-20.04
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+    env:
+      PUSH_IMAGE: true
     steps:
     - uses: actions/checkout@v3
       with:
@@ -197,20 +196,10 @@ jobs:
     - uses: ./.github/workflows/setup
       with:
         git-lfs: false
-    - name: Push to container registry
+    - name: Build and push CL Docker image
       run: |
         $DOCKER_LOGIN
-        docker push $DOCKER_REGISTRY/$BASE_IMAGE:latest
-        docker tag $DOCKER_REGISTRY/$BASE_IMAGE:latest $DOCKER_REGISTRY/$BASE_IMAGE:$GITHUB_SHA
-        docker push $DOCKER_REGISTRY/$BASE_IMAGE:$GITHUB_SHA
-    - name: Build CL Docker image
-      run: eval "$BUILD_CL"
-    - name: Push to container registry
-      run: |
-        $DOCKER_LOGIN
-        docker push $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest
-        docker tag $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest $DOCKER_REGISTRY/$CL_BASE_IMAGE:$GITHUB_SHA
-        docker push $DOCKER_REGISTRY/$CL_BASE_IMAGE:$GITHUB_SHA
+        eval "$BUILD_CL"
 
   static_analysis:
     name: static analysis
