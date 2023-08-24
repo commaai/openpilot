@@ -79,7 +79,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 17
       ret.steerActuatorDelay = 0.1
 
-    elif candidate in (CAR.FORESTER, CAR.FORESTER_2022, CAR.CROSSTREK_HYBRID):
+    elif candidate in (CAR.FORESTER, CAR.FORESTER_2022, CAR.FORESTER_HYBRID):
       ret.mass = 1568.
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5
