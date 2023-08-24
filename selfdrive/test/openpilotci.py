@@ -15,6 +15,7 @@ def get_url(route_name: str, segment_num: str, log_type="rlog") -> str:
   return BASE_URL + f"{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
 
 
+# TODO: replace with credential helper (check env and AzureCliCredential)
 def get_sas_token() -> str:
   sas_token = os.environ.get("AZURE_TOKEN", None)
   if os.path.isfile(TOKEN_PATH):
@@ -28,6 +29,7 @@ def get_sas_token() -> str:
   return sas_token
 
 
+# TODO: use credential helper
 def upload_bytes(data: Union[bytes, IO], name: str) -> str:
   from azure.storage.blob import BlobServiceClient
   service = BlobServiceClient(ACCOUNT_URL, credential=get_sas_token())

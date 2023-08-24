@@ -22,12 +22,14 @@ SOURCES = [
 ]
 
 
+# TODO: move to openpilotci.py
 @lru_cache
 def get_blob_service(account_name):
   account_url = f"https://{account_name}.blob.core.windows.net"
   return BlobServiceClient(account_url, credential=AzureCliCredential())
 
 
+# TODO: move to openpilotci.py
 @lru_cache
 def get_container_sas(account_name, container_name):
   start_time = datetime.utcnow()
