@@ -309,21 +309,8 @@ void Setup::nextPage() {
 }
 
 Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
-}
-
-void Setup::showEvent(QShowEvent *event) {
-  static bool initialized = false;
-  if (std::exchange(initialized, true) == true) return;
-
-  // select language
-  QMap<QString, QString> langs = getSupportedLanguages();
-  QString selection = MultiOptionDialog::getSelection(tr("Select a language"), langs.keys(), "", this);
-  if (!selection.isEmpty()) {
-    QString selectedLang = langs[selection];
-    Params().put("LanguageSetting", selectedLang.toStdString());
-    if (translator.load(":/" + selectedLang)) {
-      qApp->installTranslator(&translator);
-    }
+  if (std::getenv("MULTILANG")) {
+    selectLanguage();
   }
 
   std::stringstream buffer;
@@ -386,6 +373,18 @@ void Setup::showEvent(QShowEvent *event) {
       background-color: #3049F4;
     }
   )");
+}
+
+void Setup::selectLanguage() {
+  QMap<QString, QString> langs = getSupportedLanguages();
+  QString selection = MultiOptionDialog::getSelection(tr("Select a language"), langs.keys(), "", this);
+  if (!selection.isEmpty()) {
+    QString selectedLang = langs[selection];
+    Params().put("LanguageSetting", selectedLang.toStdString());
+    if (translator.load(":/" + selectedLang)) {
+      qApp->installTranslator(&translator);
+    }
+  }
 }
 
 int main(int argc, char *argv[]) {

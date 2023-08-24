@@ -11,9 +11,9 @@ class Setup : public QStackedWidget {
 
 public:
   explicit Setup(QWidget *parent = 0);
-  void showEvent(QShowEvent *event);
 
 private:
+  void selectLanguage();
   QWidget *low_voltage();
   QWidget *getting_started();
   QWidget *network_setup();
