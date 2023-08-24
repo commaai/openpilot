@@ -107,10 +107,11 @@ class CarState(CarStateBase):
                       (cp_es_distance.vl["ES_Brake"]["Brake_Pressure"] != 0)
         self.es_distance_msg = copy.copy(cp_es_distance.vl["ES_Distance"])
 
-      if self.car_fingerprint not in HYBRID_CARS:
         self.es_status_msg = copy.copy(cp_es_status.vl["ES_Status"])
         self.cruise_control_msg = copy.copy(cp_cruise.vl["CruiseControl"])
 
+    if self.car_fingerprint not in HYBRID_CARS:
+      self.es_distance_msg = copy.copy(cp_es_distance.vl["ES_Distance"])
     self.es_dashstatus_msg = copy.copy(cp_cam.vl["ES_DashStatus"])
     if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
       self.es_infotainment_msg = copy.copy(cp_cam.vl["ES_Infotainment"])
