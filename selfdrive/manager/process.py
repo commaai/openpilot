@@ -172,8 +172,8 @@ class NativeProcess(ManagerProcess):
     self.name = name
     self.cwd = cwd
     self.cmdline = cmdline
-    self.enabled = enabled
     self.should_run = should_run
+    self.enabled = enabled
     self.sigkill = sigkill
     self.watchdog_max_dt = watchdog_max_dt
     self.launcher = nativelauncher
@@ -201,8 +201,8 @@ class PythonProcess(ManagerProcess):
   def __init__(self, name, module, should_run, enabled=True, sigkill=False, watchdog_max_dt=None):
     self.name = name
     self.module = module
-    self.enabled = enabled
     self.should_run = should_run
+    self.enabled = enabled
     self.sigkill = sigkill
     self.watchdog_max_dt = watchdog_max_dt
     self.launcher = launcher
