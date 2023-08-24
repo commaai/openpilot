@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import math
 import unittest
 import hypothesis.strategies as st
@@ -40,6 +41,10 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
 
 
 class TestCarInterfaces(unittest.TestCase):
+
+  @classmethod
+  def setUpClass(cls):
+    os.environ['NO_RADAR_SLEEP'] = '1'
 
   @parameterized.expand([(car,) for car in sorted(all_known_cars())])
   @settings(max_examples=5)
