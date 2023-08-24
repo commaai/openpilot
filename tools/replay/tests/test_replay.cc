@@ -3,6 +3,8 @@
 
 #include <QDebug>
 #include <QEventLoop>
+#include <QFutureWatcher>
+#include <QtConcurrent>
 
 #include "catch2/catch.hpp"
 #include "common/util.h"
@@ -147,63 +149,43 @@ TEST_CASE("Route") {
   };
 }
 
-// helper class for unit tests
-class TestReplay : public Replay {
- public:
-  TestReplay(const QString &route, uint32_t flags = REPLAY_FLAG_NO_FILE_CACHE | REPLAY_FLAG_NO_VIPC) : Replay(route, {}, {}, {}, nullptr, flags) {}
-  void test_seek();
-  void testSeekTo(int seek_to);
-};
-
-void TestReplay::testSeekTo(int seek_to) {
-  seekTo(seek_to, false);
-
-  while (true) {
-    std::unique_lock lk(stream_lock_);
-    stream_cv_.wait(lk, [=]() { return events_updated_ == true; });
-    events_updated_ = false;
-    if (cur_mono_time_ != route_start_ts_ + seek_to * 1e9) {
-      // wake up by the previous merging, skip it.
-      continue;
-    }
-
-    Event cur_event(cereal::Event::Which::INIT_DATA, cur_mono_time_);
-    auto eit = std::upper_bound(events_->begin(), events_->end(), &cur_event, Event::lessThan());
-    if (eit == events_->end()) {
-      qDebug() << "waiting for events...";
-      continue;
-    }
-
-    REQUIRE(std::is_sorted(events_->begin(), events_->end(), Event::lessThan()));
-    const int seek_to_segment = seek_to / 60;
-    const int event_seconds = ((*eit)->mono_time - route_start_ts_) / 1e9;
-    current_segment_ = event_seconds / 60;
-    INFO("seek to [" << seek_to << "s segment " << seek_to_segment << "], events [" << event_seconds << "s segment" << current_segment_ << "]");
-    REQUIRE(event_seconds >= seek_to);
-    if (event_seconds > seek_to) {
-      auto it = segments_.lower_bound(seek_to_segment);
-      REQUIRE(it->first == current_segment_);
-    }
-    break;
-  }
-}
-
-void TestReplay::test_seek() {
-  // create a dummy stream thread
-  stream_thread_ = new QThread(this);
-  QEventLoop loop;
-  std::thread thread = std::thread([&]() {
-    for (int i = 0; i < 10; ++i) {
-      testSeekTo(util::random_int(0, 2 * 60));
-    }
-    loop.quit();
-  });
-  loop.exec();
-  thread.join();
-}
+std::mutex lock;
+std::condition_variable cv;
+uint64_t mono_time = 0;
 
 TEST_CASE("Replay") {
-  TestReplay replay(DEMO_ROUTE);
+  auto event_filter = [](const Event *e, void *opaque) {
+    std::unique_lock lk(lock);
+    mono_time = e->mono_time;
+    cv.notify_one();
+    return true;
+  };
+
+  Replay replay(DEMO_ROUTE, {}, {}, {}, nullptr, REPLAY_FLAG_NO_VIPC);
   REQUIRE(replay.load());
-  replay.test_seek();
+  replay.installEventFilter(event_filter, nullptr);
+  replay.start();
+
+  QEventLoop event_loop;
+  QFutureWatcher<void> watcher;
+  QObject::connect(&watcher, &QFutureWatcher<void>::finished, [&event_loop]() { event_loop.exit(); });
+  watcher.setFuture(QtConcurrent::run([&]() {
+    for (int i = 0; i < 10; ++i) {
+      int seek_to = util::random_int(0, 2 * 60);
+      replay.seekTo(seek_to, false);
+
+      std::unique_lock lk(lock);
+      mono_time = 0;
+      cv.wait(lk, [&]() { return mono_time > 0; });
+
+      const int seek_to_segment = seek_to / 60;
+      const int event_seconds = (mono_time - replay.routeStartTime()) / 1e9;
+      INFO("seek to [" << seek_to << "s segment " << seek_to_segment << "], events ["
+                       << event_seconds << "s segment]");
+      REQUIRE(event_seconds == seek_to);
+    }
+  }));
+
+  event_loop.exec();
+  replay.stop();
 }
