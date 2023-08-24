@@ -42,8 +42,6 @@ runs:
     - id: setup-buildx-action
       name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
-      with:
-        driver-opts: image=moby/buildkit:v0.12.1
     # build our docker image
     - shell: bash
       run: eval ${{ env.BUILD }}
