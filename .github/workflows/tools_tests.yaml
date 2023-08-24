@@ -60,7 +60,7 @@ jobs:
       run: eval "$BUILD_CL"
     - name: Setup to push to repo
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
-      run:
+      run: |
         export PUSH_IMAGE=true
         $DOCKER_LOGIN
     - name: Build and push sim image
@@ -81,7 +81,7 @@ jobs:
         git_lfs: false
     - name: Setup to push to repo
       if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
-      run:
+      run: |
         export PUSH_IMAGE=true
         $DOCKER_LOGIN
     - name: Build and push docs image
