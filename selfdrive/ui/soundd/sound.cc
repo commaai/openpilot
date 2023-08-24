@@ -27,7 +27,7 @@ Sound::Sound(QObject *parent) : sm({"controlsState", "microphone"}) {
   QTimer *timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, &Sound::update);
   timer->start(1000 / UI_FREQ);
-};
+}
 
 void Sound::update() {
   sm.update(0);

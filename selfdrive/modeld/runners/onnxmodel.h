@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "selfdrive/modeld/runners/runmodel.h"
 
 class ONNXModel : public RunModel {

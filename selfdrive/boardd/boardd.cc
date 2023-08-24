@@ -18,6 +18,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <future>
+#include <memory>
 #include <thread>
 
 #include "cereal/gen/cpp/car.capnp.h"
