@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-from functools import lru_cache
-import sys
 import subprocess
-from tqdm import tqdm
+import sys
+from functools import lru_cache
+from typing import Optional
+
+from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
+from tqdm import tqdm
 
 from openpilot.selfdrive.car.tests.routes import routes as test_car_models_routes
 from openpilot.selfdrive.locationd.test.test_laikad import UBLOX_TEST_ROUTE, QCOM_TEST_ROUTE
@@ -59,7 +62,7 @@ def upload_route(path, exclude_patterns=None):
   ] + [f"--exclude-pattern={p}" for p in exclude_patterns]
   subprocess.check_call(cmd)
 
-def list_all_blobs(blob_service, container, prefix=None):
+def list_all_blobs(blob_service: BlobServiceClient, container: str, prefix: Optional[str] = None):
   marker = None
   count = 0
   while True:
