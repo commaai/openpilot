@@ -292,8 +292,8 @@ void Localizer::input_fake_gps_observations(double current_time) {
   VectorXd current_x = this->kf->get_x();
   VectorXd ecef_pos = current_x.segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
   VectorXd ecef_vel = current_x.segment<STATE_ECEF_VELOCITY_LEN>(STATE_ECEF_VELOCITY_START);
-  MatrixXdr ecef_pos_R = this->kf->get_fake_gps_pos_cov();
-  MatrixXdr ecef_vel_R = this->kf->get_fake_gps_vel_cov();
+  const MatrixXdr &ecef_pos_R = this->kf->get_fake_gps_pos_cov();
+  const MatrixXdr &ecef_vel_R = this->kf->get_fake_gps_vel_cov();
 
   this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
   this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
@@ -507,8 +507,8 @@ void Localizer::handle_live_calib(double current_time, const cereal::LiveCalibra
 }
 
 void Localizer::reset_kalman(double current_time) {
-  VectorXd init_x = this->kf->get_initial_x();
-  MatrixXdr init_P = this->kf->get_initial_P();
+  const VectorXd &init_x = this->kf->get_initial_x();
+  const MatrixXdr &init_P = this->kf->get_initial_P();
   this->reset_kalman(current_time, init_x, init_P);
 }
 
@@ -544,12 +544,12 @@ void Localizer::update_reset_tracker() {
   }
 }
 
-void Localizer::reset_kalman(double current_time, VectorXd init_orient, VectorXd init_pos, VectorXd init_vel, MatrixXdr init_pos_R, MatrixXdr init_vel_R) {
+void Localizer::reset_kalman(double current_time, const VectorXd &init_orient, const VectorXd &init_pos, const VectorXd &init_vel, const MatrixXdr &init_pos_R, const MatrixXdr &init_vel_R) {
   // too nonlinear to init on completely wrong
   VectorXd current_x = this->kf->get_x();
   MatrixXdr current_P = this->kf->get_P();
   MatrixXdr init_P = this->kf->get_initial_P();
-  MatrixXdr reset_orientation_P = this->kf->get_reset_orientation_P();
+  const MatrixXdr &reset_orientation_P = this->kf->get_reset_orientation_P();
   int non_ecef_state_err_len = init_P.rows() - (STATE_ECEF_POS_ERR_LEN + STATE_ECEF_ORIENTATION_ERR_LEN + STATE_ECEF_VELOCITY_ERR_LEN);
 
   current_x.segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START) = init_orient;
@@ -565,7 +565,7 @@ void Localizer::reset_kalman(double current_time, VectorXd init_orient, VectorXd
   this->reset_kalman(current_time, current_x, init_P);
 }
 
-void Localizer::reset_kalman(double current_time, VectorXd init_x, MatrixXdr init_P) {
+void Localizer::reset_kalman(double current_time, const VectorXd &init_x, const MatrixXdr &init_P) {
   this->kf->init_state(init_x, init_P, current_time);
   this->last_reset_time = current_time;
   this->reset_tracker += 1.0;
@@ -620,7 +620,7 @@ bool Localizer::is_gps_ok() {
   return (this->kf->get_filter_time() - this->last_gps_msg) < 2.0;
 }
 
-bool Localizer::critical_services_valid(std::map<std::string, double> critical_services) {
+bool Localizer::critical_services_valid(const std::map<std::string, double> &critical_services) {
   for (auto &kv : critical_services){
     if (kv.second >= INPUT_INVALID_THRESHOLD){
       return false;
@@ -653,7 +653,7 @@ void Localizer::determine_gps_mode(double current_time) {
   }
 }
 
-void Localizer::configure_gnss_source(LocalizerGnssSource source) {
+void Localizer::configure_gnss_source(const LocalizerGnssSource &source) {
   this->gnss_source = source;
   if (source == LocalizerGnssSource::UBLOX) {
     this->gps_std_factor = 10.0;
