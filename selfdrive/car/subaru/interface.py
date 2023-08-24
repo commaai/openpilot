@@ -13,9 +13,9 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "subaru"
     ret.radarUnavailable = True
     # for HYBRID CARS to be upstreamed, we need:
-    #   - replacement for ES_Distance so we can cancel the cruise control
-    #   - to find the Cruise_Activated bit from the car
-    #   - proper panda safety setup (use the correct cruise_activated bit, throttle from Throttle_Hybrid, etc)
+    # - replacement for ES_Distance so we can cancel the cruise control
+    # - to find the Cruise_Activated bit from the car
+    # - proper panda safety setup (use the correct cruise_activated bit, throttle from Throttle_Hybrid, etc)
     ret.dashcamOnly = candidate in (PREGLOBAL_CARS | LKAS_ANGLE | HYBRID_CARS)
     ret.autoResumeSng = False
 
@@ -79,7 +79,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 17
       ret.steerActuatorDelay = 0.1
 
-    elif candidate in (CAR.FORESTER, CAR.FORESTER_2022):
+    elif candidate in (CAR.FORESTER, CAR.FORESTER_2022, CAR.FORESTER_HYBRID):
       ret.mass = 1568.
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5

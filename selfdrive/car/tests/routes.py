@@ -28,6 +28,7 @@ non_tested_cars = [
   VOLKSWAGEN.CRAFTER_MK2,  # need a route from an ACC-equipped Crafter
   TOYOTA.RAV4_TSS2_2023,
   TOYOTA.RAV4H_TSS2_2023,
+  SUBARU.FORESTER_HYBRID,
 ]
 
 
