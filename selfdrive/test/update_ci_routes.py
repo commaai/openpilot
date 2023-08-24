@@ -9,13 +9,13 @@ from selfdrive.car.tests.routes import routes as test_car_models_routes
 from selfdrive.locationd.test.test_laikad import UBLOX_TEST_ROUTE, QCOM_TEST_ROUTE
 from selfdrive.test.process_replay.test_processes import source_segments as replay_segments
 
-_DATA_ACCOUNT_PRODUCTION = "commadata2"
-_DATA_ACCOUNT_CI = "commadataci"
-_DATA_BUCKET_PRODUCTION = "commadata2"
+DATA_ACCOUNT_PRODUCTION = "commadata2"
+DATA_ACCOUNT_CI = "commadataci"
+DATA_BUCKET_PRODUCTION = "commadata2"
 
 SOURCES = [
-  (_DATA_ACCOUNT_PRODUCTION, _DATA_BUCKET_PRODUCTION),
-  (_DATA_ACCOUNT_CI, "commadataci"),
+  (DATA_ACCOUNT_PRODUCTION, DATA_BUCKET_PRODUCTION),
+  (DATA_ACCOUNT_CI, "commadataci"),
 ]
 
 
@@ -35,9 +35,9 @@ def get_user_token(account_name, container_name):
 
 @lru_cache
 def get_azure_keys():
-  dest_key = get_user_token(_DATA_ACCOUNT_CI, "openpilotci")
+  dest_key = get_user_token(DATA_ACCOUNT_CI, "openpilotci")
   source_keys = [get_user_token(account, bucket) for account, bucket in SOURCES]
-  service = BlockBlobService(_DATA_ACCOUNT_CI, sas_token=dest_key)
+  service = BlockBlobService(DATA_ACCOUNT_CI, sas_token=dest_key)
   return dest_key, source_keys, service
 
 
@@ -53,7 +53,7 @@ def upload_route(path, exclude_patterns=None):
     "azcopy",
     "copy",
     f"{path}/*",
-    f"https://{_DATA_ACCOUNT_CI}.blob.core.windows.net/openpilotci/{destpath}?{dest_key}",
+    f"https://{DATA_ACCOUNT_CI}.blob.core.windows.net/openpilotci/{destpath}?{dest_key}",
     "--recursive=false",
     "--overwrite=false",
   ] + [f"--exclude-pattern={p}" for p in exclude_patterns]
@@ -88,7 +88,7 @@ def sync_to_ci_public(route):
       "azcopy",
       "copy",
       f"https://{source_account}.blob.core.windows.net/{source_bucket}/{key_prefix}?{source_key}",
-      f"https://{_DATA_ACCOUNT_CI}.blob.core.windows.net/openpilotci/{dongle_id}?{dest_key}",
+      f"https://{DATA_ACCOUNT_CI}.blob.core.windows.net/openpilotci/{dongle_id}?{dest_key}",
       "--recursive=true",
       "--overwrite=false",
       "--exclude-pattern=*/dcamera.hevc",
