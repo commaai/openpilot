@@ -28,7 +28,6 @@ non_tested_cars = [
   VOLKSWAGEN.CRAFTER_MK2,  # need a route from an ACC-equipped Crafter
   TOYOTA.RAV4_TSS2_2023,
   TOYOTA.RAV4H_TSS2_2023,
-  SUBARU.FORESTER_HYBRID,
 ]
 
 
@@ -242,6 +241,7 @@ routes = [
   CarTestRoute("1bbe6bf2d62f58a8|2022-07-14--17-11-43", SUBARU.OUTBACK, segment=10),
   CarTestRoute("c56e69bbc74b8fad|2022-08-18--09-43-51", SUBARU.LEGACY, segment=3),
   CarTestRoute("f4e3a0c511a076f4|2022-08-04--16-16-48", SUBARU.CROSSTREK_HYBRID, segment=2),
+  CarTestRoute("8db3f557a1e70a1a|2022-11-30--19-53-29", SUBARU.FORESTER_HYBRID, segment=2),
   CarTestRoute("7fd1e4f3a33c1673|2022-12-04--15-09-53", SUBARU.FORESTER_2022, segment=4),
   CarTestRoute("f3b34c0d2632aa83|2023-07-23--20-43-25", SUBARU.OUTBACK_2023, segment=7),
   # Pre-global, dashcam
