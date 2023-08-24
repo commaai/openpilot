@@ -1,4 +1,4 @@
-#include "bmx055_magn.h"
+#include "system/sensord/sensors/bmx055_magn.h"
 
 #include <unistd.h>
 
