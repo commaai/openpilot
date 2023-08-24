@@ -11,7 +11,7 @@ def driverview(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started or params.get_bool("IsDriverViewEnabled")
 
 def notcar(started: bool, params: Params, CP: car.CarParams) -> bool:
-  return CP.notCar  # type: ignore
+  return started and CP.notCar
 
 def iscar(started: bool, params: Params, CP: car.CarParams) -> bool:
   return not CP.notCar
@@ -59,8 +59,8 @@ procs = [
   NativeProcess("modeld", "selfdrive/modeld", ["./modeld"], only_onroad),
   NativeProcess("mapsd", "selfdrive/navd", ["./mapsd"], only_onroad),
   NativeProcess("navmodeld", "selfdrive/modeld", ["./navmodeld"], only_onroad),
-  NativeProcess("sensord", "system/sensord", ["./sensord"], only_onroad, enabled=not PC),
-  NativeProcess("ui", "selfdrive/ui", ["./ui"], always_run, watchdog_max_dt=(5 if not PC else None)),
+  NativeProcess("sensord", "system/sensord", ["./sensord"], only_onroad, enabled=TICI),
+  NativeProcess("ui", "selfdrive/ui", ["./ui"], always_run, watchdog_max_dt=(5 if TICI else None)),
   NativeProcess("soundd", "selfdrive/ui/soundd", ["./soundd"], only_onroad),
   NativeProcess("locationd", "selfdrive/locationd", ["./locationd"], only_onroad),
   NativeProcess("boardd", "selfdrive/boardd", ["./boardd"], always_run, enabled=False),
