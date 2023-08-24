@@ -38,7 +38,7 @@ static bool dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=N
   v4l_buf.memory = V4L2_MEMORY_USERPTR;
   v4l_buf.m.planes = planes;
   v4l_buf.length = 1;
-  int ret = HANDLE_EINTR(ioctl(fd, VIDIOC_DQBUF, &v4l_buf));
+  int ret = util::safe_ioctl(fd, VIDIOC_DQBUF, &v4l_buf);
   if (ret != 0) {
     if (errno == EAGAIN) {
       // EAGAIN if we're just out of buffers to dequeue.
