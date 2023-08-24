@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include <QPushButton>
 #include <QStackedLayout>
 #include <QWidget>
@@ -18,7 +20,7 @@ class OnroadAlerts : public QWidget {
   Q_OBJECT
 
 public:
-  OnroadAlerts(QWidget *parent = 0) : QWidget(parent) {};
+  OnroadAlerts(QWidget *parent = 0) : QWidget(parent) {}
   void updateAlert(const Alert &a);
 
 protected:
@@ -148,5 +150,6 @@ private:
 
 private slots:
   void offroadTransition(bool offroad);
+  void primeChanged(bool prime);
   void updateState(const UIState &s);
 };

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
 
-# copied from common.transformations/camera.py
+# copied from openpilot.common.transformations/camera.py
 eon_focal_length = 910.0  # pixels
 eon_dcam_focal_length = 860.0  # pixels
 

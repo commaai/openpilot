@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # pylint: disable=E1101
+import capnp
 import os
 import importlib
 import unittest
@@ -8,17 +9,17 @@ from typing import List, Optional, Tuple
 from parameterized import parameterized_class
 
 from cereal import log, car
-from common.basedir import BASEDIR
-from common.realtime import DT_CTRL
-from selfdrive.car.fingerprints import all_known_cars
-from selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
-from selfdrive.car.gm.values import CAR as GM
-from selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
-from selfdrive.car.hyundai.values import CAR as HYUNDAI
-from selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
-from selfdrive.test.openpilotci import get_url
-from tools.lib.logreader import LogReader
-from tools.lib.route import Route, SegmentName, RouteName
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.realtime import DT_CTRL
+from openpilot.selfdrive.car.fingerprints import all_known_cars
+from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
+from openpilot.selfdrive.car.gm.values import CAR as GM
+from openpilot.selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
+from openpilot.selfdrive.car.hyundai.values import CAR as HYUNDAI
+from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
+from openpilot.selfdrive.test.openpilotci import get_url
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.route import Route, SegmentName, RouteName
 
 from panda.tests.libpanda import libpanda_py
 
@@ -35,9 +36,9 @@ ignore_addr_checks_valid = [
 ]
 
 
-def get_test_cases():
+def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
   # build list of test cases
-  test_cases: List[Tuple[str, Optional[CarTestRoute]]] = []
+  test_cases = []
   if not len(INTERNAL_SEG_LIST):
     routes_by_car = defaultdict(set)
     for r in routes:
@@ -52,11 +53,11 @@ def get_test_cases():
       seg_list = f.read().splitlines()
 
     cnt = INTERNAL_SEG_CNT or len(seg_list)
-    seg_list = iter(seg_list[:cnt])
+    seg_list_iter = iter(seg_list[:cnt])
 
-    for platform in seg_list:
+    for platform in seg_list_iter:
       platform = platform[2:]  # get rid of comment
-      segment_name = SegmentName(next(seg_list))
+      segment_name = SegmentName(next(seg_list_iter))
       test_cases.append((platform, CarTestRoute(segment_name.route_name.canonical_name, platform,
                                                 segment=segment_name.segment_num)))
   return test_cases
@@ -66,9 +67,11 @@ SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
 
 class TestCarModelBase(unittest.TestCase):
-  car_model = None
-  test_route = None
-  ci = True
+  car_model: Optional[str] = None
+  test_route: Optional[CarTestRoute] = None
+  ci: bool = True
+
+  can_msgs: List[capnp.lib.capnp._DynamicStructReader]
 
   @unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Long running test skipped. Unset {SKIP_ENV_VAR} to run")
   @classmethod
@@ -319,9 +322,7 @@ class TestCarModelBase(unittest.TestCase):
       # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
 
       checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
-      if self.CP.carName not in ("hyundai", "body"):
-        # TODO: fix standstill mismatches for other makes
-        checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
+      checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
 
       # TODO: remove this exception once this mismatch is resolved
       brake_pressed = CS.brakePressed
@@ -341,6 +342,10 @@ class TestCarModelBase(unittest.TestCase):
             checks['controlsAllowed'] += not self.safety.get_controls_allowed()
         else:
           checks['controlsAllowed'] += not CS.cruiseState.enabled and self.safety.get_controls_allowed()
+
+        # TODO: fix notCar mismatch
+        if not self.CP.notCar:
+          checks['cruiseState'] += CS.cruiseState.enabled != self.safety.get_cruise_engaged_prev()
       else:
         # Check for enable events on rising edge of controls allowed
         button_enable = any(evt.enable for evt in CS.events)

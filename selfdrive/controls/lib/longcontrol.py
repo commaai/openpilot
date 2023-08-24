@@ -1,9 +1,9 @@
 from cereal import car
-from common.numpy_fast import clip, interp
-from common.realtime import DT_CTRL
-from selfdrive.controls.lib.drive_helpers import CONTROL_N, apply_deadzone
-from selfdrive.controls.lib.pid import PIDController
-from selfdrive.modeld.constants import T_IDXS
+from openpilot.common.numpy_fast import clip, interp
+from openpilot.common.realtime import DT_CTRL
+from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, apply_deadzone
+from openpilot.selfdrive.controls.lib.pid import PIDController
+from openpilot.selfdrive.modeld.constants import T_IDXS
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 

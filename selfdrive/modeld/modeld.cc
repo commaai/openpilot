@@ -23,7 +23,7 @@ ExitHandler do_exit;
 mat3 update_calibration(Eigen::Vector3d device_from_calib_euler, bool wide_camera, bool bigmodel_frame) {
   /*
      import numpy as np
-     from common.transformations.model import medmodel_frame_from_calib_frame
+     from openpilot.common.transformations.model import medmodel_frame_from_calib_frame
      medmodel_frame_from_calib_frame = medmodel_frame_from_calib_frame[:, :3]
      calib_from_smedmodel_frame = np.linalg.inv(medmodel_frame_from_calib_frame)
   */
