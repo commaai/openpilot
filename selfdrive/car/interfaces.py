@@ -339,9 +339,9 @@ class CarStateBase(ABC):
     Q = [[0.0, 0.0], [0.0, 100.0]]
     R = 0.3
     A = [[1.0, DT_CTRL], [0.0, 1.0]]
-    C = [1.0, 0.0]
+    C = [[1.0, 0.0]]
     x0=[[0.0], [0.0]]
-    K = get_kalman_gain(DT_CTRL, np.matrix(A), np.matrix(A), np.matrix(Q), R)
+    K = get_kalman_gain(DT_CTRL, np.array(A), np.array(C), np.array(Q), R)
     self.v_ego_kf = KF1D(x0=x0, A=A, C=C, K=K)
 
   def update_speed_kf(self, v_ego_raw):
