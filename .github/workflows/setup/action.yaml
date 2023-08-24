@@ -32,6 +32,8 @@ runs:
         restore-keys: |
           scons-${{ env.CACHE_COMMIT_DATE }}-
           scons-
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
     # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
     - id: normalize-file-permissions
       shell: bash
