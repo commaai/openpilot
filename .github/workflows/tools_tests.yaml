@@ -64,7 +64,7 @@ jobs:
       run: eval "$BUILD_CL"
     - name: Build simulator image
       run: |
-        DOCKER_BUILDKIT=1 docker buildx build --load --cache-to type=inline --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/sim/Dockerfile.sim .
+        DOCKER_BUILDKIT=1 docker buildx build --load --pull=false -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/sim/Dockerfile.sim .
     - name: Push to container registry
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       run: |
@@ -85,7 +85,7 @@ jobs:
         git_lfs: false
     - name: Build docs image
       run: |
-        DOCKER_BUILDKIT=1 docker buildx build --load --cache-to type=inline --cache-from $DOCKER_REGISTRY/openpilot-docs:latest -t $DOCKER_REGISTRY/openpilot-docs:latest -f docs/docker/Dockerfile .
+        DOCKER_BUILDKIT=1 docker buildx build --load --pull=false -t $DOCKER_REGISTRY/openpilot-docs:latest -f docs/docker/Dockerfile .
     - name: Push docker container
       if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
