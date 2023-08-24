@@ -132,6 +132,20 @@ FW_VERSIONS = {
       b'284U29HE0A',
     ],
   },
+    CAR.LEAF: {
+    (Ecu.abs, 0x740, None): [
+      b'476606WK9B',
+    ],
+    (Ecu.eps, 0x742, None): [
+      b'5SN2A\xb7A\x05\x02N126F\x15\xb2\x00\x00\x00\x00\x00\x00\x00\x80',
+    ],
+    (Ecu.fwdCamera, 0x707, None): [
+      b'6WK2CDB\x04\x18\x00\x00\x00\x00\x00R=1\x18\x99\x10\x00\x00\x00\x80',
+    ],
+    (Ecu.gateway, 0x18dad0f1, None): [
+      b'284U26WK0C',
+    ],
+  },
   CAR.LEAF_IC: {
     (Ecu.fwdCamera, 0x707, None): [
       b'5SH1BDB\x04\x18\x00\x00\x00\x00\x00_-?\x04\x91\xf2\x00\x00\x00\x80',

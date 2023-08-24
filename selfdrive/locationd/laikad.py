@@ -205,12 +205,16 @@ class Laikad:
       # Additionally, the pseudoranges are broken in the measurementReports
       # and the doppler filteredSpeed is broken in the drMeasurementReports
       report_time = gps_time_from_qcom_report(gnss_msg)
-      if report_time - self.last_report_time > 0:
+      if report_time - self.last_report_time == 0:
+        self.qcom_reports.append(gnss_msg)
+        self.last_report_time = report_time
+      elif report_time - self.last_report_time > 0:
         self.qcom_reports_received = max(1, len(self.qcom_reports))
         self.qcom_reports = [gnss_msg]
+        self.last_report_time = report_time
       else:
-        self.qcom_reports.append(gnss_msg)
-      self.last_report_time = report_time
+        # Sometimes DR reports get sent one iteration late (1second), they need to be ignored
+        cloudlog.warning(f"Received report with time {report_time} before last report time {self.last_report_time}")
 
       if len(self.qcom_reports) == self.qcom_reports_received:
         new_meas = get_measurements_from_qcom_reports(self.qcom_reports)

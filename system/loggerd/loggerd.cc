@@ -98,7 +98,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
       re.marked_ready_to_rotate = false;
       // we are in this segment now, process any queued messages before this one
       if (!re.q.empty()) {
-        for (auto &qmsg: re.q) {
+        for (auto &qmsg : re.q) {
           bytes_count += handle_encoder_msg(s, qmsg, name, re, encoder_info);
         }
         re.q.clear();
@@ -233,7 +233,7 @@ void loggerd_thread() {
 
   std::map<std::string, EncoderInfo> encoder_infos_dict;
   for (const auto &cam : cameras_logged) {
-    for (const auto &encoder_info: cam.encoder_infos) {
+    for (const auto &encoder_info : cam.encoder_infos) {
       encoder_infos_dict[encoder_info.publish_name] = encoder_info;
       s.max_waiting++;
     }

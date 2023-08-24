@@ -32,6 +32,13 @@ runs:
         restore-keys: |
           scons-${{ env.CACHE_COMMIT_DATE }}-
           scons-
+    # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
+    - id: normalize-file-permissions
+      shell: bash
+      name: Normalize file permissions to ensure a consistent docker build cache
+      run: |
+        find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
+        find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
     # build our docker image
     - shell: bash
       run: eval ${{ env.BUILD }}
