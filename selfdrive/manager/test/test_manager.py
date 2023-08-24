@@ -34,7 +34,7 @@ class TestManager(unittest.TestCase):
     manager.main()
 
   def test_blacklisted_procs(self):
-    # TODO: ensure blacklisted procs until we have a dedicated test
+    # TODO: ensure there are blacklisted procs until we have a dedicated test
     self.assertTrue(len(BLACKLIST_PROCS), "No blacklisted procs to test not_run")
 
   def test_startup_time(self):
