@@ -64,6 +64,10 @@ AddOption('--no-test',
           default=os.path.islink(Dir('#laika/').abspath),
           help='skip building test files')
 
+AddOption('--minimal',
+          action='store_true',
+          help='the minimum build to run openpilot. no tests, tools, etc.')
+
 ## Architecture name breakdown (arch)
 ## - larch64: linux tici aarch64
 ## - aarch64: linux pc aarch64
@@ -436,7 +440,7 @@ SConscript(['selfdrive/navd/SConscript'])
 SConscript(['selfdrive/modeld/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
 
-if (arch in ['x86_64', 'aarch64', 'Darwin'] and Dir('#tools/cabana/').exists()) or GetOption('extras'):
+if (arch in ['x86_64', 'aarch64', 'Darwin'] and Dir('#tools/cabana/').exists() and not GetOption('minimal')) or GetOption('extras'):
   SConscript(['tools/replay/SConscript'])
   SConscript(['tools/cabana/SConscript'])
 
