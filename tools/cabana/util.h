@@ -59,7 +59,7 @@ public:
 private:
   std::pair<double, double> get_minmax(int n, int left, int right, int range_left, int range_right) const;
   void build_tree(const QVector<QPointF> &arr, int n, int left, int right);
-  std::vector<std::pair<double ,double>> tree;
+  std::vector<std::pair<double, double>> tree;
   int size = 0;
 };
 

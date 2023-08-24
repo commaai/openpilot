@@ -15,7 +15,7 @@
 
 MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(0 ,0, 0, 0);
+  main_layout->setContentsMargins(0, 0, 0, 0);
 
   QHBoxLayout *title_layout = new QHBoxLayout();
   num_msg_label = new QLabel(this);
