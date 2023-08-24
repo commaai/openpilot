@@ -63,7 +63,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
   QObject::connect(uiState(), &UIState::uiUpdate, this, &OnroadWindow::updateState);
   QObject::connect(uiState(), &UIState::offroadTransition, this, &OnroadWindow::offroadTransition);
-  QObject::connect(uiState(), &UIState::primeTypeChanged, this, &OnroadWindow::primeTypeChanged);
+  QObject::connect(uiState(), &UIState::primeChanged, this, &OnroadWindow::primeChanged);
 }
 
 void OnroadWindow::updateState(const UIState &s) {
@@ -106,7 +106,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
 void OnroadWindow::offroadTransition(bool offroad) {
 #ifdef ENABLE_MAPS
   if (!offroad) {
-    if (map == nullptr && (uiState()->primeType() || !MAPBOX_TOKEN.isEmpty())) {
+    if (map == nullptr && (uiState()->hasPrime() || !MAPBOX_TOKEN.isEmpty())) {
       auto m = new MapPanel(get_mapbox_settings());
       map = m;
 
@@ -126,9 +126,9 @@ void OnroadWindow::offroadTransition(bool offroad) {
   alerts->updateAlert({});
 }
 
-void OnroadWindow::primeTypeChanged(int prime_type) {
+void OnroadWindow::primeChanged(bool prime) {
 #ifdef ENABLE_MAPS
-  if (map && (!prime_type && MAPBOX_TOKEN.isEmpty())) {
+  if (map && (!prime && MAPBOX_TOKEN.isEmpty())) {
     nvg->map_settings_btn->setEnabled(false);
     nvg->map_settings_btn->setVisible(false);
     map->deleteLater();
