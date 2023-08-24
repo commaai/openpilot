@@ -1,7 +1,9 @@
 #pragma once
 
+#include <map>
+#include <string>
+
 #include <QButtonGroup>
-#include <QFileSystemWatcher>
 #include <QFrame>
 #include <QLabel>
 #include <QPushButton>
@@ -9,6 +11,7 @@
 #include <QWidget>
 
 
+#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 
 // ********** settings window + top-level panels **********
@@ -64,6 +67,7 @@ public slots:
 private:
   Params params;
   std::map<std::string, ParamControl*> toggles;
+  ButtonParamControl *long_personality_setting;
 
   void updateToggles();
 };
@@ -87,5 +91,5 @@ private:
   ButtonControl *targetBranchBtn;
 
   Params params;
-  QFileSystemWatcher *fs_watch;
+  ParamWatcher *fs_watch;
 };

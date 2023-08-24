@@ -1,11 +1,11 @@
 import copy
 from cereal import car
-from common.conversions import Conversions as CV
-from common.numpy_fast import mean
+from openpilot.common.conversions import Conversions as CV
+from openpilot.common.numpy_fast import mean
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
-from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD
+from openpilot.selfdrive.car.interfaces import CarStateBase
+from openpilot.selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD
 
 TransmissionType = car.CarParams.TransmissionType
 NetworkLocation = car.CarParams.NetworkLocation
@@ -17,8 +17,13 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["ECMPRDNL2"]["PRNDL2"]
+    self.cluster_speed_hyst_gap = CV.KPH_TO_MS / 2.
+    self.cluster_min_speed = CV.KPH_TO_MS / 2.
+
     self.loopback_lka_steering_cmd_updated = False
-    self.camera_lka_steering_cmd_counter = 0
+    self.loopback_lka_steering_cmd_ts_nanos = 0
+    self.pt_lka_steering_cmd_counter = 0
+    self.cam_lka_steering_cmd_counter = 0
     self.buttons_counter = 0
 
   def update(self, pt_cp, cam_cp, loopback_cp):
@@ -32,8 +37,11 @@ class CarState(CarStateBase):
 
     # Variables used for avoiding LKAS faults
     self.loopback_lka_steering_cmd_updated = len(loopback_cp.vl_all["ASCMLKASteeringCmd"]["RollingCounter"]) > 0
+    if self.loopback_lka_steering_cmd_updated:
+      self.loopback_lka_steering_cmd_ts_nanos = loopback_cp.ts_nanos["ASCMLKASteeringCmd"]["RollingCounter"]
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
-      self.camera_lka_steering_cmd_counter = cam_cp.vl["ASCMLKASteeringCmd"]["RollingCounter"]
+      self.pt_lka_steering_cmd_counter = pt_cp.vl["ASCMLKASteeringCmd"]["RollingCounter"]
+      self.cam_lka_steering_cmd_counter = cam_cp.vl["ASCMLKASteeringCmd"]["RollingCounter"]
 
     ret.wheelSpeeds = self.get_wheel_speeds(
       pt_cp.vl["EBCMWheelSpdFront"]["FLWheelSpd"],
@@ -93,7 +101,8 @@ class CarState(CarStateBase):
     ret.parkingBrake = pt_cp.vl["VehicleIgnitionAlt"]["ParkBrake"] == 1
     ret.cruiseState.available = pt_cp.vl["ECMEngineStatus"]["CruiseMainOn"] != 0
     ret.espDisabled = pt_cp.vl["ESPStatus"]["TractionControlOn"] != 1
-    ret.accFaulted = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.FAULTED
+    ret.accFaulted = (pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.FAULTED or
+                      pt_cp.vl["EBCMFrictionBrakeStatus"]["FrictionBrakeUnavailable"] == 1)
 
     ret.cruiseState.enabled = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] != AccState.OFF
     ret.cruiseState.standstill = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.STANDSTILL
@@ -108,63 +117,19 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser(CP):
-    signals = []
-    checks = []
+    messages = []
     if CP.networkLocation == NetworkLocation.fwdCamera:
-      signals += [
-        ("AEBCmdActive", "AEBCmd"),
-        ("RollingCounter", "ASCMLKASteeringCmd"),
-        ("ACCSpeedSetpoint", "ASCMActiveCruiseControlStatus"),
-        ("ACCCruiseState", "ASCMActiveCruiseControlStatus"),
-      ]
-      checks += [
+      messages += [
         ("AEBCmd", 10),
         ("ASCMLKASteeringCmd", 10),
         ("ASCMActiveCruiseControlStatus", 25),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.CAMERA)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus.CAMERA)
 
   @staticmethod
   def get_can_parser(CP):
-    signals = [
-      # sig_name, sig_address
-      ("BrakePedalPos", "ECMAcceleratorPos"),
-      ("FrontLeftDoor", "BCMDoorBeltStatus"),
-      ("FrontRightDoor", "BCMDoorBeltStatus"),
-      ("RearLeftDoor", "BCMDoorBeltStatus"),
-      ("RearRightDoor", "BCMDoorBeltStatus"),
-      ("LeftSeatBelt", "BCMDoorBeltStatus"),
-      ("RightSeatBelt", "BCMDoorBeltStatus"),
-      ("TurnSignals", "BCMTurnSignals"),
-      ("AcceleratorPedal2", "AcceleratorPedal2"),
-      ("CruiseState", "AcceleratorPedal2"),
-      ("ACCButtons", "ASCMSteeringButton"),
-      ("RollingCounter", "ASCMSteeringButton"),
-      ("SteeringWheelAngle", "PSCMSteeringAngle"),
-      ("SteeringWheelRate", "PSCMSteeringAngle"),
-      ("FLWheelSpd", "EBCMWheelSpdFront"),
-      ("FRWheelSpd", "EBCMWheelSpdFront"),
-      ("RLWheelSpd", "EBCMWheelSpdRear"),
-      ("RRWheelSpd", "EBCMWheelSpdRear"),
-      ("MovingBackward", "EBCMWheelSpdRear"),
-      ("PRNDL2", "ECMPRDNL2"),
-      ("ManualMode", "ECMPRDNL2"),
-      ("LKADriverAppldTrq", "PSCMStatus"),
-      ("LKATorqueDelivered", "PSCMStatus"),
-      ("LKATorqueDeliveredStatus", "PSCMStatus"),
-      ("HandsOffSWlDetectionStatus", "PSCMStatus"),
-      ("HandsOffSWDetectionMode", "PSCMStatus"),
-      ("LKATotalTorqueDelivered", "PSCMStatus"),
-      ("PSCMStatusChecksum", "PSCMStatus"),
-      ("RollingCounter", "PSCMStatus"),
-      ("TractionControlOn", "ESPStatus"),
-      ("ParkBrake", "VehicleIgnitionAlt"),
-      ("CruiseMainOn", "ECMEngineStatus"),
-      ("BrakePressed", "ECMEngineStatus"),
-    ]
-
-    checks = [
+    messages = [
       ("BCMTurnSignals", 1),
       ("ECMPRDNL2", 10),
       ("PSCMStatus", 10),
@@ -173,6 +138,7 @@ class CarState(CarStateBase):
       ("VehicleIgnitionAlt", 10),
       ("EBCMWheelSpdFront", 20),
       ("EBCMWheelSpdRear", 20),
+      ("EBCMFrictionBrakeStatus", 20),
       ("AcceleratorPedal2", 33),
       ("ASCMSteeringButton", 33),
       ("ECMEngineStatus", 100),
@@ -180,20 +146,21 @@ class CarState(CarStateBase):
       ("ECMAcceleratorPos", 80),
     ]
 
-    if CP.transmissionType == TransmissionType.direct:
-      signals.append(("RegenPaddle", "EBCMRegenPaddle"))
-      checks.append(("EBCMRegenPaddle", 50))
+    # Used to read back last counter sent to PT by camera
+    if CP.networkLocation == NetworkLocation.fwdCamera:
+      messages += [
+        ("ASCMLKASteeringCmd", 0),
+      ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.POWERTRAIN)
+    if CP.transmissionType == TransmissionType.direct:
+      messages.append(("EBCMRegenPaddle", 50))
+
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus.POWERTRAIN)
 
   @staticmethod
   def get_loopback_can_parser(CP):
-    signals = [
-      ("RollingCounter", "ASCMLKASteeringCmd"),
-    ]
-
-    checks = [
+    messages = [
       ("ASCMLKASteeringCmd", 0),
     ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.LOOPBACK, enforce_checks=False)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus.LOOPBACK)

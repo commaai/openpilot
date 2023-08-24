@@ -1,15 +1,21 @@
 name: 'openpilot env setup'
 
 inputs:
-  save-cache:
-    default: false
+  setup_docker_scons_cache:
+    description: 'Whether or not to build the scons-cache docker image'
     required: false
+    default: 'false'
+  git_lfs:
+    description: 'Whether or not to pull the git lfs'
+    required: false
+    default: 'true'
 
 runs:
   using: "composite"
   steps:
     # do this after checkout to ensure our custom LFS config is used to pull from GitLab
     - shell: bash
+      if: ${{ inputs.git_lfs == 'true' }}
       run: git lfs pull
 
     # build cache
@@ -18,20 +24,22 @@ runs:
       run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
     - shell: bash
       run: echo "$CACHE_COMMIT_DATE"
-    - shell: bash
-      run: echo "CACHE_SKIP_SAVE=true" >> $GITHUB_ENV
-      if: github.ref != 'refs/heads/master' || inputs.save-cache == 'false'
-    - id: scons-cache
-      # TODO: change the version to the released version
-      # when https://github.com/actions/cache/pull/489 (or 571) is merged.
-      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+    - id: restore-scons-cache
+      uses: actions/cache/restore@v3
       with:
-        path: /tmp/scons_cache
+        path: ~/scons_cache
         key: scons-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
         restore-keys: |
           scons-${{ env.CACHE_COMMIT_DATE }}-
           scons-
-
     # build our docker image
     - shell: bash
       run: eval ${{ env.BUILD }}
+    - id: setup-scons-cache-docker
+      name: Sets up a docker image with scons cache that can by mounted as a buildkit cache mount
+      shell: bash
+      if: ${{ inputs.setup_docker_scons_cache == 'true' }}
+      run: |
+        cp selfdrive/test/Dockerfile.scons_cache ~
+        cd ~
+        DOCKER_BUILDKIT=1 docker build -t scons-cache -f Dockerfile.scons_cache .

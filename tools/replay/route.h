@@ -1,5 +1,10 @@
 #pragma once
 
+#include <map>
+#include <memory>
+#include <set>
+#include <string>
+
 #include <QDateTime>
 #include <QFutureSynchronizer>
 

@@ -10,16 +10,18 @@ from cffi import FFI
 import cereal.messaging as messaging
 from cereal import log
 
+from openpilot.common.ffi_wrapper import suffix
+
 SENSOR_DECIMATION = 1
 VISION_DECIMATION = 1
 
-LIBLOCATIOND_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../liblocationd.so'))
+LIBLOCATIOND_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../liblocationd' + suffix()))
 
 
 class TestLocationdLib(unittest.TestCase):
   def setUp(self):
     header = '''typedef ...* Localizer_t;
-Localizer_t localizer_init();
+Localizer_t localizer_init(bool has_ublox);
 void localizer_get_message_bytes(Localizer_t localizer, bool inputsOK, bool sensorsOK, bool gpsOK, bool msgValid, char *buff, size_t buff_size);
 void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t size);'''
 
@@ -27,7 +29,7 @@ void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t 
     self.ffi.cdef(header)
     self.lib = self.ffi.dlopen(LIBLOCATIOND_PATH)
 
-    self.localizer = self.lib.localizer_init()
+    self.localizer = self.lib.localizer_init(True) # default to ublox
 
     self.buff_size = 2048
     self.msg_buff = self.ffi.new(f'char[{self.buff_size}]')
@@ -38,7 +40,8 @@ void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t 
 
   def localizer_get_msg(self, t=0, inputsOK=True, sensorsOK=True, gpsOK=True, msgValid=True):
     self.lib.localizer_get_message_bytes(self.localizer, inputsOK, sensorsOK, gpsOK, msgValid, self.ffi.addressof(self.msg_buff, 0), self.buff_size)
-    return log.Event.from_bytes(self.ffi.buffer(self.msg_buff), nesting_limit=self.buff_size // 8)
+    with log.Event.from_bytes(self.ffi.buffer(self.msg_buff), nesting_limit=self.buff_size // 8) as log_evt:
+      return log_evt
 
   def test_liblocalizer(self):
     msg = messaging.new_message('liveCalibration')
