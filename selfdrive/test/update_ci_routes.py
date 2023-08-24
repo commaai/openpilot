@@ -3,11 +3,9 @@ import subprocess
 import sys
 from datetime import datetime, timedelta
 from functools import lru_cache
-from typing import Iterable, Optional, Tuple
 
 from azure.identity import AzureCliCredential
-from azure.storage.blob import (BlobServiceClient, ContainerClient, ContainerSasPermissions,
-                                generate_container_sas, UserDelegationKey)
+from azure.storage.blob import BlobServiceClient, ContainerSasPermissions, generate_container_sas
 from tqdm import tqdm
 
 from openpilot.selfdrive.car.tests.routes import routes as test_car_models_routes
@@ -25,38 +23,35 @@ SOURCES = [
 
 
 @lru_cache
-def get_blob_service(account_name: str) -> BlobServiceClient:
+def get_blob_service(account_name):
   account_url = f"https://{account_name}.blob.core.windows.net"
   return BlobServiceClient(account_url, credential=AzureCliCredential())
 
 
 @lru_cache
-def get_user_delegation_key(account_name: str) -> UserDelegationKey:
+def get_container_sas(account_name, container_name):
   start_time = datetime.utcnow()
   expiry_time = start_time + timedelta(hours=1)
-  return get_blob_service(account_name).get_user_delegation_key(start_time, expiry_time)
+  blob_service = get_blob_service(account_name)
 
-
-@lru_cache
-def get_container_sas(account_name: str, container_name: str):
   return generate_container_sas(
     account_name,
     container_name,
-    user_delegation_key=get_user_delegation_key(account_name),
+    user_delegation_key=blob_service.get_user_delegation_key(start_time, expiry_time),
     permission=ContainerSasPermissions(read=True, write=True, list=True),
-    expiry=datetime.utcnow() + timedelta(hours=1),
+    expiry=expiry_time,
   )
 
 
 @lru_cache
-def get_azure_keys() -> Tuple[str, Iterable[Tuple[str, str]], ContainerClient]:
+def get_azure_keys():
   dest_key = get_container_sas(_DATA_ACCOUNT_CI, "openpilotci")
   source_keys = [get_container_sas(account, bucket) for account, bucket in SOURCES]
   container = get_blob_service(_DATA_ACCOUNT_CI).get_container_client("openpilotci")
   return dest_key, source_keys, container
 
 
-def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) -> None:
+def upload_route(path: str, exclude_patterns=None) -> None:
   dest_key = get_container_sas(_DATA_ACCOUNT_CI, "openpilotci")
   if exclude_patterns is None:
     exclude_patterns = ['*/dcamera.hevc']
