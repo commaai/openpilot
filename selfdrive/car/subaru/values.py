@@ -71,6 +71,7 @@ class CAR:
   FORESTER = "SUBARU FORESTER 2019"
   OUTBACK = "SUBARU OUTBACK 6TH GEN"
   CROSSTREK_HYBRID = "SUBARU CROSSTREK HYBRID 2020"
+  FORESTER_HYBRID = "SUBARU FORESTER HYBRID 2020"
   LEGACY = "SUBARU LEGACY 7TH GEN"
   FORESTER_2022 = "SUBARU FORESTER 2022"
   OUTBACK_2023 = "SUBARU OUTBACK 7TH GEN"
@@ -113,6 +114,7 @@ CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   ],
   # TODO: is there an XV and Impreza too?
   CAR.CROSSTREK_HYBRID: SubaruCarInfo("Subaru Crosstrek Hybrid 2020"),
+  CAR.FORESTER_HYBRID: SubaruCarInfo("Subaru Forester Hybrid 2020"),
   CAR.FORESTER: SubaruCarInfo("Subaru Forester 2019-21", "All"),
   CAR.FORESTER_PREGLOBAL: SubaruCarInfo("Subaru Forester 2017-18"),
   CAR.LEGACY_PREGLOBAL: SubaruCarInfo("Subaru Legacy 2015-18"),
@@ -389,6 +391,23 @@ FW_VERSIONS = {
       b'\x1a\xe6F1\x00',
     ],
   },
+  CAR.FORESTER_HYBRID: {
+    (Ecu.abs, 0x7b0, None): [
+      b'\xa3 \x19T\x00',
+    ],
+    (Ecu.eps, 0x746, None): [
+      b'\x8d\xc2\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x787, None): [
+      b'\x00\x00eY\x1f@ !',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xd2\xa1`r\x07',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+       b'\x1b\xa7@a\x00',
+    ],
+  },
   CAR.FORESTER_PREGLOBAL: {
     (Ecu.abs, 0x7b0, None): [
       b'\x7d\x97\x14\x40',
@@ -649,6 +668,7 @@ DBC = {
   CAR.FORESTER: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER_2022: dbc_dict('subaru_global_2017_generated', None),
   CAR.OUTBACK: dbc_dict('subaru_global_2017_generated', None),
+  CAR.FORESTER_HYBRID: dbc_dict('subaru_global_2020_hybrid_generated', None),
   CAR.CROSSTREK_HYBRID: dbc_dict('subaru_global_2020_hybrid_generated', None),
   CAR.OUTBACK_2023: dbc_dict('subaru_global_2017_generated', None),
   CAR.LEGACY: dbc_dict('subaru_global_2017_generated', None),
@@ -661,4 +681,4 @@ DBC = {
 LKAS_ANGLE = {CAR.FORESTER_2022, CAR.OUTBACK_2023}
 GLOBAL_GEN2 = {CAR.OUTBACK, CAR.LEGACY, CAR.OUTBACK_2023}
 PREGLOBAL_CARS = {CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018}
-HYBRID_CARS = {CAR.CROSSTREK_HYBRID, }
+HYBRID_CARS = {CAR.CROSSTREK_HYBRID, CAR.FORESTER_HYBRID}
