@@ -3,7 +3,7 @@ import os
 import math
 import unittest
 import hypothesis.strategies as st
-from hypothesis import given, settings, Phase, HealthCheck
+from hypothesis import Phase, given, settings
 import importlib
 from parameterized import parameterized
 
