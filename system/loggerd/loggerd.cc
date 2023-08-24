@@ -179,7 +179,7 @@ void handle_user_flag(LoggerdState *s) {
   LOGW("preserving %s", s->logger.segmentPath().c_str());
 
 #ifdef __APPLE__
-  int ret = setxattr(s->segment_path, PRESERVE_ATTR_NAME, &PRESERVE_ATTR_VALUE, 1, 0, 0);
+  int ret = setxattr(s->logger.segmentPath().c_str(), PRESERVE_ATTR_NAME, &PRESERVE_ATTR_VALUE, 1, 0, 0);
 #else
   int ret = setxattr(s->logger.segmentPath().c_str(), PRESERVE_ATTR_NAME, &PRESERVE_ATTR_VALUE, 1, 0);
 #endif
