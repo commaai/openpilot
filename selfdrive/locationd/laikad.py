@@ -454,7 +454,7 @@ def main(sm=None, pm=None):
 
   # disable until set as main gps source, to better analyze startup time
   # TODO ensure low CPU usage before enabling
-  use_internet = True  # "LAIKAD_NO_INTERNET" not in os.environ
+  use_internet = False  # "LAIKAD_NO_INTERNET" not in os.environ
 
   replay = "REPLAY" in os.environ
   laikad = Laikad(save_ephemeris=not replay, auto_fetch_navs=use_internet, use_qcom=use_qcom)
