@@ -247,7 +247,7 @@ def main(sm=None, pm=None):
           'stiffnessFactor': liveParameters.stiffnessFactor,
           'angleOffsetAverageDeg': liveParameters.angleOffsetAverageDeg,
         }
-        params().put_nonblocking("LiveParameters", json.dumps(params))
+        Params().put_nonblocking("LiveParameters", json.dumps(params))
 
       pm.send('liveParameters', msg)
 

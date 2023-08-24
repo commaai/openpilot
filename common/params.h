@@ -1,8 +1,12 @@
 #pragma once
 
+#include <future>
 #include <map>
 #include <string>
+#include <tuple>
 #include <vector>
+
+#include "common/queue.h"
 
 enum ParamKeyType {
   PERSISTENT = 0x02,
@@ -50,4 +54,14 @@ public:
 private:
   std::string params_path;
   std::string prefix;
+};
+
+class AsyncWriter {
+private:
+  void queue(const std::tuple<std::string, std::string, std::string> &dat);
+  void write();
+
+  std::future<void> future;
+  SafeQueue<std::tuple<std::string, std::string, std::string>> q;
+  friend class Params;
 };

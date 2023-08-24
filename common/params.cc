@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <csignal>
-#include <future>
 #include <unordered_map>
 
 #include "common/queue.h"
@@ -329,28 +328,23 @@ void Params::clearAll(ParamKeyType key_type) {
   fsync_dir(getParamPath());
 }
 
-struct AsyncWriter {
-  void queue(const std::tuple<std::string, std::string, std::string> &dat) {
-    q.push(dat);
-    // start thread on demand
-    if (!f.valid() || f.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
-      f = std::async(std::launch::async, &AsyncWriter::write, this);
-    }
-  }
-
-  void write() {
-    std::tuple<std::string, std::string, std::string> dat;
-    while (q.try_pop(dat, 0)) {
-      auto &[path, key, value] = dat;
-      Params(path).put(key, value);
-    }
-  }
-
-  std::future<void> f;
-  SafeQueue<std::tuple<std::string, std::string, std::string>> q;
-};
-
 void Params::putNonBlocking(const std::string &key, const std::string &val) {
   static AsyncWriter async_writer;
   async_writer.queue({params_path, key, val});
+}
+
+void AsyncWriter::queue(const std::tuple<std::string, std::string, std::string> &dat) {
+  q.push(dat);
+  // start thread on demand
+  if (!future.valid() || future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+    future = std::async(std::launch::async, &AsyncWriter::write, this);
+  }
+}
+
+void AsyncWriter::write() {
+  std::tuple<std::string, std::string, std::string> dat;
+  while (q.try_pop(dat, 0)) {
+    auto &[path, key, value] = dat;
+    Params(path).put(key, value);
+  }
 }
