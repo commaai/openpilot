@@ -1,5 +1,7 @@
 #include "tools/cabana/signalview.h"
 
+#include <algorithm>
+
 #include <QCompleter>
 #include <QDialogButtonBox>
 #include <QHBoxLayout>
@@ -226,10 +228,14 @@ void SignalModel::handleMsgChanged(MessageId id) {
 
 void SignalModel::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
   if (id == msg_id) {
-    int i = dbc()->msg(msg_id)->indexOf(sig);
-    beginInsertRows({}, i, i);
-    insertItem(root.get(), i, sig);
-    endInsertRows();
+    if (filter_str.isEmpty()) {
+      int i = dbc()->msg(msg_id)->indexOf(sig);
+      beginInsertRows({}, i, i);
+      insertItem(root.get(), i, sig);
+      endInsertRows();
+    } else if (sig->name.contains(filter_str, Qt::CaseInsensitive)) {
+      refresh();
+    }
   }
 }
 
@@ -237,12 +243,14 @@ void SignalModel::handleSignalUpdated(const cabana::Signal *sig) {
   if (int row = signalRow(sig); row != -1) {
     emit dataChanged(index(row, 0), index(row, 1), {Qt::DisplayRole, Qt::EditRole, Qt::CheckStateRole});
 
-    // move row when the order changes.
-    int to = dbc()->msg(msg_id)->indexOf(sig);
-    if (to != row) {
-      beginMoveRows({}, row, row, {}, to > row ? to + 1 : to);
-      root->children.move(row, to);
-      endMoveRows();
+    if (filter_str.isEmpty()) {
+      // move row when the order changes.
+      int to = dbc()->msg(msg_id)->indexOf(sig);
+      if (to != row) {
+        beginMoveRows({}, row, row, {}, to > row ? to + 1 : to);
+        root->children.move(row, to);
+        endMoveRows();
+      }
     }
   }
 }
@@ -269,7 +277,7 @@ QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QMo
   int width = option.widget->size().width() / 2;
   if (index.column() == 0) {
     int spacing = option.widget->style()->pixelMetric(QStyle::PM_TreeViewIndentation) + color_label_width + 8;
-    auto text = index.data(Qt::DisplayRole).toString();;
+    auto text = index.data(Qt::DisplayRole).toString();
     auto item = (SignalModel::Item *)index.internalPointer();
     if (item->type == SignalModel::Item::Sig && item->sig->type != cabana::Signal::Type::Normal) {
       text += item->sig->type == cabana::Signal::Type::Multiplexor ? QString(" M ") : QString(" m%1 ").arg(item->sig->multiplex_value);

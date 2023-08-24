@@ -3,6 +3,7 @@
 #include <memory>
 #include <map>
 #include <set>
+#include <vector>
 
 #include "tools/cabana/dbc/dbcfile.h"
 

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <tuple>
+#include <vector>
+
 #include <QList>
 #include <QSet>
 #include <QStyledItemDelegate>

@@ -1,3 +1,5 @@
+#include <string>
+
 #include "common/watchdog.h"
 #include "common/util.h"
 

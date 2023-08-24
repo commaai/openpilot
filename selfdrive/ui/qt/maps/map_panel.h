@@ -10,7 +10,11 @@ class MapPanel : public QFrame {
 public:
   explicit MapPanel(const QMapboxGLSettings &settings, QWidget *parent = nullptr);
 
-  bool isShowingMap() const;
+signals:
+  void mapPanelRequested();
+
+public slots:
+  void toggleMapSettings();
 
 private:
   QStackedLayout *content_stack;

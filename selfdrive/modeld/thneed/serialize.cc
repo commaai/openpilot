@@ -75,8 +75,7 @@ void Thneed::load(const char *filename) {
 #endif
       if (clbuf == NULL) {
         printf("clError: %s create image %zux%zu rp %zu with buffer %p\n", cl_get_error_string(errcode),
-          desc.image_width, desc.image_height, desc.image_row_pitch, desc.buffer
-        );
+          desc.image_width, desc.image_height, desc.image_row_pitch, desc.buffer);
       }
       assert(clbuf != NULL);
     }

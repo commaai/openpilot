@@ -3,7 +3,11 @@
 #include <array>
 #include <atomic>
 #include <deque>
+#include <memory>
+#include <tuple>
 #include <unordered_map>
+#include <vector>
+
 #include <QColor>
 #include <QHash>
 
@@ -34,12 +38,18 @@ struct CanEvent {
   uint8_t dat[];
 };
 
+struct BusConfig {
+  int can_speed_kbps = 500;
+  int data_speed_kbps = 2000;
+  bool can_fd = false;
+};
+
 class AbstractStream : public QObject {
   Q_OBJECT
 
 public:
   AbstractStream(QObject *parent);
-  virtual ~AbstractStream() {};
+  virtual ~AbstractStream() {}
   virtual void start() = 0;
   inline bool liveStreaming() const { return route() == nullptr; }
   virtual void seekTo(double ts) {}
@@ -57,7 +67,7 @@ public:
   virtual void pause(bool pause) {}
   const std::vector<const CanEvent *> &allEvents() const { return all_events_; }
   const std::vector<const CanEvent *> &events(const MessageId &id) const;
-  virtual const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return {}; }
+  virtual const std::vector<std::tuple<double, double, TimelineType>> getTimeline() { return {}; }
 
 signals:
   void paused();

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cmath>
+#include <vector>
+#include <utility>
 
 #include <QApplication>
 #include <QByteArray>
@@ -67,15 +69,14 @@ public:
   MessageBytesDelegate(QObject *parent, bool multiple_lines = false);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-  void setMultipleLines(bool v);
-  int widthForBytes(int n) const;
   bool multipleLines() const { return multiple_lines; }
+  void setMultipleLines(bool v) { multiple_lines = v; }
+  int widthForBytes(int n) const;
 
 private:
   QFont fixed_font;
   QSize byte_size = {};
   bool multiple_lines = false;
-  mutable QSize size_cache[65] = {};
 };
 
 inline QString toHex(const QByteArray &dat) { return dat.toHex(' ').toUpper(); }
@@ -98,7 +99,7 @@ namespace utils {
 QPixmap icon(const QString &id);
 void setTheme(int theme);
 inline QString formatSeconds(int seconds) {
-  return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
+  return QDateTime::fromSecsSinceEpoch(seconds, Qt::UTC).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
 }
 }
 

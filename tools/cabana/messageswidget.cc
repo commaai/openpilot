@@ -1,4 +1,10 @@
 #include "tools/cabana/messageswidget.h"
+
+#include <algorithm>
+#include <limits>
+#include <utility>
+#include <vector>
+
 #include <QHBoxLayout>
 #include <QPainter>
 #include <QPushButton>
@@ -28,7 +34,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   // message table
   view = new MessageView(this);
   model = new MessageListModel(this);
-  header = new MessageViewHeader(this, model);
+  header = new MessageViewHeader(this);
   auto delegate = new MessageBytesDelegate(view, settings.multiple_lines_bytes);
 
   view->setItemDelegate(delegate);
@@ -177,7 +183,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
     switch (index.column()) {
       case Column::NAME: return msgName(id);
-      case Column::SOURCE: return id.source != INVALID_SOURCE ? QString::number(id.source) : "N/A" ;
+      case Column::SOURCE: return id.source != INVALID_SOURCE ? QString::number(id.source) : "N/A";
       case Column::ADDRESS: return QString::number(id.address, 16);
       case Column::FREQ: return id.source != INVALID_SOURCE ? getFreq(can_data) : "N/A";
       case Column::COUNT: return id.source != INVALID_SOURCE ? QString::number(can_data.count) : "N/A";
@@ -446,7 +452,7 @@ void MessageView::headerContextMenuEvent(const QPoint &pos) {
   menu->popup(header()->mapToGlobal(pos));
 }
 
-MessageViewHeader::MessageViewHeader(QWidget *parent, MessageListModel *model) : model(model), QHeaderView(Qt::Horizontal, parent) {
+MessageViewHeader::MessageViewHeader(QWidget *parent) : QHeaderView(Qt::Horizontal, parent) {
   QObject::connect(this, &QHeaderView::sectionResized, this, &MessageViewHeader::updateHeaderPositions);
   QObject::connect(this, &QHeaderView::sectionMoved, this, &MessageViewHeader::updateHeaderPositions);
 }
@@ -485,7 +491,7 @@ void MessageViewHeader::updateHeaderPositions() {
 void MessageViewHeader::updateGeometries() {
   for (int i = 0; i < count(); i++) {
     if (!editors[i]) {
-      QString column_name = model->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
+      QString column_name = model()->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
       editors[i] = new QLineEdit(this);
       editors[i]->setClearButtonEnabled(true);
       editors[i]->setPlaceholderText(tr("Filter %1").arg(column_name));

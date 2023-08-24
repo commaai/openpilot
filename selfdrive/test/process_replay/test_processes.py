@@ -7,14 +7,14 @@ from collections import defaultdict
 from tqdm import tqdm
 from typing import Any, DefaultDict, Dict
 
-from selfdrive.car.car_helpers import interface_names
-from selfdrive.test.openpilotci import get_url, upload_file
-from selfdrive.test.process_replay.compare_logs import compare_logs
-from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_openpilot_enabled, replay_process
-from system.version import get_commit
-from tools.lib.filereader import FileReader
-from tools.lib.logreader import LogReader
-from tools.lib.helpers import save_log
+from openpilot.selfdrive.car.car_helpers import interface_names
+from openpilot.selfdrive.test.openpilotci import get_url, upload_file
+from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs
+from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_openpilot_enabled, replay_process
+from openpilot.system.version import get_commit
+from openpilot.tools.lib.filereader import FileReader
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.helpers import save_log
 
 source_segments = [
   ("BODY", "937ccb7243511b65|2022-05-24--16-03-09--1"),        # COMMA.BODY
@@ -41,23 +41,23 @@ source_segments = [
 ]
 
 segments = [
-  ("BODY", "aregenECF15D9E559|2023-05-10--14-26-40--0"), 
-  ("HYUNDAI", "aregenAB9F543F70A|2023-05-10--14-28-25--0"), 
-  ("HYUNDAI2", "aregen39F5A028F96|2023-05-10--14-31-00--0"), 
-  ("TOYOTA", "aregen8D6A8B36E8D|2023-05-10--14-32-38--0"), 
-  ("TOYOTA2", "aregenB1933C49809|2023-05-10--14-34-14--0"), 
-  ("TOYOTA3", "aregen5D9915223DC|2023-05-10--14-36-43--0"), 
-  ("HONDA", "aregen484B732B675|2023-05-10--14-38-23--0"), 
-  ("HONDA2", "aregenAF6ACED4713|2023-05-10--14-40-01--0"), 
-  ("CHRYSLER", "aregen99B094E1E2E|2023-05-10--14-41-40--0"), 
-  ("RAM", "aregen5C2487E1EEB|2023-05-10--14-44-09--0"), 
-  ("SUBARU", "aregen98D277B792E|2023-05-10--14-46-46--0"), 
-  ("GM", "aregen377BA28D848|2023-05-10--14-48-28--0"), 
-  ("GM2", "aregen7CA0CC0F0C2|2023-05-10--14-51-00--0"), 
-  ("NISSAN", "aregen7097BF01563|2023-05-10--14-52-43--0"), 
-  ("VOLKSWAGEN", "aregen765AF3D2CB5|2023-05-10--14-54-23--0"), 
-  ("MAZDA", "aregen3053762FF2E|2023-05-10--14-56-53--0"), 
-  ("FORD", "aregenDDE0F89FA1E|2023-05-10--14-59-26--0"), 
+  ("BODY", "aregenECF15D9E559|2023-05-10--14-26-40--0"),
+  ("HYUNDAI", "aregenAB9F543F70A|2023-05-10--14-28-25--0"),
+  ("HYUNDAI2", "aregen39F5A028F96|2023-05-10--14-31-00--0"),
+  ("TOYOTA", "aregen8D6A8B36E8D|2023-05-10--14-32-38--0"),
+  ("TOYOTA2", "aregenB1933C49809|2023-05-10--14-34-14--0"),
+  ("TOYOTA3", "aregen5D9915223DC|2023-05-10--14-36-43--0"),
+  ("HONDA", "aregen484B732B675|2023-05-10--14-38-23--0"),
+  ("HONDA2", "aregenAF6ACED4713|2023-05-10--14-40-01--0"),
+  ("CHRYSLER", "aregen99B094E1E2E|2023-05-10--14-41-40--0"),
+  ("RAM", "aregen5C2487E1EEB|2023-05-10--14-44-09--0"),
+  ("SUBARU", "aregen98D277B792E|2023-05-10--14-46-46--0"),
+  ("GM", "aregen377BA28D848|2023-05-10--14-48-28--0"),
+  ("GM2", "aregen7CA0CC0F0C2|2023-05-10--14-51-00--0"),
+  ("NISSAN", "aregen7097BF01563|2023-05-10--14-52-43--0"),
+  ("VOLKSWAGEN", "aregen765AF3D2CB5|2023-05-10--14-54-23--0"),
+  ("MAZDA", "aregen3053762FF2E|2023-05-10--14-56-53--0"),
+  ("FORD", "aregenDDE0F89FA1E|2023-05-10--14-59-26--0"),
   ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
@@ -82,7 +82,7 @@ def run_test_process(data):
     assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
     upload_file(cur_log_fn, os.path.basename(cur_log_fn))
     os.remove(cur_log_fn)
-  return (segment, cfg.proc_name, cfg.subtest_name, res)
+  return (segment, cfg.proc_name, res)
 
 
 def get_log_data(segment):
@@ -110,7 +110,7 @@ def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=Non
       return f"Route did not enable at all or for long enough: {new_log_path}", log_msgs
 
   try:
-    return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance, cfg.field_tolerances), log_msgs
+    return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance), log_msgs
   except Exception as e:
     return str(e), log_msgs
 
@@ -224,24 +224,24 @@ if __name__ == "__main__":
         if cfg.proc_name not in tested_procs:
           continue
 
-        cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}{cfg.subtest_name}_{cur_commit}.bz2")
+        cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
         if args.update_refs:  # reference logs will not exist if routes were just regenerated
           ref_log_path = get_url(*segment.rsplit("--", 1))
         else:
-          ref_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}{cfg.subtest_name}_{ref_commit}.bz2")
+          ref_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
           ref_log_path = ref_log_fn if os.path.exists(ref_log_fn) else BASE_URL + os.path.basename(ref_log_fn)
 
         dat = None if args.upload_only else log_data[segment]
         pool_args.append((segment, cfg, args, cur_log_fn, ref_log_path, dat))
 
-        log_paths[segment][cfg.proc_name + cfg.subtest_name]['ref'] = ref_log_path
-        log_paths[segment][cfg.proc_name + cfg.subtest_name]['new'] = cur_log_fn
+        log_paths[segment][cfg.proc_name]['ref'] = ref_log_path
+        log_paths[segment][cfg.proc_name]['new'] = cur_log_fn
 
     results: Any = defaultdict(dict)
     p2 = pool.map(run_test_process, pool_args)
-    for (segment, proc, subtest_name, result) in tqdm(p2, desc="Running Tests", total=len(pool_args)):
+    for (segment, proc, result) in tqdm(p2, desc="Running Tests", total=len(pool_args)):
       if not args.upload_only:
-        results[segment][proc + subtest_name] = result
+        results[segment][proc] = result
 
   diff1, diff2, failed = format_diff(results, log_paths, ref_commit)
   if not upload:
