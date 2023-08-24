@@ -51,8 +51,8 @@ class TestCarInterfaces(unittest.TestCase):
 
   # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
   #  many generated examples to overrun when max_examples > ~20, don't run it
-  @parameterized.expand([(car,) for car in sorted(all_known_cars()) if car.startswith('SUBARU CROSSTREK HYBRID') or car.startswith('TOYOTA')])
-  @settings(max_examples=50,
+  @parameterized.expand([(car,) for car in sorted(all_known_cars()) if car.startswith('SUBARU CROSSTREK HYBRID')])
+  @settings(max_examples=100,
             phases=(Phase.reuse, Phase.generate, Phase.shrink),
             # suppress_health_check=list(HealthCheck),
             )
@@ -67,7 +67,7 @@ class TestCarInterfaces(unittest.TestCase):
     car_interface = CarInterface(car_params, CarController, CarState)
     assert car_params
     assert car_interface
-    return
+    # return
 
     self.assertGreater(car_params.mass, 1)
     self.assertGreater(car_params.wheelbase, 0)
