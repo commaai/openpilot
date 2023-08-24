@@ -66,10 +66,10 @@ def join_process(process: Process, timeout: float) -> None:
 class ManagerProcess(ABC):
   daemon = False
   sigkill = False
+  should_run: Callable[[bool, Params, car.CarParams], bool]
   proc: Optional[Process] = None
   enabled = True
   name = ""
-  should_run: Callable[[bool, Params, car.CarParams], bool]
 
   last_watchdog_time = 0
   watchdog_max_dt: Optional[int] = None
