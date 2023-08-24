@@ -1,5 +1,8 @@
 #include "tools/cabana/chart/chart.h"
 
+#include <algorithm>
+#include <limits>
+
 #include <QActionGroup>
 #include <QApplication>
 #include <QDrag>

@@ -3,7 +3,11 @@
 #include <array>
 #include <atomic>
 #include <deque>
+#include <memory>
+#include <tuple>
 #include <unordered_map>
+#include <vector>
+
 #include <QColor>
 #include <QHash>
 

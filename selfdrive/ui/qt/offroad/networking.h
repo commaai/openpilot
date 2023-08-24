@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "selfdrive/ui/qt/offroad/wifiManager.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"

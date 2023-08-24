@@ -1,6 +1,8 @@
 #pragma once
 
 #include <deque>
+#include <vector>
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QHeaderView>
