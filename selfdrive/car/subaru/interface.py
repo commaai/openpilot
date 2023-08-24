@@ -3,7 +3,7 @@ from cereal import car
 from panda import Panda
 from openpilot.selfdrive.car import get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
-from openpilot.selfdrive.car.subaru.values import CAR, LKAS_ANGLE, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags
+from openpilot.selfdrive.car.subaru.values import CAR, LKAS_ANGLE, GLOBAL_GEN2, PREGLOBAL_CARS, HYBRID_CARS, SubaruFlags
 
 
 class CarInterface(CarInterfaceBase):
@@ -12,7 +12,11 @@ class CarInterface(CarInterfaceBase):
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "subaru"
     ret.radarUnavailable = True
-    ret.dashcamOnly = candidate in (PREGLOBAL_CARS | LKAS_ANGLE)
+    # for HYBRID CARS to be upstreamed, we need:
+    #   - replacement for ES_Distance so we can cancel the cruise control
+    #   - to find the Cruise_Activated bit from the car
+    #   - proper panda safety setup (use the correct cruise_activated bit, throttle from Throttle_Hybrid, etc)
+    ret.dashcamOnly = candidate in (PREGLOBAL_CARS | LKAS_ANGLE | HYBRID_CARS)
     ret.autoResumeSng = False
 
     # Detect infotainment message sent from the camera
@@ -68,6 +72,13 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 14., 23.], [0., 14., 23.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.045, 0.042, 0.20], [0.04, 0.035, 0.045]]
 
+    elif candidate == CAR.CROSSTREK_HYBRID:
+      ret.mass = 1668.
+      ret.wheelbase = 2.67
+      ret.centerToFront = ret.wheelbase * 0.5
+      ret.steerRatio = 17
+      ret.steerActuatorDelay = 0.1
+
     elif candidate in (CAR.FORESTER, CAR.FORESTER_2022):
       ret.mass = 1568.
       ret.wheelbase = 2.67
@@ -107,7 +118,7 @@ class CarInterface(CarInterfaceBase):
     else:
       raise ValueError(f"unknown car: {candidate}")
 
-    #ret.experimentalLongitudinalAvailable = candidate not in (GLOBAL_GEN2 | PREGLOBAL_CARS | LKAS_ANGLE)
+    #ret.experimentalLongitudinalAvailable = candidate not in (GLOBAL_GEN2 | PREGLOBAL_CARS | LKAS_ANGLE | HYBRID_CARS)
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
 
     if ret.openpilotLongitudinalControl:
