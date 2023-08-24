@@ -15,11 +15,11 @@ env:
   CL_BASE_IMAGE: openpilot-base-cl
   DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
 
-  BUILD: .github/scripts/docker_build.sh base
+  BUILD: selfdrive/test/docker_build.sh base
 
   RUN: docker run --shm-size 1G -v $GITHUB_WORKSPACE:/tmp/openpilot -w /tmp/openpilot -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v ~/scons_cache:/tmp/scons_cache -v ~/comma_download_cache:/tmp/comma_download_cache -v ~/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/sh -c
 
-  BUILD_CL: .github/scripts/docker_build.sh cl
+  BUILD_CL: selfdrive/test/docker_build.sh cl
   
   RUN_CL: docker run --shm-size 1G -v $GITHUB_WORKSPACE:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v ~/scons_cache:/tmp/scons_cache -v ~/comma_download_cache:/tmp/comma_download_cache -v ~/openpilot_cache:/tmp/openpilot_cache $CL_BASE_IMAGE /bin/sh -c
 
@@ -65,7 +65,7 @@ jobs:
         $DOCKER_LOGIN
     - name: Build and push sim image
       run: |
-        .github/scripts/docker_build.sh sim
+        selfdrive/test/docker_build.sh sim
 
   docs:
     name: build docs
@@ -86,7 +86,7 @@ jobs:
         $DOCKER_LOGIN
     - name: Build and push docs image
       run: |
-        .github/scripts/docker_build.sh docs
+        selfdrive/test/docker_build.sh docs
 
   devcontainer:
     name: devcontainer
