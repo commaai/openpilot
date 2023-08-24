@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 #include <memory>
+#include <tuple>
 #include <utility>
 
 #include "cereal/visionipc/visionipc_server.h"

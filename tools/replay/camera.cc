@@ -3,6 +3,7 @@
 #include "msm_media_info.h"
 
 #include <cassert>
+#include <tuple>
 
 std::tuple<size_t, size_t, size_t> get_nv12_info(int width, int height) {
   int nv12_width = VENUS_Y_STRIDE(COLOR_FMT_NV12, width);
