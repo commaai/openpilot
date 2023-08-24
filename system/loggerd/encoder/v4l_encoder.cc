@@ -21,10 +21,10 @@ const int env_debug_encoder = (getenv("DEBUG_ENCODER") != NULL) ? atoi(getenv("D
 
 static void checked_ioctl(int fd, unsigned long request, void *argp) {
   int ret = util::safe_ioctl(fd, request, argp);
-  if (ret < 0) {
+  if (ret != 0) {
     LOGE("checked_ioctl failed with error %d (%d %lx %p)", errno, fd, request, argp);
+    assert(0);
   }
-  assert(ret == 0);
 }
 
 static void dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=NULL, unsigned int *bytesused=NULL, unsigned int *flags=NULL, struct timeval *timestamp=NULL) {
