@@ -175,7 +175,7 @@ public:
 
 private:
   float x_, k_;
-//  bool initialized_;
+  bool initialized_;
 };
 
 template<typename T>
