@@ -40,7 +40,7 @@ jobs:
     - name: Unit test
       timeout-minutes: 2
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) --directory=/tmp/openpilot/cereal && \
+        ${{ env.RUN }} "scons -j$(nproc) --directory=/tmp/openpilot cereal && \
                         apt-get update && \
                         apt-get install -y libdw-dev libqt5svg5-dev libqt5x11extras5-dev && \
                         cd /tmp/openpilot/tools/plotjuggler && \
