@@ -1,4 +1,5 @@
 #include <cassert>
+#include <string>
 #include <sys/ioctl.h>
 #include <poll.h>
 
@@ -6,11 +7,11 @@
 #include "common/util.h"
 #include "common/timing.h"
 
-#include "libyuv.h"
-#include "msm_media_info.h"
+#include "third_party/libyuv/include/libyuv.h"
+#include "third_party/linux/include/msm_media_info.h"
 
 // has to be in this order
-#include "v4l2-controls.h"
+#include "third_party/linux/include/v4l2-controls.h"
 #include <linux/videodev2.h>
 #define V4L2_QCOM_BUF_FLAG_CODECCONFIG 0x00020000
 #define V4L2_QCOM_BUF_FLAG_EOS 0x02000000
@@ -18,7 +19,7 @@
 // echo 0x7fffffff > /sys/kernel/debug/msm_vidc/debug_level
 const int env_debug_encoder = (getenv("DEBUG_ENCODER") != NULL) ? atoi(getenv("DEBUG_ENCODER")) : 0;
 
-#define checked_ioctl(x,y,z) { int _ret = HANDLE_EINTR(ioctl(x,y,z)); if (_ret!=0) { LOGE("checked_ioctl failed %d %lx %p", x, y, z); } assert(_ret==0); }
+#define checked_ioctl(x, y, z) { int _ret = HANDLE_EINTR(ioctl(x, y, z)); if (_ret!=0) { LOGE("checked_ioctl failed %d %lx %p", x, y, z); } assert(_ret==0); }
 
 static void dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=NULL, unsigned int *bytesused=NULL, unsigned int *flags=NULL, struct timeval *timestamp=NULL) {
   v4l2_plane plane = {0};

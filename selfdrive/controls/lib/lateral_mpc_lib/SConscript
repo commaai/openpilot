@@ -38,9 +38,8 @@ generated_files = [
   f'{gen}/lat_model/lat_expl_vde_adj.c',
 
   f'{gen}/lat_model/lat_model.h',
-  f'{gen}/lat_cost/lat_cost_y_fun.h',
-  f'{gen}/lat_cost/lat_cost_y_e_fun.h',
-  f'{gen}/lat_cost/lat_cost_y_0_fun.h',
+  f'{gen}/lat_constraints/lat_constraints.h',
+  f'{gen}/lat_cost/lat_cost.h',
 ] + build_files
 
 acados_dir = '#third_party/acados'
@@ -49,8 +48,6 @@ acados_templates_dir = '#third_party/acados/acados_template/c_templates_tera'
 source_list = ['lat_mpc.py',
   '#/selfdrive/modeld/constants.py',
   f'{acados_dir}/include/acados_c/ocp_nlp_interface.h',
-  f'{acados_dir}/x86_64/lib/libacados.so',
-  f'{acados_dir}/larch64/lib/libacados.so',
   f'{acados_templates_dir}/acados_solver.in.c',
 ]
 

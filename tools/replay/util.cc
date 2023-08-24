@@ -9,8 +9,10 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <mutex>
 #include <numeric>
+#include <utility>
 
 #include "common/timing.h"
 #include "common/util.h"

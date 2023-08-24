@@ -7,13 +7,13 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from typing import NoReturn, Union, List, Dict
 
-from common.params import Params
+from openpilot.common.params import Params
 from cereal.messaging import SubMaster
-from system.swaglog import cloudlog
-from system.hardware import HARDWARE
-from common.file_helpers import atomic_write_in_dir
-from system.version import get_normalized_origin, get_short_branch, get_short_version, is_dirty
-from system.loggerd.config import STATS_DIR, STATS_DIR_FILE_LIMIT, STATS_SOCKET, STATS_FLUSH_TIME_S
+from openpilot.system.swaglog import cloudlog
+from openpilot.system.hardware import HARDWARE
+from openpilot.common.file_helpers import atomic_write_in_dir
+from openpilot.system.version import get_normalized_origin, get_short_branch, get_short_version, is_dirty
+from openpilot.system.loggerd.config import STATS_DIR, STATS_DIR_FILE_LIMIT, STATS_SOCKET, STATS_FLUSH_TIME_S
 
 
 class METRIC_TYPE:
@@ -23,6 +23,8 @@ class METRIC_TYPE:
 class StatLog:
   def __init__(self):
     self.pid = None
+    self.zctx = None
+    self.sock = None
 
   def connect(self) -> None:
     self.zctx = zmq.Context()
@@ -30,6 +32,12 @@ class StatLog:
     self.sock.setsockopt(zmq.LINGER, 10)
     self.sock.connect(STATS_SOCKET)
     self.pid = os.getpid()
+
+  def __del__(self):
+    if self.sock is not None:
+      self.sock.close()
+    if self.zctx is not None:
+      self.zctx.term()
 
   def _send(self, metric: str) -> None:
     if os.getpid() != self.pid:
@@ -68,7 +76,7 @@ def main() -> NoReturn:
     return res
 
   # open statistics socket
-  ctx = zmq.Context().instance()
+  ctx = zmq.Context.instance()
   sock = ctx.socket(zmq.PULL)
   sock.bind(STATS_SOCKET)
 
@@ -92,70 +100,74 @@ def main() -> NoReturn:
   last_flush_time = time.monotonic()
   gauges = {}
   samples: Dict[str, List[float]] = defaultdict(list)
-  while True:
-    started_prev = sm['deviceState'].started
-    sm.update()
-
-    # Update metrics
+  try:
     while True:
-      try:
-        metric = sock.recv_string(zmq.NOBLOCK)
+      started_prev = sm['deviceState'].started
+      sm.update()
+
+      # Update metrics
+      while True:
         try:
-          metric_type = metric.split('|')[1]
-          metric_name = metric.split(':')[0]
-          metric_value = float(metric.split('|')[0].split(':')[1])
+          metric = sock.recv_string(zmq.NOBLOCK)
+          try:
+            metric_type = metric.split('|')[1]
+            metric_name = metric.split(':')[0]
+            metric_value = float(metric.split('|')[0].split(':')[1])
 
-          if metric_type == METRIC_TYPE.GAUGE:
-            gauges[metric_name] = metric_value
-          elif metric_type == METRIC_TYPE.SAMPLE:
-            samples[metric_name].append(metric_value)
-          else:
-            cloudlog.event("unknown metric type", metric_type=metric_type)
-        except Exception:
-          cloudlog.event("malformed metric", metric=metric)
-      except zmq.error.Again:
-        break
+            if metric_type == METRIC_TYPE.GAUGE:
+              gauges[metric_name] = metric_value
+            elif metric_type == METRIC_TYPE.SAMPLE:
+              samples[metric_name].append(metric_value)
+            else:
+              cloudlog.event("unknown metric type", metric_type=metric_type)
+          except Exception:
+            cloudlog.event("malformed metric", metric=metric)
+        except zmq.error.Again:
+          break
 
-    # flush when started state changes or after FLUSH_TIME_S
-    if (time.monotonic() > last_flush_time + STATS_FLUSH_TIME_S) or (sm['deviceState'].started != started_prev):
-      result = ""
-      current_time = datetime.utcnow().replace(tzinfo=timezone.utc)
-      tags['started'] = sm['deviceState'].started
+      # flush when started state changes or after FLUSH_TIME_S
+      if (time.monotonic() > last_flush_time + STATS_FLUSH_TIME_S) or (sm['deviceState'].started != started_prev):
+        result = ""
+        current_time = datetime.utcnow().replace(tzinfo=timezone.utc)
+        tags['started'] = sm['deviceState'].started
 
-      for key, value in gauges.items():
-        result += get_influxdb_line(f"gauge.{key}", value, current_time, tags)
+        for key, value in gauges.items():
+          result += get_influxdb_line(f"gauge.{key}", value, current_time, tags)
 
-      for key, values in samples.items():
-        values.sort()
-        sample_count = len(values)
-        sample_sum = sum(values)
+        for key, values in samples.items():
+          values.sort()
+          sample_count = len(values)
+          sample_sum = sum(values)
 
-        stats = {
-          'count': sample_count,
-          'min': values[0],
-          'max': values[-1],
-          'mean': sample_sum / sample_count,
-        }
-        for percentile in [0.05, 0.5, 0.95]:
-          value = values[int(round(percentile * (sample_count - 1)))]
-          stats[f"p{int(percentile * 100)}"] = value
+          stats = {
+            'count': sample_count,
+            'min': values[0],
+            'max': values[-1],
+            'mean': sample_sum / sample_count,
+          }
+          for percentile in [0.05, 0.5, 0.95]:
+            value = values[int(round(percentile * (sample_count - 1)))]
+            stats[f"p{int(percentile * 100)}"] = value
 
-        result += get_influxdb_line(f"sample.{key}", stats, current_time, tags)
+          result += get_influxdb_line(f"sample.{key}", stats, current_time, tags)
 
-      # clear intermediate data
-      gauges.clear()
-      samples.clear()
-      last_flush_time = time.monotonic()
+        # clear intermediate data
+        gauges.clear()
+        samples.clear()
+        last_flush_time = time.monotonic()
 
-      # check that we aren't filling up the drive
-      if len(os.listdir(STATS_DIR)) < STATS_DIR_FILE_LIMIT:
-        if len(result) > 0:
-          stats_path = os.path.join(STATS_DIR, f"{current_time.timestamp():.0f}_{idx}")
-          with atomic_write_in_dir(stats_path) as f:
-            f.write(result)
-          idx += 1
-      else:
-        cloudlog.error("stats dir full")
+        # check that we aren't filling up the drive
+        if len(os.listdir(STATS_DIR)) < STATS_DIR_FILE_LIMIT:
+          if len(result) > 0:
+            stats_path = os.path.join(STATS_DIR, f"{current_time.timestamp():.0f}_{idx}")
+            with atomic_write_in_dir(stats_path) as f:
+              f.write(result)
+            idx += 1
+        else:
+          cloudlog.error("stats dir full")
+  finally:
+    sock.close()
+    ctx.term()
 
 
 if __name__ == "__main__":
