@@ -6,7 +6,7 @@ on:
 
 env:
   DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-  BUILD: .github/scripts/docker_build_prebuilt.sh
+  BUILD: .github/scripts/docker_build.sh prebuilt
 
 jobs:
   build_prebuilt:
