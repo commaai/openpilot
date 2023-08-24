@@ -54,6 +54,7 @@ private:
   // Panning
   QPointF m_lastPos;
   int interaction_counter = 0;
+  double vehicle_speed_ = 0.0;
 
   // Position
   std::optional<QMapbox::Coordinate> last_valid_nav_dest;

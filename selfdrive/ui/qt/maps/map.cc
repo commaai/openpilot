@@ -18,7 +18,7 @@ const float MAX_PITCH = 50;
 const float MIN_PITCH = 0;
 const float MAP_SCALE = 2;
 
-MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), velocity_filter(0, 10, 0.05) {
+MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), velocity_filter(0, 10, 0.05, false) {
   QObject::connect(uiState(), &UIState::uiUpdate, this, &MapWindow::updateState);
 
   map_overlay = new QWidget (this);
@@ -151,7 +151,8 @@ void MapWindow::updateState(const UIState &s) {
     if (locationd_valid) {
       last_position = QMapbox::Coordinate(locationd_pos.getValue()[0], locationd_pos.getValue()[1]);
       last_bearing = RAD2DEG(locationd_orientation.getValue()[2]);
-      velocity_filter.update(locationd_velocity.getValue()[0]);
+      vehicle_speed_ = locationd_velocity.getValue()[0];
+      velocity_filter.update(std::max(10.0, locationd_velocity.getValue()[0]));
     }
   }
 
@@ -202,6 +203,7 @@ void MapWindow::updateState(const UIState &s) {
     if (last_position) m_map->setCoordinate(*last_position);
     if (last_bearing) m_map->setBearing(*last_bearing);
     m_map->setZoom(util::map_val<float>(velocity_filter.x(), 0, 30, MAX_ZOOM, MIN_ZOOM));
+    qDebug() << "velocity_filter.x()" << velocity_filter.x();
   } else {
     interaction_counter--;
   }
@@ -304,6 +306,8 @@ void MapWindow::mousePressEvent(QMouseEvent *ev) {
 void MapWindow::mouseDoubleClickEvent(QMouseEvent *ev) {
   if (last_position) m_map->setCoordinate(*last_position);
   if (last_bearing) m_map->setBearing(*last_bearing);
+//  velocity_filter.reset(0, false);
+  velocity_filter.reset(vehicle_speed_);
   m_map->setZoom(util::map_val<float>(velocity_filter.x(), 0, 30, MAX_ZOOM, MIN_ZOOM));
   update();
 
