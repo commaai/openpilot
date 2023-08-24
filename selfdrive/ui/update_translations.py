@@ -4,7 +4,7 @@ import json
 import os
 
 from cereal import car, messaging
-from common.basedir import BASEDIR
+from openpilot.common.basedir import BASEDIR
 from selfdrive.controls.controlsd import CAMERA_PACKETS, CONTROL_PACKETS
 from selfdrive.controls.lib.events import EVENTS, Alert
 

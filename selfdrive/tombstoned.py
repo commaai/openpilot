@@ -9,11 +9,11 @@ import time
 import glob
 from typing import NoReturn
 
-from common.file_helpers import mkdirs_exists_ok
-from system.loggerd.config import ROOT
-import selfdrive.sentry as sentry
-from system.swaglog import cloudlog
-from system.version import get_commit
+from openpilot.common.file_helpers import mkdirs_exists_ok
+from openpilot.system.loggerd.config import ROOT
+import openpilot.selfdrive.sentry as sentry
+from openpilot.system.swaglog import cloudlog
+from openpilot.system.version import get_commit
 
 MAX_SIZE = 1_000_000 * 100  # allow up to 100M
 MAX_TOMBSTONE_FN_LEN = 62  # 85 - 23 ("<dongle id>/crash/")

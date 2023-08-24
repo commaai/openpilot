@@ -13,17 +13,17 @@ from typing import Dict, List
 import cereal.messaging as messaging
 from cereal import log
 from cereal.services import service_list
-from common.basedir import BASEDIR
-from common.params import Params
-from common.timeout import Timeout
-from system.loggerd.config import ROOT
-from system.loggerd.xattr_cache import getxattr
-from system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
-from selfdrive.manager.process_config import managed_processes
-from system.version import get_version
-from tools.lib.logreader import LogReader
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.params import Params
+from openpilot.common.timeout import Timeout
+from openpilot.system.loggerd.config import ROOT
+from openpilot.system.loggerd.xattr_cache import getxattr
+from openpilot.system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
+from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.version import get_version
+from openpilot.tools.lib.logreader import LogReader
 from cereal.visionipc import VisionIpcServer, VisionStreamType
-from common.transformations.camera import tici_f_frame_size, tici_d_frame_size, tici_e_frame_size
+from openpilot.common.transformations.camera import tici_f_frame_size, tici_d_frame_size, tici_e_frame_size
 
 SentinelType = log.Sentinel.SentinelType
 
@@ -210,7 +210,8 @@ class TestLoggerd(unittest.TestCase):
     for fn in ["console-ramoops", "pmsg-ramoops-0"]:
       path = Path(os.path.join("/sys/fs/pstore/", fn))
       if path.is_file():
-        expected_val = open(path, "rb").read()
+        with open(path, "rb") as f:
+          expected_val = f.read()
         bootlog_val = [e.value for e in boot.pstore.entries if e.key == fn][0]
         self.assertEqual(expected_val, bootlog_val)
 

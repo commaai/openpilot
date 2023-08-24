@@ -7,9 +7,9 @@ from collections import defaultdict
 import rpyc # pylint: disable=import-error
 from rpyc.utils.server import ThreadedServer  # pylint: disable=import-error
 
-#from common.params import Params
+#from openpilot.common.params import Params
 import cereal.messaging as messaging
-from selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.manager.process_config import managed_processes
 from laika.lib.coordinates import ecef2geodetic
 
 DELTA = 0.001

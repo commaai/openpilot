@@ -3,7 +3,7 @@
 #define CATCH_CONFIG_MAIN
 #include "catch2/catch.hpp"
 
-#include "json11.hpp"
+#include "third_party/json11/json11.hpp"
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "common/version.h"

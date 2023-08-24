@@ -8,8 +8,8 @@ from tqdm import tqdm
 from typing import List, Tuple, cast
 
 from cereal.services import service_list
-from tools.lib.route import Route
-from tools.lib.logreader import LogReader
+from openpilot.tools.lib.route import Route
+from openpilot.tools.lib.logreader import LogReader
 
 if __name__ == "__main__":
   r = Route(sys.argv[1])

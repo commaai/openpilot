@@ -33,6 +33,7 @@ struct Network {
   SecurityType security_type;
 };
 bool compare_by_strength(const Network &a, const Network &b);
+inline int strengthLevel(unsigned int strength) { return std::clamp((int)round(strength / 33.), 0, 3); }
 
 class WifiManager : public QObject {
   Q_OBJECT

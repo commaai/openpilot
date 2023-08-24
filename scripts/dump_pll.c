@@ -39,9 +39,9 @@ void hexdump(uint32_t *d, int l) {
 
 int main() {
   int fd = open("/dev/mem", O_RDWR);
-  volatile uint32_t *mb = (uint32_t*)mmap(0,0x1000,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0x06400000);
-  volatile uint32_t *mc = (uint32_t*)mmap(0,0x1000,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0x06480000);
-  volatile uint32_t *md = (uint32_t*)mmap(0,0x1000,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0x09A20000);
+  volatile uint32_t *mb = (uint32_t *)mmap(0, 0x1000, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0x06400000);
+  volatile uint32_t *mc = (uint32_t *)mmap(0, 0x1000, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0x06480000);
+  volatile uint32_t *md = (uint32_t *)mmap(0, 0x1000, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0x09A20000);
   while (1) {
     printf("PLL MODE:%x L_VAL:%x ALPHA:%x USER_CTL:%x CONFIG_CTL:%x CONFIG_CTL_HI:%x STATUS:%x TEST_CTL_LO:%x TEST_CTL_HI:%x\n",
         mb[C0_PLL_MODE/4], mb[C0_PLL_L_VAL/4], mb[C0_PLL_ALPHA/4],
