@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-if   [ $1 = "base" ]; then
+if [ $1 = "base" ]; then
   export DOCKER_IMAGE=openpilot-base
   export DOCKER_FILE=Dockerfile.openpilot_base
 elif [ $1 = "docs" ]; then
@@ -22,7 +22,7 @@ else
 fi
 
 export DOCKER_REGISTRY=ghcr.io/commaai
-export COMMIT_SHA=$(git rev-parse HEAD);
+export COMMIT_SHA=$(git rev-parse HEAD)
 
 LOCAL_TAG=$DOCKER_IMAGE
 REMOTE_TAG=$DOCKER_REGISTRY/$LOCAL_TAG
@@ -41,7 +41,7 @@ DOCKER_BUILDKIT=1 docker buildx build --load $CACHE_TO --cache-from type=registr
 
 # if [[ ! -z "$PUSH_IMAGE" ]];
 # then
-#     docker push $REMOTE_TAG
-#     docker tag $REMOTE_TAG $REMOTE_SHA_TAG
-#     docker push $REMOTE_SHA_TAG
+#   docker push $REMOTE_TAG
+#   docker tag $REMOTE_TAG $REMOTE_SHA_TAG
+#   docker push $REMOTE_SHA_TAG
 # fi

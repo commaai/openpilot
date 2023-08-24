@@ -86,7 +86,17 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
 
   while (!exit) {
     int rc = poll(&pfd, 1, 1000);
-    if (!rc) { LOGE("encoder dequeue poll timeout"); continue; }
+    if (rc < 0) {
+      if (errno != EINTR) {
+        // TODO: exit encoder?
+        // ignore the error and keep going
+        LOGE("poll failed (%d - %d)", rc, errno);
+      }
+      continue;
+    } else if (rc == 0) {
+      LOGE("encoder dequeue poll timeout");
+      continue;
+    }
 
     if (env_debug_encoder >= 2) {
       printf("%20s poll %x at %.2f ms\n", e->encoder_info.filename, pfd.revents, millis_since_boot());
