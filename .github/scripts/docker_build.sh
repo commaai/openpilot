@@ -15,6 +15,9 @@ elif [ $1 = "prebuilt" ]; then
 elif [ $1 = "cl" ]; then
     export DOCKER_IMAGE=openpilot-base-cl
     export DOCKER_FILE=Dockerfile.openpilot_base_cl
+else
+    echo "Invalid docker build image $1"
+    exit 1
 fi
 
 export DOCKER_REGISTRY=ghcr.io/commaai
