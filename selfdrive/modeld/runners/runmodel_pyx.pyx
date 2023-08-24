@@ -1,8 +1,9 @@
 # distutils: language = c++
-# cython: c_string_encoding=ascii, language_level=3
+# cython: c_string_encoding=ascii
 
 from libcpp.string cimport string
 from libc.string cimport memcpy
+
 from selfdrive.modeld.models.commonmodel_pyx cimport CLMem
 
 cdef class RunModel:

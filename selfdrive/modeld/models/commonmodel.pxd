@@ -1,5 +1,4 @@
 # distutils: language = c++
-#cython: language_level=3
 
 from cereal.visionipc.visionipc cimport cl_device_id, cl_context, cl_mem
 
