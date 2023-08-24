@@ -16,8 +16,7 @@ env:
   CL_BASE_IMAGE: openpilot-base-cl
   AZURE_TOKEN: ${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}
 
-  DOCKER_USER: ${{ github.actor }}
-  DOCKER_PASS: ${{ secrets.GITHUB_TOKEN }}
+  DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
   BUILD: .github/scripts/docker_build_base.sh
 
   RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONWARNINGS=error -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v ~/scons_cache:/tmp/scons_cache -v ~/comma_download_cache:/tmp/comma_download_cache -v ~/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/sh -c
@@ -196,7 +195,9 @@ jobs:
       with:
         git-lfs: false
     - name: Build and push CL Docker image
-      run: eval "$BUILD_CL"
+      run: |
+        $DOCKER_LOGIN
+        eval "$BUILD_CL"
 
   static_analysis:
     name: static analysis

@@ -5,8 +5,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOCKER_USER: ${{ github.actor }}
-  DOCKER_PASS: ${{ secrets.GITHUB_TOKEN }}
+  DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
   BUILD: .github/scripts/docker_build_prebuilt.sh
 
 jobs:
@@ -30,4 +29,5 @@ jobs:
         submodules: true
     - name: Build and Push docker image
       run: |
+        $DOCKER_LOGIN
         eval "$BUILD"
