@@ -3,7 +3,7 @@
 
 #include <cassert>
 #include <algorithm>
-#include "libyuv.h"
+#include "third_party/libyuv/include/libyuv.h"
 
 #ifdef __APPLE__
 #define HW_DEVICE_TYPE AV_HWDEVICE_TYPE_VIDEOTOOLBOX

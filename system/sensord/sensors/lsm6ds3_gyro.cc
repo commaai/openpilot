@@ -1,4 +1,4 @@
-#include "lsm6ds3_gyro.h"
+#include "system/sensord/sensors/lsm6ds3_gyro.h"
 
 #include <cassert>
 #include <cmath>

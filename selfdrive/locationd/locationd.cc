@@ -1,11 +1,11 @@
+#include "selfdrive/locationd/locationd.h"
+
 #include <sys/time.h>
 #include <sys/resource.h>
 
 #include <algorithm>
 #include <cmath>
 #include <vector>
-
-#include "locationd.h"
 
 using namespace EKFS;
 using namespace Eigen;

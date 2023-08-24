@@ -5,7 +5,7 @@
 #include <map>
 #include <string>
 
-#include "json11.hpp"
+#include "third_party/json11/json11.hpp"
 
 #include "cereal/messaging/messaging.h"
 #include "common/timing.h"
