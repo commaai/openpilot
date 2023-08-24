@@ -34,6 +34,8 @@ runs:
           scons-
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
+      with:
+        driver: docker-container
     # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
     - id: normalize-file-permissions
       shell: bash
