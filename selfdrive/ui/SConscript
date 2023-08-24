@@ -82,14 +82,13 @@ qt_env.NoClean(translation_sources)
 qt_env.Precious(translation_sources)
 qt_env.NoCache(lupdate)
 
-# setup and factory resetter
-if GetOption('extras'):
+
+if GetOption('extras') and arch != "Darwin":
+  # setup and factory resetter
   qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
   qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc", asset_obj],
                  LIBS=qt_libs + ['curl', 'common', 'json11'])
 
-
-if GetOption('extras'):
   # build updater UI
   qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
 

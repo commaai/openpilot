@@ -79,7 +79,9 @@ jobs:
     - uses: ./.github/workflows/setup
     - name: Build openpilot with all flags
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 12 || 30) }} # allow more time when we missed the scons cache
-      run: ${{ env.RUN }} "scons -j$(nproc) --extras && release/check-dirty.sh"
+      run: |
+        ${{ env.RUN }} "scons -j$(nproc)"
+        ${{ env.RUN }} "release/check-dirty.sh"
     - name: Cleanup scons cache and rebuild
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 2 || 30) }} # allow more time when we missed the scons cache
       run: |
