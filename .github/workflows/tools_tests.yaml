@@ -47,9 +47,6 @@ jobs:
   simulator:
     name: simulator
     runs-on: ubuntu-20.04
-    env:
-      IMAGE_NAME: openpilot-sim
-      IS_MASTER: ${{ github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot' }}
     if: github.repository == 'commaai/openpilot'
     timeout-minutes: 45
     steps:
@@ -74,8 +71,6 @@ jobs:
     name: build docs
     runs-on: ubuntu-20.04
     timeout-minutes: 45
-    env:
-      IMAGE_NAME: openpilot-sim
     steps:
     - uses: actions/checkout@v3
       with:
