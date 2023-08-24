@@ -391,7 +391,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.FORESTER_HYBRID: {
-    (Ecu.esp, 0x7b0, None): [
+    (Ecu.abs, 0x7b0, None): [
       b'\xa3 \x19T\x00',
     ],
     (Ecu.eps, 0x746, None): [
