@@ -4,9 +4,8 @@ from opendbc.can.can_define import CANDefine
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
-from openpilot.selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus, SubaruFlags
+from openpilot.selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, HYBRID_CARS, PREGLOBAL_CARS, CanBus, SubaruFlags
 from openpilot.selfdrive.car import CanSignalRateCalculator
-from selfdrive.car.subaru.values import HYBRID_CARS
 
 
 class CarState(CarStateBase):
