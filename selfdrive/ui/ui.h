@@ -96,6 +96,15 @@ typedef enum UIStatus {
   STATUS_ENGAGED,
 } UIStatus;
 
+enum PrimeType {
+  UNKNOWN = -1,
+  NONE = 0,
+  MAGENTA = 1,
+  LITE = 2,
+  BLUE = 3,
+  MAGENTA_NEW = 4,
+};
+
 const QColor bg_colors [] = {
   [STATUS_DISENGAGED] = QColor(0x17, 0x33, 0x49, 0xc8),
   [STATUS_OVERRIDE] = QColor(0x91, 0x9b, 0x95, 0xf1),
@@ -153,8 +162,8 @@ public:
     return scene.started && (*sm)["controlsState"].getControlsState().getEnabled();
   }
 
-  void setPrimeType(int type);
-  inline int primeType() const { return prime_type; }
+  void setPrimeType(PrimeType type);
+  inline PrimeType primeType() const { return prime_type; }
 
   int fb_w = 0, fb_h = 0;
 
@@ -170,7 +179,7 @@ public:
 signals:
   void uiUpdate(const UIState &s);
   void offroadTransition(bool offroad);
-  void primeTypeChanged(int prime_type);
+  void primeTypeChanged(PrimeType prime_type);
 
 private slots:
   void update();
@@ -178,7 +187,7 @@ private slots:
 private:
   QTimer *timer;
   bool started_prev = false;
-  int prime_type = -1;
+  PrimeType prime_type = PrimeType::UNKNOWN;
 };
 
 UIState *uiState();
