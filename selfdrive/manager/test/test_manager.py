@@ -64,7 +64,7 @@ class TestManager(unittest.TestCase):
         self.assertTrue(state.running, f"{p.name} not running")
         exit_code = p.stop(retry=False)
 
-        self.assertNotIn(p.name, BLACKLIST_PROCS)
+        self.assertNotIn(p.name, BLACKLIST_PROCS, f"{p.name} is running")
 
         # TODO: mapsd should exit cleanly
         if p.name == "mapsd":
