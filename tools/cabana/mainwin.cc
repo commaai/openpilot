@@ -1,6 +1,9 @@
 #include "tools/cabana/mainwin.h"
 
+#include <algorithm>
 #include <iostream>
+#include <string>
+
 #include <QClipboard>
 #include <QDesktopWidget>
 #include <QFile>

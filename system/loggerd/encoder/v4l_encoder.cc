@@ -1,4 +1,5 @@
 #include <cassert>
+#include <string>
 #include <sys/ioctl.h>
 #include <poll.h>
 

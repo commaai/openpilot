@@ -185,8 +185,8 @@ class UBloxAttrDict(dict):
   def __getattr__(self, name):
     try:
       return self.__getitem__(name)
-    except KeyError:
-      raise AttributeError(name)
+    except KeyError as e:
+      raise RuntimeError(f"ublock invalid attr: {name}") from e
 
   def __setattr__(self, name, value):
     if name in self.__dict__:
@@ -270,7 +270,7 @@ class UBloxDescriptor:
       return
 
     size2 = struct.calcsize(self.format2)
-    for c in range(count):
+    for _ in range(count):
       r = UBloxAttrDict()
       if size2 > len(buf):
         raise UBloxError("INVALID_SIZE=%u, " % len(buf))
@@ -324,7 +324,7 @@ class UBloxDescriptor:
       msg._buf += struct.pack(self.format2, *tuple(f2))
     msg._buf += struct.pack('<BB', *msg.checksum(data=msg._buf[2:]))
 
-  def format(self, msg):
+  def format_json(self, msg):
     '''return a formatted string for a message'''
     if not msg._unpacked:
       self.unpack(msg)
@@ -555,28 +555,28 @@ class UBloxMessage:
     '''format a message as a string'''
     if not self.valid():
       return 'UBloxMessage(INVALID)'
-    type = self.msg_type()
-    if type in msg_types:
-      return msg_types[type].format(self)
-    return 'UBloxMessage(UNKNOWN %s, %u)' % (str(type), self.msg_length())
+    msg_type = self.msg_type()
+    if msg_type in msg_types:
+      return msg_types[msg_type].format(self)
+    return 'UBloxMessage(UNKNOWN %s, %u)' % (str(msg_type), self.msg_length())
 
   def as_dict(self):
     '''format a message as a string'''
     if not self.valid():
       return 'UBloxMessage(INVALID)'
-    type = self.msg_type()
-    if type in msg_types:
-      return msg_types[type].format(self)
-    return 'UBloxMessage(UNKNOWN %s, %u)' % (str(type), self.msg_length())
+    msg_type = self.msg_type()
+    if msg_type in msg_types:
+      return msg_types[msg_type].format(self)
+    return 'UBloxMessage(UNKNOWN %s, %u)' % (str(msg_type), self.msg_length())
 
   def __getattr__(self, name):
     '''allow access to message fields'''
     try:
       return self._fields[name]
-    except KeyError:
+    except KeyError as e:
       if name == 'recs':
         return self._recs
-      raise AttributeError(name)
+      raise AttributeError(name) from e
 
   def __setattr__(self, name, value):
     '''allow access to message fields'''
@@ -598,29 +598,29 @@ class UBloxMessage:
     '''unpack a message'''
     if not self.valid():
       raise UBloxError('INVALID MESSAGE')
-    type = self.msg_type()
-    if type not in msg_types:
-      raise UBloxError('Unknown message %s length=%u' % (str(type), len(self._buf)))
-    msg_types[type].unpack(self)
+    msg_type = self.msg_type()
+    if msg_type not in msg_types:
+      raise UBloxError('Unknown message %s length=%u' % (str(msg_type), len(self._buf)))
+    msg_types[msg_type].unpack(self)
     return self._fields, self._recs
 
   def pack(self):
     '''pack a message'''
     if not self.valid():
       raise UBloxError('INVALID MESSAGE')
-    type = self.msg_type()
-    if type not in msg_types:
-      raise UBloxError('Unknown message %s' % str(type))
-    msg_types[type].pack(self)
+    msg_type = self.msg_type()
+    if msg_type not in msg_types:
+      raise UBloxError('Unknown message %s' % str(msg_type))
+    msg_types[msg_type].pack(self)
 
   def name(self):
     '''return the short string name for a message'''
     if not self.valid():
       raise UBloxError('INVALID MESSAGE')
-    type = self.msg_type()
-    if type not in msg_types:
-      raise UBloxError('Unknown message %s length=%u' % (str(type), len(self._buf)))
-    return msg_types[type].name
+    msg_type = self.msg_type()
+    if msg_type not in msg_types:
+      raise UBloxError('Unknown message %s length=%u' % (str(msg_types), len(self._buf)))
+    return msg_types[msg_type].name
 
   def msg_class(self):
     '''return the message class'''
@@ -655,9 +655,9 @@ class UBloxMessage:
       return False
     return True
 
-  def add(self, bytes):
+  def add(self, data):
     '''add some bytes to a message'''
-    self._buf += bytes
+    self._buf += data
     while not self.valid_so_far() and len(self._buf) > 0:
       '''handle corrupted streams'''
       self._buf = self._buf[1:]
@@ -768,7 +768,7 @@ class UBlox:
     if not self.read_only:
       if self.use_sendrecv:
         return self.dev.send(buf)
-      if type(buf) == str:
+      if isinstance(buf, str):
         return self.dev.write(str.encode(buf))
       else:
         return self.dev.write(buf)
@@ -933,7 +933,7 @@ class UBlox:
                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
     self.send_message(CLASS_CFG, MSG_CFG_NAVX5, payload)
 
-  def module_reset(self, set, mode):
+  def module_reset(self, reset, mode):
     ''' Reset the module for hot/warm/cold start'''
-    payload = struct.pack('<HBB', set, mode, 0)
+    payload = struct.pack('<HBB', reset, mode, 0)
     self.send_message(CLASS_CFG, MSG_CFG_RST, payload)
