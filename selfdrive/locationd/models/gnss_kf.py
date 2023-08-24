@@ -11,8 +11,8 @@ if __name__ == '__main__':  # Generating sympy
   import sympy as sp
   from rednose.helpers.ekf_sym import gen_code
 else:
-  from rednose.helpers.ekf_sym_pyx import EKF_sym_pyx  # pylint: disable=no-name-in-module,import-error
-  from rednose.helpers.ekf_sym import EKF_sym  # pylint: disable=no-name-in-module,import-error
+  from rednose.helpers.ekf_sym_pyx import EKF_sym_pyx
+  from rednose.helpers.ekf_sym import EKF_sym
 
 
 class States():
