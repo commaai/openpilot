@@ -1,8 +1,8 @@
 #include "system/loggerd/logger.h"
 
+#include <ftw.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <ftw.h>
 
 #include <cassert>
 #include <cerrno>

@@ -4,8 +4,8 @@
 #include <iostream>
 #include <memory>
 
-#include "common/util.h"
 #include "common/swaglog.h"
+#include "common/util.h"
 
 namespace {  // helper functions
 

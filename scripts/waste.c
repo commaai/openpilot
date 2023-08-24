@@ -2,15 +2,16 @@
 // gcc -O2 waste.c -lpthread -owaste -DMEM
 
 #define _GNU_SOURCE
-#include <stdio.h>
-#include <math.h>
-#include <sched.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <pthread.h>
 #include <arm_neon.h>
+#include <math.h>
+#include <pthread.h>
+#include <sched.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/sysinfo.h>
+#include <unistd.h>
+
 #include "../common/timing.h"
 
 int get_nprocs(void);

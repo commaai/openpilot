@@ -1,9 +1,5 @@
 #pragma once
 
-#include <cmath>
-#include <vector>
-#include <utility>
-
 #include <QApplication>
 #include <QByteArray>
 #include <QDateTime>
@@ -15,6 +11,9 @@
 #include <QStyledItemDelegate>
 #include <QToolButton>
 #include <QVector>
+#include <cmath>
+#include <utility>
+#include <vector>
 
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/settings.h"

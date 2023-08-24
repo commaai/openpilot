@@ -8,8 +8,8 @@
 #include <utility>
 #include <vector>
 
-#include "common/util.h"
 #include "common/timing.h"
+#include "common/util.h"
 
 void PrintErrorStringAndExit() {
   std::cerr << zdl::DlSystem::getLastErrorString() << std::endl;

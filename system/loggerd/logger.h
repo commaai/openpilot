@@ -1,5 +1,7 @@
 #pragma once
 
+#include <capnp/serialize.h>
+#include <kj/array.h>
 #include <pthread.h>
 
 #include <cassert>
@@ -8,12 +10,9 @@
 #include <memory>
 #include <string>
 
-#include <capnp/serialize.h>
-#include <kj/array.h>
-
 #include "cereal/messaging/messaging.h"
-#include "common/util.h"
 #include "common/swaglog.h"
+#include "common/util.h"
 #include "system/hardware/hw.h"
 
 const std::string LOG_ROOT = Path::log_root();

@@ -1,11 +1,10 @@
 #include "selfdrive/ui/qt/offroad/wifiManager.h"
 
-#include "selfdrive/ui/ui.h"
-#include "selfdrive/ui/qt/widgets/prime.h"
-
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/qt/widgets/prime.h"
+#include "selfdrive/ui/ui.h"
 
 bool compare_by_strength(const Network &a, const Network &b) {
   return std::tuple(a.connected, strengthLevel(a.strength), b.ssid) >

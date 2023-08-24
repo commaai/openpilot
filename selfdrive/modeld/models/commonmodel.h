@@ -12,8 +12,8 @@
 #include <CL/cl.h>
 #endif
 
-#include "common/mat.h"
 #include "cereal/messaging/messaging.h"
+#include "common/mat.h"
 #include "selfdrive/modeld/transforms/loadyuv.h"
 #include "selfdrive/modeld/transforms/transform.h"
 

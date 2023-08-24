@@ -2,8 +2,8 @@
 
 #include <QLabel>
 #include <QProcess>
-#include <QPushButton>
 #include <QProgressBar>
+#include <QPushButton>
 #include <QStackedWidget>
 #include <QWidget>
 

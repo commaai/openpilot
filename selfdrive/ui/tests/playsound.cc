@@ -1,7 +1,7 @@
 #include <QApplication>
+#include <QDebug>
 #include <QSoundEffect>
 #include <QTimer>
-#include <QDebug>
 
 int main(int argc, char **argv) {
 

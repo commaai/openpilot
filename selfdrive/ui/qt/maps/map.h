@@ -1,7 +1,5 @@
 #pragma once
 
-#include <optional>
-
 #include <QGeoCoordinate>
 #include <QGestureEvent>
 #include <QLabel>
@@ -15,13 +13,14 @@
 #include <QString>
 #include <QVBoxLayout>
 #include <QWheelEvent>
+#include <optional>
 
 #include "cereal/messaging/messaging.h"
 #include "common/params.h"
 #include "common/util.h"
-#include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/maps/map_eta.h"
 #include "selfdrive/ui/qt/maps/map_instructions.h"
+#include "selfdrive/ui/ui.h"
 
 class MapWindow : public QOpenGLWidget {
   Q_OBJECT

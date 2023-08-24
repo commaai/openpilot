@@ -1,20 +1,17 @@
-#include "selfdrive/ui/qt/offroad/settings.h"
-
+#include <QDebug>
+#include <QLabel>
 #include <cassert>
 #include <cmath>
 #include <string>
 
-#include <QDebug>
-#include <QLabel>
-
 #include "common/params.h"
 #include "common/util.h"
-#include "selfdrive/ui/ui.h"
+#include "selfdrive/ui/qt/offroad/settings.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/input.h"
+#include "selfdrive/ui/ui.h"
 #include "system/hardware/hw.h"
-
 
 void SoftwarePanel::checkForUpdates() {
   std::system("pkill -SIGUSR1 -f selfdrive.updated");

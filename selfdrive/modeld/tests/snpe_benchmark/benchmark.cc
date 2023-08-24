@@ -1,12 +1,12 @@
-#include <SNPE/SNPE.hpp>
-#include <SNPE/SNPEBuilder.hpp>
-#include <SNPE/SNPEFactory.hpp>
 #include <DlContainer/IDlContainer.hpp>
 #include <DlSystem/DlError.hpp>
 #include <DlSystem/ITensor.hpp>
 #include <DlSystem/ITensorFactory.hpp>
-#include <iostream>
+#include <SNPE/SNPE.hpp>
+#include <SNPE/SNPEBuilder.hpp>
+#include <SNPE/SNPEFactory.hpp>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 
 using namespace std;

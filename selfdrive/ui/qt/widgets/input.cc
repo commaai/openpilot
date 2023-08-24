@@ -1,13 +1,12 @@
 #include "selfdrive/ui/qt/widgets/input.h"
 
-#include <QPushButton>
 #include <QButtonGroup>
+#include <QPushButton>
 
-#include "system/hardware/hw.h"
-#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
-
+#include "system/hardware/hw.h"
 
 QDialogBase::QDialogBase(QWidget *parent) : QDialog(parent) {
   Q_ASSERT(parent != nullptr);

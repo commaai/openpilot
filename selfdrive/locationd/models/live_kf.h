@@ -1,13 +1,12 @@
 #pragma once
 
-#include <string>
 #include <cmath>
-#include <memory>
-#include <unordered_map>
-#include <vector>
-
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Dense>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "generated/live_kf_constants.h"
 #include "rednose/helpers/ekf_sym.h"

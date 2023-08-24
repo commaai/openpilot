@@ -2,9 +2,9 @@
 
 #include <cassert>
 
-#include "system/sensord/sensors/bmx055_accel.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
+#include "system/sensord/sensors/bmx055_accel.h"
 
 BMX055_Temp::BMX055_Temp(I2CBus *bus) : I2CSensor(bus) {}
 

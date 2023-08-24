@@ -5,14 +5,12 @@
 
 #include <cassert>
 #include <cstring>
-
 #include <eigen3/Eigen/Dense>
 
 #include "common/clutil.h"
 #include "common/params.h"
-#include "common/timing.h"
 #include "common/swaglog.h"
-
+#include "common/timing.h"
 
 // #define DUMP_YUV
 

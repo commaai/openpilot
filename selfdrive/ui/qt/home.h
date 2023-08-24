@@ -8,8 +8,8 @@
 #include <QWidget>
 
 #include "common/params.h"
-#include "selfdrive/ui/qt/offroad/driverview.h"
 #include "selfdrive/ui/qt/body.h"
+#include "selfdrive/ui/qt/offroad/driverview.h"
 #include "selfdrive/ui/qt/onroad.h"
 #include "selfdrive/ui/qt/sidebar.h"
 #include "selfdrive/ui/qt/widgets/controls.h"

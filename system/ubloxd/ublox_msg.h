@@ -10,8 +10,8 @@
 
 #include "cereal/messaging/messaging.h"
 #include "common/util.h"
-#include "system/ubloxd/generated/gps.h"
 #include "system/ubloxd/generated/glonass.h"
+#include "system/ubloxd/generated/gps.h"
 #include "system/ubloxd/generated/ubx.h"
 
 using namespace std::string_literals;

@@ -1,14 +1,13 @@
 #include "selfdrive/ui/ui.h"
 
+#include <QtConcurrent>
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 
-#include <QtConcurrent>
-
-#include "common/transformations/orientation.hpp"
 #include "common/params.h"
 #include "common/swaglog.h"
+#include "common/transformations/orientation.hpp"
 #include "common/util.h"
 #include "common/watchdog.h"
 #include "system/hardware/hw.h"

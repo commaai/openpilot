@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QThread>
 #include <algorithm>
 #include <map>
 #include <memory>
@@ -7,10 +8,8 @@
 #include <set>
 #include <string>
 #include <tuple>
-#include <vector>
 #include <utility>
-
-#include <QThread>
+#include <vector>
 
 #include "tools/replay/camera.h"
 #include "tools/replay/route.h"

@@ -2,9 +2,9 @@
 #include "opendbc/can/common.h"
 #undef INFO
 #include "catch2/catch.hpp"
-#include "tools/replay/logreader.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
+#include "tools/replay/logreader.h"
 
 // demo route, first segment
 const std::string TEST_RLOG_URL = "https://commadata2.blob.core.windows.net/commadata2/a2a0ccea32023010/2023-07-27--13-01-19/0/rlog.bz2";

@@ -1,17 +1,16 @@
 #include "selfdrive/ui/qt/widgets/offroad_alerts.h"
 
-#include <algorithm>
-#include <string>
-#include <vector>
-#include <utility>
-
 #include <QHBoxLayout>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <algorithm>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "common/util.h"
-#include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
+#include "system/hardware/hw.h"
 
 AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);

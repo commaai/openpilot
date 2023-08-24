@@ -1,16 +1,15 @@
 #pragma once
 
-#include <map>
-#include <memory>
-#include <string>
-#include <optional>
-
-#include <QObject>
-#include <QTimer>
 #include <QColor>
 #include <QFuture>
+#include <QObject>
 #include <QPolygonF>
+#include <QTimer>
 #include <QTransform>
+#include <map>
+#include <memory>
+#include <optional>
+#include <string>
 
 #include "cereal/messaging/messaging.h"
 #include "common/modeldata.h"

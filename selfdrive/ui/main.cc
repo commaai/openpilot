@@ -3,10 +3,10 @@
 #include <QApplication>
 #include <QTranslator>
 
-#include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/window.h"
+#include "system/hardware/hw.h"
 
 int main(int argc, char *argv[]) {
   setpriority(PRIO_PROCESS, 0, -20);

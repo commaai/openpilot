@@ -1,19 +1,17 @@
 #pragma once
 
+#include <QGeoCoordinate>
+#include <QMapboxGL>
+#include <QOffscreenSurface>
+#include <QOpenGLBuffer>
+#include <QOpenGLContext>
+#include <QOpenGLFramebufferObject>
+#include <QOpenGLFunctions>
+#include <QTimer>
 #include <memory>
 
-#include <QOpenGLContext>
-#include <QMapboxGL>
-#include <QTimer>
-#include <QGeoCoordinate>
-#include <QOpenGLBuffer>
-#include <QOffscreenSurface>
-#include <QOpenGLFunctions>
-#include <QOpenGLFramebufferObject>
-
-#include "cereal/visionipc/visionipc_server.h"
 #include "cereal/messaging/messaging.h"
-
+#include "cereal/visionipc/visionipc_server.h"
 
 class MapRenderer : public QObject {
   Q_OBJECT

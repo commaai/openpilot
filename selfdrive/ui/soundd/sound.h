@@ -6,8 +6,8 @@
 #include <QSoundEffect>
 #include <QString>
 
-#include "system/hardware/hw.h"
 #include "selfdrive/ui/ui.h"
+#include "system/hardware/hw.h"
 
 const std::tuple<AudibleAlert, QString, int> sound_list[] = {
   // AudibleAlert, file name, loop count

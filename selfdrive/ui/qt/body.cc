@@ -1,10 +1,9 @@
 #include "selfdrive/ui/qt/body.h"
 
-#include <cmath>
-#include <algorithm>
-
 #include <QPainter>
 #include <QStackedLayout>
+#include <algorithm>
+#include <cmath>
 
 #include "common/params.h"
 #include "common/timing.h"

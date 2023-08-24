@@ -1,7 +1,7 @@
 #include "selfdrive/locationd/locationd.h"
 
-#include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/time.h>
 
 #include <algorithm>
 #include <cmath>

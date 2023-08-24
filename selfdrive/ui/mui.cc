@@ -1,11 +1,11 @@
 #include <QApplication>
-#include <QtWidgets>
-#include <QTimer>
 #include <QGraphicsScene>
+#include <QTimer>
+#include <QtWidgets>
 
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/ui.h"
 
 class StatusBar : public QGraphicsRectItem {
   private:

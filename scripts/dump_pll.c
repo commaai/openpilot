@@ -1,5 +1,5 @@
-#include <stdio.h>
 #include <fcntl.h>
+#include <stdio.h>
 #include <sys/mman.h>
 
 void hexdump(uint32_t *d, int l) {

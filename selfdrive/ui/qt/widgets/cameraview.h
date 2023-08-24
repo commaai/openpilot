@@ -1,5 +1,9 @@
 #pragma once
 
+#include <QOpenGLFunctions>
+#include <QOpenGLShaderProgram>
+#include <QOpenGLWidget>
+#include <QThread>
 #include <deque>
 #include <map>
 #include <memory>
@@ -8,23 +12,18 @@
 #include <string>
 #include <utility>
 
-#include <QOpenGLFunctions>
-#include <QOpenGLShaderProgram>
-#include <QOpenGLWidget>
-#include <QThread>
-
 #ifdef QCOM2
 #define EGL_EGLEXT_PROTOTYPES
 #define EGL_NO_X11
 #define GL_TEXTURE_EXTERNAL_OES 0x8D65
+#include <drm/drm_fourcc.h>
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
-#include <drm/drm_fourcc.h>
 #endif
 
 #include "cereal/visionipc/visionipc_client.h"
-#include "system/camerad/cameras/camera_common.h"
 #include "selfdrive/ui/ui.h"
+#include "system/camerad/cameras/camera_common.h"
 
 const int FRAME_BUFFER_SIZE = 5;
 static_assert(FRAME_BUFFER_SIZE <= YUV_BUFFER_COUNT);

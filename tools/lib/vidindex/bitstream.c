@@ -1,7 +1,7 @@
 #include "./bitstream.h"
 
-#include <stdbool.h>
 #include <assert.h>
+#include <stdbool.h>
 
 static const uint32_t BS_MASKS[33] = {
     0,           0x1L,        0x3L,       0x7L,       0xFL,       0x1FL,

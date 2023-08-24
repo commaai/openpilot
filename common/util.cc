@@ -1,14 +1,13 @@
 #include "common/util.h"
 
-#include <sys/ioctl.h>
-#include <sys/stat.h>
-#include <sys/resource.h>
 #include <dirent.h>
+#include <sys/ioctl.h>
+#include <sys/resource.h>
+#include <sys/stat.h>
 
 #include <cassert>
 #include <cerrno>
 #include <cstring>
-#include <dirent.h>
 #include <fstream>
 #include <iomanip>
 #include <random>

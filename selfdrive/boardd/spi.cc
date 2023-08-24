@@ -1,7 +1,7 @@
 #ifndef __APPLE__
+#include <linux/spi/spidev.h>
 #include <sys/file.h>
 #include <sys/ioctl.h>
-#include <linux/spi/spidev.h>
 
 #include <cassert>
 #include <cmath>
@@ -9,12 +9,11 @@
 #include <iomanip>
 #include <sstream>
 
-#include "common/util.h"
-#include "common/timing.h"
 #include "common/swaglog.h"
+#include "common/timing.h"
+#include "common/util.h"
 #include "panda/board/comms_definitions.h"
 #include "selfdrive/boardd/panda_comms.h"
-
 
 #define SPI_SYNC 0x5AU
 #define SPI_HACK 0x79U

@@ -5,10 +5,10 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
-#include "system/hardware/hw.h"
-#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
+#include "system/hardware/hw.h"
 
 int main(int argc, char *argv[]) {
   initApp(argc, argv);

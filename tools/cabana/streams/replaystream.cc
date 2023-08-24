@@ -1,8 +1,8 @@
 #include "tools/cabana/streams/replaystream.h"
 
-#include <QLabel>
 #include <QFileDialog>
 #include <QGridLayout>
+#include <QLabel>
 #include <QMessageBox>
 #include <QPushButton>
 

@@ -1,16 +1,16 @@
 #pragma once
 
+#include <QGeoCoordinate>
+#include <QMapboxGL>
 #include <optional>
 #include <string>
 #include <utility>
-#include <eigen3/Eigen/Dense>
-#include <QMapboxGL>
-#include <QGeoCoordinate>
 
-#include "common/util.h"
+#include <eigen3/Eigen/Dense>
+#include "cereal/messaging/messaging.h"
 #include "common/transformations/coordinates.hpp"
 #include "common/transformations/orientation.hpp"
-#include "cereal/messaging/messaging.h"
+#include "common/util.h"
 
 const QString MAPBOX_TOKEN = util::getenv("MAPBOX_TOKEN").c_str();
 const QString MAPS_HOST = util::getenv("MAPS_HOST", MAPBOX_TOKEN.isEmpty() ? "https://maps.comma.ai" : "https://api.mapbox.com").c_str();

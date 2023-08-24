@@ -1,28 +1,25 @@
 #include "selfdrive/ui/qt/offroad/settings.h"
 
+#include <QDebug>
 #include <cassert>
 #include <cmath>
 #include <string>
 #include <tuple>
 #include <vector>
 
-#include <QDebug>
-
-#include "selfdrive/ui/qt/offroad/networking.h"
-
 #include "common/params.h"
-#include "common/watchdog.h"
 #include "common/util.h"
-#include "system/hardware/hw.h"
+#include "common/watchdog.h"
+#include "selfdrive/ui/qt/offroad/networking.h"
+#include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
 #include "selfdrive/ui/ui.h"
-#include "selfdrive/ui/qt/util.h"
-#include "selfdrive/ui/qt/qt_window.h"
-#include "selfdrive/ui/qt/widgets/input.h"
+#include "system/hardware/hw.h"
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon

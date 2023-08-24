@@ -1,15 +1,14 @@
 #pragma once
 
-#include <string>
-
 #include <QApplication>
 #include <QScreen>
 #include <QWidget>
+#include <string>
 
 #ifdef QCOM2
 #include <qpa/qplatformnativeinterface.h>
-#include <wayland-client-protocol.h>
 #include <QPlatformSurfaceEvent>
+#include <wayland-client-protocol.h>
 #endif
 
 #include "system/hardware/hw.h"

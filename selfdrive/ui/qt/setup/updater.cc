@@ -1,12 +1,13 @@
+#include "selfdrive/ui/qt/setup/updater.h"
+
 #include <QDebug>
 #include <QTimer>
 #include <QVBoxLayout>
 
-#include "system/hardware/hw.h"
-#include "selfdrive/ui/qt/util.h"
-#include "selfdrive/ui/qt/qt_window.h"
-#include "selfdrive/ui/qt/setup/updater.h"
 #include "selfdrive/ui/qt/offroad/networking.h"
+#include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/util.h"
+#include "system/hardware/hw.h"
 
 Updater::Updater(const QString &updater_path, const QString &manifest_path, QWidget *parent)
   : updater(updater_path), manifest(manifest_path), QStackedWidget(parent) {

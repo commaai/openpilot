@@ -1,20 +1,19 @@
 #pragma once
 
-#include <eigen3/Eigen/Dense>
 #include <deque>
+#include <eigen3/Eigen/Dense>
 #include <fstream>
-#include <memory>
 #include <map>
+#include <memory>
 #include <string>
 
 #include "cereal/messaging/messaging.h"
-#include "common/transformations/coordinates.hpp"
-#include "common/transformations/orientation.hpp"
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
+#include "common/transformations/coordinates.hpp"
+#include "common/transformations/orientation.hpp"
 #include "common/util.h"
-
 #include "system/sensord/sensors/constants.h"
 #define VISION_DECIMATION 2
 #define SENSOR_DECIMATION 10

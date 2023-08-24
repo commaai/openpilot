@@ -1,16 +1,15 @@
 #include "selfdrive/ui/qt/offroad/onboarding.h"
 
-#include <string>
-
 #include <QLabel>
 #include <QPainter>
 #include <QQmlContext>
 #include <QQuickWidget>
 #include <QTransform>
 #include <QVBoxLayout>
+#include <string>
 
-#include "common/util.h"
 #include "common/params.h"
+#include "common/util.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 

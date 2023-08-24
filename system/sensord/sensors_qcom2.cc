@@ -1,14 +1,14 @@
+#include <linux/gpio.h>
+#include <poll.h>
 #include <sys/resource.h>
 
 #include <chrono>
+#include <map>
 #include <thread>
 #include <vector>
-#include <map>
-#include <poll.h>
-#include <linux/gpio.h>
 
-#include "cereal/services.h"
 #include "cereal/messaging/messaging.h"
+#include "cereal/services.h"
 #include "common/i2c.h"
 #include "common/ratekeeper.h"
 #include "common/swaglog.h"

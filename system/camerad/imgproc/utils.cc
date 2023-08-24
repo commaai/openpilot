@@ -2,8 +2,8 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cstdio>
 #include <cmath>
+#include <cstdio>
 #include <cstring>
 
 const int16_t lapl_conv_krnl[9] = {0, 1, 0,

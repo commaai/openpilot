@@ -1,13 +1,13 @@
 #include "selfdrive/navd/map_renderer.h"
 
-#include <cmath>
-#include <string>
 #include <QApplication>
 #include <QBuffer>
+#include <cmath>
+#include <string>
 
-#include "common/util.h"
-#include "common/timing.h"
 #include "common/swaglog.h"
+#include "common/timing.h"
+#include "common/util.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 
 const float DEFAULT_ZOOM = 13.5; // Don't go below 13 or features will start to disappear

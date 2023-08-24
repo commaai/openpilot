@@ -1,9 +1,9 @@
-#include <iostream>
-#include <vector>
 #include <bitset>
 #include <cassert>
 #include <cstdlib>
 #include <ctime>
+#include <iostream>
+#include <vector>
 
 #include "catch2/catch.hpp"
 #include "system/ubloxd/generated/glonass.h"

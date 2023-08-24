@@ -1,6 +1,7 @@
+#include "common/watchdog.h"
+
 #include <string>
 
-#include "common/watchdog.h"
 #include "common/util.h"
 
 const std::string watchdog_fn_prefix = "/dev/shm/wd_";  // + <pid>

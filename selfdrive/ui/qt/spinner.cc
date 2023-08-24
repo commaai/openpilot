@@ -1,19 +1,18 @@
 #include "selfdrive/ui/qt/spinner.h"
 
-#include <algorithm>
-#include <cstdio>
-#include <iostream>
-#include <string>
-
 #include <QApplication>
 #include <QGridLayout>
 #include <QPainter>
 #include <QString>
 #include <QTransform>
+#include <algorithm>
+#include <cstdio>
+#include <iostream>
+#include <string>
 
-#include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/util.h"
+#include "system/hardware/hw.h"
 
 TrackWidget::TrackWidget(QWidget *parent) : QWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);

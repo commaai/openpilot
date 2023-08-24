@@ -18,14 +18,14 @@ int gpiochip_get_ro_value_fd(const char* consumer_label, int gpiochiop_id, int p
 #else
 
 #include <fcntl.h>
+#include <linux/gpio.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 
 #include <cstring>
-#include <linux/gpio.h>
-#include <sys/ioctl.h>
 
-#include "common/util.h"
 #include "common/swaglog.h"
+#include "common/util.h"
 
 int gpio_init(int pin_nr, bool output) {
   char pin_dir_path[50];

@@ -1,13 +1,13 @@
 #pragma once
 
-#include <cstdint>
 #include <unistd.h>
+
+#include <cstdint>
 #include <vector>
+
 #include "cereal/gen/cpp/log.capnp.h"
-
-#include "common/i2c.h"
 #include "common/gpio.h"
-
+#include "common/i2c.h"
 #include "common/swaglog.h"
 #include "system/sensord/sensors/constants.h"
 #include "system/sensord/sensors/sensor.h"

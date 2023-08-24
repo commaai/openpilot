@@ -1,7 +1,8 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#include "system/loggerd/video_writer.h"
+
 #include <cassert>
 
-#include "system/loggerd/video_writer.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 

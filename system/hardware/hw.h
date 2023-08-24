@@ -2,8 +2,8 @@
 
 #include <string>
 
-#include "system/hardware/base.h"
 #include "common/util.h"
+#include "system/hardware/base.h"
 
 #if QCOM2
 #include "system/hardware/tici/hardware.h"

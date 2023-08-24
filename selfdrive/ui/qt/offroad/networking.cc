@@ -1,17 +1,15 @@
 #include "selfdrive/ui/qt/offroad/networking.h"
 
-#include <algorithm>
-
 #include <QHBoxLayout>
 #include <QScrollBar>
 #include <QStyle>
+#include <algorithm>
 
-#include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
-
+#include "selfdrive/ui/ui.h"
 
 // Networking functions
 

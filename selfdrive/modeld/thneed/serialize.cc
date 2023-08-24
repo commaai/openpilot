@@ -1,10 +1,10 @@
 #include <cassert>
 #include <set>
 
-#include "third_party/json11/json11.hpp"
-#include "common/util.h"
 #include "common/clutil.h"
+#include "common/util.h"
 #include "selfdrive/modeld/thneed/thneed.h"
+#include "third_party/json11/json11.hpp"
 using namespace json11;
 
 extern map<cl_program, string> g_program_source;

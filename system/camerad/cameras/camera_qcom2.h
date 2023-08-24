@@ -1,15 +1,15 @@
 #pragma once
 
+#include <media/cam_req_mgr.h>
+
 #include <cstdint>
 #include <map>
 #include <utility>
 
-#include <media/cam_req_mgr.h>
-
-#include "system/camerad/cameras/camera_common.h"
-#include "system/camerad/cameras/camera_util.h"
 #include "common/params.h"
 #include "common/util.h"
+#include "system/camerad/cameras/camera_common.h"
+#include "system/camerad/cameras/camera_util.h"
 
 #define FRAME_BUF_COUNT 4
 #define ANALOG_GAIN_MAX_CNT 55

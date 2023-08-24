@@ -1,12 +1,13 @@
+#include "system/loggerd/encoder/v4l_encoder.h"
+
+#include <poll.h>
+#include <sys/ioctl.h>
+
 #include <cassert>
 #include <string>
-#include <sys/ioctl.h>
-#include <poll.h>
 
-#include "system/loggerd/encoder/v4l_encoder.h"
-#include "common/util.h"
 #include "common/timing.h"
-
+#include "common/util.h"
 #include "third_party/libyuv/include/libyuv.h"
 #include "third_party/linux/include/msm_media_info.h"
 

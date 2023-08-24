@@ -1,7 +1,7 @@
 #pragma once
 
-#include <QMovie>
 #include <QLabel>
+#include <QMovie>
 #include <QPushButton>
 
 #include "common/util.h"

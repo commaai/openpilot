@@ -1,22 +1,19 @@
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <mutex>
-#include <cmath>
-
 #include <eigen3/Eigen/Dense>
+#include <mutex>
 
 #include "cereal/messaging/messaging.h"
-#include "common/transformations/orientation.hpp"
-
 #include "cereal/visionipc/visionipc_client.h"
 #include "common/clutil.h"
 #include "common/params.h"
 #include "common/swaglog.h"
+#include "common/transformations/orientation.hpp"
 #include "common/util.h"
-#include "system/hardware/hw.h"
 #include "selfdrive/modeld/models/driving.h"
 #include "selfdrive/modeld/models/nav.h"
-
+#include "system/hardware/hw.h"
 
 ExitHandler do_exit;
 

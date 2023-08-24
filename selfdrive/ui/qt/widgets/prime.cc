@@ -8,12 +8,11 @@
 #include <QStackedWidget>
 #include <QTimer>
 #include <QVBoxLayout>
-
 #include <QrCode.hpp>
 
+#include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/util.h"
-#include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/wifi.h"
 
 using qrcodegen::QrCode;

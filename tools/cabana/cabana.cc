@@ -3,11 +3,11 @@
 
 #include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/mainwin.h"
-#include "tools/cabana/streamselector.h"
 #include "tools/cabana/streams/devicestream.h"
 #include "tools/cabana/streams/pandastream.h"
 #include "tools/cabana/streams/replaystream.h"
 #include "tools/cabana/streams/socketcanstream.h"
+#include "tools/cabana/streamselector.h"
 
 int main(int argc, char *argv[]) {
   QCoreApplication::setApplicationName("Cabana");

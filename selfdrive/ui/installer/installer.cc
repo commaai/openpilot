@@ -1,19 +1,19 @@
+#include "selfdrive/ui/installer/installer.h"
+
 #include <time.h>
 #include <unistd.h>
-
-#include <cstdlib>
-#include <fstream>
-#include <map>
-#include <string>
 
 #include <QDebug>
 #include <QDir>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <cstdlib>
+#include <fstream>
+#include <map>
+#include <string>
 
-#include "selfdrive/ui/installer/installer.h"
-#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/util.h"
 
 std::string get_str(std::string const s) {
   std::string::size_type pos = s.find('?');

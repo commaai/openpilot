@@ -1,15 +1,14 @@
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <algorithm>
 #include <string>
 #include <utility>
 
-#include <QJsonDocument>
-#include <QJsonObject>
-
 #include "common/params.h"
-#include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
+#include "system/hardware/hw.h"
 
 QString get_mapbox_token() {
   // Valid for 4 weeks since we can't swap tokens on the fly

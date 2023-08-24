@@ -2,9 +2,9 @@
 
 #include "common/transformations/coordinates.hpp"
 
-#include <iostream>
 #include <cmath>
 #include <eigen3/Eigen/Dense>
+#include <iostream>
 
 double a = 6378137; // lgtm [cpp/short-global-name]
 double b = 6356752.3142; // lgtm [cpp/short-global-name]

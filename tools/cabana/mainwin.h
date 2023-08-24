@@ -12,8 +12,8 @@
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/detailwidget.h"
 #include "tools/cabana/messageswidget.h"
-#include "tools/cabana/videowidget.h"
 #include "tools/cabana/tools/findsimilarbits.h"
+#include "tools/cabana/videowidget.h"
 
 class MainWindow : public QMainWindow {
   Q_OBJECT

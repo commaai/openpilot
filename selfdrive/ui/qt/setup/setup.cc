@@ -1,23 +1,22 @@
 #include "selfdrive/ui/qt/setup/setup.h"
 
-#include <cstdio>
-#include <cstdlib>
-#include <sstream>
+#include <curl/curl.h>
 
 #include <QApplication>
 #include <QLabel>
 #include <QVBoxLayout>
 
-#include <curl/curl.h>
-
+#include <cstdio>
+#include <cstdlib>
+#include <sstream>
 #include <string>
 
 #include "common/util.h"
-#include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
-#include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/offroad/networking.h"
+#include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/input.h"
+#include "system/hardware/hw.h"
 
 const std::string USER_AGENT = "AGNOSSetup-";
 const QString DASHCAM_URL = "https://dashcam.comma.ai";

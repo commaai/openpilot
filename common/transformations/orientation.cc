@@ -1,10 +1,11 @@
 #define _USE_MATH_DEFINES
 
-#include <iostream>
+#include "common/transformations/orientation.hpp"
+
 #include <cmath>
 #include <eigen3/Eigen/Dense>
+#include <iostream>
 
-#include "common/transformations/orientation.hpp"
 #include "common/transformations/coordinates.hpp"
 
 Eigen::Quaterniond ensure_unique(Eigen::Quaterniond quat){
