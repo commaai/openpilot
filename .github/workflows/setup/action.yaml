@@ -54,4 +54,4 @@ runs:
       run: |
         cp selfdrive/test/Dockerfile.scons_cache ~
         cd ~
-        DOCKER_BUILDKIT=1 docker buildx build -t scons-cache -f Dockerfile.scons_cache .
+        DOCKER_BUILDKIT=1 docker buildx build --load -t scons-cache -f Dockerfile.scons_cache .
