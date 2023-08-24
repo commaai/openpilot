@@ -6,7 +6,7 @@ openpilot implements a [bridge](bridge.py) that allows it to run in the [CARLA s
 ## System Requirements
 
 openpilot doesn't have any extreme hardware requirements, however CARLA requires an NVIDIA graphics card and is very resource-intensive and may not run smoothly on your system.
-For this case, we have a the simulator in low quality by default.
+For this case, we have the simulator in low quality by default.
 
 You can also check out the [CARLA python documentation](https://carla.readthedocs.io/en/latest/python_api/) to find more parameters to tune that might increase performance on your system.
 
@@ -39,6 +39,8 @@ Options:
   --high_quality        Set simulator to higher quality (requires good GPU)
   --town TOWN           Select map to drive in
   --spawn_point NUM     Number of the spawn point to start in
+  --host HOST           Host address of Carla client (127.0.0.1 as default)
+  --port PORT           Port of Carla client (2000 as default)
 ```
 
 To engage openpilot press 1 a few times while focused on bridge.py to increase the cruise speed.

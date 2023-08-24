@@ -2,17 +2,13 @@ Import('env', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc')
 
 libs = ['m', 'pthread', common, 'jpeg', 'OpenCL', 'yuv', cereal, messaging, 'zmq', 'capnp', 'kj', visionipc, gpucommon, 'atomic']
 
-cenv = env.Clone()
-cenv['CPPPATH'].append('include/')
-
-camera_obj = cenv.Object(['cameras/camera_qcom2.cc', 'cameras/camera_common.cc', 'cameras/camera_util.cc'])
-cenv.Program('camerad', [
+camera_obj = env.Object(['cameras/camera_qcom2.cc', 'cameras/camera_common.cc', 'cameras/camera_util.cc'])
+env.Program('camerad', [
     'main.cc',
     camera_obj,
   ], LIBS=libs)
 
 if GetOption("test") and arch == "x86_64":
-  cenv.Program('test/ae_gray_test', [
-      'test/ae_gray_test.cc',
-      camera_obj,
-    ], LIBS=libs)
+  env.Program('test/ae_gray_test',
+              ['test/ae_gray_test.cc', camera_obj],
+              LIBS=libs)

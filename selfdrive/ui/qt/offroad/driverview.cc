@@ -1,5 +1,6 @@
 #include "selfdrive/ui/qt/offroad/driverview.h"
 
+#include <algorithm>
 #include <QPainter>
 
 #include "selfdrive/ui/qt/qt_window.h"
@@ -12,30 +13,33 @@ DriverViewWindow::DriverViewWindow(QWidget* parent) : QWidget(parent) {
   layout = new QStackedLayout(this);
   layout->setStackingMode(QStackedLayout::StackAll);
 
-  cameraView = new CameraViewWidget("camerad", VISION_STREAM_DRIVER, true, this);
+  cameraView = new CameraWidget("camerad", VISION_STREAM_DRIVER, true, this);
   layout->addWidget(cameraView);
 
   scene = new DriverViewScene(this);
-  connect(cameraView, &CameraViewWidget::vipcThreadFrameReceived, scene, &DriverViewScene::frameUpdated);
+  connect(cameraView, &CameraWidget::vipcThreadFrameReceived, scene, &DriverViewScene::frameUpdated);
   layout->addWidget(scene);
   layout->setCurrentWidget(scene);
 }
 
 void DriverViewWindow::mouseReleaseEvent(QMouseEvent* e) {
+  cameraView->stopVipcThread();
   emit done();
 }
 
 DriverViewScene::DriverViewScene(QWidget* parent) : sm({"driverStateV2"}), QWidget(parent) {
-  face_img = loadPixmap("../assets/img_driver_face.png", {FACE_IMG_SIZE, FACE_IMG_SIZE});
+  face_img = loadPixmap("../assets/img_driver_face_static.png", {FACE_IMG_SIZE, FACE_IMG_SIZE});
 }
 
 void DriverViewScene::showEvent(QShowEvent* event) {
   frame_updated = false;
   params.putBool("IsDriverViewEnabled", true);
+  device()->resetInteractiveTimeout(60);
 }
 
 void DriverViewScene::hideEvent(QHideEvent* event) {
   params.putBool("IsDriverViewEnabled", false);
+  device()->resetInteractiveTimeout();
 }
 
 void DriverViewScene::frameUpdated() {
@@ -51,7 +55,7 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
   if (!frame_updated) {
     p.setPen(Qt::white);
     p.setRenderHint(QPainter::TextAntialiasing);
-    configFont(p, "Inter", 100, "Bold");
+    p.setFont(InterFont(100, QFont::Bold));
     p.drawText(geometry(), Qt::AlignCenter, tr("camera starting"));
     return;
   }

@@ -1,22 +1,20 @@
+FROM scons-cache as scons-cache
+
 FROM ghcr.io/commaai/openpilot-base:latest
 
 ENV PYTHONUNBUFFERED 1
 
 ENV OPENPILOT_PATH /home/batman/openpilot/
 ENV PYTHONPATH ${OPENPILOT_PATH}:${PYTHONPATH}
+ENV POETRY_VIRUALENVS_CREATE false
 
 RUN mkdir -p ${OPENPILOT_PATH}
 WORKDIR ${OPENPILOT_PATH}
 
-COPY Pipfile Pipfile.lock $OPENPILOT_PATH
-RUN pip install --no-cache-dir pipenv==2021.5.29 pip==21.3.1 && \
-    pipenv install --system --deploy --dev --clear && \
-    pip uninstall -y pipenv
-
-
 COPY SConstruct ${OPENPILOT_PATH}
 
-COPY ./pyextra ${OPENPILOT_PATH}/pyextra
+COPY ./openpilot ${OPENPILOT_PATH}/openpilot
+COPY ./body ${OPENPILOT_PATH}/body
 COPY ./third_party ${OPENPILOT_PATH}/third_party
 COPY ./site_scons ${OPENPILOT_PATH}/site_scons
 COPY ./laika ${OPENPILOT_PATH}/laika
@@ -33,7 +31,7 @@ COPY ./selfdrive ${OPENPILOT_PATH}/selfdrive
 COPY ./system ${OPENPILOT_PATH}/system
 COPY ./*.md ${OPENPILOT_PATH}/
 
-RUN scons -j$(nproc)
+RUN --mount=type=bind,from=scons-cache,source=/tmp/scons_cache,target=/tmp/scons_cache,rw scons -j$(nproc)
 
 RUN apt update && apt install doxygen -y
 COPY ./docs ${OPENPILOT_PATH}/docs
@@ -42,5 +40,5 @@ WORKDIR ${OPENPILOT_PATH}/docs
 RUN make html
 
 FROM nginx:1.21
-COPY --from=0  /home/batman/openpilot/build/docs/html /usr/share/nginx/html
+COPY --from=1 /home/batman/openpilot/build/docs/html /usr/share/nginx/html
 COPY ./docs/docker/nginx.conf /etc/nginx/conf.d/default.conf

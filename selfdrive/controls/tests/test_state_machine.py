@@ -2,10 +2,10 @@
 import unittest
 
 from cereal import car, log
-from common.realtime import DT_CTRL
-from selfdrive.car.car_helpers import interfaces
-from selfdrive.controls.controlsd import Controls, SOFT_DISABLE_TIME
-from selfdrive.controls.lib.events import Events, ET, Alert, Priority, AlertSize, AlertStatus, VisualAlert, \
+from openpilot.common.realtime import DT_CTRL
+from openpilot.selfdrive.car.car_helpers import interfaces
+from openpilot.selfdrive.controls.controlsd import Controls, SOFT_DISABLE_TIME
+from openpilot.selfdrive.controls.lib.events import Events, ET, Alert, Priority, AlertSize, AlertStatus, VisualAlert, \
                                           AudibleAlert, EVENTS
 
 State = log.ControlsState.OpenpilotState
@@ -31,7 +31,7 @@ class TestStateMachine(unittest.TestCase):
 
   def setUp(self):
     CarInterface, CarController, CarState = interfaces["mock"]
-    CP = CarInterface.get_params("mock")
+    CP = CarInterface.get_non_essential_params("mock")
     CI = CarInterface(CP, CarController, CarState)
 
     self.controlsd = Controls(CI=CI)
@@ -79,7 +79,7 @@ class TestStateMachine(unittest.TestCase):
     self.assertEqual(self.controlsd.state, State.disabled)
 
   def test_no_entry(self):
-    # disabled with enable events
+    # Make sure noEntry keeps us disabled
     for et in ENABLE_EVENT_TYPES:
       self.controlsd.events.add(make_event([ET.NO_ENTRY, et]))
       self.controlsd.state_transition(self.CS)
@@ -87,11 +87,11 @@ class TestStateMachine(unittest.TestCase):
       self.controlsd.events.clear()
 
   def test_no_entry_pre_enable(self):
-    # preEnabled with preEnabled event
+    # preEnabled with noEntry event
     self.controlsd.state = State.preEnabled
     self.controlsd.events.add(make_event([ET.NO_ENTRY, ET.PRE_ENABLE]))
     self.controlsd.state_transition(self.CS)
-    self.assertEqual(self.controlsd.state, State.disabled)
+    self.assertEqual(self.controlsd.state, State.preEnabled)
 
   def test_maintain_states(self):
     # Given current state's event type, we should maintain state

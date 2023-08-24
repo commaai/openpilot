@@ -5,13 +5,13 @@ from parameterized import parameterized
 
 from cereal import log, car
 import cereal.messaging as messaging
-from common.params import Params
-from selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp # pylint: disable=no-name-in-module,import-error
-from selfdrive.car.fingerprints import _FINGERPRINTS
-from selfdrive.car.toyota.values import CAR as TOYOTA
-from selfdrive.car.mazda.values import CAR as MAZDA
-from selfdrive.controls.lib.events import EVENT_NAME
-from selfdrive.test.helpers import with_processes
+from openpilot.common.params import Params
+from openpilot.selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp # pylint: disable=no-name-in-module,import-error
+from openpilot.selfdrive.car.fingerprints import _FINGERPRINTS
+from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
+from openpilot.selfdrive.car.mazda.values import CAR as MAZDA
+from openpilot.selfdrive.controls.lib.events import EVENT_NAME
+from openpilot.selfdrive.test.helpers import with_processes
 
 EventName = car.CarEvent.EventName
 Ecu = car.CarParams.Ecu
@@ -94,6 +94,9 @@ class TestStartup(unittest.TestCase):
 
     time.sleep(2) # wait for controlsd to be ready
 
+    pm.send('can', can_list_to_can_capnp([[0, 0, b"", 0]]))
+    time.sleep(0.1)
+
     msg = messaging.new_message('pandaStates', 1)
     msg.pandaStates[0].pandaType = log.PandaState.PandaType.uno
     pm.send('pandaStates', msg)
@@ -105,6 +108,10 @@ class TestStartup(unittest.TestCase):
       finger = _FINGERPRINTS[car_model][0]
 
     for _ in range(1000):
+      # controlsd waits for boardd to echo back that it has changed the multiplexing mode
+      if not params.get_bool("ObdMultiplexingChanged"):
+        params.put_bool("ObdMultiplexingChanged", True)
+
       msgs = [[addr, 0, b'\x00'*length, 0] for addr, length in finger.items()]
       pm.send('can', can_list_to_can_capnp(msgs))
 

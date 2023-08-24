@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Union
 
-from selfdrive.car.docs_definitions import CarInfo
+from openpilot.selfdrive.car.docs_definitions import CarInfo
 
 
 class CAR:
