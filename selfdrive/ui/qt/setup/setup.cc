@@ -3,14 +3,13 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sstream>
+#include <string>
 
 #include <QApplication>
 #include <QLabel>
 #include <QVBoxLayout>
 
 #include <curl/curl.h>
-
-#include <string>
 
 #include "common/util.h"
 #include "system/hardware/hw.h"
