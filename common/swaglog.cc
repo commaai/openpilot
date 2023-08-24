@@ -5,6 +5,7 @@
 #include "common/swaglog.h"
 
 #include <cassert>
+#include <cstdarg>
 #include <cstring>
 #include <limits>
 #include <mutex>
@@ -134,4 +135,3 @@ void cloudlog_te(int levelnum, const char* filename, int lineno, const char* fun
   cloudlog_t_common(levelnum, filename, lineno, func, frame_id, fmt, args);
   va_end(args);
 }
-

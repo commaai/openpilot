@@ -1,4 +1,4 @@
-![](https://i.imgur.com/b0ZyIx5.jpg)
+![openpilot on the comma 3X](https://github.com/commaai/openpilot/assets/4038174/f1081737-8718-4241-a22a-3ceba526361a)
 
 Table of Contents
 =======================
@@ -39,10 +39,10 @@ Running on a dedicated device in a car
 ------
 
 To use openpilot in a car, you need four things
-* A supported device to run this software: a [comma three](https://comma.ai/shop/products/three).
-* This software. The setup procedure of the comma three allows the user to enter a URL for custom software.
+* A supported device to run this software: a [comma 3X](https://comma.ai/shop/comma-3x) or comma three.
+* This software. The setup procedure of the comma 3/3X allows the user to enter a URL for custom software.
 The URL, openpilot.comma.ai will install the release version of openpilot. To install openpilot master, you can use installer.comma.ai/commaai/master, and replacing commaai with another GitHub username can install a fork.
-* One of [the 200+ supported cars](docs/CARS.md). We support Honda, Toyota, Hyundai, Nissan, Kia, Chrysler, Lexus, Acura, Audi, VW, and more. If your car is not supported but has adaptive cruise control and lane-keeping assist, it's likely able to run openpilot.
+* One of [the 250+ supported cars](docs/CARS.md). We support Honda, Toyota, Hyundai, Nissan, Kia, Chrysler, Lexus, Acura, Audi, VW, Ford and more. If your car is not supported but has adaptive cruise control and lane-keeping assist, it's likely able to run openpilot.
 * A [car harness](https://comma.ai/shop/products/car-harness) to connect to your car.
 
 We have detailed instructions for [how to mount the device in a car](https://comma.ai/setup).
@@ -67,7 +67,7 @@ Documentation related to openpilot development can be found on [docs.comma.ai](h
 
 You can add support for your car by following guides we have written for [Brand](https://blog.comma.ai/how-to-write-a-car-port-for-openpilot/) and [Model](https://blog.comma.ai/openpilot-port-guide-for-toyota-models/) ports. Generally, a car with adaptive cruise control and lane keep assist is a good candidate. [Join our Discord](https://discord.comma.ai) to discuss car ports: most car makes have a dedicated channel.
 
-Want to get paid to work on openpilot? [comma is hiring](https://comma.ai/jobs/).
+Want to get paid to work on openpilot? [comma is hiring](https://comma.ai/jobs#open-positions).
 
 And [follow us on Twitter](https://twitter.com/comma_ai).
 

@@ -1,9 +1,9 @@
 from cereal import car
 from panda import Panda
-from common.conversions import Conversions as CV
-from selfdrive.car import STD_CARGO_KG, get_safety_config
-from selfdrive.car.interfaces import CarInterfaceBase
-from selfdrive.car.volkswagen.values import CAR, PQ_CARS, CANBUS, NetworkLocation, TransmissionType, GearShifter
+from openpilot.common.conversions import Conversions as CV
+from openpilot.selfdrive.car import get_safety_config
+from openpilot.selfdrive.car.interfaces import CarInterfaceBase
+from openpilot.selfdrive.car.volkswagen.values import CAR, PQ_CARS, CANBUS, NetworkLocation, TransmissionType, GearShifter
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -20,19 +20,19 @@ class CarInterface(CarInterfaceBase):
       self.ext_bus = CANBUS.cam
       self.cp_ext = self.cp_cam
 
+    self.eps_timer_soft_disable_alert = False
+
   @staticmethod
-  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "volkswagen"
     ret.radarUnavailable = True
-
-    use_off_car_defaults = len(fingerprint[0]) == 0  # Pick sensible carParams during offline doc generation/CI jobs
 
     if candidate in PQ_CARS:
       # Set global PQ35/PQ46/NMS parameters
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagenPq)]
       ret.enableBsm = 0x3BA in fingerprint[0]  # SWA_1
 
-      if 0x440 in fingerprint[0] or use_off_car_defaults:  # Getriebe_1
+      if 0x440 in fingerprint[0] or docs:  # Getriebe_1
         ret.transmissionType = TransmissionType.automatic
       else:
         ret.transmissionType = TransmissionType.manual
@@ -55,7 +55,7 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagen)]
       ret.enableBsm = 0x30F in fingerprint[0]  # SWA_01
 
-      if 0xAD in fingerprint[0] or use_off_car_defaults:  # Getriebe_11
+      if 0xAD in fingerprint[0] or docs:  # Getriebe_11
         ret.transmissionType = TransmissionType.automatic
       elif 0x187 in fingerprint[0]:  # EV_Gearshift
         ret.transmissionType = TransmissionType.direct
@@ -80,7 +80,7 @@ class CarInterface(CarInterfaceBase):
 
     # Global longitudinal tuning defaults, can be overridden per-vehicle
 
-    ret.experimentalLongitudinalAvailable = ret.networkLocation == NetworkLocation.gateway or use_off_car_defaults
+    ret.experimentalLongitudinalAvailable = ret.networkLocation == NetworkLocation.gateway or docs
     if experimental_long:
       # Proof-of-concept, prep for E2E only. No radar points available. Panda ALLOW_DEBUG firmware required.
       ret.openpilotLongitudinalControl = True
@@ -92,6 +92,7 @@ class CarInterface(CarInterfaceBase):
     ret.stoppingControl = True
     ret.startingState = True
     ret.startAccel = 1.0
+    ret.stopAccel = -0.55
     ret.vEgoStarting = 1.0
     ret.vEgoStopping = 1.0
     ret.longitudinalTuning.kpV = [0.1]
@@ -100,32 +101,32 @@ class CarInterface(CarInterfaceBase):
     # Per-chassis tuning values, override tuning defaults here if desired
 
     if candidate == CAR.ARTEON_MK1:
-      ret.mass = 1733 + STD_CARGO_KG
+      ret.mass = 1733
       ret.wheelbase = 2.84
 
     elif candidate == CAR.ATLAS_MK1:
-      ret.mass = 2011 + STD_CARGO_KG
+      ret.mass = 2011
       ret.wheelbase = 2.98
 
     elif candidate == CAR.CRAFTER_MK2:
-      ret.mass = 2100 + STD_CARGO_KG
+      ret.mass = 2100
       ret.wheelbase = 3.64  # SWB, LWB is 4.49, TBD how to detect difference
       ret.minSteerSpeed = 50 * CV.KPH_TO_MS
 
     elif candidate == CAR.GOLF_MK7:
-      ret.mass = 1397 + STD_CARGO_KG
+      ret.mass = 1397
       ret.wheelbase = 2.62
 
     elif candidate == CAR.JETTA_MK7:
-      ret.mass = 1328 + STD_CARGO_KG
+      ret.mass = 1328
       ret.wheelbase = 2.71
 
     elif candidate == CAR.PASSAT_MK8:
-      ret.mass = 1551 + STD_CARGO_KG
+      ret.mass = 1551
       ret.wheelbase = 2.79
 
     elif candidate == CAR.PASSAT_NMS:
-      ret.mass = 1503 + STD_CARGO_KG
+      ret.mass = 1503
       ret.wheelbase = 2.80
       ret.minEnableSpeed = 20 * CV.KPH_TO_MS  # ACC "basic", no FtS
       ret.minSteerSpeed = 50 * CV.KPH_TO_MS
@@ -133,86 +134,86 @@ class CarInterface(CarInterfaceBase):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.POLO_MK6:
-      ret.mass = 1230 + STD_CARGO_KG
+      ret.mass = 1230
       ret.wheelbase = 2.55
 
     elif candidate == CAR.SHARAN_MK2:
-      ret.mass = 1639 + STD_CARGO_KG
+      ret.mass = 1639
       ret.wheelbase = 2.92
       ret.minSteerSpeed = 50 * CV.KPH_TO_MS
       ret.steerActuatorDelay = 0.2
 
     elif candidate == CAR.TAOS_MK1:
-      ret.mass = 1498 + STD_CARGO_KG
+      ret.mass = 1498
       ret.wheelbase = 2.69
 
     elif candidate == CAR.TCROSS_MK1:
-      ret.mass = 1150 + STD_CARGO_KG
+      ret.mass = 1150
       ret.wheelbase = 2.60
 
     elif candidate == CAR.TIGUAN_MK2:
-      ret.mass = 1715 + STD_CARGO_KG
+      ret.mass = 1715
       ret.wheelbase = 2.74
 
     elif candidate == CAR.TOURAN_MK2:
-      ret.mass = 1516 + STD_CARGO_KG
+      ret.mass = 1516
       ret.wheelbase = 2.79
 
     elif candidate == CAR.TRANSPORTER_T61:
-      ret.mass = 1926 + STD_CARGO_KG
+      ret.mass = 1926
       ret.wheelbase = 3.00  # SWB, LWB is 3.40, TBD how to detect difference
       ret.minSteerSpeed = 14.0
 
     elif candidate == CAR.TROC_MK1:
-      ret.mass = 1413 + STD_CARGO_KG
+      ret.mass = 1413
       ret.wheelbase = 2.63
 
     elif candidate == CAR.AUDI_A3_MK3:
-      ret.mass = 1335 + STD_CARGO_KG
+      ret.mass = 1335
       ret.wheelbase = 2.61
 
     elif candidate == CAR.AUDI_Q2_MK1:
-      ret.mass = 1205 + STD_CARGO_KG
+      ret.mass = 1205
       ret.wheelbase = 2.61
 
     elif candidate == CAR.AUDI_Q3_MK2:
-      ret.mass = 1623 + STD_CARGO_KG
+      ret.mass = 1623
       ret.wheelbase = 2.68
 
     elif candidate == CAR.SEAT_ATECA_MK1:
-      ret.mass = 1900 + STD_CARGO_KG
+      ret.mass = 1900
       ret.wheelbase = 2.64
 
     elif candidate == CAR.SEAT_LEON_MK3:
-      ret.mass = 1227 + STD_CARGO_KG
+      ret.mass = 1227
       ret.wheelbase = 2.64
 
     elif candidate == CAR.SKODA_FABIA_MK4:
-      ret.mass = 1266 + STD_CARGO_KG
+      ret.mass = 1266
       ret.wheelbase = 2.56
 
     elif candidate == CAR.SKODA_KAMIQ_MK1:
-      ret.mass = 1265 + STD_CARGO_KG
+      ret.mass = 1265
       ret.wheelbase = 2.66
 
     elif candidate == CAR.SKODA_KAROQ_MK1:
-      ret.mass = 1278 + STD_CARGO_KG
+      ret.mass = 1278
       ret.wheelbase = 2.66
 
     elif candidate == CAR.SKODA_KODIAQ_MK1:
-      ret.mass = 1569 + STD_CARGO_KG
+      ret.mass = 1569
       ret.wheelbase = 2.79
 
     elif candidate == CAR.SKODA_OCTAVIA_MK3:
-      ret.mass = 1388 + STD_CARGO_KG
+      ret.mass = 1388
       ret.wheelbase = 2.68
 
     elif candidate == CAR.SKODA_SCALA_MK1:
-      ret.mass = 1192 + STD_CARGO_KG
+      ret.mass = 1192
       ret.wheelbase = 2.65
 
     elif candidate == CAR.SKODA_SUPERB_MK3:
-      ret.mass = 1505 + STD_CARGO_KG
+      ret.mass = 1505
       ret.wheelbase = 2.84
 
     else:
@@ -244,9 +245,13 @@ class CarInterface(CarInterfaceBase):
       if c.enabled and ret.vEgo < self.CP.minEnableSpeed:
         events.add(EventName.speedTooLow)
 
+    if self.eps_timer_soft_disable_alert:
+      events.add(EventName.steerTimeLimit)
+
     ret.events = events.to_msg()
 
     return ret
 
   def apply(self, c, now_nanos):
-    return self.CC.update(c, self.CS, self.ext_bus, now_nanos)
+    new_actuators, can_sends, self.eps_timer_soft_disable_alert = self.CC.update(c, self.CS, self.ext_bus, now_nanos)
+    return new_actuators, can_sends

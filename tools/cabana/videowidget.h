@@ -1,25 +1,35 @@
 #pragma once
 
 #include <atomic>
+#include <map>
+#include <memory>
 #include <mutex>
+#include <tuple>
+#include <vector>
 
-#include <QHBoxLayout>
 #include <QFuture>
 #include <QLabel>
 #include <QPushButton>
 #include <QSlider>
-#include <QTimer>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 #include "tools/cabana/streams/abstractstream.h"
 
-class ThumbnailLabel : public QWidget {
+struct AlertInfo {
+  cereal::ControlsState::AlertStatus status;
+  QString text1;
+  QString text2;
+};
+
+class InfoLabel : public QWidget {
 public:
-  ThumbnailLabel(QWidget *parent);
-  void showPixmap(const QPoint &pt, const QString &sec, const QPixmap &pm);
+  InfoLabel(QWidget *parent);
+  void showPixmap(const QPoint &pt, const QString &sec, const QPixmap &pm, const AlertInfo &alert);
+  void showAlert(const AlertInfo &alert);
   void paintEvent(QPaintEvent *event) override;
   QPixmap pixmap;
   QString second;
+  AlertInfo alert_info;
 };
 
 class Slider : public QSlider {
@@ -28,24 +38,30 @@ class Slider : public QSlider {
 public:
   Slider(QWidget *parent);
   ~Slider();
+  double currentSecond() const { return value() / factor; }
+  void setCurrentSecond(double sec) { setValue(sec * factor); }
+  void setTimeRange(double min, double max);
+  AlertInfo alertInfo(double sec);
+  QPixmap thumbnail(double sec);
+
+signals:
+  void updateMaximumTime(double);
 
 private:
   void mousePressEvent(QMouseEvent *e) override;
   void mouseMoveEvent(QMouseEvent *e) override;
-  void leaveEvent(QEvent *event) override;
-  void sliderChange(QAbstractSlider::SliderChange change) override;
+  bool event(QEvent *event) override;
   void paintEvent(QPaintEvent *ev) override;
-  void streamStarted();
-  void loadThumbnails();
+  void parseQLog();
 
-  int slider_x = -1;
-  std::vector<std::tuple<int, int, TimelineType>> timeline;
+  const double factor = 1000.0;
+  std::vector<std::tuple<double, double, TimelineType>> timeline;
   std::mutex thumbnail_lock;
-  std::atomic<bool> abort_load_thumbnail = false;
+  std::atomic<bool> abort_parse_qlog = false;
   QMap<uint64_t, QPixmap> thumbnails;
-  QFuture<void> thumnail_future;
-  ThumbnailLabel thumbnail_label;
-  QTimer timer;
+  std::map<uint64_t, AlertInfo> alerts;
+  std::unique_ptr<QFuture<void>> qlog_future;
+  InfoLabel thumbnail_label;
 };
 
 class VideoWidget : public QFrame {
@@ -53,7 +69,8 @@ class VideoWidget : public QFrame {
 
 public:
   VideoWidget(QWidget *parnet = nullptr);
-  void rangeChanged(double min, double max, bool is_zommed);
+  void updateTimeRange(double min, double max, bool is_zommed);
+  void setMaximumTime(double sec);
 
 protected:
   void updateState();
@@ -61,9 +78,10 @@ protected:
   QWidget *createCameraWidget();
 
   CameraWidget *cam_widget;
+  double maximum_time = 0;
   QLabel *end_time_label;
   QLabel *time_label;
-  QHBoxLayout *slider_layout;
   QPushButton *play_btn;
+  InfoLabel *alert_label;
   Slider *slider;
 };

@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 import capnp
 import time
-from typing import Optional, Set, Tuple
+from typing import Optional, Set
 
 import cereal.messaging as messaging
 from panda.python.uds import SERVICE_TYPE
-from selfdrive.car import make_can_msg
-from selfdrive.boardd.boardd import can_list_to_can_capnp
-from system.swaglog import cloudlog
-
-EcuAddrBusType = Tuple[int, Optional[int], int]
+from openpilot.selfdrive.car import make_can_msg
+from openpilot.selfdrive.car.fw_query_definitions import EcuAddrBusType
+from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
+from openpilot.system.swaglog import cloudlog
 
 
 def make_tester_present_msg(addr, bus, subaddr=None):
@@ -55,6 +54,10 @@ def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, que
       can_packets = messaging.drain_sock(logcan, wait_for_one=True)
       for packet in can_packets:
         for msg in packet.can:
+          if not len(msg.dat):
+            cloudlog.warning("ECU addr scan: skipping empty remote frame")
+            continue
+
           subaddr = None if (msg.address, None, msg.src) in responses else msg.dat[0]
           if (msg.address, subaddr, msg.src) in responses and is_tester_present_response(msg, subaddr):
             if debug:
@@ -86,7 +89,7 @@ if __name__ == "__main__":
 
   print()
   print("Found ECUs on addresses:")
-  for addr, subaddr, bus in ecu_addrs:
+  for addr, subaddr, _ in ecu_addrs:
     msg = f"  0x{hex(addr)}"
     if subaddr is not None:
       msg += f" (sub-address: {hex(subaddr)})"

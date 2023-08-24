@@ -3,6 +3,8 @@
 #include <string>
 #include <cmath>
 #include <memory>
+#include <unordered_map>
+#include <vector>
 
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Dense>

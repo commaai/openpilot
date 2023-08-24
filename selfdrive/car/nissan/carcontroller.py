@@ -1,8 +1,8 @@
 from cereal import car
 from opendbc.can.packer import CANPacker
-from selfdrive.car import apply_std_steer_angle_limits
-from selfdrive.car.nissan import nissancan
-from selfdrive.car.nissan.values import CAR, CarControllerParams
+from openpilot.selfdrive.car import apply_std_steer_angle_limits
+from openpilot.selfdrive.car.nissan import nissancan
+from openpilot.selfdrive.car.nissan.values import CAR, CarControllerParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -26,13 +26,11 @@ class CarController:
     can_sends = []
 
     ### STEER ###
-    lkas_hud_msg = CS.lkas_hud_msg
-    lkas_hud_info_msg = CS.lkas_hud_info_msg
     steer_hud_alert = 1 if hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw) else 0
 
     if CC.latActive:
       # windup slower
-      apply_angle = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgo, CarControllerParams)
+      apply_angle = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw, CarControllerParams)
 
       # Max torque from driver before EPS will give up and not apply torque
       if not bool(CS.out.steeringPressed):
@@ -63,16 +61,17 @@ class CarController:
       can_sends.append(nissancan.create_cancel_msg(self.packer, CS.cancel_msg, pcm_cancel_cmd))
 
     can_sends.append(nissancan.create_steering_control(
-      self.packer, apply_angle, self.frame, CC.enabled, self.lkas_max_torque))
+      self.packer, apply_angle, self.frame, CC.latActive, self.lkas_max_torque))
 
-    if lkas_hud_msg and lkas_hud_info_msg:
+    # Below are the HUD messages. We copy the stock message and modify
+    if self.CP.carFingerprint != CAR.ALTIMA:
       if self.frame % 2 == 0:
-        can_sends.append(nissancan.create_lkas_hud_msg(
-          self.packer, lkas_hud_msg, CC.enabled, hud_control.leftLaneVisible, hud_control.rightLaneVisible, hud_control.leftLaneDepart, hud_control.rightLaneDepart))
+        can_sends.append(nissancan.create_lkas_hud_msg(self.packer, CS.lkas_hud_msg, CC.enabled, hud_control.leftLaneVisible, hud_control.rightLaneVisible,
+                                                       hud_control.leftLaneDepart, hud_control.rightLaneDepart))
 
       if self.frame % 50 == 0:
         can_sends.append(nissancan.create_lkas_hud_info_msg(
-          self.packer, lkas_hud_info_msg, steer_hud_alert
+          self.packer, CS.lkas_hud_info_msg, steer_hud_alert
         ))
 
     new_actuators = actuators.copy()

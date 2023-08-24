@@ -10,15 +10,12 @@ from multiprocessing import Process
 
 from setproctitle import setproctitle  # pylint: disable=no-name-in-module
 
+from cereal import car, log
 import cereal.messaging as messaging
-import selfdrive.sentry as sentry
-from cereal import car
-from common.basedir import BASEDIR
-from common.params import Params
-from common.realtime import sec_since_boot
-from system.swaglog import cloudlog
-from system.hardware import HARDWARE
-from cereal import log
+import openpilot.selfdrive.sentry as sentry
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.params import Params
+from openpilot.system.swaglog import cloudlog
 
 WATCHDOG_FN = "/dev/shm/wd_"
 ENABLE_WATCHDOG = os.getenv("NO_WATCHDOG") is None
@@ -40,7 +37,7 @@ def launcher(proc: str, name: str) -> None:
     sentry.set_tag("daemon", name)
 
     # exec the process
-    getattr(mod, 'main')()
+    mod.main()
   except KeyboardInterrupt:
     cloudlog.warning(f"child {proc} got SIGINT")
   except Exception:
@@ -67,7 +64,6 @@ def join_process(process: Process, timeout: float) -> None:
 
 
 class ManagerProcess(ABC):
-  unkillable = False
   daemon = False
   sigkill = False
   onroad = True
@@ -91,7 +87,7 @@ class ManagerProcess(ABC):
     pass
 
   def restart(self) -> None:
-    self.stop()
+    self.stop(sig=signal.SIGKILL)
     self.start()
 
   def check_watchdog(self, started: bool) -> None:
@@ -100,29 +96,30 @@ class ManagerProcess(ABC):
 
     try:
       fn = WATCHDOG_FN + str(self.proc.pid)
-      # TODO: why can't pylint find struct.unpack?
-      self.last_watchdog_time = struct.unpack('Q', open(fn, "rb").read())[0] # pylint: disable=no-member
+      with open(fn, "rb") as f:
+        # TODO: why can't pylint find struct.unpack?
+        self.last_watchdog_time = struct.unpack('Q', f.read())[0] # pylint: disable=no-member
     except Exception:
       pass
 
-    dt = sec_since_boot() - self.last_watchdog_time / 1e9
+    dt = time.monotonic() - self.last_watchdog_time / 1e9
 
     if dt > self.watchdog_max_dt:
-      # Only restart while offroad for now
       if self.watchdog_seen and ENABLE_WATCHDOG:
         cloudlog.error(f"Watchdog timeout for {self.name} (exitcode {self.proc.exitcode}) restarting ({started=})")
         self.restart()
     else:
       self.watchdog_seen = True
 
-  def stop(self, retry: bool=True, block: bool=True) -> Optional[int]:
+  def stop(self, retry: bool = True, block: bool = True, sig: Optional[signal.Signals] = None) -> Optional[int]:
     if self.proc is None:
       return None
 
     if self.proc.exitcode is None:
       if not self.shutting_down:
         cloudlog.info(f"killing {self.name}")
-        sig = signal.SIGKILL if self.sigkill else signal.SIGINT
+        if sig is None:
+          sig = signal.SIGKILL if self.sigkill else signal.SIGINT
         self.signal(sig)
         self.shutting_down = True
 
@@ -131,22 +128,11 @@ class ManagerProcess(ABC):
 
       join_process(self.proc, 5)
 
-      # If process failed to die send SIGKILL or reboot
+      # If process failed to die send SIGKILL
       if self.proc.exitcode is None and retry:
-        if self.unkillable:
-          cloudlog.critical(f"unkillable process {self.name} failed to exit! rebooting in 15 if it doesn't die")
-          join_process(self.proc, 15)
-
-          if self.proc.exitcode is None:
-            cloudlog.critical(f"unkillable process {self.name} failed to die!")
-            os.system("date >> /data/unkillable_reboot")
-            os.sync()
-            HARDWARE.reboot()
-            raise RuntimeError
-        else:
-          cloudlog.info(f"killing {self.name} with SIGKILL")
-          self.signal(signal.SIGKILL)
-          self.proc.join()
+        cloudlog.info(f"killing {self.name} with SIGKILL")
+        self.signal(signal.SIGKILL)
+        self.proc.join()
 
     ret = self.proc.exitcode
     cloudlog.info(f"{self.name} is dead with {ret}")
@@ -195,6 +181,7 @@ class NativeProcess(ManagerProcess):
     self.unkillable = unkillable
     self.sigkill = sigkill
     self.watchdog_max_dt = watchdog_max_dt
+    self.launcher = nativelauncher
 
   def prepare(self) -> None:
     pass
@@ -209,7 +196,7 @@ class NativeProcess(ManagerProcess):
 
     cwd = os.path.join(BASEDIR, self.cwd)
     cloudlog.info(f"starting process {self.name}")
-    self.proc = Process(name=self.name, target=nativelauncher, args=(self.cmdline, cwd, self.name))
+    self.proc = Process(name=self.name, target=self.launcher, args=(self.cmdline, cwd, self.name))
     self.proc.start()
     self.watchdog_seen = False
     self.shutting_down = False
@@ -226,6 +213,7 @@ class PythonProcess(ManagerProcess):
     self.unkillable = unkillable
     self.sigkill = sigkill
     self.watchdog_max_dt = watchdog_max_dt
+    self.launcher = launcher
 
   def prepare(self) -> None:
     if self.enabled:
@@ -241,7 +229,7 @@ class PythonProcess(ManagerProcess):
       return
 
     cloudlog.info(f"starting python {self.module}")
-    self.proc = Process(name=self.name, target=launcher, args=(self.module, self.name))
+    self.proc = Process(name=self.name, target=self.launcher, args=(self.module, self.name))
     self.proc.start()
     self.watchdog_seen = False
     self.shutting_down = False
@@ -257,14 +245,16 @@ class DaemonProcess(ManagerProcess):
     self.enabled = enabled
     self.onroad = True
     self.offroad = True
+    self.params = None
 
   def prepare(self) -> None:
     pass
 
   def start(self) -> None:
-    params = Params()
-    pid = params.get(self.param_name, encoding='utf-8')
+    if self.params is None:
+      self.params = Params()
 
+    pid = self.params.get(self.param_name, encoding='utf-8')
     if pid is not None:
       try:
         os.kill(int(pid), 0)
@@ -283,9 +273,9 @@ class DaemonProcess(ManagerProcess):
                                stderr=open('/dev/null', 'w'),
                                preexec_fn=os.setpgrp)
 
-    params.put(self.param_name, str(proc.pid))
+    self.params.put(self.param_name, str(proc.pid))
 
-  def stop(self, retry=True, block=True) -> None:
+  def stop(self, retry=True, block=True, sig=None) -> None:
     pass
 
 
