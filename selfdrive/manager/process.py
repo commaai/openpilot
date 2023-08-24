@@ -66,8 +66,6 @@ def join_process(process: Process, timeout: float) -> None:
 class ManagerProcess(ABC):
   daemon = False
   sigkill = False
-  onroad = True
-  offroad = False
   proc: Optional[Process] = None
   enabled = True
   name = ""
