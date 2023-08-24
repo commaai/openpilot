@@ -2,8 +2,8 @@
 import cereal.messaging as messaging
 from opendbc.can.packer import CANPacker
 from opendbc.can.parser import CANParser
-from selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp  # pylint: disable=no-name-in-module,import-error
-from selfdrive.car import crc8_pedal
+from openpilot.selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp  # pylint: disable=no-name-in-module,import-error
+from openpilot.selfdrive.car import crc8_pedal
 
 packer = CANPacker("honda_civic_touring_2016_can_generated")
 rpacker = CANPacker("acura_ilx_2016_nidec")
@@ -11,19 +11,12 @@ rpacker = CANPacker("acura_ilx_2016_nidec")
 
 def get_car_can_parser():
   dbc_f = 'honda_civic_touring_2016_can_generated'
-  signals = [
-    ("STEER_TORQUE", 0xe4),
-    ("STEER_TORQUE_REQUEST", 0xe4),
-    ("COMPUTER_BRAKE", 0x1fa),
-    ("COMPUTER_BRAKE_REQUEST", 0x1fa),
-    ("GAS_COMMAND", 0x200),
-  ]
   checks = [
     (0xe4, 100),
     (0x1fa, 50),
     (0x200, 50),
   ]
-  return CANParser(dbc_f, signals, checks, 0)
+  return CANParser(dbc_f, checks, 0)
 cp = get_car_can_parser()
 
 def can_function(pm, speed, angle, idx, cruise_button, is_engaged):

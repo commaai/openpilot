@@ -9,9 +9,9 @@ base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
 if arch == 'larch64':
   base_libs.append('EGL')
 
-maps = arch in ['larch64', 'x86_64']
+maps = arch in ['larch64', 'aarch64', 'x86_64']
 
-if maps and arch == 'x86_64':
+if maps and arch != 'larch64':
   rpath = [Dir(f"#third_party/mapbox-gl-native-qt/{arch}").srcnode().abspath]
   qt_env["RPATH"] += rpath
 
@@ -131,5 +131,5 @@ if GetOption('extras'):
     assert f[0].get_size() < 300*1e3
 
 # build watch3
-if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
+if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
   qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'json11', 'zmq', 'visionipc', 'messaging'])

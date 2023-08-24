@@ -1,5 +1,7 @@
 #include "tools/cabana/dbc/dbc.h"
 
+#include <algorithm>
+
 #include "tools/cabana/util.h"
 
 uint qHash(const MessageId &item) {

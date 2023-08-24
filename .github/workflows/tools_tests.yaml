@@ -2,8 +2,8 @@ name: tools
 
 on:
   push:
-    branches-ignore:
-      - 'testing-closet*'
+    branches:
+      - master
   pull_request:
 
 concurrency:
@@ -17,19 +17,20 @@ env:
   DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
 
   BUILD: |
-      DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
+      DOCKER_BUILDKIT=1 docker build --pull --cache-to type=inline --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
 
-  RUN: docker run --shm-size 1G -v $GITHUB_WORKSPACE:/tmp/openpilot -w /tmp/openpilot -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/sh -c
+  RUN: docker run --shm-size 1G -v $GITHUB_WORKSPACE:/tmp/openpilot -w /tmp/openpilot -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v ~/scons_cache:/tmp/scons_cache -v ~/comma_download_cache:/tmp/comma_download_cache -v ~/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/sh -c
 
   BUILD_CL: |
-      DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $CL_BASE_IMAGE:latest -f Dockerfile.openpilot_base_cl .
-  RUN_CL: docker run --shm-size 1G -v $GITHUB_WORKSPACE:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/openpilot_cache:/tmp/openpilot_cache $CL_BASE_IMAGE /bin/sh -c
+      DOCKER_BUILDKIT=1 docker build --pull --cache-to type=inline --cache-from $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $CL_BASE_IMAGE:latest -f Dockerfile.openpilot_base_cl .
+  RUN_CL: docker run --shm-size 1G -v $GITHUB_WORKSPACE:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v ~/scons_cache:/tmp/scons_cache -v ~/comma_download_cache:/tmp/comma_download_cache -v ~/openpilot_cache:/tmp/openpilot_cache $CL_BASE_IMAGE /bin/sh -c
 
 
 jobs:
   plotjuggler:
     name: plotjuggler
     runs-on: ubuntu-20.04
+    timeout-minutes: 45
     steps:
     - uses: actions/checkout@v3
       with:
@@ -37,6 +38,7 @@ jobs:
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Unit test
+      timeout-minutes: 2
       run: |
         ${{ env.RUN }} "scons -j$(nproc) --directory=/tmp/openpilot/cereal && \
                         apt-get update && \
@@ -50,18 +52,19 @@ jobs:
     env:
       IMAGE_NAME: openpilot-sim
     if: github.repository == 'commaai/openpilot'
+    timeout-minutes: 45
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - name: Pull LFS
-      run: git lfs pull
-    - name: Build base image
-      run: eval "$BUILD"
+    - uses: ./.github/workflows/setup
+      with:
+        setup_docker_scons_cache: true
     - name: Build base cl image
       run: eval "$BUILD_CL"
     - name: Build simulator image
-      run: DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/sim/Dockerfile.sim .
+      run: |
+        DOCKER_BUILDKIT=1 docker build --cache-to type=inline --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/sim/Dockerfile.sim .
     - name: Push to container registry
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       run: |
@@ -71,17 +74,36 @@ jobs:
   docs:
     name: build docs
     runs-on: ubuntu-20.04
+    timeout-minutes: 45
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - name: Build docker container
+    - uses: ./.github/workflows/setup
+      with:
+        setup_docker_scons_cache: true
+        git_lfs: false
+    - name: Build docs image
       run: |
-        DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/openpilot-docs:latest -t $DOCKER_REGISTRY/openpilot-docs:latest -f docs/docker/Dockerfile .
+        DOCKER_BUILDKIT=1 docker build --cache-to type=inline --cache-from $DOCKER_REGISTRY/openpilot-docs:latest -t $DOCKER_REGISTRY/openpilot-docs:latest -f docs/docker/Dockerfile .
     - name: Push docker container
       if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
         $DOCKER_LOGIN
         docker push $DOCKER_REGISTRY/openpilot-docs:latest
 
-
+  devcontainer:
+    name: devcontainer
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+    - name: Setup Dev Container CLI
+      run: npm install -g @devcontainers/cli
+    - name: Build dev container image
+      run: devcontainer build --workspace-folder .
+    - name: Run dev container
+      run: devcontainer up --workspace-folder .
+    - name: Test environment
+      run: devcontainer exec --workspace-folder . scons --dry-run

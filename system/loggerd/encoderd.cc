@@ -47,7 +47,7 @@ bool sync_encoders(EncoderdState *s, CameraType cam_type, uint32_t frame_id) {
 void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
   util::set_thread_name(cam_info.thread_name);
 
-  std::vector<Encoder *> encoders;
+  std::vector<std::unique_ptr<Encoder>> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
 
   int cur_seg = 0;
@@ -60,16 +60,13 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
     // init encoders
     if (encoders.empty()) {
       VisionBuf buf_info = vipc_client.buffers[0];
-      LOGW("encoder %s init %dx%d", cam_info.thread_name, buf_info.width, buf_info.height);
+      LOGW("encoder %s init %zux%zu", cam_info.thread_name, buf_info.width, buf_info.height);
       assert(buf_info.width > 0 && buf_info.height > 0);
 
       for (const auto &encoder_info : cam_info.encoder_infos) {
-        encoders.push_back(new Encoder(encoder_info, buf_info.width, buf_info.height));
+        auto &e = encoders.emplace_back(new Encoder(encoder_info, buf_info.width, buf_info.height));
+        e->encoder_open(nullptr);
       }
-    }
-
-    for (int i = 0; i < encoders.size(); ++i) {
-      encoders[i]->encoder_open(NULL);
     }
 
     bool lagging = false;
@@ -81,7 +78,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       // detect loop around and drop the frames
       if (buf->get_frame_id() != extra.frame_id) {
         if (!lagging) {
-          LOGE("encoder %s lag  buffer id: %d  extra id: %d", cam_info.thread_name, buf->get_frame_id(), extra.frame_id);
+          LOGE("encoder %s lag  buffer id: %" PRIu64 " extra id: %d", cam_info.thread_name, buf->get_frame_id(), extra.frame_id);
           lagging = true;
         }
         continue;
@@ -113,15 +110,10 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       }
     }
   }
-
-  LOG("encoder destroy");
-  for(auto &e : encoders) {
-    e->encoder_close();
-    delete e;
-  }
 }
 
-void encoderd_thread() {
+template <size_t N>
+void encoderd_thread(const LogCameraInfo (&cameras)[N]) {
   EncoderdState s;
 
   std::set<VisionStreamType> streams;
@@ -136,9 +128,9 @@ void encoderd_thread() {
   if (!streams.empty()) {
     std::vector<std::thread> encoder_threads;
     for (auto stream : streams) {
-      auto it = std::find_if(std::begin(cameras_logged), std::end(cameras_logged),
+      auto it = std::find_if(std::begin(cameras), std::end(cameras),
                              [stream](auto &cam) { return cam.stream_type == stream; });
-      assert(it != std::end(cameras_logged));
+      assert(it != std::end(cameras));
       ++s.max_waiting;
       encoder_threads.push_back(std::thread(encoder_thread, &s, *it));
     }
@@ -147,7 +139,7 @@ void encoderd_thread() {
   }
 }
 
-int main() {
+int main(int argc, char* argv[]) {
   if (!Hardware::PC()) {
     int ret;
     ret = util::set_realtime_priority(52);
@@ -155,6 +147,15 @@ int main() {
     ret = util::set_core_affinity({3});
     assert(ret == 0);
   }
-  encoderd_thread();
+  if (argc > 1) {
+    std::string arg1(argv[1]);
+    if (arg1 == "--stream") {
+      encoderd_thread(stream_cameras_logged);
+    } else {
+      LOGE("Argument '%s' is not supported", arg1.c_str());
+    }
+  } else {
+    encoderd_thread(cameras_logged);
+  }
   return 0;
 }

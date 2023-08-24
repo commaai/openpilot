@@ -15,12 +15,14 @@ docs/INTEGRATION.md
 docs/LIMITATIONS.md
 site_scons/site_tools/cython.py
 
+openpilot/__init__.py
+openpilot/**
+
 common/.gitignore
 common/__init__.py
 common/conversions.py
 common/gpio.py
 common/realtime.py
-common/clock.pyx
 common/timeout.py
 common/ffi_wrapper.py
 common/file_helpers.py
@@ -60,6 +62,7 @@ release/*
 
 tools/__init__.py
 tools/lib/*
+tools/bodyteleop/*
 tools/joystick/*
 tools/replay/*.cc
 tools/replay/*.h
@@ -159,6 +162,8 @@ common/clutil.cc
 common/clutil.h
 common/params.h
 common/params.cc
+common/ratekeeper.cc
+common/ratekeeper.h
 common/watchdog.cc
 common/watchdog.h
 
@@ -417,8 +422,6 @@ selfdrive/assets/navigation/*
 third_party/.gitignore
 third_party/SConscript
 
-third_party/cluster/*
-
 third_party/linux/**
 third_party/opencl/**
 
@@ -432,15 +435,11 @@ third_party/kaitai/*.h
 third_party/kaitai/*.cpp
 
 third_party/libyuv/include/**
-third_party/libyuv/lib/**
-third_party/libyuv/larch64/**
 
 third_party/snpe/include/**
 third_party/snpe/dsp**
 
 third_party/acados/.gitignore
-third_party/acados/x86_64/**
-third_party/acados/larch64/**
 third_party/acados/include/**
 third_party/acados/acados_template/**
 
@@ -570,6 +569,7 @@ opendbc/nissan_x_trail_2017_generated.dbc
 opendbc/nissan_leaf_2018_generated.dbc
 
 opendbc/subaru_global_2017_generated.dbc
+opendbc/subaru_global_2020_hybrid_generated.dbc
 opendbc/subaru_outback_2015_generated.dbc
 opendbc/subaru_outback_2019_generated.dbc
 opendbc/subaru_forester_2017_generated.dbc

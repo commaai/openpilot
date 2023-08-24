@@ -30,20 +30,20 @@ from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutExce
 import cereal.messaging as messaging
 from cereal import log
 from cereal.services import service_list
-from common.api import Api
-from common.basedir import PERSIST
-from common.file_helpers import CallbackReader
-from common.params import Params
-from common.realtime import sec_since_boot, set_core_affinity
-from system.hardware import HARDWARE, PC, AGNOS
-from system.loggerd.config import ROOT
-from system.loggerd.xattr_cache import getxattr, setxattr
-from selfdrive.statsd import STATS_DIR
-from system.swaglog import SWAGLOG_DIR, cloudlog
-from system.version import get_commit, get_origin, get_short_branch, get_version
+from openpilot.common.api import Api
+from openpilot.common.basedir import PERSIST
+from openpilot.common.file_helpers import CallbackReader
+from openpilot.common.params import Params
+from openpilot.common.realtime import set_core_affinity
+from openpilot.system.hardware import HARDWARE, PC, AGNOS
+from openpilot.system.loggerd.config import ROOT
+from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
+from openpilot.selfdrive.statsd import STATS_DIR
+from openpilot.system.swaglog import SWAGLOG_DIR, cloudlog
+from openpilot.system.version import get_commit, get_origin, get_short_branch, get_version
 
 
-# missing in pysocket
+# TODO: use socket constant when mypy recognizes this as a valid attribute
 TCP_USER_TIMEOUT = 18
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
@@ -85,7 +85,7 @@ class UploadItem:
   url: str
   headers: Dict[str, str]
   created_at: int
-  id: Optional[str]
+  id: Optional[str] # noqa: A003 (to match the response from the remote server)
   retry_count: int = 0
   current: bool = False
   progress: float = 0
@@ -213,6 +213,16 @@ def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = Tr
         break
 
 
+def cb(sm, item, tid, sz: int, cur: int) -> None:
+  # Abort transfer if connection changed to metered after starting upload
+  sm.update(0)
+  metered = sm['deviceState'].networkMetered
+  if metered and (not item.allow_cellular):
+    raise AbortTransferException
+
+  cur_upload_items[tid] = replace(item, progress=cur / sz if sz else 1)
+
+
 def upload_handler(end_event: threading.Event) -> None:
   sm = messaging.SubMaster(['deviceState'])
   tid = threading.get_ident()
@@ -242,15 +252,6 @@ def upload_handler(end_event: threading.Event) -> None:
         continue
 
       try:
-        def cb(sz: int, cur: int) -> None:
-          # Abort transfer if connection changed to metered after starting upload
-          sm.update(0)
-          metered = sm['deviceState'].networkMetered
-          if metered and (not item.allow_cellular):
-            raise AbortTransferException
-
-          cur_upload_items[tid] = replace(item, progress=cur / sz if sz else 1)
-
         fn = item.path
         try:
           sz = os.path.getsize(fn)
@@ -258,7 +259,7 @@ def upload_handler(end_event: threading.Event) -> None:
           sz = -1
 
         cloudlog.event("athena.upload_handler.upload_start", fn=fn, sz=sz, network_type=network_type, metered=metered, retry_count=item.retry_count)
-        response = _do_upload(item, cb)
+        response = _do_upload(item, partial(cb, sm, item, tid))
 
         if response.status_code not in (200, 201, 401, 403, 412):
           cloudlog.event("athena.upload_handler.retry", status_code=response.status_code, fn=fn, sz=sz, network_type=network_type, metered=metered)
@@ -551,7 +552,7 @@ def getNetworks():
 
 @dispatcher.add_method
 def takeSnapshot() -> Optional[Union[str, Dict[str, str]]]:
-  from system.camerad.snapshot.snapshot import jpeg_write, snapshot
+  from openpilot.system.camerad.snapshot.snapshot import jpeg_write, snapshot
   ret = snapshot()
   if ret is not None:
     def b64jpeg(x):
@@ -592,10 +593,10 @@ def log_handler(end_event: threading.Event) -> None:
     return
 
   log_files = []
-  last_scan = 0
+  last_scan = 0.
   while not end_event.is_set():
     try:
-      curr_scan = sec_since_boot()
+      curr_scan = time.monotonic()
       if curr_scan - last_scan > 10:
         log_files = get_logs_to_send_sorted()
         last_scan = curr_scan
@@ -651,8 +652,8 @@ def log_handler(end_event: threading.Event) -> None:
 
 def stat_handler(end_event: threading.Event) -> None:
   while not end_event.is_set():
-    last_scan = 0
-    curr_scan = sec_since_boot()
+    last_scan = 0.
+    curr_scan = time.monotonic()
     try:
       if curr_scan - last_scan > 10:
         stat_filenames = list(filter(lambda name: not name.startswith(tempfile.gettempprefix()), os.listdir(STATS_DIR)))
@@ -720,7 +721,7 @@ def ws_proxy_send(ws: WebSocket, local_sock: socket.socket, signal_sock: socket.
 
 
 def ws_recv(ws: WebSocket, end_event: threading.Event) -> None:
-  last_ping = int(sec_since_boot() * 1e9)
+  last_ping = int(time.monotonic() * 1e9)
   while not end_event.is_set():
     try:
       opcode, data = ws.recv_data(control_frame=True)
@@ -729,10 +730,10 @@ def ws_recv(ws: WebSocket, end_event: threading.Event) -> None:
           data = data.decode("utf-8")
         recv_queue.put_nowait(data)
       elif opcode == ABNF.OPCODE_PING:
-        last_ping = int(sec_since_boot() * 1e9)
+        last_ping = int(time.monotonic() * 1e9)
         Params().put("LastAthenaPingTime", str(last_ping))
     except WebSocketTimeoutException:
-      ns_since_last_ping = int(sec_since_boot() * 1e9) - last_ping
+      ns_since_last_ping = int(time.monotonic() * 1e9) - last_ping
       if ns_since_last_ping > RECONNECT_TIMEOUT_S * 1e9:
         cloudlog.exception("athenad.ws_recv.timeout")
         end_event.set()
@@ -820,10 +821,6 @@ def main(exit_event: Optional[threading.Event] = None):
       break
     except (ConnectionError, TimeoutError, WebSocketException):
       conn_retries += 1
-      params.remove("LastAthenaPingTime")
-    # TODO: socket.timeout and TimeoutError are now the same exception since python3.10
-    # Remove the socket.timeout case once we have fully moved to python3.11
-    except socket.timeout: # pylint: disable=duplicate-except
       params.remove("LastAthenaPingTime")
     except Exception:
       cloudlog.exception("athenad.main.exception")

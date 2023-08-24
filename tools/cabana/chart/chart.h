@@ -1,5 +1,8 @@
 #pragma once
 
+#include <tuple>
+#include <utility>
+
 #include <QGraphicsPixmapItem>
 #include <QGraphicsProxyWidget>
 #include <QtCharts/QChartView>

@@ -1,5 +1,8 @@
 #include "tools/cabana/chart/chart.h"
 
+#include <algorithm>
+#include <limits>
+
 #include <QActionGroup>
 #include <QApplication>
 #include <QDrag>
@@ -764,6 +767,7 @@ QXYSeries *ChartView::createSeries(SeriesType type, QColor color) {
     chart()->legend()->setMarkerShape(QLegend::MarkerShapeFromSeries);
   } else {
     series = new QScatterSeries(this);
+    static_cast<QScatterSeries*>(series)->setBorderColor(color);
     chart()->legend()->setMarkerShape(QLegend::MarkerShapeCircle);
   }
   series->setColor(color);

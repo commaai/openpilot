@@ -5,7 +5,10 @@
 #include <memory_resource>
 #endif
 
+#include <memory>
 #include <set>
+#include <string>
+#include <vector>
 
 #include "cereal/gen/cpp/log.capnp.h"
 #include "system/camerad/cameras/camera_common.h"
@@ -61,7 +64,6 @@ private:
   bool parse(const std::set<cereal::Event::Which> &allow, std::atomic<bool> *abort);
   std::string raw_;
 #ifdef HAS_MEMORY_RESOURCE
-  std::pmr::monotonic_buffer_resource *mbr_ = nullptr;
-  void *pool_buffer_ = nullptr;
+  std::unique_ptr<std::pmr::monotonic_buffer_resource> mbr_;
 #endif
 };

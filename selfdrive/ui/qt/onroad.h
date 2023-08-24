@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include <QPushButton>
 #include <QStackedLayout>
 #include <QWidget>
@@ -18,7 +20,7 @@ class OnroadAlerts : public QWidget {
   Q_OBJECT
 
 public:
-  OnroadAlerts(QWidget *parent = 0) : QWidget(parent) {};
+  OnroadAlerts(QWidget *parent = 0) : QWidget(parent) {}
   void updateAlert(const Alert &a);
 
 protected:
@@ -84,7 +86,6 @@ public:
   MapSettingsButton *map_settings_btn;
 
 private:
-  void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity);
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
 
   QVBoxLayout *main_layout;
