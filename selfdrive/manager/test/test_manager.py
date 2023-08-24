@@ -33,6 +33,10 @@ class TestManager(unittest.TestCase):
     os.environ['PREPAREONLY'] = '1'
     manager.main()
 
+  def test_blacklisted_procs(self):
+    # TODO: ensure blacklisted procs until we have a dedicated test
+    self.assertTrue(len(BLACKLIST_PROCS), "No blacklisted procs to test not_run")
+
   def test_startup_time(self):
     for _ in range(10):
       start = time.monotonic()
@@ -51,7 +55,6 @@ class TestManager(unittest.TestCase):
 
     CP = car.CarParams.new_message()
     procs = ensure_running(managed_processes.values(), True, Params(), CP, not_run=BLACKLIST_PROCS)
-    print('RUNNING', procs)
 
     time.sleep(10)
 
