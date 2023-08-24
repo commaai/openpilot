@@ -1,4 +1,4 @@
-FROM scons-cache as scons-cache
+FROM scons-cache:cache as scons-cache
 
 FROM ghcr.io/commaai/openpilot-base:latest
 
