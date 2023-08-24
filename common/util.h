@@ -170,9 +170,6 @@ public:
   inline void reset(float x) { x_ = x; }
   inline float x(){ return x_; }
 
-public:
-  bool initialized_;
-
 private:
   float x_, k_;
   bool initialized_;
