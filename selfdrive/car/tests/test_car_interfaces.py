@@ -12,8 +12,11 @@ from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import gen_empty_fingerprint
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import all_known_cars
+from openpilot.selfdrive.car.fw_versions import FW_VERSIONS
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
+
+ALL_ECUS = list({ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()})
 
 
 def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
@@ -22,12 +25,8 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
                                                                      st.integers(min_value=0, max_value=64)) for key in
                                                 gen_empty_fingerprint()})
 
-  # just the most important fields
-  car_fw_strategy = st.lists(st.fixed_dictionaries({
-    'ecu': st.sampled_from(list(car.CarParams.Ecu.schema.enumerants.keys())),
-    # TODO: only use reasonable addrs for the paired ecu and brand/platform
-    'address': st.integers(min_value=0, max_value=0x800),
-  }))
+  # only pick from possible ecus to reduce search space
+  car_fw_strategy = st.lists(st.sampled_from(ALL_ECUS))
 
   params_strategy = st.fixed_dictionaries({
     'fingerprints': fingerprint_strategy,
@@ -36,7 +35,7 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
   })
 
   params: dict = draw(params_strategy)
-  params['car_fw'] = [car.CarParams.CarFw(**fw) for fw in params['car_fw']]
+  params['car_fw'] = [car.CarParams.CarFw(ecu=fw[0], address=fw[1], subAddress=fw[2] or 0) for fw in params['car_fw']]
   return params
 
 
