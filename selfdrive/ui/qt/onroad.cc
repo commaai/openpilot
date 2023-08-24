@@ -283,53 +283,42 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
 
   const bool cs_alive = sm.alive("controlsState");
   const bool nav_alive = sm.alive("navInstruction") && sm["navInstruction"].getValid();
-
   const auto cs = sm["controlsState"].getControlsState();
   const auto car_state = sm["carState"].getCarState();
   const auto nav_instruction = sm["navInstruction"].getNavInstruction();
 
   // Handle older routes where vCruiseCluster is not set
   float v_cruise =  cs.getVCruiseCluster() == 0.0 ? cs.getVCruise() : cs.getVCruiseCluster();
-  float set_speed = cs_alive ? v_cruise : SET_SPEED_NA;
-  bool cruise_set = set_speed > 0 && (int)set_speed != SET_SPEED_NA;
-  if (cruise_set && !s.scene.is_metric) {
-    set_speed *= KM_TO_MILE;
+  setSpeed = cs_alive ? v_cruise : SET_SPEED_NA;
+  is_cruise_set = setSpeed > 0 && (int)setSpeed != SET_SPEED_NA;
+  if (is_cruise_set && !s.scene.is_metric) {
+    setSpeed *= KM_TO_MILE;
   }
 
   // Handle older routes where vEgoCluster is not set
-  float v_ego;
-  if (car_state.getVEgoCluster() == 0.0 && !v_ego_cluster_seen) {
-    v_ego = car_state.getVEgo();
-  } else {
-    v_ego = car_state.getVEgoCluster();
-    v_ego_cluster_seen = true;
-  }
-  float cur_speed = cs_alive ? std::max<float>(0.0, v_ego) : 0.0;
-  cur_speed *= s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH;
+  v_ego_cluster_seen = v_ego_cluster_seen || car_state.getVEgoCluster() != 0.0;
+  float v_ego = v_ego_cluster_seen ? car_state.getVEgoCluster() : car_state.getVEgo();
+  speed = cs_alive ? std::max<float>(0.0, v_ego) : 0.0;
+  speed *= s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH;
 
   auto speed_limit_sign = nav_instruction.getSpeedLimitSign();
-  float speed_limit = nav_alive ? nav_instruction.getSpeedLimit() : 0.0;
-  speed_limit *= (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH);
+  speedLimit = nav_alive ? nav_instruction.getSpeedLimit() : 0.0;
+  speedLimit *= (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH);
 
-  setProperty("speedLimit", speed_limit);
-  setProperty("has_us_speed_limit", nav_alive && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::MUTCD);
-  setProperty("has_eu_speed_limit", nav_alive && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::VIENNA);
-
-  setProperty("is_cruise_set", cruise_set);
-  setProperty("is_metric", s.scene.is_metric);
-  setProperty("speed", cur_speed);
-  setProperty("setSpeed", set_speed);
-  setProperty("speedUnit", s.scene.is_metric ? tr("km/h") : tr("mph"));
-  setProperty("hideBottomIcons", (cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE));
-  setProperty("status", s.status);
+  has_us_speed_limit = (nav_alive && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::MUTCD);
+  has_eu_speed_limit = (nav_alive && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::VIENNA);
+  is_metric = s.scene.is_metric;
+  speedUnit =  s.scene.is_metric ? tr("km/h") : tr("mph");
+  hideBottomIcons = (cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
+  status = s.status;
 
   // update engageability/experimental mode button
   experimental_btn->updateState(s);
 
   // update DM icon
   auto dm_state = sm["driverMonitoringState"].getDriverMonitoringState();
-  setProperty("dmActive", dm_state.getIsActiveMode());
-  setProperty("rightHandDM", dm_state.getIsRHD());
+  dmActive = dm_state.getIsActiveMode();
+  rightHandDM = dm_state.getIsRHD();
   // DM icon transition
   dm_fade_state = std::clamp(dm_fade_state+0.2*(0.5-dmActive), 0.0, 1.0);
 
