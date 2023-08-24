@@ -200,8 +200,9 @@ class CarInterface(CarInterfaceBase):
 
     ret.centerToFront = ret.wheelbase * 0.44
 
-    # TODO: find a way to automatically determine if the BSM signals are flipped
-    ret.enableBsm = 0x3F6 in fingerprint[0] and candidate in TSS2_CAR # (TSS2_CAR or candidate in (CAR.CHR, CAR.CHRH))
+    # TODO: Some TSS-P platforms have BSM, but are flipped based on region or driving direction.
+    # Detect this and enable for C-HR and others
+    ret.enableBsm = 0x3F6 in fingerprint[0] and candidate in TSS2_CAR  # | {CAR.CHR, CAR.CHRH}
 
     # Detect smartDSU, which intercepts ACC_CMD from the DSU (or radar) allowing openpilot to send it
     if 0x2FF in fingerprint[0]:
