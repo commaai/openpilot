@@ -156,6 +156,7 @@ public:
   FirstOrderFilter(float x0, float ts, float dt, bool initialized = true) {
     k_ = (dt / ts) / (1.0 + dt / ts);
     x_ = x0;
+    initialized_ = initialized;
   }
   inline float update(float x) {
     if (initialized_) {
@@ -169,9 +170,12 @@ public:
   inline void reset(float x) { x_ = x; }
   inline float x(){ return x_; }
 
+public:
+  bool initialized_;
+
 private:
   float x_, k_;
-  bool initialized_;
+//  bool initialized_;
 };
 
 template<typename T>
