@@ -118,8 +118,8 @@ def hw_state_thread(end_event, hw_queue):
 
         # Log modem version once
         if AGNOS and ((modem_version is None) or (modem_nv is None)):
-          modem_version = HARDWARE.get_modem_version()  # pylint: disable=assignment-from-none
-          modem_nv = HARDWARE.get_modem_nv()  # pylint: disable=assignment-from-none
+          modem_version = HARDWARE.get_modem_version()
+          modem_nv = HARDWARE.get_modem_nv()
 
           if (modem_version is not None) and (modem_nv is not None):
             cloudlog.event("modem version", version=modem_version, nv=modem_nv)

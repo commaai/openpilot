@@ -97,7 +97,7 @@ def get_device_type():
 class Tici(HardwareBase):
   @cached_property
   def bus(self):
-    import dbus  # pylint: disable=import-error
+    import dbus
     return dbus.SystemBus()
 
   @cached_property
