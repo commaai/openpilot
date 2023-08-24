@@ -187,18 +187,19 @@ jobs:
     name: docker push
     runs-on: ubuntu-20.04
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
-    env:
-      PUSH_IMAGE: true
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: true
+    - name: Setup to push to repo
+      run: |
+        export PUSH_IMAGE=true
+        $DOCKER_LOGIN
     - uses: ./.github/workflows/setup
       with:
         git-lfs: false
     - name: Build and push CL Docker image
       run: |
-        $DOCKER_LOGIN
         eval "$BUILD_CL"
 
   static_analysis:
