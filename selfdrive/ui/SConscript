@@ -1,13 +1,17 @@
 import os
+import json
 Import('qt_env', 'arch', 'common', 'messaging', 'visionipc',
        'cereal', 'transformations')
 
 base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
              'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 
-maps = arch in ['larch64', 'x86_64']
+if arch == 'larch64':
+  base_libs.append('EGL')
 
-if maps and arch == 'x86_64':
+maps = arch in ['larch64', 'aarch64', 'x86_64']
+
+if maps and arch != 'larch64':
   rpath = [Dir(f"#third_party/mapbox-gl-native-qt/{arch}").srcnode().abspath]
   qt_env["RPATH"] += rpath
 
@@ -15,20 +19,23 @@ if arch == "Darwin":
   del base_libs[base_libs.index('OpenCL')]
   qt_env['FRAMEWORKS'] += ['OpenCL']
 
-widgets_src = ["ui.cc", "qt/util.cc", "qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
+qt_util = qt_env.Library("qt_util", ["#selfdrive/ui/qt/api.cc", "#selfdrive/ui/qt/util.cc"], LIBS=base_libs)
+widgets_src = ["ui.cc", "qt/widgets/input.cc", "qt/widgets/drive_stats.cc", "qt/widgets/wifi.cc",
                "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc",
                "qt/widgets/offroad_alerts.cc", "qt/widgets/prime.cc", "qt/widgets/keyboard.cc",
-               "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#third_party/qrcode/QrCode.cc", "qt/api.cc",
+               "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#third_party/qrcode/QrCode.cc",
                "qt/request_repeater.cc", "qt/qt_window.cc", "qt/offroad/networking.cc", "qt/offroad/wifiManager.cc"]
 
 qt_env['CPPDEFINES'] = []
 if maps:
   base_libs += ['qmapboxgl']
-  widgets_src += ["qt/maps/map_helpers.cc", "qt/maps/map_settings.cc", "qt/maps/map.cc"]
+  widgets_src += ["qt/maps/map_helpers.cc", "qt/maps/map_settings.cc", "qt/maps/map.cc", "qt/maps/map_panel.cc",
+                  "qt/maps/map_eta.cc", "qt/maps/map_instructions.cc"]
   qt_env['CPPDEFINES'] += ["ENABLE_MAPS"]
 
 widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
-qt_libs = [widgets] + base_libs
+Export('widgets')
+qt_libs = [widgets, qt_util] + base_libs
 
 # build assets
 assets = "#selfdrive/assets/assets.cc"
@@ -52,9 +59,28 @@ qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_libs)
 # build main UI
 qt_src = ["main.cc", "qt/sidebar.cc", "qt/onroad.cc", "qt/body.cc",
           "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc",
-          "qt/offroad/onboarding.cc", "qt/offroad/driverview.cc"]
+          "qt/offroad/software_settings.cc", "qt/offroad/onboarding.cc",
+          "qt/offroad/driverview.cc", "qt/offroad/experimental_mode.cc"]
 qt_env.Program("_ui", qt_src + [asset_obj], LIBS=qt_libs)
+if GetOption('test'):
+  qt_src.remove("main.cc")  # replaced by test_runner
+  qt_env.Program('tests/test_translations', [asset_obj, 'tests/test_runner.cc', 'tests/test_translations.cc'] + qt_src, LIBS=qt_libs)
+  qt_env.Program('tests/ui_snapshot', [asset_obj, "tests/ui_snapshot.cc"] + qt_src, LIBS=qt_libs)
 
+
+# build translation files
+with open(File("translations/languages.json").abspath) as f:
+  languages = json.loads(f.read())
+translation_sources = [f"#selfdrive/ui/translations/{l}.ts" for l in languages.values()]
+translation_targets = [src.replace(".ts", ".qm") for src in translation_sources]
+lrelease_bin = 'third_party/qt5/larch64/bin/lrelease' if arch == 'larch64' else 'lrelease'
+
+lupdate = qt_env.Command(translation_sources, qt_src, "selfdrive/ui/update_translations.py")
+lrelease = qt_env.Command(translation_targets, translation_sources, f"{lrelease_bin} $SOURCES")
+qt_env.Depends(lrelease, lupdate)
+qt_env.NoClean(translation_sources)
+qt_env.Precious(translation_sources)
+qt_env.NoCache(lupdate)
 
 # setup and factory resetter
 if GetOption('extras'):
@@ -64,7 +90,7 @@ if GetOption('extras'):
 
 
 if GetOption('extras'):
-  # buidl updater UI
+  # build updater UI
   qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
 
   # build mui
@@ -79,7 +105,7 @@ if GetOption('extras'):
   installers = [
     ("openpilot", release),
     ("openpilot_test", f"{release}-staging"),
-    ("openpilot_nightly", "master-ci"),
+    ("openpilot_nightly", "nightly"),
     ("openpilot_internal", "master"),
     ("dashcam", dashcam),
     ("dashcam_test", f"{dashcam}-staging"),
@@ -104,17 +130,6 @@ if GetOption('extras'):
     # keep installers small
     assert f[0].get_size() < 300*1e3
 
-
-# build headless replay
-if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
-  qt_env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
-
-  replay_lib_src = ["replay/replay.cc", "replay/consoleui.cc", "replay/camera.cc", "replay/filereader.cc", "replay/logreader.cc", "replay/framereader.cc", "replay/route.cc", "replay/util.cc"]
-
-  replay_lib = qt_env.Library("qt_replay", replay_lib_src, LIBS=base_libs)
-  replay_libs = [replay_lib, 'avutil', 'avcodec', 'avformat', 'bz2', 'curl', 'yuv', 'ncurses'] + qt_libs
-  qt_env.Program("replay/replay", ["replay/main.cc"], LIBS=replay_libs)
+# build watch3
+if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
   qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'json11', 'zmq', 'visionipc', 'messaging'])
-
-  if GetOption('test'):
-    qt_env.Program('replay/tests/test_replay', ['replay/tests/test_runner.cc', 'replay/tests/test_replay.cc'], LIBS=[replay_libs])

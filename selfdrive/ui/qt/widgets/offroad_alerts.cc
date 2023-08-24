@@ -1,11 +1,16 @@
 #include "selfdrive/ui/qt/widgets/offroad_alerts.h"
 
+#include <algorithm>
+#include <string>
+#include <vector>
+#include <utility>
+
 #include <QHBoxLayout>
 #include <QJsonDocument>
 #include <QJsonObject>
 
 #include "common/util.h"
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
 AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent) {
@@ -22,12 +27,12 @@ AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent
   QHBoxLayout *footer_layout = new QHBoxLayout();
   main_layout->addLayout(footer_layout);
 
-  QPushButton *dismiss_btn = new QPushButton("Close");
+  QPushButton *dismiss_btn = new QPushButton(tr("Close"));
   dismiss_btn->setFixedSize(400, 125);
   footer_layout->addWidget(dismiss_btn, 0, Qt::AlignBottom | Qt::AlignLeft);
   QObject::connect(dismiss_btn, &QPushButton::clicked, this, &AbstractAlert::dismiss);
 
-  snooze_btn = new QPushButton("Snooze Update");
+  snooze_btn = new QPushButton(tr("Snooze Update"));
   snooze_btn->setVisible(false);
   snooze_btn->setFixedSize(550, 125);
   footer_layout->addWidget(snooze_btn, 0, Qt::AlignBottom | Qt::AlignRight);
@@ -38,7 +43,7 @@ AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent
   snooze_btn->setStyleSheet(R"(color: white; background-color: #4F4F4F;)");
 
   if (hasRebootBtn) {
-    QPushButton *rebootBtn = new QPushButton("Reboot and Update");
+    QPushButton *rebootBtn = new QPushButton(tr("Reboot and Update"));
     rebootBtn->setFixedSize(600, 125);
     footer_layout->addWidget(rebootBtn, 0, Qt::AlignBottom | Qt::AlignRight);
     QObject::connect(rebootBtn, &QPushButton::clicked, [=]() { Hardware::reboot(); });
@@ -92,7 +97,11 @@ int OffroadAlert::refresh() {
     std::string bytes = params.get(key);
     if (bytes.size()) {
       auto doc_par = QJsonDocument::fromJson(bytes.c_str());
-      text = doc_par["text"].toString();
+      text = tr(doc_par["text"].toString().toUtf8().data());
+      auto extra = doc_par["extra"].toString();
+      if (!extra.isEmpty()) {
+        text = text.arg(extra);
+      }
     }
     label->setText(text);
     label->setVisible(!text.isEmpty());
@@ -112,7 +121,7 @@ UpdateAlert::UpdateAlert(QWidget *parent) : AbstractAlert(true, parent) {
 bool UpdateAlert::refresh() {
   bool updateAvailable = params.getBool("UpdateAvailable");
   if (updateAvailable) {
-    releaseNotes->setText(params.get("ReleaseNotes").c_str());
+    releaseNotes->setText(params.get("UpdaterNewReleaseNotes").c_str());
   }
   return updateAvailable;
 }

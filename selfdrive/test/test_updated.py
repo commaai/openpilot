@@ -9,8 +9,8 @@ import signal
 import subprocess
 import random
 
-from common.basedir import BASEDIR
-from common.params import Params
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.params import Params
 
 
 class TestUpdated(unittest.TestCase):
@@ -113,7 +113,7 @@ class TestUpdated(unittest.TestCase):
 
   def _wait_for_update(self, timeout=30, clear_param=False):
     if clear_param:
-      self.params.delete("LastUpdateTime")
+      self.params.remove("LastUpdateTime")
 
     self._update_now()
     t = self._read_param("LastUpdateTime", timeout=timeout)
@@ -166,7 +166,7 @@ class TestUpdated(unittest.TestCase):
     last_update_time = datetime.datetime.fromisoformat(t)
     td = datetime.datetime.utcnow() - last_update_time
     self.assertLess(td.total_seconds(), 10)
-    self.params.delete("LastUpdateTime")
+    self.params.remove("LastUpdateTime")
 
     # wait a bit for the rest of the params to be written
     time.sleep(0.1)
@@ -232,7 +232,7 @@ class TestUpdated(unittest.TestCase):
 
     # run for a cycle with no update
     self._wait_for_update(clear_param=True)
-    self.params.delete("LastUpdateTime")
+    self.params.remove("LastUpdateTime")
     first_mtime = os.path.getmtime(overlay_init_fn)
 
     # touch a file in the basedir

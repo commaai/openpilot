@@ -4,7 +4,7 @@
 
 ## Installation
 
-Once you've cloned and are in openpilot, this command will download PlotJuggler and install our plugins:
+Once you've [set up the openpilot environment](../README.md), this command will download PlotJuggler and install our plugins:
 
 `cd tools/plotjuggler && ./juggle.py --install`
 
@@ -12,7 +12,8 @@ Once you've cloned and are in openpilot, this command will download PlotJuggler 
 
 ```
 $ ./juggle.py -h
-usage: juggle.py [-h] [--demo] [--qlog] [--can] [--stream] [--layout [LAYOUT]] [--install] [--dbc DBC] [route_or_segment_name] [segment_count]
+usage: juggle.py [-h] [--demo] [--qlog] [--ci] [--can] [--stream] [--layout [LAYOUT]] [--install] [--dbc DBC]
+                 [route_or_segment_name] [segment_count]
 
 A helper to run PlotJuggler on openpilot routes
 
@@ -25,21 +26,23 @@ optional arguments:
   -h, --help            show this help message and exit
   --demo                Use the demo route instead of providing one (default: False)
   --qlog                Use qlogs (default: False)
+  --ci                  Download data from openpilot CI bucket (default: False)
   --can                 Parse CAN data (default: False)
   --stream              Start PlotJuggler in streaming mode (default: False)
   --layout [LAYOUT]     Run PlotJuggler with a pre-defined layout (default: None)
   --install             Install or update PlotJuggler + plugins (default: False)
-  --dbc DBC             Set the DBC name to load for parsing CAN data. If not set, the DBC will be
-                        automatically inferred from the logs. (default: None)
+  --dbc DBC             Set the DBC name to load for parsing CAN data. If not set, the DBC will be automatically
+                        inferred from the logs. (default: None)
+
 ```
 
 Examples using route name:
 
-`./juggle.py "4cf7a6ad03080c90|2021-09-29--13-46-36"`
+`./juggle.py "a2a0ccea32023010|2023-07-27--13-01-19"`
 
 Examples using segment name:
 
-`./juggle.py "4cf7a6ad03080c90|2021-09-29--13-46-36--1"`
+`./juggle.py "a2a0ccea32023010|2023-07-27--13-01-19--1"`
 
 ## Streaming
 

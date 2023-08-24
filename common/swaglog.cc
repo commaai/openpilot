@@ -5,6 +5,7 @@
 #include "common/swaglog.h"
 
 #include <cassert>
+#include <cstdarg>
 #include <cstring>
 #include <limits>
 #include <mutex>
@@ -15,7 +16,7 @@
 
 #include "common/util.h"
 #include "common/version.h"
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 
 class SwaglogState : public LogState {
  public:
@@ -66,8 +67,9 @@ static void log(int levelnum, const char* filename, int lineno, const char* func
   char levelnum_c = levelnum;
   zmq_send(s.sock, (levelnum_c + log_s).c_str(), log_s.length() + 1, ZMQ_NOBLOCK);
 }
+
 static void cloudlog_common(int levelnum, const char* filename, int lineno, const char* func,
-                            char* msg_buf, json11::Json::object msg_j={}) {
+                            char* msg_buf, const json11::Json::object &msg_j={}) {
   std::lock_guard lk(s.lock);
   if (!s.initialized) s.initialize();
 
@@ -133,4 +135,3 @@ void cloudlog_te(int levelnum, const char* filename, int lineno, const char* fun
   cloudlog_t_common(levelnum, filename, lineno, func, frame_id, fmt, args);
   va_end(args);
 }
-

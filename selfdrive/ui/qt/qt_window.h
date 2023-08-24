@@ -12,10 +12,9 @@
 #include <QPlatformSurfaceEvent>
 #endif
 
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 
 const QString ASSET_PATH = ":/";
-
-const int WIDE_WIDTH = 2160;
+const QSize DEVICE_SCREEN_SIZE = {2160, 1080};
 
 void setMainWindow(QWidget *w);

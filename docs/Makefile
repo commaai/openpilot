@@ -32,7 +32,7 @@ clean:
 	@echo "Copying docs & config to build folder..."
 	cp -a "$(DOCSDIR)" "$(BUILDDIR)"
 	cd "$(OPENPILOT_ROOT)" && \
-		find . -type f \( -name "*.md" -o -name "*.rst" -o -name "*.png" -o -name "*.jpg" \) \
+		find . -type f \( -name "*.md" -o -name "*.rst" -o -name "*.png" -o -name "*.jpg" -o -name "*.svg" \) \
 			-not -path "*/.*" \
 			-not -path "./build/*" \
 			-not -path "./docs/*" \
@@ -41,7 +41,7 @@ clean:
 
 	@echo "Building rst files..."
 	sphinx-apidoc -o "$(DOCSBUILDDIR)" ../ \
-		../xx ../laika_repo ../rednose_repo ../pyextra ../notebooks ../panda_jungle \
+		../xx ../laika_repo ../rednose_repo ../notebooks ../panda_jungle \
 		../third_party \
 		../panda/examples \
 		../scripts \

@@ -2,26 +2,28 @@
 # cython: language_level = 3
 from libcpp cimport bool
 from libcpp.string cimport string
+from libcpp.vector cimport vector
 import threading
 
 cdef extern from "common/params.h":
   cpdef enum ParamKeyType:
     PERSISTENT
     CLEAR_ON_MANAGER_START
-    CLEAR_ON_IGNITION_ON
-    CLEAR_ON_IGNITION_OFF
+    CLEAR_ON_ONROAD_TRANSITION
+    CLEAR_ON_OFFROAD_TRANSITION
     ALL
 
   cdef cppclass c_Params "Params":
     c_Params(string) nogil
     string get(string, bool) nogil
-    bool getBool(string) nogil
+    bool getBool(string, bool) nogil
     int remove(string) nogil
     int put(string, string) nogil
     int putBool(string, bool) nogil
     bool checkKey(string) nogil
     string getParamPath(string) nogil
     void clearAll(ParamKeyType)
+    vector[string] allKeys()
 
 
 def ensure_bytes(v):
@@ -66,11 +68,11 @@ cdef class Params:
 
     return val if encoding is None else val.decode(encoding)
 
-  def get_bool(self, key):
+  def get_bool(self, key, bool block=False):
     cdef string k = self.check_key(key)
     cdef bool r
     with nogil:
-      r = self.p.getBool(k)
+      r = self.p.getBool(k, block)
     return r
 
   def put(self, key, dat):
@@ -90,7 +92,7 @@ cdef class Params:
     with nogil:
       self.p.putBool(k, val)
 
-  def delete(self, key):
+  def remove(self, key):
     cdef string k = self.check_key(key)
     with nogil:
       self.p.remove(k)
@@ -99,12 +101,11 @@ cdef class Params:
     cdef string key_bytes = ensure_bytes(key)
     return self.p.getParamPath(key_bytes).decode("utf-8")
 
-def put_nonblocking(key, val, d=""):
-  def f(key, val):
-    params = Params(d)
-    cdef string k = ensure_bytes(key)
-    params.put(k, val)
+  def all_keys(self):
+    return self.p.allKeys()
 
-  t = threading.Thread(target=f, args=(key, val))
-  t.start()
-  return t
+def put_nonblocking(key, val, d=""):
+  threading.Thread(target=lambda: Params(d).put(key, val)).start()
+
+def put_bool_nonblocking(key, bool val, d=""):
+  threading.Thread(target=lambda: Params(d).put_bool(key, val)).start()

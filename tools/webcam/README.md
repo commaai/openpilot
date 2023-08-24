@@ -1,3 +1,5 @@
+# NOTE: this README is outdated. #24590 tracks adding back webcam support
+
 # Run openpilot with webcam on PC
 
 What's needed:
@@ -16,21 +18,21 @@ git clone https://github.com/commaai/openpilot.git
 - Follow [this readme](https://github.com/commaai/openpilot/tree/master/tools) to install the requirements
 - Add line "export PYTHONPATH=$HOME/openpilot" to your ~/.bashrc
 - Install tensorflow 2.2 and nvidia drivers: nvidia-xxx/cuda10.0/cudnn7.6.5
-- Install [OpenCL Driver](http://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/15532/l_opencl_p_18.1.0.015.tgz)
+- Install [OpenCL Driver](https://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/15532/l_opencl_p_18.1.0.015.tgz)
 - Install [OpenCV4](https://www.pyimagesearch.com/2018/08/15/how-to-install-opencv-4-on-ubuntu/) (ignore the Python part)
 
 ## Build openpilot for webcam
 ```
 cd ~/openpilot
 ```
-- check out selfdrive/camerad/cameras/camera_webcam.cc lines 72 and 146 before building if any camera is upside down
+- check out system/camerad/cameras/camera_webcam.cc lines 72 and 146 before building if any camera is upside down
 ```
 USE_WEBCAM=1 scons -j$(nproc)
 ```
 
 ## Connect the hardware
 - Connect the road facing camera first, then the driver facing camera
-- (default indexes are 1 and 2; can be modified in selfdrive/camerad/cameras/camera_webcam.cc)
+- (default indexes are 1 and 2; can be modified in system/camerad/cameras/camera_webcam.cc)
 - Connect your computer to panda
 
 ## GO

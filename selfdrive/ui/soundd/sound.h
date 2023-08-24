@@ -1,8 +1,12 @@
+#pragma once
+
+#include <tuple>
+
 #include <QMap>
 #include <QSoundEffect>
 #include <QString>
 
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 #include "selfdrive/ui/ui.h"
 
 const std::tuple<AudibleAlert, QString, int> sound_list[] = {
@@ -27,8 +31,8 @@ protected:
   void update();
   void setAlert(const Alert &alert);
 
+  SubMaster sm;
   Alert current_alert = {};
   QMap<AudibleAlert, QPair<QSoundEffect *, int>> sounds;
-  SubMaster sm;
-  uint64_t started_frame;
+  int current_volume = -1;
 };

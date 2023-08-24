@@ -28,11 +28,9 @@ selfdrive
 camerad
 ^^^^^^^
 .. autodoxygenindex::
-   :project: selfdrive_camerad_cameras
+   :project: system_camerad_cameras
 .. autodoxygenindex::
-   :project: selfdrive_camerad_transforms
-.. autodoxygenindex::
-   :project: selfdrive_camerad_imgproc
+   :project: system_camerad_imgproc
 
 locationd
 ^^^^^^^^^
@@ -54,7 +52,7 @@ soundd
 replay
 """"""
 .. autodoxygenindex::
-   :project: selfdrive_ui_replay
+   :project: tools_replay
 
 qt
 ""
@@ -75,8 +73,6 @@ modeld
 .. autodoxygenindex::
    :project: selfdrive_modeld_models
 .. autodoxygenindex::
-   :project: selfdrive_modeld_thneed
-.. autodoxygenindex::
    :project: selfdrive_modeld_runners
 
 common
@@ -87,7 +83,7 @@ common
 sensorsd
 ^^^^^^^^
 .. autodoxygenindex::
-   :project: selfdrive_sensord_sensors
+   :project: system_sensord_sensors
 
 boardd
 ^^^^^^

@@ -1,13 +1,22 @@
 #!/usr/bin/env python3
+from collections import defaultdict
+import os
+import re
 import unittest
 
-from selfdrive.car.car_helpers import interfaces, get_interface_attr
-from selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_info
+from openpilot.common.basedir import BASEDIR
+from openpilot.selfdrive.car.car_helpers import interfaces, get_interface_attr
+from openpilot.selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_info
+from openpilot.selfdrive.car.docs_definitions import Cable, Column, PartType, Star
+from openpilot.selfdrive.car.honda.values import CAR as HONDA
+from openpilot.selfdrive.debug.dump_car_info import dump_car_info
+from openpilot.selfdrive.debug.print_docs_diff import print_car_info_diff
 
 
 class TestCarDocs(unittest.TestCase):
-  def setUp(self):
-    self.all_cars = get_all_car_info()
+  @classmethod
+  def setUpClass(cls):
+    cls.all_cars = get_all_car_info()
 
   def test_generator(self):
     generated_cars_md = generate_cars_md(self.all_cars, CARS_MD_TEMPLATE)
@@ -15,27 +24,72 @@ class TestCarDocs(unittest.TestCase):
       current_cars_md = f.read()
 
     self.assertEqual(generated_cars_md, current_cars_md,
-                     "Run selfdrive/car/docs.py to generate new supported cars documentation")
+                     "Run selfdrive/car/docs.py to update the compatibility documentation")
+
+  def test_docs_diff(self):
+    dump_path = os.path.join(BASEDIR, "selfdrive", "car", "tests", "cars_dump")
+    dump_car_info(dump_path)
+    print_car_info_diff(dump_path)
+    os.remove(dump_path)
+
+  def test_duplicate_years(self):
+    make_model_years = defaultdict(list)
+    for car in self.all_cars:
+      with self.subTest(car_info_name=car.name):
+        make_model = (car.make, car.model)
+        for year in car.year_list:
+          self.assertNotIn(year, make_model_years[make_model], f"{car.name}: Duplicate model year")
+          make_model_years[make_model].append(year)
 
   def test_missing_car_info(self):
     all_car_info_platforms = get_interface_attr("CAR_INFO", combine_brands=True).keys()
     for platform in sorted(interfaces.keys()):
-      if platform not in all_car_info_platforms:
-        self.fail("Platform: {} doesn't exist in CarInfo".format(platform))
+      with self.subTest(platform=platform):
+        self.assertTrue(platform in all_car_info_platforms, "Platform: {} doesn't exist in CarInfo".format(platform))
 
   def test_naming_conventions(self):
-    # Asserts market-standard car naming conventions by make
+    # Asserts market-standard car naming conventions by brand
     for car in self.all_cars:
-      tokens = car.model.lower().split(" ")
-      if car.car_name == "hyundai":
-        self.assertNotIn("phev", tokens, "Use `Plug-in Hybrid`")
-        self.assertNotIn("hev", tokens, "Use `Hybrid`")
-        self.assertNotIn("ev", tokens, "Use `Electric`")
-        if "plug-in hybrid" in car.model.lower():
-          self.assertIn("Plug-in Hybrid", car.model, "Use correct capitalization")
-      elif car.car_name == "toyota":
-        if "rav4" in tokens:
-          self.assertIn("RAV4", car.model, "Use correct capitalization")
+      with self.subTest(car=car):
+        tokens = car.model.lower().split(" ")
+        if car.car_name == "hyundai":
+          self.assertNotIn("phev", tokens, "Use `Plug-in Hybrid`")
+          self.assertNotIn("hev", tokens, "Use `Hybrid`")
+          if "plug-in hybrid" in car.model.lower():
+            self.assertIn("Plug-in Hybrid", car.model, "Use correct capitalization")
+          if car.make != "Kia":
+            self.assertNotIn("ev", tokens, "Use `Electric`")
+        elif car.car_name == "toyota":
+          if "rav4" in tokens:
+            self.assertIn("RAV4", car.model, "Use correct capitalization")
+
+  def test_torque_star(self):
+    # Asserts brand-specific assumptions around steering torque star
+    for car in self.all_cars:
+      with self.subTest(car=car):
+        # honda sanity check, it's the definition of a no torque star
+        if car.car_fingerprint in (HONDA.ACCORD, HONDA.CIVIC, HONDA.CRV, HONDA.ODYSSEY, HONDA.PILOT):
+          self.assertEqual(car.row[Column.STEERING_TORQUE], Star.EMPTY, f"{car.name} has full torque star")
+        elif car.car_name in ("toyota", "hyundai"):
+          self.assertNotEqual(car.row[Column.STEERING_TORQUE], Star.EMPTY, f"{car.name} has no torque star")
+
+  def test_year_format(self):
+    for car in self.all_cars:
+      with self.subTest(car=car):
+        self.assertIsNone(re.search(r"\d{4}-\d{4}", car.name), f"Format years correctly: {car.name}")
+
+  def test_harnesses(self):
+    for car in self.all_cars:
+      with self.subTest(car=car):
+        if car.name == "comma body":
+          raise unittest.SkipTest
+
+        car_part_type = [p.part_type for p in car.car_parts.all_parts()]
+        car_parts = list(car.car_parts.all_parts())
+        self.assertTrue(len(car_parts) > 0, f"Need to specify car parts: {car.name}")
+        self.assertTrue(car_part_type.count(PartType.connector) == 1, f"Need to specify one harness connector: {car.name}")
+        self.assertTrue(car_part_type.count(PartType.mount) == 1, f"Need to specify one mount: {car.name}")
+        self.assertTrue(Cable.right_angle_obd_c_cable_1_5ft in car_parts, f"Need to specify a right angle OBD-C cable (1.5ft): {car.name}")
 
 
 if __name__ == "__main__":

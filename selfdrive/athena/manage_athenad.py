@@ -3,10 +3,10 @@
 import time
 from multiprocessing import Process
 
-from common.params import Params
-from selfdrive.manager.process import launcher
-from selfdrive.swaglog import cloudlog
-from selfdrive.version import get_version, is_dirty
+from openpilot.common.params import Params
+from openpilot.selfdrive.manager.process import launcher
+from openpilot.system.swaglog import cloudlog
+from openpilot.system.version import get_version, is_dirty
 
 ATHENA_MGR_PID_PARAM = "AthenadPid"
 
@@ -27,7 +27,7 @@ def main():
   except Exception:
     cloudlog.exception("manage_athenad.exception")
   finally:
-    params.delete(ATHENA_MGR_PID_PARAM)
+    params.remove(ATHENA_MGR_PID_PARAM)
 
 
 if __name__ == '__main__':

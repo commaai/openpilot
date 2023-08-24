@@ -9,11 +9,11 @@ import time
 import glob
 from typing import NoReturn
 
-from common.file_helpers import mkdirs_exists_ok
-from selfdrive.loggerd.config import ROOT
-import selfdrive.sentry as sentry
-from selfdrive.swaglog import cloudlog
-from selfdrive.version import get_commit
+from openpilot.common.file_helpers import mkdirs_exists_ok
+from openpilot.system.loggerd.config import ROOT
+import openpilot.selfdrive.sentry as sentry
+from openpilot.system.swaglog import cloudlog
+from openpilot.system.version import get_commit
 
 MAX_SIZE = 1_000_000 * 100  # allow up to 100M
 MAX_TOMBSTONE_FN_LEN = 62  # 85 - 23 ("<dongle id>/crash/")
@@ -54,53 +54,12 @@ def get_tombstones():
       with os.scandir(folder) as d:
 
         # Loop over first 1000 directory entries
-        for _, f in zip(range(1000), d):
+        for _, f in zip(range(1000), d, strict=False):
           if f.name.startswith("tombstone"):
             files.append((f.path, int(f.stat().st_ctime)))
           elif f.name.endswith(".crash") and f.stat().st_mode == 0o100640:
             files.append((f.path, int(f.stat().st_ctime)))
   return files
-
-
-def report_tombstone_android(fn):
-  f_size = os.path.getsize(fn)
-  if f_size > MAX_SIZE:
-    cloudlog.error(f"Tombstone {fn} too big, {f_size}. Skipping...")
-    return
-
-  with open(fn, encoding='ISO-8859-1') as f:
-    contents = f.read()
-
-  message = " ".join(contents.split('\n')[5:7])
-
-  # Cut off pid/tid, since that varies per run
-  name_idx = message.find('name')
-  if name_idx >= 0:
-    message = message[name_idx:]
-
-  executable = ""
-  start_exe_idx = message.find('>>> ')
-  end_exe_idx = message.find(' <<<')
-  if start_exe_idx >= 0 and end_exe_idx >= 0:
-    executable = message[start_exe_idx + 4:end_exe_idx]
-
-  # Cut off fault addr
-  fault_idx = message.find(', fault addr')
-  if fault_idx >= 0:
-    message = message[:fault_idx]
-
-  sentry.report_tombstone(fn, message, contents)
-
-  # Copy crashlog to upload folder
-  clean_path = executable.replace('./', '').replace('/', '_')
-  date = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
-
-  new_fn = f"{date}_{get_commit(default='nocommit')[:8]}_{safe_fn(clean_path)}"[:MAX_TOMBSTONE_FN_LEN]
-
-  crashlog_dir = os.path.join(ROOT, "crash")
-  mkdirs_exists_ok(crashlog_dir)
-
-  shutil.copy(fn, os.path.join(crashlog_dir, new_fn))
 
 
 def report_tombstone_apport(fn):
@@ -199,7 +158,7 @@ def main() -> NoReturn:
         if fn.endswith(".crash"):
           report_tombstone_apport(fn)
         else:
-          report_tombstone_android(fn)
+          cloudlog.error(f"unknown crash type: {fn}")
       except Exception:
         cloudlog.exception(f"Error reporting tombstone {fn}")
 

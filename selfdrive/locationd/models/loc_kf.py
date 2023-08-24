@@ -5,33 +5,14 @@ import sys
 import numpy as np
 import sympy as sp
 
-from selfdrive.locationd.models.constants import ObservationKind
 from rednose.helpers.ekf_sym import EKF_sym, gen_code
 from rednose.helpers.lst_sq_computer import LstSqComputer
 from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rotate
 
+from openpilot.selfdrive.locationd.models.constants import ObservationKind
+from openpilot.selfdrive.locationd.models.gnss_helpers import parse_pr, parse_prr
+
 EARTH_GM = 3.986005e14  # m^3/s^2 (gravitational constant * mass of earth)
-
-
-def parse_prr(m):
-  from laika.raw_gnss import GNSSMeasurement
-  sat_pos_vel_i = np.concatenate((m[GNSSMeasurement.SAT_POS],
-                                  m[GNSSMeasurement.SAT_VEL]))
-  R_i = np.atleast_2d(m[GNSSMeasurement.PRR_STD]**2)
-  z_i = m[GNSSMeasurement.PRR]
-  return z_i, R_i, sat_pos_vel_i
-
-
-def parse_pr(m):
-  from laika.raw_gnss import GNSSMeasurement
-  pseudorange = m[GNSSMeasurement.PR]
-  pseudorange_stdev = m[GNSSMeasurement.PR_STD]
-  sat_pos_freq_i = np.concatenate((m[GNSSMeasurement.SAT_POS],
-                                   np.array([m[GNSSMeasurement.GLONASS_FREQ]])))
-  z_i = np.atleast_1d(pseudorange)
-  R_i = np.atleast_2d(pseudorange_stdev**2)
-  return z_i, R_i, sat_pos_freq_i
-
 
 class States():
   ECEF_POS = slice(0, 3)  # x, y and z in ECEF in meters
@@ -44,15 +25,16 @@ class States():
   ODO_SCALE_UNUSED = slice(18, 19)  # odometer scale
   ACCELERATION = slice(19, 22)  # Acceleration in device frame in m/s**2
   FOCAL_SCALE_UNUSED = slice(22, 23)  # focal length scale
-  IMU_OFFSET = slice(23, 26)  # imu offset angles in radians
+  IMU_FROM_DEVICE_EULER = slice(23, 26)  # imu offset angles in radians
   GLONASS_BIAS = slice(26, 27)  # GLONASS bias in m expressed as bias + freq_num*freq_slope
   GLONASS_FREQ_SLOPE = slice(27, 28)  # GLONASS bias in m expressed as bias + freq_num*freq_slope
   CLOCK_ACCELERATION = slice(28, 29)  # clock acceleration in light-meters/s**2,
   ACCELEROMETER_SCALE_UNUSED = slice(29, 30)  # scale of mems accelerometer
   ACCELEROMETER_BIAS = slice(30, 33)  # bias of mems accelerometer
   # TODO the offset is likely a translation of the sensor, not a rotation of the camera
-  WIDE_CAM_OFFSET = slice(33, 36)  # wide camera offset angles in radians (tici only)
-  # We curently do not use ACCELEROMETER_SCALE to avoid instability due to too many free variables (ACCELEROMETER_SCALE, ACCELEROMETER_BIAS, IMU_OFFSET).
+  WIDE_FROM_DEVICE_EULER = slice(33, 36)  # wide camera offset angles in radians (tici only)
+  # We currently do not use ACCELEROMETER_SCALE to avoid instability due to too many free variables
+  # (ACCELEROMETER_SCALE, ACCELEROMETER_BIAS, IMU_FROM_DEVICE_EULER).
   # From experiments we see that ACCELEROMETER_BIAS is more correct than ACCELEROMETER_SCALE
 
   # Error-state has different slices because it is an ESKF
@@ -66,13 +48,13 @@ class States():
   ODO_SCALE_ERR_UNUSED = slice(17, 18)
   ACCELERATION_ERR = slice(18, 21)
   FOCAL_SCALE_ERR_UNUSED = slice(21, 22)
-  IMU_OFFSET_ERR = slice(22, 25)
+  IMU_FROM_DEVICE_EULER_ERR = slice(22, 25)
   GLONASS_BIAS_ERR = slice(25, 26)
   GLONASS_FREQ_SLOPE_ERR = slice(26, 27)
   CLOCK_ACCELERATION_ERR = slice(27, 28)
   ACCELEROMETER_SCALE_ERR_UNUSED = slice(28, 29)
   ACCELEROMETER_BIAS_ERR = slice(29, 32)
-  WIDE_CAM_OFFSET_ERR = slice(32, 35)
+  WIDE_FROM_DEVICE_EULER_ERR = slice(32, 35)
 
 
 class LocKalman():
@@ -110,22 +92,6 @@ class LocKalman():
                        0.05**2, 0.05**2, 0.05**2,
                        0.01**2, 0.01**2, 0.01**2])
 
-  # process noise
-  Q = np.diag([0.03**2, 0.03**2, 0.03**2,
-               0.0**2, 0.0**2, 0.0**2,
-               0.0**2, 0.0**2, 0.0**2,
-               0.1**2, 0.1**2, 0.1**2,
-               (.1)**2, (0.0)**2,
-               (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
-               (0.02 / 100)**2,
-               3**2, 3**2, 3**2,
-               0.001**2,
-               (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2,
-               (.1)**2, (.01)**2,
-               0.005**2,
-               (0.02 / 100)**2,
-               (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
-               (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2])
 
   # measurements that need to pass mahalanobis distance outlier rejector
   maha_test_kinds = [ObservationKind.ORB_FEATURES, ObservationKind.ORB_FEATURES_WIDE]  # , ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_RATE]
@@ -159,15 +125,15 @@ class LocKalman():
     cd = state[States.CLOCK_DRIFT, :]
     roll_bias, pitch_bias, yaw_bias = state[States.GYRO_BIAS, :]
     acceleration = state[States.ACCELERATION, :]
-    imu_angles = state[States.IMU_OFFSET, :]
-    imu_angles[0, 0] = 0  # not observable enough
-    imu_angles[2, 0] = 0  # not observable enough
+    imu_from_device_euler = state[States.IMU_FROM_DEVICE_EULER, :]
+    imu_from_device_euler[0, 0] = 0  # not observable enough
+    imu_from_device_euler[2, 0] = 0  # not observable enough
     glonass_bias = state[States.GLONASS_BIAS, :]
     glonass_freq_slope = state[States.GLONASS_FREQ_SLOPE, :]
     ca = state[States.CLOCK_ACCELERATION, :]
     accel_bias = state[States.ACCELEROMETER_BIAS, :]
-    wide_cam_angles = state[States.WIDE_CAM_OFFSET, :]
-    wide_cam_angles[0, 0] = 0  # not observable enough
+    wide_from_device_euler = state[States.WIDE_FROM_DEVICE_EULER, :]
+    wide_from_device_euler[0, 0] = 0  # not observable enough
 
     dt = sp.Symbol('dt')
 
@@ -225,9 +191,9 @@ class LocKalman():
 
     # Observation matrix modifier
     H_mod_sym = sp.Matrix(np.zeros((dim_state, dim_state_err)))
-    for p_idx, p_err_idx in zip(p_idxs, p_err_idxs):
+    for p_idx, p_err_idx in zip(p_idxs, p_err_idxs, strict=True):
       H_mod_sym[p_idx[0]:p_idx[1], p_err_idx[0]:p_err_idx[1]] = np.eye(p_idx[1] - p_idx[0])
-    for q_idx, q_err_idx in zip(q_idxs, q_err_idxs):
+    for q_idx, q_err_idx in zip(q_idxs, q_err_idxs, strict=True):
       H_mod_sym[q_idx[0]:q_idx[1], q_err_idx[0]:q_err_idx[1]] = 0.5 * quat_matrix_r(state[q_idx[0]:q_idx[1]])[:, 1:]
 
     # these error functions are defined so that say there
@@ -239,17 +205,17 @@ class LocKalman():
     delta_x = sp.MatrixSymbol('delta_x', dim_state_err, 1)
 
     err_function_sym = sp.Matrix(np.zeros((dim_state, 1)))
-    for q_idx, q_err_idx in zip(q_idxs, q_err_idxs):
+    for q_idx, q_err_idx in zip(q_idxs, q_err_idxs, strict=True):
       delta_quat = sp.Matrix(np.ones(4))
       delta_quat[1:, :] = sp.Matrix(0.5 * delta_x[q_err_idx[0]: q_err_idx[1], :])
       err_function_sym[q_idx[0]:q_idx[1], 0] = quat_matrix_r(nom_x[q_idx[0]:q_idx[1], 0]) * delta_quat
-    for p_idx, p_err_idx in zip(p_idxs, p_err_idxs):
+    for p_idx, p_err_idx in zip(p_idxs, p_err_idxs, strict=True):
       err_function_sym[p_idx[0]:p_idx[1], :] = sp.Matrix(nom_x[p_idx[0]:p_idx[1], :] + delta_x[p_err_idx[0]:p_err_idx[1], :])
 
     inv_err_function_sym = sp.Matrix(np.zeros((dim_state_err, 1)))
-    for p_idx, p_err_idx in zip(p_idxs, p_err_idxs):
+    for p_idx, p_err_idx in zip(p_idxs, p_err_idxs, strict=True):
       inv_err_function_sym[p_err_idx[0]:p_err_idx[1], 0] = sp.Matrix(-nom_x[p_idx[0]:p_idx[1], 0] + true_x[p_idx[0]:p_idx[1], 0])
-    for q_idx, q_err_idx in zip(q_idxs, q_err_idxs):
+    for q_idx, q_err_idx in zip(q_idxs, q_err_idxs, strict=True):
       delta_quat = quat_matrix_r(nom_x[q_idx[0]:q_idx[1], 0]).T * true_x[q_idx[0]:q_idx[1], 0]
       inv_err_function_sym[q_err_idx[0]:q_err_idx[1], 0] = sp.Matrix(2 * delta_quat[1:])
 
@@ -292,15 +258,15 @@ class LocKalman():
                                         los_vector[2] * (sat_vz - vz) +
                                         cd[0]])
 
-    imu_rot = euler_rotate(*imu_angles)
-    h_gyro_sym = imu_rot * sp.Matrix([vroll + roll_bias,
+    imu_from_device = euler_rotate(*imu_from_device_euler)
+    h_gyro_sym = imu_from_device * sp.Matrix([vroll + roll_bias,
                                       vpitch + pitch_bias,
                                       vyaw + yaw_bias])
 
     pos = sp.Matrix([x, y, z])
     # add 1 for stability, prevent division by 0
     gravity = quat_rot.T * ((EARTH_GM / ((x**2 + y**2 + z**2 + 1)**(3.0 / 2.0))) * pos)
-    h_acc_sym = imu_rot * (gravity + acceleration + accel_bias)
+    h_acc_sym = imu_from_device * (gravity + acceleration + accel_bias)
     h_acc_stationary_sym = acceleration
     h_phone_rot_sym = sp.Matrix([vroll, vpitch, vyaw])
     h_relative_motion = sp.Matrix(quat_rot.T * v)
@@ -316,7 +282,7 @@ class LocKalman():
                [h_phone_rot_sym, ObservationKind.CAMERA_ODO_ROTATION, None],
                [h_acc_stationary_sym, ObservationKind.NO_ACCEL, None]]
 
-    wide_cam_rot = euler_rotate(*wide_cam_angles)
+    wide_from_device = euler_rotate(*wide_from_device_euler)
     # MSCKF configuration
     if N > 0:
       # experimentally found this is correct value for imx298 with 910 focal length
@@ -331,7 +297,7 @@ class LocKalman():
 
       track_pos_sym = sp.Matrix([track_x - x, track_y - y, track_z - z])
       track_pos_rot_sym = quat_rot.T * track_pos_sym
-      track_pos_rot_wide_cam_sym = wide_cam_rot * track_pos_rot_sym
+      track_pos_rot_wide_cam_sym = wide_from_device * track_pos_rot_sym
       h_track_sym[-2:, :] = sp.Matrix([focal_scale * (track_pos_rot_sym[1] / track_pos_rot_sym[0]),
                                        focal_scale * (track_pos_rot_sym[2] / track_pos_rot_sym[0])])
       h_track_wide_cam_sym[-2:, :] = sp.Matrix([focal_scale * (track_pos_rot_wide_cam_sym[1] / track_pos_rot_wide_cam_sym[0]),
@@ -348,7 +314,7 @@ class LocKalman():
         quat_rot = quat_rotate(*q)
         track_pos_sym = sp.Matrix([track_x - x, track_y - y, track_z - z])
         track_pos_rot_sym = quat_rot.T * track_pos_sym
-        track_pos_rot_wide_cam_sym = wide_cam_rot * track_pos_rot_sym
+        track_pos_rot_wide_cam_sym = wide_from_device * track_pos_rot_sym
         h_track_sym[n * 2:n * 2 + 2, :] = sp.Matrix([focal_scale * (track_pos_rot_sym[1] / track_pos_rot_sym[0]),
                                                      focal_scale * (track_pos_rot_sym[2] / track_pos_rot_sym[0])])
         h_track_wide_cam_sym[n * 2: n * 2 + 2, :] = sp.Matrix([focal_scale * (track_pos_rot_wide_cam_sym[1] / track_pos_rot_wide_cam_sym[0]),
@@ -359,13 +325,35 @@ class LocKalman():
       obs_eqs.append([h_track_sym, ObservationKind.ORB_FEATURES, track_epos_sym])
       obs_eqs.append([h_track_wide_cam_sym, ObservationKind.ORB_FEATURES_WIDE, track_epos_sym])
       obs_eqs.append([h_track_sym, ObservationKind.FEATURE_TRACK_TEST, track_epos_sym])
-      msckf_params = [dim_main, dim_augment, dim_main_err, dim_augment_err, N, [ObservationKind.MSCKF_TEST, ObservationKind.ORB_FEATURES, ObservationKind.ORB_FEATURES_WIDE]]
+      msckf_params = [dim_main, dim_augment, dim_main_err, dim_augment_err, N,
+                      [ObservationKind.MSCKF_TEST, ObservationKind.ORB_FEATURES, ObservationKind.ORB_FEATURES_WIDE]]
     else:
       msckf_params = None
     gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err, eskf_params, msckf_params, maha_test_kinds)
 
-  def __init__(self, generated_dir, N=4):
+  def __init__(self, generated_dir, N=4, erratic_clock=False):
     name = f"{self.name}_{N}"
+
+
+    # process noise
+    q_clock_error = 100.0 if erratic_clock else 0.1
+    q_clock_error_rate = 10 if erratic_clock else 0.0
+    self.Q = np.diag([0.03**2, 0.03**2, 0.03**2,
+                      0.0**2, 0.0**2, 0.0**2,
+                      0.0**2, 0.0**2, 0.0**2,
+                      0.1**2, 0.1**2, 0.1**2,
+                      (q_clock_error)**2, (q_clock_error_rate)**2,
+                      (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
+                      (0.02 / 100)**2,
+                      3**2, 3**2, 3**2,
+                      0.001**2,
+                      (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2,
+                      (.1)**2, (.01)**2,
+                      0.005**2,
+                      (0.02 / 100)**2,
+                      (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
+                      (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2])
+
 
     self.obs_noise = {ObservationKind.ODOMETRIC_SPEED: np.atleast_2d(0.2**2),
                       ObservationKind.PHONE_GYRO: np.diag([0.025**2, 0.025**2, 0.025**2]),
@@ -384,7 +372,7 @@ class LocKalman():
     self.dim_state_err = self.dim_main_err + self.dim_augment_err * self.N
 
     if self.N > 0:
-      x_initial, P_initial, Q = self.pad_augmented(self.x_initial, self.P_initial, self.Q)  # lgtm[py/mismatched-multiple-assignment] pylint: disable=unbalanced-tuple-unpacking
+      x_initial, P_initial, Q = self.pad_augmented(self.x_initial, self.P_initial, self.Q)  # lgtm[py/mismatched-multiple-assignment]
       self.computer = LstSqComputer(generated_dir, N)
 
     self.quaternion_idxs = [3, ] + [(self.dim_main + i * self.dim_augment + 3)for i in range(self.N)]
