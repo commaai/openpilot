@@ -20,8 +20,8 @@
 const int env_debug_encoder = (getenv("DEBUG_ENCODER") != NULL) ? atoi(getenv("DEBUG_ENCODER")) : 0;
 
 static void checked_ioctl(int fd, unsigned long request, void *argp) {
-  int ret = HANDLE_EINTR(ioctl(fd, request, argp));
-  if (ret != 0) {
+  int ret = util::safe_ioctl(fd, request, argp);
+  if (ret < 0) {
     LOGE("checked_ioctl failed with error %d (%d %lx %p)", errno, fd, request, argp);
   }
   assert(ret == 0);
