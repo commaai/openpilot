@@ -4,7 +4,7 @@ extern "C" {
   typedef Localizer* Localizer_t;
 
   Localizer *localizer_init(bool has_ublox) {
-    return new Localizer(has_ublox ? LocalizerGnssSource::UBLOX : LocalizerGnssSource::QCOM);
+    return new Localizer();
   }
 
   void localizer_get_message_bytes(Localizer *localizer, bool inputsOK, bool sensorsOK, bool gpsOK, bool msgValid,
