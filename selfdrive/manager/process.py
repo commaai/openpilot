@@ -63,19 +63,15 @@ def join_process(process: Process, timeout: float) -> None:
     time.sleep(0.001)
 
 
-def onroad_callback(started, params, CP: car.CarParams) -> bool:
-  return started
-
-
 class ManagerProcess(ABC):
   daemon = False
   sigkill = False
   onroad = True
   offroad = False
-  callback: Optional[Callable[[bool, Params, car.CarParams], bool]] = None
   proc: Optional[Process] = None
   enabled = True
   name = ""
+  should_run: Callable[[bool, Params, car.CarParams], bool]
 
   last_watchdog_time = 0
   watchdog_max_dt: Optional[int] = None
@@ -174,14 +170,12 @@ class ManagerProcess(ABC):
 
 
 class NativeProcess(ManagerProcess):
-  def __init__(self, name, cwd, cmdline, enabled=True, onroad=True, offroad=False, callback=onroad_callback, sigkill=False, watchdog_max_dt=None):
+  def __init__(self, name, cwd, cmdline, should_run, enabled=True, sigkill=False, watchdog_max_dt=None):
     self.name = name
     self.cwd = cwd
     self.cmdline = cmdline
     self.enabled = enabled
-    self.onroad = onroad
-    self.offroad = offroad
-    self.callback = callback
+    self.should_run = should_run
     self.sigkill = sigkill
     self.watchdog_max_dt = watchdog_max_dt
     self.launcher = nativelauncher
@@ -206,11 +200,11 @@ class NativeProcess(ManagerProcess):
 
 
 class PythonProcess(ManagerProcess):
-  def __init__(self, name, module, enabled=True, callback=onroad_callback, sigkill=False, watchdog_max_dt=None):
+  def __init__(self, name, module, should_run, enabled=True, sigkill=False, watchdog_max_dt=None):
     self.name = name
     self.module = module
     self.enabled = enabled
-    self.callback = callback
+    self.should_run = should_run
     self.sigkill = sigkill
     self.watchdog_max_dt = watchdog_max_dt
     self.launcher = launcher
@@ -244,6 +238,10 @@ class DaemonProcess(ManagerProcess):
     self.param_name = param_name
     self.enabled = enabled
     self.params = None
+
+  @staticmethod
+  def should_run(started, params, CP):
+    return True
 
   def prepare(self) -> None:
     pass
@@ -284,7 +282,7 @@ def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None
 
   running = []
   for p in procs:
-    if p.enabled and p.callback():
+    if p.enabled and p.should_run(started, params, CP):
       p.start()
       running.append(p)
     else:
