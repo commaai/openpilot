@@ -422,20 +422,20 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
 
   if (io_mem_handle != 0) {
     io_cfg[0].mem_handle[0] = io_mem_handle;
-		io_cfg[0].planes[0] = (struct cam_plane_cfg){
-		 .width = ci.frame_width,
-		 .height = ci.frame_height + ci.extra_height,
-		 .plane_stride = ci.frame_stride,
-		 .slice_height = ci.frame_height + ci.extra_height,
-		 .meta_stride = 0x0,    // YUV has meta(stride=0x400, size=0x5000)
-		 .meta_size = 0x0,
-		 .meta_offset = 0x0,
-		 .packer_config = 0x0,  // 0xb for YUV
-		 .mode_config = 0x0,    // 0x9ef for YUV
-		 .tile_config = 0x0,
-		 .h_init = 0x0,
-		 .v_init = 0x0,
-		};
+    io_cfg[0].planes[0] = (struct cam_plane_cfg){
+      .width = ci.frame_width,
+      .height = ci.frame_height + ci.extra_height,
+      .plane_stride = ci.frame_stride,
+      .slice_height = ci.frame_height + ci.extra_height,
+      .meta_stride = 0x0,  // YUV has meta(stride=0x400, size=0x5000)
+      .meta_size = 0x0,
+      .meta_offset = 0x0,
+      .packer_config = 0x0,  // 0xb for YUV
+      .mode_config = 0x0,    // 0x9ef for YUV
+      .tile_config = 0x0,
+      .h_init = 0x0,
+      .v_init = 0x0,
+    };
     io_cfg[0].format = CAM_FORMAT_MIPI_RAW_12;             // CAM_FORMAT_UBWC_TP10 for YUV
     io_cfg[0].color_space = CAM_COLOR_SPACE_BASE;          // CAM_COLOR_SPACE_BT601_FULL for YUV
     io_cfg[0].color_pattern = 0x5;                         // 0x0 for YUV

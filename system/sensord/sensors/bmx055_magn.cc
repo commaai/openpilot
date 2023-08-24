@@ -171,17 +171,17 @@ bool BMX055_Magn::perform_self_test() {
   uint8_t forced = BMX055_MAGN_FORCED;
 
   // Negative current
-	set_register(BMX055_MAGN_I2C_REG_MAG, forced | (uint8_t(0b10) << 6));
-	util::sleep_for(100);
+  set_register(BMX055_MAGN_I2C_REG_MAG, forced | (uint8_t(0b10) << 6));
+  util::sleep_for(100);
 
-	read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
-	parse_xyz(buffer, &x, &y, &neg_z);
+  read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
+  parse_xyz(buffer, &x, &y, &neg_z);
 
   // Positive current
-	set_register(BMX055_MAGN_I2C_REG_MAG, forced | (uint8_t(0b11) << 6));
-	util::sleep_for(100);
+  set_register(BMX055_MAGN_I2C_REG_MAG, forced | (uint8_t(0b11) << 6));
+  util::sleep_for(100);
 
-	read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
+  read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
   parse_xyz(buffer, &x, &y, &pos_z);
 
   // Put back in normal mode
@@ -206,9 +206,9 @@ bool BMX055_Magn::parse_xyz(uint8_t buffer[8], int16_t *x, int16_t *y, int16_t *
     uint16_t data_r = (uint16_t) (((uint16_t)buffer[7] << 8) | buffer[6]) >> 2;
     assert(data_r != 0);
 
-		*x = compensate_x(trim_data, mdata_x, data_r);
-		*y = compensate_y(trim_data, mdata_y, data_r);
-		*z = compensate_z(trim_data, mdata_z, data_r);
+    *x = compensate_x(trim_data, mdata_x, data_r);
+    *y = compensate_y(trim_data, mdata_y, data_r);
+    *z = compensate_z(trim_data, mdata_z, data_r);
   }
   return ready;
 }
