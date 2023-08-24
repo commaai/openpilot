@@ -61,7 +61,7 @@ QMapbox::CoordinatesCollections coordinate_to_collection(const QMapbox::Coordina
 
 QMapbox::CoordinatesCollections capnp_coordinate_list_to_collection(const capnp::List<cereal::NavRoute::Coordinate>::Reader& coordinate_list) {
   QMapbox::Coordinates coordinates;
-  for (auto const &c: coordinate_list) {
+  for (auto const &c : coordinate_list) {
     coordinates.push_back({c.getLatitude(), c.getLongitude()});
   }
   return {QMapbox::CoordinatesCollection{coordinates}};
