@@ -13,16 +13,14 @@ concurrency:
 env:
   BASE_IMAGE: openpilot-base
   CL_BASE_IMAGE: openpilot-base-cl
-  DOCKER_REGISTRY: ghcr.io/commaai
   DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
 
-  BUILD: |
-      DOCKER_BUILDKIT=1 docker build --pull --cache-to type=inline --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
+  BUILD: selfdrive/test/docker_build.sh base
 
   RUN: docker run --shm-size 1G -v $GITHUB_WORKSPACE:/tmp/openpilot -w /tmp/openpilot -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v ~/scons_cache:/tmp/scons_cache -v ~/comma_download_cache:/tmp/comma_download_cache -v ~/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/sh -c
 
-  BUILD_CL: |
-      DOCKER_BUILDKIT=1 docker build --pull --cache-to type=inline --cache-from $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $CL_BASE_IMAGE:latest -f Dockerfile.openpilot_base_cl .
+  BUILD_CL: selfdrive/test/docker_build.sh cl
+  
   RUN_CL: docker run --shm-size 1G -v $GITHUB_WORKSPACE:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v ~/scons_cache:/tmp/scons_cache -v ~/comma_download_cache:/tmp/comma_download_cache -v ~/openpilot_cache:/tmp/openpilot_cache $CL_BASE_IMAGE /bin/sh -c
 
 
@@ -49,8 +47,6 @@ jobs:
   simulator:
     name: simulator
     runs-on: ubuntu-20.04
-    env:
-      IMAGE_NAME: openpilot-sim
     if: github.repository == 'commaai/openpilot'
     timeout-minutes: 45
     steps:
@@ -62,14 +58,14 @@ jobs:
         setup_docker_scons_cache: true
     - name: Build base cl image
       run: eval "$BUILD_CL"
-    - name: Build simulator image
-      run: |
-        DOCKER_BUILDKIT=1 docker build --cache-to type=inline --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/sim/Dockerfile.sim .
-    - name: Push to container registry
+    - name: Setup to push to repo
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
-      run: |
+      run:
+        export PUSH_IMAGE=true
         $DOCKER_LOGIN
-        docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest
+    - name: Build and push sim image
+      run: |
+        selfdrive/test/docker_build.sh sim
 
   docs:
     name: build docs
@@ -83,14 +79,14 @@ jobs:
       with:
         setup_docker_scons_cache: true
         git_lfs: false
-    - name: Build docs image
-      run: |
-        DOCKER_BUILDKIT=1 docker build --cache-to type=inline --cache-from $DOCKER_REGISTRY/openpilot-docs:latest -t $DOCKER_REGISTRY/openpilot-docs:latest -f docs/docker/Dockerfile .
-    - name: Push docker container
+    - name: Setup to push to repo
       if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
-      run: |
+      run:
+        export PUSH_IMAGE=true
         $DOCKER_LOGIN
-        docker push $DOCKER_REGISTRY/openpilot-docs:latest
+    - name: Build and push docs image
+      run: |
+        selfdrive/test/docker_build.sh docs
 
   devcontainer:
     name: devcontainer
