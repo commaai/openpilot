@@ -16,6 +16,7 @@
   <file>offroad/icon_wifi_strength_full.svg</file>
 
   <file alias="languages.json">../ui/translations/languages.json</file>
+  <file alias="main_en">../ui/translations/main_en.qm</file>
   <file alias="main_de">../ui/translations/main_de.qm</file>
   <file alias="main_fr">../ui/translations/main_fr.qm</file>
   <file alias="main_pt-BR">../ui/translations/main_pt-BR.qm</file>
