@@ -191,6 +191,11 @@ void MapWindow::updateState(const UIState &s) {
     carPosSource["type"] = "geojson";
     carPosSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature1);
     m_map->updateSource("carPosSource", carPosSource);
+
+    // Map bearing isn't updated when interacting, keep location marker up to date
+    if (last_bearing) {
+      m_map->setLayoutProperty("carPosLayer", "icon-rotate", *last_bearing - m_map->bearing());
+    }
   }
 
   if (interaction_counter == 0) {
