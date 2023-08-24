@@ -27,7 +27,8 @@ static void checked_ioctl(int fd, unsigned long request, void *argp) {
   }
 }
 
-static bool dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=NULL, unsigned int *bytesused=NULL, unsigned int *flags=NULL, struct timeval *timestamp=NULL) {
+static bool dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index = NULL, unsigned int *bytesused = NULL,
+                           unsigned int *flags = NULL, struct timeval *timestamp = NULL) {
   struct v4l2_buffer v4l_buf;
   memset(&v4l_buf, 0, sizeof(v4l_buf));
   // WARNING: do not change this to something smaller than VIDEO_MAX_PLANES
