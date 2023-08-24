@@ -1,7 +1,7 @@
 #include <cassert>
 #include <set>
 
-#include "json11.hpp"
+#include "third_party/json11/json11.hpp"
 #include "common/util.h"
 #include "common/clutil.h"
 #include "selfdrive/modeld/thneed/thneed.h"

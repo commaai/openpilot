@@ -12,7 +12,7 @@
 #include <string>
 
 #include <zmq.h>
-#include "json11.hpp"
+#include "third_party/json11/json11.hpp"
 
 #include "common/util.h"
 #include "common/version.h"
