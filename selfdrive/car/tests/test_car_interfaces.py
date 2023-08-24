@@ -16,6 +16,8 @@ from openpilot.selfdrive.car.fw_versions import FW_VERSIONS
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
+ALL_ECUS = list({ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()})
+
 
 MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '5'))
 ALL_ECUS = list({ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()})
