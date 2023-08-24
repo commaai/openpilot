@@ -37,7 +37,7 @@ then
     CACHE_TO="--cache-to type=registry,ref=$REMOTE_TAG_CACHE,mode=max"
 fi
 
-DOCKER_BUILDKIT=1 docker buildx build $CACHE_TO --cache-from type=registry,ref=$REMOTE_TAG_CACHE -t $REMOTE_TAG -t $LOCAL_TAG -f $OPENPILOT_DIR/$DOCKER_FILE $OPENPILOT_DIR
+DOCKER_BUILDKIT=1 docker buildx build --load $CACHE_TO --cache-from type=registry,ref=$REMOTE_TAG_CACHE -t $REMOTE_TAG -t $LOCAL_TAG -f $OPENPILOT_DIR/$DOCKER_FILE $OPENPILOT_DIR
 
 # if [[ ! -z "$PUSH_IMAGE" ]];
 # then
