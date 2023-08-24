@@ -100,7 +100,7 @@ class CarState(CarStateBase):
       self.es_brake_msg = copy.copy(cp_es_brake.vl["ES_Brake"])
       cp_es_status = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
 
-      # Hybrid cars don't have es_distance, need a replacement
+      # TODO: Hybrid cars don't have ES_Distance, need a replacement
       if self.car_fingerprint not in HYBRID_CARS:
         # 8 is known AEB, there are a few other values related to AEB we ignore
         ret.stockAeb = (cp_es_distance.vl["ES_Brake"]["AEB_Status"] == 8) and \
