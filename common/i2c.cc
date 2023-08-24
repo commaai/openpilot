@@ -8,7 +8,6 @@
 #include <cstdio>
 #include <stdexcept>
 
-#include "common/util.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 
