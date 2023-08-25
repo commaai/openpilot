@@ -81,6 +81,7 @@ def sync_to_ci_public(route: str) -> bool:
 
   print(f"Uploading {route}")
   for source_account, source_bucket in SOURCES:
+    # assumes az login has been run
     print(f"Trying {source_account}/{source_bucket}")
     cmd = [
       "azcopy",
