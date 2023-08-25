@@ -12,7 +12,7 @@ from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.navd.tests.test_map_renderer import gen_llk
+from openpilot.selfdrive.navd.tests.test_map_renderer import gen_llk
 
 
 class TestLatControl(unittest.TestCase):

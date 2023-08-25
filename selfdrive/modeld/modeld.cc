@@ -30,7 +30,7 @@ mat3 update_calibration(Eigen::Vector3d device_from_calib_euler, bool wide_camer
   static const auto calib_from_medmodel = (Eigen::Matrix<float, 3, 3>() <<
      0.00000000e+00, 0.00000000e+00, 1.00000000e+00,
      1.09890110e-03, 0.00000000e+00, -2.81318681e-01,
-    -2.25466395e-20, 1.09890110e-03,-5.23076923e-02).finished();
+    -2.25466395e-20, 1.09890110e-03, -5.23076923e-02).finished();
 
   static const auto calib_from_sbigmodel = (Eigen::Matrix<float, 3, 3>() <<
      0.00000000e+00,  7.31372216e-19,  1.00000000e+00,

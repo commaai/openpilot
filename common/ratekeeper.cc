@@ -1,5 +1,7 @@
 #include "common/ratekeeper.h"
 
+#include <algorithm>
+
 #include "common/swaglog.h"
 #include "common/timing.h"
 #include "common/util.h"

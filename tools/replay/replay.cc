@@ -16,19 +16,20 @@ Replay::Replay(QString route, QStringList allow, QStringList block, QStringList 
   auto event_struct = capnp::Schema::from<cereal::Event>().asStruct();
   sockets_.resize(event_struct.getUnionFields().size());
   for (const auto &it : services) {
-    uint16_t which = event_struct.getFieldByName(it.name).getProto().getDiscriminantValue();
+    auto name = it.second.name.c_str();
+    uint16_t which = event_struct.getFieldByName(name).getProto().getDiscriminantValue();
     if ((which == cereal::Event::Which::UI_DEBUG || which == cereal::Event::Which::USER_FLAG) &&
         !(flags & REPLAY_FLAG_ALL_SERVICES) &&
-        !allow.contains(it.name)) {
+        !allow.contains(name)) {
       continue;
     }
 
-    if ((allow.empty() || allow.contains(it.name)) && !block.contains(it.name)) {
-      sockets_[which] = it.name;
+    if ((allow.empty() || allow.contains(name)) && !block.contains(name)) {
+      sockets_[which] = name;
       if (!allow.empty() || !block.empty()) {
         allow_list.insert((cereal::Event::Which)which);
       }
-      s.push_back(it.name);
+      s.push_back(name);
     }
   }
 

@@ -6,12 +6,15 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include <algorithm>
 #include <atomic>
 #include <cassert>
 #include <cerrno>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <string>
+#include <vector>
 
 #include "media/cam_defs.h"
 #include "media/cam_isp.h"
@@ -194,7 +197,7 @@ static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
   unconditional_wait->delay = delay_ms;
   unconditional_wait->op_code = CAMERA_SENSOR_WAIT_OP_SW_UCND;
   return (struct cam_cmd_power *)(unconditional_wait + 1);
-};
+}
 
 int CameraState::sensors_init() {
   uint32_t cam_packet_handle = 0;
@@ -419,20 +422,20 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
 
   if (io_mem_handle != 0) {
     io_cfg[0].mem_handle[0] = io_mem_handle;
-		io_cfg[0].planes[0] = (struct cam_plane_cfg){
-		 .width = ci.frame_width,
-		 .height = ci.frame_height + ci.extra_height,
-		 .plane_stride = ci.frame_stride,
-		 .slice_height = ci.frame_height + ci.extra_height,
-		 .meta_stride = 0x0,    // YUV has meta(stride=0x400, size=0x5000)
-		 .meta_size = 0x0,
-		 .meta_offset = 0x0,
-		 .packer_config = 0x0,  // 0xb for YUV
-		 .mode_config = 0x0,    // 0x9ef for YUV
-		 .tile_config = 0x0,
-		 .h_init = 0x0,
-		 .v_init = 0x0,
-		};
+    io_cfg[0].planes[0] = (struct cam_plane_cfg){
+      .width = ci.frame_width,
+      .height = ci.frame_height + ci.extra_height,
+      .plane_stride = ci.frame_stride,
+      .slice_height = ci.frame_height + ci.extra_height,
+      .meta_stride = 0x0,  // YUV has meta(stride=0x400, size=0x5000)
+      .meta_size = 0x0,
+      .meta_offset = 0x0,
+      .packer_config = 0x0,  // 0xb for YUV
+      .mode_config = 0x0,    // 0x9ef for YUV
+      .tile_config = 0x0,
+      .h_init = 0x0,
+      .v_init = 0x0,
+    };
     io_cfg[0].format = CAM_FORMAT_MIPI_RAW_12;             // CAM_FORMAT_UBWC_TP10 for YUV
     io_cfg[0].color_space = CAM_COLOR_SPACE_BASE;          // CAM_COLOR_SPACE_BT601_FULL for YUV
     io_cfg[0].color_pattern = 0x5;                         // 0x0 for YUV
@@ -505,7 +508,7 @@ void CameraState::enqueue_buffer(int i, bool dp) {
 }
 
 void CameraState::enqueue_req_multi(int start, int n, bool dp) {
-  for (int i=start;i<start+n;++i) {
+  for (int i=start; i<start+n; ++i) {
     request_ids[(i - 1) % FRAME_BUF_COUNT] = i;
     enqueue_buffer((i - 1) % FRAME_BUF_COUNT, dp);
   }

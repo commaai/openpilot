@@ -1,5 +1,6 @@
 #include "selfdrive/ui/qt/spinner.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <iostream>
 #include <string>
@@ -93,7 +94,7 @@ Spinner::Spinner(QWidget *parent) : QWidget(parent) {
 
   notifier = new QSocketNotifier(fileno(stdin), QSocketNotifier::Read);
   QObject::connect(notifier, &QSocketNotifier::activated, this, &Spinner::update);
-};
+}
 
 void Spinner::update(int n) {
   std::string line;

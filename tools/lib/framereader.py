@@ -1,4 +1,3 @@
-# pylint: skip-file
 import json
 import os
 import pickle

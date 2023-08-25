@@ -54,7 +54,6 @@ always_false = [False] * int(TEST_TIMESPAN / DT_DMON)
 
 # TODO: this only tests DriverStatus
 class TestMonitoring(unittest.TestCase):
-  # pylint: disable=no-member
   def _run_seq(self, msgs, interaction, engaged, standstill):
     DS = DriverStatus()
     events = []

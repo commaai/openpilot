@@ -10,6 +10,8 @@
 
 #include <curl/curl.h>
 
+#include <string>
+
 #include "common/util.h"
 #include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
