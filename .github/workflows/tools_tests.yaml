@@ -61,7 +61,7 @@ jobs:
     - name: Setup to push to repo
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       run: |
-        export PUSH_IMAGE=true
+        echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
         $DOCKER_LOGIN
     - name: Build and push sim image
       run: |
@@ -82,7 +82,7 @@ jobs:
     - name: Setup to push to repo
       if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
-        export PUSH_IMAGE=true
+        echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
         $DOCKER_LOGIN
     - name: Build and push docs image
       run: |
