@@ -16,7 +16,7 @@ def get_ci_blob_url(blob_name: str) -> str:
 
 def get_url(route_name: str, segment_num: str, log_type="rlog") -> str:
   ext = "hevc" if log_type.endswith('camera') else "bz2"
-  blob_name =f"{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
+  blob_name = f"{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
   return get_ci_blob_url(blob_name)
 
 
