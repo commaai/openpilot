@@ -27,11 +27,16 @@ runs:
     - id: restore-scons-cache
       uses: actions/cache/restore@v3
       with:
-        path: ~/scons_cache
+        path: .ci_cache/scons_cache
         key: scons-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
         restore-keys: |
           scons-${{ env.CACHE_COMMIT_DATE }}-
           scons-
+    # if we didn't get a cache hit, make the directory manually so it doesn't fail on future steps
+    - id: scons-cache-setup
+      shell: bash
+      if: steps.restore-scons-cache.outputs.cache-hit != 'true'
+      run: mkdir -p $GITHUB_WORKSPACE/.ci_cache/scons_cache
     # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
     - id: normalize-file-permissions
       shell: bash
@@ -47,6 +52,6 @@ runs:
       shell: bash
       if: ${{ inputs.setup_docker_scons_cache == 'true' }}
       run: |
-        cp selfdrive/test/Dockerfile.scons_cache ~
-        cd ~
+        cp selfdrive/test/Dockerfile.scons_cache $GITHUB_WORKSPACE/.ci_cache
+        cd $GITHUB_WORKSPACE/.ci_cache
         DOCKER_BUILDKIT=1 docker build -t scons-cache -f Dockerfile.scons_cache .
