@@ -189,12 +189,12 @@ def fingerprint(logcan, sendcan, num_pandas):
 
   cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match, cached=cached,
                  fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, fingerprints=finger,
-                 error=True)
-  return car_fingerprint, finger, vin, car_fw, source, exact_match, fw_query_time, cached
+                 fw_query_time=fw_query_time, error=True)
+  return car_fingerprint, finger, vin, car_fw, source, exact_match
 
 
 def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
-  candidate, fingerprints, vin, car_fw, source, exact_match, fw_query_time, cached = fingerprint(logcan, sendcan, num_pandas)
+  candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, num_pandas)
 
   if candidate is None:
     cloudlog.event("car doesn't match any fingerprints", fingerprints=fingerprints, error=True)
@@ -206,7 +206,5 @@ def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
   CP.carFw = car_fw
   CP.fingerprintSource = source
   CP.fuzzyFingerprint = not exact_match
-  CP.fwQueryTime = fw_query_time
-  CP.fingerprintCached = cached
 
   return CarInterface(CP, CarController, CarState), CP
