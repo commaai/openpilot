@@ -400,13 +400,9 @@ selfdrive/modeld/thneed/serialize.cc
 selfdrive/modeld/runners/__init__.py
 selfdrive/modeld/runners/*.pxd
 selfdrive/modeld/runners/*.pyx
-
-selfdrive/modeld/runners/snpemodel.cc
-selfdrive/modeld/runners/snpemodel.h
-selfdrive/modeld/runners/thneedmodel.cc
-selfdrive/modeld/runners/thneedmodel.h
-selfdrive/modeld/runners/runmodel.h
-selfdrive/modeld/runners/run.h
+selfdrive/modeld/runners/*.cc
+selfdrive/modeld/runners/*.h
+selfdrive/modeld/runners/*.py
 
 selfdrive/monitoring/dmonitoringd.py
 selfdrive/monitoring/driver_monitor.py
