@@ -11,7 +11,7 @@ BASE_URL = f"{DATA_CI_ACCOUNT_URL}/{DATA_CI_CONTAINER}"
 TOKEN_PATH = Path("/data/azure_token")
 
 
-def get_url(route_name: str, segment_num: str, log_type="rlog") -> str:
+def get_url(route_name: str, segment_num, log_type="rlog") -> str:
   ext = "hevc" if log_type.endswith('camera') else "bz2"
   return f"{BASE_URL}/{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
 
