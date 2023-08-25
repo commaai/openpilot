@@ -11,7 +11,6 @@ SCons.Warnings.warningAsException(True)
 
 TICI = os.path.isfile('/TICI')
 AGNOS = TICI
-CI_SIM = os.environ.get("CI_SIM", None) != None
 
 Decider('MD5-timestamp')
 
@@ -236,7 +235,7 @@ if GetOption('compile_db'):
   env.CompilationDatabase('compile_commands.json')
 
 # Setup cache dir
-cache_dir = '/data/scons_cache' if AGNOS else '/tmp/scons_cache' if not CI_SIM else '.ci_cache/scons_cache'
+cache_dir = '/data/scons_cache' if AGNOS else '/tmp/scons_cache'
 CacheDir(cache_dir)
 Clean(["."], cache_dir)
 
