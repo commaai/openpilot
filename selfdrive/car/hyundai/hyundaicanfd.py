@@ -74,12 +74,12 @@ def create_block_lfa(packer, CAN, CS):
   ret.append(packer.make_can_msg("CAM_0x230", CAN.ACAN, cam_0x230_values))
 
   for i in range(0x235, 0x248 + 1):
-    cam_1_values = {s: CS[f"cam_0x{i:03X}"][s] for s in ["COUNTER"]}
-    ret.append(packer.make_can_msg(f"CAM_0x{i:03X}", CAN.ACAN, cam_1_values))
+    cam_1_values = {s: CS[f"cam_0x{i:03x}"][s] for s in ["COUNTER"]}
+    ret.append(packer.make_can_msg(f"CAM_0x{i:03x}", CAN.ACAN, cam_1_values))
 
   for i in range(0x360, 0x366 + 1):
-    cam_2_values = {s: CS[f"cam_0x{i:03X}"][s] for s in ["COUNTER"]}
-    ret.append(packer.make_can_msg(f"CAM_0x{i:03X}", CAN.ACAN, cam_2_values))
+    cam_2_values = {s: CS[f"cam_0x{i:03x}"][s] for s in ["COUNTER"]}
+    ret.append(packer.make_can_msg(f"CAM_0x{i:03x}", CAN.ACAN, cam_2_values))
 
   return ret
 
