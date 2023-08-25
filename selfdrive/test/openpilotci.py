@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+from datetime import datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
 from typing import IO, Union
@@ -26,6 +27,24 @@ def get_azure_credential():
   else:
     from azure.identity import AzureCliCredential
     return AzureCliCredential()
+
+
+@lru_cache
+def get_container_sas(account_name: str, container_name: str):
+  from azure.storage.blob import BlobServiceClient, ContainerSasPermissions, generate_container_sas
+  start_time = datetime.utcnow()
+  expiry_time = start_time + timedelta(hours=1)
+  blob_service = BlobServiceClient(
+    account_url=f"https://{account_name}.blob.core.windows.net",
+    credential=get_azure_credential(),
+  )
+  return generate_container_sas(
+    account_name,
+    container_name,
+    user_delegation_key=blob_service.get_user_delegation_key(start_time, expiry_time),
+    permission=ContainerSasPermissions(read=True, write=True, list=True),
+    expiry=expiry_time,
+  )
 
 
 def upload_bytes(data: Union[bytes, IO], blob_name: str) -> str:

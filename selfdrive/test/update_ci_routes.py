@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 import subprocess
 import sys
-from datetime import datetime, timedelta
 from functools import lru_cache
 from typing import Iterable, Optional
 
-from azure.storage.blob import BlobServiceClient, ContainerClient, ContainerSasPermissions, generate_container_sas
+from azure.storage.blob import ContainerClient
 from tqdm import tqdm
 
 from openpilot.selfdrive.car.tests.routes import routes as test_car_models_routes
 from openpilot.selfdrive.locationd.test.test_laikad import UBLOX_TEST_ROUTE, QCOM_TEST_ROUTE
 from openpilot.selfdrive.test.process_replay.test_processes import source_segments as replay_segments
 from openpilot.selfdrive.test.openpilotci import (BASE_URL, DATA_CI_ACCOUNT, DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER,
-                                                  get_azure_credential)
+                                                  get_azure_credential, get_container_sas)
 
 DATA_PROD_ACCOUNT = "commadata2"
 DATA_PROD_CONTAINER = "commadata2"
@@ -21,23 +20,6 @@ SOURCES = [
   (DATA_PROD_ACCOUNT, DATA_PROD_CONTAINER),
   (DATA_CI_ACCOUNT, DATA_CI_CONTAINER),
 ]
-
-
-@lru_cache
-def get_container_sas(account_name: str, container_name: str):
-  start_time = datetime.utcnow()
-  expiry_time = start_time + timedelta(hours=1)
-  blob_service = BlobServiceClient(
-    account_url=f"https://{account_name}.blob.core.windows.net",
-    credential=get_azure_credential(),
-  )
-  return generate_container_sas(
-    account_name,
-    container_name,
-    user_delegation_key=blob_service.get_user_delegation_key(start_time, expiry_time),
-    permission=ContainerSasPermissions(read=True, write=True, list=True),
-    expiry=expiry_time,
-  )
 
 
 @lru_cache
