@@ -40,7 +40,7 @@ class CarInterface(CarInterfaceBase):
     else:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    if candidate == CAR.ASCENT:
+    if candidate in (CAR.ASCENT, CAR.ASCENT_2023):
       ret.mass = 2031.
       ret.wheelbase = 2.89
       ret.centerToFront = ret.wheelbase * 0.5
@@ -89,7 +89,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 14., 23.], [0., 14., 23.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01, 0.065, 0.2], [0.001, 0.015, 0.025]]
 
-    elif candidate in (CAR.OUTBACK, CAR.LEGACY, CAR.OUTBACK_2023, CAR.ASCENT_2023):
+    elif candidate in (CAR.OUTBACK, CAR.LEGACY, CAR.OUTBACK_2023):
       ret.mass = 1568.
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5
