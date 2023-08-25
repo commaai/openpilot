@@ -10,7 +10,7 @@ from tqdm import tqdm
 from openpilot.selfdrive.car.tests.routes import routes as test_car_models_routes
 from openpilot.selfdrive.locationd.test.test_laikad import UBLOX_TEST_ROUTE, QCOM_TEST_ROUTE
 from openpilot.selfdrive.test.process_replay.test_processes import source_segments as replay_segments
-from openpilot.selfdrive.test.openpilotci import (BASE_URL, DATA_CI_ACCOUNT, DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER,
+from openpilot.selfdrive.test.openpilotci import (DATA_CI_ACCOUNT, DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER,
                                                   get_azure_credential, get_container_sas)
 
 DATA_PROD_ACCOUNT = "commadata2"
@@ -38,11 +38,12 @@ def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) ->
 
   r, n = path.rsplit("--", 1)
   r = '/'.join(r.split('/')[-2:])  # strip out anything extra in the path
+  destpath = f"{r}/{n}"
   cmd = [
     "azcopy",
     "copy",
     f"{path}/*",
-    BASE_URL + f"{r}/{n}?{dest_key}",
+    f"https://{DATA_CI_ACCOUNT}.blob.core.windows.net/{DATA_CI_CONTAINER}/{destpath}?{dest_key}",
     "--recursive=false",
     "--overwrite=false",
   ] + [f"--exclude-pattern={p}" for p in exclude_patterns]
@@ -65,7 +66,7 @@ def sync_to_ci_public(route: str) -> bool:
       "azcopy",
       "copy",
       f"https://{source_account}.blob.core.windows.net/{source_bucket}/{key_prefix}?{source_key}",
-      BASE_URL + f"{dongle_id}?{dest_key}",
+      f"https://{DATA_CI_ACCOUNT}.blob.core.windows.net/{DATA_CI_CONTAINER}/{dongle_id}?{dest_key}",
       "--recursive=true",
       "--overwrite=false",
       "--exclude-pattern=*/dcamera.hevc",
