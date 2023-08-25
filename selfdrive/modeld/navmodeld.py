@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
+import os
 import gc
+import math
 import time
 import ctypes
 import numpy as np
@@ -17,6 +19,7 @@ from openpilot.selfdrive.modeld.models.commonmodel_pyx import Runtime
 if USE_ONNX:
   from selfdrive.modeld.runners.onnxmodel_pyx import ONNXModel as ModelRunner
 else:
+  os.environ['ADSP_LIBRARY_PATH'] = "/data/pythonpath/third_party/snpe/dsp/"
   from selfdrive.modeld.runners.snpemodel_pyx import SNPEModel as ModelRunner
 
 TRAJECTORY_SIZE = 33
@@ -57,7 +60,7 @@ class ModelState:
     self.inputs['map'][:] = buf
 
     t1 = time.perf_counter()
-    self.model.setInputBuffer("map", self.inputs['map'], NAV_INPUT_SIZE // ctypes.sizeof(ctypes.c_float))
+    self.model.setInputBuffer("map", self.inputs['map'].view(np.float32))
     self.model.execute()
     t2 = time.perf_counter()
     return self.output, t2 - t1
@@ -71,13 +74,13 @@ def get_navmodel_packet(model_output: np.ndarray, valid: bool, frame_id: int, lo
     'locationMonoTime': location_ts,
     'modelExecutionTime': execution_time,
     'dspExecutionTime': dsp_execution_time,
-    'features': model_result.features,
-    'desirePrediction': model_result.desire_pred,
+    'features': model_result.features[:],
+    'desirePrediction': model_result.desire_pred[:],
     'position': {
       'x': [p.x for p in model_result.plan.mean],
       'y': [p.y for p in model_result.plan.mean],
-      'xStd': np.exp([p.x for p in model_result.plan.std]),
-      'yStd': np.exp([p.y for p in model_result.plan.std])}}
+      'xStd': [math.exp(p.x) for p in model_result.plan.std],
+      'yStd': [math.exp(p.y) for p in model_result.plan.std]}}
 
   return msg
 
@@ -98,7 +101,7 @@ def main():
   vipc_client = VisionIpcClient("navd", VisionStreamType.VISION_STREAM_MAP, True)
   while not vipc_client.connect(False):
     time.sleep(0.1)
-  assert vipc_client.connected
+  assert vipc_client.is_connected()
   cloudlog.warning(f"connected with buffer size: {vipc_client.buffer_len}")
 
   sm = SubMaster(["navInstruction"])
@@ -115,7 +118,7 @@ def main():
     t2 = time.perf_counter()
 
     valid = vipc_client.valid and sm.valid["navInstruction"]
-    pm.publish("navModel", get_navmodel_packet(model_output, valid, vipc_client.frame_id, vipc_client.timestamp_sof, t2 - t1, dsp_execution_time))
+    pm.send("navModel", get_navmodel_packet(model_output, valid, vipc_client.frame_id, vipc_client.timestamp_sof, t2 - t1, dsp_execution_time))
 
 
 if __name__ == "__main__":
