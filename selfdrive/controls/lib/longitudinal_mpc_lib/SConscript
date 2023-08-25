@@ -38,7 +38,10 @@ generated_files = [
   f'{gen}/Makefile',
 
   f'{gen}/main_long.c',
+  f'{gen}/main_sim_long.c',
   f'{gen}/acados_solver_long.h',
+  f'{gen}/acados_sim_solver_long.h',
+  f'{gen}/acados_sim_solver_long.c',
   f'{gen}/acados_solver.pxd',
 
   f'{gen}/long_model/long_expl_vde_adj.c',
