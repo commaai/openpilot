@@ -47,6 +47,7 @@ runs:
       shell: bash
       if: ${{ inputs.setup_docker_scons_cache == 'true' }}
       run: |
+        mkdir -p /comma/scons_cache
         cp selfdrive/test/Dockerfile.scons_cache /comma
         cd /comma
         DOCKER_BUILDKIT=1 docker build -t scons-cache -f Dockerfile.scons_cache .
