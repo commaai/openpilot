@@ -1,7 +1,7 @@
-
 #include "catch2/catch.hpp"
 #define private public
 #include "common/params.h"
+#include "common/util.h"
 
 TEST_CASE("Params/asyncWriter") {
   char tmp_path[] = "/tmp/asyncWriter_XXXXXX";
