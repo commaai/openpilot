@@ -287,7 +287,7 @@ class CarState(CarStateBase):
     else:
       messages.append(("LVR12", 100))
 
-    bus = 5 if CP.flags & HyundaiFlags.CAN_CANFD_HDA2.value else 0
+    bus = CanBus(CP).ECAN if CP.flags & HyundaiFlags.CAN_CANFD_HDA2.value else 0
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, bus)
 
   @staticmethod
@@ -314,7 +314,7 @@ class CarState(CarStateBase):
     if CP.flags & HyundaiFlags.CAN_CANFD_HDA2:
       messages.append(("CAM_0x2a4", 20))
 
-    bus = 6 if CP.flags & HyundaiFlags.CAN_CANFD_HDA2 else 2
+    bus = CanBus(CP).CAM if CP.flags & HyundaiFlags.CAN_CANFD_HDA2 else 2
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, bus)
 
   def get_can_parser_canfd(self, CP):

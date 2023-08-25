@@ -266,7 +266,7 @@ class CarInterface(CarInterfaceBase):
     if candidate in CANFD_CAR:
       ret.enableBsm = 0x1e5 in fingerprint[CAN.ECAN]
     else:
-      bus = 5 if ret.flags & HyundaiFlags.CAN_CANFD_HDA2 else 0
+      bus = CAN.ECAN if ret.flags & HyundaiFlags.CAN_CANFD_HDA2 else 0
       ret.enableBsm = 0x58b in fingerprint[bus]
 
     # *** panda safety config ***
