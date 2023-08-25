@@ -9,6 +9,11 @@ inputs:
     description: 'Whether or not to pull the git lfs'
     required: false
     default: 'true'
+  is_buildjet:
+    description: 'Whether or not this is a buildjet runner'
+    required: false
+    default: 'false'
+
 
 runs:
   using: "composite"
@@ -44,6 +49,12 @@ runs:
       run: |
         find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
         find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
+    - id: setup-buildx-action
+      if: ${{ inputs.is_buildjet == 'true' }}
+      name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+      with:
+        driver: docker-container
     # build our docker image
     - shell: bash
       run: eval ${{ env.BUILD }}
