@@ -1,6 +1,6 @@
 # functions common among cars
 import capnp
-from typing import List, Optional
+from typing import List
 
 from cereal import car
 from common.numpy_fast import clip
