@@ -222,11 +222,11 @@ void loggerd_thread() {
   std::unique_ptr<Poller> poller(Poller::create());
 
   // subscribe to all socks
-  for (const auto& it : services) {
+  for (const auto& [_, it] : services) {
     bool encoder = std::any_of(std::begin(ALL_ENCODER_INFO), std::end(ALL_ENCODER_INFO),
-                               [name = it.name](auto &e) { return strcmp(name, e.publish_name) == 0; });
+                               [name = it.name](auto &e) { return name == e.publish_name; });
     if (!it.should_log && !encoder) continue;
-    LOGD("logging %s (on port %d)", it.name, it.port);
+    LOGD("logging %s (on port %d)", it.name.c_str(), it.port);
 
     SubSocket * sock = SubSocket::create(ctx.get(), it.name);
     assert(sock != NULL);
