@@ -173,6 +173,7 @@ def main() -> NoReturn:
         cloudlog.error("Internal panda is missing, trying again")
         no_internal_panda_count += 1
         continue
+      no_internal_panda_count = 0
 
       # sort pandas to have deterministic order
       pandas.sort(key=cmp_to_key(panda_sort_cmp))
