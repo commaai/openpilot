@@ -6,14 +6,14 @@ from typing import IO, Union
 DATA_CI_ACCOUNT = "commadataci"
 DATA_CI_ACCOUNT_URL = f"https://{DATA_CI_ACCOUNT}.blob.core.windows.net"
 DATA_CI_CONTAINER = "openpilotci"
-BASE_URL = f"{DATA_CI_ACCOUNT_URL}/{DATA_CI_CONTAINER}"
+BASE_URL = f"{DATA_CI_ACCOUNT_URL}/{DATA_CI_CONTAINER}/"
 
 TOKEN_PATH = Path("/data/azure_token")
 
 
 def get_url(route_name: str, segment_num, log_type="rlog") -> str:
   ext = "hevc" if log_type.endswith('camera') else "bz2"
-  return f"{BASE_URL}/{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
+  return BASE_URL + f"{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
 
 
 def get_azure_credential():
@@ -35,7 +35,7 @@ def upload_bytes(data: Union[bytes, IO], blob_name: str) -> str:
     credential=get_azure_credential(),
   )
   blob.upload_blob(data)
-  return f"{BASE_URL}/{blob_name}"
+  return BASE_URL + blob_name
 
 
 def upload_file(path: Union[str, os.PathLike], blob_name: str) -> str:

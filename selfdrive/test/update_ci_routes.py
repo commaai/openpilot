@@ -48,12 +48,11 @@ def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) ->
 
   r, n = path.rsplit("--", 1)
   r = '/'.join(r.split('/')[-2:])  # strip out anything extra in the path
-  destpath = f"{r}/{n}"
   cmd = [
     "azcopy",
     "copy",
     f"{path}/*",
-    f"{BASE_URL}/{destpath}?{dest_key}",
+    BASE_URL + f"{r}/{n}?{dest_key}",
     "--recursive=false",
     "--overwrite=false",
   ] + [f"--exclude-pattern={p}" for p in exclude_patterns]
@@ -81,7 +80,7 @@ def sync_to_ci_public(route: str) -> bool:
       "azcopy",
       "copy",
       f"https://{source_account}.blob.core.windows.net/{source_bucket}/{key_prefix}",
-      f"{BASE_URL}/{dongle_id}",
+      BASE_URL + dongle_id,
       "--recursive=true",
       "--overwrite=false",
       "--exclude-pattern=*/dcamera.hevc",
