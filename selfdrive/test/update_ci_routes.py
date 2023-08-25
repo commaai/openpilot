@@ -63,7 +63,7 @@ def upload_route(path: str, exclude_patterns=None) -> None:
     "azcopy",
     "copy",
     f"{path}/*",
-    f"https://{DATA_CI_ACCOUNT}.blob.core.windows.net/{DATA_CI_CONTAINER}/{destpath}?{dest_key}",
+    f"{DATA_CI_ACCOUNT_URL}/{DATA_CI_CONTAINER}/{destpath}?{dest_key}",
     "--recursive=false",
     "--overwrite=false",
   ] + [f"--exclude-pattern={p}" for p in exclude_patterns]
@@ -86,7 +86,7 @@ def sync_to_ci_public(route: str) -> bool:
       "azcopy",
       "copy",
       f"https://{source_account}.blob.core.windows.net/{source_bucket}/{key_prefix}?{source_key}",
-      f"https://{DATA_CI_ACCOUNT}.blob.core.windows.net/{DATA_CI_CONTAINER}/{dongle_id}?{dest_key}",
+      f"{DATA_CI_ACCOUNT_URL}/{DATA_CI_CONTAINER}/{dongle_id}?{dest_key}",
       "--recursive=true",
       "--overwrite=false",
       "--exclude-pattern=*/dcamera.hevc",
