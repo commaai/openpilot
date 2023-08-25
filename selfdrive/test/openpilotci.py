@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+from functools import lru_cache
 from pathlib import Path
 from typing import IO, Union
 
@@ -16,6 +17,7 @@ def get_url(route_name: str, segment_num, log_type="rlog") -> str:
   return BASE_URL + f"{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
 
 
+@lru_cache
 def get_azure_credential():
   if "AZURE_TOKEN" in os.environ:
     return os.environ["AZURE_TOKEN"]
