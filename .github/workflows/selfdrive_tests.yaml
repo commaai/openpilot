@@ -393,17 +393,21 @@ jobs:
         with:
           submodules: true
           ref: ${{ github.event.pull_request.base.ref }}
+        path: base
       - uses: ./.github/workflows/setup
       - name: Get base car info
         run: |
+          cd base
           ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/debug/dump_car_info.py --path /tmp/openpilot_cache/base_car_info"
           sudo chown -R $USER:$USER ${{ github.workspace }}
       - uses: actions/checkout@v3
         with:
           submodules: true
+        path: current
       - name: Save car docs diff
         id: save_diff
         run: |
+          cd current
           ${{ env.RUN }} "scons -j$(nproc)"
           output=$(${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/base_car_info")
           output="${output//$'\n'/'%0A'}"
