@@ -1,9 +1,8 @@
 # functions common among cars
 from collections import namedtuple
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import capnp
-from typing import List
 
 from cereal import car
 from openpilot.common.numpy_fast import clip, interp
