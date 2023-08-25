@@ -76,8 +76,7 @@ bool AbstractStream::postEvents() {
       it.value() = all_msgs[it.key()];
     }
     // use pointer to avoid data copy in queued connection.
-    QMetaObject::invokeMethod(this, std::bind(&AbstractStream::updateMessages, this, new_msgs.release()),
-                              Qt::QueuedConnection);
+    QMetaObject::invokeMethod(this, std::bind(&AbstractStream::updateMessages, this, new_msgs.release()), Qt::QueuedConnection);
     new_msgs.reset(new QHash<MessageId, CanData>);
     new_msgs->reserve(100);
     return true;
@@ -203,7 +202,6 @@ const QColor GREYISH_BLUE_LIGHTER = QColor(102, 86, 169, start_alpha / 2).lighte
 inline QColor blend(const QColor &a, const QColor &b) {
   return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
 }
-
 
 // Calculate the frequency of the past minute.
 double calc_freq(const MessageId &msg_id, double current_sec) {
