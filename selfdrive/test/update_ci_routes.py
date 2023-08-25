@@ -48,7 +48,8 @@ def get_container_sas(account_name: str, container_name: str):
 def get_azure_keys():
   dest_key = get_container_sas(DATA_CI_ACCOUNT, DATA_CI_CONTAINER)
   source_keys = [get_container_sas(account, bucket) for account, bucket in SOURCES]
-  return dest_key, source_keys
+  container_client = ContainerClient(DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER, credential=get_azure_credential())
+  return dest_key, source_keys, container_client
 
 
 def upload_route(path: str, exclude_patterns=None) -> None:
@@ -71,11 +72,10 @@ def upload_route(path: str, exclude_patterns=None) -> None:
 
 
 def sync_to_ci_public(route: str) -> bool:
-  dest_key, source_keys = get_azure_keys()
+  dest_key, source_keys, container_client = get_azure_keys()
   key_prefix = route.replace('|', '/')
   dongle_id = key_prefix.split('/')[0]
 
-  container_client = ContainerClient(DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER, credential=get_azure_credential())
   if next(container_client.list_blob_names(name_starts_with=key_prefix), None) is not None:
     return True
 
