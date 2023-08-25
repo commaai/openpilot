@@ -48,14 +48,13 @@ else:
     del libs[libs.index('SNPE')]
     del common_src[common_src.index('runners/snpemodel.cc')]
 
+for pathdef, fn in {'TRANSFORM': 'transforms/transform.cl', 'LOADYUV': 'transforms/loadyuv.cl', 'ONNXRUNNER': 'runners/onnx_runner.py'}.items():
+  for xenv in (lenv, lenvCython):
+    xenv['CXXFLAGS'].append(f'-D{pathdef}_PATH=\\"{File(fn).abspath}\\"')
+
 if (use_thneed and arch == "larch64") or GetOption('pc_thneed'):
   lenvCython['CFLAGS'].append("-DUSE_THNEED")
   lenvCython['CXXFLAGS'].append("-DUSE_THNEED")
-
-for pathdef, fn in {'TRANSFORM': 'transforms/transform.cl', 'LOADYUV': 'transforms/loadyuv.cl', 'ONNXRUNNER': 'runners/onnx_runner.py'}.items():
-  path = File(fn).abspath
-  lenv['CXXFLAGS'].append(f'-D{pathdef}_PATH=\\"{path}\\"')
-  lenvCython['CXXFLAGS'].append(f'-D{pathdef}_PATH=\\"{path}\\"')
 
 common_frameworks = []
 common_libs = envCython["LIBS"] + [gpucommon, common, 'zmq']

@@ -1,9 +1,10 @@
 # distutils: language = c++
-# cython: c_string_encoding=ascii, language_level=3
+# cython: c_string_encoding=ascii
 
 import numpy as np
 cimport numpy as cnp
 from libc.string cimport memcpy
+
 from cereal.visionipc.visionipc cimport cl_mem
 from cereal.visionipc.visionipc_pyx cimport VisionBuf, CLContext as BaseCLContext
 from .commonmodel cimport CL_DEVICE_TYPE_DEFAULT, cl_get_device_id, cl_create_context
