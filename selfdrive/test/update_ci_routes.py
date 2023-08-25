@@ -59,22 +59,31 @@ def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) ->
   subprocess.check_call(cmd)
 
 
-def sync_to_ci_public(container: ContainerClient, route: str) -> bool:
+@lru_cache
+def get_azure_keys():
+  dest_container = ContainerClient(DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER, credential=get_azure_credential())
+  dest_key = get_container_sas(DATA_CI_ACCOUNT, DATA_CI_CONTAINER)
+  source_keys = [get_container_sas(*s) for s in SOURCES]
+  return dest_container, dest_key, source_keys
+
+
+def sync_to_ci_public(route: str) -> bool:
+  dest_container, dest_key, source_keys = get_azure_keys()
   key_prefix = route.replace('|', '/')
   dongle_id = key_prefix.split('/')[0]
 
-  if next(container.list_blob_names(name_starts_with=key_prefix), None) is not None:
+  if next(dest_container.list_blob_names(name_starts_with=key_prefix), None) is not None:
     return True
 
   print(f"Uploading {route}")
-  for source_account, source_bucket in SOURCES:
+  for (source_account, source_bucket), source_key in zip(SOURCES, source_keys, strict=True):
     # assumes az login has been run
     print(f"Trying {source_account}/{source_bucket}")
     cmd = [
       "azcopy",
       "copy",
-      f"https://{source_account}.blob.core.windows.net/{source_bucket}/{key_prefix}",
-      BASE_URL + dongle_id,
+      f"https://{source_account}.blob.core.windows.net/{source_bucket}/{key_prefix}?{source_key}",
+      BASE_URL + f"{dongle_id}?{dest_key}",
       "--recursive=true",
       "--overwrite=false",
       "--exclude-pattern=*/dcamera.hevc",
@@ -102,9 +111,8 @@ if __name__ == "__main__":
     to_sync.extend([rt.route for rt in test_car_models_routes])
     to_sync.extend([s[1].rsplit('--', 1)[0] for s in replay_segments])
 
-  container = ContainerClient(DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER, credential=get_azure_credential())
   for r in tqdm(to_sync):
-    if not sync_to_ci_public(container, r):
+    if not sync_to_ci_public(r):
       failed_routes.append(r)
 
   if len(failed_routes):
