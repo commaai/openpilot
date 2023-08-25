@@ -17,19 +17,20 @@ def get_sas_token():
     sas_token = open(TOKEN_PATH).read().strip()
 
   if sas_token is None:
-    sas_token = subprocess.check_output("az storage container generate-sas --account-name commadataci --name openpilotci --https-only --permissions lrw \
-                                         --expiry $(date -u '+%Y-%m-%dT%H:%M:%SZ' -d '+1 hour') --auth-mode login --as-user --output tsv", shell=True).decode().strip("\n")
+    sas_token = subprocess.check_output("az storage container generate-sas --account-name commadataci --name openpilotci \
+                                         --https-only --permissions lrw --expiry $(date -u '+%Y-%m-%dT%H:%M:%SZ' -d '+1 hour') \
+                                         --auth-mode login --as-user --output tsv", shell=True).decode().strip("\n")
 
   return sas_token
 
 def upload_bytes(data, name):
-  from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
+  from azure.storage.blob import BlockBlobService
   service = BlockBlobService(account_name="commadataci", sas_token=get_sas_token())
   service.create_blob_from_bytes("openpilotci", name, data)
   return BASE_URL + name
 
 def upload_file(path, name):
-  from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
+  from azure.storage.blob import BlockBlobService
   service = BlockBlobService(account_name="commadataci", sas_token=get_sas_token())
   service.create_blob_from_path("openpilotci", name, path)
   return BASE_URL + name

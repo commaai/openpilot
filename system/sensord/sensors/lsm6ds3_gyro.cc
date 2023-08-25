@@ -1,4 +1,4 @@
-#include "lsm6ds3_gyro.h"
+#include "system/sensord/sensors/lsm6ds3_gyro.h"
 
 #include <cassert>
 #include <cmath>
@@ -128,7 +128,7 @@ int LSM6DS3_Gyro::init() {
   }
 
   ret = self_test(LSM6DS3_GYRO_POSITIVE_TEST);
-  if (ret < 0 ) {
+  if (ret < 0) {
     LOGE("LSM6DS3 gyro positive self-test failed!");
     if (do_self_test) goto fail;
   }

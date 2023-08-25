@@ -1,4 +1,6 @@
 venv/
+.venv/
+.ci_cache
 .env
 .clang-format
 .DS_Store
@@ -56,7 +58,6 @@ selfdrive/modeld/_dmonitoringmodeld
 /src/
 
 one
-openpilot
 notebooks
 xx
 yy
@@ -85,3 +86,4 @@ build/
 !**/.gitkeep
 
 poetry.toml
+Pipfile

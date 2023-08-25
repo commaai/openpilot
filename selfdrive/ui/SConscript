@@ -9,9 +9,9 @@ base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
 if arch == 'larch64':
   base_libs.append('EGL')
 
-maps = arch in ['larch64', 'x86_64']
+maps = arch in ['larch64', 'aarch64', 'x86_64']
 
-if maps and arch == 'x86_64':
+if maps and arch != 'larch64':
   rpath = [Dir(f"#third_party/mapbox-gl-native-qt/{arch}").srcnode().abspath]
   qt_env["RPATH"] += rpath
 
@@ -46,7 +46,7 @@ asset_obj = qt_env.Object("assets", assets)
 
 # build soundd
 qt_env.Program("soundd/_soundd", ["soundd/main.cc", "soundd/sound.cc"], LIBS=qt_libs)
-if GetOption('test'):
+if GetOption('extras'):
   qt_env.Program("tests/playsound", "tests/playsound.cc", LIBS=base_libs)
   qt_env.Program('tests/test_sound', ['tests/test_runner.cc', 'soundd/sound.cc', 'tests/test_sound.cc'], LIBS=qt_libs)
 
@@ -62,7 +62,7 @@ qt_src = ["main.cc", "qt/sidebar.cc", "qt/onroad.cc", "qt/body.cc",
           "qt/offroad/software_settings.cc", "qt/offroad/onboarding.cc",
           "qt/offroad/driverview.cc", "qt/offroad/experimental_mode.cc"]
 qt_env.Program("_ui", qt_src + [asset_obj], LIBS=qt_libs)
-if GetOption('test'):
+if GetOption('extras'):
   qt_src.remove("main.cc")  # replaced by test_runner
   qt_env.Program('tests/test_translations', [asset_obj, 'tests/test_runner.cc', 'tests/test_translations.cc'] + qt_src, LIBS=qt_libs)
   qt_env.Program('tests/ui_snapshot', [asset_obj, "tests/ui_snapshot.cc"] + qt_src, LIBS=qt_libs)
@@ -82,14 +82,13 @@ qt_env.NoClean(translation_sources)
 qt_env.Precious(translation_sources)
 qt_env.NoCache(lupdate)
 
-# setup and factory resetter
-if GetOption('extras'):
+
+if GetOption('extras') and arch != "Darwin":
+  # setup and factory resetter
   qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
   qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc", asset_obj],
                  LIBS=qt_libs + ['curl', 'common', 'json11'])
 
-
-if GetOption('extras'):
   # build updater UI
   qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
 
@@ -131,5 +130,5 @@ if GetOption('extras'):
     assert f[0].get_size() < 300*1e3
 
 # build watch3
-if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
+if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
   qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'json11', 'zmq', 'visionipc', 'messaging'])

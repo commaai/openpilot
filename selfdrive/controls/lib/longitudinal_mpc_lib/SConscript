@@ -44,10 +44,8 @@ generated_files = [
   f'{gen}/long_model/long_expl_vde_adj.c',
 
   f'{gen}/long_model/long_model.h',
-  f'{gen}/long_constraints/long_h_constraint.h',
-  f'{gen}/long_cost/long_cost_y_fun.h',
-  f'{gen}/long_cost/long_cost_y_e_fun.h',
-  f'{gen}/long_cost/long_cost_y_0_fun.h',
+  f'{gen}/long_constraints/long_constraints.h',
+  f'{gen}/long_cost/long_cost.h',
 ] + build_files
 
 acados_dir = '#third_party/acados'
@@ -56,8 +54,6 @@ acados_templates_dir = '#third_party/acados/acados_template/c_templates_tera'
 source_list = ['long_mpc.py',
   '#/selfdrive/modeld/constants.py',
   f'{acados_dir}/include/acados_c/ocp_nlp_interface.h',
-  f'{acados_dir}/x86_64/lib/libacados.so',
-  f'{acados_dir}/larch64/lib/libacados.so',
   f'{acados_templates_dir}/acados_solver.in.c',
 ]
 

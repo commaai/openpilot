@@ -7,7 +7,7 @@
 #include "tools/cabana/streams/abstractstream.h"
 
 // demo route, first segment
-const std::string TEST_RLOG_URL = "https://commadata2.blob.core.windows.net/commadata2/4cf7a6ad03080c90/2021-09-29--13-46-36/0/rlog.bz2";
+const std::string TEST_RLOG_URL = "https://commadata2.blob.core.windows.net/commadata2/a2a0ccea32023010/2023-07-27--13-01-19/0/rlog.bz2";
 
 TEST_CASE("DBCFile::generateDBC") {
   QString fn = QString("%1/%2.dbc").arg(OPENDBC_FILE_PATH, "tesla_can");

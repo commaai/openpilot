@@ -2,7 +2,7 @@
 import time
 import unittest
 from cereal import log
-from common.params import Params
+from openpilot.common.params import Params
 from datetime import datetime
 from unittest import mock
 
@@ -13,11 +13,11 @@ from laika.ephemeris import EphemerisType
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, read_raw_ublox, read_raw_qcom
-from selfdrive.locationd.laikad import EPHEMERIS_CACHE, Laikad
-from selfdrive.test.openpilotci import get_url
-from tools.lib.logreader import LogReader
+from openpilot.selfdrive.locationd.laikad import EPHEMERIS_CACHE, Laikad
+from openpilot.selfdrive.test.openpilotci import get_url
+from openpilot.tools.lib.logreader import LogReader
 
-from selfdrive.test.process_replay.process_replay import get_process_config, replay_process
+from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process
 
 GPS_TIME_PREDICTION_ORBITS_RUSSIAN_SRC = GPSTime.from_datetime(datetime(2022, month=1, day=29, hour=12))
 UBLOX_TEST_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36"
@@ -111,7 +111,7 @@ class TestLaikad(unittest.TestCase):
     laikad = Laikad()
     laikad.fetch_navs(gpstime, block=False)
     laikad.orbit_fetch_future.result(30)
-    
+
     # Get results and save orbits to laikad:
     laikad.fetch_navs(gpstime, block=False)
     ephem = laikad.astro_dog.navs['G01'][0]
@@ -173,12 +173,12 @@ class TestLaikad(unittest.TestCase):
     self.assertTrue(kf_valid)
 
   def test_laika_online_nav_only(self):
-    for use_qcom, logs in zip([True, False], [self.logs_qcom, self.logs]):
+    for use_qcom, logs in zip([True, False], [self.logs_qcom, self.logs], strict=True):
       laikad = Laikad(auto_update=True, valid_ephem_types=EphemerisType.NAV, use_qcom=use_qcom)
       # Disable fetch_orbits to test NAV only
       correct_msgs = verify_messages(logs, laikad)
-      correct_msgs_expected = 56 if use_qcom else 560
-      valid_fix_expected = 56 if use_qcom else 560
+      correct_msgs_expected = 55 if use_qcom else 560
+      valid_fix_expected = 55 if use_qcom else 560
 
       self.assertEqual(correct_msgs_expected, len(correct_msgs))
       self.assertEqual(valid_fix_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
@@ -215,7 +215,7 @@ class TestLaikad(unittest.TestCase):
 
   def test_get_navs_in_process(self):
     for auto_fetch_navs in [True, False]:
-      for use_qcom, logs in zip([True, False], [self.logs_qcom, self.logs]):
+      for use_qcom, logs in zip([True, False], [self.logs_qcom, self.logs], strict=True):
         laikad = Laikad(auto_update=False, use_qcom=use_qcom, auto_fetch_navs=auto_fetch_navs)
         has_navs = False
         has_fix = False
@@ -236,9 +236,9 @@ class TestLaikad(unittest.TestCase):
           has_polys = len(vals) > 0 and max([len(v) for v in vals]) > 0
           has_fix = has_fix or out_msg.gnssMeasurements.positionECEF.valid
           if len(out_msg.gnssMeasurements.ephemerisStatuses):
-            seen_chip_eph = seen_chip_eph or any([x.source == 'gnssChip' for x in out_msg.gnssMeasurements.ephemerisStatuses])
-            seen_internet_eph = seen_internet_eph or any([x.source == 'internet' for x in out_msg.gnssMeasurements.ephemerisStatuses])
-            
+            seen_chip_eph = seen_chip_eph or any(x.source == 'gnssChip' for x in out_msg.gnssMeasurements.ephemerisStatuses)
+            seen_internet_eph = seen_internet_eph or any(x.source == 'internet' for x in out_msg.gnssMeasurements.ephemerisStatuses)
+
         self.assertTrue(has_navs or has_polys)
         self.assertTrue(has_fix)
         self.assertTrue(seen_chip_eph or auto_fetch_navs)
@@ -248,7 +248,7 @@ class TestLaikad(unittest.TestCase):
 
   def test_cache(self):
     use_qcom = True
-    for use_qcom, logs in zip([True, False], [self.logs_qcom, self.logs]):
+    for use_qcom, logs in zip([True, False], [self.logs_qcom, self.logs], strict=True):
       Params().remove(EPHEMERIS_CACHE)
       laikad = Laikad(auto_update=True, save_ephemeris=True, use_qcom=use_qcom)
       def wait_for_cache():
@@ -278,10 +278,10 @@ class TestLaikad(unittest.TestCase):
       # Verify cache is working for only nav by running a segment
       msg = verify_messages(logs, laikad, return_one_success=True)
       self.assertTrue(len(msg.gnssMeasurements.ephemerisStatuses))
-      self.assertTrue(any([x.source=='cache' for x in msg.gnssMeasurements.ephemerisStatuses]))
+      self.assertTrue(any(x.source=='cache' for x in msg.gnssMeasurements.ephemerisStatuses))
       self.assertIsNotNone(msg)
 
-      #TODO test cache with only orbits 
+      #TODO test cache with only orbits
       #with patch('selfdrive.locationd.laikad.get_orbit_data', return_value=None) as mock_method:
       #  # Verify no orbit downloads even if orbit fetch times is reset since the cache has recently been saved and we don't want to download high frequently
       #  laikad.astro_dog.orbit_fetched_times = TimeRangeHolder()

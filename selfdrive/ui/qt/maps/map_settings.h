@@ -1,6 +1,7 @@
 #pragma once
 
 #include <future>
+#include <vector>
 
 #include <QFrame>
 #include <QJsonArray>
@@ -27,7 +28,7 @@ class NavManager : public QObject {
 
 public:
   static NavManager *instance();
-  QJsonArray currentLocations() const { return locations; };
+  QJsonArray currentLocations() const { return locations; }
   QJsonObject currentDestination() const { return current_dest; }
   void setCurrentDestination(const QJsonObject &loc);
   qint64 getLastActivity(const QJsonObject &loc) const;
@@ -54,7 +55,6 @@ public:
   void navigateTo(const QJsonObject &place);
 
 private:
-  void mousePressEvent(QMouseEvent *ev) override;
   void showEvent(QShowEvent *event) override;
   void refresh();
 

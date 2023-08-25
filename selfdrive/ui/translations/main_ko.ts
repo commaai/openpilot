@@ -353,33 +353,6 @@
         <source>hr</source>
         <translation>시간</translation>
     </message>
-    <message>
-        <source>km</source>
-        <translation>km</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>mi</translation>
-    </message>
-</context>
-<context>
-    <name>MapInstructions</name>
-    <message>
-        <source> km</source>
-        <translation> km</translation>
-    </message>
-    <message>
-        <source> m</source>
-        <translation> m</translation>
-    </message>
-    <message>
-        <source> mi</source>
-        <translation> mi</translation>
-    </message>
-    <message>
-        <source> ft</source>
-        <translation> ft</translation>
-    </message>
 </context>
 <context>
     <name>MapSettings</name>
@@ -404,7 +377,7 @@
     </message>
     <message>
         <source>Waiting for route</source>
-        <translation type="unfinished"></translation>
+        <translation>경로를 기다리는중</translation>
     </message>
 </context>
 <context>
@@ -616,6 +589,22 @@
         <translation>
             <numerusform>%n 일전</numerusform>
         </translation>
+    </message>
+    <message>
+        <source>km</source>
+        <translation>km</translation>
+    </message>
+    <message>
+        <source>m</source>
+        <translation>m</translation>
+    </message>
+    <message>
+        <source>mi</source>
+        <translation>mi</translation>
+    </message>
+    <message>
+        <source>ft</source>
+        <translation>ft</translation>
     </message>
 </context>
 <context>
@@ -1066,20 +1055,12 @@ This may take up to a minute.</source>
         <translation>openpilot은 기본적으로 &lt;b&gt;안정적 모드&lt;/b&gt;로 주행합니다. 실험적 모드는 안정적 모드에 준비되지 않은 &lt;b&gt;알파 수준 기능&lt;/b&gt;을 활성화 합니다. 실험적 모드의 특징은 아래에 나열되어 있습니다</translation>
     </message>
     <message>
-        <source>🌮 End-to-End Longitudinal Control 🌮</source>
-        <translation>🌮 E2E 롱컨트롤 🌮</translation>
-    </message>
-    <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
         <translation>주행모델이 가속과 감속을 제어하도록 합니다. openpilot은 신호등과 정지표지판을 보고 멈추는 것을 포함하여 운전자가 생각하는것처럼 주행합니다. 주행 모델이 주행할 속도를 결정하므로 설정된 속도는 상한선으로만 작용합니다. 이것은 알파 기능이므로 사용에 주의해야 합니다.</translation>
     </message>
     <message>
         <source>New Driving Visualization</source>
         <translation>새로운 주행 시각화</translation>
-    </message>
-    <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
-        <translation>주행 시각화는 저속에서 도로를 향하는 광각 카메라로 전환되어 일부 회전을 더 잘 보여줍니다. 실험적 모드의 로고도 우측상단에 표시됩니다.</translation>
     </message>
     <message>
         <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
@@ -1130,12 +1111,20 @@ This may take up to a minute.</source>
         <translation>Navigate on openpilot (NOO)</translation>
     </message>
     <message>
-        <source>When navigation has a destination, openpilot will input the map information into the model. This generally improves behavior and allows openpilot to keep left or right appropriately at forks/exits and take turns. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected.</source>
-        <translation>내비게이션에 목적지가 있으면 openpilot이 경로 정보를 모델에 입력합니다. 이것은 일반적으로 동작을 개선하고 openpilot이 분기점에서 적절하게 왼쪽 또는 오른쪽을 유지하고 회전할 수 있도록 합니다. 차선 변경 동작은 변경되지 않았으며 여전히 운전자에 의해 활성화됩니다. 이것은 알파 상태의 기능이니 사용에 주의해야 합니다.</translation>
-    </message>
-    <message>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
         <translation>openpilot E2E 롱컨트롤 (알파) 토글을 활성화하여 실험적 모드를 허용합니다.</translation>
+    </message>
+    <message>
+        <source>End-to-End Longitudinal Control</source>
+        <translation>E2E 롱컨트롤</translation>
+    </message>
+    <message>
+        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
+        <translation>내비게이션에 목적지가 있으면 openpilot이 지도 정보를 모델에 입력합니다. 이는 모델에 유용한 컨텍스트를 제공하고 openpilot이 분기점에서 적절하게 왼쪽 또는 오른쪽을 유지할 수 있도록 합니다. 차선 변경 기능은 여전히 운전자의 조작에 의해 활성화됩니다. 이것은 알파 상태의 기능입니다. 특히 출구 분기점 주변에서 실수가 발생될수 있으며 이러한 실수에는 의도하지 않은 차선 이탈, 늦은 출구 이용, 도로 가장자리의 분리대 또는 경계석을 향해 운전하는 등이 포함될 수 있습니다.</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
+        <translation>주행 시각화는 저속으로 주행시 도로를 향한 광각 카메라로 전환되어 일부 회전을 더 잘 보여줍니다. 실험적 모드 로고도 우측 상단에 표시됩니다. 내비게이션 목적지가 설정되고 주행 모델에 입력되면 지도의 주행 경로가 녹색으로 바뀝니다.</translation>
     </message>
 </context>
 <context>
@@ -1188,12 +1177,12 @@ This may take up to a minute.</source>
         <translation>설정 열기</translation>
     </message>
     <message>
-        <source>Uploading training data</source>
-        <translation>트레이닝 데이터 업로드</translation>
+        <source>Ready to upload</source>
+        <translation>업로드 준비완료</translation>
     </message>
     <message>
-        <source>Your data is used to train driving models and help improve openpilot</source>
-        <translation>귀하의 데이터는 운전 모델을 교육하고 openpilot을 개선하는 데 사용됩니다.</translation>
+        <source>Training data will be pulled periodically while your device is on Wi-Fi</source>
+        <translation>기기가 wifi에 연결되어 있는 동안 트레이닝 데이터를 주기적으로 전송합니다.</translation>
     </message>
 </context>
 <context>

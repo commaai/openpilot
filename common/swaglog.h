@@ -9,14 +9,20 @@
 #define CLOUDLOG_CRITICAL 50
 
 
+#ifdef __GNUC__
+#define SWAG_LOG_CHECK_FMT(a, b) __attribute__ ((format (printf, a, b)))
+#else
+#define SWAG_LOG_CHECK_FMT(a, b)
+#endif
+
 void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func,
-                const char* fmt, ...) /*__attribute__ ((format (printf, 6, 7)))*/;
+                const char* fmt, ...) SWAG_LOG_CHECK_FMT(5, 6);
 
 void cloudlog_te(int levelnum, const char* filename, int lineno, const char* func,
-                 const char* fmt, ...) /*__attribute__ ((format (printf, 6, 7)))*/;
+                 const char* fmt, ...) SWAG_LOG_CHECK_FMT(5, 6);
 
 void cloudlog_te(int levelnum, const char* filename, int lineno, const char* func,
-                 uint32_t frame_id, const char* fmt, ...) /*__attribute__ ((format (printf, 6, 7)))*/;
+                 uint32_t frame_id, const char* fmt, ...) SWAG_LOG_CHECK_FMT(6, 7);
 
 
 #define cloudlog(lvl, fmt, ...) cloudlog_e(lvl, __FILE__, __LINE__, \
@@ -38,7 +44,7 @@ void cloudlog_te(int levelnum, const char* filename, int lineno, const char* fun
   int __millis = (millis);                          \
   uint64_t __ts = nanos_since_boot();               \
                                                     \
-  if (!__begin) __begin = __ts;                     \
+  if (!__begin) { __begin = __ts; }                 \
                                                     \
   if (__begin + __millis*1000000ULL < __ts) {       \
     if (__missed) {                                 \

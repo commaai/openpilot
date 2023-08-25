@@ -1,4 +1,6 @@
-#include "map_settings.h"
+#include "selfdrive/ui/qt/maps/map_settings.h"
+
+#include <utility>
 
 #include <QApplication>
 #include <QDebug>
@@ -15,6 +17,7 @@ static bool locationEqual(const QJsonValue &v1, const QJsonValue &v2) {
 
 MapSettings::MapSettings(bool closeable, QWidget *parent) : QFrame(parent) {
   setContentsMargins(0, 0, 0, 0);
+  setAttribute(Qt::WA_NoMousePropagation);
 
   auto *frame = new QVBoxLayout(this);
   frame->setContentsMargins(40, 40, 40, 0);
@@ -85,11 +88,6 @@ MapSettings::MapSettings(bool closeable, QWidget *parent) : QFrame(parent) {
 
   setStyleSheet("MapSettings { background-color: #333333; }");
   QObject::connect(NavManager::instance(), &NavManager::updated, this, &MapSettings::refresh);
-}
-
-void MapSettings::mousePressEvent(QMouseEvent *ev) {
-  // Prevent mouse event from propagating up
-  ev->accept();
 }
 
 void MapSettings::showEvent(QShowEvent *event) {
