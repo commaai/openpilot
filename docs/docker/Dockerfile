@@ -38,5 +38,5 @@ WORKDIR ${OPENPILOT_PATH}/docs
 RUN make html
 
 FROM nginx:1.21
-COPY --from=1 /home/batman/openpilot/build/docs/html /usr/share/nginx/html
+COPY --from=0 /home/batman/openpilot/build/docs/html /usr/share/nginx/html
 COPY ./docs/docker/nginx.conf /etc/nginx/conf.d/default.conf
