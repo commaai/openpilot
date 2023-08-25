@@ -25,14 +25,16 @@ def create_button_events(cur_btn: int, prev_btn: int, buttons_dict: Dict[int, ca
                          unpressed_btn: int = 0) -> List[capnp.lib.capnp._DynamicStructBuilder]:
   events: List[capnp.lib.capnp._DynamicStructBuilder] = []
 
+  if cur_btn == prev_btn:
+    return []
+
   # Add events for button presses, handling when a button switches without going to unpressed
-  if cur_btn != prev_btn:
-    if prev_btn != unpressed_btn:
-      events.append(car.CarState.ButtonEvent(pressed=False,
-                                             type=buttons_dict.get(prev_btn, ButtonType.unknown)))
-    if cur_btn != unpressed_btn:
-      events.append(car.CarState.ButtonEvent(pressed=True,
-                                             type=buttons_dict.get(cur_btn, ButtonType.unknown)))
+  if prev_btn != unpressed_btn:
+    events.append(car.CarState.ButtonEvent(pressed=False,
+                                           type=buttons_dict.get(prev_btn, ButtonType.unknown)))
+  if cur_btn != unpressed_btn:
+    events.append(car.CarState.ButtonEvent(pressed=True,
+                                           type=buttons_dict.get(cur_btn, ButtonType.unknown)))
 
   return events
 
