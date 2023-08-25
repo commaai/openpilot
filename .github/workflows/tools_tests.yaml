@@ -35,12 +35,13 @@ jobs:
         submodules: true
     - name: Build Docker image
       run: eval "$BUILD"
-    - name: Unit test
+    - name: Build openpilot
+      timeout-minutes: 5
+      run: ${{ env.RUN }} "scons -j$(nproc) --directory=/tmp/openpilot"
+    - name: Test PlotJuggler
       timeout-minutes: 2
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) --directory=/tmp/openpilot cereal && \
-                        cd /tmp/openpilot/tools/plotjuggler && \
-                        ./test_plotjuggler.py"
+        ${{ env.RUN }} "pytest tools/plotjuggler/"
 
   simulator:
     name: simulator
