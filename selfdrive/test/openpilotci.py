@@ -15,8 +15,7 @@ TOKEN_PATH = Path("/data/azure_token")
 
 def get_url(route_name: str, segment_num: str, log_type="rlog") -> str:
   ext = "hevc" if log_type.endswith('camera') else "bz2"
-  blob_name = f"{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
-  return f"{BASE_URL}/{blob_name}"
+  return f"{BASE_URL}/{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
 
 
 def get_azure_credential() -> Union[str, AzureCliCredential]:
