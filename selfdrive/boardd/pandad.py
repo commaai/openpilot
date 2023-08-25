@@ -154,8 +154,7 @@ def main() -> NoReturn:
         else:
           cloudlog.info("No pandas found, resetting internal panda")
           HARDWARE.reset_internal_panda()
-          time.sleep(3)  # wait to come back up
-
+        time.sleep(3)  # wait to come back up
         continue
       else:
         no_panda_count = 0
