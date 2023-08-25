@@ -12,7 +12,6 @@ from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType
 from openpilot.system.swaglog import cloudlog
 from openpilot.common.params import Params
-from openpilot.common.realtime import set_realtime_priority
 from openpilot.selfdrive.modeld.config import USE_ONNX
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import Runtime
 
@@ -87,7 +86,7 @@ def get_navmodel_packet(model_output: np.ndarray, valid: bool, frame_id: int, lo
 
 def main():
   gc.disable()
-  set_realtime_priority(-15)
+  os.setpriority(os.PRIO_PROCESS, 0, -15)
 
   # there exists a race condition when two processes try to create a
   # SNPE model runner at the same time, wait for dmonitoringmodeld to finish
@@ -114,7 +113,7 @@ def main():
 
     sm.update(0)
     t1 = time.perf_counter()
-    model_output, dsp_execution_time = model.run(buf.data)
+    model_output, dsp_execution_time = model.run(buf.data[:buf.uv_offset])
     t2 = time.perf_counter()
 
     valid = vipc_client.valid and sm.valid["navInstruction"]
