@@ -8,7 +8,7 @@ import time
 from multiprocessing import Process, Queue
 from typing import Any
 
-import carla  # pylint: disable=import-error
+import carla
 import numpy as np
 import pyopencl as cl
 import pyopencl.array as cl_array

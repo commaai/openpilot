@@ -14,7 +14,7 @@ from openpilot.selfdrive.manager.process_config import managed_processes
 
 
 class TestLocationdProc(unittest.TestCase):
-  LLD_MSGS = ['gpsLocationExternal', 'cameraOdometry', 'carState', 'liveCalibration',
+  LLD_MSGS = ['gnssMeasurements', 'cameraOdometry', 'carState', 'liveCalibration',
               'accelerometer', 'gyroscope', 'magnetometer']
 
   def setUp(self):
@@ -35,25 +35,14 @@ class TestLocationdProc(unittest.TestCase):
       msg = messaging.new_message(name)
     except capnp.lib.capnp.KjException:
       msg = messaging.new_message(name, 0)
-
-    if name == "gpsLocationExternal":
-      msg.gpsLocationExternal.flags = 1
-      msg.gpsLocationExternal.verticalAccuracy = 1.0
-      msg.gpsLocationExternal.speedAccuracy = 1.0
-      msg.gpsLocationExternal.bearingAccuracyDeg = 1.0
-      msg.gpsLocationExternal.vNED = [0.0, 0.0, 0.0]
-      msg.gpsLocationExternal.latitude = float(self.lat)
-      msg.gpsLocationExternal.longitude = float(self.lon)
-      msg.gpsLocationExternal.unixTimestampMillis = t * 1e6
-      msg.gpsLocationExternal.altitude = float(self.alt)
-    #if name == "gnssMeasurements":
-    #  msg.gnssMeasurements.measTime = t
-    #  msg.gnssMeasurements.positionECEF.value = [self.x , self.y, self.z]
-    #  msg.gnssMeasurements.positionECEF.std = [0,0,0]
-    #  msg.gnssMeasurements.positionECEF.valid = True
-    #  msg.gnssMeasurements.velocityECEF.value = []
-    #  msg.gnssMeasurements.velocityECEF.std = [0,0,0]
-    #  msg.gnssMeasurements.velocityECEF.valid = True
+    if name == "gnssMeasurements":
+      msg.gnssMeasurements.measTime = t
+      msg.gnssMeasurements.positionECEF.value = [self.x , self.y, self.z]
+      msg.gnssMeasurements.positionECEF.std = [0,0,0]
+      msg.gnssMeasurements.positionECEF.valid = True
+      msg.gnssMeasurements.velocityECEF.value = []
+      msg.gnssMeasurements.velocityECEF.std = [0,0,0]
+      msg.gnssMeasurements.velocityECEF.valid = True
     elif name == 'cameraOdometry':
       msg.cameraOdometry.rot = [0.0, 0.0, 0.0]
       msg.cameraOdometry.rotStd = [0.0, 0.0, 0.0]

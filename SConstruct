@@ -14,10 +14,6 @@ AGNOS = TICI
 
 Decider('MD5-timestamp')
 
-AddOption('--extras',
-          action='store_true',
-          help='build misc extras, like setup and installer files')
-
 AddOption('--kaitai',
           action='store_true',
           help='Regenerate kaitai struct parsers')
@@ -58,11 +54,11 @@ AddOption('--pc-thneed',
           dest='pc_thneed',
           help='use thneed on pc')
 
-AddOption('--no-test',
+AddOption('--minimal',
           action='store_false',
-          dest='test',
+          dest='extras',
           default=os.path.islink(Dir('#laika/').abspath),
-          help='skip building test files')
+          help='the minimum build to run openpilot. no tests, tools, etc.')
 
 ## Architecture name breakdown (arch)
 ## - larch64: linux tici aarch64
@@ -436,7 +432,7 @@ SConscript(['selfdrive/navd/SConscript'])
 SConscript(['selfdrive/modeld/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
 
-if (arch in ['x86_64', 'aarch64', 'Darwin'] and Dir('#tools/cabana/').exists()) or GetOption('extras'):
+if arch in ['x86_64', 'aarch64', 'Darwin'] and Dir('#tools/cabana/').exists() and GetOption('extras'):
   SConscript(['tools/replay/SConscript'])
   SConscript(['tools/cabana/SConscript'])
 

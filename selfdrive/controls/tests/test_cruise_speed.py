@@ -52,7 +52,7 @@ class TestCruiseSpeed(unittest.TestCase):
 @parameterized_class(('pcm_cruise',), [(False,)])
 class TestVCruiseHelper(unittest.TestCase):
   def setUp(self):
-    self.CP = car.CarParams(pcmCruise=self.pcm_cruise)  # pylint: disable=E1101
+    self.CP = car.CarParams(pcmCruise=self.pcm_cruise)
     self.v_cruise_helper = VCruiseHelper(self.CP)
     self.reset_cruise_speed_state()
 

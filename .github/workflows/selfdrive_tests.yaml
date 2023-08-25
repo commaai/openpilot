@@ -12,21 +12,18 @@ concurrency:
 
 env:
   PYTHONWARNINGS: error
-
   BASE_IMAGE: openpilot-base
   CL_BASE_IMAGE: openpilot-base-cl
-  DOCKER_REGISTRY: ghcr.io/commaai
   AZURE_TOKEN: ${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}
 
   DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-  BUILD: |
-      DOCKER_BUILDKIT=1 docker build --pull --cache-to type=inline --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
+  BUILD: selfdrive/test/docker_build.sh base
 
-  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONWARNINGS=error -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v ~/scons_cache:/tmp/scons_cache -v ~/comma_download_cache:/tmp/comma_download_cache -v ~/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/sh -c
+  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONWARNINGS=error -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/sh -c
 
-  BUILD_CL: |
-      DOCKER_BUILDKIT=1 docker build --cache-to type=inline --cache-from $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $CL_BASE_IMAGE:latest -f Dockerfile.openpilot_base_cl .
-  RUN_CL: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONWARNINGS=error -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v ~/scons_cache:/tmp/scons_cache -v ~/comma_download_cache:/tmp/comma_download_cache -v ~/openpilot_cache:/tmp/openpilot_cache $CL_BASE_IMAGE /bin/sh -c
+  BUILD_CL: selfdrive/test/docker_build.sh cl
+
+  RUN_CL: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONWARNINGS=error -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $CL_BASE_IMAGE /bin/sh -c
 
   UNIT_TEST: coverage run --append -m unittest discover
 
@@ -79,7 +76,9 @@ jobs:
     - uses: ./.github/workflows/setup
     - name: Build openpilot with all flags
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 12 || 30) }} # allow more time when we missed the scons cache
-      run: ${{ env.RUN }} "scons -j$(nproc) --extras && release/check-dirty.sh"
+      run: |
+        ${{ env.RUN }} "scons -j$(nproc)"
+        ${{ env.RUN }} "release/check-dirty.sh"
     - name: Cleanup scons cache and rebuild
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 2 || 30) }} # allow more time when we missed the scons cache
       run: |
@@ -89,7 +88,7 @@ jobs:
       uses: actions/cache/save@v3
       if: github.ref == 'refs/heads/master'
       with:
-        path: ~/scons_cache
+        path: .ci_cache/scons_cache
         key: scons-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
 
   build_mac:
@@ -192,23 +191,16 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
+    - name: Setup to push to repo
+      run: |
+        echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
+        $DOCKER_LOGIN
     - uses: ./.github/workflows/setup
       with:
         git-lfs: false
-    - name: Push to container registry
+    - name: Build and push CL Docker image
       run: |
-        $DOCKER_LOGIN
-        docker push $DOCKER_REGISTRY/$BASE_IMAGE:latest
-        docker tag $DOCKER_REGISTRY/$BASE_IMAGE:latest $DOCKER_REGISTRY/$BASE_IMAGE:$GITHUB_SHA
-        docker push $DOCKER_REGISTRY/$BASE_IMAGE:$GITHUB_SHA
-    - name: Build CL Docker image
-      run: eval "$BUILD_CL"
-    - name: Push to container registry
-      run: |
-        $DOCKER_LOGIN
-        docker push $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest
-        docker tag $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest $DOCKER_REGISTRY/$CL_BASE_IMAGE:$GITHUB_SHA
-        docker push $DOCKER_REGISTRY/$CL_BASE_IMAGE:$GITHUB_SHA
+        eval "$BUILD_CL"
 
   static_analysis:
     name: static analysis
@@ -302,7 +294,7 @@ jobs:
       id: dependency-cache
       uses: actions/cache@v3
       with:
-        path: ~/comma_download_cache
+        path: .ci_cache/comma_download_cache
         key: proc-replay-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/ref_commit') }}
     - name: Build openpilot
       run: |
@@ -325,7 +317,7 @@ jobs:
     - name: Upload reference logs
       if: ${{ failure() && steps.print-diff.outcome == 'success' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
       run: |
-        ${{ env.RUN }} "CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
+        ${{ env.RUN }} "unset PYTHONWARNINGS && CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
 
@@ -377,7 +369,7 @@ jobs:
       id: dependency-cache
       uses: actions/cache@v3
       with:
-        path: ~/comma_download_cache
+        path: .ci_cache/comma_download_cache
         key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'selfdrive/car/tests/routes.py') }}-${{ matrix.job }}
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
@@ -409,9 +401,11 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: true
+          path: current
       - name: Save car docs diff
         id: save_diff
         run: |
+          cd current
           ${{ env.RUN }} "scons -j$(nproc)"
           output=$(${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/base_car_info")
           output="${output//$'\n'/'%0A'}"

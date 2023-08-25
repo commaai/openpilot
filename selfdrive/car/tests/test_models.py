@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=E1101
 import capnp
 import os
 import importlib
