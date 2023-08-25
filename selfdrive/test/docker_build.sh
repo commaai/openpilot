@@ -35,7 +35,7 @@ DOCKER_BUILDKIT=1 docker build --cache-to type=inline --cache-from type=registry
 
 if [[ ! -z "$PUSH_IMAGE" ]];
 then
-    docker push $REMOTE_TAG
-    docker tag $REMOTE_TAG $REMOTE_SHA_TAG
-    docker push $REMOTE_SHA_TAG
+  docker push $REMOTE_TAG
+  docker tag $REMOTE_TAG $REMOTE_SHA_TAG
+  docker push $REMOTE_SHA_TAG
 fi

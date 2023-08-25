@@ -193,7 +193,7 @@ jobs:
         submodules: true
     - name: Setup to push to repo
       run: |
-        export PUSH_IMAGE=true
+        echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
         $DOCKER_LOGIN
     - uses: ./.github/workflows/setup
       with:
