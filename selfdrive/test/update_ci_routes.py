@@ -40,6 +40,14 @@ def get_container_sas(account_name: str, container_name: str):
   )
 
 
+@lru_cache
+def get_azure_keys():
+  dest_container = ContainerClient(DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER, credential=get_azure_credential())
+  dest_key = get_container_sas(DATA_CI_ACCOUNT, DATA_CI_CONTAINER)
+  source_keys = [get_container_sas(*s) for s in SOURCES]
+  return dest_container, dest_key, source_keys
+
+
 def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) -> None:
   # TODO: use azure-storage-blob instead of azcopy, simplifies auth
   dest_key = get_container_sas(DATA_CI_ACCOUNT, DATA_CI_CONTAINER)
@@ -57,14 +65,6 @@ def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) ->
     "--overwrite=false",
   ] + [f"--exclude-pattern={p}" for p in exclude_patterns]
   subprocess.check_call(cmd)
-
-
-@lru_cache
-def get_azure_keys():
-  dest_container = ContainerClient(DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER, credential=get_azure_credential())
-  dest_key = get_container_sas(DATA_CI_ACCOUNT, DATA_CI_CONTAINER)
-  source_keys = [get_container_sas(*s) for s in SOURCES]
-  return dest_container, dest_key, source_keys
 
 
 def sync_to_ci_public(route: str) -> bool:
