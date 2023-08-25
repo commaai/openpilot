@@ -364,8 +364,9 @@ else:
   cereal = [File('#cereal/libcereal.a')]
   messaging = [File('#cereal/libmessaging.a')]
   visionipc = [File('#cereal/libvisionipc.a')]
+messaging_python = [File('#cereal/messaging/messaging_pyx.so')]
 
-Export('cereal', 'messaging', 'visionipc')
+Export('cereal', 'messaging', 'messaging_python', 'visionipc')
 
 # Build rednose library and ekf models
 
