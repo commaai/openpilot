@@ -96,7 +96,8 @@ sconscontrib = {git = "https://github.com/SCons/scons-contrib.git"}
 
 [tool.poetry.group.dev.dependencies]
 av = "*"
-azure-storage-blob = "~2.1"
+azure-identity = "*"
+azure-storage-blob = "*"
 breathe = "*"
 carla = { url = "https://github.com/commaai/carla/releases/download/3.11.4/carla-0.9.14-cp311-cp311-linux_x86_64.whl", platform = "linux", markers = "platform_machine == 'x86_64'" }
 coverage = "*"

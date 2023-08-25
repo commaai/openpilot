@@ -62,7 +62,7 @@ void AbstractStream::updateEvent(const MessageId &id, double sec, const uint8_t 
   std::lock_guard lk(mutex);
   auto mask_it = masks.find(id);
   std::vector<uint8_t> *mask = mask_it == masks.end() ? nullptr : &mask_it->second;
-  all_msgs[id].compute((const char *)data, size, sec, getSpeed(), mask);
+  all_msgs[id].compute(id, (const char *)data, size, sec, getSpeed(), mask);
   if (!new_msgs->contains(id)) {
     new_msgs->insert(id, {});
   }
@@ -113,9 +113,8 @@ void AbstractStream::updateLastMsgsTo(double sec) {
     if (it != ev.crend()) {
       double ts = (*it)->mono_time / 1e9 - routeStartTime();
       auto &m = all_msgs[id];
-      m.compute((const char *)(*it)->dat, (*it)->size, ts, getSpeed(), mask);
+      m.compute(id, (const char *)(*it)->dat, (*it)->size, ts, getSpeed(), mask);
       m.count = std::distance(it, ev.crend());
-      m.freq = m.count / std::max(1.0, ts);
     }
   }
 
@@ -165,18 +164,20 @@ void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std
     }
   }
 
+  auto compare = [](const CanEvent *l, const CanEvent *r) {
+    return l->mono_time < r->mono_time;
+  };
+
   bool append = new_events.front()->mono_time > lastest_event_ts;
   for (auto &[id, new_e] : new_events_map) {
     auto &e = events_[id];
-    auto pos = append ? e.end() : std::upper_bound(e.cbegin(), e.cend(), new_e.front(), [](const CanEvent *l, const CanEvent *r) {
-      return l->mono_time < r->mono_time;
-    });
+    auto pos = append ? e.end()
+                      : std::upper_bound(e.cbegin(), e.cend(), new_e.front(), compare);
     e.insert(pos, new_e.cbegin(), new_e.cend());
   }
 
-  auto pos = append ? all_events_.end() : std::upper_bound(all_events_.begin(), all_events_.end(), new_events.front(), [](auto l, auto r) {
-    return l->mono_time < r->mono_time;
-  });
+  auto pos = append ? all_events_.end()
+                    : std::upper_bound(all_events_.begin(), all_events_.end(), new_events.front(), compare);
   all_events_.insert(pos, new_events.cbegin(), new_events.cend());
 
   lastest_event_ts = all_events_.back()->mono_time;
@@ -184,6 +185,8 @@ void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std
 }
 
 // CanData
+
+namespace {
 
 constexpr int periodic_threshold = 10;
 constexpr int start_alpha = 128;
@@ -195,15 +198,41 @@ const QColor CYAN_LIGHTER = QColor(0, 187, 255, start_alpha).lighter(135);
 const QColor RED_LIGHTER = QColor(255, 0, 0, start_alpha).lighter(135);
 const QColor GREYISH_BLUE_LIGHTER = QColor(102, 86, 169, start_alpha / 2).lighter(135);
 
-static inline QColor blend(const QColor &a, const QColor &b) {
+inline QColor blend(const QColor &a, const QColor &b) {
   return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
 }
 
-void CanData::compute(const char *can_data, const int size, double current_sec, double playback_speed, const std::vector<uint8_t> *mask, uint32_t in_freq) {
+// Calculate the frequency of the past minute.
+double calc_freq(const MessageId &msg_id, double current_sec) {
+  auto compare = [](const CanEvent *e, uint64_t mono_time) {
+    return e->mono_time < mono_time;
+  };
+
+  const auto &events = can->events(msg_id);
+  uint64_t cur_mono_time = (can->routeStartTime() + current_sec) * 1e9;
+  uint64_t first_mono_time = std::max<int64_t>(0, cur_mono_time - 59 * 1e9);
+  auto first = std::lower_bound(events.begin(), events.end(), first_mono_time, compare);
+  auto second = std::lower_bound(first, events.end(), cur_mono_time, compare);
+  if (first != events.end() && second != events.end()) {
+    double duration = ((*second)->mono_time - (*first)->mono_time) / 1e9;
+    uint32_t count = std::distance(first, second);
+    return count / std::max(1.0, duration);
+  }
+  return 0;
+}
+
+}  // namespace
+
+void CanData::compute(const MessageId &msg_id, const char *can_data, const int size, double current_sec,
+                      double playback_speed, const std::vector<uint8_t> *mask, double in_freq) {
   ts = current_sec;
   ++count;
-  const double sec_to_first_event = current_sec - (can->allEvents().front()->mono_time / 1e9 - can->routeStartTime());
-  freq = in_freq == 0 ? count / std::max(1.0, sec_to_first_event) : in_freq;
+
+  if (auto sec = seconds_since_boot(); (sec - last_freq_update_ts) >= 1) {
+    last_freq_update_ts = sec;
+    freq = !in_freq ? calc_freq(msg_id, ts) : in_freq;
+  }
+
   if (dat.size() != size) {
     dat.resize(size);
     bit_change_counts.resize(size);

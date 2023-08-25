@@ -70,7 +70,7 @@ int gpiochip_get_ro_value_fd(const char* consumer_label, int gpiochiop_id, int p
   rq.eventflags = GPIOEVENT_REQUEST_BOTH_EDGES;
 
   strncpy(rq.consumer_label, consumer_label, std::size(rq.consumer_label) - 1);
-  int ret = ioctl(fd, GPIO_GET_LINEEVENT_IOCTL, &rq);
+  int ret = util::safe_ioctl(fd, GPIO_GET_LINEEVENT_IOCTL, &rq);
   if (ret == -1) {
     LOGE("Unable to get line event from ioctl : %s", strerror(errno));
     close(fd);
