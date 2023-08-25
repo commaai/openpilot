@@ -1,13 +1,14 @@
 import yaml
 import os
 import time
+import numpy as np
 from abc import abstractmethod, ABC
 from typing import Any, Dict, Optional, Tuple, List, Callable
 
 from cereal import car
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.conversions import Conversions as CV
-from openpilot.common.kalman.simple_kalman import KF1D
+from openpilot.common.kalman.simple_kalman import KF1D, get_kalman_gain
 from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, STD_CARGO_KG
@@ -335,12 +336,13 @@ class CarStateBase(ABC):
     self.cluster_speed_hyst_gap = 0.0
     self.cluster_min_speed = 0.0  # min speed before dropping to 0
 
-    # Q = np.matrix([[0.0, 0.0], [0.0, 100.0]])
-    # R = 0.3
-    self.v_ego_kf = KF1D(x0=[[0.0], [0.0]],
-                         A=[[1.0, DT_CTRL], [0.0, 1.0]],
-                         C=[1.0, 0.0],
-                         K=[[0.17406039], [1.65925647]])
+    Q = [[0.0, 0.0], [0.0, 100.0]]
+    R = 0.3
+    A = [[1.0, DT_CTRL], [0.0, 1.0]]
+    C = [[1.0, 0.0]]
+    x0=[[0.0], [0.0]]
+    K = get_kalman_gain(DT_CTRL, np.array(A), np.array(C), np.array(Q), R)
+    self.v_ego_kf = KF1D(x0=x0, A=A, C=C[0], K=K)
 
   def update_speed_kf(self, v_ego_raw):
     if abs(v_ego_raw - self.v_ego_kf.x[0][0]) > 2.0:  # Prevent large accelerations when car starts at non zero speed
