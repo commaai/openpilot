@@ -24,19 +24,13 @@ SOURCES = [
 
 
 @lru_cache
-def get_blob_service(account_name: str) -> BlobServiceClient:
-  return BlobServiceClient(
-    account_url=f"https://{account_name}.blob.core.windows.net",
-    credential=get_azure_credential(),
-  )
-
-
-@lru_cache
 def get_container_sas(account_name: str, container_name: str):
   start_time = datetime.utcnow()
   expiry_time = start_time + timedelta(hours=1)
-  blob_service = get_blob_service(account_name)
-
+  blob_service = BlobServiceClient(
+    account_url=f"https://{account_name}.blob.core.windows.net",
+    credential=get_azure_credential(),
+  )
   return generate_container_sas(
     account_name,
     container_name,
