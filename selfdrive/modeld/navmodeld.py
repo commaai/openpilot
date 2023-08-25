@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import gc
-import sys
 import time
 import ctypes
 import numpy as np
@@ -12,9 +11,9 @@ from cereal.visionipc import VisionIpcClient, VisionStreamType
 from openpilot.system.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_realtime_priority
+from openpilot.selfdrive.modeld.config import USE_ONNX
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import Runtime
 
-USE_ONNX = True  # TODO: inject this from the sconscript somehow
 if USE_ONNX:
   from selfdrive.modeld.runners.onnxmodel_pyx import ONNXModel as ModelRunner
 else:
@@ -48,11 +47,11 @@ class ModelState:
   model: ModelRunner
 
   def __init__(self):
-    assert ctypes.sizeof(NavModelResult) == NAV_OUTPUT_SIZE
+    assert ctypes.sizeof(NavModelResult) == NAV_OUTPUT_SIZE * ctypes.sizeof(ctypes.c_float)
     self.output = np.zeros(NAV_OUTPUT_SIZE, dtype=np.float32)
     self.inputs = {'map': np.zeros(NAV_INPUT_SIZE, dtype=np.uint8)}
     self.model = ModelRunner(MODEL_PATH, self.output, Runtime.DSP, True, None)
-    self.model.addInput("map", None, 0)
+    self.model.addInput("map", None)
 
   def run(self, buf:np.ndarray) -> Tuple[np.ndarray, float]:
     self.inputs['map'][:] = buf
@@ -65,12 +64,6 @@ class ModelState:
 
 def get_navmodel_packet(model_output: np.ndarray, valid: bool, frame_id: int, location_ts: int, execution_time: float, dsp_execution_time: float):
   model_result = model_output.ctypes.data_as(ctypes.POINTER(NavModelResult)).contents
-  plan = {
-    'x': [p.x for p in model_result.plan.mean],
-    'y': [p.y for p in model_result.plan.mean],
-    'xStd': np.exp([p.x for p in model_result.plan.std]),
-    'yStd': np.exp([p.y for p in model_result.plan.std])}
-
   msg = messaging.new_message('navModel')
   msg.valid = valid
   msg.navModel = {
@@ -80,8 +73,14 @@ def get_navmodel_packet(model_output: np.ndarray, valid: bool, frame_id: int, lo
     'dspExecutionTime': dsp_execution_time,
     'features': model_result.features,
     'desirePrediction': model_result.desire_pred,
-    'position': plan}
+    'position': {
+      'x': [p.x for p in model_result.plan.mean],
+      'y': [p.y for p in model_result.plan.mean],
+      'xStd': np.exp([p.x for p in model_result.plan.std]),
+      'yStd': np.exp([p.y for p in model_result.plan.std])}}
+
   return msg
+
 
 def main():
   gc.disable()
@@ -90,7 +89,7 @@ def main():
   # there exists a race condition when two processes try to create a
   # SNPE model runner at the same time, wait for dmonitoringmodeld to finish
   cloudlog.warning("waiting for dmonitoringmodeld to initialize")
-  if not Params().getBool("DmModelInitialized", True):
+  if not Params().get_bool("DmModelInitialized", True):
     return
 
   model = ModelState()
@@ -120,7 +119,4 @@ def main():
 
 
 if __name__ == "__main__":
-  try:
-    main()
-  except KeyboardInterrupt:
-    sys.exit()
+  main()

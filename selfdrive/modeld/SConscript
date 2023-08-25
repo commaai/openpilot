@@ -5,6 +5,10 @@ lenvCython = envCython.Clone()
 libs = [cereal, messaging, visionipc, gpucommon, common, 'capnp', 'zmq', 'kj', 'pthread']
 frameworks = []
 
+config = {
+  'USE_ONNX': False
+}
+
 common_src = [
   "models/commonmodel.cc",
   "transforms/loadyuv.cc",
@@ -69,11 +73,6 @@ lenv.Program('_dmonitoringmodeld', [
     "models/dmonitoring.cc",
   ]+common_model, LIBS=libs + snpe_lib)
 
-lenv.Program('_navmodeld', [
-    "navmodeld.cc",
-    "models/nav.cc",
-  ]+common_model, LIBS=libs + snpe_lib)
-
 # Build thneed model
 if arch == "larch64" or GetOption('pc_thneed'):
   fn = File("models/supercombo").abspath
@@ -90,3 +89,8 @@ if arch == "larch64" or GetOption('pc_thneed'):
   thneed_lib = env.SharedLibrary('thneed', thneed_src, LIBS=[gpucommon, common, 'zmq', 'OpenCL', 'dl'])
   thneedmodel_lib = env.Library('thneedmodel', ['runners/thneedmodel.cc'])
   lenvCython.Program('runners/thneedmodel_pyx.so', 'runners/thneedmodel_pyx.pyx', LIBS=envCython["LIBS"]+[thneedmodel_lib, thneed_lib, gpucommon, common, 'dl', 'zmq', 'OpenCL'])
+
+# write config file
+for k,v in config.items():
+  lenv[k] = v
+lenv.Textfile('config.py', source=['\n'.join(f'{k} = ${k}' for k in config)], varlist=config.keys())
