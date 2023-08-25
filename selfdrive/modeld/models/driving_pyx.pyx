@@ -1,11 +1,12 @@
 # distutils: language = c++
-# cython: c_string_encoding=ascii, language_level=3
+# cython: c_string_encoding=ascii
 
 import numpy as np
 cimport numpy as cnp
 from libcpp cimport bool
 from libc.string cimport memcpy
 from libc.stdint cimport uint32_t, uint64_t
+
 from .commonmodel cimport mat3
 from .driving cimport FEATURE_LEN as CPP_FEATURE_LEN, HISTORY_BUFFER_LEN as CPP_HISTORY_BUFFER_LEN, DESIRE_LEN as CPP_DESIRE_LEN, \
                       TRAFFIC_CONVENTION_LEN as CPP_TRAFFIC_CONVENTION_LEN, DRIVING_STYLE_LEN as CPP_DRIVING_STYLE_LEN, \

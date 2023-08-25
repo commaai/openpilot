@@ -1,8 +1,8 @@
 # distutils: language = c++
-#cython: language_level=3
 
 from libcpp cimport bool
 from libc.stdint cimport uint32_t, uint64_t
+
 from .commonmodel cimport mat3
 
 cdef extern from "cereal/messaging/messaging.h":
