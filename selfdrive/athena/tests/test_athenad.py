@@ -8,6 +8,7 @@ import time
 import threading
 import queue
 import unittest
+from dataclasses import asdict, replace
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -17,10 +18,10 @@ from unittest import mock
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
-from system import swaglog
-from selfdrive.athena import athenad
-from selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
-from selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
+from openpilot.system import swaglog
+from openpilot.selfdrive.athena import athenad
+from openpilot.selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
+from openpilot.selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
 from cereal import messaging
 
 
@@ -158,7 +159,7 @@ class TestAthenadMethods(unittest.TestCase):
     resp = dispatcher["uploadFileToUrl"]("qlog.bz2", f"{host}/qlog.bz2", {})
     self.assertEqual(resp['enqueued'], 1)
     self.assertNotIn('failed', resp)
-    self.assertDictContainsSubset({"path": fn, "url": f"{host}/qlog.bz2", "headers": {}}, resp['items'][0])
+    self.assertLessEqual({"path": fn, "url": f"{host}/qlog.bz2", "headers": {}}.items(), resp['items'][0].items())
     self.assertIsNotNone(resp['items'][0].get('id'))
     self.assertEqual(athenad.upload_queue.qsize(), 1)
 
@@ -226,7 +227,7 @@ class TestAthenadMethods(unittest.TestCase):
     """When an upload times out or fails to connect it should be placed back in the queue"""
     fn = self._create_file('qlog.bz2')
     item = athenad.UploadItem(path=fn, url="http://localhost:44444/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
-    item_no_retry = item._replace(retry_count=MAX_RETRY_COUNT)
+    item_no_retry = replace(item, retry_count=MAX_RETRY_COUNT)
 
     end_event = threading.Event()
     thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))
@@ -252,7 +253,8 @@ class TestAthenadMethods(unittest.TestCase):
       end_event.set()
 
   def test_cancelUpload(self):
-    item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='id', allow_cellular=True)
+    item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={},
+                              created_at=int(time.time()*1000), id='id', allow_cellular=True)
     athenad.upload_queue.put_nowait(item)
     dispatcher["cancelUpload"](item.id)
 
@@ -296,7 +298,7 @@ class TestAthenadMethods(unittest.TestCase):
     self.assertEqual(len(items), 0)
 
   @with_http_server
-  def test_listUploadQueueCurrent(self, host):
+  def test_listUploadQueueCurrent(self, host: str):
     fn = self._create_file('qlog.bz2')
     item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
 
@@ -316,12 +318,13 @@ class TestAthenadMethods(unittest.TestCase):
       end_event.set()
 
   def test_listUploadQueue(self):
-    item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='id', allow_cellular=True)
+    item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={},
+                              created_at=int(time.time()*1000), id='id', allow_cellular=True)
     athenad.upload_queue.put_nowait(item)
 
     items = dispatcher["listUploadQueue"]()
     self.assertEqual(len(items), 1)
-    self.assertDictEqual(items[0], item._asdict())
+    self.assertDictEqual(items[0], asdict(item))
     self.assertFalse(items[0]['current'])
 
     athenad.cancelled_uploads.add(item.id)
@@ -346,9 +349,9 @@ class TestAthenadMethods(unittest.TestCase):
     athenad.UploadQueueCache.initialize(athenad.upload_queue)
 
     self.assertEqual(athenad.upload_queue.qsize(), 1)
-    self.assertDictEqual(athenad.upload_queue.queue[-1]._asdict(), item1._asdict())
+    self.assertDictEqual(asdict(athenad.upload_queue.queue[-1]), asdict(item1))
 
-  @mock.patch('selfdrive.athena.athenad.create_connection')
+  @mock.patch('openpilot.selfdrive.athena.athenad.create_connection')
   def test_startLocalProxy(self, mock_create_connection):
     end_event = threading.Event()
 
@@ -375,6 +378,10 @@ class TestAthenadMethods(unittest.TestCase):
   def test_getSshAuthorizedKeys(self):
     keys = dispatcher["getSshAuthorizedKeys"]()
     self.assertEqual(keys, MockParams().params["GithubSshKeys"].decode('utf-8'))
+
+  def test_getGithubUsername(self):
+    keys = dispatcher["getGithubUsername"]()
+    self.assertEqual(keys, MockParams().params["GithubUsername"].decode('utf-8'))
 
   def test_getVersion(self):
     resp = dispatcher["getVersion"]()
@@ -416,6 +423,7 @@ class TestAthenadMethods(unittest.TestCase):
     # ensure the list is all logs except most recent
     sl = athenad.get_logs_to_send_sorted()
     self.assertListEqual(sl, fl[:-1])
+
 
 if __name__ == '__main__':
   unittest.main()

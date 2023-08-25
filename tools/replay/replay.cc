@@ -10,21 +10,38 @@
 #include "system/hardware/hw.h"
 #include "tools/replay/util.h"
 
-Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *sm_, uint32_t flags, QString data_dir, QObject *parent)
+Replay::Replay(QString route, QStringList allow, QStringList block, QStringList base_blacklist, SubMaster *sm_, uint32_t flags, QString data_dir, QObject *parent)
     : sm(sm_), flags_(flags), QObject(parent) {
   std::vector<const char *> s;
   auto event_struct = capnp::Schema::from<cereal::Event>().asStruct();
   sockets_.resize(event_struct.getUnionFields().size());
   for (const auto &it : services) {
-    if ((allow.empty() || allow.contains(it.name)) && !block.contains(it.name)) {
-      uint16_t which = event_struct.getFieldByName(it.name).getProto().getDiscriminantValue();
-      sockets_[which] = it.name;
+    auto name = it.second.name.c_str();
+    uint16_t which = event_struct.getFieldByName(name).getProto().getDiscriminantValue();
+    if ((which == cereal::Event::Which::UI_DEBUG || which == cereal::Event::Which::USER_FLAG) &&
+        !(flags & REPLAY_FLAG_ALL_SERVICES) &&
+        !allow.contains(name)) {
+      continue;
+    }
+
+    if ((allow.empty() || allow.contains(name)) && !block.contains(name)) {
+      sockets_[which] = name;
       if (!allow.empty() || !block.empty()) {
         allow_list.insert((cereal::Event::Which)which);
       }
-      s.push_back(it.name);
+      s.push_back(name);
     }
   }
+
+  if (!allow_list.empty()) {
+    // the following events are needed for replay to work properly.
+    allow_list.insert(cereal::Event::Which::INIT_DATA);
+    allow_list.insert(cereal::Event::Which::CAR_PARAMS);
+    if (sockets_[cereal::Event::Which::PANDA_STATES] != nullptr) {
+      allow_list.insert(cereal::Event::Which::PANDA_STATE_D_E_P_R_E_C_A_T_E_D);
+    }
+  }
+
   qDebug() << "services " << s;
   qDebug() << "loading route " << route;
 
@@ -51,9 +68,9 @@ void Replay::stop() {
     stream_thread_->wait();
     stream_thread_ = nullptr;
   }
-  segments_.clear();
   camera_server_.reset(nullptr);
   timeline_future.waitForFinished();
+  segments_.clear();
   rInfo("shutdown: done");
 }
 
@@ -84,7 +101,7 @@ void Replay::start(int seconds) {
 }
 
 void Replay::updateEvents(const std::function<bool()> &lambda) {
-  // set updating_events to true to force stream thread release the lock and wait for evnets_udpated.
+  // set updating_events to true to force stream thread release the lock and wait for events_updated.
   updating_events_ = true;
   {
     std::unique_lock lk(stream_lock_);
@@ -107,6 +124,7 @@ void Replay::seekTo(double seconds, bool relative) {
     rInfo("seeking to %d s, segment %d", (int)seconds, seg);
     current_segment_ = seg;
     cur_mono_time_ = route_start_ts_ + seconds * 1e9;
+    emit seekedTo(seconds);
     return isSegmentMerged(seg);
   });
   queueSegment();
@@ -120,8 +138,18 @@ void Replay::seekToFlag(FindFlag flag) {
 
 void Replay::buildTimeline() {
   uint64_t engaged_begin = 0;
+  bool engaged = false;
+
+  auto alert_status = cereal::ControlsState::AlertStatus::NORMAL;
+  auto alert_size = cereal::ControlsState::AlertSize::NONE;
   uint64_t alert_begin = 0;
-  TimelineType alert_type = TimelineType::None;
+  std::string alert_type;
+
+  const TimelineType timeline_types[] = {
+    [(int)cereal::ControlsState::AlertStatus::NORMAL] = TimelineType::AlertInfo,
+    [(int)cereal::ControlsState::AlertStatus::USER_PROMPT] = TimelineType::AlertWarning,
+    [(int)cereal::ControlsState::AlertStatus::CRITICAL] = TimelineType::AlertCritical,
+  };
 
   for (auto it = segments_.cbegin(); it != segments_.cend() && !exit_; ++it) {
     LogReader log;
@@ -133,26 +161,24 @@ void Replay::buildTimeline() {
       if (e->which == cereal::Event::Which::CONTROLS_STATE) {
         auto cs = e->event.getControlsState();
 
-        if (!engaged_begin && cs.getEnabled()) {
+        if (engaged != cs.getEnabled()) {
+          if (engaged) {
+            std::lock_guard lk(timeline_lock);
+            timeline.push_back({toSeconds(engaged_begin), toSeconds(e->mono_time), TimelineType::Engaged});
+          }
           engaged_begin = e->mono_time;
-        } else if (engaged_begin && !cs.getEnabled()) {
-          std::lock_guard lk(timeline_lock);
-          timeline.push_back({toSeconds(engaged_begin), toSeconds(e->mono_time), TimelineType::Engaged});
-          engaged_begin = 0;
+          engaged = cs.getEnabled();
         }
 
-        if (!alert_begin && cs.getAlertType().size() > 0) {
-          alert_begin = e->mono_time;
-          alert_type = TimelineType::AlertInfo;
-          if (cs.getAlertStatus() != cereal::ControlsState::AlertStatus::NORMAL) {
-            alert_type = cs.getAlertStatus() == cereal::ControlsState::AlertStatus::USER_PROMPT
-                             ? TimelineType::AlertWarning
-                             : TimelineType::AlertCritical;
+        if (alert_type != cs.getAlertType().cStr() || alert_status != cs.getAlertStatus()) {
+          if (!alert_type.empty() && alert_size != cereal::ControlsState::AlertSize::NONE) {
+            std::lock_guard lk(timeline_lock);
+            timeline.push_back({toSeconds(alert_begin), toSeconds(e->mono_time), timeline_types[(int)alert_status]});
           }
-        } else if (alert_begin && cs.getAlertType().size() == 0) {
-          std::lock_guard lk(timeline_lock);
-          timeline.push_back({toSeconds(alert_begin), toSeconds(e->mono_time), alert_type});
-          alert_begin = 0;
+          alert_begin = e->mono_time;
+          alert_type = cs.getAlertType().cStr();
+          alert_size = cs.getAlertSize();
+          alert_status = cs.getAlertStatus();
         }
       } else if (e->which == cereal::Event::Which::USER_FLAG) {
         std::lock_guard lk(timeline_lock);
@@ -185,7 +211,7 @@ std::optional<uint64_t> Replay::find(FindFlag flag) {
 
 void Replay::pause(bool pause) {
   updateEvents([=]() {
-    rWarning("%s at %d s", pause ? "paused..." : "resuming", currentSeconds());
+    rWarning("%s at %.2f s", pause ? "paused..." : "resuming", currentSeconds());
     paused_ = pause;
     return true;
   });
@@ -209,11 +235,17 @@ void Replay::segmentLoadFinished(bool success) {
 void Replay::queueSegment() {
   if (segments_.empty()) return;
 
-  SegmentMap::iterator cur, end;
-  cur = end = segments_.lower_bound(std::min(current_segment_.load(), segments_.rbegin()->first));
-  for (int i = 0; end != segments_.end() && i <= segment_cache_limit + FORWARD_FETCH_SEGS; ++i) {
+  SegmentMap::iterator begin, cur;
+  begin = cur = segments_.lower_bound(std::min(current_segment_.load(), segments_.rbegin()->first));
+  int distance = std::max<int>(std::ceil(segment_cache_limit / 2.0) - 1, segment_cache_limit - std::distance(cur, segments_.end()));
+  for (int i = 0; begin != segments_.begin() && i < distance; ++i) {
+    --begin;
+  }
+  auto end = begin;
+  for (int i = 0; end != segments_.end() && i < segment_cache_limit; ++i) {
     ++end;
   }
+
   // load one segment at a time
   for (auto it = cur; it != end; ++it) {
     auto &[n, seg] = *it;
@@ -227,12 +259,6 @@ void Replay::queueSegment() {
     }
   }
 
-  const auto &cur_segment = cur->second;
-  // merge the previous adjacent segment if it's loaded
-  auto begin = segments_.find(cur_segment->seg_num - 1);
-  if (begin == segments_.end() || !(begin->second && begin->second->isLoaded())) {
-    begin = cur;
-  }
   mergeSegments(begin, end);
 
   // free segments out of current semgnt window.
@@ -240,6 +266,7 @@ void Replay::queueSegment() {
   std::for_each(end, segments_.end(), [](auto &e) { e.second.reset(nullptr); });
 
   // start stream thread
+  const auto &cur_segment = cur->second;
   if (stream_thread_ == nullptr && cur_segment->isLoaded()) {
     startStream(cur_segment.get());
     emit streamStarted();
@@ -247,12 +274,13 @@ void Replay::queueSegment() {
 }
 
 void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::iterator &end) {
-  // merge 3 segments in sequence.
   std::vector<int> segments_need_merge;
   size_t new_events_size = 0;
-  for (auto it = begin; it != end && it->second && it->second->isLoaded() && segments_need_merge.size() < segment_cache_limit; ++it) {
-    segments_need_merge.push_back(it->first);
-    new_events_size += it->second->log->events.size();
+  for (auto it = begin; it != end; ++it) {
+    if (it->second && it->second->isLoaded()) {
+      segments_need_merge.push_back(it->first);
+      new_events_size += it->second->log->events.size();
+    }
   }
 
   if (segments_need_merge != segments_merged_) {
@@ -266,18 +294,23 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
     new_events_->reserve(new_events_size);
     for (int n : segments_need_merge) {
       const auto &e = segments_[n]->log->events;
-      auto middle = new_events_->insert(new_events_->end(), e.begin(), e.end());
-      std::inplace_merge(new_events_->begin(), middle, new_events_->end(), Event::lessThan());
+      if (e.size() > 0) {
+        auto insert_from = e.begin();
+        if (new_events_->size() > 0 && (*insert_from)->which == cereal::Event::Which::INIT_DATA) ++insert_from;
+        auto middle = new_events_->insert(new_events_->end(), insert_from, e.end());
+        std::inplace_merge(new_events_->begin(), middle, new_events_->end(), Event::lessThan());
+      }
     }
 
-    updateEvents([&]() {
-      events_.swap(new_events_);
-      segments_merged_ = segments_need_merge;
-      return true;
-    });
     if (stream_thread_) {
       emit segmentsMerged();
     }
+    updateEvents([&]() {
+      events_.swap(new_events_);
+      segments_merged_ = segments_need_merge;
+      // Do not wake up the stream thread if the current segment has not been merged.
+      return isSegmentMerged(current_segment_) || (segments_.count(current_segment_) == 0);
+    });
   }
 }
 

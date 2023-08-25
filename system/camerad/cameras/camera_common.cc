@@ -5,9 +5,10 @@
 #include <cassert>
 #include <cstdio>
 #include <chrono>
+#include <string>
 #include <thread>
 
-#include "libyuv.h"
+#include "third_party/libyuv/include/libyuv.h"
 #include <jpeglib.h>
 
 #include "system/camerad/imgproc/utils.h"
@@ -16,7 +17,7 @@
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "system/hardware/hw.h"
-#include "msm_media_info.h"
+#include "third_party/linux/include/msm_media_info.h"
 
 #include "system/camerad/cameras/camera_qcom2.h"
 #ifdef QCOM2
@@ -81,8 +82,6 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
 
   rgb_width = ci->frame_width;
   rgb_height = ci->frame_height;
-
-  yuv_transform = get_model_yuv_transform();
 
   int nv12_width = VENUS_Y_STRIDE(COLOR_FMT_NV12, rgb_width);
   int nv12_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, rgb_height);
@@ -151,15 +150,11 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setFrameId(frame_data.frame_id);
   framed.setTimestampEof(frame_data.timestamp_eof);
   framed.setTimestampSof(frame_data.timestamp_sof);
-  framed.setFrameLength(frame_data.frame_length);
   framed.setIntegLines(frame_data.integ_lines);
   framed.setGain(frame_data.gain);
   framed.setHighConversionGain(frame_data.high_conversion_gain);
   framed.setMeasuredGreyFraction(frame_data.measured_grey_fraction);
   framed.setTargetGreyFraction(frame_data.target_grey_fraction);
-  framed.setLensPos(frame_data.lens_pos);
-  framed.setLensErr(frame_data.lens_err);
-  framed.setLensTruePos(frame_data.lens_true_pos);
   framed.setProcessingTime(frame_data.processing_time);
 
   const float ev = c->cur_ev[frame_data.frame_id % 3];
@@ -167,7 +162,7 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setExposureValPercent(perc);
 
   if (c->camera_id == CAMERA_ID_AR0231) {
-    framed.setSensor(cereal::FrameData::ImageSensor::AR0321);
+    framed.setSensor(cereal::FrameData::ImageSensor::AR0231);
   } else if (c->camera_id == CAMERA_ID_OX03C10) {
     framed.setSensor(cereal::FrameData::ImageSensor::OX03C10);
   }

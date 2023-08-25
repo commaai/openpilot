@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import requests
-from common.params import Params
+from openpilot.common.params import Params
 import sys
 
 
@@ -14,8 +14,10 @@ if __name__ == "__main__":
   keys = requests.get(f"https://github.com/{username}.keys", timeout=10)
 
   if keys.status_code == 200:
-    Params().put("GithubSshKeys", keys.text)
-    Params().put("GithubUsername", username)
+    params = Params()
+    params.put_bool("SshEnabled", True)
+    params.put("GithubSshKeys", keys.text)
+    params.put("GithubUsername", username)
     print("Setup ssh keys successfully")
   else:
     print("Error getting public keys from github")

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 from cereal import car
 from panda import Panda
-from selfdrive.car.tesla.values import CANBUS, CAR
-from selfdrive.car import STD_CARGO_KG, get_safety_config
-from selfdrive.car.interfaces import CarInterfaceBase
+from openpilot.selfdrive.car.tesla.values import CANBUS, CAR
+from openpilot.selfdrive.car import get_safety_config
+from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "tesla"
 
     # There is no safe way to do steer blending with user torque,
@@ -23,7 +23,6 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kpV = [0]
     ret.longitudinalTuning.kiBP = [0]
     ret.longitudinalTuning.kiV = [0]
-    ret.stopAccel = 0.0
     ret.longitudinalActuatorDelayUpperBound = 0.5 # s
     ret.radarTimeStep = (1.0 / 8) # 8Hz
 
@@ -43,7 +42,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.25
 
     if candidate in (CAR.AP2_MODELS, CAR.AP1_MODELS):
-      ret.mass = 2100. + STD_CARGO_KG
+      ret.mass = 2100.
       ret.wheelbase = 2.959
       ret.centerToFront = ret.wheelbase * 0.5
       ret.steerRatio = 15.0
@@ -59,5 +58,5 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  def apply(self, c):
-    return self.CC.update(c, self.CS)
+  def apply(self, c, now_nanos):
+    return self.CC.update(c, self.CS, now_nanos)

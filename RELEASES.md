@@ -1,10 +1,84 @@
-Version 0.9.1 (2022-12-XX)
+Version 0.9.5 (202X-XX-XX)
 ========================
-* Adjust alert volume using ambient noise level
-* Removed driver monitoring timer resetting on interaction if face detected and distracted
+* Kia Sorento Hybrid 2023 support thanks to sunnyhaibin!
+* Lexus IS 2023 support thanks to L3R5!
+
+Version 0.9.4 (2023-07-27)
+========================
+* comma 3X support
+* Navigate on openpilot in Experimental mode
+  * When navigation has a destination, openpilot will input the map information into the model, which provides useful context to help the model understand the scene
+  * When navigating on openpilot, openpilot will keep left or right appropriately at forks and exits
+  * When navigating on openpilot, lane change behavior is unchanged and still activated by the driver
+  * When navigate on openpilot is active, the path on the map is green
+* UI updates
+  * Navigation settings moved to home screen and map
+  * Border color always shows engagement status. Blue means disengaged, green means engaged, and grey means engaged with human overriding
+  * Alerts are shown inside the border. Black means info, orange means warning, and red means critical alert
+* Bookmarked segments are preserved on the device's storage
+* Ford Focus 2018 support
+* Kia Carnival 2023 support thanks to sunnyhaibin!
+
+Version 0.9.3 (2023-06-29)
+========================
+* New driving model
+  * Improved height estimation and added height tracking in liveCalibration
+  * Model inputs refactor
+* New driving personality setting
+  * Three settings: aggressive, standard, and relaxed
+  * Standard is recommended and the default
+  * In aggressive mode, lead follow distance is shorter and acceleration response is quicker
+  * In relaxed mode, lead follow distance is longer
+* Improved fuzzy fingerprinting for Hyundai, Kia, and Genesis
+* Improved thermal management logic
+
+Version 0.9.2 (2023-05-22)
+========================
+* New driving model
+  * Reduced turn diving
+  * Trained on a new dataset
+* UI updates
+  * New experimental mode visualization
+  * Draw MPC path instead of model-predicted path
+* AGNOS 7
+  * Faster boot time
+  * Fixes rare no sounds bug
+  * Fixes bootsplash bug at extreme temperatures
+* Buick LaCrosse 2017-19 support thanks to koch-cf!
+* Chevrolet Trailblazer 2021-22 support thanks to TurboCE!
+* Ford Bronco Sport 2021-22 support
+* Ford Escape 2020-22 support
+* Ford Explorer 2020-22 support
+* Ford Kuga 2020-22 support
+* Ford Maverick 2022-23 support
+* Genesis GV80 2023 support thanks to JWingate80!
+* Honda HR-V 2023 support thanks to AlexandreSato and galegozi!
+* Kia Niro EV 2023 support thanks to JosselinLecocq!
+* Lexus ES 2017-18 support
+* Lincoln Aviator 2021 support
+* Škoda Fabia 2022-23 support thanks to jyoung8607!
+
+
+Version 0.9.1 (2023-02-28)
+========================
+* New driving model
+  * 30% improved height estimation resulting in better driving performance for tall cars
+* Driver monitoring: removed timer resetting on user interaction if distracted
+* UI updates
+  * Adjust alert volume using ambient noise level
+  * Driver monitoring icon shows driver's head pose
+  * German translation thanks to Vrabetz and CzokNorris!
+* Cadillac Escalade 2017 support thanks to rickygilleland!
 * Chevrolet Bolt EV 2022-23 support thanks to JasonJShuler!
+* Genesis GV60 2023 support thanks to sunnyhaibin!
 * Hyundai Tucson 2022-23 support
+* Kia K5 Hybrid 2020 support thanks to sunnyhaibin!
+* Kia Niro Hybrid 2023 support thanks to sunnyhaibin!
+* Kia Sorento 2022-23 support thanks to sunnyhaibin!
 * Kia Sorento Plug-in Hybrid 2022 support thanks to sunnyhaibin!
+* Toyota C-HR 2021 support thanks to eFiniLan!
+* Toyota C-HR Hybrid 2022 support thanks to Korben00!
+* Volkswagen Crafter and MAN TGE 2017-23 support thanks to jyoung8607!
 
 Version 0.9.0 (2022-11-21)
 ========================

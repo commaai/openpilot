@@ -1,5 +1,4 @@
 # type: ignore
-# pylint: skip-file
 
 # Configuration file for the Sphinx documentation builder.
 #
@@ -17,8 +16,8 @@ import os
 import sys
 from os.path import exists
 
-from common.basedir import BASEDIR
-from system.version import get_version
+from openpilot.common.basedir import BASEDIR
+from openpilot.system.version import get_version
 
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
@@ -29,7 +28,7 @@ VERSION = get_version()
 # -- Project information -----------------------------------------------------
 
 project = 'openpilot docs'
-copyright = '2021, comma.ai'
+copyright = '2021, comma.ai' # noqa: A001
 author = 'comma.ai'
 version = VERSION
 release = VERSION
@@ -100,7 +99,7 @@ breathe_projects_source = {}
 
 # only document files that have accompanying .cc files next to them
 print("searching for c_docs...")
-for root, dirs, files in os.walk(BASEDIR):
+for root, _, files in os.walk(BASEDIR):
   found = False
   breath_src = {}
   breathe_srcs_list = []

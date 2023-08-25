@@ -1,9 +1,9 @@
-#include "locationd.h"
+#include "selfdrive/locationd/locationd.h"
 
 extern "C" {
   typedef Localizer* Localizer_t;
 
-  Localizer *localizer_init() {
+  Localizer *localizer_init(bool has_ublox) {
     return new Localizer();
   }
 
