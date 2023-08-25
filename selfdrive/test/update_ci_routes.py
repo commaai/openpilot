@@ -71,7 +71,7 @@ def upload_route(path: str, exclude_patterns=None) -> None:
 
 
 def sync_to_ci_public(route: str) -> bool:
-  dest_key, source_keys, container = get_azure_keys()
+  dest_key, source_keys = get_azure_keys()
   key_prefix = route.replace('|', '/')
   dongle_id = key_prefix.split('/')[0]
 
