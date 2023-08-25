@@ -357,7 +357,7 @@ jobs:
 
   test_cars:
     name: cars
-    runs-on: ${{ ((github.event.pull_request.head.repo.full_name == 'commaai/openpilot') || (github.repository == 'commaai/openpilot')) && 'buildjet-8vcpu-ubuntu-2004' || 'ubuntu-20.04' }}
+    runs-on: ${{ ((github.event.pull_request.head.repo.full_name == 'commaai/openpilot') || (github.repository == 'commaai/openpilot')) && 'buildjet-4vcpu-ubuntu-2004' || 'ubuntu-20.04' }}
     strategy:
       fail-fast: false
       matrix:
