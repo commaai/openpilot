@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+# To build sim and docs, you can run the following to mount the scons cache to the same place as in CI:
+# mkdir -p .ci_cache/scons_cache
+# sudo mount --bind /tmp/scons_cache/ .ci_cache/scons_cache
+
 if [ $1 = "base" ]; then
   export DOCKER_IMAGE=openpilot-base
   export DOCKER_FILE=Dockerfile.openpilot_base
