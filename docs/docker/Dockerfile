@@ -1,5 +1,3 @@
-FROM scons-cache as scons-cache
-
 FROM ghcr.io/commaai/openpilot-base:latest
 
 ENV PYTHONUNBUFFERED 1
