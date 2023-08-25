@@ -394,7 +394,7 @@ jobs:
           submodules: true
           ref: ${{ github.event.pull_request.base.ref }}
           path: base
-      - uses: ./.github/workflows/setup
+      - uses: ./base/.github/workflows/setup
       - name: Get base car info
         run: |
           cd base
