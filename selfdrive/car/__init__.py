@@ -27,12 +27,12 @@ def create_button_events(cur_btn: int, prev_btn: int, buttons_dict: Dict[int, ca
 
   # Add events for button presses, handling when a button switches without going to unpressed
   if cur_btn != prev_btn:
-    for pressed, btn in ((False, prev_btn), (True, cur_btn)):
-      if btn == unpressed_btn:
-        continue
-
-      events.append(car.CarState.ButtonEvent(pressed=pressed,
-                                             type=buttons_dict.get(btn, ButtonType.unknown)))
+    if prev_btn != unpressed_btn:
+      events.append(car.CarState.ButtonEvent(pressed=False,
+                                             type=buttons_dict.get(prev_btn, ButtonType.unknown)))
+    if cur_btn != unpressed_btn:
+      events.append(car.CarState.ButtonEvent(pressed=True,
+                                             type=buttons_dict.get(cur_btn, ButtonType.unknown)))
 
   return events
 
