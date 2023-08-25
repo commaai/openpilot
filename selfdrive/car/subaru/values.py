@@ -138,6 +138,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [StdQueries.TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
     ),
     # Some Eyesight modules fail on TESTER_PRESENT_REQUEST
+    # TODO: check if this resolves the fingerprinting issue for the 2023 ASCENT and other new cars
     Request(
       [SUBARU_VERSION_REQUEST],
       [SUBARU_VERSION_RESPONSE],
