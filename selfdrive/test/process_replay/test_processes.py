@@ -177,7 +177,7 @@ if __name__ == "__main__":
                       help="Updates reference logs using current commit")
   parser.add_argument("--upload-only", action="store_true",
                       help="Skips testing processes and uploads logs from previous test run")
-  parser.add_argument("-j", "--jobs", type=int, default=max(min(cpu_count - 2, 24), 1),
+  parser.add_argument("-j", "--jobs", type=int, default=max(cpu_count - 2, 1),
                       help="Max amount of parallel jobs")
   args = parser.parse_args()
 
