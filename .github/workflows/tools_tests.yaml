@@ -37,7 +37,7 @@ jobs:
       run: eval "$BUILD"
     - name: Build openpilot
       timeout-minutes: 5
-      run: ${{ env.RUN }} "scons -j$(nproc) --directory=/tmp/openpilot"
+      run: ${{ env.RUN }} "scons -j$(nproc) --directory=/tmp/openpilot/cereal --minimal"
     - name: Test PlotJuggler
       timeout-minutes: 2
       run: |
