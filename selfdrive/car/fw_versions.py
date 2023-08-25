@@ -149,9 +149,7 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True, log=True):
   if allow_fuzzy:
     exact_matches.append((False, match_fw_to_car_fuzzy))
 
-  brand_to_fw_dict = {}
-  for brand in VERSIONS.keys():
-    brand_to_fw_dict[brand] = build_fw_dict(fw_versions, filter_brand=brand)
+  brand_to_fw_dict = {build_fw_dict(fw_versions, filter_brand=brand) for brand in VERSIONS.keys()}
 
   for exact_match, match_func in exact_matches:
     # For each brand, attempt to fingerprint using all FW returned from its queries
