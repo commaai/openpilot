@@ -6,6 +6,8 @@
 #include "cereal/messaging/messaging.h"
 #include "common/modeldata.h"
 #include "common/util.h"
+#include "selfdrive/modeld/models/commonmodel.h"
+#include "selfdrive/modeld/runners/run.h"
 
 constexpr int FEATURE_LEN = 128;
 constexpr int HISTORY_BUFFER_LEN = 99;

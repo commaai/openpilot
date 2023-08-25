@@ -10,16 +10,17 @@ from typing import Tuple, Dict
 from cereal import messaging
 from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType
+from openpilot.system.hardware import TICI
 from openpilot.system.swaglog import cloudlog
 from openpilot.common.params import Params
-from openpilot.selfdrive.modeld.config import USE_ONNX
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import Runtime
 
-if USE_ONNX:
-  from selfdrive.modeld.runners.onnxmodel_pyx import ONNXModel as ModelRunner
-else:
+USE_SNPE_MODEL = TICI or int(os.getenv('USE_SNPE_MODEL', '0'))
+if USE_SNPE_MODEL:
   os.environ['ADSP_LIBRARY_PATH'] = "/data/pythonpath/third_party/snpe/dsp/"
   from selfdrive.modeld.runners.snpemodel_pyx import SNPEModel as ModelRunner
+else:
+  from selfdrive.modeld.runners.onnxmodel_pyx import ONNXModel as ModelRunner
 
 TRAJECTORY_SIZE = 33
 NAV_INPUT_SIZE = 256*256
@@ -27,7 +28,7 @@ NAV_FEATURE_LEN = 256
 NAV_INSTRUCTION_LEN = 150
 NAV_DESIRE_LEN = 32
 NAV_OUTPUT_SIZE = 2*2*TRAJECTORY_SIZE + NAV_DESIRE_LEN + NAV_FEATURE_LEN
-MODEL_PATH = str(Path(__file__).parent / 'models' / ('navmodel.onnx' if USE_ONNX else 'navmodel_q.dlc'))
+MODEL_PATH = str(Path(__file__).parent / 'models' / ('navmodel_q.dlc' if USE_SNPE_MODEL else 'navmodel.onnx'))
 
 class NavModelOutputXY(ctypes.Structure):
   _fields_ = [
