@@ -309,15 +309,10 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_body)
 
-    buttonEvents = []
-
-    if self.CS.cruise_buttons != self.CS.prev_cruise_buttons:
-      buttonEvents.extend(create_button_events(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT))
-
-    if self.CS.cruise_setting != self.CS.prev_cruise_setting:
-      buttonEvents.extend(create_button_events(self.CS.cruise_setting, self.CS.prev_cruise_setting, {1: ButtonType.altButton1}))
-
-    ret.buttonEvents = buttonEvents
+    ret.buttonEvents = [
+      *create_button_events(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT),
+      *create_button_events(self.CS.cruise_setting, self.CS.prev_cruise_setting, {1: ButtonType.altButton1}),
+    ]
 
     # events
     events = self.create_common_events(ret, pcm_enable=False)
