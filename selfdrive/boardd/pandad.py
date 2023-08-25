@@ -148,13 +148,14 @@ def main() -> NoReturn:
       panda_serials = Panda.list()
       if len(panda_serials) == 0:
         no_panda_count += 1
-        if no_panda_count < 5:
+        if no_panda_count == 3:
+          cloudlog.info("No pandas found, putting internal panda into DFU")
+          HARDWARE.recover_internal_panda()
+        else:
           cloudlog.info("No pandas found, resetting internal panda")
           HARDWARE.reset_internal_panda()
           time.sleep(3)  # wait to come back up
-        else:
-          cloudlog.info("No pandas found, putting internal panda into DFU")
-          HARDWARE.recover_internal_panda()
+
         continue
       else:
         no_panda_count = 0
