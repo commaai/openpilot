@@ -67,11 +67,21 @@ def create_cam_0x2a4(packer, CAN, cam_0x2a4):
   values["BYTE7"] = 0
   return packer.make_can_msg("CAM_0x2a4", CAN.ACAN, values)
 
-def create_cam_0x364(packer, CAN, cam_0x364):
-  values = {f"BYTE{i}": cam_0x364[f"BYTE{i}"] for i in range(3, 32)}
-  values['COUNTER'] = cam_0x364['COUNTER']
-  values["BYTE7"] = 0
-  return packer.make_can_msg("CAM_0x364", CAN.ACAN, values)
+def create_block_lfa(packer, CAN, CS):
+  ret = []
+
+  cam_0x230_values = {s: CS.cam_0x230[s] for s in ["COUNTER"]}
+  ret.append(packer.make_can_msg("CAM_0x230", CAN.ACAN, cam_0x230_values))
+
+  for i in range(0x235, 0x248 + 1):
+    cam_1_values = {s: CS[f"cam_0x{i:03X}"][s] for s in ["COUNTER"]}
+    ret.append(packer.make_can_msg(f"CAM_0x{i:03X}", CAN.ACAN, cam_1_values))
+
+  for i in range(0x360, 0x366 + 1):
+    cam_2_values = {s: CS[f"cam_0x{i:03X}"][s] for s in ["COUNTER"]}
+    ret.append(packer.make_can_msg(f"CAM_0x{i:03X}", CAN.ACAN, cam_2_values))
+
+  return ret
 
 def create_buttons(packer, CP, CAN, cnt, btn):
   values = {
