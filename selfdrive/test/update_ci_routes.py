@@ -59,17 +59,11 @@ def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) ->
   subprocess.check_call(cmd)
 
 
-@lru_cache
-def get_container_client() -> ContainerClient:
-  return ContainerClient(DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER, credential=get_azure_credential())
-
-
-def sync_to_ci_public(route: str) -> bool:
+def sync_to_ci_public(container: ContainerClient, route: str) -> bool:
   key_prefix = route.replace('|', '/')
   dongle_id = key_prefix.split('/')[0]
 
-  container_client = get_container_client()
-  if next(container_client.list_blob_names(name_starts_with=key_prefix), None) is not None:
+  if next(container.list_blob_names(name_starts_with=key_prefix), None) is not None:
     return True
 
   print(f"Uploading {route}")
@@ -108,8 +102,9 @@ if __name__ == "__main__":
     to_sync.extend([rt.route for rt in test_car_models_routes])
     to_sync.extend([s[1].rsplit('--', 1)[0] for s in replay_segments])
 
+  container = ContainerClient(DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER, credential=get_azure_credential())
   for r in tqdm(to_sync):
-    if not sync_to_ci_public(r):
+    if not sync_to_ci_public(container, r):
       failed_routes.append(r)
 
   if len(failed_routes):
