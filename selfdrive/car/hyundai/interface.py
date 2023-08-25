@@ -53,7 +53,7 @@ class CarInterface(CarInterfaceBase):
       if 0x2a4 in fingerprint[5]:
         ret.flags |= HyundaiFlags.CAN_CANFD.value
 
-      lfa_bus = 6 if ret.flags & HyundaiFlags.CAN_CANFD else 2
+      lfa_bus = CAN.CAM if ret.flags & HyundaiFlags.CAN_CANFD else 2
       # Send LFA message on cars with HDA
       if 0x485 in fingerprint[lfa_bus]:
         ret.flags |= HyundaiFlags.SEND_LFA.value
@@ -267,7 +267,7 @@ class CarInterface(CarInterfaceBase):
     if candidate in CANFD_CAR:
       ret.enableBsm = 0x1e5 in fingerprint[CAN.ECAN]
     else:
-      bus = 4 if ret.flags & HyundaiFlags.CAN_CANFD else 0
+      bus = CAN.ECAN if ret.flags & HyundaiFlags.CAN_CANFD else 0
       ret.enableBsm = 0x58b in fingerprint[bus]
 
     # *** panda safety config ***

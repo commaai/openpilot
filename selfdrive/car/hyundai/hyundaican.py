@@ -1,4 +1,5 @@
 import crcmod
+from selfdrive.car.hyundai.hyundaicanfd import CanBus
 from selfdrive.car.hyundai.values import HyundaiFlags, CAR, CHECKSUM, CAMERA_SCC_CAR
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
@@ -8,7 +9,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
                   left_lane, right_lane,
                   left_lane_depart, right_lane_depart, CP):
   can_canfd = CP.flags & HyundaiFlags.CAN_CANFD
-  bus = 4 if can_canfd else 0
+  bus = CanBus(CP).ECAN if can_canfd else 0
 
   lkas11_sigs = [
     "CF_Lkas_LdwsActivemode",
@@ -129,13 +130,13 @@ def create_clu11(packer, frame, clu11, button, CP):
   values["CF_Clu_CruiseSwState"] = button
   values["CF_Clu_AliveCnt1"] = frame % 0x10
   # send buttons to camera on camera-scc based cars
-  bus = 2 if CP.carFingerprint in CAMERA_SCC_CAR else 4 if CP.flags & HyundaiFlags.CAN_CANFD else 0
+  bus = 2 if CP.carFingerprint in CAMERA_SCC_CAR else CanBus(CP).ECAN if CP.flags & HyundaiFlags.CAN_CANFD else 0
   return packer.make_can_msg("CLU11", bus, values)
 
 
 def create_lfahda_mfc(packer, frame, enabled, CP):
   can_canfd = CP.flags & HyundaiFlags.CAN_CANFD
-  bus = 4 if can_canfd else 0
+  bus = CanBus(CP).ECAN if can_canfd else 0
 
   values = {
     "LFA_Icon_State": 2 if enabled else 0,
