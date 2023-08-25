@@ -244,6 +244,7 @@ routes = [
   CarTestRoute("f4e3a0c511a076f4|2022-08-04--16-16-48", SUBARU.CROSSTREK_HYBRID, segment=2),
   CarTestRoute("7fd1e4f3a33c1673|2022-12-04--15-09-53", SUBARU.FORESTER_2022, segment=4),
   CarTestRoute("f3b34c0d2632aa83|2023-07-23--20-43-25", SUBARU.OUTBACK_2023, segment=7),
+  CarTestRoute("99437cef6d5ff2ee|2023-03-13--21-21-38", SUBARU.ASCENT_2023, segment=7),
   # Pre-global, dashcam
   CarTestRoute("95441c38ae8c130e|2020-06-08--12-10-17", SUBARU.FORESTER_PREGLOBAL),
   CarTestRoute("df5ca7660000fba8|2020-06-16--17-37-19", SUBARU.LEGACY_PREGLOBAL),
