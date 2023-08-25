@@ -3,24 +3,23 @@ import os
 from pathlib import Path
 from typing import IO, Union
 
+from azure.identity import AzureCliCredential
+
 DATA_CI_ACCOUNT = "commadataci"
 DATA_CI_ACCOUNT_URL = f"https://{DATA_CI_ACCOUNT}.blob.core.windows.net"
 DATA_CI_CONTAINER = "openpilotci"
+BASE_URL = f"{DATA_CI_ACCOUNT_URL}/{DATA_CI_CONTAINER}"
 
 TOKEN_PATH = Path("/data/azure_token")
-
-
-def get_ci_blob_url(blob_name: str) -> str:
-  return f"{DATA_CI_ACCOUNT_URL}/{DATA_CI_CONTAINER}/{blob_name}"
 
 
 def get_url(route_name: str, segment_num: str, log_type="rlog") -> str:
   ext = "hevc" if log_type.endswith('camera') else "bz2"
   blob_name = f"{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
-  return get_ci_blob_url(blob_name)
+  return f"{BASE_URL}/{blob_name}"
 
 
-def get_azure_credential():
+def get_azure_credential() -> Union[str, AzureCliCredential]:
   if "AZURE_TOKEN" in os.environ:
     return os.environ["AZURE_TOKEN"]
   elif TOKEN_PATH.is_file():
@@ -39,7 +38,7 @@ def upload_bytes(data: Union[bytes, IO], blob_name: str) -> str:
     credential=get_azure_credential(),
   )
   blob.upload_blob(data)
-  return get_ci_blob_url(blob_name)
+  return f"{BASE_URL}/{blob_name}"
 
 
 def upload_file(path: Union[str, os.PathLike], blob_name: str) -> str:
