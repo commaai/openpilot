@@ -354,6 +354,7 @@ selfdrive/manager/process.py
 selfdrive/manager/test/__init__.py
 selfdrive/manager/test/test_manager.py
 
+selfdrive/modeld/.gitignore
 selfdrive/modeld/__init__.py
 selfdrive/modeld/SConscript
 selfdrive/modeld/modeld.cc
@@ -363,6 +364,10 @@ selfdrive/modeld/constants.py
 selfdrive/modeld/modeld
 selfdrive/modeld/navmodeld
 selfdrive/modeld/dmonitoringmodeld
+
+selfdrive/modeld/models/__init__.py
+selfdrive/modeld/models/*.pxd
+selfdrive/modeld/models/*.pyx
 
 selfdrive/modeld/models/commonmodel.cc
 selfdrive/modeld/models/commonmodel.h
@@ -391,6 +396,10 @@ selfdrive/modeld/thneed/thneed.h
 selfdrive/modeld/thneed/thneed_common.cc
 selfdrive/modeld/thneed/thneed_qcom2.cc
 selfdrive/modeld/thneed/serialize.cc
+
+selfdrive/modeld/runners/__init__.py
+selfdrive/modeld/runners/*.pxd
+selfdrive/modeld/runners/*.pyx
 
 selfdrive/modeld/runners/snpemodel.cc
 selfdrive/modeld/runners/snpemodel.h

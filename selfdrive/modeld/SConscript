@@ -1,7 +1,8 @@
 import os
 
-Import('env', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc', 'transformations')
+Import('env', 'envCython', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc', 'transformations')
 lenv = env.Clone()
+lenvCython = envCython.Clone()
 
 libs = [cereal, messaging, common, visionipc, gpucommon,
         'OpenCL', 'SNPE', 'capnp', 'zmq', 'kj', 'yuv']
@@ -53,8 +54,28 @@ else:
     del common_src[common_src.index('runners/snpemodel.cc')]
 
 for pathdef, fn in {'TRANSFORM': 'transforms/transform.cl', 'LOADYUV': 'transforms/loadyuv.cl', 'ONNXRUNNER': 'runners/onnx_runner.py'}.items():
-  path = File(fn).abspath
-  lenv['CXXFLAGS'].append(f'-D{pathdef}_PATH=\\"{path}\\"')
+  for xenv in (lenv, lenvCython):
+    xenv['CXXFLAGS'].append(f'-D{pathdef}_PATH=\\"{File(fn).abspath}\\"')
+
+if (use_thneed and arch == "larch64") or GetOption('pc_thneed'):
+  lenvCython['CFLAGS'].append("-DUSE_THNEED")
+  lenvCython['CXXFLAGS'].append("-DUSE_THNEED")
+
+common_frameworks = []
+common_libs = envCython["LIBS"] + [gpucommon, common, 'zmq']
+if arch == "Darwin":
+  common_frameworks.append('OpenCL')
+else:
+  common_libs.append('OpenCL')
+
+onnxmodel_lib = lenv.Library('onnxmodel', ['runners/onnxmodel.cc'])
+snpemodel_lib = lenv.Library('snpemodel', ['runners/snpemodel.cc'])
+commonmodel_lib = lenv.Library('commonmodel', common_src)
+
+lenvCython.Program('runners/runmodel_pyx.so', 'runners/runmodel_pyx.pyx', LIBS=common_libs, FRAMEWORKS=common_frameworks)
+lenvCython.Program('runners/onnxmodel_pyx.so', 'runners/onnxmodel_pyx.pyx', LIBS=[onnxmodel_lib, *common_libs], FRAMEWORKS=common_frameworks)
+lenvCython.Program('runners/snpemodel_pyx.so', 'runners/snpemodel_pyx.pyx', LIBS=[snpemodel_lib, *common_libs], FRAMEWORKS=common_frameworks)
+lenvCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=[commonmodel_lib, *common_libs], FRAMEWORKS=common_frameworks)
 
 common_model = lenv.Object(common_src)
 
