@@ -2,6 +2,7 @@
 #include <string>
 
 #include "cereal/messaging/messaging.h"
+#include "common/params.h"
 #include "common/swaglog.h"
 #include "system/loggerd/logger.h"
 
@@ -48,7 +49,8 @@ static kj::Array<capnp::word> build_boot_log() {
 }
 
 int main(int argc, char** argv) {
-  const std::string path = LOG_ROOT + "/boot/" + logger_get_route_name();
+  const std::string timestr = logger_get_route_name();
+  const std::string path = LOG_ROOT + "/boot/" + timestr;
   LOGW("bootlog to %s", path.c_str());
 
   // Open bootlog
@@ -60,6 +62,9 @@ int main(int argc, char** argv) {
   file.write(logger_build_init_data().asBytes());
   // Write bootlog
   file.write(build_boot_log().asBytes());
+
+  // Write out bootlog param to match routes with bootlog
+  Params().put("CurrentBootlog", timestr.c_str());
 
   return 0;
 }

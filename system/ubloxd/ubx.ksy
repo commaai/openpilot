@@ -17,6 +17,7 @@ seq:
         0x0215: rxm_rawx
         0x0a09: mon_hw
         0x0a0b: mon_hw2
+        0x0135: nav_sat
 instances:
   checksum:
     pos: length + 6
@@ -142,13 +143,13 @@ types:
         type: u1
       - id: reserved1
         size: 3
-      - id: measurements
-        type: meas
+      - id: meas
+        type: measurement
         size: 32
         repeat: expr
         repeat-expr: num_meas
     types:
-      meas:
+      measurement:
         seq:
           - id: pr_mes
             type: f8
@@ -179,6 +180,39 @@ types:
             type: u1
           - id: reserved3
             size: 1
+  nav_sat:
+    seq:
+      - id: itow
+        type: u4
+      - id: version
+        type: u1
+      - id: num_svs
+        type: u1
+      - id: reserved
+        size: 2
+      - id: svs
+        type: nav
+        size: 12
+        repeat: expr
+        repeat-expr: num_svs
+    types:
+      nav:
+        seq:
+          - id: gnss_id
+            type: u1
+            enum: gnss_type
+          - id: sv_id
+            type: u1
+          - id: cno
+            type: u1
+          - id: elev
+            type: s1
+          - id: azim
+            type: s2
+          - id: pr_res
+            type: s2
+          - id: flags
+            type: u4
 
   nav_pvt:
     seq:

@@ -2,10 +2,11 @@
 
 #include <cassert>
 #include <cstdint>
+#include <ctime>
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <ctime>
+#include <utility>
 
 #include "cereal/messaging/messaging.h"
 #include "common/util.h"
@@ -14,6 +15,11 @@
 #include "system/ubloxd/generated/ubx.h"
 
 using namespace std::string_literals;
+
+const int SECS_IN_MIN = 60;
+const int SECS_IN_HR = 60 * SECS_IN_MIN;
+const int SECS_IN_DAY = 24 * SECS_IN_HR;
+const int SECS_IN_WEEK = 7 * SECS_IN_DAY;
 
 // protocol constants
 namespace ublox {
@@ -46,7 +52,7 @@ namespace ublox {
     assert(msg.size() > 2);
 
     uint8_t ck_a = 0, ck_b = 0;
-    for(int i = 2; i < msg.size(); i++) {
+    for (int i = 2; i < msg.size(); i++) {
       ck_a = (ck_a + msg[i]) & 0xFF;
       ck_b = (ck_b + ck_a) & 0xFF;
     }
@@ -97,12 +103,12 @@ class UbloxMsgParser {
     kj::Array<capnp::word> gen_rxm_rawx(ubx_t::rxm_rawx_t *msg);
     kj::Array<capnp::word> gen_mon_hw(ubx_t::mon_hw_t *msg);
     kj::Array<capnp::word> gen_mon_hw2(ubx_t::mon_hw2_t *msg);
+    kj::Array<capnp::word> gen_nav_sat(ubx_t::nav_sat_t *msg);
 
   private:
     inline bool valid_cheksum();
     inline bool valid();
     inline bool valid_so_far();
-    inline uint16_t get_glonass_year(uint8_t N4, uint16_t Nt);
 
     kj::Array<capnp::word> parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *msg);
     kj::Array<capnp::word> parse_glonass_ephemeris(ubx_t::rxm_sfrbx_t *msg);

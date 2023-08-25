@@ -4,12 +4,12 @@ import shutil
 from datetime import datetime
 from collections import defaultdict
 
-import rpyc # pylint: disable=import-error
-from rpyc.utils.server import ThreadedServer  # pylint: disable=import-error
+import rpyc
+from rpyc.utils.server import ThreadedServer
 
-#from common.params import Params
+#from openpilot.common.params import Params
 import cereal.messaging as messaging
-from selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.manager.process_config import managed_processes
 from laika.lib.coordinates import ecef2geodetic
 
 DELTA = 0.001
@@ -17,7 +17,7 @@ ALT_DELTA = 30
 MATCH_NUM = 10
 REPORT_STATS = 10
 
-EPHEM_CACHE = "/data/params/d/LaikadEphemerisV2"
+EPHEM_CACHE = "/data/params/d/LaikadEphemerisV3"
 DOWNLOAD_CACHE = "/tmp/comma_download_cache"
 
 SERVER_LOG_FILE = "/tmp/fuzzy_server.log"
@@ -128,7 +128,7 @@ class RemoteCheckerService(rpyc.Service):
         if pos_geo is None or len(pos_geo) == 0:
           continue
 
-        match  = all(abs(g-s) < DELTA for g,s in zip(pos_geo[:2], [slat, slon]))
+        match  = all(abs(g-s) < DELTA for g,s in zip(pos_geo[:2], [slat, slon], strict=True))
         match &= abs(pos_geo[2] - salt) < ALT_DELTA
         if match:
           match_cnt += 1

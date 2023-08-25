@@ -1,6 +1,6 @@
 // unittest for set_exposure_target
 
-#include "ae_gray_test.h"
+#include "system/camerad/test/ae_gray_test.h"
 
 #include <cassert>
 

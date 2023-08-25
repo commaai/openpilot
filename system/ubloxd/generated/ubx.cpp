@@ -40,6 +40,11 @@ void ubx_t::_read() {
         m_body = new rxm_sfrbx_t(m__io, this, m__root);
         break;
     }
+    case 309: {
+        n_body = false;
+        m_body = new nav_sat_t(m__io, this, m__root);
+        break;
+    }
     case 2571: {
         n_body = false;
         m_body = new mon_hw2_t(m__io, this, m__root);
@@ -70,9 +75,9 @@ void ubx_t::_clean_up() {
 ubx_t::rxm_rawx_t::rxm_rawx_t(kaitai::kstream* p__io, ubx_t* p__parent, ubx_t* p__root) : kaitai::kstruct(p__io) {
     m__parent = p__parent;
     m__root = p__root;
-    m_measurements = 0;
-    m__raw_measurements = 0;
-    m__io__raw_measurements = 0;
+    m_meas = 0;
+    m__raw_meas = 0;
+    m__io__raw_meas = 0;
 
     try {
         _read();
@@ -89,15 +94,15 @@ void ubx_t::rxm_rawx_t::_read() {
     m_num_meas = m__io->read_u1();
     m_rec_stat = m__io->read_u1();
     m_reserved1 = m__io->read_bytes(3);
-    m__raw_measurements = new std::vector<std::string>();
-    m__io__raw_measurements = new std::vector<kaitai::kstream*>();
-    m_measurements = new std::vector<meas_t*>();
-    const int l_measurements = num_meas();
-    for (int i = 0; i < l_measurements; i++) {
-        m__raw_measurements->push_back(m__io->read_bytes(32));
-        kaitai::kstream* io__raw_measurements = new kaitai::kstream(m__raw_measurements->at(m__raw_measurements->size() - 1));
-        m__io__raw_measurements->push_back(io__raw_measurements);
-        m_measurements->push_back(new meas_t(io__raw_measurements, this, m__root));
+    m__raw_meas = new std::vector<std::string>();
+    m__io__raw_meas = new std::vector<kaitai::kstream*>();
+    m_meas = new std::vector<measurement_t*>();
+    const int l_meas = num_meas();
+    for (int i = 0; i < l_meas; i++) {
+        m__raw_meas->push_back(m__io->read_bytes(32));
+        kaitai::kstream* io__raw_meas = new kaitai::kstream(m__raw_meas->at(m__raw_meas->size() - 1));
+        m__io__raw_meas->push_back(io__raw_meas);
+        m_meas->push_back(new measurement_t(io__raw_meas, this, m__root));
     }
 }
 
@@ -106,24 +111,24 @@ ubx_t::rxm_rawx_t::~rxm_rawx_t() {
 }
 
 void ubx_t::rxm_rawx_t::_clean_up() {
-    if (m__raw_measurements) {
-        delete m__raw_measurements; m__raw_measurements = 0;
+    if (m__raw_meas) {
+        delete m__raw_meas; m__raw_meas = 0;
     }
-    if (m__io__raw_measurements) {
-        for (std::vector<kaitai::kstream*>::iterator it = m__io__raw_measurements->begin(); it != m__io__raw_measurements->end(); ++it) {
+    if (m__io__raw_meas) {
+        for (std::vector<kaitai::kstream*>::iterator it = m__io__raw_meas->begin(); it != m__io__raw_meas->end(); ++it) {
             delete *it;
         }
-        delete m__io__raw_measurements; m__io__raw_measurements = 0;
+        delete m__io__raw_meas; m__io__raw_meas = 0;
     }
-    if (m_measurements) {
-        for (std::vector<meas_t*>::iterator it = m_measurements->begin(); it != m_measurements->end(); ++it) {
+    if (m_meas) {
+        for (std::vector<measurement_t*>::iterator it = m_meas->begin(); it != m_meas->end(); ++it) {
             delete *it;
         }
-        delete m_measurements; m_measurements = 0;
+        delete m_meas; m_meas = 0;
     }
 }
 
-ubx_t::rxm_rawx_t::meas_t::meas_t(kaitai::kstream* p__io, ubx_t::rxm_rawx_t* p__parent, ubx_t* p__root) : kaitai::kstruct(p__io) {
+ubx_t::rxm_rawx_t::measurement_t::measurement_t(kaitai::kstream* p__io, ubx_t::rxm_rawx_t* p__parent, ubx_t* p__root) : kaitai::kstruct(p__io) {
     m__parent = p__parent;
     m__root = p__root;
 
@@ -135,7 +140,7 @@ ubx_t::rxm_rawx_t::meas_t::meas_t(kaitai::kstream* p__io, ubx_t::rxm_rawx_t* p__
     }
 }
 
-void ubx_t::rxm_rawx_t::meas_t::_read() {
+void ubx_t::rxm_rawx_t::measurement_t::_read() {
     m_pr_mes = m__io->read_f8le();
     m_cp_mes = m__io->read_f8le();
     m_do_mes = m__io->read_f4le();
@@ -152,11 +157,11 @@ void ubx_t::rxm_rawx_t::meas_t::_read() {
     m_reserved3 = m__io->read_bytes(1);
 }
 
-ubx_t::rxm_rawx_t::meas_t::~meas_t() {
+ubx_t::rxm_rawx_t::measurement_t::~measurement_t() {
     _clean_up();
 }
 
-void ubx_t::rxm_rawx_t::meas_t::_clean_up() {
+void ubx_t::rxm_rawx_t::measurement_t::_clean_up() {
 }
 
 ubx_t::rxm_sfrbx_t::rxm_sfrbx_t(kaitai::kstream* p__io, ubx_t* p__parent, ubx_t* p__root) : kaitai::kstruct(p__io) {
@@ -196,6 +201,89 @@ void ubx_t::rxm_sfrbx_t::_clean_up() {
     if (m_body) {
         delete m_body; m_body = 0;
     }
+}
+
+ubx_t::nav_sat_t::nav_sat_t(kaitai::kstream* p__io, ubx_t* p__parent, ubx_t* p__root) : kaitai::kstruct(p__io) {
+    m__parent = p__parent;
+    m__root = p__root;
+    m_svs = 0;
+    m__raw_svs = 0;
+    m__io__raw_svs = 0;
+
+    try {
+        _read();
+    } catch(...) {
+        _clean_up();
+        throw;
+    }
+}
+
+void ubx_t::nav_sat_t::_read() {
+    m_itow = m__io->read_u4le();
+    m_version = m__io->read_u1();
+    m_num_svs = m__io->read_u1();
+    m_reserved = m__io->read_bytes(2);
+    m__raw_svs = new std::vector<std::string>();
+    m__io__raw_svs = new std::vector<kaitai::kstream*>();
+    m_svs = new std::vector<nav_t*>();
+    const int l_svs = num_svs();
+    for (int i = 0; i < l_svs; i++) {
+        m__raw_svs->push_back(m__io->read_bytes(12));
+        kaitai::kstream* io__raw_svs = new kaitai::kstream(m__raw_svs->at(m__raw_svs->size() - 1));
+        m__io__raw_svs->push_back(io__raw_svs);
+        m_svs->push_back(new nav_t(io__raw_svs, this, m__root));
+    }
+}
+
+ubx_t::nav_sat_t::~nav_sat_t() {
+    _clean_up();
+}
+
+void ubx_t::nav_sat_t::_clean_up() {
+    if (m__raw_svs) {
+        delete m__raw_svs; m__raw_svs = 0;
+    }
+    if (m__io__raw_svs) {
+        for (std::vector<kaitai::kstream*>::iterator it = m__io__raw_svs->begin(); it != m__io__raw_svs->end(); ++it) {
+            delete *it;
+        }
+        delete m__io__raw_svs; m__io__raw_svs = 0;
+    }
+    if (m_svs) {
+        for (std::vector<nav_t*>::iterator it = m_svs->begin(); it != m_svs->end(); ++it) {
+            delete *it;
+        }
+        delete m_svs; m_svs = 0;
+    }
+}
+
+ubx_t::nav_sat_t::nav_t::nav_t(kaitai::kstream* p__io, ubx_t::nav_sat_t* p__parent, ubx_t* p__root) : kaitai::kstruct(p__io) {
+    m__parent = p__parent;
+    m__root = p__root;
+
+    try {
+        _read();
+    } catch(...) {
+        _clean_up();
+        throw;
+    }
+}
+
+void ubx_t::nav_sat_t::nav_t::_read() {
+    m_gnss_id = static_cast<ubx_t::gnss_type_t>(m__io->read_u1());
+    m_sv_id = m__io->read_u1();
+    m_cno = m__io->read_u1();
+    m_elev = m__io->read_s1();
+    m_azim = m__io->read_s2le();
+    m_pr_res = m__io->read_s2le();
+    m_flags = m__io->read_u4le();
+}
+
+ubx_t::nav_sat_t::nav_t::~nav_t() {
+    _clean_up();
+}
+
+void ubx_t::nav_sat_t::nav_t::_clean_up() {
 }
 
 ubx_t::nav_pvt_t::nav_pvt_t(kaitai::kstream* p__io, ubx_t* p__parent, ubx_t* p__root) : kaitai::kstruct(p__io) {
