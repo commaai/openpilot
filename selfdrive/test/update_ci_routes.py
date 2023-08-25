@@ -25,8 +25,10 @@ SOURCES = [
 
 @lru_cache
 def get_blob_service(account_name: str) -> BlobServiceClient:
-  account_url = f"https://{account_name}.blob.core.windows.net"
-  return BlobServiceClient(account_url, credential=get_azure_credential())
+  return BlobServiceClient(
+    account_url=f"https://{account_name}.blob.core.windows.net",
+    credential=get_azure_credential(),
+  )
 
 
 @lru_cache
@@ -45,6 +47,7 @@ def get_container_sas(account_name: str, container_name: str):
 
 
 def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) -> None:
+  # TODO: use azure-storage-blob instead of azcopy, simplifies auth
   dest_key = get_container_sas(DATA_CI_ACCOUNT, DATA_CI_CONTAINER)
   if exclude_patterns is None:
     exclude_patterns = ['*/dcamera.hevc']
@@ -64,7 +67,7 @@ def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) ->
 
 
 @lru_cache
-def get_container_client():
+def get_container_client() -> ContainerClient:
   return ContainerClient(DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER, credential=get_azure_credential())
 
 
