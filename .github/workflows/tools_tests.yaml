@@ -53,8 +53,6 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup
-      with:
-        setup_docker_scons_cache: true
     - name: Build base cl image
       run: eval "$BUILD_CL"
     - name: Setup to push to repo
@@ -76,7 +74,6 @@ jobs:
         submodules: true
     - uses: ./.github/workflows/setup
       with:
-        setup_docker_scons_cache: true
         git_lfs: false
     - name: Setup to push to repo
       if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
