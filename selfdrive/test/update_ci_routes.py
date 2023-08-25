@@ -4,34 +4,33 @@ import sys
 from datetime import datetime, timedelta
 from functools import lru_cache
 
-from azure.identity import AzureCliCredential
-from azure.storage.blob import BlobServiceClient, ContainerSasPermissions, generate_container_sas
+from azure.storage.blob import BlobServiceClient, ContainerClient, ContainerSasPermissions, generate_container_sas
 from tqdm import tqdm
 
 from openpilot.selfdrive.car.tests.routes import routes as test_car_models_routes
 from openpilot.selfdrive.locationd.test.test_laikad import UBLOX_TEST_ROUTE, QCOM_TEST_ROUTE
 from openpilot.selfdrive.test.process_replay.test_processes import source_segments as replay_segments
+from openpilot.selfdrive.test.openpilotci import DATA_CI_ACCOUNT, DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER, get_azure_credential
 
-_DATA_ACCOUNT_PRODUCTION = "commadata2"
-_DATA_ACCOUNT_CI = "commadataci"
-_DATA_BUCKET_PRODUCTION = "commadata2"
+DATA_PROD_ACCOUNT = "commadata2"
+DATA_PROD_CONTAINER = "commadata2"
 
 SOURCES = [
-  (_DATA_ACCOUNT_PRODUCTION, _DATA_BUCKET_PRODUCTION),
-  (_DATA_ACCOUNT_CI, "commadataci"),
+  (DATA_PROD_ACCOUNT, DATA_PROD_CONTAINER),
+  (DATA_CI_ACCOUNT, DATA_CI_CONTAINER),
 ]
 
 
 # TODO: move to openpilotci.py
 @lru_cache
-def get_blob_service(account_name):
+def get_blob_service(account_name: str) -> BlobServiceClient:
   account_url = f"https://{account_name}.blob.core.windows.net"
-  return BlobServiceClient(account_url, credential=AzureCliCredential())
+  return BlobServiceClient(account_url, credential=get_azure_credential())
 
 
 # TODO: move to openpilotci.py
 @lru_cache
-def get_container_sas(account_name, container_name):
+def get_container_sas(account_name: str, container_name: str):
   start_time = datetime.utcnow()
   expiry_time = start_time + timedelta(hours=1)
   blob_service = get_blob_service(account_name)
@@ -47,14 +46,13 @@ def get_container_sas(account_name, container_name):
 
 @lru_cache
 def get_azure_keys():
-  dest_key = get_container_sas(_DATA_ACCOUNT_CI, "openpilotci")
+  dest_key = get_container_sas(DATA_CI_ACCOUNT, DATA_CI_CONTAINER)
   source_keys = [get_container_sas(account, bucket) for account, bucket in SOURCES]
-  container = get_blob_service(_DATA_ACCOUNT_CI).get_container_client("openpilotci")
-  return dest_key, source_keys, container
+  return dest_key, source_keys
 
 
 def upload_route(path: str, exclude_patterns=None) -> None:
-  dest_key = get_container_sas(_DATA_ACCOUNT_CI, "openpilotci")
+  dest_key = get_container_sas(DATA_CI_ACCOUNT, DATA_CI_CONTAINER)
   if exclude_patterns is None:
     exclude_patterns = ['*/dcamera.hevc']
 
@@ -65,7 +63,7 @@ def upload_route(path: str, exclude_patterns=None) -> None:
     "azcopy",
     "copy",
     f"{path}/*",
-    f"https://{_DATA_ACCOUNT_CI}.blob.core.windows.net/openpilotci/{destpath}?{dest_key}",
+    f"https://{DATA_CI_ACCOUNT}.blob.core.windows.net/{DATA_CI_CONTAINER}/{destpath}?{dest_key}",
     "--recursive=false",
     "--overwrite=false",
   ] + [f"--exclude-pattern={p}" for p in exclude_patterns]
@@ -77,7 +75,8 @@ def sync_to_ci_public(route: str) -> bool:
   key_prefix = route.replace('|', '/')
   dongle_id = key_prefix.split('/')[0]
 
-  if next(container.list_blob_names(name_starts_with=key_prefix), None) is not None:
+  container_client = ContainerClient(DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER, credential=get_azure_credential())
+  if next(container_client.list_blob_names(name_starts_with=key_prefix), None) is not None:
     return True
 
   print(f"Uploading {route}")
@@ -87,7 +86,7 @@ def sync_to_ci_public(route: str) -> bool:
       "azcopy",
       "copy",
       f"https://{source_account}.blob.core.windows.net/{source_bucket}/{key_prefix}?{source_key}",
-      f"https://{_DATA_ACCOUNT_CI}.blob.core.windows.net/openpilotci/{dongle_id}?{dest_key}",
+      f"https://{DATA_CI_ACCOUNT}.blob.core.windows.net/{DATA_CI_CONTAINER}/{dongle_id}?{dest_key}",
       "--recursive=true",
       "--overwrite=false",
       "--exclude-pattern=*/dcamera.hevc",

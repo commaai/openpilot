@@ -1,50 +1,47 @@
 #!/usr/bin/env python3
 import os
-import sys
-import subprocess
+from pathlib import Path
 from typing import IO, Union
 
-ACCOUNT_URL = "https://commadataci.blob.core.windows.net"
-CONTAINER_NAME = "openpilotci"
-BASE_URL = f"{ACCOUNT_URL}/{CONTAINER_NAME}/"
-TOKEN_PATH = "/data/azure_token"
+DATA_CI_ACCOUNT = "commadataci"
+DATA_CI_ACCOUNT_URL = f"https://{DATA_CI_ACCOUNT}.blob.core.windows.net"
+DATA_CI_CONTAINER = "openpilotci"
+
+TOKEN_PATH = Path("/data/azure_token")
+
+
+def get_ci_blob_url(blob_name: str) -> str:
+  return f"{DATA_CI_ACCOUNT_URL}/{DATA_CI_CONTAINER}/{blob_name}"
 
 
 def get_url(route_name: str, segment_num: str, log_type="rlog") -> str:
   ext = "hevc" if log_type.endswith('camera') else "bz2"
-  return BASE_URL + f"{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
+  blob_name =f"{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
+  return get_ci_blob_url(blob_name)
 
 
-# TODO: replace with credential helper (check env and AzureCliCredential)
-def get_sas_token() -> str:
-  sas_token = os.environ.get("AZURE_TOKEN", None)
-  if os.path.isfile(TOKEN_PATH):
-    sas_token = open(TOKEN_PATH).read().strip()
-
-  if sas_token is None:
-    sas_token = subprocess.check_output("az storage container generate-sas --account-name commadataci --name openpilotci \
-                                         --https-only --permissions lrw --expiry $(date -u '+%Y-%m-%dT%H:%M:%SZ' -d '+1 hour') \
-                                         --auth-mode login --as-user --output tsv", shell=True).decode().strip("\n")
-
-  return sas_token
+def get_azure_credential():
+  if "AZURE_TOKEN" in os.environ:
+    return os.environ["AZURE_TOKEN"]
+  elif TOKEN_PATH.is_file():
+    return TOKEN_PATH.read_text().strip()
+  else:
+    from azure.identity import AzureCliCredential
+    return AzureCliCredential()
 
 
-# TODO: use credential helper
-def upload_bytes(data: Union[bytes, IO], name: str) -> str:
-  from azure.storage.blob import BlobServiceClient
-  service = BlobServiceClient(ACCOUNT_URL, credential=get_sas_token())
-  blob = service.get_blob_client(container=CONTAINER_NAME, blob=name)
+def upload_bytes(data: Union[bytes, IO], blob_name: str) -> str:
+  from azure.storage.blob import BlobClient
+  blob = BlobClient(
+    account_url=DATA_CI_ACCOUNT_URL,
+    container_name=DATA_CI_CONTAINER,
+    blob_name=blob_name,
+    credential=get_azure_credential(),
+  )
   blob.upload_blob(data)
-  return BASE_URL + name
+  return get_ci_blob_url(blob_name)
 
 
-def upload_file(path: Union[str, os.PathLike], name: str) -> str:
+def upload_file(path: Union[str, os.PathLike], blob_name: str) -> str:
   with open(path, "rb") as f:
-    return upload_bytes(f, name)
-
-
-if __name__ == "__main__":
-  for f in sys.argv[1:]:
-    name = os.path.basename(f)
-    url = upload_file(f, name)
-    print(url)
+    return upload_bytes(f, blob_name)
