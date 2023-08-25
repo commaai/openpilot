@@ -127,6 +127,7 @@ def panda_sort_cmp(a: Panda, b: Panda):
 
 def main() -> NoReturn:
   count = 0
+  no_panda_count = 0
   first_run = True
   params = Params()
 
@@ -146,11 +147,17 @@ def main() -> NoReturn:
 
       panda_serials = Panda.list()
       if len(panda_serials) == 0:
-        if first_run:
+        no_panda_count += 1
+        if no_panda_count < 5:
           cloudlog.info("No pandas found, resetting internal panda")
           HARDWARE.reset_internal_panda()
-          time.sleep(2)  # wait to come back up
+          time.sleep(3)  # wait to come back up
+        else:
+          cloudlog.info("No pandas found, putting internal panda into DFU")
+          HARDWARE.recover_internal_panda()
         continue
+      else:
+        no_panda_count = 0
 
       cloudlog.info(f"{len(panda_serials)} panda(s) found, connecting - {panda_serials}")
 

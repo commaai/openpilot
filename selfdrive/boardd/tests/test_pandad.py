@@ -114,5 +114,12 @@ class TestPandad(unittest.TestCase):
   def test_release_to_devel_bootstub(self):
     self._flash_and_test(None)
 
+  @phone_only
+  def test_recover_from_bad_bootstub(self):
+    self._go_to_dfu()
+    with PandaDFU(None) as pd:
+      pd.program_bootstub(b"\x00"*1024)
+
+
 if __name__ == "__main__":
   unittest.main()
