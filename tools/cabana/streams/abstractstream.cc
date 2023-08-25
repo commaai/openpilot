@@ -164,7 +164,6 @@ void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std
     }
   }
 
-
   auto compare = [](const CanEvent *l, const CanEvent *r) {
     return l->mono_time < r->mono_time;
   };
