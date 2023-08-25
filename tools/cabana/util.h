@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cmath>
+#include <vector>
+#include <utility>
 
 #include <QApplication>
 #include <QByteArray>
@@ -57,7 +59,7 @@ public:
 private:
   std::pair<double, double> get_minmax(int n, int left, int right, int range_left, int range_right) const;
   void build_tree(const QVector<QPointF> &arr, int n, int left, int right);
-  std::vector<std::pair<double ,double>> tree;
+  std::vector<std::pair<double, double>> tree;
   int size = 0;
 };
 
@@ -97,7 +99,7 @@ namespace utils {
 QPixmap icon(const QString &id);
 void setTheme(int theme);
 inline QString formatSeconds(int seconds) {
-  return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
+  return QDateTime::fromSecsSinceEpoch(seconds, Qt::UTC).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
 }
 }
 

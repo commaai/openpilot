@@ -9,15 +9,15 @@ import numpy as np
 
 import cereal.messaging as messaging
 from cereal import log
-from common.api import Api
-from common.params import Params
-from common.realtime import Ratekeeper
-from common.transformations.coordinates import ecef2geodetic
-from selfdrive.navd.helpers import (Coordinate, coordinate_from_param,
+from openpilot.common.api import Api
+from openpilot.common.params import Params
+from openpilot.common.realtime import Ratekeeper
+from openpilot.common.transformations.coordinates import ecef2geodetic
+from openpilot.selfdrive.navd.helpers import (Coordinate, coordinate_from_param,
                                     distance_along_geometry, maxspeed_to_ms,
                                     minimum_distance,
                                     parse_banner_instructions)
-from system.swaglog import cloudlog
+from openpilot.system.swaglog import cloudlog
 
 REROUTE_DISTANCE = 25
 MANEUVER_TRANSITION_THRESHOLD = 10
@@ -219,9 +219,39 @@ class RouteEngine:
     along_geometry = distance_along_geometry(geometry, self.last_position)
     distance_to_maneuver_along_geometry = step['distance'] - along_geometry
 
+    # Banner instructions are for the following maneuver step, don't use empty last step
+    banner_step = step
+    if not len(banner_step['bannerInstructions']) and self.step_idx == len(self.route) - 1:
+      banner_step = self.route[max(self.step_idx - 1, 0)]
+
     # Current instruction
     msg.navInstruction.maneuverDistance = distance_to_maneuver_along_geometry
-    parse_banner_instructions(msg.navInstruction, step['bannerInstructions'], distance_to_maneuver_along_geometry)
+    instruction = parse_banner_instructions(banner_step['bannerInstructions'], distance_to_maneuver_along_geometry)
+    if instruction is not None:
+      for k,v in instruction.items():
+        setattr(msg.navInstruction, k, v)
+
+    # All instructions
+    maneuvers = []
+    for i, step_i in enumerate(self.route):
+      if i < self.step_idx:
+        distance_to_maneuver = -sum(self.route[j]['distance'] for j in range(i+1, self.step_idx)) - along_geometry
+      elif i == self.step_idx:
+        distance_to_maneuver = distance_to_maneuver_along_geometry
+      else:
+        distance_to_maneuver = distance_to_maneuver_along_geometry + sum(self.route[j]['distance'] for j in range(self.step_idx+1, i+1))
+
+      instruction = parse_banner_instructions(step_i['bannerInstructions'], distance_to_maneuver)
+      if instruction is None:
+        continue
+      maneuver = {'distance': distance_to_maneuver}
+      if 'maneuverType' in instruction:
+        maneuver['type'] = instruction['maneuverType']
+      if 'maneuverModifier' in instruction:
+        maneuver['modifier'] = instruction['maneuverModifier']
+      maneuvers.append(maneuver)
+
+    msg.navInstruction.allManeuvers = maneuvers
 
     # Compute total remaining time and distance
     remaining = 1.0 - along_geometry / max(step['distance'], 1)
@@ -269,11 +299,11 @@ class RouteEngine:
         self.reset_recompute_limits()
       else:
         cloudlog.warning("Destination reached")
-        Params().remove("NavDestination")
 
         # Clear route if driving away from destination
         dist = self.nav_destination.distance_to(self.last_position)
         if dist > REROUTE_DISTANCE:
+          self.params.remove("NavDestination")
           self.clear_route()
 
   def send_route(self):

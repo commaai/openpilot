@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import sys
-import tensorflow as tf  # pylint: disable=import-error
+import tensorflow as tf
 
 with open(sys.argv[1], "rb") as f:
   graph_def = tf.compat.v1.GraphDef()

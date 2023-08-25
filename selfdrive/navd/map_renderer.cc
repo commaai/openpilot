@@ -67,8 +67,14 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online, QObject
   ctx->functions()->glViewport(0, 0, WIDTH, HEIGHT);
 
   QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
+    // Ignore expected signals
     // https://github.com/mapbox/mapbox-gl-native/blob/cf734a2fec960025350d8de0d01ad38aeae155a0/platform/qt/include/qmapboxgl.hpp#L116
-    //LOGD("new state %d", change);
+    if (change != QMapboxGL::MapChange::MapChangeRegionWillChange &&
+        change != QMapboxGL::MapChange::MapChangeRegionDidChange &&
+        change != QMapboxGL::MapChange::MapChangeWillStartRenderingFrame &&
+        change != QMapboxGL::MapChange::MapChangeDidFinishRenderingFrameFullyRendered) {
+      LOGD("New map state: %d", change);
+    }
   });
 
   QObject::connect(m_map.data(), &QMapboxGL::mapLoadingFailed, [=](QMapboxGL::MapLoadingFailure err_code, const QString &reason) {
@@ -266,6 +272,7 @@ void MapRenderer::updateRoute(QList<QGeoCoordinate> coordinates) {
 
 void MapRenderer::initLayers() {
   if (!m_map->layerExists("navLayer")) {
+    LOGD("Initializing navLayer");
     QVariantMap nav;
     nav["id"] = "navLayer";
     nav["type"] = "line";

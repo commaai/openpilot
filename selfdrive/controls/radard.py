@@ -6,12 +6,12 @@ from typing import Optional, Dict, Any
 
 import capnp
 from cereal import messaging, log, car
-from common.numpy_fast import interp
-from common.params import Params
-from common.realtime import Ratekeeper, Priority, config_realtime_process
-from system.swaglog import cloudlog
+from openpilot.common.numpy_fast import interp
+from openpilot.common.params import Params
+from openpilot.common.realtime import Ratekeeper, Priority, config_realtime_process
+from openpilot.system.swaglog import cloudlog
 
-from common.kalman.simple_kalman import KF1D
+from openpilot.common.kalman.simple_kalman import KF1D
 
 
 # Default lead acceleration decay set to 50% at 1s
@@ -163,7 +163,8 @@ def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, v_ego: floa
   }
 
 
-def get_lead(v_ego: float, ready: bool, tracks: Dict[int, Track], lead_msg: capnp._DynamicStructReader, model_v_ego: float, low_speed_override: bool = True) -> Dict[str, Any]:
+def get_lead(v_ego: float, ready: bool, tracks: Dict[int, Track], lead_msg: capnp._DynamicStructReader,
+             model_v_ego: float, low_speed_override: bool = True) -> Dict[str, Any]:
   # Determine leads, this is where the essential logic happens
   if len(tracks) > 0 and ready and lead_msg.prob > .5:
     track = match_vision_to_track(v_ego, lead_msg, tracks)
@@ -282,7 +283,8 @@ def radard_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[messagi
 
   # wait for stats about the car to come in from controls
   cloudlog.info("radard is waiting for CarParams")
-  CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
+  with car.CarParams.from_bytes(Params().get("CarParams", block=True)) as msg:
+    CP = msg
   cloudlog.info("radard got CarParams")
 
   # import the radar from the fingerprint
@@ -317,7 +319,7 @@ def radard_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[messagi
     rk.monitor_time()
 
 
-def main(sm: messaging.SubMaster = None, pm: messaging.PubMaster = None, can_sock: messaging.SubSocket = None):
+def main(sm: Optional[messaging.SubMaster] = None, pm: Optional[messaging.PubMaster] = None, can_sock: messaging.SubSocket = None):
   radard_thread(sm, pm, can_sock)
 
 

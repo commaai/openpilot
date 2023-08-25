@@ -1,9 +1,11 @@
+#include "selfdrive/locationd/locationd.h"
+
 #include <sys/time.h>
 #include <sys/resource.h>
 
+#include <algorithm>
 #include <cmath>
-
-#include "locationd.h"
+#include <vector>
 
 using namespace EKFS;
 using namespace Eigen;
@@ -13,7 +15,6 @@ const double ACCEL_SANITY_CHECK = 100.0;  // m/s^2
 const double ROTATION_SANITY_CHECK = 10.0;  // rad/s
 const double TRANS_SANITY_CHECK = 200.0;  // m/s
 const double CALIB_RPY_SANITY_CHECK = 0.5; // rad (+- 30 deg)
-const double ALTITUDE_SANITY_CHECK = 10000; // m
 const double MIN_STD_SANITY_CHECK = 1e-5; // m or rad
 const double VALID_TIME_SINCE_RESET = 1.0; // s
 const double VALID_POS_STD = 50.0; // m
@@ -23,15 +24,11 @@ const double INPUT_INVALID_THRESHOLD = 5.0; // same as reset tracker
 const double DECAY = 0.99995; // same as reset tracker
 const double MAX_FILTER_REWIND_TIME = 0.8; // s
 
-// TODO: GPS sensor time offsets are empirically calculated
-// They should be replaced with synced time from a real clock
-const double GPS_QUECTEL_SENSOR_TIME_OFFSET = 0.630; // s
-const double GPS_UBLOX_SENSOR_TIME_OFFSET = 0.095; // s
 const float  GPS_POS_STD_THRESHOLD = 50.0;
 const float  GPS_VEL_STD_THRESHOLD = 5.0;
 const float  GPS_POS_ERROR_RESET_THRESHOLD = 300.0;
-const float  GPS_POS_STD_RESET_THRESHOLD = 2.0;
-const float  GPS_VEL_STD_RESET_THRESHOLD = 0.5;
+const float  GPS_POS_STD_RESET_THRESHOLD = 10.0;
+const float  GPS_VEL_STD_RESET_THRESHOLD = 1.0;
 const float  GPS_ORIENTATION_ERROR_RESET_THRESHOLD = 1.0;
 const int    GPS_ORIENTATION_ERROR_RESET_CNT = 3;
 
@@ -70,7 +67,7 @@ static VectorXd rotate_std(const MatrixXdr& rot_matrix, const VectorXd& std_in) 
   return rotate_cov(rot_matrix, std_in.array().square().matrix().asDiagonal()).diagonal().array().sqrt();
 }
 
-Localizer::Localizer(LocalizerGnssSource gnss_source) {
+Localizer::Localizer() {
   this->kf = std::make_unique<LiveKalman>();
   this->reset_kalman();
 
@@ -84,7 +81,6 @@ Localizer::Localizer(LocalizerGnssSource gnss_source) {
 
   VectorXd ecef_pos = this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
   this->converter = std::make_unique<LocalCoord>((ECEF) { .x = ecef_pos[0], .y = ecef_pos[1], .z = ecef_pos[2] });
-  this->configure_gnss_source(gnss_source);
 }
 
 void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
@@ -240,8 +236,7 @@ void Localizer::handle_sensor(double current_time, const cereal::SensorEventData
     LOGE("Sensor reading ignored, sensor timestamp more than 100ms off from log time");
     this->observation_timings_invalid = true;
     return;
-  }
-  else if (!this->is_timestamp_valid(sensor_time)) {
+  } else if (!this->is_timestamp_valid(sensor_time)) {
     this->observation_timings_invalid = true;
     return;
   }
@@ -258,8 +253,7 @@ void Localizer::handle_sensor(double current_time, const cereal::SensorEventData
     if (meas.norm() < ROTATION_SANITY_CHECK) {
       this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_GYRO, { meas });
       this->observation_values_invalid["gyroscope"] *= DECAY;
-    }
-    else{
+    } else {
       this->observation_values_invalid["gyroscope"] += 1.0;
     }
   }
@@ -277,8 +271,7 @@ void Localizer::handle_sensor(double current_time, const cereal::SensorEventData
     if (meas.norm() < ACCEL_SANITY_CHECK) {
       this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_ACCEL, { meas });
       this->observation_values_invalid["accelerometer"] *= DECAY;
-    }
-    else{
+    } else {
       this->observation_values_invalid["accelerometer"] += 1.0;
     }
   }
@@ -293,94 +286,37 @@ void Localizer::input_fake_gps_observations(double current_time) {
   VectorXd current_x = this->kf->get_x();
   VectorXd ecef_pos = current_x.segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
   VectorXd ecef_vel = current_x.segment<STATE_ECEF_VELOCITY_LEN>(STATE_ECEF_VELOCITY_START);
-  MatrixXdr ecef_pos_R = this->kf->get_fake_gps_pos_cov();
-  MatrixXdr ecef_vel_R = this->kf->get_fake_gps_vel_cov();
+  const MatrixXdr &ecef_pos_R = this->kf->get_fake_gps_pos_cov();
+  const MatrixXdr &ecef_vel_R = this->kf->get_fake_gps_vel_cov();
 
   this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
   this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
 }
 
-void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::Reader& log, const double sensor_time_offset) {
-  // ignore the message if the fix is invalid
-  bool gps_invalid_flag = (log.getFlags() % 2 == 0);
-  bool gps_unreasonable = (Vector2d(log.getAccuracy(), log.getVerticalAccuracy()).norm() >= SANE_GPS_UNCERTAINTY);
-  bool gps_accuracy_insane = ((log.getVerticalAccuracy() <= 0) || (log.getSpeedAccuracy() <= 0) || (log.getBearingAccuracyDeg() <= 0));
-  bool gps_lat_lng_alt_insane = ((std::abs(log.getLatitude()) > 90) || (std::abs(log.getLongitude()) > 180) || (std::abs(log.getAltitude()) > ALTITUDE_SANITY_CHECK));
-  bool gps_vel_insane = (floatlist2vector(log.getVNED()).norm() > TRANS_SANITY_CHECK);
-
-  if (gps_invalid_flag || gps_unreasonable || gps_accuracy_insane || gps_lat_lng_alt_insane || gps_vel_insane) {
-    //this->gps_valid = false;
-    this->determine_gps_mode(current_time);
-    return;
-  }
-
-  double sensor_time = current_time - sensor_time_offset;
-
-  // Process message
-  //this->gps_valid = true;
-  this->gps_mode = true;
-  Geodetic geodetic = { log.getLatitude(), log.getLongitude(), log.getAltitude() };
-  this->converter = std::make_unique<LocalCoord>(geodetic);
-
-  VectorXd ecef_pos = this->converter->ned2ecef({ 0.0, 0.0, 0.0 }).to_vector();
-  VectorXd ecef_vel = this->converter->ned2ecef({ log.getVNED()[0], log.getVNED()[1], log.getVNED()[2] }).to_vector() - ecef_pos;
-  float ecef_pos_std = std::sqrt(this->gps_variance_factor * std::pow(log.getAccuracy(), 2) + this->gps_vertical_variance_factor * std::pow(log.getVerticalAccuracy(), 2));
-  MatrixXdr ecef_pos_R = Vector3d::Constant(std::pow(this->gps_std_factor * ecef_pos_std, 2)).asDiagonal();
-  MatrixXdr ecef_vel_R = Vector3d::Constant(std::pow(this->gps_std_factor * log.getSpeedAccuracy(), 2)).asDiagonal();
-
-  this->unix_timestamp_millis = log.getUnixTimestampMillis();
-  double gps_est_error = (this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START) - ecef_pos).norm();
-
-  VectorXd orientation_ecef = quat2euler(vector2quat(this->kf->get_x().segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
-  VectorXd orientation_ned = ned_euler_from_ecef({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ecef);
-  VectorXd orientation_ned_gps = Vector3d(0.0, 0.0, DEG2RAD(log.getBearingDeg()));
-  VectorXd orientation_error = (orientation_ned - orientation_ned_gps).array() - M_PI;
-  for (int i = 0; i < orientation_error.size(); i++) {
-    orientation_error(i) = std::fmod(orientation_error(i), 2.0 * M_PI);
-    if (orientation_error(i) < 0.0) {
-      orientation_error(i) += 2.0 * M_PI;
-    }
-    orientation_error(i) -= M_PI;
-  }
-  VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
-
-  if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 1.0) {
-    LOGE("Locationd vs ubloxLocation orientation difference too large, kalman reset");
-    this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
-    this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
-  } else if (gps_est_error > 100.0) {
-    LOGE("Locationd vs ubloxLocation position difference too large, kalman reset");
-    this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
-  }
-
-  this->last_gps_msg = sensor_time;
-  this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
-  this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
-}
-
 void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements::Reader& log) {
 
-  if(!log.getPositionECEF().getValid() || !log.getVelocityECEF().getValid()) {
+  if (!log.getPositionECEF().getValid() || !log.getVelocityECEF().getValid()) {
     this->determine_gps_mode(current_time);
     return;
   }
 
   double sensor_time = log.getMeasTime() * 1e-9;
-  sensor_time -= this->gps_time_offset;
 
   auto ecef_pos_v = log.getPositionECEF().getValue();
   VectorXd ecef_pos = Vector3d(ecef_pos_v[0], ecef_pos_v[1], ecef_pos_v[2]);
 
-  // indexed at 0 cause all std values are the same MAE
-  auto ecef_pos_std = log.getPositionECEF().getStd()[0];
-  MatrixXdr ecef_pos_R = Vector3d::Constant(pow(this->gps_std_factor*ecef_pos_std, 2)).asDiagonal();
+  auto ecef_pos_std = log.getPositionECEF().getStd();
+  VectorXd ecef_pos_var = Vector3d(ecef_pos_std[0], ecef_pos_std[1], ecef_pos_std[2]).array().square().matrix();
+  double ecef_pos_std_norm = std::sqrt(ecef_pos_var.sum());
+  MatrixXdr ecef_pos_R = ecef_pos_var.asDiagonal();
 
   auto ecef_vel_v = log.getVelocityECEF().getValue();
   VectorXd ecef_vel = Vector3d(ecef_vel_v[0], ecef_vel_v[1], ecef_vel_v[2]);
 
-  // indexed at 0 cause all std values are the same MAE
-  auto ecef_vel_std = log.getVelocityECEF().getStd()[0];
-  MatrixXdr ecef_vel_R = Vector3d::Constant(pow(this->gps_std_factor*ecef_vel_std, 2)).asDiagonal();
+  auto ecef_vel_std = log.getVelocityECEF().getStd();
+  VectorXd ecef_vel_var = Vector3d(ecef_vel_std[0], ecef_vel_std[1], ecef_vel_std[2]).array().square().matrix();
+  double ecef_vel_std_norm = std::sqrt(ecef_vel_var.sum());
+  MatrixXdr ecef_vel_R = ecef_vel_var.asDiagonal();
 
   double gps_est_error = (this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START) - ecef_pos).norm();
 
@@ -403,23 +339,22 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   }
   VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
 
-  if (ecef_pos_std > GPS_POS_STD_THRESHOLD || ecef_vel_std > GPS_VEL_STD_THRESHOLD) {
+  if (ecef_pos_std_norm > GPS_POS_STD_THRESHOLD || ecef_vel_std_norm > GPS_VEL_STD_THRESHOLD) {
     this->determine_gps_mode(current_time);
     return;
   }
 
   // prevent jumping gnss measurements (covered lots, standstill...)
-  bool orientation_reset = ecef_vel_std < GPS_VEL_STD_RESET_THRESHOLD;
+  bool orientation_reset = ecef_vel_std_norm < GPS_VEL_STD_RESET_THRESHOLD;
   orientation_reset &= orientation_error.norm() > GPS_ORIENTATION_ERROR_RESET_THRESHOLD;
   orientation_reset &= !this->standstill;
   if (orientation_reset) {
     this->orientation_reset_count++;
-  }
-  else {
+  } else {
     this->orientation_reset_count = 0;
   }
 
-  if ((gps_est_error > GPS_POS_ERROR_RESET_THRESHOLD && ecef_pos_std < GPS_POS_STD_RESET_THRESHOLD) || this->last_gps_msg == 0) {
+  if ((gps_est_error > GPS_POS_ERROR_RESET_THRESHOLD && ecef_pos_std_norm < GPS_POS_STD_RESET_THRESHOLD) || this->last_gps_msg == 0) {
     // always reset on first gps message and if the location is off but the accuracy is high
     LOGE("Locationd vs gnssMeasurement position difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
@@ -509,8 +444,8 @@ void Localizer::handle_live_calib(double current_time, const cereal::LiveCalibra
 }
 
 void Localizer::reset_kalman(double current_time) {
-  VectorXd init_x = this->kf->get_initial_x();
-  MatrixXdr init_P = this->kf->get_initial_P();
+  const VectorXd &init_x = this->kf->get_initial_x();
+  const MatrixXdr &init_P = this->kf->get_initial_P();
   this->reset_kalman(current_time, init_x, init_P);
 }
 
@@ -546,12 +481,12 @@ void Localizer::update_reset_tracker() {
   }
 }
 
-void Localizer::reset_kalman(double current_time, VectorXd init_orient, VectorXd init_pos, VectorXd init_vel, MatrixXdr init_pos_R, MatrixXdr init_vel_R) {
+void Localizer::reset_kalman(double current_time, const VectorXd &init_orient, const VectorXd &init_pos, const VectorXd &init_vel, const MatrixXdr &init_pos_R, const MatrixXdr &init_vel_R) {
   // too nonlinear to init on completely wrong
   VectorXd current_x = this->kf->get_x();
   MatrixXdr current_P = this->kf->get_P();
   MatrixXdr init_P = this->kf->get_initial_P();
-  MatrixXdr reset_orientation_P = this->kf->get_reset_orientation_P();
+  const MatrixXdr &reset_orientation_P = this->kf->get_reset_orientation_P();
   int non_ecef_state_err_len = init_P.rows() - (STATE_ECEF_POS_ERR_LEN + STATE_ECEF_ORIENTATION_ERR_LEN + STATE_ECEF_VELOCITY_ERR_LEN);
 
   current_x.segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START) = init_orient;
@@ -561,12 +496,13 @@ void Localizer::reset_kalman(double current_time, VectorXd init_orient, VectorXd
   init_P.block<STATE_ECEF_POS_ERR_LEN, STATE_ECEF_POS_ERR_LEN>(STATE_ECEF_POS_ERR_START, STATE_ECEF_POS_ERR_START).diagonal() = init_pos_R.diagonal();
   init_P.block<STATE_ECEF_ORIENTATION_ERR_LEN, STATE_ECEF_ORIENTATION_ERR_LEN>(STATE_ECEF_ORIENTATION_ERR_START, STATE_ECEF_ORIENTATION_ERR_START).diagonal() = reset_orientation_P.diagonal();
   init_P.block<STATE_ECEF_VELOCITY_ERR_LEN, STATE_ECEF_VELOCITY_ERR_LEN>(STATE_ECEF_VELOCITY_ERR_START, STATE_ECEF_VELOCITY_ERR_START).diagonal() = init_vel_R.diagonal();
-  init_P.block(STATE_ANGULAR_VELOCITY_ERR_START, STATE_ANGULAR_VELOCITY_ERR_START, non_ecef_state_err_len, non_ecef_state_err_len).diagonal() = current_P.block(STATE_ANGULAR_VELOCITY_ERR_START, STATE_ANGULAR_VELOCITY_ERR_START, non_ecef_state_err_len, non_ecef_state_err_len).diagonal();
+  init_P.block(STATE_ANGULAR_VELOCITY_ERR_START, STATE_ANGULAR_VELOCITY_ERR_START, non_ecef_state_err_len, non_ecef_state_err_len).diagonal() = current_P.block(STATE_ANGULAR_VELOCITY_ERR_START,
+    STATE_ANGULAR_VELOCITY_ERR_START, non_ecef_state_err_len, non_ecef_state_err_len).diagonal();
 
   this->reset_kalman(current_time, current_x, init_P);
 }
 
-void Localizer::reset_kalman(double current_time, VectorXd init_x, MatrixXdr init_P) {
+void Localizer::reset_kalman(double current_time, const VectorXd &init_x, const MatrixXdr &init_P) {
   this->kf->init_state(init_x, init_P, current_time);
   this->last_reset_time = current_time;
   this->reset_tracker += 1.0;
@@ -588,12 +524,8 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
     this->handle_sensor(t, log.getAccelerometer());
   } else if (log.isGyroscope()) {
     this->handle_sensor(t, log.getGyroscope());
-  } else if (log.isGpsLocation()) {
-    this->handle_gps(t, log.getGpsLocation(), GPS_QUECTEL_SENSOR_TIME_OFFSET);
-  } else if (log.isGpsLocationExternal()) {
-    this->handle_gps(t, log.getGpsLocationExternal(), GPS_UBLOX_SENSOR_TIME_OFFSET);
-  //} else if (log.isGnssMeasurements()) {
-  //  this->handle_gnss(t, log.getGnssMeasurements());
+  } else if (log.isGnssMeasurements()) {
+    this->handle_gnss(t, log.getGnssMeasurements());
   } else if (log.isCarState()) {
     this->handle_car_state(t, log.getCarState());
   } else if (log.isCameraOdometry()) {
@@ -621,7 +553,7 @@ bool Localizer::is_gps_ok() {
   return (this->kf->get_filter_time() - this->last_gps_msg) < 2.0;
 }
 
-bool Localizer::critical_services_valid(std::map<std::string, double> critical_services) {
+bool Localizer::critical_services_valid(const std::map<std::string, double> &critical_services) {
   for (auto &kv : critical_services){
     if (kv.second >= INPUT_INVALID_THRESHOLD){
       return false;
@@ -648,45 +580,18 @@ void Localizer::determine_gps_mode(double current_time) {
     if (this->gps_mode){
       this->gps_mode = false;
       this->reset_kalman(current_time);
-    }
-    else{
+    } else {
       this->input_fake_gps_observations(current_time);
     }
   }
 }
 
-void Localizer::configure_gnss_source(LocalizerGnssSource source) {
-  this->gnss_source = source;
-  if (source == LocalizerGnssSource::UBLOX) {
-    this->gps_std_factor = 10.0;
-    this->gps_variance_factor = 1.0;
-    this->gps_vertical_variance_factor = 1.0;
-    this->gps_time_offset = GPS_UBLOX_SENSOR_TIME_OFFSET;
-  } else {
-    this->gps_std_factor = 2.0;
-    this->gps_variance_factor = 0.0;
-    this->gps_vertical_variance_factor = 3.0;
-    this->gps_time_offset = GPS_QUECTEL_SENSOR_TIME_OFFSET;
-  }
-}
-
 int Localizer::locationd_thread() {
-  LocalizerGnssSource source;
-  const char* gps_location_socket;
-  if (Params().getBool("UbloxAvailable")) {
-    source = LocalizerGnssSource::UBLOX;
-    gps_location_socket = "gpsLocationExternal";
-  } else {
-    source = LocalizerGnssSource::QCOM;
-    gps_location_socket = "gpsLocation";
-  }
-
-  this->configure_gnss_source(source);
-  const std::initializer_list<const char *> service_list = {gps_location_socket, "cameraOdometry", "liveCalibration",
+  const std::initializer_list<const char *> service_list = {"gnssMeasurements", "cameraOdometry", "liveCalibration",
                                                           "carState", "carParams", "accelerometer", "gyroscope"};
 
   // TODO: remove carParams once we're always sending at 100Hz
-  SubMaster sm(service_list, {}, nullptr, {gps_location_socket, "carParams"});
+  SubMaster sm(service_list, {}, nullptr, {"gnssMeasurements", "carParams"});
   PubMaster pm({"liveLocationKalman"});
 
   uint64_t cnt = 0;

@@ -10,8 +10,8 @@ import sys
 import numpy as np
 from collections import defaultdict
 
-from tools.lib.logreader import LogReader
-from tools.lib.route import Route
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.route import Route
 
 import matplotlib.pyplot as plt
 

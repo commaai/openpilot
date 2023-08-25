@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "system/hardware/base.h"
 #include "common/util.h"
 

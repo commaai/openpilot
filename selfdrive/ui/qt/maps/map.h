@@ -49,17 +49,14 @@ private:
   void pinchTriggered(QPinchGesture *gesture);
   void setError(const QString &err_str);
 
-  bool m_sourceAdded = false;
-
   bool loaded_once = false;
-  bool allow_open = true;
 
   // Panning
   QPointF m_lastPos;
-  int pan_counter = 0;
-  int zoom_counter = 0;
+  int interaction_counter = 0;
 
   // Position
+  std::optional<QMapbox::Coordinate> last_valid_nav_dest;
   std::optional<QMapbox::Coordinate> last_position;
   std::optional<float> last_bearing;
   FirstOrderFilter velocity_filter;
@@ -70,8 +67,6 @@ private:
   QLabel *error;
   MapInstructions* map_instructions;
   MapETA* map_eta;
-  QPushButton *settings_btn;
-  QPixmap directions_icon, settings_icon;
 
   // Blue with normal nav, green when nav is input into the model
   QColor getNavPathColor(bool nav_enabled) {

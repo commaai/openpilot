@@ -1,5 +1,6 @@
 #include "selfdrive/ui/ui.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 
@@ -168,15 +169,15 @@ static void update_state(UIState *s) {
     Eigen::Matrix3d device_from_calib = euler2rot(rpy);
     Eigen::Matrix3d wide_from_device = euler2rot(wfde);
     Eigen::Matrix3d view_from_device;
-    view_from_device << 0,1,0,
-                        0,0,1,
-                        1,0,0;
+    view_from_device << 0, 1, 0,
+                        0, 0, 1,
+                        1, 0, 0;
     Eigen::Matrix3d view_from_calib = view_from_device * device_from_calib;
-    Eigen::Matrix3d view_from_wide_calib = view_from_device * wide_from_device * device_from_calib ;
+    Eigen::Matrix3d view_from_wide_calib = view_from_device * wide_from_device * device_from_calib;
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++) {
-        scene.view_from_calib.v[i*3 + j] = view_from_calib(i,j);
-        scene.view_from_wide_calib.v[i*3 + j] = view_from_wide_calib(i,j);
+        scene.view_from_calib.v[i*3 + j] = view_from_calib(i, j);
+        scene.view_from_wide_calib.v[i*3 + j] = view_from_wide_calib(i, j);
       }
     }
     scene.calibration_valid = live_calib.getCalStatus() == cereal::LiveCalibrationData::Status::CALIBRATED;
@@ -244,8 +245,11 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   });
 
   Params params;
-  prime_type = std::atoi(params.get("PrimeType").c_str());
   language = QString::fromStdString(params.get("LanguageSetting"));
+  auto prime_value = params.get("PrimeType");
+  if (!prime_value.empty()) {
+    prime_type = static_cast<PrimeType>(std::atoi(prime_value.c_str()));
+  }
 
   // update timer
   timer = new QTimer(this);
@@ -264,11 +268,18 @@ void UIState::update() {
   emit uiUpdate(*this);
 }
 
-void UIState::setPrimeType(int type) {
+void UIState::setPrimeType(PrimeType type) {
   if (type != prime_type) {
+    bool prev_prime = hasPrime();
+
     prime_type = type;
     Params().put("PrimeType", std::to_string(prime_type));
     emit primeTypeChanged(prime_type);
+
+    bool prime = hasPrime();
+    if (prev_prime != prime) {
+      emit primeChanged(prime);
+    }
   }
 }
 
@@ -293,8 +304,11 @@ void Device::setAwake(bool on) {
   }
 }
 
-void Device::resetInteractiveTimeout() {
-  interactive_timeout = (ignition_on ? 10 : 30) * UI_FREQ;
+void Device::resetInteractiveTimeout(int timeout) {
+  if (timeout == -1) {
+    timeout = (ignition_on ? 10 : 30);
+  }
+  interactive_timeout = timeout * UI_FREQ;
 }
 
 void Device::updateBrightness(const UIState &s) {

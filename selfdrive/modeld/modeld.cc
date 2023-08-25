@@ -23,14 +23,14 @@ ExitHandler do_exit;
 mat3 update_calibration(Eigen::Vector3d device_from_calib_euler, bool wide_camera, bool bigmodel_frame) {
   /*
      import numpy as np
-     from common.transformations.model import medmodel_frame_from_calib_frame
+     from openpilot.common.transformations.model import medmodel_frame_from_calib_frame
      medmodel_frame_from_calib_frame = medmodel_frame_from_calib_frame[:, :3]
      calib_from_smedmodel_frame = np.linalg.inv(medmodel_frame_from_calib_frame)
   */
   static const auto calib_from_medmodel = (Eigen::Matrix<float, 3, 3>() <<
      0.00000000e+00, 0.00000000e+00, 1.00000000e+00,
      1.09890110e-03, 0.00000000e+00, -2.81318681e-01,
-    -2.25466395e-20, 1.09890110e-03,-5.23076923e-02).finished();
+    -2.25466395e-20, 1.09890110e-03, -5.23076923e-02).finished();
 
   static const auto calib_from_sbigmodel = (Eigen::Matrix<float, 3, 3>() <<
      0.00000000e+00,  7.31372216e-19,  1.00000000e+00,
@@ -60,9 +60,10 @@ mat3 update_calibration(Eigen::Vector3d device_from_calib_euler, bool wide_camer
 void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcClient &vipc_client_extra, bool main_wide_camera, bool use_extra_client) {
   // messaging
   PubMaster pm({"modelV2", "cameraOdometry"});
-  SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel"});
+  SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel", "navInstruction"});
 
   Params params;
+  PublishState ps = {};
 
   // setup filter to track dropped frames
   FirstOrderFilter frame_dropped_filter(0., 10., 1. / MODEL_FREQ);
@@ -77,6 +78,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
   bool live_calib_seen = false;
   float driving_style[DRIVING_STYLE_LEN] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0};
   float nav_features[NAV_FEATURE_LEN] = {0};
+  float nav_instructions[NAV_INSTRUCTION_LEN] = {0};
 
   VisionBuf *buf_main = nullptr;
   VisionBuf *buf_extra = nullptr;
@@ -147,6 +149,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       nav_enabled = true;
     } else if (nav_enabled && !use_nav) {
       memset(nav_features, 0, sizeof(float)*NAV_FEATURE_LEN);
+      memset(nav_instructions, 0, sizeof(float)*NAV_INSTRUCTION_LEN);
       nav_enabled = false;
     }
 
@@ -154,6 +157,21 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       auto nav_model_features = sm["navModel"].getNavModel().getFeatures();
       for (int i=0; i<NAV_FEATURE_LEN; i++) {
         nav_features[i] = nav_model_features[i];
+      }
+    }
+
+    if (nav_enabled && sm.updated("navInstruction")) {
+      memset(nav_instructions, 0, sizeof(float)*NAV_INSTRUCTION_LEN);
+      auto maneuvers = sm["navInstruction"].getNavInstruction().getAllManeuvers();
+      for (int i=0; i<maneuvers.size(); i++) {
+        int distance_idx = 25 + (int)(maneuvers[i].getDistance() / 20);
+        std::string direction = maneuvers[i].getModifier();
+        int direction_idx = 0;
+        if (direction == "left" || direction == "slight left" || direction == "sharp left") direction_idx = 1;
+        if (direction == "right" || direction == "slight right" || direction == "sharp right") direction_idx = 2;
+        if (distance_idx >= 0 && distance_idx < 50) {
+          nav_instructions[distance_idx*3 + direction_idx] = 1;
+        }
       }
     }
 
@@ -174,12 +192,12 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     }
 
     double mt1 = millis_since_boot();
-    ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire, is_rhd, driving_style, nav_features, prepare_only);
+    ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire, is_rhd, driving_style, nav_features, nav_instructions, prepare_only);
     double mt2 = millis_since_boot();
     float model_execution_time = (mt2 - mt1) / 1000.0;
 
     if (model_output != nullptr) {
-      model_publish(&model, pm, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio, *model_output, meta_main.timestamp_eof, timestamp_llk, model_execution_time,
+      model_publish(pm, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio, *model_output, model, ps, meta_main.timestamp_eof, timestamp_llk, model_execution_time,
                     nav_enabled, live_calib_seen);
       posenet_publish(pm, meta_main.frame_id, vipc_dropped_frames, *model_output, meta_main.timestamp_eof, live_calib_seen);
     }
@@ -237,11 +255,11 @@ int main(int argc, char **argv) {
   // vipc_client.connected is false only when do_exit is true
   if (!do_exit) {
     const VisionBuf *b = &vipc_client_main.buffers[0];
-    LOGW("connected main cam with buffer size: %d (%d x %d)", b->len, b->width, b->height);
+    LOGW("connected main cam with buffer size: %zu (%zu x %zu)", b->len, b->width, b->height);
 
     if (use_extra_client) {
       const VisionBuf *wb = &vipc_client_extra.buffers[0];
-      LOGW("connected extra cam with buffer size: %d (%d x %d)", wb->len, wb->width, wb->height);
+      LOGW("connected extra cam with buffer size: %zu (%zu x %zu)", wb->len, wb->width, wb->height);
     }
 
     run_model(model, vipc_client_main, vipc_client_extra, main_wide_camera, use_extra_client);

@@ -32,7 +32,7 @@ Read [here](https://github.com/commaai/openpilot/blob/90af436a121164a51da9fa48d0
 * .dlc file is a pre-quantized model and only runs on qualcomm DSPs
 
 ### input format
-* single image W = 1440  H = 960 represented in planar YUV420 format:
+* single image W = 1440 H = 960 luminance channel (Y) from the planar YUV420 format:
   * full input size is 1440 * 960 = 1382400
   * normalized ranging from 0.0 to 1.0 in float32 (onnx runner) or ranging from 0 to 255 in uint8 (snpe runner)
 * camera calibration angles (roll, pitch, yaw) from liveCalibration: 3 x float32 inputs

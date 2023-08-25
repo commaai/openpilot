@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
-from selfdrive.car.hyundai.values import FW_VERSIONS, PLATFORM_CODE_ECUS, get_platform_codes
+from openpilot.selfdrive.car.hyundai.values import FW_VERSIONS, PLATFORM_CODE_ECUS, get_platform_codes
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}

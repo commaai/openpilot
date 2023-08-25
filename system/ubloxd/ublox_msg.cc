@@ -1,7 +1,8 @@
-#include "ublox_msg.h"
+#include "system/ubloxd/ublox_msg.h"
 
 #include <unistd.h>
 
+#include <algorithm>
 #include <cassert>
 #include <chrono>
 #include <cmath>
@@ -9,6 +10,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <unordered_map>
+#include <utility>
 
 #include "common/swaglog.h"
 
@@ -21,26 +23,26 @@ inline static bool bit_to_bool(uint8_t val, int shifts) {
 
 inline int UbloxMsgParser::needed_bytes() {
   // Msg header incomplete?
-  if(bytes_in_parse_buf < ublox::UBLOX_HEADER_SIZE)
+  if (bytes_in_parse_buf < ublox::UBLOX_HEADER_SIZE)
     return ublox::UBLOX_HEADER_SIZE + ublox::UBLOX_CHECKSUM_SIZE - bytes_in_parse_buf;
   uint16_t needed = UBLOX_MSG_SIZE(msg_parse_buf) + ublox::UBLOX_HEADER_SIZE + ublox::UBLOX_CHECKSUM_SIZE;
   // too much data
-  if(needed < (uint16_t)bytes_in_parse_buf)
+  if (needed < (uint16_t)bytes_in_parse_buf)
     return -1;
   return needed - (uint16_t)bytes_in_parse_buf;
 }
 
 inline bool UbloxMsgParser::valid_cheksum() {
   uint8_t ck_a = 0, ck_b = 0;
-  for(int i = 2; i < bytes_in_parse_buf - ublox::UBLOX_CHECKSUM_SIZE;i++) {
+  for (int i = 2; i < bytes_in_parse_buf - ublox::UBLOX_CHECKSUM_SIZE; i++) {
     ck_a = (ck_a + msg_parse_buf[i]) & 0xFF;
     ck_b = (ck_b + ck_a) & 0xFF;
   }
-  if(ck_a != msg_parse_buf[bytes_in_parse_buf - 2]) {
+  if (ck_a != msg_parse_buf[bytes_in_parse_buf - 2]) {
     LOGD("Checksum a mismatch: %02X, %02X", ck_a, msg_parse_buf[6]);
     return false;
   }
-  if(ck_b != msg_parse_buf[bytes_in_parse_buf - 1]) {
+  if (ck_b != msg_parse_buf[bytes_in_parse_buf - 1]) {
     LOGD("Checksum b mismatch: %02X, %02X", ck_b, msg_parse_buf[7]);
     return false;
   }
@@ -53,13 +55,13 @@ inline bool UbloxMsgParser::valid() {
 }
 
 inline bool UbloxMsgParser::valid_so_far() {
-  if(bytes_in_parse_buf > 0 && msg_parse_buf[0] != ublox::PREAMBLE1) {
+  if (bytes_in_parse_buf > 0 && msg_parse_buf[0] != ublox::PREAMBLE1) {
     return false;
   }
-  if(bytes_in_parse_buf > 1 && msg_parse_buf[1] != ublox::PREAMBLE2) {
+  if (bytes_in_parse_buf > 1 && msg_parse_buf[1] != ublox::PREAMBLE2) {
     return false;
   }
-  if(needed_bytes() == 0 && !valid()) {
+  if (needed_bytes() == 0 && !valid()) {
     return false;
   }
   return true;
@@ -68,8 +70,8 @@ inline bool UbloxMsgParser::valid_so_far() {
 bool UbloxMsgParser::add_data(float log_time, const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed) {
   last_log_time = log_time;
   int needed = needed_bytes();
-  if(needed > 0) {
-    bytes_consumed = std::min((uint32_t)needed, incoming_data_len );
+  if (needed > 0) {
+    bytes_consumed = std::min((uint32_t)needed, incoming_data_len);
     // Add data to buffer
     memcpy(msg_parse_buf + bytes_in_parse_buf, incoming_data, bytes_consumed);
     bytes_in_parse_buf += bytes_consumed;
@@ -78,15 +80,15 @@ bool UbloxMsgParser::add_data(float log_time, const uint8_t *incoming_data, uint
   }
 
   // Validate msg format, detect invalid header and invalid checksum.
-  while(!valid_so_far() && bytes_in_parse_buf != 0) {
+  while (!valid_so_far() && bytes_in_parse_buf != 0) {
     // Corrupted msg, drop a byte.
     bytes_in_parse_buf -= 1;
-    if(bytes_in_parse_buf > 0)
+    if (bytes_in_parse_buf > 0)
       memmove(&msg_parse_buf[0], &msg_parse_buf[1], bytes_in_parse_buf);
   }
 
   // There is redundant data at the end of buffer, reset the buffer.
-  if(needed_bytes() == -1) {
+  if (needed_bytes() == -1) {
     bytes_in_parse_buf = 0;
   }
   return valid();
@@ -295,8 +297,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
         continue;
       if (glonass_string_superframes[msg->freq_id()][i] == 0 || gl_string.superframe_number() == 0) {
         superframe_unknown = true;
-      }
-      else if (glonass_string_superframes[msg->freq_id()][i] != gl_string.superframe_number()) {
+      } else if (glonass_string_superframes[msg->freq_id()][i] != gl_string.superframe_number()) {
         needs_clear = true;
       }
       // Check if string times add up to being from the same frame
@@ -390,7 +391,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
     eph.setP4(data->p4());
     eph.setSvURA(glonass_URA_lookup.at(data->f_t()));
     if (msg->sv_id() != data->n()) {
-      LOGE("SV_ID != SLOT_NUMBER: %d %d", msg->sv_id(), data->n());
+      LOGE("SV_ID != SLOT_NUMBER: %d %" PRIu64, msg->sv_id(), data->n());
     }
     eph.setSvType(data->m());
   }
@@ -434,7 +435,7 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_rawx(ubx_t::rxm_rawx_t *msg) {
 
   auto mb = mr.initMeasurements(msg->num_meas());
   auto measurements = *msg->meas();
-  for(int8_t i = 0; i < msg->num_meas(); i++) {
+  for (int8_t i = 0; i < msg->num_meas(); i++) {
     mb[i].setSvId(measurements[i]->sv_id());
     mb[i].setPseudorange(measurements[i]->pr_mes());
     mb[i].setCarrierCycles(measurements[i]->cp_mes());
@@ -469,7 +470,7 @@ kj::Array<capnp::word> UbloxMsgParser::gen_nav_sat(ubx_t::nav_sat_t *msg) {
 
   auto svs = sr.initSvs(msg->num_svs());
   auto svs_data = *msg->svs();
-  for(int8_t i = 0; i < msg->num_svs(); i++) {
+  for (int8_t i = 0; i < msg->num_svs(); i++) {
     svs[i].setSvId(svs_data[i]->sv_id());
     svs[i].setGnssId(svs_data[i]->gnss_id());
     svs[i].setFlagsBitfield(svs_data[i]->flags());
