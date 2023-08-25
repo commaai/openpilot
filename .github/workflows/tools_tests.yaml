@@ -35,14 +35,13 @@ jobs:
         submodules: true
     - name: Build Docker image
       run: eval "$BUILD"
-    - name: Unit test
+    - name: Build openpilot
+      timeout-minutes: 5
+      run: ${{ env.RUN }} "scons -j$(nproc) --directory=/tmp/openpilot/cereal --minimal"
+    - name: Test PlotJuggler
       timeout-minutes: 2
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) --directory=/tmp/openpilot cereal && \
-                        apt-get update && \
-                        apt-get install -y libdw-dev libqt5svg5-dev libqt5x11extras5-dev && \
-                        cd /tmp/openpilot/tools/plotjuggler && \
-                        ./test_plotjuggler.py"
+        ${{ env.RUN }} "pytest tools/plotjuggler/"
 
   simulator:
     name: simulator
