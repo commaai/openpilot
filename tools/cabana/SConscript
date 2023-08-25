@@ -35,7 +35,7 @@ cabana_lib = cabana_env.Library("cabana_lib", ['mainwin.cc', 'streams/socketcans
                                                'commands.cc', 'messageswidget.cc', 'streamselector.cc', 'settings.cc', 'util.cc', 'detailwidget.cc', 'tools/findsimilarbits.cc', 'tools/findsignal.cc'], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 cabana_env.Program('cabana', ['cabana.cc', cabana_lib, assets], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 
-if GetOption('test'):
+if GetOption('extras'):
   cabana_env.Program('tests/test_cabana', ['tests/test_runner.cc', 'tests/test_cabana.cc', cabana_lib], LIBS=[cabana_libs])
 
 generate_dbc = cabana_env.Command('generate_dbc_json',

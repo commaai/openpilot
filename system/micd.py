@@ -85,7 +85,7 @@ class Mic:
 
   def micd_thread(self):
     # sounddevice must be imported after forking processes
-    import sounddevice as sd  # pylint: disable=import-outside-toplevel
+    import sounddevice as sd
 
     with sd.InputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback) as stream:
       cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}")

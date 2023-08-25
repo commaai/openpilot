@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <memory>
 #include <thread>
 
 #include "cereal/messaging/messaging.h"

@@ -6,7 +6,7 @@ from typing import Dict, Iterable, Optional, Tuple
 import capnp
 
 from cereal import car
-from selfdrive.car.ford.values import FW_QUERY_CONFIG, FW_VERSIONS
+from openpilot.selfdrive.car.ford.values import FW_QUERY_CONFIG, FW_VERSIONS
 
 Ecu = car.CarParams.Ecu
 

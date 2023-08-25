@@ -11,7 +11,7 @@
 
 #define __STDC_CONSTANT_MACROS
 
-#include "libyuv.h"
+#include "third_party/libyuv/include/libyuv.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>

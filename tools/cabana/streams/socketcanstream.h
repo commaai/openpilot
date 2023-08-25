@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include <QtSerialBus/QCanBus>
 #include <QtSerialBus/QCanBusDevice>
 #include <QtSerialBus/QCanBusDeviceInfo>

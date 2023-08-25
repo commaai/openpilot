@@ -47,7 +47,7 @@ bool sync_encoders(EncoderdState *s, CameraType cam_type, uint32_t frame_id) {
 void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
   util::set_thread_name(cam_info.thread_name);
 
-  std::vector<Encoder *> encoders;
+  std::vector<std::unique_ptr<Encoder>> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
 
   int cur_seg = 0;
@@ -64,12 +64,9 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       assert(buf_info.width > 0 && buf_info.height > 0);
 
       for (const auto &encoder_info : cam_info.encoder_infos) {
-        encoders.push_back(new Encoder(encoder_info, buf_info.width, buf_info.height));
+        auto &e = encoders.emplace_back(new Encoder(encoder_info, buf_info.width, buf_info.height));
+        e->encoder_open(nullptr);
       }
-    }
-
-    for (int i = 0; i < encoders.size(); ++i) {
-      encoders[i]->encoder_open(NULL);
     }
 
     bool lagging = false;
@@ -112,12 +109,6 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
         }
       }
     }
-  }
-
-  LOG("encoder destroy");
-  for (auto &e : encoders) {
-    e->encoder_close();
-    delete e;
   }
 }
 
