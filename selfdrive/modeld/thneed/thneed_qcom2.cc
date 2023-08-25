@@ -107,7 +107,8 @@ int ioctl(int filedes, unsigned long request, void *argp) {
   }
 
   int ret = my_ioctl(filedes, request, argp);
-  if (ret != 0) printf("ioctl returned %d with errno %d\n", ret, errno);
+  // NOTE: This error message goes into stdout and messes up pyenv
+  // if (ret != 0) printf("ioctl returned %d with errno %d\n", ret, errno);
   return ret;
 }
 

@@ -9,11 +9,11 @@ from typing import List, NoReturn
 from functools import cmp_to_key
 
 from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
-from common.basedir import BASEDIR
-from common.params import Params
-from selfdrive.boardd.set_time import set_time
-from system.hardware import HARDWARE
-from system.swaglog import cloudlog
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.params import Params
+from openpilot.selfdrive.boardd.set_time import set_time
+from openpilot.system.hardware import HARDWARE
+from openpilot.system.swaglog import cloudlog
 
 
 def get_expected_signature(panda: Panda) -> bytes:

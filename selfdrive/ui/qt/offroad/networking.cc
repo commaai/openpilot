@@ -10,7 +10,6 @@
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
-#include "selfdrive/ui/qt/widgets/prime.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
 
@@ -77,7 +76,7 @@ void Networking::refresh() {
   an->refresh();
 }
 
-void Networking::connectToNetwork(const Network &n) {
+void Networking::connectToNetwork(const Network n) {
   if (wifi->isKnownConnection(n.ssid)) {
     wifi->activateWifiConnection(n.ssid);
   } else if (n.security_type == SecurityType::OPEN) {
@@ -183,7 +182,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   // Set initial config
   wifi->updateGsmSettings(roamingEnabled, QString::fromStdString(params.get("GsmApn")), metered);
 
-  connect(uiState(), &UIState::primeTypeChanged, this, [=](int prime_type) {
+  connect(uiState(), &UIState::primeTypeChanged, this, [=](PrimeType prime_type) {
     bool gsmVisible = prime_type == PrimeType::NONE || prime_type == PrimeType::LITE;
     roamingToggle->setVisible(gsmVisible);
     editApnButton->setVisible(gsmVisible);
@@ -309,7 +308,7 @@ WifiItem *WifiUI::getItem(int n) {
   auto item = n < wifi_items.size() ? wifi_items[n] : wifi_items.emplace_back(new WifiItem(tr("CONNECTING..."), tr("FORGET")));
   if (!item->parentWidget()) {
     QObject::connect(item, &WifiItem::connectToNetwork, this, &WifiUI::connectToNetwork);
-    QObject::connect(item, &WifiItem::forgotNetwork, [this](const Network &n) {
+    QObject::connect(item, &WifiItem::forgotNetwork, [this](const Network n) {
       if (ConfirmationDialog::confirm(tr("Forget Wi-Fi Network \"%1\"?").arg(QString::fromUtf8(n.ssid)), tr("Forget"), this))
         wifi->forgetConnection(n.ssid);
     });

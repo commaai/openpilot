@@ -13,7 +13,10 @@
 #include <ctime>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <streambuf>
+#include <string>
+#include <vector>
 
 #include "common/params.h"
 #include "common/swaglog.h"

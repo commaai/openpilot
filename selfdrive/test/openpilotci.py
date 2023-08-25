@@ -24,13 +24,13 @@ def get_sas_token():
   return sas_token
 
 def upload_bytes(data, name):
-  from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
+  from azure.storage.blob import BlockBlobService
   service = BlockBlobService(account_name="commadataci", sas_token=get_sas_token())
   service.create_blob_from_bytes("openpilotci", name, data)
   return BASE_URL + name
 
 def upload_file(path, name):
-  from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
+  from azure.storage.blob import BlockBlobService
   service = BlockBlobService(account_name="commadataci", sas_token=get_sas_token())
   service.create_blob_from_path("openpilotci", name, path)
   return BASE_URL + name
