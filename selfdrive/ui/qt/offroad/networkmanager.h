@@ -45,8 +45,4 @@ const int NM_METERED_GUESS_YES = 3;
 const int NM_METERED_GUESS_NO  = 4;
 
 // https://developer-old.gnome.org/NetworkManager/stable/nm-dbus-types.html#NMActiveConnectionState
-const int NM_ACTIVE_CONNECTION_STATE_UNKNOWN      = 0;
 const int NM_ACTIVE_CONNECTION_STATE_ACTIVATING   = 1;
-const int NM_ACTIVE_CONNECTION_STATE_ACTIVATED    = 2;
-const int NM_ACTIVE_CONNECTION_STATE_DEACTIVATING = 3;
-const int NM_ACTIVE_CONNECTION_STATE_DEACTIVATED  = 4;
