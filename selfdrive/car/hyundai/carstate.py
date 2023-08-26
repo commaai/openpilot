@@ -230,11 +230,7 @@ class CarState(CarStateBase):
     if self.CP.flags & HyundaiFlags.CANFD_HDA2 and not self.CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING:
       self.cam_0x2a4 = copy.copy(cp_cam.vl["CAM_0x2a4"])
     if self.CP.flags & HyundaiFlags.CANFD_HDA2 and self.CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING:
-      self.cam_0x230 = copy.copy(cp_cam.vl["CAM_0x230"])
-      for i in range(0x235, 0x248 + 1):
-        setattr(self, f"cam_0x{i:03x}", copy.copy(cp_cam.vl[f"CAM_0x{i:03x}"]))
-      for i in range(0x360, 0x366 + 1):
-        setattr(self, f"cam_0x{i:03x}", copy.copy(cp_cam.vl[f"CAM_0x{i:03x}"]))
+      self.cam_0x362 = copy.copy(cp_cam.vl["CAM_0x362"])
 
     return ret
 
@@ -339,11 +335,7 @@ class CarState(CarStateBase):
     if CP.flags & HyundaiFlags.CANFD_HDA2 and not CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING:
       messages += [("CAM_0x2a4", 20)]
     elif CP.flags & HyundaiFlags.CANFD_HDA2 and CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING:
-      messages += [("CAM_0x230", 33)]
-      for i in range(0x235, 0x248 + 1):
-        messages.append((f"CAM_0x{i:03x}", 33))
-      for i in range(0x360, 0x366 + 1):
-        messages.append((f"CAM_0x{i:03x}", 20))
+      messages += [("CAM_0x362", 20)]
     elif CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
       messages += [
         ("SCC_CONTROL", 50),
