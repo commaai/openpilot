@@ -163,7 +163,7 @@ SecurityType WifiManager::getSecurityType(const QVariantMap &properties) {
 
 void WifiManager::connect(const Network &n, const QString &password, const QString &username) {
 //  connecting_to_network = n.ssid;
-  seenNetworks[n.ssid].connected = ConnectedType::CONNECTING;
+//  seenNetworks[n.ssid].connected = ConnectedType::CONNECTING;
   forgetConnection(n.ssid);  // Clear all connections that may already exist to the network we are connecting
   Connection connection;
   connection["connection"]["type"] = "802-11-wireless";
@@ -258,32 +258,36 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
     forgetConnection(connecting_to_network);
     emit wrongPassword(connecting_to_network);
   } else if (new_state == NM_DEVICE_STATE_ACTIVATED) {
-    connecting_to_network = "";
-    refreshNetworks();
+//    connecting_to_network = ""; // TODO
+    setCurrentConnecting("", connecting_to_network);
+//    refreshNetworks();
   }
 }
 
-void WifiManager::setCurrentConnecting(const QString &ssid) {
-  connecting_to_network = ssid;
+void WifiManager::setCurrentConnecting(const QString &connecting_ssid, const QString &connected_ssid) {
+  connecting_to_network = connecting_ssid;
   for (auto &network : seenNetworks) {
-    network.connected = (network.ssid == ssid) ? ConnectedType::CONNECTING : ConnectedType::DISCONNECTED;
+    network.connected = (network.ssid == connecting_ssid) ? ConnectedType::CONNECTING : (network.ssid == connected_ssid) ? ConnectedType::CONNECTED : ConnectedType::DISCONNECTED;
   }
   emit refreshSignal();
 }
 
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
 void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
+  qDebug() << "props:" << props;
   if (props.contains("ActiveConnection")) {
     QString path = props.value("ActiveConnection").value<QDBusObjectPath>().path();
     if (path == "" || path == "/") {
-      connecting_to_network = "";
+//      connecting_to_network = "";
+      setCurrentConnecting("");
     } else {
 //      qDebug() << "HERE:" << props.value("ActiveConnection").value<QDBusObjectPath>().path();
       auto so = call<QDBusObjectPath>(props.value("ActiveConnection").value<QDBusObjectPath>().path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "SpecificObject");
       auto state = call<uint>(props.value("ActiveConnection").value<QDBusObjectPath>().path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "State");
       if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
         if (so.path() != "" && so.path() != "/") {
-          connecting_to_network = get_property(so.path(), "Ssid");
+//          connecting_to_network = get_property(so.path(), "Ssid");
+          setCurrentConnecting(get_property(so.path(), "Ssid"));
           qDebug() << "activating ssid:" << connecting_to_network;
         }
       }
