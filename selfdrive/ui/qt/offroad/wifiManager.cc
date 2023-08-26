@@ -278,7 +278,9 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
 void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
   if (props.contains("ActiveConnection")) {
     QString path = props.value("ActiveConnection").value<QDBusObjectPath>().path();
+
     if (emptyPath(path)) {
+      // Empty ActiveConnection is sent when device state is NM_DEVICE_STATE_DEACTIVATING, update current SSID
       setCurrentSsid("");
     } else {
       auto active_conn_object = call<QDBusObjectPath>(path, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "SpecificObject");
@@ -287,7 +289,6 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
         setCurrentSsid(get_property(active_conn_object.path(), "Ssid"));
       }
     }
-
   } else if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("LastScan")) {
     refreshNetworks();
   } else if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("ActiveAccessPoint")) {
