@@ -57,11 +57,13 @@ private:
 };
 
 class AsyncWriter {
-private:
+public:
+  AsyncWriter() {}
   void queue(const std::tuple<std::string, std::string, std::string> &dat);
+
+private:
   void write();
 
   std::future<void> future;
   SafeQueue<std::tuple<std::string, std::string, std::string>> q;
-  friend class Params;
 };

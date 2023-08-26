@@ -333,6 +333,9 @@ void Params::putNonBlocking(const std::string &key, const std::string &val) {
   async_writer.queue({params_path, key, val});
 }
 
+
+// AsyncWriter
+
 void AsyncWriter::queue(const std::tuple<std::string, std::string, std::string> &dat) {
   q.push(dat);
   // start thread on demand
