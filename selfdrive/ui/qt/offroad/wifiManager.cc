@@ -277,7 +277,6 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
         if (so.path() != "" && so.path() != "/") {
           connecting_to_network = get_property(so.path(), "Ssid");
           qDebug() << "activating ssid:" << connecting_to_network;
-          emit refreshSignal();
         }
       }
     }
