@@ -271,21 +271,16 @@ void WifiManager::setCurrentSsid(const QString &connecting_ssid, const QString &
 
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
 void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
-  qDebug() << "props:" << props;
   if (props.contains("ActiveConnection")) {
     QString path = props.value("ActiveConnection").value<QDBusObjectPath>().path();
     if (path == "" || path == "/") {
-//      connecting_to_network = "";
       setCurrentSsid("");
     } else {
-//      qDebug() << "HERE:" << props.value("ActiveConnection").value<QDBusObjectPath>().path();
       auto so = call<QDBusObjectPath>(props.value("ActiveConnection").value<QDBusObjectPath>().path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "SpecificObject");
       auto state = call<uint>(props.value("ActiveConnection").value<QDBusObjectPath>().path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "State");
       if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
         if (so.path() != "" && so.path() != "/") {
-//          connecting_to_network = get_property(so.path(), "Ssid");
           setCurrentSsid(get_property(so.path(), "Ssid"));
-          qDebug() << "activating ssid:" << connecting_to_network;
         }
       }
     }
