@@ -280,12 +280,6 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
           emit refreshSignal();
         }
       }
-//      qDebug() << state;
-//      if (so.path() != "" && so.path() != "/") {
-//        QString Ssid = get_property(pth.path(), "Ssid");
-//        qDebug() << "activating ssid:" << Ssid;
-//      }
-//      qDebug() << knownConnections.contains(props.value("ActiveConnection").value<QDBusObjectPath>());
     }
 
   } else if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("LastScan")) {
