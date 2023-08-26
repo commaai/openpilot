@@ -57,7 +57,7 @@ if (use_thneed and target == "agnos-aarch64") or GetOption('pc_thneed'):
   lenvCython['CXXFLAGS'].append("-DUSE_THNEED")
 
 common_frameworks = []
-common_libs = envCython["LIBS"] + [gpucommon, common, 'zmq']
+common_libs = envCython["LIBS"] + [gpucommon, common, 'json11', 'zmq']
 if target == "Darwin":
   common_frameworks.append('OpenCL')
 else:
@@ -99,6 +99,6 @@ if (use_thneed and target == "agnos-aarch64") or GetOption('pc_thneed'):
   tinygrad_files = sum([lenv.Glob("#"+x) for x in open(File("#release/files_common").abspath).read().split("\n") if x.startswith("tinygrad_repo/")], [])
   lenv.Command(fn + ".thneed", [fn + ".onnx"] + tinygrad_files, cmd)
 
-  thneed_lib = env.SharedLibrary('thneed', thneed_src, LIBS=[gpucommon, common, 'zmq', 'OpenCL', 'dl'])
+  thneed_lib = env.SharedLibrary('thneed', thneed_src, LIBS=[gpucommon, common, 'json11', 'zmq', 'OpenCL', 'dl'])
   thneedmodel_lib = env.Library('thneedmodel', ['runners/thneedmodel.cc'])
-  lenvCython.Program('runners/thneedmodel_pyx.so', 'runners/thneedmodel_pyx.pyx', LIBS=envCython["LIBS"]+[thneedmodel_lib, thneed_lib, gpucommon, common, 'dl', 'zmq', 'OpenCL'])
+  lenvCython.Program('runners/thneedmodel_pyx.so', 'runners/thneedmodel_pyx.pyx', LIBS=envCython["LIBS"]+[thneedmodel_lib, thneed_lib, gpucommon, common, 'json11', 'dl', 'zmq', 'OpenCL'])
