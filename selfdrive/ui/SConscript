@@ -56,9 +56,9 @@ qt_env.NoClean(translation_sources)
 qt_env.Precious(translation_sources)
 qt_env.NoCache(lupdate)
 
-# add compiled translations to qrc file to include with assets
-translation_assets_src = "#selfdrive/assets/translations_assets.qrc"
-with open(File(translation_assets_src).abspath, 'w') as f:
+# create qrc file for compiled translations to include with assets
+translations_assets_src = "#selfdrive/assets/translations_assets.qrc"
+with open(File(translations_assets_src).abspath, 'w') as f:
   f.write('<!DOCTYPE RCC><RCC version="1.0">\n<qresource>\n')
   f.write('\n'.join([f'<file alias="{l}">../ui/translations/{l}.qm</file>' for l in languages.values()]))
   f.write('\n</qresource>\n</RCC>')
@@ -66,8 +66,8 @@ with open(File(translation_assets_src).abspath, 'w') as f:
 # build assets
 assets = "#selfdrive/assets/assets.cc"
 assets_src = "#selfdrive/assets/assets.qrc"
-qt_env.Command(assets, [assets_src, translation_assets_src], f"rcc $SOURCES -o $TARGET")
-qt_env.Depends(assets, Glob('#selfdrive/assets/*', exclude=[assets, assets_src, translation_assets_src, "#selfdrive/assets/assets.o"]) + [lrelease])
+qt_env.Command(assets, [assets_src, translations_assets_src], f"rcc $SOURCES -o $TARGET")
+qt_env.Depends(assets, Glob('#selfdrive/assets/*', exclude=[assets, assets_src, translations_assets_src, "#selfdrive/assets/assets.o"]) + [lrelease])
 asset_obj = qt_env.Object("assets", assets)
 
 # build soundd
