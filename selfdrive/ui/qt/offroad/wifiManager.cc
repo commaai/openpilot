@@ -230,6 +230,16 @@ void WifiManager::forgetConnection(const QString &ssid) {
   }
 }
 
+void WifiManager::setCurrentSsid(const QString &connecting_ssid, const QString &connected_ssid) {
+  // Allows the network connected statuses to be updated between AP refreshes
+  for (auto &network : seenNetworks) {
+    network.connected = (network.ssid == connecting_ssid) ? ConnectedType::CONNECTING :
+                        ((network.ssid == connected_ssid) ? ConnectedType::CONNECTED : ConnectedType::DISCONNECTED);
+  }
+  connecting_to_network = connecting_ssid;
+  emit refreshSignal();
+}
+
 uint WifiManager::getAdapterType(const QDBusObjectPath &path) {
   return call<uint>(path.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE, "DeviceType");
 }
@@ -262,16 +272,6 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
   } else if (new_state == NM_DEVICE_STATE_ACTIVATED) {
     setCurrentSsid("", connecting_to_network);
   }
-}
-
-void WifiManager::setCurrentSsid(const QString &connecting_ssid, const QString &connected_ssid) {
-  // Allows the network connected statuses to be updated between AP refreshes
-  for (auto &network : seenNetworks) {
-    network.connected = (network.ssid == connecting_ssid) ? ConnectedType::CONNECTING :
-                        ((network.ssid == connected_ssid) ? ConnectedType::CONNECTED : ConnectedType::DISCONNECTED);
-  }
-  connecting_to_network = connecting_ssid;
-  emit refreshSignal();
 }
 
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
