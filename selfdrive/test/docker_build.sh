@@ -35,7 +35,7 @@ REMOTE_SHA_TAG=$REMOTE_TAG:$COMMIT_SHA
 SCRIPT_DIR=$(dirname "$0")
 OPENPILOT_DIR=$SCRIPT_DIR/../../
 
-DOCKER_BUILDKIT=1 docker build --cache-to type=inline --cache-from type=registry,ref=$REMOTE_TAG -t $REMOTE_TAG -t $LOCAL_TAG -f $OPENPILOT_DIR/$DOCKER_FILE $OPENPILOT_DIR
+DOCKER_BUILDKIT=1 docker buildx build --load --cache-to type=inline --cache-from type=registry,ref=$REMOTE_TAG -t $REMOTE_TAG -t $LOCAL_TAG -f $OPENPILOT_DIR/$DOCKER_FILE $OPENPILOT_DIR
 
 if [[ ! -z "$PUSH_IMAGE" ]];
 then
