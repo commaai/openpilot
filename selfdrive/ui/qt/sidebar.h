@@ -1,9 +1,10 @@
 #pragma once
 
+#include <memory>
+
 #include <QFrame>
 #include <QMap>
 
-#include "common/params.h"
 #include "selfdrive/ui/ui.h"
 
 typedef QPair<QPair<QString, QString>, QColor> ItemStatus;
@@ -21,18 +22,21 @@ public:
   explicit Sidebar(QWidget* parent = 0);
 
 signals:
-  void openSettings();
+  void openSettings(int index = 0, const QString &param = "");
   void valueChanged();
 
 public slots:
+  void offroadTransition(bool offroad);
   void updateState(const UIState &s);
 
 protected:
   void paintEvent(QPaintEvent *event) override;
+  void mousePressEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void drawMetric(QPainter &p, const QPair<QString, QString> &label, QColor c, int y);
 
-  QPixmap home_img, settings_img;
+  QPixmap home_img, flag_img, settings_img;
+  bool onroad, flag_pressed, settings_pressed;
   const QMap<cereal::DeviceState::NetworkType, QString> network_type = {
     {cereal::DeviceState::NetworkType::NONE, tr("--")},
     {cereal::DeviceState::NetworkType::WIFI, tr("Wi-Fi")},
@@ -49,7 +53,6 @@ protected:
   const QColor warning_color = QColor(218, 202, 37);
   const QColor danger_color = QColor(201, 34, 49);
 
-  Params params;
   ItemStatus connect_status, panda_status, temp_status;
   QString net_type;
   int net_strength = 0;

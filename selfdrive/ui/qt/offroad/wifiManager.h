@@ -33,6 +33,7 @@ struct Network {
   SecurityType security_type;
 };
 bool compare_by_strength(const Network &a, const Network &b);
+inline int strengthLevel(unsigned int strength) { return std::clamp((int)round(strength / 33.), 0, 3); }
 
 class WifiManager : public QObject {
   Q_OBJECT
@@ -50,7 +51,7 @@ public:
   bool isKnownConnection(const QString &ssid);
   std::optional<QDBusPendingCall> activateWifiConnection(const QString &ssid);
   NetworkType currentNetworkType();
-  void updateGsmSettings(bool roaming, QString apn);
+  void updateGsmSettings(bool roaming, QString apn, bool metered);
   void connect(const Network &ssid, const QString &password = {}, const QString &username = {});
 
   // Tethering functions
@@ -71,9 +72,7 @@ private:
 
   QString getAdapter(const uint = NM_DEVICE_TYPE_WIFI);
   uint getAdapterType(const QDBusObjectPath &path);
-  bool isWirelessAdapter(const QDBusObjectPath &path);
   QString getIp4Address();
-  void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
   void deactivateConnectionBySsid(const QString &ssid);
   void deactivateConnection(const QDBusObjectPath &path);
   QVector<QDBusObjectPath> getActiveConnections();

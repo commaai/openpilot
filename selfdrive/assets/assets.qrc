@@ -1,5 +1,6 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
+  <file alias="bootstrap-icons.svg">../../third_party/bootstrap/bootstrap-icons.svg</file>
   <file>img_continue_triangle.svg</file>
   <file>img_circled_check.svg</file>
   <file>img_circled_slash.svg</file>
@@ -13,5 +14,7 @@
   <file>offroad/icon_wifi_strength_medium.svg</file>
   <file>offroad/icon_wifi_strength_high.svg</file>
   <file>offroad/icon_wifi_strength_full.svg</file>
+
+  <file alias="languages.json">../ui/translations/languages.json</file>
 </qresource>
 </RCC>

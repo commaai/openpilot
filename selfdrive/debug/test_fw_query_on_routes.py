@@ -6,23 +6,21 @@ import argparse
 import os
 import traceback
 from tqdm import tqdm
-from tools.lib.logreader import LogReader
-from tools.lib.route import Route
-from selfdrive.car.interfaces import get_interface_attr
-from selfdrive.car.car_helpers import interface_names
-from selfdrive.car.fw_versions import match_fw_to_car
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.route import Route
+from openpilot.selfdrive.car.car_helpers import interface_names
+from openpilot.selfdrive.car.fw_versions import VERSIONS, match_fw_to_car
 
 
 NO_API = "NO_API" in os.environ
-VERSIONS = get_interface_attr('FW_VERSIONS', ignore_none=True)
 SUPPORTED_BRANDS = VERSIONS.keys()
 SUPPORTED_CARS = [brand for brand in SUPPORTED_BRANDS for brand in interface_names[brand]]
 UNKNOWN_BRAND = "unknown"
 
 try:
-  from xx.pipeline.c.CarState import migration
+  from xx.pipeline.lib.fingerprint import MIGRATION
 except ImportError:
-  migration = {}
+  MIGRATION = {}
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Run FW fingerprint on Qlog of route or list of routes')
@@ -56,7 +54,7 @@ if __name__ == "__main__":
       qlog_path = f"cd:/{dongle_id}/{time}/0/qlog.bz2"
     else:
       route = Route(route)
-      qlog_path = route.qlog_paths()[0]
+      qlog_path = next((p for p in route.qlog_paths() if p is not None), None)
 
     if qlog_path is None:
       continue
@@ -68,19 +66,19 @@ if __name__ == "__main__":
       CP = None
       for msg in lr:
         if msg.which() == "pandaStates":
-          if msg.pandaStates[0].pandaType not in ('uno', 'blackPanda', 'dos'):
+          if msg.pandaStates[0].pandaType in ('unknown', 'whitePanda', 'greyPanda', 'pedal'):
             print("wrong panda type")
             break
 
         elif msg.which() == "carParams":
           CP = msg.carParams
-          car_fw = CP.carFw
+          car_fw = [fw for fw in CP.carFw if not fw.logging]
           if len(car_fw) == 0:
             print("no fw")
             break
 
           live_fingerprint = CP.carFingerprint
-          live_fingerprint = migration.get(live_fingerprint, live_fingerprint)
+          live_fingerprint = MIGRATION.get(live_fingerprint, live_fingerprint)
 
           if args.car is not None:
             live_fingerprint = args.car
@@ -114,7 +112,8 @@ if __name__ == "__main__":
           padding = max([len(fw.brand or UNKNOWN_BRAND) for fw in car_fw])
           for version in sorted(car_fw, key=lambda fw: fw.brand):
             subaddr = None if version.subAddress == 0 else hex(version.subAddress)
-            print(f"  Brand: {version.brand or UNKNOWN_BRAND:{padding}}, bus: {version.bus} - (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}],")
+            print(f"  Brand: {version.brand or UNKNOWN_BRAND:{padding}}, bus: {version.bus} - \
+                      (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}],")
 
           print("Mismatches")
           found = False
@@ -168,7 +167,7 @@ if __name__ == "__main__":
       break
 
   print()
-  # Print FW versions that need to be added seperated out by car and address
+  # Print FW versions that need to be added separated out by car and address
   for car, m in sorted(mismatches.items()):
     print(car)
     addrs = defaultdict(list)

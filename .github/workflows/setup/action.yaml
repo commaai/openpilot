@@ -1,45 +1,51 @@
 name: 'openpilot env setup'
 
-env:
-  BASE_IMAGE: openpilot-base
-  DOCKER_REGISTRY: ghcr.io/commaai
-  BUILD: |
-      docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
-      docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
-      docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
-
 inputs:
-  save-cache:
-    default: false
+  git_lfs:
+    description: 'Whether or not to pull the git lfs'
     required: false
+    default: 'true'
 
 runs:
   using: "composite"
   steps:
     # do this after checkout to ensure our custom LFS config is used to pull from GitLab
     - shell: bash
+      if: ${{ inputs.git_lfs == 'true' }}
       run: git lfs pull
 
     # build cache
     - id: date
       shell: bash
-      run: echo "::set-output name=date::$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d')"
+      run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
     - shell: bash
-      run: echo "${{ steps.date.outputs.date }}"
-    - shell: bash
-      run: echo "CACHE_SKIP_SAVE=true" >> $GITHUB_ENV
-      if: github.ref != 'refs/heads/master' || inputs.save-cache == 'false'
-    - id: scons-cache
-      # TODO: change the version to the released version
-      # when https://github.com/actions/cache/pull/489 (or 571) is merged.
-      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+      run: echo "$CACHE_COMMIT_DATE"
+    - id: restore-scons-cache
+      uses: actions/cache/restore@v3
       with:
-        path: /tmp/scons_cache
-        key: scons-${{ steps.date.outputs.date }}-${{ github.sha }}
+        path: .ci_cache/scons_cache
+        key: scons-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
         restore-keys: |
-          scons-${{ steps.date.outputs.date }}-
+          scons-${{ env.CACHE_COMMIT_DATE }}-
           scons-
-
+    # if we didn't get a cache hit, make the directory manually so it doesn't fail on future steps
+    - id: scons-cache-setup
+      shell: bash
+      if: steps.restore-scons-cache.outputs.cache-hit != 'true'
+      run: mkdir -p $GITHUB_WORKSPACE/.ci_cache/scons_cache
+    # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
+    - id: normalize-file-permissions
+      shell: bash
+      name: Normalize file permissions to ensure a consistent docker build cache
+      run: |
+        find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
+        find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
+    - id: setup-buildx-action
+      if: contains(runner.name, 'buildjet')
+      name: Set up Docker Buildx on buildjet to ensure a consistent cache
+      uses: docker/setup-buildx-action@v2
+      with:
+        driver: docker-container
     # build our docker image
     - shell: bash
-      run: eval "$BUILD"
+      run: eval ${{ env.BUILD }}

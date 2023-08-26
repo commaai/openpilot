@@ -5,10 +5,10 @@
 
 #include <algorithm>
 #include <climits>
+#include <fstream>
 #include <random>
 #include <string>
 
-#define CATCH_CONFIG_MAIN
 #include "catch2/catch.hpp"
 #include "common/util.h"
 
@@ -136,7 +136,7 @@ TEST_CASE("util::create_directories") {
     REQUIRE(util::create_directories(dir + "/file", 0755) == false);
     REQUIRE(util::create_directories(dir + "/file/1/2/3", 0755) == false);
   }
-  SECTION("end with slashs") {
+  SECTION("end with slashes") {
     REQUIRE(util::create_directories(dir + "/", 0755));
   }
   SECTION("empty") {

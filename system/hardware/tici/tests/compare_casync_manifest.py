@@ -8,7 +8,7 @@ from typing import Dict, List
 import requests
 from tqdm import tqdm
 
-import system.hardware.tici.casync as casync
+import openpilot.system.hardware.tici.casync as casync
 
 
 def get_chunk_download_size(chunk):
@@ -17,7 +17,7 @@ def get_chunk_download_size(chunk):
   if os.path.isfile(path):
     return os.path.getsize(path)
   else:
-    r = requests.head(path)
+    r = requests.head(path, timeout=10)
     r.raise_for_status()
     return int(r.headers['content-length'])
 
@@ -40,7 +40,7 @@ if __name__ == "__main__":
   # Get content-length for each chunk
   with multiprocessing.Pool() as pool:
     szs = list(tqdm(pool.imap(get_chunk_download_size, to), total=len(to)))
-  chunk_sizes = {t.sha: sz for (t, sz) in zip(to, szs)}
+  chunk_sizes = {t.sha: sz for (t, sz) in zip(to, szs, strict=True)}
 
   sources: Dict[str, List[int]] = {
     'seed': [],
