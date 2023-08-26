@@ -166,7 +166,7 @@ SecurityType WifiManager::getSecurityType(const QVariantMap &properties) {
 }
 
 void WifiManager::connect(const Network &n, const QString &password, const QString &username) {
-  setCurrentConnecting(n.ssid);
+  setCurrentSsid(n.ssid);
   forgetConnection(n.ssid);  // Clear all connections that may already exist to the network we are connecting
   Connection connection;
   connection["connection"]["type"] = "802-11-wireless";
@@ -231,11 +231,13 @@ void WifiManager::forgetConnection(const QString &ssid) {
   }
 }
 
-void WifiManager::setCurrentConnecting(const QString &ssid) {
-  connecting_to_network = ssid;
+void WifiManager::setCurrentSsid(const QString &connecting_ssid, const QString &connected_ssid) {
+  // Allows the network connected statuses to be updated between AP refreshes
   for (auto &network : seenNetworks) {
-    network.connected = (network.ssid == ssid) ? ConnectedType::CONNECTING : ConnectedType::DISCONNECTED;
+    network.connected = (network.ssid == connecting_ssid) ? ConnectedType::CONNECTING :
+                        ((network.ssid == connected_ssid) ? ConnectedType::CONNECTED : ConnectedType::DISCONNECTED);
   }
+  connecting_to_network = connecting_ssid;
   emit refreshSignal();
 }
 
@@ -269,8 +271,7 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
     forgetConnection(connecting_to_network);
     emit wrongPassword(connecting_to_network);
   } else if (new_state == NM_DEVICE_STATE_ACTIVATED) {
-    connecting_to_network = "";
-    refreshNetworks();
+    setCurrentSsid("", connecting_to_network);
   }
 }
 
@@ -327,7 +328,7 @@ void WifiManager::initConnections() {
 std::optional<QDBusPendingCall> WifiManager::activateWifiConnection(const QString &ssid) {
   const QDBusObjectPath &path = getConnectionPath(ssid);
   if (!path.path().isEmpty()) {
-    setCurrentConnecting(ssid);
+    setCurrentSsid(ssid);
     return asyncCall(NM_DBUS_PATH, NM_DBUS_INTERFACE, "ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
   }
   return std::nullopt;
