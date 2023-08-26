@@ -229,7 +229,7 @@ class CarState(CarStateBase):
     ret.accFaulted = cp.vl["TCS"]["ACCEnable"] != 0  # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
 
     # TODO: consolidate both messages, they have similar definitions
-    if self.CP.flags & HyundaiFlags.CANFD_HDA2 and not self.CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING:
+    if self.CP.flags & HyundaiFlags.CANFD_HDA2:
       if self.CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING:
         self.cam_0x362 = copy.copy(cp_cam.vl["CAM_0x362"])
       else:
