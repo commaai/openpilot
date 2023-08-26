@@ -3,12 +3,11 @@
 #include <algorithm>
 #include <QPainter>
 
-#include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/util.h"
 
 const int FACE_IMG_SIZE = 130;
 
-DriverViewWindow::DriverViewWindow(QWidget* parent) : QWidget(parent) {
+DriverViewWindow::DriverViewWindow(QWidget* parent) : QDialogBase(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
   layout = new QStackedLayout(this);
   layout->setStackingMode(QStackedLayout::StackAll);
@@ -21,18 +20,11 @@ DriverViewWindow::DriverViewWindow(QWidget* parent) : QWidget(parent) {
   layout->addWidget(scene);
   layout->setCurrentWidget(scene);
 
-  QObject::connect(device(), &Device::interactiveTimeout, this, &DriverViewWindow::closeView);
-}
-
-void DriverViewWindow::closeView() {
-  if (isVisible()) {
-    cameraView->stopVipcThread();
-    emit done();
-  }
+  QObject::connect(device(), &Device::interactiveTimeout, this, &QDialogBase::accept);
 }
 
 void DriverViewWindow::mouseReleaseEvent(QMouseEvent* e) {
-  closeView();
+  QDialogBase::accept();
 }
 
 DriverViewScene::DriverViewScene(QWidget* parent) : QWidget(parent) {

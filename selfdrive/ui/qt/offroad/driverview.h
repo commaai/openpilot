@@ -3,6 +3,7 @@
 #include <QStackedLayout>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
+#include "selfdrive/ui/qt/widgets/input.h"
 
 class DriverViewScene : public QWidget {
   Q_OBJECT
@@ -18,25 +19,20 @@ protected:
   void hideEvent(QHideEvent *event) override;
   void paintEvent(QPaintEvent *event) override;
 
-private:
   Params params;
   QPixmap face_img;
   bool is_rhd = false;
   bool frame_updated = false;
 };
 
-class DriverViewWindow : public QWidget {
+class DriverViewWindow : public QDialogBase {
   Q_OBJECT
 
 public:
   explicit DriverViewWindow(QWidget *parent);
 
-signals:
-  void done();
-
 protected:
   void mouseReleaseEvent(QMouseEvent* e) override;
-  void closeView();
 
   CameraWidget *cameraView;
   DriverViewScene *scene;
