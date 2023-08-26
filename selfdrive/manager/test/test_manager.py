@@ -5,16 +5,17 @@ import time
 import unittest
 
 from cereal import car
-from common.params import Params
-import selfdrive.manager.manager as manager
-from selfdrive.manager.process import ensure_running
-from selfdrive.manager.process_config import managed_processes
-from system.hardware import HARDWARE
+from openpilot.common.params import Params
+import openpilot.selfdrive.manager.manager as manager
+from openpilot.selfdrive.manager.process import ensure_running
+from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.hardware import HARDWARE
 
 os.environ['FAKEUPLOAD'] = "1"
 
 MAX_STARTUP_TIME = 3
 BLACKLIST_PROCS = ['manage_athenad', 'pandad', 'pigeond']
+
 
 class TestManager(unittest.TestCase):
   def setUp(self):
@@ -31,6 +32,10 @@ class TestManager(unittest.TestCase):
   def test_manager_prepare(self):
     os.environ['PREPAREONLY'] = '1'
     manager.main()
+
+  def test_blacklisted_procs(self):
+    # TODO: ensure there are blacklisted procs until we have a dedicated test
+    self.assertTrue(len(BLACKLIST_PROCS), "No blacklisted procs to test not_run")
 
   def test_startup_time(self):
     for _ in range(10):
@@ -58,6 +63,8 @@ class TestManager(unittest.TestCase):
         state = p.get_process_state_msg()
         self.assertTrue(state.running, f"{p.name} not running")
         exit_code = p.stop(retry=False)
+
+        self.assertNotIn(p.name, BLACKLIST_PROCS, f"{p.name} was started")
 
         # TODO: mapsd should exit cleanly
         if p.name == "mapsd":

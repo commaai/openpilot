@@ -1,5 +1,9 @@
 #pragma once
 
+#include <deque>
+#include <memory>
+#include <vector>
+
 #include <QBasicTimer>
 
 #include "tools/cabana/streams/abstractstream.h"

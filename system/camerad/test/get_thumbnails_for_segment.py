@@ -4,9 +4,9 @@ import os
 
 from tqdm import tqdm
 
-from common.file_helpers import mkdirs_exists_ok
-from tools.lib.logreader import LogReader
-from tools.lib.route import Route
+from openpilot.common.file_helpers import mkdirs_exists_ok
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.route import Route
 
 import argparse
 

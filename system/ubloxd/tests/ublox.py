@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: skip-file
 '''
 UBlox binary protocol handling
 

@@ -1,6 +1,7 @@
 Version 0.9.5 (202X-XX-XX)
 ========================
-* Hyundai Ioniq 6 2023 support thanks to sshane, sunnyhaibin, and mob9221!
+* Hyundai Ioniq 6 2023 support thanks to sunnyhaibin, mob9221, and sshane!
+* Kia Sorento Hybrid 2023 support thanks to sunnyhaibin!
 * Lexus IS 2023 support thanks to L3R5!
 
 Version 0.9.4 (2023-07-27)

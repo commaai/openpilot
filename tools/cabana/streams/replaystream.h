@@ -1,5 +1,11 @@
 #pragma once
 
+#include <algorithm>
+#include <memory>
+#include <set>
+#include <tuple>
+#include <vector>
+
 #include "common/prefix.h"
 #include "tools/cabana/streams/abstractstream.h"
 

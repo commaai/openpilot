@@ -4,7 +4,7 @@ import sys
 import os
 import numpy as np
 
-from selfdrive.locationd.models.constants import ObservationKind
+from openpilot.selfdrive.locationd.models.constants import ObservationKind
 
 import sympy as sp
 import inspect
