@@ -199,8 +199,6 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Hyundai Ioniq 5 (with HDA II) 2022-23", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_q])),
   ],
   CAR.IONIQ_6: [
-    # TODO: unknown
-    HyundaiCarInfo("Hyundai Ioniq 6 (without HDA II) 2023", "Highway Driving Assist", car_parts=CarParts.common([CarHarness.hyundai_k])),
     HyundaiCarInfo("Hyundai Ioniq 6 (with HDA II) 2023", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_p])),
   ],
   CAR.TUCSON_4TH_GEN: [
