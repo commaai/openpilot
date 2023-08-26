@@ -43,7 +43,7 @@ std::optional<QString> getDongleId() {
 }
 
 QMap<QString, QString> getSupportedLanguages() {
-  QFile f("translations/languages.json");
+  QFile f(":/languages.json");
   f.open(QIODevice::ReadOnly | QIODevice::Text);
   QString val = f.readAll();
 
