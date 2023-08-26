@@ -28,7 +28,8 @@ class CarInterface(CarInterfaceBase):
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
-    ret.dashcamOnly = candidate in {CAR.IONIQ_6}
+    # FIXME: the Optima Hybrid uses a different SCC12 checksum
+    ret.dashcamOnly = candidate in {CAR.IONIQ_6, CAR.KIA_OPTIMA_H}
 
     hda2 = Ecu.adas in [fw.ecu for fw in car_fw]
     CAN = CanBus(None, hda2, fingerprint)
