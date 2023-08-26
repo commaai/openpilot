@@ -8,6 +8,7 @@ common_libs = [
   'util.cc',
   'i2c.cc',
   'watchdog.cc',
+  'ratekeeper.cc'
 ]
 if target != "Darwin":
   common_libs.append('gpio.cc')
@@ -21,12 +22,11 @@ gpucommon_files = [
 gpucommon = env.Library('gpucommon', gpucommon_files)
 
 # *** tests
-if GetOption('test'):
-  env.Program('tests/test_util', ['tests/test_util.cc'], LIBS=[common])
-  env.Program('tests/test_swaglog', ['tests/test_swaglog.cc'], LIBS=[common, 'json11', 'zmq', 'pthread'])
+if GetOption('extras'):
+  test_files = ['tests/test_runner.cc', 'tests/test_util.cc', 'tests/test_swaglog.cc', 'tests/test_ratekeeper.cc']
+  env.Program('tests/test_common', test_files, LIBS=[common, 'json11', 'zmq', 'pthread'])
 
-# *** params & clock
-envCython.Program('clock.so', 'clock.pyx')
+# *** params
 envCython.Program('params_pyx.so', 'params_pyx.pyx', LIBS=envCython['LIBS'] + [common, 'zmq', 'json11'])
 
 Export('common', 'gpucommon')

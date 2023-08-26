@@ -1,3 +1,40 @@
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=laika_repo/"
+python_files = "test_*.py"
+timeout = "30"  # you get this long by default
+
+[tool.mypy]
+python_version = "3.11"
+plugins = [
+  "numpy.typing.mypy_plugin",
+]
+exclude = [
+  "body/",
+  "cereal/",
+  "opendbc/",
+  "panda/",
+  "laika/",
+  "laika_repo/",
+  "rednose/",
+  "rednose_repo/",
+  "tinygrad/",
+  "tinygrad_repo/",
+  "third_party/",
+]
+
+# third-party packages
+ignore_missing_imports=true
+
+# helpful warnings
+warn_redundant_casts=true
+warn_unreachable=true
+warn_unused_ignores=true
+
+# restrict dynamic typing
+warn_return_any=true
+
+
 [tool.poetry]
 name = "openpilot"
 version = "0.1.0"
@@ -16,24 +53,20 @@ aiohttp = "*"
 aiortc = "*"
 casadi = "==3.6.3"
 cffi = "*"
+control = "*"
 crcmod = "*"
 cryptography = "*"
 Cython = "*"
-flake8 = "*"
-Flask = "*"
 future-fstrings = "*"  # for acados
-gunicorn = "*"
 hatanaka = "==2.4"
 hexdump = "*"
 Jinja2 = "*"
 json-rpc = "*"
 libusb1 = "*"
-numpy = "==1.23.0"  # locked pending deprecation fixes in xx
+numpy = "*"
 onnx = ">=1.14.0"
 onnxruntime-gpu = { version = ">=1.15.1", platform = "linux", markers = "platform_machine == 'x86_64'" }
 pillow = "*"
-poetry = "==1.2.2"
-protobuf = "==3.20.3"
 psutil = "*"
 pyaudio = "*"
 pycapnp = "*"
@@ -42,12 +75,11 @@ pydub = "*"
 PyJWT = "*"
 pyopencl = "*"
 pyserial = "*"
-python-dateutil = "*"
 PyYAML = "*"
 pyzmq = "*"
 requests = "*"
 scons = "*"
-sentry-sdk = "*"
+sentry-sdk = "==1.28.1"  # needs to be updated with AGNOS
 setproctitle = "*"
 smbus2 = "*"
 sounddevice = "*"
@@ -57,7 +89,6 @@ sympy = "*"
 timezonefinder = "*"
 tqdm = "*"
 urllib3 = "*"
-utm = "*"
 websocket_client = "*"
 polyline = "*"
 sconscontrib = {git = "https://github.com/SCons/scons-contrib.git"}
@@ -65,19 +96,16 @@ sconscontrib = {git = "https://github.com/SCons/scons-contrib.git"}
 
 [tool.poetry.group.dev.dependencies]
 av = "*"
-azure-storage-blob = "~2.1"
+azure-identity = "*"
+azure-storage-blob = "*"
 breathe = "*"
 carla = { url = "https://github.com/commaai/carla/releases/download/3.11.4/carla-0.9.14-cp311-cp311-linux_x86_64.whl", platform = "linux", markers = "platform_machine == 'x86_64'" }
-control = "*"
 coverage = "*"
 dictdiffer = "*"
-fastcluster = "*"
 ft4222 = "*"
-hexdump = "*"
 hypothesis = "==6.46.7"
 inputs = "*"
 lru-dict = "*"
-lxml = "*"
 markdown-it-py = "*"
 matplotlib = "*"
 mpld3 = "*"
@@ -87,17 +115,16 @@ natsort = "*"
 opencv-python-headless = "*"
 pandas = "*"
 parameterized = "^0.8"
-paramiko = "*"
 pprofile = "*"
 pre-commit = "*"
 pycurl = "*"
 pygame = "*"
-pylint = "*"
 pyprof2calltree = "*"
 pytest = "*"
+pytest-cov = "*"
+pytest-subtests = "*"
 pytest-xdist = "*"
-reverse_geocoder = "*"
-scipy = "==1.9.3"  # pinned until xx refs changes can be checked
+scipy = "*"
 sphinx = "*"
 sphinx-rtd-theme = "*"
 sphinx-sitemap = "*"
@@ -106,83 +133,28 @@ tenacity = "*"
 types-atomicwrites = "*"
 types-certifi = "*"
 types-pycurl = "*"
-types-python-dateutil = "*"
 types-PyYAML = "*"
 types-requests = "*"
 types-tabulate = "*"
-
-
-[tool.poetry.group.xx]
-optional = true
-
-[tool.poetry.group.xx.dependencies]
-aenum = "*"
-aiohttp = "*"
-albumentations = "*"
-azure-cli-core = "*"
-azure-common = "*"
-azure-core = "*"
-azure-nspkg = "~3.0"
-azure-storage-common = "~2.1"
-azure-storage-nspkg = "~3.1"
-blosc = "==1.9.2"
-cloudpickle = "*"
-configargparse = "*"
-cupy-cuda11x = "*"
-datadog = "*"
-dotmap = "*"
-einops = "*"
-elasticsearch = "*"
-Flask-Cors = "*"
-Flask-SocketIO = "*"
-GeoAlchemy2 = "*"
-imageio = "*"
-influxdb-client = "*"
-ipykernel = "*"
-ipython = "*"
-joblib = "*"
-json-logging-py = "*"
-jupyter = "*"
-jupyterlab = "*"
-jupyterlab-vim = "*"
-Markdown = "*"
-msgpack-python = "*"
-networkx = "~2.8"
-nvidia-ml-py3 = "*"
-onnx2torch = "*"
-onnxoptimizer = "*"
-osmium = "*"
-pillow-avif-plugin = "*"
-pipenv = "==2022.10.12"
-plotly = "*"
-pycuda = "*"
-Pygments = "*"
-PyMySQL = "~0.9"
-pyproj = "*"
-python-logstash = "*"
-redis = "*"
-s2sphere = "*"
-scikit-image = "*"
-scikit-learn = "*"
-segmentation-models-pytorch = "==0.3.3"
-simplejson = "*"
-SQLAlchemy = "*"
-torch = { url = "https://download.pytorch.org/whl/cu118/torch-2.0.1%2Bcu118-cp311-cp311-linux_x86_64.whl" }
-torchsummary = "*"
-torchvision = { url = "https://download.pytorch.org/whl/cu118/torchvision-0.15.2%2Bcu118-cp311-cp311-linux_x86_64.whl" }
-triton = "*"
-Werkzeug = "*"
-zerorpc = { git = "https://github.com/commaai/zerorpc-python.git", branch = "master" }
-omegaconf = "*"
-osmnx = "==1.2.2"
-tritonclient = {version = "2.28.0", extras = ["http"]}
-transformers = "*"
-timm = "==0.9.2"
-PyNvCodec = { git = "https://github.com/NVIDIA/VideoProcessingFramework.git", rev = "3347e55" }
-apex = { url = "https://github.com/commaai/apex/releases/download/pytorch2.0.1%2Bcu11.8/apex-0.1-cp311-cp311-linux_x86_64.whl" }
-opencv-python-headless = { url = "https://github.com/commaai/opencv-python-builder/releases/download/4.5.5.64%2Bcu118-cp311/opencv_python_headless-4.5.5.64-cp311-cp311-manylinux_2_31_x86_64.whl", platform = "linux" }
+pyqt5 = { version = "*", markers = "platform_machine == 'x86_64'" } # no aarch64 wheels for macOS/linux
 
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+# https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
+[tool.ruff]
+select = ["E", "F", "W", "PIE", "C4", "ISC", "RUF100", "A", "B"]
+ignore = ["W292", "E741", "E402", "C408", "ISC003", "B027", "B024"]
+line-length = 160
+target-version="py311"
+exclude = [
+  "panda",
+  "opendbc",
+  "laika_repo",
+  "rednose_repo",
+  "tinygrad_repo",
+  "third_party",
+]
+flake8-implicit-str-concat.allow-multiline=false

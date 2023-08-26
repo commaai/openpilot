@@ -7,11 +7,12 @@ from parameterized import parameterized
 import threading
 
 from cereal import car
-from common.params import Params
-from selfdrive.car.car_helpers import interfaces
-from selfdrive.car.fingerprints import FW_VERSIONS
-from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, match_fw_to_car, get_fw_versions, get_present_ecus
-from selfdrive.car.vin import get_vin
+from openpilot.common.params import Params
+from openpilot.selfdrive.car.car_helpers import interfaces
+from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
+from openpilot.selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, \
+                                                match_fw_to_car, get_fw_versions, get_present_ecus
+from openpilot.selfdrive.car.vin import get_vin
 
 CarFw = car.CarParams.CarFw
 Ecu = car.CarParams.Ecu
@@ -167,6 +168,10 @@ class TestFwFingerprint(unittest.TestCase):
         for request_obj in config.requests:
           self.assertEqual(len(request_obj.request), len(request_obj.response))
 
+          # No request on the OBD port (bus 1, multiplexed) should be run on an aux panda
+          self.assertFalse(request_obj.auxiliary and request_obj.bus == 1 and request_obj.obd_multiplexing,
+                           f"{brand.title()}: OBD multiplexed request is marked auxiliary: {request_obj}")
+
 
 class TestFwFingerprintTiming(unittest.TestCase):
   N: int = 5
@@ -229,14 +234,14 @@ class TestFwFingerprintTiming(unittest.TestCase):
         'honda': 0.5,
         'hyundai': 0.7,
         'mazda': 0.2,
-        'nissan': 0.3,
+        'nissan': 0.4,
         'subaru': 0.2,
         'tesla': 0.2,
         'toyota': 1.6,
         'volkswagen': 0.2,
       },
       2: {
-        'ford': 0.4,
+        'ford': 0.3,
         'hyundai': 1.1,
       }
     }

@@ -12,7 +12,7 @@
 // TODO: detect when we can't play sounds
 // TODO: detect when we can't display the UI
 
-Sound::Sound(QObject *parent) : sm({"controlsState", "deviceState", "microphone"}) {
+Sound::Sound(QObject *parent) : sm({"controlsState", "microphone"}) {
   qInfo() << "default audio device: " << QAudioDeviceInfo::defaultOutputDevice().deviceName();
 
   for (auto &[alert, fn, loops] : sound_list) {
@@ -27,33 +27,22 @@ Sound::Sound(QObject *parent) : sm({"controlsState", "deviceState", "microphone"
   QTimer *timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, &Sound::update);
   timer->start(1000 / UI_FREQ);
-};
+}
 
 void Sound::update() {
-  const bool started_prev = sm["deviceState"].getDeviceState().getStarted();
   sm.update(0);
-
-  const bool started = sm["deviceState"].getDeviceState().getStarted();
-  if (started && !started_prev) {
-    started_frame = sm.frame;
-  }
-
-  // no sounds while offroad
-  // also no sounds if nothing is alive in case thermald crashes while offroad
-  const bool crashed = (sm.frame - std::max(sm.rcv_frame("deviceState"), sm.rcv_frame("controlsState"))) > 10*UI_FREQ;
-  if (!started || crashed) {
-    setAlert({});
-    return;
-  }
 
   // scale volume using ambient noise level
   if (sm.updated("microphone")) {
     float volume = util::map_val(sm["microphone"].getMicrophone().getFilteredSoundPressureWeightedDb(), 30.f, 60.f, 0.f, 1.f);
     volume = QAudio::convertVolume(volume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
-    Hardware::set_volume(volume);
+    // set volume on changes
+    if (std::exchange(current_volume, std::nearbyint(volume * 10)) != current_volume) {
+      Hardware::set_volume(volume);
+    }
   }
 
-  setAlert(Alert::get(sm, started_frame));
+  setAlert(Alert::get(sm, 0));
 }
 
 void Sound::setAlert(const Alert &alert) {

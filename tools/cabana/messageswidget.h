@@ -1,5 +1,9 @@
 #pragma once
 
+#include <algorithm>
+#include <utility>
+#include <vector>
+
 #include <QAbstractTableModel>
 #include <QCheckBox>
 #include <QContextMenuEvent>

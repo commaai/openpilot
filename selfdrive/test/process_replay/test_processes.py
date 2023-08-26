@@ -7,14 +7,14 @@ from collections import defaultdict
 from tqdm import tqdm
 from typing import Any, DefaultDict, Dict
 
-from selfdrive.car.car_helpers import interface_names
-from selfdrive.test.openpilotci import get_url, upload_file
-from selfdrive.test.process_replay.compare_logs import compare_logs
-from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_openpilot_enabled, replay_process
-from system.version import get_commit
-from tools.lib.filereader import FileReader
-from tools.lib.logreader import LogReader
-from tools.lib.helpers import save_log
+from openpilot.selfdrive.car.car_helpers import interface_names
+from openpilot.selfdrive.test.openpilotci import get_url, upload_file
+from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs
+from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_openpilot_enabled, replay_process
+from openpilot.system.version import get_commit
+from openpilot.tools.lib.filereader import FileReader
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.helpers import save_log
 
 source_segments = [
   ("BODY", "937ccb7243511b65|2022-05-24--16-03-09--1"),        # COMMA.BODY
@@ -41,23 +41,23 @@ source_segments = [
 ]
 
 segments = [
-  ("BODY", "aregenECF15D9E559|2023-05-10--14-26-40--0"), 
-  ("HYUNDAI", "aregenAB9F543F70A|2023-05-10--14-28-25--0"), 
-  ("HYUNDAI2", "aregen39F5A028F96|2023-05-10--14-31-00--0"), 
-  ("TOYOTA", "aregen8D6A8B36E8D|2023-05-10--14-32-38--0"), 
-  ("TOYOTA2", "aregenB1933C49809|2023-05-10--14-34-14--0"), 
-  ("TOYOTA3", "aregen5D9915223DC|2023-05-10--14-36-43--0"), 
-  ("HONDA", "aregen484B732B675|2023-05-10--14-38-23--0"), 
-  ("HONDA2", "aregenAF6ACED4713|2023-05-10--14-40-01--0"), 
-  ("CHRYSLER", "aregen99B094E1E2E|2023-05-10--14-41-40--0"), 
-  ("RAM", "aregen5C2487E1EEB|2023-05-10--14-44-09--0"), 
-  ("SUBARU", "aregen98D277B792E|2023-05-10--14-46-46--0"), 
-  ("GM", "aregen377BA28D848|2023-05-10--14-48-28--0"), 
-  ("GM2", "aregen7CA0CC0F0C2|2023-05-10--14-51-00--0"), 
-  ("NISSAN", "aregen7097BF01563|2023-05-10--14-52-43--0"), 
-  ("VOLKSWAGEN", "aregen765AF3D2CB5|2023-05-10--14-54-23--0"), 
-  ("MAZDA", "aregen3053762FF2E|2023-05-10--14-56-53--0"), 
-  ("FORD", "aregenDDE0F89FA1E|2023-05-10--14-59-26--0"), 
+  ("BODY", "aregenECF15D9E559|2023-05-10--14-26-40--0"),
+  ("HYUNDAI", "aregenAB9F543F70A|2023-05-10--14-28-25--0"),
+  ("HYUNDAI2", "aregen39F5A028F96|2023-05-10--14-31-00--0"),
+  ("TOYOTA", "aregen8D6A8B36E8D|2023-05-10--14-32-38--0"),
+  ("TOYOTA2", "aregenB1933C49809|2023-05-10--14-34-14--0"),
+  ("TOYOTA3", "aregen5D9915223DC|2023-05-10--14-36-43--0"),
+  ("HONDA", "aregen484B732B675|2023-05-10--14-38-23--0"),
+  ("HONDA2", "aregenAF6ACED4713|2023-05-10--14-40-01--0"),
+  ("CHRYSLER", "aregen99B094E1E2E|2023-05-10--14-41-40--0"),
+  ("RAM", "aregen5C2487E1EEB|2023-05-10--14-44-09--0"),
+  ("SUBARU", "aregen98D277B792E|2023-05-10--14-46-46--0"),
+  ("GM", "aregen377BA28D848|2023-05-10--14-48-28--0"),
+  ("GM2", "aregen7CA0CC0F0C2|2023-05-10--14-51-00--0"),
+  ("NISSAN", "aregen7097BF01563|2023-05-10--14-52-43--0"),
+  ("VOLKSWAGEN", "aregen765AF3D2CB5|2023-05-10--14-54-23--0"),
+  ("MAZDA", "aregen3053762FF2E|2023-05-10--14-56-53--0"),
+  ("FORD", "aregenDDE0F89FA1E|2023-05-10--14-59-26--0"),
   ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
@@ -110,7 +110,7 @@ def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=Non
       return f"Route did not enable at all or for long enough: {new_log_path}", log_msgs
 
   try:
-    return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance, cfg.field_tolerances), log_msgs
+    return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance), log_msgs
   except Exception as e:
     return str(e), log_msgs
 
@@ -158,6 +158,8 @@ if __name__ == "__main__":
   all_cars = {car for car, _ in segments}
   all_procs = {cfg.proc_name for cfg in CONFIGS if cfg.proc_name not in EXCLUDED_PROCS}
 
+  cpu_count = os.cpu_count() or 1
+
   parser = argparse.ArgumentParser(description="Regression test to identify changes in a process's output")
   parser.add_argument("--whitelist-procs", type=str, nargs="*", default=all_procs,
                       help="Whitelist given processes from the test (e.g. controlsd)")
@@ -175,7 +177,8 @@ if __name__ == "__main__":
                       help="Updates reference logs using current commit")
   parser.add_argument("--upload-only", action="store_true",
                       help="Skips testing processes and uploads logs from previous test run")
-  parser.add_argument("-j", "--jobs", type=int, default=1)
+  parser.add_argument("-j", "--jobs", type=int, default=max(cpu_count - 2, 1),
+                      help="Max amount of parallel jobs")
   args = parser.parse_args()
 
   tested_procs = set(args.whitelist_procs) - set(args.blacklist_procs)

@@ -7,6 +7,9 @@
 #endif
 
 #include <cmath>
+#include <set>
+#include <string>
+#include <utility>
 
 #include <QOpenGLBuffer>
 #include <QOffscreenSurface>

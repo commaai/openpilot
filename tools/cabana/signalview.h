@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include <QAbstractItemModel>
 #include <QLabel>
 #include <QLineEdit>
@@ -129,7 +131,7 @@ private:
       QAbstractItemView::dataChanged(topLeft, bottomRight, roles);
     }
     void leaveEvent(QEvent *event) override {
-      emit ((SignalView *)parentWidget())->highlight(nullptr);
+      emit static_cast<SignalView *>(parentWidget())->highlight(nullptr);
       QTreeView::leaveEvent(event);
     }
   };

@@ -23,5 +23,5 @@ env.Program('loggerd', ['loggerd.cc'], LIBS=libs)
 env.Program('encoderd', ['encoderd.cc'], LIBS=libs)
 env.Program('bootlog.cc', LIBS=libs)
 
-if GetOption('test'):
+if GetOption('extras'):
   env.Program('tests/test_logger', ['tests/test_runner.cc', 'tests/test_logger.cc'], LIBS=libs + ['curl', 'crypto'])
