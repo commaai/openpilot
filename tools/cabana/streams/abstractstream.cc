@@ -12,8 +12,11 @@ StreamNotifier *StreamNotifier::instance() {
   return &notifier;
 }
 
-AbstractStream::AbstractStream(QObject *parent) : new_msgs(new QHash<MessageId, CanData>()), QObject(parent) {
+AbstractStream::AbstractStream(QObject *parent) : QObject(parent) {
   assert(parent != nullptr);
+  new_msgs = std::make_unique<QHash<MessageId, CanData>>();
+  event_buffer = std::make_unique<MonotonicBuffer>(50000 * (sizeof(CanEvent) + sizeof(uint8_t) * 8));
+
   QObject::connect(this, &AbstractStream::seekedTo, this, &AbstractStream::updateLastMsgsTo);
   QObject::connect(&settings, &Settings::changed, this, &AbstractStream::updateMasks);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &AbstractStream::updateMasks);
@@ -129,37 +132,24 @@ void AbstractStream::updateLastMsgsTo(double sec) {
 }
 
 void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last) {
-  size_t memory_size = 0;
-  size_t events_cnt = 0;
-  for (auto it = first; it != last; ++it) {
-    if ((*it)->which == cereal::Event::Which::CAN) {
-      for (const auto &c : (*it)->event.getCan()) {
-        memory_size += sizeof(CanEvent) + sizeof(uint8_t) * c.getDat().size();
-        ++events_cnt;
-      }
-    }
-  }
-  if (memory_size == 0) return;
-
-  char *ptr = memory_blocks.emplace_back(new char[memory_size]).get();
   std::unordered_map<MessageId, std::deque<const CanEvent *>> new_events_map;
   std::vector<const CanEvent *> new_events;
-  new_events.reserve(events_cnt);
+  new_events.reserve(std::distance(first, last));
+
   for (auto it = first; it != last; ++it) {
     if ((*it)->which == cereal::Event::Which::CAN) {
       uint64_t ts = (*it)->mono_time;
       for (const auto &c : (*it)->event.getCan()) {
-        CanEvent *e = (CanEvent *)ptr;
+        auto dat = c.getDat();
+        CanEvent *e = (CanEvent *)event_buffer->allocate(sizeof(CanEvent) + sizeof(uint8_t) * dat.size());
         e->src = c.getSrc();
         e->address = c.getAddress();
         e->mono_time = ts;
-        auto dat = c.getDat();
         e->size = dat.size();
         memcpy(e->dat, (uint8_t *)dat.begin(), e->size);
 
         new_events_map[{.source = e->src, .address = e->address}].push_back(e);
         new_events.push_back(e);
-        ptr += sizeof(CanEvent) + sizeof(uint8_t) * e->size;
       }
     }
   }
