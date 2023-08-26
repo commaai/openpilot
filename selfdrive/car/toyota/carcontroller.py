@@ -125,6 +125,10 @@ class CarController:
 
     self.last_standstill = CS.out.standstill
 
+    # handle UI messages
+    fcw_alert = hud_control.visualAlert == VisualAlert.fcw
+    steer_alert = hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw)
+
     # we can spam can to cancel the system even if we are using lat only control
     if (self.frame % 3 == 0 and self.CP.openpilotLongitudinalControl) or pcm_cancel_cmd:
       lead = hud_control.leadVisible or CS.out.vEgo < 12.  # at low speed we always assume the lead is present so ACC can be engaged
@@ -133,10 +137,10 @@ class CarController:
       if pcm_cancel_cmd and self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
         can_sends.append(create_acc_cancel_command(self.packer))
       elif self.CP.openpilotLongitudinalControl:
-        can_sends.append(create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.standstill_req, lead, CS.acc_type))
+        can_sends.append(create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.standstill_req, lead, CS.acc_type, fcw_alert))
         self.accel = pcm_accel_cmd
       else:
-        can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False, lead, CS.acc_type))
+        can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False, lead, CS.acc_type, False))
 
     if self.frame % 2 == 0 and self.CP.enableGasInterceptor and self.CP.openpilotLongitudinalControl:
       # send exactly zero if gas cmd is zero. Interceptor will send the max between read value and gas cmd.
@@ -149,9 +153,6 @@ class CarController:
       # ui mesg is at 1Hz but we send asap if:
       # - there is something to display
       # - there is something to stop displaying
-      fcw_alert = hud_control.visualAlert == VisualAlert.fcw
-      steer_alert = hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw)
-
       send_ui = False
       if ((fcw_alert or steer_alert) and not self.alert_active) or \
          (not (fcw_alert or steer_alert) and self.alert_active):
