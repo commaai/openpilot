@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <memory>
 #include <thread>
+#include <vector>
 
 #include "cereal/messaging/messaging.h"
 #include "cereal/visionipc/visionipc.h"
