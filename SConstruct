@@ -52,7 +52,7 @@ AddOption('--pc-thneed',
 AddOption('--minimal',
           action='store_false',
           dest='extras',
-          default=os.path.islink(Dir('#laika/').abspath) or os.path.exists(Dir('#laika/').abspath),
+          default=os.path.exists(Dir('#laika/').abspath),
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
 ## Architecture name breakdown (arch)
