@@ -275,7 +275,7 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
       auto state = call<uint>(props.value("ActiveConnection").value<QDBusObjectPath>().path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "State");
       if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
         if (so.path() != "" && so.path() != "/") {
-          connecting_to_network = get_property(pth.path(), "Ssid");
+          connecting_to_network = get_property(so.path(), "Ssid");
           qDebug() << "activating ssid:" << connecting_to_network;
           emit refreshSignal();
         }
