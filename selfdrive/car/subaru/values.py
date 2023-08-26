@@ -66,6 +66,7 @@ class CanBus:
 class CAR:
   # Global platform
   ASCENT = "SUBARU ASCENT LIMITED 2019"
+  ASCENT_2023 = "SUBARU ASCENT 2023"
   IMPREZA = "SUBARU IMPREZA LIMITED 2019"
   IMPREZA_2020 = "SUBARU IMPREZA SPORT 2020"
   FORESTER = "SUBARU FORESTER 2019"
@@ -122,6 +123,7 @@ CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   CAR.OUTBACK_PREGLOBAL_2018: SubaruCarInfo("Subaru Outback 2018-19"),
   CAR.FORESTER_2022: SubaruCarInfo("Subaru Forester 2022", "All", car_parts=CarParts.common([CarHarness.subaru_c])),
   CAR.OUTBACK_2023: SubaruCarInfo("Subaru Outback 2023", "All", car_parts=CarParts.common([CarHarness.subaru_d])),
+  CAR.ASCENT_2023: SubaruCarInfo("Subaru Ascent 2023", "All", car_parts=CarParts.common([CarHarness.subaru_d])),
 }
 
 SUBARU_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
@@ -136,6 +138,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [StdQueries.TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
     ),
     # Some Eyesight modules fail on TESTER_PRESENT_REQUEST
+    # TODO: check if this resolves the fingerprinting issue for the 2023 Ascent and other new Subaru cars
     Request(
       [SUBARU_VERSION_REQUEST],
       [SUBARU_VERSION_RESPONSE],
@@ -175,6 +178,23 @@ FW_VERSIONS = {
       b'\001\xfe\xf9\000\000',
       b'\x01\xfe\xf7\x00\x00',
       b'\x01\xfe\xfa\x00\x00',
+    ],
+  },
+  CAR.ASCENT_2023: {
+    (Ecu.abs, 0x7b0, None): [
+      b'\xa5 #\x03\x00',
+    ],
+    (Ecu.eps, 0x746, None): [
+      b'%\xc0\xd0\x11',
+    ],
+    (Ecu.fwdCamera, 0x787, None): [
+      b'\x05!\x08\x1dK\x05!\x08\x01/',
+    ],
+    (Ecu.engine, 0x7a2, None): [
+      b'\xe5,\xa0P\x07',
+    ],
+    (Ecu.transmission, 0x7a3, None): [
+      b'\x04\xfe\xf3\x00\x00',
     ],
   },
   CAR.LEGACY: {
@@ -663,6 +683,7 @@ FW_VERSIONS = {
 
 DBC = {
   CAR.ASCENT: dbc_dict('subaru_global_2017_generated', None),
+  CAR.ASCENT_2023: dbc_dict('subaru_global_2017_generated', None),
   CAR.IMPREZA: dbc_dict('subaru_global_2017_generated', None),
   CAR.IMPREZA_2020: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER: dbc_dict('subaru_global_2017_generated', None),
@@ -678,7 +699,7 @@ DBC = {
   CAR.OUTBACK_PREGLOBAL_2018: dbc_dict('subaru_outback_2019_generated', None),
 }
 
-LKAS_ANGLE = {CAR.FORESTER_2022, CAR.OUTBACK_2023}
-GLOBAL_GEN2 = {CAR.OUTBACK, CAR.LEGACY, CAR.OUTBACK_2023}
+LKAS_ANGLE = {CAR.FORESTER_2022, CAR.OUTBACK_2023, CAR.ASCENT_2023}
+GLOBAL_GEN2 = {CAR.OUTBACK, CAR.LEGACY, CAR.OUTBACK_2023, CAR.ASCENT_2023}
 PREGLOBAL_CARS = {CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018}
 HYBRID_CARS = {CAR.CROSSTREK_HYBRID, CAR.FORESTER_HYBRID}

@@ -40,7 +40,7 @@ class CarInterface(CarInterfaceBase):
     else:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    if candidate == CAR.ASCENT:
+    if candidate in (CAR.ASCENT, CAR.ASCENT_2023):
       ret.mass = 2031.
       ret.wheelbase = 2.89
       ret.centerToFront = ret.wheelbase * 0.5

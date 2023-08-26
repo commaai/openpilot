@@ -8,7 +8,7 @@ env.Program('camerad', [
     camera_obj,
   ], LIBS=libs)
 
-if GetOption("test") and arch == "x86_64":
+if GetOption("extras") and arch == "x86_64":
   env.Program('test/ae_gray_test',
               ['test/ae_gray_test.cc', camera_obj],
               LIBS=libs)
