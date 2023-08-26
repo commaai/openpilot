@@ -1,5 +1,7 @@
 #include "tools/cabana/chart/chartswidget.h"
 
+#include <algorithm>
+
 #include <QApplication>
 #include <QFutureSynchronizer>
 #include <QMenu>

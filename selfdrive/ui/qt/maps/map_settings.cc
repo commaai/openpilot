@@ -1,4 +1,6 @@
-#include "map_settings.h"
+#include "selfdrive/ui/qt/maps/map_settings.h"
+
+#include <utility>
 
 #include <QApplication>
 #include <QDebug>

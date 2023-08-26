@@ -17,6 +17,7 @@ Options:
   --stream                       read can messages from live streaming
   --panda                        read can messages from panda
   --panda-serial <panda-serial>  read can messages from panda with given serial
+  --socketcan <socketcan>        read can messages from given SocketCAN device
   --zmq <zmq>                    the ip address on which to receive zmq
                                  messages
   --data_dir <data_dir>          local directory with routes
