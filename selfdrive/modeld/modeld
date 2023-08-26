@@ -1,7 +1,10 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 cd "$DIR/../../"
 
-export LD_PRELOAD="$DIR/libthneed.so"
+if [ -f "$DIR/libthneed.so" ]; then
+  export LD_PRELOAD="$DIR/libthneed.so"
+fi
+
 exec "$DIR/modeld.py"
