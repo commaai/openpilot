@@ -8,7 +8,7 @@ from typing import Optional, Callable, List, ValuesView
 from abc import ABC, abstractmethod
 from multiprocessing import Process
 
-from setproctitle import setproctitle  # pylint: disable=no-name-in-module
+from setproctitle import setproctitle
 
 from cereal import car, log
 import cereal.messaging as messaging
@@ -96,7 +96,7 @@ class ManagerProcess(ABC):
       fn = WATCHDOG_FN + str(self.proc.pid)
       with open(fn, "rb") as f:
         # TODO: why can't pylint find struct.unpack?
-        self.last_watchdog_time = struct.unpack('Q', f.read())[0] # pylint: disable=no-member
+        self.last_watchdog_time = struct.unpack('Q', f.read())[0]
     except Exception:
       pass
 
@@ -261,7 +261,7 @@ class DaemonProcess(ManagerProcess):
         pass
 
     cloudlog.info(f"starting daemon {self.name}")
-    proc = subprocess.Popen(['python', '-m', self.module],  # pylint: disable=subprocess-popen-preexec-fn
+    proc = subprocess.Popen(['python', '-m', self.module],
                                stdin=open('/dev/null'),
                                stdout=open('/dev/null', 'w'),
                                stderr=open('/dev/null', 'w'),

@@ -15,7 +15,7 @@
 
 MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(0 ,0, 0, 0);
+  main_layout->setContentsMargins(0, 0, 0, 0);
 
   QHBoxLayout *title_layout = new QHBoxLayout();
   num_msg_label = new QLabel(this);
@@ -174,7 +174,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
 
   auto getFreq = [](const CanData &d) -> QString {
     if (d.freq > 0 && (can->currentSec() - d.ts - 1.0 / settings.fps) < (5.0 / d.freq)) {
-      return d.freq >= 1 ? QString::number(std::nearbyint(d.freq)) : QString::number(d.freq, 'f', 2);
+      return d.freq >= 0.95 ? QString::number(std::nearbyint(d.freq)) : QString::number(d.freq, 'f', 2);
     } else {
       return "--";
     }
