@@ -292,6 +292,9 @@ void WifiUI::refresh() {
       status_icon = circled_slash;
     } else if (network.security_type == SecurityType::WPA) {
       status_icon = lock;
+    } else {
+      status_icon.fill(Qt::transparent);
+      status_icon.scaledToWidth(49);
     }
     bool show_forget_btn = wifi->isKnownConnection(network.ssid) && !is_tethering_enabled;
     QPixmap strength = strengths[strengthLevel(network.strength)];
@@ -333,7 +336,7 @@ WifiItem::WifiItem(const QString &connecting_text, const QString &forget_text, Q
   hlayout->addWidget(forgetBtn = new QPushButton(forget_text), 0, Qt::AlignRight);
   forgetBtn->setObjectName("forgetBtn");
   hlayout->addWidget(iconLabel = new QLabel(), 0, Qt::AlignRight);
-  iconLabel->setFixedWidth(49);
+//  iconLabel->setFixedWidth(49);
   hlayout->addWidget(strengthLabel = new QLabel(), 0, Qt::AlignRight);
 
   QObject::connect(forgetBtn, &QPushButton::clicked, [this]() { emit forgotNetwork(network); });
