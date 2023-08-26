@@ -23,8 +23,6 @@ thneed_src_qcom = thneed_src_common + ["thneed/thneed_qcom2.cc"]
 thneed_src_pc = thneed_src_common + ["thneed/thneed_pc.cc"]
 thneed_src = thneed_src_qcom if arch == "larch64" else thneed_src_pc
 
-use_thneed = not GetOption('no_thneed')
-
 if arch == "larch64":
   libs += ['gsl', 'CB', 'pthread', 'dl']
 else:
@@ -52,7 +50,7 @@ for pathdef, fn in {'TRANSFORM': 'transforms/transform.cl', 'LOADYUV': 'transfor
   for xenv in (lenv, lenvCython):
     xenv['CXXFLAGS'].append(f'-D{pathdef}_PATH=\\"{File(fn).abspath}\\"')
 
-if (use_thneed and arch == "larch64") or GetOption('pc_thneed'):
+if arch == "larch64" or GetOption('pc_thneed'):
   lenvCython['CFLAGS'].append("-DUSE_THNEED")
   lenvCython['CXXFLAGS'].append("-DUSE_THNEED")
 
@@ -87,7 +85,7 @@ lenv.Program('_navmodeld', [
   ]+common_model, LIBS=libs)
 
 # build thneed model
-if (use_thneed and arch == "larch64") or GetOption('pc_thneed'):
+if arch == "larch64" or GetOption('pc_thneed'):
   fn = File("models/supercombo").abspath
 
   tinygrad_opts = ["NATIVE_EXPLOG=1", "VALIDHACKS=1", "OPTLOCAL=1", "IMAGE=2", "GPU=1", "ENABLE_METHOD_CACHE=1"]
