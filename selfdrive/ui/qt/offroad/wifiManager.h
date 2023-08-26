@@ -85,7 +85,7 @@ private:
   void refreshNetworks();
   void activateModemConnection(const QDBusObjectPath &path);
   void addTetheringConnection();
-  void setCurrentConnecting(const QString &connecting_ssid = "", const QString &connected_ssid = "");
+  void setCurrentSsid(const QString &connecting_ssid = "", const QString &connected_ssid = "");
 
 signals:
   void wrongPassword(const QString &ssid);

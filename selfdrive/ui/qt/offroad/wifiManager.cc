@@ -256,11 +256,11 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
     forgetConnection(connecting_to_network);
     emit wrongPassword(connecting_to_network);
   } else if (new_state == NM_DEVICE_STATE_ACTIVATED) {
-    setCurrentConnecting("", connecting_to_network);
+    setCurrentSsid("", connecting_to_network);
   }
 }
 
-void WifiManager::setCurrentConnecting(const QString &connecting_ssid, const QString &connected_ssid) {
+void WifiManager::setCurrentSsid(const QString &connecting_ssid, const QString &connected_ssid) {
   for (auto &network : seenNetworks) {
     network.connected = (network.ssid == connecting_ssid) ? ConnectedType::CONNECTING :
                         ((network.ssid == connected_ssid) ? ConnectedType::CONNECTED : ConnectedType::DISCONNECTED);
@@ -276,7 +276,7 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
     QString path = props.value("ActiveConnection").value<QDBusObjectPath>().path();
     if (path == "" || path == "/") {
 //      connecting_to_network = "";
-      setCurrentConnecting("");
+      setCurrentSsid("");
     } else {
 //      qDebug() << "HERE:" << props.value("ActiveConnection").value<QDBusObjectPath>().path();
       auto so = call<QDBusObjectPath>(props.value("ActiveConnection").value<QDBusObjectPath>().path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "SpecificObject");
@@ -284,7 +284,7 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
       if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
         if (so.path() != "" && so.path() != "/") {
 //          connecting_to_network = get_property(so.path(), "Ssid");
-          setCurrentConnecting(get_property(so.path(), "Ssid"));
+          setCurrentSsid(get_property(so.path(), "Ssid"));
           qDebug() << "activating ssid:" << connecting_to_network;
         }
       }
