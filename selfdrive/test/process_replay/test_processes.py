@@ -7,14 +7,14 @@ from collections import defaultdict
 from tqdm import tqdm
 from typing import Any, DefaultDict, Dict
 
-from selfdrive.car.car_helpers import interface_names
-from selfdrive.test.openpilotci import get_url, upload_file
-from selfdrive.test.process_replay.compare_logs import compare_logs
-from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_openpilot_enabled, replay_process
-from system.version import get_commit
-from tools.lib.filereader import FileReader
-from tools.lib.logreader import LogReader
-from tools.lib.helpers import save_log
+from openpilot.selfdrive.car.car_helpers import interface_names
+from openpilot.selfdrive.test.openpilotci import get_url, upload_file
+from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs
+from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_openpilot_enabled, replay_process
+from openpilot.system.version import get_commit
+from openpilot.tools.lib.filereader import FileReader
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.helpers import save_log
 
 source_segments = [
   ("BODY", "937ccb7243511b65|2022-05-24--16-03-09--1"),        # COMMA.BODY
@@ -110,7 +110,7 @@ def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=Non
       return f"Route did not enable at all or for long enough: {new_log_path}", log_msgs
 
   try:
-    return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance, cfg.field_tolerances), log_msgs
+    return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance), log_msgs
   except Exception as e:
     return str(e), log_msgs
 
@@ -158,6 +158,8 @@ if __name__ == "__main__":
   all_cars = {car for car, _ in segments}
   all_procs = {cfg.proc_name for cfg in CONFIGS if cfg.proc_name not in EXCLUDED_PROCS}
 
+  cpu_count = os.cpu_count() or 1
+
   parser = argparse.ArgumentParser(description="Regression test to identify changes in a process's output")
   parser.add_argument("--whitelist-procs", type=str, nargs="*", default=all_procs,
                       help="Whitelist given processes from the test (e.g. controlsd)")
@@ -175,7 +177,8 @@ if __name__ == "__main__":
                       help="Updates reference logs using current commit")
   parser.add_argument("--upload-only", action="store_true",
                       help="Skips testing processes and uploads logs from previous test run")
-  parser.add_argument("-j", "--jobs", type=int, default=1)
+  parser.add_argument("-j", "--jobs", type=int, default=max(cpu_count - 2, 1),
+                      help="Max amount of parallel jobs")
   args = parser.parse_args()
 
   tested_procs = set(args.whitelist_procs) - set(args.blacklist_procs)

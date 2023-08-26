@@ -3,8 +3,8 @@ import time
 import unittest
 import numpy as np
 
-from selfdrive.test.helpers import with_processes, phone_only
-from system.camerad.snapshot.snapshot import get_snapshots
+from openpilot.selfdrive.test.helpers import with_processes, phone_only
+from openpilot.system.camerad.snapshot.snapshot import get_snapshots
 
 TEST_TIME = 45
 REPEAT = 5

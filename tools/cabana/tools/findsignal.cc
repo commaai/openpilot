@@ -180,8 +180,8 @@ void FindSignalDlg::search() {
   std::function<bool(double)> cmp = nullptr;
   switch (compare_cb->currentIndex()) {
     case 0: cmp = [v1](double v) { return v == v1;}; break;
-    case 1: cmp = [v1](double v) { return v > v1;};break;
-    case 2: cmp = [v1](double v) { return v >= v1;};break;
+    case 1: cmp = [v1](double v) { return v > v1;}; break;
+    case 2: cmp = [v1](double v) { return v >= v1;}; break;
     case 3: cmp = [v1](double v) { return v != v1;}; break;
     case 4: cmp = [v1](double v) { return v < v1;}; break;
     case 5: cmp = [v1](double v) { return v <= v1;}; break;

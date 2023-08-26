@@ -8,7 +8,7 @@ from typing import Dict, List
 import requests
 from tqdm import tqdm
 
-import system.hardware.tici.casync as casync
+import openpilot.system.hardware.tici.casync as casync
 
 
 def get_chunk_download_size(chunk):

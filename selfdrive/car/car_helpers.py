@@ -1,17 +1,18 @@
 import os
+import time
 from typing import Callable, Dict, List, Optional, Tuple
 
 from cereal import car
-from common.params import Params
-from common.basedir import BASEDIR
-from system.version import is_comma_remote, is_tested_branch
-from selfdrive.car.interfaces import get_interface_attr
-from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
-from selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
-from selfdrive.car.fw_versions import get_fw_versions_ordered, get_present_ecus, match_fw_to_car, set_obd_multiplexing
-from system.swaglog import cloudlog
+from openpilot.common.params import Params
+from openpilot.common.basedir import BASEDIR
+from openpilot.system.version import is_comma_remote, is_tested_branch
+from openpilot.selfdrive.car.interfaces import get_interface_attr
+from openpilot.selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
+from openpilot.selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
+from openpilot.selfdrive.car.fw_versions import get_fw_versions_ordered, get_present_ecus, match_fw_to_car, set_obd_multiplexing
+from openpilot.system.swaglog import cloudlog
 import cereal.messaging as messaging
-from selfdrive.car import gen_empty_fingerprint
+from openpilot.selfdrive.car import gen_empty_fingerprint
 
 FRAME_FINGERPRINT = 100  # 1s
 
@@ -44,7 +45,7 @@ def get_one_can(logcan):
 def load_interfaces(brand_names):
   ret = {}
   for brand_name in brand_names:
-    path = f'selfdrive.car.{brand_name}'
+    path = f'openpilot.selfdrive.car.{brand_name}'
     CarInterface = __import__(path + '.interface', fromlist=['CarInterface']).CarInterface
 
     if os.path.exists(BASEDIR + '/' + path.replace('.', '/') + '/carstate.py'):
@@ -125,6 +126,7 @@ def fingerprint(logcan, sendcan, num_pandas):
   ecu_rx_addrs = set()
   params = Params()
 
+  start_time = time.monotonic()
   if not skip_fw_query:
     # Vin query only reliably works through OBDII
     bus = 1
@@ -165,6 +167,8 @@ def fingerprint(logcan, sendcan, num_pandas):
   set_obd_multiplexing(params, False)
   params.put_bool("FirmwareQueryDone", True)
 
+  fw_query_time = time.monotonic() - start_time
+
   # CAN fingerprint
   # drain CAN socket so we get the latest messages
   messaging.drain_sock_raw(logcan)
@@ -185,7 +189,7 @@ def fingerprint(logcan, sendcan, num_pandas):
 
   cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match, cached=cached,
                  fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, fingerprints=finger,
-                 error=True)
+                 fw_query_time=fw_query_time, error=True)
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
 

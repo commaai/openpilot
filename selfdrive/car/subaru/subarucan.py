@@ -1,5 +1,5 @@
 from cereal import car
-from selfdrive.car.subaru.values import CanBus
+from openpilot.selfdrive.car.subaru.values import CanBus
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -25,7 +25,7 @@ def create_es_distance(packer, es_distance_msg, bus, pcm_cancel_cmd, long_enable
     "Cruise_Throttle",
     "Signal2",
     "Car_Follow",
-    "Signal3",
+    "Low_Speed_Follow",
     "Cruise_Soft_Disable",
     "Signal7",
     "Cruise_Brake_Active",
@@ -108,8 +108,11 @@ def create_es_lkas_state(packer, es_lkas_state_msg, enabled, visual_alert, left_
     elif right_lane_depart:
       values["LKAS_Alert"] = 11  # Right lane departure dash alert
 
-  values["LKAS_ACTIVE"] = 1  # Show LKAS lane lines
-  values["LKAS_Dash_State"] = 2 if enabled else 0  # Green enabled indicator
+  if enabled:
+    values["LKAS_ACTIVE"] = 1  # Show LKAS lane lines
+    values["LKAS_Dash_State"] = 2  # Green enabled indicator
+  else:
+    values["LKAS_Dash_State"] = 0  # LKAS Not enabled
 
   values["LKAS_Left_Line_Visible"] = int(left_line)
   values["LKAS_Right_Line_Visible"] = int(right_line)

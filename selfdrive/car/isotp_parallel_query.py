@@ -3,8 +3,8 @@ from collections import defaultdict
 from functools import partial
 
 import cereal.messaging as messaging
-from system.swaglog import cloudlog
-from selfdrive.boardd.boardd import can_list_to_can_capnp
+from openpilot.system.swaglog import cloudlog
+from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_addr_for_tx_addr
 
 
@@ -104,14 +104,14 @@ class IsoTpParallelQuery:
 
       for tx_addr, msg in msgs.items():
         try:
-          dat, rx_in_progress = msg.recv()
+          dat, updated = msg.recv()
         except Exception:
           cloudlog.exception(f"Error processing UDS response: {tx_addr}")
           request_done[tx_addr] = True
           continue
 
-        # Extend timeout for each consecutive ISO-TP frame to avoid timing out on long responses
-        if rx_in_progress:
+        # Extend timeout for each valid ISO-TP frame to avoid timing out on long responses
+        if updated:
           addrs_responded.add(tx_addr)
           response_timeouts[tx_addr] = time.monotonic() + timeout
 

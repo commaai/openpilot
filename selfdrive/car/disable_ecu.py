@@ -1,5 +1,5 @@
-from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
-from system.swaglog import cloudlog
+from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
+from openpilot.system.swaglog import cloudlog
 
 EXT_DIAG_REQUEST = b'\x10\x03'
 EXT_DIAG_RESPONSE = b'\x50\x03'

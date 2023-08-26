@@ -4,9 +4,9 @@ from typing import Dict, List, Optional, Union
 
 from cereal import car
 from panda.python import uds
-from selfdrive.car import AngleRateLimit, dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, CarHarness, CarParts
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
+from openpilot.selfdrive.car.docs_definitions import CarInfo, CarHarness, CarParts
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
 
@@ -130,6 +130,20 @@ FW_VERSIONS = {
     ],
     (Ecu.gateway, 0x18dad0f1, None): [
       b'284U29HE0A',
+    ],
+  },
+    CAR.LEAF: {
+    (Ecu.abs, 0x740, None): [
+      b'476606WK9B',
+    ],
+    (Ecu.eps, 0x742, None): [
+      b'5SN2A\xb7A\x05\x02N126F\x15\xb2\x00\x00\x00\x00\x00\x00\x00\x80',
+    ],
+    (Ecu.fwdCamera, 0x707, None): [
+      b'6WK2CDB\x04\x18\x00\x00\x00\x00\x00R=1\x18\x99\x10\x00\x00\x00\x80',
+    ],
+    (Ecu.gateway, 0x18dad0f1, None): [
+      b'284U26WK0C',
     ],
   },
   CAR.LEAF_IC: {

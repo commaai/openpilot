@@ -44,7 +44,7 @@ void cloudlog_te(int levelnum, const char* filename, int lineno, const char* fun
   int __millis = (millis);                          \
   uint64_t __ts = nanos_since_boot();               \
                                                     \
-  if (!__begin) __begin = __ts;                     \
+  if (!__begin) { __begin = __ts; }                 \
                                                     \
   if (__begin + __millis*1000000ULL < __ts) {       \
     if (__missed) {                                 \

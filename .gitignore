@@ -1,12 +1,12 @@
 venv/
 .venv/
+.ci_cache
 .env
 .clang-format
 .DS_Store
 .tags
 .ipynb_checkpoints
 .idea
-.moc_files
 .overlay_init
 .overlay_consistent
 .sconsign.dblite

@@ -6,13 +6,13 @@ import capnp
 
 import panda.python.uds as uds
 from cereal import car
-from common.params import Params
-from selfdrive.car.ecu_addrs import get_ecu_addrs
-from selfdrive.car.fw_query_definitions import AddrType, EcuAddrBusType
-from selfdrive.car.interfaces import get_interface_attr
-from selfdrive.car.fingerprints import FW_VERSIONS
-from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
-from system.swaglog import cloudlog
+from openpilot.common.params import Params
+from openpilot.selfdrive.car.ecu_addrs import get_ecu_addrs
+from openpilot.selfdrive.car.fw_query_definitions import AddrType, EcuAddrBusType
+from openpilot.selfdrive.car.interfaces import get_interface_attr
+from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
+from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
+from openpilot.system.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
 ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
@@ -338,7 +338,7 @@ if __name__ == "__main__":
   import time
   import argparse
   import cereal.messaging as messaging
-  from selfdrive.car.vin import get_vin
+  from openpilot.selfdrive.car.vin import get_vin
 
   parser = argparse.ArgumentParser(description='Get firmware version of ECUs')
   parser.add_argument('--scan', action='store_true')

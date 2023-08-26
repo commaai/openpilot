@@ -7,8 +7,8 @@ from logging.handlers import BaseRotatingHandler
 
 import zmq
 
-from common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
-from system.hardware import PC
+from openpilot.common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
+from openpilot.system.hardware import PC
 
 if PC:
   SWAGLOG_DIR = os.path.join(str(Path.home()), ".comma", "log")

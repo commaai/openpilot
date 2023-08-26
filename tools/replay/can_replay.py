@@ -8,10 +8,10 @@ from tqdm import tqdm
 
 os.environ['FILEREADER_CACHE'] = '1'
 
-from common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
-from selfdrive.boardd.boardd import can_capnp_to_can_list
-from tools.plotjuggler.juggle import load_segment
-from tools.lib.logreader import logreader_from_route_or_segment
+from openpilot.common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
+from openpilot.selfdrive.boardd.boardd import can_capnp_to_can_list
+from openpilot.tools.plotjuggler.juggle import load_segment
+from openpilot.tools.lib.logreader import logreader_from_route_or_segment
 from panda import Panda, PandaJungle
 
 def send_thread(s, flock):
