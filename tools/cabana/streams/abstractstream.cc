@@ -134,9 +134,10 @@ void AbstractStream::updateLastMsgsTo(double sec) {
 }
 
 void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last) {
-  std::unordered_map<MessageId, std::deque<const CanEvent *>> new_events_map;
-  std::vector<const CanEvent *> new_events;
-  new_events.reserve(std::distance(first, last));
+  static std::unordered_map<MessageId, std::deque<const CanEvent *>> new_events_map;
+  static  std::vector<const CanEvent *> new_events;
+  new_events_map.clear();
+  neew_events.clear();
 
   for (auto it = first; it != last; ++it) {
     if ((*it)->which == cereal::Event::Which::CAN) {
