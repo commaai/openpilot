@@ -1,5 +1,4 @@
 import os
-import shutil
 import subprocess
 import sys
 import sysconfig
@@ -14,10 +13,6 @@ TICI = os.path.isfile('/TICI')
 AGNOS = TICI
 
 Decider('MD5-timestamp')
-
-AddOption('--extras',
-          action='store_true',
-          help='build misc extras, like setup and installer files')
 
 AddOption('--kaitai',
           action='store_true',
@@ -49,21 +44,16 @@ AddOption('--external-sconscript',
           dest='external_sconscript',
           help='add an external SConscript to the build')
 
-AddOption('--no-thneed',
-          action='store_true',
-          dest='no_thneed',
-          help='avoid using thneed')
-
 AddOption('--pc-thneed',
           action='store_true',
           dest='pc_thneed',
           help='use thneed on pc')
 
-AddOption('--no-test',
+AddOption('--minimal',
           action='store_false',
-          dest='test',
+          dest='extras',
           default=os.path.islink(Dir('#laika/').abspath),
-          help='skip building test files')
+          help='the minimum build to run openpilot. no tests, tools, etc.')
 
 ## Architecture name breakdown (arch)
 ## - larch64: linux tici aarch64
@@ -336,18 +326,6 @@ qt_env['CXXFLAGS'] += qt_flags
 qt_env['LIBPATH'] += ['#selfdrive/ui']
 qt_env['LIBS'] = qt_libs
 
-# Have to respect cache-readonly
-if GetOption('cache_readonly'):
-  local_moc_files_dir = Dir("#.moc_files").abspath
-  cache_moc_files_dir = cache_dir + "/moc_files"
-  if os.path.exists(local_moc_files_dir):
-    shutil.rmtree(local_moc_files_dir)
-  if os.path.exists(cache_moc_files_dir):
-    shutil.copytree(cache_moc_files_dir, local_moc_files_dir)
-  qt_env['QT3_MOCHPREFIX'] = local_moc_files_dir + "/moc_"
-else:
-  qt_env['QT3_MOCHPREFIX'] = cache_dir + '/moc_files/moc_'
-
 if GetOption("clazy"):
   checks = [
     "level0",
@@ -381,8 +359,9 @@ else:
   cereal = [File('#cereal/libcereal.a')]
   messaging = [File('#cereal/libmessaging.a')]
   visionipc = [File('#cereal/libvisionipc.a')]
+messaging_python = [File('#cereal/messaging/messaging_pyx.so')]
 
-Export('cereal', 'messaging', 'visionipc')
+Export('cereal', 'messaging', 'messaging_python', 'visionipc')
 
 # Build rednose library and ekf models
 
@@ -449,7 +428,7 @@ SConscript(['selfdrive/navd/SConscript'])
 SConscript(['selfdrive/modeld/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
 
-if (arch in ['x86_64', 'aarch64', 'Darwin'] and Dir('#tools/cabana/').exists()) or GetOption('extras'):
+if arch in ['x86_64', 'aarch64', 'Darwin'] and Dir('#tools/cabana/').exists() and GetOption('extras'):
   SConscript(['tools/replay/SConscript'])
   SConscript(['tools/cabana/SConscript'])
 

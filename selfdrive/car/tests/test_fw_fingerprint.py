@@ -168,6 +168,10 @@ class TestFwFingerprint(unittest.TestCase):
         for request_obj in config.requests:
           self.assertEqual(len(request_obj.request), len(request_obj.response))
 
+          # No request on the OBD port (bus 1, multiplexed) should be run on an aux panda
+          self.assertFalse(request_obj.auxiliary and request_obj.bus == 1 and request_obj.obd_multiplexing,
+                           f"{brand.title()}: OBD multiplexed request is marked auxiliary: {request_obj}")
+
 
 class TestFwFingerprintTiming(unittest.TestCase):
   N: int = 5
@@ -221,7 +225,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
     print(f'get_vin, query time={vin_time / self.N} seconds')
 
   def test_fw_query_timing(self):
-    total_ref_time = 6.2
+    total_ref_time = 6.1
     brand_ref_times = {
       1: {
         'body': 0.1,
@@ -237,7 +241,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
         'volkswagen': 0.2,
       },
       2: {
-        'ford': 0.4,
+        'ford': 0.3,
         'hyundai': 1.1,
       }
     }

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import sys
-import cProfile  # pylint: disable=import-error
+import cProfile
 import pprofile
 import pyprof2calltree
 

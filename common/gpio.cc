@@ -1,5 +1,7 @@
 #include "common/gpio.h"
 
+#include <string>
+
 #ifdef __APPLE__
 int gpio_init(int pin_nr, bool output) {
   return 0;
@@ -29,7 +31,7 @@ int gpio_init(int pin_nr, bool output) {
   char pin_dir_path[50];
   int pin_dir_path_len = snprintf(pin_dir_path, sizeof(pin_dir_path),
                            "/sys/class/gpio/gpio%d/direction", pin_nr);
-  if(pin_dir_path_len <= 0) {
+  if (pin_dir_path_len <= 0) {
     return -1;
   }
   const char *value = output ? "out" : "in";
@@ -40,7 +42,7 @@ int gpio_set(int pin_nr, bool high) {
   char pin_val_path[50];
   int pin_val_path_len = snprintf(pin_val_path, sizeof(pin_val_path),
                            "/sys/class/gpio/gpio%d/value", pin_nr);
-  if(pin_val_path_len <= 0) {
+  if (pin_val_path_len <= 0) {
     return -1;
   }
   return util::write_file(pin_val_path, (void*)(high ? "1" : "0"), 1);
@@ -68,7 +70,7 @@ int gpiochip_get_ro_value_fd(const char* consumer_label, int gpiochiop_id, int p
   rq.eventflags = GPIOEVENT_REQUEST_BOTH_EDGES;
 
   strncpy(rq.consumer_label, consumer_label, std::size(rq.consumer_label) - 1);
-  int ret = ioctl(fd, GPIO_GET_LINEEVENT_IOCTL, &rq);
+  int ret = util::safe_ioctl(fd, GPIO_GET_LINEEVENT_IOCTL, &rq);
   if (ret == -1) {
     LOGE("Unable to get line event from ioctl : %s", strerror(errno));
     close(fd);

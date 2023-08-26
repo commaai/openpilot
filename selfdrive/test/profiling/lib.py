@@ -34,7 +34,7 @@ class PubSocket():
 
 
 class SubMaster(messaging.SubMaster):
-  def __init__(self, msgs, trigger, services, check_averag_freq=False):  # pylint: disable=super-init-not-called
+  def __init__(self, msgs, trigger, services, check_averag_freq=False):
     self.frame = 0
     self.data = {}
     self.ignore_alive = []
@@ -87,5 +87,5 @@ class SubMaster(messaging.SubMaster):
 
 
 class PubMaster(messaging.PubMaster):
-  def __init__(self):  # pylint: disable=super-init-not-called
+  def __init__(self):
     self.sock = defaultdict(PubSocket)

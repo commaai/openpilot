@@ -26,7 +26,7 @@ def decoder(addr, vipc_server, vst, nvidia, debug=False):
   if nvidia:
     os.environ["NV_LOW_LATENCY"] = "3"    # both bLowLatency and CUVID_PKT_ENDOFPICTURE
     sys.path += os.environ["LD_LIBRARY_PATH"].split(":")
-    import PyNvCodec as nvc # pylint: disable=import-error
+    import PyNvCodec as nvc
 
     nvDec = nvc.PyNvDecoder(W, H, nvc.PixelFormat.NV12, nvc.CudaVideoCodec.HEVC, 0)
     cc1 = nvc.ColorspaceConversionContext(nvc.ColorSpace.BT_709, nvc.ColorRange.JPEG)

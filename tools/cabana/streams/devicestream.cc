@@ -1,5 +1,8 @@
 #include "tools/cabana/streams/devicestream.h"
 
+#include <memory>
+#include <string>
+
 #include <QButtonGroup>
 #include <QFormLayout>
 #include <QRadioButton>
