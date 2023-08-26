@@ -75,7 +75,7 @@ translation_sources = [f"#selfdrive/ui/translations/{l}.ts" for l in languages.v
 translation_targets = [src.replace(".ts", ".qm") for src in translation_sources]
 lrelease_bin = 'third_party/qt5/larch64/bin/lrelease' if arch == 'larch64' else 'lrelease'
 
-lupdate = qt_env.Command(translation_sources, qt_src, "selfdrive/ui/update_translations.py")
+lupdate = qt_env.Command(translation_sources, qt_src + widgets_src, "selfdrive/ui/update_translations.py")
 lrelease = qt_env.Command(translation_targets, translation_sources, f"{lrelease_bin} $SOURCES")
 qt_env.Depends(lrelease, lupdate)
 qt_env.NoClean(translation_sources)
