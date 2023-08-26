@@ -277,13 +277,13 @@ void WifiManager::setCurrentSsid(const QString &connecting_ssid, const QString &
 void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
   if (props.contains("ActiveConnection")) {
     QString path = props.value("ActiveConnection").value<QDBusObjectPath>().path();
-    if (path == "" || path == "/") {
+    if (emptyPath(path)) {
       setCurrentSsid("");
     } else {
       auto so = call<QDBusObjectPath>(props.value("ActiveConnection").value<QDBusObjectPath>().path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "SpecificObject");
       auto state = call<uint>(props.value("ActiveConnection").value<QDBusObjectPath>().path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "State");
       if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
-        if (so.path() != "" && so.path() != "/") {
+        if (!emptyPath(so.path())) {
           setCurrentSsid(get_property(so.path(), "Ssid"));
         }
       }
