@@ -1578,6 +1578,14 @@ FW_VERSIONS = {
       b'\xf1\x87\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xf1\x816T6B8051\x00\x00\xf1\x006T6H0_C2\x00\x006T6B8051\x00\x00TJFSG24NH27\xa7\xc2\xb4',
     ],
   },
+  CAR.KIA_OPTIMA_H: {
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00JFhe SCC FNCUP      1.00 1.00 96400-A8000         ',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00JFP LKAS AT EUR LHD 1.00 1.03 95895-A8100 160711',
+    ],
+  },
   CAR.ELANTRA: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00PD  LKAS AT USA LHD 1.01 1.01 95740-G3100 A54',
