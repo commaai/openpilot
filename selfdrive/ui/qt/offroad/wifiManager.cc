@@ -8,8 +8,8 @@
 #include "selfdrive/ui/qt/util.h"
 
 bool compare_by_strength(const Network &a, const Network &b) {
-  return std::tuple(a.connected == ConnectedType::CONNECTED, strengthLevel(a.strength), b.ssid) >
-         std::tuple(b.connected == ConnectedType::CONNECTED, strengthLevel(b.strength), a.ssid);
+  return std::tuple(a.connected, strengthLevel(a.strength), b.ssid) >
+         std::tuple(b.connected, strengthLevel(b.strength), a.ssid);
 }
 
 template <typename T = QDBusMessage, typename... Args>
