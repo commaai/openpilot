@@ -67,68 +67,14 @@ def create_cam_0x2a4(packer, CAN, cam_0x2a4):
   values["BYTE7"] = 0
   return packer.make_can_msg("CAM_0x2a4", CAN.ACAN, values)
 
-def create_block_lfa(packer, CAN, CS):
-  ret = []
-
-  cam_0x230_values = {s: CS.cam_0x230[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x230", CAN.ACAN, cam_0x230_values))
-
-  cam_0x235_values = {s: CS.cam_0x235[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x235", CAN.ACAN, cam_0x235_values))
-
-  cam_0x236_values = {s: CS.cam_0x236[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x236", CAN.ACAN, cam_0x236_values))
-
-  cam_0x237_values = {s: CS.cam_0x237[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x237", CAN.ACAN, cam_0x237_values))
-
-  cam_0x238_values = {s: CS.cam_0x238[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x238", CAN.ACAN, cam_0x238_values))
-
-  cam_0x239_values = {s: CS.cam_0x239[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x239", CAN.ACAN, cam_0x239_values))
-
-  cam_0x23a_values = {s: CS.cam_0x23a[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x23a", CAN.ACAN, cam_0x23a_values))
-
-  cam_0x23b_values = {s: CS.cam_0x23b[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x23b", CAN.ACAN, cam_0x23b_values))
-
-  cam_0x23c_values = {s: CS.cam_0x23c[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x23c", CAN.ACAN, cam_0x23c_values))
-
-  cam_0x23d_values = {s: CS.cam_0x23d[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x23d", CAN.ACAN, cam_0x23d_values))
-
-  cam_0x23e_values = {s: CS.cam_0x23e[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x23e", CAN.ACAN, cam_0x23e_values))
-
-  cam_0x23f_values = {s: CS.cam_0x23f[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x23f", CAN.ACAN, cam_0x23f_values))
-
-
-  cam_0x360_values = {s: CS.cam_0x360[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x360", CAN.ACAN, cam_0x360_values))
-
-  cam_0x361_values = {s: CS.cam_0x361[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x361", CAN.ACAN, cam_0x361_values))
-
-  cam_0x362_values = {s: CS.cam_0x362[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x362", CAN.ACAN, cam_0x362_values))
-
-  cam_0x363_values = {s: CS.cam_0x363[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x363", CAN.ACAN, cam_0x363_values))
-
-  cam_0x364_values = {s: CS.cam_0x364[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x364", CAN.ACAN, cam_0x364_values))
-
-  cam_0x365_values = {s: CS.cam_0x365[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x365", CAN.ACAN, cam_0x365_values))
-
-  cam_0x366_values = {s: CS.cam_0x366[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x366", CAN.ACAN, cam_0x366_values))
-
-  return ret
+def create_cam_0x362(packer, CAN, cam_0x362):
+  values = {f"BYTE{i}": cam_0x362[f"BYTE{i}"] for i in range(3, 32)}
+  values["COUNTER"] = cam_0x362["COUNTER"]
+  values["NEW_SIGNAL_1"] = cam_0x362["NEW_SIGNAL_1"]
+  values["NEW_SIGNAL_2"] = cam_0x362["NEW_SIGNAL_2"]
+  values["LEFT_LANELINES"] = 0
+  values["RIGHT_LANELINES"] = 0
+  return packer.make_can_msg("CAM_0x362", CAN.ACAN, values)
 
 def create_buttons(packer, CP, CAN, cnt, btn):
   values = {
