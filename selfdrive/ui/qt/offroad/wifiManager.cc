@@ -8,8 +8,8 @@
 #include "selfdrive/ui/qt/util.h"
 
 bool compare_by_strength(const Network &a, const Network &b) {
-  return std::tuple(a.connected, strengthLevel(a.strength), b.ssid) >
-         std::tuple(b.connected, strengthLevel(b.strength), a.ssid);
+  return std::tuple(a.connected == ConnectedType::CONNECTED, strengthLevel(a.strength), b.ssid) >
+         std::tuple(b.connected == ConnectedType::CONNECTED, strengthLevel(b.strength), a.ssid);
 }
 
 template <typename T = QDBusMessage, typename... Args>
@@ -261,6 +261,14 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
     connecting_to_network = "";
     refreshNetworks();
   }
+}
+
+void WifiManager::setCurrentConnecting(const QString &ssid) {
+  connecting_to_network = ssid;
+  for (auto &network : seenNetworks) {
+    network.connected = (network.ssid == ssid) ? ConnectedType::CONNECTING : ConnectedType::DISCONNECTED;
+  }
+  emit refreshSignal();
 }
 
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
