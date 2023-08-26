@@ -137,7 +137,7 @@ void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std
   static std::unordered_map<MessageId, std::deque<const CanEvent *>> new_events_map;
   static  std::vector<const CanEvent *> new_events;
   new_events_map.clear();
-  neew_events.clear();
+  new_events.clear();
 
   for (auto it = first; it != last; ++it) {
     if ((*it)->which == cereal::Event::Which::CAN) {
@@ -161,16 +161,13 @@ void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std
     return l->mono_time < r->mono_time;
   };
 
-  bool append = new_events.front()->mono_time > lastest_event_ts;
   for (auto &[id, new_e] : new_events_map) {
     auto &e = events_[id];
-    auto pos = append ? e.end()
-                      : std::upper_bound(e.cbegin(), e.cend(), new_e.front(), compare);
+    auto pos = std::upper_bound(e.cbegin(), e.cend(), new_e.front(), compare);
     e.insert(pos, new_e.cbegin(), new_e.cend());
   }
 
-  auto pos = append ? all_events_.end()
-                    : std::upper_bound(all_events_.begin(), all_events_.end(), new_events.front(), compare);
+  auto pos = std::upper_bound(all_events_.begin(), all_events_.end(), new_events.front(), compare);
   all_events_.insert(pos, new_events.cbegin(), new_events.cend());
 
   lastest_event_ts = all_events_.back()->mono_time;
