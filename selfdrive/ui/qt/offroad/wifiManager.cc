@@ -227,6 +227,14 @@ void WifiManager::forgetConnection(const QString &ssid) {
   }
 }
 
+void WifiManager::setCurrentConnecting(const QString &ssid) {
+  connecting_to_network = ssid;
+  for (auto &network : seenNetworks) {
+    network.connected = (network.ssid == ssid) ? ConnectedType::CONNECTING : ConnectedType::DISCONNECTED;
+  }
+  emit refreshSignal();
+}
+
 uint WifiManager::getAdapterType(const QDBusObjectPath &path) {
   return call<uint>(path.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE, "DeviceType");
 }
@@ -260,14 +268,6 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
     connecting_to_network = "";
     refreshNetworks();
   }
-}
-
-void WifiManager::setCurrentConnecting(const QString &ssid) {
-  connecting_to_network = ssid;
-  for (auto &network : seenNetworks) {
-    network.connected = (network.ssid == ssid) ? ConnectedType::CONNECTING : ConnectedType::DISCONNECTED;
-  }
-  emit refreshSignal();
 }
 
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
