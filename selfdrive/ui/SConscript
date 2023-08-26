@@ -56,6 +56,12 @@ qt_env.NoClean(translation_sources)
 qt_env.Precious(translation_sources)
 qt_env.NoCache(lupdate)
 
+# add translations files to qrc file to include with assets
+with open('../assets/translations_assets.qrc', 'w') as f:
+  f.write('<!DOCTYPE RCC><RCC version="1.0">\n<qresource>\n')
+  f.write('\n'.join([f'<file alias="{l}">../ui/translations/{l}.qm</file>' for l in languages.values()]))
+  f.write('\n</qresource>\n</RCC>')
+
 # build assets
 assets = "#selfdrive/assets/assets.cc"
 assets_src = "#selfdrive/assets/assets.qrc"
