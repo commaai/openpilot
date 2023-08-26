@@ -337,10 +337,12 @@ SConscript(['common/SConscript'])
 
 # *** Build cereal and messaging
 SConscript(['cereal/SConscript'])
+
 cereal = [File('#cereal/libcereal.a')]
 messaging = [File('#cereal/libmessaging.a')]
+messaging_python = [File('#cereal/messaging/messaging_pyx.so')]
 visionipc = [File('#cereal/libvisionipc.a')]
-Export('cereal', 'messaging', 'visionipc')
+Export('cereal', 'messaging', 'messaging_python', 'visionipc')
 
 # *** Build other submodules
 SConscript([
