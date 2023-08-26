@@ -282,10 +282,8 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
     } else {
       auto so = call<QDBusObjectPath>(props.value("ActiveConnection").value<QDBusObjectPath>().path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "SpecificObject");
       auto state = call<uint>(props.value("ActiveConnection").value<QDBusObjectPath>().path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "State");
-      if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
-        if (!emptyPath(so.path())) {
-          setCurrentSsid(get_property(so.path(), "Ssid"));
-        }
+      if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING && !emptyPath(so.path())) {
+        setCurrentSsid(get_property(so.path(), "Ssid"));
       }
     }
 
