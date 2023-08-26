@@ -2,7 +2,7 @@ FROM ghcr.io/commaai/openpilot-base:latest
 
 ENV PYTHONUNBUFFERED 1
 
-ENV OPENPILOT_PATH /home/batman/openpilot/
+ENV OPENPILOT_PATH /tmp/openpilot
 ENV PYTHONPATH ${OPENPILOT_PATH}:${PYTHONPATH}
 ENV POETRY_VIRUALENVS_CREATE false
 
@@ -29,7 +29,7 @@ COPY ./selfdrive ${OPENPILOT_PATH}/selfdrive
 COPY ./system ${OPENPILOT_PATH}/system
 COPY ./*.md ${OPENPILOT_PATH}/
 
-RUN --mount=type=bind,source=.ci_cache/scons_cache,target=/tmp/scons_cache,rw scons -j$(nproc)
+RUN --mount=type=bind,source=.ci_cache/scons_cache,target=/tmp/scons_cache,rw scons -j$(nproc) --cache-readonly
 
 RUN apt update && apt install doxygen -y
 COPY ./docs ${OPENPILOT_PATH}/docs
