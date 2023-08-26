@@ -8,7 +8,7 @@
 
 #include <QDebug>
 
-#include "selfdrive/ui/qt/offroad/networking.h"
+#include "selfdrive/ui/qt/network/networking.h"
 
 #include "common/params.h"
 #include "common/watchdog.h"
