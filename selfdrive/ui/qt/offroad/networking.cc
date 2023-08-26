@@ -336,7 +336,6 @@ WifiItem::WifiItem(const QString &connecting_text, const QString &forget_text, Q
   hlayout->addWidget(forgetBtn = new QPushButton(forget_text), 0, Qt::AlignRight);
   forgetBtn->setObjectName("forgetBtn");
   hlayout->addWidget(iconLabel = new QLabel(), 0, Qt::AlignRight);
-//  iconLabel->setFixedWidth(49);
   hlayout->addWidget(strengthLabel = new QLabel(), 0, Qt::AlignRight);
 
   QObject::connect(forgetBtn, &QPushButton::clicked, [this]() { emit forgotNetwork(network); });
