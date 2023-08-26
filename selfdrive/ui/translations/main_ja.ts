@@ -747,6 +747,10 @@ This may take up to a minute.</source>
         <source>Something went wrong. Reboot the device.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Select a language</source>
+        <translation>言語を選択</translation>
+    </message>
 </context>
 <context>
     <name>SetupWidget</name>

@@ -749,6 +749,10 @@ This may take up to a minute.</source>
         <source>No custom software found at this URL.</source>
         <translation>이 URL에서 커스텀 소프트웨어를 찾을 수 없습니다.</translation>
     </message>
+    <message>
+        <source>Select a language</source>
+        <translation>언어를 선택하세요</translation>
+    </message>
 </context>
 <context>
     <name>SetupWidget</name>
