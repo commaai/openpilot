@@ -335,7 +335,7 @@ class CarState(CarStateBase):
   @staticmethod
   def get_cam_can_parser_canfd(CP):
     messages = []
-    if CP.flags & HyundaiFlags.CANFD_HDA2 and not CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING:
+    if CP.flags & HyundaiFlags.CANFD_HDA2:
       block_lfa_msg = "CAM_0x362" if CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING else "CAM_0x2a4"
       messages += [(block_lfa_msg, 20)]
     elif CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
