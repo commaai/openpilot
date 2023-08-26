@@ -256,7 +256,6 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
   if (new_state == NM_DEVICE_STATE_NEED_AUTH && change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT && !connecting_to_network.isEmpty()) {
     forgetConnection(connecting_to_network);
     emit wrongPassword(connecting_to_network);
-    setCurrentConnecting("");
   } else if (new_state == NM_DEVICE_STATE_ACTIVATED) {
     connecting_to_network = "";
     refreshNetworks();
