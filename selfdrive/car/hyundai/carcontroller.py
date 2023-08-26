@@ -116,7 +116,7 @@ class CarController:
         if not hda2_alt_steering:
           can_sends.append(hyundaicanfd.create_cam_0x2a4(self.packer, self.CAN, CS.cam_0x2a4))
         elif hda2_alt_steering:
-          can_sends.extend(hyundaicanfd.create_cam_0x362(self.packer, self.CAN, CS.cam_0x362))
+          can_sends.append(hyundaicanfd.create_cam_0x362(self.packer, self.CAN, CS.cam_0x362))
 
       # LFA and HDA icons
       if self.frame % 5 == 0 and (not hda2 or hda2_long):
