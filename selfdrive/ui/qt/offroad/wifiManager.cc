@@ -162,8 +162,8 @@ SecurityType WifiManager::getSecurityType(const QVariantMap &properties) {
 }
 
 void WifiManager::connect(const Network &n, const QString &password, const QString &username) {
-  setCurrentConnecting(n.ssid);
   forgetConnection(n.ssid);  // Clear all connections that may already exist to the network we are connecting
+  setCurrentConnecting(n.ssid);
   Connection connection;
   connection["connection"]["type"] = "802-11-wireless";
   connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
@@ -225,6 +225,7 @@ void WifiManager::forgetConnection(const QString &ssid) {
   if (!path.path().isEmpty()) {
     call(path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "Delete");
   }
+  setCurrentConnecting("");
 }
 
 uint WifiManager::getAdapterType(const QDBusObjectPath &path) {
