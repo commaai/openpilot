@@ -395,6 +395,7 @@ selfdrive/modeld/thneed/*.py
 selfdrive/modeld/thneed/thneed.h
 selfdrive/modeld/thneed/thneed_common.cc
 selfdrive/modeld/thneed/thneed_qcom2.cc
+selfdrive/modeld/thneed/thneed_pc.cc
 selfdrive/modeld/thneed/serialize.cc
 
 selfdrive/modeld/runners/__init__.py
