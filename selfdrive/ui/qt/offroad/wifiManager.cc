@@ -86,6 +86,11 @@ void WifiManager::stop() {
 }
 
 void WifiManager::refreshNetworks() {
+  seenNetworks.clear();
+  seenNetworks["test1"] = {"test1", 1U, ConnectedType::DISCONNECTED, SecurityType::WPA};
+  seenNetworks["test2"] = {"test2", 1U, ConnectedType::CONNECTING, SecurityType::OPEN};
+  seenNetworks["test3"] = {"test3", 1U, ConnectedType::DISCONNECTED, SecurityType::WPA};
+  emit refreshSignal();
   if (adapter.isEmpty() || !timer.isActive()) return;
 
   QDBusPendingCall pending_call = asyncCall(adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, "GetAllAccessPoints");
@@ -96,6 +101,8 @@ void WifiManager::refreshNetworks() {
 void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
   ipv4_address = getIp4Address();
   seenNetworks.clear();
+  seenNetworks["test"] = {"test", 1U, ConnectedType::CONNECTING, SecurityType::WPA};
+  emit refreshSignal();
 
   const QDBusReply<QList<QDBusObjectPath>> wather_reply = *watcher;
   for (const QDBusObjectPath &path : wather_reply.value()) {
@@ -222,6 +229,7 @@ QVector<QDBusObjectPath> WifiManager::getActiveConnections() {
 }
 
 bool WifiManager::isKnownConnection(const QString &ssid) {
+  return true;
   return !getConnectionPath(ssid).path().isEmpty();
 }
 
