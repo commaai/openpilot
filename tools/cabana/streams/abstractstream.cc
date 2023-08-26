@@ -5,6 +5,8 @@
 
 #include <QTimer>
 
+static const int EVENT_NEXT_BUFFER_SIZE = 6 * 1024 * 1024;  // 6MB
+
 AbstractStream *can = nullptr;
 
 StreamNotifier *StreamNotifier::instance() {
@@ -15,7 +17,7 @@ StreamNotifier *StreamNotifier::instance() {
 AbstractStream::AbstractStream(QObject *parent) : QObject(parent) {
   assert(parent != nullptr);
   new_msgs = std::make_unique<QHash<MessageId, CanData>>();
-  event_buffer = std::make_unique<MonotonicBuffer>(50000 * (sizeof(CanEvent) + sizeof(uint8_t) * 8));
+  event_buffer = std::make_unique<MonotonicBuffer>(EVENT_NEXT_BUFFER_SIZE);
 
   QObject::connect(this, &AbstractStream::seekedTo, this, &AbstractStream::updateLastMsgsTo);
   QObject::connect(&settings, &Settings::changed, this, &AbstractStream::updateMasks);
