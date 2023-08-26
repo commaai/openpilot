@@ -293,8 +293,8 @@ void WifiUI::refresh() {
     } else if (network.security_type == SecurityType::WPA) {
       status_icon = lock;
     } else {
+      status_icon = QPixmap(lock.width(), lock.height());
       status_icon.fill(Qt::transparent);
-      status_icon.scaledToWidth(49);
     }
     bool show_forget_btn = wifi->isKnownConnection(network.ssid) && !is_tethering_enabled;
     QPixmap strength = strengths[strengthLevel(network.strength)];
