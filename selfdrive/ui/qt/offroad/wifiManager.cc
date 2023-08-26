@@ -265,10 +265,11 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
 }
 
 void WifiManager::setCurrentConnecting(const QString &connecting_ssid, const QString &connected_ssid) {
-  connecting_to_network = connecting_ssid;
   for (auto &network : seenNetworks) {
-    network.connected = (network.ssid == connecting_ssid) ? ConnectedType::CONNECTING : (network.ssid == connected_ssid) ? ConnectedType::CONNECTED : ConnectedType::DISCONNECTED;
+    network.connected = (network.ssid == connecting_ssid) ? ConnectedType::CONNECTING :
+                        ((network.ssid == connected_ssid) ? ConnectedType::CONNECTED : ConnectedType::DISCONNECTED);
   }
+  connecting_to_network = connecting_ssid;
   emit refreshSignal();
 }
 
