@@ -158,6 +158,8 @@ if __name__ == "__main__":
   all_cars = {car for car, _ in segments}
   all_procs = {cfg.proc_name for cfg in CONFIGS if cfg.proc_name not in EXCLUDED_PROCS}
 
+  cpu_count = os.cpu_count() or 1
+
   parser = argparse.ArgumentParser(description="Regression test to identify changes in a process's output")
   parser.add_argument("--whitelist-procs", type=str, nargs="*", default=all_procs,
                       help="Whitelist given processes from the test (e.g. controlsd)")
@@ -175,7 +177,8 @@ if __name__ == "__main__":
                       help="Updates reference logs using current commit")
   parser.add_argument("--upload-only", action="store_true",
                       help="Skips testing processes and uploads logs from previous test run")
-  parser.add_argument("-j", "--jobs", type=int, default=1)
+  parser.add_argument("-j", "--jobs", type=int, default=max(cpu_count - 2, 1),
+                      help="Max amount of parallel jobs")
   args = parser.parse_args()
 
   tested_procs = set(args.whitelist_procs) - set(args.blacklist_procs)
