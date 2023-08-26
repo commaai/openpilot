@@ -44,11 +44,6 @@ AddOption('--external-sconscript',
           dest='external_sconscript',
           help='add an external SConscript to the build')
 
-AddOption('--no-thneed',
-          action='store_true',
-          dest='no_thneed',
-          help='avoid using thneed')
-
 AddOption('--pc-thneed',
           action='store_true',
           dest='pc_thneed',
