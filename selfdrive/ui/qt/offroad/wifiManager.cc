@@ -162,7 +162,7 @@ SecurityType WifiManager::getSecurityType(const QVariantMap &properties) {
 }
 
 void WifiManager::connect(const Network &n, const QString &password, const QString &username) {
-  connecting_to_network = n.ssid;
+//  connecting_to_network = n.ssid;
   seenNetworks[n.ssid].connected = ConnectedType::CONNECTING;
   forgetConnection(n.ssid);  // Clear all connections that may already exist to the network we are connecting
   Connection connection;
@@ -265,7 +265,29 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
 
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
 void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
-  if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("LastScan")) {
+  if (props.contains("ActiveConnection")) {
+    QString path = props.value("ActiveConnection").value<QDBusObjectPath>().path();
+    if (path == "" || path == "/") {
+      connecting_to_network = "";
+    } else {
+//      qDebug() << "HERE:" << props.value("ActiveConnection").value<QDBusObjectPath>().path();
+      auto so = call<QDBusObjectPath>(props.value("ActiveConnection").value<QDBusObjectPath>().path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "SpecificObject");
+      auto state = call<uint>(props.value("ActiveConnection").value<QDBusObjectPath>().path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "State");
+      if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
+        if (so.path() != "" && so.path() != "/") {
+          connecting_to_network = get_property(pth.path(), "Ssid");
+          qDebug() << "activating ssid:" << connecting_to_network;
+        }
+      }
+//      qDebug() << state;
+//      if (so.path() != "" && so.path() != "/") {
+//        QString Ssid = get_property(pth.path(), "Ssid");
+//        qDebug() << "activating ssid:" << Ssid;
+//      }
+//      qDebug() << knownConnections.contains(props.value("ActiveConnection").value<QDBusObjectPath>());
+    }
+
+  } else if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("LastScan")) {
     refreshNetworks();
   } else if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("ActiveAccessPoint")) {
     activeAp = props.value("ActiveAccessPoint").value<QDBusObjectPath>().path();
@@ -316,7 +338,7 @@ void WifiManager::initConnections() {
 std::optional<QDBusPendingCall> WifiManager::activateWifiConnection(const QString &ssid) {
   const QDBusObjectPath &path = getConnectionPath(ssid);
   if (!path.path().isEmpty()) {
-    connecting_to_network = ssid;
+//    connecting_to_network = ssid;
     return asyncCall(NM_DBUS_PATH, NM_DBUS_INTERFACE, "ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
   }
   return std::nullopt;
