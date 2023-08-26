@@ -265,6 +265,7 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
 }
 
 void WifiManager::setCurrentSsid(const QString &connecting_ssid, const QString &connected_ssid) {
+  // Allows the connected status to be updated between AP refreshes
   for (auto &network : seenNetworks) {
     network.connected = (network.ssid == connecting_ssid) ? ConnectedType::CONNECTING :
                         ((network.ssid == connected_ssid) ? ConnectedType::CONNECTED : ConnectedType::DISCONNECTED);
