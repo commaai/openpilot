@@ -68,7 +68,7 @@ def create_cam_0x2a4(packer, CAN, cam_0x2a4):
   return packer.make_can_msg("CAM_0x2a4", CAN.ACAN, values)
 
 def create_cam_0x362(packer, CAN, cam_0x362):
-  values = {f"BYTE{i}": cam_0x362[f"BYTE{i}"] for i in range(3, 32)}
+  values = {f"BYTE{i}": cam_0x362[f"BYTE{i}"] for i in range(3, 32) if i != 7}
   values["COUNTER"] = cam_0x362["COUNTER"]
   values["NEW_SIGNAL_1"] = cam_0x362["NEW_SIGNAL_1"]
   values["NEW_SIGNAL_2"] = cam_0x362["NEW_SIGNAL_2"]
