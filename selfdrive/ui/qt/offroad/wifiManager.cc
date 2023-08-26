@@ -271,6 +271,7 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
     forgetConnection(connecting_to_network);
     emit wrongPassword(connecting_to_network);
   } else if (new_state == NM_DEVICE_STATE_ACTIVATED) {
+    ipv4_address = getIp4Address();
     setCurrentSsid("", connecting_to_network);
   }
 }
