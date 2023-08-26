@@ -106,33 +106,6 @@ def create_block_lfa(packer, CAN, CS):
   cam_0x23f_values = {s: CS.cam_0x23f[s] for s in ["COUNTER"]}
   ret.append(packer.make_can_msg("CAM_0x23f", CAN.ACAN, cam_0x23f_values))
 
-  cam_0x240_values = {s: CS.cam_0x240[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x240", CAN.ACAN, cam_0x240_values))
-
-  cam_0x241_values = {s: CS.cam_0x241[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x241", CAN.ACAN, cam_0x241_values))
-
-  cam_0x242_values = {s: CS.cam_0x242[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x242", CAN.ACAN, cam_0x242_values))
-
-  cam_0x243_values = {s: CS.cam_0x243[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x243", CAN.ACAN, cam_0x243_values))
-
-  cam_0x244_values = {s: CS.cam_0x244[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x244", CAN.ACAN, cam_0x244_values))
-
-  cam_0x245_values = {s: CS.cam_0x245[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x245", CAN.ACAN, cam_0x245_values))
-
-  cam_0x246_values = {s: CS.cam_0x246[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x246", CAN.ACAN, cam_0x246_values))
-
-  cam_0x247_values = {s: CS.cam_0x247[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x247", CAN.ACAN, cam_0x247_values))
-
-  cam_0x248_values = {s: CS.cam_0x248[s] for s in ["COUNTER"]}
-  ret.append(packer.make_can_msg("CAM_0x248", CAN.ACAN, cam_0x248_values))
-
 
   cam_0x360_values = {s: CS.cam_0x360[s] for s in ["COUNTER"]}
   ret.append(packer.make_can_msg("CAM_0x360", CAN.ACAN, cam_0x360_values))
