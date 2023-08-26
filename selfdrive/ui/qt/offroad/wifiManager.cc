@@ -258,9 +258,8 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
     emit wrongPassword(connecting_to_network);
     setCurrentConnecting("");
   } else if (new_state == NM_DEVICE_STATE_ACTIVATED) {
-//    connecting_to_network = "";
-    setCurrentConnecting("");
-//    refreshNetworks();
+    connecting_to_network = "";
+    refreshNetworks();
   }
 }
 
