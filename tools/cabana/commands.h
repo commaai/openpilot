@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include <QUndoCommand>
 #include <QUndoStack>
 

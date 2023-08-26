@@ -104,37 +104,37 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
 
   // lowercase
   std::vector<QVector<QString>> lowercase = {
-    {"q","w","e","r","t","y","u","i","o","p"},
-    {"a","s","d","f","g","h","j","k","l"},
-    {"↑","z","x","c","v","b","n","m",BACKSPACE_KEY},
-    {"123","  ",".",ENTER_KEY},
+    {"q", "w", "e", "r", "t", "y", "u", "i", "o", "p"},
+    {"a", "s", "d", "f", "g", "h", "j", "k", "l"},
+    {"↑", "z", "x", "c", "v", "b", "n", "m", BACKSPACE_KEY},
+    {"123", "  ", ".", ENTER_KEY},
   };
   main_layout->addWidget(new KeyboardLayout(this, lowercase));
 
   // uppercase
   std::vector<QVector<QString>> uppercase = {
-    {"Q","W","E","R","T","Y","U","I","O","P"},
-    {"A","S","D","F","G","H","J","K","L"},
-    {"↓","Z","X","C","V","B","N","M",BACKSPACE_KEY},
-    {"123","  ",".",ENTER_KEY},
+    {"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"},
+    {"A", "S", "D", "F", "G", "H", "J", "K", "L"},
+    {"↓", "Z", "X", "C", "V", "B", "N", "M", BACKSPACE_KEY},
+    {"123", "  ", ".", ENTER_KEY},
   };
   main_layout->addWidget(new KeyboardLayout(this, uppercase));
 
   // numbers + specials
   std::vector<QVector<QString>> numbers = {
-    {"1","2","3","4","5","6","7","8","9","0"},
-    {"-","/",":",";","(",")","$","&&","@","\""},
-    {"#+=",".",",","?","!","`",BACKSPACE_KEY},
-    {"ABC","  ",".",ENTER_KEY},
+    {"1", "2", "3", "4", "5", "6", "7", "8", "9", "0"},
+    {"-", "/", ":", ";", "(", ")", "$", "&&", "@", "\""},
+    {"#+=", ".", ",", "?", "!", "`", BACKSPACE_KEY},
+    {"ABC", "  ", ".", ENTER_KEY},
   };
   main_layout->addWidget(new KeyboardLayout(this, numbers));
 
   // extra specials
   std::vector<QVector<QString>> specials = {
-    {"[","]","{","}","#","%","^","*","+","="},
-    {"_","\\","|","~","<",">","€","£","¥","•"},
-    {"123",".",",","?","!","'",BACKSPACE_KEY},
-    {"ABC","  ",".",ENTER_KEY},
+    {"[", "]", "{", "}", "#", "%", "^", "*", "+", "="},
+    {"_", "\\", "|", "~", "<", ">", "€", "£", "¥", "•"},
+    {"123", ".", ",", "?", "!", "'", BACKSPACE_KEY},
+    {"ABC", "  ", ".", ENTER_KEY},
   };
   main_layout->addWidget(new KeyboardLayout(this, specials));
 

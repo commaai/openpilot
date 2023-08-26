@@ -1,5 +1,6 @@
 #include "selfdrive/ui/qt/offroad/driverview.h"
 
+#include <algorithm>
 #include <QPainter>
 
 #include "selfdrive/ui/qt/qt_window.h"

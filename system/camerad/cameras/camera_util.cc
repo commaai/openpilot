@@ -37,7 +37,7 @@ std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data
   };
   int err = do_cam_control(fd, CAM_ACQUIRE_DEV, &cmd, sizeof(cmd));
   return err == 0 ? std::make_optional(cmd.dev_handle) : std::nullopt;
-};
+}
 
 int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t packet_handle) {
   struct cam_config_dev_cmd cmd = {

@@ -2,10 +2,10 @@
 import unittest
 
 from cereal import car
-from selfdrive.car.fw_versions import build_fw_dict
-from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
+from openpilot.selfdrive.car.fw_versions import build_fw_dict
+from openpilot.selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
                                          EV_CAR, FW_QUERY_CONFIG, FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, \
-                                         PLATFORM_CODE_ECUS, get_platform_codes
+                                         UNSUPPORTED_LONGITUDINAL_CAR, PLATFORM_CODE_ECUS, get_platform_codes
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
@@ -37,7 +37,7 @@ NO_DATES_PLATFORMS = {
 
 class TestHyundaiFingerprint(unittest.TestCase):
   def test_canfd_not_in_can_features(self):
-    can_specific_feature_list = set.union(*CAN_GEARS.values(), *CHECKSUM.values(), LEGACY_SAFETY_MODE_CAR, CAMERA_SCC_CAR)
+    can_specific_feature_list = set.union(*CAN_GEARS.values(), *CHECKSUM.values(), LEGACY_SAFETY_MODE_CAR, UNSUPPORTED_LONGITUDINAL_CAR, CAMERA_SCC_CAR)
     for car_model in CANFD_CAR:
       self.assertNotIn(car_model, can_specific_feature_list, "CAN FD car unexpectedly found in a CAN feature list")
 
@@ -70,7 +70,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
   # fingerprint in the absence of full FW matches:
   def test_platform_code_ecus_available(self):
     # TODO: add queries for these non-CAN FD cars to get EPS
-    no_eps_platforms = CANFD_CAR | {CAR.KIA_SORENTO, CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL,
+    no_eps_platforms = CANFD_CAR | {CAR.KIA_SORENTO, CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL, CAR.KIA_OPTIMA_H,
                                     CAR.SONATA_LF, CAR.TUCSON, CAR.GENESIS_G90, CAR.GENESIS_G80}
 
     # Asserts ECU keys essential for fuzzy fingerprinting are available on all platforms

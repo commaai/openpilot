@@ -90,12 +90,12 @@ class WebClientSpeaker(MediaBlackhole):
       self.buffer.write(bio)
 
   async def start(self):
-    for track, task in self._MediaBlackhole__tracks.items():  # pylint: disable=access-member-before-definition
+    for track, task in self._MediaBlackhole__tracks.items():
       if task is None:
         self._MediaBlackhole__tracks[track] = asyncio.ensure_future(self.consume(track))
 
   async def stop(self):
-    for task in self._MediaBlackhole__tracks.values():  # pylint: disable=access-member-before-definition
+    for task in self._MediaBlackhole__tracks.values():
       if task is not None:
         task.cancel()
     self._MediaBlackhole__tracks = {}

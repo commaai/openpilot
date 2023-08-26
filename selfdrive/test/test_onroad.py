@@ -14,14 +14,14 @@ from pathlib import Path
 from cereal import car
 import cereal.messaging as messaging
 from cereal.services import service_list
-from common.basedir import BASEDIR
-from common.timeout import Timeout
-from common.params import Params
-from selfdrive.controls.lib.events import EVENTS, ET
-from system.hardware import HARDWARE
-from system.loggerd.config import ROOT
-from selfdrive.test.helpers import set_params_enabled, release_only
-from tools.lib.logreader import LogReader
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.timeout import Timeout
+from openpilot.common.params import Params
+from openpilot.selfdrive.controls.lib.events import EVENTS, ET
+from openpilot.system.hardware import HARDWARE
+from openpilot.system.loggerd.config import ROOT
+from openpilot.selfdrive.test.helpers import set_params_enabled, release_only
+from openpilot.tools.lib.logreader import LogReader
 
 # Baseline CPU usage by process
 PROCS = {
@@ -34,15 +34,15 @@ PROCS = {
   "selfdrive.controls.plannerd": 16.5,
   "./_ui": 18.0,
   "selfdrive.locationd.paramsd": 9.0,
-  "./_sensord": 12.0,
+  "./_sensord": 7.0,
   "selfdrive.controls.radard": 4.5,
-  "./_modeld": 4.48,
+  "selfdrive.modeld.modeld": 8.0,
   "./_dmonitoringmodeld": 5.0,
   "./_navmodeld": 1.0,
   "selfdrive.thermald.thermald": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
   "selfdrive.locationd.torqued": 5.0,
-  "./_soundd": (15.0, 65.0),
+  "./_soundd": (1.0, 65.0),
   "selfdrive.monitoring.dmonitoringd": 4.0,
   "./proclogd": 1.54,
   "system.logmessaged": 0.2,

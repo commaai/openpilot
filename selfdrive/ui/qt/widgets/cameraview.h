@@ -1,7 +1,12 @@
 #pragma once
 
+#include <deque>
+#include <map>
 #include <memory>
 #include <mutex>
+#include <set>
+#include <string>
+#include <utility>
 
 #include <QOpenGLFunctions>
 #include <QOpenGLShaderProgram>

@@ -4,7 +4,7 @@ import capnp
 from collections import defaultdict
 
 from cereal.messaging import SubMaster
-from common.numpy_fast import mean
+from openpilot.common.numpy_fast import mean
 from typing import Optional, Dict
 
 def cputime_total(ct):
