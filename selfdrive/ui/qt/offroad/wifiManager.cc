@@ -37,6 +37,10 @@ QDBusPendingCall asyncCall(const QString &path, const QString &interface, const 
   return nm.asyncCall(method, args...);
 }
 
+bool emptyPath(const QString &path) {
+  return path == "" || path == "/";
+}
+
 WifiManager::WifiManager(QObject *parent) : QObject(parent) {
   qDBusRegisterMetaType<Connection>();
   qDBusRegisterMetaType<IpConfig>();
@@ -190,7 +194,7 @@ void WifiManager::connect(const Network &n, const QString &password, const QStri
 void WifiManager::deactivateConnectionBySsid(const QString &ssid) {
   for (QDBusObjectPath active_connection : getActiveConnections()) {
     auto pth = call<QDBusObjectPath>(active_connection.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "SpecificObject");
-    if (pth.path() != "" && pth.path() != "/") {
+    if (!emptyPath(pth.path())) {
       QString Ssid = get_property(pth.path(), "Ssid");
       if (Ssid == ssid) {
         deactivateConnection(active_connection);
@@ -273,7 +277,7 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
 }
 
 void WifiManager::deviceAdded(const QDBusObjectPath &path) {
-  if (getAdapterType(path) == NM_DEVICE_TYPE_WIFI && (adapter.isEmpty() || adapter == "/")) {
+  if (getAdapterType(path) == NM_DEVICE_TYPE_WIFI && emptyPath(adapter)) {
     adapter = path.path();
     setup();
   }
@@ -450,7 +454,7 @@ void WifiManager::setTetheringEnabled(bool enabled) {
 }
 
 bool WifiManager::isTetheringEnabled() {
-  if (activeAp != "" && activeAp != "/") {
+  if (!emptyPath(activeAp)) {
     return get_property(activeAp, "Ssid") == tethering_ssid;
   }
   return false;
