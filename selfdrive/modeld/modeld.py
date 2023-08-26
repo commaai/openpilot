@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import sys
 import time
 import numpy as np
@@ -7,7 +8,7 @@ from typing import Dict, Optional
 from setproctitle import setproctitle
 from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
-from openpilot.system.hardware import PC
+from openpilot.system.hardware import PC, TICI
 from openpilot.system.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.filter_simple import FirstOrderFilter
@@ -16,14 +17,15 @@ from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLCont
 from openpilot.selfdrive.modeld.models.driving_pyx import (
   PublishState, create_model_msg, create_pose_msg, update_calibration,
   FEATURE_LEN, HISTORY_BUFFER_LEN, DESIRE_LEN, TRAFFIC_CONVENTION_LEN, NAV_FEATURE_LEN, NAV_INSTRUCTION_LEN,
-  OUTPUT_SIZE, NET_OUTPUT_SIZE, MODEL_FREQ, USE_THNEED)
+  OUTPUT_SIZE, NET_OUTPUT_SIZE, MODEL_FREQ)
 
-if USE_THNEED:
+USE_THNEED_MODEL = int(os.getenv('USE_THNEED_MODEL', str(int(TICI))))
+if USE_THNEED_MODEL:
   from selfdrive.modeld.runners.thneedmodel_pyx import ThneedModel as ModelRunner
 else:
   from selfdrive.modeld.runners.onnxmodel_pyx import ONNXModel as ModelRunner
 
-MODEL_PATH = str(Path(__file__).parent / f"models/supercombo.{'thneed' if USE_THNEED else 'onnx'}")
+MODEL_PATH = str(Path(__file__).parent / f"models/supercombo.{'thneed' if USE_THNEED_MODEL else 'onnx'}")
 
 # NOTE: numpy matmuls don't seem to perfectly match eigen matmuls so the ref test fails, but we should switch to the np version after checking compare_runtime
 # from common.transformations.orientation import rot_from_euler
