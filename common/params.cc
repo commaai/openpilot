@@ -282,7 +282,8 @@ std::string Params::get(const std::string &key, bool block) {
     sigfillset(&sigset);
     std::string value;
     while (true) {
-      if (value = util::read_file(getParamPath(key)); !value.empty()) break;
+      std::string value = util::read_file(getParamPath(key));
+      if (!value.empty()) break;
 
       siginfo_t info = {};
       timespec req = {.tv_nsec = (long)(100 * 1e6)};
