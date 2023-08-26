@@ -1,6 +1,8 @@
 #include "common/params.h"
 
+
 #include <dirent.h>
+#include <signal.h>
 #include <sys/file.h>
 
 #include <algorithm>
@@ -278,17 +280,29 @@ std::string Params::get(const std::string &key, bool block) {
     return util::read_file(getParamPath(key));
   } else {
     // blocking read until successful
+    struct sigaction act = {};
+    sigaction(SIGINT, nullptr, &act);
+
     sigset_t sigset;
-    sigfillset(&sigset);
+    sigemptyset(&sigset);
+    sigaddset(&sigset, SIGINT);
+    sigaddset(&sigset, SIGTERM);
+    pthread_sigmask(SIG_BLOCK, &sigset, nullptr);
+
     std::string value;
     while (true) {
-      std::string value = util::read_file(getParamPath(key));
+      value = util::read_file(getParamPath(key));
       if (!value.empty()) break;
 
       siginfo_t info = {};
       timespec req = {.tv_nsec = (long)(100 * 1e6)};
       sigtimedwait(&sigset, &info, &req);
-      if (info.si_signo == SIGINT || info.si_signo == SIGTERM) break;
+      if (info.si_signo == SIGINT || info.si_signo == SIGTERM) {
+        if (act.sa_sigaction) {
+          act.sa_sigaction(info.si_signo, &info, nullptr);
+        }
+        break;
+      }
     }
 
     return value;
