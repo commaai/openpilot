@@ -12,92 +12,47 @@
 #include "common/params.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
+#include "common/transformations/orientation.hpp"
 
-constexpr float FCW_THRESHOLD_5MS2_HIGH = 0.15;
-constexpr float FCW_THRESHOLD_5MS2_LOW = 0.05;
-constexpr float FCW_THRESHOLD_3MS2 = 0.7;
 
-std::array<float, 5> prev_brake_5ms2_probs = {0,0,0,0,0};
-std::array<float, 3> prev_brake_3ms2_probs = {0,0,0};
+mat3 update_calibration(float *device_from_calib_euler, bool wide_camera, bool bigmodel_frame) {
+  /*
+     import numpy as np
+     from common.transformations.model import medmodel_frame_from_calib_frame
+     medmodel_frame_from_calib_frame = medmodel_frame_from_calib_frame[:, :3]
+     calib_from_smedmodel_frame = np.linalg.inv(medmodel_frame_from_calib_frame)
+  */
+  static const auto calib_from_medmodel = (Eigen::Matrix<float, 3, 3>() <<
+     0.00000000e+00, 0.00000000e+00, 1.00000000e+00,
+     1.09890110e-03, 0.00000000e+00, -2.81318681e-01,
+    -2.25466395e-20, 1.09890110e-03, -5.23076923e-02).finished();
 
-// #define DUMP_YUV
+  static const auto calib_from_sbigmodel = (Eigen::Matrix<float, 3, 3>() <<
+     0.00000000e+00,  7.31372216e-19,  1.00000000e+00,
+     2.19780220e-03,  4.11497335e-19, -5.62637363e-01,
+    -6.66298828e-20,  2.19780220e-03, -3.33626374e-01).finished();
 
-template<class T, size_t size>
-constexpr const kj::ArrayPtr<const T> to_kj_array_ptr(const std::array<T, size> &arr) {
-  return kj::ArrayPtr(arr.data(), arr.size());
-}
+  static const auto view_from_device = (Eigen::Matrix<float, 3, 3>() <<
+     0.0,  1.0,  0.0,
+     0.0,  0.0,  1.0,
+     1.0,  0.0,  0.0).finished();
 
-void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
-  s->frame = new ModelFrame(device_id, context);
-  s->wide_frame = new ModelFrame(device_id, context);
-
-#ifdef USE_THNEED
-  s->m = std::make_unique<ThneedModel>("models/supercombo.thneed",
-#elif USE_ONNX_MODEL
-  s->m = std::make_unique<ONNXModel>("models/supercombo.onnx",
-#else
-  s->m = std::make_unique<SNPEModel>("models/supercombo.dlc",
-#endif
-   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, true, false, context);
-
-#ifdef TEMPORAL
-  s->m->addRecurrent(&s->output[OUTPUT_SIZE], TEMPORAL_SIZE);
-#endif
-
-#ifdef DESIRE
-  s->m->addDesire(s->pulse_desire, DESIRE_LEN);
-#endif
-
-#ifdef TRAFFIC_CONVENTION
-  s->m->addTrafficConvention(s->traffic_convention, TRAFFIC_CONVENTION_LEN);
-#endif
-}
-
-ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
-                              const mat3 &transform, const mat3 &transform_wide, float *desire_in, bool is_rhd, bool prepare_only) {
-#ifdef DESIRE
-  if (desire_in != NULL) {
-    for (int i = 1; i < DESIRE_LEN; i++) {
-      // Model decides when action is completed
-      // so desire input is just a pulse triggered on rising edge
-      if (desire_in[i] - s->prev_desire[i] > .99) {
-        s->pulse_desire[i] = desire_in[i];
-      } else {
-        s->pulse_desire[i] = 0.0;
-      }
-      s->prev_desire[i] = desire_in[i];
-    }
-  }
-#endif
-
-  int rhd_idx = is_rhd;
-  s->traffic_convention[rhd_idx] = 1.0;
-  s->traffic_convention[1-rhd_idx] = 0.0;
-
-  // if getInputBuf is not NULL, net_input_buf will be
-  auto net_input_buf = s->frame->prepare(buf->buf_cl, buf->width, buf->height, buf->stride, buf->uv_offset, transform, static_cast<cl_mem*>(s->m->getInputBuf()));
-  s->m->addImage(net_input_buf, s->frame->buf_size);
-  LOGT("Image added");
-
-  if (wbuf != nullptr) {
-    auto net_extra_buf = s->wide_frame->prepare(wbuf->buf_cl, wbuf->width, wbuf->height, wbuf->stride, wbuf->uv_offset, transform_wide, static_cast<cl_mem*>(s->m->getExtraBuf()));
-    s->m->addExtra(net_extra_buf, s->wide_frame->buf_size);
-    LOGT("Extra image added");
+  Eigen::Vector3d device_from_calib_euler_vec;
+  for (int i=0; i<3; i++) {
+    device_from_calib_euler_vec(i) = device_from_calib_euler[i];
   }
 
-  if (prepare_only) {
-    return nullptr;
+  const auto cam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(wide_camera ? ECAM_INTRINSIC_MATRIX.v : FCAM_INTRINSIC_MATRIX.v);
+  Eigen::Matrix<float, 3, 3, Eigen::RowMajor>  device_from_calib = euler2rot(device_from_calib_euler_vec).cast <float> ();
+  auto calib_from_model = bigmodel_frame ? calib_from_sbigmodel : calib_from_medmodel;
+  auto camera_from_calib = cam_intrinsics * view_from_device * device_from_calib;
+  auto warp_matrix = camera_from_calib * calib_from_model;
+
+  mat3 transform = {};
+  for (int i=0; i<3*3; i++) {
+    transform.v[i] = warp_matrix(i / 3, i % 3);
   }
-
-  s->m->execute();
-  LOGT("Execution finished");
-
-  return (ModelOutput*)&s->output;
-}
-
-void model_free(ModelState* s) {
-  delete s->frame;
-  delete s->wide_frame;
+  return transform;
 }
 
 void fill_lead(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelOutputLeads &leads, int t_idx, float prob_t) {
@@ -128,7 +83,7 @@ void fill_lead(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelOutputL
   lead.setAStd(to_kj_array_ptr(lead_a_std));
 }
 
-void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMeta &meta_data) {
+void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMeta &meta_data, PublishState &ps) {
   std::array<float, DESIRE_LEN> desire_state_softmax;
   softmax(meta_data.desire_state_prob.array.data(), desire_state_softmax.data(), DESIRE_LEN);
 
@@ -137,7 +92,7 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMet
     softmax(meta_data.desire_pred_prob[i].array.data(), desire_pred_softmax.data() + (i * DESIRE_LEN), DESIRE_LEN);
   }
 
-  std::array<float, DISENGAGE_LEN> lat_long_t = {2,4,6,8,10};
+  std::array<float, DISENGAGE_LEN> lat_long_t = {2, 4, 6, 8, 10};
   std::array<float, DISENGAGE_LEN> gas_disengage_sigmoid, brake_disengage_sigmoid, steer_override_sigmoid,
                                    brake_3ms2_sigmoid, brake_4ms2_sigmoid, brake_5ms2_sigmoid;
   for (int i=0; i<DISENGAGE_LEN; i++) {
@@ -150,18 +105,18 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMet
     //gas_pressed_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].gas_pressed);
   }
 
-  std::memmove(prev_brake_5ms2_probs.data(), &prev_brake_5ms2_probs[1], 4*sizeof(float));
-  std::memmove(prev_brake_3ms2_probs.data(), &prev_brake_3ms2_probs[1], 2*sizeof(float));
-  prev_brake_5ms2_probs[4] = brake_5ms2_sigmoid[0];
-  prev_brake_3ms2_probs[2] = brake_3ms2_sigmoid[0];
+  std::memmove(ps.prev_brake_5ms2_probs.data(), &ps.prev_brake_5ms2_probs[1], 4*sizeof(float));
+  std::memmove(ps.prev_brake_3ms2_probs.data(), &ps.prev_brake_3ms2_probs[1], 2*sizeof(float));
+  ps.prev_brake_5ms2_probs[4] = brake_5ms2_sigmoid[0];
+  ps.prev_brake_3ms2_probs[2] = brake_3ms2_sigmoid[0];
 
   bool above_fcw_threshold = true;
-  for (int i=0; i<prev_brake_5ms2_probs.size(); i++) {
+  for (int i=0; i<ps.prev_brake_5ms2_probs.size(); i++) {
     float threshold = i < 2 ? FCW_THRESHOLD_5MS2_LOW : FCW_THRESHOLD_5MS2_HIGH;
-    above_fcw_threshold = above_fcw_threshold && prev_brake_5ms2_probs[i] > threshold;
+    above_fcw_threshold = above_fcw_threshold && ps.prev_brake_5ms2_probs[i] > threshold;
   }
-  for (int i=0; i<prev_brake_3ms2_probs.size(); i++) {
-    above_fcw_threshold = above_fcw_threshold && prev_brake_3ms2_probs[i] > FCW_THRESHOLD_3MS2;
+  for (int i=0; i<ps.prev_brake_3ms2_probs.size(); i++) {
+    above_fcw_threshold = above_fcw_threshold && ps.prev_brake_3ms2_probs[i] > FCW_THRESHOLD_3MS2;
   }
 
   auto disengage = meta.initDisengagePredictions();
@@ -179,8 +134,46 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMet
   meta.setHardBrakePredicted(above_fcw_threshold);
 }
 
+void fill_confidence(cereal::ModelDataV2::Builder &framed, PublishState &ps) {
+  if (framed.getFrameId() % (2*MODEL_FREQ) == 0) {
+    // update every 2s to match predictions interval
+    auto dbps = framed.getMeta().getDisengagePredictions().getBrakeDisengageProbs();
+    auto dgps = framed.getMeta().getDisengagePredictions().getGasDisengageProbs();
+    auto dsps = framed.getMeta().getDisengagePredictions().getSteerOverrideProbs();
+
+    float any_dp[DISENGAGE_LEN];
+    float dp_ind[DISENGAGE_LEN];
+
+    for (int i = 0; i < DISENGAGE_LEN; i++) {
+      any_dp[i] = 1 - ((1-dbps[i])*(1-dgps[i])*(1-dsps[i])); // any disengage prob
+    }
+
+    dp_ind[0] = any_dp[0];
+    for (int i = 0; i < DISENGAGE_LEN-1; i++) {
+      dp_ind[i+1] = (any_dp[i+1] - any_dp[i]) / (1 - any_dp[i]); // independent disengage prob for each 2s slice
+    }
+
+    // rolling buf for 2, 4, 6, 8, 10s
+    std::memmove(&ps.disengage_buffer[0], &ps.disengage_buffer[DISENGAGE_LEN], sizeof(float) * DISENGAGE_LEN * (DISENGAGE_LEN-1));
+    std::memcpy(&ps.disengage_buffer[DISENGAGE_LEN * (DISENGAGE_LEN-1)], &dp_ind[0], sizeof(float) * DISENGAGE_LEN);
+  }
+
+  float score = 0;
+  for (int i = 0; i < DISENGAGE_LEN; i++) {
+    score += ps.disengage_buffer[i*DISENGAGE_LEN+DISENGAGE_LEN-1-i] / DISENGAGE_LEN;
+  }
+
+  if (score < RYG_GREEN) {
+    framed.setConfidence(cereal::ModelDataV2::ConfidenceClass::GREEN);
+  } else if (score < RYG_YELLOW) {
+    framed.setConfidence(cereal::ModelDataV2::ConfidenceClass::YELLOW);
+  } else {
+    framed.setConfidence(cereal::ModelDataV2::ConfidenceClass::RED);
+  }
+}
+
 template<size_t size>
-void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<float, size> &t,
+void fill_xyzt(cereal::XYZTData::Builder xyzt, const std::array<float, size> &t,
                const std::array<float, size> &x, const std::array<float, size> &y, const std::array<float, size> &z) {
   xyzt.setT(to_kj_array_ptr(t));
   xyzt.setX(to_kj_array_ptr(x));
@@ -189,7 +182,7 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<flo
 }
 
 template<size_t size>
-void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<float, size> &t,
+void fill_xyzt(cereal::XYZTData::Builder xyzt, const std::array<float, size> &t,
                const std::array<float, size> &x, const std::array<float, size> &y, const std::array<float, size> &z,
                const std::array<float, size> &x_std, const std::array<float, size> &y_std, const std::array<float, size> &z_std) {
   fill_xyzt(xyzt, t, x, y, z);
@@ -206,7 +199,7 @@ void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelOutputPlanPredic
   std::array<float, TRAJECTORY_SIZE> acc_x, acc_y, acc_z;
   std::array<float, TRAJECTORY_SIZE> rot_rate_x, rot_rate_y, rot_rate_z;
 
-  for(int i=0; i<TRAJECTORY_SIZE; i++) {
+  for (int i=0; i<TRAJECTORY_SIZE; i++) {
     pos_x[i] = plan.mean[i].position.x;
     pos_y[i] = plan.mean[i].position.y;
     pos_z[i] = plan.mean[i].position.z;
@@ -293,7 +286,7 @@ void fill_road_edges(cereal::ModelDataV2::Builder &framed, const std::array<floa
   });
 }
 
-void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_outputs) {
+void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_outputs, PublishState &ps) {
   const auto &best_plan = net_outputs.plans.get_best_prediction();
   std::array<float, TRAJECTORY_SIZE> plan_t;
   std::fill_n(plan_t.data(), plan_t.size(), NAN);
@@ -321,7 +314,10 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
   fill_road_edges(framed, plan_t, net_outputs.road_edges);
 
   // meta
-  fill_meta(framed.initMeta(), net_outputs.meta);
+  fill_meta(framed.initMeta(), net_outputs.meta, ps);
+
+  // confidence
+  fill_confidence(framed, ps);
 
   // leads
   auto leads = framed.initLeadsV3(LEAD_MHP_SELECTION);
@@ -329,43 +325,58 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
   for (int i=0; i<LEAD_MHP_SELECTION; i++) {
     fill_lead(leads[i], net_outputs.leads, i, t_offsets[i]);
   }
+
+  // temporal pose
+  const auto &v_mean = net_outputs.temporal_pose.velocity_mean;
+  const auto &r_mean = net_outputs.temporal_pose.rotation_mean;
+  const auto &v_std = net_outputs.temporal_pose.velocity_std;
+  const auto &r_std = net_outputs.temporal_pose.rotation_std;
+  auto temporal_pose = framed.initTemporalPose();
+  temporal_pose.setTrans({v_mean.x, v_mean.y, v_mean.z});
+  temporal_pose.setRot({r_mean.x, r_mean.y, r_mean.z});
+  temporal_pose.setTransStd({exp(v_std.x), exp(v_std.y), exp(v_std.z)});
+  temporal_pose.setRotStd({exp(r_std.x), exp(r_std.y), exp(r_std.z)});
 }
 
-void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
-                   const ModelOutput &net_outputs, uint64_t timestamp_eof,
-                   float model_execution_time, kj::ArrayPtr<const float> raw_pred, const bool valid) {
+void fill_model_msg(MessageBuilder &msg, float *net_output_data, PublishState &ps, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
+                    uint64_t timestamp_eof, uint64_t timestamp_llk, float model_execution_time, const bool nav_enabled, const bool valid) {
   const uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
-  MessageBuilder msg;
   auto framed = msg.initEvent(valid).initModelV2();
   framed.setFrameId(vipc_frame_id);
   framed.setFrameIdExtra(vipc_frame_id_extra);
   framed.setFrameAge(frame_age);
   framed.setFrameDropPerc(frame_drop * 100);
   framed.setTimestampEof(timestamp_eof);
+  framed.setLocationMonoTime(timestamp_llk);
   framed.setModelExecutionTime(model_execution_time);
+  framed.setNavEnabled(nav_enabled);
   if (send_raw_pred) {
-    framed.setRawPredictions(raw_pred.asBytes());
+    framed.setRawPredictions(kj::ArrayPtr<const float>(net_output_data, NET_OUTPUT_SIZE).asBytes());
   }
-  fill_model(framed, net_outputs);
-  pm.send("modelV2", msg);
+  fill_model(framed, *((ModelOutput*) net_output_data), ps);
 }
 
-void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
-                     const ModelOutput &net_outputs, uint64_t timestamp_eof, const bool valid) {
-  MessageBuilder msg;
-  const auto &v_mean = net_outputs.pose.velocity_mean;
-  const auto &r_mean = net_outputs.pose.rotation_mean;
-  const auto &v_std = net_outputs.pose.velocity_std;
-  const auto &r_std = net_outputs.pose.rotation_std;
+void fill_pose_msg(MessageBuilder &msg, float *net_output_data, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames, uint64_t timestamp_eof, const bool valid) {
+    const ModelOutput &net_outputs = *((ModelOutput*) net_output_data);
+    const auto &v_mean = net_outputs.pose.velocity_mean;
+    const auto &r_mean = net_outputs.pose.rotation_mean;
+    const auto &t_mean = net_outputs.wide_from_device_euler.mean;
+    const auto &v_std = net_outputs.pose.velocity_std;
+    const auto &r_std = net_outputs.pose.rotation_std;
+    const auto &t_std = net_outputs.wide_from_device_euler.std;
+    const auto &road_transform_trans_mean = net_outputs.road_transform.position_mean;
+    const auto &road_transform_trans_std = net_outputs.road_transform.position_std;
 
-  auto posenetd = msg.initEvent(valid && (vipc_dropped_frames < 1)).initCameraOdometry();
-  posenetd.setTrans({v_mean.x, v_mean.y, v_mean.z});
-  posenetd.setRot({r_mean.x, r_mean.y, r_mean.z});
-  posenetd.setTransStd({exp(v_std.x), exp(v_std.y), exp(v_std.z)});
-  posenetd.setRotStd({exp(r_std.x), exp(r_std.y), exp(r_std.z)});
+    auto posenetd = msg.initEvent(valid && (vipc_dropped_frames < 1)).initCameraOdometry();
+    posenetd.setTrans({v_mean.x, v_mean.y, v_mean.z});
+    posenetd.setRot({r_mean.x, r_mean.y, r_mean.z});
+    posenetd.setWideFromDeviceEuler({t_mean.x, t_mean.y, t_mean.z});
+    posenetd.setRoadTransformTrans({road_transform_trans_mean.x, road_transform_trans_mean.y, road_transform_trans_mean.z});
+    posenetd.setTransStd({exp(v_std.x), exp(v_std.y), exp(v_std.z)});
+    posenetd.setRotStd({exp(r_std.x), exp(r_std.y), exp(r_std.z)});
+    posenetd.setWideFromDeviceEulerStd({exp(t_std.x), exp(t_std.y), exp(t_std.z)});
+    posenetd.setRoadTransformTransStd({exp(road_transform_trans_std.x), exp(road_transform_trans_std.y), exp(road_transform_trans_std.z)});
 
-  posenetd.setTimestampEof(timestamp_eof);
-  posenetd.setFrameId(vipc_frame_id);
-
-  pm.send("cameraOdometry", msg);
+    posenetd.setTimestampEof(timestamp_eof);
+    posenetd.setFrameId(vipc_frame_id);
 }

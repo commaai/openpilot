@@ -20,20 +20,13 @@ void Sidebar::drawMetric(QPainter &p, const QPair<QString, QString> &label, QCol
   p.drawRoundedRect(rect, 20, 20);
 
   p.setPen(QColor(0xff, 0xff, 0xff));
-  configFont(p, "Inter", 35, "SemiBold");
-
-  QRect label_rect = getTextRect(p, Qt::AlignCenter, label.first);
-  label_rect.setWidth(218);
-  label_rect.moveLeft(rect.left() + 22);
-  label_rect.moveTop(rect.top() + 19);
-  p.drawText(label_rect, Qt::AlignCenter, label.first);
-
-  label_rect.moveTop(rect.top() + 65);
-  p.drawText(label_rect, Qt::AlignCenter, label.second);
+  p.setFont(InterFont(35, QFont::DemiBold));
+  p.drawText(rect.adjusted(22, 0, 0, 0), Qt::AlignCenter, label.first + "\n" + label.second);
 }
 
-Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
+Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(false), settings_pressed(false) {
   home_img = loadPixmap("../assets/images/button_home.png", home_btn.size());
+  flag_img = loadPixmap("../assets/images/button_flag.png", home_btn.size());
   settings_img = loadPixmap("../assets/images/button_settings.png", settings_btn.size(), Qt::IgnoreAspectRatio);
 
   connect(this, &Sidebar::valueChanged, [=] { update(); });
@@ -47,15 +40,33 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"userFlag"});
 }
 
+void Sidebar::mousePressEvent(QMouseEvent *event) {
+  if (onroad && home_btn.contains(event->pos())) {
+    flag_pressed = true;
+    update();
+  } else if (settings_btn.contains(event->pos())) {
+    settings_pressed = true;
+    update();
+  }
+}
+
 void Sidebar::mouseReleaseEvent(QMouseEvent *event) {
+  if (flag_pressed || settings_pressed) {
+    flag_pressed = settings_pressed = false;
+    update();
+  }
   if (home_btn.contains(event->pos())) {
     MessageBuilder msg;
     msg.initEvent().initUserFlag();
     pm->send("userFlag", msg);
-  }
-  if (settings_btn.contains(event->pos())) {
+  } else if (settings_btn.contains(event->pos())) {
     emit openSettings();
   }
+}
+
+void Sidebar::offroadTransition(bool offroad) {
+  onroad = !offroad;
+  update();
 }
 
 void Sidebar::updateState(const UIState &s) {
@@ -73,7 +84,9 @@ void Sidebar::updateState(const UIState &s) {
   if (last_ping == 0) {
     connectStatus = ItemStatus{{tr("CONNECT"), tr("OFFLINE")}, warning_color};
   } else {
-    connectStatus = nanos_since_boot() - last_ping < 80e9 ? ItemStatus{{tr("CONNECT"), tr("ONLINE")}, good_color} : ItemStatus{{tr("CONNECT"), tr("ERROR")}, danger_color};
+    connectStatus = nanos_since_boot() - last_ping < 80e9
+                        ? ItemStatus{{tr("CONNECT"), tr("ONLINE")}, good_color}
+                        : ItemStatus{{tr("CONNECT"), tr("ERROR")}, danger_color};
   }
   setProperty("connectStatus", QVariant::fromValue(connectStatus));
 
@@ -102,11 +115,12 @@ void Sidebar::paintEvent(QPaintEvent *event) {
 
   p.fillRect(rect(), QColor(57, 57, 57));
 
-  // static imgs
-  p.setOpacity(0.65);
+  // buttons
+  p.setOpacity(settings_pressed ? 0.65 : 1.0);
   p.drawPixmap(settings_btn.x(), settings_btn.y(), settings_img);
+  p.setOpacity(onroad && flag_pressed ? 0.65 : 1.0);
+  p.drawPixmap(home_btn.x(), home_btn.y(), onroad ? flag_img : home_img);
   p.setOpacity(1.0);
-  p.drawPixmap(home_btn.x(), home_btn.y(), home_img);
 
   // network
   int x = 58;
@@ -117,7 +131,7 @@ void Sidebar::paintEvent(QPaintEvent *event) {
     x += 37;
   }
 
-  configFont(p, "Inter", 35, "Regular");
+  p.setFont(InterFont(35));
   p.setPen(QColor(0xff, 0xff, 0xff));
   const QRect r = QRect(50, 247, 100, 50);
   p.drawText(r, Qt::AlignCenter, net_type);

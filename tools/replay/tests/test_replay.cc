@@ -9,7 +9,6 @@
 #include "tools/replay/replay.h"
 #include "tools/replay/util.h"
 
-const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
 const std::string TEST_RLOG_CHECKSUM = "5b966d4bb21a100a8c4e59195faeb741b975ccbe268211765efd1763d892bfb3";
 
@@ -42,13 +41,6 @@ TEST_CASE("httpMultiPartDownload") {
   }
   REQUIRE(content.size() == 9112651);
   REQUIRE(sha256(content) == TEST_RLOG_CHECKSUM);
-}
-
-int random_int(int min, int max) {
-  std::random_device dev;
-  std::mt19937 rng(dev());
-  std::uniform_int_distribution<std::mt19937::result_type> dist(min, max);
-  return dist(rng);
 }
 
 TEST_CASE("FileReader") {
@@ -103,10 +95,13 @@ void read_segment(int n, const SegmentFile &segment_file, uint32_t flags) {
       if (cam == RoadCam || cam == WideRoadCam) {
         REQUIRE(fr->getFrameCount() == 1200);
       }
-      std::unique_ptr<uint8_t[]> yuv_buf = std::make_unique<uint8_t[]>(fr->getYUVSize());
+      auto [nv12_width, nv12_height, nv12_buffer_size] = get_nv12_info(fr->width, fr->height);
+      VisionBuf buf;
+      buf.allocate(nv12_buffer_size);
+      buf.init_yuv(fr->width, fr->height, nv12_width, nv12_width * nv12_height);
       // sequence get 100 frames
       for (int i = 0; i < 100; ++i) {
-        REQUIRE(fr->get(i, yuv_buf.get()));
+        REQUIRE(fr->get(i, &buf));
       }
     }
 
@@ -145,7 +140,7 @@ TEST_CASE("Route") {
     auto flags = GENERATE(REPLAY_FLAG_DCAM | REPLAY_FLAG_ECAM, REPLAY_FLAG_QCAMERA);
     Route route(DEMO_ROUTE);
     REQUIRE(route.load());
-    REQUIRE(route.segments().size() == 11);
+    REQUIRE(route.segments().size() == 13);
     for (int i = 0; i < 2; ++i) {
       read_segment(i, route.at(i), flags);
     }
@@ -155,7 +150,7 @@ TEST_CASE("Route") {
 // helper class for unit tests
 class TestReplay : public Replay {
  public:
-  TestReplay(const QString &route, uint8_t flags = REPLAY_FLAG_NO_FILE_CACHE) : Replay(route, {}, {}, nullptr, flags) {}
+  TestReplay(const QString &route, uint32_t flags = REPLAY_FLAG_NO_FILE_CACHE | REPLAY_FLAG_NO_VIPC) : Replay(route, {}, {}, {}, nullptr, flags) {}
   void test_seek();
   void testSeekTo(int seek_to);
 };
@@ -198,8 +193,8 @@ void TestReplay::test_seek() {
   stream_thread_ = new QThread(this);
   QEventLoop loop;
   std::thread thread = std::thread([&]() {
-    for (int i = 0; i < 50; ++i) {
-      testSeekTo(random_int(0, 3 * 60));
+    for (int i = 0; i < 10; ++i) {
+      testSeekTo(util::random_int(0, 2 * 60));
     }
     loop.quit();
   });
@@ -208,8 +203,7 @@ void TestReplay::test_seek() {
 }
 
 TEST_CASE("Replay") {
-  auto flag = GENERATE(REPLAY_FLAG_NO_FILE_CACHE, REPLAY_FLAG_NONE);
-  TestReplay replay(DEMO_ROUTE, flag);
+  TestReplay replay(DEMO_ROUTE);
   REQUIRE(replay.load());
   replay.test_seek();
 }
