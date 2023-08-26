@@ -162,8 +162,6 @@ SecurityType WifiManager::getSecurityType(const QVariantMap &properties) {
 }
 
 void WifiManager::connect(const Network &n, const QString &password, const QString &username) {
-//  connecting_to_network = n.ssid;
-//  seenNetworks[n.ssid].connected = ConnectedType::CONNECTING;
   forgetConnection(n.ssid);  // Clear all connections that may already exist to the network we are connecting
   Connection connection;
   connection["connection"]["type"] = "802-11-wireless";
@@ -258,9 +256,7 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
     forgetConnection(connecting_to_network);
     emit wrongPassword(connecting_to_network);
   } else if (new_state == NM_DEVICE_STATE_ACTIVATED) {
-//    connecting_to_network = ""; // TODO
     setCurrentConnecting("", connecting_to_network);
-//    refreshNetworks();
   }
 }
 
@@ -345,7 +341,6 @@ void WifiManager::initConnections() {
 std::optional<QDBusPendingCall> WifiManager::activateWifiConnection(const QString &ssid) {
   const QDBusObjectPath &path = getConnectionPath(ssid);
   if (!path.path().isEmpty()) {
-//    connecting_to_network = ssid;
     return asyncCall(NM_DBUS_PATH, NM_DBUS_INTERFACE, "ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
   }
   return std::nullopt;
