@@ -301,6 +301,7 @@ jobs:
       timeout-minutes: 30
       run: |
         ${{ env.RUN }} "CI=1 coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
+                        chmod -R 777 /tmp/comma_download_cache && \
                         coverage xml"
     - name: Print diff
       id: print-diff
