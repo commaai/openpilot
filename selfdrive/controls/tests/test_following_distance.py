@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import unittest
+
+import pytest
 from openpilot.common.params import Params
 from cereal import log
 
@@ -23,6 +25,7 @@ def run_following_distance_simulation(v_lead, t_end=100.0, e2e=False):
   return output[-1,2] - output[-1,1]
 
 
+@pytest.mark.parallel
 class TestFollowingDistance(unittest.TestCase):
   def test_following_distance(self):
     params = Params()

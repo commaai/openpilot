@@ -6,6 +6,7 @@ import unittest
 from collections import defaultdict, Counter
 from typing import List, Optional, Tuple
 from parameterized import parameterized_class
+import pytest
 
 from cereal import log, car
 from openpilot.common.basedir import BASEDIR
@@ -65,6 +66,7 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
 SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
 
+@pytest.mark.parallel
 class TestCarModelBase(unittest.TestCase):
   car_model: Optional[str] = None
   test_route: Optional[CarTestRoute] = None

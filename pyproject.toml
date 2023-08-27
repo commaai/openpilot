@@ -3,6 +3,9 @@ minversion = "6.0"
 addopts = "--ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=laika_repo/"
 python_files = "test_*.py"
 timeout = "30"  # you get this long by default
+markers = [
+    "parallel: mark tests as parallelizable (tests with no global state, so can be run in parallel)",
+]
 
 [tool.mypy]
 python_version = "3.11"

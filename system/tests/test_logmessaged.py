@@ -13,6 +13,9 @@ from openpilot.system.swaglog import cloudlog, SWAGLOG_DIR
 class TestLogmessaged(unittest.TestCase):
 
   def setUp(self):
+    for handler in cloudlog.handlers:
+      handler.flush()
+    
     if os.path.exists(SWAGLOG_DIR):
       shutil.rmtree(SWAGLOG_DIR)
 

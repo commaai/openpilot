@@ -3,6 +3,7 @@ import numpy as np
 import unittest
 
 from parameterized import parameterized_class
+import pytest
 from cereal import log
 from openpilot.common.params import Params
 from openpilot.selfdrive.controls.lib.drive_helpers import VCruiseHelper, V_CRUISE_MIN, V_CRUISE_MAX, V_CRUISE_INITIAL, IMPERIAL_INCREMENT
@@ -31,6 +32,7 @@ def run_cruise_simulation(cruise, e2e, t_end=20.):
   return output[-1, 3]
 
 
+@pytest.mark.parallel
 class TestCruiseSpeed(unittest.TestCase):
   def test_cruise_speed(self):
     params = Params()
