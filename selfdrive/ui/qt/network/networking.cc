@@ -1,4 +1,4 @@
-#include "selfdrive/ui/qt/offroad/networking.h"
+#include "selfdrive/ui/qt/network/networking.h"
 
 #include <algorithm>
 
