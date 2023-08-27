@@ -28,7 +28,7 @@ class CarState(CarStateBase):
     self.gear_msg_canfd = "GEAR_ALT" if CP.flags & HyundaiFlags.CANFD_ALT_GEARS else \
                           "GEAR_ALT_2" if CP.flags & HyundaiFlags.CANFD_ALT_GEARS_2 else \
                           "GEAR_SHIFTER"
-    if CP.carFingerprint in CANFD_CAR:
+    if CP.carFingerprint in (CANFD_CAR - CAN_CANFD_CAR):
       self.shifter_values = can_define.dv[self.gear_msg_canfd]["GEAR"]
     elif self.CP.carFingerprint in CAN_GEARS["use_cluster_gears"]:
       self.shifter_values = can_define.dv["CLU15"]["CF_Clu_Gear"]
@@ -238,7 +238,7 @@ class CarState(CarStateBase):
     return ret
 
   def get_can_parser(self, CP):
-    if CP.carFingerprint in CANFD_CAR:
+    if CP.carFingerprint in (CANFD_CAR - CAN_CANFD_CAR):
       return self.get_can_parser_canfd(CP)
 
     freq_mdps12 = 100 if CP.flags & HyundaiFlags.CAN_CANFD.value else 50
