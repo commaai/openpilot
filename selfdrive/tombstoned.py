@@ -38,7 +38,7 @@ def clear_apport_folder():
 def get_apport_stacktrace(fn):
   try:
     cmd = f'apport-retrace -s <(cat <(echo "Package: openpilot") "{fn}")'
-    return subprocess.check_output(cmd, shell=True, encoding='utf8', timeout=30, executable='/bin/bash')  # pylint: disable=unexpected-keyword-arg
+    return subprocess.check_output(cmd, shell=True, encoding='utf8', timeout=30, executable='/bin/bash')
   except subprocess.CalledProcessError:
     return "Error getting stacktrace"
   except subprocess.TimeoutExpired:
@@ -95,7 +95,7 @@ def report_tombstone_apport(fn):
 
         try:
           sig_num = int(line.strip().split(': ')[-1])
-          message += " (" + signal.Signals(sig_num).name + ")"  # pylint: disable=no-member
+          message += " (" + signal.Signals(sig_num).name + ")"
         except ValueError:
           pass
 

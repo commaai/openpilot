@@ -4,8 +4,8 @@ import shutil
 from datetime import datetime
 from collections import defaultdict
 
-import rpyc # pylint: disable=import-error
-from rpyc.utils.server import ThreadedServer  # pylint: disable=import-error
+import rpyc
+from rpyc.utils.server import ThreadedServer
 
 #from openpilot.common.params import Params
 import cereal.messaging as messaging

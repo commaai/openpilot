@@ -4,7 +4,7 @@
 #include <QtDBus>
 #include <QTimer>
 
-#include "selfdrive/ui/qt/offroad/networkmanager.h"
+#include "selfdrive/ui/qt/network/networkmanager.h"
 
 enum class SecurityType {
   OPEN,
@@ -85,6 +85,7 @@ private:
   void refreshNetworks();
   void activateModemConnection(const QDBusObjectPath &path);
   void addTetheringConnection();
+  void setCurrentConnecting(const QString &ssid);
 
 signals:
   void wrongPassword(const QString &ssid);

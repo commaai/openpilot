@@ -118,8 +118,8 @@ def hw_state_thread(end_event, hw_queue):
 
         # Log modem version once
         if AGNOS and ((modem_version is None) or (modem_nv is None)):
-          modem_version = HARDWARE.get_modem_version()  # pylint: disable=assignment-from-none
-          modem_nv = HARDWARE.get_modem_nv()  # pylint: disable=assignment-from-none
+          modem_version = HARDWARE.get_modem_version()
+          modem_nv = HARDWARE.get_modem_nv()
 
           if (modem_version is not None) and (modem_nv is not None):
             cloudlog.event("modem version", version=modem_version, nv=modem_nv)
@@ -165,7 +165,7 @@ def hw_state_thread(end_event, hw_queue):
     time.sleep(DT_TRML)
 
 
-def thermald_thread(end_event, hw_queue):
+def thermald_thread(end_event, hw_queue) -> None:
   pm = messaging.PubMaster(['deviceState'])
   sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "controlsState", "pandaStates"], poll=["pandaStates"])
 
@@ -177,10 +177,10 @@ def thermald_thread(end_event, hw_queue):
   startup_conditions: Dict[str, bool] = {}
   startup_conditions_prev: Dict[str, bool] = {}
 
-  off_ts = None
-  started_ts = None
+  off_ts: Optional[float] = None
+  started_ts: Optional[float] = None
   started_seen = False
-  startup_blocked_ts = None
+  startup_blocked_ts: Optional[float] = None
   thermal_status = ThermalStatus.yellow
 
   last_hw_state = HardwareState(
