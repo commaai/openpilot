@@ -1,6 +1,6 @@
 import crcmod
 from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
-from openpilot.selfdrive.car.hyundai.values import CAR, CHECKSUM, CAMERA_SCC_CAR
+from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, CAR, CHECKSUM, CAMERA_SCC_CAR
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
@@ -144,18 +144,14 @@ def create_lfahda_mfc(packer, frame, enabled, CP):
   }
 
   if can_canfd:
-    values.update({
-      "COUNTER": frame % 0xF
-    })
+    values["COUNTER"] = frame % 0xF
 
     dat = packer.make_can_msg("LFAHDA_MFC", bus, values)[2]
 
     # CRC Checksum
     checksum = hyundai_checksum(dat[1:8])
 
-    values.update({
-      "CHECKSUM": checksum,
-    })
+    values["CHECKSUM"] = checksum
 
   return packer.make_can_msg("LFAHDA_MFC", bus, values)
 

@@ -255,15 +255,16 @@ class CarState(CarStateBase):
       ("SAS11", 100),
     ]
 
-    if not CP.openpilotLongitudinalControl and CP.carFingerprint not in CAMERA_SCC_CAR and not (CP.flags & HyundaiFlags.CAN_CANFD.value):
-      messages += [
-        ("SCC11", 50),
-        ("SCC12", 50),
-      ]
-      if CP.flags & HyundaiFlags.USE_FCA.value:
-        messages.append(("FCA11", 50))
-    elif CP.flags & HyundaiFlags.CAN_CANFD.value:
-      messages.append(("SCC12", 50))
+    if not CP.openpilotLongitudinalControl:
+      if CP.flags & HyundaiFlags.CAN_CANFD.value:
+        messages.append(("SCC12", 50))
+      elif CP.carFingerprint not in CAMERA_SCC_CAR:
+        messages += [
+          ("SCC11", 50),
+          ("SCC12", 50),
+        ]
+        if CP.flags & HyundaiFlags.USE_FCA.value:
+          messages.append(("FCA11", 50))
 
     if CP.enableBsm:
       freq_lca11 = 20 if CP.flags & HyundaiFlags.CAN_CANFD.value else 50

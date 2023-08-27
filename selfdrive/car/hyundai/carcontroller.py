@@ -55,7 +55,6 @@ class CarController:
     self.apply_steer_last = 0
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
-    self.lkas11_cnt = -1
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
