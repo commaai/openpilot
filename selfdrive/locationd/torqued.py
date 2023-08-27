@@ -127,7 +127,8 @@ class TorqueEstimator:
     self.resets += 1.0
     self.decay = MIN_FILTER_DECAY
     self.raw_points = defaultdict(lambda: deque(maxlen=self.hist_len))
-    self.filtered_points = PointBuckets(x_bounds=STEER_BUCKET_BOUNDS, min_points=self.min_bucket_points, min_points_total=self.min_points_total, points_per_bucket=POINTS_PER_BUCKET)
+    self.filtered_points = PointBuckets(x_bounds=STEER_BUCKET_BOUNDS, min_points=self.min_bucket_points,
+                                        min_points_total=self.min_points_total, points_per_bucket=POINTS_PER_BUCKET)
 
   def estimate_params(self):
     points = self.filtered_points.get_points(self.fit_points)
