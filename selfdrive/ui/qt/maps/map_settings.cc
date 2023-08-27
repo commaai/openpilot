@@ -327,8 +327,8 @@ void NavManager::parseLocationsResponse(const QString &response, bool success) {
   auto remote_locations = doc.array();
   for (QJsonValueRef loc : remote_locations) {
     auto obj = loc.toObject();
-    auto newTime = convertTimestampToEpoch(obj["modified"].toString());
-    obj.insert("time", qMax(newTime, getLastActivity(obj)));
+    auto serverTime = convertTimestampToEpoch(obj["modified"].toString());
+    obj.insert("time", qMax(serverTime, getLastActivity(obj)));
     loc = obj;
   }
 
