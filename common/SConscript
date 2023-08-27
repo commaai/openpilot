@@ -12,6 +12,7 @@ common_libs = [
   'util.cc',
   'i2c.cc',
   'watchdog.cc',
+  'ratekeeper.cc'
 ]
 
 if arch != "Darwin":
@@ -26,10 +27,10 @@ files = [
 _gpucommon = fxn('gpucommon', files)
 Export('_common', '_gpucommon')
 
-if GetOption('test'):
-  env.Program('tests/test_util', ['tests/test_util.cc'], LIBS=[_common])
-  env.Program('tests/test_swaglog', ['tests/test_swaglog.cc'], LIBS=[_common, 'json11', 'zmq', 'pthread'])
+if GetOption('extras'):
+  env.Program('tests/test_common',
+              ['tests/test_runner.cc', 'tests/test_util.cc', 'tests/test_swaglog.cc', 'tests/test_ratekeeper.cc'],
+              LIBS=[_common, 'json11', 'zmq', 'pthread'])
 
 # Cython
-envCython.Program('clock.so', 'clock.pyx')
 envCython.Program('params_pyx.so', 'params_pyx.pyx', LIBS=envCython['LIBS'] + [_common, 'zmq', 'json11'])

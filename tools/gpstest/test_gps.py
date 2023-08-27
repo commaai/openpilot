@@ -3,11 +3,11 @@ import time
 import unittest
 import struct
 
-from common.params import Params
+from openpilot.common.params import Params
 import cereal.messaging as messaging
-import system.sensord.pigeond as pd
-from system.hardware import TICI
-from selfdrive.test.helpers import with_processes
+import openpilot.system.sensord.pigeond as pd
+from openpilot.system.hardware import TICI
+from openpilot.selfdrive.test.helpers import with_processes
 
 
 def read_events(service, duration_sec):

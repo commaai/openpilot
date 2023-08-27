@@ -1,11 +1,12 @@
 #pragma once
 
-#include <cassert>
 #include <pthread.h>
 
+#include <cassert>
 #include <cstdint>
 #include <cstdio>
 #include <memory>
+#include <string>
 
 #include <capnp/serialize.h>
 #include <kj/array.h>

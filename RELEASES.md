@@ -1,6 +1,7 @@
 Version 0.9.5 (202X-XX-XX)
 ========================
 * Hyundai Palisade (without HDA II) 2023 support thanks to sunnyhaibin!
+* Kia Sorento Hybrid 2023 support thanks to sunnyhaibin!
 * Kia Telluride (without HDA II) 2023 support thanks to sunnyhaibin!
 * Lexus IS 2023 support thanks to L3R5!
 

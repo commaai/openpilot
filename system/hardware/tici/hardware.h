@@ -2,6 +2,8 @@
 
 #include <cstdlib>
 #include <fstream>
+#include <map>
+#include <string>
 
 #include "common/params.h"
 #include "common/util.h"
@@ -15,19 +17,19 @@ public:
   static bool AGNOS() { return true; }
   static std::string get_os_version() {
     return "AGNOS " + util::read_file("/VERSION");
-  };
+  }
 
   static std::string get_name() {
     std::string devicetree_model = util::read_file("/sys/firmware/devicetree/base/model");
     return (devicetree_model.find("tizi") != std::string::npos) ? "tizi" : "tici";
-  };
+  }
 
   static cereal::InitData::DeviceType get_device_type() {
     return (get_name() == "tizi") ? cereal::InitData::DeviceType::TIZI : cereal::InitData::DeviceType::TICI;
-  };
+  }
 
-  static int get_voltage() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input").c_str()); };
-  static int get_current() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input").c_str()); };
+  static int get_voltage() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input").c_str()); }
+  static int get_current() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input").c_str()); }
 
   static std::string get_serial() {
     static std::string serial("");
@@ -47,8 +49,8 @@ public:
     return serial;
   }
 
-  static void reboot() { std::system("sudo reboot"); };
-  static void poweroff() { std::system("sudo poweroff"); };
+  static void reboot() { std::system("sudo reboot"); }
+  static void poweroff() { std::system("sudo poweroff"); }
   static void set_brightness(int percent) {
     std::string max = util::read_file("/sys/class/backlight/panel0-backlight/max_brightness");
 
@@ -57,14 +59,14 @@ public:
       brightness_control << (int)(percent * (std::stof(max)/100.)) << "\n";
       brightness_control.close();
     }
-  };
+  }
   static void set_display_power(bool on) {
     std::ofstream bl_power_control("/sys/class/backlight/panel0-backlight/bl_power");
     if (bl_power_control.is_open()) {
       bl_power_control << (on ? "0" : "4") << "\n";
       bl_power_control.close();
     }
-  };
+  }
   static void set_volume(float volume) {
     volume = util::map_val(volume, 0.f, 1.f, MIN_VOLUME, MAX_VOLUME);
 
@@ -99,6 +101,6 @@ public:
     return ret;
   }
 
-  static bool get_ssh_enabled() { return Params().getBool("SshEnabled"); };
-  static void set_ssh_enabled(bool enabled) { Params().putBool("SshEnabled", enabled); };
+  static bool get_ssh_enabled() { return Params().getBool("SshEnabled"); }
+  static void set_ssh_enabled(bool enabled) { Params().putBool("SshEnabled", enabled); }
 };

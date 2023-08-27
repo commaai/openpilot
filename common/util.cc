@@ -3,7 +3,6 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/resource.h>
-#include <dirent.h>
 
 #include <cassert>
 #include <cerrno>
@@ -251,6 +250,14 @@ std::string dir_name(std::string const &path) {
   size_t pos = path.find_last_of("/");
   if (pos == std::string::npos) return "";
   return path.substr(0, pos);
+}
+
+bool starts_with(const std::string &s1, const std::string &s2) {
+  return strncmp(s1.c_str(), s2.c_str(), s2.size()) == 0;
+}
+
+bool ends_with(const std::string &s1, const std::string &s2) {
+  return strcmp(s1.c_str() + (s1.size() - s2.size()), s2.c_str()) == 0;
 }
 
 std::string check_output(const std::string& command) {

@@ -753,6 +753,10 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
         <source>Start over</source>
         <translation>Recommencer</translation>
     </message>
+    <message>
+        <source>Select a language</source>
+        <translation>Choisir une langue</translation>
+    </message>
 </context>
 <context>
     <name>SetupWidget</name>

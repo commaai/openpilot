@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 from typing import NamedTuple, Optional
 
-from selfdrive.car.chrysler.values import CAR as CHRYSLER
-from selfdrive.car.gm.values import CAR as GM
-from selfdrive.car.ford.values import CAR as FORD
-from selfdrive.car.honda.values import CAR as HONDA
-from selfdrive.car.hyundai.values import CAR as HYUNDAI
-from selfdrive.car.nissan.values import CAR as NISSAN
-from selfdrive.car.mazda.values import CAR as MAZDA
-from selfdrive.car.subaru.values import CAR as SUBARU
-from selfdrive.car.toyota.values import CAR as TOYOTA
-from selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
-from selfdrive.car.tesla.values import CAR as TESLA
-from selfdrive.car.body.values import CAR as COMMA
+from openpilot.selfdrive.car.chrysler.values import CAR as CHRYSLER
+from openpilot.selfdrive.car.gm.values import CAR as GM
+from openpilot.selfdrive.car.ford.values import CAR as FORD
+from openpilot.selfdrive.car.honda.values import CAR as HONDA
+from openpilot.selfdrive.car.hyundai.values import CAR as HYUNDAI
+from openpilot.selfdrive.car.nissan.values import CAR as NISSAN
+from openpilot.selfdrive.car.mazda.values import CAR as MAZDA
+from openpilot.selfdrive.car.subaru.values import CAR as SUBARU
+from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
+from openpilot.selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
+from openpilot.selfdrive.car.tesla.values import CAR as TESLA
+from openpilot.selfdrive.car.body.values import CAR as COMMA
 
 # TODO: add routes for these cars
 non_tested_cars = [
@@ -23,11 +23,11 @@ non_tested_cars = [
   GM.EQUINOX,
   HYUNDAI.GENESIS_G90,
   HYUNDAI.IONIQ_6,
-  HYUNDAI.KIA_OPTIMA_H,
   HONDA.ODYSSEY_CHN,
   VOLKSWAGEN.CRAFTER_MK2,  # need a route from an ACC-equipped Crafter
   TOYOTA.RAV4_TSS2_2023,
   TOYOTA.RAV4H_TSS2_2023,
+  SUBARU.FORESTER_HYBRID,
 ]
 
 
@@ -110,6 +110,7 @@ routes = [
   CarTestRoute("e0e98335f3ebc58f|2021-03-07--16-38-29", HYUNDAI.KIA_CEED),
   CarTestRoute("7653b2bce7bcfdaa|2020-03-04--15-34-32", HYUNDAI.KIA_OPTIMA_G4),
   CarTestRoute("018654717bc93d7d|2022-09-19--23-11-10", HYUNDAI.KIA_OPTIMA_G4_FL, segment=0),
+  CarTestRoute("f9716670b2481438|2023-08-23--14-49-50", HYUNDAI.KIA_OPTIMA_H),
   CarTestRoute("c75a59efa0ecd502|2021-03-11--20-52-55", HYUNDAI.KIA_SELTOS),
   CarTestRoute("b3537035ffe6a7d6|2022-10-17--15-23-49", HYUNDAI.KIA_SPORTAGE_HYBRID_5TH_GEN),
   CarTestRoute("5b7c365c50084530|2020-04-15--16-13-24", HYUNDAI.SONATA),
@@ -119,6 +120,7 @@ routes = [
   CarTestRoute("36e10531feea61a4|2022-07-25--13-37-42", HYUNDAI.TUCSON_HYBRID_4TH_GEN),
   CarTestRoute("5875672fc1d4bf57|2020-07-23--21-33-28", HYUNDAI.KIA_SORENTO),
   CarTestRoute("1d0d000db3370fd0|2023-01-04--22-28-42", HYUNDAI.KIA_SORENTO_4TH_GEN, segment=5),
+  CarTestRoute("fc19648042eb6896|2023-08-16--11-43-27", HYUNDAI.KIA_SORENTO_HEV_4TH_GEN, segment=14),
   CarTestRoute("628935d7d3e5f4f7|2022-11-30--01-12-46", HYUNDAI.KIA_SORENTO_PHEV_4TH_GEN),
   CarTestRoute("9c917ba0d42ffe78|2020-04-17--12-43-19", HYUNDAI.PALISADE),
   CarTestRoute("f2cf0de0119d2a16|2023-03-03--21-13-05", HYUNDAI.PALISADE_2023),
@@ -240,8 +242,10 @@ routes = [
   CarTestRoute("8bf7e79a3ce64055|2021-05-24--09-36-27", SUBARU.IMPREZA_2020),
   CarTestRoute("1bbe6bf2d62f58a8|2022-07-14--17-11-43", SUBARU.OUTBACK, segment=10),
   CarTestRoute("c56e69bbc74b8fad|2022-08-18--09-43-51", SUBARU.LEGACY, segment=3),
+  CarTestRoute("f4e3a0c511a076f4|2022-08-04--16-16-48", SUBARU.CROSSTREK_HYBRID, segment=2),
   CarTestRoute("7fd1e4f3a33c1673|2022-12-04--15-09-53", SUBARU.FORESTER_2022, segment=4),
   CarTestRoute("f3b34c0d2632aa83|2023-07-23--20-43-25", SUBARU.OUTBACK_2023, segment=7),
+  CarTestRoute("99437cef6d5ff2ee|2023-03-13--21-21-38", SUBARU.ASCENT_2023, segment=7),
   # Pre-global, dashcam
   CarTestRoute("95441c38ae8c130e|2020-06-08--12-10-17", SUBARU.FORESTER_PREGLOBAL),
   CarTestRoute("df5ca7660000fba8|2020-06-16--17-37-19", SUBARU.LEGACY_PREGLOBAL),

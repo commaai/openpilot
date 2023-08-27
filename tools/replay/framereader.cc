@@ -2,9 +2,8 @@
 #include "tools/replay/util.h"
 
 #include <cassert>
-#include "libyuv.h"
-
-#include "cereal/visionipc/visionbuf.h"
+#include <algorithm>
+#include "third_party/libyuv/include/libyuv.h"
 
 #ifdef __APPLE__
 #define HW_DEVICE_TYPE AV_HWDEVICE_TYPE_VIDEOTOOLBOX
@@ -118,7 +117,6 @@ bool FrameReader::load(const std::byte *data, size_t size, bool no_hw_decoder, s
 
   width = (decoder_ctx->width + 3) & ~3;
   height = decoder_ctx->height;
-  visionbuf_compute_aligned_width_and_height(width, height, &aligned_width, &aligned_height);
 
   if (has_hw_decoder && !no_hw_decoder) {
     if (!initHardwareDecoder(HW_DEVICE_TYPE)) {
@@ -177,15 +175,15 @@ bool FrameReader::initHardwareDecoder(AVHWDeviceType hw_device_type) {
   return true;
 }
 
-bool FrameReader::get(int idx, uint8_t *yuv) {
-  assert(yuv != nullptr);
+bool FrameReader::get(int idx, VisionBuf *buf) {
+  assert(buf != nullptr);
   if (!valid_ || idx < 0 || idx >= packets.size()) {
     return false;
   }
-  return decode(idx, yuv);
+  return decode(idx, buf);
 }
 
-bool FrameReader::decode(int idx, uint8_t *yuv) {
+bool FrameReader::decode(int idx, VisionBuf *buf) {
   int from_idx = idx;
   if (idx != prev_idx + 1 && key_frames_count_ > 1) {
     // seeking to the nearest key frame
@@ -201,7 +199,7 @@ bool FrameReader::decode(int idx, uint8_t *yuv) {
   for (int i = from_idx; i <= idx; ++i) {
     AVFrame *f = decodeFrame(packets[i]);
     if (f && i == idx) {
-      return copyBuffers(f, yuv);
+      return copyBuffers(f, buf);
     }
   }
   return false;
@@ -233,22 +231,20 @@ AVFrame *FrameReader::decodeFrame(AVPacket *pkt) {
   }
 }
 
-bool FrameReader::copyBuffers(AVFrame *f, uint8_t *yuv) {
-  assert(f != nullptr && yuv != nullptr);
-  uint8_t *y = yuv;
-  uint8_t *uv = y + width * height;
+bool FrameReader::copyBuffers(AVFrame *f, VisionBuf *buf) {
+  assert(f != nullptr && buf != nullptr);
   if (hw_pix_fmt == HW_PIX_FMT) {
     for (int i = 0; i < height/2; i++) {
-      memcpy(y + (i*2 + 0)*width, f->data[0] + (i*2 + 0)*f->linesize[0], width);
-      memcpy(y + (i*2 + 1)*width, f->data[0] + (i*2 + 1)*f->linesize[0], width);
-      memcpy(uv + i*width, f->data[1] + i*f->linesize[1], width);
+      memcpy(buf->y + (i*2 + 0)*buf->stride, f->data[0] + (i*2 + 0)*f->linesize[0], width);
+      memcpy(buf->y + (i*2 + 1)*buf->stride, f->data[0] + (i*2 + 1)*f->linesize[0], width);
+      memcpy(buf->uv + i*buf->stride, f->data[1] + i*f->linesize[1], width);
     }
   } else {
     libyuv::I420ToNV12(f->data[0], f->linesize[0],
                        f->data[1], f->linesize[1],
                        f->data[2], f->linesize[2],
-                       y, width,
-                       uv, width,
+                       buf->y, buf->stride,
+                       buf->uv, buf->stride,
                        width, height);
   }
   return true;
