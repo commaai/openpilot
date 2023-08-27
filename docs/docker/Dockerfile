@@ -15,8 +15,8 @@ COPY ./openpilot ${OPENPILOT_PATH}/openpilot
 COPY ./body ${OPENPILOT_PATH}/body
 COPY ./third_party ${OPENPILOT_PATH}/third_party
 COPY ./site_scons ${OPENPILOT_PATH}/site_scons
-COPY ./laika ${OPENPILOT_PATH}/laika
 COPY ./laika_repo ${OPENPILOT_PATH}/laika_repo
+RUN ln -s ${OPENPILOT_PATH}/laika_repo ${OPENPILOT_PATH}/laika
 COPY ./rednose ${OPENPILOT_PATH}/rednose
 COPY ./rednose_repo ${OPENPILOT_PATH}/rednose_repo
 COPY ./tools ${OPENPILOT_PATH}/tools
