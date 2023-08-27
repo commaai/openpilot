@@ -15,6 +15,11 @@ static bool locationEqual(const QJsonValue &v1, const QJsonValue &v2) {
   return v1["latitude"] == v2["latitude"] && v1["longitude"] == v2["longitude"];
 }
 
+static qint64 convertTimestampToEpoch(const QString &timestamp) {
+  QDateTime dt = QDateTime::fromString(timestamp, Qt::ISODate);
+  return dt.isValid() ? dt.toSecsSinceEpoch() : 0;
+}
+
 MapSettings::MapSettings(bool closeable, QWidget *parent) : QFrame(parent) {
   setContentsMargins(0, 0, 0, 0);
   setAttribute(Qt::WA_NoMousePropagation);
@@ -322,7 +327,8 @@ void NavManager::parseLocationsResponse(const QString &response, bool success) {
   auto remote_locations = doc.array();
   for (QJsonValueRef loc : remote_locations) {
     auto obj = loc.toObject();
-    obj.insert("time", getLastActivity(obj));
+    auto serverTime = convertTimestampToEpoch(obj["modified"].toString());
+    obj.insert("time", qMax(serverTime, getLastActivity(obj)));
     loc = obj;
   }
 
