@@ -101,7 +101,7 @@ std::string generate_inp_data(string_data& data) {
   string_data.reserve(16);
   for (int i = 0; i < 128; i+=8) {
     std::string substr = inp_data.substr(i, 8);
-    string_data.push_back( (uint8_t)std::stoi(substr.c_str(), 0, 2));
+    string_data.push_back((uint8_t)std::stoi(substr.c_str(), 0, 2));
   }
 
   return string_data;

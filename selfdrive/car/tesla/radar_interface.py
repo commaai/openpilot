@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from cereal import car
 from opendbc.can.parser import CANParser
-from selfdrive.car.tesla.values import DBC, CANBUS
-from selfdrive.car.interfaces import RadarInterfaceBase
+from openpilot.selfdrive.car.tesla.values import DBC, CANBUS
+from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 
 RADAR_MSGS_A = list(range(0x310, 0x36E, 3))
 RADAR_MSGS_B = list(range(0x311, 0x36F, 3))
@@ -36,7 +36,7 @@ class RadarInterface(RadarInterfaceBase):
 
   def update(self, can_strings):
     if self.rcp is None:
-      return None
+      return super().update(None)
 
     values = self.rcp.update_strings(can_strings)
     self.updated_messages.update(values)

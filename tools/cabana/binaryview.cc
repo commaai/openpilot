@@ -1,5 +1,7 @@
 #include "tools/cabana/binaryview.h"
 
+#include <algorithm>
+
 #include <QFontDatabase>
 #include <QHeaderView>
 #include <QMouseEvent>

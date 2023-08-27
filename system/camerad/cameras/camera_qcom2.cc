@@ -6,12 +6,15 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include <algorithm>
 #include <atomic>
 #include <cassert>
 #include <cerrno>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <string>
+#include <vector>
 
 #include "media/cam_defs.h"
 #include "media/cam_isp.h"
@@ -194,7 +197,7 @@ static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
   unconditional_wait->delay = delay_ms;
   unconditional_wait->op_code = CAMERA_SENSOR_WAIT_OP_SW_UCND;
   return (struct cam_cmd_power *)(unconditional_wait + 1);
-};
+}
 
 int CameraState::sensors_init() {
   uint32_t cam_packet_handle = 0;
@@ -419,20 +422,20 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
 
   if (io_mem_handle != 0) {
     io_cfg[0].mem_handle[0] = io_mem_handle;
-		io_cfg[0].planes[0] = (struct cam_plane_cfg){
-		 .width = ci.frame_width,
-		 .height = ci.frame_height + ci.extra_height,
-		 .plane_stride = ci.frame_stride,
-		 .slice_height = ci.frame_height + ci.extra_height,
-		 .meta_stride = 0x0,    // YUV has meta(stride=0x400, size=0x5000)
-		 .meta_size = 0x0,
-		 .meta_offset = 0x0,
-		 .packer_config = 0x0,  // 0xb for YUV
-		 .mode_config = 0x0,    // 0x9ef for YUV
-		 .tile_config = 0x0,
-		 .h_init = 0x0,
-		 .v_init = 0x0,
-		};
+    io_cfg[0].planes[0] = (struct cam_plane_cfg){
+      .width = ci.frame_width,
+      .height = ci.frame_height + ci.extra_height,
+      .plane_stride = ci.frame_stride,
+      .slice_height = ci.frame_height + ci.extra_height,
+      .meta_stride = 0x0,  // YUV has meta(stride=0x400, size=0x5000)
+      .meta_size = 0x0,
+      .meta_offset = 0x0,
+      .packer_config = 0x0,  // 0xb for YUV
+      .mode_config = 0x0,    // 0x9ef for YUV
+      .tile_config = 0x0,
+      .h_init = 0x0,
+      .v_init = 0x0,
+    };
     io_cfg[0].format = CAM_FORMAT_MIPI_RAW_12;             // CAM_FORMAT_UBWC_TP10 for YUV
     io_cfg[0].color_space = CAM_COLOR_SPACE_BASE;          // CAM_COLOR_SPACE_BT601_FULL for YUV
     io_cfg[0].color_pattern = 0x5;                         // 0x0 for YUV
@@ -505,7 +508,7 @@ void CameraState::enqueue_buffer(int i, bool dp) {
 }
 
 void CameraState::enqueue_req_multi(int start, int n, bool dp) {
-  for (int i=start;i<start+n;++i) {
+  for (int i=start; i<start+n; ++i) {
     request_ids[(i - 1) % FRAME_BUF_COUNT] = i;
     enqueue_buffer((i - 1) % FRAME_BUF_COUNT, dp);
   }
@@ -725,7 +728,8 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
   LOGD("acquire csiphy dev");
 
   // config ISP
-  alloc_w_mmu_hdl(multi_cam_state->video0_fd, 984480, (uint32_t*)&buf0_handle, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, multi_cam_state->device_iommu, multi_cam_state->cdm_iommu);
+  alloc_w_mmu_hdl(multi_cam_state->video0_fd, 984480, (uint32_t*)&buf0_handle, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS |
+                  CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, multi_cam_state->device_iommu, multi_cam_state->cdm_iommu);
   config_isp(0, 0, 1, buf0_handle, 0);
 
   // config csiphy
@@ -1273,9 +1277,9 @@ void cameras_run(MultiCameraState *s) {
     if (ret == 0) {
       if (ev.type == V4L_EVENT_CAM_REQ_MGR_EVENT) {
         struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)ev.u.data;
-        // LOGD("v4l2 event: sess_hdl 0x%X, link_hdl 0x%X, frame_id %d, req_id %lld, timestamp 0x%llx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
         if (env_debug_frames) {
-          printf("sess_hdl 0x%6X, link_hdl 0x%6X, frame_id %lu, req_id %lu, timestamp %.2f ms, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp/1e6, event_data->u.frame_msg.sof_status);
+          printf("sess_hdl 0x%6X, link_hdl 0x%6X, frame_id %lu, req_id %lu, timestamp %.2f ms, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl,
+                 event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp/1e6, event_data->u.frame_msg.sof_status);
         }
 
         if (event_data->session_hdl == s->road_cam.session_handle) {

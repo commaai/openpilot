@@ -4,12 +4,12 @@ import shutil
 from datetime import datetime
 from collections import defaultdict
 
-import rpyc # pylint: disable=import-error
-from rpyc.utils.server import ThreadedServer  # pylint: disable=import-error
+import rpyc
+from rpyc.utils.server import ThreadedServer
 
-#from common.params import Params
+#from openpilot.common.params import Params
 import cereal.messaging as messaging
-from selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.manager.process_config import managed_processes
 from laika.lib.coordinates import ecef2geodetic
 
 DELTA = 0.001
