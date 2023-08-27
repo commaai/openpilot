@@ -9,7 +9,7 @@ class CanBus(CanBusBase):
 
     if hda2 is None:
       assert CP is not None
-      hda2 = CP.flags & HyundaiFlags.CANFD_HDA2.value or CP.flags & HyundaiFlags.CAN_CANFD_HDA2.value
+      hda2 = CP.flags & HyundaiFlags.CANFD_HDA2.value
 
     # On the CAN-FD platforms, the LKAS camera is on both A-CAN and E-CAN. HDA2 cars
     # have a different harness than the HDA1 and non-HDA variants in order to split
@@ -51,7 +51,7 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_steer):
     "NEW_SIGNAL_2": 0,
   }
 
-  if CP.flags & HyundaiFlags.CANFD_HDA2 or CP.flags & HyundaiFlags.CAN_CANFD_HDA2:
+  if CP.flags & HyundaiFlags.CANFD_HDA2:
     if CP.openpilotLongitudinalControl:
       ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
     ret.append(packer.make_can_msg("LKAS", CAN.ACAN, values))

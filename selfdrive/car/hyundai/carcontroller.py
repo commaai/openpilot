@@ -102,22 +102,21 @@ class CarController:
       if self.CP.flags & HyundaiFlags.ENABLE_BLINKERS:
         can_sends.append([0x7b1, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", self.CAN.ECAN])
 
-    can_canfd_hda2 = self.CP.flags & HyundaiFlags.CAN_CANFD_HDA2
-
     # CAN-FD platforms
-    if self.CP.carFingerprint in CANFD_CAR or can_canfd_hda2:
+    if self.CP.carFingerprint in CANFD_CAR:
       hda2 = self.CP.flags & HyundaiFlags.CANFD_HDA2
       hda2_long = hda2 and self.CP.openpilotLongitudinalControl
+      hda2_can_canfd = hda2 and self.CP.flags & HyundaiFlags.CAN_CANFD
 
       # steering control
       can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_steer))
 
       # disable LFA on HDA2
-      if self.frame % 5 == 0 and (hda2 or can_canfd_hda2):
+      if self.frame % 5 == 0 and hda2:
         can_sends.append(hyundaicanfd.create_cam_0x2a4(self.packer, self.CAN, CS.cam_0x2a4))
 
       # LFA and HDA icons
-      if self.frame % 5 == 0 and (not hda2 or hda2_long) and not can_canfd_hda2:
+      if self.frame % 5 == 0 and (not hda2 or hda2_long):
         can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, self.CAN, CC.enabled))
 
       # blinkers
@@ -133,7 +132,7 @@ class CarController:
           self.accel_last = accel
       else:
         # button presses
-        if can_canfd_hda2:
+        if hda2_can_canfd:
           if CC.cruiseControl.cancel:
             can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL, self.CP))
           elif CC.cruiseControl.resume:
