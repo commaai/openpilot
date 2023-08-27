@@ -1,6 +1,6 @@
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
-from openpilot.common.numpy_fast import interp
+from openpilot.common.numpy_fast import interp, clip
 from openpilot.common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_driver_steer_torque_limits
@@ -91,8 +91,12 @@ class CarController:
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = 0
         else:
-          self.apply_gas = int(round(interp(actuators.accel, self.params.GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
-          self.apply_brake = int(round(interp(actuators.accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
+          if actuators.gas is not None and actuators.brake is not None:
+            self.apply_brake = int(round(clip(actuators.brake, 0, self.params.MAX_BRAKE)))
+            self.apply_gas = int(round(clip(actuators.gas, self.params.INACTIVE_REGEN, self.params.MAX_GAS)))
+          else:
+            self.apply_gas = int(round(interp(actuators.accel, self.params.GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
+            self.apply_brake = int(round(interp(actuators.accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
           # Don't allow any gas above inactive regen while stopping
           # FIXME: brakes aren't applied immediately when enabling at a stop
           if stopping:

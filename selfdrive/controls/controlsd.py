@@ -86,7 +86,8 @@ class Controls:
         ignore += ['driverCameraState', 'managerState']
       self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
-                                     'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters', 'testJoystick'] + self.camera_packets,
+                                     'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
+                                     'liveGasParameters', 'testJoystick'] + self.camera_packets,
                                     ignore_alive=ignore, ignore_avg_freq=['radarState', 'testJoystick'])
 
     if CI is None:
@@ -576,6 +577,11 @@ class Controls:
         self.LaC.update_live_torque_params(torque_params.latAccelFactorFiltered, torque_params.latAccelOffsetFiltered,
                                            torque_params.frictionCoefficientFiltered)
 
+    # Update Gas Params
+    gas_params = self.sm['liveGasParameters']
+    if self.sm.all_checks(['liveGasParameters']):
+      self.LoC.update_live_gas_params(gas_params)
+
     lat_plan = self.sm['lateralPlan']
     long_plan = self.sm['longitudinalPlan']
 
@@ -636,6 +642,12 @@ class Controls:
         lac_log.steeringAngleDeg = CS.steeringAngleDeg
         lac_log.output = actuators.steer
         lac_log.saturated = abs(actuators.steer) >= 0.9
+
+    try:  # FIXME
+      pitch = self.sm['liveLocationKalman'].calibratedOrientationNED.value[1]
+    except IndexError:
+      pitch = 0.0
+    actuators.gas, actuators.brake = self.LoC.get_gas_brake(actuators.accel, CS.vEgo, pitch)
 
     if CS.steeringPressed:
       self.last_steering_pressed_frame = self.sm.frame

@@ -99,6 +99,7 @@ class CarInterface(CarInterfaceBase):
       ret.stoppingDecelRate = 2.0  # reach brake quickly after enabling
       ret.vEgoStopping = 0.25
       ret.vEgoStarting = 0.25
+      ret.gasCommandOffset = 1554
 
       if experimental_long:
         ret.pcmCruise = False
@@ -113,6 +114,7 @@ class CarInterface(CarInterfaceBase):
       # supports stop and go, but initial engage must (conservatively) be above 18mph
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.minSteerSpeed = 7 * CV.MPH_TO_MS
+      ret.gasCommandOffset = 1404
 
       # Tuning
       ret.longitudinalTuning.kpV = [2.4, 1.5]

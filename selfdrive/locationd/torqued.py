@@ -12,6 +12,8 @@ from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
+from openpilot.selfdrive.locationd.params_learner import PointBuckets
+
 
 HISTORY = 5  # secs
 POINTS_PER_BUCKET = 1500
@@ -29,7 +31,7 @@ STEER_MIN_THRESHOLD = 0.02
 MIN_FILTER_DECAY = 50
 MAX_FILTER_DECAY = 250
 LAT_ACC_THRESHOLD = 1
-STEER_BUCKET_BOUNDS = [(-0.5, -0.3), (-0.3, -0.2), (-0.2, -0.1), (-0.1, 0), (0, 0.1), (0.1, 0.2), (0.2, 0.3), (0.3, 0.5)]
+STEER_BUCKET_BOUNDS = [((-0.5, -0.3),), ((-0.3, -0.2),), ((-0.2, -0.1),), ((-0.1, 0),), ((0, 0.1),), ((0.1, 0.2),), ((0.2, 0.3),), ((0.3, 0.5),)]
 MIN_BUCKET_POINTS = np.array([100, 300, 500, 500, 500, 500, 300, 100])
 MIN_ENGAGE_BUFFER = 2  # secs
 
@@ -41,56 +43,6 @@ def slope2rot(slope):
   sin = np.sqrt(slope**2 / (slope**2 + 1))
   cos = np.sqrt(1 / (slope**2 + 1))
   return np.array([[cos, -sin], [sin, cos]])
-
-
-class NPQueue:
-  def __init__(self, maxlen, rowsize):
-    self.maxlen = maxlen
-    self.arr = np.empty((0, rowsize))
-
-  def __len__(self):
-    return len(self.arr)
-
-  def append(self, pt):
-    if len(self.arr) < self.maxlen:
-      self.arr = np.append(self.arr, [pt], axis=0)
-    else:
-      self.arr[:-1] = self.arr[1:]
-      self.arr[-1] = pt
-
-
-class PointBuckets:
-  def __init__(self, x_bounds, min_points, min_points_total):
-    self.x_bounds = x_bounds
-    self.buckets = {bounds: NPQueue(maxlen=POINTS_PER_BUCKET, rowsize=3) for bounds in x_bounds}
-    self.buckets_min_points = dict(zip(x_bounds, min_points, strict=True))
-    self.min_points_total = min_points_total
-
-  def bucket_lengths(self):
-    return [len(v) for v in self.buckets.values()]
-
-  def __len__(self):
-    return sum(self.bucket_lengths())
-
-  def is_valid(self):
-    return all(len(v) >= min_pts for v, min_pts in zip(self.buckets.values(), self.buckets_min_points.values(), strict=True)) \
-                                                                                and (self.__len__() >= self.min_points_total)
-
-  def add_point(self, x, y):
-    for bound_min, bound_max in self.x_bounds:
-      if (x >= bound_min) and (x < bound_max):
-        self.buckets[(bound_min, bound_max)].append([x, 1.0, y])
-        break
-
-  def get_points(self, num_points=None):
-    points = np.vstack([x.arr for x in self.buckets.values()])
-    if num_points is None:
-      return points
-    return points[np.random.choice(np.arange(len(points)), min(len(points), num_points), replace=False)]
-
-  def load_points(self, points):
-    for x, y in points:
-      self.add_point(x, y)
 
 
 class TorqueEstimator:
@@ -153,7 +105,7 @@ class TorqueEstimator:
             }
           initial_params['points'] = cache_ltp.points
           self.decay = cache_ltp.decay
-          self.filtered_points.load_points(initial_params['points'])
+          self.filtered_points.load_points([([x], y) for x, y in initial_params['points']])
           cloudlog.info("restored torque params from cache")
       except Exception:
         cloudlog.exception("failed to restore cached torque params")
@@ -175,7 +127,7 @@ class TorqueEstimator:
     self.resets += 1.0
     self.decay = MIN_FILTER_DECAY
     self.raw_points = defaultdict(lambda: deque(maxlen=self.hist_len))
-    self.filtered_points = PointBuckets(x_bounds=STEER_BUCKET_BOUNDS, min_points=self.min_bucket_points, min_points_total=self.min_points_total)
+    self.filtered_points = PointBuckets(x_bounds=STEER_BUCKET_BOUNDS, min_points=self.min_bucket_points, min_points_total=self.min_points_total, points_per_bucket=POINTS_PER_BUCKET)
 
   def estimate_params(self):
     points = self.filtered_points.get_points(self.fit_points)
@@ -216,7 +168,7 @@ class TorqueEstimator:
         steer = np.interp(t, self.raw_points['carControl_t'], self.raw_points['steer_torque'])
         lateral_acc = (vego * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
         if all(active) and (not any(steer_override)) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD) and (abs(lateral_acc) <= LAT_ACC_THRESHOLD):
-          self.filtered_points.add_point(float(steer), float(lateral_acc))
+          self.filtered_points.add_point([float(steer)], float(lateral_acc))
 
   def get_msg(self, valid=True, with_points=False):
     msg = messaging.new_message('liveTorqueParameters')
