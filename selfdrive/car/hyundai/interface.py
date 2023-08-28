@@ -38,7 +38,7 @@ class CarInterface(CarInterfaceBase):
       # detect HDA2 with ADAS Driving ECU
       if hda2:
         ret.flags |= HyundaiFlags.CANFD_HDA2.value
-        if 0x50 not in fingerprint[CAN.CAM]:
+        if 0x110 in fingerprint[CAN.CAM]:
           ret.flags |= HyundaiFlags.CANFD_HDA2_ALT_STEERING.value
       else:
         # non-HDA2
