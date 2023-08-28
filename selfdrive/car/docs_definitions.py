@@ -176,8 +176,10 @@ CarFootnote = namedtuple("CarFootnote", ["text", "column", "docs_only", "shop_fo
 
 class CommonFootnote(Enum):
   EXP_LONG_AVAIL = CarFootnote(
-    "Experimental openpilot longitudinal control is available behind a toggle; " +
-    "the toggle is only available in non-release branches such as `devel` or `master-ci`. ",
+    "openpilot Longitudinal Control (Alpha) is available behind a toggle;" +
+    "the toggle is only available in non-release branches such as `devel` or `master-ci`." +
+    "For example, to install the `devel` branch, use `installer.comma.ai/commaai/devel`" +
+    "as the software URL in the comma three or 3X setup.",
     Column.LONGITUDINAL, docs_only=True)
   EXP_LONG_DSU = CarFootnote(
     "By default, this car will use the stock Adaptive Cruise Control (ACC) for longitudinal control. " +
