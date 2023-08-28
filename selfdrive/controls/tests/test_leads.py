@@ -14,7 +14,7 @@ class TestLeads(unittest.TestCase):
     def single_iter_pkg():
       # single iter package, with meaningless cans and empty carState/modelV2
       msgs = []
-      for i in range(5):
+      for _ in range(5):
         can = messaging.new_message("can", 1)
         cs = messaging.new_message("carState")
         msgs.append(can.as_reader())
