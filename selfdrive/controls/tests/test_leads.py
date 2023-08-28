@@ -31,6 +31,6 @@ class TestLeads(unittest.TestCase):
 
     self.assertTrue(len(states) == 0 or all(failures))
 
-  
+
 if __name__ == "__main__":
   unittest.main()
