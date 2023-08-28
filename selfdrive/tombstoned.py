@@ -9,11 +9,11 @@ import time
 import glob
 from typing import NoReturn
 
-from common.file_helpers import mkdirs_exists_ok
-from system.loggerd.config import ROOT
-import selfdrive.sentry as sentry
-from system.swaglog import cloudlog
-from system.version import get_commit
+from openpilot.common.file_helpers import mkdirs_exists_ok
+from openpilot.system.loggerd.config import ROOT
+import openpilot.selfdrive.sentry as sentry
+from openpilot.system.swaglog import cloudlog
+from openpilot.system.version import get_commit
 
 MAX_SIZE = 1_000_000 * 100  # allow up to 100M
 MAX_TOMBSTONE_FN_LEN = 62  # 85 - 23 ("<dongle id>/crash/")
@@ -38,7 +38,7 @@ def clear_apport_folder():
 def get_apport_stacktrace(fn):
   try:
     cmd = f'apport-retrace -s <(cat <(echo "Package: openpilot") "{fn}")'
-    return subprocess.check_output(cmd, shell=True, encoding='utf8', timeout=30, executable='/bin/bash')  # pylint: disable=unexpected-keyword-arg
+    return subprocess.check_output(cmd, shell=True, encoding='utf8', timeout=30, executable='/bin/bash')
   except subprocess.CalledProcessError:
     return "Error getting stacktrace"
   except subprocess.TimeoutExpired:
@@ -95,7 +95,7 @@ def report_tombstone_apport(fn):
 
         try:
           sig_num = int(line.strip().split(': ')[-1])
-          message += " (" + signal.Signals(sig_num).name + ")"  # pylint: disable=no-member
+          message += " (" + signal.Signals(sig_num).name + ")"
         except ValueError:
           pass
 

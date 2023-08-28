@@ -1,7 +1,11 @@
 #pragma once
 
 #include <atomic>
+#include <map>
+#include <memory>
 #include <mutex>
+#include <tuple>
+#include <vector>
 
 #include <QFuture>
 #include <QLabel>

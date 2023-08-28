@@ -354,33 +354,6 @@
         <source>hr</source>
         <translation>hr</translation>
     </message>
-    <message>
-        <source>km</source>
-        <translation>km</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>mi</translation>
-    </message>
-</context>
-<context>
-    <name>MapInstructions</name>
-    <message>
-        <source> km</source>
-        <translation> km</translation>
-    </message>
-    <message>
-        <source> m</source>
-        <translation> m</translation>
-    </message>
-    <message>
-        <source> mi</source>
-        <translation> milha</translation>
-    </message>
-    <message>
-        <source> ft</source>
-        <translation> pés</translation>
-    </message>
 </context>
 <context>
     <name>MapSettings</name>
@@ -621,6 +594,22 @@
             <numerusform>há %n dias</numerusform>
         </translation>
     </message>
+    <message>
+        <source>km</source>
+        <translation>km</translation>
+    </message>
+    <message>
+        <source>m</source>
+        <translation>m</translation>
+    </message>
+    <message>
+        <source>mi</source>
+        <translation>milha</translation>
+    </message>
+    <message>
+        <source>ft</source>
+        <translation>pés</translation>
+    </message>
 </context>
 <context>
     <name>Reset</name>
@@ -763,6 +752,10 @@ Isso pode levar até um minuto.</translation>
     <message>
         <source>Something went wrong. Reboot the device.</source>
         <translation>Algo deu errado. Reinicie o dispositivo.</translation>
+    </message>
+    <message>
+        <source>Select a language</source>
+        <translation>Selecione o Idioma</translation>
     </message>
 </context>
 <context>

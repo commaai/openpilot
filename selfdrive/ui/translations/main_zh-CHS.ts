@@ -353,33 +353,6 @@
         <source>hr</source>
         <translation>小时</translation>
     </message>
-    <message>
-        <source>km</source>
-        <translation>km</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>mi</translation>
-    </message>
-</context>
-<context>
-    <name>MapInstructions</name>
-    <message>
-        <source> km</source>
-        <translation> km</translation>
-    </message>
-    <message>
-        <source> m</source>
-        <translation> m</translation>
-    </message>
-    <message>
-        <source> mi</source>
-        <translation> mi</translation>
-    </message>
-    <message>
-        <source> ft</source>
-        <translation> ft</translation>
-    </message>
 </context>
 <context>
     <name>MapSettings</name>
@@ -617,6 +590,22 @@
             <numerusform>%n 天前</numerusform>
         </translation>
     </message>
+    <message>
+        <source>km</source>
+        <translation>km</translation>
+    </message>
+    <message>
+        <source>m</source>
+        <translation>m</translation>
+    </message>
+    <message>
+        <source>mi</source>
+        <translation>mi</translation>
+    </message>
+    <message>
+        <source>ft</source>
+        <translation>ft</translation>
+    </message>
 </context>
 <context>
     <name>Reset</name>
@@ -759,6 +748,10 @@ This may take up to a minute.</source>
     <message>
         <source>Something went wrong. Reboot the device.</source>
         <translation>发生了一些错误。请重新启动您的设备。</translation>
+    </message>
+    <message>
+        <source>Select a language</source>
+        <translation>选择语言</translation>
     </message>
 </context>
 <context>

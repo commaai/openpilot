@@ -6,8 +6,8 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 
 from cereal.services import service_list
-from tools.lib.logreader import LogReader
-from tools.lib.route import Route
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.route import Route
 
 MIN_SIZE = 0.5  # Percent size of total to show as separate entry
 

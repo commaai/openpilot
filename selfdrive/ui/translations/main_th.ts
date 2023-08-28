@@ -353,33 +353,6 @@
         <source>hr</source>
         <translation>ชม.</translation>
     </message>
-    <message>
-        <source>km</source>
-        <translation>กม.</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>ไมล์</translation>
-    </message>
-</context>
-<context>
-    <name>MapInstructions</name>
-    <message>
-        <source> km</source>
-        <translation> กม.</translation>
-    </message>
-    <message>
-        <source> m</source>
-        <translation> ม.</translation>
-    </message>
-    <message>
-        <source> mi</source>
-        <translation> ไมล์</translation>
-    </message>
-    <message>
-        <source> ft</source>
-        <translation> ฟุต</translation>
-    </message>
 </context>
 <context>
     <name>MapSettings</name>
@@ -617,6 +590,22 @@
             <numerusform>%n วันที่แล้ว</numerusform>
         </translation>
     </message>
+    <message>
+        <source>km</source>
+        <translation>กม.</translation>
+    </message>
+    <message>
+        <source>m</source>
+        <translation>ม.</translation>
+    </message>
+    <message>
+        <source>mi</source>
+        <translation>ไมล์</translation>
+    </message>
+    <message>
+        <source>ft</source>
+        <translation>ฟุต</translation>
+    </message>
 </context>
 <context>
     <name>Reset</name>
@@ -759,6 +748,10 @@ This may take up to a minute.</source>
     <message>
         <source>No custom software found at this URL.</source>
         <translation>ไม่พบซอฟต์แวร์ที่กำหนดเองที่ URL นี้</translation>
+    </message>
+    <message>
+        <source>Select a language</source>
+        <translation>เลือกภาษา</translation>
     </message>
 </context>
 <context>

@@ -8,10 +8,10 @@ import subprocess
 import numpy as np
 
 import cereal.messaging as messaging
-from system.hardware import TICI
-from system.sensord.rawgps.rawgpsd import at_cmd, wait_for_modem
-from selfdrive.manager.process_config import managed_processes
-from common.transformations.coordinates import ecef_from_geodetic
+from openpilot.system.hardware import TICI
+from openpilot.system.sensord.rawgps.rawgpsd import at_cmd, wait_for_modem
+from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.common.transformations.coordinates import ecef_from_geodetic
 
 GOOD_SIGNAL = bool(int(os.getenv("GOOD_SIGNAL", '0')))
 

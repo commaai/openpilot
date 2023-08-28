@@ -3,8 +3,8 @@ import time
 import unittest
 import numpy as np
 
-from system.hardware import TICI
-from system.hardware.tici.hardware import Tici
+from openpilot.system.hardware import TICI
+from openpilot.system.hardware.tici.hardware import Tici
 
 HARDWARE = Tici()
 

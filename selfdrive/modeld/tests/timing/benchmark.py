@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 # type: ignore
-# pylint: skip-file
 
 import os
 import time
 import numpy as np
 
 import cereal.messaging as messaging
-from selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.manager.process_config import managed_processes
 
 
 N = int(os.getenv("N", "5"))

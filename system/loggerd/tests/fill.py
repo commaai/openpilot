@@ -3,8 +3,8 @@
 
 from pathlib import Path
 
-from system.loggerd.config import ROOT, get_available_percent
-from system.loggerd.tests.loggerd_tests_common import create_random_file
+from openpilot.system.loggerd.config import ROOT, get_available_percent
+from openpilot.system.loggerd.tests.loggerd_tests_common import create_random_file
 
 
 if __name__ == "__main__":
