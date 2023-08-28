@@ -7,7 +7,7 @@
 
 const int FACE_IMG_SIZE = 130;
 
-DriverViewWindow::DriverViewWindow(QWidget* parent) : QDialogBase(parent) {
+DriverViewWindow::DriverViewWindow(QWidget* parent) : DialogBase(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
   layout = new QStackedLayout(this);
   layout->setStackingMode(QStackedLayout::StackAll);
@@ -20,11 +20,11 @@ DriverViewWindow::DriverViewWindow(QWidget* parent) : QDialogBase(parent) {
   layout->addWidget(scene);
   layout->setCurrentWidget(scene);
 
-  QObject::connect(device(), &Device::interactiveTimeout, this, &QDialogBase::accept);
+  QObject::connect(device(), &Device::interactiveTimeout, this, &DialogBase::accept);
 }
 
 void DriverViewWindow::mouseReleaseEvent(QMouseEvent* e) {
-  QDialogBase::accept();
+  DialogBase::accept();
 }
 
 DriverViewScene::DriverViewScene(QWidget* parent) : QWidget(parent) {

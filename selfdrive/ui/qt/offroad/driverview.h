@@ -25,7 +25,7 @@ protected:
   bool frame_updated = false;
 };
 
-class DriverViewWindow : public QDialogBase {
+class DriverViewWindow : public DialogBase {
   Q_OBJECT
 
 public:
