@@ -2,7 +2,7 @@ FROM ghcr.io/commaai/openpilot-base:latest
 
 ENV PYTHONUNBUFFERED 1
 
-ENV OPENPILOT_PATH /home/batman/openpilot/
+ENV OPENPILOT_PATH /tmp/openpilot
 ENV PYTHONPATH ${OPENPILOT_PATH}:${PYTHONPATH}
 ENV POETRY_VIRUALENVS_CREATE false
 
@@ -15,8 +15,8 @@ COPY ./openpilot ${OPENPILOT_PATH}/openpilot
 COPY ./body ${OPENPILOT_PATH}/body
 COPY ./third_party ${OPENPILOT_PATH}/third_party
 COPY ./site_scons ${OPENPILOT_PATH}/site_scons
-COPY ./laika ${OPENPILOT_PATH}/laika
 COPY ./laika_repo ${OPENPILOT_PATH}/laika_repo
+RUN ln -s ${OPENPILOT_PATH}/laika_repo ${OPENPILOT_PATH}/laika
 COPY ./rednose ${OPENPILOT_PATH}/rednose
 COPY ./rednose_repo ${OPENPILOT_PATH}/rednose_repo
 COPY ./tools ${OPENPILOT_PATH}/tools
@@ -29,7 +29,7 @@ COPY ./selfdrive ${OPENPILOT_PATH}/selfdrive
 COPY ./system ${OPENPILOT_PATH}/system
 COPY ./*.md ${OPENPILOT_PATH}/
 
-RUN --mount=type=bind,source=.ci_cache/scons_cache,target=/tmp/scons_cache,rw scons -j$(nproc)
+RUN --mount=type=bind,source=.ci_cache/scons_cache,target=/tmp/scons_cache,rw scons -j$(nproc) --cache-readonly
 
 RUN apt update && apt install doxygen -y
 COPY ./docs ${OPENPILOT_PATH}/docs
@@ -38,5 +38,5 @@ WORKDIR ${OPENPILOT_PATH}/docs
 RUN make html
 
 FROM nginx:1.21
-COPY --from=0 /home/batman/openpilot/build/docs/html /usr/share/nginx/html
+COPY --from=0 /tmp/openpilot/build/docs/html /usr/share/nginx/html
 COPY ./docs/docker/nginx.conf /etc/nginx/conf.d/default.conf
