@@ -10,7 +10,7 @@ from selfdrive.car.toyota.values import CAR as TOYOTA
 class TestLeads(unittest.TestCase):
   def test_radar_fault(self):
     # if there's no radar-related can traffic, radard should either not respond or respond with an error
-    # this is tighly coupled with underlying car radar_interface implementation, but it's a good sanity check
+    # this is tightly coupled with underlying car radar_interface implementation, but it's a good sanity check
     def single_iter_pkg():
       # single iter package, with meaningless cans and empty carState/modelV2
       msgs = []
