@@ -23,7 +23,7 @@ jobs:
           delete-branch: ${{ github.event.pull_request.head.repo.full_name == 'commaai/openpilot' }} # only delete branches on the main repo
           exempt-pr-labels: "work in progress,needs testing" # if wip or it needs testing from the community, don't mark as stale
           days-before-pr-stale: ${{ env.DAYS_BEFORE_PR_STALE }}
-          days-before-pr-close: ${{ env.DAYS_BEFORE_PR_STALE }}
+          days-before-pr-close: ${{ env.DAYS_BEFORE_PR_CLOSE }}
 
           # issue config
           days-before-issue-stale: -1 # ignore issues for now
