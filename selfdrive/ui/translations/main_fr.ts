@@ -860,7 +860,7 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     <name>SoftwarePanel</name>
     <message>
         <source>Updates are only downloaded while the car is off.</source>
-        <translation>MàJ téléchargées si la voiture est éteinte.</translation>
+        <translation>Les MàJ sont téléchargées uniquement si la voiture est éteinte.</translation>
     </message>
     <message>
         <source>Current Version</source>
