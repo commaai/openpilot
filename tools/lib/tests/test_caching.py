@@ -1,18 +1,24 @@
 #!/usr/bin/env python3
 import os
-import shutil
 import unittest
+import tempfile
+from unittest import mock
 
-os.environ["COMMA_CACHE"] = "/tmp/__test_cache__"
-from openpilot.tools.lib.url_file import URLFile, CACHE_DIR
+from openpilot.tools.lib.url_file import URLFile
 
 
 class TestFileDownload(unittest.TestCase):
+  def setUp(self):
+    self.temp_dir = tempfile.TemporaryDirectory()
+    self.cache_dir_patch = mock.patch("openpilot.tools.lib.url_file.CACHE_DIR", self.temp_dir.name)
+    self.cache_dir_patch.start()
+
+  def tearDown(self):
+    self.temp_dir.cleanup()
+    self.cache_dir_patch.stop()
 
   def compare_loads(self, url, start=0, length=None):
     """Compares range between cached and non cached version"""
-    shutil.rmtree(CACHE_DIR)
-
     file_cached = URLFile(url, cache=True)
     file_downloaded = URLFile(url, cache=False)
 
