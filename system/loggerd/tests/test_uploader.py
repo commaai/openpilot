@@ -14,7 +14,7 @@ from openpilot.system.loggerd.uploader import uploader_fn, UPLOAD_ATTR_NAME, UPL
 from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase
 
 
-class TestLogHandler(logging.Handler):
+class FakeLogHandler(logging.Handler):
   def __init__(self):
     logging.Handler.__init__(self)
     self.reset()
@@ -33,7 +33,7 @@ class TestLogHandler(logging.Handler):
     except Exception:
       pass
 
-log_handler = TestLogHandler()
+log_handler = FakeLogHandler()
 cloudlog.addHandler(log_handler)
 
 
