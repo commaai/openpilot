@@ -59,7 +59,7 @@ class CarController:
   def create_button_messages(self, CC, CS, can_sends, use_clu11):
     # Determine which messages to send button commands to based on the platform's primary cruise button messages
     if use_clu11:
-      # Platforms that has CLU11|0x4F1 (mainly CAN platforms)
+      # Platforms that have CLU11|0x4F1 (mainly CAN platforms)
       if CC.cruiseControl.cancel:
         can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL, self.CP.carFingerprint))
       elif CC.cruiseControl.resume:
