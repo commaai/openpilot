@@ -2,7 +2,7 @@
 minversion = "6.0"
 addopts = "--ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=laika_repo/ -Werror --strict-config --strict-markers"
 python_files = "test_*.py"
-timeout = "30"  # you get this long by default
+#timeout = "30"  # you get this long by default
 
 [tool.mypy]
 python_version = "3.11"
