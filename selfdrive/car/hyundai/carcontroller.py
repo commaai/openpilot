@@ -167,7 +167,7 @@ class CarController:
     self.frame += 1
     return new_actuators, can_sends
 
-  def create_button_messages(self, CC, CS, use_clu11):
+  def create_button_messages(self, CC: car.CarControl, CS: car.CarState, use_clu11: bool):
     can_sends = []
     if use_clu11:
       if CC.cruiseControl.cancel:
