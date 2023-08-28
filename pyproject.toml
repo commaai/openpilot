@@ -1,8 +1,8 @@
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=laika_repo/"
+addopts = "--ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=laika_repo/ -Werror --strict-config --strict-markers"
 python_files = "test_*.py"
-timeout = "30"  # you get this long by default
+#timeout = "30"  # you get this long by default
 
 [tool.mypy]
 python_version = "3.11"
@@ -124,6 +124,8 @@ pytest = "*"
 pytest-cov = "*"
 pytest-subtests = "*"
 pytest-xdist = "*"
+pytest-timeout = "*"
+pytest-timeouts = "*"
 scipy = "*"
 sphinx = "*"
 sphinx-rtd-theme = "*"
