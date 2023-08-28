@@ -56,8 +56,10 @@ class CarController:
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
 
-  def create_button_messages(self, CC, CS, can_sends, can_platform):
-    if can_platform:
+  def create_button_messages(self, CC, CS, can_sends, use_clu11):
+    # Determine which messages to send button commands to based on the platform's primary cruise button messages
+    if use_clu11:
+      # Platforms that has CLU11|0x4F1 (mainly CAN platforms)
       if CC.cruiseControl.cancel:
         can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL, self.CP.carFingerprint))
       elif CC.cruiseControl.resume:
@@ -68,6 +70,7 @@ class CarController:
           if (self.frame - self.last_button_frame) * DT_CTRL >= 0.15:
             self.last_button_frame = self.frame
     else:
+      # Platforms that do not have CLU11|0x4F1 (mainly CAN-FD platforms)
       if (self.frame - self.last_button_frame) * DT_CTRL > 0.25:
         # cruise cancel
         if CC.cruiseControl.cancel:
@@ -166,7 +169,7 @@ class CarController:
           self.accel_last = accel
       else:
         # button presses
-        can_sends.extend(self.create_button_messages(CC, CS, can_sends, can_fd=True))
+        can_sends.extend(self.create_button_messages(CC, CS, can_sends, use_clu11=False))
     else:
       can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, apply_steer_req,
                                                 torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled,
@@ -174,7 +177,7 @@ class CarController:
                                                 left_lane_warning, right_lane_warning))
 
       if not self.CP.openpilotLongitudinalControl:
-        can_sends.extend(self.create_button_messages(CC, CS, can_sends, can=True))
+        can_sends.extend(self.create_button_messages(CC, CS, can_sends, use_clu11=True))
 
       if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
         # TODO: unclear if this is needed
