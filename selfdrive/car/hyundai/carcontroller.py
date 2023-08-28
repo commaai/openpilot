@@ -56,45 +56,6 @@ class CarController:
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
 
-  def create_button_messages(self, CC, CS, use_clu11):
-    can_sends = []
-    # Determine which messages to send button commands to based on the platform's primary cruise button messages
-    if use_clu11:
-      # Platforms that use CLU11|0x4F1 (mainly CAN platforms)
-      if CC.cruiseControl.cancel:
-        can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL, self.CP.carFingerprint))
-      elif CC.cruiseControl.resume:
-        # send resume at a max freq of 10Hz
-        if (self.frame - self.last_button_frame) * DT_CTRL > 0.1:
-          # send 25 messages at a time to increases the likelihood of resume being accepted
-          can_sends.extend([hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.RES_ACCEL, self.CP.carFingerprint)] * 25)
-          if (self.frame - self.last_button_frame) * DT_CTRL >= 0.15:
-            self.last_button_frame = self.frame
-    else:
-      # Platforms that do not use CLU11|0x4F1 (mainly CAN-FD platforms)
-      if (self.frame - self.last_button_frame) * DT_CTRL > 0.25:
-        # cruise cancel
-        if CC.cruiseControl.cancel:
-          if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
-            can_sends.append(hyundaicanfd.create_acc_cancel(self.packer, self.CP, self.CAN, CS.cruise_info))
-            self.last_button_frame = self.frame
-          else:
-            for _ in range(20):
-              can_sends.append(hyundaicanfd.create_buttons(self.packer, self.CP, self.CAN, CS.buttons_counter+1, Buttons.CANCEL))
-            self.last_button_frame = self.frame
-
-        # cruise standstill resume
-        elif CC.cruiseControl.resume:
-          if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
-            # TODO: resume for alt button cars
-            pass
-          else:
-            for _ in range(20):
-              can_sends.append(hyundaicanfd.create_buttons(self.packer, self.CP, self.CAN, CS.buttons_counter+1, Buttons.RES_ACCEL))
-            self.last_button_frame = self.frame
-
-    return can_sends
-
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
@@ -207,3 +168,39 @@ class CarController:
 
     self.frame += 1
     return new_actuators, can_sends
+
+  def create_button_messages(self, CC, CS, use_clu11):
+    can_sends = []
+    if use_clu11:
+      if CC.cruiseControl.cancel:
+        can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL, self.CP.carFingerprint))
+      elif CC.cruiseControl.resume:
+        # send resume at a max freq of 10Hz
+        if (self.frame - self.last_button_frame) * DT_CTRL > 0.1:
+          # send 25 messages at a time to increases the likelihood of resume being accepted
+          can_sends.extend([hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.RES_ACCEL, self.CP.carFingerprint)] * 25)
+          if (self.frame - self.last_button_frame) * DT_CTRL >= 0.15:
+            self.last_button_frame = self.frame
+    else:
+      if (self.frame - self.last_button_frame) * DT_CTRL > 0.25:
+        # cruise cancel
+        if CC.cruiseControl.cancel:
+          if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
+            can_sends.append(hyundaicanfd.create_acc_cancel(self.packer, self.CP, self.CAN, CS.cruise_info))
+            self.last_button_frame = self.frame
+          else:
+            for _ in range(20):
+              can_sends.append(hyundaicanfd.create_buttons(self.packer, self.CP, self.CAN, CS.buttons_counter+1, Buttons.CANCEL))
+            self.last_button_frame = self.frame
+
+        # cruise standstill resume
+        elif CC.cruiseControl.resume:
+          if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
+            # TODO: resume for alt button cars
+            pass
+          else:
+            for _ in range(20):
+              can_sends.append(hyundaicanfd.create_buttons(self.packer, self.CP, self.CAN, CS.buttons_counter+1, Buttons.RES_ACCEL))
+            self.last_button_frame = self.frame
+
+    return can_sends
