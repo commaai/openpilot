@@ -56,7 +56,8 @@ class CarController:
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
 
-  def create_button_messages(self, CC, CS, can_sends, use_clu11):
+  def create_button_messages(self, CC, CS, use_clu11):
+    can_sends = []
     # Determine which messages to send button commands to based on the platform's primary cruise button messages
     if use_clu11:
       # Platforms that use CLU11|0x4F1 (mainly CAN platforms)
@@ -169,7 +170,7 @@ class CarController:
           self.accel_last = accel
       else:
         # button presses
-        can_sends.extend(self.create_button_messages(CC, CS, can_sends, use_clu11=False))
+        can_sends.extend(self.create_button_messages(CC, CS, use_clu11=False))
     else:
       can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, apply_steer_req,
                                                 torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled,
@@ -177,7 +178,7 @@ class CarController:
                                                 left_lane_warning, right_lane_warning))
 
       if not self.CP.openpilotLongitudinalControl:
-        can_sends.extend(self.create_button_messages(CC, CS, can_sends, use_clu11=True))
+        can_sends.extend(self.create_button_messages(CC, CS, use_clu11=True))
 
       if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
         # TODO: unclear if this is needed
