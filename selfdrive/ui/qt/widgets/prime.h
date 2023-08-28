@@ -28,7 +28,7 @@ private slots:
 
 
 // pairing popup widget
-class PairingPopup : public QDialogBase {
+class PairingPopup : public DialogBase {
   Q_OBJECT
 
 public:
