@@ -102,10 +102,6 @@ class CarController:
       if self.CP.flags & HyundaiFlags.ENABLE_BLINKERS:
         can_sends.append([0x7b1, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", self.CAN.ECAN])
 
-    # button presses
-    if not self.CP.openpilotLongitudinalControl:
-      can_sends.extend(self.create_button_messages(CC, CS, self.CP.carFingerprint in CANFD_CAR))
-
     # CAN-FD platforms
     if self.CP.carFingerprint in CANFD_CAR:
       hda2 = self.CP.flags & HyundaiFlags.CANFD_HDA2
@@ -133,11 +129,17 @@ class CarController:
           can_sends.append(hyundaicanfd.create_acc_control(self.packer, self.CAN, CC.enabled, self.accel_last, accel, stopping, CC.cruiseControl.override,
                                                            set_speed_in_units))
           self.accel_last = accel
+      else:
+        # button presses
+        can_sends.extend(self.create_button_messages(CC, CS, use_clu11=False))
     else:
       can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, apply_steer_req,
                                                 torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled,
                                                 hud_control.leftLaneVisible, hud_control.rightLaneVisible,
                                                 left_lane_warning, right_lane_warning))
+
+      if not self.CP.openpilotLongitudinalControl:
+        can_sends.extend(self.create_button_messages(CC, CS, use_clu11=True))
 
       if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
         # TODO: unclear if this is needed
