@@ -142,8 +142,9 @@ class CarState(CarStateBase):
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
 
     if not self.CP.openpilotLongitudinalControl:
-      aeb_src = "FCA11" if self.CP.flags & HyundaiFlags.USE_FCA.value else "SCC12"
-      aeb_sig = "FCA_CmdAct" if self.CP.flags & HyundaiFlags.USE_FCA.value else "AEB_CmdAct"
+      use_fca = self.CP.flags & HyundaiFlags.USE_FCA
+      aeb_src = "FCA11" if use_fca else "SCC12"
+      aeb_sig = "FCA_CmdAct" if use_fca else "AEB_CmdAct"
       aeb_warning = cp_cruise.vl[aeb_src]["CF_VSM_Warn"] != 0
       aeb_braking = cp_cruise.vl[aeb_src]["CF_VSM_DecCmdAct"] != 0 or cp_cruise.vl[aeb_src][aeb_sig] != 0
       ret.stockFcw = aeb_warning and not aeb_braking
@@ -257,7 +258,7 @@ class CarState(CarStateBase):
         ("SCC11", 50),
         ("SCC12", 50),
       ]
-      if CP.flags & HyundaiFlags.USE_FCA.value:
+      if CP.flags & HyundaiFlags.USE_FCA:
         messages.append(("FCA11", 50))
 
     if CP.enableBsm:
@@ -297,7 +298,7 @@ class CarState(CarStateBase):
         ("SCC12", 50),
       ]
 
-      if CP.flags & HyundaiFlags.USE_FCA.value:
+      if CP.flags & HyundaiFlags.USE_FCA:
         messages.append(("FCA11", 50))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)
@@ -321,7 +322,7 @@ class CarState(CarStateBase):
         ("BLINDSPOTS_REAR_CORNERS", 20),
       ]
 
-    if not (CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value) and not CP.openpilotLongitudinalControl:
+    if not (CP.flags & HyundaiFlags.CANFD_CAMERA_SCC) and not CP.openpilotLongitudinalControl:
       messages += [
         ("SCC_CONTROL", 50),
       ]

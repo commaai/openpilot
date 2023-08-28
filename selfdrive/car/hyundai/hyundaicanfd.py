@@ -9,7 +9,7 @@ class CanBus(CanBusBase):
 
     if hda2 is None:
       assert CP is not None
-      hda2 = CP.flags & HyundaiFlags.CANFD_HDA2.value
+      hda2 = CP.flags & HyundaiFlags.CANFD_HDA2
 
     # On the CAN-FD platforms, the LKAS camera is on both A-CAN and E-CAN. HDA2 cars
     # have a different harness than the HDA1 and non-HDA variants in order to split
@@ -78,7 +78,7 @@ def create_buttons(packer, CP, CAN, cnt, btn):
 
 def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
   # TODO: why do we copy different values here?
-  if CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value:
+  if CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
     values = {s: cruise_info_copy[s] for s in [
       "COUNTER",
       "CHECKSUM",
