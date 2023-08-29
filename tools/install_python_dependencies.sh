@@ -13,23 +13,28 @@ fi
 if ! command -v "pyenv" > /dev/null 2>&1; then
   echo "pyenv install ..."
   curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+  PYENV_PATH_SETUP="export PATH=\$HOME/.pyenv/bin:\$HOME/.pyenv/shims:\$PATH"
 fi
 
-if ! [ -f "${HOME}/.pyenvrc" ]; then
+if ! [ -f "${HOME}/.pyenvrc" ] || ! [ -z $PYENV_PATH_SETUP ]; then
   echo "pyenvrc setup ..."
   cat <<EOF > "${HOME}/.pyenvrc"
 if [ -z "\$PYENV_ROOT" ]; then
-  export PATH=\$HOME/.pyenv/bin:\$HOME/.pyenv/shims:\$PATH
+  $PYENV_PATH_SETUP
   export PYENV_ROOT="\$HOME/.pyenv"
   eval "\$(pyenv init --path)"
   eval "\$(pyenv init -)"
   eval "\$(pyenv virtualenv-init -)"
 fi
 EOF
-  echo -e "\nsource ~/.pyenvrc" >> $RC_FILE
+
+  SOURCE_PYENVRC="source \"\$HOME/.pyenvrc\""
+  if ! grep "^$SOURCE_PYENVRC$" $RC_FILE > /dev/null; then
+    echo "$SOURCE_PYENVRC" >> $RC_FILE
+  fi
 
   # activate pyenv now
-  source "${HOME}/.pyenvrc"
+  eval "$SOURCE_PYENVRC"
 fi
 
 export MAKEFLAGS="-j$(nproc)"
