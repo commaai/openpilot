@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
 # To build sim and docs, you can run the following to mount the scons cache to the same place as in CI:
@@ -28,9 +28,10 @@ fi
 export DOCKER_REGISTRY=ghcr.io/commaai
 export COMMIT_SHA=$(git rev-parse HEAD)
 
+ARCH=$(uname -m)
 LOCAL_TAG=$DOCKER_IMAGE
-REMOTE_TAG=$DOCKER_REGISTRY/$LOCAL_TAG
-REMOTE_SHA_TAG=$REMOTE_TAG:$COMMIT_SHA
+REMOTE_TAG=$DOCKER_REGISTRY/$LOCAL_TAG:$ARCH
+REMOTE_SHA_TAG=$DOCKER_REGISTRY/$LOCAL_TAG:$ARCH-$COMMIT_SHA
 
 SCRIPT_DIR=$(dirname "$0")
 OPENPILOT_DIR=$SCRIPT_DIR/../../
