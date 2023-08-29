@@ -4,7 +4,7 @@ from opendbc.can.can_define import CANDefine
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
-from openpilot.selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, PREGLOBAL_CARS, HYBRID_CARS, CanBus, SubaruFlags
+from openpilot.selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, HYBRID_CARS, CanBus, SubaruFlags
 from openpilot.selfdrive.car import CanSignalRateCalculator
 
 
@@ -24,7 +24,7 @@ class CarState(CarStateBase):
 
     ret.gasPressed = ret.gas > 1e-5
     if self.car_fingerprint in PREGLOBAL_CARS:
-      ret.brakePressed = cp.vl["Brake_Pedal"]["Brake_Pedal"] > 2
+      ret.brakePressed = cp.vl["Brake_Pedal"]["Brake_Pedal"] > 0
     else:
       cp_brakes = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp
       ret.brakePressed = cp_brakes.vl["Brake_Status"]["Brake"] == 1
@@ -145,6 +145,17 @@ class CarState(CarStateBase):
     return messages
 
   @staticmethod
+  def get_common_preglobal_body_messages():
+    messages = [
+      ("CruiseControl", 50),
+      ("Wheel_Speeds", 50),
+      ("Dash_State2", 1),
+      ("Dashlights", 10),
+    ]
+
+    return messages
+
+  @staticmethod
   def get_can_parser(CP):
     messages = [
       # sig_address, frequency
@@ -166,29 +177,8 @@ class CarState(CarStateBase):
     if CP.carFingerprint not in PREGLOBAL_CARS:
       if CP.carFingerprint not in GLOBAL_GEN2:
         messages += CarState.get_common_global_body_messages(CP)
-
-      messages += [
-        ("Dashlights", 10),
-        ("BodyInfo", 10),
-      ]
     else:
-      messages += [
-        ("Wheel_Speeds", 50),
-        ("Dash_State2", 1),
-      ]
-
-      if CP.carFingerprint == CAR.FORESTER_PREGLOBAL:
-        messages += [
-          ("Dashlights", 20),
-          ("BodyInfo", 1),
-          ("CruiseControl", 50),
-        ]
-
-      if CP.carFingerprint in (CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018):
-        messages += [
-          ("Dashlights", 10),
-          ("CruiseControl", 50),
-        ]
+      messages += CarState.get_common_preglobal_body_messages()
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus.main)
 
