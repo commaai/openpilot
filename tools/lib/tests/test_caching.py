@@ -2,7 +2,7 @@
 import os
 import unittest
 from openpilot.tools.lib.url_file import URLFile
-from tools.lib.tests import temporary_cache_dir
+from openpilot.selfdrive.test.helpers import temporary_cache_dir
 
 
 class TestFileDownload(unittest.TestCase):
@@ -32,7 +32,7 @@ class TestFileDownload(unittest.TestCase):
     self.assertEqual(response_cached, response_downloaded)
 
   @temporary_cache_dir
-  def test_small_file(self):
+  def test_small_file(self, temp_dir):
     # Make sure we don't force cache
     os.environ["FILEREADER_CACHE"] = "0"
     small_file_url = "https://raw.githubusercontent.com/commaai/openpilot/master/docs/SAFETY.md"
@@ -53,7 +53,7 @@ class TestFileDownload(unittest.TestCase):
       self.compare_loads(small_file_url, 100 * i, 100)
 
   @temporary_cache_dir
-  def test_large_file(self):
+  def test_large_file(self, temp_dir):
     large_file_url = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/qlog.bz2"
     #  Load the end 100 bytes of both files
     file_large = URLFile(large_file_url)
