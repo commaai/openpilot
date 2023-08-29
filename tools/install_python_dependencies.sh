@@ -29,7 +29,7 @@ EOF
   echo -e "\nsource ~/.pyenvrc" >> $RC_FILE
 
   # activate pyenv now
-  source $RC_FILE
+  source "${HOME}/.pyenvrc"
 fi
 
 export MAKEFLAGS="-j$(nproc)"
