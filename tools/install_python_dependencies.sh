@@ -13,7 +13,10 @@ fi
 if ! command -v "pyenv" > /dev/null 2>&1; then
   echo "pyenv install ..."
   curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+fi
 
+if ! [ -f "${HOME}/.pyenvrc" ]; then
+  echo "pyenvrc setup ..."
   cat <<EOF > "${HOME}/.pyenvrc"
 if [ -z "\$PYENV_ROOT" ]; then
   export PATH=\$HOME/.pyenv/bin:\$HOME/.pyenv/shims:\$PATH
