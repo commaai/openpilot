@@ -261,7 +261,7 @@ def create_preglobal_es_distance(packer, cruise_button, es_distance_msg):
     "Signal1",
     "Car_Follow",
     "Signal2",
-    "Brake_On",
+    "Cruise_Brake_Active",
     "Distance_Swap",
     "Standstill",
     "Signal3",
