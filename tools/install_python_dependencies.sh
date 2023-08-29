@@ -22,7 +22,6 @@ if [ -z "$PYENV_SHELL" ] || [ -n "$PYENV_PATH_SETUP" ]; then
 if [ -z "\$PYENV_ROOT" ]; then
   $PYENV_PATH_SETUP
   export PYENV_ROOT="\$HOME/.pyenv"
-  eval "\$(pyenv init --path)"
   eval "\$(pyenv init -)"
   eval "\$(pyenv virtualenv-init -)"
 fi
@@ -33,8 +32,9 @@ EOF
     printf "\n$SOURCE_PYENVRC\n" >> $RC_FILE
   fi
 
-  # activate pyenv now
-  source "${HOME}/.pyenvrc"
+  if [ -n "$PYENV_PATH_SETUP" ]; then
+    eval "$PYENV_PATH_SETUP"
+  fi
 fi
 
 export MAKEFLAGS="-j$(nproc)"
