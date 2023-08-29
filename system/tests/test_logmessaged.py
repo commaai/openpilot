@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 import glob
 import os
-import tempfile
 import time
 import unittest
-from unittest import mock
 
 import cereal.messaging as messaging
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.system.swaglog import cloudlog, ipchandler
+from system.tests import temporary_swaglog_dir
+
 
 
 class TestLogmessaged(unittest.TestCase):
@@ -18,11 +18,8 @@ class TestLogmessaged(unittest.TestCase):
     ipchandler.close()
     ipchandler.connect()
 
-  def setUp(self):
-    self.temp_dir = tempfile.TemporaryDirectory()
-    self.swaglog_dir_patch = mock.patch("openpilot.system.swaglog.SWAGLOG_DIR", self.temp_dir.name + "/")
-    self.swaglog_dir_patch.start()
-
+  def _setup(self, temp_dir):
+    self.temp_dir = temp_dir
     managed_processes['logmessaged'].start()
     self.sock = messaging.sub_sock("logMessage", timeout=1000, conflate=False)
     self.error_sock = messaging.sub_sock("logMessage", timeout=1000, conflate=False)
@@ -36,13 +33,13 @@ class TestLogmessaged(unittest.TestCase):
     del self.sock
     del self.error_sock
     managed_processes['logmessaged'].stop(block=True)
-    self.temp_dir.cleanup()
-    self.swaglog_dir_patch.stop()
 
   def _get_log_files(self):
-    return list(glob.glob(os.path.join(self.temp_dir.name, "swaglog.*")))
+    return list(glob.glob(os.path.join(self.temp_dir, "swaglog.*")))
 
-  def test_simple_log(self):
+  @temporary_swaglog_dir
+  def test_simple_log(self, temp_dir):
+    self._setup(temp_dir)
     msgs = [f"abc {i}" for i in range(10)]
     for m in msgs:
       cloudlog.error(m)
@@ -51,7 +48,9 @@ class TestLogmessaged(unittest.TestCase):
     assert len(m) == len(msgs)
     assert len(self._get_log_files()) >= 1
 
-  def test_big_log(self):
+  @temporary_swaglog_dir
+  def test_big_log(self, temp_dir):
+    self._setup(temp_dir)
     n = 10
     msg = "a"*3*1024*1024
     for _ in range(n):
