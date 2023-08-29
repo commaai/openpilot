@@ -63,10 +63,10 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_steer):
 def create_cam_0x2a4(packer, CAN, cam_0x2a4):
   values = {f"BYTE{i}": cam_0x2a4[f"BYTE{i}"] for i in range(3, 24) if i != 7}
   values["COUNTER"] = cam_0x2a4["COUNTER"]
-  values["NEW_SIGNAL_1"] = cam_0x2a4["NEW_SIGNAL_1"]
-  values["NEW_SIGNAL_2"] = cam_0x2a4["NEW_SIGNAL_2"]
-  values["LEFT_LANELINES"] = 0
-  values["RIGHT_LANELINES"] = 0
+  values["SET_ME_0"] = cam_0x2a4["SET_ME_0"]
+  values["SET_ME_0_2"] = cam_0x2a4["SET_ME_0_2"]
+  values["LEFT_LANE_LINE"] = 0
+  values["RIGHT_LANE_LINE"] = 0
   return packer.make_can_msg("CAM_0x2a4", CAN.ACAN, values)
 
 def create_buttons(packer, CP, CAN, cnt, btn):
