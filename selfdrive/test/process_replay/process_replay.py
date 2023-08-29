@@ -143,6 +143,7 @@ class ProcessContainer:
     self.sockets: Optional[List[messaging.SubSocket]] = None
     self.rc: Optional[ReplayContext] = None
     self.vipc_server: Optional[VisionIpcServer] = None
+    self.environ_config: Optional[Dict[str, Any]] = None
     self.capture: Optional[ProcessOutputCapture] = None
 
   @property
@@ -156,6 +157,15 @@ class ProcessContainer:
   @property
   def subs(self) -> List[str]:
     return self.cfg.subs
+
+  def _clean_env(self):
+    for k in self.environ_config.keys():
+      if k in os.environ:
+        del os.environ[k]
+
+    for k in ["PROC_NAME", "SIMULATION"]:
+      if k in os.environ:
+        del os.environ[k]
 
   def _setup_env(self, params_config: Dict[str, Any], environ_config: Dict[str, Any]):
     for k, v in environ_config.items():
@@ -176,6 +186,8 @@ class ProcessContainer:
         params.put_bool(k, v)
       else:
         params.put(k, v)
+
+    self.environ_config = environ_config
 
   def _setup_vision_ipc(self, all_msgs):
     assert len(self.cfg.vision_pubs) != 0
@@ -238,6 +250,7 @@ class ProcessContainer:
       self.process.stop()
       self.rc.close_context()
       self.prefix.clean_dirs()
+      self._clean_env()
 
   def run_step(self, msg: capnp._DynamicStructReader, frs: Optional[Dict[str, Any]]) -> List[capnp._DynamicStructReader]:
     assert self.rc and self.pm and self.sockets and self.process.proc
@@ -433,6 +446,13 @@ def laikad_config_pubsub_callback(params, cfg, lr):
   cfg.main_pub_drained = True
 
 
+def locationd_config_pubsub_callback(params, cfg, lr):
+  ublox = params.get_bool("UbloxAvailable")
+  sub_keys = ({"gpsLocation", } if ublox else {"gpsLocationExternal", })
+
+  cfg.pubs = set(cfg.pubs) - sub_keys
+
+
 CONFIGS = [
   ProcessConfig(
     proc_name="controlsd",
@@ -487,11 +507,12 @@ CONFIGS = [
   ProcessConfig(
     proc_name="locationd",
     pubs=[
-      "cameraOdometry", "accelerometer", "gyroscope", "gnssMeasurements",
-      "liveCalibration", "carState", "carParams"
+      "cameraOdometry", "accelerometer", "gyroscope", "gpsLocationExternal",
+      "liveCalibration", "carState", "carParams", "gpsLocation"
     ],
     subs=["liveLocationKalman"],
     ignore=["logMonoTime", "valid"],
+    config_callback=locationd_config_pubsub_callback,
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
