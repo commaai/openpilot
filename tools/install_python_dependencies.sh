@@ -30,7 +30,7 @@ EOF
 
   SOURCE_PYENVRC="source \"\$HOME/.pyenvrc\""
   if ! grep "^$SOURCE_PYENVRC$" $RC_FILE > /dev/null; then
-    echo "\n$SOURCE_PYENVRC" >> $RC_FILE
+    printf "\n$SOURCE_PYENVRC" >> $RC_FILE
   fi
 
   # activate pyenv now
