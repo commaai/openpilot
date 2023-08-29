@@ -9,26 +9,29 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN cd $HOME && \
     curl -O https://raw.githubusercontent.com/commaai/eon-neos-builder/master/devices/eon/home/.tmux.conf
 
-ENV PYTHONPATH $HOME/openpilot:${PYTHONPATH}
-RUN mkdir -p $HOME/openpilot
+ENV OPENPILOT_PATH /tmp/openpilot
+ENV PYTHONPATH ${OPENPILOT_PATH}:${PYTHONPATH}
 
-COPY SConstruct $HOME/openpilot/
+RUN mkdir -p ${OPENPILOT_PATH}
+WORKDIR ${OPENPILOT_PATH}
 
-COPY ./openpilot $HOME/openpilot/openpilot
-COPY ./body $HOME/openpilot/body
-COPY ./third_party $HOME/openpilot/third_party
-COPY ./site_scons $HOME/openpilot/site_scons
-COPY ./rednose $HOME/openpilot/rednose
-COPY ./laika $HOME/openpilot/laika
-COPY ./common $HOME/openpilot/common
-COPY ./opendbc $HOME/openpilot/opendbc
-COPY ./cereal $HOME/openpilot/cereal
-COPY ./panda $HOME/openpilot/panda
-COPY ./selfdrive $HOME/openpilot/selfdrive
-COPY ./system $HOME/openpilot/system
-COPY ./tools $HOME/openpilot/tools
+COPY SConstruct ${OPENPILOT_PATH}
 
-WORKDIR $HOME/openpilot
-RUN --mount=type=bind,source=.ci_cache/scons_cache,target=/tmp/scons_cache,rw scons -j$(nproc)
+COPY ./openpilot ${OPENPILOT_PATH}/openpilot
+COPY ./body ${OPENPILOT_PATH}/body
+COPY ./third_party ${OPENPILOT_PATH}/third_party
+COPY ./site_scons ${OPENPILOT_PATH}/site_scons
+COPY ./rednose ${OPENPILOT_PATH}/rednose
+COPY ./laika_repo ${OPENPILOT_PATH}/laika_repo
+RUN ln -s ${OPENPILOT_PATH}/laika_repo ${OPENPILOT_PATH}/laika
+COPY ./common ${OPENPILOT_PATH}/common
+COPY ./opendbc ${OPENPILOT_PATH}/opendbc
+COPY ./cereal ${OPENPILOT_PATH}/cereal
+COPY ./panda ${OPENPILOT_PATH}/panda
+COPY ./selfdrive ${OPENPILOT_PATH}/selfdrive
+COPY ./system ${OPENPILOT_PATH}/system
+COPY ./tools ${OPENPILOT_PATH}/tools
+
+RUN --mount=type=bind,source=.ci_cache/scons_cache,target=/tmp/scons_cache,rw scons -j$(nproc) --cache-readonly
 
 RUN python -c "from openpilot.selfdrive.test.helpers import set_params_enabled; set_params_enabled()"

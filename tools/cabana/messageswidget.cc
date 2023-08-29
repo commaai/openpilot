@@ -281,7 +281,8 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
       case Column::NAME: {
         const auto msg = dbc()->msg(id);
         match = re.match(msg ? msg->name : UNTITLED).hasMatch();
-        match |= msg && std::any_of(msg->sigs.cbegin(), msg->sigs.cend(), [&re](const auto &s) { return re.match(s->name).hasMatch(); });
+        match = match || (msg && std::any_of(msg->sigs.cbegin(), msg->sigs.cend(),
+                                             [&re](const auto &s) { return re.match(s->name).hasMatch(); }));
         break;
       }
       case Column::SOURCE:
@@ -289,7 +290,7 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
         break;
       case Column::ADDRESS: {
         match = re.match(QString::number(id.address, 16)).hasMatch();
-        match |= parseRange(txt, id.address, 16);
+        match = match || parseRange(txt, id.address, 16);
         break;
       }
       case Column::FREQ:
@@ -301,8 +302,8 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
         break;
       case Column::DATA: {
         match = QString(data.dat.toHex()).contains(txt, Qt::CaseInsensitive);
-        match |= re.match(QString(data.dat.toHex())).hasMatch();
-        match |= re.match(QString(data.dat.toHex(' '))).hasMatch();
+        match = match || re.match(QString(data.dat.toHex())).hasMatch();
+        match = match || re.match(QString(data.dat.toHex(' '))).hasMatch();
         break;
       }
     }
