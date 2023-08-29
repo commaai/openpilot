@@ -70,10 +70,10 @@ def create_cam_0x2a4(packer, CAN, cam_0x2a4):
 def create_cam_0x362(packer, CAN, cam_0x362):
   values = {f"BYTE{i}": cam_0x362[f"BYTE{i}"] for i in range(3, 32) if i != 7}
   values["COUNTER"] = cam_0x362["COUNTER"]
-  values["NEW_SIGNAL_1"] = cam_0x362["NEW_SIGNAL_1"]
-  values["NEW_SIGNAL_2"] = cam_0x362["NEW_SIGNAL_2"]
-  values["LEFT_LANELINES"] = 0
-  values["RIGHT_LANELINES"] = 0
+  values["SET_ME_0"] = cam_0x362["SET_ME_0"]
+  values["SET_ME_0_2"] = cam_0x362["SET_ME_0_2"]
+  values["LEFT_LANE_LINE"] = 0
+  values["RIGHT_LANE_LINE"] = 0
   return packer.make_can_msg("CAM_0x362", CAN.ACAN, values)
 
 def create_buttons(packer, CP, CAN, cnt, btn):
