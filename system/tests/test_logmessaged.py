@@ -12,13 +12,11 @@ from openpilot.system.tests import temporary_swaglog_dir
 
 
 class TestLogmessaged(unittest.TestCase):
-  @classmethod
-  def setUpClass(cls):
+  def _setup(self, temp_dir):
     # clear the IPC buffer in case some other tests used cloudlog and filled it
     ipchandler.close()
     ipchandler.connect()
 
-  def _setup(self, temp_dir):
     self.temp_dir = temp_dir
     managed_processes['logmessaged'].start()
     self.sock = messaging.sub_sock("logMessage", timeout=1000, conflate=False)
