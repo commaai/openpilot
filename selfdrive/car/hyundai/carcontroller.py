@@ -111,7 +111,7 @@ class CarController:
       # steering control
       can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_steer))
 
-      # HDA2, send "no lanelines detected" to ADAS ECU, this prevents factory LFA from overriding our steering commands
+      # prevent LFA from activating on HDA2 by sending "no lane lines detected" to ADAS ECU
       if self.frame % 5 == 0 and hda2:
         # TODO: consolidate both messages, they have similar definitions
         if hda2_alt_steering:
