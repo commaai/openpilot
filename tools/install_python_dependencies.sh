@@ -32,12 +32,11 @@ EOF
     printf "\n$SOURCE_PYENVRC\n" >> $RC_FILE
   fi
 
-  if [ -n "$PYENV_PATH_SETUP" ]; then
-    eval "$PYENV_PATH_SETUP"
+  eval "$SOURCE_PYENVRC"
+  # $(pyenv init -) produces a function which is broken on bash 3.2 which ships on macOS
+  if [ $(uname) == "Darwin" ]; then
+    unset -f pyenv
   fi
-  # $(pyenv init -) generated a function which is broken on bash 3.2 which ships on macOS 
-  # $(pyenv init --path) works fine though, and its being used below
-  eval "$(pyenv virtualenv-init -)"
 fi
 
 export MAKEFLAGS="-j$(nproc)"
