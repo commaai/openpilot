@@ -28,5 +28,16 @@
       "username": "batman"
     }
   },
-  "remoteUser": "batman"
+  "remoteUser": "batman",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-vscode.cpptools",
+        "ms-toolsai.jupyter",
+        "guyskk.language-cython",
+        "lharri73.dbc"
+      ]
+    }
+  }
 }
