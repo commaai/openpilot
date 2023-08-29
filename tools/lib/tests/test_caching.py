@@ -2,7 +2,7 @@
 import os
 import unittest
 from openpilot.tools.lib.url_file import URLFile
-from openpilot.common.mock import temporary_cache_dir
+from selfdrive.test.helpers import temporary_cache_dir
 
 
 class TestFileDownload(unittest.TestCase):
