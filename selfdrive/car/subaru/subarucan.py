@@ -239,13 +239,14 @@ def create_es_infotainment(packer, es_infotainment_msg, visual_alert):
 
 # *** Subaru Pre-global ***
 
-def subaru_preglobal_checksum(packer, values, addr):
+def subaru_preglobal_checksum(packer, values, addr, checksum_byte=7):
   dat = packer.make_can_msg(addr, 0, values)[2]
-  return (sum(dat[:7])) % 256
+  return (sum(dat[:checksum_byte]) + sum(dat[checksum_byte+1:])) % 256
 
 
-def create_preglobal_steering_control(packer, apply_steer, steer_req):
+def create_preglobal_steering_control(packer, frame, apply_steer, steer_req):
   values = {
+    "COUNTER": frame % 0x08,
     "LKAS_Command": apply_steer,
     "LKAS_Active": steer_req,
   }
