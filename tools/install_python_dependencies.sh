@@ -28,7 +28,7 @@ if [ -z "\$PYENV_ROOT" ]; then
 fi
 EOF
 
-  SOURCE_PYENVRC="source \"\$HOME/.pyenvrc\""
+  SOURCE_PYENVRC="source ~/.pyenvrc"
   if ! grep "^$SOURCE_PYENVRC$" $RC_FILE > /dev/null; then
     printf "\n$SOURCE_PYENVRC" >> $RC_FILE
   fi
