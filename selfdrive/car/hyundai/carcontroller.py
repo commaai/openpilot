@@ -106,7 +106,7 @@ class CarController:
     hda2_can_canfd = hda2 and self.CP.flags & HyundaiFlags.CAN_CANFD
 
     # CAN-FD platforms
-    if self.CP.carFingerprint in (CANFD_CAR - CAN_CANFD_CAR) or hda2_can_canfd:
+    if self.CP.carFingerprint in CANFD_CAR and (self.CP.carFingerprint not in CAN_CANFD_CAR or hda2_can_canfd):
       hda2_long = hda2 and self.CP.openpilotLongitudinalControl
 
       # steering control
