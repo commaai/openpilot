@@ -9,7 +9,7 @@ def temporary_mock_dir(mock_path):
       with tempfile.TemporaryDirectory() as temp_dir:
         cache_dir_patch = mock.patch(mock_path, temp_dir)
         cache_dir_patch.start()
-        func(*args, **kwargs)
+        func(*args, **kwargs, temp_dir=temp_dir)
         cache_dir_patch.stop()
       return wrapper
   return decorator
