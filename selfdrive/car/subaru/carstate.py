@@ -177,11 +177,6 @@ class CarState(CarStateBase):
     if CP.carFingerprint not in PREGLOBAL_CARS:
       if CP.carFingerprint not in GLOBAL_GEN2:
         messages += CarState.get_common_global_body_messages(CP)
-
-      messages += [
-        ("Dashlights", 10),
-        ("BodyInfo", 10),
-      ]
     else:
       messages += CarState.get_common_preglobal_body_messages()
 
