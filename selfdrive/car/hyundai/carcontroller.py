@@ -113,11 +113,7 @@ class CarController:
 
       # prevent LFA from activating on HDA2 by sending "no lane lines detected" to ADAS ECU
       if self.frame % 5 == 0 and hda2:
-        # TODO: consolidate both messages, they have similar definitions
-        if hda2_alt_steering:
-          can_sends.append(hyundaicanfd.create_cam_0x362(self.packer, self.CAN, CS.cam_0x362))
-        else:
-          can_sends.append(hyundaicanfd.create_cam_0x2a4(self.packer, self.CAN, CS.cam_0x2a4))
+        can_sends.append(hyundaicanfd.create_suppress_lfa(self.packer, self.CAN, CS, hda2_alt_steering))
 
       # LFA and HDA icons
       if self.frame % 5 == 0 and (not hda2 or hda2_long):

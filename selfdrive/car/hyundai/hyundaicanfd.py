@@ -61,23 +61,18 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_steer):
 
   return ret
 
-def create_cam_0x2a4(packer, CAN, cam_0x2a4):
-  values = {f"BYTE{i}": cam_0x2a4[f"BYTE{i}"] for i in range(3, 24) if i != 7}
-  values["COUNTER"] = cam_0x2a4["COUNTER"]
+def create_suppress_lfa(packer, CAN, CS, hda2_alt_steering):
+  fwd_msg = CS.cam_0x362 if hda2_alt_steering else CS.cam_0x2a4
+  suppress_msg = "CAM_0x362" if hda2_alt_steering else "CAM_0x2a4"
+  msg_bytes = 32 if hda2_alt_steering else 24
+
+  values = {f"BYTE{i}": fwd_msg[f"BYTE{i}"] for i in range(3, msg_bytes) if i != 7}
+  values["COUNTER"] = fwd_msg["COUNTER"]
   values["SET_ME_0"] = 0
   values["SET_ME_0_2"] = 0
   values["LEFT_LANE_LINE"] = 0
   values["RIGHT_LANE_LINE"] = 0
-  return packer.make_can_msg("CAM_0x2a4", CAN.ACAN, values)
-
-def create_cam_0x362(packer, CAN, cam_0x362):
-  values = {f"BYTE{i}": cam_0x362[f"BYTE{i}"] for i in range(3, 32) if i != 7}
-  values["COUNTER"] = cam_0x362["COUNTER"]
-  values["SET_ME_0"] = cam_0x362["SET_ME_0"]
-  values["SET_ME_0_2"] = cam_0x362["SET_ME_0_2"]
-  values["LEFT_LANE_LINE"] = 0
-  values["RIGHT_LANE_LINE"] = 0
-  return packer.make_can_msg("CAM_0x362", CAN.ACAN, values)
+  return packer.make_can_msg(suppress_msg, CAN.ACAN, values)
 
 def create_buttons(packer, CP, CAN, cnt, btn):
   values = {
