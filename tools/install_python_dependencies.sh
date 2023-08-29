@@ -16,7 +16,7 @@ if ! command -v "pyenv" > /dev/null 2>&1; then
   PYENV_PATH_SETUP="export PATH=\$HOME/.pyenv/bin:\$HOME/.pyenv/shims:\$PATH"
 fi
 
-if ! [ -f "${HOME}/.pyenvrc" ] || ! [ -z $PYENV_PATH_SETUP ]; then
+if [ -z "$PYENV_SHELL" ] || [ -n "$PYENV_PATH_SETUP" ]; then
   echo "pyenvrc setup ..."
   cat <<EOF > "${HOME}/.pyenvrc"
 if [ -z "\$PYENV_ROOT" ]; then
