@@ -35,6 +35,9 @@ EOF
   if [ -n "$PYENV_PATH_SETUP" ]; then
     eval "$PYENV_PATH_SETUP"
   fi
+  # $(pyenv init -) is broken on bash 3.2 which ships on macOS 
+  # but it is not needed since pyenv is initialized below
+  eval "$(pyenv virtualenv-init -)"
 fi
 
 export MAKEFLAGS="-j$(nproc)"
