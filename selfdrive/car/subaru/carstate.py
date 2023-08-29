@@ -150,7 +150,6 @@ class CarState(CarStateBase):
       ("CruiseControl", 50),
       ("Wheel_Speeds", 50),
       ("Dash_State2", 1),
-      ("Dashlights", 10),
     ]
 
     return messages
