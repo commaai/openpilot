@@ -30,11 +30,11 @@ EOF
 
   SOURCE_PYENVRC="source \"\$HOME/.pyenvrc\""
   if ! grep "^$SOURCE_PYENVRC$" $RC_FILE > /dev/null; then
-    echo "$SOURCE_PYENVRC" >> $RC_FILE
+    echo "\n$SOURCE_PYENVRC" >> $RC_FILE
   fi
 
   # activate pyenv now
-  eval "$SOURCE_PYENVRC"
+  source "${HOME}/.pyenvrc"
 fi
 
 export MAKEFLAGS="-j$(nproc)"
