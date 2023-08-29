@@ -277,8 +277,8 @@ class CarInterface(CarInterfaceBase):
 
     # *** panda safety config ***
     if candidate in CANFD_CAR:
-      cfgs = [get_safety_config(car.CarParams.SafetyModel.hyundaiCanfd), ] if ret.flags & HyundaiFlags.CAN_CANFD else \
-             [get_safety_config(car.CarParams.SafetyModel.hyundai), ]
+      cfgs = [get_safety_config(car.CarParams.SafetyModel.hyundai), ] if ret.flags & HyundaiFlags.CAN_CANFD else \
+             [get_safety_config(car.CarParams.SafetyModel.hyundaiCanfd), ]
       if CAN.ECAN >= 4:
         cfgs.insert(0, get_safety_config(car.CarParams.SafetyModel.noOutput))
       ret.safetyConfigs = cfgs
