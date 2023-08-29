@@ -197,7 +197,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
                                 kwargs=dict(num_pandas=num_pandas))
       brand_time += self._run_thread(thread)
 
-    return round(brand_time / self.N, 2)
+    return brand_time / self.N
 
   def _assert_timing(self, avg_time, ref_time):
     self.assertLess(avg_time, ref_time + self.TOL)
@@ -256,10 +256,12 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
           avg_time = self._benchmark_brand(brand, num_pandas)
           total_time += avg_time
+          avg_time = round(avg_time, 2)
           self._assert_timing(avg_time, brand_ref_times[num_pandas][brand])
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
 
     with self.subTest(brand='all_brands'):
+      total_time = round(total_time, 2)
       self._assert_timing(total_time, total_ref_time)
       print(f'all brands, total FW query time={total_time} seconds')
 
