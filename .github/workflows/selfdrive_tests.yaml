@@ -194,6 +194,7 @@ jobs:
     - name: Setup to push to repo
       run: |
         echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
+        echo "CURRENT_ARCH_BUILD=true" >> "$GITHUB_ENV"
         $DOCKER_LOGIN
     - uses: ./.github/workflows/setup
       with:
@@ -213,6 +214,7 @@ jobs:
     - name: Setup to push to repo
       run: |
         echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
+        echo "CURRENT_ARCH_BUILD=true" >> "$GITHUB_ENV"
         $DOCKER_LOGIN
     - name: Build and push base Docker image
       run: | 
