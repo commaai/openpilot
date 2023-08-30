@@ -401,7 +401,7 @@ SConscript(['selfdrive/navd/SConscript'])
 SConscript(['selfdrive/modeld/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
 
-if (target in ['linux-x86_64', 'linux-aarch64', 'Darwin'] and Dir('#tools/cabana/').exists()) or GetOption('extras'):
+if (target in ['linux-x86_64', 'linux-aarch64', 'Darwin'] and Dir('#tools/cabana/').exists()) and GetOption('extras'):
   SConscript(['tools/replay/SConscript'])
   SConscript(['tools/cabana/SConscript'])
 
