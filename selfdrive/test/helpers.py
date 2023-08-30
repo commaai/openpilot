@@ -99,7 +99,7 @@ def string_context(context):
 
     def __exit__(self, *args):
       pass
-  
+
   return StringContext
 
 temporary_cache_dir = temporary_mock_dir("openpilot.tools.lib.url_file.CACHE_DIR")
