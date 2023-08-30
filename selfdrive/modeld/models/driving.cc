@@ -1,59 +1,7 @@
 #include "selfdrive/modeld/models/driving.h"
 
-#include <fcntl.h>
-#include <unistd.h>
-
-#include <cassert>
 #include <cstring>
 
-#include <eigen3/Eigen/Dense>
-
-#include "common/clutil.h"
-#include "common/params.h"
-#include "common/timing.h"
-#include "common/swaglog.h"
-#include "common/transformations/orientation.hpp"
-
-
-mat3 update_calibration(float *device_from_calib_euler, bool wide_camera, bool bigmodel_frame) {
-  /*
-     import numpy as np
-     from common.transformations.model import medmodel_frame_from_calib_frame
-     medmodel_frame_from_calib_frame = medmodel_frame_from_calib_frame[:, :3]
-     calib_from_smedmodel_frame = np.linalg.inv(medmodel_frame_from_calib_frame)
-  */
-  static const auto calib_from_medmodel = (Eigen::Matrix<float, 3, 3>() <<
-     0.00000000e+00, 0.00000000e+00, 1.00000000e+00,
-     1.09890110e-03, 0.00000000e+00, -2.81318681e-01,
-    -2.25466395e-20, 1.09890110e-03, -5.23076923e-02).finished();
-
-  static const auto calib_from_sbigmodel = (Eigen::Matrix<float, 3, 3>() <<
-     0.00000000e+00,  7.31372216e-19,  1.00000000e+00,
-     2.19780220e-03,  4.11497335e-19, -5.62637363e-01,
-    -6.66298828e-20,  2.19780220e-03, -3.33626374e-01).finished();
-
-  static const auto view_from_device = (Eigen::Matrix<float, 3, 3>() <<
-     0.0,  1.0,  0.0,
-     0.0,  0.0,  1.0,
-     1.0,  0.0,  0.0).finished();
-
-  Eigen::Vector3d device_from_calib_euler_vec;
-  for (int i=0; i<3; i++) {
-    device_from_calib_euler_vec(i) = device_from_calib_euler[i];
-  }
-
-  const auto cam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(wide_camera ? ECAM_INTRINSIC_MATRIX.v : FCAM_INTRINSIC_MATRIX.v);
-  Eigen::Matrix<float, 3, 3, Eigen::RowMajor>  device_from_calib = euler2rot(device_from_calib_euler_vec).cast <float> ();
-  auto calib_from_model = bigmodel_frame ? calib_from_sbigmodel : calib_from_medmodel;
-  auto camera_from_calib = cam_intrinsics * view_from_device * device_from_calib;
-  auto warp_matrix = camera_from_calib * calib_from_model;
-
-  mat3 transform = {};
-  for (int i=0; i<3*3; i++) {
-    transform.v[i] = warp_matrix(i / 3, i % 3);
-  }
-  return transform;
-}
 
 void fill_lead(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelOutputLeads &leads, int t_idx, float prob_t) {
   std::array<float, LEAD_TRAJ_LEN> lead_t = {0.0, 2.0, 4.0, 6.0, 8.0, 10.0};

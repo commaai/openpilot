@@ -13,9 +13,12 @@ from openpilot.system.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import config_realtime_process
+from openpilot.common.transformations.orientation import rot_from_euler
+from openpilot.common.transformations.model import medmodel_frame_from_calib_frame, sbigmodel_frame_from_calib_frame
+from openpilot.common.transformations.camera import view_frame_from_device_frame, tici_fcam_intrinsics, tici_ecam_intrinsics
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext, Runtime
 from openpilot.selfdrive.modeld.models.driving_pyx import (
-  PublishState, create_model_msg, create_pose_msg, update_calibration,
+  PublishState, create_model_msg, create_pose_msg,
   FEATURE_LEN, HISTORY_BUFFER_LEN, DESIRE_LEN, TRAFFIC_CONVENTION_LEN, NAV_FEATURE_LEN, NAV_INSTRUCTION_LEN,
   OUTPUT_SIZE, NET_OUTPUT_SIZE, MODEL_FREQ)
 
@@ -27,20 +30,16 @@ else:
 
 MODEL_PATH = str(Path(__file__).parent / f"models/supercombo.{'thneed' if USE_THNEED else 'onnx'}")
 
-# NOTE: numpy matmuls don't seem to perfectly match eigen matmuls so the ref test fails, but we should switch to the np version after checking compare_runtime
-# from common.transformations.orientation import rot_from_euler
-# from common.transformations.model import medmodel_frame_from_calib_frame, sbigmodel_frame_from_calib_frame
-# from common.transformations.camera import view_frame_from_device_frame, tici_fcam_intrinsics, tici_ecam_intrinsics
-# calib_from_medmodel = np.linalg.inv(medmodel_frame_from_calib_frame[:, :3])
-# calib_from_sbigmodel = np.linalg.inv(sbigmodel_frame_from_calib_frame[:, :3])
-#
-# def update_calibration(device_from_calib_euler: np.ndarray, wide_camera: bool, bigmodel_frame: bool) -> np.ndarray:
-#   cam_intrinsics = tici_ecam_intrinsics if wide_camera else tici_fcam_intrinsics
-#   calib_from_model = calib_from_sbigmodel if bigmodel_frame else calib_from_medmodel
-#   device_from_calib = rot_from_euler(device_from_calib_euler)
-#   camera_from_calib = cam_intrinsics @ view_frame_from_device_frame @ device_from_calib
-#   warp_matrix: np.ndarray = camera_from_calib @ calib_from_model
-#   return warp_matrix
+calib_from_medmodel = np.linalg.inv(medmodel_frame_from_calib_frame[:, :3])
+calib_from_sbigmodel = np.linalg.inv(sbigmodel_frame_from_calib_frame[:, :3])
+
+def update_calibration(device_from_calib_euler: np.ndarray, wide_camera: bool, bigmodel_frame: bool) -> np.ndarray:
+  cam_intrinsics = tici_ecam_intrinsics if wide_camera else tici_fcam_intrinsics
+  calib_from_model = calib_from_sbigmodel if bigmodel_frame else calib_from_medmodel
+  device_from_calib = rot_from_euler(device_from_calib_euler)
+  camera_from_calib = cam_intrinsics @ view_frame_from_device_frame @ device_from_calib
+  warp_matrix: np.ndarray = camera_from_calib @ calib_from_model
+  return warp_matrix.astype(np.float32)
 
 class FrameMeta:
   frame_id: int = 0
