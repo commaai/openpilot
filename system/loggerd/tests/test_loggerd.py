@@ -163,6 +163,7 @@ class TestLoggerd(unittest.TestCase):
 
     fps = 20.0
     for n in range(1, int(num_segs*length*fps)+1):
+      time_start = time.monotonic()
       for stream_type, frame_spec, state in streams:
         dat = np.empty(frame_spec[2], dtype=np.uint8)
         vipc_server.send(stream_type, dat[:].flatten().tobytes(), n, n/fps, n/fps)
@@ -171,7 +172,7 @@ class TestLoggerd(unittest.TestCase):
         frame = getattr(camera_state, state)
         frame.frameId = n
         pm.send(state, camera_state)
-      time.sleep(1.0/fps)
+      time.sleep((1.0/fps) - (time.monotonic() - time_start))
 
     managed_processes["loggerd"].stop()
     managed_processes["encoderd"].stop()
