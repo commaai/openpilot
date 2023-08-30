@@ -17,25 +17,14 @@ RUN cd /tmp && \
     tools/install_ubuntu_dependencies.sh && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /tmp/* && \
-    rm -rf /root/.cache && \
     # remove unused architectures from gcc for panda
     cd /usr/lib/gcc/arm-none-eabi/9.2.1 && \
     rm -rf arm/ && \
     rm -rf thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
 
-ARG USERNAME=batman
-ARG UID=1000
-ARG GID=1000
-
-RUN groupadd -g "${GID}" ${USERNAME} \
-    && useradd --create-home --no-log-init -u "${UID}" -g "${GID}" ${USERNAME} \
-    && usermod -aG sudo ${USERNAME}
-
-USER ${USERNAME}
-
 ENV POETRY_VIRTUALENVS_CREATE=false
 ENV PYENV_VERSION=3.11.4
-ENV PYENV_ROOT="/home/${USERNAME}/.pyenv"
+ENV PYENV_ROOT="/root/.pyenv"
 ENV PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
 
 COPY pyproject.toml poetry.lock .python-version /tmp/
@@ -44,6 +33,6 @@ COPY tools/install_python_dependencies.sh /tmp/tools/
 RUN cd /tmp && \
     tools/install_python_dependencies.sh && \
     rm -rf /tmp/* && \
-    rm -rf /home/${USERNAME}/.cache
+    rm -rf /root/.cache
 
 RUN sudo git config --global --add safe.directory /tmp/openpilot
