@@ -56,7 +56,7 @@ class TestUbloxProcessing(unittest.TestCase):
 
     self.assertEqual(count_gps, 5036)
     self.assertEqual(count_glonass, 3651)
-  
+
   @pytest.mark.parallel
   @temporary_dir
   def test_get_fix(self, temp_dir):
