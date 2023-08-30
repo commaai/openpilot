@@ -43,7 +43,7 @@ class Plant:
 
     self.rk = Ratekeeper(self.rate, print_delay_threshold=100.0)
     self.ts = 1. / self.rate
-    time.sleep(1)
+    time.sleep(0.1)
     self.sm = messaging.SubMaster(['longitudinalPlan'])
 
     from openpilot.selfdrive.car.honda.values import CAR
@@ -144,9 +144,9 @@ class Plant:
       v_rel = 0.
 
     # print at 5hz
-    if (self.rk.frame % (self.rate // 5)) == 0:
-      print("%2.2f sec   %6.2f m  %6.2f m/s  %6.2f m/s2   lead_rel: %6.2f m  %6.2f m/s"
-            % (self.current_time, self.distance, self.speed, self.acceleration, d_rel, v_rel))
+    # if (self.rk.frame % (self.rate // 5)) == 0:
+    #   print("%2.2f sec   %6.2f m  %6.2f m/s  %6.2f m/s2   lead_rel: %6.2f m  %6.2f m/s"
+    #         % (self.current_time, self.distance, self.speed, self.acceleration, d_rel, v_rel))
 
 
     # ******** update prevs ********
