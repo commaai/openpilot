@@ -302,7 +302,7 @@
     </message>
 </context>
 <context>
-    <name>DriverViewScene</name>
+    <name>DriverViewWindow</name>
     <message>
         <source>camera starting</source>
         <translation>kamera başlatılıyor</translation>
