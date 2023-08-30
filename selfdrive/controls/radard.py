@@ -36,7 +36,7 @@ class KalmanParams:
     self.C = [1.0, 0.0]
     Q = [[10., 0.0], [0.0, 100.]]
     R = 1e3
-    self.K = get_kalman_gain(dt, np.array(self.A), np.array([self.C]), np.array(Q), R)
+    self.K = get_kalman_gain(dt, np.array(self.A), np.array([self.C]), np.array(Q), R, iterations=500)
 
 
 class Track:
