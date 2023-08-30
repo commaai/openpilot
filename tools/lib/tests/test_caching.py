@@ -32,7 +32,7 @@ class TestFileDownload(unittest.TestCase):
     self.assertEqual(response_cached, response_downloaded)
 
   @temporary_cache_dir
-  def test_small_file(self, temp_dir):
+  def test_small_file(self):
     # Make sure we don't force cache
     os.environ["FILEREADER_CACHE"] = "0"
     small_file_url = "https://raw.githubusercontent.com/commaai/openpilot/master/docs/SAFETY.md"
