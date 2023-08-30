@@ -23,6 +23,16 @@ RUN cd /tmp && \
     rm -rf arm/ && \
     rm -rf thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
 
+ARG USERNAME=batman
+ARG UID=1000
+ARG GID=1000
+
+RUN groupadd -g "${GID}" ${USERNAME} \
+    && useradd --create-home --no-log-init -u "${UID}" -g "${GID}" ${USERNAME} \
+    && usermod -aG sudo ${USERNAME}
+
+USER ${USERNAME}
+
 ENV POETRY_VIRTUALENVS_CREATE=false
 ENV PYENV_VERSION=3.11.4
 ENV PYENV_ROOT="/home/${USERNAME}/.pyenv"
