@@ -105,6 +105,8 @@ class Laikad:
     self.ttff = -1
     self.measurement_lag = 0.630 if self.use_qcom else 0.095
 
+    self.cached_ephemeris_status = {}
+
     # qcom specific stuff
     self.qcom_reports_received = 4
     self.qcom_reports = []
@@ -148,7 +150,7 @@ class Laikad:
   def create_ephem_statuses(self):
     ephemeris_statuses = []
     eph_list: List = sum([v for k,v in self.astro_dog.navs.items()], []) + sum([v for k,v in self.astro_dog.qcom_polys.items()], [])
-    for eph in eph_list:
+    def create_emph_status(eph):
       status = log.GnssMeasurements.EphemerisStatus.new_message()
       status.constellationId = ConstellationId.from_rinex_char(eph.prn[0]).value
       status.svId = get_sv_id(eph.prn)
@@ -156,7 +158,14 @@ class Laikad:
       status.source = get_log_eph_source(eph).value
       status.tow = eph.epoch.tow
       status.gpsWeek = eph.epoch.week
-      ephemeris_statuses.append(status)
+      return status
+
+    for eph in eph_list:
+      if hash(eph) not in self.cached_ephemeris_status:
+        self.cached_ephemeris_status[hash(eph)] = create_emph_status(eph)
+
+      ephemeris_statuses.append(self.cached_ephemeris_status[hash(eph)])
+
     return ephemeris_statuses
 
 
