@@ -76,7 +76,7 @@ def temporary_mock_dir(mock_paths_in, kwarg = None, generator = tempfile.Tempora
   def wrapper(func):
     @wraps(func)
     def wrap(*args, **kwargs):
-      mock_paths = [mock_paths_in] if type(mock_paths_in) is not list else mock_paths_in
+      mock_paths = [mock_paths_in] if isinstance(mock_paths_in, list) else mock_paths_in
       with generator() as temp_dir:
         mocks = []
         for mock_path in mock_paths:
