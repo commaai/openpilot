@@ -190,7 +190,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
       if not params.get_bool("ObdMultiplexingChanged"):
         params.put_bool("ObdMultiplexingChanged", True)
     return time.perf_counter() - t
-  
+
   def fake_get_data(self, timeout):
     self.fake_timeout_time += timeout
     return {}
@@ -206,7 +206,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
       thread = threading.Thread(target=get_fw_versions, args=(fake_socket, fake_socket, brand),
                                 kwargs=dict(num_pandas=num_pandas))
       brand_time += self._run_thread(thread) + self.fake_timeout_time
-    
+
     query_patch.stop()
     return brand_time / self.N
 
