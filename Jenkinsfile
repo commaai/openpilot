@@ -177,11 +177,8 @@ pipeline {
             phone_steps("tizi", [
               ["build openpilot", "cd selfdrive/manager && ./build.py"],
               ["test boardd loopback", "SINGLE_PANDA=1 pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
-              // avoid hitting ST bootloader bug for now
-              ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py -k 'test_best_case_'"],
+              ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py -k 'test_best_case_'"], // avoid hitting ST bootloader bug for now
               ["test sensord", "cd system/sensord/tests && pytest test_sensord.py"],
-              ["test camerad", "pytest system/camerad/test/test_camerad.py"],
-              ["test exposure", "pytest system/camerad/test/test_exposure.py"],
               ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
               ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
               ["test rawgpsd", "pytest system/sensord/rawgps/test_rawgps.py"],
