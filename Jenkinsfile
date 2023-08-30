@@ -177,7 +177,8 @@ pipeline {
             phone_steps("tizi", [
               ["build openpilot", "cd selfdrive/manager && ./build.py"],
               ["test boardd loopback", "SINGLE_PANDA=1 pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
-              ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
+              // avoid hitting ST bootloader bug for now
+              ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py -k 'test_best_case_'"],
               ["test sensord", "cd system/sensord/tests && pytest test_sensord.py"],
               ["test camerad", "pytest system/camerad/test/test_camerad.py"],
               ["test exposure", "pytest system/camerad/test/test_exposure.py"],
@@ -249,11 +250,11 @@ pipeline {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
             phone_steps("tici-lsmc", [
-              ["build", "cd selfdrive/manager && ./build.py"],
+              ["build", "scons -j8 system/sensord/"],
               ["test sensord", "cd system/sensord/tests && pytest test_sensord.py"],
             ])
             phone_steps("tici-bmx-lsm", [
-              ["build", "cd selfdrive/manager && ./build.py"],
+              ["build", "scons -j8 system/sensord/"],
               ["test sensord", "cd system/sensord/tests && pytest test_sensord.py"],
             ])
           }
