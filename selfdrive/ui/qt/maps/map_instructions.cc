@@ -89,6 +89,10 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     QString fn = "direction_" + type;
     if (!modifier.isEmpty()) {
       fn += "_" + modifier;
+      if (type == "roundabout" || type == "rotary"){
+        // Normalize and round to nearest 45deg
+        fn += "_" + QString::number(((instruction.getManeuverDegrees() + 382) % 360 / 45 * 45));
+      }
     }
     fn = fn.replace(' ', '_');
     bool rhd = is_rhd && (fn.contains("_left") || fn.contains("_right"));
