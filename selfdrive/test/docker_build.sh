@@ -5,6 +5,11 @@ set -e
 # mkdir -p .ci_cache/scons_cache
 # sudo mount --bind /tmp/scons_cache/ .ci_cache/scons_cache
 
+if [ ! -z $PUSH_IMAGE ] && [ -z $CURRENT_ARCH_BUILD ]; then
+  echo "PUSH_IMAGE is only supported for single arch builds"
+  exit 1
+fi
+
 if [ $1 = "base" ]; then
   export DOCKER_IMAGE=openpilot-base
   export DOCKER_FILE=Dockerfile.openpilot_base
@@ -28,18 +33,20 @@ fi
 export DOCKER_REGISTRY=ghcr.io/commaai
 export COMMIT_SHA=$(git rev-parse HEAD)
 
-ARCH=$(uname -m)
-LOCAL_TAG=$DOCKER_IMAGE
-REMOTE_TAG=$DOCKER_REGISTRY/$LOCAL_TAG:$ARCH
-REMOTE_SHA_TAG=$DOCKER_REGISTRY/$LOCAL_TAG:$ARCH-$COMMIT_SHA
+if [ ! -n "$CURRENT_ARCH_BUILD" ]; then
+  ARCH=$(uname -m)
+  TAG_SUFFIX="-$ARCH"
+fi
+LOCAL_TAG=$DOCKER_IMAGE$TAG_SUFFIX
+REMOTE_TAG=$DOCKER_REGISTRY/$LOCAL_TAG
+REMOTE_SHA_TAG=$DOCKER_REGISTRY/$LOCAL_TAG-$COMMIT_SHA
 
 SCRIPT_DIR=$(dirname "$0")
 OPENPILOT_DIR=$SCRIPT_DIR/../../
 
 DOCKER_BUILDKIT=1 docker buildx build --load --cache-to type=inline --cache-from type=registry,ref=$REMOTE_TAG -t $REMOTE_TAG -t $LOCAL_TAG -f $OPENPILOT_DIR/$DOCKER_FILE $OPENPILOT_DIR
 
-if [[ ! -z "$PUSH_IMAGE" ]];
-then
+if [ ! -z "$PUSH_IMAGE" ]; then
   docker push $REMOTE_TAG
   docker tag $REMOTE_TAG $REMOTE_SHA_TAG
   docker push $REMOTE_SHA_TAG
