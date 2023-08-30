@@ -2071,6 +2071,6 @@ DBC = {
   CAR.GENESIS_GV80: dbc_dict('hyundai_canfd_generated', None),
   CAR.KIA_CARNIVAL_4TH_GEN: dbc_dict('hyundai_canfd_generated', None),
   CAR.KIA_SORENTO_HEV_4TH_GEN: dbc_dict('hyundai_canfd_generated', None),
-  CAR.KIA_SORENTO_HEV_4TH_GEN: dbc_dict('hyundai_canfd_generated', None),
+  CAR.KONA_EV_2ND_GEN: dbc_dict('hyundai_canfd_generated', None),
   CAR.PALISADE_2023: dbc_dict('hyundai_palisade_2023_generated', None),
 }
