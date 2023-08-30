@@ -172,7 +172,7 @@ class TestLoggerd(unittest.TestCase):
         frame = getattr(camera_state, state)
         frame.frameId = n
         pm.send(state, camera_state)
-      time.sleep((1.0/fps) - (time.monotonic() - time_start))
+      time.sleep(max((1.0/fps) - (time.monotonic() - time_start), 0))
 
     managed_processes["loggerd"].stop()
     managed_processes["encoderd"].stop()
