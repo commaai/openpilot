@@ -60,7 +60,7 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
   {
     QHBoxLayout *title_layout = new QHBoxLayout;
     {
-      QLabel *title = new QLabel(tr("Uploading training data"));
+      QLabel *title = new QLabel(tr("Ready to upload"));
       title->setStyleSheet("font-size: 64px; font-weight: 600;");
       title->setWordWrap(true);
       title->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
@@ -74,7 +74,7 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
     }
     uploading_layout->addLayout(title_layout);
 
-    QLabel *desc = new QLabel(tr("Your data is used to train driving models and help improve openpilot"));
+    QLabel *desc = new QLabel(tr("Training data will be pulled periodically while your device is on Wi-Fi"));
     desc->setStyleSheet("font-size: 48px; font-weight: 400;");
     desc->setWordWrap(true);
     uploading_layout->addWidget(desc);

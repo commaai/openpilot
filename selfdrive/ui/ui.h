@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
 #include <optional>
@@ -20,6 +21,7 @@ const int UI_BORDER_SIZE = 30;
 const int UI_HEADER_HEIGHT = 420;
 
 const int UI_FREQ = 20; // Hz
+const int BACKLIGHT_OFFROAD = 50;
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 const mat3 DEFAULT_CALIBRATION = {{ 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0 }};
@@ -94,6 +96,15 @@ typedef enum UIStatus {
   STATUS_ENGAGED,
 } UIStatus;
 
+enum PrimeType {
+  UNKNOWN = -1,
+  NONE = 0,
+  MAGENTA = 1,
+  LITE = 2,
+  BLUE = 3,
+  MAGENTA_NEW = 4,
+};
+
 const QColor bg_colors [] = {
   [STATUS_DISENGAGED] = QColor(0x17, 0x33, 0x49, 0xc8),
   [STATUS_OVERRIDE] = QColor(0x91, 0x9b, 0x95, 0xf1),
@@ -151,8 +162,9 @@ public:
     return scene.started && (*sm)["controlsState"].getControlsState().getEnabled();
   }
 
-  void setPrimeType(int type);
-  inline int primeType() const { return prime_type; }
+  void setPrimeType(PrimeType type);
+  inline PrimeType primeType() const { return prime_type; }
+  inline bool hasPrime() const { return prime_type != PrimeType::UNKNOWN && prime_type != PrimeType::NONE; }
 
   int fb_w = 0, fb_h = 0;
 
@@ -168,7 +180,8 @@ public:
 signals:
   void uiUpdate(const UIState &s);
   void offroadTransition(bool offroad);
-  void primeTypeChanged(int prime_type);
+  void primeChanged(bool prime);
+  void primeTypeChanged(PrimeType prime_type);
 
 private slots:
   void update();
@@ -176,7 +189,7 @@ private slots:
 private:
   QTimer *timer;
   bool started_prev = false;
-  int prime_type = -1;
+  PrimeType prime_type = PrimeType::UNKNOWN;
 };
 
 UIState *uiState();
@@ -188,11 +201,16 @@ class Device : public QObject {
 public:
   Device(QObject *parent = 0);
   bool isAwake() { return awake; }
+  void setOffroadBrightness(int brightness) {
+    offroad_brightness = std::clamp(brightness, 0, 100);
+  }
 
 private:
   bool awake = false;
   int interactive_timeout = 0;
   bool ignition_on = false;
+
+  int offroad_brightness = BACKLIGHT_OFFROAD;
   int last_brightness = 0;
   FirstOrderFilter brightness_filter;
   QFuture<void> brightness_future;
@@ -206,7 +224,7 @@ signals:
   void interactiveTimeout();
 
 public slots:
-  void resetInteractiveTimeout();
+  void resetInteractiveTimeout(int timeout = -1);
   void update(const UIState &s);
 };
 

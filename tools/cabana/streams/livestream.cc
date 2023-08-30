@@ -1,5 +1,8 @@
 #include "tools/cabana/streams/livestream.h"
 
+#include <algorithm>
+#include <memory>
+
 struct LiveStream::Logger {
   Logger() : start_ts(seconds_since_epoch()), segment_num(-1) {}
 

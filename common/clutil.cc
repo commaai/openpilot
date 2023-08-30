@@ -38,8 +38,8 @@ void cl_print_info(cl_platform_id platform, cl_device_id device) {
   LOGD("extensions: %s", get_platform_info(platform, CL_PLATFORM_EXTENSIONS).c_str());
   LOGD("name: %s", get_device_info(device, CL_DEVICE_NAME).c_str());
   LOGD("device version: %s", get_device_info(device, CL_DEVICE_VERSION).c_str());
-  LOGD("max work group size: %d", work_group_size);
-  LOGD("type = %d = ", device_type, type_str);
+  LOGD("max work group size: %zu", work_group_size);
+  LOGD("type = %d, %s", (int)device_type, type_str);
 }
 
 void cl_print_build_errors(cl_program program, cl_device_id device) {
@@ -62,7 +62,7 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
   CL_CHECK(clGetPlatformIDs(num_platforms, &platform_ids[0], NULL));
 
   for (size_t i = 0; i < num_platforms; ++i) {
-    LOGD("platform[%d] CL_PLATFORM_NAME: %s", i, get_platform_info(platform_ids[i], CL_PLATFORM_NAME).c_str());
+    LOGD("platform[%zu] CL_PLATFORM_NAME: %s", i, get_platform_info(platform_ids[i], CL_PLATFORM_NAME).c_str());
 
     // Get first device
     if (cl_device_id device_id = NULL; clGetDeviceIDs(platform_ids[i], device_type, 1, &device_id, NULL) == 0 && device_id) {
@@ -73,6 +73,10 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
   LOGE("No valid openCL platform found");
   assert(0);
   return nullptr;
+}
+
+cl_context cl_create_context(cl_device_id device_id) {
+  return CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
 }
 
 cl_program cl_program_from_file(cl_context ctx, cl_device_id device_id, const char* path, const char* args) {

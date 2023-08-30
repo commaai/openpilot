@@ -1,13 +1,14 @@
 import logging
 import os
 import time
+import warnings
 from pathlib import Path
 from logging.handlers import BaseRotatingHandler
 
 import zmq
 
-from common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
-from system.hardware import PC
+from openpilot.common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
+from openpilot.system.hardware import PC
 
 if PC:
   SWAGLOG_DIR = os.path.join(str(Path.home()), ".comma", "log")
@@ -76,6 +77,9 @@ class UnixDomainSocketHandler(logging.Handler):
     self.sock = None
 
   def __del__(self):
+    self.close()
+
+  def close(self):
     if self.sock is not None:
       self.sock.close()
     if self.zctx is not None:
@@ -90,6 +94,8 @@ class UnixDomainSocketHandler(logging.Handler):
 
   def emit(self, record):
     if os.getpid() != self.pid:
+      # TODO suppresses warning about forking proc with zmq socket, fix root cause
+      warnings.filterwarnings("ignore", category=ResourceWarning, message="unclosed.*<zmq.*>")
       self.connect()
 
     msg = self.format(record).rstrip('\n')
@@ -126,6 +132,8 @@ elif print_level == 'info':
 elif print_level == 'warning':
   outhandler.setLevel(logging.WARNING)
 
+ipchandler = UnixDomainSocketHandler(SwagFormatter(log))
+
 log.addHandler(outhandler)
 # logs are sent through IPC before writing to disk to prevent disk I/O blocking
-log.addHandler(UnixDomainSocketHandler(SwagFormatter(log)))
+log.addHandler(ipchandler)

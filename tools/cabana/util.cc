@@ -1,12 +1,16 @@
 #include "tools/cabana/util.h"
 
+#include <algorithm>
 #include <array>
 #include <csignal>
+#include <limits>
+#include <memory>
+#include <string>
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <QDebug>
 #include <QColor>
+#include <QDebug>
 #include <QFontDatabase>
 #include <QLocale>
 #include <QPainter>
@@ -54,12 +58,6 @@ MessageBytesDelegate::MessageBytesDelegate(QObject *parent, bool multiple_lines)
   byte_size = QFontMetrics(fixed_font).size(Qt::TextSingleLine, "00 ") + QSize(0, 2);
 }
 
-void MessageBytesDelegate::setMultipleLines(bool v) {
-  if (std::exchange(multiple_lines, v) != multiple_lines) {
-    std::fill_n(size_cache, std::size(size_cache), QSize{});
-  }
-}
-
 int MessageBytesDelegate::widthForBytes(int n) const {
   int h_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
   return n * byte_size.width() + h_margin * 2;
@@ -73,19 +71,8 @@ QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const Q
   }
   int n = data.toByteArray().size();
   assert(n >= 0 && n <= 64);
-
-  QSize size = size_cache[n];
-  if (size.isEmpty()) {
-    if (!multiple_lines) {
-      size.setWidth(widthForBytes(n));
-      size.setHeight(byte_size.height() + 2 * v_margin);
-    } else {
-      size.setWidth(widthForBytes(8));
-      size.setHeight(byte_size.height() * std::max(1, n / 8) + 2 * v_margin);
-    }
-    size_cache[n] = size;
-  }
-  return size;
+  return !multiple_lines ? QSize{widthForBytes(n), byte_size.height() + 2 * v_margin}
+                         : QSize{widthForBytes(8), byte_size.height() * std::max(1, n / 8) + 2 * v_margin};
 }
 
 void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
@@ -238,7 +225,7 @@ void setTheme(int theme) {
       new_palette.setColor(QPalette::BrightText, QColor("#f0f0f0"));
       new_palette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor("#777777"));
       new_palette.setColor(QPalette::Disabled, QPalette::WindowText, QColor("#777777"));
-      new_palette.setColor(QPalette::Disabled, QPalette::Text, QColor("#777777"));;
+      new_palette.setColor(QPalette::Disabled, QPalette::Text, QColor("#777777"));
       new_palette.setColor(QPalette::Light, QColor("#777777"));
       new_palette.setColor(QPalette::Dark, QColor("#353535"));
     } else {
@@ -277,4 +264,27 @@ QString signalToolTip(const cabana::Signal *sig) {
     Little Endian: %6 Signed: %7</span>
   )").arg(sig->name).arg(sig->start_bit).arg(sig->size).arg(sig->msb).arg(sig->lsb)
      .arg(sig->is_little_endian ? "Y" : "N").arg(sig->is_signed ? "Y" : "N");
+}
+
+// MonotonicBuffer
+
+void *MonotonicBuffer::allocate(size_t bytes, size_t alignment) {
+  assert(bytes > 0);
+  void *p = std::align(alignment, bytes, current_buf, available);
+  if (p == nullptr) {
+    available = next_buffer_size = std::max(next_buffer_size, bytes);
+    current_buf = buffers.emplace_back(std::aligned_alloc(alignment, next_buffer_size));
+    next_buffer_size *= growth_factor;
+    p = current_buf;
+  }
+
+  current_buf = (char *)current_buf + bytes;
+  available -= bytes;
+  return p;
+}
+
+MonotonicBuffer::~MonotonicBuffer() {
+  for (auto buf : buffers) {
+    free(buf);
+  }
 }

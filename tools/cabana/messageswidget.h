@@ -1,5 +1,9 @@
 #pragma once
 
+#include <algorithm>
+#include <utility>
+#include <vector>
+
 #include <QAbstractTableModel>
 #include <QCheckBox>
 #include <QContextMenuEvent>
@@ -69,7 +73,7 @@ class MessageViewHeader : public QHeaderView {
 
   Q_OBJECT
 public:
-  MessageViewHeader(QWidget *parent, MessageListModel *model);
+  MessageViewHeader(QWidget *parent);
   void updateHeaderPositions();
 
   void updateGeometries() override;
@@ -85,8 +89,6 @@ private:
   void updateFilters();
 
   QMap<int, QLineEdit *> editors;
-  QMap<int, QSet<QString>> values;
-  MessageListModel *model;
 };
 
 class MessagesWidget : public QWidget {
