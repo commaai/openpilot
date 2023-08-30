@@ -40,7 +40,7 @@ SConscript([
   'transformations/SConscript'  
 ])
 
-Import('simple_kalman_python', 'transformations')
-common_python = [params_python, simple_kalman_python, transformations]
+Import('simple_kalman_python', 'transformations_python')
+common_python = [params_python, simple_kalman_python, transformations_python]
 
 Export('common_python')
