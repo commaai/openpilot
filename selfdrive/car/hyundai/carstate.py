@@ -230,12 +230,9 @@ class CarState(CarStateBase):
     self.buttons_counter = cp.vl[self.cruise_btns_msg_canfd]["COUNTER"]
     ret.accFaulted = cp.vl["TCS"]["ACCEnable"] != 0  # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
 
-    # TODO: consolidate both messages, they have similar definitions
     if self.CP.flags & HyundaiFlags.CANFD_HDA2:
-      if self.CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING:
-        self.cam_0x362 = copy.copy(cp_cam.vl["CAM_0x362"])
-      else:
-        self.cam_0x2a4 = copy.copy(cp_cam.vl["CAM_0x2a4"])
+      lfa_lanelines_msg = 0x362 if self.CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING else 0x2a4
+      setattr(self, f"cam_0x{lfa_lanelines_msg:03x}", copy.copy(cp_cam.vl[f"CAM_0x{lfa_lanelines_msg:03x}"]))
 
     return ret
 
