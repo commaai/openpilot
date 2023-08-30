@@ -1,16 +1,17 @@
 #!/bin/bash
 
-# Link root to new batman user
-rm /home/batman/.bashrc
-ln -s /root/.pyenv      /home/batman/.pyenv
-ln -s /root/.pyenvrc    /home/batman/.pyenvrc
-ln -s /root/.bashrc     /home/batman/.bashrc
-ln -s /root/.Xauthority /home/batman/.Xauthority
+USER=batman
+
+# Link root pyenv to new batman user
+unlink /home/$USER/.pyenv
+unlink /home/$USER/.pyenvrc
+
+ln -s /root/.pyenv    /home/$USER/.pyenv
+ln -s /root/.pyenvrc  /home/$USER/.pyenvrc
 
 # Setup permissions
-sudo chown batman: /root
-sudo chmod u+w /root
-sudo chown batman: /tmp/scons_cache
-sudo chmod u+w /tmp/scons_cache
+sudo usermod -G root $USER
 
-pre-commit install
+# TODO: this takes 2-3 minutes to complete, can we do this faster somehow?
+sudo chown -R batman: /root
+sudo chown -R batman: /tmp/scons_cache
