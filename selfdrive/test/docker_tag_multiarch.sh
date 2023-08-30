@@ -36,14 +36,13 @@ REMOTE_SHA_TAG=$REMOTE_TAG:$COMMIT_SHA
 
 MANIFEST_AMENDS=""
 for ARCH in ${ARCHS[@]}; do
-  MANIFEST_AMENDS="$MANIFEST_AMENDS --amend $REMOTE_TAG:$ARCH-$COMMIT_SHA"
+  MANIFEST_AMENDS="$MANIFEST_AMENDS --amend $REMOTE_TAG-$ARCH:$COMMIT_SHA"
 done
 
 docker manifest create $REMOTE_TAG $MANIFEST_AMENDS
 docker manifest create $REMOTE_SHA_TAG $MANIFEST_AMENDS
 
-if [[ ! -z "$PUSH_IMAGE" ]];
-then
+if [[ ! -z "$PUSH_IMAGE" ]]; then
   docker manifest push $REMOTE_TAG
   docker manifest push $REMOTE_SHA_TAG
 fi
