@@ -13,7 +13,7 @@ from .driving cimport FEATURE_LEN as CPP_FEATURE_LEN, HISTORY_BUFFER_LEN as CPP_
                       NAV_FEATURE_LEN as CPP_NAV_FEATURE_LEN, NAV_INSTRUCTION_LEN as CPP_NAV_INSTRUCTION_LEN, \
                       OUTPUT_SIZE as CPP_OUTPUT_SIZE, NET_OUTPUT_SIZE as CPP_NET_OUTPUT_SIZE, MODEL_FREQ as CPP_MODEL_FREQ
 from .driving cimport MessageBuilder, PublishState as cppPublishState
-from .driving cimport fill_model_msg, fill_pose_msg, update_calibration as cpp_update_calibration
+from .driving cimport fill_model_msg, fill_pose_msg
 
 FEATURE_LEN = CPP_FEATURE_LEN
 HISTORY_BUFFER_LEN = CPP_HISTORY_BUFFER_LEN
@@ -28,13 +28,6 @@ MODEL_FREQ = CPP_MODEL_FREQ
 
 cdef class PublishState:
   cdef cppPublishState state
-
-def update_calibration(float[:] device_from_calib_euler, bool wide_camera, bool bigmodel_frame):
-  cdef mat3 result = cpp_update_calibration(&device_from_calib_euler[0], wide_camera, bigmodel_frame)
-  np_result = np.empty(9, dtype=np.float32)
-  cdef float[:] np_result_view = np_result
-  memcpy(&np_result_view[0], &result.v[0], 9*sizeof(float))
-  return np_result.reshape(3, 3)
 
 def create_model_msg(float[:] model_outputs, PublishState ps, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
                      uint64_t timestamp_eof, uint64_t timestamp_llk, float model_execution_time, bool nav_enabled, bool valid):
