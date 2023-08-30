@@ -202,6 +202,39 @@ jobs:
       run: |
         eval "$BUILD_CL"
 
+  docker_push_arm64:
+    name: docker push arm64
+    runs-on: buildjet-4vcpu-ubuntu-2004-arm
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+    - name: Setup to push to repo
+      run: |
+        echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
+        $DOCKER_LOGIN
+    - name: Build and push base Docker image
+      run: | 
+        eval "$BUILD"
+
+  docker_push_multiarch:
+    name: docker push multiarch tag
+    runs-on: ubuntu-20.04
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+    needs: [docker_push, docker_push_arm64]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: false
+    - name: Setup to push to repo
+      run: |
+        echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
+        $DOCKER_LOGIN
+    - name: Merge x64 and arm64 tags
+      run: | 
+        selfdrive/test/docker_tag_multiarch.sh base x86_64 aarch64
+
   static_analysis:
     name: static analysis
     runs-on: ubuntu-20.04
