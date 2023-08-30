@@ -1,7 +1,6 @@
 import unittest
 import time
 import numpy as np
-import pytest
 
 from laika import AstroDog
 from laika.helpers import ConstellationId
@@ -43,7 +42,6 @@ class TestUbloxProcessing(unittest.TestCase):
     lr = LogReader(get_url("37b6542f3211019a|2023-01-15--23-45-10", 14))
     cls.ublox_raw = get_ublox_raw(lr)
 
-  @pytest.mark.parallel
   def test_read_ublox_raw(self):
     count_gps = 0
     count_glonass = 0
@@ -57,7 +55,6 @@ class TestUbloxProcessing(unittest.TestCase):
     self.assertEqual(count_gps, 5036)
     self.assertEqual(count_glonass, 3651)
 
-  @pytest.mark.parallel
   @temporary_dir
   def test_get_fix(self, temp_dir):
     dog = AstroDog(cache_dir=temp_dir)

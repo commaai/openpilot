@@ -6,7 +6,6 @@ from collections import defaultdict
 from parameterized import parameterized
 import threading
 
-import pytest
 
 from cereal import car
 from openpilot.common.params import Params
@@ -30,7 +29,6 @@ class FakeSocket:
     pass
 
 
-@pytest.mark.parallel
 class TestFwFingerprint(unittest.TestCase):
   def assertFingerprints(self, candidates, expected):
     candidates = list(candidates)
