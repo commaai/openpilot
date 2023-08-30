@@ -19,5 +19,16 @@
     "--volume=/tmp/comma_download_cache:/tmp/comma_download_cache",
     "--volume=/tmp/devcontainer_scons_cache:/tmp/scons_cache",
     "--shm-size=1G"
-  ]
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-vscode.cpptools",
+        "ms-toolsai.jupyter",
+        "guyskk.language-cython",
+        "lharri73.dbc"
+      ]
+    }
+  }
 }
