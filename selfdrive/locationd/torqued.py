@@ -76,6 +76,9 @@ class PointBuckets:
     return all(len(v) >= min_pts for v, min_pts in zip(self.buckets.values(), self.buckets_min_points.values(), strict=True)) \
                                                                                 and (self.__len__() >= self.min_points_total)
 
+  def is_calculable(self):
+    return all(len(v) > 0 for v, min_pts in zip(self.buckets.values(), self.buckets_min_points.values(), strict=True))
+
   def add_point(self, x, y):
     for bound_min, bound_max in self.x_bounds:
       if (x >= bound_min) and (x < bound_max):
@@ -225,13 +228,12 @@ class TorqueEstimator:
     liveTorqueParameters.version = VERSION
     liveTorqueParameters.useParams = self.use_params
 
-    # always calculate estimates, validity is marked below
-    latAccelFactor, latAccelOffset, frictionCoeff = self.estimate_params()
-    liveTorqueParameters.latAccelFactorRaw = float(latAccelFactor)
-    liveTorqueParameters.latAccelOffsetRaw = float(latAccelOffset)
-    liveTorqueParameters.frictionCoefficientRaw = float(frictionCoeff)
-
     if self.filtered_points.is_valid():
+      latAccelFactor, latAccelOffset, frictionCoeff = self.estimate_params()
+      liveTorqueParameters.latAccelFactorRaw = float(latAccelFactor)
+      liveTorqueParameters.latAccelOffsetRaw = float(latAccelOffset)
+      liveTorqueParameters.frictionCoefficientRaw = float(frictionCoeff)
+
       if any(val is None or np.isnan(val) for val in [latAccelFactor, latAccelOffset, frictionCoeff]):
         cloudlog.exception("Live torque parameters are invalid.")
         liveTorqueParameters.liveValid = False
