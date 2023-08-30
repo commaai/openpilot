@@ -147,6 +147,10 @@ class Laikad:
         cloudlog.debug("Cache saved")
       self.last_cached_t = self.last_report_time
 
+  @staticmethod
+  def eph_hash(eph):
+    return hash((eph.prn, eph.eph_type, eph.file_source, eph.epoch.tow, eph.epoch.week, eph.file_name))
+
   def create_ephem_statuses(self):
     ephemeris_statuses = []
     eph_list: List = sum([v for k,v in self.astro_dog.navs.items()], []) + sum([v for k,v in self.astro_dog.qcom_polys.items()], [])
@@ -161,10 +165,10 @@ class Laikad:
       return status
 
     for eph in eph_list:
-      if hash(eph) not in self.cached_ephemeris_status:
-        self.cached_ephemeris_status[hash(eph)] = create_emph_status(eph)
+      if self.eph_hash(eph) not in self.cached_ephemeris_status:
+        self.cached_ephemeris_status[self.eph_hash(eph)] = create_emph_status(eph)
 
-      ephemeris_statuses.append(self.cached_ephemeris_status[hash(eph)])
+      ephemeris_statuses.append(self.cached_ephemeris_status[self.eph_hash(eph)])
 
     return ephemeris_statuses
 
