@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import time
 import unittest
+
 from cereal import log
 from openpilot.common.params import Params
 from datetime import datetime
@@ -14,6 +15,7 @@ from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, read_raw_ublox, read_raw_qcom
 from openpilot.selfdrive.locationd.laikad import EPHEMERIS_CACHE, Laikad
+from openpilot.selfdrive.test.helpers import temporary_laikad_downloads_dir
 from openpilot.selfdrive.test.openpilotci import get_url
 from openpilot.tools.lib.logreader import LogReader
 
@@ -106,6 +108,7 @@ class TestLaikad(unittest.TestCase):
   def setUp(self):
     Params().remove(EPHEMERIS_CACHE)
 
+  @temporary_laikad_downloads_dir
   def test_fetch_navs_non_blocking(self):
     gpstime = GPSTime.from_datetime(datetime(2021, month=3, day=1))
     laikad = Laikad()
@@ -126,7 +129,7 @@ class TestLaikad(unittest.TestCase):
     self.assertIsNotNone(ephem)
     self.assertNotEqual(ephem, ephem2)
 
-
+  @temporary_laikad_downloads_dir
   def test_fetch_navs_with_wrong_clocks(self):
     laikad = Laikad()
 
@@ -149,6 +152,7 @@ class TestLaikad(unittest.TestCase):
     check_has_navs()
     self.assertEqual(laikad.last_fetch_navs_t, real_current_time)
 
+  @temporary_laikad_downloads_dir
   def test_laika_online(self):
     laikad = Laikad(auto_update=True, valid_ephem_types=EphemerisType.ULTRA_RAPID_ORBIT)
     correct_msgs = verify_messages(self.logs, laikad)
@@ -157,6 +161,7 @@ class TestLaikad(unittest.TestCase):
     self.assertEqual(correct_msgs_expected, len(correct_msgs))
     self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
+  @temporary_laikad_downloads_dir
   def test_kf_becomes_valid(self):
     laikad = Laikad(auto_update=False)
     m = self.logs[0]
@@ -172,7 +177,8 @@ class TestLaikad(unittest.TestCase):
         break
     self.assertTrue(kf_valid)
 
-  def test_laika_online_nav_only(self):
+  @temporary_laikad_downloads_dir
+  def test_laika_online_nav_only(self,):
     for use_qcom, logs in zip([True, False], [self.logs_qcom, self.logs], strict=True):
       laikad = Laikad(auto_update=True, valid_ephem_types=EphemerisType.NAV, use_qcom=use_qcom)
       # Disable fetch_orbits to test NAV only
@@ -183,12 +189,14 @@ class TestLaikad(unittest.TestCase):
       self.assertEqual(correct_msgs_expected, len(correct_msgs))
       self.assertEqual(valid_fix_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
+  @temporary_laikad_downloads_dir
   @mock.patch('laika.downloader.download_and_cache_file')
   def test_laika_offline(self, downloader_mock):
     downloader_mock.side_effect = DownloadFailed("Mock download failed")
     laikad = Laikad(auto_update=False)
     laikad.fetch_navs(GPS_TIME_PREDICTION_ORBITS_RUSSIAN_SRC, block=True)
 
+  @temporary_laikad_downloads_dir
   @mock.patch('laika.downloader.download_and_cache_file')
   def test_download_failed_russian_source(self, downloader_mock):
     downloader_mock.side_effect = DownloadFailed
@@ -198,12 +206,14 @@ class TestLaikad(unittest.TestCase):
     self.assertEqual(expected_msgs, len(correct_msgs))
     self.assertEqual(expected_msgs, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
+  @temporary_laikad_downloads_dir
   def test_laika_get_orbits(self):
     laikad = Laikad(auto_update=False)
     # Pretend process has loaded the orbits on startup by using the time of the first gps message.
     laikad.fetch_navs(self.first_gps_time, block=True)
     self.dict_has_values(laikad.astro_dog.navs)
 
+  @temporary_laikad_downloads_dir
   @unittest.skip("Use to debug live data")
   def test_laika_get_navs_now(self):
     laikad = Laikad(auto_update=False)
@@ -213,6 +223,7 @@ class TestLaikad(unittest.TestCase):
     prn = "R01"
     self.assertGreater(len(laikad.astro_dog.navs[prn]), 0)
 
+  @temporary_laikad_downloads_dir
   def test_get_navs_in_process(self):
     for auto_fetch_navs in [True, False]:
       for use_qcom, logs in zip([True, False], [self.logs_qcom, self.logs], strict=True):
@@ -246,6 +257,7 @@ class TestLaikad(unittest.TestCase):
         self.assertEqual(len(laikad.astro_dog.navs_fetched_times._ranges), 0)
         self.assertEqual(None, laikad.orbit_fetch_future)
 
+  @temporary_laikad_downloads_dir
   def test_cache(self):
     use_qcom = True
     for use_qcom, logs in zip([True, False], [self.logs_qcom, self.logs], strict=True):
@@ -296,6 +308,7 @@ class TestLaikad(unittest.TestCase):
       #  mock_method.assert_not_called()
       #break
 
+  @temporary_laikad_downloads_dir
   def test_low_gnss_meas(self):
     cnt = 0
     laikad = Laikad()

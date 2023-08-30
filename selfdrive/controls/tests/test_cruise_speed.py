@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import numpy as np
 import unittest
+import pytest
 
 from parameterized import parameterized_class
 from cereal import log
@@ -31,6 +32,7 @@ def run_cruise_simulation(cruise, e2e, t_end=20.):
   return output[-1, 3]
 
 
+@pytest.mark.parallel
 class TestCruiseSpeed(unittest.TestCase):
   def test_cruise_speed(self):
     params = Params()

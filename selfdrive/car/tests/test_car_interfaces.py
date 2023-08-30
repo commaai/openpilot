@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import math
+import pytest
 import unittest
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
@@ -41,6 +42,7 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
   return params
 
 
+@pytest.mark.parallel
 class TestCarInterfaces(unittest.TestCase):
 
   @classmethod
