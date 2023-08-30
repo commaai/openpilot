@@ -6,7 +6,6 @@ from collections import defaultdict
 from parameterized import parameterized
 import threading
 
-
 from cereal import car
 from openpilot.common.params import Params
 from openpilot.selfdrive.car.car_helpers import interfaces
@@ -27,6 +26,7 @@ class FakeSocket:
 
   def send(self, msg):
     pass
+
 
 class TestFwFingerprint(unittest.TestCase):
   def assertFingerprints(self, candidates, expected):
