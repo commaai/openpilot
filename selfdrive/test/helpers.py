@@ -76,7 +76,7 @@ def temporary_mock_dir(mock_paths_in, kwarg = None, generator = tempfile.Tempora
   def wrapper(func):
     @wraps(func)
     def wrap(*args, **kwargs):
-      mock_paths = [mock_paths_in] if isinstance(mock_paths_in, list) else mock_paths_in
+      mock_paths = mock_paths_in if isinstance(mock_paths_in, list) else [mock_paths_in]
       with generator() as temp_dir:
         mocks = []
         for mock_path in mock_paths:
@@ -92,18 +92,18 @@ def temporary_mock_dir(mock_paths_in, kwarg = None, generator = tempfile.Tempora
     return wrap
   return wrapper
 
-class StringContext:
-  def __init__(self, context):
-    self.context = context
+def string_context(context):
+  class StringContext:
+    def __enter__(self):
+      return context
 
-  def __enter__(self):
-    return self.context
-
-  def __exit__(self, *args):
-    pass
+    def __exit__(self, *args):
+      pass
+  
+  return StringContext
 
 temporary_cache_dir = temporary_mock_dir("openpilot.tools.lib.url_file.CACHE_DIR")
 temporary_swaglog_dir = temporary_mock_dir("openpilot.system.swaglog.SWAGLOG_DIR", "temp_dir")
 temporary_laikad_downloads_dir = temporary_mock_dir("openpilot.selfdrive.locationd.laikad.DOWNLOADS_CACHE_FOLDER")
 temporary_swaglog_ipc = temporary_mock_dir(["openpilot.system.swaglog.SWAGLOG_IPC", "system.logmessaged.SWAGLOG_IPC"],
-                                           generator=StringContext("/tmp/test_swaglog_ipc"))
+                                           generator=string_context("/tmp/test_swaglog_ipc"))
