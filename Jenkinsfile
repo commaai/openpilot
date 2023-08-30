@@ -250,11 +250,11 @@ pipeline {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
             phone_steps("tici-lsmc", [
-              ["build", "scons -j8 system/sensord/"],
+              ["build", "cd selfdrive/manager && ./build.py"],
               ["test sensord", "cd system/sensord/tests && pytest test_sensord.py"],
             ])
             phone_steps("tici-bmx-lsm", [
-              ["build", "scons -j8 system/sensord/"],
+              ["build", "cd selfdrive/manager && ./build.py"],
               ["test sensord", "cd system/sensord/tests && pytest test_sensord.py"],
             ])
           }
