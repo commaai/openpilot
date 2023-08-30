@@ -23,6 +23,5 @@ cdef extern from "selfdrive/modeld/models/driving.h":
   cdef int MODEL_FREQ
   cdef struct PublishState: pass
 
-  mat3 update_calibration(float *, bool, bool)
   void fill_model_msg(MessageBuilder, float *, PublishState, uint32_t, uint32_t, uint32_t, float, uint64_t, uint64_t, float, bool, bool)
   void fill_pose_msg(MessageBuilder, float *, uint32_t, uint32_t, uint64_t, bool)
