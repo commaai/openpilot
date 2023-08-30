@@ -52,22 +52,26 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_steer):
   }
 
   if CP.flags & HyundaiFlags.CANFD_HDA2:
+    hda2_lkas_msg = "LKAS_ALT" if CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING else "LKAS"
     if CP.openpilotLongitudinalControl:
       ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
-    ret.append(packer.make_can_msg("LKAS", CAN.ACAN, values))
+    ret.append(packer.make_can_msg(hda2_lkas_msg, CAN.ACAN, values))
   else:
     ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
 
   return ret
 
-def create_cam_0x2a4(packer, CAN, cam_0x2a4):
-  values = {f"BYTE{i}": cam_0x2a4[f"BYTE{i}"] for i in range(3, 24) if i != 7}
-  values["COUNTER"] = cam_0x2a4["COUNTER"]
+def create_suppress_lfa(packer, CAN, hda2_lfa_block_msg, hda2_alt_steering):
+  suppress_msg = "CAM_0x362" if hda2_alt_steering else "CAM_0x2a4"
+  msg_bytes = 32 if hda2_alt_steering else 24
+
+  values = {f"BYTE{i}": hda2_lfa_block_msg[f"BYTE{i}"] for i in range(3, msg_bytes) if i != 7}
+  values["COUNTER"] = hda2_lfa_block_msg["COUNTER"]
   values["SET_ME_0"] = 0
   values["SET_ME_0_2"] = 0
   values["LEFT_LANE_LINE"] = 0
   values["RIGHT_LANE_LINE"] = 0
-  return packer.make_can_msg("CAM_0x2a4", CAN.ACAN, values)
+  return packer.make_can_msg(suppress_msg, CAN.ACAN, values)
 
 def create_buttons(packer, CP, CAN, cnt, btn):
   values = {
