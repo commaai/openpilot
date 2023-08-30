@@ -2,6 +2,9 @@
 
 #include <cstdlib>
 #include <fstream>
+#include <map>
+#include <string>
+
 #include "cereal/messaging/messaging.h"
 
 // no-op base hw class

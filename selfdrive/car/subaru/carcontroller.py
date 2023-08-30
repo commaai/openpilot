@@ -2,7 +2,7 @@ from openpilot.common.numpy_fast import clip, interp
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_driver_steer_torque_limits
 from openpilot.selfdrive.car.subaru import subarucan
-from openpilot.selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus, CarControllerParams, SubaruFlags
+from openpilot.selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, HYBRID_CARS, CanBus, CarControllerParams, SubaruFlags
 
 
 class CarController:
@@ -36,7 +36,7 @@ class CarController:
         apply_steer = 0
 
       if self.CP.carFingerprint in PREGLOBAL_CARS:
-        can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer, CC.latActive))
+        can_sends.append(subarucan.create_preglobal_steering_control(self.packer, self.frame // self.p.STEER_STEP, apply_steer, CC.latActive))
       else:
         can_sends.append(subarucan.create_steering_control(self.packer, apply_steer, CC.latActive))
 
@@ -100,8 +100,9 @@ class CarController:
                                                         self.CP.openpilotLongitudinalControl, cruise_brake > 0, cruise_throttle))
       else:
         if pcm_cancel_cmd:
-          bus = CanBus.alt if self.CP.carFingerprint in GLOBAL_GEN2 else CanBus.main
-          can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, bus, pcm_cancel_cmd))
+          if self.CP.carFingerprint not in HYBRID_CARS:
+            bus = CanBus.alt if self.CP.carFingerprint in GLOBAL_GEN2 else CanBus.main
+            can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, bus, pcm_cancel_cmd))
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX

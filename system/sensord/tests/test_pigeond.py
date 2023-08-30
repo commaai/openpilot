@@ -56,7 +56,7 @@ class TestPigeond(unittest.TestCase):
       managed_processes['pigeond'].stop()
 
       assert gpio_read(GPIO.UBLOX_RST_N) == 0
-      assert gpio_read(GPIO.UBLOX_PWR_EN) == 0
+      assert gpio_read(GPIO.GNSS_PWR_EN) == 0
 
 
 if __name__ == "__main__":

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <memory>
+#include <vector>
+
 #include <QComboBox>
 #include <QFormLayout>
 #include <QVBoxLayout>

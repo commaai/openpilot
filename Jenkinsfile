@@ -160,6 +160,7 @@ pipeline {
             sh "scons --clean && scons --no-cache --random -j42"
             sh "INTERNAL_SEG_CNT=500 INTERNAL_SEG_LIST=selfdrive/car/tests/test_models_segs.txt FILEREADER_CACHE=1 \
                 pytest -n42 --dist=loadscope selfdrive/car/tests/test_models.py"
+            sh "MAX_EXAMPLES=100 pytest -n42 selfdrive/car/tests/test_car_interfaces.py"
           }
 
           post {

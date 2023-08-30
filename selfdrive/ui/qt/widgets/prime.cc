@@ -68,7 +68,7 @@ void PairingQRWidget::paintEvent(QPaintEvent *e) {
 }
 
 
-PairingPopup::PairingPopup(QWidget *parent) : QDialogBase(parent) {
+PairingPopup::PairingPopup(QWidget *parent) : DialogBase(parent) {
   QHBoxLayout *hlayout = new QHBoxLayout(this);
   hlayout->setContentsMargins(0, 0, 0, 0);
   hlayout->setSpacing(0);
@@ -117,28 +117,19 @@ PairingPopup::PairingPopup(QWidget *parent) : QDialogBase(parent) {
 }
 
 
-PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QFrame(parent) {
+PrimeUserWidget::PrimeUserWidget(QWidget *parent) : QFrame(parent) {
+  setObjectName("primeWidget");
   QVBoxLayout *mainLayout = new QVBoxLayout(this);
-  mainLayout->setContentsMargins(0, 0, 0, 0);
-  mainLayout->setSpacing(30);
-
-  // subscribed prime layout
-  QWidget *primeWidget = new QWidget;
-  primeWidget->setObjectName("primeWidget");
-  QVBoxLayout *primeLayout = new QVBoxLayout(primeWidget);
-  primeLayout->setContentsMargins(56, 40, 56, 40);
-  primeLayout->setSpacing(20);
+  mainLayout->setContentsMargins(56, 40, 56, 40);
+  mainLayout->setSpacing(20);
 
   QLabel *subscribed = new QLabel(tr("✓ SUBSCRIBED"));
   subscribed->setStyleSheet("font-size: 41px; font-weight: bold; color: #86FF4E;");
-  primeLayout->addWidget(subscribed);
+  mainLayout->addWidget(subscribed);
 
   QLabel *commaPrime = new QLabel(tr("comma prime"));
   commaPrime->setStyleSheet("font-size: 75px; font-weight: bold;");
-  primeLayout->addWidget(commaPrime);
-
-  mainLayout->addWidget(primeWidget);
-  mainLayout->addStretch();
+  mainLayout->addWidget(commaPrime);
 }
 
 
@@ -165,7 +156,7 @@ PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QFrame(parent) {
   main_layout->addSpacing(30);
 
   QVector<QString> bullets = {tr("Remote access"), tr("24/7 LTE connectivity"), tr("1 year of drive storage"), tr("Turn-by-turn navigation")};
-  for (auto &b: bullets) {
+  for (auto &b : bullets) {
     const QString check = "<b><font color='#465BEA'>✓</font></b> ";
     QLabel *l = new QLabel(check + b);
     l->setAlignment(Qt::AlignLeft);
@@ -278,7 +269,7 @@ void SetupWidget::replyFinished(const QString &response, bool success) {
   }
 
   QJsonObject json = doc.object();
-  int prime_type = json["prime_type"].toInt();
+  PrimeType prime_type = static_cast<PrimeType>(json["prime_type"].toInt());
   uiState()->setPrimeType(prime_type);
 
   if (!json["is_paired"].toBool()) {
