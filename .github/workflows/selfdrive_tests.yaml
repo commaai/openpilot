@@ -235,16 +235,6 @@ jobs:
       run: | 
         selfdrive/test/docker_tag_multiarch.sh base x86_64 aarch64
 
-  test_buildjet:
-    name: test buildjet arm
-    runs-on: buildjet-4vcpu-ubuntu-2204-arm
-    steps:
-      - name: print arch
-        run: |
-          echo "$(uname -m)"
-          echo "$(uname -a)"
-          docker -v
-
   static_analysis:
     name: static analysis
     runs-on: ubuntu-20.04
