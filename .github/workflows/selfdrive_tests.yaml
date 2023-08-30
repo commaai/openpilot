@@ -204,7 +204,7 @@ jobs:
 
   docker_push_arm64:
     name: docker push arm64
-    runs-on: buildjet-4vcpu-ubuntu-2004-arm
+    runs-on: buildjet-4vcpu-ubuntu-2204-arm
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v3
@@ -237,7 +237,7 @@ jobs:
 
   test_buildjet:
     name: test buildjet arm
-    runs-on: buildjet-4vcpu-ubuntu-2004-arm
+    runs-on: buildjet-4vcpu-ubuntu-2204-arm
     steps:
       - name: print arch
         run: |
