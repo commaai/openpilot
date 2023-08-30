@@ -184,7 +184,7 @@ jobs:
         sudo rm -rf /Applications/ArmGNUToolchain/*/*/.fseventsd
 
   docker_push:
-    name: docker push
+    name: docker push (x86_64)
     runs-on: ubuntu-20.04
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     steps:
@@ -203,7 +203,7 @@ jobs:
         eval "$BUILD_CL"
 
   docker_push_arm64:
-    name: docker push arm64
+    name: docker push (arm64)
     runs-on: buildjet-4vcpu-ubuntu-2204-arm
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     steps:
