@@ -40,6 +40,7 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
   params['car_fw'] = [car.CarParams.CarFw(ecu=fw[0], address=fw[1], subAddress=fw[2] or 0) for fw in params['car_fw']]
   return params
 
+
 class TestCarInterfaces(unittest.TestCase):
 
   @classmethod

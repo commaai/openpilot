@@ -28,7 +28,6 @@ class FakeSocket:
   def send(self, msg):
     pass
 
-
 class TestFwFingerprint(unittest.TestCase):
   def assertFingerprints(self, candidates, expected):
     candidates = list(candidates)
