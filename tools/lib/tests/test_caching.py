@@ -53,7 +53,7 @@ class TestFileDownload(unittest.TestCase):
       self.compare_loads(small_file_url, 100 * i, 100)
 
   @temporary_cache_dir
-  def test_large_file(self, temp_dir):
+  def test_large_file(self):
     large_file_url = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/qlog.bz2"
     #  Load the end 100 bytes of both files
     file_large = URLFile(large_file_url)
