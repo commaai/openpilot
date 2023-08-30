@@ -6,7 +6,9 @@ if [ $# -lt 2 ]; then
   exit 1
 fi
 
-source docker_common.sh $1
+SCRIPT_DIR=$(dirname "$0")
+
+source $SCRIPT_DIR/docker_common.sh $1
 
 ARCHS=("${@:2}")
 LOCAL_TAG=$DOCKER_IMAGE

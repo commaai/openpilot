@@ -10,7 +10,10 @@ if [ -n "$PUSH_IMAGE" ] && [ -z "$CURRENT_ARCH_BUILD" ]; then
   exit 1
 fi
 
-source docker_common.sh $1
+SCRIPT_DIR=$(dirname "$0")
+OPENPILOT_DIR=$SCRIPT_DIR/../../
+
+source $SCRIPT_DIR/docker_common.sh $1
 
 if [ -n "$CURRENT_ARCH_BUILD" ]; then
   ARCH=$(uname -m)
@@ -19,9 +22,6 @@ fi
 LOCAL_TAG=$DOCKER_IMAGE$TAG_SUFFIX
 REMOTE_TAG=$DOCKER_REGISTRY/$LOCAL_TAG
 REMOTE_SHA_TAG=$DOCKER_REGISTRY/$LOCAL_TAG-$COMMIT_SHA
-
-SCRIPT_DIR=$(dirname "$0")
-OPENPILOT_DIR=$SCRIPT_DIR/../../
 
 DOCKER_BUILDKIT=1 docker buildx build --load --cache-to type=inline --cache-from type=registry,ref=$REMOTE_TAG -t $REMOTE_TAG -t $LOCAL_TAG -f $OPENPILOT_DIR/$DOCKER_FILE $OPENPILOT_DIR
 
