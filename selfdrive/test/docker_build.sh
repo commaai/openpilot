@@ -5,7 +5,7 @@ set -e
 # mkdir -p .ci_cache/scons_cache
 # sudo mount --bind /tmp/scons_cache/ .ci_cache/scons_cache
 
-if [ -n $PUSH_IMAGE ] && [ -z $CURRENT_ARCH_BUILD ]; then
+if [ -n "$PUSH_IMAGE" ] && [ -z "$CURRENT_ARCH_BUILD" ]; then
   echo "PUSH_IMAGE is only supported for single arch builds"
   exit 1
 fi
