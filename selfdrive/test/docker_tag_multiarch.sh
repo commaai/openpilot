@@ -6,28 +6,7 @@ if [ $# -lt 2 ]; then
   exit 1
 fi
 
-if [ $1 = "base" ]; then
-  export DOCKER_IMAGE=openpilot-base
-  export DOCKER_FILE=Dockerfile.openpilot_base
-elif [ $1 = "docs" ]; then
-  export DOCKER_IMAGE=openpilot-docs
-  export DOCKER_FILE=docs/docker/Dockerfile
-elif [ $1 = "sim" ]; then
-  export DOCKER_IMAGE=openpilot-sim
-  export DOCKER_FILE=tools/sim/Dockerfile.sim
-elif [ $1 = "prebuilt" ]; then
-  export DOCKER_IMAGE=openpilot-prebuilt
-  export DOCKER_FILE=Dockerfile.openpilot
-elif [ $1 = "cl" ]; then
-  export DOCKER_IMAGE=openpilot-base-cl
-  export DOCKER_FILE=Dockerfile.openpilot_base_cl
-else
-  echo "Invalid docker build image $1"
-  exit 1
-fi
-
-export DOCKER_REGISTRY=ghcr.io/commaai
-export COMMIT_SHA=$(git rev-parse HEAD)
+source docker_common.sh $1
 
 ARCHS=("${@:2}")
 LOCAL_TAG=$DOCKER_IMAGE
@@ -42,7 +21,7 @@ done
 docker manifest create $REMOTE_TAG $MANIFEST_AMENDS
 docker manifest create $REMOTE_SHA_TAG $MANIFEST_AMENDS
 
-if [[ ! -z "$PUSH_IMAGE" ]]; then
+if [[ -n "$PUSH_IMAGE" ]]; then
   docker manifest push $REMOTE_TAG
   docker manifest push $REMOTE_SHA_TAG
 fi
