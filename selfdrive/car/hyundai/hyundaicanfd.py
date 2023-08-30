@@ -46,7 +46,7 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_steer):
     "LKA_ASSIST": 0,
     "STEER_REQ": 1 if lat_active else 0,
     "STEER_MODE": 0,
-    "SET_ME_1": 0,
+    "HAS_LANE_SAFETY": 0,  # hide LKAS settings
     "NEW_SIGNAL_1": 0,
     "NEW_SIGNAL_2": 0,
   }
@@ -61,9 +61,12 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_steer):
   return ret
 
 def create_cam_0x2a4(packer, CAN, cam_0x2a4):
-  values = {f"BYTE{i}": cam_0x2a4[f"BYTE{i}"] for i in range(3, 24)}
-  values['COUNTER'] = cam_0x2a4['COUNTER']
-  values["BYTE7"] = 0
+  values = {f"BYTE{i}": cam_0x2a4[f"BYTE{i}"] for i in range(3, 24) if i != 7}
+  values["COUNTER"] = cam_0x2a4["COUNTER"]
+  values["SET_ME_0"] = 0
+  values["SET_ME_0_2"] = 0
+  values["LEFT_LANE_LINE"] = 0
+  values["RIGHT_LANE_LINE"] = 0
   return packer.make_can_msg("CAM_0x2a4", CAN.ACAN, values)
 
 def create_buttons(packer, CP, CAN, cnt, btn):

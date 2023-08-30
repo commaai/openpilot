@@ -101,7 +101,7 @@ protected:
   QHash<MessageId, CanData> all_msgs;
   std::unordered_map<MessageId, std::vector<const CanEvent *>> events_;
   std::vector<const CanEvent *> all_events_;
-  std::deque<std::unique_ptr<char[]>> memory_blocks;
+  std::unique_ptr<MonotonicBuffer> event_buffer;
   std::mutex mutex;
   std::unordered_map<MessageId, std::vector<uint8_t>> masks;
 };

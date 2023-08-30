@@ -318,6 +318,8 @@ selfdrive/ui/tests/test_translations.py
 
 selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.h
+selfdrive/ui/qt/network/*.cc
+selfdrive/ui/qt/network/*.h
 selfdrive/ui/qt/offroad/*.cc
 selfdrive/ui/qt/offroad/*.h
 selfdrive/ui/qt/offroad/*.qml
