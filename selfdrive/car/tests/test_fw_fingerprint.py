@@ -176,22 +176,23 @@ class TestFwFingerprint(unittest.TestCase):
 
 class TestFwFingerprintTiming(unittest.TestCase):
   N: int = 5
-  TOL: float = 0.11
+  TOL: float = 0.1
 
   @staticmethod
   def _run_thread(thread: threading.Thread) -> float:
     params = Params()
     params.put_bool("ObdMultiplexingEnabled", True)
     thread.start()
+    t = time.perf_counter()
 
     while thread.is_alive():
-      time.sleep(0.02)
+      time.sleep(0.001)
       if not params.get_bool("ObdMultiplexingChanged"):
         params.put_bool("ObdMultiplexingChanged", True)
-    return 
+    return time.perf_counter() - t
   
   def fake_get_data(self, timeout):
-    self.timeout_total += timeout
+    self.fake_timeout_time += timeout
     return {}
 
   def _benchmark_brand(self, brand, num_pandas):
@@ -199,13 +200,15 @@ class TestFwFingerprintTiming(unittest.TestCase):
     query_patch.start()
 
     fake_socket = FakeSocket()
-    self.timeout_total = 0
-    thread = threading.Thread(target=get_fw_versions, args=(fake_socket, fake_socket, brand),
-                              kwargs=dict(num_pandas=num_pandas))
-    self._run_thread(thread)
+    brand_time = 0
+    for _ in range(self.N):
+      self.fake_timeout_time = 0
+      thread = threading.Thread(target=get_fw_versions, args=(fake_socket, fake_socket, brand),
+                                kwargs=dict(num_pandas=num_pandas))
+      brand_time += self._run_thread(thread) + self.fake_timeout_time
+    
     query_patch.stop()
-
-    return self.timeout_total
+    return brand_time / self.N
 
   def _assert_timing(self, avg_time, ref_time):
     self.assertLess(avg_time, ref_time + self.TOL)
@@ -233,7 +236,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
     print(f'get_vin, query time={vin_time / self.N} seconds')
 
   def test_fw_query_timing(self):
-    total_ref_time = 5.7
+    total_ref_time = 5.9
     brand_ref_times = {
       1: {
         'body': 0.1,
@@ -250,7 +253,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
       },
       2: {
         'ford': 0.3,
-        'hyundai': 1.1,
+        'hyundai': 1,
       }
     }
 
