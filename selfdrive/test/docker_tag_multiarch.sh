@@ -7,13 +7,9 @@ if [ $# -lt 2 ]; then
 fi
 
 SCRIPT_DIR=$(dirname "$0")
+ARCHS=("${@:2}")
 
 source $SCRIPT_DIR/docker_common.sh $1
-
-ARCHS=("${@:2}")
-LOCAL_TAG=$DOCKER_IMAGE
-REMOTE_TAG=$DOCKER_REGISTRY/$LOCAL_TAG
-REMOTE_SHA_TAG=$REMOTE_TAG:$COMMIT_SHA
 
 MANIFEST_AMENDS=""
 for ARCH in ${ARCHS[@]}; do
