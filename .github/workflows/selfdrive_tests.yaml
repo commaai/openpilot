@@ -243,6 +243,7 @@ jobs:
         run: |
           echo "$(uname -m)"
           echo "$(uname -a)"
+          docker -v
 
   static_analysis:
     name: static analysis
