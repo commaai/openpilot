@@ -21,9 +21,10 @@ const double VALID_TIME_SINCE_RESET = 1.0; // s
 const double VALID_POS_STD = 50.0; // m
 const double MAX_RESET_TRACKER = 5.0;
 const double SANE_GPS_UNCERTAINTY = 1500.0; // m
-const double INPUT_INVALID_THRESHOLD = 5.0; // same as reset tracker
-const double DECAY = 0.99995; // same as reset tracker
+const double INPUT_INVALID_THRESHOLD = 0.5; // same as reset tracker
+const double DECAY = 0.9993; // ~10 secs to resume after a bad input
 const double MAX_FILTER_REWIND_TIME = 0.8; // s
+const double YAWRATE_CROSS_ERR_CHECK_FACTOR = 5;
 
 // TODO: GPS sensor time offsets are empirically calculated
 // They should be replaced with synced time from a real clock
@@ -256,7 +257,13 @@ void Localizer::handle_sensor(double current_time, const cereal::SensorEventData
   if (log.getSensor() == SENSOR_GYRO_UNCALIBRATED && log.getType() == SENSOR_TYPE_GYROSCOPE_UNCALIBRATED) {
     auto v = log.getGyroUncalibrated().getV();
     auto meas = Vector3d(-v[2], -v[1], -v[0]);
-    if (meas.norm() < ROTATION_SANITY_CHECK) {
+
+    VectorXd gyro_bias = this->kf->get_x().segment<STATE_GYRO_BIAS_LEN>(STATE_GYRO_BIAS_START);
+    float gyro_camodo_yawrate_err = std::abs((meas[2] - gyro_bias[2]) - this->camodo_yawrate_distribution[0]);
+    float gyro_camodo_yawrate_err_threshold = YAWRATE_CROSS_ERR_CHECK_FACTOR * this->camodo_yawrate_distribution[1];
+    bool gyro_valid = gyro_camodo_yawrate_err < gyro_camodo_yawrate_err_threshold;
+
+    if ((meas.norm() < ROTATION_SANITY_CHECK) && gyro_valid) {
       this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_GYRO, { meas });
       this->observation_values_invalid["gyroscope"] *= DECAY;
     } else {
@@ -483,6 +490,7 @@ void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry
   this->kf->predict_and_observe(current_time, OBSERVATION_CAMERA_ODO_TRANSLATION,
     { trans_device }, { trans_device_cov });
   this->observation_values_invalid["cameraOdometry"] *= DECAY;
+  this->camodo_yawrate_distribution = Vector2d(rot_device[2], rotate_std(this->device_from_calib, rot_calib_std)[2]);
 }
 
 void Localizer::handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& log) {
