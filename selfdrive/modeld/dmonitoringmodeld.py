@@ -23,16 +23,18 @@ OUTPUT_SIZE = 84
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 MODEL_PATHS = {
   ModelRunner.SNPE: Path(__file__).parent / 'models/dmonitoring_model_q.dlc',
-  ModelRunner.ONNX: Path(__file__).parent / 'dmonitoring_model.onnx'}
+  ModelRunner.ONNX: Path(__file__).parent / 'models/dmonitoring_model.onnx'}
 
 class DriverStateResult(ctypes.Structure):
   _fields_ = [
     ("face_orientation", ctypes.c_float*3),
+    ("face_position", ctypes.c_float*3),
     ("face_orientation_std", ctypes.c_float*3),
-    ("face_position", ctypes.c_float*2),
-    ("face_position_std", ctypes.c_float*2),
+    ("face_position_std", ctypes.c_float*3),
     ("face_prob", ctypes.c_float),
+    ("_unused_a", ctypes.c_float*8),
     ("left_eye_prob", ctypes.c_float),
+    ("_unused_b", ctypes.c_float*8),
     ("right_eye_prob", ctypes.c_float),
     ("left_blink_prob", ctypes.c_float),
     ("right_blink_prob", ctypes.c_float),
@@ -88,8 +90,8 @@ def get_driver_state(ds_result: DriverStateResult):
   return {
     "faceOrientation": [x * REG_SCALE for x in ds_result.face_orientation],
     "faceOrientationStd": [math.exp(x) for x in ds_result.face_orientation_std],
-    "facePosition": [x * REG_SCALE for x in ds_result.face_position],
-    "facePositionStd": [math.exp(x) for x in ds_result.face_position_std],
+    "facePosition": [x * REG_SCALE for x in ds_result.face_position[:2]],
+    "facePositionStd": [math.exp(x) for x in ds_result.face_position_std[:2]],
     "faceProb": sigmoid(ds_result.face_prob),
     "leftEyeProb": sigmoid(ds_result.left_eye_prob),
     "rightEyeProb": sigmoid(ds_result.right_eye_prob),
