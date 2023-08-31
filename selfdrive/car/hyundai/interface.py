@@ -300,7 +300,7 @@ class CarInterface(CarInterfaceBase):
         # these cars require a special panda safety mode due to missing counters and checksums in the messages
         ret.safetyConfigs = [get_safety_config(SafetyModel.hyundaiLegacy)]
       else:
-        ret = set_safety_config_canfd(ret.CAN, can_fd=False)
+        ret = set_safety_config_canfd(ret, CAN, can_fd=False)
 
       if candidate in CAMERA_SCC_CAR:
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HYUNDAI_CAMERA_SCC
