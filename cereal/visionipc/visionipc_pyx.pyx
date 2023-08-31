@@ -98,8 +98,11 @@ cdef class VisionIpcClient:
   cdef cppVisionIpcClient * client
   cdef VisionIpcBufExtra extra
 
-  def __cinit__(self, string name, VisionStreamType stream, bool conflate):
-    self.client = new cppVisionIpcClient(name, stream, conflate, NULL, NULL)
+  def __cinit__(self, string name, VisionStreamType stream, bool conflate, CLContext context = None):
+    if context:
+      self.client = new cppVisionIpcClient(name, stream, conflate, context.device_id, context.context)
+    else:
+      self.client = new cppVisionIpcClient(name, stream, conflate, NULL, NULL)
 
   def __dealloc__(self):
     del self.client

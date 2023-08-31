@@ -1,74 +1,76 @@
 #!/usr/bin/env python3
 import os
 import subprocess
-import textwrap
 from pathlib import Path
+from typing import List
 
 # NOTE: Do NOT import anything here that needs be built (e.g. params)
-from common.basedir import BASEDIR
-from common.spinner import Spinner
-from common.text_window import TextWindow
-from system.hardware import AGNOS
-from system.swaglog import cloudlog, add_file_handler
-from system.version import is_dirty
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.spinner import Spinner
+from openpilot.common.text_window import TextWindow
+from openpilot.system.hardware import AGNOS
+from openpilot.system.swaglog import cloudlog, add_file_handler
+from openpilot.system.version import is_dirty
 
 MAX_CACHE_SIZE = 4e9 if "CI" in os.environ else 2e9
 CACHE_DIR = Path("/data/scons_cache" if AGNOS else "/tmp/scons_cache")
 
-TOTAL_SCONS_NODES = 2460
+TOTAL_SCONS_NODES = 2560
 MAX_BUILD_PROGRESS = 100
 PREBUILT = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
-
 
 def build(spinner: Spinner, dirty: bool = False) -> None:
   env = os.environ.copy()
   env['SCONS_PROGRESS'] = "1"
   nproc = os.cpu_count()
-  j_flag = "" if nproc is None else f"-j{nproc - 1}"
+  if nproc is None:
+    nproc = 2
 
-  scons: subprocess.Popen = subprocess.Popen(["scons", j_flag, "--cache-populate"], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
-  assert scons.stderr is not None
+  # building with all cores can result in using too
+  # much memory, so retry with less parallelism
+  compile_output: List[bytes] = []
+  for n in (nproc, nproc/2, 1):
+    compile_output.clear()
+    scons: subprocess.Popen = subprocess.Popen(["scons", f"-j{int(n)}", "--cache-populate", "--minimal"], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
+    assert scons.stderr is not None
 
-  compile_output = []
+    # Read progress from stderr and update spinner
+    while scons.poll() is None:
+      try:
+        line = scons.stderr.readline()
+        if line is None:
+          continue
+        line = line.rstrip()
 
-  # Read progress from stderr and update spinner
-  while scons.poll() is None:
-    try:
-      line = scons.stderr.readline()
-      if line is None:
-        continue
-      line = line.rstrip()
+        prefix = b'progress: '
+        if line.startswith(prefix):
+          i = int(line[len(prefix):])
+          spinner.update_progress(MAX_BUILD_PROGRESS * min(1., i / TOTAL_SCONS_NODES), 100.)
+        elif len(line):
+          compile_output.append(line)
+          print(line.decode('utf8', 'replace'))
+      except Exception:
+        pass
 
-      prefix = b'progress: '
-      if line.startswith(prefix):
-        i = int(line[len(prefix):])
-        spinner.update_progress(MAX_BUILD_PROGRESS * min(1., i / TOTAL_SCONS_NODES), 100.)
-      elif len(line):
-        compile_output.append(line)
-        print(line.decode('utf8', 'replace'))
-    except Exception:
-      pass
+    if scons.returncode == 0:
+      break
 
   if scons.returncode != 0:
     # Read remaining output
-    r = scons.stderr.read().split(b'\n')
-    compile_output += r
+    if scons.stderr is not None:
+      compile_output += scons.stderr.read().split(b'\n')
 
     # Build failed log errors
-    errors = [line.decode('utf8', 'replace') for line in compile_output
-              if any(err in line for err in [b'error: ', b'not found, needed by target'])]
-    error_s = "\n".join(errors)
+    error_s = b"\n".join(compile_output).decode('utf8', 'replace')
     add_file_handler(cloudlog)
     cloudlog.error("scons build failed\n" + error_s)
 
     # Show TextWindow
     spinner.close()
     if not os.getenv("CI"):
-      error_s = "\n \n".join("\n".join(textwrap.wrap(e, 65)) for e in errors)
       with TextWindow("openpilot failed to build\n \n" + error_s) as t:
         t.wait_for_exit()
     exit(1)
-
 
   # enforce max cache size
   cache_files = [f for f in CACHE_DIR.rglob('*') if f.is_file()]

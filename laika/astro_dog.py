@@ -40,7 +40,7 @@ class AstroDog:
     for const in valid_const:
       if not isinstance(const, ConstellationId):
         raise TypeError(f"valid_const must be a list of ConstellationId, got {const}")
-  
+
     self.auto_update = auto_update
     self.cache_dir = cache_dir
     self.clear_old_ephemeris = clear_old_ephemeris

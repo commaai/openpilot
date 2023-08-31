@@ -148,14 +148,14 @@ int spi_cb_rx(uint8_t *data, int len, uint8_t *data_out) {
 #ifdef PEDAL
 
 #include "stm32fx/llbxcan.h"
-#define CAN CAN1
+#define CANx CAN1
 
 #define CAN_BL_INPUT 0x1
 #define CAN_BL_OUTPUT 0x2
 
 void CAN1_TX_IRQ_Handler(void) {
   // clear interrupt
-  CAN->TSR |= CAN_TSR_RQCP0;
+  CANx->TSR |= CAN_TSR_RQCP0;
 }
 
 #define ISOTP_BUF_SIZE 0x110
@@ -171,21 +171,21 @@ int isotp_buf_out_idx = 0;
 
 void bl_can_send(uint8_t *odat) {
   // wait for send
-  while (!(CAN->TSR & CAN_TSR_TME0));
+  while (!(CANx->TSR & CAN_TSR_TME0));
 
   // send continue
-  CAN->sTxMailBox[0].TDLR = ((uint32_t*)odat)[0];
-  CAN->sTxMailBox[0].TDHR = ((uint32_t*)odat)[1];
-  CAN->sTxMailBox[0].TDTR = 8;
-  CAN->sTxMailBox[0].TIR = (CAN_BL_OUTPUT << 21) | 1;
+  CANx->sTxMailBox[0].TDLR = ((uint32_t*)odat)[0];
+  CANx->sTxMailBox[0].TDHR = ((uint32_t*)odat)[1];
+  CANx->sTxMailBox[0].TDTR = 8;
+  CANx->sTxMailBox[0].TIR = (CAN_BL_OUTPUT << 21) | 1;
 }
 
 void CAN1_RX0_IRQ_Handler(void) {
-  while (CAN->RF0R & CAN_RF0R_FMP0) {
-    if ((CAN->sFIFOMailBox[0].RIR>>21) == CAN_BL_INPUT) {
+  while (CANx->RF0R & CAN_RF0R_FMP0) {
+    if ((CANx->sFIFOMailBox[0].RIR>>21) == CAN_BL_INPUT) {
       uint8_t dat[8];
       for (int i = 0; i < 8; i++) {
-        dat[i] = GET_MAILBOX_BYTE(&CAN->sFIFOMailBox[0], i);
+        dat[i] = GET_MAILBOX_BYTE(&CANx->sFIFOMailBox[0], i);
       }
       uint8_t odat[8];
       uint8_t type = dat[0] & 0xF0;
@@ -193,7 +193,7 @@ void CAN1_RX0_IRQ_Handler(void) {
         // continue
         while (isotp_buf_out_remain > 0) {
           // wait for send
-          while (!(CAN->TSR & CAN_TSR_TME0));
+          while (!(CANx->TSR & CAN_TSR_TME0));
 
           odat[0] = 0x20 | isotp_buf_out_idx;
           memcpy(odat+1, isotp_buf_out_ptr, 7);
@@ -251,12 +251,12 @@ void CAN1_RX0_IRQ_Handler(void) {
       }
     }
     // next
-    CAN->RF0R |= CAN_RF0R_RFOM0;
+    CANx->RF0R |= CAN_RF0R_RFOM0;
   }
 }
 
 void CAN1_SCE_IRQ_Handler(void) {
-  llcan_clear_send(CAN);
+  llcan_clear_send(CANx);
 }
 
 #endif
@@ -284,8 +284,8 @@ void soft_flasher_start(void) {
   current_board->enable_can_transceiver(1, true);
 
   // init can
-  llcan_set_speed(CAN1, 5000, false, false);
-  llcan_init(CAN1);
+  llcan_set_speed(CANx, 5000, false, false);
+  llcan_init(CANx);
 #endif
 
   gpio_usart2_init();

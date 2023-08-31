@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <map>
+#include <string>
 
 #include <QDebug>
 #include <QDir>

@@ -15,7 +15,7 @@ class BaseHandle(ABC):
     ...
 
   @abstractmethod
-  def controlWrite(self, request_type: int, request: int, value: int, index: int, data, timeout: int = TIMEOUT) -> int:
+  def controlWrite(self, request_type: int, request: int, value: int, index: int, data, timeout: int = TIMEOUT, expect_disconnect: bool = False):
     ...
 
   @abstractmethod

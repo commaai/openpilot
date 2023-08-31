@@ -72,7 +72,7 @@ RINEX_CONSTELLATION_TO_ID: Dict[ConstellationId, str] = {
 # Now you can ask for constellation using:
 # >>> RINEX_CONSTELLATION_IDENTIFIERS['R']
 #     "GLONASS"
-RINEX_ID_TO_CONSTELLATION: Dict[str, ConstellationId] = {id: con for con, id in RINEX_CONSTELLATION_TO_ID.items()}
+RINEX_ID_TO_CONSTELLATION: Dict[str, ConstellationId] = {con_id: con for con, con_id in RINEX_CONSTELLATION_TO_ID.items()}
 
 
 def get_el_az(pos, sat_pos):

@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 from cereal import car
 from panda import Panda
-from common.conversions import Conversions as CV
-from selfdrive.car.hyundai.hyundaicanfd import CanBus
-from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, CANFD_RADAR_SCC_CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons
-from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
-from selfdrive.car import STD_CARGO_KG, create_button_event, scale_tire_stiffness, get_safety_config
-from selfdrive.car.interfaces import CarInterfaceBase
-from selfdrive.car.disable_ecu import disable_ecu
+from openpilot.common.conversions import Conversions as CV
+from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
+from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, CANFD_RADAR_SCC_CAR, \
+                                         EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, UNSUPPORTED_LONGITUDINAL_CAR, \
+                                         Buttons
+from openpilot.selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
+from openpilot.selfdrive.car import create_button_events, get_safety_config
+from openpilot.selfdrive.car.interfaces import CarInterfaceBase
+from openpilot.selfdrive.car.disable_ecu import disable_ecu
 
 Ecu = car.CarParams.Ecu
 ButtonType = car.CarState.ButtonEvent.Type
@@ -26,7 +28,8 @@ class CarInterface(CarInterfaceBase):
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
-    ret.dashcamOnly = candidate in {CAR.KIA_OPTIMA_H, CAR.IONIQ_6}
+    # FIXME: the Optima Hybrid uses a different SCC12 checksum
+    ret.dashcamOnly = candidate in {CAR.KIA_OPTIMA_H, }
 
     hda2 = Ecu.adas in [fw.ecu for fw in car_fw]
     CAN = CanBus(None, hda2, fingerprint)
@@ -35,6 +38,8 @@ class CarInterface(CarInterfaceBase):
       # detect HDA2 with ADAS Driving ECU
       if hda2:
         ret.flags |= HyundaiFlags.CANFD_HDA2.value
+        if 0x110 in fingerprint[CAN.CAM]:
+          ret.flags |= HyundaiFlags.CANFD_HDA2_ALT_STEERING.value
       else:
         # non-HDA2
         if 0x1cf not in fingerprint[CAN.ECAN]:
@@ -58,183 +63,185 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerLimitTimer = 0.4
-    tire_stiffness_factor = 1.
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     if candidate in (CAR.SANTA_FE, CAR.SANTA_FE_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022):
-      ret.mass = 3982. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 3982. * CV.LB_TO_KG
       ret.wheelbase = 2.766
       # Values from optimizer
       ret.steerRatio = 16.55  # 13.8 is spec end-to-end
-      tire_stiffness_factor = 0.82
+      ret.tireStiffnessFactor = 0.82
     elif candidate in (CAR.SONATA, CAR.SONATA_HYBRID):
-      ret.mass = 1513. + STD_CARGO_KG
+      ret.mass = 1513.
       ret.wheelbase = 2.84
       ret.steerRatio = 13.27 * 1.15   # 15% higher at the center seems reasonable
-      tire_stiffness_factor = 0.65
+      ret.tireStiffnessFactor = 0.65
     elif candidate == CAR.SONATA_LF:
-      ret.mass = 4497. * CV.LB_TO_KG
+      ret.mass = 1536.
       ret.wheelbase = 2.804
       ret.steerRatio = 13.27 * 1.15   # 15% higher at the center seems reasonable
     elif candidate == CAR.PALISADE:
-      ret.mass = 1999. + STD_CARGO_KG
+      ret.mass = 1999.
       ret.wheelbase = 2.90
       ret.steerRatio = 15.6 * 1.15
-      tire_stiffness_factor = 0.63
+      ret.tireStiffnessFactor = 0.63
     elif candidate == CAR.ELANTRA:
-      ret.mass = 1275. + STD_CARGO_KG
+      ret.mass = 1275.
       ret.wheelbase = 2.7
       ret.steerRatio = 15.4            # 14 is Stock | Settled Params Learner values are steerRatio: 15.401566348670535
-      tire_stiffness_factor = 0.385    # stiffnessFactor settled on 1.0081302973865127
+      ret.tireStiffnessFactor = 0.385    # stiffnessFactor settled on 1.0081302973865127
       ret.minSteerSpeed = 32 * CV.MPH_TO_MS
     elif candidate == CAR.ELANTRA_2021:
-      ret.mass = (2800. * CV.LB_TO_KG) + STD_CARGO_KG
+      ret.mass = 2800. * CV.LB_TO_KG
       ret.wheelbase = 2.72
       ret.steerRatio = 12.9
-      tire_stiffness_factor = 0.65
+      ret.tireStiffnessFactor = 0.65
     elif candidate == CAR.ELANTRA_HEV_2021:
-      ret.mass = (3017. * CV.LB_TO_KG) + STD_CARGO_KG
+      ret.mass = 3017. * CV.LB_TO_KG
       ret.wheelbase = 2.72
       ret.steerRatio = 12.9
-      tire_stiffness_factor = 0.65
+      ret.tireStiffnessFactor = 0.65
     elif candidate == CAR.HYUNDAI_GENESIS:
-      ret.mass = 2060. + STD_CARGO_KG
+      ret.mass = 2060.
       ret.wheelbase = 3.01
       ret.steerRatio = 16.5
       ret.minSteerSpeed = 60 * CV.KPH_TO_MS
-    elif candidate in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022):
-      ret.mass = {CAR.KONA_EV: 1685., CAR.KONA_HEV: 1425., CAR.KONA_EV_2022: 1743.}.get(candidate, 1275.) + STD_CARGO_KG
-      ret.wheelbase = 2.6
-      ret.steerRatio = 13.42  # Spec
-      tire_stiffness_factor = 0.385
+    elif candidate in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022, CAR.KONA_EV_2ND_GEN):
+      ret.mass = {CAR.KONA_EV: 1685., CAR.KONA_HEV: 1425., CAR.KONA_EV_2022: 1743., CAR.KONA_EV_2ND_GEN: 1740.}.get(candidate, 1275.)
+      ret.wheelbase = {CAR.KONA_EV_2ND_GEN: 2.66, }.get(candidate, 2.6)
+      ret.steerRatio = {CAR.KONA_EV_2ND_GEN: 13.6, }.get(candidate, 13.42)  # Spec
+      ret.tireStiffnessFactor = 0.385
     elif candidate in (CAR.IONIQ, CAR.IONIQ_EV_LTD, CAR.IONIQ_PHEV_2019, CAR.IONIQ_HEV_2022, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV):
-      ret.mass = 1490. + STD_CARGO_KG  # weight per hyundai site https://www.hyundaiusa.com/ioniq-electric/specifications.aspx
+      ret.mass = 1490.  # weight per hyundai site https://www.hyundaiusa.com/ioniq-electric/specifications.aspx
       ret.wheelbase = 2.7
       ret.steerRatio = 13.73  # Spec
-      tire_stiffness_factor = 0.385
+      ret.tireStiffnessFactor = 0.385
       if candidate in (CAR.IONIQ, CAR.IONIQ_EV_LTD, CAR.IONIQ_PHEV_2019):
         ret.minSteerSpeed = 32 * CV.MPH_TO_MS
     elif candidate == CAR.VELOSTER:
-      ret.mass = 3558. * CV.LB_TO_KG
+      ret.mass = 2917. * CV.LB_TO_KG
       ret.wheelbase = 2.80
       ret.steerRatio = 13.75 * 1.15
-      tire_stiffness_factor = 0.5
+      ret.tireStiffnessFactor = 0.5
     elif candidate == CAR.TUCSON:
       ret.mass = 3520. * CV.LB_TO_KG
       ret.wheelbase = 2.67
       ret.steerRatio = 14.00 * 1.15
-      tire_stiffness_factor = 0.385
+      ret.tireStiffnessFactor = 0.385
     elif candidate in (CAR.TUCSON_4TH_GEN, CAR.TUCSON_HYBRID_4TH_GEN):
-      ret.mass = 1630. + STD_CARGO_KG  # average
+      ret.mass = 1630.  # average
       ret.wheelbase = 2.756
       ret.steerRatio = 16.
-      tire_stiffness_factor = 0.385
+      ret.tireStiffnessFactor = 0.385
     elif candidate == CAR.SANTA_CRUZ_1ST_GEN:
-      ret.mass = 1870. + STD_CARGO_KG  # weight from Limited trim - the only supported trim
+      ret.mass = 1870.  # weight from Limited trim - the only supported trim
       ret.wheelbase = 3.000
-      ret.steerRatio = 14.2  # steering ratio according to Hyundai News https://www.hyundainews.com/assets/documents/original/48035-2022SantaCruzProductGuideSpecsv2081521.pdf
+      # steering ratio according to Hyundai News https://www.hyundainews.com/assets/documents/original/48035-2022SantaCruzProductGuideSpecsv2081521.pdf
+      ret.steerRatio = 14.2
 
     # Kia
     elif candidate == CAR.KIA_SORENTO:
-      ret.mass = 1985. + STD_CARGO_KG
+      ret.mass = 1985.
       ret.wheelbase = 2.78
       ret.steerRatio = 14.4 * 1.1   # 10% higher at the center seems reasonable
     elif candidate in (CAR.KIA_NIRO_EV, CAR.KIA_NIRO_EV_2ND_GEN, CAR.KIA_NIRO_PHEV, CAR.KIA_NIRO_HEV_2021, CAR.KIA_NIRO_HEV_2ND_GEN):
-      ret.mass = 3543. * CV.LB_TO_KG + STD_CARGO_KG  # average of all the cars
+      ret.mass = 3543. * CV.LB_TO_KG  # average of all the cars
       ret.wheelbase = 2.7
       ret.steerRatio = 13.6  # average of all the cars
-      tire_stiffness_factor = 0.385
+      ret.tireStiffnessFactor = 0.385
       if candidate == CAR.KIA_NIRO_PHEV:
         ret.minSteerSpeed = 32 * CV.MPH_TO_MS
     elif candidate == CAR.KIA_SELTOS:
-      ret.mass = 1337. + STD_CARGO_KG
+      ret.mass = 1337.
       ret.wheelbase = 2.63
       ret.steerRatio = 14.56
-      tire_stiffness_factor = 1
     elif candidate == CAR.KIA_SPORTAGE_5TH_GEN:
-      ret.mass = 1700. + STD_CARGO_KG  # weight from SX and above trims, average of FWD and AWD versions
+      ret.mass = 1700.  # weight from SX and above trims, average of FWD and AWD versions
       ret.wheelbase = 2.756
       ret.steerRatio = 13.6  # steering ratio according to Kia News https://www.kiamedia.com/us/en/models/sportage/2023/specifications
     elif candidate in (CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL, CAR.KIA_OPTIMA_H):
       ret.mass = 3558. * CV.LB_TO_KG
       ret.wheelbase = 2.80
       ret.steerRatio = 13.75
-      tire_stiffness_factor = 0.5
+      ret.tireStiffnessFactor = 0.5
       if candidate == CAR.KIA_OPTIMA_G4:
         ret.minSteerSpeed = 32 * CV.MPH_TO_MS
     elif candidate in (CAR.KIA_STINGER, CAR.KIA_STINGER_2022):
-      ret.mass = 1825. + STD_CARGO_KG
+      ret.mass = 1825.
       ret.wheelbase = 2.78
       ret.steerRatio = 14.4 * 1.15   # 15% higher at the center seems reasonable
     elif candidate == CAR.KIA_FORTE:
-      ret.mass = 3558. * CV.LB_TO_KG
+      ret.mass = 2878. * CV.LB_TO_KG
       ret.wheelbase = 2.80
       ret.steerRatio = 13.75
-      tire_stiffness_factor = 0.5
+      ret.tireStiffnessFactor = 0.5
     elif candidate == CAR.KIA_CEED:
-      ret.mass = 1450. + STD_CARGO_KG
+      ret.mass = 1450.
       ret.wheelbase = 2.65
       ret.steerRatio = 13.75
-      tire_stiffness_factor = 0.5
+      ret.tireStiffnessFactor = 0.5
     elif candidate in (CAR.KIA_K5_2021, CAR.KIA_K5_HEV_2020):
-      ret.mass = 3228. * CV.LB_TO_KG
+      ret.mass = 3381. * CV.LB_TO_KG
       ret.wheelbase = 2.85
       ret.steerRatio = 13.27  # 2021 Kia K5 Steering Ratio (all trims)
-      tire_stiffness_factor = 0.5
+      ret.tireStiffnessFactor = 0.5
     elif candidate == CAR.KIA_EV6:
-      ret.mass = 2055 + STD_CARGO_KG
+      ret.mass = 2055
       ret.wheelbase = 2.9
       ret.steerRatio = 16.
-      tire_stiffness_factor = 0.65
+      ret.tireStiffnessFactor = 0.65
     elif candidate in (CAR.IONIQ_5, CAR.IONIQ_6):
-      ret.mass = 1948 + STD_CARGO_KG
+      ret.mass = 1948
       ret.wheelbase = 2.97
       ret.steerRatio = 14.26
-      tire_stiffness_factor = 0.65
+      ret.tireStiffnessFactor = 0.65
     elif candidate == CAR.KIA_SPORTAGE_HYBRID_5TH_GEN:
-      ret.mass = 1767. + STD_CARGO_KG  # SX Prestige trim support only
+      ret.mass = 1767.  # SX Prestige trim support only
       ret.wheelbase = 2.756
       ret.steerRatio = 13.6
-    elif candidate in (CAR.KIA_SORENTO_4TH_GEN, CAR.KIA_SORENTO_PHEV_4TH_GEN):
+    elif candidate in (CAR.KIA_SORENTO_4TH_GEN, CAR.KIA_SORENTO_HEV_4TH_GEN, CAR.KIA_SORENTO_PHEV_4TH_GEN):
       ret.wheelbase = 2.81
       ret.steerRatio = 13.5  # average of the platforms
       if candidate == CAR.KIA_SORENTO_4TH_GEN:
-        ret.mass = 3957 * CV.LB_TO_KG + STD_CARGO_KG
+        ret.mass = 3957 * CV.LB_TO_KG
+      elif candidate == CAR.KIA_SORENTO_HEV_4TH_GEN:
+        ret.mass = 4255 * CV.LB_TO_KG
       else:
-        ret.mass = 4537 * CV.LB_TO_KG + STD_CARGO_KG
+        ret.mass = 4537 * CV.LB_TO_KG
     elif candidate == CAR.KIA_CARNIVAL_4TH_GEN:
-      ret.mass = 2087. + STD_CARGO_KG
+      ret.mass = 2087.
       ret.wheelbase = 3.09
       ret.steerRatio = 14.23
 
     # Genesis
     elif candidate == CAR.GENESIS_GV60_EV_1ST_GEN:
-      ret.mass = 2205 + STD_CARGO_KG
+      ret.mass = 2205
       ret.wheelbase = 2.9
-      ret.steerRatio = 12.6 # https://www.motor1.com/reviews/586376/2023-genesis-gv60-first-drive/#:~:text=Relative%20to%20the%20related%20Ioniq,5%2FEV6%27s%2014.3%3A1.
+      # https://www.motor1.com/reviews/586376/2023-genesis-gv60-first-drive/#:~:text=Relative%20to%20the%20related%20Ioniq,5%2FEV6%27s%2014.3%3A1.
+      ret.steerRatio = 12.6
     elif candidate == CAR.GENESIS_G70:
       ret.steerActuatorDelay = 0.1
-      ret.mass = 1640.0 + STD_CARGO_KG
+      ret.mass = 1640.0
       ret.wheelbase = 2.84
       ret.steerRatio = 13.56
     elif candidate == CAR.GENESIS_G70_2020:
-      ret.mass = 3673.0 * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 3673.0 * CV.LB_TO_KG
       ret.wheelbase = 2.83
       ret.steerRatio = 12.9
     elif candidate == CAR.GENESIS_GV70_1ST_GEN:
-      ret.mass = 1950. + STD_CARGO_KG
+      ret.mass = 1950.
       ret.wheelbase = 2.87
       ret.steerRatio = 14.6
     elif candidate == CAR.GENESIS_G80:
-      ret.mass = 2060. + STD_CARGO_KG
+      ret.mass = 2060.
       ret.wheelbase = 3.01
       ret.steerRatio = 16.5
     elif candidate == CAR.GENESIS_G90:
-      ret.mass = 2200
+      ret.mass = 2200.
       ret.wheelbase = 3.15
       ret.steerRatio = 12.069
     elif candidate == CAR.GENESIS_GV80:
-      ret.mass = 2258. + STD_CARGO_KG
+      ret.mass = 2258.
       ret.wheelbase = 2.95
       ret.steerRatio = 14.14
 
@@ -246,7 +253,7 @@ class CarInterface(CarInterfaceBase):
     else:
       ret.longitudinalTuning.kpV = [0.5]
       ret.longitudinalTuning.kiV = [0.0]
-      ret.experimentalLongitudinalAvailable = candidate not in (LEGACY_SAFETY_MODE_CAR | CAMERA_SCC_CAR)
+      ret.experimentalLongitudinalAvailable = candidate not in (UNSUPPORTED_LONGITUDINAL_CAR | CAMERA_SCC_CAR)
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
     ret.pcmCruise = not ret.openpilotLongitudinalControl
 
@@ -272,6 +279,8 @@ class CarInterface(CarInterfaceBase):
 
       if ret.flags & HyundaiFlags.CANFD_HDA2:
         ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_HDA2
+        if ret.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING:
+          ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_HDA2_ALT_STEERING
       if ret.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
         ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_ALT_BUTTONS
       if ret.flags & HyundaiFlags.CANFD_CAMERA_SCC:
@@ -299,10 +308,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.centerToFront = ret.wheelbase * 0.4
 
-    # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
-    # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
-                                                                         tire_stiffness_factor=tire_stiffness_factor)
     return ret
 
   @staticmethod
@@ -320,13 +325,8 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam)
 
-    if self.CS.CP.openpilotLongitudinalControl and self.CS.cruise_buttons[-1] != self.CS.prev_cruise_buttons:
-      buttonEvents = [create_button_event(self.CS.cruise_buttons[-1], self.CS.prev_cruise_buttons, BUTTONS_DICT)]
-      # Handle CF_Clu_CruiseSwState changing buttons mid-press
-      if self.CS.cruise_buttons[-1] != 0 and self.CS.prev_cruise_buttons != 0:
-        buttonEvents.append(create_button_event(0, self.CS.prev_cruise_buttons, BUTTONS_DICT))
-
-      ret.buttonEvents = buttonEvents
+    if self.CS.CP.openpilotLongitudinalControl:
+      ret.buttonEvents = create_button_events(self.CS.cruise_buttons[-1], self.CS.prev_cruise_buttons, BUTTONS_DICT)
 
     # On some newer model years, the CANCEL button acts as a pause/resume button based on the PCM state
     # To avoid re-engaging when openpilot cancels, check user engagement intention via buttons

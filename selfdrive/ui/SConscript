@@ -9,9 +9,9 @@ base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
 if arch == 'larch64':
   base_libs.append('EGL')
 
-maps = arch in ['larch64', 'x86_64']
+maps = arch in ['larch64', 'aarch64', 'x86_64']
 
-if maps and arch == 'x86_64':
+if maps and arch != 'larch64':
   rpath = [Dir(f"#third_party/mapbox-gl-native-qt/{arch}").srcnode().abspath]
   qt_env["RPATH"] += rpath
 
@@ -24,7 +24,7 @@ widgets_src = ["ui.cc", "qt/widgets/input.cc", "qt/widgets/drive_stats.cc", "qt/
                "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc",
                "qt/widgets/offroad_alerts.cc", "qt/widgets/prime.cc", "qt/widgets/keyboard.cc",
                "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#third_party/qrcode/QrCode.cc",
-               "qt/request_repeater.cc", "qt/qt_window.cc", "qt/offroad/networking.cc", "qt/offroad/wifiManager.cc"]
+               "qt/request_repeater.cc", "qt/qt_window.cc", "qt/network/networking.cc", "qt/network/wifi_manager.cc"]
 
 qt_env['CPPDEFINES'] = []
 if maps:
@@ -37,16 +37,42 @@ widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
 Export('widgets')
 qt_libs = [widgets, qt_util] + base_libs
 
+qt_src = ["main.cc", "qt/sidebar.cc", "qt/onroad.cc", "qt/body.cc",
+          "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc",
+          "qt/offroad/software_settings.cc", "qt/offroad/onboarding.cc",
+          "qt/offroad/driverview.cc", "qt/offroad/experimental_mode.cc"]
+
+# build translation files
+with open(File("translations/languages.json").abspath) as f:
+  languages = json.loads(f.read())
+translation_sources = [f"#selfdrive/ui/translations/{l}.ts" for l in languages.values()]
+translation_targets = [src.replace(".ts", ".qm") for src in translation_sources]
+lrelease_bin = 'third_party/qt5/larch64/bin/lrelease' if arch == 'larch64' else 'lrelease'
+
+lupdate = qt_env.Command(translation_sources, qt_src + widgets_src, "selfdrive/ui/update_translations.py")
+lrelease = qt_env.Command(translation_targets, translation_sources, f"{lrelease_bin} $SOURCES")
+qt_env.Depends(lrelease, lupdate)
+qt_env.NoClean(translation_sources)
+qt_env.Precious(translation_sources)
+qt_env.NoCache(lupdate)
+
+# create qrc file for compiled translations to include with assets
+translations_assets_src = "#selfdrive/assets/translations_assets.qrc"
+with open(File(translations_assets_src).abspath, 'w') as f:
+  f.write('<!DOCTYPE RCC><RCC version="1.0">\n<qresource>\n')
+  f.write('\n'.join([f'<file alias="{l}">../ui/translations/{l}.qm</file>' for l in languages.values()]))
+  f.write('\n</qresource>\n</RCC>')
+
 # build assets
 assets = "#selfdrive/assets/assets.cc"
 assets_src = "#selfdrive/assets/assets.qrc"
-qt_env.Command(assets, assets_src, f"rcc $SOURCES -o $TARGET")
-qt_env.Depends(assets, Glob('#selfdrive/assets/*', exclude=[assets, assets_src, "#selfdrive/assets/assets.o"]))
+qt_env.Command(assets, [assets_src, translations_assets_src], f"rcc $SOURCES -o $TARGET")
+qt_env.Depends(assets, Glob('#selfdrive/assets/*', exclude=[assets, assets_src, translations_assets_src, "#selfdrive/assets/assets.o"]) + [lrelease])
 asset_obj = qt_env.Object("assets", assets)
 
 # build soundd
 qt_env.Program("soundd/_soundd", ["soundd/main.cc", "soundd/sound.cc"], LIBS=qt_libs)
-if GetOption('test'):
+if GetOption('extras'):
   qt_env.Program("tests/playsound", "tests/playsound.cc", LIBS=base_libs)
   qt_env.Program('tests/test_sound', ['tests/test_runner.cc', 'soundd/sound.cc', 'tests/test_sound.cc'], LIBS=qt_libs)
 
@@ -57,39 +83,19 @@ qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
 qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_libs)
 
 # build main UI
-qt_src = ["main.cc", "qt/sidebar.cc", "qt/onroad.cc", "qt/body.cc",
-          "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc",
-          "qt/offroad/software_settings.cc", "qt/offroad/onboarding.cc",
-          "qt/offroad/driverview.cc", "qt/offroad/experimental_mode.cc"]
 qt_env.Program("_ui", qt_src + [asset_obj], LIBS=qt_libs)
-if GetOption('test'):
+if GetOption('extras'):
   qt_src.remove("main.cc")  # replaced by test_runner
   qt_env.Program('tests/test_translations', [asset_obj, 'tests/test_runner.cc', 'tests/test_translations.cc'] + qt_src, LIBS=qt_libs)
   qt_env.Program('tests/ui_snapshot', [asset_obj, "tests/ui_snapshot.cc"] + qt_src, LIBS=qt_libs)
 
 
-# build translation files
-with open(File("translations/languages.json").abspath) as f:
-  languages = json.loads(f.read())
-translation_sources = [f"#selfdrive/ui/translations/{l}.ts" for l in languages.values()]
-translation_targets = [src.replace(".ts", ".qm") for src in translation_sources]
-lrelease_bin = 'third_party/qt5/larch64/bin/lrelease' if arch == 'larch64' else 'lrelease'
-
-lupdate = qt_env.Command(translation_sources, qt_src, "selfdrive/ui/update_translations.py")
-lrelease = qt_env.Command(translation_targets, translation_sources, f"{lrelease_bin} $SOURCES")
-qt_env.Depends(lrelease, lupdate)
-qt_env.NoClean(translation_sources)
-qt_env.Precious(translation_sources)
-qt_env.NoCache(lupdate)
-
-# setup and factory resetter
-if GetOption('extras'):
+if GetOption('extras') and arch != "Darwin":
+  # setup and factory resetter
   qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
   qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc", asset_obj],
                  LIBS=qt_libs + ['curl', 'common', 'json11'])
 
-
-if GetOption('extras'):
   # build updater UI
   qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
 
@@ -131,5 +137,5 @@ if GetOption('extras'):
     assert f[0].get_size() < 300*1e3
 
 # build watch3
-if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
+if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
   qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'json11', 'zmq', 'visionipc', 'messaging'])

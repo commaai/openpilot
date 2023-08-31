@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "cereal/messaging/messaging.h"
 #include "cereal/services.h"
 #include "cereal/visionipc/visionipc_client.h"
@@ -12,7 +14,9 @@
 #include "system/loggerd/logger.h"
 
 constexpr int MAIN_FPS = 20;
-const int MAIN_BITRATE = 10000000;
+const int MAIN_BITRATE = 1e7;
+const int LIVESTREAM_BITRATE = 1e6;
+const int QCAM_BITRATE = 256000;
 
 #define NO_CAMERA_PATIENCE 500  // fall back to time-based rotation if all cameras are dead
 
@@ -26,11 +30,10 @@ const int SEGMENT_LENGTH = LOGGERD_TEST ? atoi(getenv("LOGGERD_SEGMENT_LENGTH"))
 
 constexpr char PRESERVE_ATTR_NAME[] = "user.preserve";
 constexpr char PRESERVE_ATTR_VALUE = '1';
-
 class EncoderInfo {
 public:
   const char *publish_name;
-  const char *filename;
+  const char *filename = NULL;
   bool record = true;
   int frame_width = 1928;
   int frame_height = 1208;
@@ -57,11 +60,13 @@ const EncoderInfo main_road_encoder_info = {
   .filename = "fcamera.hevc",
   INIT_ENCODE_FUNCTIONS(RoadEncode),
 };
+
 const EncoderInfo main_wide_road_encoder_info = {
   .publish_name = "wideRoadEncodeData",
   .filename = "ecamera.hevc",
   INIT_ENCODE_FUNCTIONS(WideRoadEncode),
 };
+
 const EncoderInfo main_driver_encoder_info = {
   .publish_name = "driverEncodeData",
   .filename = "dcamera.hevc",
@@ -69,16 +74,39 @@ const EncoderInfo main_driver_encoder_info = {
   INIT_ENCODE_FUNCTIONS(DriverEncode),
 };
 
+const EncoderInfo stream_road_encoder_info = {
+  .publish_name = "livestreamRoadEncodeData",
+  .encode_type = cereal::EncodeIndex::Type::QCAMERA_H264,
+  .record = false,
+  .bitrate = LIVESTREAM_BITRATE,
+  INIT_ENCODE_FUNCTIONS(LivestreamRoadEncode),
+};
+
+const EncoderInfo stream_wide_road_encoder_info = {
+  .publish_name = "livestreamWideRoadEncodeData",
+  .encode_type = cereal::EncodeIndex::Type::QCAMERA_H264,
+  .record = false,
+  .bitrate = LIVESTREAM_BITRATE,
+  INIT_ENCODE_FUNCTIONS(LivestreamWideRoadEncode),
+};
+
+const EncoderInfo stream_driver_encoder_info = {
+  .publish_name = "livestreamDriverEncodeData",
+  .encode_type = cereal::EncodeIndex::Type::QCAMERA_H264,
+  .record = false,
+  .bitrate = LIVESTREAM_BITRATE,
+  INIT_ENCODE_FUNCTIONS(LivestreamDriverEncode),
+};
+
 const EncoderInfo qcam_encoder_info = {
   .publish_name = "qRoadEncodeData",
   .filename = "qcamera.ts",
-  .bitrate = 256000,
+  .bitrate = QCAM_BITRATE,
   .encode_type = cereal::EncodeIndex::Type::QCAMERA_H264,
   .frame_width = 526,
   .frame_height = 330,
   INIT_ENCODE_FUNCTIONS(QRoadEncode),
 };
-
 
 const LogCameraInfo road_camera_info{
   .thread_name = "road_cam_encoder",
@@ -101,4 +129,26 @@ const LogCameraInfo driver_camera_info{
   .encoder_infos = {main_driver_encoder_info}
 };
 
+const LogCameraInfo stream_road_camera_info{
+  .thread_name = "road_cam_encoder",
+  .type = RoadCam,
+  .stream_type = VISION_STREAM_ROAD,
+  .encoder_infos = {stream_road_encoder_info}
+};
+
+const LogCameraInfo stream_wide_road_camera_info{
+  .thread_name = "wide_road_cam_encoder",
+  .type = WideRoadCam,
+  .stream_type = VISION_STREAM_WIDE_ROAD,
+  .encoder_infos = {stream_wide_road_encoder_info}
+};
+
+const LogCameraInfo stream_driver_camera_info{
+  .thread_name = "driver_cam_encoder",
+  .type = DriverCam,
+  .stream_type = VISION_STREAM_DRIVER,
+  .encoder_infos = {stream_driver_encoder_info}
+};
+
 const LogCameraInfo cameras_logged[] = {road_camera_info, wide_road_camera_info, driver_camera_info};
+const LogCameraInfo stream_cameras_logged[] = {stream_road_camera_info, stream_wide_road_camera_info, stream_driver_camera_info};

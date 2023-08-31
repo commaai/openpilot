@@ -4,19 +4,9 @@
 #include <memory>
 
 #include "cereal/messaging/messaging.h"
-#include "cereal/visionipc/visionipc_client.h"
-#include "common/mat.h"
 #include "common/modeldata.h"
 #include "common/util.h"
-#include "selfdrive/modeld/models/commonmodel.h"
 #include "selfdrive/modeld/models/nav.h"
-#include "selfdrive/modeld/runners/run.h"
-
-// gate this here
-#define TEMPORAL
-#define DESIRE
-#define TRAFFIC_CONVENTION
-#define NAV
 
 constexpr int FEATURE_LEN = 128;
 constexpr int HISTORY_BUFFER_LEN = 99;
@@ -31,13 +21,15 @@ constexpr int BLINKER_LEN = 6;
 constexpr int META_STRIDE = 7;
 
 constexpr int PLAN_MHP_N = 5;
-
 constexpr int LEAD_MHP_N = 2;
 constexpr int LEAD_TRAJ_LEN = 6;
-constexpr int LEAD_PRED_DIM = 4;
 constexpr int LEAD_MHP_SELECTION = 3;
 // Padding to get output shape as multiple of 4
 constexpr int PAD_SIZE = 2;
+
+constexpr float FCW_THRESHOLD_5MS2_HIGH = 0.15;
+constexpr float FCW_THRESHOLD_5MS2_LOW = 0.05;
+constexpr float FCW_THRESHOLD_3MS2 = 0.7;
 
 struct ModelOutputXYZ {
   float x;
@@ -249,43 +241,14 @@ struct ModelOutput {
 };
 
 constexpr int OUTPUT_SIZE = sizeof(ModelOutput) / sizeof(float);
-
-#ifdef TEMPORAL
-  constexpr int TEMPORAL_SIZE = HISTORY_BUFFER_LEN * FEATURE_LEN;
-#else
-  constexpr int TEMPORAL_SIZE = 0;
-#endif
 constexpr int NET_OUTPUT_SIZE = OUTPUT_SIZE + FEATURE_LEN + PAD_SIZE;
 
-// TODO: convert remaining arrays to std::array and update model runners
-struct ModelState {
-  ModelFrame *frame = nullptr;
-  ModelFrame *wide_frame = nullptr;
-  std::array<float, HISTORY_BUFFER_LEN * FEATURE_LEN> feature_buffer = {};
+struct PublishState {
   std::array<float, DISENGAGE_LEN * DISENGAGE_LEN> disengage_buffer = {};
-  std::array<float, NET_OUTPUT_SIZE> output = {};
-  std::unique_ptr<RunModel> m;
-#ifdef DESIRE
-  float prev_desire[DESIRE_LEN] = {};
-  float pulse_desire[DESIRE_LEN*(HISTORY_BUFFER_LEN+1)] = {};
-#endif
-#ifdef TRAFFIC_CONVENTION
-  float traffic_convention[TRAFFIC_CONVENTION_LEN] = {};
-#endif
-#ifdef DRIVING_STYLE
-  float driving_style[DRIVING_STYLE_LEN] = {};
-#endif
-#ifdef NAV
-  float nav_features[NAV_FEATURE_LEN] = {};
-#endif
+  std::array<float, 5> prev_brake_5ms2_probs = {};
+  std::array<float, 3> prev_brake_3ms2_probs = {};
 };
 
-void model_init(ModelState* s, cl_device_id device_id, cl_context context);
-ModelOutput *model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* buf_wide,
-                              const mat3 &transform, const mat3 &transform_wide, float *desire_in, bool is_rhd, float *driving_style, float *nav_features, bool prepare_only);
-void model_free(ModelState* s);
-void model_publish(ModelState* s, PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
-                   const ModelOutput &net_outputs, uint64_t timestamp_eof, uint64_t timestamp_llk,
-                   float model_execution_time, const bool nav_enabled, const bool valid);
-void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
-                     const ModelOutput &net_outputs, uint64_t timestamp_eof, const bool valid);
+void fill_model_msg(MessageBuilder &msg, float *net_output_data, PublishState &ps, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
+                    uint64_t timestamp_eof, uint64_t timestamp_llk, float model_execution_time, const bool nav_enabled, const bool valid);
+void fill_pose_msg(MessageBuilder &msg, float *net_outputs, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames, uint64_t timestamp_eof, const bool valid);

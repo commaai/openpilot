@@ -140,11 +140,11 @@ BO_ 290 ES_LKAS: 8 XXX
  SG_ LKAS_Output : 16|13@1- (-1,0) [-8191|8191] "" XXX
  SG_ LKAS_Request : 29|1@0+ (1,0) [0|1] "" XXX
 
-BO_ 292 ES_LKAS_ALT: 8 XXX
+BO_ 292 ES_LKAS_ANGLE: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|1] "" XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|1] "" XXX
  SG_ LKAS_Request : 12|1@1+ (1,0) [0|1] "" XXX
- SG_ LKAS_Output : 40|17@1- (-1,0) [0|1] "" XXX
+ SG_ LKAS_Output : 40|17@1- (-0.01,0) [0|1] "deg" XXX
  SG_ SET_3 : 60|2@1+ (1,0) [0|1] "" XXX
 
 BO_ 544 ES_Brake: 8 XXX
@@ -162,9 +162,9 @@ BO_ 544 ES_Brake: 8 XXX
 BO_ 577 Cruise_Status: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ Cruise_Set_Speed : 51|12@0+ (1,0) [0|120] "" XXX
  SG_ Cruise_On : 54|1@1+ (1,0) [0|1] "" XXX
  SG_ Cruise_Activated : 55|1@1+ (1,0) [0|1] "" XXX
- SG_ Cruise_Active : 57|4@1+ (1,0) [0|15] "" XXX
 
 BO_ 552 BSD_RCTA: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
@@ -246,6 +246,14 @@ BO_ 802 ES_LKAS_State: 8 XXX
  SG_ LKAS_Alert : 32|5@1+ (1,0) [0|31] "" XXX
  SG_ Signal3 : 37|27@1+ (1,0) [0|1] "" XXX
 
+BO_ 803 ES_Infotainment: 8 XXX
+ SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ LKAS_Blue_Lines : 15|4@0+ (1,0) [0|15] "" XXX
+ SG_ Signal1 : 19|4@0+ (1,0) [0|15] "" XXX
+ SG_ LKAS_State_Infotainment : 22|3@0+ (1,0) [0|7] "" XXX
+ SG_ Signal2 : 24|1@0+ (1,0) [0|1] "" XXX
+
 BO_ 722 AC_State: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
@@ -256,6 +264,21 @@ BO_ 1677 Dash_State: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Units : 29|3@1+ (1,0) [0|7] "" XXX
+
+BO_ 554 ES_HighBeamAssist: 8 XXX
+ SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ HBA_Available : 13|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 805 ES_STATIC_1: 8 XXX
+ SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ SET_3 : 23|2@0+ (1,0) [0|3] "" XXX
+
+BO_ 289 ES_STATIC_2: 8 XXX
+ SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ SET_3 : 15|2@1+ (1,0) [0|3] "" XXX
 
 CM_ SG_ 64 Throttle_Combo "Throttle Cruise + Pedal";
 CM_ SG_ 313 Brake_Lights "Driver or Cruise Brake on";
@@ -287,7 +310,7 @@ BO_ 72 Transmission: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Gear : 24|8@1+ (1,0) [0|255] "" XXX
- SG_ RPM : 40|16@1+ (1,0) [0|65535] "" XXX
+ SG_ RPM : 40|15@1+ (1,0) [0|65535] "" XXX
 
 BO_ 73 CVT: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
@@ -302,7 +325,7 @@ BO_ 545 ES_Distance: 8 XXX
  SG_ Cruise_Throttle : 16|12@1+ (1,0) [0|4095] "" XXX
  SG_ Signal2 : 28|4@1+ (1,0) [0|15] "" XXX
  SG_ Car_Follow : 32|1@1+ (1,0) [0|1] "" XXX
- SG_ Signal3 : 33|1@1+ (1,0) [0|1] "" XXX
+ SG_ Low_Speed_Follow : 33|1@1+ (1,0) [0|1] "" XXX
  SG_ Cruise_Soft_Disable : 34|1@1+ (1,0) [0|1] "" XXX
  SG_ Signal7 : 35|1@1+ (1,0) [0|1] "" XXX
  SG_ Cruise_Brake_Active : 36|1@1+ (1,0) [0|1] "" XXX
@@ -335,14 +358,6 @@ BO_ 576 CruiseControl: 8 XXX
  SG_ Cruise_On : 40|1@1+ (1,0) [0|1] "" XXX
  SG_ Cruise_Activated : 41|1@1+ (1,0) [0|1] "" XXX
  SG_ Signal2 : 42|22@1+ (1,0) [0|4194303] "" XXX
-
-BO_ 803 ES_Infotainment: 8 XXX
- SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
- SG_ LKAS_Blue_Lines : 15|4@0+ (1,0) [0|15] "" XXX
- SG_ Signal1 : 19|4@0+ (1,0) [0|15] "" XXX
- SG_ LKAS_State_Infotainment : 22|3@0+ (1,0) [0|7] "" XXX
- SG_ Signal2 : 24|1@0+ (1,0) [0|1] "" XXX
 
 CM_ SG_ 545 Cruise_Throttle "RPM-like output signal";
 CM_ SG_ 545 Cruise_EPB "1 = Electric Parking Brake set";

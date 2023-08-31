@@ -11,11 +11,11 @@ uint8_t can_irq_number[3][3] = {
 
 bool can_set_speed(uint8_t can_number) {
   bool ret = true;
-  CAN_TypeDef *CAN = CANIF_FROM_CAN_NUM(can_number);
+  CAN_TypeDef *CANx = CANIF_FROM_CAN_NUM(can_number);
   uint8_t bus_number = BUS_NUM_FROM_CAN_NUM(can_number);
 
   ret &= llcan_set_speed(
-    CAN,
+    CANx,
     bus_config[bus_number].can_speed,
     can_loopback,
     (unsigned int)(can_silent) & (1U << can_number)
@@ -74,8 +74,8 @@ void can_set_gmlan(uint8_t bus) {
 }
 
 void update_can_health_pkt(uint8_t can_number, uint32_t ir_reg) {
-  CAN_TypeDef *CAN = CANIF_FROM_CAN_NUM(can_number);
-  uint32_t esr_reg = CAN->ESR;
+  CAN_TypeDef *CANx = CANIF_FROM_CAN_NUM(can_number);
+  uint32_t esr_reg = CANx->ESR;
 
   can_health[can_number].bus_off = ((esr_reg & CAN_ESR_BOFF) >> CAN_ESR_BOFF_Pos);
   can_health[can_number].bus_off_cnt += can_health[can_number].bus_off;
@@ -98,12 +98,12 @@ void update_can_health_pkt(uint8_t can_number, uint32_t ir_reg) {
     can_health[can_number].total_error_cnt += 1U;
 
     // RX message lost due to FIFO overrun
-    if ((CAN->RF0R & (CAN_RF0R_FOVR0)) != 0) {
+    if ((CANx->RF0R & (CAN_RF0R_FOVR0)) != 0) {
       can_health[can_number].total_rx_lost_cnt += 1U;
-      CAN->RF0R &= ~(CAN_RF0R_FOVR0);
+      CANx->RF0R &= ~(CAN_RF0R_FOVR0);
     }
     can_health[can_number].can_core_reset_cnt += 1U;
-    llcan_clear_send(CAN);
+    llcan_clear_send(CANx);
   }
 }
 
@@ -119,28 +119,28 @@ void process_can(uint8_t can_number) {
 
     ENTER_CRITICAL();
 
-    CAN_TypeDef *CAN = CANIF_FROM_CAN_NUM(can_number);
+    CAN_TypeDef *CANx = CANIF_FROM_CAN_NUM(can_number);
     uint8_t bus_number = BUS_NUM_FROM_CAN_NUM(can_number);
 
     // check for empty mailbox
     CANPacket_t to_send;
-    if ((CAN->TSR & (CAN_TSR_TERR0 | CAN_TSR_ALST0)) != 0) { // last TX failed due to error arbitration lost
+    if ((CANx->TSR & (CAN_TSR_TERR0 | CAN_TSR_ALST0)) != 0) { // last TX failed due to error arbitration lost
       can_health[can_number].total_tx_lost_cnt += 1U;
-      CAN->TSR |= (CAN_TSR_TERR0 | CAN_TSR_ALST0);
+      CANx->TSR |= (CAN_TSR_TERR0 | CAN_TSR_ALST0);
     }
-    if ((CAN->TSR & CAN_TSR_TME0) == CAN_TSR_TME0) {
+    if ((CANx->TSR & CAN_TSR_TME0) == CAN_TSR_TME0) {
       // add successfully transmitted message to my fifo
-      if ((CAN->TSR & CAN_TSR_RQCP0) == CAN_TSR_RQCP0) {
-        if ((CAN->TSR & CAN_TSR_TXOK0) == CAN_TSR_TXOK0) {
+      if ((CANx->TSR & CAN_TSR_RQCP0) == CAN_TSR_RQCP0) {
+        if ((CANx->TSR & CAN_TSR_TXOK0) == CAN_TSR_TXOK0) {
           CANPacket_t to_push;
           to_push.returned = 1U;
           to_push.rejected = 0U;
-          to_push.extended = (CAN->sTxMailBox[0].TIR >> 2) & 0x1U;
-          to_push.addr = (to_push.extended != 0U) ? (CAN->sTxMailBox[0].TIR >> 3) : (CAN->sTxMailBox[0].TIR >> 21);
-          to_push.data_len_code = CAN->sTxMailBox[0].TDTR & 0xFU;
+          to_push.extended = (CANx->sTxMailBox[0].TIR >> 2) & 0x1U;
+          to_push.addr = (to_push.extended != 0U) ? (CANx->sTxMailBox[0].TIR >> 3) : (CANx->sTxMailBox[0].TIR >> 21);
+          to_push.data_len_code = CANx->sTxMailBox[0].TDTR & 0xFU;
           to_push.bus = bus_number;
-          WORD_TO_BYTE_ARRAY(&to_push.data[0], CAN->sTxMailBox[0].TDLR);
-          WORD_TO_BYTE_ARRAY(&to_push.data[4], CAN->sTxMailBox[0].TDHR);
+          WORD_TO_BYTE_ARRAY(&to_push.data[0], CANx->sTxMailBox[0].TDLR);
+          WORD_TO_BYTE_ARRAY(&to_push.data[4], CANx->sTxMailBox[0].TDHR);
           can_set_checksum(&to_push);
 
           rx_buffer_overflow += can_push(&can_rx_q, &to_push) ? 0U : 1U;
@@ -148,19 +148,19 @@ void process_can(uint8_t can_number) {
 
         // clear interrupt
         // careful, this can also be cleared by requesting a transmission
-        CAN->TSR |= CAN_TSR_RQCP0;
+        CANx->TSR |= CAN_TSR_RQCP0;
       }
 
       if (can_pop(can_queues[bus_number], &to_send)) {
         if (can_check_checksum(&to_send)) {
           can_health[can_number].total_tx_cnt += 1U;
           // only send if we have received a packet
-          CAN->sTxMailBox[0].TIR = ((to_send.extended != 0U) ? (to_send.addr << 3) : (to_send.addr << 21)) | (to_send.extended << 2);
-          CAN->sTxMailBox[0].TDTR = to_send.data_len_code;
-          BYTE_ARRAY_TO_WORD(CAN->sTxMailBox[0].TDLR, &to_send.data[0]);
-          BYTE_ARRAY_TO_WORD(CAN->sTxMailBox[0].TDHR, &to_send.data[4]);
+          CANx->sTxMailBox[0].TIR = ((to_send.extended != 0U) ? (to_send.addr << 3) : (to_send.addr << 21)) | (to_send.extended << 2);
+          CANx->sTxMailBox[0].TDTR = to_send.data_len_code;
+          BYTE_ARRAY_TO_WORD(CANx->sTxMailBox[0].TDLR, &to_send.data[0]);
+          BYTE_ARRAY_TO_WORD(CANx->sTxMailBox[0].TDHR, &to_send.data[4]);
           // Send request TXRQ
-          CAN->sTxMailBox[0].TIR |= 0x1U;
+          CANx->sTxMailBox[0].TIR |= 0x1U;
         } else {
           can_health[can_number].total_tx_checksum_error_cnt += 1U;
         }
@@ -176,10 +176,10 @@ void process_can(uint8_t can_number) {
 // CANx_RX0 IRQ Handler
 // blink blue when we are receiving CAN messages
 void can_rx(uint8_t can_number) {
-  CAN_TypeDef *CAN = CANIF_FROM_CAN_NUM(can_number);
+  CAN_TypeDef *CANx = CANIF_FROM_CAN_NUM(can_number);
   uint8_t bus_number = BUS_NUM_FROM_CAN_NUM(can_number);
 
-  while ((CAN->RF0R & CAN_RF0R_FMP0) != 0) {
+  while ((CANx->RF0R & CAN_RF0R_FMP0) != 0) {
     can_health[can_number].total_rx_cnt += 1U;
 
     // can is live
@@ -190,12 +190,12 @@ void can_rx(uint8_t can_number) {
 
     to_push.returned = 0U;
     to_push.rejected = 0U;
-    to_push.extended = (CAN->sFIFOMailBox[0].RIR >> 2) & 0x1U;
-    to_push.addr = (to_push.extended != 0U) ? (CAN->sFIFOMailBox[0].RIR >> 3) : (CAN->sFIFOMailBox[0].RIR >> 21);
-    to_push.data_len_code = CAN->sFIFOMailBox[0].RDTR & 0xFU;
+    to_push.extended = (CANx->sFIFOMailBox[0].RIR >> 2) & 0x1U;
+    to_push.addr = (to_push.extended != 0U) ? (CANx->sFIFOMailBox[0].RIR >> 3) : (CANx->sFIFOMailBox[0].RIR >> 21);
+    to_push.data_len_code = CANx->sFIFOMailBox[0].RDTR & 0xFU;
     to_push.bus = bus_number;
-    WORD_TO_BYTE_ARRAY(&to_push.data[0], CAN->sFIFOMailBox[0].RDLR);
-    WORD_TO_BYTE_ARRAY(&to_push.data[4], CAN->sFIFOMailBox[0].RDHR);
+    WORD_TO_BYTE_ARRAY(&to_push.data[0], CANx->sFIFOMailBox[0].RDLR);
+    WORD_TO_BYTE_ARRAY(&to_push.data[4], CANx->sFIFOMailBox[0].RDHR);
     can_set_checksum(&to_push);
 
     // forwarding (panda only)
@@ -223,7 +223,7 @@ void can_rx(uint8_t can_number) {
     rx_buffer_overflow += can_push(&can_rx_q, &to_push) ? 0U : 1U;
 
     // next
-    CAN->RF0R |= CAN_RF0R_RFOM0;
+    CANx->RF0R |= CAN_RF0R_RFOM0;
   }
 }
 
@@ -253,9 +253,9 @@ bool can_init(uint8_t can_number) {
   REGISTER_INTERRUPT(CAN3_SCE_IRQn, CAN3_SCE_IRQ_Handler, CAN_INTERRUPT_RATE, FAULT_INTERRUPT_RATE_CAN_3)
 
   if (can_number != 0xffU) {
-    CAN_TypeDef *CAN = CANIF_FROM_CAN_NUM(can_number);
+    CAN_TypeDef *CANx = CANIF_FROM_CAN_NUM(can_number);
     ret &= can_set_speed(can_number);
-    ret &= llcan_init(CAN);
+    ret &= llcan_init(CANx);
     // in case there are queued up messages
     process_can(can_number);
   }

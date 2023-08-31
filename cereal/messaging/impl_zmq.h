@@ -63,5 +63,5 @@ private:
 public:
   void registerSocket(SubSocket *socket);
   std::vector<SubSocket*> poll(int timeout);
-  ~ZMQPoller(){};
+  ~ZMQPoller(){}
 };

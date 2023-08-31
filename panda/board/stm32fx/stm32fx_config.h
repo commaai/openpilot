@@ -48,10 +48,10 @@
 #include "comms_definitions.h"
 
 #ifndef BOOTSTUB
-  #ifdef PANDA
-    #include "main_declarations.h"
-  #else
+  #ifdef PEDAL
     #include "pedal/main_declarations.h"
+  #else
+    #include "main_declarations.h"
   #endif
 #else
   #include "bootstub_declarations.h"
@@ -73,17 +73,17 @@
 #include "drivers/watchdog.h"
 #include "stm32fx/llflash.h"
 
-#if defined(PANDA) || defined(BOOTSTUB)
+#if !defined(PEDAL) || defined(BOOTSTUB)
   #include "drivers/spi.h"
   #include "stm32fx/llspi.h"
 #endif
 
-#if !defined(BOOTSTUB) && (defined(PANDA) || defined(PEDAL_USB))
+#if !defined(BOOTSTUB) && (!defined(PEDAL) || defined(PEDAL_USB))
   #include "drivers/uart.h"
   #include "stm32fx/lluart.h"
 #endif
 
-#if !defined(PEDAL_USB) && !defined(PEDAL) && !defined(BOOTSTUB)
+#if defined(PANDA) && !defined(BOOTSTUB)
   #include "stm32fx/llexti.h"
 #endif
 
@@ -91,7 +91,7 @@
   #include "stm32fx/llbxcan.h"
 #endif
 
-#if defined(PANDA) || defined(BOOTSTUB) || defined(PEDAL_USB)
+#if !defined(PEDAL) || defined(PEDAL_USB) || defined(BOOTSTUB)
   #include "stm32fx/llusb.h"
 #endif
 

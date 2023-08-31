@@ -12,7 +12,8 @@ IPP_ALT = 6821000
 def get_alpha_beta(rcv_pos, el):
     geocentric_alt = np.linalg.norm(rcv_pos)
     alpha = np.pi/2 + el
-    beta = np.arcsin(geocentric_alt*np.sin(alpha)/IPP_ALT)
+    arcsin_arg = geocentric_alt*np.sin(alpha)/IPP_ALT
+    beta = np.arcsin(np.clip(arcsin_arg, -1, 1))
     return alpha, beta
 
 def get_slant_delay(rcv_pos, az, el, sat_pos, time, freq, vertical_delay):
@@ -183,7 +184,7 @@ def parse_ionex(ionex_file):
     elif "END OF TEC MAP" in line:
       map_end_idx += [j]
   if maps_count != len(map_start_idx):
-    raise LookupError("Parsing error: the number of maps in the header "
+    raise LookupError("Parsing error: the number of maps in the header " +
                       "is not equal to the number of maps in the body.")
   if len(map_start_idx) != len(map_end_idx):
     raise IndexError("Starts end ends numbers are not equal.")

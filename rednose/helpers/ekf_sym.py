@@ -192,7 +192,7 @@ def gen_code(folder, name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_p
   for group, kinds in func_lists.items():
     post_code += f"  .{group}s = {{\n"
     for kind in kinds:
-      str_kind = f"\"{kind}\"" if type(kind) == str else kind
+      str_kind = f"\"{kind}\"" if isinstance(kind, str) else kind
       post_code += f"    {{ {str_kind}, {name}_{group}_{kind} }},\n"
     post_code += "  },\n"
   post_code += "  .extra_routines = {\n"

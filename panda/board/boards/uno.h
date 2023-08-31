@@ -51,10 +51,6 @@ void uno_set_led(uint8_t color, bool enabled) {
   }
 }
 
-void uno_set_gps_load_switch(bool enabled) {
-  set_gpio_output(GPIOC, 12, enabled);
-}
-
 void uno_set_bootkick(bool enabled){
   if (enabled) {
     set_gpio_output(GPIOB, 14, false);
@@ -73,32 +69,9 @@ void uno_set_phone_power(bool enabled){
   set_gpio_output(GPIOB, 4, enabled);
 }
 
-void uno_set_gps_mode(uint8_t mode) {
-  switch (mode) {
-    case GPS_DISABLED:
-      // GPS OFF
-      set_gpio_output(GPIOB, 1, 0);
-      set_gpio_output(GPIOC, 5, 0);
-      uno_set_gps_load_switch(false);
-      break;
-    case GPS_ENABLED:
-      // GPS ON
-      set_gpio_output(GPIOB, 1, 1);
-      set_gpio_output(GPIOC, 5, 1);
-      uno_set_gps_load_switch(true);
-      break;
-    case GPS_BOOTMODE:
-      set_gpio_output(GPIOB, 1, 1);
-      set_gpio_output(GPIOC, 5, 0);
-      uno_set_gps_load_switch(true);
-      break;
-    default:
-      print("Invalid ESP/GPS mode\n");
-      break;
-  }
-}
-
-void uno_set_can_mode(uint8_t mode){
+void uno_set_can_mode(uint8_t mode) {
+  uno_enable_can_transceiver(2U, false);
+  uno_enable_can_transceiver(4U, false);
   switch (mode) {
     case CAN_MODE_NORMAL:
     case CAN_MODE_OBD_CAN2:
@@ -110,6 +83,7 @@ void uno_set_can_mode(uint8_t mode){
         // B5,B6: normal CAN2 mode
         set_gpio_alternate(GPIOB, 5, GPIO_AF9_CAN2);
         set_gpio_alternate(GPIOB, 6, GPIO_AF9_CAN2);
+        uno_enable_can_transceiver(2U, true);
       } else {
         // B5,B6: disable normal CAN2 mode
         set_gpio_mode(GPIOB, 5, MODE_INPUT);
@@ -118,6 +92,7 @@ void uno_set_can_mode(uint8_t mode){
         // B12,B13: OBD mode
         set_gpio_alternate(GPIOB, 12, GPIO_AF9_CAN2);
         set_gpio_alternate(GPIOB, 13, GPIO_AF9_CAN2);
+        uno_enable_can_transceiver(4U, true);
       }
       break;
     default:
@@ -168,8 +143,10 @@ void uno_init(void) {
   set_gpio_mode(GPIOC, 0, MODE_ANALOG);
   set_gpio_mode(GPIOC, 3, MODE_ANALOG);
 
-  // Set default state of GPS
-  current_board->set_gps_mode(GPS_ENABLED);
+  // GPS off
+  set_gpio_output(GPIOB, 1, 0);
+  set_gpio_output(GPIOC, 5, 0);
+  set_gpio_output(GPIOC, 12, 0);
 
   // C10: OBD_SBU1_RELAY (harness relay driving output)
   // C11: OBD_SBU2_RELAY (harness relay driving output)
@@ -182,9 +159,6 @@ void uno_init(void) {
 
   // C8: FAN PWM aka TIM3_CH3
   set_gpio_alternate(GPIOC, 8, GPIO_AF2_TIM3);
-
-  // Turn on GPS load switch.
-  uno_set_gps_load_switch(true);
 
   // Turn on phone regulator
   uno_set_phone_power(true);
@@ -227,6 +201,13 @@ void uno_init(void) {
   uno_bootkick();
 }
 
+void uno_init_bootloader(void) {
+  // GPS off
+  set_gpio_output(GPIOB, 1, 0);
+  set_gpio_output(GPIOC, 5, 0);
+  set_gpio_output(GPIOC, 12, 0);
+}
+
 const harness_configuration uno_harness_config = {
   .has_harness = true,
   .GPIO_SBU1 = GPIOC,
@@ -245,7 +226,6 @@ const board board_uno = {
   .board_type = "Uno",
   .board_tick = uno_board_tick,
   .harness_config = &uno_harness_config,
-  .has_gps = true,
   .has_hw_gmlan = false,
   .has_obd = true,
   .has_lin = false,
@@ -257,10 +237,10 @@ const board board_uno = {
   .fan_stall_recovery = false,
   .fan_enable_cooldown_time = 0U,
   .init = uno_init,
+  .init_bootloader = uno_init_bootloader,
   .enable_can_transceiver = uno_enable_can_transceiver,
   .enable_can_transceivers = uno_enable_can_transceivers,
   .set_led = uno_set_led,
-  .set_gps_mode = uno_set_gps_mode,
   .set_can_mode = uno_set_can_mode,
   .check_ignition = uno_check_ignition,
   .read_current = unused_read_current,

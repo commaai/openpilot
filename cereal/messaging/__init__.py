@@ -1,6 +1,7 @@
 # must be built with scons
-from .messaging_pyx import Context, Poller, SubSocket, PubSocket, SocketEventHandle, toggle_fake_events, set_fake_prefix, get_fake_prefix, delete_fake_prefix, wait_for_one_event  # pylint: disable=no-name-in-module, import-error
-from .messaging_pyx import MultiplePublishersError, MessagingError  # pylint: disable=no-name-in-module, import-error
+from .messaging_pyx import Context, Poller, SubSocket, PubSocket, SocketEventHandle, toggle_fake_events, \
+                                set_fake_prefix, get_fake_prefix, delete_fake_prefix, wait_for_one_event
+from .messaging_pyx import MultiplePublishersError, MessagingError
 
 import os
 import capnp
@@ -23,13 +24,6 @@ assert wait_for_one_event
 NO_TRAVERSAL_LIMIT = 2**64-1
 AVG_FREQ_HISTORY = 100
 
-# sec_since_boot is faster, but allow to run standalone too
-try:
-  from common.realtime import sec_since_boot
-except ImportError:
-  sec_since_boot = time.time
-  print("Warning, using python time.time() instead of faster sec_since_boot")
-
 context = Context()
 
 
@@ -49,7 +43,7 @@ def log_from_bytes(dat: bytes) -> capnp.lib.capnp._DynamicStructReader:
 
 def new_message(service: Optional[str] = None, size: Optional[int] = None) -> capnp.lib.capnp._DynamicStructBuilder:
   dat = log.Event.new_message()
-  dat.logMonoTime = int(sec_since_boot() * 1e9)
+  dat.logMonoTime = int(time.monotonic() * 1e9)
   dat.valid = True
   if service is not None:
     if size is None:
@@ -212,7 +206,7 @@ class SubMaster:
     # non-blocking receive for non-polled sockets
     for s in self.non_polled_services:
       msgs.append(recv_one_or_none(self.sock[s]))
-    self.update_msgs(sec_since_boot(), msgs)
+    self.update_msgs(time.monotonic(), msgs)
 
   def update_msgs(self, cur_time: float, msgs: List[capnp.lib.capnp._DynamicStructReader]) -> None:
     self.frame += 1

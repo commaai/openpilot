@@ -1,7 +1,3 @@
-
-void dma_pointer_handler(uart_ring *q, uint32_t dma_ndtr) { UNUSED(q); UNUSED(dma_ndtr); }
-void dma_rx_init(uart_ring *q) { UNUSED(q); }
-
 #define __DIV(_PCLK_, _BAUD_)                    (((_PCLK_) * 25U) / (4U * (_BAUD_)))
 #define __DIVMANT(_PCLK_, _BAUD_)                (__DIV((_PCLK_), (_BAUD_)) / 100U)
 #define __DIVFRAQ(_PCLK_, _BAUD_)                ((((__DIV((_PCLK_), (_BAUD_)) - (__DIVMANT((_PCLK_), (_BAUD_)) * 100U)) * 16U) + 50U) / 100U)
@@ -9,30 +5,28 @@ void dma_rx_init(uart_ring *q) { UNUSED(q); }
 
 void uart_rx_ring(uart_ring *q){
   // Do not read out directly if DMA enabled
-  if (q->dma_rx == false) {
-    ENTER_CRITICAL();
+  ENTER_CRITICAL();
 
-    // Read out RX buffer
-    uint8_t c = q->uart->RDR;  // This read after reading SR clears a bunch of interrupts
+  // Read out RX buffer
+  uint8_t c = q->uart->RDR;  // This read after reading SR clears a bunch of interrupts
 
-    uint16_t next_w_ptr = (q->w_ptr_rx + 1U) % q->rx_fifo_size;
+  uint16_t next_w_ptr = (q->w_ptr_rx + 1U) % q->rx_fifo_size;
 
-    if ((next_w_ptr == q->r_ptr_rx) && q->overwrite) {
-      // overwrite mode: drop oldest byte
-      q->r_ptr_rx = (q->r_ptr_rx + 1U) % q->rx_fifo_size;
-    }
-
-    // Do not overwrite buffer data
-    if (next_w_ptr != q->r_ptr_rx) {
-      q->elems_rx[q->w_ptr_rx] = c;
-      q->w_ptr_rx = next_w_ptr;
-      if (q->callback != NULL) {
-        q->callback(q);
-      }
-    }
-
-    EXIT_CRITICAL();
+  if ((next_w_ptr == q->r_ptr_rx) && q->overwrite) {
+    // overwrite mode: drop oldest byte
+    q->r_ptr_rx = (q->r_ptr_rx + 1U) % q->rx_fifo_size;
   }
+
+  // Do not overwrite buffer data
+  if (next_w_ptr != q->r_ptr_rx) {
+    q->elems_rx[q->w_ptr_rx] = c;
+    q->w_ptr_rx = next_w_ptr;
+    if (q->callback != NULL) {
+      q->callback(q);
+    }
+  }
+
+  EXIT_CRITICAL();
 }
 
 void uart_tx_ring(uart_ring *q){
@@ -96,16 +90,6 @@ void uart_interrupt_handler(uart_ring *q) {
   // Send if necessary
   uart_tx_ring(q);
 
-  // Run DMA pointer handler if the line is idle
-  if(q->dma_rx && (status & USART_ISR_IDLE)){
-    // Reset IDLE flag
-    UART_READ_RDR(q->uart)
-
-    #ifdef DEBUG_UART
-      print("No IDLE dma_pointer_handler implemented for this UART.");
-    #endif
-  }
-
   EXIT_CRITICAL();
 }
 
@@ -115,10 +99,6 @@ void uart_init(uart_ring *q, int baud) {
   if (q->uart == UART7) {
     REGISTER_INTERRUPT(UART7_IRQn, UART7_IRQ_Handler, 150000U, FAULT_INTERRUPT_RATE_UART_7)
 
-    if (q->dma_rx) {
-      // TODO
-    }
-
     uart_set_baud(q->uart, baud);
     q->uart->CR1 = USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;
 
@@ -127,10 +107,5 @@ void uart_init(uart_ring *q, int baud) {
 
     // Enable UART interrupts
     NVIC_EnableIRQ(UART7_IRQn);
-
-    // Initialise RX DMA if used
-    if (q->dma_rx) {
-      dma_rx_init(q);
-    }
   }
 }

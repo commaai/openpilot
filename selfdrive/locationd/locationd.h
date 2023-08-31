@@ -1,6 +1,7 @@
 #pragma once
 
 #include <eigen3/Eigen/Dense>
+#include <deque>
 #include <fstream>
 #include <memory>
 #include <map>
@@ -32,13 +33,13 @@ public:
   int locationd_thread();
 
   void reset_kalman(double current_time = NAN);
-  void reset_kalman(double current_time, Eigen::VectorXd init_orient, Eigen::VectorXd init_pos, Eigen::VectorXd init_vel, MatrixXdr init_pos_R, MatrixXdr init_vel_R);
-  void reset_kalman(double current_time, Eigen::VectorXd init_x, MatrixXdr init_P);
+  void reset_kalman(double current_time, const Eigen::VectorXd &init_orient, const Eigen::VectorXd &init_pos, const Eigen::VectorXd &init_vel, const MatrixXdr &init_pos_R, const MatrixXdr &init_vel_R);
+  void reset_kalman(double current_time, const Eigen::VectorXd &init_x, const MatrixXdr &init_P);
   void finite_check(double current_time = NAN);
   void time_check(double current_time = NAN);
   void update_reset_tracker();
   bool is_gps_ok();
-  bool critical_services_valid(std::map<std::string, double> critical_services);
+  bool critical_services_valid(const std::map<std::string, double> &critical_services);
   bool is_timestamp_valid(double current_time);
   void determine_gps_mode(double current_time);
   bool are_inputs_ok();
@@ -94,5 +95,5 @@ private:
   float gps_vertical_variance_factor;
   double gps_time_offset;
 
-  void configure_gnss_source(LocalizerGnssSource source);
+  void configure_gnss_source(const LocalizerGnssSource &source);
 };

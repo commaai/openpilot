@@ -49,37 +49,13 @@ void black_set_led(uint8_t color, bool enabled) {
   }
 }
 
-void black_set_gps_load_switch(bool enabled) {
-  set_gpio_output(GPIOC, 12, enabled);
-}
-
 void black_set_usb_load_switch(bool enabled) {
   set_gpio_output(GPIOB, 1, !enabled);
 }
 
-void black_set_gps_mode(uint8_t mode) {
-  switch (mode) {
-    case GPS_DISABLED:
-      // GPS OFF
-      set_gpio_output(GPIOC, 12, 0);
-      set_gpio_output(GPIOC, 5, 0);
-      break;
-    case GPS_ENABLED:
-      // GPS ON
-      set_gpio_output(GPIOC, 12, 1);
-      set_gpio_output(GPIOC, 5, 1);
-      break;
-    case GPS_BOOTMODE:
-      set_gpio_output(GPIOC, 12, 1);
-      set_gpio_output(GPIOC, 5, 0);
-      break;
-    default:
-      print("Invalid GPS mode\n");
-      break;
-  }
-}
-
-void black_set_can_mode(uint8_t mode){
+void black_set_can_mode(uint8_t mode) {
+  black_enable_can_transceiver(2U, false);
+  black_enable_can_transceiver(4U, false);
   switch (mode) {
     case CAN_MODE_NORMAL:
     case CAN_MODE_OBD_CAN2:
@@ -91,6 +67,8 @@ void black_set_can_mode(uint8_t mode){
         // B5,B6: normal CAN2 mode
         set_gpio_alternate(GPIOB, 5, GPIO_AF9_CAN2);
         set_gpio_alternate(GPIOB, 6, GPIO_AF9_CAN2);
+        black_enable_can_transceiver(2U, true);
+
       } else {
         // B5,B6: disable normal CAN2 mode
         set_gpio_mode(GPIOB, 5, MODE_INPUT);
@@ -99,6 +77,7 @@ void black_set_can_mode(uint8_t mode){
         // B12,B13: OBD mode
         set_gpio_alternate(GPIOB, 12, GPIO_AF9_CAN2);
         set_gpio_alternate(GPIOB, 13, GPIO_AF9_CAN2);
+        black_enable_can_transceiver(4U, true);
       }
       break;
     default:
@@ -124,8 +103,9 @@ void black_init(void) {
   set_gpio_mode(GPIOC, 0, MODE_ANALOG);
   set_gpio_mode(GPIOC, 3, MODE_ANALOG);
 
-  // Set default state of GPS
-  current_board->set_gps_mode(GPS_ENABLED);
+  // GPS OFF
+  set_gpio_output(GPIOC, 5, 0);
+  set_gpio_output(GPIOC, 12, 0);
 
   // C10: OBD_SBU1_RELAY (harness relay driving output)
   // C11: OBD_SBU2_RELAY (harness relay driving output)
@@ -135,9 +115,6 @@ void black_init(void) {
   set_gpio_output_type(GPIOC, 11, OUTPUT_TYPE_OPEN_DRAIN);
   set_gpio_output(GPIOC, 10, 1);
   set_gpio_output(GPIOC, 11, 1);
-
-  // Turn on GPS load switch.
-  black_set_gps_load_switch(true);
 
   // Turn on USB load switch.
   black_set_usb_load_switch(true);
@@ -165,6 +142,12 @@ void black_init(void) {
   }
 }
 
+void black_init_bootloader(void) {
+  // GPS OFF
+  set_gpio_output(GPIOC, 5, 0);
+  set_gpio_output(GPIOC, 12, 0);
+}
+
 const harness_configuration black_harness_config = {
   .has_harness = true,
   .GPIO_SBU1 = GPIOC,
@@ -183,7 +166,6 @@ const board board_black = {
   .board_type = "Black",
   .board_tick = unused_board_tick,
   .harness_config = &black_harness_config,
-  .has_gps = true,
   .has_hw_gmlan = false,
   .has_obd = true,
   .has_lin = false,
@@ -195,10 +177,10 @@ const board board_black = {
   .fan_stall_recovery = false,
   .fan_enable_cooldown_time = 0U,
   .init = black_init,
+  .init_bootloader = black_init_bootloader,
   .enable_can_transceiver = black_enable_can_transceiver,
   .enable_can_transceivers = black_enable_can_transceivers,
   .set_led = black_set_led,
-  .set_gps_mode = black_set_gps_mode,
   .set_can_mode = black_set_can_mode,
   .check_ignition = black_check_ignition,
   .read_current = unused_read_current,

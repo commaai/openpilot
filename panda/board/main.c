@@ -82,21 +82,21 @@ void set_safety_mode(uint16_t mode, uint16_t param) {
 
   switch (mode_copy) {
     case SAFETY_SILENT:
-      set_intercept_relay(false);
+      set_intercept_relay(false, false);
       if (current_board->has_obd) {
         current_board->set_can_mode(CAN_MODE_NORMAL);
       }
       can_silent = ALL_CAN_SILENT;
       break;
     case SAFETY_NOOUTPUT:
-      set_intercept_relay(false);
+      set_intercept_relay(false, false);
       if (current_board->has_obd) {
         current_board->set_can_mode(CAN_MODE_NORMAL);
       }
       can_silent = ALL_CAN_LIVE;
       break;
     case SAFETY_ELM327:
-      set_intercept_relay(false);
+      set_intercept_relay(false, false);
       heartbeat_counter = 0U;
       heartbeat_lost = false;
       if (current_board->has_obd) {
@@ -109,7 +109,7 @@ void set_safety_mode(uint16_t mode, uint16_t param) {
       can_silent = ALL_CAN_LIVE;
       break;
     default:
-      set_intercept_relay(true);
+      set_intercept_relay(true, false);
       heartbeat_counter = 0U;
       heartbeat_lost = false;
       if (current_board->has_obd) {
@@ -157,6 +157,7 @@ void tick_handler(void) {
     // tick drivers at 8Hz
     fan_tick();
     usb_tick();
+    harness_tick();
     simple_watchdog_kick();
 
     // decimated to 1Hz
@@ -185,7 +186,6 @@ void tick_handler(void) {
       current_board->set_led(LED_BLUE, (uptime_cnt & 1U) && (power_save_status == POWER_SAVE_STATUS_ENABLED));
 
       // tick drivers at 1Hz
-      harness_tick();
       logging_tick();
 
       const bool recent_heartbeat = heartbeat_counter == 0U;
@@ -237,7 +237,7 @@ void tick_handler(void) {
       if (controls_allowed && !heartbeat_engaged) {
         heartbeat_engaged_mismatches += 1U;
         if (heartbeat_engaged_mismatches >= 3U) {
-          controls_allowed = 0U;
+          controls_allowed = false;
         }
       } else {
         heartbeat_engaged_mismatches = 0U;
@@ -370,13 +370,6 @@ int main(void) {
   enable_fpu();
 
   log("main start");
-
-  if (current_board->has_gps) {
-    uart_init(&uart_ring_gps, 9600);
-  } else {
-    // enable ESP uart
-    uart_init(&uart_ring_gps, 115200);
-  }
 
   if (current_board->has_lin) {
     // enable LIN

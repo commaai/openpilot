@@ -1,11 +1,11 @@
 # functions common among cars
 from collections import namedtuple
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import capnp
 
 from cereal import car
-from common.numpy_fast import clip, interp
+from openpilot.common.numpy_fast import clip, interp
 
 
 # kg of standard extra cargo to count for drive, gas, etc...
@@ -24,25 +24,27 @@ def apply_hysteresis(val: float, val_steady: float, hyst_gap: float) -> float:
   return val_steady
 
 
-def create_button_event(cur_but: int, prev_but: int, buttons_dict: Dict[int, capnp.lib.capnp._EnumModule],
-                        unpressed: int = 0) -> capnp.lib.capnp._DynamicStructBuilder:
-  if cur_but != unpressed:
-    be = car.CarState.ButtonEvent(pressed=True)
-    but = cur_but
-  else:
-    be = car.CarState.ButtonEvent(pressed=False)
-    but = prev_but
-  be.type = buttons_dict.get(but, ButtonType.unknown)
-  return be
+def create_button_events(cur_btn: int, prev_btn: int, buttons_dict: Dict[int, capnp.lib.capnp._EnumModule],
+                         unpressed_btn: int = 0) -> List[capnp.lib.capnp._DynamicStructBuilder]:
+  events: List[capnp.lib.capnp._DynamicStructBuilder] = []
+
+  if cur_btn == prev_btn:
+    return events
+
+  # Add events for button presses, multiple when a button switches without going to unpressed
+  for pressed, btn in ((False, prev_btn), (True, cur_btn)):
+    if btn != unpressed_btn:
+      events.append(car.CarState.ButtonEvent(pressed=pressed,
+                                             type=buttons_dict.get(btn, ButtonType.unknown)))
+  return events
 
 
 def gen_empty_fingerprint():
   return {i: {} for i in range(0, 8)}
 
 
-# FIXME: hardcoding honda civic 2016 touring params so they can be used to
-# scale unknown params for other cars
-class CivicParams:
+# these params were derived for the Civic and used to calculate params for other cars
+class VehicleDynamicsParams:
   MASS = 1326. + STD_CARGO_KG
   WHEELBASE = 2.70
   CENTER_TO_FRONT = WHEELBASE * 0.4
@@ -55,18 +57,18 @@ class CivicParams:
 # TODO: get actual value, for now starting with reasonable value for
 # civic and scaling by mass and wheelbase
 def scale_rot_inertia(mass, wheelbase):
-  return CivicParams.ROTATIONAL_INERTIA * mass * wheelbase ** 2 / (CivicParams.MASS * CivicParams.WHEELBASE ** 2)
+  return VehicleDynamicsParams.ROTATIONAL_INERTIA * mass * wheelbase ** 2 / (VehicleDynamicsParams.MASS * VehicleDynamicsParams.WHEELBASE ** 2)
 
 
 # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
 # mass and CG position, so all cars will have approximately similar dyn behaviors
-def scale_tire_stiffness(mass, wheelbase, center_to_front, tire_stiffness_factor=1.0):
+def scale_tire_stiffness(mass, wheelbase, center_to_front, tire_stiffness_factor):
   center_to_rear = wheelbase - center_to_front
-  tire_stiffness_front = (CivicParams.TIRE_STIFFNESS_FRONT * tire_stiffness_factor) * mass / CivicParams.MASS * \
-                         (center_to_rear / wheelbase) / (CivicParams.CENTER_TO_REAR / CivicParams.WHEELBASE)
+  tire_stiffness_front = (VehicleDynamicsParams.TIRE_STIFFNESS_FRONT * tire_stiffness_factor) * mass / VehicleDynamicsParams.MASS * \
+                         (center_to_rear / wheelbase) / (VehicleDynamicsParams.CENTER_TO_REAR / VehicleDynamicsParams.WHEELBASE)
 
-  tire_stiffness_rear = (CivicParams.TIRE_STIFFNESS_REAR * tire_stiffness_factor) * mass / CivicParams.MASS * \
-                        (center_to_front / wheelbase) / (CivicParams.CENTER_TO_FRONT / CivicParams.WHEELBASE)
+  tire_stiffness_rear = (VehicleDynamicsParams.TIRE_STIFFNESS_REAR * tire_stiffness_factor) * mass / VehicleDynamicsParams.MASS * \
+                        (center_to_front / wheelbase) / (VehicleDynamicsParams.CENTER_TO_FRONT / VehicleDynamicsParams.WHEELBASE)
 
   return tire_stiffness_front, tire_stiffness_rear
 
@@ -132,6 +134,30 @@ def apply_std_steer_angle_limits(apply_angle, apply_angle_last, v_ego, LIMITS):
   return clip(apply_angle, apply_angle_last - angle_rate_lim, apply_angle_last + angle_rate_lim)
 
 
+def common_fault_avoidance(fault_condition: bool, request: bool, above_limit_frames: int,
+                           max_above_limit_frames: int, max_mismatching_frames: int = 1):
+  """
+  Several cars have the ability to work around their EPS limits by cutting the
+  request bit of their LKAS message after a certain number of frames above the limit.
+  """
+
+  # Count up to max_above_limit_frames, at which point we need to cut the request for above_limit_frames to avoid a fault
+  if request and fault_condition:
+    above_limit_frames += 1
+  else:
+    above_limit_frames = 0
+
+  # Once we cut the request bit, count additionally to max_mismatching_frames before setting the request bit high again.
+  # Some brands do not respect our workaround without multiple messages on the bus, for example
+  if above_limit_frames > max_above_limit_frames:
+    request = False
+
+  if above_limit_frames >= max_above_limit_frames + max_mismatching_frames:
+    above_limit_frames = 0
+
+  return above_limit_frames, request
+
+
 def crc8_pedal(data):
   crc = 0xFF    # standard init value
   poly = 0xD5   # standard crc8: x8+x7+x6+x4+x2+1
@@ -189,3 +215,24 @@ class CanBusBase:
     else:
       num = len(CP.safetyConfigs)
     self.offset = 4 * (num - 1)
+
+
+class CanSignalRateCalculator:
+  """
+  Calculates the instantaneous rate of a CAN signal by using the counter
+  variable and the known frequency of the CAN message that contains it.
+  """
+  def __init__(self, frequency):
+    self.frequency = frequency
+    self.previous_counter = 0
+    self.previous_value = 0
+    self.rate = 0
+
+  def update(self, current_value, current_counter):
+    if current_counter != self.previous_counter:
+      self.rate = (current_value - self.previous_value) * self.frequency
+
+    self.previous_counter = current_counter
+    self.previous_value = current_value
+
+    return self.rate
