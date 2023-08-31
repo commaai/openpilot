@@ -3,7 +3,7 @@ import json
 import os
 import time
 import subprocess
-from typing import NoReturn
+from typing import NoReturn, Optional
 
 import requests
 from timezonefinder import TimezoneFinder
@@ -34,6 +34,7 @@ def set_timezone(valid_timezones, timezone):
 def main() -> NoReturn:
   params = Params()
   tf = TimezoneFinder()
+  last_ip_lookup: Optional[float] = None
 
   # Get allowed timezones
   valid_timezones = subprocess.check_output('timedatectl list-timezones', shell=True, encoding='utf8').strip().split('\n')
@@ -56,6 +57,11 @@ def main() -> NoReturn:
 
     # Find timezone based on IP geolocation if no gps location is available
     if location is None:
+      # Don't make too many API requests
+      if last_ip_lookup is not None and time.monotonic() - last_ip_lookup < 3600:
+        continue
+      last_ip_lookup = time.monotonic()
+
       cloudlog.debug("Setting timezone based on IP lookup")
       try:
         r = requests.get("https://ipapi.co/timezone", timeout=10)
@@ -63,8 +69,6 @@ def main() -> NoReturn:
           set_timezone(valid_timezones, r.text)
         else:
           cloudlog.error(f"Unexpected status code from api {r.status_code}")
-
-        time.sleep(3600)  # Don't make too many API requests
       except requests.exceptions.RequestException:
         cloudlog.exception("Error getting timezone based on IP")
         continue
