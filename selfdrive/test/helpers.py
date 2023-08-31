@@ -1,6 +1,7 @@
 import os
 import time
 import tempfile
+from typing import List, Union
 
 from unittest import mock
 from functools import wraps
@@ -72,7 +73,12 @@ def with_processes(processes, init_time=0, ignore_stopped=None):
   return wrapper
 
 
-def temporary_mock_dir(mock_paths_in, kwarg = None, generator = tempfile.TemporaryDirectory):
+def temporary_mock_dir(mock_paths_in: Union[List[str], str], kwarg: Union[str, None] = None, generator = tempfile.TemporaryDirectory):
+  """
+  mock_paths_in: string or string list representing the full path of the variable you want to mock.
+  kwarg: str or None representing the kwarg that gets passed into the test function, in case the test needs access to the temporary directory.
+  generator: a context to use to generate the temporary directory
+  """
   def wrapper(func):
     @wraps(func)
     def wrap(*args, **kwargs):
