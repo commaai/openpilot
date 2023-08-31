@@ -21,7 +21,7 @@ BUTTONS_DICT = {Buttons.RES_ACCEL: ButtonType.accelCruise, Buttons.SET_DECEL: Bu
 
 
 def set_safety_config_canfd(CAN, can_fd=True):
-  platform = SafetyModel.hyundai if can_fd else SafetyModel.hyundaiCanfd
+  platform = SafetyModel.hyundaiCanfd if can_fd else SafetyModel.hyundai
   cfgs = [get_safety_config(platform), ]
   if CAN.ECAN >= 4:
     cfgs.insert(0, get_safety_config(SafetyModel.noOutput))
