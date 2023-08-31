@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 import gc
 import math
 import time
@@ -10,25 +9,19 @@ from typing import Tuple, Dict
 from cereal import messaging
 from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType
-from openpilot.system.hardware import TICI
 from openpilot.system.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_realtime_priority
 from openpilot.selfdrive.modeld.constants import IDX_N
-from openpilot.selfdrive.modeld.models.commonmodel_pyx import Runtime
-
-USE_SNPE = int(os.getenv('USE_SNPE', str(int(TICI))))
-if USE_SNPE:
-  os.environ['ADSP_LIBRARY_PATH'] = "/data/pythonpath/third_party/snpe/dsp/"
-  from selfdrive.modeld.runners.snpemodel_pyx import SNPEModel as ModelRunner
-else:
-  from selfdrive.modeld.runners.onnxmodel_pyx import ONNXModel as ModelRunner
+from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
 
 NAV_INPUT_SIZE = 256*256
 NAV_FEATURE_LEN = 256
 NAV_DESIRE_LEN = 32
 NAV_OUTPUT_SIZE = 2*2*IDX_N + NAV_DESIRE_LEN + NAV_FEATURE_LEN
-MODEL_PATH = str(Path(__file__).parent / 'models' / ('navmodel_q.dlc' if USE_SNPE else 'navmodel.onnx'))
+MODEL_PATHS = {
+  ModelRunner.SNPE: Path(__file__).parent / 'models/navmodel_q.dlc',
+  ModelRunner.ONNX: Path(__file__).parent / 'models/navmodel.onnx'}
 
 class NavModelOutputXY(ctypes.Structure):
   _fields_ = [
@@ -53,7 +46,7 @@ class ModelState:
     assert ctypes.sizeof(NavModelResult) == NAV_OUTPUT_SIZE * ctypes.sizeof(ctypes.c_float)
     self.output = np.zeros(NAV_OUTPUT_SIZE, dtype=np.float32)
     self.inputs = {'map': np.zeros(NAV_INPUT_SIZE, dtype=np.uint8)}
-    self.model = ModelRunner(MODEL_PATH, self.output, Runtime.DSP, True, None)
+    self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.DSP, True, None)
     self.model.addInput("map", None)
 
   def run(self, buf:np.ndarray) -> Tuple[np.ndarray, float]:
