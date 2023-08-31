@@ -13,6 +13,7 @@ from cereal.visionipc import VisionIpcClient, VisionStreamType
 from openpilot.system.hardware import TICI
 from openpilot.system.swaglog import cloudlog
 from openpilot.common.params import Params
+from openpilot.common.realtime import set_realtime_priority
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import Runtime
 
 USE_SNPE_MODEL = TICI or int(os.getenv('USE_SNPE_MODEL', '0'))
@@ -87,7 +88,7 @@ def get_navmodel_packet(model_output: np.ndarray, valid: bool, frame_id: int, lo
 
 def main():
   gc.disable()
-  os.setpriority(os.PRIO_PROCESS, 0, -15)
+  set_realtime_priority(53)
 
   # there exists a race condition when two processes try to create a
   # SNPE model runner at the same time, wait for dmonitoringmodeld to finish
