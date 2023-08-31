@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
 import os
-import shutil
 import unittest
-
-os.environ["COMMA_CACHE"] = "/tmp/__test_cache__"
-from tools.lib.url_file import URLFile, CACHE_DIR
+from openpilot.tools.lib.url_file import URLFile
+from openpilot.selfdrive.test.helpers import temporary_cache_dir
 
 
 class TestFileDownload(unittest.TestCase):
 
   def compare_loads(self, url, start=0, length=None):
     """Compares range between cached and non cached version"""
-    shutil.rmtree(CACHE_DIR)
-
     file_cached = URLFile(url, cache=True)
     file_downloaded = URLFile(url, cache=False)
 
@@ -35,7 +31,8 @@ class TestFileDownload(unittest.TestCase):
     self.assertEqual(file_cached.get_length(), file_downloaded.get_length())
     self.assertEqual(response_cached, response_downloaded)
 
-  def test_small_file(self):
+  @temporary_cache_dir
+  def test_small_file(self, temp_dir):
     # Make sure we don't force cache
     os.environ["FILEREADER_CACHE"] = "0"
     small_file_url = "https://raw.githubusercontent.com/commaai/openpilot/master/docs/SAFETY.md"
@@ -55,7 +52,8 @@ class TestFileDownload(unittest.TestCase):
     for i in range(length // 100):
       self.compare_loads(small_file_url, 100 * i, 100)
 
-  def test_large_file(self):
+  @temporary_cache_dir
+  def test_large_file(self, temp_dir):
     large_file_url = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/qlog.bz2"
     #  Load the end 100 bytes of both files
     file_large = URLFile(large_file_url)

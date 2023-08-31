@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <stdexcept>
+#include <vector>
 
 #include "cereal/messaging/messaging.h"
 #include "common/swaglog.h"

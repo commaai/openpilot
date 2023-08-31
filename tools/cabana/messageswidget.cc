@@ -1,4 +1,10 @@
 #include "tools/cabana/messageswidget.h"
+
+#include <algorithm>
+#include <limits>
+#include <utility>
+#include <vector>
+
 #include <QHBoxLayout>
 #include <QPainter>
 #include <QPushButton>
@@ -9,7 +15,7 @@
 
 MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(0 ,0, 0, 0);
+  main_layout->setContentsMargins(0, 0, 0, 0);
 
   QHBoxLayout *title_layout = new QHBoxLayout();
   num_msg_label = new QLabel(this);
@@ -168,7 +174,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
 
   auto getFreq = [](const CanData &d) -> QString {
     if (d.freq > 0 && (can->currentSec() - d.ts - 1.0 / settings.fps) < (5.0 / d.freq)) {
-      return d.freq >= 1 ? QString::number(std::nearbyint(d.freq)) : QString::number(d.freq, 'f', 2);
+      return d.freq >= 0.95 ? QString::number(std::nearbyint(d.freq)) : QString::number(d.freq, 'f', 2);
     } else {
       return "--";
     }
@@ -177,7 +183,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
     switch (index.column()) {
       case Column::NAME: return msgName(id);
-      case Column::SOURCE: return id.source != INVALID_SOURCE ? QString::number(id.source) : "N/A" ;
+      case Column::SOURCE: return id.source != INVALID_SOURCE ? QString::number(id.source) : "N/A";
       case Column::ADDRESS: return QString::number(id.address, 16);
       case Column::FREQ: return id.source != INVALID_SOURCE ? getFreq(can_data) : "N/A";
       case Column::COUNT: return id.source != INVALID_SOURCE ? QString::number(can_data.count) : "N/A";
@@ -275,7 +281,8 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
       case Column::NAME: {
         const auto msg = dbc()->msg(id);
         match = re.match(msg ? msg->name : UNTITLED).hasMatch();
-        match |= msg && std::any_of(msg->sigs.cbegin(), msg->sigs.cend(), [&re](const auto &s) { return re.match(s->name).hasMatch(); });
+        match = match || (msg && std::any_of(msg->sigs.cbegin(), msg->sigs.cend(),
+                                             [&re](const auto &s) { return re.match(s->name).hasMatch(); }));
         break;
       }
       case Column::SOURCE:
@@ -283,7 +290,7 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
         break;
       case Column::ADDRESS: {
         match = re.match(QString::number(id.address, 16)).hasMatch();
-        match |= parseRange(txt, id.address, 16);
+        match = match || parseRange(txt, id.address, 16);
         break;
       }
       case Column::FREQ:
@@ -295,8 +302,8 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
         break;
       case Column::DATA: {
         match = QString(data.dat.toHex()).contains(txt, Qt::CaseInsensitive);
-        match |= re.match(QString(data.dat.toHex())).hasMatch();
-        match |= re.match(QString(data.dat.toHex(' '))).hasMatch();
+        match = match || re.match(QString(data.dat.toHex())).hasMatch();
+        match = match || re.match(QString(data.dat.toHex(' '))).hasMatch();
         break;
       }
     }

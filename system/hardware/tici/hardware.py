@@ -8,11 +8,11 @@ from functools import cached_property, lru_cache
 from pathlib import Path
 
 from cereal import log
-from common.gpio import gpio_set, gpio_init, get_irqs_for_action
-from system.hardware.base import HardwareBase, ThermalConfig
-from system.hardware.tici import iwlist
-from system.hardware.tici.pins import GPIO
-from system.hardware.tici.amplifier import Amplifier
+from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
+from openpilot.system.hardware.base import HardwareBase, ThermalConfig
+from openpilot.system.hardware.tici import iwlist
+from openpilot.system.hardware.tici.pins import GPIO
+from openpilot.system.hardware.tici.amplifier import Amplifier
 
 NM = 'org.freedesktop.NetworkManager'
 NM_CON_ACT = NM + '.Connection.Active'
@@ -97,7 +97,7 @@ def get_device_type():
 class Tici(HardwareBase):
   @cached_property
   def bus(self):
-    import dbus  # pylint: disable=import-error
+    import dbus
     return dbus.SystemBus()
 
   @cached_property
@@ -586,7 +586,7 @@ class Tici(HardwareBase):
     gpio_init(GPIO.STM_RST_N, True)
 
     gpio_set(GPIO.STM_RST_N, 1)
-    time.sleep(2)
+    time.sleep(1)
     gpio_set(GPIO.STM_RST_N, 0)
 
   def recover_internal_panda(self):
@@ -595,9 +595,9 @@ class Tici(HardwareBase):
 
     gpio_set(GPIO.STM_RST_N, 1)
     gpio_set(GPIO.STM_BOOT0, 1)
-    time.sleep(1)
+    time.sleep(0.5)
     gpio_set(GPIO.STM_RST_N, 0)
-    time.sleep(1)
+    time.sleep(0.5)
     gpio_set(GPIO.STM_BOOT0, 0)
 
 

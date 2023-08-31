@@ -6,6 +6,7 @@
 #include <list>
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 #include "cereal/gen/cpp/car.capnp.h"

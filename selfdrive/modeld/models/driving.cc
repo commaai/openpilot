@@ -1,124 +1,7 @@
 #include "selfdrive/modeld/models/driving.h"
 
-#include <fcntl.h>
-#include <unistd.h>
-
-#include <cassert>
 #include <cstring>
 
-#include <eigen3/Eigen/Dense>
-
-#include "common/clutil.h"
-#include "common/params.h"
-#include "common/timing.h"
-#include "common/swaglog.h"
-
-
-// #define DUMP_YUV
-
-void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
-  s->frame = new ModelFrame(device_id, context);
-  s->wide_frame = new ModelFrame(device_id, context);
-
-#ifdef USE_THNEED
-  s->m = std::make_unique<ThneedModel>("models/supercombo.thneed",
-#elif USE_ONNX_MODEL
-  s->m = std::make_unique<ONNXModel>("models/supercombo.onnx",
-#else
-  s->m = std::make_unique<SNPEModel>("models/supercombo.dlc",
-#endif
-   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, false, context);
-
-  s->m->addInput("input_imgs", NULL, 0);
-  s->m->addInput("big_input_imgs", NULL, 0);
-
-  // TODO: the input is important here, still need to fix this
-#ifdef DESIRE
-  s->m->addInput("desire_pulse", s->pulse_desire, DESIRE_LEN*(HISTORY_BUFFER_LEN+1));
-#endif
-
-#ifdef TRAFFIC_CONVENTION
-  s->m->addInput("traffic_convention", s->traffic_convention, TRAFFIC_CONVENTION_LEN);
-#endif
-
-#ifdef DRIVING_STYLE
-  s->m->addInput("driving_style", s->driving_style, DRIVING_STYLE_LEN);
-#endif
-
-#ifdef NAV
-  s->m->addInput("nav_features", s->nav_features, NAV_FEATURE_LEN);
-  s->m->addInput("nav_instructions", s->nav_instructions, NAV_INSTRUCTION_LEN);
-#endif
-
-#ifdef TEMPORAL
-  s->m->addInput("feature_buffer", &s->feature_buffer[0], TEMPORAL_SIZE);
-#endif
-
-}
-
-ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf, const mat3 &transform, const mat3 &transform_wide,
-                              float *desire_in, bool is_rhd, float *driving_style, float *nav_features, float *nav_instructions, bool prepare_only) {
-#ifdef DESIRE
-  std::memmove(&s->pulse_desire[0], &s->pulse_desire[DESIRE_LEN], sizeof(float) * DESIRE_LEN*HISTORY_BUFFER_LEN);
-  if (desire_in != NULL) {
-    for (int i = 1; i < DESIRE_LEN; i++) {
-      // Model decides when action is completed
-      // so desire input is just a pulse triggered on rising edge
-      if (desire_in[i] - s->prev_desire[i] > .99) {
-        s->pulse_desire[DESIRE_LEN*HISTORY_BUFFER_LEN+i] = desire_in[i];
-      } else {
-        s->pulse_desire[DESIRE_LEN*HISTORY_BUFFER_LEN+i] = 0.0;
-      }
-      s->prev_desire[i] = desire_in[i];
-    }
-  }
-LOGT("Desire enqueued");
-#endif
-
-#ifdef NAV
-  std::memcpy(s->nav_features, nav_features, sizeof(float)*NAV_FEATURE_LEN);
-  std::memcpy(s->nav_instructions, nav_instructions, sizeof(float)*NAV_INSTRUCTION_LEN);
-#endif
-
-#ifdef DRIVING_STYLE
-  std::memcpy(s->driving_style, driving_style, sizeof(float)*DRIVING_STYLE_LEN);
-#endif
-
-  int rhd_idx = is_rhd;
-  s->traffic_convention[rhd_idx] = 1.0;
-  s->traffic_convention[1-rhd_idx] = 0.0;
-
-  // if getInputBuf is not NULL, net_input_buf will be
-  auto net_input_buf = s->frame->prepare(buf->buf_cl, buf->width, buf->height, buf->stride, buf->uv_offset, transform, static_cast<cl_mem*>(s->m->getCLBuffer("input_imgs")));
-  s->m->setInputBuffer("input_imgs", net_input_buf, s->frame->buf_size);
-  LOGT("Image added");
-
-  if (wbuf != nullptr) {
-    auto net_extra_buf = s->wide_frame->prepare(wbuf->buf_cl, wbuf->width, wbuf->height, wbuf->stride, wbuf->uv_offset, transform_wide, static_cast<cl_mem*>(s->m->getCLBuffer("big_input_imgs")));
-    s->m->setInputBuffer("big_input_imgs", net_extra_buf, s->wide_frame->buf_size);
-    LOGT("Extra image added");
-  }
-
-  if (prepare_only) {
-    return nullptr;
-  }
-
-  s->m->execute();
-  LOGT("Execution finished");
-
-  #ifdef TEMPORAL
-    std::memmove(&s->feature_buffer[0], &s->feature_buffer[FEATURE_LEN], sizeof(float) * FEATURE_LEN*(HISTORY_BUFFER_LEN-1));
-    std::memcpy(&s->feature_buffer[FEATURE_LEN*(HISTORY_BUFFER_LEN-1)], &s->output[OUTPUT_SIZE], sizeof(float) * FEATURE_LEN);
-    LOGT("Features enqueued");
-  #endif
-
-  return (ModelOutput*)&s->output;
-}
-
-void model_free(ModelState* s) {
-  delete s->frame;
-  delete s->wide_frame;
-}
 
 void fill_lead(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelOutputLeads &leads, int t_idx, float prob_t) {
   std::array<float, LEAD_TRAJ_LEN> lead_t = {0.0, 2.0, 4.0, 6.0, 8.0, 10.0};
@@ -157,7 +40,7 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMet
     softmax(meta_data.desire_pred_prob[i].array.data(), desire_pred_softmax.data() + (i * DESIRE_LEN), DESIRE_LEN);
   }
 
-  std::array<float, DISENGAGE_LEN> lat_long_t = {2,4,6,8,10};
+  std::array<float, DISENGAGE_LEN> lat_long_t = {2, 4, 6, 8, 10};
   std::array<float, DISENGAGE_LEN> gas_disengage_sigmoid, brake_disengage_sigmoid, steer_override_sigmoid,
                                    brake_3ms2_sigmoid, brake_4ms2_sigmoid, brake_5ms2_sigmoid;
   for (int i=0; i<DISENGAGE_LEN; i++) {
@@ -264,7 +147,7 @@ void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelOutputPlanPredic
   std::array<float, TRAJECTORY_SIZE> acc_x, acc_y, acc_z;
   std::array<float, TRAJECTORY_SIZE> rot_rate_x, rot_rate_y, rot_rate_z;
 
-  for(int i=0; i<TRAJECTORY_SIZE; i++) {
+  for (int i=0; i<TRAJECTORY_SIZE; i++) {
     pos_x[i] = plan.mean[i].position.x;
     pos_y[i] = plan.mean[i].position.y;
     pos_z[i] = plan.mean[i].position.z;
@@ -403,11 +286,9 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
   temporal_pose.setRotStd({exp(r_std.x), exp(r_std.y), exp(r_std.z)});
 }
 
-void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
-                   const ModelOutput &net_outputs, ModelState &s, PublishState &ps, uint64_t timestamp_eof, uint64_t timestamp_llk,
-                   float model_execution_time, const bool nav_enabled, const bool valid) {
+void fill_model_msg(MessageBuilder &msg, float *net_output_data, PublishState &ps, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
+                    uint64_t timestamp_eof, uint64_t timestamp_llk, float model_execution_time, const bool nav_enabled, const bool valid) {
   const uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
-  MessageBuilder msg;
   auto framed = msg.initEvent(valid).initModelV2();
   framed.setFrameId(vipc_frame_id);
   framed.setFrameIdExtra(vipc_frame_id_extra);
@@ -418,36 +299,32 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id
   framed.setModelExecutionTime(model_execution_time);
   framed.setNavEnabled(nav_enabled);
   if (send_raw_pred) {
-    framed.setRawPredictions((kj::ArrayPtr<const float>(s.output.data(), s.output.size())).asBytes());
+    framed.setRawPredictions(kj::ArrayPtr<const float>(net_output_data, NET_OUTPUT_SIZE).asBytes());
   }
-  fill_model(framed, net_outputs, ps);
-  pm.send("modelV2", msg);
+  fill_model(framed, *((ModelOutput*) net_output_data), ps);
 }
 
-void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
-                     const ModelOutput &net_outputs, uint64_t timestamp_eof, const bool valid) {
-  MessageBuilder msg;
-  const auto &v_mean = net_outputs.pose.velocity_mean;
-  const auto &r_mean = net_outputs.pose.rotation_mean;
-  const auto &t_mean = net_outputs.wide_from_device_euler.mean;
-  const auto &v_std = net_outputs.pose.velocity_std;
-  const auto &r_std = net_outputs.pose.rotation_std;
-  const auto &t_std = net_outputs.wide_from_device_euler.std;
-  const auto &road_transform_trans_mean = net_outputs.road_transform.position_mean;
-  const auto &road_transform_trans_std = net_outputs.road_transform.position_std;
+void fill_pose_msg(MessageBuilder &msg, float *net_output_data, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames, uint64_t timestamp_eof, const bool valid) {
+    const ModelOutput &net_outputs = *((ModelOutput*) net_output_data);
+    const auto &v_mean = net_outputs.pose.velocity_mean;
+    const auto &r_mean = net_outputs.pose.rotation_mean;
+    const auto &t_mean = net_outputs.wide_from_device_euler.mean;
+    const auto &v_std = net_outputs.pose.velocity_std;
+    const auto &r_std = net_outputs.pose.rotation_std;
+    const auto &t_std = net_outputs.wide_from_device_euler.std;
+    const auto &road_transform_trans_mean = net_outputs.road_transform.position_mean;
+    const auto &road_transform_trans_std = net_outputs.road_transform.position_std;
 
-  auto posenetd = msg.initEvent(valid && (vipc_dropped_frames < 1)).initCameraOdometry();
-  posenetd.setTrans({v_mean.x, v_mean.y, v_mean.z});
-  posenetd.setRot({r_mean.x, r_mean.y, r_mean.z});
-  posenetd.setWideFromDeviceEuler({t_mean.x, t_mean.y, t_mean.z});
-  posenetd.setRoadTransformTrans({road_transform_trans_mean.x, road_transform_trans_mean.y, road_transform_trans_mean.z});
-  posenetd.setTransStd({exp(v_std.x), exp(v_std.y), exp(v_std.z)});
-  posenetd.setRotStd({exp(r_std.x), exp(r_std.y), exp(r_std.z)});
-  posenetd.setWideFromDeviceEulerStd({exp(t_std.x), exp(t_std.y), exp(t_std.z)});
-  posenetd.setRoadTransformTransStd({exp(road_transform_trans_std.x), exp(road_transform_trans_std.y), exp(road_transform_trans_std.z)});
+    auto posenetd = msg.initEvent(valid && (vipc_dropped_frames < 1)).initCameraOdometry();
+    posenetd.setTrans({v_mean.x, v_mean.y, v_mean.z});
+    posenetd.setRot({r_mean.x, r_mean.y, r_mean.z});
+    posenetd.setWideFromDeviceEuler({t_mean.x, t_mean.y, t_mean.z});
+    posenetd.setRoadTransformTrans({road_transform_trans_mean.x, road_transform_trans_mean.y, road_transform_trans_mean.z});
+    posenetd.setTransStd({exp(v_std.x), exp(v_std.y), exp(v_std.z)});
+    posenetd.setRotStd({exp(r_std.x), exp(r_std.y), exp(r_std.z)});
+    posenetd.setWideFromDeviceEulerStd({exp(t_std.x), exp(t_std.y), exp(t_std.z)});
+    posenetd.setRoadTransformTransStd({exp(road_transform_trans_std.x), exp(road_transform_trans_std.y), exp(road_transform_trans_std.z)});
 
-  posenetd.setTimestampEof(timestamp_eof);
-  posenetd.setFrameId(vipc_frame_id);
-
-  pm.send("cameraOdometry", msg);
+    posenetd.setTimestampEof(timestamp_eof);
+    posenetd.setFrameId(vipc_frame_id);
 }

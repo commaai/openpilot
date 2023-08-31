@@ -1,8 +1,8 @@
-from common.numpy_fast import clip, interp
+from openpilot.common.numpy_fast import clip, interp
 from opendbc.can.packer import CANPacker
-from selfdrive.car import apply_driver_steer_torque_limits
-from selfdrive.car.subaru import subarucan
-from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus, CarControllerParams, SubaruFlags
+from openpilot.selfdrive.car import apply_driver_steer_torque_limits
+from openpilot.selfdrive.car.subaru import subarucan
+from openpilot.selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, HYBRID_CARS, CanBus, CarControllerParams, SubaruFlags
 
 
 class CarController:
@@ -12,7 +12,6 @@ class CarController:
     self.frame = 0
 
     self.cruise_button_prev = 0
-    self.last_cancel_frame = 0
 
     self.p = CarControllerParams(CP)
     self.packer = CANPacker(DBC[CP.carFingerprint]['pt'])
@@ -37,7 +36,7 @@ class CarController:
         apply_steer = 0
 
       if self.CP.carFingerprint in PREGLOBAL_CARS:
-        can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer, CC.latActive))
+        can_sends.append(subarucan.create_preglobal_steering_control(self.packer, self.frame // self.p.STEER_STEP, apply_steer, CC.latActive))
       else:
         can_sends.append(subarucan.create_steering_control(self.packer, apply_steer, CC.latActive))
 
@@ -56,7 +55,7 @@ class CarController:
       cruise_brake = clip(apply_brake, CarControllerParams.BRAKE_MIN, CarControllerParams.BRAKE_MAX)
     else:
       cruise_throttle = CarControllerParams.THROTTLE_INACTIVE
-      cruise_rpm = CarControllerParams.RPM_INACTIVE
+      cruise_rpm = CarControllerParams.RPM_MIN
       cruise_brake = CarControllerParams.BRAKE_MIN
 
     # *** alerts and pcm cancel ***
@@ -100,10 +99,10 @@ class CarController:
           can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, 0, pcm_cancel_cmd,
                                                         self.CP.openpilotLongitudinalControl, cruise_brake > 0, cruise_throttle))
       else:
-        if pcm_cancel_cmd and (self.frame - self.last_cancel_frame) > 0.2:
-          bus = CanBus.alt if self.CP.carFingerprint in GLOBAL_GEN2 else CanBus.main
-          can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, bus, pcm_cancel_cmd))
-          self.last_cancel_frame = self.frame
+        if pcm_cancel_cmd:
+          if self.CP.carFingerprint not in HYBRID_CARS:
+            bus = CanBus.alt if self.CP.carFingerprint in GLOBAL_GEN2 else CanBus.main
+            can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, bus, pcm_cancel_cmd))
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX

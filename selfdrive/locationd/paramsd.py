@@ -7,12 +7,12 @@ import numpy as np
 import cereal.messaging as messaging
 from cereal import car
 from cereal import log
-from common.params import Params, put_nonblocking
-from common.realtime import config_realtime_process, DT_MDL
-from common.numpy_fast import clip
-from selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
-from selfdrive.locationd.models.constants import GENERATED_DIR
-from system.swaglog import cloudlog
+from openpilot.common.params import Params, put_nonblocking
+from openpilot.common.realtime import config_realtime_process, DT_MDL
+from openpilot.common.numpy_fast import clip
+from openpilot.selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
+from openpilot.selfdrive.locationd.models.constants import GENERATED_DIR
+from openpilot.system.swaglog import cloudlog
 
 
 MAX_ANGLE_OFFSET_DELTA = 20 * DT_MDL  # Max 20 deg/s

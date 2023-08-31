@@ -2,9 +2,9 @@
 import os
 import time
 import numpy as np
-from system.hardware.tici.hardware import Tici
-from system.hardware.tici.pins import GPIO
-from common.gpio import gpio_init, gpio_set, gpio_export
+from openpilot.system.hardware.tici.hardware import Tici
+from openpilot.system.hardware.tici.pins import GPIO
+from openpilot.common.gpio import gpio_init, gpio_set, gpio_export
 
 def read_power():
   with open("/sys/bus/i2c/devices/0-0040/hwmon/hwmon1/in1_input") as f:
@@ -53,7 +53,7 @@ if __name__ == "__main__":
   t.set_screen_brightness(0)
   gpio_init(GPIO.STM_RST_N, True)
   gpio_init(GPIO.HUB_RST_N, True)
-  gpio_init(GPIO.UBLOX_PWR_EN, True)
+  gpio_init(GPIO.GNSS_PWR_EN, True)
   gpio_init(GPIO.LTE_RST_N, True)
   gpio_init(GPIO.LTE_PWRKEY, True)
   gpio_init(GPIO.CAM0_AVDD_EN, True)
@@ -65,7 +65,7 @@ if __name__ == "__main__":
   os.system("sudo su -c 'echo 0 > /sys/kernel/debug/regulator/camera_rear_ldo/enable'")  # cam 1v2 off
   gpio_set(GPIO.CAM0_AVDD_EN, False)    # cam 2v8 off
   gpio_set(GPIO.LTE_RST_N, True)        # quectel off
-  gpio_set(GPIO.UBLOX_PWR_EN, False)    # gps off
+  gpio_set(GPIO.GNSS_PWR_EN, False)    # gps off
   gpio_set(GPIO.STM_RST_N, True)        # panda off
   gpio_set(GPIO.HUB_RST_N, False)       # hub off
   # cameras in reset
@@ -92,7 +92,7 @@ if __name__ == "__main__":
   gpio_set(GPIO.STM_RST_N, False)
   time.sleep(5)
   print("panda:    ", read_power_avg())
-  gpio_set(GPIO.UBLOX_PWR_EN, True)
+  gpio_set(GPIO.GNSS_PWR_EN, True)
   time.sleep(5)
   print("gps:      ", read_power_avg())
   gpio_set(GPIO.LTE_RST_N, False)

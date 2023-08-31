@@ -30,17 +30,17 @@ from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutExce
 import cereal.messaging as messaging
 from cereal import log
 from cereal.services import service_list
-from common.api import Api
-from common.basedir import PERSIST
-from common.file_helpers import CallbackReader
-from common.params import Params
-from common.realtime import sec_since_boot, set_core_affinity
-from system.hardware import HARDWARE, PC, AGNOS
-from system.loggerd.config import ROOT
-from system.loggerd.xattr_cache import getxattr, setxattr
-from selfdrive.statsd import STATS_DIR
-from system.swaglog import SWAGLOG_DIR, cloudlog
-from system.version import get_commit, get_origin, get_short_branch, get_version
+from openpilot.common.api import Api
+from openpilot.common.basedir import PERSIST
+from openpilot.common.file_helpers import CallbackReader
+from openpilot.common.params import Params
+from openpilot.common.realtime import set_core_affinity
+from openpilot.system.hardware import HARDWARE, PC, AGNOS
+from openpilot.system.loggerd.config import ROOT
+from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
+from openpilot.selfdrive.statsd import STATS_DIR
+from openpilot.system.swaglog import SWAGLOG_DIR, cloudlog
+from openpilot.system.version import get_commit, get_origin, get_short_branch, get_version
 
 
 # TODO: use socket constant when mypy recognizes this as a valid attribute
@@ -75,7 +75,7 @@ class UploadFile:
   allow_cellular: bool
 
   @classmethod
-  def from_dict(cls, d: Dict) -> UploadFile:
+  def from_dict(cls, d: dict) -> UploadFile:
     return cls(d.get("fn", ""), d.get("url", ""), d.get("headers", {}), d.get("allow_cellular", False))
 
 
@@ -92,7 +92,7 @@ class UploadItem:
   allow_cellular: bool = False
 
   @classmethod
-  def from_dict(cls, d: Dict) -> UploadItem:
+  def from_dict(cls, d: dict) -> UploadItem:
     return cls(d["path"], d["url"], d["headers"], d["created_at"], d["id"], d["retry_count"], d["current"],
                d["progress"], d["allow_cellular"])
 
@@ -309,7 +309,7 @@ def _do_upload(upload_item: UploadItem, callback: Optional[Callable] = None) -> 
 
 # security: user should be able to request any message from their car
 @dispatcher.add_method
-def getMessage(service: str, timeout: int = 1000) -> Dict:
+def getMessage(service: str, timeout: int = 1000) -> dict:
   if service is None or service not in service_list:
     raise Exception("invalid service")
 
@@ -320,7 +320,7 @@ def getMessage(service: str, timeout: int = 1000) -> Dict:
     raise TimeoutError
 
   # this is because capnp._DynamicStructReader doesn't have typing information
-  return cast(Dict, ret.to_dict())
+  return cast(dict, ret.to_dict())
 
 
 @dispatcher.add_method
@@ -552,7 +552,7 @@ def getNetworks():
 
 @dispatcher.add_method
 def takeSnapshot() -> Optional[Union[str, Dict[str, str]]]:
-  from system.camerad.snapshot.snapshot import jpeg_write, snapshot
+  from openpilot.system.camerad.snapshot.snapshot import jpeg_write, snapshot
   ret = snapshot()
   if ret is not None:
     def b64jpeg(x):
@@ -593,10 +593,10 @@ def log_handler(end_event: threading.Event) -> None:
     return
 
   log_files = []
-  last_scan = 0
+  last_scan = 0.
   while not end_event.is_set():
     try:
-      curr_scan = sec_since_boot()
+      curr_scan = time.monotonic()
       if curr_scan - last_scan > 10:
         log_files = get_logs_to_send_sorted()
         last_scan = curr_scan
@@ -652,8 +652,8 @@ def log_handler(end_event: threading.Event) -> None:
 
 def stat_handler(end_event: threading.Event) -> None:
   while not end_event.is_set():
-    last_scan = 0
-    curr_scan = sec_since_boot()
+    last_scan = 0.
+    curr_scan = time.monotonic()
     try:
       if curr_scan - last_scan > 10:
         stat_filenames = list(filter(lambda name: not name.startswith(tempfile.gettempprefix()), os.listdir(STATS_DIR)))
@@ -721,7 +721,7 @@ def ws_proxy_send(ws: WebSocket, local_sock: socket.socket, signal_sock: socket.
 
 
 def ws_recv(ws: WebSocket, end_event: threading.Event) -> None:
-  last_ping = int(sec_since_boot() * 1e9)
+  last_ping = int(time.monotonic() * 1e9)
   while not end_event.is_set():
     try:
       opcode, data = ws.recv_data(control_frame=True)
@@ -730,10 +730,10 @@ def ws_recv(ws: WebSocket, end_event: threading.Event) -> None:
           data = data.decode("utf-8")
         recv_queue.put_nowait(data)
       elif opcode == ABNF.OPCODE_PING:
-        last_ping = int(sec_since_boot() * 1e9)
+        last_ping = int(time.monotonic() * 1e9)
         Params().put("LastAthenaPingTime", str(last_ping))
     except WebSocketTimeoutException:
-      ns_since_last_ping = int(sec_since_boot() * 1e9) - last_ping
+      ns_since_last_ping = int(time.monotonic() * 1e9) - last_ping
       if ns_since_last_ping > RECONNECT_TIMEOUT_S * 1e9:
         cloudlog.exception("athenad.ws_recv.timeout")
         end_event.set()

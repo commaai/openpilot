@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import math
 from cereal import car
-from common.conversions import Conversions as CV
+from openpilot.common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
-from selfdrive.car.gm.values import DBC, CanBus
-from selfdrive.car.interfaces import RadarInterfaceBase
+from openpilot.selfdrive.car.gm.values import DBC, CanBus
+from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 
 RADAR_HEADER_MSG = 1120
 SLOT_1_MSG = RADAR_HEADER_MSG + 1
@@ -44,7 +44,7 @@ class RadarInterface(RadarInterfaceBase):
 
   def update(self, can_strings):
     if self.rcp is None:
-      return None
+      return super().update(None)
 
     vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)

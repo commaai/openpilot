@@ -14,9 +14,9 @@ else:
 
 import cereal.messaging as messaging
 from collections import namedtuple
-from tools.lib.logreader import LogReader
-from selfdrive.test.openpilotci import get_url
-from common.basedir import BASEDIR
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.selfdrive.test.openpilotci import get_url
+from openpilot.common.basedir import BASEDIR
 
 ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'command', 'path', 'segment', 'wait_for_response'])
 
@@ -53,7 +53,7 @@ class TestValgrind(unittest.TestCase):
     os.chdir(os.path.join(BASEDIR, cwd))
     # Run valgrind on a process
     command = "valgrind --leak-check=full " + arg
-    p = subprocess.Popen(command, stderr=subprocess.PIPE, shell=True, preexec_fn=os.setsid)  # pylint: disable=W1509
+    p = subprocess.Popen(command, stderr=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
 
     while not self.replay_done:
       time.sleep(0.1)

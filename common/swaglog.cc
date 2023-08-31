@@ -12,7 +12,7 @@
 #include <string>
 
 #include <zmq.h>
-#include "json11.hpp"
+#include "third_party/json11/json11.hpp"
 
 #include "common/util.h"
 #include "common/version.h"
@@ -64,8 +64,7 @@ static void log(int levelnum, const char* filename, int lineno, const char* func
   if (levelnum >= s.print_level) {
     printf("%s: %s\n", filename, msg);
   }
-  char levelnum_c = levelnum;
-  zmq_send(s.sock, (levelnum_c + log_s).c_str(), log_s.length() + 1, ZMQ_NOBLOCK);
+  zmq_send(s.sock, log_s.data(), log_s.length(), ZMQ_NOBLOCK);
 }
 
 static void cloudlog_common(int levelnum, const char* filename, int lineno, const char* func,
@@ -87,8 +86,11 @@ static void cloudlog_common(int levelnum, const char* filename, int lineno, cons
     log_j["msg"] = msg_j;
   }
 
-  std::string log_s = ((json11::Json)log_j).dump();
+  std::string log_s;
+  log_s += (char)levelnum;
+  ((json11::Json)log_j).dump(log_s);
   log(levelnum, filename, lineno, func, msg_buf, log_s);
+
   free(msg_buf);
 }
 
