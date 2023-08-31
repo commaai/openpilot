@@ -9,8 +9,6 @@ from cereal.messaging import log_from_bytes
 TEST_UDS_SERVER_SERVICES: UdsServicesType = {
   uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER: {
     None: {  # no subfunction
-      b'\xF1\x00': b'\xF1\x00CV1 MFC  AT USA LHD 1.00 1.05 99210-CV000 211027',
-      b'\xF1\x90': b'\xF1\x901H3110W0RLD5',
       b'\xF1\x81': b'\xF1\x81\x018966306Q6000\x00\x00\x00\x00',
     }
   }
