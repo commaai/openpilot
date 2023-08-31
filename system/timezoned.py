@@ -11,7 +11,9 @@ from timezonefinder import TimezoneFinder
 from openpilot.common.params import Params
 from openpilot.system.hardware import AGNOS
 from openpilot.system.swaglog import cloudlog
+from openpilot.system.version import get_version
 
+REQUEST_HEADERS = headers = {'User-Agent': "openpilot-" + get_version()}
 
 def set_timezone(valid_timezones, timezone):
   if timezone not in valid_timezones:
@@ -58,7 +60,7 @@ def main() -> NoReturn:
     if location is None:
       cloudlog.debug("Setting timezone based on IP lookup")
       try:
-        r = requests.get("https://ipapi.co/timezone", timeout=10)
+        r = requests.get("https://ipapi.co/timezone", headers=REQUEST_HEADERS, timeout=10)
         if r.status_code == 200:
           set_timezone(valid_timezones, r.text)
         else:
