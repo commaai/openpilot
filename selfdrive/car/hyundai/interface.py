@@ -20,6 +20,14 @@ BUTTONS_DICT = {Buttons.RES_ACCEL: ButtonType.accelCruise, Buttons.SET_DECEL: Bu
                 Buttons.GAP_DIST: ButtonType.gapAdjustCruise, Buttons.CANCEL: ButtonType.cancel}
 
 
+def set_safety_config_canfd(CAN, can_fd=True):
+  platform = SafetyModel.hyundai if can_fd else SafetyModel.hyundaiCanfd
+  cfgs = [get_safety_config(platform), ]
+  if CAN.ECAN >= 4:
+    cfgs.insert(0, get_safety_config(SafetyModel.noOutput))
+  return cfgs
+
+
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
@@ -354,11 +362,3 @@ class CarInterface(CarInterfaceBase):
 
   def apply(self, c, now_nanos):
     return self.CC.update(c, self.CS, now_nanos)
-
-
-def set_safety_config_canfd(CAN, can_fd=True):
-  platform = SafetyModel.hyundai if can_fd else SafetyModel.hyundaiCanfd
-  cfgs = [get_safety_config(platform), ]
-  if CAN.ECAN >= 4:
-    cfgs.insert(0, get_safety_config(SafetyModel.noOutput))
-  return cfgs
