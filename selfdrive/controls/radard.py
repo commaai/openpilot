@@ -173,7 +173,7 @@ def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, v_ego: floa
 def get_lead(v_ego: float, ready: bool, tracks: Dict[int, Track], lead_msg: capnp._DynamicStructReader,
              model_v_ego: float, low_speed_override: bool = True) -> Dict[str, Any]:
   # Determine leads, this is where the essential logic happens
-  lead_msg_empty = any([len(c) == 0 for c in [lead_msg.x, lead_msg.y, lead_msg.v]])
+  lead_msg_empty = any([lead_msg.x, lead_msg.y, lead_msg.v])
   if len(tracks) > 0 and ready and not lead_msg_empty and lead_msg.prob > .5:
     track = match_vision_to_track(v_ego, lead_msg, tracks)
   else:
@@ -212,14 +212,11 @@ class RadarD:
 
     self.ready = False
 
-  def update(self, sm: messaging.SubMaster, radar_data: Optional[car.RadarData]):
+  def update(self, sm: messaging.SubMaster, radar_data: car.RadarData):
     self.current_time = 1e-9*max(sm.logMonoTime.values())
 
-    radar_points = []
-    radar_errors = []
-    if radar_data is not None:
-      radar_points = radar_data.points
-      radar_errors = radar_data.errors
+    radar_points = radar_data.points
+    radar_errors = radar_data.errors
 
     if sm.updated['carState']:
       self.v_ego = sm['carState'].vEgo
@@ -227,7 +224,7 @@ class RadarD:
     if sm.updated['modelV2']:
       self.ready = True
 
-    if radar_data is not None:
+    if radar_data.parseStatus:
       ar_pts = {}
       for pt in radar_points:
         ar_pts[pt.trackId] = [pt.dRel, pt.yRel, pt.vRel, pt.measured]
@@ -323,10 +320,7 @@ def radard_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[messagi
 
     if sm.updated['modelV2']:
       can_strings = messaging.drain_sock_raw(can_sock)
-      if len(can_strings) == 0:
-        radar_data = None
-      else:
-        radar_data = interface.update(can_strings)
+      radar_data = interface.update(can_strings)
 
       radar.update(sm, radar_data)
       radar.publish(pm, -rk.remaining*1000.0)
