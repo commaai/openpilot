@@ -29,6 +29,7 @@ print(services[uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL])
 # class to support interfacing with fake UDS server from IsoTpParallelQuery class
 class MockCanSocket:  # TODO: rename to sock
   def __init__(self):
+    self.timeout = 0.01  # delay, doesn't work without this. FIXME: why?
     self.can_buf = MockCanBuffer()
 
   def send(self, msgs: bytes, server: bool = False):
@@ -41,7 +42,7 @@ class MockCanSocket:  # TODO: rename to sock
     # print('end')
 
   def receive(self, non_blocking=False):
-    time.sleep(0.02)
+    time.sleep(self.timeout)
     msgs = self.can_buf.can_recv()
     if len(msgs) == 0:
       return None
