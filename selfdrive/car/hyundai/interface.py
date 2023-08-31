@@ -286,13 +286,14 @@ class CarInterface(CarInterfaceBase):
       ret.enableBsm = 0x58b in fingerprint[bus]
 
     # *** panda safety config ***
+    if ret.flags & HyundaiFlags.CANFD_HDA2:
+      ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_HDA2
+
     if candidate in CANFD_CAR:
       ret.safetyConfigs = set_safety_config_canfd(CAN, can_fd=True)
 
-      if ret.flags & HyundaiFlags.CANFD_HDA2:
-        ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_HDA2
-        if ret.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING:
-          ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_HDA2_ALT_STEERING
+      if hda2 and ret.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING:
+        ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_HDA2_ALT_STEERING
       if ret.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
         ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_ALT_BUTTONS
       if ret.flags & HyundaiFlags.CANFD_CAMERA_SCC:
