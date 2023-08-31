@@ -1,3 +1,6 @@
+import traceback
+import time
+
 from panda.tests.python.test_uds import UdsServicesType, UdsServer, MockCanBuffer, STANDARD_UDS_SERVER_SERVICES
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from selfdrive.car.fw_versions import get_fw_versions
@@ -15,12 +18,12 @@ TEST_UDS_SERVER_SERVICES: UdsServicesType = {
     }
   }
 }
+services = STANDARD_UDS_SERVER_SERVICES | TEST_UDS_SERVER_SERVICES
 
-
-# class Object(object):
-#   def __init__(self, can_buf):
-#
-#   def receive(self):
+print(services[uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL])
+services[uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL][bytes([uds.SESSION_TYPE.DEFAULT])][b''] = b'\x00\x32\x01\xf4'
+services[uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL][bytes([uds.SESSION_TYPE.EXTENDED_DIAGNOSTIC])][b''] = b'\x00\x32\x01\xf4'
+print(services[uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL])
 
 
 # class to support interfacing with fake UDS server from IsoTpParallelQuery class
@@ -38,6 +41,7 @@ class MockCanSocket:  # TODO: rename to sock
     # print('end')
 
   def receive(self, non_blocking=False):
+    time.sleep(0.02)
     msgs = self.can_buf.can_recv()
     if len(msgs) == 0:
       return None
@@ -57,9 +61,13 @@ uds_server = UdsServer(can_sock.can_buf, uds.get_rx_addr_for_tx_addr(tx_addr), t
 uds_server.set_services(STANDARD_UDS_SERVER_SERVICES | TEST_UDS_SERVER_SERVICES)
 uds_server.start()
 
-# can_send = partial(can_buf.can_send(server=True))
-fw_versions = get_fw_versions(can_sock, can_sock, query_brand='toyota')
-assert len(fw_versions) == 1 and fw_versions[0].fwVersion == b'\x018966306Q6000\x00\x00\x00\x00'
-print('got fw versions', fw_versions)
+try:
+  # can_send = partial(can_buf.can_send(server=True))
+  fw_versions = get_fw_versions(can_sock, can_sock, query_brand='toyota')
+  print('got fw versions', fw_versions)
+  assert len(fw_versions) == 1 and fw_versions[0].fwVersion == b'\x018966306Q6000\x00\x00\x00\x00'
+except:
+  # traceback.print_exception()
+  print(traceback.format_exc())
 
 uds_server.stop()
