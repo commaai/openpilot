@@ -44,6 +44,10 @@ for pathdef, fn in {'TRANSFORM': 'transforms/transform.cl', 'LOADYUV': 'transfor
     xenv['CXXFLAGS'].append(f'-D{pathdef}_PATH=\\"{File(fn).abspath}\\"')
 
 # Compile cython
+snpe_rpath_qcom = "/data/pythonpath/third_party/snpe/larch64"
+snpe_rpath_pc = f"{Dir('#').abspath}/third_party/snpe/x86_64-linux-clang"
+snpe_rpath = lenvCython['RPATH'] + [snpe_rpath_qcom if arch == "larch64" else snpe_rpath_pc]
+
 cython_libs = envCython["LIBS"] + libs
 onnxmodel_lib = lenv.Library('onnxmodel', ['runners/onnxmodel.cc'])
 snpemodel_lib = lenv.Library('snpemodel', ['runners/snpemodel.cc'])
@@ -52,7 +56,7 @@ driving_lib = lenv.Library('driving', ['models/driving.cc'])
 
 lenvCython.Program('runners/runmodel_pyx.so', 'runners/runmodel_pyx.pyx', LIBS=cython_libs, FRAMEWORKS=frameworks)
 lenvCython.Program('runners/onnxmodel_pyx.so', 'runners/onnxmodel_pyx.pyx', LIBS=[onnxmodel_lib, *cython_libs], FRAMEWORKS=frameworks)
-lenvCython.Program('runners/snpemodel_pyx.so', 'runners/snpemodel_pyx.pyx', LIBS=[snpemodel_lib, snpe_lib, *cython_libs], FRAMEWORKS=frameworks)
+lenvCython.Program('runners/snpemodel_pyx.so', 'runners/snpemodel_pyx.pyx', LIBS=[snpemodel_lib, snpe_lib, *cython_libs], FRAMEWORKS=frameworks, RPATH=snpe_rpath)
 lenvCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=[commonmodel_lib, *cython_libs], FRAMEWORKS=frameworks)
 lenvCython.Program('models/driving_pyx.so', 'models/driving_pyx.pyx', LIBS=[driving_lib, commonmodel_lib, *cython_libs], FRAMEWORKS=frameworks)
 
