@@ -1,10 +1,7 @@
-import traceback
 import time
 
 from panda.tests.python.test_uds import UdsServicesType, UdsServer, MockCanBuffer, STANDARD_UDS_SERVER_SERVICES
-from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from selfdrive.car.fw_versions import get_fw_versions
-from functools import partial
 from panda.python import uds
 from selfdrive.boardd.boardd import can_capnp_to_can_list, can_list_to_can_capnp
 from cereal.messaging import log_from_bytes
@@ -20,10 +17,8 @@ TEST_UDS_SERVER_SERVICES: UdsServicesType = {
 }
 services = STANDARD_UDS_SERVER_SERVICES | TEST_UDS_SERVER_SERVICES
 
-print(services[uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL])
 services[uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL][bytes([uds.SESSION_TYPE.DEFAULT])][b''] = b'\x00\x32\x01\xf4'
 services[uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL][bytes([uds.SESSION_TYPE.EXTENDED_DIAGNOSTIC])][b''] = b'\x00\x32\x01\xf4'
-print(services[uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL])
 
 
 # class to support interfacing with fake UDS server from IsoTpParallelQuery class
@@ -64,11 +59,10 @@ uds_server.start()
 
 try:
   # can_send = partial(can_buf.can_send(server=True))
+  t = time.monotonic()
   fw_versions = get_fw_versions(can_sock, can_sock, query_brand='toyota')
+  print('time', time.monotonic() - t)
   print('got fw versions', fw_versions)
   assert len(fw_versions) == 1 and fw_versions[0].fwVersion == b'\x018966306Q6000\x00\x00\x00\x00'
-except:
-  # traceback.print_exception()
-  print(traceback.format_exc())
-
-uds_server.stop()
+finally:
+  uds_server.stop()
