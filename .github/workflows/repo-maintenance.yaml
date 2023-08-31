@@ -16,7 +16,6 @@ jobs:
     - uses: actions/checkout@v3
     - name: poetry lock
       run: |
-        pip install poetry
         poetry lock
     - name: pre-commit autoupdate
       run: |
