@@ -103,10 +103,10 @@ class CarController:
         can_sends.append([0x7b1, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", self.CAN.ECAN])
 
     hda2 = self.CP.flags & HyundaiFlags.CANFD_HDA2
-    hda2_can_canfd = hda2 and self.CP.flags & HyundaiFlags.CAN_CANFD
+    can_canfd = hda2 and self.CP.flags & HyundaiFlags.CAN_CANFD
 
     # CAN-FD platforms
-    if self.CP.carFingerprint in CANFD_CAR or hda2_can_canfd:
+    if self.CP.carFingerprint in CANFD_CAR or (hda2 and can_canfd):
       hda2_long = hda2 and self.CP.openpilotLongitudinalControl
 
       # steering control
@@ -134,7 +134,7 @@ class CarController:
           self.accel_last = accel
       else:
         # button presses
-        can_sends.extend(self.create_button_messages(CC, CS, use_clu11=hda2_can_canfd))
+        can_sends.extend(self.create_button_messages(CC, CS, use_clu11=(hda2 and can_canfd)))
     else:
       can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, apply_steer_req,
                                                 torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled,

@@ -106,7 +106,7 @@ class CarState(CarStateBase):
       ret.cruiseState.enabled = cp.vl["TCS13"]["ACC_REQ"] == 1
       ret.cruiseState.standstill = False
     else:
-      scc_bus = "SCC12" if self.CP.flags & HyundaiFlags.CAN_CANFD.value else "SCC11"
+      scc_bus = "SCC12" if self.CP.flags & HyundaiFlags.CAN_CANFD else "SCC11"
       ret.cruiseState.available = cp_cruise.vl[scc_bus]["MainMode_ACC"] == 1
       ret.cruiseState.enabled = cp_cruise.vl["SCC12"]["ACCMode"] != 0
       ret.cruiseState.standstill = cp_cruise.vl[scc_bus]["SCCInfoDisplay"] == 4.
@@ -244,7 +244,7 @@ class CarState(CarStateBase):
     if CP.carFingerprint in CANFD_CAR:
       return self.get_can_parser_canfd(CP)
 
-    freq_mdps12 = 100 if CP.flags & HyundaiFlags.CAN_CANFD.value else 50
+    freq_mdps12 = 100 if CP.flags & HyundaiFlags.CAN_CANFD else 50
 
     messages = [
       # address, frequency
@@ -262,7 +262,7 @@ class CarState(CarStateBase):
     ]
 
     if not CP.openpilotLongitudinalControl:
-      if CP.flags & HyundaiFlags.CAN_CANFD.value:
+      if CP.flags & HyundaiFlags.CAN_CANFD:
         messages.append(("SCC12", 50))
       elif CP.carFingerprint not in CAMERA_SCC_CAR:
         messages += [
@@ -273,7 +273,7 @@ class CarState(CarStateBase):
           messages.append(("FCA11", 50))
 
     if CP.enableBsm:
-      freq_lca11 = 20 if CP.flags & HyundaiFlags.CAN_CANFD.value else 50
+      freq_lca11 = 20 if CP.flags & HyundaiFlags.CAN_CANFD else 50
       messages.append(("LCA11", freq_lca11))
 
     if CP.carFingerprint in (HYBRID_CAR | EV_CAR):
