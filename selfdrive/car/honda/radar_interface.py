@@ -43,8 +43,8 @@ class RadarInterface(RadarInterfaceBase):
         self.updated_values[addr][sig_name].extend(vals)
 
     radar_data = car.RadarData.new_message()
-    radar_data.parseStatus = self.trigger_msg in self.updated_values
-    if radar_data.parseStatus:
+    radar_data.parseCompleted = self.trigger_msg in self.updated_values
+    if radar_data.parseCompleted:
       radar_data.points, fault, wrong_config = self._update_radar_points(self.updated_values)
       self.updated_values.clear()
     else:

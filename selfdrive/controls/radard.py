@@ -224,7 +224,7 @@ class RadarD:
     if sm.updated['modelV2']:
       self.ready = True
 
-    if radar_data.parseStatus:
+    if radar_data.parseCompleted:
       ar_pts = {}
       for pt in radar_points:
         ar_pts[pt.trackId] = [pt.dRel, pt.yRel, pt.vRel, pt.measured]

@@ -50,8 +50,8 @@ class RadarInterface(RadarInterfaceBase):
     self.updated_messages.update(vls)
 
     ret = car.RadarData.new_message()
-    ret.parseStatus = self.trigger_msg in self.updated_messages
-    if ret.parseStatus:
+    ret.parseCompleted = self.trigger_msg in self.updated_messages
+    if ret.parseCompleted:
       ret.points, fault = self._update_radar_points(self.updated_messages)
       self.updated_messages.clear()
     else:
