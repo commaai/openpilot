@@ -144,9 +144,9 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   rgb.x = (k02*vb.s2+k04*vb.s0)/(k02+k04); // R_G1
   rgb.y = vb.s1; // G1(R)
   rgb.z = (k01*va.s1+k03*vc.s1)/(k01+k03); // B_G1
-  rgb.x = gid_x / 1928.0 / 10.0;
-  rgb.y = rgb.x;
-  rgb.z = rgb.x;
+  rgb.x = 0.0;
+  rgb.y = 1.0;
+  rgb.z = 0.0;
   rgb_out[0] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
 
   const float k11 = get_k(va.s1, vc.s1, va.s3, vc.s3);
