@@ -198,6 +198,8 @@ class CarState(CarStateBase):
   @staticmethod
   def get_cam_can_parser(CP):
     messages = []
+    signals = []
+
     if not CP.flags & SubaruFlags.EYESIGHT_DISABLED:
       if CP.carFingerprint in PREGLOBAL_CARS:
         messages += [
@@ -212,8 +214,16 @@ class CarState(CarStateBase):
 
         if CP.flags & SubaruFlags.SEND_INFOTAINMENT:
           messages.append(("ES_Infotainment", 10))
+    else:
+      messages.append(("ES_UDS_Response", 20))
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus.camera)
+      signals += [
+        (("Cruise_Cancel"), 20),
+        (("Cruise_Resume"), 20),
+        (("Cruise_Set"), 20),
+      ]
+
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus.camera)#, signals=signals)
 
   @staticmethod
   def get_body_can_parser(CP):
