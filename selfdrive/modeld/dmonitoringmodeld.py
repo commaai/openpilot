@@ -68,14 +68,14 @@ class ModelState:
 
   def run(self, buf:VisionBuf) -> Tuple[np.ndarray, float]:
     v_offset = buf.height - MODEL_HEIGHT
-    h_offset = (buf.width - MODEL_WIDTH) / 2
+    h_offset = (buf.width - MODEL_WIDTH) // 2
     buf_data = buf.data
 
     # make a uint8 copy
     for row in range(MODEL_HEIGHT):
       dst_offset = row * MODEL_WIDTH
       src_offset = (v_offset + row) * buf.stride + h_offset
-      self.inputs['input_img'][dst_offset:dst_offset+MODEL_WIDTH] = buf_data[src_offset:src_offset+MODEL_WIDTH]
+      self.inputs['input_imgs'][dst_offset:dst_offset+MODEL_WIDTH] = buf_data[src_offset:src_offset+MODEL_WIDTH]
 
     t1 = time.perf_counter()
     self.model.setInputBuffer("input_imgs", self.inputs['input_imgs'].view(np.float32))
@@ -111,9 +111,10 @@ def get_driverstate_packet(model_output: np.ndarray, frame_id: int, location_ts:
     'dspExecutionTime': dsp_execution_time,
     'poorVisionProb': sigmoid(model_result.poor_vision_prob),
     'wheelOnRightProb': sigmoid(model_result.wheel_on_right_prob),
-    'driver_state_lhd': get_driver_state(model_result.driver_state_lhd),
-    'driver_state_rhd': get_driver_state(model_result.driver_state_rhd),
-    'rawPredictions': model_output.tobytes() if SEND_RAW_PRED else None}
+    'leftDriverData': get_driver_state(model_result.driver_state_lhd),
+    'rightDriverData': get_driver_state(model_result.driver_state_rhd),
+    'rawPredictions': model_output.tobytes() if SEND_RAW_PRED else b'',
+  }
 
   return msg
 
