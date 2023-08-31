@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 from cereal import car
 from panda import Panda
-from selfdrive.car import STD_CARGO_KG, disable_ecu, get_safety_config
-from selfdrive.car.interfaces import CarInterfaceBase
-from selfdrive.car.subaru.values import CAR, GLOBAL_ES_ADDR, LKAS_ANGLE, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags
-from system.swaglog import cloudlog
+from openpilot.selfdrive.car import STD_CARGO_KG, disable_ecu, get_safety_config
+from openpilot.selfdrive.car.interfaces import CarInterfaceBase
+from openpilot.selfdrive.car.subaru.values import CAR, GLOBAL_ES_ADDR, LKAS_ANGLE, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags
+from openpilot.system.swaglog import cloudlog
 
 
 class CarInterface(CarInterfaceBase):
