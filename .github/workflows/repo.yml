@@ -4,15 +4,19 @@ on:
   schedule:
     - cron: "0 15 * * 2"
   workflow_dispatch:
+  push:
 
 jobs:
-  pre-commit-autoupdate:
-    name: pre-commit autoupdate
+  updates:
+    name: updates
     runs-on: ubuntu-20.04
     container:
       image: ghcr.io/commaai/openpilot-base:latest
     steps:
     - uses: actions/checkout@v3
+    - name: poetry lock
+      run: |
+        poetry lock
     - name: pre-commit autoupdate
       run: |
         git config --global --add safe.directory '*'
@@ -21,8 +25,8 @@ jobs:
       uses: peter-evans/create-pull-request@5b4a9f6a9e2af26e5f02351490b90d01eb8ec1e5
       with:
         token: ${{ secrets.ACTIONS_CREATE_PR_PAT }}
-        commit-message: Update pre-commit hook versions
-        title: 'pre-commit: autoupdate hooks'
-        branch: pre-commit-updates
+        commit-message: Update Python packages and pre-commit hooks
+        title: 'python package + pre-commit hook updates'
+        branch: auto-package-updates
         base: master
         delete-branch: true
