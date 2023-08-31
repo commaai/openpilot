@@ -47,12 +47,9 @@ class CarInterface(CarInterfaceBase):
     hda2 = Ecu.adas in [fw.ecu for fw in car_fw]
     CAN = CanBus(None, hda2, fingerprint)
 
-    if hda2:
-      ret.flags |= HyundaiFlags.CANFD_HDA2.value
-
     if candidate in CANFD_CAR:
       # detect HDA2 with ADAS Driving ECU
-      if ret.flags & HyundaiFlags.CANFD_HDA2:
+      if hda2:
         if 0x110 in fingerprint[CAN.CAM]:
           ret.flags |= HyundaiFlags.CANFD_HDA2_ALT_STEERING.value
       else:
@@ -288,6 +285,7 @@ class CarInterface(CarInterfaceBase):
     ret.safetyConfigs = set_safety_config_hyundai(candidate, CAN, can_fd=(candidate in CANFD_CAR))
 
     if ret.flags & HyundaiFlags.CANFD_HDA2:
+      ret.flags |= HyundaiFlags.CANFD_HDA2.value
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_HDA2
 
     if candidate in CANFD_CAR:
