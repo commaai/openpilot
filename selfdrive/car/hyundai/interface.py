@@ -12,6 +12,7 @@ from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.car.disable_ecu import disable_ecu
 
 Ecu = car.CarParams.Ecu
+SafetyModel = car.CarParams.SafetyModel
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 ENABLE_BUTTONS = (Buttons.RES_ACCEL, Buttons.SET_DECEL, Buttons.CANCEL)
@@ -277,7 +278,7 @@ class CarInterface(CarInterfaceBase):
 
     # *** panda safety config ***
     if candidate in CANFD_CAR:
-      ret.safetyConfigs = set_safety_config_canfd(ret.flags, CAN)
+      ret.safetyConfigs = set_safety_config_canfd(CAN, can_fd=True)
 
       if ret.flags & HyundaiFlags.CANFD_HDA2:
         ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_HDA2
@@ -292,7 +293,7 @@ class CarInterface(CarInterfaceBase):
         # these cars require a special panda safety mode due to missing counters and checksums in the messages
         ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundaiLegacy)]
       elif ret.flags & HyundaiFlags.CAN_CANFD:
-        ret.safetyConfigs = set_safety_config_canfd(ret, CAN)
+        ret.safetyConfigs = set_safety_config_canfd(CAN, can_fd=False)
         ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CAN_CANFD
       else:
         ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundai, 0)]
@@ -355,10 +356,9 @@ class CarInterface(CarInterfaceBase):
     return self.CC.update(c, self.CS, now_nanos)
 
 
-def set_safety_config_canfd(flags, CAN):
-  cfgs = [get_safety_config(car.CarParams.SafetyModel.hyundai), ] if flags & HyundaiFlags.CAN_CANFD else \
-         [get_safety_config(car.CarParams.SafetyModel.hyundaiCanfd), ]
+def set_safety_config_canfd(CAN, can_fd=True):
+  platform = SafetyModel.hyundai if can_fd else SafetyModel.hyundaiCanfd
+  cfgs = [get_safety_config(platform), ]
   if CAN.ECAN >= 4:
-    cfgs.insert(0, get_safety_config(car.CarParams.SafetyModel.noOutput))
-
+    cfgs.insert(0, get_safety_config(SafetyModel.noOutput))
   return cfgs
