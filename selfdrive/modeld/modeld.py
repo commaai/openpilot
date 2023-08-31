@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 import sys
 import time
 import numpy as np
@@ -8,26 +7,21 @@ from typing import Dict, Optional
 from setproctitle import setproctitle
 from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
-from openpilot.system.hardware import TICI
 from openpilot.system.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.model import get_warp_matrix
-from openpilot.selfdrive.modeld.runners.runmodel_pyx import Runtime
+from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
 from openpilot.selfdrive.modeld.models.driving_pyx import (
   PublishState, create_model_msg, create_pose_msg,
   FEATURE_LEN, HISTORY_BUFFER_LEN, DESIRE_LEN, TRAFFIC_CONVENTION_LEN, NAV_FEATURE_LEN, NAV_INSTRUCTION_LEN,
   OUTPUT_SIZE, NET_OUTPUT_SIZE, MODEL_FREQ)
 
-USE_THNEED = int(os.getenv('USE_THNEED', str(int(TICI))))
-if USE_THNEED:
-  from selfdrive.modeld.runners.thneedmodel_pyx import ThneedModel as ModelRunner
-else:
-  from selfdrive.modeld.runners.onnxmodel_pyx import ONNXModel as ModelRunner
-
-MODEL_PATH = str(Path(__file__).parent / f"models/supercombo.{'thneed' if USE_THNEED else 'onnx'}")
+MODEL_PATHS = {
+  ModelRunner.THNEED: Path(__file__).parent / 'models/supercombo.thneed',
+  ModelRunner.ONNX: Path(__file__).parent / 'models/supercombo.onnx'}
 
 class FrameMeta:
   frame_id: int = 0
@@ -59,7 +53,7 @@ class ModelState:
       'feature_buffer': np.zeros(HISTORY_BUFFER_LEN * FEATURE_LEN, dtype=np.float32),
     }
 
-    self.model = ModelRunner(MODEL_PATH, self.output, Runtime.GPU, False, context)
+    self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.GPU, False, context)
     self.model.addInput("input_imgs", None)
     self.model.addInput("big_input_imgs", None)
     for k,v in self.inputs.items():
