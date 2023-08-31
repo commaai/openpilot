@@ -17,8 +17,6 @@ class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
     super().__init__(CP)
     self.track_id = 0
-    self.radar_fault = False
-    self.radar_wrong_config = False
     self.radar_off_can = CP.radarUnavailable
     self.radar_ts = CP.radarTimeStep
 
@@ -36,7 +34,7 @@ class RadarInterface(RadarInterfaceBase):
     # in Bosch radar and we are only steering for now, so sleep 0.05s to keep
     # radard at 20Hz and return no points
     if self.radar_off_can:
-      return None
+      return super().update(None)
 
     addresses = self.rcp.update_strings(can_strings)
     for addr in addresses:
@@ -44,17 +42,30 @@ class RadarInterface(RadarInterfaceBase):
       for sig_name, vals in vals_dict.items():
         self.updated_values[addr][sig_name].extend(vals)
 
-    if self.trigger_msg not in self.updated_values:
-      return None
+    radar_data = car.RadarData.new_message()
+    radar_data.parseStatus = self.trigger_msg in self.updated_values
+    if radar_data.parseStatus:
+      radar_data.points, fault, wrong_config = self._update_radar_points(self.updated_values)
+      self.updated_values.clear()
+    else:
+      radar_data.points, fault, wrong_config = [], False, False,
+    radar_data.errors = self._radar_errors(fault, wrong_config)
 
-    radar_data = self._radar_msg_from_buffer(self.updated_values, self.rcp.can_valid)
-    self.updated_values.clear()
-  
     return radar_data
 
-  def _radar_msg_from_buffer(self, updated_values, can_valid):
-    ret = car.RadarData.new_message()
+  def _radar_errors(self, radar_fault, radar_wrong_config):
+    errors = []
+    if not self.rcp.can_valid:
+      errors.append("canError")
+    if radar_fault:
+      errors.append("fault")
+    if radar_wrong_config:
+      errors.append("wrongConfig")
 
+    return errors
+
+  def _update_radar_points(self, updated_values):
+    radar_fault, radar_wrong_config = False, False
     for ii in sorted(updated_values):
       msgs = updated_values[ii]
       n_vals_per_addr = len(list(msgs.values())[0])
@@ -66,8 +77,8 @@ class RadarInterface(RadarInterfaceBase):
       for cpt in cpts:
         if ii == 0x400:
           # check for radar faults
-          self.radar_fault = cpt['RADAR_STATE'] != 0x79
-          self.radar_wrong_config = cpt['RADAR_STATE'] == 0x69
+          radar_fault = cpt['RADAR_STATE'] != 0x79
+          radar_wrong_config = cpt['RADAR_STATE'] == 0x69
         elif cpt['LONG_DIST'] < 255:
           if ii not in self.pts or cpt['NEW_TRACK']:
             self.pts[ii] = car.RadarData.RadarPoint.new_message()
@@ -83,15 +94,4 @@ class RadarInterface(RadarInterfaceBase):
           if ii in self.pts:
             del self.pts[ii]
 
-    errors = []
-    if not can_valid:
-      errors.append("canError")
-    if self.radar_fault:
-      errors.append("fault")
-    if self.radar_wrong_config:
-      errors.append("wrongConfig")
-    ret.errors = errors
-
-    ret.points = list(self.pts.values())
-
-    return ret
+    return list(self.pts.values()), radar_fault, radar_wrong_config

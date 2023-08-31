@@ -36,25 +36,33 @@ class RadarInterface(RadarInterfaceBase):
 
   def update(self, can_strings):
     if self.rcp is None:
-      return None
+      return super().update(None)
 
     values = self.rcp.update_strings(can_strings)
     self.updated_messages.update(values)
 
-    if self.trigger_msg not in self.updated_messages:
-      return None
-
     ret = car.RadarData.new_message()
+    ret.parseStatus = self.trigger_msg in self.updated_messages
+    if ret.parseStatus:
+      ret.points = self._update_radar_points()
+      self.updated_messages.clear()
+    else:
+      ret.points = []
+    ret.errors = self._radar_errors()
 
-    # Errors
+    return ret
+
+  def _radar_errors(self):
     errors = []
     sgu_info = self.rcp.vl['TeslaRadarSguInfo']
     if not self.rcp.can_valid:
       errors.append('canError')
     if sgu_info['RADC_HWFail'] or sgu_info['RADC_SGUFail'] or sgu_info['RADC_SensorDirty']:
       errors.append('fault')
-    ret.errors = errors
 
+    return errors
+
+  def _update_radar_points(self):
     # Radar tracks
     for i in range(NUM_POINTS):
       msg_a = self.rcp.vl[RADAR_MSGS_A[i]]
@@ -84,6 +92,6 @@ class RadarInterface(RadarInterfaceBase):
       self.pts[i].yvRel = msg_b['LatSpeed']
       self.pts[i].measured = bool(msg_a['Meas'])
 
-    ret.points = list(self.pts.values())
-    self.updated_messages.clear()
-    return ret
+    points = list(self.pts.values())
+
+    return points

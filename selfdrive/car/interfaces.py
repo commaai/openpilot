@@ -312,7 +312,7 @@ class RadarInterfaceBase(ABC):
     self.delay = 0
 
   def update(self, can_strings):
-    pass
+    return car.RadarData.new_message()
 
 
 class CarStateBase(ABC):

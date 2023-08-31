@@ -46,21 +46,31 @@ class RadarInterface(RadarInterfaceBase):
 
   def update(self, can_strings):
     if self.rcp is None or self.CP.radarUnavailable:
-      return None
+      return super().update(None)
 
     vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
 
-    if self.trigger_msg not in self.updated_messages:
-      return None
-
     ret = car.RadarData.new_message()
+    ret.parseStatus = self.trigger_msg in self.updated_messages
+    if ret.parseStatus:
+      ret.points = self._update_radar_points(self.updated_messages)
+      self.updated_messages.clear()
+    else:
+      ret.points = []
+      ret.errors = self._radar_errors()
+
+    return ret
+
+  def _radar_errors(self):
     errors = []
     if not self.rcp.can_valid:
       errors.append("canError")
-    ret.errors = errors
 
-    for ii in self.updated_messages:  # ii should be the message ID as a number
+    return errors
+
+  def _update_radar_points(self, updated_values):
+    for ii in updated_values:  # ii should be the message ID as a number
       cpt = self.rcp.vl[ii]
       trackId = _address_to_track(ii)
 
@@ -80,7 +90,6 @@ class RadarInterface(RadarInterfaceBase):
         self.pts[trackId].vRel = cpt['REL_SPEED']
 
     # We want a list, not a dictionary. Filter out LONG_DIST==0 because that means it's not valid.
-    ret.points = [x for x in self.pts.values() if x.dRel != 0]
+    points = [x for x in self.pts.values() if x.dRel != 0]
 
-    self.updated_messages.clear()
-    return ret
+    return points

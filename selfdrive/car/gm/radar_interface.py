@@ -44,32 +44,44 @@ class RadarInterface(RadarInterfaceBase):
 
   def update(self, can_strings):
     if self.rcp is None:
-      return None
+      return super().update(None)
 
     vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
 
-    if self.trigger_msg not in self.updated_messages:
-      return None
-
     ret = car.RadarData.new_message()
+    ret.parseStatus = self.trigger_msg in self.updated_messages
+    if ret.parseStatus:
+      ret.points, fault = self._update_radar_points(self.updated_messages)
+      self.updated_messages.clear()
+    else:
+      ret.points, fault = [], False
+    ret.errors = self._radar_errors(fault)
+
+    self.updated_messages.clear()
+    return ret
+
+  def _radar_errors(self, radar_fault):
+    errors = []
+    if not self.rcp.can_valid:
+      errors.append("canError")
+    if radar_fault:
+      errors.append("fault")
+
+    return errors
+
+  def _update_radar_points(self, updated_values):
     header = self.rcp.vl[RADAR_HEADER_MSG]
     fault = header['FLRRSnsrBlckd'] or header['FLRRSnstvFltPrsntInt'] or \
       header['FLRRYawRtPlsblityFlt'] or header['FLRRHWFltPrsntInt'] or \
       header['FLRRAntTngFltPrsnt'] or header['FLRRAlgnFltPrsnt']
-    errors = []
-    if not self.rcp.can_valid:
-      errors.append("canError")
-    if fault:
-      errors.append("fault")
-    ret.errors = errors
 
     currentTargets = set()
     num_targets = header['FLRRNumValidTargets']
 
     # Not all radar messages describe targets,
     # no need to monitor all of the self.rcp.msgs_upd
-    for ii in self.updated_messages:
+    for ii in updated_values:
       if ii == RADAR_HEADER_MSG:
         continue
 
@@ -96,6 +108,4 @@ class RadarInterface(RadarInterfaceBase):
       if oldTarget not in currentTargets:
         del self.pts[oldTarget]
 
-    ret.points = list(self.pts.values())
-    self.updated_messages.clear()
-    return ret
+    return list(self.pts.values()), fault

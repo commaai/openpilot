@@ -30,30 +30,30 @@ class RadarInterface(RadarInterfaceBase):
 
   def update(self, can_strings):
     if self.radar_off_can or (self.rcp is None):
-      return None
+      return super().update(None)
 
     vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
 
-    if self.trigger_msg not in self.updated_messages:
-      return None
+    radar_data = car.RadarData.new_message()
+    radar_data.parseStatus = self.trigger_msg in self.updated_messages
+    if radar_data.parseStatus:
+      radar_data.points = self._update_radar_points()
+      self.updated_messages.clear()
+    else:
+      radar_data.points = []
+    radar_data.errors = self._radar_errors()
 
-    rr = self._update(self.updated_messages)
-    self.updated_messages.clear()
+    return radar_data
 
-    return rr
-
-  def _update(self, updated_messages):
-    ret = car.RadarData.new_message()
-    if self.rcp is None:
-      return ret
-
+  def _radar_errors(self):
     errors = []
-
     if not self.rcp.can_valid:
       errors.append("canError")
-    ret.errors = errors
 
+    return errors
+
+  def _update_radar_points(self):
     for addr in range(RADAR_START_ADDR, RADAR_START_ADDR + RADAR_MSG_COUNT):
       msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
 
@@ -75,5 +75,4 @@ class RadarInterface(RadarInterfaceBase):
       else:
         del self.pts[addr]
 
-    ret.points = list(self.pts.values())
-    return ret
+    return list(self.pts.values())

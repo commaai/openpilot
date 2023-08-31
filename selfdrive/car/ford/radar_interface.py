@@ -51,28 +51,35 @@ class RadarInterface(RadarInterfaceBase):
 
   def update(self, can_strings):
     if self.rcp is None:
-      return None
+      return super().update(None)
 
     vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
 
-    if self.trigger_msg not in self.updated_messages:
-      return None
-
     ret = car.RadarData.new_message()
+    ret.parseStatus = self.trigger_msg in self.updated_messages
+    ret.errors = self._radar_errors()
+    if ret.parseStatus:
+      ret.points = self._update_radar_points()
+      self.updated_messages.clear()
+
+    return ret
+
+  def _radar_errors(self):
     errors = []
     if not self.rcp.can_valid:
       errors.append("canError")
-    ret.errors = errors
 
+    return errors
+
+  def _update_radar_points(self):
     if self.radar == RADAR.DELPHI_ESR:
       self._update_delphi_esr()
     elif self.radar == RADAR.DELPHI_MRR:
       self._update_delphi_mrr()
 
-    ret.points = list(self.pts.values())
-    self.updated_messages.clear()
-    return ret
+    points = list(self.pts.values())
+    return points
 
   def _update_delphi_esr(self):
     for ii in sorted(self.updated_messages):

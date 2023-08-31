@@ -21,6 +21,7 @@ def _create_radar_can_parser(car_fingerprint):
 
   return CANParser(DBC[car_fingerprint]['radar'], messages, 1)
 
+
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
     super().__init__(CP)
@@ -42,7 +43,7 @@ class RadarInterface(RadarInterfaceBase):
 
   def update(self, can_strings):
     if self.rcp is None:
-      return None
+      return super().update(None)
 
     addresses = self.rcp.update_strings(can_strings)
     for addr in addresses:
@@ -50,21 +51,25 @@ class RadarInterface(RadarInterfaceBase):
       for sig_name, vals in vals_dict.items():
         self.updated_values[addr][sig_name].extend(vals)
 
-    if self.trigger_msg not in self.updated_values:
-      return None
-
-    radar_data = self._radar_msg_from_buffer(self.updated_values, self.rcp.can_valid)
-    self.updated_values.clear()
+    radar_data = car.RadarData.new_message()
+    radar_data.parseStatus = self.trigger_msg in self.updated_values
+    if radar_data.parseStatus:
+      radar_data.points = self._update_radar_points(self.updated_values)
+      self.updated_values.clear()
+    else:
+      radar_data.points = []
+    radar_data.errors = self._radar_errors()
 
     return radar_data
 
-  def _radar_msg_from_buffer(self, updated_values, can_valid):
-    ret = car.RadarData.new_message()
+  def _radar_errors(self):
     errors = []
-    if not can_valid:
+    if not self.rcp.can_valid:
       errors.append("canError")
-    ret.errors = errors
 
+    return errors
+
+  def _update_radar_points(self, updated_values):
     for ii in sorted(updated_values):
       if ii not in self.RADAR_A_MSGS:
         continue
@@ -109,5 +114,4 @@ class RadarInterface(RadarInterfaceBase):
           if ii in self.pts:
             del self.pts[ii]
 
-    ret.points = list(self.pts.values())
-    return ret
+    return list(self.pts.values())
