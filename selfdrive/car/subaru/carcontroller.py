@@ -98,8 +98,10 @@ class CarController:
 
           can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, 0, pcm_cancel_cmd,
                                                         self.CP.openpilotLongitudinalControl, cruise_brake > 0, cruise_throttle))
-          
+        
         if self.CP.flags & SubaruFlags.EYESIGHT_DISABLED:
+          # Create all of the other eyesight messages to keep the rest of the car happy when eyesight is disabled
+          
           # Tester present (keeps eyesight disabled)
           if self.frame % 100 == 0:
             can_sends.append([GLOBAL_ES_ADDR, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", bus])
