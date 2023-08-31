@@ -158,7 +158,7 @@ class CarState(CarStateBase):
     self.lkas11 = copy.copy(cp_cam.vl["LKAS11"])
     self.clu11 = copy.copy(cp.vl["CLU11"])
     if self.CP.flags & HyundaiFlags.CAN_CANFD and self.CP.flags & HyundaiFlags.CANFD_HDA2:
-      self.hda2_lfa_block_msg = copy.copy(cp_cam.vl["CAM_0x2a4"])
+      self.hda2_lfa_block_msg = self.get_hda2_lfa_block_msg(cp_cam, self.CP)
     self.steer_state = cp.vl["MDPS12"]["CF_Mdps_ToiActive"]  # 0 NOT ACTIVE, 1 ACTIVE
     self.prev_cruise_buttons = self.cruise_buttons[-1]
     self.cruise_buttons.extend(cp.vl_all["CLU11"]["CF_Clu_CruiseSwState"])
@@ -236,8 +236,7 @@ class CarState(CarStateBase):
     ret.accFaulted = cp.vl["TCS"]["ACCEnable"] != 0  # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
 
     if self.CP.flags & HyundaiFlags.CANFD_HDA2:
-      self.hda2_lfa_block_msg = copy.copy(cp_cam.vl["CAM_0x362"] if self.CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING
-                                          else cp_cam.vl["CAM_0x2a4"])
+      self.hda2_lfa_block_msg = self.get_hda2_lfa_block_msg(cp_cam, self.CP)
 
     return ret
 
@@ -363,3 +362,9 @@ class CarState(CarStateBase):
       ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus(CP).CAM)
+
+  @staticmethod
+  def get_hda2_lfa_block_msg(cp_cam, CP):
+    msg = copy.copy(cp_cam.vl["CAM_0x362"] if CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING
+                    else cp_cam.vl["CAM_0x2a4"])
+    return msg
