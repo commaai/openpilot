@@ -307,7 +307,7 @@ void Device::setAwake(bool on) {
 
 void Device::resetInteractiveTimeout(int timeout) {
   if (timeout == -1) {
-    timeout = (ignition_on ? 10 : 30);
+    timeout = (ignition_on ? 3600 : 3600);
   }
   interactive_timeout = timeout * UI_FREQ;
 }
@@ -335,7 +335,7 @@ void Device::updateBrightness(const UIState &s) {
 
   if (brightness != last_brightness) {
     if (!brightness_future.isRunning()) {
-      brightness_future = QtConcurrent::run(Hardware::set_brightness, brightness);
+      // brightness_future = QtConcurrent::run(Hardware::set_brightness, brightness);
       last_brightness = brightness;
     }
   }
