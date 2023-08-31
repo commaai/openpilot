@@ -8,7 +8,7 @@ from typing import Dict, Optional
 from setproctitle import setproctitle
 from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
-from openpilot.system.hardware import PC, TICI
+from openpilot.system.hardware import TICI
 from openpilot.system.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.filter_simple import FirstOrderFilter
@@ -94,8 +94,7 @@ class ModelState:
 def main():
   cloudlog.bind(daemon="selfdrive.modeld.modeld")
   setproctitle("selfdrive.modeld.modeld")
-  if not PC:
-    config_realtime_process(7, 54)
+  config_realtime_process(7, 54)
 
   cl_context = CLContext()
   model = ModelState(cl_context)
