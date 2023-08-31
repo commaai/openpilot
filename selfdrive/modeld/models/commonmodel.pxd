@@ -16,8 +16,3 @@ cdef extern from "selfdrive/modeld/models/commonmodel.h":
     int buf_size
     ModelFrame(cl_device_id, cl_context)
     float * prepare(cl_mem, int, int, int, int, mat3, cl_mem*)
-
-cdef extern from "selfdrive/modeld/runners/runmodel.h":
-  cdef int USE_CPU_RUNTIME
-  cdef int USE_GPU_RUNTIME
-  cdef int USE_DSP_RUNTIME
