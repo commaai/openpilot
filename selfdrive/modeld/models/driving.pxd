@@ -21,9 +21,7 @@ cdef extern from "selfdrive/modeld/models/driving.h":
   cdef int OUTPUT_SIZE
   cdef int NET_OUTPUT_SIZE
   cdef int MODEL_FREQ
-  cdef bool CPP_USE_THNEED
   cdef struct PublishState: pass
 
-  mat3 update_calibration(float *, bool, bool)
   void fill_model_msg(MessageBuilder, float *, PublishState, uint32_t, uint32_t, uint32_t, float, uint64_t, uint64_t, float, bool, bool)
   void fill_pose_msg(MessageBuilder, float *, uint32_t, uint32_t, uint64_t, bool)

@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 import glob
 import os
-import shutil
 import time
 import unittest
 
 import cereal.messaging as messaging
 from openpilot.selfdrive.manager.process_config import managed_processes
-from openpilot.system.swaglog import cloudlog, SWAGLOG_DIR
+from openpilot.system.swaglog import cloudlog, ipchandler
+from selfdrive.test.helpers import temporary_swaglog_dir
 
 
 class TestLogmessaged(unittest.TestCase):
+  def _setup(self, temp_dir):
+    # clear the IPC buffer in case some other tests used cloudlog and filled it
+    ipchandler.close()
+    ipchandler.connect()
 
-  def setUp(self):
-    if os.path.exists(SWAGLOG_DIR):
-      shutil.rmtree(SWAGLOG_DIR)
-
+    self.temp_dir = temp_dir
     managed_processes['logmessaged'].start()
     self.sock = messaging.sub_sock("logMessage", timeout=1000, conflate=False)
     self.error_sock = messaging.sub_sock("logMessage", timeout=1000, conflate=False)
@@ -31,9 +32,11 @@ class TestLogmessaged(unittest.TestCase):
     managed_processes['logmessaged'].stop(block=True)
 
   def _get_log_files(self):
-    return list(glob.glob(os.path.join(SWAGLOG_DIR, "swaglog.*")))
+    return list(glob.glob(os.path.join(self.temp_dir, "swaglog.*")))
 
-  def test_simple_log(self):
+  @temporary_swaglog_dir
+  def test_simple_log(self, temp_dir):
+    self._setup(temp_dir)
     msgs = [f"abc {i}" for i in range(10)]
     for m in msgs:
       cloudlog.error(m)
@@ -42,7 +45,9 @@ class TestLogmessaged(unittest.TestCase):
     assert len(m) == len(msgs)
     assert len(self._get_log_files()) >= 1
 
-  def test_big_log(self):
+  @temporary_swaglog_dir
+  def test_big_log(self, temp_dir):
+    self._setup(temp_dir)
     n = 10
     msg = "a"*3*1024*1024
     for _ in range(n):

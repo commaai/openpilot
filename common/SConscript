@@ -32,5 +32,15 @@ if GetOption('extras'):
               ['tests/test_runner.cc', 'tests/test_util.cc', 'tests/test_swaglog.cc', 'tests/test_ratekeeper.cc'],
               LIBS=[_common, 'json11', 'zmq', 'pthread'])
 
-# Cython
-envCython.Program('params_pyx.so', 'params_pyx.pyx', LIBS=envCython['LIBS'] + [_common, 'zmq', 'json11'])
+# Cython bindings
+params_python = envCython.Program('params_pyx.so', 'params_pyx.pyx', LIBS=envCython['LIBS'] + [_common, 'zmq', 'json11'])
+
+SConscript([
+  'kalman/SConscript',
+  'transformations/SConscript'  
+])
+
+Import('simple_kalman_python', 'transformations_python')
+common_python = [params_python, simple_kalman_python, transformations_python]
+
+Export('common_python')
