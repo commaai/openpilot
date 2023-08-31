@@ -20,17 +20,16 @@ BUTTONS_DICT = {Buttons.RES_ACCEL: ButtonType.accelCruise, Buttons.SET_DECEL: Bu
                 Buttons.GAP_DIST: ButtonType.gapAdjustCruise, Buttons.CANCEL: ButtonType.cancel}
 
 
-def set_safety_config_canfd(ret, CAN, can_fd=True):
-  platform = SafetyModel.hyundaiCanfd if can_fd else SafetyModel.hyundai
+def set_safety_config_hyundai(candidate, CAN, can_fd=True):
+  platform = SafetyModel.hyundaiCanfd if can_fd \
+                                      else SafetyModel.hyundaiLegacy if candidate in LEGACY_SAFETY_MODE_CAR else \
+                                      SafetyModel.hyundai
+
   cfgs = [get_safety_config(platform), ]
   if CAN.ECAN >= 4:
     cfgs.insert(0, get_safety_config(SafetyModel.noOutput))
-  ret.safetyConfigs = cfgs
 
-  if ret.flags & HyundaiFlags.CANFD_HDA2:
-    ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_HDA2
-
-  return ret
+  return cfgs
 
 
 class CarInterface(CarInterfaceBase):
@@ -286,22 +285,19 @@ class CarInterface(CarInterfaceBase):
       ret.enableBsm = 0x58b in fingerprint[0]
 
     # *** panda safety config ***
-    if candidate in CANFD_CAR:
-      ret = set_safety_config_canfd(ret, CAN, can_fd=True)
+    ret.safetyConfigs = set_safety_config_hyundai(candidate, CAN, can_fd=(candidate in CANFD_CAR))
 
-      if hda2 and ret.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING:
+    if hda2:
+      ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_HDA2
+      if ret.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING:
         ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_HDA2_ALT_STEERING
+
+    if candidate in CANFD_CAR:
       if ret.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
         ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_ALT_BUTTONS
       if ret.flags & HyundaiFlags.CANFD_CAMERA_SCC:
         ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CAMERA_SCC
     else:
-      if candidate in LEGACY_SAFETY_MODE_CAR:
-        # these cars require a special panda safety mode due to missing counters and checksums in the messages
-        ret.safetyConfigs = [get_safety_config(SafetyModel.hyundaiLegacy)]
-      else:
-        ret = set_safety_config_canfd(ret, CAN, can_fd=False)
-
       if candidate in CAMERA_SCC_CAR:
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HYUNDAI_CAMERA_SCC
 
