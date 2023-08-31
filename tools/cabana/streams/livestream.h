@@ -1,5 +1,9 @@
 #pragma once
 
+#include <deque>
+#include <memory>
+#include <vector>
+
 #include <QBasicTimer>
 
 #include "tools/cabana/streams/abstractstream.h"
@@ -10,6 +14,7 @@ class LiveStream : public AbstractStream {
 public:
   LiveStream(QObject *parent);
   virtual ~LiveStream();
+  void start() override;
   inline double routeStartTime() const override { return begin_event_ts / 1e9; }
   inline double currentSec() const override { return (current_event_ts - begin_event_ts) / 1e9; }
   void setSpeed(float speed) override { speed_ = speed; }
@@ -20,7 +25,6 @@ public:
 
 protected:
   virtual void streamThread() = 0;
-  void startStreamThread();
   void handleEvent(const char *data, const size_t size);
 
 private:
@@ -42,7 +46,6 @@ private:
   std::vector<Event *> receivedEvents;
   std::deque<Msg> receivedMessages;
 
-  std::unique_ptr<std::ofstream> fs;
   int timer_id;
   QBasicTimer update_timer;
 
@@ -53,4 +56,7 @@ private:
   bool post_last_event = true;
   double speed_ = 1;
   bool paused_ = false;
+
+  struct Logger;
+  std::unique_ptr<Logger> logger;
 };

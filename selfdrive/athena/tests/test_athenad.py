@@ -18,10 +18,10 @@ from unittest import mock
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
-from system import swaglog
-from selfdrive.athena import athenad
-from selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
-from selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
+from openpilot.system import swaglog
+from openpilot.selfdrive.athena import athenad
+from openpilot.selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
+from openpilot.selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
 from cereal import messaging
 
 
@@ -159,7 +159,7 @@ class TestAthenadMethods(unittest.TestCase):
     resp = dispatcher["uploadFileToUrl"]("qlog.bz2", f"{host}/qlog.bz2", {})
     self.assertEqual(resp['enqueued'], 1)
     self.assertNotIn('failed', resp)
-    self.assertDictContainsSubset({"path": fn, "url": f"{host}/qlog.bz2", "headers": {}}, resp['items'][0])
+    self.assertLessEqual({"path": fn, "url": f"{host}/qlog.bz2", "headers": {}}.items(), resp['items'][0].items())
     self.assertIsNotNone(resp['items'][0].get('id'))
     self.assertEqual(athenad.upload_queue.qsize(), 1)
 
@@ -253,7 +253,8 @@ class TestAthenadMethods(unittest.TestCase):
       end_event.set()
 
   def test_cancelUpload(self):
-    item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='id', allow_cellular=True)
+    item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={},
+                              created_at=int(time.time()*1000), id='id', allow_cellular=True)
     athenad.upload_queue.put_nowait(item)
     dispatcher["cancelUpload"](item.id)
 
@@ -317,7 +318,8 @@ class TestAthenadMethods(unittest.TestCase):
       end_event.set()
 
   def test_listUploadQueue(self):
-    item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='id', allow_cellular=True)
+    item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={},
+                              created_at=int(time.time()*1000), id='id', allow_cellular=True)
     athenad.upload_queue.put_nowait(item)
 
     items = dispatcher["listUploadQueue"]()
@@ -349,7 +351,7 @@ class TestAthenadMethods(unittest.TestCase):
     self.assertEqual(athenad.upload_queue.qsize(), 1)
     self.assertDictEqual(asdict(athenad.upload_queue.queue[-1]), asdict(item1))
 
-  @mock.patch('selfdrive.athena.athenad.create_connection')
+  @mock.patch('openpilot.selfdrive.athena.athenad.create_connection')
   def test_startLocalProxy(self, mock_create_connection):
     end_event = threading.Event()
 

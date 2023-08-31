@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <stdexcept>
+#include <vector>
 
 #include "cereal/messaging/messaging.h"
 #include "common/swaglog.h"
@@ -13,16 +14,17 @@ Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
   // try USB first, then SPI
   try {
     handle = std::make_unique<PandaUsbHandle>(serial);
-    LOGW("conntected to %s over USB", serial.c_str());
+    LOGW("connected to %s over USB", serial.c_str());
   } catch (std::exception &e) {
 #ifndef __APPLE__
     handle = std::make_unique<PandaSpiHandle>(serial);
-    LOGW("conntected to %s over SPI", serial.c_str());
+    LOGW("connected to %s over SPI", serial.c_str());
+#else
+    throw e;
 #endif
   }
 
   hw_type = get_hw_type();
-
   has_rtc = (hw_type == cereal::PandaState::PandaType::UNO) ||
             (hw_type == cereal::PandaState::PandaType::DOS) ||
             (hw_type == cereal::PandaState::PandaType::TRES);
@@ -44,13 +46,15 @@ std::string Panda::hw_serial() {
   return handle->hw_serial;
 }
 
-std::vector<std::string> Panda::list() {
+std::vector<std::string> Panda::list(bool usb_only) {
   std::vector<std::string> serials = PandaUsbHandle::list();
 
 #ifndef __APPLE__
-  for (auto s : PandaSpiHandle::list()) {
-    if (std::find(serials.begin(), serials.end(), s) == serials.end()) {
-      serials.push_back(s);
+  if (!usb_only) {
+    for (auto s : PandaSpiHandle::list()) {
+      if (std::find(serials.begin(), serials.end(), s) == serials.end()) {
+        serials.push_back(s);
+      }
     }
   }
 #endif
@@ -149,6 +153,19 @@ std::optional<std::string> Panda::get_serial() {
   char serial_buf[17] = {'\0'};
   int err = handle->control_read(0xd0, 0, 0, (uint8_t*)serial_buf, 16);
   return err >= 0 ? std::make_optional(serial_buf) : std::nullopt;
+}
+
+bool Panda::up_to_date() {
+  if (auto fw_sig = get_firmware_version()) {
+    for (auto fn : { "panda.bin.signed", "panda_h7.bin.signed" }) {
+      auto content = util::read_file(std::string("../../panda/board/obj/") + fn);
+      if (content.size() >= fw_sig->size() &&
+          memcmp(content.data() + content.size() - fw_sig->size(), fw_sig->data(), fw_sig->size()) == 0) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 void Panda::set_power_saving(bool power_saving) {

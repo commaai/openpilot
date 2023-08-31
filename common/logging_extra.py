@@ -65,7 +65,7 @@ class SwagFormatter(logging.Formatter):
 
     return record_dict
 
-  def format(self, record):
+  def format(self, record): # noqa: A003
     if self.swaglogger is None:
       raise Exception("must set swaglogger before calling format()")
     return json_robust_dumps(self.format_dict(record))
@@ -95,7 +95,7 @@ class SwagLogFileFormatter(SwagFormatter):
       k += "$a"
     return k, v
 
-  def format(self, record):
+  def format(self, record): # noqa: A003
     if isinstance(record, str):
       v = json.loads(record)
     else:
@@ -153,9 +153,9 @@ class SwagLogger(logging.Logger):
   def bind_global(self, **kwargs):
     self.global_ctx.update(kwargs)
 
-  def event(self, event_name, *args, **kwargs):
+  def event(self, event, *args, **kwargs):
     evt = NiceOrderedDict()
-    evt['event'] = event_name
+    evt['event'] = event
     if args:
       evt['args'] = args
     evt.update(kwargs)
@@ -197,7 +197,7 @@ class SwagLogger(logging.Logger):
       filename = os.path.normcase(co.co_filename)
 
       # TODO: is this pylint exception correct?
-      if filename == _srcfile:  # pylint: disable=comparison-with-callable
+      if filename == _srcfile:
         f = f.f_back
         continue
       sinfo = None

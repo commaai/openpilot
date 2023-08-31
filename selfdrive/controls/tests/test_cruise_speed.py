@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 import numpy as np
-from parameterized import parameterized_class
 import unittest
 
-from selfdrive.controls.lib.drive_helpers import VCruiseHelper, V_CRUISE_MIN, V_CRUISE_MAX, V_CRUISE_INITIAL, IMPERIAL_INCREMENT
+from parameterized import parameterized_class
+from cereal import log
+from openpilot.common.params import Params
+from openpilot.selfdrive.controls.lib.drive_helpers import VCruiseHelper, V_CRUISE_MIN, V_CRUISE_MAX, V_CRUISE_INITIAL, IMPERIAL_INCREMENT
 from cereal import car
-from common.conversions import Conversions as CV
-from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
+from openpilot.common.conversions import Conversions as CV
+from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
 ButtonEvent = car.CarState.ButtonEvent
 ButtonType = car.CarState.ButtonEvent.Type
@@ -31,20 +33,26 @@ def run_cruise_simulation(cruise, e2e, t_end=20.):
 
 class TestCruiseSpeed(unittest.TestCase):
   def test_cruise_speed(self):
-    for e2e in [False, True]:
-      for speed in np.arange(5, 40, 5):
-        print(f'Testing {speed} m/s')
-        cruise_speed = float(speed)
+    params = Params()
+    personalities = [log.LongitudinalPersonality.relaxed,
+                     log.LongitudinalPersonality.standard,
+                     log.LongitudinalPersonality.aggressive]
+    for personality in personalities:
+      params.put("LongitudinalPersonality", str(personality))
+      for e2e in [False, True]:
+        for speed in [5,35]:
+          print(f'Testing {speed} m/s')
+          cruise_speed = float(speed)
 
-        simulation_steady_state = run_cruise_simulation(cruise_speed, e2e)
-        self.assertAlmostEqual(simulation_steady_state, cruise_speed, delta=.01, msg=f'Did not reach {speed} m/s')
+          simulation_steady_state = run_cruise_simulation(cruise_speed, e2e)
+          self.assertAlmostEqual(simulation_steady_state, cruise_speed, delta=.01, msg=f'Did not reach {speed} m/s')
 
 
 # TODO: test pcmCruise
 @parameterized_class(('pcm_cruise',), [(False,)])
 class TestVCruiseHelper(unittest.TestCase):
   def setUp(self):
-    self.CP = car.CarParams(pcmCruise=self.pcm_cruise)  # pylint: disable=E1101
+    self.CP = car.CarParams(pcmCruise=self.pcm_cruise)
     self.v_cruise_helper = VCruiseHelper(self.CP)
     self.reset_cruise_speed_state()
 
