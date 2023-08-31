@@ -289,7 +289,7 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_HDA2
 
     if candidate in CANFD_CAR:
-      if ret.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING:
+      if hda2 and ret.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING:
         ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_HDA2_ALT_STEERING
       if ret.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
         ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_ALT_BUTTONS
