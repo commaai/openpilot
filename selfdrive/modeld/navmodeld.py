@@ -14,22 +14,21 @@ from openpilot.system.hardware import TICI
 from openpilot.system.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_realtime_priority
+from openpilot.selfdrive.modeld.constants import IDX_N
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import Runtime
 
-USE_SNPE_MODEL = TICI or int(os.getenv('USE_SNPE_MODEL', '0'))
-if USE_SNPE_MODEL:
+USE_SNPE = int(os.getenv('USE_SNPE', str(int(TICI))))
+if USE_SNPE:
   os.environ['ADSP_LIBRARY_PATH'] = "/data/pythonpath/third_party/snpe/dsp/"
   from selfdrive.modeld.runners.snpemodel_pyx import SNPEModel as ModelRunner
 else:
   from selfdrive.modeld.runners.onnxmodel_pyx import ONNXModel as ModelRunner
 
-TRAJECTORY_SIZE = 33
 NAV_INPUT_SIZE = 256*256
 NAV_FEATURE_LEN = 256
-NAV_INSTRUCTION_LEN = 150
 NAV_DESIRE_LEN = 32
-NAV_OUTPUT_SIZE = 2*2*TRAJECTORY_SIZE + NAV_DESIRE_LEN + NAV_FEATURE_LEN
-MODEL_PATH = str(Path(__file__).parent / 'models' / ('navmodel_q.dlc' if USE_SNPE_MODEL else 'navmodel.onnx'))
+NAV_OUTPUT_SIZE = 2*2*IDX_N + NAV_DESIRE_LEN + NAV_FEATURE_LEN
+MODEL_PATH = str(Path(__file__).parent / 'models' / ('navmodel_q.dlc' if USE_SNPE else 'navmodel.onnx'))
 
 class NavModelOutputXY(ctypes.Structure):
   _fields_ = [
@@ -37,8 +36,8 @@ class NavModelOutputXY(ctypes.Structure):
     ("y", ctypes.c_float)]
 class NavModelOutputPlan(ctypes.Structure):
   _fields_ = [
-    ("mean", NavModelOutputXY*TRAJECTORY_SIZE),
-    ("std", NavModelOutputXY*TRAJECTORY_SIZE)]
+    ("mean", NavModelOutputXY*IDX_N),
+    ("std", NavModelOutputXY*IDX_N)]
 class NavModelResult(ctypes.Structure):
   _fields_ = [
     ("plan", NavModelOutputPlan),
