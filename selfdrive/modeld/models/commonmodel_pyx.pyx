@@ -8,13 +8,7 @@ from libc.string cimport memcpy
 from cereal.visionipc.visionipc cimport cl_mem
 from cereal.visionipc.visionipc_pyx cimport VisionBuf, CLContext as BaseCLContext
 from .commonmodel cimport CL_DEVICE_TYPE_DEFAULT, cl_get_device_id, cl_create_context
-from .commonmodel cimport USE_CPU_RUNTIME, USE_GPU_RUNTIME, USE_DSP_RUNTIME
 from .commonmodel cimport mat3, ModelFrame as cppModelFrame
-
-class Runtime:
-  CPU = USE_CPU_RUNTIME
-  GPU = USE_GPU_RUNTIME
-  DSP = USE_DSP_RUNTIME
 
 cdef class CLContext(BaseCLContext):
   def __cinit__(self):
