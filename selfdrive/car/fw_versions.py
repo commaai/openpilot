@@ -278,8 +278,8 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
     for ecu in brand_versions.values():
       # Each brand can define extra ECUs to query for data collection
       for ecu_type, addr, sub_addr in list(ecu) + config.extra_ecus:
-        if addr != 0x700:
-          continue
+        # if addr not in (0x700, ):
+        #   continue
         a = (brand, addr, sub_addr)
         if a not in ecu_types:
           ecu_types[a] = ecu_type

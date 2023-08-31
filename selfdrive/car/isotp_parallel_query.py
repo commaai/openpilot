@@ -28,8 +28,9 @@ class IsoTpParallelQuery:
 
   def rx(self):
     """Drain can socket and sort messages into buffers based on address"""
-    can_packets = messaging.drain_sock(self.logcan, wait_for_one=False)
-    print('CAN PACKETS',  can_packets)
+    can_packets = messaging.drain_sock(self.logcan, wait_for_one=True)
+    if len(can_packets):
+      print('CAN PACKETS',  can_packets)
 
     for packet in can_packets:
       for msg in packet.can:
@@ -61,7 +62,7 @@ class IsoTpParallelQuery:
     return msgs
 
   def _drain_rx(self):
-    # messaging.drain_sock_raw(self.logcan)
+    # print('dropping data', messaging.drain_sock_raw(self.logcan))
     self.msg_buffer = defaultdict(list)
 
   def _create_isotp_msg(self, tx_addr, sub_addr, rx_addr):
@@ -72,8 +73,7 @@ class IsoTpParallelQuery:
     # uses iso-tp frame separation time of 10 ms
     # TODO: use single_frame_mode so ECUs can send as fast as they want,
     # as well as reduces chances we process messages from previous queries
-    return IsoTpMessage(can_client, timeout=0, separation_time=0, debug=self.debug, max_len=max_len)
-    # return IsoTpMessage(can_client, timeout=0, separation_time=0.01, debug=self.debug, max_len=max_len)
+    return IsoTpMessage(can_client, timeout=0, separation_time=0.01, debug=self.debug, max_len=max_len)
 
   def get_data(self, timeout, total_timeout=60.):
     self._drain_rx()
@@ -101,11 +101,8 @@ class IsoTpParallelQuery:
     start_time = time.monotonic()
     addrs_responded = set()  # track addresses that have ever sent a valid iso-tp frame for timeout logging
     response_timeouts = {tx_addr: start_time + timeout for tx_addr in self.msg_addrs}
-    print('ready to go')
     while True:
-      print('tru eloop')
       self.rx()
-      print('after rx')
 
       for tx_addr, msg in msgs.items():
         try:
