@@ -33,13 +33,13 @@ def run_following_distance_simulation(v_lead, t_end=100.0, e2e=False):
                        log.LongitudinalPersonality.aggressive],
                       [0,10,35])) # speed
 class TestFollowingDistance(unittest.TestCase):
-  def test_following_distance(self, e2e, personality, speed):
+  def test_following_distance(self):
     params = Params()
     params.put("LongitudinalPersonality", str(self.personality))
-    v_lead = float(speed)
-    simulation_steady_state = run_following_distance_simulation(v_lead, e2e=e2e)
-    correct_steady_state = desired_follow_distance(v_lead, v_lead, get_T_FOLLOW(personality))
-    err_ratio = 0.2 if e2e else 0.1
+    v_lead = float(self.speed)
+    simulation_steady_state = run_following_distance_simulation(v_lead, e2e=self.e2e)
+    correct_steady_state = desired_follow_distance(v_lead, v_lead, get_T_FOLLOW(self.personality))
+    err_ratio = 0.2 if self.e2e else 0.1
     self.assertAlmostEqual(simulation_steady_state, correct_steady_state, delta=(err_ratio * correct_steady_state + .5))
 
 
