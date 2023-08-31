@@ -27,7 +27,7 @@ jobs:
       with:
         token: ${{ secrets.ACTIONS_CREATE_PR_PAT }}
         commit-message: Update Python packages and pre-commit hooks
-        title: 'python package + pre-commit hook updates'
+        title: 'Update Python packages and pre-commit hooks'
         branch: auto-package-updates
         base: master
         delete-branch: true
