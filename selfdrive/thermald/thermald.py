@@ -330,7 +330,7 @@ def thermald_thread(end_event, hw_queue) -> None:
             pass
 
     # Handle offroad/onroad transition
-    should_start = all(onroad_conditions.values()) or True
+    should_start = all(onroad_conditions.values())
     if started_ts is None:
       should_start = should_start and all(startup_conditions.values())
 
