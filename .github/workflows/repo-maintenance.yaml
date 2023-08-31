@@ -4,7 +4,6 @@ on:
   schedule:
     - cron: "0 15 * * 2"
   workflow_dispatch:
-  push:
 
 jobs:
   updates:
@@ -16,6 +15,7 @@ jobs:
     - uses: actions/checkout@v3
     - name: poetry lock
       run: |
+        pip install poetry
         poetry lock
     - name: pre-commit autoupdate
       run: |
@@ -26,7 +26,7 @@ jobs:
       with:
         token: ${{ secrets.ACTIONS_CREATE_PR_PAT }}
         commit-message: Update Python packages and pre-commit hooks
-        title: 'python package + pre-commit hook updates'
+        title: 'Update Python packages and pre-commit hooks'
         branch: auto-package-updates
         base: master
         delete-branch: true
