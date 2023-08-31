@@ -20,7 +20,7 @@ BUTTONS_DICT = {Buttons.RES_ACCEL: ButtonType.accelCruise, Buttons.SET_DECEL: Bu
                 Buttons.GAP_DIST: ButtonType.gapAdjustCruise, Buttons.CANCEL: ButtonType.cancel}
 
 
-def set_safety_config_hyundai(candidate, CAN, can_fd=True):
+def set_safety_config_hyundai(candidate, CAN, can_fd=False):
   platform = SafetyModel.hyundaiCanfd if can_fd else \
              SafetyModel.hyundaiLegacy if candidate in LEGACY_SAFETY_MODE_CAR else \
              SafetyModel.hyundai
