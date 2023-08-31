@@ -1,6 +1,7 @@
 import os
 from openpilot.system.hardware import TICI
-from openpilot.selfdrive.modeld.runners.runmodel_pyx import RunModel
+from openpilot.selfdrive.modeld.runners.runmodel_pyx import RunModel, Runtime
+assert Runtime
 
 USE_THNEED = int(os.getenv('USE_THNEED', str(int(TICI))))
 USE_SNPE = int(os.getenv('USE_SNPE', str(int(TICI))))

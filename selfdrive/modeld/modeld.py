@@ -12,8 +12,7 @@ from openpilot.common.params import Params
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.model import get_warp_matrix
-from openpilot.selfdrive.modeld.runners import ModelRunner
-from openpilot.selfdrive.modeld.runners.runmodel_pyx import Runtime
+from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
 from openpilot.selfdrive.modeld.models.driving_pyx import (
   PublishState, create_model_msg, create_pose_msg,
