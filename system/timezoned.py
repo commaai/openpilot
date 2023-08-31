@@ -20,7 +20,7 @@ def set_timezone(valid_timezones, timezone):
     cloudlog.error(f"Timezone not supported {timezone}")
     return
 
-  cloudlog.debug(f"Setting timezone to {timezone}")
+  cloudlog.info(f"Setting timezone to {timezone}")
   try:
     if AGNOS:
       tzpath = os.path.join("/usr/share/zoneinfo/", timezone)
