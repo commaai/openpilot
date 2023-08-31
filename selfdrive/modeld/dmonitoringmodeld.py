@@ -10,17 +10,10 @@ from typing import Tuple, Dict
 from cereal import messaging
 from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
-from openpilot.system.hardware import TICI
 from openpilot.system.swaglog import cloudlog
 from openpilot.common.params import Params
-from openpilot.selfdrive.modeld.models.commonmodel_pyx import Runtime
-
-USE_SNPE_MODEL = TICI or int(os.getenv('USE_SNPE_MODEL', '0'))
-if USE_SNPE_MODEL:
-  os.environ['ADSP_LIBRARY_PATH'] = "/data/pythonpath/third_party/snpe/dsp/"
-  from selfdrive.modeld.runners.snpemodel_pyx import SNPEModel as ModelRunner
-else:
-  from selfdrive.modeld.runners.onnxmodel_pyx import ONNXModel as ModelRunner
+from openpilot.common.realtime import set_realtime_priority
+from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
 
 CALIB_LEN = 3
 REG_SCALE = 0.25
@@ -28,7 +21,9 @@ MODEL_WIDTH = 1440
 MODEL_HEIGHT = 960
 OUTPUT_SIZE = 84
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
-MODEL_PATH = str(Path(__file__).parent / 'models' / ('dmonitoring_model_q.dlc' if USE_SNPE_MODEL else 'dmonitoring_model.onnx'))
+MODEL_PATHS = {
+  ModelRunner.SNPE: Path(__file__).parent / 'models/dmonitoring_model_q.dlc',
+  ModelRunner.ONNX: Path(__file__).parent / 'dmonitoring_model.onnx'}
 
 class DriverStateResult(ctypes.Structure):
   _fields_ = [
@@ -64,7 +59,8 @@ class ModelState:
     self.inputs = {
       'input_imgs': np.zeros(MODEL_HEIGHT * MODEL_WIDTH, dtype=np.uint8),
       'calib': np.zeros(CALIB_LEN, dtype=np.float32)}
-    self.model = ModelRunner(MODEL_PATH, self.output, Runtime.DSP, True, None)
+
+    self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.DSP, True, None)
     self.model.addInput("input_imgs", None)
     self.model.addInput("calib", self.inputs['calib'])
 
@@ -122,11 +118,10 @@ def get_driverstate_packet(model_output: np.ndarray, frame_id: int, location_ts:
 
 def main():
   gc.disable()
-  os.setpriority(os.PRIO_PROCESS, 0, -15)
+  set_realtime_priority(53)
 
   model = ModelState()
   cloudlog.warning("models loaded, dmonitoringmodeld starting")
-
   Params().put_bool("DmModelInitialized", True)
 
   cloudlog.warning("connecting to driver stream")
