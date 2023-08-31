@@ -87,7 +87,7 @@ def get_navmodel_packet(model_output: np.ndarray, valid: bool, frame_id: int, lo
 
 def main():
   gc.disable()
-  set_realtime_priority(53)
+  set_realtime_priority(1)
 
   # there exists a race condition when two processes try to create a
   # SNPE model runner at the same time, wait for dmonitoringmodeld to finish
