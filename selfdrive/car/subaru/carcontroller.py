@@ -47,7 +47,7 @@ class CarController:
       if self.CP.carFingerprint in STEER_RATE_LIMITED:
         # Steering rate fault prevention
         self.steer_rate_counter, apply_steer_req = \
-          common_fault_avoidance(CS.out.steeringRateDeg > MAX_STEER_RATE, apply_steer_req,
+          common_fault_avoidance(abs(CS.out.steeringRateDeg) > MAX_STEER_RATE, apply_steer_req,
                                  self.steer_rate_counter, MAX_STEER_RATE_FRAMES)
 
       if self.CP.carFingerprint in PREGLOBAL_CARS:
