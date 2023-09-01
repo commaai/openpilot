@@ -14,6 +14,7 @@ from openpilot.system.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_realtime_priority
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
+from openpilot.selfdrive.modeld.models.commonmodel_pyx import sigmoid
 
 CALIB_LEN = 3
 REG_SCALE = 0.25
@@ -66,13 +67,13 @@ class ModelState:
     self.model.addInput("input_imgs", None)
     self.model.addInput("calib", self.inputs['calib'])
 
-  def run(self, buf:VisionBuf) -> Tuple[np.ndarray, float]:
+  def run(self, buf:VisionBuf, calib:np.ndarray) -> Tuple[np.ndarray, float]:
+    self.inputs['calib'][:] = calib
+
     v_offset = buf.height - MODEL_HEIGHT
     h_offset = (buf.width - MODEL_WIDTH) // 2
     buf_data = buf.data
-
-    # make a uint8 copy
-    for row in range(MODEL_HEIGHT):
+    for row in range(MODEL_HEIGHT):  # make a uint8 copy
       dst_offset = row * MODEL_WIDTH
       src_offset = (v_offset + row) * buf.stride + h_offset
       self.inputs['input_imgs'][dst_offset:dst_offset+MODEL_WIDTH] = buf_data[src_offset:src_offset+MODEL_WIDTH]
@@ -83,8 +84,6 @@ class ModelState:
     t2 = time.perf_counter()
     return self.output, t2 - t1
 
-def sigmoid(x):
-  return 1. / (1. + math.exp(-x))
 
 def get_driver_state(ds_result: DriverStateResult):
   return {
@@ -113,8 +112,7 @@ def get_driverstate_packet(model_output: np.ndarray, frame_id: int, location_ts:
     'wheelOnRightProb': sigmoid(model_result.wheel_on_right_prob),
     'leftDriverData': get_driver_state(model_result.driver_state_lhd),
     'rightDriverData': get_driver_state(model_result.driver_state_rhd),
-    'rawPredictions': model_output.tobytes() if SEND_RAW_PRED else b'',
-  }
+    'rawPredictions': model_output.tobytes() if SEND_RAW_PRED else b''}
 
   return msg
 
@@ -150,7 +148,7 @@ def main():
       calib[:] = np.array(sm["liveCalibration"].rpyCalib)
 
     t1 = time.perf_counter()
-    model_output, dsp_execution_time = model.run(buf)
+    model_output, dsp_execution_time = model.run(buf, calib)
     t2 = time.perf_counter()
 
     pm.send("driverStateV2", get_driverstate_packet(model_output, vipc_client.frame_id, vipc_client.timestamp_sof, t2 - t1, dsp_execution_time))
