@@ -24,7 +24,7 @@ const double SANE_GPS_UNCERTAINTY = 1500.0; // m
 const double INPUT_INVALID_THRESHOLD = 0.5; // same as reset tracker
 const double DECAY = 0.9993; // ~10 secs to resume after a bad input
 const double MAX_FILTER_REWIND_TIME = 0.8; // s
-const double YAWRATE_CROSS_ERR_CHECK_FACTOR = 20;
+const double YAWRATE_CROSS_ERR_CHECK_FACTOR = 30;
 
 // TODO: GPS sensor time offsets are empirically calculated
 // They should be replaced with synced time from a real clock
