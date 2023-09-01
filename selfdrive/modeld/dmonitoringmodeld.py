@@ -72,11 +72,9 @@ class ModelState:
 
     v_offset = buf.height - MODEL_HEIGHT
     h_offset = (buf.width - MODEL_WIDTH) // 2
-    buf_data = buf.data
-    for row in range(MODEL_HEIGHT):  # make a uint8 copy
-      dst_offset = row * MODEL_WIDTH
-      src_offset = (v_offset + row) * buf.stride + h_offset
-      self.inputs['input_imgs'][dst_offset:dst_offset+MODEL_WIDTH] = buf_data[src_offset:src_offset+MODEL_WIDTH]
+    buf_data = buf.data.reshape(-1, buf.stride)
+    input_data = self.inputs['input_imgs'].reshape(MODEL_HEIGHT, MODEL_WIDTH)
+    input_data[:] = buf_data[v_offset:v_offset+MODEL_HEIGHT, h_offset:h_offset+MODEL_WIDTH]
 
     t1 = time.perf_counter()
     self.model.setInputBuffer("input_imgs", self.inputs['input_imgs'].view(np.float32))
