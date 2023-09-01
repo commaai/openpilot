@@ -58,6 +58,8 @@ class TestToyotaFingerprint(unittest.TestCase):
 
       for ecu, fws in ecus.items():
         for fw in fws:
+
+          print('\ninput', fw)
           get_platform_codes([fw])
           continue
           match = FW_PATTERN.search(fw)
