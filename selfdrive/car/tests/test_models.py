@@ -21,6 +21,7 @@ from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import Route, SegmentName, RouteName
 
 from panda.tests.libpanda import libpanda_py
+from openpilot.selfdrive.test.helpers import SKIP_ENV_VAR
 
 PandaType = log.PandaState.PandaType
 
@@ -61,8 +62,6 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
                                                 segment=segment_name.segment_num)))
   return test_cases
 
-
-SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
 
 class TestCarModelBase(unittest.TestCase):
