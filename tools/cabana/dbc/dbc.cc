@@ -1,5 +1,7 @@
 #include "tools/cabana/dbc/dbc.h"
 
+#include <algorithm>
+
 #include "tools/cabana/util.h"
 
 uint qHash(const MessageId &item) {
@@ -111,6 +113,9 @@ void cabana::Msg::update() {
   for (auto sig : sigs) {
     sig->multiplexor = sig->type == cabana::Signal::Type::Multiplexed ? multiplexor : nullptr;
     if (!sig->multiplexor) {
+      if (sig->type == cabana::Signal::Type::Multiplexed) {
+        sig->type = cabana::Signal::Type::Normal;
+      }
       sig->multiplex_value = 0;
     }
   }
@@ -162,7 +167,7 @@ bool cabana::Signal::operator==(const cabana::Signal &other) const {
          is_signed == other.is_signed && is_little_endian == other.is_little_endian &&
          factor == other.factor && offset == other.offset &&
          min == other.min && max == other.max && comment == other.comment && unit == other.unit && val_desc == other.val_desc &&
-         multiplex_value == other.multiplex_value && type == other.type;
+         multiplex_value == other.multiplex_value && type == other.type && receiver_name == other.receiver_name;
 }
 
 // helper functions

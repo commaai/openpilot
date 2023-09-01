@@ -1,4 +1,4 @@
-#include "locationd.h"
+#include "selfdrive/locationd/locationd.h"
 
 extern "C" {
   typedef Localizer* Localizer_t;

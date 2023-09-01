@@ -3,17 +3,23 @@
 #include <array>
 #include <atomic>
 #include <deque>
+#include <memory>
+#include <tuple>
 #include <unordered_map>
+#include <vector>
+
 #include <QColor>
 #include <QHash>
 
+#include "common/timing.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/settings.h"
 #include "tools/cabana/util.h"
 #include "tools/replay/replay.h"
 
 struct CanData {
-  void compute(const char *dat, const int size, double current_sec, double playback_speed, const std::vector<uint8_t> *mask, uint32_t in_freq = 0);
+  void compute(const MessageId &msg_id, const char *dat, const int size, double current_sec,
+               double playback_speed, const std::vector<uint8_t> *mask = nullptr, double in_freq = 0);
 
   double ts = 0.;
   uint32_t count = 0;
@@ -24,6 +30,7 @@ struct CanData {
   std::vector<std::array<uint32_t, 8>> bit_change_counts;
   std::vector<int> last_delta;
   std::vector<int> same_delta_counter;
+  double last_freq_update_ts = seconds_since_boot();
 };
 
 struct CanEvent {
@@ -34,12 +41,18 @@ struct CanEvent {
   uint8_t dat[];
 };
 
+struct BusConfig {
+  int can_speed_kbps = 500;
+  int data_speed_kbps = 2000;
+  bool can_fd = false;
+};
+
 class AbstractStream : public QObject {
   Q_OBJECT
 
 public:
   AbstractStream(QObject *parent);
-  virtual ~AbstractStream() {};
+  virtual ~AbstractStream() {}
   virtual void start() = 0;
   inline bool liveStreaming() const { return route() == nullptr; }
   virtual void seekTo(double ts) {}
@@ -57,7 +70,7 @@ public:
   virtual void pause(bool pause) {}
   const std::vector<const CanEvent *> &allEvents() const { return all_events_; }
   const std::vector<const CanEvent *> &events(const MessageId &id) const;
-  virtual const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return {}; }
+  virtual const std::vector<std::tuple<double, double, TimelineType>> getTimeline() { return {}; }
 
 signals:
   void paused();
@@ -88,7 +101,7 @@ protected:
   QHash<MessageId, CanData> all_msgs;
   std::unordered_map<MessageId, std::vector<const CanEvent *>> events_;
   std::vector<const CanEvent *> all_events_;
-  std::deque<std::unique_ptr<char[]>> memory_blocks;
+  std::unique_ptr<MonotonicBuffer> event_buffer;
   std::mutex mutex;
   std::unordered_map<MessageId, std::vector<uint8_t>> masks;
 };

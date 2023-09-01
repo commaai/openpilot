@@ -13,7 +13,10 @@
 #include <ctime>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <streambuf>
+#include <string>
+#include <vector>
 
 #include "common/params.h"
 #include "common/swaglog.h"
@@ -83,7 +86,7 @@ kj::Array<capnp::word> logger_build_init_data() {
   }
 
   int i = log_commands.size();
-  for (auto [key, value] : hw_logs) {
+  for (auto &[key, value] : hw_logs) {
     auto lentry = commands[i];
     lentry.setKey(key);
     lentry.setValue(capnp::Data::Reader((const kj::byte*)value.data(), value.size()));

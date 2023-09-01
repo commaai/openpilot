@@ -1,5 +1,8 @@
 #include "tools/cabana/chart/chart.h"
 
+#include <algorithm>
+#include <limits>
+
 #include <QActionGroup>
 #include <QApplication>
 #include <QDrag>
@@ -484,7 +487,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
     if (rubber->width() <= 0) {
       // no rubber dragged, seek to mouse position
       can->seekTo(min);
-    } else if (rubber->width() > 10) {
+    } else if (rubber->width() > 10 && (max - min) > 0.01) { // Minimum range is 10 milliseconds.
       charts_widget->zoom_undo_stack->push(new ZoomCommand(charts_widget, {min, max}));
     } else {
       viewport()->update();
@@ -764,6 +767,7 @@ QXYSeries *ChartView::createSeries(SeriesType type, QColor color) {
     chart()->legend()->setMarkerShape(QLegend::MarkerShapeFromSeries);
   } else {
     series = new QScatterSeries(this);
+    static_cast<QScatterSeries*>(series)->setBorderColor(color);
     chart()->legend()->setMarkerShape(QLegend::MarkerShapeCircle);
   }
   series->setColor(color);

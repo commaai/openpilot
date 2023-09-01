@@ -33,6 +33,7 @@ echo tici-$(cat /proc/cmdline | sed -e 's/^.*androidboot.serialno=//' -e 's/ .*$
 sudo sed -i "s,/data/params/d/GithubSshKeys,/usr/comma/setup_keys," /etc/ssh/sshd_config
 sudo systemctl daemon-reload
 sudo systemctl restart ssh
+sudo systemctl restart NetworkManager
 sudo systemctl disable ssh-param-watcher.path
 sudo systemctl disable ssh-param-watcher.service
 sudo mount -o ro,remount /
@@ -41,6 +42,13 @@ while true; do
   if ! sudo systemctl is-active -q ssh; then
     sudo systemctl start ssh
   fi
+
+  if ! pgrep -f 'ciui.py' > /dev/null 2>&1; then
+    echo 'starting UI'
+    cp $SOURCE_DIR/selfdrive/test/ciui.py /data/
+    /data/ciui.py &
+  fi
+
   sleep 5s
 done
 
@@ -54,7 +62,9 @@ if [ ! -d "$SOURCE_DIR" ]; then
 fi
 cd $SOURCE_DIR
 
-rm -f .git/index.lock
+# cleanup orphaned locks
+find .git -type f -name "*.lock" -exec rm {} +
+
 git reset --hard
 git fetch --no-tags --no-recurse-submodules -j4 --verbose --depth 1 origin $GIT_COMMIT
 find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \;

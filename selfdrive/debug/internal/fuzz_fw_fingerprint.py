@@ -5,11 +5,11 @@ from collections import defaultdict
 
 from tqdm import tqdm
 
-from selfdrive.car.fw_versions import match_fw_to_car_fuzzy
-from selfdrive.car.toyota.values import FW_VERSIONS as TOYOTA_FW_VERSIONS
-from selfdrive.car.honda.values import FW_VERSIONS as HONDA_FW_VERSIONS
-from selfdrive.car.hyundai.values import FW_VERSIONS as HYUNDAI_FW_VERSIONS
-from selfdrive.car.volkswagen.values import FW_VERSIONS as VW_FW_VERSIONS
+from openpilot.selfdrive.car.fw_versions import match_fw_to_car_fuzzy
+from openpilot.selfdrive.car.toyota.values import FW_VERSIONS as TOYOTA_FW_VERSIONS
+from openpilot.selfdrive.car.honda.values import FW_VERSIONS as HONDA_FW_VERSIONS
+from openpilot.selfdrive.car.hyundai.values import FW_VERSIONS as HYUNDAI_FW_VERSIONS
+from openpilot.selfdrive.car.volkswagen.values import FW_VERSIONS as VW_FW_VERSIONS
 
 
 FWS = {}
@@ -27,7 +27,7 @@ if __name__ == "__main__":
   for _ in tqdm(range(1000)):
     for candidate, fws in FWS.items():
       fw_dict = {}
-      for (tp, addr, subaddr), fw_list in fws.items():
+      for (_, addr, subaddr), fw_list in fws.items():
         fw_dict[(addr, subaddr)] = [random.choice(fw_list)]
 
       matches = match_fw_to_car_fuzzy(fw_dict, log=False, exclude=candidate)
