@@ -6,7 +6,7 @@ from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_driver_steer_torque_limits, common_fault_avoidance
 from openpilot.selfdrive.car.hyundai import hyundaicanfd, hyundaican
 from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
-from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CANFD_CAR, CAR
+from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CANFD_CAR, CAR, CAN_CANFD_CAR
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
@@ -103,7 +103,7 @@ class CarController:
         can_sends.append([0x7b1, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", self.CAN.ECAN])
 
     hda2 = self.CP.flags & HyundaiFlags.CANFD_HDA2
-    can_canfd = hda2 and self.CP.flags & HyundaiFlags.CAN_CANFD
+    can_canfd = self.CP.flags & HyundaiFlags.CAN_CANFD
 
     # CAN-FD platforms
     if self.CP.carFingerprint in CANFD_CAR or (hda2 and can_canfd):
