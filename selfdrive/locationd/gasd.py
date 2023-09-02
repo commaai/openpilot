@@ -14,6 +14,8 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.locationd.params_learner import PointBuckets
 from openpilot.system.swaglog import cloudlog
 
+from selfdrive.car.interfaces import ACCEL_MAX, ACCEL_MIN
+
 HISTORY = 5  # secs
 POINTS_PER_BUCKET = 1500
 MIN_POINTS_TOTAL = 200
@@ -21,6 +23,9 @@ MIN_POINTS_TOTAL_QLOG = 600
 FIT_POINTS_TOTAL = 200
 FIT_POINTS_TOTAL_QLOG = 200
 MIN_VEL = 0.5  # m/s
+FACTOR_SANITY = 0.3
+VEGO_MAX = 40.0  # m/s
+FACTOR_SANITY_BRAKE = 0.1
 ACCEL_MIN_THRESHOLD = 0.02
 MIN_FILTER_DECAY = 50
 MAX_FILTER_DECAY = 250
@@ -157,6 +162,44 @@ class GasBrakeEstimator:
     self.filtered_brake = PointBuckets(x_bounds=ALL_BUCKET_BOUNDS, min_points_total=self.min_points_total,
                                        min_points=MIN_BUCKET_POINTS, points_per_bucket=POINTS_PER_BUCKET)
 
+  def sanity_check(self):
+    cases = [
+      # (accel, vego, pitch)
+      (0.0, 0.0, 0.0),
+      (0.0, VEGO_MAX, 0.0),
+      (ACCEL_MAX, 1.0, 0.0),
+      (ACCEL_MAX, VEGO_MAX, 0.0),
+      (ACCEL_MIN, 1.0, 0.0),
+      (ACCEL_MIN, VEGO_MAX, 0.0),
+      (-1.0, 10.0, 0.0),
+      (-1.0, 10.0, 0.25),
+      (0.0, 10.0, 0.25),
+      (0.0, 10.0, -0.25),
+    ]
+    for accel, vego, pitch in cases:
+      offline_gas = (self.offline_gasAccelFactor * accel
+                     + self.offline_gasVEgoFactor * vego
+                     + self.offline_gasPitchFactor * pitch
+                     + self.offline_gasOffset)
+      offline_brake = (self.offline_brakeAccelFactor * accel
+                       + self.offline_brakeVEgoFactor * vego
+                       + self.offline_brakePitchFactor * pitch
+                       + self.offline_brakeOffset)
+
+      live_gas = (self.filtered_params['gasAccelFactor'].x * accel
+                  + self.filtered_params['gasVEgoFactor'].x * vego
+                  + self.filtered_params['gasPitchFactor'].x * pitch
+                  + self.filtered_params['gasOffset'].x)
+      live_brake = (self.filtered_params['brakeAccelFactor'].x * accel
+                    + self.filtered_params['brakeVEgoFactor'].x * vego
+                    + self.filtered_params['brakePitchFactor'].x * pitch
+                    + self.filtered_params['brakeOffset'].x)
+
+      if (abs(live_gas - offline_gas) > FACTOR_SANITY * offline_gas
+          or abs(live_brake - offline_brake) > FACTOR_SANITY_BRAKE * offline_brake):
+        return False
+      return True
+
   def estimate_params(self) -> np.ndarray:
     # TODO: can we cat these together for a single solve?
     A_gas = self.filtered_gas.get_points(self.fit_points)[:, :-1]
@@ -216,7 +259,7 @@ class GasBrakeEstimator:
     if PointBuckets.is_jointly_valid(self.filtered_gas, self.filtered_brake):
       x = self.estimate_params()
 
-      if any(val is None or np.isnan(val) for val in x.flatten()):
+      if any(val is None or np.isnan(val) for val in x.flatten()) or not self.sanity_check():
         cloudlog.exception("Live gas parameters are invalid.")
         liveGasParameters.liveValid = False
         self.reset()
