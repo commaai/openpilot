@@ -80,16 +80,15 @@ class GasBrakeEstimator:
       self.min_points_total = MIN_POINTS_TOTAL
       self.fit_points = FIT_POINTS_TOTAL
 
-    # TODO: Load like with torqued
-    self.offline_gasAccelFactor = 451.
-    self.offline_gasVEgoFactor = 6.7
-    self.offline_gasPitchFactor = 0.
-    self.offline_gasOffset = 606.
+    self.offline_gasAccelFactor = CP.longitudinalTuning.gasAccelFactor
+    self.offline_gasVEgoFactor = CP.longitudinalTuning.gasVEgoFactor
+    self.offline_gasPitchFactor = CP.longitudinalTuning.gasPitchFactor
+    self.offline_gasOffset = CP.longitudinalTuning.gasOffset
 
-    self.offline_brakeAccelFactor = -132
-    self.offline_brakeVEgoFactor = 5.3
-    self.offline_brakePitchFactor = -2.3
-    self.offline_brakeOffset = -106
+    self.offline_brakeAccelFactor = CP.longitudinalTuning.brakeAccelFactor
+    self.offline_brakeVEgoFactor = CP.longitudinalTuning.brakeVEgoFactor
+    self.offline_brakePitchFactor = CP.longitudinalTuning.brakePitchFactor
+    self.offline_brakeOffset = CP.longitudinalTuning.brakeOffset
 
     self.resets = 0.0
     self.use_params = True

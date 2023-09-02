@@ -3,7 +3,7 @@ import os
 import time
 import numpy as np
 from abc import abstractmethod, ABC
-from typing import Any, Dict, Optional, Tuple, List, Callable
+from typing import Any, Dict, Optional, Tuple, List, Callable, Literal
 
 from cereal import car
 from openpilot.common.basedir import BASEDIR
@@ -30,29 +30,41 @@ TORQUE_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/params.yam
 TORQUE_OVERRIDE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/override.yaml')
 TORQUE_SUBSTITUTE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/substitute.yaml')
 
+GAS_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/gas_data/params.yaml')
+GAS_OVERRIDE_PATH = os.path.join(BASEDIR, 'selfdrive/car/gas_data/override.yaml')
+GAS_SUBSTITUTE_PATH = os.path.join(BASEDIR, 'selfdrive/car/gas_data/substitute.yaml')
 
-def get_torque_params(candidate):
-  with open(TORQUE_SUBSTITUTE_PATH) as f:
+
+def get_offline_params(candidate, params_path, substitute_path, override_path):
+  with open(substitute_path) as f:
     sub = yaml.load(f, Loader=yaml.CSafeLoader)
   if candidate in sub:
     candidate = sub[candidate]
 
-  with open(TORQUE_PARAMS_PATH) as f:
+  with open(params_path) as f:
     params = yaml.load(f, Loader=yaml.CSafeLoader)
-  with open(TORQUE_OVERRIDE_PATH) as f:
+  with open(override_path) as f:
     override = yaml.load(f, Loader=yaml.CSafeLoader)
 
   # Ensure no overlap
   if sum([candidate in x for x in [sub, params, override]]) > 1:
-    raise RuntimeError(f'{candidate} is defined twice in torque config')
+    raise RuntimeError(f'{candidate} is defined twice in config')
 
   if candidate in override:
     out = override[candidate]
   elif candidate in params:
     out = params[candidate]
   else:
-    raise NotImplementedError(f"Did not find torque params for {candidate}")
+    raise NotImplementedError(f"Did not find params for {candidate}")
   return {key: out[i] for i, key in enumerate(params['legend'])}
+
+
+def get_torque_params(candidate):
+  return get_offline_params(candidate, TORQUE_PARAMS_PATH, TORQUE_SUBSTITUTE_PATH, TORQUE_OVERRIDE_PATH)
+
+
+def get_gas_params(candidate):
+  return get_offline_params(candidate, GAS_PARAMS_PATH, GAS_SUBSTITUTE_PATH, GAS_OVERRIDE_PATH)
 
 
 # generic car and radar interfaces
@@ -190,6 +202,23 @@ class CarInterfaceBase(ABC):
     tune.torque.latAccelFactor = params['LAT_ACCEL_FACTOR']
     tune.torque.latAccelOffset = 0.0
     tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
+
+  @staticmethod
+  def configure_gas_tune(candidate, tune, tune_type: Literal['gas', 'accel']):
+    if tune_type == 'accel':
+      raise NotImplementedError('accel tuning not implemented yet')
+
+    params = get_gas_params(candidate)
+
+    tune.gasAccelFactor = params['GAS_ACCEL_FACTOR']
+    tune.gasVEgoFactor = params['GAS_VEGO_FACTOR']
+    tune.gasPitchFactor = params['GAS_PITCH_FACTOR']
+    tune.gasOffset = params['GAS_OFFSET']
+
+    tune.brakeAccelFactor = params['BRAKE_ACCEL_FACTOR']
+    tune.brakeVEgoFactor = params['BRAKE_VEGO_FACTOR']
+    tune.brakePitchFactor = params['BRAKE_PITCH_FACTOR']
+    tune.brakeOffset = params['BRAKE_OFFSET']
 
   @abstractmethod
   def _update(self, c: car.CarControl) -> car.CarState:
