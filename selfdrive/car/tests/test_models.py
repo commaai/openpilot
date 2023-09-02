@@ -118,7 +118,6 @@ class TestCarModelBase(unittest.TestCase):
         elif msg.which() == 'pandaStates':
           for ps in msg.pandaStates:
             if ps.safetyModel.raw != 3:
-
               no_elm = True
               break
 
