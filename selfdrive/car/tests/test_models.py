@@ -109,25 +109,26 @@ class TestCarModelBase(unittest.TestCase):
       experimental_long = False
       enabled_toggle = True
       dashcam_only = False
-      no_elm = False
+      left_elm = False
       for msg in lr:
         if msg.which() == 'pandaStateDEPREATED':
           if msg.pandaState.safetyModel.raw != 3:
-            no_elm = True
+            left_elm = True
         elif msg.which() == 'pandaStates':
           for ps in msg.pandaStates:
             if ps.safetyModel.raw != 3:
-              no_elm = True
+              left_elm = True
               break
 
         elif msg.which() == "can":
-          if not no_elm:
-            continue
-          can_msgs.append(msg)
           if len(can_msgs) <= FRAME_FINGERPRINT:
             for m in msg.can:
               if m.src < 64:
                 fingerprint[m.src][m.address] = len(m.dat)
+
+          # Skip CAN messages where OBD port could be multiplexed, and relay is closed
+          if left_elm:
+            can_msgs.append(msg)
 
         elif msg.which() == "carParams":
           car_fw = msg.carParams.carFw
