@@ -1,10 +1,9 @@
-import os, sys
+import os
+import sys
 from dataclasses import dataclass, fields
+from subprocess import check_output, CalledProcessError
 from time import sleep
 from typing import NoReturn
-
-from time import sleep
-from subprocess import check_output, CalledProcessError
 
 DEBUG = int(os.environ.get("DEBUG", "0"))
 
@@ -97,7 +96,8 @@ def process_nmea_port_messages(device:str="/dev/ttyUSB1") -> NoReturn:
       with open(device, "r") as nmeaport:
         for line in nmeaport:
           line = line.strip()
-          if DEBUG: print(line)
+          if DEBUG:
+            print(line)
           if not line.startswith("$"): # all NMEA messages start with $
             continue
           if not nmea_checksum_ok(line):
