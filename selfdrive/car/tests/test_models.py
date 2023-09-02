@@ -111,8 +111,8 @@ class TestCarModelBase(unittest.TestCase):
       dashcam_only = False
       left_elm = False
       for msg in lr:
-        if msg.which() == 'pandaStateDEPREATED':
-          if msg.pandaState.safetyModel.raw != 3:
+        if msg.which() == 'pandaStateDEPRECATED':
+          if msg.pandaStateDEPRECATED.safetyModel.raw != 3:
             left_elm = True
         elif msg.which() == 'pandaStates':
           for ps in msg.pandaStates:
