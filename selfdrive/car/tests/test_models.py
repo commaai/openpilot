@@ -90,7 +90,6 @@ class TestCarModelBase(unittest.TestCase):
     test_segs = (2, 1, 0)
     if cls.test_route.segment is not None:
       test_segs = (cls.test_route.segment,)
-    cls.segment_num = None
 
     for seg in test_segs:
       try:
@@ -144,7 +143,6 @@ class TestCarModelBase(unittest.TestCase):
               enabled_toggle = param.value.strip(b'\x00') == b'1'
 
       if len(can_msgs) > int(50 / DT_CTRL):
-        cls.segment_num = seg
         break
     else:
       raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded?")
@@ -221,7 +219,7 @@ class TestCarModelBase(unittest.TestCase):
     error_cnt = 0
     for i, msg in enumerate(self.can_msgs):
       rr = RI.update((msg.as_builder().to_bytes(),))
-      if rr is not None and (i > 50 and self.segment_num != 0 or i > 500 and self.segment_num == 0):
+      if rr is not None and i > 50:
         error_cnt += car.RadarData.Error.canError in rr.errors
     self.assertEqual(error_cnt, 0)
 
