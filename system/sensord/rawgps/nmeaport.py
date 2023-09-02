@@ -47,13 +47,7 @@ class GnssMeasNmeaPort:
   # 6 = GALILEO
   constellation: int
   svId: int
-  # flags bit mask:
-  # 0x0001 = carrier_to_noise_ratio valid
-  # 0x0200 = 
-  # 0x0400 = 
-  # 0x0800 = 
-  # 0x1000 = 
-  flags: int
+  flags: int # always zero
   time_offset_ns: int
   # state bit mask:
   # 0x0001 = CODE LOCK
