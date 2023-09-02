@@ -107,11 +107,11 @@ def process_nmea_port_messages(device:str="/dev/ttyUSB1") -> NoReturn:
           match fields[0]:
             case "$GNCLK":
               # fields at end are reserved (not used)
-              gnss_clock = GnssClockNmeaPort(*fields[1:10])
+              gnss_clock = GnssClockNmeaPort(*fields[1:10]) # type: ignore[arg-type]
               print(gnss_clock)
             case "$GNMEAS":
               # fields at end are reserved (not used)
-              gnss_meas = GnssMeasNmeaPort(*fields[1:14])
+              gnss_meas = GnssMeasNmeaPort(*fields[1:14]) # type: ignore[arg-type]
               print(gnss_meas)
     except Exception as e:
       print(e)
@@ -134,15 +134,15 @@ def main() -> NoReturn:
   gpio_init(GPIO.GNSS_PWR_EN, True)
   gpio_set(GPIO.GNSS_PWR_EN, True)
 
-  if "+QGPS: 0" not in at_cmd("AT+QGPS?"):
+  if b"+QGPS: 0" not in (at_cmd("AT+QGPS?") or b""):
     print("stop location tracking ...")
     at_cmd("AT+QGPSEND")
 
-  if '+QGPSCFG: "outport",usbnmea' not in at_cmd('AT+QGPSCFG="outport"'):
+  if b'+QGPSCFG: "outport",usbnmea' not in (at_cmd('AT+QGPSCFG="outport"') or b""):
     print("configure outport ...")
     at_cmd('AT+QGPSCFG="outport","usbnmea"') # usbnmea = /dev/ttyUSB1
 
-  if '+QGPSCFG: "gnssrawdata",3,0' not in at_cmd('AT+QGPSCFG="gnssrawdata"'):
+  if b'+QGPSCFG: "gnssrawdata",3,0' not in (at_cmd('AT+QGPSCFG="gnssrawdata"') or b""):
     print("configure gnssrawdata ...")
     # AT+QGPSCFG="gnssrawdata",<constellation-mask>,<port>'
     # <constellation-mask> values:
