@@ -188,7 +188,7 @@ void InputDialog::setMinLength(int length) {
 // ConfirmationDialog
 
 ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString &confirm_text, const QString &cancel_text,
-                                       const bool rich, const bool confirm_required, QWidget *parent) : DialogBase(parent) {
+                                       const bool rich, QWidget *parent, const int confirm_required) : DialogBase(parent) {
   QFrame *container = new QFrame(this);
   container->setStyleSheet(R"(
     QFrame { background-color: #1B1B1B; color: #C9C9C9; }
@@ -220,7 +220,8 @@ ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString
     this->confirm_text = confirm_text;
     confirm_btn = new QPushButton(this->confirm_text);
     confirm_btn->setObjectName("confirm_btn");
-    if (confirm_required) {
+    if (confirm_required != 0) {
+      this->second = confirm_required;
       confirm_btn->setEnabled(false);
       confirm_btn->setText(confirm_text + " (" + QString::number(second) + ")");
       timer = new QTimer(this);
@@ -258,17 +259,17 @@ void ConfirmationDialog::confirmUpdate() {
 }
 
 bool ConfirmationDialog::alert(const QString &prompt_text, QWidget *parent) {
-  ConfirmationDialog d = ConfirmationDialog(prompt_text, tr("Ok"), "", false, false, parent);
+  ConfirmationDialog d = ConfirmationDialog(prompt_text, tr("Ok"), "", false, parent);
   return d.exec();
 }
 
-bool ConfirmationDialog::confirm(const QString &prompt_text, const QString &confirm_text, QWidget *parent) {
-  ConfirmationDialog d = ConfirmationDialog(prompt_text, confirm_text, tr("Cancel"), false, true, parent);
+bool ConfirmationDialog::confirm(const QString &prompt_text, const QString &confirm_text, QWidget *parent, const int confirm_required) {
+  ConfirmationDialog d = ConfirmationDialog(prompt_text, confirm_text, tr("Cancel"), false, parent, confirm_required);
   return d.exec();
 }
 
 bool ConfirmationDialog::rich(const QString &prompt_text, QWidget *parent) {
-  ConfirmationDialog d = ConfirmationDialog(prompt_text, tr("Ok"), "", true, false, parent);
+  ConfirmationDialog d = ConfirmationDialog(prompt_text, tr("Ok"), "", true, parent);
   return d.exec();
 }
 
