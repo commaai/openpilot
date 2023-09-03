@@ -38,8 +38,6 @@ def format_fw_versions(brand, fw_versions):
   return ret
 
 def write_fw_versions(brand, fw_versions):
-  new_fw_versions = format_fw_versions(brand, ALL_FW_VERSIONS[brand])
-  
   filename = f"selfdrive/car/{brand}/values.py"
   with open(filename, "r") as f:
     values_py = f.read()
@@ -53,7 +51,7 @@ def write_fw_versions(brand, fw_versions):
     end_str = "}\n}\n"
     end = values_py.index(end_str)
 
-  new_values_py = values_py[0:start] + new_fw_versions + "\n" + values_py[end+len(end_str):]
+  new_values_py = values_py[0:start] + format_fw_versions(brand, fw_versions) + "\n" + values_py[end+len(end_str):]
   
   with open(filename, "w") as f:
     f.write(new_values_py)
@@ -113,4 +111,4 @@ if __name__ == "__main__":
         fw_versions.add(fw.fwVersion)
         ALL_FW_VERSIONS[brand][platform][key] = list(fw_versions)
 
-  write_fw_versions(brand, fw_versions)
+  write_fw_versions(brand, ALL_FW_VERSIONS[brand])
