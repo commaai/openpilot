@@ -198,7 +198,7 @@ class GasBrakeEstimator:
       if (abs(live_gas - offline_gas) > FACTOR_SANITY * offline_gas
           or abs(live_brake - offline_brake) > FACTOR_SANITY_BRAKE * offline_brake):
         return False
-      return True
+    return True
 
   def estimate_params(self) -> np.ndarray:
     # TODO: can we cat these together for a single solve?
