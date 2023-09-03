@@ -25,7 +25,7 @@ def format_fw_versions(brand, fw_versions):
     for key in fw_versions[platform]:
         (ecu, addr, subAddr) = key
         ret += f"    (Ecu.{ECU_LOOKUP[ecu]}, {hex(addr)}, {None if subAddr == 0 else subAddr}): [\n"
-        for version in fw_versions[platform][key]:
+        for version in sorted(fw_versions[platform][key]):
           ret += f"      {version},\n"
         ret += "    ],\n"
     ret += "  },\n"
