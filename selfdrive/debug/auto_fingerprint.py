@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
-import re
 from cereal import car
-import codecs
 
-from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, replay_process
 from openpilot.tools.lib.logreader import MultiLogIterator
 from openpilot.tools.lib.route import Route
-from pyvin import VIN
-from selfdrive.car.fw_versions import build_fw_dict, match_fw_to_car
+from selfdrive.car.fw_versions import match_fw_to_car
 from selfdrive.car.interfaces import get_interface_attr
 
 
@@ -75,12 +71,6 @@ if __name__ == "__main__":
       carVin = msg.carParams.carVin
       break
   
-  if carVin is not None and carVin != '00000000000000000':
-    vehicle = VIN(carVin)
-    print("VIN: ", carVin, vehicle.Make, vehicle.Model, vehicle.ModelYear)
-  else:
-    print("No VIN found...")
-
   if args.platform is None: # attempt to auto-determine platform with other fuzzy fingerprints
     _, possible_platforms = match_fw_to_car(carFw)
 
