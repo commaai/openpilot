@@ -250,7 +250,6 @@ FW_VERSIONS = {
   CAR.MAVERICK_MK1: {
     (Ecu.eps, 0x730, None): [
       b'NZ6C-14D003-AL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'PZ6A-14C204-BE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x760, None): [
       b'NZ6C-2D053-AG\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
