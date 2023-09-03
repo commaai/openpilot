@@ -71,6 +71,7 @@ class TestCarModelBase(unittest.TestCase):
   ci: bool = True
 
   can_msgs: List[capnp.lib.capnp._DynamicStructReader]
+  elm_frame: Optional[int]
 
   @unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Long running test skipped. Unset {SKIP_ENV_VAR} to run")
   @classmethod
@@ -111,6 +112,7 @@ class TestCarModelBase(unittest.TestCase):
       enabled_toggle = True
       dashcam_only = False
       left_elm = False
+      cls.elm_frame = None
       for msg in lr:
         if msg.which() == 'pandaStateDEPRECATED':
           if msg.pandaStateDEPRECATED.safetyModel != SafetyModel.elm327:
@@ -123,14 +125,14 @@ class TestCarModelBase(unittest.TestCase):
               break
 
         elif msg.which() == "can":
+          can_msgs.append(msg)
           if len(can_msgs) <= FRAME_FINGERPRINT:
             for m in msg.can:
               if m.src < 64:
                 fingerprint[m.src][m.address] = len(m.dat)
 
-          # Skip CAN messages where OBD port could be multiplexed, and relay is closed
-          if left_elm:
-            can_msgs.append(msg)
+          if cls.elm_frame is None and left_elm:
+            cls.elm_frame = len(can_msgs)
 
         elif msg.which() == "carParams":
           car_fw = msg.carParams.carFw
@@ -219,8 +221,10 @@ class TestCarModelBase(unittest.TestCase):
     RI = RadarInterface(self.CP)
     assert RI
 
+    # Since OBD port is multiplexed while fingerprinting, start parsing CAN messages
+    # after we've left ELM mode
     error_cnt = 0
-    for i, msg in enumerate(self.can_msgs):
+    for i, msg in enumerate(self.can_msgs[self.elm_frame:]):
       rr = RI.update((msg.as_builder().to_bytes(),))
       if rr is not None and i > 50:
         error_cnt += car.RadarData.Error.canError in rr.errors
@@ -253,11 +257,12 @@ class TestCarModelBase(unittest.TestCase):
         if t > 1e6:
           self.assertTrue(self.safety.addr_checks_valid())
 
-          # No need to check relay malfunction on disabled routes (relay closed)
-          if self.openpilot_enabled:
+          # No need to check relay malfunction on disabled routes (relay closed) or for reasonable fingerprinting time
+          # TODO: detect when relay has flipped to properly check relay malfunction
+          if self.openpilot_enabled and t > 5e6:
             self.assertFalse(self.safety.get_relay_malfunction())
-        else:
-          self.safety.set_relay_malfunction(False)
+          else:
+            self.safety.set_relay_malfunction(False)
 
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
