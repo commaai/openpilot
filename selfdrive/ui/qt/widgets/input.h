@@ -4,6 +4,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QString>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -55,10 +56,18 @@ class ConfirmationDialog : public DialogBase {
 
 public:
   explicit ConfirmationDialog(const QString &prompt_text, const QString &confirm_text,
-                              const QString &cancel_text, const bool rich, QWidget* parent);
+                              const QString &cancel_text, const bool rich, const bool confirm_required, QWidget* parent);
   static bool alert(const QString &prompt_text, QWidget *parent);
   static bool confirm(const QString &prompt_text, const QString &confirm_text, QWidget *parent);
   static bool rich(const QString &prompt_text, QWidget *parent);
+
+private:
+  QPushButton *confirm_btn;
+  QString confirm_text;
+  QTimer *timer;
+  int second = 5;
+  void confirmTimer();
+  void confirmUpdate();
 };
 
 class MultiOptionDialog : public DialogBase {
