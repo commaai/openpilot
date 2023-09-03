@@ -228,7 +228,6 @@ class TestCarModelBase(unittest.TestCase):
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
 
-    self.safety.set_relay_malfunction(False)
     start_ts = self.can_msgs[0].logMonoTime
 
     failed_addrs = Counter()
@@ -255,6 +254,8 @@ class TestCarModelBase(unittest.TestCase):
           # No need to check relay malfunction on disabled routes (relay closed)
           if self.openpilot_enabled:
             self.assertFalse(self.safety.get_relay_malfunction())
+        else:
+          self.safety.set_relay_malfunction(False)
 
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
