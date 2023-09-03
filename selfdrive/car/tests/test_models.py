@@ -24,6 +24,7 @@ from panda.tests.libpanda import libpanda_py
 from openpilot.selfdrive.test.helpers import SKIP_ENV_VAR
 
 PandaType = log.PandaState.PandaType
+SafetyModel = car.CarParams.SafetyModel
 
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
@@ -112,11 +113,12 @@ class TestCarModelBase(unittest.TestCase):
       left_elm = False
       for msg in lr:
         if msg.which() == 'pandaStateDEPRECATED':
-          if msg.pandaStateDEPRECATED.safetyModel.raw != 3:
+          if msg.pandaStateDEPRECATED.safetyModel != SafetyModel.elm327:
             left_elm = True
+
         elif msg.which() == 'pandaStates':
           for ps in msg.pandaStates:
-            if ps.safetyModel.raw != 3:
+            if ps.safetyModel != SafetyModel.elm327:
               left_elm = True
               break
 
