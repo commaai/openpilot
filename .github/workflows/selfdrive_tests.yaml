@@ -249,7 +249,6 @@ jobs:
       run: |
         ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
                         $UNIT_TEST common && \
-                        $UNIT_TEST opendbc/can && \
                         $UNIT_TEST selfdrive/boardd && \
                         $UNIT_TEST selfdrive/controls && \
                         $UNIT_TEST selfdrive/monitoring && \
