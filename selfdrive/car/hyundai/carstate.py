@@ -8,7 +8,7 @@ from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
 from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CAN_GEARS, CAMERA_SCC_CAR, \
-                                                   CANFD_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams
+                                                   CANFD_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams, FCEV_CAR
 from openpilot.selfdrive.car.interfaces import CarStateBase
 
 PREV_BUTTON_SAMPLES = 8
@@ -33,6 +33,8 @@ class CarState(CarStateBase):
       self.shifter_values = can_define.dv["CLU15"]["CF_Clu_Gear"]
     elif self.CP.carFingerprint in CAN_GEARS["use_tcu_gears"]:
       self.shifter_values = can_define.dv["TCU12"]["CUR_GR"]
+    elif self.CP.carFingerprint in CAN_GEARS["use_ems_gears"]:
+      self.shifter_values = can_define.dv["EMS20"]["HYDROGEN_GEAR_SHIFTER"]
     else:  # preferred and elect gear methods use same definition
       self.shifter_values = can_define.dv["LVR12"]["CF_Lvr_Gear"]
 
@@ -118,9 +120,11 @@ class CarState(CarStateBase):
     ret.parkingBrake = cp.vl["TCS13"]["PBRAKE_ACT"] == 1
     ret.accFaulted = cp.vl["TCS13"]["ACCEnable"] != 0  # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
 
-    if self.CP.carFingerprint in (HYBRID_CAR | EV_CAR):
+    if self.CP.carFingerprint in (HYBRID_CAR | EV_CAR | FCEV_CAR):
       if self.CP.carFingerprint in HYBRID_CAR:
         ret.gas = cp.vl["E_EMS11"]["CR_Vcu_AccPedDep_Pos"] / 254.
+      elif self.CP.carFingerprint in FCEV_CAR:
+        ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / 254.
       else:
         ret.gas = cp.vl["E_EMS11"]["Accel_Pedal_Pos"] / 254.
       ret.gasPressed = ret.gas > 0
@@ -136,6 +140,8 @@ class CarState(CarStateBase):
       gear = cp.vl["TCU12"]["CUR_GR"]
     elif self.CP.carFingerprint in CAN_GEARS["use_elect_gears"]:
       gear = cp.vl["ELECT_GEAR"]["Elect_Gear_Shifter"]
+    elif self.CP.carFingerprint in CAN_GEARS["use_ems_gears"]:
+      gear = cp.vl["EMS20"]["HYDROGEN_GEAR_SHIFTER"]
     else:
       gear = cp.vl["LVR12"]["CF_Lvr_Gear"]
 
@@ -270,6 +276,8 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint in (HYBRID_CAR | EV_CAR):
       messages.append(("E_EMS11", 50))
+    elif CP.carFingerprint in FCEV_CAR:
+      messages.append(("ACCELERATOR", 100))
     else:
       messages += [
         ("EMS12", 100),
@@ -282,6 +290,8 @@ class CarState(CarStateBase):
       messages.append(("TCU12", 100))
     elif CP.carFingerprint in CAN_GEARS["use_elect_gears"]:
       messages.append(("ELECT_GEAR", 20))
+    elif CP.carFingerprint in CAN_GEARS["use_ems_gears"]:
+      messages.append(("EMS20", 100))
     else:
       messages.append(("LVR12", 100))
 

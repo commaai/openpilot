@@ -5,7 +5,7 @@ from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
 from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, CANFD_RADAR_SCC_CAR, \
                                          EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, UNSUPPORTED_LONGITUDINAL_CAR, \
-                                         Buttons
+                                         Buttons, FCEV_CAR
 from openpilot.selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from openpilot.selfdrive.car import create_button_events, get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
@@ -212,6 +212,10 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2087.
       ret.wheelbase = 3.09
       ret.steerRatio = 14.23
+    elif candidate == CAR.NEXO_1ST_GEN:
+      ret.mass = 3990 * CV.LB_TO_KG  # https://www.hyundainews.com/assets/documents/original/42768-2021NEXOProductGuideSpecs.pdf
+      ret.wheelbase = 2.79  # https://www.hyundainews.com/assets/documents/original/42768-2021NEXOProductGuideSpecs.pdf
+      ret.steerRatio = 14.19  # https://www.hyundainews.com/assets/documents/original/42768-2021NEXOProductGuideSpecs.pdf
 
     # Genesis
     elif candidate == CAR.GENESIS_GV60_EV_1ST_GEN:
@@ -301,6 +305,8 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_HYBRID_GAS
     elif candidate in EV_CAR:
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_EV_GAS
+    elif candidate in FCEV_CAR:
+      ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_FCEV_GAS
 
     if candidate in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022):
       ret.flags |= HyundaiFlags.ALT_LIMITS.value

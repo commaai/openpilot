@@ -99,6 +99,7 @@ class CAR:
   TUCSON_4TH_GEN = "HYUNDAI TUCSON 4TH GEN"
   TUCSON_HYBRID_4TH_GEN = "HYUNDAI TUCSON HYBRID 4TH GEN"
   SANTA_CRUZ_1ST_GEN = "HYUNDAI SANTA CRUZ 1ST GEN"
+  NEXO_1ST_GEN = "HYUNDAI NEXO 1ST GEN"
 
   # Kia
   KIA_FORTE = "KIA FORTE E 2018 & GT 2021"
@@ -209,6 +210,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.TUCSON_HYBRID_4TH_GEN: HyundaiCarInfo("Hyundai Tucson Hybrid 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_n])),
   CAR.SANTA_CRUZ_1ST_GEN: HyundaiCarInfo("Hyundai Santa Cruz 2022-23", car_parts=CarParts.common([CarHarness.hyundai_n])),
+  CAR.NEXO_1ST_GEN: HyundaiCarInfo("Hyundai Nexo 2021", "All", car_parts=CarParts.common([CarHarness.hyundai_h])),
 
   # Kia
   CAR.KIA_FORTE: [
@@ -1936,6 +1938,20 @@ FW_VERSIONS = {
       b'\xf1\x00MQhe SCC FHCUP      1.00 1.07 99110-P4000         ',
     ],
   },
+  CAR.NEXO_1ST_GEN: {
+    (Ecu.abs, 0x7D1, None): [
+      b'\xf1\x00FE IEB \x01 312 \x11\x13 58520-M5000',
+    ],
+    (Ecu.fwdCamera, 0x7C4, None): [
+      b'\xf1\x00FE  MFC  AT KOR LHD 1.00 1.00 99211-M5100 201218',
+    ],
+    (Ecu.eps, 0x7D4, None): [
+      b'\xf1\x00FE  MDPS C 1.00 1.05 56340-M5000 9903',
+    ],
+    (Ecu.fwdRadar, 0x7D0, None): [
+      b'\xf1\x00FE__ SCC FHCUP      1.00 1.05 99110-M5000         ',
+    ],
+  },
 }
 
 CHECKSUM = {
@@ -1952,6 +1968,7 @@ CAN_GEARS = {
                       CAR.KONA_EV, CAR.IONIQ, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID,
                       CAR.KONA_HEV, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.IONIQ_PHEV_2019,
                       CAR.KONA_EV_2022, CAR.KIA_K5_HEV_2020},
+  "use_ems_gears": {CAR.NEXO_1ST_GEN, },
 }
 
 CANFD_CAR = {CAR.KIA_EV6, CAR.IONIQ_5, CAR.IONIQ_6, CAR.TUCSON_4TH_GEN, CAR.TUCSON_HYBRID_4TH_GEN, CAR.KIA_SPORTAGE_HYBRID_5TH_GEN,
@@ -1974,6 +1991,8 @@ HYBRID_CAR = {CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.KIA_NIRO_PHEV, CAR.KIA_N
 
 EV_CAR = {CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV, CAR.KIA_NIRO_EV_2ND_GEN, CAR.KONA_EV_2022,
           CAR.KIA_EV6, CAR.IONIQ_5, CAR.IONIQ_6, CAR.GENESIS_GV60_EV_1ST_GEN, CAR.KONA_EV_2ND_GEN}
+
+FCEV_CAR = {CAR.NEXO_1ST_GEN, }
 
 # these cars require a special panda safety mode due to missing counters and checksums in the messages
 LEGACY_SAFETY_MODE_CAR = {CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_LTD, CAR.IONIQ_PHEV, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_OPTIMA_G4,
@@ -2046,4 +2065,5 @@ DBC = {
   CAR.KIA_CARNIVAL_4TH_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KIA_SORENTO_HEV_4TH_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KONA_EV_2ND_GEN: dbc_dict('hyundai_canfd', None),
+  CAR.NEXO_1ST_GEN: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
 }
