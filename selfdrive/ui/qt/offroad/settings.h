@@ -53,6 +53,7 @@ private slots:
 
 private:
   Params params;
+  int confirm_timer = 0;
 };
 
 class TogglesPanel : public ListWidget {
