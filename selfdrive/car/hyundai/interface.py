@@ -24,7 +24,6 @@ def set_safety_config_hyundai(candidate, CAN, can_fd=False):
   platform = SafetyModel.hyundaiCanfd if can_fd else \
              SafetyModel.hyundaiLegacy if candidate in LEGACY_SAFETY_MODE_CAR else \
              SafetyModel.hyundai
-
   cfgs = [get_safety_config(platform), ]
   if CAN.ECAN >= 4:
     cfgs.insert(0, get_safety_config(SafetyModel.noOutput))
