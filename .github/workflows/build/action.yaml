@@ -1,0 +1,31 @@
+name: 'openpilot build'
+
+inputs:
+  cache_key_prefix:
+    description: 'Prefix for caching key'
+    required: false
+    default: 'scons'
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+    - uses: ./.github/workflows/setup
+    - name: Build openpilot with all flags
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 12 || 30) }} # allow more time when we missed the scons cache
+      run: |
+        ${{ env.RUN }} "scons -j$(nproc)"
+        ${{ env.RUN }} "release/check-dirty.sh"
+    - name: Cleanup scons cache and rebuild
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 2 || 30) }} # allow more time when we missed the scons cache
+      run: |
+          ${{ env.RUN }} "rm -rf /tmp/scons_cache/* && \
+                          scons -j$(nproc) --cache-populate"
+    - name: Save scons cache
+      uses: actions/cache/save@v3
+      if: github.ref == 'refs/heads/master'
+      with:
+        path: .ci_cache/scons_cache
+        key: ${{ inputs.cache_key_prefix }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
