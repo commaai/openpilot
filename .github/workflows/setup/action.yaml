@@ -10,7 +10,7 @@ runs:
   using: "composite"
   steps:
     - id: setup-1
-      action: ./.github/workflows/base_setup
+      uses: ./.github/workflows/base_setup
       with: |
         git_lfs: ${{ inputs.git_lfs }}
     - if: steps.setup-1.outcome == 'failure'
@@ -18,7 +18,7 @@ runs:
       run: sleep 30
     - id: setup-2
       if: steps.setup-1.outcome == 'failure'
-      action: ./.github/workflows/base_setup
+      uses: ./.github/workflows/base_setup
       with: |
         git_lfs: ${{ inputs.git_lfs }}
     - if: steps.setup-2.outcome == 'failure'
@@ -26,6 +26,6 @@ runs:
       run: sleep 30
     - id: setup-3
       if: steps.setup-2.outcome == 'failure'
-      action: ./.github/workflows/base_setup
+      uses: ./.github/workflows/base_setup
       with: |
         git_lfs: ${{ inputs.git_lfs }}
