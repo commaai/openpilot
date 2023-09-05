@@ -9,25 +9,23 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - id: setup-1
+    - id: setup1
       uses: ./.github/workflows/base_setup
-      continue-on-error: true
       with:
         git_lfs: ${{ inputs.git_lfs }}
-    - if: steps.setup-1.conclusion == 'failure'
+    - if: steps.setup1.conclusion == 'failure'
       shell: bash
       run: sleep 30
-    - id: setup-2
-      if: steps.setup-1.conclusion == 'failure'
+    - id: setup2
+      if: steps.setup1.conclusion == 'failure'
       uses: ./.github/workflows/base_setup
-      continue-on-error: true
       with:
         git_lfs: ${{ inputs.git_lfs }}
-    - if: steps.setup-2.conclusion == 'failure'
+    - if: steps.setup2.conclusion == 'failure'
       shell: bash
       run: sleep 30
     - id: setup-3
-      if: steps.setup-2.conclusion == 'failure'
+      if: steps.setup2.conclusion == 'failure'
       uses: ./.github/workflows/base_setup
       with:
         git_lfs: ${{ inputs.git_lfs }}
