@@ -88,6 +88,12 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
   if (!type.isEmpty()) {
     QString fn = "direction_" + type;
     if (!modifier.isEmpty()) {
+      if (type == "roundabout" || type == "rotary") {
+        // Normalize and round to nearest 45deg
+        fn += "_" + QString::number(((instruction.getManeuverDegrees() + 382) % 360 / 45 * 45));
+        // Don't have slight/tight/straight entry maneuver icons
+        modifier.remove(QRegExp("^(straight_|tight_|slight_)"));
+      }
       fn += "_" + modifier;
     }
     fn = fn.replace(' ', '_');
