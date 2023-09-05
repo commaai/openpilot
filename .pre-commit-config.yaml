@@ -14,6 +14,8 @@ repos:
     -   id: check-yaml
     -   id: check-merge-conflict
     -   id: check-symlinks
+    -   id: check-executables-have-shebangs
+    -   id: check-shebang-scripts-are-executable
     -   id: check-added-large-files
         args: ['--maxkb=100']
 -   repo: https://github.com/codespell-project/codespell
