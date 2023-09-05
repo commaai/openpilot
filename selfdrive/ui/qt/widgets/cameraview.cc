@@ -41,6 +41,8 @@ const char frame_fragment_shader[] =
   "out vec4 colorOut;\n"
   "void main() {\n"
   "  colorOut = texture(uTexture, vTexCoord);\n"
+  // gamma to improve worst case visibility when dark
+  "  colorOut.rgb = pow(colorOut.rgb, vec3(1.0/1.28));\n"
   "}\n";
 #else
 const char frame_fragment_shader[] =
