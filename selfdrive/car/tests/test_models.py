@@ -232,10 +232,10 @@ class TestCarModelBase(unittest.TestCase):
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
 
-    start_ts = self.can_msgs[self.elm_frame].logMonoTime
+    start_ts = self.can_msgs[0].logMonoTime
 
     failed_addrs = Counter()
-    for can in self.can_msgs[self.elm_frame:]:
+    for can in self.can_msgs:
       # update panda timer
       t = (can.logMonoTime - start_ts) / 1e3
       self.safety.set_timer(int(t))
@@ -255,11 +255,12 @@ class TestCarModelBase(unittest.TestCase):
         if t > 1e6:
           self.assertTrue(self.safety.addr_checks_valid())
 
-          # No need to check relay malfunction on disabled routes (relay closed)
-          if self.openpilot_enabled:
+          # No need to check relay malfunction on disabled routes (relay closed),
+          # or before fingerprinting is done (1s of tolerance)
+          if self.openpilot_enabled and t / 1e4 > (self.elm_frame + 100):
             self.assertFalse(self.safety.get_relay_malfunction())
-        else:
-          self.safety.set_relay_malfunction(False)
+          else:
+            self.safety.set_relay_malfunction(False)
 
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
