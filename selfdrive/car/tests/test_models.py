@@ -113,19 +113,7 @@ class TestCarModelBase(unittest.TestCase):
       dashcam_only = False
       cls.elm_frame = None
       for msg in lr:
-        # Log which can frame the panda safety mode left ELM327, for CAN validity and relay malfunction checks
-        if msg.which() == 'pandaStates':
-          for ps in msg.pandaStates:
-            if ps.safetyModel != SafetyModel.elm327:
-              if cls.elm_frame is None:
-                cls.elm_frame = len(can_msgs)
-
-        elif msg.which() == 'pandaStateDEPRECATED':
-          if msg.pandaStateDEPRECATED.safetyModel != SafetyModel.elm327:
-            if cls.elm_frame is None:
-              cls.elm_frame = len(can_msgs)
-
-        elif msg.which() == "can":
+        if msg.which() == "can":
           can_msgs.append(msg)
           if len(can_msgs) <= FRAME_FINGERPRINT:
             for m in msg.can:
@@ -144,6 +132,18 @@ class TestCarModelBase(unittest.TestCase):
           for param in msg.initData.params.entries:
             if param.key == 'OpenpilotEnabledToggle':
               enabled_toggle = param.value.strip(b'\x00') == b'1'
+
+        # Log which can frame the panda safety mode left ELM327, for CAN validity and relay malfunction checks
+        if msg.which() == 'pandaStates':
+          for ps in msg.pandaStates:
+            if ps.safetyModel != SafetyModel.elm327:
+              if cls.elm_frame is None:
+                cls.elm_frame = len(can_msgs)
+
+        elif msg.which() == 'pandaStateDEPRECATED':
+          if msg.pandaStateDEPRECATED.safetyModel != SafetyModel.elm327:
+            if cls.elm_frame is None:
+              cls.elm_frame = len(can_msgs)
 
       if len(can_msgs) > int(50 / DT_CTRL):
         break
