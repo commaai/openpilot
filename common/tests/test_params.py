@@ -10,12 +10,7 @@ from openpilot.common.params import Params, ParamKeyType, UnknownKeyName, put_no
 
 class TestParams(unittest.TestCase):
   def setUp(self):
-    self.tmpdir = tempfile.mkdtemp()
-    print("using", self.tmpdir)
-    self.params = Params(self.tmpdir)
-
-  def tearDown(self):
-    shutil.rmtree(self.tmpdir)
+    self.params = Params()
 
   def test_params_put_and_get(self):
     self.params.put("DongleId", "cb38263377b873ee")
