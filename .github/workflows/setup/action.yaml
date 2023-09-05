@@ -11,6 +11,7 @@ runs:
   steps:
     - id: setup1
       uses: ./.github/workflows/base_setup
+      continue-on-error: true
       with:
         git_lfs: ${{ inputs.git_lfs }}
         test_failure: true
@@ -20,6 +21,7 @@ runs:
     - id: setup2
       if: failure() && steps.setup1.conclusion == 'failure'
       uses: ./.github/workflows/base_setup
+      continue-on-error: true
       with:
         git_lfs: ${{ inputs.git_lfs }}
     - if: failure() && steps.setup2.conclusion == 'failure'
@@ -28,5 +30,6 @@ runs:
     - id: setup-3
       if: failure() && steps.setup2.conclusion == 'failure'
       uses: ./.github/workflows/base_setup
+      continue-on-error: true
       with:
         git_lfs: ${{ inputs.git_lfs }}
