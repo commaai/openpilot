@@ -244,11 +244,8 @@ ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString
 void ConfirmationDialog::confirmTimer() {
   if (confirm_timer > 0) {
     confirm_timer--;
-    confirm_btn->setText(confirm_text + " (" + QString::number(confirm_timer) + ")");
-  }
-  if (confirm_timer <= 0) {
-    confirm_btn->setText(confirm_text);
-    confirm_btn->setEnabled(true);
+    confirm_btn->setText(confirm_timer > 0 ? confirm_text + " (" + QString::number(confirm_timer) + ")" : confirm_text);
+    confirm_btn->setEnabled(confirm_timer <= 0);
   }
 }
 
