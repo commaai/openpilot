@@ -70,6 +70,9 @@ jobs:
     name: build all (x86_64)
     runs-on: ubuntu-20.04
     steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
     - uses: ./.github/workflows/build
       with:
         cache_key_prefix: scons
@@ -79,6 +82,9 @@ jobs:
     runs-on: buildjet-4vcpu-ubuntu-2204-arm
     if: github.repository == 'commaai/openpilot'
     steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
     - uses: ./.github/workflows/build
       with:
         cache_key_prefix: scons_arm64
