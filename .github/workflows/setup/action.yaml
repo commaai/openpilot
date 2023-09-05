@@ -13,19 +13,19 @@ runs:
       uses: ./.github/workflows/base_setup
       with:
         git_lfs: ${{ inputs.git_lfs }}
-    - if: steps.setup1.conclusion == 'failure'
+    - if: failure() && steps.setup1.conclusion == 'failure'
       shell: bash
       run: sleep 30
     - id: setup2
-      if: steps.setup1.conclusion == 'failure'
+      if: failure() && steps.setup1.conclusion == 'failure'
       uses: ./.github/workflows/base_setup
       with:
         git_lfs: ${{ inputs.git_lfs }}
-    - if: steps.setup2.conclusion == 'failure'
+    - if: failure() && steps.setup2.conclusion == 'failure'
       shell: bash
       run: sleep 30
     - id: setup-3
-      if: steps.setup2.conclusion == 'failure'
+      if: failure() && steps.setup2.conclusion == 'failure'
       uses: ./.github/workflows/base_setup
       with:
         git_lfs: ${{ inputs.git_lfs }}
