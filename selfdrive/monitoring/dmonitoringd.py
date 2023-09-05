@@ -14,13 +14,15 @@ def dmonitoringd_thread(sm=None, pm=None):
   gc.disable()
   set_realtime_priority(2)
 
+  params = Params()
+
   if pm is None:
     pm = messaging.PubMaster(['driverMonitoringState'])
 
   if sm is None:
     sm = messaging.SubMaster(['driverStateV2', 'liveCalibration', 'carState', 'controlsState', 'modelV2'], poll=['driverStateV2'])
 
-  driver_status = DriverStatus(rhd_saved=Params().get_bool("IsRhdDetected"))
+  driver_status = DriverStatus(rhd_saved=params.get_bool("IsRhdDetected"))
 
   sm['liveCalibration'].calStatus = log.LiveCalibrationData.Status.invalid
   sm['liveCalibration'].rpyCalib = [0, 0, 0]
@@ -87,7 +89,7 @@ def dmonitoringd_thread(sm=None, pm=None):
     if (sm['driverStateV2'].frameId % 6000 == 0 and
      driver_status.wheelpos_learner.filtered_stat.n > driver_status.settings._WHEELPOS_FILTER_MIN_COUNT and
      driver_status.wheel_on_right == (driver_status.wheelpos_learner.filtered_stat.M > driver_status.settings._WHEELPOS_THRESHOLD)):
-      Params().put_bool_nonblocking("IsRhdDetected", driver_status.wheel_on_right)
+      params.put_bool_nonblocking("IsRhdDetected", driver_status.wheel_on_right)
 
 def main(sm=None, pm=None):
   dmonitoringd_thread(sm, pm)
