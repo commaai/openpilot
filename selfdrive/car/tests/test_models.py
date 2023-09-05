@@ -111,18 +111,18 @@ class TestCarModelBase(unittest.TestCase):
       experimental_long = False
       enabled_toggle = True
       dashcam_only = False
-      left_elm = False
       cls.elm_frame = None
       for msg in lr:
         if msg.which() == 'pandaStateDEPRECATED':
           if msg.pandaStateDEPRECATED.safetyModel != SafetyModel.elm327:
-            left_elm = True
+            if cls.elm_frame is None:
+              cls.elm_frame = len(can_msgs)
 
         elif msg.which() == 'pandaStates':
           for ps in msg.pandaStates:
             if ps.safetyModel != SafetyModel.elm327:
-              left_elm = True
-              break
+              if cls.elm_frame is None:
+                cls.elm_frame = len(can_msgs)
 
         elif msg.which() == "can":
           can_msgs.append(msg)
@@ -130,9 +130,6 @@ class TestCarModelBase(unittest.TestCase):
             for m in msg.can:
               if m.src < 64:
                 fingerprint[m.src][m.address] = len(m.dat)
-
-          if cls.elm_frame is None and left_elm:
-            cls.elm_frame = len(can_msgs)
 
         elif msg.which() == "carParams":
           car_fw = msg.carParams.carFw
