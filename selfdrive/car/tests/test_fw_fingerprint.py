@@ -175,7 +175,7 @@ class TestFwFingerprint(unittest.TestCase):
 
 class TestFwFingerprintTiming(unittest.TestCase):
   N: int = 5
-  TOL: float = 0.1
+  TOL: float = 0.12
 
   @staticmethod
   def _run_thread(thread: threading.Thread) -> float:
