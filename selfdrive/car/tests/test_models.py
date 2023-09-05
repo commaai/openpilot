@@ -113,16 +113,17 @@ class TestCarModelBase(unittest.TestCase):
       dashcam_only = False
       cls.elm_frame = None
       for msg in lr:
-        if msg.which() == 'pandaStateDEPRECATED':
-          if msg.pandaStateDEPRECATED.safetyModel != SafetyModel.elm327:
-            if cls.elm_frame is None:
-              cls.elm_frame = len(can_msgs)
-
-        elif msg.which() == 'pandaStates':
+        # Log which can frame the panda safety mode left ELM327, for CAN validity and relay malfunction checks
+        if msg.which() == 'pandaStates':
           for ps in msg.pandaStates:
             if ps.safetyModel != SafetyModel.elm327:
               if cls.elm_frame is None:
                 cls.elm_frame = len(can_msgs)
+
+        elif msg.which() == 'pandaStateDEPRECATED':
+          if msg.pandaStateDEPRECATED.safetyModel != SafetyModel.elm327:
+            if cls.elm_frame is None:
+              cls.elm_frame = len(can_msgs)
 
         elif msg.which() == "can":
           can_msgs.append(msg)
