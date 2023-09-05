@@ -133,7 +133,7 @@ class TestCarModelBase(unittest.TestCase):
             if param.key == 'OpenpilotEnabledToggle':
               enabled_toggle = param.value.strip(b'\x00') == b'1'
 
-        # Log which can frame the panda safety mode left ELM327, for CAN validity and relay malfunction checks
+        # Log which can frame the panda safety mode left ELM327, for CAN validity checks
         if msg.which() == 'pandaStates':
           for ps in msg.pandaStates:
             if ps.safetyModel != SafetyModel.elm327:
