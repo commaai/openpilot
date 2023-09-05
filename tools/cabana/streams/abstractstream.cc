@@ -5,6 +5,8 @@
 
 #include <QTimer>
 
+static const int EVENT_NEXT_BUFFER_SIZE = 6 * 1024 * 1024;  // 6MB
+
 AbstractStream *can = nullptr;
 
 StreamNotifier *StreamNotifier::instance() {
@@ -12,8 +14,11 @@ StreamNotifier *StreamNotifier::instance() {
   return &notifier;
 }
 
-AbstractStream::AbstractStream(QObject *parent) : new_msgs(new QHash<MessageId, CanData>()), QObject(parent) {
+AbstractStream::AbstractStream(QObject *parent) : QObject(parent) {
   assert(parent != nullptr);
+  new_msgs = std::make_unique<QHash<MessageId, CanData>>();
+  event_buffer = std::make_unique<MonotonicBuffer>(EVENT_NEXT_BUFFER_SIZE);
+
   QObject::connect(this, &AbstractStream::seekedTo, this, &AbstractStream::updateLastMsgsTo);
   QObject::connect(&settings, &Settings::changed, this, &AbstractStream::updateMasks);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &AbstractStream::updateMasks);
@@ -129,37 +134,25 @@ void AbstractStream::updateLastMsgsTo(double sec) {
 }
 
 void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last) {
-  size_t memory_size = 0;
-  size_t events_cnt = 0;
-  for (auto it = first; it != last; ++it) {
-    if ((*it)->which == cereal::Event::Which::CAN) {
-      for (const auto &c : (*it)->event.getCan()) {
-        memory_size += sizeof(CanEvent) + sizeof(uint8_t) * c.getDat().size();
-        ++events_cnt;
-      }
-    }
-  }
-  if (memory_size == 0) return;
+  static std::unordered_map<MessageId, std::deque<const CanEvent *>> new_events_map;
+  static  std::vector<const CanEvent *> new_events;
+  new_events_map.clear();
+  new_events.clear();
 
-  char *ptr = memory_blocks.emplace_back(new char[memory_size]).get();
-  std::unordered_map<MessageId, std::deque<const CanEvent *>> new_events_map;
-  std::vector<const CanEvent *> new_events;
-  new_events.reserve(events_cnt);
   for (auto it = first; it != last; ++it) {
     if ((*it)->which == cereal::Event::Which::CAN) {
       uint64_t ts = (*it)->mono_time;
       for (const auto &c : (*it)->event.getCan()) {
-        CanEvent *e = (CanEvent *)ptr;
+        auto dat = c.getDat();
+        CanEvent *e = (CanEvent *)event_buffer->allocate(sizeof(CanEvent) + sizeof(uint8_t) * dat.size());
         e->src = c.getSrc();
         e->address = c.getAddress();
         e->mono_time = ts;
-        auto dat = c.getDat();
         e->size = dat.size();
         memcpy(e->dat, (uint8_t *)dat.begin(), e->size);
 
         new_events_map[{.source = e->src, .address = e->address}].push_back(e);
         new_events.push_back(e);
-        ptr += sizeof(CanEvent) + sizeof(uint8_t) * e->size;
       }
     }
   }
@@ -168,17 +161,14 @@ void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std
     return l->mono_time < r->mono_time;
   };
 
-  bool append = new_events.front()->mono_time > lastest_event_ts;
   for (auto &[id, new_e] : new_events_map) {
     auto &e = events_[id];
-    auto pos = append ? e.end()
-                      : std::upper_bound(e.cbegin(), e.cend(), new_e.front(), compare);
-    e.insert(pos, new_e.cbegin(), new_e.cend());
+    auto insert_pos = std::upper_bound(e.cbegin(), e.cend(), new_e.front(), compare);
+    e.insert(insert_pos, new_e.cbegin(), new_e.cend());
   }
 
-  auto pos = append ? all_events_.end()
-                    : std::upper_bound(all_events_.begin(), all_events_.end(), new_events.front(), compare);
-  all_events_.insert(pos, new_events.cbegin(), new_events.cend());
+  auto insert_pos = std::upper_bound(all_events_.cbegin(), all_events_.cend(), new_events.front(), compare);
+  all_events_.insert(insert_pos, new_events.cbegin(), new_events.cend());
 
   lastest_event_ts = all_events_.back()->mono_time;
   emit eventsMerged();

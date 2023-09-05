@@ -9,6 +9,7 @@ from laika.opt import calc_pos_fix
 from openpilot.selfdrive.test.openpilotci import get_url
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.selfdrive.test.helpers import with_processes
+from openpilot.selfdrive.test.helpers import temporary_dir
 import cereal.messaging as messaging
 
 def get_gnss_measurements(log_reader):
@@ -54,8 +55,9 @@ class TestUbloxProcessing(unittest.TestCase):
     self.assertEqual(count_gps, 5036)
     self.assertEqual(count_glonass, 3651)
 
-  def test_get_fix(self):
-    dog = AstroDog()
+  @temporary_dir
+  def test_get_fix(self, temp_dir):
+    dog = AstroDog(cache_dir=temp_dir)
     position_fix_found = 0
     count_processed_measurements = 0
     count_corrected_measurements = 0

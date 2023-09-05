@@ -15,6 +15,8 @@ if PC:
 else:
   SWAGLOG_DIR = "/data/log/"
 
+SWAGLOG_IPC = "/tmp/logmessage"
+
 def get_file_handler():
   Path(SWAGLOG_DIR).mkdir(parents=True, exist_ok=True)
   base_filename = os.path.join(SWAGLOG_DIR, "swaglog")
@@ -77,6 +79,9 @@ class UnixDomainSocketHandler(logging.Handler):
     self.sock = None
 
   def __del__(self):
+    self.close()
+
+  def close(self):
     if self.sock is not None:
       self.sock.close()
     if self.zctx is not None:
@@ -86,7 +91,7 @@ class UnixDomainSocketHandler(logging.Handler):
     self.zctx = zmq.Context()
     self.sock = self.zctx.socket(zmq.PUSH)
     self.sock.setsockopt(zmq.LINGER, 10)
-    self.sock.connect("ipc:///tmp/logmessage")
+    self.sock.connect(f"ipc://{SWAGLOG_IPC}")
     self.pid = os.getpid()
 
   def emit(self, record):
@@ -129,6 +134,8 @@ elif print_level == 'info':
 elif print_level == 'warning':
   outhandler.setLevel(logging.WARNING)
 
+ipchandler = UnixDomainSocketHandler(SwagFormatter(log))
+
 log.addHandler(outhandler)
 # logs are sent through IPC before writing to disk to prevent disk I/O blocking
-log.addHandler(UnixDomainSocketHandler(SwagFormatter(log)))
+log.addHandler(ipchandler)
