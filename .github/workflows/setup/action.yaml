@@ -11,7 +11,7 @@ runs:
   steps:
     - id: setup-1
       uses: ./.github/workflows/base_setup
-      with: |
+      with:
         git_lfs: ${{ inputs.git_lfs }}
     - if: steps.setup-1.outcome == 'failure'
       shell: bash
@@ -19,7 +19,7 @@ runs:
     - id: setup-2
       if: steps.setup-1.outcome == 'failure'
       uses: ./.github/workflows/base_setup
-      with: |
+      with:
         git_lfs: ${{ inputs.git_lfs }}
     - if: steps.setup-2.outcome == 'failure'
       shell: bash
@@ -27,5 +27,5 @@ runs:
     - id: setup-3
       if: steps.setup-2.outcome == 'failure'
       uses: ./.github/workflows/base_setup
-      with: |
+      with:
         git_lfs: ${{ inputs.git_lfs }}
