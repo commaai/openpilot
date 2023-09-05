@@ -233,7 +233,6 @@ class TestCarModelBase(unittest.TestCase):
       self.skipTest("no need to check panda safety for dashcamOnly")
 
     start_ts = self.can_msgs[self.elm_frame].logMonoTime
-    self.safety.set_relay_malfunction(False)
 
     failed_addrs = Counter()
     for can in self.can_msgs[self.elm_frame:]:
