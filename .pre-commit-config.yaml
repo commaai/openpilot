@@ -15,7 +15,9 @@ repos:
     -   id: check-merge-conflict
     -   id: check-symlinks
     -   id: check-executables-have-shebangs
+        exclude: '^(tinygrad_repo)'
     -   id: check-shebang-scripts-are-executable
+        exclude: '^(tinygrad_repo)'
     -   id: check-added-large-files
         args: ['--maxkb=100']
 -   repo: https://github.com/codespell-project/codespell
