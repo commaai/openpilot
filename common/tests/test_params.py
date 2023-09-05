@@ -1,8 +1,6 @@
 import os
 import threading
 import time
-import tempfile
-import shutil
 import uuid
 import unittest
 
