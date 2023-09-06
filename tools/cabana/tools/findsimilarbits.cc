@@ -1,5 +1,7 @@
 #include "tools/cabana/tools/findsimilarbits.h"
 
+#include <algorithm>
+
 #include <QGridLayout>
 #include <QHeaderView>
 #include <QHBoxLayout>
@@ -24,14 +26,12 @@ FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent, Qt::Wi
     for (uint8_t bus : can->sources) {
       cb->addItem(QString::number(bus), bus);
     }
-    cb->model()->sort(0);
-    cb->setCurrentIndex(0);
   }
 
   msg_cb = new QComboBox(this);
   // TODO: update when src_bus_combo changes
-  for (auto &[id, msg] : dbc()->getMessages(0)) {
-    msg_cb->addItem(msg.name, id.address);
+  for (auto &[address, msg] : dbc()->getMessages(-1)) {
+    msg_cb->addItem(msg.name, address);
   }
   msg_cb->model()->sort(0);
   msg_cb->setCurrentIndex(0);

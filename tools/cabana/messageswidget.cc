@@ -1,4 +1,10 @@
 #include "tools/cabana/messageswidget.h"
+
+#include <algorithm>
+#include <limits>
+#include <utility>
+#include <vector>
+
 #include <QHBoxLayout>
 #include <QPainter>
 #include <QPushButton>
@@ -9,7 +15,7 @@
 
 MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(0 ,0, 0, 0);
+  main_layout->setContentsMargins(0, 0, 0, 0);
 
   QHBoxLayout *title_layout = new QHBoxLayout();
   num_msg_label = new QLabel(this);
@@ -28,11 +34,13 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   // message table
   view = new MessageView(this);
   model = new MessageListModel(this);
-  header = new MessageViewHeader(this, model);
+  header = new MessageViewHeader(this);
   auto delegate = new MessageBytesDelegate(view, settings.multiple_lines_bytes);
 
   view->setItemDelegate(delegate);
+  view->setHeader(header);
   view->setModel(model);
+  view->setHeader(header);
   view->setSortingEnabled(true);
   view->sortByColumn(MessageListModel::Column::NAME, Qt::AscendingOrder);
   view->setAllColumnsShowFocus(true);
@@ -40,7 +48,6 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   view->setItemsExpandable(false);
   view->setIndentation(0);
   view->setRootIsDecorated(false);
-  view->setHeader(header);
 
   // Must be called before setting any header parameters to avoid overriding
   restoreHeaderState(settings.message_header_state);
@@ -82,6 +89,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   });
   QObject::connect(suppress_defined_signals, &QCheckBox::stateChanged, [=](int state) {
     settings.suppress_defined_signals = (state == Qt::Checked);
+    emit settings.changed();
   });
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MessagesWidget::dbcModified);
@@ -130,7 +138,7 @@ void MessagesWidget::dbcModified() {
 void MessagesWidget::selectMessage(const MessageId &msg_id) {
   auto it = std::find(model->msgs.cbegin(), model->msgs.cend(), msg_id);
   if (it != model->msgs.cend()) {
-    view->selectionModel()->setCurrentIndex(model->index(std::distance(model->msgs.cbegin(), it), 0), QItemSelectionModel::Rows | QItemSelectionModel::ClearAndSelect);
+    view->setCurrentIndex(model->index(std::distance(model->msgs.cbegin(), it), 0));
   }
 }
 
@@ -166,7 +174,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
 
   auto getFreq = [](const CanData &d) -> QString {
     if (d.freq > 0 && (can->currentSec() - d.ts - 1.0 / settings.fps) < (5.0 / d.freq)) {
-      return d.freq >= 1 ? QString::number(std::nearbyint(d.freq)) : QString::number(d.freq, 'f', 2);
+      return d.freq >= 0.95 ? QString::number(std::nearbyint(d.freq)) : QString::number(d.freq, 'f', 2);
     } else {
       return "--";
     }
@@ -175,7 +183,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
     switch (index.column()) {
       case Column::NAME: return msgName(id);
-      case Column::SOURCE: return id.source != INVALID_SOURCE ? QString::number(id.source) : "N/A" ;
+      case Column::SOURCE: return id.source != INVALID_SOURCE ? QString::number(id.source) : "N/A";
       case Column::ADDRESS: return QString::number(id.address, 16);
       case Column::FREQ: return id.source != INVALID_SOURCE ? getFreq(can_data) : "N/A";
       case Column::COUNT: return id.source != INVALID_SOURCE ? QString::number(can_data.count) : "N/A";
@@ -209,7 +217,7 @@ void MessageListModel::setFilterStrings(const QMap<int, QString> &filters) {
 
 void MessageListModel::dbcModified() {
   dbc_address.clear();
-  for (const auto &[_, m] : dbc()->getMessages(0)) {
+  for (const auto &[_, m] : dbc()->getMessages(-1)) {
     dbc_address.insert(m.address);
   }
   fetchData();
@@ -273,7 +281,8 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
       case Column::NAME: {
         const auto msg = dbc()->msg(id);
         match = re.match(msg ? msg->name : UNTITLED).hasMatch();
-        match |= msg && std::any_of(msg->sigs.cbegin(), msg->sigs.cend(), [&re](const auto &s) { return re.match(s.name).hasMatch(); });
+        match = match || (msg && std::any_of(msg->sigs.cbegin(), msg->sigs.cend(),
+                                             [&re](const auto &s) { return re.match(s->name).hasMatch(); }));
         break;
       }
       case Column::SOURCE:
@@ -281,7 +290,7 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
         break;
       case Column::ADDRESS: {
         match = re.match(QString::number(id.address, 16)).hasMatch();
-        match |= parseRange(txt, id.address, 16);
+        match = match || parseRange(txt, id.address, 16);
         break;
       }
       case Column::FREQ:
@@ -293,8 +302,8 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
         break;
       case Column::DATA: {
         match = QString(data.dat.toHex()).contains(txt, Qt::CaseInsensitive);
-        match |= re.match(QString(data.dat.toHex())).hasMatch();
-        match |= re.match(QString(data.dat.toHex(' '))).hasMatch();
+        match = match || re.match(QString(data.dat.toHex())).hasMatch();
+        match = match || re.match(QString(data.dat.toHex(' '))).hasMatch();
         break;
       }
     }
@@ -444,7 +453,7 @@ void MessageView::headerContextMenuEvent(const QPoint &pos) {
   menu->popup(header()->mapToGlobal(pos));
 }
 
-MessageViewHeader::MessageViewHeader(QWidget *parent, MessageListModel *model) : model(model), QHeaderView(Qt::Horizontal, parent) {
+MessageViewHeader::MessageViewHeader(QWidget *parent) : QHeaderView(Qt::Horizontal, parent) {
   QObject::connect(this, &QHeaderView::sectionResized, this, &MessageViewHeader::updateHeaderPositions);
   QObject::connect(this, &QHeaderView::sectionMoved, this, &MessageViewHeader::updateHeaderPositions);
 }
@@ -483,7 +492,7 @@ void MessageViewHeader::updateHeaderPositions() {
 void MessageViewHeader::updateGeometries() {
   for (int i = 0; i < count(); i++) {
     if (!editors[i]) {
-      QString column_name = model->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
+      QString column_name = model()->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
       editors[i] = new QLineEdit(this);
       editors[i]->setClearButtonEnabled(true);
       editors[i]->setPlaceholderText(tr("Filter %1").arg(column_name));

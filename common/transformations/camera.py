@@ -1,6 +1,6 @@
 import numpy as np
 
-import common.transformations.orientation as orient
+import openpilot.common.transformations.orientation as orient
 
 ## -- hardcoded hardware params --
 eon_f_focal_length = 910.0
@@ -59,14 +59,6 @@ device_frame_from_view_frame = np.array([
   [ 0.,  1.,  0.]
 ])
 view_frame_from_device_frame = device_frame_from_view_frame.T
-
-
-def get_calib_from_vp(vp):
-  vp_norm = normalize(vp)
-  yaw_calib = np.arctan(vp_norm[0])
-  pitch_calib = -np.arctan(vp_norm[1]*np.cos(yaw_calib))
-  roll_calib = 0
-  return roll_calib, pitch_calib, yaw_calib
 
 
 # aka 'extrinsic_matrix'
@@ -129,6 +121,14 @@ def denormalize(img_pts, intrinsics=fcam_intrinsics, width=np.inf, height=np.inf
     img_pts_denormalized[img_pts_denormalized[:, 1] > height] = np.nan
     img_pts_denormalized[img_pts_denormalized[:, 1] < 0] = np.nan
   return img_pts_denormalized[:, :2].reshape(input_shape)
+
+
+def get_calib_from_vp(vp, intrinsics=fcam_intrinsics):
+  vp_norm = normalize(vp, intrinsics)
+  yaw_calib = np.arctan(vp_norm[0])
+  pitch_calib = -np.arctan(vp_norm[1]*np.cos(yaw_calib))
+  roll_calib = 0
+  return roll_calib, pitch_calib, yaw_calib
 
 
 def device_from_ecef(pos_ecef, orientation_ecef, pt_ecef):

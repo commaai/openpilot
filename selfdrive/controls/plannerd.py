@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
+import os
 import numpy as np
 from cereal import car
-from common.params import Params
-from common.realtime import Priority, config_realtime_process
-from system.swaglog import cloudlog
-from selfdrive.modeld.constants import T_IDXS
-from selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
-from selfdrive.controls.lib.lateral_planner import LateralPlanner
+from openpilot.common.params import Params
+from openpilot.common.realtime import Priority, config_realtime_process
+from openpilot.system.swaglog import cloudlog
+from openpilot.selfdrive.modeld.constants import T_IDXS
+from openpilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
+from openpilot.selfdrive.controls.lib.lateral_planner import LateralPlanner
 import cereal.messaging as messaging
 
 def cumtrapz(x, t):
@@ -31,11 +32,14 @@ def plannerd_thread(sm=None, pm=None):
 
   cloudlog.info("plannerd is waiting for CarParams")
   params = Params()
-  CP = car.CarParams.from_bytes(params.get("CarParams", block=True))
+  with car.CarParams.from_bytes(params.get("CarParams", block=True)) as msg:
+    CP = msg
   cloudlog.info("plannerd got CarParams: %s", CP.carName)
 
+  debug_mode = bool(int(os.getenv("DEBUG", "0")))
+
   longitudinal_planner = LongitudinalPlanner(CP)
-  lateral_planner = LateralPlanner(CP)
+  lateral_planner = LateralPlanner(CP, debug=debug_mode)
 
   if sm is None:
     sm = messaging.SubMaster(['carControl', 'carState', 'controlsState', 'radarState', 'modelV2'],

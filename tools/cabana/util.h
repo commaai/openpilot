@@ -1,15 +1,17 @@
 #pragma once
 
 #include <cmath>
+#include <deque>
+#include <vector>
+#include <utility>
 
-#include <QAbstractItemView>
 #include <QApplication>
 #include <QByteArray>
 #include <QDateTime>
 #include <QDoubleValidator>
-#include <QColor>
 #include <QFont>
 #include <QRegExpValidator>
+#include <QSocketNotifier>
 #include <QStringBuilder>
 #include <QStyledItemDelegate>
 #include <QToolButton>
@@ -22,7 +24,7 @@ class LogSlider : public QSlider {
   Q_OBJECT
 
 public:
-  LogSlider(double factor, Qt::Orientation orientation, QWidget *parent = nullptr) : factor(factor), QSlider(orientation, parent) {};
+  LogSlider(double factor, Qt::Orientation orientation, QWidget *parent = nullptr) : factor(factor), QSlider(orientation, parent) {}
 
   void setRange(double min, double max) {
     log_min = factor * std::log10(min);
@@ -58,7 +60,7 @@ public:
 private:
   std::pair<double, double> get_minmax(int n, int left, int right, int range_left, int range_right) const;
   void build_tree(const QVector<QPointF> &arr, int n, int left, int right);
-  std::vector<std::pair<double ,double>> tree;
+  std::vector<std::pair<double, double>> tree;
   int size = 0;
 };
 
@@ -68,20 +70,18 @@ public:
   MessageBytesDelegate(QObject *parent, bool multiple_lines = false);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-  void setMultipleLines(bool v);
-  int widthForBytes(int n) const;
   bool multipleLines() const { return multiple_lines; }
+  void setMultipleLines(bool v) { multiple_lines = v; }
+  int widthForBytes(int n) const;
 
 private:
   QFont fixed_font;
   QSize byte_size = {};
   bool multiple_lines = false;
-  mutable QSize size_cache[65] = {};
 };
 
 inline QString toHex(const QByteArray &dat) { return dat.toHex(' ').toUpper(); }
 QString toHex(uint8_t byte);
-QColor getColor(const cabana::Signal *sig);
 
 class NameValidator : public QRegExpValidator {
   Q_OBJECT
@@ -100,7 +100,7 @@ namespace utils {
 QPixmap icon(const QString &id);
 void setTheme(int theme);
 inline QString formatSeconds(int seconds) {
-  return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
+  return QDateTime::fromSecsSinceEpoch(seconds, Qt::UTC).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
 }
 }
 
@@ -138,4 +138,36 @@ private:
   void closeTabClicked();
 };
 
+class UnixSignalHandler : public QObject {
+  Q_OBJECT
+
+public:
+  UnixSignalHandler(QObject *parent = nullptr);
+  ~UnixSignalHandler();
+  static void signalHandler(int s);
+
+public slots:
+  void handleSigTerm();
+
+private:
+  inline static int sig_fd[2] = {};
+  QSocketNotifier *sn;
+};
+
+class MonotonicBuffer {
+public:
+  MonotonicBuffer(size_t initial_size) : next_buffer_size(initial_size) {}
+  ~MonotonicBuffer();
+  void *allocate(size_t bytes, size_t alignment = 16ul);
+  void deallocate(void *p) {}
+
+private:
+  void *current_buf = nullptr;
+  size_t next_buffer_size = 0;
+  size_t available = 0;
+  std::deque<void *> buffers;
+  static constexpr float growth_factor = 1.5;
+};
+
 int num_decimals(double num);
+QString signalToolTip(const cabana::Signal *sig);

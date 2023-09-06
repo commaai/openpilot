@@ -1,5 +1,7 @@
 #include "tools/cabana/chart/chartswidget.h"
 
+#include <algorithm>
+
 #include <QApplication>
 #include <QFutureSynchronizer>
 #include <QMenu>
@@ -402,7 +404,7 @@ void ChartsWidget::removeAll() {
 
   if (!charts.isEmpty()) {
     for (auto c : charts) {
-      c->deleteLater();
+      delete c;
     }
     charts.clear();
     updateToolBar();

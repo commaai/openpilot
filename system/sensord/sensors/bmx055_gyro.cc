@@ -1,4 +1,4 @@
-#include "bmx055_gyro.h"
+#include "system/sensord/sensors/bmx055_gyro.h"
 
 #include <cassert>
 #include <cmath>
@@ -54,7 +54,7 @@ int BMX055_Gyro::shutdown()  {
   // enter deep suspend mode (lowest power mode)
   int ret = set_register(BMX055_GYRO_I2C_REG_LPM1, BMX055_GYRO_DEEP_SUSPEND);
   if (ret < 0) {
-    LOGE("Could not move BMX055 GYRO in deep suspend mode!")
+    LOGE("Could not move BMX055 GYRO in deep suspend mode!");
   }
 
   return ret;
