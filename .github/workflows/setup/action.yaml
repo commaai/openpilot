@@ -24,6 +24,7 @@ runs:
       continue-on-error: true
       with:
         git_lfs: ${{ inputs.git_lfs }}
+        test_failure: true
     - if: steps.setup2.outcome == 'failure'
       shell: bash
       run: sleep 30
@@ -32,3 +33,4 @@ runs:
       uses: ./.github/workflows/base_setup
       with:
         git_lfs: ${{ inputs.git_lfs }}
+        test_failure: true
