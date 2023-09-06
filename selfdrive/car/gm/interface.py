@@ -150,7 +150,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiV = [0.]
       ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_volt()
       ret.steerActuatorDelay = 0.2
-
       CarInterfaceBase.configure_gas_tune(candidate, ret.longitudinalTuning, 'gas')
 
     elif candidate == CAR.MALIBU:
@@ -181,6 +180,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15.8
       ret.centerToFront = ret.wheelbase * 0.4  # wild guess
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+      CarInterfaceBase.configure_gas_tune(candidate, ret.longitudinalTuning, 'gas')
 
     elif candidate == CAR.BUICK_REGAL:
       ret.mass = 3779. * CV.LB_TO_KG  # (3849+3708)/2
@@ -221,6 +221,7 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 1.0
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+      CarInterfaceBase.configure_gas_tune(candidate, ret.longitudinalTuning, 'gas')
 
     elif candidate == CAR.SILVERADO:
       ret.mass = 2450.
@@ -234,6 +235,7 @@ class CarInterface(CarInterfaceBase):
       if ret.openpilotLongitudinalControl:
         ret.minEnableSpeed = -1.
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+      CarInterfaceBase.configure_gas_tune(candidate, ret.longitudinalTuning, 'gas')
 
     elif candidate == CAR.EQUINOX:
       ret.mass = 3500. * CV.LB_TO_KG
