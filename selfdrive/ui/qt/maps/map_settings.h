@@ -1,5 +1,6 @@
 #pragma once
 
+#include <future>
 #include <vector>
 
 #include <QFrame>
@@ -22,42 +23,41 @@ const QString NAV_FAVORITE_LABEL_WORK = "work";
 
 class DestinationWidget;
 
-class NavigationRequest : public QObject {
+class NavManager : public QObject {
   Q_OBJECT
 
 public:
-  static NavigationRequest *instance();
+  static NavManager *instance();
   QJsonArray currentLocations() const { return locations; }
+  QJsonObject currentDestination() const { return current_dest; }
+  void setCurrentDestination(const QJsonObject &loc);
+  qint64 getLastActivity(const QJsonObject &loc) const;
 
 signals:
-  void locationsUpdated(const QJsonArray &locations);
-  void nextDestinationUpdated();
+  void updated();
 
 private:
-  NavigationRequest(QObject *parent);
+  NavManager(QObject *parent);
   void parseLocationsResponse(const QString &response, bool success);
+  void sortLocations();
 
   Params params;
   QString prev_response;
   QJsonArray locations;
+  QJsonObject current_dest;
+  std::future<void> write_param_future;
 };
 
 class MapSettings : public QFrame {
   Q_OBJECT
 public:
   explicit MapSettings(bool closeable = false, QWidget *parent = nullptr);
-
   void navigateTo(const QJsonObject &place);
-  void updateLocations(const QJsonArray &locations);
-  void updateCurrentRoute();
 
 private:
   void showEvent(QShowEvent *event) override;
   void refresh();
 
-  Params params;
-  QJsonArray current_locations;
-  QJsonObject current_destination;
   QVBoxLayout *destinations_layout;
   DestinationWidget *current_widget;
   DestinationWidget *home_widget;

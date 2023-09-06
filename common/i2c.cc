@@ -31,10 +31,14 @@ I2CBus::I2CBus(uint8_t bus_id) {
 }
 
 I2CBus::~I2CBus() {
-  if (i2c_fd >= 0) { close(i2c_fd); }
+  if (i2c_fd >= 0) {
+    close(i2c_fd);
+  }
 }
 
 int I2CBus::read_register(uint8_t device_address, uint register_address, uint8_t *buffer, uint8_t len) {
+  std::lock_guard lk(m);
+
   int ret = 0;
 
   ret = HANDLE_EINTR(ioctl(i2c_fd, I2C_SLAVE, device_address));
@@ -48,6 +52,8 @@ fail:
 }
 
 int I2CBus::set_register(uint8_t device_address, uint register_address, uint8_t data) {
+  std::lock_guard lk(m);
+
   int ret = 0;
 
   ret = HANDLE_EINTR(ioctl(i2c_fd, I2C_SLAVE, device_address));

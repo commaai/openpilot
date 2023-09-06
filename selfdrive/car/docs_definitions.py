@@ -85,6 +85,7 @@ class CarHarness(EnumBase):
   bosch_a = BaseCarHarness("Honda Bosch A connector")
   bosch_b = BaseCarHarness("Honda Bosch B connector")
   toyota_a = BaseCarHarness("Toyota A connector")
+  toyota_b = BaseCarHarness("Toyota B connector")
   subaru_a = BaseCarHarness("Subaru A connector")
   subaru_b = BaseCarHarness("Subaru B connector")
   subaru_c = BaseCarHarness("Subaru C connector")
@@ -110,6 +111,7 @@ class CarHarness(EnumBase):
   hyundai_o = BaseCarHarness("Hyundai O connector")
   hyundai_p = BaseCarHarness("Hyundai P connector")
   hyundai_q = BaseCarHarness("Hyundai Q connector")
+  hyundai_r = BaseCarHarness("Hyundai R connector")
   custom = BaseCarHarness("Developer connector")
   obd_ii = BaseCarHarness("OBD-II connector", parts=[Cable.long_obdc_cable, Cable.long_obdc_cable], has_connector=False)
   gm = BaseCarHarness("GM connector")
@@ -174,8 +176,8 @@ CarFootnote = namedtuple("CarFootnote", ["text", "column", "docs_only", "shop_fo
 
 class CommonFootnote(Enum):
   EXP_LONG_AVAIL = CarFootnote(
-    "Experimental openpilot longitudinal control is available behind a toggle; " +
-    "the toggle is only available in non-release branches such as `devel` or `master-ci`. ",
+    "openpilot Longitudinal Control (Alpha) is available behind a toggle; " +
+    "the toggle is only available in non-release branches such as `devel` or `master-ci`.",
     Column.LONGITUDINAL, docs_only=True)
   EXP_LONG_DSU = CarFootnote(
     "By default, this car will use the stock Adaptive Cruise Control (ACC) for longitudinal control. " +

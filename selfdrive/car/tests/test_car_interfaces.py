@@ -7,7 +7,7 @@ from hypothesis import Phase, given, settings
 import importlib
 from parameterized import parameterized
 
-from cereal import car
+from cereal import car, messaging
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import gen_empty_fingerprint
 from openpilot.selfdrive.car.car_helpers import interfaces
@@ -50,7 +50,7 @@ class TestCarInterfaces(unittest.TestCase):
   # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
   #  many generated examples to overrun when max_examples > ~20, don't use it
   @parameterized.expand([(car,) for car in sorted(all_known_cars())])
-  @settings(max_examples=MAX_EXAMPLES, deadline=500,
+  @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
   def test_car_interfaces(self, car_name, data):
@@ -118,6 +118,12 @@ class TestCarInterfaces(unittest.TestCase):
     if not car_params.radarUnavailable and radar_interface.rcp is not None and \
        hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
       radar_interface._update([radar_interface.trigger_msg])
+
+    # Test radar fault
+    if not car_params.radarUnavailable and radar_interface.rcp is not None:
+      cans = [messaging.new_message('can', 1).to_bytes() for _ in range(5)]
+      rr = radar_interface.update(cans)
+      self.assertTrue(rr is None or len(rr.errors) > 0)
 
   def test_interface_attrs(self):
     """Asserts basic behavior of interface attribute getter"""

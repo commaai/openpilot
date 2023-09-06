@@ -1,4 +1,4 @@
-#include "selfdrive/ui/qt/offroad/wifiManager.h"
+#include "selfdrive/ui/qt/network/wifi_manager.h"
 
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/widgets/prime.h"

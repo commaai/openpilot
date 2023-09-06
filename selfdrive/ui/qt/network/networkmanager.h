@@ -1,3 +1,5 @@
+#pragma once
+
 /**
  * We are using a NetworkManager DBUS API : https://developer.gnome.org/NetworkManager/1.26/spec.html
  * */

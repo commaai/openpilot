@@ -4,7 +4,7 @@
 #include <QtDBus>
 #include <QTimer>
 
-#include "selfdrive/ui/qt/offroad/networkmanager.h"
+#include "selfdrive/ui/qt/network/networkmanager.h"
 
 enum class SecurityType {
   OPEN,
