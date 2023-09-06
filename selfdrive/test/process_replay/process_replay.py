@@ -382,6 +382,11 @@ def torqued_rcv_callback(msg, cfg, frame):
   return (frame - 1) == 0 or msg.which() == 'liveLocationKalman'
 
 
+def gasd_rcv_callback(msg, cfg, frame):
+  # should_recv always true to increment frame
+  return (frame - 1) == 0 or msg.which() == 'liveLocationKalman'
+
+
 def dmonitoringmodeld_rcv_callback(msg, cfg, frame):
   return msg.which() == "driverCameraState"
 
@@ -472,7 +477,7 @@ CONFIGS = [
       "can", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
       "longitudinalPlan", "lateralPlan", "liveLocationKalman", "liveParameters", "radarState",
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
-      "testJoystick", "liveTorqueParameters"
+      "testJoystick", "liveTorqueParameters", "liveGasParameters"
     ],
     subs=["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
@@ -561,6 +566,15 @@ CONFIGS = [
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
     should_recv_callback=torqued_rcv_callback,
+    tolerance=NUMPY_TOLERANCE,
+  ),
+  ProcessConfig(
+    proc_name="gasd",
+    pubs=["liveLocationKalman", "carState", "carControl"],
+    subs=["liveGasParameters"],
+    ignore=["logMonoTime"],
+    init_callback=get_car_params_callback,
+    should_recv_callback=gasd_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
