@@ -33,11 +33,10 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - name: Build Docker image
-      run: eval "$BUILD"
+    - uses: ./.github/workflows/setup
     - name: Build openpilot
       timeout-minutes: 5
-      run: ${{ env.RUN }} "scons -j$(nproc) --directory=/tmp/openpilot/cereal --minimal"
+      run: ${{ env.RUN }} "scons -j$(nproc) cereal/ common/ --minimal"
     - name: Test PlotJuggler
       timeout-minutes: 2
       run: |
