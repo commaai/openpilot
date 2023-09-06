@@ -38,6 +38,6 @@ namespace Path {
   }
   
   inline std::string swaglog_ipc() {
-    return "ipc:///tmp/logmessage" + Path::openpilot_prefix();;
+    return "ipc:///tmp/logmessage" + Path::openpilot_prefix();
   }
 }  // namespace Path
