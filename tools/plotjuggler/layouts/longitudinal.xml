@@ -6,7 +6,7 @@
     <DockSplitter orientation="-" sizes="0.250401;0.249599;0.250401;0.249599" count="4">
      <DockArea name="...">
       <plot flip_y="false" flip_x="false" mode="TimeSeries" style="Lines">
-       <range top="1.391623" bottom="-2.563614" left="104.907277" right="126.285782"/>
+       <range right="126.285782" top="1.391623" left="104.907277" bottom="-2.563614"/>
        <limitY/>
        <curve name="/carState/aEgo" color="#f14cc1"/>
        <curve name="/longitudinalPlan/accels/0" color="#9467bd"/>
@@ -15,7 +15,7 @@
      </DockArea>
      <DockArea name="...">
       <plot flip_y="false" flip_x="false" mode="TimeSeries" style="Lines">
-       <range top="1.184960" bottom="-1.811222" left="104.907277" right="126.285782"/>
+       <range right="126.285782" top="1.184960" left="104.907277" bottom="-1.811222" />
        <limitY/>
        <curve name="/controlsState/upAccelCmd" color="#1f77b4"/>
        <curve name="/controlsState/uiAccelCmd" color="#d62728"/>
@@ -24,7 +24,7 @@
      </DockArea>
      <DockArea name="...">
       <plot flip_y="false" flip_x="false" mode="TimeSeries" style="Lines">
-       <range top="15.862889" bottom="-0.568809" left="104.907277" right="126.285782"/>
+       <range right="126.285782" top="15.862889" left="104.907277" bottom="-0.568809" />
        <limitY/>
        <curve name="/carState/vEgo" color="#1ac938"/>
        <curve name="/longitudinalPlan/speeds/0" color="#ff7f0e"/>
@@ -32,7 +32,7 @@
      </DockArea>
      <DockArea name="...">
       <plot flip_y="false" flip_x="false" mode="TimeSeries" style="Lines">
-       <range top="1.025000" bottom="-0.025000" left="104.907277" right="126.285782"/>
+       <range right="126.285782" top="1.025000" left="104.907277" bottom="-0.025000" />
        <limitY/>
        <curve name="/carControl/longActive"  color="#1f77b4"/>
        <curve name="/carState/gasPressed" color="#d62728"/>
