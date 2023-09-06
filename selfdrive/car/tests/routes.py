@@ -126,9 +126,11 @@ routes = [
   CarTestRoute("eb4eae1476647463|2023-08-26--18-07-04", HYUNDAI.IONIQ_6, segment=6),  # HDA2
   CarTestRoute("3f29334d6134fcd4|2022-03-30--22-00-50", HYUNDAI.IONIQ_PHEV_2019),
   CarTestRoute("fa8db5869167f821|2021-06-10--22-50-10", HYUNDAI.IONIQ_PHEV),
+  CarTestRoute("e1107f9d04dfb1e2|2023-09-05--22-32-12", HYUNDAI.IONIQ_PHEV),  # openpilot longitudinal enabled
   CarTestRoute("2c5cf2dd6102e5da|2020-12-17--16-06-44", HYUNDAI.IONIQ_EV_2020),
   CarTestRoute("610ebb9faaad6b43|2020-06-13--15-28-36", HYUNDAI.IONIQ_EV_LTD),
   CarTestRoute("2c5cf2dd6102e5da|2020-06-26--16-00-08", HYUNDAI.IONIQ),
+  CarTestRoute("012c95f06918eca4|2023-01-15--11-19-36", HYUNDAI.IONIQ),  # openpilot longitudinal enabled
   CarTestRoute("ab59fe909f626921|2021-10-18--18-34-28", HYUNDAI.IONIQ_HEV_2022),
   CarTestRoute("22d955b2cd499c22|2020-08-10--19-58-21", HYUNDAI.KONA),
   CarTestRoute("efc48acf44b1e64d|2021-05-28--21-05-04", HYUNDAI.KONA_EV),

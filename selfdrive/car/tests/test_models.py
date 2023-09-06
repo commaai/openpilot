@@ -24,6 +24,7 @@ from panda.tests.libpanda import libpanda_py
 from openpilot.selfdrive.test.helpers import SKIP_ENV_VAR
 
 PandaType = log.PandaState.PandaType
+SafetyModel = car.CarParams.SafetyModel
 
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
@@ -70,6 +71,7 @@ class TestCarModelBase(unittest.TestCase):
   ci: bool = True
 
   can_msgs: List[capnp.lib.capnp._DynamicStructReader]
+  elm_frame: Optional[int]
 
   @unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Long running test skipped. Unset {SKIP_ENV_VAR} to run")
   @classmethod
@@ -105,6 +107,7 @@ class TestCarModelBase(unittest.TestCase):
 
       car_fw = []
       can_msgs = []
+      cls.elm_frame = None
       fingerprint = defaultdict(dict)
       experimental_long = False
       enabled_toggle = True
@@ -129,6 +132,16 @@ class TestCarModelBase(unittest.TestCase):
           for param in msg.initData.params.entries:
             if param.key == 'OpenpilotEnabledToggle':
               enabled_toggle = param.value.strip(b'\x00') == b'1'
+
+        # Log which can frame the panda safety mode left ELM327, for CAN validity checks
+        if msg.which() == 'pandaStates':
+          for ps in msg.pandaStates:
+            if cls.elm_frame is None and ps.safetyModel != SafetyModel.elm327:
+              cls.elm_frame = len(can_msgs)
+
+        elif msg.which() == 'pandaStateDEPRECATED':
+          if cls.elm_frame is None and msg.pandaStateDEPRECATED.safetyModel != SafetyModel.elm327:
+            cls.elm_frame = len(can_msgs)
 
       if len(can_msgs) > int(50 / DT_CTRL):
         break
@@ -204,8 +217,10 @@ class TestCarModelBase(unittest.TestCase):
     RI = RadarInterface(self.CP)
     assert RI
 
+    # Since OBD port is multiplexed to bus 1 (commonly radar bus) while fingerprinting,
+    # start parsing CAN messages after we've left ELM mode and can expect CAN traffic
     error_cnt = 0
-    for i, msg in enumerate(self.can_msgs):
+    for i, msg in enumerate(self.can_msgs[self.elm_frame:]):
       rr = RI.update((msg.as_builder().to_bytes(),))
       if rr is not None and i > 50:
         error_cnt += car.RadarData.Error.canError in rr.errors
@@ -238,9 +253,9 @@ class TestCarModelBase(unittest.TestCase):
         if t > 1e6:
           self.assertTrue(self.safety.addr_checks_valid())
 
-          # No need to check relay malfunction on disabled routes (relay closed) or for reasonable fingerprinting time
-          # TODO: detect when relay has flipped to properly check relay malfunction
-          if self.openpilot_enabled and t > 5e6:
+          # No need to check relay malfunction on disabled routes (relay closed),
+          # or before fingerprinting is done (1s of tolerance to exit silent mode)
+          if self.openpilot_enabled and t / 1e4 > (self.elm_frame + 100):
             self.assertFalse(self.safety.get_relay_malfunction())
           else:
             self.safety.set_relay_malfunction(False)
