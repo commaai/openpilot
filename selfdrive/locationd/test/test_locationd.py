@@ -80,7 +80,7 @@ class TestLocationdProc(unittest.TestCase):
     for msg in sorted(msgs, key=lambda x: x.logMonoTime):
       self.pm.send(msg.which(), msg)
       if msg.which() == "cameraOdometry":
-        self.pm.wait_for_readers_to_update(msg.which(), 0.1)
+        self.pm.wait_for_readers_to_update(msg.which(), 0.1, dt=0.005)
     time.sleep(1)  # wait for async params write
 
     lastGPS = json.loads(self.params.get('LastGPSPosition'))
