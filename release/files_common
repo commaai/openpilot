@@ -118,6 +118,9 @@ selfdrive/car/tests/test_car_interfaces.py
 selfdrive/car/torque_data/params.yaml
 selfdrive/car/torque_data/substitute.yaml
 selfdrive/car/torque_data/override.yaml
+selfdrive/car/gas_data/params.yaml
+selfdrive/car/gas_data/substitute.yaml
+selfdrive/car/gas_data/override.yaml
 
 selfdrive/car/body/*.py
 selfdrive/car/chrysler/*.py
