@@ -183,7 +183,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.KONA_EV_2022: HyundaiCarInfo("Hyundai Kona Electric 2022", car_parts=CarParts.common([CarHarness.hyundai_o])),
   CAR.KONA_HEV: HyundaiCarInfo("Hyundai Kona Hybrid 2020", video_link="https://youtu.be/0dwpAHiZgFo",
                                                                       car_parts=CarParts.common([CarHarness.hyundai_i])),  # TODO: check packages
-  CAR.KONA_EV_2ND_GEN: HyundaiCarInfo("Hyundai Kona Electric (with HDA II, Korea only) 2023", car_parts=CarParts.common([CarHarness.hyundai_r])),
+  CAR.KONA_EV_2ND_GEN: HyundaiCarInfo("Hyundai Kona Electric (with HDA II, Korea only) 2023", video_link="https://www.youtube.com/watch?v=U2fOCmcQ8hw", car_parts=CarParts.common([CarHarness.hyundai_r])),
   CAR.SANTA_FE: HyundaiCarInfo("Hyundai Santa Fe 2019-20", "All", car_parts=CarParts.common([CarHarness.hyundai_d])),
   CAR.SANTA_FE_2022: HyundaiCarInfo("Hyundai Santa Fe 2021-23", "All", video_link="https://youtu.be/VnHzSTygTS4",
                                                                       car_parts=CarParts.common([CarHarness.hyundai_l])),
@@ -587,11 +587,13 @@ FW_VERSIONS = {
       b'\xf1\x00AE  MDPS C 1.00 1.01 56310/G2510 4APHC101',
       b'\xf1\x00AE  MDPS C 1.00 1.01 56310/G2560 4APHC101',
       b'\xf1\x00AE  MDPS C 1.00 1.01 56310G2510\x00 4APHC101',
+      b'\xf1\x00AE  MDPS C 1.00 1.01 56310/G2310 4APHC101',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00AEP MFC  AT USA LHD 1.00 1.01 95740-G2600 190819',
       b'\xf1\x00AEP MFC  AT EUR RHD 1.00 1.01 95740-G2600 190819',
       b'\xf1\x00AEP MFC  AT USA LHD 1.00 1.00 95740-G2700 201027',
+      b'\xf1\x00AEP MFC  AT EUR LHD 1.00 1.01 95740-G2600 190819',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x816H6F6051\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -604,6 +606,7 @@ FW_VERSIONS = {
       b'\xf1\x816U3J9051\x00\x00\xf1\x006U3H1_C2\x00\x006U3J9051\x00\x00PAE0G16NL2\x00\x00\x00\x00',
       b'\xf1\x006U3H1_C2\x00\x006U3J9051\x00\x00PAE0G16NL0\x00\x00\x00\x00',
       b'\xf1\x006U3H1_C2\x00\x006U3J9051\x00\x00PAE0G16NL2\xad\xeb\xabt',
+      b'\xf1\x006U3H1_C2\x00\x006U3J8051\x00\x00PAETG16UL0\x00\x00\x00\x00',
     ],
   },
   CAR.IONIQ_EV_2020: {
@@ -1941,6 +1944,7 @@ FW_VERSIONS = {
   CAR.KIA_SORENTO_HEV_4TH_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00MQ4HMFC  AT KOR LHD 1.00 1.12 99210-P2000 230331',
+      b'\xf1\x00MQ4HMFC  AT USA LHD 1.00 1.11 99210-P2000 211217',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00MQhe SCC FHCUP      1.00 1.07 99110-P4000         ',
@@ -2004,7 +2008,7 @@ EV_CAR = {CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV, CAR
           CAR.KIA_EV6, CAR.IONIQ_5, CAR.IONIQ_6, CAR.GENESIS_GV60_EV_1ST_GEN, CAR.KONA_EV_2ND_GEN}
 
 # these cars require a special panda safety mode due to missing counters and checksums in the messages
-LEGACY_SAFETY_MODE_CAR = {CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_LTD, CAR.IONIQ_PHEV, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_OPTIMA_G4,
+LEGACY_SAFETY_MODE_CAR = {CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_OPTIMA_G4,
                           CAR.VELOSTER, CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.KIA_CEED, CAR.ELANTRA, CAR.IONIQ_HEV_2022,
                           CAR.KIA_OPTIMA_H}
 
