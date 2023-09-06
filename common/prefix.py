@@ -5,6 +5,7 @@ import uuid
 from typing import Optional
 
 from openpilot.common.params import Params
+from openpilot.system.hardware.hw import Paths
 
 class OpenpilotPrefix:
   def __init__(self, prefix: Optional[str] = None, clean_dirs_on_exit: bool = True):
@@ -18,6 +19,7 @@ class OpenpilotPrefix:
       os.mkdir(self.msgq_path)
     except FileExistsError:
       pass
+    os.makedirs(Paths.log_root(), exist_ok=True)
 
     return self
 
@@ -36,3 +38,4 @@ class OpenpilotPrefix:
       shutil.rmtree(os.path.realpath(symlink_path), ignore_errors=True)
       os.remove(symlink_path)
     shutil.rmtree(self.msgq_path, ignore_errors=True)
+    shutil.rmtree(Paths.log_root(), ignore_errors=True)

@@ -1,6 +1,7 @@
 import os
-from selfdrive.hardware import PC
 from pathlib import Path
+
+from openpilot.selfdrive.hardware import PC
 
 class Paths:
   @staticmethod
