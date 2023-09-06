@@ -5,17 +5,10 @@ inputs:
     description: 'Whether or not to pull the git lfs'
     required: false
     default: 'true'
-  test_failure:
-    description: 'test failure'
-    required: true
-    default: 'false'
 
 runs:
   using: "composite"
   steps:
-    - shell: bash
-      if: ${{ inputs.test_failure == 'true' }}
-      run: exit 1
     # do this after checkout to ensure our custom LFS config is used to pull from GitLab
     - shell: bash
       if: ${{ inputs.git_lfs == 'true' }}
