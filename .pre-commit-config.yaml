@@ -83,3 +83,8 @@ repos:
         name: validate poetry lock
         args:
         - --check
+-   repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.26.3
+    hooks:
+    -   id: check-github-actions
+    -   id: check-github-workflows
