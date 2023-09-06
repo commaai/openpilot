@@ -6,6 +6,7 @@ import ctypes
 import numpy as np
 from pathlib import Path
 from typing import Tuple, Dict
+
 from cereal import messaging
 from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType
@@ -27,10 +28,12 @@ class NavModelOutputXY(ctypes.Structure):
   _fields_ = [
     ("x", ctypes.c_float),
     ("y", ctypes.c_float)]
+
 class NavModelOutputPlan(ctypes.Structure):
   _fields_ = [
     ("mean", NavModelOutputXY*IDX_N),
     ("std", NavModelOutputXY*IDX_N)]
+
 class NavModelResult(ctypes.Structure):
   _fields_ = [
     ("plan", NavModelOutputPlan),
@@ -62,19 +65,16 @@ def get_navmodel_packet(model_output: np.ndarray, valid: bool, frame_id: int, lo
   model_result = model_output.ctypes.data_as(ctypes.POINTER(NavModelResult)).contents
   msg = messaging.new_message('navModel')
   msg.valid = valid
-  msg.navModel = {
-    'frameId': frame_id,
-    'locationMonoTime': location_ts,
-    'modelExecutionTime': execution_time,
-    'dspExecutionTime': dsp_execution_time,
-    'features': model_result.features[:],
-    'desirePrediction': model_result.desire_pred[:],
-    'position': {
-      'x': [p.x for p in model_result.plan.mean],
-      'y': [p.y for p in model_result.plan.mean],
-      'xStd': [math.exp(p.x) for p in model_result.plan.std],
-      'yStd': [math.exp(p.y) for p in model_result.plan.std]}}
-
+  msg.navModel.frameId = frame_id
+  msg.navModel.locationMonoTime = location_ts
+  msg.navModel.modelExecutionTime = execution_time
+  msg.navModel.dspExecutionTime = dsp_execution_time
+  msg.navModel.features = model_result.features[:]
+  msg.navModel.desirePrediction = model_result.desire_pred[:]
+  msg.navModel.position.x = [p.x for p in model_result.plan.mean]
+  msg.navModel.position.y = [p.y for p in model_result.plan.mean]
+  msg.navModel.position.xStd = [math.exp(p.x) for p in model_result.plan.std]
+  msg.navModel.position.yStd = [math.exp(p.y) for p in model_result.plan.std]
   return msg
 
 
