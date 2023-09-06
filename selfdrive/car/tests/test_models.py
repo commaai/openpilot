@@ -254,7 +254,7 @@ class TestCarModelBase(unittest.TestCase):
           self.assertTrue(self.safety.addr_checks_valid())
 
           # No need to check relay malfunction on disabled routes (relay closed),
-          # or before fingerprinting is done (1s of tolerance)
+          # or before fingerprinting is done (1s of tolerance to exit silent mode)
           if self.openpilot_enabled and t / 1e4 > (self.elm_frame + 100):
             self.assertFalse(self.safety.get_relay_malfunction())
           else:
