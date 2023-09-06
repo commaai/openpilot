@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+# To build sim and docs, you can run the following to mount the scons cache to the same place as in CI:
+# mkdir -p .ci_cache/scons_cache
+# sudo mount --bind /tmp/scons_cache/ .ci_cache/scons_cache
+
 if [ $1 = "base" ]; then
   export DOCKER_IMAGE=openpilot-base
   export DOCKER_FILE=Dockerfile.openpilot_base
@@ -31,7 +35,7 @@ REMOTE_SHA_TAG=$REMOTE_TAG:$COMMIT_SHA
 SCRIPT_DIR=$(dirname "$0")
 OPENPILOT_DIR=$SCRIPT_DIR/../../
 
-DOCKER_BUILDKIT=1 docker build --cache-to type=inline --cache-from type=registry,ref=$REMOTE_TAG -t $REMOTE_TAG -t $LOCAL_TAG -f $OPENPILOT_DIR/$DOCKER_FILE $OPENPILOT_DIR
+DOCKER_BUILDKIT=1 docker buildx build --load --cache-to type=inline --cache-from type=registry,ref=$REMOTE_TAG -t $REMOTE_TAG -t $LOCAL_TAG -f $OPENPILOT_DIR/$DOCKER_FILE $OPENPILOT_DIR
 
 if [[ ! -z "$PUSH_IMAGE" ]];
 then

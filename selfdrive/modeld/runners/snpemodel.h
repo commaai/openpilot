@@ -17,10 +17,6 @@
 
 #include "selfdrive/modeld/runners/runmodel.h"
 
-#ifdef USE_THNEED
-#include "selfdrive/modeld/thneed/thneed.h"
-#endif
-
 struct SNPEModelInput : public ModelInput {
   std::unique_ptr<zdl::DlSystem::IUserBuffer> snpe_buffer;
 
@@ -36,11 +32,6 @@ public:
   SNPEModel(const std::string path, float *_output, size_t _output_size, int runtime, bool use_tf8 = false, cl_context context = NULL);
   void addInput(const std::string name, float *buffer, int size);
   void execute();
-
-#ifdef USE_THNEED
-  std::unique_ptr<Thneed> thneed;
-  bool thneed_recorded = false;
-#endif
 
 private:
   std::string model_data;

@@ -1,13 +1,13 @@
 #include <zmq.h>
-#include <iostream>
-#define CATCH_CONFIG_MAIN
-#include "catch2/catch.hpp"
 
-#include "third_party/json11/json11.hpp"
+#include <iostream>
+
+#include "catch2/catch.hpp"
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "common/version.h"
 #include "system/hardware/hw.h"
+#include "third_party/json11/json11.hpp"
 
 const char *SWAGLOG_ADDR = "ipc:///tmp/logmessage";
 std::string daemon_name = "testy";

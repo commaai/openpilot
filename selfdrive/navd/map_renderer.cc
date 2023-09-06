@@ -64,6 +64,7 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
   m_map->setCoordinateZoom(QMapbox::Coordinate(0, 0), DEFAULT_ZOOM);
   m_map->setStyleJson(style.c_str());
   m_map->createRenderer();
+  ever_loaded = false;
 
   m_map->resize(fbo->size());
   m_map->setFramebufferObject(fbo->handle(), fbo->size());
@@ -72,11 +73,13 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
   QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
     // Ignore expected signals
     // https://github.com/mapbox/mapbox-gl-native/blob/cf734a2fec960025350d8de0d01ad38aeae155a0/platform/qt/include/qmapboxgl.hpp#L116
-    if (change != QMapboxGL::MapChange::MapChangeRegionWillChange &&
-        change != QMapboxGL::MapChange::MapChangeRegionDidChange &&
-        change != QMapboxGL::MapChange::MapChangeWillStartRenderingFrame &&
-        change != QMapboxGL::MapChange::MapChangeDidFinishRenderingFrameFullyRendered) {
-      LOGD("New map state: %d", change);
+    if (ever_loaded) {
+      if (change != QMapboxGL::MapChange::MapChangeRegionWillChange &&
+          change != QMapboxGL::MapChange::MapChangeRegionDidChange &&
+          change != QMapboxGL::MapChange::MapChangeWillStartRenderingFrame &&
+          change != QMapboxGL::MapChange::MapChangeDidFinishRenderingFrameFullyRendered) {
+        LOGD("New map state: %d", change);
+      }
     }
   });
 
@@ -188,6 +191,7 @@ void MapRenderer::publish(const double render_time, const bool loaded) {
 
   auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
   bool valid = loaded && (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && location.getPositionGeodetic().getValid();
+  ever_loaded = ever_loaded || loaded;
   uint64_t ts = nanos_since_boot();
   VisionBuf* buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_MAP);
   VisionIpcBufExtra extra = {

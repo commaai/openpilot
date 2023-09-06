@@ -19,7 +19,13 @@
 // echo 0x7fffffff > /sys/kernel/debug/msm_vidc/debug_level
 const int env_debug_encoder = (getenv("DEBUG_ENCODER") != NULL) ? atoi(getenv("DEBUG_ENCODER")) : 0;
 
-#define checked_ioctl(x, y, z) { int _ret = HANDLE_EINTR(ioctl(x, y, z)); if (_ret!=0) { LOGE("checked_ioctl failed %d %lx %p", x, y, z); } assert(_ret==0); }
+static void checked_ioctl(int fd, unsigned long request, void *argp) {
+  int ret = util::safe_ioctl(fd, request, argp);
+  if (ret != 0) {
+    LOGE("checked_ioctl failed with error %d (%d %lx %p)", errno, fd, request, argp);
+    assert(0);
+  }
+}
 
 static void dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=NULL, unsigned int *bytesused=NULL, unsigned int *flags=NULL, struct timeval *timestamp=NULL) {
   v4l2_plane plane = {0};
@@ -69,7 +75,7 @@ static void request_buffers(int fd, v4l2_buf_type buf_type, unsigned int count) 
 }
 
 void V4LEncoder::dequeue_handler(V4LEncoder *e) {
-  std::string dequeue_thread_name = "dq-"+std::string(e->encoder_info.filename);
+  std::string dequeue_thread_name = "dq-"+std::string(e->encoder_info.publish_name);
   util::set_thread_name(dequeue_thread_name.c_str());
 
   e->segment_num++;
@@ -99,7 +105,7 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
     }
 
     if (env_debug_encoder >= 2) {
-      printf("%20s poll %x at %.2f ms\n", e->encoder_info.filename, pfd.revents, millis_since_boot());
+      printf("%20s poll %x at %.2f ms\n", e->encoder_info.publish_name, pfd.revents, millis_since_boot());
     }
 
     int frame_id = -1;
@@ -127,7 +133,7 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
 
       if (env_debug_encoder) {
         printf("%20s got(%d) %6d bytes flags %8x idx %3d/%4d id %8d ts %ld lat %.2f ms (%lu frames free)\n",
-          e->encoder_info.filename, index, bytesused, flags, e->segment_num, idx, frame_id, ts, millis_since_boot()-(ts/1000.), e->free_buf_in.size());
+          e->encoder_info.publish_name, index, bytesused, flags, e->segment_num, idx, frame_id, ts, millis_since_boot()-(ts/1000.), e->free_buf_in.size());
       }
 
       // requeue the buffer

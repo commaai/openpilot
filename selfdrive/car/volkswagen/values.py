@@ -265,7 +265,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.SKODA_SCALA_MK1: VWCarInfo("Škoda Scala 2020-23", footnotes=[Footnote.VW_MQB_A0]),
   CAR.SKODA_SUPERB_MK3: VWCarInfo("Škoda Superb 2015-22"),
   CAR.SKODA_OCTAVIA_MK3: [
-    VWCarInfo("Škoda Octavia 2015, 2018-19"),
+    VWCarInfo("Škoda Octavia 2015-19"),
     VWCarInfo("Škoda Octavia RS 2016"),
   ],
 }
@@ -1254,6 +1254,7 @@ FW_VERSIONS = {
       b'\xf1\x8704E906027HD\xf1\x893742',
       b'\xf1\x8704E906027MH\xf1\x894786',
       b'\xf1\x8704L906021DT\xf1\x898127',
+      b'\xf1\x8704L906026BP\xf1\x897608',
       b'\xf1\x8704L906026BS\xf1\x891541',
       b'\xf1\x875G0906259C \xf1\x890002',
     ],
@@ -1263,11 +1264,13 @@ FW_VERSIONS = {
       b'\xf1\x870CW300043B \xf1\x891601',
       b'\xf1\x870CW300043P \xf1\x891605',
       b'\xf1\x870D9300041C \xf1\x894936',
+      b'\xf1\x870D9300041H \xf1\x895220',
       b'\xf1\x870D9300041J \xf1\x894902',
       b'\xf1\x870D9300041P \xf1\x894507',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x873Q0959655AC\xf1\x890200\xf1\x82\r11120011100010022212110200',
+      b'\xf1\x873Q0959655AP\xf1\x890305\xf1\x82\r11110011110011213331312131',
       b'\xf1\x873Q0959655AQ\xf1\x890200\xf1\x82\r11120011100010312212113100',
       b'\xf1\x873Q0959655AS\xf1\x890200\xf1\x82\r11120011100010022212110200',
       b'\xf1\x873Q0959655BH\xf1\x890703\xf1\x82\0163221003221002105755331052100',
@@ -1279,13 +1282,15 @@ FW_VERSIONS = {
       b'\xf1\x873Q0909144J \xf1\x895063\xf1\x82\00566A01513A1',
       b'\xf1\x875Q0909144AA\xf1\x891081\xf1\x82\00521T00403A1',
       b'\xf1\x875Q0909144AB\xf1\x891082\xf1\x82\x0521T00403A1',
-      b'\xf1\x875QD909144E \xf1\x891081\xf1\x82\x0521T00503A1',
       b'\xf1\x875Q0909144R \xf1\x891061\xf1\x82\x0516A00604A1',
+      b'\xf1\x875Q0909144T \xf1\x891072\xf1\x82\x0521T00601A1',
+      b'\xf1\x875QD909144E \xf1\x891081\xf1\x82\x0521T00503A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x875Q0907572D \xf1\x890304\xf1\x82\x0101',
       b'\xf1\x875Q0907572F \xf1\x890400\xf1\x82\00101',
       b'\xf1\x875Q0907572J \xf1\x890654',
+      b'\xf1\x875Q0907572K \xf1\x890402\xf1\x82\x0101',
       b'\xf1\x875Q0907572P \xf1\x890682',
       b'\xf1\x875Q0907572R \xf1\x890771',
     ],
@@ -1315,6 +1320,7 @@ FW_VERSIONS = {
   },
   CAR.SKODA_SUPERB_MK3: {
     (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8704E906027BT\xf1\x899042',
       b'\xf1\x8704L906026ET\xf1\x891343',
       b'\xf1\x8704L906026FP\xf1\x891196',
       b'\xf1\x8704L906026KB\xf1\x894071',
@@ -1327,6 +1333,7 @@ FW_VERSIONS = {
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x870CW300042H \xf1\x891601',
+      b'\xf1\x870CW300049Q \xf1\x890906',
       b'\xf1\x870D9300011T \xf1\x894801',
       b'\xf1\x870D9300012  \xf1\x894940',
       b'\xf1\x870D9300013A \xf1\x894905',
@@ -1350,6 +1357,7 @@ FW_VERSIONS = {
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x875Q0909143K \xf1\x892033\xf1\x820514UZ070203',
+      b'\xf1\x875Q0909143M \xf1\x892041\xf1\x820522UZ050303',
       b'\xf1\x875Q0909143M \xf1\x892041\xf1\x820522UZ070303',
       b'\xf1\x875Q0909143P \xf1\x892051\xf1\x820526UZ070505',
       b'\xf1\x875Q0910143B \xf1\x892201\xf1\x82\00563UZ060700',

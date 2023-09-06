@@ -38,7 +38,8 @@ cabana_env.Program('cabana', ['cabana.cc', cabana_lib, assets], LIBS=cabana_libs
 if GetOption('extras'):
   cabana_env.Program('tests/test_cabana', ['tests/test_runner.cc', 'tests/test_cabana.cc', cabana_lib], LIBS=[cabana_libs])
 
-generate_dbc = cabana_env.Command('generate_dbc_json',
-                                   [],
-                                   "python3 tools/cabana/dbc/generate_dbc_json.py --out tools/cabana/dbc/car_fingerprint_to_dbc.json")
+output_json_file = 'tools/cabana/dbc/car_fingerprint_to_dbc.json'
+generate_dbc = cabana_env.Command('#' + output_json_file,
+                                  ['dbc/generate_dbc_json.py'],
+                                  "python3 tools/cabana/dbc/generate_dbc_json.py --out " + output_json_file)
 cabana_env.Depends(generate_dbc, ["#common", "#selfdrive/boardd", "#opendbc", "#cereal"])

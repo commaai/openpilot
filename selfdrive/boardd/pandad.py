@@ -129,12 +129,23 @@ def main() -> NoReturn:
   count = 0
   first_run = True
   params = Params()
+  no_internal_panda_count = 0
 
   while True:
     try:
       count += 1
       cloudlog.event("pandad.flash_and_connect", count=count)
       params.remove("PandaSignatures")
+
+      # Handle missing internal panda
+      if no_internal_panda_count > 0:
+        if no_internal_panda_count == 3:
+          cloudlog.info("No pandas found, putting internal panda into DFU")
+          HARDWARE.recover_internal_panda()
+        else:
+          cloudlog.info("No pandas found, resetting internal panda")
+          HARDWARE.reset_internal_panda()
+        time.sleep(3)  # wait to come back up
 
       # Flash all Pandas in DFU mode
       dfu_serials = PandaDFU.list()
@@ -146,10 +157,7 @@ def main() -> NoReturn:
 
       panda_serials = Panda.list()
       if len(panda_serials) == 0:
-        if first_run:
-          cloudlog.info("No pandas found, resetting internal panda")
-          HARDWARE.reset_internal_panda()
-          time.sleep(2)  # wait to come back up
+        no_internal_panda_count += 1
         continue
 
       cloudlog.info(f"{len(panda_serials)} panda(s) found, connecting - {panda_serials}")
@@ -162,10 +170,10 @@ def main() -> NoReturn:
       # Ensure internal panda is present if expected
       internal_pandas = [panda for panda in pandas if panda.is_internal()]
       if HARDWARE.has_internal_panda() and len(internal_pandas) == 0:
-        cloudlog.error("Internal panda is missing, resetting")
-        HARDWARE.reset_internal_panda()
-        time.sleep(2)  # wait to come back up
+        cloudlog.error("Internal panda is missing, trying again")
+        no_internal_panda_count += 1
         continue
+      no_internal_panda_count = 0
 
       # sort pandas to have deterministic order
       pandas.sort(key=cmp_to_key(panda_sort_cmp))
