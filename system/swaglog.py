@@ -8,19 +8,15 @@ from logging.handlers import BaseRotatingHandler
 import zmq
 
 from openpilot.common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
-from openpilot.system.hardware import PC
+from system.hardware.hw import Paths
 
-if PC:
-  SWAGLOG_DIR = os.path.join(str(Path.home()), ".comma", "log")
-else:
-  SWAGLOG_DIR = "/data/log/"
 
 def SWAGLOG_IPC():
   return "/tmp/logmessage" + os.environ.get("OPENPILOT_PREFIX", "")
 
 def get_file_handler():
-  Path(SWAGLOG_DIR).mkdir(parents=True, exist_ok=True)
-  base_filename = os.path.join(SWAGLOG_DIR, "swaglog")
+  Path(Paths.swaglog_root()).mkdir(parents=True, exist_ok=True)
+  base_filename = os.path.join(Paths.swaglog_root(), "swaglog")
   handler = SwaglogRotatingFileHandler(base_filename)
   return handler
 
