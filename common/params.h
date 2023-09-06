@@ -59,6 +59,7 @@ private:
 class AsyncWriter {
 public:
   AsyncWriter() {}
+  ~AsyncWriter();
   void queue(const std::tuple<std::string, std::string, std::string> &dat);
 
 private:
