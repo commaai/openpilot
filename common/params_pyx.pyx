@@ -115,9 +115,3 @@ cdef class Params:
 
   def all_keys(self):
     return self.p.allKeys()
-
-def put_nonblocking(key, val, d=""):
-  Params(d).put_non_blocking(key, val)
-
-def put_bool_nonblocking(key, bool val, d=""):
-  Params(d).put_bool_non_blocking(key, val)
