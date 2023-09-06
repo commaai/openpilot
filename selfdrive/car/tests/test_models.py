@@ -107,11 +107,11 @@ class TestCarModelBase(unittest.TestCase):
 
       car_fw = []
       can_msgs = []
+      cls.elm_frame = None
       fingerprint = defaultdict(dict)
       experimental_long = False
       enabled_toggle = True
       dashcam_only = False
-      cls.elm_frame = None
       for msg in lr:
         if msg.which() == "can":
           can_msgs.append(msg)
