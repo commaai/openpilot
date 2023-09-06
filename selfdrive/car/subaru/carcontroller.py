@@ -103,7 +103,7 @@ class CarController:
         if pcm_cancel_cmd:
           if self.CP.carFingerprint not in HYBRID_CARS:
             bus = CanBus.alt if self.CP.carFingerprint in GLOBAL_GEN2 else CanBus.main
-            can_sends.append(subarucan.create_es_distance(self.packer, self.frame // 10, CS.es_distance_msg, bus, pcm_cancel_cmd))
+            can_sends.append(subarucan.create_es_distance(self.packer, None, CS.es_distance_msg, bus, pcm_cancel_cmd))
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
