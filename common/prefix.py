@@ -24,7 +24,10 @@ class OpenpilotPrefix:
   def __exit__(self, exc_type, exc_obj, exc_tb):
     if self.clean_dirs_on_exit:
       self.clean_dirs()
-    del os.environ['OPENPILOT_PREFIX']
+    try:
+      del os.environ['OPENPILOT_PREFIX']
+    except KeyError:
+      pass
     return False
 
   def clean_dirs(self):
