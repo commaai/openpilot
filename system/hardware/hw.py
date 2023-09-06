@@ -8,11 +8,11 @@ class Paths:
       return os.path.join(str(Path.home()), ".comma")
 
   @staticmethod
-  def log_root():
+  def log_root() -> str:
     if os.environ.get('LOG_ROOT', False):
       return os.environ['LOG_ROOT']
     elif PC:
-      return str(Paths.comma_home() / "media" / "0" / "realdata")
+      return str(Path(Paths.comma_home()) / "media" / "0" / "realdata")
     else:
       return '/data/media/0/realdata/'
 

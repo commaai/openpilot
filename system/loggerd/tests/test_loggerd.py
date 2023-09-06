@@ -16,7 +16,7 @@ from cereal.services import service_list
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
-from openpilot.system.loggerd.config import ROOT
+from openpilot.system.hardware.hw import Paths
 from openpilot.system.loggerd.xattr_cache import getxattr
 from openpilot.system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
 from openpilot.selfdrive.manager.process_config import managed_processes
@@ -33,7 +33,7 @@ CEREAL_SERVICES = [f for f in log.Event.schema.union_fields if f in service_list
 
 class TestLoggerd(unittest.TestCase):
   def _get_latest_log_dir(self):
-    log_dirs = sorted(Path(ROOT).iterdir(), key=lambda f: f.stat().st_mtime)
+    log_dirs = sorted(Path(Paths.log_root()).iterdir(), key=lambda f: f.stat().st_mtime)
     return log_dirs[-1]
 
   def _get_log_dir(self, x):
