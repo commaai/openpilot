@@ -1,10 +1,26 @@
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=openpilot/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=laika_repo/ -Werror --strict-config --strict-markers"
+addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=laika_repo/ -Werror --strict-config --strict-markers"
 python_files = "test_*.py"
 #timeout = "30"  # you get this long by default
 markers = [
   "parallel: mark tests as parallelizable (tests with no global state, so can be run in parallel)"
+]
+testpaths = [
+  "common",
+  "selfdrive/athena",
+  "selfdrive/boardd",
+  "selfdrive/car",
+  "selfdrive/controls",
+  "selfdrive/locationd",
+  "selfdrive/monitoring",
+  "selfdrive/thermald",
+  "selfdrive/test/longitudinal_maneuvers",
+  "system/hardware/tici",
+  "system/loggerd",
+  "system/tests",
+  "system/ubloxd",
+  "tools/lib/tests"
 ]
 
 [tool.mypy]
