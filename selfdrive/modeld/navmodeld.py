@@ -62,7 +62,7 @@ class ModelState:
     return self.output, t2 - t1
 
 def get_navmodel_packet(model_output: np.ndarray, valid: bool, frame_id: int, location_ts: int, execution_time: float, dsp_execution_time: float):
-  model_result = model_output.ctypes.data_as(ctypes.POINTER(NavModelResult)).contents
+  model_result = ctypes.cast(model_output.ctypes.data, ctypes.POINTER(NavModelResult)).contents
   msg = messaging.new_message('navModel')
   msg.valid = valid
   msg.navModel.frameId = frame_id
