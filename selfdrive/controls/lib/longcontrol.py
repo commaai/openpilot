@@ -72,9 +72,9 @@ class LongControl:
   def get_gas_brake(self, accel, v_ego, pitch):
     arr = np.array([accel, v_ego, pitch, 1.])
     gas, brake = np.dot(self.gas_params, arr)
-    if brake < 0:
+    if gas > self.CP.gasCommandOffset:
       brake = 0
-    if brake > 0 or gas < self.CP.gasCommandOffset:
+    else:
       gas = self.CP.gasCommandOffset
     return float(gas), float(brake)
 
