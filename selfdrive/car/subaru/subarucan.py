@@ -19,7 +19,6 @@ def create_steering_status(packer):
 def create_es_distance(packer, frame, es_distance_msg, bus, pcm_cancel_cmd, long_enabled = False, brake_cmd = False, cruise_throttle = 0):
   values = {s: es_distance_msg[s] for s in [
     "CHECKSUM",
-    "COUNTER",
     "Signal1",
     "Cruise_Fault",
     "Cruise_Throttle",
@@ -40,11 +39,9 @@ def create_es_distance(packer, frame, es_distance_msg, bus, pcm_cancel_cmd, long
     "Signal6",
   ]}
 
-  values["COUNTER"] = (values["COUNTER"] + 1) % 0x10
+  values["COUNTER"] = frame % 0x10
 
   if long_enabled:
-    values["COUNTER"] = frame % 0x10
-
     values["Cruise_Throttle"] = cruise_throttle
 
     # Do not disable openpilot on Eyesight Soft Disable, if openpilot is controlling long
