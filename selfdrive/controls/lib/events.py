@@ -576,11 +576,10 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.PERMANENT: NormalPermanentAlert("GPS Malfunction", "Likely Hardware Issue"),
   },
 
-  # When the GPS position and localizer diverge the localizer is reset to the
-  # current GPS position. This alert is thrown when the localizer is reset
-  # more often than expected.
   EventName.localizerMalfunction: {
-    # ET.PERMANENT: NormalPermanentAlert("Sensor Malfunction", "Hardware Malfunction"),
+    ET.PERMANENT: NormalPermanentAlert("Localizer Malfunction", "Inputs Invalid"),
+    ET.NO_ENTRY: NoEntryAlert("Localizer Malfunction"),
+    ET.SOFT_DISABLE: soft_disable_alert("Localizer Malfunction"),
   },
 
   # ********** events that affect controls state transitions **********

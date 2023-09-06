@@ -720,9 +720,9 @@ int Localizer::locationd_thread() {
     // 100Hz publish for notcars, 20Hz for cars
     const char* trigger_msg = sm["carParams"].getCarParams().getNotCar() ? "accelerometer" : "cameraOdometry";
     if (sm.updated(trigger_msg)) {
-      bool inputsOK = sm.allAliveAndValid();
+      bool inputsOK = sm.allAliveAndValid() && this->are_inputs_ok();
       bool gpsOK = this->is_gps_ok();
-      bool sensorsOK = sm.allAliveAndValid({"accelerometer", "gyroscope"}) && this->are_inputs_ok();
+      bool sensorsOK = sm.allAliveAndValid({"accelerometer", "gyroscope"});
 
       // Log time to first fix
       if (gpsOK && std::isnan(this->ttff) && !std::isnan(this->first_valid_log_time)) {
