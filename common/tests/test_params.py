@@ -1,21 +1,14 @@
 import os
 import threading
 import time
-import tempfile
-import shutil
 import uuid
 import unittest
 
-from openpilot.common.params import Params, ParamKeyType, UnknownKeyName, put_nonblocking, put_bool_nonblocking
+from openpilot.common.params import Params, ParamKeyType, UnknownKeyName
 
 class TestParams(unittest.TestCase):
   def setUp(self):
-    self.tmpdir = tempfile.mkdtemp()
-    print("using", self.tmpdir)
-    self.params = Params(self.tmpdir)
-
-  def tearDown(self):
-    shutil.rmtree(self.tmpdir)
+    self.params = Params()
 
   def test_params_put_and_get(self):
     self.params.put("DongleId", "cb38263377b873ee")
@@ -90,19 +83,19 @@ class TestParams(unittest.TestCase):
     self.assertFalse(self.params.get_bool("IsMetric"))
 
   def test_put_non_blocking_with_get_block(self):
-    q = Params(self.tmpdir)
+    q = Params()
     def _delayed_writer():
       time.sleep(0.1)
-      put_nonblocking("CarParams", "test", self.tmpdir)
+      Params().put_nonblocking("CarParams", "test")
     threading.Thread(target=_delayed_writer).start()
     assert q.get("CarParams") is None
     assert q.get("CarParams", True) == b"test"
 
   def test_put_bool_non_blocking_with_get_block(self):
-    q = Params(self.tmpdir)
+    q = Params()
     def _delayed_writer():
       time.sleep(0.1)
-      put_bool_nonblocking("CarParams", True, self.tmpdir)
+      Params().put_bool_nonblocking("CarParams", True)
     threading.Thread(target=_delayed_writer).start()
     assert q.get("CarParams") is None
     assert q.get("CarParams", True) == b"1"

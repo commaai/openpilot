@@ -749,6 +749,10 @@ This may take up to a minute.</source>
         <source>No custom software found at this URL.</source>
         <translation>ไม่พบซอฟต์แวร์ที่กำหนดเองที่ URL นี้</translation>
     </message>
+    <message>
+        <source>Select a language</source>
+        <translation>เลือกภาษา</translation>
+    </message>
 </context>
 <context>
     <name>SetupWidget</name>

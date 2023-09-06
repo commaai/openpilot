@@ -1,4 +1,4 @@
-#include "mmc5603nj_magn.h"
+#include "system/sensord/sensors/mmc5603nj_magn.h"
 
 #include <algorithm>
 #include <cassert>

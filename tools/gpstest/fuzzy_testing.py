@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import multiprocessing
-import rpyc # pylint: disable=import-error
+import rpyc
 from collections import defaultdict
 
 from helper import download_rinex, exec_LimeGPS_bin

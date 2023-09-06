@@ -17,12 +17,12 @@ from cereal import car
 from cereal.services import service_list
 from cereal.visionipc import VisionIpcServer, get_endpoint_name as vipc_get_endpoint_name
 from openpilot.common.params import Params
+from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.timeout import Timeout
 from openpilot.common.realtime import DT_CTRL
 from panda.python import ALTERNATIVE_EXPERIENCE
 from openpilot.selfdrive.car.car_helpers import get_car, interfaces
 from openpilot.selfdrive.manager.process_config import managed_processes
-from openpilot.selfdrive.test.process_replay.helpers import OpenpilotPrefix, DummySocket
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.selfdrive.test.process_replay.capture import ProcessOutputCapture
@@ -33,6 +33,18 @@ NUMPY_TOLERANCE = 1e-7
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
+class DummySocket:
+  def __init__(self):
+    self.data: List[bytes] = []
+
+  def receive(self, non_blocking: bool = False) -> Optional[bytes]:
+    if non_blocking:
+      return None
+
+    return self.data.pop()
+
+  def send(self, data: bytes):
+    self.data.append(data)
 
 class LauncherWithCapture:
   def __init__(self, capture: ProcessOutputCapture, launcher: Callable):
@@ -143,6 +155,7 @@ class ProcessContainer:
     self.sockets: Optional[List[messaging.SubSocket]] = None
     self.rc: Optional[ReplayContext] = None
     self.vipc_server: Optional[VisionIpcServer] = None
+    self.environ_config: Optional[Dict[str, Any]] = None
     self.capture: Optional[ProcessOutputCapture] = None
 
   @property
@@ -156,6 +169,15 @@ class ProcessContainer:
   @property
   def subs(self) -> List[str]:
     return self.cfg.subs
+
+  def _clean_env(self):
+    for k in self.environ_config.keys():
+      if k in os.environ:
+        del os.environ[k]
+
+    for k in ["PROC_NAME", "SIMULATION"]:
+      if k in os.environ:
+        del os.environ[k]
 
   def _setup_env(self, params_config: Dict[str, Any], environ_config: Dict[str, Any]):
     for k, v in environ_config.items():
@@ -176,6 +198,8 @@ class ProcessContainer:
         params.put_bool(k, v)
       else:
         params.put(k, v)
+
+    self.environ_config = environ_config
 
   def _setup_vision_ipc(self, all_msgs):
     assert len(self.cfg.vision_pubs) != 0
@@ -238,6 +262,7 @@ class ProcessContainer:
       self.process.stop()
       self.rc.close_context()
       self.prefix.clean_dirs()
+      self._clean_env()
 
   def run_step(self, msg: capnp._DynamicStructReader, frs: Optional[Dict[str, Any]]) -> List[capnp._DynamicStructReader]:
     assert self.rc and self.pm and self.sockets and self.process.proc

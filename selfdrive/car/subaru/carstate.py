@@ -4,9 +4,8 @@ from opendbc.can.can_define import CANDefine
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
-from openpilot.selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus, SubaruFlags
+from openpilot.selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, HYBRID_CARS, CanBus, SubaruFlags
 from openpilot.selfdrive.car import CanSignalRateCalculator
-from selfdrive.car.subaru.values import HYBRID_CARS
 
 
 class CarState(CarStateBase):
@@ -25,7 +24,7 @@ class CarState(CarStateBase):
 
     ret.gasPressed = ret.gas > 1e-5
     if self.car_fingerprint in PREGLOBAL_CARS:
-      ret.brakePressed = cp.vl["Brake_Pedal"]["Brake_Pedal"] > 2
+      ret.brakePressed = cp.vl["Brake_Pedal"]["Brake_Pedal"] > 0
     else:
       cp_brakes = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp
       ret.brakePressed = cp_brakes.vl["Brake_Status"]["Brake"] == 1
@@ -101,17 +100,18 @@ class CarState(CarStateBase):
       self.es_brake_msg = copy.copy(cp_es_brake.vl["ES_Brake"])
       cp_es_status = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
 
-      if self.car_fingerprint not in HYBRID_CARS: # Hybrid cars don't have es_distance, need a replacement
+      # TODO: Hybrid cars don't have ES_Distance, need a replacement
+      if self.car_fingerprint not in HYBRID_CARS:
         # 8 is known AEB, there are a few other values related to AEB we ignore
         ret.stockAeb = (cp_es_distance.vl["ES_Brake"]["AEB_Status"] == 8) and \
-                      (cp_es_distance.vl["ES_Brake"]["Brake_Pressure"] != 0)
-        self.es_distance_msg = copy.copy(cp_es_distance.vl["ES_Distance"])
+                       (cp_es_distance.vl["ES_Brake"]["Brake_Pressure"] != 0)
 
         self.es_status_msg = copy.copy(cp_es_status.vl["ES_Status"])
         self.cruise_control_msg = copy.copy(cp_cruise.vl["CruiseControl"])
 
     if self.car_fingerprint not in HYBRID_CARS:
       self.es_distance_msg = copy.copy(cp_es_distance.vl["ES_Distance"])
+
     self.es_dashstatus_msg = copy.copy(cp_cam.vl["ES_DashStatus"])
     if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
       self.es_infotainment_msg = copy.copy(cp_cam.vl["ES_Infotainment"])
@@ -145,6 +145,16 @@ class CarState(CarStateBase):
     return messages
 
   @staticmethod
+  def get_common_preglobal_body_messages():
+    messages = [
+      ("CruiseControl", 50),
+      ("Wheel_Speeds", 50),
+      ("Dash_State2", 1),
+    ]
+
+    return messages
+
+  @staticmethod
   def get_can_parser(CP):
     messages = [
       # sig_address, frequency
@@ -166,29 +176,8 @@ class CarState(CarStateBase):
     if CP.carFingerprint not in PREGLOBAL_CARS:
       if CP.carFingerprint not in GLOBAL_GEN2:
         messages += CarState.get_common_global_body_messages(CP)
-
-      messages += [
-        ("Dashlights", 10),
-        ("BodyInfo", 10),
-      ]
     else:
-      messages += [
-        ("Wheel_Speeds", 50),
-        ("Dash_State2", 1),
-      ]
-
-      if CP.carFingerprint == CAR.FORESTER_PREGLOBAL:
-        messages += [
-          ("Dashlights", 20),
-          ("BodyInfo", 1),
-          ("CruiseControl", 50),
-        ]
-
-      if CP.carFingerprint in (CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018):
-        messages += [
-          ("Dashlights", 10),
-          ("CruiseControl", 50),
-        ]
+      messages += CarState.get_common_preglobal_body_messages()
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus.main)
 

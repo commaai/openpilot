@@ -96,7 +96,7 @@ void test(char *filename) {
 void get_testframe(int index, std::unique_ptr<zdl::DlSystem::ITensor> &input) {
   FILE * pFile;
   string filepath="/data/ipt/quantize_samples/sample_input_"+std::to_string(index);
-  pFile = fopen(filepath.c_str(),"rb");
+  pFile = fopen(filepath.c_str(), "rb");
   int length = 1*6*160*320*4;
   float * frame_buffer = new float[length/4]; // 32/8
   fread(frame_buffer, length, 1, pFile);
@@ -164,7 +164,7 @@ void testrun(char* modelfile) {
   for (int i=0; i<10000; i++) {
     std::unique_ptr<zdl::DlSystem::ITensor> input;
     input = zdl::SNPE::SNPEFactory::getTensorFactory().createTensor(inputShape);
-    get_testframe(i,input);
+    get_testframe(i, input);
     snpe->execute(input.get(), outputTensorMap);
     zdl::DlSystem::StringList tensorNames = outputTensorMap.getTensorNames();
     std::for_each(tensorNames.begin(), tensorNames.end(), [&](const char* name) {

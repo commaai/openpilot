@@ -15,7 +15,7 @@ from typing import List, NoReturn, Optional
 from cereal import log
 import cereal.messaging as messaging
 from openpilot.common.conversions import Conversions as CV
-from openpilot.common.params import Params, put_nonblocking
+from openpilot.common.params import Params
 from openpilot.common.realtime import set_realtime_priority
 from openpilot.common.transformations.orientation import rot_from_euler, euler_from_rot
 from openpilot.system.swaglog import cloudlog
@@ -63,8 +63,8 @@ class Calibrator:
     self.not_car = False
 
     # Read saved calibration
-    params = Params()
-    calibration_params = params.get("CalibrationParams")
+    self.params = Params()
+    calibration_params = self.params.get("CalibrationParams")
     rpy_init = RPY_INIT
     wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT
     height = HEIGHT_INIT
@@ -162,7 +162,7 @@ class Calibrator:
 
     write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 5)
     if self.param_put and write_this_cycle:
-      put_nonblocking("CalibrationParams", self.get_msg().to_bytes())
+      self.params.put_nonblocking("CalibrationParams", self.get_msg().to_bytes())
 
   def handle_v_ego(self, v_ego: float) -> None:
     self.v_ego = v_ego
