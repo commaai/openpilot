@@ -13,7 +13,7 @@ runs:
   using: "composite"
   steps:
     - id: setup1
-      uses: ./.github/workflows/base_setup
+      uses: ./.github/workflows/setup
       continue-on-error: true
       with:
         git_lfs: ${{ inputs.git_lfs }}
@@ -23,7 +23,7 @@ runs:
       run: sleep ${{ env.SLEEP_TIME }}
     - id: setup2
       if: steps.setup1.outcome == 'failure'
-      uses: ./.github/workflows/base_setup
+      uses: ./.github/workflows/setup
       continue-on-error: true
       with:
         git_lfs: ${{ inputs.git_lfs }}
@@ -33,7 +33,7 @@ runs:
       run: sleep ${{ env.SLEEP_TIME }}
     - id: setup3
       if: steps.setup2.outcome == 'failure'
-      uses: ./.github/workflows/base_setup
+      uses: ./.github/workflows/setup
       with:
         git_lfs: ${{ inputs.git_lfs }}
         is_retried: true
