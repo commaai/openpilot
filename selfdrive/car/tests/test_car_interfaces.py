@@ -123,7 +123,10 @@ class TestCarInterfaces(unittest.TestCase):
     if not car_params.radarUnavailable and radar_interface.rcp is not None:
       cans = [messaging.new_message('can', 1).to_bytes() for _ in range(5)]
       rr = radar_interface.update(cans)
-      self.assertTrue(rr is None or len(rr.errors) > 0)
+      self.assertTrue(len(rr.errors) > 0)
+
+      rr = radar_interface.update([])
+      self.assertTrue(len(rr.errors) > 0)
 
   def test_interface_attrs(self):
     """Asserts basic behavior of interface attribute getter"""
