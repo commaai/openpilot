@@ -5,10 +5,17 @@ inputs:
     description: 'Whether or not to pull the git lfs'
     required: false
     default: 'true'
+  git_submodules:
+    description: 'Whether or not to pull the git submodules'
+    required: false
+    default: 'true'
 
 runs:
   using: "composite"
   steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: ${{ inputs.git_submodules == 'true' }}
     # do this after checkout to ensure our custom LFS config is used to pull from GitLab
     - shell: bash
       if: ${{ inputs.git_lfs == 'true' }}
