@@ -22,3 +22,7 @@ class Paths:
       return os.path.join(Paths.comma_home(), "log")
     else:
       return "/data/log/"
+
+  @staticmethod
+  def swaglog_ipc() -> str:
+    return "/tmp/logmessage" + os.environ.get("OPENPILOT_PREFIX", "")

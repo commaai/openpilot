@@ -11,9 +11,6 @@ from openpilot.common.logging_extra import SwagLogger, SwagFormatter, SwagLogFil
 from system.hardware.hw import Paths
 
 
-def SWAGLOG_IPC():
-  return "/tmp/logmessage" + os.environ.get("OPENPILOT_PREFIX", "")
-
 def get_file_handler():
   Path(Paths.swaglog_root()).mkdir(parents=True, exist_ok=True)
   base_filename = os.path.join(Paths.swaglog_root(), "swaglog")
@@ -88,7 +85,7 @@ class UnixDomainSocketHandler(logging.Handler):
     self.zctx = zmq.Context()
     self.sock = self.zctx.socket(zmq.PUSH)
     self.sock.setsockopt(zmq.LINGER, 10)
-    self.sock.connect(f"ipc://{SWAGLOG_IPC()}")
+    self.sock.connect(Paths.swaglog_ipc())
     self.pid = os.getpid()
 
   def emit(self, record):
