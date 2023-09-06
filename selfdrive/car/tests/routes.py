@@ -168,6 +168,7 @@ routes = [
   CarTestRoute("e9966711cfb04ce3|2022-01-11--07-59-43", TOYOTA.AVALON_TSS2),
   CarTestRoute("eca1080a91720a54|2022-03-17--13-32-29", TOYOTA.AVALONH_TSS2),
   CarTestRoute("6cdecc4728d4af37|2020-02-23--15-44-18", TOYOTA.CAMRY),
+  CarTestRoute("2f37c007683e85ba|2023-09-02--14-39-44", TOYOTA.CAMRY),  # openpilot longitudinal, with radar CAN filter
   CarTestRoute("3456ad0cd7281b24|2020-12-13--17-45-56", TOYOTA.CAMRY_TSS2),
   CarTestRoute("ffccc77938ddbc44|2021-01-04--16-55-41", TOYOTA.CAMRYH_TSS2),
   CarTestRoute("54034823d30962f5|2021-05-24--06-37-34", TOYOTA.CAMRYH),
