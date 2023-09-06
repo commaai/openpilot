@@ -20,7 +20,7 @@
 
 class SwaglogState : public LogState {
  public:
-  SwaglogState() : LogState("ipc:///tmp/logmessage") {}
+  SwaglogState() : LogState((std::string("ipc:///tmp/logmessage") + util::getenv("OPENPILOT_PREFIX", "")).c_str()) {}
 
   json11::Json::object ctx_j;
 

@@ -15,7 +15,7 @@ def main() -> NoReturn:
 
   ctx = zmq.Context.instance()
   sock = ctx.socket(zmq.PULL)
-  sock.bind(f"ipc://{SWAGLOG_IPC}")
+  sock.bind(f"ipc://{SWAGLOG_IPC()}")
 
   # and we publish them
   log_message_sock = messaging.pub_sock('logMessage')

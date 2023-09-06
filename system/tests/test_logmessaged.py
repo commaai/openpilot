@@ -7,7 +7,7 @@ import unittest
 import cereal.messaging as messaging
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.system.swaglog import cloudlog, ipchandler
-from openpilot.selfdrive.test.helpers import temporary_swaglog_dir, temporary_swaglog_ipc
+from openpilot.selfdrive.test.helpers import temporary_swaglog_dir
 
 
 class TestLogmessaged(unittest.TestCase):
@@ -35,7 +35,6 @@ class TestLogmessaged(unittest.TestCase):
     return list(glob.glob(os.path.join(self.temp_dir, "swaglog.*")))
 
   @temporary_swaglog_dir
-  @temporary_swaglog_ipc
   def test_simple_log(self, temp_dir):
     self._setup(temp_dir)
     msgs = [f"abc {i}" for i in range(10)]
@@ -47,7 +46,6 @@ class TestLogmessaged(unittest.TestCase):
     assert len(self._get_log_files()) >= 1
 
   @temporary_swaglog_dir
-  @temporary_swaglog_ipc
   def test_big_log(self, temp_dir):
     self._setup(temp_dir)
     n = 10

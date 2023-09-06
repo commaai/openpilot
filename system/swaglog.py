@@ -15,7 +15,8 @@ if PC:
 else:
   SWAGLOG_DIR = "/data/log/"
 
-SWAGLOG_IPC = "/tmp/logmessage"
+def SWAGLOG_IPC():
+  return "/tmp/logmessage" + os.environ.get("OPENPILOT_PREFIX", "")
 
 def get_file_handler():
   Path(SWAGLOG_DIR).mkdir(parents=True, exist_ok=True)
@@ -91,7 +92,7 @@ class UnixDomainSocketHandler(logging.Handler):
     self.zctx = zmq.Context()
     self.sock = self.zctx.socket(zmq.PUSH)
     self.sock.setsockopt(zmq.LINGER, 10)
-    self.sock.connect(f"ipc://{SWAGLOG_IPC}")
+    self.sock.connect(f"ipc://{SWAGLOG_IPC()}")
     self.pid = os.getpid()
 
   def emit(self, record):
