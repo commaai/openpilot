@@ -11,7 +11,7 @@ from typing import List, Optional, Dict, Any
 import numpy as np
 
 from cereal import log, messaging
-from openpilot.common.params import Params, put_nonblocking
+from openpilot.common.params import Params
 from laika import AstroDog
 from laika.constants import SECS_IN_HR, SECS_IN_MIN
 from laika.downloader import DownloadFailed
@@ -82,6 +82,8 @@ class Laikad:
     valid_ephem_types: Valid ephemeris types to be used by AstroDog
     save_ephemeris: If true saves and loads nav and orbit ephemeris to cache.
     """
+    self.params = Params()
+
     self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types,
                               clear_old_ephemeris=True, cache_dir=DOWNLOADS_CACHE_FOLDER)
     self.gnss_kf = GNSSKalman(GENERATED_DIR, cython=True, erratic_clock=use_qcom)
@@ -113,7 +115,7 @@ class Laikad:
     if not self.save_ephemeris:
       return
 
-    cache_bytes = Params().get(EPHEMERIS_CACHE)
+    cache_bytes = self.params.get(EPHEMERIS_CACHE)
     if not cache_bytes:
       return
 
@@ -141,7 +143,7 @@ class Laikad:
       if len(valid_navs) > 0:
         ephem_cache = ephemeris_structs.EphemerisCache(glonassEphemerides=[e.data for e in valid_navs if e.prn[0]=='R'],
                                                        gpsEphemerides=[e.data for e in valid_navs if e.prn[0]=='G'])
-        put_nonblocking(EPHEMERIS_CACHE, ephem_cache.to_bytes())
+        self.params.put_nonblocking(EPHEMERIS_CACHE, ephem_cache.to_bytes())
         cloudlog.debug("Cache saved")
       self.last_cached_t = self.last_report_time
 
