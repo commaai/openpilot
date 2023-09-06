@@ -3,7 +3,7 @@
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 cd $DIR
 
-OPENPILOT_DIR="/openpilot"
+OPENPILOT_DIR="/tmp/openpilot"
 if ! [[ -z "$MOUNT_OPENPILOT" ]]; then
   OPENPILOT_DIR="$(dirname $(dirname $DIR))"
   EXTRA_ARGS="-v $OPENPILOT_DIR:$OPENPILOT_DIR -e PYTHONPATH=$OPENPILOT_DIR:$PYTHONPATH"

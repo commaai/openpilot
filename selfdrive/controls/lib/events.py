@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import math
 import os
 from enum import IntEnum

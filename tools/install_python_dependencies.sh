@@ -13,20 +13,30 @@ fi
 if ! command -v "pyenv" > /dev/null 2>&1; then
   echo "pyenv install ..."
   curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+  PYENV_PATH_SETUP="export PATH=\$HOME/.pyenv/bin:\$HOME/.pyenv/shims:\$PATH"
+fi
 
+if [ -z "$PYENV_SHELL" ] || [ -n "$PYENV_PATH_SETUP" ]; then
+  echo "pyenvrc setup ..."
   cat <<EOF > "${HOME}/.pyenvrc"
 if [ -z "\$PYENV_ROOT" ]; then
-  export PATH=\$HOME/.pyenv/bin:\$HOME/.pyenv/shims:\$PATH
+  $PYENV_PATH_SETUP
   export PYENV_ROOT="\$HOME/.pyenv"
-  eval "\$(pyenv init --path)"
   eval "\$(pyenv init -)"
   eval "\$(pyenv virtualenv-init -)"
 fi
 EOF
-  echo -e "\nsource ~/.pyenvrc" >> $RC_FILE
 
-  # activate pyenv now
-  source $RC_FILE
+  SOURCE_PYENVRC="source ~/.pyenvrc"
+  if ! grep "^$SOURCE_PYENVRC$" $RC_FILE > /dev/null; then
+    printf "\n$SOURCE_PYENVRC\n" >> $RC_FILE
+  fi
+
+  eval "$SOURCE_PYENVRC"
+  # $(pyenv init -) produces a function which is broken on bash 3.2 which ships on macOS
+  if [ $(uname) == "Darwin" ]; then
+    unset -f pyenv
+  fi
 fi
 
 export MAKEFLAGS="-j$(nproc)"
