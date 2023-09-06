@@ -29,7 +29,7 @@ class TestLeads(unittest.TestCase):
     states = [m for m in out if m.which() == "radarState"]
     failures = [not state.valid and len(state.radarState.radarErrors) for state in states]
 
-    self.assertTrue(all(failures))
+    self.assertTrue(len(failures) != 0 and all(failures))
 
 
 if __name__ == "__main__":
