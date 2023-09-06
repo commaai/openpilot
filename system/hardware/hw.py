@@ -5,7 +5,7 @@ from pathlib import Path
 class Paths:
   @staticmethod
   def comma_home() -> str:
-      return os.path.join(str(Path.home()), ".comma")
+    return os.path.join(str(Path.home()), ".comma" + os.environ.get("OPENPILOT_PREFIX", ""))
 
   @staticmethod
   def log_root() -> str:
@@ -19,6 +19,6 @@ class Paths:
   @staticmethod
   def swaglog_root() -> str:
     if PC:
-      return os.path.join(Paths.comma_home(), "log" + os.environ.get("OPENPILOT_PREFIX", ""))
+      return os.path.join(Paths.comma_home(), "log")
     else:
       return "/data/log/"

@@ -6,6 +6,7 @@ import unittest
 
 import cereal.messaging as messaging
 from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.hardware.hw import Paths
 from openpilot.system.swaglog import cloudlog, ipchandler
 
 
@@ -30,7 +31,7 @@ class TestLogmessaged(unittest.TestCase):
     managed_processes['logmessaged'].stop(block=True)
 
   def _get_log_files(self):
-    return list(glob.glob(os.path.join(self.temp_dir, "swaglog.*")))
+    return list(glob.glob(os.path.join(Paths.swaglog_root(), "swaglog.*")))
 
   def test_simple_log(self):
     msgs = [f"abc {i}" for i in range(10)]
