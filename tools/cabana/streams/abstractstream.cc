@@ -170,7 +170,7 @@ void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std
   auto insert_pos = std::upper_bound(all_events_.cbegin(), all_events_.cend(), new_events.front(), compare);
   all_events_.insert(insert_pos, new_events.cbegin(), new_events.cend());
 
-  lastest_event_ts = all_events_.back()->mono_time;
+  lastest_event_ts = all_events_.empty() ? 0 : all_events_.back()->mono_time;
   emit eventsMerged();
 }
 
