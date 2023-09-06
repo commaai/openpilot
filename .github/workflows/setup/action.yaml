@@ -6,6 +6,9 @@ inputs:
     required: false
     default: 'true'
 
+env:
+  SLEEP_TIME: 30 # Time to sleep between retries
+
 runs:
   using: "composite"
   steps:
@@ -16,7 +19,7 @@ runs:
         git_lfs: ${{ inputs.git_lfs }}
     - if: steps.setup1.outcome == 'failure'
       shell: bash
-      run: sleep 30
+      run: sleep ${{ env.SLEEP_TIME }}
     - id: setup2
       if: steps.setup1.outcome == 'failure'
       uses: ./.github/workflows/base_setup
@@ -25,8 +28,8 @@ runs:
         git_lfs: ${{ inputs.git_lfs }}
     - if: steps.setup2.outcome == 'failure'
       shell: bash
-      run: sleep 30
-    - id: setup-3
+      run: sleep ${{ env.SLEEP_TIME }}
+    - id: setup3
       if: steps.setup2.outcome == 'failure'
       uses: ./.github/workflows/base_setup
       with:
