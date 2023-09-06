@@ -7,6 +7,7 @@ import ctypes
 import numpy as np
 from pathlib import Path
 from typing import Tuple, Dict
+
 from cereal import messaging
 from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
@@ -100,7 +101,7 @@ def get_driver_state(ds_result: DriverStateResult):
     "notReadyProb": [sigmoid(x) for x in ds_result.not_ready_prob]}
 
 def get_driverstate_packet(model_output: np.ndarray, frame_id: int, location_ts: int, execution_time: float, dsp_execution_time: float):
-  model_result = model_output.ctypes.data_as(ctypes.POINTER(DMonitoringModelResult)).contents
+  model_result = ctypes.cast(model_output.ctypes.data, ctypes.POINTER(DMonitoringModelResult)).contents
   msg = messaging.new_message('driverStateV2')
   msg.driverStateV2 = {
     'frameId': frame_id,
