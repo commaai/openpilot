@@ -25,4 +25,4 @@ class Paths:
 
   @staticmethod
   def swaglog_ipc() -> str:
-    return "/tmp/logmessage" + os.environ.get("OPENPILOT_PREFIX", "")
+    return "ipc:///tmp/logmessage" + os.environ.get("OPENPILOT_PREFIX", "")
