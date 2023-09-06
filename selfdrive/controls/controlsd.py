@@ -378,7 +378,7 @@ class Controls:
       self.events.add(EventName.vehicleModelInvalid)
     if not self.sm['lateralPlan'].mpcSolutionValid:
       self.events.add(EventName.plannerError)
-    if not (self.sm['liveParameters'].sensorValid or self.sm['liveLocationKalman'].sensorsOK or self.sm['liveLocationKalman'].inputsOK) and not NOSENSOR:
+    if not (self.sm['liveParameters'].sensorValid and self.sm['liveLocationKalman'].sensorsOK) and not NOSENSOR:
       if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive all the inputs
         self.events.add(EventName.sensorDataInvalid)
     if not self.sm['liveLocationKalman'].posenetOK:
