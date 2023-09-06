@@ -84,35 +84,32 @@ class ModelState:
     return self.output, t2 - t1
 
 
-def get_driver_state(ds_result: DriverStateResult):
-  return {
-    "faceOrientation": [x * REG_SCALE for x in ds_result.face_orientation],
-    "faceOrientationStd": [math.exp(x) for x in ds_result.face_orientation_std],
-    "facePosition": [x * REG_SCALE for x in ds_result.face_position[:2]],
-    "facePositionStd": [math.exp(x) for x in ds_result.face_position_std[:2]],
-    "faceProb": sigmoid(ds_result.face_prob),
-    "leftEyeProb": sigmoid(ds_result.left_eye_prob),
-    "rightEyeProb": sigmoid(ds_result.right_eye_prob),
-    "leftBlinkProb": sigmoid(ds_result.left_blink_prob),
-    "rightBlinkProb": sigmoid(ds_result.right_blink_prob),
-    "sunglassesProb": sigmoid(ds_result.sunglasses_prob),
-    "occludedProb": sigmoid(ds_result.occluded_prob),
-    "readyProb": [sigmoid(x) for x in ds_result.ready_prob],
-    "notReadyProb": [sigmoid(x) for x in ds_result.not_ready_prob]}
+def fill_driver_state(msg, ds_result: DriverStateResult):
+  msg.faceOrientation = [x * REG_SCALE for x in ds_result.face_orientation]
+  msg.faceOrientationStd = [math.exp(x) for x in ds_result.face_orientation_std]
+  msg.facePosition = [x * REG_SCALE for x in ds_result.face_position[:2]]
+  msg.facePositionStd = [math.exp(x) for x in ds_result.face_position_std[:2]]
+  msg.faceProb = sigmoid(ds_result.face_prob)
+  msg.leftEyeProb = sigmoid(ds_result.left_eye_prob)
+  msg.rightEyeProb = sigmoid(ds_result.right_eye_prob)
+  msg.leftBlinkProb = sigmoid(ds_result.left_blink_prob)
+  msg.rightBlinkProb = sigmoid(ds_result.right_blink_prob)
+  msg.sunglassesProb = sigmoid(ds_result.sunglasses_prob)
+  msg.occludedProb = sigmoid(ds_result.occluded_prob)
+  msg.readyProb = [sigmoid(x) for x in ds_result.ready_prob]
+  msg.notReadyProb = [sigmoid(x) for x in ds_result.not_ready_prob]
 
 def get_driverstate_packet(model_output: np.ndarray, frame_id: int, location_ts: int, execution_time: float, dsp_execution_time: float):
   model_result = ctypes.cast(model_output.ctypes.data, ctypes.POINTER(DMonitoringModelResult)).contents
   msg = messaging.new_message('driverStateV2')
-  msg.driverStateV2 = {
-    'frameId': frame_id,
-    'modelExecutionTime': execution_time,
-    'dspExecutionTime': dsp_execution_time,
-    'poorVisionProb': sigmoid(model_result.poor_vision_prob),
-    'wheelOnRightProb': sigmoid(model_result.wheel_on_right_prob),
-    'leftDriverData': get_driver_state(model_result.driver_state_lhd),
-    'rightDriverData': get_driver_state(model_result.driver_state_rhd),
-    'rawPredictions': model_output.tobytes() if SEND_RAW_PRED else b''}
-
+  msg.driverStateV2.frameId = frame_id
+  msg.driverStateV2.modelExecutionTime = execution_time
+  msg.driverStateV2.dspExecutionTime = dsp_execution_time
+  msg.driverStateV2.poorVisionProb = sigmoid(model_result.poor_vision_prob)
+  msg.driverStateV2.wheelOnRightProb = sigmoid(model_result.wheel_on_right_prob)
+  msg.driverStateV2.rawPredictions = model_output.tobytes() if SEND_RAW_PRED else b''
+  fill_driver_state(msg.driverStateV2.leftDriverData, model_result.driver_state_lhd)
+  fill_driver_state(msg.driverStateV2.rightDriverData, model_result.driver_state_rhd)
   return msg
 
 
