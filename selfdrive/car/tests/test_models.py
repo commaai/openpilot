@@ -218,7 +218,7 @@ class TestCarModelBase(unittest.TestCase):
     assert RI
 
     # Since OBD port is multiplexed to bus 1 (commonly radar bus) while fingerprinting,
-    # start parsing CAN messages after we've left ELM mode
+    # start parsing CAN messages after we've left ELM mode and can expect CAN traffic
     error_cnt = 0
     for i, msg in enumerate(self.can_msgs[self.elm_frame:]):
       rr = RI.update((msg.as_builder().to_bytes(),))
