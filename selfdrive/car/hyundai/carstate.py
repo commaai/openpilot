@@ -53,10 +53,6 @@ class CarState(CarStateBase):
     self.params = CarControllerParams(CP)
 
   def update(self, cp, cp_cam):
-    # HDA2 CAN FD and hybrid CAN FD both use common messages to block stock LFA
-    if self.CP.flags & HyundaiFlags.CANFD_HDA2:
-      self.hda2_lfa_block_msg = self.get_hda2_lfa_block_msg(cp_cam, self.CP)
-
     if self.CP.carFingerprint in CANFD_CAR:
       return self.update_canfd(cp, cp_cam)
 
@@ -161,6 +157,8 @@ class CarState(CarStateBase):
     # save the entire LKAS11 and CLU11
     self.lkas11 = copy.copy(cp_cam.vl["LKAS11"])
     self.clu11 = copy.copy(cp.vl["CLU11"])
+    if self.CP.flags & HyundaiFlags.CAN_CANFD and self.CP.flags & HyundaiFlags.CANFD_HDA2:
+      self.hda2_lfa_block_msg = self.get_hda2_lfa_block_msg(cp_cam, self.CP)
     self.steer_state = cp.vl["MDPS12"]["CF_Mdps_ToiActive"]  # 0 NOT ACTIVE, 1 ACTIVE
     self.prev_cruise_buttons = self.cruise_buttons[-1]
     self.cruise_buttons.extend(cp.vl_all["CLU11"]["CF_Clu_CruiseSwState"])
@@ -236,6 +234,9 @@ class CarState(CarStateBase):
     self.main_buttons.extend(cp.vl_all[self.cruise_btns_msg_canfd]["ADAPTIVE_CRUISE_MAIN_BTN"])
     self.buttons_counter = cp.vl[self.cruise_btns_msg_canfd]["COUNTER"]
     ret.accFaulted = cp.vl["TCS"]["ACCEnable"] != 0  # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
+
+    if self.CP.flags & HyundaiFlags.CANFD_HDA2:
+      self.hda2_lfa_block_msg = self.get_hda2_lfa_block_msg(cp_cam, self.CP)
 
     return ret
 
