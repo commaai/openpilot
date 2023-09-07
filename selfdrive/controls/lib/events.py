@@ -577,7 +577,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   },
 
   EventName.localizerMalfunction: {
-    ET.PERMANENT: NormalPermanentAlert("Localizer Malfunction", "Inputs Invalid"),
     ET.NO_ENTRY: NoEntryAlert("Localizer Malfunction"),
     ET.SOFT_DISABLE: soft_disable_alert("Localizer Malfunction"),
   },
