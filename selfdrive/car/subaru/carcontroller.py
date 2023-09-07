@@ -38,6 +38,9 @@ class CarController:
       new_steer = int(round(apply_steer))
       apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.p)
 
+      if not CC.latActive:
+        apply_steer = 0
+
       apply_steer_req = CC.latActive
 
       if self.CP.carFingerprint in STEER_RATE_LIMITED:
