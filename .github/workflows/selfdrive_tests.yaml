@@ -41,7 +41,7 @@ jobs:
     - name: Build devel
       timeout-minutes: 1
       run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
     - name: Check submodules
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       timeout-minutes: 1
@@ -74,7 +74,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot with all flags
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 12 || 30) }} # allow more time when we missed the scons cache
       run: |
@@ -196,7 +196,7 @@ jobs:
       run: |
         echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
         $DOCKER_LOGIN
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
       with:
         git-lfs: false
     - name: Build and push CL Docker image
@@ -223,7 +223,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run valgrind
@@ -241,7 +241,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: ${{ env.RUN }} "scons -j$(nproc)"
@@ -273,7 +273,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
     - name: Cache test routes
       id: dependency-cache
       uses: actions/cache@v3
@@ -313,7 +313,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
     - name: Build base Docker image
       run: eval "$BUILD"
     - name: Build Docker image
@@ -349,7 +349,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
     - name: Cache test routes
       id: dependency-cache
       uses: actions/cache@v3
@@ -378,7 +378,7 @@ jobs:
         with:
           submodules: true
           ref: ${{ github.event.pull_request.base.ref }}
-      - uses: ./.github/workflows/setup
+      - uses: ./.github/workflows/setup-with-retry
       - name: Get base car info
         run: |
           ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/debug/dump_car_info.py --path /tmp/openpilot_cache/base_car_info"
