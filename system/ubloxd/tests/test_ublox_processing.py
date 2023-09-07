@@ -34,13 +34,14 @@ def get_ublox_raw(log_reader):
 class TestUbloxProcessing(unittest.TestCase):
   NUM_TEST_PROCESS_MEAS = 10
 
-  def setUp(self):
+  @classmethod
+  def setUpClass(cls):
     lr = LogReader(get_url("4cf7a6ad03080c90|2021-09-29--13-46-36", 0))
-    self.gnss_measurements = get_gnss_measurements(lr)
+    cls.gnss_measurements = get_gnss_measurements(lr)
 
     # test gps ephemeris continuity check (drive has ephemeris issues with cutover data)
     lr = LogReader(get_url("37b6542f3211019a|2023-01-15--23-45-10", 14))
-    self.ublox_raw = get_ublox_raw(lr)
+    cls.ublox_raw = get_ublox_raw(lr)
 
   def test_read_ublox_raw(self):
     count_gps = 0
