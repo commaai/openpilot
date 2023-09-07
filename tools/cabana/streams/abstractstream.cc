@@ -27,6 +27,11 @@ AbstractStream::AbstractStream(QObject *parent) : QObject(parent) {
     emit StreamNotifier::instance()->changingStream();
     delete can;
     can = this;
+    // TODO: add method stop() to class AbstractStream
+    QObject::connect(qApp, &QApplication::aboutToQuit, can, []() {
+      qDebug() << "stopping stream thread";
+      can->pause(true);
+    });
     emit StreamNotifier::instance()->streamStarted();
   });
 }
