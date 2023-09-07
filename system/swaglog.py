@@ -15,6 +15,8 @@ if PC:
 else:
   SWAGLOG_DIR = "/data/log/"
 
+SWAGLOG_IPC = "/tmp/logmessage"
+
 def get_file_handler():
   Path(SWAGLOG_DIR).mkdir(parents=True, exist_ok=True)
   base_filename = os.path.join(SWAGLOG_DIR, "swaglog")
@@ -89,7 +91,7 @@ class UnixDomainSocketHandler(logging.Handler):
     self.zctx = zmq.Context()
     self.sock = self.zctx.socket(zmq.PUSH)
     self.sock.setsockopt(zmq.LINGER, 10)
-    self.sock.connect("ipc:///tmp/logmessage")
+    self.sock.connect(f"ipc://{SWAGLOG_IPC}")
     self.pid = os.getpid()
 
   def emit(self, record):
