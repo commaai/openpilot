@@ -25,12 +25,9 @@ def pm_patch(name, value, constant=False):
 
 
 @patch("time.monotonic", new=mock_time_monotonic)
-@patch("openpilot.selfdrive.thermald.power_monitoring.put_nonblocking", new=lambda x, y: Params().put(x, y))
 class TestPowerMonitoring(unittest.TestCase):
   def setUp(self):
     self.params = Params()
-    self.params.remove("CarBatteryCapacity")
-    self.params.remove("DisablePowerDown")
 
   # Test to see that it doesn't do anything when pandaState is None
   def test_pandaState_present(self):

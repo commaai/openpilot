@@ -209,6 +209,7 @@ system/hardware/__init__.py
 system/hardware/base.h
 system/hardware/base.py
 system/hardware/hw.h
+system/hardware/hw.py
 system/hardware/tici/__init__.py
 system/hardware/tici/hardware.h
 system/hardware/tici/hardware.py
