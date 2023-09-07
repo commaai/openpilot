@@ -251,7 +251,6 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
     for (auto btn : findChildren<ButtonControl *>()) {
       btn->setEnabled(offroad);
-      confirm_timer = offroad ? 0 : 3;
     }
   });
 
@@ -308,7 +307,7 @@ void DevicePanel::updateCalibDescription() {
 
 void DevicePanel::reboot() {
   if (!uiState()->engaged()) {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to reboot?"), tr("Reboot"), this, confirm_timer)) {
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to reboot?"), tr("Reboot"), this, 3)) {
       // Check engaged again in case it changed while the dialog was open
       if (!uiState()->engaged()) {
         params.putBool("DoReboot", true);

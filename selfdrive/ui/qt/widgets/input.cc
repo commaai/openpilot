@@ -2,6 +2,7 @@
 
 #include <QPushButton>
 #include <QButtonGroup>
+#include <QTimer>
 
 #include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/util.h"
@@ -188,13 +189,13 @@ void InputDialog::setMinLength(int length) {
 // ConfirmationDialog
 
 ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString &confirm_text, const QString &cancel_text,
-                                       const bool rich, QWidget *parent, const int confirm_timer) : DialogBase(parent) {
+                                       const bool rich, QWidget *parent, int _count_down) : DialogBase(parent) {
   QFrame *container = new QFrame(this);
   container->setStyleSheet(R"(
     QFrame { background-color: #1B1B1B; color: #C9C9C9; }
-    #confirm_btn { background-color: #465BEA; }
+    #confirm_btn:enabled { background-color: #465BEA; color: #C9C9C9;}
+    #confirm_btn:disabled { color: gray; }
     #confirm_btn:pressed { background-color: #3049F4; }
-    #confirm_btn:disabled { background-color: #1b245e; color: #3b3838; }
   )");
   QVBoxLayout *main_layout = new QVBoxLayout(container);
   main_layout->setContentsMargins(32, rich ? 32 : 120, 32, 32);
@@ -217,21 +218,21 @@ ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString
   }
 
   if (confirm_text.length()) {
-    confirm_btn = new QPushButton(confirm_text);
+    QPushButton* confirm_btn = new QPushButton(confirm_text);
     confirm_btn->setObjectName("confirm_btn");
     btn_layout->addWidget(confirm_btn);
-    this->confirm_text = confirm_text;
-    this->confirm_timer = confirm_timer;
-
-    if (confirm_timer != 0) {
-      confirm_btn->setEnabled(false);
-      confirm_btn->setText(confirm_text + " (" + QString::number(confirm_timer) + ")");
-      timer = new QTimer(this);
-      connect(timer, &QTimer::timeout, this, &ConfirmationDialog::confirmTimer);
+    QObject::connect(confirm_btn, &QPushButton::clicked, this, &ConfirmationDialog::accept);
+    countdown = _count_down != 0 ? _count_down : 0;
+    if (countdown > 0) {
+      QTimer *timer = new QTimer(this);
+      auto countdown_lambda = [=]() {
+        confirm_btn->setEnabled(countdown == 0);
+        confirm_btn->setText(countdown == 0 ? confirm_text : QString("%1 (%2)").arg(confirm_text).arg(countdown));
+        if (countdown-- == 0) timer->stop();
+      };
+      timer->callOnTimeout(countdown_lambda);
       timer->start(1000);
-      QObject::connect(confirm_btn, &QPushButton::clicked, this, &ConfirmationDialog::confirmUpdate);
-    } else {
-      QObject::connect(confirm_btn, &QPushButton::clicked, this, &ConfirmationDialog::accept);
+      countdown_lambda();
     }
   }
 
@@ -241,27 +242,13 @@ ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString
   outer_layout->addWidget(container);
 }
 
-void ConfirmationDialog::confirmTimer() {
-  if (confirm_timer > 0) {
-    confirm_timer--;
-    confirm_btn->setText(confirm_timer > 0 ? confirm_text + " (" + QString::number(confirm_timer) + ")" : confirm_text);
-    confirm_btn->setEnabled(confirm_timer <= 0);
-  }
-}
-
-void ConfirmationDialog::confirmUpdate() {
-  if (confirm_timer <= 0) {
-    accept();
-  }
-}
-
 bool ConfirmationDialog::alert(const QString &prompt_text, QWidget *parent) {
   ConfirmationDialog d = ConfirmationDialog(prompt_text, tr("Ok"), "", false, parent);
   return d.exec();
 }
 
-bool ConfirmationDialog::confirm(const QString &prompt_text, const QString &confirm_text, QWidget *parent, const int confirm_timer) {
-  ConfirmationDialog d = ConfirmationDialog(prompt_text, confirm_text, tr("Cancel"), false, parent, confirm_timer);
+bool ConfirmationDialog::confirm(const QString &prompt_text, const QString &confirm_text, QWidget *parent, int countdown) {
+  ConfirmationDialog d = ConfirmationDialog(prompt_text, confirm_text, tr("Cancel"), false, parent, countdown);
   return d.exec();
 }
 
