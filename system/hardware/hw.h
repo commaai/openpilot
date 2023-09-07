@@ -45,6 +45,6 @@ namespace Path {
     if (const char *env = getenv("COMMA_CACHE")) {
       return env;
     }
-    return "/tmp/comma_download_cache" + Path::openpilot_prefix();
+    return "/tmp/comma_download_cache" + Path::openpilot_prefix() + "/";
   }
 }  // namespace Path
