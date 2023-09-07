@@ -68,37 +68,22 @@ jobs:
         ${{ env.RUN }} "unset PYTHONWARNINGS && pre-commit run --all"
 
   build:
-    name: build all (x86_64)
-    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        arch: ${{ (github.repository == 'commaai/openpilot') && [x86_64, aarch64] || [x86_64] }}
+    runs-on: ${{ (matrix.arch == 'aarch64') && 'buildjet-4vcpu-ubuntu-2204-arm' || 'ubuntu-20.04' }}
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Setup architecture
       run: |
-        echo "TARGET_ARCHITECTURE=x86_64" >> "$GITHUB_ENV"
+        echo "TARGET_ARCHITECTURE=${{ matrix.arch }}" >> "$GITHUB_ENV"
     - uses: ./.github/workflows/setup-with-retry
     - uses: ./.github/workflows/build
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 15 || 30) }} # allow more time when we missed the scons cache
       with:
-        cache_key_prefix: scons
-
-  build_arm64:
-    name: build all (arm64)
-    runs-on: ${{ (github.repository == 'commaai/openpilot') && 'buildjet-4vcpu-ubuntu-2204-arm' || 'ubuntu-20.04' }}
-    if: github.repository == 'commaai/openpilot'
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: true
-    - name: Setup architecture
-      run: |
-        echo "TARGET_ARCHITECTURE=aarch64" >> "$GITHUB_ENV"
-    - uses: ./.github/workflows/setup-with-retry
-    - uses: ./.github/workflows/build
-      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 15 || 30) }} # allow more time when we missed the scons cache
-      with:
-        cache_key_prefix: scons_arm64
+        cache_key_prefix: ${{ (matrix.arch == 'aarch64') && 'scons_aarch64' || 'scons' }}
 
   build_mac:
     name: build macos
