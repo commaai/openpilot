@@ -34,9 +34,7 @@ def run_cruise_simulation(cruise, e2e, t_end=20.):
 
 @parameterized_class(("e2e", "personality", "speed"), itertools.product(
                       [True, False], # e2e
-                      [log.LongitudinalPersonality.relaxed, # personality
-                       log.LongitudinalPersonality.standard,
-                       log.LongitudinalPersonality.aggressive],
+                      log.LongitudinalPersonality.schema.enumerants, # personality
                       [5,35])) # speed
 class TestCruiseSpeed(unittest.TestCase):
   def test_cruise_speed(self):
