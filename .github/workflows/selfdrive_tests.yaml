@@ -175,8 +175,10 @@ jobs:
         sudo rm -rf /Applications/ArmGNUToolchain/*/*/.fseventsd
 
   docker_push:
-    name: docker push (x86_64)
-    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        arch: ${{ fromJson( (github.repository == 'commaai/openpilot') && '["x86_64", "aarch64"]' || '["x86_64"]' ) }}
+    runs-on: ${{ (matrix.arch == 'aarch64') && 'buildjet-4vcpu-ubuntu-2204-arm' || 'ubuntu-20.04' }}
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v3
@@ -185,37 +187,21 @@ jobs:
     - name: Setup to push to repo
       run: |
         echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
-        echo "TARGET_ARCHITECTURE=x86_64" >> "$GITHUB_ENV"
+        echo "TARGET_ARCHITECTURE=${{ matrix.arch }}" >> "$GITHUB_ENV"
         $DOCKER_LOGIN
     - uses: ./.github/workflows/setup-with-retry
       with:
         git-lfs: false
     - name: Build and push CL Docker image
+      if: matrix.arch == 'x86_64'
       run: |
         eval "$BUILD_CL"
-
-  docker_push_arm64:
-    name: docker push (arm64)
-    runs-on: ${{ (github.repository == 'commaai/openpilot') && 'buildjet-4vcpu-ubuntu-2204-arm' || 'ubuntu-20.04' }}
-    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: true
-    - name: Setup to push to repo
-      run: |
-        echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
-        echo "TARGET_ARCHITECTURE=aarch64" >> "$GITHUB_ENV"
-        $DOCKER_LOGIN
-    - name: Build and push base Docker image
-      run: | 
-        eval "$BUILD"
 
   docker_push_multiarch:
     name: docker push multiarch tag
     runs-on: ubuntu-20.04
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
-    needs: [docker_push, docker_push_arm64]
+    needs: [docker_push]
     steps:
     - uses: actions/checkout@v3
       with:
