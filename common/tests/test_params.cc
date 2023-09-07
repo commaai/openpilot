@@ -11,7 +11,7 @@ TEST_CASE("Params/asyncWriter") {
   {
     AsyncWriter async_writer;
     for (const auto &name : param_names) {
-      async_writer.queue({param_path, name, "1"});
+      async_writer.queue({params.params_path, params.params_prefix, name, "1"});
       // param is empty
       REQUIRE(params.get(name).empty());
     }

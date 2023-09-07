@@ -214,8 +214,14 @@ std::unordered_map<std::string, uint32_t> keys = {
 
 
 Params::Params(const std::string &path) {
-  prefix = "/" + util::getenv("OPENPILOT_PREFIX", "d");
-  params_path = ensure_params_path(prefix, path);
+  params_prefix = "/" + util::getenv("OPENPILOT_PREFIX", "d");
+  params_path = ensure_params_path(params_prefix, path);
+}
+
+// used by AsyncWriter
+Params::Params(const std::string &path, const std::string &prefix) {
+  params_prefix = prefix;
+  params_path = ensure_params_path(params_prefix, path);
 }
 
 std::vector<std::string> Params::allKeys() const {
@@ -331,9 +337,8 @@ void Params::clearAll(ParamKeyType key_type) {
 
 void Params::putNonBlocking(const std::string &key, const std::string &val) {
   static AsyncWriter async_writer;
-  async_writer.queue({params_path, key, val});
+  async_writer.queue({params_path, params_prefix, key, val});
 }
-
 
 // AsyncWriter
 
@@ -343,8 +348,8 @@ AsyncWriter::~AsyncWriter() {
   }
 }
 
-void AsyncWriter::queue(const std::tuple<std::string, std::string, std::string> &dat) {
-  q.push(dat);
+void AsyncWriter::queue(const AsyncWriter::Param &p) {
+  q.push(p);
   // start thread on demand
   if (!future.valid() || future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
     future = std::async(std::launch::async, &AsyncWriter::write, this);
@@ -352,9 +357,8 @@ void AsyncWriter::queue(const std::tuple<std::string, std::string, std::string> 
 }
 
 void AsyncWriter::write() {
-  std::tuple<std::string, std::string, std::string> dat;
-  while (q.try_pop(dat, 0)) {
-    auto &[path, key, value] = dat;
-    Params(path).put(key, value);
+  AsyncWriter::Param p;
+  while (q.try_pop(p, 0)) {
+    Params(p.param_path, p.param_prefix).put(p.key, p.value);
   }
 }

@@ -20,11 +20,12 @@ enum ParamKeyType {
 class Params {
 public:
   Params(const std::string &path = {});
+  Params(const std::string &path, const std::string &prefix);
   std::vector<std::string> allKeys() const;
   bool checkKey(const std::string &key);
   ParamKeyType getKeyType(const std::string &key);
   inline std::string getParamPath(const std::string &key = {}) {
-    return params_path + prefix + (key.empty() ? "" : "/" + key);
+    return params_path + params_prefix + (key.empty() ? "" : "/" + key);
   }
 
   // Delete a value
@@ -53,18 +54,21 @@ public:
 
 private:
   std::string params_path;
-  std::string prefix;
+  std::string params_prefix;
 };
 
 class AsyncWriter {
 public:
   AsyncWriter() {}
   ~AsyncWriter();
-  void queue(const std::tuple<std::string, std::string, std::string> &dat);
+  struct Param {
+    std::string param_path, param_prefix, key, value;
+  };
+  void queue(const AsyncWriter::Param &param);
 
 private:
   void write();
 
   std::future<void> future;
-  SafeQueue<std::tuple<std::string, std::string, std::string>> q;
+  SafeQueue<AsyncWriter::Param> q;
 };
