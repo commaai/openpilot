@@ -2,9 +2,8 @@
 
 #include <QColorDialog>
 #include <QListWidget>
-#include <QListWidgetItem>
 
-#include "tools/cabana/dbc/dbc.h"
+#include "tools/cabana/dbc/dbcmanager.h"
 
 class SignalColorDlg : public QDialog {
 public:
@@ -12,14 +11,19 @@ public:
   void addSignal(const MessageId &msg_id, const cabana::Signal *sig);
 
 private:
-  struct ListItem : public QListWidgetItem {
-    ListItem(const MessageId &id, const cabana::Signal *s, QListWidget *parent)
-        : msg_id(id), sig(s), color(s->color), QListWidgetItem(parent) {}
+  struct Item : public QListWidgetItem {
+    Item(const MessageId &id, const cabana::Signal *s, QListWidget *parent)
+        : msg_id(id), QListWidgetItem(s->name, parent) { setColor(s->color); }
+    void setColor(const QColor &c) {
+      color = c;
+      QPixmap pm(12, 12);
+      pm.fill(color);
+      setIcon(pm);
+    }
     MessageId msg_id;
-    const cabana::Signal *sig;
     QColor color;
   };
 
-  QListWidget *signal_list;
+  QListWidget *list;
   QColorDialog *color_picker;
 };
