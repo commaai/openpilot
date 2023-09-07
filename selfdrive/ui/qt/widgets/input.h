@@ -4,7 +4,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QString>
-#include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -60,9 +59,9 @@ public:
   static bool alert(const QString &prompt_text, QWidget *parent);
   static bool confirm(const QString &prompt_text, const QString &confirm_text, QWidget *parent, int countdown = 0);
   static bool rich(const QString &prompt_text, QWidget *parent);
+
 private:
   int countdown = 0;
-
 };
 
 class MultiOptionDialog : public DialogBase {
