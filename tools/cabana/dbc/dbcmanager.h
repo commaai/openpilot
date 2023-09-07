@@ -26,6 +26,7 @@ public:
 
   void addSignal(const MessageId &id, const cabana::Signal &sig);
   void updateSignal(const MessageId &id, const QString &sig_name, const cabana::Signal &sig);
+  void updateSignalColor(const MessageId &id, const QString &sig_name, const QColor &color);
   void removeSignal(const MessageId &id, const QString &sig_name);
 
   void updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &comment);

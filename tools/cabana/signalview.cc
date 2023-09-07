@@ -15,6 +15,7 @@
 #include <QVBoxLayout>
 
 #include "tools/cabana/commands.h"
+#include "tools/cabana/common/colordlg.h"
 
 // SignalModel
 
@@ -457,6 +458,10 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   sparkline_range_slider->setValue(settings.sparkline_range);
   sparkline_range_slider->setToolTip(tr("Sparkline time range"));
 
+  auto choose_color_btn = new ToolButton("palette", tr("Choose color for signal"));
+  choose_color_btn->setIconSize({12, 12});
+  hl->addWidget(choose_color_btn);
+
   auto collapse_btn = new ToolButton("dash-square", tr("Collapse All"));
   collapse_btn->setIconSize({12, 12});
   hl->addWidget(collapse_btn);
@@ -487,6 +492,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
 
   QObject::connect(filter_edit, &QLineEdit::textEdited, model, &SignalModel::setFilter);
   QObject::connect(sparkline_range_slider, &QSlider::valueChanged, this, &SignalView::setSparklineRange);
+  QObject::connect(choose_color_btn, &QPushButton::clicked, this, &SignalView::chooseColorForSignals);
   QObject::connect(collapse_btn, &QPushButton::clicked, tree, &QTreeView::collapseAll);
   QObject::connect(tree, &QAbstractItemView::clicked, this, &SignalView::rowClicked);
   QObject::connect(tree, &QTreeView::viewportEntered, [this]() { emit highlight(nullptr); });
@@ -653,6 +659,14 @@ void SignalView::updateState(const QHash<MessageId, CanData> *msgs) {
   for (int i = 0; i < model->rowCount(); ++i) {
     emit model->dataChanged(model->index(i, 1), model->index(i, 1), {Qt::DisplayRole});
   }
+}
+
+void SignalView::chooseColorForSignals() {
+  SignalColorDlg dlg(this);
+  for (auto item : model->root->children) {
+    dlg.addSignal(model->msg_id, item->sig);
+  }
+  dlg.exec();
 }
 
 void SignalView::resizeEvent(QResizeEvent* event) {

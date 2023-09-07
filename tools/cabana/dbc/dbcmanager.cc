@@ -72,6 +72,15 @@ void DBCManager::updateSignal(const MessageId &id, const QString &sig_name, cons
   }
 }
 
+void DBCManager::updateSignalColor(const MessageId &id, const QString &sig_name, const QColor &color) {
+   if (auto m = msg(id)) {
+    if (auto s = m->sig(sig_name)) {
+      s->color = color;
+      emit signalUpdated(s);
+    }
+   }
+}
+
 void DBCManager::removeSignal(const MessageId &id, const QString &sig_name) {
   if (auto m = msg(id)) {
     if (auto s = m->sig(sig_name)) {

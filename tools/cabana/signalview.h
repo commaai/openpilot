@@ -117,6 +117,7 @@ private:
   void setSparklineRange(int value);
   void handleSignalAdded(MessageId id, const cabana::Signal *sig);
   void handleSignalUpdated(const cabana::Signal *sig);
+  void chooseColorForSignals();
   void updateState(const QHash<MessageId, CanData> *msgs = nullptr);
 
   struct TreeView : public QTreeView {

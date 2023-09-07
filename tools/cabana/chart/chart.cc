@@ -20,6 +20,7 @@
 #include <QWindow>
 
 #include "tools/cabana/chart/chartswidget.h"
+#include "tools/cabana/common/colordlg.h"
 
 // ChartAxisElement's padding is 4 (https://codebrowser.dev/qt5/qtcharts/src/charts/axis/chartaxiselement_p.h.html)
 const int AXIS_X_TOP_MARGIN = 4;
@@ -79,6 +80,7 @@ void ChartView::createToolButtons() {
   }
   menu->addSeparator();
   menu->addAction(tr("Manage Signals"), this, &ChartView::manageSignals);
+  menu->addAction(tr("Choose Colors"), this, &ChartView::chooseColorForSignals);
   split_chart_act = menu->addAction(tr("Split Chart"), [this]() { charts_widget->splitChart(this); });
 
   QToolButton *manage_btn = new ToolButton("list", "");
@@ -175,6 +177,14 @@ void ChartView::manageSignals() {
       return std::none_of(items.cbegin(), items.cend(), [&](auto &it) { return s.msg_id == it->msg_id && s.sig == it->sig; });
     });
   }
+}
+
+void ChartView::chooseColorForSignals() {
+  SignalColorDlg dlg(this);
+  for (auto &s : sigs) {
+    dlg.addSignal(s.msg_id, s.sig);
+  }
+  dlg.exec();
 }
 
 void ChartView::resizeEvent(QResizeEvent *event) {
