@@ -708,5 +708,6 @@ GLOBAL_GEN2 = {CAR.OUTBACK, CAR.LEGACY, CAR.OUTBACK_2023, CAR.ASCENT_2023}
 PREGLOBAL_CARS = {CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018}
 HYBRID_CARS = {CAR.CROSSTREK_HYBRID, CAR.FORESTER_HYBRID}
 
-# cars that appear to be steering angle rate limited. appears to be all cars that started production after 2020
+# Cars that temporarily fault when steering angle rate is greater than some threshold.
+# Appears to be all cars that started production after 2020
 STEER_RATE_LIMITED = GLOBAL_GEN2 | {CAR.IMPREZA_2020}
