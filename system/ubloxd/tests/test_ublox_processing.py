@@ -8,9 +8,9 @@ from laika.helpers import ConstellationId
 from laika.raw_gnss import correct_measurements, process_measurements, read_raw_ublox
 from laika.opt import calc_pos_fix
 from openpilot.selfdrive.test.openpilotci import get_url
+from openpilot.system.hardware.hw import Paths
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.selfdrive.test.helpers import with_processes
-from openpilot.selfdrive.test.helpers import temporary_dir
 import cereal.messaging as messaging
 
 def get_gnss_measurements(log_reader):
@@ -34,14 +34,13 @@ def get_ublox_raw(log_reader):
 class TestUbloxProcessing(unittest.TestCase):
   NUM_TEST_PROCESS_MEAS = 10
 
-  @classmethod
-  def setUpClass(cls):
+  def setUp(self):
     lr = LogReader(get_url("4cf7a6ad03080c90|2021-09-29--13-46-36", 0))
-    cls.gnss_measurements = get_gnss_measurements(lr)
+    self.gnss_measurements = get_gnss_measurements(lr)
 
     # test gps ephemeris continuity check (drive has ephemeris issues with cutover data)
     lr = LogReader(get_url("37b6542f3211019a|2023-01-15--23-45-10", 14))
-    cls.ublox_raw = get_ublox_raw(lr)
+    self.ublox_raw = get_ublox_raw(lr)
 
   def test_read_ublox_raw(self):
     count_gps = 0
@@ -56,9 +55,8 @@ class TestUbloxProcessing(unittest.TestCase):
     self.assertEqual(count_gps, 5036)
     self.assertEqual(count_glonass, 3651)
 
-  @temporary_dir
-  def test_get_fix(self, temp_dir):
-    dog = AstroDog(cache_dir=temp_dir)
+  def test_get_fix(self):
+    dog = AstroDog(cache_dir=Paths.download_cache_root())
     position_fix_found = 0
     count_processed_measurements = 0
     count_corrected_measurements = 0
