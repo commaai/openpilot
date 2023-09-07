@@ -58,16 +58,9 @@ class RadarInterface(RadarInterfaceBase):
       self.updated_values.clear()
     else:
       radar_data.points = []
-    radar_data.errors = self._radar_errors()
+    radar_data.errors = self._get_errors()
 
     return radar_data
-
-  def _radar_errors(self):
-    errors = []
-    if not self.rcp.can_valid:
-      errors.append("canError")
-
-    return errors
 
   def _update_radar_points(self, updated_values):
     for ii in sorted(updated_values):
@@ -91,9 +84,8 @@ class RadarInterface(RadarInterfaceBase):
         else:
           self.valid_cnt[ii] = max(self.valid_cnt[ii] - 1, 0)
 
-        n_b_scores = len(radar_b_msgs['SCORE'])
-        if n_b_scores > 0:
-          score_index = min(index, n_b_scores - 1)
+        if len(radar_b_msgs['SCORE']) > 0:
+          score_index = min(index, len(radar_b_msgs['SCORE']) - 1)
           score = radar_b_msgs['SCORE'][score_index]
         else:
           score = None

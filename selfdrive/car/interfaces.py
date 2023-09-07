@@ -314,6 +314,13 @@ class RadarInterfaceBase(ABC):
   def update(self, can_strings):
     return car.RadarData.new_message()
 
+  def _get_errors(self) -> List[str]:
+    errors = []
+    if not self.rcp.can_valid:
+      errors.append("canError")
+
+    return errors
+
 
 class CarStateBase(ABC):
   def __init__(self, CP):

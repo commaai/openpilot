@@ -41,16 +41,9 @@ class RadarInterface(RadarInterfaceBase):
       self.updated_messages.clear()
     else:
       radar_data.points = []
-    radar_data.errors = self._radar_errors()
+    radar_data.errors = self._get_errors()
 
     return radar_data
-
-  def _radar_errors(self):
-    errors = []
-    if not self.rcp.can_valid:
-      errors.append("canError")
-
-    return errors
 
   def _update_radar_points(self):
     for addr in range(RADAR_START_ADDR, RADAR_START_ADDR + RADAR_MSG_COUNT):

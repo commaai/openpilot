@@ -48,15 +48,13 @@ class RadarInterface(RadarInterfaceBase):
       self.updated_messages.clear()
     else:
       ret.points = []
-    ret.errors = self._radar_errors()
+    ret.errors = self._get_errors()
 
     return ret
 
-  def _radar_errors(self):
-    errors = []
+  def _get_errors(self):
+    errors = super()._get_errors()
     sgu_info = self.rcp.vl['TeslaRadarSguInfo']
-    if not self.rcp.can_valid:
-      errors.append('canError')
     if sgu_info['RADC_HWFail'] or sgu_info['RADC_SGUFail'] or sgu_info['RADC_SensorDirty']:
       errors.append('fault')
 

@@ -58,16 +58,9 @@ class RadarInterface(RadarInterfaceBase):
       self.updated_messages.clear()
     else:
       ret.points = []
-      ret.errors = self._radar_errors()
+    ret.errors = self._get_errors()
 
     return ret
-
-  def _radar_errors(self):
-    errors = []
-    if not self.rcp.can_valid:
-      errors.append("canError")
-
-    return errors
 
   def _update_radar_points(self, updated_values):
     for ii in updated_values:  # ii should be the message ID as a number

@@ -57,19 +57,12 @@ class RadarInterface(RadarInterfaceBase):
 
     ret = car.RadarData.new_message()
     ret.parseCompleted = self.trigger_msg in self.updated_messages
-    ret.errors = self._radar_errors()
+    ret.errors = self._get_errors()
     if ret.parseCompleted:
       ret.points = self._update_radar_points()
       self.updated_messages.clear()
 
     return ret
-
-  def _radar_errors(self):
-    errors = []
-    if not self.rcp.can_valid:
-      errors.append("canError")
-
-    return errors
 
   def _update_radar_points(self):
     if self.radar == RADAR.DELPHI_ESR:

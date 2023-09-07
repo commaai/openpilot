@@ -52,20 +52,18 @@ class RadarInterface(RadarInterfaceBase):
     ret = car.RadarData.new_message()
     ret.parseCompleted = self.trigger_msg in self.updated_messages
     if ret.parseCompleted:
-      ret.points, fault = self._update_radar_points(self.updated_messages)
+      ret.points, self.radar_fault = self._update_radar_points(self.updated_messages)
       self.updated_messages.clear()
     else:
-      ret.points, fault = [], False
-    ret.errors = self._radar_errors(fault)
+      ret.points, self.radar_fault = [], False
+    ret.errors = self._get_errors()
 
     self.updated_messages.clear()
     return ret
 
-  def _radar_errors(self, radar_fault):
-    errors = []
-    if not self.rcp.can_valid:
-      errors.append("canError")
-    if radar_fault:
+  def _get_errors(self):
+    errors = super()._get_errors()
+    if self.radar_fault:
       errors.append("fault")
 
     return errors

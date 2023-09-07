@@ -45,21 +45,19 @@ class RadarInterface(RadarInterfaceBase):
     radar_data = car.RadarData.new_message()
     radar_data.parseCompleted = self.trigger_msg in self.updated_values
     if radar_data.parseCompleted:
-      radar_data.points, fault, wrong_config = self._update_radar_points(self.updated_values)
+      radar_data.points, self.radar_fault, self.radar_wrong_config = self._update_radar_points(self.updated_values)
       self.updated_values.clear()
     else:
-      radar_data.points, fault, wrong_config = [], False, False,
-    radar_data.errors = self._radar_errors(fault, wrong_config)
+      radar_data.points, self.radar_fault, self.radar_wrong_config = [], False, False,
+    radar_data.errors = self._get_errors()
 
     return radar_data
 
-  def _radar_errors(self, radar_fault, radar_wrong_config):
-    errors = []
-    if not self.rcp.can_valid:
-      errors.append("canError")
-    if radar_fault:
+  def _get_errors(self):
+    errors = super()._get_errors()
+    if self.radar_fault:
       errors.append("fault")
-    if radar_wrong_config:
+    if self.radar_wrong_config:
       errors.append("wrongConfig")
 
     return errors
