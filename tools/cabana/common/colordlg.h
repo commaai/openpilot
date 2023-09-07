@@ -1,15 +1,12 @@
 #pragma once
 
 #include <QColorDialog>
-#include <QDialog>
 #include <QListWidget>
 #include <QListWidgetItem>
 
 #include "tools/cabana/dbc/dbc.h"
 
 class SignalColorDlg : public QDialog {
-  Q_OBJECT
-
 public:
   explicit SignalColorDlg(QWidget *parent);
   void addSignal(const MessageId &msg_id, const cabana::Signal *sig);
