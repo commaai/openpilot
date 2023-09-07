@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 if [ $1 = "base" ]; then
   export DOCKER_IMAGE=openpilot-base
   export DOCKER_FILE=Dockerfile.openpilot_base
