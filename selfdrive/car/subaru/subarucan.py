@@ -16,10 +16,9 @@ def create_steering_control(packer, apply_steer, steer_req):
 def create_steering_status(packer):
   return packer.make_can_msg("ES_LKAS_State", 0, {})
 
-def create_es_distance(packer, es_distance_msg, bus, pcm_cancel_cmd, long_enabled = False, brake_cmd = False, cruise_throttle = 0):
+def create_es_distance(packer, frame, es_distance_msg, bus, pcm_cancel_cmd, long_enabled = False, brake_cmd = False, cruise_throttle = 0):
   values = {s: es_distance_msg[s] for s in [
     "CHECKSUM",
-    "COUNTER",
     "Signal1",
     "Cruise_Fault",
     "Cruise_Throttle",
@@ -39,7 +38,8 @@ def create_es_distance(packer, es_distance_msg, bus, pcm_cancel_cmd, long_enable
     "Cruise_Resume",
     "Signal6",
   ]}
-  values["COUNTER"] = (values["COUNTER"] + 1) % 0x10
+
+  values["COUNTER"] = frame % 0x10
 
   if long_enabled:
     values["Cruise_Throttle"] = cruise_throttle
@@ -57,10 +57,9 @@ def create_es_distance(packer, es_distance_msg, bus, pcm_cancel_cmd, long_enable
   return packer.make_can_msg("ES_Distance", bus, values)
 
 
-def create_es_lkas_state(packer, es_lkas_state_msg, enabled, visual_alert, left_line, right_line, left_lane_depart, right_lane_depart):
+def create_es_lkas_state(packer, frame, es_lkas_state_msg, enabled, visual_alert, left_line, right_line, left_lane_depart, right_lane_depart):
   values = {s: es_lkas_state_msg[s] for s in [
     "CHECKSUM",
-    "COUNTER",
     "LKAS_Alert_Msg",
     "Signal1",
     "LKAS_ACTIVE",
@@ -76,6 +75,8 @@ def create_es_lkas_state(packer, es_lkas_state_msg, enabled, visual_alert, left_
     "LKAS_Alert",
     "Signal3",
   ]}
+
+  values["COUNTER"] = frame % 0x10
 
   # Filter the stock LKAS "Keep hands on wheel" alert
   if values["LKAS_Alert_Msg"] == 1:
@@ -119,10 +120,9 @@ def create_es_lkas_state(packer, es_lkas_state_msg, enabled, visual_alert, left_
 
   return packer.make_can_msg("ES_LKAS_State", CanBus.main, values)
 
-def create_es_dashstatus(packer, dashstatus_msg, enabled, long_enabled, long_active, lead_visible):
+def create_es_dashstatus(packer, frame, dashstatus_msg, enabled, long_enabled, long_active, lead_visible):
   values = {s: dashstatus_msg[s] for s in [
     "CHECKSUM",
-    "COUNTER",
     "PCB_Off",
     "LDW_Off",
     "Signal1",
@@ -150,6 +150,8 @@ def create_es_dashstatus(packer, dashstatus_msg, enabled, long_enabled, long_act
     "Cruise_State",
   ]}
 
+  values["COUNTER"] = frame % 0x10
+
   if enabled and long_active:
     values["Cruise_State"] = 0
     values["Cruise_Activated"] = 1
@@ -165,10 +167,9 @@ def create_es_dashstatus(packer, dashstatus_msg, enabled, long_enabled, long_act
 
   return packer.make_can_msg("ES_DashStatus", CanBus.main, values)
 
-def create_es_brake(packer, es_brake_msg, enabled, brake_value):
+def create_es_brake(packer, frame, es_brake_msg, enabled, brake_value):
   values = {s: es_brake_msg[s] for s in [
     "CHECKSUM",
-    "COUNTER",
     "Signal1",
     "Brake_Pressure",
     "AEB_Status",
@@ -178,6 +179,8 @@ def create_es_brake(packer, es_brake_msg, enabled, brake_value):
     "Cruise_Activated",
     "Signal3",
   ]}
+
+  values["COUNTER"] = frame % 0x10
 
   if enabled:
     values["Cruise_Activated"] = 1
@@ -190,10 +193,9 @@ def create_es_brake(packer, es_brake_msg, enabled, brake_value):
 
   return packer.make_can_msg("ES_Brake", CanBus.main, values)
 
-def create_es_status(packer, es_status_msg, long_enabled, long_active, cruise_rpm):
+def create_es_status(packer, frame, es_status_msg, long_enabled, long_active, cruise_rpm):
   values = {s: es_status_msg[s] for s in [
     "CHECKSUM",
-    "COUNTER",
     "Signal1",
     "Cruise_Fault",
     "Cruise_RPM",
@@ -204,6 +206,8 @@ def create_es_status(packer, es_status_msg, long_enabled, long_active, cruise_rp
     "Signal3",
   ]}
 
+  values["COUNTER"] = frame % 0x10
+
   if long_enabled:
     values["Cruise_RPM"] = cruise_rpm
 
@@ -213,16 +217,18 @@ def create_es_status(packer, es_status_msg, long_enabled, long_active, cruise_rp
   return packer.make_can_msg("ES_Status", CanBus.main, values)
 
 
-def create_es_infotainment(packer, es_infotainment_msg, visual_alert):
+def create_es_infotainment(packer, frame, es_infotainment_msg, visual_alert):
   # Filter stock LKAS disabled and Keep hands on steering wheel OFF alerts
   values = {s: es_infotainment_msg[s] for s in [
     "CHECKSUM",
-    "COUNTER",
     "LKAS_State_Infotainment",
     "LKAS_Blue_Lines",
     "Signal1",
     "Signal2",
   ]}
+
+  values["COUNTER"] = frame % 0x10
+
   if values["LKAS_State_Infotainment"] in (3, 4):
     values["LKAS_State_Infotainment"] = 0
 
