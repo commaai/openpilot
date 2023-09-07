@@ -40,4 +40,11 @@ namespace Path {
   inline std::string swaglog_ipc() {
     return "ipc:///tmp/logmessage" + Path::openpilot_prefix();
   }
+
+  inline std::string download_cache_root() {
+    if (const char *env = getenv("COMMA_CACHE")) {
+      return env;
+    }
+    return "/tmp/comma_download_cache" + Path::openpilot_prefix() + "/";
+  }
 }  // namespace Path

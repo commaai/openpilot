@@ -32,6 +32,9 @@ CEREAL_SERVICES = [f for f in log.Event.schema.union_fields if f in service_list
 
 
 class TestLoggerd(unittest.TestCase):
+  def setUp(self):
+    os.environ.pop("LOG_ROOT", None)
+
   def _get_latest_log_dir(self):
     log_dirs = sorted(Path(Paths.log_root()).iterdir(), key=lambda f: f.stat().st_mtime)
     return log_dirs[-1]
