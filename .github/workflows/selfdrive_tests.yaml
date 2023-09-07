@@ -74,6 +74,9 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
+    - name: Setup architecture
+      run: |
+        echo "TARGET_ARCHITECTURE=x86_64" >> "$GITHUB_ENV"
     - uses: ./.github/workflows/setup-with-retry
     - uses: ./.github/workflows/build
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 15 || 30) }} # allow more time when we missed the scons cache
@@ -82,12 +85,15 @@ jobs:
 
   build_arm64:
     name: build all (arm64)
-    runs-on: buildjet-4vcpu-ubuntu-2204-arm
+    runs-on: ${{ (github.repository == 'commaai/openpilot') && 'buildjet-4vcpu-ubuntu-2204-arm' || 'ubuntu-20.04' }}
     if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: true
+    - name: Setup architecture
+      run: |
+        echo "TARGET_ARCHITECTURE=aarch64" >> "$GITHUB_ENV"
     - uses: ./.github/workflows/setup-with-retry
     - uses: ./.github/workflows/build
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 15 || 30) }} # allow more time when we missed the scons cache
@@ -197,7 +203,7 @@ jobs:
     - name: Setup to push to repo
       run: |
         echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
-        echo "CURRENT_ARCH_BUILD=true" >> "$GITHUB_ENV"
+        echo "TARGET_ARCHITECTURE=x86_64" >> "$GITHUB_ENV"
         $DOCKER_LOGIN
     - uses: ./.github/workflows/setup-with-retry
       with:
@@ -208,7 +214,7 @@ jobs:
 
   docker_push_arm64:
     name: docker push (arm64)
-    runs-on: buildjet-4vcpu-ubuntu-2204-arm
+    runs-on: ${{ (github.repository == 'commaai/openpilot') && 'buildjet-4vcpu-ubuntu-2204-arm' || 'ubuntu-20.04' }}
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v3
@@ -217,7 +223,7 @@ jobs:
     - name: Setup to push to repo
       run: |
         echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
-        echo "CURRENT_ARCH_BUILD=true" >> "$GITHUB_ENV"
+        echo "TARGET_ARCHITECTURE=aarch64" >> "$GITHUB_ENV"
         $DOCKER_LOGIN
     - name: Build and push base Docker image
       run: | 
