@@ -1,12 +1,8 @@
 #pragma once
 
-#include <future>
 #include <map>
 #include <string>
-#include <tuple>
 #include <vector>
-
-#include "common/queue.h"
 
 enum ParamKeyType {
   PERSISTENT = 0x02,
@@ -46,25 +42,8 @@ public:
   inline int putBool(const std::string &key, bool val) {
     return put(key.c_str(), val ? "1" : "0", 1);
   }
-  void putNonBlocking(const std::string &key, const std::string &val);
-  inline void putBoolNonBlocking(const std::string &key, bool val) {
-    putNonBlocking(key, val ? "1" : "0");
-  }
 
 private:
   std::string params_path;
   std::string prefix;
-};
-
-class AsyncWriter {
-public:
-  AsyncWriter() {}
-  ~AsyncWriter();
-  void queue(const std::tuple<std::string, std::string, std::string> &dat);
-
-private:
-  void write();
-
-  std::future<void> future;
-  SafeQueue<std::tuple<std::string, std::string, std::string>> q;
 };
