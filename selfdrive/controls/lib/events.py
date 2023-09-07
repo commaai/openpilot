@@ -434,7 +434,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   # bad alignment or bad sensor data. If this happens consistently consider creating an issue on GitHub
   EventName.vehicleModelInvalid: {
     ET.NO_ENTRY: NoEntryAlert("Vehicle Parameter Identification Failed"),
-    ET.SOFT_DISABLE: soft_disable_alert("Vehicle Parameter Identification Failed"),
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Vehicle Parameter Identification Failed"),
   },
 
   EventName.steerTempUnavailableSilent: {
