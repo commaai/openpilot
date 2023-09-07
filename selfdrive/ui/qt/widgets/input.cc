@@ -189,7 +189,7 @@ void InputDialog::setMinLength(int length) {
 // ConfirmationDialog
 
 ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString &confirm_text, const QString &cancel_text,
-                                       const bool rich, QWidget *parent, int _count_down) : DialogBase(parent) {
+                                       const bool rich, QWidget *parent, int count_down) : countdown(count_down), DialogBase(parent) {
   QFrame *container = new QFrame(this);
   container->setStyleSheet(R"(
     QFrame { background-color: #1B1B1B; color: #C9C9C9; }
@@ -222,7 +222,6 @@ ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString
     confirm_btn->setObjectName("confirm_btn");
     btn_layout->addWidget(confirm_btn);
     QObject::connect(confirm_btn, &QPushButton::clicked, this, &ConfirmationDialog::accept);
-    countdown = _count_down != 0 ? _count_down : 0;
     if (countdown > 0) {
       QTimer *timer = new QTimer(this);
       auto countdown_lambda = [=]() {
