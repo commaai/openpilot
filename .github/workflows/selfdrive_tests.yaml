@@ -249,7 +249,7 @@ jobs:
       timeout-minutes: 40
       run: |
         ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
-                        $PYTEST && \
+                        $PYTEST -n auto --dist=loadscope && \
                         selfdrive/locationd/test/_test_locationd_lib.py && \
                         ./system/ubloxd/tests/test_glonass_runner && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
