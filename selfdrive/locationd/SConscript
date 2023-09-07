@@ -1,20 +1,6 @@
 Import('env', 'common', 'cereal', 'messaging', 'libkf', 'transformations')
 
-loc_libs = [cereal, messaging, 'zmq', common, 'capnp', 'kj', 'kaitai', 'pthread']
-
-if GetOption('kaitai'):
-  generated = Dir('generated').srcnode().abspath
-  cmd = f"kaitai-struct-compiler --target cpp_stl --outdir {generated} $SOURCES"
-  env.Command(['generated/ubx.cpp', 'generated/ubx.h'], 'ubx.ksy', cmd)
-  env.Command(['generated/gps.cpp', 'generated/gps.h'], 'gps.ksy', cmd)
-  glonass = env.Command(['generated/glonass.cpp', 'generated/glonass.h'], 'glonass.ksy', cmd)
-
-  # kaitai issue: https://github.com/kaitai-io/kaitai_struct/issues/910
-  patch = env.Command(None, 'glonass_fix.patch', 'git apply $SOURCES')
-  env.Depends(patch, glonass)
-
-glonass_obj = env.Object('generated/glonass.cpp')
-env.Program("ubloxd", ["ubloxd.cc", "ublox_msg.cc", "generated/ubx.cpp", "generated/gps.cpp",  glonass_obj], LIBS=loc_libs)
+loc_libs = [cereal, messaging, 'zmq', common, 'capnp', 'kj', 'pthread']
 
 ekf_sym_cc = env.SharedObject("#rednose/helpers/ekf_sym.cc")
 locationd_sources = ["locationd.cc", "models/live_kf.cc", ekf_sym_cc]
@@ -26,6 +12,3 @@ lenv.Depends(locationd, libkf)
 if File("liblocationd.cc").exists():
   liblocationd = lenv.SharedLibrary("liblocationd", ["liblocationd.cc"] + locationd_sources, LIBS=loc_libs + transformations)
   lenv.Depends(liblocationd, libkf)
-
-if GetOption('test'):
-  env.Program("test/test_glonass_runner", ['test/test_glonass_runner.cc', 'test/test_glonass_kaitai.cc', glonass_obj], LIBS=[loc_libs])

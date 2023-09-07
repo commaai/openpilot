@@ -8,7 +8,7 @@ class MetaDriveWorld(World):
   def __init__(self, env, ticks_per_frame: float):
     self.env = env
     self.speed = 0.0
-    self.camerad = Camerad()
+    self.camerad = Camerad(dual_camera=False)
     self.ticks_per_frame = ticks_per_frame
 
   def apply_controls(self, steer_sim, throttle_out, brake_out, rk):
@@ -51,7 +51,7 @@ class MetaDriveWorld(World):
     # max_steer_angle = 75 / self.ticks_per_frame
     max_steer_angle = 30 / math.sqrt(self.ticks_per_frame)
     return max_steer_angle * STEER_RATIO * -1
-  
+
   def tick(self):
     pass
 
@@ -63,7 +63,7 @@ class MetaDriveBridge(SimulatorBridge):
     if args.ticks_per_frame:
       self.TICKS_PER_FRAME = args.ticks_per_frame
     self.should_render = args.high_quality
-      
+
     super(MetaDriveBridge, self).__init__(args)
 
   def spawn_world(self):
@@ -79,7 +79,7 @@ class MetaDriveBridge(SimulatorBridge):
     def get_pixels_array_patched(self, base_object, clip=True):
       self.track(base_object)
       return type(self)._singleton.get_rgb_array()
-    setattr(BaseCamera, "get_pixels_array", get_pixels_array_patched)
+    BaseCamera.get_pixels_array = get_pixels_array_patched
 
     # config = dict(
     #   # camera_dist=3.0,
@@ -119,7 +119,7 @@ class MetaDriveBridge(SimulatorBridge):
         cam.setHpr(0, 0.8, 0)
         lens.setFov(160)
         lens.setAspectRatio(1.15)
-  
+
     env.vehicle.add_image_sensor("rgb_wide", RGBCameraWide())
 
     # TODO(jon-chuang): enable road camera
@@ -139,7 +139,7 @@ class MetaDriveBridge(SimulatorBridge):
     #     cam.setHpr(0, 0.8, 0)
     #     lens.setFov(40)
     #     lens.setAspectRatio(0.5)
-  
+
     # env.vehicle.add_image_sensor("rgb_road", RGBCameraRoad())
     def transform_img(origin_img):
       img = np.frombuffer(origin_img.getRamImage().getData(), dtype=np.uint8)
@@ -156,7 +156,7 @@ class MetaDriveBridge(SimulatorBridge):
       img = timer("transform_img", lambda: transform_img(origin_img))
       return img
 
-    setattr(ImageBuffer, "get_rgb_array", patch_get_rgb_array)
+    ImageBuffer.get_rgb_array = patch_get_rgb_array
     # Simulation tends to be slow in the initial steps. This prevents lagging later
     for _ in range(30):
       env.step([0.0, 1.0])

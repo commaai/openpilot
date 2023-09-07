@@ -24,8 +24,8 @@ class CarlaWorld(World):
     return math.sqrt(self.vel.x ** 2 + self.vel.y ** 2 + self.vel.z ** 2)  # in m/s
 
   def get_steer_correction(self) -> float:
-    return self.max_steer_angle * STEER_RATIO * -1  
-  
+    return self.max_steer_angle * STEER_RATIO * -1
+
   def tick(self):
     self.world.tick()
 

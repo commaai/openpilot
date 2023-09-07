@@ -15,12 +15,14 @@ docs/INTEGRATION.md
 docs/LIMITATIONS.md
 site_scons/site_tools/cython.py
 
+openpilot/__init__.py
+openpilot/**
+
 common/.gitignore
 common/__init__.py
 common/conversions.py
 common/gpio.py
 common/realtime.py
-common/clock.pyx
 common/timeout.py
 common/ffi_wrapper.py
 common/file_helpers.py
@@ -35,6 +37,7 @@ common/filter_simple.py
 common/stat_live.py
 common/spinner.py
 common/text_window.py
+common/time.py
 
 common/kalman/.gitignore
 common/kalman/*
@@ -59,6 +62,7 @@ release/*
 
 tools/__init__.py
 tools/lib/*
+tools/bodyteleop/*
 tools/joystick/*
 tools/replay/*.cc
 tools/replay/*.h
@@ -158,6 +162,8 @@ common/clutil.cc
 common/clutil.h
 common/params.h
 common/params.cc
+common/ratekeeper.cc
+common/ratekeeper.h
 common/watchdog.cc
 common/watchdog.h
 
@@ -181,7 +187,6 @@ selfdrive/controls/lib/desire_helper.py
 selfdrive/controls/lib/drive_helpers.py
 selfdrive/controls/lib/events.py
 selfdrive/controls/lib/latcontrol_angle.py
-selfdrive/controls/lib/latcontrol_indi.py
 selfdrive/controls/lib/latcontrol_torque.py
 selfdrive/controls/lib/latcontrol_pid.py
 selfdrive/controls/lib/latcontrol.py
@@ -189,7 +194,6 @@ selfdrive/controls/lib/lateral_planner.py
 selfdrive/controls/lib/longcontrol.py
 selfdrive/controls/lib/longitudinal_planner.py
 selfdrive/controls/lib/pid.py
-selfdrive/controls/lib/radar_helpers.py
 selfdrive/controls/lib/vehicle_model.py
 
 selfdrive/controls/lib/lateral_mpc_lib/.gitignore
@@ -205,6 +209,7 @@ system/hardware/__init__.py
 system/hardware/base.h
 system/hardware/base.py
 system/hardware/hw.h
+system/hardware/hw.py
 system/hardware/tici/__init__.py
 system/hardware/tici/hardware.h
 system/hardware/tici/hardware.py
@@ -219,14 +224,15 @@ system/hardware/pc/__init__.py
 system/hardware/pc/hardware.h
 system/hardware/pc/hardware.py
 
-selfdrive/locationd/__init__.py
-selfdrive/locationd/.gitignore
-selfdrive/locationd/SConscript
-selfdrive/locationd/ubloxd.cc
-selfdrive/locationd/ublox_msg.cc
-selfdrive/locationd/ublox_msg.h
-selfdrive/locationd/generated/*
+system/ubloxd/.gitignore
+system/ubloxd/SConscript
+system/ubloxd/generated/*
+system/ubloxd/*.h
+system/ubloxd/*.cc
 
+selfdrive/locationd/__init__.py
+selfdrive/locationd/SConscript
+selfdrive/locationd/.gitignore
 selfdrive/locationd/laikad.py
 selfdrive/locationd/locationd.h
 selfdrive/locationd/locationd.cc
@@ -253,44 +259,47 @@ system/proclogd/main.cc
 system/proclogd/proclog.cc
 system/proclogd/proclog.h
 
-selfdrive/loggerd/.gitignore
-selfdrive/loggerd/SConscript
-selfdrive/loggerd/encoder/encoder.cc
-selfdrive/loggerd/encoder/encoder.h
-selfdrive/loggerd/encoder/v4l_encoder.cc
-selfdrive/loggerd/encoder/v4l_encoder.h
-selfdrive/loggerd/video_writer.cc
-selfdrive/loggerd/video_writer.h
-selfdrive/loggerd/logger.cc
-selfdrive/loggerd/logger.h
-selfdrive/loggerd/loggerd.cc
-selfdrive/loggerd/loggerd.h
-selfdrive/loggerd/encoderd.cc
-selfdrive/loggerd/bootlog.cc
-selfdrive/loggerd/encoder/ffmpeg_encoder.cc
-selfdrive/loggerd/encoder/ffmpeg_encoder.h
+system/loggerd/.gitignore
+system/loggerd/SConscript
+system/loggerd/encoder/encoder.cc
+system/loggerd/encoder/encoder.h
+system/loggerd/encoder/v4l_encoder.cc
+system/loggerd/encoder/v4l_encoder.h
+system/loggerd/video_writer.cc
+system/loggerd/video_writer.h
+system/loggerd/logger.cc
+system/loggerd/logger.h
+system/loggerd/loggerd.cc
+system/loggerd/loggerd.h
+system/loggerd/encoderd.cc
+system/loggerd/bootlog.cc
+system/loggerd/encoder/ffmpeg_encoder.cc
+system/loggerd/encoder/ffmpeg_encoder.h
 
-selfdrive/loggerd/__init__.py
-selfdrive/loggerd/config.py
-selfdrive/loggerd/uploader.py
-selfdrive/loggerd/deleter.py
-selfdrive/loggerd/xattr_cache.py
+system/loggerd/__init__.py
+system/loggerd/config.py
+system/loggerd/uploader.py
+system/loggerd/deleter.py
+system/loggerd/xattr_cache.py
 
-selfdrive/sensord/SConscript
-selfdrive/sensord/sensors_qcom2.cc
-selfdrive/sensord/sensors/*.cc
-selfdrive/sensord/sensors/*.h
-selfdrive/sensord/sensord
-selfdrive/sensord/pigeond.py
+system/sensord/.gitignore
+system/sensord/SConscript
+system/sensord/sensors_qcom2.cc
+system/sensord/sensors/*.cc
+system/sensord/sensors/*.h
+system/sensord/sensord
+system/sensord/pigeond.py
 
 selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
 selfdrive/thermald/fan_controller.py
 
 selfdrive/test/__init__.py
+selfdrive/test/fuzzy_generation.py
 selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
 selfdrive/test/test_onroad.py
+selfdrive/test/test_time_to_onroad.py
 
 selfdrive/ui/.gitignore
 selfdrive/ui/SConscript
@@ -310,6 +319,8 @@ selfdrive/ui/tests/test_translations.py
 
 selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.h
+selfdrive/ui/qt/network/*.cc
+selfdrive/ui/qt/network/*.h
 selfdrive/ui/qt/offroad/*.cc
 selfdrive/ui/qt/offroad/*.h
 selfdrive/ui/qt/offroad/*.qml
@@ -346,15 +357,20 @@ selfdrive/manager/process.py
 selfdrive/manager/test/__init__.py
 selfdrive/manager/test/test_manager.py
 
+selfdrive/modeld/.gitignore
 selfdrive/modeld/__init__.py
 selfdrive/modeld/SConscript
-selfdrive/modeld/modeld.cc
+selfdrive/modeld/modeld.py
 selfdrive/modeld/navmodeld.cc
 selfdrive/modeld/dmonitoringmodeld.cc
 selfdrive/modeld/constants.py
 selfdrive/modeld/modeld
 selfdrive/modeld/navmodeld
 selfdrive/modeld/dmonitoringmodeld
+
+selfdrive/modeld/models/__init__.py
+selfdrive/modeld/models/*.pxd
+selfdrive/modeld/models/*.pyx
 
 selfdrive/modeld/models/commonmodel.cc
 selfdrive/modeld/models/commonmodel.h
@@ -384,19 +400,19 @@ selfdrive/modeld/thneed/thneed_common.cc
 selfdrive/modeld/thneed/thneed_qcom2.cc
 selfdrive/modeld/thneed/serialize.cc
 
-selfdrive/modeld/runners/snpemodel.cc
-selfdrive/modeld/runners/snpemodel.h
-selfdrive/modeld/runners/thneedmodel.cc
-selfdrive/modeld/runners/thneedmodel.h
-selfdrive/modeld/runners/runmodel.h
-selfdrive/modeld/runners/run.h
+selfdrive/modeld/runners/__init__.py
+selfdrive/modeld/runners/*.pxd
+selfdrive/modeld/runners/*.pyx
+selfdrive/modeld/runners/*.cc
+selfdrive/modeld/runners/*.h
+selfdrive/modeld/runners/*.py
 
 selfdrive/monitoring/dmonitoringd.py
 selfdrive/monitoring/driver_monitor.py
 
+selfdrive/navd/.gitignore
 selfdrive/navd/__init__.py
-selfdrive/navd/navd.py
-selfdrive/navd/helpers.py
+selfdrive/navd/**
 
 selfdrive/assets/.gitignore
 selfdrive/assets/assets.qrc
@@ -409,11 +425,10 @@ selfdrive/assets/images/*
 selfdrive/assets/offroad/*
 selfdrive/assets/sounds/*
 selfdrive/assets/training/*
+selfdrive/assets/navigation/*
 
 third_party/.gitignore
 third_party/SConscript
-
-third_party/cluster/*
 
 third_party/linux/**
 third_party/opencl/**
@@ -428,14 +443,11 @@ third_party/kaitai/*.h
 third_party/kaitai/*.cpp
 
 third_party/libyuv/include/**
-third_party/libyuv/lib/**
-third_party/libyuv/larch64/**
 
 third_party/snpe/include/**
 third_party/snpe/dsp**
 
-third_party/acados/x86_64/**
-third_party/acados/larch64/**
+third_party/acados/.gitignore
 third_party/acados/include/**
 third_party/acados/acados_template/**
 
@@ -465,6 +477,7 @@ body/crypto/**
 cereal/.gitignore
 cereal/__init__.py
 cereal/car.capnp
+cereal/custom.capnp
 cereal/legacy.capnp
 cereal/log.capnp
 cereal/services.py
@@ -474,6 +487,10 @@ cereal/logger/logger.h
 cereal/messaging/.gitignore
 cereal/messaging/__init__.py
 cereal/messaging/bridge.cc
+cereal/messaging/event.cc
+cereal/messaging/event.h
+cereal/messaging/impl_fake.cc
+cereal/messaging/impl_fake.h
 cereal/messaging/impl_msgq.cc
 cereal/messaging/impl_msgq.h
 cereal/messaging/impl_zmq.cc
@@ -556,10 +573,11 @@ opendbc/hyundai_kia_mando_front_radar_generated.dbc
 
 opendbc/mazda_2017.dbc
 
-opendbc/nissan_x_trail_2017.dbc
-opendbc/nissan_leaf_2018.dbc
+opendbc/nissan_x_trail_2017_generated.dbc
+opendbc/nissan_leaf_2018_generated.dbc
 
 opendbc/subaru_global_2017_generated.dbc
+opendbc/subaru_global_2020_hybrid_generated.dbc
 opendbc/subaru_outback_2015_generated.dbc
 opendbc/subaru_outback_2019_generated.dbc
 opendbc/subaru_forester_2017_generated.dbc
@@ -577,13 +595,14 @@ opendbc/tesla_can.dbc
 opendbc/tesla_radar.dbc
 opendbc/tesla_powertrain.dbc
 
-tinygrad_repo/accel/opencl/*
-tinygrad_repo/tinygrad/llops/ops_opencl.py
 tinygrad_repo/openpilot/compile.py
 tinygrad_repo/extra/onnx.py
+tinygrad_repo/extra/onnx_ops.py
 tinygrad_repo/extra/thneed.py
 tinygrad_repo/extra/utils.py
-tinygrad_repo/tinygrad/llops/ops_gpu.py
-tinygrad_repo/tinygrad/shape/*
+tinygrad_repo/tinygrad/codegen/ast.py
+tinygrad_repo/tinygrad/codegen/gpu.py
 tinygrad_repo/tinygrad/nn/*
+tinygrad_repo/tinygrad/runtime/ops_gpu.py
+tinygrad_repo/tinygrad/shape/*
 tinygrad_repo/tinygrad/*.py

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import argparse
 import math
 import os
@@ -15,13 +14,13 @@ import pyopencl.array as cl_array
 import cereal.messaging as messaging
 from cereal import log
 from cereal.visionipc import VisionIpcServer, VisionStreamType
-from common.basedir import BASEDIR
-from common.numpy_fast import clip
-from common.params import Params
-from common.realtime import DT_DMON, Ratekeeper
-from selfdrive.car.honda.values import CruiseButtons
-from selfdrive.test.helpers import set_params_enabled
-from tools.sim.lib.can import can_function
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.numpy_fast import clip
+from openpilot.common.params import Params
+from openpilot.common.realtime import DT_DMON, Ratekeeper
+from openpilot.selfdrive.car.honda.values import CruiseButtons
+from openpilot.selfdrive.test.helpers import set_params_enabled
+from openpilot.tools.sim.lib.can import can_function
 
 W, H = 1928, 1208
 REPEAT_COUNTER = 5
@@ -69,13 +68,14 @@ def steer_rate_limit(old, new):
 
 
 class Camerad:
-  def __init__(self):
+  def __init__(self, dual_camera):
     self.frame_road_id = 0
     self.frame_wide_id = 0
     self.vipc_server = VisionIpcServer("camerad")
 
     self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 5, False, W, H)
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 5, False, W, H)
+    if dual_camera:
+      self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 5, False, W, H)
     self.vipc_server.start_listener()
 
     # set up for pyopencl rgb to yuv conversion
@@ -117,7 +117,7 @@ class Camerad:
     self.krnl(self.queue, (self.Wdiv4, self.Hdiv4), None, rgb_cl.data, yuv_cl.data).wait()
     yuv = np.resize(yuv_cl.get(), rgb.size // 2)
     return yuv.data.tobytes()
-  
+
   def _send_yuv(self, yuv, frame_id, pub_type, yuv_type):
     eof = int(frame_id * 0.05 * 1e9)
     self.vipc_server.send(yuv_type, yuv, frame_id, eof, eof)
@@ -340,7 +340,7 @@ class SimulatorBridge(ABC):
     bridge_p = Process(target=self.bridge_keep_alive, args=(queue, retries), daemon=True)
     bridge_p.start()
     return bridge_p
-  
+
   # Must return object of class `World`, after spawning objects into that world
   @abstractmethod
   def spawn_world(self) -> World:

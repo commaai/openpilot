@@ -69,7 +69,8 @@ class TestSimBridgeIntegrationSmoke(unittest.TestCase):
             no_car_events_issues_once = True
             break
 
-        self.assertTrue(no_car_events_issues_once, f"Failed because no messages received, or CarEvents '{car_event_issues}' or processes not running '{not_running}'")
+        self.assertTrue(no_car_events_issues_once,
+                        f"Failed because no messages received, or CarEvents '{car_event_issues}' or processes not running '{not_running}'")
 
         start_time = time.monotonic()
         min_counts_control_active = 100
@@ -86,7 +87,8 @@ class TestSimBridgeIntegrationSmoke(unittest.TestCase):
             if control_active == min_counts_control_active:
               break
 
-        self.assertEqual(min_counts_control_active, control_active, f"Simulator did not engage a minimal of {min_counts_control_active} steps was {control_active}")
+        self.assertEqual(min_counts_control_active, control_active,
+                         f"Simulator did not engage a minimal of {min_counts_control_active} steps was {control_active}")
 
 class ProcessHolder(AbstractContextManager):
   def __init__(self):

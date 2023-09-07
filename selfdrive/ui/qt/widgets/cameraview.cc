@@ -7,6 +7,9 @@
 #endif
 
 #include <cmath>
+#include <set>
+#include <string>
+#include <utility>
 
 #include <QOpenGLBuffer>
 #include <QOffscreenSurface>
@@ -38,6 +41,8 @@ const char frame_fragment_shader[] =
   "out vec4 colorOut;\n"
   "void main() {\n"
   "  colorOut = texture(uTexture, vTexCoord);\n"
+  // gamma to improve worst case visibility when dark
+  "  colorOut.rgb = pow(colorOut.rgb, vec3(1.0/1.28));\n"
   "}\n";
 #else
 const char frame_fragment_shader[] =
@@ -96,8 +101,10 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 CameraWidget::CameraWidget(std::string stream_name, VisionStreamType type, bool zoom, QWidget* parent) :
                           stream_name(stream_name), requested_stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
+  qRegisterMetaType<std::set<VisionStreamType>>("availableStreams");
   QObject::connect(this, &CameraWidget::vipcThreadConnected, this, &CameraWidget::vipcConnected, Qt::BlockingQueuedConnection);
   QObject::connect(this, &CameraWidget::vipcThreadFrameReceived, this, &CameraWidget::vipcFrameReceived, Qt::QueuedConnection);
+  QObject::connect(this, &CameraWidget::vipcAvailableStreamsUpdated, this, &CameraWidget::availableStreamsUpdated, Qt::QueuedConnection);
 }
 
 CameraWidget::~CameraWidget() {
@@ -110,6 +117,16 @@ CameraWidget::~CameraWidget() {
     glDeleteBuffers(2, textures);
   }
   doneCurrent();
+}
+
+// Qt uses device-independent pixels, depending on platform this may be
+// different to what OpenGL uses
+int CameraWidget::glWidth() {
+    return width() * devicePixelRatio();
+}
+
+int CameraWidget::glHeight() {
+  return height() * devicePixelRatio();
 }
 
 void CameraWidget::initializeGL() {
@@ -181,22 +198,28 @@ void CameraWidget::stopVipcThread() {
   }
 }
 
+void CameraWidget::availableStreamsUpdated(std::set<VisionStreamType> streams) {
+  available_streams = streams;
+}
+
 void CameraWidget::updateFrameMat() {
-  int w = width(), h = height();
+  int w = glWidth(), h = glHeight();
 
   if (zoomed_view) {
     if (active_stream_type == VISION_STREAM_DRIVER) {
-      frame_mat = get_driver_view_transform(w, h, stream_width, stream_height);
+      if (stream_width > 0 && stream_height > 0) {
+        frame_mat = get_driver_view_transform(w, h, stream_width, stream_height);
+      }
     } else {
       // Project point at "infinity" to compute x and y offsets
       // to ensure this ends up in the middle of the screen
       // for narrow come and a little lower for wide cam.
       // TODO: use proper perspective transform?
       if (active_stream_type == VISION_STREAM_WIDE_ROAD) {
-        intrinsic_matrix = ecam_intrinsic_matrix;
+        intrinsic_matrix = ECAM_INTRINSIC_MATRIX;
         zoom = 2.0;
       } else {
-        intrinsic_matrix = fcam_intrinsic_matrix;
+        intrinsic_matrix = FCAM_INTRINSIC_MATRIX;
         zoom = 1.1;
       }
       const vec3 inf = {{1000., 0., 0.}};
@@ -260,7 +283,7 @@ void CameraWidget::paintGL() {
 
   updateFrameMat();
 
-  glViewport(0, 0, width(), height());
+  glViewport(0, 0, glWidth(), glHeight());
   glBindVertexArray(frame_vao);
   glUseProgram(program->programId());
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -366,6 +389,13 @@ void CameraWidget::vipcThread() {
 
     if (!vipc_client->connected) {
       clearFrames();
+      auto streams = VisionIpcClient::getAvailableStreams(stream_name, false);
+      if (streams.empty()) {
+        QThread::msleep(100);
+        continue;
+      }
+      emit vipcAvailableStreamsUpdated(streams);
+
       if (!vipc_client->connect(false)) {
         QThread::msleep(100);
         continue;
@@ -400,4 +430,5 @@ void CameraWidget::vipcThread() {
 void CameraWidget::clearFrames() {
   std::lock_guard lk(frame_lock);
   frames.clear();
+  available_streams.clear();
 }

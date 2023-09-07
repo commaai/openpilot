@@ -1,4 +1,6 @@
 venv/
+.venv/
+.ci_cache
 .env
 .clang-format
 .DS_Store
@@ -45,10 +47,9 @@ selfdrive/logcatd/logcatd
 selfdrive/mapd/default_speeds_by_region.json
 system/proclogd/proclogd
 selfdrive/ui/_ui
+selfdrive/ui/translations/alerts_generated.h
 selfdrive/test/longitudinal_maneuvers/out
-selfdrive/visiond/visiond
-selfdrive/sensord/_gpsd
-selfdrive/sensord/_sensord
+selfdrive/car/tests/cars_dump
 system/camerad/camerad
 system/camerad/test/ae_gray_test
 selfdrive/modeld/_modeld
@@ -57,7 +58,6 @@ selfdrive/modeld/_dmonitoringmodeld
 /src/
 
 one
-openpilot
 notebooks
 xx
 yy
@@ -86,3 +86,4 @@ build/
 !**/.gitkeep
 
 poetry.toml
+Pipfile

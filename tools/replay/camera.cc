@@ -1,7 +1,19 @@
 #include "tools/replay/camera.h"
-#include "tools/replay/util.h"
 
 #include <cassert>
+#include <tuple>
+
+#include "third_party/linux/include/msm_media_info.h"
+#include "tools/replay/util.h"
+
+std::tuple<size_t, size_t, size_t> get_nv12_info(int width, int height) {
+  int nv12_width = VENUS_Y_STRIDE(COLOR_FMT_NV12, width);
+  int nv12_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, height);
+  assert(nv12_width == VENUS_UV_STRIDE(COLOR_FMT_NV12, width));
+  assert(nv12_height / 2 == VENUS_UV_SCANLINES(COLOR_FMT_NV12, height));
+  size_t nv12_buffer_size = 2346 * nv12_width;  // comes from v4l2_format.fmt.pix_mp.plane_fmt[0].sizeimage
+  return {nv12_width, nv12_height, nv12_buffer_size};
+}
 
 CameraServer::CameraServer(std::pair<int, int> camera_size[MAX_CAMERAS]) {
   for (int i = 0; i < MAX_CAMERAS; ++i) {
@@ -25,7 +37,9 @@ void CameraServer::startVipcServer() {
   for (auto &cam : cameras_) {
     if (cam.width > 0 && cam.height > 0) {
       rInfo("camera[%d] frame size %dx%d", cam.type, cam.width, cam.height);
-      vipc_server_->create_buffers(cam.stream_type, YUV_BUFFER_COUNT, false, cam.width, cam.height);
+      auto [nv12_width, nv12_height, nv12_buffer_size] = get_nv12_info(cam.width, cam.height);
+      vipc_server_->create_buffers_with_sizes(cam.stream_type, YUV_BUFFER_COUNT, false, cam.width, cam.height,
+                                              nv12_buffer_size, nv12_width, nv12_width * nv12_height);
       if (!cam.thread.joinable()) {
         cam.thread = std::thread(&CameraServer::cameraThread, this, std::ref(cam));
       }
@@ -38,7 +52,7 @@ void CameraServer::cameraThread(Camera &cam) {
   auto read_frame = [&](FrameReader *fr, int frame_id) {
     VisionBuf *yuv_buf = vipc_server_->get_buffer(cam.stream_type);
     assert(yuv_buf);
-    bool ret = fr->get(frame_id, (uint8_t *)yuv_buf->addr);
+    bool ret = fr->get(frame_id, yuv_buf);
     return ret ? yuv_buf : nullptr;
   };
 
