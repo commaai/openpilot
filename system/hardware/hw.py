@@ -27,3 +27,9 @@ class Paths:
   @staticmethod
   def swaglog_ipc() -> str:
     return "ipc:///tmp/logmessage" + os.environ.get("OPENPILOT_PREFIX", "")
+
+  @staticmethod
+  def download_cache_root() -> str:
+    if os.environ.get('COMMA_CACHE', False):
+      return os.environ['COMMA_CACHE']
+    return "/tmp/comma_download_cache" + os.environ.get("OPENPILOT_PREFIX", "") + "/"
