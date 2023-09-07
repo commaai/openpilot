@@ -14,9 +14,9 @@ from tqdm import trange
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.system.hardware import TICI
-from openpilot.system.loggerd.config import ROOT
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.tools.lib.logreader import LogReader
+from openpilot.selfdrive.hardware.hw import Paths
 
 SEGMENT_LENGTH = 2
 FULL_SIZE = 2507572
@@ -48,12 +48,12 @@ class TestEncoder(unittest.TestCase):
     self._clear_logs()
 
   def _clear_logs(self):
-    if os.path.exists(ROOT):
-      shutil.rmtree(ROOT)
+    if os.path.exists(Paths.log_root()):
+      shutil.rmtree(Paths.log_root())
 
   def _get_latest_segment_path(self):
-    last_route = sorted(Path(ROOT).iterdir())[-1]
-    return os.path.join(ROOT, last_route)
+    last_route = sorted(Path(Paths.log_root()).iterdir())[-1]
+    return os.path.join(Paths.log_root(), last_route)
 
   # TODO: this should run faster than real time
   @parameterized.expand([(True, ), (False, )])
@@ -146,7 +146,7 @@ class TestEncoder(unittest.TestCase):
       for i in trange(num_segments):
         # poll for next segment
         with Timeout(int(SEGMENT_LENGTH*10), error_msg=f"timed out waiting for segment {i}"):
-          while Path(f"{route_prefix_path}--{i+1}") not in Path(ROOT).iterdir():
+          while Path(f"{route_prefix_path}--{i+1}") not in Path(Paths.log_root()).iterdir():
             time.sleep(0.1)
         check_seg(i)
     finally:

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import unittest
 import time
 import numpy as np
@@ -7,6 +8,7 @@ from laika.helpers import ConstellationId
 from laika.raw_gnss import correct_measurements, process_measurements, read_raw_ublox
 from laika.opt import calc_pos_fix
 from openpilot.selfdrive.test.openpilotci import get_url
+from openpilot.system.hardware.hw import Paths
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.selfdrive.test.helpers import with_processes
 import cereal.messaging as messaging
@@ -55,7 +57,7 @@ class TestUbloxProcessing(unittest.TestCase):
     self.assertEqual(count_glonass, 3651)
 
   def test_get_fix(self):
-    dog = AstroDog()
+    dog = AstroDog(cache_dir=Paths.download_cache_root())
     position_fix_found = 0
     count_processed_measurements = 0
     count_corrected_measurements = 0

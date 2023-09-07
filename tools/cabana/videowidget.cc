@@ -159,13 +159,13 @@ Slider::Slider(QWidget *parent) : thumbnail_label(parent), QSlider(Qt::Horizonta
       qlog_future = std::make_unique<QFuture<void>>(QtConcurrent::run(this, &Slider::parseQLog));
     }
   });
-}
-
-Slider::~Slider() {
-  abort_parse_qlog = true;
-  if (qlog_future) {
-    qlog_future->waitForFinished();
-  }
+  QObject::connect(qApp, &QApplication::aboutToQuit, [this]() {
+    abort_parse_qlog = true;
+    if (qlog_future && qlog_future->isRunning()) {
+      qDebug() << "stopping thumbnail thread";
+      qlog_future->waitForFinished();
+    }
+  });
 }
 
 AlertInfo Slider::alertInfo(double seconds) {
