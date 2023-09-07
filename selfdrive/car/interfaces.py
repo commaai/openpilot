@@ -309,7 +309,6 @@ class RadarInterfaceBase(ABC):
   def __init__(self, CP):
     self.rcp = None
     self.pts = {}
-    self.delay = 0
 
   def update(self, can_strings):
     return car.RadarData.new_message()

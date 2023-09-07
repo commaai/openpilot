@@ -41,6 +41,7 @@ class RadarInterface(RadarInterfaceBase):
     self.trigger_msg = LAST_RADAR_MSG
     self.updated_messages = set()
     self.radar_ts = CP.radarTimeStep
+    self.radar_fault = False
 
   def update(self, can_strings):
     if self.rcp is None:
