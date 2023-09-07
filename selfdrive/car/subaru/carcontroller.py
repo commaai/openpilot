@@ -41,17 +41,17 @@ class CarController:
       if not CC.latActive:
         apply_steer = 0
 
-      apply_steer_req = CC.latActive
-
-      if self.CP.carFingerprint in STEER_RATE_LIMITED:
-        # Steering rate fault prevention
-        self.steer_rate_counter, apply_steer_req = \
-          common_fault_avoidance(abs(CS.out.steeringRateDeg) > MAX_STEER_RATE, apply_steer_req,
-                                 self.steer_rate_counter, MAX_STEER_RATE_FRAMES)
-
       if self.CP.carFingerprint in PREGLOBAL_CARS:
-        can_sends.append(subarucan.create_preglobal_steering_control(self.packer, self.frame // self.p.STEER_STEP, apply_steer, apply_steer_req))
+        can_sends.append(subarucan.create_preglobal_steering_control(self.packer, self.frame // self.p.STEER_STEP, apply_steer, CC.latActive))
       else:
+        apply_steer_req = CC.latActive
+
+        if self.CP.carFingerprint in STEER_RATE_LIMITED:
+          # Steering rate fault prevention
+          self.steer_rate_counter, apply_steer_req = \
+            common_fault_avoidance(abs(CS.out.steeringRateDeg) > MAX_STEER_RATE, apply_steer_req,
+                                  self.steer_rate_counter, MAX_STEER_RATE_FRAMES)
+
         can_sends.append(subarucan.create_steering_control(self.packer, apply_steer, apply_steer_req))
 
       self.apply_steer_last = apply_steer
