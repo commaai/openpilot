@@ -33,7 +33,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
       timeout-minutes: 5
       run: ${{ env.RUN }} "scons -j$(nproc) cereal/ common/ --minimal"
@@ -51,7 +51,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
     - name: Build base cl image
       run: eval "$BUILD_CL"
     - name: Setup to push to repo
@@ -71,7 +71,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
       with:
         git_lfs: false
     - name: Setup to push to repo

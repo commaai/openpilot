@@ -24,11 +24,11 @@ from laika.opt import calc_pos_fix, get_posfix_sympy_fun, calc_vel_fix, get_velf
 from openpilot.selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
 from openpilot.selfdrive.locationd.models.gnss_kf import GNSSKalman
 from openpilot.selfdrive.locationd.models.gnss_kf import States as GStates
+from openpilot.system.hardware.hw import Paths
 from openpilot.system.swaglog import cloudlog
 
 MAX_TIME_GAP = 10
 EPHEMERIS_CACHE = 'LaikadEphemerisV3'
-DOWNLOADS_CACHE_FOLDER = "/tmp/comma_download_cache/"
 CACHE_VERSION = 0.2
 POS_FIX_RESIDUAL_THRESHOLD = 100.0
 
@@ -83,7 +83,7 @@ class Laikad:
     save_ephemeris: If true saves and loads nav and orbit ephemeris to cache.
     """
     self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types,
-                              clear_old_ephemeris=True, cache_dir=DOWNLOADS_CACHE_FOLDER)
+                              clear_old_ephemeris=True, cache_dir=Paths.download_cache_root())
     self.gnss_kf = GNSSKalman(GENERATED_DIR, cython=True, erratic_clock=use_qcom)
 
     self.auto_fetch_navs = auto_fetch_navs
@@ -435,9 +435,9 @@ def kf_add_observations(gnss_kf: GNSSKalman, t: float, measurements: List[GNSSMe
 
 
 def clear_tmp_cache():
-  if os.path.exists(DOWNLOADS_CACHE_FOLDER):
-    shutil.rmtree(DOWNLOADS_CACHE_FOLDER)
-  os.mkdir(DOWNLOADS_CACHE_FOLDER)
+  if os.path.exists(Paths.download_cache_root()):
+    shutil.rmtree(Paths.download_cache_root())
+  os.mkdir(Paths.download_cache_root())
 
 
 def main(sm=None, pm=None):
