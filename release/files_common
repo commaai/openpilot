@@ -361,11 +361,10 @@ selfdrive/modeld/.gitignore
 selfdrive/modeld/__init__.py
 selfdrive/modeld/SConscript
 selfdrive/modeld/modeld.py
-selfdrive/modeld/navmodeld.cc
+selfdrive/modeld/navmodeld.py
 selfdrive/modeld/dmonitoringmodeld.cc
 selfdrive/modeld/constants.py
 selfdrive/modeld/modeld
-selfdrive/modeld/navmodeld
 selfdrive/modeld/dmonitoringmodeld
 
 selfdrive/modeld/models/__init__.py
@@ -383,8 +382,6 @@ selfdrive/modeld/models/dmonitoring.cc
 selfdrive/modeld/models/dmonitoring.h
 selfdrive/modeld/models/dmonitoring_model_q.dlc
 
-selfdrive/modeld/models/nav.cc
-selfdrive/modeld/models/nav.h
 selfdrive/modeld/models/navmodel_q.dlc
 
 selfdrive/modeld/transforms/loadyuv.cc
