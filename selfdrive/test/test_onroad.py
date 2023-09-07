@@ -19,8 +19,8 @@ from openpilot.common.timeout import Timeout
 from openpilot.common.params import Params
 from openpilot.selfdrive.controls.lib.events import EVENTS, ET
 from openpilot.system.hardware import HARDWARE
-from openpilot.system.loggerd.config import ROOT
 from openpilot.selfdrive.test.helpers import set_params_enabled, release_only
+from openpilot.system.hardware.hw import Paths
 from openpilot.tools.lib.logreader import LogReader
 
 # Baseline CPU usage by process
@@ -102,7 +102,7 @@ class TestOnroad(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     if "DEBUG" in os.environ:
-      segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog")), Path(ROOT).iterdir())
+      segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog")), Path(Paths.log_root()).iterdir())
       segs = sorted(segs, key=lambda x: x.stat().st_mtime)
       print(segs[-3])
       cls.lr = list(LogReader(os.path.join(segs[-3], "rlog")))
@@ -115,8 +115,8 @@ class TestOnroad(unittest.TestCase):
     params.remove("CurrentRoute")
     set_params_enabled()
     os.environ['TESTING_CLOSET'] = '1'
-    if os.path.exists(ROOT):
-      shutil.rmtree(ROOT)
+    if os.path.exists(Paths.log_root()):
+      shutil.rmtree(Paths.log_root())
     os.system("rm /dev/shm/*")
 
     # Make sure athena isn't running
@@ -143,8 +143,8 @@ class TestOnroad(unittest.TestCase):
 
         while len(cls.segments) < 3:
           segs = set()
-          if Path(ROOT).exists():
-            segs = set(Path(ROOT).glob(f"{route}--*"))
+          if Path(Paths.log_root()).exists():
+            segs = set(Path(Paths.log_root()).glob(f"{route}--*"))
           cls.segments = sorted(segs, key=lambda s: int(str(s).rsplit('--')[-1]))
           time.sleep(2)
 

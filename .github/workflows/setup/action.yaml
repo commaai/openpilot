@@ -5,10 +5,21 @@ inputs:
     description: 'Whether or not to pull the git lfs'
     required: false
     default: 'true'
+  is_retried:
+    description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
+    required: false
+    default: 'false'
 
 runs:
   using: "composite"
   steps:
+    # assert that this action is retried using the setup-with-retry
+    - shell: bash
+      if: ${{ inputs.is_retried == 'false' }}
+      run: |
+        echo "You should not run this action directly. Use setup-with-retry instead"
+        exit 1
+
     # do this after checkout to ensure our custom LFS config is used to pull from GitLab
     - shell: bash
       if: ${{ inputs.git_lfs == 'true' }}

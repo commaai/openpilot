@@ -381,6 +381,8 @@ class Controls:
     if not (self.sm['liveParameters'].sensorValid or self.sm['liveLocationKalman'].sensorsOK) and not NOSENSOR:
       if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive all the inputs
         self.events.add(EventName.sensorDataInvalid)
+    if not self.sm['liveLocationKalman'].inputsOK and not NOSENSOR:
+      self.events.add(EventName.localizerMalfunction)
     if not self.sm['liveLocationKalman'].posenetOK:
       self.events.add(EventName.posenetInvalid)
     if not self.sm['liveLocationKalman'].deviceStable:
@@ -420,8 +422,6 @@ class Controls:
 
       if self.sm['modelV2'].frameDropPerc > 20:
         self.events.add(EventName.modeldLagging)
-      if self.sm['liveLocationKalman'].excessiveResets:
-        self.events.add(EventName.localizerMalfunction)
 
   def data_sample(self):
     """Receive data from sockets and update carState"""
