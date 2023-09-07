@@ -76,9 +76,6 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - name: Setup architecture
-      run: |
-        echo "TARGET_ARCHITECTURE=${{ matrix.arch }}" >> "$GITHUB_ENV"
     - uses: ./.github/workflows/setup-with-retry
     - uses: ./.github/workflows/build
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 15 || 30) }} # allow more time when we missed the scons cache
