@@ -70,7 +70,7 @@ jobs:
   build:
     strategy:
       matrix:
-        arch: ${{ (github.repository == 'commaai/openpilot') && [x86_64, aarch64] || [x86_64] }}
+        arch: ${{ fromJson( (github.repository == 'commaai/openpilot') && '["x86_64", "aarch64"]' || '["x86_64"]' ) }}
     runs-on: ${{ (matrix.arch == 'aarch64') && 'buildjet-4vcpu-ubuntu-2204-arm' || 'ubuntu-20.04' }}
     steps:
     - uses: actions/checkout@v3
