@@ -458,10 +458,8 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   sparkline_range_slider->setValue(settings.sparkline_range);
   sparkline_range_slider->setToolTip(tr("Sparkline time range"));
 
-  auto choose_color_btn = new ToolButton("palette", tr("Choose color for signal"));
+  hl->addWidget(choose_color_btn = new ToolButton("palette", tr("Choose color for signal")));
   choose_color_btn->setIconSize({12, 12});
-  hl->addWidget(choose_color_btn);
-
   auto collapse_btn = new ToolButton("dash-square", tr("Collapse All"));
   collapse_btn->setIconSize({12, 12});
   hl->addWidget(collapse_btn);
@@ -595,6 +593,7 @@ void SignalView::signalHovered(const cabana::Signal *sig) {
 void SignalView::updateToolBar() {
   signal_count_lb->setText(tr("Signals: %1").arg(model->rowCount()));
   sparkline_label->setText(utils::formatSeconds(settings.sparkline_range));
+  choose_color_btn->setEnabled(model->rowCount() > 0);
 }
 
 void SignalView::setSparklineRange(int value) {

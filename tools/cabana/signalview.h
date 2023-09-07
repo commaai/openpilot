@@ -143,6 +143,7 @@ private:
   QLineEdit *filter_edit;
   ChartsWidget *charts;
   QLabel *signal_count_lb;
+  ToolButton *choose_color_btn;
   SignalItemDelegate *delegate;
   friend SignalItemDelegate;
 };
