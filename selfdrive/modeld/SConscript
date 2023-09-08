@@ -32,12 +32,6 @@ if arch == "Darwin":
 else:
   libs += ['OpenCL']
 
-# Use onnx on PC
-if arch != "larch64" and not GetOption('snpe'):
-  common_src += ['runners/onnxmodel.cc']
-  lenv['CFLAGS'].append("-DUSE_ONNX_MODEL")
-  lenv['CXXFLAGS'].append("-DUSE_ONNX_MODEL")
-
 # Set path definitions
 for pathdef, fn in {'TRANSFORM': 'transforms/transform.cl', 'LOADYUV': 'transforms/loadyuv.cl', 'ONNXRUNNER': 'runners/onnx_runner.py'}.items():
   for xenv in (lenv, lenvCython):
