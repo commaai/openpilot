@@ -48,15 +48,15 @@ class ModelState:
   def __init__(self):
     assert ctypes.sizeof(NavModelResult) == NAV_OUTPUT_SIZE * ctypes.sizeof(ctypes.c_float)
     self.output = np.zeros(NAV_OUTPUT_SIZE, dtype=np.float32)
-    self.inputs = {'map': np.zeros(NAV_INPUT_SIZE, dtype=np.uint8)}
+    self.inputs = {'input_img': np.zeros(NAV_INPUT_SIZE, dtype=np.uint8)}
     self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.DSP, True, None)
-    self.model.addInput("map", None)
+    self.model.addInput("input_img", None)
 
   def run(self, buf:np.ndarray) -> Tuple[np.ndarray, float]:
-    self.inputs['map'][:] = buf
+    self.inputs['input_img'][:] = buf
 
     t1 = time.perf_counter()
-    self.model.setInputBuffer("map", self.inputs['map'].view(np.float32))
+    self.model.setInputBuffer("input_img", self.inputs['input_img'].view(np.float32))
     self.model.execute()
     t2 = time.perf_counter()
     return self.output, t2 - t1
