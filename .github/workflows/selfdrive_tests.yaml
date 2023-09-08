@@ -249,7 +249,7 @@ jobs:
       timeout-minutes: 40
       run: |
         ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
-                        $PYTEST && \
+                        $PYTEST -n auto --dist=loadscope --timeout 30 && \
                         selfdrive/locationd/test/_test_locationd_lib.py && \
                         ./system/ubloxd/tests/test_glonass_runner && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
@@ -324,7 +324,7 @@ jobs:
         ${{ env.RUN }} "scons -j$(nproc)"
     # PYTHONWARNINGS triggers a SyntaxError in onnxruntime
     - name: Run model replay with ONNX
-      timeout-minutes: 2
+      timeout-minutes: 3
       run: |
         ${{ env.RUN_CL }} "unset PYTHONWARNINGS && \
                            ONNXCPU=1 CI=1 NO_NAV=1 coverage run selfdrive/test/process_replay/model_replay.py && \
