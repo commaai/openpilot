@@ -2,7 +2,7 @@ import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Dict, List, Set, Tuple, Union
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
