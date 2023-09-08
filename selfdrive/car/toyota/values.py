@@ -236,7 +236,7 @@ STATIC_DSU_MSGS = [
 ]
 
 
-def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[bytes]]]:
+def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, bytes]]:
   codes = set()  # (Optional[part]-platform-major_version, minor_version)
   for fw in fw_versions:
     # FW versions returned from UDS queries can return multiple fields/chunks of data (different ECU calibrations, different data?)
