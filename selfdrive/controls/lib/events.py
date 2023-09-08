@@ -564,13 +564,14 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   },
 
   EventName.locationdTemporaryError: {
-    ET.NO_ENTRY: NoEntryAlert("Localizer Temporary Error"),
-    ET.SOFT_DISABLE: soft_disable_alert("Localizer Temporary Error"),
+    ET.NO_ENTRY: NoEntryAlert("locationd Temporary Error"),
+    ET.SOFT_DISABLE: soft_disable_alert("locationd Temporary Error"),
   },
 
   EventName.locationdPermanentError: {
-    ET.NO_ENTRY: NoEntryAlert("Localizer Permanent Error"),
-    ET.SOFT_DISABLE: soft_disable_alert("Localizer Permanent Error"),
+    ET.NO_ENTRY: NoEntryAlert("locationd Permanent Error"),
+    ET.IMMEDIATE_DISABLE: soft_disable_alert("locationd Permanent Error"),
+    ET.PERMANENT: NormalPermanentAlert("locationd Permanent Error"),
   },
 
   # openpilot tries to learn certain parameters about your car by observing
@@ -588,7 +589,8 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
 
   EventName.paramsdPermanentError: {
     ET.NO_ENTRY: NoEntryAlert("paramsd Permanent Error"),
-    ET.SOFT_DISABLE: soft_disable_alert("paramsd Permanent Error"),
+    ET.IMMEDIATE_DISABLE: soft_disable_alert("paramsd Permanent Error"),
+    ET.PERMANENT: NormalPermanentAlert("paramsd Permanent Error"),
   },
 
   # ********** events that affect controls state transitions **********

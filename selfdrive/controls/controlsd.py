@@ -380,15 +380,13 @@ class Controls:
       self.events.add(EventName.posenetInvalid)
     if not self.sm['liveLocationKalman'].deviceStable:
       self.events.add(EventName.deviceFalling)
-    if not (self.sm['liveLocationKalman'].sensorsOK) and not NOSENSOR:
+    if not self.sm['liveLocationKalman'].sensorsOK and not NOSENSOR:
       if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive sensor inputs
         self.events.add(EventName.sensorDataInvalid)
     if not self.sm['liveLocationKalman'].inputsOK and self.sm['liveLocationKalman'].sensorsOK and not NOSENSOR:
       self.events.add(EventName.locationdTemporaryError)
     if not self.sm['liveParameters'].valid and not TESTING_CLOSET and (not SIMULATION or REPLAY):
       self.events.add(EventName.paramsdTemporaryError)
-    if not self.sm['liveParameters'].sensorValid:
-      self.events.add(EventName.paramsdPermanentError)
 
     if not REPLAY:
       # Check for mismatch between openpilot and car's PCM
