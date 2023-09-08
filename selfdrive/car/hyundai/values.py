@@ -459,6 +459,7 @@ PART_NUMBER_FW_PATTERN = re.compile(b'(?<=[0-9][.,][0-9]{2} )([0-9]{5}[-/]?[A-Z]
 # TODO: use abs, it has the platform code and part number on many platforms
 PLATFORM_CODE_ECUS = [Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps]
 # So far we've only seen dates in fwdCamera
+# TODO: there are date codes in the ABS firmware versions in hex
 DATE_FW_ECUS = [Ecu.fwdCamera]
 
 FW_QUERY_CONFIG = FwQueryConfig(
