@@ -102,20 +102,21 @@ def fill_driver_state(msg, ds_result: DriverStateResult):
 def get_driverstate_packet(model_output: np.ndarray, frame_id: int, location_ts: int, execution_time: float, dsp_execution_time: float):
   model_result = ctypes.cast(model_output.ctypes.data, ctypes.POINTER(DMonitoringModelResult)).contents
   msg = messaging.new_message('driverStateV2')
-  msg.driverStateV2.frameId = frame_id
-  msg.driverStateV2.modelExecutionTime = execution_time
-  msg.driverStateV2.dspExecutionTime = dsp_execution_time
-  msg.driverStateV2.poorVisionProb = sigmoid(model_result.poor_vision_prob)
-  msg.driverStateV2.wheelOnRightProb = sigmoid(model_result.wheel_on_right_prob)
-  msg.driverStateV2.rawPredictions = model_output.tobytes() if SEND_RAW_PRED else b''
-  fill_driver_state(msg.driverStateV2.leftDriverData, model_result.driver_state_lhd)
-  fill_driver_state(msg.driverStateV2.rightDriverData, model_result.driver_state_rhd)
+  ds = msg.driverStateV2
+  ds.frameId = frame_id
+  ds.modelExecutionTime = execution_time
+  ds.dspExecutionTime = dsp_execution_time
+  ds.poorVisionProb = sigmoid(model_result.poor_vision_prob)
+  ds.wheelOnRightProb = sigmoid(model_result.wheel_on_right_prob)
+  ds.rawPredictions = model_output.tobytes() if SEND_RAW_PRED else b''
+  fill_driver_state(ds.leftDriverData, model_result.driver_state_lhd)
+  fill_driver_state(ds.rightDriverData, model_result.driver_state_rhd)
   return msg
 
 
 def main():
   gc.disable()
-  set_realtime_priority(53)
+  set_realtime_priority(1)
 
   model = ModelState()
   cloudlog.warning("models loaded, dmonitoringmodeld starting")
