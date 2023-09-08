@@ -14,6 +14,10 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "mock"
+    ret.mass = 1700.
+    ret.wheelbase = 2.70
+    ret.centerToFront = ret.wheelbase * 0.5
+    ret.steerRatio = 13.
     return ret
 
   def _update(self, c):
@@ -21,8 +25,8 @@ class CarInterface(CarInterfaceBase):
     gps_sock = 'gpsLocationExternal' if self.sm.rcv_frame['gpsLocationExternal'] > 1 else 'gpsLocation'
 
     ret = car.CarState.new_message()
-    ret.vEgo = self.speedself.sm[gps_sock].speed
-    ret.vEgoRaw = self.speedself.sm[gps_sock].speed
+    ret.vEgo = self.sm[gps_sock].speed
+    ret.vEgoRaw = self.sm[gps_sock].speed
 
     return ret
 
