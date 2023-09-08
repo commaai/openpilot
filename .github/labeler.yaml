@@ -16,10 +16,7 @@ tesla: selfdrive/car/tesla/*
 toyota: selfdrive/car/toyota/*
 volkswagen: selfdrive/car/volkswagen/*
 
-multilanguage: selfdrive/ui/translations/**
-
-simulation: tools/sim/**
-
-ui: selfdrive/ui/**
-
-tools: tools/**
+#multilanguage: selfdrive/ui/translations/**
+#simulation: tools/sim/**
+#ui: selfdrive/ui/**
+#tools: tools/**
