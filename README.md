@@ -40,12 +40,12 @@ Running on a dedicated device in a car
 
 To use openpilot in a car, you need four things
 1. Supported Device: 
-  A Comma 3X or Comma Three. You can purchase these devices from (https://comma.ai/shop/comma-3x)
+  A comma 3/3x. You can purchase these devices from (https://comma.ai/shop/comma-3x)
   
 2. Software Installation:
   The setup procedure for the Comma 3/3X allows users to enter a URL for custom software installation.
-  To install the release version of openpilot, use the URL (https://github.com/commaai/openpilot).
-  To install openpilot master for more advanced users, use the URL (https://installer.comma.ai/commaai/master). You can replace "commaai" with another GitHub username to install a fork.
+  To install the release version of openpilot, use the URL `openpilot.comma.ai`.
+  To install openpilot master for more advanced users, use the URL `installer.comma.ai/commaai/master`. You can replace "commaai" with another GitHub username to install a fork.
 
 3. Supported Car:
   Ensure that you have one of [the 250+ supported cars](docs/CARS.md). openpilot supports a wide range of car makes including Honda, Toyota, Hyundai, Nissan, Kia, Chrysler, Lexus, Acura, Audi, VW, Ford, and many more.
