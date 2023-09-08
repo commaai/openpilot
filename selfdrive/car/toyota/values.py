@@ -302,7 +302,7 @@ def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
   candidates = set()
 
   for candidate, fws in FW_VERSIONS.items():
-    print('\n\ncandidate:', candidate)
+    # print('\n\ncandidate:', candidate)
     # Keep track of ECUs which pass all checks (platform codes, within date range)
     valid_found_ecus = set()
     valid_expected_ecus = {ecu[1:] for ecu in fws if ecu[0] in PLATFORM_CODE_ECUS}
@@ -322,7 +322,7 @@ def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
       found_platform_codes = {code for code, _ in codes}
       # found_dates = {date for _, date in codes if date is not None}
 
-      print(ecu, expected_platform_codes, found_platform_codes)
+      # print(ecu, expected_platform_codes, found_platform_codes)
 
       # Check platform code + part number matches for any found versions
       if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
@@ -347,16 +347,14 @@ def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
   return candidates - fuzzy_platform_blacklist
 
 
-# # Regex patterns for parsing platform code, FW date, and part number from FW versions
+# Regex patterns for parsing platform code, FW date, and part number from FW versions
 SHORT_FW_PATTERN = re.compile(b'(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{4})')
 MEDIUM_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<version>[A-Z0-9]{3})')
 LONG_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{3})')
 FW_LEN_CODE = re.compile(b'^[\x01-\x05]')  # 5 chunks max. highest seen is 3 chunks, 16 bytes each
 
-# List of ECUs expected to have platform codes, camera and radar should exist on all cars
+# List of ECUs expected to have platform codes
 PLATFORM_CODE_ECUS = [Ecu.abs, Ecu.engine, Ecu.eps, Ecu.dsu, Ecu.fwdCamera, Ecu.fwdRadar]
-# So far we've only seen dates in fwdCamera
-# DATE_FW_ECUS = [Ecu.fwdCamera]
 
 # Some ECUs that use KWP2000 have their FW versions on non-standard data identifiers.
 # Toyota diagnostic software first gets the supported data ids, then queries them one by one.
@@ -431,8 +429,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
 )
 
 # FW_PATTERN = re.compile(b'[0-9]{4}[0-9A-Z][0-9A-Z]')
-# FW_PATTERN2 = re.compile(br'(?<=\\x[0-9]{2})[0-9A-Z]{5}|^[0-9A-Z]{5}')
-# FW_PATTERN_V3 = re.compile(b'(?P<length>^[\x00-\x0F])?(?P<part>[0-9A-Z]{4})')
 
 FW_VERSIONS = {
   CAR.AVALON: {

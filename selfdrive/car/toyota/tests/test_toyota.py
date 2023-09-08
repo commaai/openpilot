@@ -11,7 +11,7 @@ from selfdrive.car.fw_versions import build_fw_dict
 #                                          EV_CAR, FW_QUERY_CONFIG, FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, \
 #                                          PLATFORM_CODE_ECUS, get_platform_codes
 from selfdrive.car.toyota.values import TSS2_CAR, ANGLE_CONTROL_CAR, FW_VERSIONS, FW_QUERY_CONFIG, EV_HYBRID_CAR, \
-                                        LONG_FW_PATTERN, FW_LEN_CODE, get_platform_codes  # FW_PATTERN_V3
+                                        LONG_FW_PATTERN, FW_LEN_CODE, get_platform_codes
 from openpilot.selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, RADAR_ACC_CAR, FW_VERSIONS
 
 Ecu = car.CarParams.Ecu
@@ -60,11 +60,8 @@ class TestToyotaFingerprint(unittest.TestCase):
   #   get_platform_codes(fws)
 
   def test_fw_pattern(self):
-    # return
+    """Asserts all ECUs can be parsed"""
     for car_model, ecus in FW_VERSIONS.items():
-      # print()
-      # print(car_model)
-
       for ecu, fws in ecus.items():
         for fw in fws:
 
@@ -72,74 +69,6 @@ class TestToyotaFingerprint(unittest.TestCase):
           ret = get_platform_codes([fw])
           self.assertTrue(len(ret))
           print('ret', ret)
-          continue
-          match = FW_PATTERN.search(fw)
-          length = FW_LEN_CODE.search(fw)
-          if ecu[0] in (Ecu.fwdRadar, Ecu.fwdCamera):
-            assert (length is None) == (car_model not in TSS2_CAR), (car_model, ecu, fw)
-          if ecu[0] in (Ecu.engine,):
-            assert length is not None
-          # assert match is not None, (ecu, fw, match)
-          # print(fw, match)
-
-  # def test_fw_debugging(self):
-  #   for car_model, ecus in FW_VERSIONS.items():
-  #     print()
-  #     print(car_model)
-  #     cam_len_code = False
-  #     eng_len_code = False
-  #
-  #     for ecu, fws in ecus.items():
-  #       if ecu[0] in (Ecu.fwdRadar, Ecu.fwdCamera):
-  #         cam_len_code |= all(f[0] < 4 for f in fws)
-  #       if ecu[0] in (Ecu.engine, Ecu.abs):
-  #         eng_len_code |= all(1 < f[0] < 4 for f in fws)
-  #         print(ecu, eng_len_code)
-  #
-  #     if (car_model in TSS2_CAR) != cam_len_code:
-  #       print(car_model, car_model in TSS2_CAR, cam_len_code)
-  #
-  #     if (car_model in EV_HYBRID_CAR) != eng_len_code:
-  #       print('MISMATCH', car_model, car_model in EV_HYBRID_CAR, eng_len_code)
-
-  def test_shared_fw(self):
-    return
-    all_fw = defaultdict(set)
-    for car_model, ecus in FW_VERSIONS.items():
-      # print()
-      # print(car_model)
-
-      for ecu, fws in ecus.items():
-        parts = set()
-        for fw in fws:
-          length, part = FW_PATTERN_V3.search(fw).groups()
-          parts.add(part)
-
-          all_fw[(ecu[1], fw)].add(car_model)
-        if len(parts) > 1:
-          print('uoh' ,car_model, ecu, parts)
-
-    # print(all_fw)
-
-    # shared abs (or whatever is in the continue statement)
-    shared = defaultdict(set)
-
-    for car_model, ecus in FW_VERSIONS.items():
-      # print()
-      # print(car_model)
-
-      for ecu, fws in ecus.items():
-        if ecu[0] != Ecu.abs:
-          continue
-        for fw in fws:
-          if len(all_fw[ecu[1], fw]) > 1:
-            shared[car_model] |= all_fw[ecu[1], fw]
-          # print(car_model, all_fw[ecu[1], fw])
-          # # all_fw[(ecu[1], fw)].add(car_model)
-
-    print(shared)
-    print(len(shared))
-
 
   # Tests for platform codes, part numbers, and FW dates which Hyundai will use to fuzzy
   # fingerprint in the absence of full FW matches:
@@ -245,6 +174,7 @@ class TestToyotaFingerprint(unittest.TestCase):
 
     platforms_with_shared_codes = set()
     for platform, fw_by_addr in FW_VERSIONS.items():
+      print('platform', platform)
       car_fw = []
       for ecu, fw_versions in fw_by_addr.items():
         ecu_name, addr, sub_addr = ecu
@@ -254,6 +184,7 @@ class TestToyotaFingerprint(unittest.TestCase):
 
       CP = car.CarParams.new_message(carFw=car_fw)
       matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw))
+      print('matches', matches)
       if len(matches) == 1:
         self.assertEqual(list(matches)[0], platform)
       else:
