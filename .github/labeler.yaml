@@ -2,19 +2,33 @@ CI / testing:
  - .github/**
  - '**/test_*'
 
-car: selfdrive/car/**
-body: selfdrive/car/body/*
-chrysler: selfdrive/car/chrysler/*
-ford: selfdrive/car/ford/*
-gm: selfdrive/car/gm/*
-honda: selfdrive/car/honda/*
-hyundai: selfdrive/car/hyundai/*
-mazda: selfdrive/car/mazda/*
-nissan: selfdrive/car/nissan/*
-subaru: selfdrive/car/subaru/*
-tesla: selfdrive/car/tesla/*
-toyota: selfdrive/car/toyota/*
-volkswagen: selfdrive/car/volkswagen/*
+car: 
+  - all: ['selfdrive/car/**']
+
+body:
+  - all: ['selfdrive/car/body/*']
+chrysler:
+  - all: ['selfdrive/car/chrysler/*']
+ford: 
+  - all: ['selfdrive/car/ford/*']
+gm: 
+  - all: ['selfdrive/car/gm/*']
+honda: 
+  - all: ['selfdrive/car/honda/*']
+hyundai: 
+  - all: ['selfdrive/car/hyundai/*']
+mazda: 
+  - all: ['selfdrive/car/mazda/*']
+nissan: 
+  - all: ['selfdrive/car/nissan/*']
+subaru: 
+  - all: ['selfdrive/car/subaru/*']
+tesla: 
+  - all: ['selfdrive/car/tesla/*']
+toyota: 
+  - all: ['selfdrive/car/toyota/*']
+volkswagen: 
+  - all: ['selfdrive/car/volkswagen/*']
 
 #multilanguage: selfdrive/ui/translations/**
 #simulation: tools/sim/**
