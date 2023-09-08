@@ -570,7 +570,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
 
   EventName.locationdPermanentError: {
     ET.NO_ENTRY: NoEntryAlert("locationd Permanent Error"),
-    ET.IMMEDIATE_DISABLE: soft_disable_alert("locationd Permanent Error"),
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("locationd Permanent Error"),
     ET.PERMANENT: NormalPermanentAlert("locationd Permanent Error"),
   },
 
