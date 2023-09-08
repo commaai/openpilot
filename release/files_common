@@ -362,10 +362,9 @@ selfdrive/modeld/__init__.py
 selfdrive/modeld/SConscript
 selfdrive/modeld/modeld.py
 selfdrive/modeld/navmodeld.py
-selfdrive/modeld/dmonitoringmodeld.cc
+selfdrive/modeld/dmonitoringmodeld.py
 selfdrive/modeld/constants.py
 selfdrive/modeld/modeld
-selfdrive/modeld/dmonitoringmodeld
 
 selfdrive/modeld/models/__init__.py
 selfdrive/modeld/models/*.pxd
@@ -378,8 +377,6 @@ selfdrive/modeld/models/driving.cc
 selfdrive/modeld/models/driving.h
 selfdrive/modeld/models/supercombo.onnx
 
-selfdrive/modeld/models/dmonitoring.cc
-selfdrive/modeld/models/dmonitoring.h
 selfdrive/modeld/models/dmonitoring_model_q.dlc
 
 selfdrive/modeld/models/navmodel_q.dlc
