@@ -52,8 +52,8 @@ class TestToyotaFingerprint(unittest.TestCase):
 
   def test_fw_pattern(self):
     """Asserts all ECUs can be parsed"""
-    for car_model, ecus in FW_VERSIONS.items():
-      for ecu, fws in ecus.items():
+    for ecus in FW_VERSIONS.values():
+      for fws in ecus.values():
         for fw in fws:
           ret = get_platform_codes([fw])
           self.assertTrue(len(ret))
