@@ -21,7 +21,7 @@ from openpilot.selfdrive.athena import athenad
 from openpilot.selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
 from openpilot.selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
 from cereal import messaging
-from selfdrive.hardware.hw import Paths
+from openpilot.selfdrive.hardware.hw import Paths
 
 
 class TestAthenadMethods(unittest.TestCase):
