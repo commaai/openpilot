@@ -235,11 +235,6 @@ STATIC_DSU_MSGS = [
            CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 0, 100, b'\x0c\x00\x00\x00\x00\x00\x00\x00'),
 ]
 
-SHORT_FW_PATTERN = re.compile(b'(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{4})')
-MEDIUM_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<version>[A-Z0-9]{3})')
-LONG_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{3})')
-FW_LEN_CODE = re.compile(b'^[\x01-\x05]')  # 5 chunks max. highest seen is 3 chunks, 16 bytes each
-
 
 def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[bytes]]]:
   codes = set()  # TODO: standardize (code-Optional[part], date)
@@ -352,23 +347,22 @@ def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
   return candidates - fuzzy_platform_blacklist
 
 
+# # Regex patterns for parsing platform code, FW date, and part number from FW versions
+SHORT_FW_PATTERN = re.compile(b'(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{4})')
+MEDIUM_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<version>[A-Z0-9]{3})')
+LONG_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{3})')
+FW_LEN_CODE = re.compile(b'^[\x01-\x05]')  # 5 chunks max. highest seen is 3 chunks, 16 bytes each
+
+# List of ECUs expected to have platform codes, camera and radar should exist on all cars
+PLATFORM_CODE_ECUS = [Ecu.abs, Ecu.engine, Ecu.eps, Ecu.dsu, Ecu.fwdCamera, Ecu.fwdRadar]
+# So far we've only seen dates in fwdCamera
+# DATE_FW_ECUS = [Ecu.fwdCamera]
+
 # Some ECUs that use KWP2000 have their FW versions on non-standard data identifiers.
 # Toyota diagnostic software first gets the supported data ids, then queries them one by one.
 # For example, sends: 0x1a8800, receives: 0x1a8800010203, queries: 0x1a8801, 0x1a8802, 0x1a8803
 TOYOTA_VERSION_REQUEST_KWP = b'\x1a\x88\x01'
 TOYOTA_VERSION_RESPONSE_KWP = b'\x5a\x88\x01'
-
-# # Regex patterns for parsing platform code, FW date, and part number from FW versions
-# PLATFORM_CODE_FW_PATTERN = re.compile(b'((?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] +
-#                                       b')[A-Z]{2}[A-Za-z0-9]{0,2})')
-# DATE_FW_PATTERN = re.compile(b'(?<=[ -])([0-9]{6}$)')
-# PART_NUMBER_FW_PATTERN = re.compile(b'(?<=[0-9][.,][0-9]{2} )([0-9]{5}[-/]?[A-Z][A-Z0-9]{3}[0-9])')
-
-# List of ECUs expected to have platform codes, camera and radar should exist on all cars
-# TODO: use abs, it has the platform code and part number on many platforms
-PLATFORM_CODE_ECUS = [Ecu.abs, Ecu.engine, Ecu.eps, Ecu.dsu, Ecu.fwdCamera, Ecu.fwdRadar]
-# So far we've only seen dates in fwdCamera
-# DATE_FW_ECUS = [Ecu.fwdCamera]
 
 FW_QUERY_CONFIG = FwQueryConfig(
   # TODO: look at data to whitelist new ECUs effectively
