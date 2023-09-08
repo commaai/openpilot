@@ -37,7 +37,7 @@ PROCS = {
   "./_sensord": 7.0,
   "selfdrive.controls.radard": 4.5,
   "selfdrive.modeld.modeld": 8.0,
-  "./_dmonitoringmodeld": 5.0,
+  "selfdrive.modeld.dmonitoringmodeld": 8.0,
   "selfdrive.modeld.navmodeld": 1.0,
   "selfdrive.thermald.thermald": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
