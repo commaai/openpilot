@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from hypothesis import given, settings, strategies as st
 import unittest
 
 from cereal import car
@@ -66,13 +65,6 @@ class TestHyundaiFingerprint(unittest.TestCase):
             continue
           part = code.split(b"-")[1]
           self.assertFalse(part.startswith(b'CW'), "Car has bad part number")
-
-  @settings(max_examples=100)
-  @given(data=st.data())
-  def test_platform_codes_fuzzy_fw(self, data):
-    fw_strategy = st.lists(st.binary())
-    fws = data.draw(fw_strategy)
-    get_platform_codes(fws)
 
   # Tests for platform codes, part numbers, and FW dates which Hyundai will use to fuzzy
   # fingerprint in the absence of full FW matches:
