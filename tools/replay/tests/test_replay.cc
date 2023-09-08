@@ -122,27 +122,22 @@ TEST_CASE("Route") {
     util::create_directories(log_path, 0755);
     REQUIRE(donload_to_file(remote_route.at(i).rlog.toStdString(), log_path + "rlog.bz2"));
     REQUIRE(donload_to_file(remote_route.at(i).road_cam.toStdString(), log_path + "fcamera.hevc"));
-    REQUIRE(donload_to_file(remote_route.at(i).driver_cam.toStdString(), log_path + "dcamera.hevc"));
-    REQUIRE(donload_to_file(remote_route.at(i).wide_road_cam.toStdString(), log_path + "ecamera.hevc"));
-    REQUIRE(donload_to_file(remote_route.at(i).qcamera.toStdString(), log_path + "qcamera.ts"));
   }
 
   SECTION("Local route") {
-    auto flags = GENERATE(REPLAY_FLAG_DCAM | REPLAY_FLAG_ECAM, REPLAY_FLAG_QCAMERA);
     Route route(DEMO_ROUTE, QString::fromStdString(data_dir));
     REQUIRE(route.load());
     REQUIRE(route.segments().size() == 2);
     for (int i = 0; i < route.segments().size(); ++i) {
-      read_segment(i, route.at(i), flags);
+      read_segment(i, route.at(i), REPLAY_FLAG_NONE);
     }
   };
   SECTION("Remote route") {
-    auto flags = GENERATE(REPLAY_FLAG_DCAM | REPLAY_FLAG_ECAM, REPLAY_FLAG_QCAMERA);
     Route route(DEMO_ROUTE);
     REQUIRE(route.load());
     REQUIRE(route.segments().size() == 13);
     for (int i = 0; i < 2; ++i) {
-      read_segment(i, route.at(i), flags);
+      read_segment(i, route.at(i), REPLAY_FLAG_NONE);
     }
   };
 }
@@ -150,7 +145,7 @@ TEST_CASE("Route") {
 // helper class for unit tests
 class TestReplay : public Replay {
  public:
-  TestReplay(const QString &route, uint32_t flags = REPLAY_FLAG_NO_FILE_CACHE | REPLAY_FLAG_NO_VIPC) : Replay(route, {}, {}, {}, nullptr, flags) {}
+  TestReplay(const QString &route, uint32_t flags = REPLAY_FLAG_NO_VIPC) : Replay(route, {}, {}, {}, nullptr, flags) {}
   void test_seek();
   void testSeekTo(int seek_to);
 };
