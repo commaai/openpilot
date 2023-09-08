@@ -207,12 +207,12 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: false
-    - name: Setup to push to repo
+    - name: Setup docker
       run: |
-        echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
         $DOCKER_LOGIN
     - name: Merge x64 and arm64 tags
-      run: | 
+      run: |
+        echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
         selfdrive/test/docker_tag_multiarch.sh base x86_64 aarch64
 
   static_analysis:
