@@ -77,7 +77,7 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
-    - uses: ./.github/workflows/build
+    - uses: ./.github/workflows/compile-openpilot
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 15 || 30) }} # allow more time when we missed the scons cache
       with:
         cache_key_prefix: ${{ (matrix.arch == 'aarch64') && 'scons_aarch64' || 'scons' }}

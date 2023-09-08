@@ -1,4 +1,4 @@
-name: 'openpilot build'
+name: 'compile openpilot'
 
 inputs:
   cache_key_prefix:
