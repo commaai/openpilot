@@ -69,11 +69,6 @@ lenv.Program('_dmonitoringmodeld', [
     "models/dmonitoring.cc",
   ]+common_model, LIBS=libs + snpe_lib)
 
-lenv.Program('_navmodeld', [
-    "navmodeld.cc",
-    "models/nav.cc",
-  ]+common_model, LIBS=libs + snpe_lib)
-
 # Build thneed model
 if arch == "larch64" or GetOption('pc_thneed'):
   fn = File("models/supercombo").abspath

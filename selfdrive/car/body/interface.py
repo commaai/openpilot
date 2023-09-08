@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import math
 from cereal import car
 from openpilot.common.realtime import DT_CTRL

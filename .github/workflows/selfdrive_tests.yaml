@@ -26,6 +26,7 @@ env:
   RUN_CL: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONWARNINGS=error -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $CL_BASE_IMAGE /bin/sh -c
 
   UNIT_TEST: coverage run --append -m unittest discover
+  PYTEST: pytest --continue-on-collection-errors --cov --cov-report=xml --cov-append --durations=0 --durations-min=5
 
 jobs:
   build_release:
@@ -40,7 +41,7 @@ jobs:
     - name: Build devel
       timeout-minutes: 1
       run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
     - name: Check submodules
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       timeout-minutes: 1
@@ -73,7 +74,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot with all flags
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 12 || 30) }} # allow more time when we missed the scons cache
       run: |
@@ -195,7 +196,7 @@ jobs:
       run: |
         echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
         $DOCKER_LOGIN
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
       with:
         git-lfs: false
     - name: Build and push CL Docker image
@@ -222,7 +223,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run valgrind
@@ -240,7 +241,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: ${{ env.RUN }} "scons -j$(nproc)"
@@ -248,22 +249,9 @@ jobs:
       timeout-minutes: 40
       run: |
         ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
-                        $UNIT_TEST common && \
-                        $UNIT_TEST selfdrive/boardd && \
-                        $UNIT_TEST selfdrive/controls && \
-                        $UNIT_TEST selfdrive/monitoring && \
-                        $UNIT_TEST system/loggerd && \
-                        $UNIT_TEST selfdrive/car && \
-                        $UNIT_TEST selfdrive/locationd && \
-                        $UNIT_TEST selfdrive/test/longitudinal_maneuvers && \
-                        $UNIT_TEST system/tests && \
-                        $UNIT_TEST system/ubloxd && \
+                        $PYTEST -n auto --dist=loadscope --timeout 30 && \
                         selfdrive/locationd/test/_test_locationd_lib.py && \
                         ./system/ubloxd/tests/test_glonass_runner && \
-                        $UNIT_TEST selfdrive/athena && \
-                        $UNIT_TEST selfdrive/thermald && \
-                        $UNIT_TEST system/hardware/tici && \
-                        $UNIT_TEST tools/lib/tests && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         ./selfdrive/ui/tests/test_translations.py && \
@@ -274,8 +262,7 @@ jobs:
                         ./tools/replay/tests/test_replay && \
                         ./tools/cabana/tests/test_cabana && \
                         ./system/camerad/test/ae_gray_test && \
-                        ./selfdrive/test/process_replay/test_fuzzy.py && \
-                        coverage xml"
+                        ./selfdrive/test/process_replay/test_fuzzy.py"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
 
@@ -286,7 +273,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
     - name: Cache test routes
       id: dependency-cache
       uses: actions/cache@v3
@@ -326,7 +313,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
     - name: Build base Docker image
       run: eval "$BUILD"
     - name: Build Docker image
@@ -362,7 +349,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
     - name: Cache test routes
       id: dependency-cache
       uses: actions/cache@v3
@@ -374,7 +361,7 @@ jobs:
     - name: Test car models
       timeout-minutes: 25
       run: |
-        ${{ env.RUN }} "pytest --cov --cov-report=xml -n auto --dist=loadscope selfdrive/car/tests/test_models.py && \
+        ${{ env.RUN }} "$PYTEST -n auto --dist=loadscope selfdrive/car/tests/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
         NUM_JOBS: 5
@@ -391,7 +378,7 @@ jobs:
         with:
           submodules: true
           ref: ${{ github.event.pull_request.base.ref }}
-      - uses: ./.github/workflows/setup
+      - uses: ./.github/workflows/setup-with-retry
       - name: Get base car info
         run: |
           ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/debug/dump_car_info.py --path /tmp/openpilot_cache/base_car_info"

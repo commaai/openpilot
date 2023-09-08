@@ -75,12 +75,7 @@ int main(int argc, char *argv[]) {
     } else if (cmd_parser.isSet("demo")) {
       route = DEMO_ROUTE;
     }
-
-    if (route.isEmpty()) {
-      StreamSelector dlg(&stream);
-      dlg.exec();
-      dbc_file = dlg.dbcFile();
-    } else {
+    if (!route.isEmpty()) {
       auto replay_stream = new ReplayStream(&app);
       if (!replay_stream->loadRoute(route, cmd_parser.value("data_dir"), replay_flags)) {
         return 0;
@@ -89,17 +84,28 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  MainWindow w;
-  if (!stream) {
-    stream = new DummyStream(&app);
-  }
-  stream->start();
-  if (!dbc_file.isEmpty()) {
-    w.loadFile(dbc_file);
-  }
-  w.show();
+  int ret = 0;
+  {
+    MainWindow w;
+    QTimer::singleShot(0, [&]() {
+      if (!stream) {
+        StreamSelector dlg(&stream);
+        dlg.exec();
+        dbc_file = dlg.dbcFile();
+      }
+      if (!stream) {
+        stream = new DummyStream(&app);
+      }
+      stream->start();
+      if (!dbc_file.isEmpty()) {
+        w.loadFile(dbc_file);
+      }
+      w.show();
+    });
 
-  int ret = app.exec();
+    ret = app.exec();
+  }
+
   delete can;
   return ret;
 }
