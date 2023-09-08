@@ -271,14 +271,15 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[by
       if fw_match is not None:
         platform, major_version, sub_version = fw_match.groups()
         # print('platform code, version', platform, major_version, sub_version)
-        codes.add((platform, major_version))
+        codes.add((platform + b'-' + major_version, sub_version))
 
     elif len(first_chunk) == 10:
+      print('medium fw', fw)
       fw_match = MEDIUM_FW_PATTERN.search(first_chunk)
       if fw_match is not None:
-        # TODO: platform is a loose term here
-        part, platform, version = fw_match.groups()
-        codes.add((part + b'-' + platform, version))
+        part, platform, major_version, sub_version = fw_match.groups()
+        # print(part, platform, major_version, sub_version)
+        codes.add((part + b'-' + platform + b'-' + major_version, sub_version))
 
     elif len(first_chunk) == 12:
       # print(LONG_FW_PATTERN)
@@ -349,7 +350,7 @@ def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
 
 # Regex patterns for parsing platform code, FW date, and part number from FW versions
 SHORT_FW_PATTERN = re.compile(b'(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{4})')
-MEDIUM_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<version>[A-Z0-9]{3})')
+MEDIUM_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{1})(?P<sub_version>[A-Z0-9]{2})')
 LONG_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{3})')
 FW_LEN_CODE = re.compile(b'^[\x01-\x05]')  # 5 chunks max. highest seen is 3 chunks, 16 bytes each
 

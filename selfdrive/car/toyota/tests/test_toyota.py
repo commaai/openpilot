@@ -7,9 +7,6 @@ from collections import defaultdict
 
 from cereal import car
 from selfdrive.car.fw_versions import build_fw_dict
-# from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
-#                                          EV_CAR, FW_QUERY_CONFIG, FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, \
-#                                          PLATFORM_CODE_ECUS, get_platform_codes
 from selfdrive.car.toyota.values import TSS2_CAR, ANGLE_CONTROL_CAR, FW_VERSIONS, FW_QUERY_CONFIG, EV_HYBRID_CAR, \
                                         LONG_FW_PATTERN, FW_LEN_CODE, get_platform_codes
 from openpilot.selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, RADAR_ACC_CAR, FW_VERSIONS
@@ -118,33 +115,34 @@ class TestToyotaFingerprint(unittest.TestCase):
   #         self.assertTrue(all({b"-" in code for code, _ in codes}),
   #                         f"FW does not have part number: {fw}")
   #
-  # def test_platform_codes_spot_check(self):
-  #   # Asserts basic platform code parsing behavior for a few cases
-  #   results = get_platform_codes([b"\xf1\x00DH LKAS 1.1 -150210"])
-  #   self.assertEqual(results, {(b"DH", b"150210")})
-  #
-  #   # Some cameras and all radars do not have dates
-  #   results = get_platform_codes([b"\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         "])
-  #   self.assertEqual(results, {(b"AEhe-G2000", None)})
-  #
-  #   results = get_platform_codes([b"\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         "])
-  #   self.assertEqual(results, {(b"CV1-CV000", None)})
-  #
-  #   results = get_platform_codes([
-  #     b"\xf1\x00DH LKAS 1.1 -150210",
-  #     b"\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ",
-  #     b"\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ",
-  #   ])
-  #   self.assertEqual(results, {(b"DH", b"150210"), (b"AEhe-G2000", None), (b"CV1-CV000", None)})
-  #
-  #   results = get_platform_codes([
-  #     b"\xf1\x00LX2 MFC  AT USA LHD 1.00 1.07 99211-S8100 220222",
-  #     b"\xf1\x00LX2 MFC  AT USA LHD 1.00 1.08 99211-S8100 211103",
-  #     b"\xf1\x00ON  MFC  AT USA LHD 1.00 1.01 99211-S9100 190405",
-  #     b"\xf1\x00ON  MFC  AT USA LHD 1.00 1.03 99211-S9100 190720",
-  #   ])
-  #   self.assertEqual(results, {(b"LX2-S8100", b"220222"), (b"LX2-S8100", b"211103"),
-  #                              (b"ON-S9100", b"190405"), (b"ON-S9100", b"190720")})
+  def test_platform_codes_spot_check(self):
+    return
+    # Asserts basic platform code parsing behavior for a few cases
+    results = get_platform_codes([b'\x018966306L3100\x00\x00\x00\x00'])
+    self.assertEqual(results, {(b"89663-06", b"L3-100")})
+
+    # Some cameras and all radars do not have dates
+    results = get_platform_codes([b"\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         "])
+    self.assertEqual(results, {(b"AEhe-G2000", None)})
+
+    results = get_platform_codes([b"\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         "])
+    self.assertEqual(results, {(b"CV1-CV000", None)})
+
+    results = get_platform_codes([
+      b"\xf1\x00DH LKAS 1.1 -150210",
+      b"\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ",
+      b"\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ",
+    ])
+    self.assertEqual(results, {(b"DH", b"150210"), (b"AEhe-G2000", None), (b"CV1-CV000", None)})
+
+    results = get_platform_codes([
+      b"\xf1\x00LX2 MFC  AT USA LHD 1.00 1.07 99211-S8100 220222",
+      b"\xf1\x00LX2 MFC  AT USA LHD 1.00 1.08 99211-S8100 211103",
+      b"\xf1\x00ON  MFC  AT USA LHD 1.00 1.01 99211-S9100 190405",
+      b"\xf1\x00ON  MFC  AT USA LHD 1.00 1.03 99211-S9100 190720",
+    ])
+    self.assertEqual(results, {(b"LX2-S8100", b"220222"), (b"LX2-S8100", b"211103"),
+                               (b"ON-S9100", b"190405"), (b"ON-S9100", b"190720")})
   #
   def test_fuzzy_excluded_platforms(self):
     # Asserts a list of platforms that will not fuzzy fingerprint with platform codes due to them being shared.
