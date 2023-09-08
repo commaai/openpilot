@@ -168,6 +168,7 @@ routes = [
   CarTestRoute("e9966711cfb04ce3|2022-01-11--07-59-43", TOYOTA.AVALON_TSS2),
   CarTestRoute("eca1080a91720a54|2022-03-17--13-32-29", TOYOTA.AVALONH_TSS2),
   CarTestRoute("6cdecc4728d4af37|2020-02-23--15-44-18", TOYOTA.CAMRY),
+  CarTestRoute("2f37c007683e85ba|2023-09-02--14-39-44", TOYOTA.CAMRY),  # openpilot longitudinal, with radar CAN filter
   CarTestRoute("3456ad0cd7281b24|2020-12-13--17-45-56", TOYOTA.CAMRY_TSS2),
   CarTestRoute("ffccc77938ddbc44|2021-01-04--16-55-41", TOYOTA.CAMRYH_TSS2),
   CarTestRoute("54034823d30962f5|2021-05-24--06-37-34", TOYOTA.CAMRYH),
@@ -243,6 +244,7 @@ routes = [
   CarTestRoute("c321c6b697c5a5ff|2020-06-23--11-04-33", SUBARU.FORESTER),
   CarTestRoute("791340bc01ed993d|2019-03-10--16-28-08", SUBARU.IMPREZA),
   CarTestRoute("8bf7e79a3ce64055|2021-05-24--09-36-27", SUBARU.IMPREZA_2020),
+  # CarTestRoute("8de015561e1ea4a0|2023-08-29--17-08-31", SUBARU.IMPREZA),  # openpilot longitudinal
   CarTestRoute("1bbe6bf2d62f58a8|2022-07-14--17-11-43", SUBARU.OUTBACK, segment=10),
   CarTestRoute("c56e69bbc74b8fad|2022-08-18--09-43-51", SUBARU.LEGACY, segment=3),
   CarTestRoute("f4e3a0c511a076f4|2022-08-04--16-16-48", SUBARU.CROSSTREK_HYBRID, segment=2),

@@ -207,7 +207,9 @@ void CameraWidget::updateFrameMat() {
 
   if (zoomed_view) {
     if (active_stream_type == VISION_STREAM_DRIVER) {
-      frame_mat = get_driver_view_transform(w, h, stream_width, stream_height);
+      if (stream_width > 0 && stream_height > 0) {
+        frame_mat = get_driver_view_transform(w, h, stream_width, stream_height);
+      }
     } else {
       // Project point at "infinity" to compute x and y offsets
       // to ensure this ends up in the middle of the screen

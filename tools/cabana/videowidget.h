@@ -37,7 +37,6 @@ class Slider : public QSlider {
 
 public:
   Slider(QWidget *parent);
-  ~Slider();
   double currentSecond() const { return value() / factor; }
   void setCurrentSecond(double sec) { setValue(sec * factor); }
   void setTimeRange(double min, double max);

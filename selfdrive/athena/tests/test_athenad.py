@@ -3,7 +3,6 @@ import json
 import os
 import requests
 import shutil
-import tempfile
 import time
 import threading
 import queue
@@ -18,11 +17,11 @@ from unittest import mock
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
-from openpilot.system import swaglog
 from openpilot.selfdrive.athena import athenad
 from openpilot.selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
 from openpilot.selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
 from cereal import messaging
+from selfdrive.hardware.hw import Paths
 
 
 class TestAthenadMethods(unittest.TestCase):
@@ -30,8 +29,6 @@ class TestAthenadMethods(unittest.TestCase):
   def setUpClass(cls):
     cls.SOCKET_PORT = 45454
     athenad.Params = MockParams
-    athenad.ROOT = tempfile.mkdtemp()
-    athenad.SWAGLOG_DIR = swaglog.SWAGLOG_DIR = tempfile.mkdtemp()
     athenad.Api = MockApi
     athenad.LOCAL_PORT_WHITELIST = {cls.SOCKET_PORT}
 
@@ -41,8 +38,8 @@ class TestAthenadMethods(unittest.TestCase):
     athenad.cur_upload_items.clear()
     athenad.cancelled_uploads.clear()
 
-    for i in os.listdir(athenad.ROOT):
-      p = os.path.join(athenad.ROOT, i)
+    for i in os.listdir(Paths.log_root()):
+      p = os.path.join(Paths.log_root(), i)
       if os.path.isdir(p):
         shutil.rmtree(p)
       else:
@@ -61,7 +58,7 @@ class TestAthenadMethods(unittest.TestCase):
 
   @staticmethod
   def _create_file(file: str, parent: Optional[str] = None) -> str:
-    fn = os.path.join(athenad.ROOT if parent is None else parent, file)
+    fn = os.path.join(Paths.log_root() if parent is None else parent, file)
     os.makedirs(os.path.dirname(fn), exist_ok=True)
     Path(fn).touch()
     return fn
@@ -418,7 +415,7 @@ class TestAthenadMethods(unittest.TestCase):
     fl = list()
     for i in range(10):
       file = f'swaglog.{i:010}'
-      self._create_file(file, athenad.SWAGLOG_DIR)
+      self._create_file(file, Paths.swaglog_root())
       fl.append(file)
 
     # ensure the list is all logs except most recent
