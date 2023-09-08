@@ -80,7 +80,7 @@ jobs:
     - uses: ./.github/workflows/compile-openpilot
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 15 || 30) }} # allow more time when we missed the scons cache
       with:
-        cache_key_prefix: ${{ (matrix.arch == 'aarch64') && 'scons_aarch64' || 'scons' }}
+        cache_key_prefix: scons_${{ matrix.arch }}
 
   build_mac:
     name: build macos

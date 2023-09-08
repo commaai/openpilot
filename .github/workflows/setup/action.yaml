@@ -8,7 +8,7 @@ inputs:
   cache_key_prefix:
     description: 'Prefix for caching key'
     required: false
-    default: 'scons'
+    default: 'scons_x86_64'
   is_retried:
     description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
     required: false
