@@ -250,10 +250,10 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, bytes]]:
       fw = fw[1:]
 
     # fw length should be multiple of 16 bytes (per chunk, even if no length code), skip parsing if unexpected length
-    if length_code * 16 != len(fw):
+    if length_code * FW_CHUNK_LEN != len(fw):
       continue
 
-    chunks = [fw[16 * i:16 * i + 16].strip(b'\x00 ') for i in range(length_code)]
+    chunks = [fw[FW_CHUNK_LEN * i:FW_CHUNK_LEN * i + FW_CHUNK_LEN].strip(b'\x00 ') for i in range(length_code)]
 
     # only first is considered for now since second is commonly shared (TODO: understand that)
     first_chunk = chunks[0]
@@ -293,6 +293,7 @@ SHORT_FW_PATTERN = re.compile(b'(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0
 MEDIUM_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{1})(?P<sub_version>[A-Z0-9]{2})')
 LONG_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{3})')
 FW_LEN_CODE = re.compile(b'^[\x01-\x05]')  # 5 chunks max. highest seen is 3 chunks, 16 bytes each
+FW_CHUNK_LEN = 16
 
 # List of ECUs expected to have platform codes
 # TODO: use hybrid ECU, splits many similar ICE and hybrid variants
