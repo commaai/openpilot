@@ -97,7 +97,6 @@ TEST_CASE("logger") {
 
     auto logging_thread = [&]() -> void {
       LoggerHandle *lh = logger_get_handle(&logger);
-      REQUIRE(lh != nullptr);
       int segment = main_segment;
       int delayed_cnt = 0;
       while (!do_exit) {

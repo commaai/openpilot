@@ -9,8 +9,12 @@
 #include <random>
 #include <string>
 
+#include <unordered_map>
+
 #include "catch2/catch.hpp"
 #include "common/util.h"
+
+std::hash<std::string> hasher;
 
 std::string random_bytes(int size) {
   std::random_device rd;
@@ -38,7 +42,7 @@ TEST_CASE("util::read_file") {
     std::string content = random_bytes(64 * 1024);
     write(fd, content.c_str(), content.size());
     std::string ret = util::read_file(filename);
-    REQUIRE(ret == content);
+    REQUIRE(hasher(ret) == hasher(content));
     close(fd);
   }
   SECTION("read directory") {
@@ -108,7 +112,7 @@ TEST_CASE("util::safe_fwrite") {
   REQUIRE(ret == 0);
   ret = fclose(f);
   REQUIRE(ret == 0);
-  REQUIRE(dat == util::read_file(filename));
+  REQUIRE(hasher(dat) == hasher(util::read_file(filename)));
 }
 
 TEST_CASE("util::create_directories") {
