@@ -50,9 +50,6 @@ private slots:
   void poweroff();
   void reboot();
   void updateCalibDescription();
-
-private:
-  Params params;
 };
 
 class TogglesPanel : public ListWidget {
@@ -65,7 +62,6 @@ public slots:
   void expandToggleDescription(const QString &param);
 
 private:
-  Params params;
   std::map<std::string, ParamControl*> toggles;
   ButtonParamControl *long_personality_setting;
 
@@ -89,7 +85,5 @@ private:
   ButtonControl *installBtn;
   ButtonControl *downloadBtn;
   ButtonControl *targetBranchBtn;
-
-  Params params;
   ParamWatcher *fs_watch;
 };

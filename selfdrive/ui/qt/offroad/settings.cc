@@ -10,7 +10,6 @@
 
 #include "selfdrive/ui/qt/network/networking.h"
 
-#include "common/params.h"
 #include "common/watchdog.h"
 #include "common/util.h"
 #include "system/hardware/hw.h"
@@ -98,7 +97,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   for (auto &[param, title, desc, icon] : toggle_defs) {
     auto toggle = new ParamControl(param, title, desc, icon, this);
 
-    bool locked = params.getBool((param + "Lock").toStdString());
+    bool locked = UIState::params.getBool((param + "Lock").toStdString());
     toggle->setEnabled(!locked);
 
     addItem(toggle);
@@ -151,15 +150,15 @@ void TogglesPanel::updateToggles() {
                                   .arg(tr("The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. "
                                           "When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green."));
 
-  const bool is_release = params.getBool("IsReleaseBranch");
-  auto cp_bytes = params.get("CarParamsPersistent");
+  const bool is_release = UIState::params.getBool("IsReleaseBranch");
+  auto cp_bytes = UIState::params.get("CarParamsPersistent");
   if (!cp_bytes.empty()) {
     AlignedBuffer aligned_buf;
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
     cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
 
     if (!CP.getExperimentalLongitudinalAvailable() || is_release) {
-      params.remove("ExperimentalLongitudinalEnabled");
+      UIState::params.remove("ExperimentalLongitudinalEnabled");
     }
     op_long_toggle->setVisible(CP.getExperimentalLongitudinalAvailable() && !is_release);
     if (hasLongitudinalControl(CP)) {
@@ -171,7 +170,7 @@ void TogglesPanel::updateToggles() {
       // no long for now
       experimental_mode_toggle->setEnabled(false);
       long_personality_setting->setEnabled(false);
-      params.remove("ExperimentalMode");
+      UIState::params.remove("ExperimentalMode");
 
       const QString unavailable = tr("Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control.");
 
@@ -197,7 +196,7 @@ void TogglesPanel::updateToggles() {
 DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   setSpacing(50);
   addItem(new LabelControl(tr("Dongle ID"), getDongleId().value_or(tr("N/A"))));
-  addItem(new LabelControl(tr("Serial"), params.get("HardwareSerial").c_str()));
+  addItem(new LabelControl(tr("Serial"), UIState::params.get("HardwareSerial").c_str()));
 
   // offroad-only buttons
 
@@ -210,13 +209,13 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   connect(resetCalibBtn, &ButtonControl::showDescriptionEvent, this, &DevicePanel::updateCalibDescription);
   connect(resetCalibBtn, &ButtonControl::clicked, [&]() {
     if (ConfirmationDialog::confirm(tr("Are you sure you want to reset calibration?"), tr("Reset"), this)) {
-      params.remove("CalibrationParams");
-      params.remove("LiveTorqueParameters");
+      UIState::params.remove("CalibrationParams");
+      UIState::params.remove("LiveTorqueParameters");
     }
   });
   addItem(resetCalibBtn);
 
-  if (!params.getBool("Passive")) {
+  if (!UIState::params.getBool("Passive")) {
     auto retrainingBtn = new ButtonControl(tr("Review Training Guide"), tr("REVIEW"), tr("Review the rules, features, and limitations of openpilot"));
     connect(retrainingBtn, &ButtonControl::clicked, [=]() {
       if (ConfirmationDialog::confirm(tr("Are you sure you want to review the training guide?"), tr("Review"), this)) {
@@ -241,7 +240,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     QString selection = MultiOptionDialog::getSelection(tr("Select a language"), langs.keys(), langs.key(uiState()->language), this);
     if (!selection.isEmpty()) {
       // put language setting, exit Qt UI, and trigger fast restart
-      params.put("LanguageSetting", langs[selection].toStdString());
+      UIState::params.put("LanguageSetting", langs[selection].toStdString());
       qApp->exit(18);
       watchdog_kick(0);
     }
@@ -285,7 +284,7 @@ void DevicePanel::updateCalibDescription() {
   QString desc =
       tr("openpilot requires the device to be mounted within 4° left or right and "
          "within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.");
-  std::string calib_bytes = params.get("CalibrationParams");
+  std::string calib_bytes = UIState::params.get("CalibrationParams");
   if (!calib_bytes.empty()) {
     try {
       AlignedBuffer aligned_buf;
@@ -310,7 +309,7 @@ void DevicePanel::reboot() {
     if (ConfirmationDialog::confirm(tr("Are you sure you want to reboot?"), tr("Reboot"), this)) {
       // Check engaged again in case it changed while the dialog was open
       if (!uiState()->engaged()) {
-        params.putBool("DoReboot", true);
+        UIState::params.putBool("DoReboot", true);
       }
     }
   } else {
@@ -323,7 +322,7 @@ void DevicePanel::poweroff() {
     if (ConfirmationDialog::confirm(tr("Are you sure you want to power off?"), tr("Power Off"), this)) {
       // Check engaged again in case it changed while the dialog was open
       if (!uiState()->engaged()) {
-        params.putBool("DoShutdown", true);
+        UIState::params.putBool("DoShutdown", true);
       }
     }
   } else {

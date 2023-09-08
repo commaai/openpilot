@@ -7,7 +7,6 @@
 #include <QtConcurrent>
 
 #include "common/transformations/orientation.hpp"
-#include "common/params.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "common/watchdog.h"
@@ -210,9 +209,8 @@ static void update_state(UIState *s) {
 }
 
 void ui_update_params(UIState *s) {
-  auto params = Params();
-  s->scene.is_metric = params.getBool("IsMetric");
-  s->scene.map_on_left = params.getBool("NavSettingLeftSide");
+  s->scene.is_metric = UIState::params.getBool("IsMetric");
+  s->scene.map_on_left = UIState::params.getBool("NavSettingLeftSide");
 }
 
 void UIState::updateStatus() {
@@ -244,9 +242,8 @@ UIState::UIState(QObject *parent) : QObject(parent) {
     "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "uiPlan",
   });
 
-  Params params;
-  language = QString::fromStdString(params.get("LanguageSetting"));
-  auto prime_value = params.get("PrimeType");
+  language = QString::fromStdString(UIState::params.get("LanguageSetting"));
+  auto prime_value = UIState::params.get("PrimeType");
   if (!prime_value.empty()) {
     prime_type = static_cast<PrimeType>(std::atoi(prime_value.c_str()));
   }
@@ -273,7 +270,7 @@ void UIState::setPrimeType(PrimeType type) {
     bool prev_prime = hasPrime();
 
     prime_type = type;
-    Params().put("PrimeType", std::to_string(prime_type));
+    UIState::params.put("PrimeType", std::to_string(prime_type));
     emit primeTypeChanged(prime_type);
 
     bool prime = hasPrime();

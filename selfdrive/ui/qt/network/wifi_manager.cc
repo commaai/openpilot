@@ -3,7 +3,6 @@
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/widgets/prime.h"
 
-#include "common/params.h"
 #include "common/swaglog.h"
 #include "selfdrive/ui/qt/util.h"
 

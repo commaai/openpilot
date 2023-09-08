@@ -17,7 +17,6 @@
 #include <QWheelEvent>
 
 #include "cereal/messaging/messaging.h"
-#include "common/params.h"
 #include "common/util.h"
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/maps/map_eta.h"

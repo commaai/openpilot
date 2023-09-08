@@ -177,6 +177,9 @@ public:
 
   QTransform car_space_transform;
 
+  // singleton params
+  inline static Params params;
+
 signals:
   void uiUpdate(const UIState &s);
   void offroadTransition(bool offroad);

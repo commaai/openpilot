@@ -10,9 +10,9 @@
 #include <QVBoxLayout>
 
 #include "common/util.h"
-#include "common/params.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/input.h"
+#include "selfdrive/ui/ui.h"
 
 TrainingGuide::TrainingGuide(QWidget *parent) : QFrame(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
@@ -37,7 +37,7 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   if (contains(boundingRect[currentIndex], e->pos())) {
     if (currentIndex == 9) {
       const QRect yes = QRect(707, 804, 531, 164);
-      Params().putBool("RecordFront", contains(yes, e->pos()));
+      UIState::params.putBool("RecordFront", contains(yes, e->pos()));
     }
     currentIndex += 1;
   } else if (currentIndex == (boundingRect.size() - 2) && contains(boundingRect.last(), e->pos())) {
@@ -176,14 +176,14 @@ void DeclinePage::showEvent(QShowEvent *event) {
   uninstall_btn->setStyleSheet("background-color: #B73D3D");
   buttons->addWidget(uninstall_btn);
   QObject::connect(uninstall_btn, &QPushButton::clicked, [=]() {
-    Params().putBool("DoUninstall", true);
+    UIState::params.putBool("DoUninstall", true);
   });
 }
 
 void OnboardingWindow::updateActiveScreen() {
   if (!accepted_terms) {
     setCurrentIndex(0);
-  } else if (!training_done && !params.getBool("Passive")) {
+  } else if (!training_done && !UIState::params.getBool("Passive")) {
     setCurrentIndex(1);
   } else {
     emit onboardingDone();
@@ -191,15 +191,15 @@ void OnboardingWindow::updateActiveScreen() {
 }
 
 OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
-  std::string current_terms_version = params.get("TermsVersion");
-  std::string current_training_version = params.get("TrainingVersion");
-  accepted_terms = params.get("HasAcceptedTerms") == current_terms_version;
-  training_done = params.get("CompletedTrainingVersion") == current_training_version;
+  std::string current_terms_version = UIState::params.get("TermsVersion");
+  std::string current_training_version = UIState::params.get("TrainingVersion");
+  accepted_terms = UIState::params.get("HasAcceptedTerms") == current_terms_version;
+  training_done = UIState::params.get("CompletedTrainingVersion") == current_training_version;
 
   TermsPage* terms = new TermsPage(this);
   addWidget(terms);
   connect(terms, &TermsPage::acceptedTerms, [=]() {
-    Params().put("HasAcceptedTerms", current_terms_version);
+    UIState::params.put("HasAcceptedTerms", current_terms_version);
     accepted_terms = true;
     updateActiveScreen();
   });
@@ -209,7 +209,7 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
   addWidget(tr);
   connect(tr, &TrainingGuide::completedTraining, [=]() {
     training_done = true;
-    Params().put("CompletedTrainingVersion", current_training_version);
+    UIState::params.put("CompletedTrainingVersion", current_training_version);
     updateActiveScreen();
   });
 

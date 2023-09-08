@@ -7,9 +7,9 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
-#include "common/params.h"
 #include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
+#include "selfdrive/ui/ui.h"
 
 QString get_mapbox_token() {
   // Valid for 4 weeks since we can't swap tokens on the fly
@@ -118,7 +118,7 @@ QList<QGeoCoordinate> polyline_to_coordinate_list(const QString &polylineString)
 }
 
 std::optional<QMapbox::Coordinate> coordinate_from_param(const std::string &param) {
-  QString json_str = QString::fromStdString(Params().get(param));
+  QString json_str = QString::fromStdString(UIState::params.get(param));
   if (json_str.isEmpty()) return {};
 
   QJsonDocument doc = QJsonDocument::fromJson(json_str.toUtf8());

@@ -14,7 +14,6 @@
 
 #include <string>
 
-#include "common/params.h"
 #include "common/util.h"
 #include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/util.h"

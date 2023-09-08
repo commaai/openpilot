@@ -7,6 +7,7 @@
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/window.h"
+#include "selfdrive/ui/ui.h"
 
 int main(int argc, char *argv[]) {
   setpriority(PRIO_PROCESS, 0, -20);
@@ -15,7 +16,7 @@ int main(int argc, char *argv[]) {
   initApp(argc, argv);
 
   QTranslator translator;
-  QString translation_file = QString::fromStdString(Params().get("LanguageSetting"));
+  QString translation_file = QString::fromStdString(UIState::params.get("LanguageSetting"));
   if (!translator.load(QString(":/%1").arg(translation_file)) && translation_file.length()) {
     qCritical() << "Failed to load translation file:" << translation_file;
   }

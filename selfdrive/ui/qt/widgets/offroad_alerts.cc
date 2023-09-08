@@ -12,6 +12,7 @@
 #include "common/util.h"
 #include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
+#include "selfdrive/ui/ui.h"
 
 AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
@@ -37,7 +38,7 @@ AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent
   snooze_btn->setFixedSize(550, 125);
   footer_layout->addWidget(snooze_btn, 0, Qt::AlignBottom | Qt::AlignRight);
   QObject::connect(snooze_btn, &QPushButton::clicked, [=]() {
-    params.putBool("SnoozeUpdate", true);
+    UIState::params.putBool("SnoozeUpdate", true);
   });
   QObject::connect(snooze_btn, &QPushButton::clicked, this, &AbstractAlert::dismiss);
   snooze_btn->setStyleSheet(R"(color: white; background-color: #4F4F4F;)");
@@ -94,7 +95,7 @@ int OffroadAlert::refresh() {
   int alertCount = 0;
   for (const auto &[key, label] : alerts) {
     QString text;
-    std::string bytes = params.get(key);
+    std::string bytes = UIState::params.get(key);
     if (bytes.size()) {
       auto doc_par = QJsonDocument::fromJson(bytes.c_str());
       text = tr(doc_par["text"].toString().toUtf8().data());
@@ -119,9 +120,9 @@ UpdateAlert::UpdateAlert(QWidget *parent) : AbstractAlert(true, parent) {
 }
 
 bool UpdateAlert::refresh() {
-  bool updateAvailable = params.getBool("UpdateAvailable");
+  bool updateAvailable = UIState::params.getBool("UpdateAvailable");
   if (updateAvailable) {
-    releaseNotes->setText(params.get("UpdaterNewReleaseNotes").c_str());
+    releaseNotes->setText(UIState::params.get("UpdaterNewReleaseNotes").c_str());
   }
   return updateAvailable;
 }

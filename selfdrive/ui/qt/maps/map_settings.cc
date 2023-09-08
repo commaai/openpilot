@@ -8,6 +8,7 @@
 #include "common/util.h"
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
+#include "selfdrive/ui/ui.h"
 
 static void swap(QJsonValueRef v1, QJsonValueRef v2) { std::swap(v1, v2); }
 
@@ -275,8 +276,8 @@ NavManager *NavManager::instance() {
 }
 
 NavManager::NavManager(QObject *parent) : QObject(parent) {
-  locations = QJsonDocument::fromJson(params.get("NavPastDestinations").c_str()).array();
-  current_dest = QJsonDocument::fromJson(params.get("NavDestination").c_str()).object();
+  locations = QJsonDocument::fromJson(UIState::params.get("NavPastDestinations").c_str()).array();
+  current_dest = QJsonDocument::fromJson(UIState::params.get("NavDestination").c_str()).object();
   if (auto dongle_id = getDongleId()) {
     {
       // Fetch favorite and recent locations
@@ -294,9 +295,9 @@ NavManager::NavManager(QObject *parent) : QObject(parent) {
       RequestRepeater *repeater = new RequestRepeater(this, url, "", 10, true);
       QObject::connect(repeater, &RequestRepeater::requestDone, [=](const QString &resp, bool success) {
         if (success && resp != "null") {
-          if (params.get("NavDestination").empty()) {
+          if (UIState::params.get("NavDestination").empty()) {
             qWarning() << "Setting NavDestination from /next" << resp;
-            params.put("NavDestination", resp.toStdString());
+            UIState::params.put("NavDestination", resp.toStdString());
           } else {
             qWarning() << "Got location from /next, but NavDestination already set";
           }
@@ -306,7 +307,7 @@ NavManager::NavManager(QObject *parent) : QObject(parent) {
 
         // athena can set destination at any time
         param_watcher->addParam("NavDestination");
-        current_dest = QJsonDocument::fromJson(params.get("NavDestination").c_str()).object();
+        current_dest = QJsonDocument::fromJson(UIState::params.get("NavDestination").c_str()).object();
         emit updated();
       });
     }
@@ -350,7 +351,7 @@ void NavManager::sortLocations() {
   });
 
   write_param_future = std::async(std::launch::async, [destinations = QJsonArray(locations)]() {
-    Params().put("NavPastDestinations", QJsonDocument(destinations).toJson().toStdString());
+    UIState::params.put("NavPastDestinations", QJsonDocument(destinations).toJson().toStdString());
   });
 }
 
@@ -377,9 +378,9 @@ void NavManager::setCurrentDestination(const QJsonObject &loc) {
       *it = current_dest;
       sortLocations();
     }
-    params.put("NavDestination", QJsonDocument(current_dest).toJson().toStdString());
+    UIState::params.put("NavDestination", QJsonDocument(current_dest).toJson().toStdString());
   } else {
-    params.remove("NavDestination");
+    UIState::params.remove("NavDestination");
   }
   emit updated();
 }

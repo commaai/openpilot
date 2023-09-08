@@ -19,7 +19,6 @@ protected:
   void paintEvent(QPaintEvent *event) override;
 
 private:
-  Params params;
   QPixmap face_img;
   bool is_rhd = false;
   bool frame_updated = false;

@@ -64,7 +64,6 @@ private:
   ButtonControl* editApnButton;
   ToggleControl* meteredToggle;
   WifiManager* wifi = nullptr;
-  Params params;
 
 signals:
   void backPress();

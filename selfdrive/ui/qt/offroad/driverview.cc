@@ -5,6 +5,7 @@
 
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/ui.h"
 
 const int FACE_IMG_SIZE = 130;
 
@@ -41,12 +42,12 @@ DriverViewScene::DriverViewScene(QWidget* parent) : QWidget(parent) {
 
 void DriverViewScene::showEvent(QShowEvent* event) {
   frame_updated = false;
-  params.putBool("IsDriverViewEnabled", true);
+  UIState::params.putBool("IsDriverViewEnabled", true);
   device()->resetInteractiveTimeout(60);
 }
 
 void DriverViewScene::hideEvent(QHideEvent* event) {
-  params.putBool("IsDriverViewEnabled", false);
+  UIState::params.putBool("IsDriverViewEnabled", false);
 }
 
 void DriverViewScene::frameUpdated() {

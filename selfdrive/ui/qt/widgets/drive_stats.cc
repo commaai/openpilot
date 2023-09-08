@@ -5,9 +5,9 @@
 #include <QJsonObject>
 #include <QVBoxLayout>
 
-#include "common/params.h"
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/ui.h"
 
 static QLabel* newLabel(const QString& text, const QString &type) {
   QLabel* label = new QLabel(text);
@@ -16,7 +16,7 @@ static QLabel* newLabel(const QString& text, const QString &type) {
 }
 
 DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
-  metric_ = Params().getBool("IsMetric");
+  metric_ = UIState::params.getBool("IsMetric");
 
   QVBoxLayout* main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(50, 50, 50, 60);
@@ -89,7 +89,7 @@ void DriveStats::parseResponse(const QString& response, bool success) {
 }
 
 void DriveStats::showEvent(QShowEvent* event) {
-  bool metric = Params().getBool("IsMetric");
+  bool metric = UIState::params.getBool("IsMetric");
   if (metric_ != metric) {
     metric_ = metric;
     updateStats();

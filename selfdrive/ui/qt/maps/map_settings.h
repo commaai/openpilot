@@ -11,7 +11,6 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
-#include "common/params.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 
@@ -41,7 +40,6 @@ private:
   void parseLocationsResponse(const QString &response, bool success);
   void sortLocations();
 
-  Params params;
   QString prev_response;
   QJsonArray locations;
   QJsonObject current_dest;

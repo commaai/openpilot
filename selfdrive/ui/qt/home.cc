@@ -226,7 +226,7 @@ void OffroadHome::hideEvent(QHideEvent *event) {
 }
 
 void OffroadHome::refresh() {
-  version->setText(getBrand() + " " +  QString::fromStdString(params.get("UpdaterCurrentDescription")));
+  version->setText(getBrand() + " " +  QString::fromStdString(UIState::params.get("UpdaterCurrentDescription")));
 
   bool updateAvailable = update_widget->refresh();
   int alerts = alerts_widget->refresh();

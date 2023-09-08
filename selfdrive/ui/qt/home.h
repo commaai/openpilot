@@ -7,7 +7,6 @@
 #include <QTimer>
 #include <QWidget>
 
-#include "common/params.h"
 #include "selfdrive/ui/qt/offroad/driverview.h"
 #include "selfdrive/ui/qt/body.h"
 #include "selfdrive/ui/qt/onroad.h"
@@ -29,8 +28,6 @@ private:
   void showEvent(QShowEvent *event) override;
   void hideEvent(QHideEvent *event) override;
   void refresh();
-
-  Params params;
 
   QTimer* timer;
   ElidedLabel* version;

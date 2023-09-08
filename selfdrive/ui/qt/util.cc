@@ -17,15 +17,16 @@
 #include <QtXml/QDomDocument>
 
 #include "common/swaglog.h"
+#include "selfdrive/ui/ui.h"
 #include "system/hardware/hw.h"
 
 QString getVersion() {
-  static QString version =  QString::fromStdString(Params().get("Version"));
+  static QString version =  QString::fromStdString(UIState::params.get("Version"));
   return version;
 }
 
 QString getBrand() {
-  return Params().getBool("Passive") ? QObject::tr("dashcam") : QObject::tr("openpilot");
+  return UIState::params.getBool("Passive") ? QObject::tr("dashcam") : QObject::tr("openpilot");
 }
 
 QString getUserAgent() {
@@ -33,7 +34,7 @@ QString getUserAgent() {
 }
 
 std::optional<QString> getDongleId() {
-  std::string id = Params().get("DongleId");
+  std::string id = UIState::params.get("DongleId");
 
   if (!id.empty() && (id != "UnregisteredDevice")) {
     return QString::fromStdString(id);
@@ -239,7 +240,7 @@ bool hasLongitudinalControl(const cereal::CarParams::Reader &car_params) {
   // Using the experimental longitudinal toggle, returns whether longitudinal control
   // will be active without needing a restart of openpilot
   return car_params.getExperimentalLongitudinalAvailable()
-             ? Params().getBool("ExperimentalLongitudinalEnabled")
+             ? UIState::params.getBool("ExperimentalLongitudinalEnabled")
              : car_params.getOpenpilotLongitudinalControl();
 }
 

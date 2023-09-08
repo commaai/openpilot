@@ -9,7 +9,7 @@
 const QString ICON_SUFFIX = ".png";
 
 MapInstructions::MapInstructions(QWidget *parent) : QWidget(parent) {
-  is_rhd = Params().getBool("IsRhdDetected");
+  is_rhd = UIState::params.getBool("IsRhdDetected");
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(11, UI_BORDER_SIZE, 11, 20);
 

@@ -7,7 +7,6 @@
 #include <QDebug>
 #include <QLabel>
 
-#include "common/params.h"
 #include "common/util.h"
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
@@ -45,15 +44,15 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   installBtn = new ButtonControl(tr("Install Update"), tr("INSTALL"));
   connect(installBtn, &ButtonControl::clicked, [=]() {
     installBtn->setEnabled(false);
-    params.putBool("DoReboot", true);
+    UIState::params.putBool("DoReboot", true);
   });
   addItem(installBtn);
 
   // branch selecting
   targetBranchBtn = new ButtonControl(tr("Target Branch"), tr("SELECT"));
   connect(targetBranchBtn, &ButtonControl::clicked, [=]() {
-    auto current = params.get("GitBranch");
-    QStringList branches = QString::fromStdString(params.get("UpdaterAvailableBranches")).split(",");
+    auto current = UIState::params.get("GitBranch");
+    QStringList branches = QString::fromStdString(UIState::params.get("UpdaterAvailableBranches")).split(",");
     for (QString b : {current.c_str(), "devel-staging", "devel", "nightly", "master-ci", "master"}) {
       auto i = branches.indexOf(b);
       if (i >= 0) {
@@ -62,15 +61,15 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
       }
     }
 
-    QString cur = QString::fromStdString(params.get("UpdaterTargetBranch"));
+    QString cur = QString::fromStdString(UIState::params.get("UpdaterTargetBranch"));
     QString selection = MultiOptionDialog::getSelection(tr("Select a branch"), branches, cur, this);
     if (!selection.isEmpty()) {
-      params.put("UpdaterTargetBranch", selection.toStdString());
-      targetBranchBtn->setValue(QString::fromStdString(params.get("UpdaterTargetBranch")));
+      UIState::params.put("UpdaterTargetBranch", selection.toStdString());
+      targetBranchBtn->setValue(QString::fromStdString(UIState::params.get("UpdaterTargetBranch")));
       checkForUpdates();
     }
   });
-  if (!params.getBool("IsTestedBranch")) {
+  if (!UIState::params.getBool("IsTestedBranch")) {
     addItem(targetBranchBtn);
   }
 
@@ -78,7 +77,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   auto uninstallBtn = new ButtonControl(tr("Uninstall %1").arg(getBrand()), tr("UNINSTALL"));
   connect(uninstallBtn, &ButtonControl::clicked, [&]() {
     if (ConfirmationDialog::confirm(tr("Are you sure you want to uninstall?"), tr("Uninstall"), this)) {
-      params.putBool("DoUninstall", true);
+      UIState::params.putBool("DoUninstall", true);
     }
   });
   addItem(uninstallBtn);
@@ -119,8 +118,8 @@ void SoftwarePanel::updateLabels() {
   downloadBtn->setVisible(!is_onroad);
 
   // download update
-  QString updater_state = QString::fromStdString(params.get("UpdaterState"));
-  bool failed = std::atoi(params.get("UpdateFailedCount").c_str()) > 0;
+  QString updater_state = QString::fromStdString(UIState::params.get("UpdaterState"));
+  bool failed = std::atoi(UIState::params.get("UpdateFailedCount").c_str()) > 0;
   if (updater_state != "idle") {
     downloadBtn->setEnabled(false);
     downloadBtn->setValue(updater_state);
@@ -128,12 +127,12 @@ void SoftwarePanel::updateLabels() {
     if (failed) {
       downloadBtn->setText(tr("CHECK"));
       downloadBtn->setValue(tr("failed to check for update"));
-    } else if (params.getBool("UpdaterFetchAvailable")) {
+    } else if (UIState::params.getBool("UpdaterFetchAvailable")) {
       downloadBtn->setText(tr("DOWNLOAD"));
       downloadBtn->setValue(tr("update available"));
     } else {
       QString lastUpdate = tr("never");
-      auto tm = params.get("LastUpdateTime");
+      auto tm = UIState::params.get("LastUpdateTime");
       if (!tm.empty()) {
         lastUpdate = timeAgo(QDateTime::fromString(QString::fromStdString(tm + "Z"), Qt::ISODate));
       }
@@ -142,15 +141,15 @@ void SoftwarePanel::updateLabels() {
     }
     downloadBtn->setEnabled(true);
   }
-  targetBranchBtn->setValue(QString::fromStdString(params.get("UpdaterTargetBranch")));
+  targetBranchBtn->setValue(QString::fromStdString(UIState::params.get("UpdaterTargetBranch")));
 
   // current + new versions
-  versionLbl->setText(QString::fromStdString(params.get("UpdaterCurrentDescription")));
-  versionLbl->setDescription(QString::fromStdString(params.get("UpdaterCurrentReleaseNotes")));
+  versionLbl->setText(QString::fromStdString(UIState::params.get("UpdaterCurrentDescription")));
+  versionLbl->setDescription(QString::fromStdString(UIState::params.get("UpdaterCurrentReleaseNotes")));
 
-  installBtn->setVisible(!is_onroad && params.getBool("UpdateAvailable"));
-  installBtn->setValue(QString::fromStdString(params.get("UpdaterNewDescription")));
-  installBtn->setDescription(QString::fromStdString(params.get("UpdaterNewReleaseNotes")));
+  installBtn->setVisible(!is_onroad && UIState::params.getBool("UpdateAvailable"));
+  installBtn->setValue(QString::fromStdString(UIState::params.get("UpdaterNewDescription")));
+  installBtn->setDescription(QString::fromStdString(UIState::params.get("UpdaterNewReleaseNotes")));
 
   update();
 }

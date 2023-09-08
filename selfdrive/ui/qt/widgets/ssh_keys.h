@@ -25,8 +25,6 @@ public:
   SshControl();
 
 private:
-  Params params;
-
   void refresh();
   void getUserKeys(const QString &username);
 };

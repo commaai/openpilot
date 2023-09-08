@@ -9,7 +9,6 @@ public:
   RequestRepeater(QObject *parent, const QString &requestURL, const QString &cacheKey = "", int period = 0, bool while_onroad=false);
 
 private:
-  Params params;
   QTimer *timer;
   QString prevResp;
 };

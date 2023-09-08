@@ -7,7 +7,6 @@
 #include <QStackedWidget>
 #include <QWidget>
 
-#include "common/params.h"
 #include "selfdrive/ui/qt/qt_window.h"
 
 class TrainingGuide : public QFrame {
@@ -102,7 +101,6 @@ public:
 private:
   void updateActiveScreen();
 
-  Params params;
   bool accepted_terms = false, training_done = false;
 
 signals:

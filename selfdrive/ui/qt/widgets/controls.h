@@ -10,9 +10,9 @@
 #include <QPainter>
 #include <QPushButton>
 
-#include "common/params.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
+#include "selfdrive/ui/ui.h"
 
 class ElidedLabel : public QLabel {
   Q_OBJECT
@@ -151,10 +151,10 @@ public:
                       "<p style=\"text-align: center; margin: 0 128px; font-size: 50px;\">" + getDescription() + "</p></body>");
       ConfirmationDialog dialog(content, tr("Enable"), tr("Cancel"), true, this);
 
-      bool confirmed = store_confirm && params.getBool(key + "Confirmed");
+      bool confirmed = store_confirm && UIState::params.getBool(key + "Confirmed");
       if (!confirm || confirmed || !state || dialog.exec()) {
-        if (store_confirm && state) params.putBool(key + "Confirmed", true);
-        params.putBool(key, state);
+        if (store_confirm && state) UIState::params.putBool(key + "Confirmed", true);
+        UIState::params.putBool(key, state);
         setIcon(state);
       } else {
         toggle.togglePosition();
@@ -172,7 +172,7 @@ public:
   }
 
   void refresh() {
-    bool state = params.getBool(key);
+    bool state = UIState::params.getBool(key);
     if (state != toggle.on) {
       toggle.togglePosition();
       setIcon(state);
@@ -193,7 +193,6 @@ private:
   }
 
   std::string key;
-  Params params;
   QPixmap active_icon_pixmap;
   bool confirm = false;
   bool store_confirm = false;
@@ -225,7 +224,7 @@ public:
       }
     )";
     key = param.toStdString();
-    int value = atoi(params.get(key).c_str());
+    int value = atoi(UIState::params.get(key).c_str());
 
     button_group = new QButtonGroup(this);
     button_group->setExclusive(true);
@@ -241,7 +240,7 @@ public:
 
     QObject::connect(button_group, QOverload<int, bool>::of(&QButtonGroup::buttonToggled), [=](int id, bool checked) {
       if (checked) {
-        params.put(key, std::to_string(id));
+        UIState::params.put(key, std::to_string(id));
       }
     });
   }
@@ -254,7 +253,6 @@ public:
 
 private:
   std::string key;
-  Params params;
   QButtonGroup *button_group;
 };
 
