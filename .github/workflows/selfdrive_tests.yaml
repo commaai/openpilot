@@ -67,30 +67,20 @@ jobs:
         cd $STRIPPED_DIR
         ${{ env.RUN }} "unset PYTHONWARNINGS && pre-commit run --all"
 
-  build_all:
-    name: build all
-    runs-on: ubuntu-20.04
+  build:
+    strategy:
+      matrix:
+        arch: ${{ fromJson( (github.repository == 'commaai/openpilot') && '["x86_64", "aarch64"]' || '["x86_64"]' ) }}
+    runs-on: ${{ (matrix.arch == 'aarch64') && 'buildjet-2vcpu-ubuntu-2204-arm' || 'ubuntu-20.04' }}
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
-    - name: Build openpilot with all flags
-      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 12 || 30) }} # allow more time when we missed the scons cache
-      run: |
-        ${{ env.RUN }} "scons -j$(nproc)"
-        ${{ env.RUN }} "release/check-dirty.sh"
-    - name: Cleanup scons cache and rebuild
-      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 2 || 30) }} # allow more time when we missed the scons cache
-      run: |
-          ${{ env.RUN }} "rm -rf /tmp/scons_cache/* && \
-                          scons -j$(nproc) --cache-populate"
-    - name: Save scons cache
-      uses: actions/cache/save@v3
-      if: github.ref == 'refs/heads/master'
+    - uses: ./.github/workflows/compile-openpilot
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 15 || 30) }} # allow more time when we missed the scons cache
       with:
-        path: .ci_cache/scons_cache
-        key: scons-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        cache_key_prefix: scons_${{ matrix.arch }}
 
   build_mac:
     name: build macos
@@ -185,8 +175,10 @@ jobs:
         sudo rm -rf /Applications/ArmGNUToolchain/*/*/.fseventsd
 
   docker_push:
-    name: docker push
-    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        arch: ${{ fromJson( (github.repository == 'commaai/openpilot') && '["x86_64", "aarch64"]' || '["x86_64"]' ) }}
+    runs-on: ${{ (matrix.arch == 'aarch64') && 'buildjet-2vcpu-ubuntu-2204-arm' || 'ubuntu-20.04' }}
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v3
@@ -195,13 +187,33 @@ jobs:
     - name: Setup to push to repo
       run: |
         echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
+        echo "TARGET_ARCHITECTURE=${{ matrix.arch }}" >> "$GITHUB_ENV"
         $DOCKER_LOGIN
     - uses: ./.github/workflows/setup-with-retry
       with:
         git-lfs: false
     - name: Build and push CL Docker image
+      if: matrix.arch == 'x86_64'
       run: |
+        echo "TARGET_ARCHITECTURE=''" >> "$GITHUB_ENV"
         eval "$BUILD_CL"
+
+  docker_push_multiarch:
+    name: docker push multiarch tag
+    runs-on: ubuntu-20.04
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+    needs: [docker_push]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: false
+    - name: Setup docker
+      run: |
+        $DOCKER_LOGIN
+    - name: Merge x64 and arm64 tags
+      run: |
+        echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
+        selfdrive/test/docker_tag_multiarch.sh base x86_64 aarch64
 
   static_analysis:
     name: static analysis

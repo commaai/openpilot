@@ -5,6 +5,10 @@ inputs:
     description: 'Whether or not to pull the git lfs'
     required: false
     default: 'true'
+  cache_key_prefix:
+    description: 'Prefix for caching key'
+    required: false
+    default: 'scons_x86_64'
   is_retried:
     description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
     required: false
@@ -35,10 +39,10 @@ runs:
       uses: actions/cache/restore@v3
       with:
         path: .ci_cache/scons_cache
-        key: scons-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        key: ${{ inputs.cache_key_prefix }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
         restore-keys: |
-          scons-${{ env.CACHE_COMMIT_DATE }}-
-          scons-
+          ${{ inputs.cache_key_prefix }}-${{ env.CACHE_COMMIT_DATE }}-
+          ${{ inputs.cache_key_prefix }}-
     # if we didn't get a cache hit, make the directory manually so it doesn't fail on future steps
     - id: scons-cache-setup
       shell: bash
