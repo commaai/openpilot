@@ -259,9 +259,6 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[by
     if not len(chunks):
       continue
 
-    # a = list(map(len, chunks))
-    # print(fw, chunks, a)
-
     # only first is considered for now since second is commonly shared (TODO: understand that)
     first_chunk = chunks[0]
     if len(first_chunk) == 8:
@@ -274,7 +271,7 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[by
         codes.add((platform + b'-' + major_version, sub_version))
 
     elif len(first_chunk) == 10:
-      print('medium fw', fw)
+      # print('medium fw', fw)
       fw_match = MEDIUM_FW_PATTERN.search(first_chunk)
       if fw_match is not None:
         part, platform, major_version, sub_version = fw_match.groups()
@@ -289,7 +286,7 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[by
         # print('got long match!')
         part, platform, major_version, sub_version = fw_match.groups()
         # print(first_chunk, fw_match, fw_match.groups())
-        codes.add((part + b'-' + platform, major_version + b'-' + sub_version))
+        codes.add((part + b'-' + platform + b'-' + major_version, sub_version))
 
   return codes
 
