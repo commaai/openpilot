@@ -348,6 +348,7 @@ void Params::putNonBlocking(const std::string &key, const std::string &val) {
 void Params::asyncWriteThread() {
   std::pair<std::string, std::string> p;
   while (queue.try_pop(p, 0)) {
+    // Params::put is Thread-Safe
     put(p.first, p.second);
   }
 }
