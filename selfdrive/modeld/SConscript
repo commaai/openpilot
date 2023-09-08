@@ -32,12 +32,6 @@ if arch == "Darwin":
 else:
   libs += ['OpenCL']
 
-# Use onnx on PC
-if arch != "larch64" and not GetOption('snpe'):
-  common_src += ['runners/onnxmodel.cc']
-  lenv['CFLAGS'].append("-DUSE_ONNX_MODEL")
-  lenv['CXXFLAGS'].append("-DUSE_ONNX_MODEL")
-
 # Set path definitions
 for pathdef, fn in {'TRANSFORM': 'transforms/transform.cl', 'LOADYUV': 'transforms/loadyuv.cl', 'ONNXRUNNER': 'runners/onnx_runner.py'}.items():
   for xenv in (lenv, lenvCython):
@@ -59,15 +53,6 @@ lenvCython.Program('runners/onnxmodel_pyx.so', 'runners/onnxmodel_pyx.pyx', LIBS
 lenvCython.Program('runners/snpemodel_pyx.so', 'runners/snpemodel_pyx.pyx', LIBS=[snpemodel_lib, snpe_lib, *cython_libs], FRAMEWORKS=frameworks, RPATH=snpe_rpath)
 lenvCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=[commonmodel_lib, *cython_libs], FRAMEWORKS=frameworks)
 lenvCython.Program('models/driving_pyx.so', 'models/driving_pyx.pyx', LIBS=[driving_lib, commonmodel_lib, *cython_libs], FRAMEWORKS=frameworks)
-
-# Compile binaries
-lenv['FRAMEWORKS'] = frameworks
-common_model = lenv.Object(common_src)
-
-lenv.Program('_dmonitoringmodeld', [
-    "dmonitoringmodeld.cc",
-    "models/dmonitoring.cc",
-  ]+common_model, LIBS=libs + snpe_lib)
 
 # Build thneed model
 if arch == "larch64" or GetOption('pc_thneed'):
