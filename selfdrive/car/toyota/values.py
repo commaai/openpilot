@@ -348,7 +348,15 @@ def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
   return candidates - fuzzy_platform_blacklist
 
 
-# Regex patterns for parsing platform code, FW date, and part number from FW versions
+# Regex patterns for parsing more general platform-specific identifiers from FW versions.
+# - Part number: Toyota part number (usually last character needs to be ignored to find a match).
+# - Platform: usually multiple codes per an openpilot platform, however this has the less variability and
+#    is usually shared across ECUs and model years signifying this describes something about the specific platform.
+# - Major version: second least variable part of the FW version. Seen splitting cars by model year such as RAV4 2022/2023 and Prius.
+#    It is important to note that these aren't always consecutive, for example:
+#    Prius TSS-P has these major versions over 16 FW: 2, 3, 4, 6, 8 while Prius TSS2 has: 5
+# - Sub version: exclusive to major version, but shared with other cars. Should only be used for further filtering,
+#    more exploration is needed.
 SHORT_FW_PATTERN = re.compile(b'(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{4})')
 MEDIUM_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{1})(?P<sub_version>[A-Z0-9]{2})')
 LONG_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{3})')
