@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
-from selfdrive.car.hyundai.values import FW_VERSIONS, PLATFORM_CODE_ECUS, get_platform_codes
+from openpilot.selfdrive.car.toyota.values import FW_VERSIONS, get_platform_codes
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
@@ -10,8 +10,8 @@ if __name__ == "__main__":
     print()
     print(car_model)
     for ecu in sorted(ecus, key=lambda x: int(x[0])):
-      if ecu[0] not in PLATFORM_CODE_ECUS:
-        continue
+      # if ecu[0] not in PLATFORM_CODE_ECUS:
+      #   continue
 
       platform_codes = get_platform_codes(ecus[ecu])
       codes = {code for code, _ in platform_codes}
