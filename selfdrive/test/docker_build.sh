@@ -5,11 +5,6 @@ set -e
 # mkdir -p .ci_cache/scons_cache
 # sudo mount --bind /tmp/scons_cache/ .ci_cache/scons_cache
 
-if [ -n "$PUSH_IMAGE" ] && [ -z "$TARGET_ARCHITECTURE" ]; then
-  echo "PUSH_IMAGE is only supported for single arch builds"
-  exit 1
-fi
-
 SCRIPT_DIR=$(dirname "$0")
 OPENPILOT_DIR=$SCRIPT_DIR/../../
 if [ -n "$TARGET_ARCHITECTURE" ]; then
