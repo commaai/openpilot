@@ -424,19 +424,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
 
   # ********** events only containing alerts that display while engaged **********
 
-  # openpilot tries to learn certain parameters about your car by observing
-  # how the car behaves to steering inputs from both human and openpilot driving.
-  # This includes:
-  # - steer ratio: gear ratio of the steering rack. Steering angle divided by tire angle
-  # - tire stiffness: how much grip your tires have
-  # - angle offset: most steering angle sensors are offset and measure a non zero angle when driving straight
-  # This alert is thrown when any of these values exceed a sanity check. This can be caused by
-  # bad alignment or bad sensor data. If this happens consistently consider creating an issue on GitHub
-  EventName.vehicleModelInvalid: {
-    ET.NO_ENTRY: NoEntryAlert("Vehicle Parameter Identification Failed"),
-    ET.SOFT_DISABLE: soft_disable_alert("Vehicle Parameter Identification Failed"),
-  },
-
   EventName.steerTempUnavailableSilent: {
     ET.WARNING: Alert(
       "Steering Temporarily Unavailable",
@@ -576,9 +563,32 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.PERMANENT: NormalPermanentAlert("GPS Malfunction", "Likely Hardware Issue"),
   },
 
-  EventName.localizerMalfunction: {
-    ET.NO_ENTRY: NoEntryAlert("Localizer Malfunction"),
-    ET.SOFT_DISABLE: soft_disable_alert("Localizer Malfunction"),
+  EventName.locationdTemporaryError: {
+    ET.NO_ENTRY: NoEntryAlert("Localizer Temporary Error"),
+    ET.SOFT_DISABLE: soft_disable_alert("Localizer Temporary Error"),
+  },
+
+  EventName.locationdPermanentError: {
+    ET.NO_ENTRY: NoEntryAlert("Localizer Permanent Error"),
+    ET.SOFT_DISABLE: soft_disable_alert("Localizer Permanent Error"),
+  },
+
+  # openpilot tries to learn certain parameters about your car by observing
+  # how the car behaves to steering inputs from both human and openpilot driving.
+  # This includes:
+  # - steer ratio: gear ratio of the steering rack. Steering angle divided by tire angle
+  # - tire stiffness: how much grip your tires have
+  # - angle offset: most steering angle sensors are offset and measure a non zero angle when driving straight
+  # This alert is thrown when any of these values exceed a sanity check. This can be caused by
+  # bad alignment or bad sensor data. If this happens consistently consider creating an issue on GitHub
+  EventName.paramsdTemporaryError: {
+    ET.NO_ENTRY: NoEntryAlert("paramsd Temporary Error"),
+    ET.SOFT_DISABLE: soft_disable_alert("paramsd Temporary Error"),
+  },
+
+  EventName.paramsdPermanentError: {
+    ET.NO_ENTRY: NoEntryAlert("paramsd Permanent Error"),
+    ET.SOFT_DISABLE: soft_disable_alert("paramsd Permanent Error"),
   },
 
   # ********** events that affect controls state transitions **********
