@@ -1,7 +1,6 @@
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=laika_repo/ -Werror --strict-config --strict-markers"
-cpp_files = "TODO"
 python_files = "test_*.py"
 #timeout = "30"  # you get this long by default
 markers = [
@@ -143,7 +142,6 @@ pygame = "*"
 pyprof2calltree = "*"
 pytest = "*"
 pytest-cov = "*"
-pytest-cpp = "*"
 pytest-subtests = "*"
 pytest-xdist = "*"
 pytest-timeout = "*"
