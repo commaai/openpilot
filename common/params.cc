@@ -346,6 +346,7 @@ void Params::putNonBlocking(const std::string &key, const std::string &val) {
 }
 
 void Params::asyncWriteThread() {
+  // TODO: write the latest one if a key has multiple values in the queue.
   std::pair<std::string, std::string> p;
   while (queue.try_pop(p, 0)) {
     // Params::put is Thread-Safe
