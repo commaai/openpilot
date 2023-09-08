@@ -44,18 +44,16 @@ To use openpilot in a car, you need four things
   
 2. Software Installation:
   The setup procedure for the Comma 3/3X allows users to enter a URL for custom software installation.
-  To install the release version of Openpilot, use the URL (https://github.com/commaai/openpilot).
-  To install Openpilot master for more advanced users, use the URL (https://installer.comma.ai/commaai/master). You can replace "commaai" with another GitHub username to install a fork.
+  To install the release version of openpilot, use the URL (https://github.com/commaai/openpilot).
+  To install openpilot master for more advanced users, use the URL (https://installer.comma.ai/commaai/master). You can replace "commaai" with another GitHub username to install a fork.
 
 3. Supported Car:
-  Ensure that you have one of [the 250+ supported cars](docs/CARS.md). Openpilot supports a wide range of car makes including Honda, Toyota, Hyundai, Nissan, Kia, Chrysler, Lexus, Acura, Audi, VW, Ford, and many more.
-  If your car is not officially listed as supported but has adaptive cruise control and lane-keeping assist, it's likely capable of running Openpilot.
+  Ensure that you have one of [the 250+ supported cars](docs/CARS.md). openpilot supports a wide range of car makes including Honda, Toyota, Hyundai, Nissan, Kia, Chrysler, Lexus, Acura, Audi, VW, Ford, and many more.
+  If your car is not officially listed as supported but has adaptive cruise control and lane-keeping assist, it's likely capable of running openpilot.
   
 4. Car Harness:
   You will also need a [car harness](https://comma.ai/shop/car-harness) to connect your Comma 3X or Comma Three to your car.
-  Make sure to follow the manufacturer's instructions and safety guidelines when installing and using Openpilot with your supported device and vehicle.
-
-We have detailed instructions for [how to mount the device in a car](https://comma.ai/setup).
+  We have detailed instructions for [how to mount the device in a car](https://comma.ai/setup).
 
 Running on PC
 ------
