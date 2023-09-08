@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from cereal import car
 from panda import Panda
 from openpilot.selfdrive.car import get_safety_config

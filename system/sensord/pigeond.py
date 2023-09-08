@@ -27,11 +27,11 @@ UBLOX_ASSIST_ACK = b"\xb5\x62\x13\x60\x08\x00"
 
 def set_power(enabled: bool) -> None:
   gpio_init(GPIO.UBLOX_SAFEBOOT_N, True)
-  gpio_init(GPIO.UBLOX_PWR_EN, True)
+  gpio_init(GPIO.GNSS_PWR_EN, True)
   gpio_init(GPIO.UBLOX_RST_N, True)
 
   gpio_set(GPIO.UBLOX_SAFEBOOT_N, True)
-  gpio_set(GPIO.UBLOX_PWR_EN, enabled)
+  gpio_set(GPIO.GNSS_PWR_EN, enabled)
   gpio_set(GPIO.UBLOX_RST_N, enabled)
 
 def add_ubx_checksum(msg: bytes) -> bytes:

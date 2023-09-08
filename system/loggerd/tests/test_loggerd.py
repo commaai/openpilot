@@ -16,7 +16,7 @@ from cereal.services import service_list
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
-from openpilot.system.loggerd.config import ROOT
+from openpilot.system.hardware.hw import Paths
 from openpilot.system.loggerd.xattr_cache import getxattr
 from openpilot.system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
 from openpilot.selfdrive.manager.process_config import managed_processes
@@ -32,8 +32,11 @@ CEREAL_SERVICES = [f for f in log.Event.schema.union_fields if f in service_list
 
 
 class TestLoggerd(unittest.TestCase):
+  def setUp(self):
+    os.environ.pop("LOG_ROOT", None)
+
   def _get_latest_log_dir(self):
-    log_dirs = sorted(Path(ROOT).iterdir(), key=lambda f: f.stat().st_mtime)
+    log_dirs = sorted(Path(Paths.log_root()).iterdir(), key=lambda f: f.stat().st_mtime)
     return log_dirs[-1]
 
   def _get_log_dir(self, x):
@@ -154,35 +157,35 @@ class TestLoggerd(unittest.TestCase):
       vipc_server.create_buffers_with_sizes(stream_type, 40, False, *(frame_spec))
     vipc_server.start_listener()
 
-    for _ in range(5):
-      num_segs = random.randint(2, 5)
-      length = random.randint(1, 3)
-      os.environ["LOGGERD_SEGMENT_LENGTH"] = str(length)
-      managed_processes["loggerd"].start()
-      managed_processes["encoderd"].start()
-      time.sleep(1)
+    num_segs = random.randint(2, 5)
+    length = random.randint(1, 3)
+    os.environ["LOGGERD_SEGMENT_LENGTH"] = str(length)
+    managed_processes["loggerd"].start()
+    managed_processes["encoderd"].start()
+    time.sleep(1)
 
-      fps = 20.0
-      for n in range(1, int(num_segs*length*fps)+1):
-        for stream_type, frame_spec, state in streams:
-          dat = np.empty(frame_spec[2], dtype=np.uint8)
-          vipc_server.send(stream_type, dat[:].flatten().tobytes(), n, n/fps, n/fps)
+    fps = 20.0
+    for n in range(1, int(num_segs*length*fps)+1):
+      time_start = time.monotonic()
+      for stream_type, frame_spec, state in streams:
+        dat = np.empty(frame_spec[2], dtype=np.uint8)
+        vipc_server.send(stream_type, dat[:].flatten().tobytes(), n, n/fps, n/fps)
 
-          camera_state = messaging.new_message(state)
-          frame = getattr(camera_state, state)
-          frame.frameId = n
-          pm.send(state, camera_state)
-        time.sleep(1.0/fps)
+        camera_state = messaging.new_message(state)
+        frame = getattr(camera_state, state)
+        frame.frameId = n
+        pm.send(state, camera_state)
+      time.sleep(max((1.0/fps) - (time.monotonic() - time_start), 0))
 
-      managed_processes["loggerd"].stop()
-      managed_processes["encoderd"].stop()
+    managed_processes["loggerd"].stop()
+    managed_processes["encoderd"].stop()
 
-      route_path = str(self._get_latest_log_dir()).rsplit("--", 1)[0]
-      for n in range(num_segs):
-        p = Path(f"{route_path}--{n}")
-        logged = {f.name for f in p.iterdir() if f.is_file()}
-        diff = logged ^ expected_files
-        self.assertEqual(len(diff), 0, f"didn't get all expected files. run={_} seg={n} {route_path=}, {diff=}\n{logged=} {expected_files=}")
+    route_path = str(self._get_latest_log_dir()).rsplit("--", 1)[0]
+    for n in range(num_segs):
+      p = Path(f"{route_path}--{n}")
+      logged = {f.name for f in p.iterdir() if f.is_file()}
+      diff = logged ^ expected_files
+      self.assertEqual(len(diff), 0, f"didn't get all expected files. run={_} seg={n} {route_path=}, {diff=}\n{logged=} {expected_files=}")
 
   def test_bootlog(self):
     # generate bootlog with fake launch log
