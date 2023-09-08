@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from hypothesis import given, settings, strategies as st
 import re
 from cereal import car
 import unittest
@@ -10,7 +11,7 @@ from selfdrive.car.fw_versions import build_fw_dict
 #                                          EV_CAR, FW_QUERY_CONFIG, FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, \
 #                                          PLATFORM_CODE_ECUS, get_platform_codes
 from selfdrive.car.toyota.values import TSS2_CAR, ANGLE_CONTROL_CAR, FW_VERSIONS, FW_QUERY_CONFIG, EV_HYBRID_CAR, \
-                                        FW_PATTERN, FW_LEN_CODE, FW_PATTERN_V3, get_platform_codes
+                                        LONG_FW_PATTERN, FW_LEN_CODE, get_platform_codes  # FW_PATTERN_V3
 from openpilot.selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, RADAR_ACC_CAR, FW_VERSIONS
 
 Ecu = car.CarParams.Ecu
@@ -51,6 +52,13 @@ class TestToyotaInterfaces(unittest.TestCase):
 
 
 class TestToyotaFingerprint(unittest.TestCase):
+  # @settings(max_examples=100)
+  # @given(data=st.data())
+  # def test_platform_codes_fuzzy_fw(self, data):
+  #   fw_strategy = st.lists(st.binary())
+  #   fws = data.draw(fw_strategy)
+  #   get_platform_codes(fws)
+
   def test_fw_pattern(self):
     for car_model, ecus in FW_VERSIONS.items():
       # print()
@@ -60,7 +68,9 @@ class TestToyotaFingerprint(unittest.TestCase):
         for fw in fws:
 
           print('\ninput', fw)
-          get_platform_codes([fw])
+          ret = get_platform_codes([fw])
+          # self.assertTrue(len(ret))
+          print('ret', ret)
           continue
           match = FW_PATTERN.search(fw)
           length = FW_LEN_CODE.search(fw)

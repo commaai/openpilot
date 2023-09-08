@@ -236,10 +236,12 @@ STATIC_DSU_MSGS = [
 ]
 
 SHORT_FW_PATTERN = re.compile(b'(?P<platform>[A-Z0-9]{4})(?P<version>[A-Z0-9]{4})')
-MED_PATTERN = re.compile(b'TODO')
-FW_PATTERN = re.compile(b'(?P<part>[0-9A-Z]{4})[0-9A-Z](?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{3})')
+MEDIUM_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<version>[A-Z0-9]{3})')
+LONG_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{3})')
+FW_LEN_CODE = re.compile(b'^[\x01-\x05]')  # 5 chunks max. max seen is 3 chunks, 16 bytes each
 
 
+import random
 def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[bytes]]]:
   # Returns unique, platform-specific identification codes for a set of versions
   codes = set()  # (code-Optional[part], date)
@@ -247,44 +249,74 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[by
     # FW versions returned from UDS queries can return multiple fields/chunks of data (different ECU calibrations, different data?)
     #  and are prefixed with a byte that describes how many chunks of data there are.
     # But FW returned from KWP requires querying of each sub-data id and does not have a length prefix.
-    has_n_chunks = fw[0] < 0xf  # max seen is 3 chunks, 16 bytes each
-    n_chunks = 1
-    print(f'{has_n_chunks=}')
-    if has_n_chunks:
-      n_chunks = fw[0]
+    # fw = bytearray(fw)
+    # fw[0] = random.randint(0, 20)
+    length_code = 1
+    length_code_match = FW_LEN_CODE.search(fw)
+    # has_n_chunks = fw[0] <= 0x5  # max seen is 3 chunks, 16 bytes each
+    # assert (length_code is not None) == bool(has_n_chunks), fw
+    # continue
+    # n_chunks = 1
+    # print(f'{has_n_chunks=}')
+    if length_code_match is not None:
+      # n_chunks = length_code.group()[0]  # fw[0]
+      length_code = length_code_match.group()[0]
       fw = fw[1:]
-      assert n_chunks * 16 == len(fw)
 
-    chunks = [fw[16 * i:16 * i + 16] for i in range(n_chunks)]
-    # chunks = [s for s in fw.split(b'\x00') if len(s)]
+    # fw length should be multiple of 16 bytes (per chunk, even if no length code), skip parsing if unexpected length
+    if length_code * 16 != len(fw):
+      continue
+
+    chunks = [fw[16 * i:16 * i + 16] for i in range(length_code)]
     chunks = [c.strip(b'\x00 ') for c in chunks]
+    # chunks = [s.strip(b'\x00 ') for s in fw.split(b'\x00') if len(s)]
+
+    # Ensure not all empty bytes
+    # TODO: needed since we use
+    if not len(chunks):
+      continue
+
+    # if chunks not in ([b'896634A13000', b''], [b'896634A23000', b'']):
+    #   assert chunks == chunks_new, (chunks, chunks_new)
+
     a = list(map(len, chunks))
     print(fw, chunks, a)
-    # assert len(set(a)) == 1
+    # assert len(set(a)) == 1, (a, fw)
     # only first is considered for now since second is commonly shared (TODO: understand that)
 
     first_chunk = chunks[0]
     # doesn't have a part encoded in version (OBD query?)
     # short_version = sum(b > 0xf for b in first_chunk) == 8
-    short_version = len(first_chunk) == 8
-    if short_version:
+    # short_version = len(first_chunk) == 8
+    if len(first_chunk) == 8:
+      # TODO: some short chunks have the part number in subsequent chunks
       print('short version')
       code_match = SHORT_FW_PATTERN.search(first_chunk)
       if code_match is not None:
-        code, version = code_match.groups()
-        print('platform code, version', code, version)
+        platform, version = code_match.groups()
+        print('platform code, version', platform, version)
+        codes.add((platform, version))
     elif len(first_chunk) == 10:
+      code_match = MEDIUM_FW_PATTERN.search(first_chunk)
+      if code_match is not None:
+        # TODO: platform is a loose term here
+        part, platform, version = code_match.groups()
+        codes.add((part + b'-' + platform, version))
+      print('not done', first_chunk)
       # not done
       pass
     elif len(first_chunk) == 12:
-      print(FW_PATTERN)
-      code_match = FW_PATTERN.search(first_chunk)
+      print(LONG_FW_PATTERN)
+      print('long, searching', first_chunk)
+      code_match = LONG_FW_PATTERN.search(first_chunk)
       if code_match is not None:
         print('got long match!')
+        part, platform, major_version, sub_version = code_match.groups()
         print(first_chunk, code_match, code_match.groups())
+        codes.add((part + b'-' + platform, major_version + b'-' + sub_version))
 
-    else:
-      assert False, f'invalid length: {len(first_chunk)}'
+    # else:
+    #   assert False, f'invalid length: {len(first_chunk)}'
 
 
     continue
@@ -405,8 +437,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
 
 # FW_PATTERN = re.compile(b'[0-9]{4}[0-9A-Z][0-9A-Z]')
 # FW_PATTERN2 = re.compile(br'(?<=\\x[0-9]{2})[0-9A-Z]{5}|^[0-9A-Z]{5}')
-FW_LEN_CODE = re.compile(b'^[\x00-\x0F]')
-FW_PATTERN_V3 = re.compile(b'(?P<length>^[\x00-\x0F])?(?P<part>[0-9A-Z]{4})')
+# FW_PATTERN_V3 = re.compile(b'(?P<length>^[\x00-\x0F])?(?P<part>[0-9A-Z]{4})')
 
 FW_VERSIONS = {
   CAR.AVALON: {
