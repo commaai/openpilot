@@ -146,7 +146,7 @@ pygame = "*"
 pyprof2calltree = "*"
 pytest = "*"
 pytest-cov = "*"
-pytest-cpp = { git = "https://github.com/jnewb1/pytest-cpp.git", branch = "catch2-fix-section" } # until it's merged upstream
+pytest-cpp = "*"
 pytest-subtests = "*"
 pytest-xdist = "*"
 pytest-timeout = "*"
