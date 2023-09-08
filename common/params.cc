@@ -4,6 +4,7 @@
 #include <sys/file.h>
 
 #include <algorithm>
+#include <cassert>
 #include <csignal>
 #include <unordered_map>
 
@@ -222,6 +223,7 @@ Params::~Params() {
   if (future.valid()) {
     future.wait();
   }
+  assert(queue.empty());
 }
 
 std::vector<std::string> Params::allKeys() const {
