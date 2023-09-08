@@ -235,16 +235,14 @@ STATIC_DSU_MSGS = [
            CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 0, 100, b'\x0c\x00\x00\x00\x00\x00\x00\x00'),
 ]
 
-SHORT_FW_PATTERN = re.compile(b'(?P<platform>[A-Z0-9]{4})(?P<version>[A-Z0-9]{4})')
+SHORT_FW_PATTERN = re.compile(b'(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{4})')
 MEDIUM_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<version>[A-Z0-9]{3})')
 LONG_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{3})')
-FW_LEN_CODE = re.compile(b'^[\x01-\x05]')  # 5 chunks max. max seen is 3 chunks, 16 bytes each
+FW_LEN_CODE = re.compile(b'^[\x01-\x05]')  # 5 chunks max. highest seen is 3 chunks, 16 bytes each
 
 
-import random
 def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[bytes]]]:
-  # Returns unique, platform-specific identification codes for a set of versions
-  codes = set()  # (code-Optional[part], date)
+  codes = set()  # TODO: standardize (code-Optional[part], date)
   for fw in fw_versions:
     # FW versions returned from UDS queries can return multiple fields/chunks of data (different ECU calibrations, different data?)
     #  and are prefixed with a byte that describes how many chunks of data there are.
