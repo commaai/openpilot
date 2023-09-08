@@ -9,6 +9,9 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: false
     - uses: actions/labeler@v4
       with:
         dot: true
