@@ -22,6 +22,10 @@ class Params {
 public:
   explicit Params(const std::string &path = {});
   ~Params();
+  // Not copyable.
+  Params(const Params&) = delete;
+  Params& operator=(const Params&) = delete;
+
   std::vector<std::string> allKeys() const;
   bool checkKey(const std::string &key);
   ParamKeyType getKeyType(const std::string &key);
