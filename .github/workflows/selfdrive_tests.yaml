@@ -212,7 +212,7 @@ jobs:
         $DOCKER_LOGIN
     - name: Merge x64 and arm64 tags
       run: |
-        echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
+        export PUSH_IMAGE=true
         selfdrive/test/docker_tag_multiarch.sh base x86_64 aarch64
 
   static_analysis:
