@@ -8,9 +8,8 @@ SignalColorDlg::SignalColorDlg(QWidget *parent) : QDialog(parent) {
   setWindowTitle(tr("Choose color for signal"));
   QHBoxLayout *hl = new QHBoxLayout;
   hl->addWidget(list = new QListWidget(this));
-  list->setContentsMargins(9, 9, 9, 9);
   hl->addWidget(color_picker = new QColorDialog(this));
-  color_picker->setOption(QColorDialog::NoButtons);
+  color_picker->setOptions(QColorDialog::NoButtons | QColorDialog::DontUseNativeDialog);
   color_picker->setWindowFlags(Qt::Widget);
 
   auto button_box = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
