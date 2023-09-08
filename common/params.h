@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include "common/queue.h"
@@ -19,8 +20,8 @@ enum ParamKeyType {
 
 class Params {
 public:
-  Params(const std::string &path = {});
-  Params(const std::string &path, const std::string &prefix);
+  explicit Params(const std::string &path = {});
+  ~Params();
   std::vector<std::string> allKeys() const;
   bool checkKey(const std::string &key);
   ParamKeyType getKeyType(const std::string &key);
@@ -53,22 +54,12 @@ public:
   }
 
 private:
+  void asyncWriteThread();
+
   std::string params_path;
   std::string params_prefix;
-};
 
-class AsyncWriter {
-public:
-  AsyncWriter() {}
-  ~AsyncWriter();
-  struct Param {
-    std::string param_path, param_prefix, key, value;
-  };
-  void queue(const AsyncWriter::Param &param);
-
-private:
-  void write();
-
+  // for nonblocking write
   std::future<void> future;
-  SafeQueue<AsyncWriter::Param> q;
+  SafeQueue<std::pair<std::string, std::string>> queue;
 };

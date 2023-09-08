@@ -218,10 +218,10 @@ Params::Params(const std::string &path) {
   params_path = ensure_params_path(params_prefix, path);
 }
 
-// used by AsyncWriter
-Params::Params(const std::string &path, const std::string &prefix) {
-  params_prefix = prefix;
-  params_path = ensure_params_path(params_prefix, path);
+Params::~Params() {
+  if (future.valid()) {
+    future.wait();
+  }
 }
 
 std::vector<std::string> Params::allKeys() const {
@@ -336,29 +336,16 @@ void Params::clearAll(ParamKeyType key_type) {
 }
 
 void Params::putNonBlocking(const std::string &key, const std::string &val) {
-  static AsyncWriter async_writer;
-  async_writer.queue({params_path, params_prefix, key, val});
-}
-
-// AsyncWriter
-
-AsyncWriter::~AsyncWriter() {
-  if (future.valid()) {
-    future.wait();
-  }
-}
-
-void AsyncWriter::queue(const AsyncWriter::Param &p) {
-  q.push(p);
+   queue.push(std::make_pair(key, val));
   // start thread on demand
   if (!future.valid() || future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
-    future = std::async(std::launch::async, &AsyncWriter::write, this);
+    future = std::async(std::launch::async, &Params::asyncWriteThread, this);
   }
 }
 
-void AsyncWriter::write() {
-  AsyncWriter::Param p;
-  while (q.try_pop(p, 0)) {
-    Params(p.param_path, p.param_prefix).put(p.key, p.value);
+void Params::asyncWriteThread() {
+  std::pair<std::string, std::string> p;
+  while (queue.try_pop(p, 0)) {
+    put(p.first, p.second);
   }
 }

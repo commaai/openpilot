@@ -3,25 +3,25 @@
 #include "common/params.h"
 #include "common/util.h"
 
-TEST_CASE("Params/asyncWriter") {
+TEST_CASE("params_nonblocking_put") {
   char tmp_path[] = "/tmp/asyncWriter_XXXXXX";
   const std::string param_path = mkdtemp(tmp_path);
-  Params params(param_path);
   auto param_names = {"CarParams", "IsMetric"};
   {
-    AsyncWriter async_writer;
+    Params params(param_path);
     for (const auto &name : param_names) {
-      async_writer.queue({params.params_path, params.params_prefix, name, "1"});
+      params.putNonBlocking(name, "1");
       // param is empty
       REQUIRE(params.get(name).empty());
     }
 
     // check if thread is running
-    REQUIRE(async_writer.future.valid());
-    REQUIRE(async_writer.future.wait_for(std::chrono::milliseconds(0)) == std::future_status::timeout);
+    REQUIRE(params.future.valid());
+    REQUIRE(params.future.wait_for(std::chrono::milliseconds(0)) == std::future_status::timeout);
   }
   // check results
+  Params p(param_path);
   for (const auto &name : param_names) {
-    REQUIRE(params.get(name) == "1");
+    REQUIRE(p.get(name) == "1");
   }
 }
