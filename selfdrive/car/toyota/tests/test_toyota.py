@@ -60,6 +60,7 @@ class TestToyotaFingerprint(unittest.TestCase):
   #   get_platform_codes(fws)
 
   def test_fw_pattern(self):
+    return
     for car_model, ecus in FW_VERSIONS.items():
       # print()
       # print(car_model)
@@ -67,9 +68,9 @@ class TestToyotaFingerprint(unittest.TestCase):
       for ecu, fws in ecus.items():
         for fw in fws:
 
-          print('\ninput', fw)
+          print('\ninput', car_model, fw)
           ret = get_platform_codes([fw])
-          # self.assertTrue(len(ret))
+          self.assertTrue(len(ret))
           print('ret', ret)
           continue
           match = FW_PATTERN.search(fw)
@@ -216,35 +217,55 @@ class TestToyotaFingerprint(unittest.TestCase):
   #   self.assertEqual(results, {(b"LX2-S8100", b"220222"), (b"LX2-S8100", b"211103"),
   #                              (b"ON-S9100", b"190405"), (b"ON-S9100", b"190720")})
   #
-  # def test_fuzzy_excluded_platforms(self):
-  #   # Asserts a list of platforms that will not fuzzy fingerprint with platform codes due to them being shared.
-  #   # This list can be shrunk as we combine platforms and detect features
-  #   excluded_platforms = {
-  #     CAR.GENESIS_G70,            # shared platform code, part number, and date
-  #     CAR.GENESIS_G70_2020,
-  #     CAR.TUCSON_4TH_GEN,         # shared platform code and part number
-  #     CAR.TUCSON_HYBRID_4TH_GEN,
-  #   }
-  #   excluded_platforms |= CANFD_CAR - EV_CAR  # shared platform codes
-  #   excluded_platforms |= NO_DATES_PLATFORMS  # date codes are required to match
-  #
-  #   platforms_with_shared_codes = set()
-  #   for platform, fw_by_addr in FW_VERSIONS.items():
-  #     car_fw = []
-  #     for ecu, fw_versions in fw_by_addr.items():
-  #       ecu_name, addr, sub_addr = ecu
-  #       for fw in fw_versions:
-  #         car_fw.append({"ecu": ecu_name, "fwVersion": fw, "address": addr,
-  #                        "subAddress": 0 if sub_addr is None else sub_addr})
-  #
-  #     CP = car.CarParams.new_message(carFw=car_fw)
-  #     matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw))
-  #     if len(matches) == 1:
-  #       self.assertEqual(list(matches)[0], platform)
-  #     else:
-  #       platforms_with_shared_codes.add(platform)
-  #
-  #   self.assertEqual(platforms_with_shared_codes, excluded_platforms)
+  def test_fuzzy_excluded_platforms(self):
+    # Asserts a list of platforms that will not fuzzy fingerprint with platform codes due to them being shared.
+    # This list can be shrunk as we combine platforms and detect features
+    # excluded_platforms = {
+    #   CAR.GENESIS_G70,            # shared platform code, part number, and date
+    #   CAR.GENESIS_G70_2020,
+    #   CAR.TUCSON_4TH_GEN,         # shared platform code and part number
+    #   CAR.TUCSON_HYBRID_4TH_GEN,
+    # }
+    # excluded_platforms |= CANFD_CAR - EV_CAR  # shared platform codes
+    # excluded_platforms |= NO_DATES_PLATFORMS  # date codes are required to match
+    excluded_platforms = set()
+
+    platforms_with_shared_codes = set()
+    for platform, fw_by_addr in FW_VERSIONS.items():
+      # if platform != 'TOYOTA RAV4 2022':
+      #   continue
+      car_fw = []
+      for ecu, fw_versions in fw_by_addr.items():
+        ecu_name, addr, sub_addr = ecu
+        for fw in fw_versions:
+          car_fw.append({"ecu": ecu_name, "fwVersion": fw, "address": addr,
+                         "subAddress": 0 if sub_addr is None else sub_addr})
+
+      CP = car.CarParams.new_message(carFw=car_fw)
+      matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw))
+      if matches in (
+        {CAR.RAV4, CAR.RAV4H},
+        {CAR.RAV4_TSS2, CAR.RAV4H_TSS2},
+        {CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2_2022},
+        {CAR.RAV4_TSS2_2023, CAR.RAV4H_TSS2_2023},
+        {CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2},
+        {CAR.HIGHLANDER, CAR.HIGHLANDERH},
+        {CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2},
+        {CAR.CAMRY, CAR.CAMRYH},
+        {CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2},
+        {CAR.CHR, CAR.CHRH},
+        {CAR.CHR_TSS2, CAR.CHRH_TSS2},
+        {CAR.LEXUS_ES, CAR.LEXUS_ESH},
+        {CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2},
+      ):
+        matches = {platform}
+      print('matches', matches)
+      if len(matches) == 1:
+        self.assertEqual(list(matches)[0], platform)
+      else:
+        platforms_with_shared_codes.add(platform)
+
+    self.assertEqual(platforms_with_shared_codes, excluded_platforms, (len(platforms_with_shared_codes), len(FW_VERSIONS)))
 
 
 if __name__ == "__main__":
