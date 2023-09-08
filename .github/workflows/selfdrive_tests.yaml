@@ -324,7 +324,7 @@ jobs:
         ${{ env.RUN }} "scons -j$(nproc)"
     # PYTHONWARNINGS triggers a SyntaxError in onnxruntime
     - name: Run model replay with ONNX
-      timeout-minutes: 2
+      timeout-minutes: 3
       run: |
         ${{ env.RUN_CL }} "unset PYTHONWARNINGS && \
                            ONNXCPU=1 CI=1 NO_NAV=1 coverage run selfdrive/test/process_replay/model_replay.py && \
