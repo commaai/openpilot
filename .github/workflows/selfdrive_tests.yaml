@@ -197,7 +197,7 @@ jobs:
     - name: Build and push CL Docker image
       if: matrix.arch == 'x86_64'
       run: |
-        echo "TARGET_ARCHITECTURE=''" >> "$GITHUB_ENV"
+        unset TARGET_ARCHITECTURE
         eval "$BUILD_CL"
 
   docker_push_multiarch:
