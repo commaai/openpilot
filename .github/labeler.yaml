@@ -1,6 +1,5 @@
 CI / testing:
- - .github/**
- - '**/test_*'
+  - all: ['.github/**', '**/test_*']
 
 car: 
   - all: ['selfdrive/car/**']
@@ -30,7 +29,12 @@ toyota:
 volkswagen: 
   - all: ['selfdrive/car/volkswagen/*']
 
+simulation:
+  - all: ['tools/sim/**']
+ui:
+  - all: ['selfdrive/ui/**']
+tools: 
+  - all: ['tools/**']
+
 #multilanguage: selfdrive/ui/translations/**
-#simulation: tools/sim/**
-#ui: selfdrive/ui/**
-#tools: tools/**
+
