@@ -9,6 +9,7 @@ from openpilot.selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CA
 MAX_STEER_RATE = 25  # deg/s
 MAX_STEER_RATE_FRAMES = 7  # tx control frames needed before torque can be cut
 
+# test subaru change
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
