@@ -46,11 +46,11 @@ class ModelState:
     self.prev_desire = np.zeros(DESIRE_LEN, dtype=np.float32)
     self.output = np.zeros(NET_OUTPUT_SIZE, dtype=np.float32)
     self.inputs = {
-      'desire_pulse': np.zeros(DESIRE_LEN * (HISTORY_BUFFER_LEN+1), dtype=np.float32),
+      'desire': np.zeros(DESIRE_LEN * (HISTORY_BUFFER_LEN+1), dtype=np.float32),
       'traffic_convention': np.zeros(TRAFFIC_CONVENTION_LEN, dtype=np.float32),
       'nav_features': np.zeros(NAV_FEATURE_LEN, dtype=np.float32),
       'nav_instructions': np.zeros(NAV_INSTRUCTION_LEN, dtype=np.float32),
-      'feature_buffer': np.zeros(HISTORY_BUFFER_LEN * FEATURE_LEN, dtype=np.float32),
+      'features_buffer': np.zeros(HISTORY_BUFFER_LEN * FEATURE_LEN, dtype=np.float32),
     }
 
     self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.GPU, False, context)
@@ -62,10 +62,10 @@ class ModelState:
   def run(self, buf: VisionBuf, wbuf: VisionBuf, transform: np.ndarray, transform_wide: np.ndarray,
                 inputs: Dict[str, np.ndarray], prepare_only: bool) -> Optional[np.ndarray]:
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
-    inputs['desire_pulse'][0] = 0
-    self.inputs['desire_pulse'][:-DESIRE_LEN] = self.inputs['desire_pulse'][DESIRE_LEN:]
-    self.inputs['desire_pulse'][-DESIRE_LEN:] = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
-    self.prev_desire[:] = inputs['desire_pulse']
+    inputs['desire'][0] = 0
+    self.inputs['desire'][:-DESIRE_LEN] = self.inputs['desire'][DESIRE_LEN:]
+    self.inputs['desire'][-DESIRE_LEN:] = np.where(inputs['desire'] - self.prev_desire > .99, inputs['desire'], 0)
+    self.prev_desire[:] = inputs['desire']
 
     self.inputs['traffic_convention'][:] = inputs['traffic_convention']
     self.inputs['nav_features'][:] = inputs['nav_features']
@@ -81,8 +81,8 @@ class ModelState:
       return None
 
     self.model.execute()
-    self.inputs['feature_buffer'][:-FEATURE_LEN] = self.inputs['feature_buffer'][FEATURE_LEN:]
-    self.inputs['feature_buffer'][-FEATURE_LEN:] = self.output[OUTPUT_SIZE:OUTPUT_SIZE+FEATURE_LEN]
+    self.inputs['features_buffer'][:-FEATURE_LEN] = self.inputs['features_buffer'][FEATURE_LEN:]
+    self.inputs['features_buffer'][-FEATURE_LEN:] = self.output[OUTPUT_SIZE:OUTPUT_SIZE+FEATURE_LEN]
     return self.output
 
 
@@ -232,7 +232,7 @@ def main():
       cloudlog.error(f"skipping model eval. Dropped {vipc_dropped_frames} frames")
 
     inputs:Dict[str, np.ndarray] = {
-      'desire_pulse': vec_desire,
+      'desire': vec_desire,
       'traffic_convention': traffic_convention,
       'driving_style': driving_style,
       'nav_features': nav_features,
