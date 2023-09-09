@@ -41,6 +41,11 @@ struct CanEvent {
   uint8_t dat[];
 };
 
+struct CompareCanEvent {
+  constexpr bool operator()(const CanEvent *const e, uint64_t ts) const { return e->mono_time < ts; }
+  constexpr bool operator()(uint64_t ts, const CanEvent *const e) const { return ts < e->mono_time; }
+};
+
 struct BusConfig {
   int can_speed_kbps = 500;
   int data_speed_kbps = 2000;
