@@ -97,13 +97,22 @@ def pcStage(String stageName, Closure body) {
   }
 }
 
+def setupCredentials() {
+  withCredentials([
+    string(credentialsId: 'azure_token', variable: 'AZURE_TOKEN')
+    string(credentialsId: 'mapbox_token', variable: 'MAPBOX_TOKEN')
+  ]) {
+    env.AZURE_TOKEN = "${AZURE_TOKEN}"
+    env.MAPBOX_TOKEN= "${MAPBOX_TOKEN}"
+  }
+}
+
 node {
   env.CI = "1"
   env.PYTHONWARNINGS = "error"
   env.TEST_DIR = "/data/openpilot"
   env.SOURCE_DIR = "/data/openpilot_source/"
-  env.AZURE_TOKEN = credentials('azure_token')
-  env.MAPBOX_TOKEN = credentials('mapbox_token')
+  setupCredentials()
 
   env.GIT_BRANCH = checkout(scm).GIT_BRANCH
   env.GIT_COMMIT = checkout(scm).GIT_COMMIT
