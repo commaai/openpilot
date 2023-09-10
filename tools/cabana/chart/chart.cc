@@ -286,9 +286,7 @@ void ChartView::updateSeries(const cabana::Signal *sig, bool clear) {
       s.vals.reserve(msgs.capacity());
       s.step_vals.reserve(msgs.capacity() * 2);
 
-      auto first = std::upper_bound(msgs.cbegin(), msgs.cend(), s.last_value_mono_time, [](uint64_t ts, auto e) {
-        return ts < e->mono_time;
-      });
+      auto first = std::upper_bound(msgs.cbegin(), msgs.cend(), s.last_value_mono_time, CompareCanEvent());
       const double route_start_time = can->routeStartTime();
       for (auto end = msgs.cend(); first != end; ++first) {
         const CanEvent *e = *first;
