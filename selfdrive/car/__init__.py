@@ -40,7 +40,7 @@ def create_button_events(cur_btn: int, prev_btn: int, buttons_dict: Dict[int, ca
 
 
 def gen_empty_fingerprint():
-  return {i: {} for i in range(0, 8)}
+  return {i: {} for i in range(8)}
 
 
 # these params were derived for the Civic and used to calculate params for other cars

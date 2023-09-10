@@ -1267,6 +1267,10 @@ This may take up to a minute.</source>
         <source>No custom software found at this URL.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Select a language</source>
+        <translation>Dil seçin</translation>
+    </message>
 </context>
 <context>
     <name>SetupWidget</name>

@@ -36,11 +36,11 @@ from openpilot.common.file_helpers import CallbackReader
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
 from openpilot.system.hardware import HARDWARE, PC, AGNOS
-from openpilot.system.loggerd.config import ROOT
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.selfdrive.statsd import STATS_DIR
-from openpilot.system.swaglog import SWAGLOG_DIR, cloudlog
+from openpilot.system.swaglog import cloudlog
 from openpilot.system.version import get_commit, get_origin, get_short_branch, get_version
+from openpilot.selfdrive.hardware.hw import Paths
 
 
 # TODO: use socket constant when mypy recognizes this as a valid attribute
@@ -75,7 +75,7 @@ class UploadFile:
   allow_cellular: bool
 
   @classmethod
-  def from_dict(cls, d: Dict) -> UploadFile:
+  def from_dict(cls, d: dict) -> UploadFile:
     return cls(d.get("fn", ""), d.get("url", ""), d.get("headers", {}), d.get("allow_cellular", False))
 
 
@@ -92,7 +92,7 @@ class UploadItem:
   allow_cellular: bool = False
 
   @classmethod
-  def from_dict(cls, d: Dict) -> UploadItem:
+  def from_dict(cls, d: dict) -> UploadItem:
     return cls(d["path"], d["url"], d["headers"], d["created_at"], d["id"], d["retry_count"], d["current"],
                d["progress"], d["allow_cellular"])
 
@@ -119,12 +119,11 @@ class AbortTransferException(Exception):
 
 
 class UploadQueueCache:
-  params = Params()
 
   @staticmethod
   def initialize(upload_queue: Queue[UploadItem]) -> None:
     try:
-      upload_queue_json = UploadQueueCache.params.get("AthenadUploadQueue")
+      upload_queue_json = Params().get("AthenadUploadQueue")
       if upload_queue_json is not None:
         for item in json.loads(upload_queue_json):
           upload_queue.put(UploadItem.from_dict(item))
@@ -136,7 +135,7 @@ class UploadQueueCache:
     try:
       queue: List[Optional[UploadItem]] = list(upload_queue.queue)
       items = [asdict(i) for i in queue if i is not None and (i.id not in cancelled_uploads)]
-      UploadQueueCache.params.put("AthenadUploadQueue", json.dumps(items))
+      Params().put("AthenadUploadQueue", json.dumps(items))
     except Exception:
       cloudlog.exception("athena.UploadQueueCache.cache.exception")
 
@@ -309,7 +308,7 @@ def _do_upload(upload_item: UploadItem, callback: Optional[Callable] = None) -> 
 
 # security: user should be able to request any message from their car
 @dispatcher.add_method
-def getMessage(service: str, timeout: int = 1000) -> Dict:
+def getMessage(service: str, timeout: int = 1000) -> dict:
   if service is None or service not in service_list:
     raise Exception("invalid service")
 
@@ -320,7 +319,7 @@ def getMessage(service: str, timeout: int = 1000) -> Dict:
     raise TimeoutError
 
   # this is because capnp._DynamicStructReader doesn't have typing information
-  return cast(Dict, ret.to_dict())
+  return cast(dict, ret.to_dict())
 
 
 @dispatcher.add_method
@@ -352,7 +351,7 @@ def scan_dir(path: str, prefix: str) -> List[str]:
   # (glob and friends traverse entire dir tree)
   with os.scandir(path) as i:
     for e in i:
-      rel_path = os.path.relpath(e.path, ROOT)
+      rel_path = os.path.relpath(e.path, Paths.log_root())
       if e.is_dir(follow_symlinks=False):
         # add trailing slash
         rel_path = os.path.join(rel_path, '')
@@ -367,7 +366,7 @@ def scan_dir(path: str, prefix: str) -> List[str]:
 
 @dispatcher.add_method
 def listDataDirectory(prefix='') -> List[str]:
-  return scan_dir(ROOT, prefix)
+  return scan_dir(Paths.log_root(), prefix)
 
 
 @dispatcher.add_method
@@ -408,7 +407,7 @@ def uploadFilesToUrls(files_data: List[UploadFileDict]) -> UploadFilesToUrlRespo
       failed.append(file.fn)
       continue
 
-    path = os.path.join(ROOT, file.fn)
+    path = os.path.join(Paths.log_root(), file.fn)
     if not os.path.exists(path) and not os.path.exists(strip_bz2_extension(path)):
       failed.append(file.fn)
       continue
@@ -572,8 +571,8 @@ def get_logs_to_send_sorted() -> List[str]:
   # TODO: scan once then use inotify to detect file creation/deletion
   curr_time = int(time.time())
   logs = []
-  for log_entry in os.listdir(SWAGLOG_DIR):
-    log_path = os.path.join(SWAGLOG_DIR, log_entry)
+  for log_entry in os.listdir(Paths.swaglog_root()):
+    log_path = os.path.join(Paths.swaglog_root(), log_entry)
     time_sent = 0
     try:
       value = getxattr(log_path, LOG_ATTR_NAME)
@@ -608,7 +607,7 @@ def log_handler(end_event: threading.Event) -> None:
         cloudlog.debug(f"athena.log_handler.forward_request {log_entry}")
         try:
           curr_time = int(time.time())
-          log_path = os.path.join(SWAGLOG_DIR, log_entry)
+          log_path = os.path.join(Paths.swaglog_root(), log_entry)
           setxattr(log_path, LOG_ATTR_NAME, int.to_bytes(curr_time, 4, sys.byteorder))
           with open(log_path) as f:
             jsonrpc = {
@@ -635,7 +634,7 @@ def log_handler(end_event: threading.Event) -> None:
           log_success = "result" in log_resp and log_resp["result"].get("success")
           cloudlog.debug(f"athena.log_handler.forward_response {log_entry} {log_success}")
           if log_entry and log_success:
-            log_path = os.path.join(SWAGLOG_DIR, log_entry)
+            log_path = os.path.join(Paths.swaglog_root(), log_entry)
             try:
               setxattr(log_path, LOG_ATTR_NAME, LOG_ATTR_VALUE_MAX_UNIX_TIME)
             except OSError:

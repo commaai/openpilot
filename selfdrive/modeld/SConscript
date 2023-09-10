@@ -1,17 +1,14 @@
-import os
-
 Import('env', 'envCython', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc', 'transformations')
 lenv = env.Clone()
 lenvCython = envCython.Clone()
 
-libs = [cereal, messaging, common, visionipc, gpucommon,
-        'OpenCL', 'SNPE', 'capnp', 'zmq', 'kj', 'yuv']
+libs = [cereal, messaging, visionipc, gpucommon, common, 'capnp', 'zmq', 'kj', 'pthread']
+frameworks = []
 
 common_src = [
   "models/commonmodel.cc",
-  "runners/snpemodel.cc",
   "transforms/loadyuv.cc",
-  "transforms/transform.cc"
+  "transforms/transform.cc",
 ]
 
 thneed_src_common = [
@@ -23,68 +20,39 @@ thneed_src_qcom = thneed_src_common + ["thneed/thneed_qcom2.cc"]
 thneed_src_pc = thneed_src_common + ["thneed/thneed_pc.cc"]
 thneed_src = thneed_src_qcom if arch == "larch64" else thneed_src_pc
 
-if arch == "larch64":
-  libs += ['gsl', 'CB', 'pthread', 'dl']
+# SNPE except on Mac and ARM Linux
+snpe_lib = []
+if arch != "Darwin" and arch != "aarch64":
+  common_src += ['runners/snpemodel.cc']
+  snpe_lib += ['SNPE']
+
+# OpenCL is a framework on Mac
+if arch == "Darwin":
+  frameworks += ['OpenCL']
 else:
-  libs += ['pthread']
+  libs += ['OpenCL']
 
-  if not GetOption('snpe'):
-    # for onnx support
-    common_src += ['runners/onnxmodel.cc']
-
-    # tell runners to use onnx
-    lenv['CFLAGS'].append("-DUSE_ONNX_MODEL")
-    lenv['CXXFLAGS'].append("-DUSE_ONNX_MODEL")
-
-  if arch == "Darwin":
-    # fix OpenCL
-    del libs[libs.index('OpenCL')]
-    lenv['FRAMEWORKS'] = ['OpenCL']
-
-  if arch == "Darwin" or arch == "aarch64":
-    # no SNPE on Mac and ARM Linux
-    del libs[libs.index('SNPE')]
-    del common_src[common_src.index('runners/snpemodel.cc')]
-
-for pathdef, fn in {'TRANSFORM': 'transforms/transform.cl', 'LOADYUV': 'transforms/loadyuv.cl', 'ONNXRUNNER': 'runners/onnx_runner.py'}.items():
+# Set path definitions
+for pathdef, fn in {'TRANSFORM': 'transforms/transform.cl', 'LOADYUV': 'transforms/loadyuv.cl'}.items():
   for xenv in (lenv, lenvCython):
     xenv['CXXFLAGS'].append(f'-D{pathdef}_PATH=\\"{File(fn).abspath}\\"')
 
-if arch == "larch64" or GetOption('pc_thneed'):
-  lenvCython['CFLAGS'].append("-DUSE_THNEED")
-  lenvCython['CXXFLAGS'].append("-DUSE_THNEED")
+# Compile cython
+snpe_rpath_qcom = "/data/pythonpath/third_party/snpe/larch64"
+snpe_rpath_pc = f"{Dir('#').abspath}/third_party/snpe/x86_64-linux-clang"
+snpe_rpath = lenvCython['RPATH'] + [snpe_rpath_qcom if arch == "larch64" else snpe_rpath_pc]
 
-common_frameworks = []
-common_libs = envCython["LIBS"] + [gpucommon, common, 'zmq']
-if arch == "Darwin":
-  common_frameworks.append('OpenCL')
-else:
-  common_libs.append('OpenCL')
-
-onnxmodel_lib = lenv.Library('onnxmodel', ['runners/onnxmodel.cc'])
+cython_libs = envCython["LIBS"] + libs
 snpemodel_lib = lenv.Library('snpemodel', ['runners/snpemodel.cc'])
 commonmodel_lib = lenv.Library('commonmodel', common_src)
 driving_lib = lenv.Library('driving', ['models/driving.cc'])
 
-lenvCython.Program('runners/runmodel_pyx.so', 'runners/runmodel_pyx.pyx', LIBS=common_libs, FRAMEWORKS=common_frameworks)
-lenvCython.Program('runners/onnxmodel_pyx.so', 'runners/onnxmodel_pyx.pyx', LIBS=[onnxmodel_lib, *common_libs], FRAMEWORKS=common_frameworks)
-lenvCython.Program('runners/snpemodel_pyx.so', 'runners/snpemodel_pyx.pyx', LIBS=[snpemodel_lib, *common_libs], FRAMEWORKS=common_frameworks)
-lenvCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=[commonmodel_lib, *common_libs], FRAMEWORKS=common_frameworks)
-lenvCython.Program('models/driving_pyx.so', 'models/driving_pyx.pyx', LIBS=[driving_lib, commonmodel_lib, cereal, messaging, *common_libs, 'capnp', 'kj'] + transformations, FRAMEWORKS=common_frameworks)
+lenvCython.Program('runners/runmodel_pyx.so', 'runners/runmodel_pyx.pyx', LIBS=cython_libs, FRAMEWORKS=frameworks)
+lenvCython.Program('runners/snpemodel_pyx.so', 'runners/snpemodel_pyx.pyx', LIBS=[snpemodel_lib, snpe_lib, *cython_libs], FRAMEWORKS=frameworks, RPATH=snpe_rpath)
+lenvCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=[commonmodel_lib, *cython_libs], FRAMEWORKS=frameworks)
+lenvCython.Program('models/driving_pyx.so', 'models/driving_pyx.pyx', LIBS=[driving_lib, commonmodel_lib, *cython_libs], FRAMEWORKS=frameworks)
 
-common_model = lenv.Object(common_src)
-
-lenv.Program('_dmonitoringmodeld', [
-    "dmonitoringmodeld.cc",
-    "models/dmonitoring.cc",
-  ]+common_model, LIBS=libs)
-
-lenv.Program('_navmodeld', [
-    "navmodeld.cc",
-    "models/nav.cc",
-  ]+common_model, LIBS=libs)
-
-# build thneed model
+# Build thneed model
 if arch == "larch64" or GetOption('pc_thneed'):
   fn = File("models/supercombo").abspath
 

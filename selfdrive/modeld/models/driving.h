@@ -4,22 +4,18 @@
 #include <memory>
 
 #include "cereal/messaging/messaging.h"
-#include "common/mat.h"
 #include "common/modeldata.h"
 #include "common/util.h"
-#include "selfdrive/modeld/models/nav.h"
-
-#ifdef USE_THNEED
-  constexpr bool CPP_USE_THNEED = true;
-#else
-  constexpr bool CPP_USE_THNEED = false;
-#endif
+#include "selfdrive/modeld/models/commonmodel.h"
+#include "selfdrive/modeld/runners/run.h"
 
 constexpr int FEATURE_LEN = 128;
 constexpr int HISTORY_BUFFER_LEN = 99;
 constexpr int DESIRE_LEN = 8;
 constexpr int DESIRE_PRED_LEN = 4;
 constexpr int TRAFFIC_CONVENTION_LEN = 2;
+constexpr int NAV_FEATURE_LEN = 256;
+constexpr int NAV_INSTRUCTION_LEN = 150;
 constexpr int DRIVING_STYLE_LEN = 12;
 constexpr int MODEL_FREQ = 20;
 
@@ -256,7 +252,6 @@ struct PublishState {
   std::array<float, 3> prev_brake_3ms2_probs = {};
 };
 
-mat3 update_calibration(float *device_from_calib_euler, bool wide_camera, bool bigmodel_frame);
 void fill_model_msg(MessageBuilder &msg, float *net_output_data, PublishState &ps, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
                     uint64_t timestamp_eof, uint64_t timestamp_llk, float model_execution_time, const bool nav_enabled, const bool valid);
 void fill_pose_msg(MessageBuilder &msg, float *net_outputs, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames, uint64_t timestamp_eof, const bool valid);
