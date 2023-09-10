@@ -108,6 +108,10 @@ node {
   env.GIT_BRANCH = checkout(scm).GIT_BRANCH
   env.GIT_COMMIT = checkout(scm).GIT_COMMIT
 
+  def excludeBranches = ['master-ci', 'devel', 'devel-staging', 'release3', 'release3-staging',
+                         'dashcam3', 'dashcam3-staging', 'testing-closet*', 'hotfix-*']
+  def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
+
   if (env.BRANCH_NAME != 'master') {
     properties([
         disableConcurrentBuilds(abortPrevious: true)
@@ -131,7 +135,7 @@ node {
       ])
     }
 
-    // TODO: don't run on a bunch of branches
+    if (env.BRANCH_NAME !~ /${excludeRegex}/) {
     parallel (
       // tici tests
       'onroad tests': {
@@ -202,24 +206,21 @@ node {
         ])
       },
 
-      // *** PC tests *** 
-      'build test': {
-        pcStage("build test") {
+      // *** PC tests ***
+      'PC tests': {
+        pcStage("PC tests") {
           // tests that our build system's dependencies are configured properly,
           // needs a machine with lots of cores
           sh "scons --clean && scons --no-cache --random -j42"
-        }
-      },
-      'car tests': {
-        pcStage("car tests") {
-          // TODO: use scons cache
-          sh "scons -j20"
+
+          // car tests
           sh "INTERNAL_SEG_CNT=500 INTERNAL_SEG_LIST=selfdrive/car/tests/test_models_segs.txt FILEREADER_CACHE=1 \
               pytest -n42 --dist=loadscope selfdrive/car/tests/test_models.py"
           sh "MAX_EXAMPLES=100 pytest -n42 selfdrive/car/tests/test_car_interfaces.py"
         }
       },
     )
+    }
   } catch (Exception e) {
     currentBuild.result = 'FAILED'
     throw e
