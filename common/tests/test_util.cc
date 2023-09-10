@@ -9,12 +9,8 @@
 #include <random>
 #include <string>
 
-#include <unordered_map>
-
 #include "catch2/catch.hpp"
 #include "common/util.h"
-
-std::hash<std::string> hasher;
 
 std::string random_bytes(int size) {
   std::random_device rd;
