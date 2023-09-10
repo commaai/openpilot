@@ -57,7 +57,6 @@ def deviceStage(String stageName, String deviceType, List env, def steps) {
         return
     }
 
-    //def extra = safe ? "" : "export UNSAFE=1\n";
     def extra = env.collect { "export ${it}" }.join('\n');
 
     docker.image('ghcr.io/commaai/alpine-ssh').inside('--user=root') {
@@ -142,29 +141,6 @@ node {
         ["build nightly", "RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_release.sh"],
       ])
     }
-
-    /*
-    // benchmarking
-    parallel (
-      'tici - unsafe': {
-        deviceStage("tici", "tici-common", ["UNSAFE=1"], [
-          ["build openpilot", "cd selfdrive/manager && ./build.py"],
-        ])
-      },
-
-      'tici - safe': {
-        deviceStage("tici", "tici-loopback", true, [
-          ["build openpilot", "cd selfdrive/manager && ./build.py"],
-        ])
-      },
-
-      'PC tests': {
-        pcStage("PC tests") {
-          sh "scons -j20"
-        }
-      },
-    )
-    */
 
     if (!env.BRANCH_NAME.matches(excludeRegex)) {
     parallel (
