@@ -135,7 +135,7 @@ node {
       ])
     }
 
-    if (env.BRANCH_NAME !~ /${excludeRegex}/) {
+    if (!env.BRANCH_NAME.matches(excludeRegex)) {
     parallel (
       // tici tests
       'onroad tests': {
