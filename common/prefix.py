@@ -39,3 +39,5 @@ class OpenpilotPrefix:
       os.remove(symlink_path)
     shutil.rmtree(self.msgq_path, ignore_errors=True)
     shutil.rmtree(Paths.log_root(), ignore_errors=True)
+    shutil.rmtree(Paths.download_cache_root(), ignore_errors=True)
+    shutil.rmtree(Paths.comma_home(), ignore_errors=True)
