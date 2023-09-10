@@ -5,8 +5,8 @@ import os
 
 from cereal import car, messaging
 from openpilot.common.basedir import BASEDIR
-from selfdrive.controls.controlsd import CAMERA_PACKETS, CONTROL_PACKETS
-from selfdrive.controls.lib.events import EVENTS, Alert
+from openpilot.selfdrive.controls.controlsd import CAMERA_PACKETS, CONTROL_PACKETS
+from openpilot.selfdrive.controls.lib.events import EVENTS, Alert
 
 UI_DIR = os.path.join(BASEDIR, "selfdrive", "ui")
 TRANSLATIONS_DIR = os.path.join(UI_DIR, "translations")
