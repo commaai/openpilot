@@ -56,31 +56,68 @@ sleep infinity
 EOF
 chmod +x $CONTINUE_PATH
 
+safe_checkout() {
+  # completely clean TEST_DIR
+
+  cd $SOURCE_DIR
+
+  # cleanup orphaned locks
+  find .git -type f -name "*.lock" -exec rm {} +
+
+  git reset --hard
+  git fetch --no-tags --no-recurse-submodules -j4 --verbose --depth 1 origin $GIT_COMMIT
+  find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \;
+  git reset --hard $GIT_COMMIT
+  git checkout $GIT_COMMIT
+  git clean -xdff
+  git submodule sync
+  git submodule update --init --recursive
+  git submodule foreach --recursive "git reset --hard && git clean -xdff"
+
+  git lfs pull
+  (ulimit -n 65535 && git lfs prune)
+
+  echo "git checkout done, t=$SECONDS"
+  du -hs $SOURCE_DIR $SOURCE_DIR/.git
+
+  if [ -z "SKIP_COPY" ]; then
+    rsync -a --delete $SOURCE_DIR $TEST_DIR
+  fi
+}
+
+unsafe_checkout() {
+  # checkout directly in test dir, leave old build products
+
+  cd $TEST_DIR
+
+  # cleanup orphaned locks
+  find .git -type f -name "*.lock" -exec rm {} +
+
+  git fetch --no-tags --no-recurse-submodules -j8 --verbose --depth 1 origin $GIT_COMMIT
+  git checkout --force --no-recurse-submodules $GIT_COMMIT
+  git reset --hard $GIT_COMMIT
+  git clean -df
+  git submodule sync
+  git submodule update --init --recursive
+  git submodule foreach --recursive "git reset --hard && git clean -df"
+
+  git lfs pull
+  (ulimit -n 65535 && git lfs prune)
+}
+
+export GIT_PACK_THREADS=8
+
 # set up environment
 if [ ! -d "$SOURCE_DIR" ]; then
   git clone https://github.com/commaai/openpilot.git $SOURCE_DIR
 fi
-cd $SOURCE_DIR
 
-# cleanup orphaned locks
-find .git -type f -name "*.lock" -exec rm {} +
-
-git reset --hard
-git fetch --no-tags --no-recurse-submodules -j4 --verbose --depth 1 origin $GIT_COMMIT
-find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \;
-git reset --hard $GIT_COMMIT
-git checkout $GIT_COMMIT
-git clean -xdff
-git submodule sync
-git submodule update --init --recursive
-git submodule foreach --recursive "git reset --hard && git clean -xdff"
-
-git lfs pull
-(ulimit -n 65535 && git lfs prune)
-
-echo "git checkout done, t=$SECONDS"
-du -hs $SOURCE_DIR $SOURCE_DIR/.git
-
-rsync -a --delete $SOURCE_DIR $TEST_DIR
+if [ ! -z "$UNSAFE" ]; then
+  echo "doing unsafe checkout"
+  unsafe_checkout
+else
+  echo "doing safe checkout"
+  safe_checkout
+fi
 
 echo "$TEST_DIR synced with $GIT_COMMIT, t=$SECONDS"
