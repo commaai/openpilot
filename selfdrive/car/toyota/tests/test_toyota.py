@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-from cereal import car
+from hypothesis import given, settings, strategies as st
 import unittest
 
-from openpilot.selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, RADAR_ACC_CAR, FW_VERSIONS
+from cereal import car
+from openpilot.selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, RADAR_ACC_CAR, FW_VERSIONS, \
+                                                  get_platform_codes
 
 Ecu = car.CarParams.Ecu
+ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
 
 class TestToyotaInterfaces(unittest.TestCase):
@@ -37,6 +40,23 @@ class TestToyotaInterfaces(unittest.TestCase):
 
         if car_model not in (CAR.PRIUS_V, CAR.LEXUS_CTH):
           self.assertIn(Ecu.eps, present_ecus)
+
+
+class TestToyotaFingerprint(unittest.TestCase):
+  @settings(max_examples=100)
+  @given(data=st.data())
+  def test_platform_codes_fuzzy_fw(self, data):
+    fw_strategy = st.lists(st.binary())
+    fws = data.draw(fw_strategy)
+    get_platform_codes(fws)
+
+  def test_fw_pattern(self):
+    """Asserts all ECUs can be parsed"""
+    for ecus in FW_VERSIONS.values():
+      for fws in ecus.values():
+        for fw in fws:
+          ret = get_platform_codes([fw])
+          self.assertTrue(len(ret))
 
 
 if __name__ == "__main__":
