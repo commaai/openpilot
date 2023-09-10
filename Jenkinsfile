@@ -99,11 +99,11 @@ def pcStage(String stageName, Closure body) {
 
 def setupCredentials() {
   withCredentials([
-    string(credentialsId: 'azure_token', variable: 'AZURE_TOKEN')
+    string(credentialsId: 'azure_token', variable: 'AZURE_TOKEN'),
     string(credentialsId: 'mapbox_token', variable: 'MAPBOX_TOKEN')
   ]) {
     env.AZURE_TOKEN = "${AZURE_TOKEN}"
-    env.MAPBOX_TOKEN= "${MAPBOX_TOKEN}"
+    env.MAPBOX_TOKEN = "${MAPBOX_TOKEN}"
   }
 }
 
