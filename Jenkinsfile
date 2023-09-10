@@ -80,7 +80,7 @@ def pcStage(String stageName, Closure body) {
     checkout scm
 
     def dockerArgs = '--user=root -v /tmp/comma_download_cache:/tmp/comma_download_cache';
-    docker.build("openpilot-base", "-f Dockerfile.openpilot_base .").inside(dockerArgs) {
+    docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .").inside(dockerArgs) {
       timeout(time: 20, unit: 'MINUTES') {
         try {
           sh "git config --global --add safe.directory '*'"
