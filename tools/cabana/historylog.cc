@@ -162,9 +162,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_ti
     return msgs;
   } else {
     assert(min_time == 0);
-    auto first = std::upper_bound(events.cbegin(), events.cend(), from_time, [](uint64_t ts, auto e) {
-      return ts < e->mono_time;
-    });
+    auto first = std::upper_bound(events.cbegin(), events.cend(), from_time, CompareCanEvent());
     auto msgs = fetchData(first, events.cend(), 0);
     if (update_colors) {
       for (auto it = msgs.begin(); it != msgs.end(); ++it) {

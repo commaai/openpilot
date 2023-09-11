@@ -358,10 +358,12 @@ SHORT_FW_PATTERN = re.compile(b'(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0
 MEDIUM_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{1})(?P<sub_version>[A-Z0-9]{2})')
 LONG_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{3})')
 FW_LEN_CODE = re.compile(b'^[\x01-\x05]')  # 5 chunks max. highest seen is 3 chunks, 16 bytes each
+FW_CHUNK_LEN = 16
 
 # List of ECUs expected to have platform codes
 # TODO: use hybrid ECU, splits many similar ICE and hybrid variants
 PLATFORM_CODE_ECUS = [Ecu.abs, Ecu.engine, Ecu.eps, Ecu.dsu, Ecu.fwdCamera, Ecu.fwdRadar]
+
 
 # Some ECUs that use KWP2000 have their FW versions on non-standard data identifiers.
 # Toyota diagnostic software first gets the supported data ids, then queries them one by one.

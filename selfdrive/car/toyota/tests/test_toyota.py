@@ -10,8 +10,11 @@ from selfdrive.car.fw_versions import build_fw_dict
 from selfdrive.car.toyota.values import TSS2_CAR, ANGLE_CONTROL_CAR, FW_VERSIONS, FW_QUERY_CONFIG, EV_HYBRID_CAR, \
                                         LONG_FW_PATTERN, FW_LEN_CODE, get_platform_codes
 from openpilot.selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, RADAR_ACC_CAR, FW_VERSIONS
+from openpilot.selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, RADAR_ACC_CAR, FW_VERSIONS, \
+                                                  get_platform_codes
 
 Ecu = car.CarParams.Ecu
+ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
@@ -194,6 +197,21 @@ class TestToyotaFingerprint(unittest.TestCase):
         platforms_with_shared_codes.add(platform)
 
     self.assertEqual(platforms_with_shared_codes, excluded_platforms, (len(platforms_with_shared_codes), len(FW_VERSIONS)))
+
+  @settings(max_examples=100)
+  @given(data=st.data())
+  def test_platform_codes_fuzzy_fw(self, data):
+    fw_strategy = st.lists(st.binary())
+    fws = data.draw(fw_strategy)
+    get_platform_codes(fws)
+
+  def test_fw_pattern(self):
+    """Asserts all ECUs can be parsed"""
+    for ecus in FW_VERSIONS.values():
+      for fws in ecus.values():
+        for fw in fws:
+          ret = get_platform_codes([fw])
+          self.assertTrue(len(ret))
 
 
 if __name__ == "__main__":
