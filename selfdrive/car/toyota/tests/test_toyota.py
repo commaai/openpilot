@@ -5,7 +5,7 @@ import unittest
 from cereal import car
 from selfdrive.car.fw_versions import build_fw_dict
 from openpilot.selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, RADAR_ACC_CAR, FW_VERSIONS, \
-                                                  get_platform_codes
+                                                  FW_QUERY_CONFIG, get_platform_codes
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
