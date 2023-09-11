@@ -2,7 +2,7 @@ import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Dict, List, Set, Tuple, Union
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
@@ -357,7 +357,6 @@ FW_LEN_CODE = re.compile(b'^[\x01-\x05]')  # 5 chunks max. highest seen is 3 chu
 FW_CHUNK_LEN = 16
 
 # List of ECUs expected to have platform codes
-# TODO: use hybrid ECU, splits many similar ICE and hybrid variants
 PLATFORM_CODE_ECUS = [Ecu.abs, Ecu.engine, Ecu.eps, Ecu.dsu, Ecu.fwdCamera, Ecu.fwdRadar]
 
 
