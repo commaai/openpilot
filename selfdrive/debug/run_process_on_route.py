@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 
 import argparse
-import platform
-import sys
 
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, replay_process
+from openpilot.selfdrive.test.process_replay.support_utils import exit_if_process_replay_supported
 from openpilot.tools.lib.logreader import MultiLogIterator
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.helpers import save_log
@@ -16,9 +15,7 @@ if __name__ == "__main__":
   parser.add_argument("process", help="The process to run")
   args = parser.parse_args()
 
-  if platform.system() == "Darwin":
-    print(f"{sys.argv[0]} is not supported on macOS")
-    sys.exit(1)
+  exit_if_process_replay_supported()
 
   cfg = [c for c in CONFIGS if c.proc_name == args.process][0]
 

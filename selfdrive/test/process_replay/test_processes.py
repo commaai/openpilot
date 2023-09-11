@@ -2,7 +2,6 @@
 import argparse
 import concurrent.futures
 import os
-import platform
 import sys
 from collections import defaultdict
 from tqdm import tqdm
@@ -12,6 +11,7 @@ from openpilot.selfdrive.car.car_helpers import interface_names
 from openpilot.selfdrive.test.openpilotci import get_url, upload_file
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_openpilot_enabled, replay_process
+from openpilot.selfdrive.test.process_replay.support_utils import exit_if_process_replay_supported
 from openpilot.system.version import get_commit
 from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.logreader import LogReader
@@ -182,9 +182,7 @@ if __name__ == "__main__":
                       help="Max amount of parallel jobs")
   args = parser.parse_args()
 
-  if platform.system() == "Darwin":
-    print(f"{sys.argv[0]} is not supported on macOS")
-    sys.exit(1)
+  exit_if_process_replay_supported()
 
   tested_procs = set(args.whitelist_procs) - set(args.blacklist_procs)
   tested_cars = set(args.whitelist_cars) - set(args.blacklist_cars)

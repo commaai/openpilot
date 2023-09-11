@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-import platform
 import sys
 import time
 from collections import defaultdict
@@ -15,6 +14,7 @@ from openpilot.selfdrive.test.openpilotci import BASE_URL, get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs
 from openpilot.selfdrive.test.process_replay.test_processes import format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process
+from openpilot.selfdrive.test.process_replay.support_utils import exit_if_process_replay_supported
 from openpilot.system.version import get_commit
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.logreader import LogReader
@@ -144,9 +144,7 @@ def model_replay(lr, frs):
 
 
 if __name__ == "__main__":
-  if platform.system() == "Darwin":
-    print(f"{sys.argv[0]} is not supported on macOS")
-    sys.exit(1)
+  exit_if_process_replay_supported()
 
   update = "--update" in sys.argv
   replay_dir = os.path.dirname(os.path.abspath(__file__))
