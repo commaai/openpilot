@@ -126,12 +126,15 @@ routes = [
   CarTestRoute("eb4eae1476647463|2023-08-26--18-07-04", HYUNDAI.IONIQ_6, segment=6),  # HDA2
   CarTestRoute("3f29334d6134fcd4|2022-03-30--22-00-50", HYUNDAI.IONIQ_PHEV_2019),
   CarTestRoute("fa8db5869167f821|2021-06-10--22-50-10", HYUNDAI.IONIQ_PHEV),
+  CarTestRoute("e1107f9d04dfb1e2|2023-09-05--22-32-12", HYUNDAI.IONIQ_PHEV),  # openpilot longitudinal enabled
   CarTestRoute("2c5cf2dd6102e5da|2020-12-17--16-06-44", HYUNDAI.IONIQ_EV_2020),
   CarTestRoute("610ebb9faaad6b43|2020-06-13--15-28-36", HYUNDAI.IONIQ_EV_LTD),
   CarTestRoute("2c5cf2dd6102e5da|2020-06-26--16-00-08", HYUNDAI.IONIQ),
+  CarTestRoute("012c95f06918eca4|2023-01-15--11-19-36", HYUNDAI.IONIQ),  # openpilot longitudinal enabled
   CarTestRoute("ab59fe909f626921|2021-10-18--18-34-28", HYUNDAI.IONIQ_HEV_2022),
   CarTestRoute("22d955b2cd499c22|2020-08-10--19-58-21", HYUNDAI.KONA),
   CarTestRoute("efc48acf44b1e64d|2021-05-28--21-05-04", HYUNDAI.KONA_EV),
+  CarTestRoute("f90d3cd06caeb6fa|2023-09-06--17-15-47", HYUNDAI.KONA_EV),  # openpilot longitudinal enabled
   CarTestRoute("ff973b941a69366f|2022-07-28--22-01-19", HYUNDAI.KONA_EV_2022, segment=11),
   CarTestRoute("1618132d68afc876|2023-08-27--09-32-14", HYUNDAI.KONA_EV_2ND_GEN, segment=13),
   CarTestRoute("49f3c13141b6bc87|2021-07-28--08-05-13", HYUNDAI.KONA_HEV),
@@ -166,6 +169,7 @@ routes = [
   CarTestRoute("e9966711cfb04ce3|2022-01-11--07-59-43", TOYOTA.AVALON_TSS2),
   CarTestRoute("eca1080a91720a54|2022-03-17--13-32-29", TOYOTA.AVALONH_TSS2),
   CarTestRoute("6cdecc4728d4af37|2020-02-23--15-44-18", TOYOTA.CAMRY),
+  CarTestRoute("2f37c007683e85ba|2023-09-02--14-39-44", TOYOTA.CAMRY),  # openpilot longitudinal, with radar CAN filter
   CarTestRoute("3456ad0cd7281b24|2020-12-13--17-45-56", TOYOTA.CAMRY_TSS2),
   CarTestRoute("ffccc77938ddbc44|2021-01-04--16-55-41", TOYOTA.CAMRYH_TSS2),
   CarTestRoute("54034823d30962f5|2021-05-24--06-37-34", TOYOTA.CAMRYH),
@@ -241,6 +245,7 @@ routes = [
   CarTestRoute("c321c6b697c5a5ff|2020-06-23--11-04-33", SUBARU.FORESTER),
   CarTestRoute("791340bc01ed993d|2019-03-10--16-28-08", SUBARU.IMPREZA),
   CarTestRoute("8bf7e79a3ce64055|2021-05-24--09-36-27", SUBARU.IMPREZA_2020),
+  # CarTestRoute("8de015561e1ea4a0|2023-08-29--17-08-31", SUBARU.IMPREZA),  # openpilot longitudinal
   CarTestRoute("1bbe6bf2d62f58a8|2022-07-14--17-11-43", SUBARU.OUTBACK, segment=10),
   CarTestRoute("c56e69bbc74b8fad|2022-08-18--09-43-51", SUBARU.LEGACY, segment=3),
   CarTestRoute("f4e3a0c511a076f4|2022-08-04--16-16-48", SUBARU.CROSSTREK_HYBRID, segment=2),

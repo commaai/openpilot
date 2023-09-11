@@ -174,7 +174,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.IONIQ_PHEV: HyundaiCarInfo("Hyundai Ioniq Plug-in Hybrid 2020-22", "All", car_parts=CarParts.common([CarHarness.hyundai_h])),
   CAR.KONA: HyundaiCarInfo("Hyundai Kona 2020", car_parts=CarParts.common([CarHarness.hyundai_b])),
   CAR.KONA_EV: HyundaiCarInfo("Hyundai Kona Electric 2018-21", car_parts=CarParts.common([CarHarness.hyundai_g])),
-  CAR.KONA_EV_2022: HyundaiCarInfo("Hyundai Kona Electric 2022", car_parts=CarParts.common([CarHarness.hyundai_o])),
+  CAR.KONA_EV_2022: HyundaiCarInfo("Hyundai Kona Electric 2022-23", car_parts=CarParts.common([CarHarness.hyundai_o])),
   CAR.KONA_HEV: HyundaiCarInfo("Hyundai Kona Hybrid 2020", video_link="https://youtu.be/0dwpAHiZgFo",
                                                                       car_parts=CarParts.common([CarHarness.hyundai_i])),  # TODO: check packages
   CAR.KONA_EV_2ND_GEN: HyundaiCarInfo("Hyundai Kona Electric (with HDA II, Korea only) 2023", video_link="https://www.youtube.com/watch?v=U2fOCmcQ8hw", car_parts=CarParts.common([CarHarness.hyundai_r])),
@@ -262,7 +262,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Kia EV6 (with HDA II) 2022-23", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_p]))
   ],
   CAR.KIA_CARNIVAL_4TH_GEN: [
-    HyundaiCarInfo("Kia Carnival 2023", car_parts=CarParts.common([CarHarness.hyundai_a])),
+    HyundaiCarInfo("Kia Carnival 2023-24", car_parts=CarParts.common([CarHarness.hyundai_a])),
     HyundaiCarInfo("Kia Carnival (China only) 2023", car_parts=CarParts.common([CarHarness.hyundai_k]))
   ],
 
@@ -461,6 +461,7 @@ PART_NUMBER_FW_PATTERN = re.compile(b'(?<=[0-9][.,][0-9]{2} )([0-9]{5}[-/]?[A-Z]
 # TODO: use abs, it has the platform code and part number on many platforms
 PLATFORM_CODE_ECUS = [Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps]
 # So far we've only seen dates in fwdCamera
+# TODO: there are date codes in the ABS firmware versions in hex
 DATE_FW_ECUS = [Ecu.fwdCamera]
 
 FW_QUERY_CONFIG = FwQueryConfig(
@@ -578,11 +579,13 @@ FW_VERSIONS = {
       b'\xf1\x00AE  MDPS C 1.00 1.01 56310/G2510 4APHC101',
       b'\xf1\x00AE  MDPS C 1.00 1.01 56310/G2560 4APHC101',
       b'\xf1\x00AE  MDPS C 1.00 1.01 56310G2510\x00 4APHC101',
+      b'\xf1\x00AE  MDPS C 1.00 1.01 56310/G2310 4APHC101',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00AEP MFC  AT USA LHD 1.00 1.01 95740-G2600 190819',
       b'\xf1\x00AEP MFC  AT EUR RHD 1.00 1.01 95740-G2600 190819',
       b'\xf1\x00AEP MFC  AT USA LHD 1.00 1.00 95740-G2700 201027',
+      b'\xf1\x00AEP MFC  AT EUR LHD 1.00 1.01 95740-G2600 190819',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x816H6F6051\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -595,6 +598,7 @@ FW_VERSIONS = {
       b'\xf1\x816U3J9051\x00\x00\xf1\x006U3H1_C2\x00\x006U3J9051\x00\x00PAE0G16NL2\x00\x00\x00\x00',
       b'\xf1\x006U3H1_C2\x00\x006U3J9051\x00\x00PAE0G16NL0\x00\x00\x00\x00',
       b'\xf1\x006U3H1_C2\x00\x006U3J9051\x00\x00PAE0G16NL2\xad\xeb\xabt',
+      b'\xf1\x006U3H1_C2\x00\x006U3J8051\x00\x00PAETG16UL0\x00\x00\x00\x00',
     ],
   },
   CAR.IONIQ_EV_2020: {
@@ -1413,10 +1417,7 @@ FW_VERSIONS = {
       b'\xf1\x8758520-K4010\xf1\x00OS IEB \x04 101 \x11\x13 58520-K4010',
       b'\xf1\x8758520-K4010\xf1\x00OS IEB \x03 101 \x11\x13 58520-K4010',
       b'\xf1\x00OS IEB \r 102"\x05\x16 58520-K4010',
-      # TODO: these return from the MULTI request, above return from LONG
-      b'\x01\x04\x7f\xff\xff\xf8\xff\xff\x00\x00\x01\xd3\x00\x00\x00\x00\xff\xb7\xff\xee\xff\xe0\x00\xc0\xc0\xfc\xd5\xfc\x00\x00U\x10\xffP\xf5\xff\xfd\x00\x00\x00\x00\xfc\x00\x01',
-      b'\x01\x04\x7f\xff\xff\xf8\xff\xff\x00\x00\x01\xdb\x00\x00\x00\x00\xff\xb1\xff\xd9\xff\xd2\x00\xc0\xc0\xfc\xd5\xfc\x00\x00U\x10\xff\xd6\xf5\x00\x06\x00\x00\x00\x14\xfd\x00\x04',
-      b'\x01\x04\x7f\xff\xff\xf8\xff\xff\x00\x00\x01\xd3\x00\x00\x00\x00\xff\xb7\xff\xf4\xff\xd9\x00\xc0',
+      b'\xf1\x00OS IEB \x02 102"\x05\x16 58520-K4010',
     ],
     (Ecu.fwdCamera, 0x7C4, None): [
       b'\xf1\x00OSP LKA  AT CND LHD 1.00 1.02 99211-J9110 802',
@@ -1424,12 +1425,14 @@ FW_VERSIONS = {
       b'\xf1\x00OSP LKA  AT AUS RHD 1.00 1.04 99211-J9200 904',
       b'\xf1\x00OSP LKA  AT EUR LHD 1.00 1.04 99211-J9200 904',
       b'\xf1\x00OSP LKA  AT EUR RHD 1.00 1.04 99211-J9200 904',
+      b'\xf1\x00OSP LKA  AT USA LHD 1.00 1.04 99211-J9200 904',
     ],
     (Ecu.eps, 0x7D4, None): [
       b'\xf1\x00OSP MDPS C 1.00 1.02 56310K4260\x00 4OEPC102',
       b'\xf1\x00OSP MDPS C 1.00 1.02 56310/K4970 4OEPC102',
       b'\xf1\x00OSP MDPS C 1.00 1.02 56310/K4271 4OEPC102',
       b'\xf1\x00OSP MDPS C 1.00 1.02 56310K4971\x00 4OEPC102',
+      b'\xf1\x00OSP MDPS C 1.00 1.02 56310K4261\x00 4OEPC102',
     ],
     (Ecu.fwdRadar, 0x7D0, None): [
       b'\xf1\x00YB__ FCA -----      1.00 1.01 99110-K4500      \x00\x00\x00',
@@ -1923,6 +1926,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00KA4 MFC  AT USA LHD 1.00 1.06 99210-R0000 220221',
       b'\xf1\x00KA4CMFC  AT CHN LHD 1.00 1.01 99211-I4000 210525',
+      b'\xf1\x00KA4 MFC  AT USA LHD 1.00 1.00 99210-R0100 230105',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00KA4_ SCC FHCUP      1.00 1.03 99110-R0000         ',
@@ -1995,7 +1999,7 @@ EV_CAR = {CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV, CAR
 FCEV_CAR = {CAR.NEXO_1ST_GEN, }
 
 # these cars require a special panda safety mode due to missing counters and checksums in the messages
-LEGACY_SAFETY_MODE_CAR = {CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_LTD, CAR.IONIQ_PHEV, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_OPTIMA_G4,
+LEGACY_SAFETY_MODE_CAR = {CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_LTD, CAR.KIA_OPTIMA_G4,
                           CAR.VELOSTER, CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.KIA_CEED, CAR.ELANTRA, CAR.IONIQ_HEV_2022,
                           CAR.KIA_OPTIMA_H}
 
