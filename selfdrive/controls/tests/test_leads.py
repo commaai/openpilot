@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import platform
 import unittest
 
 import cereal.messaging as messaging
@@ -8,6 +9,7 @@ from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
 
 
 class TestLeads(unittest.TestCase):
+  @unittest.skipIf(platform.system() == "Darwin", "replay_process is not supported on macOS")
   def test_radar_fault(self):
     # if there's no radar-related can traffic, radard should either not respond or respond with an error
     # this is tightly coupled with underlying car radar_interface implementation, but it's a good sanity check

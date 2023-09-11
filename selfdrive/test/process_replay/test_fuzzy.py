@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 import copy
+import platform
+import unittest
+
 from hypothesis import given, HealthCheck, Phase, settings
 import hypothesis.strategies as st
 from parameterized import parameterized
-import unittest
 
 from cereal import log
 from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
@@ -16,6 +18,7 @@ import openpilot.selfdrive.test.process_replay.process_replay as pr
 NOT_TESTED = ['controlsd', 'plannerd', 'calibrationd', 'dmonitoringd', 'paramsd', 'laikad', 'dmonitoringmodeld', 'modeld']
 TEST_CASES = [(cfg.proc_name, copy.deepcopy(cfg)) for cfg in pr.CONFIGS if cfg.proc_name not in NOT_TESTED]
 
+@unittest.skipIf(platform.system() == "Darwin", "replay_process is not supported on macOS")
 class TestFuzzProcesses(unittest.TestCase):
 
   @parameterized.expand(TEST_CASES)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import platform
 import time
 import unittest
 from cereal import log
@@ -95,6 +96,7 @@ def get_measurement_mock(gpstime, sat_ephemeris):
 
 
 @unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Laika test skipped since it's long and not currently used. Unset {SKIP_ENV_VAR} to run")
+@unittest.skipIf(platform.system() == "Darwin", "replay_process is not supported on macOS")
 class TestLaikad(unittest.TestCase):
 
   @classmethod
