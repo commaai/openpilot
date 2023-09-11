@@ -77,7 +77,7 @@ echo "[ ] installed python dependencies t=$SECONDS"
 # brew does not link qt5 by default
 # check if qt5 can be linked, if not, prompt the user to link it
 QT_BIN_LOCATION="$(command -v lupdate || :)"
-if [ -z "$QT_BIN_LOCATION" ]; then
+if [ -n "$QT_BIN_LOCATION" ]; then
   # if qt6 is linked, prompt the user to unlink it and link the right version
   QT_BIN_VERSION="$(lupdate -version)"
   if [[ ! "$QT_BIN_VERSION" =~ .*5\.[0-9]+\.[0-9]+.* ]]; then
