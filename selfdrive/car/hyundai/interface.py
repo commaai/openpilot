@@ -137,6 +137,10 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.000
       # steering ratio according to Hyundai News https://www.hyundainews.com/assets/documents/original/48035-2022SantaCruzProductGuideSpecsv2081521.pdf
       ret.steerRatio = 14.2
+    elif candidate == CAR.AZERA_2022:
+      ret.mass = 1540.  # average
+      ret.wheelbase = 2.885
+      ret.steerRatio = 14.5
 
     # Kia
     elif candidate == CAR.KIA_SORENTO:
