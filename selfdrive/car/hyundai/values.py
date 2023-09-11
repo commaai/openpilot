@@ -260,7 +260,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Kia EV6 (with HDA II) 2022-23", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_p]))
   ],
   CAR.KIA_CARNIVAL_4TH_GEN: [
-    HyundaiCarInfo("Kia Carnival 2023", car_parts=CarParts.common([CarHarness.hyundai_a])),
+    HyundaiCarInfo("Kia Carnival 2023-24", car_parts=CarParts.common([CarHarness.hyundai_a])),
     HyundaiCarInfo("Kia Carnival (China only) 2023", car_parts=CarParts.common([CarHarness.hyundai_k]))
   ],
 
@@ -1924,6 +1924,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00KA4 MFC  AT USA LHD 1.00 1.06 99210-R0000 220221',
       b'\xf1\x00KA4CMFC  AT CHN LHD 1.00 1.01 99211-I4000 210525',
+      b'\xf1\x00KA4 MFC  AT USA LHD 1.00 1.00 99210-R0100 230105',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00KA4_ SCC FHCUP      1.00 1.03 99110-R0000         ',
@@ -1979,7 +1980,7 @@ EV_CAR = {CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV, CAR
           CAR.KIA_EV6, CAR.IONIQ_5, CAR.IONIQ_6, CAR.GENESIS_GV60_EV_1ST_GEN, CAR.KONA_EV_2ND_GEN}
 
 # these cars require a special panda safety mode due to missing counters and checksums in the messages
-LEGACY_SAFETY_MODE_CAR = {CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_OPTIMA_G4,
+LEGACY_SAFETY_MODE_CAR = {CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_LTD, CAR.KIA_OPTIMA_G4,
                           CAR.VELOSTER, CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.KIA_CEED, CAR.ELANTRA, CAR.IONIQ_HEV_2022,
                           CAR.KIA_OPTIMA_H}
 

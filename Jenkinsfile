@@ -51,16 +51,18 @@ END"""
   }
 }
 
-def deviceStage(String stageName, String deviceType, def steps) {
+def deviceStage(String stageName, String deviceType, List env, def steps) {
   stage(stageName) {
     if (currentBuild.result != null) {
         return
     }
 
+    def extra = env.collect { "export ${it}" }.join('\n');
+
     docker.image('ghcr.io/commaai/alpine-ssh').inside('--user=root') {
       lock(resource: "", label: deviceType, inversePrecedence: true, variable: 'device_ip', quantity: 1) {
         timeout(time: 20, unit: 'MINUTES') {
-          device(device_ip, "git checkout", readFile("selfdrive/test/setup_device_ci.sh"),)
+          device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
           steps.each { item ->
             device(device_ip, item[0], item[1])
           }
@@ -79,7 +81,7 @@ def pcStage(String stageName, Closure body) {
 
     checkout scm
 
-    def dockerArgs = '--user=root -v /tmp/comma_download_cache:/tmp/comma_download_cache';
+    def dockerArgs = '--user=root -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache';
     docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .").inside(dockerArgs) {
       timeout(time: 20, unit: 'MINUTES') {
         try {
@@ -128,19 +130,15 @@ node {
   }
 
   try {
-    stage('git checkout') {
-      checkout scm
-    }
-
     if (env.BRANCH_NAME == 'devel-staging') {
-      deviceStage("build release3-staging", "tici-needs-can", [
-        ["build nightly", "RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_release.sh"],
+      deviceStage("build release3-staging", "tici-needs-can", [], [
+        ["build release3-staging & dashcam3-staging", "RELEASE_BRANCH=release3-staging DASHCAM_BRANCH=dashcam3-staging $SOURCE_DIR/release/build_release.sh"],
       ])
     }
 
     if (env.BRANCH_NAME == 'master-ci') {
-      deviceStage("build release3-staging", "tici-needs-can", [
-        ["build release3-staging & dashcam3-staging", "RELEASE_BRANCH=release3-staging DASHCAM_BRANCH=dashcam3-staging $SOURCE_DIR/release/build_release.sh"],
+      deviceStage("build nightly", "tici-needs-can", [], [
+        ["build nightly", "RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_release.sh"],
       ])
     }
 
@@ -148,7 +146,7 @@ node {
     parallel (
       // tici tests
       'onroad tests': {
-        deviceStage("tici", "tici-needs-can", [
+        deviceStage("onroad", "tici-needs-can", ["SKIP_COPY=1"], [
           ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR ./build_devel.sh"],
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["check dirty", "release/check-dirty.sh"],
@@ -157,7 +155,7 @@ node {
         ])
       },
       'HW + Unit Tests': {
-        deviceStage("tici", "tici-common", [
+        deviceStage("tici", "tici-common", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
           ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
           ["test power draw", "./system/hardware/tici/tests/test_power_draw.py"],
@@ -168,47 +166,44 @@ node {
         ])
       },
       'loopback': {
-        deviceStage("tici", "tici-loopback", [
+        deviceStage("tici", "tici-loopback", ["UNSAFE=1"], [
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["test boardd loopback", "pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
         ])
       },
       'camerad': {
-        deviceStage("AR0231", "tici-ar0231", [
+        deviceStage("AR0231", "tici-ar0231", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
           ["test camerad", "pytest system/camerad/test/test_camerad.py"],
           ["test exposure", "pytest system/camerad/test/test_exposure.py"],
         ])
-        deviceStage("OX03C10", "tici-ox03c10", [
+        deviceStage("OX03C10", "tici-ox03c10", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
           ["test camerad", "pytest system/camerad/test/test_camerad.py"],
           ["test exposure", "pytest system/camerad/test/test_exposure.py"],
         ])
       },
       'sensord': {
-        deviceStage("LSM + MMC", "tici-lsmc", [
+        deviceStage("LSM + MMC", "tici-lsmc", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
           ["test sensord", "cd system/sensord/tests && pytest test_sensord.py"],
         ])
-        deviceStage("BMX + LSM", "tici-bmx-lsm", [
+        deviceStage("BMX + LSM", "tici-bmx-lsm", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
           ["test sensord", "cd system/sensord/tests && pytest test_sensord.py"],
         ])
       },
       'replay': {
-        deviceStage("tici", "tici-replay", [
+        deviceStage("tici", "tici-replay", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
           ["model replay", "cd selfdrive/test/process_replay && ./model_replay.py"],
         ])
       },
       'tizi': {
-        deviceStage("tizi", "tizi", [
+        deviceStage("tizi", "tizi", ["UNSAFE=1"], [
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["test boardd loopback", "SINGLE_PANDA=1 pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
           ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
-          ["test sensord", "cd system/sensord/tests && pytest test_sensord.py"],
-          ["test camerad", "pytest system/camerad/test/test_camerad.py"],
-          ["test exposure", "pytest system/camerad/test/test_exposure.py"],
           ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
           ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
           ["test rawgpsd", "pytest system/sensord/rawgps/test_rawgps.py"],
@@ -220,14 +215,18 @@ node {
         pcStage("PC tests") {
           // tests that our build system's dependencies are configured properly,
           // needs a machine with lots of cores
-          sh "scons --clean && scons --no-cache --random -j42"
-
-          // car tests
-          sh "INTERNAL_SEG_CNT=500 INTERNAL_SEG_LIST=selfdrive/car/tests/test_models_segs.txt FILEREADER_CACHE=1 \
-              pytest -n42 --dist=loadscope selfdrive/car/tests/test_models.py"
-          sh "MAX_EXAMPLES=100 pytest -n42 selfdrive/car/tests/test_car_interfaces.py"
+          sh label: "test multi-threaded build", script: "scons --no-cache --random -j42"
         }
       },
+      'car tests': {
+        pcStage("car tests") {
+          sh "scons -j30"
+          sh label: "test_models.py", script: "INTERNAL_SEG_CNT=250 INTERNAL_SEG_LIST=selfdrive/car/tests/test_models_segs.txt FILEREADER_CACHE=1 \
+              pytest -n42 --dist=loadscope selfdrive/car/tests/test_models.py"
+          sh label: "test_car_interfaces.py", script: "MAX_EXAMPLES=100 pytest -n42 selfdrive/car/tests/test_car_interfaces.py"
+        }
+      },
+
     )
     }
   } catch (Exception e) {
