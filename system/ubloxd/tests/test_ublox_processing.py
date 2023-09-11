@@ -99,7 +99,7 @@ class TestUbloxProcessing(unittest.TestCase):
       rcv_msgs = []
       for msg in self.ublox_raw:
         ur_pm.send(msg.which(), msg.as_builder())
-        time.sleep(0.01)
+        time.sleep(0.001)
         rcv_msgs += messaging.drain_sock(ugs)
 
       time.sleep(0.1)

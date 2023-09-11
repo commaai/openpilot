@@ -5,6 +5,10 @@ inputs:
     description: 'Whether or not to pull the git lfs'
     required: false
     default: 'true'
+  cache_key_prefix:
+    description: 'Prefix for caching key'
+    required: false
+    default: 'scons_x86_64'
 
 env:
   SLEEP_TIME: 30 # Time to sleep between retries
@@ -17,6 +21,7 @@ runs:
       continue-on-error: true
       with:
         git_lfs: ${{ inputs.git_lfs }}
+        cache_key_prefix: ${{ inputs.cache_key_prefix }}
         is_retried: true
     - if: steps.setup1.outcome == 'failure'
       shell: bash
@@ -27,6 +32,7 @@ runs:
       continue-on-error: true
       with:
         git_lfs: ${{ inputs.git_lfs }}
+        cache_key_prefix: ${{ inputs.cache_key_prefix }}
         is_retried: true
     - if: steps.setup2.outcome == 'failure'
       shell: bash
@@ -36,4 +42,5 @@ runs:
       uses: ./.github/workflows/setup
       with:
         git_lfs: ${{ inputs.git_lfs }}
+        cache_key_prefix: ${{ inputs.cache_key_prefix }}
         is_retried: true

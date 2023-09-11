@@ -40,7 +40,7 @@ from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.selfdrive.statsd import STATS_DIR
 from openpilot.system.swaglog import cloudlog
 from openpilot.system.version import get_commit, get_origin, get_short_branch, get_version
-from selfdrive.hardware.hw import Paths
+from openpilot.selfdrive.hardware.hw import Paths
 
 
 # TODO: use socket constant when mypy recognizes this as a valid attribute
@@ -119,12 +119,11 @@ class AbortTransferException(Exception):
 
 
 class UploadQueueCache:
-  params = Params()
 
   @staticmethod
   def initialize(upload_queue: Queue[UploadItem]) -> None:
     try:
-      upload_queue_json = UploadQueueCache.params.get("AthenadUploadQueue")
+      upload_queue_json = Params().get("AthenadUploadQueue")
       if upload_queue_json is not None:
         for item in json.loads(upload_queue_json):
           upload_queue.put(UploadItem.from_dict(item))
@@ -136,7 +135,7 @@ class UploadQueueCache:
     try:
       queue: List[Optional[UploadItem]] = list(upload_queue.queue)
       items = [asdict(i) for i in queue if i is not None and (i.id not in cancelled_uploads)]
-      UploadQueueCache.params.put("AthenadUploadQueue", json.dumps(items))
+      Params().put("AthenadUploadQueue", json.dumps(items))
     except Exception:
       cloudlog.exception("athena.UploadQueueCache.cache.exception")
 
