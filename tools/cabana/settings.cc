@@ -6,7 +6,6 @@
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QPushButton>
-#include <QSettings>
 #include <QStandardPaths>
 
 #include "tools/cabana/util.h"
@@ -35,6 +34,8 @@ void Settings::save() {
   s.setValue("log_path", log_path);
   s.setValue("drag_direction", drag_direction);
   s.setValue("suppress_defined_signals", suppress_defined_signals);
+  s.sync();
+  return s.status();
 }
 
 void Settings::load() {
