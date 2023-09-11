@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QApplication>
 #include <QByteArray>
 #include <QCheckBox>
 #include <QComboBox>
@@ -22,9 +23,10 @@ public:
     AlwaysBE,
   };
 
-  Settings();
+  Settings() {}
   void save();
   void load();
+  inline static QString filePath() { return QApplication::applicationDirPath() + "/settings"; }
 
   int fps = 10;
   int max_cached_minutes = 30;
