@@ -84,7 +84,7 @@ if [ -n "$QT_BIN_LOCATION" ]; then
     echo
     echo "lupdate/lrelease available at PATH is $QT_BIN_VERSION"
     if [[ "$QT_BIN_LOCATION" == "$(brew --prefix)/"* ]]; then
-      echo "Please run the following command to link qt5:"
+      echo "Run the following command to link qt5:"
       echo "brew unlink qt@6 && brew link qt@5"
     else
       echo "Remove conflicting qt entries from PATH and run the following command to link qt5:"
