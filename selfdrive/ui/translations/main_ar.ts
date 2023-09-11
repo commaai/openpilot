@@ -343,18 +343,6 @@
         <source>Installing...</source>
         <translation>جارٍ التثبيت ...</translation>
     </message>
-    <message>
-        <source>Receiving objects: </source>
-        <translation type="vanished">استقبال الكائنات: </translation>
-    </message>
-    <message>
-        <source>Resolving deltas: </source>
-        <translation type="vanished">حل دلتا: </translation>
-    </message>
-    <message>
-        <source>Updating files: </source>
-        <translation type="vanished">جارٍ تحديث الملفات: </translation>
-    </message>
 </context>
 <context>
     <name>MapETA</name>
@@ -369,74 +357,6 @@
     <message>
         <source>hr</source>
         <translation>سع</translation>
-    </message>
-    <message>
-        <source>km</source>
-        <translation type="vanished">كم</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation type="vanished">مل</translation>
-    </message>
-</context>
-<context>
-    <name>MapInstructions</name>
-    <message>
-        <source> km</source>
-        <translation type="vanished"> كم</translation>
-    </message>
-    <message>
-        <source> m</source>
-        <translation type="vanished"> م</translation>
-    </message>
-    <message>
-        <source> mi</source>
-        <translation type="vanished"> مل</translation>
-    </message>
-    <message>
-        <source> ft</source>
-        <translation type="vanished"> قد</translation>
-    </message>
-</context>
-<context>
-    <name>MapPanel</name>
-    <message>
-        <source>Current Destination</source>
-        <translation type="vanished">الوجهة الحالية</translation>
-    </message>
-    <message>
-        <source>CLEAR</source>
-        <translation type="vanished">مسح</translation>
-    </message>
-    <message>
-        <source>Recent Destinations</source>
-        <translation type="vanished">الوجهات الأخيرة</translation>
-    </message>
-    <message>
-        <source>Try the Navigation Beta</source>
-        <translation type="vanished">جرب التنقل التجريبي</translation>
-    </message>
-    <message>
-        <source>Get turn-by-turn directions displayed and more with a comma
-prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation type="vanished">احصل على الاتجاهات خطوة بخطوة معروضة والمزيد باستخدام comma
-الاشتراك الرئيسي. اشترك الآن: https://connect.comma.ai</translation>
-    </message>
-    <message>
-        <source>No home
-location set</source>
-        <translation type="vanished">لم يتم تعيين
-موقع المنزل</translation>
-    </message>
-    <message>
-        <source>No work
-location set</source>
-        <translation type="vanished">لم يتم تعيين
-موقع العمل</translation>
-    </message>
-    <message>
-        <source>no recent destinations</source>
-        <translation type="vanished">لا توجد وجهات حديثة</translation>
     </message>
 </context>
 <context>
@@ -615,14 +535,6 @@ location set</source>
         <translation>الوصول عن بعد</translation>
     </message>
     <message>
-        <source>1 year of storage</source>
-        <translation type="vanished">سنة واحدة من التخزين</translation>
-    </message>
-    <message>
-        <source>Developer perks</source>
-        <translation type="vanished">امتيازات المطور</translation>
-    </message>
-    <message>
         <source>24/7 LTE connectivity</source>
         <translation type="unfinished"></translation>
     </message>
@@ -644,14 +556,6 @@ location set</source>
     <message>
         <source>comma prime</source>
         <translation>comma prime</translation>
-    </message>
-    <message>
-        <source>CONNECT.COMMA.AI</source>
-        <translation type="vanished">CONNECT.COMMA.AI</translation>
-    </message>
-    <message>
-        <source>COMMA POINTS</source>
-        <translation type="vanished">COMMA POINTS</translation>
     </message>
 </context>
 <context>
@@ -733,16 +637,8 @@ location set</source>
         <translation>هل أنت متأكد أنك تريد إعادة ضبط جهازك؟</translation>
     </message>
     <message>
-        <source>Resetting device...</source>
-        <translation type="vanished">جارٍ إعادة ضبط الجهاز ...</translation>
-    </message>
-    <message>
         <source>System Reset</source>
         <translation>إعادة تعيين النظام</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation type="vanished">تم تشغيل إعادة تعيين النظام. اضغط على تأكيد لمسح كل المحتوى والإعدادات. اضغط على إلغاء لاستئناف التمهيد.</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -757,10 +653,6 @@ location set</source>
         <translation>تأكيد</translation>
     </message>
     <message>
-        <source>Unable to mount data partition. Press confirm to reset your device.</source>
-        <translation type="vanished">تعذر تحميل قسم البيانات. اضغط على تأكيد لإعادة ضبط جهازك.</translation>
-    </message>
-    <message>
         <source>Resetting device...
 This may take up to a minute.</source>
         <translation type="unfinished"></translation>
@@ -772,13 +664,6 @@ This may take up to a minute.</source>
     <message>
         <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
         <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>RichTextDialog</name>
-    <message>
-        <source>Ok</source>
-        <translation type="vanished">موافق</translation>
     </message>
 </context>
 <context>
@@ -802,10 +687,6 @@ This may take up to a minute.</source>
     <message>
         <source>Software</source>
         <translation>برمجة</translation>
-    </message>
-    <message>
-        <source>Navigation</source>
-        <translation type="vanished">ملاحة</translation>
     </message>
 </context>
 <context>
@@ -849,18 +730,6 @@ This may take up to a minute.</source>
     <message>
         <source>Waiting for internet</source>
         <translation>في انتظار الاتصال بالإنترنت</translation>
-    </message>
-    <message>
-        <source>Choose Software to Install</source>
-        <translation type="vanished">اختر البرنامج المراد تثبيته</translation>
-    </message>
-    <message>
-        <source>Dashcam</source>
-        <translation type="vanished">Dashcam</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation type="vanished">برامج مخصصة</translation>
     </message>
     <message>
         <source>Enter URL</source>
@@ -1004,54 +873,6 @@ This may take up to a minute.</source>
 <context>
     <name>SoftwarePanel</name>
     <message>
-        <source>Git Branch</source>
-        <translation type="vanished">Git Branch</translation>
-    </message>
-    <message>
-        <source>Git Commit</source>
-        <translation type="vanished">Git Commit</translation>
-    </message>
-    <message>
-        <source>OS Version</source>
-        <translation type="vanished">إصدار نظام التشغيل</translation>
-    </message>
-    <message>
-        <source>Version</source>
-        <translation type="vanished">إصدار</translation>
-    </message>
-    <message>
-        <source>Last Update Check</source>
-        <translation type="vanished">التحقق من آخر تحديث</translation>
-    </message>
-    <message>
-        <source>The last time openpilot successfully checked for an update. The updater only runs while the car is off.</source>
-        <translation type="vanished">آخر مرة نجح برنامج openpilot في التحقق من التحديث. يعمل المحدث فقط أثناء إيقاف تشغيل السيارة.</translation>
-    </message>
-    <message>
-        <source>Check for Update</source>
-        <translation type="vanished">فحص التحديثات</translation>
-    </message>
-    <message>
-        <source>CHECKING</source>
-        <translation type="vanished">تدقيق</translation>
-    </message>
-    <message>
-        <source>Switch Branch</source>
-        <translation type="vanished">تبديل الفرع</translation>
-    </message>
-    <message>
-        <source>ENTER</source>
-        <translation type="vanished">أدخل</translation>
-    </message>
-    <message>
-        <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation type="vanished">سيتم سحب الفرع الجديد في المرة التالية التي يتم فيها تشغيل أداة التحديث.</translation>
-    </message>
-    <message>
-        <source>Enter branch name</source>
-        <translation type="vanished">أدخل اسم الفرع</translation>
-    </message>
-    <message>
         <source>UNINSTALL</source>
         <translation>الغاء التثبيت</translation>
     </message>
@@ -1062,10 +883,6 @@ This may take up to a minute.</source>
     <message>
         <source>Are you sure you want to uninstall?</source>
         <translation>هل أنت متأكد أنك تريد إلغاء التثبيت؟</translation>
-    </message>
-    <message>
-        <source>failed to fetch update</source>
-        <translation type="vanished">فشل في جلب التحديث</translation>
     </message>
     <message>
         <source>CHECK</source>
@@ -1250,14 +1067,6 @@ This may take up to a minute.</source>
     <message>
         <source>Show map on left side when in split screen view.</source>
         <translation>إظهار الخريطة على الجانب الأيسر عندما تكون في طريقة عرض الشاشة المنقسمة.</translation>
-    </message>
-    <message>
-        <source>openpilot Longitudinal Control</source>
-        <translation type="vanished">openpilot التحكم الطولي</translation>
-    </message>
-    <message>
-        <source>openpilot will disable the car&apos;s radar and will take over control of gas and brakes. Warning: this disables AEB!</source>
-        <translation type="vanished">سوف يقوم برنامج openpilot بتعطيل رادار السيارة وسيتولى التحكم في الغاز والمكابح. تحذير: هذا يعطل AEB!</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
