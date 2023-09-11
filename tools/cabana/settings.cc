@@ -13,12 +13,8 @@
 
 Settings settings;
 
-Settings::Settings() {
-  load();
-}
-
 void Settings::save() {
-  QSettings s("settings", QSettings::IniFormat);
+  QSettings s(filePath(), QSettings::IniFormat);
   s.setValue("fps", fps);
   s.setValue("max_cached_minutes", max_cached_minutes);
   s.setValue("chart_height", chart_height);
@@ -42,7 +38,7 @@ void Settings::save() {
 }
 
 void Settings::load() {
-  QSettings s("settings", QSettings::IniFormat);
+  QSettings s(filePath(), QSettings::IniFormat);
   fps = s.value("fps", 10).toInt();
   max_cached_minutes = s.value("max_cached_minutes", 30).toInt();
   chart_height = s.value("chart_height", 200).toInt();
