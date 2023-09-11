@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import argparse
+import platform
+import sys
 
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, replay_process
 from openpilot.tools.lib.logreader import MultiLogIterator
@@ -13,6 +15,10 @@ if __name__ == "__main__":
   parser.add_argument("route", help="The route name to use")
   parser.add_argument("process", help="The process to run")
   args = parser.parse_args()
+
+  if platform.system() == "Darwin":
+    print(f"{sys.argv[0]} is not supported on macOS")
+    sys.exit(1)
 
   cfg = [c for c in CONFIGS if c.proc_name == args.process][0]
 

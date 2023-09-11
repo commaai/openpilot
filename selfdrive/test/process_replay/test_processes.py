@@ -2,6 +2,7 @@
 import argparse
 import concurrent.futures
 import os
+import platform
 import sys
 from collections import defaultdict
 from tqdm import tqdm
@@ -180,6 +181,10 @@ if __name__ == "__main__":
   parser.add_argument("-j", "--jobs", type=int, default=max(cpu_count - 2, 1),
                       help="Max amount of parallel jobs")
   args = parser.parse_args()
+
+  if platform.system() == "Darwin":
+    print(f"{sys.argv[0]} is not supported on macOS")
+    sys.exit(1)
 
   tested_procs = set(args.whitelist_procs) - set(args.blacklist_procs)
   tested_cars = set(args.whitelist_cars) - set(args.blacklist_cars)

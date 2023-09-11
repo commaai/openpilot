@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-import os
 import argparse
+import os
+import platform
+import sys
 import time
 import capnp
 
@@ -108,6 +110,10 @@ if __name__ == "__main__":
   parser.add_argument("route", type=str, help="The source route")
   parser.add_argument("seg", type=int, help="Segment in source route")
   args = parser.parse_args()
+
+  if platform.system() == "Darwin":
+    print(f"{sys.argv[0]} is not supported on macOS")
+    sys.exit(1)
 
   blacklist_set = set(args.blacklist_procs)
   daemons = [p for p in args.whitelist_procs if p not in blacklist_set]

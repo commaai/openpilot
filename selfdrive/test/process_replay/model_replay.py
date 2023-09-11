@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import platform
 import sys
 import time
 from collections import defaultdict
@@ -143,6 +144,10 @@ def model_replay(lr, frs):
 
 
 if __name__ == "__main__":
+  if platform.system() == "Darwin":
+    print(f"{sys.argv[0]} is not supported on macOS")
+    sys.exit(1)
+
   update = "--update" in sys.argv
   replay_dir = os.path.dirname(os.path.abspath(__file__))
   ref_commit_fn = os.path.join(replay_dir, "model_replay_ref_commit")
