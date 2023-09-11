@@ -20,6 +20,7 @@ from openpilot.selfdrive.test.openpilotci import get_url
 from openpilot.tools.lib.logreader import LogReader
 
 from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process
+from openpilot.selfdrive.test.process_replay.support_utils import skip_if_process_replay_unsupported
 from openpilot.selfdrive.test.helpers import SKIP_ENV_VAR
 
 GPS_TIME_PREDICTION_ORBITS_RUSSIAN_SRC = GPSTime.from_datetime(datetime(2022, month=1, day=29, hour=12))
@@ -96,7 +97,7 @@ def get_measurement_mock(gpstime, sat_ephemeris):
 
 
 @unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Laika test skipped since it's long and not currently used. Unset {SKIP_ENV_VAR} to run")
-@unittest.skipIf(platform.system() == "Darwin", "replay_process is not supported on macOS")
+@skip_if_process_replay_unsupported
 class TestLaikad(unittest.TestCase):
 
   @classmethod
