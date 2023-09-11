@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import os
-import platform
-import sys
 import time
 import capnp
 

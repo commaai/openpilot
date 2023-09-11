@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-import platform
 import time
 import unittest
 from cereal import log
