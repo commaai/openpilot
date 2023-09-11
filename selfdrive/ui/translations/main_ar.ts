@@ -117,6 +117,33 @@
     </message>
 </context>
 <context>
+    <name>DestinationWidget</name>
+    <message>
+        <source>Home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Work</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No destination set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>work</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No %1 location set</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -238,6 +265,14 @@
         <source>Disengage to Power Off</source>
         <translation>فك الارتباط لإيقاف التشغيل</translation>
     </message>
+    <message>
+        <source>Reset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Review</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DriveStats</name>
@@ -274,6 +309,17 @@
     </message>
 </context>
 <context>
+    <name>ExperimentalModeButton</name>
+    <message>
+        <source>EXPERIMENTAL MODE ON</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CHILL MODE ON</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>InputDialog</name>
     <message>
         <source>Cancel</source>
@@ -299,15 +345,15 @@
     </message>
     <message>
         <source>Receiving objects: </source>
-        <translation>استقبال الكائنات: </translation>
+        <translation type="vanished">استقبال الكائنات: </translation>
     </message>
     <message>
         <source>Resolving deltas: </source>
-        <translation>حل دلتا: </translation>
+        <translation type="vanished">حل دلتا: </translation>
     </message>
     <message>
         <source>Updating files: </source>
-        <translation>جارٍ تحديث الملفات: </translation>
+        <translation type="vanished">جارٍ تحديث الملفات: </translation>
     </message>
 </context>
 <context>
@@ -326,71 +372,82 @@
     </message>
     <message>
         <source>km</source>
-        <translation>كم</translation>
+        <translation type="vanished">كم</translation>
     </message>
     <message>
         <source>mi</source>
-        <translation>مل</translation>
+        <translation type="vanished">مل</translation>
     </message>
 </context>
 <context>
     <name>MapInstructions</name>
     <message>
         <source> km</source>
-        <translation> كم</translation>
+        <translation type="vanished"> كم</translation>
     </message>
     <message>
         <source> m</source>
-        <translation> م</translation>
+        <translation type="vanished"> م</translation>
     </message>
     <message>
         <source> mi</source>
-        <translation> مل</translation>
+        <translation type="vanished"> مل</translation>
     </message>
     <message>
         <source> ft</source>
-        <translation> قد</translation>
+        <translation type="vanished"> قد</translation>
     </message>
 </context>
 <context>
     <name>MapPanel</name>
     <message>
         <source>Current Destination</source>
-        <translation>الوجهة الحالية</translation>
+        <translation type="vanished">الوجهة الحالية</translation>
     </message>
     <message>
         <source>CLEAR</source>
-        <translation>مسح</translation>
+        <translation type="vanished">مسح</translation>
     </message>
     <message>
         <source>Recent Destinations</source>
-        <translation>الوجهات الأخيرة</translation>
+        <translation type="vanished">الوجهات الأخيرة</translation>
     </message>
     <message>
         <source>Try the Navigation Beta</source>
-        <translation>جرب التنقل التجريبي</translation>
+        <translation type="vanished">جرب التنقل التجريبي</translation>
     </message>
     <message>
         <source>Get turn-by-turn directions displayed and more with a comma
 prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>احصل على الاتجاهات خطوة بخطوة معروضة والمزيد باستخدام comma
+        <translation type="vanished">احصل على الاتجاهات خطوة بخطوة معروضة والمزيد باستخدام comma
 الاشتراك الرئيسي. اشترك الآن: https://connect.comma.ai</translation>
     </message>
     <message>
         <source>No home
 location set</source>
-        <translation>لم يتم تعيين
+        <translation type="vanished">لم يتم تعيين
 موقع المنزل</translation>
     </message>
     <message>
         <source>No work
 location set</source>
-        <translation>لم يتم تعيين
+        <translation type="vanished">لم يتم تعيين
 موقع العمل</translation>
     </message>
     <message>
         <source>no recent destinations</source>
-        <translation>لا توجد وجهات حديثة</translation>
+        <translation type="vanished">لا توجد وجهات حديثة</translation>
+    </message>
+</context>
+<context>
+    <name>MapSettings</name>
+    <message>
+        <source>NAVIGATION</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manage at connect.comma.ai</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -402,6 +459,10 @@ location set</source>
     <message>
         <source>Waiting for GPS</source>
         <translation>في انتظار GPS</translation>
+    </message>
+    <message>
+        <source>Waiting for route</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -432,6 +493,62 @@ location set</source>
     <message>
         <source>Wrong password</source>
         <translation>كلمة مرور خاطئة</translation>
+    </message>
+</context>
+<context>
+    <name>OffroadAlert</name>
+    <message>
+        <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won&apos;t engage in %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect to internet to check for updates. openpilot won&apos;t automatically start until it connects to internet to check for updates.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to download updates
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid date and time settings, system won&apos;t start. Connect to internet to set time.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Taking camera snapshots. System won&apos;t start until finished.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An update to your device&apos;s operating system is downloading in the background. You will be prompted to update when it&apos;s ready to install.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NVMe drive not mounted.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -469,6 +586,17 @@ location set</source>
     </message>
 </context>
 <context>
+    <name>ParamControl</name>
+    <message>
+        <source>Enable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">إلغاء</translation>
+    </message>
+</context>
+<context>
     <name>PrimeAdWidget</name>
     <message>
         <source>Upgrade Now</source>
@@ -488,11 +616,23 @@ location set</source>
     </message>
     <message>
         <source>1 year of storage</source>
-        <translation>سنة واحدة من التخزين</translation>
+        <translation type="vanished">سنة واحدة من التخزين</translation>
     </message>
     <message>
         <source>Developer perks</source>
-        <translation>امتيازات المطور</translation>
+        <translation type="vanished">امتيازات المطور</translation>
+    </message>
+    <message>
+        <source>24/7 LTE connectivity</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 year of drive storage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turn-by-turn navigation</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -507,11 +647,11 @@ location set</source>
     </message>
     <message>
         <source>CONNECT.COMMA.AI</source>
-        <translation>CONNECT.COMMA.AI</translation>
+        <translation type="vanished">CONNECT.COMMA.AI</translation>
     </message>
     <message>
         <source>COMMA POINTS</source>
-        <translation>COMMA POINTS</translation>
+        <translation type="vanished">COMMA POINTS</translation>
     </message>
 </context>
 <context>
@@ -565,6 +705,22 @@ location set</source>
             <numerusform>منذ %n ايام</numerusform>
         </translation>
     </message>
+    <message>
+        <source>km</source>
+        <translation type="unfinished">كم</translation>
+    </message>
+    <message>
+        <source>m</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>mi</source>
+        <translation type="unfinished">مل</translation>
+    </message>
+    <message>
+        <source>ft</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Reset</name>
@@ -578,7 +734,7 @@ location set</source>
     </message>
     <message>
         <source>Resetting device...</source>
-        <translation>جارٍ إعادة ضبط الجهاز ...</translation>
+        <translation type="vanished">جارٍ إعادة ضبط الجهاز ...</translation>
     </message>
     <message>
         <source>System Reset</source>
@@ -586,7 +742,7 @@ location set</source>
     </message>
     <message>
         <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>تم تشغيل إعادة تعيين النظام. اضغط على تأكيد لمسح كل المحتوى والإعدادات. اضغط على إلغاء لاستئناف التمهيد.</translation>
+        <translation type="vanished">تم تشغيل إعادة تعيين النظام. اضغط على تأكيد لمسح كل المحتوى والإعدادات. اضغط على إلغاء لاستئناف التمهيد.</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -602,14 +758,27 @@ location set</source>
     </message>
     <message>
         <source>Unable to mount data partition. Press confirm to reset your device.</source>
-        <translation>تعذر تحميل قسم البيانات. اضغط على تأكيد لإعادة ضبط جهازك.</translation>
+        <translation type="vanished">تعذر تحميل قسم البيانات. اضغط على تأكيد لإعادة ضبط جهازك.</translation>
+    </message>
+    <message>
+        <source>Resetting device...
+This may take up to a minute.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>RichTextDialog</name>
     <message>
         <source>Ok</source>
-        <translation>موافق</translation>
+        <translation type="vanished">موافق</translation>
     </message>
 </context>
 <context>
@@ -636,7 +805,7 @@ location set</source>
     </message>
     <message>
         <source>Navigation</source>
-        <translation>ملاحة</translation>
+        <translation type="vanished">ملاحة</translation>
     </message>
 </context>
 <context>
@@ -683,15 +852,15 @@ location set</source>
     </message>
     <message>
         <source>Choose Software to Install</source>
-        <translation>اختر البرنامج المراد تثبيته</translation>
+        <translation type="vanished">اختر البرنامج المراد تثبيته</translation>
     </message>
     <message>
         <source>Dashcam</source>
-        <translation>Dashcam</translation>
+        <translation type="vanished">Dashcam</translation>
     </message>
     <message>
         <source>Custom Software</source>
-        <translation>برامج مخصصة</translation>
+        <translation type="vanished">برامج مخصصة</translation>
     </message>
     <message>
         <source>Enter URL</source>
@@ -720,6 +889,18 @@ location set</source>
     <message>
         <source>Start over</source>
         <translation>ابدأ من جديد</translation>
+    </message>
+    <message>
+        <source>Something went wrong. Reboot the device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No custom software found at this URL.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a language</source>
+        <translation type="unfinished">اختر لغة</translation>
     </message>
 </context>
 <context>
@@ -922,6 +1103,30 @@ location set</source>
         <source>Select a branch</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Uninstall</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>failed to check for update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DOWNLOAD</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>update available</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>never</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>up to date, last checked %1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SshControl</name>
@@ -1055,27 +1260,83 @@ location set</source>
         <translation type="vanished">سوف يقوم برنامج openpilot بتعطيل رادار السيارة وسيتولى التحكم في الغاز والمكابح. تحذير: هذا يعطل AEB!</translation>
     </message>
     <message>
-        <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
+        <source>openpilot Longitudinal Control (Alpha)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Experimental openpilot Longitudinal Control</source>
+        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
+        <source>Experimental Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>openpilot longitudinal control is not currently available for this car.</source>
+        <source>Aggressive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enable experimental longitudinal control to enable this.</source>
+        <source>Standard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Relaxed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Driving Personality</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>End-to-End Longitudinal Control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Navigate on openpilot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New Driving Visualization</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1115,6 +1376,29 @@ location set</source>
     </message>
 </context>
 <context>
+    <name>WiFiPromptWidget</name>
+    <message>
+        <source>Setup Wi-Fi</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ready to upload</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Training data will be pulled periodically while your device is on Wi-Fi</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>WifiUI</name>
     <message>
         <source>Scanning for networks...</source>
@@ -1131,6 +1415,10 @@ location set</source>
     <message>
         <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
         <translation>نزع شبكة اWi-Fi &quot;%1&quot;?</translation>
+    </message>
+    <message>
+        <source>Forget</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>
