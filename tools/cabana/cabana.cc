@@ -18,6 +18,8 @@ int main(int argc, char *argv[]) {
   app.setWindowIcon(QIcon(":cabana-icon.png"));
 
   UnixSignalHandler signalHandler;
+
+  settings.load();
   utils::setTheme(settings.theme);
 
   QCommandLineParser cmd_parser;
