@@ -263,18 +263,11 @@ jobs:
       timeout-minutes: 40
       run: |
         ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
-                        $PYTEST -n auto --dist=loadscope --timeout 30 && \
+                        $PYTEST -n auto --dist=loadscope --timeout 30 -o cpp_files=test_* && \
                         selfdrive/locationd/test/_test_locationd_lib.py && \
-                        ./system/ubloxd/tests/test_glonass_runner && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         ./selfdrive/ui/tests/test_translations.py && \
-                        ./common/tests/test_common && \
-                        ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
-                        ./system/loggerd/tests/test_logger &&\
-                        ./system/proclogd/tests/test_proclog && \
-                        ./tools/replay/tests/test_replay && \
-                        ./tools/cabana/tests/test_cabana && \
                         ./system/camerad/test/ae_gray_test && \
                         ./selfdrive/test/process_replay/test_fuzzy.py"
     - name: "Upload coverage to Codecov"
