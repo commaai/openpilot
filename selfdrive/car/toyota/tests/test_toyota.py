@@ -1,15 +1,9 @@
 #!/usr/bin/env python3
 from hypothesis import given, settings, strategies as st
-import re
-from cereal import car
 import unittest
-from collections import defaultdict
 
 from cereal import car
 from selfdrive.car.fw_versions import build_fw_dict
-from selfdrive.car.toyota.values import TSS2_CAR, ANGLE_CONTROL_CAR, FW_VERSIONS, FW_QUERY_CONFIG, EV_HYBRID_CAR, \
-                                        LONG_FW_PATTERN, FW_LEN_CODE, get_platform_codes
-from openpilot.selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, RADAR_ACC_CAR, FW_VERSIONS
 from openpilot.selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, RADAR_ACC_CAR, FW_VERSIONS, \
                                                   get_platform_codes
 
