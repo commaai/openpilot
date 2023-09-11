@@ -3797,22 +3797,18 @@ testing = ["fields", "hunter", "process-tests", "pytest-xdist", "six", "virtuale
 
 [[package]]
 name = "pytest-cpp"
-version = "2.3.1.dev23+g403fbdf"
+version = "2.4.0"
 description = "Use pytest's runner to discover and execute C++ tests"
 optional = false
 python-versions = ">=3.7"
-files = []
-develop = false
+files = [
+    {file = "pytest-cpp-2.4.0.tar.gz", hash = "sha256:dcb8b09d4c714fc7f778dc40a7c2c47e73cc50280d7f9bba3bdd3ca98abd4685"},
+    {file = "pytest_cpp-2.4.0-py3-none-any.whl", hash = "sha256:e7c5f40b70b00cc09d672a1584e35beb9b9553512cdd4b1d1f99468747b3bc31"},
+]
 
 [package.dependencies]
 colorama = "*"
 pytest = ">=7.0"
-
-[package.source]
-type = "git"
-url = "https://github.com/jnewb1/pytest-cpp.git"
-reference = "catch2-fix-section"
-resolved_reference = "403fbdfdc4b60ee6e396d5054caaa9e13ed26450"
 
 [[package]]
 name = "pytest-subtests"
