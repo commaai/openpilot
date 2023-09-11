@@ -16,8 +16,6 @@ from openpilot.selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONT
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
-ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
-
 
 class TestToyotaInterfaces(unittest.TestCase):
   def test_car_sets(self):
@@ -52,14 +50,14 @@ class TestToyotaInterfaces(unittest.TestCase):
 
 
 class TestToyotaFingerprint(unittest.TestCase):
-  # @settings(max_examples=100)
-  # @given(data=st.data())
-  # def test_platform_codes_fuzzy_fw(self, data):
-  #   fw_strategy = st.lists(st.binary())
-  #   fws = data.draw(fw_strategy)
-  #   get_platform_codes(fws)
+  @settings(max_examples=100)
+  @given(data=st.data())
+  def test_platform_codes_fuzzy_fw(self, data):
+    fw_strategy = st.lists(st.binary())
+    fws = data.draw(fw_strategy)
+    get_platform_codes(fws)
 
-  def test_fw_pattern(self):
+  def test_fw_pattern_new(self):
     """Asserts all ECUs can be parsed"""
     for car_model, ecus in FW_VERSIONS.items():
       for ecu, fws in ecus.items():
@@ -197,21 +195,6 @@ class TestToyotaFingerprint(unittest.TestCase):
         platforms_with_shared_codes.add(platform)
 
     self.assertEqual(platforms_with_shared_codes, excluded_platforms, (len(platforms_with_shared_codes), len(FW_VERSIONS)))
-
-  @settings(max_examples=100)
-  @given(data=st.data())
-  def test_platform_codes_fuzzy_fw(self, data):
-    fw_strategy = st.lists(st.binary())
-    fws = data.draw(fw_strategy)
-    get_platform_codes(fws)
-
-  def test_fw_pattern(self):
-    """Asserts all ECUs can be parsed"""
-    for ecus in FW_VERSIONS.values():
-      for fws in ecus.values():
-        for fw in fws:
-          ret = get_platform_codes([fw])
-          self.assertTrue(len(ret))
 
 
 if __name__ == "__main__":

@@ -250,14 +250,10 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[by
       fw = fw[1:]
 
     # fw length should be multiple of 16 bytes (per chunk, even if no length code), skip parsing if unexpected length
-    if length_code * 16 != len(fw):
+    if length_code * FW_CHUNK_LEN != len(fw):
       continue
 
-    chunks = [fw[16 * i:16 * i + 16].strip(b'\x00 ') for i in range(length_code)]
-
-    # Ensure not all empty bytes
-    if not len(chunks):
-      continue
+    chunks = [fw[FW_CHUNK_LEN * i:FW_CHUNK_LEN * i + FW_CHUNK_LEN].strip(b'\x00 ') for i in range(length_code)]
 
     # only first is considered for now since second is commonly shared (TODO: understand that)
     first_chunk = chunks[0]
@@ -267,8 +263,8 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[by
       fw_match = SHORT_FW_PATTERN.search(first_chunk)
       if fw_match is not None:
         platform, major_version, sub_version = fw_match.groups()
+        codes.add((b'-'.join((platform, major_version)), sub_version))
         # print('platform code, version', platform, major_version, sub_version)
-        codes.add((platform + b'-' + major_version, sub_version))
 
     elif len(first_chunk) == 10:
       # print('medium fw', fw)
@@ -276,7 +272,7 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[by
       if fw_match is not None:
         part, platform, major_version, sub_version = fw_match.groups()
         # print(part, platform, major_version, sub_version)
-        codes.add((part + b'-' + platform + b'-' + major_version, sub_version))
+        codes.add((b'-'.join((part, platform, major_version)), sub_version))
 
     elif len(first_chunk) == 12:
       # print(LONG_FW_PATTERN)
@@ -286,7 +282,7 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[by
         # print('got long match!')
         part, platform, major_version, sub_version = fw_match.groups()
         # print(first_chunk, fw_match, fw_match.groups())
-        codes.add((part + b'-' + platform + b'-' + major_version, sub_version))
+        codes.add((b'-'.join((part, platform, major_version)), sub_version))
 
   return codes
 
@@ -436,8 +432,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
   match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
 )
-
-# FW_PATTERN = re.compile(b'[0-9]{4}[0-9A-Z][0-9A-Z]')
 
 FW_VERSIONS = {
   CAR.AVALON: {
