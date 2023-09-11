@@ -3,7 +3,7 @@
 import argparse
 
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, replay_process
-from openpilot.selfdrive.test.process_replay.support_utils import exit_if_process_replay_supported
+from openpilot.selfdrive.test.process_replay.support_utils import exit_if_process_replay_unsupported
 from openpilot.tools.lib.logreader import MultiLogIterator
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.helpers import save_log
@@ -15,7 +15,7 @@ if __name__ == "__main__":
   parser.add_argument("process", help="The process to run")
   args = parser.parse_args()
 
-  exit_if_process_replay_supported()
+  exit_if_process_replay_unsupported()
 
   cfg = [c for c in CONFIGS if c.proc_name == args.process][0]
 

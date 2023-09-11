@@ -10,7 +10,7 @@ from typing import Union, Iterable, Optional, List, Any, Dict, Tuple
 
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, replay_process, get_process_config, \
                                                         check_openpilot_enabled, get_custom_params_from_lr
-from openpilot.selfdrive.test.process_replay.support_utils import exit_if_process_replay_supported
+from openpilot.selfdrive.test.process_replay.support_utils import exit_if_process_replay_unsupported
 from openpilot.selfdrive.test.update_ci_routes import upload_route
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.framereader import FrameReader
@@ -112,7 +112,7 @@ if __name__ == "__main__":
   parser.add_argument("seg", type=int, help="Segment in source route")
   args = parser.parse_args()
 
-  exit_if_process_replay_supported()
+  exit_if_process_replay_unsupported()
 
   blacklist_set = set(args.blacklist_procs)
   daemons = [p for p in args.whitelist_procs if p not in blacklist_set]
