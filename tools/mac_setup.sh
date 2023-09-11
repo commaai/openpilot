@@ -79,11 +79,11 @@ echo "[ ] installed python dependencies t=$SECONDS"
 QT_BIN_LOCATION="$(command -v lupdate || :)"
 if [ -n "$QT_BIN_LOCATION" ]; then
   # if qt6 is linked, prompt the user to unlink it and link the right version
-  QT_BIN_VERSION="$(lupdate -version)"
-  if [[ ! "$QT_BIN_VERSION" =~ .*5\.[0-9]+\.[0-9]+.* ]]; then
+  QT_BIN_VERSION="$(lupdate -version | awk '{print $NF}')"
+  if [[ ! "$QT_BIN_VERSION" =~ 5\.[0-9]+\.[0-9]+ ]]; then
     echo
     echo "lupdate/lrelease available at PATH is $QT_BIN_VERSION"
-    if [[ "$QT_BIN_LOCATION" == "$(brew --prefix)/*" ]]; then
+    if [[ "$QT_BIN_LOCATION" == "$(brew --prefix)/"* ]]; then
       echo "Please run the following command to link qt5:"
       echo "brew unlink qt@6 && brew link qt@5"
     else
