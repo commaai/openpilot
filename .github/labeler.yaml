@@ -1,42 +1,61 @@
 CI / testing:
-  - all: ['.github/**']
-  - all: ['**/test_*']
+  - all:
+    - changed-files: ['.github/**']
+  - all:
+    - changed-files: ['**/test_*']
 
 car: 
-  - all: ['selfdrive/car/**']
+  - all:
+    - changed-files: ['selfdrive/car/**']
 
 body:
-  - all: ['selfdrive/car/body/*']
+  - all:
+    - changed-files: ['selfdrive/car/body/*']
 chrysler:
-  - all: ['selfdrive/car/chrysler/*']
+  - all:
+    - changed-files: ['selfdrive/car/chrysler/*']
 ford: 
-  - all: ['selfdrive/car/ford/*']
+  - all:
+    - changed-files: ['selfdrive/car/ford/*']
 gm: 
-  - all: ['selfdrive/car/gm/*']
+  - all:
+    - changed-files: ['selfdrive/car/gm/*']
 honda: 
-  - all: ['selfdrive/car/honda/*']
+  - all:
+    - changed-files: ['selfdrive/car/honda/*']
 hyundai: 
-  - all: ['selfdrive/car/hyundai/*']
+  - all:
+    - changed-files: ['selfdrive/car/hyundai/*']
 mazda: 
-  - all: ['selfdrive/car/mazda/*']
+  - all:
+    - changed-files: ['selfdrive/car/mazda/*']
 nissan: 
-  - all: ['selfdrive/car/nissan/*']
+  - all:
+    - changed-files: ['selfdrive/car/nissan/*']
 subaru: 
-  - all: ['selfdrive/car/subaru/*']
+  - all:
+    - changed-files: ['selfdrive/car/subaru/*']
 tesla: 
-  - all: ['selfdrive/car/tesla/*']
+  - all:
+    - changed-files: ['selfdrive/car/tesla/*']
 toyota: 
-  - all: ['selfdrive/car/toyota/*']
+  - all:
+    - changed-files: ['selfdrive/car/toyota/*']
 volkswagen: 
-  - all: ['selfdrive/car/volkswagen/*']
+  - all:
+    - changed-files: ['selfdrive/car/volkswagen/*']
 
 simulation:
-  - all: ['tools/sim/**']
+  - all:
+    - changed-files: ['tools/sim/**']
 ui:
-  - all: ['selfdrive/ui/**']
+  - all:
+    - changed-files: ['selfdrive/ui/**']
 tools: 
-  - all: ['tools/**']
+  - all:
+    - changed-files: ['tools/**']
 
 multilanguage:
-  - all: ['selfdrive/ui/translations/**']
+  - all:
+    - changed-files: ['selfdrive/ui/translations/**']
 
