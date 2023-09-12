@@ -7,7 +7,7 @@ from collections import namedtuple, defaultdict
 
 import cereal.messaging as messaging
 from cereal import log
-from cereal.services import service_list
+from cereal.services import SERVICE_LIST
 from openpilot.common.gpio import get_irqs_for_action
 from openpilot.common.timeout import Timeout
 from openpilot.system.hardware import TICI
@@ -172,7 +172,7 @@ class TestSensord(unittest.TestCase):
     for s, msgs in self.events.items():
       with self.subTest(sensor=s):
         freq = len(msgs) / self.sample_secs
-        ef = service_list[s].frequency
+        ef = SERVICE_LIST[s].frequency
         assert ef*0.85 <= freq <= ef*1.15
 
   def test_logmonottime_timestamp_diff(self):
