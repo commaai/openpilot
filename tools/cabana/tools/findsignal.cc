@@ -37,10 +37,10 @@ void FindSignalModel::search(std::function<bool(double)> cmp) {
   filtered_signals.reserve(prev_sigs.size());
   QtConcurrent::blockingMap(prev_sigs, [&](auto &s) {
     const auto &events = can->events(s.id);
-    auto first = std::upper_bound(events.cbegin(), events.cend(), s.mono_time, [](uint64_t ts, auto &e) { return ts < e->mono_time; });
+    auto first = std::upper_bound(events.cbegin(), events.cend(), s.mono_time, CompareCanEvent());
     auto last = events.cend();
     if (last_time < std::numeric_limits<uint64_t>::max()) {
-      last = std::upper_bound(events.cbegin(), events.cend(), last_time, [](uint64_t ts, auto &e) { return ts < e->mono_time; });
+      last = std::upper_bound(events.cbegin(), events.cend(), last_time, CompareCanEvent());
     }
 
     auto it = std::find_if(first, last, [&](const CanEvent *e) { return cmp(get_raw_value(e->dat, e->size, s.sig)); });
@@ -225,7 +225,7 @@ void FindSignalDlg::setInitialSignals() {
   for (auto it = can->last_msgs.cbegin(); it != can->last_msgs.cend(); ++it) {
     if (buses.isEmpty() || buses.contains(it.key().source) && (addresses.isEmpty() || addresses.contains(it.key().address))) {
       const auto &events = can->events(it.key());
-      auto e = std::lower_bound(events.cbegin(), events.cend(), first_time, [](auto e, uint64_t ts) { return e->mono_time < ts; });
+      auto e = std::lower_bound(events.cbegin(), events.cend(), first_time, CompareCanEvent());
       if (e != events.cend()) {
         const int total_size = it.value().dat.size() * 8;
         for (int size = min_size->value(); size <= max_size->value(); ++size) {

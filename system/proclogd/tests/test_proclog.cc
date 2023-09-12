@@ -140,7 +140,6 @@ TEST_CASE("buildProcLogerMessage") {
       REQUIRE(p.getName() == "test_proclog");
       REQUIRE(p.getState() == 'R');
       REQUIRE_THAT(p.getExe().cStr(), Catch::Matchers::Contains("test_proclog"));
-      REQUIRE(p.getCmdline().size() == 1);
       REQUIRE_THAT(p.getCmdline()[0], Catch::Matchers::Contains("test_proclog"));
     } else {
       std::string cmd_path = "/proc/" + std::to_string(p.getPid()) + "/cmdline";

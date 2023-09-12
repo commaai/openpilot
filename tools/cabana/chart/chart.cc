@@ -286,9 +286,7 @@ void ChartView::updateSeries(const cabana::Signal *sig, bool clear) {
       s.vals.reserve(msgs.capacity());
       s.step_vals.reserve(msgs.capacity() * 2);
 
-      auto first = std::upper_bound(msgs.cbegin(), msgs.cend(), s.last_value_mono_time, [](uint64_t ts, auto e) {
-        return ts < e->mono_time;
-      });
+      auto first = std::upper_bound(msgs.cbegin(), msgs.cend(), s.last_value_mono_time, CompareCanEvent());
       const double route_start_time = can->routeStartTime();
       for (auto end = msgs.cend(); first != end; ++first) {
         const CanEvent *e = *first;
@@ -476,7 +474,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
   auto rubber = findChild<QRubberBand *>();
   if (event->button() == Qt::LeftButton && rubber && rubber->isVisible()) {
     rubber->hide();
-    QRectF rect = rubber->geometry().normalized();
+    auto rect = rubber->geometry().normalized();
     double min = chart()->mapToValue(rect.topLeft()).x();
     double max = chart()->mapToValue(rect.bottomRight()).x();
 
@@ -700,7 +698,10 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
     }
   }
 
-  // paint zoom range
+  drawRubberBandTimeRange(painter);
+}
+
+void ChartView::drawRubberBandTimeRange(QPainter *painter) {
   auto rubber = findChild<QRubberBand *>();
   if (rubber && rubber->isVisible() && rubber->width() > 1) {
     painter->setPen(Qt::white);

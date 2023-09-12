@@ -9,12 +9,8 @@ void Sparkline::update(const MessageId &msg_id, const cabana::Signal *sig, doubl
   const auto &msgs = can->events(msg_id);
   uint64_t ts = (last_msg_ts + can->routeStartTime()) * 1e9;
   uint64_t first_ts = (ts > range * 1e9) ? ts - range * 1e9 : 0;
-  auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), first_ts, [](auto e, uint64_t ts) {
-    return e->mono_time < ts;
-  });
-  auto last = std::upper_bound(first, msgs.cend(), ts, [](uint64_t ts, auto e) {
-    return ts < e->mono_time;
-  });
+  auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), first_ts, CompareCanEvent());
+  auto last = std::upper_bound(first, msgs.cend(), ts, CompareCanEvent());
 
   bool update_values = last_ts != last_msg_ts || time_range != range;
   last_ts = last_msg_ts;

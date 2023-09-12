@@ -1,6 +1,7 @@
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=laika_repo/ -Werror --strict-config --strict-markers"
+addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=laika_repo/ -Werror --strict-config --strict-markers --durations=10"
+#cpp_files = "test_*" # uncomment when agnos has pytest-cpp and remove from CI
 python_files = "test_*.py"
 #timeout = "30"  # you get this long by default
 markers = [
@@ -18,9 +19,12 @@ testpaths = [
   "selfdrive/test/longitudinal_maneuvers",
   "system/hardware/tici",
   "system/loggerd",
+  "system/proclogd",
   "system/tests",
   "system/ubloxd",
-  "tools/lib/tests"
+  "tools/lib/tests",
+  "tools/replay",
+  "tools/cabana"
 ]
 
 [tool.mypy]
@@ -142,6 +146,7 @@ pygame = "*"
 pyprof2calltree = "*"
 pytest = "*"
 pytest-cov = "*"
+pytest-cpp = "*"
 pytest-subtests = "*"
 pytest-xdist = "*"
 pytest-timeout = "*"
@@ -167,7 +172,7 @@ build-backend = "poetry.core.masonry.api"
 
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]
-select = ["E", "F", "W", "PIE", "C4", "ISC", "RUF100", "A", "B"]
+select = ["E", "F", "W", "PIE", "C4", "ISC", "RUF100", "A", "B", "TID251"]
 ignore = ["W292", "E741", "E402", "C408", "ISC003", "B027", "B024"]
 line-length = 160
 target-version="py311"
@@ -180,3 +185,9 @@ exclude = [
   "third_party",
 ]
 flake8-implicit-str-concat.allow-multiline=false
+[tool.ruff.flake8-tidy-imports.banned-api]
+"selfdrive".msg = "Use openpilot.selfdrive"
+"common".msg = "Use openpilot.common"
+"system".msg = "Use openpilot.system"
+"third_party".msg = "Use openpilot.third_party"
+"tools".msg = "Use openpilot.tools"
