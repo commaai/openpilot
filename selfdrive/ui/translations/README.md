@@ -24,8 +24,15 @@ openpilot provides a few tools to help contributors manage their translations an
    selfdrive/ui/update_translations.py
    ```
 3. Edit the translation file, marking each translation as completed:
+
+   On Linux:
    ```shell
    linguist selfdrive/ui/translations/your_language_file.ts
+   ```
+
+   On macOS:
+   ```shell
+   open "$(brew --prefix qt@5)/libexec/Linguist.app" --args $PWD/selfdrive/ui/translations/your_language_file.ts
    ```
 4. View your finished translations by compiling and starting the UI, then find it in the language selector:
    ```shell
