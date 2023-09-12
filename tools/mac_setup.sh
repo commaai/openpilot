@@ -74,6 +74,27 @@ export PYCURL_SSL_LIBRARY=openssl
 $DIR/install_python_dependencies.sh
 echo "[ ] installed python dependencies t=$SECONDS"
 
+# brew does not link qt5 by default
+# check if qt5 can be linked, if not, prompt the user to link it
+QT_BIN_LOCATION="$(command -v lupdate || :)"
+if [ -n "$QT_BIN_LOCATION" ]; then
+  # if qt6 is linked, prompt the user to unlink it and link the right version
+  QT_BIN_VERSION="$(lupdate -version | awk '{print $NF}')"
+  if [[ ! "$QT_BIN_VERSION" =~ 5\.[0-9]+\.[0-9]+ ]]; then
+    echo
+    echo "lupdate/lrelease available at PATH is $QT_BIN_VERSION"
+    if [[ "$QT_BIN_LOCATION" == "$(brew --prefix)/"* ]]; then
+      echo "Run the following command to link qt5:"
+      echo "brew unlink qt@6 && brew link qt@5"
+    else
+      echo "Remove conflicting qt entries from PATH and run the following command to link qt5:"
+      echo "brew link qt@5"
+    fi
+  fi
+else
+  brew link qt@5
+fi
+
 echo
 echo "----   OPENPILOT SETUP DONE   ----"
 echo "Open a new shell or configure your active shell env by running:"
