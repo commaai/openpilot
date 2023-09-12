@@ -9,9 +9,10 @@ inputs:
     description: 'Prefix for caching key'
     required: false
     default: 'scons_x86_64'
-
-env:
-  SLEEP_TIME: 30 # Time to sleep between retries
+  sleep_time:
+    description: 'Time to sleep between retries'
+    required: false
+    default: 30
 
 runs:
   using: "composite"
@@ -25,7 +26,7 @@ runs:
         is_retried: true
     - if: steps.setup1.outcome == 'failure'
       shell: bash
-      run: sleep ${{ env.SLEEP_TIME }}
+      run: sleep ${{ inputs.sleep_time }}
     - id: setup2
       if: steps.setup1.outcome == 'failure'
       uses: ./.github/workflows/setup
@@ -36,7 +37,7 @@ runs:
         is_retried: true
     - if: steps.setup2.outcome == 'failure'
       shell: bash
-      run: sleep ${{ env.SLEEP_TIME }}
+      run: sleep ${{ inputs.sleep_time }}
     - id: setup3
       if: steps.setup2.outcome == 'failure'
       uses: ./.github/workflows/setup
