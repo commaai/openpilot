@@ -228,6 +228,13 @@ class CarState(CarStateBase):
       ret.cruiseState.speed = cp_cruise_info.vl["SCC_CONTROL"]["VSetDis"] * speed_factor
       self.cruise_info = copy.copy(cp_cruise_info.vl["SCC_CONTROL"])
 
+    # Manual Speed Limit Assist is a feature that replaces non-adaptive cruise control on EV CAN FD platforms.
+    # It limits the vehicle speed, overridable by pressing the accelerator past a certain point.
+    # The car will brake, but does not respect positive acceleration commands in this mode
+    # TODO: find this message on ICE & HYBRID cars + cruise control signals (if exists)
+    if self.CP.carFingerprint in EV_CAR:
+      ret.cruiseState.nonAdaptive = cp.vl["MANUAL_SPEED_LIMIT_ASSIST"]["MSLA_ENABLED"] == 1
+
     self.prev_cruise_buttons = self.cruise_buttons[-1]
     self.cruise_buttons.extend(cp.vl_all[self.cruise_btns_msg_canfd]["CRUISE_BUTTONS"])
     self.main_buttons.extend(cp.vl_all[self.cruise_btns_msg_canfd]["ADAPTIVE_CRUISE_MAIN_BTN"])
@@ -321,6 +328,11 @@ class CarState(CarStateBase):
       ("BLINKERS", 4),
       ("DOORS_SEATBELTS", 4),
     ]
+
+    if CP.carFingerprint in EV_CAR:
+      messages += [
+        ("MANUAL_SPEED_LIMIT_ASSIST", 10),
+      ]
 
     if not (CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS):
       messages += [
