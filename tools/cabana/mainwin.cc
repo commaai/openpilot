@@ -609,7 +609,7 @@ void MainWindow::closeEvent(QCloseEvent *event) {
 
   auto status = settings.save();
   if (status == QSettings::AccessError) {
-    QString error = tr("Failed to write settings to [%1]: access denied").arg(QDir::currentPath() + "/settings");
+    QString error = tr("Failed to write settings to [%1]: access denied").arg(Settings::filePath());
     qDebug() << error;
     QMessageBox::warning(this, tr("Failed to write settings"), error);
   }

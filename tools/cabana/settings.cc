@@ -12,7 +12,7 @@
 
 Settings settings;
 
-void Settings::save() {
+QSettings::Status Settings::save() {
   QSettings s(filePath(), QSettings::IniFormat);
   s.setValue("fps", fps);
   s.setValue("max_cached_minutes", max_cached_minutes);
