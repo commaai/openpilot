@@ -191,7 +191,6 @@ class TestCarModelBase(unittest.TestCase):
         raise Exception("unknown tuning")
 
   def test_car_interface(self):
-    # test
     # TODO: also check for checksum violations from can parser
     can_invalid_cnt = 0
     can_valid = False
