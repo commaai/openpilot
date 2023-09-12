@@ -219,7 +219,7 @@ void ChartsWidget::updateToolBar() {
   undo_zoom_action->setVisible(is_zoomed);
   redo_zoom_action->setVisible(is_zoomed);
   reset_zoom_action->setVisible(is_zoomed);
-  reset_zoom_btn->setText(is_zoomed ? tr("%1-%2").arg(zoomed_range.first, 0, 'f', 1).arg(zoomed_range.second, 0, 'f', 1) : "");
+  reset_zoom_btn->setText(is_zoomed ? tr("%1-%2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2) : "");
   remove_all_btn->setEnabled(!charts.isEmpty());
   dock_btn->setIcon(docking ? "arrow-up-right-square" : "arrow-down-left-square");
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));

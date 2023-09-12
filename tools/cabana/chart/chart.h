@@ -84,6 +84,7 @@ private:
   void drawBackground(QPainter *painter, const QRectF &rect) override;
   void drawDropIndicator(bool draw) { if (std::exchange(can_drop, draw) != can_drop) viewport()->update(); }
   void drawTimeline(QPainter *painter);
+  void drawRubberBandTimeRange(QPainter *painter);
   std::tuple<double, double, int> getNiceAxisNumbers(qreal min, qreal max, int tick_count);
   qreal niceNumber(qreal x, bool ceiling);
   QXYSeries *createSeries(SeriesType type, QColor color);
