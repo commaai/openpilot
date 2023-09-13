@@ -59,6 +59,7 @@ LEXUS IS 2023: [2.0, 2.0, 0.1]
 KIA SORENTO HYBRID 4TH GEN: [2.5, 2.5, 0.1]
 HYUNDAI KONA ELECTRIC 2ND GEN: [2.5, 2.5, 0.1]
 HYUNDAI IONIQ 6 2023: [2.5, 2.5, 0.1]
+HYUNDAI AZERA 6TH GEN: [1.8, 1.8, 0.1]
 
 # Dashcam or fallback configured as ideal car
 mock: [10.0, 10, 0.0]
