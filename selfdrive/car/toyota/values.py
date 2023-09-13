@@ -2390,8 +2390,8 @@ UNSUPPORTED_DSU_CAR = {CAR.LEXUS_IS, CAR.LEXUS_RC}
 # these cars have a radar which sends ACC messages instead of the camera
 RADAR_ACC_CAR = {CAR.RAV4H_TSS2_2022, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2_2023, CAR.RAV4_TSS2_2023, CAR.CHR_TSS2, CAR.CHRH_TSS2}
 
-# these cars can use the Lane Tracing Assist (LTA) message for lateral control (varies by manufacturing plant).
-# cars made in Japan can use the existing LKA commands (torque), while US or Canada-made cars only accept LTA
+# these cars manufactured in Canada, U.S. have EPSs that reject Lane Keep Assist (LKA, torque) messages and require
+# Lane Tracing Assist (LTA, angle) to steer properly. cars manufactured in Japan still work with the older LKA messages which is detected
 ANGLE_CONTROL_CAR = {CAR.RAV4H_TSS2_2023, CAR.RAV4_TSS2_2023}
 
 EV_HYBRID_CAR = {CAR.AVALONH_2019, CAR.AVALONH_TSS2, CAR.CAMRYH, CAR.CAMRYH_TSS2, CAR.CHRH, CAR.CHRH_TSS2, CAR.COROLLAH_TSS2,
