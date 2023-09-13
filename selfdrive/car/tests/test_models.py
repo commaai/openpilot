@@ -16,10 +16,10 @@ from openpilot.selfdrive.car.gm.values import CAR as GM
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from openpilot.selfdrive.car.hyundai.values import CAR as HYUNDAI
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
+from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.test.openpilotci import get_url
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import Route, SegmentName, RouteName
-from openpilot.selfdrive.controls.controlsd import Controls
 
 from panda.tests.libpanda import libpanda_py
 from openpilot.selfdrive.test.helpers import SKIP_ENV_VAR
