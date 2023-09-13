@@ -30,7 +30,7 @@ class CarInterface(CarInterfaceBase):
     if candidate in ANGLE_CONTROL_CAR:
       ret.flags |= ToyotaFlags.ANGLE_CONTROL
       for fw in car_fw:
-        # Certain EPS FW accepts torque commands (Japanese plants)
+        # Detect if we can control the car with torque (cars made in Japan)
         if fw.ecu == "eps" and not fw.fwVersion == b'8965B42371\x00\x00\x00\x00\x00\x00':
           ret.flags &= ~ToyotaFlags.ANGLE_CONTROL
 
