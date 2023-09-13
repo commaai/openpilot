@@ -7,6 +7,7 @@
 #include <QDialog>
 #include <QGroupBox>
 #include <QLineEdit>
+#include <QSettings>
 #include <QSpinBox>
 
 #define LIGHT_THEME 1
@@ -24,7 +25,7 @@ public:
   };
 
   Settings() {}
-  void save();
+  QSettings::Status save();
   void load();
   inline static QString filePath() { return QApplication::applicationDirPath() + "/settings"; }
 

@@ -83,6 +83,7 @@ private:
   void drawForeground(QPainter *painter, const QRectF &rect) override;
   void drawBackground(QPainter *painter, const QRectF &rect) override;
   void drawDropIndicator(bool draw) { if (std::exchange(can_drop, draw) != can_drop) viewport()->update(); }
+  void drawSignalValue(QPainter *painter);
   void drawTimeline(QPainter *painter);
   void drawRubberBandTimeRange(QPainter *painter);
   std::tuple<double, double, int> getNiceAxisNumbers(qreal min, qreal max, int tick_count);
