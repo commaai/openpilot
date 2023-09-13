@@ -815,7 +815,7 @@ void ChartView::setSeriesColor(QXYSeries *series, QColor color) {
       auto last_color = qobject_cast<QXYSeries *>(existing_series.back())->color();
       color.setHsvF(std::fmod(last_color.hueF() + 60 / 360.0, 1.0),
                     QRandomGenerator::global()->bounded(35, 100) / 100.0,
-                    QRandomGenerator::global()->bounded(75, 100) / 100.0);
+                    QRandomGenerator::global()->bounded(85, 100) / 100.0);
       break;
     }
   }
