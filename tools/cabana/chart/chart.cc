@@ -25,7 +25,8 @@
 const int AXIS_X_TOP_MARGIN = 4;
 static inline bool xLessThan(const QPointF &p, float x) { return p.x() < x; }
 
-ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent) : charts_widget(parent), tip_label(this), QChartView(nullptr, parent) {
+ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent)
+    : charts_widget(parent), tip_label(this), QChartView(nullptr, parent) {
   series_type = (SeriesType)settings.chart_series_type;
   QChart *chart = new QChart();
   chart->setBackgroundVisible(false);
@@ -668,6 +669,7 @@ void ChartView::drawBackground(QPainter *painter, const QRectF &rect) {
 
 void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
   drawTimeline(painter);
+  drawSignalValue(painter);
   // draw track points
   painter->setPen(Qt::NoPen);
   qreal track_line_x = -1;
@@ -718,23 +720,24 @@ void ChartView::drawRubberBandTimeRange(QPainter *painter) {
 
 void ChartView::drawTimeline(QPainter *painter) {
   const auto plot_area = chart()->plotArea();
-  // draw line
+  // draw vertical time line
   qreal x = std::clamp(chart()->mapToPosition(QPointF{cur_sec, 0}).x(), plot_area.left(), plot_area.right());
   painter->setPen(QPen(chart()->titleBrush().color(), 2));
   painter->drawLine(QPointF{x, plot_area.top()}, QPointF{x, plot_area.bottom() + 1});
 
-  // draw current time
+  // draw current time under the axis-x
   QString time_str = QString::number(cur_sec, 'f', 2);
   QSize time_str_size = QFontMetrics(axis_x->labelsFont()).size(Qt::TextSingleLine, time_str) + QSize(8, 2);
-  QRect time_str_rect(QPoint(x - time_str_size.width() / 2, plot_area.bottom() + AXIS_X_TOP_MARGIN), time_str_size);
+  QRectF time_str_rect(QPointF(x - time_str_size.width() / 2.0, plot_area.bottom() + AXIS_X_TOP_MARGIN), time_str_size);
   QPainterPath path;
   path.addRoundedRect(time_str_rect, 3, 3);
   painter->fillPath(path, settings.theme == DARK_THEME ? Qt::darkGray : Qt::gray);
   painter->setPen(palette().color(QPalette::BrightText));
   painter->setFont(axis_x->labelsFont());
   painter->drawText(time_str_rect, Qt::AlignCenter, time_str);
+}
 
-  // draw signal value
+void ChartView::drawSignalValue(QPainter *painter) {
   auto item_group = qgraphicsitem_cast<QGraphicsItemGroup *>(chart()->legend()->childItems()[0]);
   assert(item_group != nullptr);
   auto legend_markers = item_group->childItems();
