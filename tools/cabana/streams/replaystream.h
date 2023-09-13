@@ -1,5 +1,11 @@
 #pragma once
 
+#include <algorithm>
+#include <memory>
+#include <set>
+#include <tuple>
+#include <vector>
+
 #include "common/prefix.h"
 #include "tools/cabana/streams/abstractstream.h"
 
@@ -11,7 +17,7 @@ public:
   void start() override;
   bool loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags = REPLAY_FLAG_NONE);
   bool eventFilter(const Event *event);
-  void seekTo(double ts) override { replay->seekTo(std::max(double(0), ts), false); };
+  void seekTo(double ts) override { replay->seekTo(std::max(double(0), ts), false); }
   inline QString routeName() const override { return replay->route()->name(); }
   inline QString carFingerprint() const override { return replay->carFingerprint().c_str(); }
   double totalSeconds() const override { return replay->totalSeconds(); }
@@ -23,7 +29,7 @@ public:
   inline float getSpeed() const { return replay->getSpeed(); }
   inline bool isPaused() const override { return replay->isPaused(); }
   void pause(bool pause) override;
-  inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() override { return replay->getTimeline(); }
+  inline const std::vector<std::tuple<double, double, TimelineType>> getTimeline() override { return replay->getTimeline(); }
   static AbstractOpenStreamWidget *widget(AbstractStream **stream);
 
 private:

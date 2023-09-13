@@ -8,11 +8,11 @@ from functools import cached_property, lru_cache
 from pathlib import Path
 
 from cereal import log
-from common.gpio import gpio_set, gpio_init, get_irq_for_action
-from system.hardware.base import HardwareBase, ThermalConfig
-from system.hardware.tici import iwlist
-from system.hardware.tici.pins import GPIO
-from system.hardware.tici.amplifier import Amplifier
+from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
+from openpilot.system.hardware.base import HardwareBase, ThermalConfig
+from openpilot.system.hardware.tici import iwlist
+from openpilot.system.hardware.tici.pins import GPIO
+from openpilot.system.hardware.tici.amplifier import Amplifier
 
 NM = 'org.freedesktop.NetworkManager'
 NM_CON_ACT = NM + '.Connection.Active'
@@ -61,22 +61,43 @@ MM_MODEM_ACCESS_TECHNOLOGY_LTE = 1 << 14
 
 
 def sudo_write(val, path):
-  os.system(f"sudo su -c 'echo {val} > {path}'")
+  try:
+    with open(path, 'w') as f:
+      f.write(str(val))
+  except PermissionError:
+    os.system(f"sudo chmod a+w {path}")
+    try:
+      with open(path, 'w') as f:
+        f.write(str(val))
+    except PermissionError:
+      # fallback for debugfs files
+      os.system(f"sudo su -c 'echo {val} > {path}'")
 
 
 def affine_irq(val, action):
-  irq = get_irq_for_action(action)
-  if len(irq) == 0:
+  irqs = get_irqs_for_action(action)
+  if len(irqs) == 0:
     print(f"No IRQs found for '{action}'")
     return
-  for i in irq:
+
+  for i in irqs:
     sudo_write(str(val), f"/proc/irq/{i}/smp_affinity_list")
 
+@lru_cache
+def get_device_type():
+  # lru_cache and cache can cause memory leaks when used in classes
+  with open("/sys/firmware/devicetree/base/model") as f:
+    model = f.read().strip('\x00')
+  model = model.split('comma ')[-1]
+  # TODO: remove this with AGNOS 7+
+  if model.startswith('Qualcomm'):
+    model = 'tici'
+  return model
 
 class Tici(HardwareBase):
   @cached_property
   def bus(self):
-    import dbus  # pylint: disable=import-error
+    import dbus
     return dbus.SystemBus()
 
   @cached_property
@@ -95,19 +116,14 @@ class Tici(HardwareBase):
     with open("/VERSION") as f:
       return f.read().strip()
 
-  @lru_cache
   def get_device_type(self):
-    with open("/sys/firmware/devicetree/base/model") as f:
-      model = f.read().strip('\x00')
-    model = model.split('comma ')[-1]
-    # TODO: remove this with AGNOS 7+
-    if model.startswith('Qualcomm'):
-      model = 'tici'
-    return model
+    return get_device_type()
 
   def get_sound_card_online(self):
-    return (os.path.isfile('/proc/asound/card0/state') and
-            open('/proc/asound/card0/state').read().strip() == 'ONLINE')
+    if os.path.isfile('/proc/asound/card0/state'):
+      with open('/proc/asound/card0/state') as f:
+        return f.read().strip() == 'ONLINE'
+    return False
 
   def reboot(self, reason=None):
     subprocess.check_output(["sudo", "reboot"])
@@ -307,7 +323,8 @@ class Tici(HardwareBase):
       (True, tc + ["class", "add", "dev", adapter, "parent", "1:", "classid", "1:20", "htb", "rate", f"{upload_speed_kbps}kbit"]),
 
       # Create universal 32 bit filter on adapter that sends all outbound ip traffic through the class
-      (True, tc + ["filter", "add", "dev", adapter, "parent", "1:", "protocol", "ip", "prio", "10", "u32", "match", "ip", "dst", "0.0.0.0/0", "flowid", "1:20"]),
+      (True, tc + ["filter", "add", "dev", adapter, "parent", "1:", "protocol", "ip", "prio", \
+                   "10", "u32", "match", "ip", "dst", "0.0.0.0/0", "flowid", "1:20"]),
     ]
 
     download = [
@@ -316,7 +333,8 @@ class Tici(HardwareBase):
 
       # Redirect ingress (incoming) to egress ifb0
       (True, tc + ["qdisc", "add", "dev", adapter, "handle", "ffff:", "ingress"]),
-      (True, tc + ["filter", "add", "dev", adapter, "parent", "ffff:", "protocol", "ip", "u32", "match", "u32", "0", "0", "action", "mirred", "egress", "redirect", "dev", ifb]),
+      (True, tc + ["filter", "add", "dev", adapter, "parent", "ffff:", "protocol", "ip", "u32", \
+                   "match", "u32", "0", "0", "action", "mirred", "egress", "redirect", "dev", ifb]),
 
       # Add class and rules for virtual interface
       (True, tc + ["qdisc", "add", "dev", ifb, "root", "handle", "2:", "htb"]),
@@ -436,23 +454,24 @@ class Tici(HardwareBase):
 
     # *** IRQ config ***
 
-    # GPU
-    affine_irq(5, "kgsl-3d0")
-
     # boardd core
     affine_irq(4, "spi_geni")         # SPI
     affine_irq(4, "xhci-hcd:usb3")    # aux panda USB (or potentially anything else on USB)
     if "tici" in self.get_device_type():
-      affine_irq(4, "xhci-hcd:usb1")  # internal panda USB
+      affine_irq(4, "xhci-hcd:usb1")  # internal panda USB (also modem)
+
+    # GPU
+    affine_irq(5, "kgsl-3d0")
 
     # camerad core
-    camera_irqs = ("cci", "cpas_camnoc", "cpas-cdm", "csid", "ife", "csid", "csid-lite", "ife-lite")
+    camera_irqs = ("cci", "cpas_camnoc", "cpas-cdm", "csid", "ife", "csid-lite", "ife-lite")
     for n in camera_irqs:
       affine_irq(5, n)
 
   def get_gpu_usage_percent(self):
     try:
-      used, total = open('/sys/class/kgsl/kgsl-3d0/gpubusy').read().strip().split()
+      with open('/sys/class/kgsl/kgsl-3d0/gpubusy') as f:
+        used, total = f.read().strip().split()
       return 100.0 * int(used) / int(total)
     except Exception:
       return 0
@@ -469,13 +488,13 @@ class Tici(HardwareBase):
 
     # *** IRQ config ***
 
-    # move these off the default core
-    affine_irq(1, "msm_drm")
-    affine_irq(1, "msm_vidc")
-    affine_irq(1, "i2c_geni")
-
     # mask off big cluster from default affinity
     sudo_write("f", "/proc/irq/default_smp_affinity")
+
+    # move these off the default core
+    affine_irq(1, "msm_drm")   # display
+    affine_irq(1, "msm_vidc")  # encoders
+    affine_irq(1, "i2c_geni")  # sensors
 
     # *** GPU config ***
     # https://github.com/commaai/agnos-kernel-sdm845/blob/master/arch/arm64/boot/dts/qcom/sdm845-gpu.dtsi#L216
@@ -484,7 +503,7 @@ class Tici(HardwareBase):
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_bus_on")
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_clk_on")
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_rail_on")
-    sudo_write("1000000", "/sys/class/kgsl/kgsl-3d0/idle_timer")
+    sudo_write("1000", "/sys/class/kgsl/kgsl-3d0/idle_timer")
     sudo_write("performance", "/sys/class/kgsl/kgsl-3d0/devfreq/governor")
     sudo_write("596", "/sys/class/kgsl/kgsl-3d0/max_clock_mhz")
 
@@ -567,7 +586,7 @@ class Tici(HardwareBase):
     gpio_init(GPIO.STM_RST_N, True)
 
     gpio_set(GPIO.STM_RST_N, 1)
-    time.sleep(2)
+    time.sleep(1)
     gpio_set(GPIO.STM_RST_N, 0)
 
   def recover_internal_panda(self):
@@ -576,9 +595,9 @@ class Tici(HardwareBase):
 
     gpio_set(GPIO.STM_RST_N, 1)
     gpio_set(GPIO.STM_BOOT0, 1)
-    time.sleep(1)
+    time.sleep(0.5)
     gpio_set(GPIO.STM_RST_N, 0)
-    time.sleep(1)
+    time.sleep(0.5)
     gpio_set(GPIO.STM_BOOT0, 0)
 
 

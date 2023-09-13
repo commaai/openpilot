@@ -2,12 +2,18 @@
 
 #include <QHBoxLayout>
 #include <QMouseEvent>
+#include <QStackedWidget>
 #include <QVBoxLayout>
 
 #include "selfdrive/ui/qt/offroad/experimental_mode.h"
 #include "selfdrive/ui/qt/util.h"
-#include "selfdrive/ui/qt/widgets/drive_stats.h"
 #include "selfdrive/ui/qt/widgets/prime.h"
+
+#ifdef ENABLE_MAPS
+#include "selfdrive/ui/qt/maps/map_settings.h"
+#else
+#include "selfdrive/ui/qt/widgets/drive_stats.h"
+#endif
 
 // HomeWindow: the container for the offroad and onroad UIs
 
@@ -28,6 +34,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   slayout->addWidget(home);
 
   onroad = new OnroadWindow(this);
+  QObject::connect(onroad, &OnroadWindow::mapPanelRequested, this, [=] { sidebar->hide(); });
   slayout->addWidget(onroad);
 
   body = new BodyWindow(this);
@@ -46,6 +53,10 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 
 void HomeWindow::showSidebar(bool show) {
   sidebar->setVisible(show);
+}
+
+void HomeWindow::showMapPanel(bool show) {
+  onroad->showMapPanel(show);
 }
 
 void HomeWindow::updateState(const UIState &s) {
@@ -136,21 +147,39 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     home_layout->setContentsMargins(0, 0, 0, 0);
     home_layout->setSpacing(30);
 
-    // left: ExperimentalModeButton, DriveStats
-    QWidget* left_widget = new QWidget(this);
-    QVBoxLayout* left_column = new QVBoxLayout(left_widget);
-    left_column->setContentsMargins(0, 0, 0, 0);
-    left_column->setSpacing(30);
+    // left: MapSettings/PrimeAdWidget
+    QStackedWidget *left_widget = new QStackedWidget(this);
+#ifdef ENABLE_MAPS
+    left_widget->addWidget(new MapSettings);
+#else
+    left_widget->addWidget(new DriveStats);
+#endif
+    left_widget->addWidget(new PrimeAdWidget);
+    left_widget->setStyleSheet("border-radius: 10px;");
 
-    ExperimentalModeButton *experimental_mode = new ExperimentalModeButton(this);
-    QObject::connect(experimental_mode, &ExperimentalModeButton::openSettings, this, &OffroadHome::openSettings);
-    left_column->addWidget(experimental_mode, 1);
-    left_column->addWidget(new DriveStats, 1);
+    left_widget->setCurrentIndex(uiState()->hasPrime() ? 0 : 1);
+    connect(uiState(), &UIState::primeChanged, [=](bool prime) {
+      left_widget->setCurrentIndex(prime ? 0 : 1);
+    });
 
     home_layout->addWidget(left_widget, 1);
 
-    // right: SetupWidget
-    home_layout->addWidget(new SetupWidget);
+    // right: ExperimentalModeButton, SetupWidget
+    QWidget* right_widget = new QWidget(this);
+    QVBoxLayout* right_column = new QVBoxLayout(right_widget);
+    right_column->setContentsMargins(0, 0, 0, 0);
+    right_widget->setFixedWidth(750);
+    right_column->setSpacing(30);
+
+    ExperimentalModeButton *experimental_mode = new ExperimentalModeButton(this);
+    QObject::connect(experimental_mode, &ExperimentalModeButton::openSettings, this, &OffroadHome::openSettings);
+    right_column->addWidget(experimental_mode, 1);
+
+    SetupWidget *setup_widget = new SetupWidget;
+    QObject::connect(setup_widget, &SetupWidget::openSettings, this, &OffroadHome::openSettings);
+    right_column->addWidget(setup_widget, 1);
+
+    home_layout->addWidget(right_widget, 1);
   }
   center_layout->addWidget(home_widget);
 
@@ -170,7 +199,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
 
   setStyleSheet(R"(
     * {
-     color: white;
+      color: white;
     }
     OffroadHome {
       background-color: black;

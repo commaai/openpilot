@@ -1,11 +1,12 @@
-from dataclasses import dataclass
+# ruff: noqa: E501
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Union
 
 from cereal import car
 from panda.python import uds
-from selfdrive.car import AngleRateLimit, dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, CarPart, CarParts
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
+from openpilot.selfdrive.car.docs_definitions import CarInfo, CarHarness, CarParts
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
 
@@ -30,13 +31,10 @@ class CAR:
   ALTIMA = "NISSAN ALTIMA 2020"
 
 
-NISSAN_PARTS: List[CarPart] = [CarPart.harness_box, CarPart.rj45_cable_7ft, CarPart.long_obdc_cable, CarPart.usbc_coupler, CarPart.mount, CarPart.right_angle_obd_c_cable_1_5ft]
-
-
 @dataclass
 class NissanCarInfo(CarInfo):
   package: str = "ProPILOT Assist"
-  car_parts: CarParts = CarParts([CarPart.nissan_a] + NISSAN_PARTS)
+  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.nissan_a]))
 
 
 CAR_INFO: Dict[str, Optional[Union[NissanCarInfo, List[NissanCarInfo]]]] = {
@@ -44,7 +42,7 @@ CAR_INFO: Dict[str, Optional[Union[NissanCarInfo, List[NissanCarInfo]]]] = {
   CAR.LEAF: NissanCarInfo("Nissan Leaf 2018-23", video_link="https://youtu.be/vaMbtAh_0cY"),
   CAR.LEAF_IC: None,  # same platforms
   CAR.ROGUE: NissanCarInfo("Nissan Rogue 2018-20"),
-  CAR.ALTIMA: NissanCarInfo("Nissan Altima 2019-20", car_parts=CarParts([CarPart.nissan_b] + NISSAN_PARTS)),
+  CAR.ALTIMA: NissanCarInfo("Nissan Altima 2019-20", car_parts=CarParts.common([CarHarness.nissan_b])),
 }
 
 FINGERPRINTS = {
@@ -82,8 +80,13 @@ FINGERPRINTS = {
   ]
 }
 
-NISSAN_DIAGNOSTIC_REQUEST_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL, 0xc0])
-NISSAN_DIAGNOSTIC_RESPONSE_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL + 0x40, 0xc0])
+# Default diagnostic session
+NISSAN_DIAGNOSTIC_REQUEST_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL, 0x81])
+NISSAN_DIAGNOSTIC_RESPONSE_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL + 0x40, 0x81])
+
+# Manufacturer specific
+NISSAN_DIAGNOSTIC_REQUEST_KWP_2 = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL, 0xda])
+NISSAN_DIAGNOSTIC_RESPONSE_KWP_2 = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL + 0x40, 0xda])
 
 NISSAN_VERSION_REQUEST_KWP = b'\x21\x83'
 NISSAN_VERSION_RESPONSE_KWP = b'\x61\x83'
@@ -100,6 +103,11 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
       [NISSAN_DIAGNOSTIC_RESPONSE_KWP, NISSAN_VERSION_RESPONSE_KWP],
       rx_offset=NISSAN_RX_OFFSET,
+    ),
+    # Rogue's engine solely responds to this
+    Request(
+      [NISSAN_DIAGNOSTIC_REQUEST_KWP_2, NISSAN_VERSION_REQUEST_KWP],
+      [NISSAN_DIAGNOSTIC_RESPONSE_KWP_2, NISSAN_VERSION_RESPONSE_KWP],
     ),
     Request(
       [StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
@@ -122,6 +130,20 @@ FW_VERSIONS = {
     ],
     (Ecu.gateway, 0x18dad0f1, None): [
       b'284U29HE0A',
+    ],
+  },
+    CAR.LEAF: {
+    (Ecu.abs, 0x740, None): [
+      b'476606WK9B',
+    ],
+    (Ecu.eps, 0x742, None): [
+      b'5SN2A\xb7A\x05\x02N126F\x15\xb2\x00\x00\x00\x00\x00\x00\x00\x80',
+    ],
+    (Ecu.fwdCamera, 0x707, None): [
+      b'6WK2CDB\x04\x18\x00\x00\x00\x00\x00R=1\x18\x99\x10\x00\x00\x00\x80',
+    ],
+    (Ecu.gateway, 0x18dad0f1, None): [
+      b'284U26WK0C',
     ],
   },
   CAR.LEAF_IC: {

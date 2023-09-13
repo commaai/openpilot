@@ -1,15 +1,14 @@
 #include <zmq.h>
-#include <iostream>
-#define CATCH_CONFIG_MAIN
-#include "catch2/catch.hpp"
 
-#include "json11.hpp"
+#include <iostream>
+
+#include "catch2/catch.hpp"
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "common/version.h"
 #include "system/hardware/hw.h"
+#include "third_party/json11/json11.hpp"
 
-const char *SWAGLOG_ADDR = "ipc:///tmp/logmessage";
 std::string daemon_name = "testy";
 std::string dongle_id = "test_dongle_id";
 int LINE_NO = 0;
@@ -25,7 +24,7 @@ void log_thread(int thread_id, int msg_cnt) {
 void recv_log(int thread_cnt, int thread_msg_cnt) {
   void *zctx = zmq_ctx_new();
   void *sock = zmq_socket(zctx, ZMQ_PULL);
-  zmq_bind(sock, SWAGLOG_ADDR);
+  zmq_bind(sock, Path::swaglog_ipc().c_str());
   std::vector<int> thread_msgs(thread_cnt);
   int total_count = 0;
 

@@ -1,11 +1,12 @@
 import re
 from collections import namedtuple
+import copy
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union
 
 from cereal import car
-from common.conversions import Conversions as CV
+from openpilot.common.conversions import Conversions as CV
 
 GOOD_TORQUE_THRESHOLD = 1.0  # m/s^2
 MODEL_YEARS_RE = r"(?<= )((\d{4}-\d{2})|(\d{4}))(,|$)"
@@ -30,119 +31,144 @@ class Star(Enum):
   EMPTY = "empty"
 
 
-class PartType(Enum):
-  connector = "Connector"
-  device = "Device"
-  cable = "Cable"
-  accessory = "Accessory"
-  mount = "Mount"
+# A part + its comprised parts
+@dataclass
+class BasePart:
+  name: str
+  parts: List[Enum] = field(default_factory=list)
+
+  def all_parts(self):
+    # Recursively get all parts
+    _parts = 'parts'
+    parts = []
+    parts.extend(getattr(self, _parts))
+    for part in getattr(self, _parts):
+      parts.extend(part.value.all_parts())
+
+    return parts
+
+
+class EnumBase(Enum):
+  @property
+  def part_type(self):
+    return PartType(self.__class__)
+
+
+class Mount(EnumBase):
+  mount = BasePart("mount")
+  angled_mount_8_degrees = BasePart("angled mount (8 degrees)")
+
+
+class Cable(EnumBase):
+  rj45_cable_7ft = BasePart("RJ45 cable (7 ft)")
+  long_obdc_cable = BasePart("long OBD-C cable")
+  usb_a_2_a_cable = BasePart("USB A-A cable")
+  usbc_otg_cable = BasePart("USB C OTG cable")
+  usbc_coupler = BasePart("USB-C coupler")
+  obd_c_cable_1_5ft = BasePart("OBD-C cable (1.5 ft)")
+  right_angle_obd_c_cable_1_5ft = BasePart("right angle OBD-C cable (1.5 ft)")
+
+
+class Accessory(EnumBase):
+  harness_box = BasePart("harness box")
+  comma_power_v2 = BasePart("comma power v2")
 
 
 @dataclass
-class Part:
-  name: str
-
-  @property
-  def type(self) -> PartType:
-    raise NotImplementedError
+class BaseCarHarness(BasePart):
+  parts: List[Enum] = field(default_factory=lambda: [Accessory.harness_box, Accessory.comma_power_v2, Cable.rj45_cable_7ft])
+  has_connector: bool = True  # without are hidden on the harness connector page
 
 
-class Connector(Part):
-  @property
-  def type(self) -> PartType:
-    return PartType.connector
+class CarHarness(EnumBase):
+  nidec = BaseCarHarness("Honda Nidec connector")
+  bosch_a = BaseCarHarness("Honda Bosch A connector")
+  bosch_b = BaseCarHarness("Honda Bosch B connector")
+  toyota_a = BaseCarHarness("Toyota A connector")
+  toyota_b = BaseCarHarness("Toyota B connector")
+  subaru_a = BaseCarHarness("Subaru A connector")
+  subaru_b = BaseCarHarness("Subaru B connector")
+  subaru_c = BaseCarHarness("Subaru C connector")
+  subaru_d = BaseCarHarness("Subaru D connector")
+  fca = BaseCarHarness("FCA connector")
+  ram = BaseCarHarness("Ram connector")
+  vw = BaseCarHarness("VW connector")
+  j533 = BaseCarHarness("J533 connector", parts=[Accessory.harness_box, Cable.long_obdc_cable, Cable.usbc_coupler])
+  hyundai_a = BaseCarHarness("Hyundai A connector")
+  hyundai_b = BaseCarHarness("Hyundai B connector")
+  hyundai_c = BaseCarHarness("Hyundai C connector")
+  hyundai_d = BaseCarHarness("Hyundai D connector")
+  hyundai_e = BaseCarHarness("Hyundai E connector")
+  hyundai_f = BaseCarHarness("Hyundai F connector")
+  hyundai_g = BaseCarHarness("Hyundai G connector")
+  hyundai_h = BaseCarHarness("Hyundai H connector")
+  hyundai_i = BaseCarHarness("Hyundai I connector")
+  hyundai_j = BaseCarHarness("Hyundai J connector")
+  hyundai_k = BaseCarHarness("Hyundai K connector")
+  hyundai_l = BaseCarHarness("Hyundai L connector")
+  hyundai_m = BaseCarHarness("Hyundai M connector")
+  hyundai_n = BaseCarHarness("Hyundai N connector")
+  hyundai_o = BaseCarHarness("Hyundai O connector")
+  hyundai_p = BaseCarHarness("Hyundai P connector")
+  hyundai_q = BaseCarHarness("Hyundai Q connector")
+  hyundai_r = BaseCarHarness("Hyundai R connector")
+  custom = BaseCarHarness("Developer connector")
+  obd_ii = BaseCarHarness("OBD-II connector", parts=[Cable.long_obdc_cable, Cable.long_obdc_cable], has_connector=False)
+  gm = BaseCarHarness("GM connector")
+  nissan_a = BaseCarHarness("Nissan A connector", parts=[Accessory.harness_box, Cable.rj45_cable_7ft, Cable.long_obdc_cable, Cable.usbc_coupler])
+  nissan_b = BaseCarHarness("Nissan B connector", parts=[Accessory.harness_box, Cable.rj45_cable_7ft, Cable.long_obdc_cable, Cable.usbc_coupler])
+  mazda = BaseCarHarness("Mazda connector")
+  ford_q3 = BaseCarHarness("Ford Q3 connector")
+  ford_q4 = BaseCarHarness("Ford Q4 connector")
 
 
-class Accessory(Part):
-  @property
-  def type(self) -> PartType:
-    return PartType.accessory
+class Device(EnumBase):
+  three = BasePart("comma three", parts=[Mount.mount, Cable.right_angle_obd_c_cable_1_5ft])
+  # variant of comma three with angled mounts
+  three_angled_mount = BasePart("comma three", parts=[Mount.angled_mount_8_degrees, Cable.right_angle_obd_c_cable_1_5ft])
+  red_panda = BasePart("red panda")
 
 
-class Mount(Part):
-  @property
-  def type(self) -> PartType:
-    return PartType.mount
+class Kit(EnumBase):
+  red_panda_kit = BasePart("CAN FD panda kit", parts=[Device.red_panda, Accessory.harness_box,
+                                                      Cable.usb_a_2_a_cable, Cable.usbc_otg_cable, Cable.obd_c_cable_1_5ft])
 
 
-class Cable(Part):
-  @property
-  def type(self) -> PartType:
-    return PartType.cable
+class Tool(EnumBase):
+  socket_8mm_deep = BasePart("Socket Wrench 8mm or 5/16\" (deep)")
+  pry_tool = BasePart("Pry Tool")
 
 
-class Device(Part):
-  @property
-  def type(self) -> PartType:
-    return PartType.device
+class PartType(Enum):
+  accessory = Accessory
+  cable = Cable
+  connector = CarHarness
+  device = Device
+  kit = Kit
+  mount = Mount
+  tool = Tool
 
 
-class CarPart(Enum):
-  nidec = Connector("Honda Nidec connector")
-  bosch_a = Connector("Honda Bosch A connector")
-  bosch_b = Connector("Honda Bosch B connector")
-  toyota = Connector("Toyota connector")
-  subaru_a = Connector("Subaru A connector")
-  subaru_b = Connector("Subaru B connector")
-  fca = Connector("FCA connector")
-  ram = Connector("Ram connector")
-  vw = Connector("VW connector")
-  j533 = Connector("J533 connector")
-  hyundai_a = Connector("Hyundai A connector")
-  hyundai_b = Connector("Hyundai B connector")
-  hyundai_c = Connector("Hyundai C connector")
-  hyundai_d = Connector("Hyundai D connector")
-  hyundai_e = Connector("Hyundai E connector")
-  hyundai_f = Connector("Hyundai F connector")
-  hyundai_g = Connector("Hyundai G connector")
-  hyundai_h = Connector("Hyundai H connector")
-  hyundai_i = Connector("Hyundai I connector")
-  hyundai_j = Connector("Hyundai J connector")
-  hyundai_k = Connector("Hyundai K connector")
-  hyundai_l = Connector("Hyundai L connector")
-  hyundai_m = Connector("Hyundai M connector")
-  hyundai_n = Connector("Hyundai N connector")
-  hyundai_o = Connector("Hyundai O connector")
-  hyundai_p = Connector("Hyundai P connector")
-  hyundai_q = Connector("Hyundai Q connector")
-  custom = Connector("Developer connector")
-  obd_ii = Connector("OBD-II connector")
-  gm = Connector("GM connector")
-  nissan_a = Connector("Nissan A connector")
-  nissan_b = Connector("Nissan B connector")
-  mazda = Connector("Mazda connector")
-  ford_q3 = Connector("Ford Q3 connector")
-  ford_q4 = Connector("Ford Q4 connector")
-
-  comma_3 = Device("comma 3")
-  red_panda = Device("red panda")
-
-  harness_box = Accessory("harness box")
-  comma_power_v2 = Accessory("comma power v2")
-
-  mount = Mount("mount")
-  angled_mount = Mount("angled mount")
-
-  rj45_cable_7ft = Cable("RJ45 cable (7 ft)")
-  long_obdc_cable = Cable("long OBD-C cable")
-  usb_a_2_a_cable = Cable("USB A-A cable")
-  usbc_otg_cable = Cable("USB C OTG cable")
-  usbc_coupler = Cable("USB-C coupler")
-  obd_c_cable_1_5ft = Cable("OBD-C cable (1.5 ft)")
-  right_angle_obd_c_cable_1_5ft = Cable("right angle OBD-C cable (1.5 ft)")
-
-
-DEFAULT_CAR_PARTS: List[CarPart] = [CarPart.harness_box, CarPart.comma_power_v2, CarPart.rj45_cable_7ft, CarPart.mount, CarPart.right_angle_obd_c_cable_1_5ft]
+DEFAULT_CAR_PARTS: List[EnumBase] = [Device.three]
 
 
 @dataclass
 class CarParts:
-  parts: List[CarPart] = field(default_factory=list)
+  parts: List[EnumBase] = field(default_factory=list)
+
+  def __call__(self):
+    return copy.deepcopy(self)
 
   @classmethod
-  def common(cls, add: List[CarPart] = None, remove: List[CarPart] = None):
+  def common(cls, add: Optional[List[EnumBase]] = None, remove: Optional[List[EnumBase]] = None):
     p = [part for part in (add or []) + DEFAULT_CAR_PARTS if part not in (remove or [])]
     return cls(p)
+
+  def all_parts(self):
+    parts = []
+    for part in self.parts:
+      parts.extend(part.value.all_parts())
+    return self.parts + parts
 
 
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "docs_only", "shop_footnote"], defaults=(False, False))
@@ -150,10 +176,12 @@ CarFootnote = namedtuple("CarFootnote", ["text", "column", "docs_only", "shop_fo
 
 class CommonFootnote(Enum):
   EXP_LONG_AVAIL = CarFootnote(
-    "Experimental openpilot longitudinal control is available behind a toggle; the toggle is only available in non-release branches such as `devel` or `master-ci`. ",
+    "openpilot Longitudinal Control (Alpha) is available behind a toggle; " +
+    "the toggle is only available in non-release branches such as `devel` or `master-ci`.",
     Column.LONGITUDINAL, docs_only=True)
   EXP_LONG_DSU = CarFootnote(
-    "By default, this car will use the stock Adaptive Cruise Control (ACC) for longitudinal control. If the Driver Support Unit (DSU) is disconnected, openpilot ACC will replace " +
+    "By default, this car will use the stock Adaptive Cruise Control (ACC) for longitudinal control. " +
+    "If the Driver Support Unit (DSU) is disconnected, openpilot ACC will replace " +
     "stock ACC. <b><i>NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b>",
     Column.LONGITUDINAL)
 
@@ -214,7 +242,7 @@ class CarInfo:
   auto_resume: Optional[bool] = None
 
   # all the parts needed for the supported car
-  car_parts: CarParts = CarParts()
+  car_parts: CarParts = field(default_factory=CarParts)
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
     self.car_name = CP.carName
@@ -223,14 +251,14 @@ class CarInfo:
 
     # longitudinal column
     op_long = "Stock"
-    if CP.openpilotLongitudinalControl and not CP.enableDsu:
-      op_long = "openpilot"
-    elif CP.experimentalLongitudinalAvailable or CP.enableDsu:
+    if CP.experimentalLongitudinalAvailable or CP.enableDsu:
       op_long = "openpilot available"
       if CP.enableDsu:
         self.footnotes.append(CommonFootnote.EXP_LONG_DSU)
       else:
         self.footnotes.append(CommonFootnote.EXP_LONG_AVAIL)
+    elif CP.openpilotLongitudinalControl and not CP.enableDsu:
+      op_long = "openpilot"
 
     # min steer & enable speed columns
     # TODO: set all the min steer speeds in carParams and remove this
@@ -250,10 +278,17 @@ class CarInfo:
     hardware_col = "None"
     if self.car_parts.parts:
       model_years = self.model + (' ' + self.years if self.years else '')
-      buy_link = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">Buy Here</a>'
-      parts = '<br>'.join([f"- {self.car_parts.parts.count(part)} {part.value.name}" for part in
-                           sorted(set(self.car_parts.parts), key=lambda part: str(part.value.name))])
-      hardware_col = f'<details><summary>View</summary><sub>{parts}<br>{buy_link}</sub></details>'
+      buy_link = f'<a href="https://comma.ai/shop/comma-3x.html?make={self.make}&model={model_years}">Buy Here</a>'
+
+      tools_docs = [part for part in self.car_parts.all_parts() if isinstance(part, Tool)]
+      parts_docs = [part for part in self.car_parts.all_parts() if not isinstance(part, Tool)]
+
+      def display_func(parts):
+        return '<br>'.join([f"- {parts.count(part)} {part.value.name}" for part in sorted(set(parts), key=lambda part: str(part.value.name))])
+
+      hardware_col = f'<details><summary>Parts</summary><sub>{display_func(parts_docs)}<br>{buy_link}</sub></details>'
+      if len(tools_docs):
+        hardware_col += f'<details><summary>Tools</summary><sub>{display_func(tools_docs)}</sub></details>'
 
     self.row: Dict[Enum, Union[str, Star]] = {
       Column.MAKE: self.make,
@@ -305,8 +340,6 @@ class CarInfo:
       exp_link = "<a href='https://blog.comma.ai/090release/#experimental-mode' target='_blank' class='link-light-new-regular-text'>Experimental mode</a>"
       if CP.openpilotLongitudinalControl or CP.experimentalLongitudinalAvailable:
         sentence_builder += f" Traffic light and stop sign handling is also available in {exp_link}."
-      else:
-        sentence_builder += f" {exp_link}, with traffic light and stop sign handling, is not currently available for this car, but may be added in a future software update."
 
       return sentence_builder.format(car_model=f"{self.make} {self.model}", alc=alc, acc=acc)
 

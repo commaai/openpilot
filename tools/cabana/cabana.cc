@@ -7,6 +7,7 @@
 #include "tools/cabana/streams/devicestream.h"
 #include "tools/cabana/streams/pandastream.h"
 #include "tools/cabana/streams/replaystream.h"
+#include "tools/cabana/streams/socketcanstream.h"
 
 int main(int argc, char *argv[]) {
   QCoreApplication::setApplicationName("Cabana");
@@ -15,6 +16,10 @@ int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
   app.setApplicationDisplayName("Cabana");
   app.setWindowIcon(QIcon(":cabana-icon.png"));
+
+  UnixSignalHandler signalHandler;
+
+  settings.load();
   utils::setTheme(settings.theme);
 
   QCommandLineParser cmd_parser;
@@ -26,6 +31,9 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"stream", "read can messages from live streaming"});
   cmd_parser.addOption({"panda", "read can messages from panda"});
   cmd_parser.addOption({"panda-serial", "read can messages from panda with given serial", "panda-serial"});
+  if (SocketCanStream::available()) {
+    cmd_parser.addOption({"socketcan", "read can messages from given SocketCAN device", "socketcan"});
+  }
   cmd_parser.addOption({"zmq", "the ip address on which to receive zmq messages", "zmq"});
   cmd_parser.addOption({"data_dir", "local directory with routes", "data_dir"});
   cmd_parser.addOption({"no-vipc", "do not output video"});
@@ -42,7 +50,16 @@ int main(int argc, char *argv[]) {
     if (cmd_parser.isSet("panda-serial")) {
       config.serial = cmd_parser.value("panda-serial");
     }
-    stream = new PandaStream(&app, config);
+    try {
+      stream = new PandaStream(&app, config);
+    } catch (std::exception &e) {
+      qWarning() << e.what();
+      return 0;
+    }
+  } else if (cmd_parser.isSet("socketcan")) {
+    SocketCanStreamConfig config = {};
+    config.device = cmd_parser.value("socketcan");
+    stream = new SocketCanStream(&app, config);
   } else {
     uint32_t replay_flags = REPLAY_FLAG_NONE;
     if (cmd_parser.isSet("ecam")) {
@@ -60,12 +77,7 @@ int main(int argc, char *argv[]) {
     } else if (cmd_parser.isSet("demo")) {
       route = DEMO_ROUTE;
     }
-
-    if (route.isEmpty()) {
-      StreamSelector dlg(&stream);
-      dlg.exec();
-      dbc_file = dlg.dbcFile();
-    } else {
+    if (!route.isEmpty()) {
       auto replay_stream = new ReplayStream(&app);
       if (!replay_stream->loadRoute(route, cmd_parser.value("data_dir"), replay_flags)) {
         return 0;
@@ -74,14 +86,28 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  MainWindow w;
-  if (!stream) {
-    stream = new DummyStream(&app);
+  int ret = 0;
+  {
+    MainWindow w;
+    QTimer::singleShot(0, [&]() {
+      if (!stream) {
+        StreamSelector dlg(&stream);
+        dlg.exec();
+        dbc_file = dlg.dbcFile();
+      }
+      if (!stream) {
+        stream = new DummyStream(&app);
+      }
+      stream->start();
+      if (!dbc_file.isEmpty()) {
+        w.loadFile(dbc_file);
+      }
+      w.show();
+    });
+
+    ret = app.exec();
   }
-  stream->start();
-  if (!dbc_file.isEmpty()) {
-    w.loadFile(dbc_file);
-  }
-  w.show();
-  return app.exec();
+
+  delete can;
+  return ret;
 }

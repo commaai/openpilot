@@ -4,13 +4,16 @@
 #include <curl/curl.h>
 #include <openssl/sha.h>
 
+#include <cstdarg>
 #include <cstring>
 #include <cassert>
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <mutex>
 #include <numeric>
+#include <utility>
 
 #include "common/timing.h"
 #include "common/util.h"

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <tuple>
+#include <utility>
+
 #include <QGraphicsPixmapItem>
 #include <QGraphicsProxyWidget>
 #include <QtCharts/QChartView>
@@ -56,7 +59,7 @@ private slots:
   void manageSignals();
   void handleMarkerClicked();
   void msgUpdated(MessageId id);
-  void msgRemoved(MessageId id) { removeIf([=](auto &s) { return s.msg_id == id; }); }
+  void msgRemoved(MessageId id) { removeIf([=](auto &s) { return s.msg_id.address == id.address && !dbc()->msg(id); }); }
   void signalRemoved(const cabana::Signal *sig) { removeIf([=](auto &s) { return s.sig == sig; }); }
 
 private:
@@ -80,10 +83,13 @@ private:
   void drawForeground(QPainter *painter, const QRectF &rect) override;
   void drawBackground(QPainter *painter, const QRectF &rect) override;
   void drawDropIndicator(bool draw) { if (std::exchange(can_drop, draw) != can_drop) viewport()->update(); }
+  void drawSignalValue(QPainter *painter);
   void drawTimeline(QPainter *painter);
+  void drawRubberBandTimeRange(QPainter *painter);
   std::tuple<double, double, int> getNiceAxisNumbers(qreal min, qreal max, int tick_count);
   qreal niceNumber(qreal x, bool ceiling);
   QXYSeries *createSeries(SeriesType type, QColor color);
+  void setSeriesColor(QXYSeries *, QColor color);
   void updateSeriesPoints();
   void removeIf(std::function<bool(const SigItem &)> predicate);
   inline void clearTrackPoints() { for (auto &s : sigs) s.track_pt = {}; }

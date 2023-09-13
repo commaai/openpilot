@@ -3,13 +3,14 @@ import time
 import shutil
 from datetime import datetime
 from collections import defaultdict
+from openpilot.system.hardware.hw import Paths
 
-import rpyc # pylint: disable=import-error
-from rpyc.utils.server import ThreadedServer  # pylint: disable=import-error
+import rpyc
+from rpyc.utils.server import ThreadedServer
 
-#from common.params import Params
+#from openpilot.common.params import Params
 import cereal.messaging as messaging
-from selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.manager.process_config import managed_processes
 from laika.lib.coordinates import ecef2geodetic
 
 DELTA = 0.001
@@ -18,7 +19,6 @@ MATCH_NUM = 10
 REPORT_STATS = 10
 
 EPHEM_CACHE = "/data/params/d/LaikadEphemerisV3"
-DOWNLOAD_CACHE = "/tmp/comma_download_cache"
 
 SERVER_LOG_FILE = "/tmp/fuzzy_server.log"
 server_log = open(SERVER_LOG_FILE, "w+")
@@ -128,7 +128,7 @@ class RemoteCheckerService(rpyc.Service):
         if pos_geo is None or len(pos_geo) == 0:
           continue
 
-        match  = all(abs(g-s) < DELTA for g,s in zip(pos_geo[:2], [slat, slon]))
+        match  = all(abs(g-s) < DELTA for g,s in zip(pos_geo[:2], [slat, slon], strict=True))
         match &= abs(pos_geo[2] - salt) < ALT_DELTA
         if match:
           match_cnt += 1
@@ -162,7 +162,7 @@ class RemoteCheckerService(rpyc.Service):
 
         if os.path.exists(EPHEM_CACHE):
           os.remove(EPHEM_CACHE)
-        shutil.rmtree(DOWNLOAD_CACHE, ignore_errors=True)
+        shutil.rmtree(Paths.download_cache_root(), ignore_errors=True)
 
       ret = self.run_checker(slat, slon, salt, sockets, procs, timeout)
       kill_procs(procs)

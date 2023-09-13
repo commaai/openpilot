@@ -1,5 +1,7 @@
 #include "tools/cabana/historylog.h"
 
+#include <functional>
+
 #include <QPainter>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -63,7 +65,10 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
         return "Data";
       }
     } else if (role == Qt::BackgroundRole && section > 0 && show_signals) {
-      return QBrush(getColor(sigs[section - 1]));
+      // Alpha-blend the signal color with the background to ensure contrast
+      QColor sigColor = sigs[section - 1]->color;
+      sigColor.setAlpha(128);
+      return QBrush(sigColor);
     }
   }
   return {};
@@ -122,7 +127,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, I
   for (; first != last && (*first)->mono_time > min_time; ++first) {
     const CanEvent *e = *first;
     for (int i = 0; i < sigs.size(); ++i) {
-      values[i] = get_raw_value(e->dat, e->size, *sigs[i]);
+      sigs[i]->getValue(e->dat, e->size, &values[i]);
     }
     if (!filter_cmp || filter_cmp(values[filter_sig_idx], filter_value)) {
       auto &m = msgs.emplace_back();
@@ -138,7 +143,6 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, I
 }
 
 std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_time, uint64_t min_time) {
-  const QList<uint8_t> mask;
   const auto &events = can->events(msg_id);
   const auto freq = can->lastMessage(msg_id).freq;
   const bool update_colors = !display_signals_mode || sigs.empty();
@@ -151,20 +155,18 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_ti
     auto msgs = fetchData(first, events.rend(), min_time);
     if (update_colors && (min_time > 0 || messages.empty())) {
       for (auto it = msgs.rbegin(); it != msgs.rend(); ++it) {
-        hex_colors.compute(it->data.data(), it->data.size(), it->mono_time / (double)1e9, speed, mask, freq);
+        hex_colors.compute(msg_id, it->data.data(), it->data.size(), it->mono_time / (double)1e9, speed, nullptr, freq);
         it->colors = hex_colors.colors;
       }
     }
     return msgs;
   } else {
     assert(min_time == 0);
-    auto first = std::upper_bound(events.cbegin(), events.cend(), from_time, [](uint64_t ts, auto e) {
-      return ts < e->mono_time;
-    });
+    auto first = std::upper_bound(events.cbegin(), events.cend(), from_time, CompareCanEvent());
     auto msgs = fetchData(first, events.cend(), 0);
     if (update_colors) {
       for (auto it = msgs.begin(); it != msgs.end(); ++it) {
-        hex_colors.compute(it->data.data(), it->data.size(), it->mono_time / (double)1e9, speed, mask, freq);
+        hex_colors.compute(msg_id, it->data.data(), it->data.size(), it->mono_time / (double)1e9, speed, nullptr, freq);
         it->colors = hex_colors.colors;
       }
     }

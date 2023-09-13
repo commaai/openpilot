@@ -32,7 +32,7 @@ void ReplayStream::mergeSegments() {
 }
 
 bool ReplayStream::loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags) {
-  replay.reset(new Replay(route, {"can", "roadEncodeIdx", "wideRoadEncodeIdx", "carParams"}, {}, nullptr, replay_flags, data_dir, this));
+  replay.reset(new Replay(route, {"can", "roadEncodeIdx", "wideRoadEncodeIdx", "carParams"}, {}, {}, nullptr, replay_flags, data_dir, this));
   replay->setSegmentCacheLimit(settings.max_cached_minutes);
   replay->installEventFilter(event_filter, this);
   QObject::connect(replay.get(), &Replay::seekedTo, this, &AbstractStream::seekedTo);
@@ -55,11 +55,12 @@ bool ReplayStream::eventFilter(const Event *event) {
       const auto dat = c.getDat();
       updateEvent(id, current_sec, (const uint8_t*)dat.begin(), dat.size());
     }
-    double ts = millis_since_boot();
-    if ((ts - prev_update_ts) > (1000.0 / settings.fps)) {
-      if (postEvents()) {
-        prev_update_ts = ts;
-      }
+  }
+
+  double ts = millis_since_boot();
+  if ((ts - prev_update_ts) > (1000.0 / settings.fps)) {
+    if (postEvents()) {
+      prev_update_ts = ts;
     }
   }
   return true;

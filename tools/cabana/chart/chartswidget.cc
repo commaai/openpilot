@@ -1,5 +1,7 @@
 #include "tools/cabana/chart/chartswidget.h"
 
+#include <algorithm>
+
 #include <QApplication>
 #include <QFutureSynchronizer>
 #include <QMenu>
@@ -217,7 +219,7 @@ void ChartsWidget::updateToolBar() {
   undo_zoom_action->setVisible(is_zoomed);
   redo_zoom_action->setVisible(is_zoomed);
   reset_zoom_action->setVisible(is_zoomed);
-  reset_zoom_btn->setText(is_zoomed ? tr("%1-%2").arg(zoomed_range.first, 0, 'f', 1).arg(zoomed_range.second, 0, 'f', 1) : "");
+  reset_zoom_btn->setText(is_zoomed ? tr("%1-%2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2) : "");
   remove_all_btn->setEnabled(!charts.isEmpty());
   dock_btn->setIcon(docking ? "arrow-up-right-square" : "arrow-down-left-square");
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
@@ -275,6 +277,10 @@ void ChartsWidget::splitChart(ChartView *src_chart) {
     for (auto it = src_chart->sigs.begin() + 1; it != src_chart->sigs.end(); /**/) {
       auto c = createChart();
       src_chart->chart()->removeSeries(it->series);
+
+      // Restore to the original color
+      it->series->setColor(it->sig->color);
+
       c->addSeries(it->series);
       c->sigs.push_back(*it);
       c->updateAxisY();
@@ -402,7 +408,7 @@ void ChartsWidget::removeAll() {
 
   if (!charts.isEmpty()) {
     for (auto c : charts) {
-      c->deleteLater();
+      delete c;
     }
     charts.clear();
     updateToolBar();

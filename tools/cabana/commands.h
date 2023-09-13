@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include <QUndoCommand>
 #include <QUndoStack>
 
@@ -37,6 +39,7 @@ public:
 
 private:
   const MessageId id;
+  bool msg_created = false;
   cabana::Signal signal = {};
 };
 
@@ -48,7 +51,7 @@ public:
 
 private:
   const MessageId id;
-  cabana::Signal signal = {};
+  QList<cabana::Signal> sigs;
 };
 
 class EditSignalCommand : public QUndoCommand {
@@ -59,8 +62,7 @@ public:
 
 private:
   const MessageId id;
-  cabana::Signal old_signal = {};
-  cabana::Signal new_signal = {};
+  QList<std::pair<cabana::Signal, cabana::Signal>> sigs; // QList<{old_sig, new_sig}>
 };
 
 namespace UndoStack {

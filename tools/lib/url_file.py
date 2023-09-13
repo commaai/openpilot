@@ -1,5 +1,3 @@
-# pylint: skip-file
-
 import os
 import time
 import tempfile
@@ -9,12 +7,11 @@ import pycurl
 from hashlib import sha256
 from io import BytesIO
 from tenacity import retry, wait_random_exponential, stop_after_attempt
-from common.file_helpers import mkdirs_exists_ok, atomic_write_in_dir
+from openpilot.common.file_helpers import mkdirs_exists_ok, atomic_write_in_dir
+from openpilot.system.hardware.hw import Paths
 #  Cache chunk size
 K = 1000
 CHUNK_SIZE = 1000 * K
-
-CACHE_DIR = os.environ.get("COMMA_CACHE", "/tmp/comma_download_cache/")
 
 
 def hash_256(link):
@@ -40,7 +37,7 @@ class URLFile:
       self._curl = self._tlocal.curl
     except AttributeError:
       self._curl = self._tlocal.curl = pycurl.Curl()
-    mkdirs_exists_ok(CACHE_DIR)
+    mkdirs_exists_ok(Paths.download_cache_root())
 
   def __enter__(self):
     return self
@@ -68,7 +65,7 @@ class URLFile:
   def get_length(self):
     if self._length is not None:
       return self._length
-    file_length_path = os.path.join(CACHE_DIR, hash_256(self._url) + "_length")
+    file_length_path = os.path.join(Paths.download_cache_root(), hash_256(self._url) + "_length")
     if os.path.exists(file_length_path) and not self._force_download:
       with open(file_length_path) as file_length:
           content = file_length.read()
@@ -95,7 +92,7 @@ class URLFile:
       self._pos = position
       chunk_number = self._pos / CHUNK_SIZE
       file_name = hash_256(self._url) + "_" + str(chunk_number)
-      full_path = os.path.join(CACHE_DIR, str(file_name))
+      full_path = os.path.join(Paths.download_cache_root(), str(file_name))
       data = None
       #  If we don't have a file, download it
       if not os.path.exists(full_path):

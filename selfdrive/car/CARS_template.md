@@ -10,7 +10,7 @@
 
 # Supported Cars
 
-A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system. Supported vehicles reference the US market unless otherwise specified.
+A supported vehicle is one that just works when you install a comma device. All supported cars provide a better experience than any stock system. Supported vehicles reference the US market unless otherwise specified.
 
 # {{all_car_info | length}} Supported Cars
 
@@ -58,7 +58,7 @@ All the cars that openpilot supports use a [CAN bus](https://en.wikipedia.org/wi
 ### Toyota Security
 
 openpilot does not yet support these Toyota models due to a new message authentication method.
-[Vote](https://comma.ai/shop/products/vote) if you'd like to see openpilot support on these models.
+[Vote](https://comma.ai/shop#toyota-security) if you'd like to see openpilot support on these models.
 
 * Toyota RAV4 Prime 2021+
 * Toyota Sienna 2021+

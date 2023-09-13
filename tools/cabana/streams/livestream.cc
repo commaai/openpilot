@@ -1,10 +1,33 @@
 #include "tools/cabana/streams/livestream.h"
 
+#include <algorithm>
+#include <memory>
+
+struct LiveStream::Logger {
+  Logger() : start_ts(seconds_since_epoch()), segment_num(-1) {}
+
+  void write(const char *data, const size_t size) {
+    int n = (seconds_since_epoch() - start_ts) / 60.0;
+    if (std::exchange(segment_num, n) != segment_num) {
+      QString dir = QString("%1/%2--%3")
+                        .arg(settings.log_path)
+                        .arg(QDateTime::fromSecsSinceEpoch(start_ts).toString("yyyy-MM-dd--hh-mm-ss"))
+                        .arg(n);
+      util::create_directories(dir.toStdString(), 0755);
+      fs.reset(new std::ofstream((dir + "/rlog").toStdString(), std::ios::binary | std::ios::out));
+    }
+
+    fs->write(data, size);
+  }
+
+  std::unique_ptr<std::ofstream> fs;
+  int segment_num;
+  uint64_t start_ts;
+};
+
 LiveStream::LiveStream(QObject *parent) : AbstractStream(parent) {
   if (settings.log_livestream) {
-    std::string path = (settings.log_path + "/" + QDateTime::currentDateTime().toString("yyyy-MM-dd--hh-mm-ss") + "--0").toStdString();
-    util::create_directories(path, 0755);
-    fs.reset(new std::ofstream(path + "/rlog", std::ios::binary | std::ios::out));
+    logger = std::make_unique<Logger>();
   }
   stream_thread = new QThread(this);
 
@@ -34,8 +57,8 @@ LiveStream::~LiveStream() {
 
 // called in streamThread
 void LiveStream::handleEvent(const char *data, const size_t size) {
-  if (fs) {
-    fs->write(data, size);
+  if (logger) {
+    logger->write(data, size);
   }
 
   std::lock_guard lk(lock);
@@ -79,12 +102,8 @@ void LiveStream::updateEvents() {
   uint64_t last_ts = post_last_event && speed_ == 1.0
                        ? all_events_.back()->mono_time
                        : first_event_ts + (nanos_since_boot() - first_update_ts) * speed_;
-  auto first = std::upper_bound(all_events_.cbegin(), all_events_.cend(), current_event_ts, [](uint64_t ts, auto e) {
-    return ts < e->mono_time;
-  });
-  auto last = std::upper_bound(first, all_events_.cend(), last_ts, [](uint64_t ts, auto e) {
-    return ts < e->mono_time;
-  });
+  auto first = std::upper_bound(all_events_.cbegin(), all_events_.cend(), current_event_ts, CompareCanEvent());
+  auto last = std::upper_bound(first, all_events_.cend(), last_ts, CompareCanEvent());
 
   for (auto it = first; it != last; ++it) {
     const CanEvent *e = *it;
