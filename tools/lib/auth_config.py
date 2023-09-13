@@ -13,9 +13,6 @@ if PC:
 else:
   CONFIG_DIR = "/tmp/.comma"
 
-mkdirs_exists_ok(CONFIG_DIR)
-
-
 def get_token():
   try:
     with open(os.path.join(CONFIG_DIR, 'auth.json')) as f:
@@ -26,9 +23,13 @@ def get_token():
 
 
 def set_token(token):
+  mkdirs_exists_ok(CONFIG_DIR)
   with open(os.path.join(CONFIG_DIR, 'auth.json'), 'w') as f:
     json.dump({'access_token': token}, f)
 
 
 def clear_token():
-  os.unlink(os.path.join(CONFIG_DIR, 'auth.json'))
+  try:
+    os.unlink(os.path.join(CONFIG_DIR, 'auth.json'))
+  except FileNotFoundError:
+    pass
