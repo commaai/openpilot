@@ -69,6 +69,7 @@ class HyundaiFlags(IntFlag):
 
 class CAR:
   # Hyundai
+  AZERA_6TH_GEN = "HYUNDAI AZERA 6TH GEN"
   ELANTRA = "HYUNDAI ELANTRA 2017"
   ELANTRA_2021 = "HYUNDAI ELANTRA 2021"
   ELANTRA_HEV_2021 = "HYUNDAI ELANTRA HYBRID 2021"
@@ -99,7 +100,6 @@ class CAR:
   TUCSON_4TH_GEN = "HYUNDAI TUCSON 4TH GEN"
   TUCSON_HYBRID_4TH_GEN = "HYUNDAI TUCSON HYBRID 4TH GEN"
   SANTA_CRUZ_1ST_GEN = "HYUNDAI SANTA CRUZ 1ST GEN"
-  AZERA_6TH_GEN = "HYUNDAI AZERA 6TH GEN"
 
   # Kia
   KIA_FORTE = "KIA FORTE E 2018 & GT 2021"
@@ -153,6 +153,7 @@ class HyundaiCarInfo(CarInfo):
 
 
 CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
+  CAR.AZERA_6TH_GEN: HyundaiCarInfo("Hyundai Azera 2022", "All", car_parts=CarParts.common([CarHarness.hyundai_k])),
   CAR.ELANTRA: [
     HyundaiCarInfo("Hyundai Elantra 2017-19", min_enable_speed=19 * CV.MPH_TO_MS, car_parts=CarParts.common([CarHarness.hyundai_b])),
     HyundaiCarInfo("Hyundai Elantra GT 2017-19", car_parts=CarParts.common([CarHarness.hyundai_e])),
@@ -210,7 +211,6 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.TUCSON_HYBRID_4TH_GEN: HyundaiCarInfo("Hyundai Tucson Hybrid 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_n])),
   CAR.SANTA_CRUZ_1ST_GEN: HyundaiCarInfo("Hyundai Santa Cruz 2022-23", car_parts=CarParts.common([CarHarness.hyundai_n])),
-  CAR.AZERA_6TH_GEN: HyundaiCarInfo("Hyundai Azera 2022", "All", car_parts=CarParts.common([CarHarness.hyundai_k])),
 
   # Kia
   CAR.KIA_FORTE: [
@@ -525,6 +525,23 @@ FW_QUERY_CONFIG = FwQueryConfig(
 )
 
 FW_VERSIONS = {
+  CAR.AZERA_6TH_GEN: {
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00IG__ SCC F-CU-      1.00 1.00 99110-G8100         ',
+    ],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00IG  MDPS C 1.00 1.02 56310G8510\x00 4IGSC103',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00IG  MFC  AT MES LHD 1.00 1.04 99211-G8100 200511',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x00bcsh8p54  U912\x00\x00\x00\x00\x00\x00SIG0M35MH0\xa4 |.',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x81641KA051\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+  },
   CAR.HYUNDAI_GENESIS: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00DH LKAS 1.1 -150210',
@@ -1942,23 +1959,6 @@ FW_VERSIONS = {
       b'\xf1\x00MQhe SCC FHCUP      1.00 1.07 99110-P4000         ',
     ],
   },
-  CAR.AZERA_6TH_GEN: {
-    (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00IG__ SCC F-CU-      1.00 1.00 99110-G8100         ',
-    ],
-    (Ecu.eps, 0x7d4, None): [
-      b'\xf1\x00IG  MDPS C 1.00 1.02 56310G8510\x00 4IGSC103',
-    ],
-    (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00IG  MFC  AT MES LHD 1.00 1.04 99211-G8100 200511',
-    ],
-    (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x00bcsh8p54  U912\x00\x00\x00\x00\x00\x00SIG0M35MH0\xa4 |.',
-    ],
-    (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x81641KA051\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-  },
 }
 
 CHECKSUM = {
@@ -2009,6 +2009,7 @@ UNSUPPORTED_LONGITUDINAL_CAR = LEGACY_SAFETY_MODE_CAR | {CAR.KIA_NIRO_PHEV, CAR.
 # If 0x500 is present on bus 1 it probably has a Mando radar outputting radar points.
 # If no points are outputted by default it might be possible to turn it on using  selfdrive/debug/hyundai_enable_radar_points.py
 DBC = {
+  CAR.AZERA_6TH_GEN: dbc_dict('hyundai_kia_generic', None),
   CAR.ELANTRA: dbc_dict('hyundai_kia_generic', None),
   CAR.ELANTRA_2021: dbc_dict('hyundai_kia_generic', None),
   CAR.ELANTRA_HEV_2021: dbc_dict('hyundai_kia_generic', None),
@@ -2069,5 +2070,4 @@ DBC = {
   CAR.KIA_CARNIVAL_4TH_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KIA_SORENTO_HEV_4TH_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KONA_EV_2ND_GEN: dbc_dict('hyundai_canfd', None),
-  CAR.AZERA_6TH_GEN: dbc_dict('hyundai_kia_generic', None),
 }

@@ -64,7 +64,11 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    if candidate in (CAR.SANTA_FE, CAR.SANTA_FE_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022):
+    if candidate == CAR.AZERA_6TH_GEN:
+      ret.mass = 1540.  # average
+      ret.wheelbase = 2.885
+      ret.steerRatio = 14.5
+    elif candidate in (CAR.SANTA_FE, CAR.SANTA_FE_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022):
       ret.mass = 3982. * CV.LB_TO_KG
       ret.wheelbase = 2.766
       # Values from optimizer
@@ -137,10 +141,6 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.000
       # steering ratio according to Hyundai News https://www.hyundainews.com/assets/documents/original/48035-2022SantaCruzProductGuideSpecsv2081521.pdf
       ret.steerRatio = 14.2
-    elif candidate == CAR.AZERA_6TH_GEN:
-      ret.mass = 1540.  # average
-      ret.wheelbase = 2.885
-      ret.steerRatio = 14.5
 
     # Kia
     elif candidate == CAR.KIA_SORENTO:
