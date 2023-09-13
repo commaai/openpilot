@@ -810,7 +810,7 @@ void ChartView::addSeries(QXYSeries *series) {
 void ChartView::setSeriesColor(QXYSeries *series, QColor color) {
   auto existing_series = chart()->series();
   for (auto s : existing_series) {
-    if (s != series && color == qobject_cast<QXYSeries *>(s)->color()) {
+    if (s != series && std::abs(color.hueF() - qobject_cast<QXYSeries *>(s)->color().hueF()) < 0.1) {
       // use different color to distinguish it from others.
       auto last_color = qobject_cast<QXYSeries *>(existing_series.back())->color();
       color.setHsvF(std::fmod(last_color.hueF() + 60 / 360.0, 1.0),
