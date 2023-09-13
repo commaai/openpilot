@@ -1,5 +1,6 @@
 #include <chrono>
 #include <thread>
+#include <iostream>
 
 #include <QDebug>
 #include <QEventLoop>
@@ -110,35 +111,36 @@ void read_segment(int n, const SegmentFile &segment_file, uint32_t flags) {
   loop.exec();
 }
 
+std::string download_demo_route() {
+  static std::string data_dir;
 
-class DemoRouteDownloadFixture {
-  protected:
-    std::string data_dir;
+  if (data_dir == "") {
+    char tmp_path[] = "/tmp/root_XXXXXX";
+    data_dir = mkdtemp(tmp_path);
 
-  public:
-    DemoRouteDownloadFixture() {
-      char tmp_path[] = "/tmp/root_XXXXXX";
-      data_dir = mkdtemp(tmp_path);
+    Route remote_route(DEMO_ROUTE);
+    assert(remote_route.load());
 
-      Route remote_route(DEMO_ROUTE);
-      assert(remote_route.load());
-
-      // Create a local route from remote for testing
-      const std::string route_name = DEMO_ROUTE.mid(17).toStdString();
-      for (int i = 0; i < 2; ++i) {
-        std::string log_path = util::string_format("%s/%s--%d/", data_dir.c_str(), route_name.c_str(), i);
-        util::create_directories(log_path, 0755);
-        REQUIRE(download_to_file(remote_route.at(i).rlog.toStdString(), log_path + "rlog.bz2"));
-        REQUIRE(download_to_file(remote_route.at(i).road_cam.toStdString(), log_path + "fcamera.hevc"));
-        REQUIRE(download_to_file(remote_route.at(i).driver_cam.toStdString(), log_path + "dcamera.hevc"));
-        REQUIRE(download_to_file(remote_route.at(i).wide_road_cam.toStdString(), log_path + "ecamera.hevc"));
-        REQUIRE(download_to_file(remote_route.at(i).qcamera.toStdString(), log_path + "qcamera.ts"));
-      }
+    // Create a local route from remote for testing
+    const std::string route_name = DEMO_ROUTE.mid(17).toStdString();
+    for (int i = 0; i < 2; ++i) {
+      std::string log_path = util::string_format("%s/%s--%d/", data_dir.c_str(), route_name.c_str(), i);
+      util::create_directories(log_path, 0755);
+      REQUIRE(download_to_file(remote_route.at(i).rlog.toStdString(), log_path + "rlog.bz2"));
+      REQUIRE(download_to_file(remote_route.at(i).road_cam.toStdString(), log_path + "fcamera.hevc"));
+      REQUIRE(download_to_file(remote_route.at(i).driver_cam.toStdString(), log_path + "dcamera.hevc"));
+      REQUIRE(download_to_file(remote_route.at(i).wide_road_cam.toStdString(), log_path + "ecamera.hevc"));
+      REQUIRE(download_to_file(remote_route.at(i).qcamera.toStdString(), log_path + "qcamera.ts"));
     }
- };
+  }
+
+  return data_dir;
+}
 
 
-TEST_CASE_METHOD(DemoRouteDownloadFixture, "Route") {
+TEST_CASE("Route") {
+  std::string data_dir = download_demo_route();
+
   SECTION("Local route") {
     auto flags = GENERATE(REPLAY_FLAG_DCAM | REPLAY_FLAG_ECAM, REPLAY_FLAG_QCAMERA);
     Route route(DEMO_ROUTE, QString::fromStdString(data_dir));
