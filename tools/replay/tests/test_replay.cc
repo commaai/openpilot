@@ -113,7 +113,7 @@ void read_segment(int n, const SegmentFile &segment_file, uint32_t flags) {
 
 class DemoRouteDownloadFixture {
   protected:
-    const std::string data_dir;
+    std::string data_dir;
 
   public:
     DemoRouteDownloadFixture() {
@@ -138,7 +138,7 @@ class DemoRouteDownloadFixture {
  };
 
 
-TEST_CASE(DemoRouteDownloadFixture, "Route") {
+TEST_CASE_METHOD(DemoRouteDownloadFixture, "Route") {
   SECTION("Local route") {
     auto flags = GENERATE(REPLAY_FLAG_DCAM | REPLAY_FLAG_ECAM, REPLAY_FLAG_QCAMERA);
     Route route(DEMO_ROUTE, QString::fromStdString(data_dir));
