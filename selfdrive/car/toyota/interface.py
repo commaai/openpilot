@@ -28,6 +28,13 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE
 
     if candidate in ANGLE_CONTROL_CAR:
+      ret.flags |= ToyotaFlags.ANGLE_CONTROL
+      for fw in car_fw:
+        # Check for EPS that accepts LKA (torque) commands
+        if fw.ecu == "eps" and not fw.fwVersion == b'8965B42371\x00\x00\x00\x00\x00\x00':
+          ret.flags &= ~ToyotaFlags.ANGLE_CONTROL
+
+    if ret.flags & ToyotaFlags.ANGLE_CONTROL:
       ret.dashcamOnly = True
       ret.steerControlType = SteerControlType.angle
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
