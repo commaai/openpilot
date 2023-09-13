@@ -87,7 +87,7 @@ public:
   void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const override;
 
-  QValidator *name_validator, *double_validator;
+  QValidator *name_validator, *double_validator, *node_validator;
   QFont label_font, minmax_font;
   const int color_label_width = 18;
   mutable QSize button_size;

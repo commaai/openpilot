@@ -269,6 +269,7 @@ void SignalModel::handleSignalRemoved(const cabana::Signal *sig) {
 
 SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {
   name_validator = new NameValidator(this);
+  node_validator = new QRegExpValidator(QRegExp("^\\w+(,\\w+)*$"), this);
   double_validator = new DoubleValidator(this);
 
   label_font.setPointSize(8);
@@ -389,7 +390,9 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
       item->type == SignalModel::Item::Min || item->type == SignalModel::Item::Max) {
     QLineEdit *e = new QLineEdit(parent);
     e->setFrame(false);
-    e->setValidator(item->type == SignalModel::Item::Name || item->type == SignalModel::Item::Node ? name_validator : double_validator);
+    if (item->type == SignalModel::Item::Name) e->setValidator(name_validator);
+    else if (item->type == SignalModel::Item::Node) e->setValidator(node_validator);
+    else e->setValidator(double_validator);
 
     if (item->type == SignalModel::Item::Name) {
       QCompleter *completer = new QCompleter(dbc()->signalNames());
