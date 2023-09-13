@@ -289,6 +289,7 @@ void ChartsWidget::splitChart(ChartView *src_chart) {
     }
     src_chart->updateAxisY();
     src_chart->updateTitle();
+    QTimer::singleShot(0, src_chart, &ChartView::resetChartCache);
   }
 }
 
