@@ -60,11 +60,12 @@ bool DBCFile::writeContents(const QString &fn) {
   return false;
 }
 
-void DBCFile::updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &comment) {
+void DBCFile::updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &node, const QString &comment) {
   auto &m = msgs[id.address];
   m.address = id.address;
   m.name = name;
   m.size = size;
+  m.transmitter = node;
   m.comment = comment;
 }
 

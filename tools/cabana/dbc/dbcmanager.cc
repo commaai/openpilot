@@ -82,10 +82,10 @@ void DBCManager::removeSignal(const MessageId &id, const QString &sig_name) {
   }
 }
 
-void DBCManager::updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &comment) {
+void DBCManager::updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &node, const QString &comment) {
   auto dbc_file = findDBCFile(id);
   assert(dbc_file);  // This should be impossible
-  dbc_file->updateMsg(id, name, size, comment);
+  dbc_file->updateMsg(id, name, size, node, comment);
   emit msgUpdated(id);
 }
 

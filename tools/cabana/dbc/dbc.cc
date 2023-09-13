@@ -78,6 +78,9 @@ QString cabana::Msg::newSignalName() {
 }
 
 void cabana::Msg::update() {
+  if (transmitter.isEmpty()) {
+    transmitter = "XXX";
+  }
   mask.assign(size, 0x00);
   multiplexor = nullptr;
 
@@ -125,6 +128,9 @@ void cabana::Msg::update() {
 
 void cabana::Signal::update() {
   updateMsbLsb(*this);
+  if (receiver_name.isEmpty()) {
+    receiver_name = "XXX";
+  }
 
   float h = 19 * (float)lsb / 64.0;
   h = fmod(h, 1.0);
