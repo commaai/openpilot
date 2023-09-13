@@ -14,6 +14,7 @@
 #include <QMimeData>
 #include <QOpenGLWidget>
 #include <QPropertyAnimation>
+#include <QRandomGenerator>
 #include <QRubberBand>
 #include <QScreen>
 #include <QtMath>
@@ -151,6 +152,11 @@ void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
 
 void ChartView::signalUpdated(const cabana::Signal *sig) {
   if (std::any_of(sigs.cbegin(), sigs.cend(), [=](auto &s) { return s.sig == sig; })) {
+    for (const auto &s : sigs) {
+      if (s.sig == sig && s.series->color() != sig->color) {
+        setSeriesColor(s.series, sig->color);
+      }
+    }
     updateTitle();
     updateSeries(sig);
   }
@@ -281,7 +287,6 @@ void ChartView::updateSeries(const cabana::Signal *sig, bool clear) {
         s.step_vals.clear();
         s.last_value_mono_time = 0;
       }
-      s.series->setColor(s.sig->color);
 
       const auto &msgs = can->events(s.msg_id);
       s.vals.reserve(msgs.capacity());
@@ -789,6 +794,7 @@ QXYSeries *ChartView::createSeries(SeriesType type, QColor color) {
 }
 
 void ChartView::addSeries(QXYSeries *series) {
+  setSeriesColor(series, series->color());
   chart()->addSeries(series);
   series->attachAxis(axis_x);
   series->attachAxis(axis_y);
@@ -799,6 +805,21 @@ void ChartView::addSeries(QXYSeries *series) {
   if (glwidget && !glwidget->testAttribute(Qt::WA_TransparentForMouseEvents)) {
     glwidget->setAttribute(Qt::WA_TransparentForMouseEvents);
   }
+}
+
+void ChartView::setSeriesColor(QXYSeries *series, QColor color) {
+  auto existing_series = chart()->series();
+  for (auto s : existing_series) {
+    if (s != series && std::abs(color.hueF() - qobject_cast<QXYSeries *>(s)->color().hueF()) < 0.1) {
+      // use different color to distinguish it from others.
+      auto last_color = qobject_cast<QXYSeries *>(existing_series.back())->color();
+      color.setHsvF(std::fmod(last_color.hueF() + 60 / 360.0, 1.0),
+                    QRandomGenerator::global()->bounded(35, 100) / 100.0,
+                    QRandomGenerator::global()->bounded(85, 100) / 100.0);
+      break;
+    }
+  }
+  series->setColor(color);
 }
 
 void ChartView::setSeriesType(SeriesType type) {
