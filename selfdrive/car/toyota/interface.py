@@ -31,7 +31,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerControlType = SteerControlType.angle
       for fw in car_fw:
         # Detect if we can control the car with torque (cars made in Japan)
-        if fw.ecu == "eps" and not fw.fwVersion == b'8965B42371\x00\x00\x00\x00\x00\x00':
+        if fw.ecu == "eps" and fw.fwVersion == b'8965B42371\x00\x00\x00\x00\x00\x00':
           ret.steerControlType = SteerControlType.torque
 
     if ret.steerControlType == SteerControlType.angle:
