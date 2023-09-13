@@ -439,11 +439,11 @@ void MainWindow::saveFile(DBCFile *dbc_file) {
   if (!dbc_file->filename.isEmpty()) {
     dbc_file->save();
     updateLoadSaveMenus();
+    UndoStack::instance()->setClean();
+    statusBar()->showMessage(tr("File saved"), 2000);
   } else if (!dbc_file->isEmpty()) {
     saveFileAs(dbc_file);
   }
-  UndoStack::instance()->setClean();
-  statusBar()->showMessage(tr("File saved"), 2000);
 }
 
 void MainWindow::saveFileAs(DBCFile *dbc_file) {
@@ -451,6 +451,8 @@ void MainWindow::saveFileAs(DBCFile *dbc_file) {
   QString fn = QFileDialog::getSaveFileName(this, title, QDir::cleanPath(settings.last_dir + "/untitled.dbc"), tr("DBC (*.dbc)"));
   if (!fn.isEmpty()) {
     dbc_file->saveAs(fn);
+    UndoStack::instance()->setClean();
+    statusBar()->showMessage(tr("File saved as %1").arg(fn), 2000);
     updateRecentFiles(fn);
     updateLoadSaveMenus();
   }
