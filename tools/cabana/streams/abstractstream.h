@@ -30,7 +30,7 @@ struct CanData {
   std::vector<std::array<uint32_t, 8>> bit_change_counts;
   std::vector<int> last_delta;
   std::vector<int> same_delta_counter;
-  double last_freq_update_ts = seconds_since_boot();
+  double last_freq_update_ts = 0;
 };
 
 struct CanEvent {
