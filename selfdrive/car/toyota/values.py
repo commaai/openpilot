@@ -44,7 +44,6 @@ class ToyotaFlags(IntFlag):
   HYBRID = 1
   SMART_DSU = 2
   DISABLE_RADAR = 4
-  ANGLE_CONTROL = 8
 
 
 class CAR:

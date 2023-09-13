@@ -28,15 +28,14 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE
 
     if candidate in ANGLE_CONTROL_CAR:
-      ret.flags |= ToyotaFlags.ANGLE_CONTROL
+      ret.steerControlType = SteerControlType.angle
       for fw in car_fw:
         # Detect if we can control the car with torque (cars made in Japan)
         if fw.ecu == "eps" and not fw.fwVersion == b'8965B42371\x00\x00\x00\x00\x00\x00':
-          ret.flags &= ~ToyotaFlags.ANGLE_CONTROL
+          ret.steerControlType = SteerControlType.torque
 
-    if ret.flags & ToyotaFlags.ANGLE_CONTROL:
+    if ret.stoppingControl == SteerControlType.angle:
       ret.dashcamOnly = True
-      ret.steerControlType = SteerControlType.angle
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
 
       # LTA control can be more delayed and winds up more often
