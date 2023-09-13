@@ -606,7 +606,13 @@ void MainWindow::closeEvent(QCloseEvent *event) {
     settings.video_splitter_state = video_splitter->saveState();
   }
   settings.message_header_state = messages_widget->saveHeaderState();
-  settings.save();
+
+  auto status = settings.save();
+  if (status == QSettings::AccessError) {
+    QString error = tr("Failed to write settings to [%1]: access denied").arg(Settings::filePath());
+    qDebug() << error;
+    QMessageBox::warning(this, tr("Failed to write settings"), error);
+  }
   QWidget::closeEvent(event);
 }
 
