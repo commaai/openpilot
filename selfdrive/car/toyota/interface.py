@@ -34,7 +34,7 @@ class CarInterface(CarInterfaceBase):
         if fw.ecu == "eps" and not fw.fwVersion == b'8965B42371\x00\x00\x00\x00\x00\x00':
           ret.steerControlType = SteerControlType.torque
 
-    if ret.stoppingControl == SteerControlType.angle:
+    if ret.steerControlType == SteerControlType.angle:
       ret.dashcamOnly = True
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
 
