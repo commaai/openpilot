@@ -89,6 +89,7 @@ private:
   std::tuple<double, double, int> getNiceAxisNumbers(qreal min, qreal max, int tick_count);
   qreal niceNumber(qreal x, bool ceiling);
   QXYSeries *createSeries(SeriesType type, QColor color);
+  void setSeriesColor(QXYSeries *, QColor color);
   void updateSeriesPoints();
   void removeIf(std::function<bool(const SigItem &)> predicate);
   inline void clearTrackPoints() { for (auto &s : sigs) s.track_pt = {}; }

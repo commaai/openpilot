@@ -277,6 +277,10 @@ void ChartsWidget::splitChart(ChartView *src_chart) {
     for (auto it = src_chart->sigs.begin() + 1; it != src_chart->sigs.end(); /**/) {
       auto c = createChart();
       src_chart->chart()->removeSeries(it->series);
+
+      // Restore to the original color
+      it->series->setColor(it->sig->color);
+
       c->addSeries(it->series);
       c->sigs.push_back(*it);
       c->updateAxisY();
