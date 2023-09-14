@@ -125,7 +125,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3585. * CV.LB_TO_KG  # Average between ICE and Hybrid
 
       # Only specific EPS FW accept torque on 2023 RAV4, so they likely are all the same
-      # TODO: revisit this disparity if there is a divide on 2023
+      # TODO: revisit this disparity if there is a divide for 2023
       if candidate not in (CAR.RAV4_TSS2_2023, CAR.RAV4H_TSS2_2023):
         ret.lateralTuning.init('pid')
         ret.lateralTuning.pid.kiBP = [0.0]
