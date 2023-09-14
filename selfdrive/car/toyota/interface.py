@@ -127,21 +127,23 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 14.3
       ret.tireStiffnessFactor = 0.7933
       ret.mass = 3585. * CV.LB_TO_KG  # Average between ICE and Hybrid
-      ret.lateralTuning.init('pid')
-      ret.lateralTuning.pid.kiBP = [0.0]
-      ret.lateralTuning.pid.kpBP = [0.0]
-      ret.lateralTuning.pid.kpV = [0.6]
-      ret.lateralTuning.pid.kiV = [0.1]
-      ret.lateralTuning.pid.kf = 0.00007818594
 
-      # 2019+ RAV4 TSS2 uses two different steering racks and specific tuning seems to be necessary.
-      # See https://github.com/commaai/openpilot/pull/21429#issuecomment-873652891
-      for fw in car_fw:
-        if fw.ecu == "eps" and (fw.fwVersion.startswith(b'\x02') or fw.fwVersion in [b'8965B42181\x00\x00\x00\x00\x00\x00']):
-          ret.lateralTuning.pid.kpV = [0.15]
-          ret.lateralTuning.pid.kiV = [0.05]
-          ret.lateralTuning.pid.kf = 0.00004
-          break
+      if candidate not in (CAR.RAV4_TSS2_2023, CAR.RAV4H_TSS2_2023):
+        ret.lateralTuning.init('pid')
+        ret.lateralTuning.pid.kiBP = [0.0]
+        ret.lateralTuning.pid.kpBP = [0.0]
+        ret.lateralTuning.pid.kpV = [0.6]
+        ret.lateralTuning.pid.kiV = [0.1]
+        ret.lateralTuning.pid.kf = 0.00007818594
+
+        # 2019+ RAV4 TSS2 uses two different steering racks and specific tuning seems to be necessary.
+        # See https://github.com/commaai/openpilot/pull/21429#issuecomment-873652891
+        for fw in car_fw:
+          if fw.ecu == "eps" and (fw.fwVersion.startswith(b'\x02') or fw.fwVersion in [b'8965B42181\x00\x00\x00\x00\x00\x00']):
+            ret.lateralTuning.pid.kpV = [0.15]
+            ret.lateralTuning.pid.kiV = [0.05]
+            ret.lateralTuning.pid.kf = 0.00004
+            break
 
     elif candidate in (CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2):
       ret.wheelbase = 2.67  # Average between 2.70 for sedan and 2.64 for hatchback
