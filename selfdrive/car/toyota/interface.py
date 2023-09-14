@@ -27,7 +27,7 @@ class CarInterface(CarInterfaceBase):
     if DBC[candidate]["pt"] == "toyota_new_mc_pt_generated":
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE
 
-    # Default to angle for these cars with a whitelist for EPSs that accept torque (made in Japan)
+    # Default to angle for angle control cars with a whitelist for EPSs that accept torque (made in Japan)
     # So far only hybrid RAV4 2023 has been seen with this FW version
     angle_car_torque_fw = any(fw.ecu == "eps" and fw.fwVersion == b'8965B42371\x00\x00\x00\x00\x00\x00' for fw in car_fw)
     if candidate not in ANGLE_CONTROL_CAR or (angle_car_torque_fw and candidate == CAR.RAV4H_TSS2_2023):
