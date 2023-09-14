@@ -77,6 +77,9 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
+    - name: test
+      run: |
+        echo "Name: ${{ runner.name }}"
     - name: Setup docker
       if: matrix.arch == 'aarch64'
       run: |
@@ -198,7 +201,6 @@ jobs:
         echo "TARGET_ARCHITECTURE=${{ matrix.arch }}" >> "$GITHUB_ENV"
         $DOCKER_GHCR_LOGIN
         # login only on arm machines, due to buildjet rate limits
-        echo "${{ runner.name }}"
         if [[ "$(uname -m)" == aarch64 ]]; then
           $DOCKER_HUB_LOGIN
         fi
