@@ -339,7 +339,7 @@ class Controls:
           self.events.add(EventName.cameraMalfunction)
         elif not self.sm.all_freq_ok(self.camera_packets):
           self.events.add(EventName.cameraFrameRate)
-    if not REPLAY and self.rk.lagging:
+    if not REPLAY and not SIMULATION and self.rk.lagging:
       self.events.add(EventName.controlsdLagging)
     if len(self.sm['radarState'].radarErrors) or (not self.rk.lagging and not self.sm.all_checks(['radarState'])):
       self.events.add(EventName.radarFault)

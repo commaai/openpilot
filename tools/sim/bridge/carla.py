@@ -67,11 +67,11 @@ class CarlaWorld(World):
     return np.ascontiguousarray(rgb[:, :, [0, 1, 2]])
 
   def cam_callback_road(self, image):
-    with self.world.image_lock:
+    with self.image_lock:
       self.road_image = self.carla_image_to_rgb(image)
 
   def cam_callback_wide_road(self, image):
-    with self.world.image_lock:
+    with self.image_lock:
       self.wide_road_image = self.carla_image_to_rgb(image)
 
   def apply_controls(self, steer_angle, throttle_out, brake_out):

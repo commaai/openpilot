@@ -56,6 +56,7 @@ class SimulatorState:
   def speed(self):
     return math.sqrt(self.velocity.x ** 2 + self.velocity.y ** 2 + self.velocity.z ** 2)
 
+
 class World(ABC):
   def __init__(self, dual_camera):
     self.dual_camera = dual_camera
