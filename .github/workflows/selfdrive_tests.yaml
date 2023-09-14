@@ -264,6 +264,7 @@ jobs:
       run: |
         ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
                         $PYTEST -n auto --dist=loadscope --timeout 30 -o cpp_files=test_* && \
+                        ./selfdrive/locationd/test/test_locationd_scenarios.py && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         ./selfdrive/ui/tests/test_translations.py && \
