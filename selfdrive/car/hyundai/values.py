@@ -105,6 +105,7 @@ class CAR:
   KIA_FORTE = "KIA FORTE E 2018 & GT 2021"
   KIA_K5_2021 = "KIA K5 2021"
   KIA_K5_HEV_2020 = "KIA K5 HYBRID 2020"
+  KIA_K8_HEV_1ST_GEN = "KIA K8 HYBRID 1ST GEN"
   KIA_NIRO_EV = "KIA NIRO EV 2020"
   KIA_NIRO_EV_2ND_GEN = "KIA NIRO EV 2ND GEN"
   KIA_NIRO_PHEV = "KIA NIRO HYBRID 2019"
@@ -219,6 +220,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.KIA_K5_2021: HyundaiCarInfo("Kia K5 2021-22", car_parts=CarParts.common([CarHarness.hyundai_a])),
   CAR.KIA_K5_HEV_2020: HyundaiCarInfo("Kia K5 Hybrid 2020", car_parts=CarParts.common([CarHarness.hyundai_a])),
+  CAR.KIA_K8_HEV_1ST_GEN: HyundaiCarInfo("Kia K8 Hybrid (with HDA II) 2023", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_q])),
   CAR.KIA_NIRO_EV: [
     HyundaiCarInfo("Kia Niro EV 2019", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", car_parts=CarParts.common([CarHarness.hyundai_h])),
     HyundaiCarInfo("Kia Niro EV 2020", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", car_parts=CarParts.common([CarHarness.hyundai_f])),
@@ -1959,6 +1961,14 @@ FW_VERSIONS = {
       b'\xf1\x00MQhe SCC FHCUP      1.00 1.07 99110-P4000         ',
     ],
   },
+  CAR.KIA_K8_HEV_1ST_GEN: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00GL3HMFC  AT KOR LHD 1.00 1.03 99211-L8000 210907',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00GL3_ RDR -----      1.00 1.02 99110-L8000         ',
+    ],
+  },
 }
 
 CHECKSUM = {
@@ -1980,7 +1990,7 @@ CAN_GEARS = {
 CANFD_CAR = {CAR.KIA_EV6, CAR.IONIQ_5, CAR.IONIQ_6, CAR.TUCSON_4TH_GEN, CAR.TUCSON_HYBRID_4TH_GEN, CAR.KIA_SPORTAGE_HYBRID_5TH_GEN,
              CAR.SANTA_CRUZ_1ST_GEN, CAR.KIA_SPORTAGE_5TH_GEN, CAR.GENESIS_GV70_1ST_GEN, CAR.KIA_SORENTO_PHEV_4TH_GEN,
              CAR.GENESIS_GV60_EV_1ST_GEN, CAR.KIA_SORENTO_4TH_GEN, CAR.KIA_NIRO_HEV_2ND_GEN, CAR.KIA_NIRO_EV_2ND_GEN,
-             CAR.GENESIS_GV80, CAR.KIA_CARNIVAL_4TH_GEN, CAR.KIA_SORENTO_HEV_4TH_GEN, CAR.KONA_EV_2ND_GEN}
+             CAR.GENESIS_GV80, CAR.KIA_CARNIVAL_4TH_GEN, CAR.KIA_SORENTO_HEV_4TH_GEN, CAR.KONA_EV_2ND_GEN, CAR.KIA_K8_HEV_1ST_GEN}
 
 # The radar does SCC on these cars when HDA I, rather than the camera
 CANFD_RADAR_SCC_CAR = {CAR.GENESIS_GV70_1ST_GEN, CAR.KIA_SORENTO_PHEV_4TH_GEN, CAR.KIA_SORENTO_4TH_GEN, CAR.GENESIS_GV80,
@@ -1993,7 +2003,7 @@ CAMERA_SCC_CAR = {CAR.KONA_EV_2022, }
 HYBRID_CAR = {CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.KIA_NIRO_PHEV, CAR.KIA_NIRO_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.IONIQ,
               CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.IONIQ_PHEV_2019, CAR.TUCSON_HYBRID_4TH_GEN,
               CAR.KIA_SPORTAGE_HYBRID_5TH_GEN, CAR.KIA_SORENTO_PHEV_4TH_GEN, CAR.KIA_K5_HEV_2020, CAR.KIA_NIRO_HEV_2ND_GEN,
-              CAR.KIA_SORENTO_HEV_4TH_GEN, CAR.KIA_OPTIMA_H}
+              CAR.KIA_SORENTO_HEV_4TH_GEN, CAR.KIA_OPTIMA_H, CAR.KIA_K8_HEV_1ST_GEN}
 
 EV_CAR = {CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV, CAR.KIA_NIRO_EV_2ND_GEN, CAR.KONA_EV_2022,
           CAR.KIA_EV6, CAR.IONIQ_5, CAR.IONIQ_6, CAR.GENESIS_GV60_EV_1ST_GEN, CAR.KONA_EV_2ND_GEN}
@@ -2070,4 +2080,5 @@ DBC = {
   CAR.KIA_CARNIVAL_4TH_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KIA_SORENTO_HEV_4TH_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KONA_EV_2ND_GEN: dbc_dict('hyundai_canfd', None),
+  CAR.KIA_K8_HEV_1ST_GEN: dbc_dict('hyundai_canfd', None),
 }
