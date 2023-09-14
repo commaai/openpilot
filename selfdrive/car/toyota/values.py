@@ -109,7 +109,7 @@ class Footnote(Enum):
     "openpilot operates above 28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control.",
     Column.FSR_LONGITUDINAL)
   RAV4_2023 = CarFootnote(
-    "Refers to cars manufactured in Japan with VINs starting with J. U.S. and Canada-built RAV4 are currently not supported. " +
+    "Refers to cars manufactured in Japan that have VINs starting with J. U.S. and Canada-built RAV4 are currently not supported. " +
     "Support for these cars will come in a future software update.",
     Column.MODEL)
 
