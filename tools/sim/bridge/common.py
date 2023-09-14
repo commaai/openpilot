@@ -3,10 +3,10 @@ import threading
 
 from multiprocessing import Process, Queue
 from abc import ABC, abstractmethod
+from typing import Optional
 
 import cereal.messaging as messaging
 from openpilot.common.params import Params
-
 from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import Ratekeeper
 from openpilot.selfdrive.test.helpers import set_params_enabled
@@ -39,6 +39,8 @@ class SimulatorBridge(ABC):
     self._exit = threading.Event()
     self.simulator_state = SimulatorState()
 
+    self.world: Optional[World] = None
+
   def _on_shutdown(self, signal, frame):
     self._keep_alive = False
 
@@ -51,6 +53,9 @@ class SimulatorBridge(ABC):
   def close(self):
     self.started = False
     self._exit_event.set()
+
+    if self.world is not None:
+      self.world.close()
 
   def run(self, queue, retries=-1):
     bridge_p = Process(target=self.bridge_keep_alive, args=(queue, retries), daemon=True)

@@ -80,3 +80,7 @@ class World(ABC):
   @abstractmethod
   def read_cameras(self):
     pass
+
+  @abstractmethod
+  def close(self):
+    pass

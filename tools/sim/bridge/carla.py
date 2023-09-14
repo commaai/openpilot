@@ -1,4 +1,5 @@
 import numpy as np
+
 from openpilot.common.params import Params
 from openpilot.tools.sim.lib.common import SimulatorState, vec3
 from openpilot.tools.sim.bridge.common import World, SimulatorBridge
@@ -123,17 +124,13 @@ class CarlaBridge(SimulatorBridge):
     self.num_selected_spawn_point = arguments.num_selected_spawn_point
 
   def spawn_world(self):
-    import carla  # pylint: disable=import-error
-    def connect_carla_client(host: str, port: int):
-      client = carla.Client(host, port)
-      client.set_timeout(5)
-      return client
+    import carla
+    client = carla.Client(self.host, self.port)
+    client.set_timeout(5)
 
-    client = connect_carla_client(self.host, self.port)
     world = client.load_world(self.town)
 
     settings = world.get_settings()
-    #settings.synchronous_mode = True  # Enables synchronous mode
     settings.fixed_delta_seconds = 0.01
     world.apply_settings(settings)
 
@@ -166,6 +163,3 @@ class CarlaBridge(SimulatorBridge):
     vehicle.apply_physics_control(physics_control)
 
     return CarlaWorld(world, vehicle, dual_camera=self.dual_camera)
-
-  def close(self):
-    super().close()
