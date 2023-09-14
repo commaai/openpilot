@@ -28,9 +28,9 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE
 
     if candidate in ANGLE_CONTROL_CAR:
+      # Default to angle for these cars with a whitelist for EPSs that accept torque (made in Japan)
       ret.steerControlType = SteerControlType.angle
       for fw in car_fw:
-        # Detect if we can control the car with torque (cars made in Japan)
         if fw.ecu == "eps" and fw.fwVersion == b'8965B42371\x00\x00\x00\x00\x00\x00':
           ret.steerControlType = SteerControlType.torque
 
