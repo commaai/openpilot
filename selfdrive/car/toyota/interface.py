@@ -27,7 +27,7 @@ class CarInterface(CarInterfaceBase):
     if DBC[candidate]["pt"] == "toyota_new_mc_pt_generated":
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE
 
-    # Default to angle for these cars with a whitelist for EPSs that accept torque (made in Japan)
+    # Default to angle control with a whitelist for EPSs that accept torque (made in Japan)
     if candidate in ANGLE_CONTROL_CAR and not any(fw.ecu == "eps" and fw.fwVersion ==
                                                   b'8965B42371\x00\x00\x00\x00\x00\x00' for fw in car_fw):
       ret.dashcamOnly = True
