@@ -65,7 +65,7 @@ void DBCFile::updateMsg(const MessageId &id, const QString &name, uint32_t size,
   m.address = id.address;
   m.name = name;
   m.size = size;
-  m.transmitter = node;
+  m.transmitter = node.isEmpty() ? "XXX" : node;
   m.comment = comment;
 }
 
