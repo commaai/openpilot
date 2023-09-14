@@ -1,5 +1,7 @@
 import signal
 import threading
+import time
+import functools
 
 from multiprocessing import Process, Queue
 from abc import ABC, abstractmethod
@@ -14,6 +16,12 @@ from openpilot.selfdrive.car.honda.values import CruiseButtons
 from openpilot.tools.sim.lib.common import SimulatorState, World
 from openpilot.tools.sim.lib.simulated_car import SimulatedCar
 from openpilot.tools.sim.lib.simulated_sensors import SimulatedSensors
+
+
+def loop(function, dt):
+  while True:
+    function()
+    time.sleep(dt)
 
 
 class SimulatorBridge(ABC):
@@ -67,15 +75,19 @@ class SimulatorBridge(ABC):
     pass
 
   def _run(self, q: Queue):
-    self.world = world = self.spawn_world()
+    self.world = self.spawn_world()
+
     self.simulated_car = SimulatedCar()
     self.simulated_sensors = SimulatedSensors(self.dual_camera)
+
+    self.simulated_car_thread = threading.Thread(target=loop, args=(functools.partial(self.simulated_car.update, self.simulator_state), 0.01))
+    self.simulated_car_thread.start()
 
     rk = Ratekeeper(100, print_delay_threshold=None)
 
     # Simulation tends to be slow in the initial steps. This prevents lagging later
     for _ in range(20):
-      world.tick()
+      self.world.tick()
 
     throttle_manual = steer_manual = brake_manual = 0.
 
@@ -121,7 +133,6 @@ class SimulatorBridge(ABC):
 
       steer_manual = steer_manual * -40
 
-      self.simulated_car.update(self.simulator_state)
       self.simulated_sensors.update(self.simulator_state, self.world)
 
       is_openpilot_engaged = self.simulated_car.sm['controlsState'].active
@@ -135,11 +146,11 @@ class SimulatorBridge(ABC):
       brake_out = brake_op if is_openpilot_engaged else brake_manual
       steer_out = steer_op if is_openpilot_engaged else steer_manual
 
-      world.apply_controls(steer_out, throttle_out, brake_out)
-      world.read_sensors(self.simulator_state)
+      self.world.apply_controls(steer_out, throttle_out, brake_out)
+      self.world.read_sensors(self.simulator_state)
 
       if rk.frame % self.TICKS_PER_FRAME == 0:
-        world.read_cameras()
-        world.tick()
+        self.world.read_cameras()
+        self.world.tick()
 
       self.started = True

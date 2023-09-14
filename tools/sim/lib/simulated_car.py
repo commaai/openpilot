@@ -103,10 +103,9 @@ class SimulatedCar:
     self.pm.send('pandaStates', dat)
 
   def update(self, simulator_state: SimulatorState):
-    for _ in range(2):
-      self.send_can_messages(simulator_state)
-      self.send_panda_state(simulator_state)
+    self.send_can_messages(simulator_state)
+    self.send_panda_state(simulator_state)
 
-      self.idx += 1
+    self.idx += 1
 
     self.sm.update(0)
