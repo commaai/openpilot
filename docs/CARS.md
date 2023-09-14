@@ -281,7 +281,7 @@ A supported vehicle is one that just works when you install a comma device. All 
 <sup>6</sup>Requires a comma 3X or <a href="https://comma.ai/shop/can-fd-panda-kit" target="_blank">CAN FD panda kit</a> for this <a href="https://en.wikipedia.org/wiki/CAN_FD" target="_blank">CAN FD car</a>. <br />
 <sup>7</sup>In the non-US market, openpilot requires the car to come equipped with EyeSight with Lane Keep Assistance. <br />
 <sup>8</sup>openpilot operates above 28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control. <br />
-<sup>9</sup>Refers to cars manufactured in Japan which support torque commands. The VIN should start with J. <br />
+<sup>9</sup>Refers to cars manufactured in Japan. The VIN should start with J. U.S. and Canada-built RAV4 are currently not supported. Support for these cars will come in a future software update. <br />
 <sup>10</sup>Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform. <br />
 <sup>11</sup>Refers only to the MQB-based European B8 Passat, not the NMS Passat in the USA/China/Mideast markets. <br />
 <sup>12</sup>Some Škoda vehicles are equipped with heated windshields, which are known to block GPS signal needed for some comma three functionality. <br />
