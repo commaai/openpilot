@@ -27,25 +27,21 @@ class CarInterface(CarInterfaceBase):
     if DBC[candidate]["pt"] == "toyota_new_mc_pt_generated":
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE
 
-    if candidate in ANGLE_CONTROL_CAR:
-      # Default to angle for these cars with a whitelist for EPSs that accept torque (made in Japan)
-      ret.steerControlType = SteerControlType.angle
-      for fw in car_fw:
-        if fw.ecu == "eps" and fw.fwVersion == b'8965B42371\x00\x00\x00\x00\x00\x00':
-          ret.steerControlType = SteerControlType.torque
+    # Default to angle for these cars with a whitelist for EPSs that accept torque (made in Japan)
+    if candidate not in ANGLE_CONTROL_CAR or any(fw.ecu == "eps" and fw.fwVersion ==
+                                                 b'8965B42371\x00\x00\x00\x00\x00\x00' for fw in car_fw):
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    if ret.steerControlType == SteerControlType.angle:
+      ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
+      ret.steerLimitTimer = 0.4
+    else:
       ret.dashcamOnly = True
+      ret.steerControlType = SteerControlType.angle
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
 
       # LTA control can be more delayed and winds up more often
       ret.steerActuatorDelay = 0.25
       ret.steerLimitTimer = 0.8
-    else:
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-
-      ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
-      ret.steerLimitTimer = 0.4
 
     ret.stoppingControl = False  # Toyota starts braking more when it thinks you want to stop
 
