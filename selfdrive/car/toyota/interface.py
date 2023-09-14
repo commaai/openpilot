@@ -124,7 +124,7 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.7933
       ret.mass = 3585. * CV.LB_TO_KG  # Average between ICE and Hybrid
 
-      # Only specific EPS FW support torque on 2023 RAV4, so they likely are all the same
+      # Only specific EPS FW accept torque on 2023 RAV4, so they likely are all the same
       # TODO: revisit this disparity if there is a divide on 2023
       if candidate not in (CAR.RAV4_TSS2_2023, CAR.RAV4H_TSS2_2023):
         ret.lateralTuning.init('pid')
