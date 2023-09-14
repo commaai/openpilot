@@ -27,18 +27,12 @@ class CarInterface(CarInterfaceBase):
     if DBC[candidate]["pt"] == "toyota_new_mc_pt_generated":
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE
 
-    if candidate in ANGLE_CONTROL_CAR:
-      # Default to angle for these cars with a whitelist for EPSs that accept torque (made in Japan)
-      # So far no ICE RAV4 2023 has been seen with this FW version
-      torque_fw = any(fw.ecu == "eps" and fw.fwVersion == b'8965B42371\x00\x00\x00\x00\x00\x00' for fw in car_fw)
-      if torque_fw and candidate in {CAR.RAV4H_TSS2_2023}:
-        ret.steerControlType = SteerControlType.torque
-      else:
-        ret.steerControlType = SteerControlType.angle
-
-    # Default to angle control with a whitelist for EPSs that accept torque (made in Japan)
-    if ret.steerControlType == SteerControlType.angle:
+    # Default to angle for these cars with a whitelist for EPSs that accept torque (made in Japan)
+    # So far no ICE RAV4 2023 has been seen with this FW version
+    torque_fw = any(fw.ecu == "eps" and fw.fwVersion == b'8965B42371\x00\x00\x00\x00\x00\x00' for fw in car_fw)
+    if candidate in ANGLE_CONTROL_CAR and (not torque_fw or candidate != CAR.RAV4H_TSS2_2023):
       ret.dashcamOnly = True
+      ret.steerControlType = SteerControlType.angle
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
 
       # LTA control can be more delayed and winds up more often
