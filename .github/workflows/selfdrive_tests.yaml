@@ -198,6 +198,7 @@ jobs:
         echo "TARGET_ARCHITECTURE=${{ matrix.arch }}" >> "$GITHUB_ENV"
         $DOCKER_GHCR_LOGIN
         # login only on arm machines, due to buildjet rate limits
+        echo "${{ runner.name }}"
         if [[ "$(uname -m)" == aarch64 ]]; then
           $DOCKER_HUB_LOGIN
         fi
