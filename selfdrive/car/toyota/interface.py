@@ -28,7 +28,7 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE
 
     # Default to angle for these cars with a whitelist for EPSs that accept torque (made in Japan)
-    # So far no ICE RAV4 2023 has been seen with this FW version
+    # So far only hybrid RAV4 2023 has been seen with this FW version
     angle_car_torque_fw = any(fw.ecu == "eps" and fw.fwVersion == b'8965B42371\x00\x00\x00\x00\x00\x00' for fw in car_fw)
     if candidate in ANGLE_CONTROL_CAR and (not angle_car_torque_fw or candidate != CAR.RAV4H_TSS2_2023):
       ret.dashcamOnly = True
