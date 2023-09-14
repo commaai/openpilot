@@ -396,7 +396,6 @@ FW_VERSIONS = {
   },
   CAR.CRAFTER_MK2: {
     (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x8704L906056BP',
       b'\xf1\x8704L906056BP\xf1\x894729',
       b'\xf1\x8704L906056EK\xf1\x896391',
       b'\xf1\x8705L906023BC\xf1\x892688',
