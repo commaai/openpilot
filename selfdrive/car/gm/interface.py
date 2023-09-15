@@ -255,7 +255,7 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.5
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-      ret.tire_stiffness_factor = 1.0
+      ret.tireStiffnessFactor = 1.0
 
     return ret
 
