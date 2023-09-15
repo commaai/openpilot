@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import time
 import unittest
 import numpy as np
 import random
@@ -27,7 +26,6 @@ class TestModeld(unittest.TestCase):
     self.pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'liveCalibration', 'lateralPlan'])
 
     managed_processes['modeld'].start()
-    time.sleep(3)
 
   def tearDown(self):
     managed_processes['modeld'].stop()
