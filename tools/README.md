@@ -4,7 +4,7 @@
 
 openpilot is developed and tested on **Ubuntu 20.04**, which is the primary development target aside from the [supported embedded hardware](https://github.com/commaai/openpilot#running-on-a-dedicated-device-in-a-car).
 
-Running natively on any other system is not reccomended, and will require modifications. On windows you can use WSL, on macOS or incompatible linux systems it is recomended to use the devcontainers.
+Running natively on any other system is not recommended, and will require modifications. On windows you can use WSL, on macOS or incompatible linux systems it is recommended to use the devcontainers.
 
 ## Native setup on Ubuntu 20.04
 
@@ -36,11 +36,11 @@ Build openpilot with this command:
 scons -u -j$(nproc)
 ```
 
-## Dev Container on any linux or maxOS
+## Dev Container on any linux or macOS
 
 openpilot supports [Dev Containers](https://containers.dev/). Dev containers provide customizable and consistent development environment wrapped inside a container. This means you can develop in a designated environment matching our primary development target, regardless of your local setup.
 
-Dev containers are supported in [multiple editors and IDEs](https://containers.dev/supporting), including [Visual Studio Code](https://code.visualstudio.com/docs/devcontainers/containers).
+Dev containers are supported in [multiple editors and IDEs](https://containers.dev/supporting), including Visual Studio Code. Use the following [guide](https://code.visualstudio.com/docs/devcontainers/containers) to start using them with VSCode.
 
 #### X11 forwarding on macOS
 
