@@ -6,7 +6,7 @@ import random
 import traceback
 from tqdm import tqdm
 
-from openpilot.selfdrive.test.process_replay.helpers import OpenpilotPrefix
+from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.test.process_replay.regen import regen_and_save
 from openpilot.selfdrive.test.process_replay.test_processes import FAKEDATA, source_segments as segments
 from openpilot.tools.lib.route import SegmentName

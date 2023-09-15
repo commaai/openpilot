@@ -6,8 +6,7 @@
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 
-// demo route, first segment
-const std::string TEST_RLOG_URL = "https://commadata2.blob.core.windows.net/commadata2/a2a0ccea32023010/2023-07-27--13-01-19/0/rlog.bz2";
+const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
 
 TEST_CASE("DBCFile::generateDBC") {
   QString fn = QString("%1/%2.dbc").arg(OPENDBC_FILE_PATH, "tesla_can");

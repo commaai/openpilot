@@ -68,7 +68,7 @@ void PairingQRWidget::paintEvent(QPaintEvent *e) {
 }
 
 
-PairingPopup::PairingPopup(QWidget *parent) : QDialogBase(parent) {
+PairingPopup::PairingPopup(QWidget *parent) : DialogBase(parent) {
   QHBoxLayout *hlayout = new QHBoxLayout(this);
   hlayout->setContentsMargins(0, 0, 0, 0);
   hlayout->setSpacing(0);

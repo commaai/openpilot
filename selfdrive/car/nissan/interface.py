@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
 from cereal import car
+from panda import Panda
 from openpilot.selfdrive.car import get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.car.nissan.values import CAR
@@ -31,7 +31,7 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.44
     elif candidate == CAR.ALTIMA:
       # Altima has EPS on C-CAN unlike the others that have it on V-CAN
-      ret.safetyConfigs[0].safetyParam = 1 # EPS is on alternate bus
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_NISSAN_ALT_EPS_BUS
       ret.mass = 1492
       ret.wheelbase = 2.824
       ret.centerToFront = ret.wheelbase * 0.44

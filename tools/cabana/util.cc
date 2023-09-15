@@ -1,7 +1,6 @@
 #include "tools/cabana/util.h"
 
 #include <algorithm>
-#include <array>
 #include <csignal>
 #include <limits>
 #include <memory>
@@ -56,6 +55,10 @@ std::pair<double, double> SegmentTree::get_minmax(int n, int left, int right, in
 MessageBytesDelegate::MessageBytesDelegate(QObject *parent, bool multiple_lines) : multiple_lines(multiple_lines), QStyledItemDelegate(parent) {
   fixed_font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
   byte_size = QFontMetrics(fixed_font).size(Qt::TextSingleLine, "00 ") + QSize(0, 2);
+  for (int i = 0; i < 256; ++i) {
+    hex_text_table[i].setText(QStringLiteral("%1").arg(i, 2, 16, QLatin1Char('0')).toUpper());
+    hex_text_table[i].prepare({}, fixed_font);
+  }
 }
 
 int MessageBytesDelegate::widthForBytes(int n) const {
@@ -107,7 +110,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
     } else if (option.state & QStyle::State_Selected) {
       painter->setPen(option.palette.color(QPalette::HighlightedText));
     }
-    painter->drawText(r, Qt::AlignCenter, toHex(byte_list[i]));
+    utils::drawStaticText(painter, r, hex_text_table[(uint8_t)(byte_list[i])]);
   }
   painter->setFont(old_font);
   painter->setPen(old_pen);

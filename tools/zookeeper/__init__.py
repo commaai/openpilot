@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import ft4222
 import ft4222.I2CMaster
 
