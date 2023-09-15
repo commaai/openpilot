@@ -364,6 +364,7 @@ class TestCarModelBase(unittest.TestCase):
       else:
         # Check for enable events on rising edge of controls allowed
         controlsd.update_events(CS)
+        controlsd.CS_prev = CS
         button_enable = (any(evt.enable for evt in CS.events) and
                          not any(evt == EventName.pedalPressed for evt in controlsd.events.names))
         mismatch = button_enable != (self.safety.get_controls_allowed() and not controls_allowed_prev)
