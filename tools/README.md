@@ -2,9 +2,11 @@
 
 ## System Requirements
 
-openpilot is developed and tested on **Ubuntu 20.04**, which is the primary development target aside from the [supported embedded hardware](https://github.com/commaai/openpilot#running-on-a-dedicated-device-in-a-car). We also have a CI test to verify that openpilot builds on macOS, but the tools are untested. For the best experience, stick to Ubuntu 20.04, otherwise openpilot and the tools should work with minimal to no modifications on macOS and other Linux systems.
+openpilot is developed and tested on **Ubuntu 20.04**, which is the primary development target aside from the [supported embedded hardware](https://github.com/commaai/openpilot#running-on-a-dedicated-device-in-a-car).
 
-## Setup your PC
+Running natively on any other system is not reccomended, and will require modifications. On windows you can use WSL, on macOS or incompatible linux systems it is recomended to use the devcontainers.
+
+## Native setup on Ubuntu 20.04
 
 First, clone openpilot:
 ``` bash
@@ -23,10 +25,6 @@ Then, run the setup script:
 # for Ubuntu 20.04 LTS
 tools/ubuntu_setup.sh
 
-# for macOS
-tools/mac_setup.sh
-```
-
 Activate a shell with the Python dependencies installed:
 
 ``` bash
@@ -38,7 +36,7 @@ Build openpilot with this command:
 scons -u -j$(nproc)
 ```
 
-### Dev Container
+## Dev Container on any linux or maxOS
 
 openpilot supports [Dev Containers](https://containers.dev/). Dev containers provide customizable and consistent development environment wrapped inside a container. This means you can develop in a designated environment matching our primary development target, regardless of your local setup.
 
@@ -48,7 +46,7 @@ Dev containers are supported in [multiple editors and IDEs](https://containers.d
 
 GUI apps like `ui` or `cabana` can also run inside the container by leveraging X11 forwarding. To make use of it on macOS, additional configuration steps must be taken. Follow [these](https://gist.github.com/sorny/969fe55d85c9b0035b0109a31cbcb088) steps to setup X11 forwarding on macOS.
 
-### Windows
+## WSL on Windows
 
 Neither openpilot nor any of the tools are developed or tested on Windows, but the [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about) should provide a similar experience to native Ubuntu. [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/compare-versions) specifically has been reported by several users to be a seamless experience.
 
