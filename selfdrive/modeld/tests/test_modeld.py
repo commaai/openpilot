@@ -27,8 +27,7 @@ class TestModeld(unittest.TestCase):
     self.pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'liveCalibration', 'lateralPlan'])
 
     managed_processes['modeld'].start()
-    time.sleep(0.2)
-    self.sm.update(1000)
+    time.sleep(3)
 
   def tearDown(self):
     managed_processes['modeld'].stop()
