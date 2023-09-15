@@ -73,9 +73,9 @@ size_t AbstractStream::suppressHighlighted() {
       const double dt = cur_ts - last_change.ts;
       if (dt < 2.0) {
         last_change.suppressed = true;
-        // clear bit change counts
-        last_change.bit_change_counts.fill(0);
       }
+      // clear bit change counts
+      last_change.bit_change_counts.fill(0);
       cnt += last_change.suppressed;
     }
   }
