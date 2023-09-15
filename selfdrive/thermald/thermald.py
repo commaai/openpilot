@@ -213,7 +213,7 @@ def thermald_thread(end_event, hw_queue) -> None:
     sm.update(PANDA_STATES_TIMEOUT)
 
     # Run at 2Hz
-    if sm.frame % round(PANDA_STATES_FREQUENCY / 2) != 0:
+    if sm.frame % round(PANDA_STATES_FREQUENCY * DT_TRML) != 0:
       continue
 
     pandaStates = sm['pandaStates']
