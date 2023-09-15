@@ -3804,18 +3804,22 @@ testing = ["fields", "hunter", "process-tests", "pytest-xdist", "six", "virtuale
 
 [[package]]
 name = "pytest-cpp"
-version = "2.4.0"
+version = "2.4.1.dev6+g18d7959"
 description = "Use pytest's runner to discover and execute C++ tests"
 optional = false
 python-versions = ">=3.7"
-files = [
-    {file = "pytest-cpp-2.4.0.tar.gz", hash = "sha256:dcb8b09d4c714fc7f778dc40a7c2c47e73cc50280d7f9bba3bdd3ca98abd4685"},
-    {file = "pytest_cpp-2.4.0-py3-none-any.whl", hash = "sha256:e7c5f40b70b00cc09d672a1584e35beb9b9553512cdd4b1d1f99468747b3bc31"},
-]
+files = []
+develop = false
 
 [package.dependencies]
 colorama = "*"
 pytest = ">=7.0"
+
+[package.source]
+type = "git"
+url = "https://github.com/pytest-dev/pytest-cpp.git"
+reference = "catch2-handle-exceptions"
+resolved_reference = "18d795979d2da7f9b3f82aaf350caeab43c1459a"
 
 [[package]]
 name = "pytest-subtests"
@@ -5081,4 +5085,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "6c93bf910082c9de645e00f036ebbce8cb1e658fb0b74f435ec3120e17acacca"
+content-hash = "1fccf2c257433ee0378791d215b58c7ec461e2dafba2b8d11b274bfd2ad7d9d4"

@@ -146,7 +146,7 @@ pygame = "*"
 pyprof2calltree = "*"
 pytest = "*"
 pytest-cov = "*"
-pytest-cpp = "*"
+pytest-cpp = { git = "https://github.com/pytest-dev/pytest-cpp.git", branch = "catch2-handle-exceptions" }
 pytest-subtests = "*"
 pytest-xdist = "*"
 pytest-timeout = "*"
