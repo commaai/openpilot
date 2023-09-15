@@ -26,11 +26,16 @@ struct CanData {
   double freq = 0;
   QByteArray dat;
   QVector<QColor> colors;
-  std::vector<double> last_change_t;
-  std::vector<std::array<uint32_t, 8>> bit_change_counts;
-  std::vector<int> last_delta;
-  std::vector<int> same_delta_counter;
-  std::vector<bool> suppressed_bytes;
+
+  struct ByteLastChange {
+    double ts;
+    int delta;
+    int same_delta_counter;
+    bool suppressed;
+    std::array<uint32_t, 8> bit_change_counts;
+  };
+
+  std::vector<ByteLastChange> last_changes;
   double last_freq_update_ts = 0;
 };
 

@@ -51,12 +51,12 @@ void AbstractStream::updateMasks() {
   // clear bit change counts
   for (const auto &[id, mask] : masks) {
     if (auto it = all_msgs.find(id); it != all_msgs.end()) {
-      auto &bit_change_counts = it.value().bit_change_counts;
-      int size = std::min(mask.size(), bit_change_counts.size());
+      auto &last_changes = it.value().last_changes;
+      int size = std::min(mask.size(), last_changes.size());
       for (int i = 0; i < size; ++i) {
         for (int j = 0; j < 8; ++j) {
           if (((mask[i] >> (7 - j)) & 1) != 0) {
-            bit_change_counts[i][j] = 0;
+            last_changes[i].bit_change_counts[j] = 0;
           }
         }
       }
@@ -70,13 +70,13 @@ size_t AbstractStream::suppressHighlighted() {
   const double cur_ts = currentSec();
   for (auto &m : all_msgs) {
     for (int i = 0; i < m.dat.size(); ++i) {
-      const double dt = cur_ts - m.last_change_t[i];
+      const double dt = cur_ts - m.last_changes[i].ts;
       if (dt < 2.0) {
-        m.suppressed_bytes[i] = true;
+        m.last_changes[i].suppressed = true;
         // clear bit change counts
-        std::fill(m.bit_change_counts[i].begin(), m.bit_change_counts[i].end(), 0);
+        m.last_changes[i].bit_change_counts.fill(0);
       }
-      cnt += m.suppressed_bytes[i];
+      cnt += m.last_changes[i].suppressed;
     }
   }
   return cnt;
@@ -85,7 +85,9 @@ size_t AbstractStream::suppressHighlighted() {
 void AbstractStream::clearSuppressed() {
   std::lock_guard lk(suppress_mutex);
   for (auto &m : all_msgs) {
-    std::fill(m.suppressed_bytes.begin(), m.suppressed_bytes.end(), false);
+    for (auto &c : m.last_changes) {
+      c.suppressed = 0;
+    }
   }
 }
 
@@ -263,12 +265,11 @@ void CanData::compute(const MessageId &msg_id, const char *can_data, const int s
 
   if (dat.size() != size) {
     dat.resize(size);
-    bit_change_counts.resize(size);
     colors = QVector(size, QColor(0, 0, 0, 0));
-    last_change_t.assign(size, ts);
-    last_delta.resize(size);
-    same_delta_counter.resize(size);
-    suppressed_bytes.resize(size);
+    last_changes.resize(size);
+    for (auto &c : last_changes) {
+      c.ts = ts;
+    }
   } else {
     bool lighter = settings.theme == DARK_THEME;
     const QColor &cyan = !lighter ? CYAN : CYAN_LIGHTER;
@@ -276,9 +277,11 @@ void CanData::compute(const MessageId &msg_id, const char *can_data, const int s
     const QColor &greyish_blue = !lighter ? GREYISH_BLUE : GREYISH_BLUE_LIGHTER;
 
     for (int i = 0; i < size; ++i) {
+      auto &last_change = last_changes[i];
+
       uint8_t mask_byte = 0xff;
-      if (suppressed_bytes[i]) {
-        mask_byte = 0;
+      if (last_change.suppressed) {
+        mask_byte = 0x00;
       } else if (mask && i < mask->size()) {
         mask_byte = (~((*mask)[i]));
       }
@@ -287,17 +290,17 @@ void CanData::compute(const MessageId &msg_id, const char *can_data, const int s
       const int delta = cur - last;
 
       if (last != cur) {
-        double delta_t = ts - last_change_t[i];
+        double delta_t = ts - last_change.ts;
 
         // Keep track if signal is changing randomly, or mostly moving in the same direction
-        if (std::signbit(delta) == std::signbit(last_delta[i])) {
-          same_delta_counter[i] = std::min(16, same_delta_counter[i] + 1);
+        if (std::signbit(delta) == std::signbit(last_change.delta)) {
+          last_change.same_delta_counter = std::min(16, last_change.same_delta_counter + 1);
         } else {
-          same_delta_counter[i] = std::max(0, same_delta_counter[i] - 4);
+          last_change.same_delta_counter = std::max(0, last_change.same_delta_counter - 4);
         }
 
         // Mostly moves in the same direction, color based on delta up/down
-        if (delta_t * freq > periodic_threshold || same_delta_counter[i] > 8) {
+        if (delta_t * freq > periodic_threshold || last_change.same_delta_counter > 8) {
           // Last change was while ago, choose color based on delta up or down
           colors[i] = (cur > last) ? cyan : red;
         } else {
@@ -309,12 +312,12 @@ void CanData::compute(const MessageId &msg_id, const char *can_data, const int s
         const uint8_t tmp = (cur ^ last);
         for (int bit = 0; bit < 8; bit++) {
           if (tmp & (1 << bit)) {
-            bit_change_counts[i][bit] += 1;
+            last_change.bit_change_counts[bit] += 1;
           }
         }
 
-        last_change_t[i] = ts;
-        last_delta[i] = delta;
+        last_change.ts = ts;
+        last_change.delta = delta;
       } else {
         // Fade out
         float alpha_delta = 1.0 / (freq + 1) / (fade_time * playback_speed);
