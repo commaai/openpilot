@@ -17,7 +17,6 @@
 #include <QRandomGenerator>
 #include <QRubberBand>
 #include <QScreen>
-#include <QtMath>
 #include <QWindow>
 
 #include "tools/cabana/chart/chartswidget.h"
@@ -365,7 +364,7 @@ void ChartView::updateAxisY() {
     axis_y->setRange(min_y, max_y);
     axis_y->setTickCount(tick_count);
 
-    int n = qMax(int(-qFloor(std::log10((max_y - min_y) / (tick_count - 1)))), 0) + 1;
+    int n = std::max(int(-std::floor(std::log10((max_y - min_y) / (tick_count - 1)))), 0) + 1;
     int max_label_width = 0;
     QFontMetrics fm(axis_y->labelsFont());
     for (int i = 0; i < tick_count; i++) {
@@ -383,15 +382,15 @@ void ChartView::updateAxisY() {
 std::tuple<double, double, int> ChartView::getNiceAxisNumbers(qreal min, qreal max, int tick_count) {
   qreal range = niceNumber((max - min), true);  // range with ceiling
   qreal step = niceNumber(range / (tick_count - 1), false);
-  min = qFloor(min / step);
-  max = qCeil(max / step);
+  min = std::floor(min / step);
+  max = std::ceil(max / step);
   tick_count = int(max - min) + 1;
   return {min * step, max * step, tick_count};
 }
 
 // nice numbers can be expressed as form of 1*10^n, 2* 10^n or 5*10^n
 qreal ChartView::niceNumber(qreal x, bool ceiling) {
-  qreal z = qPow(10, qFloor(std::log10(x))); //find corresponding number of the form of 10^n than is smaller than x
+  qreal z = std::pow(10, std::floor(std::log10(x))); //find corresponding number of the form of 10^n than is smaller than x
   qreal q = x / z; //q<10 && q>=1;
   if (ceiling) {
     if (q <= 1.0) q = 1;
