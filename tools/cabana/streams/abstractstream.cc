@@ -69,14 +69,14 @@ size_t AbstractStream::suppressHighlighted() {
   size_t cnt = 0;
   const double cur_ts = currentSec();
   for (auto &m : all_msgs) {
-    for (int i = 0; i < m.dat.size(); ++i) {
-      const double dt = cur_ts - m.last_changes[i].ts;
+    for (auto &last_change : m.last_changes) {
+      const double dt = cur_ts - last_change.ts;
       if (dt < 2.0) {
-        m.last_changes[i].suppressed = true;
+        last_change.suppressed = true;
         // clear bit change counts
-        m.last_changes[i].bit_change_counts.fill(0);
+        last_change.bit_change_counts.fill(0);
       }
-      cnt += m.last_changes[i].suppressed;
+      cnt += last_change.suppressed;
     }
   }
   return cnt;
@@ -85,9 +85,7 @@ size_t AbstractStream::suppressHighlighted() {
 void AbstractStream::clearSuppressed() {
   std::lock_guard lk(suppress_mutex);
   for (auto &m : all_msgs) {
-    for (auto &c : m.last_changes) {
-      c.suppressed = 0;
-    }
+    std::for_each(m.last_changes.begin(), m.last_changes.end(), [](auto &c) { c.suppressed = false; });
   }
 }
 
@@ -267,9 +265,7 @@ void CanData::compute(const MessageId &msg_id, const char *can_data, const int s
     dat.resize(size);
     colors = QVector(size, QColor(0, 0, 0, 0));
     last_changes.resize(size);
-    for (auto &c : last_changes) {
-      c.ts = ts;
-    }
+    std::for_each(last_changes.begin(), last_changes.end(), [current_sec](auto &c) { c.ts = current_sec; });
   } else {
     bool lighter = settings.theme == DARK_THEME;
     const QColor &cyan = !lighter ? CYAN : CYAN_LIGHTER;
@@ -285,6 +281,7 @@ void CanData::compute(const MessageId &msg_id, const char *can_data, const int s
       } else if (mask && i < mask->size()) {
         mask_byte = (~((*mask)[i]));
       }
+
       const uint8_t last = dat[i] & mask_byte;
       const uint8_t cur = can_data[i] & mask_byte;
       const int delta = cur - last;
