@@ -11,7 +11,7 @@
 class EditMsgCommand : public QUndoCommand {
 public:
   EditMsgCommand(const MessageId &id, const QString &name, int size, const QString &node,
-                const QString &comment, QUndoCommand *parent = nullptr);
+                 const QString &comment, QUndoCommand *parent = nullptr);
   void undo() override;
   void redo() override;
 
