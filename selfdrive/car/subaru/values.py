@@ -310,6 +310,7 @@ FW_VERSIONS = {
       b'\xa2 !`\000',
       b'\xf1\x00\xb2\x06\x04',
       b'\xa2  `\x00',
+      b'\xa2 !3\x00',
     ],
     (Ecu.eps, 0x746, None): [
       b'\x9a\xc0\000\000',
@@ -323,6 +324,7 @@ FW_VERSIONS = {
       b'\x00\x00eq\x1f@ "',
       b'\x00\x00eq\x00\x00\x00\x00',
       b'\x00\x00e\x8f\x00\x00\x00\x00',
+      b'\x00\x00e\xa4\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xca!ap\a',
@@ -337,6 +339,7 @@ FW_VERSIONS = {
       b'\xf3"fp\x07',
       b'\xe6"f0\x07',
       b'\xe6"fp\x07',
+      b'\xe6!`@\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xe6\xf5\004\000\000',
@@ -348,6 +351,7 @@ FW_VERSIONS = {
       b'\xe9\xf6F0\x00',
       b'\xe9\xf5B0\x00',
       b'\xe9\xf6B0\x00',
+      b'\xe9\xf5"\x00\x00',
     ],
   },
   CAR.CROSSTREK_HYBRID: {
@@ -703,3 +707,7 @@ LKAS_ANGLE = {CAR.FORESTER_2022, CAR.OUTBACK_2023, CAR.ASCENT_2023}
 GLOBAL_GEN2 = {CAR.OUTBACK, CAR.LEGACY, CAR.OUTBACK_2023, CAR.ASCENT_2023}
 PREGLOBAL_CARS = {CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018}
 HYBRID_CARS = {CAR.CROSSTREK_HYBRID, CAR.FORESTER_HYBRID}
+
+# Cars that temporarily fault when steering angle rate is greater than some threshold.
+# Appears to be all cars that started production after 2020
+STEER_RATE_LIMITED = GLOBAL_GEN2 | {CAR.IMPREZA_2020}
