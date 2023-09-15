@@ -1,5 +1,7 @@
 Version 0.9.5 (202X-XX-XX)
 ========================
+* New driving model
+  * Improved navigate on openpilot performance using navigation instructions as an additional model input
 * Hyundai Azera 2022 support thanks to sunnyhaibin!
 * Hyundai Ioniq 6 2023 support thanks to sunnyhaibin, alamo3, and sshane!
 * Hyundai Kona Electric 2023 (Korean version) support thanks to sunnyhaibin and haram-KONA!
