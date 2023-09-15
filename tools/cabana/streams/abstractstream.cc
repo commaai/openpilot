@@ -311,7 +311,7 @@ void CanData::compute(const MessageId &msg_id, const char *can_data, const int s
         // Track bit level changes
         const uint8_t tmp = (cur ^ last);
         for (int bit = 0; bit < 8; bit++) {
-          if (tmp & (1 << bit)) {
+          if (tmp & (1 << (7 - bit))) {
             last_change.bit_change_counts[bit] += 1;
           }
         }

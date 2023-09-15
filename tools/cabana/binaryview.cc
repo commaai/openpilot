@@ -311,7 +311,7 @@ void BinaryViewModel::updateState() {
       int val = ((binary[i] >> (7 - j)) & 1) != 0 ? 1 : 0;
       // Bit update frequency based highlighting
       double offset = !item.sigs.empty() ? 50 : 0;
-      auto n = last_msg.last_changes[i].bit_change_counts[7 - j];
+      auto n = last_msg.last_changes[i].bit_change_counts[j];
       double min_f = n == 0 ? offset : offset + 25;
       double alpha = std::clamp(offset + log2(1.0 + factor * (double)n / (double)last_msg.count) * scaler, min_f, max_f);
       auto color = item.bg_color;
