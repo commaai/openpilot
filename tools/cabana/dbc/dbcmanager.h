@@ -28,7 +28,7 @@ public:
   void updateSignal(const MessageId &id, const QString &sig_name, const cabana::Signal &sig);
   void removeSignal(const MessageId &id, const QString &sig_name);
 
-  void updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &comment);
+  void updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &node, const QString &comment);
   void removeMsg(const MessageId &id);
 
   QString newMsgName(const MessageId &id);
