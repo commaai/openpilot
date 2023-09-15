@@ -13,6 +13,7 @@
 #include "opendbc/can/common_dbc.h"
 
 const QString UNTITLED = "untitled";
+const QString DEFAULT_NODE_NAME = "XXX";
 
 struct MessageId {
   uint8_t source = 0;
