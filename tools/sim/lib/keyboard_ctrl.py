@@ -38,7 +38,6 @@ def getch() -> str:
 def keyboard_poll_thread(q: 'Queue[str]'):
   while True:
     c = getch()
-    print("got %s" % c)
     if c == '1':
       q.put("cruise_up")
     elif c == '2':

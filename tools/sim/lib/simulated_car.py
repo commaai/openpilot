@@ -107,5 +107,3 @@ class SimulatedCar:
     self.send_panda_state(simulator_state)
 
     self.idx += 1
-
-    self.sm.update(0)

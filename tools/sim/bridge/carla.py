@@ -16,8 +16,6 @@ class CarlaWorld(World):
     self.max_steer_angle: float = vehicle.get_physics_control().wheels[0].max_steer_angle
     self.params = Params()
 
-    self.road_image = np.zeros((H, W, 3), dtype=np.uint8)
-
     self.steer_ratio = 15
 
     self.carla_objects = []

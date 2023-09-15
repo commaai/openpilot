@@ -1,6 +1,5 @@
 import signal
 import threading
-import time
 import functools
 
 from multiprocessing import Process, Queue
@@ -18,10 +17,11 @@ from openpilot.tools.sim.lib.simulated_car import SimulatedCar
 from openpilot.tools.sim.lib.simulated_sensors import SimulatedSensors
 
 
-def loop(function, dt):
+def rk_loop(function, hz):
+  rk = Ratekeeper(hz)
   while True:
     function()
-    time.sleep(dt)
+    rk.keep_time()
 
 
 class SimulatorBridge(ABC):
@@ -30,6 +30,8 @@ class SimulatorBridge(ABC):
   def __init__(self, arguments):
     set_params_enabled()
     self.params = Params()
+
+    self.rk = Ratekeeper(100)
 
     msg = messaging.new_message('liveCalibration')
     msg.liveCalibration.validBlocks = 20
@@ -80,7 +82,7 @@ class SimulatorBridge(ABC):
     self.simulated_car = SimulatedCar()
     self.simulated_sensors = SimulatedSensors(self.dual_camera)
 
-    self.simulated_car_thread = threading.Thread(target=loop, args=(functools.partial(self.simulated_car.update, self.simulator_state), 0.01))
+    self.simulated_car_thread = threading.Thread(target=rk_loop, args=(functools.partial(self.simulated_car.update, self.simulator_state), 100))
     self.simulated_car_thread.start()
 
     rk = Ratekeeper(100, print_delay_threshold=None)
@@ -91,12 +93,7 @@ class SimulatorBridge(ABC):
 
     throttle_manual = steer_manual = brake_manual = 0.
 
-    # loop
     while self._keep_alive:
-      # 1. Read the throttle, steer and brake from op or manual controls
-      # 2. Set instructions in Carla
-      # 3. Send current carstate to op via can
-
       throttle_out = steer_out = brake_out = 0.0
       throttle_op = steer_op = brake_op = 0.0
 
@@ -104,7 +101,7 @@ class SimulatorBridge(ABC):
 
       throttle_manual = steer_manual = brake_manual = 0.
 
-      # --------------Step 1-------------------------------
+      # Read manual controls
       if not q.empty():
         message = q.get()
         m = message.split('_')
@@ -133,9 +130,12 @@ class SimulatorBridge(ABC):
 
       steer_manual = steer_manual * -40
 
+      # Update openpilot on current sensor state
       self.simulated_sensors.update(self.simulator_state, self.world)
 
       is_openpilot_engaged = self.simulated_car.sm['controlsState'].active
+
+      self.simulated_car.sm.update(0)
 
       if is_openpilot_engaged:
         throttle_op = clip(self.simulated_car.sm['carControl'].actuators.accel / 1.6, 0.0, 1.0)
@@ -149,8 +149,10 @@ class SimulatorBridge(ABC):
       self.world.apply_controls(steer_out, throttle_out, brake_out)
       self.world.read_sensors(self.simulator_state)
 
-      if rk.frame % self.TICKS_PER_FRAME == 0:
-        self.world.read_cameras()
+      if self.rk.frame % self.TICKS_PER_FRAME == 0:
         self.world.tick()
+        self.world.read_cameras()
 
       self.started = True
+
+      rk.keep_time()
