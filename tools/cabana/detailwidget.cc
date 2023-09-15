@@ -2,7 +2,6 @@
 
 #include <QFormLayout>
 #include <QMenu>
-#include <QMessageBox>
 
 #include "tools/cabana/commands.h"
 #include "tools/cabana/mainwin.h"
@@ -135,11 +134,12 @@ void DetailWidget::refresh() {
     for (auto s : binary_view->getOverlappingSignals()) {
       warnings.push_back(tr("%1 has overlapping bits.").arg(s->name));
     }
+    name_label->setText(QString("%1 (%2)").arg(msgName(msg_id), msg->transmitter));
   } else {
     warnings.push_back(tr("Drag-Select in binary view to create new signal."));
+    name_label->setText(msgName(msg_id));
   }
   remove_btn->setEnabled(msg != nullptr);
-  name_label->setText(msgName(msg_id));
 
   if (!warnings.isEmpty()) {
     warning_label->setText(warnings.join('\n'));
@@ -164,8 +164,8 @@ void DetailWidget::editMsg() {
   int size = msg ? msg->size : can->lastMessage(msg_id).dat.size();
   EditMessageDialog dlg(msg_id, msgName(msg_id), size, this);
   if (dlg.exec()) {
-    UndoStack::push(new EditMsgCommand(msg_id, dlg.name_edit->text().trimmed(),
-                                       dlg.size_spin->value(), dlg.comment_edit->toPlainText().trimmed()));
+    UndoStack::push(new EditMsgCommand(msg_id, dlg.name_edit->text().trimmed(), dlg.size_spin->value(),
+                                       dlg.node->text().trimmed(), dlg.comment_edit->toPlainText().trimmed()));
   }
 }
 
@@ -182,25 +182,24 @@ EditMessageDialog::EditMessageDialog(const MessageId &msg_id, const QString &tit
 
   form_layout->addRow("", error_label = new QLabel);
   error_label->setVisible(false);
-  name_edit = new QLineEdit(title, this);
+  form_layout->addRow(tr("Name"), name_edit = new QLineEdit(title, this));
   name_edit->setValidator(new NameValidator(name_edit));
-  form_layout->addRow(tr("Name"), name_edit);
 
-  size_spin = new QSpinBox(this);
+  form_layout->addRow(tr("Size"), size_spin = new QSpinBox(this));
   // TODO: limit the maximum?
   size_spin->setMinimum(1);
   size_spin->setValue(size);
-  form_layout->addRow(tr("Size"), size_spin);
 
+  form_layout->addRow(tr("Node"), node = new QLineEdit(this));
+  node->setValidator(new NameValidator(name_edit));
   form_layout->addRow(tr("Comment"), comment_edit = new QTextEdit(this));
+  form_layout->addRow(btn_box = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel));
+
   if (auto msg = dbc()->msg(msg_id)) {
+    node->setText(msg->transmitter);
     comment_edit->setText(msg->comment);
   }
-
-  btn_box = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   validateName(name_edit->text());
-  form_layout->addRow(btn_box);
-
   setFixedWidth(parent->width() * 0.9);
   connect(name_edit, &QLineEdit::textEdited, this, &EditMessageDialog::validateName);
   connect(btn_box, &QDialogButtonBox::accepted, this, &QDialog::accept);
