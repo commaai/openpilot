@@ -26,6 +26,7 @@ class TestModeld(unittest.TestCase):
     self.pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'liveCalibration', 'lateralPlan'])
 
     managed_processes['modeld'].start()
+    self.pm.wait_for_readers_to_update("roadCameraState", 10)
 
   def tearDown(self):
     managed_processes['modeld'].stop()
