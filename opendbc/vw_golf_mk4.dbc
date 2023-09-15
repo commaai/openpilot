@@ -1178,7 +1178,7 @@ BO_ 870 AWV: 8 XXX
  SG_ AWV_1_Freigabe : 16|1@1+ (1,0) [0|1] "" Vector__XXX
  SG_ AWV_1_Prefill : 17|1@1+ (1,0) [0|1] "" Vector__XXX
  SG_ AWV_1_Parameter : 18|2@1+ (1,0) [0|3] "" Vector__XXX
- SG_ AWV_only : 20|4@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ AWV_only : 20|1@1+ (1,0) [0|1] "" Vector__XXX
  SG_ AWV_CityANB_Auspraegung : 21|1@1+ (1,0) [0|1] "" Vector__XXX
  SG_ AWV_Halten : 22|1@1+ (1,0) [0|1] "" Vector__XXX
  SG_ ANB_Teilbremsung_Freigabe : 23|1@1+ (1,0) [0|1] "" Vector__XXX

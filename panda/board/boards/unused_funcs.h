@@ -1,5 +1,4 @@
-void unused_set_gps_mode(uint8_t mode) {
-  UNUSED(mode);
+void unused_init_bootloader(void) {
 }
 
 void unused_set_ir_power(uint8_t percentage) {

@@ -15,12 +15,14 @@ docs/INTEGRATION.md
 docs/LIMITATIONS.md
 site_scons/site_tools/cython.py
 
+openpilot/__init__.py
+openpilot/**
+
 common/.gitignore
 common/__init__.py
 common/conversions.py
 common/gpio.py
 common/realtime.py
-common/clock.pyx
 common/timeout.py
 common/ffi_wrapper.py
 common/file_helpers.py
@@ -60,6 +62,7 @@ release/*
 
 tools/__init__.py
 tools/lib/*
+tools/bodyteleop/*
 tools/joystick/*
 tools/replay/*.cc
 tools/replay/*.h
@@ -159,6 +162,8 @@ common/clutil.cc
 common/clutil.h
 common/params.h
 common/params.cc
+common/ratekeeper.cc
+common/ratekeeper.h
 common/watchdog.cc
 common/watchdog.h
 
@@ -204,6 +209,7 @@ system/hardware/__init__.py
 system/hardware/base.h
 system/hardware/base.py
 system/hardware/hw.h
+system/hardware/hw.py
 system/hardware/tici/__init__.py
 system/hardware/tici/hardware.h
 system/hardware/tici/hardware.py
@@ -313,6 +319,8 @@ selfdrive/ui/tests/test_translations.py
 
 selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.h
+selfdrive/ui/qt/network/*.cc
+selfdrive/ui/qt/network/*.h
 selfdrive/ui/qt/offroad/*.cc
 selfdrive/ui/qt/offroad/*.h
 selfdrive/ui/qt/offroad/*.qml
@@ -349,15 +357,18 @@ selfdrive/manager/process.py
 selfdrive/manager/test/__init__.py
 selfdrive/manager/test/test_manager.py
 
+selfdrive/modeld/.gitignore
 selfdrive/modeld/__init__.py
 selfdrive/modeld/SConscript
-selfdrive/modeld/modeld.cc
-selfdrive/modeld/navmodeld.cc
-selfdrive/modeld/dmonitoringmodeld.cc
+selfdrive/modeld/modeld.py
+selfdrive/modeld/navmodeld.py
+selfdrive/modeld/dmonitoringmodeld.py
 selfdrive/modeld/constants.py
 selfdrive/modeld/modeld
-selfdrive/modeld/navmodeld
-selfdrive/modeld/dmonitoringmodeld
+
+selfdrive/modeld/models/__init__.py
+selfdrive/modeld/models/*.pxd
+selfdrive/modeld/models/*.pyx
 
 selfdrive/modeld/models/commonmodel.cc
 selfdrive/modeld/models/commonmodel.h
@@ -366,12 +377,8 @@ selfdrive/modeld/models/driving.cc
 selfdrive/modeld/models/driving.h
 selfdrive/modeld/models/supercombo.onnx
 
-selfdrive/modeld/models/dmonitoring.cc
-selfdrive/modeld/models/dmonitoring.h
 selfdrive/modeld/models/dmonitoring_model_q.dlc
 
-selfdrive/modeld/models/nav.cc
-selfdrive/modeld/models/nav.h
 selfdrive/modeld/models/navmodel_q.dlc
 
 selfdrive/modeld/transforms/loadyuv.cc
@@ -387,12 +394,12 @@ selfdrive/modeld/thneed/thneed_common.cc
 selfdrive/modeld/thneed/thneed_qcom2.cc
 selfdrive/modeld/thneed/serialize.cc
 
-selfdrive/modeld/runners/snpemodel.cc
-selfdrive/modeld/runners/snpemodel.h
-selfdrive/modeld/runners/thneedmodel.cc
-selfdrive/modeld/runners/thneedmodel.h
-selfdrive/modeld/runners/runmodel.h
-selfdrive/modeld/runners/run.h
+selfdrive/modeld/runners/__init__.py
+selfdrive/modeld/runners/*.pxd
+selfdrive/modeld/runners/*.pyx
+selfdrive/modeld/runners/*.cc
+selfdrive/modeld/runners/*.h
+selfdrive/modeld/runners/*.py
 
 selfdrive/monitoring/dmonitoringd.py
 selfdrive/monitoring/driver_monitor.py
@@ -417,8 +424,6 @@ selfdrive/assets/navigation/*
 third_party/.gitignore
 third_party/SConscript
 
-third_party/cluster/*
-
 third_party/linux/**
 third_party/opencl/**
 
@@ -432,15 +437,11 @@ third_party/kaitai/*.h
 third_party/kaitai/*.cpp
 
 third_party/libyuv/include/**
-third_party/libyuv/lib/**
-third_party/libyuv/larch64/**
 
 third_party/snpe/include/**
 third_party/snpe/dsp**
 
 third_party/acados/.gitignore
-third_party/acados/x86_64/**
-third_party/acados/larch64/**
 third_party/acados/include/**
 third_party/acados/acados_template/**
 
@@ -570,6 +571,7 @@ opendbc/nissan_x_trail_2017_generated.dbc
 opendbc/nissan_leaf_2018_generated.dbc
 
 opendbc/subaru_global_2017_generated.dbc
+opendbc/subaru_global_2020_hybrid_generated.dbc
 opendbc/subaru_outback_2015_generated.dbc
 opendbc/subaru_outback_2019_generated.dbc
 opendbc/subaru_forester_2017_generated.dbc

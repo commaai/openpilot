@@ -1,17 +1,24 @@
 #!/usr/bin/env python3
+import os
 import math
 import unittest
 import hypothesis.strategies as st
-from hypothesis import given, settings
+from hypothesis import Phase, given, settings
 import importlib
 from parameterized import parameterized
 
-from cereal import car
-from common.realtime import DT_CTRL
-from selfdrive.car import gen_empty_fingerprint
-from selfdrive.car.car_helpers import interfaces
-from selfdrive.car.fingerprints import all_known_cars
-from selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
+from cereal import car, messaging
+from openpilot.common.realtime import DT_CTRL
+from openpilot.selfdrive.car import gen_empty_fingerprint
+from openpilot.selfdrive.car.car_helpers import interfaces
+from openpilot.selfdrive.car.fingerprints import all_known_cars
+from openpilot.selfdrive.car.fw_versions import FW_VERSIONS
+from openpilot.selfdrive.car.interfaces import get_interface_attr
+from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
+
+ALL_ECUS = list({ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()})
+
+MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '5'))
 
 
 def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
@@ -20,12 +27,8 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
                                                                      st.integers(min_value=0, max_value=64)) for key in
                                                 gen_empty_fingerprint()})
 
-  # just the most important fields
-  car_fw_strategy = st.lists(st.fixed_dictionaries({
-    'ecu': st.sampled_from(list(car.CarParams.Ecu.schema.enumerants.keys())),
-    # TODO: only use reasonable addrs for the paired ecu and brand/platform
-    'address': st.integers(min_value=0, max_value=0x800),
-  }))
+  # only pick from possible ecus to reduce search space
+  car_fw_strategy = st.lists(st.sampled_from(ALL_ECUS))
 
   params_strategy = st.fixed_dictionaries({
     'fingerprints': fingerprint_strategy,
@@ -34,14 +37,21 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
   })
 
   params: dict = draw(params_strategy)
-  params['car_fw'] = [car.CarParams.CarFw(**fw) for fw in params['car_fw']]
+  params['car_fw'] = [car.CarParams.CarFw(ecu=fw[0], address=fw[1], subAddress=fw[2] or 0) for fw in params['car_fw']]
   return params
 
 
 class TestCarInterfaces(unittest.TestCase):
 
+  @classmethod
+  def setUpClass(cls):
+    os.environ['NO_RADAR_SLEEP'] = '1'
+
+  # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
+  #  many generated examples to overrun when max_examples > ~20, don't use it
   @parameterized.expand([(car,) for car in sorted(all_known_cars())])
-  @settings(max_examples=5)
+  @settings(max_examples=MAX_EXAMPLES, deadline=None,
+            phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
   def test_car_interfaces(self, car_name, data):
     CarInterface, CarController, CarState = interfaces[car_name]
@@ -77,9 +87,6 @@ class TestCarInterfaces(unittest.TestCase):
         self.assertTrue(not math.isnan(tune.torque.kf) and tune.torque.kf > 0)
         self.assertTrue(not math.isnan(tune.torque.friction) and tune.torque.friction > 0)
 
-      elif tune.which() == 'indi':
-        self.assertTrue(len(tune.indi.outerLoopGainV))
-
     cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
     # Run car interface
     now_nanos = 0
@@ -108,6 +115,38 @@ class TestCarInterfaces(unittest.TestCase):
     if not car_params.radarUnavailable and radar_interface.rcp is not None and \
        hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
       radar_interface._update([radar_interface.trigger_msg])
+
+    # Test radar fault
+    if not car_params.radarUnavailable and radar_interface.rcp is not None:
+      cans = [messaging.new_message('can', 1).to_bytes() for _ in range(5)]
+      rr = radar_interface.update(cans)
+      self.assertTrue(rr is None or len(rr.errors) > 0)
+
+  def test_interface_attrs(self):
+    """Asserts basic behavior of interface attribute getter"""
+    num_brands = len(get_interface_attr('CAR'))
+    self.assertGreaterEqual(num_brands, 13)
+
+    # Should return value for all brands when not combining, even if attribute doesn't exist
+    ret = get_interface_attr('FAKE_ATTR')
+    self.assertEqual(len(ret), num_brands)
+
+    # Make sure we can combine dicts
+    ret = get_interface_attr('DBC', combine_brands=True)
+    self.assertGreaterEqual(len(ret), 170)
+
+    # We don't support combining non-dicts
+    ret = get_interface_attr('CAR', combine_brands=True)
+    self.assertEqual(len(ret), 0)
+
+    # If brand has None value, it shouldn't return when ignore_none=True is specified
+    none_brands = {b for b, v in get_interface_attr('FINGERPRINTS').items() if v is None}
+    self.assertGreaterEqual(len(none_brands), 1)
+
+    ret = get_interface_attr('FINGERPRINTS', ignore_none=True)
+    none_brands_in_ret = none_brands.intersection(ret)
+    self.assertEqual(len(none_brands_in_ret), 0, f'Brands with None values in ignore_none=True result: {none_brands_in_ret}')
+
 
 if __name__ == "__main__":
   unittest.main()

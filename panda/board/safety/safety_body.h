@@ -11,6 +11,9 @@ static int body_rx_hook(CANPacket_t *to_push) {
 
   bool valid = addr_safety_check(to_push, &body_rx_checks, NULL, NULL, NULL, NULL);
 
+  // body is never at standstill
+  vehicle_moving = true;
+
   controls_allowed = valid;
 
   return valid;

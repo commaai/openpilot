@@ -174,7 +174,7 @@ void safety_tick(const addr_checks *rx_checks) {
       bool lagging = elapsed_time > MAX(rx_checks->check[i].msg[rx_checks->check[i].index].expected_timestep * MAX_MISSED_MSGS, 1e6);
       rx_checks->check[i].lagging = lagging;
       if (lagging) {
-        controls_allowed = 0;
+        controls_allowed = false;
       }
 
       if (lagging || !is_msg_valid(rx_checks->check, i)) {
@@ -200,7 +200,7 @@ bool is_msg_valid(AddrCheckStruct addr_list[], int index) {
   if (index != -1) {
     if (!addr_list[index].valid_checksum || !addr_list[index].valid_quality_flag || (addr_list[index].wrong_counters >= MAX_WRONG_COUNTERS)) {
       valid = false;
-      controls_allowed = 0;
+      controls_allowed = false;
     }
   }
   return valid;
@@ -254,19 +254,19 @@ bool addr_safety_check(CANPacket_t *to_push,
 void generic_rx_checks(bool stock_ecu_detected) {
   // exit controls on rising edge of gas press
   if (gas_pressed && !gas_pressed_prev && !(alternative_experience & ALT_EXP_DISABLE_DISENGAGE_ON_GAS)) {
-    controls_allowed = 0;
+    controls_allowed = false;
   }
   gas_pressed_prev = gas_pressed;
 
   // exit controls on rising edge of brake press
   if (brake_pressed && (!brake_pressed_prev || vehicle_moving)) {
-    controls_allowed = 0;
+    controls_allowed = false;
   }
   brake_pressed_prev = brake_pressed;
 
   // exit controls on rising edge of regen paddle
   if (regen_braking && (!regen_braking_prev || vehicle_moving)) {
-    controls_allowed = 0;
+    controls_allowed = false;
   }
   regen_braking_prev = regen_braking;
 
@@ -507,6 +507,12 @@ bool longitudinal_accel_checks(int desired_accel, const LongitudinalLimits limit
 
 bool longitudinal_speed_checks(int desired_speed, const LongitudinalLimits limits) {
   return !get_longitudinal_allowed() && (desired_speed != limits.inactive_speed);
+}
+
+bool longitudinal_transmission_rpm_checks(int desired_transmission_rpm, const LongitudinalLimits limits) {
+  bool transmission_rpm_valid = get_longitudinal_allowed() && !max_limit_check(desired_transmission_rpm, limits.max_transmission_rpm, limits.min_transmission_rpm);
+  bool transmission_rpm_inactive = desired_transmission_rpm == limits.inactive_transmission_rpm;
+  return !(transmission_rpm_valid || transmission_rpm_inactive);
 }
 
 bool longitudinal_gas_checks(int desired_gas, const LongitudinalLimits limits) {

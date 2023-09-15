@@ -3,11 +3,11 @@ import os
 import shutil
 import threading
 from typing import List
-
-from system.swaglog import cloudlog
-from system.loggerd.config import ROOT, get_available_bytes, get_available_percent
-from system.loggerd.uploader import listdir_by_creation
-from system.loggerd.xattr_cache import getxattr
+from openpilot.system.hardware.hw import Paths
+from openpilot.system.swaglog import cloudlog
+from openpilot.system.loggerd.config import get_available_bytes, get_available_percent
+from openpilot.system.loggerd.uploader import listdir_by_creation
+from openpilot.system.loggerd.xattr_cache import getxattr
 
 MIN_BYTES = 5 * 1024 * 1024 * 1024
 MIN_PERCENT = 10
@@ -20,7 +20,7 @@ PRESERVE_COUNT = 5
 
 
 def has_preserve_xattr(d: str) -> bool:
-  return getxattr(os.path.join(ROOT, d), PRESERVE_ATTR_NAME) == PRESERVE_ATTR_VALUE
+  return getxattr(os.path.join(Paths.log_root(), d), PRESERVE_ATTR_NAME) == PRESERVE_ATTR_VALUE
 
 
 def get_preserved_segments(dirs_by_creation: List[str]) -> List[str]:
@@ -51,14 +51,14 @@ def deleter_thread(exit_event):
     out_of_percent = get_available_percent(default=MIN_PERCENT + 1) < MIN_PERCENT
 
     if out_of_percent or out_of_bytes:
-      dirs = listdir_by_creation(ROOT)
+      dirs = listdir_by_creation(Paths.log_root())
 
       # skip deleting most recent N preserved segments (and their prior segment)
       preserved_dirs = get_preserved_segments(dirs)
 
       # remove the earliest directory we can
       for delete_dir in sorted(dirs, key=lambda d: (d in DELETE_LAST, d in preserved_dirs)):
-        delete_path = os.path.join(ROOT, delete_dir)
+        delete_path = os.path.join(Paths.log_root(), delete_dir)
 
         if any(name.endswith(".lock") for name in os.listdir(delete_path)):
           continue

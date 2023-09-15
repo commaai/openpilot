@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 from numpy import cos, exp, pi
 from .lib.coordinates import ecef2geodetic
 

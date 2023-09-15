@@ -223,7 +223,9 @@ static int volkswagen_mqb_tx_hook(CANPacket_t *to_send) {
       desired_torque *= -1;
     }
 
-    if (steer_torque_cmd_checks(desired_torque, -1, VOLKSWAGEN_MQB_STEERING_LIMITS)) {
+    bool steer_req = GET_BIT(to_send, 30U) != 0U;
+
+    if (steer_torque_cmd_checks(desired_torque, steer_req, VOLKSWAGEN_MQB_STEERING_LIMITS)) {
       tx = 0;
     }
   }

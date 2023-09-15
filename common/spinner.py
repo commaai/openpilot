@@ -1,6 +1,6 @@
 import os
 import subprocess
-from common.basedir import BASEDIR
+from openpilot.common.basedir import BASEDIR
 
 
 class Spinner():
@@ -29,11 +29,11 @@ class Spinner():
 
   def close(self):
     if self.spinner_proc is not None:
+      self.spinner_proc.kill()
       try:
-        self.spinner_proc.stdin.close()
-      except BrokenPipeError:
-        pass
-      self.spinner_proc.terminate()
+        self.spinner_proc.communicate(timeout=2.)
+      except subprocess.TimeoutExpired:
+        print("WARNING: failed to kill spinner")
       self.spinner_proc = None
 
   def __del__(self):

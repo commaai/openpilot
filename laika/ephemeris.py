@@ -455,7 +455,7 @@ def parse_rinex_nav_msg_glonass(file_name):
     e['n4'], e['nt'], toe_seconds = epoch.as_glonass()
     tb = toe_seconds / (15 * SECS_IN_MIN)
 
-  
+
     e['tb'] = tb
 
     e['tauN'] = -float(line[23:42])
@@ -465,12 +465,12 @@ def parse_rinex_nav_msg_glonass(file_name):
     e['x'], e['xVel'], e['xAccel'], e['svHealth'] = read4(f, rinex_ver)
     e['y'], e['yVel'], e['yAccel'], e['freqNum'] = read4(f, rinex_ver)
     e['z'], e['zVel'], e['zAccel'], e['age'] = read4(f, rinex_ver)
-    
+
     # TODO unclear why glonass sometimes has nav messages 3s after correct one
     if abs(tb - int(tb)) > 1e-3:
       continue
 
-    
+
     data_struct = ephemeris_structs.GlonassEphemeris.new_message(**e)
     ephem = GLONASSEphemeris(data_struct, file_name=file_name)
 

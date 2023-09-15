@@ -16,19 +16,20 @@ Replay::Replay(QString route, QStringList allow, QStringList block, QStringList 
   auto event_struct = capnp::Schema::from<cereal::Event>().asStruct();
   sockets_.resize(event_struct.getUnionFields().size());
   for (const auto &it : services) {
-    uint16_t which = event_struct.getFieldByName(it.name).getProto().getDiscriminantValue();
+    auto name = it.second.name.c_str();
+    uint16_t which = event_struct.getFieldByName(name).getProto().getDiscriminantValue();
     if ((which == cereal::Event::Which::UI_DEBUG || which == cereal::Event::Which::USER_FLAG) &&
-        !(flags & REPLAY_FLAG_ALL_SERVICES) && 
-        !allow.contains(it.name)) {
+        !(flags & REPLAY_FLAG_ALL_SERVICES) &&
+        !allow.contains(name)) {
       continue;
     }
 
-    if ((allow.empty() || allow.contains(it.name)) && !block.contains(it.name)) {
-      sockets_[which] = it.name;
+    if ((allow.empty() || allow.contains(name)) && !block.contains(name)) {
+      sockets_[which] = name;
       if (!allow.empty() || !block.empty()) {
         allow_list.insert((cereal::Event::Which)which);
       }
-      s.push_back(it.name);
+      s.push_back(name);
     }
   }
 
@@ -150,9 +151,10 @@ void Replay::buildTimeline() {
     [(int)cereal::ControlsState::AlertStatus::CRITICAL] = TimelineType::AlertCritical,
   };
 
-  for (auto it = segments_.cbegin(); it != segments_.cend() && !exit_; ++it) {
+  const auto &route_segments = route_->segments();
+  for (auto it = route_segments.cbegin(); it != route_segments.cend() && !exit_; ++it) {
     LogReader log;
-    if (!log.load(route_->at(it->first).qlog.toStdString(), &exit_,
+    if (!log.load(it->second.qlog.toStdString(), &exit_,
                   {cereal::Event::Which::CONTROLS_STATE, cereal::Event::Which::USER_FLAG},
                   !hasFlag(REPLAY_FLAG_NO_FILE_CACHE), 0, 3)) continue;
 
@@ -226,7 +228,10 @@ void Replay::segmentLoadFinished(bool success) {
   if (!success) {
     Segment *seg = qobject_cast<Segment *>(sender());
     rWarning("failed to load segment %d, removing it from current replay list", seg->seg_num);
-    segments_.erase(seg->seg_num);
+    updateEvents([&]() {
+      segments_.erase(seg->seg_num);
+      return true;
+    });
   }
   queueSegment();
 }
@@ -307,7 +312,8 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
     updateEvents([&]() {
       events_.swap(new_events_);
       segments_merged_ = segments_need_merge;
-      return true;
+      // Do not wake up the stream thread if the current segment has not been merged.
+      return isSegmentMerged(current_segment_) || (segments_.count(current_segment_) == 0);
     });
   }
 }
@@ -454,7 +460,7 @@ void Replay::stream() {
     }
 
     if (eit == events_->end() && !hasFlag(REPLAY_FLAG_NO_LOOP)) {
-      int last_segment = segments_.rbegin()->first;
+      int last_segment = segments_.empty() ? 0 : segments_.rbegin()->first;
       if (current_segment_ >= last_segment && isSegmentMerged(last_segment)) {
         rInfo("reaches the end of route, restart from beginning");
         QMetaObject::invokeMethod(this, std::bind(&Replay::seekTo, this, 0, false), Qt::QueuedConnection);

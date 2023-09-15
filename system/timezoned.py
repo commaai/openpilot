@@ -8,9 +8,12 @@ from typing import NoReturn
 import requests
 from timezonefinder import TimezoneFinder
 
-from common.params import Params
-from system.hardware import AGNOS
-from system.swaglog import cloudlog
+from openpilot.common.params import Params
+from openpilot.system.hardware import AGNOS
+from openpilot.system.swaglog import cloudlog
+from openpilot.system.version import get_version
+
+REQUEST_HEADERS = {'User-Agent': "openpilot-" + get_version()}
 
 
 def set_timezone(valid_timezones, timezone):
@@ -18,7 +21,7 @@ def set_timezone(valid_timezones, timezone):
     cloudlog.error(f"Timezone not supported {timezone}")
     return
 
-  cloudlog.debug(f"Setting timezone to {timezone}")
+  cloudlog.info(f"Setting timezone to {timezone}")
   try:
     if AGNOS:
       tzpath = os.path.join("/usr/share/zoneinfo/", timezone)
@@ -58,7 +61,7 @@ def main() -> NoReturn:
     if location is None:
       cloudlog.debug("Setting timezone based on IP lookup")
       try:
-        r = requests.get("https://ipapi.co/timezone", timeout=10)
+        r = requests.get("https://ipapi.co/timezone", headers=REQUEST_HEADERS, timeout=10)
         if r.status_code == 200:
           set_timezone(valid_timezones, r.text)
         else:

@@ -29,7 +29,7 @@ unsigned int subaru_checksum(uint32_t address, const Signal &sig, const std::vec
   while (address) { s += address & 0xFF; address >>= 8; }
 
   // skip checksum in first byte
-  for (int i = 1; i < d.size(); i++) { s += d[i]; };
+  for (int i = 1; i < d.size(); i++) { s += d[i]; }
 
   return s & 0xFF;
 }

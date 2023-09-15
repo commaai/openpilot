@@ -10,8 +10,9 @@
 
 #ifdef STM32H7
 #define SPI_BUF_SIZE 2048U
-__attribute__((section(".ram_d1"))) uint8_t spi_buf_rx[SPI_BUF_SIZE];
-__attribute__((section(".ram_d2"))) uint8_t spi_buf_tx[SPI_BUF_SIZE];
+// H7 DMA2 located in D2 domain, so we need to use SRAM1/SRAM2
+__attribute__((section(".sram12"))) uint8_t spi_buf_rx[SPI_BUF_SIZE];
+__attribute__((section(".sram12"))) uint8_t spi_buf_tx[SPI_BUF_SIZE];
 #else
 #define SPI_BUF_SIZE 1024U
 uint8_t spi_buf_rx[SPI_BUF_SIZE];

@@ -50,6 +50,8 @@ void red_set_led(uint8_t color, bool enabled) {
 }
 
 void red_set_can_mode(uint8_t mode) {
+  red_enable_can_transceiver(2U, false);
+  red_enable_can_transceiver(4U, false);
   switch (mode) {
     case CAN_MODE_NORMAL:
     case CAN_MODE_OBD_CAN2:
@@ -67,6 +69,7 @@ void red_set_can_mode(uint8_t mode) {
 
         set_gpio_pullup(GPIOB, 6, PULL_NONE);
         set_gpio_alternate(GPIOB, 6, GPIO_AF9_FDCAN2);
+        red_enable_can_transceiver(2U, true);
       } else {
         // B5,B6: disable normal mode
         set_gpio_pullup(GPIOB, 5, PULL_NONE);
@@ -80,6 +83,7 @@ void red_set_can_mode(uint8_t mode) {
 
         set_gpio_pullup(GPIOB, 13, PULL_NONE);
         set_gpio_alternate(GPIOB, 13, GPIO_AF9_FDCAN2);
+        red_enable_can_transceiver(4U, true);
       }
       break;
     default:
@@ -170,7 +174,6 @@ const board board_red = {
   .board_type = "Red",
   .board_tick = unused_board_tick,
   .harness_config = &red_harness_config,
-  .has_gps = false,
   .has_hw_gmlan = false,
   .has_obd = true,
   .has_lin = false,
@@ -182,10 +185,10 @@ const board board_red = {
   .fan_stall_recovery = false,
   .fan_enable_cooldown_time = 0U,
   .init = red_init,
+  .init_bootloader = unused_init_bootloader,
   .enable_can_transceiver = red_enable_can_transceiver,
   .enable_can_transceivers = red_enable_can_transceivers,
   .set_led = red_set_led,
-  .set_gps_mode = unused_set_gps_mode,
   .set_can_mode = red_set_can_mode,
   .check_ignition = red_check_ignition,
   .read_current = unused_read_current,

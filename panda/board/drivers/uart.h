@@ -1,8 +1,7 @@
-// IRQs: USART1, USART2, USART3, UART5
+// IRQs: USART2, USART3, UART5
 
 // ***************************** Definitions *****************************
 #define FIFO_SIZE_INT 0x400U
-#define FIFO_SIZE_DMA 0x1000U
 
 typedef struct uart_ring {
   volatile uint16_t w_ptr_tx;
@@ -15,11 +14,10 @@ typedef struct uart_ring {
   uint32_t rx_fifo_size;
   USART_TypeDef *uart;
   void (*callback)(struct uart_ring*);
-  bool dma_rx;
   bool overwrite;
 } uart_ring;
 
-#define UART_BUFFER(x, size_rx, size_tx, uart_ptr, callback_ptr, rx_dma, overwrite_mode) \
+#define UART_BUFFER(x, size_rx, size_tx, uart_ptr, callback_ptr, overwrite_mode) \
   uint8_t elems_rx_##x[size_rx]; \
   uint8_t elems_tx_##x[size_tx]; \
   uart_ring uart_ring_##x = {  \
@@ -33,7 +31,6 @@ typedef struct uart_ring {
     .rx_fifo_size = (size_rx), \
     .uart = (uart_ptr), \
     .callback = (callback_ptr), \
-    .dma_rx = (rx_dma), \
     .overwrite = (overwrite_mode) \
   };
 
@@ -44,23 +41,20 @@ void uart_send_break(uart_ring *u);
 
 // ******************************** UART buffers ********************************
 
-// gps = USART1
-UART_BUFFER(gps, FIFO_SIZE_DMA, FIFO_SIZE_INT, USART1, NULL, true, false)
-
 // lin1, K-LINE = UART5
 // lin2, L-LINE = USART3
-UART_BUFFER(lin1, FIFO_SIZE_INT, FIFO_SIZE_INT, UART5, NULL, false, false)
-UART_BUFFER(lin2, FIFO_SIZE_INT, FIFO_SIZE_INT, USART3, NULL, false, false)
+UART_BUFFER(lin1, FIFO_SIZE_INT, FIFO_SIZE_INT, UART5, NULL, false)
+UART_BUFFER(lin2, FIFO_SIZE_INT, FIFO_SIZE_INT, USART3, NULL, false)
 
 // debug = USART2
-UART_BUFFER(debug, FIFO_SIZE_INT, FIFO_SIZE_INT, USART2, debug_ring_callback, false, true)
+UART_BUFFER(debug, FIFO_SIZE_INT, FIFO_SIZE_INT, USART2, debug_ring_callback, true)
 
 // SOM debug = UART7
 #ifdef STM32H7
-  UART_BUFFER(som_debug, FIFO_SIZE_INT, FIFO_SIZE_INT, UART7, NULL, false, true)
+  UART_BUFFER(som_debug, FIFO_SIZE_INT, FIFO_SIZE_INT, UART7, NULL, true)
 #else
   // UART7 is not available on F4
-  UART_BUFFER(som_debug, 1U, 1U, NULL, NULL, false, true)
+  UART_BUFFER(som_debug, 1U, 1U, NULL, NULL, true)
 #endif
 
 uart_ring *get_ring_by_number(int a) {
@@ -68,9 +62,6 @@ uart_ring *get_ring_by_number(int a) {
   switch(a) {
     case 0:
       ring = &uart_ring_debug;
-      break;
-    case 1:
-      ring = &uart_ring_gps;
       break;
     case 2:
       ring = &uart_ring_lin1;

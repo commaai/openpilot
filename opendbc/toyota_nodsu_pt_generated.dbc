@@ -252,6 +252,7 @@ BO_ 1005 REVERSE_CAMERA_STATE: 2 BGM
  SG_ REVERSE_CAMERA_GUIDELINES : 9|2@0+ (1,0) [1|3] "" XXX
 
 BO_ 1009 PCM_CRUISE_ALT: 8 XXX
+ SG_ PCM_FOLLOW_DISTANCE : 4|2@1+ (1,0) [0|3] "" XXX
  SG_ MAIN_ON : 13|1@0+ (1,0) [0|3] "" XXX
  SG_ CRUISE_STATE : 10|1@0+ (1,0) [0|1] "" XXX
  SG_ UI_SET_SPEED : 23|8@0+ (1,0) [0|255] "mph" XXX
@@ -259,7 +260,7 @@ BO_ 1009 PCM_CRUISE_ALT: 8 XXX
 BO_ 1020 SOLAR_SENSOR: 8 XXX
  SG_ LUX_SENSOR : 55|13@0+ (1,0) [0|0] "" XXX
 
-BO_ 1041 ACC_HUD: 8 DSU
+BO_ 1041 PCS_HUD: 8 DSU
  SG_ PCS_INDICATOR : 7|2@0+ (1,0) [0|3] "" XXX
  SG_ FCW : 4|1@0+ (1,0) [0|1] "" XXX
  SG_ SET_ME_X20 : 15|8@0+ (1,0) [0|1] "" XXX
@@ -425,7 +426,7 @@ BO_ 1592 DOOR_LOCKS: 8 XXX
  SG_ LOCKED_VIA_KEYFOB : 23|1@0+ (1,0) [0|1] "" XXX
 
 CM_ SG_ 36 YAW_RATE "verify";
-CM_ SG_ 36 STEERING_TORQUE "does not seem the steer torque, tbd";
+CM_ SG_ 36 ACCEL_X "x-axis accel";
 CM_ SG_ 37 STEER_FRACTION "1/15th of the signal STEER_ANGLE, which is 1.5 deg; note that 0x8 is never set";
 CM_ SG_ 37 STEER_RATE "factor is tbd";
 CM_ SG_ 466 NEUTRAL_FORCE "force in newtons the engine/electric motors are applying without any acceleration commands or user input";
@@ -440,7 +441,7 @@ CM_ SG_ 581 GAS_PEDAL "it seems slightly filtered";
 CM_ SG_ 608 STEER_TORQUE_DRIVER "driver torque";
 CM_ SG_ 608 STEER_OVERRIDE "set when driver torque exceeds a certain value";
 CM_ SG_ 614 ANGLE "set to measured angle when ipas control isn't active";
-CM_ SG_ 643 COUNTER "only used on cars that use this msg for cruise control";
+CM_ SG_ 643 _COUNTER "only used on cars that use this msg for cruise control";
 CM_ SG_ 643 BRAKE_STATUS "only used on cars that use this msg for cruise control";
 CM_ SG_ 643 PRECOLLISION_ACTIVE "set 0.5s before any braking";
 CM_ SG_ 835 ACC_TYPE "if 2, car is likely to have a permanent low speed lockout. 1 is ok";
@@ -527,6 +528,7 @@ VAL_ 956 ECON_ON 0 "off" 1 "on";
 VAL_ 956 B_GEAR_ENGAGED 0 "off" 1 "on";
 VAL_ 956 DRIVE_ENGAGED 0 "off" 1 "on";
 VAL_ 1005 REVERSE_CAMERA_GUIDELINES 3 "No guidelines" 2 "Static guidelines" 1 "Active guidelines";
+VAL_ 1009 PCM_FOLLOW_DISTANCE 1 "far" 2 "medium" 3 "close";
 VAL_ 1041 PCS_INDICATOR 2 "PCS Faulted" 1 "PCS Turned Off By User" 0 "PCS Enabled";
 VAL_ 1041 PCS_SENSITIVITY 64 "high sensitivity"  128 "mid sensitivity" 192 "low sensitivity" 0 "off";
 VAL_ 1042 LDA_ALERT 3 "hold with continuous beep" 2 "LDA unavailable" 1 "hold" 0 "none";

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 
 # Copyright (C) 2014 Swift Navigation Inc.
 #

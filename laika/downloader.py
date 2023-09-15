@@ -2,8 +2,6 @@ import certifi
 import ftplib
 import hatanaka
 import os
-import urllib.request
-import urllib.error
 import pycurl
 import re
 import time
@@ -13,7 +11,7 @@ import logging
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 from io import BytesIO
-from ftplib import FTP_TLS
+from ftplib import FTP_TLS, FTP
 
 from atomicwrites import atomic_write
 
@@ -185,7 +183,7 @@ def https_download_file(url):
   crl.setopt(crl.SSL_CIPHER_LIST, 'DEFAULT@SECLEVEL=1')
   crl.setopt(crl.COOKIEJAR, '/tmp/cddis_cookies')
   crl.setopt(pycurl.CONNECTTIMEOUT, 10)
-  
+
   buf = BytesIO()
   crl.setopt(crl.WRITEDATA, buf)
   crl.perform()
@@ -198,25 +196,19 @@ def https_download_file(url):
 
 
 def ftp_download_file(url):
-  try:
-    urlf = urllib.request.urlopen(url, timeout=10)
-    data_zipped = urlf.read()
-    urlf.close()
-    return data_zipped
-  except urllib.error.URLError as e:
-    raise DownloadFailed(e)
-
-def ftps_download_file(url):
   parsed = urlparse(url)
+  is_sftp = parsed.scheme == "sftp"
   try:
     buf = BytesIO()
-    with FTP_TLS(parsed.hostname) as ftps:
-      ftps.login(user='anonymous')
-      ftps.prot_p()
-      ftps.retrbinary('RETR ' + parsed.path, buf.write)
+    with FTP_TLS(parsed.hostname) if is_sftp else FTP(parsed.hostname) as ftp:
+      ftp.login(user='anonymous')
+      if is_sftp:
+        ftp.prot_p()
+      ftp.retrbinary('RETR ' + parsed.path, buf.write)
     return buf.getvalue()
   except ftplib.all_errors as e:
     raise DownloadFailed(e)
+
 
 @retryable
 def download_files(url_base, folder_path, cacheDir, filenames):
@@ -233,10 +225,8 @@ def download_file(url_base, folder_path, filename_zipped):
   logging.debug('Downloading ' + url)
   if url.startswith('https://'):
     return https_download_file(url)
-  elif url.startswith('ftp://'):
+  elif url.startswith(('ftp://', 'sftp://')):
     return ftp_download_file(url)
-  elif url.startswith('sftp://'):
-    return ftps_download_file(url)
   raise NotImplementedError('Did not find supported url scheme')
 
 

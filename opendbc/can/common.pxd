@@ -3,6 +3,7 @@
 
 from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 from libcpp cimport bool
+from libcpp.pair cimport pair
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
@@ -48,14 +49,6 @@ cdef extern from "common_dbc.h":
     vector[Msg] msgs
     vector[Val] vals
 
-  cdef struct SignalParseOptions:
-    uint32_t address
-    string name
-
-  cdef struct MessageParseOptions:
-    uint32_t address
-    int check_frequency
-
   cdef struct SignalValue:
     uint32_t address
     uint64_t ts_nanos
@@ -74,8 +67,8 @@ cdef extern from "common.h":
   cdef cppclass CANParser:
     bool can_valid
     bool bus_timeout
-    CANParser(int, string, vector[MessageParseOptions], vector[SignalParseOptions])
-    void update_strings(vector[string]&, vector[SignalValue]&, bool)
+    CANParser(int, string, vector[pair[uint32_t, int]]) except +
+    void update_strings(vector[string]&, vector[SignalValue]&, bool) except +
 
   cdef cppclass CANPacker:
    CANPacker(string)

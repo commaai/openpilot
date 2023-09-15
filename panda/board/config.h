@@ -21,10 +21,18 @@
 // USB definitions
 #define USB_VID 0xBBAAU
 
-#ifdef BOOTSTUB
-  #define USB_PID 0xDDEEU
+#ifdef PANDA_JUNGLE
+  #ifdef BOOTSTUB
+    #define USB_PID 0xDDEFU
+  #else
+    #define USB_PID 0xDDCFU
+  #endif
 #else
-  #define USB_PID 0xDDCCU
+  #ifdef BOOTSTUB
+    #define USB_PID 0xDDEEU
+  #else
+    #define USB_PID 0xDDCCU
+  #endif
 #endif
 
 // platform includes

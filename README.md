@@ -1,4 +1,4 @@
-![](https://i.imgur.com/b0ZyIx5.jpg)
+![openpilot on the comma 3X](https://github.com/commaai/openpilot/assets/4038174/f1081737-8718-4241-a22a-3ceba526361a)
 
 Table of Contents
 =======================
@@ -39,13 +39,17 @@ Running on a dedicated device in a car
 ------
 
 To use openpilot in a car, you need four things
-* A supported device to run this software: a [comma three](https://comma.ai/shop/products/three).
-* This software. The setup procedure of the comma three allows the user to enter a URL for custom software.
-The URL, openpilot.comma.ai will install the release version of openpilot. To install openpilot master, you can use installer.comma.ai/commaai/master, and replacing commaai with another GitHub username can install a fork.
-* One of [the 250+ supported cars](docs/CARS.md). We support Honda, Toyota, Hyundai, Nissan, Kia, Chrysler, Lexus, Acura, Audi, VW, Ford and more. If your car is not supported but has adaptive cruise control and lane-keeping assist, it's likely able to run openpilot.
-* A [car harness](https://comma.ai/shop/products/car-harness) to connect to your car.
+1. **Supported Device:** A comma 3/3X. You can purchase these devices from (https://comma.ai/shop/comma-3x)
+  
+2. **Software:** The setup procedure for the comma 3/3X allows users to enter a URL for custom software.
+  To install the release version of openpilot, use the URL `openpilot.comma.ai`.
+  To install openpilot master (for more advanced users), use the URL `installer.comma.ai/commaai/master`. You can replace "commaai" with another GitHub username to install a fork.
 
-We have detailed instructions for [how to mount the device in a car](https://comma.ai/setup).
+3. **Supported Car:** Ensure that you have one of [the 250+ supported cars](docs/CARS.md). openpilot supports a wide range of car makes including Honda, Toyota, Hyundai, Nissan, Kia, Chrysler, Lexus, Acura, Audi, VW, Ford, and many more.
+  If your car is not officially listed as supported but has adaptive cruise control and lane-keeping assist, it's likely capable of running openpilot.
+  
+4. **Car Harness:** You will also need a [car harness](https://comma.ai/shop/car-harness) to connect your comma 3/3X to your car.
+  We have detailed instructions for [how to install the harness and device in a car](https://comma.ai/setup).
 
 Running on PC
 ------

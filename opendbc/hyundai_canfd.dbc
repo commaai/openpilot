@@ -65,7 +65,7 @@ BO_ 80 LKAS: 16 XXX
  SG_ LKA_ASSIST : 62|1@1+ (1,0) [0|1] "" XXX
  SG_ LKA_MODE : 24|3@1+ (1,0) [0|7] "" XXX
  SG_ NEW_SIGNAL_2 : 70|2@0+ (1,0) [0|3] "" XXX
- SG_ SET_ME_1 : 80|1@0+ (1,0) [0|1] "" XXX
+ SG_ HAS_LANE_SAFETY : 80|1@0+ (1,0) [0|1] "" XXX
  SG_ NEW_SIGNAL_3 : 111|8@0+ (1,0) [0|255] "" XXX
  SG_ FCA_SYSWARN : 40|1@0+ (1,0) [0|1] "" XXX
 
@@ -98,10 +98,10 @@ BO_ 160 WHEEL_SPEEDS: 24 XXX
  SG_ MOVING_BACKWARD : 57|1@0+ (1,0) [0|1] "" XXX
  SG_ MOVING_FORWARD2 : 58|1@0+ (1,0) [0|1] "" XXX
  SG_ MOVING_BACKWARD2 : 59|1@0+ (1,0) [0|1] "" XXX
- SG_ WHEEL_SPEED_1 : 64|16@1+ (0.03125,0) [0|65535] "m/s" XXX
- SG_ WHEEL_SPEED_2 : 80|16@1+ (0.03125,0) [0|65535] "m/s" XXX
- SG_ WHEEL_SPEED_3 : 96|16@1+ (0.03125,0) [0|65535] "m/s" XXX
- SG_ WHEEL_SPEED_4 : 112|16@1+ (0.03125,0) [0|65535] "m/s" XXX
+ SG_ WHEEL_SPEED_1 : 64|16@1+ (0.03125,0) [0|65535] "kph" XXX
+ SG_ WHEEL_SPEED_2 : 80|16@1+ (0.03125,0) [0|65535] "kph" XXX
+ SG_ WHEEL_SPEED_3 : 96|16@1+ (0.03125,0) [0|65535] "kph" XXX
+ SG_ WHEEL_SPEED_4 : 112|16@1+ (0.03125,0) [0|65535] "kph" XXX
 
 BO_ 234 MDPS: 24 XXX
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
@@ -124,6 +124,23 @@ BO_ 261 ACCELERATOR_ALT: 32 XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
  SG_ ACCELERATOR_PEDAL : 103|10@1+ (0.25,0) [0|1022] "" XXX
 
+BO_ 272 LKAS_ALT: 32 XXX
+ SG_ STEER_REQ : 52|1@1+ (1,0) [0|1] "" XXX
+ SG_ TORQUE_REQUEST : 41|11@1+ (1,-1024) [0|4095] "" XXX
+ SG_ LKA_ICON : 38|2@1+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_1 : 27|2@1+ (1,0) [0|255] "" XXX
+ SG_ LFA_BUTTON : 56|1@1+ (1,0) [0|255] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ STEER_MODE : 65|3@1+ (1,0) [0|1] "" XXX
+ SG_ LKA_WARNING : 32|1@1+ (1,0) [0|1] "" XXX
+ SG_ LKA_ASSIST : 62|1@1+ (1,0) [0|1] "" XXX
+ SG_ LKA_MODE : 24|3@1+ (1,0) [0|7] "" XXX
+ SG_ NEW_SIGNAL_2 : 70|2@0+ (1,0) [0|3] "" XXX
+ SG_ HAS_LANE_SAFETY : 80|1@0+ (1,0) [0|1] "" XXX
+ SG_ NEW_SIGNAL_3 : 111|8@0+ (1,0) [0|255] "" XXX
+ SG_ FCA_SYSWARN : 40|1@0+ (1,0) [0|1] "" XXX
+
 BO_ 293 STEERING_SENSORS: 16 XXX
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
@@ -143,7 +160,7 @@ BO_ 298 LFA: 16 ADRV
  SG_ LKA_ASSIST : 62|1@1+ (1,0) [0|1] "" XXX
  SG_ LKA_MODE : 24|3@1+ (1,0) [0|7] "" XXX
  SG_ NEW_SIGNAL_2 : 70|2@0+ (1,0) [0|3] "" XXX
- SG_ SET_ME_1 : 80|1@0+ (1,0) [0|1] "" XXX
+ SG_ HAS_LANE_SAFETY : 80|1@0+ (1,0) [0|1] "" XXX
  SG_ NEW_SIGNAL_3 : 111|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 304 GEAR_SHIFTER: 16 XXX
@@ -453,7 +470,10 @@ BO_ 676 CAM_0x2a4: 24 XXX
  SG_ BYTE4 : 32|8@1+ (1,0) [0|255] "" XXX
  SG_ BYTE5 : 40|8@1+ (1,0) [0|255] "" XXX
  SG_ BYTE6 : 48|8@1+ (1,0) [0|255] "" XXX
- SG_ BYTE7 : 56|8@1+ (1,0) [0|255] "" XXX
+ SG_ LEFT_LANE_LINE : 56|2@1+ (1,0) [0|3] "" XXX
+ SG_ SET_ME_0 : 58|2@1+ (1,0) [0|3] "" XXX
+ SG_ RIGHT_LANE_LINE : 60|2@1+ (1,0) [0|3] "" XXX
+ SG_ SET_ME_0_2 : 62|2@1+ (1,0) [0|3] "" XXX
  SG_ BYTE8 : 64|8@1+ (1,0) [0|255] "" XXX
  SG_ BYTE9 : 72|8@1+ (1,0) [0|255] "" XXX
  SG_ BYTE10 : 80|8@1+ (1,0) [0|255] "" XXX
@@ -487,10 +507,54 @@ BO_ 702 CAM_0x2be: 32 CAMERA
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
 
+BO_ 736 MANUAL_SPEED_LIMIT_ASSIST: 32 XXX
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ MSLA_STATUS : 26|2@1+ (1,0) [0|3] "" XXX
+ SG_ MSLA_ENABLED : 38|1@1+ (1,0) [0|1] "" XXX
+ SG_ MAX_SPEED : 55|8@0+ (1,0) [0|255] "" XXX
+ SG_ MAX_SPEED_COPY : 144|8@1+ (1,0) [0|255] "" XXX
+
 BO_ 837 ADRV_0x345: 8 ADRV
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
  SG_ SET_ME_15 : 24|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 866 CAM_0x362: 32 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE3 : 24|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE4 : 32|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE5 : 40|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE6 : 48|8@1+ (1,0) [0|255] "" XXX
+ SG_ LEFT_LANE_LINE : 56|2@1+ (1,0) [0|3] "" XXX
+ SG_ SET_ME_0 : 58|2@1+ (1,0) [0|3] "" XXX
+ SG_ RIGHT_LANE_LINE : 60|2@1+ (1,0) [0|3] "" XXX
+ SG_ SET_ME_0_2 : 62|2@1+ (1,0) [0|3] "" XXX
+ SG_ BYTE8 : 64|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE9 : 72|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE10 : 80|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE11 : 88|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE12 : 96|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE13 : 104|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE14 : 112|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE15 : 120|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE16 : 128|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE17 : 136|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE18 : 144|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE19 : 152|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE20 : 160|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE21 : 168|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE22 : 176|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE23 : 184|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE24 : 192|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE25 : 200|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE26 : 208|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE27 : 216|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE28 : 224|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE29 : 232|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE30 : 240|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE31 : 248|8@1+ (1,0) [0|255] "" XXX
 
 BO_ 961 BLINKER_STALKS: 8 XXX
  SG_ COUNTER_ALT : 15|4@0+ (1,0) [0|15] "" XXX
@@ -512,9 +576,14 @@ BO_ 1041 DOORS_SEATBELTS: 8 XXX
  SG_ PASSENGER_SEATBELT : 36|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 1043 BLINKERS: 8 XXX
+ SG_ LEFT_STALK : 8|1@0+ (1,0) [0|1] "" XXX
+ SG_ RIGHT_STALK : 10|1@0+ (1,0) [0|1] "" XXX
  SG_ COUNTER_ALT : 15|4@0+ (1,0) [0|15] "" XXX
  SG_ LEFT_LAMP : 20|1@0+ (1,0) [0|1] "" XXX
  SG_ RIGHT_LAMP : 22|1@0+ (1,0) [0|1] "" XXX
+ SG_ LEFT_LAMP_ALT : 59|1@0+ (1,0) [0|1] "" XXX
+ SG_ RIGHT_LAMP_ALT : 61|1@0+ (1,0) [0|1] "" XXX
+ SG_ USE_ALT_LAMP : 62|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 1240 CLUSTER_INFO: 8 XXX
  SG_ DISTANCE_UNIT : 0|1@1+ (1,0) [0|1] "" XXX
@@ -589,7 +658,12 @@ BO_ 1264 LOCAL_TIME: 8 XXX
  SG_ MINUTES : 21|6@0+ (1,0) [0|63] "" XXX
  SG_ SECONDS : 31|8@0+ (1,0) [0|59] "" XXX
 
+CM_ 272 "Alternative LKAS message, used on cars such as 2023 Ioniq 6, 2nd gen Kona. Matches LKAS except size is 32 bytes";
+CM_ 676 "Contains signals with detailed lane line information. Used by ADAS ECU on HDA 2 vehicles to operate LFA.";
+CM_ 866 "Contains signals with detailed lane line information. Used by ADAS ECU on HDA 2 vehicles to operate LFA. Used on cars that use message 272.";
+CM_ 1043 "Lamp signals do not seem universal on cars that use LKAS_ALT, but stalk signals do.";
 
+CM_ SG_ 80 HAS_LANE_SAFETY "If 0, hides LKAS 'Lane Safety' menu from vehicle settings";
 CM_ SG_ 96 BRAKE_PRESSURE "User applied brake pedal pressure. Ramps from computer applied pressure on falling edge of cruise. Cruise cancels if !=0";
 CM_ SG_ 101 BRAKE_POSITION "User applied brake pedal position, max is ~700. Signed on some vehicles";
 CM_ SG_ 373 PROBABLY_EQUIP "aeb equip?";
@@ -598,9 +672,15 @@ CM_ SG_ 373 DriverBraking "Likely derived from BRAKE->BRAKE_POSITION";
 CM_ SG_ 373 DriverBrakingLowSens "Higher threshold version of DriverBraking";
 CM_ SG_ 352 SET_ME_9 "has something to do with AEB settings";
 CM_ SG_ 416 VSetDis "set speed in display units";
+CM_ SG_ 676 LEFT_LANE_LINE "Left lane line confidence";
+CM_ SG_ 676 RIGHT_LANE_LINE "Right lane line confidence";
+CM_ SG_ 736 MAX_SPEED "Display units. Restricts car from driving above this speed unless accelerator pedal is depressed beyond pressure point";
+CM_ SG_ 866 LEFT_LANE_LINE "Left lane line confidence";
+CM_ SG_ 866 RIGHT_LANE_LINE "Right lane line confidence";
 CM_ SG_ 961 COUNTER_ALT "only increments on change";
 CM_ SG_ 1041 COUNTER_ALT "only increments on change";
 CM_ SG_ 1043 COUNTER_ALT "only increments on change";
+CM_ SG_ 1043 USE_ALT_LAMP "likely 1 on cars that use alt lamp signals";
 VAL_ 53 GEAR 0 "P" 5 "D" 6 "N" 7 "R" ;
 VAL_ 64 GEAR 0 "P" 5 "D" 6 "N" 7 "R" ;
 VAL_ 69 GEAR 0 "P" 5 "D" 6 "N" 7 "R" ;
@@ -609,6 +689,8 @@ VAL_ 80 LKA_ICON 0 "hidden" 1 "grey" 2 "green" 3 "flashing green" ;
 VAL_ 80 LKA_MODE 1 "warning only" 2 "assist" 6 "off" ;
 VAL_ 96 TRACTION_AND_STABILITY_CONTROL 0 "On" 5 "Limited" 1 "Off";
 VAL_ 234 LKA_FAULT 0 "ok" 1 "lka fault" ;
+VAL_ 272 LKA_ICON 0 "hidden" 1 "grey" 2 "green" 3 "flashing green" ;
+VAL_ 272 LKA_MODE 1 "warning only" 2 "assist" 6 "off" ;
 VAL_ 298 LKA_ICON 0 "hidden" 1 "grey" 2 "green" 3 "flashing green" ;
 VAL_ 298 LKA_MODE 1 "warning only" 2 "assist" 6 "off" ;
 VAL_ 304 PARK_BUTTON 1 "Pressed" 2 "Not Pressed";
@@ -622,6 +704,11 @@ VAL_ 426 CRUISE_BUTTONS 0 "none" 1 "res_accel" 2 "set_decel" 3 "gap_distance" 4 
 VAL_ 463 CRUISE_BUTTONS 0 "none" 1 "res_accel" 2 "set_decel" 3 "gap_distance" 4 "pause_resume" ;
 VAL_ 463 RIGHT_PADDLE 0 "Not Pulled" 1 "Pulled";
 VAL_ 463 LEFT_PADDLE 0 "Not Pulled" 1 "Pulled";
+VAL_ 676 LEFT_LANE_LINE 0 "Not Detected" 1 "Low Confidence" 2 "Medium Confidence" 3 "High Confidence";
+VAL_ 676 RIGHT_LANE_LINE 0 "Not Detected" 1 "Low Confidence" 2 "Medium Confidence" 3 "High Confidence";
+VAL_ 736 MSLA_STATUS 0 "disabled" 1 "active" 2 "paused";
+VAL_ 866 LEFT_LANE_LINE 0 "Not Detected" 1 "Low Confidence" 2 "Medium Confidence" 3 "High Confidence";
+VAL_ 866 RIGHT_LANE_LINE 0 "Not Detected" 1 "Low Confidence" 2 "Medium Confidence" 3 "High Confidence";
 VAL_ 1041 DRIVER_DOOR 0 "Closed" 1 "Opened";
 VAL_ 1041 PASSENGER_DOOR 0 "Closed" 1 "Opened";
 VAL_ 1041 DRIVER_REAR_DOOR 0 "Closed" 1 "Opened";

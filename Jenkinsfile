@@ -1,4 +1,4 @@
-def phone(String ip, String step_label, String cmd) {
+def device(String ip, String step_label, String cmd) {
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
     def ssh_cmd = """
 ssh -tt -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' /usr/bin/bash <<'END'
@@ -6,6 +6,7 @@ ssh -tt -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' /usr/bin/bash <
 set -e
 
 export CI=1
+export PYTHONWARNINGS=error
 export LOGPRINT=debug
 export TEST_DIR=${env.TEST_DIR}
 export SOURCE_DIR=${env.SOURCE_DIR}
@@ -50,222 +51,186 @@ END"""
   }
 }
 
-def phone_steps(String device_type, steps) {
-  lock(resource: "", label: device_type, inversePrecedence: true, variable: 'device_ip', quantity: 1) {
-    timeout(time: 20, unit: 'MINUTES') {
-      phone(device_ip, "git checkout", readFile("selfdrive/test/setup_device_ci.sh"),)
-      steps.each { item ->
-        phone(device_ip, item[0], item[1])
+def deviceStage(String stageName, String deviceType, List env, def steps) {
+  stage(stageName) {
+    if (currentBuild.result != null) {
+        return
+    }
+
+    def extra = env.collect { "export ${it}" }.join('\n');
+
+    docker.image('ghcr.io/commaai/alpine-ssh').inside('--user=root') {
+      lock(resource: "", label: deviceType, inversePrecedence: true, variable: 'device_ip', quantity: 1) {
+        timeout(time: 20, unit: 'MINUTES') {
+          device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
+          steps.each { item ->
+            device(device_ip, item[0], item[1])
+          }
+        }
       }
     }
   }
 }
 
-pipeline {
-  agent none
-  environment {
-    CI = "1"
-    TEST_DIR = "/data/openpilot"
-    SOURCE_DIR = "/data/openpilot_source/"
-    AZURE_TOKEN = credentials('azure_token')
-    MAPBOX_TOKEN = credentials('mapbox_token')
+def pcStage(String stageName, Closure body) {
+  node {
+  stage(stageName) {
+    if (currentBuild.result != null) {
+        return
+    }
+
+    checkout scm
+
+    def dockerArgs = '--user=root -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache';
+    docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .").inside(dockerArgs) {
+      timeout(time: 20, unit: 'MINUTES') {
+        try {
+          sh "git config --global --add safe.directory '*'"
+          sh "git submodule update --init --recursive"
+          sh "git lfs pull"
+          body()
+        } finally {
+          sh "rm -rf ${env.WORKSPACE}/* || true"
+          sh "rm -rf .* || true"
+        }
+      }
+    }
   }
-  options {
-    timeout(time: 3, unit: 'HOURS')
-    disableConcurrentBuilds(abortPrevious: env.BRANCH_NAME != 'master')
+  }
+}
+
+def setupCredentials() {
+  withCredentials([
+    string(credentialsId: 'azure_token', variable: 'AZURE_TOKEN'),
+    string(credentialsId: 'mapbox_token', variable: 'MAPBOX_TOKEN')
+  ]) {
+    env.AZURE_TOKEN = "${AZURE_TOKEN}"
+    env.MAPBOX_TOKEN = "${MAPBOX_TOKEN}"
+  }
+}
+
+node {
+  env.CI = "1"
+  env.PYTHONWARNINGS = "error"
+  env.TEST_DIR = "/data/openpilot"
+  env.SOURCE_DIR = "/data/openpilot_source/"
+  setupCredentials()
+
+  env.GIT_BRANCH = checkout(scm).GIT_BRANCH
+  env.GIT_COMMIT = checkout(scm).GIT_COMMIT
+
+  def excludeBranches = ['master-ci', 'devel', 'devel-staging', 'release3', 'release3-staging',
+                         'dashcam3', 'dashcam3-staging', 'testing-closet*', 'hotfix-*']
+  def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
+
+  if (env.BRANCH_NAME != 'master') {
+    properties([
+        disableConcurrentBuilds(abortPrevious: true)
+    ])
   }
 
-  stages {
-    stage('build release3-staging') {
-      agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
-      when {
-        branch 'devel-staging'
-      }
-      steps {
-        phone_steps("tici-needs-can", [
-          ["build release3-staging & dashcam3-staging", "RELEASE_BRANCH=release3-staging DASHCAM_BRANCH=dashcam3-staging $SOURCE_DIR/release/build_release.sh"],
+  try {
+    if (env.BRANCH_NAME == 'devel-staging') {
+      deviceStage("build release3-staging", "tici-needs-can", [], [
+        ["build release3-staging & dashcam3-staging", "RELEASE_BRANCH=release3-staging DASHCAM_BRANCH=dashcam3-staging $SOURCE_DIR/release/build_release.sh"],
+      ])
+    }
+
+    if (env.BRANCH_NAME == 'master-ci') {
+      deviceStage("build nightly", "tici-needs-can", [], [
+        ["build nightly", "RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_release.sh"],
+      ])
+    }
+
+    if (!env.BRANCH_NAME.matches(excludeRegex)) {
+    parallel (
+      // tici tests
+      'onroad tests': {
+        deviceStage("onroad", "tici-needs-can", ["SKIP_COPY=1"], [
+          ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR ./build_devel.sh"],
+          ["build openpilot", "cd selfdrive/manager && ./build.py"],
+          ["check dirty", "release/check-dirty.sh"],
+          ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
+          ["time to onroad", "cd selfdrive/test/ && pytest test_time_to_onroad.py"],
         ])
-      }
-    }
-
-    stage('build nightly') {
-      agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
-      when {
-        branch 'master-ci'
-      }
-      steps {
-        phone_steps("tici-needs-can", [
-          ["build nightly", "RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_release.sh"],
+      },
+      'HW + Unit Tests': {
+        deviceStage("tici", "tici-common", ["UNSAFE=1"], [
+          ["build", "cd selfdrive/manager && ./build.py"],
+          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
+          ["test power draw", "./system/hardware/tici/tests/test_power_draw.py"],
+          ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
+          ["test pigeond", "pytest system/sensord/tests/test_pigeond.py"],
+          ["test manager", "pytest selfdrive/manager/test/test_manager.py"],
+          ["test nav", "pytest selfdrive/navd/tests/"],
         ])
-      }
+      },
+      'loopback': {
+        deviceStage("tici", "tici-loopback", ["UNSAFE=1"], [
+          ["build openpilot", "cd selfdrive/manager && ./build.py"],
+          ["test boardd loopback", "pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
+        ])
+      },
+      'camerad': {
+        deviceStage("AR0231", "tici-ar0231", ["UNSAFE=1"], [
+          ["build", "cd selfdrive/manager && ./build.py"],
+          ["test camerad", "pytest system/camerad/test/test_camerad.py"],
+          ["test exposure", "pytest system/camerad/test/test_exposure.py"],
+        ])
+        deviceStage("OX03C10", "tici-ox03c10", ["UNSAFE=1"], [
+          ["build", "cd selfdrive/manager && ./build.py"],
+          ["test camerad", "pytest system/camerad/test/test_camerad.py"],
+          ["test exposure", "pytest system/camerad/test/test_exposure.py"],
+        ])
+      },
+      'sensord': {
+        deviceStage("LSM + MMC", "tici-lsmc", ["UNSAFE=1"], [
+          ["build", "cd selfdrive/manager && ./build.py"],
+          ["test sensord", "cd system/sensord/tests && pytest test_sensord.py"],
+        ])
+        deviceStage("BMX + LSM", "tici-bmx-lsm", ["UNSAFE=1"], [
+          ["build", "cd selfdrive/manager && ./build.py"],
+          ["test sensord", "cd system/sensord/tests && pytest test_sensord.py"],
+        ])
+      },
+      'replay': {
+        deviceStage("tici", "tici-replay", ["UNSAFE=1"], [
+          ["build", "cd selfdrive/manager && ./build.py"],
+          ["model replay", "cd selfdrive/test/process_replay && ./model_replay.py"],
+        ])
+      },
+      'tizi': {
+        deviceStage("tizi", "tizi", ["UNSAFE=1"], [
+          ["build openpilot", "cd selfdrive/manager && ./build.py"],
+          ["test boardd loopback", "SINGLE_PANDA=1 pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
+          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
+          ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
+          ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
+          ["test rawgpsd", "pytest system/sensord/rawgps/test_rawgps.py"],
+        ])
+      },
+
+      // *** PC tests ***
+      'PC tests': {
+        pcStage("PC tests") {
+          // tests that our build system's dependencies are configured properly,
+          // needs a machine with lots of cores
+          sh label: "test multi-threaded build", script: "scons --no-cache --random -j42"
+        }
+      },
+      'car tests': {
+        pcStage("car tests") {
+          sh "scons -j30"
+          sh label: "test_models.py", script: "INTERNAL_SEG_CNT=250 INTERNAL_SEG_LIST=selfdrive/car/tests/test_models_segs.txt FILEREADER_CACHE=1 \
+              pytest -n42 --dist=loadscope selfdrive/car/tests/test_models.py"
+          sh label: "test_car_interfaces.py", script: "MAX_EXAMPLES=100 pytest -n42 selfdrive/car/tests/test_car_interfaces.py"
+        }
+      },
+
+    )
     }
-
-    stage('openpilot tests') {
-      when {
-        not {
-          anyOf {
-            branch 'master-ci'; branch 'devel'; branch 'devel-staging';
-            branch 'release3'; branch 'release3-staging'; branch 'dashcam3'; branch 'dashcam3-staging';
-            branch 'testing-closet*'; branch 'hotfix-*'
-          }
-        }
-      }
-
-      parallel {
-
-        /*
-        stage('simulator') {
-          agent {
-            dockerfile {
-              filename 'Dockerfile.sim_nvidia'
-              dir 'tools/sim'
-              args '--user=root'
-            }
-          }
-          steps {
-            sh "git config --global --add safe.directory '*'"
-            sh "git submodule update --init --recursive"
-            sh "git lfs pull"
-            lock(resource: "", label: "simulator", inversePrecedence: true, quantity: 1) {
-              sh "${WORKSPACE}/tools/sim/build_container.sh"
-              sh "DETACH=1 ${WORKSPACE}/tools/sim/start_carla.sh"
-              sh "${WORKSPACE}/tools/sim/start_openpilot_docker.sh"
-            }
-          }
-
-          post {
-            always {
-              sh "docker kill carla_sim || true"
-              sh "rm -rf ${WORKSPACE}/* || true"
-              sh "rm -rf .* || true"
-            }
-          }
-        }
-        */
-
-        stage('scons build test') {
-          agent {
-            dockerfile {
-              filename 'Dockerfile.openpilot_base'
-              args '--user=root'
-            }
-          }
-          steps {
-            sh "git config --global --add safe.directory '*'"
-            sh "git submodule update --init --depth=1 --recursive"
-            sh "scons --clean && scons --no-cache -j42"
-            sh "scons --clean && scons --no-cache --random -j42"
-          }
-
-          post {
-            always {
-              sh "rm -rf ${WORKSPACE}/* || true"
-              sh "rm -rf .* || true"
-            }
-          }
-        }
-
-        stage('tizi-tests') {
-          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
-          steps {
-            phone_steps("tizi", [
-              ["build openpilot", "cd selfdrive/manager && ./build.py"],
-              ["test boardd loopback", "SINGLE_PANDA=1 pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
-              ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
-              ["test sensord", "cd system/sensord/tests && pytest test_sensord.py"],
-              ["test camerad", "pytest system/camerad/test/test_camerad.py"],
-              ["test exposure", "pytest system/camerad/test/test_exposure.py"],
-              ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
-              ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
-              ["test rawgpsd", "pytest system/sensord/rawgps/test_rawgps.py"],
-            ])
-          }
-        }
-
-        stage('build') {
-          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
-          environment {
-            R3_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
-          }
-          steps {
-            phone_steps("tici-needs-can", [
-              ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR EXTRA_FILES='tools/' ./build_devel.sh"],
-              ["build openpilot", "cd selfdrive/manager && ./build.py"],
-              ["check dirty", "release/check-dirty.sh"],
-              ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
-              ["time to onroad", "cd selfdrive/test/ && pytest test_time_to_onroad.py"],
-            ])
-          }
-        }
-
-        stage('loopback-tests') {
-          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
-          steps {
-            phone_steps("tici-loopback", [
-              ["build openpilot", "cd selfdrive/manager && ./build.py"],
-              ["test boardd loopback", "pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
-            ])
-          }
-        }
-
-        stage('HW + Unit Tests') {
-          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
-          steps {
-            phone_steps("tici-common", [
-              ["build", "cd selfdrive/manager && ./build.py"],
-              ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
-              ["test power draw", "pytest system/hardware/tici/tests/test_power_draw.py"],
-              ["test loggerd", "pytest system/loggerd/tests/test_loggerd.py"],
-              ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
-              ["test pigeond", "pytest system/sensord/tests/test_pigeond.py"],
-              ["test manager", "pytest selfdrive/manager/test/test_manager.py"],
-              ["test nav", "pytest selfdrive/navd/tests/"],
-            ])
-          }
-        }
-
-        stage('camerad') {
-          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
-          steps {
-            phone_steps("tici-ar0231", [
-              ["build", "cd selfdrive/manager && ./build.py"],
-              ["test camerad", "pytest system/camerad/test/test_camerad.py"],
-              ["test exposure", "pytest system/camerad/test/test_exposure.py"],
-            ])
-            phone_steps("tici-ox03c10", [
-              ["build", "cd selfdrive/manager && ./build.py"],
-              ["test camerad", "pytest system/camerad/test/test_camerad.py"],
-              ["test exposure", "pytest system/camerad/test/test_exposure.py"],
-            ])
-          }
-        }
-
-        stage('sensord') {
-          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
-          steps {
-            phone_steps("tici-lsmc", [
-              ["build", "cd selfdrive/manager && ./build.py"],
-              ["test sensord", "cd system/sensord/tests && pytest test_sensord.py"],
-            ])
-            phone_steps("tici-bmx-lsm", [
-              ["build", "cd selfdrive/manager && ./build.py"],
-              ["test sensord", "cd system/sensord/tests && pytest test_sensord.py"],
-            ])
-          }
-        }
-
-        stage('replay') {
-          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
-          steps {
-            phone_steps("tici-replay", [
-              ["build", "cd selfdrive/manager && ./build.py"],
-              ["model replay", "cd selfdrive/test/process_replay && ./model_replay.py"],
-            ])
-          }
-        }
-
-      }
-    }
-
+  } catch (Exception e) {
+    currentBuild.result = 'FAILED'
+    throw e
   }
 }

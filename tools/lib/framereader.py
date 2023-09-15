@@ -1,4 +1,3 @@
-# pylint: skip-file
 import json
 import os
 import pickle
@@ -13,11 +12,11 @@ import numpy as np
 from lru import LRU
 
 import _io
-from tools.lib.cache import cache_path_for_file_path
-from tools.lib.exceptions import DataUnreadableError
-from common.file_helpers import atomic_write_in_dir
+from openpilot.tools.lib.cache import cache_path_for_file_path, DEFAULT_CACHE_DIR
+from openpilot.tools.lib.exceptions import DataUnreadableError
+from openpilot.common.file_helpers import atomic_write_in_dir
 
-from tools.lib.filereader import FileReader
+from openpilot.tools.lib.filereader import FileReader
 
 HEVC_SLICE_B = 0
 HEVC_SLICE_P = 1
@@ -70,8 +69,8 @@ def ffprobe(fn, fmt=None):
 
   try:
     ffprobe_output = subprocess.check_output(cmd)
-  except subprocess.CalledProcessError:
-    raise DataUnreadableError(fn)
+  except subprocess.CalledProcessError as e:
+    raise DataUnreadableError(fn) from e
 
   return json.loads(ffprobe_output)
 
@@ -80,14 +79,14 @@ def vidindex(fn, typ):
   vidindex_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "vidindex")
   vidindex = os.path.join(vidindex_dir, "vidindex")
 
-  subprocess.check_call(["make"], cwd=vidindex_dir, stdout=open("/dev/null", "w"))
+  subprocess.check_call(["make"], cwd=vidindex_dir, stdout=subprocess.DEVNULL)
 
   with tempfile.NamedTemporaryFile() as prefix_f, \
        tempfile.NamedTemporaryFile() as index_f:
     try:
       subprocess.check_call([vidindex, typ, fn, prefix_f.name, index_f.name])
-    except subprocess.CalledProcessError:
-      raise DataUnreadableError(f"vidindex failed on file {fn}")
+    except subprocess.CalledProcessError as e:
+      raise DataUnreadableError(f"vidindex failed on file {fn}") from e
     with open(index_f.name, "rb") as f:
       index = f.read()
     with open(prefix_f.name, "rb") as f:
@@ -107,8 +106,8 @@ def cache_fn(func):
     if kwargs.pop('no_cache', None):
       cache_path = None
     else:
-      cache_prefix = kwargs.pop('cache_prefix', None)
-      cache_path = cache_path_for_file_path(fn, cache_prefix)
+      cache_dir = kwargs.pop('cache_dir', DEFAULT_CACHE_DIR)
+      cache_path = cache_path_for_file_path(fn, cache_dir)
 
     if cache_path and os.path.exists(cache_path):
       with open(cache_path, "rb") as cache_file:
@@ -141,18 +140,18 @@ def index_stream(fn, typ):
   }
 
 
-def index_videos(camera_paths, cache_prefix=None):
+def index_videos(camera_paths, cache_dir=DEFAULT_CACHE_DIR):
   """Requires that paths in camera_paths are contiguous and of the same type."""
   if len(camera_paths) < 1:
     raise ValueError("must provide at least one video to index")
 
   frame_type = fingerprint_video(camera_paths[0])
   for fn in camera_paths:
-    index_video(fn, frame_type, cache_prefix)
+    index_video(fn, frame_type, cache_dir)
 
 
-def index_video(fn, frame_type=None, cache_prefix=None):
-  cache_path = cache_path_for_file_path(fn, cache_prefix)
+def index_video(fn, frame_type=None, cache_dir=DEFAULT_CACHE_DIR):
+  cache_path = cache_path_for_file_path(fn, cache_dir)
 
   if os.path.exists(cache_path):
     return
@@ -161,16 +160,16 @@ def index_video(fn, frame_type=None, cache_prefix=None):
     frame_type = fingerprint_video(fn[0])
 
   if frame_type == FrameType.h265_stream:
-    index_stream(fn, "hevc", cache_prefix=cache_prefix)
+    index_stream(fn, "hevc", cache_dir=cache_dir)
   else:
     raise NotImplementedError("Only h265 supported")
 
 
-def get_video_index(fn, frame_type, cache_prefix=None):
-  cache_path = cache_path_for_file_path(fn, cache_prefix)
+def get_video_index(fn, frame_type, cache_dir=DEFAULT_CACHE_DIR):
+  cache_path = cache_path_for_file_path(fn, cache_dir)
 
   if not os.path.exists(cache_path):
-    index_video(fn, frame_type, cache_prefix)
+    index_video(fn, frame_type, cache_dir)
 
   if not os.path.exists(cache_path):
     return None
@@ -237,25 +236,23 @@ def decompress_video_data(rawdat, vid_fmt, w, h, pix_fmt):
 
     threads = os.getenv("FFMPEG_THREADS", "0")
     cuda = os.getenv("FFMPEG_CUDA", "0") == "1"
-    proc = subprocess.Popen(
-      ["ffmpeg",
-       "-threads", threads,
-       "-hwaccel", "none" if not cuda else "cuda",
-       "-c:v", "hevc",
-       "-vsync", "0",
-       "-f", vid_fmt,
-       "-flags2", "showall",
-       "-i", "pipe:0",
-       "-threads", threads,
-       "-f", "rawvideo",
-       "-pix_fmt", pix_fmt,
-       "pipe:1"],
-      stdin=tmpf, stdout=subprocess.PIPE, stderr=open("/dev/null"))
-
-    # dat = proc.communicate()[0]
-    dat = proc.stdout.read()
-    if proc.wait() != 0:
-      raise DataUnreadableError("ffmpeg failed")
+    args = ["ffmpeg",
+            "-threads", threads,
+            "-hwaccel", "none" if not cuda else "cuda",
+            "-c:v", "hevc",
+            "-vsync", "0",
+            "-f", vid_fmt,
+            "-flags2", "showall",
+            "-i", "pipe:0",
+            "-threads", threads,
+            "-f", "rawvideo",
+            "-pix_fmt", pix_fmt,
+            "pipe:1"]
+    with subprocess.Popen(args, stdin=tmpf, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL) as proc:
+      # dat = proc.communicate()[0]
+      dat = proc.stdout.read()
+      if proc.wait() != 0:
+        raise DataUnreadableError("ffmpeg failed")
 
   if pix_fmt == "rgb24":
     ret = np.frombuffer(dat, dtype=np.uint8).reshape(-1, h, w, 3)
@@ -287,13 +284,13 @@ class BaseFrameReader:
     raise NotImplementedError
 
 
-def FrameReader(fn, cache_prefix=None, readahead=False, readbehind=False, index_data=None):
+def FrameReader(fn, cache_dir=DEFAULT_CACHE_DIR, readahead=False, readbehind=False, index_data=None):
   frame_type = fingerprint_video(fn)
   if frame_type == FrameType.raw:
     return RawFrameReader(fn)
   elif frame_type in (FrameType.h265_stream,):
     if not index_data:
-      index_data = get_video_index(fn, frame_type, cache_prefix)
+      index_data = get_video_index(fn, frame_type, cache_dir)
     return StreamFrameReader(fn, frame_type, index_data, readahead=readahead, readbehind=readbehind)
   else:
     raise NotImplementedError(frame_type)
@@ -418,7 +415,7 @@ class VideoStreamDecompressor:
         elif self.pix_fmt == "yuv444p":
           ret = np.frombuffer(dat, dtype=np.uint8).reshape((3, self.h, self.w))
         else:
-          assert False
+          raise RuntimeError(f"unknown pix_fmt: {self.pix_fmt}")
         yield ret
 
       result_code = self.proc.wait()

@@ -10,18 +10,18 @@
 #include "selfdrive/ui/qt/widgets/keyboard.h"
 
 
-class QDialogBase : public QDialog {
+class DialogBase : public QDialog {
   Q_OBJECT
 
 protected:
-  QDialogBase(QWidget *parent);
+  DialogBase(QWidget *parent);
   bool eventFilter(QObject *o, QEvent *e) override;
 
 public slots:
   int exec() override;
 };
 
-class InputDialog : public QDialogBase {
+class InputDialog : public DialogBase {
   Q_OBJECT
 
 public:
@@ -50,7 +50,7 @@ signals:
   void emitText(const QString &text);
 };
 
-class ConfirmationDialog : public QDialogBase {
+class ConfirmationDialog : public DialogBase {
   Q_OBJECT
 
 public:
@@ -61,7 +61,7 @@ public:
   static bool rich(const QString &prompt_text, QWidget *parent);
 };
 
-class MultiOptionDialog : public QDialogBase {
+class MultiOptionDialog : public DialogBase {
   Q_OBJECT
 
 public:

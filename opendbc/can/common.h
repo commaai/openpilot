@@ -76,8 +76,7 @@ public:
   uint64_t can_invalid_cnt = CAN_INVALID_CNT;
 
   CANParser(int abus, const std::string& dbc_name,
-            const std::vector<MessageParseOptions> &options,
-            const std::vector<SignalParseOptions> &sigoptions);
+            const std::vector<std::pair<uint32_t, int>> &messages);
   CANParser(int abus, const std::string& dbc_name, bool ignore_checksum, bool ignore_counter);
   #ifndef DYNAMIC_CAPNP
   void update_string(const std::string &data, bool sendcan);

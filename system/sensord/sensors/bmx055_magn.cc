@@ -1,4 +1,4 @@
-#include "bmx055_magn.h"
+#include "system/sensord/sensors/bmx055_magn.h"
 
 #include <unistd.h>
 
@@ -77,7 +77,7 @@ int BMX055_Magn::init() {
 
   // suspend -> sleep
   int ret = set_register(BMX055_MAGN_I2C_REG_PWR_0, 0x01);
-  if(ret < 0) {
+  if (ret < 0) {
     LOGE("Enabling power failed: %d", ret);
     goto fail;
   }
@@ -90,21 +90,21 @@ int BMX055_Magn::init() {
 
   // Load magnetometer trim
   ret = read_register(BMX055_MAGN_I2C_REG_DIG_X1, trim_x1y1, 2);
-  if(ret < 0) goto fail;
+  if (ret < 0) goto fail;
   ret = read_register(BMX055_MAGN_I2C_REG_DIG_X2, trim_x2y2, 2);
-  if(ret < 0) goto fail;
+  if (ret < 0) goto fail;
   ret = read_register(BMX055_MAGN_I2C_REG_DIG_XY2, trim_xy1xy2, 2);
-  if(ret < 0) goto fail;
+  if (ret < 0) goto fail;
   ret = read_register(BMX055_MAGN_I2C_REG_DIG_Z1_LSB, trim_z1, 2);
-  if(ret < 0) goto fail;
+  if (ret < 0) goto fail;
   ret = read_register(BMX055_MAGN_I2C_REG_DIG_Z2_LSB, trim_z2, 2);
-  if(ret < 0) goto fail;
+  if (ret < 0) goto fail;
   ret = read_register(BMX055_MAGN_I2C_REG_DIG_Z3_LSB, trim_z3, 2);
-  if(ret < 0) goto fail;
+  if (ret < 0) goto fail;
   ret = read_register(BMX055_MAGN_I2C_REG_DIG_Z4_LSB, trim_z4, 2);
-  if(ret < 0) goto fail;
+  if (ret < 0) goto fail;
   ret = read_register(BMX055_MAGN_I2C_REG_DIG_XYZ1_LSB, trim_xyz1, 2);
-  if(ret < 0) goto fail;
+  if (ret < 0) goto fail;
 
   // Read trim data
   trim_data.dig_x1 = trim_x1y1[0];
@@ -171,17 +171,17 @@ bool BMX055_Magn::perform_self_test() {
   uint8_t forced = BMX055_MAGN_FORCED;
 
   // Negative current
-	set_register(BMX055_MAGN_I2C_REG_MAG, forced | (uint8_t(0b10) << 6));
-	util::sleep_for(100);
+  set_register(BMX055_MAGN_I2C_REG_MAG, forced | (uint8_t(0b10) << 6));
+  util::sleep_for(100);
 
-	read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
-	parse_xyz(buffer, &x, &y, &neg_z);
+  read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
+  parse_xyz(buffer, &x, &y, &neg_z);
 
   // Positive current
-	set_register(BMX055_MAGN_I2C_REG_MAG, forced | (uint8_t(0b11) << 6));
-	util::sleep_for(100);
+  set_register(BMX055_MAGN_I2C_REG_MAG, forced | (uint8_t(0b11) << 6));
+  util::sleep_for(100);
 
-	read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
+  read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
   parse_xyz(buffer, &x, &y, &pos_z);
 
   // Put back in normal mode
@@ -206,9 +206,9 @@ bool BMX055_Magn::parse_xyz(uint8_t buffer[8], int16_t *x, int16_t *y, int16_t *
     uint16_t data_r = (uint16_t) (((uint16_t)buffer[7] << 8) | buffer[6]) >> 2;
     assert(data_r != 0);
 
-		*x = compensate_x(trim_data, mdata_x, data_r);
-		*y = compensate_y(trim_data, mdata_y, data_r);
-		*z = compensate_z(trim_data, mdata_z, data_r);
+    *x = compensate_x(trim_data, mdata_x, data_r);
+    *y = compensate_y(trim_data, mdata_y, data_r);
+    *z = compensate_z(trim_data, mdata_z, data_r);
   }
   return ready;
 }

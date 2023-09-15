@@ -64,12 +64,17 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 /* Specify the memory areas */
 MEMORY
 {
+/* RAM */
+BACKUP_SRAM (xrw)  : ORIGIN = 0x38800000, LENGTH = 4K /* Backup SRAM(4kb) */
+SRAM4 (xrw)        : ORIGIN = 0x38000000, LENGTH = 16K /* SRAM4(16kb) best for BDMA and SDMMC1*/
+SRAM12 (xrw)       : ORIGIN = 0x30000000, LENGTH = 32K /* SRAM1(16kb) + SRAM2(16kb), not for BDMA or SDMMC1 */
+AXISRAM (xrw)      : ORIGIN = 0x24000000, LENGTH = 320K /* AXI SRAM */
 DTCMRAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 128K /* DTCM */
-RAM_D1 (xrw)      : ORIGIN = 0x24000000, LENGTH = 320K /* AXI SRAM */
-RAM_D2 (xrw)      : ORIGIN = 0x30000000, LENGTH = 32K /* SRAM1(16kb) + SRAM2(16kb) */
-RAM_D3 (xrw)      : ORIGIN = 0x38000000, LENGTH = 16K /* SRAM4 */
+
+/* Code */
+SYSTEM (rx)        : ORIGIN = 0x1FF00000, LENGTH = 128K /* System memory */
+FLASH (rx)         : ORIGIN = 0x08000000, LENGTH = 1024K
 ITCMRAM (xrw)      : ORIGIN = 0x00000000, LENGTH = 64K
-FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 1024K
 }
 
 /* Define output sections */
@@ -141,7 +146,7 @@ SECTIONS
   _sidata = LOADADDR(.data);
 
   /* Initialized data sections goes into RAM, load LMA copy after code */
-  .data : 
+  .data :
   {
     . = ALIGN(4);
     _sdata = .;        /* create a global symbol at data start */
@@ -180,17 +185,35 @@ SECTIONS
     . = ALIGN(8);
   } >DTCMRAM
 
-  .ram_d1 (NOLOAD) :
+  .itcmram (NOLOAD) :
   {
     . = ALIGN(4);
-    *(.ram_d1*)
-  } >RAM_D1
+    *(.itcmram*)
+  } >ITCMRAM
 
-  .ram_d2 (NOLOAD) :
+  .axisram (NOLOAD) :
   {
     . = ALIGN(4);
-    *(.ram_d2*)
-  } >RAM_D2
+    *(.axisram*)
+  } >AXISRAM
+
+  .sram12 (NOLOAD) :
+  {
+    . = ALIGN(4);
+    *(.sram12*)
+  } >SRAM12
+
+  .sram4 (NOLOAD) :
+  {
+    . = ALIGN(4);
+    *(.sram4*)
+  } >SRAM4
+
+  .backup_sram (NOLOAD) :
+  {
+    . = ALIGN(4);
+    *(.backup_sram*)
+  } >BACKUP_SRAM
 
   .ARM.attributes 0 : { *(.ARM.attributes) }
 }

@@ -3,33 +3,38 @@
 #include <QDir>
 #include <QVBoxLayout>
 
+#include "selfdrive/ui/qt/maps/map_helpers.h"
 #include "selfdrive/ui/ui.h"
 
 const QString ICON_SUFFIX = ".png";
 
 MapInstructions::MapInstructions(QWidget *parent) : QWidget(parent) {
   is_rhd = Params().getBool("IsRhdDetected");
-  QHBoxLayout *main_layout = new QHBoxLayout(this);
-  main_layout->setContentsMargins(11, 50, 11, 11);
-  main_layout->addWidget(icon_01 = new QLabel, 0, Qt::AlignTop);
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(11, UI_BORDER_SIZE, 11, 20);
 
-  QWidget *right_container = new QWidget(this);
-  right_container->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  QVBoxLayout *layout = new QVBoxLayout(right_container);
+  QHBoxLayout *top_layout = new QHBoxLayout;
+  top_layout->addWidget(icon_01 = new QLabel, 0, Qt::AlignTop);
 
-  layout->addWidget(distance = new QLabel);
+  QVBoxLayout *right_layout = new QVBoxLayout;
+  right_layout->setContentsMargins(9, 9, 9, 0);
+  right_layout->addWidget(distance = new QLabel);
   distance->setStyleSheet(R"(font-size: 90px;)");
 
-  layout->addWidget(primary = new QLabel);
+  right_layout->addWidget(primary = new QLabel);
   primary->setStyleSheet(R"(font-size: 60px;)");
   primary->setWordWrap(true);
 
-  layout->addWidget(secondary = new QLabel);
+  right_layout->addWidget(secondary = new QLabel);
   secondary->setStyleSheet(R"(font-size: 50px;)");
   secondary->setWordWrap(true);
 
-  layout->addLayout(lane_layout = new QHBoxLayout);
-  main_layout->addWidget(right_container);
+  top_layout->addLayout(right_layout);
+
+  main_layout->addLayout(top_layout);
+  main_layout->addLayout(lane_layout = new QHBoxLayout);
+  lane_layout->setAlignment(Qt::AlignHCenter);
+  lane_layout->setSpacing(10);
 
   setStyleSheet("color:white");
   QPalette pal = palette();
@@ -63,18 +68,6 @@ void MapInstructions::buildPixmapCache() {
   }
 }
 
-QString MapInstructions::getDistance(float d) {
-  d = std::max(d, 0.0f);
-  if (uiState()->scene.is_metric) {
-    return (d > 500) ? QString::number(d / 1000, 'f', 1) + tr(" km")
-                     : QString::number(50 * int(d / 50)) + tr(" m");
-  } else {
-    float feet = d * METER_TO_FOOT;
-    return (feet > 500) ? QString::number(d * METER_TO_MILE, 'f', 1) + tr(" mi")
-                        : QString::number(50 * int(feet / 50)) + tr(" ft");
-  }
-}
-
 void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruction) {
   setUpdatesEnabled(false);
 
@@ -85,7 +78,9 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
   primary->setText(primary_str);
   secondary->setVisible(secondary_str.length() > 0);
   secondary->setText(secondary_str);
-  distance->setText(getDistance(instruction.getManeuverDistance()));
+
+  auto distance_str_pair = map_format_distance(instruction.getManeuverDistance(), uiState()->scene.is_metric);
+  distance->setText(QString("%1 %2").arg(distance_str_pair.first, distance_str_pair.second));
 
   // Show arrow with direction
   QString type = QString::fromStdString(instruction.getManeuverType());
@@ -100,6 +95,8 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     icon_01->setPixmap(pixmap_cache[!rhd ? fn : "rhd_" + fn]);
     icon_01->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     icon_01->setVisible(true);
+  } else {
+    icon_01->setVisible(false);
   }
 
   // Hide distance after arrival
@@ -109,23 +106,21 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
   auto lanes = instruction.getLanes();
   for (int i = 0; i < lanes.size(); ++i) {
     bool active = lanes[i].getActive();
-
-    // TODO: only use active direction if active
-    bool left = false, straight = false, right = false;
-    for (auto const &direction : lanes[i].getDirections()) {
-      left |= direction == cereal::NavInstruction::Direction::LEFT;
-      right |= direction == cereal::NavInstruction::Direction::RIGHT;
-      straight |= direction == cereal::NavInstruction::Direction::STRAIGHT;
-    }
+    const auto active_direction = lanes[i].getActiveDirection();
 
     // TODO: Make more images based on active direction and combined directions
     QString fn = "lane_direction_";
-    if (left) {
-      fn += "turn_left";
-    } else if (right) {
-      fn += "turn_right";
-    } else if (straight) {
-      fn += "turn_straight";
+
+    // active direction has precedence
+    if (active && active_direction != cereal::NavInstruction::Direction::NONE) {
+      fn += "turn_" + DIRECTIONS[active_direction];
+    } else {
+      for (auto const &direction : lanes[i].getDirections()) {
+        if (direction != cereal::NavInstruction::Direction::NONE) {
+          fn += "turn_" + DIRECTIONS[direction];
+          break;
+        }
+      }
     }
 
     if (!active) {

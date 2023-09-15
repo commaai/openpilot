@@ -1,9 +1,6 @@
 # -*- coding: future_fstrings -*-
 #
-# Copyright 2019 Gianluca Frison, Dimitris Kouzoupis, Robin Verschueren,
-# Andrea Zanelli, Niels van Duijkeren, Jonathan Frey, Tommaso Sartor,
-# Branimir Novoselnik, Rien Quirynen, Rezart Qelibari, Dang Doan,
-# Jonas Koenemann, Yutao Chen, Tobias Schöls, Jonas Schlagenhauf, Moritz Diehl
+# Copyright (c) The acados authors.
 #
 # This file is part of acados.
 #
@@ -32,56 +29,58 @@
 # POSSIBILITY OF SUCH DAMAGE.;
 #
 
-import sys, os, json
+import sys
+import os
+import json
+import importlib
 
 import numpy as np
 
-from ctypes import *
+from subprocess import DEVNULL, call, STDOUT
+
+from ctypes import POINTER, cast, CDLL, c_void_p, c_char_p, c_double, c_int, c_bool, byref
 from copy import deepcopy
 
-from .generate_c_code_explicit_ode import generate_c_code_explicit_ode
-from .generate_c_code_implicit_ode import generate_c_code_implicit_ode
-from .generate_c_code_gnsf import generate_c_code_gnsf
+from .casadi_function_generation import generate_c_code_implicit_ode, generate_c_code_gnsf, generate_c_code_explicit_ode
 from .acados_sim import AcadosSim
 from .acados_ocp import AcadosOcp
-from .acados_model import acados_model_strip_casadi_symbolics
-from .utils import is_column, render_template, format_class_dict, np_array_to_list,\
-     make_model_consistent, set_up_imported_gnsf_model, get_python_interface_path
+from .utils import is_column, render_template, format_class_dict, make_object_json_dumpable,\
+     make_model_consistent, set_up_imported_gnsf_model, get_python_interface_path, get_lib_ext,\
+     casadi_length, is_empty, check_casadi_version
 from .builders import CMakeBuilder
+from .gnsf.detect_gnsf_structure import detect_gnsf_structure
 
 
-def make_sim_dims_consistent(acados_sim):
+
+def make_sim_dims_consistent(acados_sim: AcadosSim):
     dims = acados_sim.dims
     model = acados_sim.model
     # nx
     if is_column(model.x):
-        dims.nx = model.x.shape[0]
+        dims.nx = casadi_length(model.x)
     else:
-        raise Exception("model.x should be column vector!")
+        raise Exception('model.x should be column vector!')
 
     # nu
-    if is_column(model.u):
-        dims.nu = model.u.shape[0]
-    elif model.u == None or model.u == []:
+    if is_empty(model.u):
         dims.nu = 0
     else:
-        raise Exception("model.u should be column vector or None!")
+        dims.nu = casadi_length(model.u)
 
     # nz
-    if is_column(model.z):
-        dims.nz = model.z.shape[0]
-    elif model.z == None or model.z == []:
+    if is_empty(model.z):
         dims.nz = 0
     else:
-        raise Exception("model.z should be column vector or None!")
+        dims.nz = casadi_length(model.z)
 
     # np
-    if is_column(model.p):
-        dims.np = model.p.shape[0]
-    elif model.p == None or model.p == []:
+    if is_empty(model.p):
         dims.np = 0
     else:
-        raise Exception("model.p should be column vector or None!")
+        dims.np = casadi_length(model.p)
+    if acados_sim.parameter_values.shape[0] != dims.np:
+        raise Exception('inconsistent dimension np, regarding model.p and parameter_values.' + \
+            f'\nGot np = {dims.np}, acados_sim.parameter_values.shape = {acados_sim.parameter_values.shape[0]}\n')
 
 
 def get_sim_layout():
@@ -92,7 +91,7 @@ def get_sim_layout():
     return sim_layout
 
 
-def sim_formulation_json_dump(acados_sim, json_file='acados_sim.json'):
+def sim_formulation_json_dump(acados_sim: AcadosSim, json_file='acados_sim.json'):
     # Load acados_sim structure description
     sim_layout = get_sim_layout()
 
@@ -105,11 +104,10 @@ def sim_formulation_json_dump(acados_sim, json_file='acados_sim.json'):
         # Copy sim object attributes dictionaries
         sim_dict[key]=dict(getattr(acados_sim, key).__dict__)
 
-    sim_dict['model'] = acados_model_strip_casadi_symbolics(sim_dict['model'])
     sim_json = format_class_dict(sim_dict)
 
     with open(json_file, 'w') as f:
-        json.dump(sim_json, f, default=np_array_to_list, indent=4, sort_keys=True)
+        json.dump(sim_json, f, default=make_object_json_dumpable, indent=4, sort_keys=True)
 
 
 def sim_get_default_cmake_builder() -> CMakeBuilder:
@@ -122,47 +120,49 @@ def sim_get_default_cmake_builder() -> CMakeBuilder:
     return cmake_builder
 
 
-def sim_render_templates(json_file, model_name, code_export_dir, cmake_options: CMakeBuilder = None):
+def sim_render_templates(json_file, model_name: str, code_export_dir, cmake_options: CMakeBuilder = None):
     # setting up loader and environment
     json_path = os.path.join(os.getcwd(), json_file)
 
     if not os.path.exists(json_path):
         raise Exception(f"{json_path} not found!")
 
-    template_dir = code_export_dir
-
-    ## Render templates
+    # Render templates
     in_file = 'acados_sim_solver.in.c'
     out_file = f'acados_sim_solver_{model_name}.c'
-    render_template(in_file, out_file, template_dir, json_path)
+    render_template(in_file, out_file, code_export_dir, json_path)
 
     in_file = 'acados_sim_solver.in.h'
     out_file = f'acados_sim_solver_{model_name}.h'
-    render_template(in_file, out_file, template_dir, json_path)
+    render_template(in_file, out_file, code_export_dir, json_path)
+
+    in_file = 'acados_sim_solver.in.pxd'
+    out_file = f'acados_sim_solver.pxd'
+    render_template(in_file, out_file, code_export_dir, json_path)
 
     # Builder
     if cmake_options is not None:
         in_file = 'CMakeLists.in.txt'
         out_file = 'CMakeLists.txt'
-        render_template(in_file, out_file, template_dir, json_path)
+        render_template(in_file, out_file, code_export_dir, json_path)
     else:
         in_file = 'Makefile.in'
         out_file = 'Makefile'
-        render_template(in_file, out_file, template_dir, json_path)
+        render_template(in_file, out_file, code_export_dir, json_path)
 
     in_file = 'main_sim.in.c'
     out_file = f'main_sim_{model_name}.c'
-    render_template(in_file, out_file, template_dir, json_path)
+    render_template(in_file, out_file, code_export_dir, json_path)
 
-    ## folder model
-    template_dir = os.path.join(code_export_dir, model_name + '_model')
+    # folder model
+    model_dir = os.path.join(code_export_dir, model_name + '_model')
 
     in_file = 'model.in.h'
     out_file = f'{model_name}_model.h'
-    render_template(in_file, out_file, template_dir, json_path)
+    render_template(in_file, out_file, model_dir, json_path)
 
 
-def sim_generate_casadi_functions(acados_sim):
+def sim_generate_external_functions(acados_sim: AcadosSim):
     model = acados_sim.model
     model = make_model_consistent(model)
 
@@ -170,7 +170,16 @@ def sim_generate_casadi_functions(acados_sim):
 
     opts = dict(generate_hess = acados_sim.solver_options.sens_hess,
                 code_export_directory = acados_sim.code_export_directory)
+
+    # create code_export_dir, model_dir
+    code_export_dir = acados_sim.code_export_directory
+    opts['code_export_directory'] = code_export_dir
+    model_dir = os.path.join(code_export_dir, model.name + '_model')
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
+
     # generate external functions
+    check_casadi_version()
     if integrator_type == 'ERK':
         generate_c_code_explicit_ode(model, opts)
     elif integrator_type == 'IRK':
@@ -190,62 +199,117 @@ class AcadosSimSolver:
             the `CMake` pipeline instead of a `Makefile` (`CMake` seems to be the better option in conjunction with
             `MS Visual Studio`); default: `None`
     """
-    def __init__(self, acados_sim_, json_file='acados_sim.json', build=True, cmake_builder: CMakeBuilder = None):
+    if sys.platform=="win32":
+        from ctypes import wintypes
+        from ctypes import WinDLL
+        dlclose = WinDLL('kernel32', use_last_error=True).FreeLibrary
+        dlclose.argtypes = [wintypes.HMODULE]
+    else:
+        dlclose = CDLL(None).dlclose
+        dlclose.argtypes = [c_void_p]
 
-        self.solver_created = False
 
-        if isinstance(acados_sim_, AcadosOcp):
-            # set up acados_sim_
-            acados_sim = AcadosSim()
-            acados_sim.model = acados_sim_.model
-            acados_sim.dims.nx = acados_sim_.dims.nx
-            acados_sim.dims.nu = acados_sim_.dims.nu
-            acados_sim.dims.nz = acados_sim_.dims.nz
-            acados_sim.dims.np = acados_sim_.dims.np
-            acados_sim.solver_options.integrator_type = acados_sim_.solver_options.integrator_type
-            acados_sim.code_export_directory = acados_sim_.code_export_directory
+    @classmethod
+    def generate(cls, acados_sim: AcadosSim, json_file='acados_sim.json', cmake_builder: CMakeBuilder = None):
+        """
+        Generates the code for an acados sim solver, given the description in acados_sim
+        """
 
-        elif isinstance(acados_sim_, AcadosSim):
-            acados_sim = acados_sim_
+        acados_sim.code_export_directory = os.path.abspath(acados_sim.code_export_directory)
 
-        acados_sim.__problem_class = 'SIM'
-
-        model_name = acados_sim.model.name
+        # make dims consistent
         make_sim_dims_consistent(acados_sim)
 
-        # reuse existing json and casadi functions, when creating integrator from ocp
-        if isinstance(acados_sim_, AcadosSim):
-            if acados_sim.solver_options.integrator_type == 'GNSF':
+        # module dependent post processing
+        if acados_sim.solver_options.integrator_type == 'GNSF':
+            if acados_sim.solver_options.sens_hess == True:
+                raise Exception("AcadosSimSolver: GNSF does not support sens_hess = True.")
+            if 'gnsf_model' in acados_sim.__dict__:
                 set_up_imported_gnsf_model(acados_sim)
-
-            sim_generate_casadi_functions(acados_sim)
-            sim_formulation_json_dump(acados_sim, json_file)
-
-        code_export_dir = acados_sim.code_export_directory
-        if build:
-            # render templates
-            sim_render_templates(json_file, model_name, code_export_dir, cmake_builder)
-
-            # Compile solver
-            cwd = os.getcwd()
-            code_export_dir = os.path.abspath(code_export_dir)
-            os.chdir(code_export_dir)
-            if cmake_builder is not None:
-                cmake_builder.exec(code_export_dir)
             else:
-                os.system('make sim_shared_lib')
-            os.chdir(cwd)
+                detect_gnsf_structure(acados_sim)
 
-        self.sim_struct = acados_sim
-        model_name = self.sim_struct.model.name
+        # generate external functions
+        sim_generate_external_functions(acados_sim)
+
+        # dump to json
+        sim_formulation_json_dump(acados_sim, json_file)
+
+        # render templates
+        sim_render_templates(json_file, acados_sim.model.name, acados_sim.code_export_directory, cmake_builder)
+
+
+    @classmethod
+    def build(cls, code_export_dir, with_cython=False, cmake_builder: CMakeBuilder = None, verbose: bool = True):
+        # Compile solver
+        cwd = os.getcwd()
+        os.chdir(code_export_dir)
+        if with_cython:
+            call(
+                ['make', 'clean_sim_cython'],
+                stdout=None if verbose else DEVNULL,
+                stderr=None if verbose else STDOUT
+            )
+            call(
+                ['make', 'sim_cython'],
+                stdout=None if verbose else DEVNULL,
+                stderr=None if verbose else STDOUT
+            )
+        else:
+            if cmake_builder is not None:
+                cmake_builder.exec(code_export_dir, verbose=verbose)
+            else:
+                call(
+                    ['make', 'sim_shared_lib'],
+                    stdout=None if verbose else DEVNULL,
+                    stderr=None if verbose else STDOUT
+                )
+        os.chdir(cwd)
+
+
+    @classmethod
+    def create_cython_solver(cls, json_file):
+        """
+        """
+        with open(json_file, 'r') as f:
+            acados_sim_json = json.load(f)
+        code_export_directory = acados_sim_json['code_export_directory']
+
+        importlib.invalidate_caches()
+        rel_code_export_directory = os.path.relpath(code_export_directory)
+        acados_sim_solver_pyx = importlib.import_module(f'{rel_code_export_directory}.acados_sim_solver_pyx')
+
+        AcadosSimSolverCython = getattr(acados_sim_solver_pyx, 'AcadosSimSolverCython')
+        return AcadosSimSolverCython(acados_sim_json['model']['name'])
+
+    def __init__(self, acados_sim, json_file='acados_sim.json', generate=True, build=True, cmake_builder: CMakeBuilder = None, verbose: bool = True):
+
+        self.solver_created = False
+        self.acados_sim = acados_sim
+        model_name = acados_sim.model.name
         self.model_name = model_name
+
+        code_export_dir = os.path.abspath(acados_sim.code_export_directory)
+
+        # reuse existing json and casadi functions, when creating integrator from ocp
+        if generate and not isinstance(acados_sim, AcadosOcp):
+            self.generate(acados_sim, json_file=json_file, cmake_builder=cmake_builder)
+
+        if build:
+            self.build(code_export_dir, cmake_builder=cmake_builder, verbose=True)
+
+        # prepare library loading
+        lib_prefix = 'lib'
+        lib_ext = get_lib_ext()
+        if os.name == 'nt':
+            lib_prefix = ''
 
         # Load acados library to avoid unloading the library.
         # This is necessary if acados was compiled with OpenMP, since the OpenMP threads can't be destroyed.
         # Unloading a library which uses OpenMP results in a segfault (on any platform?).
         # see [https://stackoverflow.com/questions/34439956/vc-crash-when-freeing-a-dll-built-with-openmp]
         # or [https://python.hotexamples.com/examples/_ctypes/-/dlclose/python-dlclose-function-examples.html]
-        libacados_name = 'libacados.so'
+        libacados_name = f'{lib_prefix}acados{lib_ext}'
         libacados_filepath = os.path.join(acados_sim.acados_lib_path, libacados_name)
         self.__acados_lib = CDLL(libacados_filepath)
         # find out if acados was compiled with OpenMP
@@ -257,18 +321,11 @@ class AcadosSimSolver:
             print('acados was compiled with OpenMP.')
         else:
             print('acados was compiled without OpenMP.')
+        libacados_sim_solver_name = f'{lib_prefix}acados_sim_solver_{self.model_name}{lib_ext}'
+        self.shared_lib_name = os.path.join(code_export_dir, libacados_sim_solver_name)
 
-        # Ctypes
-        lib_prefix = 'lib'
-        lib_ext = '.so'
-        if os.name == 'nt':
-            lib_prefix = ''
-            lib_ext = ''
-        self.shared_lib_name = os.path.join(code_export_dir, f'{lib_prefix}acados_sim_solver_{model_name}{lib_ext}')
-        print(f'self.shared_lib_name = "{self.shared_lib_name}"')
-        
+        # get shared_lib
         self.shared_lib = CDLL(self.shared_lib_name)
-
 
         # create capsule
         getattr(self.shared_lib, f"{model_name}_acados_sim_solver_create_capsule").restype = c_void_p
@@ -304,23 +361,34 @@ class AcadosSimSolver:
         getattr(self.shared_lib, f"{model_name}_acados_get_sim_solver").restype = c_void_p
         self.sim_solver = getattr(self.shared_lib, f"{model_name}_acados_get_sim_solver")(self.capsule)
 
-        nu = self.sim_struct.dims.nu
-        nx = self.sim_struct.dims.nx
-        nz = self.sim_struct.dims.nz
-        self.gettable = {
-            'x': nx,
-            'xn': nx,
-            'u': nu,
-            'z': nz,
-            'S_forw': nx*(nx+nu),
-            'Sx': nx*nx,
-            'Su': nx*nu,
-            'S_adj': nx+nu,
-            'S_hess': (nx+nu)*(nx+nu),
-            'S_algebraic': (nz)*(nx+nu),
-        }
+        self.gettable_vectors = ['x', 'u', 'z', 'S_adj']
+        self.gettable_matrices = ['S_forw', 'Sx', 'Su', 'S_hess', 'S_algebraic']
+        self.gettable_scalars = ['CPUtime', 'time_tot', 'ADtime', 'time_ad', 'LAtime', 'time_la']
 
-        self.settable = ['S_adj', 'T', 'x', 'u', 'xdot', 'z', 'p'] # S_forw
+
+    def simulate(self, x=None, u=None, z=None, p=None):
+        """
+        Simulate the system forward for the given x, u, z, p and return x_next.
+        Wrapper around `solve()` taking care of setting/getting inputs/outputs.
+        """
+        if x is not None:
+            self.set('x', x)
+        if u is not None:
+            self.set('u', u)
+        if z is not None:
+            self.set('z', z)
+        if p is not None:
+            self.set('p', p)
+
+        status = self.solve()
+
+        if status == 2:
+            print("Warning: acados_sim_solver reached maximum iterations.")
+        elif status != 0:
+            raise Exception(f'acados_sim_solver for model {self.model_name} returned status {status}.')
+
+        x_next = self.get('x')
+        return x_next
 
 
     def solve(self):
@@ -338,55 +406,64 @@ class AcadosSimSolver:
         """
         Get the last solution of the solver.
 
-            :param str field: string in ['x', 'u', 'z', 'S_forw', 'Sx', 'Su', 'S_adj', 'S_hess', 'S_algebraic']
+            :param str field: string in ['x', 'u', 'z', 'S_forw', 'Sx', 'Su', 'S_adj', 'S_hess', 'S_algebraic', 'CPUtime', 'time_tot', 'ADtime', 'time_ad', 'LAtime', 'time_la']
         """
-        field = field_
-        field = field.encode('utf-8')
+        field = field_.encode('utf-8')
 
-        if field_ in self.gettable.keys():
+        if field_ in self.gettable_vectors:
+            # get dims
+            dims = np.ascontiguousarray(np.zeros((2,)), dtype=np.intc)
+            dims_data = cast(dims.ctypes.data, POINTER(c_int))
+
+            self.shared_lib.sim_dims_get_from_attr.argtypes = [c_void_p, c_void_p, c_char_p, POINTER(c_int)]
+            self.shared_lib.sim_dims_get_from_attr(self.sim_config, self.sim_dims, field, dims_data)
 
             # allocate array
-            dims = self.gettable[field_]
-            out = np.ascontiguousarray(np.zeros((dims,)), dtype=np.float64)
+            out = np.ascontiguousarray(np.zeros((dims[0],)), dtype=np.float64)
             out_data = cast(out.ctypes.data, POINTER(c_double))
 
             self.shared_lib.sim_out_get.argtypes = [c_void_p, c_void_p, c_void_p, c_char_p, c_void_p]
             self.shared_lib.sim_out_get(self.sim_config, self.sim_dims, self.sim_out, field, out_data)
 
-            if field_ == 'S_forw':
-                nu = self.sim_struct.dims.nu
-                nx = self.sim_struct.dims.nx
-                out = out.reshape(nx, nx+nu, order='F')
-            elif field_ == 'Sx':
-                nx = self.sim_struct.dims.nx
-                out = out.reshape(nx, nx, order='F')
-            elif field_ == 'Su':
-                nx = self.sim_struct.dims.nx
-                nu = self.sim_struct.dims.nu
-                out = out.reshape(nx, nu, order='F')
-            elif field_ == 'S_hess':
-                nx = self.sim_struct.dims.nx
-                nu = self.sim_struct.dims.nu
-                out = out.reshape(nx+nu, nx+nu, order='F')
-            elif field_ == 'S_algebraic':
-                nx = self.sim_struct.dims.nx
-                nu = self.sim_struct.dims.nu
-                nz = self.sim_struct.dims.nz
-                out = out.reshape(nz, nx+nu, order='F')
+        elif field_ in self.gettable_matrices:
+            # get dims
+            dims = np.ascontiguousarray(np.zeros((2,)), dtype=np.intc)
+            dims_data = cast(dims.ctypes.data, POINTER(c_int))
+
+            self.shared_lib.sim_dims_get_from_attr.argtypes = [c_void_p, c_void_p, c_char_p, POINTER(c_int)]
+            self.shared_lib.sim_dims_get_from_attr(self.sim_config, self.sim_dims, field, dims_data)
+
+            out = np.zeros((dims[0], dims[1]), order='F')
+            out_data = cast(out.ctypes.data, POINTER(c_double))
+
+            self.shared_lib.sim_out_get.argtypes = [c_void_p, c_void_p, c_void_p, c_char_p, c_void_p]
+            self.shared_lib.sim_out_get(self.sim_config, self.sim_dims, self.sim_out, field, out_data)
+
+        elif field_ in self.gettable_scalars:
+            scalar = c_double()
+            scalar_data = byref(scalar)
+            self.shared_lib.sim_out_get.argtypes = [c_void_p, c_void_p, c_void_p, c_char_p, c_void_p]
+            self.shared_lib.sim_out_get(self.sim_config, self.sim_dims, self.sim_out, field, scalar_data)
+
+            out = scalar.value
         else:
             raise Exception(f'AcadosSimSolver.get(): Unknown field {field_},' \
-                f' available fields are {", ".join(self.gettable.keys())}')
+                f' available fields are {", ".join(self.gettable_vectors+self.gettable_matrices)}, {", ".join(self.gettable_scalars)}')
 
         return out
 
 
-    def set(self, field_, value_):
+
+    def set(self, field_: str, value_):
         """
         Set numerical data inside the solver.
 
-            :param field: string in ['p', 'S_adj', 'T', 'x', 'u', 'xdot', 'z']
+            :param field: string in ['x', 'u', 'p', 'xdot', 'z', 'seed_adj', 'T']
             :param value: the value with appropriate size.
         """
+        settable = ['x', 'u', 'p', 'xdot', 'z', 'seed_adj', 'T'] # S_forw
+
+        # TODO: check and throw error here. then remove checks in Cython for speed
         # cast value_ to avoid conversion issues
         if isinstance(value_, (float, int)):
             value_ = np.array([value_])
@@ -395,12 +472,11 @@ class AcadosSimSolver:
         value_data = cast(value_.ctypes.data, POINTER(c_double))
         value_data_p = cast((value_data), c_void_p)
 
-        field = field_
-        field = field.encode('utf-8')
+        field = field_.encode('utf-8')
 
         # treat parameters separately
         if field_ == 'p':
-            model_name = self.sim_struct.model.name
+            model_name = self.acados_sim.model.name
             getattr(self.shared_lib, f"{model_name}_acados_sim_update_params").argtypes = [c_void_p, POINTER(c_double), c_int]
             value_data = cast(value_.ctypes.data, POINTER(c_double))
             getattr(self.shared_lib, f"{model_name}_acados_sim_update_params")(self.capsule, value_data, value_.shape[0])
@@ -420,19 +496,46 @@ class AcadosSimSolver:
                 value_shape = (value_shape[0], 0)
 
             if value_shape != tuple(dims):
-                raise Exception('AcadosSimSolver.set(): mismatching dimension' \
-                    ' for field "{}" with dimension {} (you have {})'.format(field_, tuple(dims), value_shape))
+                raise Exception(f'AcadosSimSolver.set(): mismatching dimension' \
+                    f' for field "{field_}" with dimension {tuple(dims)} (you have {value_shape}).')
 
         # set
         if field_ in ['xdot', 'z']:
             self.shared_lib.sim_solver_set.argtypes = [c_void_p, c_char_p, c_void_p]
             self.shared_lib.sim_solver_set(self.sim_solver, field, value_data_p)
-        elif field_ in self.settable:
+        elif field_ in settable:
             self.shared_lib.sim_in_set.argtypes = [c_void_p, c_void_p, c_void_p, c_char_p, c_void_p]
             self.shared_lib.sim_in_set(self.sim_config, self.sim_dims, self.sim_in, field, value_data_p)
         else:
             raise Exception(f'AcadosSimSolver.set(): Unknown field {field_},' \
-                f' available fields are {", ".join(self.settable)}')
+                f' available fields are {", ".join(settable)}')
+
+        return
+
+
+    def options_set(self, field_: str, value_: bool):
+        """
+        Set solver options
+
+            :param field: string in ['sens_forw', 'sens_adj', 'sens_hess']
+            :param value: Boolean
+        """
+        fields = ['sens_forw', 'sens_adj', 'sens_hess']
+        if field_ not in fields:
+            raise Exception(f"field {field_} not supported. Supported values are {', '.join(fields)}.\n")
+
+        field = field_.encode('utf-8')
+        value_ctypes = c_bool(value_)
+
+        if not isinstance(value_, bool):
+            raise TypeError("options_set: expected boolean for value")
+
+        # only allow setting
+        if getattr(self.acados_sim.solver_options, field_) or value_ == False:
+            self.shared_lib.sim_opts_set.argtypes = [c_void_p, c_void_p, c_char_p, POINTER(c_bool)]
+            self.shared_lib.sim_opts_set(self.sim_config, self.sim_opts, field, value_ctypes)
+        else:
+            raise RuntimeError(f"Cannot set option {field_} to True, because it was False in original solver options.\n")
 
         return
 
@@ -451,4 +554,6 @@ class AcadosSimSolver:
             try:
                 self.dlclose(self.shared_lib._handle)
             except:
+                print(f"WARNING: acados Python interface could not close shared_lib handle of AcadosSimSolver {self.model_name}.\n",
+                     "Attempting to create a new one with the same name will likely result in the old one being used!")
                 pass

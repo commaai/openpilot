@@ -13,13 +13,13 @@ from typing import BinaryIO, Iterator, List, Optional, Tuple, Union
 
 from cereal import log
 import cereal.messaging as messaging
-from common.api import Api
-from common.params import Params
-from common.realtime import set_core_affinity
-from system.hardware import TICI
-from system.loggerd.xattr_cache import getxattr, setxattr
-from system.loggerd.config import ROOT
-from system.swaglog import cloudlog
+from openpilot.common.api import Api
+from openpilot.common.params import Params
+from openpilot.common.realtime import set_core_affinity
+from openpilot.system.hardware import TICI
+from openpilot.system.hardware.hw import Paths
+from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
+from openpilot.system.swaglog import cloudlog
 
 NetworkType = log.DeviceState.NetworkType
 UPLOAD_ATTR_NAME = 'user.upload'
@@ -46,7 +46,7 @@ class FakeResponse:
 UploadResponse = Union[requests.Response, FakeResponse]
 
 def get_directory_sort(d: str) -> List[str]:
-  return list(map(lambda s: s.rjust(10, '0'), d.rsplit('--', 1)))
+  return [s.rjust(10, '0') for s in d.rsplit('--', 1)]
 
 def listdir_by_creation(d: str) -> List[str]:
   try:
@@ -211,7 +211,8 @@ class Uploader:
         else:
           content_length = int(stat.request.headers.get("Content-Length", 0))
           self.last_speed = (content_length / 1e6) / self.last_time
-          cloudlog.event("upload_success", key=key, fn=fn, sz=sz, content_length=content_length, network_type=network_type, metered=metered, speed=self.last_speed)
+          cloudlog.event("upload_success", key=key, fn=fn, sz=sz, content_length=content_length,
+                         network_type=network_type, metered=metered, speed=self.last_speed)
         success = True
       else:
         success = False
@@ -243,7 +244,7 @@ def uploader_fn(exit_event: threading.Event) -> None:
   except Exception:
     cloudlog.exception("failed to set core affinity")
 
-  clear_locks(ROOT)
+  clear_locks(Paths.log_root())
 
   params = Params()
   dongle_id = params.get("DongleId", encoding='utf8')
@@ -257,7 +258,7 @@ def uploader_fn(exit_event: threading.Event) -> None:
 
   sm = messaging.SubMaster(['deviceState'])
   pm = messaging.PubMaster(['uploaderState'])
-  uploader = Uploader(dongle_id, ROOT)
+  uploader = Uploader(dongle_id, Paths.log_root())
 
   backoff = 0.1
   while not exit_event.is_set():

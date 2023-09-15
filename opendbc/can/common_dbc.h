@@ -5,21 +5,9 @@
 #include <string>
 #include <vector>
 
-#define ARRAYSIZE(x) (sizeof(x)/sizeof(x[0]))
-
 struct SignalPackValue {
   std::string name;
   double value;
-};
-
-struct SignalParseOptions {
-  uint32_t address;
-  std::string name;
-};
-
-struct MessageParseOptions {
-  uint32_t address;
-  int check_frequency;
 };
 
 struct SignalValue {
