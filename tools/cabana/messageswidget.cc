@@ -87,10 +87,6 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
     // Reset model to force recalculation of the width of the bytes column
     model->forceResetModel();
   });
-  QObject::connect(suppress_defined_signals, &QCheckBox::stateChanged, [=](int state) {
-    settings.suppress_defined_signals = (state == Qt::Checked);
-    emit settings.changed();
-  });
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MessagesWidget::dbcModified);
   QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &MessagesWidget::dbcModified);
@@ -109,11 +105,15 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
       }
     }
   });
-  QObject::connect(suppress_add, &QPushButton::clicked, [=]() {
+
+  QObject::connect(suppress_defined_signals, &QCheckBox::stateChanged, [](int state) {
+    can->suppressDefinedSignals(state == Qt::Checked);
+  });
+  QObject::connect(suppress_add, &QPushButton::clicked, [this]() {
     size_t cnt = can->suppressHighlighted();
     updateSuppressedButtons(cnt);
   });
-  QObject::connect(suppress_clear, &QPushButton::clicked, [=]() {
+  QObject::connect(suppress_clear, &QPushButton::clicked, [this]() {
     can->clearSuppressed();
     updateSuppressedButtons(0);
   });

@@ -84,6 +84,7 @@ public:
   virtual const std::vector<std::tuple<double, double, TimelineType>> getTimeline() { return {}; }
   size_t suppressHighlighted();
   void clearSuppressed();
+  void suppressDefinedSignals(bool suppress);
 
 signals:
   void paused();
@@ -115,7 +116,8 @@ protected:
   std::unordered_map<MessageId, std::vector<const CanEvent *>> events_;
   std::vector<const CanEvent *> all_events_;
   std::unique_ptr<MonotonicBuffer> event_buffer;
-  std::mutex suppress_mutex;
+  std::recursive_mutex suppress_mutex;
+  bool suppress_defined_signals = false;
   std::unordered_map<MessageId, std::vector<uint8_t>> masks;
 };
 
