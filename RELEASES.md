@@ -4,6 +4,7 @@ Version 0.9.5 (202X-XX-XX)
 * Hyundai Ioniq 6 2023 support thanks to sunnyhaibin, alamo3, and sshane!
 * Hyundai Kona Electric 2023 (Korean version) support thanks to sunnyhaibin and haram-KONA!
 * Hyundai Nexo 2021 support thanks to sunnyhaibin!
+* Kia K8 Hybrid (with HDA II) 2023 support thanks to sunnyhaibin!
 * Kia Sorento Hybrid 2023 support thanks to sunnyhaibin!
 * Lexus IS 2023 support thanks to L3R5!
 

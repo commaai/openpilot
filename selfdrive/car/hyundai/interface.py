@@ -141,6 +141,10 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.000
       # steering ratio according to Hyundai News https://www.hyundainews.com/assets/documents/original/48035-2022SantaCruzProductGuideSpecsv2081521.pdf
       ret.steerRatio = 14.2
+    elif candidate == CAR.NEXO_1ST_GEN:
+      ret.mass = 3990 * CV.LB_TO_KG  # https://www.hyundainews.com/assets/documents/original/42768-2021NEXOProductGuideSpecs.pdf
+      ret.wheelbase = 2.79  # https://www.hyundainews.com/assets/documents/original/42768-2021NEXOProductGuideSpecs.pdf
+      ret.steerRatio = 14.19  # https://www.hyundainews.com/assets/documents/original/42768-2021NEXOProductGuideSpecs.pdf
 
     # Kia
     elif candidate == CAR.KIA_SORENTO:
@@ -215,10 +219,10 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2087.
       ret.wheelbase = 3.09
       ret.steerRatio = 14.23
-    elif candidate == CAR.NEXO_1ST_GEN:
-      ret.mass = 3990 * CV.LB_TO_KG  # https://www.hyundainews.com/assets/documents/original/42768-2021NEXOProductGuideSpecs.pdf
-      ret.wheelbase = 2.79  # https://www.hyundainews.com/assets/documents/original/42768-2021NEXOProductGuideSpecs.pdf
-      ret.steerRatio = 14.19  # https://www.hyundainews.com/assets/documents/original/42768-2021NEXOProductGuideSpecs.pdf
+    elif candidate == CAR.KIA_K8_HEV_1ST_GEN:
+      ret.mass = 1630.  # https://carprices.ae/brands/kia/2023/k8/1.6-turbo-hybrid
+      ret.wheelbase = 2.895
+      ret.steerRatio = 13.27  # guesstimate from K5 platform
 
     # Genesis
     elif candidate == CAR.GENESIS_GV60_EV_1ST_GEN:
