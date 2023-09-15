@@ -1,4 +1,4 @@
-Version 0.9.5 (202X-XX-XX)
+Version 0.9.5 (2023-09-27)
 ========================
 * New driving model
   * Improved navigate on openpilot performance using navigation instructions as an additional model input
