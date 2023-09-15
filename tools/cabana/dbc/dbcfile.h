@@ -22,7 +22,7 @@ public:
   void cleanupAutoSaveFile();
   QString generateDBC();
 
-  void updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &comment);
+  void updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &node, const QString &comment);
   inline void removeMsg(const MessageId &id) { msgs.erase(id.address); }
 
   inline const std::map<uint32_t, cabana::Msg> &getMessages() const { return msgs; }
