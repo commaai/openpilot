@@ -1,6 +1,7 @@
 import sys
 import termios
 import time
+
 from termios import (BRKINT, CS8, CSIZE, ECHO, ICANON, ICRNL, IEXTEN, INPCK,
                      ISTRIP, IXON, PARENB, VMIN, VTIME)
 from typing import NoReturn
@@ -38,7 +39,6 @@ def getch() -> str:
 def keyboard_poll_thread(q: 'Queue[str]'):
   while True:
     c = getch()
-    print("got %s" % c)
     if c == '1':
       q.put("cruise_up")
     elif c == '2':
