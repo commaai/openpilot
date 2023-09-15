@@ -18,9 +18,9 @@ from openpilot.tools.sim.lib.simulated_car import SimulatedCar
 from openpilot.tools.sim.lib.simulated_sensors import SimulatedSensors
 
 
-def rk_loop(function, hz):
+def rk_loop(function, hz, exit_event: threading.Event):
   rk = Ratekeeper(hz)
-  while True:
+  while not exit_event.is_set():
     function()
     rk.keep_time()
 
@@ -53,6 +53,9 @@ class SimulatorBridge(ABC):
     self.world: Optional[World] = None
 
   def _on_shutdown(self, signal, frame):
+    self.shutdown()
+
+  def shutdown(self):
     self._keep_alive = False
 
   def bridge_keep_alive(self, q: Queue, retries: int):
@@ -83,7 +86,8 @@ class SimulatorBridge(ABC):
     self.simulated_car = SimulatedCar()
     self.simulated_sensors = SimulatedSensors(self.dual_camera)
 
-    self.simulated_car_thread = threading.Thread(target=rk_loop, args=(functools.partial(self.simulated_car.update, self.simulator_state), 100))
+    self.simulated_car_thread = threading.Thread(target=rk_loop, args=(functools.partial(self.simulated_car.update, self.simulator_state),
+                                                                        100, self._exit_event))
     self.simulated_car_thread.start()
 
     rk = Ratekeeper(100, print_delay_threshold=None)

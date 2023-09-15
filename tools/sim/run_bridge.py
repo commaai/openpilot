@@ -44,4 +44,7 @@ if __name__ == "__main__":
     from openpilot.tools.sim.lib.keyboard_ctrl import keyboard_poll_thread
 
     keyboard_poll_thread(q)
+
+  simulator_bridge.shutdown()
+
   p.join()
