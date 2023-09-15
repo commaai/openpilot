@@ -37,16 +37,55 @@ AbstractStream::AbstractStream(QObject *parent) : QObject(parent) {
 }
 
 void AbstractStream::updateMasks() {
-  std::lock_guard lk(mutex);
+  std::lock_guard lk(suppress_mutex);
   masks.clear();
-  if (settings.suppress_defined_signals) {
-    for (auto s : sources) {
-      if (auto f = dbc()->findDBCFile(s)) {
-        for (const auto &[address, m] : f->getMessages()) {
-          masks[{.source = (uint8_t)s, .address = address}] = m.mask;
+  if (!settings.suppress_defined_signals) return;
+
+  for (auto s : sources) {
+    if (auto f = dbc()->findDBCFile(s)) {
+      for (const auto &[address, m] : f->getMessages()) {
+        masks[{.source = (uint8_t)s, .address = address}] = m.mask;
+      }
+    }
+  }
+  // clear bit change counts
+  for (const auto &[id, mask] : masks) {
+    if (auto it = all_msgs.find(id); it != all_msgs.end()) {
+      auto &bit_change_counts = it.value().bit_change_counts;
+      int size = std::min(mask.size(), bit_change_counts.size());
+      for (int i = 0; i < size; ++i) {
+        for (int j = 0; j < 8; ++j) {
+          if (((mask[i] >> (7 - j)) & 1) != 0) {
+            bit_change_counts[i][j] = 0;
+          }
         }
       }
     }
+  }
+}
+
+size_t AbstractStream::suppressHighlighted() {
+  std::lock_guard lk(suppress_mutex);
+  size_t cnt = 0;
+  const double cur_ts = currentSec();
+  for (auto &m : all_msgs) {
+    for (int i = 0; i < m.dat.size(); ++i) {
+      const double dt = cur_ts - m.last_change_t[i];
+      if (dt < 2.0) {
+        m.suppressed_bytes[i] = true;
+        // clear bit change counts
+        std::fill(m.bit_change_counts[i].begin(), m.bit_change_counts[i].end(), 0);
+      }
+      cnt += m.suppressed_bytes[i];
+    }
+  }
+  return cnt;
+}
+
+void AbstractStream::clearSuppressed() {
+  std::lock_guard lk(suppress_mutex);
+  for (auto &m : all_msgs) {
+    std::fill(m.suppressed_bytes.begin(), m.suppressed_bytes.end(), false);
   }
 }
 
@@ -69,7 +108,7 @@ void AbstractStream::updateMessages(QHash<MessageId, CanData> *messages) {
 }
 
 void AbstractStream::updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size) {
-  std::lock_guard lk(mutex);
+  std::lock_guard lk(suppress_mutex);
   auto mask_it = masks.find(id);
   std::vector<uint8_t> *mask = mask_it == masks.end() ? nullptr : &mask_it->second;
   all_msgs[id].compute(id, (const char *)data, size, sec, getSpeed(), mask);
@@ -229,6 +268,7 @@ void CanData::compute(const MessageId &msg_id, const char *can_data, const int s
     last_change_t.assign(size, ts);
     last_delta.resize(size);
     same_delta_counter.resize(size);
+    suppressed_bytes.resize(size);
   } else {
     bool lighter = settings.theme == DARK_THEME;
     const QColor &cyan = !lighter ? CYAN : CYAN_LIGHTER;
@@ -236,7 +276,12 @@ void CanData::compute(const MessageId &msg_id, const char *can_data, const int s
     const QColor &greyish_blue = !lighter ? GREYISH_BLUE : GREYISH_BLUE_LIGHTER;
 
     for (int i = 0; i < size; ++i) {
-      const uint8_t mask_byte = (mask && i < mask->size()) ? (~((*mask)[i])) : 0xff;
+      uint8_t mask_byte = 0xff;
+      if (suppressed_bytes[i]) {
+        mask_byte = 0;
+      } else if (mask && i < mask->size()) {
+        mask_byte = (~((*mask)[i]));
+      }
       const uint8_t last = dat[i] & mask_byte;
       const uint8_t cur = can_data[i] & mask_byte;
       const int delta = cur - last;

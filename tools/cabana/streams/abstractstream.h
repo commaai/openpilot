@@ -30,6 +30,7 @@ struct CanData {
   std::vector<std::array<uint32_t, 8>> bit_change_counts;
   std::vector<int> last_delta;
   std::vector<int> same_delta_counter;
+  std::vector<bool> suppressed_bytes;
   double last_freq_update_ts = 0;
 };
 
@@ -76,6 +77,8 @@ public:
   const std::vector<const CanEvent *> &allEvents() const { return all_events_; }
   const std::vector<const CanEvent *> &events(const MessageId &id) const;
   virtual const std::vector<std::tuple<double, double, TimelineType>> getTimeline() { return {}; }
+  size_t suppressHighlighted();
+  void clearSuppressed();
 
 signals:
   void paused();
@@ -107,7 +110,7 @@ protected:
   std::unordered_map<MessageId, std::vector<const CanEvent *>> events_;
   std::vector<const CanEvent *> all_events_;
   std::unique_ptr<MonotonicBuffer> event_buffer;
-  std::mutex mutex;
+  std::mutex suppress_mutex;
   std::unordered_map<MessageId, std::vector<uint8_t>> masks;
 };
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <algorithm>
-#include <utility>
 #include <vector>
 
 #include <QAbstractTableModel>
@@ -40,12 +39,9 @@ public:
   void setFilterStrings(const QMap<int, QString> &filters);
   void msgsReceived(const QHash<MessageId, CanData> *new_msgs, bool has_new_ids);
   void fetchData();
-  void suppress();
-  void clearSuppress();
   void forceResetModel();
   void dbcModified();
   std::vector<MessageId> msgs;
-  QSet<std::pair<MessageId, int>> suppressed_bytes;
 
 private:
   void sortMessages(std::vector<MessageId> &new_msgs);
@@ -99,7 +95,7 @@ public:
   void selectMessage(const MessageId &message_id);
   QByteArray saveHeaderState() const { return view->header()->saveState(); }
   bool restoreHeaderState(const QByteArray &state) const { return view->header()->restoreState(state); }
-  void updateSuppressedButtons();
+  void updateSuppressedButtons(size_t n);
 
 public slots:
   void dbcModified();

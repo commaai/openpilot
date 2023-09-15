@@ -110,15 +110,15 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
     }
   });
   QObject::connect(suppress_add, &QPushButton::clicked, [=]() {
-    model->suppress();
-    updateSuppressedButtons();
+    size_t cnt = can->suppressHighlighted();
+    updateSuppressedButtons(cnt);
   });
   QObject::connect(suppress_clear, &QPushButton::clicked, [=]() {
-    model->clearSuppress();
-    updateSuppressedButtons();
+    can->clearSuppressed();
+    updateSuppressedButtons(0);
   });
 
-  updateSuppressedButtons();
+  updateSuppressedButtons(0);
 
   setWhatsThis(tr(R"(
     <b>Message View</b><br/>
@@ -142,13 +142,13 @@ void MessagesWidget::selectMessage(const MessageId &msg_id) {
   }
 }
 
-void MessagesWidget::updateSuppressedButtons() {
-  if (model->suppressed_bytes.empty()) {
+void MessagesWidget::updateSuppressedButtons(size_t n) {
+  if (!n) {
     suppress_clear->setEnabled(false);
     suppress_clear->setText("Clear Suppressed");
   } else {
     suppress_clear->setEnabled(true);
-    suppress_clear->setText(QString("Clear Suppressed (%1)").arg(model->suppressed_bytes.size()));
+    suppress_clear->setText(QString("Clear Suppressed (%1)").arg(n));
   }
 }
 
@@ -192,15 +192,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
       case Column::DATA: return id.source != INVALID_SOURCE ? toHex(can_data.dat) : "N/A";
     }
   } else if (role == ColorsRole) {
-    QVector<QColor> colors = can_data.colors;
-    if (!suppressed_bytes.empty()) {
-      for (int i = 0; i < colors.size(); i++) {
-        if (suppressed_bytes.contains({id, i})) {
-          colors[i] = QColor(255, 255, 255, 0);
-        }
-      }
-    }
-    return QVariant::fromValue(colors);
+    return QVariant::fromValue(can_data.colors);
   } else if (role == BytesRole && index.column() == Column::DATA && id.source != INVALID_SOURCE) {
     return can_data.dat;
   } else if (role == Qt::ToolTipRole && index.column() == Column::NAME) {
@@ -360,24 +352,6 @@ void MessageListModel::sort(int column, Qt::SortOrder order) {
     sort_order = order;
     fetchData();
   }
-}
-
-void MessageListModel::suppress() {
-  const double cur_ts = can->currentSec();
-
-  for (auto &id : msgs) {
-    auto &can_data = can->lastMessage(id);
-    for (int i = 0; i < can_data.dat.size(); i++) {
-      const double dt = cur_ts - can_data.last_change_t[i];
-      if (dt < 2.0) {
-        suppressed_bytes.insert({id, i});
-      }
-    }
-  }
-}
-
-void MessageListModel::clearSuppress() {
-  suppressed_bytes.clear();
 }
 
 void MessageListModel::forceResetModel() {
