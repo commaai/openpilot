@@ -33,7 +33,7 @@ class MetaDriveWorld(World):
     steer_metadrive = steer_angle * 1 / (self.env.vehicle.MAX_STEERING * self.steer_ratio)
     steer_metadrive = np.clip(steer_metadrive, -1, 1)
 
-    if (time.time() - self.reset_time) > 5:
+    if (time.monotonic() - self.reset_time) > 5:
       self.vc[0] = steer_metadrive
 
       if throttle_out:
@@ -61,7 +61,7 @@ class MetaDriveWorld(World):
 
     if terminated:
       self.env.reset()
-      self.reset_time = time.time()
+      self.reset_time = time.monotonic()
 
   def close(self):
     pass
