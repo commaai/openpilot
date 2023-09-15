@@ -29,6 +29,12 @@ runs:
       if: ${{ inputs.git_lfs == 'true' }}
       run: git lfs pull
 
+    # login to docker hub on BuildJet runners, due to rate limiting
+    # https://buildjet.com/for-github-actions/docs/guides/docker
+    - name: Login to Docker Hub
+      if: contains(runner.name, 'buildjet')
+      run: docker login -u adeebshihadeh -p ${{ secrets.DOCKER_HUB_PAT }}
+
     # build cache
     - id: date
       shell: bash
