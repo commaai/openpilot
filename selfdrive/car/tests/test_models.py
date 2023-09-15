@@ -166,10 +166,10 @@ class TestCarModelBase(unittest.TestCase):
     del cls.can_msgs
 
   def setUp(self):
-    Params().put_bool("OpenpilotEnabledToggle", True)
-
     self.CI = self.CarInterface(self.CP.copy(), self.CarController, self.CarState)
     assert self.CI
+
+    Params().put_bool("OpenpilotEnabledToggle", self.openpilot_enabled)
 
     # TODO: check safetyModel is in release panda build
     self.safety = libpanda_py.libpanda
