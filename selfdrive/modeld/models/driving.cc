@@ -175,6 +175,33 @@ void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelOutputPlanPredic
   fill_xyzt(framed.initOrientationRate(), T_IDXS_FLOAT, rot_rate_x, rot_rate_y, rot_rate_z);
 }
 
+
+void fill_lateral_planner(cereal::ModelDataV2::Builder &framed, const LateralPlannerOutput &model_lateral_planner_solution) {
+  std::array<float, TRAJECTORY_SIZE> lateral_plan_solution_x, lateral_plan_solution_y, lateral_plan_solution_yaw, lateral_plan_solution_yaw_rate;
+  std::array<float, TRAJECTORY_SIZE> lateral_plan_solution_x_std, lateral_plan_solution_y_std, lateral_plan_solution_yaw_std, lateral_plan_solution_yaw_rate_std;
+
+  for (int i=0; i<TRAJECTORY_SIZE; i++) {
+    lateral_plan_solution_x[i] = model_lateral_planner_solution.mean[i].x;
+    lateral_plan_solution_y[i] = model_lateral_planner_solution.mean[i].y;
+    lateral_plan_solution_yaw[i] = model_lateral_planner_solution.mean[i].yaw;
+    lateral_plan_solution_yaw_rate[i] = model_lateral_planner_solution.mean[i].yaw_rate;
+    lateral_plan_solution_x_std[i] = exp(model_lateral_planner_solution.std[i].x);
+    lateral_plan_solution_y_std[i] = exp(model_lateral_planner_solution.std[i].y);
+    lateral_plan_solution_yaw_std[i] = exp(model_lateral_planner_solution.std[i].yaw);
+    lateral_plan_solution_yaw_rate_std[i] = exp(model_lateral_planner_solution.std[i].yaw_rate);
+  }
+
+  auto lateral_planner_solution = framed.initLateralPlannerSolution();
+  lateral_planner_solution.setX(to_kj_array_ptr(lateral_plan_solution_x));
+  lateral_planner_solution.setY(to_kj_array_ptr(lateral_plan_solution_y));
+  lateral_planner_solution.setYaw(to_kj_array_ptr(lateral_plan_solution_yaw));
+  lateral_planner_solution.setYawRate(to_kj_array_ptr(lateral_plan_solution_yaw_rate));
+  lateral_planner_solution.setXStd(to_kj_array_ptr(lateral_plan_solution_x_std));
+  lateral_planner_solution.setYStd(to_kj_array_ptr(lateral_plan_solution_y_std));
+  lateral_planner_solution.setYawStd(to_kj_array_ptr(lateral_plan_solution_yaw_std));
+  lateral_planner_solution.setYawRateStd(to_kj_array_ptr(lateral_plan_solution_yaw_rate_std));
+}
+
 void fill_lane_lines(cereal::ModelDataV2::Builder &framed, const std::array<float, TRAJECTORY_SIZE> &plan_t,
                      const ModelOutputLaneLines &lanes) {
   std::array<float, TRAJECTORY_SIZE> left_far_y, left_far_z;
@@ -258,6 +285,7 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
   }
 
   fill_plan(framed, best_plan);
+  fill_lateral_planner(framed, net_outputs.lateral_planner_solution);
   fill_lane_lines(framed, plan_t, net_outputs.lane_lines);
   fill_road_edges(framed, plan_t, net_outputs.road_edges);
 
