@@ -1,11 +1,10 @@
 import time
+
+from cereal import log
 import cereal.messaging as messaging
 
 from openpilot.common.params import Params
-from cereal import log
-
 from openpilot.common.realtime import DT_DMON
-
 from openpilot.tools.sim.lib.camerad import Camerad
 
 from typing import TYPE_CHECKING

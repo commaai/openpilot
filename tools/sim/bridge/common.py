@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 import cereal.messaging as messaging
+
 from openpilot.common.params import Params
 from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import Ratekeeper
