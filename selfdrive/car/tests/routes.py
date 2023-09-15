@@ -125,7 +125,6 @@ routes = [
   CarTestRoute("9c917ba0d42ffe78|2020-04-17--12-43-19", HYUNDAI.PALISADE),
   CarTestRoute("05a8f0197fdac372|2022-10-19--14-14-09", HYUNDAI.IONIQ_5),  # HDA2
   CarTestRoute("eb4eae1476647463|2023-08-26--18-07-04", HYUNDAI.IONIQ_6, segment=6),  # HDA2
-  CarTestRoute("d24644b698e91fbc|2023-09-14--22-14-44", HYUNDAI.IONIQ_6),  # HDA2 EUR model
   CarTestRoute("3f29334d6134fcd4|2022-03-30--22-00-50", HYUNDAI.IONIQ_PHEV_2019),
   CarTestRoute("fa8db5869167f821|2021-06-10--22-50-10", HYUNDAI.IONIQ_PHEV),
   CarTestRoute("e1107f9d04dfb1e2|2023-09-05--22-32-12", HYUNDAI.IONIQ_PHEV),  # openpilot longitudinal enabled
