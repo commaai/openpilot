@@ -13,7 +13,7 @@ concurrency:
 env:
   BASE_IMAGE: openpilot-base
   CL_BASE_IMAGE: openpilot-base-cl
-  DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+  DOCKER_GHCR_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
 
   BUILD: selfdrive/test/docker_build.sh base
 
@@ -58,7 +58,7 @@ jobs:
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       run: |
         echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
-        $DOCKER_LOGIN
+        $DOCKER_GHCR_LOGIN
     - name: Build and push sim image
       run: |
         selfdrive/test/docker_build.sh sim
@@ -78,7 +78,7 @@ jobs:
       if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
         echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
-        $DOCKER_LOGIN
+        $DOCKER_GHCR_LOGIN
     - name: Build and push docs image
       run: |
         selfdrive/test/docker_build.sh docs

@@ -14,9 +14,9 @@
 #include <QMimeData>
 #include <QOpenGLWidget>
 #include <QPropertyAnimation>
+#include <QRandomGenerator>
 #include <QRubberBand>
 #include <QScreen>
-#include <QtMath>
 #include <QWindow>
 
 #include "tools/cabana/chart/chartswidget.h"
@@ -151,6 +151,11 @@ void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
 
 void ChartView::signalUpdated(const cabana::Signal *sig) {
   if (std::any_of(sigs.cbegin(), sigs.cend(), [=](auto &s) { return s.sig == sig; })) {
+    for (const auto &s : sigs) {
+      if (s.sig == sig && s.series->color() != sig->color) {
+        setSeriesColor(s.series, sig->color);
+      }
+    }
     updateTitle();
     updateSeries(sig);
   }
@@ -281,7 +286,6 @@ void ChartView::updateSeries(const cabana::Signal *sig, bool clear) {
         s.step_vals.clear();
         s.last_value_mono_time = 0;
       }
-      s.series->setColor(s.sig->color);
 
       const auto &msgs = can->events(s.msg_id);
       s.vals.reserve(msgs.capacity());
@@ -360,7 +364,7 @@ void ChartView::updateAxisY() {
     axis_y->setRange(min_y, max_y);
     axis_y->setTickCount(tick_count);
 
-    int n = qMax(int(-qFloor(std::log10((max_y - min_y) / (tick_count - 1)))), 0) + 1;
+    int n = std::max(int(-std::floor(std::log10((max_y - min_y) / (tick_count - 1)))), 0) + 1;
     int max_label_width = 0;
     QFontMetrics fm(axis_y->labelsFont());
     for (int i = 0; i < tick_count; i++) {
@@ -378,15 +382,15 @@ void ChartView::updateAxisY() {
 std::tuple<double, double, int> ChartView::getNiceAxisNumbers(qreal min, qreal max, int tick_count) {
   qreal range = niceNumber((max - min), true);  // range with ceiling
   qreal step = niceNumber(range / (tick_count - 1), false);
-  min = qFloor(min / step);
-  max = qCeil(max / step);
+  min = std::floor(min / step);
+  max = std::ceil(max / step);
   tick_count = int(max - min) + 1;
   return {min * step, max * step, tick_count};
 }
 
 // nice numbers can be expressed as form of 1*10^n, 2* 10^n or 5*10^n
 qreal ChartView::niceNumber(qreal x, bool ceiling) {
-  qreal z = qPow(10, qFloor(std::log10(x))); //find corresponding number of the form of 10^n than is smaller than x
+  qreal z = std::pow(10, std::floor(std::log10(x))); //find corresponding number of the form of 10^n than is smaller than x
   qreal q = x / z; //q<10 && q>=1;
   if (ceiling) {
     if (q <= 1.0) q = 1;
@@ -789,6 +793,7 @@ QXYSeries *ChartView::createSeries(SeriesType type, QColor color) {
 }
 
 void ChartView::addSeries(QXYSeries *series) {
+  setSeriesColor(series, series->color());
   chart()->addSeries(series);
   series->attachAxis(axis_x);
   series->attachAxis(axis_y);
@@ -799,6 +804,21 @@ void ChartView::addSeries(QXYSeries *series) {
   if (glwidget && !glwidget->testAttribute(Qt::WA_TransparentForMouseEvents)) {
     glwidget->setAttribute(Qt::WA_TransparentForMouseEvents);
   }
+}
+
+void ChartView::setSeriesColor(QXYSeries *series, QColor color) {
+  auto existing_series = chart()->series();
+  for (auto s : existing_series) {
+    if (s != series && std::abs(color.hueF() - qobject_cast<QXYSeries *>(s)->color().hueF()) < 0.1) {
+      // use different color to distinguish it from others.
+      auto last_color = qobject_cast<QXYSeries *>(existing_series.back())->color();
+      color.setHsvF(std::fmod(last_color.hueF() + 60 / 360.0, 1.0),
+                    QRandomGenerator::global()->bounded(35, 100) / 100.0,
+                    QRandomGenerator::global()->bounded(85, 100) / 100.0);
+      break;
+    }
+  }
+  series->setColor(color);
 }
 
 void ChartView::setSeriesType(SeriesType type) {
