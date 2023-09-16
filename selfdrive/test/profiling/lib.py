@@ -1,5 +1,5 @@
 from collections import defaultdict, deque
-from cereal.services import SERVICE_LIST
+from cereal.services import service_list
 import cereal.messaging as messaging
 import capnp
 
@@ -67,7 +67,7 @@ class SubMaster(messaging.SubMaster):
     self.msgs = list(reversed(self.msgs))
 
     for s in services:
-      self.freq[s] = SERVICE_LIST[s].frequency
+      self.freq[s] = service_list[s].frequency
       try:
         data = messaging.new_message(s)
       except capnp.lib.capnp.KjException:

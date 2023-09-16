@@ -13,7 +13,7 @@ import psutil
 
 import cereal.messaging as messaging
 from cereal import log
-from cereal.services import SERVICE_LIST
+from cereal.services import service_list
 from openpilot.common.dict_helpers import strip_deprecated_keys
 from openpilot.common.time import MIN_DATE
 from openpilot.common.filter_simple import FirstOrderFilter
@@ -34,7 +34,7 @@ NetworkStrength = log.DeviceState.NetworkStrength
 CURRENT_TAU = 15.   # 15s time constant
 TEMP_TAU = 5.   # 5s time constant
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
-PANDA_STATES_FREQUENCY = SERVICE_LIST['pandaStates'].frequency
+PANDA_STATES_FREQUENCY = service_list['pandaStates'].frequency
 PANDA_STATES_TIMEOUT = round(1000 / PANDA_STATES_FREQUENCY * 1.5)  # 1.5x the expected pandaState frequency
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])

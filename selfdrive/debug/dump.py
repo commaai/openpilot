@@ -8,7 +8,7 @@ import cereal.messaging as messaging
 
 from hexdump import hexdump
 from cereal import log
-from cereal.services import SERVICE_LIST
+from cereal.services import service_list
 
 codecs.register_error("strict", codecs.backslashreplace_errors)
 
@@ -31,7 +31,7 @@ if __name__ == "__main__":
 
   poller = messaging.Poller()
 
-  for m in args.socket if len(args.socket) > 0 else SERVICE_LIST:
+  for m in args.socket if len(args.socket) > 0 else service_list:
     messaging.sub_sock(m, poller, addr=args.addr)
 
   values = None
