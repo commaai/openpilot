@@ -18,7 +18,6 @@ AbstractStream::AbstractStream(QObject *parent) : QObject(parent) {
   assert(parent != nullptr);
   new_msgs = std::make_unique<QHash<MessageId, CanData>>();
   event_buffer = std::make_unique<MonotonicBuffer>(EVENT_NEXT_BUFFER_SIZE);
-  suppress_defined_signals = settings.suppress_defined_signals;
 
   QObject::connect(this, &AbstractStream::seekedTo, this, &AbstractStream::updateLastMsgsTo);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &AbstractStream::updateMasks);
@@ -46,26 +45,24 @@ void AbstractStream::updateMasks() {
       }
     }
   }
-  if (suppress_defined_signals) {
+  if (settings.suppress_defined_signals) {
     suppressDefinedSignals(true);
   }
 }
 
 void AbstractStream::suppressDefinedSignals(bool suppress) {
   std::lock_guard lk(suppress_mutex);
-  suppress_defined_signals = settings.suppress_defined_signals = suppress;
-  if (suppress_defined_signals) {
-    // clear bit change counts
-    for (const auto &[id, mask] : masks) {
-      if (auto it = all_msgs.find(id); it != all_msgs.end()) {
-        auto &last_changes = it.value().last_changes;
-        int size = std::min(mask.size(), last_changes.size());
-        for (int i = 0; i < size; ++i) {
-          for (int j = 0; j < 8; ++j) {
-            if (((mask[i] >> (7 - j)) & 1) != 0) {
-              last_changes[i].bit_change_counts[j] = 0;
-            }
-          }
+  settings.suppress_defined_signals = suppress;
+  if (!suppress) return;
+
+  // clear bit change counts
+  for (const auto &[id, mask] : masks) {
+    if (auto it = all_msgs.find(id); it != all_msgs.end()) {
+      auto &last_changes = it.value().last_changes;
+      const int size = std::min(mask.size(), last_changes.size());
+      for (int i = 0; i < size; ++i) {
+        for (int j = 0; j < 8; ++j) {
+          if (((mask[i] >> (7 - j)) & 1) != 0) last_changes[i].bit_change_counts[j] = 0;
         }
       }
     }
@@ -118,7 +115,7 @@ void AbstractStream::updateMessages(QHash<MessageId, CanData> *messages) {
 void AbstractStream::updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size) {
   std::lock_guard lk(suppress_mutex);
   std::vector<uint8_t> *mask = nullptr;
-  if (suppress_defined_signals) {
+  if (settings.suppress_defined_signals) {
     auto mask_it = masks.find(id);
     mask = (mask_it == masks.end()) ? nullptr : &mask_it->second;
   }
@@ -168,12 +165,10 @@ void AbstractStream::updateLastMsgsTo(double sec) {
     auto it = std::lower_bound(ev.crbegin(), ev.crend(), last_ts, [](auto e, uint64_t ts) {
       return e->mono_time > ts;
     });
-    auto mask_it = masks.find(id);
-    std::vector<uint8_t> *mask = mask_it == masks.end() ? nullptr : &mask_it->second;
     if (it != ev.crend()) {
       double ts = (*it)->mono_time / 1e9 - routeStartTime();
       auto &m = all_msgs[id];
-      m.compute(id, (const char *)(*it)->dat, (*it)->size, ts, getSpeed(), mask);
+      m.compute(id, (const char *)(*it)->dat, (*it)->size, ts, getSpeed());
       m.count = std::distance(it, ev.crend());
     }
   }

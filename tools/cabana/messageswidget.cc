@@ -106,9 +106,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
     }
   });
 
-  QObject::connect(suppress_defined_signals, &QCheckBox::stateChanged, [](int state) {
-    can->suppressDefinedSignals(state == Qt::Checked);
-  });
+  QObject::connect(suppress_defined_signals, &QCheckBox::stateChanged, can, &AbstractStream::suppressDefinedSignals);
   QObject::connect(suppress_add, &QPushButton::clicked, [this]() {
     size_t cnt = can->suppressHighlighted();
     updateSuppressedButtons(cnt);

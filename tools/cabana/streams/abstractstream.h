@@ -117,7 +117,6 @@ protected:
   std::vector<const CanEvent *> all_events_;
   std::unique_ptr<MonotonicBuffer> event_buffer;
   std::recursive_mutex suppress_mutex;
-  bool suppress_defined_signals = false;
   std::unordered_map<MessageId, std::vector<uint8_t>> masks;
 };
 
