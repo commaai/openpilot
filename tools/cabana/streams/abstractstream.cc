@@ -110,11 +110,8 @@ void AbstractStream::updateMessages(QHash<MessageId, CanData> *messages) {
 
 void AbstractStream::updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size) {
   std::lock_guard lk(suppress_mutex);
-  std::vector<uint8_t> *mask = nullptr;
-  if (settings.suppress_defined_signals) {
-    auto mask_it = masks.find(id);
-    mask = (mask_it == masks.end()) ? nullptr : &mask_it->second;
-  }
+  auto mask_it = masks.find(id);
+  std::vector<uint8_t> *mask = mask_it == masks.end() ? nullptr : &mask_it->second;
   all_msgs[id].compute(id, (const char *)data, size, sec, getSpeed(), mask);
   if (!new_msgs->contains(id)) {
     new_msgs->insert(id, {});
