@@ -47,10 +47,9 @@ async def control_body(data, app):
   logger.info(str(data))
   x = max(-1.0, min(1.0, data['x']))
   y = max(-1.0, min(1.0, data['y']))
-  dat = messaging.new_message('testJoystick')
-  dat.testJoystick.axes = [x, y]
-  dat.testJoystick.buttons = [False]
-  pm.send('testJoystick', dat)
+  dat = messaging.new_message('bodyReserved0')
+  dat.bodyReserved0 = json.dumps({'x': x, 'y': y})
+  pm.send('bodyReserved0', dat)
   app['mutable_vals']['last_send_time'] = now
   if (data['type'] == 'control_command'):
     app['mutable_vals']['last_override_time'] = now
@@ -180,7 +179,7 @@ async def run(cmd):
 
 def main():
   global pm, sm
-  pm = messaging.PubMaster(['testJoystick'])
+  pm = messaging.PubMaster(['bodyReserved0'])
   sm = messaging.SubMaster(['carState', 'logMessage'])
   # App needs to be HTTPS for microphone and audio autoplay to work on the browser
   cert_path = TELEOPDIR + '/cert.pem'

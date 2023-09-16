@@ -87,6 +87,7 @@ procs = [
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
   PythonProcess("webjoystick", "tools.bodyteleop.web", notcar),
+  PythonProcess("bodycontrolsd", "tools.bodyteleop.bodycontrolsd", notcar),
 ]
 
 managed_processes = {p.name: p for p in procs}
