@@ -79,7 +79,7 @@ def brake_pump_hysteresis(apply_brake, apply_brake_last, last_pump_ts, ts):
 
 def round_hud_set_speed(v_cruise_kph, is_metric):
   if not is_metric:
-    v_cruise_kph = round(v_cruise_kph / CV.KPH_TO_MPH) * IMPERIAL_INCREMENT
+    v_cruise_kph = round(v_cruise_kph / IMPERIAL_INCREMENT) * IMPERIAL_INCREMENT * 1.001
   return round(v_cruise_kph)
 
 
