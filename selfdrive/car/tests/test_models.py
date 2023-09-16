@@ -16,7 +16,7 @@ from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from openpilot.selfdrive.car.gm.values import CAR as GM
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from openpilot.selfdrive.car.hyundai.values import CAR as HYUNDAI
-from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
+from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute, SkipFlags
 from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.test.openpilotci import get_url
 from openpilot.tools.lib.logreader import LogReader
@@ -65,7 +65,6 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
       test_cases.append((platform, CarTestRoute(segment_name.route_name.canonical_name, platform,
                                                 segment=segment_name.segment_num)))
   return test_cases
-
 
 
 class TestCarModelBase(unittest.TestCase):
@@ -258,7 +257,8 @@ class TestCarModelBase(unittest.TestCase):
 
           # No need to check relay malfunction on disabled routes (relay closed),
           # or before fingerprinting is done (1s of tolerance to exit silent mode)
-          if self.openpilot_enabled and t / 1e4 > (self.elm_frame + 100):
+          if (self.openpilot_enabled and t / 1e4 > (self.elm_frame + 100) and
+            not self.test_route.skip_flags & SkipFlags.RELAY_MALFUNCTION):
             self.assertFalse(self.safety.get_relay_malfunction())
           else:
             self.safety.set_relay_malfunction(False)

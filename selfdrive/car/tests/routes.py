@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from enum import IntFlag
 from typing import NamedTuple, Optional
 
 from openpilot.selfdrive.car.chrysler.values import CAR as CHRYSLER
@@ -29,10 +30,15 @@ non_tested_cars = [
 ]
 
 
+class SkipFlags(IntFlag):
+  RELAY_MALFUNCTION = 1
+
+
 class CarTestRoute(NamedTuple):
   route: str
   car_model: Optional[str]
   segment: Optional[int] = None
+  skip_flags: SkipFlags = 0
 
 
 routes = [
@@ -279,7 +285,10 @@ routes = [
   # Segments that test specific issues
   # Controls mismatch due to interceptor threshold
   CarTestRoute("cfb32f0fb91b173b|2022-04-06--14-54-45", HONDA.CIVIC, segment=21),
-  CarTestRoute("5a8762b91fc70467|2022-04-14--21-26-20", TOYOTA.RAV4, segment=2),
+  # Smart-DSU starts publishing ACC_CONTROL, skip relay malfunction check
+  CarTestRoute("5a8762b91fc70467|2022-04-14--21-26-20", TOYOTA.RAV4, segment=2,
+               skip_flags=SkipFlags.RELAY_MALFUNCTION),
+
   # Controls mismatch due to standstill threshold
   CarTestRoute("bec2dcfde6a64235|2022-04-08--14-21-32", HONDA.CRV_HYBRID, segment=22),
 ]
