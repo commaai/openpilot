@@ -396,6 +396,7 @@ FW_VERSIONS = {
   },
   CAR.CRAFTER_MK2: {
     (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8704L906056BP\xf1\x894729',
       b'\xf1\x8704L906056EK\xf1\x896391',
       b'\xf1\x8705L906023BC\xf1\x892688',
     ],
@@ -403,15 +404,18 @@ FW_VERSIONS = {
     #(Ecu.transmission, 0x7e1, None): [
     #],
     (Ecu.srs, 0x715, None): [
+      b'\xf1\x873Q0959655AL\xf1\x890505\xf1\x82\x0e1411001413001203151311031100',
       b'\xf1\x873Q0959655BG\xf1\x890703\xf1\x82\x0e16120016130012051G1313052900',
       b'\xf1\x875QF959655AS\xf1\x890755\xf1\x82\x1315140015150011111100050200--1311120749',
     ],
     (Ecu.eps, 0x712, None): [
+      b'\xf1\x872N0909143D\x00\xf1\x897010\xf1\x82\x05183AZ306A2',
       b'\xf1\x872N0909143E \xf1\x897021\xf1\x82\x05163AZ306A2',
       b'\xf1\x872N0909144K \xf1\x897045\xf1\x82\x05233AZ810A2',
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x872Q0907572AA\xf1\x890396',
+      b'\xf1\x872Q0907572J \xf1\x890156',
       b'\xf1\x872Q0907572M \xf1\x890233',
     ],
   },
