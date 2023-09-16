@@ -22,11 +22,8 @@ def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
 
 
 def get_cruise_speed_conversion(car_fingerprint: str, is_metric: bool) -> float:
-  # if signal is kph, need to apply a factor that the car uses
-  # 20mph=40kph, 90 mph=144kph => (144 - 40) / (90 - 25)=1.6
-  factor = CV.MPH_TO_KPH / 1.6
   # on certain cars, CRUISE_SPEED changes to imperial with car's unit setting
-  return CV.MPH_TO_MS if car_fingerprint in HONDA_BOSCH_RADARLESS and not is_metric else CV.KPH_TO_MS * factor
+  return CV.MPH_TO_MS if car_fingerprint in HONDA_BOSCH_RADARLESS and not is_metric else CV.KPH_TO_MS
 
 
 def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake):
