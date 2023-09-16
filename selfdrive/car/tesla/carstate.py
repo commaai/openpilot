@@ -85,7 +85,7 @@ class CarState(CarStateBase):
     ret.rightBlinker = (cp.vl["GTW_carState"]["BC_indicatorRStatus"] == 1)
 
     # Seatbelt
-    ret.seatbeltUnlatched = (cp.vl["SDM1"]["SDM_bcklDrivStatus"] != 1)
+    ret.seatbeltUnlatched = False #(cp.vl["SDM1"]["SDM_bcklDrivStatus"] != 1)
 
     # TODO: blindspot
 
@@ -111,7 +111,7 @@ class CarState(CarStateBase):
       ("DI_state", 10),
       ("STW_ACTN_RQ", 10),
       ("GTW_carState", 10),
-      ("SDM1", 10),
+      # ("SDM1", 10),
       ("BrakeMessage", 50),
     ]
     return CANParser(DBC[CP.carFingerprint]['chassis'], messages, CANBUS.chassis)
