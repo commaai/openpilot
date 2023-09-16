@@ -47,7 +47,7 @@ async def control_body(data, app):
   logger.info(str(data))
   x = max(-1.0, min(1.0, data['x']))
   y = max(-1.0, min(1.0, data['y']))
-  dat = messaging.new_message('bodyReserved0')
+  dat = messaging.new_message()
   dat.bodyReserved0 = json.dumps({'x': x, 'y': y})
   pm.send('bodyReserved0', dat)
   app['mutable_vals']['last_send_time'] = now

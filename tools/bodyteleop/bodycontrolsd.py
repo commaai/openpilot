@@ -9,7 +9,7 @@ def main():
       sm.update(0)
 
       if sm.updated['bodyReserved0']:
-          controls = json.loads(sm.bodyReserved0)
+          controls = json.loads(sm['bodyReserved0'])
           msg = messaging.new_message('testJoystick')
           msg.testJoystick.axes = [controls['x'], controls['y']]
           msg.testJoystick.buttons = [False]
