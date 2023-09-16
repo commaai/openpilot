@@ -111,7 +111,7 @@ protected:
   uint64_t lastest_event_ts = 0;
   std::atomic<bool> processing = false;
   std::unique_ptr<QHash<MessageId, CanData>> new_msgs;
-  QHash<MessageId, CanData> all_msgs;
+  std::unordered_map<MessageId, CanData> all_msgs;
   std::unordered_map<MessageId, std::vector<const CanEvent *>> events_;
   std::vector<const CanEvent *> all_events_;
   std::unique_ptr<MonotonicBuffer> event_buffer;

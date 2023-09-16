@@ -47,7 +47,7 @@ void AbstractStream::updateMasks() {
   // clear bit change counts
   for (const auto &[id, mask] : masks) {
     if (auto it = all_msgs.find(id); it != all_msgs.end()) {
-      auto &last_changes = it.value().last_changes;
+      auto &last_changes = it->second.last_changes;
       const int size = std::min(mask.size(), last_changes.size());
       for (int i = 0; i < size; ++i) {
         for (int j = 0; j < 8; ++j) {
@@ -68,7 +68,7 @@ size_t AbstractStream::suppressHighlighted() {
   std::lock_guard lk(mutex);
   size_t cnt = 0;
   const double cur_ts = currentSec();
-  for (auto &m : all_msgs) {
+  for (auto &[_, m] : all_msgs) {
     for (auto &last_change : m.last_changes) {
       const double dt = cur_ts - last_change.ts;
       if (dt < 2.0) {
@@ -84,7 +84,7 @@ size_t AbstractStream::suppressHighlighted() {
 
 void AbstractStream::clearSuppressed() {
   std::lock_guard lk(mutex);
-  for (auto &m : all_msgs) {
+  for (auto &[_, m] : all_msgs) {
     std::for_each(m.last_changes.begin(), m.last_changes.end(), [](auto &c) { c.suppressed = false; });
   }
 }
@@ -161,12 +161,10 @@ void AbstractStream::updateLastMsgsTo(double sec) {
       auto &m = all_msgs[id];
       m.compute(id, (const char *)(*it)->dat, (*it)->size, ts, getSpeed());
       m.count = std::distance(it, ev.crend());
+      last_msgs[id] = m;
     }
   }
 
-  // deep copy all_msgs to last_msgs to avoid multi-threading issue.
-  last_msgs = all_msgs;
-  last_msgs.detach();
   // use a timer to prevent recursive calls
   QTimer::singleShot(0, this, [this]() { emit msgsReceived(&last_msgs, true); });
 }
