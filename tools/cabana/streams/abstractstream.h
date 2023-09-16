@@ -19,7 +19,7 @@
 
 struct CanData {
   void compute(const MessageId &msg_id, const char *dat, const int size, double current_sec,
-               double playback_speed, const std::vector<uint8_t> *mask = nullptr, double in_freq = 0);
+               double playback_speed, const std::vector<uint8_t> *mask = nullptr);
 
   double ts = 0.;
   uint32_t count = 0;

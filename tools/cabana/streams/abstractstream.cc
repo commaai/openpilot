@@ -258,13 +258,13 @@ double calc_freq(const MessageId &msg_id, double current_sec) {
 }  // namespace
 
 void CanData::compute(const MessageId &msg_id, const char *can_data, const int size, double current_sec,
-                      double playback_speed, const std::vector<uint8_t> *mask, double in_freq) {
+                      double playback_speed, const std::vector<uint8_t> *mask) {
   ts = current_sec;
   ++count;
 
   if (auto sec = seconds_since_boot(); (sec - last_freq_update_ts) >= 1) {
     last_freq_update_ts = sec;
-    freq = !in_freq ? calc_freq(msg_id, ts) : in_freq;
+    freq = calc_freq(msg_id, ts);
   }
 
   if (dat.size() != size) {
