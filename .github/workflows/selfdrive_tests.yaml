@@ -142,7 +142,7 @@ jobs:
         fi
     - name: Install dependencies
       if: steps.dependency-cache.outputs.cache-hit != 'true'
-      run: ./tools/mac_setup.sh
+      run: SKIP_PROMPT=1 ./tools/mac_setup.sh
       env:
         # package install has DeprecationWarnings
         PYTHONWARNINGS: default
