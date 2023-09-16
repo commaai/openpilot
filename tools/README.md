@@ -8,37 +8,34 @@ Running natively on any other system is not recommended, and will require modifi
 
 ## Native setup on Ubuntu 20.04
 
-** 1. CLONE OPENPILOT **
+**1. Clone openpilot**
 
 Either do a partial clone for faster download:
 ``` bash
-cd ~
 git clone --filter=blob:none --recurse-submodules --also-filter-submodules https://github.com/commaai/openpilot.git
-cd openpilot
 ```
 
 or do a full clone:
 ``` bash
-cd ~
 git clone --recurse-submodules https://github.com/commaai/openpilot.git
-cd openpilot
 ```
 
-** 2. Then, run the setup script **
+**2. Run the setup script**
 
 ``` bash
+cd openpilot
+
 # for Ubuntu 20.04 LTS
 tools/ubuntu_setup.sh
-
-Activate a shell with the Python dependencies installed:
-
-
-** 3. build openpilot **
-``` bash
-cd openpilot && poetry shell
 ```
 
-Build openpilot with this command:
+Activate a shell with the Python dependencies installed:
+``` bash
+poetry shell
+```
+
+**3. Build openpilot**
+
 ``` bash
 scons -u -j$(nproc)
 ```
