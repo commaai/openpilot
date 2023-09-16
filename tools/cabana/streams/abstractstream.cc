@@ -35,7 +35,7 @@ AbstractStream::AbstractStream(QObject *parent) : QObject(parent) {
 }
 
 void AbstractStream::updateMasks() {
-  std::lock_guard lk(suppress_mutex);
+  std::lock_guard lk(mutex);
   masks.clear();
   if (!settings.suppress_defined_signals) return;
 
@@ -59,13 +59,13 @@ void AbstractStream::updateMasks() {
 }
 
 void AbstractStream::suppressDefinedSignals(bool suppress) {
-  std::lock_guard lk(suppress_mutex);
+  std::lock_guard lk(mutex);
   settings.suppress_defined_signals = suppress;
   updateMasks();
 }
 
 size_t AbstractStream::suppressHighlighted() {
-  std::lock_guard lk(suppress_mutex);
+  std::lock_guard lk(mutex);
   size_t cnt = 0;
   const double cur_ts = currentSec();
   for (auto &m : all_msgs) {
@@ -83,7 +83,7 @@ size_t AbstractStream::suppressHighlighted() {
 }
 
 void AbstractStream::clearSuppressed() {
-  std::lock_guard lk(suppress_mutex);
+  std::lock_guard lk(mutex);
   for (auto &m : all_msgs) {
     std::for_each(m.last_changes.begin(), m.last_changes.end(), [](auto &c) { c.suppressed = false; });
   }
@@ -107,7 +107,7 @@ void AbstractStream::updateMessages(QHash<MessageId, CanData> *messages) {
 }
 
 void AbstractStream::updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size) {
-  std::lock_guard lk(suppress_mutex);
+  std::lock_guard lk(mutex);
   auto mask_it = masks.find(id);
   std::vector<uint8_t> *mask = mask_it == masks.end() ? nullptr : &mask_it->second;
   all_msgs[id].compute(id, (const char *)data, size, sec, getSpeed(), mask);

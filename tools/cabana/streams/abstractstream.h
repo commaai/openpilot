@@ -115,7 +115,7 @@ protected:
   std::unordered_map<MessageId, std::vector<const CanEvent *>> events_;
   std::vector<const CanEvent *> all_events_;
   std::unique_ptr<MonotonicBuffer> event_buffer;
-  std::recursive_mutex suppress_mutex;
+  std::recursive_mutex mutex;
   std::unordered_map<MessageId, std::vector<uint8_t>> masks;
 };
 
