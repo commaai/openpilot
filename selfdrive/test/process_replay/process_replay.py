@@ -255,18 +255,16 @@ class ProcessContainer:
         time.sleep(0)
 
   def stop(self):
-    with self.prefix:
-      self.process.signal(signal.SIGKILL)
-      self.process.stop()
-      self.rc.close_context()
-      self.prefix.clean_dirs()
-      self._clean_env()
+    self.process.signal(signal.SIGKILL)
+    self.process.stop()
+    self.rc.close_context()
+    self._clean_env()
 
   def run_step(self, msg: capnp._DynamicStructReader, frs: Optional[Dict[str, Any]]) -> List[capnp._DynamicStructReader]:
     assert self.rc and self.pm and self.sockets and self.process.proc
 
     output_msgs = []
-    with self.prefix, Timeout(self.cfg.timeout, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
+    with Timeout(self.cfg.timeout, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
       end_of_cycle = True
       if self.cfg.should_recv_callback is not None:
         end_of_cycle = self.cfg.should_recv_callback(msg, self.cfg, self.cnt)
