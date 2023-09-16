@@ -81,7 +81,7 @@ def read_sensor_events(duration_sec):
     socks[stype] = messaging.sub_sock(stype, poller=poller, timeout=100)
 
   # wait for sensors to come up
-  with Timeout(60, "sensors didn't come up"):
+  with Timeout(int(os.environ.get("SENSOR_WAIT", "5")), "sensors didn't come up"):
     while len(poller.poll(250)) == 0:
       pass
   time.sleep(1)
