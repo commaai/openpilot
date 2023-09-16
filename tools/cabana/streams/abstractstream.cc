@@ -1,7 +1,6 @@
 #include "tools/cabana/streams/abstractstream.h"
 
 #include <algorithm>
-#include <vector>
 
 #include <QTimer>
 
@@ -102,7 +101,6 @@ void AbstractStream::updateMessages(QHash<MessageId, CanData> *messages) {
     updateMasks();
     emit sourcesUpdated(sources);
   }
-  emit updated();
   emit msgsReceived(messages, prev_msg_size != last_msgs.size());
   delete messages;
   processing = false;
@@ -170,10 +168,7 @@ void AbstractStream::updateLastMsgsTo(double sec) {
   last_msgs = all_msgs;
   last_msgs.detach();
   // use a timer to prevent recursive calls
-  QTimer::singleShot(0, [this]() {
-    emit updated();
-    emit msgsReceived(&last_msgs, true);
-  });
+  QTimer::singleShot(0, this, [this]() { emit msgsReceived(&last_msgs, true); });
 }
 
 void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last) {

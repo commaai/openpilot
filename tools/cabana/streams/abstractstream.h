@@ -92,7 +92,6 @@ signals:
   void seekedTo(double sec);
   void streamStarted();
   void eventsMerged();
-  void updated();
   void msgsReceived(const QHash<MessageId, CanData> *new_msgs, bool has_new_ids);
   void sourcesUpdated(const SourceSet &s);
 
