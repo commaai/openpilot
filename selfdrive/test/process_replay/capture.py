@@ -28,7 +28,8 @@ class FdRedirect:
 
 
 class ProcessOutputCapture:
-  def __init__(self, proc_name: str, prefix: str):
+  def __init__(self, proc_name: str):
+    prefix = os.environ.get("OPENPILOT_PREFIX", "")
     prefix = f"{proc_name}_{prefix}"
     self.stdout_redirect = FdRedirect(prefix, 1)
     self.stderr_redirect = FdRedirect(prefix, 2)

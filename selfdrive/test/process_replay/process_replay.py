@@ -146,7 +146,6 @@ class ProcessConfig:
 
 class ProcessContainer:
   def __init__(self, cfg: ProcessConfig):
-    self.prefix = OpenpilotPrefix(clean_dirs_on_exit=False)
     self.cfg = copy.deepcopy(cfg)
     self.process = copy.deepcopy(managed_processes[cfg.proc_name])
     self.msg_queue: List[capnp._DynamicStructReader] = []
@@ -226,35 +225,34 @@ class ProcessContainer:
     all_msgs: Union[LogReader, List[capnp._DynamicStructReader]],
     fingerprint: Optional[str], capture_output: bool
   ):
-    with self.prefix as p:
-      self._setup_env(params_config, environ_config)
+    self._setup_env(params_config, environ_config)
 
-      if self.cfg.config_callback is not None:
-        params = Params()
-        self.cfg.config_callback(params, self.cfg, all_msgs)
+    if self.cfg.config_callback is not None:
+      params = Params()
+      self.cfg.config_callback(params, self.cfg, all_msgs)
 
-      self.rc = ReplayContext(self.cfg)
-      self.rc.open_context()
+    self.rc = ReplayContext(self.cfg)
+    self.rc.open_context()
 
-      self.pm = messaging.PubMaster(self.cfg.pubs)
-      self.sockets = [messaging.sub_sock(s, timeout=100) for s in self.cfg.subs]
+    self.pm = messaging.PubMaster(self.cfg.pubs)
+    self.sockets = [messaging.sub_sock(s, timeout=100) for s in self.cfg.subs]
 
-      if len(self.cfg.vision_pubs) != 0:
-        self._setup_vision_ipc(all_msgs)
-        assert self.vipc_server is not None
+    if len(self.cfg.vision_pubs) != 0:
+      self._setup_vision_ipc(all_msgs)
+      assert self.vipc_server is not None
 
-      if capture_output:
-        self.capture = ProcessOutputCapture(self.cfg.proc_name, p.prefix)
+    if capture_output:
+      self.capture = ProcessOutputCapture(self.cfg.proc_name)
 
-      self._start_process()
+    self._start_process()
 
-      if self.cfg.init_callback is not None:
-        self.cfg.init_callback(self.rc, self.pm, all_msgs, fingerprint)
+    if self.cfg.init_callback is not None:
+      self.cfg.init_callback(self.rc, self.pm, all_msgs, fingerprint)
 
-      # wait for process to startup
-      with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(self.cfg.proc_name)}"):
-        while not all(self.pm.all_readers_updated(s) for s in self.cfg.pubs if s not in self.cfg.ignore_alive_pubs):
-          time.sleep(0)
+    # wait for process to startup
+    with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(self.cfg.proc_name)}"):
+      while not all(self.pm.all_readers_updated(s) for s in self.cfg.pubs if s not in self.cfg.ignore_alive_pubs):
+        time.sleep(0)
 
   def stop(self):
     with self.prefix:

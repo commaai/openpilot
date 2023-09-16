@@ -41,3 +41,4 @@ class OpenpilotPrefix:
     shutil.rmtree(Paths.log_root(), ignore_errors=True)
     shutil.rmtree(Paths.download_cache_root(), ignore_errors=True)
     shutil.rmtree(Paths.comma_home(), ignore_errors=True)
+    shutil.rmtree(Paths.swaglog_root(), ignore_errors=True)
