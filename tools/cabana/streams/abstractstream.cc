@@ -273,11 +273,12 @@ void CanData::compute(const MessageId &msg_id, const char *can_data, const int s
     const QColor &cyan = !lighter ? CYAN : CYAN_LIGHTER;
     const QColor &red = !lighter ? RED : RED_LIGHTER;
     const QColor &greyish_blue = !lighter ? GREYISH_BLUE : GREYISH_BLUE_LIGHTER;
+    const float alpha_delta = 1.0 / (freq + 1) / (fade_time * playback_speed);
 
     for (int i = 0; i < size; ++i) {
       auto &last_change = last_changes[i];
 
-      uint8_t mask_byte = 0xff;
+      uint8_t mask_byte = 0xFF;
       if (last_change.suppressed) {
         mask_byte = 0x00;
       } else if (mask && i < mask->size()) {
@@ -318,7 +319,6 @@ void CanData::compute(const MessageId &msg_id, const char *can_data, const int s
         last_change.delta = delta;
       } else {
         // Fade out
-        float alpha_delta = 1.0 / (freq + 1) / (fade_time * playback_speed);
         colors[i].setAlphaF(std::max(0.0, colors[i].alphaF() - alpha_delta));
       }
     }
