@@ -1124,7 +1124,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
-        <translation>عندما يكون للملاحة وجهة، سيقوم openpilot بإدخال معلومات الخريطة في النموذج. يوفر هذا سياقًا مفيدًا للنموذج ويسمح لـ openpilot بالبقاء يسارًا أو يمينًا بشكل مناسب عند المخارج/المخارج. لا يتغير سلوك تغيير المسار ولا يزال السائق ينشطه. هذه ميزة جودة ألفا؛ وينبغي توقع الأخطاء، وخاصة حول المخارج والشوك. يمكن أن تشمل هذه الأخطاء عبور الخطوط غير المقصودة، والخروج المتأخر، والقيادة نحو الحواجز الفاصلة في المناطق الممتلئة بالدماء، وما إلى ذلك.</translation>
+        <translation>عندما يكون للملاحة وجهة، سيقوم openpilot بإدخال معلومات الخريطة في النموذج. يوفر هذا سياقًا مفيدًا للنموذج ويسمح لـ openpilot بالبقاء يسارًا أو يمينًا بشكل مناسب عند المخارج/المخارج. لا يتغير سلوك تغيير المسار ولا يزال السائق ينشطه. هذه ميزة جودة ألفا؛ وينبغي توقع الأخطاء، وخاصة حول المخارج والشوك. يمكن أن تشمل هذه الأخطاء عبور الخطوط غير المقصودة، والخروج المتأخر، أو القيادة نحو الحواجز الفاصلة في المناطق المثلثة بين الطريق الرئيسي والمخرج.</translation>
     </message>
     <message>
         <source>New Driving Visualization</source>
