@@ -38,23 +38,13 @@ AbstractStream::AbstractStream(QObject *parent) : QObject(parent) {
 void AbstractStream::updateMasks() {
   std::lock_guard lk(suppress_mutex);
   masks.clear();
+  if (!settings.suppress_defined_signals) return;
+
   for (auto s : sources) {
-    if (auto f = dbc()->findDBCFile(s)) {
-      for (const auto &[address, m] : f->getMessages()) {
-        masks[{.source = (uint8_t)s, .address = address}] = m.mask;
-      }
+    for (const auto &[address, m] : dbc()->getMessages(s)) {
+      masks[{.source = (uint8_t)s, .address = address}] = m.mask;
     }
   }
-  if (settings.suppress_defined_signals) {
-    suppressDefinedSignals(true);
-  }
-}
-
-void AbstractStream::suppressDefinedSignals(bool suppress) {
-  std::lock_guard lk(suppress_mutex);
-  settings.suppress_defined_signals = suppress;
-  if (!suppress) return;
-
   // clear bit change counts
   for (const auto &[id, mask] : masks) {
     if (auto it = all_msgs.find(id); it != all_msgs.end()) {
@@ -67,6 +57,12 @@ void AbstractStream::suppressDefinedSignals(bool suppress) {
       }
     }
   }
+}
+
+void AbstractStream::suppressDefinedSignals(bool suppress) {
+  std::lock_guard lk(suppress_mutex);
+  settings.suppress_defined_signals = suppress;
+  updateMasks();
 }
 
 size_t AbstractStream::suppressHighlighted() {
@@ -287,7 +283,6 @@ void CanData::compute(const MessageId &msg_id, const char *can_data, const int s
       } else if (mask && i < mask->size()) {
         mask_byte = (~((*mask)[i]));
       }
-
       const uint8_t last = dat[i] & mask_byte;
       const uint8_t cur = can_data[i] & mask_byte;
       const int delta = cur - last;
