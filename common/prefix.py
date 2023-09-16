@@ -22,7 +22,7 @@ class OpenpilotPrefix:
     os.makedirs(Paths.log_root(), exist_ok=True)
     os.makedirs(Paths.download_cache_root(), exist_ok=True)
     os.makedirs(Paths.comma_home(), exist_ok=True)
-  
+
     return self
 
   def __exit__(self, exc_type, exc_obj, exc_tb):
