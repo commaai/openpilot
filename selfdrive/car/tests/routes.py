@@ -38,7 +38,7 @@ class CarTestRoute(NamedTuple):
   route: str
   car_model: Optional[str]
   segment: Optional[int] = None
-  skip_flags: SkipFlags = 0
+  skip_flags: SkipFlags = SkipFlags(0)
 
 
 routes = [
