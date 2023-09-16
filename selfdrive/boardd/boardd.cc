@@ -476,12 +476,12 @@ void panda_state_thread(std::vector<Panda *> pandas, bool spoofing_started) {
   RateKeeper rk("panda_state_thread", 10);
 
   while (!do_exit && check_all_connected(pandas)) {
+    auto ignition_opt = send_panda_states(&pm, pandas, spoofing_started);
+
     if (sm.frame % 5 == 0) {
       // send out peripheralState at 2Hz
       send_peripheral_state(&pm, peripheral_panda);
     }
-
-    auto ignition_opt = send_panda_states(&pm, pandas, spoofing_started);
 
     if (!ignition_opt) {
       LOGE("Failed to get ignition_opt");

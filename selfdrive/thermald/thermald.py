@@ -34,7 +34,7 @@ NetworkStrength = log.DeviceState.NetworkStrength
 CURRENT_TAU = 15.   # 15s time constant
 TEMP_TAU = 5.   # 5s time constant
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
-PANDA_STATES_TIMEOUT = round(1000 / service_list['pandaStates'].frequency * 1.5)  # 1.5x the expected pandaState frequency
+PERIPHERAL_STATE_TIMEOUT = round(1000 / service_list['peripheralState'].frequency * 1.5)  # 1.5x the expected peripheralState frequency
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
 HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'network_strength', 'network_stats',
@@ -168,7 +168,7 @@ def hw_state_thread(end_event, hw_queue):
 
 def thermald_thread(end_event, hw_queue) -> None:
   pm = messaging.PubMaster(['deviceState'])
-  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "controlsState", "pandaStates"], poll=["pandaStates"])
+  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "controlsState", "pandaStates"], poll=["peripheralState"])
 
   count = 0
 
@@ -209,11 +209,7 @@ def thermald_thread(end_event, hw_queue) -> None:
   fan_controller = None
 
   while not end_event.is_set():
-    sm.update(PANDA_STATES_TIMEOUT)
-
-    # Run at 2Hz
-    if sm.frame % round(service_list['pandaStates'].frequency * DT_TRML) != 0:
-      continue
+    sm.update(PERIPHERAL_STATE_TIMEOUT)
 
     pandaStates = sm['pandaStates']
     peripheralState = sm['peripheralState']
