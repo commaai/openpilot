@@ -1,6 +1,7 @@
 import time
 
 from cereal import log
+from cereal.services import service_list
 import cereal.messaging as messaging
 
 from openpilot.common.params import Params
@@ -120,7 +121,7 @@ class SimulatedSensors:
       self.send_fake_driver_monitoring()
       self.last_dmon_update = now
 
-    if (now - self.last_perp_update) > 0.25:
+    if (now - self.last_perp_update) > (1 / service_list['peripheralState']):
       self.send_peripheral_state()
       self.last_perp_update = now
 
