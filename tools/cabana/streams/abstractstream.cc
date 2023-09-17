@@ -248,9 +248,9 @@ void CanData::compute(const MessageId &msg_id, const char *can_data, const int s
   ts = current_sec;
   ++count;
 
-  if (auto sec = seconds_since_boot(); (sec - last_freq_update_ts) >= 1) {
-    last_freq_update_ts = sec;
-    freq = calc_freq(msg_id, ts);
+  if (current_sec < last_freq_update_ts || (current_sec - last_freq_update_ts) >= 1.0) {
+    last_freq_update_ts = current_sec;
+    freq = calc_freq(msg_id, current_sec);
   }
 
   if (dat.size() != size) {
