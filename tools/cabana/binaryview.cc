@@ -388,7 +388,7 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
           drawSignalCell(painter, option, index, s);
         }
       }
-    } else if (item->valid) {
+    } else if (item->valid && item->bg_color.alpha() > 0) {
       painter->fillRect(option.rect, item->bg_color);
     }
     auto color_role = item->sigs.contains(bin_view->hovered_sig) ? QPalette::BrightText : QPalette::Text;
