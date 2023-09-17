@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <set>
 
 #include <QAbstractItemModel>
 #include <QLabel>
@@ -117,7 +118,7 @@ private:
   void setSparklineRange(int value);
   void handleSignalAdded(MessageId id, const cabana::Signal *sig);
   void handleSignalUpdated(const cabana::Signal *sig);
-  void updateState(const QHash<MessageId, CanData> *msgs = nullptr);
+  void updateState(const std::set<MessageId> *msgs = nullptr);
 
   struct TreeView : public QTreeView {
     TreeView(QWidget *parent) : QTreeView(parent) {}

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <algorithm>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include <QAbstractTableModel>
@@ -37,7 +39,7 @@ public:
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return msgs.size(); }
   void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
   void setFilterStrings(const QMap<int, QString> &filters);
-  void msgsReceived(const QHash<MessageId, CanData> *new_msgs, bool has_new_ids);
+  void msgsReceived(const std::set<MessageId> *new_msgs, bool has_new_ids);
   void fetchData();
   void forceResetModel();
   void dbcModified();

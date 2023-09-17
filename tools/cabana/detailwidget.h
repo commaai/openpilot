@@ -1,5 +1,7 @@
 #pragma once
 
+#include <set>
+
 #include <QDialogButtonBox>
 #include <QSplitter>
 #include <QTabWidget>
@@ -39,7 +41,7 @@ private:
   void showTabBarContextMenu(const QPoint &pt);
   void editMsg();
   void removeMsg();
-  void updateState(const QHash<MessageId, CanData> * msgs = nullptr);
+  void updateState(const std::set<MessageId> *msgs = nullptr);
 
   MessageId msg_id;
   QLabel *time_label, *warning_icon, *warning_label;

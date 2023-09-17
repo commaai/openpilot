@@ -279,38 +279,39 @@ void ChartView::updateSeriesPoints() {
   }
 }
 
-void ChartView::updateSeries(const cabana::Signal *sig, bool clear) {
+void ChartView::updateSeries(const cabana::Signal *sig, const CanEventsMap *new_events) {
+  const auto events = (new_events ? new_events : &can->eventsMap());
   for (auto &s : sigs) {
     if (!sig || s.sig == sig) {
-      if (clear) {
+      auto events_it = events->find(s.msg_id);
+      if (events_it == events->end()) continue;
+
+      const std::vector<const CanEvent *> &msgs = events_it->second;
+      if (msgs.front()->mono_time < s.last_value_mono_time) {
         s.vals.clear();
         s.step_vals.clear();
         s.last_value_mono_time = 0;
       }
+      s.vals.reserve(s.vals.size() + msgs.capacity());
+      s.step_vals.reserve(s.step_vals.size() + msgs.capacity() * 2);
+      s.last_value_mono_time = msgs.back()->mono_time;
 
-      const auto &msgs = can->events(s.msg_id);
-      s.vals.reserve(msgs.capacity());
-      s.step_vals.reserve(msgs.capacity() * 2);
-
-      auto first = std::upper_bound(msgs.cbegin(), msgs.cend(), s.last_value_mono_time, CompareCanEvent());
       const double route_start_time = can->routeStartTime();
-      for (auto end = msgs.cend(); first != end; ++first) {
-        const CanEvent *e = *first;
+      for (const CanEvent *e : msgs) {
         double value = 0;
         if (s.sig->getValue(e->dat, e->size, &value)) {
           double ts = e->mono_time / 1e9 - route_start_time;  // seconds
-          s.vals.append({ts, value});
+          s.vals.emplace_back(ts, value);
           if (!s.step_vals.empty()) {
-            s.step_vals.append({ts, s.step_vals.back().y()});
+            s.step_vals.emplace_back(ts, s.step_vals.back().y());
           }
-          s.step_vals.append({ts, value});
-          s.last_value_mono_time = e->mono_time;
+          s.step_vals.emplace_back(ts, value);
         }
       }
       if (!can->liveStreaming()) {
         s.segment_tree.build(s.vals);
       }
-      s.series->replace(series_type == SeriesType::StepLine ? s.step_vals : s.vals);
+      s.series->replace(QVector<QPointF>::fromStdVector(series_type == SeriesType::StepLine ? s.step_vals : s.vals));
     }
   }
   updateAxisY();
@@ -842,7 +843,7 @@ void ChartView::setSeriesType(SeriesType type) {
     }
     for (auto &s : sigs) {
       auto series = createSeries(series_type, s.sig->color);
-      series->replace(series_type == SeriesType::StepLine ? s.step_vals : s.vals);
+      series->replace(QVector<QPointF>::fromStdVector(series_type == SeriesType::StepLine ? s.step_vals : s.vals));
       s.series = series;
     }
     updateSeriesPoints();

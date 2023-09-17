@@ -2,8 +2,6 @@
 
 #include <algorithm>
 #include <limits>
-#include <utility>
-#include <vector>
 
 #include <QHBoxLayout>
 #include <QPainter>
@@ -332,12 +330,12 @@ void MessageListModel::fetchData() {
   }
 }
 
-void MessageListModel::msgsReceived(const QHash<MessageId, CanData> *new_msgs, bool has_new_ids) {
+void MessageListModel::msgsReceived(const std::set<MessageId> *new_msgs, bool has_new_ids) {
   if (has_new_ids || filter_str.contains(Column::FREQ) || filter_str.contains(Column::COUNT) || filter_str.contains(Column::DATA)) {
     fetchData();
   }
   for (int i = 0; i < msgs.size(); ++i) {
-    if (new_msgs->contains(msgs[i])) {
+    if (!new_msgs || new_msgs->count(msgs[i])) {
       for (int col = Column::FREQ; col < columnCount(); ++col)
         emit dataChanged(index(i, col), index(i, col), {Qt::DisplayRole});
     }

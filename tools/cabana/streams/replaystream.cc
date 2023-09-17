@@ -63,9 +63,8 @@ bool ReplayStream::eventFilter(const Event *event) {
 
   double ts = millis_since_boot();
   if ((ts - prev_update_ts) > (1000.0 / settings.fps)) {
-    if (postEvents()) {
-      prev_update_ts = ts;
-    }
+    emit lastMsgsChanged();
+    prev_update_ts = ts;
   }
   return true;
 }

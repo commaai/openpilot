@@ -2,6 +2,7 @@
 
 #include <tuple>
 #include <utility>
+#include <vector>
 
 #include <QMenu>
 #include <QGraphicsPixmapItem>
@@ -31,7 +32,7 @@ public:
   ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent = nullptr);
   void addSignal(const MessageId &msg_id, const cabana::Signal *sig);
   bool hasSignal(const MessageId &msg_id, const cabana::Signal *sig) const;
-  void updateSeries(const cabana::Signal *sig = nullptr, bool clear = true);
+  void updateSeries(const cabana::Signal *sig = nullptr, const CanEventsMap *new_events = nullptr);
   void updatePlot(double cur, double min, double max);
   void setSeriesType(SeriesType type);
   void updatePlotArea(int left, bool force = false);
@@ -43,8 +44,8 @@ public:
     MessageId msg_id;
     const cabana::Signal *sig = nullptr;
     QXYSeries *series = nullptr;
-    QVector<QPointF> vals;
-    QVector<QPointF> step_vals;
+    std::vector<QPointF> vals;
+    std::vector<QPointF> step_vals;
     uint64_t last_value_mono_time = 0;
     QPointF track_pt{};
     SegmentTree segment_tree;

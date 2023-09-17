@@ -1,9 +1,8 @@
 #pragma once
 
 #include <array>
-#include <atomic>
-#include <deque>
 #include <memory>
+#include <set>
 #include <tuple>
 #include <unordered_map>
 #include <vector>
@@ -57,6 +56,7 @@ struct BusConfig {
   int data_speed_kbps = 2000;
   bool can_fd = false;
 };
+typedef std::unordered_map<MessageId, std::vector<const CanEvent *>> CanEventsMap;
 
 class AbstractStream : public QObject {
   Q_OBJECT
@@ -80,6 +80,7 @@ public:
   virtual bool isPaused() const { return false; }
   virtual void pause(bool pause) {}
   const std::vector<const CanEvent *> &allEvents() const { return all_events_; }
+  const CanEventsMap &eventsMap() const { return events_; }
   const std::vector<const CanEvent *> &events(const MessageId &id) const;
   virtual const std::vector<std::tuple<double, double, TimelineType>> getTimeline() { return {}; }
   size_t suppressHighlighted();
@@ -91,9 +92,10 @@ signals:
   void resume();
   void seekedTo(double sec);
   void streamStarted();
-  void eventsMerged();
-  void msgsReceived(const QHash<MessageId, CanData> *new_msgs, bool has_new_ids);
+  void eventsMerged(const CanEventsMap &can_events_map);
+  void msgsReceived(const std::set<MessageId> *new_msgs, bool has_new_ids);
   void sourcesUpdated(const SourceSet &s);
+  void lastMsgsChanged();
 
 public:
   QHash<MessageId, CanData> last_msgs;
@@ -101,22 +103,22 @@ public:
 
 protected:
   void mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last);
-  bool postEvents();
   uint64_t lastEventMonoTime() const { return lastest_event_ts; }
   void updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size);
-  void updateMessages(QHash<MessageId, CanData> *);
+  void updateLastMessages();
   void updateMasks();
   void updateLastMsgsTo(double sec);
 
   uint64_t lastest_event_ts = 0;
-  std::atomic<bool> processing = false;
-  std::unique_ptr<QHash<MessageId, CanData>> new_msgs;
-  std::unordered_map<MessageId, CanData> all_msgs;
-  std::unordered_map<MessageId, std::vector<const CanEvent *>> events_;
+  CanEventsMap events_;
   std::vector<const CanEvent *> all_events_;
   std::unique_ptr<MonotonicBuffer> event_buffer;
+
+  // Members accessed in multiple threads. (mutex protected)
   std::recursive_mutex mutex;
+  std::set<MessageId> new_msgs;
   std::unordered_map<MessageId, std::vector<uint8_t>> masks;
+  std::unordered_map<MessageId, CanData> all_msgs;
 };
 
 class AbstractOpenStreamWidget : public QWidget {

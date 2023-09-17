@@ -1,6 +1,7 @@
 #include "tools/cabana/streams/abstractstream.h"
 
 #include <algorithm>
+#include <utility>
 
 #include <QTimer>
 
@@ -15,9 +16,9 @@ StreamNotifier *StreamNotifier::instance() {
 
 AbstractStream::AbstractStream(QObject *parent) : QObject(parent) {
   assert(parent != nullptr);
-  new_msgs = std::make_unique<QHash<MessageId, CanData>>();
   event_buffer = std::make_unique<MonotonicBuffer>(EVENT_NEXT_BUFFER_SIZE);
 
+  QObject::connect(this, &AbstractStream::lastMsgsChanged, this, &AbstractStream::updateLastMessages, Qt::QueuedConnection);
   QObject::connect(this, &AbstractStream::seekedTo, this, &AbstractStream::updateLastMsgsTo);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &AbstractStream::updateMasks);
   QObject::connect(dbc(), &DBCManager::maskUpdated, this, &AbstractStream::updateMasks);
@@ -89,21 +90,23 @@ void AbstractStream::clearSuppressed() {
   }
 }
 
-void AbstractStream::updateMessages(QHash<MessageId, CanData> *messages) {
+void AbstractStream::updateLastMessages() {
   auto prev_src_size = sources.size();
   auto prev_msg_size = last_msgs.size();
-  for (auto it = messages->begin(); it != messages->end(); ++it) {
-    const auto &id = it.key();
-    last_msgs[id] = it.value();
-    sources.insert(id.source);
+  std::set<MessageId> messages;
+  {
+    std::lock_guard lk(mutex);
+    for (const auto &id : new_msgs) {
+      last_msgs[id] = all_msgs[id];
+      sources.insert(id.source);
+    }
+    messages = std::move(new_msgs);
   }
   if (sources.size() != prev_src_size) {
     updateMasks();
     emit sourcesUpdated(sources);
   }
-  emit msgsReceived(messages, prev_msg_size != last_msgs.size());
-  delete messages;
-  processing = false;
+  emit msgsReceived(&messages, prev_msg_size != last_msgs.size());
 }
 
 void AbstractStream::updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size) {
@@ -111,25 +114,7 @@ void AbstractStream::updateEvent(const MessageId &id, double sec, const uint8_t 
   auto mask_it = masks.find(id);
   std::vector<uint8_t> *mask = mask_it == masks.end() ? nullptr : &mask_it->second;
   all_msgs[id].compute(id, (const char *)data, size, sec, getSpeed(), mask);
-  if (!new_msgs->contains(id)) {
-    new_msgs->insert(id, {});
-  }
-}
-
-bool AbstractStream::postEvents() {
-  // delay posting CAN message if UI thread is busy
-  if (processing == false) {
-    processing = true;
-    for (auto it = new_msgs->begin(); it != new_msgs->end(); ++it) {
-      it.value() = all_msgs[it.key()];
-    }
-    // use pointer to avoid data copy in queued connection.
-    QMetaObject::invokeMethod(this, std::bind(&AbstractStream::updateMessages, this, new_msgs.release()), Qt::QueuedConnection);
-    new_msgs.reset(new QHash<MessageId, CanData>);
-    new_msgs->reserve(100);
-    return true;
-  }
-  return false;
+  new_msgs.insert(id);
 }
 
 const std::vector<const CanEvent *> &AbstractStream::events(const MessageId &id) const {
@@ -147,7 +132,7 @@ const CanData &AbstractStream::lastMessage(const MessageId &id) {
 // it is thread safe to update data in updateLastMsgsTo.
 // updateLastMsgsTo is always called in UI thread.
 void AbstractStream::updateLastMsgsTo(double sec) {
-  new_msgs.reset(new QHash<MessageId, CanData>);
+  new_msgs.clear();
   all_msgs.clear();
   last_msgs.clear();
 
@@ -164,13 +149,12 @@ void AbstractStream::updateLastMsgsTo(double sec) {
       last_msgs[id] = m;
     }
   }
-
   // use a timer to prevent recursive calls
-  QTimer::singleShot(0, this, [this]() { emit msgsReceived(&last_msgs, true); });
+  QTimer::singleShot(0, this, [this]() { emit msgsReceived(nullptr, true); });
 }
 
 void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last) {
-  static std::unordered_map<MessageId, std::deque<const CanEvent *>> new_events_map;
+  static CanEventsMap new_events_map;
   static  std::vector<const CanEvent *> new_events;
   new_events_map.clear();
   new_events.clear();
@@ -199,13 +183,12 @@ void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std
     e.insert(insert_pos, new_e.cbegin(), new_e.cend());
   }
 
+  lastest_event_ts = all_events_.empty() ? 0 : all_events_.back()->mono_time;
   if (!new_events.empty()) {
     auto insert_pos = std::upper_bound(all_events_.cbegin(), all_events_.cend(), new_events.front()->mono_time, CompareCanEvent());
     all_events_.insert(insert_pos, new_events.cbegin(), new_events.cend());
+    emit eventsMerged(new_events_map);
   }
-
-  lastest_event_ts = all_events_.empty() ? 0 : all_events_.back()->mono_time;
-  emit eventsMerged();
 }
 
 // CanData

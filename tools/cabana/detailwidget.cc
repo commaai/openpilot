@@ -150,9 +150,9 @@ void DetailWidget::refresh() {
   warning_widget->setVisible(!warnings.isEmpty());
 }
 
-void DetailWidget::updateState(const QHash<MessageId, CanData> *msgs) {
+void DetailWidget::updateState(const std::set<MessageId> *msgs) {
   time_label->setText(QString::number(can->currentSec(), 'f', 3));
-  if ((msgs && !msgs->contains(msg_id)))
+  if ((msgs && !msgs->count(msg_id)))
     return;
 
   if (tab_widget->currentIndex() == 0)

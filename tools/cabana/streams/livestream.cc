@@ -111,7 +111,7 @@ void LiveStream::updateEvents() {
     updateEvent(id, (e->mono_time - begin_event_ts) / 1e9, e->dat, e->size);
     current_event_ts = e->mono_time;
   }
-  postEvents();
+  emit lastMsgsChanged();
 }
 
 void LiveStream::seekTo(double sec) {
