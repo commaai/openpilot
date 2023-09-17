@@ -16,8 +16,7 @@ env:
   CL_BASE_IMAGE: openpilot-base-cl
   AZURE_TOKEN: ${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}
 
-  DOCKER_GHCR_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-  DOCKER_HUB_LOGIN: docker login -u adeebshihadeh -p ${{ secrets.DOCKER_HUB_PAT }}
+  DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
   BUILD: selfdrive/test/docker_build.sh base
 
   RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONWARNINGS=error -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/sh -c
@@ -77,11 +76,6 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    # login only on arm machines, due to buildjet rate limits
-    - name: Setup docker
-      if: contains(runner.name, 'buildjet')
-      run: |
-        $DOCKER_HUB_LOGIN
     - uses: ./.github/workflows/setup-with-retry
       with:
         cache_key_prefix: scons_${{ matrix.arch }}
@@ -196,12 +190,7 @@ jobs:
       run: |
         echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
         echo "TARGET_ARCHITECTURE=${{ matrix.arch }}" >> "$GITHUB_ENV"
-        $DOCKER_GHCR_LOGIN
-    # login only on arm machines, due to buildjet rate limits
-    - name: Additional setup for buildjet
-      if: contains(runner.name, 'buildjet')
-      run: |
-        $DOCKER_HUB_LOGIN
+        $DOCKER_LOGIN
     - uses: ./.github/workflows/setup-with-retry
       with:
         git-lfs: false
@@ -222,7 +211,7 @@ jobs:
         submodules: false
     - name: Setup docker
       run: |
-        $DOCKER_GHCR_LOGIN
+        $DOCKER_LOGIN
     - name: Merge x64 and arm64 tags
       run: |
         export PUSH_IMAGE=true
