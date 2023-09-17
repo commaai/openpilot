@@ -552,7 +552,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00IGhe SCC FHCUP      1.00 1.00 99110-M9100         ',
-    ],    
+    ],
   },
   CAR.HYUNDAI_GENESIS: {
     (Ecu.fwdCamera, 0x7c4, None): [
