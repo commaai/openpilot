@@ -260,7 +260,6 @@ def get_platform_codes(fw_versions: List[bytes]) -> Dict[bytes, Set[bytes]]:
     first_chunk = chunks[0]
     if len(first_chunk) == 8:
       # TODO: no part number, but some short chunks have it in subsequent chunks
-      # print('short version', fw)
       fw_match = SHORT_FW_PATTERN.search(first_chunk)
       if fw_match is not None:
         platform, major_version, sub_version = fw_match.groups()
@@ -268,7 +267,6 @@ def get_platform_codes(fw_versions: List[bytes]) -> Dict[bytes, Set[bytes]]:
         # print('platform code, version', platform, major_version, sub_version)
 
     elif len(first_chunk) == 10:
-      # print('medium fw', fw)
       fw_match = MEDIUM_FW_PATTERN.search(first_chunk)
       if fw_match is not None:
         part, platform, major_version, sub_version = fw_match.groups()
@@ -276,8 +274,6 @@ def get_platform_codes(fw_versions: List[bytes]) -> Dict[bytes, Set[bytes]]:
         codes[b'-'.join((part, platform, major_version))].add(sub_version)
 
     elif len(first_chunk) == 12:
-      # print(LONG_FW_PATTERN)
-      # print('long version', fw)
       fw_match = LONG_FW_PATTERN.search(first_chunk)
       if fw_match is not None:
         # print('got long match!')
@@ -289,15 +285,9 @@ def get_platform_codes(fw_versions: List[bytes]) -> Dict[bytes, Set[bytes]]:
 
 
 def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
-  # Non-electric CAN FD platforms often do not have platform code specifiers needed
-  # to distinguish between hybrid and ICE. All EVs so far are either exclusively
-  # electric or specify electric in the platform code.
-  # TODO: whitelist platforms that we've seen hybrid and ICE versions of that have these specifiers
-  fuzzy_platform_blacklist = set()  # set(CANFD_CAR - EV_CAR)
   candidates = set()
 
   for candidate, fws in FW_VERSIONS.items():
-    # print('\n\ncandidate:', candidate)
     # Keep track of ECUs which pass all checks (platform codes, within sub-version range)
     valid_found_ecus = set()
     valid_expected_ecus = {ecu[1:] for ecu in fws if ecu[0] in PLATFORM_CODE_ECUS}
@@ -312,8 +302,6 @@ def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
 
       # Found platform codes & versions
       found_platform_codes = get_platform_codes(live_fw_versions.get(addr, set()))
-
-      # print(ecu, expected_platform_codes, found_platform_codes)
 
       # Check part number + platform code + major version matches for any found versions
       # Then check that sub-version for the above is within range (splits model years)
@@ -331,7 +319,7 @@ def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
     if valid_expected_ecus.issubset(valid_found_ecus):
       candidates.add(candidate)
 
-  return candidates - fuzzy_platform_blacklist
+  return candidates
 
 
 # Regex patterns for parsing more general platform-specific identifiers from FW versions.
