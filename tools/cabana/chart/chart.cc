@@ -321,7 +321,7 @@ void ChartView::updateSeries(const cabana::Signal *sig, const CanEventsMap *new_
 
 // auto zoom on yaxis
 void ChartView::updateAxisY() {
-  if (sigs.isEmpty()) return;
+  if (sigs.empty()) return;
 
   double min = std::numeric_limits<double>::max();
   double max = std::numeric_limits<double>::lowest();
@@ -624,7 +624,7 @@ void ChartView::dropEvent(QDropEvent *event) {
         source_chart->chart()->removeSeries(s.series);
         addSeries(s.series);
       }
-      sigs.append(source_chart->sigs);
+      sigs.insert(sigs.end(), std::move_iterator(source_chart->sigs.begin()), std::move_iterator(source_chart->sigs.end()));
       updateAxisY();
       updateTitle();
       startAnimation();

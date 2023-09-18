@@ -281,7 +281,7 @@ void ChartsWidget::splitChart(ChartView *src_chart) {
       it->series->setColor(it->sig->color);
 
       c->addSeries(it->series);
-      c->sigs.push_back(*it);
+      c->sigs.emplace_back(std::move(*it));
       c->updateAxisY();
       c->updateTitle();
       it = src_chart->sigs.erase(it);
@@ -321,7 +321,7 @@ void ChartsWidget::updateLayout(bool force) {
     }
     for (int i = 0; i < current_charts.size(); ++i) {
       charts_layout->addWidget(current_charts[i], i / n, i % n);
-      if (current_charts[i]->sigs.isEmpty()) {
+      if (current_charts[i]->sigs.empty()) {
         // the chart will be resized after add signal. delay setVisible to reduce flicker.
         QTimer::singleShot(0, [c = current_charts[i]]() { c->setVisible(true); });
       } else {

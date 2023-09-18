@@ -228,7 +228,7 @@ QString DBCFile::generateDBC() {
       if (!sig->comment.isEmpty()) {
         signal_comment += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(address).arg(sig->name).arg(sig->comment);
       }
-      if (!sig->val_desc.isEmpty()) {
+      if (!sig->val_desc.empty()) {
         QStringList text;
         for (auto &[val, desc] : sig->val_desc) {
           text << QString("%1 \"%2\"").arg(val).arg(desc);

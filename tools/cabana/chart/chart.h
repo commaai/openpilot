@@ -108,7 +108,7 @@ private:
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;
   TipLabel tip_label;
-  QList<SigItem> sigs;
+  std::vector<SigItem> sigs;
   double cur_sec = 0;
   SeriesType series_type = SeriesType::Line;
   bool is_scrubbing = false;
