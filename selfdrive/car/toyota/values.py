@@ -298,7 +298,7 @@ def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
 
   for candidate, fws in FW_VERSIONS.items():
     # print('\n\ncandidate:', candidate)
-    # Keep track of ECUs which pass all checks (platform codes, within date range)
+    # Keep track of ECUs which pass all checks (platform codes, within sub-version range)
     valid_found_ecus = set()
     valid_expected_ecus = {ecu[1:] for ecu in fws if ecu[0] in PLATFORM_CODE_ECUS}
     for ecu, expected_versions in fws.items():
@@ -307,10 +307,10 @@ def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
       if ecu[0] not in PLATFORM_CODE_ECUS:
         continue
 
-      # Expected platform codes & dates
+      # Expected platform codes & versions
       expected_platform_codes = get_platform_codes(expected_versions)
 
-      # Found platform codes & dates
+      # Found platform codes & versions
       found_platform_codes = get_platform_codes(live_fw_versions.get(addr, set()))
 
       # print(ecu, expected_platform_codes, found_platform_codes)
