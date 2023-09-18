@@ -1,6 +1,10 @@
 name: 'openpilot env setup'
 
 inputs:
+  docker_hub_pat:
+    description: 'Auth token for Docker Hub, required for BuildJet jobs'
+    required: false
+    default: ''
   git_lfs:
     description: 'Whether or not to pull the git lfs'
     required: false
@@ -28,6 +32,18 @@ runs:
     - shell: bash
       if: ${{ inputs.git_lfs == 'true' }}
       run: git lfs pull
+
+    # on BuildJet runners, must be logged into DockerHub to avoid rate limiting
+    # https://buildjet.com/for-github-actions/docs/guides/docker
+    - name: Check Docker Hub credentials
+      if: contains(runner.name, 'buildjet') && ${{ inputs.docker_hub_pat == '' }}
+      run: |
+        echo "Need to set the Docker Hub PAT secret as an input to this action"
+        exit 1
+    - name: Login to Docker Hub
+      if: contains(runner.name, 'buildjet')
+      run: |
+        docker login -u adeebshihadeh -p ${{ inputs.docker_hub_pat }}
 
     # build cache
     - id: date
