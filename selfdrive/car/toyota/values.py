@@ -357,7 +357,8 @@ FW_LEN_CODE = re.compile(b'^[\x01-\x03]')  # highest seen is 3 chunks, 16 bytes 
 FW_CHUNK_LEN = 16
 
 # List of ECUs expected to have platform codes
-PLATFORM_CODE_ECUS = [Ecu.abs, Ecu.engine, Ecu.eps, Ecu.dsu, Ecu.fwdCamera, Ecu.fwdRadar]
+# Engine is not well understood at this time (lots of variability in major version)
+PLATFORM_CODE_ECUS = [Ecu.abs, Ecu.eps, Ecu.dsu, Ecu.fwdCamera, Ecu.fwdRadar]
 
 
 # Some ECUs that use KWP2000 have their FW versions on non-standard data identifiers.
