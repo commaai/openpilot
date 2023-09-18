@@ -120,14 +120,14 @@ class TestToyotaFingerprint(unittest.TestCase):
 
     # Short version has no part number
     results = get_platform_codes([b"\x0235879000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00"])
-    self.assertEqual(results, {(b"35-87", b"9000")})
+    self.assertEqual(results, {(b"58-79", b"000")})
 
     results = get_platform_codes([
       b"F152607140\x00\x00\x00\x00\x00\x00",
       b"\x028646F4104100\x00\x00\x00\x008646G5301200\x00\x00\x00\x00",
       b"\x0235879000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00",
     ])
-    self.assertEqual(results, {(b"F1526-07-1", b"40"), (b"8646F-41-04", b"100"), (b"35-87", b"9000")})
+    self.assertEqual(results, {(b"F1526-07-1", b"40"), (b"8646F-41-04", b"100"), (b"58-79", b"000")})
 
   def test_fuzzy_excluded_platforms(self):
     # Asserts a list of platforms that will not fuzzy fingerprint with platform codes due to them being shared.
