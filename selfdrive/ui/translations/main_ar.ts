@@ -60,11 +60,11 @@
     </message>
     <message>
         <source>Cellular Metered</source>
-        <translation type="unfinished"></translation>
+        <translation>قياس الخلوية</translation>
     </message>
     <message>
         <source>Prevent large data uploads when on a metered connection</source>
-        <translation type="unfinished"></translation>
+        <translation>منع تحميل البيانات الكبيرة عندما تكون على اتصال مقنن</translation>
     </message>
 </context>
 <context>
@@ -114,6 +114,33 @@
     <message>
         <source>Decline, uninstall %1</source>
         <translation>رفض ، قم بإلغاء تثبيت %1</translation>
+    </message>
+</context>
+<context>
+    <name>DestinationWidget</name>
+    <message>
+        <source>Home</source>
+        <translation>بيت</translation>
+    </message>
+    <message>
+        <source>Work</source>
+        <translation>عمل</translation>
+    </message>
+    <message>
+        <source>No destination set</source>
+        <translation>لم يتم تحديد الوجهة</translation>
+    </message>
+    <message>
+        <source>home</source>
+        <translation>بيت</translation>
+    </message>
+    <message>
+        <source>work</source>
+        <translation>عمل</translation>
+    </message>
+    <message>
+        <source>No %1 location set</source>
+        <translation>لم يتم تعيين موقع %1</translation>
     </message>
 </context>
 <context>
@@ -238,6 +265,14 @@
         <source>Disengage to Power Off</source>
         <translation>فك الارتباط لإيقاف التشغيل</translation>
     </message>
+    <message>
+        <source>Reset</source>
+        <translation>إعادة ضبط</translation>
+    </message>
+    <message>
+        <source>Review</source>
+        <translation>مراجعة</translation>
+    </message>
 </context>
 <context>
     <name>DriveStats</name>
@@ -274,6 +309,17 @@
     </message>
 </context>
 <context>
+    <name>ExperimentalModeButton</name>
+    <message>
+        <source>EXPERIMENTAL MODE ON</source>
+        <translation>تشغيل الوضع التجريبي</translation>
+    </message>
+    <message>
+        <source>CHILL MODE ON</source>
+        <translation>تشغيل وضع التبريد</translation>
+    </message>
+</context>
+<context>
     <name>InputDialog</name>
     <message>
         <source>Cancel</source>
@@ -297,18 +343,6 @@
         <source>Installing...</source>
         <translation>جارٍ التثبيت ...</translation>
     </message>
-    <message>
-        <source>Receiving objects: </source>
-        <translation>استقبال الكائنات: </translation>
-    </message>
-    <message>
-        <source>Resolving deltas: </source>
-        <translation>حل دلتا: </translation>
-    </message>
-    <message>
-        <source>Updating files: </source>
-        <translation>جارٍ تحديث الملفات: </translation>
-    </message>
 </context>
 <context>
     <name>MapETA</name>
@@ -324,73 +358,16 @@
         <source>hr</source>
         <translation>سع</translation>
     </message>
-    <message>
-        <source>km</source>
-        <translation>كم</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>مل</translation>
-    </message>
 </context>
 <context>
-    <name>MapInstructions</name>
+    <name>MapSettings</name>
     <message>
-        <source> km</source>
-        <translation> كم</translation>
+        <source>NAVIGATION</source>
+        <translation>ملاحة</translation>
     </message>
     <message>
-        <source> m</source>
-        <translation> م</translation>
-    </message>
-    <message>
-        <source> mi</source>
-        <translation> مل</translation>
-    </message>
-    <message>
-        <source> ft</source>
-        <translation> قد</translation>
-    </message>
-</context>
-<context>
-    <name>MapPanel</name>
-    <message>
-        <source>Current Destination</source>
-        <translation>الوجهة الحالية</translation>
-    </message>
-    <message>
-        <source>CLEAR</source>
-        <translation>مسح</translation>
-    </message>
-    <message>
-        <source>Recent Destinations</source>
-        <translation>الوجهات الأخيرة</translation>
-    </message>
-    <message>
-        <source>Try the Navigation Beta</source>
-        <translation>جرب التنقل التجريبي</translation>
-    </message>
-    <message>
-        <source>Get turn-by-turn directions displayed and more with a comma
-prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>احصل على الاتجاهات خطوة بخطوة معروضة والمزيد باستخدام comma
-الاشتراك الرئيسي. اشترك الآن: https://connect.comma.ai</translation>
-    </message>
-    <message>
-        <source>No home
-location set</source>
-        <translation>لم يتم تعيين
-موقع المنزل</translation>
-    </message>
-    <message>
-        <source>No work
-location set</source>
-        <translation>لم يتم تعيين
-موقع العمل</translation>
-    </message>
-    <message>
-        <source>no recent destinations</source>
-        <translation>لا توجد وجهات حديثة</translation>
+        <source>Manage at connect.comma.ai</source>
+        <translation>إدارة في Connect.comma.ai</translation>
     </message>
 </context>
 <context>
@@ -402,6 +379,10 @@ location set</source>
     <message>
         <source>Waiting for GPS</source>
         <translation>في انتظار GPS</translation>
+    </message>
+    <message>
+        <source>Waiting for route</source>
+        <translation>في انتظار الطريق</translation>
     </message>
 </context>
 <context>
@@ -432,6 +413,63 @@ location set</source>
     <message>
         <source>Wrong password</source>
         <translation>كلمة مرور خاطئة</translation>
+    </message>
+</context>
+<context>
+    <name>OffroadAlert</name>
+    <message>
+        <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
+        <translation>درجة حرارة الجهاز مرتفعة جدًا. تبريد النظام قبل البدء. درجة حرارة المكونات الداخلية الحالية: %1</translation>
+    </message>
+    <message>
+        <source>Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won&apos;t engage in %1</source>
+        <translation>اتصل بالإنترنت فورًا للتحقق من وجود تحديثات. إذا لم تكن متصلاً بالإنترنت، فلن يشارك openpilot في %1</translation>
+    </message>
+    <message>
+        <source>Connect to internet to check for updates. openpilot won&apos;t automatically start until it connects to internet to check for updates.</source>
+        <translation>اتصل بالإنترنت للتحقق من التحديثات. لن يبدأ تشغيل openpilot تلقائيًا حتى يتصل بالإنترنت للتحقق من وجود تحديثات.</translation>
+    </message>
+    <message>
+        <source>Unable to download updates
+%1</source>
+        <translation>غير قادر على تنزيل التحديثات
+%1</translation>
+    </message>
+    <message>
+        <source>Invalid date and time settings, system won&apos;t start. Connect to internet to set time.</source>
+        <translation>إعدادات التاريخ والوقت غير صالحة، ولن يبدأ النظام. الاتصال بالإنترنت لضبط الوقت.</translation>
+    </message>
+    <message>
+        <source>Taking camera snapshots. System won&apos;t start until finished.</source>
+        <translation>التقاط لقطات الكاميرا. لن يبدأ النظام حتى ينتهي.</translation>
+    </message>
+    <message>
+        <source>An update to your device&apos;s operating system is downloading in the background. You will be prompted to update when it&apos;s ready to install.</source>
+        <translation>يتم تنزيل تحديث لنظام تشغيل جهازك في الخلفية. سيُطلب منك التحديث عندما يكون جاهزًا للتثبيت.</translation>
+    </message>
+    <message>
+        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
+        <translation>فشل الجهاز في التسجيل. لن يتم الاتصال بخوادم comma.ai أو التحميل إليها، ولا يتلقى أي دعم من comma.ai. إذا كان هذا جهازًا رسميًا، فتفضل بزيارة https://comma.ai/support.</translation>
+    </message>
+    <message>
+        <source>NVMe drive not mounted.</source>
+        <translation>محرك NVMe غير مثبت.</translation>
+    </message>
+    <message>
+        <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
+        <translation>تم اكتشاف محرك أقراص NVMe غير مدعوم. قد يستهلك الجهاز قدرًا أكبر بكثير من الطاقة ويرتفع درجة حرارته بسبب عدم دعم NVMe.</translation>
+    </message>
+    <message>
+        <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
+        <translation>لم يتمكن openpilot من التعرف على سيارتك. سيارتك إما غير مدعومة أو لم يتم التعرف على وحدات التحكم الإلكترونية الخاصة بها. يرجى تقديم طلب سحب لإضافة إصدارات البرامج الثابتة إلى السيارة المناسبة. تحتاج مساعدة؟ انضم إلى discord.comma.ai.</translation>
+    </message>
+    <message>
+        <source>openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.</source>
+        <translation>لم يتمكن openpilot من التعرف على سيارتك. تحقق من سلامة الكابلات وتأكد من أن جميع التوصيلات آمنة، خاصة أن طاقة الفاصلة تم إدخالها بالكامل في منفذ OBD-II في السيارة. تحتاج مساعدة؟ انضم إلى discord.comma.ai.</translation>
+    </message>
+    <message>
+        <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
+        <translation>اكتشف openpilot تغييرًا في موضع تركيب الجهاز. تأكد من تثبيت الجهاز بالكامل في الحامل وتثبيته بإحكام على الزجاج الأمامي.</translation>
     </message>
 </context>
 <context>
@@ -469,6 +507,17 @@ location set</source>
     </message>
 </context>
 <context>
+    <name>ParamControl</name>
+    <message>
+        <source>Enable</source>
+        <translation>تمكين</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>إلغاء</translation>
+    </message>
+</context>
+<context>
     <name>PrimeAdWidget</name>
     <message>
         <source>Upgrade Now</source>
@@ -487,12 +536,16 @@ location set</source>
         <translation>الوصول عن بعد</translation>
     </message>
     <message>
-        <source>1 year of storage</source>
-        <translation>سنة واحدة من التخزين</translation>
+        <source>24/7 LTE connectivity</source>
+        <translation>اتصال 24/7 LTE</translation>
     </message>
     <message>
-        <source>Developer perks</source>
-        <translation>امتيازات المطور</translation>
+        <source>1 year of drive storage</source>
+        <translation>سنة واحدة من تخزين القرص</translation>
+    </message>
+    <message>
+        <source>Turn-by-turn navigation</source>
+        <translation>التنقل خطوة بخطوة</translation>
     </message>
 </context>
 <context>
@@ -504,14 +557,6 @@ location set</source>
     <message>
         <source>comma prime</source>
         <translation>comma prime</translation>
-    </message>
-    <message>
-        <source>CONNECT.COMMA.AI</source>
-        <translation>CONNECT.COMMA.AI</translation>
-    </message>
-    <message>
-        <source>COMMA POINTS</source>
-        <translation>COMMA POINTS</translation>
     </message>
 </context>
 <context>
@@ -565,6 +610,22 @@ location set</source>
             <numerusform>منذ %n ايام</numerusform>
         </translation>
     </message>
+    <message>
+        <source>km</source>
+        <translation>كم</translation>
+    </message>
+    <message>
+        <source>m</source>
+        <translation>م</translation>
+    </message>
+    <message>
+        <source>mi</source>
+        <translation>مل</translation>
+    </message>
+    <message>
+        <source>ft</source>
+        <translation>قدم</translation>
+    </message>
 </context>
 <context>
     <name>Reset</name>
@@ -577,16 +638,8 @@ location set</source>
         <translation>هل أنت متأكد أنك تريد إعادة ضبط جهازك؟</translation>
     </message>
     <message>
-        <source>Resetting device...</source>
-        <translation>جارٍ إعادة ضبط الجهاز ...</translation>
-    </message>
-    <message>
         <source>System Reset</source>
         <translation>إعادة تعيين النظام</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>تم تشغيل إعادة تعيين النظام. اضغط على تأكيد لمسح كل المحتوى والإعدادات. اضغط على إلغاء لاستئناف التمهيد.</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -601,15 +654,18 @@ location set</source>
         <translation>تأكيد</translation>
     </message>
     <message>
-        <source>Unable to mount data partition. Press confirm to reset your device.</source>
-        <translation>تعذر تحميل قسم البيانات. اضغط على تأكيد لإعادة ضبط جهازك.</translation>
+        <source>Resetting device...
+This may take up to a minute.</source>
+        <translation>إعادة تعيين الجهاز...
+قد يستغرق هذا ما يصل إلى دقيقة.</translation>
     </message>
-</context>
-<context>
-    <name>RichTextDialog</name>
     <message>
-        <source>Ok</source>
-        <translation>موافق</translation>
+        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <translation>اضغط على تأكيد لمسح جميع المحتويات والإعدادات. اضغط على إلغاء لاستئناف التمهيد.</translation>
+    </message>
+    <message>
+        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
+        <translation>غير قادر على تحميل قسم البيانات. قد يكون القسم تالفًا. اضغط على تأكيد لمسح جهازك وإعادة ضبطه.</translation>
     </message>
 </context>
 <context>
@@ -633,10 +689,6 @@ location set</source>
     <message>
         <source>Software</source>
         <translation>برمجة</translation>
-    </message>
-    <message>
-        <source>Navigation</source>
-        <translation>ملاحة</translation>
     </message>
 </context>
 <context>
@@ -682,18 +734,6 @@ location set</source>
         <translation>في انتظار الاتصال بالإنترنت</translation>
     </message>
     <message>
-        <source>Choose Software to Install</source>
-        <translation>اختر البرنامج المراد تثبيته</translation>
-    </message>
-    <message>
-        <source>Dashcam</source>
-        <translation>Dashcam</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>برامج مخصصة</translation>
-    </message>
-    <message>
         <source>Enter URL</source>
         <translation>إدخال عنوان الموقع</translation>
     </message>
@@ -720,6 +760,18 @@ location set</source>
     <message>
         <source>Start over</source>
         <translation>ابدأ من جديد</translation>
+    </message>
+    <message>
+        <source>Something went wrong. Reboot the device.</source>
+        <translation>حدث خطأ ما. قم بإعادة تشغيل الجهاز.</translation>
+    </message>
+    <message>
+        <source>No custom software found at this URL.</source>
+        <translation>لم يتم العثور على برامج مخصصة على عنوان URL هذا.</translation>
+    </message>
+    <message>
+        <source>Select a language</source>
+        <translation>اختر لغة</translation>
     </message>
 </context>
 <context>
@@ -823,54 +875,6 @@ location set</source>
 <context>
     <name>SoftwarePanel</name>
     <message>
-        <source>Git Branch</source>
-        <translation type="vanished">Git Branch</translation>
-    </message>
-    <message>
-        <source>Git Commit</source>
-        <translation type="vanished">Git Commit</translation>
-    </message>
-    <message>
-        <source>OS Version</source>
-        <translation type="vanished">إصدار نظام التشغيل</translation>
-    </message>
-    <message>
-        <source>Version</source>
-        <translation type="vanished">إصدار</translation>
-    </message>
-    <message>
-        <source>Last Update Check</source>
-        <translation type="vanished">التحقق من آخر تحديث</translation>
-    </message>
-    <message>
-        <source>The last time openpilot successfully checked for an update. The updater only runs while the car is off.</source>
-        <translation type="vanished">آخر مرة نجح برنامج openpilot في التحقق من التحديث. يعمل المحدث فقط أثناء إيقاف تشغيل السيارة.</translation>
-    </message>
-    <message>
-        <source>Check for Update</source>
-        <translation type="vanished">فحص التحديثات</translation>
-    </message>
-    <message>
-        <source>CHECKING</source>
-        <translation type="vanished">تدقيق</translation>
-    </message>
-    <message>
-        <source>Switch Branch</source>
-        <translation type="vanished">تبديل الفرع</translation>
-    </message>
-    <message>
-        <source>ENTER</source>
-        <translation type="vanished">أدخل</translation>
-    </message>
-    <message>
-        <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation type="vanished">سيتم سحب الفرع الجديد في المرة التالية التي يتم فيها تشغيل أداة التحديث.</translation>
-    </message>
-    <message>
-        <source>Enter branch name</source>
-        <translation type="vanished">أدخل اسم الفرع</translation>
-    </message>
-    <message>
         <source>UNINSTALL</source>
         <translation>الغاء التثبيت</translation>
     </message>
@@ -883,44 +887,64 @@ location set</source>
         <translation>هل أنت متأكد أنك تريد إلغاء التثبيت؟</translation>
     </message>
     <message>
-        <source>failed to fetch update</source>
-        <translation type="vanished">فشل في جلب التحديث</translation>
-    </message>
-    <message>
         <source>CHECK</source>
         <translation>تأكد الان</translation>
     </message>
     <message>
         <source>Updates are only downloaded while the car is off.</source>
-        <translation type="unfinished"></translation>
+        <translation>يتم تنزيل التحديثات فقط أثناء إيقاف تشغيل السيارة.</translation>
     </message>
     <message>
         <source>Current Version</source>
-        <translation type="unfinished"></translation>
+        <translation>النسخة الحالية</translation>
     </message>
     <message>
         <source>Download</source>
-        <translation type="unfinished"></translation>
+        <translation>تحميل</translation>
     </message>
     <message>
         <source>Install Update</source>
-        <translation type="unfinished"></translation>
+        <translation>تثبيت التحديث</translation>
     </message>
     <message>
         <source>INSTALL</source>
-        <translation type="unfinished"></translation>
+        <translation>ثبيت</translation>
     </message>
     <message>
         <source>Target Branch</source>
-        <translation type="unfinished"></translation>
+        <translation>فرع الهدف</translation>
     </message>
     <message>
         <source>SELECT</source>
-        <translation type="unfinished"></translation>
+        <translation>اختر</translation>
     </message>
     <message>
         <source>Select a branch</source>
-        <translation type="unfinished"></translation>
+        <translation>اختر فرعا</translation>
+    </message>
+    <message>
+        <source>Uninstall</source>
+        <translation>الغاء التثبيت</translation>
+    </message>
+    <message>
+        <source>failed to check for update</source>
+        <translation>فشل في التحقق من التحديث</translation>
+    </message>
+    <message>
+        <source>DOWNLOAD</source>
+        <translation>تحميل</translation>
+    </message>
+    <message>
+        <source>update available</source>
+        <translation>يتوفر تحديث</translation>
+    </message>
+    <message>
+        <source>never</source>
+        <translation>أبداً</translation>
+    </message>
+    <message>
+        <source>up to date, last checked %1</source>
+        <translation>محدث، آخر فحص %1</translation>
     </message>
 </context>
 <context>
@@ -1047,36 +1071,84 @@ location set</source>
         <translation>إظهار الخريطة على الجانب الأيسر عندما تكون في طريقة عرض الشاشة المنقسمة.</translation>
     </message>
     <message>
-        <source>openpilot Longitudinal Control</source>
-        <translation type="vanished">openpilot التحكم الطولي</translation>
+        <source>openpilot Longitudinal Control (Alpha)</source>
+        <translation>التحكم الطولي المفتوح (ألفا)</translation>
     </message>
     <message>
-        <source>openpilot will disable the car&apos;s radar and will take over control of gas and brakes. Warning: this disables AEB!</source>
-        <translation type="vanished">سوف يقوم برنامج openpilot بتعطيل رادار السيارة وسيتولى التحكم في الغاز والمكابح. تحذير: هذا يعطل AEB!</translation>
+        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation>تحذير: التحكم الطولي في نظام الطيار المفتوح موجود في مرحلة ألفا لهذه السيارة وسيقوم بتعطيل مكابح الطوارئ التلقائية (AEB).</translation>
     </message>
     <message>
-        <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
-        <translation type="unfinished"></translation>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation>في هذه السيارة، يعمل نظام openpilot افتراضيًا على ACC المدمج في السيارة بدلاً من التحكم الطولي في نظام openpilot. قم بتمكين هذا للتبديل إلى التحكم الطولي المفتوح. يوصى بتمكين الوضع التجريبي عند تمكين التحكم الطولي المفتوح ألفا.</translation>
     </message>
     <message>
-        <source>Experimental openpilot Longitudinal Control</source>
-        <translation type="unfinished"></translation>
+        <source>Experimental Mode</source>
+        <translation>الوضع التجريبي</translation>
     </message>
     <message>
-        <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <source>Aggressive</source>
+        <translation>عدوانية</translation>
     </message>
     <message>
-        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation type="unfinished"></translation>
+        <source>Standard</source>
+        <translation>قياسي</translation>
     </message>
     <message>
-        <source>openpilot longitudinal control is not currently available for this car.</source>
-        <translation type="unfinished"></translation>
+        <source>Relaxed</source>
+        <translation>مريح</translation>
     </message>
     <message>
-        <source>Enable experimental longitudinal control to enable this.</source>
-        <translation type="unfinished"></translation>
+        <source>Driving Personality</source>
+        <translation>شخصية القيادة</translation>
+    </message>
+    <message>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
+        <translation>ينصح القياسية. في الوضع العدواني، سيتبع الطيار المفتوح السيارات الرائدة بشكل أقرب ويكون أكثر عدوانية مع البنزين والفرامل. في الوضع المريح، سيبقى الطيار المفتوح بعيدًا عن السيارات الرائدة.</translation>
+    </message>
+    <message>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
+        <translation>يتم تعيين openpilot افتراضيًا على القيادة في &lt;b&gt;وضع التبريد&lt;/b&gt;. يعمل الوضع التجريبي على تمكين &lt;b&gt;ميزات مستوى ألفا&lt;/b&gt; غير الجاهزة لوضع التبريد. الميزات التجريبية مذكورة أدناه:</translation>
+    </message>
+    <message>
+        <source>End-to-End Longitudinal Control</source>
+        <translation>التحكم الطولي من النهاية إلى النهاية</translation>
+    </message>
+    <message>
+        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
+        <translation>دع نموذج القيادة يتحكم في الغاز والفرامل. سيقود نظام openpilot كما يعتقد الإنسان، بما في ذلك التوقف عند الأضواء الحمراء وإشارات التوقف. نظرًا لأن نموذج القيادة هو الذي يحدد سرعة القيادة، فإن السرعة المضبوطة ستكون بمثابة الحد الأعلى فقط. هذه ميزة جودة ألفا؛ ينبغي توقع الأخطاء.</translation>
+    </message>
+    <message>
+        <source>Navigate on openpilot</source>
+        <translation>التنقل على openpilot</translation>
+    </message>
+    <message>
+        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
+        <translation>عندما يكون للملاحة وجهة، سيقوم openpilot بإدخال معلومات الخريطة في النموذج. يوفر هذا سياقًا مفيدًا للنموذج ويسمح لـ openpilot بالبقاء يسارًا أو يمينًا بشكل مناسب عند المخارج/المخارج. لا يتغير سلوك تغيير المسار ولا يزال السائق ينشطه. هذه ميزة جودة ألفا؛ وينبغي توقع الأخطاء، وخاصة حول المخارج والتقاطعات. يمكن أن تشمل هذه الأخطاء عبور الخطوط غير المقصودة، والخروج المتأخر، أو القيادة نحو الحواجز الفاصلة في المناطق المثلثة بين الطريق الرئيسي والمخرج.</translation>
+    </message>
+    <message>
+        <source>New Driving Visualization</source>
+        <translation>تصور القيادة الجديد</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
+        <translation>سينتقل تصور القيادة إلى الكاميرا ذات الزاوية الواسعة المواجهة للطريق بسرعات منخفضة لإظهار بعض المنعطفات بشكل أفضل. سيتم أيضًا عرض شعار الوضع التجريبي في الزاوية اليمنى العليا. عند تعيين وجهة التنقل ويستخدمها نموذج القيادة كمدخل، سيتحول مسار القيادة على الخريطة إلى اللون الأخضر.</translation>
+    </message>
+    <message>
+        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <translation>الوضع التجريبي غير متاح حاليًا في هذه السيارة نظرًا لاستخدام مخزون السيارة ACC للتحكم الطولي.</translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation>قد يأتي التحكم الطولي openpilot في التحديث المستقبلي.</translation>
+    </message>
+    <message>
+        <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation>يمكن اختبار نسخة ألفا من التحكم الطولي المفتوح، إلى جانب الوضع التجريبي، على الفروع غير الصادرة.</translation>
+    </message>
+    <message>
+        <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
+        <translation>قم بتمكين تبديل التحكم الطولي المفتوح (alpha) للسماح بالوضع التجريبي.</translation>
     </message>
 </context>
 <context>
@@ -1115,6 +1187,29 @@ location set</source>
     </message>
 </context>
 <context>
+    <name>WiFiPromptWidget</name>
+    <message>
+        <source>Setup Wi-Fi</source>
+        <translation>إعداد شبكة Wi-Fi</translation>
+    </message>
+    <message>
+        <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>
+        <translation>اتصل بشبكة Wi-Fi لتحميل بيانات القيادة والمساعدة في تحسين نظام openpilot</translation>
+    </message>
+    <message>
+        <source>Open Settings</source>
+        <translation>أفتح الإعدادات</translation>
+    </message>
+    <message>
+        <source>Ready to upload</source>
+        <translation>جاهز للتحميل</translation>
+    </message>
+    <message>
+        <source>Training data will be pulled periodically while your device is on Wi-Fi</source>
+        <translation>سيتم سحب بيانات التدريب بشكل دوري أثناء اتصال جهازك بشبكة Wi-Fi</translation>
+    </message>
+</context>
+<context>
     <name>WifiUI</name>
     <message>
         <source>Scanning for networks...</source>
@@ -1131,6 +1226,10 @@ location set</source>
     <message>
         <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
         <translation>نزع شبكة اWi-Fi &quot;%1&quot;?</translation>
+    </message>
+    <message>
+        <source>Forget</source>
+        <translation>إنساها</translation>
     </message>
 </context>
 </TS>
