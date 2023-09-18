@@ -236,8 +236,9 @@ STATIC_DSU_MSGS = [
 ]
 
 
-def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, bytes]]:
-  codes = set()  # (Optional[part]-platform-major_version, minor_version)
+def get_platform_codes(fw_versions: List[bytes]) -> Dict[bytes, Set[bytes]]:
+  # Returns minor versions in a dict so comparisons can be made within part-platform-version combos
+  codes = defaultdict(set)  # Optional[part]-platform-major_version: set of minor_version
   for fw in fw_versions:
     # FW versions returned from UDS queries can return multiple fields/chunks of data (different ECU calibrations, different data?)
     #  and are prefixed with a byte that describes how many chunks of data there are.
@@ -263,7 +264,7 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, bytes]]:
       fw_match = SHORT_FW_PATTERN.search(first_chunk)
       if fw_match is not None:
         platform, major_version, sub_version = fw_match.groups()
-        codes.add((b'-'.join((platform, major_version)), sub_version))
+        codes[b'-'.join((platform, major_version))].add(sub_version)
         # print('platform code, version', platform, major_version, sub_version)
 
     elif len(first_chunk) == 10:
@@ -272,19 +273,19 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, bytes]]:
       if fw_match is not None:
         part, platform, major_version, sub_version = fw_match.groups()
         # print(part, platform, major_version, sub_version)
-        codes.add((b'-'.join((part, platform, major_version)), sub_version))
+        codes[b'-'.join((part, platform, major_version))].add(sub_version)
 
     elif len(first_chunk) == 12:
       # print(LONG_FW_PATTERN)
-      # print('long, searching', first_chunk)
+      # print('long version', fw)
       fw_match = LONG_FW_PATTERN.search(first_chunk)
       if fw_match is not None:
         # print('got long match!')
         part, platform, major_version, sub_version = fw_match.groups()
         # print(first_chunk, fw_match, fw_match.groups())
-        codes.add((b'-'.join((part, platform, major_version)), sub_version))
+        codes[b'-'.join((part, platform, major_version))].add(sub_version)
 
-  return codes
+  return dict(codes)
 
 
 def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
@@ -307,32 +308,24 @@ def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
         continue
 
       # Expected platform codes & dates
-      codes = get_platform_codes(expected_versions)
-      expected_platform_codes = {code for code, _ in codes}
-      # expected_dates = {date for _, date in codes if date is not None}
+      expected_platform_codes = get_platform_codes(expected_versions)
 
       # Found platform codes & dates
-      codes = get_platform_codes(live_fw_versions.get(addr, set()))
-      found_platform_codes = {code for code, _ in codes}
-      # found_dates = {date for _, date in codes if date is not None}
+      found_platform_codes = get_platform_codes(live_fw_versions.get(addr, set()))
 
       # print(ecu, expected_platform_codes, found_platform_codes)
 
-      # Check platform code + part number matches for any found versions
-      if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
-        break
+      # Check part number + platform code + major version matches for any found versions
+      # Then check that sub-version for the above is within range (splits model years)
+      for found_platform_code, found_sub_versions in found_platform_codes.items():
+        if found_platform_code in expected_platform_codes:
+          expected_sub_versions = expected_platform_codes[found_platform_code]
 
-      # if ecu[0] in DATE_FW_ECUS:
-      #   # If ECU can have a FW date, require it to exist
-      #   # (this excludes candidates in the database without dates)
-      #   if not len(expected_dates) or not len(found_dates):
-      #     break
-      #
-      #   # Check any date within range in the database, format is %y%m%d
-      #   if not any(min(expected_dates) <= found_date <= max(expected_dates) for found_date in found_dates):
-      #     break
-      #
-      valid_found_ecus.add(addr)
+          # Check any sub-version within range in the database for this part-platform-version combo
+          if any(min(expected_sub_versions) <= found_sub_version <= max(expected_sub_versions) for
+                 found_sub_version in found_sub_versions):
+            valid_found_ecus.add(addr)
+            break
 
     # If all live ECUs pass all checks for candidate, add it as a match
     if valid_expected_ecus.issubset(valid_found_ecus):
