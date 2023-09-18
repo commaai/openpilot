@@ -7,7 +7,7 @@ Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
 if __name__ == "__main__":
-  parts_for_ecu = defaultdict(set)
+  parts_for_ecu: dict = defaultdict(set)
 
   for car_model, ecus in FW_VERSIONS.items():
     print()
