@@ -44,6 +44,8 @@ class TestToyotaInterfaces(unittest.TestCase):
 
 
 class TestToyotaFingerprint(unittest.TestCase):
+  # Tests for part numbers, platform codes, and sub-versions which Toyota will use to fuzzy
+  # fingerprint in the absence of full FW matches:
   @settings(max_examples=100)
   @given(data=st.data())
   def test_platform_codes_fuzzy_fw(self, data):
@@ -64,23 +66,20 @@ class TestToyotaFingerprint(unittest.TestCase):
           self.assertTrue(len(ret))
           print('ret', ret)
 
-  # Tests for platform codes, part numbers, and FW dates which Hyundai will use to fuzzy
-  # fingerprint in the absence of full FW matches:
-  # def test_platform_code_ecus_available(self):
-  #   # TODO: add queries for these non-CAN FD cars to get EPS
-  #   no_eps_platforms = CANFD_CAR | {CAR.KIA_SORENTO, CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL,
-  #                                   CAR.SONATA_LF, CAR.TUCSON, CAR.GENESIS_G90, CAR.GENESIS_G80}
-  #
-  #   # Asserts ECU keys essential for fuzzy fingerprinting are available on all platforms
-  #   for car_model, ecus in FW_VERSIONS.items():
-  #     with self.subTest(car_model=car_model):
-  #       for platform_code_ecu in PLATFORM_CODE_ECUS:
-  #         if platform_code_ecu in (Ecu.fwdRadar, Ecu.eps) and car_model == CAR.HYUNDAI_GENESIS:
-  #           continue
-  #         if platform_code_ecu == Ecu.eps and car_model in no_eps_platforms:
-  #           continue
-  #         self.assertIn(platform_code_ecu, [e[0] for e in ecus])
-  #
+  def test_platform_code_ecus_available(self):
+    # Asserts ECU keys essential for fuzzy fingerprinting are available on all platforms
+    for car_model, ecus in FW_VERSIONS.items():
+      with self.subTest(car_model=car_model):
+        for platform_code_ecu in PLATFORM_CODE_ECUS:
+          if platform_code_ecu == Ecu.eps and car_model in (CAR.PRIUS_V, CAR.LEXUS_CTH,):
+            continue
+          if platform_code_ecu == Ecu.abs and car_model in (CAR.ALPHARD_TSS2,):
+            continue
+          # TODO: add DSU FW versions for Highlander Hybrid
+          if platform_code_ecu == Ecu.dsu and car_model in TSS2_CAR | {CAR.HIGHLANDERH}:
+            continue
+          self.assertIn(platform_code_ecu, [e[0] for e in ecus])
+
   # def test_fw_format(self):
   #   # Asserts:
   #   # - every supported ECU FW version returns one platform code
