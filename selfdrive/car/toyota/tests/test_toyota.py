@@ -5,7 +5,7 @@ import unittest
 from cereal import car
 from selfdrive.car.fw_versions import build_fw_dict
 from openpilot.selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, RADAR_ACC_CAR, FW_VERSIONS, \
-                                                  FW_QUERY_CONFIG, get_platform_codes
+                                                  FW_QUERY_CONFIG, PLATFORM_CODE_ECUS, get_platform_codes
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
@@ -56,6 +56,8 @@ class TestToyotaFingerprint(unittest.TestCase):
     for car_model, ecus in FW_VERSIONS.items():
       for ecu, fws in ecus.items():
         for fw in fws:
+          if ecu[0] not in PLATFORM_CODE_ECUS:
+            continue
 
           print('\ninput', car_model, fw)
           ret = get_platform_codes([fw])
@@ -144,7 +146,7 @@ class TestToyotaFingerprint(unittest.TestCase):
       # CAR.RAV4H_TSS2,
       CAR.LEXUS_RX_TSS2,
       # # CAR.CAMRYH_TSS2,
-      # CAR.CHR,
+      CAR.CHR,
       # # CAR.RAV4H,
       # CAR.RAV4H_TSS2_2022,
       # # CAR.HIGHLANDERH_TSS2,
@@ -153,7 +155,7 @@ class TestToyotaFingerprint(unittest.TestCase):
       # CAR.CHRH,
       # CAR.RAV4H_TSS2_2023,
       # CAR.CAMRY_TSS2,
-      # CAR.COROLLA_TSS2,
+      CAR.COROLLA_TSS2,
     }
 
     platforms_with_shared_codes = set()
