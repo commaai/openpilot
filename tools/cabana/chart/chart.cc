@@ -10,7 +10,6 @@
 #include <QGraphicsDropShadowEffect>
 #include <QGraphicsItemGroup>
 #include <QGraphicsOpacityEffect>
-#include <QMenu>
 #include <QMimeData>
 #include <QOpenGLWidget>
 #include <QPropertyAnimation>
@@ -66,8 +65,8 @@ void ChartView::createToolButtons() {
   close_btn_proxy->setWidget(remove_btn);
   close_btn_proxy->setZValue(chart()->zValue() + 11);
 
+  menu = new QMenu(this);
   // series types
-  QMenu *menu = new QMenu(this);
   auto change_series_group = new QActionGroup(menu);
   change_series_group->setExclusive(true);
   QStringList types{tr("Line"), tr("Step Line"), tr("Scatter")};
@@ -90,7 +89,9 @@ void ChartView::createToolButtons() {
   manage_btn_proxy->setWidget(manage_btn);
   manage_btn_proxy->setZValue(chart()->zValue() + 11);
 
-  QObject::connect(remove_btn, &QToolButton::clicked, [this]() { charts_widget->removeChart(this); });
+  close_act = new QAction(tr("Close"), this);
+  QObject::connect(close_act, &QAction::triggered, [this] () { charts_widget->removeChart(this); });
+  QObject::connect(remove_btn, &QToolButton::clicked, close_act, &QAction::triggered);
   QObject::connect(change_series_group, &QActionGroup::triggered, [this](QAction *action) {
     setSeriesType((SeriesType)action->data().toInt());
   });
@@ -450,6 +451,17 @@ static QPixmap getDropPixmap(const QPixmap &src) {
   p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
   p.fillRect(target_rect, QColor(0, 0, 0, 200));
   return px;
+}
+
+void ChartView::contextMenuEvent(QContextMenuEvent *event) { 
+  QMenu context_menu(this);
+  context_menu.addActions(menu->actions());
+  context_menu.addSeparator();
+  context_menu.addAction(charts_widget->undo_zoom_action);
+  context_menu.addAction(charts_widget->redo_zoom_action);
+  context_menu.addSeparator();
+  context_menu.addAction(close_act);
+  context_menu.exec(event->globalPos());
 }
 
 void ChartView::mousePressEvent(QMouseEvent *event) {
