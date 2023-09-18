@@ -3,7 +3,7 @@ from hypothesis import given, settings, strategies as st
 import unittest
 
 from cereal import car
-from selfdrive.car.fw_versions import build_fw_dict
+from openpilot.selfdrive.car.fw_versions import build_fw_dict
 from openpilot.selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, RADAR_ACC_CAR, FW_VERSIONS, \
                                                   FW_QUERY_CONFIG, PLATFORM_CODE_ECUS, get_platform_codes
 
@@ -90,7 +90,7 @@ class TestToyotaFingerprint(unittest.TestCase):
           # Toyota places the ECU part number in their FW versions, assert all parsable
           # Note that there is only one unique part number per ECU across the fleet, so this
           # is not important for identification, just a sanity check.
-          self.assertTrue(all({code.count(b"-") > 1 for code in codes}),
+          self.assertTrue(all(code.count(b"-") > 1 for code in codes),
                           f"FW does not have part number: {fw} {codes}")
 
   def test_platform_codes_spot_check(self):
