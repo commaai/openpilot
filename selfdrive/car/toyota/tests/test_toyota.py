@@ -53,19 +53,6 @@ class TestToyotaFingerprint(unittest.TestCase):
     fws = data.draw(fw_strategy)
     get_platform_codes(fws)
 
-  def test_fw_pattern_new(self):
-    """Asserts all ECUs can be parsed"""
-    for car_model, ecus in FW_VERSIONS.items():
-      for ecu, fws in ecus.items():
-        for fw in fws:
-          if ecu[0] not in PLATFORM_CODE_ECUS:
-            continue
-
-          print('\ninput', car_model, fw)
-          ret = get_platform_codes([fw])
-          self.assertTrue(len(ret))
-          print('ret', ret)
-
   def test_platform_code_ecus_available(self):
     # Asserts ECU keys essential for fuzzy fingerprinting are available on all platforms
     for car_model, ecus in FW_VERSIONS.items():
@@ -80,36 +67,31 @@ class TestToyotaFingerprint(unittest.TestCase):
             continue
           self.assertIn(platform_code_ecu, [e[0] for e in ecus])
 
-  # def test_fw_format(self):
-  #   # Asserts:
-  #   # - every supported ECU FW version returns one platform code
-  #   # - every supported ECU FW version has a part number
-  #   # - expected parsing of ECU FW dates
-  #
-  #   for car_model, ecus in FW_VERSIONS.items():
-  #     with self.subTest(car_model=car_model):
-  #       for ecu, fws in ecus.items():
-  #         if ecu[0] not in PLATFORM_CODE_ECUS:
-  #           continue
-  #
-  #         codes = set()
-  #         for fw in fws:
-  #           result = get_platform_codes([fw])
-  #           self.assertEqual(1, len(result), f"Unable to parse FW: {fw}")
-  #           codes |= result
-  #
-  #         if ecu[0] not in DATE_FW_ECUS or car_model in NO_DATES_PLATFORMS:
-  #           self.assertTrue(all({date is None for _, date in codes}))
-  #         else:
-  #           self.assertTrue(all({date is not None for _, date in codes}))
-  #
-  #         if car_model == CAR.HYUNDAI_GENESIS:
-  #           raise unittest.SkipTest("No part numbers for car model")
-  #
-  #         # Hyundai places the ECU part number in their FW versions, assert all parsable
-  #         # Some examples of valid formats: b"56310-L0010", b"56310L0010", b"56310/M6300"
-  #         self.assertTrue(all({b"-" in code for code, _ in codes}),
-  #                         f"FW does not have part number: {fw}")
+  def test_fw_format(self):
+    # Asserts:
+    # - every supported ECU FW version returns one platform code
+    # - every supported ECU FW version has a part number
+    # - expected parsing of ECU sub-versions
+
+    for car_model, ecus in FW_VERSIONS.items():
+      with self.subTest(car_model=car_model):
+        for ecu, fws in ecus.items():
+          if ecu[0] not in PLATFORM_CODE_ECUS:
+            continue
+
+          codes = dict()
+          for fw in fws:
+            result = get_platform_codes([fw])
+            # Check only one platform code and sub-version
+            self.assertEqual(1, len(result), f"Unable to parse FW: {fw}")
+            self.assertEqual(1, len(list(result.values())[0]), f"Unable to parse FW: {fw}")
+            codes |= result
+
+          # Toyota places the ECU part number in their FW versions, assert all parsable
+          # Note that there is only one unique part number per ECU across the fleet, so this
+          # is not important for identification, just a sanity check.
+          self.assertTrue(all({code.count(b"-") > 1 for code in codes}),
+                          f"FW does not have part number: {fw} {codes}")
 
   def test_platform_codes_spot_check(self):
     # Asserts basic platform code parsing behavior for a few cases
