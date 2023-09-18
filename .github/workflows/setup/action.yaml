@@ -3,15 +3,15 @@ name: 'openpilot env setup'
 inputs:
   docker_hub_pat:
     description: 'Auth token for Docker Hub, required for BuildJet jobs'
-    required: false
+    required: true
     default: ''
   git_lfs:
     description: 'Whether or not to pull the git lfs'
-    required: false
+    required: true
     default: 'true'
   cache_key_prefix:
     description: 'Prefix for caching key'
-    required: false
+    required: true
     default: 'scons_x86_64'
   is_retried:
     description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
