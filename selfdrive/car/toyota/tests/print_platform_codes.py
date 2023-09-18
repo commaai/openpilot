@@ -14,8 +14,5 @@ if __name__ == "__main__":
         continue
 
       platform_codes = get_platform_codes(ecus[ecu])
-      codes = {code for code, _ in platform_codes}
-      dates = {date for _, date in platform_codes if date is not None}
       print(f'  (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])}, {ecu[2]}):')
-      print(f'    Codes: {codes}')
-      print(f' Versions: {dates}')
+      print(f'    Codes: {platform_codes}')
