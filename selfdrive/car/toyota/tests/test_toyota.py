@@ -114,22 +114,33 @@ class TestToyotaFingerprint(unittest.TestCase):
 
   def test_platform_codes_spot_check(self):
     # Asserts basic platform code parsing behavior for a few cases
-    results = get_platform_codes([b"F152607140\x00\x00\x00\x00\x00\x00"])
-    self.assertEqual(results, {(b"F1526-07-1", b"40")})
+    results = get_platform_codes([
+      b"F152607140\x00\x00\x00\x00\x00\x00",
+      b"F152607171\x00\x00\x00\x00\x00\x00",
+      b"F152607110\x00\x00\x00\x00\x00\x00",
+      b"F152607180\x00\x00\x00\x00\x00\x00",
+    ])
+    self.assertEqual(results, {b"F1526-07-1": {b"10", b"40", b"71", b"80"}})
 
-    results = get_platform_codes([b"\x028646F4104100\x00\x00\x00\x008646G5301200\x00\x00\x00\x00"])
-    self.assertEqual(results, {(b"8646F-41-04", b"100")})
+    results = get_platform_codes([
+      b"\x028646F4104100\x00\x00\x00\x008646G5301200\x00\x00\x00\x00",
+      b"\x028646F4104100\x00\x00\x00\x008646G3304000\x00\x00\x00\x00",
+    ])
+    self.assertEqual(results, {b"8646F-41-04": {b"100"}})
 
     # Short version has no part number
-    results = get_platform_codes([b"\x0235879000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00"])
-    self.assertEqual(results, {(b"58-79", b"000")})
+    results = get_platform_codes([
+      b"\x0235870000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00",
+      b"\x0235883000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00",
+    ])
+    self.assertEqual(results, {b"58-70": {b"000"}, b"58-83": {b"000"}})
 
     results = get_platform_codes([
       b"F152607140\x00\x00\x00\x00\x00\x00",
       b"\x028646F4104100\x00\x00\x00\x008646G5301200\x00\x00\x00\x00",
       b"\x0235879000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00",
     ])
-    self.assertEqual(results, {(b"F1526-07-1", b"40"), (b"8646F-41-04", b"100"), (b"58-79", b"000")})
+    self.assertEqual(results, {b"F1526-07-1": {b"40"}, b"8646F-41-04": {b"100"}, b"58-79": {b"000"}})
 
   def test_fuzzy_excluded_platforms(self):
     # Asserts a list of platforms that will not fuzzy fingerprint with platform codes due to them being shared.
