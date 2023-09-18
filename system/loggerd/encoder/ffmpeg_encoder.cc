@@ -11,7 +11,7 @@
 
 #define __STDC_CONSTANT_MACROS
 
-#include "libyuv.h"
+#include "third_party/libyuv/include/libyuv.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -135,7 +135,7 @@ int FfmpegEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {
     }
 
     if (env_debug_encoder) {
-      printf("%20s got %8d bytes flags %8x idx %4d id %8d\n", encoder_info.filename, pkt.size, pkt.flags, counter, extra->frame_id);
+      printf("%20s got %8d bytes flags %8x idx %4d id %8d\n", encoder_info.publish_name, pkt.size, pkt.flags, counter, extra->frame_id);
     }
 
     publisher_publish(this, segment_num, counter, *extra,

@@ -271,7 +271,7 @@ def main() -> NoReturn:
   def cleanup(sig, frame):
     cloudlog.warning("caught sig disabling quectel gps")
 
-    gpio_set(GPIO.UBLOX_PWR_EN, False)
+    gpio_set(GPIO.GNSS_PWR_EN, False)
     teardown_quectel(diag)
     cloudlog.warning("quectel cleanup done")
 
@@ -289,8 +289,8 @@ def main() -> NoReturn:
   want_assistance = not r
   current_gps_time = utc_to_gpst(GPSTime.from_datetime(datetime.utcnow()))
   cloudlog.warning("quectel setup done")
-  gpio_init(GPIO.UBLOX_PWR_EN, True)
-  gpio_set(GPIO.UBLOX_PWR_EN, True)
+  gpio_init(GPIO.GNSS_PWR_EN, True)
+  gpio_set(GPIO.GNSS_PWR_EN, True)
 
   pm = messaging.PubMaster(['qcomGnss', 'gpsLocation'])
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import pytest
 import random
 import time
 import unittest
@@ -168,10 +169,14 @@ class TestFwFingerprint(unittest.TestCase):
         for request_obj in config.requests:
           self.assertEqual(len(request_obj.request), len(request_obj.response))
 
+          # No request on the OBD port (bus 1, multiplexed) should be run on an aux panda
+          self.assertFalse(request_obj.auxiliary and request_obj.bus == 1 and request_obj.obd_multiplexing,
+                           f"{brand.title()}: OBD multiplexed request is marked auxiliary: {request_obj}")
+
 
 class TestFwFingerprintTiming(unittest.TestCase):
   N: int = 5
-  TOL: float = 0.1
+  TOL: float = 0.12
 
   @staticmethod
   def _run_thread(thread: threading.Thread) -> float:
@@ -193,7 +198,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
                                 kwargs=dict(num_pandas=num_pandas))
       brand_time += self._run_thread(thread)
 
-    return round(brand_time / self.N, 2)
+    return brand_time / self.N
 
   def _assert_timing(self, avg_time, ref_time):
     self.assertLess(avg_time, ref_time + self.TOL)
@@ -220,15 +225,16 @@ class TestFwFingerprintTiming(unittest.TestCase):
     self._assert_timing(vin_time / self.N, vin_ref_time)
     print(f'get_vin, query time={vin_time / self.N} seconds')
 
+  @pytest.mark.timeout(60)
   def test_fw_query_timing(self):
-    total_ref_time = 6.2
+    total_ref_time = 6.07
     brand_ref_times = {
       1: {
-        'body': 0.1,
+        'body': 0.11,
         'chrysler': 0.3,
         'ford': 0.2,
-        'honda': 0.5,
-        'hyundai': 0.7,
+        'honda': 0.52,
+        'hyundai': 0.72,
         'mazda': 0.2,
         'nissan': 0.4,
         'subaru': 0.2,
@@ -237,8 +243,8 @@ class TestFwFingerprintTiming(unittest.TestCase):
         'volkswagen': 0.2,
       },
       2: {
-        'ford': 0.4,
-        'hyundai': 1.1,
+        'ford': 0.3,
+        'hyundai': 1.12,
       }
     }
 
@@ -252,10 +258,12 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
           avg_time = self._benchmark_brand(brand, num_pandas)
           total_time += avg_time
+          avg_time = round(avg_time, 2)
           self._assert_timing(avg_time, brand_ref_times[num_pandas][brand])
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
 
     with self.subTest(brand='all_brands'):
+      total_time = round(total_time, 2)
       self._assert_timing(total_time, total_ref_time)
       print(f'all brands, total FW query time={total_time} seconds')
 

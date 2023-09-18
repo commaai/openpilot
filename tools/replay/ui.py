@@ -3,9 +3,9 @@ import argparse
 import os
 import sys
 
-import cv2  # pylint: disable=import-error
+import cv2
 import numpy as np
-import pygame  # pylint: disable=import-error
+import pygame
 
 import cereal.messaging as messaging
 from openpilot.common.numpy_fast import clip

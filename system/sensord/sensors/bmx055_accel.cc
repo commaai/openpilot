@@ -1,4 +1,4 @@
-#include "bmx055_accel.h"
+#include "system/sensord/sensors/bmx055_accel.h"
 
 #include <cassert>
 

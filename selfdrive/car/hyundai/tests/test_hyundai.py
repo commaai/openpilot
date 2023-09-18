@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from hypothesis import settings, given, strategies as st
 import unittest
 
 from cereal import car
@@ -66,11 +67,19 @@ class TestHyundaiFingerprint(unittest.TestCase):
           part = code.split(b"-")[1]
           self.assertFalse(part.startswith(b'CW'), "Car has bad part number")
 
+  @settings(max_examples=100)
+  @given(data=st.data())
+  def test_platform_codes_fuzzy_fw(self, data):
+    """Ensure function doesn't raise an exception"""
+    fw_strategy = st.lists(st.binary())
+    fws = data.draw(fw_strategy)
+    get_platform_codes(fws)
+
   # Tests for platform codes, part numbers, and FW dates which Hyundai will use to fuzzy
   # fingerprint in the absence of full FW matches:
   def test_platform_code_ecus_available(self):
     # TODO: add queries for these non-CAN FD cars to get EPS
-    no_eps_platforms = CANFD_CAR | {CAR.KIA_SORENTO, CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL,
+    no_eps_platforms = CANFD_CAR | {CAR.KIA_SORENTO, CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL, CAR.KIA_OPTIMA_H,
                                     CAR.SONATA_LF, CAR.TUCSON, CAR.GENESIS_G90, CAR.GENESIS_G80}
 
     # Asserts ECU keys essential for fuzzy fingerprinting are available on all platforms

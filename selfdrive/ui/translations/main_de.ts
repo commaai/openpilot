@@ -751,6 +751,10 @@ This may take up to a minute.</source>
         <source>Something went wrong. Reboot the device.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Select a language</source>
+        <translation>Sprache wählen</translation>
+    </message>
 </context>
 <context>
     <name>SetupWidget</name>

@@ -1,5 +1,8 @@
 #include "tools/cabana/chart/chart.h"
 
+#include <algorithm>
+#include <limits>
+
 #include <QActionGroup>
 #include <QApplication>
 #include <QDrag>
@@ -11,9 +14,9 @@
 #include <QMimeData>
 #include <QOpenGLWidget>
 #include <QPropertyAnimation>
+#include <QRandomGenerator>
 #include <QRubberBand>
 #include <QScreen>
-#include <QtMath>
 #include <QWindow>
 
 #include "tools/cabana/chart/chartswidget.h"
@@ -22,7 +25,8 @@
 const int AXIS_X_TOP_MARGIN = 4;
 static inline bool xLessThan(const QPointF &p, float x) { return p.x() < x; }
 
-ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent) : charts_widget(parent), tip_label(this), QChartView(nullptr, parent) {
+ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent)
+    : charts_widget(parent), tip_label(this), QChartView(nullptr, parent) {
   series_type = (SeriesType)settings.chart_series_type;
   QChart *chart = new QChart();
   chart->setBackgroundVisible(false);
@@ -147,6 +151,11 @@ void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
 
 void ChartView::signalUpdated(const cabana::Signal *sig) {
   if (std::any_of(sigs.cbegin(), sigs.cend(), [=](auto &s) { return s.sig == sig; })) {
+    for (const auto &s : sigs) {
+      if (s.sig == sig && s.series->color() != sig->color) {
+        setSeriesColor(s.series, sig->color);
+      }
+    }
     updateTitle();
     updateSeries(sig);
   }
@@ -277,15 +286,12 @@ void ChartView::updateSeries(const cabana::Signal *sig, bool clear) {
         s.step_vals.clear();
         s.last_value_mono_time = 0;
       }
-      s.series->setColor(s.sig->color);
 
       const auto &msgs = can->events(s.msg_id);
       s.vals.reserve(msgs.capacity());
       s.step_vals.reserve(msgs.capacity() * 2);
 
-      auto first = std::upper_bound(msgs.cbegin(), msgs.cend(), s.last_value_mono_time, [](uint64_t ts, auto e) {
-        return ts < e->mono_time;
-      });
+      auto first = std::upper_bound(msgs.cbegin(), msgs.cend(), s.last_value_mono_time, CompareCanEvent());
       const double route_start_time = can->routeStartTime();
       for (auto end = msgs.cend(); first != end; ++first) {
         const CanEvent *e = *first;
@@ -358,7 +364,7 @@ void ChartView::updateAxisY() {
     axis_y->setRange(min_y, max_y);
     axis_y->setTickCount(tick_count);
 
-    int n = qMax(int(-qFloor(std::log10((max_y - min_y) / (tick_count - 1)))), 0) + 1;
+    int n = std::max(int(-std::floor(std::log10((max_y - min_y) / (tick_count - 1)))), 0) + 1;
     int max_label_width = 0;
     QFontMetrics fm(axis_y->labelsFont());
     for (int i = 0; i < tick_count; i++) {
@@ -376,15 +382,15 @@ void ChartView::updateAxisY() {
 std::tuple<double, double, int> ChartView::getNiceAxisNumbers(qreal min, qreal max, int tick_count) {
   qreal range = niceNumber((max - min), true);  // range with ceiling
   qreal step = niceNumber(range / (tick_count - 1), false);
-  min = qFloor(min / step);
-  max = qCeil(max / step);
+  min = std::floor(min / step);
+  max = std::ceil(max / step);
   tick_count = int(max - min) + 1;
   return {min * step, max * step, tick_count};
 }
 
 // nice numbers can be expressed as form of 1*10^n, 2* 10^n or 5*10^n
 qreal ChartView::niceNumber(qreal x, bool ceiling) {
-  qreal z = qPow(10, qFloor(std::log10(x))); //find corresponding number of the form of 10^n than is smaller than x
+  qreal z = std::pow(10, std::floor(std::log10(x))); //find corresponding number of the form of 10^n than is smaller than x
   qreal q = x / z; //q<10 && q>=1;
   if (ceiling) {
     if (q <= 1.0) q = 1;
@@ -473,7 +479,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
   auto rubber = findChild<QRubberBand *>();
   if (event->button() == Qt::LeftButton && rubber && rubber->isVisible()) {
     rubber->hide();
-    QRectF rect = rubber->geometry().normalized();
+    auto rect = rubber->geometry().normalized();
     double min = chart()->mapToValue(rect.topLeft()).x();
     double max = chart()->mapToValue(rect.bottomRight()).x();
 
@@ -667,6 +673,7 @@ void ChartView::drawBackground(QPainter *painter, const QRectF &rect) {
 
 void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
   drawTimeline(painter);
+  drawSignalValue(painter);
   // draw track points
   painter->setPen(Qt::NoPen);
   qreal track_line_x = -1;
@@ -697,7 +704,10 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
     }
   }
 
-  // paint zoom range
+  drawRubberBandTimeRange(painter);
+}
+
+void ChartView::drawRubberBandTimeRange(QPainter *painter) {
   auto rubber = findChild<QRubberBand *>();
   if (rubber && rubber->isVisible() && rubber->width() > 1) {
     painter->setPen(Qt::white);
@@ -714,23 +724,24 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
 
 void ChartView::drawTimeline(QPainter *painter) {
   const auto plot_area = chart()->plotArea();
-  // draw line
+  // draw vertical time line
   qreal x = std::clamp(chart()->mapToPosition(QPointF{cur_sec, 0}).x(), plot_area.left(), plot_area.right());
   painter->setPen(QPen(chart()->titleBrush().color(), 2));
   painter->drawLine(QPointF{x, plot_area.top()}, QPointF{x, plot_area.bottom() + 1});
 
-  // draw current time
+  // draw current time under the axis-x
   QString time_str = QString::number(cur_sec, 'f', 2);
   QSize time_str_size = QFontMetrics(axis_x->labelsFont()).size(Qt::TextSingleLine, time_str) + QSize(8, 2);
-  QRect time_str_rect(QPoint(x - time_str_size.width() / 2, plot_area.bottom() + AXIS_X_TOP_MARGIN), time_str_size);
+  QRectF time_str_rect(QPointF(x - time_str_size.width() / 2.0, plot_area.bottom() + AXIS_X_TOP_MARGIN), time_str_size);
   QPainterPath path;
   path.addRoundedRect(time_str_rect, 3, 3);
   painter->fillPath(path, settings.theme == DARK_THEME ? Qt::darkGray : Qt::gray);
   painter->setPen(palette().color(QPalette::BrightText));
   painter->setFont(axis_x->labelsFont());
   painter->drawText(time_str_rect, Qt::AlignCenter, time_str);
+}
 
-  // draw signal value
+void ChartView::drawSignalValue(QPainter *painter) {
   auto item_group = qgraphicsitem_cast<QGraphicsItemGroup *>(chart()->legend()->childItems()[0]);
   assert(item_group != nullptr);
   auto legend_markers = item_group->childItems();
@@ -782,6 +793,7 @@ QXYSeries *ChartView::createSeries(SeriesType type, QColor color) {
 }
 
 void ChartView::addSeries(QXYSeries *series) {
+  setSeriesColor(series, series->color());
   chart()->addSeries(series);
   series->attachAxis(axis_x);
   series->attachAxis(axis_y);
@@ -792,6 +804,21 @@ void ChartView::addSeries(QXYSeries *series) {
   if (glwidget && !glwidget->testAttribute(Qt::WA_TransparentForMouseEvents)) {
     glwidget->setAttribute(Qt::WA_TransparentForMouseEvents);
   }
+}
+
+void ChartView::setSeriesColor(QXYSeries *series, QColor color) {
+  auto existing_series = chart()->series();
+  for (auto s : existing_series) {
+    if (s != series && std::abs(color.hueF() - qobject_cast<QXYSeries *>(s)->color().hueF()) < 0.1) {
+      // use different color to distinguish it from others.
+      auto last_color = qobject_cast<QXYSeries *>(existing_series.back())->color();
+      color.setHsvF(std::fmod(last_color.hueF() + 60 / 360.0, 1.0),
+                    QRandomGenerator::global()->bounded(35, 100) / 100.0,
+                    QRandomGenerator::global()->bounded(85, 100) / 100.0);
+      break;
+    }
+  }
+  series->setColor(color);
 }
 
 void ChartView::setSeriesType(SeriesType type) {

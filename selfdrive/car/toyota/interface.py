@@ -1,10 +1,11 @@
-#!/usr/bin/env python3
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
 from panda import Panda
+from panda.python import uds
 from openpilot.selfdrive.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
                                         MIN_ACC_SPEED, EPS_SCALE, EV_HYBRID_CAR, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR
 from openpilot.selfdrive.car import get_safety_config
+from openpilot.selfdrive.car.disable_ecu import disable_ecu
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 EventName = car.CarEvent.EventName
@@ -26,7 +27,15 @@ class CarInterface(CarInterfaceBase):
     if DBC[candidate]["pt"] == "toyota_new_mc_pt_generated":
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE
 
-    if candidate in ANGLE_CONTROL_CAR:
+    # Allow angle control cars with whitelisted EPSs to use torque control (made in Japan)
+    # So far only hybrid RAV4 2023 has been seen with this FW version
+    angle_car_torque_fw = any(fw.ecu == "eps" and fw.fwVersion == b'8965B42371\x00\x00\x00\x00\x00\x00' for fw in car_fw)
+    if candidate not in ANGLE_CONTROL_CAR or (angle_car_torque_fw and candidate == CAR.RAV4H_TSS2_2023):
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+      ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
+      ret.steerLimitTimer = 0.4
+    else:
       ret.dashcamOnly = True
       ret.steerControlType = SteerControlType.angle
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
@@ -34,11 +43,6 @@ class CarInterface(CarInterfaceBase):
       # LTA control can be more delayed and winds up more often
       ret.steerActuatorDelay = 0.25
       ret.steerLimitTimer = 0.8
-    else:
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-
-      ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
-      ret.steerLimitTimer = 0.4
 
     ret.stoppingControl = False  # Toyota starts braking more when it thinks you want to stop
 
@@ -120,21 +124,25 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 14.3
       ret.tireStiffnessFactor = 0.7933
       ret.mass = 3585. * CV.LB_TO_KG  # Average between ICE and Hybrid
-      ret.lateralTuning.init('pid')
-      ret.lateralTuning.pid.kiBP = [0.0]
-      ret.lateralTuning.pid.kpBP = [0.0]
-      ret.lateralTuning.pid.kpV = [0.6]
-      ret.lateralTuning.pid.kiV = [0.1]
-      ret.lateralTuning.pid.kf = 0.00007818594
 
-      # 2019+ RAV4 TSS2 uses two different steering racks and specific tuning seems to be necessary.
-      # See https://github.com/commaai/openpilot/pull/21429#issuecomment-873652891
-      for fw in car_fw:
-        if fw.ecu == "eps" and (fw.fwVersion.startswith(b'\x02') or fw.fwVersion in [b'8965B42181\x00\x00\x00\x00\x00\x00']):
-          ret.lateralTuning.pid.kpV = [0.15]
-          ret.lateralTuning.pid.kiV = [0.05]
-          ret.lateralTuning.pid.kf = 0.00004
-          break
+      # Only specific EPS FW accept torque on 2023 RAV4, so they likely are all the same
+      # TODO: revisit this disparity if there is a divide for 2023
+      if candidate not in (CAR.RAV4_TSS2_2023, CAR.RAV4H_TSS2_2023):
+        ret.lateralTuning.init('pid')
+        ret.lateralTuning.pid.kiBP = [0.0]
+        ret.lateralTuning.pid.kpBP = [0.0]
+        ret.lateralTuning.pid.kpV = [0.6]
+        ret.lateralTuning.pid.kiV = [0.1]
+        ret.lateralTuning.pid.kf = 0.00007818594
+
+        # 2019+ RAV4 TSS2 uses two different steering racks and specific tuning seems to be necessary.
+        # See https://github.com/commaai/openpilot/pull/21429#issuecomment-873652891
+        for fw in car_fw:
+          if fw.ecu == "eps" and (fw.fwVersion.startswith(b'\x02') or fw.fwVersion in [b'8965B42181\x00\x00\x00\x00\x00\x00']):
+            ret.lateralTuning.pid.kpV = [0.15]
+            ret.lateralTuning.pid.kiV = [0.05]
+            ret.lateralTuning.pid.kf = 0.00004
+            break
 
     elif candidate in (CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2):
       ret.wheelbase = 2.67  # Average between 2.70 for sedan and 2.64 for hatchback
@@ -197,10 +205,14 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 4305. * CV.LB_TO_KG
 
     ret.centerToFront = ret.wheelbase * 0.44
+
+    # TODO: Some TSS-P platforms have BSM, but are flipped based on region or driving direction.
+    # Detect flipped signals and enable for C-HR and others
     ret.enableBsm = 0x3F6 in fingerprint[0] and candidate in TSS2_CAR
 
     # Detect smartDSU, which intercepts ACC_CMD from the DSU (or radar) allowing openpilot to send it
-    if 0x2FF in fingerprint[0]:
+    # 0x2AA is sent by a similar device which intercepts the radar instead of DSU on NO_DSU_CARs
+    if 0x2FF in fingerprint[0] or (0x2AA in fingerprint[0] and candidate in NO_DSU_CAR):
       ret.flags |= ToyotaFlags.SMART_DSU.value
 
     # No radar dbc for cars without DSU which are not TSS 2.0
@@ -214,11 +226,17 @@ class CarInterface(CarInterfaceBase):
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
 
     # if the smartDSU is detected, openpilot can send ACC_CONTROL and the smartDSU will block it from the DSU or radar.
-    # since we don't yet parse radar on TSS2 radar-based ACC cars, gate longitudinal behind experimental toggle
+    # since we don't yet parse radar on TSS2/TSS-P radar-based ACC cars, gate longitudinal behind experimental toggle
     use_sdsu = bool(ret.flags & ToyotaFlags.SMART_DSU)
-    if candidate in RADAR_ACC_CAR:
+    if candidate in (RADAR_ACC_CAR | NO_DSU_CAR):
       ret.experimentalLongitudinalAvailable = use_sdsu
-      use_sdsu = use_sdsu and experimental_long
+
+      if not use_sdsu:
+        # Disabling radar is only supported on TSS2 radar-ACC cars
+        if experimental_long and candidate in RADAR_ACC_CAR and False:  # TODO: disabling radar isn't supported yet
+          ret.flags |= ToyotaFlags.DISABLE_RADAR.value
+      else:
+        use_sdsu = use_sdsu and experimental_long
 
     # openpilot longitudinal enabled by default:
     #  - non-(TSS2 radar ACC cars) w/ smartDSU installed
@@ -226,7 +244,9 @@ class CarInterface(CarInterfaceBase):
     #  - TSS2 cars with camera sending ACC_CONTROL where we can block it
     # openpilot longitudinal behind experimental long toggle:
     #  - TSS2 radar ACC cars w/ smartDSU installed
-    ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
+    #  - TSS2 radar ACC cars w/o smartDSU installed (disables radar)
+    #  - TSS-P DSU-less cars w/ CAN filter installed (no radar parser yet)
+    ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR) or bool(ret.flags & ToyotaFlags.DISABLE_RADAR.value)
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
 
     if not ret.openpilotLongitudinalControl:
@@ -261,14 +281,12 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  # uncomment to disable radar:
-  # @staticmethod
-  # def init(CP, logcan, sendcan):
-  #   # a diagnostic mode of SESSION_TYPE.PROGRAMMING disabled the ECU on its own. car did not accept DISABLE_RX_DISABLE_TX, but it did not matter.
-  #   # a diagnostic mode of SESSION_TYPE.EXTENDED_DIAGNOSTIC and CONTROL_TYPE.ENABLE_RX_DISABLE_TX did work, so use that
-  #   # TODO: add a flag, radarUnavailable shouldn't be used as "radar acc" right now
-  #   if CP.openpilotLongitudinalControl and CP.radarUnavailable:
-  #     disable_ecu(logcan, sendcan, bus=0, addr=0x750, sub_addr=0xf, com_cont_req=b'\x28\x01\x01')
+  @staticmethod
+  def init(CP, logcan, sendcan):
+    # disable radar if alpha longitudinal toggled on radar-ACC car without CAN filter/smartDSU
+    if CP.flags & ToyotaFlags.DISABLE_RADAR.value:
+      communication_control = bytes([uds.SERVICE_TYPE.COMMUNICATION_CONTROL, uds.CONTROL_TYPE.ENABLE_RX_DISABLE_TX, uds.MESSAGE_TYPE.NORMAL])
+      disable_ecu(logcan, sendcan, bus=0, addr=0x750, sub_addr=0xf, com_cont_req=communication_control)
 
   # returns a car.CarState
   def _update(self, c):

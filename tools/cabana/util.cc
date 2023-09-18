@@ -1,12 +1,15 @@
 #include "tools/cabana/util.h"
 
-#include <array>
+#include <algorithm>
 #include <csignal>
+#include <limits>
+#include <memory>
+#include <string>
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <QDebug>
 #include <QColor>
+#include <QDebug>
 #include <QFontDatabase>
 #include <QLocale>
 #include <QPainter>
@@ -52,6 +55,10 @@ std::pair<double, double> SegmentTree::get_minmax(int n, int left, int right, in
 MessageBytesDelegate::MessageBytesDelegate(QObject *parent, bool multiple_lines) : multiple_lines(multiple_lines), QStyledItemDelegate(parent) {
   fixed_font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
   byte_size = QFontMetrics(fixed_font).size(Qt::TextSingleLine, "00 ") + QSize(0, 2);
+  for (int i = 0; i < 256; ++i) {
+    hex_text_table[i].setText(QStringLiteral("%1").arg(i, 2, 16, QLatin1Char('0')).toUpper());
+    hex_text_table[i].prepare({}, fixed_font);
+  }
 }
 
 int MessageBytesDelegate::widthForBytes(int n) const {
@@ -103,7 +110,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
     } else if (option.state & QStyle::State_Selected) {
       painter->setPen(option.palette.color(QPalette::HighlightedText));
     }
-    painter->drawText(r, Qt::AlignCenter, toHex(byte_list[i]));
+    utils::drawStaticText(painter, r, hex_text_table[(uint8_t)(byte_list[i])]);
   }
   painter->setFont(old_font);
   painter->setPen(old_pen);
@@ -260,4 +267,27 @@ QString signalToolTip(const cabana::Signal *sig) {
     Little Endian: %6 Signed: %7</span>
   )").arg(sig->name).arg(sig->start_bit).arg(sig->size).arg(sig->msb).arg(sig->lsb)
      .arg(sig->is_little_endian ? "Y" : "N").arg(sig->is_signed ? "Y" : "N");
+}
+
+// MonotonicBuffer
+
+void *MonotonicBuffer::allocate(size_t bytes, size_t alignment) {
+  assert(bytes > 0);
+  void *p = std::align(alignment, bytes, current_buf, available);
+  if (p == nullptr) {
+    available = next_buffer_size = std::max(next_buffer_size, bytes);
+    current_buf = buffers.emplace_back(std::aligned_alloc(alignment, next_buffer_size));
+    next_buffer_size *= growth_factor;
+    p = current_buf;
+  }
+
+  current_buf = (char *)current_buf + bytes;
+  available -= bytes;
+  return p;
+}
+
+MonotonicBuffer::~MonotonicBuffer() {
+  for (auto buf : buffers) {
+    free(buf);
+  }
 }

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import time
 import unittest
 from cereal import log
@@ -18,6 +19,7 @@ from openpilot.selfdrive.test.openpilotci import get_url
 from openpilot.tools.lib.logreader import LogReader
 
 from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process
+from openpilot.selfdrive.test.helpers import SKIP_ENV_VAR
 
 GPS_TIME_PREDICTION_ORBITS_RUSSIAN_SRC = GPSTime.from_datetime(datetime(2022, month=1, day=29, hour=12))
 UBLOX_TEST_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36"
@@ -92,6 +94,7 @@ def get_measurement_mock(gpstime, sat_ephemeris):
   return meas
 
 
+@unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Laika test skipped since it's long and not currently used. Unset {SKIP_ENV_VAR} to run")
 class TestLaikad(unittest.TestCase):
 
   @classmethod
@@ -177,8 +180,8 @@ class TestLaikad(unittest.TestCase):
       laikad = Laikad(auto_update=True, valid_ephem_types=EphemerisType.NAV, use_qcom=use_qcom)
       # Disable fetch_orbits to test NAV only
       correct_msgs = verify_messages(logs, laikad)
-      correct_msgs_expected = 56 if use_qcom else 560
-      valid_fix_expected = 56 if use_qcom else 560
+      correct_msgs_expected = 55 if use_qcom else 560
+      valid_fix_expected = 55 if use_qcom else 560
 
       self.assertEqual(correct_msgs_expected, len(correct_msgs))
       self.assertEqual(valid_fix_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))

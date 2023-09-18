@@ -1,3 +1,4 @@
+exclude: '^(tinygrad_repo)'
 repos:
 -   repo: meta
     hooks:
@@ -14,6 +15,8 @@ repos:
     -   id: check-yaml
     -   id: check-merge-conflict
     -   id: check-symlinks
+    -   id: check-executables-have-shebangs
+    -   id: check-shebang-scripts-are-executable
     -   id: check-added-large-files
         args: ['--maxkb=100']
 -   repo: https://github.com/codespell-project/codespell
@@ -35,7 +38,7 @@ repos:
         args: ['--explicit-package-bases']
         exclude: '^(third_party/)|(cereal/)|(opendbc/)|(panda/)|(laika/)|(laika_repo/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(xx/)'
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.285
+    rev: v0.0.288
     hooks:
     -   id: ruff
         exclude: '^(third_party/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(laika_repo/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)'
@@ -64,7 +67,7 @@ repos:
         - --linelength=240
         # https://google.github.io/styleguide/cppguide.html
         # relevant rules are whitelisted, see all options with: cpplint --filter=
-        - --filter=-build,-legal,-readability,-runtime,-whitespace,+build/forward_decl,+build/deprecated,+whitespace/line_length,+whitespace/empty_if_body,+whitespace/empty_loop_body,+whitespace/empty_conditional_body
+        - --filter=-build,-legal,-readability,-runtime,-whitespace,+build/include_subdir,+build/forward_decl,+build/include_what_you_use,+build/deprecated,+whitespace/comma,+whitespace/line_length,+whitespace/empty_if_body,+whitespace/empty_loop_body,+whitespace/empty_conditional_body,+whitespace/forcolon,+whitespace/parens,+whitespace/semicolon,+whitespace/tab,+readability/braces
 -   repo: local
     hooks:
     -   id: test_translations
@@ -80,3 +83,7 @@ repos:
         name: validate poetry lock
         args:
         - --check
+-   repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.26.3
+    hooks:
+    -   id: check-github-workflows

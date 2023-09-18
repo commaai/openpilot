@@ -15,19 +15,20 @@
 Sound::Sound(QObject *parent) : sm({"controlsState", "microphone"}) {
   qInfo() << "default audio device: " << QAudioDeviceInfo::defaultOutputDevice().deviceName();
 
-  for (auto &[alert, fn, loops] : sound_list) {
+  for (auto &[alert, fn, loops, volume] : sound_list) {
     QSoundEffect *s = new QSoundEffect(this);
     QObject::connect(s, &QSoundEffect::statusChanged, [=]() {
       assert(s->status() != QSoundEffect::Error);
     });
     s->setSource(QUrl::fromLocalFile("../../assets/sounds/" + fn));
+    s->setVolume(volume);
     sounds[alert] = {s, loops};
   }
 
   QTimer *timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, &Sound::update);
   timer->start(1000 / UI_FREQ);
-};
+}
 
 void Sound::update() {
   sm.update(0);

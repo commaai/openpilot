@@ -10,8 +10,8 @@ import glob
 from typing import NoReturn
 
 from openpilot.common.file_helpers import mkdirs_exists_ok
-from openpilot.system.loggerd.config import ROOT
 import openpilot.selfdrive.sentry as sentry
+from openpilot.system.hardware.hw import Paths
 from openpilot.system.swaglog import cloudlog
 from openpilot.system.version import get_commit
 
@@ -38,7 +38,7 @@ def clear_apport_folder():
 def get_apport_stacktrace(fn):
   try:
     cmd = f'apport-retrace -s <(cat <(echo "Package: openpilot") "{fn}")'
-    return subprocess.check_output(cmd, shell=True, encoding='utf8', timeout=30, executable='/bin/bash')  # pylint: disable=unexpected-keyword-arg
+    return subprocess.check_output(cmd, shell=True, encoding='utf8', timeout=30, executable='/bin/bash')
   except subprocess.CalledProcessError:
     return "Error getting stacktrace"
   except subprocess.TimeoutExpired:
@@ -95,7 +95,7 @@ def report_tombstone_apport(fn):
 
         try:
           sig_num = int(line.strip().split(': ')[-1])
-          message += " (" + signal.Signals(sig_num).name + ")"  # pylint: disable=no-member
+          message += " (" + signal.Signals(sig_num).name + ")"
         except ValueError:
           pass
 
@@ -130,7 +130,7 @@ def report_tombstone_apport(fn):
 
   new_fn = f"{date}_{get_commit(default='nocommit')[:8]}_{safe_fn(clean_path)}"[:MAX_TOMBSTONE_FN_LEN]
 
-  crashlog_dir = os.path.join(ROOT, "crash")
+  crashlog_dir = os.path.join(Paths.log_root(), "crash")
   mkdirs_exists_ok(crashlog_dir)
 
   # Files could be on different filesystems, copy, then delete

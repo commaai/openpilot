@@ -5,7 +5,10 @@
 #include <memory_resource>
 #endif
 
+#include <memory>
 #include <set>
+#include <string>
+#include <vector>
 
 #include "cereal/gen/cpp/log.capnp.h"
 #include "system/camerad/cameras/camera_common.h"
