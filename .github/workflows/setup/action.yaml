@@ -36,7 +36,7 @@ runs:
     # on BuildJet runners, must be logged into DockerHub to avoid rate limiting
     # https://buildjet.com/for-github-actions/docs/guides/docker
     - shell: bash
-      if: contains(runner.name, 'buildjet') && ${{ inputs.docker_hub_pat == '' }}
+      if: "contains(runner.name, 'buildjet') && ${{ inputs.docker_hub_pat == '' }}"
       run: |
         echo "Need to set the Docker Hub PAT secret as an input to this action"
         exit 1
