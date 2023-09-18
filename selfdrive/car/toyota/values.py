@@ -264,21 +264,17 @@ def get_platform_codes(fw_versions: List[bytes]) -> Dict[bytes, Set[bytes]]:
       if fw_match is not None:
         platform, major_version, sub_version = fw_match.groups()
         codes[b'-'.join((platform, major_version))].add(sub_version)
-        # print('platform code, version', platform, major_version, sub_version)
 
     elif len(first_chunk) == 10:
       fw_match = MEDIUM_FW_PATTERN.search(first_chunk)
       if fw_match is not None:
         part, platform, major_version, sub_version = fw_match.groups()
-        # print(part, platform, major_version, sub_version)
         codes[b'-'.join((part, platform, major_version))].add(sub_version)
 
     elif len(first_chunk) == 12:
       fw_match = LONG_FW_PATTERN.search(first_chunk)
       if fw_match is not None:
-        # print('got long match!')
         part, platform, major_version, sub_version = fw_match.groups()
-        # print(first_chunk, fw_match, fw_match.groups())
         codes[b'-'.join((part, platform, major_version))].add(sub_version)
 
   return dict(codes)
