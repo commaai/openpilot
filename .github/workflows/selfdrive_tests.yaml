@@ -195,7 +195,7 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
       with:
         git-lfs: false
-        docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
+        #docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
     - name: Build and push CL Docker image
       if: matrix.arch == 'x86_64'
       run: |

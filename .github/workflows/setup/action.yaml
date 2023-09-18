@@ -38,9 +38,6 @@ runs:
     - shell: bash
       if: ${{ contains(runner.name, 'buildjet') && inputs.docker_hub_pat == '' }}
       run: |
-        env
-        echo "runner.os ${{ runner.os }}"
-        echo "runner.name ${{ runner.name }}"
         echo "Need to set the Docker Hub PAT secret as an input to this action"
         exit 1
     - name: Login to Docker Hub
