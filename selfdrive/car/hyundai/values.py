@@ -1951,6 +1951,7 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00KA4_ SCC FHCUP      1.00 1.03 99110-R0000         ',
       b'\xf1\x00KA4c SCC FHCUP      1.00 1.01 99110-I4000         ',
+      b'\xf1\x00KA4_ SCC FHCUP      1.00 1.00 99110-R0100         ',
     ],
   },
   CAR.KIA_SORENTO_HEV_4TH_GEN: {
