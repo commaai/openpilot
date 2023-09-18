@@ -34,7 +34,7 @@ if __name__ == "__main__":
     color = "green" if percent_finished == 100 else "orange" if percent_finished > 90 else "red"
 
     # Download badge
-    badge_label = f"LANGUAGE {name}"
+    badge_label = f"LANGUAGE {name}" if (name != "العربية") else f"LANGUAGE Arabic"
     badge_message = f"{percent_finished}% complete"
     if unfinished_translations != 0:
       badge_message += f" ({unfinished_translations} unfinished)"
