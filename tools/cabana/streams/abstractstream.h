@@ -8,7 +8,6 @@
 #include <vector>
 
 #include <QColor>
-#include <QHash>
 
 #include "common/timing.h"
 #include "tools/cabana/dbc/dbcmanager.h"
@@ -98,7 +97,7 @@ signals:
   void lastMsgsChanged();
 
 public:
-  QHash<MessageId, CanData> last_msgs;
+  std::unordered_map<MessageId, CanData> last_msgs;
   SourceSet sources;
 
 protected:

@@ -306,11 +306,11 @@ void MessageListModel::fetchData() {
   new_msgs.reserve(can->last_msgs.size() + dbc_address.size());
 
   auto address = dbc_address;
-  for (auto it = can->last_msgs.cbegin(); it != can->last_msgs.cend(); ++it) {
-    if (filter_str.isEmpty() || matchMessage(it.key(), it.value(), filter_str)) {
-      new_msgs.push_back(it.key());
+  for (const auto &[id, m] : can->last_msgs) {
+    if (filter_str.isEmpty() || matchMessage(id, m, filter_str)) {
+      new_msgs.push_back(id);
     }
-    address.remove(it.key().address);
+    address.remove(id.address);
   }
 
   // merge all DBC messages
@@ -385,8 +385,8 @@ void MessageView::updateBytesSectionSize() {
   auto delegate = ((MessageBytesDelegate *)itemDelegate());
   int max_bytes = 8;
   if (!delegate->multipleLines()) {
-    for (auto it = can->last_msgs.constBegin(); it != can->last_msgs.constEnd(); ++it) {
-      max_bytes = std::max(max_bytes, it.value().dat.size());
+    for (const auto &[_, m] : can->last_msgs) {
+      max_bytes = std::max(max_bytes, m.dat.size());
     }
   }
   int width = delegate->widthForBytes(max_bytes);

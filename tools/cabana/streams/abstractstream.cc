@@ -126,7 +126,7 @@ const std::vector<const CanEvent *> &AbstractStream::events(const MessageId &id)
 const CanData &AbstractStream::lastMessage(const MessageId &id) {
   static CanData empty_data = {};
   auto it = last_msgs.find(id);
-  return it != last_msgs.end() ? it.value() : empty_data;
+  return it != last_msgs.end() ? it->second : empty_data;
 }
 
 // it is thread safe to update data in updateLastMsgsTo.
@@ -146,9 +146,9 @@ void AbstractStream::updateLastMsgsTo(double sec) {
       auto &m = all_msgs[id];
       m.compute(id, (const char *)(*it)->dat, (*it)->size, ts, getSpeed());
       m.count = std::distance(it, ev.crend());
-      last_msgs[id] = m;
     }
   }
+  last_msgs = all_msgs;
   // use a timer to prevent recursive calls
   QTimer::singleShot(0, this, [this]() { emit msgsReceived(nullptr, true); });
 }
