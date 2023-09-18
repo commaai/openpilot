@@ -4,11 +4,13 @@
 
 // EditMsgCommand
 
-EditMsgCommand::EditMsgCommand(const MessageId &id, const QString &name, int size, const QString &comment, QUndoCommand *parent)
-    : id(id), new_name(name), new_size(size), new_comment(comment), QUndoCommand(parent) {
+EditMsgCommand::EditMsgCommand(const MessageId &id, const QString &name, int size,
+                               const QString &node, const QString &comment, QUndoCommand *parent)
+    : id(id), new_name(name), new_size(size), new_node(node), new_comment(comment), QUndoCommand(parent) {
   if (auto msg = dbc()->msg(id)) {
     old_name = msg->name;
     old_size = msg->size;
+    old_node = msg->transmitter;
     old_comment = msg->comment;
     setText(QObject::tr("edit message %1:%2").arg(name).arg(id.address));
   } else {
@@ -20,11 +22,11 @@ void EditMsgCommand::undo() {
   if (old_name.isEmpty())
     dbc()->removeMsg(id);
   else
-    dbc()->updateMsg(id, old_name, old_size, old_comment);
+    dbc()->updateMsg(id, old_name, old_size, old_node, old_comment);
 }
 
 void EditMsgCommand::redo() {
-  dbc()->updateMsg(id, new_name, new_size, new_comment);
+  dbc()->updateMsg(id, new_name, new_size, new_node, new_comment);
 }
 
 // RemoveMsgCommand
@@ -38,7 +40,7 @@ RemoveMsgCommand::RemoveMsgCommand(const MessageId &id, QUndoCommand *parent) : 
 
 void RemoveMsgCommand::undo() {
   if (!message.name.isEmpty()) {
-    dbc()->updateMsg(id, message.name, message.size, message.comment);
+    dbc()->updateMsg(id, message.name, message.size, message.transmitter, message.comment);
     for (auto s : message.getSignals())
       dbc()->addSignal(id, *s);
   }
@@ -64,7 +66,7 @@ void AddSigCommand::undo() {
 void AddSigCommand::redo() {
   if (auto msg = dbc()->msg(id); !msg) {
     msg_created = true;
-    dbc()->updateMsg(id, dbc()->newMsgName(id), can->lastMessage(id).dat.size(), "");
+    dbc()->updateMsg(id, dbc()->newMsgName(id), can->lastMessage(id).dat.size(), "", "");
   }
   signal.name = dbc()->newSignalName(id);
   signal.max = std::pow(2, signal.size) - 1;

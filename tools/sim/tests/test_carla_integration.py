@@ -8,8 +8,8 @@ from multiprocessing import Queue
 from cereal import messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.manager.helpers import unblock_stdout
-from openpilot.tools.sim import bridge
-from openpilot.tools.sim.bridge import CarlaBridge
+from openpilot.tools.sim.run_bridge import parse_args
+from openpilot.tools.sim.bridge.carla import CarlaBridge
 
 CI = "CI" in os.environ
 
@@ -42,7 +42,7 @@ class TestCarlaIntegration(unittest.TestCase):
 
     sm = messaging.SubMaster(['controlsState', 'carEvents', 'managerState'])
     q = Queue()
-    carla_bridge = CarlaBridge(bridge.parse_args([]))
+    carla_bridge = CarlaBridge(parse_args([]))
     p_bridge = carla_bridge.run(q, retries=10)
     self.processes.append(p_bridge)
 
