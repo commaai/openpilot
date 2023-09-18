@@ -127,36 +127,14 @@ class TestToyotaFingerprint(unittest.TestCase):
     # Asserts a list of platforms that will not fuzzy fingerprint with platform codes due to them being shared.
     # This list can be shrunk as we combine platforms, detect features, and add the hybrid ECU
     excluded_platforms = {
-      # # CAR.LEXUS_ESH_TSS2,
-      # # CAR.RAV4_TSS2_2022,
       CAR.LEXUS_ES_TSS2,
-      # # CAR.RAV4_TSS2,
-      # # CAR.RAV4_TSS2_2023,
-      # CAR.RAV4_TSS2,
-      # # CAR.CAMRY,
-      # CAR.HIGHLANDER_TSS2,
-      # CAR.RAV4H_TSS2,
       CAR.LEXUS_RX_TSS2,
-      # # CAR.CAMRYH_TSS2,
       CAR.CHR,
-      # # CAR.RAV4H,
-      # CAR.RAV4H_TSS2_2022,
-      # # CAR.HIGHLANDERH_TSS2,
-      # # CAR.RAV4,
-      # # CAR.CHR_TSS2,
-      # CAR.CHRH,
-      # CAR.RAV4H_TSS2_2023,
-      # CAR.CAMRY_TSS2,
       CAR.COROLLA_TSS2,
     }
 
     platforms_with_shared_codes = set()
     for platform, fw_by_addr in FW_VERSIONS.items():
-      # if platform != CAR.RAV4_TSS2:
-      #   continue
-      # if 'RAV4 HYBRID' not in platform:
-      #   continue
-      print('platform', platform)
       car_fw = []
       for ecu, fw_versions in fw_by_addr.items():
         ecu_name, addr, sub_addr = ecu
@@ -166,7 +144,6 @@ class TestToyotaFingerprint(unittest.TestCase):
 
       CP = car.CarParams.new_message(carFw=car_fw)
       matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw))
-      print('matches', matches)
       if len(matches) == 1:
         self.assertEqual(list(matches)[0], platform)
       else:
