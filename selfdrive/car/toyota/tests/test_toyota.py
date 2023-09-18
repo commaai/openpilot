@@ -125,8 +125,8 @@ class TestToyotaFingerprint(unittest.TestCase):
 
   def test_fuzzy_excluded_platforms(self):
     # Asserts a list of platforms that will not fuzzy fingerprint with platform codes due to them being shared.
-    # This list can be shrunk as we combine platforms, detect features, and add the hybrid ECU
-    # Note: this list is so small because other ECUs are not shared between hybrid & ICE, commonly the ABS.
+    # This list can be shrunk as we combine platforms, detect features, and add the hybrid ECU.
+    # Note: this list is so small because other ECUs are not shared between hybrid & ICE, commonly the ABS
     excluded_platforms = {
       CAR.LEXUS_ES_TSS2,
       CAR.LEXUS_RX_TSS2,
