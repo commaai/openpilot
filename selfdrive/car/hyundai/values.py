@@ -1619,13 +1619,13 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00JFP LKAS AT EUR LHD 1.00 1.03 95895-A8100 160711',
-      b'\xf1\x00ADP LKAS AT USA LHD 1.00 1.03 99211-F2000 X31',
     ],
   },
   CAR.ELANTRA: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00PD  LKAS AT USA LHD 1.01 1.01 95740-G3100 A54',
       b'\xf1\x00PD  LKAS AT KOR LHD 1.00 1.02 95740-G3000 A51',
+      b'\xf1\x00ADP LKAS AT USA LHD 1.00 1.03 99211-F2000 X31',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x006U2V0_C2\x00\x006U2VA051\x00\x00DPD0H16NS0e\x0e\xcd\x8e',
