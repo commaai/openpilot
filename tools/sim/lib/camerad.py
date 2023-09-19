@@ -9,11 +9,11 @@ from openpilot.tools.sim.lib.common import W, H
 
 # Modified from: https://github.com/opencv/opencv/issues/22514#issuecomment-1369457841
 def rgb2nv12(rgb):
-    yuv = cv2.cvtColor(rgb, cv2.COLOR_BGR2YUV_I420)
-    uv_row_cnt = yuv.shape[0] // 3
-    uv_plane = np.transpose(yuv[uv_row_cnt * 2:].reshape(2, -1), [1, 0])
-    yuv[uv_row_cnt * 2:] = uv_plane.reshape(uv_row_cnt, -1)
-    return yuv
+  yuv = cv2.cvtColor(rgb, cv2.COLOR_BGR2YUV_I420)
+  uv_row_cnt = yuv.shape[0] // 3
+  uv_plane = np.transpose(yuv[uv_row_cnt * 2:].reshape(2, -1), [1, 0])
+  yuv[uv_row_cnt * 2:] = uv_plane.reshape(uv_row_cnt, -1)
+  return yuv
 
 
 class Camerad:
