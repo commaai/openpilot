@@ -556,7 +556,7 @@
     </message>
     <message>
         <source>comma prime</source>
-        <translation type="unfinished">omma prime</translation>
+        <translation type="unfinished">comma prime</translation>
     </message>
 </context>
 <context>
