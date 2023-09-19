@@ -19,7 +19,7 @@ from openpilot.tools.sim.lib.simulated_sensors import SimulatedSensors
 
 
 def rk_loop(function, hz, exit_event: threading.Event):
-  rk = Ratekeeper(hz)
+  rk = Ratekeeper(hz, None)
   while not exit_event.is_set():
     function()
     rk.keep_time()

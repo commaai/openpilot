@@ -6,6 +6,30 @@ from openpilot.tools.sim.bridge.common import World, SimulatorBridge
 from openpilot.tools.sim.lib.common import vec3, SimulatorState
 from openpilot.tools.sim.lib.camerad import W, H
 
+
+def apply_metadrive_patches():
+  from metadrive.engine.core.engine_core import EngineCore
+  from metadrive.engine.core.image_buffer import ImageBuffer
+  from metadrive.obs.image_obs import ImageObservation
+
+  # By default, metadrive won't try to use cuda images unless it's used as a sensor for vehicles, so patch that in
+  def add_image_sensor_patched(self, name: str, cls, args):
+    if self.global_config["image_on_cuda"]:# and name == self.global_config["vehicle_config"]["image_source"]:
+        sensor = cls(*args, self, cuda=True)
+    else:
+        sensor = cls(*args, self, cuda=False)
+    assert isinstance(sensor, ImageBuffer), "This API is for adding image sensor"
+    self.sensors[name] = sensor
+
+  EngineCore.add_image_sensor = add_image_sensor_patched
+
+  # we aren't going to use the built-in observation stack, so disable it to save time
+  def observe_patched(self, vehicle):
+    return self.state
+
+  ImageObservation.observe = observe_patched
+
+
 class MetaDriveWorld(World):
   def __init__(self, env, ticks_per_frame: float, dual_camera = False):
     super().__init__(dual_camera)
@@ -25,9 +49,6 @@ class MetaDriveWorld(World):
     if type(img) != np.ndarray:
       img = img.get() # convert cupy array to numpy
     return img
-
-  def get_obs_as_rgb(self, buffer):
-    return (self.env.observations['default_agent'].img_obs.state * 255)[...,-1]
 
   def apply_controls(self, steer_angle, throttle_out, brake_out):
     steer_metadrive = steer_angle * 1 / (self.env.vehicle.MAX_STEERING * self.steer_ratio)
@@ -78,21 +99,10 @@ class MetaDriveBridge(SimulatorBridge):
   def spawn_world(self):
     from metadrive.component.sensors.rgb_camera import RGBCamera
     from metadrive.component.sensors.base_camera import _cuda_enable
-    from metadrive.engine.core.engine_core import EngineCore
-    from metadrive.engine.core.image_buffer import ImageBuffer
     from metadrive.envs.metadrive_env import MetaDriveEnv
     from panda3d.core import Vec3
 
-    # By default, metadrive won't try to use cuda images unless it's used as a sensor for vehicles, so patch that in
-    def add_image_sensor_patched(self, name: str, cls, args):
-      if self.global_config["image_on_cuda"]:# and name == self.global_config["vehicle_config"]["image_source"]:
-          sensor = cls(*args, self, cuda=True)
-      else:
-          sensor = cls(*args, self, cuda=False)
-      assert isinstance(sensor, ImageBuffer), "This API is for adding image sensor"
-      self.sensors[name] = sensor
-
-    EngineCore.add_image_sensor = add_image_sensor_patched
+    apply_metadrive_patches()
 
     C3_POSITION = Vec3(0, 0, 1)
 
