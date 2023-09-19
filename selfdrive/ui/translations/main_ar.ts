@@ -672,7 +672,7 @@ This may take up to a minute.</source>
     <name>SettingsWindow</name>
     <message>
         <source>×</source>
-        <translation>x</translation>
+        <translation>×</translation>
     </message>
     <message>
         <source>الجهاز</source>
