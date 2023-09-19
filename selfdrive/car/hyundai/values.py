@@ -550,6 +550,15 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7C4, None): [
       b'\xf1\x00IGH MFC  AT KOR LHD 1.00 1.02 99211-G8100 191029',
     ],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00IG  MDPS C 1.00 1.00 56310M9600\x00 4IHSC100',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x006T7N0_C2\x00\x006T7VA051\x00\x00TIGSH24KA1\xc7\x85\xe2`',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x816H590051\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00IGhe SCC FHCUP      1.00 1.00 99110-M9100         ',
     ],
