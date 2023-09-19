@@ -12,6 +12,10 @@ SUBARU FORESTER 2022: [.nan, 3.0, .nan]
 SUBARU OUTBACK 7TH GEN: [.nan, 3.0, .nan]
 SUBARU ASCENT 2023: [.nan, 3.0, .nan]
 
+# Toyota LTA also has torque
+TOYOTA RAV4 2023: [.nan, 3.0, .nan]
+TOYOTA RAV4 HYBRID 2023: [.nan, 3.0, .nan]
+
 # Tesla has high torque
 TESLA AP1 MODEL S: [.nan, 2.5, .nan]
 TESLA AP2 MODEL S: [.nan, 2.5, .nan]
@@ -57,8 +61,6 @@ HYUNDAI KONA ELECTRIC 2ND GEN: [2.5, 2.5, 0.1]
 HYUNDAI IONIQ 6 2023: [2.5, 2.5, 0.1]
 HYUNDAI AZERA 6TH GEN: [1.8, 1.8, 0.1]
 KIA K8 HYBRID 1ST GEN: [2.5, 2.5, 0.1]
-TOYOTA RAV4 2023: [2.5, 2.5, 0.1]
-TOYOTA RAV4 HYBRID 2023: [2.5, 2.5, 0.1]
 
 # Dashcam or fallback configured as ideal car
 mock: [10.0, 10, 0.0]
