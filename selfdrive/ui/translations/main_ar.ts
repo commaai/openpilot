@@ -676,7 +676,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Device</source>
-        <translation>الجهاز</translation>
+        <translation type="unfinished">الجهاز</translation>
     </message>
     <message>
         <source>Network</source>
@@ -880,7 +880,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Uninstall %1</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Are you sure you want to uninstall?</source>
@@ -979,7 +979,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Request timed out</source>
-        <translation>انتهى وقت الطلب</translation>
+        <translation type="unfinished">انتهى وقت الطلب</translation>
     </message>
     <message>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
@@ -990,18 +990,18 @@ This may take up to a minute.</source>
     <name>SshToggle</name>
     <message>
         <source>Enable SSH</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>TermsPage</name>
     <message>
         <source>Terms &amp; Conditions</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Decline</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll to accept</source>
