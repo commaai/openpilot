@@ -79,15 +79,15 @@
     </message>
     <message>
         <source>MAX</source>
-        <translation type="unfinished">الحد الأقصى</translation>
+        <translation>MAX</translation>
     </message>
     <message>
         <source>SPEED</source>
-        <translation>السرعة</translation>
+        <translation>SPEED</translation>
     </message>
     <message>
         <source>LIMIT</source>
-        <translation type="unfinished">الحد الأدنى</translation>
+        <translation>LIMIT</translation>
     </message>
 </context>
 <context>
