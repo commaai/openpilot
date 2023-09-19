@@ -1,32 +1,33 @@
 #!/usr/bin/env python3
 import os
 import math
+import time
 from typing import SupportsFloat
 
 from cereal import car, log
-from common.numpy_fast import clip
-from common.realtime import sec_since_boot, config_realtime_process, Priority, Ratekeeper, DT_CTRL
-from common.profiler import Profiler
-from common.params import Params, put_nonblocking, put_bool_nonblocking
+from openpilot.common.numpy_fast import clip
+from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
+from openpilot.common.profiler import Profiler
+from openpilot.common.params import Params, put_nonblocking, put_bool_nonblocking
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcClient, VisionStreamType
-from common.conversions import Conversions as CV
+from openpilot.common.conversions import Conversions as CV
 from panda import ALTERNATIVE_EXPERIENCE
-from system.swaglog import cloudlog
-from system.version import is_release_branch, get_short_branch
-from selfdrive.boardd.boardd import can_list_to_can_capnp
-from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
-from selfdrive.controls.lib.lateral_planner import CAMERA_OFFSET
-from selfdrive.controls.lib.drive_helpers import VCruiseHelper, get_lag_adjusted_curvature
-from selfdrive.controls.lib.latcontrol import LatControl, MIN_LATERAL_CONTROL_SPEED
-from selfdrive.controls.lib.longcontrol import LongControl
-from selfdrive.controls.lib.latcontrol_pid import LatControlPID
-from selfdrive.controls.lib.latcontrol_angle import LatControlAngle, STEER_ANGLE_SATURATION_THRESHOLD
-from selfdrive.controls.lib.latcontrol_torque import LatControlTorque
-from selfdrive.controls.lib.events import Events, ET
-from selfdrive.controls.lib.alertmanager import AlertManager, set_offroad_alert
-from selfdrive.controls.lib.vehicle_model import VehicleModel
-from system.hardware import HARDWARE
+from openpilot.system.swaglog import cloudlog
+from openpilot.system.version import is_release_branch, get_short_branch
+from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
+from openpilot.selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
+from openpilot.selfdrive.controls.lib.lateral_planner import CAMERA_OFFSET
+from openpilot.selfdrive.controls.lib.drive_helpers import VCruiseHelper, get_lag_adjusted_curvature
+from openpilot.selfdrive.controls.lib.latcontrol import LatControl, MIN_LATERAL_CONTROL_SPEED
+from openpilot.selfdrive.controls.lib.longcontrol import LongControl
+from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
+from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle, STEER_ANGLE_SATURATION_THRESHOLD
+from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
+from openpilot.selfdrive.controls.lib.events import Events, ET
+from openpilot.selfdrive.controls.lib.alertmanager import AlertManager, set_offroad_alert
+from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
+from openpilot.system.hardware import HARDWARE
 
 SOFT_DISABLE_TIME = 3  # seconds
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
@@ -373,17 +374,19 @@ class Controls:
     else:
       self.logged_comm_issue = None
 
-    if not self.sm['liveParameters'].valid and not TESTING_CLOSET and (not SIMULATION or REPLAY):
-      self.events.add(EventName.vehicleModelInvalid)
     if not self.sm['lateralPlan'].mpcSolutionValid:
       self.events.add(EventName.plannerError)
-    if not (self.sm['liveParameters'].sensorValid or self.sm['liveLocationKalman'].sensorsOK) and not NOSENSOR:
-      if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive all the inputs
-        self.events.add(EventName.sensorDataInvalid)
     if not self.sm['liveLocationKalman'].posenetOK:
       self.events.add(EventName.posenetInvalid)
     if not self.sm['liveLocationKalman'].deviceStable:
       self.events.add(EventName.deviceFalling)
+    if not (self.sm['liveParameters'].sensorValid or self.sm['liveLocationKalman'].sensorsOK):
+      if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive sensor inputs
+        self.events.add(EventName.sensorDataInvalid)
+    if not self.sm['liveLocationKalman'].inputsOK:
+      self.events.add(EventName.locationdTemporaryError)
+    if not self.sm['liveParameters'].valid and not TESTING_CLOSET and (not SIMULATION or REPLAY):
+      self.events.add(EventName.paramsdTemporaryError)
 
     if not REPLAY:
       # Check for mismatch between openpilot and car's PCM
@@ -419,8 +422,6 @@ class Controls:
 
       if self.sm['modelV2'].frameDropPerc > 20:
         self.events.add(EventName.modeldLagging)
-      if self.sm['liveLocationKalman'].excessiveResets:
-        self.events.add(EventName.localizerMalfunction)
 
   def data_sample(self):
     """Receive data from sockets and update carState"""
@@ -743,7 +744,7 @@ class Controls:
 
     if not self.read_only and self.initialized:
       # send car controls over can
-      now_nanos = self.can_log_mono_time if REPLAY else int(sec_since_boot() * 1e9)
+      now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
       self.last_actuators, can_sends = self.CI.apply(CC, now_nanos)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
       CC.actuatorsOutput = self.last_actuators
@@ -806,8 +807,6 @@ class Controls:
       controlsState.lateralControlState.pidState = lac_log
     elif lat_tuning == 'torque':
       controlsState.lateralControlState.torqueState = lac_log
-    elif lat_tuning == 'indi':
-      controlsState.lateralControlState.indiState = lac_log
 
     self.pm.send('controlsState', dat)
 
@@ -842,7 +841,7 @@ class Controls:
     self.CC = CC
 
   def step(self):
-    start_time = sec_since_boot()
+    start_time = time.monotonic()
     self.prof.checkpoint("Ratekeeper", ignore=True)
 
     self.is_metric = self.params.get_bool("IsMetric")

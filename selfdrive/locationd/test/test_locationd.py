@@ -7,10 +7,10 @@ import capnp
 
 import cereal.messaging as messaging
 from cereal.services import service_list
-from common.params import Params
-from common.transformations.coordinates import ecef2geodetic
+from openpilot.common.params import Params
+from openpilot.common.transformations.coordinates import ecef2geodetic
 
-from selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.manager.process_config import managed_processes
 
 
 class TestLocationdProc(unittest.TestCase):
@@ -80,7 +80,7 @@ class TestLocationdProc(unittest.TestCase):
     for msg in sorted(msgs, key=lambda x: x.logMonoTime):
       self.pm.send(msg.which(), msg)
       if msg.which() == "cameraOdometry":
-        self.pm.wait_for_readers_to_update(msg.which(), 0.1)
+        self.pm.wait_for_readers_to_update(msg.which(), 0.1, dt=0.005)
     time.sleep(1)  # wait for async params write
 
     lastGPS = json.loads(self.params.get('LastGPSPosition'))

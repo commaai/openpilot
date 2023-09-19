@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
 import glob
 import os
-import shutil
 import time
 import unittest
 
 import cereal.messaging as messaging
-from selfdrive.manager.process_config import managed_processes
-from system.swaglog import cloudlog, SWAGLOG_DIR
+from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.hardware.hw import Paths
+from openpilot.system.swaglog import cloudlog, ipchandler
 
 
 class TestLogmessaged(unittest.TestCase):
-
   def setUp(self):
-    if os.path.exists(SWAGLOG_DIR):
-      shutil.rmtree(SWAGLOG_DIR)
+    # clear the IPC buffer in case some other tests used cloudlog and filled it
+    ipchandler.close()
+    ipchandler.connect()
 
     managed_processes['logmessaged'].start()
     self.sock = messaging.sub_sock("logMessage", timeout=1000, conflate=False)
     self.error_sock = messaging.sub_sock("logMessage", timeout=1000, conflate=False)
 
     # ensure sockets are connected
-    time.sleep(0.2)
+    time.sleep(1)
     messaging.drain_sock(self.sock)
     messaging.drain_sock(self.error_sock)
 
@@ -31,7 +31,7 @@ class TestLogmessaged(unittest.TestCase):
     managed_processes['logmessaged'].stop(block=True)
 
   def _get_log_files(self):
-    return list(glob.glob(os.path.join(SWAGLOG_DIR, "swaglog.*")))
+    return list(glob.glob(os.path.join(Paths.swaglog_root(), "swaglog.*")))
 
   def test_simple_log(self):
     msgs = [f"abc {i}" for i in range(10)]

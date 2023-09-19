@@ -1,14 +1,14 @@
-#!/usr/bin/env python3
 from cereal import car
 from panda import Panda
-from common.conversions import Conversions as CV
-from selfdrive.car.hyundai.hyundaicanfd import CanBus
-from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, CANFD_RADAR_SCC_CAR, \
-                                                            EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons
-from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
-from selfdrive.car import create_button_event, get_safety_config
-from selfdrive.car.interfaces import CarInterfaceBase
-from selfdrive.car.disable_ecu import disable_ecu
+from openpilot.common.conversions import Conversions as CV
+from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
+from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, CANFD_RADAR_SCC_CAR, \
+                                         EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, UNSUPPORTED_LONGITUDINAL_CAR, \
+                                         Buttons
+from openpilot.selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
+from openpilot.selfdrive.car import create_button_events, get_safety_config
+from openpilot.selfdrive.car.interfaces import CarInterfaceBase
+from openpilot.selfdrive.car.disable_ecu import disable_ecu
 
 Ecu = car.CarParams.Ecu
 ButtonType = car.CarState.ButtonEvent.Type
@@ -27,7 +27,8 @@ class CarInterface(CarInterfaceBase):
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
-    ret.dashcamOnly = candidate in {CAR.KIA_OPTIMA_H, CAR.IONIQ_6}
+    # FIXME: the Optima Hybrid uses a different SCC12 checksum
+    ret.dashcamOnly = candidate in {CAR.KIA_OPTIMA_H, }
 
     hda2 = Ecu.adas in [fw.ecu for fw in car_fw]
     CAN = CanBus(None, hda2, fingerprint)
@@ -36,6 +37,8 @@ class CarInterface(CarInterfaceBase):
       # detect HDA2 with ADAS Driving ECU
       if hda2:
         ret.flags |= HyundaiFlags.CANFD_HDA2.value
+        if 0x110 in fingerprint[CAN.CAM]:
+          ret.flags |= HyundaiFlags.CANFD_HDA2_ALT_STEERING.value
       else:
         # non-HDA2
         if 0x1cf not in fingerprint[CAN.ECAN]:
@@ -61,7 +64,11 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    if candidate in (CAR.SANTA_FE, CAR.SANTA_FE_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022):
+    if candidate == CAR.AZERA_6TH_GEN:
+      ret.mass = 1540.  # average
+      ret.wheelbase = 2.885
+      ret.steerRatio = 14.5
+    elif candidate in (CAR.SANTA_FE, CAR.SANTA_FE_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022):
       ret.mass = 3982. * CV.LB_TO_KG
       ret.wheelbase = 2.766
       # Values from optimizer
@@ -102,10 +109,10 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.01
       ret.steerRatio = 16.5
       ret.minSteerSpeed = 60 * CV.KPH_TO_MS
-    elif candidate in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022):
-      ret.mass = {CAR.KONA_EV: 1685., CAR.KONA_HEV: 1425., CAR.KONA_EV_2022: 1743.}.get(candidate, 1275.)
-      ret.wheelbase = 2.6
-      ret.steerRatio = 13.42  # Spec
+    elif candidate in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022, CAR.KONA_EV_2ND_GEN):
+      ret.mass = {CAR.KONA_EV: 1685., CAR.KONA_HEV: 1425., CAR.KONA_EV_2022: 1743., CAR.KONA_EV_2ND_GEN: 1740.}.get(candidate, 1275.)
+      ret.wheelbase = {CAR.KONA_EV_2ND_GEN: 2.66, }.get(candidate, 2.6)
+      ret.steerRatio = {CAR.KONA_EV_2ND_GEN: 13.6, }.get(candidate, 13.42)  # Spec
       ret.tireStiffnessFactor = 0.385
     elif candidate in (CAR.IONIQ, CAR.IONIQ_EV_LTD, CAR.IONIQ_PHEV_2019, CAR.IONIQ_HEV_2022, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV):
       ret.mass = 1490.  # weight per hyundai site https://www.hyundaiusa.com/ioniq-electric/specifications.aspx
@@ -195,17 +202,23 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1767.  # SX Prestige trim support only
       ret.wheelbase = 2.756
       ret.steerRatio = 13.6
-    elif candidate in (CAR.KIA_SORENTO_4TH_GEN, CAR.KIA_SORENTO_PHEV_4TH_GEN):
+    elif candidate in (CAR.KIA_SORENTO_4TH_GEN, CAR.KIA_SORENTO_HEV_4TH_GEN, CAR.KIA_SORENTO_PHEV_4TH_GEN):
       ret.wheelbase = 2.81
       ret.steerRatio = 13.5  # average of the platforms
       if candidate == CAR.KIA_SORENTO_4TH_GEN:
         ret.mass = 3957 * CV.LB_TO_KG
+      elif candidate == CAR.KIA_SORENTO_HEV_4TH_GEN:
+        ret.mass = 4255 * CV.LB_TO_KG
       else:
         ret.mass = 4537 * CV.LB_TO_KG
     elif candidate == CAR.KIA_CARNIVAL_4TH_GEN:
       ret.mass = 2087.
       ret.wheelbase = 3.09
       ret.steerRatio = 14.23
+    elif candidate == CAR.KIA_K8_HEV_1ST_GEN:
+      ret.mass = 1630.  # https://carprices.ae/brands/kia/2023/k8/1.6-turbo-hybrid
+      ret.wheelbase = 2.895
+      ret.steerRatio = 13.27  # guesstimate from K5 platform
 
     # Genesis
     elif candidate == CAR.GENESIS_GV60_EV_1ST_GEN:
@@ -247,7 +260,7 @@ class CarInterface(CarInterfaceBase):
     else:
       ret.longitudinalTuning.kpV = [0.5]
       ret.longitudinalTuning.kiV = [0.0]
-      ret.experimentalLongitudinalAvailable = candidate not in (LEGACY_SAFETY_MODE_CAR | CAMERA_SCC_CAR)
+      ret.experimentalLongitudinalAvailable = candidate not in (UNSUPPORTED_LONGITUDINAL_CAR | CAMERA_SCC_CAR)
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
     ret.pcmCruise = not ret.openpilotLongitudinalControl
 
@@ -273,6 +286,8 @@ class CarInterface(CarInterfaceBase):
 
       if ret.flags & HyundaiFlags.CANFD_HDA2:
         ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_HDA2
+        if ret.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING:
+          ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_HDA2_ALT_STEERING
       if ret.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
         ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_ALT_BUTTONS
       if ret.flags & HyundaiFlags.CANFD_CAMERA_SCC:
@@ -317,13 +332,8 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam)
 
-    if self.CS.CP.openpilotLongitudinalControl and self.CS.cruise_buttons[-1] != self.CS.prev_cruise_buttons:
-      buttonEvents = [create_button_event(self.CS.cruise_buttons[-1], self.CS.prev_cruise_buttons, BUTTONS_DICT)]
-      # Handle CF_Clu_CruiseSwState changing buttons mid-press
-      if self.CS.cruise_buttons[-1] != 0 and self.CS.prev_cruise_buttons != 0:
-        buttonEvents.append(create_button_event(0, self.CS.prev_cruise_buttons, BUTTONS_DICT))
-
-      ret.buttonEvents = buttonEvents
+    if self.CS.CP.openpilotLongitudinalControl:
+      ret.buttonEvents = create_button_events(self.CS.cruise_buttons[-1], self.CS.prev_cruise_buttons, BUTTONS_DICT)
 
     # On some newer model years, the CANCEL button acts as a pause/resume button based on the PCM state
     # To avoid re-engaging when openpilot cancels, check user engagement intention via buttons

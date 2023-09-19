@@ -64,7 +64,7 @@ bool create_params_path(const std::string &param_path, const std::string &key_pa
 std::string ensure_params_path(const std::string &prefix, const std::string &path = {}) {
   std::string params_path = path.empty() ? Path::params() : path;
   if (!create_params_path(params_path, params_path + prefix)) {
-    throw std::runtime_error(util::string_format("Failed to ensure params path, errno=%d", errno));
+    throw std::runtime_error(util::string_format("Failed to ensure params path, errno=%d, path=%s", errno, params_path.c_str()));
   }
   return params_path;
 }
@@ -158,6 +158,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LongitudinalPersonality", PERSISTENT},
     {"NavDestination", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"NavDestinationWaypoints", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
+    {"NavPastDestinations", PERSISTENT},
     {"NavSettingLeftSide", PERSISTENT},
     {"NavSettingTime24h", PERSISTENT},
     {"NavdRender", PERSISTENT},

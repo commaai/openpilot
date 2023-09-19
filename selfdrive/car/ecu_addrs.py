@@ -5,10 +5,10 @@ from typing import Optional, Set
 
 import cereal.messaging as messaging
 from panda.python.uds import SERVICE_TYPE
-from selfdrive.car import make_can_msg
-from selfdrive.car.fw_query_definitions import EcuAddrBusType
-from selfdrive.boardd.boardd import can_list_to_can_capnp
-from system.swaglog import cloudlog
+from openpilot.selfdrive.car import make_can_msg
+from openpilot.selfdrive.car.fw_query_definitions import EcuAddrBusType
+from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
+from openpilot.system.swaglog import cloudlog
 
 
 def make_tester_present_msg(addr, bus, subaddr=None):

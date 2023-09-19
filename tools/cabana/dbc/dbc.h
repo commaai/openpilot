@@ -1,14 +1,19 @@
 #pragma once
 
+#include <limits>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include <QColor>
 #include <QList>
 #include <QMetaType>
 #include <QString>
-#include <limits>
 
 #include "opendbc/can/common_dbc.h"
 
 const QString UNTITLED = "untitled";
+const QString DEFAULT_NODE_NAME = "XXX";
 
 struct MessageId {
   uint8_t source = 0;

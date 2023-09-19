@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
-import time
 import unittest
 import numpy as np
 import random
 
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcServer, VisionStreamType
-from common.transformations.camera import tici_f_frame_size
-from common.realtime import DT_MDL
-from selfdrive.manager.process_config import managed_processes
-from selfdrive.test.process_replay.vision_meta import meta_from_camera_state
+from openpilot.common.transformations.camera import tici_f_frame_size
+from openpilot.common.realtime import DT_MDL
+from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state
 
 IMG = np.zeros(int(tici_f_frame_size[0]*tici_f_frame_size[1]*(3/2)), dtype=np.uint8)
 IMG_BYTES = IMG.flatten().tobytes()
@@ -27,8 +26,7 @@ class TestModeld(unittest.TestCase):
     self.pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'liveCalibration', 'lateralPlan'])
 
     managed_processes['modeld'].start()
-    time.sleep(0.2)
-    self.sm.update(1000)
+    self.pm.wait_for_readers_to_update("roadCameraState", 10)
 
   def tearDown(self):
     managed_processes['modeld'].stop()

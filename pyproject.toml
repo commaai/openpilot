@@ -1,8 +1,62 @@
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=laika_repo/"
+addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=laika_repo/ -Werror --strict-config --strict-markers --durations=10"
+#cpp_files = "test_*" # uncomment when agnos has pytest-cpp and remove from CI
 python_files = "test_*.py"
-timeout = "30"  # you get this long by default
+#timeout = "30"  # you get this long by default
+markers = [
+  "parallel: mark tests as parallelizable (tests with no global state, so can be run in parallel)"
+]
+testpaths = [
+  "common",
+  "selfdrive/athena",
+  "selfdrive/boardd",
+  "selfdrive/car",
+  "selfdrive/controls",
+  "selfdrive/locationd",
+  "selfdrive/monitoring",
+  "selfdrive/thermald",
+  "selfdrive/test/longitudinal_maneuvers",
+  "system/hardware/tici",
+  "system/loggerd",
+  "system/proclogd",
+  "system/tests",
+  "system/ubloxd",
+  "tools/lib/tests",
+  "tools/replay",
+  "tools/cabana"
+]
+
+[tool.mypy]
+python_version = "3.11"
+plugins = [
+  "numpy.typing.mypy_plugin",
+]
+exclude = [
+  "body/",
+  "cereal/",
+  "opendbc/",
+  "panda/",
+  "laika/",
+  "laika_repo/",
+  "rednose/",
+  "rednose_repo/",
+  "tinygrad/",
+  "tinygrad_repo/",
+  "third_party/",
+]
+
+# third-party packages
+ignore_missing_imports=true
+
+# helpful warnings
+warn_redundant_casts=true
+warn_unreachable=true
+warn_unused_ignores=true
+
+# restrict dynamic typing
+warn_return_any=true
+
 
 [tool.poetry]
 name = "openpilot"
@@ -22,6 +76,7 @@ aiohttp = "*"
 aiortc = "*"
 casadi = "==3.6.3"
 cffi = "*"
+control = "*"
 crcmod = "*"
 cryptography = "*"
 Cython = "*"
@@ -39,6 +94,7 @@ psutil = "*"
 pyaudio = "*"
 pycapnp = "*"
 pycryptodome = "*"
+pycurl = "*"
 pydub = "*"
 PyJWT = "*"
 pyopencl = "*"
@@ -64,7 +120,8 @@ sconscontrib = {git = "https://github.com/SCons/scons-contrib.git"}
 
 [tool.poetry.group.dev.dependencies]
 av = "*"
-azure-storage-blob = "~2.1"
+azure-identity = "*"
+azure-storage-blob = "*"
 breathe = "*"
 carla = { url = "https://github.com/commaai/carla/releases/download/3.11.4/carla-0.9.14-cp311-cp311-linux_x86_64.whl", platform = "linux", markers = "platform_machine == 'x86_64'" }
 coverage = "*"
@@ -75,6 +132,7 @@ inputs = "*"
 lru-dict = "*"
 markdown-it-py = "*"
 matplotlib = "*"
+metadrive-simulator = { git = "https://github.com/metadriverse/metadrive.git", rev ="7d6f8ef707bfff67c6b88f3b4a98f8b1d58bf8e6", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
 mpld3 = "*"
 mypy = "*"
 myst-parser = "*"
@@ -84,11 +142,16 @@ pandas = "*"
 parameterized = "^0.8"
 pprofile = "*"
 pre-commit = "*"
-pycurl = "*"
 pygame = "*"
 pyprof2calltree = "*"
 pytest = "*"
+pytest-cov = "*"
+pytest-cpp = "*"
+pytest-subtests = "*"
 pytest-xdist = "*"
+pytest-timeout = "*"
+pytest-timeouts = "*"
+ruff = "*"
 scipy = "*"
 sphinx = "*"
 sphinx-rtd-theme = "*"
@@ -110,7 +173,7 @@ build-backend = "poetry.core.masonry.api"
 
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]
-select = ["E", "F", "W", "PIE", "C4", "ISC", "RUF100", "A", "B"]
+select = ["E", "F", "W", "PIE", "C4", "ISC", "RUF008", "RUF100", "A", "B", "TID251"]
 ignore = ["W292", "E741", "E402", "C408", "ISC003", "B027", "B024"]
 line-length = 160
 target-version="py311"
@@ -123,3 +186,9 @@ exclude = [
   "third_party",
 ]
 flake8-implicit-str-concat.allow-multiline=false
+[tool.ruff.flake8-tidy-imports.banned-api]
+"selfdrive".msg = "Use openpilot.selfdrive"
+"common".msg = "Use openpilot.common"
+"system".msg = "Use openpilot.system"
+"third_party".msg = "Use openpilot.third_party"
+"tools".msg = "Use openpilot.tools"

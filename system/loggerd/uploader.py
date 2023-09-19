@@ -13,13 +13,13 @@ from typing import BinaryIO, Iterator, List, Optional, Tuple, Union
 
 from cereal import log
 import cereal.messaging as messaging
-from common.api import Api
-from common.params import Params
-from common.realtime import set_core_affinity
-from system.hardware import TICI
-from system.loggerd.xattr_cache import getxattr, setxattr
-from system.loggerd.config import ROOT
-from system.swaglog import cloudlog
+from openpilot.common.api import Api
+from openpilot.common.params import Params
+from openpilot.common.realtime import set_core_affinity
+from openpilot.system.hardware import TICI
+from openpilot.system.hardware.hw import Paths
+from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
+from openpilot.system.swaglog import cloudlog
 
 NetworkType = log.DeviceState.NetworkType
 UPLOAD_ATTR_NAME = 'user.upload'
@@ -244,7 +244,7 @@ def uploader_fn(exit_event: threading.Event) -> None:
   except Exception:
     cloudlog.exception("failed to set core affinity")
 
-  clear_locks(ROOT)
+  clear_locks(Paths.log_root())
 
   params = Params()
   dongle_id = params.get("DongleId", encoding='utf8')
@@ -258,7 +258,7 @@ def uploader_fn(exit_event: threading.Event) -> None:
 
   sm = messaging.SubMaster(['deviceState'])
   pm = messaging.PubMaster(['uploaderState'])
-  uploader = Uploader(dongle_id, ROOT)
+  uploader = Uploader(dongle_id, Paths.log_root())
 
   backoff = 0.1
   while not exit_event.is_set():

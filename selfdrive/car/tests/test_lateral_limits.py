@@ -6,11 +6,11 @@ import sys
 from typing import DefaultDict, Dict
 import unittest
 
-from common.realtime import DT_CTRL
-from selfdrive.car.car_helpers import interfaces
-from selfdrive.car.fingerprints import all_known_cars
-from selfdrive.car.interfaces import get_torque_params
-from selfdrive.car.subaru.values import CAR as SUBARU
+from openpilot.common.realtime import DT_CTRL
+from openpilot.selfdrive.car.car_helpers import interfaces
+from openpilot.selfdrive.car.fingerprints import all_known_cars
+from openpilot.selfdrive.car.interfaces import get_torque_params
+from openpilot.selfdrive.car.subaru.values import CAR as SUBARU
 
 CAR_MODELS = all_known_cars()
 
@@ -32,7 +32,7 @@ ABOVE_LIMITS_CARS = [
 car_model_jerks: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
 
 
-@parameterized_class('car_model', [(c,) for c in CAR_MODELS])
+@parameterized_class('car_model', [(c,) for c in sorted(CAR_MODELS)])
 class TestLateralLimits(unittest.TestCase):
   car_model: str
 

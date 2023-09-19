@@ -6,9 +6,9 @@ from collections import namedtuple
 from pathlib import Path
 from typing import Sequence
 
-import system.loggerd.deleter as deleter
-from common.timeout import Timeout, TimeoutException
-from system.loggerd.tests.loggerd_tests_common import UploaderTestCase
+import openpilot.system.loggerd.deleter as deleter
+from openpilot.common.timeout import Timeout, TimeoutException
+from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase
 
 Stats = namedtuple("Stats", ['f_bavail', 'f_blocks', 'f_frsize'])
 
@@ -22,7 +22,6 @@ class TestDeleter(UploaderTestCase):
     super().setUp()
     self.fake_stats = Stats(f_bavail=0, f_blocks=10, f_frsize=4096)
     deleter.os.statvfs = self.fake_statvfs
-    deleter.ROOT = str(self.root)
 
   def start_thread(self):
     self.end_event = threading.Event()

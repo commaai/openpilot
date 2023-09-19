@@ -3,15 +3,16 @@
 
 from pathlib import Path
 
-from system.loggerd.config import ROOT, get_available_percent
-from system.loggerd.tests.loggerd_tests_common import create_random_file
+from openpilot.system.hardware.hw import Paths
+from openpilot.system.loggerd.config import get_available_percent
+from openpilot.system.loggerd.tests.loggerd_tests_common import create_random_file
 
 
 if __name__ == "__main__":
   segment_idx = 0
   while True:
     seg_name = f"1970-01-01--00-00-00--{segment_idx}"
-    seg_path = Path(ROOT) / seg_name
+    seg_path = Path(Paths.log_root()) / seg_name
 
     print(seg_path)
 

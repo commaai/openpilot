@@ -1,5 +1,4 @@
 import os
-import shutil
 import subprocess
 import sys
 import sysconfig
@@ -14,10 +13,6 @@ TICI = os.path.isfile('/TICI')
 AGNOS = TICI
 
 Decider('MD5-timestamp')
-
-AddOption('--extras',
-          action='store_true',
-          help='build misc extras, like setup and installer files')
 
 AddOption('--kaitai',
           action='store_true',
@@ -49,21 +44,16 @@ AddOption('--external-sconscript',
           dest='external_sconscript',
           help='add an external SConscript to the build')
 
-AddOption('--no-thneed',
-          action='store_true',
-          dest='no_thneed',
-          help='avoid using thneed')
-
 AddOption('--pc-thneed',
           action='store_true',
           dest='pc_thneed',
           help='use thneed on pc')
 
-AddOption('--no-test',
+AddOption('--minimal',
           action='store_false',
-          dest='test',
+          dest='extras',
           default=os.path.islink(Dir('#laika/').abspath),
-          help='skip building test files')
+          help='the minimum build to run openpilot. no tests, tools, etc.')
 
 ## Architecture name breakdown (arch)
 ## - larch64: linux tici aarch64
@@ -254,18 +244,6 @@ def progress_function(node):
 if os.environ.get('SCONS_PROGRESS'):
   Progress(progress_function, interval=node_interval)
 
-SHARED = False
-
-# TODO: this can probably be removed
-def abspath(x):
-  if arch == 'aarch64':
-    pth = os.path.join("/data/pythonpath", x[0].path)
-    env.Depends(pth, x)
-    return File(pth)
-  else:
-    # rpath works elsewhere
-    return x[0].path.rsplit("/", 1)[1][:-3]
-
 # Cython build environment
 py_include = sysconfig.get_paths()['include']
 envCython = env.Clone()
@@ -336,18 +314,6 @@ qt_env['CXXFLAGS'] += qt_flags
 qt_env['LIBPATH'] += ['#selfdrive/ui']
 qt_env['LIBS'] = qt_libs
 
-# Have to respect cache-readonly
-if GetOption('cache_readonly'):
-  local_moc_files_dir = Dir("#.moc_files").abspath
-  cache_moc_files_dir = cache_dir + "/moc_files"
-  if os.path.exists(local_moc_files_dir):
-    shutil.rmtree(local_moc_files_dir)
-  if os.path.exists(cache_moc_files_dir):
-    shutil.copytree(cache_moc_files_dir, local_moc_files_dir)
-  qt_env['QT3_MOCHPREFIX'] = local_moc_files_dir + "/moc_"
-else:
-  qt_env['QT3_MOCHPREFIX'] = cache_dir + '/moc_files/moc_'
-
 if GetOption("clazy"):
   checks = [
     "level0",
@@ -359,33 +325,35 @@ if GetOption("clazy"):
   qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
   qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
 
-Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED')
+Export('env', 'qt_env', 'arch', 'real_arch')
 
+# Build common module
 SConscript(['common/SConscript'])
 Import('_common', '_gpucommon')
 
-if SHARED:
-  common, gpucommon = abspath(common), abspath(gpucommon)
-else:
-  common = [_common, 'json11']
-  gpucommon = [_gpucommon]
+common = [_common, 'json11']
+gpucommon = [_gpucommon]
 
 Export('common', 'gpucommon')
 
-# cereal and messaging are shared with the system
+# Build cereal and messaging
 SConscript(['cereal/SConscript'])
-if SHARED:
-  cereal = abspath([File('cereal/libcereal_shared.so')])
-  messaging = abspath([File('cereal/libmessaging_shared.so')])
-else:
-  cereal = [File('#cereal/libcereal.a')]
-  messaging = [File('#cereal/libmessaging.a')]
-  visionipc = [File('#cereal/libvisionipc.a')]
 
-Export('cereal', 'messaging', 'visionipc')
+cereal = [File('#cereal/libcereal.a')]
+messaging = [File('#cereal/libmessaging.a')]
+visionipc = [File('#cereal/libvisionipc.a')]
+messaging_python = [File('#cereal/messaging/messaging_pyx.so')]
+
+Export('cereal', 'messaging', 'messaging_python', 'visionipc')
+
+# Build other submodules
+SConscript([
+  'body/board/SConscript',
+  'opendbc/can/SConscript',
+  'panda/SConscript',
+])
 
 # Build rednose library and ekf models
-
 rednose_deps = [
   "#selfdrive/locationd/models/constants.py",
   "#selfdrive/locationd/models/gnss_helpers.py",
@@ -427,19 +395,7 @@ if arch != "Darwin":
   ])
 
 # Build openpilot
-
-# build submodules
-SConscript([
-  'body/board/SConscript',
-  'cereal/SConscript',
-  'opendbc/can/SConscript',
-  'panda/SConscript',
-])
-
 SConscript(['third_party/SConscript'])
-
-SConscript(['common/kalman/SConscript'])
-SConscript(['common/transformations/SConscript'])
 
 SConscript(['selfdrive/boardd/SConscript'])
 SConscript(['selfdrive/controls/lib/lateral_mpc_lib/SConscript'])
@@ -449,7 +405,7 @@ SConscript(['selfdrive/navd/SConscript'])
 SConscript(['selfdrive/modeld/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
 
-if (arch in ['x86_64', 'aarch64', 'Darwin'] and Dir('#tools/cabana/').exists()) or GetOption('extras'):
+if arch in ['x86_64', 'aarch64', 'Darwin'] and Dir('#tools/cabana/').exists() and GetOption('extras'):
   SConscript(['tools/replay/SConscript'])
   SConscript(['tools/cabana/SConscript'])
 

@@ -4,9 +4,9 @@ import time
 import subprocess
 
 import cereal.messaging as messaging
-from common.basedir import BASEDIR
-from common.timeout import Timeout
-from selfdrive.test.helpers import set_params_enabled
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.timeout import Timeout
+from openpilot.selfdrive.test.helpers import set_params_enabled
 
 
 def test_time_to_onroad():

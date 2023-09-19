@@ -6,8 +6,8 @@ import numpy as np
 
 import cereal.messaging as messaging
 from cereal import log
-from common.params import Params
-from selfdrive.locationd.calibrationd import Calibrator, INPUTS_NEEDED, INPUTS_WANTED, BLOCK_SIZE, MIN_SPEED_FILTER, \
+from openpilot.common.params import Params
+from openpilot.selfdrive.locationd.calibrationd import Calibrator, INPUTS_NEEDED, INPUTS_WANTED, BLOCK_SIZE, MIN_SPEED_FILTER, \
                                                          MAX_YAW_RATE_FILTER, SMOOTH_CYCLES, HEIGHT_INIT
 
 

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <optional>
+#include <string>
+#include <utility>
 #include <eigen3/Eigen/Dense>
 #include <QMapboxGL>
 #include <QGeoCoordinate>
@@ -27,4 +29,3 @@ QMapbox::CoordinatesCollections coordinate_list_to_collection(const QList<QGeoCo
 QList<QGeoCoordinate> polyline_to_coordinate_list(const QString &polylineString);
 std::optional<QMapbox::Coordinate> coordinate_from_param(const std::string &param);
 std::pair<QString, QString> map_format_distance(float d, bool is_metric);
-double angle_difference(double angle1, double angle2);

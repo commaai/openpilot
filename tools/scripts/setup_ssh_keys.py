@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import requests
-from common.params import Params
+from openpilot.common.params import Params
 import sys
 
 

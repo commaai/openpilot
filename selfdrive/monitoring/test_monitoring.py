@@ -3,9 +3,9 @@ import unittest
 import numpy as np
 
 from cereal import car, log
-from common.realtime import DT_DMON
-from selfdrive.controls.lib.events import Events
-from selfdrive.monitoring.driver_monitor import DriverStatus, DRIVER_MONITOR_SETTINGS
+from openpilot.common.realtime import DT_DMON
+from openpilot.selfdrive.controls.lib.events import Events
+from openpilot.selfdrive.monitoring.driver_monitor import DriverStatus, DRIVER_MONITOR_SETTINGS
 
 EventName = car.CarEvent.EventName
 dm_settings = DRIVER_MONITOR_SETTINGS()
@@ -54,7 +54,6 @@ always_false = [False] * int(TEST_TIMESPAN / DT_DMON)
 
 # TODO: this only tests DriverStatus
 class TestMonitoring(unittest.TestCase):
-  # pylint: disable=no-member
   def _run_seq(self, msgs, interaction, engaged, standstill):
     DS = DriverStatus()
     events = []

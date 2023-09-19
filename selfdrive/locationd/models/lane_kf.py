@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import sympy as sp
 
-from selfdrive.locationd.models.constants import ObservationKind
+from openpilot.selfdrive.locationd.models.constants import ObservationKind
 from rednose.helpers.ekf_sym import gen_code, EKF_sym
 
 
