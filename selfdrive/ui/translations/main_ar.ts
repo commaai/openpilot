@@ -727,7 +727,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Continue without Wi-Fi</source>
-        <translation>المتابعة بدون شبكة Wi-Fi</translation>
+        <translation>المتابعة بدون شبكة الواي فاي</translation>
     </message>
     <message>
         <source>Waiting for internet</source>
