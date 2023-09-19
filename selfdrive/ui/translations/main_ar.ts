@@ -499,7 +499,7 @@
     </message>
     <message>
         <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
-        <translation>انقر &quot،إضافة جهاز جديد&quot، وامسح رمز الاستجابة السريعة (QR) على اليمين</translation>
+        <translation>انقر &quot;،إضافة جهاز جديد&quot;، وامسح رمز الاستجابة السريعة (QR) على اليمين</translation>
     </message>
     <message>
         <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
