@@ -556,7 +556,7 @@
     </message>
     <message>
         <source>comma prime</source>
-        <translation type="unfinished">comma prime</translation>
+        <translation>comma prime</translation>
     </message>
 </context>
 <context>
@@ -676,7 +676,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished">الجهاز</translation>
+        <translation>الجهاز</translation>
     </message>
     <message>
         <source>Network</source>
@@ -979,7 +979,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Request timed out</source>
-        <translation type="unfinished">انتهى وقت الطلب</translation>
+        <translation>انتهى وقت الطلب</translation>
     </message>
     <message>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
