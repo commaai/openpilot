@@ -853,7 +853,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>ETH</source>
-        <translation>إيثرنت</translation>
+        <translation>ETH</translation>
     </message>
     <message>
         <source>2G</source>
