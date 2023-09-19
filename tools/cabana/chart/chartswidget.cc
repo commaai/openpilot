@@ -161,7 +161,7 @@ void ChartsWidget::setZoom(double min, double max) {
   is_zoomed = zoomed_range != display_range;
   updateToolBar();
   updateState();
-  emit rangeChanged(min, max, is_zoomed);
+  emit zoomChanged(min, max, is_zoomed);
 }
 
 void ChartsWidget::zoomReset() {

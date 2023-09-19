@@ -133,7 +133,7 @@ void VideoWidget::setMaximumTime(double sec) {
   slider->setTimeRange(0, sec);
 }
 
-void VideoWidget::updateTimeRange(double min, double max, bool is_zoomed) {
+void VideoWidget::zoomChanged(double min, double max, bool is_zoomed) {
   if (can->liveStreaming()) {
     skip_to_end_btn->setEnabled(!is_zoomed);
     return;

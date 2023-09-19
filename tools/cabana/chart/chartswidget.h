@@ -50,7 +50,7 @@ public slots:
 
 signals:
   void dock(bool floating);
-  void rangeChanged(double min, double max, bool is_zommed);
+  void zoomChanged(double min, double max, bool is_zommed);
   void seriesChanged();
 
 private:
