@@ -14,7 +14,7 @@ class SimulatedCar:
 
   def __init__(self):
     self.pm = messaging.PubMaster(['can', 'pandaStates'])
-    self.sm = messaging.SubMaster(['carControl', 'controlsState'])
+    self.sm = messaging.SubMaster(['carControl', 'controlsState', 'carParams'])
     self.cp = self.get_car_can_parser()
     self.idx = 0
 
@@ -93,6 +93,7 @@ class SimulatedCar:
     self.pm.send('can', can_list_to_can_capnp(msg))
 
   def send_panda_state(self, simulator_state):
+    self.sm.update(0)
     dat = messaging.new_message('pandaStates', 1)
     dat.valid = True
     dat.pandaStates[0] = {
@@ -100,6 +101,7 @@ class SimulatedCar:
       'pandaType': "blackPanda",
       'controlsAllowed': True,
       'safetyModel': 'hondaNidec',
+      'alternativeExperience': self.sm["carParams"].alternativeExperience
     }
     self.pm.send('pandaStates', dat)
 
