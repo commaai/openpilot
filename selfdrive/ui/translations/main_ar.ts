@@ -675,8 +675,8 @@ This may take up to a minute.</source>
         <translation>×</translation>
     </message>
     <message>
-        <source>الجهاز</source>
-        <translation></translation>
+        <source>Device</source>
+        <translation>الجهاز</translation>
     </message>
     <message>
         <source>Network</source>
@@ -978,8 +978,8 @@ This may take up to a minute.</source>
         <translation>لا يحتوي اسم المستخدم &apos;%1&apos; أي مفاتيح على GitHub</translation>
     </message>
     <message>
-        <source>انتهى وقت الطلب</source>
-        <translation></translation>
+        <source>Request timed out</source>
+        <translation>انتهى وقت الطلب</translation>
     </message>
     <message>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
