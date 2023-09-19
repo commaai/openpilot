@@ -24,8 +24,6 @@ git clone --recurse-submodules https://github.com/commaai/openpilot.git
 
 ``` bash
 cd openpilot
-
-# for Ubuntu 20.04 LTS
 tools/ubuntu_setup.sh
 ```
 
@@ -40,7 +38,7 @@ poetry shell
 scons -u -j$(nproc)
 ```
 
-## Dev Container on any linux or macOS
+## Dev Container on any Linux or macOS
 
 openpilot supports [Dev Containers](https://containers.dev/). Dev containers provide customizable and consistent development environment wrapped inside a container. This means you can develop in a designated environment matching our primary development target, regardless of your local setup.
 
@@ -52,7 +50,7 @@ GUI apps like `ui` or `cabana` can also run inside the container by leveraging X
 
 ## WSL on Windows
 
-Neither openpilot nor any of the tools are developed or tested on Windows, but the [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about) should provide a similar experience to native Ubuntu. [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/compare-versions) specifically has been reported by several users to be a seamless experience.
+[Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about) should provide a similar experience to native Ubuntu. [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/compare-versions) specifically has been reported by several users to be a seamless experience.
 
 Follow [these instructions](https://docs.microsoft.com/en-us/windows/wsl/install) to setup the WSL and install the `Ubuntu-20.04` distribution. Once your Ubuntu WSL environment is setup, follow the Linux setup instructions to finish setting up your environment. See [these instructions](https://learn.microsoft.com/en-us/windows/wsl/tutorials/gui-apps) for running GUI apps.
 
