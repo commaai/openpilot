@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# pull base image
+docker pull ghcr.io/commaai/openpilot-base:latest
+
 # setup .host dir
 mkdir -p .devcontainer/.host
 
