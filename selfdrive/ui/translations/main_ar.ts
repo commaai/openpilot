@@ -849,7 +849,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Wi-Fi</source>
-        <translation>شبكة الواي فاي</translation>
+        <translation>Wi-Fi</translation>
     </message>
     <message>
         <source>ETH</source>
