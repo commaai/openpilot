@@ -104,8 +104,8 @@ cdef class Params:
   def all_keys(self):
     return self.p.allKeys()
 
-def put_nonblocking(key, val, d=""):
-  threading.Thread(target=lambda: Params(d).put(key, val)).start()
+  def put_nonblocking(self, key, val):
+    threading.Thread(target=lambda: self.put(key, val)).start()
 
-def put_bool_nonblocking(key, bool val, d=""):
-  threading.Thread(target=lambda: Params(d).put_bool(key, val)).start()
+  def put_bool_nonblocking(self, key, bool val):
+    threading.Thread(target=lambda: self.put_bool(key, val)).start()
