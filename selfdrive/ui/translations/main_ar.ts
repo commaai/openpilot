@@ -79,7 +79,7 @@
     </message>
     <message>
         <source>MAX</source>
-        <translation>الحد الأقصى</translation>
+        <translation type="unfinished">الحد الأقصى</translation>
     </message>
     <message>
         <source>SPEED</source>
@@ -87,7 +87,7 @@
     </message>
     <message>
         <source>LIMIT</source>
-        <translation>الحد الأدنى</translation>
+        <translation type="unfinished">الحد الأدنى</translation>
     </message>
 </context>
 <context>
@@ -316,7 +316,7 @@
     </message>
     <message>
         <source>CHILL MODE ON</source>
-        <translation>تشغيل وضع التبريد</translation>
+        <translation type="unfinished">تشغيل وضع التبريد</translation>
     </message>
 </context>
 <context>
@@ -348,15 +348,15 @@
     <name>MapETA</name>
     <message>
         <source>eta</source>
-        <translation>الوقت المتوقع للوصول</translation>
+        <translation type="unfinished">الوقت المتوقع للوصول</translation>
     </message>
     <message>
         <source>min</source>
-        <translation>دقيقة</translation>
+        <translation type="unfinished">دقيقة</translation>
     </message>
     <message>
         <source>hr</source>
-        <translation>ساعة</translation>
+        <translation type="unfinished">ساعة</translation>
     </message>
 </context>
 <context>
@@ -556,7 +556,7 @@
     </message>
     <message>
         <source>comma prime</source>
-        <translation>omma prime</translation>
+        <translation type="unfinished">omma prime</translation>
     </message>
 </context>
 <context>
@@ -1108,7 +1108,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
-        <translation>يتم وضع openpilot بشكل قياسي في &lt;b&gt;وضعية التبريد&lt;/b&gt;. يمكن الوضع التجريبي &lt;b&gt;ميزات المستوى ألفا&lt;/b&gt; التي لا تكون جاهزة في وضع التبريد:</translation>
+        <translation type="unfinished">يتم وضع openpilot بشكل قياسي في &lt;b&gt;وضعية التبريد&lt;/b&gt;. يمكن الوضع التجريبي &lt;b&gt;ميزات المستوى ألفا&lt;/b&gt; التي لا تكون جاهزة في وضع التبريد:</translation>
     </message>
     <message>
         <source>End-to-End Longitudinal Control</source>
