@@ -77,6 +77,7 @@ class MetaDriveBridge(SimulatorBridge):
 
   def spawn_world(self):
     from metadrive.component.sensors.rgb_camera import RGBCamera
+    from metadrive.component.sensors.base_camera import _cuda_enable
     from metadrive.engine.core.engine_core import EngineCore
     from metadrive.engine.core.image_buffer import ImageBuffer
     from metadrive.envs.metadrive_env import MetaDriveEnv
@@ -127,7 +128,7 @@ class MetaDriveBridge(SimulatorBridge):
             spawn_longitude=15
           ),
           sensors=sensors,
-          image_on_cuda=True,
+          image_on_cuda=_cuda_enable,
           image_observation=True,
           interface_panel=[],
           out_of_route_done=False,
