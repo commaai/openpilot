@@ -97,6 +97,9 @@ class MetaDriveBridge(SimulatorBridge):
     super(MetaDriveBridge, self).__init__(args)
 
   def spawn_world(self):
+    print("---------------------------------------------------------")
+    print("---- Spawning Metadrive world, this make take awhile ----")
+    print("---------------------------------------------------------")
     from metadrive.component.sensors.rgb_camera import RGBCamera
     from metadrive.component.sensors.base_camera import _cuda_enable
     from metadrive.envs.metadrive_env import MetaDriveEnv
