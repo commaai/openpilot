@@ -231,7 +231,7 @@
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
-        <translation>يشير جهازك إلى %1 درجة %2، و%3 درجة %4.</translation>
+        <translation> يشير جهازك إلى %1 درجة %2، و%3 درجة %4.</translation>
     </message>
     <message>
         <source>down</source>
@@ -465,7 +465,7 @@
     </message>
     <message>
         <source>openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.</source>
-        <translation>لم يتمكن openpilot من تحديد سيارتك. تحقق من سلامة الكابلات وتأكد من تأمين جميع الوصلات، لا سيما أنه قد تم إدخال طاقة الفاصلة بالكامل في منفذ OBD-II في السيارة. هل تريد أي مساعدة؟ لا تتردد في الانضمام إلى discord.comma.ai</translation>
+        <translation>لم يتمكن openpilot من تحديد سيارتك. تحقق من سلامة الكابلات وتأكد من تأمين جميع الوصلات، لا سيما أنه قد تم إدخال طاقة الفاصلة بالكامل في منفذ OBD-II في السيارة. هل تريد أي مساعدة؟ لا تتردد في الانضمام إلى discord.comma.ai.</translation>
     </message>
     <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
@@ -480,11 +480,11 @@
     </message>
     <message>
         <source> ALERTS</source>
-        <translation>التنبهات</translation>
+        <translation> التنبهات</translation>
     </message>
     <message>
         <source> ALERT</source>
-        <translation>تنبيه</translation>
+        <translation> تنبيه</translation>
     </message>
 </context>
 <context>
@@ -503,7 +503,7 @@
     </message>
     <message>
         <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
-        <translation>اجعل لـconnect.comma.ai إشارة مرجعية على شاشتك  الرئيسية من أجل استخدامه مثل أي تطبيق.</translation>
+        <translation>اجعل لـconnect.comma.ai إشارة مرجعية على شاشتك  الرئيسية من أجل استخدامه مثل أي تطبيق</translation>
     </message>
 </context>
 <context>
@@ -529,7 +529,7 @@
     </message>
     <message>
         <source>PRIME FEATURES:</source>
-        <translation>الميزات الأساسية</translation>
+        <translation>الميزات الأساسية:</translation>
     </message>
     <message>
         <source>Remote access</source>
@@ -631,7 +631,7 @@
     <name>Reset</name>
     <message>
         <source>Reset failed. Reboot to try again.</source>
-        <translation>فشل إعاة الضبط. أعد الإقلاع للمحاولة من جديد</translation>
+        <translation>فشل إعاة الضبط. أعد الإقلاع للمحاولة من جديد.</translation>
     </message>
     <message>
         <source>Are you sure you want to reset your device?</source>
@@ -657,11 +657,11 @@
         <source>Resetting device...
 This may take up to a minute.</source>
         <translation>يتم إعادة ضبط الجهاز...
-قد يستغرق الأمر حوالي الدقيقة</translation>
+قد يستغرق الأمر حوالي الدقيقة.</translation>
     </message>
     <message>
         <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>اضغط على تأكيد لمسح جميع المحتويات والإعدادات. اضغط على إلغاء لمتابعة الإقلاع</translation>
+        <translation>اضغط على تأكيد لمسح جميع المحتويات والإعدادات. اضغط على إلغاء لمتابعة الإقلاع.</translation>
     </message>
     <message>
         <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
@@ -955,7 +955,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.</source>
-        <translation>تنبيه: هذا يمنح SSH إمكانية الوصول إلى جميع المفاتيح العامة في إعدادات GitHub. لا تقم بإدخال اسم مستخدم GitHub بدلاً من اسمك. لن تطلب منك comma employee إطلاقاً أن تضيف اسم مستخدم GitHub الخاص بهم </translation>
+        <translation>تنبيه: هذا يمنح SSH إمكانية الوصول إلى جميع المفاتيح العامة في إعدادات GitHub. لا تقم بإدخال اسم مستخدم GitHub بدلاً من اسمك. لن تطلب منك comma employee إطلاقاً أن تضيف اسم مستخدم GitHub الخاص بهم.</translation>
     </message>
     <message>
         <source>ADD</source>
@@ -1036,7 +1036,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Display speed in km/h instead of mph.</source>
-        <translation>عرض السرعة بواحدات كم/سا بدلاً من ميل/سا</translation>
+        <translation>عرض السرعة بواحدات كم/سا بدلاً من ميل/سا.</translation>
     </message>
     <message>
         <source>Record and Upload Driver Camera</source>
@@ -1044,7 +1044,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Upload data from the driver facing camera and help improve the driver monitoring algorithm.</source>
-        <translation>تحميل البيانات من الكاميرا المواجهة للسائق، والمساعدة في تحسين خوارزمية مراقبة السائق</translation>
+        <translation>تحميل البيانات من الكاميرا المواجهة للسائق، والمساعدة في تحسين خوارزمية مراقبة السائق.</translation>
     </message>
     <message>
         <source>Disengage on Accelerator Pedal</source>
@@ -1052,7 +1052,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>عند تمكين هذه الميزة، فإن الضغط على دواسة الوقود سيؤدي إلى فك ارتباط openpilot. </translation>
+        <translation>عند تمكين هذه الميزة، فإن الضغط على دواسة الوقود سيؤدي إلى فك ارتباط openpilot.</translation>
     </message>
     <message>
         <source>Show ETA in 24h Format</source>
@@ -1068,7 +1068,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Show map on left side when in split screen view.</source>
-        <translation>عرض الخريطة عل الجانب الأيسر عندما تكون وضعية العرض بطريقة الشاشة المنقسمة</translation>
+        <translation>عرض الخريطة عل الجانب الأيسر عندما تكون وضعية العرض بطريقة الشاشة المنقسمة.</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
@@ -1076,7 +1076,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation>تحذير: التحكم الطولي في openpilot في المرحلة ألفا لهذه السيارة، وسيقوم بتعطيل مكابح الطوارئ الآلية (AEB)</translation>
+        <translation>تحذير: التحكم الطولي في openpilot في المرحلة ألفا لهذه السيارة، وسيقوم بتعطيل مكابح الطوارئ الآلية (AEB).</translation>
     </message>
     <message>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
@@ -1104,11 +1104,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
-        <translation>يوصى بالوضع القياسي. في الوضع الهجومي، سيتبع openpilot السيارات الرائدة بشكل أقرب، ويصبح أكثر هجومية في دواسات الوقود والمكابح. في وضعية الراحة يبقى openplot بعيداً لمسافة جيدة عن السيارة الرائدة. </translation>
+        <translation>يوصى بالوضع القياسي. في الوضع الهجومي، سيتبع openpilot السيارات الرائدة بشكل أقرب، ويصبح أكثر هجومية في دواسات الوقود والمكابح. في وضعية الراحة يبقى openplot بعيداً لمسافة جيدة عن السيارة الرائدة.</translation>
     </message>
     <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
-        <translation>يتم وضع openpilot بشكل قياسي في &lt;b&gt;وضعية التبريد&lt;/b&gt;. يمكن الوضع التجريبي &lt;b&gt;ميزات المستوى ألفا&lt;/b&gt; التي لا تكون جاهزة في وضع التبريد.</translation>
+        <translation>يتم وضع openpilot بشكل قياسي في &lt;b&gt;وضعية التبريد&lt;/b&gt;. يمكن الوضع التجريبي &lt;b&gt;ميزات المستوى ألفا&lt;/b&gt; التي لا تكون جاهزة في وضع التبريد:</translation>
     </message>
     <message>
         <source>End-to-End Longitudinal Control</source>
