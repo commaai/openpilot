@@ -82,6 +82,8 @@ class Laikad:
     valid_ephem_types: Valid ephemeris types to be used by AstroDog
     save_ephemeris: If true saves and loads nav and orbit ephemeris to cache.
     """
+    self.params = Params()
+
     self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types,
                               clear_old_ephemeris=True, cache_dir=Paths.download_cache_root())
     self.gnss_kf = GNSSKalman(GENERATED_DIR, cython=True, erratic_clock=use_qcom)
@@ -104,8 +106,6 @@ class Laikad:
     self.first_log_time = None
     self.ttff = -1
     self.measurement_lag = 0.630 if self.use_qcom else 0.095
-
-    self.params = Params()
 
     # qcom specific stuff
     self.qcom_reports_received = 4
