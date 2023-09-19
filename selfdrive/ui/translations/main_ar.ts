@@ -975,7 +975,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Username &apos;%1&apos; has no keys on GitHub</source>
-        <translation>لا يحتوي اسم المستخدم &apos;%1&apos أي مفاتيح على GitHub</translation>
+        <translation>لا يحتوي اسم المستخدم &apos;%1&apos; أي مفاتيح على GitHub</translation>
     </message>
     <message>
         <source>انتهى وقت الطلب</source>
