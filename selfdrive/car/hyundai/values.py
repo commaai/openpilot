@@ -1619,6 +1619,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00JFP LKAS AT EUR LHD 1.00 1.03 95895-A8100 160711',
+      b'\xf1\x00ADP LKAS AT USA LHD 1.00 1.03 99211-F2000 X31',
     ],
   },
   CAR.ELANTRA: {
@@ -1629,6 +1630,7 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x006U2V0_C2\x00\x006U2VA051\x00\x00DPD0H16NS0e\x0e\xcd\x8e',
       b'\xf1\x006U2U0_C2\x00\x006U2T0051\x00\x00DPD0D16KS0u\xce\x1fk',
+      b'\xf1\x006T6K0_C2\x00\x006T6S2051\x00\x00TAD0N20NSD(\xfcA\x9d',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00PD  MDPS C 1.00 1.04 56310/G3300 4PDDC104',
@@ -1637,11 +1639,16 @@ FW_VERSIONS = {
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00PD ESC \x0b 104\x18\t\x03 58920-G3350',
       b'\xf1\x00PD ESC \t 104\x18\t\x03 58920-G3350',
+      b'\xf1\x00AD ESC \x11 11 \x18\x05\x06 58910-F2840',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00PD__ SCC F-CUP      1.00 1.00 96400-G3300         ',
       b'\xf1\x00PD__ SCC FNCUP      1.01 1.00 96400-G3000         ',
+      b'\xf1\x00AD__ SCC H-CUP      1.00 1.00 99110-F2100         ',
     ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8161698051\x00\x00\x00\x00\x00\x00\x00\x00',
+    ]
   },
   CAR.ELANTRA_2021: {
     (Ecu.fwdRadar, 0x7d0, None): [
