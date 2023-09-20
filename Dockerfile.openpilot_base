@@ -39,8 +39,6 @@ RUN cd /tmp && \
 RUN sudo git config --global --add safe.directory /tmp/openpilot
 
 # Install PortableCL
-COPY tools/install_pocl.sh /tmp/tools/
-RUN cd /tmp && \
-    tools/install_pocl.sh && \
-    rm -rf /tmp/* && \
+RUN apt update && \
+    apt install -y pocl-opencl-icd && \
     rm -rf /var/lib/apt/lists/*
