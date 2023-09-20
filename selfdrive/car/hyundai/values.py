@@ -1646,9 +1646,6 @@ FW_VERSIONS = {
       b'\xf1\x00PD__ SCC FNCUP      1.01 1.00 96400-G3000         ',
       b'\xf1\x00AD__ SCC H-CUP      1.00 1.00 99110-F2100         ',
     ],
-    (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x8161698051\x00\x00\x00\x00\x00\x00\x00\x00',
-    ]
   },
   CAR.ELANTRA_2021: {
     (Ecu.fwdRadar, 0x7d0, None): [
