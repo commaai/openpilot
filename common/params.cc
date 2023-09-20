@@ -28,10 +28,10 @@ int fsync_dir(const std::string &path) {
   return result;
 }
 
-int create_params_path(const std::string &param_path, const std::string &key_path) {
+bool create_params_path(const std::string &param_path, const std::string &key_path) {
   // Make sure params path exists
   if (!util::file_exists(param_path) && !util::create_directories(param_path, 0775)) {
-    return 1;
+    return false;
   }
 
   // See if the symlink exists, otherwise create it
@@ -44,30 +44,29 @@ int create_params_path(const std::string &param_path, const std::string &key_pat
     // this should be OK since mkdtemp just replaces characters in place
     char *tmp_dir = mkdtemp((char *)tmp_path.c_str());
     if (tmp_dir == NULL) {
-      return 2;
+      return false;
     }
 
     std::string link_path = std::string(tmp_dir) + ".link";
     if (symlink(tmp_dir, link_path.c_str()) != 0) {
-      return 3;
+      return false;
     }
 
     // don't return false if it has been created by other
     if (rename(link_path.c_str(), key_path.c_str()) != 0 && errno != EEXIST) {
-      return 4;
+      return false;
     }
   }
 
-  return 0;
+  return true;
 }
 
 std::string ensure_params_path(const std::string &prefix, const std::string &path = {}) {
   std::string params_path = path.empty() ? Path::params() : path;
-  int ret = create_params_path(params_path, params_path + prefix);
-  if (ret) {
+  if (!create_params_path(params_path, params_path + prefix)) {
     throw std::runtime_error(util::string_format(
         "Failed to ensure params path, errno=%d, path=%s, param_prefix=%s",
-        ret, params_path.c_str(), prefix.c_str()));
+        errno, params_path.c_str(), prefix.c_str()));
   }
   return params_path;
 }
