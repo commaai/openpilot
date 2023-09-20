@@ -1032,6 +1032,9 @@ FW_VERSIONS = {
     ],
   },
   CAR.CUSTIN_1ST_GEN: {
+    (Ecu.abs, 0x7d1, None): [
+      b'\xf1\x00KU ESC \x01 101!\x02\x03 58910-O3200',
+    ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00KU__ SCC F-CUP      1.00 1.01 99110-O3000         ',
     ],
