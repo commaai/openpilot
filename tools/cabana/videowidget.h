@@ -81,6 +81,7 @@ protected:
   QLabel *end_time_label;
   QLabel *time_label;
   QPushButton *play_btn;
+  QPushButton *skip_to_end_btn = nullptr;
   InfoLabel *alert_label;
   Slider *slider;
 };
