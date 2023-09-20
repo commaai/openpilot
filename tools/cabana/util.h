@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cmath>
 #include <deque>
 #include <vector>
@@ -10,8 +11,10 @@
 #include <QDateTime>
 #include <QDoubleValidator>
 #include <QFont>
+#include <QPainter>
 #include <QRegExpValidator>
 #include <QSocketNotifier>
+#include <QStaticText>
 #include <QStringBuilder>
 #include <QStyledItemDelegate>
 #include <QToolButton>
@@ -75,6 +78,7 @@ public:
   int widthForBytes(int n) const;
 
 private:
+  std::array<QStaticText, 256> hex_text_table;
   QFont fixed_font;
   QSize byte_size = {};
   bool multiple_lines = false;
@@ -101,6 +105,10 @@ QPixmap icon(const QString &id);
 void setTheme(int theme);
 inline QString formatSeconds(int seconds) {
   return QDateTime::fromSecsSinceEpoch(seconds, Qt::UTC).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
+}
+inline void drawStaticText(QPainter *p, const QRect &r, const QStaticText &text) {
+  auto size = (r.size() - text.size()) / 2;
+  p->drawStaticText(r.left() + size.width(), r.top() + size.height(), text);
 }
 }
 

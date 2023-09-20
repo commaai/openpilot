@@ -60,11 +60,12 @@ bool DBCFile::writeContents(const QString &fn) {
   return false;
 }
 
-void DBCFile::updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &comment) {
+void DBCFile::updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &node, const QString &comment) {
   auto &m = msgs[id.address];
   m.address = id.address;
   m.name = name;
   m.size = size;
+  m.transmitter = node.isEmpty() ? DEFAULT_NODE_NAME : node;
   m.comment = comment;
 }
 
@@ -198,7 +199,8 @@ void DBCFile::parse(const QString &content) {
 QString DBCFile::generateDBC() {
   QString dbc_string, signal_comment, message_comment, val_desc;
   for (const auto &[address, m] : msgs) {
-    dbc_string += QString("BO_ %1 %2: %3 %4\n").arg(address).arg(m.name).arg(m.size).arg(m.transmitter.isEmpty() ? "XXX" : m.transmitter);
+    const QString transmitter = m.transmitter.isEmpty() ? DEFAULT_NODE_NAME : m.transmitter;
+    dbc_string += QString("BO_ %1 %2: %3 %4\n").arg(address).arg(m.name).arg(m.size).arg(transmitter);
     if (!m.comment.isEmpty()) {
       message_comment += QString("CM_ BO_ %1 \"%2\";\n").arg(address).arg(m.comment);
     }
@@ -221,7 +223,7 @@ QString DBCFile::generateDBC() {
                         .arg(doubleToString(sig->min))
                         .arg(doubleToString(sig->max))
                         .arg(sig->unit)
-                        .arg(sig->receiver_name.isEmpty() ? "XXX" : sig->receiver_name);
+                        .arg(sig->receiver_name.isEmpty() ? DEFAULT_NODE_NAME : sig->receiver_name);
       if (!sig->comment.isEmpty()) {
         signal_comment += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(address).arg(sig->name).arg(sig->comment);
       }

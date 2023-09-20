@@ -61,11 +61,11 @@ class ModelState:
     assert ctypes.sizeof(DMonitoringModelResult) == OUTPUT_SIZE * ctypes.sizeof(ctypes.c_float)
     self.output = np.zeros(OUTPUT_SIZE, dtype=np.float32)
     self.inputs = {
-      'input_imgs': np.zeros(MODEL_HEIGHT * MODEL_WIDTH, dtype=np.uint8),
+      'input_img': np.zeros(MODEL_HEIGHT * MODEL_WIDTH, dtype=np.uint8),
       'calib': np.zeros(CALIB_LEN, dtype=np.float32)}
 
     self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.DSP, True, None)
-    self.model.addInput("input_imgs", None)
+    self.model.addInput("input_img", None)
     self.model.addInput("calib", self.inputs['calib'])
 
   def run(self, buf:VisionBuf, calib:np.ndarray) -> Tuple[np.ndarray, float]:
@@ -74,11 +74,11 @@ class ModelState:
     v_offset = buf.height - MODEL_HEIGHT
     h_offset = (buf.width - MODEL_WIDTH) // 2
     buf_data = buf.data.reshape(-1, buf.stride)
-    input_data = self.inputs['input_imgs'].reshape(MODEL_HEIGHT, MODEL_WIDTH)
+    input_data = self.inputs['input_img'].reshape(MODEL_HEIGHT, MODEL_WIDTH)
     input_data[:] = buf_data[v_offset:v_offset+MODEL_HEIGHT, h_offset:h_offset+MODEL_WIDTH]
 
     t1 = time.perf_counter()
-    self.model.setInputBuffer("input_imgs", self.inputs['input_imgs'].view(np.float32))
+    self.model.setInputBuffer("input_img", self.inputs['input_img'].view(np.float32))
     self.model.execute()
     t2 = time.perf_counter()
     return self.output, t2 - t1
