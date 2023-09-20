@@ -880,7 +880,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Uninstall %1</source>
-        <translation type="unfinished"></translation>
+        <translation>إلغاء التثبيت %1</translation>
     </message>
     <message>
         <source>Are you sure you want to uninstall?</source>
@@ -990,7 +990,7 @@ This may take up to a minute.</source>
     <name>SshToggle</name>
     <message>
         <source>Enable SSH</source>
-        <translation type="unfinished"></translation>
+        <translation>تمكين SSH</translation>
     </message>
 </context>
 <context>
