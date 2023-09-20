@@ -6,6 +6,7 @@ from multiprocessing import Queue
 
 from openpilot.tools.sim.bridge.common import SimulatorBridge
 from openpilot.tools.sim.bridge.carla import CarlaBridge
+from openpilot.tools.sim.bridge.metadrive import MetaDriveBridge
 
 
 def parse_args(add_args=None):
@@ -30,6 +31,8 @@ if __name__ == "__main__":
   simulator_bridge: SimulatorBridge
   if args.simulator == "carla":
     simulator_bridge = CarlaBridge(args)
+  elif args.simulator == "metadrive":
+    simulator_bridge = MetaDriveBridge(args)
   else:
     raise AssertionError("simulator type not supported")
   p = simulator_bridge.run(q)
