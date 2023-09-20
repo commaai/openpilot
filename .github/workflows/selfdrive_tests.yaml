@@ -78,6 +78,7 @@ jobs:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
       with:
+        docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
         cache_key_prefix: scons_${{ matrix.arch }}
     - uses: ./.github/workflows/compile-openpilot
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 15 || 30) }} # allow more time when we missed the scons cache
@@ -136,7 +137,7 @@ jobs:
         fi
     - name: Install dependencies
       if: steps.dependency-cache.outputs.cache-hit != 'true'
-      run: ./tools/mac_setup.sh
+      run: SKIP_PROMPT=1 ./tools/mac_setup.sh
       env:
         # package install has DeprecationWarnings
         PYTHONWARNINGS: default
@@ -177,6 +178,7 @@ jobs:
         sudo rm -rf /Applications/ArmGNUToolchain/*/*/.fseventsd
 
   docker_push:
+    name: docker push
     strategy:
       matrix:
         arch: ${{ fromJson( (github.repository == 'commaai/openpilot') && '["x86_64", "aarch64"]' || '["x86_64"]' ) }}
@@ -194,6 +196,7 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
       with:
         git-lfs: false
+        docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
     - name: Build and push CL Docker image
       if: matrix.arch == 'x86_64'
       run: |
@@ -260,7 +263,7 @@ jobs:
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run unit tests
-      timeout-minutes: 40
+      timeout-minutes: 15
       run: |
         ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
                         $PYTEST -n auto --dist=loadscope --timeout 30 -o cpp_files=test_* && \
@@ -280,6 +283,8 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
+      with:
+        docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
     - name: Cache test routes
       id: dependency-cache
       uses: actions/cache@v3

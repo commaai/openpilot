@@ -35,13 +35,24 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   }
 
   // btn controls
+  QButtonGroup *group = new QButtonGroup(this);
+  group->setExclusive(true);
+
   QHBoxLayout *control_layout = new QHBoxLayout();
   play_btn = new QPushButton();
   play_btn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
   control_layout->addWidget(play_btn);
+  if (can->liveStreaming()) {
+    control_layout->addWidget(skip_to_end_btn = new QPushButton(utils::icon("skip-end-fill"), {}));
+    skip_to_end_btn->setToolTip(tr("Skip to the end"));
+    QObject::connect(skip_to_end_btn, &QPushButton::clicked, [group]() {
+      // set speed to 1.0
+      group->buttons()[2]->click();
+      can->pause(false);
+      can->seekTo(can->totalSeconds() + 1);
+    });
+  }
 
-  QButtonGroup *group = new QButtonGroup(this);
-  group->setExclusive(true);
   for (float speed : {0.1, 0.5, 1., 2.}) {
     QPushButton *btn = new QPushButton(QString("%1x").arg(speed), this);
     btn->setCheckable(true);
@@ -121,7 +132,10 @@ void VideoWidget::setMaximumTime(double sec) {
 }
 
 void VideoWidget::updateTimeRange(double min, double max, bool is_zoomed) {
-  if (can->liveStreaming()) return;
+  if (can->liveStreaming()) {
+    skip_to_end_btn->setEnabled(!is_zoomed);
+    return;
+  }
 
   if (!is_zoomed) {
     min = 0;
