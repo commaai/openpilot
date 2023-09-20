@@ -301,17 +301,27 @@ def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
 
       # Check part number + platform code + major version matches for any found versions
       # Then check that sub-version for the above is within range (splits model years)
-      for found_platform_code, found_sub_versions in found_platform_codes.items():
-        if found_platform_code in expected_platform_codes:
-          expected_sub_versions = expected_platform_codes[found_platform_code]
 
-          # Check any sub-version within range in the database for this part-platform-version combo
-          if any(min(expected_sub_versions) <= found_sub_version <= max(expected_sub_versions) for
-                 found_sub_version in found_sub_versions):
-            valid_found_ecus.add(addr)
-            break
+      # Sub-versions are incremented for minor recalls, do not need to be checked.
+      # Platform codes and major versions change for different physical parts. For example,
+      # engine's major version describes actual Toyota engine type.
+
+      if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
+        break
+      valid_found_ecus.add(addr)
+
+      # for found_platform_code, found_sub_versions in found_platform_codes.items():
+      #   if found_platform_code in expected_platform_codes:
+      #     expected_sub_versions = expected_platform_codes[found_platform_code]
+      #
+      #     # Check any sub-version within range in the database for this part-platform-version combo
+      #     if any(min(expected_sub_versions) <= found_sub_version <= max(expected_sub_versions) for
+      #            found_sub_version in found_sub_versions):
+      #       valid_found_ecus.add(addr)
+      #       break
 
     # If all live ECUs pass all checks for candidate, add it as a match
+    # print(candidate, valid_expected_ecus, valid_found_ecus)
     if valid_expected_ecus.issubset(valid_found_ecus):
       candidates.add(candidate)
 
@@ -333,9 +343,9 @@ LONG_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P
 FW_LEN_CODE = re.compile(b'^[\x01-\x03]')  # highest seen is 3 chunks, 16 bytes each
 FW_CHUNK_LEN = 16
 
-# List of ECUs expected to have platform codes
-# Engine is not well understood at this time (lots of variability in major version)
-PLATFORM_CODE_ECUS = [Ecu.abs, Ecu.eps, Ecu.dsu, Ecu.fwdCamera, Ecu.fwdRadar]
+# List of ECUs that are most unique across openpilot platforms
+# TODO: use hybrid ECU, splits similar ICE and hybrid variants
+PLATFORM_CODE_ECUS = [Ecu.abs, Ecu.eps, Ecu.fwdCamera]
 
 
 # Some ECUs that use KWP2000 have their FW versions on non-standard data identifiers.

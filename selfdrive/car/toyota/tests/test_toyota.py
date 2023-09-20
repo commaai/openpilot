@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import random
 from hypothesis import given, settings, strategies as st
 import unittest
 
@@ -131,8 +132,18 @@ class TestToyotaFingerprint(unittest.TestCase):
       CAR.LEXUS_ES_TSS2,
       CAR.LEXUS_RX_TSS2,
       CAR.CHR,
+      CAR.CHRH,
       CAR.COROLLA_TSS2,
+      CAR.COROLLAH_TSS2,
+      CAR.RAV4_TSS2,
+      CAR.RAV4H_TSS2,
+      CAR.LEXUS_NX_TSS2,
+      CAR.LEXUS_NXH,
+      CAR.LEXUS_NXH_TSS2,
+      CAR.LEXUS_NX,
+      CAR.LEXUS_RXH_TSS2,
     }
+    # excluded_platforms = {_car for _car in FW_VERSIONS}
 
     platforms_with_shared_codes = set()
     for platform, fw_by_addr in FW_VERSIONS.items():
@@ -148,8 +159,10 @@ class TestToyotaFingerprint(unittest.TestCase):
       if len(matches) == 1:
         self.assertEqual(list(matches)[0], platform)
       else:
+        print('matches', platform, matches)
         platforms_with_shared_codes.add(platform)
 
+    print(len(platforms_with_shared_codes), len(excluded_platforms))
     self.assertEqual(platforms_with_shared_codes, excluded_platforms, (len(platforms_with_shared_codes), len(FW_VERSIONS)))
 
 
