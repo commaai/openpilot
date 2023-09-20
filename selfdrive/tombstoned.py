@@ -10,8 +10,8 @@ import glob
 from typing import NoReturn
 
 from openpilot.common.file_helpers import mkdirs_exists_ok
-from openpilot.system.loggerd.config import ROOT
 import openpilot.selfdrive.sentry as sentry
+from openpilot.system.hardware.hw import Paths
 from openpilot.system.swaglog import cloudlog
 from openpilot.system.version import get_commit
 
@@ -130,7 +130,7 @@ def report_tombstone_apport(fn):
 
   new_fn = f"{date}_{get_commit(default='nocommit')[:8]}_{safe_fn(clean_path)}"[:MAX_TOMBSTONE_FN_LEN]
 
-  crashlog_dir = os.path.join(ROOT, "crash")
+  crashlog_dir = os.path.join(Paths.log_root(), "crash")
   mkdirs_exists_ok(crashlog_dir)
 
   # Files could be on different filesystems, copy, then delete

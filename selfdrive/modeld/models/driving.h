@@ -6,13 +6,16 @@
 #include "cereal/messaging/messaging.h"
 #include "common/modeldata.h"
 #include "common/util.h"
-#include "selfdrive/modeld/models/nav.h"
+#include "selfdrive/modeld/models/commonmodel.h"
+#include "selfdrive/modeld/runners/run.h"
 
 constexpr int FEATURE_LEN = 128;
 constexpr int HISTORY_BUFFER_LEN = 99;
 constexpr int DESIRE_LEN = 8;
 constexpr int DESIRE_PRED_LEN = 4;
 constexpr int TRAFFIC_CONVENTION_LEN = 2;
+constexpr int NAV_FEATURE_LEN = 256;
+constexpr int NAV_INSTRUCTION_LEN = 150;
 constexpr int DRIVING_STYLE_LEN = 12;
 constexpr int MODEL_FREQ = 20;
 

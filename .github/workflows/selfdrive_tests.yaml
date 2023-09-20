@@ -41,7 +41,7 @@ jobs:
     - name: Build devel
       timeout-minutes: 1
       run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
     - name: Check submodules
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       timeout-minutes: 1
@@ -67,30 +67,23 @@ jobs:
         cd $STRIPPED_DIR
         ${{ env.RUN }} "unset PYTHONWARNINGS && pre-commit run --all"
 
-  build_all:
-    name: build all
-    runs-on: ubuntu-20.04
+  build:
+    strategy:
+      matrix:
+        arch: ${{ fromJson( (github.repository == 'commaai/openpilot') && '["x86_64", "aarch64"]' || '["x86_64"]' ) }}
+    runs-on: ${{ (matrix.arch == 'aarch64') && 'buildjet-2vcpu-ubuntu-2204-arm' || 'ubuntu-20.04' }}
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
-    - name: Build openpilot with all flags
-      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 12 || 30) }} # allow more time when we missed the scons cache
-      run: |
-        ${{ env.RUN }} "scons -j$(nproc)"
-        ${{ env.RUN }} "release/check-dirty.sh"
-    - name: Cleanup scons cache and rebuild
-      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 2 || 30) }} # allow more time when we missed the scons cache
-      run: |
-          ${{ env.RUN }} "rm -rf /tmp/scons_cache/* && \
-                          scons -j$(nproc) --cache-populate"
-    - name: Save scons cache
-      uses: actions/cache/save@v3
-      if: github.ref == 'refs/heads/master'
+    - uses: ./.github/workflows/setup-with-retry
       with:
-        path: .ci_cache/scons_cache
-        key: scons-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
+        cache_key_prefix: scons_${{ matrix.arch }}
+    - uses: ./.github/workflows/compile-openpilot
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 15 || 30) }} # allow more time when we missed the scons cache
+      with:
+        cache_key_prefix: scons_${{ matrix.arch }}
 
   build_mac:
     name: build macos
@@ -144,7 +137,7 @@ jobs:
         fi
     - name: Install dependencies
       if: steps.dependency-cache.outputs.cache-hit != 'true'
-      run: ./tools/mac_setup.sh
+      run: SKIP_PROMPT=1 ./tools/mac_setup.sh
       env:
         # package install has DeprecationWarnings
         PYTHONWARNINGS: default
@@ -186,7 +179,10 @@ jobs:
 
   docker_push:
     name: docker push
-    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        arch: ${{ fromJson( (github.repository == 'commaai/openpilot') && '["x86_64", "aarch64"]' || '["x86_64"]' ) }}
+    runs-on: ${{ (matrix.arch == 'aarch64') && 'buildjet-2vcpu-ubuntu-2204-arm' || 'ubuntu-20.04' }}
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v3
@@ -195,13 +191,34 @@ jobs:
     - name: Setup to push to repo
       run: |
         echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
+        echo "TARGET_ARCHITECTURE=${{ matrix.arch }}" >> "$GITHUB_ENV"
         $DOCKER_LOGIN
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
       with:
         git-lfs: false
+        docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
     - name: Build and push CL Docker image
+      if: matrix.arch == 'x86_64'
       run: |
+        unset TARGET_ARCHITECTURE
         eval "$BUILD_CL"
+
+  docker_push_multiarch:
+    name: docker push multiarch tag
+    runs-on: ubuntu-20.04
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+    needs: [docker_push]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: false
+    - name: Setup docker
+      run: |
+        $DOCKER_LOGIN
+    - name: Merge x64 and arm64 tags
+      run: |
+        export PUSH_IMAGE=true
+        selfdrive/test/docker_tag_multiarch.sh base x86_64 aarch64
 
   static_analysis:
     name: static analysis
@@ -223,7 +240,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run valgrind
@@ -241,26 +258,18 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run unit tests
-      timeout-minutes: 40
+      timeout-minutes: 15
       run: |
         ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
-                        $PYTEST && \
-                        selfdrive/locationd/test/_test_locationd_lib.py && \
-                        ./system/ubloxd/tests/test_glonass_runner && \
+                        $PYTEST -n auto --dist=loadscope --timeout 30 -o cpp_files=test_* && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         ./selfdrive/ui/tests/test_translations.py && \
-                        ./common/tests/test_common && \
-                        ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
-                        ./system/loggerd/tests/test_logger &&\
-                        ./system/proclogd/tests/test_proclog && \
-                        ./tools/replay/tests/test_replay && \
-                        ./tools/cabana/tests/test_cabana && \
                         ./system/camerad/test/ae_gray_test && \
                         ./selfdrive/test/process_replay/test_fuzzy.py"
     - name: "Upload coverage to Codecov"
@@ -273,7 +282,9 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
+      with:
+        docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
     - name: Cache test routes
       id: dependency-cache
       uses: actions/cache@v3
@@ -313,7 +324,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
     - name: Build base Docker image
       run: eval "$BUILD"
     - name: Build Docker image
@@ -324,7 +335,7 @@ jobs:
         ${{ env.RUN }} "scons -j$(nproc)"
     # PYTHONWARNINGS triggers a SyntaxError in onnxruntime
     - name: Run model replay with ONNX
-      timeout-minutes: 2
+      timeout-minutes: 3
       run: |
         ${{ env.RUN_CL }} "unset PYTHONWARNINGS && \
                            ONNXCPU=1 CI=1 NO_NAV=1 coverage run selfdrive/test/process_replay/model_replay.py && \
@@ -349,7 +360,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
     - name: Cache test routes
       id: dependency-cache
       uses: actions/cache@v3
@@ -378,7 +389,7 @@ jobs:
         with:
           submodules: true
           ref: ${{ github.event.pull_request.base.ref }}
-      - uses: ./.github/workflows/setup
+      - uses: ./.github/workflows/setup-with-retry
       - name: Get base car info
         run: |
           ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/debug/dump_car_info.py --path /tmp/openpilot_cache/base_car_info"
