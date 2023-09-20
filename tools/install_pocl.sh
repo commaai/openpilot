@@ -18,7 +18,3 @@ ninja install
 # removing this picks up PoCL from the system install, not the build dir
 rm -f CTestCustom.cmake
 ctest -j4 --output-on-failure -L internal
-
-apt install -y software-properties-common
-add-apt-repository -y ppa:ocl-icd/ppa
-apt update && apt install -y ocl-icd-dev
