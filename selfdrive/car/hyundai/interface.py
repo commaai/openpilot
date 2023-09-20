@@ -144,7 +144,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.CUSTIN:
       ret.mass = 1690.  # from https://www.hyundai-motor.com.tw/clicktobuy/custin#spec_0
       ret.wheelbase = 3.055
-      ret.steerRatio = 17.07  # from learner
+      ret.steerRatio = 15.3  # from learner
 
     # Kia
     elif candidate == CAR.KIA_SORENTO:
