@@ -26,7 +26,7 @@ def pm_patch(name, value, constant=False):
 
 
 @patch("time.monotonic", new=mock_time_monotonic)
-@patch("openpilot.common.params.put_nonblocking", new=noop) # TODO: Remove this once nonblocking params are safer
+@patch("openpilot.selfdrive.thermald.power_monitoring.put_nonblocking", new=noop) # TODO: Remove this once nonblocking params are safer
 class TestPowerMonitoring(unittest.TestCase):
   def setUp(self):
     self.params = Params()
