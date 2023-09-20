@@ -4,7 +4,7 @@ import time
 import uuid
 import unittest
 
-from openpilot.common.params import Params, ParamKeyType, UnknownKeyName
+from openpilot.common.params import Params, ParamKeyType, UnknownKeyName, put_nonblocking, put_bool_nonblocking
 
 class TestParams(unittest.TestCase):
   def setUp(self):
@@ -86,7 +86,7 @@ class TestParams(unittest.TestCase):
     q = Params()
     def _delayed_writer():
       time.sleep(0.1)
-      Params().put_nonblocking("CarParams", "test")
+      put_nonblocking("CarParams", "test")
     threading.Thread(target=_delayed_writer).start()
     assert q.get("CarParams") is None
     assert q.get("CarParams", True) == b"test"
@@ -95,7 +95,7 @@ class TestParams(unittest.TestCase):
     q = Params()
     def _delayed_writer():
       time.sleep(0.1)
-      Params().put_bool_nonblocking("CarParams", True)
+      put_bool_nonblocking("CarParams", True)
     threading.Thread(target=_delayed_writer).start()
     assert q.get("CarParams") is None
     assert q.get("CarParams", True) == b"1"

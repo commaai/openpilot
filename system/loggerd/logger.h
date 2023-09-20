@@ -8,8 +8,6 @@
 #include "common/util.h"
 #include "system/hardware/hw.h"
 
-const std::string LOG_ROOT = Path::log_root();
-
 class RawFile {
  public:
   RawFile(const std::string &path) {
@@ -36,7 +34,7 @@ typedef cereal::Sentinel::SentinelType SentinelType;
 
 class LoggerState {
 public:
-  LoggerState(const std::string& log_root = LOG_ROOT);
+  LoggerState(const std::string& log_root = Path::log_root());
   ~LoggerState();
   bool next();
   void write(uint8_t* data, size_t size, bool in_qlog);

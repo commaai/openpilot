@@ -30,7 +30,7 @@ struct CanData {
   std::vector<std::array<uint32_t, 8>> bit_change_counts;
   std::vector<int> last_delta;
   std::vector<int> same_delta_counter;
-  double last_freq_update_ts = seconds_since_boot();
+  double last_freq_update_ts = 0;
 };
 
 struct CanEvent {
@@ -39,6 +39,11 @@ struct CanEvent {
   uint64_t mono_time;
   uint8_t size;
   uint8_t dat[];
+};
+
+struct CompareCanEvent {
+  constexpr bool operator()(const CanEvent *const e, uint64_t ts) const { return e->mono_time < ts; }
+  constexpr bool operator()(uint64_t ts, const CanEvent *const e) const { return ts < e->mono_time; }
 };
 
 struct BusConfig {

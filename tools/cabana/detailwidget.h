@@ -21,6 +21,7 @@ public:
   QString original_name;
   QDialogButtonBox *btn_box;
   QLineEdit *name_edit;
+  QLineEdit *node;
   QTextEdit *comment_edit;
   QLabel *error_label;
   QSpinBox *size_spin;
