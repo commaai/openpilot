@@ -24,7 +24,7 @@ RUN cd /tmp && \
 
 ENV POETRY_VIRTUALENVS_CREATE=false
 ENV PYENV_VERSION=3.11.4
-ENV PYENV_ROOT="/root/.pyenv"
+ENV PYENV_ROOT="/opt/pyenv"
 ENV PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
 
 COPY pyproject.toml poetry.lock .python-version /tmp/

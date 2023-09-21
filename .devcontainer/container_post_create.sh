@@ -12,3 +12,13 @@ if [ -n "\$DISPLAY" ]; then
 fi
 EOF
 fi
+
+# setup the new batman user
+USER=batman
+
+# Link root pyenv to new batman user
+unlink /home/$USER/.pyenvrc
+ln -s /root/.pyenvrc /home/$USER/.pyenvrc
+
+sudo chown -R $USER: /opt/pyenv
+sudo chown -R $USER: /tmp/scons_cache
