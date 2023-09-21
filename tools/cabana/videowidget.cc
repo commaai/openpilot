@@ -129,11 +129,8 @@ QWidget *VideoWidget::createCameraWidget() {
 }
 
 void VideoWidget::setMaximumTime(double sec) {
-  if (!zoomed) {
-    end_time_label->setText(utils::formatSeconds(sec));
-    slider->setTimeRange(0, sec);
-  }
   maximum_time = sec;
+  if (!zoomed) setTimeRange(0, maximum_time);
 }
 
 void VideoWidget::zoomChanged(double min, double max, bool is_zoomed) {
@@ -142,11 +139,10 @@ void VideoWidget::zoomChanged(double min, double max, bool is_zoomed) {
     skip_to_end_btn->setEnabled(!is_zoomed);
     return;
   }
+  zoomed ? setTimeRange(min, max) : setTimeRange(0, maximum_time);
+}
 
-  if (!is_zoomed) {
-    min = 0;
-    max = maximum_time;
-  }
+void VideoWidget::setTimeRange(double min, double max) {
   end_time_label->setText(utils::formatSeconds(max));
   slider->setTimeRange(min, max);
 }
@@ -180,11 +176,6 @@ QPixmap Slider::thumbnail(double seconds)  {
   uint64_t mono_time = (seconds + can->routeStartTime()) * 1e9;
   auto it = thumbnails.lowerBound(mono_time);
   return it != thumbnails.end() ? it.value() : QPixmap();
-}
-
-void Slider::setTimeRange(double min, double max) {
-  assert(min < max);
-  setRange(min * factor, max * factor);
 }
 
 void Slider::parseQLog(int segnum, std::shared_ptr<LogReader> qlog) {

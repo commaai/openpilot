@@ -51,7 +51,6 @@ void ReplayStream::start() {
 
 bool ReplayStream::eventFilter(const Event *event) {
   static double prev_update_ts = 0;
-  // delay posting CAN message if UI thread is busy
   if (event->which == cereal::Event::Which::CAN) {
     double current_sec = event->mono_time / 1e9 - routeStartTime();
     for (const auto &c : event->event.getCan()) {

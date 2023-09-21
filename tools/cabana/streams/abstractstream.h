@@ -55,6 +55,7 @@ struct BusConfig {
   int data_speed_kbps = 2000;
   bool can_fd = false;
 };
+
 typedef std::unordered_map<MessageId, std::vector<const CanEvent *>> CanEventsMap;
 
 class AbstractStream : public QObject {

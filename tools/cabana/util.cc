@@ -9,7 +9,6 @@
 #include <unistd.h>
 
 #include <QColor>
-#include <QDebug>
 #include <QFontDatabase>
 #include <QLocale>
 #include <QPainter>

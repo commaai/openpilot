@@ -4,8 +4,6 @@
 #include <QFileInfo>
 #include <QRegularExpression>
 #include <QTextStream>
-#include <numeric>
-#include <sstream>
 
 DBCFile::DBCFile(const QString &dbc_file_name, QObject *parent) : QObject(parent) {
   QFile file(dbc_file_name);

@@ -298,25 +298,24 @@ static void calc_values(const cabana::Signal *sig, const std::vector<const CanEv
 }
 
 void ChartView::updateSeries(const cabana::Signal *sig, const CanEventsMap *new_events) {
-  for (auto &s : sigs) {
+    for (auto &s : sigs) {
     if (!sig || s.sig == sig) {
       if (!new_events) {
         s.vals.clear();
         s.step_vals.clear();
       }
       auto events = new_events ? new_events : &can->eventsMap();
-      auto events_it = events->find(s.msg_id);
-      if (events_it == events->end() || events_it->second.empty()) continue;
+      auto it = events->find(s.msg_id);
+      if (it == events->end() || it->second.empty()) continue;
 
-      const std::vector<const CanEvent *> &msgs = events_it->second;
-      if (s.vals.empty() || (msgs.back()->mono_time / 1e9 - can->routeStartTime()) > s.vals.back().x()) {
-        calc_values(s.sig, msgs, s.vals, s.step_vals);
+      if (s.vals.empty() || (it->second.front()->mono_time / 1e9 - can->routeStartTime()) > s.vals.back().x()) {
+        calc_values(s.sig, it->second, s.vals, s.step_vals);
       } else {
         std::vector<QPointF> vals, step_vals;
-        calc_values(s.sig, msgs, vals, step_vals);
-        s.vals.insert(std::lower_bound(s.vals.begin(), s.vals.end(), vals.back().x(), xLessThan),
+        calc_values(s.sig, it->second, vals, step_vals);
+        s.vals.insert(std::lower_bound(s.vals.begin(), s.vals.end(), vals.front().x(), xLessThan),
                       vals.begin(), vals.end());
-        s.step_vals.insert(std::lower_bound(s.step_vals.begin(), s.step_vals.end(), step_vals.back().x(), xLessThan),
+        s.step_vals.insert(std::lower_bound(s.step_vals.begin(), s.step_vals.end(), step_vals.front().x(), xLessThan),
                            step_vals.begin(), step_vals.end());
       }
 
@@ -854,9 +853,8 @@ void ChartView::setSeriesType(SeriesType type) {
       s.series->deleteLater();
     }
     for (auto &s : sigs) {
-      auto series = createSeries(series_type, s.sig->color);
-      series->replace(QVector<QPointF>::fromStdVector(series_type == SeriesType::StepLine ? s.step_vals : s.vals));
-      s.series = series;
+      s.series = createSeries(series_type, s.sig->color);
+      s.series->replace(QVector<QPointF>::fromStdVector(series_type == SeriesType::StepLine ? s.step_vals : s.vals));
     }
     updateSeriesPoints();
     updateTitle();
