@@ -127,6 +127,8 @@ class SimulatorBridge(ABC):
             self.simulator_state.cruise_button = CruiseButtons.MAIN
         elif m[0] == "ignition":
           self.simulator_state.ignition = not self.simulator_state.ignition
+        elif m[0] == "reset":
+          self.world.reset()
         elif m[0] == "quit":
           break
 
