@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import os
 
 from typing import Any
 from multiprocessing import Queue
@@ -19,7 +20,7 @@ def parse_args(add_args=None):
   # Carla specific
   parser.add_argument('--town', type=str, default='Town04_Opt')
   parser.add_argument('--spawn_point', dest='num_selected_spawn_point', type=int, default=16)
-  parser.add_argument('--host', dest='host', type=str, default='127.0.0.1')
+  parser.add_argument('--host', dest='host', type=str, default=os.environ.get("CARLA_HOST", '127.0.0.1'))
   parser.add_argument('--port', dest='port', type=int, default=2000)
 
   return parser.parse_args(add_args)
