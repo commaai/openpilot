@@ -3,6 +3,7 @@ import time
 import shutil
 from datetime import datetime
 from collections import defaultdict
+from openpilot.system.hardware.hw import Paths
 
 import rpyc
 from rpyc.utils.server import ThreadedServer
@@ -18,7 +19,6 @@ MATCH_NUM = 10
 REPORT_STATS = 10
 
 EPHEM_CACHE = "/data/params/d/LaikadEphemerisV3"
-DOWNLOAD_CACHE = "/tmp/comma_download_cache"
 
 SERVER_LOG_FILE = "/tmp/fuzzy_server.log"
 server_log = open(SERVER_LOG_FILE, "w+")
@@ -162,7 +162,7 @@ class RemoteCheckerService(rpyc.Service):
 
         if os.path.exists(EPHEM_CACHE):
           os.remove(EPHEM_CACHE)
-        shutil.rmtree(DOWNLOAD_CACHE, ignore_errors=True)
+        shutil.rmtree(Paths.download_cache_root(), ignore_errors=True)
 
       ret = self.run_checker(slat, slon, salt, sockets, procs, timeout)
       kill_procs(procs)

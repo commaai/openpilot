@@ -1,3 +1,4 @@
+exclude: '^(tinygrad_repo)'
 repos:
 -   repo: meta
     hooks:
@@ -9,11 +10,14 @@ repos:
     -   id: check-ast
         exclude: '^(third_party)/'
     -   id: check-json
+        exclude: '.devcontainer/devcontainer.json' # this supports JSON with comments
     -   id: check-toml
     -   id: check-xml
     -   id: check-yaml
     -   id: check-merge-conflict
     -   id: check-symlinks
+    -   id: check-executables-have-shebangs
+    -   id: check-shebang-scripts-are-executable
     -   id: check-added-large-files
         args: ['--maxkb=100']
 -   repo: https://github.com/codespell-project/codespell
@@ -35,7 +39,7 @@ repos:
         args: ['--explicit-package-bases']
         exclude: '^(third_party/)|(cereal/)|(opendbc/)|(panda/)|(laika/)|(laika_repo/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(xx/)'
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.285
+    rev: v0.0.290
     hooks:
     -   id: ruff
         exclude: '^(third_party/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(laika_repo/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)'
@@ -80,3 +84,7 @@ repos:
         name: validate poetry lock
         args:
         - --check
+-   repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.26.3
+    hooks:
+    -   id: check-github-workflows

@@ -17,7 +17,7 @@ class SignalModel : public QAbstractItemModel {
   Q_OBJECT
 public:
   struct Item {
-    enum Type {Root, Sig, Name, Size, Endian, Signed, Offset, Factor, SignalType, MultiplexValue, ExtraInfo, Unit, Comment, Min, Max, Desc };
+    enum Type {Root, Sig, Name, Size, Node, Endian, Signed, Offset, Factor, SignalType, MultiplexValue, ExtraInfo, Unit, Comment, Min, Max, Desc };
     ~Item() { qDeleteAll(children); }
     inline int row() { return parent->children.indexOf(this); }
 
@@ -87,7 +87,7 @@ public:
   void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const override;
 
-  QValidator *name_validator, *double_validator;
+  QValidator *name_validator, *double_validator, *node_validator;
   QFont label_font, minmax_font;
   const int color_label_width = 18;
   mutable QSize button_size;

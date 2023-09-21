@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import patch
 
 from openpilot.common.params import Params
+from openpilot.selfdrive.test.helpers import noop
 from openpilot.selfdrive.thermald.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
                                                 CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING, DELAY_SHUTDOWN_TIME_S
 
@@ -25,12 +26,10 @@ def pm_patch(name, value, constant=False):
 
 
 @patch("time.monotonic", new=mock_time_monotonic)
-@patch("openpilot.selfdrive.thermald.power_monitoring.put_nonblocking", new=lambda x, y: Params().put(x, y))
+@patch("openpilot.selfdrive.thermald.power_monitoring.put_nonblocking", new=noop) # TODO: Remove this once nonblocking params are safer
 class TestPowerMonitoring(unittest.TestCase):
   def setUp(self):
     self.params = Params()
-    self.params.remove("CarBatteryCapacity")
-    self.params.remove("DisablePowerDown")
 
   # Test to see that it doesn't do anything when pandaState is None
   def test_pandaState_present(self):

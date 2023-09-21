@@ -6,19 +6,14 @@
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QPushButton>
-#include <QSettings>
 #include <QStandardPaths>
 
 #include "tools/cabana/util.h"
 
 Settings settings;
 
-Settings::Settings() {
-  load();
-}
-
-void Settings::save() {
-  QSettings s("settings", QSettings::IniFormat);
+QSettings::Status Settings::save() {
+  QSettings s(filePath(), QSettings::IniFormat);
   s.setValue("fps", fps);
   s.setValue("max_cached_minutes", max_cached_minutes);
   s.setValue("chart_height", chart_height);
@@ -39,10 +34,12 @@ void Settings::save() {
   s.setValue("log_path", log_path);
   s.setValue("drag_direction", drag_direction);
   s.setValue("suppress_defined_signals", suppress_defined_signals);
+  s.sync();
+  return s.status();
 }
 
 void Settings::load() {
-  QSettings s("settings", QSettings::IniFormat);
+  QSettings s(filePath(), QSettings::IniFormat);
   fps = s.value("fps", 10).toInt();
   max_cached_minutes = s.value("max_cached_minutes", 30).toInt();
   chart_height = s.value("chart_height", 200).toInt();

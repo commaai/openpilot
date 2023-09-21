@@ -19,6 +19,8 @@ public:
   void drawSignalCell(QPainter* painter, const QStyleOptionViewItem &option, const QModelIndex &index, const cabana::Signal *sig) const;
 
   QFont small_font, hex_font;
+  std::array<QStaticText, 256> hex_text_table;
+  std::array<QStaticText, 2> bin_text_table;
 };
 
 class BinaryViewModel : public QAbstractTableModel {
@@ -26,7 +28,7 @@ public:
   BinaryViewModel(QObject *parent) : QAbstractTableModel(parent) {}
   void refresh();
   void updateState();
-  void updateItem(int row, int col, const QString &val, const QColor &color);
+  void updateItem(int row, int col, uint8_t val, const QColor &color);
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return row_count; }
@@ -42,7 +44,7 @@ public:
     QColor bg_color = QColor(102, 86, 169, 255);
     bool is_msb = false;
     bool is_lsb = false;
-    QString val;
+    uint8_t val;
     QList<const cabana::Signal *> sigs;
     bool valid = false;
   };

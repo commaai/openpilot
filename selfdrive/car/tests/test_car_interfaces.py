@@ -50,7 +50,7 @@ class TestCarInterfaces(unittest.TestCase):
   # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
   #  many generated examples to overrun when max_examples > ~20, don't use it
   @parameterized.expand([(car,) for car in sorted(all_known_cars())])
-  @settings(max_examples=MAX_EXAMPLES, deadline=500,
+  @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
   def test_car_interfaces(self, car_name, data):
@@ -86,9 +86,6 @@ class TestCarInterfaces(unittest.TestCase):
       elif tune.which() == 'torque':
         self.assertTrue(not math.isnan(tune.torque.kf) and tune.torque.kf > 0)
         self.assertTrue(not math.isnan(tune.torque.friction) and tune.torque.friction > 0)
-
-      elif tune.which() == 'indi':
-        self.assertTrue(len(tune.indi.outerLoopGainV))
 
     cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
     # Run car interface

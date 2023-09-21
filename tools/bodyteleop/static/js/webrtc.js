@@ -108,36 +108,46 @@ export function createDummyVideoTrack() {
 export function start(pc, dc) {
   pc = createPeerConnection(pc);
 
-  if (constraints.audio || constraints.video) {
-    // add audio track
-    navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
-      stream.getTracks().forEach(function(track) {
-        pc.addTrack(track, stream);
-        // only audio?
-        // if (track.kind === 'audio'){
-        //     pc.addTrack(track, stream);
-        // }
-      });
-        return negotiate(pc);
-      }, function(err) {
-        alert('Could not acquire media: ' + err);
-      });
+  // add audio track
+  navigator.mediaDevices.enumerateDevices()
+    .then(function(devices) {
+      const hasAudioInput = devices.find((device) => { device.kind === "audioinput" });
+      var modifiedConstraints = {};
+      modifiedConstraints.video = constraints.video;
+      modifiedConstraints.audio = hasAudioInput ? constraints.audio : false;
 
-    // add a fake video?
-    // const dummyVideoTrack = createDummyVideoTrack();
-    // const dummyMediaStream = new MediaStream();
-    // dummyMediaStream.addTrack(dummyVideoTrack);
-    // pc.addTrack(dummyVideoTrack, dummyMediaStream);
+      return Promise.resolve(modifiedConstraints);
+    })
+    .then(function(constraints) {
+      if (constraints.audio || constraints.video) {
+        return navigator.mediaDevices.getUserMedia(constraints);
+      } else{
+        return Promise.resolve(null);
+      }
+    })
+    .then(function(stream) {
+      if (stream) {
+        stream.getTracks().forEach(function(track) {
+          pc.addTrack(track, stream);
+        });
+      }
 
-  } else {
-    negotiate(pc);
-  }
+      return negotiate(pc);
+    })
+    .catch(function(err) {
+      alert('Could not acquire media: ' + err);
+    });
+
+  // add a fake video?
+  // const dummyVideoTrack = createDummyVideoTrack();
+  // const dummyMediaStream = new MediaStream();
+  // dummyMediaStream.addTrack(dummyVideoTrack);
+  // pc.addTrack(dummyVideoTrack, dummyMediaStream);
   
   // setInterval(() => {pc.getStats(null).then((stats) => {stats.forEach((report) => console.log(report))})}, 10000)
   // var video = document.querySelector('video');
   // var print = function (e, f){console.log(e, f);  video.requestVideoFrameCallback(print);};
   // video.requestVideoFrameCallback(print);
-
 
   var parameters = {"ordered": true};
   dc = pc.createDataChannel('data', parameters);

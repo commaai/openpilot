@@ -24,7 +24,7 @@ struct LoggerdState {
 
 void logger_rotate(LoggerdState *s) {
   int segment = -1;
-  int err = logger_next(&s->logger, LOG_ROOT.c_str(), s->segment_path, sizeof(s->segment_path), &segment);
+  int err = logger_next(&s->logger, Path::log_root().c_str(), s->segment_path, sizeof(s->segment_path), &segment);
   assert(err == 0);
   s->rotate_segment = segment;
   s->ready_to_rotate = 0;
@@ -116,6 +116,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
         }
         // if we aren't actually recording, don't create the writer
         if (encoder_info.record) {
+          assert(encoder_info.filename != NULL);
           re.writer.reset(new VideoWriter(s->segment_path,
             encoder_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
             encoder_info.frame_width, encoder_info.frame_height, encoder_info.fps, idx.getType()));

@@ -9,6 +9,7 @@ from parameterized import parameterized_class
 
 from cereal import log, car
 from openpilot.common.basedir import BASEDIR
+from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
@@ -16,13 +17,17 @@ from openpilot.selfdrive.car.gm.values import CAR as GM
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from openpilot.selfdrive.car.hyundai.values import CAR as HYUNDAI
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
+from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.test.openpilotci import get_url
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import Route, SegmentName, RouteName
 
 from panda.tests.libpanda import libpanda_py
+from openpilot.selfdrive.test.helpers import SKIP_ENV_VAR
 
+EventName = car.CarEvent.EventName
 PandaType = log.PandaState.PandaType
+SafetyModel = car.CarParams.SafetyModel
 
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
@@ -62,8 +67,6 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
   return test_cases
 
 
-SKIP_ENV_VAR = "SKIP_LONG_TESTS"
-
 
 class TestCarModelBase(unittest.TestCase):
   car_model: Optional[str] = None
@@ -71,6 +74,7 @@ class TestCarModelBase(unittest.TestCase):
   ci: bool = True
 
   can_msgs: List[capnp.lib.capnp._DynamicStructReader]
+  elm_frame: Optional[int]
 
   @unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Long running test skipped. Unset {SKIP_ENV_VAR} to run")
   @classmethod
@@ -106,6 +110,7 @@ class TestCarModelBase(unittest.TestCase):
 
       car_fw = []
       can_msgs = []
+      cls.elm_frame = None
       fingerprint = defaultdict(dict)
       experimental_long = False
       enabled_toggle = True
@@ -131,6 +136,16 @@ class TestCarModelBase(unittest.TestCase):
             if param.key == 'OpenpilotEnabledToggle':
               enabled_toggle = param.value.strip(b'\x00') == b'1'
 
+        # Log which can frame the panda safety mode left ELM327, for CAN validity checks
+        if msg.which() == 'pandaStates':
+          for ps in msg.pandaStates:
+            if cls.elm_frame is None and ps.safetyModel != SafetyModel.elm327:
+              cls.elm_frame = len(can_msgs)
+
+        elif msg.which() == 'pandaStateDEPRECATED':
+          if cls.elm_frame is None and msg.pandaStateDEPRECATED.safetyModel != SafetyModel.elm327:
+            cls.elm_frame = len(can_msgs)
+
       if len(can_msgs) > int(50 / DT_CTRL):
         break
     else:
@@ -151,8 +166,10 @@ class TestCarModelBase(unittest.TestCase):
     del cls.can_msgs
 
   def setUp(self):
-    self.CI = self.CarInterface(self.CP, self.CarController, self.CarState)
+    self.CI = self.CarInterface(self.CP.copy(), self.CarController, self.CarState)
     assert self.CI
+
+    Params().put_bool("OpenpilotEnabledToggle", self.openpilot_enabled)
 
     # TODO: check safetyModel is in release panda build
     self.safety = libpanda_py.libpanda
@@ -175,8 +192,6 @@ class TestCarModelBase(unittest.TestCase):
         self.assertTrue(len(self.CP.lateralTuning.pid.kpV))
       elif tuning == 'torque':
         self.assertTrue(self.CP.lateralTuning.torque.kf > 0)
-      elif tuning == 'indi':
-        self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
       else:
         raise Exception("unknown tuning")
 
@@ -205,8 +220,10 @@ class TestCarModelBase(unittest.TestCase):
     RI = RadarInterface(self.CP)
     assert RI
 
+    # Since OBD port is multiplexed to bus 1 (commonly radar bus) while fingerprinting,
+    # start parsing CAN messages after we've left ELM mode and can expect CAN traffic
     error_cnt = 0
-    for i, msg in enumerate(self.can_msgs):
+    for i, msg in enumerate(self.can_msgs[self.elm_frame:]):
       rr = RI.update((msg.as_builder().to_bytes(),))
       if rr is not None and i > 50:
         error_cnt += car.RadarData.Error.canError in rr.errors
@@ -239,9 +256,9 @@ class TestCarModelBase(unittest.TestCase):
         if t > 1e6:
           self.assertTrue(self.safety.addr_checks_valid())
 
-          # No need to check relay malfunction on disabled routes (relay closed) or for reasonable fingerprinting time
-          # TODO: detect when relay has flipped to properly check relay malfunction
-          if self.openpilot_enabled and t > 5e6:
+          # No need to check relay malfunction on disabled routes (relay closed),
+          # or before fingerprinting is done (1s of tolerance to exit silent mode)
+          if self.openpilot_enabled and t / 1e4 > (self.elm_frame + 100):
             self.assertFalse(self.safety.get_relay_malfunction())
           else:
             self.safety.set_relay_malfunction(False)
@@ -303,6 +320,8 @@ class TestCarModelBase(unittest.TestCase):
     controls_allowed_prev = False
     CS_prev = car.CarState.new_message()
     checks = defaultdict(lambda: 0)
+    controlsd = Controls(CI=self.CI)
+    controlsd.initialized = True
     for idx, can in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (can.as_builder().to_bytes(), ))
       for msg in filter(lambda m: m.src in range(64), can.can):
@@ -347,7 +366,10 @@ class TestCarModelBase(unittest.TestCase):
           checks['cruiseState'] += CS.cruiseState.enabled != self.safety.get_cruise_engaged_prev()
       else:
         # Check for enable events on rising edge of controls allowed
-        button_enable = any(evt.enable for evt in CS.events)
+        controlsd.update_events(CS)
+        controlsd.CS_prev = CS
+        button_enable = (any(evt.enable for evt in CS.events) and
+                         not any(evt == EventName.pedalPressed for evt in controlsd.events.names))
         mismatch = button_enable != (self.safety.get_controls_allowed() and not controls_allowed_prev)
         checks['controlsAllowed'] += mismatch
         controls_allowed_prev = self.safety.get_controls_allowed()

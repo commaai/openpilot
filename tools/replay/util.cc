@@ -4,6 +4,7 @@
 #include <curl/curl.h>
 #include <openssl/sha.h>
 
+#include <cstdarg>
 #include <cstring>
 #include <cassert>
 #include <cmath>
