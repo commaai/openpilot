@@ -279,38 +279,51 @@ void ChartView::updateSeriesPoints() {
   }
 }
 
-void ChartView::updateSeries(const cabana::Signal *sig, bool clear) {
+static void calc_values(const cabana::Signal *sig, const std::vector<const CanEvent *> &msgs,
+                        std::vector<QPointF> &vals, std::vector<QPointF> &step_vals) {
+  vals.reserve(vals.size() + msgs.capacity());
+  step_vals.reserve(step_vals.size() + msgs.capacity() * 2);
+  const double route_start_time = can->routeStartTime();
+  for (const CanEvent *e : msgs) {
+    double value = 0;
+    if (sig->getValue(e->dat, e->size, &value)) {
+      double ts = e->mono_time / 1e9 - route_start_time;  // seconds
+      vals.emplace_back(ts, value);
+      if (!step_vals.empty()) {
+        step_vals.emplace_back(ts, step_vals.back().y());
+      }
+      step_vals.emplace_back(ts, value);
+    }
+  }
+}
+
+void ChartView::updateSeries(const cabana::Signal *sig, const CanEventsMap *new_events) {
   for (auto &s : sigs) {
     if (!sig || s.sig == sig) {
-      if (clear) {
+      if (!new_events) {
         s.vals.clear();
         s.step_vals.clear();
-        s.last_value_mono_time = 0;
+      }
+      auto events = new_events ? new_events : &can->eventsMap();
+      auto events_it = events->find(s.msg_id);
+      if (events_it == events->end() || events_it->second.empty()) continue;
+
+      const std::vector<const CanEvent *> &msgs = events_it->second;
+      if (s.vals.empty() || (msgs.front()->mono_time / 1e9 - can->routeStartTime()) > s.vals.back().x()) {
+        calc_values(s.sig, msgs, s.vals, s.step_vals);
+      } else {
+        std::vector<QPointF> vals, step_vals;
+        calc_values(s.sig, msgs, vals, step_vals);
+        s.vals.insert(std::lower_bound(s.vals.begin(), s.vals.end(), vals.front().x(), xLessThan),
+                      vals.begin(), vals.end());
+        s.step_vals.insert(std::lower_bound(s.step_vals.begin(), s.step_vals.end(), step_vals.front().x(), xLessThan),
+                           step_vals.begin(), step_vals.end());
       }
 
-      const auto &msgs = can->events(s.msg_id);
-      s.vals.reserve(msgs.capacity());
-      s.step_vals.reserve(msgs.capacity() * 2);
-
-      auto first = std::upper_bound(msgs.cbegin(), msgs.cend(), s.last_value_mono_time, CompareCanEvent());
-      const double route_start_time = can->routeStartTime();
-      for (auto end = msgs.cend(); first != end; ++first) {
-        const CanEvent *e = *first;
-        double value = 0;
-        if (s.sig->getValue(e->dat, e->size, &value)) {
-          double ts = e->mono_time / 1e9 - route_start_time;  // seconds
-          s.vals.append({ts, value});
-          if (!s.step_vals.empty()) {
-            s.step_vals.append({ts, s.step_vals.back().y()});
-          }
-          s.step_vals.append({ts, value});
-          s.last_value_mono_time = e->mono_time;
-        }
-      }
       if (!can->liveStreaming()) {
         s.segment_tree.build(s.vals);
       }
-      s.series->replace(series_type == SeriesType::StepLine ? s.step_vals : s.vals);
+      s.series->replace(QVector<QPointF>::fromStdVector(series_type == SeriesType::StepLine ? s.step_vals : s.vals));
     }
   }
   updateAxisY();
@@ -320,7 +333,7 @@ void ChartView::updateSeries(const cabana::Signal *sig, bool clear) {
 
 // auto zoom on yaxis
 void ChartView::updateAxisY() {
-  if (sigs.isEmpty()) return;
+  if (sigs.empty()) return;
 
   double min = std::numeric_limits<double>::max();
   double max = std::numeric_limits<double>::lowest();
@@ -623,7 +636,7 @@ void ChartView::dropEvent(QDropEvent *event) {
         source_chart->chart()->removeSeries(s.series);
         addSeries(s.series);
       }
-      sigs.append(source_chart->sigs);
+      sigs.insert(sigs.end(), std::move_iterator(source_chart->sigs.begin()), std::move_iterator(source_chart->sigs.end()));
       updateAxisY();
       updateTitle();
       startAnimation();
@@ -842,7 +855,7 @@ void ChartView::setSeriesType(SeriesType type) {
     }
     for (auto &s : sigs) {
       auto series = createSeries(series_type, s.sig->color);
-      series->replace(series_type == SeriesType::StepLine ? s.step_vals : s.vals);
+      series->replace(QVector<QPointF>::fromStdVector(series_type == SeriesType::StepLine ? s.step_vals : s.vals));
       s.series = series;
     }
     updateSeriesPoints();
