@@ -10,6 +10,7 @@ repos:
     -   id: check-ast
         exclude: '^(third_party)/'
     -   id: check-json
+        exclude: '.devcontainer/devcontainer.json' # this supports JSON with comments
     -   id: check-toml
     -   id: check-xml
     -   id: check-yaml

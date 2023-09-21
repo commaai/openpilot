@@ -70,7 +70,10 @@ jobs:
   build:
     strategy:
       matrix:
-        arch: ${{ fromJson( (github.repository == 'commaai/openpilot') && '["x86_64", "aarch64"]' || '["x86_64"]' ) }}
+        arch: ${{ fromJson(
+           ((github.repository == 'commaai/openpilot') &&
+              ((github.event_name != 'pull_request') || 
+               (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && '["x86_64", "aarch64"]' || '["x86_64"]' ) }}
     runs-on: ${{ (matrix.arch == 'aarch64') && 'buildjet-2vcpu-ubuntu-2204-arm' || 'ubuntu-20.04' }}
     steps:
     - uses: actions/checkout@v3
@@ -277,7 +280,9 @@ jobs:
 
   process_replay:
     name: process replay
-    runs-on: ${{ ((github.event.pull_request.head.repo.full_name == 'commaai/openpilot') || (github.repository == 'commaai/openpilot')) && 'buildjet-8vcpu-ubuntu-2004' || 'ubuntu-20.04' }}
+    runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
+                   ((github.event_name != 'pull_request') || 
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'buildjet-8vcpu-ubuntu-2004' || 'ubuntu-20.04' }}
     steps:
     - uses: actions/checkout@v3
       with:
