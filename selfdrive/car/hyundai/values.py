@@ -141,7 +141,7 @@ class Footnote(Enum):
   CANFD = CarFootnote(
     "Requires a comma 3X or <a href=\"https://comma.ai/shop/can-fd-panda-kit\" target=\"_blank\">CAN FD panda kit</a> " +
     "for this <a href=\"https://en.wikipedia.org/wiki/CAN_FD\" target=\"_blank\">CAN FD car</a>.",
-    Column.MODEL, shop_footnote=True)
+    Column.MODEL, shop_footnote=False)
 
 
 @dataclass
@@ -1833,6 +1833,7 @@ FW_VERSIONS = {
       b'\xf1\x00CE__ RDR -----      1.00 1.01 99110-KL000         ',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00CE  MFC  AT EUR LHD 1.00 1.03 99211-KL000 221011',
       b'\xf1\x00CE  MFC  AT USA LHD 1.00 1.04 99211-KL000 221213',
     ],
   },
@@ -1883,6 +1884,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00NQ5 FR_CMR AT USA LHD 1.00 1.00 99211-P1030 662',
       b'\xf1\x00NQ5 FR_CMR AT USA LHD 1.00 1.00 99211-P1040 663',
+      b'\xf1\x00NQ5 FR_CMR AT AUS RHD 1.00 1.00 99211-P1040 663',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NQ5__               1.00 1.02 99110-P1000         ',
@@ -1950,6 +1952,7 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00KA4_ SCC FHCUP      1.00 1.03 99110-R0000         ',
       b'\xf1\x00KA4c SCC FHCUP      1.00 1.01 99110-I4000         ',
+      b'\xf1\x00KA4_ SCC FHCUP      1.00 1.00 99110-R0100         ',
     ],
   },
   CAR.KIA_SORENTO_HEV_4TH_GEN: {

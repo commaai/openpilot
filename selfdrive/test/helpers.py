@@ -69,3 +69,7 @@ def with_processes(processes, init_time=0, ignore_stopped=None):
 
     return wrap
   return wrapper
+
+
+def noop(*args, **kwargs):
+  pass
