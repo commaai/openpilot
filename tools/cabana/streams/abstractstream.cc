@@ -154,10 +154,10 @@ void AbstractStream::updateLastMsgsTo(double sec) {
 }
 
 void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last) {
-  static CanEventsMap new_events_map;
-  static  std::vector<const CanEvent *> new_events;
-  std::for_each(new_events_map.begin(), new_events_map.end(), [](auto &e) { e.second.clear(); });
-  new_events.clear();
+  static CanEventsMap events_map;
+  static  std::vector<const CanEvent *> events;
+  std::for_each(events_map.begin(), events_map.end(), [](auto &e) { e.second.clear(); });
+  events.clear();
 
   for (auto it = first; it != last; ++it) {
     if ((*it)->which == cereal::Event::Which::CAN) {
@@ -171,25 +171,25 @@ void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std
         e->size = dat.size();
         memcpy(e->dat, (uint8_t *)dat.begin(), e->size);
 
-        new_events_map[{.source = e->src, .address = e->address}].push_back(e);
-        new_events.push_back(e);
+        events_map[{.source = e->src, .address = e->address}].push_back(e);
+        events.push_back(e);
       }
     }
   }
 
-  if (!new_events.empty()) {
-    for (auto &[id, new_e] : new_events_map) {
+  if (!events.empty()) {
+    for (auto &[id, new_e] : events_map) {
       if (!new_e.empty()) {
         auto &e = events_[id];
-        auto insert_pos = std::upper_bound(e.cbegin(), e.cend(), new_e.front()->mono_time, CompareCanEvent());
-        e.insert(insert_pos, new_e.cbegin(), new_e.cend());
+        auto insert_pos = std::upper_bound(e.begin(), e.end(), new_e.front()->mono_time, CompareCanEvent());
+        e.insert(insert_pos, new_e.begin(), new_e.end());
       }
     }
-    auto insert_pos = std::upper_bound(all_events_.cbegin(), all_events_.cend(), new_events.front()->mono_time, CompareCanEvent());
-    all_events_.insert(insert_pos, new_events.cbegin(), new_events.cend());
+    auto insert_pos = std::upper_bound(all_events_.begin(), all_events_.end(), events.front()->mono_time, CompareCanEvent());
+    all_events_.insert(insert_pos, events.begin(), events.end());
 
     lastest_event_ts = all_events_.back()->mono_time;
-    emit eventsMerged(new_events_map);
+    emit eventsMerged(events_map);
   }
 }
 

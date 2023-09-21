@@ -284,10 +284,10 @@ static void calc_values(const cabana::Signal *sig, const std::vector<const CanEv
   vals.reserve(vals.size() + msgs.capacity());
   step_vals.reserve(step_vals.size() + msgs.capacity() * 2);
   const double route_start_time = can->routeStartTime();
+  double value = 0;
   for (const CanEvent *e : msgs) {
-    double value = 0;
     if (sig->getValue(e->dat, e->size, &value)) {
-      double ts = e->mono_time / 1e9 - route_start_time;  // seconds
+      const double ts = e->mono_time / 1e9 - route_start_time;  // seconds
       vals.emplace_back(ts, value);
       if (!step_vals.empty()) {
         step_vals.emplace_back(ts, step_vals.back().y());
@@ -309,14 +309,14 @@ void ChartView::updateSeries(const cabana::Signal *sig, const CanEventsMap *new_
       if (events_it == events->end() || events_it->second.empty()) continue;
 
       const std::vector<const CanEvent *> &msgs = events_it->second;
-      if (s.vals.empty() || (msgs.front()->mono_time / 1e9 - can->routeStartTime()) > s.vals.back().x()) {
+      if (s.vals.empty() || (msgs.back()->mono_time / 1e9 - can->routeStartTime()) > s.vals.back().x()) {
         calc_values(s.sig, msgs, s.vals, s.step_vals);
       } else {
         std::vector<QPointF> vals, step_vals;
         calc_values(s.sig, msgs, vals, step_vals);
-        s.vals.insert(std::lower_bound(s.vals.begin(), s.vals.end(), vals.front().x(), xLessThan),
+        s.vals.insert(std::lower_bound(s.vals.begin(), s.vals.end(), vals.back().x(), xLessThan),
                       vals.begin(), vals.end());
-        s.step_vals.insert(std::lower_bound(s.step_vals.begin(), s.step_vals.end(), step_vals.front().x(), xLessThan),
+        s.step_vals.insert(std::lower_bound(s.step_vals.begin(), s.step_vals.end(), step_vals.back().x(), xLessThan),
                            step_vals.begin(), step_vals.end());
       }
 
