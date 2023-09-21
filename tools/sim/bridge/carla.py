@@ -7,9 +7,21 @@ from openpilot.tools.sim.lib.camerad import W, H
 
 
 class CarlaWorld(World):
-  def __init__(self, world, high_quality=False, dual_camera=False, num_selected_spawn_point=0):
+  def __init__(self, client, high_quality, dual_camera, num_selected_spawn_point, town):
     super().__init__(dual_camera)
     import carla
+
+    low_quality_layers = carla.MapLayer(carla.MapLayer.Ground | carla.MapLayer.Walls | carla.MapLayer.Decals)
+
+    layers = carla.MapLayer.All if high_quality else low_quality_layers
+
+    world = client.load_world(town, map_layers=layers)
+
+    settings = world.get_settings()
+    settings.fixed_delta_seconds = 0.01
+    world.apply_settings(settings)
+
+    world.set_weather(carla.WeatherParameters.ClearSunset)
 
     self.world = world
     world_map = world.get_map()
@@ -67,7 +79,7 @@ class CarlaWorld(World):
     self.gps = world.spawn_actor(gps_bp, transform, attach_to=self.vehicle)
     self.params.put_bool("UbloxAvailable", True)
 
-    self.carla_objects = [self.imu, self.gps, self.road_camera, self.road_wide_camera, self.vehicle, ]
+    self.carla_objects = [self.imu, self.gps, self.road_camera, self.road_wide_camera, self.vehicle]
 
   def close(self):
     for s in self.carla_objects:
@@ -128,7 +140,10 @@ class CarlaWorld(World):
     self.world.tick()
 
   def reset(self):
-    self.vehicle.set_postion(self.spawn_point)
+    import carla
+
+    self.vehicle.set_transform(self.spawn_point)
+    self.vehicle.set_target_velocity(carla.Vector3D())
 
 
 class CarlaBridge(SimulatorBridge):
@@ -146,20 +161,5 @@ class CarlaBridge(SimulatorBridge):
     client = carla.Client(self.host, self.port)
     client.set_timeout(5)
 
-    world = client.load_world(self.town)
-
-    settings = world.get_settings()
-    settings.fixed_delta_seconds = 0.01
-    world.apply_settings(settings)
-
-    world.set_weather(carla.WeatherParameters.ClearSunset)
-
-    if not self.high_quality:
-      world.unload_map_layer(carla.MapLayer.Foliage)
-      world.unload_map_layer(carla.MapLayer.Buildings)
-      world.unload_map_layer(carla.MapLayer.ParkedVehicles)
-      world.unload_map_layer(carla.MapLayer.Props)
-      world.unload_map_layer(carla.MapLayer.StreetLights)
-      world.unload_map_layer(carla.MapLayer.Particles)
-
-    return CarlaWorld(world, dual_camera=self.dual_camera, num_selected_spawn_point=self.num_selected_spawn_point)
+    return CarlaWorld(client, high_quality=self.high_quality, dual_camera=self.dual_camera,
+                      num_selected_spawn_point=self.num_selected_spawn_point, town=self.town)
