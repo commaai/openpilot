@@ -217,6 +217,7 @@ FW_VERSIONS = {
   CAR.F_150_MK14: {
     (Ecu.eps, 0x730, None): [
       b'ML3V-14D003-BC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'ML3P-7P470-AL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
     ],
     (Ecu.abs, 0x760, None): [
       b'PL34-2D053-CA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
