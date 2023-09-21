@@ -303,10 +303,10 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
 
 void MessageListModel::fetchData() {
   std::vector<MessageId> new_msgs;
-  new_msgs.reserve(can->last_msgs.size() + dbc_address.size());
+  new_msgs.reserve(can->lastMessages().size() + dbc_address.size());
 
   auto address = dbc_address;
-  for (const auto &[id, m] : can->last_msgs) {
+  for (const auto &[id, m] : can->lastMessages()) {
     if (filter_str.isEmpty() || matchMessage(id, m, filter_str)) {
       new_msgs.push_back(id);
     }
@@ -385,7 +385,7 @@ void MessageView::updateBytesSectionSize() {
   auto delegate = ((MessageBytesDelegate *)itemDelegate());
   int max_bytes = 8;
   if (!delegate->multipleLines()) {
-    for (const auto &[_, m] : can->last_msgs) {
+    for (const auto &[_, m] : can->lastMessages()) {
       max_bytes = std::max(max_bytes, m.dat.size());
     }
   }

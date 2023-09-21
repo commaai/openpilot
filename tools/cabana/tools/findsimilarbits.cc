@@ -23,7 +23,7 @@ FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent, Qt::Wi
   src_bus_combo = new QComboBox(this);
   find_bus_combo = new QComboBox(this);
   for (auto cb : {src_bus_combo, find_bus_combo}) {
-    for (uint8_t bus : can->sources) {
+    for (uint8_t bus : can->sources()) {
       cb->addItem(QString::number(bus), bus);
     }
   }

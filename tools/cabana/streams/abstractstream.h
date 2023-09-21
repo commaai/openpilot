@@ -78,8 +78,10 @@ public:
   virtual double getSpeed() { return 1; }
   virtual bool isPaused() const { return false; }
   virtual void pause(bool pause) {}
-  const std::vector<const CanEvent *> &allEvents() const { return all_events_; }
-  const CanEventsMap &eventsMap() const { return events_; }
+  inline const std::unordered_map<MessageId, CanData> &lastMessages() const { return last_msgs_; }
+  inline const std::vector<const CanEvent *> &allEvents() const { return all_events_; }
+  inline const CanEventsMap &eventsMap() const { return events_; }
+  inline const SourceSet &sources() const { return sources_; }
   const std::vector<const CanEvent *> &events(const MessageId &id) const;
   virtual const std::vector<std::tuple<double, double, TimelineType>> getTimeline() { return {}; }
   size_t suppressHighlighted();
@@ -97,28 +99,26 @@ signals:
   void lastMsgsChanged();
   void qLogLoaded(int segnum, std::shared_ptr<LogReader> qlog);
 
-public:
-  std::unordered_map<MessageId, CanData> last_msgs;
-  SourceSet sources;
-
 protected:
   void mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last);
-  uint64_t lastEventMonoTime() const { return lastest_event_ts; }
+  uint64_t lastEventMonoTime() const { return lastest_event_ts_; }
   void updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size);
   void updateLastMessages();
   void updateMasks();
   void updateLastMsgsTo(double sec);
 
-  uint64_t lastest_event_ts = 0;
+  uint64_t lastest_event_ts_ = 0;
   CanEventsMap events_;
   std::vector<const CanEvent *> all_events_;
-  std::unique_ptr<MonotonicBuffer> event_buffer;
+  std::unique_ptr<MonotonicBuffer> event_buffer_;
+  std::unordered_map<MessageId, CanData> last_msgs_;
+  SourceSet sources_;
 
   // Members accessed in multiple threads. (mutex protected)
-  std::recursive_mutex mutex;
-  std::set<MessageId> new_msgs;
-  std::unordered_map<MessageId, std::vector<uint8_t>> masks;
-  std::unordered_map<MessageId, CanData> all_msgs;
+  std::recursive_mutex mutex_;
+  std::set<MessageId> new_msgs_;
+  std::unordered_map<MessageId, std::vector<uint8_t>> masks_;
+  std::unordered_map<MessageId, CanData> msgs_;
 };
 
 class AbstractOpenStreamWidget : public QWidget {

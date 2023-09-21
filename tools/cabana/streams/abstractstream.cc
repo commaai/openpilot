@@ -16,7 +16,7 @@ StreamNotifier *StreamNotifier::instance() {
 
 AbstractStream::AbstractStream(QObject *parent) : QObject(parent) {
   assert(parent != nullptr);
-  event_buffer = std::make_unique<MonotonicBuffer>(EVENT_NEXT_BUFFER_SIZE);
+  event_buffer_ = std::make_unique<MonotonicBuffer>(EVENT_NEXT_BUFFER_SIZE);
 
   QObject::connect(this, &AbstractStream::lastMsgsChanged, this, &AbstractStream::updateLastMessages, Qt::QueuedConnection);
   QObject::connect(this, &AbstractStream::seekedTo, this, &AbstractStream::updateLastMsgsTo);
@@ -36,18 +36,18 @@ AbstractStream::AbstractStream(QObject *parent) : QObject(parent) {
 }
 
 void AbstractStream::updateMasks() {
-  std::lock_guard lk(mutex);
-  masks.clear();
+  std::lock_guard lk(mutex_);
+  masks_.clear();
   if (!settings.suppress_defined_signals) return;
 
-  for (auto s : sources) {
+  for (auto s : sources_) {
     for (const auto &[address, m] : dbc()->getMessages(s)) {
-      masks[{.source = (uint8_t)s, .address = address}] = m.mask;
+      masks_[{.source = (uint8_t)s, .address = address}] = m.mask;
     }
   }
   // clear bit change counts
-  for (const auto &[id, mask] : masks) {
-    if (auto it = all_msgs.find(id); it != all_msgs.end()) {
+  for (const auto &[id, mask] : masks_) {
+    if (auto it = msgs_.find(id); it != msgs_.end()) {
       auto &last_changes = it->second.last_changes;
       const int size = std::min(mask.size(), last_changes.size());
       for (int i = 0; i < size; ++i) {
@@ -60,16 +60,16 @@ void AbstractStream::updateMasks() {
 }
 
 void AbstractStream::suppressDefinedSignals(bool suppress) {
-  std::lock_guard lk(mutex);
+  std::lock_guard lk(mutex_);
   settings.suppress_defined_signals = suppress;
   updateMasks();
 }
 
 size_t AbstractStream::suppressHighlighted() {
-  std::lock_guard lk(mutex);
+  std::lock_guard lk(mutex_);
   size_t cnt = 0;
   const double cur_ts = currentSec();
-  for (auto &[_, m] : all_msgs) {
+  for (auto &[_, m] : msgs_) {
     for (auto &last_change : m.last_changes) {
       const double dt = cur_ts - last_change.ts;
       if (dt < 2.0) {
@@ -84,37 +84,37 @@ size_t AbstractStream::suppressHighlighted() {
 }
 
 void AbstractStream::clearSuppressed() {
-  std::lock_guard lk(mutex);
-  for (auto &[_, m] : all_msgs) {
+  std::lock_guard lk(mutex_);
+  for (auto &[_, m] : msgs_) {
     std::for_each(m.last_changes.begin(), m.last_changes.end(), [](auto &c) { c.suppressed = false; });
   }
 }
 
 void AbstractStream::updateLastMessages() {
-  auto prev_src_size = sources.size();
-  auto prev_msg_size = last_msgs.size();
+  auto prev_src_size = sources_.size();
+  auto prev_msg_size = last_msgs_.size();
   std::set<MessageId> messages;
   {
-    std::lock_guard lk(mutex);
-    for (const auto &id : new_msgs) {
-      last_msgs[id] = all_msgs[id];
-      sources.insert(id.source);
+    std::lock_guard lk(mutex_);
+    for (const auto &id : new_msgs_) {
+      last_msgs_[id] = msgs_[id];
+      sources_.insert(id.source);
     }
-    messages = std::move(new_msgs);
+    messages = std::move(new_msgs_);
   }
-  if (sources.size() != prev_src_size) {
+  if (sources_.size() != prev_src_size) {
     updateMasks();
-    emit sourcesUpdated(sources);
+    emit sourcesUpdated(sources_);
   }
-  emit msgsReceived(&messages, prev_msg_size != last_msgs.size());
+  emit msgsReceived(&messages, prev_msg_size != last_msgs_.size());
 }
 
 void AbstractStream::updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size) {
-  std::lock_guard lk(mutex);
-  auto mask_it = masks.find(id);
-  std::vector<uint8_t> *mask = mask_it == masks.end() ? nullptr : &mask_it->second;
-  all_msgs[id].compute(id, (const char *)data, size, sec, getSpeed(), mask);
-  new_msgs.insert(id);
+  std::lock_guard lk(mutex_);
+  auto mask_it = masks_.find(id);
+  std::vector<uint8_t> *mask = mask_it == masks_.end() ? nullptr : &mask_it->second;
+  msgs_[id].compute(id, (const char *)data, size, sec, getSpeed(), mask);
+  new_msgs_.insert(id);
 }
 
 const std::vector<const CanEvent *> &AbstractStream::events(const MessageId &id) const {
@@ -125,16 +125,16 @@ const std::vector<const CanEvent *> &AbstractStream::events(const MessageId &id)
 
 const CanData &AbstractStream::lastMessage(const MessageId &id) {
   static CanData empty_data = {};
-  auto it = last_msgs.find(id);
-  return it != last_msgs.end() ? it->second : empty_data;
+  auto it = last_msgs_.find(id);
+  return it != last_msgs_.end() ? it->second : empty_data;
 }
 
 // it is thread safe to update data in updateLastMsgsTo.
 // updateLastMsgsTo is always called in UI thread.
 void AbstractStream::updateLastMsgsTo(double sec) {
-  new_msgs.clear();
-  all_msgs.clear();
-  last_msgs.clear();
+  new_msgs_.clear();
+  msgs_.clear();
+  last_msgs_.clear();
 
   uint64_t last_ts = (sec + routeStartTime()) * 1e9;
   for (auto &[id, ev] : events_) {
@@ -143,12 +143,12 @@ void AbstractStream::updateLastMsgsTo(double sec) {
     });
     if (it != ev.crend()) {
       double ts = (*it)->mono_time / 1e9 - routeStartTime();
-      auto &m = all_msgs[id];
+      auto &m = msgs_[id];
       m.compute(id, (const char *)(*it)->dat, (*it)->size, ts, getSpeed());
       m.count = std::distance(it, ev.crend());
     }
   }
-  last_msgs = all_msgs;
+  last_msgs_ = msgs_;
   // use a timer to prevent recursive calls
   QTimer::singleShot(0, this, [this]() { emit msgsReceived(nullptr, true); });
 }
@@ -164,7 +164,7 @@ void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std
       uint64_t ts = (*it)->mono_time;
       for (const auto &c : (*it)->event.getCan()) {
         auto dat = c.getDat();
-        CanEvent *e = (CanEvent *)event_buffer->allocate(sizeof(CanEvent) + sizeof(uint8_t) * dat.size());
+        CanEvent *e = (CanEvent *)event_buffer_->allocate(sizeof(CanEvent) + sizeof(uint8_t) * dat.size());
         e->src = c.getSrc();
         e->address = c.getAddress();
         e->mono_time = ts;
@@ -188,7 +188,7 @@ void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std
     auto insert_pos = std::upper_bound(all_events_.begin(), all_events_.end(), events.front()->mono_time, CompareCanEvent());
     all_events_.insert(insert_pos, events.begin(), events.end());
 
-    lastest_event_ts = all_events_.back()->mono_time;
+    lastest_event_ts_ = all_events_.back()->mono_time;
     emit eventsMerged(events_map);
   }
 }

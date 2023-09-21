@@ -44,7 +44,7 @@ SignalSelector::SignalSelector(QString title, QWidget *parent) : QDialog(parent)
   auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   main_layout->addWidget(buttonBox, 3, 2);
 
-  for (const auto &[id, _] : can->last_msgs) {
+  for (const auto &[id, _] : can->lastMessages()) {
     if (auto m = dbc()->msg(id)) {
       msgs_combo->addItem(QString("%1 (%2)").arg(m->name).arg(id.toString()), QVariant::fromValue(id));
     }
