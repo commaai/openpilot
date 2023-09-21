@@ -81,8 +81,11 @@ class MetaDriveWorld(World):
     obs, _, terminated, _, info = self.env.step(self.vc)
 
     if terminated:
-      self.env.reset()
-      self.reset_time = time.monotonic()
+      self.reset()
+
+  def reset(self):
+    self.env.reset()
+    self.reset_time = time.monotonic()
 
   def close(self):
     pass

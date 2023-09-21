@@ -110,6 +110,9 @@ class CarlaWorld(World):
   def tick(self):
     self.world.tick()
 
+  def reset(self):
+    pass
+
 
 class CarlaBridge(SimulatorBridge):
   TICKS_PER_FRAME = 5
