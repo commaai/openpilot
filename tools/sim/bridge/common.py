@@ -19,7 +19,7 @@ from openpilot.tools.sim.lib.simulated_sensors import SimulatedSensors
 
 
 def rk_loop(function, hz, exit_event: threading.Event):
-  rk = Ratekeeper(hz)
+  rk = Ratekeeper(hz, None)
   while not exit_event.is_set():
     function()
     rk.keep_time()
@@ -127,6 +127,8 @@ class SimulatorBridge(ABC):
             self.simulator_state.cruise_button = CruiseButtons.MAIN
         elif m[0] == "ignition":
           self.simulator_state.ignition = not self.simulator_state.ignition
+        elif m[0] == "reset":
+          self.world.reset()
         elif m[0] == "quit":
           break
 
