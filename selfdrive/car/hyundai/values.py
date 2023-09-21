@@ -928,12 +928,16 @@ FW_VERSIONS = {
   CAR.SANTA_FE_2022: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00TM__ SCC F-CUP      1.00 1.00 99110-S1500         ',
+      b'\xf1\x8799110S1500\xf1\x00TM__ SCC F-CUP      1.00 1.00 99110-S1500         ',
+      b'\xf1\x00TM__ SCC F-CUP      1.00 1.00 99110-S1500         ',
       b'\xf1\x00TM__ SCC FHCUP      1.00 1.00 99110-S1500         ',
     ],
     (Ecu.abs, 0x7d1, None): [
+      b'\xf1\x00TM ESC   103!\x030 58910-S1MA0',
       b'\xf1\x00TM ESC \x01 102!\x04\x03 58910-S2DA0',
       b'\xf1\x00TM ESC \x02 101 \x08\x04 58910-S2GA0',
       b'\xf1\x00TM ESC \x03 101 \x08\x02 58910-S2DA0',
+      b'\xf1\x8758910-S1MA0\xf1\x00TM ESC   103!\x030 58910-S1MA0',
       b'\xf1\x8758910-S2DA0\xf1\x00TM ESC \x03 101 \x08\x02 58910-S2DA0',
       b'\xf1\x8758910-S2GA0\xf1\x00TM ESC \x02 101 \x08\x04 58910-S2GA0',
       b'\xf1\x8758910-S1DA0\xf1\x00TM ESC \x1e 102 \x08\x08 58910-S1DA0',
@@ -943,6 +947,9 @@ FW_VERSIONS = {
       b'\xf1\x00TM ESC \x02 103"\x07\x08 58910-S2GA0',
     ],
     (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x87           \xf1\x81           ',
+      b'MTM-KM40HF200M01',
+      b'\xf1\x87           \xf1\x89MTM-KM40HF200M01\xf1\x82MTM-KM40HF200M01',
       b'\xf1\x870\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x81HM6M1_0a0_L50',
       b'\xf1\x81HM6M1_0a0_H00',
       b'\xf1\x82TACVN5GMI3XXXH0A',
@@ -956,10 +963,13 @@ FW_VERSIONS = {
       b'\xf1\x8739101-2STN8\xf1\x81HM6M1_0a0_M00',
     ],
     (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00TM  MDPS C 1.00 1.01 56310-S1EB0 4TSDC101',
       b'\xf1\x00TM  MDPS C 1.00 1.02 56370-S2AA0 0B19',
       b'\xf1\x00TM  MDPS C 1.00 1.01 56310-S1AB0 4TSDC101',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00TM  MFC  AT MES LHD 1.00 1.05 99211-S1500 220126',
+      b'\xf1\x00TM  MFC  AT MES LHD 1.00 1.05 99211-S1500 220126',
       b'\xf1\x00TMA MFC  AT MEX LHD 1.00 1.01 99211-S2500 210205',
       b'\xf1\x00TMA MFC  AT USA LHD 1.00 1.00 99211-S2500 200720',
       b'\xf1\x00TM  MFC  AT EUR LHD 1.00 1.03 99211-S1500 210224',
@@ -967,6 +977,8 @@ FW_VERSIONS = {
       b'\xf1\x00TMA MFC  AT USA LHD 1.00 1.03 99211-S2500 220414',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'STM0M35GH2\x00\x00\x00\x00\x00\x00',
+      b'STM0M35GH2\x00\x00\x00\x00\x00\x00',
       b'\xf1\x00HT6WA280BLHT6WAD00A1STM2G25NH2\x00\x00\x00\x00\x00\x00\xf8\xc0\xc3\xaa',
       b'\xf1\x00HT6WA280BLHT6WAD00A1STM4G25NH1\x00\x00\x00\x00\x00\x00\x9cl\x04\xbc',
       b'\xf1\x00T02601BL  T02900A1  VTMPT25XXX900NSA\xf3\xf4Uj',
