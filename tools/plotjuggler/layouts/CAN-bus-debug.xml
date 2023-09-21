@@ -79,14 +79,6 @@
   <plugin ID="DataLoad Rlog"/>
   <plugin ID="Cereal Subscriber"/>
  </Plugins>
- <!-- - - - - - - - - - - - - - - -->
- <previouslyLoaded_Datafiles>
-  <fileInfo filename="../../../../twopilot/tools/plotjuggler/tmpfy80cwmp.rlog" prefix="">
-   <selected_datasources value=""/>
-   <plugin ID="DataLoad Rlog"/>
-  </fileInfo>
- </previouslyLoaded_Datafiles>
- <!-- - - - - - - - - - - - - - - -->
  <customMathEquations/>
  <snippets/>
  <!-- - - - - - - - - - - - - - - -->
