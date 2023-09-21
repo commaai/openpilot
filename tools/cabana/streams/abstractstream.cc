@@ -156,7 +156,7 @@ void AbstractStream::updateLastMsgsTo(double sec) {
 void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last) {
   static CanEventsMap new_events_map;
   static  std::vector<const CanEvent *> new_events;
-  new_events_map.clear();
+  std::for_each(new_events_map.begin(), new_events_map.end(), [](auto &e) { e.second.clear(); });
   new_events.clear();
 
   for (auto it = first; it != last; ++it) {
@@ -177,16 +177,18 @@ void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std
     }
   }
 
-  for (auto &[id, new_e] : new_events_map) {
-    auto &e = events_[id];
-    auto insert_pos = std::upper_bound(e.cbegin(), e.cend(), new_e.front()->mono_time, CompareCanEvent());
-    e.insert(insert_pos, new_e.cbegin(), new_e.cend());
-  }
-
-  lastest_event_ts = all_events_.empty() ? 0 : all_events_.back()->mono_time;
   if (!new_events.empty()) {
+    for (auto &[id, new_e] : new_events_map) {
+      if (!new_e.empty()) {
+        auto &e = events_[id];
+        auto insert_pos = std::upper_bound(e.cbegin(), e.cend(), new_e.front()->mono_time, CompareCanEvent());
+        e.insert(insert_pos, new_e.cbegin(), new_e.cend());
+      }
+    }
     auto insert_pos = std::upper_bound(all_events_.cbegin(), all_events_.cend(), new_events.front()->mono_time, CompareCanEvent());
     all_events_.insert(insert_pos, new_events.cbegin(), new_events.cend());
+
+    lastest_event_ts = all_events_.back()->mono_time;
     emit eventsMerged(new_events_map);
   }
 }

@@ -4,6 +4,7 @@
 #include <utility>
 
 #include <QButtonGroup>
+#include <QFutureSynchronizer>
 #include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QPainter>
@@ -120,7 +121,7 @@ QWidget *VideoWidget::createCameraWidget() {
   setMaximumTime(can->totalSeconds());
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->currentSecond()); });
   QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(utils::formatSeconds(slider->currentSecond())); });
-  QObject::connect(slider, &Slider::updateMaximumTime, this, &VideoWidget::setMaximumTime, Qt::QueuedConnection);
+  QObject::connect(slider, &Slider::updateMaximumTime, this, &VideoWidget::setMaximumTime);
   QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(static_cast<ReplayStream*>(can), &ReplayStream::qLogLoaded, slider, &Slider::parseQLog);
   QObject::connect(can, &AbstractStream::updated, this, &VideoWidget::updateState);
@@ -128,12 +129,15 @@ QWidget *VideoWidget::createCameraWidget() {
 }
 
 void VideoWidget::setMaximumTime(double sec) {
+  if (!zoomed) {
+    end_time_label->setText(utils::formatSeconds(sec));
+    slider->setTimeRange(0, sec);
+  }
   maximum_time = sec;
-  end_time_label->setText(utils::formatSeconds(sec));
-  slider->setTimeRange(0, sec);
 }
 
 void VideoWidget::zoomChanged(double min, double max, bool is_zoomed) {
+  zoomed = is_zoomed;
   if (can->liveStreaming()) {
     skip_to_end_btn->setEnabled(!is_zoomed);
     return;

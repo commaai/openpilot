@@ -95,6 +95,7 @@ signals:
   void msgsReceived(const std::set<MessageId> *new_msgs, bool has_new_ids);
   void sourcesUpdated(const SourceSet &s);
   void lastMsgsChanged();
+  void qLogLoaded(int segnum, std::shared_ptr<LogReader> qlog);
 
 public:
   std::unordered_map<MessageId, CanData> last_msgs;

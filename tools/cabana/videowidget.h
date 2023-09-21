@@ -43,6 +43,7 @@ signals:
   void updateMaximumTime(double);
 
 private:
+  void parseQLog(int segnum, std::shared_ptr<LogReader> qlog);
   void mousePressEvent(QMouseEvent *e) override;
   void mouseMoveEvent(QMouseEvent *e) override;
   bool event(QEvent *event) override;
@@ -75,4 +76,5 @@ protected:
   QToolButton *skip_to_end_btn = nullptr;
   InfoLabel *alert_label;
   Slider *slider;
+  bool zoomed = false;
 };
