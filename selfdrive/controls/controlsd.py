@@ -383,8 +383,8 @@ class Controls:
     if not (self.sm['liveParameters'].sensorValid or self.sm['liveLocationKalman'].sensorsOK):
       if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive sensor inputs
         self.events.add(EventName.sensorDataInvalid)
-    if not self.sm['liveLocationKalman'].inputsOK:
-      self.events.add(EventName.locationdTemporaryError)
+    #if not self.sm['liveLocationKalman'].inputsOK:
+    #  self.events.add(EventName.locationdTemporaryError)
     if not self.sm['liveParameters'].valid and not TESTING_CLOSET and (not SIMULATION or REPLAY):
       self.events.add(EventName.paramsdTemporaryError)
 
