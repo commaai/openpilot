@@ -153,28 +153,22 @@ void AbstractStream::updateLastMsgsTo(double sec) {
   QTimer::singleShot(0, this, [this]() { emit msgsReceived(nullptr, true); });
 }
 
-void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last) {
+const CanEvent *AbstractStream::newEvent(uint64_t mono_time, const cereal::CanData::Reader &c) {
+  auto dat = c.getDat();
+  CanEvent *e = (CanEvent *)event_buffer_->allocate(sizeof(CanEvent) + sizeof(uint8_t) * dat.size());
+  e->src = c.getSrc();
+  e->address = c.getAddress();
+  e->mono_time = mono_time;
+  e->size = dat.size();
+  memcpy(e->dat, (uint8_t *)dat.begin(), e->size);
+  return e;
+}
+
+void AbstractStream::mergeEvents(const std::vector<const CanEvent *> &events) {
   static CanEventsMap events_map;
-  static  std::vector<const CanEvent *> events;
   std::for_each(events_map.begin(), events_map.end(), [](auto &e) { e.second.clear(); });
-  events.clear();
-
-  for (auto it = first; it != last; ++it) {
-    if ((*it)->which == cereal::Event::Which::CAN) {
-      uint64_t ts = (*it)->mono_time;
-      for (const auto &c : (*it)->event.getCan()) {
-        auto dat = c.getDat();
-        CanEvent *e = (CanEvent *)event_buffer_->allocate(sizeof(CanEvent) + sizeof(uint8_t) * dat.size());
-        e->src = c.getSrc();
-        e->address = c.getAddress();
-        e->mono_time = ts;
-        e->size = dat.size();
-        memcpy(e->dat, (uint8_t *)dat.begin(), e->size);
-
-        events_map[{.source = e->src, .address = e->address}].push_back(e);
-        events.push_back(e);
-      }
-    }
+  for (auto e : events) {
+    events_map[{.source = e->src, .address = e->address}].push_back(e);
   }
 
   if (!events.empty()) {

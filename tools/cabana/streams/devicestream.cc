@@ -30,7 +30,7 @@ void DeviceStream::streamThread() {
       continue;
     }
 
-    handleEvent(msg->getData(), msg->getSize());
+    handleEvent(kj::ArrayPtr<capnp::word>((capnp::word*)msg->getData(), msg->getSize() / sizeof(capnp::word)));
     delete msg;
   }
 }

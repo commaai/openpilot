@@ -60,8 +60,7 @@ void SocketCanStream::streamThread() {
       canData[i].setDat(kj::arrayPtr((uint8_t*)payload.data(), payload.size()));
     }
 
-    auto bytes = msg.toBytes();
-    handleEvent((const char*)bytes.begin(), bytes.size());
+    handleEvent(capnp::messageToFlatArray(msg));
   }
 }
 

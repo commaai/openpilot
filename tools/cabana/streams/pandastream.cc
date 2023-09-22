@@ -87,7 +87,6 @@ void PandaStream::streamThread() {
     MessageBuilder msg;
     auto evt = msg.initEvent();
     auto canData = evt.initCan(raw_can_data.size());
-
     for (uint i = 0; i<raw_can_data.size(); i++) {
       canData[i].setAddress(raw_can_data[i].address);
       canData[i].setBusTime(raw_can_data[i].busTime);
@@ -95,8 +94,7 @@ void PandaStream::streamThread() {
       canData[i].setSrc(raw_can_data[i].src);
     }
 
-    auto bytes = msg.toBytes();
-    handleEvent((const char*)bytes.begin(), bytes.size());
+    handleEvent(capnp::messageToFlatArray(msg));
 
     panda->send_heartbeat(false);
   }

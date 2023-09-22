@@ -28,8 +28,18 @@ void ReplayStream::mergeSegments() {
   for (auto &[n, seg] : replay->segments()) {
     if (seg && seg->isLoaded() && !processed_segments.count(n)) {
       processed_segments.insert(n);
-      const auto &events = seg->log->events;
-      mergeEvents(events.cbegin(), events.cend());
+
+      std::vector<const CanEvent *> new_events;
+      new_events.reserve(seg->log->events.size());
+      for (auto it = seg->log->events.cbegin(); it != seg->log->events.cend(); ++it) {
+        if ((*it)->which == cereal::Event::Which::CAN) {
+          const uint64_t ts = (*it)->mono_time;
+          for (const auto &c : (*it)->event.getCan()) {
+            new_events.push_back(newEvent(ts, c));
+          }
+        }
+      }
+      mergeEvents(new_events);
     }
   }
 }

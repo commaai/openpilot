@@ -101,7 +101,8 @@ signals:
   void qLogLoaded(int segnum, std::shared_ptr<LogReader> qlog);
 
 protected:
-  void mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last);
+  void mergeEvents(const std::vector<const CanEvent *> &events);
+  const CanEvent *newEvent(uint64_t mono_time, const cereal::CanData::Reader &c);
   uint64_t lastEventMonoTime() const { return lastest_event_ts_; }
   void updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size);
   void updateLastMessages();
