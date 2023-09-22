@@ -149,6 +149,10 @@ void MessagesWidget::updateSuppressedButtons(size_t n) {
 }
 
 // MessageListModel
+MessageListModel::MessageListModel(QObject *parent) : QAbstractTableModel(parent) {
+  sort_timer.setSingleShot(true);
+  sort_timer.callOnTimeout(this, &MessageListModel::fetchData);
+}
 
 QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, int role) const {
   if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
@@ -245,6 +249,7 @@ void MessageListModel::sortMessages(std::vector<MessageId> &new_msgs) {
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   }
+  last_sort_ts = millis_since_boot();
 }
 
 static bool parseRange(const QString &filter, uint32_t value, int base = 10) {
@@ -331,9 +336,17 @@ void MessageListModel::fetchData() {
 }
 
 void MessageListModel::msgsReceived(const std::set<MessageId> *new_msgs, bool has_new_ids) {
-  if (has_new_ids || filter_str.contains(Column::FREQ) || filter_str.contains(Column::COUNT) || filter_str.contains(Column::DATA)) {
-    fetchData();
+  if (has_new_ids) {
+    sort_timer.start(110);
+  } else if (!filter_str.empty()) {
+    bool need_sort = (filter_str.contains(Column::FREQ) || filter_str.contains(Column::COUNT) ||
+                      filter_str.contains(Column::DATA));
+    if (need_sort && ((millis_since_boot() - last_sort_ts) >= 1000)) {
+      fetchData();
+      return;
+    }
   }
+
   for (int i = 0; i < msgs.size(); ++i) {
     if (!new_msgs || new_msgs->count(msgs[i])) {
       for (int col = Column::FREQ; col < columnCount(); ++col)

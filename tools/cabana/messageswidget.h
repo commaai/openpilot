@@ -13,6 +13,7 @@
 #include <QLineEdit>
 #include <QMenu>
 #include <QSet>
+#include <QTimer>
 #include <QTreeView>
 
 #include "tools/cabana/dbc/dbcmanager.h"
@@ -32,7 +33,7 @@ public:
     DATA,
   };
 
-  MessageListModel(QObject *parent) : QAbstractTableModel(parent) {}
+  MessageListModel(QObject *parent);
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
   int columnCount(const QModelIndex &parent = QModelIndex()) const override { return Column::DATA + 1; }
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
@@ -52,6 +53,8 @@ private:
   QMap<int, QString> filter_str;
   QSet<uint32_t> dbc_address;
   int sort_column = 0;
+  QTimer sort_timer;
+  double last_sort_ts = 0;
   Qt::SortOrder sort_order = Qt::AscendingOrder;
 };
 
