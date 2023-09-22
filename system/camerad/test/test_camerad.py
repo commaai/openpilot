@@ -46,7 +46,7 @@ class TestCamerad(unittest.TestCase):
       expected_frames = SERVICE_LIST[cam].frequency * TEST_TIMESPAN
       assert expected_frames*0.95 < len(msgs) < expected_frames*1.05, f"unexpected frame count {cam}: {expected_frames=}, got {len(msgs)}"
 
-      dts = np.abs(np.diff([getattr(m, m.which()).timestampSof/1e6 for m in msgs]) - 1000 / SERVICE_LIST[cam].frequency)
+      dts = np.abs(np.diff([getattr(m, m.which()).timestampSof/1e6 for m in msgs]) - 1000/SERVICE_LIST[cam].frequency)
       assert (dts < FRAME_DELTA_TOLERANCE[cls.sensor_type]).all(), f"{cam} dts(ms) out of spec: max diff {dts.max()}, 99 percentile {np.percentile(dts, 99)}"
 
       for m in msgs:

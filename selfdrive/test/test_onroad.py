@@ -179,7 +179,7 @@ class TestOnroad(unittest.TestCase):
         continue
 
       with self.subTest(service=s):
-        assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency * 55)
+        assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*55)
 
   def test_cloudlog_size(self):
     msgs = [m for m in self.lr if m.which() == 'logMessage']
