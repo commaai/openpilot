@@ -87,6 +87,7 @@ class ModelState:
 
 
 def main():
+  cloudlog.bind(daemon="selfdrive.modeld.modeld")
   setproctitle("selfdrive.modeld.modeld")
   config_realtime_process(7, 54)
 
