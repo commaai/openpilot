@@ -184,7 +184,6 @@ void AbstractStream::mergeEvents(const std::vector<const CanEvent *> &events) {
     auto insert_pos = std::upper_bound(all_events_.begin(), all_events_.end(), events.front()->mono_time, CompareCanEvent());
     all_events_.insert(insert_pos, events.begin(), events.end());
 
-    lastest_event_ts_ = all_events_.back()->mono_time;
     emit eventsMerged(events_map);
   }
 }

@@ -81,6 +81,7 @@ void LiveStream::timerEvent(QTimerEvent *event) {
     }
     if (!all_events_.empty()) {
       begin_event_ts = all_events_.front()->mono_time;
+      lastest_event_ts_ = all_events_.back()->mono_time;
       updateEvents();
       return;
     }
@@ -121,8 +122,8 @@ void LiveStream::updateEvents() {
 void LiveStream::seekTo(double sec) {
   sec = std::max(0.0, sec);
   first_update_ts = nanos_since_boot();
-  current_event_ts = first_event_ts = std::min<uint64_t>(sec * 1e9 + begin_event_ts, lastEventMonoTime());
-  post_last_event = (first_event_ts == lastEventMonoTime());
+  current_event_ts = first_event_ts = std::min<uint64_t>(sec * 1e9 + begin_event_ts, lastest_event_ts_);
+  post_last_event = (first_event_ts == lastest_event_ts_);
   emit seekedTo((current_event_ts - begin_event_ts) / 1e9);
 }
 

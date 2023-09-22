@@ -71,7 +71,7 @@ public:
   virtual QString carFingerprint() const { return ""; }
   virtual double routeStartTime() const { return 0; }
   virtual double currentSec() const = 0;
-  virtual double totalSeconds() const { return lastEventMonoTime() / 1e9 - routeStartTime(); }
+  virtual double totalSeconds() const = 0;
   inline double toSeconds(uint64_t mono_time) const { return mono_time / 1e9 - routeStartTime(); }
   inline uint64_t toMonoTime(double sec) const { return (sec + routeStartTime()) * 1e9; }
   const CanData &lastMessage(const MessageId &id);
@@ -105,13 +105,11 @@ signals:
 protected:
   void mergeEvents(const std::vector<const CanEvent *> &events);
   const CanEvent *newEvent(uint64_t mono_time, const cereal::CanData::Reader &c);
-  uint64_t lastEventMonoTime() const { return lastest_event_ts_; }
   void updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size);
   void updateLastMessages();
   void updateMasks();
   void updateLastMsgsTo(double sec);
 
-  uint64_t lastest_event_ts_ = 0;
   CanEventsMap events_;
   std::vector<const CanEvent *> all_events_;
   std::unique_ptr<MonotonicBuffer> event_buffer_;
@@ -142,6 +140,7 @@ public:
   QString routeName() const override { return tr("No Stream"); }
   void start() override { emit streamStarted(); }
   double currentSec() const override { return 0; }
+  double totalSeconds() const override { return 0; }
 };
 
 class StreamNotifier : public QObject {

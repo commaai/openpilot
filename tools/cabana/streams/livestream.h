@@ -16,6 +16,7 @@ public:
   void start() override;
   inline double routeStartTime() const override { return begin_event_ts / 1e9; }
   inline double currentSec() const override { return (current_event_ts - begin_event_ts) / 1e9; }
+  inline double totalSeconds() const override { return (lastest_event_ts_ - begin_event_ts) / 1e9; }
   void setSpeed(float speed) override { speed_ = speed; }
   double getSpeed() override { return speed_; }
   bool isPaused() const override { return paused_; }
@@ -40,6 +41,7 @@ private:
 
   uint64_t begin_event_ts = 0;
   uint64_t current_event_ts = 0;
+  uint64_t lastest_event_ts_ = 0;
   uint64_t first_event_ts = 0;
   uint64_t first_update_ts = 0;
   bool post_last_event = true;
