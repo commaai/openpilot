@@ -166,22 +166,21 @@ Slider::Slider(QWidget *parent) : thumbnail_label(parent), QSlider(Qt::Horizonta
 }
 
 AlertInfo Slider::alertInfo(double seconds) {
-  uint64_t mono_time = (seconds + can->routeStartTime()) * 1e9;
+  uint64_t mono_time = can->toMonoTime(seconds);
   auto alert_it = alerts.lower_bound(mono_time);
   bool has_alert = (alert_it != alerts.end()) && ((alert_it->first - mono_time) <= 1e8);
   return has_alert ? alert_it->second : AlertInfo{};
 }
 
 QPixmap Slider::thumbnail(double seconds)  {
-  uint64_t mono_time = (seconds + can->routeStartTime()) * 1e9;
-  auto it = thumbnails.lowerBound(mono_time);
+  auto it = thumbnails.lowerBound(can->toMonoTime(seconds));
   return it != thumbnails.end() ? it.value() : QPixmap();
 }
 
 void Slider::parseQLog(int segnum, std::shared_ptr<LogReader> qlog) {
  const auto &segments = qobject_cast<ReplayStream *>(can)->route()->segments();
   if (segments.size() > 0 && segnum == segments.rbegin()->first && !qlog->events.empty()) {
-    emit updateMaximumTime(qlog->events.back()->mono_time / 1e9 - can->routeStartTime());
+    emit updateMaximumTime(can->toSeconds(qlog->events.back()->mono_time));
   }
 
   std::mutex mutex;

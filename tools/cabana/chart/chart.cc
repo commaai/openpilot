@@ -308,7 +308,7 @@ void ChartView::updateSeries(const cabana::Signal *sig, const CanEventsMap *new_
       auto it = events->find(s.msg_id);
       if (it == events->end() || it->second.empty()) continue;
 
-      if (s.vals.empty() || (it->second.front()->mono_time / 1e9 - can->routeStartTime()) > s.vals.back().x()) {
+      if (s.vals.empty() || (can->toSeconds(it->second.front()->mono_time) > s.vals.back().x())) {
         calc_values(s.sig, it->second, s.vals, s.step_vals);
       } else {
         std::vector<QPointF> vals, step_vals;

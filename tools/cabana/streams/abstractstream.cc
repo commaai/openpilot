@@ -139,15 +139,14 @@ void AbstractStream::updateLastMsgsTo(double sec) {
   msgs_.clear();
   last_msgs_.clear();
 
-  uint64_t last_ts = (sec + routeStartTime()) * 1e9;
+  uint64_t last_ts = toMonoTime(sec);
   for (auto &[id, ev] : events_) {
     auto it = std::lower_bound(ev.crbegin(), ev.crend(), last_ts, [](auto e, uint64_t ts) {
       return e->mono_time > ts;
     });
     if (it != ev.crend()) {
-      double ts = (*it)->mono_time / 1e9 - routeStartTime();
       auto &m = msgs_[id];
-      m.compute(id, (const char *)(*it)->dat, (*it)->size, ts, getSpeed());
+      m.compute(id, (const char *)(*it)->dat, (*it)->size, toSeconds((*it)->mono_time), getSpeed());
       m.count = std::distance(it, ev.crend());
     }
   }
@@ -211,7 +210,7 @@ inline QColor blend(const QColor &a, const QColor &b) {
 // Calculate the frequency of the past minute.
 double calc_freq(const MessageId &msg_id, double current_sec) {
   const auto &events = can->events(msg_id);
-  uint64_t cur_mono_time = (can->routeStartTime() + current_sec) * 1e9;
+  uint64_t cur_mono_time = can->toMonoTime(current_sec);
   uint64_t first_mono_time = std::max<int64_t>(0, cur_mono_time - 59 * 1e9);
   auto first = std::lower_bound(events.begin(), events.end(), first_mono_time, CompareCanEvent());
   auto second = std::lower_bound(first, events.end(), cur_mono_time, CompareCanEvent());

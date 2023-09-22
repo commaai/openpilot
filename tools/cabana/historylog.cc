@@ -14,7 +14,7 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
   const auto &m = messages[index.row()];
   if (role == Qt::DisplayRole) {
     if (index.column() == 0) {
-      return QString::number((m.mono_time / (double)1e9) - can->routeStartTime(), 'f', 2);
+      return QString::number(can->toSeconds(m.mono_time), 'f', 2);
     }
     int i = index.column() - 1;
     return show_signals ? QString::number(m.sig_values[i], 'f', sigs[i]->precision) : toHex(m.data);
@@ -97,7 +97,7 @@ void HistoryLogModel::setFilter(int sig_idx, const QString &value, std::function
 }
 
 void HistoryLogModel::updateState() {
-  uint64_t current_time = (can->lastMessage(msg_id).ts + can->routeStartTime()) * 1e9 + 1;
+  uint64_t current_time = can->toMonoTime(can->lastMessage(msg_id).ts) + 1;
   auto new_msgs = dynamic_mode ? fetchData(current_time, last_fetch_time) : fetchData(0);
   if (!new_msgs.empty()) {
     beginInsertRows({}, 0, new_msgs.size() - 1);

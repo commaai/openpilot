@@ -72,6 +72,8 @@ public:
   virtual double routeStartTime() const { return 0; }
   virtual double currentSec() const = 0;
   virtual double totalSeconds() const { return lastEventMonoTime() / 1e9 - routeStartTime(); }
+  inline double toSeconds(uint64_t mono_time) const { return mono_time / 1e9 - routeStartTime(); }
+  inline uint64_t toMonoTime(double sec) const { return (sec + routeStartTime()) * 1e9; }
   const CanData &lastMessage(const MessageId &id);
   virtual VisionStreamType visionStreamType() const { return VISION_STREAM_ROAD; }
   virtual const Route *route() const { return nullptr; }

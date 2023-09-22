@@ -63,7 +63,7 @@ bool ReplayStream::eventFilter(const Event *event) {
   static double prev_update_ts = 0;
   double sec = 0;
   if (event->which == cereal::Event::Which::CAN) {
-    sec = event->mono_time / 1e9 - routeStartTime();
+    sec = toSeconds(event->mono_time);
     for (const auto &c : event->event.getCan()) {
       MessageId id{.source = c.getSrc(), .address = c.getAddress()};
       const auto dat = c.getDat();
