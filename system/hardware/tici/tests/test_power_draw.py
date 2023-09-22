@@ -8,7 +8,7 @@ from tabulate import tabulate
 from typing import List
 
 import cereal.messaging as messaging
-from cereal.services import service_list
+from cereal.services import SERVICE_LIST
 from openpilot.system.hardware import HARDWARE, TICI
 from openpilot.system.hardware.tici.power_monitor import get_power
 from openpilot.selfdrive.manager.process_config import managed_processes
@@ -91,7 +91,7 @@ class TestPowerDraw(unittest.TestCase):
       cur = used[proc.name]
       expected = proc.power
       msgs_received = sum(msg_counts[msg] for msg in proc.msgs)
-      msgs_expected = int(sum(SAMPLE_TIME * service_list[msg].frequency for msg in proc.msgs))
+      msgs_expected = int(sum(SAMPLE_TIME * SERVICE_LIST[msg].frequency for msg in proc.msgs))
       tab.append([proc.name, round(expected, 2), round(cur, 2), msgs_expected, msgs_received])
       with self.subTest(proc=proc.name):
         self.assertTrue(math.isclose(cur, expected, rel_tol=proc.rtol, abs_tol=proc.atol))
