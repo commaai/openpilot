@@ -61,17 +61,19 @@ void ReplayStream::start() {
 
 bool ReplayStream::eventFilter(const Event *event) {
   static double prev_update_ts = 0;
+  double sec = 0;
   if (event->which == cereal::Event::Which::CAN) {
-    double current_sec = event->mono_time / 1e9 - routeStartTime();
+    sec = event->mono_time / 1e9 - routeStartTime();
     for (const auto &c : event->event.getCan()) {
       MessageId id{.source = c.getSrc(), .address = c.getAddress()};
       const auto dat = c.getDat();
-      updateEvent(id, current_sec, (const uint8_t*)dat.begin(), dat.size());
+      updateEvent(id, sec, (const uint8_t*)dat.begin(), dat.size());
     }
   }
 
   double ts = millis_since_boot();
-  if ((ts - prev_update_ts) > (1000.0 / settings.fps)) {
+  if (sec > 0 && (ts - prev_update_ts) > (1000.0 / settings.fps)) {
+    current_sec_ = sec;
     emit lastMsgsChanged();
     prev_update_ts = ts;
   }
