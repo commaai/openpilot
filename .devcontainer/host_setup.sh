@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-# pull base image
-selfdrive/test/docker_build.sh base
-
 # setup .host dir
 mkdir -p .devcontainer/.host
 
