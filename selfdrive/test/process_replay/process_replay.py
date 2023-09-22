@@ -206,7 +206,7 @@ class ProcessContainer:
 
     device_type = next(msg.initData.deviceType for msg in all_msgs if msg.which() == "initData")
 
-    vipc_server = VisionIpcServer("camerad")
+    vipc_server = VisionIpcServer("navd")
     streams_metas = available_streams(all_msgs)
     for meta in streams_metas:
       if meta.camera_state in self.cfg.vision_pubs:
@@ -588,6 +588,32 @@ CONFIGS = [
     main_pub_drained=False,
     vision_pubs=["driverCameraState"],
     ignore_alive_pubs=["driverCameraState"],
+  ),
+  ProcessConfig(
+    proc_name="mapsd",
+    pubs=["liveLocationKalman", "navRoute"],
+    subs=["navThumbnail", "mapRenderState"],
+    ignore=[],
+    should_recv_callback=None,
+    tolerance=NUMPY_TOLERANCE,
+    processing_time=0.020,
+    main_pub=None,
+    main_pub_drained=False,
+    vision_pubs=[],
+    ignore_alive_pubs=[],
+  ),
+  ProcessConfig(
+    proc_name="navmodeld",
+    pubs=["navInstruction"],
+    subs=["navModel"],
+    ignore=[],
+    should_recv_callback=MessageBasedRcvCallback('mapRenderState'),
+    tolerance=NUMPY_TOLERANCE,
+    processing_time=0.020,
+    main_pub=vipc_get_endpoint_name("mapsd", meta_from_camera_state("mapRenderState").stream),
+    main_pub_drained=False,
+    vision_pubs=["mapRenderState"],
+    ignore_alive_pubs=["mapRenderState"],
   ),
 ]
 

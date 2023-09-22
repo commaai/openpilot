@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 import os
 import sys
-import time
+import numpy as np
 from collections import defaultdict
 from typing import Any
 
-import cereal.messaging as messaging
 from openpilot.common.params import Params
 from openpilot.system.hardware import PC
-from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.test.openpilotci import BASE_URL, get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs
 from openpilot.selfdrive.test.process_replay.test_processes import format_diff
@@ -25,6 +23,17 @@ NAV_FRAMES = 50
 
 NO_NAV = "NO_NAV" in os.environ
 SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
+
+class FakeFrameReader:
+  def __init__(self, frames):
+    self.frames = frames
+
+  def __len__(self):
+    return len(self.frames)
+
+  def get(self, i, count=1, pix_fmt=None):
+    assert count == 1
+    return [np.array(self.frames[i])]
 
 
 def get_log_fn(ref_commit, test_route):
@@ -50,57 +59,26 @@ def trim_logs_to_max_frames(logs, max_frames, frs_types, include_all_types):
   return all_msgs
 
 
-def nav_model_replay(lr):
-  sm = messaging.SubMaster(['navModel', 'navThumbnail', 'mapRenderState'])
-  pm = messaging.PubMaster(['liveLocationKalman', 'navRoute'])
-
-  nav = [m for m in lr if m.which() == 'navRoute']
+def mapsd_replay(lr):
+  route = [m for m in lr if m.which() == 'navRoute']
   llk = [m for m in lr if m.which() == 'liveLocationKalman']
-  assert len(nav) > 0 and len(llk) >= NAV_FRAMES and nav[0].logMonoTime < llk[-NAV_FRAMES].logMonoTime
+  assert len(route) > 0 and len(llk) >= NAV_FRAMES and route[0].logMonoTime < llk[-NAV_FRAMES].logMonoTime
 
-  log_msgs = []
-  try:
-    assert "MAPBOX_TOKEN" in os.environ
-    os.environ['MAP_RENDER_TEST_MODE'] = '1'
-    Params().put_bool('DmModelInitialized', True)
-    managed_processes['mapsd'].start()
-    managed_processes['navmodeld'].start()
+  mapsd = get_process_config("mapsd")
 
-    # setup position and route
-    for _ in range(10):
-      for s in (llk[-NAV_FRAMES], nav[0]):
-        pm.send(s.which(), s.as_builder().to_bytes())
-      sm.update(1000)
-      if sm.updated['navModel']:
-        break
-      time.sleep(1)
+  assert "MAPBOX_TOKEN" in os.environ
+  os.environ['MAP_RENDER_TEST_MODE'] = '1'
+  return replay_process(mapsd, route + llk, {})
 
-    if not sm.updated['navModel']:
-      raise Exception("no navmodeld outputs, failed to initialize")
 
-    # drain
-    time.sleep(2)
-    sm.update(0)
+def nav_model_replay(lr, thumbnails):
+  fr = FakeFrameReader([msg.navThumbnail.thumbnail for msg in thumbnails])
+  navmodeld_logs = [msg for msg in lr if msg.which() in ["mapRenderState", "navInstruction", "initData"]]
 
-    # run replay
-    for n in range(len(llk) - NAV_FRAMES, len(llk)):
-      pm.send(llk[n].which(), llk[n].as_builder().to_bytes())
-      m = messaging.recv_one(sm.sock['navThumbnail'])
-      assert m is not None, f"no navThumbnail, frame={n}"
-      log_msgs.append(m)
+  navmodeld = get_process_config("navmodeld")
 
-      m = messaging.recv_one(sm.sock['mapRenderState'])
-      assert m is not None, f"no mapRenderState, frame={n}"
-      log_msgs.append(m)
-
-      m = messaging.recv_one(sm.sock['navModel'])
-      assert m is not None, f"no navModel response, frame={n}"
-      log_msgs.append(m)
-  finally:
-    managed_processes['mapsd'].stop()
-    managed_processes['navmodeld'].stop()
-
-  return log_msgs
+  Params().put_bool('DmModelInitialized', True)
+  return replay_process(navmodeld, navmodeld_logs, {'mapRenderState': fr})
 
 
 def model_replay(lr, frs):
@@ -163,9 +141,13 @@ if __name__ == "__main__":
     os.environ['MAPS_HOST'] = BASE_URL.rstrip('/')
 
   # run replays
-  log_msgs = model_replay(lr, frs)
-  if not NO_NAV:
-    log_msgs += nav_model_replay(lr)
+  log_msgs = mapsd_replay(lr)
+  lr = [msg for msg in log_msgs if msg.which() == 'mapRenderState'] + lr
+
+  log_msgs += nav_model_replay(lr, [msg for msg in log_msgs if msg.which() == 'navThumbnail'])
+  # log_msgs = model_replay(lr, frs)
+  # if not NO_NAV:
+  #   log_msgs += nav_model_replay(lr)
 
   # get diff
   failed = False
