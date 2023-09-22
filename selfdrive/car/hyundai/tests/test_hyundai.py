@@ -37,7 +37,10 @@ NO_DATES_PLATFORMS = {
 
 
 class TestHyundaiFingerprint(unittest.TestCase):
-  def test_canfd_not_in_can_features(self):
+  def test_can_features(self):
+    # TODO: Test no EV/HEV in any gear lists (should use ELECT_GEAR)
+
+    # Test CAN FD car not in CAN feature lists
     can_specific_feature_list = set.union(*CAN_GEARS.values(), *CHECKSUM.values(), LEGACY_SAFETY_MODE_CAR, UNSUPPORTED_LONGITUDINAL_CAR, CAMERA_SCC_CAR)
     for car_model in CANFD_CAR:
       self.assertNotIn(car_model, can_specific_feature_list, "CAN FD car unexpectedly found in a CAN feature list")
