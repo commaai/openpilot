@@ -59,6 +59,11 @@ void ReplayStream::start() {
   replay->start();
 }
 
+void ReplayStream::seekTo(double ts) {
+  current_sec_ = ts;
+  replay->seekTo(ts, false);
+}
+
 bool ReplayStream::eventFilter(const Event *event) {
   static double prev_update_ts = 0;
   double sec = 0;

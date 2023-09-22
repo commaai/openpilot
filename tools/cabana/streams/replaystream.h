@@ -16,7 +16,7 @@ public:
   void start() override;
   bool loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags = REPLAY_FLAG_NONE);
   bool eventFilter(const Event *event);
-  void seekTo(double ts) override { replay->seekTo(ts, false); }
+  void seekTo(double ts) override;
   inline QString routeName() const override { return replay->route()->name(); }
   inline QString carFingerprint() const override { return replay->carFingerprint().c_str(); }
   double totalSeconds() const override { return replay->totalSeconds(); }
@@ -36,6 +36,7 @@ signals:
 
 private:
   void mergeSegments();
+
   std::unique_ptr<Replay> replay = nullptr;
   std::set<int> processed_segments;
   std::unique_ptr<OpenpilotPrefix> op_prefix;
