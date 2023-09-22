@@ -64,8 +64,8 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    if candidate == CAR.AZERA_6TH_GEN:
-      ret.mass = 1540.  # average
+    if candidate in (CAR.AZERA_6TH_GEN, CAR.AZERA_HEV_6TH_GEN):
+      ret.mass = 1600. if candidate == CAR.AZERA_6TH_GEN else 1675.  # ICE is ~average of 2.5L and 3.5L
       ret.wheelbase = 2.885
       ret.steerRatio = 14.5
     elif candidate in (CAR.SANTA_FE, CAR.SANTA_FE_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022):
