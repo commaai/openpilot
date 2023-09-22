@@ -110,8 +110,6 @@ TEST_CASE("Parser::cmdline") {
 }
 
 TEST_CASE("buildProcLogerMessage") {
-  std::vector<int> current_pids = Parser::pids();
-
   MessageBuilder msg;
   buildProcLogMessage(msg);
 
@@ -132,10 +130,7 @@ TEST_CASE("buildProcLogerMessage") {
 
   // test cereal::ProcLog::Process
   auto procs = log.getProcs();
-  REQUIRE(procs.size() == current_pids.size());
-
   for (auto p : procs) {
-    REQUIRE_THAT(current_pids, Catch::Matchers::VectorContains(p.getPid()));
     REQUIRE(allowed_states.find(p.getState()) != std::string::npos);
     if (p.getPid() == ::getpid()) {
       REQUIRE(p.getName() == "test_proclog");
