@@ -102,11 +102,14 @@ void AbstractStream::updateLastMessages() {
     }
     messages = std::move(new_msgs_);
   }
-  if (sources_.size() != prev_src_size) {
-    updateMasks();
-    emit sourcesUpdated(sources_);
+
+  if (!messages.empty()) {
+    if (sources_.size() != prev_src_size) {
+      updateMasks();
+      emit sourcesUpdated(sources_);
+    }
+    emit msgsReceived(&messages, prev_msg_size != last_msgs_.size());
   }
-  emit msgsReceived(&messages, prev_msg_size != last_msgs_.size());
 }
 
 void AbstractStream::updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size) {
