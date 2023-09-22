@@ -219,7 +219,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Kia Forte 2023", car_parts=CarParts.common([CarHarness.hyundai_e])),
   ],
   CAR.KIA_K5_2021: HyundaiCarInfo("Kia K5 2021-22", car_parts=CarParts.common([CarHarness.hyundai_a])),
-  CAR.KIA_K5_HEV_2020: HyundaiCarInfo("Kia K5 Hybrid 2020", car_parts=CarParts.common([CarHarness.hyundai_a])),
+  CAR.KIA_K5_HEV_2020: HyundaiCarInfo("Kia K5 Hybrid 2020-22", car_parts=CarParts.common([CarHarness.hyundai_a])),
   CAR.KIA_K8_HEV_1ST_GEN: HyundaiCarInfo("Kia K8 Hybrid (with HDA II) 2023", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_q])),
   CAR.KIA_NIRO_EV: [
     HyundaiCarInfo("Kia Niro EV 2019", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", car_parts=CarParts.common([CarHarness.hyundai_h])),
@@ -1392,15 +1392,18 @@ FW_VERSIONS = {
     ],
     (Ecu.eps, 0x7D4, None): [
       b'\xf1\x00DL3 MDPS C 1.00 1.02 56310-L7000 4DLHC102',
+      b'\xf1\x00DL3 MDPS C 1.00 1.02 56310-L7220 4DLHC102',
     ],
     (Ecu.fwdCamera, 0x7C4, None): [
       b'\xf1\x00DL3HMFC  AT KOR LHD 1.00 1.02 99210-L2000 200309',
+      b'\xf1\x00DL3HMFC  AT KOR LHD 1.00 1.04 99210-L2000 210527',
     ],
     (Ecu.engine, 0x7E0, None): [
       b'\xf1\x87391162JLA0',
     ],
     (Ecu.transmission, 0x7E1, None): [
       b'\xf1\x00PSBG2323  E08\x00\x00\x00\x00\x00\x00\x00TDL2H20KA2\xe3\xc6cz',
+      b'\xf1\x00PSBG2333  E16\x00\x00\x00\x00\x00\x00\x00TDL2H20KA5T\xf2\xc9\xc2',
     ],
   },
   CAR.KONA_EV: {
