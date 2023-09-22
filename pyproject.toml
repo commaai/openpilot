@@ -127,7 +127,7 @@ carla = { url = "https://github.com/commaai/carla/releases/download/3.11.4/carla
 coverage = "*"
 dictdiffer = "*"
 ft4222 = "*"
-hypothesis = "==6.46.7"
+hypothesis = "~6.47"
 inputs = "*"
 lru-dict = "*"
 markdown-it-py = "*"
