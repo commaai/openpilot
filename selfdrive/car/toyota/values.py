@@ -236,8 +236,9 @@ STATIC_DSU_MSGS = [
 ]
 
 
-def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, bytes]]:
-  codes = set()  # (Optional[part]-platform-major_version, minor_version)
+def get_platform_codes(fw_versions: List[bytes]) -> Dict[bytes, Set[bytes]]:
+  # Returns minor versions in a dict so comparisons can be made within part-platform-version combos
+  codes = defaultdict(set)  # Optional[part]-platform-major_version: set of minor_version
   for fw in fw_versions:
     # FW versions returned from UDS queries can return multiple fields/chunks of data (different ECU calibrations, different data?)
     #  and are prefixed with a byte that describes how many chunks of data there are.
@@ -262,22 +263,21 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, bytes]]:
       fw_match = SHORT_FW_PATTERN.search(first_chunk)
       if fw_match is not None:
         platform, major_version, sub_version = fw_match.groups()
-        # codes.add((platform + b'-' + major_version, sub_version))
-        codes.add((b'-'.join((platform, major_version)), sub_version))
+        codes[b'-'.join((platform, major_version))].add(sub_version)
 
     elif len(first_chunk) == 10:
       fw_match = MEDIUM_FW_PATTERN.search(first_chunk)
       if fw_match is not None:
         part, platform, major_version, sub_version = fw_match.groups()
-        codes.add((b'-'.join((part, platform, major_version)), sub_version))
+        codes[b'-'.join((part, platform, major_version))].add(sub_version)
 
     elif len(first_chunk) == 12:
       fw_match = LONG_FW_PATTERN.search(first_chunk)
       if fw_match is not None:
         part, platform, major_version, sub_version = fw_match.groups()
-        codes.add((b'-'.join((part, platform, major_version)), sub_version))
+        codes[b'-'.join((part, platform, major_version))].add(sub_version)
 
-  return codes
+  return dict(codes)
 
 
 # Regex patterns for parsing more general platform-specific identifiers from FW versions.
