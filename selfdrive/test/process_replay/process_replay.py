@@ -14,7 +14,7 @@ import capnp
 
 import cereal.messaging as messaging
 from cereal import car
-from cereal.services import service_list
+from cereal.services import SERVICE_LIST
 from cereal.visionipc import VisionIpcServer, get_endpoint_name as vipc_get_endpoint_name
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
@@ -364,7 +364,7 @@ def controlsd_rcv_callback(msg, cfg, frame):
 
   socks = [
     s for s in cfg.subs if
-    frame % int(service_list[msg.which()].frequency / service_list[s].frequency) == 0
+    frame % int(SERVICE_LIST[msg.which()].frequency / SERVICE_LIST[s].frequency) == 0
   ]
   if "sendcan" in socks and (frame - 1) < 2000:
     socks.remove("sendcan")
@@ -428,7 +428,7 @@ class FrequencyBasedRcvCallback:
 
     resp_sockets = [
       s for s in cfg.subs
-      if frame % max(1, int(service_list[msg.which()].frequency / service_list[s].frequency)) == 0
+      if frame % max(1, int(SERVICE_LIST[msg.which()].frequency / SERVICE_LIST[s].frequency)) == 0
     ]
     return bool(len(resp_sockets))
 
