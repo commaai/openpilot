@@ -137,7 +137,6 @@ const CanData &AbstractStream::lastMessage(const MessageId &id) {
 void AbstractStream::updateLastMsgsTo(double sec) {
   new_msgs_.clear();
   msgs_.clear();
-  last_msgs_.clear();
 
   uint64_t last_ts = toMonoTime(sec);
   for (auto &[id, ev] : events_) {
@@ -150,9 +149,12 @@ void AbstractStream::updateLastMsgsTo(double sec) {
       m.count = std::distance(it, ev.crend());
     }
   }
+
+  bool changed = msgs_.size() != last_msgs_.size() ||
+                 std::any_of(msgs_.begin(), msgs_.end(), [this](auto &m) { return !last_msgs_.count(m.first); });
   last_msgs_ = msgs_;
   // use a timer to prevent recursive calls
-  QTimer::singleShot(0, this, [this]() { emit msgsReceived(nullptr, true); });
+  QTimer::singleShot(0, this, [this, changed]() { emit msgsReceived(nullptr, changed); });
 }
 
 const CanEvent *AbstractStream::newEvent(uint64_t mono_time, const cereal::CanData::Reader &c) {
