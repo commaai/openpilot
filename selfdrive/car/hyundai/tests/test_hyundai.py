@@ -5,7 +5,7 @@ import unittest
 from cereal import car
 from openpilot.selfdrive.car.fw_versions import build_fw_dict
 from openpilot.selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
-                                         EV_CAR, FW_QUERY_CONFIG, FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, \
+                                         HYBRID_CAR, EV_CAR, FW_QUERY_CONFIG, FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, \
                                          UNSUPPORTED_LONGITUDINAL_CAR, PLATFORM_CODE_ECUS, get_platform_codes
 
 Ecu = car.CarParams.Ecu
@@ -38,7 +38,8 @@ NO_DATES_PLATFORMS = {
 
 class TestHyundaiFingerprint(unittest.TestCase):
   def test_can_features(self):
-    # TODO: Test no EV/HEV in any gear lists (should use ELECT_GEAR)
+    # Test no EV/HEV in any gear lists (should all use ELECT_GEAR)
+    self.assertEqual(set.union(*CAN_GEARS.values()) & (HYBRID_CAR | EV_CAR), set())
 
     # Test CAN FD car not in CAN feature lists
     can_specific_feature_list = set.union(*CAN_GEARS.values(), *CHECKSUM.values(), LEGACY_SAFETY_MODE_CAR, UNSUPPORTED_LONGITUDINAL_CAR, CAMERA_SCC_CAR)
