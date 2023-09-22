@@ -316,7 +316,7 @@
     </message>
     <message>
         <source>CHILL MODE ON</source>
-        <translation type="unfinished">تشغيل وضع التبريد</translation>
+        <translation>تشغيل وضع الراحة</translation>
     </message>
 </context>
 <context>
@@ -348,15 +348,15 @@
     <name>MapETA</name>
     <message>
         <source>eta</source>
-        <translation type="unfinished">الوقت المتوقع للوصول</translation>
+        <translation>الوصول</translation>
     </message>
     <message>
         <source>min</source>
-        <translation type="unfinished">دقيقة</translation>
+        <translation>د</translation>
     </message>
     <message>
         <source>hr</source>
-        <translation type="unfinished">ساعة</translation>
+        <translation>سا</translation>
     </message>
 </context>
 <context>
@@ -997,11 +997,11 @@ This may take up to a minute.</source>
     <name>TermsPage</name>
     <message>
         <source>Terms &amp; Conditions</source>
-        <translation type="unfinished"></translation>
+        <translation>الشروط والأحكام</translation>
     </message>
     <message>
         <source>Decline</source>
-        <translation type="unfinished"></translation>
+        <translation>رفض</translation>
     </message>
     <message>
         <source>Scroll to accept</source>
@@ -1108,7 +1108,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
-        <translation type="unfinished">يتم وضع openpilot بشكل قياسي في &lt;b&gt;وضعية التبريد&lt;/b&gt;. يمكن الوضع التجريبي &lt;b&gt;ميزات المستوى ألفا&lt;/b&gt; التي لا تكون جاهزة في وضع التبريد:</translation>
+        <translation>يتم وضع openpilot بشكل قياسي في &lt;b&gt;وضعية الراحة&lt;/b&gt;. يمكن الوضع التجريبي &lt;b&gt;ميزات المستوى ألفا&lt;/b&gt; التي لا تكون جاهزة في وضع الراحة:</translation>
     </message>
     <message>
         <source>End-to-End Longitudinal Control</source>
