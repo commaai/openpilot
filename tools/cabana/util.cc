@@ -243,15 +243,6 @@ void setTheme(int theme) {
 
 }  // namespace utils
 
-QString toHex(uint8_t byte) {
-  static std::array<QString, 256> hex = []() {
-    std::array<QString, 256> ret;
-    for (int i = 0; i < 256; ++i) ret[i] = QStringLiteral("%1").arg(i, 2, 16, QLatin1Char('0')).toUpper();
-    return ret;
-  }();
-  return hex[byte];
-}
-
 int num_decimals(double num) {
   const QString string = QString::number(num);
   auto dot_pos = string.indexOf('.');

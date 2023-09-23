@@ -85,7 +85,6 @@ private:
 };
 
 inline QString toHex(const QByteArray &dat) { return dat.toHex(' ').toUpper(); }
-QString toHex(uint8_t byte);
 
 class NameValidator : public QRegExpValidator {
   Q_OBJECT
