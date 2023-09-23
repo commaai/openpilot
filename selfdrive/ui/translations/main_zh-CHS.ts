@@ -226,8 +226,8 @@
         <translation>关机</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot要求设备安装的偏航角在左4°和右4°之间，俯仰角在上5°和下8°之间。一般来说，openpilot会持续更新校准，很少需要重置。</translation>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
+        <translation>openpilot要求设备安装的偏航角在左4°和右4°之间，俯仰角在上5°和下9°之间。一般来说，openpilot会持续更新校准，很少需要重置。</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
