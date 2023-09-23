@@ -282,6 +282,7 @@ def get_platform_codes(fw_versions: List[bytes]) -> Dict[bytes, Set[bytes]]:
 
 # Regex patterns for parsing more general platform-specific identifiers from FW versions.
 # - Part number: Toyota part number (usually last character needs to be ignored to find a match).
+#    Each ECU address has just one part number.
 # - Platform: usually multiple codes per an openpilot platform, however this has the less variability and
 #    is usually shared across ECUs and model years signifying this describes something about the specific platform.
 #    This describes more generational changes (TSS-P vs TSS2).
