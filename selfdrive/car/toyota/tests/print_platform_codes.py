@@ -27,7 +27,7 @@ if __name__ == "__main__":
   for ecu, parts in parts_for_ecu.items():
     print(f'  (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])}, {ecu[2]}): {parts}')
 
-  print('\nCar models:')
+  print('\nCar models vs. platform codes (no major versions):')
   for ecu, codes in cars_for_code.items():
     print(f' (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])}, {ecu[2]}):')
     for code, cars in codes.items():
