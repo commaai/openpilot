@@ -25,6 +25,7 @@ def cycle_alerts(duration=200, is_metric=False):
     (EventName.buttonCancel, ET.USER_DISABLE),
     (EventName.wrongGear, ET.NO_ENTRY),
 
+    (EventName.locationdTemporaryError, ET.SOFT_DISABLE),
     (EventName.accFaulted, ET.IMMEDIATE_DISABLE),
 
     # DM sequence
