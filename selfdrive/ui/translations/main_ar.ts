@@ -13,7 +13,7 @@
     </message>
     <message>
         <source>Reboot and Update</source>
-        <translation>إعادة الإقلاع والتحديث</translation>
+        <translation>إعادة التشغيل والتحديث</translation>
     </message>
 </context>
 <context>
@@ -71,11 +71,11 @@
     <name>AnnotatedCameraWidget</name>
     <message>
         <source>km/h</source>
-        <translation>كم/سا</translation>
+        <translation>كم/س</translation>
     </message>
     <message>
         <source>mph</source>
-        <translation>ميل/سا</translation>
+        <translation>ميل/س</translation>
     </message>
     <message>
         <source>MAX</source>
@@ -159,7 +159,7 @@
     </message>
     <message>
         <source>Driver Camera</source>
-        <translation>كاميرا السائق</translation>
+        <translation>كاميرة السائق</translation>
     </message>
     <message>
         <source>PREVIEW</source>
@@ -179,7 +179,7 @@
     </message>
     <message>
         <source>Are you sure you want to reset calibration?</source>
-        <translation>هل أنت متأكد من رغبتك في إعادة ضبط المعايرة؟</translation>
+        <translation>هل أنت متأكد أنك تريد إعادة ضبط المعايرة؟</translation>
     </message>
     <message>
         <source>Review Training Guide</source>
@@ -195,7 +195,7 @@
     </message>
     <message>
         <source>Are you sure you want to review the training guide?</source>
-        <translation>هل أنت متأكد من رغبتك في مراجعة دليل التدريب؟</translation>
+        <translation>هل أنت متأكد أنك تريد مراجعة دليل التدريب؟</translation>
     </message>
     <message>
         <source>Regulatory</source>
@@ -219,7 +219,7 @@
     </message>
     <message>
         <source>Reboot</source>
-        <translation>إعادة الإقلاع</translation>
+        <translation>إعادة التشغيل</translation>
     </message>
     <message>
         <source>Power Off</source>
@@ -251,15 +251,15 @@
     </message>
     <message>
         <source>Are you sure you want to reboot?</source>
-        <translation>هل أنت متأكد من رغبتك في إعادة الإقلاع؟</translation>
+        <translation>هل أنت متأكد  أنك تريد إعادة التشغيل؟</translation>
     </message>
     <message>
         <source>Disengage to Reboot</source>
-        <translation>فك الارتباط من أجل إعادة الإقلاع</translation>
+        <translation>فك الارتباط من أجل إعادة التشغيل</translation>
     </message>
     <message>
         <source>Are you sure you want to power off?</source>
-        <translation>هل أنت متأكد من رغبتك في إيقاف التشغيل؟</translation>
+        <translation>هل أنت متأكد أنك تريد إيقاف التشغيل؟</translation>
     </message>
     <message>
         <source>Disengage to Power Off</source>
@@ -328,12 +328,12 @@
     <message numerus="yes">
         <source>Need at least %n character(s)!</source>
         <translation>
-            <numerusform>تحتاج إلى %n حرف على الأقل!</numerusform>
-            <numerusform>تحتاج إلى %n حرف على الأقل!</numerusform>
-            <numerusform>تحتاج إلى %n حرفاً على الأقل!</numerusform>
-            <numerusform>تحتاج إلى %n حرفاً على الأقل!</numerusform>
+            <numerusform>تحتاج إلى حرف %n على الأقل!</numerusform>
+            <numerusform>تحتاج إلى حرف %n على الأقل!</numerusform>
+            <numerusform>تحتاج إلى حرفين %n على الأقل!</numerusform>
             <numerusform>تحتاج إلى %n أحرف على الأقل!</numerusform>
             <numerusform>تحتاج إلى %n أحرف على الأقل!</numerusform>
+            <numerusform>تحتاج إلى %n حرف على الأقل!</numerusform>
         </translation>
     </message>
 </context>
@@ -356,7 +356,7 @@
     </message>
     <message>
         <source>hr</source>
-        <translation>سا</translation>
+        <translation>س</translation>
     </message>
 </context>
 <context>
@@ -563,7 +563,7 @@
     <name>QObject</name>
     <message>
         <source>Reboot</source>
-        <translation>إعادة الإقلاع</translation>
+        <translation>إعادة التشغيل</translation>
     </message>
     <message>
         <source>Exit</source>
@@ -582,9 +582,9 @@
         <translation>
             <numerusform>منذ %n دقيقة</numerusform>
             <numerusform>منذ %n دقيقة</numerusform>
+            <numerusform>منذ دقيقتين %n</numerusform>
             <numerusform>منذ %n دقائق</numerusform>
             <numerusform>منذ %n دقائق</numerusform>
-            <numerusform>منذ %n دقيقة</numerusform>
             <numerusform>منذ %n دقيقة</numerusform>
         </translation>
     </message>
@@ -593,9 +593,9 @@
         <translation>
             <numerusform>منذ %n ساعة</numerusform>
             <numerusform>منذ %n ساعة</numerusform>
+            <numerusform>منذ ساعتين %n</numerusform>
             <numerusform>منذ %n ساعات</numerusform>
             <numerusform>منذ %n ساعات</numerusform>
-            <numerusform>منذ %n ساعة</numerusform>
             <numerusform>منذ %n ساعة</numerusform>
         </translation>
     </message>
@@ -604,10 +604,10 @@
         <translation>
             <numerusform>منذ %n يوم</numerusform>
             <numerusform>منذ %n يوم</numerusform>
+            <numerusform>منذ يومين %n</numerusform>
+            <numerusform>منذ %n أيام</numerusform>
             <numerusform>منذ %n أيام</numerusform>
             <numerusform>منذ %n يوم</numerusform>
-            <numerusform>منذ %n يوماً</numerusform>
-            <numerusform>منذ %n يوماً</numerusform>
         </translation>
     </message>
     <message>
@@ -631,11 +631,11 @@
     <name>Reset</name>
     <message>
         <source>Reset failed. Reboot to try again.</source>
-        <translation>فشل إعاة الضبط. أعد الإقلاع للمحاولة من جديد.</translation>
+        <translation>فشل إعاة الضبط. أعد التشغيل للمحاولة من جديد.</translation>
     </message>
     <message>
         <source>Are you sure you want to reset your device?</source>
-        <translation>هل أنت متأكد من رغبتك في إعادة ضبط جهازك؟</translation>
+        <translation>هل أنت متأكد أنك تريد إعادة ضبط جهازك؟</translation>
     </message>
     <message>
         <source>System Reset</source>
@@ -647,7 +647,7 @@
     </message>
     <message>
         <source>Reboot</source>
-        <translation>إعادة الإقلاع</translation>
+        <translation>إعادة التشغيل</translation>
     </message>
     <message>
         <source>Confirm</source>
@@ -661,7 +661,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>اضغط على تأكيد لمسح جميع المحتويات والإعدادات. اضغط على إلغاء لمتابعة الإقلاع.</translation>
+        <translation>اضغط على تأكيد لمسح جميع المحتويات والإعدادات. اضغط على إلغاء لمتابعة التشغيل.</translation>
     </message>
     <message>
         <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
@@ -755,7 +755,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Reboot device</source>
-        <translation>إعادة إقلاع الجهاز</translation>
+        <translation>إعادة التشغيل</translation>
     </message>
     <message>
         <source>Start over</source>
@@ -763,7 +763,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Something went wrong. Reboot the device.</source>
-        <translation>حدث خطأ ما. أعد إقلاع الجهاز.</translation>
+        <translation>حدث خطأ ما. أعد التشغيل الجهاز.</translation>
     </message>
     <message>
         <source>No custom software found at this URL.</source>
@@ -884,7 +884,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Are you sure you want to uninstall?</source>
-        <translation>هل أنت متأكد من رغبتك في إلغاء التثبيت؟</translation>
+        <translation>هل أنت متأكد أنك تريد إلغاء التثبيت؟</translation>
     </message>
     <message>
         <source>CHECK</source>
@@ -1179,7 +1179,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Reboot</source>
-        <translation>إعادة الإقلاع</translation>
+        <translation>إعادة التشغيل</translation>
     </message>
     <message>
         <source>Update failed</source>
