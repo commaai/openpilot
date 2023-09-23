@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from collections import defaultdict
 from cereal import car
 from openpilot.selfdrive.car.toyota.values import FW_VERSIONS, PLATFORM_CODE_ECUS, get_platform_codes
 
@@ -6,6 +7,7 @@ Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
 if __name__ == "__main__":
+  parts_for_ecu: dict = defaultdict(set)
   for car_model, ecus in FW_VERSIONS.items():
     print()
     print(car_model)
@@ -14,8 +16,10 @@ if __name__ == "__main__":
         continue
 
       platform_codes = get_platform_codes(ecus[ecu])
-      codes = {code for code, _ in platform_codes}
-      dates = {date for _, date in platform_codes if date is not None}
+      parts_for_ecu[ecu] |= {code.split(b'-')[0] for code in platform_codes if code.count(b'-') > 1}
       print(f'  (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])}, {ecu[2]}):')
-      print(f'    Codes: {codes}')
-      print(f' Versions: {dates}')
+      print(f'    Codes: {platform_codes}')
+
+  print('\nECU parts:')
+  for ecu, parts in parts_for_ecu.items():
+    print(f'  (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])}, {ecu[2]}): {parts}')
