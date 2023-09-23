@@ -126,6 +126,7 @@ class TestToyotaFingerprint(unittest.TestCase):
     # Asserts a list of platforms that will not fuzzy fingerprint with platform codes due to them being shared.
     # This list can be shrunk as we combine platforms, detect features, and add the hybrid ECU.
     # Note: this list is so small because other ECUs are not shared between hybrid & ICE, commonly the ABS
+    # TODO: should this be put into the fuzzy FP function as a blacklist?
     excluded_platforms = {
       CAR.LEXUS_ES_TSS2,
       CAR.LEXUS_RX_TSS2,
@@ -141,7 +142,6 @@ class TestToyotaFingerprint(unittest.TestCase):
       CAR.LEXUS_NX,
       CAR.LEXUS_RXH_TSS2,
     }
-    # excluded_platforms = {_car for _car in FW_VERSIONS}
 
     platforms_with_shared_codes = set()
     for platform, fw_by_addr in FW_VERSIONS.items():
