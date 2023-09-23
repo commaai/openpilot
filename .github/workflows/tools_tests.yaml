@@ -101,8 +101,8 @@ jobs:
     - name: Build dev container image
       run: devcontainer build --workspace-folder .
     - name: Run dev container
-      run: devcontainer up --workspace-folder .
+      run: devcontainer up --workspace-folder --mount type=volume,source=.ci_cache/scons_cache,target=/tmp/scons_cache .
     - name: Test environment
       run: |
-        devcontainer exec --workspace-folder . scons --dry-run
+        devcontainer exec --workspace-folder . scons -j$(nproc)
         devcontainer exec --workspace-folder . pip install pip-install-test
