@@ -71,7 +71,7 @@ class CAR:
   BUICK_REGAL = "BUICK REGAL ESSENCE 2018"
   ESCALADE = "CADILLAC ESCALADE 2017"
   ESCALADE_ESV = "CADILLAC ESCALADE ESV 2016"
-  ESCALADE_ESV_2019 = "CADILLAC ESCALADE ESV PLATINUM 2019"
+  ESCALADE_ESV_2019 = "CADILLAC ESCALADE ESV 2019"
   BOLT_EUV = "CHEVROLET BOLT EUV 2022"
   SILVERADO = "CHEVROLET SILVERADO 1500 2020"
   EQUINOX = "CHEVROLET EQUINOX 2019"
@@ -107,7 +107,7 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
   CAR.BUICK_REGAL: GMCarInfo("Buick Regal Essence 2018"),
   CAR.ESCALADE: GMCarInfo("Cadillac Escalade 2017", "Driver Assist Package"),
   CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", "Adaptive Cruise Control (ACC) & LKAS"),
-  CAR.ESCALADE_ESV_2019: GMCarInfo("Cadillac Escalade ESV Platinum 2019", "Adaptive Cruise Control (ACC) & LKAS"),
+  CAR.ESCALADE_ESV_2019: GMCarInfo("Cadillac Escalade ESV 2019", "Adaptive Cruise Control (ACC) & LKAS"),
   CAR.BOLT_EUV: [
     GMCarInfo("Chevrolet Bolt EUV 2022-23", "Premier or Premier Redline Trim without Super Cruise Package", video_link="https://youtu.be/xvwzGMUA210"),
     GMCarInfo("Chevrolet Bolt EV 2022-23", "2LT Trim with Adaptive Cruise Control Package"),
