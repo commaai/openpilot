@@ -1334,6 +1334,7 @@ FW_VERSIONS = {
   },
   CAR.SKODA_SUPERB_MK3: {
     (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8704E906027BS\xf1\x892887',
       b'\xf1\x8704E906027BT\xf1\x899042',
       b'\xf1\x8704L906026ET\xf1\x891343',
       b'\xf1\x8704L906026FP\xf1\x891196',
@@ -1348,6 +1349,7 @@ FW_VERSIONS = {
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x870CW300042H \xf1\x891601',
+      b'\xf1\x870CW300043B \xf1\x891603',
       b'\xf1\x870CW300049Q \xf1\x890906',
       b'\xf1\x870D9300011T \xf1\x894801',
       b'\xf1\x870D9300012  \xf1\x894940',
@@ -1379,6 +1381,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0909143P \xf1\x892051\xf1\x820526UZ070505',
       b'\xf1\x875Q0910143B \xf1\x892201\xf1\x82\00563UZ060700',
       b'\xf1\x875Q0910143B \xf1\x892201\xf1\x82\x0563UZ060600',
+      b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567UZ070500',
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567UZ070600',
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567UZ070700',
     ],
