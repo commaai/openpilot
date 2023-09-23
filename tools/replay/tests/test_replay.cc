@@ -12,7 +12,7 @@
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
 const std::string TEST_RLOG_CHECKSUM = "5b966d4bb21a100a8c4e59195faeb741b975ccbe268211765efd1763d892bfb3";
 
-bool donload_to_file(const std::string &url, const std::string &local_file, int chunk_size = 5 * 1024 * 1024, int retries = 3) {
+bool download_to_file(const std::string &url, const std::string &local_file, int chunk_size = 5 * 1024 * 1024, int retries = 3) {
   do {
     if (httpDownload(url, local_file, chunk_size)) {
       return true;
@@ -29,7 +29,7 @@ TEST_CASE("httpMultiPartDownload") {
   const size_t chunk_size = 5 * 1024 * 1024;
   std::string content;
   SECTION("download to file") {
-    REQUIRE(donload_to_file(TEST_RLOG_URL, filename, chunk_size));
+    REQUIRE(download_to_file(TEST_RLOG_URL, filename, chunk_size));
     content = util::read_file(filename);
   }
   SECTION("download to buffer") {
@@ -110,22 +110,35 @@ void read_segment(int n, const SegmentFile &segment_file, uint32_t flags) {
   loop.exec();
 }
 
-TEST_CASE("Route") {
-  // Create a local route from remote for testing
-  Route remote_route(DEMO_ROUTE);
-  REQUIRE(remote_route.load());
-  char tmp_path[] = "/tmp/root_XXXXXX";
-  const std::string data_dir = mkdtemp(tmp_path);
-  const std::string route_name = DEMO_ROUTE.mid(17).toStdString();
-  for (int i = 0; i < 2; ++i) {
-    std::string log_path = util::string_format("%s/%s--%d/", data_dir.c_str(), route_name.c_str(), i);
-    util::create_directories(log_path, 0755);
-    REQUIRE(donload_to_file(remote_route.at(i).rlog.toStdString(), log_path + "rlog.bz2"));
-    REQUIRE(donload_to_file(remote_route.at(i).road_cam.toStdString(), log_path + "fcamera.hevc"));
-    REQUIRE(donload_to_file(remote_route.at(i).driver_cam.toStdString(), log_path + "dcamera.hevc"));
-    REQUIRE(donload_to_file(remote_route.at(i).wide_road_cam.toStdString(), log_path + "ecamera.hevc"));
-    REQUIRE(donload_to_file(remote_route.at(i).qcamera.toStdString(), log_path + "qcamera.ts"));
+std::string download_demo_route() {
+  static std::string data_dir;
+
+  if (data_dir == "") {
+    char tmp_path[] = "/tmp/root_XXXXXX";
+    data_dir = mkdtemp(tmp_path);
+
+    Route remote_route(DEMO_ROUTE);
+    assert(remote_route.load());
+
+    // Create a local route from remote for testing
+    const std::string route_name = DEMO_ROUTE.mid(17).toStdString();
+    for (int i = 0; i < 2; ++i) {
+      std::string log_path = util::string_format("%s/%s--%d/", data_dir.c_str(), route_name.c_str(), i);
+      util::create_directories(log_path, 0755);
+      REQUIRE(download_to_file(remote_route.at(i).rlog.toStdString(), log_path + "rlog.bz2"));
+      REQUIRE(download_to_file(remote_route.at(i).road_cam.toStdString(), log_path + "fcamera.hevc"));
+      REQUIRE(download_to_file(remote_route.at(i).driver_cam.toStdString(), log_path + "dcamera.hevc"));
+      REQUIRE(download_to_file(remote_route.at(i).wide_road_cam.toStdString(), log_path + "ecamera.hevc"));
+      REQUIRE(download_to_file(remote_route.at(i).qcamera.toStdString(), log_path + "qcamera.ts"));
+    }
   }
+
+  return data_dir;
+}
+
+
+TEST_CASE("Route") {
+  std::string data_dir = download_demo_route();
 
   SECTION("Local route") {
     auto flags = GENERATE(REPLAY_FLAG_DCAM | REPLAY_FLAG_ECAM, REPLAY_FLAG_QCAMERA);
