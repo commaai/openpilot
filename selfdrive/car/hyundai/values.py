@@ -81,6 +81,7 @@ class CAR:
   IONIQ_PHEV_2019 = "HYUNDAI IONIQ PLUG-IN HYBRID 2019"
   IONIQ_PHEV = "HYUNDAI IONIQ PHEV 2020"
   KONA = "HYUNDAI KONA 2020"
+  KONA_2022 = "HYUNDAI KONA 2022"
   KONA_EV = "HYUNDAI KONA ELECTRIC 2019"
   KONA_EV_2022 = "HYUNDAI KONA ELECTRIC 2022"
   KONA_EV_2ND_GEN = "HYUNDAI KONA ELECTRIC 2ND GEN"
@@ -175,6 +176,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.IONIQ_PHEV_2019: HyundaiCarInfo("Hyundai Ioniq Plug-in Hybrid 2019", car_parts=CarParts.common([CarHarness.hyundai_c])),
   CAR.IONIQ_PHEV: HyundaiCarInfo("Hyundai Ioniq Plug-in Hybrid 2020-22", "All", car_parts=CarParts.common([CarHarness.hyundai_h])),
   CAR.KONA: HyundaiCarInfo("Hyundai Kona 2020", car_parts=CarParts.common([CarHarness.hyundai_b])),
+  CAR.KONA_2022: HyundaiCarInfo("Hyundai Kona 2022", car_parts=CarParts.common([CarHarness.hyundai_o])),
   CAR.KONA_EV: HyundaiCarInfo("Hyundai Kona Electric 2018-21", car_parts=CarParts.common([CarHarness.hyundai_g])),
   CAR.KONA_EV_2022: HyundaiCarInfo("Hyundai Kona Electric 2022-23", car_parts=CarParts.common([CarHarness.hyundai_o])),
   CAR.KONA_HEV: HyundaiCarInfo("Hyundai Kona Hybrid 2020", video_link="https://youtu.be/0dwpAHiZgFo",
@@ -1972,6 +1974,26 @@ FW_VERSIONS = {
       b'\xf1\x00GL3_ RDR -----      1.00 1.02 99110-L8000         ',
     ],
   },
+  CAR.KONA_2022: {
+    (Ecu.abs, 0x7D1, None): [
+      b'\xf1\x8758900-J9300 \xf1\x816V5RAS00038.ELF',
+    ],
+    (Ecu.fwdCamera, 0x7C4, None): [
+      b'\xf1\x00OSP LKA  AT USA LHD 1.00 1.04 99211-J9200 904',
+    ],
+    (Ecu.eps, 0x7D4, None): [
+      b'\xf1\x00OSP MDPS C 1.00 1.04 56310/J9291 4OPCC104',
+    ],
+    (Ecu.fwdRadar, 0x7D0, None): [
+      b'\xf1\x00YB__ FCA -----      1.00 1.01 99110-J9000      \x00\x00\x00',
+    ],
+    (Ecu.engine, 0x7E0, None): [
+      b'\xf1\x87391212MAL0',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x00T01G00BL  T01I00A1  DOS2T16X4XI00NS0\x99L\xeeq',
+    ],
+  },
 }
 
 CHECKSUM = {
@@ -2000,7 +2022,7 @@ CANFD_RADAR_SCC_CAR = {CAR.GENESIS_GV70_1ST_GEN, CAR.KIA_SORENTO_PHEV_4TH_GEN, C
                        CAR.KIA_CARNIVAL_4TH_GEN, CAR.KIA_SORENTO_HEV_4TH_GEN, CAR.KONA_EV_2ND_GEN, CAR.IONIQ_6}
 
 # The camera does SCC on these cars, rather than the radar
-CAMERA_SCC_CAR = {CAR.KONA_EV_2022, }
+CAMERA_SCC_CAR = {CAR.KONA_EV_2022, CAR.KONA_2022}
 
 # these cars use a different gas signal
 HYBRID_CAR = {CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.KIA_NIRO_PHEV, CAR.KIA_NIRO_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.IONIQ,
@@ -2084,4 +2106,5 @@ DBC = {
   CAR.KIA_SORENTO_HEV_4TH_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KONA_EV_2ND_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KIA_K8_HEV_1ST_GEN: dbc_dict('hyundai_canfd', None),
+  CAR.KONA_2022: dbc_dict('hyundai_kia_generic', None),
 }
