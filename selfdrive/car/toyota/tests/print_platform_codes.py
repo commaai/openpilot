@@ -8,7 +8,7 @@ ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
 if __name__ == "__main__":
   parts_for_ecu: dict = defaultdict(set)
-  cars_for_code = defaultdict(lambda: defaultdict(set))
+  cars_for_code: dict = defaultdict(lambda: defaultdict(set))
   for car_model, ecus in FW_VERSIONS.items():
     print()
     print(car_model)
@@ -31,4 +31,4 @@ if __name__ == "__main__":
   for ecu, codes in cars_for_code.items():
     print(f' (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])}, {ecu[2]}):')
     for code, cars in codes.items():
-      print(f'    {code}: {sorted(cars)}')
+      print(f'    {code!r}: {sorted(cars)}')
