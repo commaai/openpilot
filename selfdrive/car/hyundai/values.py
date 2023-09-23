@@ -39,7 +39,7 @@ class CarControllerParams:
     # If the max stock LKAS request is <384, add your car to this list.
     elif CP.carFingerprint in (CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.ELANTRA, CAR.ELANTRA_GT_I30, CAR.IONIQ,
                                CAR.IONIQ_EV_LTD, CAR.SANTA_FE_PHEV_2022, CAR.SONATA_LF, CAR.KIA_FORTE, CAR.KIA_NIRO_PHEV,
-                               CAR.KIA_OPTIMA_H, CAR.KIA_SORENTO):
+                               CAR.KIA_OPTIMA_H, CAR.KIA_OPTIMA_H_G4_FL, CAR.KIA_SORENTO):
       self.STEER_MAX = 255
 
     # these cars have significantly more torque than most HKG; limit to 70% of max
@@ -70,6 +70,7 @@ class HyundaiFlags(IntFlag):
 class CAR:
   # Hyundai
   AZERA_6TH_GEN = "HYUNDAI AZERA 6TH GEN"
+  AZERA_HEV_6TH_GEN = "HYUNDAI AZERA HYBRID 6TH GEN"
   ELANTRA = "HYUNDAI ELANTRA 2017"
   ELANTRA_GT_I30 = "HYUNDAI I30 N LINE 2019 & GT 2018 DCT"
   ELANTRA_2021 = "HYUNDAI ELANTRA 2021"
@@ -115,6 +116,7 @@ class CAR:
   KIA_OPTIMA_G4 = "KIA OPTIMA 4TH GEN"
   KIA_OPTIMA_G4_FL = "KIA OPTIMA 4TH GEN FACELIFT"
   KIA_OPTIMA_H = "KIA OPTIMA HYBRID 2017 & SPORTS 2019"
+  KIA_OPTIMA_H_G4_FL = "KIA OPTIMA HYBRID 4TH GEN FACELIFT"
   KIA_SELTOS = "KIA SELTOS 2021"
   KIA_SPORTAGE_5TH_GEN = "KIA SPORTAGE 5TH GEN"
   KIA_SORENTO = "KIA SORENTO GT LINE 2018"
@@ -156,6 +158,7 @@ class HyundaiCarInfo(CarInfo):
 
 CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.AZERA_6TH_GEN: HyundaiCarInfo("Hyundai Azera 2022", "All", car_parts=CarParts.common([CarHarness.hyundai_k])),
+  CAR.AZERA_HEV_6TH_GEN: HyundaiCarInfo("Hyundai Azera Hybrid 2020", "All", car_parts=CarParts.common([CarHarness.hyundai_k])),
   CAR.ELANTRA: [
     # TODO: 2017-18 could be Hyundai G
     HyundaiCarInfo("Hyundai Elantra 2017-18", min_enable_speed=19 * CV.MPH_TO_MS, car_parts=CarParts.common([CarHarness.hyundai_b])),
@@ -224,7 +227,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Kia Forte 2023", car_parts=CarParts.common([CarHarness.hyundai_e])),
   ],
   CAR.KIA_K5_2021: HyundaiCarInfo("Kia K5 2021-22", car_parts=CarParts.common([CarHarness.hyundai_a])),
-  CAR.KIA_K5_HEV_2020: HyundaiCarInfo("Kia K5 Hybrid 2020", car_parts=CarParts.common([CarHarness.hyundai_a])),
+  CAR.KIA_K5_HEV_2020: HyundaiCarInfo("Kia K5 Hybrid 2020-22", car_parts=CarParts.common([CarHarness.hyundai_a])),
   CAR.KIA_K8_HEV_1ST_GEN: HyundaiCarInfo("Kia K8 Hybrid (with HDA II) 2023", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_q])),
   CAR.KIA_NIRO_EV: [
     HyundaiCarInfo("Kia Niro EV 2019", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", car_parts=CarParts.common([CarHarness.hyundai_h])),
@@ -242,12 +245,11 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.KIA_NIRO_HEV_2ND_GEN: HyundaiCarInfo("Kia Niro Hybrid 2023", car_parts=CarParts.common([CarHarness.hyundai_a])),
   CAR.KIA_OPTIMA_G4: HyundaiCarInfo("Kia Optima 2017", "Advanced Smart Cruise Control",
-                                              car_parts=CarParts.common([CarHarness.hyundai_b])),  # TODO: may support 2016, 2018
+                                    car_parts=CarParts.common([CarHarness.hyundai_b])),  # TODO: may support 2016, 2018
   CAR.KIA_OPTIMA_G4_FL: HyundaiCarInfo("Kia Optima 2019-20", car_parts=CarParts.common([CarHarness.hyundai_g])),
-  CAR.KIA_OPTIMA_H: [
-    HyundaiCarInfo("Kia Optima Hybrid 2017", "Advanced Smart Cruise Control"),  # TODO: may support adjacent years
-    HyundaiCarInfo("Kia Optima Hybrid 2019"),
-  ],
+  # TODO: may support adjacent years. may have a non-zero minimum steering speed
+  CAR.KIA_OPTIMA_H: HyundaiCarInfo("Kia Optima Hybrid 2017", "Advanced Smart Cruise Control"),
+  CAR.KIA_OPTIMA_H_G4_FL: HyundaiCarInfo("Kia Optima Hybrid 2019", car_parts=CarParts.common([CarHarness.hyundai_h])),
   CAR.KIA_SELTOS: HyundaiCarInfo("Kia Seltos 2021", car_parts=CarParts.common([CarHarness.hyundai_a])),
   CAR.KIA_SPORTAGE_5TH_GEN: HyundaiCarInfo("Kia Sportage 2023", car_parts=CarParts.common([CarHarness.hyundai_n])),
   CAR.KIA_SORENTO: [
@@ -547,6 +549,23 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x81641KA051\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+  },
+  CAR.AZERA_HEV_6TH_GEN: {
+    (Ecu.fwdCamera, 0x7C4, None): [
+      b'\xf1\x00IGH MFC  AT KOR LHD 1.00 1.02 99211-G8100 191029',
+    ],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00IG  MDPS C 1.00 1.00 56310M9600\x00 4IHSC100',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00IGhe SCC FHCUP      1.00 1.00 99110-M9100         ',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x006T7N0_C2\x00\x006T7VA051\x00\x00TIGSH24KA1\xc7\x85\xe2`',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x816H590051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.HYUNDAI_GENESIS: {
@@ -1397,15 +1416,18 @@ FW_VERSIONS = {
     ],
     (Ecu.eps, 0x7D4, None): [
       b'\xf1\x00DL3 MDPS C 1.00 1.02 56310-L7000 4DLHC102',
+      b'\xf1\x00DL3 MDPS C 1.00 1.02 56310-L7220 4DLHC102',
     ],
     (Ecu.fwdCamera, 0x7C4, None): [
       b'\xf1\x00DL3HMFC  AT KOR LHD 1.00 1.02 99210-L2000 200309',
+      b'\xf1\x00DL3HMFC  AT KOR LHD 1.00 1.04 99210-L2000 210527',
     ],
     (Ecu.engine, 0x7E0, None): [
       b'\xf1\x87391162JLA0',
     ],
     (Ecu.transmission, 0x7E1, None): [
       b'\xf1\x00PSBG2323  E08\x00\x00\x00\x00\x00\x00\x00TDL2H20KA2\xe3\xc6cz',
+      b'\xf1\x00PSBG2333  E16\x00\x00\x00\x00\x00\x00\x00TDL2H20KA5T\xf2\xc9\xc2',
     ],
   },
   CAR.KONA_EV: {
@@ -1624,6 +1646,17 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00JFP LKAS AT EUR LHD 1.00 1.03 95895-A8100 160711',
+    ],
+  },
+  CAR.KIA_OPTIMA_H_G4_FL: {
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00JFhe SCC FHCUP      1.00 1.01 99110-A8500         ',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00JFH MFC  AT KOR LHD 1.00 1.01 95895-A8200 180323',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x816H6D1051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.ELANTRA: {
@@ -1907,6 +1940,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00NQ5 FR_CMR AT USA LHD 1.00 1.00 99211-P1030 662',
       b'\xf1\x00NQ5 FR_CMR AT USA LHD 1.00 1.00 99211-P1040 663',
+      b'\xf1\x00NQ5 FR_CMR AT AUS RHD 1.00 1.00 99211-P1040 663',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NQ5__               1.00 1.02 99110-P1000         ',
@@ -2003,13 +2037,9 @@ CHECKSUM = {
 }
 
 CAN_GEARS = {
-  # which message has the gear
+  # which message has the gear. hybrid and EV use ELECT_GEAR
   "use_cluster_gears": {CAR.ELANTRA, CAR.ELANTRA_GT_I30, CAR.KONA},
   "use_tcu_gears": {CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL, CAR.SONATA_LF, CAR.VELOSTER, CAR.TUCSON},
-  "use_elect_gears": {CAR.KIA_NIRO_EV, CAR.KIA_NIRO_PHEV, CAR.KIA_NIRO_HEV_2021, CAR.KIA_OPTIMA_H, CAR.IONIQ_EV_LTD,
-                      CAR.KONA_EV, CAR.IONIQ, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID,
-                      CAR.KONA_HEV, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.IONIQ_PHEV_2019,
-                      CAR.KONA_EV_2022, CAR.KIA_K5_HEV_2020},
 }
 
 CANFD_CAR = {CAR.KIA_EV6, CAR.IONIQ_5, CAR.IONIQ_6, CAR.TUCSON_4TH_GEN, CAR.TUCSON_HYBRID_4TH_GEN, CAR.KIA_SPORTAGE_HYBRID_5TH_GEN,
@@ -2028,7 +2058,8 @@ CAMERA_SCC_CAR = {CAR.KONA_EV_2022, }
 HYBRID_CAR = {CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.KIA_NIRO_PHEV, CAR.KIA_NIRO_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.IONIQ,
               CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.IONIQ_PHEV_2019, CAR.TUCSON_HYBRID_4TH_GEN,
               CAR.KIA_SPORTAGE_HYBRID_5TH_GEN, CAR.KIA_SORENTO_PHEV_4TH_GEN, CAR.KIA_K5_HEV_2020, CAR.KIA_NIRO_HEV_2ND_GEN,
-              CAR.KIA_SORENTO_HEV_4TH_GEN, CAR.KIA_OPTIMA_H, CAR.KIA_K8_HEV_1ST_GEN}
+              CAR.KIA_SORENTO_HEV_4TH_GEN, CAR.KIA_OPTIMA_H, CAR.KIA_OPTIMA_H_G4_FL, CAR.KIA_K8_HEV_1ST_GEN,
+              CAR.AZERA_HEV_6TH_GEN}
 
 EV_CAR = {CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV, CAR.KIA_NIRO_EV_2ND_GEN, CAR.KONA_EV_2022,
           CAR.KIA_EV6, CAR.IONIQ_5, CAR.IONIQ_6, CAR.GENESIS_GV60_EV_1ST_GEN, CAR.KONA_EV_2ND_GEN}
@@ -2039,12 +2070,14 @@ LEGACY_SAFETY_MODE_CAR = {CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_LTD, CAR.KIA_OPTIMA_
                           CAR.KIA_OPTIMA_H, CAR.ELANTRA_GT_I30}
 
 # these cars have not been verified to work with longitudinal yet - radar disable, sending correct messages, etc.
-UNSUPPORTED_LONGITUDINAL_CAR = LEGACY_SAFETY_MODE_CAR | {CAR.KIA_NIRO_PHEV, CAR.KIA_SORENTO, CAR.SONATA_LF, CAR.KIA_OPTIMA_G4_FL}
+UNSUPPORTED_LONGITUDINAL_CAR = LEGACY_SAFETY_MODE_CAR | {CAR.KIA_NIRO_PHEV, CAR.KIA_SORENTO, CAR.SONATA_LF, CAR.KIA_OPTIMA_G4_FL,
+                                                         CAR.KIA_OPTIMA_H_G4_FL}
 
 # If 0x500 is present on bus 1 it probably has a Mando radar outputting radar points.
 # If no points are outputted by default it might be possible to turn it on using  selfdrive/debug/hyundai_enable_radar_points.py
 DBC = {
   CAR.AZERA_6TH_GEN: dbc_dict('hyundai_kia_generic', None),
+  CAR.AZERA_HEV_6TH_GEN: dbc_dict('hyundai_kia_generic', None),
   CAR.ELANTRA: dbc_dict('hyundai_kia_generic', None),
   CAR.ELANTRA_GT_I30: dbc_dict('hyundai_kia_generic', None),
   CAR.ELANTRA_2021: dbc_dict('hyundai_kia_generic', None),
@@ -2069,6 +2102,7 @@ DBC = {
   CAR.KIA_OPTIMA_G4: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_OPTIMA_G4_FL: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_OPTIMA_H: dbc_dict('hyundai_kia_generic', None),
+  CAR.KIA_OPTIMA_H_G4_FL: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_SELTOS: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_SORENTO: dbc_dict('hyundai_kia_generic', None), # Has 0x5XX messages, but different format
   CAR.KIA_STINGER: dbc_dict('hyundai_kia_generic', None),
