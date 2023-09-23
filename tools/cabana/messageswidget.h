@@ -42,7 +42,6 @@ public:
   void setFilterStrings(const QMap<int, QString> &filters);
   void msgsReceived(const std::set<MessageId> *new_msgs, bool has_new_ids);
   void fetchData();
-  void forceResetModel();
   void dbcModified();
   std::vector<MessageId> msgs;
 

@@ -36,6 +36,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   auto delegate = new MessageBytesDelegate(view, settings.multiple_lines_bytes);
 
   view->setItemDelegate(delegate);
+  view->setUniformRowHeights(!settings.multiple_lines_bytes);
   view->setHeader(header);
   view->setModel(model);
   view->setHeader(header);
@@ -81,9 +82,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
     settings.multiple_lines_bytes = (state == Qt::Checked);
     delegate->setMultipleLines(settings.multiple_lines_bytes);
     view->setUniformRowHeights(!settings.multiple_lines_bytes);
-
-    // Reset model to force recalculation of the width of the bytes column
-    model->forceResetModel();
+    view->updateBytesSectionSize();
   });
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MessagesWidget::dbcModified);
@@ -362,11 +361,6 @@ void MessageListModel::sort(int column, Qt::SortOrder order) {
     sort_order = order;
     fetchData();
   }
-}
-
-void MessageListModel::forceResetModel() {
-  beginResetModel();
-  endResetModel();
 }
 
 // MessageView

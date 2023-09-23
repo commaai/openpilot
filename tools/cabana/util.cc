@@ -71,7 +71,7 @@ QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const Q
   if (!data.isValid()) {
     return {1, byte_size.height() + 2 * v_margin};
   }
-  int n = data.toByteArray().size();
+  int n = static_cast<std::vector<uint8_t>*>(data.value<void*>())->size();
   assert(n >= 0 && n <= 64);
   return !multiple_lines ? QSize{widthForBytes(n), byte_size.height() + 2 * v_margin}
                          : QSize{widthForBytes(8), byte_size.height() * std::max(1, n / 8) + 2 * v_margin};
