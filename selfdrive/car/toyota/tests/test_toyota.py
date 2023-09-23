@@ -63,9 +63,6 @@ class TestToyotaFingerprint(unittest.TestCase):
             continue
           if platform_code_ecu == Ecu.abs and car_model in (CAR.ALPHARD_TSS2,):
             continue
-          # TODO: add DSU FW versions for Highlander Hybrid
-          if platform_code_ecu == Ecu.dsu and car_model in TSS2_CAR | {CAR.HIGHLANDERH}:
-            continue
           self.assertIn(platform_code_ecu, [e[0] for e in ecus])
 
   def test_fw_format(self):
@@ -118,11 +115,12 @@ class TestToyotaFingerprint(unittest.TestCase):
     self.assertEqual(results, {b"58-70": {b"000"}, b"58-83": {b"000"}})
 
     results = get_platform_codes([
+      b"F152607110\x00\x00\x00\x00\x00\x00",
       b"F152607140\x00\x00\x00\x00\x00\x00",
       b"\x028646F4104100\x00\x00\x00\x008646G5301200\x00\x00\x00\x00",
       b"\x0235879000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00",
     ])
-    self.assertEqual(results, {b"F1526-07-1": {b"40"}, b"8646F-41-04": {b"100"}, b"58-79": {b"000"}})
+    self.assertEqual(results, {b"F1526-07-1": {b"10", b"40"}, b"8646F-41-04": {b"100"}, b"58-79": {b"000"}})
 
   def test_fuzzy_excluded_platforms(self):
     # Asserts a list of platforms that will not fuzzy fingerprint with platform codes due to them being shared.

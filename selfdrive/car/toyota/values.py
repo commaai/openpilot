@@ -237,8 +237,8 @@ STATIC_DSU_MSGS = [
 
 
 def get_platform_codes(fw_versions: List[bytes]) -> Dict[bytes, Set[bytes]]:
-  # Returns minor versions in a dict so comparisons can be made within part-platform-version combos
-  codes = defaultdict(set)  # Optional[part]-platform-major_version: set of minor_version
+  # Returns sub versions in a dict so comparisons can be made within part-platform-major_version combos
+  codes = defaultdict(set)  # Optional[part]-platform-major_version: set of sub_version
   for fw in fw_versions:
     # FW versions returned from UDS queries can return multiple fields/chunks of data (different ECU calibrations, different data?)
     #  and are prefixed with a byte that describes how many chunks of data there are.
@@ -330,13 +330,16 @@ def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
 
 # Regex patterns for parsing more general platform-specific identifiers from FW versions.
 # - Part number: Toyota part number (usually last character needs to be ignored to find a match).
-# - Platform: usually multiple codes per an openpilot platform, however this has the less variability and
+#    Each ECU address has just one part number.
+# - Platform: usually multiple codes per an openpilot platform, however this is the least variable and
 #    is usually shared across ECUs and model years signifying this describes something about the specific platform.
-# - Major version: second least variable part of the FW version. Seen splitting cars by model year such as RAV4 2022/2023 and Prius.
+#    This describes more generational changes (TSS-P vs TSS2), or manufacture region.
+# - Major version: second least variable part of the FW version. Seen splitting cars by model year/API such as
+#    RAV4 2022/2023 and Avalon. Used to differentiate cars where API has changed slightly, but is not a generational change.
 #    It is important to note that these aren't always consecutive, for example:
-#    Prius TSS-P has these major versions over 16 FW: 2, 3, 4, 6, 8 while Prius TSS2 has: 5
-# - Sub version: exclusive to major version, but shared with other cars. Should only be used for further filtering,
-#    more exploration is needed.
+#    Avalon 2016-18's fwdCamera has these major versions: 01, 03 while 2019 has: 02
+# - Sub version: exclusive to major version, but shared with other cars. Should only be used for further filtering.
+#    Seen bumped in TSB FW updates, and describes other minor differences.
 SHORT_FW_PATTERN = re.compile(b'[A-Z0-9](?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{3})')
 MEDIUM_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{1})(?P<sub_version>[A-Z0-9]{2})')
 LONG_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{3})')
@@ -345,7 +348,12 @@ FW_CHUNK_LEN = 16
 
 # List of ECUs that are most unique across openpilot platforms
 # TODO: use hybrid ECU, splits similar ICE and hybrid variants
-PLATFORM_CODE_ECUS = [Ecu.abs, Ecu.eps, Ecu.fwdCamera]
+# - fwdCamera: describes actual features related to ADAS. For example, on the Avalon it describes
+#    when TSS-P became standard, whether the car supports stop and go, and whether it's TSS2.
+#    On the RAV4, it describes the move to the radar doing ACC, and the use of LTA for lane keeping.
+# - abs: differentiates hybrid/ICE on most cars (Corolla TSS2 is an exception)
+# - eps: describes lateral API changes for the EPS, such as using LTA for lane keeping and rejecting LKA messages
+PLATFORM_CODE_ECUS = [Ecu.fwdCamera, Ecu.abs, Ecu.eps]
 
 
 # Some ECUs that use KWP2000 have their FW versions on non-standard data identifiers.
