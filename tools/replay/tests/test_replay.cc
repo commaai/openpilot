@@ -220,3 +220,16 @@ TEST_CASE("Replay") {
   REQUIRE(replay.load());
   replay.test_seek();
 }
+
+TEST_CASE("precise_nano_sleep") {
+  std::default_random_engine gen;
+  std::uniform_real_distribution<double> distribution(0.8, 4.0);
+  for (int i = 0; i < 100; ++i) {
+    long sleep_ns = distribution(gen) * 1e6;
+    uint64_t begin = nanos_since_boot();
+    precise_nano_sleep(sleep_ns);
+    int64_t diff = nanos_since_boot() - begin;
+    REQUIRE(diff >= sleep_ns);
+    REQUIRE(diff <= sleep_ns * 2);
+  }
+}
