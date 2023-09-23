@@ -41,7 +41,6 @@ public:
 public slots:
   void setDisplayType(int type);
   void setDynamicMode(int state);
-  void segmentsMerged();
 
 public:
   struct Message {

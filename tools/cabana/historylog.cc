@@ -84,12 +84,6 @@ void HistoryLogModel::setDisplayType(int type) {
   refresh();
 }
 
-void HistoryLogModel::segmentsMerged() {
-  if (!dynamic_mode) {
-    has_more_data = true;
-  }
-}
-
 void HistoryLogModel::setFilter(int sig_idx, const QString &value, std::function<bool(double, double)> cmp) {
   filter_sig_idx = sig_idx;
   filter_value = value.toDouble();
@@ -104,7 +98,6 @@ void HistoryLogModel::updateState() {
     messages.insert(messages.begin(), std::move_iterator(new_msgs.begin()), std::move_iterator(new_msgs.end()));
     endInsertRows();
   }
-  has_more_data = new_msgs.size() >= batch_size;
   last_fetch_time = current_time;
 }
 
@@ -253,7 +246,6 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   QObject::connect(can, &AbstractStream::seekedTo, model, &HistoryLogModel::refresh);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &LogsWidget::refresh);
   QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &LogsWidget::refresh);
-  QObject::connect(can, &AbstractStream::eventsMerged, model, &HistoryLogModel::segmentsMerged);
 }
 
 void LogsWidget::setMessage(const MessageId &message_id) {
