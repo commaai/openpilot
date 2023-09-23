@@ -61,9 +61,6 @@ class TestToyotaFingerprint(unittest.TestCase):
             continue
           if platform_code_ecu == Ecu.abs and car_model in (CAR.ALPHARD_TSS2,):
             continue
-          # TODO: add DSU FW versions for Highlander Hybrid
-          if platform_code_ecu == Ecu.dsu and car_model in TSS2_CAR | {CAR.HIGHLANDERH}:
-            continue
           self.assertIn(platform_code_ecu, [e[0] for e in ecus])
 
   def test_fw_format(self):
