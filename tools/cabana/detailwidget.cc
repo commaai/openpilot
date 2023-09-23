@@ -61,6 +61,8 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   tab_widget->addTab(history_log = new LogsWidget(this), utils::icon("stopwatch"), "&Logs");
   main_layout->addWidget(tab_widget);
 
+  time_label->setText(QString::number(can->currentSec(), 'f', 3));
+
   QObject::connect(edit_btn, &QToolButton::clicked, this, &DetailWidget::editMsg);
   QObject::connect(remove_btn, &QToolButton::clicked, this, &DetailWidget::removeMsg);
   QObject::connect(binary_view, &BinaryView::signalHovered, signal_view, &SignalView::signalHovered);
