@@ -299,11 +299,13 @@ FW_CHUNK_LEN = 16
 
 # List of ECUs that are most unique across openpilot platforms
 # TODO: use hybrid ECU, splits many similar ICE and hybrid variants
-# - fwdCamera: differences in platform code and major version describe actual features in the car.
+# - fwdCamera: describes actual features related to ADAS.
 #    For example, on the Avalon it describes when TSS-P became standard, whether car supports stop and go,
 #    and whether it's TSS2. On the RAV4, it describes the move to ACC from the radar, and the use of LTA
 #    for lane keeping.
-PLATFORM_CODE_ECUS = [Ecu.abs, Ecu.engine, Ecu.eps, Ecu.dsu, Ecu.fwdCamera, Ecu.fwdRadar]
+# - abs: differentiates hybrid/ICE on most cars (Corolla TSS2 is an exception), but we should use hybrid ECU
+# - eps: describes lateral API changes for the EPS, such as LTA for LKAS (LKAS messages no longer accepted)
+PLATFORM_CODE_ECUS = [Ecu.fwdCamera, Ecu.abs, Ecu.eps]
 
 
 # Some ECUs that use KWP2000 have their FW versions on non-standard data identifiers.
