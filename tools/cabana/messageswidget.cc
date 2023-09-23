@@ -189,12 +189,12 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
       case Column::ADDRESS: return QString::number(id.address, 16);
       case Column::FREQ: return id.source != INVALID_SOURCE ? getFreq(can_data) : "N/A";
       case Column::COUNT: return id.source != INVALID_SOURCE ? QString::number(can_data.count) : "N/A";
-      case Column::DATA: return id.source != INVALID_SOURCE ? toHex(can_data.dat) : "N/A";
+      case Column::DATA: return id.source != INVALID_SOURCE ? "" : "N/A";
     }
   } else if (role == ColorsRole) {
-    return QVariant::fromValue(can_data.colors);
+    return QVariant::fromValue((void*)(&can_data.colors));
   } else if (role == BytesRole && index.column() == Column::DATA && id.source != INVALID_SOURCE) {
-    return can_data.dat;
+    return QVariant::fromValue((void*)(&can_data.dat));
   } else if (role == Qt::ToolTipRole && index.column() == Column::NAME) {
     auto msg = dbc()->msg(id);
     auto tooltip = msg ? msg->name : UNTITLED;
@@ -296,9 +296,10 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
         match = parseRange(txt, data.count);
         break;
       case Column::DATA: {
-        match = QString(data.dat.toHex()).contains(txt, Qt::CaseInsensitive);
-        match = match || re.match(QString(data.dat.toHex())).hasMatch();
-        match = match || re.match(QString(data.dat.toHex(' '))).hasMatch();
+        QString hex = toHex(data.dat);
+        match = hex.contains(txt, Qt::CaseInsensitive);
+        match = match || re.match(hex).hasMatch();
+        match = match || re.match(toHex(data.dat, ' ')).hasMatch();
         break;
       }
     }
@@ -399,7 +400,7 @@ void MessageView::updateBytesSectionSize() {
   int max_bytes = 8;
   if (!delegate->multipleLines()) {
     for (const auto &[_, m] : can->lastMessages()) {
-      max_bytes = std::max(max_bytes, m.dat.size());
+      max_bytes = std::max<int>(max_bytes, m.dat.size());
     }
   }
   int width = delegate->widthForBytes(max_bytes);

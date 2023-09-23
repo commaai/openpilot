@@ -47,8 +47,8 @@ public:
   struct Message {
     uint64_t mono_time = 0;
     QVector<double> sig_values;
-    QByteArray data;
-    QVector<QColor> colors;
+    std::vector<uint8_t> data;
+    std::vector<QColor> colors;
   };
 
   template <class InputIt>

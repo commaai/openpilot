@@ -16,14 +16,14 @@
 #include "tools/replay/replay.h"
 
 struct CanData {
-  void compute(const MessageId &msg_id, const char *dat, const int size, double current_sec,
+  void compute(const MessageId &msg_id, const uint8_t *dat, const int size, double current_sec,
                double playback_speed, const std::vector<uint8_t> *mask = nullptr);
 
   double ts = 0.;
   uint32_t count = 0;
   double freq = 0;
-  QByteArray dat;
-  QVector<QColor> colors;
+  std::vector<uint8_t> dat;
+  std::vector<QColor> colors;
 
   struct ByteLastChange {
     double ts;

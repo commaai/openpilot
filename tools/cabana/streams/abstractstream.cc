@@ -116,7 +116,7 @@ void AbstractStream::updateEvent(const MessageId &id, double sec, const uint8_t 
   std::lock_guard lk(mutex_);
   auto mask_it = masks_.find(id);
   std::vector<uint8_t> *mask = mask_it == masks_.end() ? nullptr : &mask_it->second;
-  msgs_[id].compute(id, (const char *)data, size, sec, getSpeed(), mask);
+  msgs_[id].compute(id, data, size, sec, getSpeed(), mask);
   new_msgs_.insert(id);
 }
 
@@ -145,7 +145,7 @@ void AbstractStream::updateLastMsgsTo(double sec) {
     });
     if (it != ev.crend()) {
       auto &m = msgs_[id];
-      m.compute(id, (const char *)(*it)->dat, (*it)->size, toSeconds((*it)->mono_time), getSpeed());
+      m.compute(id, (*it)->dat, (*it)->size, toSeconds((*it)->mono_time), getSpeed());
       m.count = std::distance(it, ev.crend());
     }
   }
@@ -225,7 +225,7 @@ double calc_freq(const MessageId &msg_id, double current_sec) {
 
 }  // namespace
 
-void CanData::compute(const MessageId &msg_id, const char *can_data, const int size, double current_sec,
+void CanData::compute(const MessageId &msg_id, const uint8_t *can_data, const int size, double current_sec,
                       double playback_speed, const std::vector<uint8_t> *mask) {
   ts = current_sec;
   ++count;
@@ -237,7 +237,7 @@ void CanData::compute(const MessageId &msg_id, const char *can_data, const int s
 
   if (dat.size() != size) {
     dat.resize(size);
-    colors = QVector(size, QColor(0, 0, 0, 0));
+    colors.assign(size, QColor(0, 0, 0, 0));
     last_changes.resize(size);
     std::for_each(last_changes.begin(), last_changes.end(), [current_sec](auto &c) { c.ts = current_sec; });
   } else {

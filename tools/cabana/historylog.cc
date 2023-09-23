@@ -17,11 +17,11 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
       return QString::number(can->toSeconds(m.mono_time), 'f', 2);
     }
     int i = index.column() - 1;
-    return show_signals ? QString::number(m.sig_values[i], 'f', sigs[i]->precision) : toHex(m.data);
+    return show_signals ? QString::number(m.sig_values[i], 'f', sigs[i]->precision) : "";
   } else if (role == ColorsRole) {
-    return QVariant::fromValue(m.colors);
+    return QVariant::fromValue((void*)(&m.colors));
   } else if (role == BytesRole) {
-    return m.data;
+    return QVariant::fromValue((void*)(&m.data));
   } else if (role == Qt::TextAlignmentRole) {
     return (uint32_t)(Qt::AlignRight | Qt::AlignVCenter);
   }
@@ -132,7 +132,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, I
     if (!filter_cmp || filter_cmp(values[filter_sig_idx], filter_value)) {
       auto &m = msgs.emplace_back();
       m.mono_time = e->mono_time;
-      m.data = QByteArray((const char *)e->dat, e->size);
+      m.data.assign(e->dat, e->dat + e->size);
       m.sig_values = values;
       if (msgs.size() >= batch_size && min_time == 0) {
         return msgs;

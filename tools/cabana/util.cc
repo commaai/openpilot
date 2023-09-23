@@ -83,8 +83,8 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
     return QStyledItemDelegate::paint(painter, option, index);
   }
 
-  auto byte_list = data.toByteArray();
-  auto colors = index.data(ColorsRole).value<QVector<QColor>>();
+  const auto &byte_list = *static_cast<std::vector<uint8_t>*>(data.value<void*>());
+  const auto &colors = *static_cast<std::vector<QColor>*>(index.data(ColorsRole).value<void*>());
 
   int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
   int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);

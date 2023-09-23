@@ -84,7 +84,9 @@ private:
   bool multiple_lines = false;
 };
 
-inline QString toHex(const QByteArray &dat) { return dat.toHex(' ').toUpper(); }
+inline QString toHex(const std::vector<uint8_t> &dat, char separator = '\0') {
+  return QByteArray::fromRawData((const char*)dat.data(), dat.size()).toHex(separator).toUpper();
+}
 
 class NameValidator : public QRegExpValidator {
   Q_OBJECT

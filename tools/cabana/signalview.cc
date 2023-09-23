@@ -628,7 +628,7 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
 
   for (auto item : model->root->children) {
     double value = 0;
-    if (item->sig->getValue((uint8_t *)last_msg.dat.constData(), last_msg.dat.size(), &value)) {
+    if (item->sig->getValue(last_msg.dat.data(), last_msg.dat.size(), &value)) {
       item->sig_val = item->sig->formatValue(value);
     }
     max_value_width = std::max(max_value_width, fontMetrics().width(item->sig_val));
