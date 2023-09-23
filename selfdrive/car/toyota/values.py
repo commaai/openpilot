@@ -300,25 +300,12 @@ def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
       found_platform_codes = get_platform_codes(live_fw_versions.get(addr, set()))
 
       # Check part number + platform code + major version matches for any found versions
-      # Then check that sub-version for the above is within range (splits model years)
-
+      # Platform codes and major versions change for different physical parts, generation, API, etc.
       # Sub-versions are incremented for minor recalls, do not need to be checked.
-      # Platform codes and major versions change for different physical parts. For example,
-      # engine's major version describes actual Toyota engine type.
-
       if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
         break
-      valid_found_ecus.add(addr)
 
-      # for found_platform_code, found_sub_versions in found_platform_codes.items():
-      #   if found_platform_code in expected_platform_codes:
-      #     expected_sub_versions = expected_platform_codes[found_platform_code]
-      #
-      #     # Check any sub-version within range in the database for this part-platform-version combo
-      #     if any(min(expected_sub_versions) <= found_sub_version <= max(expected_sub_versions) for
-      #            found_sub_version in found_sub_versions):
-      #       valid_found_ecus.add(addr)
-      #       break
+      valid_found_ecus.add(addr)
 
     # If all live ECUs pass all checks for candidate, add it as a match
     # print(candidate, valid_expected_ecus, valid_found_ecus)
