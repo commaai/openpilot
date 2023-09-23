@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import random
 from hypothesis import given, settings, strategies as st
 import unittest
 
