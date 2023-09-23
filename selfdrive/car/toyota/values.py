@@ -302,7 +302,7 @@ FW_CHUNK_LEN = 16
 # TODO: use hybrid ECU, splits similar ICE and hybrid variants
 # - fwdCamera: describes actual features related to ADAS. For example, on the Avalon it describes
 #    when TSS-P became standard, whether the car supports stop and go, and whether it's TSS2.
-#    On the RAV4, it describes the move to ACC from the radar, and the use of LTA for lane keeping.
+#    On the RAV4, it describes the move to the radar doing ACC, and the use of LTA for lane keeping.
 # - abs: differentiates hybrid/ICE on most cars (Corolla TSS2 is an exception)
 # - eps: describes lateral API changes for the EPS, such as using LTA for lane keeping and rejecting LKA messages
 PLATFORM_CODE_ECUS = [Ecu.fwdCamera, Ecu.abs, Ecu.eps]
