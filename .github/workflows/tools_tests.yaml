@@ -101,7 +101,10 @@ jobs:
     - name: Build dev container image
       run: devcontainer build --workspace-folder .
     - name: Run dev container
-      run: devcontainer up --workspace-folder . --mount type=volume,source=$GITHUB_WORKSPACE/.ci_cache/scons_cache,target=/tmp/scons_cache
+      run: |
+        mkdir -p /tmp/devcontainer_scons_cache/
+        cp -r $GITHUB_WORKSPACE/.ci_cache/scons_cache/* /tmp/devcontainer_scons_cache/
+        devcontainer up --workspace-folder . --mount type=volume,source=$GITHUB_WORKSPACE/.ci_cache/scons_cache,target=/tmp/scons_cache
     - name: Test environment
       run: |
         devcontainer exec --workspace-folder . scons -j$(nproc)
