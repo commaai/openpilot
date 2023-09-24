@@ -1,3 +1,4 @@
 *.dlc filter=lfs diff=lfs merge=lfs -text
 *.onnx filter=lfs diff=lfs merge=lfs -text
+selfdrive/assets/fonts/* filter=lfs diff=lfs merge=lfs -text
 selfdrive/car/tests/test_models_segs.txt filter=lfs diff=lfs merge=lfs -text
