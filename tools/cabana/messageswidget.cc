@@ -16,17 +16,6 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   main_layout->setContentsMargins(0, 0, 0, 0);
 
   QHBoxLayout *title_layout = new QHBoxLayout();
-  num_msg_label = new QLabel(this);
-  title_layout->addSpacing(10);
-  title_layout->addWidget(num_msg_label);
-
-  title_layout->addStretch();
-  title_layout->addWidget(multiple_lines_bytes = new QCheckBox(tr("Multiple Lines &Bytes"), this));
-  multiple_lines_bytes->setToolTip(tr("Display bytes in multiple lines"));
-  multiple_lines_bytes->setChecked(settings.multiple_lines_bytes);
-  QPushButton *clear_filters = new QPushButton(tr("&Clear Filters"));
-  clear_filters->setEnabled(false);
-  title_layout->addWidget(clear_filters);
   main_layout->addLayout(title_layout);
 
   // message table
@@ -61,23 +50,24 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(view);
 
   // suppress
-  QHBoxLayout *suppress_layout = new QHBoxLayout();
-  suppress_add = new QPushButton("Suppress Highlighted");
-  suppress_clear = new QPushButton();
-  suppress_layout->addWidget(suppress_add);
-  suppress_layout->addWidget(suppress_clear);
-  QCheckBox *suppress_defined_signals = new QCheckBox(tr("Suppress Defined Signals"), this);
+  title_layout->addWidget(suppress_add = new QPushButton("&Suppress Highlighted"));
+  suppress_add->setToolTip(tr("Suppress Highlighted bytes"));
+  title_layout->addWidget(suppress_clear = new QPushButton());
+  suppress_clear->setToolTip(tr("Clear suppressed bytes"));
+  QCheckBox *suppress_defined_signals = new QCheckBox(tr("Suppress Signals"), this);
+  suppress_defined_signals->setToolTip(tr("Suppress Defined Signals"));
   suppress_defined_signals->setChecked(settings.suppress_defined_signals);
-  suppress_layout->addWidget(suppress_defined_signals);
-  main_layout->addLayout(suppress_layout);
+  title_layout->addWidget(suppress_defined_signals);
+  main_layout->addLayout(title_layout);
+
+  title_layout->addStretch();
+  title_layout->addWidget(multiple_lines_bytes = new QCheckBox(tr("Multi-Line Bytes"), this));
+  multiple_lines_bytes->setToolTip(tr("Display bytes in multiple lines"));
+  multiple_lines_bytes->setChecked(settings.multiple_lines_bytes);
 
   // signals/slots
   QObject::connect(header, &MessageViewHeader::filtersUpdated, model, &MessageListModel::setFilterStrings);
-  QObject::connect(header, &MessageViewHeader::filtersUpdated, [=](const QMap<int, QString> &filters) {
-    clear_filters->setEnabled(!filters.isEmpty());
-  });
   QObject::connect(view->horizontalScrollBar(), &QScrollBar::valueChanged, header, &MessageViewHeader::updateHeaderPositions);
-  QObject::connect(clear_filters, &QPushButton::clicked, header, &MessageViewHeader::clearFilters);
   QObject::connect(multiple_lines_bytes, &QCheckBox::stateChanged, [=](int state) {
     settings.multiple_lines_bytes = (state == Qt::Checked);
     delegate->setMultipleLines(settings.multiple_lines_bytes);
@@ -135,8 +125,9 @@ void MessagesWidget::updateTitle() {
       signal_count += m->sigs.size();
     }
   }
-  num_msg_label->setText(tr("%1 Messages (%2 DBC Messages, %3 Signals)")
-                             .arg(model->msgs.size()).arg(dbc_msg_count).arg(signal_count));
+  QString title = tr("%1 Messages (%2 DBC Messages, %3 Signals)")
+                      .arg(model->msgs.size()).arg(dbc_msg_count).arg(signal_count);
+  emit titleChanged(title);
 }
 
 void MessagesWidget::selectMessage(const MessageId &msg_id) {
@@ -149,10 +140,10 @@ void MessagesWidget::selectMessage(const MessageId &msg_id) {
 void MessagesWidget::updateSuppressedButtons(size_t n) {
   if (!n) {
     suppress_clear->setEnabled(false);
-    suppress_clear->setText("Clear Suppressed");
+    suppress_clear->setText("&Clear");
   } else {
     suppress_clear->setEnabled(true);
-    suppress_clear->setText(QString("Clear Suppressed (%1)").arg(n));
+    suppress_clear->setText(QString("&Clear (%1)").arg(n));
   }
 }
 
@@ -458,12 +449,6 @@ void MessageViewHeader::updateFilters() {
     }
   }
   emit filtersUpdated(filters);
-}
-
-void MessageViewHeader::clearFilters() {
-  for (QLineEdit *editor : editors) {
-    editor->clear();
-  }
 }
 
 void MessageViewHeader::updateHeaderPositions() {

@@ -9,7 +9,6 @@
 #include <QCheckBox>
 #include <QContextMenuEvent>
 #include <QHeaderView>
-#include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
 #include <QSet>
@@ -23,7 +22,6 @@ class MessageListModel : public QAbstractTableModel {
 Q_OBJECT
 
 public:
-
   enum Column {
     NAME = 0,
     SOURCE,
@@ -70,17 +68,12 @@ public:
 
 class MessageViewHeader : public QHeaderView {
   // https://stackoverflow.com/a/44346317
-
   Q_OBJECT
 public:
   MessageViewHeader(QWidget *parent);
   void updateHeaderPositions();
-
   void updateGeometries() override;
   QSize sizeHint() const override;
-
-public slots:
-  void clearFilters();
 
 signals:
   void filtersUpdated(const QMap<int, QString> &filters);
@@ -104,6 +97,7 @@ public:
 
 signals:
   void msgSelectionChanged(const MessageId &message_id);
+  void titleChanged(const QString &title);
 
 protected:
   MessageView *view;
@@ -113,5 +107,4 @@ protected:
   MessageListModel *model;
   QPushButton *suppress_add;
   QPushButton *suppress_clear;
-  QLabel *num_msg_label;
 };

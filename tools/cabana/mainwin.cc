@@ -162,7 +162,7 @@ void MainWindow::createActions() {
 }
 
 void MainWindow::createDockWindows() {
-  messages_dock = new QDockWidget(tr("MESSAGES"), this);
+  messages_dock = new QDockWidget(tr("0 Messages"), this);
   messages_dock->setObjectName("MessagesPanel");
   messages_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
   messages_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
@@ -178,6 +178,7 @@ void MainWindow::createDockWindows() {
 void MainWindow::createDockWidgets() {
   messages_widget = new MessagesWidget(this);
   messages_dock->setWidget(messages_widget);
+  QObject::connect(messages_widget, &MessagesWidget::titleChanged, messages_dock, &QDockWidget::setWindowTitle);
 
   // right panel
   charts_widget = new ChartsWidget(this);
