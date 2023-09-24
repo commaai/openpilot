@@ -280,7 +280,7 @@ def get_platform_codes(fw_versions: List[bytes]) -> Dict[bytes, Set[bytes]]:
   return dict(codes)
 
 
-def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
+def match_fw_to_car_fuzzy(live_fw_versions, exclude_fw: dict[int, bytes]) -> Set[str]:
   candidates = set()
 
   for candidate, fws in FW_VERSIONS.items():
@@ -292,6 +292,9 @@ def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
       # Only check ECUs expected to have platform codes
       if ecu[0] not in PLATFORM_CODE_ECUS:
         continue
+
+      # ignore FW if in exclude dict and there's more than one fw
+      expected_versions = [fw for fw in expected_versions if fw != exclude_fw[ecu[0]] and len(expected_versions) > 1]
 
       # Expected platform codes & versions
       expected_platform_codes = get_platform_codes(expected_versions)
