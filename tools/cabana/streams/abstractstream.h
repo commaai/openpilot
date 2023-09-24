@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <memory>
 #include <set>
@@ -72,7 +73,7 @@ public:
   virtual double routeStartTime() const { return 0; }
   virtual double currentSec() const = 0;
   virtual double totalSeconds() const = 0;
-  inline double toSeconds(uint64_t mono_time) const { return mono_time / 1e9 - routeStartTime(); }
+  inline double toSeconds(uint64_t mono_time) const { return std::max<double>(0.0, mono_time / 1e9 - routeStartTime()); }
   inline uint64_t toMonoTime(double sec) const { return (sec + routeStartTime()) * 1e9; }
   const CanData &lastMessage(const MessageId &id);
   virtual VisionStreamType visionStreamType() const { return VISION_STREAM_ROAD; }

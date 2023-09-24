@@ -21,38 +21,27 @@ public:
 };
 
 class HistoryLogModel : public QAbstractTableModel {
-  Q_OBJECT
-
 public:
-  HistoryLogModel(QObject *parent) : QAbstractTableModel(parent) {}
-  void setMessage(const MessageId &message_id);
+  HistoryLogModel(const MessageId &id, QObject *parent);
   void updateState();
   void setFilter(int sig_idx, const QString &value, std::function<bool(double, double)> cmp);
-  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
-  QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
   void fetchMore(const QModelIndex &parent) override;
-  inline bool canFetchMore(const QModelIndex &parent) const override { return has_more_data; }
+  inline bool canFetchMore(const QModelIndex &parent) const override { return !messages.empty() && has_more_data; }
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return messages.size(); }
-  int columnCount(const QModelIndex &parent = QModelIndex()) const override {
-    return display_signals_mode && !sigs.empty() ? sigs.size() + 1 : 2;
-  }
-  void refresh(bool fetch_message = true);
-
-public slots:
-  void setDisplayType(int type);
+  void refresh();
   void setDynamicMode(int state);
 
-public:
+protected:
   struct Message {
     uint64_t mono_time = 0;
-    QVector<double> sig_values;
+    std::vector<double> sig_values;
     std::vector<uint8_t> data;
     std::vector<QColor> colors;
   };
 
   template <class InputIt>
   std::deque<HistoryLogModel::Message> fetchData(InputIt first, InputIt last, uint64_t min_time);
-  std::deque<Message> fetchData(uint64_t from_time, uint64_t min_time = 0);
+  size_t fetchData(std::deque<HistoryLogModel::Message>::iterator insert_pos, uint64_t from_time, uint64_t min_time = 0);
 
   MessageId msg_id;
   CanData hex_colors;
@@ -65,7 +54,22 @@ public:
   std::deque<Message> messages;
   std::vector<cabana::Signal *> sigs;
   bool dynamic_mode = true;
-  bool display_signals_mode = true;
+};
+
+class HexLogModel : public HistoryLogModel {
+public:
+  HexLogModel(const MessageId &id, QObject *parent) : HistoryLogModel(id, parent) {}
+  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+  QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+  int columnCount(const QModelIndex &parent = QModelIndex()) const override { return 2; }
+};
+
+class SignalLogModel : public HistoryLogModel {
+public:
+  SignalLogModel(const MessageId &id, QObject *parent) : HistoryLogModel(id, parent) {}
+  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+  QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+  int columnCount(const QModelIndex &parent = QModelIndex()) const override { return sigs.size() + 1; }
 };
 
 class LogsWidget : public QFrame {
@@ -75,16 +79,16 @@ public:
   LogsWidget(QWidget *parent);
   void setMessage(const MessageId &message_id);
   void updateState();
-  void showEvent(QShowEvent *event) override;
-
-private slots:
-  void setFilter();
 
 private:
-  void refresh();
+  void showEvent(QShowEvent *event) override;
+  void setModel(bool hex_model);
+  void setFilter();
+  void msgChanged();
 
   QTableView *logs;
-  HistoryLogModel *model;
+  MessageId msg_id;
+  HistoryLogModel *model = nullptr;
   QCheckBox *dynamic_mode;
   QComboBox *signals_cb, *comp_box, *display_type_cb;
   QLineEdit *value_edit;

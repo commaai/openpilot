@@ -152,17 +152,8 @@ MessageListModel::MessageListModel(QObject *parent) : QAbstractTableModel(parent
 }
 
 QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, int role) const {
-  if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
-    switch (section) {
-      case Column::NAME: return tr("Name");
-      case Column::SOURCE: return tr("Bus");
-      case Column::ADDRESS: return tr("ID");
-      case Column::FREQ: return tr("Freq");
-      case Column::COUNT: return tr("Count");
-      case Column::DATA: return tr("Bytes");
-    }
-  }
-  return {};
+  static const QVariant titles[] = {tr("Name"), tr("Bus"), tr("Address"), tr("Freq"), tr("Count"), tr("Bytes")};
+  return orientation == Qt::Horizontal && role == Qt::DisplayRole ? titles[section] : QVariant();
 }
 
 QVariant MessageListModel::data(const QModelIndex &index, int role) const {

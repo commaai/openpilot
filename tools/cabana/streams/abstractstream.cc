@@ -1,6 +1,5 @@
 #include "tools/cabana/streams/abstractstream.h"
 
-#include <algorithm>
 #include <utility>
 
 #include <QTimer>
