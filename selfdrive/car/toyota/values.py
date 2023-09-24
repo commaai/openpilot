@@ -318,7 +318,7 @@ def match_fw_to_car_fuzzy(live_fw_versions, exclude_fw: dict[int, bytes] = None)
     if valid_expected_ecus.issubset(valid_found_ecus):
       candidates.add(candidate)
 
-  return candidates
+  return candidates - FUZZY_EXCLUDED_PLATFORMS
 
 
 # Regex patterns for parsing more general platform-specific identifiers from FW versions.
@@ -348,6 +348,11 @@ FW_CHUNK_LEN = 16
 # - eps: describes lateral API changes for the EPS, such as using LTA for lane keeping and rejecting LKA messages
 PLATFORM_CODE_ECUS = [Ecu.fwdCamera, Ecu.abs, Ecu.eps]
 
+# These platforms have at least one platform code for all ECUs shared with another platform.
+# This list can be shrunk as we combine platforms, detect features, and add the hybrid ECU
+FUZZY_EXCLUDED_PLATFORMS = {CAR.LEXUS_ES_TSS2, CAR.LEXUS_RX_TSS2, CAR.CHR, CAR.CHRH, CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2,
+                            CAR.RAV4_TSS2, CAR.RAV4H_TSS2, CAR.LEXUS_NX_TSS2, CAR.LEXUS_NXH, CAR.LEXUS_NXH_TSS2,
+                            CAR.LEXUS_NX, CAR.LEXUS_RXH_TSS2}
 
 # Some ECUs that use KWP2000 have their FW versions on non-standard data identifiers.
 # Toyota diagnostic software first gets the supported data ids, then queries them one by one.

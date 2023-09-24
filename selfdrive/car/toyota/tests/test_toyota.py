@@ -5,7 +5,8 @@ import unittest
 from cereal import car
 from openpilot.selfdrive.car.fw_versions import build_fw_dict
 from openpilot.selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, RADAR_ACC_CAR, FW_VERSIONS, \
-                                                  FW_QUERY_CONFIG, PLATFORM_CODE_ECUS, get_platform_codes
+                                                  FW_QUERY_CONFIG, PLATFORM_CODE_ECUS, FUZZY_EXCLUDED_PLATFORMS, \
+                                                  get_platform_codes
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
@@ -123,25 +124,6 @@ class TestToyotaFingerprint(unittest.TestCase):
 
   def test_fuzzy_excluded_platforms(self):
     # Asserts a list of platforms that will not fuzzy fingerprint with platform codes due to them being shared.
-    # This list can be shrunk as we combine platforms, detect features, and add the hybrid ECU.
-    # Note: this list is so small because other ECUs are not shared between hybrid & ICE, commonly the ABS
-    # TODO: should this be put into the fuzzy FP function as a blacklist?
-    excluded_platforms = {
-      CAR.LEXUS_ES_TSS2,
-      CAR.LEXUS_RX_TSS2,
-      CAR.CHR,
-      CAR.CHRH,
-      CAR.COROLLA_TSS2,
-      CAR.COROLLAH_TSS2,
-      CAR.RAV4_TSS2,
-      CAR.RAV4H_TSS2,
-      CAR.LEXUS_NX_TSS2,
-      CAR.LEXUS_NXH,
-      CAR.LEXUS_NXH_TSS2,
-      CAR.LEXUS_NX,
-      CAR.LEXUS_RXH_TSS2,
-    }
-
     platforms_with_shared_codes = set()
     for platform, fw_by_addr in FW_VERSIONS.items():
       car_fw = []
@@ -159,8 +141,8 @@ class TestToyotaFingerprint(unittest.TestCase):
         print('matches', platform, matches)
         platforms_with_shared_codes.add(platform)
 
-    print(len(platforms_with_shared_codes), len(excluded_platforms))
-    self.assertEqual(platforms_with_shared_codes, excluded_platforms, (len(platforms_with_shared_codes), len(FW_VERSIONS)))
+    print(len(platforms_with_shared_codes), len(FUZZY_EXCLUDED_PLATFORMS))
+    self.assertEqual(platforms_with_shared_codes, FUZZY_EXCLUDED_PLATFORMS, (len(platforms_with_shared_codes), len(FW_VERSIONS)))
 
 
 if __name__ == "__main__":
