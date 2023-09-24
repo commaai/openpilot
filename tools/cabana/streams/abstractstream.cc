@@ -162,18 +162,14 @@ void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std
     }
   }
 
-  auto compare = [](const CanEvent *l, const CanEvent *r) {
-    return l->mono_time < r->mono_time;
-  };
-
   for (auto &[id, new_e] : new_events_map) {
     auto &e = events_[id];
-    auto insert_pos = std::upper_bound(e.cbegin(), e.cend(), new_e.front(), compare);
+    auto insert_pos = std::upper_bound(e.cbegin(), e.cend(), new_e.front()->mono_time, CompareCanEvent());
     e.insert(insert_pos, new_e.cbegin(), new_e.cend());
   }
 
   if (!new_events.empty()) {
-    auto insert_pos = std::upper_bound(all_events_.cbegin(), all_events_.cend(), new_events.front(), compare);
+    auto insert_pos = std::upper_bound(all_events_.cbegin(), all_events_.cend(), new_events.front()->mono_time, CompareCanEvent());
     all_events_.insert(insert_pos, new_events.cbegin(), new_events.cend());
   }
 
@@ -201,15 +197,11 @@ inline QColor blend(const QColor &a, const QColor &b) {
 
 // Calculate the frequency of the past minute.
 double calc_freq(const MessageId &msg_id, double current_sec) {
-  auto compare = [](const CanEvent *e, uint64_t mono_time) {
-    return e->mono_time < mono_time;
-  };
-
   const auto &events = can->events(msg_id);
   uint64_t cur_mono_time = (can->routeStartTime() + current_sec) * 1e9;
   uint64_t first_mono_time = std::max<int64_t>(0, cur_mono_time - 59 * 1e9);
-  auto first = std::lower_bound(events.begin(), events.end(), first_mono_time, compare);
-  auto second = std::lower_bound(first, events.end(), cur_mono_time, compare);
+  auto first = std::lower_bound(events.begin(), events.end(), first_mono_time, CompareCanEvent());
+  auto second = std::lower_bound(first, events.end(), cur_mono_time, CompareCanEvent());
   if (first != events.end() && second != events.end()) {
     double duration = ((*second)->mono_time - (*first)->mono_time) / 1e9;
     uint32_t count = std::distance(first, second);

@@ -36,7 +36,7 @@ SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(p
 void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const cabana::Signal *sig) {
   Item *item = new Item{.sig = sig, .parent = parent_item, .title = sig->name, .type = Item::Sig};
   parent_item->children.insert(pos, item);
-  QString titles[]{"Name", "Size", "Little Endian", "Signed", "Offset", "Factor", "Type", "Multiplex Value", "Extra Info",
+  QString titles[]{"Name", "Size", "Node", "Little Endian", "Signed", "Offset", "Factor", "Type", "Multiplex Value", "Extra Info",
                    "Unit", "Comment", "Minimum Value", "Maximum Value", "Value Descriptions"};
   for (int i = 0; i < std::size(titles); ++i) {
     item->children.push_back(new Item{.sig = sig, .parent = item, .title = titles[i], .type = (Item::Type)(i + Item::Name)});
@@ -134,6 +134,7 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
           case Item::Sig: return item->sig_val;
           case Item::Name: return item->sig->name;
           case Item::Size: return item->sig->size;
+          case Item::Node: return item->sig->receiver_name;
           case Item::SignalType: return signalTypeToString(item->sig->type);
           case Item::MultiplexValue: return item->sig->multiplex_value;
           case Item::Offset: return doubleToString(item->sig->offset);
@@ -172,6 +173,7 @@ bool SignalModel::setData(const QModelIndex &index, const QVariant &value, int r
   switch (item->type) {
     case Item::Name: s.name = value.toString(); break;
     case Item::Size: s.size = value.toInt(); break;
+    case Item::Node: s.receiver_name = value.toString().trimmed(); break;
     case Item::SignalType: s.type = (cabana::Signal::Type)value.toInt(); break;
     case Item::MultiplexValue: s.multiplex_value = value.toInt(); break;
     case Item::Endian: s.is_little_endian = value.toBool(); break;
@@ -195,11 +197,11 @@ void SignalModel::showExtraInfo(const QModelIndex &index) {
   if (item->type == Item::ExtraInfo) {
     if (!item->parent->extra_expanded) {
       item->parent->extra_expanded = true;
-      beginInsertRows(index.parent(), 7, 13);
+      beginInsertRows(index.parent(), Item::ExtraInfo - 2, Item::Desc - 2);
       endInsertRows();
     } else {
       item->parent->extra_expanded = false;
-      beginRemoveRows(index.parent(), 7, 13);
+      beginRemoveRows(index.parent(), Item::ExtraInfo - 2, Item::Desc - 2);
       endRemoveRows();
     }
   }
@@ -267,6 +269,7 @@ void SignalModel::handleSignalRemoved(const cabana::Signal *sig) {
 
 SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {
   name_validator = new NameValidator(this);
+  node_validator = new QRegExpValidator(QRegExp("^\\w+(,\\w+)*$"), this);
   double_validator = new DoubleValidator(this);
 
   label_font.setPointSize(8);
@@ -382,12 +385,14 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 
 QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto item = (SignalModel::Item *)index.internalPointer();
-  if (item->type == SignalModel::Item::Name || item->type == SignalModel::Item::Offset ||
+  if (item->type == SignalModel::Item::Name || item->type == SignalModel::Item::Node || item->type == SignalModel::Item::Offset ||
       item->type == SignalModel::Item::Factor || item->type == SignalModel::Item::MultiplexValue ||
       item->type == SignalModel::Item::Min || item->type == SignalModel::Item::Max) {
     QLineEdit *e = new QLineEdit(parent);
     e->setFrame(false);
-    e->setValidator(item->type == SignalModel::Item::Name ? name_validator : double_validator);
+    if (item->type == SignalModel::Item::Name) e->setValidator(name_validator);
+    else if (item->type == SignalModel::Item::Node) e->setValidator(node_validator);
+    else e->setValidator(double_validator);
 
     if (item->type == SignalModel::Item::Name) {
       QCompleter *completer = new QCompleter(dbc()->signalNames());
@@ -395,7 +400,6 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
       completer->setFilterMode(Qt::MatchContains);
       e->setCompleter(completer);
     }
-
     return e;
   } else if (item->type == SignalModel::Item::Size) {
     QSpinBox *spin = new QSpinBox(parent);

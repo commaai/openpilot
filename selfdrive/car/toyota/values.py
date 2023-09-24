@@ -1,7 +1,8 @@
+import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag
-from typing import Dict, List, Union
+from typing import Dict, List, Set, Union
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
@@ -233,6 +234,79 @@ STATIC_DSU_MSGS = [
   (0x4CB, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDERH, CAR.HIGHLANDER, CAR.AVALON,
            CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 0, 100, b'\x0c\x00\x00\x00\x00\x00\x00\x00'),
 ]
+
+
+def get_platform_codes(fw_versions: List[bytes]) -> Dict[bytes, Set[bytes]]:
+  # Returns sub versions in a dict so comparisons can be made within part-platform-major_version combos
+  codes = defaultdict(set)  # Optional[part]-platform-major_version: set of sub_version
+  for fw in fw_versions:
+    # FW versions returned from UDS queries can return multiple fields/chunks of data (different ECU calibrations, different data?)
+    #  and are prefixed with a byte that describes how many chunks of data there are.
+    # But FW returned from KWP requires querying of each sub-data id and does not have a length prefix.
+
+    length_code = 1
+    length_code_match = FW_LEN_CODE.search(fw)
+    if length_code_match is not None:
+      length_code = length_code_match.group()[0]
+      fw = fw[1:]
+
+    # fw length should be multiple of 16 bytes (per chunk, even if no length code), skip parsing if unexpected length
+    if length_code * FW_CHUNK_LEN != len(fw):
+      continue
+
+    chunks = [fw[FW_CHUNK_LEN * i:FW_CHUNK_LEN * i + FW_CHUNK_LEN].strip(b'\x00 ') for i in range(length_code)]
+
+    # only first is considered for now since second is commonly shared (TODO: understand that)
+    first_chunk = chunks[0]
+    if len(first_chunk) == 8:
+      # TODO: no part number, but some short chunks have it in subsequent chunks
+      fw_match = SHORT_FW_PATTERN.search(first_chunk)
+      if fw_match is not None:
+        platform, major_version, sub_version = fw_match.groups()
+        codes[b'-'.join((platform, major_version))].add(sub_version)
+
+    elif len(first_chunk) == 10:
+      fw_match = MEDIUM_FW_PATTERN.search(first_chunk)
+      if fw_match is not None:
+        part, platform, major_version, sub_version = fw_match.groups()
+        codes[b'-'.join((part, platform, major_version))].add(sub_version)
+
+    elif len(first_chunk) == 12:
+      fw_match = LONG_FW_PATTERN.search(first_chunk)
+      if fw_match is not None:
+        part, platform, major_version, sub_version = fw_match.groups()
+        codes[b'-'.join((part, platform, major_version))].add(sub_version)
+
+  return dict(codes)
+
+
+# Regex patterns for parsing more general platform-specific identifiers from FW versions.
+# - Part number: Toyota part number (usually last character needs to be ignored to find a match).
+#    Each ECU address has just one part number.
+# - Platform: usually multiple codes per an openpilot platform, however this is the least variable and
+#    is usually shared across ECUs and model years signifying this describes something about the specific platform.
+#    This describes more generational changes (TSS-P vs TSS2), or manufacture region.
+# - Major version: second least variable part of the FW version. Seen splitting cars by model year/API such as
+#    RAV4 2022/2023 and Avalon. Used to differentiate cars where API has changed slightly, but is not a generational change.
+#    It is important to note that these aren't always consecutive, for example:
+#    Avalon 2016-18's fwdCamera has these major versions: 01, 03 while 2019 has: 02
+# - Sub version: exclusive to major version, but shared with other cars. Should only be used for further filtering.
+#    Seen bumped in TSB FW updates, and describes other minor differences.
+SHORT_FW_PATTERN = re.compile(b'[A-Z0-9](?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{3})')
+MEDIUM_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{1})(?P<sub_version>[A-Z0-9]{2})')
+LONG_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{3})')
+FW_LEN_CODE = re.compile(b'^[\x01-\x03]')  # highest seen is 3 chunks, 16 bytes each
+FW_CHUNK_LEN = 16
+
+# List of ECUs that are most unique across openpilot platforms
+# TODO: use hybrid ECU, splits similar ICE and hybrid variants
+# - fwdCamera: describes actual features related to ADAS. For example, on the Avalon it describes
+#    when TSS-P became standard, whether the car supports stop and go, and whether it's TSS2.
+#    On the RAV4, it describes the move to the radar doing ACC, and the use of LTA for lane keeping.
+# - abs: differentiates hybrid/ICE on most cars (Corolla TSS2 is an exception)
+# - eps: describes lateral API changes for the EPS, such as using LTA for lane keeping and rejecting LKA messages
+PLATFORM_CODE_ECUS = [Ecu.fwdCamera, Ecu.abs, Ecu.eps]
+
 
 # Some ECUs that use KWP2000 have their FW versions on non-standard data identifiers.
 # Toyota diagnostic software first gets the supported data ids, then queries them one by one.

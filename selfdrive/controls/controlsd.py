@@ -374,19 +374,19 @@ class Controls:
     else:
       self.logged_comm_issue = None
 
-    if not self.sm['liveParameters'].valid and not TESTING_CLOSET and (not SIMULATION or REPLAY):
-      self.events.add(EventName.vehicleModelInvalid)
     if not self.sm['lateralPlan'].mpcSolutionValid:
       self.events.add(EventName.plannerError)
-    if not (self.sm['liveParameters'].sensorValid or self.sm['liveLocationKalman'].sensorsOK) and not NOSENSOR:
-      if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive all the inputs
-        self.events.add(EventName.sensorDataInvalid)
-    if not self.sm['liveLocationKalman'].inputsOK and not NOSENSOR:
-      self.events.add(EventName.localizerMalfunction)
     if not self.sm['liveLocationKalman'].posenetOK:
       self.events.add(EventName.posenetInvalid)
     if not self.sm['liveLocationKalman'].deviceStable:
       self.events.add(EventName.deviceFalling)
+    if not (self.sm['liveParameters'].sensorValid or self.sm['liveLocationKalman'].sensorsOK):
+      if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive sensor inputs
+        self.events.add(EventName.sensorDataInvalid)
+    if not self.sm['liveLocationKalman'].inputsOK:
+      self.events.add(EventName.locationdTemporaryError)
+    if not self.sm['liveParameters'].valid and not TESTING_CLOSET and (not SIMULATION or REPLAY):
+      self.events.add(EventName.paramsdTemporaryError)
 
     if not REPLAY:
       # Check for mismatch between openpilot and car's PCM
@@ -629,8 +629,8 @@ class Controls:
 
         if CC.latActive:
           steer = clip(self.sm['testJoystick'].axes[1], -1, 1)
-          # max angle is 45 for angle-based cars
-          actuators.steer, actuators.steeringAngleDeg = steer, steer * 45.
+          # max angle is 45 for angle-based cars, max curvature is 0.02
+          actuators.steer, actuators.steeringAngleDeg, actuators.curvature = steer, steer * 45., steer * -0.02
 
         lac_log.active = self.active
         lac_log.steeringAngleDeg = CS.steeringAngleDeg
@@ -807,8 +807,6 @@ class Controls:
       controlsState.lateralControlState.pidState = lac_log
     elif lat_tuning == 'torque':
       controlsState.lateralControlState.torqueState = lac_log
-    elif lat_tuning == 'indi':
-      controlsState.lateralControlState.indiState = lac_log
 
     self.pm.send('controlsState', dat)
 
