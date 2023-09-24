@@ -198,7 +198,7 @@ jobs:
         $DOCKER_LOGIN
     - uses: ./.github/workflows/setup-with-retry
       with:
-        git-lfs: false
+        git_lfs: false
         docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
     - name: Build and push CL Docker image
       if: matrix.arch == 'x86_64'
@@ -309,7 +309,7 @@ jobs:
       id: print-diff
       if: always()
       run: cat selfdrive/test/process_replay/diff.txt
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       if: always()
       continue-on-error: true
       with:

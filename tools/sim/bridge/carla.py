@@ -7,20 +7,49 @@ from openpilot.tools.sim.lib.camerad import W, H
 
 
 class CarlaWorld(World):
-  def __init__(self, world, vehicle, high_quality=False, dual_camera=False):
+  def __init__(self, client, high_quality, dual_camera, num_selected_spawn_point, town):
     super().__init__(dual_camera)
     import carla
+
+    low_quality_layers = carla.MapLayer(carla.MapLayer.Ground | carla.MapLayer.Walls | carla.MapLayer.Decals)
+
+    layers = carla.MapLayer.All if high_quality else low_quality_layers
+
+    world = client.load_world(town, map_layers=layers)
+
+    settings = world.get_settings()
+    settings.fixed_delta_seconds = 0.01
+    world.apply_settings(settings)
+
+    world.set_weather(carla.WeatherParameters.ClearSunset)
+
     self.world = world
+    world_map = world.get_map()
+
+    blueprint_library = world.get_blueprint_library()
+
+    vehicle_bp = blueprint_library.filter('vehicle.tesla.*')[1]
+    vehicle_bp.set_attribute('role_name', 'hero')
+    spawn_points = world_map.get_spawn_points()
+    assert len(spawn_points) > num_selected_spawn_point, \
+      f'''No spawn point {num_selected_spawn_point}, try a value between 0 and {len(spawn_points)} for this town.'''
+    self.spawn_point = spawn_points[num_selected_spawn_point]
+    self.vehicle = world.spawn_actor(vehicle_bp, self.spawn_point)
+
+    physics_control = self.vehicle.get_physics_control()
+    physics_control.mass = 2326
+    physics_control.torque_curve = [[20.0, 500.0], [5000.0, 500.0]]
+    physics_control.gear_switch_time = 0.0
+    self.vehicle.apply_physics_control(physics_control)
+
     self.vc: carla.VehicleControl = carla.VehicleControl(throttle=0, steer=0, brake=0, reverse=False)
-    self.vehicle = vehicle
-    self.max_steer_angle: float = vehicle.get_physics_control().wheels[0].max_steer_angle
+    self.max_steer_angle: float = self.vehicle.get_physics_control().wheels[0].max_steer_angle
     self.params = Params()
 
     self.steer_ratio = 15
 
     self.carla_objects = []
 
-    blueprint_library = self.world.get_blueprint_library()
     transform = carla.Transform(carla.Location(x=0.8, z=1.13))
 
     def create_camera(fov, callback):
@@ -31,7 +60,7 @@ class CarlaWorld(World):
       blueprint.set_attribute('sensor_tick', str(1/20))
       if not high_quality:
         blueprint.set_attribute('enable_postprocess_effects', 'False')
-      camera = world.spawn_actor(blueprint, transform, attach_to=vehicle)
+      camera = world.spawn_actor(blueprint, transform, attach_to=self.vehicle)
       camera.listen(callback)
       return camera
 
@@ -44,13 +73,13 @@ class CarlaWorld(World):
     # re-enable IMU
     imu_bp = blueprint_library.find('sensor.other.imu')
     imu_bp.set_attribute('sensor_tick', '0.01')
-    self.imu = world.spawn_actor(imu_bp, transform, attach_to=vehicle)
+    self.imu = world.spawn_actor(imu_bp, transform, attach_to=self.vehicle)
 
     gps_bp = blueprint_library.find('sensor.other.gnss')
-    self.gps = world.spawn_actor(gps_bp, transform, attach_to=vehicle)
+    self.gps = world.spawn_actor(gps_bp, transform, attach_to=self.vehicle)
     self.params.put_bool("UbloxAvailable", True)
 
-    self.carla_objects = [self.imu, self.gps, self.road_camera, self.road_wide_camera]
+    self.carla_objects = [self.imu, self.gps, self.road_camera, self.road_wide_camera, self.vehicle]
 
   def close(self):
     for s in self.carla_objects:
@@ -111,7 +140,10 @@ class CarlaWorld(World):
     self.world.tick()
 
   def reset(self):
-    pass
+    import carla
+
+    self.vehicle.set_transform(self.spawn_point)
+    self.vehicle.set_target_velocity(carla.Vector3D())
 
 
 class CarlaBridge(SimulatorBridge):
@@ -129,38 +161,5 @@ class CarlaBridge(SimulatorBridge):
     client = carla.Client(self.host, self.port)
     client.set_timeout(5)
 
-    world = client.load_world(self.town)
-
-    settings = world.get_settings()
-    settings.fixed_delta_seconds = 0.01
-    world.apply_settings(settings)
-
-    world.set_weather(carla.WeatherParameters.ClearSunset)
-
-    if not self.high_quality:
-      world.unload_map_layer(carla.MapLayer.Foliage)
-      world.unload_map_layer(carla.MapLayer.Buildings)
-      world.unload_map_layer(carla.MapLayer.ParkedVehicles)
-      world.unload_map_layer(carla.MapLayer.Props)
-      world.unload_map_layer(carla.MapLayer.StreetLights)
-      world.unload_map_layer(carla.MapLayer.Particles)
-
-    blueprint_library = world.get_blueprint_library()
-
-    world_map = world.get_map()
-
-    vehicle_bp = blueprint_library.filter('vehicle.tesla.*')[1]
-    vehicle_bp.set_attribute('role_name', 'hero')
-    spawn_points = world_map.get_spawn_points()
-    assert len(spawn_points) > self.num_selected_spawn_point, \
-      f'''No spawn point {self.num_selected_spawn_point}, try a value between 0 and {len(spawn_points)} for this town.'''
-    spawn_point = spawn_points[self.num_selected_spawn_point]
-    vehicle = world.spawn_actor(vehicle_bp, spawn_point)
-
-    physics_control = vehicle.get_physics_control()
-    physics_control.mass = 2326
-    physics_control.torque_curve = [[20.0, 500.0], [5000.0, 500.0]]
-    physics_control.gear_switch_time = 0.0
-    vehicle.apply_physics_control(physics_control)
-
-    return CarlaWorld(world, vehicle, dual_camera=self.dual_camera)
+    return CarlaWorld(client, high_quality=self.high_quality, dual_camera=self.dual_camera,
+                      num_selected_spawn_point=self.num_selected_spawn_point, town=self.town)
