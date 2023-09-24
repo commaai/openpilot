@@ -341,7 +341,6 @@ void MessageListModel::fetchData() {
     beginResetModel();
     msgs = std::move(new_msgs);
     endResetModel();
-    emit messagesChanged();
   }
 }
 

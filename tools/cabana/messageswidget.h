@@ -45,9 +45,6 @@ public:
   void dbcModified();
   std::vector<MessageId> msgs;
 
-signals:
-  void messagesChanged();
-
 private:
   void sortMessages(std::vector<MessageId> &new_msgs);
   bool matchMessage(const MessageId &id, const CanData &data, const QMap<int, QString> &filters);
