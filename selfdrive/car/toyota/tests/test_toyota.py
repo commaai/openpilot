@@ -138,8 +138,9 @@ class TestToyotaFingerprint(unittest.TestCase):
       if len(matches) == 1:
         self.assertEqual(list(matches)[0], platform)
       else:
+        # If a platform has multiple matches, add it and its matches
         print('matches', platform, matches)
-        platforms_with_shared_codes.add(platform)
+        platforms_with_shared_codes |= {platform, *matches}
 
     print(len(platforms_with_shared_codes), len(FUZZY_EXCLUDED_PLATFORMS))
     self.assertEqual(platforms_with_shared_codes, FUZZY_EXCLUDED_PLATFORMS, (len(platforms_with_shared_codes), len(FW_VERSIONS)))
