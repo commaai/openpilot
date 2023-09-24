@@ -15,9 +15,6 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
 
-  QHBoxLayout *title_layout = new QHBoxLayout();
-  main_layout->addLayout(title_layout);
-
   // message table
   view = new MessageView(this);
   model = new MessageListModel(this);
@@ -49,21 +46,22 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
   main_layout->addWidget(view);
 
-  // suppress
-  title_layout->addWidget(suppress_add = new QPushButton("&Suppress Highlighted"));
+  // bottom layout
+  QHBoxLayout *bottom_layout = new QHBoxLayout();
+  bottom_layout->addWidget(suppress_add = new QPushButton("&Suppress Highlighted"));
   suppress_add->setToolTip(tr("Suppress Highlighted bytes"));
-  title_layout->addWidget(suppress_clear = new QPushButton());
+  bottom_layout->addWidget(suppress_clear = new QPushButton());
   suppress_clear->setToolTip(tr("Clear suppressed bytes"));
   QCheckBox *suppress_defined_signals = new QCheckBox(tr("Suppress Signals"), this);
   suppress_defined_signals->setToolTip(tr("Suppress Defined Signals"));
   suppress_defined_signals->setChecked(settings.suppress_defined_signals);
-  title_layout->addWidget(suppress_defined_signals);
-  main_layout->addLayout(title_layout);
-
-  title_layout->addStretch();
-  title_layout->addWidget(multiple_lines_bytes = new QCheckBox(tr("Multi-Line Bytes"), this));
+  bottom_layout->addWidget(suppress_defined_signals);
+  bottom_layout->addStretch();
+  bottom_layout->addWidget(multiple_lines_bytes = new QCheckBox(tr("Multi-Line Bytes"), this));
   multiple_lines_bytes->setToolTip(tr("Display bytes in multiple lines"));
   multiple_lines_bytes->setChecked(settings.multiple_lines_bytes);
+
+  main_layout->addLayout(bottom_layout);
 
   // signals/slots
   QObject::connect(header, &MessageViewHeader::filtersUpdated, model, &MessageListModel::setFilterStrings);
