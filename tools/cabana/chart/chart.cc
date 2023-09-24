@@ -662,6 +662,8 @@ void ChartView::startAnimation() {
   a->setEndValue(1);
   a->setEasingCurve(QEasingCurve::InBack);
   a->start(QPropertyAnimation::DeleteWhenStopped);
+  QObject::connect(a, &QPropertyAnimation::finished, this,
+                   [this]() { viewport()->setGraphicsEffect(nullptr); });
 }
 
 void ChartView::paintEvent(QPaintEvent *event) {
