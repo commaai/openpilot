@@ -85,13 +85,14 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
     view->updateBytesSectionSize();
   });
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MessagesWidget::dbcModified);
-  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &MessagesWidget::dbcModified);
+  QObject::connect(dbc(), &DBCManager::DBCFileChanged, model, &MessageListModel::dbcModified);
+  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, model, &MessageListModel::dbcModified);
   QObject::connect(model, &MessageListModel::modelReset, [this]() {
     if (current_msg_id) {
       selectMessage(*current_msg_id);
     }
     view->updateBytesSectionSize();
+    updateTitle();
   });
   QObject::connect(view->selectionModel(), &QItemSelectionModel::currentChanged, [=](const QModelIndex &current, const QModelIndex &previous) {
     if (current.isValid() && current.row() < model->msgs.size()) {
@@ -125,9 +126,17 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   )"));
 }
 
-void MessagesWidget::dbcModified() {
-  num_msg_label->setText(tr("%1 Messages, %2 Signals").arg(dbc()->msgCount()).arg(dbc()->signalCount()));
-  model->dbcModified();
+void MessagesWidget::updateTitle() {
+  size_t dbc_msg_count = 0;
+  size_t signal_count = 0;
+  for (const auto &msg_id : model->msgs) {
+    if (auto m = dbc()->msg(msg_id)) {
+      ++dbc_msg_count;
+      signal_count += m->sigs.size();
+    }
+  }
+  num_msg_label->setText(tr("%1 Messages (%2 DBC Messages, %3 Signals)")
+                             .arg(model->msgs.size()).arg(dbc_msg_count).arg(signal_count));
 }
 
 void MessagesWidget::selectMessage(const MessageId &msg_id) {
@@ -332,6 +341,7 @@ void MessageListModel::fetchData() {
     beginResetModel();
     msgs = std::move(new_msgs);
     endResetModel();
+    emit messagesChanged();
   }
 }
 
