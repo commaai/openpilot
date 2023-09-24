@@ -12,7 +12,7 @@
 #include "tools/cabana/chart/chart.h"
 
 const int MAX_COLUMN_COUNT = 4;
-const int CHART_SPACING = 10;
+const int CHART_SPACING = 6;
 
 ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_timer(this), QFrame(parent) {
   setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
@@ -518,15 +518,11 @@ void ChartsContainer::paintEvent(QPaintEvent *ev) {
       r.setHeight(CHART_SPACING);
     }
 
-    const int margin = (CHART_SPACING - 2) / 2;
-    QPainterPath path;
-    path.addPolygon(QPolygonF({r.topLeft(), QPointF(r.left() + CHART_SPACING, r.top() + r.height() / 2), r.bottomLeft()}));
-    path.addPolygon(QPolygonF({r.topRight(), QPointF(r.right() - CHART_SPACING, r.top() + r.height() / 2), r.bottomRight()}));
-
     QPainter p(this);
-    p.setRenderHint(QPainter::Antialiasing);
-    p.fillPath(path, palette().highlight());
-    p.fillRect(r.adjusted(2, margin, -2, -margin), palette().highlight());
+    p.setPen(QPen(palette().highlight(), 2));
+    p.drawLine(r.topLeft() + QPoint(1, 0), r.bottomLeft() + QPoint(1, 0));
+    p.drawLine(r.topLeft() + QPoint(0, r.height() / 2), r.topRight() + QPoint(0, r.height() / 2));
+    p.drawLine(r.topRight(), r.bottomRight());
   }
 }
 
