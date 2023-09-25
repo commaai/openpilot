@@ -9,13 +9,13 @@ last_control_send_time = time.monotonic()
 logger = logging.getLogger("pc")
 logging.basicConfig(level=logging.INFO)
 
-def send_control_message(pm, x, y):
+def send_control_message(pm, x, y, source):
   global last_control_send_time
   msg = messaging.new_message('testJoystick')
   msg.testJoystick.axes = [x, y]
   msg.testJoystick.buttons = [False]
   pm.send('testJoystick', msg)
-  logger.info(f"bodycontrol (x, y): ({x}, {y})")
+  logger.info(f"bodycontrol|{source} (x, y): ({x}, {y})")
   last_control_send_time = time.monotonic()
 
 
@@ -28,12 +28,12 @@ def main():
     sm.update(0)
     if sm.updated['bodyReserved0']:
       controls = json.loads(sm['bodyReserved0'])
-      send_control_message(pm, controls['x'], controls['y'])
+      send_control_message(pm, controls['x'], controls['y'], 'wasd')
 
     else:
       now = time.monotonic()
       if now > last_control_send_time + TIME_GAP_THRESHOLD:
-        send_control_message(pm, 0.0, 0.0)
+        send_control_message(pm, 0.0, 0.0, 'dummy')
 
     rk.keep_time()
 
