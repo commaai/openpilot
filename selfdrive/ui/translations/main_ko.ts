@@ -9,7 +9,7 @@
     </message>
     <message>
         <source>Snooze Update</source>
-        <translation>업데이트 일시중지</translation>
+        <translation>업데이트 일시 중지</translation>
     </message>
     <message>
         <source>Reboot and Update</source>
@@ -191,11 +191,11 @@
     </message>
     <message>
         <source>Review the rules, features, and limitations of openpilot</source>
-        <translation>openpilot의 규칙, 기능 및 제한 다시보기</translation>
+        <translation>openpilot의 규칙, 기능 및 제한 다시 확인</translation>
     </message>
     <message>
         <source>Are you sure you want to review the training guide?</source>
-        <translation>트레이닝 가이드를 다시 보시겠습니까?</translation>
+        <translation>트레이닝 가이드를 다시 확인하시겠습니까?</translation>
     </message>
     <message>
         <source>Regulatory</source>
@@ -1028,7 +1028,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Disengage on Accelerator Pedal</source>
-        <translation>가속페달 조작시 해제</translation>
+        <translation>가속페달 조작 시 해제</translation>
     </message>
     <message>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
@@ -1174,7 +1174,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>
-        <translation>Wi-Fi에 연결하여 주행 데이터를 업로드하고 openpilot 개선에 도움을 주세요</translation>
+        <translation>Wi-Fi에 연결하여 주행 데이터를 업로드하고 openpilot 개선에 기여하세요</translation>
     </message>
     <message>
         <source>Open Settings</source>
@@ -1186,7 +1186,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Training data will be pulled periodically while your device is on Wi-Fi</source>
-        <translation>기기가 Wi-File에 연결되어 있는 동안 트레이닝 데이터를 주기적으로 전송합니다.</translation>
+        <translation>기기가 Wi-Fi에 연결되어 있는 동안 트레이닝 데이터를 주기적으로 전송합니다</translation>
     </message>
 </context>
 <context>
