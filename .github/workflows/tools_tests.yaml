@@ -90,11 +90,22 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
+    - uses: ./.github/workflows/setup-with-retry
+      with:
+        git_lfs: false
+    - name: Use local image for testing devcontainer with latest base image
+      run: |
+        echo "USE_LOCAL_IMAGE=true" >> "$GITHUB_ENV"
     - name: Setup Dev Container CLI
       run: npm install -g @devcontainers/cli
     - name: Build dev container image
       run: devcontainer build --workspace-folder .
     - name: Run dev container
-      run: devcontainer up --workspace-folder .
+      run: |
+        mkdir -p /tmp/devcontainer_scons_cache/
+        cp -r $GITHUB_WORKSPACE/.ci_cache/scons_cache/* /tmp/devcontainer_scons_cache/
+        devcontainer up --workspace-folder .
     - name: Test environment
-      run: devcontainer exec --workspace-folder . scons --dry-run
+      run: |
+        devcontainer exec --workspace-folder . scons -j$(nproc)
+        devcontainer exec --workspace-folder . pip install pip-install-test
