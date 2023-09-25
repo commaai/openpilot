@@ -7,7 +7,6 @@ from typing import Any
 
 import cereal.messaging as messaging
 from openpilot.common.params import Params
-from openpilot.common.spinner import Spinner
 from openpilot.system.hardware import PC
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.test.openpilotci import BASE_URL, get_url
@@ -105,14 +104,6 @@ def nav_model_replay(lr):
 
 
 def model_replay(lr, frs):
-  if not PC:
-    spinner = Spinner()
-    spinner.update("starting model replay")
-  else:
-    spinner = None
-
-  log_msgs = []
-
   # modeld is using frame pairs
   modeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"roadCameraState", "wideRoadCameraState"}, {"roadEncodeIdx", "wideRoadEncodeIdx"})
   dmodeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"driverCameraState"}, {"driverEncodeIdx"})
@@ -128,18 +119,9 @@ def model_replay(lr, frs):
   modeld = get_process_config("modeld")
   dmonitoringmodeld = get_process_config("dmonitoringmodeld")
 
-  try:
-    if spinner:
-      spinner.update("running model replay")
-    modeld_msgs = replay_process(modeld, modeld_logs, frs)
-    dmonitoringmodeld_msgs = replay_process(dmonitoringmodeld, dmodeld_logs, frs)
-    log_msgs.extend([m for m in modeld_msgs if m.which() == "modelV2"])
-    log_msgs.extend([m for m in dmonitoringmodeld_msgs if m.which() == "driverStateV2"])
-  finally:
-    if spinner:
-      spinner.close()
-
-  return log_msgs
+  modeld_msgs = replay_process(modeld, modeld_logs, frs)
+  dmonitoringmodeld_msgs = replay_process(dmonitoringmodeld, dmodeld_logs, frs)
+  return modeld_msgs + dmonitoringmodeld_msgs
 
 
 if __name__ == "__main__":
@@ -196,8 +178,8 @@ if __name__ == "__main__":
       cmp_log = []
 
       # logs are ordered based on type: modelV2, driverStateV2, nav messages (navThumbnail, mapRenderState, navModel)
-      model_start_index = next(i for i, m in enumerate(all_logs) if m.which() == "modelV2")
-      cmp_log += all_logs[model_start_index:model_start_index + MAX_FRAMES]
+      model_start_index = next(i for i, m in enumerate(all_logs) if m.which() in ("modelV2", "cameraOdometry"))
+      cmp_log += all_logs[model_start_index:model_start_index + MAX_FRAMES*2]
       dmon_start_index = next(i for i, m in enumerate(all_logs) if m.which() == "driverStateV2")
       cmp_log += all_logs[dmon_start_index:dmon_start_index + MAX_FRAMES]
       if not NO_NAV:
