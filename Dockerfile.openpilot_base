@@ -23,7 +23,8 @@ RUN cd /tmp && \
     rm -rf thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
 
 ARG USER=batman
-RUN useradd -m -s /bin/bash -u 1000 $USER
+ARG USER_UID=1000
+RUN useradd -m -s /bin/bash -u $USER_UID $USER
 USER $USER
 
 ENV POETRY_VIRTUALENVS_CREATE=false
