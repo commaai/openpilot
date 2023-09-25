@@ -1,9 +1,9 @@
 import json
 import time
 from cereal import messaging
+from openpilot.common.realtime import Ratekeeper
 
 TIME_GAP_THRESHOLD = 0.5
-
 last_control_send_time = time.monotonic()
 
 
@@ -16,6 +16,7 @@ def send_control_message(x, y):
 
 
 def main():
+  rk = Ratekeeper(20.0)
   pm = messaging.PubMaster(['testJoystick'])
   sm = messaging.SubMaster(['bodyReserved0'])
   while True:
@@ -26,6 +27,8 @@ def main():
     if sm.updated['bodyReserved0']:
       controls = json.loads(sm['bodyReserved0'])
       send_control_message(controls['x'], controls['y'])
+
+    rk.keep_time()
 
 
 if __name__ == "__main__":
