@@ -26,14 +26,11 @@ This decodes the `driverEncodeData` packets from the body, and pushes it to a lo
 ### 2. Run Model -> Send Outputs
 ```
 # On another terminal window of the remote computer, run
-./tools/bodyteleop/remote_models/yolo.py
+./tools/bodyteleop/remote_models/yolo/yolo.py
 ```
 This creates a local VisionIPC client and receives the driver camera frames. We run the `YOLO5N` model on these frames using `onnxruntime`. There's post-processing code to parse the model outputs, compute bounding boxes and filter out objects with low probability. Finally, we publish the outputs to a socket by the message name `bodyReserved1`.
 
 
 ### 3. Control Body
 ```
-# on the body, rerun with remote ip
-./tools/bodyteleop/bodycontrolsd.py <remote-ip>
-```
-It should now start printing yolo outputs
+ToDo: Complete this section
