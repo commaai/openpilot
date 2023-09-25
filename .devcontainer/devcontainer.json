@@ -10,6 +10,7 @@
   "containerEnv": {
     "DISPLAY": "${localEnv:DISPLAY}",
     "PYTHONPATH": "${containerWorkspaceFolder}",
+    "TERM": "xterm-256color",
     "force_color_prompt": "1"
   },
   "runArgs": [
