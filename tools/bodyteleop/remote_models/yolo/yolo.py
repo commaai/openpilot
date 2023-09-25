@@ -12,7 +12,6 @@ from cereal import messaging
 
 N_CLASSES = 80
 
-
 def xywh2xyxy(x):
   y = x.copy()
   y[:, 0] = x[:, 0] - x[:, 2] / 2  # top left x
@@ -75,21 +74,18 @@ class YoloRunner:
   def __init__(self, onnx_path):
     self.sess = create_ort_session(onnx_path)
     self.class_names = [ast.literal_eval(self.sess.get_modelmeta().custom_metadata_map['names'])[i] for i in range(N_CLASSES)]
-    self.hmin = 104
-    self.wmin = 564
-    self.width = 800
-    self.width2 = 640
+    self.width, self.height = 640, 416
 
   def preprocess_image(self, img):
-    img = img[self.hmin:self.hmin + self.width, self.wmin:self.wmin + self.width]
-    img = cv2.resize(img, (self.width2, self.width2))
-    img = np.expand_dims(img, 0).astype(np.float32)
-    img = img.transpose(0, 3, 1, 2)
-    img /= 255
+    img = cv2.resize(img, (self.width, self.height))
+    img = np.expand_dims(img, 0).astype(np.float32) # add batch dim
+    img = img.transpose(0, 3, 1, 2) # NHWC -> NCHW
+    img = img[:, [2,1,0], :, :] # BGR -> RGB
+    img /= 255 # 0-255 -> 0-1
     return img
 
   def run(self, img):
-    img = self.preprocess_image(img).astype(np.float16)
+    img = self.preprocess_image(img)
     res = self.sess.run(None, {'images': img})
     res = nms(res[0])
     return [{
@@ -100,9 +96,10 @@ class YoloRunner:
       for opt in res]
 
   def draw_boxes(self, img, objects):
+    img = cv2.resize(img, (self.width, self.height))
     for obj in objects:
-      pt1 = obj['pt1'] + np.array([self.wmin, self.hmin])
-      pt2 = tuple(obj['pt2']) + np.array([self.wmin, self.hmin])
+      pt1 = obj['pt1']
+      pt2 = tuple(obj['pt2'])
       cv2.rectangle(img, pt1, pt2, (0, 255, 0), 2)
       cv2.putText(img, f"{obj['pred_class']} {obj['prob']:.2f}", pt1, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
     return img
@@ -120,10 +117,7 @@ def main(yolo_runner, debug):
     if yuv_img_raw is None or not yuv_img_raw.data.any():
       continue
     imgff = np.frombuffer(yuv_img_raw.data, dtype=np.uint8).reshape((vipc_client.height * 3 // 2, vipc_client.width))
-    # ToDo 1: get u and v from imgff and get the rgb properly
-    y = imgff[:vipc_client.height, :vipc_client.width]
-    img = cv2.cvtColor(y, cv2.COLOR_GRAY2RGB)
-    # ToDo 2: the iou is not getting filtered, there are too many outputs
+    img = cv2.cvtColor(imgff, cv2.COLOR_YUV2BGR_I420)
     outputs = yolo_runner.run(img)
     msg = messaging.new_message()
     msg.bodyReserved1 = json.dumps(outputs)
@@ -139,6 +133,6 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   if not os.path.isfile('yolov5n.onnx'):
-    os.system('wget https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5n.onnx')
+    os.system('wget https://github.com/YassineYousfi/yolov5n.onnx/releases/download/yolov5n.onnx/yolov5n.onnx')
   yolo_runner = YoloRunner('yolov5n.onnx')
   main(yolo_runner, debug=args.debug)
