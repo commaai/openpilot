@@ -221,7 +221,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   QObject::connect(display_type_cb, qOverload<int>(&QComboBox::activated), this, &LogsWidget::setModel);
   QObject::connect(signals_cb, SIGNAL(activated(int)), this, SLOT(setFilter()));
   QObject::connect(comp_box, SIGNAL(activated(int)), this, SLOT(setFilter()));
-  QObject::connect(value_edit, &QLineEdit::textChanged, this, &LogsWidget::setFilter);
+  QObject::connect(value_edit, &QLineEdit::textEdited, this, &LogsWidget::setFilter);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &LogsWidget::msgChanged);
   QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &LogsWidget::msgChanged);
 }
@@ -234,7 +234,6 @@ void LogsWidget::setMessage(const MessageId &message_id) {
 void LogsWidget::msgChanged() {
   auto msg = dbc()->msg(msg_id);
   bool has_signal = msg && msg->sigs.size() > 0;
-
   signals_cb->clear();
   if (has_signal) {
     for (auto s : msg->sigs) {
@@ -261,8 +260,6 @@ void LogsWidget::setModel(bool hex_mode) {
 }
 
 void LogsWidget::setFilter() {
-  if (value_edit->text().isEmpty() && !value_edit->isModified()) return;
-
   std::function<bool(double, double)> cmp = nullptr;
   switch (comp_box->currentIndex()) {
     case 0: cmp = std::greater<double>{}; break;
