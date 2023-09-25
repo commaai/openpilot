@@ -13,5 +13,8 @@ fi
 EOF
 fi
 
+# These lines are temporary, to remain backwards compatible with old devcontainers
+# that were running as root and therefore had their caches written as root
 USER=batman
 sudo chown -R $USER: /tmp/scons_cache
+sudo chown -R $USER: /tmp/comma_download_cache
