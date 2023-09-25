@@ -11,6 +11,7 @@
     "DISPLAY": "${localEnv:DISPLAY}",
     "PYTHONPATH": "${containerWorkspaceFolder}",
     "TERM": "xterm-256color",
+    "CARLA_HOST": "host.docker.internal",
     "force_color_prompt": "1"
   },
   "runArgs": [
