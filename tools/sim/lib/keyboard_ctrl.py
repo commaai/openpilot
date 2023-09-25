@@ -17,6 +17,20 @@ CC = 6
 
 STDIN_FD = sys.stdin.fileno()
 
+
+KEYBOARD_HELP = """
+  | key  |   functionality    |
+  -----------------------------
+  |  1   |   Cruise Resume    |
+  |  2   |    Cruise Set      |
+  |  3   |   Cruise Cancel    |
+  |  r   |  Reset Simulation  |
+  |  i   |  Toggle Ignition   |
+  |  q   |      Exit all      |
+  | wasd |  Control manually  |
+"""
+
+
 def getch() -> str:
   old_settings = termios.tcgetattr(STDIN_FD)
   try:
