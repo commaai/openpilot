@@ -256,7 +256,7 @@ class CarInterface(CarInterfaceBase):
     if candidate in CANFD_CAR:
       ret.longitudinalTuning.kpV = [0.1]
       ret.longitudinalTuning.kiV = [0.0]
-      ret.experimentalLongitudinalAvailable = True
+      ret.experimentalLongitudinalAvailable = candidate not in UNSUPPORTED_LONGITUDINAL_CAR
     else:
       ret.longitudinalTuning.kpV = [0.5]
       ret.longitudinalTuning.kiV = [0.0]

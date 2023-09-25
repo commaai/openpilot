@@ -2052,7 +2052,7 @@ LEGACY_SAFETY_MODE_CAR = {CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_LTD, CAR.KIA_OPTIMA_
 
 # these cars have not been verified to work with longitudinal yet - radar disable, sending correct messages, etc.
 UNSUPPORTED_LONGITUDINAL_CAR = LEGACY_SAFETY_MODE_CAR | {CAR.KIA_NIRO_PHEV, CAR.KIA_SORENTO, CAR.SONATA_LF, CAR.KIA_OPTIMA_G4_FL,
-                                                         CAR.KIA_OPTIMA_H_G4_FL}
+                                                         CAR.KIA_OPTIMA_H_G4_FL, CAR.KONA_EV_2ND_GEN, CAR.IONIQ_6}
 
 # If 0x500 is present on bus 1 it probably has a Mando radar outputting radar points.
 # If no points are outputted by default it might be possible to turn it on using  selfdrive/debug/hyundai_enable_radar_points.py
