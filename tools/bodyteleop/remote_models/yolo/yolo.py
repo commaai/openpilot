@@ -22,6 +22,7 @@ def xywh2xyxy(x):
 
 
 def non_max_suppression(boxes, scores, threshold):
+  # adapted from https://gist.github.com/CMCDragonkai/1be3402e261d3c239a307a3346360506
   assert boxes.shape[0] == scores.shape[0]
   ys1 = boxes[:, 0]
   xs1 = boxes[:, 1]
@@ -45,6 +46,7 @@ def non_max_suppression(boxes, scores, threshold):
 
 
 def compute_iou(box, boxes, box_area, boxes_area):
+  # adapted from https://gist.github.com/CMCDragonkai/1be3402e261d3c239a307a3346360506
   assert boxes.shape[0] == boxes_area.shape[0]
   ys1 = np.maximum(box[0], boxes[:, 0])
   xs1 = np.maximum(box[1], boxes[:, 1])
