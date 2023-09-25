@@ -27,20 +27,20 @@ def main(remote_ip=None):
   rk = Ratekeeper(20.0)
   pm = messaging.PubMaster(['testJoystick'])
   sm = messaging.SubMaster(['bodyReserved0'])
-  if remote_ip:
-    sm_remote = messaging.SubMaster(['bodyReserved1'], addr=remote_ip)
+  # if remote_ip:
+  #   sm_remote = messaging.SubMaster(['bodyReserved1'], addr=remote_ip)
 
   while True:
     sm.update(0)
-    if remote_ip:
-      sm_remote.update(0)
+    # if remote_ip:
+    #   sm_remote.update(0)
 
     if sm.updated['bodyReserved0']:
       controls = json.loads(sm['bodyReserved0'])
       send_control_message(pm, controls['x'], controls['y'], 'wasd')
-    elif remote_ip and sm_remote.updated['bodyReserved1']:
-      # ToDo: do something with the yolo outputs
-      print(sm_remote['bodyReserved1'])
+    # elif remote_ip and sm_remote.updated['bodyReserved1']:
+    #   # ToDo: do something with the yolo outputs
+    #   print(sm_remote['bodyReserved1'])
     else:
       now = time.monotonic()
       if now > last_control_send_time + TIME_GAP_THRESHOLD:
