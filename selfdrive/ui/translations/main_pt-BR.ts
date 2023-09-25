@@ -226,8 +226,8 @@
         <translation>Desligar</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>O openpilot requer que o dispositivo seja montado dentro de 4° esquerda ou direita e dentro de 5° para cima ou 8° para baixo. O openpilot está continuamente calibrando, resetar raramente é necessário.</translation>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
+        <translation>O openpilot requer que o dispositivo seja montado dentro de 4° esquerda ou direita e dentro de 5° para cima ou 9° para baixo. O openpilot está continuamente calibrando, resetar raramente é necessário.</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
@@ -752,6 +752,10 @@ Isso pode levar até um minuto.</translation>
     <message>
         <source>Something went wrong. Reboot the device.</source>
         <translation>Algo deu errado. Reinicie o dispositivo.</translation>
+    </message>
+    <message>
+        <source>Select a language</source>
+        <translation>Selecione o Idioma</translation>
     </message>
 </context>
 <context>

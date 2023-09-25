@@ -11,13 +11,15 @@
 #include <QColor>
 #include <QHash>
 
+#include "common/timing.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/settings.h"
 #include "tools/cabana/util.h"
 #include "tools/replay/replay.h"
 
 struct CanData {
-  void compute(const char *dat, const int size, double current_sec, double playback_speed, const std::vector<uint8_t> *mask, uint32_t in_freq = 0);
+  void compute(const MessageId &msg_id, const char *dat, const int size, double current_sec,
+               double playback_speed, const std::vector<uint8_t> *mask = nullptr, double in_freq = 0);
 
   double ts = 0.;
   uint32_t count = 0;
@@ -28,6 +30,7 @@ struct CanData {
   std::vector<std::array<uint32_t, 8>> bit_change_counts;
   std::vector<int> last_delta;
   std::vector<int> same_delta_counter;
+  double last_freq_update_ts = 0;
 };
 
 struct CanEvent {
@@ -36,6 +39,11 @@ struct CanEvent {
   uint64_t mono_time;
   uint8_t size;
   uint8_t dat[];
+};
+
+struct CompareCanEvent {
+  constexpr bool operator()(const CanEvent *const e, uint64_t ts) const { return e->mono_time < ts; }
+  constexpr bool operator()(uint64_t ts, const CanEvent *const e) const { return ts < e->mono_time; }
 };
 
 struct BusConfig {
@@ -98,7 +106,7 @@ protected:
   QHash<MessageId, CanData> all_msgs;
   std::unordered_map<MessageId, std::vector<const CanEvent *>> events_;
   std::vector<const CanEvent *> all_events_;
-  std::deque<std::unique_ptr<char[]>> memory_blocks;
+  std::unique_ptr<MonotonicBuffer> event_buffer;
   std::mutex mutex;
   std::unordered_map<MessageId, std::vector<uint8_t>> masks;
 };

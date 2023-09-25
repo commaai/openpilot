@@ -226,8 +226,8 @@
         <translation>Sistemi kapat</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot, cihazın 4° sola veya 5° yukarı yada 8° aşağı bakıcak şekilde monte edilmesi gerekmektedir. openpilot sürekli kendisini kalibre edilmektedir ve nadiren sıfırlama gerebilir.</translation>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
+        <translation>openpilot, cihazın 4° sola veya 5° yukarı yada 9° aşağı bakıcak şekilde monte edilmesi gerekmektedir. openpilot sürekli kendisini kalibre edilmektedir ve nadiren sıfırlama gerebilir.</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
@@ -746,6 +746,10 @@ This may take up to a minute.</source>
     <message>
         <source>No custom software found at this URL.</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a language</source>
+        <translation>Dil seçin</translation>
     </message>
 </context>
 <context>

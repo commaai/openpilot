@@ -174,7 +174,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
 
   auto getFreq = [](const CanData &d) -> QString {
     if (d.freq > 0 && (can->currentSec() - d.ts - 1.0 / settings.fps) < (5.0 / d.freq)) {
-      return d.freq >= 1 ? QString::number(std::nearbyint(d.freq)) : QString::number(d.freq, 'f', 2);
+      return d.freq >= 0.95 ? QString::number(std::nearbyint(d.freq)) : QString::number(d.freq, 'f', 2);
     } else {
       return "--";
     }
@@ -281,7 +281,8 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
       case Column::NAME: {
         const auto msg = dbc()->msg(id);
         match = re.match(msg ? msg->name : UNTITLED).hasMatch();
-        match |= msg && std::any_of(msg->sigs.cbegin(), msg->sigs.cend(), [&re](const auto &s) { return re.match(s->name).hasMatch(); });
+        match = match || (msg && std::any_of(msg->sigs.cbegin(), msg->sigs.cend(),
+                                             [&re](const auto &s) { return re.match(s->name).hasMatch(); }));
         break;
       }
       case Column::SOURCE:
@@ -289,7 +290,7 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
         break;
       case Column::ADDRESS: {
         match = re.match(QString::number(id.address, 16)).hasMatch();
-        match |= parseRange(txt, id.address, 16);
+        match = match || parseRange(txt, id.address, 16);
         break;
       }
       case Column::FREQ:
@@ -301,8 +302,8 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
         break;
       case Column::DATA: {
         match = QString(data.dat.toHex()).contains(txt, Qt::CaseInsensitive);
-        match |= re.match(QString(data.dat.toHex())).hasMatch();
-        match |= re.match(QString(data.dat.toHex(' '))).hasMatch();
+        match = match || re.match(QString(data.dat.toHex())).hasMatch();
+        match = match || re.match(QString(data.dat.toHex(' '))).hasMatch();
         break;
       }
     }
@@ -423,7 +424,7 @@ void MessageView::updateBytesSectionSize() {
 }
 
 void MessageView::headerContextMenuEvent(const QPoint &pos) {
-  QMenu *menu = new QMenu(this);
+  QMenu menu(this);
   int cur_index = header()->logicalIndexAt(pos);
 
   QAction *action;
@@ -433,9 +434,9 @@ void MessageView::headerContextMenuEvent(const QPoint &pos) {
 
     // Hide show action
     if (header()->isSectionHidden(logical_index)) {
-      action = menu->addAction(tr("  %1").arg(column_name), [=]() { header()->showSection(logical_index); });
+      action = menu.addAction(tr("  %1").arg(column_name), [=]() { header()->showSection(logical_index); });
     } else {
-      action = menu->addAction(tr("✓ %1").arg(column_name), [=]() { header()->hideSection(logical_index); });
+      action = menu.addAction(tr("✓ %1").arg(column_name), [=]() { header()->hideSection(logical_index); });
     }
 
     // Can't hide the name column
@@ -449,7 +450,7 @@ void MessageView::headerContextMenuEvent(const QPoint &pos) {
     }
   }
 
-  menu->popup(header()->mapToGlobal(pos));
+  menu.exec(header()->mapToGlobal(pos));
 }
 
 MessageViewHeader::MessageViewHeader(QWidget *parent) : QHeaderView(Qt::Horizontal, parent) {

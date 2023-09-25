@@ -3,7 +3,7 @@ import time
 import unittest
 
 import cereal.messaging as messaging
-from cereal.services import service_list
+from cereal.services import SERVICE_LIST
 from openpilot.common.gpio import gpio_read
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.manager.process_config import managed_processes
@@ -26,10 +26,10 @@ class TestPigeond(unittest.TestCase):
     sm = messaging.SubMaster(['ubloxRaw'])
 
     # setup time
-    for _ in range(int(5 * service_list['ubloxRaw'].frequency)):
+    for _ in range(int(5 * SERVICE_LIST['ubloxRaw'].frequency)):
       sm.update()
 
-    for _ in range(int(10 * service_list['ubloxRaw'].frequency)):
+    for _ in range(int(10 * SERVICE_LIST['ubloxRaw'].frequency)):
       sm.update()
       assert sm.all_checks()
 
@@ -56,7 +56,7 @@ class TestPigeond(unittest.TestCase):
       managed_processes['pigeond'].stop()
 
       assert gpio_read(GPIO.UBLOX_RST_N) == 0
-      assert gpio_read(GPIO.UBLOX_PWR_EN) == 0
+      assert gpio_read(GPIO.GNSS_PWR_EN) == 0
 
 
 if __name__ == "__main__":

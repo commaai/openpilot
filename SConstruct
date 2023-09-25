@@ -44,11 +44,6 @@ AddOption('--external-sconscript',
           dest='external_sconscript',
           help='add an external SConscript to the build')
 
-AddOption('--no-thneed',
-          action='store_true',
-          dest='no_thneed',
-          help='avoid using thneed')
-
 AddOption('--pc-thneed',
           action='store_true',
           dest='pc_thneed',
@@ -249,18 +244,6 @@ def progress_function(node):
 if os.environ.get('SCONS_PROGRESS'):
   Progress(progress_function, interval=node_interval)
 
-SHARED = False
-
-# TODO: this can probably be removed
-def abspath(x):
-  if arch == 'aarch64':
-    pth = os.path.join("/data/pythonpath", x[0].path)
-    env.Depends(pth, x)
-    return File(pth)
-  else:
-    # rpath works elsewhere
-    return x[0].path.rsplit("/", 1)[1][:-3]
-
 # Cython build environment
 py_include = sysconfig.get_paths()['include']
 envCython = env.Clone()
@@ -342,33 +325,35 @@ if GetOption("clazy"):
   qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
   qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
 
-Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED')
+Export('env', 'qt_env', 'arch', 'real_arch')
 
+# Build common module
 SConscript(['common/SConscript'])
 Import('_common', '_gpucommon')
 
-if SHARED:
-  common, gpucommon = abspath(common), abspath(gpucommon)
-else:
-  common = [_common, 'json11']
-  gpucommon = [_gpucommon]
+common = [_common, 'json11']
+gpucommon = [_gpucommon]
 
 Export('common', 'gpucommon')
 
-# cereal and messaging are shared with the system
+# Build cereal and messaging
 SConscript(['cereal/SConscript'])
-if SHARED:
-  cereal = abspath([File('cereal/libcereal_shared.so')])
-  messaging = abspath([File('cereal/libmessaging_shared.so')])
-else:
-  cereal = [File('#cereal/libcereal.a')]
-  messaging = [File('#cereal/libmessaging.a')]
-  visionipc = [File('#cereal/libvisionipc.a')]
 
-Export('cereal', 'messaging', 'visionipc')
+cereal = [File('#cereal/libcereal.a')]
+messaging = [File('#cereal/libmessaging.a')]
+visionipc = [File('#cereal/libvisionipc.a')]
+messaging_python = [File('#cereal/messaging/messaging_pyx.so')]
+
+Export('cereal', 'messaging', 'messaging_python', 'visionipc')
+
+# Build other submodules
+SConscript([
+  'body/board/SConscript',
+  'opendbc/can/SConscript',
+  'panda/SConscript',
+])
 
 # Build rednose library and ekf models
-
 rednose_deps = [
   "#selfdrive/locationd/models/constants.py",
   "#selfdrive/locationd/models/gnss_helpers.py",
@@ -410,19 +395,7 @@ if arch != "Darwin":
   ])
 
 # Build openpilot
-
-# build submodules
-SConscript([
-  'body/board/SConscript',
-  'cereal/SConscript',
-  'opendbc/can/SConscript',
-  'panda/SConscript',
-])
-
 SConscript(['third_party/SConscript'])
-
-SConscript(['common/kalman/SConscript'])
-SConscript(['common/transformations/SConscript'])
 
 SConscript(['selfdrive/boardd/SConscript'])
 SConscript(['selfdrive/controls/lib/lateral_mpc_lib/SConscript'])

@@ -226,8 +226,8 @@
         <translation>전원 종료</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot 장치는 좌우측 4° 이내, 위쪽 5° 아래쪽 8° 이내로 장착되어야 합니다. openpilot은 지속적으로 보정되며 재설정은 거의 필요하지 않습니다.</translation>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
+        <translation>openpilot 장치는 좌우측 4° 이내, 위쪽 5° 아래쪽 9° 이내로 장착되어야 합니다. openpilot은 지속적으로 보정되며 재설정은 거의 필요하지 않습니다.</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
@@ -748,6 +748,10 @@ This may take up to a minute.</source>
     <message>
         <source>No custom software found at this URL.</source>
         <translation>이 URL에서 커스텀 소프트웨어를 찾을 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Select a language</source>
+        <translation>언어를 선택하세요</translation>
     </message>
 </context>
 <context>
