@@ -33,7 +33,7 @@ class SimulatorBridge(ABC):
     set_params_enabled()
     self.params = Params()
 
-    self.rk = Ratekeeper(100)
+    self.rk = Ratekeeper(100, None)
 
     msg = messaging.new_message('liveCalibration')
     msg.liveCalibration.validBlocks = 20
@@ -102,8 +102,6 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
     self.simulated_car_thread = threading.Thread(target=rk_loop, args=(functools.partial(self.simulated_car.update, self.simulator_state),
                                                                         100, self._exit_event))
     self.simulated_car_thread.start()
-
-    rk = Ratekeeper(100, print_delay_threshold=None)
 
     # Simulation tends to be slow in the initial steps. This prevents lagging later
     for _ in range(20):
@@ -181,4 +179,4 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
 
       self.started = True
 
-      rk.keep_time()
+      self.rk.keep_time()
