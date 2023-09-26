@@ -141,6 +141,10 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.000
       # steering ratio according to Hyundai News https://www.hyundainews.com/assets/documents/original/48035-2022SantaCruzProductGuideSpecsv2081521.pdf
       ret.steerRatio = 14.2
+    elif candidate == CAR.CUSTIN_1ST_GEN:
+      ret.mass = 1690.  # from https://www.hyundai-motor.com.tw/clicktobuy/custin#spec_0
+      ret.wheelbase = 3.055
+      ret.steerRatio = 17.0  # from learner
 
     # Kia
     elif candidate == CAR.KIA_SORENTO:
