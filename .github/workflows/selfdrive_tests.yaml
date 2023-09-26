@@ -228,6 +228,9 @@ jobs:
     name: static analysis
     runs-on: ubuntu-20.04
     steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: false
     - uses: ./.github/workflows/setup-with-retry
     - name: pre-commit
       timeout-minutes: 4
