@@ -37,6 +37,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
+        lfs: true
         submodules: true
     - name: Build devel
       timeout-minutes: 1
