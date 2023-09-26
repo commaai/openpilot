@@ -10,6 +10,7 @@ from openpilot.tools.sim.lib.camerad import W, H
 def apply_metadrive_patches():
   from metadrive.engine.core.engine_core import EngineCore
   from metadrive.engine.core.image_buffer import ImageBuffer
+  from metadrive.envs.metadrive_env import MetaDriveEnv
   from metadrive.obs.image_obs import ImageObservation
 
   # By default, metadrive won't try to use cuda images unless it's used as a sensor for vehicles, so patch that in
@@ -28,6 +29,11 @@ def apply_metadrive_patches():
     return self.state
 
   ImageObservation.observe = observe_patched
+
+  def arrive_destination_patch(self, vehicle):
+    return False
+
+  MetaDriveEnv._is_arrive_destination = arrive_destination_patch
 
 
 class MetaDriveWorld(World):
