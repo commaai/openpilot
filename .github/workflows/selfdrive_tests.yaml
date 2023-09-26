@@ -38,6 +38,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
+    - run: git lfs pull
     - name: Build devel
       timeout-minutes: 1
       run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
@@ -95,6 +96,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
+    - run: git lfs pull
     - name: Determine pre-existing Homebrew packages
       if: steps.dependency-cache.outputs.cache-hit != 'true'
       run: |
@@ -198,7 +200,6 @@ jobs:
         $DOCKER_LOGIN
     - uses: ./.github/workflows/setup-with-retry
       with:
-        git_lfs: false
         docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
     - name: Build and push CL Docker image
       if: matrix.arch == 'x86_64'
@@ -230,8 +231,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - name: Build Docker image
-      run: eval "$BUILD"
+    - uses: ./.github/workflows/setup-with-retry
     - name: pre-commit
       timeout-minutes: 4
       run: ${{ env.RUN }} "unset PYTHONWARNINGS && pre-commit run --all"
@@ -394,6 +394,7 @@ jobs:
         with:
           submodules: true
           ref: ${{ github.event.pull_request.base.ref }}
+      - run: git lfs pull
       - uses: ./.github/workflows/setup-with-retry
       - name: Get base car info
         run: |
@@ -403,6 +404,7 @@ jobs:
         with:
           submodules: true
           path: current
+      - run: cd current && git lfs pull
       - name: Save car docs diff
         id: save_diff
         run: |
