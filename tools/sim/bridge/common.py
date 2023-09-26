@@ -19,7 +19,7 @@ from openpilot.tools.sim.lib.simulated_sensors import SimulatedSensors
 
 
 def rk_loop(function, hz, exit_event: threading.Event):
-  rk = Ratekeeper(hz)
+  rk = Ratekeeper(hz, None)
   while not exit_event.is_set():
     function()
     rk.keep_time()
@@ -32,7 +32,7 @@ class SimulatorBridge(ABC):
     set_params_enabled()
     self.params = Params()
 
-    self.rk = Ratekeeper(100)
+    self.rk = Ratekeeper(100, None)
 
     msg = messaging.new_message('liveCalibration')
     msg.liveCalibration.validBlocks = 20
@@ -90,8 +90,6 @@ class SimulatorBridge(ABC):
                                                                         100, self._exit_event))
     self.simulated_car_thread.start()
 
-    rk = Ratekeeper(100, print_delay_threshold=None)
-
     # Simulation tends to be slow in the initial steps. This prevents lagging later
     for _ in range(20):
       self.world.tick()
@@ -127,6 +125,8 @@ class SimulatorBridge(ABC):
             self.simulator_state.cruise_button = CruiseButtons.MAIN
         elif m[0] == "ignition":
           self.simulator_state.ignition = not self.simulator_state.ignition
+        elif m[0] == "reset":
+          self.world.reset()
         elif m[0] == "quit":
           break
 
@@ -160,4 +160,4 @@ class SimulatorBridge(ABC):
 
       self.started = True
 
-      rk.keep_time()
+      self.rk.keep_time()

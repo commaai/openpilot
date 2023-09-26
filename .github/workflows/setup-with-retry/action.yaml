@@ -5,10 +5,6 @@ inputs:
     description: 'Auth token for Docker Hub, required for BuildJet jobs'
     required: false
     default: ''
-  git_lfs:
-    description: 'Whether or not to pull the git lfs'
-    required: false
-    default: 'true'
   cache_key_prefix:
     description: 'Prefix for caching key'
     required: false
@@ -26,7 +22,6 @@ runs:
       continue-on-error: true
       with:
         docker_hub_pat: ${{ inputs.docker_hub_pat }}
-        git_lfs: ${{ inputs.git_lfs }}
         cache_key_prefix: ${{ inputs.cache_key_prefix }}
         is_retried: true
     - if: steps.setup1.outcome == 'failure'
@@ -38,7 +33,6 @@ runs:
       continue-on-error: true
       with:
         docker_hub_pat: ${{ inputs.docker_hub_pat }}
-        git_lfs: ${{ inputs.git_lfs }}
         cache_key_prefix: ${{ inputs.cache_key_prefix }}
         is_retried: true
     - if: steps.setup2.outcome == 'failure'
@@ -49,6 +43,5 @@ runs:
       uses: ./.github/workflows/setup
       with:
         docker_hub_pat: ${{ inputs.docker_hub_pat }}
-        git_lfs: ${{ inputs.git_lfs }}
         cache_key_prefix: ${{ inputs.cache_key_prefix }}
         is_retried: true
