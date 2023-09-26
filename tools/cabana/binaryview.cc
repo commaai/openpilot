@@ -337,7 +337,7 @@ QVariant BinaryViewModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::ToolTipRole) {
     auto item = (const BinaryViewModel::Item *)index.internalPointer();
     if (item && !item->sigs.empty()) {
-      return signalToolTip(item->sigs.back());
+      return utils::signalToolTip(item->sigs.back());
     }
   }
   return {};

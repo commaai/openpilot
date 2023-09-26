@@ -284,10 +284,10 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
         match = parseRange(txt, data.count);
         break;
       case Column::DATA: {
-        QString hex = toHex(data.dat);
+        QString hex = utils::toHex(data.dat);
         match = hex.contains(txt, Qt::CaseInsensitive);
         match = match || re.match(hex).hasMatch();
-        match = match || re.match(toHex(data.dat, ' ')).hasMatch();
+        match = match || re.match(utils::toHex(data.dat, ' ')).hasMatch();
         break;
       }
     }

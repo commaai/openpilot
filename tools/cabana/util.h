@@ -84,10 +84,6 @@ private:
   bool multiple_lines = false;
 };
 
-inline QString toHex(const std::vector<uint8_t> &dat, char separator = '\0') {
-  return QByteArray::fromRawData((const char*)dat.data(), dat.size()).toHex(separator).toUpper();
-}
-
 class NameValidator : public QRegExpValidator {
   Q_OBJECT
 public:
@@ -102,7 +98,10 @@ public:
 };
 
 namespace utils {
+
 QPixmap icon(const QString &id);
+int num_decimals(double num);
+QString signalToolTip(const cabana::Signal *sig);
 void setTheme(int theme);
 inline QString formatSeconds(int seconds) {
   return QDateTime::fromSecsSinceEpoch(seconds, Qt::UTC).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
@@ -111,7 +110,11 @@ inline void drawStaticText(QPainter *p, const QRect &r, const QStaticText &text)
   auto size = (r.size() - text.size()) / 2;
   p->drawStaticText(r.left() + size.width(), r.top() + size.height(), text);
 }
+inline QString toHex(const std::vector<uint8_t> &dat, char separator = '\0') {
+  return QByteArray::fromRawData((const char *)dat.data(), dat.size()).toHex(separator).toUpper();
 }
+
+}  // namespace utils
 
 class ToolButton : public QToolButton {
   Q_OBJECT
@@ -177,6 +180,3 @@ private:
   std::deque<void *> buffers;
   static constexpr float growth_factor = 1.5;
 };
-
-int num_decimals(double num);
-QString signalToolTip(const cabana::Signal *sig);

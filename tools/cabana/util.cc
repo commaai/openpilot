@@ -239,8 +239,6 @@ void setTheme(int theme) {
   }
 }
 
-}  // namespace utils
-
 int num_decimals(double num) {
   const QString string = QString::number(num);
   auto dot_pos = string.indexOf('.');
@@ -256,6 +254,8 @@ QString signalToolTip(const cabana::Signal *sig) {
   )").arg(sig->name).arg(sig->start_bit).arg(sig->size).arg(sig->msb).arg(sig->lsb)
      .arg(sig->is_little_endian ? "Y" : "N").arg(sig->is_signed ? "Y" : "N");
 }
+
+}  // namespace utils
 
 // MonotonicBuffer
 

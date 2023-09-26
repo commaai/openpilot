@@ -139,7 +139,7 @@ void cabana::Signal::update() {
   float v = 0.75 + 0.25 * (float)((hash >> 8) & 0xff) / 255.0;
 
   color = QColor::fromHsvF(h, s, v);
-  precision = std::max(num_decimals(factor), num_decimals(offset));
+  precision = std::max(utils::num_decimals(factor), utils::num_decimals(offset));
 }
 
 QString cabana::Signal::formatValue(double value) const {
