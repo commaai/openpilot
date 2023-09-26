@@ -91,6 +91,24 @@ class MetaDriveWorld(World):
     pass
 
 
+def straight_block(length):
+  return {
+    "id": "S",
+    "pre_block_socket_index": 0,
+    "length": length
+  }
+
+def curve_block(length, angle=45, direction=0):
+  return {
+    "id": "C",
+    "pre_block_socket_index": 0,
+    "length": length,
+    "radius": length,
+    "angle": angle,
+    "dir": direction
+  }
+
+
 class MetaDriveBridge(SimulatorBridge):
   TICKS_PER_FRAME = 2
 
@@ -105,6 +123,7 @@ class MetaDriveBridge(SimulatorBridge):
     print("----------------------------------------------------------")
     from metadrive.component.sensors.rgb_camera import RGBCamera
     from metadrive.component.sensors.base_camera import _cuda_enable
+    from metadrive.component.map.pg_map import MapGenerateMethod
     from metadrive.envs.metadrive_env import MetaDriveEnv
     from panda3d.core import Vec3
 
@@ -151,6 +170,20 @@ class MetaDriveBridge(SimulatorBridge):
           on_continuous_line_done=False,
           crash_vehicle_done=False,
           crash_object_done=False,
+          map_config=dict(
+            type=MapGenerateMethod.PG_MAP_FILE,
+            config=[
+              None,
+              straight_block(120),
+              curve_block(120, 90),
+              straight_block(120),
+              curve_block(120, 90),
+              straight_block(120),
+              curve_block(120, 90),
+              straight_block(120),
+              curve_block(120, 90),
+            ]
+          )
         )
       )
 
