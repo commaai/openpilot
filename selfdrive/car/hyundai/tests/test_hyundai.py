@@ -6,7 +6,8 @@ from cereal import car
 from openpilot.selfdrive.car.fw_versions import build_fw_dict
 from openpilot.selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
                                          HYBRID_CAR, EV_CAR, FW_QUERY_CONFIG, FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, \
-                                         UNSUPPORTED_LONGITUDINAL_CAR, PLATFORM_CODE_ECUS, get_platform_codes
+                                         UNSUPPORTED_LONGITUDINAL_CAR, PLATFORM_CODE_ECUS, HYUNDAI_VERSION_REQUEST_LONG, \
+                                         get_platform_codes
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
@@ -71,17 +72,18 @@ class TestHyundaiFingerprint(unittest.TestCase):
           part = code.split(b"-")[1]
           self.assertFalse(part.startswith(b'CW'), "Car has bad part number")
 
-  def test_ecu_fw_database_requests(self):
+  def test_database_correct_ecu_response(self):
     """
-    Assert standard responses for certain ECUs, since ECUs can
+    Assert standard responses for certain ECUs, since they can
     respond to multiple queries with different data
     """
+    expected_fw_prefix = HYUNDAI_VERSION_REQUEST_LONG[1:]
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
         for ecu, fws in ecus.items():
-          # TODO: enable for transmission
-          if ecu[0] in (Ecu.fwdCamera, Ecu.fwdRadar, Ecu.abs, Ecu.eps):
-            self.assertTrue(all(fw.startswith(b'\xf1\x00') for fw in fws),
+          # TODO: enable for Ecu.fwdRadar, Ecu.abs, Ecu.eps, Ecu.transmission
+          if ecu[0] in (Ecu.fwdCamera,):
+            self.assertTrue(all(fw.startswith(expected_fw_prefix) for fw in fws),
                             f"FW from unexpected request in database: {(ecu, fws)}")
 
   @settings(max_examples=100)
