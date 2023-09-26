@@ -72,8 +72,6 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
-      with:
-        git_lfs: false
     - name: Setup to push to repo
       if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
@@ -91,8 +89,6 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
-      with:
-        git_lfs: false
     - name: Use local image for testing devcontainer with latest base image
       run: |
         echo "USE_LOCAL_IMAGE=true" >> "$GITHUB_ENV"
