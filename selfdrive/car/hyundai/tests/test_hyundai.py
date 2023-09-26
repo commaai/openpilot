@@ -72,7 +72,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
           part = code.split(b"-")[1]
           self.assertFalse(part.startswith(b'CW'), "Car has bad part number")
 
-  def test_database_correct_ecu_response(self):
+  def test_correct_ecu_response_database(self):
     """
     Assert standard responses for certain ECUs, since they can
     respond to multiple queries with different data
