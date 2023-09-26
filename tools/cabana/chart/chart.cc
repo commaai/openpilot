@@ -10,14 +10,12 @@
 #include <QGraphicsDropShadowEffect>
 #include <QGraphicsItemGroup>
 #include <QGraphicsOpacityEffect>
-#include <QMenu>
 #include <QMimeData>
 #include <QOpenGLWidget>
 #include <QPropertyAnimation>
 #include <QRandomGenerator>
 #include <QRubberBand>
 #include <QScreen>
-#include <QtMath>
 #include <QWindow>
 
 #include "tools/cabana/chart/chartswidget.h"
@@ -67,8 +65,8 @@ void ChartView::createToolButtons() {
   close_btn_proxy->setWidget(remove_btn);
   close_btn_proxy->setZValue(chart()->zValue() + 11);
 
+  menu = new QMenu(this);
   // series types
-  QMenu *menu = new QMenu(this);
   auto change_series_group = new QActionGroup(menu);
   change_series_group->setExclusive(true);
   QStringList types{tr("Line"), tr("Step Line"), tr("Scatter")};
@@ -91,7 +89,9 @@ void ChartView::createToolButtons() {
   manage_btn_proxy->setWidget(manage_btn);
   manage_btn_proxy->setZValue(chart()->zValue() + 11);
 
-  QObject::connect(remove_btn, &QToolButton::clicked, [this]() { charts_widget->removeChart(this); });
+  close_act = new QAction(tr("Close"), this);
+  QObject::connect(close_act, &QAction::triggered, [this] () { charts_widget->removeChart(this); });
+  QObject::connect(remove_btn, &QToolButton::clicked, close_act, &QAction::triggered);
   QObject::connect(change_series_group, &QActionGroup::triggered, [this](QAction *action) {
     setSeriesType((SeriesType)action->data().toInt());
   });
@@ -365,7 +365,7 @@ void ChartView::updateAxisY() {
     axis_y->setRange(min_y, max_y);
     axis_y->setTickCount(tick_count);
 
-    int n = qMax(int(-qFloor(std::log10((max_y - min_y) / (tick_count - 1)))), 0) + 1;
+    int n = std::max(int(-std::floor(std::log10((max_y - min_y) / (tick_count - 1)))), 0) + 1;
     int max_label_width = 0;
     QFontMetrics fm(axis_y->labelsFont());
     for (int i = 0; i < tick_count; i++) {
@@ -383,15 +383,15 @@ void ChartView::updateAxisY() {
 std::tuple<double, double, int> ChartView::getNiceAxisNumbers(qreal min, qreal max, int tick_count) {
   qreal range = niceNumber((max - min), true);  // range with ceiling
   qreal step = niceNumber(range / (tick_count - 1), false);
-  min = qFloor(min / step);
-  max = qCeil(max / step);
+  min = std::floor(min / step);
+  max = std::ceil(max / step);
   tick_count = int(max - min) + 1;
   return {min * step, max * step, tick_count};
 }
 
 // nice numbers can be expressed as form of 1*10^n, 2* 10^n or 5*10^n
 qreal ChartView::niceNumber(qreal x, bool ceiling) {
-  qreal z = qPow(10, qFloor(std::log10(x))); //find corresponding number of the form of 10^n than is smaller than x
+  qreal z = std::pow(10, std::floor(std::log10(x))); //find corresponding number of the form of 10^n than is smaller than x
   qreal q = x / z; //q<10 && q>=1;
   if (ceiling) {
     if (q <= 1.0) q = 1;
@@ -451,6 +451,17 @@ static QPixmap getDropPixmap(const QPixmap &src) {
   p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
   p.fillRect(target_rect, QColor(0, 0, 0, 200));
   return px;
+}
+
+void ChartView::contextMenuEvent(QContextMenuEvent *event) { 
+  QMenu context_menu(this);
+  context_menu.addActions(menu->actions());
+  context_menu.addSeparator();
+  context_menu.addAction(charts_widget->undo_zoom_action);
+  context_menu.addAction(charts_widget->redo_zoom_action);
+  context_menu.addSeparator();
+  context_menu.addAction(close_act);
+  context_menu.exec(event->globalPos());
 }
 
 void ChartView::mousePressEvent(QMouseEvent *event) {
