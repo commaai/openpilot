@@ -22,8 +22,21 @@ This section walks you through this process, running YOLO as an example.
 ```
 This decodes the `driverEncodeData` packets from the body, and pushes it to a local VisionIPC server.
 
+### 2. Setup cereal bridge
 
-### 2. Run Model -> Send Outputs
+SSH into the body from the remote computer you intent to run models on. Then start cereal bridge using command below. Replace services... with the list of published sockets you intent to share with the body. For the yolo example that would be: bodyReserved1
+```
+REMOTE_IP="$(echo $SSH_CLIENT | awk '{print $1}')"
+tmux new-window -k -d -t comma -n remotebridge "/data/openpilot/cereal/messaging/bridge $REMOTE_IP <services...>"
+```
+
+To kill the bridge session, run:
+
+```
+tmux kill-window -t comma:remotebridge
+```
+
+### 3. Run Model -> Send Outputs
 ```
 # On another terminal window of the remote computer, run
 ./tools/bodyteleop/remote_models/yolo/yolo.py
@@ -31,6 +44,6 @@ This decodes the `driverEncodeData` packets from the body, and pushes it to a lo
 This creates a local VisionIPC client and receives the driver camera frames. We run the `YOLO5N` model on these frames using `onnxruntime`. There's post-processing code to parse the model outputs, compute bounding boxes and filter out objects with low probability. Finally, we publish the outputs to a socket by the message name `bodyReserved1`.
 
 
-### 3. Control Body
+### 4. Control Body
 ```
 ToDo: Complete this section
