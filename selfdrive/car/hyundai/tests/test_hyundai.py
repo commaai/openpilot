@@ -71,6 +71,19 @@ class TestHyundaiFingerprint(unittest.TestCase):
           part = code.split(b"-")[1]
           self.assertFalse(part.startswith(b'CW'), "Car has bad part number")
 
+  def test_ecu_fw_database_requests(self):
+    """
+    Assert standard responses for certain ECUs, since ECUs can
+    respond to multiple queries with different data
+    """
+    for car_model, ecus in FW_VERSIONS.items():
+      with self.subTest(car_model=car_model):
+        for ecu, fws in ecus.items():
+          # TODO: enable for transmission
+          if ecu[0] in (Ecu.fwdCamera, Ecu.fwdRadar, Ecu.abs, Ecu.eps):
+            self.assertTrue(all(fw.startswith(b'\xf1\x00') for fw in fws),
+                            f"FW from unexpected request in database: {(ecu, fws)}")
+
   @settings(max_examples=100)
   @given(data=st.data())
   def test_platform_codes_fuzzy_fw(self, data):
