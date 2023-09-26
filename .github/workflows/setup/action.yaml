@@ -5,10 +5,6 @@ inputs:
     description: 'Auth token for Docker Hub, required for BuildJet jobs'
     required: true
     default: ''
-  git_lfs:
-    description: 'Whether or not to pull the git lfs'
-    required: true
-    default: 'true'
   cache_key_prefix:
     description: 'Prefix for caching key'
     required: true
@@ -30,7 +26,6 @@ runs:
 
     # do this after checkout to ensure our custom LFS config is used to pull from GitLab
     - shell: bash
-      if: ${{ inputs.git_lfs == 'true' }}
       run: git lfs pull
 
     # on BuildJet runners, must be logged into DockerHub to avoid rate limiting
