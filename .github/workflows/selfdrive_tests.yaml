@@ -198,7 +198,6 @@ jobs:
         $DOCKER_LOGIN
     - uses: ./.github/workflows/setup-with-retry
       with:
-        git_lfs: false
         docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
     - name: Build and push CL Docker image
       if: matrix.arch == 'x86_64'
