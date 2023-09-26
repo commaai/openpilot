@@ -833,7 +833,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>PANDA</source>
-        <translation>باندا</translation>
+        <translation>PANDA</translation>
     </message>
     <message>
         <source>GPS</source>
