@@ -1384,7 +1384,6 @@ FW_VERSIONS = {
       b'\xf1\x8756310-L3220\xf1\x00DL3 MDPS C 1.00 1.01 56310-L3220 4DLAC101',
       b'\xf1\x8757700-L3000\xf1\x00DL3 MDPS R 1.00 1.02 57700-L3000 4DLAP102',
       b'\xf1\x00DL3 MDPS C 1.00 1.01 56310-L3220 4DLAC101',
-      b'\xf1\x8756310-L2220\xf1\x00DL3 MDPS C 1.00 1.02 56310-L2220 4DLDC102',
       b'\xf1\x00DL3 MDPS C 1.00 1.02 56310-L2220 4DLDC102',
     ],
     (Ecu.fwdCamera, 0x7C4, None): [
@@ -1399,15 +1398,12 @@ FW_VERSIONS = {
       b'\xf1\x8758910-L3600\xf1\x00DL ESC \x03 100 \x08\x02 58910-L3600',
       b'\xf1\x00DL ESC \t 100 \x06\x02 58910-L3800',
       b'\xf1\x00DL ESC \x01 104 \x07\x12 58910-L2200',
-      b'\xf1\x8758910-L2200\xf1\x00DL ESC \x01 104 \x07\x12 58910-L2200',
     ],
     (Ecu.engine, 0x7E0, None): [
       b'\xf1\x87391212MKT0',
       b'\xf1\x87391212MKV0',
       b'\xf1\x870\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x82DLDWN5TMDCXXXJ1B',
       b'\xf1\x81HM6M2_0a0_DQ0',
-      b'DLBUD0CMB3XWSDQB',
-      b'\xf1\x82DLBUD0CMB3XWSDQB',
     ],
     (Ecu.transmission, 0x7E1, None): [
       b'\xf1\000bcsh8p54  U913\000\000\000\000\000\000TDL2T16NB1ia\v\xb8',
@@ -1417,10 +1413,6 @@ FW_VERSIONS = {
       b'\xf1\x87954A02N300\x00\x00\x00\x00\x00\xf1\x81T02730A1  \xf1\x00T02601BL  T02730A1  WDL3T25XXX730NS2b\x1f\xb8%',
       b'\xf1\x00bcsh8p54  U913\x00\x00\x00\x00\x00\x00TDL4T16NB05\x94t\x18',
       b'\xf1\x00HT6TA261BLHT6TAB00A1SDL0C20KS0\x00\x00\x00\x00\x00\x00\\\x9f\xa5\x15',
-      b'\xf1\x87RBNSLH969121U13Zwx\x87\x88\x8a\xaa\xaa\xaa\x86fhfvwwgvf\x7f\xff\x9a\xff_\xf7VK\xf1\x81HT6TAB00A1',
-      b'SDL0C20KS0\x00\x00\x00\x00\x00\x00',
-      b'\xf1\x87RBNSLH969121U13Zwx\x87\x88\x8a\xaa\xaa\xaa\x86fhfvwwgvf\x7f\xff\x9a\xff_\xf7VK\xf1\x89HT6TAB00A1',
-      b'\xf1\x82SDL0C20KS0\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.KIA_K5_HEV_2020: {
