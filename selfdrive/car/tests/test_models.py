@@ -2,6 +2,7 @@
 import capnp
 import os
 import importlib
+import pytest
 import unittest
 from collections import defaultdict, Counter
 from typing import List, Optional, Tuple
@@ -23,7 +24,6 @@ from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import Route, SegmentName, RouteName
 
 from panda.tests.libpanda import libpanda_py
-from openpilot.selfdrive.test.helpers import SKIP_ENV_VAR
 
 EventName = car.CarEvent.EventName
 PandaType = log.PandaState.PandaType
@@ -67,7 +67,7 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
   return test_cases
 
 
-
+@pytest.mark.slow
 class TestCarModelBase(unittest.TestCase):
   car_model: Optional[str] = None
   test_route: Optional[CarTestRoute] = None
@@ -76,7 +76,6 @@ class TestCarModelBase(unittest.TestCase):
   can_msgs: List[capnp.lib.capnp._DynamicStructReader]
   elm_frame: Optional[int]
 
-  @unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Long running test skipped. Unset {SKIP_ENV_VAR} to run")
   @classmethod
   def setUpClass(cls):
     if cls.__name__ == 'TestCarModel' or cls.__name__.endswith('Base'):
