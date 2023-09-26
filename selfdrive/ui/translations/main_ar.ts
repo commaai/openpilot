@@ -525,7 +525,7 @@
     </message>
     <message>
         <source>Become a comma prime member at connect.comma.ai</source>
-        <translation>أصبح عضواً مميزاً في comma من خلال زيارة connect.comma.ai</translation>
+        <translation>كن عضوًا في comma prime على connect.comma.ai</translation>
     </message>
     <message>
         <source>PRIME FEATURES:</source>
