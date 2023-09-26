@@ -983,7 +983,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
-        <translation>اسم المستخدم @apos;%1&apos; غير موجود على GitHub</translation>
+        <translation>اسم المستخدم &apos;%1&apos; غير موجود على GitHub</translation>
     </message>
 </context>
 <context>
