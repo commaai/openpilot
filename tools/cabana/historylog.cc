@@ -211,13 +211,16 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   line->setFrameStyle(QFrame::HLine | QFrame::Sunken);
   main_layout->addWidget(line);
   main_layout->addWidget(logs = new QTableView(this));
+
+  delegate = new MessageBytesDelegate(this);
   logs->setHorizontalHeader(new HeaderView(Qt::Horizontal, this));
   logs->horizontalHeader()->setDefaultAlignment(Qt::AlignRight | (Qt::Alignment)Qt::TextWordWrap);
   logs->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+  logs->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+  logs->verticalHeader()->setDefaultSectionSize(delegate->sizeForBytes(8).height());
   logs->verticalHeader()->setVisible(false);
   logs->setFrameShape(QFrame::NoFrame);
 
-  delegate = new MessageBytesDelegate(this);
   QObject::connect(display_type_cb, qOverload<int>(&QComboBox::activated), this, &LogsWidget::setModel);
   QObject::connect(signals_cb, SIGNAL(activated(int)), this, SLOT(setFilter()));
   QObject::connect(comp_box, SIGNAL(activated(int)), this, SLOT(setFilter()));

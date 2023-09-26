@@ -386,7 +386,7 @@ void MessageView::updateBytesSectionSize() {
       max_bytes = std::max<int>(max_bytes, m.dat.size());
     }
   }
-  int width = delegate->widthForBytes(max_bytes);
+  int width = delegate->sizeForBytes(max_bytes).width();
   if (header()->sectionSize(MessageListModel::Column::DATA) != width) {
     header()->resizeSection(MessageListModel::Column::DATA, width);
   }

@@ -75,7 +75,7 @@ public:
   QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   bool multipleLines() const { return multiple_lines; }
   void setMultipleLines(bool v) { multiple_lines = v; }
-  int widthForBytes(int n) const;
+  QSize sizeForBytes(int n) const;
 
 private:
   std::array<QStaticText, 256> hex_text_table;

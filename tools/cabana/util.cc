@@ -51,7 +51,8 @@ std::pair<double, double> SegmentTree::get_minmax(int n, int left, int right, in
 
 // MessageBytesDelegate
 
-MessageBytesDelegate::MessageBytesDelegate(QObject *parent, bool multiple_lines) : multiple_lines(multiple_lines), QStyledItemDelegate(parent) {
+MessageBytesDelegate::MessageBytesDelegate(QObject *parent, bool multiple_lines)
+    : multiple_lines(multiple_lines), QStyledItemDelegate(parent) {
   fixed_font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
   byte_size = QFontMetrics(fixed_font).size(Qt::TextSingleLine, "00 ") + QSize(0, 2);
   for (int i = 0; i < 256; ++i) {
@@ -60,21 +61,18 @@ MessageBytesDelegate::MessageBytesDelegate(QObject *parent, bool multiple_lines)
   }
 }
 
-int MessageBytesDelegate::widthForBytes(int n) const {
-  int h_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
-  return n * byte_size.width() + h_margin * 2;
+QSize MessageBytesDelegate::sizeForBytes(int n) const {
+  static const int h_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
+  static const int v_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameVMargin) + 1;
+  return !multiple_lines ? QSize{n * byte_size.width() + h_margin * 2, byte_size.height() + 2 * v_margin}
+                         : QSize{8 * byte_size.width() + h_margin * 2, byte_size.height() * std::max(1, n / 8) + 2 * v_margin};
 }
 
 QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
-  int v_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameVMargin) + 1;
   auto data = index.data(BytesRole);
-  if (!data.isValid()) {
-    return {1, byte_size.height() + 2 * v_margin};
-  }
-  int n = static_cast<std::vector<uint8_t>*>(data.value<void*>())->size();
+  int n = data.isValid() ? static_cast<std::vector<uint8_t>*>(data.value<void*>())->size() : 8;
   assert(n >= 0 && n <= 64);
-  return !multiple_lines ? QSize{widthForBytes(n), byte_size.height() + 2 * v_margin}
-                         : QSize{widthForBytes(8), byte_size.height() * std::max(1, n / 8) + 2 * v_margin};
+  return sizeForBytes(n);
 }
 
 void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
