@@ -101,6 +101,7 @@ class CAR:
   TUCSON_4TH_GEN = "HYUNDAI TUCSON 4TH GEN"
   TUCSON_HYBRID_4TH_GEN = "HYUNDAI TUCSON HYBRID 4TH GEN"
   SANTA_CRUZ_1ST_GEN = "HYUNDAI SANTA CRUZ 1ST GEN"
+  CUSTIN_1ST_GEN = "HYUNDAI CUSTIN 1ST GEN"
 
   # Kia
   KIA_FORTE = "KIA FORTE E 2018 & GT 2021"
@@ -217,6 +218,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.TUCSON_HYBRID_4TH_GEN: HyundaiCarInfo("Hyundai Tucson Hybrid 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_n])),
   CAR.SANTA_CRUZ_1ST_GEN: HyundaiCarInfo("Hyundai Santa Cruz 2022-23", car_parts=CarParts.common([CarHarness.hyundai_n])),
+  CAR.CUSTIN_1ST_GEN: HyundaiCarInfo("Hyundai Custin 2023", "All", car_parts=CarParts.common([CarHarness.hyundai_k])),
 
   # Kia
   CAR.KIA_FORTE: [
@@ -1057,6 +1059,26 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x87391312MTF0',
       b'\xf1\x87391312MTF1',
+    ],
+  },
+  CAR.CUSTIN_1ST_GEN: {
+    (Ecu.abs, 0x7d1, None): [
+      b'\xf1\x00KU ESC \x01 101!\x02\x03 58910-O3200',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00KU__ SCC F-CUP      1.00 1.01 99110-O3000         ',
+    ],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00KU  MDPS C 1.00 1.01 56310/O3100 4KUCC101',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00KU2 MFC  AT CHN LHD 1.00 1.02 99211-O3000 220923',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x87391212MEC0',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x00bcsh8p54  U928\x00\x00\x00\x00\x00\x00SKU0T15KB2\x92U\xf9M',
     ],
   },
   CAR.KIA_STINGER: {
@@ -2026,7 +2048,8 @@ FW_VERSIONS = {
 
 CHECKSUM = {
   "crc8": [CAR.SANTA_FE, CAR.SONATA, CAR.PALISADE, CAR.KIA_SELTOS, CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021,
-           CAR.SONATA_HYBRID, CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.KIA_K5_HEV_2020],
+           CAR.SONATA_HYBRID, CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022,
+           CAR.KIA_K5_HEV_2020, CAR.CUSTIN_1ST_GEN],
   "6B": [CAR.KIA_SORENTO, CAR.HYUNDAI_GENESIS],
 }
 
@@ -2134,4 +2157,5 @@ DBC = {
   CAR.KIA_SORENTO_HEV_4TH_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KONA_EV_2ND_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KIA_K8_HEV_1ST_GEN: dbc_dict('hyundai_canfd', None),
+  CAR.CUSTIN_1ST_GEN: dbc_dict('hyundai_kia_generic', None),
 }
