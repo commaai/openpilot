@@ -226,8 +226,8 @@
         <translation>إيقاف التشغيل</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>يحتاج openpilot أن يتم ضبط الجهاز ضمن حدود 4 درجات يميناً أو يساراً و5 درجات نحو الأعلى أو 8 نحو الأسفل. يقوم openpilot بالمعايرة باستمرار، ونادراً ما يحتاج إلى عملية إعادة الضبط.</translation>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
+        <translation>يحتاج openpilot أن يتم ضبط الجهاز ضمن حدود 4 درجات يميناً أو يساراً و5 درجات نحو الأعلى أو 9 نحو الأسفل. يقوم openpilot بالمعايرة باستمرار، ونادراً ما يحتاج إلى عملية إعادة الضبط.</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
