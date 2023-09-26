@@ -19,7 +19,9 @@ repos:
     -   id: check-executables-have-shebangs
     -   id: check-shebang-scripts-are-executable
     -   id: check-added-large-files
-        args: ['--maxkb=100']
+        args:
+        - --maxkb=500
+        - --enforce-all
 -   repo: https://github.com/codespell-project/codespell
     rev: v2.2.5
     hooks:
