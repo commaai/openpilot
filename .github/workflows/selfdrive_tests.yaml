@@ -37,8 +37,8 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        lfs: true
         submodules: true
+    - run: git lfs pull
     - name: Build devel
       timeout-minutes: 1
       run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
@@ -96,6 +96,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
+    - run: git lfs pull
     - name: Determine pre-existing Homebrew packages
       if: steps.dependency-cache.outputs.cache-hit != 'true'
       run: |
@@ -227,11 +228,7 @@ jobs:
     name: static analysis
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: true
-    - name: Build Docker image
-      run: eval "$BUILD"
+    - uses: ./.github/workflows/setup-with-retry
     - name: pre-commit
       timeout-minutes: 4
       run: ${{ env.RUN }} "unset PYTHONWARNINGS && pre-commit run --all"
@@ -394,6 +391,7 @@ jobs:
         with:
           submodules: true
           ref: ${{ github.event.pull_request.base.ref }}
+      - run: git lfs pull
       - uses: ./.github/workflows/setup-with-retry
       - name: Get base car info
         run: |
@@ -403,6 +401,7 @@ jobs:
         with:
           submodules: true
           path: current
+      - run: git lfs pull
       - name: Save car docs diff
         id: save_diff
         run: |
