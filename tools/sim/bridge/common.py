@@ -173,7 +173,7 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
       if self.rk.frame % self.TICKS_PER_FRAME == 0:
         self.world.tick()
         self.world.read_cameras()
-      
+
       if self.rk.frame % 25 == 0:
         self.print_status()
 
