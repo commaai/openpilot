@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import pytest
 import time
 import unittest
 
@@ -16,6 +17,7 @@ from openpilot.system.hardware.tici.pins import GPIO
 HERE = os.path.dirname(os.path.realpath(__file__))
 
 
+@pytest.mark.integration
 class TestPandad(unittest.TestCase):
 
   def setUp(self):

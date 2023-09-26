@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import pytest
 import time
 import unittest
 
@@ -12,6 +13,7 @@ from openpilot.system.hardware.tici.pins import GPIO
 
 
 # TODO: test TTFF when we have good A-GNSS
+@pytest.mark.integration
 class TestPigeond(unittest.TestCase):
   @classmethod
   def setUpClass(cls):

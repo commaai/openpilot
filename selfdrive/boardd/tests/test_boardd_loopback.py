@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import pytest
 import copy
 import random
 import time
@@ -17,6 +18,7 @@ from openpilot.system.hardware import TICI
 from openpilot.selfdrive.test.helpers import phone_only, with_processes
 
 
+@pytest.mark.integration
 class TestBoardd(unittest.TestCase):
 
   @classmethod

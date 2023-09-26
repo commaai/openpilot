@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import time
 import random
+import pytest
 import unittest
 import subprocess
 
@@ -10,6 +11,7 @@ from openpilot.system.hardware.tici.hardware import Tici
 from openpilot.system.hardware.tici.amplifier import Amplifier
 
 
+@pytest.mark.integration
 class TestAmplifier(unittest.TestCase):
 
   @classmethod

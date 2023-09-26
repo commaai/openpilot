@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import pytest
 import time
 import unittest
 import numpy as np
@@ -9,6 +10,7 @@ from openpilot.system.camerad.snapshot.snapshot import get_snapshots
 TEST_TIME = 45
 REPEAT = 5
 
+@pytest.mark.integration
 class TestCamerad(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
