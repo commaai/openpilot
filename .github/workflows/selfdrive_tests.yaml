@@ -230,7 +230,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        submodules: false
+        submodules: true
     - uses: ./.github/workflows/setup-with-retry
     - name: pre-commit
       timeout-minutes: 4
@@ -404,7 +404,7 @@ jobs:
         with:
           submodules: true
           path: current
-      - run: git lfs pull
+      - run: cd current && git lfs pull
       - name: Save car docs diff
         id: save_diff
         run: |
