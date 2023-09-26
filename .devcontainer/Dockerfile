@@ -1,7 +1,5 @@
 FROM ghcr.io/commaai/openpilot-base:latest
 
-USER root
-
 RUN apt update && apt install -y vim net-tools usbutils htop ripgrep tmux
 RUN pip install ipython jupyter jupyterlab
 
