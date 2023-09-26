@@ -5,7 +5,7 @@ addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda
 python_files = "test_*.py"
 #timeout = "30"  # you get this long by default
 markers = [
-  "parallel: mark tests as parallelizable (tests with no global state, so can be run in parallel)"
+  "slow: tests that take awhile to run and can be skipped with -m 'not slow'"
 ]
 testpaths = [
   "common",
@@ -127,7 +127,7 @@ carla = { url = "https://github.com/commaai/carla/releases/download/3.11.4/carla
 coverage = "*"
 dictdiffer = "*"
 ft4222 = "*"
-hypothesis = "==6.46.7"
+hypothesis = "~6.47"
 inputs = "*"
 lru-dict = "*"
 markdown-it-py = "*"
@@ -151,6 +151,7 @@ pytest-subtests = "*"
 pytest-xdist = "*"
 pytest-timeout = "*"
 pytest-timeouts = "*"
+ruff = "*"
 scipy = "*"
 sphinx = "*"
 sphinx-rtd-theme = "*"

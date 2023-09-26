@@ -84,3 +84,7 @@ class World(ABC):
   @abstractmethod
   def close(self):
     pass
+
+  @abstractmethod
+  def reset(self):
+    pass
