@@ -29,6 +29,26 @@ A dashcam vehicle is one that has not been extensively tested to work with openp
 ## Community Maintained Cars
 Although they're not upstream, the community has openpilot running on other makes and models. See the 'Community Supported Models' section of each make [on our wiki](https://wiki.comma.ai/).
 
+* Honda
+  * Honda Clarity
+
+    The Clarity has one extra CAN bus at the camera connector. Due to this, it needs custom hardware and a custom fork to run.
+
+    Join the #honda-acura channel on [Discord](https://discord.comma.ai) with questions.
+  * Serial Steering
+
+    There are some Honda/Acura with Honda Sensing/AcuraWatch Plus that are not currently supported due to using dedicated serial data lines for its steering control messages. These cars can work with openpilot using additional hardware and minor software modifications. A Community Maintained upstream is planned.
+
+    The current list of 'serial steering' cars:
+
+    * 2016/2017 Accord
+    * 15-20 Acura MDX (2022+ MDX does not use serial steering and uses the same Bosch harness, but the wiring pinout is completely different)
+    * 15-20 Acura TLX (2021+ TLX uses the same Bosch harness with the same wiring pinout)
+
+    Join the #topic-serial-steering channel on discord with questions.
+
+
+
 # Don't see your car here?
 
 **openpilot can support many more cars than it currently does.** There are a few reasons your car may not be supported.
