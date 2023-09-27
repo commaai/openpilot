@@ -452,7 +452,7 @@
     </message>
     <message>
         <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
-        <translation>opepilot이 차량을 식별할 수 없었습니다. 지원되지 않는 차량이거나 ECU가 인식되지 않습니다. 해당 차량에 맞는 펌웨어 버전을 추가하려면 PR을 제출하세요. 도움이 필요하시면 discord.comma.ai에 가입하세요.</translation>
+        <translation>openpilot이 차량을 식별할 수 없었습니다. 지원되지 않는 차량이거나 ECU가 인식되지 않습니다. 해당 차량에 맞는 펌웨어 버전을 추가하려면 PR을 제출하세요. 도움이 필요하시면 discord.comma.ai에 가입하세요.</translation>
     </message>
     <message>
         <source>openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.</source>
@@ -558,7 +558,7 @@
     <name>QObject</name>
     <message>
         <source>Reboot</source>
-        <translation>재시작</translation>
+        <translation>재부팅</translation>
     </message>
     <message>
         <source>Exit</source>
@@ -735,7 +735,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Reboot device</source>
-        <translation>장치 재시작</translation>
+        <translation>장치 재부팅</translation>
     </message>
     <message>
         <source>Start over</source>
@@ -743,7 +743,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Something went wrong. Reboot the device.</source>
-        <translation>문제가 발생했습니다. 장치를 재시작하세요.</translation>
+        <translation>문제가 발생했습니다. 장치를 재부팅하세요.</translation>
     </message>
     <message>
         <source>No custom software found at this URL.</source>
@@ -943,7 +943,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Enter your GitHub username</source>
-        <translation>GitHub 사용자 아이디</translation>
+        <translation>GitHub 사용자 ID</translation>
     </message>
     <message>
         <source>LOADING</source>
@@ -1096,7 +1096,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Relaxed</source>
-        <translation>편안하게</translation>
+        <translation>편안한</translation>
     </message>
     <message>
         <source>Driving Personality</source>
@@ -1159,7 +1159,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Reboot</source>
-        <translation>재시작</translation>
+        <translation>재부팅</translation>
     </message>
     <message>
         <source>Update failed</source>
