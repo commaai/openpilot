@@ -63,7 +63,7 @@ class TestFileDownload(unittest.TestCase):
     self.compare_loads(large_file_url)
 
   @parameterized.expand([(True, ), (False, )])
-  def test_exists_file(self, cache_enabled):
+  def test_recover_from_missing_file(self, cache_enabled):
     os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
 
     exists_file = "http://localhost:5001/test.png"
