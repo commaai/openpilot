@@ -10,11 +10,11 @@ from openpilot.selfdrive.modeld.runners.runmodel_pyx import RunModel
 ORT_TYPES_TO_NP_TYPES = {'tensor(float16)': np.float16, 'tensor(float)': np.float32, 'tensor(uint8)': np.uint8}
 
 def convert_attributeproto_to_float32(attr):
-  float32_list = np.frombuffer(attr.raw_data, dtype='float16')
+  float32_list = np.frombuffer(attr.raw_data, dtype=np.float16)
   attr.data_type = 1
   attr.raw_data = float32_list.astype(np.float32).tobytes()
 
-def load_and_convert_model_to_float32(path):
+def convert_fp16_to_fp32(path):
   model = onnx.load(path)
   for i in model.graph.initializer:
     if i.data_type == 10:
@@ -29,7 +29,7 @@ def load_and_convert_model_to_float32(path):
           convert_attributeproto_to_float32(a.t)
   return model.SerializeToString()
 
-def create_ort_session(path, force_fp32=True):
+def create_ort_session(path, fp16_to_fp32):
   os.environ["OMP_NUM_THREADS"] = "4"
   os.environ["OMP_WAIT_POLICY"] = "PASSIVE"
 
@@ -50,7 +50,7 @@ def create_ort_session(path, force_fp32=True):
     options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
     provider = 'CPUExecutionProvider'
 
-  model_data = load_and_convert_model_to_float32(path) if force_fp32 else path
+  model_data = convert_fp16_to_fp32(path) if fp16_to_fp32 else path
   print("Onnx selected provider: ", [provider], file=sys.stderr)
   ort_session = ort.InferenceSession(model_data, options, providers=[provider])
   print("Onnx using ", ort_session.get_providers(), file=sys.stderr)
@@ -63,7 +63,7 @@ class ONNXModel(RunModel):
     self.output = output
     self.use_tf8 = use_tf8
 
-    self.session = create_ort_session(path)
+    self.session = create_ort_session(path, fp16_to_fp32=True)
     self.input_names = [x.name for x in self.session.get_inputs()]
     self.input_shapes = {x.name: [1, *x.shape[1:]] for x in self.session.get_inputs()}
     self.input_dtypes = {x.name: ORT_TYPES_TO_NP_TYPES[x.type] for x in self.session.get_inputs()}
