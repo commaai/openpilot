@@ -1,3 +1,5 @@
+import onnx
+import itertools
 import os
 import sys
 import numpy as np
@@ -7,7 +9,27 @@ from openpilot.selfdrive.modeld.runners.runmodel_pyx import RunModel
 
 ORT_TYPES_TO_NP_TYPES = {'tensor(float16)': np.float16, 'tensor(float)': np.float32, 'tensor(uint8)': np.uint8}
 
-def create_ort_session(path):
+def convert_attributeproto_to_float32(attr):
+  float32_list = np.frombuffer(attr.raw_data, dtype='float16')
+  attr.data_type = 1
+  attr.raw_data = float32_list.astype(np.float32).tobytes()
+
+def load_and_convert_model_to_float32(path):
+  model = onnx.load(path)
+  for i in model.graph.initializer:
+    if i.data_type == 10:
+      convert_attributeproto_to_float32(i)
+  for i in itertools.chain(model.graph.input, model.graph.output):
+    if i.type.tensor_type.elem_type == 10:
+      i.type.tensor_type.elem_type = 1
+  for i in model.graph.node:
+    for a in i.attribute:
+      if hasattr(a, 't'):
+        if a.t.data_type == 10:
+          convert_attributeproto_to_float32(a.t)
+  return model.SerializeToString()
+
+def create_ort_session(path, force_fp32=True):
   os.environ["OMP_NUM_THREADS"] = "4"
   os.environ["OMP_WAIT_POLICY"] = "PASSIVE"
 
@@ -28,8 +50,9 @@ def create_ort_session(path):
     options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
     provider = 'CPUExecutionProvider'
 
+  model_data = load_and_convert_model_to_float32(path) if force_fp32 else path
   print("Onnx selected provider: ", [provider], file=sys.stderr)
-  ort_session = ort.InferenceSession(path, options, providers=[provider])
+  ort_session = ort.InferenceSession(model_data, options, providers=[provider])
   print("Onnx using ", ort_session.get_providers(), file=sys.stderr)
   return ort_session
 
