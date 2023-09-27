@@ -39,7 +39,7 @@ public:
   void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
   void setFilterStrings(const QMap<int, QString> &filters);
   void msgsReceived(const std::set<MessageId> *new_msgs, bool has_new_ids);
-  void fetchData();
+  void filterAndSort();
   void dbcModified();
   std::vector<MessageId> msgs;
 

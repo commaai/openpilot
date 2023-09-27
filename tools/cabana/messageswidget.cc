@@ -148,7 +148,7 @@ void MessagesWidget::updateSuppressedButtons(size_t n) {
 // MessageListModel
 MessageListModel::MessageListModel(QObject *parent) : QAbstractTableModel(parent) {
   sort_timer.setSingleShot(true);
-  sort_timer.callOnTimeout(this, &MessageListModel::fetchData);
+  sort_timer.callOnTimeout(this, &MessageListModel::filterAndSort);
 }
 
 QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, int role) const {
@@ -194,7 +194,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
 
 void MessageListModel::setFilterStrings(const QMap<int, QString> &filters) {
   filter_str = filters;
-  fetchData();
+  filterAndSort();
 }
 
 void MessageListModel::dbcModified() {
@@ -202,7 +202,7 @@ void MessageListModel::dbcModified() {
   for (const auto &[_, m] : dbc()->getMessages(-1)) {
     dbc_address.insert(m.address);
   }
-  fetchData();
+  filterAndSort();
 }
 
 void MessageListModel::sortMessages(std::vector<MessageId> &new_msgs) {
@@ -295,7 +295,7 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
   return match;
 }
 
-void MessageListModel::fetchData() {
+void MessageListModel::filterAndSort() {
   std::vector<MessageId> new_msgs;
   new_msgs.reserve(can->lastMessages().size() + dbc_address.size());
 
@@ -331,7 +331,7 @@ void MessageListModel::msgsReceived(const std::set<MessageId> *new_msgs, bool ha
     bool need_sort = (filter_str.contains(Column::FREQ) || filter_str.contains(Column::COUNT) ||
                       filter_str.contains(Column::DATA));
     if (need_sort && ((millis_since_boot() - last_sort_ts) >= 1000)) {
-      fetchData();
+      filterAndSort();
       return;
     }
   }
@@ -348,7 +348,7 @@ void MessageListModel::sort(int column, Qt::SortOrder order) {
   if (column != columnCount() - 1) {
     sort_column = column;
     sort_order = order;
-    fetchData();
+    filterAndSort();
   }
 }
 
