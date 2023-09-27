@@ -24,8 +24,11 @@ def get_all_footnotes() -> Dict[Enum, int]:
 CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
 CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 
+PORTS_MD_OUT = os.path.join(BASEDIR, "docs", "PORTS.md")
+PORTS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "PORTS_template.md")
 
-def get_all_car_info() -> List[CarInfo]:
+
+def get_all_car_info(dashcam: bool = False) -> List[CarInfo]:
   all_car_info: List[CarInfo] = []
   footnotes = get_all_footnotes()
   for model, car_info in get_interface_attr("CAR_INFO", combine_brands=True).items():
@@ -33,7 +36,7 @@ def get_all_car_info() -> List[CarInfo]:
     CP = interfaces[model][0].get_params(model, fingerprint=gen_empty_fingerprint(),
                                          car_fw=[car.CarParams.CarFw(ecu="unknown")], experimental_long=True, docs=True)
 
-    if CP.dashcamOnly or car_info is None:
+    if CP.dashcamOnly != dashcam or car_info is None:
       continue
 
     # A platform can include multiple car models
@@ -73,10 +76,10 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Auto generates supported cars documentation",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-  parser.add_argument("--template", default=CARS_MD_TEMPLATE, help="Override default template filename")
-  parser.add_argument("--out", default=CARS_MD_OUT, help="Override default generated filename")
+  parser.add_argument("--template", default=PORTS_MD_TEMPLATE, help="Override default template filename")
+  parser.add_argument("--out", default=PORTS_MD_OUT, help="Override default generated filename")
   args = parser.parse_args()
 
   with open(args.out, 'w') as f:
-    f.write(generate_cars_md(get_all_car_info(), args.template))
+    f.write(generate_cars_md(get_all_car_info(dashcam=True), args.template))
   print(f"Generated and written to {args.out}")
