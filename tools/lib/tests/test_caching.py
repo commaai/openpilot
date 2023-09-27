@@ -1,10 +1,53 @@
 #!/usr/bin/env python3
+import http.server
 import os
+from parameterized import parameterized
+import threading
 import unittest
 from openpilot.tools.lib.url_file import URLFile
 
 
+class MockRequestHandler(http.server.BaseHTTPRequestHandler):
+  FILE_EXISTS = True
+
+  def _handle_request(self, send_content):
+    if self.FILE_EXISTS:
+      self.send_response(200)
+      self.send_header("Content-Length", 4)
+    else:
+      self.send_response(404)
+    self.end_headers()
+
+    if self.FILE_EXISTS and send_content:
+      self.wfile.write(b'1234')
+
+  def do_GET(self):
+    self._handle_request(True)
+
+  def do_HEAD(self):
+    self._handle_request(False)
+
+
+class MockServer(threading.Thread):
+  def run(self):
+    self.server = http.server.HTTPServer(("127.0.0.1", 5001), MockRequestHandler)
+    self.server.serve_forever()
+
+  def stop(self):
+    self.server.shutdown()
+
+
 class TestFileDownload(unittest.TestCase):
+  server: MockServer
+
+  @classmethod
+  def setUpClass(cls):
+    cls.server = MockServer()
+    cls.server.start()
+
+  @classmethod
+  def tearDownClass(cls) -> None:
+    cls.server.stop()
 
   def compare_loads(self, url, start=0, length=None):
     """Compares range between cached and non cached version"""
@@ -58,6 +101,22 @@ class TestFileDownload(unittest.TestCase):
 
     self.compare_loads(large_file_url, length - 100, 100)
     self.compare_loads(large_file_url)
+
+  @parameterized.expand([(True, ), (False, )])
+  def test_exists_file(self, cache_enabled):
+    os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
+
+    exists_file = "http://localhost:5001/test.png"
+
+    MockRequestHandler.FILE_EXISTS = False
+    file_not_exists = URLFile(exists_file)
+    length = file_not_exists.get_length()
+    self.assertEqual(length, -1)
+
+    MockRequestHandler.FILE_EXISTS = True
+    file_exists = URLFile(exists_file)
+    length = file_exists.get_length()
+    self.assertEqual(length, 4)
 
 
 if __name__ == "__main__":
