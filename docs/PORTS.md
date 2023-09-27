@@ -2,7 +2,7 @@
 
 # Supported Cars
 
-A dashcam vehicle is one that has not been extensively tested to work with openpilot. It does not work out of the box, though there has been some work on getting support into openpilot's codebase. These cars may range from needing a user to simply test them, fixing a small bug, or implementing safety. Dashcam vehicles reference the US market unless otherwise specified.
+A dashcam vehicle is one that has not been extensively tested to work with openpilot. It does not work out of the box, though there has been some work on getting support into openpilot's codebase. These cars may range from needing a user to simply test them, fixing a small bug, or [implementing safety](https://github.com/commaai/panda/tree/master/board/safety). Dashcam vehicles reference the US market unless otherwise specified.
 
 # 29 Dashcam Cars
 
