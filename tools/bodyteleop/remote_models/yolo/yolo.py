@@ -109,7 +109,7 @@ class YoloRunner:
 
 def main(yolo_runner, debug):
   vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_DRIVER, True)
-  pm = messaging.PubMaster(['bodyReserved1'])
+  pm = messaging.PubMaster(['customReservedRawData1'])
 
   while True:
     if not vipc_client.is_connected():
@@ -122,8 +122,8 @@ def main(yolo_runner, debug):
     img = cv2.cvtColor(imgff, cv2.COLOR_YUV2BGR_I420)
     outputs = yolo_runner.run(img)
     msg = messaging.new_message()
-    msg.bodyReserved1 = json.dumps(outputs)
-    pm.send('bodyReserved1', msg)
+    msg.customReservedRawData1 = json.dumps(outputs).encode()
+    pm.send('customReservedRawData1', msg)
     if debug:
       cv2.imwrite('yolo.jpg', yolo_runner.draw_boxes(img, outputs))
       print(f"found: {','.join([x['pred_class'] for x in outputs])}")

@@ -17,14 +17,14 @@ This section walks you through this process, running YOLO as an example.
 
 ### 1. Receive images
 ```
-# On the remote computer, run 
+# On the remote computer, run
 ./tools/camerastream/compressed_vipc.py --nvidia --cams 2 <body-ip>
 ```
 This decodes the `driverEncodeData` packets from the body, and pushes it to a local VisionIPC server.
 
 ### 2. Setup cereal bridge
 
-SSH into the body from the remote computer you intent to run models on. Then start cereal bridge using command below. Replace services... with the list of published sockets you intent to share with the body. For the yolo example that would be: bodyReserved1
+SSH into the body from the remote computer you intent to run models on. Then start cereal bridge using command below. Replace services... with the list of published sockets you intent to share with the body. For the yolo example that would be: customReservedRawData1
 ```
 REMOTE_IP="$(echo $SSH_CLIENT | awk '{print $1}')"
 tmux new-window -k -d -t comma -n remotebridge "/data/openpilot/cereal/messaging/bridge $REMOTE_IP <services...>"

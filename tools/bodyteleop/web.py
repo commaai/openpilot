@@ -40,8 +40,8 @@ async def control_body(data, app):
   x = max(-1.0, min(1.0, data['x']))
   y = max(-1.0, min(1.0, data['y']))
   dat = messaging.new_message()
-  dat.bodyReserved0 = json.dumps({'x': x, 'y': y})
-  pm.send('bodyReserved0', dat)
+  dat.customReservedRawData0 = json.dumps({'x': x, 'y': y}).encode()
+  pm.send('customReservedRawData0', dat)
   if (data['type'] == 'control_command'):
     app['mutable_vals']['prev_command'] = [data['x'], data['y']]
 
@@ -150,7 +150,7 @@ async def run(cmd):
 
 def main():
   global pm, sm
-  pm = messaging.PubMaster(['bodyReserved0'])
+  pm = messaging.PubMaster(['customReservedRawData0'])
   sm = messaging.SubMaster(['carState', 'logMessage'])
   # App needs to be HTTPS for microphone and audio autoplay to work on the browser
   cert_path = TELEOPDIR + '/cert.pem'
