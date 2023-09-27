@@ -8,7 +8,7 @@ from cereal import car
 from panda.python import uds
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car import dbc_dict
-from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
+from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, Kit
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
@@ -154,6 +154,9 @@ class HyundaiCarInfo(CarInfo):
   def init_make(self, CP: car.CarParams):
     if CP.carFingerprint in CANFD_CAR:
       self.footnotes.insert(0, Footnote.CANFD)
+      harness = next(p for p in self.car_parts.parts if isinstance(p, CarHarness))
+      self.car_parts = CarParts.common([harness, Kit.red_panda_kit])
+      print(harness)
 
 
 CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
