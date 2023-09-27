@@ -6,8 +6,6 @@ from multiprocessing import Process, Queue
 from abc import ABC, abstractmethod
 from typing import Optional
 
-import cereal.messaging as messaging
-
 from openpilot.common.params import Params
 from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import Ratekeeper
@@ -33,11 +31,6 @@ class SimulatorBridge(ABC):
     self.params = Params()
 
     self.rk = Ratekeeper(100, None)
-
-    msg = messaging.new_message('liveCalibration')
-    msg.liveCalibration.validBlocks = 20
-    msg.liveCalibration.rpyCalib = [0.0, 0.0, 0.0]
-    self.params.put("CalibrationParams", msg.to_bytes())
 
     self.dual_camera = arguments.dual_camera
     self.high_quality = arguments.high_quality
@@ -93,8 +86,6 @@ class SimulatorBridge(ABC):
     # Simulation tends to be slow in the initial steps. This prevents lagging later
     for _ in range(20):
       self.world.tick()
-
-    throttle_manual = steer_manual = brake_manual = 0.
 
     while self._keep_alive:
       throttle_out = steer_out = brake_out = 0.0
