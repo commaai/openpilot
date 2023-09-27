@@ -66,7 +66,7 @@ class TestFileDownload(unittest.TestCase):
   def test_recover_from_missing_file(self, cache_enabled):
     os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
 
-    exists_file = "http://localhost:5001/test.png"
+    file_url = "http://localhost:5001/test.png"
 
     file_exists = False
 
@@ -78,13 +78,11 @@ class TestFileDownload(unittest.TestCase):
     patch_length = mock.patch.object(URLFile, "get_length_online", get_length_online_mock)
     patch_length.start()
     try:
-      file_not_exists = URLFile(exists_file)
-      length = file_not_exists.get_length()
+      length = URLFile(file_url).get_length()
       self.assertEqual(length, -1)
 
       file_exists = True
-      file_exists = URLFile(exists_file)
-      length = file_exists.get_length()
+      length = URLFile(file_url).get_length()
       self.assertEqual(length, 4)
     finally:
       patch_length.stop()
