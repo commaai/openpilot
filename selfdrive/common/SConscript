@@ -1,0 +1,37 @@
+Import('env', 'arch', 'SHARED')
+
+if SHARED:
+  fxn = env.SharedLibrary
+else:
+  fxn = env.Library
+
+common_libs = [
+  'params.cc',
+  'statlog.cc',
+  'swaglog.cc',
+  'util.cc',
+  'gpio.cc',
+  'i2c.cc',
+  'watchdog.cc',
+]
+
+_common = fxn('common', common_libs, LIBS="json11")
+
+files = [
+  'clutil.cc',
+  'visionimg.cc',
+]
+
+if arch == "aarch64":
+  _gpu_libs = ['gui', 'adreno_utils']
+elif arch == "larch64":
+  _gpu_libs = ["GLESv2"]
+else:
+  _gpu_libs = ["GL"]
+
+_gpucommon = fxn('gpucommon', files, LIBS=_gpu_libs)
+Export('_common', '_gpucommon', '_gpu_libs')
+
+if GetOption('test'):
+  env.Program('tests/test_util', ['tests/test_util.cc'], LIBS=[_common])
+  env.Program('tests/test_swaglog', ['tests/test_swaglog.cc'], LIBS=[_common, 'json11', 'zmq', 'pthread'])

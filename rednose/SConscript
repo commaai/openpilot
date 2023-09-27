@@ -1,0 +1,41 @@
+Import('env', 'envCython', 'arch', 'rednose_config', 'common')
+
+generated_folder = rednose_config['generated_folder']
+
+templates = Glob('#rednose/templates/*')
+
+sympy_helpers = "#rednose/helpers/sympy_helpers.py"
+ekf_sym = "#rednose/helpers/ekf_sym.py"
+ekf_sym_pyx = "#rednose/helpers/ekf_sym_pyx.pyx"
+ekf_sym_cc = env.Object("#rednose/helpers/ekf_sym.cc")
+common_ekf = "#rednose/helpers/common_ekf.cc"
+
+found = {}
+for target, (command, combined_lib, extra_generated) in rednose_config['to_build'].items():
+  if File(command).exists():
+    found[target] = (command, combined_lib, extra_generated)
+
+lib_target = [common_ekf]
+for target, (command, combined_lib, extra_generated) in found.items():
+  target_files = File([f'{generated_folder}/{target}.cpp', f'{generated_folder}/{target}.h'])
+  extra_generated = [File(f'{generated_folder}/{x}') for x in extra_generated]
+  command_file = File(command)
+
+  env.Command(target_files + extra_generated,
+              [templates, command_file, sympy_helpers, ekf_sym],
+              command_file.get_abspath() + " " + target + " " + Dir(generated_folder).get_abspath())
+
+  if combined_lib:
+    lib_target.append(target_files[0])
+  else:
+    env.SharedLibrary(f'{generated_folder}/' + target, [target_files[0], common_ekf])
+
+libkf = env.SharedLibrary(f'{generated_folder}/libkf', lib_target)
+
+lenv = envCython.Clone()
+lenv["LINKFLAGS"] += [libkf[0].get_labspath()]
+lenv["LIBS"] = ['zmq', common] + lenv["LIBS"]
+ekf_sym_so = lenv.Program('#rednose/helpers/ekf_sym_pyx.so', [ekf_sym_pyx, ekf_sym_cc, common_ekf])
+lenv.Depends(ekf_sym_so, libkf)
+
+Export('libkf')
