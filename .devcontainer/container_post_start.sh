@@ -10,5 +10,6 @@ done
 
 # virtual display for virtualgl
 if [[ $HOST_OS == "darwin" ]]; then
-  Xvfb :0 -screen 0 1920x1080x24 &
+  echo "Starting virtual display at :0 ..."
+  tmux new-session -d -s fakedisplay Xvfb :0 -screen 0 1920x1080x24
 fi
