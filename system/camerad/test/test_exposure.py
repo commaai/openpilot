@@ -10,7 +10,7 @@ from openpilot.system.camerad.snapshot.snapshot import get_snapshots
 TEST_TIME = 45
 REPEAT = 5
 
-@pytest.mark.integration
+@pytest.mark.explicit
 class TestCamerad(unittest.TestCase):
   @classmethod
   def setUpClass(cls):

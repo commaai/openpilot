@@ -17,7 +17,7 @@ from openpilot.common.transformations.coordinates import ecef_from_geodetic
 GOOD_SIGNAL = bool(int(os.getenv("GOOD_SIGNAL", '0')))
 
 
-@pytest.mark.integration
+@pytest.mark.explicit
 class TestRawgpsd(unittest.TestCase):
   @classmethod
   def setUpClass(cls):

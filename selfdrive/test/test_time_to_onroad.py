@@ -10,7 +10,7 @@ from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.test.helpers import set_params_enabled
 
 
-@pytest.mark.integration
+@pytest.mark.explicit
 def test_time_to_onroad():
   # launch
   set_params_enabled()

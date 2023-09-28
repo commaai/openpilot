@@ -20,7 +20,7 @@ FRAME_DELTA_TOLERANCE = {log.FrameData.ImageSensor.ar0231: 1.0,
 CAMERAS = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
 
 
-@pytest.mark.integration
+@pytest.mark.explicit
 class TestCamerad(unittest.TestCase):
   @classmethod
   def setUpClass(cls):

@@ -10,7 +10,7 @@ from openpilot.system.hardware.tici.hardware import Tici
 HARDWARE = Tici()
 
 
-@pytest.mark.integration
+@pytest.mark.explicit
 class TestHardware(unittest.TestCase):
 
   @classmethod

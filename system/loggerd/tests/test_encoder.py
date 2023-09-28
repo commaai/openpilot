@@ -32,7 +32,7 @@ CAMERAS = [
 FILE_SIZE_TOLERANCE = 0.5
 
 
-@pytest.mark.integration
+@pytest.mark.explicit
 class TestEncoder(unittest.TestCase):
 
   # TODO: all of loggerd should work on PC

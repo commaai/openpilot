@@ -45,7 +45,7 @@ def send_llk_msg(done):
     time.sleep(1/20.)
 
 
-@pytest.mark.integration
+@pytest.mark.explicit
 class TestPowerDraw(unittest.TestCase):
 
   @classmethod

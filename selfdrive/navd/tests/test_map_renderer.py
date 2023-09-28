@@ -74,7 +74,7 @@ class MapBoxInternetDisabledServer(threading.Thread):
     MapBoxInternetDisabledRequestHandler.INTERNET_ACTIVE = True
 
 
-@pytest.mark.integration
+@pytest.mark.explicit
 class TestMapRenderer(unittest.TestCase):
   server = MapBoxInternetDisabledServer()
 

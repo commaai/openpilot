@@ -7,7 +7,7 @@ from openpilot.tools.sim.bridge.metadrive import MetaDriveBridge
 from openpilot.tools.sim.tests.test_sim_bridge import TestSimBridgeBase
 
 
-@pytest.mark.integration
+@pytest.mark.explicit
 class TestMetaDriveBridge(TestSimBridgeBase):
   def create_bridge(self):
     return MetaDriveBridge(parse_args([]))

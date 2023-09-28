@@ -18,7 +18,7 @@ MAX_STARTUP_TIME = 3
 BLACKLIST_PROCS = ['manage_athenad', 'pandad', 'pigeond']
 
 
-@pytest.mark.integration
+@pytest.mark.explicit
 class TestManager(unittest.TestCase):
   def setUp(self):
     os.environ['PASSIVE'] = '0'

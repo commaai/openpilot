@@ -98,7 +98,7 @@ def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
 
 
-@pytest.mark.integration
+@pytest.mark.explicit
 class TestOnroad(unittest.TestCase):
 
   @classmethod

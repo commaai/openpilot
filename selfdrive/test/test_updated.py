@@ -14,7 +14,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 
 
-@pytest.mark.integration
+@pytest.mark.explicit
 class TestUpdated(unittest.TestCase):
 
   def setUp(self):

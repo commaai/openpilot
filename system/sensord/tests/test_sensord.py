@@ -100,7 +100,7 @@ def read_sensor_events(duration_sec):
   return {k: v for k, v in events.items() if len(v) > 0}
 
 
-@pytest.mark.integration
+@pytest.mark.explicit
 class TestSensord(unittest.TestCase):
   @classmethod
   def setUpClass(cls):

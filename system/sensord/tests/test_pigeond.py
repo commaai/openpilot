@@ -13,7 +13,7 @@ from openpilot.system.hardware.tici.pins import GPIO
 
 
 # TODO: test TTFF when we have good A-GNSS
-@pytest.mark.integration
+@pytest.mark.explicit
 class TestPigeond(unittest.TestCase):
   @classmethod
   def setUpClass(cls):

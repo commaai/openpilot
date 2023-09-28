@@ -10,7 +10,7 @@ from openpilot.tools.sim.bridge.carla import CarlaBridge
 from openpilot.tools.sim.tests.test_sim_bridge import SIM_DIR, TestSimBridgeBase
 
 
-@pytest.mark.integration
+@pytest.mark.explicit
 class TestCarlaBridge(TestSimBridgeBase):
   """
   Tests need Carla simulator to run

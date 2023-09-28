@@ -5,7 +5,7 @@ addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda
 python_files = "test_*.py"
 #timeout = "30"  # you get this long by default
 markers = [
-  "integration: tests that aren't meant to be run locally, only in the Jenkins CI server",
+  "explicit: tests that aren't discovered by default and have to be run explicitly, ex: for on-device tests",
   "slow: tests that take awhile to run and can be skipped with -m 'not slow'"
 ]
 

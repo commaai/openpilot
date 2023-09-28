@@ -1,4 +1,3 @@
-import os
 import pytest
 
 from openpilot.common.prefix import OpenpilotPrefix
@@ -10,15 +9,12 @@ def global_setup_and_teardown():
   with OpenpilotPrefix():
     yield
 
-
-# we can't mark cpp tests, so add them manually here
+# there is currently no way to mark cpp tests, so we have to mark them here
 ADDITIONAL_EXPLICIT = ["selfdrive/ui/tests/test_translations", "selfdrive/ui/tests/test_sound"]
 
-
 def pytest_collection_modifyitems(config, items):
-  print(config)
-  skipper = pytest.mark.skip(reason="Skipping integration test since INTEGRATION env variable is not set.")
+  skipper = pytest.mark.skip(reason="Skipping explicit test since it was not run directly.")
   for item in items:
-    if os.environ.get("INTEGRATION", None) != "1":
-      if "integration" in item.keywords or item.location[0] in ADDITIONAL_EXPLICIT:
-        item.add_marker(skipper)
+    test_path = item.location[0]
+    if ("explicit" in item.keywords or test_path in ADDITIONAL_EXPLICIT) and (test_path not in config.option.file_or_dir):
+      item.add_marker(skipper)

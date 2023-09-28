@@ -2,6 +2,7 @@
 import argparse
 import concurrent.futures
 import os
+import pytest
 import sys
 from collections import defaultdict
 from tqdm import tqdm
@@ -91,6 +92,7 @@ def get_log_data(segment):
     return (segment, f.read())
 
 
+@pytest.mark.explicit
 def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=None, ignore_msgs=None):
   if ignore_fields is None:
     ignore_fields = []

@@ -11,7 +11,7 @@ from openpilot.system.hardware.tici.hardware import Tici
 from openpilot.system.hardware.tici.amplifier import Amplifier
 
 
-@pytest.mark.integration
+@pytest.mark.explicit
 class TestAmplifier(unittest.TestCase):
 
   @classmethod

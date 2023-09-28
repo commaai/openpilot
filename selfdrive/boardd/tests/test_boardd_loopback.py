@@ -18,7 +18,7 @@ from openpilot.system.hardware import TICI
 from openpilot.selfdrive.test.helpers import phone_only, with_processes
 
 
-@pytest.mark.integration
+@pytest.mark.explicit
 class TestBoardd(unittest.TestCase):
 
   @classmethod
