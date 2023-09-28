@@ -17,6 +17,6 @@ def pytest_collection_modifyitems(config, items):
   for item in items:
     test_path = item.location[0]
     is_explicit_test = "explicit" in item.keywords or test_path in ADDITIONAL_EXPLICIT
-    was_run_explicitly = test_path not in config.option.file_or_dir
-    if is_explicit_test and was_run_explicitly:
+    was_run_explicitly = test_path in config.option.file_or_dir
+    if is_explicit_test and not was_run_explicitly:
       item.add_marker(skipper)
