@@ -6,10 +6,9 @@ from openpilot.tools.sim.lib.common import SimulatorState, World, vec3
 
 
 class MetaDriveWorld(World):
-  def __init__(self, env, ticks_per_frame: float, dual_camera = False):
+  def __init__(self, env, dual_camera = False):
     super().__init__(dual_camera)
     self.env = env
-    self.ticks_per_frame = ticks_per_frame
     self.dual_camera = dual_camera
 
     self.steer_ratio = 15
