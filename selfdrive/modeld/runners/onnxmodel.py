@@ -9,7 +9,7 @@ from openpilot.selfdrive.modeld.runners.runmodel_pyx import RunModel
 
 ORT_TYPES_TO_NP_TYPES = {'tensor(float16)': np.float16, 'tensor(float)': np.float32, 'tensor(uint8)': np.uint8}
 
-def convert_attributeproto_to_float32(attr):
+def attributeproto_fp16_to_fp32(attr):
   float32_list = np.frombuffer(attr.raw_data, dtype=np.float16)
   attr.data_type = 1
   attr.raw_data = float32_list.astype(np.float32).tobytes()
@@ -18,7 +18,7 @@ def convert_fp16_to_fp32(path):
   model = onnx.load(path)
   for i in model.graph.initializer:
     if i.data_type == 10:
-      convert_attributeproto_to_float32(i)
+      attributeproto_fp16_to_fp32(i)
   for i in itertools.chain(model.graph.input, model.graph.output):
     if i.type.tensor_type.elem_type == 10:
       i.type.tensor_type.elem_type = 1
@@ -26,7 +26,7 @@ def convert_fp16_to_fp32(path):
     for a in i.attribute:
       if hasattr(a, 't'):
         if a.t.data_type == 10:
-          convert_attributeproto_to_float32(a.t)
+          attributeproto_fp16_to_fp32(a.t)
   return model.SerializeToString()
 
 def create_ort_session(path, fp16_to_fp32):
