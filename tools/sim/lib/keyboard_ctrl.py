@@ -15,8 +15,6 @@ ISPEED = 4
 OSPEED = 5
 CC = 6
 
-STDIN_FD = sys.stdin.fileno()
-
 def getch() -> str:
   old_settings = termios.tcgetattr(STDIN_FD)
   try:
@@ -72,5 +70,7 @@ if __name__ == '__main__':
   p = Process(target=test, args=(q,))
   p.daemon = True
   p.start()
+
+  STDIN_FD = sys.stdin.fileno()
 
   keyboard_poll_thread(q)
