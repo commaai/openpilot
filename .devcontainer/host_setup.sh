@@ -27,3 +27,15 @@ fi
 HOST_INFO_FILE=".devcontainer/.host/.env"
 SYSTEM=$(uname -s | tr '[:upper:]' '[:lower:]')
 echo "HOST_OS=\"$SYSTEM\"" > $HOST_INFO_FILE
+
+# run virtualgl if macos
+if [[ $SYSTEM == "darwin" ]]; then
+  if [[ -f /opt/VirtualGL/bin/vglclient ]]; then
+    echo "Starting VirtualGL client at port 10000..."
+    VGL_LOG_FILE=".devcontainer/.host/.vgl/vglclient.log"
+    mkdir -p "$(dirname $VGL_LOG_FILE)"
+    /opt/VirtualGL/bin/vglclient -l "$VGL_LOG_FILE" -display "$DISPLAY" -port 10000 -detach
+  else
+    echo "VirtualGL not found. GUI tools may not work properly."
+  fi
+fi
