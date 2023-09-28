@@ -6,6 +6,7 @@ ssh -tt -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' /usr/bin/bash <
 set -e
 
 export CI=1
+export INTEGRATION=1
 export PYTHONWARNINGS=error
 export LOGPRINT=debug
 export TEST_DIR=${env.TEST_DIR}
