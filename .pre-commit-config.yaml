@@ -41,7 +41,7 @@ repos:
         args: ['--explicit-package-bases']
         exclude: '^(third_party/)|(cereal/)|(opendbc/)|(panda/)|(laika/)|(laika_repo/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(xx/)'
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.290
+    rev: v0.0.291
     hooks:
     -   id: ruff
         exclude: '^(third_party/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(laika_repo/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)'
@@ -86,6 +86,6 @@ repos:
         args:
         - --lock
 -   repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.26.3
+    rev: 0.27.0
     hooks:
     -   id: check-github-workflows
