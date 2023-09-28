@@ -6,11 +6,11 @@
 
 #include "tools/cabana/streams/abstractstream.h"
 
-void Sparkline::update(const MessageId &msg_id, const cabana::Signal *sig, double last_msg_ts, int time_range, QSize size) {
+void Sparkline::update(const MessageId &msg_id, const cabana::Signal *sig, uint64_t last_ts, int time_range, QSize size) {
   const auto &msgs = can->events(msg_id);
-  uint64_t first_ts = can->toMonoTime(std::max(0.0, last_msg_ts - time_range));
+  uint64_t first_ts = last_ts - std::min<uint64_t>(last_ts, time_range * 1e9);
   auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), first_ts, CompareCanEvent());
-  auto last = std::upper_bound(first, msgs.cend(), can->toMonoTime(last_msg_ts), CompareCanEvent());
+  auto last = std::upper_bound(first, msgs.cend(), last_ts, CompareCanEvent());
 
   freq_ = 0;
   points.clear();

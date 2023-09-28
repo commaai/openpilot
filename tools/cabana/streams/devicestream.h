@@ -7,7 +7,7 @@ class DeviceStream : public LiveStream {
 public:
   DeviceStream(QObject *parent, QString address = {});
   static AbstractOpenStreamWidget *widget(AbstractStream **stream);
-  inline QString routeName() const override {
+  inline QString name() const override {
     return QString("Live Streaming From %1").arg(zmq_address.isEmpty() ? "127.0.0.1" : zmq_address);
   }
 

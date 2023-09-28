@@ -113,7 +113,7 @@ void LiveStream::updateEvents() {
   for (auto it = first; it != last; ++it) {
     const CanEvent *e = *it;
     MessageId id = {.source = e->src, .address = e->address};
-    updateEvent(id, (e->mono_time - begin_event_ts) / 1e9, e->dat, e->size);
+    updateEvent(id, e->mono_time, e->dat, e->size);
     current_event_ts = e->mono_time;
   }
   emit lastMsgsChanged();

@@ -260,7 +260,7 @@ void MainWindow::openStream() {
       loadFile(dlg.dbcFile());
     }
     stream->start();
-    statusBar()->showMessage(tr("Route %1 loaded").arg(can->routeName()), 2000);
+    statusBar()->showMessage(tr("Route %1 loaded").arg(can->name()), 2000);
   }
 }
 
@@ -350,7 +350,7 @@ void MainWindow::streamStarted() {
   tools_menu->setEnabled(has_stream);
   createDockWidgets();
 
-  video_dock->setWindowTitle(can->routeName());
+  video_dock->setWindowTitle(can->name());
   if (can->liveStreaming() || video_splitter->sizes()[0] == 0) {
     // display video at minimum size.
     video_splitter->setSizes({1, 1});
@@ -368,7 +368,7 @@ void MainWindow::streamStarted() {
 void MainWindow::eventsMerged() {
   if (!can->liveStreaming() && std::exchange(car_fingerprint, can->carFingerprint()) != car_fingerprint) {
     video_dock->setWindowTitle(tr("ROUTE: %1  FINGERPRINT: %2")
-                                    .arg(can->routeName())
+                                    .arg(can->name())
                                     .arg(car_fingerprint.isEmpty() ? tr("Unknown Car") : car_fingerprint));
     // Don't overwrite already loaded DBC
     if (!dbc()->msgCount() && !car_fingerprint.isEmpty()) {

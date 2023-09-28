@@ -8,7 +8,7 @@
 
 class Sparkline {
 public:
-  void update(const MessageId &msg_id, const cabana::Signal *sig, double last_msg_ts, int time_range, QSize size);
+  void update(const MessageId &msg_id, const cabana::Signal *sig, uint64_t last_ts, int time_range, QSize size);
   inline double freq() const { return freq_; }
 
   QPixmap pixmap;

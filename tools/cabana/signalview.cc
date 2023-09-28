@@ -649,7 +649,7 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
     for (int i = first_visible_row; i <= last_visible_row; ++i) {
       auto item = model->getItem(model->index(i, 1));
       synchronizer.addFuture(QtConcurrent::run(
-          &item->sparkline, &Sparkline::update, model->msg_id, item->sig, last_msg.ts, settings.sparkline_range, size));
+          &item->sparkline, &Sparkline::update, model->msg_id, item->sig, last_msg.mono_time, settings.sparkline_range, size));
     }
   }
 

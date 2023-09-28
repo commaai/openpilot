@@ -24,7 +24,7 @@ public:
 
   static bool available();
 
-  inline QString routeName() const override {
+  inline QString name() const override {
     return QString("Live Streaming From Socket CAN %1").arg(config.device);
   }
 

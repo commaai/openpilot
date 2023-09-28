@@ -283,11 +283,11 @@ static void calc_values(const cabana::Signal *sig, const std::vector<const CanEv
                         std::vector<QPointF> &vals, std::vector<QPointF> &step_vals) {
   vals.reserve(vals.size() + msgs.capacity());
   step_vals.reserve(step_vals.size() + msgs.capacity() * 2);
-  const double route_start_time = can->routeStartTime();
+  const uint64_t route_start_time = can->beginMonoTime();
   double value = 0;
   for (const CanEvent *e : msgs) {
     if (sig->getValue(e->dat, e->size, &value)) {
-      const double ts = e->mono_time / 1e9 - route_start_time;  // seconds
+      const double ts = (e->mono_time - route_start_time) / 1e9;  // seconds
       vals.emplace_back(ts, value);
       if (!step_vals.empty()) {
         step_vals.emplace_back(ts, step_vals.back().y());

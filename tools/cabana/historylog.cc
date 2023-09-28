@@ -85,7 +85,7 @@ void HistoryLogModel::setFilter(int sig_idx, const QString &value, std::function
 }
 
 void HistoryLogModel::updateState() {
-  uint64_t current_time = can->toMonoTime(can->currentSec()) + 1;
+  uint64_t current_time = can->currentMonoTime() + 1;
   dynamic_mode ? fetchData(messages.begin(), current_time, last_fetch_time) : fetchData(messages.begin(), 0);
   last_fetch_time = current_time;
 }

@@ -14,8 +14,8 @@ public:
   LiveStream(QObject *parent);
   virtual ~LiveStream();
   void start() override;
-  inline double routeStartTime() const override { return begin_event_ts / 1e9; }
-  inline double currentSec() const override { return (current_event_ts - begin_event_ts) / 1e9; }
+  inline uint64_t beginMonoTime() const override { return begin_event_ts; }
+  inline uint64_t currentMonoTime() const override { return current_event_ts; }
   inline double totalSeconds() const override { return (lastest_event_ts_ - begin_event_ts) / 1e9; }
   void setSpeed(float speed) override { speed_ = speed; }
   double getSpeed() override { return speed_; }

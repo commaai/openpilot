@@ -67,10 +67,10 @@ void AbstractStream::suppressDefinedSignals(bool suppress) {
 size_t AbstractStream::suppressHighlighted() {
   std::lock_guard lk(mutex_);
   size_t cnt = 0;
-  const double cur_ts = currentSec();
+  const uint64_t cur_ts = currentMonoTime();
   for (auto &[_, m] : msgs_) {
     for (auto &last_change : m.last_changes) {
-      const double dt = cur_ts - last_change.ts;
+      const double dt = (cur_ts - last_change.mono_time) / 1e9;
       if (dt < 2.0) {
         last_change.suppressed = true;
       }
@@ -111,11 +111,11 @@ void AbstractStream::updateLastMessages() {
   }
 }
 
-void AbstractStream::updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size) {
+void AbstractStream::updateEvent(const MessageId &id, uint64_t ts, const uint8_t *data, uint8_t size) {
   std::lock_guard lk(mutex_);
   auto mask_it = masks_.find(id);
   std::vector<uint8_t> *mask = mask_it == masks_.end() ? nullptr : &mask_it->second;
-  msgs_[id].compute(id, data, size, sec, getSpeed(), mask);
+  msgs_[id].compute(id, data, size, ts, getSpeed(), mask);
   new_msgs_.insert(id);
 }
 
@@ -208,11 +208,11 @@ inline QColor blend(const QColor &a, const QColor &b) {
 }
 
 // Calculate the frequency of the past minute.
-double calc_freq(const MessageId &msg_id, double current_sec) {
+double calc_freq(const MessageId &msg_id, uint64_t current_ts) {
   const auto &events = can->events(msg_id);
-  double first_sec = std::max(0.0, current_sec - 59);
-  auto first = std::lower_bound(events.begin(), events.end(), can->toMonoTime(first_sec), CompareCanEvent());
-  auto second = std::lower_bound(first, events.end(), can->toMonoTime(current_sec), CompareCanEvent());
+  uint64_t first_ts = current_ts - std::min<int64_t>(current_ts, 59 * 1e9);
+  auto first = std::lower_bound(events.begin(), events.end(), first_ts, CompareCanEvent());
+  auto second = std::lower_bound(first, events.end(), current_ts, CompareCanEvent());
   if (first != events.end() && second != events.end()) {
     double duration = ((*second)->mono_time - (*first)->mono_time) / 1e9;
     uint32_t count = std::distance(first, second);
@@ -223,21 +223,21 @@ double calc_freq(const MessageId &msg_id, double current_sec) {
 
 }  // namespace
 
-void CanData::compute(const MessageId &msg_id, const uint8_t *can_data, const int size, double current_sec,
+void CanData::compute(const MessageId &msg_id, const uint8_t *can_data, const int size, uint64_t current_ts,
                       double playback_speed, const std::vector<uint8_t> *mask) {
-  ts = current_sec;
+  mono_time = current_ts;
   ++count;
 
-  if (current_sec < last_freq_update_ts || (current_sec - last_freq_update_ts) >= 1.0) {
-    last_freq_update_ts = current_sec;
-    freq = calc_freq(msg_id, current_sec);
+  if (current_ts < last_freq_update_ts || (current_ts - last_freq_update_ts) >= 1.0) {
+    last_freq_update_ts = current_ts;
+    freq = calc_freq(msg_id, current_ts);
   }
 
   if (dat.size() != size) {
     dat.resize(size);
     colors.assign(size, QColor(0, 0, 0, 0));
     last_changes.resize(size);
-    std::for_each(last_changes.begin(), last_changes.end(), [current_sec](auto &c) { c.ts = current_sec; });
+    std::for_each(last_changes.begin(), last_changes.end(), [current_ts](auto &c) { c.mono_time = current_ts; });
   } else {
     bool lighter = settings.theme == DARK_THEME;
     const QColor &cyan = !lighter ? CYAN : CYAN_LIGHTER;
@@ -259,7 +259,7 @@ void CanData::compute(const MessageId &msg_id, const uint8_t *can_data, const in
       const int delta = cur - last;
 
       if (last != cur) {
-        double delta_t = ts - last_change.ts;
+        double delta_t = (mono_time - last_change.mono_time) / 1e9;
 
         // Keep track if signal is changing randomly, or mostly moving in the same direction
         if (std::signbit(delta) == std::signbit(last_change.delta)) {
@@ -285,7 +285,7 @@ void CanData::compute(const MessageId &msg_id, const uint8_t *can_data, const in
           }
         }
 
-        last_change.ts = ts;
+        last_change.mono_time = mono_time;
         last_change.delta = delta;
       } else {
         // Fade out

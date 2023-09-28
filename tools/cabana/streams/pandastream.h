@@ -22,7 +22,7 @@ class PandaStream : public LiveStream {
 public:
   PandaStream(QObject *parent, PandaStreamConfig config_ = {});
   static AbstractOpenStreamWidget *widget(AbstractStream **stream);
-  inline QString routeName() const override {
+  inline QString name() const override {
     return QString("Live Streaming From Panda %1").arg(config.serial);
   }
 

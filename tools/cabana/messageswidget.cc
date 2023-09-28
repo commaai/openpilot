@@ -157,19 +157,16 @@ QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, 
 }
 
 QVariant MessageListModel::data(const QModelIndex &index, int role) const {
-  if (!index.isValid() || index.row() >= msgs.size()) return {};
-
-  const auto &id = msgs[index.row()];
-  auto &can_data = can->lastMessage(id);
-
   auto getFreq = [](const CanData &d) -> QString {
-    if (d.freq > 0 && (can->currentSec() - d.ts - 1.0 / settings.fps) < (5.0 / d.freq)) {
+    if (d.freq > 0 && (can->currentSec() - can->toSeconds(d.mono_time) - 1.0 / settings.fps) < (5.0 / d.freq)) {
       return d.freq >= 0.95 ? QString::number(std::nearbyint(d.freq)) : QString::number(d.freq, 'f', 2);
     } else {
       return "--";
     }
   };
 
+  const auto &id = msgs[index.row()];
+  auto &can_data = can->lastMessage(id);
   if (role == Qt::DisplayRole) {
     switch (index.column()) {
       case Column::NAME: return msgName(id);
