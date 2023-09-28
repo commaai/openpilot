@@ -163,7 +163,7 @@ def main():
 
   # Increase device volume to 100%
   # ToDo: Do this properly
-  asyncio.run(run('pactl set-sink-volume @DEFAULT_SINK@ 100%'))
+  asyncio.run(run('pactl set-sink-volume @DEFAULT_SINK@ 80%'))
 
   ssl_context = ssl.SSLContext()
   ssl_context.load_cert_chain(cert_path, key_path)
