@@ -615,9 +615,6 @@ void SignalView::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
 
 void SignalView::handleSignalUpdated(const cabana::Signal *sig) {
   if (int row = model->signalRow(sig); row != -1) {
-    auto item = model->getItem(model->index(row, 1));
-    // invalidate the sparkline
-    item->sparkline.last_ts = 0;
     updateState();
   }
 }
@@ -651,11 +648,8 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
     QFutureSynchronizer<void> synchronizer;
     for (int i = first_visible_row; i <= last_visible_row; ++i) {
       auto item = model->getItem(model->index(i, 1));
-      auto &s = item->sparkline;
-      if (s.last_ts != last_msg.ts || s.size() != size || s.time_range != settings.sparkline_range) {
-        synchronizer.addFuture(QtConcurrent::run(
-            &s, &Sparkline::update, model->msg_id, item->sig, last_msg.ts, settings.sparkline_range, size));
-      }
+      synchronizer.addFuture(QtConcurrent::run(
+          &item->sparkline, &Sparkline::update, model->msg_id, item->sig, last_msg.ts, settings.sparkline_range, size));
     }
   }
 

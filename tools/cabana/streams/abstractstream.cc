@@ -210,10 +210,9 @@ inline QColor blend(const QColor &a, const QColor &b) {
 // Calculate the frequency of the past minute.
 double calc_freq(const MessageId &msg_id, double current_sec) {
   const auto &events = can->events(msg_id);
-  uint64_t cur_mono_time = can->toMonoTime(current_sec);
-  uint64_t first_mono_time = std::max<int64_t>(0, cur_mono_time - 59 * 1e9);
-  auto first = std::lower_bound(events.begin(), events.end(), first_mono_time, CompareCanEvent());
-  auto second = std::lower_bound(first, events.end(), cur_mono_time, CompareCanEvent());
+  double first_sec = std::max(0.0, current_sec - 59);
+  auto first = std::lower_bound(events.begin(), events.end(), can->toMonoTime(first_sec), CompareCanEvent());
+  auto second = std::lower_bound(first, events.end(), can->toMonoTime(current_sec), CompareCanEvent());
   if (first != events.end() && second != events.end()) {
     double duration = ((*second)->mono_time - (*first)->mono_time) / 1e9;
     uint32_t count = std::distance(first, second);
