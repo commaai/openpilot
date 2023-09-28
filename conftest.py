@@ -16,5 +16,7 @@ def pytest_collection_modifyitems(config, items):
   skipper = pytest.mark.skip(reason="Skipping explicit test since it was not run directly.")
   for item in items:
     test_path = item.location[0]
-    if ("explicit" in item.keywords or test_path in ADDITIONAL_EXPLICIT) and (test_path not in config.option.file_or_dir):
+    is_explicit_test = "explicit" in item.keywords or test_path in ADDITIONAL_EXPLICIT
+    was_run_explicitly = test_path not in config.option.file_or_dir
+    if is_explicit_test and was_run_explicitly:
       item.add_marker(skipper)
