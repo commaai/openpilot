@@ -1,6 +1,7 @@
 import sys
 import termios
 import time
+
 from termios import (BRKINT, CS8, CSIZE, ECHO, ICANON, ICRNL, IEXTEN, INPCK,
                      ISTRIP, IXON, PARENB, VMIN, VTIME)
 from typing import NoReturn
@@ -15,6 +16,20 @@ OSPEED = 5
 CC = 6
 
 STDIN_FD = sys.stdin.fileno()
+
+
+KEYBOARD_HELP = """
+  | key  |   functionality    |
+  -----------------------------
+  |  1   |   Cruise Resume    |
+  |  2   |    Cruise Set      |
+  |  3   |   Cruise Cancel    |
+  |  r   |  Reset Simulation  |
+  |  i   |  Toggle Ignition   |
+  |  q   |      Exit all      |
+  | wasd |  Control manually  |
+"""
+
 
 def getch() -> str:
   old_settings = termios.tcgetattr(STDIN_FD)
@@ -38,7 +53,6 @@ def getch() -> str:
 def keyboard_poll_thread(q: 'Queue[str]'):
   while True:
     c = getch()
-    print("got %s" % c)
     if c == '1':
       q.put("cruise_up")
     elif c == '2':
@@ -55,6 +69,8 @@ def keyboard_poll_thread(q: 'Queue[str]'):
       q.put("steer_%f" % -0.15)
     elif c == 'i':
       q.put("ignition")
+    elif c == 'r':
+      q.put("reset")
     elif c == 'q':
       q.put("quit")
       break

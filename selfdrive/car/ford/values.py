@@ -78,7 +78,7 @@ class FordCarInfo(CarInfo):
 
   def init_make(self, CP: car.CarParams):
     if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1):
-      self.car_parts = CarParts([Device.three_angled_mount, CarHarness.ford_q3])
+      self.car_parts = CarParts([Device.threex_angled_mount, CarHarness.ford_q3])
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
@@ -267,6 +267,7 @@ FW_VERSIONS = {
       b'NZ6A-14C204-ZA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PZ6A-14C204-BE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PZ6A-14C204-JC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'PZ6A-14C204-JE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
 }
