@@ -285,7 +285,7 @@ A supported vehicle is one that just works when you install a comma device. All 
 <sup>8</sup>openpilot operates above 28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control. <br />
 <sup>9</sup>Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform. <br />
 <sup>10</sup>Refers only to the MQB-based European B8 Passat, not the NMS Passat in the USA/China/Mideast markets. <br />
-<sup>11</sup>Some Škoda vehicles are equipped with heated windshields, which are known to block GPS signal needed for some comma three functionality. <br />
+<sup>11</sup>Some Škoda vehicles are equipped with heated windshields, which are known to block GPS signal needed for some comma 3X functionality. <br />
 <sup>12</sup>Only available for vehicles using a gateway (J533) harness. At this time, vehicles using a camera harness are limited to using stock ACC. <br />
 <sup>13</sup>Model-years 2022 and beyond may have a combined CAN gateway and BCM, which is supported by openpilot in software, but doesn't yet have a harness available from the comma store. <br />
 
