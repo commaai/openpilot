@@ -17,10 +17,7 @@ from PIL import Image
 from openpilot.tools.lib.auth_config import get_token
 from openpilot.tools.lib.framereader import FrameReader
 
-headers = {}
 jwt = get_token()
-if jwt:
-  headers = {"Authorization": "JWT "+jwt}
 
 route = sys.argv[1]
 segment = int(sys.argv[2])
@@ -28,7 +25,7 @@ frame = int(sys.argv[3])
 camera = cameras[sys.argv[4]] if len(sys.argv) > 4 and sys.argv[4] in cameras else "cameras"
 
 url = f'https://api.commadotai.com/v1/route/{route}/files'
-r = requests.get(url, headers=headers, timeout=10)
+r = requests.get(url, headers={"Authorization": f"JWT {jwt}"}, timeout=10)
 assert r.status_code == 200
 print("got api response")
 
