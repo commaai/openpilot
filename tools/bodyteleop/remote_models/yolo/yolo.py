@@ -74,7 +74,7 @@ def nms(prediction, conf_thres=0.3, iou_thres=0.45):
 
 class YoloRunner:
   def __init__(self, onnx_path):
-    self.sess = create_ort_session(onnx_path)
+    self.sess = create_ort_session(onnx_path, fp16_to_fp32=False)
     self.class_names = [ast.literal_eval(self.sess.get_modelmeta().custom_metadata_map['names'])[i] for i in range(N_CLASSES)]
     self.width, self.height = 640, 416
 
@@ -118,7 +118,8 @@ def main(yolo_runner, debug):
     yuv_img_raw = vipc_client.recv()
     if yuv_img_raw is None or not yuv_img_raw.data.any():
       continue
-    imgff = np.frombuffer(yuv_img_raw.data, dtype=np.uint8).reshape((vipc_client.height * 3 // 2, vipc_client.width))
+    imgff = yuv_img_raw.data.reshape(-1, vipc_client.stride)
+    imgff = imgff[:vipc_client.height * 3 // 2, :vipc_client.width]
     img = cv2.cvtColor(imgff, cv2.COLOR_YUV2BGR_I420)
     outputs = yolo_runner.run(img)
     msg = messaging.new_message()
