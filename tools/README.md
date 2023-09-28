@@ -52,7 +52,7 @@ GUI apps like `ui` or `cabana` can also run inside the container by leveraging X
 
 On Windows, you must clone openpilot into a container volume, otherwise the symlinks will be broken because Windows doesn't support them very well. Follow [these instructions](https://code.visualstudio.com/docs/devcontainers/containers#_quick-start-open-a-git-repository-or-github-pr-in-an-isolated-container-volume) to get started after getting docker installed.
 
-With Windows 11, X11 forwarding should work out of the box.
+With Windows 11 and recent Windows 10 updates, X11 forwarding should work out of the box.
 
 ## WSL on Windows
 
