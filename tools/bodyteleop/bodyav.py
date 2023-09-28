@@ -88,11 +88,12 @@ class WebClientSpeaker(MediaBlackhole):
         return
       bio = bytes(frame.planes[0])
       self.buffer.write(bio)
+      await asyncio.sleep(0)
 
   async def start(self):
     for track, task in self._MediaBlackhole__tracks.items():
       if task is None:
-        self._MediaBlackhole__tracks[track] = asyncio.ensure_future(self.consume(track))
+        self._MediaBlackhole__tracks[track] = asyncio.create_task(self.consume(track))
 
   async def stop(self):
     for task in self._MediaBlackhole__tracks.values():

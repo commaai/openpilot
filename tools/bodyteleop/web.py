@@ -141,7 +141,6 @@ async def run(cmd):
     stderr=asyncio.subprocess.PIPE
   )
   stdout, stderr = await proc.communicate()
-  logger.info("Created key and cert!")
   if stdout:
     logger.info(f'[stdout]\n{stdout.decode()}')
   if stderr:
@@ -158,8 +157,14 @@ def main():
   if (not os.path.exists(cert_path)) or (not os.path.exists(key_path)):
     asyncio.run(run(f'openssl req -x509 -newkey rsa:4096 -nodes -out {cert_path} -keyout {key_path} \
                      -days 365 -subj "/C=US/ST=California/O=commaai/OU=comma body"'))
+    logger.info("Created key and cert!")
   else:
     logger.info("Certificate exists!")
+
+  # Increase device volume to 100%
+  # ToDo: Do this properly
+  asyncio.run(run('pactl set-sink-volume @DEFAULT_SINK@ 100%'))
+
   ssl_context = ssl.SSLContext()
   ssl_context.load_cert_chain(cert_path, key_path)
   app = web.Application()

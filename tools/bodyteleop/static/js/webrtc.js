@@ -111,7 +111,7 @@ export function start(pc, dc) {
   // add audio track
   navigator.mediaDevices.enumerateDevices()
     .then(function(devices) {
-      const hasAudioInput = devices.find((device) => { device.kind === "audioinput" });
+      const hasAudioInput = devices.find((device) => device.kind === "audioinput");
       var modifiedConstraints = {};
       modifiedConstraints.video = constraints.video;
       modifiedConstraints.audio = hasAudioInput ? constraints.audio : false;
