@@ -5,6 +5,7 @@ import ast
 import os
 import argparse
 import json
+from pathlib import Path
 
 from openpilot.selfdrive.modeld.runners.onnxmodel import create_ort_session
 from cereal.visionipc import VisionIpcClient, VisionStreamType
@@ -126,7 +127,7 @@ def main(yolo_runner, debug):
     msg.customReservedRawData1 = json.dumps(outputs).encode()
     pm.send('customReservedRawData1', msg)
     if debug:
-      cv2.imwrite('yolo.jpg', yolo_runner.draw_boxes(img, outputs))
+      cv2.imwrite(str(Path(__file__).parent / 'yolo.jpg'), yolo_runner.draw_boxes(img, outputs))
       print(f"found: {','.join([x['pred_class'] for x in outputs])}")
 
 
@@ -135,7 +136,9 @@ if __name__ == "__main__":
   parser.add_argument("--debug", action="store_true", help="debug output")
   args = parser.parse_args()
 
-  if not os.path.isfile('yolov5n.onnx'):
-    os.system('wget https://github.com/YassineYousfi/yolov5n.onnx/releases/download/yolov5n.onnx/yolov5n.onnx')
-  yolo_runner = YoloRunner('yolov5n.onnx')
+  output_path = Path(__file__).parent
+  if not (output_path / 'yolov5n.onnx').exists():
+    yolo_url = 'https://github.com/YassineYousfi/yolov5n.onnx/releases/download/yolov5n.onnx/yolov5n.onnx'
+    os.system(f'wget -P {output_path} {yolo_url}')
+  yolo_runner = YoloRunner(str(output_path / 'yolov5n.onnx'))
   main(yolo_runner, debug=args.debug)

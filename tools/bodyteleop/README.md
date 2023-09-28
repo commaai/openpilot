@@ -39,7 +39,7 @@ tmux kill-window -t comma:remotebridge
 ### 3. Run Model -> Send Outputs
 ```
 # On another terminal window of the remote computer, run
-./tools/bodyteleop/remote_models/yolo/yolo.py
+./selfdrive/modeld/yolo.py
 ```
 This creates a local VisionIPC client and receives the driver camera frames. We run the `YOLO5N` model on these frames using `onnxruntime`. There's post-processing code to parse the model outputs, compute bounding boxes and filter out objects with low probability. Finally, we publish the outputs to a socket by the message name `bodyReserved1`.
 
