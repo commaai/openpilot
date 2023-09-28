@@ -247,7 +247,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
                                     car_parts=CarParts.common([CarHarness.hyundai_b])),  # TODO: may support 2016, 2018
   CAR.KIA_OPTIMA_G4_FL: HyundaiCarInfo("Kia Optima 2019-20", car_parts=CarParts.common([CarHarness.hyundai_g])),
   # TODO: may support adjacent years. may have a non-zero minimum steering speed
-  CAR.KIA_OPTIMA_H: HyundaiCarInfo("Kia Optima Hybrid 2017", "Advanced Smart Cruise Control"),
+  CAR.KIA_OPTIMA_H: HyundaiCarInfo("Kia Optima Hybrid 2017", "Advanced Smart Cruise Control", car_parts=CarParts.common([CarHarness.hyundai_c])),
   CAR.KIA_OPTIMA_H_G4_FL: HyundaiCarInfo("Kia Optima Hybrid 2019", car_parts=CarParts.common([CarHarness.hyundai_h])),
   CAR.KIA_SELTOS: HyundaiCarInfo("Kia Seltos 2021", car_parts=CarParts.common([CarHarness.hyundai_a])),
   CAR.KIA_SPORTAGE_5TH_GEN: HyundaiCarInfo("Kia Sportage 2023", car_parts=CarParts.common([CarHarness.hyundai_n])),
