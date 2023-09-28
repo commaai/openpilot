@@ -25,7 +25,7 @@ if jwt:
 route = sys.argv[1]
 segment = int(sys.argv[2])
 frame = int(sys.argv[3])
-camera = cameras[sys.argv[4]] if len(sys.argv) > 4 and sys.argv in cameras else "cameras"
+camera = cameras[sys.argv[4]] if len(sys.argv) > 4 and sys.argv[4] in cameras else "cameras"
 
 url = f'https://api.commadotai.com/v1/route/{route}/files'
 r = requests.get(url, headers=headers, timeout=10)
