@@ -28,5 +28,9 @@ private:
   Params params;
 
   void refresh();
-  void getUserKeys(const QString &username);
+  void getUserKeys(const QStringList &username, bool first = true);
+  void clearParams() {
+    params.remove("GithubUsername");
+    params.remove("GithubSshKeys");
+  };
 };
