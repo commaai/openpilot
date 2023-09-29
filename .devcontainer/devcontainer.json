@@ -31,7 +31,7 @@
       "username": "batman"
     }
   },
-  "containerUser": "root",
+  "containerUser": "batman",
   "remoteUser": "batman",
   "customizations": {
     "vscode": {
