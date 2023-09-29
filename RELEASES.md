@@ -3,6 +3,7 @@ Version 0.9.6 (2023-XX-XX)
 * Hyundai Azera Hybrid 2020 support thanks to chanhojung and haram-KONA!
 * Hyundai Custin 2023 support thanks to sunnyhaibin and Saber422!
 * Kia Optima Hybrid 2019 support
+* Hyundai Kona 2024 support
 
 Version 0.9.5 (2023-09-27)
 ========================
@@ -11,7 +12,6 @@ Version 0.9.5 (2023-09-27)
 * Hyundai Azera 2022 support thanks to sunnyhaibin!
 * Hyundai Ioniq 6 2023 support thanks to sunnyhaibin, alamo3, and sshane!
 * Hyundai Kona Electric 2023 (Korean version) support thanks to sunnyhaibin and haram-KONA!
-* Hyundai Kona 2024
 * Kia K8 Hybrid (with HDA II) 2023 support thanks to sunnyhaibin!
 * Kia Sorento Hybrid 2023 support thanks to sunnyhaibin!
 * Lexus IS 2023 support thanks to L3R5!
