@@ -110,7 +110,10 @@ class TestCarModelBase(unittest.TestCase):
       car_fw = []
       can_msgs = []
       cls.elm_frame = None
-      fingerprint = defaultdict(dict)
+      cls.fingerprint = defaultdict(dict)
+      for i in range(2):
+        # emulate closed relay
+        cls.fingerprint[(i*4)+2] = cls.fingerprint[i*4]
       experimental_long = False
       enabled_toggle = True
       dashcam_only = False
@@ -120,7 +123,11 @@ class TestCarModelBase(unittest.TestCase):
           if len(can_msgs) <= FRAME_FINGERPRINT:
             for m in msg.can:
               if m.src < 64:
-                fingerprint[m.src][m.address] = len(m.dat)
+                cls.fingerprint[m.src][m.address] = len(m.dat)
+                #if (m.src % 4) in (0, 2):
+                #  # relay is closed during fingerprinting, so emulate that
+                #  src = (m.src // 4) + (0 if m.src % 4 == 2 else 2)
+                #  cls.fingerprint[src][m.address] = len(m.dat)
 
         elif msg.which() == "carParams":
           car_fw = msg.carParams.carFw
@@ -156,7 +163,7 @@ class TestCarModelBase(unittest.TestCase):
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
-    cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, car_fw, experimental_long, docs=False)
+    cls.CP = cls.CarInterface.get_params(cls.car_model, cls.fingerprint, car_fw, experimental_long, docs=False)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
 
@@ -202,7 +209,25 @@ class TestCarModelBase(unittest.TestCase):
 
     for i, msg in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
-      self.CI.apply(CC, msg.logMonoTime)
+      _, sendcan = self.CI.apply(CC, msg.logMonoTime)
+
+      #from pprint import pprint
+      #pprint(self.fingerprint)
+
+      # ensure we don't send anything that the car doesn't send
+      for msg in sendcan:
+        addr, _, dat, bus = msg
+
+        # exception: comma pedal
+        if addr == 0x200:
+          continue
+
+        # exception: unplugged DSU
+        if addr in (835, 1041, 1042, 0x128, 321, 352, 353, 643, 742, 743, 836, 830, 869, 870, 1227, 1136):
+          continue
+
+        assert addr in self.fingerprint[bus].keys()
+        assert len(dat) == self.fingerprint[bus][addr]
 
       if CS.canValid:
         can_valid = True
