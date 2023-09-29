@@ -46,7 +46,7 @@ CAR_INFO: Dict[str, Union[MazdaCarInfo, List[MazdaCarInfo]]] = {
   CAR.MAZDA3: MazdaCarInfo("Mazda 3 2017-18"),
   CAR.MAZDA6: MazdaCarInfo("Mazda 6 2017-20"),
   CAR.CX9_2021: MazdaCarInfo("Mazda CX-9 2021-23", video_link="https://youtu.be/dA3duO4a0O4"),
-  CAR.CX5_2022: MazdaCarInfo("Mazda CX-5 2022-23"),
+  CAR.CX5_2022: MazdaCarInfo("Mazda CX-5 2022-24"),
 }
 
 
@@ -97,6 +97,7 @@ FW_VERSIONS = {
       b'K131-67XK2-F\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x760, None): [
+      b'KGWD-437K2-A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'KSD5-437K2-A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x706, None): [
@@ -110,6 +111,7 @@ FW_VERSIONS = {
       b'SH51-21PS1-C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PXDL-21PS1-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PXFG-21PS1-A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'PXFG-21PS1-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.CX5: {
