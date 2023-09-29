@@ -385,21 +385,26 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 
 QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto item = (SignalModel::Item *)index.internalPointer();
-  if (item->type == SignalModel::Item::Name || item->type == SignalModel::Item::Node || item->type == SignalModel::Item::Offset ||
-      item->type == SignalModel::Item::Factor || item->type == SignalModel::Item::MultiplexValue ||
-      item->type == SignalModel::Item::Min || item->type == SignalModel::Item::Max) {
+  if (item->type == SignalModel::Item::Name) {
+    QLineEdit *e = new QLineEdit(parent);
+    QCompleter *completer = new QCompleter(dbc()->signalNames(), e);
+    completer->setCaseSensitivity(Qt::CaseInsensitive);
+    completer->setFilterMode(Qt::MatchContains);
+    e->setFrame(false);
+    e->setCompleter(completer);
+    e->setValidator(name_validator);
+    return e;
+  } else if (item->type == SignalModel::Item::Node) {
     QLineEdit *e = new QLineEdit(parent);
     e->setFrame(false);
-    if (item->type == SignalModel::Item::Name) e->setValidator(name_validator);
-    else if (item->type == SignalModel::Item::Node) e->setValidator(node_validator);
-    else e->setValidator(double_validator);
-
-    if (item->type == SignalModel::Item::Name) {
-      QCompleter *completer = new QCompleter(dbc()->signalNames(), e);
-      completer->setCaseSensitivity(Qt::CaseInsensitive);
-      completer->setFilterMode(Qt::MatchContains);
-      e->setCompleter(completer);
-    }
+    e->setValidator(node_validator);
+    return e;
+  } else if (item->type == SignalModel::Item::Offset || item->type == SignalModel::Item::Factor ||
+             item->type == SignalModel::Item::Min || item->type == SignalModel::Item::Max ||
+             item->type == SignalModel::Item::MultiplexValue) {
+    QLineEdit *e = new QLineEdit(parent);
+    e->setFrame(false);
+    e->setValidator(double_validator);
     return e;
   } else if (item->type == SignalModel::Item::Size) {
     QSpinBox *spin = new QSpinBox(parent);
