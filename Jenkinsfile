@@ -226,6 +226,12 @@ node {
           sh label: "test_car_interfaces.py", script: "MAX_EXAMPLES=100 pytest -n42 selfdrive/car/tests/test_car_interfaces.py"
         }
       },
+      'simulation tests': {
+        pcStage("simulation tests") {
+          sh "scons -j30"
+          sh label: "test_metadrive_bridge.py", script: "python tools/sim/tests/test_metadrive_bridge.py"
+        }
+      },
 
     )
     }
