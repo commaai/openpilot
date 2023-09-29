@@ -38,8 +38,7 @@ COPY --chown=$USER tools/install_python_dependencies.sh /tmp/tools/
 RUN cd /tmp && \
     tools/install_python_dependencies.sh && \
     rm -rf /tmp/* && \
-    rm -rf /home/$USER/.cache && \
-    pip uninstall -y poetry
+    rm -rf /home/$USER/.cache
 
 USER root
 RUN sudo git config --global --add safe.directory /tmp/openpilot
