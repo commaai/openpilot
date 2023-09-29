@@ -934,16 +934,8 @@ This may take up to a minute.</source>
         <translation>คีย์ SSH</translation>
     </message>
     <message>
-        <source>Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.</source>
-        <translation>คำเตือน: สิ่งนี้ให้สิทธิ์ SSH เข้าถึงคีย์สาธารณะทั้งหมดใน GitHub ของคุณ อย่าป้อนชื่อผู้ใช้ GitHub อื่นนอกเหนือจากของคุณเอง พนักงาน comma จะไม่ขอให้คุณเพิ่มชื่อผู้ใช้ GitHub ของพวกเขา</translation>
-    </message>
-    <message>
         <source>ADD</source>
         <translation>เพิ่ม</translation>
-    </message>
-    <message>
-        <source>Enter your GitHub username</source>
-        <translation>ป้อนชื่อผู้ใช้ GitHub ของคุณ</translation>
     </message>
     <message>
         <source>LOADING</source>
@@ -964,6 +956,18 @@ This may take up to a minute.</source>
     <message>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
         <translation>ไม่พบชื่อผู้ใช้ &apos;%1&apos; บน GitHub</translation>
+    </message>
+    <message>
+        <source>Enter GitHub usernames</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Warning: This grants SSH access to all public keys in the added GitHub accounts&apos; settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Added GitHub accounts: %1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

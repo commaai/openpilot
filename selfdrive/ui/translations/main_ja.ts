@@ -932,16 +932,8 @@ This may take up to a minute.</source>
         <translation>SSH 鍵</translation>
     </message>
     <message>
-        <source>Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.</source>
-        <translation>警告: これは、GitHub の設定にあるすべての公開鍵への SSH アクセスを許可するものです。自分以外の GitHub のユーザー名を入力しないでください。commaのスタッフが GitHub のユーザー名を追加するようお願いすることはありません。</translation>
-    </message>
-    <message>
         <source>ADD</source>
         <translation>追加</translation>
-    </message>
-    <message>
-        <source>Enter your GitHub username</source>
-        <translation>GitHub のユーザー名を入力してください</translation>
     </message>
     <message>
         <source>LOADING</source>
@@ -962,6 +954,18 @@ This may take up to a minute.</source>
     <message>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
         <translation>ユーザー名 &apos;%1&apos; は GitHub に存在しません</translation>
+    </message>
+    <message>
+        <source>Enter GitHub usernames</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Warning: This grants SSH access to all public keys in the added GitHub accounts&apos; settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Added GitHub accounts: %1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

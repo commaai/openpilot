@@ -934,16 +934,8 @@ This may take up to a minute.</source>
         <translation>SSH 金鑰</translation>
     </message>
     <message>
-        <source>Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.</source>
-        <translation>警告：這將授權給 GitHub 帳號中所有公鑰 SSH 訪問權限。切勿輸入非您自己的 GitHub 使用者名稱。comma 員工「永遠不會」要求您添加他們的 GitHub 使用者名稱。</translation>
-    </message>
-    <message>
         <source>ADD</source>
         <translation>新增</translation>
-    </message>
-    <message>
-        <source>Enter your GitHub username</source>
-        <translation>請輸入您 GitHub 的使用者名稱</translation>
     </message>
     <message>
         <source>LOADING</source>
@@ -964,6 +956,18 @@ This may take up to a minute.</source>
     <message>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
         <translation>GitHub 用戶 &apos;%1&apos; 不存在</translation>
+    </message>
+    <message>
+        <source>Enter GitHub usernames</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Warning: This grants SSH access to all public keys in the added GitHub accounts&apos; settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Added GitHub accounts: %1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

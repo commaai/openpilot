@@ -938,16 +938,8 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
         <translation>Clés SSH</translation>
     </message>
     <message>
-        <source>Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.</source>
-        <translation>Attention : Ceci accorde l&apos;accès SSH à toutes les clés publiques de vos paramètres GitHub. N&apos;entrez jamais un nom d&apos;utilisateur GitHub autre que le vôtre. Un employé de comma ne vous demandera JAMAIS d&apos;ajouter son nom d&apos;utilisateur GitHub.</translation>
-    </message>
-    <message>
         <source>ADD</source>
         <translation>AJOUTER</translation>
-    </message>
-    <message>
-        <source>Enter your GitHub username</source>
-        <translation>Entrez votre nom d&apos;utilisateur GitHub</translation>
     </message>
     <message>
         <source>LOADING</source>
@@ -968,6 +960,18 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     <message>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
         <translation>L&apos;utilisateur &apos;%1&apos; n&apos;existe pas sur GitHub</translation>
+    </message>
+    <message>
+        <source>Enter GitHub usernames</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Warning: This grants SSH access to all public keys in the added GitHub accounts&apos; settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Added GitHub accounts: %1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
