@@ -10,7 +10,7 @@ You can attach to the openpilot screen where all printouts and logs appear by ru
 ## Body Basics
 Your body should be on the `comma_hack_4` branch. We recommend forking off of this branch, as it has many useful changes for the hackathon that have not been upstreamed to master yet. You can enable/disable openpilot by pressing the button on the body's base. A face will appear on the screen when openpilot is enabled.
 
-You can control your body manually using WASD in your browser. Make sure you're on the same network as your body, enable openpilot, and go to `https:<device-ip-address>:5000`. To find your device's IP address, go to settings -> network -> advanced.
+You can control your body manually using WASD in your browser. Make sure you're on the same network as your body, enable openpilot, and go to `https:<device-ip-address>:5000`. To find your device's IP address, go to settings -> network -> advanced. Note that this has only been tested in chrome and may not work in other browsers!
 
 The body movement is controlled by tools/bodyteleop/bodycontrolsd.py, which listens for data from other processes and then publishes the `testJoystick` messages that move the body's wheels. You can modify this file however you like.
 
@@ -50,7 +50,7 @@ This decodes the `driverEncodeData` packets from the body, and pushes it to a lo
 
 ### 2. Setup cereal bridge
 
-To be able to send cereal messages from remote computer to the body, cereal bridge must be opened. 
+To be able to send cereal messages from remote computer to the body, cereal bridge must be opened.
 
 SSH into the body from the remote computer you intent to run models on. Then start cereal bridge using command below. Replace services... with the list of published sockets you intent to share with the body. For the yolo example that would be: customReservedRawData1
 
