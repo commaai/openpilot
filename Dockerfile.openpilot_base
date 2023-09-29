@@ -42,3 +42,8 @@ RUN cd /tmp && \
 
 USER root
 RUN sudo git config --global --add safe.directory /tmp/openpilot
+
+# Install PortableCL
+RUN apt update && \
+    apt install -y pocl-opencl-icd && \
+    rm -rf /var/lib/apt/lists/*
