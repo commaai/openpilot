@@ -57,6 +57,7 @@ SSH into the body from the remote computer you intent to run models on. Then sta
 Note: if you're in a tmux session, detach now
 ```
 REMOTE_IP="$(echo $SSH_CLIENT | awk '{print $1}')"
+# replace services...> with space separated list of services
 tmux new-window -k -d -t comma -n remotebridge "/data/openpilot/cereal/messaging/bridge $REMOTE_IP <services...>"
 ```
 
