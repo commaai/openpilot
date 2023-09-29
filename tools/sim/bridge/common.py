@@ -68,7 +68,7 @@ class SimulatorBridge(ABC):
       self.world.close()
 
   def run(self, queue, retries=-1):
-    bridge_p = Process(target=self.bridge_keep_alive, args=(queue, retries), daemon=True)
+    bridge_p = Process(name="bridge", target=self.bridge_keep_alive, args=(queue, retries))
     bridge_p.start()
     return bridge_p
 
@@ -95,6 +95,10 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
     self.simulated_car_thread = threading.Thread(target=rk_loop, args=(functools.partial(self.simulated_car.update, self.simulator_state),
                                                                         100, self._exit_event))
     self.simulated_car_thread.start()
+
+    self.simulated_camera_thread = threading.Thread(target=rk_loop, args=(functools.partial(self.simulated_sensors.send_camera_images, self.world),
+                                                                        20, self._exit_event))
+    self.simulated_camera_thread.start()
 
     # Simulation tends to be slow in the initial steps. This prevents lagging later
     for _ in range(20):
@@ -143,7 +147,8 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
       self.simulated_sensors.update(self.simulator_state, self.world)
 
       self.simulated_car.sm.update(0)
-      self.simulator_state.is_engaged = self.simulated_car.sm['controlsState'].active
+      controlsState = self.simulated_car.sm['controlsState']
+      self.simulator_state.is_engaged = controlsState.active
 
       if self.simulator_state.is_engaged:
         throttle_op = clip(self.simulated_car.sm['carControl'].actuators.accel / 1.6, 0.0, 1.0)
@@ -151,7 +156,7 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
         steer_op = self.simulated_car.sm['carControl'].actuators.steeringAngleDeg
 
         self.past_startup_engaged = True
-      elif not self.past_startup_engaged:
+      elif not self.past_startup_engaged and controlsState.engageable:
         self.simulator_state.cruise_button = CruiseButtons.DECEL_SET # force engagement on startup
 
       throttle_out = throttle_op if self.simulator_state.is_engaged else throttle_manual
