@@ -34,10 +34,12 @@ def read_panda_logs(panda: Panda) -> None:
 
   log_state = {}
   try:
-    l = json.loads(params.get("PandaLogState"))
-    for k, v in l.items():
-      if isinstance(k, str) and isinstance(v, int):
-        log_state[k] = v
+    ls = params.get("PandaLogState")
+    if ls is not None:
+      l = json.loads(ls)
+      for k, v in l.items():
+        if isinstance(k, str) and isinstance(v, int):
+          log_state[k] = v
   except (TypeError, json.JSONDecodeError):
     cloudlog.exception("failed to parse PandaLogState")
 

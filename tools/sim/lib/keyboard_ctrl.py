@@ -17,6 +17,20 @@ CC = 6
 
 STDIN_FD = sys.stdin.fileno()
 
+
+KEYBOARD_HELP = """
+  | key  |   functionality       |
+  |------|-----------------------|
+  |  1   | Cruise Resume / Accel |
+  |  2   | Cruise Set    / Decel |
+  |  3   | Cruise Cancel         |
+  |  r   | Reset Simulation      |
+  |  i   | Toggle Ignition       |
+  |  q   | Exit all              |
+  | wasd | Control manually      |
+"""
+
+
 def getch() -> str:
   old_settings = termios.tcgetattr(STDIN_FD)
   try:
@@ -55,6 +69,8 @@ def keyboard_poll_thread(q: 'Queue[str]'):
       q.put("steer_%f" % -0.15)
     elif c == 'i':
       q.put("ignition")
+    elif c == 'r':
+      q.put("reset")
     elif c == 'q':
       q.put("quit")
       break
