@@ -17,9 +17,9 @@ def main():
   pm = PubMaster(["modelV2", "cameraOdometry"])
 
   # Load some fixed modelV2/cameraOdometry messages
-  with open(Path(__file__).parent / 'modelV2.raw', 'rb') as f:
+  with open(Path(__file__).parent / 'messages/modelV2.raw', 'rb') as f:
     modelV2_msg = f.read()
-  with open(Path(__file__).parent / 'cameraOdometry.raw', 'rb') as f:
+  with open(Path(__file__).parent / 'messages/cameraOdometry.raw', 'rb') as f:
     with log.Event.from_bytes(f.read()) as msg:
       cameraOdometry_msg = msg.as_builder()  # convert to builder so we can change the logMonoTime
 
