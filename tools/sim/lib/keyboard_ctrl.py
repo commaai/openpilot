@@ -16,15 +16,15 @@ OSPEED = 5
 CC = 6
 
 KEYBOARD_HELP = """
-  | key  |   functionality    |
-  -----------------------------
-  |  1   |   Cruise Resume    |
-  |  2   |    Cruise Set      |
-  |  3   |   Cruise Cancel    |
-  |  r   |  Reset Simulation  |
-  |  i   |  Toggle Ignition   |
-  |  q   |      Exit all      |
-  | wasd |  Control manually  |
+  | key  |   functionality       |
+  |------|-----------------------|
+  |  1   | Cruise Resume / Accel |
+  |  2   | Cruise Set    / Decel |
+  |  3   | Cruise Cancel         |
+  |  r   | Reset Simulation      |
+  |  i   | Toggle Ignition       |
+  |  q   | Exit all              |
+  | wasd | Control manually      |
 """
 
 
