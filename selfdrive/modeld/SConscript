@@ -78,6 +78,12 @@ if arch == "larch64" or GetOption('pc_thneed'):
   cmd = f"wget -nv -P {Dir('models').abspath} {yolo_url}"
   lenv.Command(fn + ".onnx", [], cmd)
 
+  # dirty hack to patch failing tinygrad assert
+  patch_target = File('#tinygrad_repo/tinygrad/ops.py').abspath
+  bad_line = "assert backing is None or GlobalCounters.cache is None, f\\\"can't copy in {backing.shape} while caching\\\""
+  patch_cmd = f"sed -i \"s/    {bad_line}/    # {bad_line}/\" {patch_target}"
+  restore_cmd = f"sed -i \"s/    # {bad_line}/    {bad_line}/\" {patch_target}"
+
   # compile to thneed
   tinygrad_opts = ["NATIVE_EXPLOG=1", "VALIDHACKS=1", "OPTLOCAL=1", "IMAGE=2", "GPU=1", "ENABLE_METHOD_CACHE=1"]
   if not GetOption('pc_thneed'):
@@ -86,4 +92,4 @@ if arch == "larch64" or GetOption('pc_thneed'):
   cmd = f"cd {Dir('#').abspath}/tinygrad_repo && " + ' '.join(tinygrad_opts) + f" python3 openpilot/compile.py {fn}.onnx {fn}.thneed"
 
   tinygrad_files = sum([lenv.Glob("#"+x) for x in open(File("#release/files_common").abspath).read().split("\n") if x.startswith("tinygrad_repo/")], [])
-  lenv.Command(fn + ".thneed", [fn + ".onnx"] + tinygrad_files, cmd)
+  lenv.Command(fn + ".thneed", [fn + ".onnx"] + tinygrad_files, f"{patch_cmd} && {cmd} && {restore_cmd}")
