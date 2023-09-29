@@ -75,11 +75,15 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Auto generates supported cars documentation",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-  parser.add_argument("--template", default=CARS_MD_TEMPLATE, help="Override default template filename")
-  parser.add_argument("--out", default=CARS_MD_OUT, help="Override default generated filename")
-  parser.add_argument("--dashcam-only", action="store_true", help="Export dashcammed cars")
+  parser.add_argument("--template", nargs="+", help="Override default template filename",
+                      default=[CARS_MD_TEMPLATE, PORTS_MD_TEMPLATE])
+  parser.add_argument("--out", nargs="+", help="Override default generated filename",
+                      default=[CARS_MD_OUT, PORTS_MD_OUT])
+  parser.add_argument("--dashcam-only", nargs="+", help="Export dashcammed cars")
   args = parser.parse_args()
 
-  with open(args.out, 'w') as f:
-    f.write(generate_cars_md(get_all_car_info(dashcam=args.dashcam_only), args.template))
-  print(f"Generated and written to {args.out}")
+  for out, template in zip(args.out, args.template, strict=True):
+    print(out, template)
+    with open(out, 'w') as f:
+      f.write(generate_cars_md(get_all_car_info(dashcam_only=args.dashcam_only), template))
+    print(f"Generated and written to {out}")
