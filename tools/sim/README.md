@@ -4,10 +4,10 @@ openpilot in simulator
 openpilot implements a [bridge](run_bridge.py) that allows it to run in the [MetaDrive simulator](https://github.com/metadriverse/metadrive) or [CARLA simulator](https://carla.org/).
 
 ## Launching openpilot
-First, start openpilot. 
+First, start openpilot.
 ``` bash
 # Run locally
-./launch_openpilot.sh
+./tools/sim/launch_openpilot.sh
 ```
 
 ## Bridge usage
@@ -35,14 +35,17 @@ options:
 
 #### All inputs:
 
-| key  |   functionality   |
-|:----:|:-----------------:|
-|  1   |  Resume / Accel   |
-|  2   |    Set / Decel    |
-|  3   |   Cruise cancel   |
-|  q   |     Exit all      |
-|  r   |    Reset sim      |
-| wasd | Control manually  |
+```
+| key  |   functionality       |
+|------|-----------------------|
+|  1   | Cruise Resume / Accel |
+|  2   | Cruise Set    / Decel |
+|  3   | Cruise Cancel         |
+|  r   | Reset Simulation      |
+|  i   | Toggle Ignition       |
+|  q   | Exit all              |
+| wasd | Control manually      |
+```
 
 ## MetaDrive
 
