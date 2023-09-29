@@ -109,6 +109,8 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
       throttle_op = steer_op = brake_op = 0.0
 
       self.simulator_state.cruise_button = 0
+      self.simulator_state.left_blinker = False
+      self.simulator_state.right_blinker = False
 
       throttle_manual = steer_manual = brake_manual = 0.
 
@@ -131,6 +133,11 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
             self.simulator_state.cruise_button = CruiseButtons.CANCEL
           elif m[1] == "main":
             self.simulator_state.cruise_button = CruiseButtons.MAIN
+        elif m[0] == "blinker":
+          if m[1] == "left":
+            self.simulator_state.left_blinker = True
+          elif m[1] == "right":
+            self.simulator_state.right_blinker = True
         elif m[0] == "ignition":
           self.simulator_state.ignition = not self.simulator_state.ignition
         elif m[0] == "reset":
@@ -140,6 +147,7 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
 
       self.simulator_state.user_brake = brake_manual
       self.simulator_state.user_gas = throttle_manual
+      self.simulator_state.user_torque = steer_manual * 10000
 
       steer_manual = steer_manual * -40
 
