@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
 import cv2
+import time
 import numpy as np
 import ast
 import os
 import argparse
 import json
+import onnx
 from pathlib import Path
 
-from openpilot.selfdrive.modeld.runners.onnxmodel import create_ort_session
-from cereal.visionipc import VisionIpcClient, VisionStreamType
 from cereal import messaging
+from cereal.visionipc import VisionIpcClient, VisionStreamType
+from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
 
-N_CLASSES = 80
+INPUT_SHAPE = (640, 416)
+OUTPUT_SHAPE = (1, 16380, 85)
+MODEL_PATHS = {
+  ModelRunner.THNEED: Path(__file__).parent / 'models/yolov5n_flat.thneed',
+  ModelRunner.ONNX: Path(__file__).parent / 'models/yolov5n_flat.onnx'}
 
 def xywh2xyxy(x):
   y = x.copy()
@@ -74,13 +80,22 @@ def nms(prediction, conf_thres=0.3, iou_thres=0.45):
 
 
 class YoloRunner:
-  def __init__(self, onnx_path):
-    self.sess = create_ort_session(onnx_path, fp16_to_fp32=False)
-    self.class_names = [ast.literal_eval(self.sess.get_modelmeta().custom_metadata_map['names'])[i] for i in range(N_CLASSES)]
-    self.width, self.height = 640, 416
+  def __init__(self):
+    onnx_path = MODEL_PATHS[ModelRunner.ONNX]
+    if not onnx_path.exists():
+      yolo_url = 'https://github.com/YassineYousfi/yolov5n.onnx/releases/download/yolov5n.onnx/yolov5n_flat.onnx'
+      os.system(f'wget -P {onnx_path.parent} {yolo_url}')
+
+    model = onnx.load(onnx_path)
+    class_names_dict = ast.literal_eval(model.metadata_props[0].value)
+    self.class_names = [class_names_dict[i] for i in range(len(class_names_dict))]
+
+    self.output = np.zeros(np.prod(OUTPUT_SHAPE), dtype=np.float32)
+    self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.GPU, False, None)
+    self.model.addInput("image", None)
 
   def preprocess_image(self, img):
-    img = cv2.resize(img, (self.width, self.height))
+    img = cv2.resize(img, INPUT_SHAPE)
     img = np.expand_dims(img, 0).astype(np.float32) # add batch dim
     img = img.transpose(0, 3, 1, 2) # NHWC -> NCHW
     img = img[:, [2,1,0], :, :] # BGR -> RGB
@@ -89,8 +104,9 @@ class YoloRunner:
 
   def run(self, img):
     img = self.preprocess_image(img)
-    res = self.sess.run(None, {'images': img})
-    res = nms(res[0])
+    self.model.setInputBuffer("image", img.flatten())
+    self.model.execute()
+    res = nms(self.output.reshape(1, 16380, 85))
     return [{
         "pred_class": self.class_names[int(opt[-1])],
         "prob": opt[-2],
@@ -99,7 +115,7 @@ class YoloRunner:
       for opt in res]
 
   def draw_boxes(self, img, objects):
-    img = cv2.resize(img, (self.width, self.height))
+    img = cv2.resize(img, INPUT_SHAPE)
     for obj in objects:
       pt1 = obj['pt1']
       pt2 = tuple(obj['pt2'])
@@ -108,27 +124,32 @@ class YoloRunner:
     return img
 
 
-def main(yolo_runner, debug):
+def main(debug=False):
+  yolo_runner = YoloRunner()
   vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_DRIVER, True)
   pm = messaging.PubMaster(['customReservedRawData1'])
 
-  while True:
-    if not vipc_client.is_connected():
-      vipc_client.connect(True)
+  while not vipc_client.connect(False):
+    time.sleep(0.1)
 
+  while True:
     yuv_img_raw = vipc_client.recv()
     if yuv_img_raw is None or not yuv_img_raw.data.any():
       continue
+
+    st = time.time()
     imgff = yuv_img_raw.data.reshape(-1, vipc_client.stride)
     imgff = imgff[:vipc_client.height * 3 // 2, :vipc_client.width]
     img = cv2.cvtColor(imgff, cv2.COLOR_YUV2BGR_I420)
     outputs = yolo_runner.run(img)
+
     msg = messaging.new_message()
     msg.customReservedRawData1 = json.dumps(outputs).encode()
     pm.send('customReservedRawData1', msg)
     if debug:
+      et = time.time()
       cv2.imwrite(str(Path(__file__).parent / 'yolo.jpg'), yolo_runner.draw_boxes(img, outputs))
-      print(f"found: {','.join([x['pred_class'] for x in outputs])}")
+      print(f"eval time: {(et-st)*1000:.2f}ms, found: {','.join([x['pred_class'] for x in outputs])}")
 
 
 if __name__ == "__main__":
@@ -136,9 +157,4 @@ if __name__ == "__main__":
   parser.add_argument("--debug", action="store_true", help="debug output")
   args = parser.parse_args()
 
-  output_path = Path(__file__).parent
-  if not (output_path / 'yolov5n.onnx').exists():
-    yolo_url = 'https://github.com/YassineYousfi/yolov5n.onnx/releases/download/yolov5n.onnx/yolov5n.onnx'
-    os.system(f'wget -P {output_path} {yolo_url}')
-  yolo_runner = YoloRunner(str(output_path / 'yolov5n.onnx'))
-  main(yolo_runner, debug=args.debug)
+  main(debug=args.debug)

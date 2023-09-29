@@ -89,6 +89,7 @@ procs = [
   PythonProcess("webjoystick", "tools.bodyteleop.web", notcar),
   PythonProcess("bodycontrolsd", "tools.bodyteleop.bodycontrolsd", notcar),
   PythonProcess("fakemodeld", "selfdrive.modeld.fakemodeld", notcar, enabled=False),
+  NativeProcess("yolo", "selfdrive/modeld", ["./yolo"], notcar, enabled=False),
 ]
 
 managed_processes = {p.name: p for p in procs}
