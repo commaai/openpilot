@@ -26,15 +26,12 @@ A supported vehicle is one that just works when you install a comma device. All 
 <sup>{{loop.index}}</sup>{{footnote}} <br />
 {% endfor %}
 
-## Community Maintained Cars
-Although they're not upstream, the community has openpilot running on other makes and models. See the 'Community Supported Models' section of each make [on our wiki](https://wiki.comma.ai/).
-
 # Don't see your car here?
+
+If you don't see your car here, check out our docs for in-progress car ports and community-maintained vehicles [here](/docs/PORTS.md).
 
 **openpilot can support many more cars than it currently does.** There are a few reasons your car may not be supported.
 If your car doesn't fit into any of the incompatibility criteria here, then there's a good chance it can be supported! We're adding support for new cars all the time. **We don't have a roadmap for car support**, and in fact, most car support comes from users like you!
-
-[**View a list of community-maintained ports in-progress car ports here.**](/docs/PORTS.md)
 
 ### Which cars are able to be supported?
 
