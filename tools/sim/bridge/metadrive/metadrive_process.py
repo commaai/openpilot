@@ -54,7 +54,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, controls_re
       img = img.get() # convert cupy array to numpy
     return img
 
-  rk = Ratekeeper(100)
+  rk = Ratekeeper(100, None)
 
   steer_ratio = 15
   vc = [0,0]
