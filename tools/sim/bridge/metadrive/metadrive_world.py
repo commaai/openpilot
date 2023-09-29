@@ -1,28 +1,26 @@
+import functools
 import math
+import multiprocessing
 import numpy as np
 import time
 
+from multiprocessing import Pipe
+from openpilot.tools.sim.bridge.metadrive.metadrive_process import metadrive_process
 from openpilot.tools.sim.lib.common import SimulatorState, World, vec3
 
 
 class MetaDriveWorld(World):
-  def __init__(self, env, dual_camera = False):
+  def __init__(self, config, dual_camera = False):
     super().__init__(dual_camera)
-    self.env = env
-    self.dual_camera = dual_camera
+    self.camera_recv, self.camera_send = Pipe()
+    self.controls_send, self.controls_recv = Pipe()
+    self.state_send, self.state_recv = Pipe()
 
+    self.metadrive_process = multiprocessing.Process(target=
+                              functools.partial(metadrive_process, dual_camera, config, self.camera_send, self.controls_recv, self.state_send))
     self.steer_ratio = 15
-
     self.vc = [0.0,0.0]
-
     self.reset_time = 0
-
-  def get_cam_as_rgb(self, cam):
-    cam = self.env.engine.sensors[cam]
-    img = cam.perceive(self.env.vehicle, clip=False)
-    if type(img) != np.ndarray:
-      img = img.get() # convert cupy array to numpy
-    return img
 
   def apply_controls(self, steer_angle, throttle_out, brake_out):
     steer_metadrive = steer_angle * 1 / (self.env.vehicle.MAX_STEERING * self.steer_ratio)

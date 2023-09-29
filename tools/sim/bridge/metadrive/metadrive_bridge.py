@@ -94,39 +94,35 @@ class MetaDriveBridge(SimulatorBridge):
     if self.dual_camera:
       sensors["rgb_wide"] = (RGBCameraWide, W, H)
 
-    env = MetaDriveEnv(
-        dict(
-          use_render=self.should_render,
-          vehicle_config=dict(
-            enable_reverse=False,
-            image_source="rgb_road",
-            spawn_longitude=15
-          ),
-          sensors=sensors,
-          image_on_cuda=_cuda_enable,
-          image_observation=True,
-          interface_panel=[],
-          out_of_route_done=False,
-          on_continuous_line_done=False,
-          crash_vehicle_done=False,
-          crash_object_done=False,
-          map_config=dict(
-            type=MapGenerateMethod.PG_MAP_FILE,
-            config=[
-              None,
-              straight_block(120),
-              curve_block(120, 90),
-              straight_block(120),
-              curve_block(120, 90),
-              straight_block(120),
-              curve_block(120, 90),
-              straight_block(120),
-              curve_block(120, 90),
-            ]
-          )
-        )
+    config = dict(
+      use_render=self.should_render,
+      vehicle_config=dict(
+        enable_reverse=False,
+        image_source="rgb_road",
+        spawn_longitude=15
+      ),
+      sensors=sensors,
+      image_on_cuda=_cuda_enable,
+      image_observation=True,
+      interface_panel=[],
+      out_of_route_done=False,
+      on_continuous_line_done=False,
+      crash_vehicle_done=False,
+      crash_object_done=False,
+      map_config=dict(
+        type=MapGenerateMethod.PG_MAP_FILE,
+        config=[
+          None,
+          straight_block(120),
+          curve_block(120, 90),
+          straight_block(120),
+          curve_block(120, 90),
+          straight_block(120),
+          curve_block(120, 90),
+          straight_block(120),
+          curve_block(120, 90),
+        ]
       )
+    )
 
-    env.reset()
-
-    return MetaDriveWorld(env)
+    return MetaDriveWorld(config)
