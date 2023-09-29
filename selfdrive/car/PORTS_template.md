@@ -10,7 +10,7 @@
 
 # Dashcam Cars
 
-A dashcam vehicle is one that has not been extensively tested to work with openpilot. It does not work out of the box, though there has been effort getting support into openpilot's codebase. These cars may range from needing a user to simply test them, fixing a small bug, or [implementing safety](https://github.com/commaai/panda/tree/master/board/safety). Dashcam vehicles reference the US market unless otherwise specified.
+Dashcam vehicles do not yet work out of the box with openpilot, though there has been effort getting support into openpilot's codebase. These cars may range from needing a user to simply test them, fixing a small bug, or [implementing safety](https://github.com/commaai/panda/tree/master/board/safety). Dashcam vehicles reference the US market unless otherwise specified.
 
 # {{all_car_info | length}} Dashcam Cars
 
@@ -27,66 +27,4 @@ A dashcam vehicle is one that has not been extensively tested to work with openp
 {% endfor %}
 
 ## Community Maintained Cars
-Although they're not upstream, the community has openpilot running on other makes and models. See the 'Community Supported Models' section of each make [on our wiki](https://wiki.comma.ai/).
-
-* Honda
-  * Honda Clarity
-
-    The Clarity has one extra CAN bus at the camera connector. Due to this, it needs custom hardware and a custom fork to run.
-
-    Join the #honda-acura channel on [Discord](https://discord.comma.ai) with questions.
-  * Serial Steering
-
-    There are some Honda/Acura with Honda Sensing/AcuraWatch Plus that are not currently supported due to using dedicated serial data lines for its steering control messages. These cars can work with openpilot using additional hardware and minor software modifications. A Community Maintained upstream is planned.
-
-    The current list of 'serial steering' cars:
-
-    * 2016/2017 Accord
-    * 15-20 Acura MDX (2022+ MDX does not use serial steering and uses the same Bosch harness, but the wiring pinout is completely different)
-    * 15-20 Acura TLX (2021+ TLX uses the same Bosch harness with the same wiring pinout)
-
-    Join the #topic-serial-steering channel on discord with questions.
-
-
-
-# Don't see your car here?
-
-**openpilot can support many more cars than it currently does.** There are a few reasons your car may not be supported.
-If your car doesn't fit into any of the incompatibility criteria here, then there's a good chance it can be supported! We're adding support for new cars all the time. **We don't have a roadmap for car support**, and in fact, most car support comes from users like you!
-
-### Which cars are able to be supported?
-
-openpilot uses the existing steering, gas, and brake interfaces in your car. If your car lacks any one of these interfaces, openpilot will not be able to control the car. If your car has [ACC](https://en.wikipedia.org/wiki/Adaptive_cruise_control) and any form of [LKAS](https://en.wikipedia.org/wiki/Automated_Lane_Keeping_Systems)/[LCA](https://en.wikipedia.org/wiki/Lane_centering), then it almost certainly has these interfaces. These features generally started shipping on cars around 2016. Note that manufacturers will often make their own [marketing terms](https://en.wikipedia.org/wiki/Adaptive_cruise_control#Vehicle_models_supporting_adaptive_cruise_control) for these features, such as Hyundai's "Smart Cruise Control" branding of Adaptive Cruise Control.
-
-If your car has the following packages or features, then it's a good candidate for support.
-
-| Make | Required Package/Features |
-| ---- | ------------------------- |
-| Acura | Any car with AcuraWatch Plus will work. AcuraWatch Plus comes standard on many newer models. |
-| Ford | Any car with Lane Centering will likely work. |
-| Honda | Any car with Honda Sensing will work. Honda Sensing comes standard on many newer models. |
-| Subaru | Any car with EyeSight will work. EyeSight comes standard on many newer models. |
-| Nissan | Any car with ProPILOT will likely work. |
-| Toyota & Lexus | Any car that has Toyota/Lexus Safety Sense with "Lane Departure Alert with Steering Assist (LDA w/SA)" and/or "Lane Tracing Assist (LTA)" will work. Note that LDA without Steering Assist will not work. These features come standard on most newer models. |
-| Hyundai, Kia, & Genesis | Any car with Smart Cruise Control (SCC) and Lane Following Assist (LFA) or Lane Keeping Assist (LKAS) will work. LKAS/LFA comes standard on most newer models. Any form of SCC will work, such as NSCC. |
-| Chrysler, Jeep, & Ram | Any car with LaneSense and Adaptive Cruise Control will likely work. These come standard on many newer models. |
-
-### FlexRay
-
-All the cars that openpilot supports use a [CAN bus](https://en.wikipedia.org/wiki/CAN_bus) for communication between all the car's computers, however a CAN bus isn't the only way that the cars in your computer can communicate. Most, if not all, vehicles from the following manufacturers use [FlexRay](https://en.wikipedia.org/wiki/FlexRay) instead of a CAN bus: **BMW, Mercedes, Audi, Land Rover, and some Volvo**. These cars may one day be supported, but we have no immediate plans to support FlexRay.
-
-### Toyota Security
-
-openpilot does not yet support these Toyota models due to a new message authentication method.
-[Vote](https://comma.ai/shop#toyota-security) if you'd like to see openpilot support on these models.
-
-* Toyota RAV4 Prime 2021+
-* Toyota Sienna 2021+
-* Toyota Venza 2021+
-* Toyota Sequoia 2023+
-* Toyota Tundra 2022+
-* Toyota Corolla Cross 2022+ (only US model)
-* Lexus NX 2022+
-* Toyota bZ4x 2023+
-* Subaru Solterra 2023+
-
+Although they're not upstream, the community has openpilot running on these other makes and models. See the 'Community Supported Models' section of each make [on our wiki](https://wiki.comma.ai/).
