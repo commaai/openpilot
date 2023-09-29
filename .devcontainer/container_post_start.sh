@@ -9,7 +9,7 @@ for DIR in $SUBMODULE_DIRS; do
 done
 
 # virtual display for virtualgl
-if [[ "$HOST_OS" == "darwin" ]] && [[ -n "$DISPLAY" ]]; then
-  echo "Starting virtual display at :0 ..."
-  tmux new-session -d -s fakedisplay Xvfb :0 -screen 0 1920x1080x24
+if [[ "$HOST_OS" == "darwin" ]] && [[ -n "$HOST_DISPLAY" ]]; then
+  echo "Starting virtual display at :99 ..."
+  tmux new-session -d -s fakedisplay Xvfb :99 -screen 0 1920x1080x24
 fi

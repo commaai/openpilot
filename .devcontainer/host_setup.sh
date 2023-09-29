@@ -27,6 +27,7 @@ fi
 HOST_INFO_FILE=".devcontainer/.host/.env"
 SYSTEM=$(uname -s | tr '[:upper:]' '[:lower:]')
 echo "HOST_OS=\"$SYSTEM\"" > $HOST_INFO_FILE
+echo "HOST_DISPLAY=\"$DISPLAY\"" >> $HOST_INFO_FILE
 
 # run virtualgl if macos
 if [[ $SYSTEM == "darwin" ]]; then
