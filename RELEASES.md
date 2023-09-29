@@ -1,5 +1,8 @@
 Version 0.9.6 (2023-XX-XX)
 ========================
+* Hyundai Azera Hybrid 2020 support thanks to chanhojung and haram-KONA!
+* Hyundai Custin 2023 support thanks to sunnyhaibin and Saber422!
+* Kia Optima Hybrid 2019 support
 
 Version 0.9.5 (2023-09-27)
 ========================

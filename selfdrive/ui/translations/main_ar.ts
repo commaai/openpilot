@@ -226,8 +226,8 @@
         <translation>أطفاء</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>يتطلب openpilot أن يتم تركيب الجهاز في حدود 4 درجات يسارًا أو يمينًا و 5 درجات لأعلى أو 8 درجات لأسفل. يقوم برنامج openpilot بالمعايرة بشكل مستمر ، ونادراً ما تكون إعادة الضبط مطلوبة.</translation>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
+        <translation>يتطلب openpilot أن يتم تركيب الجهاز في حدود 4 درجات يسارًا أو يمينًا و 5 درجات لأعلى أو 9 درجات لأسفل. يقوم برنامج openpilot بالمعايرة بشكل مستمر ، ونادراً ما تكون إعادة الضبط مطلوبة.</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>

@@ -161,7 +161,7 @@ class Footnote(Enum):
     Column.MODEL)
   SKODA_HEATED_WINDSHIELD = CarFootnote(
     "Some Škoda vehicles are equipped with heated windshields, which are known " +
-    "to block GPS signal needed for some comma three functionality.",
+    "to block GPS signal needed for some comma 3X functionality.",
     Column.MODEL)
   VW_EXP_LONG = CarFootnote(
     "Only available for vehicles using a gateway (J533) harness. At this time, vehicles using a camera harness " +
@@ -184,7 +184,7 @@ class VWCarInfo(CarInfo):
       self.footnotes.append(Footnote.SKODA_HEATED_WINDSHIELD)
 
     if CP.carFingerprint in (CAR.CRAFTER_MK2, CAR.TRANSPORTER_T61):
-      self.car_parts = CarParts([Device.three_angled_mount, CarHarness.j533])
+      self.car_parts = CarParts([Device.threex_angled_mount, CarHarness.j533])
 
 
 CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
@@ -1337,6 +1337,7 @@ FW_VERSIONS = {
       b'\xf1\x8704E906027BS\xf1\x892887',
       b'\xf1\x8704E906027BT\xf1\x899042',
       b'\xf1\x8704L906026ET\xf1\x891343',
+      b'\xf1\x8704L906026ET\xf1\x891990',
       b'\xf1\x8704L906026FP\xf1\x891196',
       b'\xf1\x8704L906026KA\xf1\x896014',
       b'\xf1\x8704L906026KB\xf1\x894071',
@@ -1356,6 +1357,7 @@ FW_VERSIONS = {
       b'\xf1\x870D9300013A \xf1\x894905',
       b'\xf1\x870D9300014K \xf1\x895006',
       b'\xf1\x870D9300041H \xf1\x894905',
+      b'\xf1\x870D9300042M \xf1\x895013',
       b'\xf1\x870D9300043F \xf1\x895202',
       b'\xf1\x870GC300013K \xf1\x892403',
       b'\xf1\x870GC300014M \xf1\x892801',
@@ -1367,6 +1369,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0959655AE\xf1\x890130\xf1\x82\022111200111121001121118112231292221111',
       b'\xf1\x875Q0959655AK\xf1\x890130\xf1\x82\022111200111121001121110012211292221111',
       b'\xf1\x875Q0959655AS\xf1\x890317\xf1\x82\x1331310031313100313131823133319331313100',
+      b'\xf1\x875Q0959655AT\xf1\x890317\xf1\x82\x1331310031313100313131013131319331313100',
       b'\xf1\x875Q0959655BH\xf1\x890336\xf1\x82\02331310031313100313131013141319331413100',
       b'\xf1\x875Q0959655BK\xf1\x890336\xf1\x82\x1331310031313100313131013141319331413100',
       b'\xf1\x875Q0959655CA\xf1\x890403\xf1\x82\x1331310031313100313151013141319331423100',
@@ -1379,6 +1382,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0909143M \xf1\x892041\xf1\x820522UZ050303',
       b'\xf1\x875Q0909143M \xf1\x892041\xf1\x820522UZ070303',
       b'\xf1\x875Q0909143P \xf1\x892051\xf1\x820526UZ070505',
+      b'\xf1\x875Q0909143P \xf1\x892051\xf1\x820526UZ060505',
       b'\xf1\x875Q0910143B \xf1\x892201\xf1\x82\00563UZ060700',
       b'\xf1\x875Q0910143B \xf1\x892201\xf1\x82\x0563UZ060600',
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567UZ070500',
