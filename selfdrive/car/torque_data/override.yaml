@@ -62,6 +62,7 @@ HYUNDAI IONIQ 6 2023: [2.5, 2.5, 0.1]
 HYUNDAI AZERA 6TH GEN: [1.8, 1.8, 0.1]
 HYUNDAI AZERA HYBRID 6TH GEN: [1.8, 1.8, 0.1]
 KIA K8 HYBRID 1ST GEN: [2.5, 2.5, 0.1]
+HYUNDAI CUSTIN 1ST GEN: [2.5, 2.5, 0.1]
 
 # Dashcam or fallback configured as ideal car
 mock: [10.0, 10, 0.0]
