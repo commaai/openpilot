@@ -27,6 +27,7 @@ class MetaDriveWorld(World):
     self.steer_ratio = 15
     self.vc = [0.0,0.0]
     self.reset_time = 0
+    self.should_reset = False
 
   def apply_controls(self, steer_angle, throttle_out, brake_out):
     if (time.monotonic() - self.reset_time) > 5:
@@ -40,7 +41,7 @@ class MetaDriveWorld(World):
       self.vc[0] = 0
       self.vc[1] = 0
 
-    self.controls_send.send(self.vc)
+    self.controls_send.send([*self.vc, self.should_reset])
 
   def read_sensors(self, state: SimulatorState):
     while self.state_recv.poll(0):
@@ -59,8 +60,8 @@ class MetaDriveWorld(World):
     pass
 
   def reset(self):
-    pass
+    self.should_reset = True
 
   def close(self):
-    if self.metadrive_process.is_alive:
+    if self.metadrive_process.is_alive():
       self.metadrive_process.kill()

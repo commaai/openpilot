@@ -96,6 +96,10 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
                                                                         100, self._exit_event))
     self.simulated_car_thread.start()
 
+    self.simulated_camera_thread = threading.Thread(target=rk_loop, args=(functools.partial(self.simulated_sensors.send_camera_images, self.world),
+                                                                        20, self._exit_event))
+    self.simulated_camera_thread.start()
+
     # Simulation tends to be slow in the initial steps. This prevents lagging later
     for _ in range(20):
       self.world.tick()

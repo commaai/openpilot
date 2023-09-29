@@ -1,39 +1,12 @@
 from metadrive.component.sensors.rgb_camera import RGBCamera
 from metadrive.component.sensors.base_camera import _cuda_enable
 from metadrive.component.map.pg_map import MapGenerateMethod
-from metadrive.engine.core.engine_core import EngineCore
-from metadrive.engine.core.image_buffer import ImageBuffer
-from metadrive.envs.metadrive_env import MetaDriveEnv
-from metadrive.obs.image_obs import ImageObservation
 from panda3d.core import Vec3
 
 from openpilot.tools.sim.bridge.common import SimulatorBridge
 from openpilot.tools.sim.bridge.metadrive.metadrive_world import MetaDriveWorld
 from openpilot.tools.sim.lib.camerad import W, H
 
-
-def apply_metadrive_patches():
-  # By default, metadrive won't try to use cuda images unless it's used as a sensor for vehicles, so patch that in
-  def add_image_sensor_patched(self, name: str, cls, args):
-    if self.global_config["image_on_cuda"]:# and name == self.global_config["vehicle_config"]["image_source"]:
-        sensor = cls(*args, self, cuda=True)
-    else:
-        sensor = cls(*args, self, cuda=False)
-    assert isinstance(sensor, ImageBuffer), "This API is for adding image sensor"
-    self.sensors[name] = sensor
-
-  EngineCore.add_image_sensor = add_image_sensor_patched
-
-  # we aren't going to use the built-in observation stack, so disable it to save time
-  def observe_patched(self, vehicle):
-    return self.state
-
-  ImageObservation.observe = observe_patched
-
-  def arrive_destination_patch(self, vehicle):
-    return False
-
-  MetaDriveEnv._is_arrive_destination = arrive_destination_patch
 
 C3_POSITION = Vec3(0, 0, 1)
 
@@ -81,9 +54,6 @@ class MetaDriveBridge(SimulatorBridge):
     super(MetaDriveBridge, self).__init__(args)
 
   def spawn_world(self):
-
-    apply_metadrive_patches()
-
     sensors = {
       "rgb_road": (RGBCameraRoad, W, H, )
     }
