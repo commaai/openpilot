@@ -1,16 +1,15 @@
+import carla
 import numpy as np
 
 from openpilot.common.params import Params
 from openpilot.tools.sim.lib.common import SimulatorState, vec3
-from openpilot.tools.sim.bridge.common import World, SimulatorBridge
+from openpilot.tools.sim.bridge.common import World
 from openpilot.tools.sim.lib.camerad import W, H
 
 
 class CarlaWorld(World):
   def __init__(self, client, high_quality, dual_camera, num_selected_spawn_point, town):
     super().__init__(dual_camera)
-    import carla
-
     low_quality_layers = carla.MapLayer(carla.MapLayer.Ground | carla.MapLayer.Walls | carla.MapLayer.Decals)
 
     layers = carla.MapLayer.All if high_quality else low_quality_layers
@@ -140,26 +139,5 @@ class CarlaWorld(World):
     self.world.tick()
 
   def reset(self):
-    import carla
-
     self.vehicle.set_transform(self.spawn_point)
     self.vehicle.set_target_velocity(carla.Vector3D())
-
-
-class CarlaBridge(SimulatorBridge):
-  TICKS_PER_FRAME = 5
-
-  def __init__(self, arguments):
-    super().__init__(arguments)
-    self.host = arguments.host
-    self.port = arguments.port
-    self.town = arguments.town
-    self.num_selected_spawn_point = arguments.num_selected_spawn_point
-
-  def spawn_world(self):
-    import carla
-    client = carla.Client(self.host, self.port)
-    client.set_timeout(5)
-
-    return CarlaWorld(client, high_quality=self.high_quality, dual_camera=self.dual_camera,
-                      num_selected_spawn_point=self.num_selected_spawn_point, town=self.town)
