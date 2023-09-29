@@ -297,6 +297,8 @@ Although they're not upstream, the community has openpilot running on other make
 **openpilot can support many more cars than it currently does.** There are a few reasons your car may not be supported.
 If your car doesn't fit into any of the incompatibility criteria here, then there's a good chance it can be supported! We're adding support for new cars all the time. **We don't have a roadmap for car support**, and in fact, most car support comes from users like you!
 
+[Here you can view a list of in-progress car ports.](/docs/PORTS.md)
+
 ### Which cars are able to be supported?
 
 openpilot uses the existing steering, gas, and brake interfaces in your car. If your car lacks any one of these interfaces, openpilot will not be able to control the car. If your car has [ACC](https://en.wikipedia.org/wiki/Adaptive_cruise_control) and any form of [LKAS](https://en.wikipedia.org/wiki/Automated_Lane_Keeping_Systems)/[LCA](https://en.wikipedia.org/wiki/Lane_centering), then it almost certainly has these interfaces. These features generally started shipping on cars around 2016. Note that manufacturers will often make their own [marketing terms](https://en.wikipedia.org/wiki/Adaptive_cruise_control#Vehicle_models_supporting_adaptive_cruise_control) for these features, such as Hyundai's "Smart Cruise Control" branding of Adaptive Cruise Control.
