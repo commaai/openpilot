@@ -58,11 +58,6 @@ Some GUI tools require OpenGL to work properly. To use them with XQuartz on mac,
 brew install --cask virtualgl
 ```
 
-Then when invoking GUI tool (e.g. ui, cabana or plotjuggler), prefix the command with `vglrun`. For instance:
-```
-vglrun python3 tools/plotjuggler/juggle.py --demo
-```
-
 ## WSL on Windows
 
 [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about) should provide a similar experience to native Ubuntu. [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/compare-versions) specifically has been reported by several users to be a seamless experience.
