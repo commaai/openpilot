@@ -27,4 +27,4 @@ Dashcam vehicles do not yet work out of the box with openpilot, though there has
 {% endfor %}
 
 ## Community Maintained Cars
-Although they're not upstream, the community has openpilot running on these other makes and models. See the 'Community Supported Models' section of each make [on our wiki](https://wiki.comma.ai/).
+Although they're not upstream, the community has openpilot running on other makes and models. See the 'Community Supported Models' section of each make [on our wiki](https://wiki.comma.ai/).

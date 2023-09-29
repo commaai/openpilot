@@ -34,7 +34,7 @@ Although they're not upstream, the community has openpilot running on other make
 **openpilot can support many more cars than it currently does.** There are a few reasons your car may not be supported.
 If your car doesn't fit into any of the incompatibility criteria here, then there's a good chance it can be supported! We're adding support for new cars all the time. **We don't have a roadmap for car support**, and in fact, most car support comes from users like you!
 
-[**View a list of in-progress car ports here.**](/docs/PORTS.md)
+[**View a list of community-maintained ports in-progress car ports here.**](/docs/PORTS.md)
 
 ### Which cars are able to be supported?
 
