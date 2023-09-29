@@ -1,21 +1,29 @@
+import ctypes
 import functools
 import multiprocessing
+import numpy as np
 import time
 
-from multiprocessing import Pipe
+from multiprocessing import Pipe, Array
 from openpilot.tools.sim.bridge.metadrive.metadrive_process import metadrive_process, metadrive_state
 from openpilot.tools.sim.lib.common import SimulatorState, World
+from openpilot.tools.sim.lib.camerad import W, H
 
 
 class MetaDriveWorld(World):
   def __init__(self, config, dual_camera = False):
     super().__init__(dual_camera)
-    self.camera_recv, self.camera_send = Pipe()
+    self.camera_array = Array(ctypes.c_uint8, W*H*3)
+    self.road_image = np.frombuffer(self.camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
+
     self.controls_send, self.controls_recv = Pipe()
     self.state_send, self.state_recv = Pipe()
 
+    self.exit_event = multiprocessing.Event()
+
     self.metadrive_process = multiprocessing.Process(name="metadrive process", target=
-                              functools.partial(metadrive_process, dual_camera, config, self.camera_send, self.controls_recv, self.state_send))
+                              functools.partial(metadrive_process, dual_camera, config,
+                                                self.camera_array, self.controls_recv, self.state_send, self.exit_event))
     self.metadrive_process.start()
 
     print("----------------------------------------------------------")
@@ -53,8 +61,7 @@ class MetaDriveWorld(World):
       state.valid = True
 
   def read_cameras(self):
-    while self.camera_recv.poll(0):
-      self.road_image = self.camera_recv.recv()
+    pass
 
   def tick(self):
     pass
@@ -63,5 +70,5 @@ class MetaDriveWorld(World):
     self.should_reset = True
 
   def close(self):
-    if self.metadrive_process.is_alive():
-      self.metadrive_process.kill()
+    self.exit_event.set()
+    self.metadrive_process.join()

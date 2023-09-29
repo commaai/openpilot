@@ -11,6 +11,8 @@ from metadrive.obs.image_obs import ImageObservation
 
 from openpilot.common.realtime import Ratekeeper
 from openpilot.tools.sim.lib.common import vec3
+from openpilot.tools.sim.lib.camerad import W, H
+
 
 metadrive_state = namedtuple("metadrive_state", ["velocity", "position", "bearing", "steering_angle"])
 
@@ -37,9 +39,10 @@ def apply_metadrive_patches():
 
   MetaDriveEnv._is_arrive_destination = arrive_destination_patch
 
-
-def metadrive_process(dual_camera: bool, config: dict, camera_send: Connection, controls_recv: Connection, state_send: Connection):
+def metadrive_process(dual_camera: bool, config: dict, camera_array, controls_recv: Connection, state_send: Connection, exit_event):
   apply_metadrive_patches()
+
+  road_image = np.frombuffer(camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
 
   env = MetaDriveEnv(config)
   env.reset()
@@ -56,7 +59,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_send: Connection, 
   steer_ratio = 15
   vc = [0,0]
 
-  while True:
+  while not exit_event.is_set():
     state = metadrive_state(
       velocity=vec3(x=float(env.vehicle.velocity[0]), y=float(env.vehicle.velocity[1]), z=0),
       position=env.vehicle.position,
@@ -66,8 +69,9 @@ def metadrive_process(dual_camera: bool, config: dict, camera_send: Connection, 
 
     state_send.send(state)
 
-    while controls_recv.poll(0):
-      steer_angle, gas, reset = controls_recv.recv()
+    if controls_recv.poll(0):
+      while controls_recv.poll(0):
+        steer_angle, gas, reset = controls_recv.recv()
 
       steer_metadrive = steer_angle * 1 / (env.vehicle.MAX_STEERING * steer_ratio)
       steer_metadrive = np.clip(steer_metadrive, -1, 1)
@@ -77,15 +81,14 @@ def metadrive_process(dual_camera: bool, config: dict, camera_send: Connection, 
       if reset:
         env.reset()
 
-    obs, _, terminated, _, info = env.step(vc)
+    if rk.frame % 5 == 0:
+      obs, _, terminated, _, info = env.step(vc)
 
-    if terminated:
-      env.reset()
+      if terminated:
+        env.reset()
 
-    #if dual_camera:
-    #  wide_road_image = get_cam_as_rgb("rgb_wide")
-    road_image = get_cam_as_rgb("rgb_road")
-
-    camera_send.send(road_image)
+      #if dual_camera:
+      #  wide_road_image = get_cam_as_rgb("rgb_wide")
+      road_image[...] = get_cam_as_rgb("rgb_road")
 
     rk.keep_time()
