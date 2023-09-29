@@ -54,4 +54,4 @@ Dashcam vehicles do not yet work out of the box with openpilot, though there has
 <sup>13</sup>Model-years 2022 and beyond may have a combined CAN gateway and BCM, which is supported by openpilot in software, but doesn't yet have a harness available from the comma store. <br />
 
 ## Community Maintained Cars
-Although they're not upstream, the community has openpilot running on these other makes and models. See the 'Community Supported Models' section of each make [on our wiki](https://wiki.comma.ai/).
+Although they're not upstream, the community has openpilot running on other makes and models. See the 'Community Supported Models' section of each make [on our wiki](https://wiki.comma.ai/).
