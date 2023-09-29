@@ -35,6 +35,24 @@ def apply_metadrive_patches():
 
   MetaDriveEnv._is_arrive_destination = arrive_destination_patch
 
+C3_POSITION = Vec3(0, 0, 1)
+
+class RGBCameraWide(RGBCamera):
+  def __init__(self, *args, **kwargs):
+    super(RGBCameraWide, self).__init__(*args, **kwargs)
+    cam = self.get_cam()
+    cam.setPos(C3_POSITION)
+    lens = self.get_lens()
+    lens.setFov(160)
+
+class RGBCameraRoad(RGBCamera):
+  def __init__(self, *args, **kwargs):
+    super(RGBCameraRoad, self).__init__(*args, **kwargs)
+    cam = self.get_cam()
+    cam.setPos(C3_POSITION)
+    lens = self.get_lens()
+    lens.setFov(40)
+
 
 def straight_block(length):
   return {
@@ -63,29 +81,8 @@ class MetaDriveBridge(SimulatorBridge):
     super(MetaDriveBridge, self).__init__(args)
 
   def spawn_world(self):
-    print("----------------------------------------------------------")
-    print("---- Spawning Metadrive world, this might take awhile ----")
-    print("----------------------------------------------------------")
 
     apply_metadrive_patches()
-
-    C3_POSITION = Vec3(0, 0, 1)
-
-    class RGBCameraWide(RGBCamera):
-      def __init__(self, *args, **kwargs):
-        super(RGBCameraWide, self).__init__(*args, **kwargs)
-        cam = self.get_cam()
-        cam.setPos(C3_POSITION)
-        lens = self.get_lens()
-        lens.setFov(160)
-
-    class RGBCameraRoad(RGBCamera):
-      def __init__(self, *args, **kwargs):
-        super(RGBCameraRoad, self).__init__(*args, **kwargs)
-        cam = self.get_cam()
-        cam.setPos(C3_POSITION)
-        lens = self.get_lens()
-        lens.setFov(40)
 
     sensors = {
       "rgb_road": (RGBCameraRoad, W, H, )

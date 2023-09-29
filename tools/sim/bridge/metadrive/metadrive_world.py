@@ -1,12 +1,10 @@
 import functools
-import math
 import multiprocessing
-import numpy as np
 import time
 
 from multiprocessing import Pipe
-from openpilot.tools.sim.bridge.metadrive.metadrive_process import metadrive_process
-from openpilot.tools.sim.lib.common import SimulatorState, World, vec3
+from openpilot.tools.sim.bridge.metadrive.metadrive_process import metadrive_process, metadrive_state
+from openpilot.tools.sim.lib.common import SimulatorState, World
 
 
 class MetaDriveWorld(World):
@@ -16,18 +14,23 @@ class MetaDriveWorld(World):
     self.controls_send, self.controls_recv = Pipe()
     self.state_send, self.state_recv = Pipe()
 
-    self.metadrive_process = multiprocessing.Process(target=
+    self.metadrive_process = multiprocessing.Process(name="metadrive process", target=
                               functools.partial(metadrive_process, dual_camera, config, self.camera_send, self.controls_recv, self.state_send))
+    self.metadrive_process.start()
+
+    print("----------------------------------------------------------")
+    print("---- Spawning Metadrive world, this might take awhile ----")
+    print("----------------------------------------------------------")
+
+    self.state_recv.recv() # wait for a state message to ensure metadrive is launched
+
     self.steer_ratio = 15
     self.vc = [0.0,0.0]
     self.reset_time = 0
 
   def apply_controls(self, steer_angle, throttle_out, brake_out):
-    steer_metadrive = steer_angle * 1 / (self.env.vehicle.MAX_STEERING * self.steer_ratio)
-    steer_metadrive = np.clip(steer_metadrive, -1, 1)
-
     if (time.monotonic() - self.reset_time) > 5:
-      self.vc[0] = steer_metadrive
+      self.vc[0] = steer_angle
 
       if throttle_out:
         self.vc[1] = throttle_out/10
@@ -37,27 +40,27 @@ class MetaDriveWorld(World):
       self.vc[0] = 0
       self.vc[1] = 0
 
+    self.controls_send.send(self.vc)
+
   def read_sensors(self, state: SimulatorState):
-    state.velocity = vec3(x=float(self.env.vehicle.velocity[0]), y=float(self.env.vehicle.velocity[1]), z=0)
-    state.gps.from_xy(self.env.vehicle.position)
-    state.bearing = float(math.degrees(self.env.vehicle.heading_theta))
-    state.steering_angle = self.env.vehicle.steering * self.env.vehicle.MAX_STEERING
-    state.valid = True
+    while self.state_recv.poll(0):
+      md_state: metadrive_state = self.state_recv.recv()
+      state.velocity = md_state.velocity
+      state.bearing = md_state.bearing
+      state.steering_angle = md_state.steering_angle
+      state.gps.from_xy(md_state.position)
+      state.valid = True
 
   def read_cameras(self):
-    if self.dual_camera:
-     self.wide_road_image = self.get_cam_as_rgb("rgb_wide")
-    self.road_image = self.get_cam_as_rgb("rgb_road")
+    while self.camera_recv.poll(0):
+      self.road_image = self.camera_recv.recv()
 
   def tick(self):
-    obs, _, terminated, _, info = self.env.step(self.vc)
-
-    if terminated:
-      self.reset()
+    pass
 
   def reset(self):
-    self.env.reset()
-    self.reset_time = time.monotonic()
+    pass
 
   def close(self):
-    pass
+    if self.metadrive_process.is_alive:
+      self.metadrive_process.kill()

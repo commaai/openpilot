@@ -68,7 +68,7 @@ class SimulatorBridge(ABC):
       self.world.close()
 
   def run(self, queue, retries=-1):
-    bridge_p = Process(target=self.bridge_keep_alive, args=(queue, retries), daemon=True)
+    bridge_p = Process(name="bridge", target=self.bridge_keep_alive, args=(queue, retries))
     bridge_p.start()
     return bridge_p
 
