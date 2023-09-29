@@ -18,11 +18,15 @@ fi
 if [[ $HOST_OS == darwin ]]; then
   echo "Setting up virtualgl for macOS..."
   cat <<EOF >> /home/$TARGET_USER/.bashrc
-export VGL_PORT=10000
-export VGL_CLIENT=host.docker.internal
-export VGL_COMPRESS=rgb
-export VGL_DISPLAY=:0
-export VGL_FPS=60
+if [ -n "\$DISPLAY" ]; then
+  export VGL_PORT=10000
+  export VGL_CLIENT=host.docker.internal
+  export VGL_COMPRESS=rgb
+  export VGL_DISPLAY=:0
+  export VGL_FPS=60
+  # prevent vglrun from running exec
+  alias exec=:; source vglrun :; unalias exec
+fi
 EOF
 fi
 
