@@ -229,7 +229,7 @@ node {
       'simulation tests': {
         pcStage("simulation tests") {
           sh "scons -j30"
-          sh label: "test_metadrive_bridge.py", script: "python tools/sim/tests/test_metadrive_bridge.py"
+          sh label: "test_metadrive_bridge.py", script: "PYTHONPATH=$(pwd) python tools/sim/tests/test_metadrive_bridge.py"
         }
       },
 
