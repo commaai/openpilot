@@ -67,7 +67,7 @@ def _get_interface_names() -> Dict[str, List[str]]:
   # returns a dict of brand name and its respective models
   brand_names = {}
   for brand_name, brand_models in get_interface_attr("CAR").items():
-    brand_names[brand_name] = [model.name for model in brand_models]
+    brand_names[brand_name] = [model.value for model in brand_models]
 
   return brand_names
 
