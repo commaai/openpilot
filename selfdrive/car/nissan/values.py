@@ -1,6 +1,7 @@
 # ruff: noqa: E501
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Union
+from enum import StrEnum
 
 from cereal import car
 from panda.python import uds
@@ -21,7 +22,7 @@ class CarControllerParams:
     pass
 
 
-class CAR:
+class CAR(StrEnum):
   XTRAIL = "NISSAN X-TRAIL 2017"
   LEAF = "NISSAN LEAF 2018"
   # Leaf with ADAS ECU found behind instrument cluster instead of glovebox

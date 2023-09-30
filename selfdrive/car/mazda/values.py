@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Union
+from enum import StrEnum
 
 from cereal import car
 from openpilot.selfdrive.car import dbc_dict
@@ -25,7 +26,7 @@ class CarControllerParams:
     pass
 
 
-class CAR:
+class CAR(StrEnum):
   CX5 = "MAZDA CX-5"
   CX9 = "MAZDA CX-9"
   MAZDA3 = "MAZDA 3"

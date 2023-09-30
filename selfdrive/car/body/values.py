@@ -1,4 +1,5 @@
 from typing import Dict
+from enum import StrEnum
 
 from cereal import car
 from openpilot.selfdrive.car import dbc_dict
@@ -21,7 +22,7 @@ class CarControllerParams:
     pass
 
 
-class CAR:
+class CAR(StrEnum):
   BODY = "COMMA BODY"
 
 

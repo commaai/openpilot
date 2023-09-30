@@ -1,7 +1,7 @@
 # ruff: noqa: E501
 import re
 from dataclasses import dataclass
-from enum import Enum, IntFlag
+from enum import Enum, IntFlag, StrEnum
 from typing import Dict, List, Optional, Set, Tuple, Union
 
 from cereal import car
@@ -67,7 +67,7 @@ class HyundaiFlags(IntFlag):
   CANFD_HDA2_ALT_STEERING = 512
 
 
-class CAR:
+class CAR(StrEnum):
   # Hyundai
   AZERA_6TH_GEN = "HYUNDAI AZERA 6TH GEN"
   AZERA_HEV_6TH_GEN = "HYUNDAI AZERA HYBRID 6TH GEN"
