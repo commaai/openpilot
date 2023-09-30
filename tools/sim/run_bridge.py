@@ -6,12 +6,12 @@ from typing import Any
 from multiprocessing import Queue
 
 from openpilot.tools.sim.bridge.common import SimulatorBridge
-from openpilot.tools.sim.bridge.carla import CarlaBridge
-from openpilot.tools.sim.bridge.metadrive import MetaDriveBridge
+from openpilot.tools.sim.bridge.carla.carla_bridge import CarlaBridge
+from openpilot.tools.sim.bridge.metadrive.metadrive_bridge import MetaDriveBridge
 
 
 def parse_args(add_args=None):
-  parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
+  parser = argparse.ArgumentParser(description='Bridge between the simulator and openpilot.')
   parser.add_argument('--joystick', action='store_true')
   parser.add_argument('--high_quality', action='store_true')
   parser.add_argument('--dual_camera', action='store_true')
