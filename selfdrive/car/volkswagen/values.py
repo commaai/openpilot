@@ -796,7 +796,6 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x872Q0907572AA\xf1\x890396',
       b'\xf1\x872Q0907572T \xf1\x890383',
-      
     ],
   },
   CAR.TCROSS_MK1: {
