@@ -356,9 +356,7 @@ void ChartView::updateAxisY() {
         if (it->y() > s.max) s.max = it->y();
       }
     } else {
-      auto [min_y, max_y] = s.segment_tree.minmax(std::distance(s.vals.cbegin(), first), std::distance(s.vals.cbegin(), last));
-      s.min = min_y;
-      s.max = max_y;
+      std::tie(s.min, s.max) = s.segment_tree.minmax(std::distance(s.vals.cbegin(), first), std::distance(s.vals.cbegin(), last));
     }
     min = std::min(min, s.min);
     max = std::max(max, s.max);
