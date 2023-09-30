@@ -50,14 +50,6 @@ Dev containers are supported in [multiple editors and IDEs](https://containers.d
 
 GUI apps like `ui` or `cabana` can also run inside the container by leveraging X11 forwarding. To make use of it on macOS, additional configuration steps must be taken. Follow [these](https://gist.github.com/sorny/969fe55d85c9b0035b0109a31cbcb088) steps to setup X11 forwarding on macOS.
 
-#### VirtualGL on macOS
-
-Some GUI tools require OpenGL to work properly. To use them with XQuartz on mac, VirtualGL needs to be installed.
-
-```
-brew install --cask virtualgl
-```
-
 ## WSL on Windows
 
 [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about) should provide a similar experience to native Ubuntu. [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/compare-versions) specifically has been reported by several users to be a seamless experience.
