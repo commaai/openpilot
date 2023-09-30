@@ -38,6 +38,12 @@ CX5_FW_VERSIONS = [
 
 class TestStartup(unittest.TestCase):
 
+  def setUp(self):
+    self.params = Params()
+    self.params.clear_all()
+    self.params.put_bool("Passive", False)
+    self.params.put_bool("OpenpilotEnabledToggle", True)
+
   @parameterized.expand([
     # TODO: test EventName.startup for release branches
 
@@ -68,11 +74,6 @@ class TestStartup(unittest.TestCase):
     controls_sock = messaging.sub_sock("controlsState")
     pm = messaging.PubMaster(['can', 'pandaStates'])
 
-    params = Params()
-    params.clear_all()
-    params.put_bool("Passive", False)
-    params.put_bool("OpenpilotEnabledToggle", True)
-
     # Build capnn version of FW array
     if fw_versions is not None:
       car_fw = []
@@ -90,7 +91,7 @@ class TestStartup(unittest.TestCase):
         car_fw.append(f)
       cp.carVin = "1" * 17
       cp.carFw = car_fw
-      params.put("CarParamsCache", cp.to_bytes())
+      self.params.put("CarParamsCache", cp.to_bytes())
 
     time.sleep(2) # wait for controlsd to be ready
 
@@ -109,8 +110,8 @@ class TestStartup(unittest.TestCase):
 
     for _ in range(1000):
       # controlsd waits for boardd to echo back that it has changed the multiplexing mode
-      if not params.get_bool("ObdMultiplexingChanged"):
-        params.put_bool("ObdMultiplexingChanged", True)
+      if not self.params.get_bool("ObdMultiplexingChanged"):
+        self.params.put_bool("ObdMultiplexingChanged", True)
 
       msgs = [[addr, 0, b'\x00'*length, 0] for addr, length in finger.items()]
       pm.send('can', can_list_to_can_capnp(msgs))
