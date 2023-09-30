@@ -26,6 +26,8 @@ The easiest way to run models on device is with onnxruntime. You can use ONNXMod
 
 You can also run models with thneed, which uses the Comma 3X's GPU. See selfdrive/modeld/SConscript for an example of how to compile onnx models to thneed. Thneed supports models with a single flat output vector, and the size of the output vector must be a multiple of 4. Inputs and outputs must be in float32. Libthneed has to be specially linked for ThneedModel to work properly. The yolo runner is a good example - set up your process as a NativeProcess in process_config.py and add a shell script like `selfdrive/modeld/yolo` that sets LD_PRELOAD and then execs your python script.
 
+If you decide to run a custom model with thneed, you'll likely want to disable the driving model runner (modeld), since that process uses up most of the available GPU capacity on the device. To disable it, set enabled=False on the modeld entry in process_config.py, and set enabled=True on the fakemodeld entry. fakemodeld just publishes some dummy modelV2 packets to make the other processes happy, it doesn't use the GPU at all so it shouldn't interfere with any custom models you want to run.
+
 ## Remote Models / Teleop
 You can also stream data to and from your computer with the cereal bridge. yolo.py is a good example of a model runner that can run either on device with thneed, or remotely using onnxruntime and the cereal bridge.
 
