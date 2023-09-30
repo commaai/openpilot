@@ -1,7 +1,7 @@
 # ruff: noqa: E501
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Union
 from enum import StrEnum
+from typing import Dict, List, Optional, Union
 
 from cereal import car
 from panda.python import uds

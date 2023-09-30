@@ -1,5 +1,5 @@
-from typing import Dict, List, Optional, Union
 from enum import StrEnum
+from typing import Dict, List, Optional, Union
 
 from openpilot.selfdrive.car.docs_definitions import CarInfo
 

@@ -1,5 +1,5 @@
-from typing import Dict
 from enum import StrEnum
+from typing import Dict
 
 from cereal import car
 from openpilot.selfdrive.car import dbc_dict

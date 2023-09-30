@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Union
 from enum import StrEnum
+from typing import Dict, List, Union
 
 from cereal import car
 from openpilot.selfdrive.car import dbc_dict
