@@ -38,4 +38,4 @@ jobs:
       - name: create pull request
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh pr create -B master -H ${{ steps.fingerprint.outputs.pr-branch-name }} --title '${{ steps.fingerprint.outputs.pr-title }}'' --body '${{ steps.fingerprint.outputs.pr-comment }}''
+        run: gh pr create -B master -H ${{ steps.fingerprint.outputs.pr-branch-name }} --title '${{ steps.fingerprint.outputs.pr-title }}' --body '${{ steps.fingerprint.outputs.pr-comment }}'
