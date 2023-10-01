@@ -31,10 +31,10 @@ def add_fw_versions(brand, platform, new_fw_versions):
     try:
       end_str = "],\n"
       end = values_py.index(end_str, start)
-    except:
+    except ValueError:
       end_str = "]\n"
       end = values_py.index(end_str, start)
-    
+
     values_py = values_py[:end] + f"  {fw_version},\n    " + values_py[end:]
 
   with open(filename, "w") as f:
@@ -61,6 +61,9 @@ if __name__ == "__main__":
       carPlatform = msg.carParams.carFingerprint
       break
 
+  if carFw is None:
+    raise Exception("No fw versions in the provided route...")
+
   if args.platform is None: # attempt to auto-determine platform with other fuzzy fingerprints
     _, possible_platforms = match_fw_to_car(carFw, log=False)
 
@@ -71,7 +74,7 @@ if __name__ == "__main__":
         print("Using platform from route")
         platform = carPlatform
       else:
-        raise Exception("unable to determine platform, try manually specifying the fingeprint.")
+        raise Exception("unable to determine platform, try manually specifying the fingerprint.")
     else:
       platform = list(possible_platforms)[0]
 
@@ -94,8 +97,8 @@ if __name__ == "__main__":
         fw_versions = set(ALL_FW_VERSIONS[brand][platform][key])
         if fw.fwVersion not in fw_versions:
           new_fw_versions[(fw.ecu, addr, subAddr)] = fw.fwVersion
-  
+
   if not new_fw_versions:
     print("No new fw versions found...")
-  
+
   add_fw_versions(brand, platform, new_fw_versions)
