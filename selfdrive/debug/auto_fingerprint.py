@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-from common.basedir import BASEDIR
+from openpilot.common.basedir import BASEDIR
 
 from openpilot.tools.lib.logreader import MultiLogIterator
 from openpilot.tools.lib.route import Route
