@@ -99,7 +99,6 @@ class YoloRunner:
     img = cv2.resize(img, INPUT_SHAPE)
     img = np.expand_dims(img, 0).astype(np.float32) # add batch dim
     img = img.transpose(0, 3, 1, 2) # NHWC -> NCHW
-    img = img[:, [2,1,0], :, :] # BGR -> RGB
     img /= 255 # 0-255 -> 0-1
     return img
 
@@ -142,13 +141,13 @@ def main(debug=False):
     st = time.time()
     imgff = yuv_img_raw.data.reshape(-1, vipc_client.stride)
     imgff = imgff[:vipc_client.height * 3 // 2, :vipc_client.width]
-    img = cv2.cvtColor(imgff, cv2.COLOR_YUV2BGR_I420)
+    img = cv2.cvtColor(imgff, cv2.COLOR_YUV2RGB_NV12)
     outputs = yolo_runner.run(img)
-
     msg = messaging.new_message()
     msg.customReservedRawData1 = json.dumps(outputs).encode()
     pm.send('customReservedRawData1', msg)
     if debug:
+      img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
       et = time.time()
       cv2.imwrite(str(Path(__file__).parent / 'yolo.jpg'), yolo_runner.draw_boxes(img, outputs))
       print(f"eval time: {(et-st)*1000:.2f}ms, found: {','.join([x['pred_class'] for x in outputs])}")
