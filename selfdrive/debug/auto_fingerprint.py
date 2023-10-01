@@ -42,30 +42,24 @@ def add_fw_versions(brand, platform, new_fw_versions):
     f.write(values_py)
 
 
-if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="Auto fingerprint from a route")
-  parser.add_argument("route", help="The route name to use")
-  parser.add_argument("platform", help="The platform, or leave empty to auto-determine using fuzzy", default=None, nargs='?')
-  args = parser.parse_args()
 
-  route = Route(args.route)
+def auto_fingerprint(route, platform):
+  route = Route(route)
   lr = MultiLogIterator(route.qlog_paths())
 
   carFw = None
-  carVin = None
   carPlatform = None
 
   for msg in lr:
     if msg.which() == "carParams":
       carFw = msg.carParams.carFw
-      carVin = msg.carParams.carVin
       carPlatform = msg.carParams.carFingerprint
       break
 
   if carFw is None:
     raise Exception("No fw versions in the provided route...")
 
-  if args.platform is None: # attempt to auto-determine platform with other fuzzy fingerprints
+  if platform is None: # attempt to auto-determine platform with other fuzzy fingerprints
     _, possible_platforms = match_fw_to_car(carFw, log=False)
 
     if len(possible_platforms) != 1:
@@ -78,9 +72,6 @@ if __name__ == "__main__":
         raise Exception("unable to determine platform, try manually specifying the fingerprint.")
     else:
       platform = list(possible_platforms)[0]
-
-  else:
-    platform = args.platform
 
   print("Attempting to add fw version for: ", platform)
 
@@ -100,6 +91,17 @@ if __name__ == "__main__":
           new_fw_versions[(fw.ecu, addr, subAddr)] = fw.fwVersion
 
   if not new_fw_versions:
-    print("No new fw versions found...")
+    raise Exception("No new fw versions found...")
 
   add_fw_versions(brand, platform, new_fw_versions)
+
+  return platform
+
+
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser(description="Auto fingerprint from a route")
+  parser.add_argument("route", help="The route name to use")
+  parser.add_argument("platform", help="The platform, or leave empty to auto-determine using fuzzy", default=None, nargs='?')
+  args = parser.parse_args()
+
+  auto_fingerprint(args.route, args.platform)
