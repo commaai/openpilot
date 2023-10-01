@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List, Optional, Set
+from typing import Any, DefaultDict, Dict, List, Optional, Set, Tuple
 from tqdm import tqdm
 import capnp
 
@@ -141,7 +141,7 @@ def match_fw_to_car_exact(live_fw_versions, match_brand=None, log=True) -> Set[s
   return set(candidates.keys()) - invalid
 
 
-def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True, log=True):
+def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True, log=True) -> Tuple[bool, Set[str]]:
   # Try exact matching first
   exact_matches = []
   if allow_exact:

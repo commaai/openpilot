@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+from typing import Optional
 from openpilot.common.basedir import BASEDIR
 
 from openpilot.tools.lib.logreader import MultiLogIterator
@@ -43,7 +44,7 @@ def add_fw_versions(brand, platform, new_fw_versions):
 
 
 
-def auto_fingerprint(route, platform):
+def auto_fingerprint(route, platform: Optional[str]) -> str:
   route = Route(route)
   lr = MultiLogIterator(route.qlog_paths())
 
@@ -65,7 +66,7 @@ def auto_fingerprint(route, platform):
     if len(possible_platforms) != 1:
       print(f"Unable to auto-determine platform, possible platforms: {possible_platforms}")
 
-      if carPlatform != "mock":
+      if carPlatform is not None and carPlatform != "mock":
         print("Using platform from route")
         platform = carPlatform
       else:
