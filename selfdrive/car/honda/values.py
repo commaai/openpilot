@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from enum import Enum, IntFlag
+from enum import Enum, IntFlag, StrEnum
 from typing import Dict, List, Optional, Union
 
 from cereal import car
@@ -72,7 +72,7 @@ VISUAL_HUD = {
 }
 
 
-class CAR:
+class CAR(StrEnum):
   ACCORD = "HONDA ACCORD 2018"
   ACCORDH = "HONDA ACCORD HYBRID 2018"
   CIVIC = "HONDA CIVIC 2016"
@@ -1358,6 +1358,7 @@ FW_VERSIONS = {
       b'78109-T6Z-A910\x00\x00',
       b'78109-T6Z-AA10\x00\x00',
       b'78109-T6Z-C620\x00\x00',
+      b'78109-T6Z-C910\x00\x00',
       b'78109-TJZ-A510\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [

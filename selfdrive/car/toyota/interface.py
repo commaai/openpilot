@@ -27,15 +27,7 @@ class CarInterface(CarInterfaceBase):
     if DBC[candidate]["pt"] == "toyota_new_mc_pt_generated":
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE
 
-    # Allow angle control cars with whitelisted EPSs to use torque control (made in Japan)
-    # So far only hybrid RAV4 2023 has been seen with this FW version
-    angle_car_torque_fw = any(fw.ecu == "eps" and fw.fwVersion == b'8965B42371\x00\x00\x00\x00\x00\x00' for fw in car_fw)
-    if candidate not in ANGLE_CONTROL_CAR or (angle_car_torque_fw and candidate == CAR.RAV4H_TSS2_2023):
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-
-      ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
-      ret.steerLimitTimer = 0.4
-    else:
+    if candidate in ANGLE_CONTROL_CAR:
       ret.dashcamOnly = True
       ret.steerControlType = SteerControlType.angle
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
@@ -43,6 +35,11 @@ class CarInterface(CarInterfaceBase):
       # LTA control can be more delayed and winds up more often
       ret.steerActuatorDelay = 0.25
       ret.steerLimitTimer = 0.8
+    else:
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+      ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
+      ret.steerLimitTimer = 0.4
 
     ret.stoppingControl = False  # Toyota starts braking more when it thinks you want to stop
 
@@ -124,25 +121,21 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 14.3
       ret.tireStiffnessFactor = 0.7933
       ret.mass = 3585. * CV.LB_TO_KG  # Average between ICE and Hybrid
+      ret.lateralTuning.init('pid')
+      ret.lateralTuning.pid.kiBP = [0.0]
+      ret.lateralTuning.pid.kpBP = [0.0]
+      ret.lateralTuning.pid.kpV = [0.6]
+      ret.lateralTuning.pid.kiV = [0.1]
+      ret.lateralTuning.pid.kf = 0.00007818594
 
-      # Only specific EPS FW accept torque on 2023 RAV4, so they likely are all the same
-      # TODO: revisit this disparity if there is a divide for 2023
-      if candidate not in (CAR.RAV4_TSS2_2023, CAR.RAV4H_TSS2_2023):
-        ret.lateralTuning.init('pid')
-        ret.lateralTuning.pid.kiBP = [0.0]
-        ret.lateralTuning.pid.kpBP = [0.0]
-        ret.lateralTuning.pid.kpV = [0.6]
-        ret.lateralTuning.pid.kiV = [0.1]
-        ret.lateralTuning.pid.kf = 0.00007818594
-
-        # 2019+ RAV4 TSS2 uses two different steering racks and specific tuning seems to be necessary.
-        # See https://github.com/commaai/openpilot/pull/21429#issuecomment-873652891
-        for fw in car_fw:
-          if fw.ecu == "eps" and (fw.fwVersion.startswith(b'\x02') or fw.fwVersion in [b'8965B42181\x00\x00\x00\x00\x00\x00']):
-            ret.lateralTuning.pid.kpV = [0.15]
-            ret.lateralTuning.pid.kiV = [0.05]
-            ret.lateralTuning.pid.kf = 0.00004
-            break
+      # 2019+ RAV4 TSS2 uses two different steering racks and specific tuning seems to be necessary.
+      # See https://github.com/commaai/openpilot/pull/21429#issuecomment-873652891
+      for fw in car_fw:
+        if fw.ecu == "eps" and (fw.fwVersion.startswith(b'\x02') or fw.fwVersion in [b'8965B42181\x00\x00\x00\x00\x00\x00']):
+          ret.lateralTuning.pid.kpV = [0.15]
+          ret.lateralTuning.pid.kiV = [0.05]
+          ret.lateralTuning.pid.kf = 0.00004
+          break
 
     elif candidate in (CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2):
       ret.wheelbase = 2.67  # Average between 2.70 for sedan and 2.64 for hatchback
