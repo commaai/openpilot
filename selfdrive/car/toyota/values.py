@@ -1,7 +1,7 @@
 import re
 from collections import defaultdict
 from dataclasses import dataclass, field
-from enum import Enum, IntFlag
+from enum import Enum, IntFlag, StrEnum
 from typing import Dict, List, Set, Union
 
 from cereal import car
@@ -46,7 +46,7 @@ class ToyotaFlags(IntFlag):
   DISABLE_RADAR = 4
 
 
-class CAR:
+class CAR(StrEnum):
   # Toyota
   ALPHARD_TSS2 = "TOYOTA ALPHARD 2020"
   ALPHARDH_TSS2 = "TOYOTA ALPHARD HYBRID 2021"
