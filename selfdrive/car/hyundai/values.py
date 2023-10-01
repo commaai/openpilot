@@ -1,7 +1,7 @@
 # ruff: noqa: E501
 import re
 from dataclasses import dataclass
-from enum import Enum, IntFlag
+from enum import Enum, IntFlag, StrEnum
 from typing import Dict, List, Optional, Set, Tuple, Union
 
 from cereal import car
@@ -67,7 +67,7 @@ class HyundaiFlags(IntFlag):
   CANFD_HDA2_ALT_STEERING = 512
 
 
-class CAR:
+class CAR(StrEnum):
   # Hyundai
   AZERA_6TH_GEN = "HYUNDAI AZERA 6TH GEN"
   AZERA_HEV_6TH_GEN = "HYUNDAI AZERA HYBRID 6TH GEN"
@@ -400,8 +400,8 @@ def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
   # to distinguish between hybrid and ICE. All EVs so far are either exclusively
   # electric or specify electric in the platform code.
   # TODO: whitelist platforms that we've seen hybrid and ICE versions of that have these specifiers
-  fuzzy_platform_blacklist = set(CANFD_CAR - EV_CAR)
-  candidates = set()
+  fuzzy_platform_blacklist = {str(car) for car in set(CANFD_CAR - EV_CAR)}
+  candidates: Set[str] = set()
 
   for candidate, fws in FW_VERSIONS.items():
     # Keep track of ECUs which pass all checks (platform codes, within date range)
