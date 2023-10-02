@@ -2,16 +2,57 @@ from collections import defaultdict
 
 from cereal import messaging
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
+from openpilot.selfdrive.car.toyota.values import EPS_SCALE
+from panda.python import Panda
 
 
 def migrate_all(lr, old_logtime=False, camera_states=False):
   msgs = migrate_sensorEvents(lr, old_logtime)
   msgs = migrate_carParams(msgs, old_logtime)
+  msgs = migrate_pandaStates(msgs, old_logtime)
   if camera_states:
     msgs = migrate_cameraStates(msgs)
 
   return msgs
 
+def migrate_pandaStates(lr, old_logtime=False):
+  all_msgs = []
+  # TODO: safety param migration should be handled automatically
+  safety_param_migration = {
+    "TOYOTA PRIUS 2017": EPS_SCALE["TOYOTA PRIUS 2017"] | Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL,
+    "TOYOTA RAV4 2017": EPS_SCALE["TOYOTA RAV4 2017"] | Panda.FLAG_TOYOTA_ALT_BRAKE,
+    "KIA EV6 2022": Panda.FLAG_HYUNDAI_EV_GAS | Panda.FLAG_HYUNDAI_CANFD_HDA2,
+  }
+
+  # Migrate safety param base on carState
+  CP = next((m.carParams for m in lr if m.which() == 'carParams'), None)
+  assert CP is not None, "carParams message not found"
+  if CP.carFingerprint in safety_param_migration:
+    safety_param = safety_param_migration[CP.carFingerprint]
+  elif len(CP.safetyConfigs):
+    safety_param = CP.safetyConfigs[0].safetyParam
+    if CP.safetyConfigs[0].safetyParamDEPRECATED != 0:
+      safety_param = CP.safetyConfigs[0].safetyParamDEPRECATED
+  else:
+    safety_param = CP.safetyParamDEPRECATED
+
+  for msg in lr:
+    if msg.which() == 'pandaStateDEPRECATED':
+      new_msg = messaging.new_message('pandaStates', 1)
+      new_msg.valid = msg.valid
+      if old_logtime:
+        new_msg.logMonoTime = msg.logMonoTime
+      new_msg.pandaStates[0] = msg.pandaStateDEPRECATED
+      new_msg.pandaStates[0].safetyParam = safety_param
+      all_msgs.append(new_msg.as_reader())
+    elif msg.which() == 'pandaStates':
+      new_msg = msg.as_builder()
+      new_msg.pandaStates[-1].safetyParam = safety_param
+      all_msgs.append(new_msg.as_reader())
+    else:
+      all_msgs.append(msg)
+
+  return all_msgs
 
 def migrate_cameraStates(lr):
   all_msgs = []
