@@ -6,10 +6,11 @@ from openpilot.selfdrive.car.toyota.values import EPS_SCALE
 from panda import Panda
 
 
-def migrate_all(lr, old_logtime=False, camera_states=False):
+def migrate_all(lr, old_logtime=False, panda_states=False, camera_states=False):
   msgs = migrate_sensorEvents(lr, old_logtime)
   msgs = migrate_carParams(msgs, old_logtime)
-  msgs = migrate_pandaStates(msgs, old_logtime)
+  if panda_states:
+    msgs = migrate_pandaStates(msgs, old_logtime)
   if camera_states:
     msgs = migrate_cameraStates(msgs)
 
