@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from openpilot.system.hardware import PC
-from openpilot.selfdrive.hardware.hw import Paths
+from openpilot.system.hardware.hw import Paths
 
 
 CAMERA_FPS = 20
