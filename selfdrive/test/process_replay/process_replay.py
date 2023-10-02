@@ -681,14 +681,13 @@ def _replay_multi_process(
     env_config = generate_environ_config(CP=CP)
 
   # validate frs and vision pubs
-  for cfg in cfgs:
-    if len(cfg.vision_pubs) == 0:
-      continue
-
+  all_vision_pubs = [pub for cfg in cfgs for pub in cfg.vision_pubs]
+  if len(all_vision_pubs) != 0:
     assert frs is not None, "frs must be provided when replaying process using vision streams"
-    assert all(meta_from_camera_state(st) is not None for st in cfg.vision_pubs),\
-                                                     f"undefined vision stream spotted, probably misconfigured process: {cfg.vision_pubs}"
-    assert all(st in frs for st in cfg.vision_pubs), f"frs for this process must contain following vision streams: {cfg.vision_pubs}"
+    assert all(meta_from_camera_state(st) is not None for st in all_vision_pubs), \
+                                                          f"undefined vision stream spotted, probably misconfigured process: (vision pubs: {all_vision_pubs})"
+    required_vision_pubs = set(available_streams(lr)) & set(all_vision_pubs)
+    assert all(st in frs for st in required_vision_pubs), f"frs for this process must contain following vision streams: {required_vision_pubs}"
 
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   log_msgs = []
