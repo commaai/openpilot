@@ -69,7 +69,7 @@ def setup_data_readers(route: str, sidx: int, use_route_meta: bool) -> Tuple[Log
 
 def regen_and_save(
   route: str, sidx: int, daemons: Union[str, Iterable[str]] = "all", outdir: str = FAKEDATA,
-  upload: bool = False, use_route_meta: bool = False, disable_tqdm: bool = False
+  upload: bool = False, use_route_meta: bool = True, disable_tqdm: bool = False
 ) -> str:
   lr, frs = setup_data_readers(route, sidx, use_route_meta)
   output_logs = regen_segment(lr, frs, daemons, disable_tqdm=disable_tqdm)

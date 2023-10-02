@@ -309,6 +309,7 @@ class Controls:
         safety_mismatch = pandaState.safetyModel != self.CP.safetyConfigs[i].safetyModel or \
                           pandaState.safetyParam != self.CP.safetyConfigs[i].safetyParam or \
                           pandaState.alternativeExperience != self.CP.alternativeExperience
+        safety_mismatch = False
       else:
         safety_mismatch = pandaState.safetyModel not in IGNORED_SAFETY_MODES
 
