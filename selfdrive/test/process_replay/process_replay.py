@@ -686,7 +686,7 @@ def _replay_multi_process(
     assert frs is not None, "frs must be provided when replaying process using vision streams"
     assert all(meta_from_camera_state(st) is not None for st in all_vision_pubs), \
                                                           f"undefined vision stream spotted, probably misconfigured process: (vision pubs: {all_vision_pubs})"
-    required_vision_pubs = set(available_streams(lr)) & set(all_vision_pubs)
+    required_vision_pubs = {m.camera_state for m in available_streams(lr)} & set(all_vision_pubs)
     assert all(st in frs for st in required_vision_pubs), f"frs for this process must contain following vision streams: {required_vision_pubs}"
 
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
