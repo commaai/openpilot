@@ -133,7 +133,7 @@ inputs = "*"
 lru-dict = "*"
 markdown-it-py = "*"
 matplotlib = "*"
-metadrive-simulator = { git = "https://github.com/metadriverse/metadrive.git", rev ="7d6f8ef707bfff67c6b88f3b4a98f8b1d58bf8e6", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
+metadrive-simulator = { git = "https://github.com/metadriverse/metadrive.git", rev ="72e842cd1d025bf676e4af8797a01e4aa282109f", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
 mpld3 = "*"
 mypy = "*"
 myst-parser = "*"
