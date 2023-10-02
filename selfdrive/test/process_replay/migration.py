@@ -3,7 +3,7 @@ from collections import defaultdict
 from cereal import messaging
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
 from openpilot.selfdrive.car.toyota.values import EPS_SCALE
-from panda.python import Panda
+from panda import Panda
 
 
 def migrate_all(lr, old_logtime=False, camera_states=False):
