@@ -1,5 +1,6 @@
 #include "tools/cabana/streams/pandastream.h"
 
+#include <QCheckBox>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPushButton>

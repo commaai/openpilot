@@ -185,6 +185,7 @@ DoubleValidator::DoubleValidator(QObject *parent) : QDoubleValidator(parent) {
 }
 
 namespace utils {
+
 QPixmap icon(const QString &id) {
   bool dark_theme = settings.theme == DARK_THEME;
   QPixmap pm;

@@ -18,7 +18,6 @@
 #include <QStringBuilder>
 #include <QStyledItemDelegate>
 #include <QToolButton>
-#include <QVector>
 
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/settings.h"
