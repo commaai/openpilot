@@ -71,7 +71,6 @@ selfdrive/__init__.py
 selfdrive/sentry.py
 selfdrive/tombstoned.py
 selfdrive/updated.py
-selfdrive/rtshield.py
 selfdrive/statsd.py
 
 system/logmessaged.py
