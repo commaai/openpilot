@@ -50,6 +50,7 @@ class MetaDriveWorld(World):
       self.vc[1] = 0
 
     self.controls_send.send([*self.vc, self.should_reset])
+    self.should_reset = False
 
   def read_sensors(self, state: SimulatorState):
     while self.state_recv.poll(0):
