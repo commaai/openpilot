@@ -395,6 +395,20 @@ docutils = ">=0.12"
 Sphinx = ">=4.0,<5.0.0 || >5.0.0"
 
 [[package]]
+name = "carla"
+version = "0.9.14"
+description = "Python API for communicating with the CARLA server."
+optional = false
+python-versions = "*"
+files = [
+    {file = "carla-0.9.14-cp311-cp311-linux_x86_64.whl", hash = "sha256:f0a8ce0c760d1fef3577e2ef90e9d468e3d85e65bd6d68b44bce51f0d5a0723a"},
+]
+
+[package.source]
+type = "url"
+url = "https://github.com/commaai/carla/releases/download/3.11.4/carla-0.9.14-cp311-cp311-linux_x86_64.whl"
+
+[[package]]
 name = "casadi"
 version = "3.6.3"
 description = "CasADi -- framework for algorithmic differentiation and numeric optimization"
@@ -5140,4 +5154,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "1b0f691acb29b1259457750798cdabf9691c354c575fb923cbc1392741af45ce"
+content-hash = "5ee4decc08dfb98864dbbcb0fae7a990f42b80cabcc0b58088c053415f348d66"
