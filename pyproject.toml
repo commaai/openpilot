@@ -81,7 +81,6 @@ crcmod = "*"
 cryptography = "*"
 Cython = "*"
 future-fstrings = "*"  # for acados
-hatanaka = "==2.4"
 hexdump = "*"
 Jinja2 = "*"
 json-rpc = "*"
@@ -90,7 +89,6 @@ numpy = "*"
 onnx = ">=1.14.0"
 onnxruntime = { version = ">=1.15.1", platform = "linux", markers = "platform_machine == 'aarch64'" }
 onnxruntime-gpu = { version = ">=1.15.1", platform = "linux", markers = "platform_machine == 'x86_64'" }
-pillow = "*"
 psutil = "*"
 pyaudio = "*"
 pycapnp = "*"
@@ -109,11 +107,9 @@ setproctitle = "*"
 smbus2 = "*"
 sounddevice = "*"
 spidev = { version = "*", platform = "linux" }
-spidev2 = { version = "*", platform = "linux" }
 sympy = "*"
 timezonefinder = "*"
 tqdm = "*"
-urllib3 = "*"
 websocket_client = "*"
 polyline = "*"
 sconscontrib = {git = "https://github.com/SCons/scons-contrib.git"}
