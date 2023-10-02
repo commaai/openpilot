@@ -124,7 +124,6 @@ av = "*"
 azure-identity = "*"
 azure-storage-blob = "*"
 breathe = "*"
-carla = { url = "https://github.com/commaai/carla/releases/download/3.11.4/carla-0.9.14-cp311-cp311-linux_x86_64.whl", platform = "linux", markers = "platform_machine == 'x86_64'" }
 coverage = "*"
 dictdiffer = "*"
 ft4222 = "*"
@@ -167,6 +166,11 @@ types-requests = "*"
 types-tabulate = "*"
 pyqt5 = { version = "*", markers = "platform_machine == 'x86_64'" } # no aarch64 wheels for macOS/linux
 
+[tool.poetry.group.carla]
+optional = true
+
+[tool.poetry.group.carla.dependencies]
+carla = { url = "https://github.com/commaai/carla/releases/download/3.11.4/carla-0.9.14-cp311-cp311-linux_x86_64.whl", platform = "linux", markers = "platform_machine == 'x86_64'" }
 
 [build-system]
 requires = ["poetry-core"]
