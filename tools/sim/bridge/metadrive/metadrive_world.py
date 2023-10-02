@@ -38,7 +38,7 @@ class MetaDriveWorld(World):
     self.should_reset = False
 
   def apply_controls(self, steer_angle, throttle_out, brake_out):
-    if (time.monotonic() - self.reset_time) > 5:
+    if (time.monotonic() - self.reset_time) > 2:
       self.vc[0] = steer_angle
 
       if throttle_out:
