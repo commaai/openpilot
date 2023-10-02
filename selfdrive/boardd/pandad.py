@@ -3,7 +3,6 @@
 import os
 import usb1
 import time
-import json
 import subprocess
 from typing import List, NoReturn
 from functools import cmp_to_key
