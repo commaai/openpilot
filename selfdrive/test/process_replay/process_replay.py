@@ -743,7 +743,6 @@ def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=Non
   params_dict = {
     "OpenpilotEnabledToggle": True,
     "Passive": False,
-    "DisengageOnAccelerator": True,
     "DisableLogging": False,
   }
 
@@ -756,9 +755,6 @@ def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=Non
     params_dict["IsRhdDetected"] = is_rhd
 
   if CP is not None:
-    if CP.alternativeExperience == ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS:
-      params_dict["DisengageOnAccelerator"] = False
-
     if fingerprint is None:
       if CP.fingerprintSource == "fw":
         params_dict["CarParamsCache"] = CP.as_builder().to_bytes()
