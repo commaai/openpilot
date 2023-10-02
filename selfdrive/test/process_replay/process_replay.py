@@ -448,16 +448,6 @@ def controlsd_config_callback(params, cfg, lr):
   params.put("ReplayControlsState", controlsState.as_builder().to_bytes())
 
 
-def laikad_config_pubsub_callback(params, cfg, lr):
-  ublox = params.get_bool("UbloxAvailable")
-  main_key = "ubloxGnss" if ublox else "qcomGnss"
-  sub_keys = ({"qcomGnss", } if ublox else {"ubloxGnss", })
-
-  cfg.pubs = set(cfg.pubs) - sub_keys
-  cfg.main_pub = main_key
-  cfg.main_pub_drained = True
-
-
 def locationd_config_pubsub_callback(params, cfg, lr):
   ublox = params.get_bool("UbloxAvailable")
   sub_keys = ({"gpsLocation", } if ublox else {"gpsLocationExternal", })
@@ -542,17 +532,6 @@ CONFIGS = [
     pubs=["ubloxRaw"],
     subs=["ubloxGnss", "gpsLocationExternal"],
     ignore=["logMonoTime"],
-  ),
-  ProcessConfig(
-    proc_name="laikad",
-    pubs=["ubloxGnss", "qcomGnss"],
-    subs=["gnssMeasurements"],
-    ignore=["logMonoTime"],
-    config_callback=laikad_config_pubsub_callback,
-    tolerance=NUMPY_TOLERANCE,
-    processing_time=0.002,
-    timeout=60*10,  # first messages are blocked on internet assistance
-    main_pub="ubloxGnss", # config_callback will switch this to qcom if needed
   ),
   ProcessConfig(
     proc_name="torqued",
