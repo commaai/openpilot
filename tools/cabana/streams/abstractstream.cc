@@ -70,7 +70,7 @@ size_t AbstractStream::suppressHighlighted() {
   const uint64_t cur_ts = currentMonoTime();
   for (auto &[_, m] : msgs_) {
     for (auto &last_change : m.last_changes) {
-      const double dt = (cur_ts - last_change.mono_time) / 1e9;
+      const double dt = int64_t(cur_ts - last_change.mono_time) / 1e9;
       if (dt < 2.0) {
         last_change.suppressed = true;
       }

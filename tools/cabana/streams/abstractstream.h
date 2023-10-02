@@ -71,10 +71,10 @@ public:
   virtual QString name() const = 0;
   virtual QString carFingerprint() const { return ""; }
   virtual uint64_t beginMonoTime() const { return 0; }
-  double currentSec() const { return (currentMonoTime() - beginMonoTime()) / 1e9; }
+  double currentSec() const { return (currentMonoTime() - std::min(currentMonoTime(), beginMonoTime())) / 1e9; }
   virtual uint64_t currentMonoTime() const = 0;
   virtual double totalSeconds() const = 0;
-  inline double toSeconds(uint64_t mono_time) const { return std::max<double>(0.0, (mono_time - beginMonoTime()) / 1e9); }
+  inline double toSeconds(uint64_t mono_time) const { return (mono_time - std::min(mono_time, beginMonoTime())) / 1e9; }
   inline uint64_t toMonoTime(double sec) const { return sec * 1e9 + beginMonoTime(); }
   const CanData &lastMessage(const MessageId &id);
   virtual VisionStreamType visionStreamType() const { return VISION_STREAM_ROAD; }
