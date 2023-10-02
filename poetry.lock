@@ -2310,9 +2310,9 @@ waymo = ["waymo-open-dataset-tf-2.11.0 (==1.5.0)"]
 
 [package.source]
 type = "git"
-url = "https://github.com/commaai/metadrive.git"
-reference = "main"
-resolved_reference = "d8e699bc3c4789731479da8e4df81c4caf2ef38d"
+url = "https://github.com/metadriverse/metadrive.git"
+reference = "72e842cd1d025bf676e4af8797a01e4aa282109f"
+resolved_reference = "72e842cd1d025bf676e4af8797a01e4aa282109f"
 
 [[package]]
 name = "mpld3"
@@ -5149,4 +5149,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "1709b10eebcd3097d9e075bad28209f65ccd96285c4925e29d68cd87db97874a"
+content-hash = "48fed6a24656563c5241635830c4a479f30329ca29d255df50215ea3f14f285e"

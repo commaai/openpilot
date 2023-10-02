@@ -49,8 +49,12 @@ class SimulatorState:
 
     self.user_gas: float = 0
     self.user_brake: float = 0
+    self.user_torque: float = 0
 
     self.cruise_button = 0
+
+    self.left_blinker = False
+    self.right_blinker = False
 
   @property
   def speed(self):

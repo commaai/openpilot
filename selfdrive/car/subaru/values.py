@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from enum import Enum, IntFlag
+from enum import Enum, IntFlag, StrEnum
 from typing import Dict, List, Union
 
 from cereal import car
@@ -63,7 +63,7 @@ class CanBus:
   camera = 2
 
 
-class CAR:
+class CAR(StrEnum):
   # Global platform
   ASCENT = "SUBARU ASCENT LIMITED 2019"
   ASCENT_2023 = "SUBARU ASCENT 2023"
