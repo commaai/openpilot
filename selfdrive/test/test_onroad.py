@@ -13,7 +13,7 @@ from pathlib import Path
 
 from cereal import car
 import cereal.messaging as messaging
-from cereal.services import service_list
+from cereal.services import SERVICE_LIST
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.timeout import Timeout
 from openpilot.common.params import Params
@@ -179,7 +179,7 @@ class TestOnroad(unittest.TestCase):
         continue
 
       with self.subTest(service=s):
-        assert len(msgs) >= math.floor(service_list[s].frequency*55)
+        assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*55)
 
   def test_cloudlog_size(self):
     msgs = [m for m in self.lr if m.which() == 'logMessage']
@@ -356,7 +356,7 @@ class TestOnroad(unittest.TestCase):
         raise Exception(f"missing {s}")
 
       ts = np.diff(msgs) / 1e9
-      dt = 1 / service_list[s].frequency
+      dt = 1 / SERVICE_LIST[s].frequency
 
       try:
         np.testing.assert_allclose(np.mean(ts), dt, rtol=0.03, err_msg=f"{s} - failed mean timing check")
