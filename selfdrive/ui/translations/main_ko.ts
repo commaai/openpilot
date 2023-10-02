@@ -1027,14 +1027,6 @@ This may take up to a minute.</source>
         <translation>운전자 카메라의 영상 데이터를 업로드하여 운전자 모니터링 알고리즘을 개선합니다.</translation>
     </message>
     <message>
-        <source>Disengage on Accelerator Pedal</source>
-        <translation>가속페달 조작 시 해제</translation>
-    </message>
-    <message>
-        <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>활성화된 경우 가속 페달을 밟으면 openpilot이 해제됩니다.</translation>
-    </message>
-    <message>
         <source>Show ETA in 24h Format</source>
         <translation>24시간 형식으로 도착 예정 시간 표시</translation>
     </message>

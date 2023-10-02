@@ -1023,14 +1023,6 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
         <translation>Mode expérimental</translation>
     </message>
     <message>
-        <source>Disengage on Accelerator Pedal</source>
-        <translation>Désengager avec la pédale d&apos;accélérateur</translation>
-    </message>
-    <message>
-        <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>Lorsqu&apos;il est activé, appuyer sur la pédale d&apos;accélérateur désengagera openpilot.</translation>
-    </message>
-    <message>
         <source>Enable Lane Departure Warnings</source>
         <translation>Activer les avertissements de sortie de voie</translation>
     </message>

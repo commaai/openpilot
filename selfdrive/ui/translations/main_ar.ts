@@ -1047,14 +1047,6 @@ This may take up to a minute.</source>
         <translation>تحميل البيانات من الكاميرا المواجهة للسائق، والمساعدة في تحسين خوارزمية مراقبة السائق.</translation>
     </message>
     <message>
-        <source>Disengage on Accelerator Pedal</source>
-        <translation>فك الارتباط عن دواسة الوقود</translation>
-    </message>
-    <message>
-        <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>عند تمكين هذه الميزة، فإن الضغط على دواسة الوقود سيؤدي إلى فك ارتباط openpilot.</translation>
-    </message>
-    <message>
         <source>Show ETA in 24h Format</source>
         <translation>إظهار الوقت المقدر للوصول بصيغة 24 ساعة</translation>
     </message>

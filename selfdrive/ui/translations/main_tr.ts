@@ -1025,10 +1025,6 @@ This may take up to a minute.</source>
         <translation>Sürücüye bakan kamera verisini yükleyin ve Cihazın algoritmasını geliştirmemize yardımcı olun.</translation>
     </message>
     <message>
-        <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>Aktifleştirilirse eğer gaz pedalına basınca openpilot devre dışı kalır.</translation>
-    </message>
-    <message>
         <source>Show ETA in 24h Format</source>
         <translation>Tahmini varış süresini 24 saat formatı şeklinde göster</translation>
     </message>
@@ -1054,10 +1050,6 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Experimental Mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disengage on Accelerator Pedal</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

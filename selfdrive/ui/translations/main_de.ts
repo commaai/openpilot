@@ -1031,10 +1031,6 @@ This may take up to a minute.</source>
         <translation>Lade Daten der Fahreraufmerksamkeitsüberwachungskamera hoch, um die Fahreraufmerksamkeitsüberwachungsalgorithmen zu verbessern.</translation>
     </message>
     <message>
-        <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>Wenn aktiviert, deaktiviert sich Openpilot sobald das Gaspedal betätigt wird.</translation>
-    </message>
-    <message>
         <source>Use 24h format instead of am/pm</source>
         <translation>Benutze das 24Stunden Format anstatt am/pm</translation>
     </message>
@@ -1055,10 +1051,6 @@ This may take up to a minute.</source>
     <message>
         <source>Experimental Mode</source>
         <translation>Experimenteller Modus</translation>
-    </message>
-    <message>
-        <source>Disengage on Accelerator Pedal</source>
-        <translation>Bei Gasbetätigung ausschalten</translation>
     </message>
     <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>

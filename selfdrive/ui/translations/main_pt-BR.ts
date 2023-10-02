@@ -1031,14 +1031,6 @@ Isso pode levar até um minuto.</translation>
         <translation>Upload dados da câmera voltada para o motorista e ajude a melhorar o algoritmo de monitoramentor.</translation>
     </message>
     <message>
-        <source>Disengage on Accelerator Pedal</source>
-        <translation>Desacionar com Pedal do Acelerador</translation>
-    </message>
-    <message>
-        <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>Quando ativado, pressionar o pedal do acelerador desacionará o openpilot.</translation>
-    </message>
-    <message>
         <source>Show ETA in 24h Format</source>
         <translation>Mostrar ETA em Formato 24h</translation>
     </message>

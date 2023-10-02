@@ -1027,14 +1027,6 @@ This may take up to a minute.</source>
         <translation>อัปโหลดข้อมูลจากกล้องที่หันหน้าไปทางคนขับ และช่วยปรับปรุงอัลกอริธึมการตรวจสอบผู้ขับขี่</translation>
     </message>
     <message>
-        <source>Disengage on Accelerator Pedal</source>
-        <translation>ยกเลิกระบบช่วยขับเมื่อเหยียบคันเร่ง</translation>
-    </message>
-    <message>
-        <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>เมื่อเปิดใช้งาน การกดแป้นคันเร่งจะเป็นการยกเลิกระบบช่วยขับโดย openpilot</translation>
-    </message>
-    <message>
         <source>Show ETA in 24h Format</source>
         <translation>แสดงเวลา ETA ในรูปแบบ 24 ชั่วโมง</translation>
     </message>

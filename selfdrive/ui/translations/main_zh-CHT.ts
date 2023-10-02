@@ -1027,14 +1027,6 @@ This may take up to a minute.</source>
         <translation>上傳駕駛監控的錄影來協助我們提升駕駛監控的準確率。</translation>
     </message>
     <message>
-        <source>Disengage on Accelerator Pedal</source>
-        <translation>油門取消控車</translation>
-    </message>
-    <message>
-        <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>啟用後，踩踏油門將會取消 openpilot 控制。</translation>
-    </message>
-    <message>
         <source>Show ETA in 24h Format</source>
         <translation>預計到達時間單位改用 24 小時制</translation>
     </message>

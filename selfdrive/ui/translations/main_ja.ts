@@ -1025,14 +1025,6 @@ This may take up to a minute.</source>
         <translation>車内カメラの映像をアップロードし、ドライバー監視システムのアルゴリズムの向上に役立てます。</translation>
     </message>
     <message>
-        <source>Disengage on Accelerator Pedal</source>
-        <translation>ｱｸｾﾙを踏むと openpilot を中断</translation>
-    </message>
-    <message>
-        <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>この機能を有効化すると、openpilotを利用中にアクセルを踏むとopenpilotによる運転サポートを中断します。</translation>
-    </message>
-    <message>
         <source>Show ETA in 24h Format</source>
         <translation>24時間表示</translation>
     </message>
