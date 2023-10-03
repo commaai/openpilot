@@ -242,7 +242,7 @@ jobs:
     - name: Run regen
       timeout-minutes: 30
       run: |
-        ${{ env.RUN }} "selfdrive/test/process_replay/regen_all.py -j$(nproc) --no-upload --whitelist-cars TOYOTA FORD"
+        ${{ env.RUN }} "CI=1 coverage run selfdrive/test/process_replay/regen_all.py -j$(nproc) --no-upload --whitelist-cars TOYOTA FORD"
 
   test_modeld:
     name: model tests
