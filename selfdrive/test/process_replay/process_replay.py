@@ -204,7 +204,7 @@ class ProcessContainer:
   def _setup_vision_ipc(self, all_msgs):
     assert len(self.cfg.vision_pubs) != 0
 
-    device_type = next(msg.initData.deviceType for msg in all_msgs if msg.which() == "initData")
+    device_type = next(str(msg.initData.deviceType) for msg in all_msgs if msg.which() == "initData")
 
     vipc_server = VisionIpcServer("camerad")
     streams_metas = available_streams(all_msgs)
@@ -214,6 +214,7 @@ class ProcessContainer:
     vipc_server.start_listener()
 
     self.vipc_server = vipc_server
+    self.cfg.vision_pubs = [meta.camera_state for meta in streams_metas if meta.camera_state in self.cfg.vision_pubs]
 
   def _start_process(self):
     if self.capture is not None:
@@ -393,9 +394,8 @@ class ModeldCameraSyncRcvCallback:
     self.is_dual_camera = True
 
   def __call__(self, msg, cfg, frame):
-    if msg.which() == "initData":
-      self.is_dual_camera = msg.initData.deviceType in ["tici", "tizi"]
-    elif msg.which() == "roadCameraState":
+    self.is_dual_camera = len(cfg.vision_pubs) == 2
+    if msg.which() == "roadCameraState":
       self.road_present = True
     elif msg.which() == "wideRoadCameraState":
       self.wide_road_present = True
@@ -681,14 +681,13 @@ def _replay_multi_process(
     env_config = generate_environ_config(CP=CP)
 
   # validate frs and vision pubs
-  for cfg in cfgs:
-    if len(cfg.vision_pubs) == 0:
-      continue
-
+  all_vision_pubs = [pub for cfg in cfgs for pub in cfg.vision_pubs]
+  if len(all_vision_pubs) != 0:
     assert frs is not None, "frs must be provided when replaying process using vision streams"
-    assert all(meta_from_camera_state(st) is not None for st in cfg.vision_pubs),\
-                                                     f"undefined vision stream spotted, probably misconfigured process: {cfg.vision_pubs}"
-    assert all(st in frs for st in cfg.vision_pubs), f"frs for this process must contain following vision streams: {cfg.vision_pubs}"
+    assert all(meta_from_camera_state(st) is not None for st in all_vision_pubs), \
+                                                          f"undefined vision stream spotted, probably misconfigured process: (vision pubs: {all_vision_pubs})"
+    required_vision_pubs = {m.camera_state for m in available_streams(lr)} & set(all_vision_pubs)
+    assert all(st in frs for st in required_vision_pubs), f"frs for this process must contain following vision streams: {required_vision_pubs}"
 
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   log_msgs = []
