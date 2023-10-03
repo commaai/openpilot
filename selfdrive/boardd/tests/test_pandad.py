@@ -17,6 +17,9 @@ HERE = os.path.dirname(os.path.realpath(__file__))
 
 class TestPandad(unittest.TestCase):
 
+  def setUp(self):
+    self._run_test(75)
+
   def tearDown(self):
     managed_processes['pandad'].stop()
 
@@ -86,10 +89,7 @@ class TestPandad(unittest.TestCase):
 
   @phone_only
   def test_best_case_startup_time(self):
-    # run once so we're setup
-    self._run_test()
-
-    # should be fast this time
+    # should be fast since it's already up to date
     self._run_test(8)
 
   @phone_only
