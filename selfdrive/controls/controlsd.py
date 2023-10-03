@@ -103,8 +103,6 @@ class Controls:
 
     self.joystick_mode = self.params.get_bool("JoystickDebugMode") or self.CP.notCar
 
-    self.CP.alternativeExperience = ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
-
     # read params
     self.is_metric = self.params.get_bool("IsMetric")
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
