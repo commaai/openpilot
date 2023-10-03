@@ -169,7 +169,7 @@ void ChartView::msgUpdated(MessageId id) {
 }
 
 void ChartView::manageSignals() {
-  SignalSelector dlg(tr("Mange Chart"), this);
+  SignalSelector dlg(tr("Manage Chart"), this);
   for (auto &s : sigs) {
     dlg.addSelected(s.msg_id, s.sig);
   }
