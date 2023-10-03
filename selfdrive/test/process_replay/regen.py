@@ -52,7 +52,7 @@ def setup_data_readers(route: str, sidx: int, use_route_meta: bool) -> Tuple[Log
     if len(r.camera_paths()) > sidx and r.camera_paths()[sidx] is not None:
       frs['roadCameraState'] = FrameReader(r.camera_paths()[sidx])
     if len(r.ecamera_paths()) > sidx and r.ecamera_paths()[sidx] is not None:
-      frs['wideCameraState'] = FrameReader(r.ecamera_paths()[sidx])
+      frs['wideRoadCameraState'] = FrameReader(r.ecamera_paths()[sidx])
     if len(r.dcamera_paths()) > sidx and r.dcamera_paths()[sidx] is not None:
       frs['driverCameraState'] = FrameReader(r.dcamera_paths()[sidx])
   else:
