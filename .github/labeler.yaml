@@ -1,6 +1,6 @@
 CI / testing:
   - all:
-    - changed-files: ['.github/**', '**/test_*']
+    - changed-files: ['.github/**', '**/test_*', 'Jenkinsfile']
 
 car: 
   - all:
