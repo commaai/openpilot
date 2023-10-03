@@ -287,7 +287,10 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.GENESIS_G80: HyundaiCarInfo("Genesis G80 2018-19", "All", car_parts=CarParts.common([CarHarness.hyundai_h])),
   CAR.GENESIS_G90: HyundaiCarInfo("Genesis G90 2017-18", "All", car_parts=CarParts.common([CarHarness.hyundai_c])),
-  CAR.GENESIS_GV80: HyundaiCarInfo("Genesis GV80 2023", "All", car_parts=CarParts.common([CarHarness.hyundai_m])),
+  CAR.GENESIS_GV80: [
+    HyundaiCarInfo("Genesis GV80 2021 (Middle East only)", "All", car_parts=CarParts.common([CarHarness.hyundai_m])),
+    HyundaiCarInfo("Genesis GV80 2023", "All", car_parts=CarParts.common([CarHarness.hyundai_m])),
+  ]
 }
 
 class Buttons:
@@ -2010,9 +2013,11 @@ FW_VERSIONS = {
   CAR.GENESIS_GV80: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00JX1 MFC  AT USA LHD 1.00 1.02 99211-T6110 220513',
+      b'\xf1\x00JX1 MFC  AT MES LHD 1.00 1.04 99211-T6010 200514',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00JX1_ SCC FHCUP      1.00 1.01 99110-T6100         ',
+      b'\xf1\x00JX1_ SCC -----      1.00 1.03 99110-T6000         ',
     ],
   },
   CAR.KIA_CARNIVAL_4TH_GEN: {
