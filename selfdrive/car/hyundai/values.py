@@ -1351,10 +1351,18 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [b'\xf1\x810000000000\x00'],
   },
   CAR.KONA: {
-    (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x00OS__ SCC F-CUP      1.00 1.00 95655-J9200         ', ],
-    (Ecu.abs, 0x7d1, None): [b'\xf1\x816V5RAK00018.ELF\xf1\x00\x00\x00\x00\x00\x00\x00', ],
-    (Ecu.engine, 0x7e0, None): [b'"\x01TOS-0NU06F301J02', ],
-    (Ecu.eps, 0x7d4, None): [b'\xf1\x00OS  MDPS C 1.00 1.05 56310J9030\x00 4OSDC105', ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00OS__ SCC F-CUP      1.00 1.00 95655-J9200         ',
+    ],
+    (Ecu.abs, 0x7d1, None): [
+      b'\xf1\x816V5RAK00018.ELF\xf1\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'"\x01TOS-0NU06F301J02',
+    ],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00OS  MDPS C 1.00 1.05 56310J9030\x00 4OSDC105',
+    ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00OS9 LKAS AT USA LHD 1.00 1.00 95740-J9300 g21',
       b'\xf1\x00OS9 LKAS AT USA LHD 1.00 1.00 95740-J9200 g30',
