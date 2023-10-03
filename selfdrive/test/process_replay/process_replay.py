@@ -204,7 +204,7 @@ class ProcessContainer:
   def _setup_vision_ipc(self, all_msgs):
     assert len(self.cfg.vision_pubs) != 0
 
-    device_type = next(msg.initData.deviceType for msg in all_msgs if msg.which() == "initData")
+    device_type = next(str(msg.initData.deviceType) for msg in all_msgs if msg.which() == "initData")
 
     vipc_server = VisionIpcServer("camerad")
     streams_metas = available_streams(all_msgs)
