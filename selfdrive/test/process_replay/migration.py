@@ -7,7 +7,6 @@ from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode
 def migrate_all(lr, old_logtime=False, camera_states=False):
   msgs = migrate_sensorEvents(lr, old_logtime)
   msgs = migrate_carParams(msgs, old_logtime)
-  msgs = migrate_carParams(msgs, old_logtime)
   if camera_states:
     msgs = migrate_cameraStates(msgs)
 
