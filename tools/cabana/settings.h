@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QApplication>
 #include <QByteArray>
 #include <QComboBox>
 #include <QDialog>
@@ -23,10 +22,8 @@ public:
     AlwaysBE,
   };
 
-  Settings() {}
-  QSettings::Status save();
-  void load();
-  inline static QString filePath() { return QApplication::applicationDirPath() + "/settings"; }
+  Settings();
+  ~Settings();
 
   int fps = 10;
   int max_cached_minutes = 30;
@@ -47,15 +44,13 @@ public:
   QByteArray window_state;
   QStringList recent_files;
   QByteArray message_header_state;
-  DragDirection drag_direction;
+  DragDirection drag_direction = MsbFirst;
 
 signals:
   void changed();
 };
 
 class SettingsDlg : public QDialog {
-  Q_OBJECT
-
 public:
   SettingsDlg(QWidget *parent);
   void save();
