@@ -214,6 +214,7 @@ class ProcessContainer:
     vipc_server.start_listener()
 
     self.vipc_server = vipc_server
+    self.cfg.vision_pubs = [meta.camera_state for meta in streams_metas if meta.camera_state in self.cfg.vision_pubs]
 
   def _start_process(self):
     if self.capture is not None:
@@ -393,9 +394,8 @@ class ModeldCameraSyncRcvCallback:
     self.is_dual_camera = True
 
   def __call__(self, msg, cfg, frame):
-    if msg.which() == "initData":
-      self.is_dual_camera = msg.initData.deviceType in ["tici", "tizi"]
-    elif msg.which() == "roadCameraState":
+    self.is_dual_camera = len(cfg.vision_pubs) == 2
+    if msg.which() == "roadCameraState":
       self.road_present = True
     elif msg.which() == "wideRoadCameraState":
       self.wide_road_present = True
