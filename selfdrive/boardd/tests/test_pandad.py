@@ -6,7 +6,6 @@ import unittest
 import cereal.messaging as messaging
 from cereal import log
 from openpilot.common.gpio import gpio_set, gpio_init
-from openpilot.common.params import Params
 from panda import Panda, PandaDFU, PandaProtocolMismatch
 from openpilot.selfdrive.test.helpers import phone_only
 from openpilot.selfdrive.manager.process_config import managed_processes
@@ -17,10 +16,6 @@ HERE = os.path.dirname(os.path.realpath(__file__))
 
 
 class TestPandad(unittest.TestCase):
-
-  def setUp(self):
-    self.params = Params()
-    self.start_log_state = self.params.get("PandaLogState")
 
   def tearDown(self):
     managed_processes['pandad'].stop()
@@ -38,10 +33,6 @@ class TestPandad(unittest.TestCase):
 
     if sm['peripheralState'].pandaType == log.PandaState.PandaType.unknown:
       raise Exception("boardd failed to start")
-
-    # simple check that we did something with the panda logs
-    cur_log_state = self.params.get("PandaLogState")
-    assert cur_log_state != self.start_log_state
 
   def _go_to_dfu(self):
     HARDWARE.recover_internal_panda()

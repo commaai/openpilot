@@ -252,8 +252,8 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.KIA_SELTOS: HyundaiCarInfo("Kia Seltos 2021", car_parts=CarParts.common([CarHarness.hyundai_a])),
   CAR.KIA_SPORTAGE_5TH_GEN: HyundaiCarInfo("Kia Sportage 2023", car_parts=CarParts.common([CarHarness.hyundai_n])),
   CAR.KIA_SORENTO: [
-    HyundaiCarInfo("Kia Sorento 2018", "Advanced Smart Cruise Control", video_link="https://www.youtube.com/watch?v=Fkh3s6WHJz8",
-                   car_parts=CarParts.common([CarHarness.hyundai_c])),
+    HyundaiCarInfo("Kia Sorento 2018", "Advanced Smart Cruise Control & LKAS", video_link="https://www.youtube.com/watch?v=Fkh3s6WHJz8",
+                   car_parts=CarParts.common([CarHarness.hyundai_e])),
     HyundaiCarInfo("Kia Sorento 2019", video_link="https://www.youtube.com/watch?v=Fkh3s6WHJz8", car_parts=CarParts.common([CarHarness.hyundai_e])),
   ],
   CAR.KIA_SORENTO_4TH_GEN: HyundaiCarInfo("Kia Sorento 2021-23", car_parts=CarParts.common([CarHarness.hyundai_k])),
