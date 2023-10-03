@@ -93,7 +93,7 @@ class TestPandad:
     # should be fast this time
     self._run_test(8)
 
-  @pytest.mark.skipif(HARDWARE.get_device_type() == 'tici', "SPI test")
+  @pytest.mark.skipif(HARDWARE.get_device_type() == 'tici', reason="SPI test")
   def test_protocol_version_check(self):
     # flash old fw
     fn = os.path.join(HERE, "bootstub.panda_h7_spiv0.bin")
