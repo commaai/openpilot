@@ -59,7 +59,7 @@ class TestPandad:
 
     assert Panda.wait_for_panda(None, 10)
     if expect_mismatch:
-      with self.assertRaises(PandaProtocolMismatch):
+      with pytest.raises(PandaProtocolMismatch):
         Panda()
     else:
       with Panda() as p:
