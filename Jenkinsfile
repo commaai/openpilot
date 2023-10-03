@@ -82,7 +82,7 @@ def pcStage(String stageName, Closure body) {
     checkout scm
 
     def dockerArgs = '--user=root -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache';
-    docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .").inside(dockerArgs) {
+    docker.build("openpilot-base-cl:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base_cl .").inside(dockerArgs) {
       timeout(time: 20, unit: 'MINUTES') {
         try {
           sh "git config --global --add safe.directory '*'"
@@ -224,6 +224,12 @@ node {
           sh label: "test_models.py", script: "INTERNAL_SEG_CNT=250 INTERNAL_SEG_LIST=selfdrive/car/tests/test_models_segs.txt FILEREADER_CACHE=1 \
               pytest -n42 --dist=loadscope selfdrive/car/tests/test_models.py"
           sh label: "test_car_interfaces.py", script: "MAX_EXAMPLES=100 pytest -n42 selfdrive/car/tests/test_car_interfaces.py"
+        }
+      },
+      'simulation tests': {
+        pcStage("simulation tests", image="openpilot-base-cl") {
+          sh "scons -j30"
+          sh label: "test_metadrive_bridge.py", script: "PYTHONWARNINGS=default PYTHONPATH=$WORKSPACE python tools/sim/tests/test_metadrive_bridge.py"
         }
       },
 
