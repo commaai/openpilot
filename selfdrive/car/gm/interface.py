@@ -224,6 +224,9 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.3
       ret.centerToFront = ret.wheelbase * 0.5
       ret.tireStiffnessFactor = 1.0
+      ret.stopAccel = -0.25
+      ret.vEgoStopping = 0.1
+      ret.vEgoStarting = 0.1
       # On the Bolt, the ECM and camera independently check that you are either above 5 kph or at a stop
       # with foot on brake to allow engagement, but this platform only has that check in the camera.
       # TODO: check if this is split by EV/ICE with more platforms in the future
