@@ -175,12 +175,15 @@ class CarController:
   def create_button_messages(self, CC: car.CarControl, CS: car.CarState, use_clu11: bool):
     can_sends = []
     if use_clu11:
-      if self.frame % 2 == 0:
-        if CC.cruiseControl.cancel:
-          can_sends.append(hyundaican.create_clu11(self.packer, (self.frame // 2) + 1, CS.clu11, Buttons.CANCEL, self.CP))
-        elif CC.cruiseControl.resume:
+      if CC.cruiseControl.cancel:
+        can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL, self.CP))
+      elif CC.cruiseControl.resume:
+        # send resume at a max freq of 10Hz
+        if (self.frame - self.last_button_frame) * DT_CTRL > 0.1:
           # send 25 messages at a time to increases the likelihood of resume being accepted
-          can_sends.extend([hyundaican.create_clu11(self.packer, (self.frame // 2) + 1, CS.clu11, Buttons.RES_ACCEL, self.CP)] * 25)
+          can_sends.extend([hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.RES_ACCEL, self.CP)] * 25)
+          if (self.frame - self.last_button_frame) * DT_CTRL >= 0.15:
+            self.last_button_frame = self.frame
     else:
       if (self.frame - self.last_button_frame) * DT_CTRL > 0.25:
         # cruise cancel
