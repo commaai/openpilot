@@ -3,14 +3,17 @@ from collections import defaultdict
 from cereal import messaging
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
 from openpilot.selfdrive.car.toyota.values import EPS_SCALE
+from openpilot.selfdrive.manager.process_config import managed_processes
 from panda import Panda
 
 
-def migrate_all(lr, old_logtime=False, panda_states=False, camera_states=False):
+def migrate_all(lr, old_logtime=False, manager_states=False, panda_states=False, camera_states=False):
   msgs = migrate_sensorEvents(lr, old_logtime)
   msgs = migrate_carParams(msgs, old_logtime)
+  if manager_states:
+    msgs = migrate_managerState(msgs)
   if panda_states:
-    msgs = migrate_pandaStates(msgs, old_logtime)
+    msgs = migrate_pandaStates(msgs)
     msgs = migrate_peripheralState(msgs)
   if camera_states:
     msgs = migrate_cameraStates(msgs)
@@ -18,7 +21,21 @@ def migrate_all(lr, old_logtime=False, panda_states=False, camera_states=False):
   return msgs
 
 
-def migrate_pandaStates(lr, old_logtime=False):
+def migrate_managerState(lr):
+  all_msgs = []
+  for msg in lr:
+    if msg.which() != "managerState":
+      all_msgs.append(msg)
+      continue
+
+    new_msg = msg.as_builder()
+    new_msg.managerState.processes = [{'name': name, 'running': True} for name in managed_processes]
+    all_msgs.append(new_msg.as_reader())
+
+  return all_msgs
+
+
+def migrate_pandaStates(lr):
   all_msgs = []
   # TODO: safety param migration should be handled automatically
   safety_param_migration = {
@@ -43,8 +60,7 @@ def migrate_pandaStates(lr, old_logtime=False):
     if msg.which() == 'pandaStateDEPRECATED':
       new_msg = messaging.new_message('pandaStates', 1)
       new_msg.valid = msg.valid
-      if old_logtime:
-        new_msg.logMonoTime = msg.logMonoTime
+      new_msg.logMonoTime = msg.logMonoTime
       new_msg.pandaStates[0] = msg.pandaStateDEPRECATED
       new_msg.pandaStates[0].safetyParam = safety_param
       all_msgs.append(new_msg.as_reader())
