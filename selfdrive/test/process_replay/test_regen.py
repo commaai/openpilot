@@ -33,11 +33,11 @@ def ci_setup_data_readers(route, sidx):
 class TestRegen(unittest.TestCase):
   @parameterized.expand(TESTED_SEGMENTS)
   def test_engaged(self, case_name, segment):
-    all_procs = [p.proc_name for p in CONFIGS if p.proc_name not in EXCLUDED_PROCESSES]
+    tested_procs = [p for p in CONFIGS if p.proc_name not in EXCLUDED_PROCESSES]
 
     route, sidx = segment.rsplit("--", 1)
     lr, frs = ci_setup_data_readers(route, sidx)
-    output_logs = regen_segment(lr, frs, daemons=all_procs, disable_tqdm=True)
+    output_logs = regen_segment(lr, frs, processes=tested_procs, disable_tqdm=True)
 
     engaged = check_openpilot_enabled(output_logs)
     self.assertTrue(engaged, f"Openpilot not engaged in {case_name}")
