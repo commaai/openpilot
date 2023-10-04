@@ -44,25 +44,28 @@ def regen_segment(
   return output_logs
 
 
-def setup_data_readers(route: str, sidx: int, use_route_meta: bool) -> Tuple[LogReader, Dict[str, Any]]:
+def setup_data_readers(
+    route: str, sidx: int, use_route_meta: bool, needs_driver_cam: bool = True, needs_road_cam: bool = True
+) -> Tuple[LogReader, Dict[str, Any]]:
   if use_route_meta:
     r = Route(route)
     lr = LogReader(r.log_paths()[sidx])
     frs = {}
-    if len(r.camera_paths()) > sidx and r.camera_paths()[sidx] is not None:
+    if needs_road_cam and len(r.camera_paths()) > sidx and r.camera_paths()[sidx] is not None:
       frs['roadCameraState'] = FrameReader(r.camera_paths()[sidx])
-    if len(r.ecamera_paths()) > sidx and r.ecamera_paths()[sidx] is not None:
+    if needs_road_cam and  len(r.ecamera_paths()) > sidx and r.ecamera_paths()[sidx] is not None:
       frs['wideRoadCameraState'] = FrameReader(r.ecamera_paths()[sidx])
-    if len(r.dcamera_paths()) > sidx and r.dcamera_paths()[sidx] is not None:
+    if needs_driver_cam and len(r.dcamera_paths()) > sidx and r.dcamera_paths()[sidx] is not None:
       frs['driverCameraState'] = FrameReader(r.dcamera_paths()[sidx])
   else:
     lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
-    frs = {
-      'roadCameraState': FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc"),
-      'driverCameraState': FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/dcamera.hevc"),
-    }
-    if next((True for m in lr if m.which() == "wideRoadCameraState"), False):
-      frs['wideRoadCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/ecamera.hevc")
+    frs = {}
+    if needs_road_cam:
+      frs['roadCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
+      if next((True for m in lr if m.which() == "wideRoadCameraState"), False):
+        frs['wideRoadCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/ecamera.hevc")
+    if needs_driver_cam:
+      frs['driverCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/dcamera.hevc")
 
   return lr, frs
 
@@ -71,7 +74,10 @@ def regen_and_save(
   route: str, sidx: int, daemons: Union[str, Iterable[str]] = "all", outdir: str = FAKEDATA,
   upload: bool = False, use_route_meta: bool = False, disable_tqdm: bool = False
 ) -> str:
-  lr, frs = setup_data_readers(route, sidx, use_route_meta)
+  all_vision_pubs = {pub for d in daemons for pub in get_process_config(d).vision_pubs}
+  lr, frs = setup_data_readers(route, sidx, use_route_meta,
+                               needs_driver_cam="driverCameraState" in all_vision_pubs,
+                               needs_road_cam="roadCameraState" in all_vision_pubs or "wideRoadCameraState" in all_vision_pubs)
   output_logs = regen_segment(lr, frs, daemons, disable_tqdm=disable_tqdm)
 
   log_dir = os.path.join(outdir, time.strftime("%Y-%m-%d--%H-%M-%S--0", time.gmtime()))
