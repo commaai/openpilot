@@ -2,9 +2,12 @@
 import os
 import unittest
 
-from openpilot.tools.lib.url_file import URLFile
+from pathlib import Path
 from parameterized import parameterized
 from unittest import mock
+
+from openpilot.system.hardware.hw import Paths
+from openpilot.tools.lib.url_file import URLFile
 
 
 class TestFileDownload(unittest.TestCase):
@@ -85,6 +88,9 @@ class TestFileDownload(unittest.TestCase):
       length = URLFile(file_url).get_length()
       self.assertEqual(length, 4)
     finally:
+      tempfile_length = Path(Paths.download_cache_root()) / "ba2119904385654cb0105a2da174875f8e7648db175f202ecae6d6428b0e838f_length"
+      if tempfile_length.exists():
+        tempfile_length.unlink()
       patch_length.stop()
 
 
