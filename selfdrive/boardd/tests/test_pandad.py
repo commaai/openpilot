@@ -24,6 +24,8 @@ class TestPandad(unittest.TestCase):
     if len(Panda.list()) == 0:
       self._run_test(60)
 
+    self.assertGreater(len(Panda.list()), 0, "no pandas found...")
+
   def tearDown(self):
     managed_processes['pandad'].stop()
 
