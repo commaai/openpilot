@@ -236,6 +236,10 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
+    - name: Build base Docker image
+      run: eval "$BUILD"
+    - name: Build Docker image
+      run: eval "$BUILD_CL"
     - name: Build openpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
