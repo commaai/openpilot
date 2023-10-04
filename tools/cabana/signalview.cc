@@ -68,10 +68,7 @@ void SignalModel::refresh() {
 }
 
 SignalModel::Item *SignalModel::getItem(const QModelIndex &index) const {
-  SignalModel::Item *item = nullptr;
-  if (index.isValid()) {
-    item = (SignalModel::Item *)index.internalPointer();
-  }
+  auto item = index.isValid() ? (SignalModel::Item *)index.internalPointer() : nullptr;
   return item ? item : root.get();
 }
 
@@ -111,10 +108,9 @@ QModelIndex SignalModel::index(int row, int column, const QModelIndex &parent) c
   if (parent.isValid() && parent.column() != 0) return {};
 
   auto parent_item = getItem(parent);
-  if (parent_item && row < parent_item->children.size()) {
-    return createIndex(row, column, parent_item->children[row]);
-  }
-  return {};
+  return (parent_item && row < parent_item->children.size())
+             ? createIndex(row, column, parent_item->children[row])
+             : QModelIndex();
 }
 
 QModelIndex SignalModel::parent(const QModelIndex &index) const {
@@ -223,9 +219,7 @@ bool SignalModel::saveSignal(const cabana::Signal *origin_s, cabana::Signal &s) 
 }
 
 void SignalModel::handleMsgChanged(MessageId id) {
-  if (id.address == msg_id.address) {
-    refresh();
-  }
+  if (id.address == msg_id.address) refresh();
 }
 
 void SignalModel::handleSignalAdded(MessageId id, const cabana::Signal *sig) {

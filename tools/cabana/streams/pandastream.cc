@@ -6,8 +6,6 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
-#include "selfdrive/ui/qt/util.h"
-
 // TODO: remove clearLayout
 static void clearLayout(QLayout* layout) {
   while (layout->count() > 0) {

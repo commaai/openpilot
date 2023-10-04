@@ -427,11 +427,8 @@ MessageViewHeader::MessageViewHeader(QWidget *parent) : QHeaderView(Qt::Horizont
 void MessageViewHeader::updateFilters() {
   QMap<int, QString> filters;
   for (int i = 0; i < count(); i++) {
-    if (editors[i]) {
-      QString filter = editors[i]->text();
-      if (!filter.isEmpty()) {
-        filters[i] = filter;
-      }
+    if (editors[i] && !editors[i]->text().isEmpty()) {
+      filters[i] = editors[i]->text();
     }
   }
   emit filtersUpdated(filters);
@@ -466,11 +463,9 @@ void MessageViewHeader::updateGeometries() {
   updateHeaderPositions();
 }
 
-
 QSize MessageViewHeader::sizeHint() const {
   QSize sz = QHeaderView::sizeHint();
-  if (editors[0]) {
+  if (editors[0])
     sz.setHeight(sz.height() + editors[0]->minimumSizeHint().height() + 1);
-  }
   return sz;
 }

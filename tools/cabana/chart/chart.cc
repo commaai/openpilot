@@ -463,7 +463,7 @@ static QPixmap getDropPixmap(const QPixmap &src) {
   return px;
 }
 
-void ChartView::contextMenuEvent(QContextMenuEvent *event) { 
+void ChartView::contextMenuEvent(QContextMenuEvent *event) {
   QMenu context_menu(this);
   context_menu.addActions(menu->actions());
   context_menu.addSeparator();
@@ -536,10 +536,9 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
 void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   const auto plot_area = chart()->plotArea();
   // Scrubbing
-  if (is_scrubbing && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
-    if (plot_area.contains(ev->pos())) {
-      can->seekTo(std::clamp(chart()->mapToValue(ev->pos()).x(), 0., can->totalSeconds()));
-    }
+  if (is_scrubbing && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier) &&
+      plot_area.contains(ev->pos())) {
+    can->seekTo(std::clamp(chart()->mapToValue(ev->pos()).x(), 0., can->totalSeconds()));
   }
 
   auto rubber = findChild<QRubberBand *>();

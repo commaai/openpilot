@@ -274,13 +274,11 @@ void LogsWidget::setFilter() {
 }
 
 void LogsWidget::updateState() {
-  if (model && isVisible() && (dynamic_mode->isChecked() || model->rowCount() == 0)) {
+  if (model && isVisible() && (dynamic_mode->isChecked() || model->rowCount() == 0))
     model->updateState();
-  }
 }
 
 void LogsWidget::showEvent(QShowEvent *event) {
-  if (model && (dynamic_mode->isChecked() || model->rowCount() == 0)) {
+  if (model && (dynamic_mode->isChecked() || model->rowCount() == 0))
     model->refresh();
-  }
 }
