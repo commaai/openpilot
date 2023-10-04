@@ -17,7 +17,7 @@
 #include "tools/replay/replay.h"
 
 struct CanData {
-  void compute(const MessageId &msg_id, const uint8_t *dat, const int size, uint64_t current_ts,
+  void update(const MessageId &msg_id, const uint8_t *dat, const int size, uint64_t current_ts,
                double playback_speed, const std::vector<uint8_t> &mask);
 
   uint64_t mono_time = 0.;

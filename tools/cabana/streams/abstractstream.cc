@@ -111,7 +111,7 @@ void AbstractStream::updateLastMessages() {
 
 void AbstractStream::updateEvent(const MessageId &id, uint64_t ts, const uint8_t *data, uint8_t size) {
   std::lock_guard lk(mutex_);
-  msgs_[id].compute(id, data, size, ts, getSpeed(), masks_[id]);
+  msgs_[id].update(id, data, size, ts, getSpeed(), masks_[id]);
   new_msgs_.insert(id);
 }
 
@@ -140,7 +140,7 @@ void AbstractStream::updateLastMsgsTo(double sec) {
     });
     if (it != ev.crend()) {
       auto &m = msgs_[id];
-      m.compute(id, (*it)->dat, (*it)->size, (*it)->mono_time, getSpeed(), {});
+      m.update(id, (*it)->dat, (*it)->size, (*it)->mono_time, getSpeed(), {});
       m.count = std::distance(it, ev.crend());
     }
   }
@@ -219,7 +219,7 @@ double calc_freq(const MessageId &msg_id, uint64_t current_ts) {
 
 }  // namespace
 
-void CanData::compute(const MessageId &msg_id, const uint8_t *can_data, const int size, uint64_t current_ts,
+void CanData::update(const MessageId &msg_id, const uint8_t *can_data, const int size, uint64_t current_ts,
                       double playback_speed, const std::vector<uint8_t> &mask) {
   mono_time = current_ts;
   ++count;
