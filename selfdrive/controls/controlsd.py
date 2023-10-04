@@ -83,7 +83,7 @@ class Controls:
     if self.sm is None:
       ignore = self.sensor_packets + ['testJoystick']
       if SIMULATION:
-        ignore += ['driverCameraState', 'managerState']
+        ignore += ['driverCameraState', 'managerState', 'peripheralState']
       self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                      'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
