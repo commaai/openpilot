@@ -51,13 +51,11 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2050
 
     elif candidate == CAR.F_150_LIGHTNING_MK1:
-      # required trim only on SuperCrew
       ret.wheelbase = 3.69
       ret.steerRatio = 17.0
       ret.mass = 2729
 
     elif candidate == CAR.MUSTANG_MACH_E_MK1:
-      # required trim only on SuperCrew
       ret.wheelbase = 2.984
       ret.steerRatio = 14.6
       ret.mass = 1959
