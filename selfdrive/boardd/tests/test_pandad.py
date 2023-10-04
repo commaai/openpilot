@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import time
-import pytest
+import unittest
 
 import cereal.messaging as messaging
 from cereal import log
@@ -14,10 +14,11 @@ from openpilot.system.hardware.tici.pins import GPIO
 HERE = os.path.dirname(os.path.realpath(__file__))
 
 
-@pytest.mark.skipif(PC, reason="needs a panda")
-class TestPandad:
+class TestPandad(unittest.TestCase):
 
   def setUp(self):
+    if PC:
+      raise unittest.SkipTest("needs a panda")
     # ensure panda is up
     if len(Panda.list()) == 0:
       self._run_test(60)
@@ -59,7 +60,7 @@ class TestPandad:
 
     assert Panda.wait_for_panda(None, 10)
     if expect_mismatch:
-      with pytest.raises(PandaProtocolMismatch):
+      with self.assertRaises(PandaProtocolMismatch):
         Panda()
     else:
       with Panda() as p:
@@ -93,8 +94,9 @@ class TestPandad:
     # should be fast this time
     self._run_test(8)
 
-  @pytest.mark.skipif(HARDWARE.get_device_type() == 'tici', reason="SPI test")
   def test_protocol_version_check(self):
+    if HARDWARE.get_device_type() == 'tici':
+      raise unittest.SkipTest("SPI test")
     # flash old fw
     fn = os.path.join(HERE, "bootstub.panda_h7_spiv0.bin")
     self._flash_bootstub_and_test(fn, expect_mismatch=True)
@@ -111,3 +113,7 @@ class TestPandad:
     self._assert_no_panda()
 
     self._run_test(60)
+
+
+if __name__ == "__main__":
+  unittest.main()
