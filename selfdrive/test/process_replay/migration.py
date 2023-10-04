@@ -68,7 +68,7 @@ def migrate_pandaStates(lr):
       new_msg = msg.as_builder()
       new_msg.pandaStates[-1].safetyParam = safety_param
       # Remove deprecated no disengage on gas alt exp flag
-      new_msg.pandaStates[-1].alternativeExperience ^= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS_DEPRECATED
+      new_msg.pandaStates[-1].alternativeExperience &= ~ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS_DEPRECATED
       all_msgs.append(new_msg.as_reader())
     else:
       all_msgs.append(msg)
