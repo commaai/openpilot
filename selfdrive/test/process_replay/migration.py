@@ -59,13 +59,13 @@ def migrate_pandaStates(lr, old_logtime=False):
 
 
 def migrate_peripheralState(lr):
-  if not any(msg.which() == "peripheralState" for msg in lr):
+  if any(msg.which() == "peripheralState" for msg in lr):
     return lr
 
   all_msg = []
   for msg in lr:
     all_msg.append(msg)
-    if msg.which() != "pandaStates":
+    if msg.which() not in ["pandaStates", "pandaStateDEPRECATED"]:
       continue
 
     new_msg = messaging.new_message("peripheralState")
