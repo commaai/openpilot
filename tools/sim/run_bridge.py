@@ -15,7 +15,7 @@ def parse_args(add_args=None):
   parser.add_argument('--joystick', action='store_true')
   parser.add_argument('--high_quality', action='store_true')
   parser.add_argument('--dual_camera', action='store_true')
-  parser.add_argument('--simulator', dest='simulator', type=str, default='carla')
+  parser.add_argument('--simulator', dest='simulator', type=str, default='metadrive')
 
   # Carla specific
   parser.add_argument('--town', type=str, default='Town04_Opt')

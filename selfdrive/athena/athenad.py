@@ -40,7 +40,7 @@ from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.selfdrive.statsd import STATS_DIR
 from openpilot.system.swaglog import cloudlog
 from openpilot.system.version import get_commit, get_origin, get_short_branch, get_version
-from openpilot.selfdrive.hardware.hw import Paths
+from openpilot.system.hardware.hw import Paths
 
 
 # TODO: use socket constant when mypy recognizes this as a valid attribute
