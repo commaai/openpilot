@@ -242,7 +242,7 @@ jobs:
     - name: Run regen
       timeout-minutes: 30
       run: |
-        ${{ env.RUN }} "$PYTEST -n auto --dist=loadscope selfdrive/test/process_replay/test_regen.py"
+        ${{ env.RUN }} "ONNXCPU=1 $PYTEST -n auto --dist=loadscope selfdrive/test/process_replay/test_regen.py"
 
   test_modeld:
     name: model tests
