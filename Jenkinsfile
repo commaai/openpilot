@@ -227,7 +227,7 @@ node {
         }
       },
       'simulation tests': {
-        pcStage("simulation tests", image="openpilot-base-cl") {
+        pcStage("simulation tests") {
           sh "scons -j30"
           sh label: "test_metadrive_bridge.py", script: "PYTHONWARNINGS=default PYTHONPATH=$WORKSPACE python tools/sim/tests/test_metadrive_bridge.py"
         }
