@@ -4,7 +4,7 @@ from cereal import messaging
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
 from openpilot.selfdrive.car.toyota.values import EPS_SCALE
 from openpilot.selfdrive.manager.process_config import managed_processes
-from panda import Panda
+from panda import Panda, ALTERNATIVE_EXPERIENCE
 
 
 def migrate_all(lr, old_logtime=False, manager_states=False, panda_states=False, camera_states=False):
@@ -67,6 +67,8 @@ def migrate_pandaStates(lr):
     elif msg.which() == 'pandaStates':
       new_msg = msg.as_builder()
       new_msg.pandaStates[-1].safetyParam = safety_param
+      # Remove deprecated no disengage on gas alt exp flag
+      new_msg.pandaStates[-1].alternativeExperience ^= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS_DEPRECATED
       all_msgs.append(new_msg.as_reader())
     else:
       all_msgs.append(msg)
