@@ -112,7 +112,8 @@ class MetaDriveBridge(SimulatorBridge):
         ]
       ),
       decision_repeat=1,
-      physics_world_step_size=self.TICKS_PER_FRAME/100
+      physics_world_step_size=self.TICKS_PER_FRAME/100,
+      preload_models=False
     )
 
     return MetaDriveWorld(config)
