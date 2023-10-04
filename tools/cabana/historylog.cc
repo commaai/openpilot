@@ -128,7 +128,7 @@ size_t HistoryLogModel::fetchData(std::deque<HistoryLogModel::Message>::iterator
     msgs = fetchData(first, events.rend(), min_time);
     if ((min_time > 0 || messages.empty())) {
       for (auto it = msgs.rbegin(); it != msgs.rend(); ++it) {
-        hex_colors.compute(msg_id, it->data.data(), it->data.size(), it->mono_time / (double)1e9, speed);
+        hex_colors.compute(msg_id, it->data.data(), it->data.size(), it->mono_time / (double)1e9, speed, {});
         it->colors = hex_colors.colors;
       }
     }
@@ -136,7 +136,7 @@ size_t HistoryLogModel::fetchData(std::deque<HistoryLogModel::Message>::iterator
     auto first = std::upper_bound(events.cbegin(), events.cend(), from_time, CompareCanEvent());
     msgs = fetchData(first, events.cend(), 0);
     for (auto it = msgs.begin(); it != msgs.end(); ++it) {
-      hex_colors.compute(msg_id, it->data.data(), it->data.size(), it->mono_time / (double)1e9, speed);
+      hex_colors.compute(msg_id, it->data.data(), it->data.size(), it->mono_time / (double)1e9, speed, {});
       it->colors = hex_colors.colors;
     }
   }

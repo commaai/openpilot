@@ -45,14 +45,12 @@ void AbstractStream::updateMasks() {
     }
   }
   // clear bit change counts
-  for (const auto &[id, mask] : masks_) {
-    if (auto it = msgs_.find(id); it != msgs_.end()) {
-      auto &last_changes = it->second.last_changes;
-      const int size = std::min(mask.size(), last_changes.size());
-      for (int i = 0; i < size; ++i) {
-        for (int j = 0; j < 8; ++j) {
-          if (((mask[i] >> (7 - j)) & 1) != 0) last_changes[i].bit_change_counts[j] = 0;
-        }
+  for (auto &[id, m] : msgs_) {
+    auto &mask = masks_[id];
+    const int size = std::min(mask.size(), m.last_changes.size());
+    for (int i = 0; i < size; ++i) {
+      for (int j = 0; j < 8; ++j) {
+        if (((mask[i] >> (7 - j)) & 1) != 0) m.last_changes[i].bit_change_counts[j] = 0;
       }
     }
   }
@@ -113,9 +111,7 @@ void AbstractStream::updateLastMessages() {
 
 void AbstractStream::updateEvent(const MessageId &id, uint64_t ts, const uint8_t *data, uint8_t size) {
   std::lock_guard lk(mutex_);
-  auto mask_it = masks_.find(id);
-  std::vector<uint8_t> *mask = mask_it == masks_.end() ? nullptr : &mask_it->second;
-  msgs_[id].compute(id, data, size, ts, getSpeed(), mask);
+  msgs_[id].compute(id, data, size, ts, getSpeed(), masks_[id]);
   new_msgs_.insert(id);
 }
 
@@ -144,7 +140,7 @@ void AbstractStream::updateLastMsgsTo(double sec) {
     });
     if (it != ev.crend()) {
       auto &m = msgs_[id];
-      m.compute(id, (*it)->dat, (*it)->size, toSeconds((*it)->mono_time), getSpeed());
+      m.compute(id, (*it)->dat, (*it)->size, toSeconds((*it)->mono_time), getSpeed(), {});
       m.count = std::distance(it, ev.crend());
     }
   }
@@ -224,7 +220,7 @@ double calc_freq(const MessageId &msg_id, uint64_t current_ts) {
 }  // namespace
 
 void CanData::compute(const MessageId &msg_id, const uint8_t *can_data, const int size, uint64_t current_ts,
-                      double playback_speed, const std::vector<uint8_t> *mask) {
+                      double playback_speed, const std::vector<uint8_t> &mask) {
   mono_time = current_ts;
   ++count;
 
@@ -248,12 +244,9 @@ void CanData::compute(const MessageId &msg_id, const uint8_t *can_data, const in
     for (int i = 0; i < size; ++i) {
       auto &last_change = last_changes[i];
 
-      uint8_t mask_byte = 0xFF;
-      if (last_change.suppressed) {
-        mask_byte = 0x00;
-      } else if (mask && i < mask->size()) {
-        mask_byte = (~((*mask)[i]));
-      }
+      uint8_t mask_byte = last_change.suppressed ? 0x00 : 0xFF;
+      if (i < mask.size()) mask_byte &= ~(mask[i]);
+
       const uint8_t last = dat[i] & mask_byte;
       const uint8_t cur = can_data[i] & mask_byte;
       const int delta = cur - last;
