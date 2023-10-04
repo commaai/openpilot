@@ -73,7 +73,7 @@ class URLFile:
           return self._length
 
     self._length = self.get_length_online()
-    if not self._force_download:
+    if not self._force_download and self._length != -1:
       with atomic_write_in_dir(file_length_path, mode="w") as file_length:
         file_length.write(str(self._length))
     return self._length
