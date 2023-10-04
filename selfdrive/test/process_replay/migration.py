@@ -42,7 +42,11 @@ def migrate_cameraStates(lr):
     new_camera_state = getattr(new_msg, new_msg.which())
     new_camera_state.frameId = encode_id
     new_camera_state.encodeId = encode_id
-    new_camera_state.timestampSof = camera_state.timestampSof
+    # timestampSof was added later so it might be missing on some old segments
+    if camera_state.timestampSof == 0 and camera_state.timestampEof > 25000000:
+      new_camera_state.timestampSof = camera_state.timestampEof - 18000000
+    else:
+      new_camera_state.timestampSof = camera_state.timestampSof
     new_camera_state.timestampEof = camera_state.timestampEof
     new_msg.logMonoTime = msg.logMonoTime
     new_msg.valid = msg.valid
