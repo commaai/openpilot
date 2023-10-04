@@ -140,7 +140,7 @@ void AbstractStream::updateLastMsgsTo(double sec) {
     });
     if (it != ev.crend()) {
       auto &m = msgs_[id];
-      m.compute(id, (*it)->dat, (*it)->size, toSeconds((*it)->mono_time), getSpeed(), {});
+      m.compute(id, (*it)->dat, (*it)->size, (*it)->mono_time, getSpeed(), {});
       m.count = std::distance(it, ev.crend());
     }
   }
