@@ -10,6 +10,7 @@ from panda import Panda, PandaDFU, PandaProtocolMismatch
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.hardware.tici.pins import GPIO
+from openpilot.selfdrive.test.helpers import with_processes
 
 HERE = os.path.dirname(os.path.realpath(__file__))
 
@@ -26,16 +27,13 @@ class TestPandad(unittest.TestCase):
   def tearDown(self):
     managed_processes['pandad'].stop()
 
+  @with_processes(['pandad'])
   def _run_test(self, timeout=30):
-    managed_processes['pandad'].start()
-
     sm = messaging.SubMaster(['peripheralState'])
     for _ in range(timeout*10):
       sm.update(100)
       if sm['peripheralState'].pandaType != log.PandaState.PandaType.unknown:
         break
-
-    managed_processes['pandad'].stop()
 
     if sm['peripheralState'].pandaType == log.PandaState.PandaType.unknown:
       raise Exception("boardd failed to start")

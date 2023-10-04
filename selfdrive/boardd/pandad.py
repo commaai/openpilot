@@ -174,9 +174,10 @@ def main() -> NoReturn:
     first_run = False
 
     # run boardd with all connected serials as arguments
-    os.environ['MANAGER_DAEMON'] = 'boardd'
+    env = os.environ.copy()
+    env['MANAGER_DAEMON'] = 'boardd'
     os.chdir(os.path.join(BASEDIR, "selfdrive/boardd"))
-    subprocess.run(["./boardd", *panda_serials], check=True)
+    subprocess.run(["./boardd", *panda_serials], check=True, env=env)
 
 if __name__ == "__main__":
   main()

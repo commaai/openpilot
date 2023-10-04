@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
+import copy
 import unittest
+from unittest import mock
 
 from cereal import car, log
 from openpilot.common.realtime import DT_CTRL
@@ -17,6 +19,7 @@ ALL_STATES = tuple(State.schema.enumerants.values())
 # The event types checked in DISABLED section of state machine
 ENABLE_EVENT_TYPES = (ET.ENABLE, ET.PRE_ENABLE, ET.OVERRIDE_LATERAL, ET.OVERRIDE_LONGITUDINAL)
 
+EVENTS = copy.copy(EVENTS)
 
 def make_event(event_types):
   event = {}
@@ -27,6 +30,7 @@ def make_event(event_types):
   return 0
 
 
+@mock.patch("openpilot.selfdrive.controls.lib.events.EVENTS", EVENTS)
 class TestStateMachine(unittest.TestCase):
 
   def setUp(self):
