@@ -18,7 +18,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.radarUnavailable = True
     ret.steerControlType = car.CarParams.SteerControlType.angle
-    ret.steerActuatorDelay = 0.2
+    ret.steerActuatorDelay = 0.25
     ret.steerLimitTimer = 1.0
 
     CAN = CanBus(fingerprint=fingerprint)
@@ -64,7 +64,7 @@ class CarInterface(CarInterfaceBase):
       # required trim only on SuperCrew
       ret.wheelbase = 3.69
       ret.steerRatio = 17.0
-      ret.mass = 2000
+      ret.mass = 2728
 
     elif candidate == CAR.FOCUS_MK4:
       ret.wheelbase = 2.7

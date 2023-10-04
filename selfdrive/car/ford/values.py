@@ -230,20 +230,8 @@ FW_VERSIONS = {
     ],
   },
   CAR.F_150_MK14: {
-    (Ecu.eps, 0x730, None): [
-      b'ML3V-14D003-BC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.abs, 0x760, None): [
-      b'PL34-2D053-CA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdRadar, 0x764, None): [
-      b'ML3T-14D049-AL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdCamera, 0x706, None): [
-      b'PJ6T-14H102-ABJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.engine, 0x7E0, None): [
-      b'PL3A-14C204-BRB\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    (Ecu.shiftByWire, 0x732, None): [
+      b'ML3P-7P470-AK\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.FOCUS_MK4: {
