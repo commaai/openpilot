@@ -7,7 +7,7 @@ set -e
 
 export CI=1
 export PYTHONWARNINGS=error
-export LOGPRINT=info
+export LOGPRINT=debug
 export TEST_DIR=${env.TEST_DIR}
 export SOURCE_DIR=${env.SOURCE_DIR}
 export GIT_BRANCH=${env.GIT_BRANCH}
