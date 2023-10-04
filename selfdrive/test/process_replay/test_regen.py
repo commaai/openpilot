@@ -12,8 +12,8 @@ from openpilot.tools.lib.framereader import FrameReader
 
 EXCLUDED_PROCESSES = {"dmonitoringd", "dmonitoringmodeld"}
 TESTED_SEGMENTS = [
-  "0982d79ebb0de295|2021-01-04--17-13-21--13", # TOYOTA PRIUS 2017:     EON, pandaStateDEPRECATED, no peripheralState, sensorEventsDEPRECATED
-  "54827bf84c38b14f|2023-01-26--21-59-07--4"   # FORD.BRONCO_SPORT_MK1: TICI
+  ("PRIUS_C2", "0982d79ebb0de295|2021-01-04--17-13-21--13"), # TOYOTA PRIUS 2017:     EON, pandaStateDEPRECATED, no peripheralState, sensorEventsDEPRECATED
+  ("FORD_C3", "54827bf84c38b14f|2023-01-26--21-59-07--4")   # FORD.BRONCO_SPORT_MK1: TICI
 ]
 
 
@@ -31,7 +31,7 @@ def ci_setup_data_readers(route, sidx):
 
 class TestRegen(unittest.TestCase):
   @parameterized.expand(TESTED_SEGMENTS)
-  def test_engaged(self, segment):
+  def test_engaged(self, case_name, segment):
     all_procs = [p.proc_name for p in CONFIGS if p.proc_name not in EXCLUDED_PROCESSES]
 
     route, sidx = segment.rsplit("--", 1)
@@ -39,7 +39,7 @@ class TestRegen(unittest.TestCase):
     output_logs = regen_segment(lr, frs, daemons=all_procs, disable_tqdm=True)
 
     engaged = check_openpilot_enabled(output_logs)
-    self.assertTrue(engaged, f"Openpilot not engaged in {segment}")
+    self.assertTrue(engaged, f"Openpilot not engaged in {case_name}")
 
 
 if __name__=='__main__':
