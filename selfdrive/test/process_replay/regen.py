@@ -6,8 +6,8 @@ import capnp
 
 from typing import Union, Iterable, Optional, List, Any, Dict, Tuple
 
-from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, replay_process, get_process_config, \
-                                                        check_openpilot_enabled, get_custom_params_from_lr
+from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, ProcessConfig, replay_process, get_process_config, \
+                                                                   check_openpilot_enabled, get_custom_params_from_lr
 from openpilot.selfdrive.test.update_ci_routes import upload_route
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.framereader import FrameReader
@@ -17,29 +17,15 @@ from openpilot.tools.lib.helpers import save_log
 
 def regen_segment(
   lr: Union[LogReader, List[capnp._DynamicStructReader]], frs: Optional[Dict[str, Any]] = None,
-  daemons: Union[str, Iterable[str]] = "all", disable_tqdm: bool = False
+  processes: Iterable[ProcessConfig] = CONFIGS, disable_tqdm: bool = False
 ) -> List[capnp._DynamicStructReader]:
-  if not isinstance(daemons, str) and not hasattr(daemons, "__iter__"):
-    raise ValueError("whitelist_proc must be a string or iterable")
-
   all_msgs = sorted(lr, key=lambda m: m.logMonoTime)
   custom_params = get_custom_params_from_lr(all_msgs)
 
-  if daemons != "all":
-    if isinstance(daemons, str):
-      raise ValueError(f"Invalid value for daemons: {daemons}")
-
-    replayed_processes = []
-    for d in daemons:
-      cfg = get_process_config(d)
-      replayed_processes.append(cfg)
-  else:
-    replayed_processes = CONFIGS
-
-  print("Replayed processes:", [p.proc_name for p in replayed_processes])
+  print("Replayed processes:", [p.proc_name for p in processes])
   print("\n\n", "*"*30, "\n\n", sep="")
 
-  output_logs = replay_process(replayed_processes, all_msgs, frs, return_all_logs=True, custom_params=custom_params, disable_progress=disable_tqdm)
+  output_logs = replay_process(processes, all_msgs, frs, return_all_logs=True, custom_params=custom_params, disable_progress=disable_tqdm)
 
   return output_logs
 
@@ -71,14 +57,28 @@ def setup_data_readers(
 
 
 def regen_and_save(
-  route: str, sidx: int, daemons: Union[str, Iterable[str]] = "all", outdir: str = FAKEDATA,
+  route: str, sidx: int, processes: Union[str, Iterable[str]] = "all", outdir: str = FAKEDATA,
   upload: bool = False, use_route_meta: bool = False, disable_tqdm: bool = False
 ) -> str:
-  all_vision_pubs = {pub for d in daemons for pub in get_process_config(d).vision_pubs}
+  if not isinstance(processes, str) and not hasattr(processes, "__iter__"):
+    raise ValueError("whitelist_proc must be a string or iterable")
+
+  if processes != "all":
+    if isinstance(processes, str):
+      raise ValueError(f"Invalid value for processes: {processes}")
+
+    replayed_processes = []
+    for d in processes:
+      cfg = get_process_config(d)
+      replayed_processes.append(cfg)
+  else:
+    replayed_processes = CONFIGS
+
+  all_vision_pubs = {pub for cfg in replayed_processes for pub in cfg.vision_pubs}
   lr, frs = setup_data_readers(route, sidx, use_route_meta,
                                needs_driver_cam="driverCameraState" in all_vision_pubs,
                                needs_road_cam="roadCameraState" in all_vision_pubs or "wideRoadCameraState" in all_vision_pubs)
-  output_logs = regen_segment(lr, frs, daemons, disable_tqdm=disable_tqdm)
+  output_logs = regen_segment(lr, frs, replayed_processes, disable_tqdm=disable_tqdm)
 
   log_dir = os.path.join(outdir, time.strftime("%Y-%m-%d--%H-%M-%S--0", time.gmtime()))
   rel_log_dir = os.path.relpath(log_dir)
@@ -116,5 +116,5 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   blacklist_set = set(args.blacklist_procs)
-  daemons = [p for p in args.whitelist_procs if p not in blacklist_set]
-  regen_and_save(args.route, args.seg, daemons=daemons, upload=args.upload, outdir=args.outdir)
+  processes = [p for p in args.whitelist_procs if p not in blacklist_set]
+  regen_and_save(args.route, args.seg, processes=processes, upload=args.upload, outdir=args.outdir)
