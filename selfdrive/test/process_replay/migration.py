@@ -11,10 +11,12 @@ def migrate_all(lr, old_logtime=False, panda_states=False, camera_states=False):
   msgs = migrate_carParams(msgs, old_logtime)
   if panda_states:
     msgs = migrate_pandaStates(msgs, old_logtime)
+    msgs = migrate_peripheralState(msgs)
   if camera_states:
     msgs = migrate_cameraStates(msgs)
 
   return msgs
+
 
 def migrate_pandaStates(lr, old_logtime=False):
   all_msgs = []
@@ -54,6 +56,24 @@ def migrate_pandaStates(lr, old_logtime=False):
       all_msgs.append(msg)
 
   return all_msgs
+
+
+def migrate_peripheralState(lr):
+  if not any(msg.which() == "peripheralState" for msg in lr):
+    return lr
+
+  all_msg = []
+  for msg in lr:
+    all_msg.append(msg)
+    if msg.which() != "pandaStates":
+      continue
+
+    new_msg = messaging.new_message("peripheralState")
+    new_msg.logMonoTime = msg.logMonoTime
+    all_msg.append(new_msg.as_reader())
+
+  return all_msg
+
 
 def migrate_cameraStates(lr):
   all_msgs = []
