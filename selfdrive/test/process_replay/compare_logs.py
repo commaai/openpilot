@@ -67,8 +67,8 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
   for msg2 in log2:
     msgs_by_which_log2[msg2.which()].append(msg2)
 
-  if set(msgs_by_which_log1.keys()) != set(msgs_by_which_log2.keys()):
-    raise Exception(f"logs are missing service keys: {set(msgs_by_which_log1.keys()) ^ set(msgs_by_which_log2.keys())}")
+  if set(msgs_by_which_log1) != set(msgs_by_which_log2):
+    raise Exception(f"logs service keys don't match:\n\t\t{set(msgs_by_which_log1)}\n\t\t{set(msgs_by_which_log2)}")
 
   diff = []
   print('IGNORE', ignore_fields)
