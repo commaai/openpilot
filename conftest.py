@@ -24,6 +24,7 @@ def openpilot_function_fixture():
   # setup a clean environment for each test
   with OpenpilotPrefix():
     yield
+
   os.environ.clear()
   os.environ.update(starting_env)
 
