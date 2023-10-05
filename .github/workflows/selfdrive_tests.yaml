@@ -252,8 +252,7 @@ jobs:
     - name: Run regen
       timeout-minutes: 30
       run: |
-        ${{ env.RUN_CL }} "unset PYTHONWARNINGS && \
-                           ONNXCPU=1 $PYTEST -n auto --dist=loadscope selfdrive/test/process_replay/test_regen.py && \
+        ${{ env.RUN_CL }} "ONNXCPU=1 $PYTEST -n auto --dist=loadscope selfdrive/test/process_replay/test_regen.py && \
                            chmod -R 777 /tmp/comma_download_cache"
 
   test_modeld:
