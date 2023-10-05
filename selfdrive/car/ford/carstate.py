@@ -26,7 +26,7 @@ class CarState(CarStateBase):
     # Hybrid variants experience a bug where a message from the PCM sends invalid checksums,
     # we do not support these cars at this time.
     # TrnAin_Tq_Actl and its quality flag are only set on ICE platform variants
-    if self.CP.carFingerprint in FORD_EV
+    if self.CP.carFingerprint in FORD_EV:
       self.hybrid_platform = False
     else:
       self.hybrid_platform = cp.vl["VehicleOperatingModes"]["TrnAinTq_D_Qf"] == 0
