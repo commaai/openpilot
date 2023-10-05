@@ -179,7 +179,8 @@ void ChartView::manageSignals() {
       addSignal(s->msg_id, s->sig);
     }
     removeIf([&](auto &s) {
-      return std::none_of(items.cbegin(), items.cend(), [&](auto &it) { return s.msg_id == it->msg_id && s.sig == it->sig; });
+      return std::none_of(items.cbegin(), items.cend(),
+                          [&](auto &it) { return s.msg_id == it->msg_id && s.sig == it->sig; });
     });
   }
 }

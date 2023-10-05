@@ -136,13 +136,8 @@ void MessagesWidget::selectMessage(const MessageId &msg_id) {
 }
 
 void MessagesWidget::updateSuppressedButtons(size_t n) {
-  if (!n) {
-    suppress_clear->setEnabled(false);
-    suppress_clear->setText("&Clear");
-  } else {
-    suppress_clear->setEnabled(true);
-    suppress_clear->setText(QString("&Clear (%1)").arg(n));
-  }
+  suppress_clear->setEnabled(n > 0);
+  suppress_clear->setText(n > 0 ? tr("&Clear (%1)").arg(n) : tr("&Clear"));
 }
 
 // MessageListModel
@@ -391,23 +386,18 @@ void MessageView::updateBytesSectionSize() {
 
 void MessageView::headerContextMenuEvent(const QPoint &pos) {
   QMenu menu(this);
-  int cur_index = header()->logicalIndexAt(pos);
 
-  QAction *action;
+  int cur_index = header()->logicalIndexAt(pos);
   for (int visual_index = 0; visual_index < header()->count(); visual_index++) {
     int logical_index = header()->logicalIndex(visual_index);
     QString column_name = model()->headerData(logical_index, Qt::Horizontal).toString();
 
     // Hide show action
-    if (header()->isSectionHidden(logical_index)) {
-      action = menu.addAction(tr("  %1").arg(column_name), [=]() { header()->showSection(logical_index); });
-    } else {
-      action = menu.addAction(tr("✓ %1").arg(column_name), [=]() { header()->hideSection(logical_index); });
-    }
-
+    auto action = header()->isSectionHidden(logical_index)
+                      ? menu.addAction(tr("  %1").arg(column_name), [=]() { header()->showSection(logical_index); })
+                      : menu.addAction(tr("✓ %1").arg(column_name), [=]() { header()->hideSection(logical_index); });
     // Can't hide the name column
     action->setEnabled(logical_index > 0);
-
     // Make current column bold
     if (logical_index == cur_index) {
       QFont font = action->font();

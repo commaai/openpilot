@@ -424,9 +424,8 @@ void MainWindow::closeFile(DBCFile *dbc_file) {
   remindSaveChanges();
   dbc()->close(dbc_file);
   // Ensure we always have at least one file open
-  if (dbc()->dbcCount() == 0) {
+  if (dbc()->dbcCount() == 0)
     newFile();
-  }
 }
 
 void MainWindow::saveFile(DBCFile *dbc_file) {
@@ -469,11 +468,8 @@ void MainWindow::saveFileToClipboard(DBCFile *dbc_file) {
 
 void MainWindow::updateLoadSaveMenus() {
   int cnt = dbc()->nonEmptyDBCCount();
-  if (cnt > 1) {
-    save_dbc->setText(tr("Save %1 DBCs...").arg(dbc()->dbcCount()));
-  } else {
-    save_dbc->setText(tr("Save DBC..."));
-  }
+  save_dbc->setText(cnt > 1 ? tr("Save %1 DBCs...").arg(dbc()->dbcCount())
+                            : tr("Save DBC..."));
   save_dbc->setEnabled(cnt > 0);
   save_dbc_as->setEnabled(cnt == 1);
 
