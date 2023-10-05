@@ -3,7 +3,6 @@ import sys
 import math
 import capnp
 import numbers
-import argparse
 import dictdiffer
 from collections import Counter
 from typing import Dict
@@ -131,17 +130,11 @@ def format_diff(results, log_paths, ref_commit):
 
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="Print diff between two logs",
-                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-  parser.add_argument("log1")
-  parser.add_argument("log2")
-  parser.add_argument("--ignore-fields", nargs="+", default=["logMonoTime", "controlsState.startMonoTime", "controlsState.cumLagMs"])
-  args = parser.parse_args()
-
-  log1 = list(LogReader(args.log1))
-  log2 = list(LogReader(args.log2))
-  results = {"segment": {"proc": compare_logs(log1, log2, args.ignore_fields)}}
-  log_paths = {"segment": {"proc": {"ref": args.log1, "new": args.log2}}}
+  log1 = list(LogReader(sys.argv[1]))
+  log2 = list(LogReader(sys.argv[2]))
+  ignore_fields = sys.argv[3:] or ["logMonoTime", "controlsState.startMonoTime", "controlsState.cumLagMs"]
+  results = {"segment": {"proc": compare_logs(log1, log2, ignore_fields)}}
+  log_paths = {"segment": {"proc": {"ref": sys.argv[1], "new": sys.argv[2]}}}
   diff1, diff2, failed = format_diff(results, log_paths, None)
 
   print(diff2)
