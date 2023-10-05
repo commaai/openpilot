@@ -211,26 +211,26 @@ void MessageListModel::sortMessages(std::vector<MessageId> &new_msgs) {
     });
   } else if (sort_column == Column::SOURCE) {
     std::sort(new_msgs.begin(), new_msgs.end(), [=](auto &l, auto &r) {
-      auto ll = std::pair{l.source, l};
-      auto rr = std::pair{r.source, r};
+      auto ll = std::tie(l.source, l);
+      auto rr = std::tie(r.source, r);
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   } else if (sort_column == Column::ADDRESS) {
     std::sort(new_msgs.begin(), new_msgs.end(), [=](auto &l, auto &r) {
-      auto ll = std::pair{l.address, l};
-      auto rr = std::pair{r.address, r};
+      auto ll = std::tie(l.address, l);
+      auto rr = std::tie(r.address, r);
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   } else if (sort_column == Column::FREQ) {
     std::sort(new_msgs.begin(), new_msgs.end(), [=](auto &l, auto &r) {
-      auto ll = std::pair{can->lastMessage(l).freq, l};
-      auto rr = std::pair{can->lastMessage(r).freq, r};
+      auto ll = std::tie(can->lastMessage(l).freq, l);
+      auto rr = std::tie(can->lastMessage(r).freq, r);
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   } else if (sort_column == Column::COUNT) {
     std::sort(new_msgs.begin(), new_msgs.end(), [=](auto &l, auto &r) {
-      auto ll = std::pair{can->lastMessage(l).count, l};
-      auto rr = std::pair{can->lastMessage(r).count, r};
+      auto ll = std::tie(can->lastMessage(l).count, l);
+      auto rr = std::tie(can->lastMessage(r).count, r);
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   }
