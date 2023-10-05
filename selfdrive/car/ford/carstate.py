@@ -27,6 +27,7 @@ class CarState(CarStateBase):
     # we do not support these cars at this time.
     # TrnAin_Tq_Actl and its quality flag are only set on ICE platform variants
     # EVs have not experienced this same issue but have the flag. Defaulting to false for now.
+
     if self.CP.carFingerprint in FORD_EV:
       self.hybrid_platform = False
     else:

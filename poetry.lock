@@ -3479,8 +3479,6 @@ files = [
     {file = "pygame-2.5.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0e24d05184e4195fe5ebcdce8b18ecb086f00182b9ae460a86682d312ce8d31f"},
     {file = "pygame-2.5.2-cp311-cp311-win32.whl", hash = "sha256:f02c1c7505af18d426d355ac9872bd5c916b27f7b0fe224749930662bea47a50"},
     {file = "pygame-2.5.2-cp311-cp311-win_amd64.whl", hash = "sha256:6d58c8cf937815d3b7cdc0fa9590c5129cb2c9658b72d00e8a4568dea2ff1d42"},
-    {file = "pygame-2.5.2-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:1a2a43802bb5e89ce2b3b775744e78db4f9a201bf8d059b946c61722840ceea8"},
-    {file = "pygame-2.5.2-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:1c289f2613c44fe70a1e40769de4a49c5ab5a29b9376f1692bb1a15c9c1c9bfa"},
     {file = "pygame-2.5.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:074aa6c6e110c925f7f27f00c7733c6303407edc61d738882985091d1eb2ef17"},
     {file = "pygame-2.5.2-cp312-cp312-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:fe0228501ec616779a0b9c4299e837877783e18df294dd690b9ab0eed3d8aaab"},
     {file = "pygame-2.5.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:31648d38ecdc2335ffc0e38fb18a84b3339730521505dac68514f83a1092e3f4"},
@@ -3878,6 +3876,20 @@ files = [
 [package.dependencies]
 colorama = "*"
 pytest = ">=7.0"
+
+[[package]]
+name = "pytest-random-order"
+version = "1.1.0"
+description = "Randomise the order in which pytest tests are run with some control over the randomness"
+optional = false
+python-versions = ">=3.5.0"
+files = [
+    {file = "pytest-random-order-1.1.0.tar.gz", hash = "sha256:dbe6debb9353a7af984cc9eddbeb3577dd4dbbcc1529a79e3d21f68ed9b45605"},
+    {file = "pytest_random_order-1.1.0-py3-none-any.whl", hash = "sha256:6cb1e59ab0f798bb0c3488c11ae0c70d7d3340306a466d28b28ccd8ef8c20b7e"},
+]
+
+[package.dependencies]
+pytest = ">=3.0.0"
 
 [[package]]
 name = "pytest-subtests"
@@ -5156,4 +5168,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "67980e736fa8d38a0b3be9afc554c67a5e1d765dcdf5fe37aef15ffbe8bd081a"
+content-hash = "173a9329d8f42b01b7d62684fadb257e604fda7e584bfcdd4fcdf71ae6aa99f9"
