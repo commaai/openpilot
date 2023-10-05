@@ -64,7 +64,6 @@ class CAR(StrEnum):
   COROLLAH_TSS2 = "TOYOTA COROLLA HYBRID TSS2 2019"
   HIGHLANDER = "TOYOTA HIGHLANDER 2017"
   HIGHLANDER_TSS2 = "TOYOTA HIGHLANDER 2020"
-  HIGHLANDERH = "TOYOTA HIGHLANDER HYBRID 2018"
   HIGHLANDERH_TSS2 = "TOYOTA HIGHLANDER HYBRID 2020"
   PRIUS = "TOYOTA PRIUS 2017"
   PRIUS_V = "TOYOTA PRIUS v 2017"
@@ -153,9 +152,11 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
     ToyotaCarInfo("Toyota Corolla Cross Hybrid (Non-US only) 2020-22", min_enable_speed=7.5),
     ToyotaCarInfo("Lexus UX Hybrid 2019-23"),
   ],
-  CAR.HIGHLANDER: ToyotaCarInfo("Toyota Highlander 2017-19", video_link="https://www.youtube.com/watch?v=0wS0wXSLzoo"),
+  CAR.HIGHLANDER: [
+    ToyotaCarInfo("Toyota Highlander 2017-19", video_link="https://www.youtube.com/watch?v=0wS0wXSLzoo"),
+    ToyotaCarInfo("Toyota Highlander Hybrid 2017-19"),
+  ],
   CAR.HIGHLANDER_TSS2: ToyotaCarInfo("Toyota Highlander 2020-23"),
-  CAR.HIGHLANDERH: ToyotaCarInfo("Toyota Highlander Hybrid 2017-19"),
   CAR.HIGHLANDERH_TSS2: ToyotaCarInfo("Toyota Highlander Hybrid 2020-23"),
   CAR.PRIUS: [
     ToyotaCarInfo("Toyota Prius 2016", "Toyota Safety Sense P", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0"),
@@ -350,6 +351,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Ecu.abs: [CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.SIENNA, CAR.LEXUS_IS, CAR.ALPHARD_TSS2],
     # On some models, the engine can show on two different addresses
     Ecu.engine: [CAR.CAMRY, CAR.COROLLA_TSS2, CAR.CHR, CAR.CHR_TSS2, CAR.LEXUS_IS, CAR.LEXUS_RC],
+    # FIXME: Certain Highlander hybrid may be missing DSU, or FW just needs to be added
+    Ecu.dsu: [CAR.HIGHLANDER],
   },
   extra_ecus=[
     # All known ECUs on a late-model Toyota vehicle not queried here:
@@ -1054,13 +1057,22 @@ FW_VERSIONS = {
       b'\x01896630E86000\x00\x00\x00\x00',
       b'\x01896630E88000\x00\x00\x00\x00',
       b'\x01896630EA0000\x00\x00\x00\x00',
+      b'\x0230E40000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\x0230E40100\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\x0230EA2000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\x0230EA2100\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B48140\x00\x00\x00\x00\x00\x00',
       b'8965B48150\x00\x00\x00\x00\x00\x00',
       b'8965B48210\x00\x00\x00\x00\x00\x00',
+      b'8965B48160\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.abs, 0x7b0, None): [b'F15260E011\x00\x00\x00\x00\x00\x00'],
+    (Ecu.abs, 0x7b0, None): [
+      b'F15260E011\x00\x00\x00\x00\x00\x00',
+      b'F152648541\x00\x00\x00\x00\x00\x00',
+      b'F152648542\x00\x00\x00\x00\x00\x00',
+    ],
     (Ecu.dsu, 0x791, None): [
       b'881510E01100\x00\x00\x00\x00',
       b'881510E01200\x00\x00\x00\x00',
@@ -1068,31 +1080,12 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'8821F4702100\x00\x00\x00\x00',
       b'8821F4702300\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdCamera, 0x750, 0x6d): [
-      b'8646F0E01200\x00\x00\x00\x00',
-      b'8646F0E01300\x00\x00\x00\x00',
-    ],
-  },
-  CAR.HIGHLANDERH: {
-    (Ecu.eps, 0x7a1, None): [
-      b'8965B48160\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.abs, 0x7b0, None): [
-      b'F152648541\x00\x00\x00\x00\x00\x00',
-      b'F152648542\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.engine, 0x7e0, None): [
-      b'\x0230E40000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'\x0230E40100\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'\x0230EA2000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'\x0230EA2100\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdRadar, 0x750, 0xf): [
       b'8821F4702100\x00\x00\x00\x00',
       b'8821F4702300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'8646F0E01200\x00\x00\x00\x00',
+      b'8646F0E01300\x00\x00\x00\x00',
       b'8646F0E01200\x00\x00\x00\x00',
       b'8646F0E01300\x00\x00\x00\x00',
     ],
@@ -2235,7 +2228,6 @@ DBC = {
   CAR.CAMRY_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.HIGHLANDER: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
   CAR.HIGHLANDER_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.HIGHLANDERH: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
   CAR.HIGHLANDERH_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.AVALON: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
   CAR.AVALON_2019: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
@@ -2288,7 +2280,7 @@ RADAR_ACC_CAR = {CAR.RAV4H_TSS2_2022, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2_2023, C
 ANGLE_CONTROL_CAR = {CAR.RAV4H_TSS2_2023, CAR.RAV4_TSS2_2023}
 
 EV_HYBRID_CAR = {CAR.AVALONH_2019, CAR.AVALONH_TSS2, CAR.COROLLAH_TSS2,
-                 CAR.HIGHLANDERH, CAR.HIGHLANDERH_TSS2, CAR.PRIUS, CAR.PRIUS_V, CAR.RAV4H, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022,
+                 CAR.HIGHLANDERH_TSS2, CAR.PRIUS, CAR.PRIUS_V, CAR.RAV4H, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022,
                  CAR.RAV4H_TSS2_2023, CAR.LEXUS_CTH, CAR.MIRAI, CAR.LEXUS_ESH, CAR.LEXUS_ESH_TSS2, CAR.LEXUS_NXH, CAR.LEXUS_RXH,
                  CAR.LEXUS_RXH_TSS2, CAR.LEXUS_NXH_TSS2, CAR.PRIUS_TSS2}
 
