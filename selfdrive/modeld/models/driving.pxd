@@ -13,6 +13,8 @@ cdef extern from "selfdrive/modeld/models/driving.h":
   cdef int HISTORY_BUFFER_LEN
   cdef int DESIRE_LEN
   cdef int TRAFFIC_CONVENTION_LEN
+  cdef int LAT_PLANNER_STATE_LEN
+  cdef int SIM_SPEED_LEN
   cdef int DRIVING_STYLE_LEN
   cdef int NAV_FEATURE_LEN
   cdef int NAV_INSTRUCTION_LEN
