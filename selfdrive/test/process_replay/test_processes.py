@@ -145,7 +145,6 @@ def format_diff(results, log_paths, ref_commit):
         for d in diff:
           diff2 += f"\t{str(d)}\n"
 
-          print('d', d)
           k = str(d[1])
           cnt[k] = 1 if k not in cnt else cnt[k] + 1
 

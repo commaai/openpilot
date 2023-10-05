@@ -39,14 +39,6 @@ def remove_ignored_fields(msg, ignore):
   return msg
 
 
-class CapnpSet(set):
-  pass
-
-class HashableCapnpStructBuilder:
-  def __init__(self, msg):
-    self.msg = msg
-
-
 def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=None,):
   if ignore_fields is None:
     ignore_fields = []
