@@ -41,7 +41,7 @@ class TestRegen(unittest.TestCase):
     output_logs = regen_segment(lr, frs, processes=tested_procs, disable_tqdm=True)
 
     engaged = check_openpilot_enabled(output_logs)
-    self.assertTrue(engaged, f"Openpilot not engaged in {case_name}")
+    self.assertTrue(engaged, f"openpilot not engaged in {case_name}")
 
 
 if __name__=='__main__':
