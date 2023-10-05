@@ -52,24 +52,24 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
     for log in (log1, log2)
   )
 
-  msgs_by_which = defaultdict(lambda: defaultdict(list))
+  msgs_by_service = defaultdict(lambda: defaultdict(list))
   for msg1 in log1:
-    msgs_by_which["ref"][msg1.which()].append(msg1)
+    msgs_by_service["ref"][msg1.which()].append(msg1)
   for msg2 in log2:
-    msgs_by_which["new"][msg2.which()].append(msg2)
+    msgs_by_service["new"][msg2.which()].append(msg2)
 
-  if set(msgs_by_which["ref"]) != set(msgs_by_which["new"]):
-    raise Exception(f"log service keys don't match:\n\t\t{set(msgs_by_which['ref'])}\n\t\t{set(msgs_by_which['new'])}")
+  if set(msgs_by_service["ref"]) != set(msgs_by_service["new"]):
+    raise Exception(f"log service keys don't match:\n\t\t{set(msgs_by_service['ref'])}\n\t\t{set(msgs_by_service['new'])}")
 
   diff = []
-  for which in msgs_by_which["ref"].keys():
-    if len(msgs_by_which["ref"][which]) != len(msgs_by_which["new"][which]):
+  for service in msgs_by_service["ref"].keys():
+    if len(msgs_by_service["ref"][service]) != len(msgs_by_service["new"][service]):
       # Print new/removed messages
-      dict_msgs1 = [remove_ignored_fields(msg1, ignore_fields).as_reader().to_dict(verbose=True) for msg1 in msgs_by_which["ref"][which]]
-      dict_msgs2 = [remove_ignored_fields(msg2, ignore_fields).as_reader().to_dict(verbose=True) for msg2 in msgs_by_which["new"][which]]
+      dict_msgs1 = [remove_ignored_fields(msg1, ignore_fields).as_reader().to_dict(verbose=True) for msg1 in msgs_by_service["ref"][service]]
+      dict_msgs2 = [remove_ignored_fields(msg2, ignore_fields).as_reader().to_dict(verbose=True) for msg2 in msgs_by_service["new"][service]]
       diff.extend(list(dictdiffer.diff(dict_msgs1, dict_msgs2)))
     else:
-      for msg1, msg2 in zip(msgs_by_which["ref"][which], msgs_by_which["new"][which], strict=True):
+      for msg1, msg2 in zip(msgs_by_service["ref"][service], msgs_by_service["new"][service], strict=True):
         msg1 = remove_ignored_fields(msg1, ignore_fields)
         msg2 = remove_ignored_fields(msg2, ignore_fields)
 
