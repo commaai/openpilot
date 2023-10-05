@@ -211,7 +211,7 @@ def get_hevc_slice_type(dat: bytes, nal_unit_start: int, nal_unit_type: HevcNalU
   # first_slice_segment_in_pic_flag equal to 1 specifies that the slice segment is the first slice segment of the picture in
   # decoding order. first_slice_segment_in_pic_flag equal to 0 specifies that the slice segment is not the first slice segment
   # of the picture in decoding order.
-  is_first_slice = dat[rbsp_start] >> 7 & 1
+  is_first_slice = dat[rbsp_start] >> 7 & 1 == 1
   if not is_first_slice:
     # TODO: parse dependent_slice_segment_flag and slice_segment_address and get real slice_type
     # for now since we don't use it return -1 for slice_type
