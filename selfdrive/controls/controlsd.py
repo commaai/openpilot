@@ -58,6 +58,7 @@ ENABLED_STATES = (State.preEnabled, *ACTIVE_STATES)
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None, CI=None):
     config_realtime_process(4, Priority.CTRL_HIGH)
+    self.first = True
 
     # Ensure the current branch is cached, otherwise the first iteration of controlsd lags
     self.branch = get_short_branch("")
@@ -314,6 +315,7 @@ class Controls:
         safety_mismatch = pandaState.safetyModel != self.CP.safetyConfigs[i].safetyModel or \
                           pandaState.safetyParam != self.CP.safetyConfigs[i].safetyParam or \
                           pandaState.alternativeExperience != self.CP.alternativeExperience
+        # assert not safety_mismatch, (pandaState.safetyModel, self.CP.safetyConfigs[i].safetyModel, pandaState.alternativeExperience, self.CP.alternativeExperience)
       else:
         safety_mismatch = pandaState.safetyModel not in IGNORED_SAFETY_MODES
 
@@ -342,8 +344,9 @@ class Controls:
           self.events.add(EventName.cameraFrameRate)
     if not REPLAY and self.rk.lagging:
       self.events.add(EventName.controlsdLagging)
-    if len(self.sm['radarState'].radarErrors) or (not self.rk.lagging and not self.sm.all_checks(['radarState'])):
+    if len(self.sm['radarState'].radarErrors) or (not self.rk.lagging and not self.sm.all_checks(['radarState'])) or self.first:
       self.events.add(EventName.radarFault)
+      self.first = False
     if not self.sm.valid['pandaStates']:
       self.events.add(EventName.usbError)
     if CS.canTimeout:

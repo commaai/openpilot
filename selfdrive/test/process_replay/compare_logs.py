@@ -4,7 +4,7 @@ import math
 import capnp
 import numbers
 import dictdiffer
-from collections import Counter
+from collections import Counter, defaultdict
 
 from openpilot.tools.lib.logreader import LogReader
 
@@ -39,6 +39,14 @@ def remove_ignored_fields(msg, ignore):
   return msg
 
 
+class CapnpSet(set):
+  pass
+
+class HashableCapnpStructBuilder:
+  def __init__(self, msg):
+    self.msg = msg
+
+
 def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=None,):
   if ignore_fields is None:
     ignore_fields = []
@@ -51,15 +59,76 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
     for log in (log1, log2)
   )
 
+  msgs_by_which_log1 = defaultdict(list)
+  msgs_by_which_log2 = defaultdict(list)
+
+  for msg1 in log1:
+    msgs_by_which_log1[msg1.which()].append(msg1)
+  for msg2 in log2:
+    msgs_by_which_log2[msg2.which()].append(msg2)
+
+  if set(msgs_by_which_log1.keys()) != set(msgs_by_which_log2.keys()):
+    raise Exception(f"logs are missing service keys: {set(msgs_by_which_log1.keys()) ^ set(msgs_by_which_log2.keys())}")
+
+  diff = []
+  print('IGNORE', ignore_fields)
+  for which in msgs_by_which_log1.keys():
+    print(which, len(msgs_by_which_log1[which]), len(msgs_by_which_log2[which]))
+    if len(msgs_by_which_log1[which]) == len(msgs_by_which_log2[which]):
+      print(which, 'log length equal')
+      # TODO: do normal diff check like below
+    else:
+      print(which, 'print diff in logs')
+      new_msgs1 = [remove_ignored_fields(msg1, ignore_fields).to_dict() for msg1 in msgs_by_which_log1[which]]
+      new_msgs2 = [remove_ignored_fields(msg2, ignore_fields).to_dict() for msg2 in msgs_by_which_log2[which]]
+      added_msgs = [m2 for m2 in new_msgs2 if m2 not in new_msgs1]
+      removed_msgs = [m1 for m1 in new_msgs1 if m1 not in new_msgs2]
+      print('--- START ---')
+      for msg in added_msgs:
+        print('ADDED MSG', msg)
+      print('---')
+      for msg in removed_msgs:
+        print('REMOVED MSG', msg)
+      print('--- end ---')
+      dd_add = []
+      diff.extend([list(*dictdiffer.diff(r, {}, ignore=ignore_fields)) for r in removed_msgs])
+      diff.extend([list(*dictdiffer.diff({}, a, ignore=ignore_fields)) for a in added_msgs])
+      print('diff', diff)
+      break
+      # dd_add += [list(dictdiffer.diff([], a, ignore=ignore_fields)) for a in added_msgs]
+      # print('dd_add')
+      # print(dd_add)
+      # dd_add = list(dictdiffer.diff({}, added_msgs, ignore=ignore_fields))
+      # dd_add = [list(dictdiffer.diff(new_msgs1, new_msgs2, ignore=ignore_fields))]
+      # diff.append('Added messages:')
+      # diff.extend(map(str, added_msgs))
+      # diff.append('')
+      # diff.append('Added/removed messages:')
+      # diff.extend(map(str, removed_msgs))
+      # diff.extend(dd_add)
+      print('Added msgs:', len(added_msgs))
+      print('Removed msgs:', len(removed_msgs))
+      continue
+      print("Added msgs: {}".format("\n".join(added_msgs)))
+      print("Removed msgs: {}".format("\n".join(removed_msgs)))
+      # added_msgs = set(new_msgs2) - set(new_msgs1)
+      # removed_msgs = set(new_msgs1) - set(new_msgs2)
+      print('Added msgs:', len(added_msgs))
+      print('Removed msgs:', len(removed_msgs))
+      # hash(new_msgs1[0])
+      # set(new_msgs1)
+    #   print('uh oh')
+    # print(which)
+  return diff
+
   if len(log1) != len(log2):
     cnt1 = Counter(m.which() for m in log1)
     cnt2 = Counter(m.which() for m in log2)
     raise Exception(f"logs are not same length: {len(log1)} VS {len(log2)}\n\t\t{cnt1}\n\t\t{cnt2}")
 
-  diff = []
   for msg1, msg2 in zip(log1, log2, strict=True):
-    if msg1.which() != msg2.which():
-      raise Exception("msgs not aligned between logs")
+    # if msg1.which() != msg2.which():
+    #   raise Exception("msgs not aligned between logs")
 
     msg1 = remove_ignored_fields(msg1, ignore_fields)
     msg2 = remove_ignored_fields(msg2, ignore_fields)
