@@ -69,7 +69,7 @@ class TestPandad(unittest.TestCase):
     self._run_test(45)
 
   def test_in_dfu(self):
-    HARDWARE.recover_internal_panda()
+    self._go_to_dfu()
     self._run_test(60)
 
   def test_in_bootstub(self):
