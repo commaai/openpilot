@@ -116,6 +116,7 @@ def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=Non
 
 
 def format_diff(results, log_paths, ref_commit):
+  print('input:', log_paths, ref_commit)
   diff1, diff2 = "", ""
   diff2 += f"***** tested against commit {ref_commit} *****\n"
 
@@ -127,8 +128,8 @@ def format_diff(results, log_paths, ref_commit):
     for proc, diff in list(result.items()):
       # long diff
       diff2 += f"*** process: {proc} ***\n"
-      diff2 += f"\tref: {log_paths[segment][proc]['ref']}\n"
-      diff2 += f"\tnew: {log_paths[segment][proc]['new']}\n\n"
+      # diff2 += f"\tref: {log_paths[segment][proc]['ref']}\n"
+      # diff2 += f"\tnew: {log_paths[segment][proc]['new']}\n\n"
 
       # short diff
       diff1 += f"    {proc}\n"
