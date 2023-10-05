@@ -6,6 +6,7 @@ import numbers
 import dictdiffer
 from collections import defaultdict
 from typing import Dict
+from deepdiff import DeepDiff
 
 from openpilot.tools.lib.logreader import LogReader
 
@@ -40,6 +41,28 @@ def remove_ignored_fields(msg, ignore):
   return msg
 
 
+def transform_location(location_str):
+  s = location_str.replace('root', '')
+
+  components = []
+  temp = ""
+  for i, char in enumerate(s):
+    temp += char
+    if char == ']' or (i < len(s) - 1 and s[i + 1] == '['):
+      components.append(temp)
+      temp = ""
+
+  parsed_components = []
+  for comp in components:
+    comp = comp.strip("[]' ")
+    if comp.isdigit():
+      parsed_components.append(int(comp))
+    else:
+      parsed_components.append(comp)
+
+  return parsed_components
+
+
 def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=None,):
   if ignore_fields is None:
     ignore_fields = []
@@ -67,8 +90,24 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
       # Print new/removed messages
       dict_msgs1 = [remove_ignored_fields(msg1, ignore_fields).as_reader().to_dict(verbose=True) for msg1 in msgs_by_service["ref"][service]]
       dict_msgs2 = [remove_ignored_fields(msg2, ignore_fields).as_reader().to_dict(verbose=True) for msg2 in msgs_by_service["new"][service]]
-      diff.extend(list(dictdiffer.diff(dict_msgs1, dict_msgs2)))
+      dd = DeepDiff(dict_msgs1, dict_msgs2)
+      output = []
+
+      for typ, items in dd.items():
+        if typ == 'values_changed':
+          for item, value in items.items():
+            location = transform_location(item)
+            output.append(('change', location, (value['old_value'], value['new_value'])))
+        elif typ == 'iterable_item_added':
+          added_items = [(transform_location(item)[-1], value) for item, value in items.items()]
+          output.append(('add', '', added_items))
+        elif typ == 'iterable_item_removed':
+          removed_items = [(transform_location(item)[-1], value) for item, value in items.items()]
+          output.append(('remove', '', removed_items))
+
+      diff.extend(output)
     else:
+      continue
       for msg1, msg2 in zip(msgs_by_service["ref"][service], msgs_by_service["new"][service], strict=True):
         msg1 = remove_ignored_fields(msg1, ignore_fields)
         msg2 = remove_ignored_fields(msg2, ignore_fields)
