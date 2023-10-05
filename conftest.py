@@ -2,6 +2,7 @@ import os
 import pytest
 
 from openpilot.common.prefix import OpenpilotPrefix
+from openpilot.system.hardware import PC
 
 
 # there is currently no way to mark cpp tests, so we have to mark them here
@@ -21,9 +22,10 @@ def pytest_collection_modifyitems(config, items):
 def openpilot_function_fixture():
   starting_env = dict(os.environ)
 
-  # setup a clean environment for each test
-  with OpenpilotPrefix():
-    yield
+  if PC:
+    # setup a clean environment for each test
+    with OpenpilotPrefix():
+      yield
 
   os.environ.clear()
   os.environ.update(starting_env)
