@@ -52,9 +52,10 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
   )
 
   msgs_by_which = defaultdict(lambda: defaultdict(list))
-  for cmp, log in (("ref", log1), ("new", log2)):
-    for msg in log:
-      msgs_by_which[cmp][msg.which()].append(msg)
+  for msg1 in log1:
+    msgs_by_which["ref"][msg1.which()].append(msg1)
+  for msg2 in log2:
+    msgs_by_which["new"][msg2.which()].append(msg2)
 
   if set(msgs_by_which["ref"]) != set(msgs_by_which["new"]):
     raise Exception(f"log service keys don't match:\n\t\t{set(msgs_by_which['ref'])}\n\t\t{set(msgs_by_which['new'])}")
