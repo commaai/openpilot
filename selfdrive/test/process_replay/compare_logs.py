@@ -3,8 +3,10 @@ import sys
 import math
 import capnp
 import numbers
+import argparse
 import dictdiffer
 from collections import Counter
+from typing import Dict
 
 from openpilot.tools.lib.logreader import LogReader
 
@@ -89,7 +91,58 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
   return diff
 
 
+def format_diff(results, log_paths, ref_commit):
+  diff1, diff2 = "", ""
+  diff2 += f"***** tested against commit {ref_commit} *****\n"
+
+  failed = False
+  for segment, result in list(results.items()):
+    diff1 += f"***** results for segment {segment} *****\n"
+    diff2 += f"***** differences for segment {segment} *****\n"
+
+    for proc, diff in list(result.items()):
+      # long diff
+      diff2 += f"*** process: {proc} ***\n"
+      diff2 += f"\tref: {log_paths[segment][proc]['ref']}\n"
+      diff2 += f"\tnew: {log_paths[segment][proc]['new']}\n\n"
+
+      # short diff
+      diff1 += f"    {proc}\n"
+      if isinstance(diff, str):
+        diff1 += f"        ref: {log_paths[segment][proc]['ref']}\n"
+        diff1 += f"        new: {log_paths[segment][proc]['new']}\n\n"
+        diff1 += f"        {diff}\n"
+        failed = True
+      elif len(diff):
+        diff1 += f"        ref: {log_paths[segment][proc]['ref']}\n"
+        diff1 += f"        new: {log_paths[segment][proc]['new']}\n\n"
+
+        cnt: Dict[str, int] = {}
+        for d in diff:
+          diff2 += f"\t{str(d)}\n"
+
+          k = str(d[1])
+          cnt[k] = 1 if k not in cnt else cnt[k] + 1
+
+        for k, v in sorted(cnt.items()):
+          diff1 += f"        {k}: {v}\n"
+        failed = True
+  return diff1, diff2, failed
+
+
 if __name__ == "__main__":
-  log1 = list(LogReader(sys.argv[1]))
-  log2 = list(LogReader(sys.argv[2]))
-  print(compare_logs(log1, log2, sys.argv[3:]))
+  parser = argparse.ArgumentParser(description="Print diff between two logs",
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+  parser.add_argument("log1")
+  parser.add_argument("log2")
+  parser.add_argument("--ignore-fields", nargs="+", default=["logMonoTime", "controlsState.startMonoTime", "controlsState.cumLagMs"])
+  args = parser.parse_args()
+
+  log1 = list(LogReader(args.log1))
+  log2 = list(LogReader(args.log2))
+  results = {"segment": {"proc": compare_logs(log1, log2, args.ignore_fields)}}
+  log_paths = {"segment": {"proc": {"ref": args.log1, "new": args.log2}}}
+  diff1, diff2, failed = format_diff(results, log_paths, None)
+
+  print(diff2)
+  print(diff1)
