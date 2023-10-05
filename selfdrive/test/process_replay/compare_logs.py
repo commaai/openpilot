@@ -6,6 +6,7 @@ import numbers
 import dictdiffer
 from collections import defaultdict
 from typing import Dict
+from deepdiff import DeepDiff
 
 from openpilot.tools.lib.logreader import LogReader
 
@@ -67,8 +68,12 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
       # Print new/removed messages
       dict_msgs1 = [remove_ignored_fields(msg1, ignore_fields).as_reader().to_dict(verbose=True) for msg1 in msgs_by_which["ref"][which]]
       dict_msgs2 = [remove_ignored_fields(msg2, ignore_fields).as_reader().to_dict(verbose=True) for msg2 in msgs_by_which["new"][which]]
-      diff.extend(list(dictdiffer.diff(dict_msgs1, dict_msgs2)))
+      dd =DeepDiff(dict_msgs1, dict_msgs2)
+
+      diff.extend([(typ, item, value) for typ, items in dd.items() for item, value in items.items()])
+      # diff.extend(list(dictdiffer.diff(dict_msgs1, dict_msgs2)))
     else:
+      continue
       for msg1, msg2 in zip(msgs_by_which["ref"][which], msgs_by_which["new"][which], strict=True):
         msg1 = remove_ignored_fields(msg1, ignore_fields)
         msg2 = remove_ignored_fields(msg2, ignore_fields)
