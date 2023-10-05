@@ -91,8 +91,15 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
         print('REMOVED MSG', msg)
       print('--- end ---')
       dd_add = []
-      diff.extend([list(*dictdiffer.diff(r, {}, ignore=ignore_fields)) for r in removed_msgs])
-      diff.extend([list(*dictdiffer.diff({}, a, ignore=ignore_fields)) for a in added_msgs])
+      dd = []
+      dd.extend([list(*dictdiffer.diff(r, {}, ignore=ignore_fields)) for r in removed_msgs])
+      dd.extend([list(*dictdiffer.diff({}, a, ignore=ignore_fields)) for a in added_msgs])
+      # diff.extend([('removed', which, list(dictdiffer.diff(r, {}, ignore=ignore_fields))[0][2]) for r in removed_msgs])
+      # diff.extend([('added', which, list(dictdiffer.diff({}, a, ignore=ignore_fields))[0][2]) for a in added_msgs])
+      dd = [(typ, which, dif) for typ, _, dif in dd]
+      diff.extend(dd)
+      # diff.extend([list(*dictdiffer.diff(r, {}, ignore=ignore_fields)) for r in removed_msgs])
+      # diff.extend([list(*dictdiffer.diff({}, a, ignore=ignore_fields)) for a in added_msgs])
       print('diff', diff)
       break
       # dd_add += [list(dictdiffer.diff([], a, ignore=ignore_fields)) for a in added_msgs]
