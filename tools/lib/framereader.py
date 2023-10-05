@@ -84,7 +84,7 @@ def cache_fn(func):
     else:
       cache_dir = kwargs.pop('cache_dir', DEFAULT_CACHE_DIR)
       cache_path = cache_path_for_file_path(fn, cache_dir)
-
+    print(cache_path)
     if cache_path and os.path.exists(cache_path):
       with open(cache_path, "rb") as cache_file:
         cache_value = pickle.load(cache_file)
@@ -105,7 +105,7 @@ def index_stream(fn, typ):
   assert typ in ("hevc", )
 
   frame_types, dat_len, prefix = hevc_index(fn)
-  index = np.array(frame_types + [(-1, dat_len)], dtype=np.uint32)
+  index = np.array(frame_types + [(0xFFFFFFFF, dat_len)], dtype=np.uint32)
   probe = ffprobe(fn, typ)
 
   return {
