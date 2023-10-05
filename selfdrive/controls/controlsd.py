@@ -12,7 +12,6 @@ from openpilot.common.params import Params, put_nonblocking, put_bool_nonblockin
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcClient, VisionStreamType
 from openpilot.common.conversions import Conversions as CV
-from panda import ALTERNATIVE_EXPERIENCE
 from openpilot.system.swaglog import cloudlog
 from openpilot.system.version import is_release_branch, get_short_branch
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
