@@ -325,9 +325,9 @@ void MessageListModel::msgsReceived(const std::set<MessageId> *new_msgs, bool ha
   if (has_new_ids) {
     sort_timer.start(110);
   } else if (!filter_str.empty()) {
-    bool need_sort = (filter_str.contains(Column::FREQ) || filter_str.contains(Column::COUNT) ||
+    bool resort = (filter_str.contains(Column::FREQ) || filter_str.contains(Column::COUNT) ||
                       filter_str.contains(Column::DATA));
-    if (need_sort && ((millis_since_boot() - last_sort_ts) >= 1000)) {
+    if (resort && ((millis_since_boot() - last_sort_ts) >= 1000)) {
       filterAndSort();
       return;
     }

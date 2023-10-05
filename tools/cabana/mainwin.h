@@ -20,7 +20,6 @@ class MainWindow : public QMainWindow {
 
 public:
   MainWindow();
-  void dockCharts(bool dock);
   void showStatusMessage(const QString &msg, int timeout = 0) { statusBar()->showMessage(msg, timeout); }
   void loadFile(const QString &fn, SourceSet s = SOURCE_ALL);
   ChartsWidget *charts_widget = nullptr;
@@ -79,8 +78,6 @@ protected:
   QDockWidget *messages_dock;
   MessagesWidget *messages_widget = nullptr;
   CenterWidget *center_widget;
-  QWidget *floating_window = nullptr;
-  QVBoxLayout *charts_layout;
   QProgressBar *progress_bar;
   QLabel *status_label;
   QJsonDocument fingerprint_to_dbc;

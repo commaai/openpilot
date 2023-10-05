@@ -15,6 +15,7 @@ const int MAX_COLUMN_COUNT = 4;
 const int CHART_SPACING = 6;
 
 ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_timer(this), QFrame(parent) {
+  setWindowTitle("Charts");
   setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
@@ -106,15 +107,11 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
   QObject::connect(reset_zoom_btn, &QToolButton::clicked, this, &ChartsWidget::zoomReset);
   QObject::connect(&settings, &Settings::changed, this, &ChartsWidget::settingChanged);
   QObject::connect(new_tab_btn, &QToolButton::clicked, this, &ChartsWidget::newTab);
+  QObject::connect(dock_btn, &QToolButton::clicked, this, &ChartsWidget::dock);
   QObject::connect(this, &ChartsWidget::seriesChanged, this, &ChartsWidget::updateTabBar);
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, this, &ChartsWidget::removeTab);
   QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
     if (index != -1) updateLayout(true);
-  });
-  QObject::connect(dock_btn, &QToolButton::clicked, [this]() {
-    emit dock(!docking);
-    docking = !docking;
-    updateToolBar();
   });
 
   newTab();
@@ -220,8 +217,8 @@ void ChartsWidget::updateToolBar() {
   reset_zoom_action->setVisible(is_zoomed);
   reset_zoom_btn->setText(is_zoomed ? tr("%1-%2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2) : "");
   remove_all_btn->setEnabled(!charts.isEmpty());
-  dock_btn->setIcon(docking ? "arrow-up-right-square" : "arrow-down-left-square");
-  dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
+  dock_btn->setIcon(!isFloating() ? "arrow-up-right-square" : "arrow-down-left-square");
+  dock_btn->setToolTip(!isFloating() ? tr("Undock charts") : tr("Dock charts"));
 }
 
 void ChartsWidget::settingChanged() {
@@ -373,6 +370,15 @@ QSize ChartsWidget::minimumSizeHint() const {
   return QSize(CHART_MIN_WIDTH, QWidget::minimumSizeHint().height());
 }
 
+void ChartsWidget::closeEvent(QCloseEvent *event) {
+  if (event->spontaneous()) {  // the X button was clicked
+    dock();
+    event->ignore();
+  } else {
+    QFrame::closeEvent(event);
+  }
+}
+
 void ChartsWidget::resizeEvent(QResizeEvent *event) {
   QWidget::resizeEvent(event);
   updateLayout();
@@ -430,12 +436,15 @@ void ChartsWidget::alignCharts() {
   }
 }
 
-bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
-  if (obj != this && event->type() == QEvent::Close) {
-    emit dock_btn->clicked();
-    return true;
+void ChartsWidget::dock() {
+  if (isFloating()) {
+    setWindowFlags(Qt::Widget);
+    showNormal();
+  } else {
+    setWindowFlags(Qt::Window);
+    showMaximized();
   }
-  return false;
+  updateToolBar();
 }
 
 bool ChartsWidget::event(QEvent *event) {

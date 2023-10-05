@@ -49,15 +49,17 @@ public slots:
   void setZoom(double min, double max);
 
 signals:
-  void dock(bool floating);
   void zoomChanged(double min, double max, bool is_zommed);
   void seriesChanged();
 
 private:
   QSize minimumSizeHint() const override;
+  void closeEvent(QCloseEvent *event) override;
   void resizeEvent(QResizeEvent *event) override;
   bool event(QEvent *event) override;
   void alignCharts();
+  void dock();
+  inline bool isFloating() { return windowFlags() & Qt::Window; }
   void newChart();
   ChartView *createChart();
   void removeChart(ChartView *chart);
@@ -75,7 +77,6 @@ private:
   void updateLayout(bool force = false);
   void settingChanged();
   void showValueTip(double sec);
-  bool eventFilter(QObject *obj, QEvent *event) override;
   void newTab();
   void removeTab(int index);
   inline QList<ChartView *> &currentCharts() { return tab_charts[tabbar->tabData(tabbar->currentIndex()).toInt()]; }
@@ -86,7 +87,6 @@ private:
   LogSlider *range_slider;
   QAction *range_lb_action;
   QAction *range_slider_action;
-  bool docking = true;
   ToolButton *dock_btn;
 
   QAction *undo_zoom_action;

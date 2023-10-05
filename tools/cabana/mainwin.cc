@@ -176,29 +176,24 @@ void MainWindow::createDockWindows() {
 }
 
 void MainWindow::createDockWidgets() {
-  messages_widget = new MessagesWidget(this);
-  messages_dock->setWidget(messages_widget);
-  QObject::connect(messages_widget, &MessagesWidget::titleChanged, messages_dock, &QDockWidget::setWindowTitle);
+  messages_dock->setWidget(messages_widget = new MessagesWidget(this));
 
   // right panel
-  charts_widget = new ChartsWidget(this);
   QWidget *charts_container = new QWidget(this);
-  charts_layout = new QVBoxLayout(charts_container);
+  auto charts_layout = new QVBoxLayout(charts_container);
   charts_layout->setContentsMargins(0, 0, 0, 0);
-  charts_layout->addWidget(charts_widget);
+  charts_layout->addWidget(charts_widget = new ChartsWidget(this));
 
-  // splitter between video and charts
   video_splitter = new QSplitter(Qt::Vertical, this);
-  video_widget = new VideoWidget(this);
-  video_splitter->addWidget(video_widget);
-  QObject::connect(charts_widget, &ChartsWidget::zoomChanged, video_widget, &VideoWidget::zoomChanged);
-
+  video_splitter->addWidget(video_widget = new VideoWidget(this));
   video_splitter->addWidget(charts_container);
   video_splitter->setStretchFactor(1, 1);
   video_splitter->restoreState(settings.video_splitter_state);
   video_splitter->handle(1)->setEnabled(!can->liveStreaming());
   video_dock->setWidget(video_splitter);
-  QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
+
+  QObject::connect(charts_widget, &ChartsWidget::zoomChanged, video_widget, &VideoWidget::zoomChanged);
+  QObject::connect(messages_widget, &MessagesWidget::titleChanged, messages_dock, &QDockWidget::setWindowTitle);
 }
 
 void MainWindow::createStatusBar() {
@@ -293,7 +288,8 @@ void MainWindow::loadFile(const QString &fn, SourceSet s) {
     QString dbc_fn = fn;
     // Prompt user to load auto saved file if it exists.
     if (QFile::exists(fn + AUTO_SAVE_EXTENSION)) {
-      auto ret = QMessageBox::question(this, tr("Auto saved DBC found"), tr("Auto saved DBC file from previous session found. Do you want to load it instead?"));
+      auto ret = QMessageBox::question(this, tr("Auto saved DBC found"),
+                                       tr("Auto saved DBC file from previous session found. Do you want to load it instead?"));
       if (ret == QMessageBox::Yes) {
         dbc_fn += AUTO_SAVE_EXTENSION;
         UndoStack::instance()->resetClean(); // Force user to save on close so the auto saved file is not lost
@@ -332,7 +328,8 @@ void MainWindow::loadFromClipboard(SourceSet s, bool close_all) {
   if (ret && dbc()->msgCount() > 0) {
     QMessageBox::information(this, tr("Load From Clipboard"), tr("DBC Successfully Loaded!"));
   } else {
-    QMessageBox msg_box(QMessageBox::Warning, tr("Failed to load DBC from clipboard"), tr("Make sure that you paste the text with correct format."));
+    QMessageBox msg_box(QMessageBox::Warning, tr("Failed to load DBC from clipboard"),
+                        tr("Make sure that you paste the text with correct format."));
     msg_box.setDetailedText(error);
     msg_box.exec();
   }
@@ -572,23 +569,6 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
 
 void MainWindow::updateStatus() {
   status_label->setText(tr("Cached Minutes:%1 FPS:%2").arg(settings.max_cached_minutes).arg(settings.fps));
-}
-
-void MainWindow::dockCharts(bool dock) {
-  if (dock && floating_window) {
-    floating_window->removeEventFilter(charts_widget);
-    charts_layout->insertWidget(0, charts_widget, 1);
-    floating_window->deleteLater();
-    floating_window = nullptr;
-  } else if (!dock && !floating_window) {
-    floating_window = new QWidget(this);
-    floating_window->setWindowFlags(Qt::Window);
-    floating_window->setWindowTitle("Charts");
-    floating_window->setLayout(new QVBoxLayout());
-    floating_window->layout()->addWidget(charts_widget);
-    floating_window->installEventFilter(charts_widget);
-    floating_window->showMaximized();
-  }
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
