@@ -151,7 +151,7 @@ node {
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["check dirty", "release/check-dirty.sh"],
           ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
-          ["time to onroad", "cd selfdrive/test/ && pytest test_time_to_onroad.py"],
+          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
         ])
       },
       'HW + Unit Tests': {
