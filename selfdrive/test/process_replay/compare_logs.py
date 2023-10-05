@@ -4,7 +4,7 @@ import math
 import capnp
 import numbers
 import dictdiffer
-from collections import Counter, defaultdict
+from collections import defaultdict
 
 from openpilot.tools.lib.logreader import LogReader
 
