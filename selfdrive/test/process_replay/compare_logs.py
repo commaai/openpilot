@@ -69,11 +69,8 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
       dict_msgs1 = [remove_ignored_fields(msg1, ignore_fields).as_reader().to_dict(verbose=True) for msg1 in msgs_by_which_log1[which]]
       dict_msgs2 = [remove_ignored_fields(msg2, ignore_fields).as_reader().to_dict(verbose=True) for msg2 in msgs_by_which_log2[which]]
 
-      dd = []
-      dd.extend([list(*dictdiffer.diff(m1, {}, ignore=ignore_fields)) for m1 in dict_msgs1 if m1 not in dict_msgs2])
-      dd.extend([list(*dictdiffer.diff({}, m2, ignore=ignore_fields)) for m2 in dict_msgs2 if m2 not in dict_msgs1])
-      dd = [(typ, which, dif) for typ, _, dif in dd]
-      diff.extend(dd)
+      diff.extend([list(*dictdiffer.diff(m1, {}, ignore=ignore_fields)) for m1 in dict_msgs1 if m1 not in dict_msgs2])
+      diff.extend([list(*dictdiffer.diff({}, m2, ignore=ignore_fields)) for m2 in dict_msgs2 if m2 not in dict_msgs1])
     else:
       for msg1, msg2 in zip(msgs_by_which_log1[which], msgs_by_which_log2[which], strict=True):
         msg1 = remove_ignored_fields(msg1, ignore_fields)
