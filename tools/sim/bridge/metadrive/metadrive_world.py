@@ -42,7 +42,7 @@ class MetaDriveWorld(World):
       self.vc[0] = steer_angle
 
       if throttle_out:
-        self.vc[1] = throttle_out/10
+        self.vc[1] = throttle_out
       else:
         self.vc[1] = -brake_out
     else:
