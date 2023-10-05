@@ -147,6 +147,8 @@ def format_diff(results, log_paths, ref_commit):
 
           print('d', d)
           k = str(d[1])
+          if k == '':
+            k = str(d[2][0][0])
           cnt[k] = 1 if k not in cnt else cnt[k] + 1
 
         for k, v in sorted(cnt.items()):

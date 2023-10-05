@@ -79,8 +79,8 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
       # TODO: do normal diff check like below
     else:
       print(which, 'print diff in logs')
-      new_msgs1 = [remove_ignored_fields(msg1, ignore_fields).to_dict() for msg1 in msgs_by_which_log1[which]]
-      new_msgs2 = [remove_ignored_fields(msg2, ignore_fields).to_dict() for msg2 in msgs_by_which_log2[which]]
+      new_msgs1 = [remove_ignored_fields(msg1, ignore_fields).as_reader().to_dict(verbose=True) for msg1 in msgs_by_which_log1[which]]
+      new_msgs2 = [remove_ignored_fields(msg2, ignore_fields).as_reader().to_dict(verbose=True) for msg2 in msgs_by_which_log2[which]]
       added_msgs = [m2 for m2 in new_msgs2 if m2 not in new_msgs1]
       removed_msgs = [m1 for m1 in new_msgs1 if m1 not in new_msgs2]
       print('--- START ---')
