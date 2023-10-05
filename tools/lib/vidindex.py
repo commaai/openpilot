@@ -113,16 +113,13 @@ HEVC_CODED_SLICE_SEGMENT_NAL_UNITS = (
 class VideoFileInvalid(Exception):
   pass
 
-def get_ue(dat: bytes, start_idx: int, skip_bits: int) -> int:
-  skip_bytes = int(skip_bits / 8)
-  skip_bits -= skip_bytes * 8
-
+def get_ue(dat: bytes, start_idx: int, skip_bits: int) -> (int, int):
   prefix_val = 0
   prefix_len = 0
   suffix_val = 0
   suffix_len = 0
 
-  i = start_idx + skip_bytes
+  i = start_idx
   while i < len(dat):
     j = 7
     while j >= 0:
@@ -152,7 +149,7 @@ def require_nal_unit_start(dat: bytes, nal_unit_start: int) -> None:
     raise ValueError("start index must be greater than zero")
 
   if dat[nal_unit_start-1] != 0x00:
-    raise VideoFileInvalid("start code must be preceeded by 0x00")
+    raise VideoFileInvalid("start code must be preceded by 0x00")
 
   if dat[nal_unit_start:nal_unit_start + NAL_UNIT_START_CODE_SIZE] != NAL_UNIT_START_CODE:
     raise VideoFileInvalid("data must begin with start code")
@@ -215,7 +212,9 @@ def get_hevc_slice_type(dat: bytes, nal_unit_start: int, nal_unit_type: HevcNalU
   # of the picture in decoding order.
   first_slice_segment_in_pic_flag = dat[rbsp_start] >> 7 & 1
   if not first_slice_segment_in_pic_flag:
-    raise VideoFileInvalid("first slice is required to come first")
+    # we only keep track of the position of the first slice segment
+    # so no need to parse dependent_slice_segment_flag and slice_segment_address
+    return None
   skip_bits += 1 # skip past first_slice_segment_in_pic_flag
 
   if nal_unit_type >= HevcNalUnitType.BLA_W_LP and nal_unit_type <= HevcNalUnitType.RSV_IRAP_VCL23:
@@ -252,7 +251,7 @@ def get_hevc_slice_type(dat: bytes, nal_unit_start: int, nal_unit_type: HevcNalU
     raise VideoFileInvalid("slice_type must be 0, 1, or 2")
   return slice_type
 
-def hevc_index(hevc_file_name: str) -> (list, int, bytes):
+def hevc_index(hevc_file_name: str, allow_corrupt: bool=False) -> (list, int, bytes):
   with FileReader(hevc_file_name) as f:
     dat = f.read()
 
@@ -262,18 +261,22 @@ def hevc_index(hevc_file_name: str) -> (list, int, bytes):
   prefix_dat = b""
   frame_types = list()
 
-  i = 1 # skip past first byte 0x00 (verified by get_hevc_nal_info)
-  while i < len(dat):
-    require_nal_unit_start(dat, i)
-    nal_unit_len = get_hevc_nal_unit_length(dat, i)
-    nal_unit_type = get_hevc_nal_unit_type(dat, i)
-    if nal_unit_type in HEVC_PARAMETER_SET_NAL_UNITS:
-      prefix_dat += dat[i:i+nal_unit_len]
-    elif nal_unit_type in HEVC_CODED_SLICE_SEGMENT_NAL_UNITS:
-      slice_type = get_hevc_slice_type(dat, i, nal_unit_type)
-      frame_types.append((i, slice_type))
-
-    i += nal_unit_len
+  try:
+    i = 1 # skip past first byte 0x00 (verified by get_hevc_nal_info)
+    while i < len(dat):
+      require_nal_unit_start(dat, i)
+      nal_unit_len = get_hevc_nal_unit_length(dat, i)
+      nal_unit_type = get_hevc_nal_unit_type(dat, i)
+      if nal_unit_type in HEVC_PARAMETER_SET_NAL_UNITS:
+        prefix_dat += dat[i:i+nal_unit_len]
+      elif nal_unit_type in HEVC_CODED_SLICE_SEGMENT_NAL_UNITS:
+        slice_type = get_hevc_slice_type(dat, i, nal_unit_type)
+        if slice_type is not None:
+          frame_types.append((slice_type, i))
+      i += nal_unit_len
+  except Exception:
+    if not allow_corrupt:
+      raise
 
   return frame_types, len(dat), prefix_dat
 
@@ -289,7 +292,7 @@ def main() -> None:
     f.write(prefix_dat)
 
   with open(args.output_index_file, "wb") as f:
-    for fp, ft in frame_types:
+    for ft, fp in frame_types:
       f.write(struct.pack("<II", ft, fp))
     f.write(struct.pack("<i", -1))
     f.write(struct.pack("<I", dat_len))
