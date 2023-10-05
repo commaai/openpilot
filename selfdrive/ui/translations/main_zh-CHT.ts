@@ -278,27 +278,27 @@
     <name>DriveStats</name>
     <message>
         <source>Drives</source>
-        <translation>旅程</translation>
+        <translation type="vanished">旅程</translation>
     </message>
     <message>
         <source>Hours</source>
-        <translation>小時</translation>
+        <translation type="vanished">小時</translation>
     </message>
     <message>
         <source>ALL TIME</source>
-        <translation>總共</translation>
+        <translation type="vanished">總共</translation>
     </message>
     <message>
         <source>PAST WEEK</source>
-        <translation>上週</translation>
+        <translation type="vanished">上週</translation>
     </message>
     <message>
         <source>KM</source>
-        <translation>公里</translation>
+        <translation type="vanished">公里</translation>
     </message>
     <message>
         <source>Miles</source>
-        <translation>英里</translation>
+        <translation type="vanished">英里</translation>
     </message>
 </context>
 <context>

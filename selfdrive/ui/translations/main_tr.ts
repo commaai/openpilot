@@ -278,27 +278,27 @@
     <name>DriveStats</name>
     <message>
         <source>Drives</source>
-        <translation>Sürücüler</translation>
+        <translation type="vanished">Sürücüler</translation>
     </message>
     <message>
         <source>Hours</source>
-        <translation>Saat</translation>
+        <translation type="vanished">Saat</translation>
     </message>
     <message>
         <source>ALL TIME</source>
-        <translation>TÜM ZAMANLAR</translation>
+        <translation type="vanished">TÜM ZAMANLAR</translation>
     </message>
     <message>
         <source>PAST WEEK</source>
-        <translation>GEÇEN HAFTA</translation>
+        <translation type="vanished">GEÇEN HAFTA</translation>
     </message>
     <message>
         <source>KM</source>
-        <translation>KM</translation>
+        <translation type="vanished">KM</translation>
     </message>
     <message>
         <source>Miles</source>
-        <translation>Mil</translation>
+        <translation type="vanished">Mil</translation>
     </message>
 </context>
 <context>

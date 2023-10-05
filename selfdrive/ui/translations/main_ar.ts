@@ -278,27 +278,27 @@
     <name>DriveStats</name>
     <message>
         <source>Drives</source>
-        <translation>القيادة</translation>
+        <translation type="vanished">القيادة</translation>
     </message>
     <message>
         <source>Hours</source>
-        <translation>ساعات</translation>
+        <translation type="vanished">ساعات</translation>
     </message>
     <message>
         <source>ALL TIME</source>
-        <translation>كامل الوقت</translation>
+        <translation type="vanished">كامل الوقت</translation>
     </message>
     <message>
         <source>PAST WEEK</source>
-        <translation>الأسبوع الماضي</translation>
+        <translation type="vanished">الأسبوع الماضي</translation>
     </message>
     <message>
         <source>KM</source>
-        <translation>كم</translation>
+        <translation type="vanished">كم</translation>
     </message>
     <message>
         <source>Miles</source>
-        <translation>ميل</translation>
+        <translation type="vanished">ميل</translation>
     </message>
 </context>
 <context>

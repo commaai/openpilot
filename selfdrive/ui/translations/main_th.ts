@@ -278,27 +278,27 @@
     <name>DriveStats</name>
     <message>
         <source>Drives</source>
-        <translation>การขับขี่</translation>
+        <translation type="vanished">การขับขี่</translation>
     </message>
     <message>
         <source>Hours</source>
-        <translation>ชั่วโมง</translation>
+        <translation type="vanished">ชั่วโมง</translation>
     </message>
     <message>
         <source>ALL TIME</source>
-        <translation>ทั้งหมด</translation>
+        <translation type="vanished">ทั้งหมด</translation>
     </message>
     <message>
         <source>PAST WEEK</source>
-        <translation>สัปดาห์ที่ผ่านมา</translation>
+        <translation type="vanished">สัปดาห์ที่ผ่านมา</translation>
     </message>
     <message>
         <source>KM</source>
-        <translation>กิโลเมตร</translation>
+        <translation type="vanished">กิโลเมตร</translation>
     </message>
     <message>
         <source>Miles</source>
-        <translation>ไมล์</translation>
+        <translation type="vanished">ไมล์</translation>
     </message>
 </context>
 <context>

@@ -278,27 +278,27 @@
     <name>DriveStats</name>
     <message>
         <source>Drives</source>
-        <translation>Trajets</translation>
+        <translation type="vanished">Trajets</translation>
     </message>
     <message>
         <source>Hours</source>
-        <translation>Heures</translation>
+        <translation type="vanished">Heures</translation>
     </message>
     <message>
         <source>ALL TIME</source>
-        <translation>DEPUIS TOUJOURS</translation>
+        <translation type="vanished">DEPUIS TOUJOURS</translation>
     </message>
     <message>
         <source>PAST WEEK</source>
-        <translation>CETTE SEMAINE</translation>
+        <translation type="vanished">CETTE SEMAINE</translation>
     </message>
     <message>
         <source>KM</source>
-        <translation>KM</translation>
+        <translation type="vanished">KM</translation>
     </message>
     <message>
         <source>Miles</source>
-        <translation>Miles</translation>
+        <translation type="vanished">Miles</translation>
     </message>
 </context>
 <context>

@@ -278,27 +278,27 @@
     <name>DriveStats</name>
     <message>
         <source>Drives</source>
-        <translation>주행</translation>
+        <translation type="vanished">주행</translation>
     </message>
     <message>
         <source>Hours</source>
-        <translation>시간</translation>
+        <translation type="vanished">시간</translation>
     </message>
     <message>
         <source>ALL TIME</source>
-        <translation>전체</translation>
+        <translation type="vanished">전체</translation>
     </message>
     <message>
         <source>PAST WEEK</source>
-        <translation>지난 주</translation>
+        <translation type="vanished">지난 주</translation>
     </message>
     <message>
         <source>KM</source>
-        <translation>km</translation>
+        <translation type="vanished">km</translation>
     </message>
     <message>
         <source>Miles</source>
-        <translation>마일</translation>
+        <translation type="vanished">마일</translation>
     </message>
 </context>
 <context>
