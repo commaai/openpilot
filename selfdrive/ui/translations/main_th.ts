@@ -275,33 +275,6 @@
     </message>
 </context>
 <context>
-    <name>DriveStats</name>
-    <message>
-        <source>Drives</source>
-        <translation type="vanished">การขับขี่</translation>
-    </message>
-    <message>
-        <source>Hours</source>
-        <translation type="vanished">ชั่วโมง</translation>
-    </message>
-    <message>
-        <source>ALL TIME</source>
-        <translation type="vanished">ทั้งหมด</translation>
-    </message>
-    <message>
-        <source>PAST WEEK</source>
-        <translation type="vanished">สัปดาห์ที่ผ่านมา</translation>
-    </message>
-    <message>
-        <source>KM</source>
-        <translation type="vanished">กิโลเมตร</translation>
-    </message>
-    <message>
-        <source>Miles</source>
-        <translation type="vanished">ไมล์</translation>
-    </message>
-</context>
-<context>
     <name>DriverViewScene</name>
     <message>
         <source>camera starting</source>

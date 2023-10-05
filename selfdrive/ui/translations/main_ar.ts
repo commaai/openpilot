@@ -275,33 +275,6 @@
     </message>
 </context>
 <context>
-    <name>DriveStats</name>
-    <message>
-        <source>Drives</source>
-        <translation type="vanished">القيادة</translation>
-    </message>
-    <message>
-        <source>Hours</source>
-        <translation type="vanished">ساعات</translation>
-    </message>
-    <message>
-        <source>ALL TIME</source>
-        <translation type="vanished">كامل الوقت</translation>
-    </message>
-    <message>
-        <source>PAST WEEK</source>
-        <translation type="vanished">الأسبوع الماضي</translation>
-    </message>
-    <message>
-        <source>KM</source>
-        <translation type="vanished">كم</translation>
-    </message>
-    <message>
-        <source>Miles</source>
-        <translation type="vanished">ميل</translation>
-    </message>
-</context>
-<context>
     <name>DriverViewScene</name>
     <message>
         <source>camera starting</source>
