@@ -295,8 +295,7 @@ def main() -> None:
   with open(args.output_index_file, "wb") as f:
     for ft, fp in frame_types:
       f.write(struct.pack("<II", ft, fp))
-    f.write(struct.pack("<i", -1))
-    f.write(struct.pack("<I", dat_len))
+    f.write(struct.pack("<II", 0xFFFFFFFF, dat_len))
 
 if __name__ == "__main__":
   main()
