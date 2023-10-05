@@ -10,8 +10,7 @@ from openpilot.common.params import Params
 from openpilot.system.hardware import PC
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.test.openpilotci import BASE_URL, get_url
-from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs
-from openpilot.selfdrive.test.process_replay.test_processes import format_diff
+from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process
 from openpilot.system.version import get_commit
 from openpilot.tools.lib.framereader import FrameReader
