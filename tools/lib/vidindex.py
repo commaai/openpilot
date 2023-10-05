@@ -205,7 +205,7 @@ def get_hevc_slice_type(dat: bytes, nal_unit_start: int, nal_unit_type: HevcNalU
   #       slice_reserved_flag[ i ]                                        u(1)
   #     slice_type                                                       ue(v)
   # ...
-  
+
   rbsp_start = nal_unit_start + NAL_UNIT_START_CODE_SIZE + NAL_UNIT_HEADER_SIZE
   skip_bits = 0
 
@@ -258,7 +258,7 @@ def hevc_index(hevc_file_name: str) -> (list, int, bytes):
 
   if len(dat) < NAL_UNIT_START_CODE_SIZE + 1:
     raise VideoFileInvalid("data is too short")
-  
+
   prefix_dat = b""
   frame_types = list()
 
