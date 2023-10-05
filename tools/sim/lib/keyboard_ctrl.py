@@ -16,15 +16,15 @@ OSPEED = 5
 CC = 6
 
 KEYBOARD_HELP = """
-  | key  |   functionality    |
-  -----------------------------
-  |  1   |   Cruise Resume    |
-  |  2   |    Cruise Set      |
-  |  3   |   Cruise Cancel    |
-  |  r   |  Reset Simulation  |
-  |  i   |  Toggle Ignition   |
-  |  q   |      Exit all      |
-  | wasd |  Control manually  |
+  | key  |   functionality       |
+  |------|-----------------------|
+  |  1   | Cruise Resume / Accel |
+  |  2   | Cruise Set    / Decel |
+  |  3   | Cruise Cancel         |
+  |  r   | Reset Simulation      |
+  |  i   | Toggle Ignition       |
+  |  q   | Exit all              |
+  | wasd | Control manually      |
 """
 
 def getch() -> str:
@@ -63,6 +63,10 @@ def keyboard_poll_thread(q: 'Queue[str]'):
       q.put("brake_%f" % 1.0)
     elif c == 'd':
       q.put("steer_%f" % -0.15)
+    elif c == 'z':
+      q.put("blinker_left")
+    elif c == 'x':
+      q.put("blinker_right")
     elif c == 'i':
       q.put("ignition")
     elif c == 'r':

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from enum import Enum, IntFlag
+from enum import Enum, IntFlag, StrEnum
 from typing import Dict, List, Optional, Union
 
 from cereal import car
@@ -72,7 +72,7 @@ VISUAL_HUD = {
 }
 
 
-class CAR:
+class CAR(StrEnum):
   ACCORD = "HONDA ACCORD 2018"
   ACCORDH = "HONDA ACCORD HYBRID 2018"
   CIVIC = "HONDA CIVIC 2016"
