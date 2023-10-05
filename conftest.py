@@ -1,3 +1,4 @@
+import contextlib
 import os
 import pytest
 
@@ -22,10 +23,9 @@ def pytest_collection_modifyitems(config, items):
 def openpilot_function_fixture():
   starting_env = dict(os.environ)
 
-  if PC:
-    # setup a clean environment for each test
-    with OpenpilotPrefix():
-      yield
+  # setup a clean environment for each test
+  with OpenpilotPrefix() if PC else contextlib.nullcontext():
+    yield
 
   os.environ.clear()
   os.environ.update(starting_env)
