@@ -63,6 +63,8 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
   msgs_by_which_log2 = defaultdict(list)
 
   for msg1 in log1:
+    # if msg1.which() == 'carEvents':
+    #   continue
     msgs_by_which_log1[msg1.which()].append(msg1)
   for msg2 in log2:
     msgs_by_which_log2[msg2.which()].append(msg2)
@@ -76,7 +78,36 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
     print(which, len(msgs_by_which_log1[which]), len(msgs_by_which_log2[which]))
     if len(msgs_by_which_log1[which]) == len(msgs_by_which_log2[which]):
       print(which, 'log length equal')
-      # TODO: do normal diff check like below
+      for msg1, msg2 in zip(msgs_by_which_log1[which], msgs_by_which_log2[which], strict=True):
+        # if msg1.which() != msg2.which():
+        #   raise Exception("msgs not aligned between logs")
+        # continue
+
+        msg1 = remove_ignored_fields(msg1, ignore_fields)
+        msg2 = remove_ignored_fields(msg2, ignore_fields)
+
+        if msg1.to_bytes() != msg2.to_bytes():
+          msg1_dict = msg1.as_reader().to_dict(verbose=True)
+          msg2_dict = msg2.as_reader().to_dict(verbose=True)
+
+          dd = dictdiffer.diff(msg1_dict, msg2_dict, ignore=ignore_fields)
+
+          # Dictdiffer only supports relative tolerance, we also want to check for absolute
+          # TODO: add this to dictdiffer
+          def outside_tolerance(diff):
+            try:
+              if diff[0] == "change":
+                a, b = diff[2]
+                finite = math.isfinite(a) and math.isfinite(b)
+                if finite and isinstance(a, numbers.Number) and isinstance(b, numbers.Number):
+                  return abs(a - b) > max(tolerance, tolerance * max(abs(a), abs(b)))
+            except TypeError:
+              pass
+            return True
+
+          dd = list(filter(outside_tolerance, dd))
+
+          diff.extend(dd)
     else:
       print(which, 'print diff in logs')
       new_msgs1 = [remove_ignored_fields(msg1, ignore_fields).as_reader().to_dict(verbose=True) for msg1 in msgs_by_which_log1[which]]
@@ -122,46 +153,7 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
       # removed_msgs = set(new_msgs1) - set(new_msgs2)
       print('Added msgs:', len(added_msgs))
       print('Removed msgs:', len(removed_msgs))
-      # hash(new_msgs1[0])
-      # set(new_msgs1)
-    #   print('uh oh')
-    # print(which)
-  return diff
 
-  if len(log1) != len(log2):
-    cnt1 = Counter(m.which() for m in log1)
-    cnt2 = Counter(m.which() for m in log2)
-    raise Exception(f"logs are not same length: {len(log1)} VS {len(log2)}\n\t\t{cnt1}\n\t\t{cnt2}")
-
-  for msg1, msg2 in zip(log1, log2, strict=True):
-    # if msg1.which() != msg2.which():
-    #   raise Exception("msgs not aligned between logs")
-
-    msg1 = remove_ignored_fields(msg1, ignore_fields)
-    msg2 = remove_ignored_fields(msg2, ignore_fields)
-
-    if msg1.to_bytes() != msg2.to_bytes():
-      msg1_dict = msg1.as_reader().to_dict(verbose=True)
-      msg2_dict = msg2.as_reader().to_dict(verbose=True)
-
-      dd = dictdiffer.diff(msg1_dict, msg2_dict, ignore=ignore_fields)
-
-      # Dictdiffer only supports relative tolerance, we also want to check for absolute
-      # TODO: add this to dictdiffer
-      def outside_tolerance(diff):
-        try:
-          if diff[0] == "change":
-            a, b = diff[2]
-            finite = math.isfinite(a) and math.isfinite(b)
-            if finite and isinstance(a, numbers.Number) and isinstance(b, numbers.Number):
-              return abs(a - b) > max(tolerance, tolerance * max(abs(a), abs(b)))
-        except TypeError:
-          pass
-        return True
-
-      dd = list(filter(outside_tolerance, dd))
-
-      diff.extend(dd)
   return diff
 
 
