@@ -2,6 +2,7 @@
 import argparse
 import struct
 from enum import IntEnum
+from typing import Tuple
 
 from openpilot.tools.lib.filereader import FileReader
 
@@ -113,7 +114,7 @@ HEVC_CODED_SLICE_SEGMENT_NAL_UNITS = (
 class VideoFileInvalid(Exception):
   pass
 
-def get_ue(dat: bytes, start_idx: int, skip_bits: int) -> (int, int):
+def get_ue(dat: bytes, start_idx: int, skip_bits: int) -> Tuple[int, int]:
   prefix_val = 0
   prefix_len = 0
   suffix_val = 0
@@ -164,7 +165,7 @@ def get_hevc_nal_unit_length(dat: bytes, nal_unit_start: int) -> int:
   nal_unit_len = (pos if pos != -1 else len(dat)) - nal_unit_start
   return nal_unit_len
 
-def get_hevc_nal_unit_type(dat: bytes, nal_unit_start: int) -> int:
+def get_hevc_nal_unit_type(dat: bytes, nal_unit_start: int) -> HevcNalUnitType:
   # 7.3.1.2 NAL unit header syntax
   # nal_unit_header( ) {    // descriptor
   #   forbidden_zero_bit    f(1)
@@ -176,9 +177,9 @@ def get_hevc_nal_unit_type(dat: bytes, nal_unit_start: int) -> int:
   nal_unit_header = dat[header_start:header_start + NAL_UNIT_HEADER_SIZE]
   if len(nal_unit_header) != 2:
     raise VideoFileInvalid("data to short to contain nal unit header")
-  return (nal_unit_header[0] >> 1) & 0x3F
+  return HevcNalUnitType((nal_unit_header[0] >> 1) & 0x3F)
 
-def get_hevc_slice_type(dat: bytes, nal_unit_start: int, nal_unit_type: HevcNalUnitType) -> int:
+def get_hevc_slice_type(dat: bytes, nal_unit_start: int, nal_unit_type: HevcNalUnitType) -> Tuple[int, bool]:
   # 7.3.2.9 Slice segment layer RBSP syntax
   # slice_segment_layer_rbsp( ) {
   #   slice_segment_header( )
@@ -210,11 +211,11 @@ def get_hevc_slice_type(dat: bytes, nal_unit_start: int, nal_unit_type: HevcNalU
   # first_slice_segment_in_pic_flag equal to 1 specifies that the slice segment is the first slice segment of the picture in
   # decoding order. first_slice_segment_in_pic_flag equal to 0 specifies that the slice segment is not the first slice segment
   # of the picture in decoding order.
-  first_slice_segment_in_pic_flag = dat[rbsp_start] >> 7 & 1
-  if not first_slice_segment_in_pic_flag:
-    # we only keep track of the position of the first slice segment
-    # so no need to parse dependent_slice_segment_flag and slice_segment_address
-    return None
+  is_first_slice = dat[rbsp_start] >> 7 & 1
+  if not is_first_slice:
+    # TODO: parse dependent_slice_segment_flag and slice_segment_address and get real slice_type
+    # for now since we don't use it return -1 for slice_type
+    return (-1, is_first_slice)
   skip_bits += 1 # skip past first_slice_segment_in_pic_flag
 
   if nal_unit_type >= HevcNalUnitType.BLA_W_LP and nal_unit_type <= HevcNalUnitType.RSV_IRAP_VCL23:
@@ -249,9 +250,9 @@ def get_hevc_slice_type(dat: bytes, nal_unit_start: int, nal_unit_type: HevcNalU
   slice_type, _ = get_ue(dat, rbsp_start, skip_bits)
   if slice_type > 2:
     raise VideoFileInvalid("slice_type must be 0, 1, or 2")
-  return slice_type
+  return slice_type, is_first_slice
 
-def hevc_index(hevc_file_name: str, allow_corrupt: bool=False) -> (list, int, bytes):
+def hevc_index(hevc_file_name: str, allow_corrupt: bool=False) -> Tuple[list, int, bytes]:
   with FileReader(hevc_file_name) as f:
     dat = f.read()
 
@@ -270,8 +271,8 @@ def hevc_index(hevc_file_name: str, allow_corrupt: bool=False) -> (list, int, by
       if nal_unit_type in HEVC_PARAMETER_SET_NAL_UNITS:
         prefix_dat += dat[i:i+nal_unit_len]
       elif nal_unit_type in HEVC_CODED_SLICE_SEGMENT_NAL_UNITS:
-        slice_type = get_hevc_slice_type(dat, i, nal_unit_type)
-        if slice_type is not None:
+        slice_type, is_first_slice = get_hevc_slice_type(dat, i, nal_unit_type)
+        if is_first_slice:
           frame_types.append((slice_type, i))
       i += nal_unit_len
   except Exception:
