@@ -11,10 +11,11 @@ IGNORE_FIELDS = ["logMonoTime"]
 
 class TestCompareLogs(unittest.TestCase):
   @staticmethod
-  def _msg(which: str, data: None | dict = None):
+  def _msg(which: str, data: None | dict = None, valid: bool = True):
     msg = messaging.new_message(which)
     if data is not None:
       getattr(msg, which).from_dict(data)
+    msg.valid = valid
     return msg.as_reader()
 
   @staticmethod
