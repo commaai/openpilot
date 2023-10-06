@@ -100,13 +100,13 @@ def cache_fn(func):
 
 
 @cache_fn
-def index_stream(fn, typ):
-  if typ != "hevc":
+def index_stream(fn, ft):
+  if ft != FrameType.h265_stream:
     raise NotImplementedError("Only h265 supported")
 
   frame_types, dat_len, prefix = hevc_index(fn)
   index = np.array(frame_types + [(0xFFFFFFFF, dat_len)], dtype=np.uint32)
-  probe = ffprobe(fn, typ)
+  probe = ffprobe(fn, "hevc")
 
   return {
     'index': index,
