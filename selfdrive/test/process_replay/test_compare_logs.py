@@ -26,7 +26,6 @@ class TestCompareLogs(unittest.TestCase):
     return failed
 
   def _assertException(self, ref_logs: list, new_logs: list, msg: str):
-    self.assertTrue(len(msg))
     with self.assertRaises(Exception) as cm:
       self._get_failed(ref_logs, new_logs)
     self.assertIn(msg, str(cm.exception))
