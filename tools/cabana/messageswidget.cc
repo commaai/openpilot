@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <limits>
 
+#include <QCheckBox>
 #include <QHBoxLayout>
 #include <QPainter>
 #include <QPushButton>
@@ -13,19 +14,13 @@
 
 MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(0, 0, 0, 0);
+  main_layout->setContentsMargins(0, 9, 0, 0);
 
   // message table
   view = new MessageView(this);
-  model = new MessageListModel(this);
-  header = new MessageViewHeader(this);
-  auto delegate = new MessageBytesDelegate(view, settings.multiple_lines_bytes);
-
-  view->setItemDelegate(delegate);
-  view->setUniformRowHeights(!settings.multiple_lines_bytes);
-  view->setHeader(header);
-  view->setModel(model);
-  view->setHeader(header);
+  view->setHeader(header = new MessageViewHeader(this));
+  view->setModel(model = new MessageListModel(this));
+  view->setItemDelegate(delegate = new MessageBytesDelegate(view, settings.multiple_lines_bytes));
   view->setSortingEnabled(true);
   view->sortByColumn(MessageListModel::Column::NAME, Qt::AscendingOrder);
   view->setAllColumnsShowFocus(true);
@@ -39,39 +34,33 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   view->header()->setSectionsMovable(true);
   view->header()->setSectionResizeMode(MessageListModel::Column::DATA, QHeaderView::Fixed);
   view->header()->setStretchLastSection(true);
-
   // Header context menu
   view->header()->setContextMenuPolicy(Qt::CustomContextMenu);
-  QObject::connect(view->header(), &QHeaderView::customContextMenuRequested, view, &MessageView::headerContextMenuEvent);
+  QObject::connect(view->header(), &QHeaderView::customContextMenuRequested, this, &MessagesWidget::headerContextMenuEvent);
+  QObject::connect(menu = new QMenu(this), &QMenu::aboutToShow, this, &MessagesWidget::menuAboutToShow);
 
-  main_layout->addWidget(view);
-
-  // bottom layout
-  QHBoxLayout *bottom_layout = new QHBoxLayout();
-  bottom_layout->addWidget(suppress_add = new QPushButton("&Suppress Highlighted"));
+  // title layout
+  QHBoxLayout *title_layout = new QHBoxLayout();
+  title_layout->addWidget(suppress_add = new QPushButton("&Suppress Highlighted"));
   suppress_add->setToolTip(tr("Suppress Highlighted bytes"));
-  bottom_layout->addWidget(suppress_clear = new QPushButton());
+  title_layout->addWidget(suppress_clear = new QPushButton());
   suppress_clear->setToolTip(tr("Clear suppressed bytes"));
   QCheckBox *suppress_defined_signals = new QCheckBox(tr("Suppress Signals"), this);
   suppress_defined_signals->setToolTip(tr("Suppress Defined Signals"));
   suppress_defined_signals->setChecked(settings.suppress_defined_signals);
-  bottom_layout->addWidget(suppress_defined_signals);
-  bottom_layout->addStretch();
-  bottom_layout->addWidget(multiple_lines_bytes = new QCheckBox(tr("Multi-Line Bytes"), this));
-  multiple_lines_bytes->setToolTip(tr("Display bytes in multiple lines"));
-  multiple_lines_bytes->setChecked(settings.multiple_lines_bytes);
+  title_layout->addWidget(suppress_defined_signals);
+  title_layout->addStretch();
+  auto menu_button = new ToolButton("list-check", tr("View"));
+  menu_button->setPopupMode(QToolButton::InstantPopup);
+  menu_button->setMenu(menu);
+  title_layout->addWidget(menu_button);
 
-  main_layout->addLayout(bottom_layout);
+  main_layout->addLayout(title_layout);
+  main_layout->addWidget(view);
 
   // signals/slots
   QObject::connect(header, &MessageViewHeader::filtersUpdated, model, &MessageListModel::setFilterStrings);
   QObject::connect(view->horizontalScrollBar(), &QScrollBar::valueChanged, header, &MessageViewHeader::updateHeaderPositions);
-  QObject::connect(multiple_lines_bytes, &QCheckBox::stateChanged, [=](int state) {
-    settings.multiple_lines_bytes = (state == Qt::Checked);
-    delegate->setMultipleLines(settings.multiple_lines_bytes);
-    view->setUniformRowHeights(!settings.multiple_lines_bytes);
-    view->updateBytesSectionSize();
-  });
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, model, &MessageListModel::dbcModified);
   QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, model, &MessageListModel::dbcModified);
@@ -91,7 +80,6 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
       }
     }
   });
-
   QObject::connect(suppress_defined_signals, &QCheckBox::stateChanged, can, &AbstractStream::suppressDefinedSignals);
   QObject::connect(suppress_add, &QPushButton::clicked, [this]() {
     size_t cnt = can->suppressHighlighted();
@@ -138,6 +126,39 @@ void MessagesWidget::selectMessage(const MessageId &msg_id) {
 void MessagesWidget::updateSuppressedButtons(size_t n) {
   suppress_clear->setEnabled(n > 0);
   suppress_clear->setText(n > 0 ? tr("&Clear (%1)").arg(n) : tr("&Clear"));
+}
+
+void MessagesWidget::headerContextMenuEvent(const QPoint &pos) {
+  menu->exec(header->mapToGlobal(pos));
+}
+
+void MessagesWidget::menuAboutToShow() {
+  if (menu->isEmpty()) {
+    for (int i = 0; i < header->count(); ++i) {
+      int index = header->logicalIndex(i);
+      auto action = menu->addAction(model->headerData(index, Qt::Horizontal).toString(),
+                                    [=]() { header->setSectionHidden(index, !header->isSectionHidden(index)); });
+      action->setCheckable(true);
+    }
+    menu->addSeparator();
+    auto action = menu->addAction(tr("Mutlti-Line bytes"), [=]() { setMultiLineBytes(!settings.multiple_lines_bytes); });
+    action->setCheckable(true);
+  }
+
+  auto actions = menu->actions();
+  for (int i = 0; i < header->count(); ++i) {
+    actions[i]->setChecked(!header->isSectionHidden(header->logicalIndex(i)));
+    // Can't hide the name column
+    actions[i]->setEnabled(header->logicalIndex(i) > 0);
+  }
+  actions.back()->setChecked(settings.multiple_lines_bytes);
+}
+
+void MessagesWidget::setMultiLineBytes(bool multi) {
+  settings.multiple_lines_bytes = multi;
+  delegate->setMultipleLines(multi);
+  view->updateBytesSectionSize();
+  view->doItemsLayout();
 }
 
 // MessageListModel
@@ -321,7 +342,7 @@ void MessageListModel::msgsReceived(const std::set<MessageId> *new_msgs, bool ha
     sort_timer.start(110);
   } else if (!filter_str.empty()) {
     bool resort = (filter_str.contains(Column::FREQ) || filter_str.contains(Column::COUNT) ||
-                      filter_str.contains(Column::DATA));
+                   filter_str.contains(Column::DATA));
     if (resort && ((millis_since_boot() - last_sort_ts) >= 1000)) {
       filterAndSort();
       return;
@@ -367,47 +388,19 @@ void MessageView::drawRow(QPainter *painter, const QStyleOptionViewItem &option,
 void MessageView::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles) {
   // Bypass the slow call to QTreeView::dataChanged.
   // QTreeView::dataChanged will invalidate the height cache and that's what we don't need in MessageView.
-  QAbstractItemView::dataChanged(topLeft, bottomRight, roles);
+  QTreeView::dataChanged(topLeft, bottomRight, roles);
 }
 
 void MessageView::updateBytesSectionSize() {
-  auto delegate = ((MessageBytesDelegate *)itemDelegate());
   int max_bytes = 8;
-  if (!delegate->multipleLines()) {
-    for (const auto &[_, m] : can->lastMessages()) {
-      max_bytes = std::max<int>(max_bytes, m.dat.size());
-    }
+  for (const auto &[_, m] : can->lastMessages()) {
+    max_bytes = std::max<int>(max_bytes, m.dat.size());
   }
-  int width = delegate->sizeForBytes(max_bytes).width();
-  if (header()->sectionSize(MessageListModel::Column::DATA) != width) {
-    header()->resizeSection(MessageListModel::Column::DATA, width);
-  }
+  int width = ((MessageBytesDelegate *)itemDelegate())->sizeForBytes(max_bytes).width();
+  header()->resizeSection(MessageListModel::Column::DATA, width);
 }
 
-void MessageView::headerContextMenuEvent(const QPoint &pos) {
-  QMenu menu(this);
-
-  int cur_index = header()->logicalIndexAt(pos);
-  for (int visual_index = 0; visual_index < header()->count(); visual_index++) {
-    int logical_index = header()->logicalIndex(visual_index);
-    QString column_name = model()->headerData(logical_index, Qt::Horizontal).toString();
-
-    // Hide show action
-    auto action = header()->isSectionHidden(logical_index)
-                      ? menu.addAction(tr("  %1").arg(column_name), [=]() { header()->showSection(logical_index); })
-                      : menu.addAction(tr("✓ %1").arg(column_name), [=]() { header()->hideSection(logical_index); });
-    // Can't hide the name column
-    action->setEnabled(logical_index > 0);
-    // Make current column bold
-    if (logical_index == cur_index) {
-      QFont font = action->font();
-      font.setBold(true);
-      action->setFont(font);
-    }
-  }
-
-  menu.exec(header()->mapToGlobal(pos));
-}
+// MessageViewHeader
 
 MessageViewHeader::MessageViewHeader(QWidget *parent) : QHeaderView(Qt::Horizontal, parent) {
   QObject::connect(this, &QHeaderView::sectionResized, this, &MessageViewHeader::updateHeaderPositions);

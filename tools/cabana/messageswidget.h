@@ -6,7 +6,6 @@
 #include <vector>
 
 #include <QAbstractTableModel>
-#include <QCheckBox>
 #include <QContextMenuEvent>
 #include <QHeaderView>
 #include <QLineEdit>
@@ -63,7 +62,6 @@ public:
   void drawBranches(QPainter *painter, const QRect &rect, const QModelIndex &index) const override {}
   void dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>()) override;
   void updateBytesSectionSize();
-  void headerContextMenuEvent(const QPoint &pos);
 };
 
 class MessageViewHeader : public QHeaderView {
@@ -100,11 +98,16 @@ signals:
   void titleChanged(const QString &title);
 
 protected:
+  void setMultiLineBytes(bool multi);
+  void headerContextMenuEvent(const QPoint &pos);
+  void menuAboutToShow();
+
   MessageView *view;
   MessageViewHeader *header;
+  MessageBytesDelegate *delegate;
   std::optional<MessageId> current_msg_id;
-  QCheckBox *multiple_lines_bytes;
   MessageListModel *model;
   QPushButton *suppress_add;
   QPushButton *suppress_clear;
+  QMenu *menu;
 };

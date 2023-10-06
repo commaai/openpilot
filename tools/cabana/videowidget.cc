@@ -232,8 +232,7 @@ void Slider::paintEvent(QPaintEvent *ev) {
 void Slider::mousePressEvent(QMouseEvent *e) {
   QSlider::mousePressEvent(e);
   if (e->button() == Qt::LeftButton && !isSliderDown()) {
-    int value = minimum() + ((maximum() - minimum()) * e->x()) / width();
-    setValue(value);
+    setValue(minimum() + ((maximum() - minimum()) * e->x()) / width());
     emit sliderReleased();
   }
 }
