@@ -28,8 +28,12 @@ RUN cd /tmp && \
 
 # Add POCL
 COPY --from=pocl-builder /opt/conda/lib /opt/pocl/lib
-RUN sudo mkdir -p /etc/OpenCL/vendors
-RUN sudo sh -c 'echo "/opt/pocl/lib/libpocl.so.2.11.0" > /etc/OpenCL/vendors/pocl.icd'
+COPY --from=pocl-builder /opt/conda/share /opt/pocl/share
+RUN mkdir -p /etc/OpenCL/vendors
+RUN echo "/opt/pocl/lib/libpocl.so.2.11.0" > /etc/OpenCL/vendors/pocl.icd
+
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES graphics,utility,compute
 
 ARG USER=batman
 ARG USER_UID=1000
@@ -53,6 +57,3 @@ RUN cd /tmp && \
 
 USER root
 RUN git config --global --add safe.directory /tmp/openpilot
-
-ENV NVIDIA_VISIBLE_DEVICES all
-ENV NVIDIA_DRIVER_CAPABILITIES graphics,utility,compute
