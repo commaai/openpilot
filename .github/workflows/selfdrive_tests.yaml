@@ -228,6 +228,33 @@ jobs:
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
 
+  regen:
+    name: regen
+    runs-on: 'ubuntu-20.04'
+    steps: 
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+    - uses: ./.github/workflows/setup-with-retry
+    - name: Cache test routes
+      id: dependency-cache
+      uses: actions/cache@v3
+      with:
+        path: .ci_cache/comma_download_cache
+        key: regen-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/test_regen.py') }}
+    - name: Build base Docker image
+      run: eval "$BUILD"
+    - name: Build Docker image
+      run: eval "$BUILD_CL"
+    - name: Build openpilot
+      run: |
+        ${{ env.RUN }} "scons -j$(nproc)"
+    - name: Run regen
+      timeout-minutes: 30
+      run: |
+        ${{ env.RUN_CL }} "ONNXCPU=1 $PYTEST -n auto --dist=loadscope selfdrive/test/process_replay/test_regen.py && \
+                           chmod -R 777 /tmp/comma_download_cache"
+
   test_modeld:
     name: model tests
     runs-on: ubuntu-20.04

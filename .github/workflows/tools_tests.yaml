@@ -106,3 +106,4 @@ jobs:
         devcontainer exec --workspace-folder . scons -j$(nproc)
         devcontainer exec --workspace-folder . pip install pip-install-test
         devcontainer exec --workspace-folder . touch /home/batman/.comma/auth.json
+        devcontainer exec --workspace-folder . sudo touch /root/test.txt
