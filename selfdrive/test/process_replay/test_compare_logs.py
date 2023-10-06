@@ -54,18 +54,26 @@ class TestCompareLogs(unittest.TestCase):
   #   diff = compare_logs(self.ref_logs, self.new_logs, ignore_fields=IGNORE_FIELDS, ignore_msgs=[], tolerance=None)
   #   print(diff)
   #   self.assertFalse(self._get_failed(diff))
-  #
-  # def test_addition(self):
-  #   self.new_logs.append(self._msg('controlsState'))
-  #   diff = compare_logs(self.ref_logs, self.new_logs, ignore_fields=IGNORE_FIELDS, ignore_msgs=[], tolerance=None)
-  #   print(diff)
-  #   self.assertTrue(self._get_failed(diff))
-  #
-  # def test_removal(self):
-  #   self.new_logs = self.new_logs[:-1]
-  #   diff = compare_logs(self.ref_logs, self.new_logs, ignore_fields=IGNORE_FIELDS, ignore_msgs=[], tolerance=None)
-  #   print(diff)
-  #   self.assertTrue(self._get_failed(diff))
+
+  def test_addition(self):
+    # Adding any single message should fail
+    ref_logs = [self._msg('controlsState'), self._msg('carState'), self._msg('carControl'),
+                self._msg('controlsState'), self._msg('carState'), self._msg('carControl')]
+    for which in ('controlsState', 'carState', 'carControl'):
+      with self.subTest(which=which):
+        new_logs = ref_logs + [self._msg(which)]
+        diff = compare_logs(ref_logs, new_logs, ignore_fields=IGNORE_FIELDS, ignore_msgs=[], tolerance=None)
+        print(diff)
+        self.assertTrue(self._get_failed(diff))
+
+  def test_removal(self):
+    ref_logs = [self._msg('controlsState'), self._msg('carState'), self._msg('carControl'),
+                self._msg('controlsState'), self._msg('carState'), self._msg('carControl')]
+    for idx in range(len(ref_logs)):
+      with self.subTest(remove_idx=idx):
+        new_logs = ref_logs[0:idx] + ref_logs[idx + 1:len(ref_logs)]
+        diff = compare_logs(ref_logs, new_logs, ignore_fields=IGNORE_FIELDS, ignore_msgs=[], tolerance=None)
+        self.assertTrue(self._get_failed(diff))
 
   # def test_order(self):
   #   self.new_logs.insert(0, self.new_logs.pop(len(self.new_logs) - 1))
