@@ -95,7 +95,6 @@ class CAR(StrEnum):
   LEXUS_NX = "LEXUS NX 2018"
   LEXUS_NXH = "LEXUS NX HYBRID 2018"
   LEXUS_NX_TSS2 = "LEXUS NX 2020"
-  LEXUS_NXH_TSS2 = "LEXUS NX HYBRID 2020"
   LEXUS_RC = "LEXUS RC 2020"
   LEXUS_RX = "LEXUS RX 2016"
   LEXUS_RXH = "LEXUS RX HYBRID 2017"
@@ -186,8 +185,10 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.LEXUS_IS_TSS2: ToyotaCarInfo("Lexus IS 2022-23"),
   CAR.LEXUS_NX: ToyotaCarInfo("Lexus NX 2018-19"),
   CAR.LEXUS_NXH: ToyotaCarInfo("Lexus NX Hybrid 2018-19"),
-  CAR.LEXUS_NX_TSS2: ToyotaCarInfo("Lexus NX 2020-21"),
-  CAR.LEXUS_NXH_TSS2: ToyotaCarInfo("Lexus NX Hybrid 2020-21"),
+  CAR.LEXUS_NX_TSS2: [
+    ToyotaCarInfo("Lexus NX 2020-21"),
+    ToyotaCarInfo("Lexus NX Hybrid 2020-21"),
+  ],
   CAR.LEXUS_RC: ToyotaCarInfo("Lexus RC 2018-20"),
   CAR.LEXUS_RX: [
     ToyotaCarInfo("Lexus RX 2016", "Lexus Safety System+"),
@@ -343,7 +344,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Ecu.abs: [CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.SIENNA, CAR.LEXUS_IS],
     # On some models, the engine can show on two different addresses
     Ecu.engine: [CAR.CAMRY, CAR.COROLLA_TSS2, CAR.CHR, CAR.CHR_TSS2, CAR.LEXUS_IS, CAR.LEXUS_RC,
-                 CAR.LEXUS_RX_TSS2],
+                 CAR.LEXUS_RX_TSS2, CAR.LEXUS_NX_TSS2],
   },
   extra_ecus=[
     # All known ECUs on a late-model Toyota vehicle not queried here:
@@ -1956,29 +1957,13 @@ FW_VERSIONS = {
       b'\x018966378B2000\x00\x00\x00\x00',
       b'\x018966378B3100\x00\x00\x00\x00',
     ],
-    (Ecu.abs, 0x7b0, None): [
-      b'\x01F152678221\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.eps, 0x7a1, None): [
-      b'8965B78120\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdRadar, 0x750, 0xf): [
-      b"\x018821F3301400\x00\x00\x00\x00",
-      b'\x018821F3301200\x00\x00\x00\x00',
-      b'\x018821F3301300\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdCamera, 0x750, 0x6d): [
-      b'\x028646F78030A0\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
-      b'\x028646F7803100\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
-    ],
-  },
-  CAR.LEXUS_NXH_TSS2: {
     (Ecu.engine, 0x7e0, None): [
       b'\x0237887000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02378A0000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02378F4000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
+      b'\x01F152678221\x00\x00\x00\x00\x00\x00',
       b'F152678210\x00\x00\x00\x00\x00\x00',
       b'F152678211\x00\x00\x00\x00\x00\x00',
     ],
@@ -1986,7 +1971,8 @@ FW_VERSIONS = {
       b'8965B78120\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
-      b'\x018821F3301400\x00\x00\x00\x00',
+      b"\x018821F3301400\x00\x00\x00\x00",
+      b'\x018821F3301200\x00\x00\x00\x00',
       b'\x018821F3301300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
@@ -2330,7 +2316,6 @@ DBC = {
   CAR.LEXUS_NXH: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
   CAR.LEXUS_NX: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
   CAR.LEXUS_NX_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.LEXUS_NXH_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.PRIUS_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.MIRAI: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.ALPHARD_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
@@ -2344,7 +2329,7 @@ EPS_SCALE = defaultdict(lambda: 73, {CAR.PRIUS: 66, CAR.COROLLA: 88, CAR.LEXUS_I
 TSS2_CAR = {CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023, CAR.COROLLA_TSS2, CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2,
             CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022, CAR.RAV4H_TSS2_2023, CAR.LEXUS_RX_TSS2, CAR.HIGHLANDER_TSS2,
             CAR.HIGHLANDERH_TSS2, CAR.PRIUS_TSS2, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2, CAR.LEXUS_IS_TSS2, CAR.MIRAI, CAR.LEXUS_NX_TSS2,
-            CAR.LEXUS_NXH_TSS2, CAR.ALPHARD_TSS2, CAR.AVALON_TSS2, CAR.AVALONH_TSS2, CAR.ALPHARDH_TSS2, CAR.CHR_TSS2, CAR.CHRH_TSS2}
+            CAR.ALPHARD_TSS2, CAR.AVALON_TSS2, CAR.AVALONH_TSS2, CAR.ALPHARDH_TSS2, CAR.CHR_TSS2, CAR.CHRH_TSS2}
 
 NO_DSU_CAR = TSS2_CAR | {CAR.CHR, CAR.CHRH, CAR.CAMRY, CAR.CAMRYH}
 
