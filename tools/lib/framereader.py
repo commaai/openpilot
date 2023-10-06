@@ -84,7 +84,7 @@ def cache_fn(func):
     else:
       cache_dir = kwargs.pop('cache_dir', DEFAULT_CACHE_DIR)
       cache_path = cache_path_for_file_path(fn, cache_dir)
-    print(cache_path)
+
     if cache_path and os.path.exists(cache_path):
       with open(cache_path, "rb") as cache_file:
         cache_value = pickle.load(cache_file)
@@ -102,7 +102,8 @@ def cache_fn(func):
 
 @cache_fn
 def index_stream(fn, typ):
-  assert typ in ("hevc", )
+  if type != "hevc":
+    raise NotImplementedError("Only h265 supported")
 
   frame_types, dat_len, prefix = hevc_index(fn)
   index = np.array(frame_types + [(0xFFFFFFFF, dat_len)], dtype=np.uint32)
@@ -115,22 +116,12 @@ def index_stream(fn, typ):
   }
 
 
-def index_videos(camera_paths, cache_dir=DEFAULT_CACHE_DIR):
-  """Requires that paths in camera_paths are contiguous and of the same type."""
-  if len(camera_paths) < 1:
-    raise ValueError("must provide at least one video to index")
-
-  for fn in camera_paths:
-    index_video(fn, "hevc", cache_dir)
-
-
 def index_video(fn, frame_type=None, cache_dir=DEFAULT_CACHE_DIR):
   cache_path = cache_path_for_file_path(fn, cache_dir)
-
   if os.path.exists(cache_path):
     return
 
-  index_stream(fn, "hevc", cache_dir=cache_dir)
+  index_stream(fn, frame_type, cache_dir=cache_dir)
 
 
 def get_video_index(fn, frame_type, cache_dir=DEFAULT_CACHE_DIR):

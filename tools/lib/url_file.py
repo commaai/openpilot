@@ -37,8 +37,7 @@ class URLFile:
       self._curl = self._tlocal.curl
     except AttributeError:
       self._curl = self._tlocal.curl = pycurl.Curl()
-    if not self._force_download:
-      mkdirs_exists_ok(Paths.download_cache_root())
+    mkdirs_exists_ok(Paths.download_cache_root())
 
   def __enter__(self):
     return self
@@ -67,13 +66,12 @@ class URLFile:
     if self._length is not None:
       return self._length
 
-    if not self._force_download:
-      file_length_path = os.path.join(Paths.download_cache_root(), hash_256(self._url) + "_length")
-      if os.path.exists(file_length_path):
-        with open(file_length_path) as file_length:
-            content = file_length.read()
-            self._length = int(content)
-            return self._length
+    file_length_path = os.path.join(Paths.download_cache_root(), hash_256(self._url) + "_length")
+    if os.path.exists(file_length_path) and not self._force_download:
+      with open(file_length_path) as file_length:
+          content = file_length.read()
+          self._length = int(content)
+          return self._length
 
     self._length = self.get_length_online()
     if not self._force_download and self._length != -1:
