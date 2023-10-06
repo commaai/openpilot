@@ -98,7 +98,7 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
   return diff
 
 
-def format_diff(results, log_paths, ref_commit):
+def format_diff(results, log_paths, ref_commit) -> tuple[str, str, bool]:
   diff1, diff2 = "", ""
   diff2 += f"***** tested against commit {ref_commit} *****\n"
 
