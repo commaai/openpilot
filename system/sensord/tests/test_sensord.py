@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import pytest
 import time
 import unittest
 import numpy as np
@@ -98,6 +99,8 @@ def read_sensor_events(duration_sec):
 
   return {k: v for k, v in events.items() if len(v) > 0}
 
+
+@pytest.mark.explicit
 class TestSensord(unittest.TestCase):
   @classmethod
   def setUpClass(cls):

@@ -150,19 +150,19 @@ node {
           ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR ./build_devel.sh"],
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["check dirty", "release/check-dirty.sh"],
-          ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
-          ["time to onroad", "cd selfdrive/test/ && pytest test_time_to_onroad.py"],
+          ["onroad tests", "pytest selfdrive/test/test_onroad.py"],
+          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
         ])
       },
       'HW + Unit Tests': {
         deviceStage("tici", "tici-common", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
           ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
-          ["test power draw", "./system/hardware/tici/tests/test_power_draw.py"],
+          ["test power draw", "pytest system/hardware/tici/tests/test_power_draw.py"],
           ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
           ["test pigeond", "pytest system/sensord/tests/test_pigeond.py"],
           ["test manager", "pytest selfdrive/manager/test/test_manager.py"],
-          ["test nav", "pytest selfdrive/navd/tests/"],
+          ["test nav", "pytest selfdrive/navd/tests/test_map_renderer.py"],
         ])
       },
       'loopback': {

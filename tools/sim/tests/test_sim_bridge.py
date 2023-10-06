@@ -1,4 +1,5 @@
 import os
+import pytest
 import subprocess
 import time
 import unittest
@@ -10,6 +11,8 @@ from openpilot.common.basedir import BASEDIR
 
 SIM_DIR = os.path.join(BASEDIR, "tools/sim")
 
+
+@pytest.mark.explicit
 class TestSimBridgeBase(unittest.TestCase):
   @classmethod
   def setUpClass(cls):

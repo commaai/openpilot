@@ -6,6 +6,8 @@ launch_openpilot.sh
 
 Jenkinsfile
 SConstruct
+conftest.py
+pyproject.toml
 
 README.md
 RELEASES.md
@@ -30,6 +32,7 @@ common/logging_extra.py
 common/numpy_fast.py
 common/params.py
 common/params_pyx.pyx
+common/prefix.py
 common/profiler.py
 common/basedir.py
 common/dict_helpers.py

@@ -4,6 +4,19 @@ import pytest
 from openpilot.common.prefix import OpenpilotPrefix
 
 
+# there is currently no way to mark cpp tests, so we have to mark them here
+ADDITIONAL_EXPLICIT = ["test_translations", "test_sound"]
+
+def pytest_collection_modifyitems(config, items):
+  skipper = pytest.mark.skip(reason="Skipping explicit test since it was not run directly.")
+  for item in items:
+    test_filename = item.fspath.basename
+    is_explicit_test = "explicit" in item.keywords or test_filename in ADDITIONAL_EXPLICIT
+    was_run_explicitly = any(test_filename in file for file in config.option.file_or_dir)
+    if is_explicit_test and not was_run_explicitly:
+      item.add_marker(skipper)
+
+
 @pytest.fixture(scope="function", autouse=True)
 def openpilot_function_fixture():
   starting_env = dict(os.environ)

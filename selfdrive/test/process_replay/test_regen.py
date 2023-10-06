@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import pytest
 import unittest
 
 from parameterized import parameterized
@@ -31,6 +31,7 @@ def ci_setup_data_readers(route, sidx):
   return lr, frs
 
 
+@pytest.mark.explicit
 class TestRegen(unittest.TestCase):
   @parameterized.expand(TESTED_SEGMENTS)
   def test_engaged(self, case_name, segment):

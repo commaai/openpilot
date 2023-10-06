@@ -282,8 +282,7 @@ jobs:
       timeout-minutes: 4
       run: |
         ${{ env.RUN_CL }} "unset PYTHONWARNINGS && \
-                           $UNIT_TEST selfdrive/modeld && \
-                           coverage xml"
+                           $PYTEST selfdrive/modeld/tests/test_modeld.py"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
 

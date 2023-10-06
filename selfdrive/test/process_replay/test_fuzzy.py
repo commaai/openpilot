@@ -3,6 +3,7 @@ import copy
 from hypothesis import given, HealthCheck, Phase, settings
 import hypothesis.strategies as st
 from parameterized import parameterized
+import pytest
 import unittest
 
 from cereal import log
@@ -16,6 +17,7 @@ import openpilot.selfdrive.test.process_replay.process_replay as pr
 NOT_TESTED = ['controlsd', 'plannerd', 'calibrationd', 'dmonitoringd', 'paramsd', 'laikad', 'dmonitoringmodeld', 'modeld']
 TEST_CASES = [(cfg.proc_name, copy.deepcopy(cfg)) for cfg in pr.CONFIGS if cfg.proc_name not in NOT_TESTED]
 
+@pytest.mark.explicit
 class TestFuzzProcesses(unittest.TestCase):
 
   @parameterized.expand(TEST_CASES)

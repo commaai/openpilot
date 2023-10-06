@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import pytest
 import json
 import time
 import datetime
@@ -16,6 +17,7 @@ from openpilot.common.transformations.coordinates import ecef_from_geodetic
 GOOD_SIGNAL = bool(int(os.getenv("GOOD_SIGNAL", '0')))
 
 
+@pytest.mark.explicit
 class TestRawgpsd(unittest.TestCase):
   @classmethod
   def setUpClass(cls):

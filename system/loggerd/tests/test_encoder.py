@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import math
 import os
+import pytest
 import random
 import shutil
 import subprocess
@@ -31,6 +32,7 @@ CAMERAS = [
 FILE_SIZE_TOLERANCE = 0.5
 
 
+@pytest.mark.explicit
 class TestEncoder(unittest.TestCase):
 
   # TODO: all of loggerd should work on PC

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import pytest
 import unittest
 import time
 import math
@@ -44,6 +45,7 @@ def send_llk_msg(done):
     time.sleep(1/20.)
 
 
+@pytest.mark.explicit
 class TestPowerDraw(unittest.TestCase):
 
   @classmethod

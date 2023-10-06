@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import pytest
 import time
 import unittest
 import numpy as np
@@ -8,6 +9,8 @@ from openpilot.system.hardware.tici.hardware import Tici
 
 HARDWARE = Tici()
 
+
+@pytest.mark.explicit
 class TestHardware(unittest.TestCase):
 
   @classmethod

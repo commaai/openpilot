@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import pytest
 import time
 import unittest
 import numpy as np
@@ -19,6 +20,7 @@ FRAME_DELTA_TOLERANCE = {log.FrameData.ImageSensor.ar0231: 1.0,
 CAMERAS = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
 
 
+@pytest.mark.explicit
 class TestCamerad(unittest.TestCase):
   @classmethod
   def setUpClass(cls):

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import pytest
 import unittest
 import requests
 import threading
@@ -73,6 +74,7 @@ class MapBoxInternetDisabledServer(threading.Thread):
     MapBoxInternetDisabledRequestHandler.INTERNET_ACTIVE = True
 
 
+@pytest.mark.explicit
 class TestMapRenderer(unittest.TestCase):
   server = MapBoxInternetDisabledServer()
 
