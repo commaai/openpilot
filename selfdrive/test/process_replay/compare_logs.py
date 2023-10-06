@@ -4,7 +4,7 @@ import math
 import capnp
 import numbers
 import dictdiffer
-from collections import defaultdict
+from collections import Counter, defaultdict
 from typing import Dict
 
 from openpilot.tools.lib.logreader import LogReader
@@ -52,6 +52,17 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
     for log in (log1, log2)
   )
 
+  diff = []
+  if len(log1) != len(log2):
+    cnt1 = Counter(m.which() for m in log1)
+    cnt2 = Counter(m.which() for m in log2)
+    diff.append(f"logs are not same length: {len(log1)} VS {len(log2)}\n\t\t{cnt1}\n\t\t{cnt2}")
+
+  for msg1, msg2 in zip(log1, log2, strict=False):
+    if msg1.which() != msg2.which():
+      diff.append("msgs not aligned between logs")
+      break
+
   msgs_by_service = defaultdict(lambda: defaultdict(list))
   for msg1 in log1:
     msgs_by_service["ref"][msg1.which()].append(msg1)
@@ -61,7 +72,6 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
   if set(msgs_by_service["ref"]) != set(msgs_by_service["new"]):
     raise Exception(f"log service keys don't match:\n\t\t{set(msgs_by_service['ref'])}\n\t\t{set(msgs_by_service['new'])}")
 
-  diff = []
   for service in msgs_by_service["ref"].keys():
     if len(msgs_by_service["ref"][service]) != len(msgs_by_service["new"][service]):
       # Print new/removed messages
