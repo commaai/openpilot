@@ -14,15 +14,6 @@ class TestCompareLogs(unittest.TestCase):
   def _msg(which: str):
     return messaging.new_message(which).as_reader()
 
-  @staticmethod
-  def _get_failed(ref_logs: list, new_logs: list) -> bool:
-    try:
-      diff = compare_logs(ref_logs, new_logs, ignore_fields=IGNORE_FIELDS)
-      _, _, failed = format_diff({"": {"": diff}}, {"": {"": {"ref": "", "new": ""}}}, {})
-    except Exception:
-      return True
-    return failed
-
   @settings(max_examples=1000, deadline=None)
   @given(data=st.data())
   def test_fuzzy_diff(self, data):
@@ -36,7 +27,11 @@ class TestCompareLogs(unittest.TestCase):
     any_diff = [remove_ignored_fields(m, IGNORE_FIELDS).as_reader().to_dict(verbose=True) for m in ref_logs] != \
                [remove_ignored_fields(m, IGNORE_FIELDS).as_reader().to_dict(verbose=True) for m in new_logs]
 
-    failed = self._get_failed(ref_logs, new_logs)
+    try:
+      diff = compare_logs(ref_logs, new_logs, ignore_fields=IGNORE_FIELDS)
+      _, _, failed = format_diff({"": {"": diff}}, {"": {"": {"ref": "", "new": ""}}}, {})
+    except Exception:
+      failed = True
     self.assertEqual(failed, any_diff, "compare_logs didn't catch diff")
 
 
