@@ -197,8 +197,8 @@ routes = [
   CarTestRoute("d27ad752e9b08d4f|2021-05-26--19-39-51", TOYOTA.LEXUS_RXH),
   CarTestRoute("01b22eb2ed121565|2020-02-02--11-25-51", TOYOTA.LEXUS_RX_TSS2),
   CarTestRoute("b74758c690a49668|2020-05-20--15-58-57", TOYOTA.LEXUS_RX_TSS2),  # hybrid
-  CarTestRoute("ec429c0f37564e3c|2020-02-01--17-28-12", TOYOTA.LEXUS_NXH),
   CarTestRoute("964c09eb11ca8089|2020-11-03--22-04-00", TOYOTA.LEXUS_NX),
+  CarTestRoute("ec429c0f37564e3c|2020-02-01--17-28-12", TOYOTA.LEXUS_NX),  # hybrid
   CarTestRoute("3fd5305f8b6ca765|2021-04-28--19-26-49", TOYOTA.LEXUS_NX_TSS2),
   CarTestRoute("09ae96064ed85a14|2022-06-09--12-22-31", TOYOTA.LEXUS_NX_TSS2),  # hybrid
   CarTestRoute("0a302ffddbb3e3d3|2020-02-08--16-19-08", TOYOTA.HIGHLANDER_TSS2),
@@ -211,9 +211,9 @@ routes = [
   CarTestRoute("0a0de17a1e6a2d15|2020-09-21--21-24-41", TOYOTA.PRIUS_TSS2),
   CarTestRoute("9b36accae406390e|2021-03-30--10-41-38", TOYOTA.MIRAI),
   CarTestRoute("cd9cff4b0b26c435|2021-05-13--15-12-39", TOYOTA.CHR),
+  CarTestRoute("57858ede0369a261|2021-05-18--20-34-20", TOYOTA.CHR),  # hybrid
   CarTestRoute("ea8fbe72b96a185c|2023-02-08--15-11-46", TOYOTA.CHR_TSS2),
   CarTestRoute("ea8fbe72b96a185c|2023-02-22--09-20-34", TOYOTA.CHR_TSS2),  # openpilot longitudinal, with smartDSU
-  CarTestRoute("57858ede0369a261|2021-05-18--20-34-20", TOYOTA.CHRH),
   CarTestRoute("6719965b0e1d1737|2023-02-09--22-44-05", TOYOTA.CHRH_TSS2),
   # CarTestRoute("6719965b0e1d1737|2023-08-29--06-40-05", TOYOTA.CHRH_TSS2),  # openpilot longitudinal, radar disabled
   CarTestRoute("14623aae37e549f3|2021-10-24--01-20-49", TOYOTA.PRIUS_V),
