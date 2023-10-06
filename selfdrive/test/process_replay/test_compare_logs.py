@@ -55,6 +55,12 @@ class TestCompareLogs(unittest.TestCase):
   #   print(diff)
   #   self.assertFalse(self._get_failed(diff))
 
+  def test_no_diff(self):
+    ref_logs = [self._msg('controlsState'), self._msg('carState'), self._msg('carControl'),
+                self._msg('controlsState'), self._msg('carState'), self._msg('carControl')]
+    diff = compare_logs(ref_logs, ref_logs, ignore_fields=IGNORE_FIELDS, ignore_msgs=[], tolerance=None)
+    self.assertFalse(self._get_failed(diff))
+
   def test_addition(self):
     # Adding any single message should fail
     ref_logs = [self._msg('controlsState'), self._msg('carState'), self._msg('carControl'),
@@ -67,6 +73,7 @@ class TestCompareLogs(unittest.TestCase):
         self.assertTrue(self._get_failed(diff))
 
   def test_removal(self):
+    # Removing any message should fail
     ref_logs = [self._msg('controlsState'), self._msg('carState'), self._msg('carControl'),
                 self._msg('controlsState'), self._msg('carState'), self._msg('carControl')]
     for idx in range(len(ref_logs)):
@@ -74,12 +81,6 @@ class TestCompareLogs(unittest.TestCase):
         new_logs = ref_logs[0:idx] + ref_logs[idx + 1:len(ref_logs)]
         diff = compare_logs(ref_logs, new_logs, ignore_fields=IGNORE_FIELDS, ignore_msgs=[], tolerance=None)
         self.assertTrue(self._get_failed(diff))
-
-  # def test_order(self):
-  #   self.new_logs.insert(0, self.new_logs.pop(len(self.new_logs) - 1))
-  #   diff = compare_logs(self.ref_logs, self.new_logs, ignore_fields=IGNORE_FIELDS, ignore_msgs=[], tolerance=None)
-  #   print(diff)
-  #   self.assertTrue(self._get_failed(diff))
 
   def test_alignment(self):
     # Reverse ref logs and compare: overall alignment should fail
@@ -91,43 +92,6 @@ class TestCompareLogs(unittest.TestCase):
     diff = compare_logs(ref_logs, new_logs, ignore_fields=IGNORE_FIELDS, ignore_msgs=[], tolerance=None)
     print(diff)
     self.assertTrue(self._get_failed(diff))
-
-    # log2 = [self._msg('controlsState'), self._msg('carControl'), self._msg('carState'), self._msg('carState')]
-    #
-    # diff = compare_logs(log1, log2, ignore_fields=IGNORE_FIELDS, ignore_msgs=[], tolerance=None)
-    # print(diff)
-    # self.assertTrue(self._get_failed(diff))
-
-    # # Test msgs out of order
-    # log2 = [self._msg('controlsState'), self._msg('carState'), self._msg('carControl')]
-
-    # diff = compare_logs(log1, log2, ignore_fields=IGNORE_FIELDS, ignore_msgs=[], tolerance=None)
-    # print(diff)
-    # self.assertTrue(self._get_failed(diff))
-
-  # def test_no_diff(self):
-  #   # print('hi')
-  #
-  #   # Test no diff
-  #   log1 = [self._msg('controlsState'), self._msg('carControl'), self._msg('carState')]
-  #
-  #   diff = compare_logs(log1, log1, ignore_fields=IGNORE_FIELDS, ignore_msgs=[], tolerance=None)
-  #   print(diff)
-  #   self.assertFalse(self._get_failed(diff))
-  #
-  #   # Test different length
-  #   log2 = [self._msg('controlsState'), self._msg('carControl'), self._msg('carState'), self._msg('carState')]
-  #
-  #   diff = compare_logs(log1, log2, ignore_fields=IGNORE_FIELDS, ignore_msgs=[], tolerance=None)
-  #   print(diff)
-  #   self.assertTrue(self._get_failed(diff))
-  #
-  #   # # Test msgs out of order
-  #   # log2 = [self._msg('controlsState'), self._msg('carState'), self._msg('carControl')]
-  #
-  #   # diff = compare_logs(log1, log2, ignore_fields=IGNORE_FIELDS, ignore_msgs=[], tolerance=None)
-  #   # print(diff)
-  #   # self.assertTrue(self._get_failed(diff))
 
 
 if __name__ == "__main__":
