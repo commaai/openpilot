@@ -4,7 +4,7 @@ import math
 import capnp
 import numbers
 import dictdiffer
-from collections import defaultdict
+from collections import Counter
 from typing import Dict
 
 from openpilot.tools.lib.logreader import LogReader
@@ -52,53 +52,45 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
     for log in (log1, log2)
   )
 
-  msgs_by_service = defaultdict(lambda: defaultdict(list))
-  for msg1 in log1:
-    msgs_by_service["ref"][msg1.which()].append(msg1)
-  for msg2 in log2:
-    msgs_by_service["new"][msg2.which()].append(msg2)
-
-  if set(msgs_by_service["ref"]) != set(msgs_by_service["new"]):
-    raise Exception(f"log service keys don't match:\n\t\t{set(msgs_by_service['ref'])}\n\t\t{set(msgs_by_service['new'])}")
+  if len(log1) != len(log2):
+    cnt1 = Counter(m.which() for m in log1)
+    cnt2 = Counter(m.which() for m in log2)
+    raise Exception(f"logs are not same length: {len(log1)} VS {len(log2)}\n\t\t{cnt1}\n\t\t{cnt2}")
 
   diff = []
-  for service in msgs_by_service["ref"].keys():
-    if len(msgs_by_service["ref"][service]) != len(msgs_by_service["new"][service]):
-      # Print new/removed messages
-      dict_msgs1 = [remove_ignored_fields(msg1, ignore_fields).as_reader().to_dict(verbose=True) for msg1 in msgs_by_service["ref"][service]]
-      dict_msgs2 = [remove_ignored_fields(msg2, ignore_fields).as_reader().to_dict(verbose=True) for msg2 in msgs_by_service["new"][service]]
-      diff.extend(list(dictdiffer.diff(dict_msgs1, dict_msgs2)))
-    else:
-      for msg1, msg2 in zip(msgs_by_service["ref"][service], msgs_by_service["new"][service], strict=True):
-        msg1 = remove_ignored_fields(msg1, ignore_fields)
-        msg2 = remove_ignored_fields(msg2, ignore_fields)
+  for msg1, msg2 in zip(log1, log2, strict=True):
+    if msg1.which() != msg2.which():
+      raise Exception("msgs not aligned between logs")
 
-        if msg1.to_bytes() != msg2.to_bytes():
-          msg1_dict = msg1.as_reader().to_dict(verbose=True)
-          msg2_dict = msg2.as_reader().to_dict(verbose=True)
+    msg1 = remove_ignored_fields(msg1, ignore_fields)
+    msg2 = remove_ignored_fields(msg2, ignore_fields)
 
-          dd = dictdiffer.diff(msg1_dict, msg2_dict, ignore=ignore_fields)
+    if msg1.to_bytes() != msg2.to_bytes():
+      msg1_dict = msg1.as_reader().to_dict(verbose=True)
+      msg2_dict = msg2.as_reader().to_dict(verbose=True)
 
-          # Dictdiffer only supports relative tolerance, we also want to check for absolute
-          # TODO: add this to dictdiffer
-          def outside_tolerance(diff):
-            try:
-              if diff[0] == "change":
-                a, b = diff[2]
-                finite = math.isfinite(a) and math.isfinite(b)
-                if finite and isinstance(a, numbers.Number) and isinstance(b, numbers.Number):
-                  return abs(a - b) > max(tolerance, tolerance * max(abs(a), abs(b)))
-            except TypeError:
-              pass
-            return True
+      dd = dictdiffer.diff(msg1_dict, msg2_dict, ignore=ignore_fields)
 
-          dd = list(filter(outside_tolerance, dd))
+      # Dictdiffer only supports relative tolerance, we also want to check for absolute
+      # TODO: add this to dictdiffer
+      def outside_tolerance(diff):
+        try:
+          if diff[0] == "change":
+            a, b = diff[2]
+            finite = math.isfinite(a) and math.isfinite(b)
+            if finite and isinstance(a, numbers.Number) and isinstance(b, numbers.Number):
+              return abs(a - b) > max(tolerance, tolerance * max(abs(a), abs(b)))
+        except TypeError:
+          pass
+        return True
 
-          diff.extend(dd)
+      dd = list(filter(outside_tolerance, dd))
+
+      diff.extend(dd)
   return diff
 
 
-def format_diff(results, log_paths, ref_commit) -> tuple[str, str, bool]:
+def format_diff(results, log_paths, ref_commit):
   diff1, diff2 = "", ""
   diff2 += f"***** tested against commit {ref_commit} *****\n"
 
