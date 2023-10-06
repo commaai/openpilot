@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
+import hypothesis.strategies as st
+from hypothesis import given, settings
 import unittest
 
 from cereal import messaging
-from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
+from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff, remove_ignored_fields
 
 IGNORE_FIELDS = ["logMonoTime"]
 
 
 class TestCompareLogs(unittest.TestCase):
-  def setUp(self):
-    self.ref_logs = [self._msg('controlsState'), self._msg('carState'), self._msg('carControl'),
-                     self._msg('controlsState'), self._msg('carState'), self._msg('carControl')]
-
   @staticmethod
   def _msg(which: str, data: None | dict = None):
     msg = messaging.new_message(which)
@@ -28,41 +26,21 @@ class TestCompareLogs(unittest.TestCase):
       return True
     return failed
 
-  def test_no_diff(self):
-    self.assertFalse(self._get_failed(self.ref_logs, self.ref_logs))
+  @settings(max_examples=1000, deadline=None)
+  @given(data=st.data())
+  def test_fuzzy_diff(self, data):
+    """compare_logs tries to format the diff nicely. check it fails for additions, removals, alignment"""
 
-  def test_addition(self):
-    # Adding any single message should fail
-    for which in ('controlsState', 'carState', 'carControl'):
-      with self.subTest(which=which):
-        new_logs = self.ref_logs + [self._msg(which)]
-        self.assertTrue(self._get_failed(self.ref_logs, new_logs))
+    services = ['controlsState', 'carState', 'carControl']
 
-  def test_removal(self):
-    # Removing any message should fail
-    for idx in range(len(self.ref_logs)):
-      with self.subTest(remove_idx=idx):
-        new_logs = self.ref_logs[0:idx] + self.ref_logs[idx + 1:len(self.ref_logs)]
-        self.assertTrue(self._get_failed(self.ref_logs, new_logs))
+    ref_logs = data.draw(st.lists(st.sampled_from(services).map(lambda x: self._msg(x)), max_size=6))
+    new_logs = data.draw(st.lists(st.sampled_from(services).map(lambda x: self._msg(x)), max_size=6))
 
-  def test_alignment(self):
-    # Msgs within each service type will match, but overall alignment should fail
-    new_logs = self.ref_logs[::-1]
-    self.assertTrue(self._get_failed(self.ref_logs, new_logs))
+    any_diff = [remove_ignored_fields(m, IGNORE_FIELDS).as_reader().to_dict(verbose=True) for m in ref_logs] != \
+               [remove_ignored_fields(m, IGNORE_FIELDS).as_reader().to_dict(verbose=True) for m in new_logs]
 
-    # Try with different length
-    self.assertTrue(self._get_failed(self.ref_logs, new_logs + [self._msg('controlsState')]))
-
-    # Try with replaced msg
-    new_logs[0] = self._msg('controlsState')
-    self.assertTrue(self._get_failed(self.ref_logs, new_logs))
-
-  def test_alignment_with_data(self):
-    # Now order of msgs within controlsState shouldn't match
-    self.ref_logs[0] = self._msg('controlsState', {'vCruise': 255})
-
-    new_logs = self.ref_logs[::-1]
-    self.assertTrue(self._get_failed(self.ref_logs, new_logs))
+    failed = self._get_failed(ref_logs, new_logs)
+    self.assertEqual(failed, any_diff, "compare_logs didn't catch diff")
 
 
 if __name__ == "__main__":
