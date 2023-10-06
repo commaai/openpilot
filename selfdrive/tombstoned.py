@@ -46,19 +46,16 @@ def get_apport_stacktrace(fn):
 
 
 def get_tombstones():
-  """Returns list of (filename, ctime) for all tombstones in /data/tombstones
-  and apport crashlogs in /var/crash"""
+  """Returns list of (filename, ctime) for all crashlogs"""
   files = []
-  for folder in [TOMBSTONE_DIR, APPORT_DIR]:
-    if os.path.exists(folder):
-      with os.scandir(folder) as d:
-
-        # Loop over first 1000 directory entries
-        for _, f in zip(range(1000), d, strict=False):
-          if f.name.startswith("tombstone"):
-            files.append((f.path, int(f.stat().st_ctime)))
-          elif f.name.endswith(".crash") and f.stat().st_mode == 0o100640:
-            files.append((f.path, int(f.stat().st_ctime)))
+  if os.path.exists(APPORT_DIR):
+    with os.scandir(APPORT_DIR) as d:
+      # Loop over first 1000 directory entries
+      for _, f in zip(range(1000), d, strict=False):
+        if f.name.startswith("tombstone"):
+          files.append((f.path, int(f.stat().st_ctime)))
+        elif f.name.endswith(".crash") and f.stat().st_mode == 0o100640:
+          files.append((f.path, int(f.stat().st_ctime)))
   return files
 
 
@@ -153,6 +150,11 @@ def main() -> NoReturn:
     now_tombstones = set(get_tombstones())
 
     for fn, _ in (now_tombstones - initial_tombstones):
+      # clear logs if we're not interested in them
+      if not sentry.should_report:
+        clear_apport_folder()
+        break
+
       try:
         cloudlog.info(f"reporting new tombstone {fn}")
         if fn.endswith(".crash"):
