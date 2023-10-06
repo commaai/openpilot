@@ -42,15 +42,11 @@ def set_tag(key: str, value: str) -> None:
   sentry_sdk.set_tag(key, value)
 
 
-def should_report() -> bool:
+def init(project: SentryProject) -> bool:
   # forks like to mess with this, so double check
   comma_remote = is_comma_remote() and "commaai" in get_origin(default="")
-  return comma_remote and is_registered_device() and not PC
-
-
-def init(project: SentryProject) -> None:
-  if not should_report:
-    return
+  if not comma_remote or not is_registered_device() or PC:
+    return False
 
   env = "release" if is_tested_branch() else "master"
   dongle_id = Params().get("DongleId", encoding='utf-8')
@@ -77,3 +73,5 @@ def init(project: SentryProject) -> None:
 
   if project == SentryProject.SELFDRIVE:
     sentry_sdk.Hub.current.start_session()
+
+  return True

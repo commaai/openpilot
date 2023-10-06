@@ -140,7 +140,7 @@ def report_tombstone_apport(fn):
 
 
 def main() -> NoReturn:
-  sentry.init(sentry.SentryProject.SELFDRIVE_NATIVE)
+  should_report = sentry.init(sentry.SentryProject.SELFDRIVE_NATIVE)
 
   # Clear apport folder on start, otherwise duplicate crashes won't register
   clear_apport_folder()
@@ -151,9 +151,12 @@ def main() -> NoReturn:
 
     for fn, _ in (now_tombstones - initial_tombstones):
       # clear logs if we're not interested in them
-      if not sentry.should_report:
-        clear_apport_folder()
-        break
+      if not should_report:
+        try:
+          os.remove(fn)
+        except Exception:
+          pass
+        continue
 
       try:
         cloudlog.info(f"reporting new tombstone {fn}")
