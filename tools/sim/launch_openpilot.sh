@@ -12,6 +12,8 @@ if [[ "$CI" ]]; then
   export BLOCK="${BLOCK},ui"
 fi
 
+python -c "from openpilot.selfdrive.test.helpers import set_params_enabled; set_params_enabled()"
+
 SCRIPT_DIR=$(dirname "$0")
 OPENPILOT_DIR=$SCRIPT_DIR/../../
 
