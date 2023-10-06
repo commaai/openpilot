@@ -275,33 +275,6 @@
     </message>
 </context>
 <context>
-    <name>DriveStats</name>
-    <message>
-        <source>Drives</source>
-        <translation>旅程数</translation>
-    </message>
-    <message>
-        <source>Hours</source>
-        <translation>小时</translation>
-    </message>
-    <message>
-        <source>ALL TIME</source>
-        <translation>全部</translation>
-    </message>
-    <message>
-        <source>PAST WEEK</source>
-        <translation>过去一周</translation>
-    </message>
-    <message>
-        <source>KM</source>
-        <translation>公里</translation>
-    </message>
-    <message>
-        <source>Miles</source>
-        <translation>英里</translation>
-    </message>
-</context>
-<context>
     <name>DriverViewScene</name>
     <message>
         <source>camera starting</source>

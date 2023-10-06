@@ -26,7 +26,7 @@ class TestToyotaInterfaces(unittest.TestCase):
     # Asserts standard ECUs exist for each platform
     common_ecus = {Ecu.fwdRadar, Ecu.fwdCamera}
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model):
+      with self.subTest(car_model=car_model.value):
         present_ecus = {ecu[0] for ecu in ecus}
         missing_ecus = common_ecus - present_ecus
         self.assertEqual(len(missing_ecus), 0)
@@ -55,7 +55,7 @@ class TestToyotaFingerprint(unittest.TestCase):
   def test_platform_code_ecus_available(self):
     # Asserts ECU keys essential for fuzzy fingerprinting are available on all platforms
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model):
+      with self.subTest(car_model=car_model.value):
         for platform_code_ecu in PLATFORM_CODE_ECUS:
           if platform_code_ecu == Ecu.eps and car_model in (CAR.PRIUS_V, CAR.LEXUS_CTH,):
             continue
@@ -70,7 +70,7 @@ class TestToyotaFingerprint(unittest.TestCase):
     # - expected parsing of ECU sub-versions
 
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model):
+      with self.subTest(car_model=car_model.value):
         for ecu, fws in ecus.items():
           if ecu[0] not in PLATFORM_CODE_ECUS:
             continue
