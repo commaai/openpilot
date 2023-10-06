@@ -1,3 +1,7 @@
+FROM condaforge/mambaforge as pocl-builder
+
+RUN mamba install pocl
+
 FROM ubuntu:20.04
 
 ENV PYTHONUNBUFFERED 1
@@ -22,6 +26,11 @@ RUN cd /tmp && \
     rm -rf arm/ && \
     rm -rf thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
 
+# Add POCL
+COPY --from=pocl-builder /opt/conda/lib /opt/pocl/lib
+RUN sudo mkdir -p /etc/OpenCL/vendors
+RUN sudo sh -c 'echo "/opt/pocl/lib/libpocl.so.2.11.0" > /etc/OpenCL/vendors/pocl.icd'
+
 ARG USER=batman
 ARG USER_UID=1000
 RUN useradd -m -s /bin/bash -u $USER_UID $USER
@@ -43,4 +52,7 @@ RUN cd /tmp && \
     rm -rf /home/$USER/.cache
 
 USER root
-RUN sudo git config --global --add safe.directory /tmp/openpilot
+RUN git config --global --add safe.directory /tmp/openpilot
+
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES graphics,utility,compute
