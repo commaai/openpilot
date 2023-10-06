@@ -92,8 +92,8 @@ def pcStage(String stageName, Closure body) {
           sh "git lfs pull"
           body()
         } finally {
-          //sh "rm -rf ${env.WORKSPACE}/* || true"
-          //sh "rm -rf .* || true"
+          sh "rm -rf ${env.WORKSPACE}/* || true"
+          sh "rm -rf .* || true"
         }
       }
     }
