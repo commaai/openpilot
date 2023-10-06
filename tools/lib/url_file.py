@@ -175,24 +175,4 @@ class URLFile:
 
   @property
   def name(self):
-    """Returns a local path to file with the URLFile's contents.
-
-       This can be used to interface with modules that require local files.
-    """
-    if self._local_file is None:
-      _, ext = os.path.splitext(urllib.parse.urlparse(self._url).path)
-      local_fd, local_path = tempfile.mkstemp(suffix=ext)
-      try:
-        os.write(local_fd, self.read())
-        local_file = open(local_path, "rb")
-      except Exception:
-        os.remove(local_path)
-        raise
-      finally:
-        os.close(local_fd)
-
-      self._local_file = local_file
-      self.read = self._local_file.read
-      self.seek = self._local_file.seek
-
-    return self._local_file.name
+    return self._url
