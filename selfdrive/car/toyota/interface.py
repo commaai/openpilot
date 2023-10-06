@@ -143,7 +143,7 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.444  # not optimized yet
       ret.mass = 3060. * CV.LB_TO_KG
 
-    elif candidate in (CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2):
+    elif candidate in (CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_ES_TSS2):
       if candidate not in (CAR.LEXUS_ES,):  # TODO: LEXUS_ES may have sng
         stop_and_go = True
       ret.wheelbase = 2.8702

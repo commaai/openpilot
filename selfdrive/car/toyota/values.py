@@ -89,7 +89,6 @@ class CAR(StrEnum):
   LEXUS_ES = "LEXUS ES 2018"
   LEXUS_ESH = "LEXUS ES HYBRID 2018"
   LEXUS_ES_TSS2 = "LEXUS ES 2019"
-  LEXUS_ESH_TSS2 = "LEXUS ES HYBRID 2019"
   LEXUS_IS = "LEXUS IS 2018"
   LEXUS_IS_TSS2 = "LEXUS IS 2023"
   LEXUS_NX = "LEXUS NX 2018"
@@ -179,8 +178,10 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.LEXUS_CTH: ToyotaCarInfo("Lexus CT Hybrid 2017-18", "Lexus Safety System+"),
   CAR.LEXUS_ES: ToyotaCarInfo("Lexus ES 2017-18"),
   CAR.LEXUS_ESH: ToyotaCarInfo("Lexus ES Hybrid 2017-18"),
-  CAR.LEXUS_ES_TSS2: ToyotaCarInfo("Lexus ES 2019-22"),
-  CAR.LEXUS_ESH_TSS2: ToyotaCarInfo("Lexus ES Hybrid 2019-23", video_link="https://youtu.be/BZ29osRVJeg?t=12"),
+  CAR.LEXUS_ES_TSS2: [
+    ToyotaCarInfo("Lexus ES 2019-22"),
+    ToyotaCarInfo("Lexus ES Hybrid 2019-23", video_link="https://youtu.be/BZ29osRVJeg?t=12"),
+  ],
   CAR.LEXUS_IS: ToyotaCarInfo("Lexus IS 2017-19"),
   CAR.LEXUS_IS_TSS2: ToyotaCarInfo("Lexus IS 2022-23"),
   CAR.LEXUS_NX: ToyotaCarInfo("Lexus NX 2018-19"),
@@ -1805,12 +1806,25 @@ FW_VERSIONS = {
       b'\x018966333T5100\x00\x00\x00\x00',
       b'\x018966333X6000\x00\x00\x00\x00',
       b'\x01896633T07000\x00\x00\x00\x00',
+      b'\x028966333S8000\x00\x00\x00\x00897CF3302002\x00\x00\x00\x00',
+      b'\x028966333S8000\x00\x00\x00\x00897CF3305001\x00\x00\x00\x00',
+      b'\x028966333T0100\x00\x00\x00\x00897CF3305001\x00\x00\x00\x00',
+      b'\x028966333V4000\x00\x00\x00\x00897CF3305001\x00\x00\x00\x00',
+      b'\x028966333W1000\x00\x00\x00\x00897CF3305001\x00\x00\x00\x00',
+      b'\x02896633T09000\x00\x00\x00\x00897CF3307001\x00\x00\x00\x00',
+      b'\x01896633T38000\x00\x00\x00\x00',
+      b'\x01896633T58000\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
       b'\x01F152606281\x00\x00\x00\x00\x00\x00',
       b'\x01F152606340\x00\x00\x00\x00\x00\x00',
       b'\x01F152606461\x00\x00\x00\x00\x00\x00',
       b'\x01F15260E031\x00\x00\x00\x00\x00\x00',
+      b'F152633423\x00\x00\x00\x00\x00\x00',
+      b'F152633680\x00\x00\x00\x00\x00\x00',
+      b'F152633681\x00\x00\x00\x00\x00\x00',
+      b'F152633F50\x00\x00\x00\x00\x00\x00',
+      b'F152633F51\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B33252\x00\x00\x00\x00\x00\x00',
@@ -1824,6 +1838,7 @@ FW_VERSIONS = {
       b'\x018821F3301200\x00\x00\x00\x00',
       b'\x018821F3301400\x00\x00\x00\x00',
       b'\x018821F6201300\x00\x00\x00\x00',
+      b'\x018821F3301300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F33030D0\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00',
@@ -1832,48 +1847,9 @@ FW_VERSIONS = {
       b'\x028646F3304300\x00\x00\x00\x008646G2601500\x00\x00\x00\x00',
       b'\x028646F3309100\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
       b'\x028646F4810200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
-    ],
-  },
-  CAR.LEXUS_ESH_TSS2: {
-    (Ecu.engine, 0x700, None): [
-      b'\x028966333S8000\x00\x00\x00\x00897CF3302002\x00\x00\x00\x00',
-      b'\x028966333S8000\x00\x00\x00\x00897CF3305001\x00\x00\x00\x00',
-      b'\x028966333T0100\x00\x00\x00\x00897CF3305001\x00\x00\x00\x00',
-      b'\x028966333V4000\x00\x00\x00\x00897CF3305001\x00\x00\x00\x00',
-      b'\x028966333W1000\x00\x00\x00\x00897CF3305001\x00\x00\x00\x00',
-      b'\x02896633T09000\x00\x00\x00\x00897CF3307001\x00\x00\x00\x00',
-      b'\x01896633T38000\x00\x00\x00\x00',
-      b'\x01896633T58000\x00\x00\x00\x00',
-    ],
-    (Ecu.abs, 0x7b0, None): [
-      b'F152633423\x00\x00\x00\x00\x00\x00',
-      b'F152633680\x00\x00\x00\x00\x00\x00',
-      b'F152633681\x00\x00\x00\x00\x00\x00',
-      b'F152633F50\x00\x00\x00\x00\x00\x00',
-      b'F152633F51\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.eps, 0x7a1, None): [
-      b'8965B33252\x00\x00\x00\x00\x00\x00',
-      b'8965B33590\x00\x00\x00\x00\x00\x00',
-      b'8965B33690\x00\x00\x00\x00\x00\x00',
-      b'8965B33721\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdRadar, 0x750, 0xf): [
-      b'\x018821F3301100\x00\x00\x00\x00',
-      b'\x018821F3301200\x00\x00\x00\x00',
-      b'\x018821F3301300\x00\x00\x00\x00',
-      b'\x018821F3301400\x00\x00\x00\x00',
-      b'\x018821F6201300\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F0610000\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
-      b'\x028646F33030D0\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00',
       b'\x028646F3303100\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00',
-      b'\x028646F3303200\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00',
-      b'\x028646F3304100\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
       b'\x028646F3304200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
-      b'\x028646F3304300\x00\x00\x00\x008646G2601500\x00\x00\x00\x00',
-      b'\x028646F3309100\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
     ],
   },
   CAR.LEXUS_ES: {
@@ -2304,7 +2280,6 @@ DBC = {
   CAR.COROLLA_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.LEXUS_ES: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
   CAR.LEXUS_ES_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.LEXUS_ESH_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.LEXUS_ESH: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
   CAR.SIENNA: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
   CAR.LEXUS_IS: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
@@ -2326,7 +2301,7 @@ DBC = {
 EPS_SCALE = defaultdict(lambda: 73, {CAR.PRIUS: 66, CAR.COROLLA: 88, CAR.LEXUS_IS: 77, CAR.LEXUS_RC: 77, CAR.LEXUS_CTH: 100, CAR.PRIUS_V: 100})
 
 # Toyota/Lexus Safety Sense 2.0 and 2.5
-TSS2_CAR = {CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023, CAR.COROLLA_TSS2, CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2,
+TSS2_CAR = {CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023, CAR.COROLLA_TSS2, CAR.LEXUS_ES_TSS2,
             CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022, CAR.RAV4H_TSS2_2023, CAR.LEXUS_RX_TSS2, CAR.HIGHLANDER_TSS2,
             CAR.HIGHLANDERH_TSS2, CAR.PRIUS_TSS2, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2, CAR.LEXUS_IS_TSS2, CAR.MIRAI, CAR.LEXUS_NX_TSS2,
             CAR.ALPHARD_TSS2, CAR.AVALON_TSS2, CAR.AVALONH_TSS2, CAR.ALPHARDH_TSS2, CAR.CHR_TSS2, CAR.CHRH_TSS2}
