@@ -9,7 +9,7 @@ from openpilot.tools.lib.filereader import FileReader
 
 DEBUG = int(os.getenv("DEBUG", "0"))
 
-# comapre to ffmpeg parsing
+# compare to ffmpeg parsing
 # ffmpeg -i <input.hevc> -c copy -bsf:v trace_headers -f null - 2>&1 | grep -B4 -A32 '] 0 '
 
 # H.265 specification
