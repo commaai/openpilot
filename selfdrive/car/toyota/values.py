@@ -100,7 +100,6 @@ class CAR(StrEnum):
   LEXUS_RX = "LEXUS RX 2016"
   LEXUS_RXH = "LEXUS RX HYBRID 2017"
   LEXUS_RX_TSS2 = "LEXUS RX 2020"
-  LEXUS_RXH_TSS2 = "LEXUS RX HYBRID 2020"
 
 
 class Footnote(Enum):
@@ -198,8 +197,10 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
     ToyotaCarInfo("Lexus RX Hybrid 2016", "Lexus Safety System+"),
     ToyotaCarInfo("Lexus RX Hybrid 2017-19"),
   ],
-  CAR.LEXUS_RX_TSS2: ToyotaCarInfo("Lexus RX 2020-22"),
-  CAR.LEXUS_RXH_TSS2: ToyotaCarInfo("Lexus RX Hybrid 2020-22"),
+  CAR.LEXUS_RX_TSS2: [
+    ToyotaCarInfo("Lexus RX 2020-22"),
+    ToyotaCarInfo("Lexus RX Hybrid 2020-22"),
+  ],
 }
 
 # (addr, cars, bus, 1/freq*100, vl)
@@ -341,7 +342,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # FIXME: On some models, abs can sometimes be missing
     Ecu.abs: [CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.SIENNA, CAR.LEXUS_IS],
     # On some models, the engine can show on two different addresses
-    Ecu.engine: [CAR.CAMRY, CAR.COROLLA_TSS2, CAR.CHR, CAR.CHR_TSS2, CAR.LEXUS_IS, CAR.LEXUS_RC],
+    Ecu.engine: [CAR.CAMRY, CAR.COROLLA_TSS2, CAR.CHR, CAR.CHR_TSS2, CAR.LEXUS_IS, CAR.LEXUS_RC,
+                 CAR.LEXUS_RX_TSS2],
   },
   extra_ecus=[
     # All known ECUs on a late-model Toyota vehicle not queried here:
@@ -2168,11 +2170,24 @@ FW_VERSIONS = {
       b'\x018966348X0000\x00\x00\x00\x00',
       b'\x01896630ED5000\x00\x00\x00\x00',
     ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\x02348X4000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\x02348X5000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\x02348X8000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\x02348Y3000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\x0234D14000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\x0234D16000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
     (Ecu.abs, 0x7b0, None): [
       b'\x01F15260E031\x00\x00\x00\x00\x00\x00',
       b'\x01F15260E041\x00\x00\x00\x00\x00\x00',
       b'\x01F152648781\x00\x00\x00\x00\x00\x00',
       b'\x01F152648801\x00\x00\x00\x00\x00\x00',
+      b'F152648831\x00\x00\x00\x00\x00\x00',
+      b'F152648891\x00\x00\x00\x00\x00\x00',
+      b'F152648D00\x00\x00\x00\x00\x00\x00',
+      b'F152648D60\x00\x00\x00\x00\x00\x00',
+      b'F152648811\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B48261\x00\x00\x00\x00\x00\x00',
@@ -2188,35 +2203,6 @@ FW_VERSIONS = {
       b'\x028646F4810200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
       b'\x028646F4810300\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
       b'\x028646F4810400\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
-    ],
-  },
-  CAR.LEXUS_RXH_TSS2: {
-    (Ecu.engine, 0x7e0, None): [
-      b'\x02348X4000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'\x02348X5000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'\x02348X8000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'\x02348Y3000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'\x0234D14000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'\x0234D16000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.abs, 0x7b0, None): [
-      b'F152648831\x00\x00\x00\x00\x00\x00',
-      b'F152648891\x00\x00\x00\x00\x00\x00',
-      b'F152648D00\x00\x00\x00\x00\x00\x00',
-      b'F152648D60\x00\x00\x00\x00\x00\x00',
-      b'F152648811\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.eps, 0x7a1, None): [
-      b'8965B48261\x00\x00\x00\x00\x00\x00',
-      b'8965B48271\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdRadar, 0x750, 0xf): [
-      b'\x018821F3301400\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdCamera, 0x750, 0x6d): [
-      b'\x028646F4810100\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
-      b'\x028646F4810200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
-      b'\x028646F4810300\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
     ],
   },
   CAR.PRIUS_TSS2: {
@@ -2309,7 +2295,6 @@ DBC = {
   CAR.LEXUS_RX: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
   CAR.LEXUS_RXH: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
   CAR.LEXUS_RX_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.LEXUS_RXH_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.CHR: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
   CAR.CHR_TSS2: dbc_dict('toyota_nodsu_pt_generated', None),
   CAR.CHRH: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
@@ -2357,7 +2342,7 @@ EPS_SCALE = defaultdict(lambda: 73, {CAR.PRIUS: 66, CAR.COROLLA: 88, CAR.LEXUS_I
 
 # Toyota/Lexus Safety Sense 2.0 and 2.5
 TSS2_CAR = {CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023, CAR.COROLLA_TSS2, CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2,
-            CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022, CAR.RAV4H_TSS2_2023, CAR.LEXUS_RX_TSS2, CAR.LEXUS_RXH_TSS2, CAR.HIGHLANDER_TSS2,
+            CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022, CAR.RAV4H_TSS2_2023, CAR.LEXUS_RX_TSS2, CAR.HIGHLANDER_TSS2,
             CAR.HIGHLANDERH_TSS2, CAR.PRIUS_TSS2, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2, CAR.LEXUS_IS_TSS2, CAR.MIRAI, CAR.LEXUS_NX_TSS2,
             CAR.LEXUS_NXH_TSS2, CAR.ALPHARD_TSS2, CAR.AVALON_TSS2, CAR.AVALONH_TSS2, CAR.ALPHARDH_TSS2, CAR.CHR_TSS2, CAR.CHRH_TSS2}
 
@@ -2375,7 +2360,7 @@ ANGLE_CONTROL_CAR = {CAR.RAV4H_TSS2_2023, CAR.RAV4_TSS2_2023}
 EV_HYBRID_CAR = {CAR.AVALONH_2019, CAR.AVALONH_TSS2, CAR.CAMRYH, CAR.CAMRYH_TSS2, CAR.CHRH, CAR.CHRH_TSS2,
                  CAR.HIGHLANDERH, CAR.HIGHLANDERH_TSS2, CAR.PRIUS, CAR.PRIUS_V, CAR.RAV4H, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022,
                  CAR.RAV4H_TSS2_2023, CAR.LEXUS_CTH, CAR.MIRAI, CAR.LEXUS_ESH, CAR.LEXUS_ESH_TSS2, CAR.LEXUS_NXH, CAR.LEXUS_RXH,
-                 CAR.LEXUS_RXH_TSS2, CAR.LEXUS_NXH_TSS2, CAR.PRIUS_TSS2, CAR.ALPHARDH_TSS2}
+                 CAR.LEXUS_NXH_TSS2, CAR.PRIUS_TSS2, CAR.ALPHARDH_TSS2}
 
 # no resume button press required
 NO_STOP_TIMER_CAR = TSS2_CAR | {CAR.PRIUS_V, CAR.RAV4H, CAR.HIGHLANDERH, CAR.HIGHLANDER, CAR.SIENNA, CAR.LEXUS_ESH}
