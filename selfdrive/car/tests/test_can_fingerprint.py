@@ -50,7 +50,7 @@ class TestCanFingerprint(unittest.TestCase):
     cases.append((FRAME_FINGERPRINT * 2, None, can))
 
     for expected_frames, car_model, can in cases:
-      with self.subTest(expected_frames=expected_frames, car_model=car_model.value):
+      with self.subTest(expected_frames=expected_frames, car_model=car_model):
         frames = 0
 
         def test():
