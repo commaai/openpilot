@@ -171,7 +171,7 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.517
       ret.mass = 3108 * CV.LB_TO_KG  # mean between min and max
 
-    elif candidate in (CAR.LEXUS_NX, CAR.LEXUS_NXH, CAR.LEXUS_NX_TSS2):
+    elif candidate in (CAR.LEXUS_NX, CAR.LEXUS_NX_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.66
       ret.steerRatio = 14.7
