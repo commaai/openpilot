@@ -10,8 +10,22 @@ IGNORE_FIELDS = ["logMonoTime"]
 
 class TestCompareLogs(unittest.TestCase):
   @staticmethod
-  def _msg(which: str):
-    return messaging.new_message(which).as_reader()
+  def _msg(which: str, data: None | dict = None):
+    msg = messaging.new_message(which)
+    if data is not None:
+      getattr(msg, which).from_dict(data)
+    return msg.as_reader()
+
+  def test_remove_ignored_fields(self):
+    msg = self._msg('carState', {'vEgo': 1.0, 'vEgoRaw': 2.0})
+    stripped_msg = remove_ignored_fields(msg, IGNORE_FIELDS + ['carState.vEgo'])
+
+    self.assertNotEqual(msg.logMonoTime, 0.0)
+    self.assertEqual(msg.carState.vEgo, 1.0)
+
+    self.assertEqual(stripped_msg.logMonoTime, 0.0)
+    self.assertEqual(stripped_msg.carState.vEgo, 0.0)
+    self.assertEqual(stripped_msg.carState.vEgoRaw, 2.0)
 
   @settings(max_examples=1000, deadline=None)
   @given(data=st.data())
