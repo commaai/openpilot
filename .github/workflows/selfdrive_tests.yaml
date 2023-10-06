@@ -175,12 +175,13 @@ jobs:
     - name: Run unit tests
       timeout-minutes: 15
       run: |
-        ${{ env.RUN }} "./selfdrive/test/process_replay/test_compare_logs.py && $PYTEST -n auto --dist=loadscope --timeout 30 -o cpp_files=test_* -m 'not slow' && \
+        ${{ env.RUN }} "$PYTEST -n auto --dist=loadscope --timeout 30 -o cpp_files=test_* -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         ./selfdrive/ui/tests/test_translations.py && \
                         ./system/camerad/test/ae_gray_test && \
-                        ./selfdrive/test/process_replay/test_fuzzy.py"
+                        ./selfdrive/test/process_replay/test_fuzzy.py && \
+                        ./selfdrive/test/process_replay/test_compare_logs.py"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
 
