@@ -69,6 +69,7 @@ class MagCalibrator:
     self.calibrated = False
     self.bearingValid = False
     self.filtered_magnetic = [FirstOrderFilter(0, FILTER_DECAY, FILTER_DT) for _ in range(3)]
+    self.filtered_vals = [0] * 3
     self.vego = 0
     self.yaw = 0
     self.yaw_valid = False
@@ -106,7 +107,7 @@ class MagCalibrator:
       coeffs = V[-1] / V[-1, -1]
       x0, y0 = self.get_ellipsoid_center(coeffs)
       (l1, l2), theta = self.get_ellipsoid_rotation(coeffs)
-      _, _, bearing = self.get_calibrated_bearing(x, y, np.array([x0, y0, l1, l2, theta, 0.0]))
+      bearing = self.get_calibrated_bearing(x, y, np.array([x0, y0, l1, l2, theta, 0.0]))
       offset = np.median(bearing - yaw)
       calibration_params = np.array([x0, y0, l1, l2, theta, offset])
     except np.linalg.LinAlgError as e:
@@ -123,7 +124,7 @@ class MagCalibrator:
     x_new, y_new = x_new / l1, y_new / l2
     bearing = np.arctan2(y_new, x_new) - offset
     bearing = bearing + np.pi * (bearing < -np.pi) - np.pi * (bearing > np.pi)
-    return x_new, y_new, bearing
+    return bearing
 
   def handle_log(self, which, msg):
     if which == "carState":
@@ -132,13 +133,15 @@ class MagCalibrator:
       self.yaw = msg.liveLocationKalman.orientationNED.value[2]
       self.yaw_valid = msg.liveLocationKalman.orientationNED.valid
     elif which == "magnetometer":
-      raw_vals = np.array(msg.magnetometer.magneticUncalibrated.v)
-      self.raw_vals = (raw_vals[: 3] - raw_vals[3:]) / 2
-      if np.all(np.abs(self.raw_vals - self.past_raw_vals) < 2.0) and msg.magnetometer.magneticUncalibrated.status:
-        self.filtered_vals = np.array([f.update(v) for f, v in zip(self.filtered_magnetic, self.raw_vals, strict=True)])
-      if self.vego > MIN_VEL and self.yaw_valid:
-        self.point_buckets.add_point(self.filtered_vals[0], self.filtered_vals[2], self.yaw)
-      self.past_raw_vals = self.raw_vals
+      mag = msg.magnetometer
+      if mag.source == log.SensorEventData.SensorSource.mmc5603nj:
+        raw_vals = np.array(mag.magneticUncalibrated.v)
+        self.raw_vals = (raw_vals[: 3] - raw_vals[3:]) / 2
+        if np.all(np.abs(self.raw_vals - self.past_raw_vals) < 2.0) and mag.magneticUncalibrated.status:
+          self.filtered_vals = np.array([f.update(v) for f, v in zip(self.filtered_magnetic, self.raw_vals, strict=True)])
+        if self.vego > MIN_VEL and self.yaw_valid:
+          self.point_buckets.add_point(self.filtered_vals[0], self.filtered_vals[2], self.yaw)
+        self.past_raw_vals = self.raw_vals
 
   def get_msg(self, valid=True, with_points=False):
     msg = messaging.new_message('MagnetometerCalibration')
@@ -157,6 +160,13 @@ class MagCalibrator:
     MagnetometerCalibration.bearingValid = bearingValid
     return msg
 
+  def compute_calibration_params(self):
+    if self.point_buckets.is_valid():
+      calibration_params = self.estimate_calibration_params()
+      if not any(np.isnan(calibration_params)):
+        self.calibrationParams = calibration_params
+        self.calibrated = True
+
 
 def main(sm=None, pm=None):
   config_realtime_process([0, 1, 2, 3], 5)
@@ -169,7 +179,7 @@ def main(sm=None, pm=None):
 
   params = Params()
   with car.CarParams.from_bytes(params.get("CarParams", block=True)) as CP:
-    estimator = MagCalibrator(CP)
+    calibrator = MagCalibrator(CP)
 
   def cache_params(sig, frame):
     signal.signal(sig, signal.SIG_DFL)
@@ -178,7 +188,7 @@ def main(sm=None, pm=None):
     params = Params()
     params.put("MagnetometerCarParams", CP.as_builder().to_bytes())
 
-    msg = estimator.get_msg(with_points=True)
+    msg = calibrator.get_msg(with_points=True)
     params.put("MagnetometerCalibration", msg.to_bytes())
 
     sys.exit(0)
@@ -190,15 +200,14 @@ def main(sm=None, pm=None):
     if sm.all_checks():
       for which in sm.updated.keys():
         if sm.updated[which]:
-          t = sm.logMonoTime[which] * 1e-9
-          estimator.handle_log(t, which, sm[which])
+          calibrator.handle_log(which, sm[which])
 
     if sm.updated['liveLocationKalman']:
-      pm.send('magnetometerCalbration', estimator.get_msg(valid=sm.all_checks()))
+      pm.send('magnetometerCalbration', calibrator.get_msg(valid=sm.all_checks()))
 
     # 1Hz
     if sm.frame % 20 == 0:
-      estimator.calibrationParams = estimator.estimate_calibration_params()
+      calibrator.compute_calibration_params()
 
 
 if __name__ == "__main__":
