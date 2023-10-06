@@ -17,7 +17,7 @@ class TestCompareLogs(unittest.TestCase):
   @staticmethod
   def _get_failed(ref_logs: list, new_logs: list) -> bool:
     try:
-      diff = compare_logs(ref_logs, new_logs, ignore_fields=IGNORE_FIELDS, ignore_msgs=[], tolerance=None)
+      diff = compare_logs(ref_logs, new_logs, ignore_fields=IGNORE_FIELDS)
       _, _, failed = format_diff({"": {"": diff}}, {"": {"": {"ref": "", "new": ""}}}, {})
     except Exception:
       return True
