@@ -104,20 +104,16 @@ def main() -> NoReturn:
         time.sleep(3)  # wait to come back up
 
       # Flash all Pandas in DFU mode
-      cloudlog.info("Listing dfu pandas")
       dfu_serials = PandaDFU.list()
-      cloudlog.info(f"{len(dfu_serials)} dfu panda(s) found")
       if len(dfu_serials) > 0:
         for serial in dfu_serials:
           cloudlog.info(f"Panda in DFU mode found, flashing recovery {serial}")
           PandaDFU(serial).recover()
         time.sleep(1)
 
-      cloudlog.info("Listing pandas")
       panda_serials = Panda.list()
       if len(panda_serials) == 0:
         no_internal_panda_count += 1
-        cloudlog.info("no internal pandas found, retrying...")
         continue
 
       cloudlog.info(f"{len(panda_serials)} panda(s) found, connecting - {panda_serials}")
@@ -178,11 +174,9 @@ def main() -> NoReturn:
     first_run = False
 
     # run boardd with all connected serials as arguments
-    env = os.environ.copy()
-    env['MANAGER_DAEMON'] = 'boardd'
+    os.environ['MANAGER_DAEMON'] = 'boardd'
     os.chdir(os.path.join(BASEDIR, "selfdrive/boardd"))
-    proc = subprocess.run(["./boardd", *panda_serials], check=True, env=env)
-    cloudlog.info(f"boardd exited with code {proc.returncode}")
+    subprocess.run(["./boardd", *panda_serials], check=True)
 
 if __name__ == "__main__":
   main()
