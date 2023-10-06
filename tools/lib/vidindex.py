@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 import argparse
+import os
 import struct
 from enum import IntEnum
 from typing import Tuple
 
 from openpilot.tools.lib.filereader import FileReader
+
+DEBUG = int(os.getenv("DEBUG", "0"))
+
+# compare to ffmpeg parsing
+# ffmpeg -i <input.hevc> -c copy -bsf:v trace_headers -f null - 2>&1 | grep -B4 -A32 '] 0 '
 
 # H.265 specification
 # https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-H.265-201802-S!!PDF-E&type=items
@@ -143,14 +149,8 @@ def get_ue(dat: bytes, start_idx: int, skip_bits: int) -> Tuple[int, int]:
   raise VideoFileInvalid("invalid exponential-golomb code")
 
 def require_nal_unit_start(dat: bytes, nal_unit_start: int) -> None:
-  if nal_unit_start >= len(dat):
-    raise ValueError("start index must be less than data length")
-
   if nal_unit_start < 1:
     raise ValueError("start index must be greater than zero")
-
-  if dat[nal_unit_start-1] != 0x00:
-    raise VideoFileInvalid("start code must be preceded by 0x00")
 
   if dat[nal_unit_start:nal_unit_start + NAL_UNIT_START_CODE_SIZE] != NAL_UNIT_START_CODE:
     raise VideoFileInvalid("data must begin with start code")
@@ -163,6 +163,8 @@ def get_hevc_nal_unit_length(dat: bytes, nal_unit_start: int) -> int:
 
   # length of NAL unit is byte count up to next NAL unit start index
   nal_unit_len = (pos if pos != -1 else len(dat)) - nal_unit_start
+  if DEBUG:
+    print("  nal_unit_len:", nal_unit_len)
   return nal_unit_len
 
 def get_hevc_nal_unit_type(dat: bytes, nal_unit_start: int) -> HevcNalUnitType:
@@ -177,7 +179,10 @@ def get_hevc_nal_unit_type(dat: bytes, nal_unit_start: int) -> HevcNalUnitType:
   nal_unit_header = dat[header_start:header_start + NAL_UNIT_HEADER_SIZE]
   if len(nal_unit_header) != 2:
     raise VideoFileInvalid("data to short to contain nal unit header")
-  return HevcNalUnitType((nal_unit_header[0] >> 1) & 0x3F)
+  nal_unit_type = HevcNalUnitType((nal_unit_header[0] >> 1) & 0x3F)
+  if DEBUG:
+    print("  nal_unit_type:", nal_unit_type.name, f"({nal_unit_type.value})")
+  return nal_unit_type
 
 def get_hevc_slice_type(dat: bytes, nal_unit_start: int, nal_unit_type: HevcNalUnitType) -> Tuple[int, bool]:
   # 7.3.2.9 Slice segment layer RBSP syntax
@@ -248,6 +253,8 @@ def get_hevc_slice_type(dat: bytes, nal_unit_start: int, nal_unit_type: HevcNalU
   #     2      | I (I slice)
   # unsigned integer 0-th order Exp-Golomb-coded syntax element with the left bit first
   slice_type, _ = get_ue(dat, rbsp_start, skip_bits)
+  if DEBUG:
+    print("  slice_type:", slice_type, f"(first slice: {is_first_slice})")
   if slice_type > 2:
     raise VideoFileInvalid("slice_type must be 0, 1, or 2")
   return slice_type, is_first_slice
@@ -259,11 +266,14 @@ def hevc_index(hevc_file_name: str, allow_corrupt: bool=False) -> Tuple[list, in
   if len(dat) < NAL_UNIT_START_CODE_SIZE + 1:
     raise VideoFileInvalid("data is too short")
 
+  if dat[0] != 0x00:
+    raise VideoFileInvalid("first byte must be 0x00")
+
   prefix_dat = b""
   frame_types = list()
 
+  i = 1 # skip past first byte 0x00
   try:
-    i = 1 # skip past first byte 0x00 (verified by get_hevc_nal_info)
     while i < len(dat):
       require_nal_unit_start(dat, i)
       nal_unit_len = get_hevc_nal_unit_length(dat, i)
@@ -275,9 +285,10 @@ def hevc_index(hevc_file_name: str, allow_corrupt: bool=False) -> Tuple[list, in
         if is_first_slice:
           frame_types.append((slice_type, i))
       i += nal_unit_len
-  except Exception:
+  except Exception as e:
     if not allow_corrupt:
       raise
+    print(f"ERROR: NAL unit skipped @ {i}\n", str(e))
 
   return frame_types, len(dat), prefix_dat
 
