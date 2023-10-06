@@ -383,6 +383,11 @@ def torqued_rcv_callback(msg, cfg, frame):
   return (frame - 1) == 0 or msg.which() == 'liveLocationKalman'
 
 
+def magd_rcv_callback(msg, cfg, frame):
+  # should_recv always true to increment frame
+  return (frame - 1) == 0 or msg.which() == 'magnetometer'
+
+
 def dmonitoringmodeld_rcv_callback(msg, cfg, frame):
   return msg.which() == "driverCameraState"
 
@@ -561,6 +566,15 @@ CONFIGS = [
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
     should_recv_callback=torqued_rcv_callback,
+    tolerance=NUMPY_TOLERANCE,
+  ),
+  ProcessConfig(
+    proc_name="magd",
+    pubs=["liveLocationKalman", "carState", "magnetometer"],
+    subs=["magnetometerCalbration"],
+    ignore=["logMonoTime"],
+    init_callback=get_car_params_callback,
+    should_recv_callback=magd_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(

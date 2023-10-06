@@ -202,7 +202,7 @@ def main(sm=None, pm=None):
         if sm.updated[which]:
           calibrator.handle_log(which, sm[which])
 
-    if sm.updated['liveLocationKalman']:
+    if sm.updated['magnetometer']:
       pm.send('magnetometerCalbration', calibrator.get_msg(valid=sm.all_checks()))
 
     # 1Hz
