@@ -90,7 +90,6 @@ def cache_fn(func):
         cache_value = pickle.load(cache_file)
     else:
       cache_value = func(fn, *args, **kwargs)
-
       if cache_path:
         with atomic_write_in_dir(cache_path, mode="wb", overwrite=True) as cache_file:
           pickle.dump(cache_value, cache_file, -1)
@@ -102,7 +101,7 @@ def cache_fn(func):
 
 @cache_fn
 def index_stream(fn, typ):
-  if type != "hevc":
+  if typ != "hevc":
     raise NotImplementedError("Only h265 supported")
 
   frame_types, dat_len, prefix = hevc_index(fn)
@@ -116,25 +115,8 @@ def index_stream(fn, typ):
   }
 
 
-def index_video(fn, frame_type=None, cache_dir=DEFAULT_CACHE_DIR):
-  cache_path = cache_path_for_file_path(fn, cache_dir)
-  if os.path.exists(cache_path):
-    return
-
-  index_stream(fn, frame_type, cache_dir=cache_dir)
-
-
 def get_video_index(fn, frame_type, cache_dir=DEFAULT_CACHE_DIR):
-  cache_path = cache_path_for_file_path(fn, cache_dir)
-
-  if not os.path.exists(cache_path):
-    index_video(fn, frame_type, cache_dir)
-
-  if not os.path.exists(cache_path):
-    return None
-  with open(cache_path, "rb") as cache_file:
-    return pickle.load(cache_file)
-
+  return index_stream(fn, frame_type, cache_dir=cache_dir)
 
 def read_file_check_size(f, sz, cookie):
   buff = bytearray(sz)
