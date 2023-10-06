@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-import hypothesis.strategies as st
-from hypothesis import given, settings
+from hypothesis import given, settings, strategies as st
 import unittest
 
 from cereal import messaging
