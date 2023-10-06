@@ -14,6 +14,7 @@ from lru import LRU
 import _io
 from openpilot.tools.lib.cache import cache_path_for_file_path, DEFAULT_CACHE_DIR
 from openpilot.tools.lib.exceptions import DataUnreadableError
+from openpilot.tools.lib.vidindex import hevc_index
 from openpilot.common.file_helpers import atomic_write_in_dir
 
 from openpilot.tools.lib.filereader import FileReader
@@ -75,31 +76,6 @@ def ffprobe(fn, fmt=None):
   return json.loads(ffprobe_output)
 
 
-def vidindex(fn, typ):
-  vidindex_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "vidindex")
-  vidindex = os.path.join(vidindex_dir, "vidindex")
-
-  subprocess.check_call(["make"], cwd=vidindex_dir, stdout=subprocess.DEVNULL)
-
-  with tempfile.NamedTemporaryFile() as prefix_f, \
-       tempfile.NamedTemporaryFile() as index_f:
-    try:
-      subprocess.check_call([vidindex, typ, fn, prefix_f.name, index_f.name])
-    except subprocess.CalledProcessError as e:
-      raise DataUnreadableError(f"vidindex failed on file {fn}") from e
-    with open(index_f.name, "rb") as f:
-      index = f.read()
-    with open(prefix_f.name, "rb") as f:
-      prefix = f.read()
-
-  index = np.frombuffer(index, np.uint32).reshape(-1, 2)
-
-  assert index[-1, 0] == 0xFFFFFFFF
-  assert index[-1, 1] == os.path.getsize(fn)
-
-  return index, prefix
-
-
 def cache_fn(func):
   @wraps(func)
   def cache_inner(fn, *args, **kwargs):
@@ -114,7 +90,6 @@ def cache_fn(func):
         cache_value = pickle.load(cache_file)
     else:
       cache_value = func(fn, *args, **kwargs)
-
       if cache_path:
         with atomic_write_in_dir(cache_path, mode="wb", overwrite=True) as cache_file:
           pickle.dump(cache_value, cache_file, -1)
@@ -125,13 +100,13 @@ def cache_fn(func):
 
 
 @cache_fn
-def index_stream(fn, typ):
-  assert typ in ("hevc", )
+def index_stream(fn, ft):
+  if ft != FrameType.h265_stream:
+    raise NotImplementedError("Only h265 supported")
 
-  with FileReader(fn) as f:
-    assert os.path.exists(f.name), fn
-    index, prefix = vidindex(f.name, typ)
-    probe = ffprobe(f.name, typ)
+  frame_types, dat_len, prefix = hevc_index(fn)
+  index = np.array(frame_types + [(0xFFFFFFFF, dat_len)], dtype=np.uint32)
+  probe = ffprobe(fn, "hevc")
 
   return {
     'index': index,
@@ -140,42 +115,8 @@ def index_stream(fn, typ):
   }
 
 
-def index_videos(camera_paths, cache_dir=DEFAULT_CACHE_DIR):
-  """Requires that paths in camera_paths are contiguous and of the same type."""
-  if len(camera_paths) < 1:
-    raise ValueError("must provide at least one video to index")
-
-  frame_type = fingerprint_video(camera_paths[0])
-  for fn in camera_paths:
-    index_video(fn, frame_type, cache_dir)
-
-
-def index_video(fn, frame_type=None, cache_dir=DEFAULT_CACHE_DIR):
-  cache_path = cache_path_for_file_path(fn, cache_dir)
-
-  if os.path.exists(cache_path):
-    return
-
-  if frame_type is None:
-    frame_type = fingerprint_video(fn[0])
-
-  if frame_type == FrameType.h265_stream:
-    index_stream(fn, "hevc", cache_dir=cache_dir)
-  else:
-    raise NotImplementedError("Only h265 supported")
-
-
 def get_video_index(fn, frame_type, cache_dir=DEFAULT_CACHE_DIR):
-  cache_path = cache_path_for_file_path(fn, cache_dir)
-
-  if not os.path.exists(cache_path):
-    index_video(fn, frame_type, cache_dir)
-
-  if not os.path.exists(cache_path):
-    return None
-  with open(cache_path, "rb") as cache_file:
-    return pickle.load(cache_file)
-
+  return index_stream(fn, frame_type, cache_dir=cache_dir)
 
 def read_file_check_size(f, sz, cookie):
   buff = bytearray(sz)
