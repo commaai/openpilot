@@ -13,8 +13,8 @@ class TestCompareLogs(unittest.TestCase):
                      self._msg('controlsState'), self._msg('carState'), self._msg('carControl')]
 
   @staticmethod
-  def _msg(which: str, data: None | dict = None, size: None | int = None):
-    msg = messaging.new_message(which, size=size)
+  def _msg(which: str, data: None | dict = None):
+    msg = messaging.new_message(which)
     if data is not None:
       getattr(msg, which).from_dict(data)
     return msg.as_reader()
@@ -43,7 +43,21 @@ class TestCompareLogs(unittest.TestCase):
         self.assertTrue(self._get_failed(self.ref_logs, new_logs))
 
   def test_alignment(self):
-    # Reverse ref logs and compare: overall alignment should fail
+    # Msgs within each service type will match, but overall alignment should fail
+    new_logs = self.ref_logs[::-1]
+    self.assertTrue(self._get_failed(self.ref_logs, new_logs))
+
+    # Try with different length
+    self.assertTrue(self._get_failed(self.ref_logs, new_logs + [self._msg('controlsState')]))
+
+    # Try with replaced msg
+    new_logs[0] = self._msg('controlsState')
+    self.assertTrue(self._get_failed(self.ref_logs, new_logs))
+
+  def test_alignment_with_data(self):
+    # Now order of msgs within controlsState shouldn't match
+    self.ref_logs[0] = self._msg('controlsState', {'vCruise': 255})
+
     new_logs = self.ref_logs[::-1]
     self.assertTrue(self._get_failed(self.ref_logs, new_logs))
 
