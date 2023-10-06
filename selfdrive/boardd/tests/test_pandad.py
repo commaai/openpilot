@@ -6,6 +6,7 @@ import unittest
 import cereal.messaging as messaging
 from cereal import log
 from openpilot.common.gpio import gpio_set, gpio_init
+from openpilot.selfdrive.boardd.pandad import get_expected_signature
 from panda import Panda, PandaDFU, PandaProtocolMismatch
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.system.hardware import HARDWARE, PC
@@ -15,16 +16,30 @@ from openpilot.selfdrive.test.helpers import with_processes
 HERE = os.path.dirname(os.path.realpath(__file__))
 
 
+def panda_up_to_date(panda_serial):
+  with Panda(panda_serial) as panda:
+    fw_signature = get_expected_signature(panda)
+    panda_signature = b"" if panda.bootstub else panda.get_signature()
+
+    return not panda.bootstub and panda_signature == fw_signature
+
+
 class TestPandad(unittest.TestCase):
 
   def setUp(self):
     if PC:
       raise unittest.SkipTest("needs a panda")
-    # ensure panda is up
-    if len(Panda.list()) == 0:
+
+    # ensure panda is prepared for test
+    pandas = Panda.list()
+
+    if len(Panda.list()) == 0 or not panda_up_to_date(pandas[0]):
       self._run_test(60)
 
-    self.assertGreater(len(Panda.list()), 0, "no pandas found...")
+    pandas = Panda.list()
+    self.assertGreater(len(pandas), 0, "no pandas found...")
+
+    self.assertTrue(panda_up_to_date(pandas[0]), "panda not up to date...")
 
   def tearDown(self):
     managed_processes['pandad'].stop()
