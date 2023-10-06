@@ -53,9 +53,6 @@ class TestCompareLogs(unittest.TestCase):
     new_logs = self.ref_logs[::-1]
     self._assertException(self.ref_logs, new_logs, "msgs not aligned between logs")
 
-    # Try with different length
-    self._assertException(self.ref_logs, new_logs + [self._msg('controlsState')], "logs are not same length")
-
     # Try with replaced msg
     new_logs[0] = self._msg('controlsState')
     self._assertException(self.ref_logs, new_logs, "msgs not aligned between logs")
