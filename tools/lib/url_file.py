@@ -1,8 +1,6 @@
 import os
 import time
-import tempfile
 import threading
-import urllib.parse
 import pycurl
 from hashlib import sha256
 from io import BytesIO
