@@ -65,7 +65,6 @@ class URLFile:
   def get_length(self):
     if self._length is not None:
       return self._length
-
     file_length_path = os.path.join(Paths.download_cache_root(), hash_256(self._url) + "_length")
     if os.path.exists(file_length_path) and not self._force_download:
       with open(file_length_path) as file_length:
