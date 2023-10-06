@@ -137,7 +137,7 @@ class CarInterface(CarInterfaceBase):
           ret.lateralTuning.pid.kf = 0.00004
           break
 
-    elif candidate in (CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2):
+    elif candidate == CAR.COROLLA_TSS2:
       ret.wheelbase = 2.67  # Average between 2.70 for sedan and 2.64 for hatchback
       ret.steerRatio = 13.9
       ret.tireStiffnessFactor = 0.444  # not optimized yet
