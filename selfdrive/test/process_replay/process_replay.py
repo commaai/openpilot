@@ -653,7 +653,10 @@ def replay_process(
   else:
     cfgs = [cfg]
 
-  all_msgs = migrate_all(lr, old_logtime=True, camera_states=any(len(cfg.vision_pubs) != 0 for cfg in cfgs))
+  all_msgs = migrate_all(lr, old_logtime=True,
+                         manager_states=True,
+                         panda_states=any("pandaStates" in cfg.pubs for cfg in cfgs),
+                         camera_states=any(len(cfg.vision_pubs) != 0 for cfg in cfgs))
   process_logs = _replay_multi_process(cfgs, all_msgs, frs, fingerprint, custom_params, captured_output_store, disable_progress)
 
   if return_all_logs:

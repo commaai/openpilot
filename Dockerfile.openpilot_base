@@ -25,6 +25,8 @@ RUN cd /tmp && \
 ARG USER=batman
 ARG USER_UID=1000
 RUN useradd -m -s /bin/bash -u $USER_UID $USER
+RUN usermod -aG sudo $USER
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 USER $USER
 
 ENV POETRY_VIRTUALENVS_CREATE=false

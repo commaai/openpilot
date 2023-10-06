@@ -29,15 +29,25 @@ def regen_job(segment, upload, disable_tqdm):
 
 
 if __name__ == "__main__":
+  all_cars = {car for car, _ in segments}
+
   parser = argparse.ArgumentParser(description="Generate new segments from old ones")
   parser.add_argument("-j", "--jobs", type=int, default=1)
   parser.add_argument("--no-upload", action="store_true")
+  parser.add_argument("--whitelist-cars", type=str, nargs="*", default=all_cars,
+                      help="Whitelist given cars from the test (e.g. HONDA)")
+  parser.add_argument("--blacklist-cars", type=str, nargs="*", default=[],
+                      help="Blacklist given cars from the test (e.g. HONDA)")
   args = parser.parse_args()
 
+  tested_cars = set(args.whitelist_cars) - set(args.blacklist_cars)
+  tested_cars = {c.upper() for c in tested_cars}
+  tested_segments = [(car, segment) for car, segment in segments if car in tested_cars]
+
   with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
-    p = pool.map(regen_job, segments, [not args.no_upload] * len(segments), [args.jobs > 1] * len(segments))
+    p = pool.map(regen_job, tested_segments, [not args.no_upload] * len(tested_segments), [args.jobs > 1] * len(tested_segments))
     msg = "Copy these new segments into test_processes.py:"
-    for seg in tqdm(p, desc="Generating segments", total=len(segments)):
+    for seg in tqdm(p, desc="Generating segments", total=len(tested_segments)):
       msg += "\n" + str(seg)
     print()
     print()
