@@ -17,7 +17,7 @@ from openpilot.tools.lib.exceptions import DataUnreadableError
 from openpilot.tools.lib.vidindex import hevc_index
 from openpilot.common.file_helpers import atomic_write_in_dir
 
-from openpilot.tools.lib.filereader import FileReader
+from openpilot.tools.lib.filereader import FileReader, resolve_name
 
 HEVC_SLICE_B = 0
 HEVC_SLICE_P = 1
@@ -60,6 +60,7 @@ def fingerprint_video(fn):
 
 
 def ffprobe(fn, fmt=None):
+  fn = resolve_name(fn)
   cmd = ["ffprobe",
          "-v", "quiet",
          "-print_format", "json",
