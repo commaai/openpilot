@@ -2,33 +2,32 @@
 
 #include <cstring>
 
+#define XYZ_ARRAY(v) {v.x, v.y, v.z}
+#define XYZ_ARRAY_STD(v) {exp(v.x), exp(v.y), exp(v.z)}
+
+template <typename Type, size_t size, typename Proj>
+struct Array : public std::array<float, size> {
+  Array(const std::array<Type, size> &arr, Proj proj) {
+    for (int i = 0; i < size; ++i)
+      (*this)[i] = std::invoke(proj, arr[i]);
+  }
+  operator kj::ArrayPtr<const float>() { return kj::ArrayPtr(this->data(), size); }
+};
 
 void fill_lead(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelOutputLeads &leads, int t_idx, float prob_t) {
   std::array<float, LEAD_TRAJ_LEN> lead_t = {0.0, 2.0, 4.0, 6.0, 8.0, 10.0};
   const auto &best_prediction = leads.get_best_prediction(t_idx);
   lead.setProb(sigmoid(leads.prob[t_idx]));
   lead.setProbTime(prob_t);
-  std::array<float, LEAD_TRAJ_LEN> lead_x, lead_y, lead_v, lead_a;
-  std::array<float, LEAD_TRAJ_LEN> lead_x_std, lead_y_std, lead_v_std, lead_a_std;
-  for (int i=0; i<LEAD_TRAJ_LEN; i++) {
-    lead_x[i] = best_prediction.mean[i].x;
-    lead_y[i] = best_prediction.mean[i].y;
-    lead_v[i] = best_prediction.mean[i].velocity;
-    lead_a[i] = best_prediction.mean[i].acceleration;
-    lead_x_std[i] = exp(best_prediction.std[i].x);
-    lead_y_std[i] = exp(best_prediction.std[i].y);
-    lead_v_std[i] = exp(best_prediction.std[i].velocity);
-    lead_a_std[i] = exp(best_prediction.std[i].acceleration);
-  }
   lead.setT(to_kj_array_ptr(lead_t));
-  lead.setX(to_kj_array_ptr(lead_x));
-  lead.setY(to_kj_array_ptr(lead_y));
-  lead.setV(to_kj_array_ptr(lead_v));
-  lead.setA(to_kj_array_ptr(lead_a));
-  lead.setXStd(to_kj_array_ptr(lead_x_std));
-  lead.setYStd(to_kj_array_ptr(lead_y_std));
-  lead.setVStd(to_kj_array_ptr(lead_v_std));
-  lead.setAStd(to_kj_array_ptr(lead_a_std));
+  lead.setX(Array(best_prediction.mean, &ModelOutputLeadElement::x));
+  lead.setY(Array(best_prediction.mean, &ModelOutputLeadElement::y));
+  lead.setV(Array(best_prediction.mean, &ModelOutputLeadElement::velocity));
+  lead.setA(Array(best_prediction.mean, &ModelOutputLeadElement::acceleration));
+  lead.setXStd(Array(best_prediction.std, [](auto &v){ return exp(v.x); }));
+  lead.setYStd(Array(best_prediction.std, [](auto &v){ return exp(v.y); }));
+  lead.setVStd(Array(best_prediction.std, [](auto &v){ return exp(v.velocity); }));
+  lead.setAStd(Array(best_prediction.std, [](auto &v){ return exp(v.acceleration); }));
 }
 
 void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMeta &meta_data, PublishState &ps) {
@@ -41,18 +40,8 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMet
   }
 
   std::array<float, DISENGAGE_LEN> lat_long_t = {2, 4, 6, 8, 10};
-  std::array<float, DISENGAGE_LEN> gas_disengage_sigmoid, brake_disengage_sigmoid, steer_override_sigmoid,
-                                   brake_3ms2_sigmoid, brake_4ms2_sigmoid, brake_5ms2_sigmoid;
-  for (int i=0; i<DISENGAGE_LEN; i++) {
-    gas_disengage_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].gas_disengage);
-    brake_disengage_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].brake_disengage);
-    steer_override_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].steer_override);
-    brake_3ms2_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].brake_3ms2);
-    brake_4ms2_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].brake_4ms2);
-    brake_5ms2_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].brake_5ms2);
-    //gas_pressed_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].gas_pressed);
-  }
-
+  Array brake_3ms2_sigmoid(meta_data.disengage_prob, [](auto &v) { return sigmoid(v.brake_3ms2); });
+  Array brake_5ms2_sigmoid(meta_data.disengage_prob, [](auto &v) { return sigmoid(v.brake_5ms2); });
   std::memmove(ps.prev_brake_5ms2_probs.data(), &ps.prev_brake_5ms2_probs[1], 4*sizeof(float));
   std::memmove(ps.prev_brake_3ms2_probs.data(), &ps.prev_brake_3ms2_probs[1], 2*sizeof(float));
   ps.prev_brake_5ms2_probs[4] = brake_5ms2_sigmoid[0];
@@ -69,12 +58,12 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMet
 
   auto disengage = meta.initDisengagePredictions();
   disengage.setT(to_kj_array_ptr(lat_long_t));
-  disengage.setGasDisengageProbs(to_kj_array_ptr(gas_disengage_sigmoid));
-  disengage.setBrakeDisengageProbs(to_kj_array_ptr(brake_disengage_sigmoid));
-  disengage.setSteerOverrideProbs(to_kj_array_ptr(steer_override_sigmoid));
-  disengage.setBrake3MetersPerSecondSquaredProbs(to_kj_array_ptr(brake_3ms2_sigmoid));
-  disengage.setBrake4MetersPerSecondSquaredProbs(to_kj_array_ptr(brake_4ms2_sigmoid));
-  disengage.setBrake5MetersPerSecondSquaredProbs(to_kj_array_ptr(brake_5ms2_sigmoid));
+  disengage.setGasDisengageProbs(Array(meta_data.disengage_prob, [](auto &v) { return sigmoid(v.gas_disengage);}));
+  disengage.setBrakeDisengageProbs(Array(meta_data.disengage_prob, [](auto &v) { return sigmoid(v.brake_disengage); }));
+  disengage.setSteerOverrideProbs(Array(meta_data.disengage_prob, [](auto &v) { return sigmoid(v.steer_override); }));
+  disengage.setBrake3MetersPerSecondSquaredProbs(brake_3ms2_sigmoid);
+  disengage.setBrake4MetersPerSecondSquaredProbs(Array(meta_data.disengage_prob, [](auto &v) { return sigmoid(v.brake_4ms2); }));
+  disengage.setBrake5MetersPerSecondSquaredProbs(brake_5ms2_sigmoid);
 
   meta.setEngagedProb(sigmoid(meta_data.engaged_prob));
   meta.setDesirePrediction(to_kj_array_ptr(desire_pred_softmax));
@@ -129,74 +118,41 @@ void fill_xyzt(cereal::XYZTData::Builder xyzt, const std::array<float, size> &t,
   xyzt.setZ(to_kj_array_ptr(z));
 }
 
-template<size_t size>
-void fill_xyzt(cereal::XYZTData::Builder xyzt, const std::array<float, size> &t,
-               const std::array<float, size> &x, const std::array<float, size> &y, const std::array<float, size> &z,
-               const std::array<float, size> &x_std, const std::array<float, size> &y_std, const std::array<float, size> &z_std) {
-  fill_xyzt(xyzt, t, x, y, z);
-  xyzt.setXStd(to_kj_array_ptr(x_std));
-  xyzt.setYStd(to_kj_array_ptr(y_std));
-  xyzt.setZStd(to_kj_array_ptr(z_std));
-}
-
 void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelOutputPlanPrediction &plan) {
-  std::array<float, TRAJECTORY_SIZE> pos_x, pos_y, pos_z;
-  std::array<float, TRAJECTORY_SIZE> pos_x_std, pos_y_std, pos_z_std;
-  std::array<float, TRAJECTORY_SIZE> vel_x, vel_y, vel_z;
-  std::array<float, TRAJECTORY_SIZE> rot_x, rot_y, rot_z;
-  std::array<float, TRAJECTORY_SIZE> acc_x, acc_y, acc_z;
-  std::array<float, TRAJECTORY_SIZE> rot_rate_x, rot_rate_y, rot_rate_z;
+  auto position = framed.initPosition();
+  fill_xyzt(position, T_IDXS_FLOAT,
+            Array(plan.mean, [](auto &v) { return v.position.x; }),
+            Array(plan.mean, [](auto &v) { return v.position.y; }),
+            Array(plan.mean, [](auto &v) { return v.position.z; }));
+  position.setXStd(Array(plan.std, [](auto &v) { return exp(v.position.x); }));
+  position.setYStd(Array(plan.std, [](auto &v) { return exp(v.position.y); }));
+  position.setZStd(Array(plan.std, [](auto &v) { return exp(v.position.z); }));
 
-  for (int i=0; i<TRAJECTORY_SIZE; i++) {
-    pos_x[i] = plan.mean[i].position.x;
-    pos_y[i] = plan.mean[i].position.y;
-    pos_z[i] = plan.mean[i].position.z;
-    pos_x_std[i] = exp(plan.std[i].position.x);
-    pos_y_std[i] = exp(plan.std[i].position.y);
-    pos_z_std[i] = exp(plan.std[i].position.z);
-    vel_x[i] = plan.mean[i].velocity.x;
-    vel_y[i] = plan.mean[i].velocity.y;
-    vel_z[i] = plan.mean[i].velocity.z;
-    acc_x[i] = plan.mean[i].acceleration.x;
-    acc_y[i] = plan.mean[i].acceleration.y;
-    acc_z[i] = plan.mean[i].acceleration.z;
-    rot_x[i] = plan.mean[i].rotation.x;
-    rot_y[i] = plan.mean[i].rotation.y;
-    rot_z[i] = plan.mean[i].rotation.z;
-    rot_rate_x[i] = plan.mean[i].rotation_rate.x;
-    rot_rate_y[i] = plan.mean[i].rotation_rate.y;
-    rot_rate_z[i] = plan.mean[i].rotation_rate.z;
-  }
-
-  fill_xyzt(framed.initPosition(), T_IDXS_FLOAT, pos_x, pos_y, pos_z, pos_x_std, pos_y_std, pos_z_std);
-  fill_xyzt(framed.initVelocity(), T_IDXS_FLOAT, vel_x, vel_y, vel_z);
-  fill_xyzt(framed.initAcceleration(), T_IDXS_FLOAT, acc_x, acc_y, acc_z);
-  fill_xyzt(framed.initOrientation(), T_IDXS_FLOAT, rot_x, rot_y, rot_z);
-  fill_xyzt(framed.initOrientationRate(), T_IDXS_FLOAT, rot_rate_x, rot_rate_y, rot_rate_z);
+  fill_xyzt(framed.initVelocity(), T_IDXS_FLOAT,
+            Array(plan.mean, [](auto &v) { return v.velocity.x; }),
+            Array(plan.mean, [](auto &v) { return v.velocity.y; }),
+            Array(plan.mean, [](auto &v) { return v.velocity.z; }));
+  fill_xyzt(framed.initAcceleration(), T_IDXS_FLOAT,
+            Array(plan.mean, [](auto &v) { return v.acceleration.x; }),
+            Array(plan.mean, [](auto &v) { return v.acceleration.y; }),
+            Array(plan.mean, [](auto &v) { return v.acceleration.z; }));
+  fill_xyzt(framed.initOrientation(), T_IDXS_FLOAT,
+            Array(plan.mean, [](auto &v) { return v.rotation.x; }),
+            Array(plan.mean, [](auto &v) { return v.rotation.y; }),
+            Array(plan.mean, [](auto &v) { return v.rotation.z; }));
+  fill_xyzt(framed.initOrientationRate(), T_IDXS_FLOAT,
+            Array(plan.mean, [](auto &v) { return v.rotation_rate.x; }),
+            Array(plan.mean, [](auto &v) { return v.rotation_rate.y; }),
+            Array(plan.mean, [](auto &v) { return v.rotation_rate.z; }));
 }
 
 void fill_lane_lines(cereal::ModelDataV2::Builder &framed, const std::array<float, TRAJECTORY_SIZE> &plan_t,
                      const ModelOutputLaneLines &lanes) {
-  std::array<float, TRAJECTORY_SIZE> left_far_y, left_far_z;
-  std::array<float, TRAJECTORY_SIZE> left_near_y, left_near_z;
-  std::array<float, TRAJECTORY_SIZE> right_near_y, right_near_z;
-  std::array<float, TRAJECTORY_SIZE> right_far_y, right_far_z;
-  for (int j=0; j<TRAJECTORY_SIZE; j++) {
-    left_far_y[j] = lanes.mean.left_far[j].y;
-    left_far_z[j] = lanes.mean.left_far[j].z;
-    left_near_y[j] = lanes.mean.left_near[j].y;
-    left_near_z[j] = lanes.mean.left_near[j].z;
-    right_near_y[j] = lanes.mean.right_near[j].y;
-    right_near_z[j] = lanes.mean.right_near[j].z;
-    right_far_y[j] = lanes.mean.right_far[j].y;
-    right_far_z[j] = lanes.mean.right_far[j].z;
-  }
-
   auto lane_lines = framed.initLaneLines(4);
-  fill_xyzt(lane_lines[0], plan_t, X_IDXS_FLOAT, left_far_y, left_far_z);
-  fill_xyzt(lane_lines[1], plan_t, X_IDXS_FLOAT, left_near_y, left_near_z);
-  fill_xyzt(lane_lines[2], plan_t, X_IDXS_FLOAT, right_near_y, right_near_z);
-  fill_xyzt(lane_lines[3], plan_t, X_IDXS_FLOAT, right_far_y, right_far_z);
+  fill_xyzt(lane_lines[0], plan_t, X_IDXS_FLOAT, Array(lanes.mean.left_far, &ModelOutputYZ::y), Array(lanes.mean.left_far, &ModelOutputYZ::z));
+  fill_xyzt(lane_lines[1], plan_t, X_IDXS_FLOAT, Array(lanes.mean.left_near, &ModelOutputYZ::y), Array(lanes.mean.left_near, &ModelOutputYZ::z));
+  fill_xyzt(lane_lines[2], plan_t, X_IDXS_FLOAT, Array(lanes.mean.right_near, &ModelOutputYZ::y), Array(lanes.mean.right_near, &ModelOutputYZ::z));
+  fill_xyzt(lane_lines[3], plan_t, X_IDXS_FLOAT, Array(lanes.mean.right_far, &ModelOutputYZ::y), Array(lanes.mean.right_far, &ModelOutputYZ::z));
 
   framed.setLaneLineStds({
     exp(lanes.std.left_far[0].y),
@@ -215,18 +171,9 @@ void fill_lane_lines(cereal::ModelDataV2::Builder &framed, const std::array<floa
 
 void fill_road_edges(cereal::ModelDataV2::Builder &framed, const std::array<float, TRAJECTORY_SIZE> &plan_t,
                      const ModelOutputRoadEdges &edges) {
-  std::array<float, TRAJECTORY_SIZE> left_y, left_z;
-  std::array<float, TRAJECTORY_SIZE> right_y, right_z;
-  for (int j=0; j<TRAJECTORY_SIZE; j++) {
-    left_y[j] = edges.mean.left[j].y;
-    left_z[j] = edges.mean.left[j].z;
-    right_y[j] = edges.mean.right[j].y;
-    right_z[j] = edges.mean.right[j].z;
-  }
-
   auto road_edges = framed.initRoadEdges(2);
-  fill_xyzt(road_edges[0], plan_t, X_IDXS_FLOAT, left_y, left_z);
-  fill_xyzt(road_edges[1], plan_t, X_IDXS_FLOAT, right_y, right_z);
+  fill_xyzt(road_edges[0], plan_t, X_IDXS_FLOAT, Array(edges.mean.left, &ModelOutputYZ::y), Array(edges.mean.left, &ModelOutputYZ::z));
+  fill_xyzt(road_edges[1], plan_t, X_IDXS_FLOAT, Array(edges.mean.right, &ModelOutputYZ::y), Array(edges.mean.right, &ModelOutputYZ::z));
 
   framed.setRoadEdgeStds({
     exp(edges.std.left[0].y),
@@ -275,15 +222,11 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
   }
 
   // temporal pose
-  const auto &v_mean = net_outputs.temporal_pose.velocity_mean;
-  const auto &r_mean = net_outputs.temporal_pose.rotation_mean;
-  const auto &v_std = net_outputs.temporal_pose.velocity_std;
-  const auto &r_std = net_outputs.temporal_pose.rotation_std;
   auto temporal_pose = framed.initTemporalPose();
-  temporal_pose.setTrans({v_mean.x, v_mean.y, v_mean.z});
-  temporal_pose.setRot({r_mean.x, r_mean.y, r_mean.z});
-  temporal_pose.setTransStd({exp(v_std.x), exp(v_std.y), exp(v_std.z)});
-  temporal_pose.setRotStd({exp(r_std.x), exp(r_std.y), exp(r_std.z)});
+  temporal_pose.setTrans(XYZ_ARRAY(net_outputs.temporal_pose.velocity_mean));
+  temporal_pose.setRot(XYZ_ARRAY(net_outputs.temporal_pose.rotation_mean));
+  temporal_pose.setTransStd(XYZ_ARRAY_STD(net_outputs.temporal_pose.velocity_std));
+  temporal_pose.setRotStd(XYZ_ARRAY_STD(net_outputs.temporal_pose.rotation_std));
 }
 
 void fill_model_msg(MessageBuilder &msg, float *net_output_data, PublishState &ps, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
@@ -306,24 +249,15 @@ void fill_model_msg(MessageBuilder &msg, float *net_output_data, PublishState &p
 
 void fill_pose_msg(MessageBuilder &msg, float *net_output_data, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames, uint64_t timestamp_eof, const bool valid) {
     const ModelOutput &net_outputs = *((ModelOutput*) net_output_data);
-    const auto &v_mean = net_outputs.pose.velocity_mean;
-    const auto &r_mean = net_outputs.pose.rotation_mean;
-    const auto &t_mean = net_outputs.wide_from_device_euler.mean;
-    const auto &v_std = net_outputs.pose.velocity_std;
-    const auto &r_std = net_outputs.pose.rotation_std;
-    const auto &t_std = net_outputs.wide_from_device_euler.std;
-    const auto &road_transform_trans_mean = net_outputs.road_transform.position_mean;
-    const auto &road_transform_trans_std = net_outputs.road_transform.position_std;
-
     auto posenetd = msg.initEvent(valid && (vipc_dropped_frames < 1)).initCameraOdometry();
-    posenetd.setTrans({v_mean.x, v_mean.y, v_mean.z});
-    posenetd.setRot({r_mean.x, r_mean.y, r_mean.z});
-    posenetd.setWideFromDeviceEuler({t_mean.x, t_mean.y, t_mean.z});
-    posenetd.setRoadTransformTrans({road_transform_trans_mean.x, road_transform_trans_mean.y, road_transform_trans_mean.z});
-    posenetd.setTransStd({exp(v_std.x), exp(v_std.y), exp(v_std.z)});
-    posenetd.setRotStd({exp(r_std.x), exp(r_std.y), exp(r_std.z)});
-    posenetd.setWideFromDeviceEulerStd({exp(t_std.x), exp(t_std.y), exp(t_std.z)});
-    posenetd.setRoadTransformTransStd({exp(road_transform_trans_std.x), exp(road_transform_trans_std.y), exp(road_transform_trans_std.z)});
+    posenetd.setTrans(XYZ_ARRAY(net_outputs.pose.velocity_mean));
+    posenetd.setRot(XYZ_ARRAY(net_outputs.pose.rotation_mean));
+    posenetd.setWideFromDeviceEuler(XYZ_ARRAY(net_outputs.wide_from_device_euler.mean));
+    posenetd.setRoadTransformTrans(XYZ_ARRAY(net_outputs.road_transform.position_mean));
+    posenetd.setTransStd(XYZ_ARRAY_STD(net_outputs.pose.velocity_std));
+    posenetd.setRotStd(XYZ_ARRAY_STD(net_outputs.pose.rotation_std));
+    posenetd.setWideFromDeviceEulerStd(XYZ_ARRAY_STD(net_outputs.wide_from_device_euler.std));
+    posenetd.setRoadTransformTransStd(XYZ_ARRAY_STD(net_outputs.road_transform.position_std));
 
     posenetd.setTimestampEof(timestamp_eof);
     posenetd.setFrameId(vipc_frame_id);
