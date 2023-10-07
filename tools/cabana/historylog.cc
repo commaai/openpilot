@@ -9,6 +9,8 @@
 #include "tools/cabana/commands.h"
 
 QVariant HexLogModel::data(const QModelIndex &index, int role) const {
+  if (!index.isValid() || index.row() >= messages.size()) return {};
+
   const auto &m = messages[index.row()];
   switch (role) {
     case Qt::DisplayRole: return index.column() == 0 ? QString::number(can->toSeconds(m.mono_time), 'f', 2) : "";
@@ -25,6 +27,8 @@ QVariant HexLogModel::headerData(int section, Qt::Orientation orientation, int r
 }
 
 QVariant SignalLogModel::data(const QModelIndex &index, int role) const {
+  if (!index.isValid() || index.row() >= messages.size()) return {};
+
   if (role == Qt::DisplayRole) {
     const auto &m = messages[index.row()];
     int n = index.column();

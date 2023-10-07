@@ -18,9 +18,9 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
   // message table
   view = new MessageView(this);
+  view->setItemDelegate(delegate = new MessageBytesDelegate(view, settings.multiple_lines_bytes));
   view->setHeader(header = new MessageViewHeader(this));
   view->setModel(model = new MessageListModel(this));
-  view->setItemDelegate(delegate = new MessageBytesDelegate(view, settings.multiple_lines_bytes));
   view->setSortingEnabled(true);
   view->sortByColumn(MessageListModel::Column::NAME, Qt::AscendingOrder);
   view->setAllColumnsShowFocus(true);
@@ -173,11 +173,13 @@ QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, 
 }
 
 QVariant MessageListModel::data(const QModelIndex &index, int role) const {
-  auto getFreq = [](const CanData &d) -> QString {
-    if (d.freq > 0 && (can->currentSec() - can->toSeconds(d.mono_time) - 1.0 / settings.fps) < (5.0 / d.freq)) {
+  if (!index.isValid() || index.row() >= msgs.size()) return {};
+
+  auto getFreq = [](const CanData &d) {
+    if (d.freq > 0 && ((can->currentSec() - can->toSeconds(d.mono_time) - 1.0 / settings.fps) < (5.0 / d.freq))) {
       return d.freq >= 0.95 ? QString::number(std::nearbyint(d.freq)) : QString::number(d.freq, 'f', 2);
     } else {
-      return "--";
+      return QString("--");
     }
   };
 
