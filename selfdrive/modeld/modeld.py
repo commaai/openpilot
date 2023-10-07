@@ -21,7 +21,7 @@ from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLCont
 from openpilot.selfdrive.modeld.models.driving_pyx import (
   PublishState, create_model_msg, create_pose_msg,
   FEATURE_LEN, HISTORY_BUFFER_LEN, DESIRE_LEN, TRAFFIC_CONVENTION_LEN, NAV_FEATURE_LEN, NAV_INSTRUCTION_LEN,
-  LAT_PLANNER_STATE_LEN, SIM_SPEED_LEN, OUTPUT_SIZE, NET_OUTPUT_SIZE, MODEL_FREQ)
+  LAT_PLANNER_STATE_LEN, OUTPUT_SIZE, NET_OUTPUT_SIZE, MODEL_FREQ)
 
 MODEL_PATHS = {
   ModelRunner.THNEED: Path(__file__).parent / 'models/supercombo.thneed',
@@ -53,7 +53,6 @@ class ModelState:
       'desire': np.zeros(DESIRE_LEN * (HISTORY_BUFFER_LEN+1), dtype=np.float32),
       'traffic_convention': np.zeros(TRAFFIC_CONVENTION_LEN, dtype=np.float32),
       'lat_planner_state': np.zeros(LAT_PLANNER_STATE_LEN, dtype=np.float32),
-      'sim_speed': np.zeros(SIM_SPEED_LEN, dtype=np.float32),
       'nav_features': np.zeros(NAV_FEATURE_LEN, dtype=np.float32),
       'nav_instructions': np.zeros(NAV_INSTRUCTION_LEN, dtype=np.float32),
       'features_buffer': np.zeros(HISTORY_BUFFER_LEN * FEATURE_LEN, dtype=np.float32),
@@ -76,7 +75,6 @@ class ModelState:
     self.inputs['traffic_convention'][:] = inputs['traffic_convention']
     self.inputs['nav_features'][:] = inputs['nav_features']
     self.inputs['nav_instructions'][:] = inputs['nav_instructions']
-    self.inputs['sim_speed'][:] = inputs['sim_speed']
     # self.inputs['driving_style'][:] = inputs['driving_style']
 
     # if getCLBuffer is not None, frame will be None
@@ -132,7 +130,7 @@ def main():
 
   # messaging
   pm = PubMaster(["modelV2", "cameraOdometry"])
-  sm = SubMaster(["lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel", "navInstruction", "carState"])
+  sm = SubMaster(["lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel", "navInstruction"])
 
   state = PublishState()
   params = Params()
@@ -246,7 +244,6 @@ def main():
     inputs:Dict[str, np.ndarray] = {
       'desire': vec_desire,
       'traffic_convention': traffic_convention,
-      'sim_speed': sm['carState'].vEgo,
       'driving_style': driving_style,
       'nav_features': nav_features,
       'nav_instructions': nav_instructions}

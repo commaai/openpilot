@@ -15,7 +15,6 @@ constexpr int DESIRE_LEN = 8;
 constexpr int DESIRE_PRED_LEN = 4;
 constexpr int TRAFFIC_CONVENTION_LEN = 2;
 constexpr int LAT_PLANNER_STATE_LEN = 4;
-constexpr int SIM_SPEED_LEN = 1;
 constexpr int NAV_FEATURE_LEN = 256;
 constexpr int NAV_INSTRUCTION_LEN = 150;
 constexpr int DRIVING_STYLE_LEN = 12;
