@@ -180,7 +180,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.LEXUS_ES: ToyotaCarInfo("Lexus ES 2017-18"),
   CAR.LEXUS_ESH: ToyotaCarInfo("Lexus ES Hybrid 2017-18"),
   CAR.LEXUS_ES_TSS2: [
-    ToyotaCarInfo("Lexus ES 2019-22"),
+    ToyotaCarInfo("Lexus ES 2019-24"),
     ToyotaCarInfo("Lexus ES Hybrid 2019-23", video_link="https://youtu.be/BZ29osRVJeg?t=12"),
   ],
   CAR.LEXUS_IS: ToyotaCarInfo("Lexus IS 2017-19"),
@@ -1764,6 +1764,7 @@ FW_VERSIONS = {
       b'\x01F152606340\x00\x00\x00\x00\x00\x00',
       b'\x01F152606461\x00\x00\x00\x00\x00\x00',
       b'\x01F15260E031\x00\x00\x00\x00\x00\x00',
+      b'\x01F15260646200\x00\x00\x00\x00',
       b'F152633423\x00\x00\x00\x00\x00\x00',
       b'F152633680\x00\x00\x00\x00\x00\x00',
       b'F152633681\x00\x00\x00\x00\x00\x00',
@@ -1783,6 +1784,7 @@ FW_VERSIONS = {
       b'\x018821F3301400\x00\x00\x00\x00',
       b'\x018821F6201300\x00\x00\x00\x00',
       b'\x018821F3301300\x00\x00\x00\x00',
+      b'\x018821F6201400\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F33030D0\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00',
