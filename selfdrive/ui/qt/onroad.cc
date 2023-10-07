@@ -4,6 +4,7 @@
 #include <cmath>
 #include <map>
 #include <memory>
+#include <sstream>
 
 #include <QDebug>
 #include <QMouseEvent>
