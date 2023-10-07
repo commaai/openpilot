@@ -437,9 +437,8 @@ void BinaryItemDelegate::drawSignalCell(QPainter *painter, const QStyleOptionVie
   }
   painter->setClipRegion(QRegion(rc).subtracted(subtract));
 
-  auto item = (const BinaryViewModel::Item *)index.internalPointer();
   QColor color = sig->color;
-  color.setAlpha(item->bg_color.alpha());
+  color.setAlpha(static_cast<BinaryViewModel::Item *>(index.internalPointer())->bg_color.alpha());
   // Mixing the signal colour with the Base background color to fade it
   painter->fillRect(rc, option.palette.color(QPalette::Base));
   painter->fillRect(rc, color);

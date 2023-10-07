@@ -6,7 +6,6 @@
 #include <vector>
 
 #include <QAbstractTableModel>
-#include <QContextMenuEvent>
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QMenu>

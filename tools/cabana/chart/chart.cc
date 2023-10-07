@@ -419,9 +419,8 @@ qreal ChartView::niceNumber(qreal x, bool ceiling) {
 }
 
 void ChartView::leaveEvent(QEvent *event) {
-  if (tip_label.isVisible()) {
+  if (tip_label.isVisible())
     charts_widget->showValueTip(-1);
-  }
   QChartView::leaveEvent(event);
 }
 
@@ -503,13 +502,9 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
   if (event->button() == Qt::LeftButton && rubber && rubber->isVisible()) {
     rubber->hide();
     auto rect = rubber->geometry().normalized();
-    double min = chart()->mapToValue(rect.topLeft()).x();
-    double max = chart()->mapToValue(rect.bottomRight()).x();
-
     // Prevent zooming/seeking past the end of the route
-    min = std::clamp(min, 0., can->totalSeconds());
-    max = std::clamp(max, 0., can->totalSeconds());
-
+    double min = std::clamp(chart()->mapToValue(rect.topLeft()).x(), 0., can->totalSeconds());
+    double max = std::clamp(chart()->mapToValue(rect.bottomRight()).x(), 0., can->totalSeconds());
     if (rubber->width() <= 0) {
       // no rubber dragged, seek to mouse position
       can->seekTo(min);

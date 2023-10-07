@@ -62,10 +62,8 @@ cabana::Signal *cabana::Msg::sig(const QString &sig_name) const {
 }
 
 int cabana::Msg::indexOf(const cabana::Signal *sig) const {
-  for (int i = 0; i < sigs.size(); ++i) {
-    if (sigs[i] == sig) return i;
-  }
-  return -1;
+  auto it = std::find(sigs.begin(), sigs.end(), sig);
+  return it != sigs.end() ? std::distance(sigs.begin(), it) : -1;
 }
 
 QString cabana::Msg::newSignalName() {
@@ -152,9 +150,8 @@ QString cabana::Signal::formatValue(double value) const {
   }
 
   QString val_str = QString::number(value, 'f', precision);
-  if (!unit.isEmpty()) {
+  if (!unit.isEmpty())
     val_str += " " + unit;
-  }
   return val_str;
 }
 

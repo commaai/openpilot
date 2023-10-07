@@ -62,9 +62,8 @@ QVariant SignalLogModel::headerData(int section, Qt::Orientation orientation, in
 // HistoryLogModel
 
 HistoryLogModel::HistoryLogModel(const MessageId &id, QObject *parent) : msg_id(id), QAbstractTableModel(parent) {
-  if (auto dbc_msg = dbc()->msg(msg_id)) {
+  if (auto dbc_msg = dbc()->msg(msg_id))
     sigs = dbc_msg->getSignals();
-  }
 }
 
 void HistoryLogModel::refresh() {

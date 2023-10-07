@@ -77,9 +77,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &DetailWidget::refresh);
   QObject::connect(tabbar, &QTabBar::customContextMenuRequested, this, &DetailWidget::showTabBarContextMenu);
   QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
-    if (index != -1) {
-      setMessage(tabbar->tabData(index).value<MessageId>());
-    }
+    if (index != -1) setMessage(tabbar->tabData(index).value<MessageId>());
   });
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
   QObject::connect(charts, &ChartsWidget::seriesChanged, signal_view, &SignalView::updateChartState);

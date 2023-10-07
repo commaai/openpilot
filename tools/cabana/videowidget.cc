@@ -111,10 +111,8 @@ QWidget *VideoWidget::createCameraWidget() {
   auto slider_layout = new QHBoxLayout();
   slider_layout->addWidget(time_label = new QLabel("00:00"));
 
-  slider = new Slider(this);
+  slider_layout->addWidget(slider = new Slider(this));
   slider->setSingleStep(0);
-  slider_layout->addWidget(slider);
-
   slider_layout->addWidget(end_time_label = new QLabel(this));
   l->addLayout(slider_layout);
 
@@ -148,9 +146,8 @@ void VideoWidget::setTimeRange(double min, double max) {
 }
 
 void VideoWidget::updateState() {
-  if (!slider->isSliderDown()) {
+  if (!slider->isSliderDown())
     slider->setCurrentSecond(can->currentSec());
-  }
   alert_label->showAlert(slider->alertInfo(can->currentSec()));
 }
 
@@ -307,9 +304,8 @@ void InfoLabel::paintEvent(QPaintEvent *event) {
     }
     color.setAlphaF(0.5);
     QString text = alert_info.text1;
-    if (!alert_info.text2.isEmpty()) {
+    if (!alert_info.text2.isEmpty())
       text += "\n" + alert_info.text2;
-    }
 
     if (!pixmap.isNull()) {
       QFont font;

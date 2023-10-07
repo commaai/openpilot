@@ -45,8 +45,7 @@ void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const caba
 
 void SignalModel::setMessage(const MessageId &id) {
   msg_id = id;
-  filter_str = "";
-  refresh();
+  setFilter("");
 }
 
 void SignalModel::setFilter(const QString &txt) {
@@ -98,10 +97,8 @@ Qt::ItemFlags SignalModel::flags(const QModelIndex &index) const {
 }
 
 int SignalModel::signalRow(const cabana::Signal *sig) const {
-  for (int i = 0; i < root->children.size(); ++i) {
-    if (root->children[i]->sig == sig) return i;
-  }
-  return -1;
+  auto it = std::find_if(root->children.cbegin(), root->children.cend(), [sig](auto &c) { return c->sig == sig; });
+  return it != root->children.cend() ? std::distance(root->children.cbegin(), it) : -1;
 }
 
 QModelIndex SignalModel::index(int row, int column, const QModelIndex &parent) const {

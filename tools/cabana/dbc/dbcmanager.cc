@@ -10,7 +10,7 @@ bool DBCManager::open(const SourceSet &sources, const QString &dbc_file_name, QS
   try {
     auto it = std::find_if(dbc_files.begin(), dbc_files.end(),
                            [&](auto &f) { return f.second && f.second->filename == dbc_file_name; });
-    auto file = (it != dbc_files.end()) ? it->second : std::make_shared<DBCFile>(dbc_file_name, this);
+    auto file = (it != dbc_files.end()) ? it->second : std::make_shared<DBCFile>(dbc_file_name);
     for (auto s : sources) {
       dbc_files[s] = file;
     }
@@ -25,7 +25,7 @@ bool DBCManager::open(const SourceSet &sources, const QString &dbc_file_name, QS
 
 bool DBCManager::open(const SourceSet &sources, const QString &name, const QString &content, QString *error) {
   try {
-    auto file = std::make_shared<DBCFile>(name, content, this);
+    auto file = std::make_shared<DBCFile>(name, content);
     for (auto s : sources) {
       dbc_files[s] = file;
     }

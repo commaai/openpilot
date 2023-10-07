@@ -1,7 +1,8 @@
 #pragma once
 
-#include <memory>
+#include <QObject>
 #include <map>
+#include <memory>
 #include <set>
 #include <vector>
 
