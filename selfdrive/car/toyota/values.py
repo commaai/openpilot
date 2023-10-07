@@ -127,7 +127,8 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.CAMRYH_TSS2: ToyotaCarInfo("Toyota Camry Hybrid 2021-24"),
   CAR.CHR: [
     ToyotaCarInfo("Toyota C-HR 2017-20"),
-    ToyotaCarInfo("Toyota C-HR Hybrid 2017-20"), ],
+    ToyotaCarInfo("Toyota C-HR Hybrid 2017-20"),
+  ],
   CAR.CHR_TSS2: ToyotaCarInfo("Toyota C-HR 2021"),
   CAR.CHRH_TSS2: ToyotaCarInfo("Toyota C-HR Hybrid 2021-22"),
   CAR.COROLLA: ToyotaCarInfo("Toyota Corolla 2017-19"),
@@ -347,7 +348,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Ecu.abs: [CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.SIENNA, CAR.LEXUS_IS],
     # On some models, the engine can show on two different addresses
     Ecu.engine: [CAR.CAMRY, CAR.COROLLA_TSS2, CAR.CHR, CAR.CHR_TSS2, CAR.LEXUS_IS, CAR.LEXUS_RC,
-                 CAR.LEXUS_RX_TSS2, CAR.LEXUS_NX, CAR.LEXUS_NX_TSS2],
+                 CAR.LEXUS_NX, CAR.LEXUS_NX_TSS2, CAR.LEXUS_RX_TSS2],
   },
   extra_ecus=[
     # All known ECUs on a late-model Toyota vehicle not queried here:
