@@ -1,7 +1,7 @@
 import re
 from collections import defaultdict
 from dataclasses import dataclass, field
-from enum import Enum, IntFlag
+from enum import Enum, IntFlag, StrEnum
 from typing import Dict, List, Set, Union
 
 from cereal import car
@@ -46,7 +46,7 @@ class ToyotaFlags(IntFlag):
   DISABLE_RADAR = 4
 
 
-class CAR:
+class CAR(StrEnum):
   # Toyota
   ALPHARD_TSS2 = "TOYOTA ALPHARD 2020"
   ALPHARDH_TSS2 = "TOYOTA ALPHARD HYBRID 2021"
@@ -131,7 +131,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.CAMRY: ToyotaCarInfo("Toyota Camry 2018-20", video_link="https://www.youtube.com/watch?v=fkcjviZY9CM", footnotes=[Footnote.CAMRY]),
   CAR.CAMRYH: ToyotaCarInfo("Toyota Camry Hybrid 2018-20", video_link="https://www.youtube.com/watch?v=Q2DYY0AWKgk"),
   CAR.CAMRY_TSS2: ToyotaCarInfo("Toyota Camry 2021-23", footnotes=[Footnote.CAMRY]),
-  CAR.CAMRYH_TSS2: ToyotaCarInfo("Toyota Camry Hybrid 2021-23"),
+  CAR.CAMRYH_TSS2: ToyotaCarInfo("Toyota Camry Hybrid 2021-24"),
   CAR.CHR: ToyotaCarInfo("Toyota C-HR 2017-20"),
   CAR.CHR_TSS2: ToyotaCarInfo("Toyota C-HR 2021"),
   CAR.CHRH: ToyotaCarInfo("Toyota C-HR Hybrid 2017-20"),
@@ -186,7 +186,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.LEXUS_ES_TSS2: ToyotaCarInfo("Lexus ES 2019-22"),
   CAR.LEXUS_ESH_TSS2: ToyotaCarInfo("Lexus ES Hybrid 2019-23", video_link="https://youtu.be/BZ29osRVJeg?t=12"),
   CAR.LEXUS_IS: ToyotaCarInfo("Lexus IS 2017-19"),
-  CAR.LEXUS_IS_TSS2: ToyotaCarInfo("Lexus IS 2023"),
+  CAR.LEXUS_IS_TSS2: ToyotaCarInfo("Lexus IS 2022-23"),
   CAR.LEXUS_NX: ToyotaCarInfo("Lexus NX 2018-19"),
   CAR.LEXUS_NXH: ToyotaCarInfo("Lexus NX Hybrid 2018-19"),
   CAR.LEXUS_NX_TSS2: ToyotaCarInfo("Lexus NX 2020-21"),
@@ -1334,17 +1334,21 @@ FW_VERSIONS = {
   CAR.LEXUS_IS_TSS2: {
     (Ecu.engine, 0x700, None): [
       b'\x018966353S1000\x00\x00\x00\x00',
+      b'\x018966353S2000\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
+      b'\x01F15265337200\x00\x00\x00\x00',
       b'\x01F15265342000\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B53450\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
+      b'\x018821F6201200\x00\x00\x00\x00',
       b'\x018821F6201300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'\x028646F5303300\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
       b'\x028646F5303400\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
     ],
   },
@@ -1649,6 +1653,7 @@ FW_VERSIONS = {
     (Ecu.engine, 0x700, None): [
       b'\x01896634A88100\x00\x00\x00\x00',
       b'\x01896634AJ2000\x00\x00\x00\x00',
+      b'\x01896634A89100\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F0R03100\x00\x00\x00\x00',
@@ -1748,6 +1753,7 @@ FW_VERSIONS = {
     (Ecu.abs, 0x7b0, None): [
       b'\x01F15264283200\x00\x00\x00\x00',
       b'\x01F15264283300\x00\x00\x00\x00',
+      b'\x01F152642F1000\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'\x028965B0R11000\x00\x00\x00\x008965B0R12000\x00\x00\x00\x00',
@@ -1758,15 +1764,17 @@ FW_VERSIONS = {
       b'\x01896634AF0000\x00\x00\x00\x00',
     ],
     (Ecu.hybrid, 0x7d2, None): [
+      b'\x02899830R39000\x00\x00\x00\x00899850R20000\x00\x00\x00\x00',
       b'\x02899830R41000\x00\x00\x00\x00899850R20000\x00\x00\x00\x00',
       b'\x028998342C0000\x00\x00\x00\x00899854224000\x00\x00\x00\x00',
-      b'\x02899830R39000\x00\x00\x00\x00899850R20000\x00\x00\x00\x00',
+      b'\x028998342C6000\x00\x00\x00\x00899854224000\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F0R03100\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F0R05100\x00\x00\x00\x008646G0R02100\x00\x00\x00\x00',
+      b'\x028646F0R05200\x00\x00\x00\x008646G0R02200\x00\x00\x00\x00',
     ],
   },
   CAR.SIENNA: {
@@ -1980,6 +1988,7 @@ FW_VERSIONS = {
       b'\x018966378G2000\x00\x00\x00\x00',
       b'\x018966378G3000\x00\x00\x00\x00',
       b'\x018966378B2000\x00\x00\x00\x00',
+      b'\x018966378B3100\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
       b'\x01F152678221\x00\x00\x00\x00\x00\x00',

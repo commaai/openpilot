@@ -59,7 +59,7 @@ class SimulatedCar:
     msg.append(self.packer.make_can_msg("GEARBOX", 0, {"GEAR": 4, "GEAR_SHIFTER": 8}))
     msg.append(self.packer.make_can_msg("GAS_PEDAL_2", 0, {}))
     msg.append(self.packer.make_can_msg("SEATBELT_STATUS", 0, {"SEATBELT_DRIVER_LATCHED": 1}))
-    msg.append(self.packer.make_can_msg("STEER_STATUS", 0, {}))
+    msg.append(self.packer.make_can_msg("STEER_STATUS", 0, {"STEER_TORQUE_SENSOR": simulator_state.user_torque}))
     msg.append(self.packer.make_can_msg("STEERING_SENSORS", 0, {"STEER_ANGLE": simulator_state.steering_angle}))
     msg.append(self.packer.make_can_msg("VSA_STATUS", 0, {}))
     msg.append(self.packer.make_can_msg("STANDSTILL", 0, {"WHEELS_MOVING": 1 if simulator_state.speed >= 1.0 else 0}))
@@ -68,7 +68,12 @@ class SimulatedCar:
     msg.append(self.packer.make_can_msg("DOORS_STATUS", 0, {}))
     msg.append(self.packer.make_can_msg("CRUISE_PARAMS", 0, {}))
     msg.append(self.packer.make_can_msg("CRUISE", 0, {}))
-    msg.append(self.packer.make_can_msg("SCM_FEEDBACK", 0, {"MAIN_ON": 1}))
+    msg.append(self.packer.make_can_msg("SCM_FEEDBACK", 0,
+                                    {
+                                      "MAIN_ON": 1,
+                                      "LEFT_BLINKER": simulator_state.left_blinker,
+                                      "RIGHT_BLINKER": simulator_state.right_blinker
+                                    }))
     msg.append(self.packer.make_can_msg("POWERTRAIN_DATA", 0,
                                     {
                                     "ACC_STATUS": int(simulator_state.is_engaged),
