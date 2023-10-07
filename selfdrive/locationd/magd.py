@@ -15,13 +15,13 @@ from openpilot.selfdrive.locationd.helpers import PointBuckets
 POINTS_PER_BUCKET = 3000
 MIN_POINTS_TOTAL = 4000
 FIT_POINTS_TOTAL = 4000
-MIN_VEL = 3  # m/s
+MIN_VEL = 10  # m/s
 FILTER_DECAY = 1.0
 FILTER_DT = 0.015
 BUCKET_KEYS = [(-np.pi, -np.pi / 2), (-np.pi / 2, 0), (0, np.pi / 2), (np.pi / 2, np.pi)]
 MIN_BUCKET_POINTS = 1000
 NO_OF_BUCKETS = 4
-
+CALIB_DEFAULTS = np.array([0.0, 0.0, 1.0, 1.0, 0.0, 0.0])
 VERSION = 1  # bump this to invalidate old parameter caches
 
 
@@ -48,7 +48,7 @@ class MagCalibrator:
     if params_cache is not None and magnetometer_cache is not None:
       try:
         with log.Event.from_bytes(magnetometer_cache) as log_evt:
-          cache_mc = log_evt.MagnetometerCalibration
+          cache_mc = log_evt.magnetometerCalibration
         with car.CarParams.from_bytes(params_cache) as msg:
           cache_CP = msg
         if self.get_restore_key(cache_CP, cache_mc.version) == self.get_restore_key(CP, VERSION):
@@ -65,7 +65,7 @@ class MagCalibrator:
     return (CP.carFingerprint, version)
 
   def reset(self):
-    self.calibrationParams = np.array([0.0, 0.0, 1.0, 1.0, 0.0, 0.0])
+    self.calibrationParams = CALIB_DEFAULTS
     self.calibrated = False
     self.bearingValid = False
     self.filtered_magnetic = [FirstOrderFilter(0, FILTER_DECAY, FILTER_DT) for _ in range(3)]
@@ -128,42 +128,44 @@ class MagCalibrator:
 
   def handle_log(self, which, msg):
     if which == "carState":
-      self.vego = msg.carState.vEgo
+      self.vego = msg.vEgo
     elif which == "liveLocationKalman":
-      self.yaw = msg.liveLocationKalman.orientationNED.value[2]
-      self.yaw_valid = msg.liveLocationKalman.orientationNED.valid
+      self.yaw = msg.orientationNED.value[2]
+      self.yaw_valid = msg.orientationNED.valid
     elif which == "magnetometer":
-      mag = msg.magnetometer
-      if mag.source == log.SensorEventData.SensorSource.mmc5603nj:
-        raw_vals = np.array(mag.magneticUncalibrated.v)
+      if msg.source == log.SensorEventData.SensorSource.mmc5603nj:
+        raw_vals = np.array(msg.magneticUncalibrated.v)
         self.raw_vals = (raw_vals[: 3] - raw_vals[3:]) / 2
-        if np.all(np.abs(self.raw_vals - self.past_raw_vals) < 2.0) and mag.magneticUncalibrated.status:
+        if np.all(np.abs(self.raw_vals - self.past_raw_vals) < 2.0) and msg.magneticUncalibrated.status:
           self.filtered_vals = np.array([f.update(v) for f, v in zip(self.filtered_magnetic, self.raw_vals, strict=True)])
         if self.vego > MIN_VEL and self.yaw_valid:
           self.point_buckets.add_point(self.filtered_vals[0], self.filtered_vals[2], self.yaw)
         self.past_raw_vals = self.raw_vals
 
   def get_msg(self, valid=True, with_points=False):
-    msg = messaging.new_message('MagnetometerCalibration')
+    msg = messaging.new_message('magnetometerCalibration')
     msg.valid = valid
-    MagnetometerCalibration = msg.MagnetometerCalibration
-    MagnetometerCalibration.version = VERSION
+    magnetometerCalibration = msg.magnetometerCalibration
+    magnetometerCalibration.version = VERSION
 
     bearing, bearingValid = 0.0, False
     if self.calibrated:
       bearing = self.get_calibrated_bearing(self.filtered_vals[0], self.filtered_vals[2], self.calibrationParams)
       bearingValid = True
 
-    MagnetometerCalibration.calibrated = self.calibrated
-    MagnetometerCalibration.calibrationParams = self.calibrationParams
-    MagnetometerCalibration.bearing = float(bearing)
-    MagnetometerCalibration.bearingValid = bearingValid
+    magnetometerCalibration.calibrated = self.calibrated
+    magnetometerCalibration.calibrationParams = self.calibrationParams.tolist()
+    magnetometerCalibration.bearing = float(bearing)
+    magnetometerCalibration.bearingValid = bearingValid
     return msg
 
   def compute_calibration_params(self):
     if self.point_buckets.is_valid():
       calibration_params = self.estimate_calibration_params()
-      if not any(np.isnan(calibration_params)):
+      if any(np.isnan(calibration_params)):
+        self.calibrationParams = CALIB_DEFAULTS
+        self.calibrated = False
+      else:
         self.calibrationParams = calibration_params
         self.calibrated = True
 
@@ -189,7 +191,7 @@ def main(sm=None, pm=None):
     params.put("MagnetometerCarParams", CP.as_builder().to_bytes())
 
     msg = calibrator.get_msg(with_points=True)
-    params.put("MagnetometerCalibration", msg.to_bytes())
+    params.put("magnetometerCalibration", msg.to_bytes())
 
     sys.exit(0)
   if "REPLAY" not in os.environ:
