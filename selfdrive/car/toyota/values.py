@@ -316,7 +316,7 @@ def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
     if valid_expected_ecus.issubset(valid_found_ecus):
       candidates.add(candidate)
 
-  return candidates - FUZZY_EXCLUDED_PLATFORMS
+  return {str(c) for c in (candidates - FUZZY_EXCLUDED_PLATFORMS)}
 
 
 # Regex patterns for parsing more general platform-specific identifiers from FW versions.
