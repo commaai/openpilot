@@ -245,7 +245,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.TOURAN_MK2: VWCarInfo("Volkswagen Touran 2016-23"),
   CAR.TRANSPORTER_T61: [
     VWCarInfo("Volkswagen Caravelle 2020"),
-    VWCarInfo("Volkswagen California 2021"),
+    VWCarInfo("Volkswagen California 2021-23"),
   ],
   CAR.TROC_MK1: VWCarInfo("Volkswagen T-Roc 2021", footnotes=[Footnote.VW_MQB_A0]),
   CAR.AUDI_A3_MK3: [
@@ -919,12 +919,14 @@ FW_VERSIONS = {
       b'\xf1\x8704L906057AP\xf1\x891186',
       b'\xf1\x8704L906057N \xf1\x890413',
       b'\xf1\x8705L906023E \xf1\x891352',
+      b'\xf1\x8705L906023MR\xf1\x892582',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x870BT300012G \xf1\x893102',
       b'\xf1\x870BT300012E \xf1\x893105',
       b'\xf1\x870BT300046R \xf1\x893102',
       b'\xf1\x870DV300012B \xf1\x893701',
+      b'\xf1\x870DV300012B \xf1\x893702',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x872Q0959655AE\xf1\x890506\xf1\x82\x1316170411110411--04041704161611152S1411',
