@@ -169,6 +169,8 @@ QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, 
 }
 
 QVariant MessageListModel::data(const QModelIndex &index, int role) const {
+  if (!index.isValid() || index.row() >= msgs.size()) return {};
+
   const auto &id = msgs[index.row()];
   auto &can_data = can->lastMessage(id);
 
@@ -424,7 +426,7 @@ void MessageView::updateBytesSectionSize() {
 }
 
 void MessageView::headerContextMenuEvent(const QPoint &pos) {
-  QMenu *menu = new QMenu(this);
+  QMenu menu(this);
   int cur_index = header()->logicalIndexAt(pos);
 
   QAction *action;
@@ -434,9 +436,9 @@ void MessageView::headerContextMenuEvent(const QPoint &pos) {
 
     // Hide show action
     if (header()->isSectionHidden(logical_index)) {
-      action = menu->addAction(tr("  %1").arg(column_name), [=]() { header()->showSection(logical_index); });
+      action = menu.addAction(tr("  %1").arg(column_name), [=]() { header()->showSection(logical_index); });
     } else {
-      action = menu->addAction(tr("✓ %1").arg(column_name), [=]() { header()->hideSection(logical_index); });
+      action = menu.addAction(tr("✓ %1").arg(column_name), [=]() { header()->hideSection(logical_index); });
     }
 
     // Can't hide the name column
@@ -450,7 +452,7 @@ void MessageView::headerContextMenuEvent(const QPoint &pos) {
     }
   }
 
-  menu->popup(header()->mapToGlobal(pos));
+  menu.exec(header()->mapToGlobal(pos));
 }
 
 MessageViewHeader::MessageViewHeader(QWidget *parent) : QHeaderView(Qt::Horizontal, parent) {

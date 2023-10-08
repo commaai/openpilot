@@ -9,7 +9,7 @@ from typing import Any, DefaultDict, Dict
 
 from openpilot.selfdrive.car.car_helpers import interface_names
 from openpilot.selfdrive.test.openpilotci import get_url, upload_file
-from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs
+from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_openpilot_enabled, replay_process
 from openpilot.system.version import get_commit
 from openpilot.tools.lib.filereader import FileReader
@@ -20,8 +20,8 @@ source_segments = [
   ("BODY", "937ccb7243511b65|2022-05-24--16-03-09--1"),        # COMMA.BODY
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.SONATA
   ("HYUNDAI2", "d545129f3ca90f28|2022-11-07--20-43-08--3"),    # HYUNDAI.KIA_EV6 (+ QCOM GPS)
-  ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.PRIUS (INDI)
-  ("TOYOTA2", "0982d79ebb0de295|2021-01-03--20-03-36--6"),     # TOYOTA.RAV4  (LQR)
+  ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.PRIUS
+  ("TOYOTA2", "0982d79ebb0de295|2021-01-03--20-03-36--6"),     # TOYOTA.RAV4
   ("TOYOTA3", "f7d7e3538cda1a2a|2021-08-16--08-55-34--6"),     # TOYOTA.COROLLA_TSS2
   ("HONDA", "eb140f119469d9ab|2021-06-12--10-46-24--27"),      # HONDA.CIVIC (NIDEC)
   ("HONDA2", "7d2244f34d1bbcda|2021-06-25--12-25-37--26"),     # HONDA.ACCORD (BOSCH)
@@ -113,45 +113,6 @@ def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=Non
     return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance), log_msgs
   except Exception as e:
     return str(e), log_msgs
-
-
-def format_diff(results, log_paths, ref_commit):
-  diff1, diff2 = "", ""
-  diff2 += f"***** tested against commit {ref_commit} *****\n"
-
-  failed = False
-  for segment, result in list(results.items()):
-    diff1 += f"***** results for segment {segment} *****\n"
-    diff2 += f"***** differences for segment {segment} *****\n"
-
-    for proc, diff in list(result.items()):
-      # long diff
-      diff2 += f"*** process: {proc} ***\n"
-      diff2 += f"\tref: {log_paths[segment][proc]['ref']}\n"
-      diff2 += f"\tnew: {log_paths[segment][proc]['new']}\n\n"
-
-      # short diff
-      diff1 += f"    {proc}\n"
-      if isinstance(diff, str):
-        diff1 += f"        ref: {log_paths[segment][proc]['ref']}\n"
-        diff1 += f"        new: {log_paths[segment][proc]['new']}\n\n"
-        diff1 += f"        {diff}\n"
-        failed = True
-      elif len(diff):
-        diff1 += f"        ref: {log_paths[segment][proc]['ref']}\n"
-        diff1 += f"        new: {log_paths[segment][proc]['new']}\n\n"
-
-        cnt: Dict[str, int] = {}
-        for d in diff:
-          diff2 += f"\t{str(d)}\n"
-
-          k = str(d[1])
-          cnt[k] = 1 if k not in cnt else cnt[k] + 1
-
-        for k, v in sorted(cnt.items()):
-          diff1 += f"        {k}: {v}\n"
-        failed = True
-  return diff1, diff2, failed
 
 
 if __name__ == "__main__":

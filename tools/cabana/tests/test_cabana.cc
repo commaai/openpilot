@@ -6,8 +6,7 @@
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 
-// demo route, first segment
-const std::string TEST_RLOG_URL = "https://commadata2.blob.core.windows.net/commadata2/a2a0ccea32023010/2023-07-27--13-01-19/0/rlog.bz2";
+const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
 
 TEST_CASE("DBCFile::generateDBC") {
   QString fn = QString("%1/%2.dbc").arg(OPENDBC_FILE_PATH, "tesla_can");
@@ -70,7 +69,7 @@ TEST_CASE("Parse can messages") {
   }
 }
 
-TEST_CASE("Parse dbc") {
+TEST_CASE("parse_dbc") {
   QString content = R"(
 BO_ 160 message_1: 8 EON
   SG_ signal_1 : 0|12@1+ (1,0) [0|4095] "unit"  XXX
@@ -84,7 +83,7 @@ VAL_ 160 signal_1 0 "disabled" 1.2 "initializing" 2 "fault";
 
 CM_ BO_ 160 "message comment" ;
 CM_ SG_ 160 signal_1 "signal comment";
-CM_ SG_ 160 signal_2 "multiple line comment
+CM_ SG_ 160 signal_2 "multiple line comment 
 1
 2
 ";)";
@@ -114,7 +113,7 @@ CM_ SG_ 160 signal_2 "multiple line comment
   REQUIRE(sig_1->val_desc[2] == std::pair<double, QString>{2, "fault"});
 
   auto &sig_2 = msg->sigs[1];
-  REQUIRE(sig_2->comment == "multiple line comment\n1\n2");
+  REQUIRE(sig_2->comment == "multiple line comment \n1\n2");
 
   // multiplexed signals
   msg = file.msg(162);

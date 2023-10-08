@@ -3,6 +3,7 @@
 #include <tuple>
 #include <utility>
 
+#include <QMenu>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsProxyWidget>
 #include <QtCharts/QChartView>
@@ -65,6 +66,7 @@ private slots:
 private:
   void createToolButtons();
   void addSeries(QXYSeries *series);
+  void contextMenuEvent(QContextMenuEvent *event) override;
   void mousePressEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *ev) override;
@@ -83,10 +85,13 @@ private:
   void drawForeground(QPainter *painter, const QRectF &rect) override;
   void drawBackground(QPainter *painter, const QRectF &rect) override;
   void drawDropIndicator(bool draw) { if (std::exchange(can_drop, draw) != can_drop) viewport()->update(); }
+  void drawSignalValue(QPainter *painter);
   void drawTimeline(QPainter *painter);
+  void drawRubberBandTimeRange(QPainter *painter);
   std::tuple<double, double, int> getNiceAxisNumbers(qreal min, qreal max, int tick_count);
   qreal niceNumber(qreal x, bool ceiling);
   QXYSeries *createSeries(SeriesType type, QColor color);
+  void setSeriesColor(QXYSeries *, QColor color);
   void updateSeriesPoints();
   void removeIf(std::function<bool(const SigItem &)> predicate);
   inline void clearTrackPoints() { for (auto &s : sigs) s.track_pt = {}; }
@@ -95,7 +100,9 @@ private:
   int align_to = 0;
   QValueAxis *axis_x;
   QValueAxis *axis_y;
+  QMenu *menu;
   QAction *split_chart_act;
+  QAction *close_act;
   QGraphicsPixmapItem *move_icon;
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;

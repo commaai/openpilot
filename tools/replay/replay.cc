@@ -151,9 +151,10 @@ void Replay::buildTimeline() {
     [(int)cereal::ControlsState::AlertStatus::CRITICAL] = TimelineType::AlertCritical,
   };
 
-  for (auto it = segments_.cbegin(); it != segments_.cend() && !exit_; ++it) {
+  const auto &route_segments = route_->segments();
+  for (auto it = route_segments.cbegin(); it != route_segments.cend() && !exit_; ++it) {
     LogReader log;
-    if (!log.load(route_->at(it->first).qlog.toStdString(), &exit_,
+    if (!log.load(it->second.qlog.toStdString(), &exit_,
                   {cereal::Event::Which::CONTROLS_STATE, cereal::Event::Which::USER_FLAG},
                   !hasFlag(REPLAY_FLAG_NO_FILE_CACHE), 0, 3)) continue;
 
@@ -227,7 +228,10 @@ void Replay::segmentLoadFinished(bool success) {
   if (!success) {
     Segment *seg = qobject_cast<Segment *>(sender());
     rWarning("failed to load segment %d, removing it from current replay list", seg->seg_num);
-    segments_.erase(seg->seg_num);
+    updateEvents([&]() {
+      segments_.erase(seg->seg_num);
+      return true;
+    });
   }
   queueSegment();
 }
@@ -317,13 +321,12 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
 void Replay::startStream(const Segment *cur_segment) {
   const auto &events = cur_segment->log->events;
 
-  // get route start time from initData
-  auto it = std::find_if(events.begin(), events.end(), [](auto e) { return e->which == cereal::Event::Which::INIT_DATA; });
-  route_start_ts_ = it != events.end() ? (*it)->mono_time : events[0]->mono_time;
-  cur_mono_time_ += route_start_ts_;
+  // each segment has an INIT_DATA
+  route_start_ts_ = events.front()->mono_time;
+  cur_mono_time_ += route_start_ts_ - 1;
 
   // write CarParams
-  it = std::find_if(events.begin(), events.end(), [](auto e) { return e->which == cereal::Event::Which::CAR_PARAMS; });
+  auto it = std::find_if(events.begin(), events.end(), [](auto e) { return e->which == cereal::Event::Which::CAR_PARAMS; });
   if (it != events.end()) {
     car_fingerprint_ = (*it)->event.getCarParams().getCarFingerprint();
     capnp::MallocMessageBuilder builder;
@@ -430,7 +433,7 @@ void Replay::stream() {
         long etime = (cur_mono_time_ - evt_start_ts) / speed_;
         long rtime = nanos_since_boot() - loop_start_ts;
         long behind_ns = etime - rtime;
-        // if behind_ns is greater than 1 second, it means that an invalid segemnt is skipped by seeking/replaying
+        // if behind_ns is greater than 1 second, it means that an invalid segment is skipped by seeking/replaying
         if (behind_ns >= 1 * 1e9 || speed_ != prev_replay_speed) {
           // reset event start times
           evt_start_ts = cur_mono_time_;
@@ -456,7 +459,7 @@ void Replay::stream() {
     }
 
     if (eit == events_->end() && !hasFlag(REPLAY_FLAG_NO_LOOP)) {
-      int last_segment = segments_.rbegin()->first;
+      int last_segment = segments_.empty() ? 0 : segments_.rbegin()->first;
       if (current_segment_ >= last_segment && isSegmentMerged(last_segment)) {
         rInfo("reaches the end of route, restart from beginning");
         QMetaObject::invokeMethod(this, std::bind(&Replay::seekTo, this, 0, false), Qt::QueuedConnection);

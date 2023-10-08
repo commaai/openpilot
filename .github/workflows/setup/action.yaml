@@ -1,18 +1,45 @@
 name: 'openpilot env setup'
 
 inputs:
-  git_lfs:
-    description: 'Whether or not to pull the git lfs'
+  docker_hub_pat:
+    description: 'Auth token for Docker Hub, required for BuildJet jobs'
+    required: true
+    default: ''
+  cache_key_prefix:
+    description: 'Prefix for caching key'
+    required: true
+    default: 'scons_x86_64'
+  is_retried:
+    description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
     required: false
-    default: 'true'
+    default: 'false'
 
 runs:
   using: "composite"
   steps:
+    # assert that this action is retried using the setup-with-retry
+    - shell: bash
+      if: ${{ inputs.is_retried == 'false' }}
+      run: |
+        echo "You should not run this action directly. Use setup-with-retry instead"
+        exit 1
+
     # do this after checkout to ensure our custom LFS config is used to pull from GitLab
     - shell: bash
-      if: ${{ inputs.git_lfs == 'true' }}
       run: git lfs pull
+
+    # on BuildJet runners, must be logged into DockerHub to avoid rate limiting
+    # https://buildjet.com/for-github-actions/docs/guides/docker
+    - shell: bash
+      if: ${{ contains(runner.name, 'buildjet') && inputs.docker_hub_pat == '' }}
+      run: |
+        echo "Need to set the Docker Hub PAT secret as an input to this action"
+        exit 1
+    - name: Login to Docker Hub
+      if: contains(runner.name, 'buildjet')
+      shell: bash
+      run: |
+        docker login -u adeebshihadeh -p ${{ inputs.docker_hub_pat }}
 
     # build cache
     - id: date
@@ -24,10 +51,10 @@ runs:
       uses: actions/cache/restore@v3
       with:
         path: .ci_cache/scons_cache
-        key: scons-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        key: ${{ inputs.cache_key_prefix }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
         restore-keys: |
-          scons-${{ env.CACHE_COMMIT_DATE }}-
-          scons-
+          ${{ inputs.cache_key_prefix }}-${{ env.CACHE_COMMIT_DATE }}-
+          ${{ inputs.cache_key_prefix }}-
     # if we didn't get a cache hit, make the directory manually so it doesn't fail on future steps
     - id: scons-cache-setup
       shell: bash
