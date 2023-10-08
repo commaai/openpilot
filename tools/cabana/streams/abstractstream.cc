@@ -2,6 +2,7 @@
 
 #include <utility>
 
+#include <QDebug>
 #include <QTimer>
 
 static const int EVENT_NEXT_BUFFER_SIZE = 6 * 1024 * 1024;  // 6MB

@@ -8,6 +8,7 @@
 #include <QRadioButton>
 #include <QRegularExpression>
 #include <QRegularExpressionValidator>
+#include <QThread>
 
 // DeviceStream
 
@@ -21,12 +22,13 @@ void DeviceStream::streamThread() {
   std::string address = zmq_address.isEmpty() ? "127.0.0.1" : zmq_address.toStdString();
   std::unique_ptr<SubSocket> sock(SubSocket::create(context.get(), "can", address));
   assert(sock != NULL);
-  sock->setTimeout(50);
   // run as fast as messages come in
   while (!QThread::currentThread()->isInterruptionRequested()) {
-    std::unique_ptr<Message> msg(sock->receive());
-    if (!msg) continue;
-
+    std::unique_ptr<Message> msg(sock->receive(true));
+    if (!msg) {
+      QThread::msleep(50);
+      continue;
+    }
     handleEvent(kj::ArrayPtr<capnp::word>((capnp::word*)msg->getData(), msg->getSize() / sizeof(capnp::word)));
   }
 }

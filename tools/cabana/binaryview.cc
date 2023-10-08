@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iterator>
 
+#include <QDebug>
 #include <QFontDatabase>
 #include <QHeaderView>
 #include <QMouseEvent>

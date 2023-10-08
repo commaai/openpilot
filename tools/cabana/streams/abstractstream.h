@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <memory>
+#include <mutex>
 #include <set>
 #include <tuple>
 #include <unordered_map>
@@ -10,11 +11,11 @@
 
 #include <QColor>
 
+#include "cereal/messaging/messaging.h"
 #include "common/timing.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/settings.h"
 #include "tools/cabana/util.h"
-#include "tools/replay/replay.h"
 
 struct CanData {
   void update(const MessageId &msg_id, const uint8_t *dat, const int size, uint64_t current_ts,
@@ -66,7 +67,7 @@ public:
   AbstractStream(QObject *parent);
   virtual ~AbstractStream() {}
   virtual void start() = 0;
-  inline bool liveStreaming() const { return route() == nullptr; }
+  virtual bool liveStreaming() const { return true; }
   virtual void seekTo(double ts) {}
   virtual QString name() const = 0;
   virtual QString carFingerprint() const { return ""; }
@@ -77,8 +78,6 @@ public:
   inline double toSeconds(uint64_t mono_time) const { return (mono_time - std::min(mono_time, beginMonoTime())) / 1e9; }
   inline uint64_t toMonoTime(double sec) const { return sec * 1e9 + beginMonoTime(); }
   const CanData &lastMessage(const MessageId &id);
-  virtual VisionStreamType visionStreamType() const { return VISION_STREAM_ROAD; }
-  virtual const Route *route() const { return nullptr; }
   virtual void setSpeed(float speed) {}
   virtual double getSpeed() { return 1; }
   virtual bool isPaused() const { return false; }
@@ -88,7 +87,6 @@ public:
   inline const CanEventsMap &eventsMap() const { return events_; }
   inline const SourceSet &sources() const { return sources_; }
   const std::vector<const CanEvent *> &events(const MessageId &id) const;
-  virtual const std::vector<std::tuple<double, double, TimelineType>> getTimeline() { return {}; }
   size_t suppressHighlighted();
   void clearSuppressed();
   void suppressDefinedSignals(bool suppress);
@@ -102,7 +100,6 @@ signals:
   void msgsReceived(const std::set<MessageId> *new_msgs, bool has_new_ids);
   void sourcesUpdated(const SourceSet &s);
   void lastMsgsChanged();
-  void qLogLoaded(int segnum, std::shared_ptr<LogReader> qlog);
 
 protected:
   void mergeEvents(const std::vector<const CanEvent *> &events);

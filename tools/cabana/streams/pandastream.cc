@@ -1,9 +1,11 @@
 #include "tools/cabana/streams/pandastream.h"
 
 #include <QCheckBox>
+#include <QDebug>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QThread>
 #include <QVBoxLayout>
 
 // TODO: remove clearLayout
