@@ -1,10 +1,10 @@
 #pragma once
 
+#include <set>
 #include <tuple>
 #include <vector>
 
 #include <QList>
-#include <QSet>
 #include <QStyledItemDelegate>
 #include <QTableView>
 
@@ -62,7 +62,7 @@ public:
   BinaryView(QWidget *parent = nullptr);
   void setMessage(const MessageId &message_id);
   void highlight(const cabana::Signal *sig);
-  QSet<const cabana::Signal*> getOverlappingSignals() const;
+  std::set<const cabana::Signal*> getOverlappingSignals() const;
   inline void updateState() { model->updateState(); }
   QSize minimumSizeHint() const override;
 

@@ -1,6 +1,7 @@
 #include "tools/cabana/binaryview.h"
 
 #include <algorithm>
+#include <iterator>
 
 #include <QFontDatabase>
 #include <QHeaderView>
@@ -207,14 +208,12 @@ void BinaryView::refresh() {
   highlightPosition(QCursor::pos());
 }
 
-QSet<const cabana::Signal *> BinaryView::getOverlappingSignals() const {
-  QSet<const cabana::Signal *> overlapping;
+std::set<const cabana::Signal *> BinaryView::getOverlappingSignals() const {
+  std::set<const cabana::Signal *> overlapping;
   for (const auto &item : model->items) {
-    if (item.sigs.size() > 1) {
-      for (auto s : item.sigs) {
-        if (s->type == cabana::Signal::Type::Normal) overlapping += s;
-      }
-    }
+    if (item.sigs.size() > 1)
+      std::copy_if(item.sigs.begin(), item.sigs.end(), std::inserter(overlapping, overlapping.end()),
+                   [](auto s) { return s->type == cabana::Signal::Type::Normal; });
   }
   return overlapping;
 }
