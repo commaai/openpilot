@@ -400,7 +400,7 @@ def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
   # to distinguish between hybrid and ICE. All EVs so far are either exclusively
   # electric or specify electric in the platform code.
   # TODO: whitelist platforms that we've seen hybrid and ICE versions of that have these specifiers
-  fuzzy_platform_blacklist = {str(car) for car in set(CANFD_CAR - EV_CAR)}
+  fuzzy_platform_blacklist = {str(c) for c in set(CANFD_CAR - EV_CAR)}
   candidates: Set[str] = set()
 
   for candidate, fws in FW_VERSIONS.items():
