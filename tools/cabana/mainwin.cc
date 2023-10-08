@@ -162,7 +162,7 @@ void MainWindow::createActions() {
 }
 
 void MainWindow::createDockWindows() {
-  messages_dock = new QDockWidget(tr("0 Messages"), this);
+  messages_dock = new QDockWidget(tr("Messages"), this);
   messages_dock->setObjectName("MessagesPanel");
   messages_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
   messages_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);

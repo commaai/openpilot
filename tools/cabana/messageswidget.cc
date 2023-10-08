@@ -130,25 +130,20 @@ void MessagesWidget::headerContextMenuEvent(const QPoint &pos) {
 }
 
 void MessagesWidget::menuAboutToShow() {
-  if (menu->isEmpty()) {
-    for (int i = 0; i < header->count(); ++i) {
-      int index = header->logicalIndex(i);
-      auto action = menu->addAction(model->headerData(index, Qt::Horizontal).toString(),
-                                    [=]() { header->setSectionHidden(index, !header->isSectionHidden(index)); });
-      action->setCheckable(true);
-    }
-    menu->addSeparator();
-    auto action = menu->addAction(tr("Mutlti-Line bytes"), [=]() { setMultiLineBytes(!settings.multiple_lines_bytes); });
-    action->setCheckable(true);
-  }
-
-  auto actions = menu->actions();
+  menu->clear();
   for (int i = 0; i < header->count(); ++i) {
-    actions[i]->setChecked(!header->isSectionHidden(header->logicalIndex(i)));
+    int logical_index = header->logicalIndex(i);
+    auto action = menu->addAction(model->headerData(logical_index, Qt::Horizontal).toString(),
+                                  [=](bool checked) { header->setSectionHidden(logical_index, !checked); });
+    action->setCheckable(true);
+    action->setChecked(!header->isSectionHidden(logical_index));
     // Can't hide the name column
-    actions[i]->setEnabled(header->logicalIndex(i) > 0);
+    action->setEnabled(logical_index > 0);
   }
-  actions.back()->setChecked(settings.multiple_lines_bytes);
+  menu->addSeparator();
+  auto action = menu->addAction(tr("Mutlti-Line bytes"), this, &MessagesWidget::setMultiLineBytes);
+  action->setCheckable(true);
+  action->setChecked(settings.multiple_lines_bytes);
 }
 
 void MessagesWidget::setMultiLineBytes(bool multi) {
