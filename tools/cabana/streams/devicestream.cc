@@ -24,14 +24,10 @@ void DeviceStream::streamThread() {
   sock->setTimeout(50);
   // run as fast as messages come in
   while (!QThread::currentThread()->isInterruptionRequested()) {
-    Message *msg = sock->receive(true);
-    if (!msg) {
-      QThread::msleep(50);
-      continue;
-    }
+    std::unique_ptr<Message> msg(sock->receive());
+    if (!msg) continue;
 
     handleEvent(kj::ArrayPtr<capnp::word>((capnp::word*)msg->getData(), msg->getSize() / sizeof(capnp::word)));
-    delete msg;
   }
 }
 
