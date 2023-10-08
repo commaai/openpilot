@@ -284,6 +284,40 @@ def get_platform_codes(fw_versions: List[bytes]) -> Dict[bytes, Set[bytes]]:
   return dict(codes)
 
 
+def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
+  candidates = set()
+
+  for candidate, fws in FW_VERSIONS.items():
+    # Keep track of ECUs which pass all checks (platform codes, within sub-version range)
+    valid_found_ecus = set()
+    valid_expected_ecus = {ecu[1:] for ecu in fws if ecu[0] in PLATFORM_CODE_ECUS}
+    for ecu, expected_versions in fws.items():
+      addr = ecu[1:]
+      # Only check ECUs expected to have platform codes
+      if ecu[0] not in PLATFORM_CODE_ECUS:
+        continue
+
+      # Expected platform codes & versions
+      expected_platform_codes = get_platform_codes(expected_versions)
+
+      # Found platform codes & versions
+      found_platform_codes = get_platform_codes(live_fw_versions.get(addr, set()))
+
+      # Check part number + platform code + major version matches for any found versions
+      # Platform codes and major versions change for different physical parts, generation, API, etc.
+      # Sub-versions are incremented for minor recalls, do not need to be checked.
+      if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
+        break
+
+      valid_found_ecus.add(addr)
+
+    # If all live ECUs pass all checks for candidate, add it as a match
+    if valid_expected_ecus.issubset(valid_found_ecus):
+      candidates.add(candidate)
+
+  return {str(c) for c in (candidates - FUZZY_EXCLUDED_PLATFORMS)}
+
+
 # Regex patterns for parsing more general platform-specific identifiers from FW versions.
 # - Part number: Toyota part number (usually last character needs to be ignored to find a match).
 #    Each ECU address has just one part number.
@@ -311,6 +345,8 @@ FW_CHUNK_LEN = 16
 # - eps: describes lateral API changes for the EPS, such as using LTA for lane keeping and rejecting LKA messages
 PLATFORM_CODE_ECUS = [Ecu.fwdCamera, Ecu.abs, Ecu.eps]
 
+# These platforms have at least one platform code for all ECUs shared with another platform.
+FUZZY_EXCLUDED_PLATFORMS = {CAR.LEXUS_ES_TSS2, CAR.LEXUS_RX_TSS2}
 
 # Some ECUs that use KWP2000 have their FW versions on non-standard data identifiers.
 # Toyota diagnostic software first gets the supported data ids, then queries them one by one.
@@ -382,6 +418,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.combinationMeter, 0x7c0, None),
     (Ecu.hvac, 0x7c4, None),
   ],
+  match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
 )
 
 FW_VERSIONS = {
