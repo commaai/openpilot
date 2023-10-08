@@ -312,7 +312,6 @@ def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
       valid_found_ecus.add(addr)
 
     # If all live ECUs pass all checks for candidate, add it as a match
-    # print(candidate, valid_expected_ecus, valid_found_ecus)
     if valid_expected_ecus.issubset(valid_found_ecus):
       candidates.add(candidate)
 
