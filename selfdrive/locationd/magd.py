@@ -177,7 +177,7 @@ def main(sm=None, pm=None):
     sm = messaging.SubMaster(['magnetometer', 'carState', 'liveLocationKalman'], poll=['liveLocationKalman'])
 
   if pm is None:
-    pm = messaging.PubMaster(['magnetometerCalbration'])
+    pm = messaging.PubMaster(['magnetometerCalibration'])
 
   params = Params()
   with car.CarParams.from_bytes(params.get("CarParams", block=True)) as CP:
@@ -185,7 +185,7 @@ def main(sm=None, pm=None):
 
   def cache_params(sig, frame):
     signal.signal(sig, signal.SIG_DFL)
-    cloudlog.warning("caching torque params")
+    cloudlog.warning("caching mag calib params")
 
     params = Params()
     params.put("MagnetometerCarParams", CP.as_builder().to_bytes())
@@ -205,7 +205,7 @@ def main(sm=None, pm=None):
           calibrator.handle_log(which, sm[which])
 
     if sm.updated['magnetometer']:
-      pm.send('magnetometerCalbration', calibrator.get_msg(valid=sm.all_checks()))
+      pm.send('magnetometerCalibration', calibrator.get_msg(valid=sm.all_checks()))
 
     # 1Hz
     if sm.frame % 20 == 0:
