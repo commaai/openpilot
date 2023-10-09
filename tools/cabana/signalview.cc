@@ -136,13 +136,7 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
           case Item::Comment: return item->sig->comment;
           case Item::Min: return doubleToString(item->sig->min);
           case Item::Max: return doubleToString(item->sig->max);
-          case Item::Desc: {
-            QStringList val_desc;
-            for (auto &[val, desc] : item->sig->val_desc) {
-              val_desc << QString("%1 \"%2\"").arg(val).arg(desc);
-            }
-            return val_desc.join(" ");
-          }
+          case Item::Desc: return item->sig->valueDescriptions();
           default: break;
         }
       }
@@ -188,12 +182,11 @@ bool SignalModel::setData(const QModelIndex &index, const QVariant &value, int r
 void SignalModel::showExtraInfo(const QModelIndex &index) {
   auto item = getItem(index);
   if (item->type == Item::ExtraInfo) {
-    if (!item->parent->extra_expanded) {
-      item->parent->extra_expanded = true;
+    item->parent->extra_expanded = !item->parent->extra_expanded;
+    if (item->parent->extra_expanded) {
       beginInsertRows(index.parent(), Item::ExtraInfo - 2, Item::Desc - 2);
       endInsertRows();
     } else {
-      item->parent->extra_expanded = false;
       beginRemoveRows(index.parent(), Item::ExtraInfo - 2, Item::Desc - 2);
       endRemoveRows();
     }
@@ -569,20 +562,19 @@ void SignalView::selectSignal(const cabana::Signal *sig, bool expand) {
 }
 
 void SignalView::updateChartState() {
-  int i = 0;
-  for (auto item : model->root->children) {
-    bool chart_opened = charts->hasSignal(model->msg_id, item->sig);
+  const auto &children = model->root->children;
+  for (int i = 0; i < children.size(); ++i) {
+    bool chart_opened = charts->hasSignal(model->msg_id, children[i]->sig);
     auto buttons = tree->indexWidget(model->index(i, 1))->findChildren<QToolButton *>();
     if (buttons.size() > 0) {
       buttons[0]->setChecked(chart_opened);
       buttons[0]->setToolTip(chart_opened ? tr("Close Plot") : tr("Show Plot\nSHIFT click to add to previous opened plot"));
     }
-    ++i;
   }
 }
 
 void SignalView::signalHovered(const cabana::Signal *sig) {
-  auto &children = model->root->children;
+  const auto &children = model->root->children;
   for (int i = 0; i < children.size(); ++i) {
     bool highlight = children[i]->sig == sig;
     if (std::exchange(children[i]->highlight, highlight) != highlight) {

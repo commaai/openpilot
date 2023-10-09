@@ -227,11 +227,7 @@ QString DBCFile::generateDBC() {
         signal_comment += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(address).arg(sig->name).arg(sig->comment);
       }
       if (!sig->val_desc.empty()) {
-        QStringList text;
-        for (auto &[val, desc] : sig->val_desc) {
-          text << QString("%1 \"%2\"").arg(val).arg(desc);
-        }
-        val_desc += QString("VAL_ %1 %2 %3;\n").arg(address).arg(sig->name).arg(text.join(" "));
+        val_desc += QString("VAL_ %1 %2 %3;\n").arg(address).arg(sig->name).arg(sig->valueDescriptions());
       }
     }
     dbc_string += "\n";

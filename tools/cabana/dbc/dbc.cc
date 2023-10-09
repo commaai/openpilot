@@ -155,6 +155,12 @@ QString cabana::Signal::formatValue(double value) const {
   return val_str;
 }
 
+QString cabana::Signal::valueDescriptions() const {
+  return std::accumulate(
+    val_desc.begin(), val_desc.end(), QString(),
+    [](auto &s, auto &v) { return s + QString("%1 \"%2\" ").arg(v.first).arg(v.second); }).trimmed();
+}
+
 bool cabana::Signal::getValue(const uint8_t *data, size_t data_size, double *val) const {
   if (multiplexor && get_raw_value(data, data_size, *multiplexor) != multiplex_value) {
     return false;
