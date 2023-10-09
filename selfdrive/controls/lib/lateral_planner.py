@@ -32,8 +32,6 @@ class LateralPlanner:
     self.debug_mode = debug
 
   def update(self, sm):
-    # TODO: do something for 0 speed
-    # TODO: is a small first order filter needed here?
     v_ego_car = sm['carState'].vEgo
 
     # Parse model predictions
@@ -47,7 +45,6 @@ class LateralPlanner:
       car_speed = np.linalg.norm(self.velocity_xyz, axis=1) - get_speed_error(md, v_ego_car)
       self.v_plan = np.clip(car_speed, MIN_SPEED, np.inf)
       self.v_ego = self.v_plan[0]
-      # YOLO e2e planning
       self.x_sol = np.column_stack([md.lateralPlannerSolution.x, md.lateralPlannerSolution.y, md.lateralPlannerSolution.yaw, md.lateralPlannerSolution.yawRate])
 
     # Lane change logic
