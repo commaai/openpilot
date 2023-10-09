@@ -292,11 +292,11 @@ void MessageListModel::filterAndSort() {
     if (filter_str.isEmpty() || matchMessage(id, m, filter_str)) {
       new_msgs.push_back(id);
     }
-    address.remove(id.address);
+    address.erase(id.address);
   }
 
   // merge all DBC messages
-  for (auto &addr : address) {
+  for (const auto &addr : address) {
     MessageId id{.source = INVALID_SOURCE, .address = addr};
     if (filter_str.isEmpty() || matchMessage(id, {}, filter_str)) {
       new_msgs.push_back(id);

@@ -61,8 +61,7 @@ void ChartView::createToolButtons() {
   move_icon->setToolTip(tr("Drag and drop to move chart"));
 
   QToolButton *remove_btn = new ToolButton("x", tr("Remove Chart"));
-  close_btn_proxy = new QGraphicsProxyWidget(chart());
-  close_btn_proxy->setWidget(remove_btn);
+  close_btn_proxy = scene()->addWidget(remove_btn);
   close_btn_proxy->setZValue(chart()->zValue() + 11);
 
   menu = new QMenu(this);
@@ -85,8 +84,7 @@ void ChartView::createToolButtons() {
   manage_btn->setMenu(menu);
   manage_btn->setPopupMode(QToolButton::InstantPopup);
   manage_btn->setStyleSheet("QToolButton::menu-indicator { image: none; }");
-  manage_btn_proxy = new QGraphicsProxyWidget(chart());
-  manage_btn_proxy->setWidget(manage_btn);
+  manage_btn_proxy = scene()->addWidget(manage_btn);
   manage_btn_proxy->setZValue(chart()->zValue() + 11);
 
   close_act = new QAction(tr("Close"), this);
@@ -581,7 +579,7 @@ void ChartView::showTip(double sec) {
         s.track_pt = *it;
         x = std::max(x, chart()->mapToPosition(*it).x());
       }
-      QString name = sigs.size() > 1 ? s.sig->name + ": " : "";
+      QString name = sigs.size() > 1 ? s.sig->name + ": " : QString();
       QString min = s.min == std::numeric_limits<double>::max() ? "--" : QString::number(s.min);
       QString max = s.max == std::numeric_limits<double>::lowest() ? "--" : QString::number(s.max);
       text_list << QString("<span style=\"color:%1;\">■ </span>%2<b>%3</b> (%4, %5)")
@@ -770,13 +768,8 @@ void ChartView::drawSignalValue(QPainter *painter) {
   painter->setPen(chart()->legend()->labelColor());
   int i = 0;
   for (auto &s : sigs) {
-    QString value = "--";
-    if (s.series->isVisible()) {
-      auto it = std::lower_bound(s.vals.crbegin(), s.vals.crend(), cur_sec, [](auto &p, double x) { return p.x() > x; });
-      if (it != s.vals.crend() && it->x() >= axis_x->min()) {
-        value = s.sig->formatValue(it->y());
-      }
-    }
+    auto it = std::lower_bound(s.vals.crbegin(), s.vals.crend(), cur_sec, [](auto &p, double x) { return p.x() > x; });
+    QString value = (it != s.vals.crend() && it->x() >= axis_x->min()) ? s.sig->formatValue(it->y()) : "--";
     QRectF marker_rect = legend_markers[i++]->sceneBoundingRect();
     QRectF value_rect(marker_rect.bottomLeft() - QPoint(0, 1), marker_rect.size());
     QString elided_val = painter->fontMetrics().elidedText(value, Qt::ElideRight, value_rect.width());

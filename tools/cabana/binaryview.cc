@@ -143,13 +143,12 @@ void BinaryView::mousePressEvent(QMouseEvent *event) {
     anchor_index = index;
     auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
     int bit_pos = get_bit_pos(anchor_index);
-    for (auto s : item->sigs) {
-      if (bit_pos == s->lsb || bit_pos == s->msb) {
-        int idx = flipBitPos(bit_pos == s->lsb ? s->msb : s->lsb);
-        anchor_index = model->index(idx / 8, idx % 8);
-        resize_sig = s;
-        break;
-      }
+    auto it = std::find_if(item->sigs.begin(), item->sigs.end(),
+                           [=](auto s) { return bit_pos == s->lsb || bit_pos == s->msb; });
+    if (it != item->sigs.end()) {
+      int idx = flipBitPos(bit_pos == (*it)->lsb ? (*it)->msb : (*it)->lsb);
+      anchor_index = model->index(idx / 8, idx % 8);
+      resize_sig = (*it);
     }
   }
   event->accept();

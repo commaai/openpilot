@@ -9,7 +9,6 @@
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QMenu>
-#include <QSet>
 #include <QTimer>
 #include <QTreeView>
 
@@ -46,7 +45,7 @@ private:
   bool matchMessage(const MessageId &id, const CanData &data, const QMap<int, QString> &filters);
 
   QMap<int, QString> filter_str;
-  QSet<uint32_t> dbc_address;
+  std::set<uint32_t> dbc_address;
   int sort_column = 0;
   QTimer sort_timer;
   double last_sort_ts = 0;
