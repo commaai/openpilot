@@ -191,7 +191,7 @@ def main(sm=None, pm=None):
     params.put("MagnetometerCarParams", CP.as_builder().to_bytes())
 
     msg = calibrator.get_msg(with_points=True)
-    params.put("magnetometerCalibration", msg.to_bytes())
+    params.put("MagnetometerCalibration", msg.to_bytes())
 
     sys.exit(0)
   if "REPLAY" not in os.environ:
