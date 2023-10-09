@@ -169,6 +169,8 @@ QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, 
 }
 
 QVariant MessageListModel::data(const QModelIndex &index, int role) const {
+  if (!index.isValid() || index.row() >= msgs.size()) return {};
+
   const auto &id = msgs[index.row()];
   auto &can_data = can->lastMessage(id);
 

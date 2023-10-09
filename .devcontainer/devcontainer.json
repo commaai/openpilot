@@ -5,7 +5,7 @@
   },
   "postCreateCommand": ".devcontainer/container_post_create.sh",
   "postStartCommand": ".devcontainer/container_post_start.sh",
-  "initializeCommand": ".devcontainer/host_setup.sh",
+  "initializeCommand": [".devcontainer/host_setup"],
   "privileged": true,
   "containerEnv": {
     "DISPLAY": "${localEnv:DISPLAY}",
