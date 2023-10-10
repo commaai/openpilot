@@ -21,7 +21,7 @@ class LateralPlanner:
     self.velocity_xyz = np.zeros((TRAJECTORY_SIZE, 3))
     self.v_plan = np.zeros((TRAJECTORY_SIZE,))
     self.x_sol = np.zeros((TRAJECTORY_SIZE, 4), dtype=np.float32)
-    self.v_ego = 0.0
+    self.v_ego = MIN_SPEED
     self.l_lane_change_prob = 0.0
     self.r_lane_change_prob = 0.0
 
