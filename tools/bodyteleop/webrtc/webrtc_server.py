@@ -117,8 +117,9 @@ class WebRTCStream:
     await self.peer_connection.setRemoteDescription(self.offer)
     answer = await self.peer_connection.createAnswer()
     await self.peer_connection.setLocalDescription(answer)
+    actual_answer = self.peer_connection.localDescription
 
-    return answer
+    return actual_answer
 
 
 if __name__=="__main__":

@@ -32,6 +32,7 @@ class WebRTCVideoClient:
 
     print("-- recv video track", self.video_track)
     frame = await self.video_track.recv()
+    print("-- got frame")
     frame_arr = frame.to_ndarray(format="bgr24")
     return frame_arr
   
@@ -120,6 +121,7 @@ class WebRTCCient:
   def add_video_consumer(self, camera_type):
     assert camera_type in ["driver", "wideRoad", "road"]
     if len(self.video_consumers) == 0:
+      print("adding transreceiver")
       self.peer_connection.addTransceiver("video", direction="recvonly")
 
     consumer = WebRTCVideoClient()
@@ -145,9 +147,10 @@ class WebRTCCient:
   async def connect(self):
     offer = await self.peer_connection.createOffer()
     await self.peer_connection.setLocalDescription(offer)
+    actual_offer = self.peer_connection.localDescription
 
     stream_metadata = WebRTCStreamingMetadata(video=list(self.video_consumers.keys()), audio="audio" in self.audio_consumers)
-    remote_offer = await self.connection_provider.connect(dataclasses.asdict(offer), dataclasses.asdict(stream_metadata))
+    remote_offer = await self.connection_provider.connect(dataclasses.asdict(actual_offer), dataclasses.asdict(stream_metadata))
     await self.peer_connection.setRemoteDescription(remote_offer)
 
 ### API example:
@@ -181,9 +184,9 @@ if __name__=="__main__":
   for cam in args.cameras:
     video_consumer = client.add_video_consumer(cam)
     consumers[cam] = video_consumer
-  asyncio.run(client.connect())
 
   async def run(consumers, client):
+    await client.connect()
     while True:
       try:
         await asyncio.sleep(5)
@@ -194,4 +197,5 @@ if __name__=="__main__":
         return
       print("=====================================")
 
-  asyncio.run(run(consumers, client))
+  loop = asyncio.get_event_loop()
+  loop.run_until_complete(run(consumers, client))
