@@ -157,6 +157,7 @@ class MagCalibrator:
     magnetometerCalibration.calibrationParams = self.calibrationParams.tolist()
     magnetometerCalibration.bearing = float(bearing)
     magnetometerCalibration.bearingValid = bearingValid
+    magnetometerCalibration.totalBucketPoints = len(self.point_buckets)
     return msg
 
   def compute_calibration_params(self):
