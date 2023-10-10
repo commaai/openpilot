@@ -20,12 +20,16 @@ class CarControllerParams:
 
   def __init__(self, CP):
     self.STEER_DELTA_UP = 3
-    self.STEER_DELTA_DOWN = 6
+    self.STEER_DELTA_DOWN = 7
     self.STEER_DRIVER_ALLOWANCE = 50
     self.STEER_DRIVER_MULTIPLIER = 2
     self.STEER_DRIVER_FACTOR = 1
     self.STEER_THRESHOLD = 150
     self.STEER_STEP = 1  # 100 Hz
+
+    # Elantra 2017's EPS faults when requesting above 6 units/msg for a few frames
+    if CP.carFingerprint in (CAR.ELANTRA,):
+      self.STEER_DELTA_DOWN = 5
 
     if CP.carFingerprint in CANFD_CAR:
       self.STEER_MAX = 270
