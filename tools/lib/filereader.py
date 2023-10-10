@@ -8,7 +8,7 @@ DATA_ENDPOINT = os.getenv("DATA_ENDPOINT", "http://data-raw.comma.internal/")
 
 def is_data_endpoint_accessible():
   hostname = urlparse(DATA_ENDPOINT).hostname
-  if not len(hostname):
+  if not hostname:
     return False
 
   try:
