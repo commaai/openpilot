@@ -12,6 +12,7 @@ from openpilot.selfdrive.test.update_ci_routes import upload_route
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.filereader import is_data_endpoint_accessible
 from openpilot.tools.lib.helpers import save_log
 
 
@@ -117,4 +118,4 @@ if __name__ == "__main__":
 
   blacklist_set = set(args.blacklist_procs)
   processes = [p for p in args.whitelist_procs if p not in blacklist_set]
-  regen_and_save(args.route, args.seg, processes=processes, upload=args.upload, outdir=args.outdir)
+  regen_and_save(args.route, args.seg, processes=processes, upload=args.upload, outdir=args.outdir, use_route_meta=not is_data_endpoint_accessible())
