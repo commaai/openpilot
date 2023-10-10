@@ -15,7 +15,7 @@ from openpilot.selfdrive.locationd.helpers import PointBuckets
 POINTS_PER_BUCKET = 3000
 MIN_POINTS_TOTAL = 4000
 FIT_POINTS_TOTAL = 4000
-MIN_VEL = 10  # m/s
+MIN_VEL = 5  # m/s
 FILTER_DECAY = 1.0
 FILTER_DT = 0.015
 BUCKET_KEYS = [(-np.pi, -np.pi / 2), (-np.pi / 2, 0), (0, np.pi / 2), (np.pi / 2, np.pi)]

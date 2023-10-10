@@ -571,7 +571,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="magd",
     pubs=["liveLocationKalman", "carState", "magnetometer"],
-    subs=["magnetometerCalbration"],
+    subs=["magnetometerCalibration"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
     should_recv_callback=magd_rcv_callback,
