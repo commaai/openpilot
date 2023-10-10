@@ -614,10 +614,16 @@ class Controls:
       actuators.accel = self.LoC.update(CC.longActive, CS, long_plan, pid_accel_limits, t_since_plan)
 
       # Steering PID loop and lateral MPC
-      self.desired_curvature, self.desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
-                                                                                       lat_plan.psis,
-                                                                                       lat_plan.curvatures,
-                                                                                       lat_plan.curvatureRates)
+      desired_curvature_lower, desired_curvature_rate_lower = get_lag_adjusted_curvature(0.18, CS.vEgo,
+                                                                                         lat_plan.psis,
+                                                                                         lat_plan.curvatures,
+                                                                                         lat_plan.curvatureRates)
+      desired_curvature_upper, desired_curvature_rate_upper = get_lag_adjusted_curvature(0.35, CS.vEgo,
+                                                                                         lat_plan.psis,
+                                                                                         lat_plan.curvatures,
+                                                                                         lat_plan.curvatureRates)
+      self.desired_curvature = desired_curvature_lower if abs(desired_curvature_lower) < abs(desired_curvature_upper) else desired_curvature_upper
+      self.desired_curvature_rate = desired_curvature_rate_lower if abs(desired_curvature_rate_lower) < abs(desired_curvature_rate_upper) else desired_curvature_rate_upper
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
                                                                              self.last_actuators, self.steer_limited, self.desired_curvature,
                                                                              self.desired_curvature_rate, self.sm['liveLocationKalman'])
