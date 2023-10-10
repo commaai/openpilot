@@ -1,38 +1,197 @@
+import asyncio
 import aiortc
 import aiohttp
 
-class WebRTCCient:
-  def __init__(self, address="127.0.0.1", port=8080, endpoint="livestream_driver"):
-    self.peer_connection = aiortc.RTCPeerConnection()
-    self.peer_connection.on("track", self.on_track)
+import argparse
+import dataclasses
+import json
+
+from collections import defaultdict
+
+@dataclasses.dataclass
+class WebRTCStreamingOffer:
+  sdp: str
+  type: str
+
+@dataclasses.dataclass
+class WebRTCStreamingMetadata:
+  video: list[str]
+  audio: bool
+
+class WebRTCVideoClient:
+  def __init__(self):
     self.video_track = None
 
-  def on_track(self, track):
-    if track.kind == "video":
-      self.video_track = track
-    elif track.kind == "audio":
-      pass
+  def attach_track(self, track):
+    assert track.kind == "video"
+    self.video_track = track
 
-  async def connect(self):
-    offer = self.peer_connection.createOffer()
-    await self.peer_connection.setLocalDescription(offer)
+  async def recv(self):
+    if self.video_track is None:
+      raise Exception("No video track")
+
+    print("-- recv video track", self.video_track)
+    frame = await self.video_track.recv()
+    frame_arr = frame.to_ndarray(format="bgr24")
+    return frame_arr
+  
+class WebRTCAudioClient:
+  def __init__(self):
+    self.audio_track = None
+
+  def attach_track(self, track):
+    assert track.kind == "audio"
+    self.audio_track = track
+
+  async def recv(self):
+    if self.audio_track is None:
+      raise Exception("No audio track")
+
+    frame = await self.audio_track.recv()
+    bio = bytes(frame.planes[0])
+    return bio
+
+class WebRTCConnectionProvider:
+  async def connect(self, offer, metadata) -> aiortc.RTCSessionDescription:
+    raise NotImplementedError()
+  
+class WebRTCStdInConnectionProvider(WebRTCConnectionProvider):
+  async def connect(self, offer, metadata) -> aiortc.RTCSessionDescription:
+    print("-- Please send this JSON to server --")
+    print(json.dumps({"offer": offer, "metadata": metadata}))
+    print("-- Press enter when the answer is ready --")
+    raw_payload = input()
+    payload = json.loads(raw_payload)
+    answer = aiortc.RTCSessionDescription(**payload)
+
+    return answer
+  
+class WebRTCHTTPConnectionProvider(WebRTCConnectionProvider):
+  def __init__(self, address="127.0.0.1", port=8080):
+    self.address = address
+    self.port = port
+
+  async def connect(self, offer, metadata) -> aiortc.RTCSessionDescription:
+    payload = {"offer": offer, "metadata": metadata}
     async with aiohttp.ClientSession() as session:
-      response = await session.get(f"http://{self.address}:{self.port}/{self.endpoint}", json=offer)
+      response = await session.get(f"http://{self.address}:{self.port}/webrtc", json=payload)
       async with response:
         if response.status != 200:
           raise Exception(f"Offer request failed with HTTP status code {response.status}")
         answer = await response.json()
         remote_offer = aiortc.RTCSessionDescription(sdp=answer.sdp, type=answer.type)
-        self.peer_connection.setRemoteDescription(remote_offer)
 
-  async def recv(self, timeout_ms=100):
-    if self.video_track is None:
-      raise Exception("No video track")
+        return remote_offer
 
-    frame = await self.video_track.recv()
-    frame_arr = frame.to_ndarray(format="bgr24")
-    return frame_arr
+class WebRTCCient:
+  def __init__(self, connection_provider: WebRTCConnectionProvider):
+    self.peer_connection = aiortc.RTCPeerConnection()
+    self.peer_connection.on("track", self._on_track)
+    self.peer_connection.on("connectionstatechange", self._on_connectionstatechange)
+    self.connection_provider = connection_provider
+    self.video_consumers = defaultdict(list)
+    self.audio_consumers = []
+    self.channels = {}
 
-  def is_connected(self):
-    return self.video_track is not None
+  def _on_connectionstatechange(self):
+    print("-- connection state is", self.peer_connection.connectionState)
 
+  def _on_track(self, track):
+    print("-- got track: ", track.kind)
+    if track.kind == "video":
+      # format: "camera_type:camera_id"
+      parts = track.id.split(":")
+      if len(parts) < 2:
+        return
+
+      camera_type = parts[0]
+      self._on_video_track(track, camera_type)
+    elif track.kind == "audio":
+      self._on_audio_track(track)
+
+  def _on_video_track(self, track, camera_type):
+    for consumer in self.video_consumers[camera_type]:
+      consumer.attach_track(track)
+
+  def _on_audio_track(self, track):
+    for consumer in self.audio_consumers:
+      consumer.append(track)
+
+  def add_video_consumer(self, camera_type):
+    assert camera_type in ["driver", "wideRoad", "road"]
+    if len(self.video_consumers) == 0:
+      self.peer_connection.addTransceiver("video", direction="recvonly")
+
+    consumer = WebRTCVideoClient()
+    self.video_consumers[camera_type].append(consumer)
+    return consumer
+
+  def add_audio_consumer(self):
+    if len(self.audio_consumers) == 0:
+      self.peer_connection.addTransceiver("audio", direction="recvonly")
+
+    consumer = WebRTCAudioClient()
+    self.audio_consumers.append(consumer)
+    return consumer
+
+  def add_channel_producer(self, channel_name):
+    if channel_name in self.channels:
+      raise Exception(f"Channel {channel_name} already exists")
+
+    channel = self.peer_connection.createDataChannel(channel_name)
+    self.channels[channel_name] = channel
+    return channel
+
+  async def connect(self):
+    offer = await self.peer_connection.createOffer()
+    await self.peer_connection.setLocalDescription(offer)
+
+    stream_metadata = WebRTCStreamingMetadata(video=list(self.video_consumers.keys()), audio="audio" in self.audio_consumers)
+    remote_offer = await self.connection_provider.connect(dataclasses.asdict(offer), dataclasses.asdict(stream_metadata))
+    await self.peer_connection.setRemoteDescription(remote_offer)
+
+### API example:
+""" idea 1
+client = WebRTCCient()
+client.add_consumer(video_consumer)
+client.add_consumer(audio_consumer)
+await client.connect()
+while True:
+  frame = await video_consumer.recv()
+  # frame = await client.video_consumer.recv() # also works  
+"""
+
+
+""" idea 2
+client = WebRTCClient()
+video_client = client.add_video_consumer()
+audio_client = client.add_audio_consumer()
+datachannel_producer = client.add_channel_producer("channel")
+await client.connect()
+"""
+
+if __name__=="__main__":
+  parser = argparse.ArgumentParser(description="WebRTC client")
+  parser.add_argument("cameras", metavar="CAMERA", type=str, nargs="+", default=["driver"], help="Camera types to stream")
+  args = parser.parse_args()
+
+  connection_provider = WebRTCStdInConnectionProvider()
+  client = WebRTCCient(connection_provider)
+  consumers = {}
+  for cam in args.cameras:
+    video_consumer = client.add_video_consumer(cam)
+    consumers[cam] = video_consumer
+  asyncio.run(client.connect())
+
+  async def run(consumers, client):
+    while True:
+      try:
+        await asyncio.sleep(5)
+        frames = await asyncio.gather(*[consumer.recv() for consumer in consumers.values()])
+        for key, frame in zip(consumers.keys(), frames):
+          print("Received frame from", key, frame.shape)
+      except aiortc.mediastreams.MediaStreamError:
+        return
+      print("=====================================")
+
+  asyncio.run(run(consumers, client))
