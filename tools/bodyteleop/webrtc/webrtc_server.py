@@ -4,7 +4,6 @@ import argparse
 import json
 
 import aiortc
-from aiortc.mediastreams import VIDEO_CLOCK_RATE, VIDEO_TIME_BASE
 import av
 import asyncio
 import numpy as np
@@ -64,7 +63,8 @@ class FrameReaderVideoStreamTrack(TiciVideoStreamTrack):
 
     #frame_reader = FrameReader(input_file)
     #self.frames = [frame_reader.get(i, pix_fmt="rgb24") for i in range(frame_reader.frame_count)]
-    self.frames = [np.zeros((1280, 720, 3), dtype=np.uint8) for i in range(1200)]
+    shape = (1280, 720, 3) if camera_type == "driver" else (1920, 1080, 3)
+    self.frames = [np.zeros(shape, dtype=np.uint8) for i in range(1200)]
     self.frame_count = len(self.frames)
     self.frame_index = 0
     self.dt = dt
@@ -90,12 +90,8 @@ class WebRTCStream:
     self.peer_connection = aiortc.RTCPeerConnection()
     self.peer_connection.on("datachannel", self._on_datachannel)
     self.peer_connection.on("connectionstatechange", self._on_connectionstatechange)
-
-    for video_track in video_tracks:
-      video_sender = self.peer_connection.addTrack(video_track)
-      self.force_codec(video_sender, "video/H264", "video")
-    for audio_track in audio_tracks:
-      self.peer_connection.addTrack(audio_track)
+    self.video_tracks = video_tracks
+    self.audio_tracks = audio_tracks
 
   def _on_connectionstatechange(self):
     print("-- connection state is", self.peer_connection.connectionState)
@@ -114,7 +110,16 @@ class WebRTCStream:
     return answer
 
   async def start_async(self):
+    assert self.peer_connection.remoteDescription is None, "Connection already established"
+
     await self.peer_connection.setRemoteDescription(self.offer)
+
+    for video_track in self.video_tracks:
+      video_sender = self.peer_connection.addTrack(video_track)
+      self.force_codec(video_sender, "video/H264", "video")
+    for audio_track in self.audio_tracks:
+      self.peer_connection.addTrack(audio_track)
+
     answer = await self.peer_connection.createAnswer()
     await self.peer_connection.setLocalDescription(answer)
     actual_answer = self.peer_connection.localDescription
@@ -149,8 +154,6 @@ if __name__=="__main__":
 
       print("-- Please send this JSON to client --")
       print(json.dumps({"sdp": answer.sdp, "type": answer.type}))
-
-      await asyncio.sleep(120)
   
   loop = asyncio.get_event_loop()
   loop.run_until_complete(run(args))

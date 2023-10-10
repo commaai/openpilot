@@ -58,10 +58,13 @@ class WebRTCConnectionProvider:
   
 class WebRTCStdInConnectionProvider(WebRTCConnectionProvider):
   async def connect(self, offer, metadata) -> aiortc.RTCSessionDescription:
+    async def async_input():
+      return await asyncio.to_thread(input)
+
     print("-- Please send this JSON to server --")
     print(json.dumps({"offer": offer, "metadata": metadata}))
     print("-- Press enter when the answer is ready --")
-    raw_payload = input()
+    raw_payload = await async_input()
     payload = json.loads(raw_payload)
     answer = aiortc.RTCSessionDescription(**payload)
 
@@ -98,7 +101,7 @@ class WebRTCCient:
     print("-- connection state is", self.peer_connection.connectionState)
 
   def _on_track(self, track):
-    print("-- got track: ", track.kind)
+    print("-- got track: ", track.kind, track.id)
     if track.kind == "video":
       # format: "camera_type:camera_id"
       parts = track.id.split(":")
@@ -120,18 +123,14 @@ class WebRTCCient:
 
   def add_video_consumer(self, camera_type):
     assert camera_type in ["driver", "wideRoad", "road"]
-    if len(self.video_consumers) == 0:
-      print("adding transreceiver")
-      self.peer_connection.addTransceiver("video", direction="recvonly")
 
+    self.peer_connection.addTransceiver("video", direction="recvonly")
     consumer = WebRTCVideoClient()
     self.video_consumers[camera_type].append(consumer)
     return consumer
 
   def add_audio_consumer(self):
-    if len(self.audio_consumers) == 0:
-      self.peer_connection.addTransceiver("audio", direction="recvonly")
-
+    self.peer_connection.addTransceiver("audio", direction="recvonly")
     consumer = WebRTCAudioClient()
     self.audio_consumers.append(consumer)
     return consumer
@@ -153,39 +152,20 @@ class WebRTCCient:
     remote_offer = await self.connection_provider.connect(dataclasses.asdict(actual_offer), dataclasses.asdict(stream_metadata))
     await self.peer_connection.setRemoteDescription(remote_offer)
 
-### API example:
-""" idea 1
-client = WebRTCCient()
-client.add_consumer(video_consumer)
-client.add_consumer(audio_consumer)
-await client.connect()
-while True:
-  frame = await video_consumer.recv()
-  # frame = await client.video_consumer.recv() # also works  
-"""
-
-
-""" idea 2
-client = WebRTCClient()
-video_client = client.add_video_consumer()
-audio_client = client.add_audio_consumer()
-datachannel_producer = client.add_channel_producer("channel")
-await client.connect()
-"""
 
 if __name__=="__main__":
   parser = argparse.ArgumentParser(description="WebRTC client")
   parser.add_argument("cameras", metavar="CAMERA", type=str, nargs="+", default=["driver"], help="Camera types to stream")
   args = parser.parse_args()
 
-  connection_provider = WebRTCStdInConnectionProvider()
-  client = WebRTCCient(connection_provider)
-  consumers = {}
-  for cam in args.cameras:
-    video_consumer = client.add_video_consumer(cam)
-    consumers[cam] = video_consumer
+  async def run(args):
+    connection_provider = WebRTCStdInConnectionProvider()
+    client = WebRTCCient(connection_provider)
+    consumers = {}
+    for cam in args.cameras:
+      video_consumer = client.add_video_consumer(cam)
+      consumers[cam] = video_consumer
 
-  async def run(consumers, client):
     await client.connect()
     while True:
       try:
@@ -198,4 +178,4 @@ if __name__=="__main__":
       print("=====================================")
 
   loop = asyncio.get_event_loop()
-  loop.run_until_complete(run(consumers, client))
+  loop.run_until_complete(run(args))
