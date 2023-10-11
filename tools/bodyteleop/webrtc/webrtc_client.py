@@ -17,35 +17,35 @@ class WebRTCStreamingOffer:
 
 class WebRTCVideoClient:
   def __init__(self):
-    self.video_track = None
+    self.track = None
 
   def attach_track(self, track):
     assert track.kind == "video"
-    self.video_track = track
+    self.track = track
 
   async def recv(self):
-    if self.video_track is None:
+    if self.track is None:
       raise Exception("No video track")
 
-    print("-- recv video track", self.video_track)
-    frame = await self.video_track.recv()
+    print("-- recv video track", self.track)
+    frame = await self.track.recv()
     print("-- got frame")
     frame_arr = frame.to_ndarray(format="bgr24")
     return frame_arr
   
 class WebRTCAudioClient:
   def __init__(self):
-    self.audio_track = None
+    self.track = None
 
   def attach_track(self, track):
     assert track.kind == "audio"
-    self.audio_track = track
+    self.track = track
 
   async def recv(self):
-    if self.audio_track is None:
+    if self.track is None:
       raise Exception("No audio track")
 
-    frame = await self.audio_track.recv()
+    frame = await self.track.recv()
     bio = bytes(frame.planes[0])
     return bio
 
@@ -93,6 +93,7 @@ class WebRTCCient:
     self.video_consumers = defaultdict(list)
     self.audio_consumers = []
     self.channels = {}
+    self.tracks_ready_event = asyncio.Event()
 
   def _on_connectionstatechange(self):
     print("-- connection state is", self.peer_connection.connectionState)
@@ -109,6 +110,8 @@ class WebRTCCient:
       self._on_video_track(track, camera_type)
     elif track.kind == "audio":
       self._on_audio_track(track)
+    
+    self._notify_if_all_tracks_ready()
 
   def _on_video_track(self, track, camera_type):
     for consumer in self.video_consumers[camera_type]:
@@ -117,6 +120,11 @@ class WebRTCCient:
   def _on_audio_track(self, track):
     for consumer in self.audio_consumers:
       consumer.append(track)
+
+  def _notify_if_all_tracks_ready(self):
+    all_consumers = sum(self.video_consumers.values(), []) + self.audio_consumers
+    if all(consumer.track is not None for consumer in all_consumers):
+      self.tracks_ready_event.set()
 
   def add_video_consumer(self, camera_type):
     assert camera_type in ["driver", "wideRoad", "road"]
@@ -151,6 +159,8 @@ class WebRTCCient:
                                            audio="audio" in self.audio_consumers)
     remote_offer = await self.connection_provider.connect(streaming_offer)
     await self.peer_connection.setRemoteDescription(remote_offer)
+    # wait for the tracks to be ready
+    await self.tracks_ready_event.wait()
 
 
 if __name__=="__main__":
@@ -169,7 +179,6 @@ if __name__=="__main__":
     await client.connect()
     while True:
       try:
-        await asyncio.sleep(5)
         frames = await asyncio.gather(*[consumer.recv() for consumer in consumers.values()])
         for key, frame in zip(consumers.keys(), frames):
           print("Received frame from", key, frame.shape)
