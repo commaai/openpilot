@@ -15,11 +15,13 @@ NOTE: This repository uses Git LFS for large files. Ensure you have [Git LFS](ht
 Either do a partial clone for faster download:
 ``` bash
 git clone --filter=blob:none --recurse-submodules --also-filter-submodules https://github.com/commaai/openpilot.git
+git lfs pull
 ```
 
 or do a full clone:
 ``` bash
 git clone --recurse-submodules https://github.com/commaai/openpilot.git
+git lfs pull
 ```
 
 **2. Run the setup script**
@@ -31,6 +33,9 @@ tools/ubuntu_setup.sh
 
 Activate a shell with the Python dependencies installed:
 ``` bash
+curl -sSL https://install.python-poetry.org | python3 -
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
 poetry shell
 ```
 
