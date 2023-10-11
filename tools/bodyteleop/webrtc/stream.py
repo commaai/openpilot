@@ -2,6 +2,7 @@
 
 import argparse
 import json
+from typing import Awaitable, Callable, Any
 
 import aiortc
 import av
@@ -10,7 +11,8 @@ import numpy as np
 
 from cereal import messaging
 from openpilot.common.realtime import DT_MDL, DT_DMON
-from openpilot.tools.bodyteleop.webrtc.webrtc_client import WebRTCStreamingOffer
+from openpilot.tools.bodyteleop.webrtc.client import DataChannelMessenger
+from openpilot.tools.bodyteleop.webrtc.connection import StreamingOffer
 from openpilot.tools.lib.framereader import FrameReader
 
 
@@ -84,30 +86,78 @@ class FrameReaderVideoStreamTrack(TiciVideoStreamTrack):
     return new_frame
 
 
+import pyaudio
+from pydub import AudioSegment
+
+
+class AudioInputStreamTrack(aiortc.mediastreams.AudioStreamTrack):
+  def __init__(self, format=pyaudio.paInt16, rate=16000, channels=1, packet_time=0.020, device_index=None):
+    super().__init__()
+
+    self.p = pyaudio.PyAudio()
+    frame_per_buffer = packet_time * rate
+    self.stream = self.p.open(format=format, 
+                              channels=channels, 
+                              rate=rate, 
+                              frames_per_buffer=frame_per_buffer, 
+                              input=True, 
+                              input_device_index=device_index)
+    self.format = format
+    self.rate = rate
+    self.channels = channels
+    self.packet_time = packet_time
+    self.chunk_size = int(rate * packet_time)
+    self.chunk_index = 0
+    self.pts = 0
+
+  async def recv(self):
+    mic_data = self.stream.read(self.chunk_size)
+    mic_sound = AudioSegment(mic_data, sample_width=pyaudio.get_sample_size(self.format), channels=self.channels, frame_rate=self.rate)
+    # create stereo sound?
+    mic_sound = AudioSegment.from_mono_audiosegments(mic_sound, mic_sound)
+    packet = av.Packet(mic_sound.raw_data)
+    # TODO
+    return None
+
+
 class WebRTCStream:
-  def __init__(self, sdb, type, video_tracks=[], audio_tracks=[]):
+  def __init__(self, sdb, type, video_codec="video/H264", audio_codec=None):
     self.offer = aiortc.RTCSessionDescription(sdp=sdb, type=type)
     self.peer_connection = aiortc.RTCPeerConnection()
     self.peer_connection.on("datachannel", self._on_datachannel)
     self.peer_connection.on("connectionstatechange", self._on_connectionstatechange)
-    self.video_tracks = video_tracks
-    self.audio_tracks = audio_tracks
+    self.video_tracks = []
+    self.video_codec = video_codec
+    self.audio_tracks = []
+    self.audio_codec = audio_codec
+    self.message_handler = None
 
   def _on_connectionstatechange(self):
     print("-- connection state is", self.peer_connection.connectionState)
 
   def _on_datachannel(self, channel):
-    pass
+    async def on_message(message):
+      if self.message_handler:
+        await self.message_handler(DataChannelMessenger(channel), message)
 
-  def force_codec(self, sender, codec, stream_type):
+    channel.on("message", on_message)
+
+  def _force_codec(self, sender, codec, stream_type):
     codecs = aiortc.RTCRtpSender.getCapabilities(stream_type).codecs
     codec = [codec for codec in codecs if codec.mimeType == codec]
     transceiver = next(t for t in self.peer_connection.getTransceivers() if t.sender == sender)
     transceiver.setCodecPreferences(codec)
 
-  def start(self):
-    answer = asyncio.run(self.start_async())
-    return answer
+  def add_video_track(self, track: aiortc.MediaStreamTrack):
+    assert track.kind == "video"
+    self.video_tracks.append(track)
+
+  def add_audio_track(self, track: aiortc.MediaStreamTrack):
+    assert track.kind == "audio"
+    self.audio_tracks.append(track)
+  
+  def add_message_handler(self, handler: Callable[[DataChannelMessenger, Any], Awaitable[None]]):
+    self.message_handler = handler
 
   async def start_async(self):
     assert self.peer_connection.remoteDescription is None, "Connection already established"
@@ -116,9 +166,12 @@ class WebRTCStream:
 
     for video_track in self.video_tracks:
       video_sender = self.peer_connection.addTrack(video_track)
-      self.force_codec(video_sender, "video/H264", "video")
+      if self.video_codec:
+        self._force_codec(video_sender, self.video_codec, "video")
     for audio_track in self.audio_tracks:
-      self.peer_connection.addTrack(audio_track)
+      audio_sender = self.peer_connection.addTrack(audio_track)
+      if self.audio_codec:
+        self._force_codec(audio_sender, self.audio_codec, "audio")
 
     answer = await self.peer_connection.createAnswer()
     await self.peer_connection.setLocalDescription(answer)
@@ -142,12 +195,21 @@ if __name__=="__main__":
       raw_payload = await async_input()
       
       payload = json.loads(raw_payload)
-      offer = WebRTCStreamingOffer(**payload)
-      track_gen = lambda cam: FrameReaderVideoStreamTrack(args.input_video, camera_type=cam) if args.input_video else LiveStreamVideoStreamTrack(cam)
-      video_tracks = [track_gen(cam) for cam in offer.video]
+      offer = StreamingOffer(**payload)
+      video_tracks = []
+      for cam in offer.video:
+        if args.input_video:
+          track = FrameReaderVideoStreamTrack(args.input_video, camera_type=cam)
+        else:
+          track = LiveStreamVideoStreamTrack(cam)
+        video_tracks.append(track)
       audio_tracks = []
 
-      stream = WebRTCStream(offer.sdp, offer.type, video_tracks, audio_tracks)
+      stream = WebRTCStream(offer.sdp, offer.type)
+      for track in video_tracks:
+        stream.add_video_track(track)
+      for track in audio_tracks:
+        stream.add_audio_track(track)
       answer = await stream.start_async()
       streams.append(stream)
 

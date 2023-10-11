@@ -8,14 +8,10 @@ import json
 
 from collections import defaultdict
 
-@dataclasses.dataclass
-class WebRTCStreamingOffer:
-  sdp: str
-  type: str
-  video: list[str]
-  audio: bool
+from openpilot.tools.bodyteleop.webrtc.messages import Message
+from openpilot.tools.bodyteleop.webrtc.connection import StreamingOffer, ConnectionProvider, StdioConnectionProvider
 
-class WebRTCVideoClient:
+class VideoConsumer:
   def __init__(self):
     self.track = None
 
@@ -33,7 +29,7 @@ class WebRTCVideoClient:
     frame_arr = frame.to_ndarray(format="bgr24")
     return frame_arr
   
-class WebRTCAudioClient:
+class AudioConsumer:
   def __init__(self):
     self.track = None
 
@@ -49,50 +45,24 @@ class WebRTCAudioClient:
     bio = bytes(frame.planes[0])
     return bio
 
-class WebRTCConnectionProvider:
-  async def connect(self, offer) -> aiortc.RTCSessionDescription:
-    raise NotImplementedError()
-  
-class WebRTCStdInConnectionProvider(WebRTCConnectionProvider):
-  async def connect(self, offer: WebRTCStreamingOffer) -> aiortc.RTCSessionDescription:
-    async def async_input():
-      return await asyncio.to_thread(input)
+class DataChannelMessenger:
+  def __init__(self, channel: aiortc.RTCDataChannel):
+    self.channel = channel
 
-    print("-- Please send this JSON to server --")
-    print(json.dumps(dataclasses.asdict(offer)))
-    print("-- Press enter when the answer is ready --")
-    raw_payload = await async_input()
-    payload = json.loads(raw_payload)
-    answer = aiortc.RTCSessionDescription(**payload)
+  def send(self, message: Message):
+    msg_json = json.dumps(message.to_dict())
+    self.channel.send(msg_json)
 
-    return answer
-  
-class WebRTCHTTPConnectionProvider(WebRTCConnectionProvider):
-  def __init__(self, address="127.0.0.1", port=8080):
-    self.address = address
-    self.port = port
-
-  async def connect(self, offer: WebRTCStreamingOffer) -> aiortc.RTCSessionDescription:
-    payload = dataclasses.asdict(offer)
-    async with aiohttp.ClientSession() as session:
-      response = await session.get(f"http://{self.address}:{self.port}/webrtc", json=payload)
-      async with response:
-        if response.status != 200:
-          raise Exception(f"Offer request failed with HTTP status code {response.status}")
-        answer = await response.json()
-        remote_offer = aiortc.RTCSessionDescription(sdp=answer.sdp, type=answer.type)
-
-        return remote_offer
 
 class WebRTCCient:
-  def __init__(self, connection_provider: WebRTCConnectionProvider):
+  def __init__(self, connection_provider: ConnectionProvider):
     self.peer_connection = aiortc.RTCPeerConnection()
     self.peer_connection.on("track", self._on_track)
     self.peer_connection.on("connectionstatechange", self._on_connectionstatechange)
     self.connection_provider = connection_provider
     self.video_consumers = defaultdict(list)
     self.audio_consumers = []
-    self.channels = {}
+    self.data_channel = None
     self.tracks_ready_event = asyncio.Event()
 
   def _on_connectionstatechange(self):
@@ -130,30 +100,31 @@ class WebRTCCient:
     assert camera_type in ["driver", "wideRoad", "road"]
 
     self.peer_connection.addTransceiver("video", direction="recvonly")
-    consumer = WebRTCVideoClient()
+    consumer = VideoConsumer()
     self.video_consumers[camera_type].append(consumer)
     return consumer
 
   def add_audio_consumer(self):
     self.peer_connection.addTransceiver("audio", direction="recvonly")
-    consumer = WebRTCAudioClient()
+    consumer = AudioConsumer()
     self.audio_consumers.append(consumer)
     return consumer
 
-  def add_channel_producer(self, channel_name):
-    if channel_name in self.channels:
-      raise Exception(f"Channel {channel_name} already exists")
+  def add_messenger(self):
+    if self.data_channel:
+      channel = self.data_channel
+    else:
+      channel = self.peer_connection.createDataChannel("data", ordered=True)
+      self.data_channel = channel
 
-    channel = self.peer_connection.createDataChannel(channel_name)
-    self.channels[channel_name] = channel
-    return channel
+    return DataChannelMessenger(channel)
 
   async def connect(self):
     offer = await self.peer_connection.createOffer()
     await self.peer_connection.setLocalDescription(offer)
     actual_offer = self.peer_connection.localDescription
 
-    streaming_offer = WebRTCStreamingOffer(sdp=actual_offer.sdp, 
+    streaming_offer = StreamingOffer(sdp=actual_offer.sdp, 
                                            type=actual_offer.type, 
                                            video=list(self.video_consumers.keys()), 
                                            audio="audio" in self.audio_consumers)
@@ -169,7 +140,7 @@ if __name__=="__main__":
   args = parser.parse_args()
 
   async def run(args):
-    connection_provider = WebRTCStdInConnectionProvider()
+    connection_provider = StdioConnectionProvider()
     client = WebRTCCient(connection_provider)
     consumers = {}
     for cam in args.cameras:
