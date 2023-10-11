@@ -4,7 +4,7 @@ from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.selfdrive.car.ford.fordcan import CanBus
-from openpilot.selfdrive.car.ford.values import CANFD_CAR, CarControllerParams, DBC
+from openpilot.selfdrive.car.ford.values import CANFD_CAR, FORD_EV, CarControllerParams, DBC
 
 GearShifter = car.CarState.GearShifter
 TransmissionType = car.CarParams.TransmissionType
@@ -26,7 +26,13 @@ class CarState(CarStateBase):
     # Hybrid variants experience a bug where a message from the PCM sends invalid checksums,
     # we do not support these cars at this time.
     # TrnAin_Tq_Actl and its quality flag are only set on ICE platform variants
-    self.hybrid_platform = cp.vl["VehicleOperatingModes"]["TrnAinTq_D_Qf"] == 0
+    # EVs have not experienced this same issue but have the flag. Defaulting to false for now.
+
+    if self.CP.carFingerprint in FORD_EV:
+      self.hybrid_platform = False
+    else:
+      self.hybrid_platform = cp.vl["VehicleOperatingModes"]["TrnAinTq_D_Qf"] == 0
+
 
     # Occasionally on startup, the ABS module recalibrates the steering pinion offset, so we need to block engagement
     # The vehicle usually recovers out of this state within a minute of normal driving

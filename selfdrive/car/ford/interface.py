@@ -14,11 +14,11 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "ford"
-    ret.dashcamOnly = candidate in {CAR.F_150_MK14}
+    ret.dashcamOnly = candidate in {CAR.F_150_MK14, CAR.MUSTANG_MACH_E_MK1, CAR.F_150_LIGHTNING_MK1}
 
     ret.radarUnavailable = True
     ret.steerControlType = car.CarParams.SteerControlType.angle
-    ret.steerActuatorDelay = 0.2
+    ret.steerActuatorDelay = 0.25
     ret.steerLimitTimer = 1.0
 
     CAN = CanBus(fingerprint=fingerprint)
@@ -50,11 +50,21 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.8
       ret.mass = 2050
 
+    elif candidate == CAR.F_150_LIGHTNING_MK1:
+      ret.wheelbase = 3.69
+      ret.steerRatio = 17.0
+      ret.mass = 2729
+
+    elif candidate == CAR.MUSTANG_MACH_E_MK1:
+      ret.wheelbase = 2.984
+      ret.steerRatio = 14.6
+      ret.mass = 1959
+
     elif candidate == CAR.F_150_MK14:
       # required trim only on SuperCrew
       ret.wheelbase = 3.69
       ret.steerRatio = 17.0
-      ret.mass = 2000
+      ret.mass = 2728
 
     elif candidate == CAR.FOCUS_MK4:
       ret.wheelbase = 2.7
