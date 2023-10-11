@@ -18,3 +18,9 @@ cd tools/replay
 # start the UI in another terminal
 selfdrive/ui/ui
 ```
+
+If **selfdrive/ui/ui** is not starting the UI
+``` bash
+poetry shell
+scons -j$(nproc) selfdrive/ui && LOGPRINT=debug selfdrive/ui/ui
+```
