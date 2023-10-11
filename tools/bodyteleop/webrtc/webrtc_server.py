@@ -10,7 +10,7 @@ import numpy as np
 
 from cereal import messaging
 from openpilot.common.realtime import DT_MDL, DT_DMON
-from openpilot.tools.bodyteleop.webrtc.webrtc_client import WebRTCStreamingMetadata, WebRTCStreamingOffer
+from openpilot.tools.bodyteleop.webrtc.webrtc_client import WebRTCStreamingOffer
 from openpilot.tools.lib.framereader import FrameReader
 
 
@@ -142,10 +142,9 @@ if __name__=="__main__":
       raw_payload = await async_input()
       
       payload = json.loads(raw_payload)
-      offer = WebRTCStreamingOffer(**payload["offer"])
-      metadata = WebRTCStreamingMetadata(**payload["metadata"])
+      offer = WebRTCStreamingOffer(**payload)
       track_gen = lambda cam: FrameReaderVideoStreamTrack(args.input_video, camera_type=cam) if args.input_video else LiveStreamVideoStreamTrack(cam)
-      video_tracks = [track_gen(cam) for cam in metadata.video]
+      video_tracks = [track_gen(cam) for cam in offer.video]
       audio_tracks = []
 
       stream = WebRTCStream(offer.sdp, offer.type, video_tracks, audio_tracks)

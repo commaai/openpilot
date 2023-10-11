@@ -12,9 +12,6 @@ from collections import defaultdict
 class WebRTCStreamingOffer:
   sdp: str
   type: str
-
-@dataclasses.dataclass
-class WebRTCStreamingMetadata:
   video: list[str]
   audio: bool
 
@@ -53,16 +50,16 @@ class WebRTCAudioClient:
     return bio
 
 class WebRTCConnectionProvider:
-  async def connect(self, offer, metadata) -> aiortc.RTCSessionDescription:
+  async def connect(self, offer) -> aiortc.RTCSessionDescription:
     raise NotImplementedError()
   
 class WebRTCStdInConnectionProvider(WebRTCConnectionProvider):
-  async def connect(self, offer, metadata) -> aiortc.RTCSessionDescription:
+  async def connect(self, offer: WebRTCStreamingOffer) -> aiortc.RTCSessionDescription:
     async def async_input():
       return await asyncio.to_thread(input)
 
     print("-- Please send this JSON to server --")
-    print(json.dumps({"offer": offer, "metadata": metadata}))
+    print(json.dumps(dataclasses.asdict(offer)))
     print("-- Press enter when the answer is ready --")
     raw_payload = await async_input()
     payload = json.loads(raw_payload)
@@ -75,8 +72,8 @@ class WebRTCHTTPConnectionProvider(WebRTCConnectionProvider):
     self.address = address
     self.port = port
 
-  async def connect(self, offer, metadata) -> aiortc.RTCSessionDescription:
-    payload = {"offer": offer, "metadata": metadata}
+  async def connect(self, offer: WebRTCStreamingOffer) -> aiortc.RTCSessionDescription:
+    payload = dataclasses.asdict(offer)
     async with aiohttp.ClientSession() as session:
       response = await session.get(f"http://{self.address}:{self.port}/webrtc", json=payload)
       async with response:
@@ -148,8 +145,11 @@ class WebRTCCient:
     await self.peer_connection.setLocalDescription(offer)
     actual_offer = self.peer_connection.localDescription
 
-    stream_metadata = WebRTCStreamingMetadata(video=list(self.video_consumers.keys()), audio="audio" in self.audio_consumers)
-    remote_offer = await self.connection_provider.connect(dataclasses.asdict(actual_offer), dataclasses.asdict(stream_metadata))
+    streaming_offer = WebRTCStreamingOffer(sdp=actual_offer.sdp, 
+                                           type=actual_offer.type, 
+                                           video=list(self.video_consumers.keys()), 
+                                           audio="audio" in self.audio_consumers)
+    remote_offer = await self.connection_provider.connect(streaming_offer)
     await self.peer_connection.setRemoteDescription(remote_offer)
 
 
