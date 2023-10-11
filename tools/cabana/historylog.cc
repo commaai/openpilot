@@ -228,8 +228,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   QObject::connect(signals_cb, SIGNAL(activated(int)), this, SLOT(setFilter()));
   QObject::connect(comp_box, SIGNAL(activated(int)), this, SLOT(setFilter()));
   QObject::connect(value_edit, &QLineEdit::textEdited, this, &LogsWidget::setFilter);
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &LogsWidget::msgChanged);
-  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &LogsWidget::msgChanged);
+  QObject::connect(dbc(), &DBCManager::changed, this, &LogsWidget::msgChanged);
 }
 
 void LogsWidget::setMessage(const MessageId &message_id) {

@@ -20,6 +20,7 @@ bool DBCManager::open(const SourceSet &sources, const QString &dbc_file_name, QS
   }
 
   emit DBCFileChanged();
+  emit changed();
   return true;
 }
 
@@ -35,6 +36,7 @@ bool DBCManager::open(const SourceSet &sources, const QString &name, const QStri
   }
 
   emit DBCFileChanged();
+  emit changed();
   return true;
 }
 
@@ -43,6 +45,7 @@ void DBCManager::close(const SourceSet &sources) {
     dbc_files[s] = nullptr;
   }
   emit DBCFileChanged();
+  emit changed();
 }
 
 void DBCManager::close(DBCFile *dbc_file) {
@@ -50,18 +53,20 @@ void DBCManager::close(DBCFile *dbc_file) {
     if (f.get() == dbc_file) f = nullptr;
   }
   emit DBCFileChanged();
+  emit changed();
 }
 
 void DBCManager::closeAll() {
   dbc_files.clear();
   emit DBCFileChanged();
+  emit changed();
 }
 
 void DBCManager::addSignal(const MessageId &id, const cabana::Signal &sig) {
   if (auto m = msg(id)) {
     if (auto s = m->addSignal(sig)) {
       emit signalAdded(id, s);
-      emit maskUpdated();
+      emit changed();
     }
   }
 }
@@ -70,7 +75,7 @@ void DBCManager::updateSignal(const MessageId &id, const QString &sig_name, cons
   if (auto m = msg(id)) {
     if (auto s = m->updateSignal(sig_name, sig)) {
       emit signalUpdated(s);
-      emit maskUpdated();
+      emit changed();
     }
   }
 }
@@ -80,7 +85,7 @@ void DBCManager::removeSignal(const MessageId &id, const QString &sig_name) {
     if (auto s = m->sig(sig_name)) {
       emit signalRemoved(s);
       m->removeSignal(sig_name);
-      emit maskUpdated();
+      emit changed();
     }
   }
 }
@@ -90,6 +95,7 @@ void DBCManager::updateMsg(const MessageId &id, const QString &name, uint32_t si
   assert(dbc_file);  // This should be impossible
   dbc_file->updateMsg(id, name, size, node, comment);
   emit msgUpdated(id);
+  emit changed();
 }
 
 void DBCManager::removeMsg(const MessageId &id) {
@@ -97,7 +103,7 @@ void DBCManager::removeMsg(const MessageId &id) {
   assert(dbc_file);  // This should be impossible
   dbc_file->removeMsg(id);
   emit msgRemoved(id);
-  emit maskUpdated();
+  emit changed();
 }
 
 QString DBCManager::newMsgName(const MessageId &id) {

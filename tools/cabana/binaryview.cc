@@ -35,8 +35,7 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   setMouseTracking(true);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &BinaryView::refresh);
-  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &BinaryView::refresh);
+  QObject::connect(dbc(), &DBCManager::changed, this, &BinaryView::refresh);
 
   addShortcuts();
   setWhatsThis(R"(

@@ -20,8 +20,7 @@ AbstractStream::AbstractStream(QObject *parent) : QObject(parent) {
 
   QObject::connect(this, &AbstractStream::lastMsgsChanged, this, &AbstractStream::updateLastMessages, Qt::QueuedConnection);
   QObject::connect(this, &AbstractStream::seekedTo, this, &AbstractStream::updateLastMsgsTo);
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &AbstractStream::updateMasks);
-  QObject::connect(dbc(), &DBCManager::maskUpdated, this, &AbstractStream::updateMasks);
+  QObject::connect(dbc(), &DBCManager::changed, this, &AbstractStream::updateMasks);
   QObject::connect(this, &AbstractStream::streamStarted, [this]() {
     emit StreamNotifier::instance()->changingStream();
     delete can;

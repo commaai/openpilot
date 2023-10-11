@@ -62,8 +62,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(header, &MessageViewHeader::filtersUpdated, model, &MessageListModel::setFilterStrings);
   QObject::connect(view->horizontalScrollBar(), &QScrollBar::valueChanged, header, &MessageViewHeader::updateHeaderPositions);
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, model, &MessageListModel::dbcModified);
-  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, model, &MessageListModel::dbcModified);
+  QObject::connect(dbc(), &DBCManager::changed, model, &MessageListModel::dbcModified);
   QObject::connect(model, &MessageListModel::modelReset, [this]() {
     if (current_msg_id) {
       selectMessage(*current_msg_id);
