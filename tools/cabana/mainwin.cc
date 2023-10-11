@@ -432,7 +432,6 @@ void MainWindow::saveFile(DBCFile *dbc_file) {
   assert(dbc_file != nullptr);
   if (!dbc_file->filename.isEmpty()) {
     dbc_file->save();
-    updateLoadSaveMenus();
     UndoStack::instance()->setClean();
     statusBar()->showMessage(tr("File saved"), 2000);
   } else if (!dbc_file->isEmpty()) {
@@ -448,7 +447,6 @@ void MainWindow::saveFileAs(DBCFile *dbc_file) {
     UndoStack::instance()->setClean();
     statusBar()->showMessage(tr("File saved as %1").arg(fn), 2000);
     updateRecentFiles(fn);
-    updateLoadSaveMenus();
   }
 }
 
