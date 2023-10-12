@@ -370,6 +370,10 @@ void ChartsWidget::doAutoScroll() {
   }
 }
 
+QSize ChartsWidget::minimumSizeHint() const {
+  return QSize(CHART_MIN_WIDTH, QWidget::minimumSizeHint().height());
+}
+
 void ChartsWidget::resizeEvent(QResizeEvent *event) {
   QWidget::resizeEvent(event);
   updateLayout();

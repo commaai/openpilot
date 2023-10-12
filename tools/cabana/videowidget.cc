@@ -39,13 +39,15 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   group->setExclusive(true);
 
   QHBoxLayout *control_layout = new QHBoxLayout();
-  play_btn = new QPushButton();
+  play_btn = new QToolButton();
   play_btn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
   control_layout->addWidget(play_btn);
   if (can->liveStreaming()) {
-    control_layout->addWidget(skip_to_end_btn = new QPushButton(utils::icon("skip-end-fill"), {}));
+    control_layout->addWidget(skip_to_end_btn = new QToolButton(this));
+    skip_to_end_btn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    skip_to_end_btn->setIcon(utils::icon("skip-end-fill"));
     skip_to_end_btn->setToolTip(tr("Skip to the end"));
-    QObject::connect(skip_to_end_btn, &QPushButton::clicked, [group]() {
+    QObject::connect(skip_to_end_btn, &QToolButton::clicked, [group]() {
       // set speed to 1.0
       group->buttons()[2]->click();
       can->pause(false);
@@ -54,9 +56,11 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   }
 
   for (float speed : {0.1, 0.5, 1., 2.}) {
-    QPushButton *btn = new QPushButton(QString("%1x").arg(speed), this);
+    QToolButton *btn = new QToolButton(this);
+    btn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    btn->setText(QString("%1x").arg(speed));
     btn->setCheckable(true);
-    QObject::connect(btn, &QPushButton::clicked, [speed]() { can->setSpeed(speed); });
+    QObject::connect(btn, &QToolButton::clicked, [speed]() { can->setSpeed(speed); });
     control_layout->addWidget(btn);
     group->addButton(btn);
     if (speed == 1.0) btn->setChecked(true);
@@ -64,7 +68,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   main_layout->addLayout(control_layout);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 
-  QObject::connect(play_btn, &QPushButton::clicked, []() { can->pause(!can->isPaused()); });
+  QObject::connect(play_btn, &QToolButton::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(can, &AbstractStream::paused, this, &VideoWidget::updatePlayBtnState);
   QObject::connect(can, &AbstractStream::resume, this, &VideoWidget::updatePlayBtnState);
   QObject::connect(&settings, &Settings::changed, this, &VideoWidget::updatePlayBtnState);
