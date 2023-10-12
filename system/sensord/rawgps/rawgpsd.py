@@ -190,7 +190,12 @@ def setup_quectel(diag: ModemDiag) -> bool:
 
   if gps_enabled():
     at_cmd("AT+QGPSEND")
-  #at_cmd("AT+QGPSDEL=0")
+
+  if "GPS_COLD_START" in os.environ:
+    # delete everything, except XTRA assistance
+    at_cmd("AT+QGPSDEL=0")
+    # delete XTRA
+    at_cmd("AT+QGPSDEL=3")
 
   # disable DPO power savings for more accuracy
   at_cmd("AT+QGPSCFG=\"dpoenable\",0")
