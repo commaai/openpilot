@@ -1,5 +1,3 @@
-import carla
-
 from openpilot.tools.sim.bridge.common import SimulatorBridge
 from openpilot.tools.sim.bridge.carla.carla_world import CarlaWorld
 
@@ -15,6 +13,8 @@ class CarlaBridge(SimulatorBridge):
     self.num_selected_spawn_point = arguments.num_selected_spawn_point
 
   def spawn_world(self):
+    import carla
+
     client = carla.Client(self.host, self.port)
     client.set_timeout(5)
 
