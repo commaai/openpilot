@@ -194,6 +194,9 @@ def setup_quectel(diag: ModemDiag) -> bool:
   if "GPS_COLD_START" in os.environ:
     # deletes all assistance
     at_cmd("AT+QGPSDEL=0")
+  else:
+    # allow module to perform hot start
+    at_cmd("AT+QGPSDEL=1")
 
   # disable DPO power savings for more accuracy
   at_cmd("AT+QGPSCFG=\"dpoenable\",0")
