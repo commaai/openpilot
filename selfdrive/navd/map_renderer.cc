@@ -105,6 +105,8 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
 void MapRenderer::msgUpdate() {
   sm->update(1000);
 
+  bool destination_set = params.get("NavDestination").size() > 0;
+
   if (sm->updated("liveLocationKalman")) {
     auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
     auto pos = location.getPositionGeodetic();

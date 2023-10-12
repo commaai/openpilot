@@ -51,6 +51,8 @@ private:
   QTimer* timer;
   bool ever_loaded = false;
 
+  Params params;
+
 public slots:
   void updatePosition(QMapbox::Coordinate position, float bearing);
   void updateRoute(QList<QGeoCoordinate> coordinates);
