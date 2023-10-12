@@ -10,6 +10,7 @@
 #include <QLineEdit>
 #include <QMenu>
 #include <QTimer>
+#include <QToolBar>
 #include <QTreeView>
 
 #include "tools/cabana/dbc/dbcmanager.h"
@@ -85,6 +86,7 @@ class MessagesWidget : public QWidget {
 
 public:
   MessagesWidget(QWidget *parent);
+  QToolBar *createToolBar();
   void selectMessage(const MessageId &message_id);
   QByteArray saveHeaderState() const { return view->header()->saveState(); }
   bool restoreHeaderState(const QByteArray &state) const { return view->header()->restoreState(state); }
@@ -105,7 +107,6 @@ protected:
   MessageBytesDelegate *delegate;
   std::optional<MessageId> current_msg_id;
   MessageListModel *model;
-  QPushButton *suppress_add;
-  QPushButton *suppress_clear;
+  QAction *suppress_clear;
   QMenu *menu;
 };

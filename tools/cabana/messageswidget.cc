@@ -5,6 +5,7 @@
 
 #include <QCheckBox>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QPainter>
 #include <QPushButton>
 #include <QScrollBar>
@@ -12,12 +13,14 @@
 
 #include "tools/cabana/commands.h"
 
-MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
+MessagesWidget::MessagesWidget(QWidget *parent) : menu(new QMenu(this)), QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(0, 9, 0, 0);
-
+  main_layout->setContentsMargins(0, 0, 0, 0);
+  main_layout->setSpacing(0);
+  // toolbar
+  main_layout->addWidget(createToolBar());
   // message table
-  view = new MessageView(this);
+  main_layout->addWidget(view = new MessageView(this));
   view->setItemDelegate(delegate = new MessageBytesDelegate(view, settings.multiple_lines_bytes));
   view->setHeader(header = new MessageViewHeader(this));
   view->setModel(model = new MessageListModel(this));
@@ -37,26 +40,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   // Header context menu
   view->header()->setContextMenuPolicy(Qt::CustomContextMenu);
   QObject::connect(view->header(), &QHeaderView::customContextMenuRequested, this, &MessagesWidget::headerContextMenuEvent);
-  QObject::connect(menu = new QMenu(this), &QMenu::aboutToShow, this, &MessagesWidget::menuAboutToShow);
-
-  // title layout
-  QHBoxLayout *title_layout = new QHBoxLayout();
-  title_layout->addWidget(suppress_add = new QPushButton("&Suppress Highlighted"));
-  suppress_add->setToolTip(tr("Suppress Highlighted bytes"));
-  title_layout->addWidget(suppress_clear = new QPushButton());
-  suppress_clear->setToolTip(tr("Clear suppressed bytes"));
-  QCheckBox *suppress_defined_signals = new QCheckBox(tr("Suppress Signals"), this);
-  suppress_defined_signals->setToolTip(tr("Suppress Defined Signals"));
-  suppress_defined_signals->setChecked(settings.suppress_defined_signals);
-  title_layout->addWidget(suppress_defined_signals);
-  title_layout->addStretch();
-  auto menu_button = new ToolButton("list-check", tr("View"));
-  menu_button->setPopupMode(QToolButton::InstantPopup);
-  menu_button->setMenu(menu);
-  title_layout->addWidget(menu_button);
-
-  main_layout->addLayout(title_layout);
-  main_layout->addWidget(view);
+  QObject::connect(menu, &QMenu::aboutToShow, this, &MessagesWidget::menuAboutToShow);
 
   // signals/slots
   QObject::connect(header, &MessageViewHeader::filtersUpdated, model, &MessageListModel::setFilterStrings);
@@ -79,15 +63,6 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
       }
     }
   });
-  QObject::connect(suppress_defined_signals, &QCheckBox::stateChanged, can, &AbstractStream::suppressDefinedSignals);
-  QObject::connect(suppress_add, &QPushButton::clicked, [this]() {
-    size_t cnt = can->suppressHighlighted();
-    updateSuppressedButtons(cnt);
-  });
-  QObject::connect(suppress_clear, &QPushButton::clicked, [this]() {
-    can->clearSuppressed();
-    updateSuppressedButtons(0);
-  });
 
   updateSuppressedButtons(0);
 
@@ -99,6 +74,33 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
     <span style="color:blue;">■ </span> increasing<br />
     <span style="color:red;">■ </span> decreasing
   )"));
+}
+
+QToolBar *MessagesWidget::createToolBar() {
+  QToolBar *toolbar = new QToolBar(this);
+  toolbar->addAction(tr("&Suppress Highlighted"), [this]() {
+    size_t cnt = can->suppressHighlighted();
+    updateSuppressedButtons(cnt);
+  });
+  suppress_clear = toolbar->addAction(tr("&Clear"), [this]() {
+    can->clearSuppressed();
+    updateSuppressedButtons(0);
+  });
+
+  suppress_clear->setToolTip(tr("Clear suppressed ighlighted"));
+  auto suppress_signals = toolbar->addAction(tr("Suppress Signals"),
+                                             can, &AbstractStream::suppressDefinedSignals);
+  suppress_signals->setCheckable(true);
+  suppress_signals->setChecked(settings.suppress_defined_signals);
+
+  QLabel *stretch_label = new QLabel(this);
+  stretch_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  toolbar->addWidget(stretch_label);
+
+  auto view_menu = toolbar->addAction(utils::icon("list-check"), tr("View"));
+  view_menu->setMenu(menu);
+  qobject_cast<QToolButton *>(toolbar->widgetForAction(view_menu))->setPopupMode(QToolButton::InstantPopup);
+  return toolbar;
 }
 
 void MessagesWidget::updateTitle() {

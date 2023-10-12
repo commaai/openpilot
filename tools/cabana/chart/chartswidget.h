@@ -53,8 +53,8 @@ signals:
   void seriesChanged();
 
 private:
-  QSize minimumSizeHint() const override;
   void closeEvent(QCloseEvent *event) override;
+  QSize minimumSizeHint() const override;
   void resizeEvent(QResizeEvent *event) override;
   bool event(QEvent *event) override;
   void alignCharts();
