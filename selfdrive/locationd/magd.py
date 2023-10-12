@@ -108,12 +108,16 @@ class MagCalibrator:
       x0, y0 = self.get_ellipsoid_center(coeffs)
       (l1, l2), theta = self.get_ellipsoid_rotation(coeffs)
       bearing = self.get_calibrated_bearing(x, y, np.array([x0, y0, l1, l2, theta, 0.0]))
-      offset = np.median(bearing - yaw)
+      offset = np.median(self.reset_angle_range(bearing - yaw))
       calibration_params = np.array([x0, y0, l1, l2, theta, offset])
     except np.linalg.LinAlgError as e:
       cloudlog.exception(f"Error computing magnetometer calibration params: {e}")
       calibration_params = np.ones(5) * np.nan
     return calibration_params
+
+  def reset_angle_range(self, angle):
+    # reset angle range to [-pi, pi]
+    return (angle + np.pi) % (2 * np.pi) - np.pi
 
   def get_calibrated_bearing(self, x, y, calibration_params):
     x0, y0, l1, l2, theta, offset = calibration_params
@@ -122,8 +126,8 @@ class MagCalibrator:
     x_new = x * np.cos(theta) + y * np.sin(theta)
     y_new = -x * np.sin(theta) + y * np.cos(theta)
     x_new, y_new = x_new / l1, y_new / l2
-    bearing = np.arctan2(y_new, x_new) - offset
-    bearing = bearing + np.pi * (bearing < -np.pi) - np.pi * (bearing > np.pi)
+    bearing = np.arctan2(y_new, x_new)
+    bearing = self.reset_angle_range(bearing - offset)
     return bearing
 
   def handle_log(self, which, msg):
