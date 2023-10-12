@@ -1,177 +1,164 @@
-#!/usr/bin/env python3
+import asyncio
+import aiortc
+from aiortc.contrib.media import MediaRelay
 
+import abc
 import argparse
 import json
-from typing import Awaitable, Callable, Any
+from typing import Callable, Awaitable, Dict, List, Any
 
-import aiortc
-import av
-import asyncio
-import numpy as np
-
-from cereal import messaging
-from openpilot.common.realtime import DT_MDL, DT_DMON
-from openpilot.tools.bodyteleop.webrtc.client import DataChannelMessenger
-from openpilot.tools.bodyteleop.webrtc.connection import StreamingOffer
-from openpilot.tools.lib.framereader import FrameReader
+from openpilot.tools.bodyteleop.webrtc.common import StreamingOffer, ConnectionProvider
 
 
-class TiciVideoStreamTrack(aiortc.MediaStreamTrack):
-  def __init__(self, camera_type):
-    super().__init__()
-    # override track id to include camera type - client needs that for identification
-    self._id = f"{camera_type}:{self._id}"
-
-
-class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
-  kind = "video"
-  camera_to_sock_mapping = {
-    "driver": "livestreamDriverEncodeData",
-    "wideRoad": "livestreamWideRoadEncodeData",
-    "road": "livestreamRoadEncodeData",
-  }
-
-  def __init__(self, camera_type):
-    assert camera_type in self.camera_to_sock_mapping
-    super().__init__(camera_type)
-
-    self.sock = messaging.sub_sock(self.camera_to_sock_mapping[camera_type], conflate=True)
-    self.dt = DT_MDL
-    self.pts = 0
-
-  async def recv(self):
-    while True:
-      msg = messaging.recv_one_or_none(self.sock)
-      if msg is not None:
-        break
-      await asyncio.sleep(0.005)
-
-    evta = getattr(msg, msg.which())
-    self.last_idx = evta.idx.encodeId
-
-    packet = av.Packet(evta.header + evta.data)
-    packet.time_base = aiortc.mediastreams.VIDEO_TIME_BASE
-    packet.pts = self.pts
-    self.pts += self.dt * aiortc.mediastreams.VIDEO_CLOCK_RATE
-    return packet
-
-
-class FrameReaderVideoStreamTrack(TiciVideoStreamTrack):
-  kind = "video"
-
-  def __init__(self, input_file, dt=DT_MDL, camera_type="driver"):
-    assert camera_type in ["driver", "wideRoad", "road"]
-    super().__init__(camera_type)
-
-    #frame_reader = FrameReader(input_file)
-    #self.frames = [frame_reader.get(i, pix_fmt="rgb24") for i in range(frame_reader.frame_count)]
-    shape = (1280, 720, 3) if camera_type == "driver" else (1920, 1080, 3)
-    self.frames = [np.zeros(shape, dtype=np.uint8) for i in range(1200)]
-    self.frame_count = len(self.frames)
-    self.frame_index = 0
-    self.dt = dt
-    self.pts = 0
-
-  async def recv(self):
-    print("-- sending frame: ", self.frame_index)
-    img = self.frames[self.frame_index]
-
-    new_frame = av.VideoFrame.from_ndarray(img, format="rgb24")
-    new_frame.pts = self.pts
-    new_frame.time_base = aiortc.mediastreams.VIDEO_TIME_BASE
-
-    self.frame_index = (self.frame_index + 1) % self.frame_count
-    self.pts += self.dt * aiortc.mediastreams.VIDEO_CLOCK_RATE
-
-    return new_frame
-
-
-import pyaudio
-from pydub import AudioSegment
-
-
-class AudioInputStreamTrack(aiortc.mediastreams.AudioStreamTrack):
-  def __init__(self, format=pyaudio.paInt16, rate=16000, channels=1, packet_time=0.020, device_index=None):
-    super().__init__()
-
-    self.p = pyaudio.PyAudio()
-    frame_per_buffer = packet_time * rate
-    self.stream = self.p.open(format=format, 
-                              channels=channels, 
-                              rate=rate, 
-                              frames_per_buffer=frame_per_buffer, 
-                              input=True, 
-                              input_device_index=device_index)
-    self.format = format
-    self.rate = rate
-    self.channels = channels
-    self.packet_time = packet_time
-    self.chunk_size = int(rate * packet_time)
-    self.chunk_index = 0
-    self.pts = 0
-
-  async def recv(self):
-    mic_data = self.stream.read(self.chunk_size)
-    mic_sound = AudioSegment(mic_data, sample_width=pyaudio.get_sample_size(self.format), channels=self.channels, frame_rate=self.rate)
-    # create stereo sound?
-    mic_sound = AudioSegment.from_mono_audiosegments(mic_sound, mic_sound)
-    packet = av.Packet(mic_sound.raw_data)
-    # TODO
-    return None
-
-
-class WebRTCStream:
-  def __init__(self, sdb, type, video_codec="video/H264", audio_codec=None):
-    self.offer = aiortc.RTCSessionDescription(sdp=sdb, type=type)
-    self.peer_connection = aiortc.RTCPeerConnection()
-    self.peer_connection.on("datachannel", self._on_datachannel)
-    self.peer_connection.on("connectionstatechange", self._on_connectionstatechange)
-    self.video_tracks = []
-    self.video_codec = video_codec
-    self.audio_tracks = []
-    self.audio_codec = audio_codec
+class WebRTCStreamBuilder:
+  def __init__(self):
+    self.consumed_camera_tracks = set()
+    self.consume_audio = False
+    self.video_producing_tracks = []
+    self.audio_producing_tracks = []
+    self.data_channel = None
     self.message_handler = None
+    self.peer_connection = None
 
+  def add_video_consumer(self, camera_type):
+    assert camera_type in ["driver", "wideRoad", "road"]
+
+    self.consumed_camera_tracks.add(camera_type)
+
+  def add_audio_consumer(self):
+    if self.consume_audio:
+      raise Exception("Only one audio consumer allowed")
+
+    self.consume_audio = True
+
+  def add_video_producer(self, track: aiortc.MediaStreamTrack):
+    assert track.kind == "video"
+    self.video_producing_tracks.append(track)
+
+  def add_audio_producer(self, track: aiortc.MediaStreamTrack):
+    assert track.kind == "audio"
+    self.audio_producing_tracks.append(track)
+
+  # def add_channel(self, message_handler: Callable[[DataChannelMessenger, Any], Awaitable[None]]):
+  #   self.data_channel = DataChannelMessenger()
+  #   self.data_channel.on_message(message_handler)
+
+  def offer(self, connection_provider: Callable[[StreamingOffer], Awaitable[aiortc.RTCSessionDescription]]):
+    return WebRTCOfferStream(connection_provider, self.consumed_camera_tracks, self.consume_audio, self.video_producing_tracks, self.audio_producing_tracks)
+
+  def answer(self, offer: StreamingOffer):
+    return WebRTCAnswerStream(offer, self.consumed_camera_tracks, self.consume_audio, self.video_producing_tracks, self.audio_producing_tracks)
+
+
+class WebRTCBaseStream(abc.ABC):
+  def __init__(self,
+               consumed_camera_types: List[str],
+               consume_audio: bool,
+               video_producer_tracks: List[aiortc.MediaStreamTrack],
+               audio_producer_tracks: List[aiortc.MediaStreamTrack]):
+    self.peer_connection = aiortc.RTCPeerConnection()
+    self.media_relay = MediaRelay()
+    self.expected_incoming_camera_types = consumed_camera_types
+    self.extected_incoming_audio = consume_audio
+    self.incoming_camera_tracks = dict()
+    self.incoming_audio_tracks = []
+    self.outgoing_video_tracks = video_producer_tracks
+    self.outgoing_audio_tracks = audio_producer_tracks
+
+    self.peer_connection.on("connectionstatechange", self._on_connectionstatechange)
+    self.peer_connection.on("datachannel", self._on_incoming_datachannel)
+    self.peer_connection.on("track", self._on_incoming_track)
+
+  def _add_consumer_tracks(self):
+    for _ in self.expected_incoming_camera_types:
+      self.peer_connection.addTransceiver("video", direction="recvonly")
+    if self.extected_incoming_audio:
+      self.peer_connection.addTransceiver("audio", direction="recvonly")
+  
+  def _add_producer_tracks(self):
+    for track in self.outgoing_video_tracks:
+      self.peer_connection.addTrack(track)
+      # force codec?
+    for track in self.outgoing_audio_tracks:
+      self.peer_connection.addTrack(track)
+    
   def _on_connectionstatechange(self):
     print("-- connection state is", self.peer_connection.connectionState)
 
-  def _on_datachannel(self, channel):
-    async def on_message(message):
-      if self.message_handler:
-        await self.message_handler(DataChannelMessenger(channel), message)
+  def _on_incoming_track(self, track):
+    print("-- got track: ", track.kind, track.id)
+    if track.kind == "video":
+      parts = track.id.split(":") # format: "camera_type:camera_id"
+      if len(parts) < 2:
+        return
 
-    channel.on("message", on_message)
+      camera_type = parts[0]
+      if camera_type in self.expected_incoming_camera_types:
+        self.incoming_camera_tracks[camera_type] = track
+    elif track.kind == "audio":
+      if self.expected_incoming_audio:
+        self.incoming_audio_tracks.append(track)
 
-  def _force_codec(self, sender, codec, stream_type):
-    codecs = aiortc.RTCRtpSender.getCapabilities(stream_type).codecs
-    codec = [codec for codec in codecs if codec.mimeType == codec]
-    transceiver = next(t for t in self.peer_connection.getTransceivers() if t.sender == sender)
-    transceiver.setCodecPreferences(codec)
+  def _on_incoming_datachannel(self, channel):
+    print("-- got data channel: ", channel.label)
 
-  def add_video_track(self, track: aiortc.MediaStreamTrack):
-    assert track.kind == "video"
-    self.video_tracks.append(track)
+  def get_incoming_video_track(self, camera_type: str, buffered: bool):
+    assert camera_type in self.incoming_camera_tracks
 
-  def add_audio_track(self, track: aiortc.MediaStreamTrack):
-    assert track.kind == "audio"
-    self.audio_tracks.append(track)
+    track = self.incoming_camera_tracks[camera_type]
+    relay_track = self.media_relay.subscribe(track, buffered=buffered)
+    return relay_track
   
-  def add_message_handler(self, handler: Callable[[DataChannelMessenger, Any], Awaitable[None]]):
-    self.message_handler = handler
+  def get_incoming_audio_track(self, buffered: bool):
+    assert len(self.incoming_audio_tracks) > 0
 
-  async def start_async(self):
+    track = self.incoming_audio_tracks[0]
+    relay_track = self.media_relay.subscribe(track, buffered=buffered)
+    return relay_track
+  
+  @abc.abstractmethod
+  async def start(self):
+    raise NotImplemented()
+
+
+class WebRTCOfferStream(WebRTCBaseStream):
+  def __init__(self, session_provider: ConnectionProvider, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.session_provider = session_provider
+    self._add_producer_tracks()
+
+  async def start(self):
+    self._add_consumer_tracks()
+
+    offer = await self.peer_connection.createOffer()
+    await self.peer_connection.setLocalDescription(offer)
+    actual_offer = self.peer_connection.localDescription
+
+    streaming_offer = StreamingOffer(sdp=actual_offer.sdp, 
+                                           type=actual_offer.type, 
+                                           video=list(self.expected_incoming_camera_types), 
+                                           audio=self.extected_incoming_audio)
+    remote_answer = await self.session_provider(streaming_offer)
+    await self.peer_connection.setRemoteDescription(remote_answer)
+    actual_answer = self.peer_connection.remoteDescription
+    # wait for the tracks to be ready
+    #await self.tracks_ready_event.wait()
+
+    return actual_answer
+
+
+class WebRTCAnswerStream(WebRTCBaseStream):
+  def __init__(self, offer: StreamingOffer, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.offer = offer
+  
+  async def start(self):
     assert self.peer_connection.remoteDescription is None, "Connection already established"
 
     await self.peer_connection.setRemoteDescription(self.offer)
 
-    for video_track in self.video_tracks:
-      video_sender = self.peer_connection.addTrack(video_track)
-      if self.video_codec:
-        self._force_codec(video_sender, self.video_codec, "video")
-    for audio_track in self.audio_tracks:
-      audio_sender = self.peer_connection.addTrack(audio_track)
-      if self.audio_codec:
-        self._force_codec(audio_sender, self.audio_codec, "audio")
+    self._add_consumer_tracks()
+    self._add_producer_tracks()
 
     answer = await self.peer_connection.createAnswer()
     await self.peer_connection.setLocalDescription(answer)
@@ -179,16 +166,24 @@ class WebRTCStream:
 
     return actual_answer
 
+if __name__ == "__main__":
+  from openpilot.tools.bodyteleop.webrtc.tracks import LiveStreamVideoStreamTrack, FrameReaderVideoStreamTrack
+  from openpilot.tools.bodyteleop.webrtc.common import StdioConnectionProvider
 
-if __name__=="__main__":
-  parser = argparse.ArgumentParser(description="WebRTC server")
-  parser.add_argument("--input-video", type=str, required=False, help="Stream from video file instead")
+  parser = argparse.ArgumentParser()
+  subparsers = parser.add_subparsers(dest="command", required=True)
+  offer_parser = subparsers.add_parser("offer")
+  offer_parser.add_argument("cameras", metavar="CAMERA", type=str, nargs="+", default=["driver"], help="Camera types to stream")
+
+  answer_parser = subparsers.add_parser("answer")
+  answer_parser.add_argument("--input-video", type=str, required=False, help="Stream from video file instead")
+  
   args = parser.parse_args()
 
   async def async_input():
     return await asyncio.to_thread(input)
 
-  async def run(args):
+  async def run_answer(args):
     streams = []
     while True:
       print("-- Please enter a JSON from client --")
@@ -205,16 +200,40 @@ if __name__=="__main__":
         video_tracks.append(track)
       audio_tracks = []
 
-      stream = WebRTCStream(offer.sdp, offer.type)
+      stream_builder = WebRTCStreamBuilder()
       for track in video_tracks:
-        stream.add_video_track(track)
+        stream_builder.add_video_producer(track)
       for track in audio_tracks:
-        stream.add_audio_track(track)
-      answer = await stream.start_async()
+        stream_builder.add_audio_producer(track)
+      stream = stream_builder.answer(offer)
+      answer = await stream.start()
       streams.append(stream)
 
       print("-- Please send this JSON to client --")
       print(json.dumps({"sdp": answer.sdp, "type": answer.type}))
-  
+
+  async def run_offer(args):
+    connection_provider = StdioConnectionProvider()
+    stream_builder = WebRTCStreamBuilder()
+    for cam in args.cameras:
+      stream_builder.add_video_consumer(cam)
+    stream = stream_builder.offer(connection_provider)
+    _ = await stream.start()
+
+    # TODO wait for the tracks to be ready using events
+    asyncio.sleep(2)
+    tracks = [stream.get_incoming_video_track(cam, False) for cam in args.cameras]
+    while True:
+      try:
+        frames = await asyncio.gather(*[track.recv() for track in tracks])
+        for key, frame in zip(args.cameras, frames):
+          print("Received frame from", key, frame.shape)
+      except aiortc.mediastreams.MediaStreamError:
+        return
+      print("=====================================")
+
   loop = asyncio.get_event_loop()
-  loop.run_until_complete(run(args))
+  if args.command == "offer":
+    loop.run_until_complete(run_offer(args))
+  elif args.command == "answer":
+    loop.run_until_complete(run_answer(args))
