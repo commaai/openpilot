@@ -60,7 +60,7 @@ void ChartView::createToolButtons() {
   move_icon = new QGraphicsPixmapItem(utils::icon("grip-horizontal"), chart());
   move_icon->setToolTip(tr("Drag and drop to move chart"));
 
-  QToolButton *remove_btn = new ToolButton("x", tr("Remove Chart"));
+  QToolButton *remove_btn = new ToolButton("x", tr("Close Chart"));
   close_btn_proxy = scene()->addWidget(remove_btn);
   close_btn_proxy->setZValue(chart()->zValue() + 11);
 

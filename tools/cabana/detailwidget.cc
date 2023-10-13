@@ -33,7 +33,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   title_layout->addWidget(name_label);
   auto edit_btn = new ToolButton("pencil", tr("Edit Message"));
   title_layout->addWidget(edit_btn);
-  remove_btn = new ToolButton("x-lg", tr("Remove Message"));
+  remove_btn = new ToolButton("trash", tr("Delete Message"));
   title_layout->addWidget(remove_btn);
   main_layout->addLayout(title_layout);
 

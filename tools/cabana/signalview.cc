@@ -521,7 +521,7 @@ void SignalView::rowsChanged() {
       h->setContentsMargins(0, v_margin, -h_margin, v_margin);
       h->setSpacing(style()->pixelMetric(QStyle::PM_ToolBarItemSpacing));
 
-      auto remove_btn = new ToolButton("x", tr("Remove signal"));
+      auto remove_btn = new ToolButton("trash", tr("Delete Signal"));
       auto plot_btn = new ToolButton("graph-up", "");
       plot_btn->setCheckable(true);
       h->addWidget(plot_btn);
@@ -568,7 +568,7 @@ void SignalView::updateChartState() {
     auto buttons = tree->indexWidget(model->index(i, 1))->findChildren<QToolButton *>();
     if (buttons.size() > 0) {
       buttons[0]->setChecked(chart_opened);
-      buttons[0]->setToolTip(chart_opened ? tr("Close Plot") : tr("Show Plot\nSHIFT click to add to previous opened plot"));
+      buttons[0]->setToolTip(chart_opened ? tr("Close Chart") : tr("Show Chart\nSHIFT click to add to previous opened chart"));
     }
   }
 }

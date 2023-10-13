@@ -34,16 +34,16 @@ MessagesWidget::MessagesWidget(QWidget *parent) : menu(new QMenu(this)), QWidget
 
   // Must be called before setting any header parameters to avoid overriding
   restoreHeaderState(settings.message_header_state);
-  view->header()->setSectionsMovable(true);
-  view->header()->setSectionResizeMode(MessageListModel::Column::DATA, QHeaderView::Fixed);
-  view->header()->setStretchLastSection(true);
+  header->setSectionsMovable(true);
+  header->setSectionResizeMode(MessageListModel::Column::DATA, QHeaderView::Fixed);
+  header->setStretchLastSection(true);
   // Header context menu
-  view->header()->setContextMenuPolicy(Qt::CustomContextMenu);
-  QObject::connect(view->header(), &QHeaderView::customContextMenuRequested, this, &MessagesWidget::headerContextMenuEvent);
-  QObject::connect(menu, &QMenu::aboutToShow, this, &MessagesWidget::menuAboutToShow);
+  header->setContextMenuPolicy(Qt::CustomContextMenu);
 
   // signals/slots
+  QObject::connect(menu, &QMenu::aboutToShow, this, &MessagesWidget::menuAboutToShow);
   QObject::connect(header, &MessageViewHeader::filtersUpdated, model, &MessageListModel::setFilterStrings);
+  QObject::connect(header, &MessageViewHeader::customContextMenuRequested, this, &MessagesWidget::headerContextMenuEvent);
   QObject::connect(view->horizontalScrollBar(), &QScrollBar::valueChanged, header, &MessageViewHeader::updateHeaderPositions);
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
   QObject::connect(dbc(), &DBCManager::changed, model, &MessageListModel::dbcModified);
@@ -78,6 +78,9 @@ MessagesWidget::MessagesWidget(QWidget *parent) : menu(new QMenu(this)), QWidget
 
 QToolBar *MessagesWidget::createToolBar() {
   QToolBar *toolbar = new QToolBar(this);
+  int icon_size = style()->pixelMetric(QStyle::PM_SmallIconSize);
+  toolbar->setIconSize({icon_size, icon_size});
+
   toolbar->addAction(tr("&Suppress Highlighted"), [this]() {
     size_t cnt = can->suppressHighlighted();
     updateSuppressedButtons(cnt);
@@ -97,7 +100,7 @@ QToolBar *MessagesWidget::createToolBar() {
   stretch_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   toolbar->addWidget(stretch_label);
 
-  auto view_menu = toolbar->addAction(utils::icon("list-check"), tr("View"));
+  auto view_menu = toolbar->addAction(utils::icon("three-dots"), tr("View..."));
   view_menu->setMenu(menu);
   qobject_cast<QToolButton *>(toolbar->widgetForAction(view_menu))->setPopupMode(QToolButton::InstantPopup);
   return toolbar;

@@ -34,7 +34,7 @@ void EditMsgCommand::redo() {
 RemoveMsgCommand::RemoveMsgCommand(const MessageId &id, QUndoCommand *parent) : id(id), QUndoCommand(parent) {
   if (auto msg = dbc()->msg(id)) {
     message = *msg;
-    setText(QObject::tr("remove message %1:%2").arg(message.name).arg(id.address));
+    setText(QObject::tr("Delete message %1:%2").arg(message.name).arg(id.address));
   }
 }
 
@@ -85,7 +85,7 @@ RemoveSigCommand::RemoveSigCommand(const MessageId &id, const cabana::Signal *si
       }
     }
   }
-  setText(QObject::tr("remove signal %1 from %2:%3").arg(sig->name).arg(msgName(id)).arg(id.address));
+  setText(QObject::tr("Delete signal %1 from %2:%3").arg(sig->name).arg(msgName(id)).arg(id.address));
 }
 
 void RemoveSigCommand::undo() { for (const auto &s : sigs) dbc()->addSignal(id, s); }
