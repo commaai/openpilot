@@ -42,12 +42,12 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
   modelV2.navEnabled = nav_enabled
 
   # plan
-  fill_xyzt(modelV2.position, T_IDXS, net_output_data['plan'][0,0], net_output_data['plan'][0,1], net_output_data['plan'][0,2],
-    net_output_data['plan_stds'][0,0], net_output_data['plan_stds'][0,1], net_output_data['plan_stds'][0,2])
-  fill_xyzt(modelV2.velocity, T_IDXS, net_output_data['plan'][0,3], net_output_data['plan'][0,4], net_output_data['plan'][0,5])
-  fill_xyzt(modelV2.acceleration, T_IDXS, net_output_data['plan'][0,6], net_output_data['plan'][0,7], net_output_data['plan'][0,9])
-  fill_xyzt(modelV2.orientation, T_IDXS, net_output_data['plan'][0,10], net_output_data['plan'][0,11], net_output_data['plan'][0,12])
-  fill_xyzt(modelV2.orientationRate, T_IDXS, net_output_data['plan'][0,13], net_output_data['plan'][0,14], net_output_data['plan'][0,15])
+  fill_xyzt(modelV2.position, T_IDXS, net_output_data['plan'][0,:,0], net_output_data['plan'][0,:,1], net_output_data['plan'][0,:,2],
+    net_output_data['plan_stds'][0,:,0], net_output_data['plan_stds'][0,:,1], net_output_data['plan_stds'][0,:,2])
+  fill_xyzt(modelV2.velocity, T_IDXS, net_output_data['plan'][0,:,3], net_output_data['plan'][0,:,4], net_output_data['plan'][0,:,5])
+  fill_xyzt(modelV2.acceleration, T_IDXS, net_output_data['plan'][0,:,6], net_output_data['plan'][0,:,7], net_output_data['plan'][0,:,8])
+  fill_xyzt(modelV2.orientation, T_IDXS, net_output_data['plan'][0,:,9], net_output_data['plan'][0,:,10], net_output_data['plan'][0,:,11])
+  fill_xyzt(modelV2.orientationRate, T_IDXS, net_output_data['plan'][0,:,12], net_output_data['plan'][0,:,13], net_output_data['plan'][0,:,14])
 
   # lane lines
   modelV2.init('laneLines', 4)
