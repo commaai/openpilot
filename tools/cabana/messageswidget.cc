@@ -37,7 +37,6 @@ MessagesWidget::MessagesWidget(QWidget *parent) : menu(new QMenu(this)), QWidget
   header->setSectionsMovable(true);
   header->setSectionResizeMode(MessageListModel::Column::DATA, QHeaderView::Fixed);
   header->setStretchLastSection(true);
-  // Header context menu
   header->setContextMenuPolicy(Qt::CustomContextMenu);
 
   // signals/slots
@@ -85,12 +84,13 @@ QToolBar *MessagesWidget::createToolBar() {
     size_t cnt = can->suppressHighlighted();
     updateSuppressedButtons(cnt);
   });
+
   suppress_clear = toolbar->addAction(tr("&Clear"), [this]() {
     can->clearSuppressed();
     updateSuppressedButtons(0);
   });
-
   suppress_clear->setToolTip(tr("Clear suppressed ighlighted"));
+
   auto suppress_signals = toolbar->addAction(tr("Suppress Signals"),
                                              can, &AbstractStream::suppressDefinedSignals);
   suppress_signals->setCheckable(true);
