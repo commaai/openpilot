@@ -49,7 +49,7 @@ class MagCalibrator:
           cache_CP = msg
         if self.get_restore_key(cache_CP, cache_mc.version) == self.get_restore_key(CP, VERSION):
           if cache_mc.calibrated:
-            self.calibrationParams = cache_mc.calibrationParams
+            self.calibrationParams = np.array(cache_mc.calibrationParams)
           self.point_buckets.load_points(cache_mc.points)
           cloudlog.info("restored magnetometer calibration params from cache")
       except Exception:
