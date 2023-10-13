@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import sys
 import time
+import pickle
 import numpy as np
+import cereal.messaging as messaging
 from pathlib import Path
 from typing import Dict, Optional
 from setproctitle import setproctitle
@@ -13,11 +15,12 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
+from openpilot.selfdrive.modeld.parse_model_outputs import parse_outputs
+from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
 from openpilot.selfdrive.modeld.models.driving_pyx import (
-  PublishState, create_model_msg, create_pose_msg,
-  FEATURE_LEN, HISTORY_BUFFER_LEN, DESIRE_LEN, TRAFFIC_CONVENTION_LEN, NAV_FEATURE_LEN, NAV_INSTRUCTION_LEN,
-  OUTPUT_SIZE, NET_OUTPUT_SIZE, MODEL_FREQ)
+  PublishState, FEATURE_LEN, HISTORY_BUFFER_LEN, DESIRE_LEN, TRAFFIC_CONVENTION_LEN, NAV_FEATURE_LEN, NAV_INSTRUCTION_LEN,
+  NET_OUTPUT_SIZE, MODEL_FREQ)
 
 MODEL_PATHS = {
   ModelRunner.THNEED: Path(__file__).parent / 'models/supercombo.thneed',
@@ -59,8 +62,14 @@ class ModelState:
     for k,v in self.inputs.items():
       self.model.addInput(k, v)
 
+    with open(Path(__file__).parent / 'models/output_slices.pkl', 'rb') as f:
+      self.output_slices = pickle.load(f)
+
+  def slice(self, model_outputs: np.ndarray) -> Dict[str, np.ndarray]:
+    return {k: model_outputs[np.newaxis, v] for k,v in self.output_slices.items()}
+
   def run(self, buf: VisionBuf, wbuf: VisionBuf, transform: np.ndarray, transform_wide: np.ndarray,
-                inputs: Dict[str, np.ndarray], prepare_only: bool) -> Optional[np.ndarray]:
+                inputs: Dict[str, np.ndarray], prepare_only: bool) -> Optional[Dict[str, np.ndarray]]:
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
     inputs['desire'][0] = 0
     self.inputs['desire'][:-DESIRE_LEN] = self.inputs['desire'][DESIRE_LEN:]
@@ -81,9 +90,11 @@ class ModelState:
       return None
 
     self.model.execute()
+    outputs = parse_outputs(self.slice(self.output))
+
     self.inputs['features_buffer'][:-FEATURE_LEN] = self.inputs['features_buffer'][FEATURE_LEN:]
-    self.inputs['features_buffer'][-FEATURE_LEN:] = self.output[OUTPUT_SIZE:OUTPUT_SIZE+FEATURE_LEN]
-    return self.output
+    self.inputs['features_buffer'][-FEATURE_LEN:] = outputs['hidden_state'][0, :]
+    return outputs
 
 
 def main():
@@ -130,7 +141,6 @@ def main():
   frame_id = 0
   last_vipc_frame_id = 0
   run_count = 0
-  # last = 0.0
 
   model_transform_main = np.zeros((3, 3), dtype=np.float32)
   model_transform_extra = np.zeros((3, 3), dtype=np.float32)
@@ -244,13 +254,20 @@ def main():
     model_execution_time = mt2 - mt1
 
     if model_output is not None:
-      pm.send("modelV2", create_model_msg(model_output, state, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio,
-                                          meta_main.timestamp_eof, timestamp_llk, model_execution_time, nav_enabled, live_calib_seen))
-      pm.send("cameraOdometry", create_pose_msg(model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen))
+      modelv2_send = messaging.new_message('modelV2')
+      posenet_send = messaging.new_message('cameraOdometry')
+      fill_model_msg(modelv2_send, model_output, state, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio,
+                      meta_main.timestamp_eof, timestamp_llk, model_execution_time, nav_enabled, live_calib_seen)
 
-    # print("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f" %
-    #   ((mt2 - mt1)*1000, (mt1 - last)*1000, meta_extra.frame_id, frame_id, frame_drop_ratio))
-    # last = mt1
+      fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen)
+      pm.send('modelV2', modelv2_send)
+      pm.send('cameraOdometry', posenet_send)
+      mt3 = time.perf_counter()
+      messaging_time = mt3 - mt2
+
+      print("model_execution_time: %.2fms, messaging_time: %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f" %
+       ((model_execution_time)*1000, (messaging_time)*1000, meta_extra.frame_id, frame_id, frame_drop_ratio))
+
     last_vipc_frame_id = meta_main.frame_id
 
 
