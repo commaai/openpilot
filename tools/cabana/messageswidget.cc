@@ -427,7 +427,5 @@ void MessageViewHeader::updateGeometries() {
 
 QSize MessageViewHeader::sizeHint() const {
   QSize sz = QHeaderView::sizeHint();
-  if (editors[0])
-    sz.setHeight(sz.height() + editors[0]->minimumSizeHint().height() + 1);
-  return sz;
+  return editors[0] ? QSize(sz.width(), sz.height() + editors[0]->height() + 1) : sz;
 }
