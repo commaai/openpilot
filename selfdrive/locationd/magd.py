@@ -100,6 +100,7 @@ class MagCalibrator:
 
   def estimate_calibration_params(self):
     points = self.point_buckets.get_points(FIT_POINTS_TOTAL)
+    calibration_params = np.ones(5) * np.nan
     try:
       x, y, yaw = points[:, 0], points[:, 1], points[:, 2]
       D = np.vstack((x * x, y * y, x * y, x, y, np.ones_like(x))).T
@@ -111,8 +112,9 @@ class MagCalibrator:
       offset = np.median(self.reset_angle_range(bearing - yaw))
       calibration_params = np.array([x0, y0, l1, l2, theta, offset])
     except np.linalg.LinAlgError as e:
+      cloudlog.exception(f"LinAlgError computing magnetometer calibration params: {e}")
+    except Exception as e:
       cloudlog.exception(f"Error computing magnetometer calibration params: {e}")
-      calibration_params = np.ones(5) * np.nan
     return calibration_params
 
   def reset_angle_range(self, angle):
