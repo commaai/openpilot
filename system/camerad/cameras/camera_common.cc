@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstdio>
 #include <chrono>
+#include <future>
 #include <string>
 #include <thread>
 
@@ -121,7 +122,10 @@ bool CameraBuf::acquire() {
   cur_frame_data = camera_bufs_metadata[cur_buf_idx];
   cur_yuv_buf = vipc_server->get_buffer(yuv_type);
   cur_camera_buf = &camera_bufs[cur_buf_idx];
+  return true;
+}
 
+void CameraBuf::sendVipcPackage() {
   double start_time = millis_since_boot();
   cl_event event;
   debayer->queue(q, camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, &event);
@@ -136,8 +140,6 @@ bool CameraBuf::acquire() {
   };
   cur_yuv_buf->set_frame_id(cur_frame_data.frame_id);
   vipc_server->send(cur_yuv_buf, &extra);
-
-  return true;
 }
 
 void CameraBuf::queue(size_t buf_idx) {
@@ -179,6 +181,7 @@ kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b) {
   return kj::mv(frame_image);
 }
 
+// this takes 10ms???
 static kj::Array<capnp::byte> yuv420_to_jpeg(const CameraBuf *b, int thumbnail_width, int thumbnail_height) {
   int downscale = b->cur_yuv_buf->width / thumbnail_width;
   assert(downscale * thumbnail_height == b->cur_yuv_buf->height);
@@ -311,11 +314,16 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
   while (!do_exit) {
     if (!cs->buf.acquire()) continue;
 
+    std::future<void> thumbnail_future;
+    if (cs == &(cameras->road_cam) && cameras->pm && cnt % 100 == 3) {
+      thumbnail_future = std::async(std::launch::async, publish_thumbnail, cameras->pm, &(cs->buf));
+    }
+
+    cs->buf.sendVipcPackage();
     callback(cameras, cs, cnt);
 
-    if (cs == &(cameras->road_cam) && cameras->pm && cnt % 100 == 3) {
-      // this takes 10ms???
-      publish_thumbnail(cameras->pm, &(cs->buf));
+    if (thumbnail_future.valid()) {
+      thumbnail_future.wait();
     }
     ++cnt;
   }
