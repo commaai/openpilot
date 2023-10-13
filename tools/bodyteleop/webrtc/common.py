@@ -15,6 +15,7 @@ class StreamingOffer:
   type: str
   video: List[str]
   audio: bool
+  channel: bool
 
 
 ConnectionProvider = Callable[[StreamingOffer], Awaitable[aiortc.RTCSessionDescription]]

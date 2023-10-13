@@ -16,8 +16,7 @@ class WebRTCStreamBuilder:
     self.consume_audio = False
     self.video_producing_tracks = []
     self.audio_producing_tracks = []
-    self.data_channel = None
-    self.message_handler = None
+    self.data_channel = False
     self.peer_connection = None
 
   def add_video_consumer(self, camera_type):
@@ -26,9 +25,6 @@ class WebRTCStreamBuilder:
     self.consumed_camera_tracks.add(camera_type)
 
   def add_audio_consumer(self):
-    if self.consume_audio:
-      raise Exception("Only one audio consumer allowed")
-
     self.consume_audio = True
 
   def add_video_producer(self, track: aiortc.MediaStreamTrack):
@@ -39,21 +35,35 @@ class WebRTCStreamBuilder:
     assert track.kind == "audio"
     self.audio_producing_tracks.append(track)
 
-  # def add_channel(self, message_handler: Callable[[DataChannelMessenger, Any], Awaitable[None]]):
-  #   self.data_channel = DataChannelMessenger()
-  #   self.data_channel.on_message(message_handler)
+  def add_messaging(self):
+    self.self.data_channel = True
 
-  def offer(self, connection_provider: Callable[[StreamingOffer], Awaitable[aiortc.RTCSessionDescription]]):
-    return WebRTCOfferStream(connection_provider, self.consumed_camera_tracks, self.consume_audio, self.video_producing_tracks, self.audio_producing_tracks)
+  def offer(self, connection_provider: ConnectionProvider):
+    return WebRTCOfferStream(
+      connection_provider, 
+      self.consumed_camera_tracks, 
+      self.consume_audio,
+      self.data_channel, 
+      self.video_producing_tracks,
+      self.audio_producing_tracks
+    )
 
   def answer(self, offer: StreamingOffer):
-    return WebRTCAnswerStream(offer, self.consumed_camera_tracks, self.consume_audio, self.video_producing_tracks, self.audio_producing_tracks)
+    return WebRTCAnswerStream(
+      offer, 
+      self.consumed_camera_tracks, 
+      self.consume_audio, 
+      self.data_channel, 
+      self.video_producing_tracks, 
+      self.audio_producing_tracks
+    )
 
 
 class WebRTCBaseStream(abc.ABC):
   def __init__(self,
                consumed_camera_types: List[str],
                consume_audio: bool,
+               enable_messaging: bool,
                video_producer_tracks: List[aiortc.MediaStreamTrack],
                audio_producer_tracks: List[aiortc.MediaStreamTrack]):
     self.peer_connection = aiortc.RTCPeerConnection()
@@ -64,6 +74,9 @@ class WebRTCBaseStream(abc.ABC):
     self.incoming_audio_tracks = []
     self.outgoing_video_tracks = video_producer_tracks
     self.outgoing_audio_tracks = audio_producer_tracks
+    self.enable_messaging = enable_messaging
+    self.messaging_channel = None
+    self.incoming_message_handlers = []
 
     self.peer_connection.on("connectionstatechange", self._on_connectionstatechange)
     self.peer_connection.on("datachannel", self._on_incoming_datachannel)
@@ -81,7 +94,15 @@ class WebRTCBaseStream(abc.ABC):
       # force codec?
     for track in self.outgoing_audio_tracks:
       self.peer_connection.addTrack(track)
+
+  def _add_messaging_channel(self, channel = None):
+    if not channel:
+      channel = self.peer_connection.createDataChannel("data", ordered=True)
     
+    for handler in self.incoming_message_handlers:
+      channel.on("message", handler)
+    self.messaging_channel = channel
+  
   def _on_connectionstatechange(self):
     print("-- connection state is", self.peer_connection.connectionState)
 
@@ -101,21 +122,41 @@ class WebRTCBaseStream(abc.ABC):
 
   def _on_incoming_datachannel(self, channel):
     print("-- got data channel: ", channel.label)
+    # this only happens on answer stream
+    if channel.label == "data" and self.messaging_channel is None:
+      self._add_messaging_channel(channel)
 
   def get_incoming_video_track(self, camera_type: str, buffered: bool):
-    assert camera_type in self.incoming_camera_tracks
+    assert camera_type in self.incoming_camera_tracks, "Video tracks are not enabled on this stream"
+    assert self.peer_connection is not None, "Stream must be started"
 
     track = self.incoming_camera_tracks[camera_type]
     relay_track = self.media_relay.subscribe(track, buffered=buffered)
     return relay_track
   
   def get_incoming_audio_track(self, buffered: bool):
-    assert len(self.incoming_audio_tracks) > 0
+    assert len(self.incoming_audio_tracks) > 0, "Audio tracks are not enabled on this stream"
+    assert self.peer_connection is not None, "Stream must be started"
 
     track = self.incoming_audio_tracks[0]
     relay_track = self.media_relay.subscribe(track, buffered=buffered)
     return relay_track
   
+  def get_messaging_channel(self):
+    assert self.enable_messaging, "Messaging is not enabled on this stream"
+    assert self.peer_connection is not None, "Stream must be started"
+
+    return self.messaging_channel
+
+  def set_message_handler(self, message_handler: Callable[[aiortc.RTCDataChannel, bytes], Awaitable[None]]):
+    self.incoming_message_handlers.append(message_handler)
+    if self.is_started:
+      self.messaging_channel.on("message", message_handler)
+
+  @property
+  def is_started(self) -> bool:
+    return self.peer_connection is not None
+
   @abc.abstractmethod
   async def start(self):
     raise NotImplemented()
@@ -134,15 +175,23 @@ class WebRTCOfferStream(WebRTCBaseStream):
     await self.peer_connection.setLocalDescription(offer)
     actual_offer = self.peer_connection.localDescription
 
-    streaming_offer = StreamingOffer(sdp=actual_offer.sdp, 
-                                           type=actual_offer.type, 
-                                           video=list(self.expected_incoming_camera_types), 
-                                           audio=self.extected_incoming_audio)
+    if self.enable_messaging:
+      self._add_messaging_channel()
+
+    streaming_offer = StreamingOffer(
+      sdp=actual_offer.sdp, 
+      type=actual_offer.type, 
+      video=list(self.expected_incoming_camera_types), 
+      audio=self.extected_incoming_audio,
+      channel=self.enable_messaging
+    )
     remote_answer = await self.session_provider(streaming_offer)
     await self.peer_connection.setRemoteDescription(remote_answer)
     actual_answer = self.peer_connection.remoteDescription
+    # TODO
     # wait for the tracks to be ready
     #await self.tracks_ready_event.wait()
+    # wait for datachannels to be ready
 
     return actual_answer
 
