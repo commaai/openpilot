@@ -20,3 +20,19 @@ def deep_interp_np(x, xp, fp, axis=None):
     return vals_interp[0]
   else:
     return vals_interp
+
+
+class NPQueue:
+  def __init__(self, maxlen, rowsize):
+    self.maxlen = maxlen
+    self.arr = np.empty((0, rowsize))
+
+  def __len__(self):
+    return len(self.arr)
+
+  def append(self, pt):
+    if len(self.arr) < self.maxlen:
+      self.arr = np.append(self.arr, [pt], axis=0)
+    else:
+      self.arr[:-1] = self.arr[1:]
+      self.arr[-1] = pt
