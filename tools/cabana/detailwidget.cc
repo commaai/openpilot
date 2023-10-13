@@ -201,7 +201,8 @@ EditMessageDialog::EditMessageDialog(const MessageId &msg_id, const QString &tit
     comment_edit->setText(msg->comment);
   }
   validateName(name_edit->text());
-  setFixedWidth(parent->width() * 0.9);
+  setMinimumWidth(500);
+  setFixedHeight(sizeHint().height());
   connect(name_edit, &QLineEdit::textEdited, this, &EditMessageDialog::validateName);
   connect(btn_box, &QDialogButtonBox::accepted, this, &QDialog::accept);
   connect(btn_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
