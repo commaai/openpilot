@@ -44,6 +44,14 @@ def slope2rot(slope):
   return np.array([[cos, -sin], [sin, cos]])
 
 
+class TorqueBuckets(PointBuckets):
+  def add_point(self, x, y):
+    for bound_min, bound_max in self.x_bounds:
+      if (x >= bound_min) and (x < bound_max):
+        self.buckets[(bound_min, bound_max)].append([x, 1.0, y])
+        break
+
+
 class TorqueEstimator:
   def __init__(self, CP, decimated=False):
     self.hist_len = int(HISTORY / DT_MDL)
@@ -126,11 +134,11 @@ class TorqueEstimator:
     self.resets += 1.0
     self.decay = MIN_FILTER_DECAY
     self.raw_points = defaultdict(lambda: deque(maxlen=self.hist_len))
-    self.filtered_points = PointBuckets(x_bounds=STEER_BUCKET_BOUNDS,
-                                        min_points=self.min_bucket_points,
-                                        min_points_total=self.min_points_total,
-                                        points_per_bucket=POINTS_PER_BUCKET,
-                                        rowsize=3)
+    self.filtered_points = TorqueBuckets(x_bounds=STEER_BUCKET_BOUNDS,
+                                         min_points=self.min_bucket_points,
+                                         min_points_total=self.min_points_total,
+                                         points_per_bucket=POINTS_PER_BUCKET,
+                                         rowsize=3)
 
   def estimate_params(self):
     points = self.filtered_points.get_points(self.fit_points)

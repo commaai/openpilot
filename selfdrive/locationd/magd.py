@@ -3,6 +3,7 @@ import os
 import sys
 import signal
 import numpy as np
+from typing import Any, Optional, Tuple, Union
 
 import cereal.messaging as messaging
 from cereal import car, log
@@ -20,25 +21,20 @@ FILTER_DECAY = 0.1
 FILTER_DT = 0.015
 BUCKET_KEYS = [(-np.pi, -np.pi / 2), (-np.pi / 2, 0), (0, np.pi / 2), (np.pi / 2, np.pi)]
 MIN_BUCKET_POINTS = 1000
-NO_OF_BUCKETS = 4
 CALIB_DEFAULTS = np.array([0.0, 0.0, 1.0, 1.0, 0.0, 0.0])
 VERSION = 1  # bump this to invalidate old parameter caches
 
 
 class MagBuckets(PointBuckets):
-  def add_point(self, x, y, yaw):
+  def add_point(self, x: float, y: float, yaw: float) -> None:
     for bound_min, bound_max in self.x_bounds:
       if (yaw >= bound_min) and (yaw < bound_max):
         self.buckets[(bound_min, bound_max)].append([x, y, yaw])
         break
 
-  def load_points(self, points):
-    for x, y, yaw in points:
-      self.add_point(x, y, yaw)
-
 
 class MagCalibrator:
-  def __init__(self, CP):
+  def __init__(self, CP: car.CarParams) -> None:
     self.reset()
 
     # try to restore cached params
@@ -61,26 +57,26 @@ class MagCalibrator:
         params.remove("MagnetometerCarParams")
         params.remove("MagnetometerCalibration")
 
-  def get_restore_key(self, CP, version):
+  def get_restore_key(self, CP: car.CarParams, version: int) -> Tuple[str, int]:
     return (CP.carFingerprint, version)
 
-  def reset(self):
+  def reset(self) -> None:
     self.calibrationParams = CALIB_DEFAULTS
     self.calibrated = False
     self.bearingValid = False
     self.filtered_magnetic = [FirstOrderFilter(0, FILTER_DECAY, FILTER_DT) for _ in range(3)]
-    self.filtered_vals = [0] * 3
+    self.filtered_vals = np.zeros(3)
     self.vego = 0
     self.yaw = 0
     self.yaw_valid = False
     self.point_buckets = MagBuckets(x_bounds=BUCKET_KEYS,
-                                        min_points=[MIN_BUCKET_POINTS] * NO_OF_BUCKETS,
+                                        min_points=[MIN_BUCKET_POINTS] * len(BUCKET_KEYS),
                                         min_points_total=MIN_POINTS_TOTAL,
                                         points_per_bucket=POINTS_PER_BUCKET,
                                         rowsize=3)
     self.past_raw_vals = np.zeros(3)
 
-  def get_ellipsoid_rotation(self, coeffs):
+  def get_ellipsoid_rotation(self, coeffs: np.ndarray) -> Tuple[np.ndarray, float]:
     a, b, c = coeffs[:3]
     M = np.array([
         [2 * a, c],
@@ -91,14 +87,14 @@ class MagCalibrator:
     rotation_angle = np.arctan2(eigenvectors[1, 0], eigenvectors[0, 0])
     return axes_lengths, rotation_angle
 
-  def get_ellipsoid_center(self, coeffs):
+  def get_ellipsoid_center(self, coeffs: np.ndarray) -> np.ndarray:
     a, b, c, d, e = coeffs[:5]
     num = (c**2 / 4) - (a * b)
     x0 = ((b * d / 2) - (c / 2 * e / 2)) / num
     y0 = ((a * e / 2) - (c / 2 * d / 2)) / num
     return np.array([x0, y0])
 
-  def estimate_calibration_params(self):
+  def estimate_calibration_params(self) -> np.ndarray:
     points = self.point_buckets.get_points(FIT_POINTS_TOTAL)
     calibration_params = np.ones(5) * np.nan
     try:
@@ -117,11 +113,11 @@ class MagCalibrator:
       cloudlog.exception(f"Error computing magnetometer calibration params: {e}")
     return calibration_params
 
-  def reset_angle_range(self, angle):
+  def reset_angle_range(self, angle: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     # reset angle range to [-pi, pi]
     return (angle + np.pi) % (2 * np.pi) - np.pi
 
-  def get_calibrated_bearing(self, x, y, calibration_params):
+  def get_calibrated_bearing(self, x: Union[float, np.ndarray], y: Union[float, np.ndarray], calibration_params: np.ndarray) -> Any:
     x0, y0, l1, l2, theta, offset = calibration_params
     x = x - x0
     y = y - y0
@@ -132,7 +128,7 @@ class MagCalibrator:
     bearing = self.reset_angle_range(bearing - offset)
     return bearing
 
-  def handle_log(self, which, msg):
+  def handle_log(self, which: str, msg: log.Event) -> None:
     if which == "carState":
       self.vego = msg.vEgo
     elif which == "liveLocationKalman":
@@ -148,7 +144,7 @@ class MagCalibrator:
           self.point_buckets.add_point(self.filtered_vals[0], self.filtered_vals[2], self.yaw)
         self.past_raw_vals = self.raw_vals
 
-  def get_msg(self, valid=True, with_points=False):
+  def get_msg(self, valid: bool = True, with_points: bool = False) -> log.Event:
     msg = messaging.new_message('magnetometerCalibration')
     msg.valid = valid
     magnetometerCalibration = msg.magnetometerCalibration
@@ -168,7 +164,7 @@ class MagCalibrator:
       magnetometerCalibration.points = self.point_buckets.get_points().tolist()
     return msg
 
-  def compute_calibration_params(self):
+  def compute_calibration_params(self) -> None:
     if self.point_buckets.is_valid():
       calibration_params = self.estimate_calibration_params()
       if any(np.isnan(calibration_params)):
@@ -179,7 +175,7 @@ class MagCalibrator:
         self.calibrated = True
 
 
-def main(sm=None, pm=None):
+def main(sm: Optional[messaging.SubMaster] = None, pm: Optional[messaging.PubMaster] = None):
   config_realtime_process([0, 1, 2, 3], 5)
 
   if sm is None:
