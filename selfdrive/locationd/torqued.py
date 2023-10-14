@@ -12,6 +12,7 @@ from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
+from openpilot.selfdrive.locationd.helpers import PointBuckets
 
 HISTORY = 5  # secs
 POINTS_PER_BUCKET = 1500
@@ -43,54 +44,12 @@ def slope2rot(slope):
   return np.array([[cos, -sin], [sin, cos]])
 
 
-class NPQueue:
-  def __init__(self, maxlen, rowsize):
-    self.maxlen = maxlen
-    self.arr = np.empty((0, rowsize))
-
-  def __len__(self):
-    return len(self.arr)
-
-  def append(self, pt):
-    if len(self.arr) < self.maxlen:
-      self.arr = np.append(self.arr, [pt], axis=0)
-    else:
-      self.arr[:-1] = self.arr[1:]
-      self.arr[-1] = pt
-
-
-class PointBuckets:
-  def __init__(self, x_bounds, min_points, min_points_total):
-    self.x_bounds = x_bounds
-    self.buckets = {bounds: NPQueue(maxlen=POINTS_PER_BUCKET, rowsize=3) for bounds in x_bounds}
-    self.buckets_min_points = dict(zip(x_bounds, min_points, strict=True))
-    self.min_points_total = min_points_total
-
-  def bucket_lengths(self):
-    return [len(v) for v in self.buckets.values()]
-
-  def __len__(self):
-    return sum(self.bucket_lengths())
-
-  def is_valid(self):
-    return all(len(v) >= min_pts for v, min_pts in zip(self.buckets.values(), self.buckets_min_points.values(), strict=True)) \
-                                                                                and (self.__len__() >= self.min_points_total)
-
+class TorqueBuckets(PointBuckets):
   def add_point(self, x, y):
     for bound_min, bound_max in self.x_bounds:
       if (x >= bound_min) and (x < bound_max):
         self.buckets[(bound_min, bound_max)].append([x, 1.0, y])
         break
-
-  def get_points(self, num_points=None):
-    points = np.vstack([x.arr for x in self.buckets.values()])
-    if num_points is None:
-      return points
-    return points[np.random.choice(np.arange(len(points)), min(len(points), num_points), replace=False)]
-
-  def load_points(self, points):
-    for x, y in points:
-      self.add_point(x, y)
 
 
 class TorqueEstimator:
@@ -175,7 +134,11 @@ class TorqueEstimator:
     self.resets += 1.0
     self.decay = MIN_FILTER_DECAY
     self.raw_points = defaultdict(lambda: deque(maxlen=self.hist_len))
-    self.filtered_points = PointBuckets(x_bounds=STEER_BUCKET_BOUNDS, min_points=self.min_bucket_points, min_points_total=self.min_points_total)
+    self.filtered_points = TorqueBuckets(x_bounds=STEER_BUCKET_BOUNDS,
+                                         min_points=self.min_bucket_points,
+                                         min_points_total=self.min_points_total,
+                                         points_per_bucket=POINTS_PER_BUCKET,
+                                         rowsize=3)
 
   def estimate_params(self):
     points = self.filtered_points.get_points(self.fit_points)
