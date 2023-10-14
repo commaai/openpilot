@@ -1111,26 +1111,6 @@ FW_VERSIONS = {
       b'\x028646F7605100\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
     ],
   },
-  CAR.LEXUS_GSF: {
-    (Ecu.engine, 0x7E0, None): [
-      b'\x0233075200\x00\x00\x00\x00\x00\x00\x00\x00530B9000\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.abs, 0x7b0, None): [
-      b'F152630700\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.dsu, 0x791, None): [
-      b'881513016200\x00\x00\x00\x00',
-    ],
-    (Ecu.eps, 0x7a1, None): [
-      b'8965B30551\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdRadar, 0x750, 0xf): [
-      b'8821F4702000\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdCamera, 0x750, 0x6d): [
-      b'8646F3002100\x00\x00\x00\x00',
-    ],
-  },
   CAR.HIGHLANDER: {
     (Ecu.engine, 0x700, None): [
       b'\x01896630E09000\x00\x00\x00\x00',
@@ -1898,6 +1878,26 @@ FW_VERSIONS = {
         b'8646F3302001\x00\x00\x00\x00',
         b'8646F3302200\x00\x00\x00\x00',
       ],
+  },
+  CAR.LEXUS_GSF: {
+    (Ecu.engine, 0x7E0, None): [
+      b'\x0233075200\x00\x00\x00\x00\x00\x00\x00\x00530B9000\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.abs, 0x7b0, None): [
+      b'F152630700\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.dsu, 0x791, None): [
+      b'881513016200\x00\x00\x00\x00',
+    ],
+    (Ecu.eps, 0x7a1, None): [
+      b'8965B30551\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x750, 0xf): [
+      b'8821F4702000\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'8646F3002100\x00\x00\x00\x00',
+    ],
   },
   CAR.LEXUS_NX: {
     (Ecu.engine, 0x700, None): [
