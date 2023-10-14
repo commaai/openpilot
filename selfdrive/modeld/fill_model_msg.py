@@ -2,7 +2,7 @@ import capnp
 import numpy as np
 from typing import List, Dict
 from openpilot.selfdrive.modeld.models.driving_pyx import PublishState
-from openpilot.selfdrive.modeld.constants import T_IDXS, X_IDXS, LEAD_T_IDXS, META_T_IDXS, LEAD_T_OFFSETS, Meta
+from openpilot.selfdrive.modeld.constants import T_IDXS, X_IDXS, LEAD_T_IDXS, META_T_IDXS, LEAD_T_OFFSETS, Meta, Plan
 
 # TODO: use Enum Slices when possible instead of hardcoded indices
 
@@ -45,16 +45,15 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
 
   # plan
   position = modelV2.position
-  fill_xyzt(position, T_IDXS, net_output_data['plan'][0,:,0], net_output_data['plan'][0,:,1], net_output_data['plan'][0,:,2],
-    net_output_data['plan_stds'][0,:,0], net_output_data['plan_stds'][0,:,1], net_output_data['plan_stds'][0,:,2])
+  fill_xyzt(position, T_IDXS, *net_output_data['plan'][0,:,Plan.POSITION].T, *net_output_data['plan_stds'][0,:,Plan.POSITION].T)
   velocity = modelV2.velocity
-  fill_xyzt(velocity, T_IDXS, net_output_data['plan'][0,:,3], net_output_data['plan'][0,:,4], net_output_data['plan'][0,:,5])
+  fill_xyzt(velocity, T_IDXS, *net_output_data['plan'][0,:,Plan.VELOCITY].T)
   acceleration = modelV2.acceleration
-  fill_xyzt(acceleration, T_IDXS, net_output_data['plan'][0,:,6], net_output_data['plan'][0,:,7], net_output_data['plan'][0,:,8])
+  fill_xyzt(acceleration, T_IDXS, *net_output_data['plan'][0,:,Plan.ACCELERATION].T)
   orientation = modelV2.orientation
-  fill_xyzt(orientation, T_IDXS, net_output_data['plan'][0,:,9], net_output_data['plan'][0,:,10], net_output_data['plan'][0,:,11])
+  fill_xyzt(orientation, T_IDXS, *net_output_data['plan'][0,:,Plan.T_FROM_CURRENT_EULER].T)
   orientation_rate = modelV2.orientationRate
-  fill_xyzt(orientation_rate, T_IDXS, net_output_data['plan'][0,:,12], net_output_data['plan'][0,:,13], net_output_data['plan'][0,:,14])
+  fill_xyzt(orientation_rate, T_IDXS, *net_output_data['plan'][0,:,Plan.ORIENTATION_RATE].T)
 
   # lane lines
   modelV2.init('laneLines', 4)
@@ -86,8 +85,8 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
 
   # meta
   meta = modelV2.meta
-  meta.desireState = net_output_data['desire_state'][0,:].reshape(-1).tolist()
-  meta.desirePrediction = net_output_data['desire_pred'][0,:].reshape(-1).tolist()
+  meta.desireState = net_output_data['desire_state'][0].reshape(-1).tolist()
+  meta.desirePrediction = net_output_data['desire_pred'][0].reshape(-1).tolist()
   meta.engagedProb = net_output_data['meta'][0,Meta.ENGAGED].item()
   meta.init('disengagePredictions')
   disengage_predictions = meta.disengagePredictions
