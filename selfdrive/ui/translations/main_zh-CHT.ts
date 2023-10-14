@@ -226,8 +226,8 @@
         <translation>關機</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot 需要將設備固定在左右偏差 4° 以內，朝上偏差 5° 以內或朝下偏差 8° 以內。鏡頭在後台會持續自動校準，很少有需要重設的情況。</translation>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
+        <translation>openpilot 需要將設備固定在左右偏差 4° 以內，朝上偏差 5° 以內或朝下偏差 9° 以內。鏡頭在後台會持續自動校準，很少有需要重設的情況。</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
@@ -272,33 +272,6 @@
     <message>
         <source>Review</source>
         <translation>回顧</translation>
-    </message>
-</context>
-<context>
-    <name>DriveStats</name>
-    <message>
-        <source>Drives</source>
-        <translation>旅程</translation>
-    </message>
-    <message>
-        <source>Hours</source>
-        <translation>小時</translation>
-    </message>
-    <message>
-        <source>ALL TIME</source>
-        <translation>總共</translation>
-    </message>
-    <message>
-        <source>PAST WEEK</source>
-        <translation>上週</translation>
-    </message>
-    <message>
-        <source>KM</source>
-        <translation>公里</translation>
-    </message>
-    <message>
-        <source>Miles</source>
-        <translation>英里</translation>
     </message>
 </context>
 <context>
