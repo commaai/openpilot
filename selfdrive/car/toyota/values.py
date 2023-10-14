@@ -2281,7 +2281,7 @@ DBC = {
   CAR.MIRAI: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.ALPHARD_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.ALPHARDH_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.LEXUS_GSF: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
+  CAR.LEXUS_GSF: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
 }
 
 # These cars have non-standard EPS torque scale factors. All others are 73
