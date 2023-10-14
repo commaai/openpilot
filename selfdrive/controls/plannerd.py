@@ -55,8 +55,8 @@ def plannerd_thread():
       longitudinal_planner.publish(sm, pm)
       publish_ui_plan(sm, pm, lateral_planner, longitudinal_planner)
 
-def main(sm=None, pm=None):
-  plannerd_thread(sm, pm)
+def main():
+  plannerd_thread()
 
 
 if __name__ == "__main__":
