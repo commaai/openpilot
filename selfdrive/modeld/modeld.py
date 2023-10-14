@@ -16,10 +16,10 @@ from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
 from openpilot.selfdrive.modeld.parse_model_outputs import parse_outputs
-from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg
+from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
 from openpilot.selfdrive.modeld.models.driving_pyx import (
-  PublishState, FEATURE_LEN, HISTORY_BUFFER_LEN, DESIRE_LEN, TRAFFIC_CONVENTION_LEN, NAV_FEATURE_LEN, NAV_INSTRUCTION_LEN,
+  FEATURE_LEN, HISTORY_BUFFER_LEN, DESIRE_LEN, TRAFFIC_CONVENTION_LEN, NAV_FEATURE_LEN, NAV_INSTRUCTION_LEN,
   NET_OUTPUT_SIZE, MODEL_FREQ)
 
 MODEL_PATHS = {
@@ -133,7 +133,7 @@ def main():
   pm = PubMaster(["modelV2", "cameraOdometry"])
   sm = SubMaster(["lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel", "navInstruction"])
 
-  state = PublishState()
+  publish_state = PublishState()
   params = Params()
 
   # setup filter to track dropped frames
@@ -256,7 +256,7 @@ def main():
     if model_output is not None:
       modelv2_send = messaging.new_message('modelV2')
       posenet_send = messaging.new_message('cameraOdometry')
-      fill_model_msg(modelv2_send, model_output, state, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio,
+      fill_model_msg(modelv2_send, model_output, publish_state, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio,
                       meta_main.timestamp_eof, timestamp_llk, model_execution_time, nav_enabled, live_calib_seen)
 
       fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen)

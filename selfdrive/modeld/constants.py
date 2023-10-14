@@ -1,3 +1,5 @@
+import numpy as np
+
 IDX_N = 33
 
 def index_function(idx, max_val=192, max_idx=32):
@@ -9,6 +11,9 @@ X_IDXS = [index_function(idx, max_val=192.0) for idx in range(IDX_N)]
 LEAD_T_IDXS = [0., 2., 4., 6., 8., 10.]
 LEAD_T_OFFSETS = [0., 2., 4.]
 META_T_IDXS = [2., 4., 6., 8., 10.]
+
+FCW_THRESHOLDS_5MS2 = np.array([.05, .05, .15, .15, .15], dtype=np.float32)
+FCW_THRESHOLDS_3MS2 = np.array([.7, .7], dtype=np.float32)
 
 class Plan:
   POSITION = slice(0, 3)
