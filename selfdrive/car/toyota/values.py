@@ -95,6 +95,7 @@ class CAR(StrEnum):
   LEXUS_RX = "LEXUS RX 2016"
   LEXUS_RXH = "LEXUS RX HYBRID 2017"
   LEXUS_RX_TSS2 = "LEXUS RX 2020"
+  LEXUS_GSF = "LEXUS GSF 2016"
 
 
 class Footnote(Enum):
@@ -1107,6 +1108,26 @@ FW_VERSIONS = {
       b'\x028646F7603100\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
       b'\x028646F7603200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
       b'\x028646F7605100\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
+    ],
+  },
+  CAR.LEXUS_GSF: {
+    (Ecu.engine, 0x7E0, None): [
+      b'\x0233075200\x00\x00\x00\x00\x00\x00\x00\x00530B9000\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.abs, 0x7b0, None): [
+      b'F152630700\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.dsu, 0x791, None): [
+      b'881513016200\x00\x00\x00\x00',
+    ],
+    (Ecu.eps, 0x7a1, None): [
+      b'8965B30551\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x750, 0xf): [
+      b'8821F4702000\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'8646F3002100\x00\x00\x00\x00',
     ],
   },
   CAR.HIGHLANDER: {
