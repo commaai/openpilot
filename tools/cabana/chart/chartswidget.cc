@@ -12,7 +12,7 @@
 #include "tools/cabana/chart/chart.h"
 
 const int MAX_COLUMN_COUNT = 4;
-const int CHART_SPACING = 6;
+const int CHART_SPACING = 4;
 
 ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_timer(this), QFrame(parent) {
   setWindowTitle("Charts");
