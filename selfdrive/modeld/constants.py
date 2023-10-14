@@ -5,15 +5,42 @@ IDX_N = 33
 def index_function(idx, max_val=192, max_idx=32):
   return (max_val) * ((idx/max_idx)**2)
 
-
 T_IDXS = [index_function(idx, max_val=10.0) for idx in range(IDX_N)]
 X_IDXS = [index_function(idx, max_val=192.0) for idx in range(IDX_N)]
 LEAD_T_IDXS = [0., 2., 4., 6., 8., 10.]
 LEAD_T_OFFSETS = [0., 2., 4.]
 META_T_IDXS = [2., 4., 6., 8., 10.]
 
+MODEL_FREQ = 20
+
 FCW_THRESHOLDS_5MS2 = np.array([.05, .05, .15, .15, .15], dtype=np.float32)
 FCW_THRESHOLDS_3MS2 = np.array([.7, .7], dtype=np.float32)
+
+DISENGAGE_WIDTH = 5
+POSE_WIDTH = 6
+SIM_POSE_WIDTH = 6
+LEAD_WIDTH = 4
+LANE_LINES_WIDTH = 2
+ROAD_EDGES_WIDTH = 2
+PLAN_WIDTH = 15
+DESIRE_PRED_WIDTH = 8
+
+NUM_LANE_LINES = 4
+NUM_ROAD_EDGES = 2
+
+LEAD_TRAJ_LEN = 6
+
+PLAN_MHP_N = 5
+LEAD_MHP_N = 2
+PLAN_MHP_SELECTION = 1
+LEAD_MHP_SELECTION = 3
+
+FCW_THRESHOLD_5MS2_HIGH = 0.15
+FCW_THRESHOLD_5MS2_LOW = 0.05
+FCW_THRESHOLD_3MS2 = 0.7
+
+RYG_GREEN = 0.01165
+RYG_YELLOW = 0.06157
 
 class Plan:
   POSITION = slice(0, 3)

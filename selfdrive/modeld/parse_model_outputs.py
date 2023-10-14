@@ -1,28 +1,6 @@
 import numpy as np
 from typing import Dict
-from openpilot.selfdrive.modeld.constants import IDX_N
-
-POSE_WIDTH = 6
-SIM_POSE_WIDTH = 6
-LEAD_WIDTH = 4
-LANE_LINES_WIDTH = 2
-ROAD_EDGES_WIDTH = 2
-PLAN_WIDTH = 15
-DESIRE_PRED_WIDTH = 8
-
-NUM_LANE_LINES = 4
-NUM_ROAD_EDGES = 2
-
-LEAD_TRAJ_LEN = 6
-
-PLAN_MHP_N = 5
-LEAD_MHP_N = 2
-PLAN_MHP_SELECTION = 1
-LEAD_MHP_SELECTION = 3
-
-FCW_THRESHOLD_5MS2_HIGH = 0.15
-FCW_THRESHOLD_5MS2_LOW = 0.05
-FCW_THRESHOLD_3MS2 = 0.7
+from openpilot.selfdrive.modeld.constants import *
 
 def sigmoid(x):
   return 1. / (1. + np.exp(-x))

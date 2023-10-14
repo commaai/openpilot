@@ -1,13 +1,14 @@
 import capnp
 import numpy as np
-from typing import List, Dict
-from openpilot.selfdrive.modeld.constants import T_IDXS, X_IDXS, LEAD_T_IDXS, META_T_IDXS, LEAD_T_OFFSETS, Meta, Plan, FCW_THRESHOLDS_5MS2, FCW_THRESHOLDS_3MS2
+from typing import Dict
+from cereal import log
+from openpilot.selfdrive.modeld.constants import *
 
 class PublishState:
   def __init__(self):
-    self.disengage_buffer = np.zeros(5*5, dtype=np.float32)
-    self.prev_brake_5ms2_probs = np.zeros(5, dtype=np.float32)
-    self.prev_brake_3ms2_probs = np.zeros(3, dtype=np.float32)
+    self.disengage_buffer = np.zeros(DISENGAGE_WIDTH*DISENGAGE_WIDTH, dtype=np.float32)
+    self.prev_brake_5ms2_probs = np.zeros(DISENGAGE_WIDTH, dtype=np.float32)
+    self.prev_brake_3ms2_probs = np.zeros(DISENGAGE_WIDTH, dtype=np.float32)
 
 def fill_xyzt(builder, t, x, y, z, x_std=None, y_std=None, z_std=None):
   builder.t = t
@@ -82,10 +83,6 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
     lead.prob = net_output_data['lead_prob'][0,i].tolist()
     lead.probTime = LEAD_T_OFFSETS[i]
 
-  # confidence
-  # TODO
-  modelV2.confidence = 0
-
   # meta
   meta = modelV2.meta
   meta.desireState = net_output_data['desire_state'][0].reshape(-1).tolist()
@@ -115,6 +112,25 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
   temporal_pose.rot = net_output_data['sim_pose'][0,3:].tolist()
   temporal_pose.rotStd = net_output_data['sim_pose_stds'][0,3:].tolist()
 
+  # confidence
+  if vipc_frame_id % (2*MODEL_FREQ) == 0:
+    # any disengage prob
+    any_disengage_probs = 1-((1-net_output_data['meta'][0,Meta.BRAKE_DISENGAGE])*(1-net_output_data['meta'][0,Meta.GAS_DISENGAGE])*(1-net_output_data['meta'][0,Meta.STEER_OVERRIDE]))
+    # independent disengage prob for each 2s slice
+    ind_disengage_probs = np.zeros(DISENGAGE_WIDTH, dtype=np.float32)
+    ind_disengage_probs[0] = any_disengage_probs[0]
+    ind_disengage_probs[1:] = np.diff(any_disengage_probs) / (1 - any_disengage_probs[:-1])
+    # rolling buf for 2, 4, 6, 8, 10s
+    publish_state.disengage_buffer[:-DISENGAGE_WIDTH] = publish_state.disengage_buffer[DISENGAGE_WIDTH:]
+    publish_state.disengage_buffer[DISENGAGE_WIDTH*(DISENGAGE_WIDTH-1):] = ind_disengage_probs
+
+  score = publish_state.disengage_buffer[DISENGAGE_WIDTH-1:DISENGAGE_WIDTH*DISENGAGE_WIDTH-1:DISENGAGE_WIDTH-1].sum()/DISENGAGE_WIDTH
+  if score < RYG_GREEN:
+    modelV2.confidence = log.ModelDataV2.ConfidenceClass.green
+  elif score < RYG_YELLOW:
+    modelV2.confidence = log.ModelDataV2.ConfidenceClass.yellow
+  else:
+    modelV2.confidence = log.ModelDataV2.ConfidenceClass.red
 
 def fill_pose_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, np.ndarray],
                   vipc_frame_id: int, vipc_dropped_frames: int, timestamp_eof: int, live_calib_seen: bool) -> None:
