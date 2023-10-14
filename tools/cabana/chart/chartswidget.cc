@@ -79,11 +79,12 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
 
   // charts
   charts_container = new ChartsContainer(this);
-
+  charts_container->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
   charts_scroll = new QScrollArea(this);
+  charts_scroll->viewport()->setBackgroundRole(QPalette::Base);
   charts_scroll->setFrameStyle(QFrame::NoFrame);
-  charts_scroll->setWidgetResizable(true);
   charts_scroll->setWidget(charts_container);
+  charts_scroll->setWidgetResizable(true);
   charts_scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   main_layout->addWidget(charts_scroll);
 
@@ -482,8 +483,9 @@ bool ChartsWidget::event(QEvent *event) {
 
 ChartsContainer::ChartsContainer(ChartsWidget *parent) : charts_widget(parent), QWidget(parent) {
   setAcceptDrops(true);
+  setBackgroundRole(QPalette::Window);
   QVBoxLayout *charts_main_layout = new QVBoxLayout(this);
-  charts_main_layout->setContentsMargins(0, 10, 0, 0);
+  charts_main_layout->setContentsMargins(0, CHART_SPACING, 0, CHART_SPACING);
   charts_layout = new QGridLayout();
   charts_layout->setSpacing(CHART_SPACING);
   charts_main_layout->addLayout(charts_layout);
