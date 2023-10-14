@@ -2,7 +2,9 @@ import capnp
 import numpy as np
 from typing import List, Dict
 from openpilot.selfdrive.modeld.models.driving_pyx import PublishState
-from openpilot.selfdrive.modeld.constants import T_IDXS, X_IDXS, LEAD_T_IDXS, META_T_IDXS, LEAD_T_OFFSETS
+from openpilot.selfdrive.modeld.constants import T_IDXS, X_IDXS, LEAD_T_IDXS, META_T_IDXS, LEAD_T_OFFSETS, Meta
+
+# TODO: use Enum Slices when possible instead of hardcoded indices
 
 def fill_xyzt(builder, t, x, y, z, x_std=None, y_std=None, z_std=None):
   builder.t = t
@@ -42,57 +44,69 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
   modelV2.navEnabled = nav_enabled
 
   # plan
-  fill_xyzt(modelV2.position, T_IDXS, net_output_data['plan'][0,:,0], net_output_data['plan'][0,:,1], net_output_data['plan'][0,:,2],
+  position = modelV2.position
+  fill_xyzt(position, T_IDXS, net_output_data['plan'][0,:,0], net_output_data['plan'][0,:,1], net_output_data['plan'][0,:,2],
     net_output_data['plan_stds'][0,:,0], net_output_data['plan_stds'][0,:,1], net_output_data['plan_stds'][0,:,2])
-  fill_xyzt(modelV2.velocity, T_IDXS, net_output_data['plan'][0,:,3], net_output_data['plan'][0,:,4], net_output_data['plan'][0,:,5])
-  fill_xyzt(modelV2.acceleration, T_IDXS, net_output_data['plan'][0,:,6], net_output_data['plan'][0,:,7], net_output_data['plan'][0,:,8])
-  fill_xyzt(modelV2.orientation, T_IDXS, net_output_data['plan'][0,:,9], net_output_data['plan'][0,:,10], net_output_data['plan'][0,:,11])
-  fill_xyzt(modelV2.orientationRate, T_IDXS, net_output_data['plan'][0,:,12], net_output_data['plan'][0,:,13], net_output_data['plan'][0,:,14])
+  velocity = modelV2.velocity
+  fill_xyzt(velocity, T_IDXS, net_output_data['plan'][0,:,3], net_output_data['plan'][0,:,4], net_output_data['plan'][0,:,5])
+  acceleration = modelV2.acceleration
+  fill_xyzt(acceleration, T_IDXS, net_output_data['plan'][0,:,6], net_output_data['plan'][0,:,7], net_output_data['plan'][0,:,8])
+  orientation = modelV2.orientation
+  fill_xyzt(orientation, T_IDXS, net_output_data['plan'][0,:,9], net_output_data['plan'][0,:,10], net_output_data['plan'][0,:,11])
+  orientation_rate = modelV2.orientationRate
+  fill_xyzt(orientation_rate, T_IDXS, net_output_data['plan'][0,:,12], net_output_data['plan'][0,:,13], net_output_data['plan'][0,:,14])
 
   # lane lines
   modelV2.init('laneLines', 4)
   for i in range(4):
-    fill_xyzt(modelV2.laneLines[i], T_IDXS, np.array(X_IDXS), net_output_data['lane_lines'][0,i,:,0], net_output_data['lane_lines'][0,i,:,1])
+    lane_line = modelV2.laneLines[i]
+    fill_xyzt(lane_line, T_IDXS, np.array(X_IDXS), net_output_data['lane_lines'][0,i,:,0], net_output_data['lane_lines'][0,i,:,1])
   modelV2.laneLineStds = net_output_data['lane_lines_stds'][0,:,0,0].tolist()
   modelV2.laneLineProbs = net_output_data['lane_lines_prob'][0,1::2].tolist()
 
   # road edges
   modelV2.init('roadEdges', 2)
   for i in range(2):
-    fill_xyzt(modelV2.roadEdges[i], T_IDXS, np.array(X_IDXS), net_output_data['road_edges'][0,i,:,0], net_output_data['road_edges'][0,i,:,1])
+    road_edge = modelV2.roadEdges[i]
+    fill_xyzt(road_edge, T_IDXS, np.array(X_IDXS), net_output_data['road_edges'][0,i,:,0], net_output_data['road_edges'][0,i,:,1])
   modelV2.roadEdgeStds = net_output_data['road_edges_stds'][0,:,0,0].tolist()
 
   # leads
   modelV2.init('leadsV3', 3)
   for i in range(3):
-    fill_xyvat(modelV2.leadsV3[i], LEAD_T_IDXS, net_output_data['lead'][0,i,:,0], net_output_data['lead'][0,i,:,1], net_output_data['lead'][0,i,:,2], net_output_data['lead'][0,i,:,3],
+    lead = modelV2.leadsV3[i]
+    fill_xyvat(lead, LEAD_T_IDXS, net_output_data['lead'][0,i,:,0], net_output_data['lead'][0,i,:,1], net_output_data['lead'][0,i,:,2], net_output_data['lead'][0,i,:,3],
       net_output_data['lead_stds'][0,i,:,0], net_output_data['lead_stds'][0,i,:,1], net_output_data['lead_stds'][0,i,:,2], net_output_data['lead_stds'][0,i,:,3])
-    modelV2.leadsV3[i].prob = net_output_data['lead_prob'][0,i].tolist()
-    modelV2.leadsV3[i].probTime = LEAD_T_OFFSETS[i]
+    lead.prob = net_output_data['lead_prob'][0,i].tolist()
+    lead.probTime = LEAD_T_OFFSETS[i]
 
   # confidence
   # TODO
   modelV2.confidence = 0
 
   # meta
-  # TODO
-  modelV2.meta.engagedProb = 0.
-  modelV2.meta.hardBrakePredicted = False
-  modelV2.meta.init('disengagePredictions')
-  modelV2.meta.disengagePredictions.t = META_T_IDXS
-  modelV2.meta.disengagePredictions.brakeDisengageProbs = np.zeros(5, dtype=np.float32).tolist()
-  modelV2.meta.disengagePredictions.gasDisengageProbs = np.zeros(5, dtype=np.float32).tolist()
-  modelV2.meta.disengagePredictions.steerOverrideProbs = np.zeros(5, dtype=np.float32).tolist()
-  modelV2.meta.disengagePredictions.brake3MetersPerSecondSquaredProbs = np.zeros(5, dtype=np.float32).tolist()
-  modelV2.meta.disengagePredictions.brake4MetersPerSecondSquaredProbs = np.zeros(5, dtype=np.float32).tolist()
-  modelV2.meta.disengagePredictions.brake5MetersPerSecondSquaredProbs = np.zeros(5, dtype=np.float32).tolist()
-  modelV2.meta.desirePrediction = np.zeros(4*8, dtype=np.float32).tolist()
+  meta = modelV2.meta
+  meta.desireState = net_output_data['desire_state'][0,:].reshape(-1).tolist()
+  meta.desirePrediction = net_output_data['desire_pred'][0,:].reshape(-1).tolist()
+  meta.engagedProb = net_output_data['meta'][0,Meta.ENGAGED].item()
+  meta.init('disengagePredictions')
+  disengage_predictions = meta.disengagePredictions
+  disengage_predictions.t = META_T_IDXS
+  disengage_predictions.brakeDisengageProbs = net_output_data['meta'][0,Meta.BRAKE_DISENGAGE].tolist()
+  disengage_predictions.gasDisengageProbs = net_output_data['meta'][0,Meta.GAS_DISENGAGE].tolist()
+  disengage_predictions.steerOverrideProbs = net_output_data['meta'][0,Meta.STEER_OVERRIDE].tolist()
+  disengage_predictions.brake3MetersPerSecondSquaredProbs = net_output_data['meta'][0,Meta.HARD_BRAKE_3].tolist()
+  disengage_predictions.brake4MetersPerSecondSquaredProbs = net_output_data['meta'][0,Meta.HARD_BRAKE_4].tolist()
+  disengage_predictions.brake5MetersPerSecondSquaredProbs =net_output_data['meta'][0,Meta.HARD_BRAKE_5].tolist()
+
+  meta.hardBrakePredicted = False
 
   # temporal pose
-  modelV2.temporalPose.trans = net_output_data['sim_pose'][0,:3].tolist()
-  modelV2.temporalPose.transStd = net_output_data['sim_pose_stds'][0,:3].tolist()
-  modelV2.temporalPose.rot = net_output_data['sim_pose'][0,3:].tolist()
-  modelV2.temporalPose.rotStd = net_output_data['sim_pose_stds'][0,3:].tolist()
+  temporal_pose = modelV2.temporalPose
+  temporal_pose.trans = net_output_data['sim_pose'][0,:3].tolist()
+  temporal_pose.transStd = net_output_data['sim_pose_stds'][0,:3].tolist()
+  temporal_pose.rot = net_output_data['sim_pose'][0,3:].tolist()
+  temporal_pose.rotStd = net_output_data['sim_pose_stds'][0,3:].tolist()
 
 
 def fill_pose_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, np.ndarray],

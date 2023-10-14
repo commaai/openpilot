@@ -8,7 +8,7 @@ LEAD_WIDTH = 4
 LANE_LINES_WIDTH = 2
 ROAD_EDGES_WIDTH = 2
 PLAN_WIDTH = 15
-DESIRE_PRED_WIDTH = 4
+DESIRE_PRED_WIDTH = 8
 
 NUM_LANE_LINES = 4
 NUM_ROAD_EDGES = 2
@@ -109,5 +109,7 @@ def parse_outputs(outs: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
   parse_mdn('lead', outs, in_N=LEAD_MHP_N, out_N=LEAD_MHP_SELECTION, out_shape=(LEAD_TRAJ_LEN,LEAD_WIDTH))
   for k in ['lead_prob', 'lane_lines_prob', 'meta']:
     parse_binary_crossentropy(k, outs)
-  parse_categorical_crossentropy('desire_pred', outs, size=DESIRE_PRED_WIDTH)
+  for k in ['desire_pred', 'desire_state']:
+    parse_categorical_crossentropy(k, outs, size=DESIRE_PRED_WIDTH)
+    parse_categorical_crossentropy(k, outs, size=DESIRE_PRED_WIDTH)
   return outs
