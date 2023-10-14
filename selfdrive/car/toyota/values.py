@@ -95,7 +95,7 @@ class CAR(StrEnum):
   LEXUS_RX = "LEXUS RX 2016"
   LEXUS_RXH = "LEXUS RX HYBRID 2017"
   LEXUS_RX_TSS2 = "LEXUS RX 2020"
-  LEXUS_GSF = "LEXUS GSF 2016"
+  LEXUS_GSF = "LEXUS GSF"
 
 
 class Footnote(Enum):
@@ -186,7 +186,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   ],
   CAR.LEXUS_IS: ToyotaCarInfo("Lexus IS 2017-19"),
   CAR.LEXUS_IS_TSS2: ToyotaCarInfo("Lexus IS 2022-23"),
-  CAR.LEXUS_GSF: ToyotaCarInfo("Lexus GSF 2016"),
+  CAR.LEXUS_GSF: ToyotaCarInfo("Lexus GSF"),
   CAR.LEXUS_NX: [
     ToyotaCarInfo("Lexus NX 2018-19"),
     ToyotaCarInfo("Lexus NX Hybrid 2018-19"),
