@@ -1,6 +1,21 @@
 import numpy as np
 from typing import List, Optional, Tuple, Any
-from openpilot.common.numpy_helpers import NPQueue
+
+
+class NPQueue:
+  def __init__(self, maxlen: int, rowsize: int) -> None:
+    self.maxlen = maxlen
+    self.arr = np.empty((0, rowsize))
+
+  def __len__(self) -> int:
+    return len(self.arr)
+
+  def append(self, pt: List[float]) -> None:
+    if len(self.arr) < self.maxlen:
+      self.arr = np.append(self.arr, [pt], axis=0)
+    else:
+      self.arr[:-1] = self.arr[1:]
+      self.arr[-1] = pt
 
 
 class PointBuckets:
