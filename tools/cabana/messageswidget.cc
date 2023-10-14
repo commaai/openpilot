@@ -102,7 +102,9 @@ QToolBar *MessagesWidget::createToolBar() {
 
   auto view_menu = toolbar->addAction(utils::icon("three-dots"), tr("View..."));
   view_menu->setMenu(menu);
-  qobject_cast<QToolButton *>(toolbar->widgetForAction(view_menu))->setPopupMode(QToolButton::InstantPopup);
+  auto view_button = qobject_cast<QToolButton *>(toolbar->widgetForAction(view_menu));
+  view_button->setPopupMode(QToolButton::InstantPopup);
+  view_button->setStyleSheet("QToolButton::menu-indicator { image: none; }");
   return toolbar;
 }
 
