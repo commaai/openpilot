@@ -246,6 +246,7 @@ selfdrive/locationd/models/gnss_helpers.py
 
 selfdrive/locationd/torqued.py
 selfdrive/locationd/calibrationd.py
+selfdrive/locationd/helpers.py
 
 system/logcatd/.gitignore
 system/logcatd/SConscript

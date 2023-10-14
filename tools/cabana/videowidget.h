@@ -9,8 +9,8 @@
 
 #include <QFuture>
 #include <QLabel>
-#include <QPushButton>
 #include <QSlider>
+#include <QToolButton>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 #include "tools/cabana/streams/abstractstream.h"
@@ -80,8 +80,8 @@ protected:
   double maximum_time = 0;
   QLabel *end_time_label;
   QLabel *time_label;
-  QPushButton *play_btn;
-  QPushButton *skip_to_end_btn = nullptr;
+  QToolButton *play_btn;
+  QToolButton *skip_to_end_btn = nullptr;
   InfoLabel *alert_label;
   Slider *slider;
 };
