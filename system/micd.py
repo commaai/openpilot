@@ -40,9 +40,9 @@ def apply_a_weighting(measurements: np.ndarray) -> np.ndarray:
 
 
 class Mic:
-  def __init__(self, pm):
-    self.pm = pm
+  def __init__(self):
     self.rk = Ratekeeper(RATE)
+    self.pm = messaging.PubMaster(['microphone'])
 
     self.measurements = np.empty(0)
 
@@ -93,11 +93,8 @@ class Mic:
         self.update()
 
 
-def main(pm=None):
-  if pm is None:
-    pm = messaging.PubMaster(['microphone'])
-
-  mic = Mic(pm)
+def main():
+  mic = Mic()
   mic.micd_thread()
 
 

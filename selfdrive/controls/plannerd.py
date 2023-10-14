@@ -27,7 +27,7 @@ def publish_ui_plan(sm, pm, lateral_planner, longitudinal_planner):
   uiPlan.accel = longitudinal_planner.a_desired_trajectory_full.tolist()
   pm.send('uiPlan', ui_send)
 
-def plannerd_thread(sm=None, pm=None):
+def plannerd_thread():
   config_realtime_process(5, Priority.CTRL_LOW)
 
   cloudlog.info("plannerd is waiting for CarParams")
@@ -41,12 +41,9 @@ def plannerd_thread(sm=None, pm=None):
   longitudinal_planner = LongitudinalPlanner(CP)
   lateral_planner = LateralPlanner(CP, debug=debug_mode)
 
-  if sm is None:
-    sm = messaging.SubMaster(['carControl', 'carState', 'controlsState', 'radarState', 'modelV2'],
-                             poll=['radarState', 'modelV2'], ignore_avg_freq=['radarState'])
-
-  if pm is None:
-    pm = messaging.PubMaster(['longitudinalPlan', 'lateralPlan', 'uiPlan'])
+  pm = messaging.PubMaster(['longitudinalPlan', 'lateralPlan', 'uiPlan'])
+  sm = messaging.SubMaster(['carControl', 'carState', 'controlsState', 'radarState', 'modelV2'],
+                           poll=['radarState', 'modelV2'], ignore_avg_freq=['radarState'])
 
   while True:
     sm.update()
@@ -58,8 +55,8 @@ def plannerd_thread(sm=None, pm=None):
       longitudinal_planner.publish(sm, pm)
       publish_ui_plan(sm, pm, lateral_planner, longitudinal_planner)
 
-def main(sm=None, pm=None):
-  plannerd_thread(sm, pm)
+def main():
+  plannerd_thread()
 
 
 if __name__ == "__main__":
