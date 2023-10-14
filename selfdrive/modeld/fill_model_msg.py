@@ -2,7 +2,7 @@ import capnp
 import numpy as np
 from typing import List, Dict
 from openpilot.selfdrive.modeld.models.driving_pyx import PublishState
-from openpilot.selfdrive.modeld.constants import T_IDXS, X_IDXS, lEAD_T_IDXS, META_T_IdXS
+from openpilot.selfdrive.modeld.constants import T_IDXS, X_IDXS, LEAD_T_IDXS, META_T_IDXS, LEAD_T_OFFSETS
 
 def fill_xyzt(builder, t, x, y, z, x_std=None, y_std=None, z_std=None):
   builder.t = t
@@ -63,13 +63,12 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
   modelV2.roadEdgeStds = net_output_data['road_edges_stds'][0,:,0,0].tolist()
 
   # leads
-  modelV2.init('leadsV3', 2)
-  for i in range(2):
-    fill_xyvat(modelV2.leadsV3[i], lEAD_T_IDXS, net_output_data['lead'][0,i,:,0], net_output_data['lead'][0,i,:,1], net_output_data['lead'][0,i,:,2], net_output_data['lead'][0,i,:,3],
+  modelV2.init('leadsV3', 3)
+  for i in range(3):
+    fill_xyvat(modelV2.leadsV3[i], LEAD_T_IDXS, net_output_data['lead'][0,i,:,0], net_output_data['lead'][0,i,:,1], net_output_data['lead'][0,i,:,2], net_output_data['lead'][0,i,:,3],
       net_output_data['lead_stds'][0,i,:,0], net_output_data['lead_stds'][0,i,:,1], net_output_data['lead_stds'][0,i,:,2], net_output_data['lead_stds'][0,i,:,3])
-
-  # leads probs
-  # TODO
+    modelV2.leadsV3[i].prob = net_output_data['lead_prob'][0,i].tolist()
+    modelV2.leadsV3[i].probTime = LEAD_T_OFFSETS[i]
 
   # confidence
   # TODO
@@ -80,7 +79,7 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
   modelV2.meta.engagedProb = 0.
   modelV2.meta.hardBrakePredicted = False
   modelV2.meta.init('disengagePredictions')
-  modelV2.meta.disengagePredictions.t = META_T_IdXS
+  modelV2.meta.disengagePredictions.t = META_T_IDXS
   modelV2.meta.disengagePredictions.brakeDisengageProbs = np.zeros(5, dtype=np.float32).tolist()
   modelV2.meta.disengagePredictions.gasDisengageProbs = np.zeros(5, dtype=np.float32).tolist()
   modelV2.meta.disengagePredictions.steerOverrideProbs = np.zeros(5, dtype=np.float32).tolist()
