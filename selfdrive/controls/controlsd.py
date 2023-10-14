@@ -56,7 +56,7 @@ ENABLED_STATES = (State.preEnabled, *ACTIVE_STATES)
 
 
 class Controls:
-  def __init__(self, sm=None, pm=None, can_sock=None, CI=None):
+  def __init__(self):
     config_realtime_process(4, Priority.CTRL_HIGH)
 
     # Ensure the current branch is cached, otherwise the first iteration of controlsd lags
@@ -80,26 +80,22 @@ class Controls:
 
     self.params = Params()
     self.sm = sm
-    if self.sm is None:
-      ignore = self.sensor_packets + ['testJoystick']
-      if SIMULATION:
-        ignore += ['driverCameraState', 'managerState']
-      self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
-                                     'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
-                                     'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
-                                     'testJoystick'] + self.camera_packets + self.sensor_packets,
-                                    ignore_alive=ignore, ignore_avg_freq=['radarState', 'testJoystick'])
+    ignore = self.sensor_packets + ['testJoystick']
+    if SIMULATION:
+      ignore += ['driverCameraState', 'managerState']
+    self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
+                                   'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
+                                   'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
+                                   'testJoystick'] + self.camera_packets + self.sensor_packets,
+                                  ignore_alive=ignore, ignore_avg_freq=['radarState', 'testJoystick'])
 
-    if CI is None:
-      # wait for one pandaState and one CAN packet
-      print("Waiting for CAN messages...")
-      get_one_can(self.can_sock)
+    # wait for one pandaState and one CAN packet
+    print("Waiting for CAN messages...")
+    get_one_can(self.can_sock)
 
-      num_pandas = len(messaging.recv_one_retry(self.sm.sock['pandaStates']).pandaStates)
-      experimental_long_allowed = self.params.get_bool("ExperimentalLongitudinalEnabled") and not is_release_branch()
-      self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], experimental_long_allowed, num_pandas)
-    else:
-      self.CI, self.CP = CI, CI.CP
+    num_pandas = len(messaging.recv_one_retry(self.sm.sock['pandaStates']).pandaStates)
+    experimental_long_allowed = self.params.get_bool("ExperimentalLongitudinalEnabled") and not is_release_branch()
+    self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], experimental_long_allowed, num_pandas)
 
     self.joystick_mode = self.params.get_bool("JoystickDebugMode") or self.CP.notCar
 
@@ -879,8 +875,8 @@ class Controls:
       self.prof.display()
 
 
-def main(sm=None, pm=None, logcan=None):
-  controls = Controls(sm, pm, logcan)
+def main():
+  controls = Controls()
   controls.controlsd_thread()
 
 
