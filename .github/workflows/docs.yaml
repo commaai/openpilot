@@ -26,10 +26,10 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    #- uses: ./.github/workflows/setup-with-retry
-    #- name: Build docs
-    #  run: |
-    #    ${{ env.RUN }} "apt update && apt install -y doxygen && cd docs && make html"
+    - uses: ./.github/workflows/setup-with-retry
+    - name: Build docs
+      run: |
+        ${{ env.RUN }} "apt update && apt install -y doxygen && cd docs && make html"
 
     # TODO: not on forks
     - uses: actions/checkout@v4
@@ -45,17 +45,13 @@ jobs:
         source release/identity.sh
 
         cd openpilot-docs
-        git checkout --orphan gh-pages
 
+        git checkout --orphan gh-pages
         git rm -rf --cached .
 
-        #cp -r ../build/docs/html/ docs/
         touch .nojekyll
-        #git add -f .nojekyll docs/
+        cp -r ../build/docs/html/ docs/
         git add -f .
 
         git commit -m "build docs"
-
-        export GIT_LFS_SKIP_PUSH=1
-        #git config --unset-all http.https://github.com/.extraheader
         git push -f origin gh-pages
