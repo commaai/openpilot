@@ -121,7 +121,7 @@ int write_encoder_msg(RemoteEncoder &re, LoggerdState *s, Message *msg) {
         }
         // if we aren't actually recording, don't create the writer
         if (re.encoder_info.record) {
-          assert(encoder_info.filename != NULL);
+          assert(re.encoder_info.filename != NULL);
           re.writer.reset(new VideoWriter(s->segment_path,
             re.encoder_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
             re.encoder_info.frame_width, re.encoder_info.frame_height, re.encoder_info.fps, idx.getType()));
