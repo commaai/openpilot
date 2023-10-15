@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
+from typing import Any
+
 from opendbc.can.parser import CANParser
 from cereal import car
 from openpilot.selfdrive.car.toyota.values import DBC, TSS2_CAR
 from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 
+NoImplicitAny = Any | Any
 
-def _create_radar_can_parser(car_fingerprint):
+def _create_radar_can_parser(car_fingerprint) -> NoImplicitAny:
   if car_fingerprint in TSS2_CAR:
     RADAR_A_MSGS = list(range(0x180, 0x190))
     RADAR_B_MSGS = list(range(0x190, 0x1a0))
@@ -38,7 +41,7 @@ class RadarInterface(RadarInterfaceBase):
     self.trigger_msg = self.RADAR_B_MSGS[-1]
     self.updated_messages = set()
 
-  def update(self, can_strings):
+  def update(self, can_strings) -> NoImplicitAny:
     if self.rcp is None:
       return super().update(None)
 
@@ -53,7 +56,7 @@ class RadarInterface(RadarInterfaceBase):
 
     return rr
 
-  def _update(self, updated_messages):
+  def _update(self, updated_messages) -> NoImplicitAny:
     ret = car.RadarData.new_message()
     errors = []
     if not self.rcp.can_valid:

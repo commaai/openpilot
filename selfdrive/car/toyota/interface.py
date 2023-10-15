@@ -1,3 +1,5 @@
+from typing import Any
+
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
 from panda import Panda
@@ -8,17 +10,19 @@ from openpilot.selfdrive.car import get_safety_config
 from openpilot.selfdrive.car.disable_ecu import disable_ecu
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
+NoImplicitAny = Any | Any
+
 EventName = car.CarEvent.EventName
 SteerControlType = car.CarParams.SteerControlType
 
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def get_pid_accel_limits(CP, current_speed, cruise_speed):
+  def get_pid_accel_limits(CP, current_speed, cruise_speed) -> NoImplicitAny:
     return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
 
   @staticmethod
-  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs) -> NoImplicitAny:
     ret.carName = "toyota"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.toyota)]
     ret.safetyConfigs[0].safetyParam = EPS_SCALE[candidate]
@@ -277,7 +281,7 @@ class CarInterface(CarInterfaceBase):
       disable_ecu(logcan, sendcan, bus=0, addr=0x750, sub_addr=0xf, com_cont_req=communication_control)
 
   # returns a car.CarState
-  def _update(self, c):
+  def _update(self, c) -> NoImplicitAny:
     ret = self.CS.update(self.cp, self.cp_cam)
 
     # events
@@ -308,5 +312,5 @@ class CarInterface(CarInterfaceBase):
 
   # pass in a car.CarControl
   # to be called @ 100hz
-  def apply(self, c, now_nanos):
+  def apply(self, c, now_nanos) -> NoImplicitAny:
     return self.CC.update(c, self.CS, now_nanos)

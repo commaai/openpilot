@@ -1,4 +1,8 @@
-def create_steer_command(packer, steer, steer_req):
+from typing import Any
+
+NoImplicitAny = Any | Any
+
+def create_steer_command(packer, steer, steer_req) -> NoImplicitAny:
   """Creates a CAN message for the Toyota Steer Command."""
 
   values = {
@@ -9,7 +13,7 @@ def create_steer_command(packer, steer, steer_req):
   return packer.make_can_msg("STEERING_LKA", 0, values)
 
 
-def create_lta_steer_command(packer, steer_angle, steer_req, frame, setme_x64):
+def create_lta_steer_command(packer, steer_angle, steer_req, frame, setme_x64) -> NoImplicitAny:
   """Creates a CAN message for the Toyota LTA Steer Command."""
 
   values = {
@@ -27,7 +31,7 @@ def create_lta_steer_command(packer, steer_angle, steer_req, frame, setme_x64):
   return packer.make_can_msg("STEERING_LTA", 0, values)
 
 
-def create_accel_command(packer, accel, pcm_cancel, standstill_req, lead, acc_type, fcw_alert):
+def create_accel_command(packer, accel, pcm_cancel, standstill_req, lead, acc_type, fcw_alert) -> NoImplicitAny:
   # TODO: find the exact canceling bit that does not create a chime
   values = {
     "ACCEL_CMD": accel,
@@ -43,7 +47,7 @@ def create_accel_command(packer, accel, pcm_cancel, standstill_req, lead, acc_ty
   return packer.make_can_msg("ACC_CONTROL", 0, values)
 
 
-def create_acc_cancel_command(packer):
+def create_acc_cancel_command(packer) -> NoImplicitAny:
   values = {
     "GAS_RELEASED": 0,
     "CRUISE_ACTIVE": 0,
@@ -55,7 +59,7 @@ def create_acc_cancel_command(packer):
   return packer.make_can_msg("PCM_CRUISE", 0, values)
 
 
-def create_fcw_command(packer, fcw):
+def create_fcw_command(packer, fcw) -> NoImplicitAny:
   values = {
     "PCS_INDICATOR": 1,  # PCS turned off
     "FCW": fcw,
@@ -67,7 +71,7 @@ def create_fcw_command(packer, fcw):
   return packer.make_can_msg("PCS_HUD", 0, values)
 
 
-def create_ui_command(packer, steer, chime, left_line, right_line, left_lane_depart, right_lane_depart, enabled, stock_lkas_hud):
+def create_ui_command(packer, steer, chime, left_line, right_line, left_lane_depart, right_lane_depart, enabled, stock_lkas_hud) -> NoImplicitAny:
   values = {
     "TWO_BEEPS": chime,
     "LDA_ALERT": steer,

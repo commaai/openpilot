@@ -1,4 +1,5 @@
 import copy
+from typing import Any
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
@@ -10,6 +11,8 @@ from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.selfdrive.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, \
                                                   TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE, UNSUPPORTED_DSU_CAR
+
+NoImplicitAny = Any | Any
 
 SteerControlType = car.CarParams.SteerControlType
 
@@ -44,7 +47,7 @@ class CarState(CarStateBase):
     self.acc_type = 1
     self.lkas_hud = {}
 
-  def update(self, cp, cp_cam):
+  def update(self, cp, cp_cam) -> NoImplicitAny:
     ret = car.CarState.new_message()
 
     ret.doorOpen = any([cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_FL"], cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_FR"],
@@ -164,7 +167,7 @@ class CarState(CarStateBase):
     return ret
 
   @staticmethod
-  def get_can_parser(CP):
+  def get_can_parser(CP) -> NoImplicitAny:
     messages = [
       ("GEAR_PACKET", 1),
       ("LIGHT_STALK", 1),
@@ -211,7 +214,7 @@ class CarState(CarStateBase):
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
 
   @staticmethod
-  def get_cam_can_parser(CP):
+  def get_cam_can_parser(CP) -> NoImplicitAny:
     messages = []
 
     if CP.carFingerprint != CAR.PRIUS_V:
