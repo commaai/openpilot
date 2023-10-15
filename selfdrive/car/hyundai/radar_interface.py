@@ -1,16 +1,19 @@
 import math
+from typing import Any
 
 from cereal import car
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 from openpilot.selfdrive.car.hyundai.values import DBC
 
+NoImplicitAny = Any | Any
+
 RADAR_START_ADDR = 0x500
 RADAR_MSG_COUNT = 32
 
 # POC for parsing corner radars: https://github.com/commaai/openpilot/pull/24221/
 
-def get_radar_can_parser(CP):
+def get_radar_can_parser(CP) -> NoImplicitAny:
   if DBC[CP.carFingerprint]['radar'] is None:
     return None
 
@@ -28,7 +31,7 @@ class RadarInterface(RadarInterfaceBase):
     self.radar_off_can = CP.radarUnavailable
     self.rcp = get_radar_can_parser(CP)
 
-  def update(self, can_strings):
+  def update(self, can_strings) -> NoImplicitAny:
     if self.radar_off_can or (self.rcp is None):
       return super().update(None)
 
@@ -43,7 +46,7 @@ class RadarInterface(RadarInterfaceBase):
 
     return rr
 
-  def _update(self, updated_messages):
+  def _update(self, updated_messages) -> NoImplicitAny:
     ret = car.RadarData.new_message()
     if self.rcp is None:
       return ret

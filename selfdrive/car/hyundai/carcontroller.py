@@ -1,3 +1,4 @@
+from typing import Any
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import clip
@@ -7,6 +8,9 @@ from openpilot.selfdrive.car import apply_driver_steer_torque_limits, common_fau
 from openpilot.selfdrive.car.hyundai import hyundaicanfd, hyundaican
 from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
 from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CANFD_CAR, CAR
+
+
+NoImplicitAny = Any | Any
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
@@ -18,7 +22,7 @@ MAX_ANGLE_FRAMES = 89
 MAX_ANGLE_CONSECUTIVE_FRAMES = 2
 
 
-def process_hud_alert(enabled, fingerprint, hud_control):
+def process_hud_alert(enabled, fingerprint, hud_control) -> NoImplicitAny:
   sys_warning = (hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw))
 
   # initialize to no line visible
@@ -56,7 +60,7 @@ class CarController:
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
 
-  def update(self, CC, CS, now_nanos):
+  def update(self, CC, CS, now_nanos) -> NoImplicitAny:
     actuators = CC.actuators
     hud_control = CC.hudControl
 
@@ -170,7 +174,7 @@ class CarController:
     self.frame += 1
     return new_actuators, can_sends
 
-  def create_button_messages(self, CC: car.CarControl, CS: car.CarState, use_clu11: bool):
+  def create_button_messages(self, CC: car.CarControl, CS: car.CarState, use_clu11: bool) -> NoImplicitAny:
     can_sends = []
     if use_clu11:
       if CC.cruiseControl.cancel:

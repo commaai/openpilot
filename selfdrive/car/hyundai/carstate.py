@@ -1,6 +1,7 @@
 from collections import deque
 import copy
 import math
+from typing import Any
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
@@ -10,6 +11,9 @@ from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
 from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CAN_GEARS, CAMERA_SCC_CAR, \
                                                    CANFD_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams
 from openpilot.selfdrive.car.interfaces import CarStateBase
+
+
+NoImplicitAny = Any | Any
 
 PREV_BUTTON_SAMPLES = 8
 CLUSTER_SAMPLE_RATE = 20  # frames
@@ -52,7 +56,7 @@ class CarState(CarStateBase):
 
     self.params = CarControllerParams(CP)
 
-  def update(self, cp, cp_cam):
+  def update(self, cp, cp_cam) -> NoImplicitAny:
     if self.CP.carFingerprint in CANFD_CAR:
       return self.update_canfd(cp, cp_cam)
 
@@ -165,7 +169,7 @@ class CarState(CarStateBase):
 
     return ret
 
-  def update_canfd(self, cp, cp_cam):
+  def update_canfd(self, cp, cp_cam) -> NoImplicitAny:
     ret = car.CarState.new_message()
 
     self.is_metric = cp.vl["CRUISE_BUTTONS_ALT"]["DISTANCE_UNIT"] != 1
@@ -247,7 +251,7 @@ class CarState(CarStateBase):
 
     return ret
 
-  def get_can_parser(self, CP):
+  def get_can_parser(self, CP) -> NoImplicitAny:
     if CP.carFingerprint in CANFD_CAR:
       return self.get_can_parser_canfd(CP)
 
@@ -297,7 +301,7 @@ class CarState(CarStateBase):
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
 
   @staticmethod
-  def get_cam_can_parser(CP):
+  def get_cam_can_parser(CP) -> NoImplicitAny:
     if CP.carFingerprint in CANFD_CAR:
       return CarState.get_cam_can_parser_canfd(CP)
 
@@ -316,7 +320,7 @@ class CarState(CarStateBase):
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)
 
-  def get_can_parser_canfd(self, CP):
+  def get_can_parser_canfd(self, CP) -> NoImplicitAny:
     messages = [
       (self.gear_msg_canfd, 100),
       (self.accelerator_msg_canfd, 100),
@@ -352,7 +356,7 @@ class CarState(CarStateBase):
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus(CP).ECAN)
 
   @staticmethod
-  def get_cam_can_parser_canfd(CP):
+  def get_cam_can_parser_canfd(CP) -> NoImplicitAny:
     messages = []
     if CP.flags & HyundaiFlags.CANFD_HDA2:
       block_lfa_msg = "CAM_0x362" if CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING else "CAM_0x2a4"

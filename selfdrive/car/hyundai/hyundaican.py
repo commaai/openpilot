@@ -1,12 +1,15 @@
 import crcmod
+from typing import Any
 from openpilot.selfdrive.car.hyundai.values import CAR, CHECKSUM, CAMERA_SCC_CAR
+
+NoImplicitAny = Any | Any
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
 def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
                   torque_fault, lkas11, sys_warning, sys_state, enabled,
                   left_lane, right_lane,
-                  left_lane_depart, right_lane_depart):
+                  left_lane_depart, right_lane_depart) -> NoImplicitAny:
   values = {s: lkas11[s] for s in [
     "CF_Lkas_LdwsActivemode",
     "CF_Lkas_LdwsSysState",
@@ -95,7 +98,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
   return packer.make_can_msg("LKAS11", 0, values)
 
 
-def create_clu11(packer, frame, clu11, button, car_fingerprint):
+def create_clu11(packer, frame, clu11, button, car_fingerprint) -> NoImplicitAny:
   values = {s: clu11[s] for s in [
     "CF_Clu_CruiseSwState",
     "CF_Clu_CruiseSwMain",
@@ -117,7 +120,7 @@ def create_clu11(packer, frame, clu11, button, car_fingerprint):
   return packer.make_can_msg("CLU11", bus, values)
 
 
-def create_lfahda_mfc(packer, enabled, hda_set_speed=0):
+def create_lfahda_mfc(packer, enabled, hda_set_speed=0) -> NoImplicitAny:
   values = {
     "LFA_Icon_State": 2 if enabled else 0,
     "HDA_Active": 1 if hda_set_speed else 0,
@@ -126,7 +129,7 @@ def create_lfahda_mfc(packer, enabled, hda_set_speed=0):
   }
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
-def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, set_speed, stopping, long_override, use_fca):
+def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, set_speed, stopping, long_override, use_fca) -> NoImplicitAny:
   commands = []
 
   scc11_values = {
@@ -187,7 +190,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
 
   return commands
 
-def create_acc_opt(packer):
+def create_acc_opt(packer) -> NoImplicitAny:
   commands = []
 
   scc13_values = {
@@ -206,7 +209,7 @@ def create_acc_opt(packer):
 
   return commands
 
-def create_frt_radar_opt(packer):
+def create_frt_radar_opt(packer) -> NoImplicitAny:
   frt_radar11_values = {
     "CF_FCA_Equip_Front_Radar": 1,
   }

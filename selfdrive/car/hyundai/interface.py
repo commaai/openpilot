@@ -1,3 +1,5 @@
+from typing import Any
+
 from cereal import car
 from panda import Panda
 from openpilot.common.conversions import Conversions as CV
@@ -10,6 +12,8 @@ from openpilot.selfdrive.car import create_button_events, get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.car.disable_ecu import disable_ecu
 
+NoImplicitAny = Any | Any
+
 Ecu = car.CarParams.Ecu
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -20,7 +24,7 @@ BUTTONS_DICT = {Buttons.RES_ACCEL: ButtonType.accelCruise, Buttons.SET_DECEL: Bu
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs) -> NoImplicitAny:
     ret.carName = "hyundai"
     ret.radarUnavailable = RADAR_START_ADDR not in fingerprint[1] or DBC[ret.carFingerprint]["radar"] is None
 
@@ -333,7 +337,7 @@ class CarInterface(CarInterfaceBase):
     if CP.flags & HyundaiFlags.ENABLE_BLINKERS:
       disable_ecu(logcan, sendcan, bus=CanBus(CP).ECAN, addr=0x7B1, com_cont_req=b'\x28\x83\x01')
 
-  def _update(self, c):
+  def _update(self, c) -> NoImplicitAny:
     ret = self.CS.update(self.cp, self.cp_cam)
 
     if self.CS.CP.openpilotLongitudinalControl:
@@ -357,5 +361,5 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  def apply(self, c, now_nanos):
+  def apply(self, c, now_nanos) -> NoImplicitAny:
     return self.CC.update(c, self.CS, now_nanos)

@@ -1,7 +1,11 @@
+from typing import Any, Dict
+
 from openpilot.common.numpy_fast import clip
 from openpilot.selfdrive.car import CanBusBase
 from openpilot.selfdrive.car.hyundai.values import HyundaiFlags
 
+
+NoImplicitAny = Any | Any
 
 class CanBus(CanBusBase):
   def __init__(self, CP, hda2=None, fingerprint=None) -> None:
@@ -35,9 +39,9 @@ class CanBus(CanBusBase):
     return self._cam
 
 
-def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_steer):
+def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_steer) -> NoImplicitAny:
 
-  ret = []
+  ret = [] # List
 
   values = {
     "LKA_MODE": 2,
@@ -61,7 +65,7 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_steer):
 
   return ret
 
-def create_suppress_lfa(packer, CAN, hda2_lfa_block_msg, hda2_alt_steering):
+def create_suppress_lfa(packer, CAN, hda2_lfa_block_msg, hda2_alt_steering) -> NoImplicitAny:
   suppress_msg = "CAM_0x362" if hda2_alt_steering else "CAM_0x2a4"
   msg_bytes = 32 if hda2_alt_steering else 24
 
@@ -73,7 +77,7 @@ def create_suppress_lfa(packer, CAN, hda2_lfa_block_msg, hda2_alt_steering):
   values["RIGHT_LANE_LINE"] = 0
   return packer.make_can_msg(suppress_msg, CAN.ACAN, values)
 
-def create_buttons(packer, CP, CAN, cnt, btn):
+def create_buttons(packer, CP, CAN, cnt, btn) -> NoImplicitAny:
   values = {
     "COUNTER": cnt,
     "SET_ME_1": 1,
@@ -83,7 +87,7 @@ def create_buttons(packer, CP, CAN, cnt, btn):
   bus = CAN.ECAN if CP.flags & HyundaiFlags.CANFD_HDA2 else CAN.CAM
   return packer.make_can_msg("CRUISE_BUTTONS", bus, values)
 
-def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
+def create_acc_cancel(packer, CP, CAN, cruise_info_copy) -> NoImplicitAny:
   # TODO: why do we copy different values here?
   if CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value:
     values = {s: cruise_info_copy[s] for s in [
@@ -113,7 +117,7 @@ def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
   })
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
 
-def create_lfahda_cluster(packer, CAN, enabled):
+def create_lfahda_cluster(packer, CAN, enabled) -> NoImplicitAny:
   values = {
     "HDA_ICON": 1 if enabled else 0,
     "LFA_ICON": 2 if enabled else 0,
@@ -121,7 +125,7 @@ def create_lfahda_cluster(packer, CAN, enabled):
   return packer.make_can_msg("LFAHDA_CLUSTER", CAN.ECAN, values)
 
 
-def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_override, set_speed):
+def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_override, set_speed) -> NoImplicitAny:
   jerk = 5
   jn = jerk / 50
   if not enabled or gas_override:
@@ -152,10 +156,10 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
 
 
-def create_spas_messages(packer, CAN, frame, left_blink, right_blink):
+def create_spas_messages(packer, CAN, frame, left_blink, right_blink) -> NoImplicitAny:
   ret = []
 
-  values = {
+  values:Dict[str,int] = {
   }
   ret.append(packer.make_can_msg("SPAS1", CAN.ECAN, values))
 
@@ -172,13 +176,13 @@ def create_spas_messages(packer, CAN, frame, left_blink, right_blink):
   return ret
 
 
-def create_adrv_messages(packer, CAN, frame):
+def create_adrv_messages(packer, CAN, frame) -> NoImplicitAny:
   # messages needed to car happy after disabling
   # the ADAS Driving ECU to do longitudinal control
 
   ret = []
 
-  values = {
+  values:Dict[str,int] = {
   }
   ret.append(packer.make_can_msg("ADRV_0x51", CAN.ACAN, values))
 
