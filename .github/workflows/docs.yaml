@@ -49,9 +49,8 @@ jobs:
         git checkout --orphan gh-pages
         git rm -rf --cached .
 
-        touch .nojekyll
-        cp -r ../docs/_static/ .
         cp -r ../build/docs/html/ docs/
+        touch docs/.nojekyll
         git add -f .
 
         git commit -m "build docs"
