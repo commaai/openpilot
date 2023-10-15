@@ -107,6 +107,7 @@ protected:
   MessageBytesDelegate *delegate;
   std::optional<MessageId> current_msg_id;
   MessageListModel *model;
+  QAction *suppress_add;
   QAction *suppress_clear;
   QMenu *menu;
 };

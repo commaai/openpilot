@@ -77,22 +77,22 @@ MessagesWidget::MessagesWidget(QWidget *parent) : menu(new QMenu(this)), QWidget
 
 QToolBar *MessagesWidget::createToolBar() {
   QToolBar *toolbar = new QToolBar(this);
-  int icon_size = style()->pixelMetric(QStyle::PM_SmallIconSize);
-  toolbar->setIconSize({icon_size, icon_size});
+  toolbar->setIconSize({12, 12});
+  toolbar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
-  toolbar->addAction(tr("&Suppress Highlighted"), [this]() {
+  suppress_add =toolbar->addAction(utils::icon("slash-circle"), "", [this]() {
     size_t cnt = can->suppressHighlighted();
     updateSuppressedButtons(cnt);
   });
-
-  suppress_clear = toolbar->addAction(tr("&Clear"), [this]() {
+  suppress_clear = toolbar->addAction(utils::icon("backspace"), tr("Clear"), [this]() {
     can->clearSuppressed();
     updateSuppressedButtons(0);
   });
-  suppress_clear->setToolTip(tr("Clear suppressed ighlighted"));
+  suppress_clear->setToolTip(tr("Clear Suppressed"));
 
-  auto suppress_signals = toolbar->addAction(tr("Suppress Signals"),
+  auto suppress_signals = toolbar->addAction(utils::icon("slash-circle"), tr("Suppress Signals"),
                                              can, &AbstractStream::suppressDefinedSignals);
+  suppress_signals->setToolTip(tr("Suppress Defined Signals"));
   suppress_signals->setCheckable(true);
   suppress_signals->setChecked(settings.suppress_defined_signals);
 
@@ -104,6 +104,7 @@ QToolBar *MessagesWidget::createToolBar() {
   view_menu->setMenu(menu);
   auto view_button = qobject_cast<QToolButton *>(toolbar->widgetForAction(view_menu));
   view_button->setPopupMode(QToolButton::InstantPopup);
+  view_button->setToolButtonStyle(Qt::ToolButtonIconOnly);
   view_button->setStyleSheet("QToolButton::menu-indicator { image: none; }");
   return toolbar;
 }
@@ -127,8 +128,8 @@ void MessagesWidget::selectMessage(const MessageId &msg_id) {
 }
 
 void MessagesWidget::updateSuppressedButtons(size_t n) {
-  suppress_clear->setEnabled(n > 0);
-  suppress_clear->setText(n > 0 ? tr("&Clear (%1)").arg(n) : tr("&Clear"));
+  suppress_clear->setVisible(n > 0);
+  suppress_add->setText(n > 0 ? tr("Suppress Highlighted: %1").arg(n) : tr("Suppress Highlighted"));
 }
 
 void MessagesWidget::headerContextMenuEvent(const QPoint &pos) {
