@@ -24,7 +24,7 @@
 
 // ***** log metadata *****
 kj::Array<capnp::word> logger_build_init_data() {
-  uint64_t wall_time_nanos = nanos_since_epoch();
+  uint64_t wall_time = nanos_since_epoch();
 
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
