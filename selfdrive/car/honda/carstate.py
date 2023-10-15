@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import Any
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
@@ -11,10 +12,12 @@ from openpilot.selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HOND
                                                  HONDA_BOSCH_RADARLESS
 from openpilot.selfdrive.car.interfaces import CarStateBase
 
+NoImplicitAny = Any | Any
+
 TransmissionType = car.CarParams.TransmissionType
 
 
-def get_can_messages(CP, gearbox_msg):
+def get_can_messages(CP, gearbox_msg) -> NoImplicitAny:
   messages = [
     ("ENGINE_DATA", 100),
     ("WHEEL_SPEEDS", 50),
@@ -108,7 +111,7 @@ class CarState(CarStateBase):
     # However, on cars without a digital speedometer this is not always present (HRV, FIT, CRV 2016, ILX and RDX)
     self.dash_speed_seen = False
 
-  def update(self, cp, cp_cam, cp_body):
+  def update(self, cp, cp_cam, cp_body) -> NoImplicitAny:
     ret = car.CarState.new_message()
 
     # car params
@@ -265,12 +268,12 @@ class CarState(CarStateBase):
 
     return ret
 
-  def get_can_parser(self, CP):
+  def get_can_parser(self, CP) -> NoImplicitAny:
     messages = get_can_messages(CP, self.gearbox_msg)
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, get_pt_bus(CP.carFingerprint))
 
   @staticmethod
-  def get_cam_can_parser(CP):
+  def get_cam_can_parser(CP) -> NoImplicitAny:
     messages = [
       ("STEERING_CONTROL", 100),
     ]
@@ -290,7 +293,7 @@ class CarState(CarStateBase):
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)
 
   @staticmethod
-  def get_body_can_parser(CP):
+  def get_body_can_parser(CP) -> NoImplicitAny:
     if CP.enableBsm:
       messages = [
         ("BSM_STATUS_LEFT", 3),

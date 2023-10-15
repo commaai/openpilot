@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
+from typing import Any
+
 from cereal import car
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 from openpilot.selfdrive.car.honda.values import DBC
 
+NoImplicitAny = Any | Any
 
-def _create_nidec_can_parser(car_fingerprint):
+
+def _create_nidec_can_parser(car_fingerprint) -> NoImplicitAny:
   radar_messages = [0x400] + list(range(0x430, 0x43A)) + list(range(0x440, 0x446))
   messages = [(m, 20) for m in radar_messages]
   return CANParser(DBC[car_fingerprint]['radar'], messages, 1)
@@ -30,7 +34,7 @@ class RadarInterface(RadarInterfaceBase):
     self.trigger_msg = 0x445
     self.updated_messages = set()
 
-  def update(self, can_strings):
+  def update(self, can_strings) -> NoImplicitAny:
     # in Bosch radar and we are only steering for now, so sleep 0.05s to keep
     # radard at 20Hz and return no points
     if self.radar_off_can:
@@ -46,7 +50,7 @@ class RadarInterface(RadarInterfaceBase):
     self.updated_messages.clear()
     return rr
 
-  def _update(self, updated_messages):
+  def _update(self, updated_messages) -> NoImplicitAny:
     ret = car.RadarData.new_message()
 
     for ii in sorted(updated_messages):

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from typing import Any
+
 from cereal import car
 from panda import Panda
 from openpilot.common.conversions import Conversions as CV
@@ -8,6 +10,8 @@ from openpilot.selfdrive.car.honda.values import CarControllerParams, CruiseButt
 from openpilot.selfdrive.car import create_button_events, get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.car.disable_ecu import disable_ecu
+
+NoImplicitAny = Any | Any
 
 
 ButtonType = car.CarState.ButtonEvent.Type
@@ -19,7 +23,7 @@ BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.D
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def get_pid_accel_limits(CP, current_speed, cruise_speed):
+  def get_pid_accel_limits(CP, current_speed, cruise_speed) -> NoImplicitAny:
     if CP.carFingerprint in HONDA_BOSCH:
       return CarControllerParams.BOSCH_ACCEL_MIN, CarControllerParams.BOSCH_ACCEL_MAX
     elif CP.enableGasInterceptor:
@@ -32,7 +36,7 @@ class CarInterface(CarInterfaceBase):
       return CarControllerParams.NIDEC_ACCEL_MIN, interp(current_speed, ACCEL_MAX_BP, ACCEL_MAX_VALS)
 
   @staticmethod
-  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs) -> NoImplicitAny:
     ret.carName = "honda"
 
     if candidate in HONDA_BOSCH:
@@ -305,7 +309,7 @@ class CarInterface(CarInterfaceBase):
       disable_ecu(logcan, sendcan, bus=1, addr=0x18DAB0F1, com_cont_req=b'\x28\x83\x03')
 
   # returns a car.CarState
-  def _update(self, c):
+  def _update(self, c) -> NoImplicitAny:
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_body)
 
     ret.buttonEvents = [
@@ -339,5 +343,5 @@ class CarInterface(CarInterfaceBase):
 
   # pass in a car.CarControl
   # to be called @ 100hz
-  def apply(self, c, now_nanos):
+  def apply(self, c, now_nanos) -> NoImplicitAny:
     return self.CC.update(c, self.CS, now_nanos)

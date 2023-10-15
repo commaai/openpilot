@@ -1,4 +1,5 @@
 from collections import namedtuple
+from typing import Any
 
 from cereal import car
 from openpilot.common.numpy_fast import clip, interp
@@ -9,16 +10,18 @@ from openpilot.selfdrive.car.honda import hondacan
 from openpilot.selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
 from openpilot.selfdrive.controls.lib.drive_helpers import rate_limit
 
+NoImplicitAny = Any | Any
+
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
 
-def compute_gb_honda_bosch(accel, speed):
+def compute_gb_honda_bosch(accel, speed) -> NoImplicitAny:
   # TODO returns 0s, is unused
   return 0.0, 0.0
 
 
-def compute_gb_honda_nidec(accel, speed):
+def compute_gb_honda_nidec(accel, speed) -> NoImplicitAny:
   creep_brake = 0.0
   creep_speed = 2.3
   creep_brake_value = 0.15
@@ -28,7 +31,7 @@ def compute_gb_honda_nidec(accel, speed):
   return clip(gb, 0.0, 1.0), clip(-gb, 0.0, 1.0)
 
 
-def compute_gas_brake(accel, speed, fingerprint):
+def compute_gas_brake(accel, speed, fingerprint) -> NoImplicitAny:
   if fingerprint in HONDA_BOSCH:
     return compute_gb_honda_bosch(accel, speed)
   else:
@@ -36,7 +39,7 @@ def compute_gas_brake(accel, speed, fingerprint):
 
 
 # TODO not clear this does anything useful
-def actuator_hysteresis(brake, braking, brake_steady, v_ego, car_fingerprint):
+def actuator_hysteresis(brake, braking, brake_steady, v_ego, car_fingerprint) -> NoImplicitAny:
   # hyst params
   brake_hyst_on = 0.02    # to activate brakes exceed this value
   brake_hyst_off = 0.005  # to deactivate brakes below this value
@@ -59,7 +62,7 @@ def actuator_hysteresis(brake, braking, brake_steady, v_ego, car_fingerprint):
   return brake, braking, brake_steady
 
 
-def brake_pump_hysteresis(apply_brake, apply_brake_last, last_pump_ts, ts):
+def brake_pump_hysteresis(apply_brake, apply_brake_last, last_pump_ts, ts) -> NoImplicitAny:
   pump_on = False
 
   # reset pump timer if:
@@ -76,7 +79,7 @@ def brake_pump_hysteresis(apply_brake, apply_brake_last, last_pump_ts, ts):
   return pump_on, last_pump_ts
 
 
-def process_hud_alert(hud_alert):
+def process_hud_alert(hud_alert) -> NoImplicitAny:
   # initialize to no alert
   fcw_display = 0
   steer_required = 0
@@ -98,7 +101,7 @@ HUDData = namedtuple("HUDData",
                       "lanes_visible", "fcw", "acc_alert", "steer_required"])
 
 
-def rate_limit_steer(new_steer, last_steer):
+def rate_limit_steer(new_steer, last_steer) -> NoImplicitAny:
   # TODO just hardcoded ramp to min/max in 0.33s for all Honda
   MAX_DELTA = 3 * DT_CTRL
   return clip(new_steer, last_steer - MAX_DELTA, last_steer + MAX_DELTA)
@@ -124,7 +127,7 @@ class CarController:
     self.brake = 0.0
     self.last_steer = 0.0
 
-  def update(self, CC, CS, now_nanos):
+  def update(self, CC, CS, now_nanos) -> NoImplicitAny:
     actuators = CC.actuators
     hud_control = CC.hudControl
     conversion = hondacan.get_cruise_speed_conversion(self.CP.carFingerprint, CS.is_metric)

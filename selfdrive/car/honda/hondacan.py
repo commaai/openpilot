@@ -1,5 +1,9 @@
+from typing import Any
+
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, CAR, CarControllerParams
+
+NoImplicitAny = Any | Any
 
 # CAN bus layout with relay
 # 0 = ACC-CAN - radar side
@@ -8,11 +12,11 @@ from openpilot.selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_
 # 3 = F-CAN A - OBDII port
 
 
-def get_pt_bus(car_fingerprint):
+def get_pt_bus(car_fingerprint) -> NoImplicitAny:
   return 1 if car_fingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS) else 0
 
 
-def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
+def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False) -> NoImplicitAny:
   no_radar = car_fingerprint in HONDA_BOSCH_RADARLESS
   if radar_disabled or no_radar:
     # when radar is disabled, steering commands are sent directly to powertrain bus
@@ -26,7 +30,7 @@ def get_cruise_speed_conversion(car_fingerprint: str, is_metric: bool) -> float:
   return CV.MPH_TO_MS if car_fingerprint in HONDA_BOSCH_RADARLESS and not is_metric else CV.KPH_TO_MS
 
 
-def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake):
+def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake) -> NoImplicitAny:
   # TODO: do we loose pressure if we keep pump off for long?
   brakelights = apply_brake > 0
   brake_rq = apply_brake > 0
@@ -51,7 +55,7 @@ def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_
   return packer.make_can_msg("BRAKE_COMMAND", bus, values)
 
 
-def create_acc_commands(packer, enabled, active, accel, gas, stopping_counter, car_fingerprint):
+def create_acc_commands(packer, enabled, active, accel, gas, stopping_counter, car_fingerprint) -> NoImplicitAny:
   commands = []
   bus = get_pt_bus(car_fingerprint)
   min_gas_accel = CarControllerParams.BOSCH_GAS_LOOKUP_BP[0]
@@ -96,7 +100,7 @@ def create_acc_commands(packer, enabled, active, accel, gas, stopping_counter, c
   return commands
 
 
-def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, radar_disabled):
+def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, radar_disabled) -> NoImplicitAny:
   values = {
     "STEER_TORQUE": apply_steer if lkas_active else 0,
     "STEER_TORQUE_REQUEST": lkas_active,
@@ -105,7 +109,7 @@ def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, r
   return packer.make_can_msg("STEERING_CONTROL", bus, values)
 
 
-def create_bosch_supplemental_1(packer, car_fingerprint):
+def create_bosch_supplemental_1(packer, car_fingerprint) -> NoImplicitAny:
   # non-active params
   values = {
     "SET_ME_X04": 0x04,
@@ -116,7 +120,7 @@ def create_bosch_supplemental_1(packer, car_fingerprint):
   return packer.make_can_msg("BOSCH_SUPPLEMENTAL_1", bus, values)
 
 
-def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, acc_hud, lkas_hud):
+def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, acc_hud, lkas_hud) -> NoImplicitAny:
   commands = []
   bus_pt = get_pt_bus(CP.carFingerprint)
   radar_disabled = CP.carFingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS) and CP.openpilotLongitudinalControl
@@ -181,7 +185,7 @@ def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, acc_hud, 
   return commands
 
 
-def spam_buttons_command(packer, button_val, car_fingerprint):
+def spam_buttons_command(packer, button_val, car_fingerprint) -> NoImplicitAny:
   values = {
     'CRUISE_BUTTONS': button_val,
     'CRUISE_SETTING': 0,
