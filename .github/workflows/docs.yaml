@@ -46,7 +46,7 @@ jobs:
 
         cd openpilot-docs
 
-        git checkout --orphan gh-pages
+        git checkout --orphan tmp
         git rm -rf --cached .
 
         cp -r ../build/docs/html/ docs/
