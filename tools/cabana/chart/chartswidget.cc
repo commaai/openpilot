@@ -370,6 +370,10 @@ void ChartsWidget::doAutoScroll() {
   }
 }
 
+QSize ChartsWidget::minimumSizeHint() const {
+  return QSize(CHART_MIN_WIDTH, QWidget::minimumSizeHint().height());
+}
+
 void ChartsWidget::resizeEvent(QResizeEvent *event) {
   QWidget::resizeEvent(event);
   updateLayout();
@@ -405,16 +409,15 @@ void ChartsWidget::removeAll() {
     tabbar->removeTab(1);
   }
   tab_charts.clear();
-  zoomReset();
 
   if (!charts.isEmpty()) {
     for (auto c : charts) {
       delete c;
     }
     charts.clear();
-    updateToolBar();
     emit seriesChanged();
   }
+  zoomReset();
 }
 
 void ChartsWidget::alignCharts() {

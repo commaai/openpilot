@@ -688,7 +688,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   EventName.sensorDataInvalid: {
     ET.PERMANENT: Alert(
       "Sensor Data Invalid",
-      "Ensure device is mounted securely",
+      "Possible Hardware Issue",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, .2, creation_delay=1.),
     ET.NO_ENTRY: NoEntryAlert("Sensor Data Invalid"),
@@ -969,7 +969,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
 
 if __name__ == '__main__':
   # print all alerts by type and priority
-  from cereal.services import service_list
+  from cereal.services import SERVICE_LIST
   from collections import defaultdict, OrderedDict
 
   event_names = {v: k for k, v in EventName.schema.enumerants.items()}
@@ -977,7 +977,7 @@ if __name__ == '__main__':
 
   CP = car.CarParams.new_message()
   CS = car.CarState.new_message()
-  sm = messaging.SubMaster(list(service_list.keys()))
+  sm = messaging.SubMaster(list(SERVICE_LIST.keys()))
 
   for i, alerts in EVENTS.items():
     for et, alert in alerts.items():

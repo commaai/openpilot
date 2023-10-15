@@ -1,3 +1,18 @@
+* text=auto
+
 *.dlc filter=lfs diff=lfs merge=lfs -text
 *.onnx filter=lfs diff=lfs merge=lfs -text
 selfdrive/car/tests/test_models_segs.txt filter=lfs diff=lfs merge=lfs -text
+selfdrive/assets/fonts/*.ttf filter=lfs diff=lfs merge=lfs -text
+selfdrive/assets/training/*.png filter=lfs diff=lfs merge=lfs -text
+system/hardware/tici/updater filter=lfs diff=lfs merge=lfs -text
+selfdrive/ui/qt/spinner_larch64 filter=lfs diff=lfs merge=lfs -text
+selfdrive/ui/qt/text_larch64 filter=lfs diff=lfs merge=lfs -text
+third_party/**/*.a filter=lfs diff=lfs merge=lfs -text
+third_party/**/*.so filter=lfs diff=lfs merge=lfs -text
+third_party/**/*.dylib filter=lfs diff=lfs merge=lfs -text
+third_party/acados/*/t_renderer filter=lfs diff=lfs merge=lfs -text
+third_party/bootstrap/bootstrap-icons.svg filter=lfs diff=lfs merge=lfs -text
+third_party/qt5/larch64/bin/lrelease filter=lfs diff=lfs merge=lfs -text
+third_party/qt5/larch64/bin/lupdate filter=lfs diff=lfs merge=lfs -text
+third_party/catch2/include/catch2/catch.hpp filter=lfs diff=lfs merge=lfs -text
