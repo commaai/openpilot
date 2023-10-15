@@ -285,7 +285,6 @@ system/sensord/SConscript
 system/sensord/sensors_qcom2.cc
 system/sensord/sensors/*.cc
 system/sensord/sensors/*.h
-system/sensord/sensord
 system/sensord/pigeond.py
 
 selfdrive/thermald/thermald.py
