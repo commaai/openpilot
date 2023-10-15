@@ -132,10 +132,6 @@ selfdrive/car/tesla/*.py
 selfdrive/car/toyota/*.py
 selfdrive/car/volkswagen/*.py
 
-system/clocksd/.gitignore
-system/clocksd/SConscript
-system/clocksd/clocksd.cc
-
 selfdrive/debug/can_printer.py
 selfdrive/debug/check_freq.py
 selfdrive/debug/dump.py
