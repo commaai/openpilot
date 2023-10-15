@@ -31,14 +31,14 @@ jobs:
       run: |
         ${{ env.RUN }} "apt update && apt install -y doxygen && cd docs && make html"
 
-    # TODO: not on forks
     - uses: actions/checkout@v4
+      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       with:
         path: openpilot-docs
         ssh-key: ${{ secrets.OPENPILOT_DOCS_KEY }}
         repository: commaai/openpilot-docs
     - name: Push
-      #if: github.ref == 'refs/heads/${{ github.event.repository.default_branch }}'
+      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       run: |
         set -x
 
