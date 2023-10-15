@@ -101,7 +101,7 @@ class SignalView : public QFrame {
 public:
   SignalView(ChartsWidget *charts, QWidget *parent);
   void setMessage(const MessageId &id);
-  void signalHovered(const cabana::Signal *sig);
+  void highlightSignal(const cabana::Signal *sig);
   void updateChartState();
   void selectSignal(const cabana::Signal *sig, bool expand = false);
   void rowClicked(const QModelIndex &index);
@@ -115,6 +115,7 @@ private:
   void rowsChanged();
   void resizeEvent(QResizeEvent* event) override;
   void updateToolBar();
+  void setHoverIndex(const QModelIndex &index);
   void setSparklineRange(int value);
   void handleSignalAdded(MessageId id, const cabana::Signal *sig);
   void handleSignalUpdated(const cabana::Signal *sig);
@@ -132,7 +133,7 @@ private:
       QAbstractItemView::dataChanged(topLeft, bottomRight, roles);
     }
     void leaveEvent(QEvent *event) override {
-      emit static_cast<SignalView *>(parentWidget())->highlight(nullptr);
+      static_cast<SignalView *>(parentWidget())->setHoverIndex(QModelIndex());
       QTreeView::leaveEvent(event);
     }
   };

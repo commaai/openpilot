@@ -61,14 +61,14 @@ class BinaryView : public QTableView {
 public:
   BinaryView(QWidget *parent = nullptr);
   void setMessage(const MessageId &message_id);
-  void highlight(const cabana::Signal *sig);
+  void highlightSignal(const cabana::Signal *sig);
   std::set<const cabana::Signal*> getOverlappingSignals() const;
   inline void updateState() { model->updateState(); }
   QSize minimumSizeHint() const override;
 
 signals:
   void signalClicked(const cabana::Signal *sig);
-  void signalHovered(const cabana::Signal *sig);
+  void highlight(const cabana::Signal *sig);
   void editSignal(const cabana::Signal *origin_s, cabana::Signal &s);
   void showChart(const MessageId &id, const cabana::Signal *sig, bool show, bool merge);
 
@@ -81,7 +81,7 @@ private:
   void mouseMoveEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void leaveEvent(QEvent *event) override;
-  void highlightPosition(const QPoint &pt);
+  void setHoverIndex(const QModelIndex &index);
 
   QModelIndex anchor_index;
   BinaryViewModel *model;

@@ -482,8 +482,8 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QObject::connect(sparkline_range_slider, &QSlider::valueChanged, this, &SignalView::setSparklineRange);
   QObject::connect(collapse_btn, &QPushButton::clicked, tree, &QTreeView::collapseAll);
   QObject::connect(tree, &QAbstractItemView::clicked, this, &SignalView::rowClicked);
-  QObject::connect(tree, &QTreeView::viewportEntered, [this]() { emit highlight(nullptr); });
-  QObject::connect(tree, &QTreeView::entered, [this](const QModelIndex &index) { emit highlight(model->getItem(index)->sig); });
+  QObject::connect(tree, &QTreeView::viewportEntered, [this]() { setHoverIndex(QModelIndex()); });
+  QObject::connect(tree, &QTreeView::entered, this, &SignalView::setHoverIndex);
   QObject::connect(model, &QAbstractItemModel::modelReset, this, &SignalView::rowsChanged);
   QObject::connect(model, &QAbstractItemModel::rowsRemoved, this, &SignalView::rowsChanged);
   QObject::connect(dbc(), &DBCManager::signalAdded, this, &SignalView::handleSignalAdded);
@@ -573,13 +573,19 @@ void SignalView::updateChartState() {
   }
 }
 
-void SignalView::signalHovered(const cabana::Signal *sig) {
+void SignalView::setHoverIndex(const QModelIndex &index) {
+  auto sig = index.isValid() ? model->getItem(index)->sig : nullptr;
+  highlightSignal(sig);
+  emit highlight(sig);
+}
+
+void SignalView::highlightSignal(const cabana::Signal *sig) {
   const auto &children = model->root->children;
   for (int i = 0; i < children.size(); ++i) {
     bool highlight = children[i]->sig == sig;
     if (std::exchange(children[i]->highlight, highlight) != highlight) {
-      emit model->dataChanged(model->index(i, 0), model->index(i, 0), {Qt::DecorationRole});
-      emit model->dataChanged(model->index(i, 1), model->index(i, 1), {Qt::DisplayRole});
+      auto rect = tree->visualRect(model->index(i, 0));
+      tree->viewport()->update(QRect(0, rect.y(), tree->viewport()->width(), rect.height()));
     }
   }
 }

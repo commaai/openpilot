@@ -65,12 +65,12 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 
   QObject::connect(edit_btn, &QToolButton::clicked, this, &DetailWidget::editMsg);
   QObject::connect(remove_btn, &QToolButton::clicked, this, &DetailWidget::removeMsg);
-  QObject::connect(binary_view, &BinaryView::signalHovered, signal_view, &SignalView::signalHovered);
+  QObject::connect(binary_view, &BinaryView::highlight, signal_view, &SignalView::highlightSignal);
   QObject::connect(binary_view, &BinaryView::signalClicked, [this](const cabana::Signal *s) { signal_view->selectSignal(s, true); });
   QObject::connect(binary_view, &BinaryView::editSignal, signal_view->model, &SignalModel::saveSignal);
   QObject::connect(binary_view, &BinaryView::showChart, charts, &ChartsWidget::showChart);
   QObject::connect(signal_view, &SignalView::showChart, charts, &ChartsWidget::showChart);
-  QObject::connect(signal_view, &SignalView::highlight, binary_view, &BinaryView::highlight);
+  QObject::connect(signal_view, &SignalView::highlight, binary_view, &BinaryView::highlightSignal);
   QObject::connect(tab_widget, &QTabWidget::currentChanged, [this]() { updateState(); });
   QObject::connect(can, &AbstractStream::msgsReceived, this, &DetailWidget::updateState);
   QObject::connect(dbc(), &DBCManager::changed, this, &DetailWidget::refresh);

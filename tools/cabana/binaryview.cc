@@ -103,11 +103,11 @@ void BinaryView::addShortcuts() {
 }
 
 QSize BinaryView::minimumSizeHint() const {
-  return {(horizontalHeader()->minimumSectionSize() + 1) * 9 + VERTICAL_HEADER_WIDTH + 2,
-          CELL_HEIGHT * std::min(model->rowCount(), 10) + 2};
+  return QSize{(horizontalHeader()->minimumSectionSize() + 1) * 9 + VERTICAL_HEADER_WIDTH + 2,
+               CELL_HEIGHT * std::min(model->rowCount(), 10) + 2};
 }
 
-void BinaryView::highlight(const cabana::Signal *sig) {
+void BinaryView::highlightSignal(const cabana::Signal *sig) {
   if (sig != hovered_sig) {
     for (int i = 0; i < model->items.size(); ++i) {
       auto &item_sigs = model->items[i].sigs;
@@ -116,9 +116,7 @@ void BinaryView::highlight(const cabana::Signal *sig) {
         emit model->dataChanged(index, index, {Qt::DisplayRole});
       }
     }
-
     hovered_sig = sig;
-    emit signalHovered(hovered_sig);
   }
 }
 
@@ -153,16 +151,17 @@ void BinaryView::mousePressEvent(QMouseEvent *event) {
   event->accept();
 }
 
-void BinaryView::highlightPosition(const QPoint &pos) {
-  if (auto index = indexAt(viewport()->mapFromGlobal(pos)); index.isValid()) {
-    auto item = (BinaryViewModel::Item *)index.internalPointer();
-    const cabana::Signal *sig = item->sigs.isEmpty() ? nullptr : item->sigs.back();
-    highlight(sig);
+void BinaryView::setHoverIndex(const QModelIndex &index) {
+  auto item = (BinaryViewModel::Item *)index.internalPointer();
+  auto sig = item && !item->sigs.isEmpty() ? item->sigs.back() : nullptr;
+  if (sig != hovered_sig) {
+    highlightSignal(sig);
+    emit highlight(sig);
   }
 }
 
 void BinaryView::mouseMoveEvent(QMouseEvent *event) {
-  highlightPosition(event->globalPos());
+  setHoverIndex(indexAt(event->pos()));
   QTableView::mouseMoveEvent(event);
 }
 
@@ -188,7 +187,7 @@ void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
 }
 
 void BinaryView::leaveEvent(QEvent *event) {
-  highlight(nullptr);
+  setHoverIndex(QModelIndex());
   QTableView::leaveEvent(event);
 }
 
@@ -202,9 +201,8 @@ void BinaryView::refresh() {
   clearSelection();
   anchor_index = QModelIndex();
   resize_sig = nullptr;
-  hovered_sig = nullptr;
   model->refresh();
-  highlightPosition(QCursor::pos());
+  setHoverIndex(indexAt(viewport()->mapFromGlobal(QCursor::pos())));
 }
 
 std::set<const cabana::Signal *> BinaryView::getOverlappingSignals() const {
