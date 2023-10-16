@@ -598,6 +598,7 @@ tinygrad_repo/tinygrad/features/image.py
 tinygrad_repo/tinygrad/nn/*
 tinygrad_repo/tinygrad/renderer/cstyle.py
 tinygrad_repo/tinygrad/runtime/lib.py
+tinygrad_repo/tinygrad/runtime/ops_cpu.py
 tinygrad_repo/tinygrad/runtime/ops_gpu.py
 tinygrad_repo/tinygrad/shape/*
 tinygrad_repo/tinygrad/*.py
