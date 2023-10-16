@@ -569,11 +569,9 @@ void MainWindow::closeEvent(QCloseEvent *event) {
   cleanupAutoSaveFile();
   remindSaveChanges();
 
-  installDownloadProgressHandler(nullptr);
+  installMessageHandler(nullptr);
   qInstallMessageHandler(nullptr);
-
-  if (floating_window)
-    floating_window->deleteLater();
+  main_win = nullptr;
 
   // save states
   settings.geometry = saveGeometry();
