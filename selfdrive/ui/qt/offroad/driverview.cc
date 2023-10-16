@@ -32,6 +32,7 @@ void DriverViewWindow::hideEvent(QHideEvent* event) {
 void DriverViewWindow::paintGL() {
   CameraWidget::paintGL();
 
+  std::lock_guard lk(frame_lock);
   QPainter p(this);
   // startup msg
   if (frames.empty()) {
