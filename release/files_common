@@ -597,6 +597,7 @@ tinygrad_repo/tinygrad/codegen/optimizer.py
 tinygrad_repo/tinygrad/features/image.py
 tinygrad_repo/tinygrad/nn/*
 tinygrad_repo/tinygrad/renderer/cstyle.py
+tinygrad_repo/tinygrad/renderer/opencl.py
 tinygrad_repo/tinygrad/runtime/lib.py
 tinygrad_repo/tinygrad/runtime/ops_cpu.py
 tinygrad_repo/tinygrad/runtime/ops_disk.py
