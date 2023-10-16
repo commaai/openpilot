@@ -106,7 +106,7 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.8
       ret.mass = 4516. * CV.LB_TO_KG  # mean between normal and hybrid
 
-    elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALONH_2019, CAR.AVALON_TSS2, CAR.AVALONH_TSS2):
+    elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALON_TSS2, CAR.AVALONH_TSS2):
       # starting from 2019, all Avalon variants have stop and go
       # https://engage.toyota.com/static/images/toyota_safety_sense/TSS_Applicability_Chart.pdf
       stop_and_go = candidate != CAR.AVALON
