@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import sys
-import os
 import time
 import pickle
 import numpy as np
@@ -22,8 +21,6 @@ from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLCont
 from openpilot.selfdrive.modeld.models.driving_pyx import (
   FEATURE_LEN, HISTORY_BUFFER_LEN, DESIRE_LEN, TRAFFIC_CONVENTION_LEN, NAV_FEATURE_LEN, NAV_INSTRUCTION_LEN,
   NET_OUTPUT_SIZE, MODEL_FREQ)
-
-DEBUG = bool(int(os.getenv("DEBUG", "0")))
 
 MODEL_PATHS = {
   ModelRunner.THNEED: Path(__file__).parent / 'models/supercombo.thneed',
