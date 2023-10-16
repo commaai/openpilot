@@ -201,6 +201,7 @@ void CameraWidget::stopVipcThread() {
   assert(egl_display != EGL_NO_DISPLAY);
   for (auto &pair : egl_images) {
     eglDestroyImageKHR(egl_display, pair.second);
+    assert(eglGetError() == EGL_SUCCESS);
   }
   egl_images.clear();
 #endif
