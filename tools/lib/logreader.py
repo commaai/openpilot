@@ -2,6 +2,7 @@
 import os
 import sys
 import bz2
+from typing import List, Union
 import urllib.parse
 import capnp
 import warnings
@@ -117,6 +118,8 @@ class LogReader:
           pass
       else:
         yield ent
+
+IterableLog = Union[LogReader, List[capnp._DynamicStructReader]]
 
 def logreader_from_route_or_segment(r, sort_by_time=False):
   sn = SegmentName(r, allow_route_name=True)
