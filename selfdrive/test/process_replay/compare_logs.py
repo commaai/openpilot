@@ -100,12 +100,10 @@ def format_diff(results, log_paths, ref_commit):
     diff_long += f"***** differences for segment {segment} *****\n"
 
     for proc, diff in list(result.items()):
-      # long diff
       diff_long += f"*** process: {proc} ***\n"
       diff_long += f"\tref: {log_paths[segment][proc]['ref']}\n"
       diff_long += f"\tnew: {log_paths[segment][proc]['new']}\n\n"
 
-      # short diff
       diff_short += f"    {proc}\n"
       if isinstance(diff, str):
         diff_short += f"        ref: {log_paths[segment][proc]['ref']}\n"
