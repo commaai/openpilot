@@ -440,7 +440,7 @@ def clear_tmp_cache():
   os.mkdir(Paths.download_cache_root())
 
 
-def main(sm=None, pm=None):
+def main():
   #clear_tmp_cache()
 
   use_qcom = not Params().get_bool("UbloxAvailable")
@@ -449,8 +449,7 @@ def main(sm=None, pm=None):
   else:
     raw_name = "ubloxGnss"
   raw_gnss_sock = messaging.sub_sock(raw_name, conflate=False)
-  if pm is None:
-    pm = messaging.PubMaster(['gnssMeasurements'])
+  pm = messaging.PubMaster(['gnssMeasurements'])
 
   # disable until set as main gps source, to better analyze startup time
   # TODO ensure low CPU usage before enabling

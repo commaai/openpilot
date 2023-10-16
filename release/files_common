@@ -246,6 +246,7 @@ selfdrive/locationd/models/gnss_helpers.py
 
 selfdrive/locationd/torqued.py
 selfdrive/locationd/calibrationd.py
+selfdrive/locationd/helpers.py
 
 system/logcatd/.gitignore
 system/logcatd/SConscript
@@ -284,7 +285,6 @@ system/sensord/SConscript
 system/sensord/sensors_qcom2.cc
 system/sensord/sensors/*.cc
 system/sensord/sensors/*.h
-system/sensord/sensord
 system/sensord/pigeond.py
 
 selfdrive/thermald/thermald.py
