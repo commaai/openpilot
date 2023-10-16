@@ -191,7 +191,7 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.8
       ret.mass = 4300. * CV.LB_TO_KG
 
-    elif candidate in (CAR.ALPHARD_TSS2, CAR.ALPHARDH_TSS2):
+    elif candidate == CAR.ALPHARD_TSS2:
       ret.wheelbase = 3.00
       ret.steerRatio = 14.2
       ret.tireStiffnessFactor = 0.444
