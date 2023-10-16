@@ -197,7 +197,7 @@ class TestOnroad(unittest.TestCase):
       assert f.is_file()
 
       sz = f.stat().st_size / 1e6
-      if f.name == "qcamera.ts"
+      if f.name == "qcamera.ts":
         assert 2.15 < sz < 2.35
       elif f.name.endswith('.hevc'):
         assert 70 < sz < 77
