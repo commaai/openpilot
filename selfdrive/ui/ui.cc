@@ -251,6 +251,18 @@ UIState::UIState(QObject *parent) : QObject(parent) {
     prime_type = static_cast<PrimeType>(std::atoi(prime_value.c_str()));
   }
 
+  auto car_params = params.get("CarParams");
+  if (!car_params.empty()) {
+    try {
+      AlignedBuffer aligned_buf;
+      capnp::FlatArrayMessageReader cmsg(aligned_buf.align(car_params.data(), car_params.size()));
+      cereal::CarParams::Reader car_params_reader = cmsg.getRoot<cereal::CarParams>();
+      scene.longitudinal_control = car_params_reader.getOpenpilotLongitudinalControl();
+    } catch (const kj::Exception &e) {
+      LOGD("Failed to read CarParams");
+    }
+  }
+
   // update timer
   timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, &UIState::update);
