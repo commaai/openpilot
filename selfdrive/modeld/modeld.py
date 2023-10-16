@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+import os
 import time
 import pickle
 import numpy as np
@@ -21,6 +22,8 @@ from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLCont
 from openpilot.selfdrive.modeld.models.driving_pyx import (
   FEATURE_LEN, HISTORY_BUFFER_LEN, DESIRE_LEN, TRAFFIC_CONVENTION_LEN, NAV_FEATURE_LEN, NAV_INSTRUCTION_LEN,
   NET_OUTPUT_SIZE, MODEL_FREQ)
+
+DEBUG = bool(int(os.getenv("DEBUG", "0")))
 
 MODEL_PATHS = {
   ModelRunner.THNEED: Path(__file__).parent / 'models/supercombo.thneed',
@@ -262,11 +265,12 @@ def main():
       fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen)
       pm.send('modelV2', modelv2_send)
       pm.send('cameraOdometry', posenet_send)
-      mt3 = time.perf_counter()
-      messaging_time = mt3 - mt2
 
-      print("model_execution_time: %.2fms, messaging_time: %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f" %
-       ((model_execution_time)*1000, (messaging_time)*1000, meta_extra.frame_id, frame_id, frame_drop_ratio))
+      #mt3 = time.perf_counter()
+      #messaging_time = mt3 - mt2
+
+      #print("model_execution_time: %.2fms, messaging_time: %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f" %
+      # ((model_execution_time)*1000, (messaging_time)*1000, meta_extra.frame_id, frame_id, frame_drop_ratio))
 
     last_vipc_frame_id = meta_main.frame_id
 
