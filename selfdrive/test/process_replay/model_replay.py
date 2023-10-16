@@ -212,13 +212,13 @@ if __name__ == "__main__":
       results: Any = {TEST_ROUTE: {}}
       log_paths: Any = {TEST_ROUTE: {"models": {'ref': BASE_URL + log_fn, 'new': log_fn}}}
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
-      diff1, diff2, failed = format_diff(results, log_paths, ref_commit)
+      diff_short, diff_long, failed = format_diff(results, log_paths, ref_commit)
 
-      print(diff2)
+      print(diff_long)
       print('-------------\n'*5)
-      print(diff1)
+      print(diff_short)
       with open("model_diff.txt", "w") as f:
-        f.write(diff2)
+        f.write(diff_long)
     except Exception as e:
       print(str(e))
       failed = True

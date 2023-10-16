@@ -207,11 +207,11 @@ if __name__ == "__main__":
       if not args.upload_only:
         results[segment][proc] = result
 
-  diff1, diff2, failed = format_diff(results, log_paths, ref_commit)
+  diff_short, diff_long, failed = format_diff(results, log_paths, ref_commit)
   if not upload:
     with open(os.path.join(PROC_REPLAY_DIR, "diff.txt"), "w") as f:
-      f.write(diff2)
-    print(diff1)
+      f.write(diff_long)
+    print(diff_short)
 
     if failed:
       print("TEST FAILED")
