@@ -161,6 +161,7 @@ class TestOnroad(unittest.TestCase):
 
     # use the second segment by default as it's the first full segment
     cls.lr = list(LogReader(os.path.join(str(cls.segments[1]), "rlog")))
+    cls.log_path = cls.segments[1]
 
   @cached_property
   def service_msgs(self):
@@ -190,6 +191,20 @@ class TestOnroad(unittest.TestCase):
     cnt = Counter(json.loads(m.logMessage)['filename'] for m in msgs)
     big_logs = [f for f, n in cnt.most_common(3) if n / sum(cnt.values()) > 30.]
     self.assertEqual(len(big_logs), 0, f"Log spam: {big_logs}")
+
+  def test_log_sizes(self):
+    for f in self.log_path.iterdir():
+      assert f.is_file()
+
+      sz = f.stat().st_size / 1e6
+      if f.name == "qcamera.ts"
+        assert 2.15 < sz < 2.35
+      elif f.name.endswith('.hevc'):
+        assert 70 < sz < 77
+      elif f.name in ("qlog", "rlog"):
+        pass
+      else:
+        raise NotImplementedError
 
   def test_ui_timings(self):
     result = "\n"
