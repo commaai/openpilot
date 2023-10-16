@@ -55,7 +55,6 @@ class CAR(StrEnum):
   CAMRY = "TOYOTA CAMRY 2018"
   CAMRYH = "TOYOTA CAMRY HYBRID 2018"
   CAMRY_TSS2 = "TOYOTA CAMRY 2021"  # TSS 2.5
-  CAMRYH_TSS2 = "TOYOTA CAMRY HYBRID 2021"
   CHR = "TOYOTA C-HR 2018"
   CHR_TSS2 = "TOYOTA C-HR 2021"
   COROLLA = "TOYOTA COROLLA 2017"
@@ -124,8 +123,10 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   ],
   CAR.CAMRY: ToyotaCarInfo("Toyota Camry 2018-20", video_link="https://www.youtube.com/watch?v=fkcjviZY9CM", footnotes=[Footnote.CAMRY]),
   CAR.CAMRYH: ToyotaCarInfo("Toyota Camry Hybrid 2018-20", video_link="https://www.youtube.com/watch?v=Q2DYY0AWKgk"),
-  CAR.CAMRY_TSS2: ToyotaCarInfo("Toyota Camry 2021-23", footnotes=[Footnote.CAMRY]),
-  CAR.CAMRYH_TSS2: ToyotaCarInfo("Toyota Camry Hybrid 2021-24"),
+  CAR.CAMRY_TSS2: [
+    ToyotaCarInfo("Toyota Camry 2021-23", footnotes=[Footnote.CAMRY]),
+    ToyotaCarInfo("Toyota Camry Hybrid 2021-24"),
+  ],
   CAR.CHR: [
     ToyotaCarInfo("Toyota C-HR 2017-20"),
     ToyotaCarInfo("Toyota C-HR Hybrid 2017-20"),
@@ -684,12 +685,16 @@ FW_VERSIONS = {
     (Ecu.eps, 0x7a1, None): [
       b'8965B33630\x00\x00\x00\x00\x00\x00',
       b'8965B33640\x00\x00\x00\x00\x00\x00',
+      b'8965B33650\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
       b'\x01F152606370\x00\x00\x00\x00\x00\x00',
       b'\x01F152606390\x00\x00\x00\x00\x00\x00',
       b'\x01F152606400\x00\x00\x00\x00\x00\x00',
       b'\x01F152606431\x00\x00\x00\x00\x00\x00',
+      b'F152633D00\x00\x00\x00\x00\x00\x00',
+      b'F152633D60\x00\x00\x00\x00\x00\x00',
+      b'F152633310\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x700, None): [
       b'\x018966306Q5000\x00\x00\x00\x00',
@@ -700,10 +705,16 @@ FW_VERSIONS = {
       b'\x018966306T3200\x00\x00\x00\x00',
       b'\x018966306T4000\x00\x00\x00\x00',
       b'\x018966306T4100\x00\x00\x00\x00',
+      b'\x018966306Q6000\x00\x00\x00\x00',
+      b'\x018966306Q7000\x00\x00\x00\x00',
+      b'\x018966306T0000\x00\x00\x00\x00',
+      b'\x018966306V1000\x00\x00\x00\x00',
+      b'\x01896633T20000\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F6201200\x00\x00\x00\x00',
       b'\x018821F6201300\x00\x00\x00\x00',
+      b'\x018821F6201400\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F0602100\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
@@ -713,35 +724,7 @@ FW_VERSIONS = {
       b'\x028646F3305200\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
       b'\x028646F3305300\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
       b'\x028646F3305500\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
-    ],
-  },
-  CAR.CAMRYH_TSS2: {
-    (Ecu.eps, 0x7a1, None): [
-      b'8965B33630\x00\x00\x00\x00\x00\x00',
-      b'8965B33650\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.abs, 0x7b0, None): [
-      b'F152633D00\x00\x00\x00\x00\x00\x00',
-      b'F152633D60\x00\x00\x00\x00\x00\x00',
-      b'F152633310\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.engine, 0x700, None): [
-      b'\x018966306Q6000\x00\x00\x00\x00',
-      b'\x018966306Q7000\x00\x00\x00\x00',
-      b'\x018966306T0000\x00\x00\x00\x00',
-      b'\x018966306V1000\x00\x00\x00\x00',
-      b'\x01896633T20000\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdRadar, 0x750, 15): [
-      b'\x018821F6201200\x00\x00\x00\x00',
-      b'\x018821F6201300\x00\x00\x00\x00',
-      b'\x018821F6201400\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdCamera, 0x750, 109): [
-      b'\x028646F3305200\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
-      b'\x028646F3305300\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
       b'\x028646F3305300\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
-      b'\x028646F3305500\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
     ],
   },
   CAR.CHR: {
@@ -2150,7 +2133,6 @@ DBC = {
   CAR.CAMRY: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
   CAR.CAMRYH: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
   CAR.CAMRY_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.CAMRYH_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.HIGHLANDER: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
   CAR.HIGHLANDER_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.HIGHLANDERH: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
@@ -2183,7 +2165,7 @@ EPS_SCALE = defaultdict(lambda: 73, {CAR.PRIUS: 66, CAR.COROLLA: 88, CAR.LEXUS_I
 # Toyota/Lexus Safety Sense 2.0 and 2.5
 TSS2_CAR = {CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023, CAR.COROLLA_TSS2, CAR.LEXUS_ES_TSS2,
             CAR.RAV4H_TSS2_2022, CAR.RAV4H_TSS2_2023, CAR.LEXUS_RX_TSS2, CAR.HIGHLANDER_TSS2,
-            CAR.PRIUS_TSS2, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2, CAR.LEXUS_IS_TSS2, CAR.MIRAI, CAR.LEXUS_NX_TSS2,
+            CAR.PRIUS_TSS2, CAR.CAMRY_TSS2, CAR.LEXUS_IS_TSS2, CAR.MIRAI, CAR.LEXUS_NX_TSS2,
             CAR.ALPHARD_TSS2, CAR.AVALON_TSS2, CAR.CHR_TSS2}
 
 NO_DSU_CAR = TSS2_CAR | {CAR.CHR, CAR.CAMRY, CAR.CAMRYH}
