@@ -92,7 +92,7 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.7933
       ret.mass = 3300. * CV.LB_TO_KG
 
-    elif candidate in (CAR.CAMRY, CAR.CAMRYH, CAR.CAMRY_TSS2):
+    elif candidate in (CAR.CAMRY, CAR.CAMRY_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.82448
       ret.steerRatio = 13.7
