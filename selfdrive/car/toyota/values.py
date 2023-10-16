@@ -68,7 +68,6 @@ class CAR(StrEnum):
   HIGHLANDER = "TOYOTA HIGHLANDER 2017"
   HIGHLANDER_TSS2 = "TOYOTA HIGHLANDER 2020"
   HIGHLANDERH = "TOYOTA HIGHLANDER HYBRID 2018"
-  HIGHLANDERH_TSS2 = "TOYOTA HIGHLANDER HYBRID 2020"
   PRIUS = "TOYOTA PRIUS 2017"
   PRIUS_V = "TOYOTA PRIUS v 2017"
   PRIUS_TSS2 = "TOYOTA PRIUS TSS2 2021"
@@ -143,9 +142,11 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
     ToyotaCarInfo("Lexus UX Hybrid 2019-23"),
   ],
   CAR.HIGHLANDER: ToyotaCarInfo("Toyota Highlander 2017-19", video_link="https://www.youtube.com/watch?v=0wS0wXSLzoo"),
-  CAR.HIGHLANDER_TSS2: ToyotaCarInfo("Toyota Highlander 2020-23"),
+  CAR.HIGHLANDER_TSS2: [
+    ToyotaCarInfo("Toyota Highlander 2020-23"),
+    ToyotaCarInfo("Toyota Highlander Hybrid 2020-23"),
+  ],
   CAR.HIGHLANDERH: ToyotaCarInfo("Toyota Highlander Hybrid 2017-19"),
-  CAR.HIGHLANDERH_TSS2: ToyotaCarInfo("Toyota Highlander Hybrid 2020-23"),
   CAR.PRIUS: [
     ToyotaCarInfo("Toyota Prius 2016", "Toyota Safety Sense P", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0"),
     ToyotaCarInfo("Toyota Prius 2017-20", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0"),
@@ -1180,6 +1181,9 @@ FW_VERSIONS = {
       b'8965B48310\x00\x00\x00\x00\x00\x00',
       b'8965B48320\x00\x00\x00\x00\x00\x00',
       b'8965B48400\x00\x00\x00\x00\x00\x00',
+      b'8965B48241\x00\x00\x00\x00\x00\x00',
+      b'8965B48310\x00\x00\x00\x00\x00\x00',
+      b'8965B48400\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
       b'\x01F15260E051\x00\x00\x00\x00\x00\x00',
@@ -1187,6 +1191,16 @@ FW_VERSIONS = {
       b'\x01F15260E110\x00\x00\x00\x00\x00\x00',
       b'\x01F15260E170\x00\x00\x00\x00\x00\x00',
       b'\x01F15260E05300\x00\x00\x00\x00',
+      b'\x01F15264872300\x00\x00\x00\x00',
+      b'\x01F15264872400\x00\x00\x00\x00',
+      b'\x01F15264872500\x00\x00\x00\x00',
+      b'\x01F15264872600\x00\x00\x00\x00',
+      b'\x01F15264873500\x00\x00\x00\x00',
+      b'\x01F152648C6300\x00\x00\x00\x00',
+      b'\x01F152648J4000\x00\x00\x00\x00',
+      b'\x01F152648J5000\x00\x00\x00\x00',
+      b'\x01F152648J6000\x00\x00\x00\x00',
+      b'\x01F15264872700\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x700, None): [
       b'\x01896630E62100\x00\x00\x00\x00',
@@ -1207,38 +1221,6 @@ FW_VERSIONS = {
       b'\x01896630EE1100\x00\x00\x00\x00',
       b'\x01896630EG3000\x00\x00\x00\x00',
       b'\x01896630EG5000\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdRadar, 0x750, 0xf): [
-      b'\x018821F3301400\x00\x00\x00\x00',
-      b'\x018821F6201200\x00\x00\x00\x00',
-      b'\x018821F6201300\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdCamera, 0x750, 0x6d): [
-      b'\x028646F0E02100\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
-      b'\x028646F4803000\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
-      b'\x028646F4803000\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
-      b'\x028646F4803200\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
-    ],
-  },
-  CAR.HIGHLANDERH_TSS2: {
-    (Ecu.eps, 0x7a1, None): [
-      b'8965B48241\x00\x00\x00\x00\x00\x00',
-      b'8965B48310\x00\x00\x00\x00\x00\x00',
-      b'8965B48400\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.abs, 0x7b0, None): [
-      b'\x01F15264872300\x00\x00\x00\x00',
-      b'\x01F15264872400\x00\x00\x00\x00',
-      b'\x01F15264872500\x00\x00\x00\x00',
-      b'\x01F15264872600\x00\x00\x00\x00',
-      b'\x01F15264873500\x00\x00\x00\x00',
-      b'\x01F152648C6300\x00\x00\x00\x00',
-      b'\x01F152648J4000\x00\x00\x00\x00',
-      b'\x01F152648J5000\x00\x00\x00\x00',
-      b'\x01F152648J6000\x00\x00\x00\x00',
-      b'\x01F15264872700\x00\x00\x00\x00',
-    ],
-    (Ecu.engine, 0x700, None): [
       b'\x01896630E67000\x00\x00\x00\x00',
       b'\x01896630EA1000\x00\x00\x00\x00',
       b'\x01896630EE4000\x00\x00\x00\x00',
@@ -1255,8 +1237,15 @@ FW_VERSIONS = {
       b'\x018821F3301400\x00\x00\x00\x00',
       b'\x018821F6201200\x00\x00\x00\x00',
       b'\x018821F6201300\x00\x00\x00\x00',
+      b'\x018821F3301400\x00\x00\x00\x00',
+      b'\x018821F6201200\x00\x00\x00\x00',
+      b'\x018821F6201300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'\x028646F0E02100\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
+      b'\x028646F4803000\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
+      b'\x028646F4803000\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
+      b'\x028646F4803200\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
       b'\x028646F0E02100\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
       b'\x028646F4803000\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
       b'\x028646F4803000\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
@@ -2234,7 +2223,6 @@ DBC = {
   CAR.HIGHLANDER: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
   CAR.HIGHLANDER_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.HIGHLANDERH: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-  CAR.HIGHLANDERH_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.AVALON: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
   CAR.AVALON_2019: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
   CAR.AVALONH_2019: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
@@ -2267,7 +2255,7 @@ EPS_SCALE = defaultdict(lambda: 73, {CAR.PRIUS: 66, CAR.COROLLA: 88, CAR.LEXUS_I
 # Toyota/Lexus Safety Sense 2.0 and 2.5
 TSS2_CAR = {CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023, CAR.COROLLA_TSS2, CAR.LEXUS_ES_TSS2,
             CAR.RAV4H_TSS2_2022, CAR.RAV4H_TSS2_2023, CAR.LEXUS_RX_TSS2, CAR.HIGHLANDER_TSS2,
-            CAR.HIGHLANDERH_TSS2, CAR.PRIUS_TSS2, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2, CAR.LEXUS_IS_TSS2, CAR.MIRAI, CAR.LEXUS_NX_TSS2,
+            CAR.PRIUS_TSS2, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2, CAR.LEXUS_IS_TSS2, CAR.MIRAI, CAR.LEXUS_NX_TSS2,
             CAR.ALPHARD_TSS2, CAR.AVALON_TSS2, CAR.AVALONH_TSS2, CAR.ALPHARDH_TSS2, CAR.CHR_TSS2, CAR.CHRH_TSS2}
 
 NO_DSU_CAR = TSS2_CAR | {CAR.CHR, CAR.CAMRY, CAR.CAMRYH}
