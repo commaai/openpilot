@@ -3,6 +3,7 @@ import numpy as np
 from typing import Dict
 from cereal import log
 from openpilot.selfdrive.modeld.constants import *
+from openpilot.common.numpy_fast import interp
 
 class PublishState:
   def __init__(self):
@@ -59,12 +60,14 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
   orientation_rate = modelV2.orientationRate
   fill_xyzt(orientation_rate, T_IDXS, *net_output_data['plan'][0,:,Plan.ORIENTATION_RATE].T)
 
+  # times at X_IDXS according to model plan
+  PLAN_T_IDXS = interp(X_IDXS, T_IDXS, net_output_data['plan'][0,:,Plan.POSITION][:,0].tolist())
+
   # lane lines
   modelV2.init('laneLines', 4)
   for i in range(4):
     lane_line = modelV2.laneLines[i]
-    # TODO: these times are wrong
-    fill_xyzt(lane_line, T_IDXS, np.array(X_IDXS), net_output_data['lane_lines'][0,i,:,0], net_output_data['lane_lines'][0,i,:,1])
+    fill_xyzt(lane_line, PLAN_T_IDXS, np.array(X_IDXS), net_output_data['lane_lines'][0,i,:,0], net_output_data['lane_lines'][0,i,:,1])
   modelV2.laneLineStds = net_output_data['lane_lines_stds'][0,:,0,0].tolist()
   modelV2.laneLineProbs = net_output_data['lane_lines_prob'][0,1::2].tolist()
 
@@ -72,8 +75,7 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
   modelV2.init('roadEdges', 2)
   for i in range(2):
     road_edge = modelV2.roadEdges[i]
-    # TODO: these times are wrong
-    fill_xyzt(road_edge, T_IDXS, np.array(X_IDXS), net_output_data['road_edges'][0,i,:,0], net_output_data['road_edges'][0,i,:,1])
+    fill_xyzt(road_edge, PLAN_T_IDXS, np.array(X_IDXS), net_output_data['road_edges'][0,i,:,0], net_output_data['road_edges'][0,i,:,1])
   modelV2.roadEdgeStds = net_output_data['road_edges_stds'][0,:,0,0].tolist()
 
   # leads
