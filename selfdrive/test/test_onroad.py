@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import bz2
 import math
 import json
 import os
@@ -197,12 +198,18 @@ class TestOnroad(unittest.TestCase):
       assert f.is_file()
 
       sz = f.stat().st_size / 1e6
+      if f.name in ("qlog", "rlog"):
+        with open(f) as ff:
+          sz = bz2.compress(ff.read())
+
       if f.name == "qcamera.ts":
         assert 2.15 < sz < 2.35
+      elif f.name == "qlog":
+        assert 0.75 < sz < 1.0
+      elif f.name == "rlog":
+        assert 20 < sz < 50
       elif f.name.endswith('.hevc'):
         assert 70 < sz < 77
-      elif f.name in ("qlog", "rlog"):
-        pass
       else:
         raise NotImplementedError
 
