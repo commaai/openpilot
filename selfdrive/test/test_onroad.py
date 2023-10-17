@@ -200,12 +200,12 @@ class TestOnroad(unittest.TestCase):
       sz = f.stat().st_size / 1e6
       if f.name in ("qlog", "rlog"):
         with open(f, 'rb') as ff:
-          sz = len(bz2.compress(ff.read()))
+          sz = len(bz2.compress(ff.read())) / 1e6
 
       if f.name == "qcamera.ts":
         assert 2.15 < sz < 2.35
       elif f.name == "qlog":
-        assert 0.75 < sz < 1.0
+        assert 0.75 < sz < 0.95
       elif f.name == "rlog":
         assert 20 < sz < 50
       elif f.name.endswith('.hevc'):
