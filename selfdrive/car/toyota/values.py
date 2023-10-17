@@ -70,7 +70,6 @@ class CAR(StrEnum):
   RAV4_TSS2 = "TOYOTA RAV4 2019"
   RAV4_TSS2_2022 = "TOYOTA RAV4 2022"
   RAV4_TSS2_2023 = "TOYOTA RAV4 2023"
-  RAV4H_TSS2_2023 = "TOYOTA RAV4 HYBRID 2023"
   MIRAI = "TOYOTA MIRAI 2021"  # TSS 2.5
   SIENNA = "TOYOTA SIENNA 2018"
 
@@ -178,8 +177,10 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
     ToyotaCarInfo("Toyota RAV4 2022"),
     ToyotaCarInfo("Toyota RAV4 Hybrid 2022", video_link="https://youtu.be/U0nH9cnrFB0"),
   ],
-  CAR.RAV4_TSS2_2023: ToyotaCarInfo("Toyota RAV4 2023"),
-  CAR.RAV4H_TSS2_2023: ToyotaCarInfo("Toyota RAV4 Hybrid 2023"),
+  CAR.RAV4_TSS2_2023: [
+    ToyotaCarInfo("Toyota RAV4 2023"),
+    ToyotaCarInfo("Toyota RAV4 Hybrid 2023"),
+  ],
   CAR.MIRAI: ToyotaCarInfo("Toyota Mirai 2021"),
   CAR.SIENNA: ToyotaCarInfo("Toyota Sienna 2018-20", video_link="https://www.youtube.com/watch?v=q1UPOo4Sh68", min_enable_speed=MIN_ACC_SPEED),
 
@@ -1541,46 +1542,28 @@ FW_VERSIONS = {
   CAR.RAV4_TSS2_2023: {
     (Ecu.abs, 0x7b0, None): [
       b'\x01F15260R450\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.eps, 0x7a1, None): [
-      b'\x028965B0R11000\x00\x00\x00\x008965B0R12000\x00\x00\x00\x00',
-    ],
-    (Ecu.engine, 0x700, None): [
-      b'\x01896634A88100\x00\x00\x00\x00',
-      b'\x01896634AJ2000\x00\x00\x00\x00',
-      b'\x01896634A89100\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdRadar, 0x750, 0xf): [
-      b'\x018821F0R03100\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdCamera, 0x750, 0x6d): [
-      b'\x028646F0R05100\x00\x00\x00\x008646G0R02100\x00\x00\x00\x00',
-    ],
-  },
-  CAR.RAV4H_TSS2_2023: {
-    (Ecu.abs, 0x7b0, None): [
       b'\x01F15264283200\x00\x00\x00\x00',
       b'\x01F15264283300\x00\x00\x00\x00',
       b'\x01F152642F1000\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'\x028965B0R11000\x00\x00\x00\x008965B0R12000\x00\x00\x00\x00',
+      b'\x028965B0R11000\x00\x00\x00\x008965B0R12000\x00\x00\x00\x00',
       b'8965B42371\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x700, None): [
+      b'\x01896634A88100\x00\x00\x00\x00',
+      b'\x01896634AJ2000\x00\x00\x00\x00',
+      b'\x01896634A89100\x00\x00\x00\x00',
       b'\x01896634AE1001\x00\x00\x00\x00',
       b'\x01896634AF0000\x00\x00\x00\x00',
     ],
-    (Ecu.hybrid, 0x7d2, None): [
-      b'\x02899830R39000\x00\x00\x00\x00899850R20000\x00\x00\x00\x00',
-      b'\x02899830R41000\x00\x00\x00\x00899850R20000\x00\x00\x00\x00',
-      b'\x028998342C0000\x00\x00\x00\x00899854224000\x00\x00\x00\x00',
-      b'\x028998342C6000\x00\x00\x00\x00899854224000\x00\x00\x00\x00',
-    ],
     (Ecu.fwdRadar, 0x750, 0xf): [
+      b'\x018821F0R03100\x00\x00\x00\x00',
       b'\x018821F0R03100\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'\x028646F0R05100\x00\x00\x00\x008646G0R02100\x00\x00\x00\x00',
       b'\x028646F0R05100\x00\x00\x00\x008646G0R02100\x00\x00\x00\x00',
       b'\x028646F0R05200\x00\x00\x00\x008646G0R02200\x00\x00\x00\x00',
     ],
@@ -2092,7 +2075,6 @@ DBC = {
   CAR.LEXUS_IS: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
   CAR.LEXUS_IS_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.LEXUS_CTH: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-  CAR.RAV4H_TSS2_2023: dbc_dict('toyota_nodsu_pt_generated', None),
   CAR.LEXUS_NX: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
   CAR.LEXUS_NX_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.PRIUS_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
@@ -2105,7 +2087,7 @@ EPS_SCALE = defaultdict(lambda: 73, {CAR.PRIUS: 66, CAR.COROLLA: 88, CAR.LEXUS_I
 
 # Toyota/Lexus Safety Sense 2.0 and 2.5
 TSS2_CAR = {CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023, CAR.COROLLA_TSS2, CAR.LEXUS_ES_TSS2,
-            CAR.RAV4H_TSS2_2023, CAR.LEXUS_RX_TSS2, CAR.HIGHLANDER_TSS2,
+            CAR.LEXUS_RX_TSS2, CAR.HIGHLANDER_TSS2,
             CAR.PRIUS_TSS2, CAR.CAMRY_TSS2, CAR.LEXUS_IS_TSS2, CAR.MIRAI, CAR.LEXUS_NX_TSS2,
             CAR.ALPHARD_TSS2, CAR.AVALON_TSS2, CAR.CHR_TSS2}
 
@@ -2115,10 +2097,10 @@ NO_DSU_CAR = TSS2_CAR | {CAR.CHR, CAR.CAMRY}
 UNSUPPORTED_DSU_CAR = {CAR.LEXUS_IS, CAR.LEXUS_RC}
 
 # these cars have a radar which sends ACC messages instead of the camera
-RADAR_ACC_CAR = {CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2_2023, CAR.RAV4_TSS2_2023, CAR.CHR_TSS2}
+RADAR_ACC_CAR = {CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023, CAR.CHR_TSS2}
 
 # these cars use the Lane Tracing Assist (LTA) message for lateral control
-ANGLE_CONTROL_CAR = {CAR.RAV4H_TSS2_2023, CAR.RAV4_TSS2_2023}
+ANGLE_CONTROL_CAR = {CAR.RAV4_TSS2_2023}
 
 # no resume button press required
 NO_STOP_TIMER_CAR = TSS2_CAR | {CAR.PRIUS_V, CAR.RAV4H, CAR.HIGHLANDERH, CAR.HIGHLANDER, CAR.SIENNA, CAR.LEXUS_ESH}
