@@ -1,9 +1,12 @@
+# ruff: noqa: E701
 import capnp
 import numpy as np
 from typing import Dict
 from cereal import log
-from openpilot.selfdrive.modeld.constants import *
-from openpilot.common.numpy_fast import interp
+from openpilot.selfdrive.modeld.constants import (
+  DISENGAGE_WIDTH, FCW_THRESHOLDS_5MS2, FCW_THRESHOLDS_3MS2, IDX_N, LEAD_T_IDXS, LEAD_T_OFFSETS,
+  META_T_IDXS, MODEL_FREQ, RYG_GREEN, RYG_YELLOW, T_IDXS, X_IDXS, Plan, Meta
+)
 
 class PublishState:
   def __init__(self):
@@ -98,8 +101,7 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
   modelV2.init('leadsV3', 3)
   for i in range(3):
     lead = modelV2.leadsV3[i]
-    fill_xyvat(lead, LEAD_T_IDXS, net_output_data['lead'][0,i,:,0], net_output_data['lead'][0,i,:,1], net_output_data['lead'][0,i,:,2], net_output_data['lead'][0,i,:,3],
-      net_output_data['lead_stds'][0,i,:,0], net_output_data['lead_stds'][0,i,:,1], net_output_data['lead_stds'][0,i,:,2], net_output_data['lead_stds'][0,i,:,3])
+    fill_xyvat(lead, LEAD_T_IDXS, *net_output_data['lead'][0,i].T, *net_output_data['lead_stds'][0,i].T)
     lead.prob = net_output_data['lead_prob'][0,i].tolist()
     lead.probTime = LEAD_T_OFFSETS[i]
 
@@ -135,7 +137,10 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
   # confidence
   if vipc_frame_id % (2*MODEL_FREQ) == 0:
     # any disengage prob
-    any_disengage_probs = 1-((1-net_output_data['meta'][0,Meta.BRAKE_DISENGAGE])*(1-net_output_data['meta'][0,Meta.GAS_DISENGAGE])*(1-net_output_data['meta'][0,Meta.STEER_OVERRIDE]))
+    brake_disengage_probs = net_output_data['meta'][0,Meta.BRAKE_DISENGAGE]
+    gas_disengage_probs = net_output_data['meta'][0,Meta.GAS_DISENGAGE]
+    steer_override_probs = net_output_data['meta'][0,Meta.STEER_OVERRIDE]
+    any_disengage_probs = 1-((1-brake_disengage_probs)*(1-gas_disengage_probs)*(1-steer_override_probs))
     # independent disengage prob for each 2s slice
     ind_disengage_probs = np.zeros(DISENGAGE_WIDTH, dtype=np.float32)
     ind_disengage_probs[0] = any_disengage_probs[0]

@@ -1,6 +1,9 @@
 import numpy as np
 from typing import Dict
-from openpilot.selfdrive.modeld.constants import *
+from openpilot.selfdrive.modeld.constants import (
+  PLAN_MHP_N, PLAN_MHP_SELECTION, IDX_N, PLAN_WIDTH, NUM_LANE_LINES, LANE_LINES_WIDTH, NUM_ROAD_EDGES, POSE_WIDTH,
+  WIDE_FROM_DEVICE_WIDTH, LEAD_MHP_N, LEAD_MHP_SELECTION, LEAD_TRAJ_LEN, LEAD_WIDTH, DESIRE_PRED_WIDTH, DESIRE_PRED_LEN
+)
 
 def sigmoid(x):
   return 1. / (1. + np.exp(-x))
