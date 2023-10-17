@@ -26,7 +26,7 @@ from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.selfdrive.test.process_replay.capture import ProcessOutputCapture
-from openpilot.tools.lib.logreader import LogReader, IterableLog
+from openpilot.tools.lib.logreader import LogReader,LogIteratable
 
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7
@@ -224,7 +224,7 @@ class ProcessContainer:
 
   def start(
     self, params_config: Dict[str, Any], environ_config: Dict[str, Any],
-    all_msgs: IterableLog,
+    all_msgs:LogIteratable,
     fingerprint: Optional[str], capture_output: bool
   ):
     with self.prefix as p:
@@ -599,7 +599,7 @@ def get_process_config(name: str) -> ProcessConfig:
     raise Exception(f"Cannot find process config with name: {name}") from ex
 
 
-def get_custom_params_from_lr(lr: IterableLog, initial_state: str = "first") -> Dict[str, Any]:
+def get_custom_params_from_lr(lr:LogIteratable, initial_state: str = "first") -> Dict[str, Any]:
   """
   Use this to get custom params dict based on provided logs.
   Useful when replaying following processes: calibrationd, paramsd, torqued
@@ -644,7 +644,7 @@ def replay_process_with_name(name: Union[str, Iterable[str]], lr: Union[LogReade
 
 
 def replay_process(
-  cfg: Union[ProcessConfig, Iterable[ProcessConfig]], lr: IterableLog, frs: Optional[Dict[str, Any]] = None,
+  cfg: Union[ProcessConfig, Iterable[ProcessConfig]], lr:LogIteratable, frs: Optional[Dict[str, Any]] = None,
   fingerprint: Optional[str] = None, return_all_logs: bool = False, custom_params: Optional[Dict[str, Any]] = None,
   captured_output_store: Optional[Dict[str, Dict[str, str]]] = None, disable_progress: bool = False
 ) -> List[capnp._DynamicStructReader]:
@@ -672,7 +672,7 @@ def replay_process(
 
 
 def _replay_multi_process(
-  cfgs: List[ProcessConfig], lr: IterableLog, frs: Optional[Dict[str, Any]], fingerprint: Optional[str],
+  cfgs: List[ProcessConfig], lr:LogIteratable, frs: Optional[Dict[str, Any]], fingerprint: Optional[str],
   custom_params: Optional[Dict[str, Any]], captured_output_store: Optional[Dict[str, Dict[str, str]]], disable_progress: bool
 ) -> List[capnp._DynamicStructReader]:
   if fingerprint is not None:
@@ -799,7 +799,7 @@ def generate_environ_config(CP=None, fingerprint=None, log_dir=None) -> Dict[str
   return environ_dict
 
 
-def check_openpilot_enabled(msgs: IterableLog) -> bool:
+def check_openpilot_enabled(msgs:LogIteratable) -> bool:
   cur_enabled_count = 0
   max_enabled_count = 0
   for msg in msgs:
