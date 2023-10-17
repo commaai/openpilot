@@ -45,12 +45,10 @@ snpe_rpath = lenvCython['RPATH'] + [snpe_rpath_qcom if arch == "larch64" else sn
 cython_libs = envCython["LIBS"] + libs
 snpemodel_lib = lenv.Library('snpemodel', ['runners/snpemodel.cc'])
 commonmodel_lib = lenv.Library('commonmodel', common_src)
-driving_lib = lenv.Library('driving', ['models/driving.cc'])
 
 lenvCython.Program('runners/runmodel_pyx.so', 'runners/runmodel_pyx.pyx', LIBS=cython_libs, FRAMEWORKS=frameworks)
 lenvCython.Program('runners/snpemodel_pyx.so', 'runners/snpemodel_pyx.pyx', LIBS=[snpemodel_lib, snpe_lib, *cython_libs], FRAMEWORKS=frameworks, RPATH=snpe_rpath)
 lenvCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=[commonmodel_lib, *cython_libs], FRAMEWORKS=frameworks)
-lenvCython.Program('models/driving_pyx.so', 'models/driving_pyx.pyx', LIBS=[driving_lib, commonmodel_lib, *cython_libs], FRAMEWORKS=frameworks)
 
 # Build thneed model
 if arch == "larch64" or GetOption('pc_thneed'):

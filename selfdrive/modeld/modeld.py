@@ -17,10 +17,10 @@ from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
 from openpilot.selfdrive.modeld.parse_model_outputs import parse_outputs
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
+from openpilot.selfdrive.modeld.constants import (
+  FEATURE_LEN, HISTORY_BUFFER_LEN, DESIRE_LEN, TRAFFIC_CONVENTION_LEN, NAV_FEATURE_LEN, NAV_INSTRUCTION_LEN, MODEL_FREQ
+  )
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
-from openpilot.selfdrive.modeld.models.driving_pyx import (
-  FEATURE_LEN, HISTORY_BUFFER_LEN, DESIRE_LEN, TRAFFIC_CONVENTION_LEN, NAV_FEATURE_LEN, NAV_INSTRUCTION_LEN,
-  NET_OUTPUT_SIZE, MODEL_FREQ)
 
 MODEL_PATHS = {
   ModelRunner.THNEED: Path(__file__).parent / 'models/supercombo.thneed',
@@ -47,7 +47,6 @@ class ModelState:
     self.frame = ModelFrame(context)
     self.wide_frame = ModelFrame(context)
     self.prev_desire = np.zeros(DESIRE_LEN, dtype=np.float32)
-    self.output = np.zeros(NET_OUTPUT_SIZE, dtype=np.float32)
     self.inputs = {
       'desire': np.zeros(DESIRE_LEN * (HISTORY_BUFFER_LEN+1), dtype=np.float32),
       'traffic_convention': np.zeros(TRAFFIC_CONVENTION_LEN, dtype=np.float32),
@@ -56,16 +55,19 @@ class ModelState:
       'features_buffer': np.zeros(HISTORY_BUFFER_LEN * FEATURE_LEN, dtype=np.float32),
     }
 
+    with open(Path(__file__).parent / 'models/output_slices.pkl', 'rb') as f:
+      self.output_slices = pickle.load(f)
+
+    net_output_size = max([x.stop for x in self.output_slices.values()])
+    self.output = np.zeros(net_output_size, dtype=np.float32)
+
     self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.GPU, False, context)
     self.model.addInput("input_imgs", None)
     self.model.addInput("big_input_imgs", None)
     for k,v in self.inputs.items():
       self.model.addInput(k, v)
 
-    with open(Path(__file__).parent / 'models/output_slices.pkl', 'rb') as f:
-      self.output_slices = pickle.load(f)
-
-  def slice(self, model_outputs: np.ndarray) -> Dict[str, np.ndarray]:
+  def slice_outputs(self, model_outputs: np.ndarray) -> Dict[str, np.ndarray]:
     return {k: model_outputs[np.newaxis, v] for k,v in self.output_slices.items()}
 
   def run(self, buf: VisionBuf, wbuf: VisionBuf, transform: np.ndarray, transform_wide: np.ndarray,
@@ -90,7 +92,7 @@ class ModelState:
       return None
 
     self.model.execute()
-    outputs = parse_outputs(self.slice(self.output))
+    outputs = parse_outputs(self.slice_outputs(self.output))
 
     self.inputs['features_buffer'][:-FEATURE_LEN] = self.inputs['features_buffer'][FEATURE_LEN:]
     self.inputs['features_buffer'][-FEATURE_LEN:] = outputs['hidden_state'][0, :]
