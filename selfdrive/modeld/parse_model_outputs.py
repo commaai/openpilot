@@ -80,7 +80,7 @@ def parse_outputs(outs: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
   parse_mdn('pose', outs, in_N=0, out_N=0, out_shape=(POSE_WIDTH,))
   parse_mdn('road_transform', outs, in_N=0, out_N=0, out_shape=(POSE_WIDTH,))
   parse_mdn('sim_pose', outs, in_N=0, out_N=0, out_shape=(POSE_WIDTH,))
-  parse_mdn('wide_from_device_euler', outs, in_N=0, out_N=0, out_shape=(POSE_WIDTH // 2,))
+  parse_mdn('wide_from_device_euler', outs, in_N=0, out_N=0, out_shape=(WIDE_FROM_DEVICE_WIDTH,))
   parse_mdn('lead', outs, in_N=LEAD_MHP_N, out_N=LEAD_MHP_SELECTION, out_shape=(LEAD_TRAJ_LEN,LEAD_WIDTH))
   for k in ['lead_prob', 'lane_lines_prob', 'meta']:
     parse_binary_crossentropy(k, outs)
