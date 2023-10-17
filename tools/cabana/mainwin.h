@@ -20,7 +20,6 @@ class MainWindow : public QMainWindow {
 
 public:
   MainWindow();
-  void showStatusMessage(const QString &msg, int timeout = 0) { statusBar()->showMessage(msg, timeout); }
   void loadFile(const QString &fn, SourceSet s = SOURCE_ALL);
   ChartsWidget *charts_widget = nullptr;
 

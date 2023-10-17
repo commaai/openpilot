@@ -353,8 +353,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
         painter->setFont(label_font);
         QString freq = QString("%1 hz").arg(item->sparkline.freq(), 0, 'g', 2);
         painter->drawText(rect.adjusted(5, 0, 0, 0), Qt::AlignLeft | Qt::AlignVCenter, freq);
-        QFontMetrics fm(label_font);
-        value_adjust = fm.width(freq) + 10;
+        value_adjust = QFontMetrics(label_font).width(freq) + 10;
       }
       // signal value
       painter->setFont(option.font);

@@ -240,9 +240,8 @@ void ChartsWidget::settingChanged() {
 }
 
 ChartView *ChartsWidget::findChart(const MessageId &id, const cabana::Signal *sig) {
-  for (auto c : charts)
-    if (c->hasSignal(id, sig)) return c;
-  return nullptr;
+  auto it = std::find_if(charts.begin(), charts.end(), [&id, sig](auto c) { return c->hasSignal(id, sig); });
+  return it != charts.end() ? *it : nullptr;
 }
 
 ChartView *ChartsWidget::createChart() {
