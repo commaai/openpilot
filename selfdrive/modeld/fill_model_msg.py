@@ -142,9 +142,7 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
     steer_override_probs = net_output_data['meta'][0,Meta.STEER_OVERRIDE]
     any_disengage_probs = 1-((1-brake_disengage_probs)*(1-gas_disengage_probs)*(1-steer_override_probs))
     # independent disengage prob for each 2s slice
-    ind_disengage_probs = np.zeros(DISENGAGE_WIDTH, dtype=np.float32)
-    ind_disengage_probs[0] = any_disengage_probs[0]
-    ind_disengage_probs[1:] = np.diff(any_disengage_probs) / (1 - any_disengage_probs[:-1])
+    ind_disengage_probs = np.r_[any_disengage_probs[0], np.diff(any_disengage_probs) / (1 - any_disengage_probs[:-1])]
     # rolling buf for 2, 4, 6, 8, 10s
     publish_state.disengage_buffer[:-DISENGAGE_WIDTH] = publish_state.disengage_buffer[DISENGAGE_WIDTH:]
     publish_state.disengage_buffer[DISENGAGE_WIDTH*(DISENGAGE_WIDTH-1):] = ind_disengage_probs
