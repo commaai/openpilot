@@ -3,8 +3,10 @@ from hypothesis import given, settings, strategies as st
 import unittest
 
 from cereal import car
+from openpilot.selfdrive.car.fw_versions import build_fw_dict
 from openpilot.selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, RADAR_ACC_CAR, FW_VERSIONS, \
-                                                  PLATFORM_CODE_ECUS, get_platform_codes
+                                                  FW_QUERY_CONFIG, PLATFORM_CODE_ECUS, FUZZY_EXCLUDED_PLATFORMS, \
+                                                  get_platform_codes
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
@@ -119,6 +121,27 @@ class TestToyotaFingerprint(unittest.TestCase):
       b"\x0235879000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00",
     ])
     self.assertEqual(results, {b"F1526-07-1": {b"10", b"40"}, b"8646F-41-04": {b"100"}, b"58-79": {b"000"}})
+
+  def test_fuzzy_excluded_platforms(self):
+    # Asserts a list of platforms that will not fuzzy fingerprint with platform codes due to them being shared.
+    platforms_with_shared_codes = set()
+    for platform, fw_by_addr in FW_VERSIONS.items():
+      car_fw = []
+      for ecu, fw_versions in fw_by_addr.items():
+        ecu_name, addr, sub_addr = ecu
+        for fw in fw_versions:
+          car_fw.append({"ecu": ecu_name, "fwVersion": fw, "address": addr,
+                         "subAddress": 0 if sub_addr is None else sub_addr})
+
+      CP = car.CarParams.new_message(carFw=car_fw)
+      matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw))
+      if len(matches) == 1:
+        self.assertEqual(list(matches)[0], platform)
+      else:
+        # If a platform has multiple matches, add it and its matches
+        platforms_with_shared_codes |= {platform, *matches}
+
+    self.assertEqual(platforms_with_shared_codes, FUZZY_EXCLUDED_PLATFORMS, (len(platforms_with_shared_codes), len(FW_VERSIONS)))
 
 
 if __name__ == "__main__":
