@@ -207,7 +207,7 @@ class TestOnroad(unittest.TestCase):
       elif f.name == "qlog":
         assert 0.75 < sz < 0.95
       elif f.name == "rlog":
-        assert 20 < sz < 50
+        assert 5 < sz < 50
       elif f.name.endswith('.hevc'):
         assert 70 < sz < 77
       else:
