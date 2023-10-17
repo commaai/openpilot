@@ -121,7 +121,6 @@ class LogReader:
       else:
         yield ent
 
-
 def logreader_from_route_or_segment(r, sort_by_time=False):
   sn = SegmentName(r, allow_route_name=True)
   route = Route(sn.route_name.canonical_name)
