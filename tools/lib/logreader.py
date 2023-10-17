@@ -12,7 +12,7 @@ from cereal import log as capnp_log
 from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.route import Route, SegmentName
 
-LogIteratable = Iterable[capnp._DynamicStructReader]
+LogIterable = Iterable[capnp._DynamicStructReader]
 
 # this is an iterator itself, and uses private variables from LogReader
 class MultiLogIterator:
