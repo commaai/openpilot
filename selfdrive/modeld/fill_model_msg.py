@@ -61,7 +61,23 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
   fill_xyzt(orientation_rate, T_IDXS, *net_output_data['plan'][0,:,Plan.ORIENTATION_RATE].T)
 
   # times at X_IDXS according to model plan
-  PLAN_T_IDXS = interp(X_IDXS, T_IDXS, net_output_data['plan'][0,:,Plan.POSITION][:,0].tolist())
+  PLAN_T_IDXS = [np.nan] * IDX_N
+  PLAN_T_IDXS[0] = 0.0
+  plan_x = net_output_data['plan'][0,:,Plan.POSITION][:,0].tolist()
+  for xidx in range(1, IDX_N):
+    tidx = 0
+    # increment tidx until we find an element that's further away than the current xidx
+    while tidx < IDX_N - 1 and plan_x[tidx+1] < X_IDXS[xidx]:
+      tidx += 1
+    if tidx == IDX_N - 1:
+      # if the Plan doesn't extend far enough, set plan_t to the max value (10s), then break
+      PLAN_T_IDXS[xidx] = T_IDXS[IDX_N - 1]
+      break
+    # interpolate to find `t` for the current xidx
+    current_x_val = plan_x[tidx]
+    next_x_val = plan_x[tidx+1]
+    p = (X_IDXS[xidx] - current_x_val) / (next_x_val - current_x_val)
+    PLAN_T_IDXS[xidx] = p * T_IDXS[tidx+1] + (1 - p) * T_IDXS[tidx]
 
   # lane lines
   modelV2.init('laneLines', 4)
