@@ -200,7 +200,7 @@ class TestOnroad(unittest.TestCase):
       sz = f.stat().st_size / 1e6
       if f.name in ("qlog", "rlog"):
         with open(f, 'rb') as ff:
-          sz = bz2.compress(ff.read())
+          sz = len(bz2.compress(ff.read()))
 
       if f.name == "qcamera.ts":
         assert 2.15 < sz < 2.35
