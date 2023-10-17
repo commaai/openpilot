@@ -134,11 +134,13 @@ void DetailWidget::refresh() {
     for (auto s : binary_view->getOverlappingSignals()) {
       warnings.push_back(tr("%1 has overlapping bits.").arg(s->name));
     }
-    name_label->setText(QString("%1 (%2)").arg(msgName(msg_id), msg->transmitter));
   } else {
     warnings.push_back(tr("Drag-Select in binary view to create new signal."));
-    name_label->setText(msgName(msg_id));
   }
+
+  QString msg_name = msg ? QString("%1 (%2)").arg(msg->name, msg->transmitter) : msgName(msg_id);
+  name_label->setText(msg_name);
+  name_label->setToolTip(msg_name);
   remove_btn->setEnabled(msg != nullptr);
 
   if (!warnings.isEmpty()) {
