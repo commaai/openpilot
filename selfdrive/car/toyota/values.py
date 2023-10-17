@@ -1,39 +1,39 @@
-import re
-from collections import defaultdict
-from dataclasses import dataclass, field
-from enum import Enum, IntFlag, StrEnum
-from typing import Dict, List, Set, Union
+进口 重新进口
+from从集合导入defaultdictimport defaultdict
+来自数据类导入数据类、字段导入数据类、字段
+from从枚举导入 Enum、IntFlag、StrEnumimport Enum, IntFlag, StrEnum
+from从输入导入Dict、List、Set、Union 导入Dict、List、Set、Union
 
-from cereal import car
-from openpilot.common.conversions import Conversions as CV
-from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
-from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, CarParts, CarHarness
-from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+从粮食 进口车 进口汽车
+来自来自 openpilot。常见的。conversions 将转化导入为 CVimport Conversions as CVas CV
+来自openpilot。自驾.汽车导入AngleRateLimit, dbc_dictimport AngleRateLimit, dbc_dict汽车导入AngleRateLimit, dbc_dictimport AngleRateLimit, dbc_dict
+来自 openpilot。自驾.汽车。docs_definitions 导入CarFootnote、CarInfo、Column、CarParts、CarHarness 导入CarFootnote、CarInfo、Column、CarParts、CarHarness汽车。docs_definitions 导入CarFootnote、CarInfo、Column、CarParts、CarHarness 导入CarFootnote、CarInfo、Column、CarParts、CarHarness
+来自 openpilot。自驾.汽车。fw_query_definitions 导入FwQueryConfig、Request、StdQueriesimport FwQueryConfig, Request, StdQueries汽车。fw_query_definitions 导入FwQueryConfig、Request、StdQueriesimport FwQueryConfig, Request, StdQueries
 
-Ecu = car.CarParams.Ecu
-MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
-PEDAL_TRANSITION = 10. * CV.MPH_TO_MS
+Ecu=汽车。汽车参数。EcuCarParams。埃库
+最小加速速度 = 19。* 专辑。MPH_TO_MS19。* 专辑。MPH_TO_MS19。* 专辑。MPH_TO_MS19。* 专辑。MPH_TO_MS
+PEDAL_TRANSITION = 10 .* CV。MPH_TO_MS10。* 简历。MPH_TO_MS10 .* CV。MPH_TO_MS10。* 简历。MPH_TO_MS
 
 
-class CarControllerParams:
-  ACCEL_MAX = 1.5  # m/s2, lower than allowed 2.0 m/s2 for tuning reasons
-  ACCEL_MIN = -3.5  # m/s2
+类CarController参数：
+  ACCEL_MAX = 1.5 # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的 2.0 m/s21.5   # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的 2.0 m/s2
+  ACCEL_MIN = - 3.53.5 
 
-  STEER_STEP = 1
-  STEER_MAX = 1500
-  STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
+  转向步数 = 1111
+  最大转向= 1500150015001500
+  STEER_ERROR_MAX = 350 # 税务命令和税务电机之间的最大增量350 # 税务命令和税务电机之间的最大增量350  # 税务命令和税务电机之间的最大增量350 # 扭矩命令和扭矩电机之间的最大增量
 
-  # Lane Tracing Assist (LTA) control limits
-  # Assuming a steering ratio of 13.7:
-  # Limit to ~2.0 m/s^3 up (7.5 deg/s), ~3.5 m/s^3 down (13 deg/s) at 75 mph
-  # Worst case, the low speed limits will allow ~4.0 m/s^3 up (15 deg/s) and ~4.9 m/s^3 down (18 deg/s) at 75 mph,
-  # however the EPS has its own internal limits at all speeds which are less than that
-  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.3, 0.15])
-  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.36, 0.26])
+  # 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制追踪辅助 (LTA) 控制# 车道跟踪辅助 (LTA) 控制限制
+  # 假设转向比为13.7：# 假设转向比为13.7：
+  # 75 mph 时限制为向上约 2.0 m/s^3 (7.5 deg/s)，向下约 3.5 m/s^3 (13 deg/s)# 限制为向上约 2.0 m/s^3 (7.5 deg/s) /s)，75 英里/小时时向下约 3.5 m/s^3 (13 deg/s)下游约 3.5 m/s^3 (13 deg/s)# 限制为向上约 2.0 m/s^3 (7.5 deg/s) /s) /s)，75 英里/小时时延约 3.5 m/s^3 (13 deg/s)# 75 mph 时限制为向上约 2.0 m/s^3 (7.5 deg/s)，向下约 3.5 m/s^3 (13 deg/s)# 限制为向上约 2.0 m/s^3 (7.5 deg/s) /s)，75 英里/小时时向下约 3.5 m/s^3 (13 deg/s)
+  # 最坏的允许情况，低速限制将是 75 英里/小时的速度向上约 4.0 m/s^3 (15 deg/s) 和后续约 4.9 m/s^3 (18 deg/s)，# Worst在这种情况允许下，低速限制将以 75 英里/小时的速度向上约 4.0 m/s^3 (15 deg/s) 和向下约 4.9 m/s^3 (18 deg/s)，# 最坏的允许情况，低速限制将以 75 英里/小时的速度向上约 4.0 m/s^3 (15 deg/s) 和后续约 4.9 m/s^3 (18 deg/s)，# Worst在这种情况下，低速限制将允许以 75 英里/小时的速度向上约 4.0 m/s^3 (15 deg/s) 和向下约 4.9 m/s^3 (18 deg/s)，
+  #然而，EPS在所有除了该速度的速度下都有其自己的内部限制#EPS在所有低于该速度的速度下都有其自己的内部限制#然而，EPS在所有除了该速度的速度下都有其自己的内部限制#EPS在所有低于该速度的速度下都有其自己的内部限制
+  ANGLE_RATE_LIMIT_UP = AngleRateLimit ( speed_bp= [ 5 , 25 ] ,angle_v= [ 0.3 , 0.15 ] ) AngleRateLimit ( speed_bp= [ 5 , 25 ] , angle_v= [ 0.3 , 0.15 ] )AngleRateLimit  ( speed_bp= [  5 , 25  ] ,angle_v= [  0.3 , 0.15  ]  )  AngleRateLimit  ( speed_bp= [  5 , 25  ] ,angle_v= [  0.3 , 0.15  ]  )
+  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit ( speed_bp= [ 5 , 25 ] ,angle_v= [ 0.36 , 0.26 ] ) AngleRateLimit ( speed_bp= [ 5 , 25 ] , angle_v= [ 0.36 , 0.26 ] )AngleRateLimit ( speed_bp= [ 5 , 25 ] ,angle_v= [ 0.36 , 0.26 ] ) AngleRateLimit ( speed_bp= [ 5 , 25 ] , angle_v= [ 0.36 , 0.26 ] )
 
-  def __init__(self, CP):
-    if CP.lateralTuning.which == 'torque':
-      self.STEER_DELTA_UP = 15       # 1.0s time to peak torque
+  def __init__ (自身, CP ) : def __init__ ( self, CP ) :def  __init__ (自身, CP ) : def  __init__ ( self, CP ) :
+    如果CP。横向调整。其中== 'XT'：如果CP。横向调整。其中== 'XT'：'XT'：如果CP。横向调整。其中== '扭矩'：
+      自己。STEER_DELTA_UP = 15  # 1.0s 达到达到扭矩的时间 STEER_DELTA_UP = 15 # 1.0s 达到峰值扭矩的时间
       self.STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
     else:
       self.STEER_DELTA_UP = 10       # 1.5s time to peak torque
@@ -59,16 +59,16 @@ class CAR(StrEnum):
   CAMRYH = "TOYOTA CAMRY HYBRID 2018"
   CAMRY_TSS2 = "TOYOTA CAMRY 2021"  # TSS 2.5
   CAMRYH_TSS2 = "TOYOTA CAMRY HYBRID 2021"
-  CHR = "TOYOTA C-HR 2018"
-  CHR_TSS2 = "TOYOTA C-HR 2021"
-  CHRH_TSS2 = "TOYOTA C-HR HYBRID 2022"
-  COROLLA = "TOYOTA COROLLA 2017"
-  # LSS2 Lexus UX Hybrid is same as a TSS2 Corolla Hybrid
-  COROLLA_TSS2 = "TOYOTA COROLLA TSS2 2019"
-  HIGHLANDER = "TOYOTA HIGHLANDER 2017"
-  HIGHLANDER_TSS2 = "TOYOTA HIGHLANDER 2020"
-  HIGHLANDERH = "TOYOTA HIGHLANDER HYBRID 2018"
-  HIGHLANDERH_TSS2 = "TOYOTA HIGHLANDER HYBRID 2020"
+  CHR =“丰田 C-HR 2018”"TOYOTA C-HR 2018"
+  CHR_TSS2 =“丰田 C-HR 2021”"TOYOTA C-HR 2021"
+  CHRH_TSS2 =“丰田 C-HR 混合动力 2022 年”"TOYOTA C-HR HYBRID 2022"
+  花冠 =“丰田花冠 2017”"TOYOTA COROLLA 2017"
+  # LSS2 Lexus UX Hybrid 与 TSS2 Corolla Hybrid 相同# LSS2 Lexus UX Hybrid is same as a TSS2 Corolla Hybrid
+  COROLLA_TSS2 = "丰田 花冠 TSS2 2019""TOYOTA COROLLA TSS2 2019"
+  汉兰达 =“丰田汉兰达 2017”"TOYOTA HIGHLANDER 2017"
+  HIGHLANDER_TSS2 = "丰田汉兰达 2020""TOYOTA HIGHLANDER 2020"
+  HIGHLANDERH =“丰田汉兰达混合动力车 2018”"TOYOTA HIGHLANDER HYBRID 2018"
+  HIGHLANDERH_TSS2 = "丰田汉兰达混合动力车 2020""TOYOTA HIGHLANDER HYBRID 2020"
   PRIUS = "TOYOTA PRIUS 2017"
   PRIUS_V = "TOYOTA PRIUS v 2017"
   PRIUS_TSS2 = "TOYOTA PRIUS TSS2 2021"
@@ -2058,11 +2058,11 @@ FW_VERSIONS = {
     ],
     (Ecu.dsu, 0x791, None): [
       b'881514811300\x00\x00\x00\x00',
-      b'881514811500\x00\x00\x00\x00',
-      b'881514811700\x00\x00\x00\x00',
-    ],
-    (Ecu.eps, 0x7a1, None): [
-      b'8965B0E011\x00\x00\x00\x00\x00\x00',
+      b'881514811500\x00\x00\x00\x00' ,
+      b'881514811700\x00\x00\x00\x00' ,
+    ] ,
+    （ Ecu.eps ，0x7a1，无）：[ _
+      b'8965B0E011\x00\x00\x00\x00\x00\x00' ,
       b'8965B0E012\x00\x00\x00\x00\x00\x00',
       b'8965B48111\x00\x00\x00\x00\x00\x00',
       b'8965B48112\x00\x00\x00\x00\x00\x00',
@@ -2098,6 +2098,7 @@ FW_VERSIONS = {
       b'\x01896634D44000\x00\x00\x00\x00',
       b'\x018966348X0000\x00\x00\x00\x00',
       b'\x01896630ED5000\x00\x00\x00\x00',
+      b'\x018966348R9200\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\x02348X4000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -2119,6 +2120,7 @@ FW_VERSIONS = {
       b'F152648D60\x00\x00\x00\x00\x00\x00',
       b'F152648811\x00\x00\x00\x00\x00\x00',
       b'F152648C80\x00\x00\x00\x00\x00\x00',
+      b'F152648493\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B48261\x00\x00\x00\x00\x00\x00',
