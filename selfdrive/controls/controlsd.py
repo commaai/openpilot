@@ -56,39 +56,33 @@ ENABLED_STATES = (State.preEnabled, *ACTIVE_STATES)
 
 
 class Controls:
-  def __init__(self, sm=None, pm=None, can_sock=None, CI=None):
+  def __init__(self, CI=None):
     config_realtime_process(4, Priority.CTRL_HIGH)
 
     # Ensure the current branch is cached, otherwise the first iteration of controlsd lags
     self.branch = get_short_branch("")
 
     # Setup sockets
-    self.pm = pm
-    if self.pm is None:
-      self.pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState',
-                                     'carControl', 'carEvents', 'carParams'])
+    self.pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState',
+                                   'carControl', 'carEvents', 'carParams'])
 
     self.sensor_packets = ["accelerometer", "gyroscope"]
     self.camera_packets = ["roadCameraState", "driverCameraState", "wideRoadCameraState"]
 
-    self.can_sock = can_sock
-    if can_sock is None:
-      can_timeout = None if os.environ.get('NO_CAN_TIMEOUT', False) else 20
-      self.can_sock = messaging.sub_sock('can', timeout=can_timeout)
+    can_timeout = None if os.environ.get('NO_CAN_TIMEOUT', False) else 20
+    self.can_sock = messaging.sub_sock('can', timeout=can_timeout)
 
     self.log_sock = messaging.sub_sock('androidLog')
 
     self.params = Params()
-    self.sm = sm
-    if self.sm is None:
-      ignore = self.sensor_packets + ['testJoystick']
-      if SIMULATION:
-        ignore += ['driverCameraState', 'managerState']
-      self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
-                                     'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
-                                     'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
-                                     'testJoystick'] + self.camera_packets + self.sensor_packets,
-                                    ignore_alive=ignore, ignore_avg_freq=['radarState', 'testJoystick'])
+    ignore = self.sensor_packets + ['testJoystick']
+    if SIMULATION:
+      ignore += ['driverCameraState', 'managerState']
+    self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
+                                   'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
+                                   'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
+                                   'testJoystick'] + self.camera_packets + self.sensor_packets,
+                                  ignore_alive=ignore, ignore_avg_freq=['radarState', 'testJoystick'])
 
     if CI is None:
       # wait for one pandaState and one CAN packet
@@ -879,8 +873,8 @@ class Controls:
       self.prof.display()
 
 
-def main(sm=None, pm=None, logcan=None):
-  controls = Controls(sm, pm, logcan)
+def main():
+  controls = Controls()
   controls.controlsd_thread()
 
 

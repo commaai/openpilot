@@ -52,13 +52,13 @@ lenvCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LI
 
 # Get model metadata
 fn = File("models/supercombo").abspath
-cmd = f' python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
+cmd = f'python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
 files = sum([lenv.Glob("#"+x) for x in open(File("#release/files_common").abspath).read().split("\n") if x.endswith("get_model_metadata.py")], [])
 lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"]+files, cmd)
 
 # Build thneed model
 if arch == "larch64" or GetOption('pc_thneed'):
-  tinygrad_opts = ["NATIVE_EXPLOG=1", "VALIDHACKS=1", "OPTLOCAL=1", "IMAGE=2", "GPU=1", "ENABLE_METHOD_CACHE=1"]
+  tinygrad_opts = ["NOLOCALS=1", "IMAGE=2", "GPU=1"]
   if not GetOption('pc_thneed'):
     # use FLOAT16 on device for speed + don't cache the CL kernels for space
     tinygrad_opts += ["FLOAT16=1", "PYOPENCL_NO_CACHE=1"]
