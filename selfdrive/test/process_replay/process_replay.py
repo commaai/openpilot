@@ -26,7 +26,7 @@ from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.selfdrive.test.process_replay.capture import ProcessOutputCapture
-from openpilot.tools.lib.logreader import LogReader, LogIterable
+from openpilot.tools.lib.logreader import LogIterable
 
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7
@@ -631,8 +631,7 @@ def get_custom_params_from_lr(lr: LogIterable, initial_state: str = "first") -> 
   return custom_params
 
 
-def replay_process_with_name(name: Union[str, Iterable[str]], lr: Union[LogReader,
-                             List[capnp._DynamicStructReader]], *args, **kwargs) -> List[capnp._DynamicStructReader]:
+def replay_process_with_name(name: Union[str, Iterable[str]], lr: LogIterable, *args, **kwargs) -> List[capnp._DynamicStructReader]:
   if isinstance(name, str):
     cfgs = [get_process_config(name)]
   elif isinstance(name, Iterable):
