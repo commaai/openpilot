@@ -2,11 +2,11 @@
 import os
 import sys
 import bz2
-from typing import Iterable, Iterator
 import urllib.parse
 import capnp
 import warnings
 
+from typing import Iterable, Iterator
 
 from cereal import log as capnp_log
 from openpilot.tools.lib.filereader import FileReader
