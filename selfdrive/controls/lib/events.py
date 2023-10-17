@@ -992,5 +992,5 @@ if __name__ == '__main__':
   for status, evs in sorted(all_alerts.items(), key=lambda x: x[0]):
     print(f"**** {status} ****")
     for p, alert_list in evs:
-      print(f"  Priority.{p.name}:")
+      print(f"  {repr(p)}:")
       print("   ", ', '.join(alert_list), "\n")
