@@ -26,6 +26,8 @@ MODEL_PATHS = {
   ModelRunner.THNEED: Path(__file__).parent / 'models/supercombo.thneed',
   ModelRunner.ONNX: Path(__file__).parent / 'models/supercombo.onnx'}
 
+METADATA_PATH = Path(__file__).parent / 'models/supercombo_metadata.pkl'
+
 class FrameMeta:
   frame_id: int = 0
   timestamp_sof: int = 0
@@ -55,10 +57,11 @@ class ModelState:
       'features_buffer': np.zeros(HISTORY_BUFFER_LEN * FEATURE_LEN, dtype=np.float32),
     }
 
-    with open(Path(__file__).parent / 'models/output_slices.pkl', 'rb') as f:
-      self.output_slices = pickle.load(f)
+    with open(METADATA_PATH, 'rb') as f:
+      model_metadata = pickle.load(f)
 
-    net_output_size = max([x.stop for x in self.output_slices.values()])
+    self.output_slices = model_metadata['output_slices']
+    net_output_size = model_metadata['output_shapes']['outputs'][1]
     self.output = np.zeros(net_output_size, dtype=np.float32)
 
     self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.GPU, False, context)

@@ -360,6 +360,7 @@ selfdrive/modeld/SConscript
 selfdrive/modeld/modeld.py
 selfdrive/modeld/parse_model_outputs.py
 selfdrive/modeld/fill_model_msg.py
+selfdrive/modeld/get_model_metadata.py
 selfdrive/modeld/navmodeld.py
 selfdrive/modeld/dmonitoringmodeld.py
 selfdrive/modeld/constants.py
@@ -373,7 +374,6 @@ selfdrive/modeld/models/commonmodel.cc
 selfdrive/modeld/models/commonmodel.h
 
 selfdrive/modeld/models/supercombo.onnx
-selfdrive/modeld/models/output_slices.pkl
 
 selfdrive/modeld/models/dmonitoring_model_q.dlc
 
