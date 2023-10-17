@@ -115,8 +115,8 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.7983
       ret.mass = 3505. * CV.LB_TO_KG  # mean between normal and hybrid
 
-    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2_2022,
-                       CAR.RAV4_TSS2_2023, CAR.RAV4H_TSS2_2023):
+    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023,
+                       CAR.RAV4H_TSS2_2023):
       ret.wheelbase = 2.68986
       ret.steerRatio = 14.3
       ret.tireStiffnessFactor = 0.7933
