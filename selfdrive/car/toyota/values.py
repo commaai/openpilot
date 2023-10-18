@@ -346,7 +346,7 @@ FW_CHUNK_LEN = 16
 PLATFORM_CODE_ECUS = [Ecu.fwdCamera, Ecu.abs, Ecu.eps]
 
 # These platforms have at least one platform code for all ECUs shared with another platform.
-FUZZY_EXCLUDED_PLATFORMS = set()
+FUZZY_EXCLUDED_PLATFORMS: set[CAR] = set()
 
 # Some ECUs that use KWP2000 have their FW versions on non-standard data identifiers.
 # Toyota diagnostic software first gets the supported data ids, then queries them one by one.
