@@ -4,17 +4,22 @@ import numpy as np
 from typing import Dict
 from cereal import log
 from openpilot.selfdrive.modeld.constants import (
-  DISENGAGE_WIDTH, FCW_THRESHOLDS_5MS2, FCW_THRESHOLDS_3MS2, IDX_N, LEAD_T_IDXS, LEAD_T_OFFSETS,
-  META_T_IDXS, MODEL_FREQ, RYG_GREEN, RYG_YELLOW, T_IDXS, X_IDXS, Plan, Meta
+  DISENGAGE_WIDTH, DESIRE_PRED_LEN, FCW_THRESHOLDS_5MS2, FCW_THRESHOLDS_3MS2, IDX_N, LEAD_T_IDXS,
+  LEAD_T_OFFSETS, META_T_IDXS, MODEL_FREQ, RYG_GREEN, RYG_YELLOW, T_IDXS, X_IDXS, Plan, Meta
 )
 
 ConfidenceClass = log.ModelDataV2.ConfidenceClass
 
 class PublishState:
   def __init__(self):
-    self.disengage_buffer = np.zeros(DISENGAGE_WIDTH*DISENGAGE_WIDTH, dtype=np.float32)
+    self.disengage_buffer = np.zeros(DISENGAGE_WIDTH*(DESIRE_PRED_LEN+1), dtype=np.float32)
     self.prev_brake_5ms2_probs = np.zeros(DISENGAGE_WIDTH, dtype=np.float32)
     self.prev_brake_3ms2_probs = np.zeros(DISENGAGE_WIDTH, dtype=np.float32)
+
+  def enqueue(self, x, sample, length=None):
+    if length is None: length = len(sample)
+    x[:-length] = x[length:]
+    x[-length:] = sample
 
 def fill_xyzt(builder, t, x, y, z, x_std=None, y_std=None, z_std=None):
   builder.t = t
@@ -122,10 +127,8 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
   disengage_predictions.brake4MetersPerSecondSquaredProbs = net_output_data['meta'][0,Meta.HARD_BRAKE_4].tolist()
   disengage_predictions.brake5MetersPerSecondSquaredProbs = net_output_data['meta'][0,Meta.HARD_BRAKE_5].tolist()
 
-  publish_state.prev_brake_5ms2_probs[:-1] = publish_state.prev_brake_5ms2_probs[1:]
-  publish_state.prev_brake_5ms2_probs[-1] = net_output_data['meta'][0,Meta.HARD_BRAKE_5][0]
-  publish_state.prev_brake_3ms2_probs[:-1] = publish_state.prev_brake_3ms2_probs[1:]
-  publish_state.prev_brake_3ms2_probs[-1] = net_output_data['meta'][0,Meta.HARD_BRAKE_3][0]
+  publish_state.enqueue(publish_state.prev_brake_5ms2_probs, net_output_data['meta'][0,Meta.HARD_BRAKE_5][0], length=1)
+  publish_state.enqueue(publish_state.prev_brake_3ms2_probs, net_output_data['meta'][0,Meta.HARD_BRAKE_3][0], length=1)
   hard_brake_predicted = (publish_state.prev_brake_5ms2_probs > FCW_THRESHOLDS_5MS2).all() and (publish_state.prev_brake_3ms2_probs > FCW_THRESHOLDS_3MS2).all()
   meta.hardBrakePredicted = hard_brake_predicted.item()
 
@@ -146,8 +149,7 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
     # independent disengage prob for each 2s slice
     ind_disengage_probs = np.r_[any_disengage_probs[0], np.diff(any_disengage_probs) / (1 - any_disengage_probs[:-1])]
     # rolling buf for 2, 4, 6, 8, 10s
-    publish_state.disengage_buffer[:-DISENGAGE_WIDTH] = publish_state.disengage_buffer[DISENGAGE_WIDTH:]
-    publish_state.disengage_buffer[DISENGAGE_WIDTH*(DISENGAGE_WIDTH-1):] = ind_disengage_probs
+    publish_state.enqueue(publish_state.disengage_buffer, ind_disengage_probs, length=DISENGAGE_WIDTH)
 
   score = publish_state.disengage_buffer[DISENGAGE_WIDTH-1:DISENGAGE_WIDTH*DISENGAGE_WIDTH-1:DISENGAGE_WIDTH-1].sum().item()/DISENGAGE_WIDTH
   modelV2.confidence = (score<RYG_GREEN)*ConfidenceClass.green + (RYG_GREEN<score<RYG_YELLOW)*ConfidenceClass.yellow + (score>RYG_YELLOW)*ConfidenceClass.red
