@@ -1,39 +1,39 @@
-进口 重新进口
-from从集合导入defaultdictimport defaultdict
-来自数据类导入数据类、字段导入数据类、字段
-from从枚举导入 Enum、IntFlag、StrEnumimport Enum, IntFlag, StrEnum
-from从输入导入Dict、List、Set、Union 导入Dict、List、Set、Union
+import re
+from collections import defaultdict
+from dataclasses import dataclass, field
+from enum import Enum, IntFlag, StrEnum
+from typing import Dict, List, Set, Union
 
-从粮食 进口车 进口汽车
-来自来自 openpilot。常见的。conversions 将转化导入为 CVimport Conversions 作为 CV 作为 CV
-来自openpilot。自驾.汽车导入AngleRateLimit , dbc_dictimport AngleRateLimit, dbc_dict导入汽车AngleRateLimit, dbc_dictimport AngleRateLimit, dbc_dictAngleRateLimit, dbc_dictimport AngleRateLimit, dbc_dictAngleRateLimit汽车, dbc_dictimport AngleRateLimit, dbc_dict汽车导入AngleRateLimit , d bc_dictimport AngleRateLimit, dbc_dict汽车导入AngleRateLimit, dbc_dictimport AngleRateLimit, dbc_dict汽车导入AngleRateLimit, dbc_dictimport AngleRateLimit, dbc_dict 导入AngleRateLimit, dbc_dictimport 汽车AngleRateLimit, dbc_dict导入汽车AngleRateLimit
-来自 openpilot。自驾.汽车。docs_definitions 导入CarFootnote、CarInfo、Column、CarParts、CarHarness导入CarFootnote、CarInfo、Column、CarParts、CarHarness。docs_definitions 导入CarFootnote、CarInfo、Column、CarParts、CarHarness 导入CarFootnote、CarInfo、Column、CarParts、线束。docs_definitions 导入CarFootnote、CarInfo、Column、CarParts、线束。 docs_definitions 导入CarFootnote、CarInfo、Column、CarParts、CarHarness 导入CarFootnote、CarInfo、Column、CarParts、CarHarness。docs_definitions 导入CarFootnote、CarInfo、Column、CarParts、CarHarness 导入CarFootnote、CarInfo、Column、CarParts、线束。docs_definitions 汽车汽车initiono、Column、CarParts、CarHarness 导入CarFootnote、CarInfo、Column、CarParts、CarHarness。docs_definitions 导入CarFootnote、CarInfo、Column、CarParts、CarHarness 导入CarFootnote、CarInfo、Column、CarParts、汽车线束汽车。docs_definitions汽车。docs_definitions导入CarFootnote、CarInfo、Column、CarParts、CarHarness 导入CarFootnote、CarInfo、Column、CarParts、CarHarness。docs_definitions 导入CarFootnote、CarInfo、Column、CarParts、CarHarness 导入CarFootnote、CarInfo、Column、CarParts、线束。docs_definitions 汽车汽车inition初始化
-来自 openpilot。自驾.汽车。fw_query_definitions导入 FwQueryConfig、Request、StdQueriesimport FwQueryConfig, Request, StdQueries 汽车。fw_query_definitions 导入 FwQueryConfig、Request、StdQueriesimport FwQueryConfig, Request, StdQueries FwQueryConfig、Request、StdQueriesimport FwQueryConfig, Request, StdQueries 汽车。fw_query_definitions 导入 FwQueryConfig、Request 、StdQueriesimport FwQueryConfig, Request, StdQueries 汽车fw_query_definitions 导入 FwQueryConfig、Request、StdQueriesimport FwQueryConfig, Request, StdQueries 汽车。fw_query_definitio 汽车。fw_query_definitions 导入导入 FwQueryConfig、Request、StdQueriesimport FwQueryConfig, Request, StdQueries 汽车。fw_query_definitions 导入 FwQueryConfig、Request、StdQueriesimport FwQueryConfig, Request, StdQueries FwQueryConfig、Request、StdQueriesimport FwQueryConfig, Request, StdQueries 汽车。fw_query_definitions 导入 FwQueryConfig、Request 、StdQueriesimport FwQueryConfig, Request, StdQueries汽车fw_query_definitions 导入FwQueryConfig、Request、StdQueriesimport FwQueryConfig, Request, StdQueries汽车。fw_query_definitio汽车。fw_query_definitions导入FwQueryConfig、Request、StdQueriesimport FwQueryConfig, Request, StdQueries 汽车。fw_query_definitions 导入 FwQueryConfig、Request、StdQueriesimport FwQueryConfig, Request, StdQueries FwQueryConfig、Request、StdQueriesimport FwQueryConfig, Request, StdQueries 汽车。fw_query_definitions 导入 FwQueryConfig、Request 、StdQueriesimport FwQueryConfig,请求, StdQueries 汽车fw_query_definitions 导入FwQueryConfig、Request、StdQueriesimport FwQueryConfig, Request, StdQueries汽车。fw_query_definitions 导入汽车FwQueryConfig、Request。fw_query_definitions 导入FwQueryConfig、Request、StdQueriesimport FwQueryConfig、Request、StdQueries 汽车。fw_query_definitions 导入FwQueryConfig、Request、StdQueriesimport FwQueryConfig、Request、StdQueries FwQueryConfig、Request、StdQueriesimport FwQueryConfig、Request、StdQueries 汽车。fw_query_definitions 导入 FwQueryConfig、Request fw_query_definitions 导入 FwQueryConfig、Request、StdQueries 汽车。fw_query_definitions 导入 FwQueryConfig、Request、StdQueries 汽车。fw_query_definitions 导入 FwQueryConfig、Request、StdQueriesimport FwQueryConfig、Request、StdQueries
+from cereal import car
+from openpilot.common.conversions import Conversions as CV
+from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
+from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, CarParts, CarHarness
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
-Ecu=汽车。汽车参数。EcuCarParams。埃库
-最小加速速度 = 19。* 相册。MPH_TO_MS19。* 相册。MPH_TO_MS19。* 相册。MPH_TO_MS19。* 相册。MPH_TO_MS19。* 相册。MPH_TO_MS19。* 相册。MPH_TO_MS19。* 相册。MPH_TO_MS19。* 相册。MPH_TO_MS19。* 相册。MPH_TO_MS19。 * 专辑。 MPH_TO_MS19。* 专辑。MPH_TO_MS19。* 专辑。MPH_TO_MS19。* 专辑。MPH_TO_MS19。* 专辑。MPH_TO_MS19。* 专辑。MPH_TO_MS19。* 专辑。MPH_TO_MS相册。MPH_TO_ MS19 。* 专辑。MPH_TO_MS19。* 专辑。MPH_TO_MS19。* 专辑。MPH_TO_MS19。* 专辑。MPH_TO_MS19。* 专辑。MPH_TO_MS19。* 专辑。MPH_TO_MS19。* 专辑。MPH_TO_MS19。* 相册。MPH_TO_MS19。* 相册。MPH_TO_MS19。* 相册。MPH_TO_MS19。* 相册。MPH_TO_MS19。* 相册。MPH_TO_MS19。* 相册。MPH_TO_MS19。* 相册。MPH_TO_MS19。* 相册。MPH_TO_MS19。* 专辑。MPH_TO_MS19。* 专辑。MPH_TO_MS19。* 专辑。MPH_TO_MS19。* 专辑。MPH_TO_MS19。* 专辑。MPH_TO_MS19。* 专辑。MPH_TO_MS19。* 专辑。MPH_TO_MS19。* 专辑。MPH_TO_MS
-PEDAL_TRANSITION = 10 .* 简历。MPH_TO_MS10。* 简历。MPH_TO_MS10 .* 简历。MPH_TO_MS10。* 简历。MPH_TO_MS10 .* 简历。MPH_TO_MS10。* 简历。MPH_TO_MS10 .* 简历。MPH_TO_MS10。* 简历。MPH_TO_MS10
+Ecu = car.CarParams.Ecu
+MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
+PEDAL_TRANSITION = 10. * CV.MPH_TO_MS
 
 
-类CarController参数：
-  ACCEL_MAX = 1.5  # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2 ，由于调整原因低于允许的2.0 m/s21.5 # m/s2，由于调整原因低于允许的2.0 m/s21.5 # m/s2，由于调整原因低于允许的2.0 m/s21.5 # m/s2，由于调整原因低于允许的2.0 m/s21.5 # m/s2，由于调整原因低于允许的2.0 m/s21.5 # m/s2，由于调整原因低于允许的2.0 m /s21.5 # m/s2，由于调整原因低于允许的2.0 m/s21.5 # m/s2，由于调整原因低于允许的2.0 m/s2原因低于允许的2.0 m/s21.5 # m/s2，由于调整原因低于允许的2.0 m/s21.5 # m/s2，由于调整原因低于允许的2.0 m/s21.5 # m /s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的 2.0 m/s21 .5 # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的2.0 m/s21.5 # m/s2，由于调整原因低于允许的2.0 m/s21.5 # m/s2，由于调整原因低于允许的2.0 m/s21.5 # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的 2.0 m/s21.5  # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的 2.0 m/s21.5 # m/s2，由于调整原因低于允许的2.0 m/s21.5 # m/s2，由于调整原因低于允许的2.0 m/s21.5 # m/s2，由于调整原因低于允许的2.0 m/s2
-  ACCEL_MIN = - 3.53。53.53。53.53。53.53。5 
+class CarControllerParams:
+  ACCEL_MAX = 1.5  # m/s2, lower than allowed 2.0 m/s2 for tuning reasons
+  ACCEL_MIN = -3.5  # m/s2
 
-  转向步数 = 1111111111111111
-  最大转向=15001500150015001500150015001500
-  STEER_ERROR_MAX = 350  #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间#税务命令和税务电机之间的最大增量350 # 税务命令和税务电机之间的最大增量350 # 税务命令和税务电机之间的最大增量350 # 税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量350之间的最大增量350 #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量增量350 #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量350量350 #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量增量350 #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量350量350 #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量350 # 税务命令和税务电机之间的最大增量350 # 税务命令和税务电机之间的最大增量350 # 税务命令和税务电机之间的最大增量350 # 税务命令和税务电机之间# 税务命令和税务电机之间的最大增量350 # 税务命令和税务电机之间的最大增量350 # 税务命令和税务电机之间的最大增量350 # 税务命令和税务电机之间的最大增量350 # 税务命令和税务电机之间的最大增量350之间的最大增量350  #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量增量350 #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量350 #税务命令和税务电机之间的最大增量
+  STEER_STEP = 1
+  STEER_MAX = 1500
+  STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
 
-  # 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助(LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制#车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助(LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助(LTA) 控制# 车道限制跟踪辅助 (LTA) 控制# 车道限制跟踪辅助 (LTA) 控制
-  # 假设转向比为13.7：# 假设转向比为13.7：# 假设转向比为13.7：# 假设转向比为13.7：
-  # 75 mph 时限制为向上约 2.0 m/s^3 (7.5 deg/s)，下游约 3.5 m/s^3 (13 deg/s)# 限制为向上约 2.0 m/s^3 (7.5 deg/s) s) s) /s) /s)，75 英里/小时进一步时约 3.5 m/s^3 (13 deg/s) 下游约 3.5 m/s^3 (13 deg/s)# 为限制向上约 2.0 m/ s ^3 (7.5 deg/s) /s) /s)，75 英里/时小时延约 3.5 m/s^3 (13 deg/s)# 75 mph 时为向上约 2.0 m/s^ 3 ( 7.5 deg/s)，进一步约3.5 m/s^3 (13 deg/s)#限制为向上约2.0 m/s^3 (7.5 deg/s) /s)，75 英里/时小时进一步约3.5米/秒^3（13度/秒）下游约3.5 m/s^3 (13 deg/s)#限制为向上约2.0 m/s^3 (7.5 deg/s) /s) /s)， 75 英里/小时限制时进一步约3.5 m/s^3 (13 deg/s)下游约3.5 m/s^3 (13 deg/s)#限制为向上约2.0 m/s ^3 (7.5 de#75米# 75 mph时限制为向上约2.0 m/s^3 (7.5 deg/s)，下游约3.5 m/s^3 (13 deg/s)#限制为向上约2.0 m/s^3 (7.5 deg/s) ）英里/小时s) /s) /s)，75 英里/小时进一步时约 3.5 m/s^3 (13 deg/s) 下游约 3.5 m/s^3 (13 deg/s)# 为限制向上约 2.0 m/ s ^3 (7.5 deg/s) /s) /s)，75 英里/时小时延约 3.5 m/s^3 (13 deg/s)# 75 mph 时为向上约 2.0 m/s^ 3 ( 7.5 deg/s)，进一步约3.5 m/s^3 (13 deg/s)#限制为向上约2.0 m/s^3 (7.5 deg/s) /s)，75 英里/时小时进一步约3.5米/秒^3（13度/秒）下游约3.5 m/s^3 (13 deg/s)#限制为向上约2.0 m/s^3 (7.5 deg/s) /s) /s)， 75 英里/小时限制时进一步约3.5 m/s^3 (13 deg/s)下游约3.5 m/s^3 (13 deg/s)#限制为向上约2.0 m/s ^3 (7.5 de#75米# 75 mph 时限制为向上约 2.0 m/s^3 (7.5 deg/s)，下游约 3.5 m/s^3 (13 deg/s)# 限制为向上约 2.0 m/s^3 (7.5 deg/s) s) /s) /s)，75 英里/小时进一步时约 3.5 m/s^3 (13 deg/s) 下游约 3.5 m/s^3 (13 deg/s)# 为向上约 2.0 m/ s ^ 3 (7.5 deg/s) /s) /s)，75 英里/时小时延约 3.5 m/s^3 (13 deg/s)# 75 mph 时限制为向上约 2.0 m/s^3 ( 7.5 deg /s)，进一步约3.5 m/s^3 (13 deg/s)#限制为向上约2.0 m/s^3 (7.5 deg/s) /s)，75 英里/时小时进一步约3.5米/秒^3（13度/秒）下游约3.5 m/s^3 (13 deg/s)#限制为向上约2.0 m/s^3 (7.5 deg/s) /s) /s)，75 英里/小时限制时进一步约3.5 m/s^3 (13 deg/s)下游约3.5 m/s^3 (13 deg/s)#限制为向上约2.0 m/s ^3 (7.5 de#75 mph mph)为向上约2.0 m/s^3 (7.5 deg/s)，下游约3.5 m/s^3 (13 deg/s)#限制为向上约2.0 m/s^3 (7.5 deg/s)g/s)s) /s) /s)，75 英里/小时进一步时约 3.5 m/s^3 (13 deg/s) 下游约 3.5 m/s^3 (13 deg/s)# 为限制向上约 2.0 m/ s ^3 (7.5 deg/s) /s) /s)，75 英里/时小时延约 3.5 m/s^3 (13 deg/s)# 75 mph 限制时为向上约 2.0 m/s^3 ( 7.5 deg/s)，进一步约3.5 m/s^3 (13 deg/s)#限制为向上约2.0 m/s^3 (7.5 deg/s) /s)，75 英里/小时时进一步约3.5米/秒^3（13度/秒）下游约3.5 m/s^3 (13 deg/s)#限制为向上约2.0 m/s^3 (7.5 deg/s) /s) /s)，75 英里/小时时进一步约 3.5 m/s^3 (13 deg/s) 下游约 3.5 m/s^3 (13 deg/s)# 限制为向上约 2.0 m/s ^3 (7.5 de# 75 mph 时限制为向上约 2.0 m/s^3 (7.5 deg/s)，下游约 3.5 m/s^3 (13 deg/s)# 限制为向上约 2.0 m/s^3 (7.5 deg/s) /s) /s)，75 英里/小时时进一步约 3.5 m/s^3 (13 deg/s) 下游约 3.5 m/s^3 (13 deg/s)# 限制为向上约 2.0 m/s ^ 3 (7.5 deg/s) /s) /s)，75 英里/时小时延约 3.5 m/s^3 (13 deg/s)# 75 mph 时限制为向上约 2.0 m/s^3 (7.5 deg) /s)，进一步约 3.5 m/s^3 (13 deg/s)# 限制为向上约 2.0 m/s^3 (7.5 deg/s) /s)，75 英里/小时时进一步约 3.5 米/秒^3（13度/秒）下游约3.5 m/s^3 (13 deg/s)#限制为向上约2.0 m/s^3 (7.5 deg/s) /s) /s)，75 英里/小时时进一步约 3.5 m/s^3 (13 deg/s) 下游约 3.5 m/s^3 (13 deg/s)# 向上限制约 2.0 m/s ^3 (7.5 deg/s)s) /s) /s)，75 英里/时小时延约 3.5 m/s^3 (13 deg/s)# 75 mph 时限制为向上约 2.0 m/s^3 (7.5 deg/s)，进一步约3.5 m/s^3 ( 13 deg/s)#限制为向上约2.0 m/s^3 (7.5 deg/s) /s)，75英里/时小时进一步约3.5米/秒^3（13度） /秒）# 75 mph时为向上约2.0 m/s^3 (7.5 deg/s)，下游约3.5 m/s^3 (13 deg/s)#为向上约2.0 m/s^3 (7.5 deg/s) /s) ，75 英里/小时时进一步约 3.5 m/s^3 (13 deg/s) 下游约 3.5 m/s^3 (13 deg/s)# 限制为向上约 2.0 m/s^3 (7.5 deg/s) ) /s) /s)，75 英里/小时时延约 3.5 m/s^3 (13 deg/s)# 75 mph 限制时为向上约 2.0 m/s^ 3 (7.5 deg/s)，后续约3.5 m/s^3 (13 deg/s)#限制为向上约2.0 m/s^3 (7.5 deg/s) /s)，75 英里/小时时后续约3.5 m/s^3 (13度/秒）
-  # 最坏的允许情况，低速限制将是 75 英里/小时的向上速度约 4.0 m/s^3 (15 deg/s) 和后续约 4.9 m/s^3 (18 deg/s)，# 最差在这种情况允许下，低速限制将是 75 英里/小时的速度向上约 4.0 m/s^3 (15 deg/s) 和下游约 4.9 m/s^3 (18 deg/s)，# 最坏的允许情况，低速限制将是 75 英里/小时的速度向上约 4.0 m/s^3 (15 deg/s) 和后续约 4.9 m/s^3 (18 deg/s)，# Worst this 在种情况允许下，低速限制则 75 英里/小时的速度向上约 4.0 m/s^3 (15 deg/s) 和下游约 4.9 m/s^3 (18 deg/s)，# 最坏的在允许的情况下，低速限制将使 75 英里/小时的向上速度约 4.0 m/s^3 (15 deg/s) 和后续约 4.9 m/s^3 (18 deg/s)，# 最差在这种在允许的情况下，低速限制将是 75 英里/小时的速度向上约 4.0 m/s^3 (15 deg/s) 和下游约 4.9 m/s^3 (18 deg/s)，# 最坏在允许的情况下，低速限制将是使 75 英里/小时的向上速度约 4.0 m/s^3 (15 deg/s) 和后续约 4.9 m/s^3 (18 deg/s)，# 最差在这种允许的情况下，低速限制将是 75 英里/小时的速度向上约 4.0 m/s^3 (15 deg/s) 和下游约 4.9 m/s^3 (18 deg/s)，# 最坏在允许的情况下，低速限制将#最坏的允许情况，低速将是 75 英里/小时的向上速度约 4.0 m/s^3 (15 deg/s) 和后续约 4.9 m/s^3 (18 deg/s)， # 最差在这种情况允许下，低限制速度将是 75 英里/小时的速度向上约 4.0 m/s^3 (15 deg/s) 和下游约 4.9 m/s^3 (18 deg/s)， # 最坏的允许情况，低速限制将是 75 英里/小时的向上速度约 4.0 m/s^3 (15 deg/s) 和后续约 4.9 m/s^3 (18 deg/s)，# 最差这种情况允许下，低速限制则 75 英里/小时的速度向上约 4.0 m/s^3 (15 deg/s) 和下游约 4.9 m/s^3 (18 deg/s)，# 最坏的在允许的情况下，低速限制将使75 英里/小时的向上速度约 4.0 m/s^3 (15 deg/s) 和后续约 4.9 m/s^3 (18 deg/s)，# 最差在这种允许的情况下，低速限制将为 75 英里/小时的速度向上约 4.0 m/s^3 (15 deg/s) 和下游约 4.9 m/s^3 (18 deg/s)，#最糟糕的允许情况，低速限制将是75 英里/小时this 在种情况允许下，低速限制则 75 英里/小时的速度向上约 4.0 m/s^3 (15 deg/s) 和下游约 4.9 m/s^3 (18 deg/s)，# 最坏的在允许的情况下，低速限制将为 75 英里/小时的向上速度约 4.0 m/s^3 (15 deg/s) 和后续约 4.9 m/s^3 (18 deg/s)，# 最差在这种在允许的情况下，低速限制将是 75 英里/小时的速度向上约 4.0 m/s^3 (15 deg/s) 和下游约 4.9 m/s^3 (18 deg/s)，# 最坏的允许情况，低速限制将是 75 英里/# 最坏的允许情况，低速限制将是 75 英里/小时的向上速度约 4.0 m/s^3 (15 deg/s) 和后续约 4.9 m/s^3 (18 deg/s)，# 最差在这种情况允许下，低速限制将是 75 英里/小时的速度向上约 4.0 m/s^3 (15 deg/s) 和下游约 4.9 m/s^3 (18 deg/s)，# 最坏的允许情况，低速限制将是 75 英里/小时的速度向上约 4.0 m/s^3 (15 deg/s) 和后续约 4.9 m/s^3 (18 deg/s)，# 的速度向上约 4.0 m/s^3 (15 deg/s) 和后续约 4.9 m/s^3 (18 deg/s)，# Worst 在这种情况下允许下，低速限制将是 75 英里/小时的速度向上约 4.0 m/s^3 (15 deg/s) 和后续约 4.9 m/s^3 (18 deg/s)，Worst 在这种情况允许下，低速限制将以 75 英里/小时的速度向上约 4.0 m/s^3 (15 deg/s) 和向下约 4.9 m/s^3 (18 deg/s)，# 最坏的允许情况，低速限制将是 75 英里/小时的向上速度约 4.0 m/s^3 (15 deg/s) 和后续约 4.9 m/s^3 (18 deg/s)，# 最差在这种情况允许下，低速限制将是 75 英里/小时的速度向上约 4.0 m/s^3 (15 deg/s) 和下游约 4.9 m/s^3 (18 deg/s)，# 最坏的允许情况，低速限制将是 75 英里/小时
-  #然而，EPS在所有除了该速度的速度下都有其自己的内部限制#EPS在所有低于该速度的速度下都有其自己的内部限制#然而，EPS在所有除了该速度的速度下都有其自己的内部限制有它自己的内部限制#EPS在所有低于该速度的速度下都有它自己的内部限制#然而，EPS在所有除了该速度的速度下都有它自己的内部限制# EPS在所有低于该速度的速度下都有其自己的内部限制#然而，EPS在所有除了该速度的速度下都有其自己的内部限制#EPS在所有低于该速度的内部限制的速度下有它自己的内部限制它自己的内部限制#EPS在所有低于该速度的速度下都有它自己的内部限制#然而，EPS在除了该速度的速度下都有它自己的内部限制#EPS在所有低于该速度的速度下都有其自己的内部限制#但是，EPS在除了该速度的速度下都有其自己的内部限制#EPS在所有该速度的内部的速度下都有其内部限制自己的内部限制#但是，EPS在所有除了该速度的速度下都有其自己的内部限制#EPS在所有除了该速度的速度下都有其自己的内部限制#然而，EPS在所有除了该速度的限制的速度下有其内部限制其自己的内部有其自己的内部限制#EPS在所有低于该速度的速度下都有其自己的内部限制#然而，EPS在除该速度的速度下它自己的内部限制它自己的内部限制#EPS在所有低于该速度的速度下都有它自己的内部限制#然而，EPS在除了该速度的速度下都有它自己的内部限制#EPS在所有低于该速度的速度下都有其自己的内部限制#但是，EPS在除了该速度的速度下都有其自己的内部限制#EPS在所有该速度的内部的速度下都有其内部限制自己的内部限制#但是，EPS在所有除了该速度的速度下都有其自己的内部限制#EPS在所有除了该速度的速度下都有其自己的内部限制#然而，EPS在所有除了该速度的限制的速度下有其内部限制其自己的内部有其自己的内部限制#EPS在所有低于该速度的速度下都有其自己的内部限制#然而，EPS在除该速度的速度下#然而，EPS在所有除了该速度的速度下都有其自己的内部限制#EPS在所有低于该速度的速度下都有其自己的内部限制#然而，EPS在所有除了该速度的速度下都有其自己的内部限制有它自己的内部限制#EPS在所有低于该速度的速度下都有它自己的内部限制#然而，EPS在所有除了该速度的速度下都有它自己的内部限制# EPS在所有低于该速度的速度下都有其自己的内部限制#然而，EPS在所有除了该速度的速度下都有其自己的内部限制#EPS在所有低于该速度的内部都有其自己的内部限制#EPS在所有低于该速度的速度下都有其自己的内部限制#但是，EPS在所有除了该速度的下都有其自己的内部限制#EPS在所有低于该速度的速度下有其自身的内部限制限制的速度下有其自己的内部限制它自己的内部限制#EPS在所有低于该速度的速度下都有它自己的内部限制#然而，EPS在所有除了该速度的速度下都有它自己的内部限制#EPS在所有低于该速度的速度下都有其自己的内部限制#但是，EPS在除了该速度的速度下都有其自己的内部限制#EPS在所有低于该速度的内部的速度下都有其自己的内部限制#然而，EPS在所有除了该速度的速度下都有其自己的内部限制#EPS在所有低于该速度的速度下都有其自己的内部限制#然而，EPS在所有除了该速度的速度下都有其内部限制其自己的内部限制有其自己的内部限制#EPS在所有低于该速度的速度下都有其自己的内部限制#然而，EPS在除
-  ANGLE_RATE_LIMIT_UP = AngleRateLimit  ( speed_bp= [  5 , 25  ] ,angle_v= [  0.3 , 0.15  ]  )  AngleRateLimit  ( speed_bp= [  5 , 25  ] , angle_v= [  0.3 , 0.15  ]  ) AngleRateLimit  ( speed_bp= [  5 , 25  ] ,angle_v = [  0.3 ) , 0.15  ]  )  AngleRateLimit  ( speed_bp= [  5 , 25 ] ,angle_v= [ 0.3 , 0.15 ] )AngleRateLimit ( speed_bp= [ 5 , 25 ] ,angle_v= [ 0.3 , 0.15 ] ) AngleRateLimit ( speed_bp= [ 5 , 25 ] ] , angle_v= [ 0.3 , 0.15 ] ) AngleRateLimit ( speed_bp= [ 5 , 25 ] ,angle_v= [ 0.3 ] , 0.15 ] ) Ang leRateLimit ( speed_bp= [ 5, 25 ] ,angle_v= [ 0.3 , 0.15 ] )AngleRateLimit ( speed_bp= [ 5 , 25 ] ,angle_v= [ 0.3 , 0.15 ] ) AngleRateLimit ( speed_bp= [ 5 , 25 ] , angle_v= [ 0.3 , 0.15 ] )AngleRateLimit ( speed_bp= [ 5 , 25 ] ,angle_v = [ 0.3 , 0.15 ] ) AngleRateLimit ( speed_bp= [ 5 , 25 ] ,angle_v= [ 0.3 , 0.15 ] )AngleRateLimit  ( speed_bp= [  5 , 25  ] ,angle_v= [  0.3 , 0.15  ]  )  AngleRateLimit  ( speed_bp= [  5 , 25  ] , angle_v= [  0.3 , 0.15  ]  ) AngleRateLimit   ( speed_bp= [   5 , 25   ] ,angle_v= [   0.3 ] , 0.15   ]   )   AngleRateLimit( speed_bp= [   5, 25   ] ,angle_v= [   0.3 , 0.15   ]   )
-  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit ( speed_bp= [ 5 , 25 ] ,angle_v= [ 0.36 , 0.26 ] ) AngleRateLimit ( speed_bp= [ 5 , 25 ] , angle_v= [ 0.36 , 0.26 ] )AngleRateLimit ( speed_bp= [ 5 , 25 ] ,angle _v= [ 0.36 , 0.26 ] ) AngleRateLimit ( speed_bp= [ 5 , 25 ] , angle_v= [ 0.36 , 0.26 ] )AngleRateLimit  ( speed_bp= [  5 , 25  ] ,angle_v= [  0.36 , 0.26  ]  )  AngleRateLimit  ( speed_bp = [  5 , 25  ] , angle_v= [  0.36 , 0.26  ]  ) AngleRateLimit  ( speed_bp= [  5 , 25  ] ,angle_v= [  0.36 ] , 0.26  ]  )  AngleRateLimit  ( speed_bp= [  5, 25  ] , angle_v= [  0.36 , 0.26  ]  )
+  # Lane Tracing Assist (LTA) control limits
+  # Assuming a steering ratio of 13.7:
+  # Limit to ~2.0 m/s^3 up (7.5 deg/s), ~3.5 m/s^3 down (13 deg/s) at 75 mph
+  # Worst case, the low speed limits will allow ~4.0 m/s^3 up (15 deg/s) and ~4.9 m/s^3 down (18 deg/s) at 75 mph,
+  # however the EPS has its own internal limits at all speeds which are less than that
+  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.3, 0.15])
+  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.36, 0.26])
 
-  def  __init__  (自身, CP ) : def  __init__  ( self, CP ) : def   __init__  (自身, CP ) : def   __init__  ( self, CP ) :
-    如果CP。横向调整。其中== 'XT'：如果CP。横向调整。其中== 'XT' ：'XT'：如果CP。横向调整。其中== '图纸'：
-      STEER_DELTA_UP = 15 # 1.0s 达到最电极的时间 STEER_DELTA_UP = 15 # 1.0s 达到最电极的时间
+  def __init__(self, CP):
+    if CP.lateralTuning.which == 'torque':
+      self.STEER_DELTA_UP = 15       # 1.0s time to peak torque
       self.STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
     else:
       self.STEER_DELTA_UP = 10       # 1.5s time to peak torque
@@ -59,16 +59,16 @@ class CAR(StrEnum):
   CAMRYH = "TOYOTA CAMRY HYBRID 2018"
   CAMRY_TSS2 = "TOYOTA CAMRY 2021"  # TSS 2.5
   CAMRYH_TSS2 = "TOYOTA CAMRY HYBRID 2021"
-  CHR =“丰田 C-HR 2018”"TOYOTA C-HR 2018"
-  CHR_TSS2 =“丰田 C-HR 2021”"TOYOTA C-HR 2021"
-  CHRH_TSS2 =“丰田 C-HR 混合动力 2022 年”"TOYOTA C-HR HYBRID 2022"
-  花冠 =“丰田花冠 2017”"TOYOTA COROLLA 2017"
-  # LSS2 Lexus UX Hybrid 与 TSS2 Corolla Hybrid 相同# LSS2 Lexus UX Hybrid is same as a TSS2 Corolla Hybrid
-  COROLLA_TSS2 = "丰田 花冠 TSS2 2019""TOYOTA COROLLA TSS2 2019"
-  汉兰达 =“丰田汉兰达 2017”"TOYOTA HIGHLANDER 2017"
-  HIGHLANDER_TSS2 = "丰田汉兰达 2020""TOYOTA HIGHLANDER 2020"
-  HIGHLANDERH =“丰田汉兰达混合动力车 2018”"TOYOTA HIGHLANDER HYBRID 2018"
-  HIGHLANDERH_TSS2 = "丰田汉兰达混合动力车 2020""TOYOTA HIGHLANDER HYBRID 2020"
+  CHR = "TOYOTA C-HR 2018"
+  CHR_TSS2 = "TOYOTA C-HR 2021"
+  CHRH_TSS2 = "TOYOTA C-HR HYBRID 2022"
+  COROLLA = "TOYOTA COROLLA 2017"
+  # LSS2 Lexus UX Hybrid is same as a TSS2 Corolla Hybrid
+  COROLLA_TSS2 = "TOYOTA COROLLA TSS2 2019"
+  HIGHLANDER = "TOYOTA HIGHLANDER 2017"
+  HIGHLANDER_TSS2 = "TOYOTA HIGHLANDER 2020"
+  HIGHLANDERH = "TOYOTA HIGHLANDER HYBRID 2018"
+  HIGHLANDERH_TSS2 = "TOYOTA HIGHLANDER HYBRID 2020"
   PRIUS = "TOYOTA PRIUS 2017"
   PRIUS_V = "TOYOTA PRIUS v 2017"
   PRIUS_TSS2 = "TOYOTA PRIUS TSS2 2021"
@@ -2037,8 +2037,8 @@ FW_VERSIONS = {
       b'8646F4809000\x00\x00\x00\x00',
     ],
   },
-  车.LEXUS_RXH：{
-    （Ecu.engine，0x7e0，无）：[
+  CAR.LEXUS_RXH: {
+    (Ecu.engine, 0x7e0, None): [
       b'\x02348J7000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02348N0000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02348Q4000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -2048,7 +2048,7 @@ FW_VERSIONS = {
       b'\x02348V6000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02348Z3000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    （Ecu.abs，0x7b0，无）：[
+    (Ecu.abs, 0x7b0, None): [
       b'F152648361\x00\x00\x00\x00\x00\x00',
       b'F152648501\x00\x00\x00\x00\x00\x00',
       b'F152648502\x00\x00\x00\x00\x00\x00',
@@ -2056,24 +2056,24 @@ FW_VERSIONS = {
       b'F152648740\x00\x00\x00\x00\x00\x00',
       b'F152648A30\x00\x00\x00\x00\x00\x00',
     ],
-    （Ecu.dsu，0x791，无）：[
+    (Ecu.dsu, 0x791, None): [
       b'881514811300\x00\x00\x00\x00',
       b'881514811500\x00\x00\x00\x00',
       b'881514811700\x00\x00\x00\x00',
     ],
-    （ Ecu.eps ，0x7a1，无）：[ _
+    (Ecu.eps, 0x7a1, None): [
       b'8965B0E011\x00\x00\x00\x00\x00\x00',
       b'8965B0E012\x00\x00\x00\x00\x00\x00',
       b'8965B48111\x00\x00\x00\x00\x00\x00',
       b'8965B48112\x00\x00\x00\x00\x00\x00',
     ],
-    （Ecu.fwdRadar，0x750，0xf）：[
+    (Ecu.fwdRadar, 0x750, 0xf): [
       b'8821F4701000\x00\x00\x00\x00',
       b'8821F4701100\x00\x00\x00\x00',
       b'8821F4701200\x00\x00\x00\x00',
       b'8821F4701300\x00\x00\x00\x00',
     ],
-    （Ecu.fwdCamera，0x750，0x6d）：[
+    (Ecu.fwdCamera, 0x750, 0x6d): [
       b'8646F4801200\x00\x00\x00\x00',
       b'8646F4802001\x00\x00\x00\x00',
       b'8646F4802100\x00\x00\x00\x00',
@@ -2082,7 +2082,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.LEXUS_RX_TSS2: {
-    （Ecu.engine，0x700，无）：[
+    (Ecu.engine, 0x700, None): [
       b'\x01896630EA9000\x00\x00\x00\x00',
       b'\x01896630EB0000\x00\x00\x00\x00',
       b'\x01896630EC9000\x00\x00\x00\x00',
@@ -2098,9 +2098,8 @@ FW_VERSIONS = {
       b'\x01896634D44000\x00\x00\x00\x00',
       b'\x018966348X0000\x00\x00\x00\x00',
       b'\x01896630ED5000\x00\x00\x00\x00',
-      b'\x018966348R9200\x00\x00\x00\x00',
     ],
-    （Ecu.engine，0x7e0，无）：[
+    (Ecu.engine, 0x7e0, None): [
       b'\x02348X4000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02348X5000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02348X8000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -2109,7 +2108,7 @@ FW_VERSIONS = {
       b'\x0234D16000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02348U2000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    （Ecu.abs，0x7b0，无）：[
+    (Ecu.abs, 0x7b0, None): [
       b'\x01F15260E031\x00\x00\x00\x00\x00\x00',
       b'\x01F15260E041\x00\x00\x00\x00\x00\x00',
       b'\x01F152648781\x00\x00\x00\x00\x00\x00',
@@ -2120,18 +2119,17 @@ FW_VERSIONS = {
       b'F152648D60\x00\x00\x00\x00\x00\x00',
       b'F152648811\x00\x00\x00\x00\x00\x00',
       b'F152648C80\x00\x00\x00\x00\x00\x00',
-      b'F152648493\x00\x00\x00\x00\x00\x00',
     ],
-    （Ecu.eps，0x7a1，无）：[
+    (Ecu.eps, 0x7a1, None): [
       b'8965B48261\x00\x00\x00\x00\x00\x00',
       b'8965B48271\x00\x00\x00\x00\x00\x00',
     ],
-    （Ecu.fwdRadar，0x750，0xf）：[
+    (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301100\x00\x00\x00\x00',
       b'\x018821F3301300\x00\x00\x00\x00',
       b'\x018821F3301400\x00\x00\x00\x00',
     ],
-    （Ecu.fwdCamera，0x750，0x6d）：[
+    (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F4810100\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
       b'\x028646F4810200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
       b'\x028646F4810300\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
@@ -2139,7 +2137,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.PRIUS_TSS2: {
-    （Ecu.engine，0x700，无）：[
+    (Ecu.engine, 0x700, None): [
       b'\x028966347B1000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966347C4000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966347C6000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
@@ -2150,20 +2148,20 @@ FW_VERSIONS = {
       b'\x038966347C5000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00897CF4707101\x00\x00\x00\x00',
       b'\x038966347C5100\x00\x00\x00\x008966A4703000\x00\x00\x00\x00897CF4707101\x00\x00\x00\x00',
     ],
-    （Ecu.abs，0x7b0，无）：[
+    (Ecu.abs, 0x7b0, None): [
       b'F152647500\x00\x00\x00\x00\x00\x00',
       b'F152647510\x00\x00\x00\x00\x00\x00',
       b'F152647520\x00\x00\x00\x00\x00\x00',
       b'F152647521\x00\x00\x00\x00\x00\x00',
       b'F152647531\x00\x00\x00\x00\x00\x00',
     ],
-    （Ecu.eps，0x7a1，无）：[
+    (Ecu.eps, 0x7a1, None): [
       b'8965B47070\x00\x00\x00\x00\x00\x00',
     ],
-    （Ecu.fwdRadar，0x750，0xf）：[
+    (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301400\x00\x00\x00\x00',
     ],
-    （Ecu.fwdCamera，0x750，0x6d）：[
+    (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F4707000\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
       b'\x028646F4710000\x00\x00\x00\x008646G2601500\x00\x00\x00\x00',
       b'\x028646F4712000\x00\x00\x00\x008646G2601500\x00\x00\x00\x00',
