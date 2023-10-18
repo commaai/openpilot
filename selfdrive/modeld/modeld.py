@@ -17,9 +17,7 @@ from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
 from openpilot.selfdrive.modeld.parse_model_outputs import parse_outputs
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
-from openpilot.selfdrive.modeld.constants import (
-  FEATURE_LEN, HISTORY_BUFFER_LEN, DESIRE_LEN, TRAFFIC_CONVENTION_LEN, NAV_FEATURE_LEN, NAV_INSTRUCTION_LEN, MODEL_FREQ
-  )
+from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
 
 MODEL_PATHS = {
@@ -48,13 +46,13 @@ class ModelState:
   def __init__(self, context: CLContext):
     self.frame = ModelFrame(context)
     self.wide_frame = ModelFrame(context)
-    self.prev_desire = np.zeros(DESIRE_LEN, dtype=np.float32)
+    self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
     self.inputs = {
-      'desire': np.zeros(DESIRE_LEN * (HISTORY_BUFFER_LEN+1), dtype=np.float32),
-      'traffic_convention': np.zeros(TRAFFIC_CONVENTION_LEN, dtype=np.float32),
-      'nav_features': np.zeros(NAV_FEATURE_LEN, dtype=np.float32),
-      'nav_instructions': np.zeros(NAV_INSTRUCTION_LEN, dtype=np.float32),
-      'features_buffer': np.zeros(HISTORY_BUFFER_LEN * FEATURE_LEN, dtype=np.float32),
+      'desire': np.zeros(ModelConstants.DESIRE_LEN * (ModelConstants.HISTORY_BUFFER_LEN+1), dtype=np.float32),
+      'traffic_convention': np.zeros(ModelConstants.TRAFFIC_CONVENTION_LEN, dtype=np.float32),
+      'nav_features': np.zeros(ModelConstants.NAV_FEATURE_LEN, dtype=np.float32),
+      'nav_instructions': np.zeros(ModelConstants.NAV_INSTRUCTION_LEN, dtype=np.float32),
+      'features_buffer': np.zeros(ModelConstants.HISTORY_BUFFER_LEN * ModelConstants.FEATURE_LEN, dtype=np.float32),
     }
 
     with open(METADATA_PATH, 'rb') as f:
@@ -77,8 +75,8 @@ class ModelState:
                 inputs: Dict[str, np.ndarray], prepare_only: bool) -> Optional[Dict[str, np.ndarray]]:
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
     inputs['desire'][0] = 0
-    self.inputs['desire'][:-DESIRE_LEN] = self.inputs['desire'][DESIRE_LEN:]
-    self.inputs['desire'][-DESIRE_LEN:] = np.where(inputs['desire'] - self.prev_desire > .99, inputs['desire'], 0)
+    self.inputs['desire'][:-ModelConstants.DESIRE_LEN] = self.inputs['desire'][ModelConstants.DESIRE_LEN:]
+    self.inputs['desire'][-ModelConstants.DESIRE_LEN:] = np.where(inputs['desire'] - self.prev_desire > .99, inputs['desire'], 0)
     self.prev_desire[:] = inputs['desire']
 
     self.inputs['traffic_convention'][:] = inputs['traffic_convention']
@@ -97,8 +95,8 @@ class ModelState:
     self.model.execute()
     outputs = parse_outputs(self.slice_outputs(self.output))
 
-    self.inputs['features_buffer'][:-FEATURE_LEN] = self.inputs['features_buffer'][FEATURE_LEN:]
-    self.inputs['features_buffer'][-FEATURE_LEN:] = outputs['hidden_state'][0, :]
+    self.inputs['features_buffer'][:-ModelConstants.FEATURE_LEN] = self.inputs['features_buffer'][ModelConstants.FEATURE_LEN:]
+    self.inputs['features_buffer'][-ModelConstants.FEATURE_LEN:] = outputs['hidden_state'][0, :]
     return outputs
 
 
@@ -142,7 +140,7 @@ def main():
   params = Params()
 
   # setup filter to track dropped frames
-  frame_dropped_filter = FirstOrderFilter(0., 10., 1. / MODEL_FREQ)
+  frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_FREQ)
   frame_id = 0
   last_vipc_frame_id = 0
   run_count = 0
@@ -151,8 +149,8 @@ def main():
   model_transform_extra = np.zeros((3, 3), dtype=np.float32)
   live_calib_seen = False
   driving_style = np.array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], dtype=np.float32)
-  nav_features = np.zeros(NAV_FEATURE_LEN, dtype=np.float32)
-  nav_instructions = np.zeros(NAV_INSTRUCTION_LEN, dtype=np.float32)
+  nav_features = np.zeros(ModelConstants.NAV_FEATURE_LEN, dtype=np.float32)
+  nav_instructions = np.zeros(ModelConstants.NAV_INSTRUCTION_LEN, dtype=np.float32)
   buf_main, buf_extra = None, None
   meta_main = FrameMeta()
   meta_extra = FrameMeta()
@@ -205,8 +203,8 @@ def main():
     traffic_convention = np.zeros(2)
     traffic_convention[int(is_rhd)] = 1
 
-    vec_desire = np.zeros(DESIRE_LEN, dtype=np.float32)
-    if desire >= 0 and desire < DESIRE_LEN:
+    vec_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
+    if desire >= 0 and desire < ModelConstants.DESIRE_LEN:
       vec_desire[desire] = 1
 
     # Enable/disable nav features
@@ -267,12 +265,6 @@ def main():
       fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen)
       pm.send('modelV2', modelv2_send)
       pm.send('cameraOdometry', posenet_send)
-
-      #mt3 = time.perf_counter()
-      #messaging_time = mt3 - mt2
-
-      #print("model_execution_time: %.2fms, messaging_time: %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f" %
-      # ((model_execution_time)*1000, (messaging_time)*1000, meta_extra.frame_id, frame_id, frame_drop_ratio))
 
     last_vipc_frame_id = meta_main.frame_id
 

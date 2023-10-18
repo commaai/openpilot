@@ -1,9 +1,6 @@
 import numpy as np
 from typing import Dict
-from openpilot.selfdrive.modeld.constants import (
-  PLAN_MHP_N, PLAN_MHP_SELECTION, IDX_N, PLAN_WIDTH, NUM_LANE_LINES, LANE_LINES_WIDTH, NUM_ROAD_EDGES, POSE_WIDTH,
-  WIDE_FROM_DEVICE_WIDTH, LEAD_MHP_N, LEAD_MHP_SELECTION, LEAD_TRAJ_LEN, LEAD_WIDTH, DESIRE_PRED_WIDTH, DESIRE_PRED_LEN
-)
+from openpilot.selfdrive.modeld.constants import ModelConstants
 
 def sigmoid(x):
   return 1. / (1. + np.exp(-x))
@@ -77,16 +74,17 @@ def parse_categorical_crossentropy(name, outs, out_shape=None):
   outs[name] = softmax(raw, axis=-1)
 
 def parse_outputs(outs: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
-  parse_mdn('plan', outs, in_N=PLAN_MHP_N, out_N=PLAN_MHP_SELECTION, out_shape=(IDX_N,PLAN_WIDTH))
-  parse_mdn('lane_lines', outs, in_N=0, out_N=0, out_shape=(NUM_LANE_LINES,IDX_N,LANE_LINES_WIDTH))
-  parse_mdn('road_edges', outs, in_N=0, out_N=0, out_shape=(NUM_ROAD_EDGES,IDX_N,LANE_LINES_WIDTH))
-  parse_mdn('pose', outs, in_N=0, out_N=0, out_shape=(POSE_WIDTH,))
-  parse_mdn('road_transform', outs, in_N=0, out_N=0, out_shape=(POSE_WIDTH,))
-  parse_mdn('sim_pose', outs, in_N=0, out_N=0, out_shape=(POSE_WIDTH,))
-  parse_mdn('wide_from_device_euler', outs, in_N=0, out_N=0, out_shape=(WIDE_FROM_DEVICE_WIDTH,))
-  parse_mdn('lead', outs, in_N=LEAD_MHP_N, out_N=LEAD_MHP_SELECTION, out_shape=(LEAD_TRAJ_LEN,LEAD_WIDTH))
+  parse_mdn('plan', outs, in_N=ModelConstants.PLAN_MHP_N, out_N=ModelConstants.PLAN_MHP_SELECTION, out_shape=(ModelConstants.IDX_N,ModelConstants.PLAN_WIDTH))
+  parse_mdn('lane_lines', outs, in_N=0, out_N=0, out_shape=(ModelConstants.NUM_LANE_LINES,ModelConstants.IDX_N,ModelConstants.LANE_LINES_WIDTH))
+  parse_mdn('road_edges', outs, in_N=0, out_N=0, out_shape=(ModelConstants.NUM_ROAD_EDGES,ModelConstants.IDX_N,ModelConstants.LANE_LINES_WIDTH))
+  parse_mdn('pose', outs, in_N=0, out_N=0, out_shape=(ModelConstants.POSE_WIDTH,))
+  parse_mdn('road_transform', outs, in_N=0, out_N=0, out_shape=(ModelConstants.POSE_WIDTH,))
+  parse_mdn('sim_pose', outs, in_N=0, out_N=0, out_shape=(ModelConstants.POSE_WIDTH,))
+  parse_mdn('wide_from_device_euler', outs, in_N=0, out_N=0, out_shape=(ModelConstants.WIDE_FROM_DEVICE_WIDTH,))
+  parse_mdn('lead', outs, in_N=ModelConstants.LEAD_MHP_N, out_N=ModelConstants.LEAD_MHP_SELECTION,
+            out_shape=(ModelConstants.LEAD_TRAJ_LEN,ModelConstants.LEAD_WIDTH))
   for k in ['lead_prob', 'lane_lines_prob', 'meta']:
     parse_binary_crossentropy(k, outs)
-  parse_categorical_crossentropy('desire_state', outs, out_shape=(DESIRE_PRED_WIDTH,))
-  parse_categorical_crossentropy('desire_pred', outs, out_shape=(DESIRE_PRED_LEN,DESIRE_PRED_WIDTH))
+  parse_categorical_crossentropy('desire_state', outs, out_shape=(ModelConstants.DESIRE_PRED_WIDTH,))
+  parse_categorical_crossentropy('desire_pred', outs, out_shape=(ModelConstants.DESIRE_PRED_LEN,ModelConstants.DESIRE_PRED_WIDTH))
   return outs
