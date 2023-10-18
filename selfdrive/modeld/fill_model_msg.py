@@ -8,6 +8,8 @@ from openpilot.selfdrive.modeld.constants import (
   META_T_IDXS, MODEL_FREQ, RYG_GREEN, RYG_YELLOW, T_IDXS, X_IDXS, Plan, Meta
 )
 
+ConfidenceClass = log.ModelDataV2.ConfidenceClass
+
 class PublishState:
   def __init__(self):
     self.disengage_buffer = np.zeros(DISENGAGE_WIDTH*DISENGAGE_WIDTH, dtype=np.float32)
@@ -147,13 +149,8 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
     publish_state.disengage_buffer[:-DISENGAGE_WIDTH] = publish_state.disengage_buffer[DISENGAGE_WIDTH:]
     publish_state.disengage_buffer[DISENGAGE_WIDTH*(DISENGAGE_WIDTH-1):] = ind_disengage_probs
 
-  score = publish_state.disengage_buffer[DISENGAGE_WIDTH-1:DISENGAGE_WIDTH*DISENGAGE_WIDTH-1:DISENGAGE_WIDTH-1].sum()/DISENGAGE_WIDTH
-  if score < RYG_GREEN:
-    modelV2.confidence = log.ModelDataV2.ConfidenceClass.green
-  elif score < RYG_YELLOW:
-    modelV2.confidence = log.ModelDataV2.ConfidenceClass.yellow
-  else:
-    modelV2.confidence = log.ModelDataV2.ConfidenceClass.red
+  score = publish_state.disengage_buffer[DISENGAGE_WIDTH-1:DISENGAGE_WIDTH*DISENGAGE_WIDTH-1:DISENGAGE_WIDTH-1].sum().item()/DISENGAGE_WIDTH
+  modelV2.confidence = (score<RYG_GREEN)*ConfidenceClass.green + (RYG_GREEN<score<RYG_YELLOW)*ConfidenceClass.yellow + (score>RYG_YELLOW)*ConfidenceClass.red
 
 def fill_pose_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, np.ndarray],
                   vipc_frame_id: int, vipc_dropped_frames: int, timestamp_eof: int, live_calib_seen: bool) -> None:
