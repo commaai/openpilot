@@ -15,7 +15,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
-from openpilot.selfdrive.modeld.parse_model_outputs import parse_outputs
+from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
@@ -61,6 +61,7 @@ class ModelState:
     self.output_slices = model_metadata['output_slices']
     net_output_size = model_metadata['output_shapes']['outputs'][1]
     self.output = np.zeros(net_output_size, dtype=np.float32)
+    self.parser = Parser()
 
     self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.GPU, False, context)
     self.model.addInput("input_imgs", None)
@@ -93,7 +94,7 @@ class ModelState:
       return None
 
     self.model.execute()
-    outputs = parse_outputs(self.slice_outputs(self.output))
+    outputs = self.parser.parse_outputs(self.slice_outputs(self.output))
 
     self.inputs['features_buffer'][:-ModelConstants.FEATURE_LEN] = self.inputs['features_buffer'][ModelConstants.FEATURE_LEN:]
     self.inputs['features_buffer'][-ModelConstants.FEATURE_LEN:] = outputs['hidden_state'][0, :]
