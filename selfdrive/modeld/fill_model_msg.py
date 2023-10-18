@@ -4,15 +4,15 @@ import numpy as np
 from typing import Dict
 from cereal import log
 from openpilot.selfdrive.modeld.constants import (
-  DISENGAGE_WIDTH, FCW_THRESHOLDS_5MS2, FCW_THRESHOLDS_3MS2, IDX_N, LEAD_T_IDXS, LEAD_T_OFFSETS,
-  META_T_IDXS, MODEL_FREQ, RYG_GREEN, RYG_YELLOW, T_IDXS, X_IDXS, Plan, Meta
+  DISENGAGE_WIDTH, CONFIDENCE_BUFFER_LEN, FCW_THRESHOLDS_5MS2, FCW_THRESHOLDS_3MS2, IDX_N, LEAD_T_IDXS,
+  LEAD_T_OFFSETS, META_T_IDXS, MODEL_FREQ, RYG_GREEN, RYG_YELLOW, T_IDXS, X_IDXS, Plan, Meta
 )
 
 ConfidenceClass = log.ModelDataV2.ConfidenceClass
 
 class PublishState:
   def __init__(self):
-    self.disengage_buffer = np.zeros(DISENGAGE_WIDTH*DISENGAGE_WIDTH, dtype=np.float32)
+    self.disengage_buffer = np.zeros(CONFIDENCE_BUFFER_LEN*DISENGAGE_WIDTH, dtype=np.float32)
     self.prev_brake_5ms2_probs = np.zeros(DISENGAGE_WIDTH, dtype=np.float32)
     self.prev_brake_3ms2_probs = np.zeros(DISENGAGE_WIDTH, dtype=np.float32)
 
@@ -147,7 +147,7 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
     ind_disengage_probs = np.r_[any_disengage_probs[0], np.diff(any_disengage_probs) / (1 - any_disengage_probs[:-1])]
     # rolling buf for 2, 4, 6, 8, 10s
     publish_state.disengage_buffer[:-DISENGAGE_WIDTH] = publish_state.disengage_buffer[DISENGAGE_WIDTH:]
-    publish_state.disengage_buffer[DISENGAGE_WIDTH*(DISENGAGE_WIDTH-1):] = ind_disengage_probs
+    publish_state.disengage_buffer[-DISENGAGE_WIDTH:] = ind_disengage_probs
 
   score = publish_state.disengage_buffer[DISENGAGE_WIDTH-1:DISENGAGE_WIDTH*DISENGAGE_WIDTH-1:DISENGAGE_WIDTH-1].sum().item()/DISENGAGE_WIDTH
   modelV2.confidence = (score<RYG_GREEN)*ConfidenceClass.green + (RYG_GREEN<score<RYG_YELLOW)*ConfidenceClass.yellow + (score>RYG_YELLOW)*ConfidenceClass.red
