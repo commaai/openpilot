@@ -68,6 +68,9 @@ int OffroadAlert::refresh() {
     QString json = util::read_file("../controls/lib/alerts_offroad.json").c_str();
     QJsonObject obj = QJsonDocument::fromJson(json.toUtf8()).object();
 
+    if (obj.empty())
+      return 0;
+
     // descending sort labels by severity
     std::vector<std::pair<std::string, int>> sorted;
     for (auto it = obj.constBegin(); it != obj.constEnd(); ++it) {
