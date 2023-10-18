@@ -149,7 +149,7 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
 
   score = 0.
   for i in range(ModelConstants.DISENGAGE_WIDTH):
-    score += publish_state.disengage_buffer[i*ModelConstants.DISENGAGE_WIDTH+ModelConstants.DISENGAGE_WIDTH-1-i] / ModelConstants.DISENGAGE_WIDTH
+    score += publish_state.disengage_buffer[i*ModelConstants.DISENGAGE_WIDTH+ModelConstants.DISENGAGE_WIDTH-1-i].item() / ModelConstants.DISENGAGE_WIDTH
 
   modelV2.confidence = (score<ModelConstants.RYG_GREEN)*ConfidenceClass.green + \
     (ModelConstants.RYG_GREEN<score<ModelConstants.RYG_YELLOW)*ConfidenceClass.yellow + \
