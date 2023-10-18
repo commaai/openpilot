@@ -433,7 +433,7 @@ void Replay::stream() {
         long etime = (cur_mono_time_ - evt_start_ts) / speed_;
         long rtime = nanos_since_boot() - loop_start_ts;
         long behind_ns = etime - rtime;
-        // if behind_ns is greater than 1 second, it means that an invalid segemnt is skipped by seeking/replaying
+        // if behind_ns is greater than 1 second, it means that an invalid segment is skipped by seeking/replaying
         if (behind_ns >= 1 * 1e9 || speed_ != prev_replay_speed) {
           // reset event start times
           evt_start_ts = cur_mono_time_;

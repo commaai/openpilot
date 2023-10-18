@@ -3,7 +3,7 @@ from openpilot.common.conversions import Conversions as CV
 from panda import Panda
 from panda.python import uds
 from openpilot.selfdrive.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
-                                        MIN_ACC_SPEED, EPS_SCALE, EV_HYBRID_CAR, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR
+                                        MIN_ACC_SPEED, EPS_SCALE, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR
 from openpilot.selfdrive.car import get_safety_config
 from openpilot.selfdrive.car.disable_ecu import disable_ecu
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
@@ -77,7 +77,7 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.444  # not optimized yet
       ret.mass = 2860. * CV.LB_TO_KG  # mean between normal and hybrid
 
-    elif candidate in (CAR.LEXUS_RX, CAR.LEXUS_RXH, CAR.LEXUS_RX_TSS2, CAR.LEXUS_RXH_TSS2):
+    elif candidate in (CAR.LEXUS_RX, CAR.LEXUS_RXH, CAR.LEXUS_RX_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.79
       ret.steerRatio = 16.  # 14.8 is spec end-to-end
@@ -85,7 +85,7 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.5533
       ret.mass = 4481. * CV.LB_TO_KG  # mean between min and max
 
-    elif candidate in (CAR.CHR, CAR.CHRH, CAR.CHR_TSS2, CAR.CHRH_TSS2):
+    elif candidate in (CAR.CHR, CAR.CHR_TSS2, CAR.CHRH_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.63906
       ret.steerRatio = 13.6
@@ -115,7 +115,7 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.7983
       ret.mass = 3505. * CV.LB_TO_KG  # mean between normal and hybrid
 
-    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022,
+    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2_2022,
                        CAR.RAV4_TSS2_2023, CAR.RAV4H_TSS2_2023):
       ret.wheelbase = 2.68986
       ret.steerRatio = 14.3
@@ -137,13 +137,13 @@ class CarInterface(CarInterfaceBase):
           ret.lateralTuning.pid.kf = 0.00004
           break
 
-    elif candidate in (CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2):
+    elif candidate == CAR.COROLLA_TSS2:
       ret.wheelbase = 2.67  # Average between 2.70 for sedan and 2.64 for hatchback
       ret.steerRatio = 13.9
       ret.tireStiffnessFactor = 0.444  # not optimized yet
       ret.mass = 3060. * CV.LB_TO_KG
 
-    elif candidate in (CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2):
+    elif candidate in (CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_ES_TSS2):
       if candidate not in (CAR.LEXUS_ES,):  # TODO: LEXUS_ES may have sng
         stop_and_go = True
       ret.wheelbase = 2.8702
@@ -171,7 +171,7 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.517
       ret.mass = 3108 * CV.LB_TO_KG  # mean between min and max
 
-    elif candidate in (CAR.LEXUS_NX, CAR.LEXUS_NXH, CAR.LEXUS_NX_TSS2, CAR.LEXUS_NXH_TSS2):
+    elif candidate in (CAR.LEXUS_NX, CAR.LEXUS_NX_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.66
       ret.steerRatio = 14.7
@@ -244,11 +244,6 @@ class CarInterface(CarInterfaceBase):
 
     if not ret.openpilotLongitudinalControl:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL
-
-    # we can't use the fingerprint to detect this reliably, since
-    # the EV gas pedal signal can take a couple seconds to appear
-    if candidate in EV_HYBRID_CAR:
-      ret.flags |= ToyotaFlags.HYBRID.value
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.

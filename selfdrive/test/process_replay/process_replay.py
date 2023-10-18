@@ -26,7 +26,7 @@ from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.selfdrive.test.process_replay.capture import ProcessOutputCapture
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.logreader import LogIterable
 
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7
@@ -204,7 +204,7 @@ class ProcessContainer:
   def _setup_vision_ipc(self, all_msgs):
     assert len(self.cfg.vision_pubs) != 0
 
-    device_type = next(msg.initData.deviceType for msg in all_msgs if msg.which() == "initData")
+    device_type = next(str(msg.initData.deviceType) for msg in all_msgs if msg.which() == "initData")
 
     vipc_server = VisionIpcServer("camerad")
     streams_metas = available_streams(all_msgs)
@@ -214,6 +214,7 @@ class ProcessContainer:
     vipc_server.start_listener()
 
     self.vipc_server = vipc_server
+    self.cfg.vision_pubs = [meta.camera_state for meta in streams_metas if meta.camera_state in self.cfg.vision_pubs]
 
   def _start_process(self):
     if self.capture is not None:
@@ -223,7 +224,7 @@ class ProcessContainer:
 
   def start(
     self, params_config: Dict[str, Any], environ_config: Dict[str, Any],
-    all_msgs: Union[LogReader, List[capnp._DynamicStructReader]],
+    all_msgs: LogIterable,
     fingerprint: Optional[str], capture_output: bool
   ):
     with self.prefix as p:
@@ -393,9 +394,8 @@ class ModeldCameraSyncRcvCallback:
     self.is_dual_camera = True
 
   def __call__(self, msg, cfg, frame):
-    if msg.which() == "initData":
-      self.is_dual_camera = msg.initData.deviceType in ["tici", "tizi"]
-    elif msg.which() == "roadCameraState":
+    self.is_dual_camera = len(cfg.vision_pubs) == 2
+    if msg.which() == "roadCameraState":
       self.road_present = True
     elif msg.which() == "wideRoadCameraState":
       self.wide_road_present = True
@@ -599,7 +599,7 @@ def get_process_config(name: str) -> ProcessConfig:
     raise Exception(f"Cannot find process config with name: {name}") from ex
 
 
-def get_custom_params_from_lr(lr: Union[LogReader, List[capnp._DynamicStructReader]], initial_state: str = "first") -> Dict[str, Any]:
+def get_custom_params_from_lr(lr: LogIterable, initial_state: str = "first") -> Dict[str, Any]:
   """
   Use this to get custom params dict based on provided logs.
   Useful when replaying following processes: calibrationd, paramsd, torqued
@@ -631,8 +631,7 @@ def get_custom_params_from_lr(lr: Union[LogReader, List[capnp._DynamicStructRead
   return custom_params
 
 
-def replay_process_with_name(name: Union[str, Iterable[str]], lr: Union[LogReader,
-                             List[capnp._DynamicStructReader]], *args, **kwargs) -> List[capnp._DynamicStructReader]:
+def replay_process_with_name(name: Union[str, Iterable[str]], lr: LogIterable, *args, **kwargs) -> List[capnp._DynamicStructReader]:
   if isinstance(name, str):
     cfgs = [get_process_config(name)]
   elif isinstance(name, Iterable):
@@ -644,7 +643,7 @@ def replay_process_with_name(name: Union[str, Iterable[str]], lr: Union[LogReade
 
 
 def replay_process(
-  cfg: Union[ProcessConfig, Iterable[ProcessConfig]], lr: Union[LogReader, List[capnp._DynamicStructReader]], frs: Optional[Dict[str, Any]] = None,
+  cfg: Union[ProcessConfig, Iterable[ProcessConfig]], lr: LogIterable, frs: Optional[Dict[str, Any]] = None,
   fingerprint: Optional[str] = None, return_all_logs: bool = False, custom_params: Optional[Dict[str, Any]] = None,
   captured_output_store: Optional[Dict[str, Dict[str, str]]] = None, disable_progress: bool = False
 ) -> List[capnp._DynamicStructReader]:
@@ -653,7 +652,10 @@ def replay_process(
   else:
     cfgs = [cfg]
 
-  all_msgs = migrate_all(lr, old_logtime=True, camera_states=any(len(cfg.vision_pubs) != 0 for cfg in cfgs))
+  all_msgs = migrate_all(lr, old_logtime=True,
+                         manager_states=True,
+                         panda_states=any("pandaStates" in cfg.pubs for cfg in cfgs),
+                         camera_states=any(len(cfg.vision_pubs) != 0 for cfg in cfgs))
   process_logs = _replay_multi_process(cfgs, all_msgs, frs, fingerprint, custom_params, captured_output_store, disable_progress)
 
   if return_all_logs:
@@ -669,7 +671,7 @@ def replay_process(
 
 
 def _replay_multi_process(
-  cfgs: List[ProcessConfig], lr: Union[LogReader, List[capnp._DynamicStructReader]], frs: Optional[Dict[str, Any]], fingerprint: Optional[str],
+  cfgs: List[ProcessConfig], lr: LogIterable, frs: Optional[Dict[str, Any]], fingerprint: Optional[str],
   custom_params: Optional[Dict[str, Any]], captured_output_store: Optional[Dict[str, Dict[str, str]]], disable_progress: bool
 ) -> List[capnp._DynamicStructReader]:
   if fingerprint is not None:
@@ -681,14 +683,13 @@ def _replay_multi_process(
     env_config = generate_environ_config(CP=CP)
 
   # validate frs and vision pubs
-  for cfg in cfgs:
-    if len(cfg.vision_pubs) == 0:
-      continue
-
+  all_vision_pubs = [pub for cfg in cfgs for pub in cfg.vision_pubs]
+  if len(all_vision_pubs) != 0:
     assert frs is not None, "frs must be provided when replaying process using vision streams"
-    assert all(meta_from_camera_state(st) is not None for st in cfg.vision_pubs),\
-                                                     f"undefined vision stream spotted, probably misconfigured process: {cfg.vision_pubs}"
-    assert all(st in frs for st in cfg.vision_pubs), f"frs for this process must contain following vision streams: {cfg.vision_pubs}"
+    assert all(meta_from_camera_state(st) is not None for st in all_vision_pubs), \
+                                                          f"undefined vision stream spotted, probably misconfigured process: (vision pubs: {all_vision_pubs})"
+    required_vision_pubs = {m.camera_state for m in available_streams(lr)} & set(all_vision_pubs)
+    assert all(st in frs for st in required_vision_pubs), f"frs for this process must contain following vision streams: {required_vision_pubs}"
 
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   log_msgs = []
@@ -797,7 +798,7 @@ def generate_environ_config(CP=None, fingerprint=None, log_dir=None) -> Dict[str
   return environ_dict
 
 
-def check_openpilot_enabled(msgs: Union[LogReader, List[capnp._DynamicStructReader]]) -> bool:
+def check_openpilot_enabled(msgs: LogIterable) -> bool:
   cur_enabled_count = 0
   max_enabled_count = 0
   for msg in msgs:

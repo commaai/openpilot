@@ -62,7 +62,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     # Asserts no ECUs known to be shared across platforms exist in the database.
     # Tucson having Santa Cruz camera and EPS for example
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model):
+      with self.subTest(car_model=car_model.value):
         if car_model == CAR.SANTA_CRUZ_1ST_GEN:
           raise unittest.SkipTest("Skip checking Santa Cruz for its parts")
 
@@ -79,7 +79,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     """
     expected_fw_prefix = HYUNDAI_VERSION_REQUEST_LONG[1:]
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model):
+      with self.subTest(car_model=car_model.value):
         for ecu, fws in ecus.items():
           # TODO: enable for Ecu.fwdRadar, Ecu.abs, Ecu.eps, Ecu.transmission
           if ecu[0] in (Ecu.fwdCamera,):
@@ -103,7 +103,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
 
     # Asserts ECU keys essential for fuzzy fingerprinting are available on all platforms
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model):
+      with self.subTest(car_model=car_model.value):
         for platform_code_ecu in PLATFORM_CODE_ECUS:
           if platform_code_ecu in (Ecu.fwdRadar, Ecu.eps) and car_model == CAR.HYUNDAI_GENESIS:
             continue
@@ -118,7 +118,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     # - expected parsing of ECU FW dates
 
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model):
+      with self.subTest(car_model=car_model.value):
         for ecu, fws in ecus.items():
           if ecu[0] not in PLATFORM_CODE_ECUS:
             continue

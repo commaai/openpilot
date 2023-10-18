@@ -275,33 +275,6 @@
     </message>
 </context>
 <context>
-    <name>DriveStats</name>
-    <message>
-        <source>Drives</source>
-        <translation>運転履歴</translation>
-    </message>
-    <message>
-        <source>Hours</source>
-        <translation>時間</translation>
-    </message>
-    <message>
-        <source>ALL TIME</source>
-        <translation>累計</translation>
-    </message>
-    <message>
-        <source>PAST WEEK</source>
-        <translation>先週</translation>
-    </message>
-    <message>
-        <source>KM</source>
-        <translation>km</translation>
-    </message>
-    <message>
-        <source>Miles</source>
-        <translation>マイル</translation>
-    </message>
-</context>
-<context>
     <name>DriverViewScene</name>
     <message>
         <source>camera starting</source>
