@@ -346,7 +346,7 @@ FW_CHUNK_LEN = 16
 PLATFORM_CODE_ECUS = [Ecu.fwdCamera, Ecu.abs, Ecu.eps]
 
 # These platforms have at least one platform code for all ECUs shared with another platform.
-FUZZY_EXCLUDED_PLATFORMS = {CAR.LEXUS_ES_TSS2, CAR.LEXUS_RX_TSS2}
+FUZZY_EXCLUDED_PLATFORMS: set[CAR] = set()
 
 # Some ECUs that use KWP2000 have their FW versions on non-standard data identifiers.
 # Toyota diagnostic software first gets the supported data ids, then queries them one by one.
@@ -1784,7 +1784,6 @@ FW_VERSIONS = {
   CAR.LEXUS_ES_TSS2: {
     (Ecu.engine, 0x700, None): [
       b'\x018966306U6000\x00\x00\x00\x00',
-      b'\x01896630EC9100\x00\x00\x00\x00',
       b'\x018966333T5000\x00\x00\x00\x00',
       b'\x018966333T5100\x00\x00\x00\x00',
       b'\x018966333X6000\x00\x00\x00\x00',
@@ -1802,7 +1801,6 @@ FW_VERSIONS = {
       b'\x01F152606281\x00\x00\x00\x00\x00\x00',
       b'\x01F152606340\x00\x00\x00\x00\x00\x00',
       b'\x01F152606461\x00\x00\x00\x00\x00\x00',
-      b'\x01F15260E031\x00\x00\x00\x00\x00\x00',
       b'\x01F15260646200\x00\x00\x00\x00',
       b'F152633423\x00\x00\x00\x00\x00\x00',
       b'F152633680\x00\x00\x00\x00\x00\x00',
@@ -1815,7 +1813,6 @@ FW_VERSIONS = {
       b'8965B33590\x00\x00\x00\x00\x00\x00',
       b'8965B33690\x00\x00\x00\x00\x00\x00',
       b'8965B33721\x00\x00\x00\x00\x00\x00',
-      b'8965B48271\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301100\x00\x00\x00\x00',
@@ -1831,7 +1828,6 @@ FW_VERSIONS = {
       b'\x028646F3304100\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
       b'\x028646F3304300\x00\x00\x00\x008646G2601500\x00\x00\x00\x00',
       b'\x028646F3309100\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
-      b'\x028646F4810200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
       b'\x028646F0610000\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
       b'\x028646F3303100\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00',
       b'\x028646F3304200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
@@ -2086,6 +2082,7 @@ FW_VERSIONS = {
       b'\x01896630EA9000\x00\x00\x00\x00',
       b'\x01896630EB0000\x00\x00\x00\x00',
       b'\x01896630EC9000\x00\x00\x00\x00',
+      b'\x01896630EC9100\x00\x00\x00\x00',
       b'\x01896630ED0000\x00\x00\x00\x00',
       b'\x01896630ED0100\x00\x00\x00\x00',
       b'\x01896630ED6000\x00\x00\x00\x00',
