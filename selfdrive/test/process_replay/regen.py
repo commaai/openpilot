@@ -11,12 +11,12 @@ from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, FAKE
 from openpilot.selfdrive.test.update_ci_routes import upload_route
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.framereader import FrameReader
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.logreader import LogReader, LogIterable
 from openpilot.tools.lib.helpers import save_log
 
 
 def regen_segment(
-  lr: Union[LogReader, List[capnp._DynamicStructReader]], frs: Optional[Dict[str, Any]] = None,
+  lr: LogIterable, frs: Optional[Dict[str, Any]] = None,
   processes: Iterable[ProcessConfig] = CONFIGS, disable_tqdm: bool = False
 ) -> List[capnp._DynamicStructReader]:
   all_msgs = sorted(lr, key=lambda m: m.logMonoTime)
