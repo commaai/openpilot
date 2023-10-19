@@ -9,6 +9,7 @@ from enum import IntEnum
 from functools import wraps
 
 import numpy as np
+import requests
 from lru import LRU
 
 import _io
@@ -61,16 +62,14 @@ def fingerprint_video(fn):
 
 def ffprobe(fn, fmt=None):
   fn = resolve_name(fn)
-  cmd = ["ffprobe",
-         "-v", "quiet",
-         "-print_format", "json",
-         "-show_format", "-show_streams"]
+  cmd = ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", "-show_streams"]
   if fmt:
     cmd += ["-f", fmt]
-  cmd += [fn]
+  cmd += ["-i", "-"]
 
   try:
-    ffprobe_output = subprocess.check_output(cmd)
+    resp = requests.get(fn, stream=True, timeout=10)
+    ffprobe_output = subprocess.check_output(cmd, stdin=resp.raw)
   except subprocess.CalledProcessError as e:
     raise DataUnreadableError(fn) from e
 
