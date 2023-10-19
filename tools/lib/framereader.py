@@ -68,8 +68,8 @@ def ffprobe(fn, fmt=None):
   cmd += ["-i", "-"]
 
   try:
-    resp = requests.get(fn, stream=True, timeout=10)
-    ffprobe_output = subprocess.check_output(cmd, stdin=resp.raw)
+    with FileReader(fn) as f:
+      ffprobe_output = subprocess.check_output(cmd, input=f.read(4096))
   except subprocess.CalledProcessError as e:
     raise DataUnreadableError(fn) from e
 
