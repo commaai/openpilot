@@ -61,16 +61,14 @@ def fingerprint_video(fn):
 
 def ffprobe(fn, fmt=None):
   fn = resolve_name(fn)
-  cmd = ["ffprobe",
-         "-v", "quiet",
-         "-print_format", "json",
-         "-show_format", "-show_streams"]
+  cmd = ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", "-show_streams"]
   if fmt:
     cmd += ["-f", fmt]
-  cmd += [fn]
+  cmd += ["-i", "-"]
 
   try:
-    ffprobe_output = subprocess.check_output(cmd)
+    with FileReader(fn) as f:
+      ffprobe_output = subprocess.check_output(cmd, input=f.read(4096))
   except subprocess.CalledProcessError as e:
     raise DataUnreadableError(fn) from e
 
