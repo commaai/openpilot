@@ -9,7 +9,6 @@ from enum import IntEnum
 from functools import wraps
 
 import numpy as np
-import requests
 from lru import LRU
 
 import _io
