@@ -3,7 +3,6 @@ import os
 import pickle
 import struct
 import subprocess
-import tempfile
 import threading
 from enum import IntEnum
 from functools import wraps
@@ -168,31 +167,21 @@ def rgb24tonv12(rgb):
 
 
 def decompress_video_data(rawdat, vid_fmt, w, h, pix_fmt):
-  # using a tempfile is much faster than proc.communicate for some reason
-
-  with tempfile.TemporaryFile() as tmpf:
-    tmpf.write(rawdat)
-    tmpf.seek(0)
-
-    threads = os.getenv("FFMPEG_THREADS", "0")
-    cuda = os.getenv("FFMPEG_CUDA", "0") == "1"
-    args = ["ffmpeg",
-            "-threads", threads,
-            "-hwaccel", "none" if not cuda else "cuda",
-            "-c:v", "hevc",
-            "-vsync", "0",
-            "-f", vid_fmt,
-            "-flags2", "showall",
-            "-i", "pipe:0",
-            "-threads", threads,
-            "-f", "rawvideo",
-            "-pix_fmt", pix_fmt,
-            "pipe:1"]
-    with subprocess.Popen(args, stdin=tmpf, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL) as proc:
-      # dat = proc.communicate()[0]
-      dat = proc.stdout.read()
-      if proc.wait() != 0:
-        raise DataUnreadableError("ffmpeg failed")
+  threads = os.getenv("FFMPEG_THREADS", "0")
+  cuda = os.getenv("FFMPEG_CUDA", "0") == "1"
+  args = ["ffmpeg", "-v", "quiet",
+          "-threads", threads,
+          "-hwaccel", "none" if not cuda else "cuda",
+          "-c:v", "hevc",
+          "-vsync", "0",
+          "-f", vid_fmt,
+          "-flags2", "showall",
+          "-i", "-",
+          "-threads", threads,
+          "-f", "rawvideo",
+          "-pix_fmt", pix_fmt,
+          "-"]
+  dat = subprocess.check_output(args, input=rawdat)
 
   if pix_fmt == "rgb24":
     ret = np.frombuffer(dat, dtype=np.uint8).reshape(-1, h, w, 3)
