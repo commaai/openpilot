@@ -156,10 +156,12 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
   score = 0.
   for i in range(ModelConstants.DISENGAGE_WIDTH):
     score += publish_state.disengage_buffer[i*ModelConstants.DISENGAGE_WIDTH+ModelConstants.DISENGAGE_WIDTH-1-i].item() / ModelConstants.DISENGAGE_WIDTH
-
-  modelV2.confidence = (score<ModelConstants.RYG_GREEN)*ConfidenceClass.green + \
-    (ModelConstants.RYG_GREEN<score<ModelConstants.RYG_YELLOW)*ConfidenceClass.yellow + \
-    (score>ModelConstants.RYG_YELLOW)*ConfidenceClass.red
+  if score < ModelConstants.RYG_GREEN:
+    modelV2.confidence = ConfidenceClass.green
+  elif score < ModelConstants.RYG_YELLOW:
+    modelV2.confidence = ConfidenceClass.yellow
+  else:
+    modelV2.confidence = ConfidenceClass.red
 
 def fill_pose_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, np.ndarray],
                   vipc_frame_id: int, vipc_dropped_frames: int, timestamp_eof: int, live_calib_seen: bool) -> None:
