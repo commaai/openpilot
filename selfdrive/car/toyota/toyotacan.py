@@ -15,7 +15,7 @@ def create_lta_steer_command(packer, steer_angle, steer_req, frame, setme_x64):
   values = {
     "COUNTER": frame + 128,
     "SETME_X1": 1,
-    "SETME_X3": 3,
+    "SETME_X3": 1,  # 1 on TSS 2.5 cars
     "PERCENTAGE": 100,
     "SETME_X64": setme_x64,
     "ANGLE": 0,
