@@ -10,6 +10,7 @@ import subprocess
 
 
 def post(url, payload):
+  print()
   print("POST to", url)
   r = requests.post(
     url,
@@ -24,6 +25,7 @@ def post(url, payload):
   )
   print("resp", r)
   print("resp text", repr(r.text))
+  print()
   r.raise_for_status()
 
   ret = f"HTTP/1.1 {r.status_code}"
@@ -39,23 +41,25 @@ class LPA:
     assert "OK" in self.at("AT")
 
   def at(self, cmd):
-    print(f"==> sending {cmd}")
+    print(f"==> {cmd}")
     self.dev.write(cmd.encode() + b'\r\n')
 
-    r = self.dev.read(8192).strip()
-    if b"OK" not in r and b"ERROR" not in r:
-      time.sleep(7)
+    r = b""
+    cnt = 0
+    while b"OK" not in r and b"ERROR" not in r and cnt < 20:
       r += self.dev.read(8192).strip()
-    print(f"<== recv {repr(r)}")
-    return r.decode()
+      cnt += 1
+    r = r.decode()
+    print(f"<== {repr(r)}")
+    return r
 
   def download_ota(self, qr):
-    return at(f'AT+QESIM="ota","{qr}"')
+    return self.at(f'AT+QESIM="ota","{qr}"')
 
   def download(self, qr):
     smdp = qr.split('$')[1]
     out = self.at(f'AT+QESIM="download","{qr}"')
-    for n in range(5):
+    for _ in range(5):
       line = out.split("+QESIM: ")[1].split("\r\n\r\nOK")[0]
 
       parts = [x.strip().strip('"') for x in line.split(',', maxsplit=4)]
@@ -69,7 +73,7 @@ class LPA:
 
       chunk_len = 1400
       for i in range(math.ceil(len(to_send) / chunk_len)):
-        state = 1 if (i+1)*chunk_len >= len(to_send) else 0
+        state = 1 if (i+1)*chunk_len < len(to_send) else 0
         data = to_send[i * chunk_len : (i+1)*chunk_len]
         out = self.at(f'AT+QESIM="trans",{len(to_send)},{state},{i},{len(data)},"{data}"')
         assert "OK" in out
@@ -97,13 +101,13 @@ class LPA:
 if __name__ == "__main__":
   import sys
 
-  # restart first, easy to get it into a bad state
-  subprocess.check_call("sudo systemctl stop ModemManager", shell=True)
-  subprocess.check_call("/usr/comma/lte/lte.sh stop_blocking", shell=True)
-  subprocess.check_call("/usr/comma/lte/lte.sh start", shell=True)
-  while not os.path.exists('/dev/ttyUSB2'):
-    time.sleep(1)
-  time.sleep(3)
+  if "RESTART" in os.environ:
+    subprocess.check_call("sudo systemctl stop ModemManager", shell=True)
+    subprocess.check_call("/usr/comma/lte/lte.sh stop_blocking", shell=True)
+    subprocess.check_call("/usr/comma/lte/lte.sh start", shell=True)
+    while not os.path.exists('/dev/ttyUSB2'):
+      time.sleep(1)
+    time.sleep(3)
 
   lpa = LPA()
   print(lpa.list_profiles())
