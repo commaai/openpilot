@@ -2043,6 +2043,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00MQhe SCC FHCUP      1.00 1.07 99110-P4000         ',
+      b'\xf1\x00MQhe SCC FHCUP      1.00 1.04 99110-P4000         ',
     ],
   },
   CAR.KIA_K8_HEV_1ST_GEN: {
