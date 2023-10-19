@@ -21,6 +21,8 @@ source ~/.bash_profile
 if [ -f /TICI ]; then
   source /etc/profile
 
+  rm -rf ~/.commacache
+
   if ! systemctl is-active --quiet systemd-resolved; then
     echo "restarting resolved"
     sudo systemctl start systemd-resolved
