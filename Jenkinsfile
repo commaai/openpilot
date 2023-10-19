@@ -156,7 +156,7 @@ node {
           ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR ./build_devel.sh"],
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["check dirty", "release/check-dirty.sh"],
-          ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
+          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
           ["time to onroad", "cd selfdrive/test/ && pytest test_time_to_onroad.py"],
         ])
       },
