@@ -1,4 +1,3 @@
-# ruff: noqa: E701
 import capnp
 import numpy as np
 from typing import Dict
@@ -18,9 +17,12 @@ def fill_xyzt(builder, t, x, y, z, x_std=None, y_std=None, z_std=None):
   builder.x = x.tolist()
   builder.y = y.tolist()
   builder.z = z.tolist()
-  if x_std is not None: builder.xStd = x_std.tolist()
-  if y_std is not None: builder.yStd = y_std.tolist()
-  if z_std is not None: builder.zStd = z_std.tolist()
+  if x_std is not None:
+    builder.xStd = x_std.tolist()
+  if y_std is not None:
+    builder.yStd = y_std.tolist()
+  if z_std is not None:
+    builder.zStd = z_std.tolist()
 
 def fill_xyvat(builder, t, x, y, v, a, x_std=None, y_std=None, v_std=None, a_std=None):
   builder.t = t
@@ -28,10 +30,14 @@ def fill_xyvat(builder, t, x, y, v, a, x_std=None, y_std=None, v_std=None, a_std
   builder.y = y.tolist()
   builder.v = v.tolist()
   builder.a = a.tolist()
-  if x_std is not None: builder.xStd = x_std.tolist()
-  if y_std is not None: builder.yStd = y_std.tolist()
-  if v_std is not None: builder.vStd = v_std.tolist()
-  if a_std is not None: builder.aStd = a_std.tolist()
+  if x_std is not None:
+    builder.xStd = x_std.tolist()
+  if y_std is not None:
+    builder.yStd = y_std.tolist()
+  if v_std is not None:
+    builder.vStd = v_std.tolist()
+  if a_std is not None:
+    builder.aStd = a_std.tolist()
 
 def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, np.ndarray], publish_state: PublishState,
                    vipc_frame_id: int, vipc_frame_id_extra: int, frame_id: int, frame_drop: float,
