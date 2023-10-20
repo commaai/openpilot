@@ -2,12 +2,17 @@
 
 import argparse
 import json
+import time
 from typing import Awaitable, Callable, Any
 
 import aiortc
+from aiortc.mediastreams import VIDEO_CLOCK_RATE, VIDEO_TIME_BASE
 import av
 import asyncio
 import numpy as np
+
+import pyaudio
+from pydub import AudioSegment
 
 from cereal import messaging
 from openpilot.common.realtime import DT_MDL, DT_DMON
@@ -15,10 +20,27 @@ from openpilot.tools.lib.framereader import FrameReader
 
 
 class TiciVideoStreamTrack(aiortc.MediaStreamTrack):
-  def __init__(self, camera_type):
+  def __init__(self, camera_type, dt, time_base=VIDEO_TIME_BASE, clock_rate=VIDEO_CLOCK_RATE):
+    assert camera_type in ["driver", "wideRoad", "road"]
     super().__init__()
     # override track id to include camera type - client needs that for identification
     self._id = f"{camera_type}:{self._id}"
+    self._dt = dt
+    self._time_base = time_base
+    self._clock_rate = clock_rate
+    self._start = None
+
+  async def next_pts(self, current_pts):
+    pts = current_pts + self._dt * self._clock_rate
+
+    data_time = pts * self._time_base
+    if self._start is None:
+      self._start = time.time() - data_time
+    else:
+      wait_time = self._start + data_time - time.time()
+      await asyncio.sleep(wait_time)
+
+    return pts
 
 
 class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
@@ -30,62 +52,74 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
   }
 
   def __init__(self, camera_type):
-    assert camera_type in self.camera_to_sock_mapping
-    super().__init__(camera_type)
+    super().__init__(camera_type, DT_MDL)
 
-    self.sock = messaging.sub_sock(self.camera_to_sock_mapping[camera_type], conflate=True)
-    self.dt = DT_MDL
-    self.pts = 0
+    self._sock = messaging.sub_sock(self.camera_to_sock_mapping[camera_type], conflate=True)
+    self._pts = 0
 
   async def recv(self):
     while True:
-      msg = messaging.recv_one_or_none(self.sock)
+      msg = messaging.recv_one_or_none(self._sock)
       if msg is not None:
         break
       await asyncio.sleep(0.005)
 
     evta = getattr(msg, msg.which())
-    self.last_idx = evta.idx.encodeId
 
     packet = av.Packet(evta.header + evta.data)
-    packet.time_base = aiortc.mediastreams.VIDEO_TIME_BASE
-    packet.pts = self.pts
-    self.pts += self.dt * aiortc.mediastreams.VIDEO_CLOCK_RATE
+    packet.time_base = self._time_base
+    packet.pts = self._pts
+
+    self._pts += self._dt * self._clock_rate
+
     return packet
+
+
+class DummyVideoStreamTrack(TiciVideoStreamTrack):
+  kind = "video"
+
+  def __init__(self, color=0, dt=DT_MDL, camera_type="driver"):
+    super().__init__(camera_type, dt)
+    self._color = color
+    self._pts = 0
+
+  async def recv(self):
+    print("-- sending frame", self._pts)
+    img = np.full((1920, 1080, 3), self._color, dtype=np.uint8)
+
+    new_frame = av.VideoFrame.from_ndarray(img, format="rgb24")
+    new_frame.pts = self._pts
+    new_frame.time_base = self._time_base
+
+    self._pts = await self.next_pts(self._pts)
+
+    return new_frame
 
 
 class FrameReaderVideoStreamTrack(TiciVideoStreamTrack):
   kind = "video"
 
   def __init__(self, input_file, dt=DT_MDL, camera_type="driver"):
-    assert camera_type in ["driver", "wideRoad", "road"]
-    super().__init__(camera_type)
+    super().__init__(camera_type, dt)
 
-    #frame_reader = FrameReader(input_file)
-    #self.frames = [frame_reader.get(i, pix_fmt="rgb24") for i in range(frame_reader.frame_count)]
-    shape = (1280, 720, 3) if camera_type == "driver" else (1920, 1080, 3)
-    self.frames = [np.zeros(shape, dtype=np.uint8) for i in range(1200)]
-    self.frame_count = len(self.frames)
-    self.frame_index = 0
-    self.dt = dt
-    self.pts = 0
+    frame_reader = FrameReader(input_file)
+    self._frames = [frame_reader.get(i, pix_fmt="rgb24") for i in range(frame_reader.frame_count)]
+    self._frame_count = len(self.frames)
+    self._frame_index = 0
+    self._pts = 0
 
   async def recv(self):
-    print("-- sending frame: ", self.frame_index)
-    img = self.frames[self.frame_index]
+    print("-- sending frame", self._pts)
+    img = self._frames[self._frame_index]
 
     new_frame = av.VideoFrame.from_ndarray(img, format="rgb24")
-    new_frame.pts = self.pts
-    new_frame.time_base = aiortc.mediastreams.VIDEO_TIME_BASE
+    new_frame.pts = self._pts
+    new_frame.time_base = self._time_base
 
-    self.frame_index = (self.frame_index + 1) % self.frame_count
-    self.pts += self.dt * aiortc.mediastreams.VIDEO_CLOCK_RATE
+    self._frame_index = (self._frame_index + 1) % self._frame_count
+    self._pts = await self.next_pts(self._pts)
 
     return new_frame
-
-
-import pyaudio
-from pydub import AudioSegment
 
 
 class AudioInputStreamTrack(aiortc.mediastreams.AudioStreamTrack):

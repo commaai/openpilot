@@ -249,7 +249,7 @@ class WebRTCAnswerStream(WebRTCBaseStream):
 
 
 if __name__ == "__main__":
-  from openpilot.tools.bodyteleop.webrtc.tracks import LiveStreamVideoStreamTrack, FrameReaderVideoStreamTrack
+  from openpilot.tools.bodyteleop.webrtc.tracks import LiveStreamVideoStreamTrack, FrameReaderVideoStreamTrack, DummyVideoStreamTrack
   from openpilot.tools.bodyteleop.webrtc.common import StdioConnectionProvider
 
   parser = argparse.ArgumentParser()
@@ -258,6 +258,7 @@ if __name__ == "__main__":
   offer_parser.add_argument("cameras", metavar="CAMERA", type=str, nargs="+", default=["driver"], help="Camera types to stream")
 
   answer_parser = subparsers.add_parser("answer")
+  answer_parser.add_argument("--dummy-video", action="store_true", help="Stream dummy frames")
   answer_parser.add_argument("--input-video", type=str, required=False, help="Stream from video file instead")
   
   args = parser.parse_args()
@@ -275,7 +276,9 @@ if __name__ == "__main__":
       offer = StreamingOffer(**payload)
       video_tracks = []
       for cam in offer.video:
-        if args.input_video:
+        if args.dummy_video:
+          track = DummyVideoStreamTrack(camera_type=cam)
+        elif args.input_video:
           track = FrameReaderVideoStreamTrack(args.input_video, camera_type=cam)
         else:
           track = LiveStreamVideoStreamTrack(cam)
@@ -311,7 +314,7 @@ if __name__ == "__main__":
       try:
         frames = await asyncio.gather(*[track.recv() for track in tracks])
         for key, frame in zip(args.cameras, frames):
-          print("Received frame from", key, frame.shape)
+          print("Received frame from", key, frame.time)
       except aiortc.mediastreams.MediaStreamError:
         return
       print("=====================================")
