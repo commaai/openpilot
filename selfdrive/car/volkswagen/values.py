@@ -717,12 +717,14 @@ FW_VERSIONS = {
   CAR.PASSAT_NMS: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8706K906016C \xf1\x899609',
+      b'\xf1\x8706K906016E \xf1\x899830',
       b'\xf1\x8706K906016G \xf1\x891124',
       b'\xf1\x8706K906071BJ\xf1\x894891',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927158AB\xf1\x893318',
       b'\xf1\x8709G927158BD\xf1\x893121',
+      b'\xf1\x8709G927158DK\xf1\x893594',
       b'\xf1\x8709G927158FQ\xf1\x893745',
     ],
     (Ecu.srs, 0x715, None): [
