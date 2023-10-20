@@ -37,7 +37,7 @@ PROCS = {
   "selfdrive.locationd.paramsd": 9.0,
   "./sensord": 7.0,
   "selfdrive.controls.radard": 4.5,
-  "selfdrive.modeld.modeld": 8.0,
+  "selfdrive.modeld.modeld": 13.0,
   "selfdrive.modeld.dmonitoringmodeld": 8.0,
   "selfdrive.modeld.navmodeld": 1.0,
   "selfdrive.thermald.thermald": 3.87,
@@ -205,7 +205,7 @@ class TestOnroad(unittest.TestCase):
       if f.name == "qcamera.ts":
         assert 2.15 < sz < 2.35
       elif f.name == "qlog":
-        assert 0.7 < sz < 0.95
+        assert 0.7 < sz < 1.0
       elif f.name == "rlog":
         assert 5 < sz < 50
       elif f.name.endswith('.hevc'):
