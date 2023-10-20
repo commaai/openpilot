@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+import os
 import time
 import pickle
 import numpy as np
@@ -19,6 +20,8 @@ from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
+
+SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
 MODEL_PATHS = {
   ModelRunner.THNEED: Path(__file__).parent / 'models/supercombo.thneed',
@@ -70,7 +73,10 @@ class ModelState:
       self.model.addInput(k, v)
 
   def slice_outputs(self, model_outputs: np.ndarray) -> Dict[str, np.ndarray]:
-    return {k: model_outputs[np.newaxis, v] for k,v in self.output_slices.items()}
+    parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in self.output_slices.items()}
+    if SEND_RAW_PRED:
+      parsed_model_outputs['raw_pred'] = model_outputs.copy()
+    return parsed_model_outputs
 
   def run(self, buf: VisionBuf, wbuf: VisionBuf, transform: np.ndarray, transform_wide: np.ndarray,
                 inputs: Dict[str, np.ndarray], prepare_only: bool) -> Optional[Dict[str, np.ndarray]]:
