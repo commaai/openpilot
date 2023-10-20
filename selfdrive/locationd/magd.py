@@ -3,7 +3,7 @@ import os
 import sys
 import signal
 import numpy as np
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Tuple, Union
 
 import cereal.messaging as messaging
 from cereal import car, log
@@ -107,10 +107,10 @@ class MagCalibrator:
       bearing = self.get_calibrated_bearing(x, y, np.array([x0, y0, l1, l2, theta, 0.0]))
       offset = np.median(self.reset_angle_range(bearing - yaw))
       calibration_params = np.array([x0, y0, l1, l2, theta, offset])
-    except np.linalg.LinAlgError as e:
-      cloudlog.exception(f"LinAlgError computing magnetometer calibration params: {e}")
-    except Exception as e:
-      cloudlog.exception(f"Error computing magnetometer calibration params: {e}")
+    except np.linalg.LinAlgError:
+      cloudlog.exception("LinAlgError computing magnetometer calibration params")
+    except Exception:
+      cloudlog.exception("Error computing magnetometer calibration params")
     return calibration_params
 
   def reset_angle_range(self, angle: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
@@ -144,7 +144,7 @@ class MagCalibrator:
           self.point_buckets.add_point(self.filtered_vals[0], self.filtered_vals[2], self.yaw)
         self.past_raw_vals = self.raw_vals
 
-  def get_msg(self, valid: bool = True, with_points: bool = False) -> log.Event:
+  def get_msg(self, valid: bool, with_points: bool = False) -> log.Event:
     msg = messaging.new_message('magnetometerCalibration')
     msg.valid = valid
     magnetometerCalibration = msg.magnetometerCalibration
@@ -175,14 +175,11 @@ class MagCalibrator:
         self.calibrated = True
 
 
-def main(sm: Optional[messaging.SubMaster] = None, pm: Optional[messaging.PubMaster] = None):
+def main():
   config_realtime_process([0, 1, 2, 3], 5)
 
-  if sm is None:
-    sm = messaging.SubMaster(['magnetometer', 'carState', 'liveLocationKalman'], poll=['liveLocationKalman'])
-
-  if pm is None:
-    pm = messaging.PubMaster(['magnetometerCalibration'])
+  sm = messaging.SubMaster(['magnetometer', 'carState', 'liveLocationKalman'], poll=['liveLocationKalman'])
+  pm = messaging.PubMaster(['magnetometerCalibration'])
 
   params = Params()
   with car.CarParams.from_bytes(params.get("CarParams", block=True)) as CP:
@@ -195,7 +192,7 @@ def main(sm: Optional[messaging.SubMaster] = None, pm: Optional[messaging.PubMas
     params = Params()
     params.put("MagnetometerCarParams", CP.as_builder().to_bytes())
 
-    msg = calibrator.get_msg(with_points=True)
+    msg = calibrator.get_msg(valid=True, with_points=True)
     params.put("MagnetometerCalibration", msg.to_bytes())
 
     sys.exit(0)
