@@ -22,12 +22,6 @@
 #include "tools/cabana/streamselector.h"
 #include "tools/cabana/tools/findsignal.h"
 
-static MainWindow *main_win = nullptr;
-void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
-  if (type == QtDebugMsg) std::cout << msg.toStdString() << std::endl;
-  if (main_win) emit main_win->showMessage(msg, 2000);
-}
-
 MainWindow::MainWindow() : QMainWindow() {
   createDockWindows();
   setCentralWidget(center_widget = new CenterWidget(this));
@@ -45,20 +39,23 @@ MainWindow::MainWindow() : QMainWindow() {
   }
   restoreState(settings.window_state);
 
+  // install handlers
+  static auto static_main_win = this;
   qRegisterMetaType<uint64_t>("uint64_t");
   qRegisterMetaType<SourceSet>("SourceSet");
   qRegisterMetaType<ReplyMsgType>("ReplyMsgType");
-  installMessageHandler([this](ReplyMsgType type, const std::string msg) {
-    // use queued connection to recv the log messages from replay.
-    emit showMessage(QString::fromStdString(msg), 2000);
+  installDownloadProgressHandler([](uint64_t cur, uint64_t total, bool success) {
+    emit static_main_win->updateProgressBar(cur, total, success);
   });
-  installDownloadProgressHandler([this](uint64_t cur, uint64_t total, bool success) {
-    emit updateProgressBar(cur, total, success);
+  qInstallMessageHandler([](QtMsgType type, const QMessageLogContext &context, const QString &msg) {
+    if (type == QtDebugMsg) std::cout << msg.toStdString() << std::endl;
+    emit static_main_win->showMessage(msg, 2000);
+  });
+  installMessageHandler([](ReplyMsgType type, const std::string msg) {
+    qInfo() << QString::fromStdString(msg);
   });
 
-  main_win = this;
-  qInstallMessageHandler(qLogMessageHandler);
-
+  // load fingerprints
   QFile json_file(QApplication::applicationDirPath() + "/dbc/car_fingerprint_to_dbc.json");
   if (json_file.open(QIODevice::ReadOnly)) {
     fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
@@ -597,7 +594,9 @@ void MainWindow::closeEvent(QCloseEvent *event) {
   cleanupAutoSaveFile();
   remindSaveChanges();
 
-  main_win = nullptr;
+  installDownloadProgressHandler(nullptr);
+  qInstallMessageHandler(nullptr);
+
   if (floating_window)
     floating_window->deleteLater();
 
