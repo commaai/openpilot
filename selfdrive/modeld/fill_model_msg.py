@@ -168,7 +168,7 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
 
   # raw prediction if enabled
   if SEND_RAW_PRED:
-    modelV2.rawPredictions = bytes(net_output_data['raw_pred'].tobytes())
+    modelV2.rawPredictions = net_output_data['raw_pred'].tobytes()
 
 def fill_pose_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, np.ndarray],
                   vipc_frame_id: int, vipc_dropped_frames: int, timestamp_eof: int, live_calib_seen: bool) -> None:
