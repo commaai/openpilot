@@ -82,7 +82,6 @@ Supported processes:
 * locationd
 * paramsd 
 * ubloxd
-* laikad
 * torqued
 * modeld
 * dmonitoringmodeld
