@@ -344,11 +344,9 @@ class RouteEngine:
     # TODO: Check for going wrong way in segment
 
 
-def main(sm=None, pm=None):
-  if sm is None:
-    sm = messaging.SubMaster(['liveLocationKalman', 'managerState'])
-  if pm is None:
-    pm = messaging.PubMaster(['navInstruction', 'navRoute'])
+def main():
+  pm = messaging.PubMaster(['navInstruction', 'navRoute'])
+  sm = messaging.SubMaster(['liveLocationKalman', 'managerState'])
 
   rk = Ratekeeper(1.0)
   route_engine = RouteEngine(sm, pm)

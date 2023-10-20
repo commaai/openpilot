@@ -218,14 +218,11 @@ class TorqueEstimator:
     return msg
 
 
-def main(sm=None, pm=None):
+def main():
   config_realtime_process([0, 1, 2, 3], 5)
 
-  if sm is None:
-    sm = messaging.SubMaster(['carControl', 'carState', 'liveLocationKalman'], poll=['liveLocationKalman'])
-
-  if pm is None:
-    pm = messaging.PubMaster(['liveTorqueParameters'])
+  pm = messaging.PubMaster(['liveTorqueParameters'])
+  sm = messaging.SubMaster(['carControl', 'carState', 'liveLocationKalman'], poll=['liveLocationKalman'])
 
   params = Params()
   with car.CarParams.from_bytes(params.get("CarParams", block=True)) as CP:
