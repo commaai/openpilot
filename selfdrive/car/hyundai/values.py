@@ -1712,6 +1712,7 @@ FW_VERSIONS = {
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x006T6K0_C2\x00\x006T6S2051\x00\x00TAD0N20NSD(\xfcA\x9d',
+      b'\xf1\x006T6K0_C2\x00\x006T6S2051\x00\x00TAD0N20NSD\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8161698051\x00\x00\x00\x00\x00\x00\x00\x00',
