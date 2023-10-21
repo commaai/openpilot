@@ -16,6 +16,7 @@ Settings settings;
 template <class SettingOperation>
 void settings_op(SettingOperation op) {
   QSettings s("cabana");
+  op(s, "absolute_time", settings.absolute_time);
   op(s, "fps", settings.fps);
   op(s, "max_cached_minutes", settings.max_cached_minutes);
   op(s, "chart_height", settings.chart_height);

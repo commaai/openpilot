@@ -240,6 +240,18 @@ void setTheme(int theme) {
   }
 }
 
+QString formatSeconds(double sec, bool include_milliseconds, bool absolute_time) {
+  QString format;
+  if (!absolute_time) {
+    format = sec > 60 * 60 ? "hh:mm:ss" : "mm:ss";
+  } else {
+    format = "yyyy-MM-dd hh::mm::ss";
+  }
+  if (include_milliseconds)
+    format += ".zzz";
+  return QDateTime::fromMSecsSinceEpoch(sec * 1000).toString(format);
+}
+
 int num_decimals(double num) {
   const QString string = QString::number(num);
   auto dot_pos = string.indexOf('.');

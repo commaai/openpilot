@@ -32,27 +32,20 @@ class Slider : public QSlider {
 
 public:
   Slider(QWidget *parent);
+  double mapToSeconds(int pos) const { return (minimum() + pos * ((maximum() - minimum()) / (double)width())) / factor; }
+  int mapToPosition(double sec) const { return width() * ((sec * factor - minimum()) / (maximum() - minimum())); }
   double currentSecond() const { return value() / factor; }
   void setCurrentSecond(double sec) { setValue(sec * factor); }
   void setTimeRange(double min, double max) { setRange(min * factor, max * factor); }
-  AlertInfo alertInfo(double sec);
-  QPixmap thumbnail(double sec);
-  void parseQLog(int segnum, std::shared_ptr<LogReader> qlog);
-
-signals:
-  void updateMaximumTime(double);
-
-private:
-  void parseQLog(int segnum, std::shared_ptr<LogReader> qlog);
-  void mousePressEvent(QMouseEvent *e) override;
-  void mouseMoveEvent(QMouseEvent *e) override;
-  bool event(QEvent *event) override;
-  void paintEvent(QPaintEvent *ev) override;
+  void setTipPosition(int pos);
 
   const double factor = 1000.0;
-  QMap<uint64_t, QPixmap> thumbnails;
-  std::map<uint64_t, AlertInfo> alerts;
-  InfoLabel thumbnail_label;
+
+private:
+  void mousePressEvent(QMouseEvent *e) override;
+  void paintEvent(QPaintEvent *ev) override;
+
+  int tip_position = -1;
 };
 
 class VideoWidget : public QFrame {
@@ -62,20 +55,32 @@ public:
   VideoWidget(QWidget *parnet = nullptr);
   void zoomChanged(double min, double max, bool is_zommed);
   void setMaximumTime(double sec);
+  AlertInfo alertInfo(double sec);
+  QPixmap thumbnail(double sec);
+  void showTip(double sec);
+
+signals:
+  void displayTipAt(double sec);
+  void updateMaximumTime(double);
 
 protected:
-  void setTimeRange(double min, double max);
+  bool eventFilter(QObject *obj, QEvent *event) override;
+  QString formatTime(double sec, bool include_milliseconds = false);
+  void parseQLog(int segnum, std::shared_ptr<LogReader> qlog);
   void updateState();
   void updatePlayBtnState();
   QWidget *createCameraWidget();
 
-  CameraWidget *cam_widget;
+  CameraWidget *cam_widget = nullptr;
   double maximum_time = 0;
-  QLabel *end_time_label;
-  QLabel *time_label;
-  QToolButton *play_btn;
-  QToolButton *skip_to_end_btn = nullptr;
-  InfoLabel *alert_label;
-  Slider *slider;
+  QToolButton *time_label = nullptr;
+  ToolButton *play_btn = nullptr;
+  ToolButton *skip_to_end_btn = nullptr;
+  QToolButton *speed_btn = nullptr;
+  Slider *slider = nullptr;
+  InfoLabel *alert_label = nullptr;
+  InfoLabel *thumbnail_label = nullptr;
+  QMap<uint64_t, QPixmap> thumbnails;
+  std::map<uint64_t, AlertInfo> alerts;
   bool zoomed = false;
 };

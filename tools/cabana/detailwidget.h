@@ -43,7 +43,7 @@ private:
   void updateState(const std::set<MessageId> *msgs = nullptr);
 
   MessageId msg_id;
-  QLabel *time_label, *warning_icon, *warning_label;
+  QLabel *warning_icon, *warning_label;
   ElidedLabel *name_label;
   QWidget *warning_widget;
   TabBar *tabbar;

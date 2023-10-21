@@ -23,12 +23,14 @@ public:
   inline QString carFingerprint() const override { return replay->carFingerprint().c_str(); }
   double totalSeconds() const override { return replay->totalSeconds(); }
   inline VisionStreamType visionStreamType() const { return replay->hasFlag(REPLAY_FLAG_ECAM) ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD; }
+  inline QDateTime beginDateTime() const { return replay->route()->datetime(); }
   inline uint64_t beginMonoTime() const override { return replay->routeStartTime(); }
   inline uint64_t currentMonoTime() const override { return current_mono_time_; }
   inline const Route *route() const { return replay->route(); }
   inline void setSpeed(float speed) override { replay->setSpeed(speed); }
   inline float getSpeed() const { return replay->getSpeed(); }
   inline bool isPaused() const override { return replay->isPaused(); }
+  inline Replay *getReplay() const { return replay.get(); }
   void pause(bool pause) override;
   inline const std::vector<std::tuple<double, double, TimelineType>> getTimeline() { return replay->getTimeline(); }
   static AbstractOpenStreamWidget *widget(AbstractStream **stream);

@@ -71,6 +71,7 @@ public:
   virtual void seekTo(double ts) {}
   virtual QString name() const = 0;
   virtual QString carFingerprint() const { return ""; }
+  virtual QDateTime beginDateTime() const { return {}; }
   virtual uint64_t beginMonoTime() const { return 0; }
   double currentSec() const { return (currentMonoTime() - std::min(currentMonoTime(), beginMonoTime())) / 1e9; }
   virtual uint64_t currentMonoTime() const = 0;

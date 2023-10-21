@@ -50,6 +50,7 @@ void LiveStream::start() {
   emit streamStarted();
   stream_thread->start();
   startUpdateTimer();
+  begin_date_time = QDateTime::currentDateTime();
 }
 
 LiveStream::~LiveStream() {

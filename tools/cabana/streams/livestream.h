@@ -4,6 +4,7 @@
 #include <vector>
 
 #include <QBasicTimer>
+#include <QDateTime>
 
 #include "tools/cabana/streams/abstractstream.h"
 
@@ -14,6 +15,7 @@ public:
   LiveStream(QObject *parent);
   virtual ~LiveStream();
   void start() override;
+  inline QDateTime beginDateTime() const { return begin_date_time; }
   inline uint64_t beginMonoTime() const override { return begin_event_ts; }
   inline uint64_t currentMonoTime() const override { return current_event_ts; }
   inline double totalSeconds() const override { return (lastest_event_ts_ - begin_event_ts) / 1e9; }
@@ -39,6 +41,7 @@ private:
   int timer_id;
   QBasicTimer update_timer;
 
+  QDateTime begin_date_time;
   uint64_t begin_event_ts = 0;
   uint64_t current_event_ts = 0;
   uint64_t lastest_event_ts_ = 0;

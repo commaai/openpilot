@@ -47,10 +47,12 @@ public slots:
   void setColumnCount(int n);
   void removeAll();
   void setZoom(double min, double max);
+  void showValueTip(double sec);
 
 signals:
   void zoomChanged(double min, double max, bool is_zommed);
   void seriesChanged();
+  void displayTipAt(double sec);
 
 private:
   void closeEvent(QCloseEvent *event) override;
@@ -76,7 +78,6 @@ private:
   void setMaxChartRange(int value);
   void updateLayout(bool force = false);
   void settingChanged();
-  void showValueTip(double sec);
   void newTab();
   void removeTab(int index);
   inline QList<ChartView *> &currentCharts() { return tab_charts[tabbar->tabData(tabbar->currentIndex()).toInt()]; }

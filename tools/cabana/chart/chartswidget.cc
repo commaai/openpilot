@@ -176,6 +176,8 @@ void ChartsWidget::showValueTip(double sec) {
   for (auto c : currentCharts()) {
     sec >= 0 ? c->showTip(sec) : c->hideTip();
   }
+  // if (!sender())
+  //   emit displayTipAt(sec);
 }
 
 void ChartsWidget::updateState() {

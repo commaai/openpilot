@@ -102,9 +102,7 @@ QPixmap icon(const QString &id);
 int num_decimals(double num);
 QString signalToolTip(const cabana::Signal *sig);
 void setTheme(int theme);
-inline QString formatSeconds(int seconds) {
-  return QDateTime::fromSecsSinceEpoch(seconds, Qt::UTC).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
-}
+QString formatSeconds(double sec, bool include_milliseconds = false, bool absolute_time = false);
 inline void drawStaticText(QPainter *p, const QRect &r, const QStaticText &text) {
   auto size = (r.size() - text.size()) / 2;
   p->drawStaticText(r.left() + size.width(), r.top() + size.height(), text);
