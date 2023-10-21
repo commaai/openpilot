@@ -34,7 +34,12 @@ void Sparkline::update(const MessageId &msg_id, const cabana::Signal *sig, uint6
       min_val -= 1;
       max_val += 1;
     }
-    render(sig->color, time_range, size);
+
+    if (size.width() > 0 && size.height() > 0) {
+      render(sig->color, time_range, size);
+    } else {
+      pixmap = QPixmap();
+    }
   } else {
     pixmap = QPixmap();
     min_val = -1;
