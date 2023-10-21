@@ -121,6 +121,11 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.385
       if candidate in (CAR.IONIQ, CAR.IONIQ_EV_LTD, CAR.IONIQ_PHEV_2019):
         ret.minSteerSpeed = 32 * CV.MPH_TO_MS
+    elif candidate in (CAR.IONIQ_5, CAR.IONIQ_6):
+      ret.mass = 1948
+      ret.wheelbase = 2.97
+      ret.steerRatio = 14.26
+      ret.tireStiffnessFactor = 0.65
     elif candidate == CAR.VELOSTER:
       ret.mass = 2917. * CV.LB_TO_KG
       ret.wheelbase = 2.80
@@ -141,6 +146,10 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.000
       # steering ratio according to Hyundai News https://www.hyundainews.com/assets/documents/original/48035-2022SantaCruzProductGuideSpecsv2081521.pdf
       ret.steerRatio = 14.2
+    elif candidate == CAR.CUSTIN_1ST_GEN:
+      ret.mass = 1690.  # from https://www.hyundai-motor.com.tw/clicktobuy/custin#spec_0
+      ret.wheelbase = 3.055
+      ret.steerRatio = 17.0  # from learner
 
     # Kia
     elif candidate == CAR.KIA_SORENTO:
@@ -192,11 +201,6 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2055
       ret.wheelbase = 2.9
       ret.steerRatio = 16.
-      ret.tireStiffnessFactor = 0.65
-    elif candidate in (CAR.IONIQ_5, CAR.IONIQ_6):
-      ret.mass = 1948
-      ret.wheelbase = 2.97
-      ret.steerRatio = 14.26
       ret.tireStiffnessFactor = 0.65
     elif candidate == CAR.KIA_SPORTAGE_HYBRID_5TH_GEN:
       ret.mass = 1767.  # SX Prestige trim support only

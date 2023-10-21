@@ -10,6 +10,8 @@ Running natively on any other system is not recommended and will require modific
 
 **1. Clone openpilot**
 
+NOTE: This repository uses Git LFS for large files. Ensure you have [Git LFS](https://git-lfs.com/) installed and set up before cloning or working with it.
+
 Either do a partial clone for faster download:
 ``` bash
 git clone --filter=blob:none --recurse-submodules --also-filter-submodules https://github.com/commaai/openpilot.git

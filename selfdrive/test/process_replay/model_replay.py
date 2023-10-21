@@ -10,8 +10,7 @@ from openpilot.common.params import Params
 from openpilot.system.hardware import PC
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.test.openpilotci import BASE_URL, get_url
-from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs
-from openpilot.selfdrive.test.process_replay.test_processes import format_diff
+from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process
 from openpilot.system.version import get_commit
 from openpilot.tools.lib.framereader import FrameReader
@@ -213,13 +212,13 @@ if __name__ == "__main__":
       results: Any = {TEST_ROUTE: {}}
       log_paths: Any = {TEST_ROUTE: {"models": {'ref': BASE_URL + log_fn, 'new': log_fn}}}
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
-      diff1, diff2, failed = format_diff(results, log_paths, ref_commit)
+      diff_short, diff_long, failed = format_diff(results, log_paths, ref_commit)
 
-      print(diff2)
+      print(diff_long)
       print('-------------\n'*5)
-      print(diff1)
+      print(diff_short)
       with open("model_diff.txt", "w") as f:
-        f.write(diff2)
+        f.write(diff_long)
     except Exception as e:
       print(str(e))
       failed = True

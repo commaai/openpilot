@@ -6,3 +6,5 @@ coverage:
         informational: true
     patch: off
 
+ignore:
+  - "**/test_*.py"

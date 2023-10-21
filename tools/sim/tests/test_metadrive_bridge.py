@@ -2,7 +2,7 @@
 import unittest
 
 from openpilot.tools.sim.run_bridge import parse_args
-from openpilot.tools.sim.bridge.metadrive import MetaDriveBridge
+from openpilot.tools.sim.bridge.metadrive.metadrive_bridge import MetaDriveBridge
 from openpilot.tools.sim.tests.test_sim_bridge import TestSimBridgeBase
 
 
