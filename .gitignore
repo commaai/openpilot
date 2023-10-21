@@ -79,6 +79,7 @@ comma*.sh
 
 selfdrive/modeld/thneed/compile
 selfdrive/modeld/models/*.thneed
+selfdrive/modeld/models/*.pkl
 
 *.bz2
 
