@@ -1712,7 +1712,9 @@ FW_VERSIONS = {
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x006T6K0_C2\x00\x006T6S2051\x00\x00TAD0N20NSD(\xfcA\x9d',
-      b'\xf1\x006T6K0_C2\x00\x006T6S2051\x00\x00TAD0N20NSD\x00\x00\x00\x00',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8161698051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00AD ESC \x11 11 \x18\x05\x06 58910-F2840',
@@ -1720,9 +1722,6 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00AD__ SCC H-CUP      1.00 1.00 99110-F2100         ',
     ],
-    (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x8161698051\x00\x00\x00\x00\x00\x00\x00\x00',
-    ]
   },
   CAR.ELANTRA_GT_I30: {
     (Ecu.fwdCamera, 0x7c4, None): [
@@ -2115,9 +2114,9 @@ EV_CAR = {CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV, CAR
           CAR.KIA_EV6, CAR.IONIQ_5, CAR.IONIQ_6, CAR.GENESIS_GV60_EV_1ST_GEN, CAR.KONA_EV_2ND_GEN}
 
 # these cars require a special panda safety mode due to missing counters and checksums in the messages
-LEGACY_SAFETY_MODE_CAR = {CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_LTD, CAR.KIA_OPTIMA_G4,
-                          CAR.VELOSTER, CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.KIA_CEED, CAR.ELANTRA, CAR.IONIQ_HEV_2022,
-                          CAR.KIA_OPTIMA_H, CAR.ELANTRA_GT_I30}
+LEGACY_SAFETY_MODE_CAR = {CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_LTD, CAR.KIA_OPTIMA_G4, CAR.VELOSTER,
+                          CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.KIA_CEED, CAR.ELANTRA, CAR.ELANTRA_GT_I30,
+                          CAR.IONIQ_HEV_2022, CAR.KIA_OPTIMA_H}
 
 # these cars have not been verified to work with longitudinal yet - radar disable, sending correct messages, etc.
 UNSUPPORTED_LONGITUDINAL_CAR = LEGACY_SAFETY_MODE_CAR | {CAR.KIA_NIRO_PHEV, CAR.KIA_SORENTO, CAR.SONATA_LF, CAR.KIA_OPTIMA_G4_FL,
