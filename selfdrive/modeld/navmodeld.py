@@ -13,13 +13,13 @@ from cereal.visionipc import VisionIpcClient, VisionStreamType
 from openpilot.system.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_realtime_priority
-from openpilot.selfdrive.modeld.constants import IDX_N
+from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
 
 NAV_INPUT_SIZE = 256*256
 NAV_FEATURE_LEN = 256
 NAV_DESIRE_LEN = 32
-NAV_OUTPUT_SIZE = 2*2*IDX_N + NAV_DESIRE_LEN + NAV_FEATURE_LEN
+NAV_OUTPUT_SIZE = 2*2*ModelConstants.IDX_N + NAV_DESIRE_LEN + NAV_FEATURE_LEN
 MODEL_PATHS = {
   ModelRunner.SNPE: Path(__file__).parent / 'models/navmodel_q.dlc',
   ModelRunner.ONNX: Path(__file__).parent / 'models/navmodel.onnx'}
@@ -31,8 +31,8 @@ class NavModelOutputXY(ctypes.Structure):
 
 class NavModelOutputPlan(ctypes.Structure):
   _fields_ = [
-    ("mean", NavModelOutputXY*IDX_N),
-    ("std", NavModelOutputXY*IDX_N)]
+    ("mean", NavModelOutputXY*ModelConstants.IDX_N),
+    ("std", NavModelOutputXY*ModelConstants.IDX_N)]
 
 class NavModelResult(ctypes.Structure):
   _fields_ = [
