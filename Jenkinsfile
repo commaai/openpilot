@@ -21,6 +21,8 @@ source ~/.bash_profile
 if [ -f /TICI ]; then
   source /etc/profile
 
+  rm -rf ~/.commacache
+
   if ! systemctl is-active --quiet systemd-resolved; then
     echo "restarting resolved"
     sudo systemctl start systemd-resolved
@@ -81,10 +83,14 @@ def pcStage(String stageName, Closure body) {
 
     checkout scm
 
-    def dockerArgs = '--user=root -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache';
+    def dockerArgs = '--user=batman -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache';
     docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .").inside(dockerArgs) {
       timeout(time: 20, unit: 'MINUTES') {
         try {
+          // TODO: remove these after all jenkins jobs are running as batman (merged with master)
+          sh "sudo chown -R batman:batman /tmp/scons_cache"
+          sh "sudo chown -R batman:batman /tmp/comma_download_cache"
+
           sh "git config --global --add safe.directory '*'"
           sh "git submodule update --init --recursive"
           sh "git lfs pull"
@@ -150,7 +156,7 @@ node {
           ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR ./build_devel.sh"],
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["check dirty", "release/check-dirty.sh"],
-          ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
+          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
           ["time to onroad", "cd selfdrive/test/ && pytest test_time_to_onroad.py"],
         ])
       },

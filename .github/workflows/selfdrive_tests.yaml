@@ -35,9 +35,10 @@ jobs:
     env:
       STRIPPED_DIR: /tmp/releasepilot
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
+    - run: git lfs pull
     - name: Build devel
       timeout-minutes: 1
       run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
@@ -65,7 +66,7 @@ jobs:
         cp pyproject.toml $STRIPPED_DIR
         cp poetry.lock $STRIPPED_DIR
         cd $STRIPPED_DIR
-        ${{ env.RUN }} "unset PYTHONWARNINGS && pre-commit run --all"
+        ${{ env.RUN }} "unset PYTHONWARNINGS && SKIP=check-added-large-files pre-commit run --all"
 
   build:
     strategy:
@@ -76,7 +77,7 @@ jobs:
                (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && '["x86_64", "aarch64"]' || '["x86_64"]' ) }}
     runs-on: ${{ (matrix.arch == 'aarch64') && 'buildjet-2vcpu-ubuntu-2204-arm' || 'ubuntu-20.04' }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
@@ -88,98 +89,6 @@ jobs:
       with:
         cache_key_prefix: scons_${{ matrix.arch }}
 
-  build_mac:
-    name: build macos
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: true
-    - name: Determine pre-existing Homebrew packages
-      if: steps.dependency-cache.outputs.cache-hit != 'true'
-      run: |
-        echo 'EXISTING_CELLAR<<EOF' >> $GITHUB_ENV
-        brew list --formula -1 >> $GITHUB_ENV
-        echo 'EOF' >> $GITHUB_ENV
-    - name: Restore scons cache
-      id: scons-restore-cache
-      uses: actions/cache/restore@v3
-      with:
-        path: /tmp/scons_cache
-        key: macos_scons-${{ github.sha }}
-        restore-keys: macos_scons-
-    - name: Cache dependencies
-      id: dependency-cache
-      uses: actions/cache@v3
-      with:
-        path: |
-          .env
-          .venv
-          ~/github_brew_cache_entries.txt
-          ~/.pyenv
-          ~/Library/Caches/pypoetry
-          /usr/local/Cellar
-          /usr/local/opt
-          /usr/local/Caskroom/gcc-arm-*
-          /opt/homebrew/Cellar
-          /opt/homebrew/opt
-          /opt/homebrew/Caskroom/gcc-arm-*
-          /Applications/ArmGNUToolchain/*/*/*
-        key: macos_deps-${{ hashFiles('tools/mac_setup.sh', 'tools/install_python_dependencies.sh', 'poetry.lock') }}
-        restore-keys: macos_deps-
-    - name: Brew link restored dependencies
-      run: |
-        if [ -f ~/github_brew_cache_entries.txt ]; then
-          brew link --force --overwrite $(cat ~/github_brew_cache_entries.txt) # `--force` for keg-only packages
-          if [ -d /Applications/ArmGNUToolchain ]; then # link gcc-arm-embedded manually
-            GCC_TOOLCHAIN="$(echo /Applications/ArmGNUToolchain/**/**/bin)"
-            echo "$GCC_TOOLCHAIN" >> $GITHUB_PATH
-          fi
-        else
-          echo "Cache entries not found"
-        fi
-    - name: Install dependencies
-      if: steps.dependency-cache.outputs.cache-hit != 'true'
-      run: SKIP_PROMPT=1 ./tools/mac_setup.sh
-      env:
-        # package install has DeprecationWarnings
-        PYTHONWARNINGS: default
-    - name: Build openpilot
-      run: |
-        eval "$(pyenv init --path)"
-        poetry run scons -j$(nproc)
-    - name: Run tests
-      run: |
-        eval "$(pyenv init --path)"
-        poetry run tools/plotjuggler/test_plotjuggler.py
-    - name: Pre Cache - Cleanup scons cache
-      if: github.ref == 'refs/heads/master'
-      run: |
-        rm -rf /tmp/scons_cache/*
-        eval "$(pyenv init --path)"
-        poetry run scons -j$(nproc) --cache-populate
-    - name: Save scons cache
-      id: scons-save-cache
-      uses: actions/cache/save@v3
-      if: github.ref == 'refs/heads/master'
-      with:
-        path: /tmp/scons_cache
-        key: macos_scons-${{ github.sha }}
-    - name: Pre Cache - Remove pre-existing Homebrew packages
-      if: steps.dependency-cache.outputs.cache-hit != 'true'
-      run: |
-        new_cellar=$(brew list --formula -1)
-        exceptions="zstd lz4 xz" # caching step needs zstd
-        comm -12 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | while read pkg; do
-          if [[ " $exceptions " != *" $pkg "* ]]; then
-            rm -rf "$(brew --cellar)/$pkg"
-          fi
-        done
-        comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | tee ~/github_brew_cache_entries.txt
-        # .fseventsd directory causes permission errors in dep caching step
-        # its used by the system to observe changes within the directory - toolchain works without it, just remove it
-        sudo rm -rf /Applications/ArmGNUToolchain/*/*/.fseventsd
-
   docker_push:
     name: docker push
     strategy:
@@ -188,7 +97,7 @@ jobs:
     runs-on: ${{ (matrix.arch == 'aarch64') && 'buildjet-2vcpu-ubuntu-2204-arm' || 'ubuntu-20.04' }}
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - name: Setup to push to repo
@@ -198,7 +107,6 @@ jobs:
         $DOCKER_LOGIN
     - uses: ./.github/workflows/setup-with-retry
       with:
-        git_lfs: false
         docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
     - name: Build and push CL Docker image
       if: matrix.arch == 'x86_64'
@@ -212,7 +120,7 @@ jobs:
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     needs: [docker_push]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: false
     - name: Setup docker
@@ -227,11 +135,10 @@ jobs:
     name: static analysis
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
-    - name: Build Docker image
-      run: eval "$BUILD"
+    - uses: ./.github/workflows/setup-with-retry
     - name: pre-commit
       timeout-minutes: 4
       run: ${{ env.RUN }} "unset PYTHONWARNINGS && pre-commit run --all"
@@ -240,7 +147,7 @@ jobs:
     name: valgrind
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
@@ -258,7 +165,7 @@ jobs:
     name: unit tests
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
@@ -268,8 +175,7 @@ jobs:
     - name: Run unit tests
       timeout-minutes: 15
       run: |
-        ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
-                        $PYTEST -n auto --dist=loadscope --timeout 30 -o cpp_files=test_* && \
+        ${{ env.RUN }} "$PYTEST -n auto --dist=loadscope --timeout 30 -o cpp_files=test_* -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         ./selfdrive/ui/tests/test_translations.py && \
@@ -284,7 +190,7 @@ jobs:
                    ((github.event_name != 'pull_request') || 
                     (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'buildjet-8vcpu-ubuntu-2004' || 'ubuntu-20.04' }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
@@ -322,11 +228,38 @@ jobs:
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
 
+  regen:
+    name: regen
+    runs-on: 'ubuntu-20.04'
+    steps: 
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - uses: ./.github/workflows/setup-with-retry
+    - name: Cache test routes
+      id: dependency-cache
+      uses: actions/cache@v3
+      with:
+        path: .ci_cache/comma_download_cache
+        key: regen-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/test_regen.py') }}
+    - name: Build base Docker image
+      run: eval "$BUILD"
+    - name: Build Docker image
+      run: eval "$BUILD_CL"
+    - name: Build openpilot
+      run: |
+        ${{ env.RUN }} "scons -j$(nproc)"
+    - name: Run regen
+      timeout-minutes: 30
+      run: |
+        ${{ env.RUN_CL }} "ONNXCPU=1 $PYTEST -n auto --dist=loadscope selfdrive/test/process_replay/test_regen.py && \
+                           chmod -R 777 /tmp/comma_download_cache"
+
   test_modeld:
     name: model tests
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
@@ -362,7 +295,7 @@ jobs:
       matrix:
         job: [0, 1, 2, 3, 4]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
@@ -390,19 +323,21 @@ jobs:
     runs-on: ubuntu-20.04
     if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
           ref: ${{ github.event.pull_request.base.ref }}
+      - run: git lfs pull
       - uses: ./.github/workflows/setup-with-retry
       - name: Get base car info
         run: |
           ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/debug/dump_car_info.py --path /tmp/openpilot_cache/base_car_info"
           sudo chown -R $USER:$USER ${{ github.workspace }}
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
           path: current
+      - run: cd current && git lfs pull
       - name: Save car docs diff
         id: save_diff
         run: |

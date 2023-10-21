@@ -395,7 +395,7 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
     else e->setValidator(double_validator);
 
     if (item->type == SignalModel::Item::Name) {
-      QCompleter *completer = new QCompleter(dbc()->signalNames());
+      QCompleter *completer = new QCompleter(dbc()->signalNames(), e);
       completer->setCaseSensitivity(Qt::CaseInsensitive);
       completer->setFilterMode(Qt::MatchContains);
       e->setCompleter(completer);

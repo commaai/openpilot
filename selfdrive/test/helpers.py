@@ -9,7 +9,6 @@ from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.system.hardware import PC
 from openpilot.system.version import training_version, terms_version
 
-SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
 def set_params_enabled():
   os.environ['PASSIVE'] = "0"
