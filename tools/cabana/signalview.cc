@@ -449,9 +449,8 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   sparkline_range_slider->setValue(settings.sparkline_range);
   sparkline_range_slider->setToolTip(tr("Sparkline time range"));
 
-  auto collapse_btn = new ToolButton("dash-square", tr("Collapse All"));
-  collapse_btn->setIconSize({12, 12});
-  hl->addWidget(collapse_btn);
+  hl->addWidget(expand_btn = new ToolButton("chevron-expand"));
+  expand_btn->setIconSize({16, 16});
 
   // tree view
   tree = new TreeView(this);
@@ -475,14 +474,16 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   main_layout->setSpacing(0);
   main_layout->addWidget(title_bar);
   main_layout->addWidget(tree);
-  updateToolBar();
 
+  updateToolBar();
   QObject::connect(filter_edit, &QLineEdit::textEdited, model, &SignalModel::setFilter);
   QObject::connect(sparkline_range_slider, &QSlider::valueChanged, this, &SignalView::setSparklineRange);
-  QObject::connect(collapse_btn, &QPushButton::clicked, tree, &QTreeView::collapseAll);
+  QObject::connect(expand_btn, &QPushButton::clicked, this, &SignalView::expandOrCollapseAll);
   QObject::connect(tree, &QAbstractItemView::clicked, this, &SignalView::rowClicked);
   QObject::connect(tree, &QTreeView::viewportEntered, [this]() { setHoverIndex(QModelIndex()); });
   QObject::connect(tree, &QTreeView::entered, this, &SignalView::setHoverIndex);
+  QObject::connect(tree, &QTreeView::collapsed, this, &SignalView::updateToolBar);
+  QObject::connect(tree, &QTreeView::expanded, this, &SignalView::updateToolBar);
   QObject::connect(model, &QAbstractItemModel::modelReset, this, &SignalView::rowsChanged);
   QObject::connect(model, &QAbstractItemModel::rowsRemoved, this, &SignalView::rowsChanged);
   QObject::connect(dbc(), &DBCManager::signalAdded, this, &SignalView::handleSignalAdded);
@@ -552,12 +553,21 @@ void SignalView::rowClicked(const QModelIndex &index) {
 void SignalView::selectSignal(const cabana::Signal *sig, bool expand) {
   if (int row = model->signalRow(sig); row != -1) {
     auto idx = model->index(row, 0);
-    if (expand) {
+    if (expand)
       tree->setExpanded(idx, !tree->isExpanded(idx));
-    }
     tree->scrollTo(idx, QAbstractItemView::PositionAtTop);
     tree->setCurrentIndex(idx);
   }
+}
+
+void SignalView::expandOrCollapseAll() {
+  tree->setUpdatesEnabled(false);
+  if (expand_btn->property("collapse").toBool()) {
+    tree->collapseAll();
+  } else {
+    tree->expandAll();
+  }
+  tree->setUpdatesEnabled(true);
 }
 
 void SignalView::updateChartState() {
@@ -592,6 +602,14 @@ void SignalView::highlightSignal(const cabana::Signal *sig) {
 void SignalView::updateToolBar() {
   signal_count_lb->setText(tr("Signals: %1").arg(model->rowCount()));
   sparkline_label->setText(utils::formatSeconds(settings.sparkline_range));
+
+  bool all_expanded = true;
+  for (int i = 0; i < model->rowCount() && all_expanded; ++i) {
+    all_expanded = tree->isExpanded(model->index(i, 0));
+  }
+  expand_btn->setIcon(all_expanded ? "chevron-contract" : "chevron-expand");
+  expand_btn->setProperty("collapse", all_expanded);
+  expand_btn->setToolTip(all_expanded ? tr("Collapse All") : tr("Expand All"));
 }
 
 void SignalView::setSparklineRange(int value) {

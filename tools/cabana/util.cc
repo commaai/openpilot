@@ -245,7 +245,7 @@ QString formatSeconds(double sec, bool include_milliseconds, bool absolute_time)
   if (!absolute_time) {
     format = sec > 60 * 60 ? "hh:mm:ss" : "mm:ss";
   } else {
-    format = "yyyy-MM-dd hh::mm::ss";
+    format = "yyyy-MM-dd hh:mm:ss";
   }
   if (include_milliseconds)
     format += ".zzz";

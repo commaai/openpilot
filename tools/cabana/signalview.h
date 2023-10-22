@@ -112,6 +112,7 @@ signals:
   void showChart(const MessageId &id, const cabana::Signal *sig, bool show, bool merge);
 
 private:
+  void expandOrCollapseAll();
   void rowsChanged();
   void resizeEvent(QResizeEvent* event) override;
   void updateToolBar();
@@ -145,6 +146,7 @@ private:
   QLineEdit *filter_edit;
   ChartsWidget *charts;
   QLabel *signal_count_lb;
+  ToolButton *expand_btn;
   SignalItemDelegate *delegate;
   friend SignalItemDelegate;
 };
