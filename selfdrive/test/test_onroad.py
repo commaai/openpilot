@@ -47,7 +47,6 @@ PROCS = {
   "selfdrive.monitoring.dmonitoringd": 4.0,
   "./proclogd": 1.54,
   "system.logmessaged": 0.2,
-  "./clocksd": 0.02,
   "selfdrive.tombstoned": 0,
   "./logcatd": 0,
   "system.micd": 10.0,
