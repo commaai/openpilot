@@ -669,7 +669,6 @@ FW_VERSIONS = {
       b'36802-TGG-G130\x00\x00',
       b'36802-TGK-Q120\x00\x00',
       b'36802-TGL-G040\x00\x00',
-      b'8S102-T20-AA10\x00\x00',
     ],
     (Ecu.fwdCamera, 0x18dab5f1, None): [
       b'36161-TBA-A130\x00\x00',
