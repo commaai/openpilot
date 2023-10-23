@@ -56,7 +56,6 @@ PROCS = {
   "selfdrive.navd.navd": 0.4,
   "system.loggerd.uploader": 3.0,
   "system.loggerd.deleter": 0.1,
-  "selfdrive.locationd.laikad": (1.0, 80.0),  # TODO: better GPS setup in testing closet
 }
 
 PROCS.update({

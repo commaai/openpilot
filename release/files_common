@@ -226,7 +226,6 @@ system/ubloxd/*.cc
 selfdrive/locationd/__init__.py
 selfdrive/locationd/SConscript
 selfdrive/locationd/.gitignore
-selfdrive/locationd/laikad.py
 selfdrive/locationd/locationd.h
 selfdrive/locationd/locationd.cc
 selfdrive/locationd/paramsd.py
