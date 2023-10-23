@@ -694,11 +694,6 @@ FW_VERSIONS = {
       b'39494-TGL-G030\x00\x00',
     ],
   },
-    CAR.CIVIC_BOSCH: {
-    (Ecu.fwdRadar, 0x18DAB0F1, None): [
-      b'8S102-T20-AA10\x00\x00',
-    ],
-  },
   CAR.CIVIC_BOSCH_DIESEL: {
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
       b'37805-59N-G630\x00\x00',
