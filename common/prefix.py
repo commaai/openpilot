@@ -12,25 +12,28 @@ class OpenpilotPrefix:
     self.prefix = prefix if prefix else str(uuid.uuid4().hex[0:15])
     self.msgq_path = os.path.join('/dev/shm', self.prefix)
     self.clean_dirs_on_exit = clean_dirs_on_exit
+    self.skip = "OPENPILOT_PREFIX" in os.environ # skip if we are already within a prefix
 
   def __enter__(self):
-    os.environ['OPENPILOT_PREFIX'] = self.prefix
-    try:
-      os.mkdir(self.msgq_path)
-    except FileExistsError:
-      pass
-    os.makedirs(Paths.log_root(), exist_ok=True)
+    if not self.skip:
+      os.environ['OPENPILOT_PREFIX'] = self.prefix
+      try:
+        os.mkdir(self.msgq_path)
+      except FileExistsError:
+        pass
+      os.makedirs(Paths.log_root(), exist_ok=True)
 
     return self
 
   def __exit__(self, exc_type, exc_obj, exc_tb):
-    if self.clean_dirs_on_exit:
-      self.clean_dirs()
-    try:
-      del os.environ['OPENPILOT_PREFIX']
-    except KeyError:
-      pass
-    return False
+    if not self.skip:
+      if self.clean_dirs_on_exit:
+        self.clean_dirs()
+      try:
+        del os.environ['OPENPILOT_PREFIX']
+      except KeyError:
+        pass
+      return False
 
   def clean_dirs(self):
     symlink_path = Params().get_param_path()
