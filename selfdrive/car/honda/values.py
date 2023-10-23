@@ -693,7 +693,7 @@ FW_VERSIONS = {
       b'39494-TGL-G030\x00\x00',
     ],
   },
-    CAR.CIVIC_SPORT: {
+    CAR.CIVIC_BOSCH: {
     (Ecu.fwdRadar, 0x18DAB0F1, None): [
       b'8S102-T20-AA10\x00\x00',
     ],
