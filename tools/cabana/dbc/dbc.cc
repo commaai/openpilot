@@ -2,10 +2,15 @@
 
 #include <algorithm>
 
+#include "opendbc/can/common_dbc.h"
 #include "tools/cabana/util.h"
 
 uint qHash(const MessageId &item) {
   return qHash(item.source) ^ qHash(item.address);
+}
+
+std::vector<std::string> allDBCNames() {
+  return get_dbc_names();
 }
 
 // cabana::Msg
