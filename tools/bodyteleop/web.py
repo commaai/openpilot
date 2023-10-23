@@ -17,11 +17,15 @@ from aiortc import RTCPeerConnection, RTCSessionDescription
 import cereal.messaging as messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.bodyteleop.bodyav import BodyMic, WebClientSpeaker, force_codec, play_sound, MediaBlackhole, EncodedBodyVideo
+from openpilot.tools.bodyteleop.webrtc.common import StreamingOffer
+from openpilot.tools.bodyteleop.webrtc.stream import WebRTCStreamBuilder
+from openpilot.tools.bodyteleop.webrtc.tracks import LiveStreamVideoStreamTrack, AudioInputStreamTrack
 
 logger = logging.getLogger("pc")
 logging.basicConfig(level=logging.INFO)
 
 pcs = set()
+streams = []
 pm, sm = None, None
 TELEOPDIR = f"{BASEDIR}/tools/bodyteleop"
 
@@ -76,85 +80,54 @@ async def stop_background_tasks(app):
 
 
 async def offer(request):
+  async def on_webrtc_channel_message(channel, message):
+    data = json.loads(message)
+    if data['type'] == 'control_command':
+      await control_body(data, request.app)
+      times = {
+        'type': 'ping_time',
+        'incoming_time': data['dt'],
+        'outgoing_time': int(time.time() * 1000),
+      }
+      channel.send(json.dumps(times))
+    if data['type'] == 'battery_level':
+      sm.update(timeout=0)
+      if sm.updated['carState']:
+        channel.send(json.dumps({'type': 'battery_level', 'value': int(sm['carState'].fuelGauge * 100)}))
+    if data['type'] == 'play_sound':
+      logger.info(f"Playing sound: {data['sound']}")
+      await play_sound(data['sound'])
+    if data['type'] == 'find_person':
+      request.app['mutable_vals']['find_person'] = data['value']
+
   logger.info("\n\n\nnewoffer!\n\n")
 
   params = await request.json()
-  offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
+  offer = StreamingOffer(
+    sdp=params["sdp"], type=params["type"],
+    video=["driver"], audio=True, channel=True
+  )
+  camera_track = LiveStreamVideoStreamTrack("driver")
+  audio_track = AudioInputStreamTrack()
+
+  stream_builder = WebRTCStreamBuilder()
+  stream_builder.add_video_producer(camera_track)
+  stream_builder.add_audio_producer(audio_track)
+  stream_builder.add_messaging()
+
+  stream = stream_builder.answer(offer)
+  stream.set_message_handler(on_webrtc_channel_message)
+  description = await stream.start()
+
   speaker = WebClientSpeaker()
   blackhole = MediaBlackhole()
 
-  pc = RTCPeerConnection()
-  pc_id = "PeerConnection(%s)" % uuid.uuid4()
-  pcs.add(pc)
-
-  def log_info(msg, *args):
-    logger.info(pc_id + " " + msg, *args)
-
-  log_info("Created for %s", request.remote)
-
-  @pc.on("datachannel")
-  def on_datachannel(channel):
-    request.app['mutable_vals']['remote_channel'] = channel
-
-    @channel.on("message")
-    async def on_message(message):
-      data = json.loads(message)
-      if data['type'] == 'control_command':
-        await control_body(data, request.app)
-        times = {
-          'type': 'ping_time',
-          'incoming_time': data['dt'],
-          'outgoing_time': int(time.time() * 1000),
-        }
-        channel.send(json.dumps(times))
-      if data['type'] == 'battery_level':
-        sm.update(timeout=0)
-        if sm.updated['carState']:
-          channel.send(json.dumps({'type': 'battery_level', 'value': int(sm['carState'].fuelGauge * 100)}))
-      if data['type'] == 'play_sound':
-        logger.info(f"Playing sound: {data['sound']}")
-        await play_sound(data['sound'])
-      if data['type'] == 'find_person':
-        request.app['mutable_vals']['find_person'] = data['value']
-
-  @pc.on("connectionstatechange")
-  async def on_connectionstatechange():
-    log_info("Connection state is %s", pc.connectionState)
-    if pc.connectionState == "failed":
-      await pc.close()
-      pcs.discard(pc)
-
-  @pc.on('track')
-  def on_track(track):
-    logger.info(f"Track received: {track.kind}")
-    if track.kind == "audio":
-      speaker.addTrack(track)
-    elif track.kind == "video":
-      blackhole.addTrack(track)
-
-    @track.on("ended")
-    async def on_ended():
-      log_info("Remote %s track ended", track.kind)
-      if track.kind == "audio":
-        await speaker.stop()
-      elif track.kind == "video":
-        await blackhole.stop()
-
-  video_sender = pc.addTrack(EncodedBodyVideo())
-  force_codec(pc, video_sender, forced_codec='video/H264')
-  _ = pc.addTrack(BodyMic())
-
-  await pc.setRemoteDescription(offer)
   await speaker.start()
   await blackhole.start()
-  answer = await pc.createAnswer()
-  await pc.setLocalDescription(answer)
 
   return web.Response(
     content_type="application/json",
-    text=json.dumps(
-      {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
-    ),
+    text=json.dumps(description),
   )
 
 
