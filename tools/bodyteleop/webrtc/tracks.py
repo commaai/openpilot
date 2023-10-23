@@ -10,7 +10,6 @@ from aiortc.mediastreams import VIDEO_CLOCK_RATE, VIDEO_TIME_BASE
 import av
 import asyncio
 import numpy as np
-
 import pyaudio
 from pydub import AudioSegment
 
@@ -52,7 +51,8 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
   }
 
   def __init__(self, camera_type):
-    super().__init__(camera_type, DT_MDL)
+    dt = DT_DMON if camera_type == "driver" else DT_MDL
+    super().__init__(camera_type, dt)
 
     self._sock = messaging.sub_sock(self.camera_to_sock_mapping[camera_type], conflate=True)
     self._pts = 0
