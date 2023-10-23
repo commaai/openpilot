@@ -38,8 +38,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   QHBoxLayout *control_layout = new QHBoxLayout();
   auto seek_backward_btn = new ToolButton("rewind", tr("Seek backward"));
   control_layout->addWidget(seek_backward_btn);
-  play_btn = new ToolButton("play", tr("Play"));
-  control_layout->addWidget(play_btn);
+  control_layout->addWidget(play_btn = new ToolButton("play", tr("Play")));
   auto seek_forward_btn = new ToolButton("fast-forward", tr("Seek forward"));
   control_layout->addWidget(seek_forward_btn);
 
@@ -52,9 +51,9 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
       can->seekTo(can->totalSeconds() + 1);
     });
   }
-  control_layout->addWidget(time_label = new QToolButton);
-  time_label->setToolTip(tr("Absolute or elapsed time"));
-  time_label->setAutoRaise(true);
+  control_layout->addWidget(time_btn = new QToolButton);
+  time_btn->setToolTip(settings.absolute_time ? tr("Elapsed time") : tr("Absolute time"));
+  time_btn->setAutoRaise(true);
   control_layout->addStretch(0);
 
   if (!can->liveStreaming()) {
@@ -101,8 +100,9 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   QObject::connect(play_btn, &QToolButton::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(seek_backward_btn, &QToolButton::clicked, []() { can->seekTo(can->currentSec() - 1); });
   QObject::connect(seek_forward_btn, &QToolButton::clicked, []() { can->seekTo(can->currentSec() + 1); });
-  QObject::connect(time_label, &QToolButton::clicked, [this]() {
+  QObject::connect(time_btn, &QToolButton::clicked, [this]() {
     settings.absolute_time = !settings.absolute_time;
+    time_btn->setToolTip(settings.absolute_time ? tr("Elapsed time") : tr("Absolute time"));
     updateState();
   });
 
@@ -182,10 +182,10 @@ void VideoWidget::updateState() {
     if (!slider->isSliderDown())
       slider->setCurrentSecond(can->currentSec());
     alert_label->showAlert(alertInfo(can->currentSec()));
-    time_label->setText(QString("%1 / %2").arg(formatTime(can->currentSec(), true),
-                                               formatTime(slider->maximum() / slider->factor)));
+    time_btn->setText(QString("%1 / %2").arg(formatTime(can->currentSec(), true),
+                                             formatTime(slider->maximum() / slider->factor)));
   } else {
-    time_label->setText(formatTime(can->currentSec(), true));
+    time_btn->setText(formatTime(can->currentSec(), true));
   }
 }
 

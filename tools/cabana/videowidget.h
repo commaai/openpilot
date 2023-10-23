@@ -3,7 +3,6 @@
 #include <map>
 #include <memory>
 
-#include <QLabel>
 #include <QSlider>
 #include <QToolButton>
 
@@ -73,7 +72,7 @@ protected:
 
   CameraWidget *cam_widget = nullptr;
   double maximum_time = 0;
-  QToolButton *time_label = nullptr;
+  QToolButton *time_btn = nullptr;
   ToolButton *play_btn = nullptr;
   ToolButton *skip_to_end_btn = nullptr;
   QToolButton *speed_btn = nullptr;
