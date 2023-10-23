@@ -12,8 +12,8 @@ ConfidenceClass = log.ModelDataV2.ConfidenceClass
 class PublishState:
   def __init__(self):
     self.disengage_buffer = np.zeros(ModelConstants.CONFIDENCE_BUFFER_LEN*ModelConstants.DISENGAGE_WIDTH, dtype=np.float32)
-    self.prev_brake_5ms2_probs = np.zeros(ModelConstants.DISENGAGE_WIDTH, dtype=np.float32)
-    self.prev_brake_3ms2_probs = np.zeros(ModelConstants.DISENGAGE_WIDTH, dtype=np.float32)
+    self.prev_brake_5ms2_probs = np.zeros(ModelConstants.FCW_5MS2_PROBS_WIDTH, dtype=np.float32)
+    self.prev_brake_3ms2_probs = np.zeros(ModelConstants.FCW_3MS2_PROBS_WIDTH, dtype=np.float32)
 
 def fill_xyzt(builder, t, x, y, z, x_std=None, y_std=None, z_std=None):
   builder.t = t
