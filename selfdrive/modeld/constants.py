@@ -25,6 +25,8 @@ class ModelConstants:
   # model outputs constants
   FCW_THRESHOLDS_5MS2 = np.array([.05, .05, .15, .15, .15], dtype=np.float32)
   FCW_THRESHOLDS_3MS2 = np.array([.7, .7], dtype=np.float32)
+  FCW_5MS2_PROBS_WIDTH = 5
+  FCW_3MS2_PROBS_WIDTH = 2
 
   DISENGAGE_WIDTH = 5
   POSE_WIDTH = 6
