@@ -19,6 +19,8 @@ from openpilot.tools.lib.framereader import FrameReader
 
 
 class TiciVideoStreamTrack(aiortc.MediaStreamTrack):
+  kind = "video"
+
   def __init__(self, camera_type, dt, time_base=VIDEO_TIME_BASE, clock_rate=VIDEO_CLOCK_RATE):
     assert camera_type in ["driver", "wideRoad", "road"]
     super().__init__()
@@ -43,7 +45,6 @@ class TiciVideoStreamTrack(aiortc.MediaStreamTrack):
 
 
 class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
-  kind = "video"
   camera_to_sock_mapping = {
     "driver": "livestreamDriverEncodeData",
     "wideRoad": "livestreamWideRoadEncodeData",
@@ -76,8 +77,6 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
 
 
 class DummyVideoStreamTrack(TiciVideoStreamTrack):
-  kind = "video"
-
   def __init__(self, color=0, dt=DT_MDL, camera_type="driver"):
     super().__init__(camera_type, dt)
     self._color = color
@@ -97,8 +96,6 @@ class DummyVideoStreamTrack(TiciVideoStreamTrack):
 
 
 class FrameReaderVideoStreamTrack(TiciVideoStreamTrack):
-  kind = "video"
-
   def __init__(self, input_file, dt=DT_MDL, camera_type="driver"):
     super().__init__(camera_type, dt)
 
@@ -123,30 +120,37 @@ class FrameReaderVideoStreamTrack(TiciVideoStreamTrack):
 
 
 class AudioInputStreamTrack(aiortc.mediastreams.AudioStreamTrack):
+  PYAUDIO_TO_AV_FORMAT_MAP = {
+      pyaudio.paUInt8: 'u8',
+      pyaudio.paInt16: 's16',
+      pyaudio.paInt24: 's24',
+      pyaudio.paInt32: 's32',
+      pyaudio.paFloat32: 'flt',
+  }
+
   def __init__(self, format=pyaudio.paInt16, rate=16000, channels=1, packet_time=0.020, device_index=None):
     super().__init__()
 
     self.p = pyaudio.PyAudio()
-    frame_per_buffer = packet_time * rate
+    chunk_size = int(packet_time * rate)
     self.stream = self.p.open(format=format, 
                               channels=channels, 
                               rate=rate, 
-                              frames_per_buffer=frame_per_buffer, 
+                              frames_per_buffer=chunk_size, 
                               input=True, 
                               input_device_index=device_index)
     self.format = format
     self.rate = rate
     self.channels = channels
     self.packet_time = packet_time
-    self.chunk_size = int(rate * packet_time)
-    self.chunk_index = 0
+    self.chunk_size = chunk_size
     self.pts = 0
 
   async def recv(self):
     mic_data = self.stream.read(self.chunk_size)
-    mic_sound = AudioSegment(mic_data, sample_width=pyaudio.get_sample_size(self.format), channels=self.channels, frame_rate=self.rate)
-    # create stereo sound?
-    mic_sound = AudioSegment.from_mono_audiosegments(mic_sound, mic_sound)
-    packet = av.Packet(mic_sound.raw_data)
-    # TODO
-    return None
+    layout = 'stereo' if self.channels > 1 else 'mono'
+    frame = av.AudioFrame.from_ndarray(mic_data, self.PYAUDIO_TO_AV_FORMAT_MAP[self.format], layout=layout, rate=self.rate)
+    frame.pts = self.pts
+    self.pts += frame.samples
+
+    return frame
