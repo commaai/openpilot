@@ -160,6 +160,7 @@ QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, 
       case Column::NAME: return tr("Name");
       case Column::SOURCE: return tr("Bus");
       case Column::ADDRESS: return tr("ID");
+      case Column::NODE: return tr("Node");
       case Column::FREQ: return tr("Freq");
       case Column::COUNT: return tr("Count");
       case Column::DATA: return tr("Bytes");
@@ -172,6 +173,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   if (!index.isValid() || index.row() >= msgs.size()) return {};
 
   const auto &id = msgs[index.row()];
+  auto msg = dbc()->msg(id);
   auto &can_data = can->lastMessage(id);
 
   auto getFreq = [](const CanData &d) -> QString {
@@ -187,6 +189,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
       case Column::NAME: return msgName(id);
       case Column::SOURCE: return id.source != INVALID_SOURCE ? QString::number(id.source) : "N/A";
       case Column::ADDRESS: return QString::number(id.address, 16);
+      case Column::NODE: return msg ? msg->transmitter : "";
       case Column::FREQ: return id.source != INVALID_SOURCE ? getFreq(can_data) : "N/A";
       case Column::COUNT: return id.source != INVALID_SOURCE ? QString::number(can_data.count) : "N/A";
       case Column::DATA: return id.source != INVALID_SOURCE ? toHex(can_data.dat) : "N/A";
@@ -204,7 +207,6 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   } else if (role == BytesRole && index.column() == Column::DATA && id.source != INVALID_SOURCE) {
     return can_data.dat;
   } else if (role == Qt::ToolTipRole && index.column() == Column::NAME) {
-    auto msg = dbc()->msg(id);
     auto tooltip = msg ? msg->name : UNTITLED;
     if (msg && !msg->comment.isEmpty()) tooltip += "<br /><span style=\"color:gray;\">" + msg->comment + "</span>";
     return tooltip;
@@ -242,6 +244,14 @@ void MessageListModel::sortMessages(std::vector<MessageId> &new_msgs) {
     std::sort(new_msgs.begin(), new_msgs.end(), [=](auto &l, auto &r) {
       auto ll = std::pair{l.address, l};
       auto rr = std::pair{r.address, r};
+      return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
+    });
+  } else if (sort_column == Column::NODE) {
+    std::sort(new_msgs.begin(), new_msgs.end(), [=](auto &l, auto &r) {
+      auto lm = dbc()->msg(l);
+      auto rm = dbc()->msg(r);
+      auto ll = std::pair{lm ? lm->transmitter : QString(), l};
+      auto rr = std::pair{rm ? rm->transmitter : QString(), r};
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   } else if (sort_column == Column::FREQ) {
