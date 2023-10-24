@@ -488,9 +488,9 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QObject::connect(model, &QAbstractItemModel::rowsRemoved, this, &SignalView::rowsChanged);
   QObject::connect(dbc(), &DBCManager::signalAdded, this, &SignalView::handleSignalAdded);
   QObject::connect(dbc(), &DBCManager::signalUpdated, this, &SignalView::handleSignalUpdated);
+  QObject::connect(can, &AbstractStream::msgsReceived, this, &SignalView::updateState);
   QObject::connect(tree->verticalScrollBar(), &QScrollBar::valueChanged, [this]() { updateState(); });
   QObject::connect(tree->verticalScrollBar(), &QScrollBar::rangeChanged, [this]() { updateState(); });
-  QObject::connect(can, &AbstractStream::msgsReceived, this, &SignalView::updateState);
   QObject::connect(tree->header(), &QHeaderView::sectionResized, [this](int logicalIndex, int oldSize, int newSize) {
     if (logicalIndex == 1) {
       value_column_width = newSize - delegate->button_size.width();
@@ -642,8 +642,7 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
     max_value_width = std::max(max_value_width, fontMetrics().width(item->sig_val));
   }
 
-  QModelIndex top = tree->indexAt(QPoint(0, 0));
-  if (top.isValid()) {
+  if (QModelIndex top = tree->indexAt(QPoint(0, 0)); top.isValid()) {
     // update visible sparkline
     int first_visible_row = top.parent().isValid() ? top.parent().row() + 1 : top.row();
     int last_visible_row = model->rowCount() - 1;
@@ -660,7 +659,8 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
     for (int i = first_visible_row; i <= last_visible_row; ++i) {
       auto item = model->getItem(model->index(i, 1));
       synchronizer.addFuture(QtConcurrent::run(
-          &item->sparkline, &Sparkline::update, model->msg_id, item->sig, last_msg.mono_time, settings.sparkline_range, size));
+          &item->sparkline, &Sparkline::update, model->msg_id, item->sig,
+          last_msg.mono_time, settings.sparkline_range, size));
     }
   }
 
