@@ -1,19 +1,14 @@
 #pragma once
 
-#include <atomic>
 #include <map>
 #include <memory>
-#include <mutex>
-#include <tuple>
-#include <vector>
 
-#include <QFuture>
 #include <QLabel>
 #include <QSlider>
 #include <QToolButton>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
-#include "tools/cabana/streams/abstractstream.h"
+#include "tools/cabana/streams/replaystream.h"
 
 struct AlertInfo {
   cereal::ControlsState::AlertStatus status;
@@ -42,6 +37,7 @@ public:
   void setTimeRange(double min, double max);
   AlertInfo alertInfo(double sec);
   QPixmap thumbnail(double sec);
+  void parseQLog(int segnum, std::shared_ptr<LogReader> qlog);
 
 signals:
   void updateMaximumTime(double);
@@ -51,15 +47,10 @@ private:
   void mouseMoveEvent(QMouseEvent *e) override;
   bool event(QEvent *event) override;
   void paintEvent(QPaintEvent *ev) override;
-  void parseQLog();
 
   const double factor = 1000.0;
-  std::vector<std::tuple<double, double, TimelineType>> timeline;
-  std::mutex thumbnail_lock;
-  std::atomic<bool> abort_parse_qlog = false;
   QMap<uint64_t, QPixmap> thumbnails;
   std::map<uint64_t, AlertInfo> alerts;
-  std::unique_ptr<QFuture<void>> qlog_future;
   InfoLabel thumbnail_label;
 };
 
