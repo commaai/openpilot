@@ -8,7 +8,7 @@
 
 ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent) {
   unsetenv("ZMQ");
-  setenv("COMMA_CACHE", "/tmp/cabana_download_cache", 1);
+  setenv("COMMA_CACHE", "/tmp/comma_download_cache", 1);
 
   // TODO: Remove when OpenpilotPrefix supports ZMQ
 #ifndef __APPLE__
