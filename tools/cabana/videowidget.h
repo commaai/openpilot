@@ -33,7 +33,7 @@ public:
   Slider(QWidget *parent);
   double mapToSeconds(int pos) const { return (minimum() + pos * ((maximum() - minimum()) / (double)width())) / factor; }
   int mapToPosition(double sec) const { return width() * ((sec * factor - minimum()) / (maximum() - minimum())); }
-  double currentSecond() const { return value() / factor; }
+  inline double currentSecond() const { return value() / factor; }
   void setCurrentSecond(double sec) { setValue(sec * factor); }
   void setTimeRange(double min, double max) { setRange(min * factor, max * factor); }
   void setTipPosition(int pos);

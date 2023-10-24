@@ -36,7 +36,7 @@ public:
   void updatePlot(double cur, double min, double max);
   void setSeriesType(SeriesType type);
   void updatePlotArea(int left, bool force = false);
-  void showTip(double sec);
+  void showTip(double sec, bool show_value);
   void hideTip();
   void startAnimation();
 

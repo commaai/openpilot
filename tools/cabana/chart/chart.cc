@@ -248,7 +248,7 @@ void ChartView::updatePlot(double cur, double min, double max) {
     updateSeriesPoints();
     // update tooltip
     if (tooltip_x >= 0) {
-      showTip(chart()->mapToValue({tooltip_x, 0}).x());
+      showTip(chart()->mapToValue({tooltip_x, 0}).x(), true);
     }
     resetChartCache();
   }
@@ -558,7 +558,7 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   }
 }
 
-void ChartView::showTip(double sec) {
+void ChartView::showTip(double sec, bool show_value) {
   QRect tip_area(0, chart()->plotArea().top(), rect().width(), chart()->plotArea().height());
   QRect visible_rect = charts_widget->chartVisibleRect(this).intersected(tip_area);
   if (visible_rect.isEmpty()) {
@@ -592,7 +592,11 @@ void ChartView::showTip(double sec) {
   QPoint pt(x, chart()->plotArea().top());
   text_list.push_front(QString::number(chart()->mapToValue({x, 0}).x(), 'f', 3));
   QString text = "<p style='white-space:pre'>" % text_list.join("<br />") % "</p>";
-  tip_label.showText(pt, text, this, visible_rect);
+  if (show_value) {
+    tip_label.showText(pt, text, this, visible_rect);
+  } else {
+    tip_label.hide();
+  }
   viewport()->update();
 }
 
@@ -704,7 +708,7 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
   }
   if (track_line_x > 0) {
     auto plot_area = chart()->plotArea();
-    painter->setPen(QPen(Qt::darkGray, 1, Qt::DashLine));
+    painter->setPen(QPen(palette().color(QPalette::Text), 1, Qt::DashLine));
     painter->drawLine(QPointF{track_line_x, plot_area.top()}, QPointF{track_line_x, plot_area.bottom()});
   }
 

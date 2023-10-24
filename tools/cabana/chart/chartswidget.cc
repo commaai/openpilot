@@ -173,11 +173,12 @@ QRect ChartsWidget::chartVisibleRect(ChartView *chart) {
 }
 
 void ChartsWidget::showValueTip(double sec) {
+  bool send_from_video = sender() != nullptr;
   for (auto c : currentCharts()) {
-    sec >= 0 ? c->showTip(sec) : c->hideTip();
+    sec >= 0 ? c->showTip(sec, !send_from_video) : c->hideTip();
   }
-  // if (!sender())
-  //   emit displayTipAt(sec);
+  if (!send_from_video)
+    emit displayTipAt(sec);
 }
 
 void ChartsWidget::updateState() {
