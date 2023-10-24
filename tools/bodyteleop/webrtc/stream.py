@@ -152,6 +152,12 @@ class WebRTCBaseStream(abc.ABC):
     sending_medias = [m for m in desc.media if m.direction in ["sendonly", "sendrecv"]]
     self.expected_number_tracks_or_channels = len(sending_medias)
 
+  def has_video_track(self, camera_type: str) -> bool:
+    return camera_type in self.incoming_camera_tracks
+
+  def has_audio_track(self) -> bool:
+    return len(self.incoming_audio_tracks) > 0
+
   def get_incoming_video_track(self, camera_type: str, buffered: bool):
     assert camera_type in self.incoming_camera_tracks, "Video tracks are not enabled on this stream"
     assert self.peer_connection is not None, "Stream must be started"
@@ -184,11 +190,11 @@ class WebRTCBaseStream(abc.ABC):
     return self.peer_connection is not None
 
   async def wait_for_connection(self):
-    if self.expected_number_tracks_or_channels:
-      await self.incoming_media_ready_event.wait()
     await self.connection_attempted_event.wait()
     if self.peer_connection.connectionState != 'connected':
       raise ValueError("Connection failed.")
+    if self.expected_number_tracks_or_channels:
+      await self.incoming_media_ready_event.wait()
 
   @abc.abstractmethod
   async def start(self):
