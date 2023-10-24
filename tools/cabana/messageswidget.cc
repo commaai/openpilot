@@ -167,7 +167,7 @@ MessageListModel::MessageListModel(QObject *parent) : QAbstractTableModel(parent
 }
 
 QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, int role) const {
-  static const QVariant titles[] = {tr("Name"), tr("Bus"), tr("Address"), tr("Freq"), tr("Count"), tr("Bytes")};
+  static const QVariant titles[] = {tr("Name"), tr("Bus"), tr("ID"), tr("Freq"), tr("Count"), tr("Bytes")};
   return orientation == Qt::Horizontal && role == Qt::DisplayRole ? titles[section] : QVariant();
 }
 
