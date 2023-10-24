@@ -172,13 +172,13 @@ QRect ChartsWidget::chartVisibleRect(ChartView *chart) {
   return chart->rect().intersected(QRect(chart->mapFrom(charts_container, visible_rect.topLeft()), visible_rect.size()));
 }
 
-void ChartsWidget::showValueTip(double sec) {
+void ChartsWidget::showTrackLine(double sec) {
   bool send_from_video = sender() != nullptr;
   for (auto c : currentCharts()) {
-    sec >= 0 ? c->showTip(sec, !send_from_video) : c->hideTip();
+    sec >= 0 ? c->showTrackLine(sec, !send_from_video) : c->hideTrackLine();
   }
   if (!send_from_video)
-    emit displayTipAt(sec);
+    emit displayTrackLineAt(sec);
 }
 
 void ChartsWidget::updateState() {
@@ -468,7 +468,7 @@ bool ChartsWidget::event(QEvent *event) {
     case QEvent::FocusIn:
     case QEvent::FocusOut:
     case QEvent::Leave:
-      showValueTip(-1);
+      showTrackLine(-1);
       break;
     default:
       break;

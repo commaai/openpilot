@@ -56,10 +56,10 @@ public:
   void setMaximumTime(double sec);
   AlertInfo alertInfo(double sec);
   QPixmap thumbnail(double sec);
-  void showTip(double sec);
+  void showTrackLine(double sec);
 
 signals:
-  void displayTipAt(double sec);
+  void displayTrackLineAt(double sec);
   void updateMaximumTime(double);
 
 protected:

@@ -194,7 +194,7 @@ void VideoWidget::updatePlayBtnState() {
   play_btn->setToolTip(can->isPaused() ? tr("Play") : tr("Pause"));
 }
 
-void VideoWidget::showTip(double sec) {
+void VideoWidget::showTrackLine(double sec) {
   if (can->liveStreaming())
     return;
 
@@ -213,7 +213,7 @@ void VideoWidget::showTip(double sec) {
   }
 
   if (!sender())
-    emit displayTipAt(sec);
+    emit displayTrackLineAt(sec);
 }
 
 bool VideoWidget::eventFilter(QObject *obj, QEvent *event) {
@@ -224,10 +224,10 @@ bool VideoWidget::eventFilter(QObject *obj, QEvent *event) {
       case QEvent::FocusIn:
       case QEvent::FocusOut:
       case QEvent::Leave:
-        showTip(-1);
+        showTrackLine(-1);
         break;
       case QEvent::MouseMove: {
-        showTip(slider->mapToSeconds(static_cast<QMouseEvent *>(event)->pos().x()));
+        showTrackLine(slider->mapToSeconds(static_cast<QMouseEvent *>(event)->pos().x()));
         break;
       }
       default:

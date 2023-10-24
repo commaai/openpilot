@@ -47,12 +47,12 @@ public slots:
   void setColumnCount(int n);
   void removeAll();
   void setZoom(double min, double max);
-  void showValueTip(double sec);
+  void showTrackLine(double sec);
 
 signals:
   void zoomChanged(double min, double max, bool is_zommed);
   void seriesChanged();
-  void displayTipAt(double sec);
+  void displayTrackLineAt(double sec);
 
 private:
   void closeEvent(QCloseEvent *event) override;

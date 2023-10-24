@@ -248,7 +248,7 @@ void ChartView::updatePlot(double cur, double min, double max) {
     updateSeriesPoints();
     // update tooltip
     if (tooltip_x >= 0) {
-      showTip(chart()->mapToValue({tooltip_x, 0}).x(), true);
+      showTrackLine(chart()->mapToValue({tooltip_x, 0}).x(), true);
     }
     resetChartCache();
   }
@@ -418,7 +418,7 @@ qreal ChartView::niceNumber(qreal x, bool ceiling) {
 
 void ChartView::leaveEvent(QEvent *event) {
   if (tip_label.isVisible())
-    charts_widget->showValueTip(-1);
+    charts_widget->showTrackLine(-1);
   QChartView::leaveEvent(event);
 }
 
@@ -541,9 +541,9 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
 
   if (!is_zooming && plot_area.contains(ev->pos())) {
     const double sec = chart()->mapToValue(ev->pos()).x();
-    charts_widget->showValueTip(sec);
+    charts_widget->showTrackLine(sec);
   } else if (tip_label.isVisible()) {
-    charts_widget->showValueTip(-1);
+    charts_widget->showTrackLine(-1);
   }
 
   QChartView::mouseMoveEvent(ev);
@@ -558,7 +558,7 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   }
 }
 
-void ChartView::showTip(double sec, bool show_value) {
+void ChartView::showTrackLine(double sec, bool show_value) {
   QRect tip_area(0, chart()->plotArea().top(), rect().width(), chart()->plotArea().height());
   QRect visible_rect = charts_widget->chartVisibleRect(this).intersected(tip_area);
   if (visible_rect.isEmpty()) {
@@ -600,7 +600,7 @@ void ChartView::showTip(double sec, bool show_value) {
   viewport()->update();
 }
 
-void ChartView::hideTip() {
+void ChartView::hideTrackLine() {
   clearTrackPoints();
   tooltip_x = -1;
   tip_label.hide();

@@ -189,8 +189,8 @@ void MainWindow::createDockWidgets() {
   video_dock->setWidget(video_splitter);
 
   QObject::connect(charts_widget, &ChartsWidget::zoomChanged, video_widget, &VideoWidget::zoomChanged);
-  QObject::connect(charts_widget, &ChartsWidget::displayTipAt, video_widget, &VideoWidget::showTip);
-  QObject::connect(video_widget, &VideoWidget::displayTipAt, charts_widget, &ChartsWidget::showValueTip);
+  QObject::connect(charts_widget, &ChartsWidget::displayTrackLineAt, video_widget, &VideoWidget::showTrackLine);
+  QObject::connect(video_widget, &VideoWidget::displayTrackLineAt, charts_widget, &ChartsWidget::showTrackLine);
   QObject::connect(messages_widget, &MessagesWidget::titleChanged, messages_dock, &QDockWidget::setWindowTitle);
 }
 
