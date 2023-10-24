@@ -202,9 +202,9 @@ void VideoWidget::showTip(double sec) {
   if (sec >= 0 && !thumb.isNull()) {
     int pos = slider->mapToPosition(sec);
     slider->setTipPosition(pos);
-    int x = std::clamp(pos - thumb.width() / 2, 0, slider->rect().right() - thumb.width());
-    int y = -thumb.height() - 9;
-    thumbnail_label->showPixmap(slider->mapTo(this, {x, y}), utils::formatSeconds(sec), thumb, alertInfo(sec));
+    int x = std::clamp(pos - thumb.width() / 2, THUMBNAIL_MARGIN, cam_widget->rect().right() - thumb.width() - THUMBNAIL_MARGIN + 1);
+    int y = cam_widget->rect().bottom() - thumb.height() - THUMBNAIL_MARGIN + 1;
+    thumbnail_label->showPixmap(cam_widget->mapTo(this, QPoint(x, y)), utils::formatSeconds(sec), thumb, alertInfo(sec));
   } else {
     slider->setTipPosition(-1);
     thumbnail_label->hide();
