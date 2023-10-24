@@ -5,7 +5,6 @@
 
 #include <QAction>
 #include <QActionGroup>
-#include <QFutureSynchronizer>
 #include <QHBoxLayout>
 #include <QMenu>
 #include <QMouseEvent>
