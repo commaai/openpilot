@@ -3,6 +3,7 @@ import os
 import argparse
 import time
 import capnp
+import numpy as np
 
 from typing import Union, Iterable, Optional, List, Any, Dict, Tuple
 
@@ -10,9 +11,27 @@ from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, FAKE
                                                                    check_openpilot_enabled, get_custom_params_from_lr
 from openpilot.selfdrive.test.update_ci_routes import upload_route
 from openpilot.tools.lib.route import Route
-from openpilot.tools.lib.framereader import FrameReader
+from openpilot.tools.lib.framereader import FrameReader, BaseFrameReader, FrameType
 from openpilot.tools.lib.logreader import LogReader, LogIterable
 from openpilot.tools.lib.helpers import save_log
+
+
+class DummyFrameReader(BaseFrameReader):
+  def __init__(self, w: int, h: int, frame_count: int, pix_val: int):
+    self.pix_val = pix_val
+    self.w, self.h = w, h
+    self.frame_count = frame_count
+    self.frame_type = FrameType.raw
+
+  def get(self, idx, count=1, pix_fmt="yuv420p"):
+    if pix_fmt == "rgb24":
+      shape = (self.h, self.w, 3)
+    elif pix_fmt == "nv12" or pix_fmt == "yuv420p":
+      shape = (int((self.h * self.w) * 1.5),)
+    else:
+      raise NotImplementedError
+
+    return [np.full(shape, self.pix_val, dtype=np.uint8) for _ in range(count)]
 
 
 def regen_segment(
