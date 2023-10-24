@@ -32,6 +32,9 @@ public:
   inline const std::vector<std::tuple<double, double, TimelineType>> getTimeline() override { return replay->getTimeline(); }
   static AbstractOpenStreamWidget *widget(AbstractStream **stream);
 
+signals:
+  void qLogLoaded(int segnum, std::shared_ptr<LogReader> qlog);
+
 private:
   void mergeSegments();
   std::unique_ptr<Replay> replay = nullptr;

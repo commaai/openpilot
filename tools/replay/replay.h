@@ -44,6 +44,7 @@ enum class FindFlag {
 
 enum class TimelineType { None, Engaged, AlertInfo, AlertWarning, AlertCritical, UserFlag };
 typedef bool (*replayEventFilter)(const Event *, void *);
+Q_DECLARE_METATYPE(std::shared_ptr<LogReader>);
 
 class Replay : public QObject {
   Q_OBJECT
@@ -91,6 +92,7 @@ signals:
   void streamStarted();
   void segmentsMerged();
   void seekedTo(double sec);
+  void qLogLoaded(int segnum, std::shared_ptr<LogReader> qlog);
 
 protected slots:
   void segmentLoadFinished(bool success);
