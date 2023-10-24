@@ -13,6 +13,7 @@ warnings.resetwarnings()
 warnings.simplefilter("always")
 
 from aiohttp import web
+import aiortc
 
 import cereal.messaging as messaging
 from openpilot.common.basedir import BASEDIR
@@ -118,10 +119,7 @@ async def offer(request):
   logger.info("\n\nNew Offer!\n\n")
 
   params = await request.json()
-  offer = StreamingOffer(
-    sdp=params["sdp"], type=params["type"],
-    video=["driver"], audio=True, channel=True
-  )
+  session = aiortc.RTCSessionDescription(sdp=params["sdp"], type=params["type"])
   camera_track = LiveStreamVideoStreamTrack("driver")
   audio_track = AudioInputStreamTrack()
 
@@ -129,7 +127,7 @@ async def offer(request):
   stream_builder.add_video_producer(camera_track)
   stream_builder.add_audio_producer(audio_track)
 
-  stream = stream_builder.answer(offer)
+  stream = stream_builder.answer(session)
   stream.set_message_handler(on_webrtc_channel_message)
   description = await stream.start()
   stream_id = "WebRTCStream(%s)" % uuid.uuid4()

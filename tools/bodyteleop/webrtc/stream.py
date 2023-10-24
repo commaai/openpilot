@@ -48,9 +48,9 @@ class WebRTCStreamBuilder:
       self.audio_producing_tracks
     )
 
-  def answer(self, offer: StreamingOffer):
+  def answer(self, session: aiortc.RTCSessionDescription):
     return WebRTCAnswerStream(
-      offer, 
+      session, 
       self.consumed_camera_tracks, 
       self.consume_audio, 
       self.data_channel, 
@@ -235,15 +235,15 @@ class WebRTCOfferStream(WebRTCBaseStream):
 
 
 class WebRTCAnswerStream(WebRTCBaseStream):
-  def __init__(self, offer: StreamingOffer, *args, **kwargs):
+  def __init__(self, session: aiortc.RTCSessionDescription, *args, **kwargs):
     super().__init__(*args, **kwargs)
-    self.offer = offer
+    self.session = session
   
   async def start(self):
     assert self.peer_connection.remoteDescription is None, "Connection already established"
 
-    self._parse_incoming_streams(remote_sdp=self.offer.sdp)
-    await self.peer_connection.setRemoteDescription(self.offer)
+    self._parse_incoming_streams(remote_sdp=self.session.sdp)
+    await self.peer_connection.setRemoteDescription(self.session)
 
     self._add_consumer_tracks()
     if self.enable_messaging:
