@@ -1134,7 +1134,7 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x81640R0051\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'\xf1\x81640N2051\x00\x00\x00\x00\x00\x00\x00\x00'',
+      b'\xf1\x81640N2051\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x81HM6M1_0a0_H00',
     ],
     (Ecu.eps, 0x7d4, None): [
