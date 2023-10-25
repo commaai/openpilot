@@ -29,6 +29,7 @@ public:
   void load();
   inline static QString filePath() { return QApplication::applicationDirPath() + "/settings"; }
 
+  bool absolute_time = false;
   int fps = 10;
   int max_cached_minutes = 30;
   int chart_height = 200;
