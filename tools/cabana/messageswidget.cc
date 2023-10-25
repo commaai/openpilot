@@ -38,9 +38,10 @@ MessagesWidget::MessagesWidget(QWidget *parent) : menu(new QMenu(this)), QWidget
 
   // Must be called before setting any header parameters to avoid overriding
   restoreHeaderState(settings.message_header_state);
-  view->header()->setSectionsMovable(true);
-  view->header()->setSectionResizeMode(MessageListModel::Column::DATA, QHeaderView::Fixed);
-  view->header()->setStretchLastSection(true);
+  header->setSectionsMovable(true);
+  header->setSectionResizeMode(MessageListModel::Column::DATA, QHeaderView::Fixed);
+  header->setStretchLastSection(true);
+  header->setContextMenuPolicy(Qt::CustomContextMenu);
 
   main_layout->addWidget(view);
 
@@ -318,6 +319,9 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
         match = match || parseRange(txt, id.address, 16);
         break;
       }
+      case Column::NODE:
+        match = re.match(msg_node_from_id(id)).hasMatch();
+        break;
       case Column::FREQ:
         // TODO: Hide stale messages?
         match = parseRange(txt, data.freq);
