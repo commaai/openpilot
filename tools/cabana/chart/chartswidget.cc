@@ -12,7 +12,7 @@
 #include "tools/cabana/chart/chart.h"
 
 const int MAX_COLUMN_COUNT = 4;
-const int CHART_SPACING = 10;
+const int CHART_SPACING = 4;
 
 ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_timer(this), QFrame(parent) {
   setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
@@ -78,8 +78,9 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
 
   // charts
   charts_container = new ChartsContainer(this);
-
+  charts_container->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
   charts_scroll = new QScrollArea(this);
+  charts_scroll->viewport()->setBackgroundRole(QPalette::Base);
   charts_scroll->setFrameStyle(QFrame::NoFrame);
   charts_scroll->setWidgetResizable(true);
   charts_scroll->setWidget(charts_container);
@@ -473,8 +474,9 @@ bool ChartsWidget::event(QEvent *event) {
 
 ChartsContainer::ChartsContainer(ChartsWidget *parent) : charts_widget(parent), QWidget(parent) {
   setAcceptDrops(true);
+  setBackgroundRole(QPalette::Window);
   QVBoxLayout *charts_main_layout = new QVBoxLayout(this);
-  charts_main_layout->setContentsMargins(0, 10, 0, 0);
+  charts_main_layout->setContentsMargins(0, CHART_SPACING, 0, CHART_SPACING);
   charts_layout = new QGridLayout();
   charts_layout->setSpacing(CHART_SPACING);
   charts_main_layout->addLayout(charts_layout);
@@ -518,15 +520,11 @@ void ChartsContainer::paintEvent(QPaintEvent *ev) {
       r.setHeight(CHART_SPACING);
     }
 
-    const int margin = (CHART_SPACING - 2) / 2;
-    QPainterPath path;
-    path.addPolygon(QPolygonF({r.topLeft(), QPointF(r.left() + CHART_SPACING, r.top() + r.height() / 2), r.bottomLeft()}));
-    path.addPolygon(QPolygonF({r.topRight(), QPointF(r.right() - CHART_SPACING, r.top() + r.height() / 2), r.bottomRight()}));
-
     QPainter p(this);
-    p.setRenderHint(QPainter::Antialiasing);
-    p.fillPath(path, palette().highlight());
-    p.fillRect(r.adjusted(2, margin, -2, -margin), palette().highlight());
+    p.setPen(QPen(palette().highlight(), 2));
+    p.drawLine(r.topLeft() + QPoint(1, 0), r.bottomLeft() + QPoint(1, 0));
+    p.drawLine(r.topLeft() + QPoint(0, r.height() / 2), r.topRight() + QPoint(0, r.height() / 2));
+    p.drawLine(r.topRight(), r.bottomRight());
   }
 }
 
