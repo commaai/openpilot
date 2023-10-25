@@ -71,7 +71,7 @@ def setup_data_readers(
     if needs_road_cam and len(r.camera_paths()) > sidx and r.camera_paths()[sidx] is not None:
       frs['roadCameraState'] = FrameReader(r.camera_paths()[sidx])
     if needs_road_cam and  len(r.ecamera_paths()) > sidx and r.ecamera_paths()[sidx] is not None:
-      frs['wideRoadCameraState'] = FrameReader(r.ecamera_paths()[sidx]) 
+      frs['wideRoadCameraState'] = FrameReader(r.ecamera_paths()[sidx])
     if needs_driver_cam:
       device_type = next(str(msg.initData.deviceType) for msg in lr if msg.which() == "initData")
       if device_type == "neo":
