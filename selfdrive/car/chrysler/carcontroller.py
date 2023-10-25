@@ -31,12 +31,12 @@ class CarController:
       # ACC cancellation
       if CC.cruiseControl.cancel:
         self.last_button_frame = self.frame
-        can_sends.append(chryslercan.create_cruise_buttons(self.packer, CS.button_counter + 1, das_bus, cancel=True))
+        can_sends.append(chryslercan.create_cruise_buttons(self.packer, self.CP, CS.button_counter + 1, das_bus, cancel=True))
 
       # ACC resume from standstill
       elif CC.cruiseControl.resume:
         self.last_button_frame = self.frame
-        can_sends.append(chryslercan.create_cruise_buttons(self.packer, CS.button_counter + 1, das_bus, resume=True))
+        can_sends.append(chryslercan.create_cruise_buttons(self.packer, self.CP, CS.button_counter + 1, das_bus, resume=True))
 
     # HUD alerts
     if self.frame % 25 == 0:

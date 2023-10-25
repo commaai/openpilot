@@ -3,7 +3,7 @@ from openpilot.common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from openpilot.selfdrive.car.interfaces import CarStateBase
-from openpilot.selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD, RAM_CARS
+from openpilot.selfdrive.car.chrysler.values import ChryslerFlags, DBC, STEER_THRESHOLD, RAM_CARS
 
 
 class CarState(CarStateBase):
@@ -16,6 +16,7 @@ class CarState(CarStateBase):
     self.button_counter = 0
     self.lkas_car_model = -1
 
+    self.button_message = "CRUISE_BUTTONS_ALT" if CP.flags & ChryslerFlags.RAM_HD_ALT_BUTTONS else "CRUISE_BUTTONS"
     if CP.carFingerprint in RAM_CARS:
       self.shifter_values = can_define.dv["Transmission_Status"]["Gear_State"]
     else:
@@ -93,7 +94,7 @@ class CarState(CarStateBase):
       ret.rightBlindspot = cp.vl["BSM_1"]["RIGHT_STATUS"] == 1
 
     self.lkas_car_model = cp_cam.vl["DAS_6"]["CAR_MODEL"]
-    self.button_counter = cp.vl["CRUISE_BUTTONS"]["COUNTER"]
+    self.button_counter = cp.vl[self.button_message]["COUNTER"]
 
     return ret
 
@@ -107,6 +108,8 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parser(CP):
+    button_message = "CRUISE_BUTTONS_ALT" if CP.flags & ChryslerFlags.RAM_HD_ALT_BUTTONS else "CRUISE_BUTTONS"
+
     messages = [
       # sig_address, frequency
       ("ESP_1", 50),
@@ -114,7 +117,7 @@ class CarState(CarStateBase):
       ("ESP_6", 50),
       ("STEERING", 100),
       ("ECM_5", 50),
-      ("CRUISE_BUTTONS", 50),
+      (button_message, 50),
       ("STEERING_LEVERS", 10),
       ("ORC_1", 2),
       ("BCM_1", 1),
