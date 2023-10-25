@@ -9,11 +9,13 @@ from typing import Union, Iterable, Optional, List, Any, Dict, Tuple
 
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, ProcessConfig, replay_process, get_process_config, \
                                                                    check_openpilot_enabled, get_custom_params_from_lr
+from openpilot.selfdrive.test.process_replay.vision_meta import DRIVER_FRAME_SIZES
 from openpilot.selfdrive.test.update_ci_routes import upload_route
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.framereader import FrameReader, BaseFrameReader, FrameType
 from openpilot.tools.lib.logreader import LogReader, LogIterable
 from openpilot.tools.lib.helpers import save_log
+from openpilot.tools.lib.url_file import URLFileException
 
 
 class DummyFrameReader(BaseFrameReader):
@@ -50,8 +52,14 @@ def regen_segment(
 
 
 def setup_data_readers(
-    route: str, sidx: int, use_route_meta: bool, needs_driver_cam: bool = True, needs_road_cam: bool = True
+    route: str, sidx: int, use_route_meta: bool,
+    needs_driver_cam: bool = True, needs_road_cam: bool = True,
+    dummy_dcam_if_missing: bool = False
 ) -> Tuple[LogReader, Dict[str, Any]]:
+  def zero_dcamera_frame_reader(lr: LogReader):
+    device_type = next(str(msg.initData.deviceType) for msg in lr if msg.which() == "initData")
+    return DummyFrameReader(*DRIVER_FRAME_SIZES[device_type], 1200, 0)
+
   if use_route_meta:
     r = Route(route)
     lr = LogReader(r.log_paths()[sidx])
@@ -62,6 +70,8 @@ def setup_data_readers(
       frs['wideRoadCameraState'] = FrameReader(r.ecamera_paths()[sidx])
     if needs_driver_cam and len(r.dcamera_paths()) > sidx and r.dcamera_paths()[sidx] is not None:
       frs['driverCameraState'] = FrameReader(r.dcamera_paths()[sidx])
+    elif dummy_dcam_if_missing:
+      frs['driverCameraState'] = zero_dcamera_frame_reader(lr)
   else:
     lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
     frs = {}
@@ -70,14 +80,19 @@ def setup_data_readers(
       if next((True for m in lr if m.which() == "wideRoadCameraState"), False):
         frs['wideRoadCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/ecamera.hevc")
     if needs_driver_cam:
-      frs['driverCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/dcamera.hevc")
+      try:
+        frs['driverCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/dcamera.hevc")
+      except URLFileException as ex:
+        if not dummy_dcam_if_missing:
+          raise ex
+        frs['driverCameraState'] = zero_dcamera_frame_reader(lr)
 
   return lr, frs
 
 
 def regen_and_save(
   route: str, sidx: int, processes: Union[str, Iterable[str]] = "all", outdir: str = FAKEDATA,
-  upload: bool = False, use_route_meta: bool = False, disable_tqdm: bool = False
+  upload: bool = False, use_route_meta: bool = False, disable_tqdm: bool = False, dummy_dcam_if_missing: bool = False
 ) -> str:
   if not isinstance(processes, str) and not hasattr(processes, "__iter__"):
     raise ValueError("whitelist_proc must be a string or iterable")
@@ -96,7 +111,8 @@ def regen_and_save(
   all_vision_pubs = {pub for cfg in replayed_processes for pub in cfg.vision_pubs}
   lr, frs = setup_data_readers(route, sidx, use_route_meta,
                                needs_driver_cam="driverCameraState" in all_vision_pubs,
-                               needs_road_cam="roadCameraState" in all_vision_pubs or "wideRoadCameraState" in all_vision_pubs)
+                               needs_road_cam="roadCameraState" in all_vision_pubs or "wideRoadCameraState" in all_vision_pubs,
+                               dummy_dcam_if_missing=dummy_dcam_if_missing)
   output_logs = regen_segment(lr, frs, replayed_processes, disable_tqdm=disable_tqdm)
 
   log_dir = os.path.join(outdir, time.strftime("%Y-%m-%d--%H-%M-%S--0", time.gmtime()))
@@ -126,6 +142,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Generate new segments from old ones")
   parser.add_argument("--upload", action="store_true", help="Upload the new segment to the CI bucket")
   parser.add_argument("--outdir", help="log output dir", default=FAKEDATA)
+  parser.add_argument("--dummy-dcamera", action='store_true', help="Use dummy blank driver camera if missing")
   parser.add_argument("--whitelist-procs", type=comma_separated_list, default=all_procs,
                       help="Comma-separated whitelist of processes to regen (e.g. controlsd,radard)")
   parser.add_argument("--blacklist-procs", type=comma_separated_list, default=[],
@@ -136,4 +153,4 @@ if __name__ == "__main__":
 
   blacklist_set = set(args.blacklist_procs)
   processes = [p for p in args.whitelist_procs if p not in blacklist_set]
-  regen_and_save(args.route, args.seg, processes=processes, upload=args.upload, outdir=args.outdir)
+  regen_and_save(args.route, args.seg, processes=processes, upload=args.upload, outdir=args.outdir, dummy_dcam_if_missing=args.dummy_dcamera)
