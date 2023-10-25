@@ -2,6 +2,7 @@
 
 #include <limits>
 
+#include <QCheckBox>
 #include <QHBoxLayout>
 #include <QPainter>
 #include <QPushButton>
