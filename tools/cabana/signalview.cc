@@ -504,7 +504,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QObject::connect(can, &AbstractStream::msgsReceived, this, &SignalView::updateState);
   QObject::connect(tree->header(), &QHeaderView::sectionResized, [this](int logicalIndex, int oldSize, int newSize) {
     if (logicalIndex == 1) {
-      value_column_width = newSize - delegate->button_size.width();
+      value_column_width = newSize;
       updateState();
     }
   });
@@ -645,8 +645,9 @@ void SignalView::updateState(const QHash<MessageId, CanData> *msgs) {
     }
 
     const static int min_max_width = QFontMetrics(delegate->minmax_font).width("-000.00") + 5;
-    int value_width = std::min<int>(max_value_width + min_max_width, value_column_width / 2);
-    QSize size(value_column_width - value_width,
+    int available_width = value_column_width - delegate->button_size.width();
+    int value_width = std::min<int>(max_value_width + min_max_width, available_width / 2);
+    QSize size(available_width - value_width,
                delegate->button_size.height() - style()->pixelMetric(QStyle::PM_FocusFrameVMargin) * 2);
     QFutureSynchronizer<void> synchronizer;
     for (int i = first_visible_row; i <= last_visible_row; ++i) {
