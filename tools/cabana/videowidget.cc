@@ -140,7 +140,7 @@ QWidget *VideoWidget::createCameraWidget() {
   stacked->addWidget(alert_label = new InfoLabel(this));
   l->addLayout(stacked);
 
-  l->addWidget(slider = new Slider(this));
+  l->addWidget(slider = new Slider(w));
   slider->setSingleStep(0);
 
   setMaximumTime(can->totalSeconds());
@@ -293,9 +293,9 @@ void Slider::mouseMoveEvent(QMouseEvent *e) {
   double seconds = (minimum() + pos * ((maximum() - minimum()) / (double)width())) / factor;
   QPixmap thumb = thumbnail(seconds);
   if (!thumb.isNull()) {
-    int x = std::clamp(pos - thumb.width() / 2, THUMBNAIL_MARGIN, rect().right() - thumb.width() - THUMBNAIL_MARGIN);
-    int y = -thumb.height();
-    thumbnail_label.showPixmap(mapToParent({x, y}), utils::formatSeconds(seconds), thumb, alertInfo(seconds));
+    int x = std::clamp(pos - thumb.width() / 2, THUMBNAIL_MARGIN, width() - thumb.width() - THUMBNAIL_MARGIN + 1);
+    int y = -thumb.height() - THUMBNAIL_MARGIN - 6;
+    thumbnail_label.showPixmap(mapToParent(QPoint(x, y)), utils::formatSeconds(seconds), thumb, alertInfo(seconds));
   } else {
     thumbnail_label.hide();
   }
