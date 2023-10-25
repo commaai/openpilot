@@ -232,7 +232,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
 
 void MessageListModel::setFilterStrings(const QMap<int, QString> &filters) {
   filter_str = filters;
-  fetchData();
+  filterAndSort();
 }
 
 void MessageListModel::dbcModified() {
@@ -240,7 +240,7 @@ void MessageListModel::dbcModified() {
   for (const auto &[_, m] : dbc()->getMessages(-1)) {
     dbc_address.insert(m.address);
   }
-  fetchData();
+  filterAndSort();
 }
 
 void MessageListModel::sortMessages(std::vector<MessageId> &new_msgs) {
@@ -340,7 +340,7 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
   return match;
 }
 
-void MessageListModel::fetchData() {
+void MessageListModel::filterAndSort() {
   std::vector<MessageId> new_msgs;
   new_msgs.reserve(can->last_msgs.size() + dbc_address.size());
 
@@ -371,7 +371,7 @@ void MessageListModel::fetchData() {
 
 void MessageListModel::msgsReceived(const QHash<MessageId, CanData> *new_msgs, bool has_new_ids) {
   if (has_new_ids || filter_str.contains(Column::FREQ) || filter_str.contains(Column::COUNT) || filter_str.contains(Column::DATA)) {
-    fetchData();
+    filterAndSort();
   }
   for (int i = 0; i < msgs.size(); ++i) {
     if (new_msgs->contains(msgs[i])) {
@@ -385,7 +385,7 @@ void MessageListModel::sort(int column, Qt::SortOrder order) {
   if (column != columnCount() - 1) {
     sort_column = column;
     sort_order = order;
-    fetchData();
+    filterAndSort();
   }
 }
 

@@ -38,7 +38,7 @@ public:
   void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
   void setFilterStrings(const QMap<int, QString> &filters);
   void msgsReceived(const QHash<MessageId, CanData> *new_msgs, bool has_new_ids);
-  void fetchData();
+  void filterAndSort();
   void suppress();
   void clearSuppress();
   void dbcModified();
