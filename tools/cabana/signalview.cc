@@ -36,7 +36,7 @@ SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(p
 void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const cabana::Signal *sig) {
   Item *item = new Item{.sig = sig, .parent = parent_item, .title = sig->name, .type = Item::Sig};
   parent_item->children.insert(pos, item);
-  QString titles[]{"Name", "Size", "Node", "Little Endian", "Signed", "Offset", "Factor", "Type", "Multiplex Value", "Extra Info",
+  QString titles[]{"Name", "Size", "Receiver Nodes", "Little Endian", "Signed", "Offset", "Factor", "Type", "Multiplex Value", "Extra Info",
                    "Unit", "Comment", "Minimum Value", "Maximum Value", "Value Descriptions"};
   for (int i = 0; i < std::size(titles); ++i) {
     item->children.push_back(new Item{.sig = sig, .parent = item, .title = titles[i], .type = (Item::Type)(i + Item::Name)});
