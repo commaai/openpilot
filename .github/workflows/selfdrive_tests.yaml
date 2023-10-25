@@ -5,6 +5,7 @@ on:
     branches:
       - master
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
