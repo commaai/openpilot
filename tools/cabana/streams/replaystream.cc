@@ -8,10 +8,13 @@
 
 ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent) {
   unsetenv("ZMQ");
+  setenv("COMMA_CACHE", "/tmp/comma_download_cache", 1);
+
   // TODO: Remove when OpenpilotPrefix supports ZMQ
 #ifndef __APPLE__
   op_prefix = std::make_unique<OpenpilotPrefix>();
 #endif
+
   QObject::connect(&settings, &Settings::changed, [this]() {
     if (replay) replay->setSegmentCacheLimit(settings.max_cached_minutes);
   });
@@ -37,6 +40,7 @@ bool ReplayStream::loadRoute(const QString &route, const QString &data_dir, uint
   replay->installEventFilter(event_filter, this);
   QObject::connect(replay.get(), &Replay::seekedTo, this, &AbstractStream::seekedTo);
   QObject::connect(replay.get(), &Replay::segmentsMerged, this, &ReplayStream::mergeSegments);
+  QObject::connect(replay.get(), &Replay::qLogLoaded, this, &ReplayStream::qLogLoaded, Qt::QueuedConnection);
   return replay->load();
 }
 

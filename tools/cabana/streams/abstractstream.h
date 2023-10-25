@@ -2,13 +2,13 @@
 
 #include <array>
 #include <atomic>
-#include <deque>
 #include <memory>
 #include <tuple>
 #include <unordered_map>
 #include <vector>
 
 #include <QColor>
+#include <QDateTime>
 #include <QHash>
 
 #include "common/timing.h"
@@ -52,6 +52,8 @@ struct BusConfig {
   bool can_fd = false;
 };
 
+typedef std::unordered_map<MessageId, std::vector<const CanEvent *>> MessageEventsMap;
+
 class AbstractStream : public QObject {
   Q_OBJECT
 
@@ -63,6 +65,7 @@ public:
   virtual void seekTo(double ts) {}
   virtual QString routeName() const = 0;
   virtual QString carFingerprint() const { return ""; }
+  virtual QDateTime beginDateTime() const { return {}; }
   virtual double routeStartTime() const { return 0; }
   virtual double currentSec() const = 0;
   virtual double totalSeconds() const { return lastEventMonoTime() / 1e9 - routeStartTime(); }
@@ -73,6 +76,7 @@ public:
   virtual double getSpeed() { return 1; }
   virtual bool isPaused() const { return false; }
   virtual void pause(bool pause) {}
+  const MessageEventsMap &eventsMap() const { return events_; }
   const std::vector<const CanEvent *> &allEvents() const { return all_events_; }
   const std::vector<const CanEvent *> &events(const MessageId &id) const;
   virtual const std::vector<std::tuple<double, double, TimelineType>> getTimeline() { return {}; }
@@ -82,7 +86,7 @@ signals:
   void resume();
   void seekedTo(double sec);
   void streamStarted();
-  void eventsMerged();
+  void eventsMerged(const MessageEventsMap &events_map);
   void updated();
   void msgsReceived(const QHash<MessageId, CanData> *new_msgs, bool has_new_ids);
   void sourcesUpdated(const SourceSet &s);
@@ -104,7 +108,7 @@ protected:
   std::atomic<bool> processing = false;
   std::unique_ptr<QHash<MessageId, CanData>> new_msgs;
   QHash<MessageId, CanData> all_msgs;
-  std::unordered_map<MessageId, std::vector<const CanEvent *>> events_;
+  MessageEventsMap events_;
   std::vector<const CanEvent *> all_events_;
   std::unique_ptr<MonotonicBuffer> event_buffer;
   std::mutex mutex;

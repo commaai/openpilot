@@ -1,19 +1,14 @@
 #pragma once
 
-#include <atomic>
 #include <map>
 #include <memory>
-#include <mutex>
-#include <tuple>
-#include <vector>
 
-#include <QFuture>
-#include <QLabel>
+#include <QHBoxLayout>
 #include <QSlider>
 #include <QToolButton>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
-#include "tools/cabana/streams/abstractstream.h"
+#include "tools/cabana/streams/replaystream.h"
 
 struct AlertInfo {
   cereal::ControlsState::AlertStatus status;
@@ -42,6 +37,9 @@ public:
   void setTimeRange(double min, double max);
   AlertInfo alertInfo(double sec);
   QPixmap thumbnail(double sec);
+  void parseQLog(int segnum, std::shared_ptr<LogReader> qlog);
+
+  const double factor = 1000.0;
 
 signals:
   void updateMaximumTime(double);
@@ -51,15 +49,9 @@ private:
   void mouseMoveEvent(QMouseEvent *e) override;
   bool event(QEvent *event) override;
   void paintEvent(QPaintEvent *ev) override;
-  void parseQLog();
 
-  const double factor = 1000.0;
-  std::vector<std::tuple<double, double, TimelineType>> timeline;
-  std::mutex thumbnail_lock;
-  std::atomic<bool> abort_parse_qlog = false;
   QMap<uint64_t, QPixmap> thumbnails;
   std::map<uint64_t, AlertInfo> alerts;
-  std::unique_ptr<QFuture<void>> qlog_future;
   InfoLabel thumbnail_label;
 };
 
@@ -72,16 +64,22 @@ public:
   void setMaximumTime(double sec);
 
 protected:
+  QString formatTime(double sec, bool include_milliseconds = false);
   void updateState();
   void updatePlayBtnState();
   QWidget *createCameraWidget();
+  QHBoxLayout *createPlaybackController();
+  void loopPlaybackClicked();
 
   CameraWidget *cam_widget;
   double maximum_time = 0;
-  QLabel *end_time_label;
-  QLabel *time_label;
-  QToolButton *play_btn;
-  QToolButton *skip_to_end_btn = nullptr;
-  InfoLabel *alert_label;
-  Slider *slider;
+  QToolButton *time_btn = nullptr;
+  ToolButton *seek_backward_btn = nullptr;
+  ToolButton *play_btn = nullptr;
+  ToolButton *seek_forward_btn = nullptr;
+  ToolButton *loop_btn = nullptr;
+  QToolButton *speed_btn = nullptr;
+  ToolButton *skip_to_end_btn = nullptr;
+  InfoLabel *alert_label = nullptr;
+  Slider *slider = nullptr;
 };
