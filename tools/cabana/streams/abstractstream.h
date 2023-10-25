@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <QColor>
+#include <QDateTime>
 #include <QHash>
 
 #include "common/timing.h"
@@ -63,6 +64,7 @@ public:
   virtual void seekTo(double ts) {}
   virtual QString routeName() const = 0;
   virtual QString carFingerprint() const { return ""; }
+  virtual QDateTime beginDateTime() const { return {}; }
   virtual double routeStartTime() const { return 0; }
   virtual double currentSec() const = 0;
   virtual double totalSeconds() const { return lastEventMonoTime() / 1e9 - routeStartTime(); }
