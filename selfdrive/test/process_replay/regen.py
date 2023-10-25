@@ -29,11 +29,15 @@ class DummyFrameReader(BaseFrameReader):
     if pix_fmt == "rgb24":
       shape = (self.h, self.w, 3)
     elif pix_fmt == "nv12" or pix_fmt == "yuv420p":
-      shape = (int((self.h * self.w) * 1.5),)
+      shape = (int((self.h * self.w) * 3 / 2),)
     else:
       raise NotImplementedError
 
     return [np.full(shape, self.pix_val, dtype=np.uint8) for _ in range(count)]
+
+  @staticmethod
+  def zero_dcamera():
+    return DummyFrameReader(*DRIVER_FRAME_SIZES["tici"], 1200, 0)
 
 
 def regen_segment(
@@ -56,13 +60,10 @@ def setup_data_readers(
     needs_driver_cam: bool = True, needs_road_cam: bool = True,
     dummy_dcam_if_missing: bool = False
 ) -> Tuple[LogReader, Dict[str, Any]]:
-  def zero_dcamera_frame_reader():
-    return DummyFrameReader(*DRIVER_FRAME_SIZES["tici"], 1200, 0)
-
   def neo_dcamera_frame_reader():
     if not dummy_dcam_if_missing:
       raise Exception("Replaying dmonitoringmodeld is not supported on neo segments! Pass dummy_dcam_if_missing=True to use a blank driver camera instead.")
-    return zero_dcamera_frame_reader()
+    return DummyFrameReader.zero_dcamera()
 
   if use_route_meta:
     r = Route(route)
@@ -80,7 +81,7 @@ def setup_data_readers(
         if len(r.dcamera_paths()) > sidx and r.dcamera_paths()[sidx] is not None:
           frs['driverCameraState'] = FrameReader(r.dcamera_paths()[sidx])
         elif dummy_dcam_if_missing:
-          frs['driverCameraState'] = zero_dcamera_frame_reader()
+          frs['driverCameraState'] = DummyFrameReader.zero_dcamera()
   else:
     lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
     frs = {}
@@ -98,7 +99,7 @@ def setup_data_readers(
         except URLFileException as ex:
           if not dummy_dcam_if_missing:
             raise ex
-          frs['driverCameraState'] = zero_dcamera_frame_reader()
+          frs['driverCameraState'] = DummyFrameReader.zero_dcamera()
 
   return lr, frs
 
