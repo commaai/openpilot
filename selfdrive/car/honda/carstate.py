@@ -22,13 +22,14 @@ def get_can_messages(CP, gearbox_msg):
     ("SEATBELT_STATUS", 10),
     ("CRUISE", 10),
     ("POWERTRAIN_DATA", 100),
-    ("CAR_SPEED", 10),
     ("VSA_STATUS", 50),
     ("STEER_STATUS", 100),
     ("STEER_MOTOR_TORQUE", 0),  # TODO: not on every car
   ]
+  if CP.carFingerprint != CAR.ODYSSEY_TWN:
+    messages += [("CAR_SPEED", 10)]
 
-  if CP.carFingerprint == CAR.ODYSSEY_CHN:
+  if CP.carFingerprint in (CAR.ODYSSEY_CHN, CAR.ODYSSEY_TWN):
     messages += [
       ("SCM_FEEDBACK", 25),
       ("SCM_BUTTONS", 50),
@@ -58,7 +59,7 @@ def get_can_messages(CP, gearbox_msg):
         ("ACC_CONTROL", 50),
       ]
   else:  # Nidec signals
-    if CP.carFingerprint == CAR.ODYSSEY_CHN:
+    if CP.carFingerprint in (CAR.ODYSSEY_CHN, CAR.ODYSSEY_TWN):
       messages.append(("CRUISE_PARAMS", 10))
     else:
       messages.append(("CRUISE_PARAMS", 50))
@@ -67,7 +68,7 @@ def get_can_messages(CP, gearbox_msg):
   if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT,
                            CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022, CAR.HRV_3G):
     pass
-  elif CP.carFingerprint in (CAR.ODYSSEY_CHN, CAR.FREED, CAR.HRV):
+  elif CP.carFingerprint in (CAR.ODYSSEY_CHN, CAR.FREED, CAR.HRV, CAR.ODYSSEY_TWN):
     pass
   else:
     messages.append(("DOORS_STATUS", 3))
@@ -122,7 +123,8 @@ class CarState(CarStateBase):
     self.cruise_buttons = cp.vl["SCM_BUTTONS"]["CRUISE_BUTTONS"]
 
     # used for car hud message
-    self.is_metric = not cp.vl["CAR_SPEED"]["IMPERIAL_UNIT"]
+    if CP.carFingerprint != CAR.ODYSSEY_TWN:
+      self.is_metric = not cp.vl["CAR_SPEED"]["IMPERIAL_UNIT"]
 
     # ******************* parse out can *******************
     # STANDSTILL->WHEELS_MOVING bit can be noisy around zero, so use XMISSION_SPEED
@@ -132,7 +134,7 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT,
                                   CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022, CAR.HRV_3G):
       ret.doorOpen = bool(cp.vl["SCM_FEEDBACK"]["DRIVERS_DOOR_OPEN"])
-    elif self.CP.carFingerprint in (CAR.ODYSSEY_CHN, CAR.FREED, CAR.HRV):
+    elif self.CP.carFingerprint in (CAR.ODYSSEY_CHN, CAR.FREED, CAR.HRV, CAR.ODYSSEY_TWN):
       ret.doorOpen = bool(cp.vl["SCM_BUTTONS"]["DRIVERS_DOOR_OPEN"])
     else:
       ret.doorOpen = any([cp.vl["DOORS_STATUS"]["DOOR_OPEN_FL"], cp.vl["DOORS_STATUS"]["DOOR_OPEN_FR"],
@@ -172,10 +174,11 @@ class CarState(CarStateBase):
     ret.vEgoRaw = (1. - v_weight) * cp.vl["ENGINE_DATA"]["XMISSION_SPEED"] * CV.KPH_TO_MS * self.CP.wheelSpeedFactor + v_weight * v_wheel
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
 
-    self.dash_speed_seen = self.dash_speed_seen or cp.vl["CAR_SPEED"]["ROUGH_CAR_SPEED_2"] > 1e-3
-    if self.dash_speed_seen:
-      conversion = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
-      ret.vEgoCluster = cp.vl["CAR_SPEED"]["ROUGH_CAR_SPEED_2"] * conversion
+    if CP.carFingerprint != CAR.ODYSSEY_TWN:
+      self.dash_speed_seen = self.dash_speed_seen or cp.vl["CAR_SPEED"]["ROUGH_CAR_SPEED_2"] > 1e-3
+      if self.dash_speed_seen:
+        conversion = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
+        ret.vEgoCluster = cp.vl["CAR_SPEED"]["ROUGH_CAR_SPEED_2"] * conversion
 
     ret.steeringAngleDeg = cp.vl["STEERING_SENSORS"]["STEER_ANGLE"]
     ret.steeringRateDeg = cp.vl["STEERING_SENSORS"]["STEER_ANGLE_RATE"]
