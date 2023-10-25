@@ -5,13 +5,12 @@
 #include <vector>
 
 #include <QAbstractTableModel>
-#include <QCheckBox>
-#include <QContextMenuEvent>
 #include <QHeaderView>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
 #include <QSet>
+#include <QToolBar>
 #include <QTreeView>
 
 #include "tools/cabana/dbc/dbcmanager.h"
@@ -21,11 +20,11 @@ class MessageListModel : public QAbstractTableModel {
 Q_OBJECT
 
 public:
-
   enum Column {
     NAME = 0,
     SOURCE,
     ADDRESS,
+    NODE,
     FREQ,
     COUNT,
     DATA,
@@ -39,10 +38,9 @@ public:
   void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
   void setFilterStrings(const QMap<int, QString> &filters);
   void msgsReceived(const QHash<MessageId, CanData> *new_msgs, bool has_new_ids);
-  void fetchData();
+  void filterAndSort();
   void suppress();
   void clearSuppress();
-  void forceResetModel();
   void dbcModified();
   std::vector<MessageId> msgs;
   QSet<std::pair<MessageId, int>> suppressed_bytes;
@@ -65,22 +63,16 @@ public:
   void drawBranches(QPainter *painter, const QRect &rect, const QModelIndex &index) const override {}
   void dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>()) override;
   void updateBytesSectionSize();
-  void headerContextMenuEvent(const QPoint &pos);
 };
 
 class MessageViewHeader : public QHeaderView {
   // https://stackoverflow.com/a/44346317
-
   Q_OBJECT
 public:
   MessageViewHeader(QWidget *parent);
   void updateHeaderPositions();
-
   void updateGeometries() override;
   QSize sizeHint() const override;
-
-public slots:
-  void clearFilters();
 
 signals:
   void filtersUpdated(const QMap<int, QString> &filters);
@@ -108,12 +100,18 @@ signals:
   void msgSelectionChanged(const MessageId &message_id);
 
 protected:
+  QToolBar *createToolBar();
+  void headerContextMenuEvent(const QPoint &pos);
+  void menuAboutToShow();
+  void setMultiLineBytes(bool multi);
+
   MessageView *view;
   MessageViewHeader *header;
+  MessageBytesDelegate *delegate;
   std::optional<MessageId> current_msg_id;
-  QCheckBox *multiple_lines_bytes;
   MessageListModel *model;
   QPushButton *suppress_add;
   QPushButton *suppress_clear;
   QLabel *num_msg_label;
+  QMenu *menu;
 };

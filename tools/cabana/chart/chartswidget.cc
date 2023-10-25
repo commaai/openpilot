@@ -12,7 +12,7 @@
 #include "tools/cabana/chart/chart.h"
 
 const int MAX_COLUMN_COUNT = 4;
-const int CHART_SPACING = 10;
+const int CHART_SPACING = 4;
 
 ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_timer(this), QFrame(parent) {
   setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
@@ -78,8 +78,9 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
 
   // charts
   charts_container = new ChartsContainer(this);
-
+  charts_container->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
   charts_scroll = new QScrollArea(this);
+  charts_scroll->viewport()->setBackgroundRole(QPalette::Base);
   charts_scroll->setFrameStyle(QFrame::NoFrame);
   charts_scroll->setWidgetResizable(true);
   charts_scroll->setWidget(charts_container);
@@ -149,11 +150,10 @@ void ChartsWidget::updateTabBar() {
   }
 }
 
-void ChartsWidget::eventsMerged() {
+void ChartsWidget::eventsMerged(const MessageEventsMap &new_events) {
   QFutureSynchronizer<void> future_synchronizer;
-  bool clear = !can->liveStreaming();
   for (auto c : charts) {
-    future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::updateSeries, nullptr, clear));
+    future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::updateSeries, nullptr, &new_events));
   }
 }
 
@@ -190,7 +190,7 @@ void ChartsWidget::updateState() {
     if (pos < 0 || pos > 0.8) {
       display_range.first = std::max(0.0, cur_sec - max_chart_range * 0.1);
     }
-    double max_sec = std::min(std::floor(display_range.first + max_chart_range), can->totalSeconds());
+    double max_sec = std::min(display_range.first + max_chart_range, can->totalSeconds());
     display_range.first = std::max(0.0, max_sec - max_chart_range);
     display_range.second = display_range.first + max_chart_range;
   } else if (cur_sec < (zoomed_range.first - 0.1) || cur_sec >= zoomed_range.second) {
@@ -282,7 +282,7 @@ void ChartsWidget::splitChart(ChartView *src_chart) {
       it->series->setColor(it->sig->color);
 
       c->addSeries(it->series);
-      c->sigs.push_back(*it);
+      c->sigs.emplace_back(std::move(*it));
       c->updateAxisY();
       c->updateTitle();
       it = src_chart->sigs.erase(it);
@@ -322,7 +322,7 @@ void ChartsWidget::updateLayout(bool force) {
     }
     for (int i = 0; i < current_charts.size(); ++i) {
       charts_layout->addWidget(current_charts[i], i / n, i % n);
-      if (current_charts[i]->sigs.isEmpty()) {
+      if (current_charts[i]->sigs.empty()) {
         // the chart will be resized after add signal. delay setVisible to reduce flicker.
         QTimer::singleShot(0, [c = current_charts[i]]() { c->setVisible(true); });
       } else {
@@ -474,8 +474,9 @@ bool ChartsWidget::event(QEvent *event) {
 
 ChartsContainer::ChartsContainer(ChartsWidget *parent) : charts_widget(parent), QWidget(parent) {
   setAcceptDrops(true);
+  setBackgroundRole(QPalette::Window);
   QVBoxLayout *charts_main_layout = new QVBoxLayout(this);
-  charts_main_layout->setContentsMargins(0, 10, 0, 0);
+  charts_main_layout->setContentsMargins(0, CHART_SPACING, 0, CHART_SPACING);
   charts_layout = new QGridLayout();
   charts_layout->setSpacing(CHART_SPACING);
   charts_main_layout->addLayout(charts_layout);
@@ -519,15 +520,11 @@ void ChartsContainer::paintEvent(QPaintEvent *ev) {
       r.setHeight(CHART_SPACING);
     }
 
-    const int margin = (CHART_SPACING - 2) / 2;
-    QPainterPath path;
-    path.addPolygon(QPolygonF({r.topLeft(), QPointF(r.left() + CHART_SPACING, r.top() + r.height() / 2), r.bottomLeft()}));
-    path.addPolygon(QPolygonF({r.topRight(), QPointF(r.right() - CHART_SPACING, r.top() + r.height() / 2), r.bottomRight()}));
-
     QPainter p(this);
-    p.setRenderHint(QPainter::Antialiasing);
-    p.fillPath(path, palette().highlight());
-    p.fillRect(r.adjusted(2, margin, -2, -margin), palette().highlight());
+    p.setPen(QPen(palette().highlight(), 2));
+    p.drawLine(r.topLeft() + QPoint(1, 0), r.bottomLeft() + QPoint(1, 0));
+    p.drawLine(r.topLeft() + QPoint(0, r.height() / 2), r.topRight() + QPoint(0, r.height() / 2));
+    p.drawLine(r.topRight(), r.bottomRight());
   }
 }
 

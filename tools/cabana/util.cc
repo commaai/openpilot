@@ -19,7 +19,7 @@
 
 // SegmentTree
 
-void SegmentTree::build(const QVector<QPointF> &arr) {
+void SegmentTree::build(const std::vector<QPointF> &arr) {
   size = arr.size();
   tree.resize(4 * size);  // size of the tree is 4 times the size of the array
   if (size > 0) {
@@ -27,7 +27,7 @@ void SegmentTree::build(const QVector<QPointF> &arr) {
   }
 }
 
-void SegmentTree::build_tree(const QVector<QPointF> &arr, int n, int left, int right) {
+void SegmentTree::build_tree(const std::vector<QPointF> &arr, int n, int left, int right) {
   if (left == right) {
     const double y = arr[left].y();
     tree[n] = {y, y};
@@ -240,6 +240,13 @@ void setTheme(int theme) {
       w->setPalette(new_palette);
     }
   }
+}
+
+QString formatSeconds(double sec, bool include_milliseconds, bool absolute_time) {
+  QString format = absolute_time ? "yyyy-MM-dd hh:mm:ss"
+                                 : (sec > 60 * 60 ? "hh:mm:ss" : "mm:ss");
+  if (include_milliseconds) format += ".zzz";
+  return QDateTime::fromMSecsSinceEpoch(sec * 1000).toString(format);
 }
 
 }  // namespace utils
