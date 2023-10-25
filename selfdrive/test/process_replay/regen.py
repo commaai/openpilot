@@ -56,9 +56,13 @@ def setup_data_readers(
     needs_driver_cam: bool = True, needs_road_cam: bool = True,
     dummy_dcam_if_missing: bool = False
 ) -> Tuple[LogReader, Dict[str, Any]]:
-  def zero_dcamera_frame_reader(lr: LogReader):
-    device_type = next(str(msg.initData.deviceType) for msg in lr if msg.which() == "initData")
-    return DummyFrameReader(*DRIVER_FRAME_SIZES[device_type], 1200, 0)
+  def zero_dcamera_frame_reader():
+    return DummyFrameReader(*DRIVER_FRAME_SIZES["tici"], 1200, 0)
+
+  def neo_dcamera_frame_reader():
+    if not dummy_dcam_if_missing:
+      raise Exception("Replaying dmonitoringmodeld is not supported on neo segments! Pass dummy_dcam_if_missing=True to use a blank driver camera instead.")
+    return zero_dcamera_frame_reader()
 
   if use_route_meta:
     r = Route(route)
@@ -67,11 +71,16 @@ def setup_data_readers(
     if needs_road_cam and len(r.camera_paths()) > sidx and r.camera_paths()[sidx] is not None:
       frs['roadCameraState'] = FrameReader(r.camera_paths()[sidx])
     if needs_road_cam and  len(r.ecamera_paths()) > sidx and r.ecamera_paths()[sidx] is not None:
-      frs['wideRoadCameraState'] = FrameReader(r.ecamera_paths()[sidx])
-    if needs_driver_cam and len(r.dcamera_paths()) > sidx and r.dcamera_paths()[sidx] is not None:
-      frs['driverCameraState'] = FrameReader(r.dcamera_paths()[sidx])
-    elif dummy_dcam_if_missing:
-      frs['driverCameraState'] = zero_dcamera_frame_reader(lr)
+      frs['wideRoadCameraState'] = FrameReader(r.ecamera_paths()[sidx]) 
+    if needs_driver_cam:
+      device_type = next(str(msg.initData.deviceType) for msg in lr if msg.which() == "initData")
+      if device_type == "neo":
+        frs['driverCameraState'] = neo_dcamera_frame_reader()
+      else:
+        if len(r.dcamera_paths()) > sidx and r.dcamera_paths()[sidx] is not None:
+          frs['driverCameraState'] = FrameReader(r.dcamera_paths()[sidx])
+        elif dummy_dcam_if_missing:
+          frs['driverCameraState'] = zero_dcamera_frame_reader()
   else:
     lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
     frs = {}
@@ -80,12 +89,16 @@ def setup_data_readers(
       if next((True for m in lr if m.which() == "wideRoadCameraState"), False):
         frs['wideRoadCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/ecamera.hevc")
     if needs_driver_cam:
-      try:
-        frs['driverCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/dcamera.hevc")
-      except URLFileException as ex:
-        if not dummy_dcam_if_missing:
-          raise ex
-        frs['driverCameraState'] = zero_dcamera_frame_reader(lr)
+      device_type = next(str(msg.initData.deviceType) for msg in lr if msg.which() == "initData")
+      if device_type == "neo":
+        frs['driverCameraState'] = neo_dcamera_frame_reader()
+      else:
+        try:
+          frs['driverCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/dcamera.hevc")
+        except URLFileException as ex:
+          if not dummy_dcam_if_missing:
+            raise ex
+          frs['driverCameraState'] = zero_dcamera_frame_reader()
 
   return lr, frs
 
