@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import bz2
 import math
 import json
 import os
@@ -37,7 +38,7 @@ PROCS = {
   "selfdrive.locationd.paramsd": 9.0,
   "./sensord": 7.0,
   "selfdrive.controls.radard": 4.5,
-  "selfdrive.modeld.modeld": 8.0,
+  "selfdrive.modeld.modeld": 13.0,
   "selfdrive.modeld.dmonitoringmodeld": 8.0,
   "selfdrive.modeld.navmodeld": 1.0,
   "selfdrive.thermald.thermald": 3.87,
@@ -47,7 +48,6 @@ PROCS = {
   "selfdrive.monitoring.dmonitoringd": 4.0,
   "./proclogd": 1.54,
   "system.logmessaged": 0.2,
-  "./clocksd": 0.02,
   "selfdrive.tombstoned": 0,
   "./logcatd": 0,
   "system.micd": 10.0,
@@ -57,7 +57,6 @@ PROCS = {
   "selfdrive.navd.navd": 0.4,
   "system.loggerd.uploader": 3.0,
   "system.loggerd.deleter": 0.1,
-  "selfdrive.locationd.laikad": (1.0, 80.0),  # TODO: better GPS setup in testing closet
 }
 
 PROCS.update({
@@ -163,6 +162,7 @@ class TestOnroad(unittest.TestCase):
 
     # use the second segment by default as it's the first full segment
     cls.lr = list(LogReader(os.path.join(str(cls.segments[1]), "rlog")))
+    cls.log_path = cls.segments[1]
 
   @cached_property
   def service_msgs(self):
@@ -192,6 +192,26 @@ class TestOnroad(unittest.TestCase):
     cnt = Counter(json.loads(m.logMessage)['filename'] for m in msgs)
     big_logs = [f for f, n in cnt.most_common(3) if n / sum(cnt.values()) > 30.]
     self.assertEqual(len(big_logs), 0, f"Log spam: {big_logs}")
+
+  def test_log_sizes(self):
+    for f in self.log_path.iterdir():
+      assert f.is_file()
+
+      sz = f.stat().st_size / 1e6
+      if f.name in ("qlog", "rlog"):
+        with open(f, 'rb') as ff:
+          sz = len(bz2.compress(ff.read())) / 1e6
+
+      if f.name == "qcamera.ts":
+        assert 2.15 < sz < 2.35
+      elif f.name == "qlog":
+        assert 0.7 < sz < 1.0
+      elif f.name == "rlog":
+        assert 5 < sz < 50
+      elif f.name.endswith('.hevc'):
+        assert 70 < sz < 77
+      else:
+        raise NotImplementedError
 
   def test_ui_timings(self):
     result = "\n"

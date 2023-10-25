@@ -90,6 +90,26 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
   return diff
 
 
+def format_process_diff(diff):
+  diff_short, diff_long = "", ""
+
+  if isinstance(diff, str):
+    diff_short += f"        {diff}\n"
+    diff_long += f"\t{diff}\n"
+  else:
+    cnt: Dict[str, int] = {}
+    for d in diff:
+      diff_long += f"\t{str(d)}\n"
+
+      k = str(d[1])
+      cnt[k] = 1 if k not in cnt else cnt[k] + 1
+
+    for k, v in sorted(cnt.items()):
+      diff_short += f"        {k}: {v}\n"
+
+  return diff_short, diff_long
+
+
 def format_diff(results, log_paths, ref_commit):
   diff_short, diff_long = "", ""
   diff_long += f"***** tested against commit {ref_commit} *****\n"
@@ -105,25 +125,17 @@ def format_diff(results, log_paths, ref_commit):
       diff_long += f"\tnew: {log_paths[segment][proc]['new']}\n\n"
 
       diff_short += f"    {proc}\n"
-      if isinstance(diff, str):
+
+      if isinstance(diff, str) or len(diff):
         diff_short += f"        ref: {log_paths[segment][proc]['ref']}\n"
         diff_short += f"        new: {log_paths[segment][proc]['new']}\n\n"
-        diff_short += f"        {diff}\n"
         failed = True
-      elif len(diff):
-        diff_short += f"        ref: {log_paths[segment][proc]['ref']}\n"
-        diff_short += f"        new: {log_paths[segment][proc]['new']}\n\n"
 
-        cnt: Dict[str, int] = {}
-        for d in diff:
-          diff_long += f"\t{str(d)}\n"
+        proc_diff_short, proc_diff_long = format_process_diff(diff)
 
-          k = str(d[1])
-          cnt[k] = 1 if k not in cnt else cnt[k] + 1
+        diff_long += proc_diff_long
+        diff_short += proc_diff_short
 
-        for k, v in sorted(cnt.items()):
-          diff_short += f"        {k}: {v}\n"
-        failed = True
   return diff_short, diff_long, failed
 
 

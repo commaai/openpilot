@@ -21,6 +21,8 @@ source ~/.bash_profile
 if [ -f /TICI ]; then
   source /etc/profile
 
+  rm -rf ~/.commacache
+
   if ! systemctl is-active --quiet systemd-resolved; then
     echo "restarting resolved"
     sudo systemctl start systemd-resolved
@@ -154,7 +156,7 @@ node {
           ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR ./build_devel.sh"],
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["check dirty", "release/check-dirty.sh"],
-          ["onroad tests", "pytest selfdrive/test/test_onroad.py"],
+          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
           ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
         ])
       },
