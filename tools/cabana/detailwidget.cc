@@ -2,6 +2,7 @@
 
 #include <QFormLayout>
 #include <QMenu>
+#include <QSpacerItem>
 
 #include "tools/cabana/commands.h"
 #include "tools/cabana/mainwin.h"
@@ -22,19 +23,15 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   // message title
   QHBoxLayout *title_layout = new QHBoxLayout();
   title_layout->setContentsMargins(3, 6, 3, 0);
-  time_label = new QLabel(this);
-  time_label->setToolTip(tr("Current time"));
-  time_label->setStyleSheet("QLabel{font-weight:bold;}");
-  title_layout->addWidget(time_label);
-  name_label = new ElidedLabel(this);
+  auto spacer = new QSpacerItem(0, 1);
+  title_layout->addItem(spacer);
+  title_layout->addWidget(name_label = new ElidedLabel(this), 1);
   name_label->setStyleSheet("QLabel{font-weight:bold;}");
   name_label->setAlignment(Qt::AlignCenter);
-  name_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  title_layout->addWidget(name_label);
   auto edit_btn = new ToolButton("pencil", tr("Edit Message"));
   title_layout->addWidget(edit_btn);
-  remove_btn = new ToolButton("x-lg", tr("Remove Message"));
-  title_layout->addWidget(remove_btn);
+  title_layout->addWidget(remove_btn = new ToolButton("x-lg", tr("Remove Message")));
+  spacer->changeSize(edit_btn->sizeHint().width() * 2 + 9, 1);
   main_layout->addLayout(title_layout);
 
   // warning
@@ -151,7 +148,6 @@ void DetailWidget::refresh() {
 }
 
 void DetailWidget::updateState(const QHash<MessageId, CanData> *msgs) {
-  time_label->setText(QString::number(can->currentSec(), 'f', 3));
   if ((msgs && !msgs->contains(msg_id)))
     return;
 
