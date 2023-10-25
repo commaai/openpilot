@@ -223,14 +223,14 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.06]]
       ret.tireStiffnessFactor = 0.677
 
-    elif candidate in (CAR.ODYSSEY, CAR.ODYSSEY_CHN):
+    elif candidate in (CAR.ODYSSEY, CAR.ODYSSEY_CHN, CAR.ODYSSEY_TWN):
       ret.mass = 1900.
       ret.wheelbase = 3.00
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 14.35  # as spec
       ret.tireStiffnessFactor = 0.82
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.28], [0.08]]
-      if candidate == CAR.ODYSSEY_CHN:
+      if candidate in (CAR.ODYSSEY_CHN, CAR.ODYSSEY_TWN):
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 32767], [0, 32767]]  # TODO: determine if there is a dead zone at the top end
       else:
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
@@ -292,7 +292,7 @@ class CarInterface(CarInterfaceBase):
     # to a negative value, so it won't matter. Otherwise, add 0.5 mph margin to not
     # conflict with PCM acc
     ret.autoResumeSng = candidate in (HONDA_BOSCH | {CAR.CIVIC}) or ret.enableGasInterceptor
-    ret.minEnableSpeed = -1. if ret.autoResumeSng else 25.5 * CV.MPH_TO_MS
+    ret.minEnableSpeed = -1. if ret.autoResumeSng else (19.0 if candidate == CAR.ODYSSEY_TWN else 25.5) * CV.MPH_TO_MS
 
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.8
