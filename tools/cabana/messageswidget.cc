@@ -1,6 +1,5 @@
 #include "tools/cabana/messageswidget.h"
 
-#include <algorithm>
 #include <limits>
 
 #include <QCheckBox>
@@ -12,6 +11,11 @@
 #include <QVBoxLayout>
 
 #include "tools/cabana/commands.h"
+
+static QString msg_node_from_id(const MessageId &id) {
+  auto msg = dbc()->msg(id);
+  return msg ? msg->transmitter : QString();
+}
 
 MessagesWidget::MessagesWidget(QWidget *parent) : menu(new QMenu(this)), QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
@@ -167,7 +171,7 @@ MessageListModel::MessageListModel(QObject *parent) : QAbstractTableModel(parent
 }
 
 QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, int role) const {
-  static const QVariant titles[] = {tr("Name"), tr("Bus"), tr("ID"), tr("Freq"), tr("Count"), tr("Bytes")};
+  static const QVariant titles[] = {tr("Name"), tr("Bus"), tr("ID"), tr("Node"), tr("Freq"), tr("Count"), tr("Bytes")};
   return orientation == Qt::Horizontal && role == Qt::DisplayRole ? titles[section] : QVariant();
 }
 
@@ -178,7 +182,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     if (d.freq > 0 && ((can->currentSec() - can->toSeconds(d.mono_time) - 1.0 / settings.fps) < (5.0 / d.freq))) {
       return d.freq >= 0.95 ? QString::number(std::nearbyint(d.freq)) : QString::number(d.freq, 'f', 2);
     } else {
-      return QString("--");
+      return QStringLiteral("--");
     }
   };
 
@@ -189,6 +193,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
       case Column::NAME: return msgName(id);
       case Column::SOURCE: return id.source != INVALID_SOURCE ? QString::number(id.source) : "N/A";
       case Column::ADDRESS: return QString::number(id.address, 16);
+      case Column::NODE: return msg_node_from_id(id);
       case Column::FREQ: return id.source != INVALID_SOURCE ? getFreq(can_data) : "N/A";
       case Column::COUNT: return id.source != INVALID_SOURCE ? QString::number(can_data.count) : "N/A";
       case Column::DATA: return id.source != INVALID_SOURCE ? "" : "N/A";
@@ -220,8 +225,8 @@ void MessageListModel::dbcModified() {
 }
 
 void MessageListModel::sortMessages(std::vector<MessageId> &new_msgs) {
-  auto do_sort = [order = sort_order](std::vector<MessageId> &new_msgs, auto proj) {
-    std::sort(new_msgs.begin(), new_msgs.end(), [order, proj = std::move(proj)](auto &l, auto &r) {
+  auto do_sort = [order = sort_order](std::vector<MessageId> &m, auto proj) {
+    std::sort(m.begin(), m.end(), [order, proj = std::move(proj)](auto &l, auto &r) {
       return order == Qt::AscendingOrder ? proj(l) < proj(r) : proj(l) > proj(r);
     });
   };
@@ -229,6 +234,7 @@ void MessageListModel::sortMessages(std::vector<MessageId> &new_msgs) {
     case Column::NAME: do_sort(new_msgs, [](auto &id) { return std::make_pair(msgName(id), id); }); break;
     case Column::SOURCE: do_sort(new_msgs, [](auto &id) { return std::tie(id.source, id); }); break;
     case Column::ADDRESS: do_sort(new_msgs, [](auto &id) { return std::tie(id.address, id);}); break;
+    case Column::NODE: do_sort(new_msgs, [](auto &id) { return std::make_pair(msg_node_from_id(id), id);}); break;
     case Column::FREQ: do_sort(new_msgs, [](auto &id) { return std::tie(can->lastMessage(id).freq, id); }); break;
     case Column::COUNT: do_sort(new_msgs, [](auto &id) { return std::tie(can->lastMessage(id).count, id); }); break;
   }
@@ -271,6 +277,9 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
         match = match || parseRange(txt, id.address, 16);
         break;
       }
+      case Column::NODE:
+        match = re.match(msg_node_from_id(id)).hasMatch();
+        break;
       case Column::FREQ:
         // TODO: Hide stale messages?
         match = parseRange(txt, data.freq);

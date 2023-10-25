@@ -24,6 +24,7 @@ public:
     NAME = 0,
     SOURCE,
     ADDRESS,
+    NODE,
     FREQ,
     COUNT,
     DATA,

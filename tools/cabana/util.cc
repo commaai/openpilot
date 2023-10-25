@@ -241,15 +241,19 @@ void setTheme(int theme) {
 }
 
 QString formatSeconds(double sec, bool include_milliseconds, bool absolute_time) {
-  QString format;
-  if (!absolute_time) {
-    format = sec > 60 * 60 ? "hh:mm:ss" : "mm:ss";
-  } else {
-    format = "yyyy-MM-dd hh:mm:ss";
-  }
-  if (include_milliseconds)
-    format += ".zzz";
+  QString format = absolute_time ? "yyyy-MM-dd hh:mm:ss"
+                                 : (sec > 60 * 60 ? "hh:mm:ss" : "mm:ss");
+  if (include_milliseconds) format += ".zzz";
   return QDateTime::fromMSecsSinceEpoch(sec * 1000).toString(format);
+}
+
+QString toHex(uint8_t byte) {
+  static std::array<QString, 256> hex = []() {
+    std::array<QString, 256> ret;
+    for (int i = 0; i < 256; ++i) ret[i] = QStringLiteral("%1").arg(i, 2, 16, QLatin1Char('0')).toUpper();
+    return ret;
+  }();
+  return hex[byte];
 }
 
 int num_decimals(double num) {

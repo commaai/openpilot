@@ -58,7 +58,7 @@ struct BusConfig {
   bool can_fd = false;
 };
 
-typedef std::unordered_map<MessageId, std::vector<const CanEvent *>> CanEventsMap;
+typedef std::unordered_map<MessageId, std::vector<const CanEvent *>> MessageEventsMap;
 
 class AbstractStream : public QObject {
   Q_OBJECT
@@ -85,7 +85,7 @@ public:
   virtual void pause(bool pause) {}
   inline const std::unordered_map<MessageId, CanData> &lastMessages() const { return last_msgs_; }
   inline const std::vector<const CanEvent *> &allEvents() const { return all_events_; }
-  inline const CanEventsMap &eventsMap() const { return events_; }
+  inline const MessageEventsMap &eventsMap() const { return events_; }
   inline const SourceSet &sources() const { return sources_; }
   const std::vector<const CanEvent *> &events(const MessageId &id) const;
   size_t suppressHighlighted();
@@ -97,7 +97,7 @@ signals:
   void resume();
   void seekedTo(double sec);
   void streamStarted();
-  void eventsMerged(const CanEventsMap &can_events_map);
+  void eventsMerged(const MessageEventsMap &can_events_map);
   void msgsReceived(const std::set<MessageId> *new_msgs, bool has_new_ids);
   void sourcesUpdated(const SourceSet &s);
   void lastMsgsChanged();
@@ -110,7 +110,7 @@ protected:
   void updateMasks();
   void updateLastMsgsTo(double sec);
 
-  CanEventsMap events_;
+  MessageEventsMap events_;
   std::vector<const CanEvent *> all_events_;
   std::unique_ptr<MonotonicBuffer> event_buffer_;
   std::unordered_map<MessageId, CanData> last_msgs_;

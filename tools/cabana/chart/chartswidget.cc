@@ -147,7 +147,7 @@ void ChartsWidget::updateTabBar() {
   }
 }
 
-void ChartsWidget::eventsMerged(const CanEventsMap &new_events) {
+void ChartsWidget::eventsMerged(const MessageEventsMap &new_events) {
   QFutureSynchronizer<void> future_synchronizer;
   for (auto c : charts) {
     future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::updateSeries, nullptr, &new_events));

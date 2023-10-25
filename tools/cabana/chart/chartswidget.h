@@ -67,7 +67,7 @@ private:
   void removeChart(ChartView *chart);
   void splitChart(ChartView *chart);
   QRect chartVisibleRect(ChartView *chart);
-  void eventsMerged(const CanEventsMap &new_events);
+  void eventsMerged(const MessageEventsMap &new_events);
   void updateState();
   void zoomReset();
   void startAutoScroll();

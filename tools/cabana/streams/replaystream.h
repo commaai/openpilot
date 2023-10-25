@@ -29,8 +29,8 @@ public:
   inline const Route *route() const { return replay->route(); }
   inline void setSpeed(float speed) override { replay->setSpeed(speed); }
   inline float getSpeed() const { return replay->getSpeed(); }
-  inline bool isPaused() const override { return replay->isPaused(); }
   inline Replay *getReplay() const { return replay.get(); }
+  inline bool isPaused() const override { return replay->isPaused(); }
   void pause(bool pause) override;
   inline const std::vector<std::tuple<double, double, TimelineType>> getTimeline() { return replay->getTimeline(); }
   static AbstractOpenStreamWidget *widget(AbstractStream **stream);

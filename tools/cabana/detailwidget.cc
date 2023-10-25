@@ -2,6 +2,7 @@
 
 #include <QFormLayout>
 #include <QMenu>
+#include <QSpacerItem>
 
 #include "tools/cabana/commands.h"
 #include "tools/cabana/mainwin.h"

@@ -3,6 +3,7 @@
 #include <map>
 #include <memory>
 
+#include <QHBoxLayout>
 #include <QSlider>
 #include <QToolButton>
 
@@ -69,12 +70,17 @@ protected:
   void updateState();
   void updatePlayBtnState();
   QWidget *createCameraWidget();
+  QHBoxLayout *createPlaybackController();
+  void loopPlaybackClicked();
 
   CameraWidget *cam_widget = nullptr;
   double maximum_time = 0;
   QToolButton *time_btn = nullptr;
+   ToolButton *seek_backward_btn = nullptr;
   ToolButton *play_btn = nullptr;
+  ToolButton *seek_forward_btn = nullptr;
   ToolButton *skip_to_end_btn = nullptr;
+  ToolButton *loop_btn = nullptr;
   QToolButton *speed_btn = nullptr;
   Slider *slider = nullptr;
   InfoLabel *alert_label = nullptr;

@@ -278,40 +278,40 @@ void ChartView::updateSeriesPoints() {
   }
 }
 
-static void calc_values(const cabana::Signal *sig, const std::vector<const CanEvent *> &msgs,
-                        std::vector<QPointF> &vals, std::vector<QPointF> &step_vals) {
-  vals.reserve(vals.size() + msgs.capacity());
-  step_vals.reserve(step_vals.size() + msgs.capacity() * 2);
-  const uint64_t begin_mono_time = can->beginMonoTime();
+void ChartView::appendCanEvents(const cabana::Signal *sig, const std::vector<const CanEvent *> &events,
+                                std::vector<QPointF> &vals, std::vector<QPointF> &step_vals) {
+  vals.reserve(vals.size() + events.capacity());
+  step_vals.reserve(step_vals.size() + events.capacity() * 2);
+
   double value = 0;
-  for (const CanEvent *e : msgs) {
+  const uint64_t begin_mono_time = can->beginMonoTime();
+  for (const CanEvent *e : events) {
     if (sig->getValue(e->dat, e->size, &value)) {
-      const double ts = (e->mono_time - std::min(e->mono_time, begin_mono_time)) / 1e9;  // seconds
+      const double ts = (e->mono_time - std::min(e->mono_time, begin_mono_time)) / 1e9;
       vals.emplace_back(ts, value);
-      if (!step_vals.empty()) {
+      if (!step_vals.empty())
         step_vals.emplace_back(ts, step_vals.back().y());
-      }
       step_vals.emplace_back(ts, value);
     }
   }
 }
 
-void ChartView::updateSeries(const cabana::Signal *sig, const CanEventsMap *new_events) {
-    for (auto &s : sigs) {
+void ChartView::updateSeries(const cabana::Signal *sig, const MessageEventsMap *msg_new_events) {
+  for (auto &s : sigs) {
     if (!sig || s.sig == sig) {
-      if (!new_events) {
+      if (!msg_new_events) {
         s.vals.clear();
         s.step_vals.clear();
       }
-      auto events = new_events ? new_events : &can->eventsMap();
+      auto events = msg_new_events ? msg_new_events : &can->eventsMap();
       auto it = events->find(s.msg_id);
       if (it == events->end() || it->second.empty()) continue;
 
-      if (s.vals.empty() || (can->toSeconds(it->second.front()->mono_time) > s.vals.back().x())) {
-        calc_values(s.sig, it->second, s.vals, s.step_vals);
+      if (s.vals.empty() || (can->toSeconds(it->second.back()->mono_time) > s.vals.back().x())) {
+        appendCanEvents(s.sig, it->second, s.vals, s.step_vals);
       } else {
         std::vector<QPointF> vals, step_vals;
-        calc_values(s.sig, it->second, vals, step_vals);
+        appendCanEvents(s.sig, it->second, vals, step_vals);
         s.vals.insert(std::lower_bound(s.vals.begin(), s.vals.end(), vals.front().x(), xLessThan),
                       vals.begin(), vals.end());
         s.step_vals.insert(std::lower_bound(s.step_vals.begin(), s.step_vals.end(), step_vals.front().x(), xLessThan),

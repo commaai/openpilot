@@ -32,7 +32,7 @@ public:
   ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent = nullptr);
   void addSignal(const MessageId &msg_id, const cabana::Signal *sig);
   bool hasSignal(const MessageId &msg_id, const cabana::Signal *sig) const;
-  void updateSeries(const cabana::Signal *sig = nullptr, const CanEventsMap *new_events = nullptr);
+  void updateSeries(const cabana::Signal *sig = nullptr, const MessageEventsMap *new_events = nullptr);
   void updatePlot(double cur, double min, double max);
   void setSeriesType(SeriesType type);
   void updatePlotArea(int left, bool force = false);
@@ -46,7 +46,6 @@ public:
     QXYSeries *series = nullptr;
     std::vector<QPointF> vals;
     std::vector<QPointF> step_vals;
-    uint64_t last_value_mono_time = 0;
     QPointF track_pt{};
     SegmentTree segment_tree;
     double min = 0;
@@ -65,6 +64,8 @@ private slots:
   void signalRemoved(const cabana::Signal *sig) { removeIf([=](auto &s) { return s.sig == sig; }); }
 
 private:
+  void appendCanEvents(const cabana::Signal *sig, const std::vector<const CanEvent *> &events,
+                       std::vector<QPointF> &vals, std::vector<QPointF> &step_vals);
   void createToolButtons();
   void addSeries(QXYSeries *series);
   void contextMenuEvent(QContextMenuEvent *event) override;
