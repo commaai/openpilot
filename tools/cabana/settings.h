@@ -1,13 +1,10 @@
 #pragma once
 
-#include <QApplication>
 #include <QByteArray>
-#include <QCheckBox>
 #include <QComboBox>
 #include <QDialog>
 #include <QGroupBox>
 #include <QLineEdit>
-#include <QSettings>
 #include <QSpinBox>
 
 #define LIGHT_THEME 1
@@ -24,10 +21,8 @@ public:
     AlwaysBE,
   };
 
-  Settings() {}
-  QSettings::Status save();
-  void load();
-  inline static QString filePath() { return QApplication::applicationDirPath() + "/settings"; }
+  Settings();
+  ~Settings();
 
   bool absolute_time = false;
   int fps = 10;
@@ -49,15 +44,13 @@ public:
   QByteArray window_state;
   QStringList recent_files;
   QByteArray message_header_state;
-  DragDirection drag_direction;
+  DragDirection drag_direction = MsbFirst;
 
 signals:
   void changed();
 };
 
 class SettingsDlg : public QDialog {
-  Q_OBJECT
-
 public:
   SettingsDlg(QWidget *parent);
   void save();
