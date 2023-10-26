@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import sys
 import os
 import time
 import pickle
@@ -15,12 +14,14 @@ from openpilot.common.params import Params
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.model import get_warp_matrix
+from openpilot.selfdrive import sentry
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
 
+PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
 MODEL_PATHS = {
@@ -108,8 +109,9 @@ class ModelState:
 
 
 def main():
-  cloudlog.bind(daemon="selfdrive.modeld.modeld")
-  setproctitle("selfdrive.modeld.modeld")
+  sentry.set_tag("daemon", PROCESS_NAME)
+  cloudlog.bind(daemon=PROCESS_NAME)
+  setproctitle(PROCESS_NAME)
   config_realtime_process(7, 54)
 
   cl_context = CLContext()
@@ -280,4 +282,7 @@ if __name__ == "__main__":
   try:
     main()
   except KeyboardInterrupt:
-    sys.exit()
+    cloudlog.warning(f"child {PROCESS_NAME} got SIGINT")
+  except Exception:
+    sentry.capture_exception()
+    raise
