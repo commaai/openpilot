@@ -142,6 +142,7 @@ class TestAthenadMethods(unittest.TestCase):
   @parameterized.expand([(True,), (False,)])
   @with_http_server
   def test_do_upload(self, compress, host):
+    # random bytes to ensure rather large object post-compression
     fn = self._create_file('qlog', data=os.urandom(10000 * 1024))
 
     # warm up object tracker
