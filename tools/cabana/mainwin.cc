@@ -24,15 +24,7 @@
 #include "tools/cabana/tools/findsignal.h"
 
 MainWindow::MainWindow() : QMainWindow() {
-   // load fingerprints
-  QFile json_file(QApplication::applicationDirPath() + "/dbc/car_fingerprint_to_dbc.json");
-  if (json_file.open(QIODevice::ReadOnly)) {
-    fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
-    auto dbc_names = fingerprint_to_dbc.object().toVariantMap().values();
-    std::transform(dbc_names.begin(), dbc_names.end(), std::inserter(opendbc_names, opendbc_names.begin()),
-                   [](const auto &name) { return name.toString(); });
-  }
-
+  loadFingerprints();
   createDockWindows();
   setCentralWidget(center_widget = new CenterWidget(this));
   createActions();
@@ -78,6 +70,16 @@ MainWindow::MainWindow() : QMainWindow() {
   QObject::connect(&settings, &Settings::changed, this, &MainWindow::updateStatus);
   QObject::connect(StreamNotifier::instance(), &StreamNotifier::changingStream, this, &MainWindow::changingStream);
   QObject::connect(StreamNotifier::instance(), &StreamNotifier::streamStarted, this, &MainWindow::streamStarted);
+}
+
+void MainWindow::loadFingerprints() {
+  QFile json_file(QApplication::applicationDirPath() + "/dbc/car_fingerprint_to_dbc.json");
+  if (json_file.open(QIODevice::ReadOnly)) {
+    fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
+    auto dbc_names = fingerprint_to_dbc.object().toVariantMap().values();
+    std::transform(dbc_names.begin(), dbc_names.end(), std::inserter(opendbc_names, opendbc_names.begin()),
+                   [](const auto &name) { return name.toString(); });
+  }
 }
 
 void MainWindow::createActions() {
