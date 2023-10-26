@@ -101,6 +101,7 @@ void Networking::wrongPassword(const QString &ssid) {
 }
 
 void Networking::showEvent(QShowEvent *event) {
+  main_layout->setCurrentWidget(wifiScreen);
   wifi->start();
 }
 
