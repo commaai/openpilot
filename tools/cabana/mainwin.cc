@@ -84,8 +84,8 @@ void MainWindow::createActions() {
   close_stream_act->setEnabled(false);
   file_menu->addSeparator();
 
-  file_menu->addAction(tr("New DBC File"), [this]() { newFile(); })->setShortcuts(QKeySequence::New);
-  file_menu->addAction(tr("Open DBC File..."), [this]() { openFile(); })->setShortcuts(QKeySequence::Open);
+  file_menu->addAction(tr("New DBC File"), [this]() { newFile(); }, QKeySequence::New);
+  file_menu->addAction(tr("Open DBC File..."), [this]() { openFile(); }, QKeySequence::Open);
 
   manage_dbcs_menu = file_menu->addMenu(tr("Manage &DBC Files"));
 
@@ -111,19 +111,15 @@ void MainWindow::createActions() {
   file_menu->addAction(tr("Load DBC From Clipboard"), [=]() { loadFromClipboard(); });
 
   file_menu->addSeparator();
-  save_dbc = file_menu->addAction(tr("Save DBC..."), this, &MainWindow::save);
-  save_dbc->setShortcuts(QKeySequence::Save);
-
-  save_dbc_as = file_menu->addAction(tr("Save DBC As..."), this, &MainWindow::saveAs);
-  save_dbc_as->setShortcuts(QKeySequence::SaveAs);
-
+  save_dbc = file_menu->addAction(tr("Save DBC..."), this, &MainWindow::save, QKeySequence::Save);
+  save_dbc_as = file_menu->addAction(tr("Save DBC As..."), this, &MainWindow::saveAs, QKeySequence::SaveAs);
   copy_dbc_to_clipboard = file_menu->addAction(tr("Copy DBC To Clipboard"), this, &MainWindow::saveToClipboard);
 
   file_menu->addSeparator();
-  file_menu->addAction(tr("Settings..."), this, &MainWindow::setOption)->setShortcuts(QKeySequence::Preferences);
+  file_menu->addAction(tr("Settings..."), this, &MainWindow::setOption, QKeySequence::Preferences);
 
   file_menu->addSeparator();
-  file_menu->addAction(tr("E&xit"), qApp, &QApplication::closeAllWindows)->setShortcuts(QKeySequence::Quit);
+  file_menu->addAction(tr("E&xit"), qApp, &QApplication::closeAllWindows, QKeySequence::Quit);
 
   // Edit Menu
   QMenu *edit_menu = menuBar()->addMenu(tr("&Edit"));
@@ -157,7 +153,7 @@ void MainWindow::createActions() {
 
   // Help Menu
   QMenu *help_menu = menuBar()->addMenu(tr("&Help"));
-  help_menu->addAction(tr("Help"), this, &MainWindow::onlineHelp)->setShortcuts(QKeySequence::HelpContents);
+  help_menu->addAction(tr("Help"), this, &MainWindow::onlineHelp, QKeySequence::HelpContents);
   help_menu->addAction(tr("About &Qt"), qApp, &QApplication::aboutQt);
 }
 
@@ -471,11 +467,7 @@ void MainWindow::saveFileToClipboard(DBCFile *dbc_file) {
 
 void MainWindow::updateLoadSaveMenus() {
   int cnt = dbc()->nonEmptyDBCCount();
-  if (cnt > 1) {
-    save_dbc->setText(tr("Save %1 DBCs...").arg(dbc()->dbcCount()));
-  } else {
-    save_dbc->setText(tr("Save DBC..."));
-  }
+  save_dbc->setText(cnt > 1 ? tr("Save %1 DBCs...").arg(cnt) : tr("Save DBC..."));
   save_dbc->setEnabled(cnt > 0);
   save_dbc_as->setEnabled(cnt == 1);
 

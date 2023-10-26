@@ -1,5 +1,6 @@
 #include "tools/cabana/streams/livestream.h"
 
+#include <QThread>
 #include <algorithm>
 #include <memory>
 
@@ -112,7 +113,7 @@ void LiveStream::updateEvents() {
     updateEvent(id, (e->mono_time - begin_event_ts) / 1e9, e->dat, e->size);
     current_event_ts = e->mono_time;
   }
-  postEvents();
+  emit privateUpdateLastMsgsSignal();
 }
 
 void LiveStream::seekTo(double sec) {

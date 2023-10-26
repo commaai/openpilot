@@ -1,14 +1,12 @@
 #include "tools/cabana/streams/pandastream.h"
 
-#include <vector>
-
+#include <QDebug>
 #include <QCheckBox>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QThread>
 #include <QVBoxLayout>
-
-#include "selfdrive/ui/qt/util.h"
 
 // TODO: remove clearLayout
 static void clearLayout(QLayout* layout) {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QObject>
 #include <memory>
 #include <map>
 #include <set>

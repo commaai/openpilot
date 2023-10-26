@@ -8,7 +8,6 @@
 
 #include <QApplication>
 #include <QByteArray>
-#include <QDateTime>
 #include <QDoubleValidator>
 #include <QFont>
 #include <QPainter>
@@ -18,7 +17,6 @@
 #include <QStringBuilder>
 #include <QStyledItemDelegate>
 #include <QToolButton>
-#include <QVector>
 
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/settings.h"
@@ -75,17 +73,15 @@ public:
   QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   bool multipleLines() const { return multiple_lines; }
   void setMultipleLines(bool v) { multiple_lines = v; }
-  int widthForBytes(int n) const;
+  QSize sizeForBytes(int n) const;
 
 private:
   std::array<QStaticText, 256> hex_text_table;
   QFont fixed_font;
   QSize byte_size = {};
   bool multiple_lines = false;
+  int h_margin, v_margin;
 };
-
-inline QString toHex(const QByteArray &dat) { return dat.toHex(' ').toUpper(); }
-QString toHex(uint8_t byte);
 
 class NameValidator : public QRegExpValidator {
   Q_OBJECT
@@ -108,6 +104,10 @@ inline void drawStaticText(QPainter *p, const QRect &r, const QStaticText &text)
   auto size = (r.size() - text.size()) / 2;
   p->drawStaticText(r.left() + size.width(), r.top() + size.height(), text);
 }
+inline QString toHex(const std::vector<uint8_t> &dat, char separator = '\0') {
+  return QByteArray::fromRawData((const char *)dat.data(), dat.size()).toHex(separator).toUpper();
+}
+
 }
 
 class ToolButton : public QToolButton {

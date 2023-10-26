@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -37,17 +38,14 @@ public:
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return msgs.size(); }
   void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
   void setFilterStrings(const QMap<int, QString> &filters);
-  void msgsReceived(const QHash<MessageId, CanData> *new_msgs, bool has_new_ids);
+  void msgsReceived(const std::set<MessageId> *new_msgs, bool has_new_ids);
   void filterAndSort();
-  void suppress();
-  void clearSuppress();
   void dbcModified();
   std::vector<MessageId> msgs;
-  QSet<std::pair<MessageId, int>> suppressed_bytes;
 
 private:
   void sortMessages(std::vector<MessageId> &new_msgs);
-  bool matchMessage(const MessageId &id, const CanData &data, const QMap<int, QString> &filters);
+  bool match(const MessageId &id);
 
   QMap<int, QString> filter_str;
   QSet<uint32_t> dbc_address;
@@ -91,7 +89,7 @@ public:
   void selectMessage(const MessageId &message_id);
   QByteArray saveHeaderState() const { return view->header()->saveState(); }
   bool restoreHeaderState(const QByteArray &state) const { return view->header()->restoreState(state); }
-  void updateSuppressedButtons();
+  void suppressHighlighted();
 
 public slots:
   void dbcModified();

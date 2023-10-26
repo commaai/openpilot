@@ -8,6 +8,7 @@
 #include <QRadioButton>
 #include <QRegularExpression>
 #include <QRegularExpressionValidator>
+#include <QThread>
 
 // DeviceStream
 

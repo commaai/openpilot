@@ -1,8 +1,12 @@
 #include "tools/cabana/streams/socketcanstream.h"
 
+#include <QDebug>
+#include <QFormLayout>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QThread>
 
 SocketCanStream::SocketCanStream(QObject *parent, SocketCanStreamConfig config_) : config(config_), LiveStream(parent) {
   if (!available()) {
@@ -48,7 +52,6 @@ void SocketCanStream::streamThread() {
     MessageBuilder msg;
     auto evt = msg.initEvent();
     auto canData = evt.initCan(frames.size());
-
 
     for (uint i = 0; i < frames.size(); i++) {
       if (!frames[i].isValid()) continue;
