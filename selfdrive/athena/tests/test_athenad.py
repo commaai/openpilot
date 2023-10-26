@@ -159,7 +159,7 @@ class TestAthenadMethods(unittest.TestCase):
     # assert memory cleaned up
     for _type, num_objects, total_size in tracker.diff():
       with self.subTest(_type=_type):
-        self.assertLess(total_size / 1024, 10, f'Object {_type} grew larger than 10 kB while uploading file')
+        self.assertLess(total_size / 1024, 10, f'Object {_type} ({num_objects=}) grew larger than 10 kB while uploading file')
 
   @with_http_server
   def test_uploadFileToUrl(self, host):
