@@ -56,7 +56,7 @@ def regen_segment(
 
 def setup_data_readers(
     route: str, sidx: int, use_route_meta: bool,
-    needs_driver_cam: bool = True, needs_road_cam: bool = True, dummy_dcam: bool = False
+    needs_driver_cam: bool = True, needs_road_cam: bool = True, dummy_driver_cam: bool = False
 ) -> Tuple[LogReader, Dict[str, Any]]:
   if use_route_meta:
     r = Route(route)
@@ -67,7 +67,7 @@ def setup_data_readers(
     if needs_road_cam and  len(r.ecamera_paths()) > sidx and r.ecamera_paths()[sidx] is not None:
       frs['wideRoadCameraState'] = FrameReader(r.ecamera_paths()[sidx])
     if needs_driver_cam:
-      if dummy_dcam:
+      if dummy_driver_cam:
         frs['driverCameraState'] = DummyFrameReader.zero_dcamera()
       elif len(r.dcamera_paths()) > sidx and r.dcamera_paths()[sidx] is not None:
         device_type = next(str(msg.initData.deviceType) for msg in lr if msg.which() == "initData")
@@ -81,7 +81,7 @@ def setup_data_readers(
       if next((True for m in lr if m.which() == "wideRoadCameraState"), False):
         frs['wideRoadCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/ecamera.hevc")
     if needs_driver_cam:
-      if dummy_dcam:
+      if dummy_driver_cam:
         frs['driverCameraState'] = DummyFrameReader.zero_dcamera()
       else:
         device_type = next(str(msg.initData.deviceType) for msg in lr if msg.which() == "initData")
@@ -93,7 +93,7 @@ def setup_data_readers(
 
 def regen_and_save(
   route: str, sidx: int, processes: Union[str, Iterable[str]] = "all", outdir: str = FAKEDATA,
-  upload: bool = False, use_route_meta: bool = False, disable_tqdm: bool = False, dummy_dcam: bool = False
+  upload: bool = False, use_route_meta: bool = False, disable_tqdm: bool = False, dummy_driver_cam: bool = False
 ) -> str:
   if not isinstance(processes, str) and not hasattr(processes, "__iter__"):
     raise ValueError("whitelist_proc must be a string or iterable")
@@ -113,7 +113,7 @@ def regen_and_save(
   lr, frs = setup_data_readers(route, sidx, use_route_meta,
                                needs_driver_cam="driverCameraState" in all_vision_pubs,
                                needs_road_cam="roadCameraState" in all_vision_pubs or "wideRoadCameraState" in all_vision_pubs,
-                               dummy_dcam=dummy_dcam)
+                               dummy_driver_cam=dummy_driver_cam)
   output_logs = regen_segment(lr, frs, replayed_processes, disable_tqdm=disable_tqdm)
 
   log_dir = os.path.join(outdir, time.strftime("%Y-%m-%d--%H-%M-%S--0", time.gmtime()))
@@ -154,4 +154,4 @@ if __name__ == "__main__":
 
   blacklist_set = set(args.blacklist_procs)
   processes = [p for p in args.whitelist_procs if p not in blacklist_set]
-  regen_and_save(args.route, args.seg, processes=processes, upload=args.upload, outdir=args.outdir, dummy_dcam=args.dummy_dcamera)
+  regen_and_save(args.route, args.seg, processes=processes, upload=args.upload, outdir=args.outdir, dummy_driver_cam=args.dummy_dcamera)
