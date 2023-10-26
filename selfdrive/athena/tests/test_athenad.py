@@ -143,23 +143,26 @@ class TestAthenadMethods(unittest.TestCase):
   def test_do_upload(self, host):
     fn = self._create_file('qlog', data=os.urandom(10000 * 1024))
 
-    # warm up object tracker
-    tracker = SummaryTracker()
-    for _ in range(5):
-      tracker.diff()
+    for compress in (True, False):
+      with self.subTest(compress=compress):
+        # warm up object tracker
+        tracker = SummaryTracker()
+        for _ in range(5):
+          tracker.diff()
 
-    item = athenad.UploadItem(path=fn + '.bz2', url="http://localhost:1238", headers={}, created_at=int(time.time()*1000), id='')
-    with self.assertRaises(requests.exceptions.ConnectionError):
-      athenad._do_upload(item)
+        upload_fn = fn + ('.bz2' if compress else '')
+        item = athenad.UploadItem(path=upload_fn, url="http://localhost:1238", headers={}, created_at=int(time.time()*1000), id='')
+        with self.assertRaises(requests.exceptions.ConnectionError):
+          athenad._do_upload(item)
 
-    item = athenad.UploadItem(path=fn + '.bz2', url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='')
-    resp = athenad._do_upload(item)
-    self.assertEqual(resp.status_code, 201)
+        item = athenad.UploadItem(path=upload_fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='')
+        resp = athenad._do_upload(item)
+        self.assertEqual(resp.status_code, 201)
 
-    # assert memory cleaned up
-    for _type, num_objects, total_size in tracker.diff():
-      with self.subTest(_type=_type):
-        self.assertLess(total_size / 1024, 10, f'Object {_type} ({num_objects=}) grew larger than 10 kB while uploading file')
+        # assert memory cleaned up
+        for _type, num_objects, total_size in tracker.diff():
+          with self.subTest(_type=_type):
+            self.assertLess(total_size / 1024, 10, f'Object {_type} ({num_objects=}) grew larger than 10 kB while uploading file')
 
   @with_http_server
   def test_uploadFileToUrl(self, host):
