@@ -22,7 +22,7 @@ Version 0.9.4 (2023-07-27)
   * When navigating on openpilot, lane change behavior is unchanged and still activated by the driver
   * When navigate on openpilot is active, the path on the map is green
 * UI updates
-  * Navigation settings moved to home screen and map
+  * Navigation settings moved to the home screen and map
   * Border color always shows engagement status. Blue means disengaged, green means engaged, and grey means engaged with human overriding
   * Alerts are shown inside the border. Black means info, orange means warning, and red means critical alert
 * Bookmarked segments are preserved on the device's storage
@@ -49,7 +49,7 @@ Version 0.9.2 (2023-05-22)
   * Trained on a new dataset
 * UI updates
   * New experimental mode visualization
-  * Draw MPC path instead of model-predicted path
+  * Draw an MPC path instead of the model-predicted path
 * AGNOS 7
   * Faster boot time
   * Fixes rare no sounds bug
@@ -62,7 +62,7 @@ Version 0.9.2 (2023-05-22)
 * Ford Kuga 2020-22 support
 * Ford Maverick 2022-23 support
 * Genesis GV80 2023 support thanks to JWingate80!
-* Honda HR-V 2023 support thanks to AlexandreSato and galegozi!
+* Honda HR-V 2023 support thanks to AlexandreSato and Galegozi!
 * Kia Niro EV 2023 support thanks to JosselinLecocq!
 * Lexus ES 2017-18 support
 * Lincoln Aviator 2021 support
@@ -75,10 +75,10 @@ Version 0.9.1 (2023-02-28)
   * 30% improved height estimation resulting in better driving performance for tall cars
 * Driver monitoring: removed timer resetting on user interaction if distracted
 * UI updates
-  * Adjust alert volume using ambient noise level
+  * Adjust the alert volume using the ambient noise level
   * Driver monitoring icon shows driver's head pose
   * German translation thanks to Vrabetz and CzokNorris!
-* Cadillac Escalade 2017 support thanks to rickygilleland!
+* Cadillac Escalade 2017 support thanks to Rickygilleland!
 * Chevrolet Bolt EV 2022-23 support thanks to JasonJShuler!
 * Genesis GV60 2023 support thanks to sunnyhaibin!
 * Hyundai Tucson 2022-23 support
@@ -94,7 +94,7 @@ Version 0.9.0 (2022-11-21)
 ========================
 * New driving model
   * Internal feature space information content increased tenfold during training to ~700 bits, which makes the model dramatically more accurate
-  * Less reliance on previous frames makes model more reactive and snappy
+  * Less reliance on previous frames makes the model more reactive and snappy
   * Trained in new reprojective simulator
   * Trained in 36 hours from scratch, compared to one week for previous releases
   * Training now simulates both lateral and longitudinal behavior, which allows openpilot to slow down for turns, stop at traffic lights, and more in experimental mode
@@ -109,7 +109,7 @@ Version 0.9.0 (2022-11-21)
 * Self-tuning torque controller: learns parameters live for each car
 * Torque controller used on all Toyota, Lexus, Hyundai, Kia, and Genesis models
 * UI updates
-  * Matched speeds shown on car's dash
+  * Matched speeds shown on the car's dash
   * Multi-language in navigation
   * Improved update experience
   * Border turns grey while overriding steering
@@ -117,7 +117,7 @@ Version 0.9.0 (2022-11-21)
   * New onroad visualization for experimental mode
 * tools: new and improved cabana thanks to deanlee!
 * Experimental longitudinal support for Volkswagen, CAN-FD Hyundai, and new GM models
-* Genesis GV70 2022-23 support thanks to zunichky and sunnyhaibin!
+* Genesis GV70 2022-23 support thanks to Zunichky and Sunnyhaibin!
 * Hyundai Santa Cruz 2021-22 support thanks to sunnyhaibin!
 * Kia Sportage 2023 support thanks to sunnyhaibin!
 * Kia Sportage Hybrid 2023 support thanks to sunnyhaibin!
@@ -127,7 +127,7 @@ Version 0.8.16 (2022-08-26)
 ========================
 * New driving model
   * Reduced turn cutting
-* Auto-detect right hand drive setting with driver monitoring model
+* Auto-detect right-hand drive setting with driver monitoring model
 * Improved fan controller for comma three
 * New translations
   * Japanese thanks to cydia2020!
@@ -145,7 +145,7 @@ Version 0.8.15 (2022-07-20)
 ========================
 * New driving model
   * Path planning uses end-to-end output instead of lane lines at all times
-  * Reduced ping pong
+  * Reduced ping-pong
   * Improved lane centering
 * New lateral controller based on physical wheel torque model
   * Much smoother control that's consistent across the speed range
@@ -179,11 +179,11 @@ Version 0.8.15 (2022-07-20)
 Version 0.8.14 (2022-06-01)
 ========================
  * New driving model
-   * Bigger model, using both of comma three's road-facing cameras
+   * Bigger model, using both of Comma three's road-facing cameras
    * Better at cut-in detection and tight turns
  * New driver monitoring model
    * Tweaked network structure to improve output resolution for DSP
-   * Fixed bug in quantization aware training to reduce quantizing errors
+   * Fixed bug in quantization-aware training to reduce quantizing errors
    * Resulted in 7x less MSE and no more random biases at runtime
  * Added toggle to disable disengaging on the accelerator pedal
  * comma body support
@@ -199,13 +199,13 @@ Version 0.8.13 (2022-02-18)
 ========================
  * Improved driver monitoring
    * Re-tuned driver pose learner for relaxed driving positions
-   * Added reliance on driving model to be more scene adaptive
+   * Added reliance on driving model to be more scene-adaptive
    * Matched strictness between comma two and comma three
  * Improved performance in turns by compensating for the road bank angle
  * Improved camera focus on the comma two
  * AGNOS 4
    * ADB support
-   * improved cell auto configuration
+   * improved cell auto-configuration
  * NEOS 19
    * package updates
    * stability improvements
@@ -222,9 +222,9 @@ Version 0.8.12 (2021-12-15)
  * New driving model
    * Improved behavior around exits
    * Better pose accuracy at high speeds, allowing max speed of 90mph
-   * Fully incorporated comma three data into all parts of training stack
+   * Fully incorporated comma three data into all parts of the training stack
  * Improved follow distance
- * Better longitudinal policy, especially in low speed traffic
+ * Better longitudinal policy, especially in low-speed traffic
  * New alert sounds
  * AGNOS 3
    * Display burn in mitigation
@@ -240,7 +240,7 @@ Version 0.8.11 (2021-11-29)
 ========================
  * Support for CAN FD on the red panda
  * Support for an external panda on the comma three
- * Navigation: Show more detailed instructions when approaching maneuver
+ * Navigation: Show more detailed instructions when approaching the maneuver
  * Fixed occasional steering faults on GM cars thanks to jyoung8607!
  * Nissan ECU firmware fingerprinting thanks to robin-reckmann, martinl, and razem-io!
  * Cadillac Escalade ESV 2016 support thanks to Gibby!
@@ -257,7 +257,7 @@ Version 0.8.10 (2021-11-01)
    * Fixed lead training making lead predictions significantly more accurate
    * Fixed several localizer dataset bugs and loss function bugs, overall improved accuracy
  * New driver monitoring model
-   * Trained on latest data from both comma two and comma three
+   * Trained on the latest data from both comma two and comma three
    * Increased model field of view by 40% on comma three
    * Improved model stability on masked users
    * Improved pose prediction with reworked ground-truth stack
@@ -265,7 +265,7 @@ Version 0.8.10 (2021-11-01)
  * Combined longitudinal MPCs
    * All longitudinal planning now happens in a single MPC system
    * Fixed instability in MPC problem to prevent sporadic CPU usage
- * AGNOS 2: minor stability improvements and builder repo open sourced
+ * AGNOS 2: minor stability improvements and builder repo open-sourced
  * tools: new and improved replay thanks to deanlee!
  * Moved community-supported cars outside of the Community Features toggle
  * Improved FW fingerprinting reliability for Hyundai/Kia/Genesis
@@ -300,7 +300,7 @@ Version 0.8.8 (2021-08-27)
  * Improved longitudinal control on Honda Nidec cars
  * Hyundai Kona Hybrid 2020 support thanks to haram-KONA!
  * Hyundai Sonata Hybrid 2021 support thanks to Matt-Wash-Burn!
- * Kia Niro Hybrid 2021 support thanks to tetious!
+ * Kia Niro Hybrid 2021 support thanks to Tetious!
 
 Version 0.8.7 (2021-07-31)
 ========================
@@ -314,7 +314,7 @@ Version 0.8.6 (2021-07-21)
    * Refactor planner output API to be more readable and verbose
    * Planners now output desired trajectories for speed, acceleration, curvature, and curvature rate
    * Use MPC for longitudinal planning when no lead car is present, makes accel and decel smoother
- * Remove "CHECK DRIVER FACE VISIBILITY" warning
+ * Remove the "CHECK DRIVER FACE VISIBILITY" warning
  * Fixed cruise fault on some TSS2.5 Camrys and international Toyotas
  * Hyundai Elantra Hybrid 2021 support thanks to tecandrew!
  * Hyundai Ioniq PHEV 2020 support thanks to YawWashout!
@@ -368,7 +368,7 @@ Version 0.8.2 (2021-02-26)
  * Use model points directly in MPC (no more polyfits), making lateral planning more accurate
  * Use model heading prediction for smoother lateral control
  * Smarter actuator delay compensation
- * Improve qcamera resolution for improved video in explorer and connect
+ * Improve qcamera resolution for improved video in Explorer and connect
  * Adjust maximum engagement speed to better fit the model's training distribution
  * New driver monitoring model trained with 3x more diverse data
  * Improved face detection with masks
@@ -385,10 +385,10 @@ Version 0.8.1 (2020-12-21)
  * Original EON is deprecated, upgrade to comma two
  * Better model performance in heavy rain
  * Better lane positioning in turns
- * Fixed bug where model would cut turns on empty roads at night
+ * Fixed bug where the model would cut turns on empty roads at night
  * Fixed issue where some Toyotas would not completely stop thanks to briskspirit!
  * Toyota Camry 2021 with TSS2.5 support
- * Hyundai Ioniq Electric 2020 support thanks to baldwalker!
+ * Hyundai Ioniq Electric 2020 support thanks to Baldwalker!
 
 Version 0.8.0 (2020-11-30)
 ========================
@@ -416,7 +416,7 @@ Version 0.7.9 (2020-10-09)
 ========================
  * Improved car battery power management
  * Improved updater robustness
- * Improved realtime performance
+ * Improved real-time performance
  * Reduced UI and modeld lags
  * Increased torque on 2020 Hyundai Sonata and Palisade
 
@@ -430,7 +430,7 @@ Version 0.7.8 (2020-08-19)
 Version 0.7.7 (2020-07-20)
 ========================
  * White panda is no longer supported, upgrade to comma two or black panda
- * Improved vehicle model estimation using high precision localizer
+ * Improved vehicle model estimation using high-precision localizer
  * Improved thermal management on comma two
  * Improved autofocus for road-facing camera
  * Improved noise performance for driver-facing camera
@@ -438,7 +438,7 @@ Version 0.7.7 (2020-07-20)
  * Fix GM ignition detection
  * Code cleanup and smaller release sizes
  * Hyundai Sonata 2020 promoted to officially supported car
- * Hyundai Ioniq Electric Limited 2019 and Ioniq SE 2020 support thanks to baldwalker!
+ * Hyundai Ioniq Electric Limited 2019 and Ioniq SE 2020 support thanks to Baldwalker!
  * Subaru Forester 2019 and Ascent 2019 support thanks to martinl!
 
 Version 0.7.6.1 (2020-06-16)
@@ -455,11 +455,11 @@ Version 0.7.6 (2020-06-05)
 
 Version 0.7.5 (2020-05-13)
 ========================
- * Right-Hand Drive support for both driving and driver monitoring!
+ * Right-hand drive support for both driving and driver monitoring!
  * New driving model: improved at sharp turns and lead speed estimation
  * New driver monitoring model: overall improvement on comma two
  * Driver camera preview in settings to improve mounting position
- * Added support for many Hyundai, Kia, Genesis models thanks to xx979xx!
+ * Added support for many Hyundai, Kia, and Genesis models thanks to xx979xx!
  * Improved lateral tuning for 2020 Toyota Rav 4 (hybrid)
 
 Version 0.7.4 (2020-03-20)
@@ -471,7 +471,7 @@ Version 0.7.4 (2020-03-20)
  * Improved lateral control on VW Golf: 20% more steering torque
  * Fixed bug where some 2017 and 2018 Toyota C-HR would use the wrong steering angle sensor
  * Support for Honda Insight thanks to theantihero!
- * Code cleanup in car abstraction layers and ui
+ * Code cleanup in car abstraction layers and UI
 
 Version 0.7.3 (2020-02-21)
 ========================
@@ -482,11 +482,11 @@ Version 0.7.3 (2020-02-21)
 
 Version 0.7.2 (2020-02-07)
 ========================
- * ECU firmware version based fingerprinting for Honda & Toyota
+ * ECU firmware version-based fingerprinting for Honda & Toyota
  * New driving model: improved path prediction during turns and lane changes and better lead speed tracking
- * Improve driver monitoring under extreme lighting and add low accuracy alert
+ * Improve driver monitoring under extreme lighting and add low-accuracy alert
  * Support for 2019 Rav4 Hybrid thanks to illumiN8i!
- * Support for 2016, 2017 and 2020 Lexus RX thanks to illumiN8i!
+ * Support for 2016, 2017, and 2020 Lexus RX thanks to illumiN8i!
  * Support for 2020 Chrysler Pacifica Hybrid thanks to adhintz!
 
 Version 0.7.1 (2020-01-20)
@@ -494,16 +494,16 @@ Version 0.7.1 (2020-01-20)
  * comma two support!
  * Lane Change Assist above 45 mph!
  * Replace zmq with custom messaging library, msgq!
- * Supercombo model: calibration and driving models are combined for better lead estimate
+ * Supercombo model: calibration and driving models are combined for a better lead estimate
  * More robust updater thanks to jyoung8607! Requires NEOS update
- * Improve low speed ACC tuning
+ * Improve low-speed ACC tuning
 
 Version 0.7 (2019-12-13)
 ========================
  * Move to SCons build system!
  * Add Lane Departure Warning (LDW) for all supported vehicles!
- * NEOS update: increase wifi speed thanks to jyoung8607!
- * Adaptive driver monitoring based on scene
+ * NEOS update: increase Wi-Fi speed thanks to jyoung8607!
+ * Adaptive driver monitoring based on the scene
  * New driving model trained end-to-end: improve lane lines and lead detection
  * Smarter torque limit alerts for all cars
  * Improve GM longitudinal control: proper computations for 15Hz radar
@@ -517,12 +517,12 @@ Version 0.6.6 (2019-11-05)
 ========================
  * Volkswagen support thanks to jyoung8607!
  * Toyota Corolla Hybrid with TSS 2.0 support thanks to u8511049!
- * Lexus ES with TSS 2.0 support thanks to energee!
+ * Lexus ES with TSS 2.0 support thanks to Energee!
  * Fix GM ignition detection and lock safety mode not required anymore
  * Log panda firmware and dongle ID thanks to martinl!
  * New driving model: improve path prediction and lead detection
  * New driver monitoring model, 4x smaller and running on DSP
- * Display an alert and don't start openpilot if panda has wrong firmware
+ * Display an alert and don't start openpilot if Panda has wrong firmware
  * Fix bug preventing EON from terminating processes after a drive
  * Remove support for Toyota giraffe without the 120Ohm resistor
 
@@ -532,10 +532,10 @@ Version 0.6.5 (2019-10-07)
  * comma Harness support!
  * New driving model: improve path prediction
  * New driver monitoring model: more accurate face and eye detection
- * Redesign offroad screen to display updates and alerts
+ * Redesign the offroad screen to display updates and alerts
  * Increase maximum allowed acceleration
  * Prevent car 12V battery drain by cutting off EON charge after 3 days of no drive
- * Lexus CT Hybrid support thanks to thomaspich!
+ * Lexus CT Hybrid support thanks to Thomaspich!
  * Louder chime for critical alerts
  * Add toggle to switch to dashcam mode
  * Fix "invalid vehicle params" error on DSU-less Toyota
@@ -545,9 +545,9 @@ Version 0.6.4 (2019-09-08)
  * Forward stock AEB for Honda Nidec
  * Improve lane centering on banked roads
  * Always-on forward collision warning
- * Always-on driver monitoring, except for right hand drive countries
+ * Always-on driver monitoring, except for right-hand drive countries
  * Driver monitoring learns the user's normal driving position
- * Honda Fit support thanks to energee!
+ * Honda Fit support thanks to Energee!
  * Lexus IS support
 
 Version 0.6.3 (2019-08-12)
@@ -557,9 +557,9 @@ Version 0.6.3 (2019-08-12)
  * Improve path prediction with new driving model
  * Improve lane positioning with wide lanes and exits
  * Improve lateral control on RAV4
- * Slow down for turns using model
- * Open sourced regression test to verify outputs against reference logs
- * Open sourced regression test to sanity check all car models
+ * Slow down for turns using the model
+ * Open-sourced regression test to verify outputs against reference logs
+ * Open-sourced regression test to sanity-check all car models
 
 Version 0.6.2 (2019-07-29)
 ========================
@@ -569,7 +569,7 @@ Version 0.6.2 (2019-07-29)
  * Strongly reduce cases of braking due to false leads
  * Better lead tracking around turns
  * Improve cut-in prediction by using neural network
- * Improve lateral control on Toyota Camry and C-HR thanks to zorrobyte!
+ * Improve lateral control on Toyota Camry and C-HR thanks to Zorrobyte!
  * Fix unintended openpilot disengagements on Jeep thanks to adhintz!
  * Fix delayed transition to offroad when car is turned off
 
@@ -578,7 +578,7 @@ Version 0.6.1 (2019-07-21)
  * Remote SSH with comma prime and [ssh.comma.ai](https://ssh.comma.ai)
  * Panda code Misra-c2012 compliance, tested against cppcheck coverage
  * Lockout openpilot after 3 terminal alerts for driver distracted or unresponsive
- * Toyota Sienna support thanks to wocsor!
+ * Toyota Sienna support thanks to Wocsor!
 
 Version 0.6 (2019-07-01)
 ========================
@@ -589,7 +589,7 @@ Version 0.6 (2019-07-01)
  * loggerd and sensord are open source, every line of openpilot is now open
  * Panda safety code is MISRA compliant and ships with a signed version on release2
  * New NEOS is 500MB smaller and has a reproducible usr/pipenv
- * Lexus ES Hybrid support thanks to wocsor!
+ * Lexus ES Hybrid support thanks to Wocsor!
  * Improve tuning for supported Toyota with TSS 2.0
  * Various other stability improvements
 
@@ -608,7 +608,7 @@ Version 0.5.12 (2019-05-16)
  * Improve lateral control for the Prius and Prius Prime
  * Compress logs before writing to disk
  * Remove old driving data when storage reaches 90% full
- * Fix small offset in following distance
+ * Fix a small offset in the following distance
  * Various small CPU optimizations
  * Improve offroad power consumption: require NEOS Update
  * Add default speed limits for Estonia thanks to martinl!
@@ -625,9 +625,9 @@ Version 0.5.11 (2019-04-17)
  * Fix bug in controls with new angle-offset learner in MPC
  * Reduce cpu consumption of ubloxd by rewriting it in C++
  * Improve driver monitoring model and face detection
- * Improve performance of visiond and ui
+ * Improve performance of visiond and UI
  * Honda Passport 2019 support
- * Lexus RX Hybrid 2019 support thanks to schomems!
+ * Lexus RX Hybrid 2019 support thanks to Schomems!
  * Improve road selection heuristic in mapd
  * Add Lane Departure Warning to dashboard for Toyota thanks to arne182
 
@@ -635,25 +635,25 @@ Version 0.5.10 (2019-03-19)
 ========================
  * Self-tuning vehicle parameters: steering offset, tire stiffness and steering ratio
  * Improve longitudinal control at low speed when lead vehicle harshly decelerates
- * Fix panda bug going unexpectedly in DCP mode when EON is connected
+ * Fix the panda bug going unexpectedly in DCP mode when EON is connected
  * Reduce white panda power consumption by 500mW when EON is disconnected by turning off WIFI
  * New Driver Monitoring Model
  * Support QR codes for login using comma connect
  * Refactor comma pedal FW and use CRC-8 checksum algorithm for safety. Reflashing pedal is required.
-   Please see `#hw-pedal` on [discord](discord.comma.ai) for assistance updating comma pedal.
+   Please see `#hw-pedal` on [discord](discord.comma.ai) for assistance updating the comma pedal.
  * Additional speed limit rules for Germany thanks to arne182
  * Allow negative speed limit offsets
 
 Version 0.5.9 (2019-02-10)
 ========================
  * Improve calibration using a dedicated neural network
- * Abstract planner in its own process to remove lags in controls process
+ * Abstract planner in its own process to remove lags in control process
  * Improve speed limits with country/region defaults by road type
  * Reduce mapd data usage with gzip thanks to eFiniLan
  * Zip log files in the background to reduce disk usage
- * Kia Optima support thanks to emmertex!
+ * Kia Optima support thanks to Emmertex!
  * Buick Regal 2018 support thanks to HOYS!
- * Comma pedal support for Toyota thanks to wocsor! Note: tuning needed and not maintained by comma
+ * Comma pedal support for Toyota thanks to Wocsor! Note: tuning needed and not maintained by comma
  * Chrysler Pacifica and Jeep Grand Cherokee support thanks to adhintz!
 
 Version 0.5.8 (2019-01-17)
@@ -662,7 +662,7 @@ Version 0.5.8 (2019-01-17)
  * Auto-slowdown for upcoming turns
  * Chrysler/Jeep/Fiat support thanks to adhintz!
  * Honda Civic 2019 support thanks to csouers!
- * Improve use of car display in Toyota thanks to arne182!
+ * Improve the use of car display in Toyota thanks to arne182!
  * No data upload when connected to Android or iOS hotspots and "Enable Upload Over Cellular" setting is off
  * EON stops charging when 12V battery drops below 11.8V
 
@@ -671,7 +671,7 @@ Version 0.5.7 (2018-12-06)
  * Speed limit from OpenStreetMap added to UI
  * Highlight speed limit when speed exceeds road speed limit plus a delta
  * Option to limit openpilot max speed to road speed limit plus a delta
- * Cadillac ATS support thanks to vntarasov!
+ * Cadillac ATS support thanks to Vntarasov!
  * GMC Acadia support thanks to CryptoKylan!
  * Decrease GPU power consumption
  * NEOSv8 autoupdate
@@ -679,37 +679,37 @@ Version 0.5.7 (2018-12-06)
 Version 0.5.6 (2018-11-16)
 ========================
  * Refresh settings layout and add feature descriptions
- * In Honda, keep stock camera on for logging and extra stock features; new openpilot giraffe setting is 0111!
- * In Toyota, option to keep stock camera on for logging and extra stock features (e.g. AHB); 120Ohm resistor required on giraffe.
+ * In Honda, keep the stock camera on for logging and extra stock features; the new openpilot giraffe setting is 0111!
+ * In Toyota, option to keep stock camera on for logging and extra stock features (e.g. AHB); 120Ohm resistor is required on giraffe.
  * Improve camera calibration stability
  * More tuning to Honda positive accelerations
  * Reduce brake pump use on Hondas
- * Chevrolet Malibu support thanks to tylergets!
+ * Chevrolet Malibu support thanks to Tylergets!
  * Holden Astra support thanks to AlexHill!
 
 Version 0.5.5 (2018-10-20)
 ========================
  * Increase allowed Honda positive accelerations
  * Fix sporadic unexpected braking when passing semi-trucks in Toyota
- * Fix gear reading bug in Hyundai Elantra thanks to emmertex!
+ * Fix gear reading bug in Hyundai Elantra thanks to Emmertex!
 
 Version 0.5.4 (2018-09-25)
 ========================
  * New Driving Model
  * New Driver Monitoring Model
  * Improve longitudinal mpc in mid-low speed braking
- * Honda Accord hybrid support thanks to energee!
+ * Honda Accord hybrid support thanks to Energee!
  * Ship mpc binaries and sensibly reduce build time
  * Calibration more stable
- * More Hyundai and Kia cars supported thanks to emmertex!
- * Various GM Volt improvements thanks to vntarasov!
+ * More Hyundai and Kia cars supported thanks to Emmertex!
+ * Various GM Volt improvements thanks to Vntarasov!
 
 Version 0.5.3 (2018-09-03)
 ========================
  * Hyundai Santa Fe support!
- * Honda Pilot 2019 support thanks to energee!
- * Toyota Highlander support thanks to daehahn!
- * Improve steering tuning for Honda Odyssey
+ * Honda Pilot 2019 support thanks to Energee!
+ * Toyota Highlander support thanks to Daehahn!
+ * Improve steering tuning for the Honda Odyssey
 
 Version 0.5.2 (2018-08-16)
 ========================
@@ -746,7 +746,7 @@ Version 0.4.7.2 (2018-06-25)
 Version 0.4.7.1 (2018-06-18)
 ==========================
  * Fix Acura ILX steer faults
- * Fix bug in mock car
+ * Fix bug in a mock car
 
 Version 0.4.7 (2018-06-15)
 ==========================
@@ -759,7 +759,7 @@ Version 0.4.7 (2018-06-15)
 
 Version 0.4.6 (2018-05-18)
 ==========================
- * NEOSv6 required! Will autoupdate
+ * NEOSv6 required! Will auto-update
  * Stability improvements
  * Fix all memory leaks
  * Update C++ compiler to clang6
@@ -770,7 +770,7 @@ Version 0.4.5 (2018-04-27)
  * Release notes added to the update popup
  * Improve auto shut-off logic to disallow empty battery
  * Added onboarding instructions
- * Include orbd, the first piece of new calibration algorithm
+ * Include orbd, the first piece of the new calibration algorithm
  * Show remaining upload data instead of file numbers
  * Fix UI bugs
  * Fix memory leaks
@@ -778,12 +778,12 @@ Version 0.4.5 (2018-04-27)
 Version 0.4.4 (2018-04-13)
 ==========================
  * EON are flipped! Flip your EON's mount!
- * Alpha Honda Ridgeline support thanks to energee!
+ * Alpha Honda Ridgeline support thanks to Energee!
  * Support optional front camera recording
  * Upload over cellular toggle now applies to all files, not just video
- * Increase acceleration when closing lead gap
+ * Increase acceleration when closing the lead gap
  * User now prompted for future updates
- * NEO no longer supported :(
+ * NEO is no longer supported :(
 
 Version 0.4.3.2 (2018-03-29)
 ============================
@@ -798,7 +798,7 @@ Version 0.4.3.1 (2018-03-19)
 ============================
  * Improve autofocus
  * Add check for MPC solution error
- * Make first distracted warning visual only
+ * Make the first distracted warning visual only
 
 Version 0.4.3 (2018-03-13)
 ==========================
@@ -807,9 +807,9 @@ Version 0.4.3 (2018-03-13)
  * Grey panda works in Waze
  * Add alpha support for 2017 Honda Pilot
  * Slight increase in acceleration response from stop
- * Switch CAN sending to use CANPacker
+ * Switch CAN be sending to use CANPacker
  * Fix pulsing acceleration regression on Honda
- * Fix openpilot bugs when stock system is in use
+ * Fix openpilot bugs when the stock system is in use
  * Change starting logic for chffrplus to use battery voltage
 
 Version 0.4.2 (2018-02-05)
@@ -846,13 +846,13 @@ Version 0.3.9 (2017-11-21)
  * Add alpha support for 2017 Toyota Prius
  * Improved longitudinal control using model predictive control
  * Enable Forward Collision Warning
- * Acura ILX now maintains openpilot engaged at standstill when brakes are applied
+ * Acura ILX now maintains openpilot engaged at a standstill when brakes are applied
 
 Version 0.3.8.2 (2017-10-30)
 ==========================
  * Add alpha support for 2017 Toyota RAV4
  * Smoother lateral control
- * Stay silent if stock system is connected through giraffe
+ * Stay silent if the stock system is connected through Giraffe
  * Minor bug fixes
 
 Version 0.3.7 (2017-09-30)
@@ -860,16 +860,16 @@ Version 0.3.7 (2017-09-30)
  * Improved lateral control using model predictive control
  * Improved lane centering
  * Improved GPS
- * Reduced tendency of path deviation near right side exits
+ * Reduced tendency of path deviation near right-side exits
  * Enable engagement while the accelerator pedal is pressed
- * Enable engagement while the brake pedal is pressed, when stationary and with lead vehicle within 5m
- * Disable engagement when park brake or brake hold are active
+ * Enable engagement while the brake pedal is pressed, when stationary and with the lead vehicle within 5m
+ * Disable engagement when park brake or brake hold is active
  * Fixed sporadic longitudinal pulsing in Civic
  * Cleanups to vehicle interface
 
 Version 0.3.6.1 (2017-08-15)
 ============================
- * Mitigate low speed steering oscillations on some vehicles
+ * Mitigate low-speed steering oscillations on some vehicles
  * Include board steering check for CR-V
 
 Version 0.3.6 (2017-08-08)
@@ -888,7 +888,7 @@ Version 0.3.5 (2017-07-30)
 Version 0.3.4 (2017-07-28)
 ==========================
  * Improved model trained on more data
- * Much improved controls tuning
+ * Much improved control tuning
  * Performance improvements
  * Bugfixes and improvements to calibration
  * Driving log can play back video
@@ -897,7 +897,7 @@ Version 0.3.4 (2017-07-28)
 Version 0.3.3  (2017-06-28)
 ===========================
  * Improved model trained on more data
- * Alpha CR-V support thanks to energee and johnnwvs!
+ * Alpha CR-V support thanks to Energee and Johnnwvs!
  * Using the opendbc project for DBC files
  * Minor performance improvements
  * UI update thanks to pjlao307
@@ -907,7 +907,7 @@ Version 0.3.3  (2017-06-28)
 Version 0.3.2  (2017-05-22)
 ===========================
  * Minor stability bugfixes
- * Added metrics and rear view mirror disable to settings
+ * Added metrics and rearview mirror disabled to settings
  * Update model with more crowdsourced data
 
 Version 0.3.1  (2017-05-17)
@@ -978,7 +978,7 @@ Version 0.2  (2016-12-12)
  * Shipped plant model and testing maneuvers
  * visiond exits more gracefully now
  * Hardware encoder in visiond should always init
- * ui now turns off the screen after 30 seconds
+ * UI now turns off the screen after 30 seconds
  * Switch to openpilot release branch for future releases
  * Added preliminary Docker container to run tests on PC
 
