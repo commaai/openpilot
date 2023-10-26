@@ -17,7 +17,7 @@ Table of Contents
 What is openpilot?
 ------
 
-[openpilot](http://github.com/commaai/openpilot) is an open source driver assistance system. Currently, openpilot performs the functions of Adaptive Cruise Control (ACC), Automated Lane Centering (ALC), Forward Collision Warning (FCW), and Lane Departure Warning (LDW) for a growing variety of [supported car makes, models, and model years](docs/CARS.md). In addition, while openpilot is engaged, a camera-based Driver Monitoring (DM) feature alerts distracted and asleep drivers. See more about [the vehicle integration](docs/INTEGRATION.md) and [limitations](docs/LIMITATIONS.md).
+[openpilot](http://github.com/commaai/openpilot) is an open-source driver assistance system. Currently, openpilot performs the functions of Adaptive Cruise Control (ACC), Automated Lane Centering (ALC), Forward Collision Warning (FCW), and Lane Departure Warning (LDW) for a growing variety of [supported car makes, models, and model years](docs/CARS.md). In addition, while openpilot is engaged, a camera-based Driver Monitoring (DM) feature alerts distracted and asleep drivers. See more about [the vehicle integration](docs/INTEGRATION.md) and [limitations](docs/LIMITATIONS.md).
 
 <table>
   <tr>
@@ -56,7 +56,7 @@ Running on PC
 
 All openpilot services can run as usual on a PC without requiring special hardware or a car. You can also run openpilot on recorded or simulated data to develop or experiment with openpilot.
 
-With openpilot's tools, you can plot logs, replay drives, and watch the full-res camera streams. See [the tools README](tools/README.md) for more information.
+With Openpilot's tools, you can plot logs, replay drives, and watch the full-res camera streams. See [the tools README](tools/README.md) for more information.
 
 You can also run openpilot in simulation [with the CARLA simulator](tools/sim/README.md). This allows openpilot to drive around a virtual car on your Ubuntu machine. The whole setup should only take a few minutes but does require a decent GPU.
 
@@ -80,19 +80,19 @@ User Data and comma Account
 
 By default, openpilot uploads the driving data to our servers. You can also access your data through [comma connect](https://connect.comma.ai/). We use your data to train better models and improve openpilot for everyone.
 
-openpilot is open source software: the user is free to disable data collection if they wish to do so.
+openpilot is open-source software: the user is free to disable data collection if they wish to do so.
 
 openpilot logs the road-facing cameras, CAN, GPS, IMU, magnetometer, thermal sensors, crashes, and operating system logs.
 The driver-facing camera is only logged if you explicitly opt-in in settings. The microphone is not recorded.
 
-By using openpilot, you agree to [our Privacy Policy](https://comma.ai/privacy). You understand that use of this software or its related services will generate certain types of user data, which may be logged and stored at the sole discretion of comma. By accepting this agreement, you grant an irrevocable, perpetual, worldwide right to comma for the use of this data.
+By using openpilot, you agree to [our Privacy Policy](https://comma.ai/privacy). You understand that the use of this software or its related services will generate certain types of user data, which may be logged and stored at the sole discretion of the comma. By accepting this agreement, you grant an irrevocable, perpetual, worldwide right to comma for the use of this data.
 
 Safety and Testing
 ----
 
 * openpilot observes ISO26262 guidelines, see [SAFETY.md](docs/SAFETY.md) for more details.
 * openpilot has software-in-the-loop [tests](.github/workflows/selfdrive_tests.yaml) that run on every commit.
-* The code enforcing the safety model lives in panda and is written in C, see [code rigor](https://github.com/commaai/panda#code-rigor) for more details.
+* The code enforcing the safety model lives in Panda and is written in C, see [code rigor](https://github.com/commaai/panda#code-rigor) for more details.
 * panda has software-in-the-loop [safety tests](https://github.com/commaai/panda/tree/master/tests/safety).
 * Internally, we have a hardware-in-the-loop Jenkins test suite that builds and unit tests the various processes.
 * panda has additional hardware-in-the-loop [tests](https://github.com/commaai/panda/blob/master/Jenkinsfile).
@@ -102,7 +102,7 @@ Directory Structure
 ------
     .
     ├── cereal              # The messaging spec and libs used for all logs
-    ├── common              # Library like functionality we've developed here
+    ├── common              # Library-like functionality we've developed here
     ├── docs                # Documentation
     ├── opendbc             # Files showing how to interpret data from cars
     ├── panda               # Code used to communicate on CAN
@@ -119,7 +119,7 @@ Directory Structure
         ├── assets          # Fonts, images, and sounds for UI
         ├── athena          # Allows communication with the app
         ├── boardd          # Daemon to talk to the board
-        ├── car             # Car specific code to read states and control actuators
+        ├── car             # Car-specific code to read states and control actuators
         ├── controls        # Planning and controls
         ├── debug           # Tools to help you debug and do car ports
         ├── locationd       # Precise localization and vehicle parameter estimation
@@ -135,9 +135,9 @@ Licensing
 
 openpilot is released under the MIT license. Some parts of the software are released under other licenses as specified.
 
-Any user of this software shall indemnify and hold harmless Comma.ai, Inc. and its directors, officers, employees, agents, stockholders, affiliates, subcontractors and customers from and against all allegations, claims, actions, suits, demands, damages, liabilities, obligations, losses, settlements, judgments, costs and expenses (including without limitation attorneys’ fees and costs) which arise out of, relate to or result from any use of this software by user.
+Any user of this software shall indemnify and hold harmless Comma.ai, Inc. and its directors, officers, employees, agents, stockholders, affiliates, subcontractors, and customers from and against all allegations, claims, actions, suits, demands, damages, liabilities, obligations, losses, settlements, judgments, costs and expenses (including without limitation attorneys’ fees and costs) which arise out of, relate to or result from any use of this software by the user.
 
-**THIS IS ALPHA QUALITY SOFTWARE FOR RESEARCH PURPOSES ONLY. THIS IS NOT A PRODUCT.
+**THIS IS ALPHA-QUALITY SOFTWARE FOR RESEARCH PURPOSES ONLY. THIS IS NOT A PRODUCT.
 YOU ARE RESPONSIBLE FOR COMPLYING WITH LOCAL LAWS AND REGULATIONS.
 NO WARRANTY EXPRESSED OR IMPLIED.**
 
