@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from pympler.tracker import SummaryTracker
 import json
 import os
 import requests
@@ -13,6 +12,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from multiprocessing import Process
+from pympler.tracker import SummaryTracker
 from unittest import mock
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException

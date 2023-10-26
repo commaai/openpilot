@@ -3472,8 +3472,6 @@ files = [
     {file = "pygame-2.5.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0e24d05184e4195fe5ebcdce8b18ecb086f00182b9ae460a86682d312ce8d31f"},
     {file = "pygame-2.5.2-cp311-cp311-win32.whl", hash = "sha256:f02c1c7505af18d426d355ac9872bd5c916b27f7b0fe224749930662bea47a50"},
     {file = "pygame-2.5.2-cp311-cp311-win_amd64.whl", hash = "sha256:6d58c8cf937815d3b7cdc0fa9590c5129cb2c9658b72d00e8a4568dea2ff1d42"},
-    {file = "pygame-2.5.2-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:1a2a43802bb5e89ce2b3b775744e78db4f9a201bf8d059b946c61722840ceea8"},
-    {file = "pygame-2.5.2-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:1c289f2613c44fe70a1e40769de4a49c5ab5a29b9376f1692bb1a15c9c1c9bfa"},
     {file = "pygame-2.5.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:074aa6c6e110c925f7f27f00c7733c6303407edc61d738882985091d1eb2ef17"},
     {file = "pygame-2.5.2-cp312-cp312-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:fe0228501ec616779a0b9c4299e837877783e18df294dd690b9ab0eed3d8aaab"},
     {file = "pygame-2.5.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:31648d38ecdc2335ffc0e38fb18a84b3339730521505dac68514f83a1092e3f4"},
@@ -3612,6 +3610,17 @@ files = [
 
 [package.dependencies]
 cffi = ">=1.0.0"
+
+[[package]]
+name = "pympler"
+version = "1.0.1"
+description = "A development tool to measure, monitor and analyze the memory behavior of Python objects."
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "Pympler-1.0.1-py3-none-any.whl", hash = "sha256:d260dda9ae781e1eab6ea15bacb84015849833ba5555f141d2d9b7b7473b307d"},
+    {file = "Pympler-1.0.1.tar.gz", hash = "sha256:993f1a3599ca3f4fcd7160c7545ad06310c9e12f70174ae7ae8d4e25f6c5d3fa"},
+]
 
 [[package]]
 name = "pyopencl"
@@ -5179,4 +5188,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "acb0688e485872194c21e1313e20fc4a67084893b26e9b8cde1d66e3fdbb1282"
+content-hash = "9538e574ca03437994b7b0a0b6cb41842256162a2f14abfd0da26587709f145a"
