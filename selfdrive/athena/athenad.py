@@ -292,7 +292,6 @@ def _do_upload(upload_item: UploadItem, callback: Optional[Callable] = None) -> 
   with open(path, "rb") as f:
     content = f.read()
     if compress:
-      print("Compressing", path)
       cloudlog.event("athena.upload_handler.compress", fn=path, fn_orig=upload_item.path)
       content = bz2.compress(content)
 
