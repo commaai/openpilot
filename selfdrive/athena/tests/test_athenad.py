@@ -9,6 +9,7 @@ import queue
 import unittest
 from dataclasses import asdict, replace
 from datetime import datetime, timedelta
+from parameterized import parameterized
 from typing import Optional
 
 from multiprocessing import Process
@@ -138,31 +139,29 @@ class TestAthenadMethods(unittest.TestCase):
     if fn.endswith('.bz2'):
       self.assertEqual(athenad.strip_bz2_extension(fn), fn[:-4])
 
-
+  @parameterized.expand([(True,), (False,)])
   @with_http_server
-  def test_do_upload(self, host):
+  def test_do_upload(self, compress, host):
     fn = self._create_file('qlog', data=os.urandom(10000 * 1024))
 
-    for compress in (True, False):
-      with self.subTest(compress=compress):
-        # warm up object tracker
-        tracker = SummaryTracker()
-        for _ in range(5):
-          tracker.diff()
+    # warm up object tracker
+    tracker = SummaryTracker()
+    for _ in range(5):
+      tracker.diff()
 
-        upload_fn = fn + ('.bz2' if compress else '')
-        item = athenad.UploadItem(path=upload_fn, url="http://localhost:1238", headers={}, created_at=int(time.time()*1000), id='')
-        with self.assertRaises(requests.exceptions.ConnectionError):
-          athenad._do_upload(item)
+    upload_fn = fn + ('.bz2' if compress else '')
+    item = athenad.UploadItem(path=upload_fn, url="http://localhost:1238", headers={}, created_at=int(time.time()*1000), id='')
+    with self.assertRaises(requests.exceptions.ConnectionError):
+      athenad._do_upload(item)
 
-        item = athenad.UploadItem(path=upload_fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='')
-        resp = athenad._do_upload(item)
-        self.assertEqual(resp.status_code, 201)
+    item = athenad.UploadItem(path=upload_fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='')
+    resp = athenad._do_upload(item)
+    self.assertEqual(resp.status_code, 201)
 
-        # assert memory cleaned up
-        for _type, num_objects, total_size in tracker.diff():
-          with self.subTest(_type=_type):
-            self.assertLess(total_size / 1024, 10, f'Object {_type} ({num_objects=}) grew larger than 10 kB while uploading file')
+    # assert memory cleaned up
+    for _type, num_objects, total_size in tracker.diff():
+      with self.subTest(_type=_type):
+        self.assertLess(total_size / 1024, 10, f'Object {_type} ({num_objects=}) grew larger than 10 kB while uploading file')
 
   @with_http_server
   def test_uploadFileToUrl(self, host):
