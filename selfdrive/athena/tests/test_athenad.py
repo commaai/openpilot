@@ -13,7 +13,6 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from multiprocessing import Process
-from pathlib import Path
 from unittest import mock
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
@@ -62,9 +61,7 @@ class TestAthenadMethods(unittest.TestCase):
     fn = os.path.join(Paths.log_root() if parent is None else parent, file)
     os.makedirs(os.path.dirname(fn), exist_ok=True)
     with open(fn, 'wb') as f:
-      # f.write(b'\xff\x00' * 15000000)
       f.write(data)
-    # Path(fn).touch()
     return fn
 
 
@@ -141,23 +138,23 @@ class TestAthenadMethods(unittest.TestCase):
     if fn.endswith('.bz2'):
       self.assertEqual(athenad.strip_bz2_extension(fn), fn[:-4])
 
+
   @with_http_server
   def test_do_upload(self, host):
-    fn = self._create_file('qlog', data=os.urandom(10000000))
+    fn = self._create_file('qlog', data=os.urandom(10000 * 1024))
 
     # warm up object tracker
     tracker = SummaryTracker()
     for _ in range(5):
       tracker.diff()
 
-    for _ in range(1):
-      item = athenad.UploadItem(path=fn + '.bz2', url="http://localhost:1238", headers={}, created_at=int(time.time()*1000), id='')
-      with self.assertRaises(requests.exceptions.ConnectionError):
-        athenad._do_upload(item)
+    item = athenad.UploadItem(path=fn + '.bz2', url="http://localhost:1238", headers={}, created_at=int(time.time()*1000), id='')
+    with self.assertRaises(requests.exceptions.ConnectionError):
+      athenad._do_upload(item)
 
-      item = athenad.UploadItem(path=fn + '.bz2', url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='')
-      resp = athenad._do_upload(item)
-      self.assertEqual(resp.status_code, 201)
+    item = athenad.UploadItem(path=fn + '.bz2', url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='')
+    resp = athenad._do_upload(item)
+    self.assertEqual(resp.status_code, 201)
 
     # assert memory cleaned up
     for _type, num_objects, total_size in tracker.diff():
