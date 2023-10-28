@@ -10,7 +10,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
-#include <QSet>
 #include <QToolBar>
 #include <QTreeView>
 
@@ -35,20 +34,28 @@ public:
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
   int columnCount(const QModelIndex &parent = QModelIndex()) const override { return Column::DATA + 1; }
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
-  int rowCount(const QModelIndex &parent = QModelIndex()) const override { return msgs.size(); }
+  int rowCount(const QModelIndex &parent = QModelIndex()) const override { return items_.size(); }
   void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
   void setFilterStrings(const QMap<int, QString> &filters);
   void msgsReceived(const std::set<MessageId> *new_msgs, bool has_new_ids);
-  void filterAndSort();
+  void filterAndSort(bool force_reset = false);
   void dbcModified();
-  std::vector<MessageId> msgs;
+
+  struct Item {
+    MessageId id;
+    QString name;
+    QString node;
+    const CanData *data;
+    bool operator==(const Item &other) const { return id == other.id; }
+  };
+  std::vector<Item> items_;
 
 private:
-  void sortMessages(std::vector<MessageId> &new_msgs);
-  bool match(const MessageId &id);
+  void sortItems(std::vector<MessageListModel::Item> &items);
+  bool match(const MessageListModel::Item &id);
 
-  QMap<int, QString> filter_str;
-  QSet<uint32_t> dbc_address;
+  QMap<int, QString> filters_;
+  std::set<MessageId> dbc_messages_;
   int sort_column = 0;
   Qt::SortOrder sort_order = Qt::AscendingOrder;
 };
