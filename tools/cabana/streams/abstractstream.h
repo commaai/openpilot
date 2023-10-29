@@ -3,7 +3,6 @@
 #include <array>
 #include <atomic>
 #include <memory>
-#include <tuple>
 #include <unordered_map>
 #include <vector>
 
@@ -70,7 +69,6 @@ public:
   virtual double currentSec() const = 0;
   virtual double totalSeconds() const { return lastEventMonoTime() / 1e9 - routeStartTime(); }
   const CanData &lastMessage(const MessageId &id);
-  virtual VisionStreamType visionStreamType() const { return VISION_STREAM_ROAD; }
   virtual const Route *route() const { return nullptr; }
   virtual void setSpeed(float speed) {}
   virtual double getSpeed() { return 1; }
@@ -79,7 +77,6 @@ public:
   const MessageEventsMap &eventsMap() const { return events_; }
   const std::vector<const CanEvent *> &allEvents() const { return all_events_; }
   const std::vector<const CanEvent *> &events(const MessageId &id) const;
-  virtual const std::vector<std::tuple<double, double, TimelineType>> getTimeline() { return {}; }
 
 signals:
   void paused();

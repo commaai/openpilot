@@ -2,9 +2,11 @@
 
 #include <map>
 #include <memory>
+#include <set>
 
 #include <QHBoxLayout>
 #include <QSlider>
+#include <QTabBar>
 #include <QToolButton>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
@@ -70,6 +72,7 @@ protected:
   QWidget *createCameraWidget();
   QHBoxLayout *createPlaybackController();
   void loopPlaybackClicked();
+  void vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams);
 
   CameraWidget *cam_widget;
   double maximum_time = 0;
@@ -82,4 +85,5 @@ protected:
   ToolButton *skip_to_end_btn = nullptr;
   InfoLabel *alert_label = nullptr;
   Slider *slider = nullptr;
+  QTabBar *camera_tab = nullptr;
 };
