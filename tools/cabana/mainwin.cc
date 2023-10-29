@@ -21,6 +21,7 @@
 #include "tools/cabana/commands.h"
 #include "tools/cabana/streamselector.h"
 #include "tools/cabana/tools/findsignal.h"
+#include "tools/replay/replay.h"
 
 MainWindow::MainWindow() : QMainWindow() {
   createDockWindows();

@@ -13,6 +13,9 @@
 #include <QVBoxLayout>
 #include <QtConcurrent>
 
+#include "tools/cabana/streams/replaystream.h"
+#include "tools/cabana/util.h"
+
 const int MIN_VIDEO_HEIGHT = 100;
 const int THUMBNAIL_MARGIN = 3;
 

@@ -202,7 +202,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     return QVariant::fromValue((void*)(&item.data->dat));
   } else if (role == Qt::ToolTipRole && index.column() == Column::NAME) {
     auto msg = dbc()->msg(item.id);
-    auto tooltip = msg ? msg->name : UNTITLED;
+    auto tooltip = item.name;
     if (msg && !msg->comment.isEmpty()) tooltip += "<br /><span style=\"color:gray;\">" + msg->comment + "</span>";
     return tooltip;
   }

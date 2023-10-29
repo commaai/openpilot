@@ -10,9 +10,9 @@
 #include <QColor>
 #include <QDateTime>
 
+#include "cereal/messaging/messaging.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/util.h"
-#include "tools/replay/logreader.h"
 
 struct CanData {
   void compute(const MessageId &msg_id, const uint8_t *dat, const int size, double current_sec,
@@ -100,8 +100,9 @@ public:
   SourceSet sources;
 
 protected:
+  void mergeEvents(const std::vector<const CanEvent *> &events);
+  const CanEvent *newEvent(uint64_t mono_time, const cereal::CanData::Reader &c);
   void updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size);
-  void mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last);
   uint64_t lastEventMonoTime() const { return lastest_event_ts; }
 
   std::vector<const CanEvent *> all_events_;
@@ -114,7 +115,7 @@ private:
 
   MessageEventsMap events_;
   std::unordered_map<MessageId, CanData> last_msgs;
-  std::unique_ptr<MonotonicBuffer> event_buffer;
+  std::unique_ptr<MonotonicBuffer> event_buffer_;
 
   // Members accessed in multiple threads. (mutex protected)
   std::mutex mutex_;
