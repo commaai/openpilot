@@ -1,9 +1,9 @@
 #pragma once
 
+#include <QCheckBox>
 #include <algorithm>
 #include <memory>
 #include <set>
-#include <tuple>
 #include <vector>
 
 #include "common/prefix.h"
@@ -21,7 +21,6 @@ public:
   inline QString routeName() const override { return replay->route()->name(); }
   inline QString carFingerprint() const override { return replay->carFingerprint().c_str(); }
   double totalSeconds() const override { return replay->totalSeconds(); }
-  inline VisionStreamType visionStreamType() const override { return replay->hasFlag(REPLAY_FLAG_ECAM) ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD; }
   inline QDateTime beginDateTime() const { return replay->route()->datetime(); }
   inline double routeStartTime() const override { return replay->routeStartTime() / (double)1e9; }
   inline double currentSec() const override { return replay->currentSeconds(); }
@@ -31,7 +30,6 @@ public:
   inline Replay *getReplay() const { return replay.get(); }
   inline bool isPaused() const override { return replay->isPaused(); }
   void pause(bool pause) override;
-  inline const std::vector<std::tuple<double, double, TimelineType>> getTimeline() override { return replay->getTimeline(); }
   static AbstractOpenStreamWidget *widget(AbstractStream **stream);
 
 signals:
@@ -54,5 +52,5 @@ public:
 
 private:
   QLineEdit *route_edit;
-  QComboBox *choose_video_cb;
+  std::vector<QCheckBox *> cameras;
 };

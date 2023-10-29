@@ -35,7 +35,8 @@ void ReplayStream::mergeSegments() {
 }
 
 bool ReplayStream::loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags) {
-  replay.reset(new Replay(route, {"can", "roadEncodeIdx", "wideRoadEncodeIdx", "carParams"}, {}, {}, nullptr, replay_flags, data_dir, this));
+  replay.reset(new Replay(route, {"can", "roadEncodeIdx", "driverEncodeIdx", "wideRoadEncodeIdx", "carParams"},
+                          {}, {}, nullptr, replay_flags, data_dir, this));
   replay->setSegmentCacheLimit(settings.max_cached_minutes);
   replay->installEventFilter(event_filter, this);
   QObject::connect(replay.get(), &Replay::seekedTo, this, &AbstractStream::seekedTo);
@@ -84,25 +85,21 @@ AbstractOpenStreamWidget *ReplayStream::widget(AbstractStream **stream) {
 
 OpenReplayWidget::OpenReplayWidget(AbstractStream **stream) : AbstractOpenStreamWidget(stream) {
   // TODO: get route list from api.comma.ai
-  QGridLayout *grid_layout = new QGridLayout();
+  QGridLayout *grid_layout = new QGridLayout(this);
   grid_layout->addWidget(new QLabel(tr("Route")), 0, 0);
   grid_layout->addWidget(route_edit = new QLineEdit(this), 0, 1);
   route_edit->setPlaceholderText(tr("Enter remote route name or click browse to select a local route"));
   auto file_btn = new QPushButton(tr("Browse..."), this);
   grid_layout->addWidget(file_btn, 0, 2);
 
-  grid_layout->addWidget(new QLabel(tr("Video")), 1, 0);
-  grid_layout->addWidget(choose_video_cb = new QComboBox(this), 1, 1);
-  QString items[] = {tr("No Video"), tr("Road Camera"), tr("Wide Road Camera"), tr("Driver Camera"), tr("QCamera")};
-  for (int i = 0; i < std::size(items); ++i) {
-    choose_video_cb->addItem(items[i]);
-  }
-  choose_video_cb->setCurrentIndex(1);  // default is road camera;
+  grid_layout->addWidget(new QLabel(tr("Camera")), 1, 0);
+  QHBoxLayout *camera_layout = new QHBoxLayout();
+  for (auto c : {tr("Road camera"), tr("Driver camera"), tr("Wide road camera")})
+    camera_layout->addWidget(cameras.emplace_back(new QCheckBox(c, this)));
+  camera_layout->addStretch(1);
+  grid_layout->addItem(camera_layout, 1, 1);
 
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->addLayout(grid_layout);
   setMinimumWidth(550);
-
   QObject::connect(file_btn, &QPushButton::clicked, [=]() {
     QString dir = QFileDialog::getExistingDirectory(this, tr("Open Local Route"), settings.last_route_dir);
     if (!dir.isEmpty()) {
@@ -124,9 +121,13 @@ bool OpenReplayWidget::open() {
   if (!is_valid_format) {
     QMessageBox::warning(nullptr, tr("Warning"), tr("Invalid route format: '%1'").arg(route));
   } else {
-    uint32_t flags[] = {REPLAY_FLAG_NO_VIPC, REPLAY_FLAG_NONE, REPLAY_FLAG_ECAM, REPLAY_FLAG_DCAM, REPLAY_FLAG_QCAMERA};
     auto replay_stream = std::make_unique<ReplayStream>(qApp);
-    if (replay_stream->loadRoute(route, data_dir, flags[choose_video_cb->currentIndex()])) {
+    uint32_t flags = REPLAY_FLAG_NONE;
+    if (cameras[1]->isChecked()) flags |= REPLAY_FLAG_DCAM;
+    if (cameras[2]->isChecked()) flags |= REPLAY_FLAG_ECAM;
+    if (flags == REPLAY_FLAG_NONE && !cameras[0]->isChecked()) flags = REPLAY_FLAG_NO_VIPC;
+
+    if (replay_stream->loadRoute(route, data_dir, flags)) {
       *stream = replay_stream.release();
     } else {
       QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to load route: '%1'").arg(route));
