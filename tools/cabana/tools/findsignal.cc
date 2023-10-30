@@ -192,7 +192,7 @@ void FindSignalDlg::search() {
   search_btn->setEnabled(false);
   stats_label->setVisible(false);
   search_btn->setText("Finding ....");
-  QTimer::singleShot(0, [=]() { model->search(cmp); });
+  QTimer::singleShot(0, this, [=]() { model->search(cmp); });
 }
 
 void FindSignalDlg::setInitialSignals() {

@@ -324,7 +324,7 @@ void ChartsWidget::updateLayout(bool force) {
       charts_layout->addWidget(current_charts[i], i / n, i % n);
       if (current_charts[i]->sigs.empty()) {
         // the chart will be resized after add signal. delay setVisible to reduce flicker.
-        QTimer::singleShot(0, [c = current_charts[i]]() { c->setVisible(true); });
+        QTimer::singleShot(0, current_charts[i], [c = current_charts[i]]() { c->setVisible(true); });
       } else {
         current_charts[i]->setVisible(true);
       }

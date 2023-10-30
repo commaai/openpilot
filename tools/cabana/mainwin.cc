@@ -371,7 +371,7 @@ void MainWindow::eventsMerged() {
       auto dbc_name = fingerprint_to_dbc[car_fingerprint];
       if (dbc_name != QJsonValue::Undefined) {
         // Prevent dialog that load autosaved file from blocking replay->start().
-        QTimer::singleShot(0, [dbc_name, this]() { loadDBCFromOpendbc(dbc_name.toString()); });
+        QTimer::singleShot(0, this, [dbc_name, this]() { loadDBCFromOpendbc(dbc_name.toString()); });
       }
     }
   }

@@ -141,8 +141,8 @@ void AbstractStream::updateLastMsgsTo(double sec) {
   }
 
   bool id_changed = messages_.size() != last_msgs.size() ||
-                    std::any_of(messages_.begin(), messages_.end(),
-                                [this](auto &m) { return !last_msgs.count(m.first); });
+                    std::any_of(messages_.cbegin(), messages_.cend(),
+                                [this](const auto &m) { return !last_msgs.count(m.first); });
   last_msgs = messages_;
   emit msgsReceived(nullptr, id_changed);
 }

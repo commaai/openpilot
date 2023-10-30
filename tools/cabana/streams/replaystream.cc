@@ -15,7 +15,7 @@ ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent) {
   op_prefix = std::make_unique<OpenpilotPrefix>();
 #endif
 
-  QObject::connect(&settings, &Settings::changed, [this]() {
+  QObject::connect(&settings, &Settings::changed, this, [this]() {
     if (replay) replay->setSegmentCacheLimit(settings.max_cached_minutes);
   });
 }
