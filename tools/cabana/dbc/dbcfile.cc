@@ -4,10 +4,8 @@
 #include <QFileInfo>
 #include <QRegularExpression>
 #include <QTextStream>
-#include <numeric>
-#include <sstream>
 
-DBCFile::DBCFile(const QString &dbc_file_name, QObject *parent) : QObject(parent) {
+DBCFile::DBCFile(const QString &dbc_file_name) {
   QFile file(dbc_file_name);
   if (file.open(QIODevice::ReadOnly)) {
     name_ = QFileInfo(dbc_file_name).baseName();
@@ -22,7 +20,7 @@ DBCFile::DBCFile(const QString &dbc_file_name, QObject *parent) : QObject(parent
   }
 }
 
-DBCFile::DBCFile(const QString &name, const QString &content, QObject *parent) : QObject(parent), name_(name), filename("") {
+DBCFile::DBCFile(const QString &name, const QString &content) : name_(name), filename("") {
   // Open from clipboard
   parse(content);
 }

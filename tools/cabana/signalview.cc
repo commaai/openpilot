@@ -36,8 +36,8 @@ SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(p
 void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const cabana::Signal *sig) {
   Item *item = new Item{.sig = sig, .parent = parent_item, .title = sig->name, .type = Item::Sig};
   parent_item->children.insert(pos, item);
-  QString titles[]{"Name", "Size", "Node", "Little Endian", "Signed", "Offset", "Factor", "Type", "Multiplex Value", "Extra Info",
-                   "Unit", "Comment", "Minimum Value", "Maximum Value", "Value Descriptions"};
+  QString titles[]{"Name", "Size", "Receiver Nodes", "Little Endian", "Signed", "Offset", "Factor", "Type",
+                   "Multiplex Value", "Extra Info", "Unit", "Comment", "Minimum Value", "Maximum Value", "Value Table"};
   for (int i = 0; i < std::size(titles); ++i) {
     item->children.push_back(new Item{.sig = sig, .parent = item, .title = titles[i], .type = (Item::Type)(i + Item::Name)});
   }
@@ -68,10 +68,7 @@ void SignalModel::refresh() {
 }
 
 SignalModel::Item *SignalModel::getItem(const QModelIndex &index) const {
-  SignalModel::Item *item = nullptr;
-  if (index.isValid()) {
-    item = (SignalModel::Item *)index.internalPointer();
-  }
+  auto item = index.isValid() ? (SignalModel::Item *)index.internalPointer() : nullptr;
   return item ? item : root.get();
 }
 
@@ -369,8 +366,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
         painter->setFont(label_font);
         QString freq = QString("%1 hz").arg(item->sparkline.freq(), 0, 'g', 2);
         painter->drawText(rect.adjusted(5, 0, 0, 0), Qt::AlignLeft | Qt::AlignVCenter, freq);
-        QFontMetrics fm(label_font);
-        value_adjust = fm.width(freq) + 10;
+        value_adjust = QFontMetrics(label_font).width(freq) + 10;
       }
       // signal value
       painter->setFont(option.font);
@@ -447,7 +443,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QRegularExpression re("\\S+");
   filter_edit->setValidator(new QRegularExpressionValidator(re, this));
   filter_edit->setClearButtonEnabled(true);
-  filter_edit->setPlaceholderText(tr("filter signals"));
+  filter_edit->setPlaceholderText(tr("Filter Signal"));
   hl->addWidget(filter_edit);
   hl->addStretch(1);
 
@@ -502,6 +498,12 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QObject::connect(tree->verticalScrollBar(), &QScrollBar::valueChanged, [this]() { updateState(); });
   QObject::connect(tree->verticalScrollBar(), &QScrollBar::rangeChanged, [this]() { updateState(); });
   QObject::connect(can, &AbstractStream::msgsReceived, this, &SignalView::updateState);
+  QObject::connect(tree->header(), &QHeaderView::sectionResized, [this](int logicalIndex, int oldSize, int newSize) {
+    if (logicalIndex == 1) {
+      value_column_width = newSize;
+      updateState();
+    }
+  });
 
   setWhatsThis(tr(R"(
     <b>Signal view</b><br />
@@ -616,13 +618,13 @@ void SignalView::handleSignalUpdated(const cabana::Signal *sig) {
   }
 }
 
-void SignalView::updateState(const QHash<MessageId, CanData> *msgs) {
+void SignalView::updateState(const std::set<MessageId> *msgs) {
   const auto &last_msg = can->lastMessage(model->msg_id);
-  if (model->rowCount() == 0 || (msgs && !msgs->contains(model->msg_id)) || last_msg.dat.size() == 0) return;
+  if (model->rowCount() == 0 || (msgs && !msgs->count(model->msg_id)) || last_msg.dat.size() == 0) return;
 
   for (auto item : model->root->children) {
     double value = 0;
-    if (item->sig->getValue((uint8_t *)last_msg.dat.constData(), last_msg.dat.size(), &value)) {
+    if (item->sig->getValue(last_msg.dat.data(), last_msg.dat.size(), &value)) {
       item->sig_val = item->sig->formatValue(value);
     }
     max_value_width = std::max(max_value_width, fontMetrics().width(item->sig_val));
@@ -638,11 +640,11 @@ void SignalView::updateState(const QHash<MessageId, CanData> *msgs) {
       last_visible_row = bottom.parent().isValid() ? bottom.parent().row() : bottom.row();
     }
 
-    QSize size(tree->columnWidth(1) - delegate->button_size.width(), delegate->button_size.height());
-    int min_max_width = std::min(size.width() - 10, QFontMetrics(delegate->minmax_font).width("-000.00") + 5);
-    int value_width = std::min<int>(max_value_width, size.width() * 0.35);
-    size -= {value_width + min_max_width, style()->pixelMetric(QStyle::PM_FocusFrameVMargin) * 2};
-
+    const static int min_max_width = QFontMetrics(delegate->minmax_font).width("-000.00") + 5;
+    int available_width = value_column_width - delegate->button_size.width();
+    int value_width = std::min<int>(max_value_width + min_max_width, available_width / 2);
+    QSize size(available_width - value_width,
+               delegate->button_size.height() - style()->pixelMetric(QStyle::PM_FocusFrameVMargin) * 2);
     QFutureSynchronizer<void> synchronizer;
     for (int i = first_visible_row; i <= last_visible_row; ++i) {
       auto item = model->getItem(model->index(i, 1));

@@ -1,18 +1,15 @@
 #pragma once
 
 #include <map>
-#include <QObject>
 
 #include "tools/cabana/dbc/dbc.h"
 
 const QString AUTO_SAVE_EXTENSION = ".tmp";
 
-class DBCFile : public QObject {
-  Q_OBJECT
-
+class DBCFile {
 public:
-  DBCFile(const QString &dbc_file_name, QObject *parent=nullptr);
-  DBCFile(const QString &name, const QString &content, QObject *parent=nullptr);
+  DBCFile(const QString &dbc_file_name);
+  DBCFile(const QString &name, const QString &content);
   ~DBCFile() {}
 
   bool save();

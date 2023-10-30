@@ -17,6 +17,10 @@ def hash_256(link):
   return hsh
 
 
+class URLFileException(Exception):
+  pass
+
+
 class URLFile:
   _tlocal = threading.local()
 
@@ -158,11 +162,11 @@ class URLFile:
 
     response_code = c.getinfo(pycurl.RESPONSE_CODE)
     if response_code == 416:  # Requested Range Not Satisfiable
-      raise Exception(f"Error, range out of bounds {response_code} {headers} ({self._url}): {repr(dats.getvalue())[:500]}")
+      raise URLFileException(f"Error, range out of bounds {response_code} {headers} ({self._url}): {repr(dats.getvalue())[:500]}")
     if download_range and response_code != 206:  # Partial Content
-      raise Exception(f"Error, requested range but got unexpected response {response_code} {headers} ({self._url}): {repr(dats.getvalue())[:500]}")
+      raise URLFileException(f"Error, requested range but got unexpected response {response_code} {headers} ({self._url}): {repr(dats.getvalue())[:500]}")
     if (not download_range) and response_code != 200:  # OK
-      raise Exception(f"Error {response_code} {headers} ({self._url}): {repr(dats.getvalue())[:500]}")
+      raise URLFileException(f"Error {response_code} {headers} ({self._url}): {repr(dats.getvalue())[:500]}")
 
     ret = dats.getvalue()
     self._pos += len(ret)
