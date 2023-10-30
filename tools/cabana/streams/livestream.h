@@ -1,6 +1,5 @@
 #pragma once
 
-#include <deque>
 #include <memory>
 #include <vector>
 
@@ -26,26 +25,16 @@ public:
 
 protected:
   virtual void streamThread() = 0;
-  void handleEvent(const char *data, const size_t size);
+  void handleEvent(kj::ArrayPtr<capnp::word> event);
 
 private:
   void startUpdateTimer();
   void timerEvent(QTimerEvent *event) override;
   void updateEvents();
 
-  struct Msg {
-    Msg(const char *data, const size_t size) {
-      event = ::new Event(aligned_buf.align(data, size));
-    }
-    ~Msg() { ::delete event; }
-    Event *event;
-    AlignedBuffer aligned_buf;
-  };
-
   std::mutex lock;
   QThread *stream_thread;
-  std::vector<Event *> receivedEvents;
-  std::deque<Msg> receivedMessages;
+  std::vector<const CanEvent *> received_events_;
 
   int timer_id;
   QBasicTimer update_timer;

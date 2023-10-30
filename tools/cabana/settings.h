@@ -33,7 +33,7 @@ public:
   int chart_series_type = 0;
   int theme = 0;
   int sparkline_range = 15; // 15 seconds
-  bool multiple_lines_bytes = true;
+  bool multiple_lines_hex = false;
   bool log_livestream = true;
   bool suppress_defined_signals = false;
   QString log_path;

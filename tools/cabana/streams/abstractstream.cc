@@ -1,8 +1,10 @@
 #include "tools/cabana/streams/abstractstream.h"
 
 #include <algorithm>
+#include <utility>
 
-#include <QTimer>
+#include "common/timing.h"
+#include "tools/cabana/settings.h"
 
 static const int EVENT_NEXT_BUFFER_SIZE = 6 * 1024 * 1024;  // 6MB
 
@@ -15,82 +17,97 @@ StreamNotifier *StreamNotifier::instance() {
 
 AbstractStream::AbstractStream(QObject *parent) : QObject(parent) {
   assert(parent != nullptr);
-  new_msgs = std::make_unique<QHash<MessageId, CanData>>();
-  event_buffer = std::make_unique<MonotonicBuffer>(EVENT_NEXT_BUFFER_SIZE);
+  event_buffer_ = std::make_unique<MonotonicBuffer>(EVENT_NEXT_BUFFER_SIZE);
 
+  QObject::connect(this, &AbstractStream::privateUpdateLastMsgsSignal, this, &AbstractStream::updateLastMessages, Qt::QueuedConnection);
   QObject::connect(this, &AbstractStream::seekedTo, this, &AbstractStream::updateLastMsgsTo);
-  QObject::connect(&settings, &Settings::changed, this, &AbstractStream::updateMasks);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &AbstractStream::updateMasks);
   QObject::connect(dbc(), &DBCManager::maskUpdated, this, &AbstractStream::updateMasks);
   QObject::connect(this, &AbstractStream::streamStarted, [this]() {
     emit StreamNotifier::instance()->changingStream();
     delete can;
     can = this;
-    // TODO: add method stop() to class AbstractStream
-    QObject::connect(qApp, &QApplication::aboutToQuit, can, []() {
-      qDebug() << "stopping stream thread";
-      can->pause(true);
-    });
     emit StreamNotifier::instance()->streamStarted();
   });
 }
 
 void AbstractStream::updateMasks() {
-  std::lock_guard lk(mutex);
-  masks.clear();
-  if (settings.suppress_defined_signals) {
-    for (auto s : sources) {
-      if (auto f = dbc()->findDBCFile(s)) {
-        for (const auto &[address, m] : f->getMessages()) {
-          masks[{.source = (uint8_t)s, .address = address}] = m.mask;
-        }
+  std::lock_guard lk(mutex_);
+  masks_.clear();
+  if (!settings.suppress_defined_signals)
+    return;
+
+  for (const auto s : sources) {
+    for (const auto &[address, m] : dbc()->getMessages(s)) {
+      masks_[{.source = (uint8_t)s, .address = address}] = m.mask;
+    }
+  }
+  // clear bit change counts
+  for (auto &[id, m] : messages_) {
+    auto &mask = masks_[id];
+    const int size = std::min(mask.size(), m.last_changes.size());
+    for (int i = 0; i < size; ++i) {
+      for (int j = 0; j < 8; ++j) {
+        if (((mask[i] >> (7 - j)) & 1) != 0) m.last_changes[i].bit_change_counts[j] = 0;
       }
     }
   }
 }
 
-void AbstractStream::updateMessages(QHash<MessageId, CanData> *messages) {
+void AbstractStream::suppressDefinedSignals(bool suppress) {
+  settings.suppress_defined_signals = suppress;
+  updateMasks();
+}
+
+size_t AbstractStream::suppressHighlighted() {
+  std::lock_guard lk(mutex_);
+  size_t cnt = 0;
+  const double cur_ts = currentSec();
+  for (auto &[_, m] : messages_) {
+    for (auto &last_change : m.last_changes) {
+      const double dt = cur_ts - last_change.ts;
+      if (dt < 2.0) {
+        last_change.suppressed = true;
+      }
+      // clear bit change counts
+      last_change.bit_change_counts.fill(0);
+      cnt += last_change.suppressed;
+    }
+  }
+  return cnt;
+}
+
+void AbstractStream::clearSuppressed() {
+  std::lock_guard lk(mutex_);
+  for (auto &[_, m] : messages_) {
+    std::for_each(m.last_changes.begin(), m.last_changes.end(), [](auto &c) { c.suppressed = false; });
+  }
+}
+
+void AbstractStream::updateLastMessages() {
   auto prev_src_size = sources.size();
   auto prev_msg_size = last_msgs.size();
-  for (auto it = messages->begin(); it != messages->end(); ++it) {
-    const auto &id = it.key();
-    last_msgs[id] = it.value();
-    sources.insert(id.source);
+  std::set<MessageId> msgs;
+  {
+    std::lock_guard lk(mutex_);
+    for (const auto &id : new_msgs_) {
+      last_msgs[id] = messages_[id];
+      sources.insert(id.source);
+    }
+    msgs = std::move(new_msgs_);
   }
+
   if (sources.size() != prev_src_size) {
     updateMasks();
     emit sourcesUpdated(sources);
   }
-  emit updated();
-  emit msgsReceived(messages, prev_msg_size != last_msgs.size());
-  delete messages;
-  processing = false;
+  emit msgsReceived(&msgs, prev_msg_size != last_msgs.size());
 }
 
 void AbstractStream::updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size) {
-  std::lock_guard lk(mutex);
-  auto mask_it = masks.find(id);
-  std::vector<uint8_t> *mask = mask_it == masks.end() ? nullptr : &mask_it->second;
-  all_msgs[id].compute(id, (const char *)data, size, sec, getSpeed(), mask);
-  if (!new_msgs->contains(id)) {
-    new_msgs->insert(id, {});
-  }
-}
-
-bool AbstractStream::postEvents() {
-  // delay posting CAN message if UI thread is busy
-  if (processing == false) {
-    processing = true;
-    for (auto it = new_msgs->begin(); it != new_msgs->end(); ++it) {
-      it.value() = all_msgs[it.key()];
-    }
-    // use pointer to avoid data copy in queued connection.
-    QMetaObject::invokeMethod(this, std::bind(&AbstractStream::updateMessages, this, new_msgs.release()), Qt::QueuedConnection);
-    new_msgs.reset(new QHash<MessageId, CanData>);
-    new_msgs->reserve(100);
-    return true;
-  }
-  return false;
+  std::lock_guard lk(mutex_);
+  messages_[id].compute(id, data, size, sec, getSpeed(), masks_[id]);
+  new_msgs_.insert(id);
 }
 
 const std::vector<const CanEvent *> &AbstractStream::events(const MessageId &id) const {
@@ -102,76 +119,62 @@ const std::vector<const CanEvent *> &AbstractStream::events(const MessageId &id)
 const CanData &AbstractStream::lastMessage(const MessageId &id) {
   static CanData empty_data = {};
   auto it = last_msgs.find(id);
-  return it != last_msgs.end() ? it.value() : empty_data;
+  return it != last_msgs.end() ? it->second : empty_data;
 }
 
 // it is thread safe to update data in updateLastMsgsTo.
 // updateLastMsgsTo is always called in UI thread.
 void AbstractStream::updateLastMsgsTo(double sec) {
-  new_msgs.reset(new QHash<MessageId, CanData>);
-  all_msgs.clear();
-  last_msgs.clear();
+  new_msgs_.clear();
+  messages_.clear();
 
   uint64_t last_ts = (sec + routeStartTime()) * 1e9;
-  for (auto &[id, ev] : events_) {
-    auto it = std::lower_bound(ev.crbegin(), ev.crend(), last_ts, [](auto e, uint64_t ts) {
-      return e->mono_time > ts;
-    });
-    auto mask_it = masks.find(id);
-    std::vector<uint8_t> *mask = mask_it == masks.end() ? nullptr : &mask_it->second;
-    if (it != ev.crend()) {
-      double ts = (*it)->mono_time / 1e9 - routeStartTime();
-      auto &m = all_msgs[id];
-      m.compute(id, (const char *)(*it)->dat, (*it)->size, ts, getSpeed(), mask);
-      m.count = std::distance(it, ev.crend());
+  for (const auto &[id, ev] : events_) {
+    auto it = std::upper_bound(ev.begin(), ev.end(), last_ts, CompareCanEvent());
+    if (it != ev.begin()) {
+      auto prev = std::prev(it);
+      double ts = (*prev)->mono_time / 1e9 - routeStartTime();
+      auto &m = messages_[id];
+      m.compute(id, (*prev)->dat, (*prev)->size, ts, getSpeed(), {});
+      m.count = std::distance(ev.begin(), prev) + 1;
     }
   }
 
-  // deep copy all_msgs to last_msgs to avoid multi-threading issue.
-  last_msgs = all_msgs;
-  last_msgs.detach();
-  // use a timer to prevent recursive calls
-  QTimer::singleShot(0, [this]() {
-    emit updated();
-    emit msgsReceived(&last_msgs, true);
-  });
+  bool id_changed = messages_.size() != last_msgs.size() ||
+                    std::any_of(messages_.cbegin(), messages_.cend(),
+                                [this](const auto &m) { return !last_msgs.count(m.first); });
+  last_msgs = messages_;
+  emit msgsReceived(nullptr, id_changed);
 }
 
-void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last) {
+const CanEvent *AbstractStream::newEvent(uint64_t mono_time, const cereal::CanData::Reader &c) {
+  auto dat = c.getDat();
+  CanEvent *e = (CanEvent *)event_buffer_->allocate(sizeof(CanEvent) + sizeof(uint8_t) * dat.size());
+  e->src = c.getSrc();
+  e->address = c.getAddress();
+  e->mono_time = mono_time;
+  e->size = dat.size();
+  memcpy(e->dat, (uint8_t *)dat.begin(), e->size);
+  return e;
+}
+
+void AbstractStream::mergeEvents(const std::vector<const CanEvent *> &events) {
   static MessageEventsMap msg_events;
-  static  std::vector<const CanEvent *> new_events;
-
   std::for_each(msg_events.begin(), msg_events.end(), [](auto &e) { e.second.clear(); });
-  new_events.clear();
-
-  for (auto it = first; it != last; ++it) {
-    if ((*it)->which == cereal::Event::Which::CAN) {
-      uint64_t ts = (*it)->mono_time;
-      for (const auto &c : (*it)->event.getCan()) {
-        auto dat = c.getDat();
-        CanEvent *e = (CanEvent *)event_buffer->allocate(sizeof(CanEvent) + sizeof(uint8_t) * dat.size());
-        e->src = c.getSrc();
-        e->address = c.getAddress();
-        e->mono_time = ts;
-        e->size = dat.size();
-        memcpy(e->dat, (uint8_t *)dat.begin(), e->size);
-
-        msg_events[{.source = e->src, .address = e->address}].push_back(e);
-        new_events.push_back(e);
-      }
-    }
+  for (auto e : events) {
+    msg_events[{.source = e->src, .address = e->address}].push_back(e);
   }
 
-  if (!new_events.empty()) {
-    for (auto &[id, new_e] : msg_events) {
+  if (!events.empty()) {
+    for (const auto &[id, new_e] : msg_events) {
       if (!new_e.empty()) {
         auto &e = events_[id];
         auto pos = std::upper_bound(e.cbegin(), e.cend(), new_e.front()->mono_time, CompareCanEvent());
         e.insert(pos, new_e.cbegin(), new_e.cend());
       }
     }
-    auto pos = std::upper_bound(all_events_.cbegin(), all_events_.cend(), new_events.front()->mono_time, CompareCanEvent());
-    all_events_.insert(pos, new_events.cbegin(), new_events.cend());
+    auto pos = std::upper_bound(all_events_.cbegin(), all_events_.cend(), events.front()->mono_time, CompareCanEvent());
+    all_events_.insert(pos, events.cbegin(), events.cend());
     emit eventsMerged(msg_events);
   }
   lastest_event_ts = all_events_.empty() ? 0 : all_events_.back()->mono_time;
@@ -181,15 +184,16 @@ void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std
 
 namespace {
 
-constexpr int periodic_threshold = 10;
-constexpr int start_alpha = 128;
-constexpr float fade_time = 2.0;
-const QColor CYAN = QColor(0, 187, 255, start_alpha);
-const QColor RED = QColor(255, 0, 0, start_alpha);
-const QColor GREYISH_BLUE = QColor(102, 86, 169, start_alpha / 2);
-const QColor CYAN_LIGHTER = QColor(0, 187, 255, start_alpha).lighter(135);
-const QColor RED_LIGHTER = QColor(255, 0, 0, start_alpha).lighter(135);
-const QColor GREYISH_BLUE_LIGHTER = QColor(102, 86, 169, start_alpha / 2).lighter(135);
+enum Color { GREYISH_BLUE, CYAN, RED};
+QColor getColor(int c) {
+  constexpr int start_alpha = 128;
+  static const QColor colors[] = {
+      [GREYISH_BLUE] = QColor(102, 86, 169, start_alpha / 2),
+      [CYAN] = QColor(0, 187, 255, start_alpha),
+      [RED] = QColor(255, 0, 0, start_alpha),
+  };
+  return settings.theme == LIGHT_THEME ? colors[c] : colors[c].lighter(135);
+}
 
 inline QColor blend(const QColor &a, const QColor &b) {
   return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
@@ -212,8 +216,8 @@ double calc_freq(const MessageId &msg_id, double current_sec) {
 
 }  // namespace
 
-void CanData::compute(const MessageId &msg_id, const char *can_data, const int size, double current_sec,
-                      double playback_speed, const std::vector<uint8_t> *mask, double in_freq) {
+void CanData::compute(const MessageId &msg_id, const uint8_t *can_data, const int size, double current_sec,
+                      double playback_speed, const std::vector<uint8_t> &mask, double in_freq) {
   ts = current_sec;
   ++count;
 
@@ -224,55 +228,53 @@ void CanData::compute(const MessageId &msg_id, const char *can_data, const int s
 
   if (dat.size() != size) {
     dat.resize(size);
-    bit_change_counts.resize(size);
-    colors = QVector(size, QColor(0, 0, 0, 0));
-    last_change_t.assign(size, ts);
-    last_delta.resize(size);
-    same_delta_counter.resize(size);
+    colors.assign(size, QColor(0, 0, 0, 0));
+    last_changes.resize(size);
+    std::for_each(last_changes.begin(), last_changes.end(), [current_sec](auto &c) { c.ts = current_sec; });
   } else {
-    bool lighter = settings.theme == DARK_THEME;
-    const QColor &cyan = !lighter ? CYAN : CYAN_LIGHTER;
-    const QColor &red = !lighter ? RED : RED_LIGHTER;
-    const QColor &greyish_blue = !lighter ? GREYISH_BLUE : GREYISH_BLUE_LIGHTER;
+    constexpr int periodic_threshold = 10;
+    constexpr float fade_time = 2.0;
+    const float alpha_delta = 1.0 / (freq + 1) / (fade_time * playback_speed);
 
     for (int i = 0; i < size; ++i) {
-      const uint8_t mask_byte = (mask && i < mask->size()) ? (~((*mask)[i])) : 0xff;
+      auto &last_change = last_changes[i];
+
+      uint8_t mask_byte = last_change.suppressed ? 0x00 : 0xFF;
+      if (i < mask.size()) mask_byte &= ~(mask[i]);
+
       const uint8_t last = dat[i] & mask_byte;
       const uint8_t cur = can_data[i] & mask_byte;
-      const int delta = cur - last;
-
       if (last != cur) {
-        double delta_t = ts - last_change_t[i];
-
+        const int delta = cur - last;
         // Keep track if signal is changing randomly, or mostly moving in the same direction
-        if (std::signbit(delta) == std::signbit(last_delta[i])) {
-          same_delta_counter[i] = std::min(16, same_delta_counter[i] + 1);
+        if (std::signbit(delta) == std::signbit(last_change.delta)) {
+          last_change.same_delta_counter = std::min(16, last_change.same_delta_counter + 1);
         } else {
-          same_delta_counter[i] = std::max(0, same_delta_counter[i] - 4);
+          last_change.same_delta_counter = std::max(0, last_change.same_delta_counter - 4);
         }
 
+        const double delta_t = ts - last_change.ts;
         // Mostly moves in the same direction, color based on delta up/down
-        if (delta_t * freq > periodic_threshold || same_delta_counter[i] > 8) {
+        if (delta_t * freq > periodic_threshold || last_change.same_delta_counter > 8) {
           // Last change was while ago, choose color based on delta up or down
-          colors[i] = (cur > last) ? cyan : red;
+          colors[i] = getColor(cur > last ? CYAN : RED);
         } else {
           // Periodic changes
-          colors[i] = blend(colors[i], greyish_blue);
+          colors[i] = blend(colors[i], getColor(GREYISH_BLUE));
         }
 
         // Track bit level changes
         const uint8_t tmp = (cur ^ last);
         for (int bit = 0; bit < 8; bit++) {
-          if (tmp & (1 << bit)) {
-            bit_change_counts[i][bit] += 1;
+          if (tmp & (1 << (7 - bit))) {
+            last_change.bit_change_counts[bit] += 1;
           }
         }
 
-        last_change_t[i] = ts;
-        last_delta[i] = delta;
+        last_change.ts = ts;
+        last_change.delta = delta;
       } else {
         // Fade out
-        float alpha_delta = 1.0 / (freq + 1) / (fade_time * playback_speed);
         colors[i].setAlphaF(std::max(0.0, colors[i].alphaF() - alpha_delta));
       }
     }

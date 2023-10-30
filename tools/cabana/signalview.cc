@@ -36,8 +36,8 @@ SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(p
 void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const cabana::Signal *sig) {
   Item *item = new Item{.sig = sig, .parent = parent_item, .title = sig->name, .type = Item::Sig};
   parent_item->children.insert(pos, item);
-  QString titles[]{"Name", "Size", "Receiver Nodes", "Little Endian", "Signed", "Offset", "Factor", "Type", "Multiplex Value", "Extra Info",
-                   "Unit", "Comment", "Minimum Value", "Maximum Value", "Value Descriptions"};
+  QString titles[]{"Name", "Size", "Receiver Nodes", "Little Endian", "Signed", "Offset", "Factor", "Type",
+                   "Multiplex Value", "Extra Info", "Unit", "Comment", "Minimum Value", "Maximum Value", "Value Table"};
   for (int i = 0; i < std::size(titles); ++i) {
     item->children.push_back(new Item{.sig = sig, .parent = item, .title = titles[i], .type = (Item::Type)(i + Item::Name)});
   }
@@ -68,10 +68,7 @@ void SignalModel::refresh() {
 }
 
 SignalModel::Item *SignalModel::getItem(const QModelIndex &index) const {
-  SignalModel::Item *item = nullptr;
-  if (index.isValid()) {
-    item = (SignalModel::Item *)index.internalPointer();
-  }
+  auto item = index.isValid() ? (SignalModel::Item *)index.internalPointer() : nullptr;
   return item ? item : root.get();
 }
 
@@ -369,8 +366,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
         painter->setFont(label_font);
         QString freq = QString("%1 hz").arg(item->sparkline.freq(), 0, 'g', 2);
         painter->drawText(rect.adjusted(5, 0, 0, 0), Qt::AlignLeft | Qt::AlignVCenter, freq);
-        QFontMetrics fm(label_font);
-        value_adjust = fm.width(freq) + 10;
+        value_adjust = QFontMetrics(label_font).width(freq) + 10;
       }
       // signal value
       painter->setFont(option.font);
@@ -622,13 +618,13 @@ void SignalView::handleSignalUpdated(const cabana::Signal *sig) {
   }
 }
 
-void SignalView::updateState(const QHash<MessageId, CanData> *msgs) {
+void SignalView::updateState(const std::set<MessageId> *msgs) {
   const auto &last_msg = can->lastMessage(model->msg_id);
-  if (model->rowCount() == 0 || (msgs && !msgs->contains(model->msg_id)) || last_msg.dat.size() == 0) return;
+  if (model->rowCount() == 0 || (msgs && !msgs->count(model->msg_id)) || last_msg.dat.size() == 0) return;
 
   for (auto item : model->root->children) {
     double value = 0;
-    if (item->sig->getValue((uint8_t *)last_msg.dat.constData(), last_msg.dat.size(), &value)) {
+    if (item->sig->getValue(last_msg.dat.data(), last_msg.dat.size(), &value)) {
       item->sig_val = item->sig->formatValue(value);
     }
     max_value_width = std::max(max_value_width, fontMetrics().width(item->sig_val));
