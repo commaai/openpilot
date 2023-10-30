@@ -147,8 +147,8 @@ void DetailWidget::refresh() {
   warning_widget->setVisible(!warnings.isEmpty());
 }
 
-void DetailWidget::updateState(const QHash<MessageId, CanData> *msgs) {
-  if ((msgs && !msgs->contains(msg_id)))
+void DetailWidget::updateState(const std::set<MessageId> *msgs) {
+  if ((msgs && !msgs->count(msg_id)))
     return;
 
   if (tab_widget->currentIndex() == 0)

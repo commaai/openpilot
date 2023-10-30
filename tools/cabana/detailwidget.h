@@ -4,6 +4,7 @@
 #include <QSplitter>
 #include <QTabWidget>
 #include <QTextEdit>
+#include <set>
 
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "tools/cabana/binaryview.h"
@@ -11,7 +12,6 @@
 #include "tools/cabana/historylog.h"
 #include "tools/cabana/signalview.h"
 
-class MainWindow;
 class EditMessageDialog : public QDialog {
 public:
   EditMessageDialog(const MessageId &msg_id, const QString &title, int size, QWidget *parent);
@@ -39,7 +39,7 @@ private:
   void showTabBarContextMenu(const QPoint &pt);
   void editMsg();
   void removeMsg();
-  void updateState(const QHash<MessageId, CanData> * msgs = nullptr);
+  void updateState(const std::set<MessageId> *msgs = nullptr);
 
   MessageId msg_id;
   QLabel *warning_icon, *warning_label;

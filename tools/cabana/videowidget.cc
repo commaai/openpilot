@@ -13,6 +13,9 @@
 #include <QVBoxLayout>
 #include <QtConcurrent>
 
+#include "tools/cabana/streams/replaystream.h"
+#include "tools/cabana/util.h"
+
 const int MIN_VIDEO_HEIGHT = 100;
 const int THUMBNAIL_MARGIN = 3;
 
@@ -35,7 +38,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
   QObject::connect(can, &AbstractStream::paused, this, &VideoWidget::updatePlayBtnState);
   QObject::connect(can, &AbstractStream::resume, this, &VideoWidget::updatePlayBtnState);
-  QObject::connect(can, &AbstractStream::updated, this, &VideoWidget::updateState);
+  QObject::connect(can, &AbstractStream::msgsReceived, this, &VideoWidget::updateState);
 
   updatePlayBtnState();
   setWhatsThis(tr(R"(
@@ -179,6 +182,8 @@ void VideoWidget::vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams
 
 void VideoWidget::loopPlaybackClicked() {
   auto replay = qobject_cast<ReplayStream *>(can)->getReplay();
+  if (!replay) return;
+
   if (replay->hasFlag(REPLAY_FLAG_NO_LOOP)) {
     replay->removeFlag(REPLAY_FLAG_NO_LOOP);
     loop_btn->setIcon("repeat");

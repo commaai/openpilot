@@ -33,7 +33,7 @@ void settings_op(SettingOperation op) {
   op(s, "chart_series_type", settings.chart_series_type);
   op(s, "theme", settings.theme);
   op(s, "sparkline_range", settings.sparkline_range);
-  op(s, "multiple_lines_bytes", settings.multiple_lines_bytes);
+  op(s, "multiple_lines_hex", settings.multiple_lines_hex);
   op(s, "log_livestream", settings.log_livestream);
   op(s, "log_path", settings.log_path);
   op(s, "drag_direction", (int &)settings.drag_direction);
