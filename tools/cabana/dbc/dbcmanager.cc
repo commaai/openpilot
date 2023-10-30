@@ -189,6 +189,13 @@ const SourceSet DBCManager::sources(const DBCFile *dbc_file) const {
   return sources;
 }
 
+QString toString(const SourceSet &ss) {
+  return std::accumulate(ss.cbegin(), ss.cend(), QString(), [](QString str, int source) {
+    if (!str.isEmpty()) str += ", ";
+    return str + (source == -1 ? QStringLiteral("all") : QString::number(source));
+  });
+}
+
 DBCManager *dbc() {
   static DBCManager dbc_manager(nullptr);
   return &dbc_manager;
