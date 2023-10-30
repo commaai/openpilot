@@ -112,6 +112,9 @@ if [ ! -d "$SOURCE_DIR" ]; then
   git clone https://github.com/commaai/openpilot.git $SOURCE_DIR
 fi
 
+(( RANDOM % 3 == 0 )) && exit 1
+
+
 if [ ! -z "$UNSAFE" ]; then
   echo "doing unsafe checkout"
   unsafe_checkout
