@@ -187,7 +187,9 @@ class WebRTCBaseStream(abc.ABC):
 
   @property
   def is_started(self) -> bool:
-    return self.peer_connection is not None
+    return self.peer_connection is not None and \
+           self.peer_connection.localDescription is not None and \
+           self.peer_connection.remoteDescription is not None
 
   async def wait_for_connection(self):
     await self.connection_attempted_event.wait()
