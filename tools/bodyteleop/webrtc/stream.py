@@ -101,8 +101,8 @@ class WebRTCBaseStream(abc.ABC):
   
   def _add_producer_tracks(self):
     for track in self.outgoing_video_tracks:
-      self.peer_connection.addTrack(track)
-      # force codec?
+      sender = self.peer_connection.addTrack(track)
+      self._force_codec(sender, "video/H264", "video")
     for track in self.outgoing_audio_tracks:
       self.peer_connection.addTrack(track)
 
@@ -120,8 +120,14 @@ class WebRTCBaseStream(abc.ABC):
   def _create_channel_handler_wrapper(self, channel, message_handler):
     async def handler_wrapper(message):
       await message_handler(channel, message)
-    handler_wrapper
+    return handler_wrapper
   
+  def _force_codec(self, sender, codec_mime, stream_type):
+    codecs = aiortc.RTCRtpSender.getCapabilities(stream_type).codecs
+    codec = [codec for codec in codecs if codec.mimeType == codec_mime]
+    transceiver = next(t for t in self.peer_connection.getTransceivers() if t.sender == sender)
+    transceiver.setCodecPreferences(codec)
+
   def _on_connectionstatechange(self):
     print("-- connection state is", self.peer_connection.connectionState)
     if self.peer_connection.connectionState in ['connected', 'failed']:
