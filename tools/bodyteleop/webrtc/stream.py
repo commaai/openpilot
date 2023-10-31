@@ -114,8 +114,13 @@ class WebRTCBaseStream(abc.ABC):
       self.messaging_channel_is_incoming = True
 
     for handler in self.incoming_message_handlers:
-      channel.on("message", handler)
+      channel.on("message", self._create_channel_handler_wrapper(channel, handler))
     self.messaging_channel = channel
+
+  def _create_channel_handler_wrapper(self, channel, message_handler):
+    async def handler_wrapper(message):
+      await message_handler(channel, message)
+    handler_wrapper
   
   def _on_connectionstatechange(self):
     print("-- connection state is", self.peer_connection.connectionState)
@@ -183,7 +188,7 @@ class WebRTCBaseStream(abc.ABC):
   def set_message_handler(self, message_handler: Callable[[aiortc.RTCDataChannel, bytes], Awaitable[None]]):
     self.incoming_message_handlers.append(message_handler)
     if self.is_started:
-      self.messaging_channel.on("message", message_handler)
+      self.messaging_channel.on("message", self._create_channel_handler_wrapper(self.messaging_channel, message_handler))
 
   @property
   def is_started(self) -> bool:
