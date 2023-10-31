@@ -17,8 +17,7 @@ import aiortc
 
 import cereal.messaging as messaging
 from openpilot.common.basedir import BASEDIR
-from openpilot.tools.bodyteleop.bodyav import BodyMic, WebClientSpeaker, force_codec, play_sound, MediaBlackhole, EncodedBodyVideo
-from openpilot.tools.bodyteleop.webrtc.common import StreamingOffer
+from openpilot.tools.bodyteleop.bodyav import WebClientSpeaker, play_sound
 from openpilot.tools.bodyteleop.webrtc.stream import WebRTCStreamBuilder
 from openpilot.tools.bodyteleop.webrtc.tracks import LiveStreamVideoStreamTrack, AudioInputStreamTrack
 
