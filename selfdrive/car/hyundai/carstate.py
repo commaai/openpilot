@@ -244,6 +244,8 @@ class CarState(CarStateBase):
     if self.CP.flags & HyundaiFlags.CANFD_HDA2:
       self.hda2_lfa_block_msg = copy.copy(cp_cam.vl["CAM_0x362"] if self.CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING
                                           else cp_cam.vl["CAM_0x2a4"])
+    if self.CP.carFingerprint == CAR.KONA_EV_2ND_GEN:
+      self.hda1_lfa_block_msg = copy.copy(cp_cam.vl["CAM_0x181"])
 
     return ret
 

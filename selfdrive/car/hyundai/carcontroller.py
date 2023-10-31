@@ -114,6 +114,8 @@ class CarController:
       if self.frame % 5 == 0 and hda2:
         can_sends.append(hyundaicanfd.create_suppress_lfa(self.packer, self.CAN, CS.hda2_lfa_block_msg,
                                                           self.CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING))
+      if self.frame % 5 == 0 and self.CP.carFingerprint == CAR.KONA_EV_2ND_GEN:
+        can_sends.append(hyundaicanfd.create_hda1_suppress_lfa(self.packer, self.CAN, CS.hda1_lfa_block_msg))
 
       # LFA and HDA icons
       if self.frame % 5 == 0 and (not hda2 or hda2_long):
