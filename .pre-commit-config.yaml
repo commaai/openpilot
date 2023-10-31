@@ -5,7 +5,7 @@ repos:
     -   id: check-hooks-apply
     -   id: check-useless-excludes
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
     -   id: check-ast
         exclude: '^(third_party)/'
@@ -41,7 +41,7 @@ repos:
         args: ['--explicit-package-bases']
         exclude: '^(third_party/)|(cereal/)|(opendbc/)|(panda/)|(laika/)|(laika_repo/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(xx/)'
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.292
+    rev: v0.1.1
     hooks:
     -   id: ruff
         exclude: '^(third_party/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(laika_repo/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)'

@@ -117,16 +117,14 @@ def check_valid_with_hysteresis(current_valid: bool, val: float, threshold: floa
   return current_valid
 
 
-def main(sm=None, pm=None):
+def main():
   config_realtime_process([0, 1, 2, 3], 5)
 
   DEBUG = bool(int(os.getenv("DEBUG", "0")))
   REPLAY = bool(int(os.getenv("REPLAY", "0")))
 
-  if sm is None:
-    sm = messaging.SubMaster(['liveLocationKalman', 'carState'], poll=['liveLocationKalman'])
-  if pm is None:
-    pm = messaging.PubMaster(['liveParameters'])
+  pm = messaging.PubMaster(['liveParameters'])
+  sm = messaging.SubMaster(['liveLocationKalman', 'carState'], poll=['liveLocationKalman'])
 
   params_reader = Params()
   # wait for stats about the car to come in from controls

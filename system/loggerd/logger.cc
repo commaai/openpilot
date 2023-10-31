@@ -24,9 +24,12 @@
 
 // ***** log metadata *****
 kj::Array<capnp::word> logger_build_init_data() {
+  uint64_t wall_time = nanos_since_epoch();
+
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
+  init.setWallTimeNanos(wall_time);
   init.setVersion(COMMA_VERSION);
   init.setDirty(!getenv("CLEAN"));
   init.setDeviceType(Hardware::get_device_type());

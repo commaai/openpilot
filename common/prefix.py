@@ -14,6 +14,7 @@ class OpenpilotPrefix:
     self.clean_dirs_on_exit = clean_dirs_on_exit
 
   def __enter__(self):
+    self.original_prefix = os.environ.get('OPENPILOT_PREFIX', None)
     os.environ['OPENPILOT_PREFIX'] = self.prefix
     try:
       os.mkdir(self.msgq_path)
@@ -28,6 +29,8 @@ class OpenpilotPrefix:
       self.clean_dirs()
     try:
       del os.environ['OPENPILOT_PREFIX']
+      if self.original_prefix is not None:
+        os.environ['OPENPILOT_PREFIX'] = self.original_prefix
     except KeyError:
       pass
     return False
