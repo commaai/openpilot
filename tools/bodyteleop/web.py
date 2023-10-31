@@ -135,14 +135,12 @@ async def offer(request):
   streams[stream_id] = stream
   stream_connection_tasks[stream_id] = connection_task
 
-  return web.Response(
-    content_type="application/json",
-    text=json.dumps(description),
-  )
+  response_content = {"sdp": description.sdp, "type": description.type}
+  return web.json_response(response_content)
 
 
 async def on_shutdown(app):
-  coroutines = [stream.stop() for stream in streams]
+  coroutines = [stream.stop() for stream in streams.values()]
   await asyncio.gather(*coroutines)
   streams.clear()
 
