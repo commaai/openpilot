@@ -148,8 +148,10 @@ class AudioInputStreamTrack(aiortc.mediastreams.AudioStreamTrack):
 
   async def recv(self):
     mic_data = self.stream.read(self.chunk_size)
+    mic_array = np.frombuffer(mic_data, dtype=np.int16)
+    mic_array = np.expand_dims(mic_array, axis=0)
     layout = 'stereo' if self.channels > 1 else 'mono'
-    frame = av.AudioFrame.from_ndarray(mic_data, format=self.PYAUDIO_TO_AV_FORMAT_MAP[self.format], layout=layout)
+    frame = av.AudioFrame.from_ndarray(mic_array, format=self.PYAUDIO_TO_AV_FORMAT_MAP[self.format], layout=layout)
     frame.pts = self.pts
     self.pts += frame.samples
 
