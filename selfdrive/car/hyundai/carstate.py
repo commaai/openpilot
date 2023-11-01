@@ -363,5 +363,7 @@ class CarState(CarStateBase):
       messages += [
         ("SCC_CONTROL", 50),
       ]
+    if CP.carFingerprint == CAR.KONA_2ND_GEN:
+      messages += [("CAM_0x181", 20)]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus(CP).CAM)
