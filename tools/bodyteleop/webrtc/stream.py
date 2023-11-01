@@ -102,7 +102,10 @@ class WebRTCBaseStream(abc.ABC):
   def _add_producer_tracks(self):
     for track in self.outgoing_video_tracks:
       sender = self.peer_connection.addTrack(track)
-      self._force_codec(sender, "video/H264", "video")
+      if hasattr(track, "codec_preference") and track.codec_preference() is not None:
+        transceiver = next(t for t in self.peer_connection.getTransceivers() if t.sender == sender)
+        codec_mime = f"video/{track.codec_preference().upper()}"
+        self._force_codec(transceiver, codec_mime, "video")
     for track in self.outgoing_audio_tracks:
       self.peer_connection.addTrack(track)
 
@@ -122,10 +125,9 @@ class WebRTCBaseStream(abc.ABC):
       await message_handler(channel, message)
     return handler_wrapper
   
-  def _force_codec(self, sender, codec_mime, stream_type):
+  def _force_codec(self, transceiver, codec_mime, stream_type):
     codecs = aiortc.RTCRtpSender.getCapabilities(stream_type).codecs
     codec = [codec for codec in codecs if codec.mimeType == codec_mime]
-    transceiver = next(t for t in self.peer_connection.getTransceivers() if t.sender == sender)
     transceiver.setCodecPreferences(codec)
 
   def _on_connectionstatechange(self):
@@ -251,9 +253,58 @@ class WebRTCAnswerStream(WebRTCBaseStream):
   def __init__(self, session: aiortc.RTCSessionDescription, *args, **kwargs):
     super().__init__(*args, **kwargs)
     self.session = session
+
+  def _probe_video_codecs(self) -> List[str]:
+    codecs = []
+    for track in self.outgoing_video_tracks:
+      if hasattr(track, "codec_preference") and track.codec_preference() is not None:
+        codecs.append(track.codec_preference())
+
+    return codecs
+
+  def _override_incoming_video_codecs(self, remote_sdp: str, preferred_codecs: List[str]) -> str:
+    desc = aiortc.sdp.SessionDescription.parse(remote_sdp)
+    preferred_codec_mimes = [f"video/{c}" for c in preferred_codecs]
+    for m in desc.media:
+      if m.kind != "video":
+        continue
+
+
+      preferred_codecs = [c for c in m.rtp.codecs if c.mimeType in preferred_codec_mimes]
+      if len(preferred_codecs) == 0:
+        raise ValueError(f"None of {preferred_codecs} codecs is supported in remote SDP")
+
+      m.rtp.codecs = preferred_codecs
+      m.fmt = [c.payloadType for c in preferred_codecs]
+
+    return str(desc)
   
+  def _assert_incoming_sdp(self, sdp: str):
+    def n_media_senders(kind, medias):
+      return [m for m in medias if m.kind == kind and m.direction in ["sendonly", "sendrecv"]]
+    def n_media_receivers(kind, medias):
+      return [m for m in medias if m.kind == kind and m.direction in ["recvonly", "sendrecv"]]
+    desc = aiortc.sdp.SessionDescription.parse(sdp)
+    transceivers = self.peer_connection.getTransceivers()
+    
+    enough_remote_video_recv = n_media_receivers("video", desc.media) >= n_media_senders("video", transceivers)
+    enough_remote_audio_recv = n_media_receivers("audio", desc.media) >= n_media_senders("audio", transceivers)
+    enough_local_video_recv = n_media_receivers("video", transceivers) >= n_media_senders("video", desc.media)
+    enough_local_audio_recv = n_media_receivers("audio", transceivers) >= n_media_senders("audio", desc.media) 
+
+    assert enough_remote_video_recv, "Not enough video receivers on remote peer"
+    assert enough_remote_audio_recv, "Not enough audio receivers on remote peer"
+    assert enough_local_video_recv, "Not enough video receivers on local peer"
+    assert enough_local_audio_recv, "Not enough audio receivers on local peer"
+
   async def start(self):
     assert self.peer_connection.remoteDescription is None, "Connection already established"
+
+    # since we sent already encoded frames in some cases (e.g. livestream video tracks are in H264), we need to force aiortc to actually use it
+    # we do that by overriding supported codec information on incoming sdp
+    preferred_codecs = self._probe_video_codecs()
+    if len(preferred_codecs) > 0:
+      self.session.sdp = self._override_incoming_video_codecs(self.session.sdp, preferred_codecs)
 
     self._parse_incoming_streams(remote_sdp=self.session.sdp)
     await self.peer_connection.setRemoteDescription(self.session)
