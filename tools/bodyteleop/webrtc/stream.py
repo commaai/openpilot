@@ -5,6 +5,7 @@ from aiortc.contrib.media import MediaRelay
 import abc
 import argparse
 import json
+import logging
 from typing import Callable, Awaitable, Dict, List, Any, Optional
 
 from openpilot.tools.bodyteleop.webrtc.common import StreamingOffer, ConnectionProvider
@@ -88,7 +89,12 @@ class WebRTCBaseStream(abc.ABC):
     self.peer_connection.on("connectionstatechange", self._on_connectionstatechange)
     self.peer_connection.on("datachannel", self._on_incoming_datachannel)
     self.peer_connection.on("track", self._on_incoming_track)
+
+    self.logger = logging.getLogger("WebRTCStream")
   
+  def _log_debug(self, msg: Any, *args):
+    self.logger.debug(f"{type(self)}() {msg}", *args)
+
   @property
   def _number_of_incoming_media(self):
     return len(self.incoming_camera_tracks) + len(self.incoming_audio_tracks) + int(self.messaging_channel_is_incoming)
@@ -131,12 +137,12 @@ class WebRTCBaseStream(abc.ABC):
     transceiver.setCodecPreferences(codec)
 
   def _on_connectionstatechange(self):
-    print("-- connection state is", self.peer_connection.connectionState)
+    self._log_debug("connection state is", self.peer_connection.connectionState)
     if self.peer_connection.connectionState in ['connected', 'failed']:
       self.connection_attempted_event.set()
 
   def _on_incoming_track(self, track: aiortc.MediaStreamTrack):
-    print("-- got track: ", track.kind, track.id)
+    self._log_debug("got track: ", track.kind, track.id)
     if track.kind == "video":
       parts = track.id.split(":") # format: "camera_type:camera_id"
       if len(parts) < 2:
@@ -151,7 +157,7 @@ class WebRTCBaseStream(abc.ABC):
     self._on_after_media()
 
   def _on_incoming_datachannel(self, channel: aiortc.RTCDataChannel):
-    print("-- got data channel: ", channel.label)
+    self._log_debug("got data channel: ", channel.label)
     if channel.label == "data" and self.messaging_channel is None:
       self._add_messaging_channel(channel)
     self._on_after_media()
@@ -223,12 +229,12 @@ class WebRTCOfferStream(WebRTCBaseStream):
   def __init__(self, session_provider: ConnectionProvider, *args, **kwargs):
     super().__init__(*args, **kwargs)
     self.session_provider = session_provider
-    self._add_producer_tracks()
 
   async def start(self):
     self._add_consumer_tracks()
     if self.enable_messaging:
       self._add_messaging_channel()
+    self._add_producer_tracks()
 
     offer = await self.peer_connection.createOffer()
     await self.peer_connection.setLocalDescription(offer)
