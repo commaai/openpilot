@@ -14,7 +14,6 @@ class StreamingOffer:
   type: str
   video: List[str]
   audio: bool
-  channel: bool
 
 
 ConnectionProvider = Callable[[StreamingOffer], Awaitable[aiortc.RTCSessionDescription]]
@@ -151,7 +150,7 @@ class WebRTCBaseStream(abc.ABC):
       self.connection_attempted_event.set()
 
   def _on_incoming_track(self, track: aiortc.MediaStreamTrack):
-    self._log_debug("got track: ", track.kind, track.id)
+    self._log_debug("got track:", track.kind, track.id)
     if track.kind == "video":
       parts = track.id.split(":") # format: "camera_type:camera_id"
       if len(parts) < 2:
@@ -166,7 +165,7 @@ class WebRTCBaseStream(abc.ABC):
     self._on_after_media()
 
   def _on_incoming_datachannel(self, channel: aiortc.RTCDataChannel):
-    self._log_debug("got data channel: ", channel.label)
+    self._log_debug("got data channel:", channel.label)
     if channel.label == "data" and self.messaging_channel is None:
       self._add_messaging_channel(channel)
     self._on_after_media()
@@ -254,7 +253,6 @@ class WebRTCOfferStream(WebRTCBaseStream):
       type=actual_offer.type,
       video=list(self.expected_incoming_camera_types),
       audio=self.expected_incoming_audio,
-      channel=self.enable_messaging
     )
     remote_answer = await self.session_provider(streaming_offer)
     self._parse_incoming_streams(remote_sdp=remote_answer.sdp)
@@ -293,24 +291,6 @@ class WebRTCAnswerStream(WebRTCBaseStream):
       m.fmt = [c.payloadType for c in preferred_codecs]
 
     return str(desc)
-
-  def _assert_incoming_sdp(self, sdp: str):
-    def n_media_senders(kind, medias):
-      return [m for m in medias if m.kind == kind and m.direction in ["sendonly", "sendrecv"]]
-    def n_media_receivers(kind, medias):
-      return [m for m in medias if m.kind == kind and m.direction in ["recvonly", "sendrecv"]]
-    desc = aiortc.sdp.SessionDescription.parse(sdp)
-    transceivers = self.peer_connection.getTransceivers()
-
-    enough_remote_video_recv = n_media_receivers("video", desc.media) >= n_media_senders("video", transceivers)
-    enough_remote_audio_recv = n_media_receivers("audio", desc.media) >= n_media_senders("audio", transceivers)
-    enough_local_video_recv = n_media_receivers("video", transceivers) >= n_media_senders("video", desc.media)
-    enough_local_audio_recv = n_media_receivers("audio", transceivers) >= n_media_senders("audio", desc.media)
-
-    assert enough_remote_video_recv, "Not enough video receivers on remote peer"
-    assert enough_remote_audio_recv, "Not enough audio receivers on remote peer"
-    assert enough_local_video_recv, "Not enough video receivers on local peer"
-    assert enough_local_audio_recv, "Not enough audio receivers on local peer"
 
   async def start(self):
     assert self.peer_connection.remoteDescription is None, "Connection already established"
