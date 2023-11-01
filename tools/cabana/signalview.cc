@@ -351,7 +351,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
       painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
       QRect rect = r.adjusted(sparkline_size.width() + 1, 0, 0, 0);
       int value_adjust = 10;
-      if (item->highlight || option.state & QStyle::State_Selected) {
+      if (!item->sparkline.isEmpty() && (item->highlight || option.state & QStyle::State_Selected)) {
         painter->drawLine(rect.topLeft(), rect.bottomLeft());
         rect.adjust(5, -v_margin, 0, v_margin);
         painter->setFont(minmax_font);
@@ -361,7 +361,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
         painter->drawText(rect, Qt::AlignLeft | Qt::AlignBottom, min);
         QFontMetrics fm(minmax_font);
         value_adjust = std::max(fm.width(min), fm.width(max)) + 5;
-      } else if (item->sig->type == cabana::Signal::Type::Multiplexed) {
+      } else if (!item->sparkline.isEmpty()  && item->sig->type == cabana::Signal::Type::Multiplexed) {
         // display freq of multiplexed signal
         painter->setFont(label_font);
         QString freq = QString("%1 hz").arg(item->sparkline.freq(), 0, 'g', 2);
@@ -610,12 +610,8 @@ void SignalView::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
 }
 
 void SignalView::handleSignalUpdated(const cabana::Signal *sig) {
-  if (int row = model->signalRow(sig); row != -1) {
-    auto item = model->getItem(model->index(row, 1));
-    // invalidate the sparkline
-    item->sparkline.last_ts = 0;
+  if (int row = model->signalRow(sig); row != -1)
     updateState();
-  }
 }
 
 void SignalView::updateState(const std::set<MessageId> *msgs) {
@@ -648,11 +644,8 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
     QFutureSynchronizer<void> synchronizer;
     for (int i = first_visible_row; i <= last_visible_row; ++i) {
       auto item = model->getItem(model->index(i, 1));
-      auto &s = item->sparkline;
-      if (s.last_ts != last_msg.ts || s.size() != size || s.time_range != settings.sparkline_range) {
-        synchronizer.addFuture(QtConcurrent::run(
-            &s, &Sparkline::update, model->msg_id, item->sig, last_msg.ts, settings.sparkline_range, size));
-      }
+      synchronizer.addFuture(QtConcurrent::run(
+          &item->sparkline, &Sparkline::update, model->msg_id, item->sig, last_msg.ts, settings.sparkline_range, size));
     }
   }
 
