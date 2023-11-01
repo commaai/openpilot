@@ -42,6 +42,9 @@ class TiciVideoStreamTrack(aiortc.MediaStreamTrack):
       await asyncio.sleep(wait_time)
 
     return pts
+  
+  def codec_preference(self):
+    return None
 
 
 class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
@@ -74,6 +77,9 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     self._pts += self._dt * self._clock_rate
 
     return packet
+  
+  def codec_preference(self):
+    return "H264"
 
 
 class DummyVideoStreamTrack(TiciVideoStreamTrack):
