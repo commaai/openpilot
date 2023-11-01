@@ -3,6 +3,8 @@ import bz2
 import math
 import json
 import os
+import pathlib
+import psutil
 import shutil
 import subprocess
 import time
@@ -91,9 +93,16 @@ TIMINGS = {
   "wideRoadCameraState": [1.5, 0.35],
 }
 
+# procs that are allowed to use the GPU
+GPU_PROCS = {"weston", "_ui", "mapsd", "camerad", "selfdrive.modeld.modeld"}
+
 
 def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
+
+
+def get_gpu_procs():
+  return [psutil.Process(int(f.name)).name() for f in pathlib.Path('/sys/devices/virtual/kgsl/kgsl/proc/').iterdir() if f.is_dir()]
 
 
 class TestOnroad(unittest.TestCase):
@@ -121,6 +130,8 @@ class TestOnroad(unittest.TestCase):
     # Make sure athena isn't running
     os.system("pkill -9 -f athena")
 
+    cls.gpu_procs = set()
+
     # start manager and run openpilot for a minute
     proc = None
     try:
@@ -145,6 +156,7 @@ class TestOnroad(unittest.TestCase):
           if Path(Paths.log_root()).exists():
             segs = set(Path(Paths.log_root()).glob(f"{route}--*"))
           cls.segments = sorted(segs, key=lambda s: int(str(s).rsplit('--')[-1]))
+          cls.gpu_procs.update(get_gpu_procs())
           time.sleep(2)
 
       # chop off last, incomplete segment
@@ -295,6 +307,9 @@ class TestOnroad(unittest.TestCase):
     # check for big leaks. note that memory usage is
     # expected to go up while the MSGQ buffers fill up
     self.assertLessEqual(max(mems) - min(mems), 3.0)
+
+  def test_gpu_usage(self):
+    self.assertEqual(self.gpu_procs, GPU_PROCS)
 
   def test_camera_processing_time(self):
     result = "\n"
