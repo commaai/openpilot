@@ -93,6 +93,7 @@ TIMINGS = {
   "wideRoadCameraState": [1.5, 0.35],
 }
 
+
 def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
 
