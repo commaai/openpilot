@@ -107,7 +107,7 @@ class WebRTCBaseStream(abc.ABC):
   def _number_of_incoming_media(self):
     return len(self.incoming_camera_tracks) + len(self.incoming_audio_tracks) + int(self.messaging_channel_is_incoming)
 
-  def _add_consumer_tracks(self):
+  def _add_consumer_transceivers(self):
     for _ in self.expected_incoming_camera_types:
       self.peer_connection.addTransceiver("video", direction="recvonly")
     if self.expected_incoming_audio:
@@ -118,8 +118,7 @@ class WebRTCBaseStream(abc.ABC):
       sender = self.peer_connection.addTrack(track)
       if hasattr(track, "codec_preference") and track.codec_preference() is not None:
         transceiver = next(t for t in self.peer_connection.getTransceivers() if t.sender == sender)
-        codec_mime = f"video/{track.codec_preference().upper()}"
-        self._force_codec(transceiver, codec_mime, "video")
+        self._force_codec(transceiver, track.codec_preference(), "video")
     for track in self.outgoing_audio_tracks:
       self.peer_connection.addTrack(track)
 
@@ -139,7 +138,8 @@ class WebRTCBaseStream(abc.ABC):
       await message_handler(channel, message)
     return handler_wrapper
 
-  def _force_codec(self, transceiver, codec_mime, stream_type):
+  def _force_codec(self, transceiver, codec, stream_type):
+    codec_mime = f"{stream_type}/{codec.upper()}"
     codecs = aiortc.RTCRtpSender.getCapabilities(stream_type).codecs
     codec = [codec for codec in codecs if codec.mimeType == codec_mime]
     transceiver.setCodecPreferences(codec)
@@ -239,7 +239,7 @@ class WebRTCOfferStream(WebRTCBaseStream):
     self.session_provider = session_provider
 
   async def start(self):
-    self._add_consumer_tracks()
+    self._add_consumer_transceivers()
     if self.enable_messaging:
       self._add_messaging_channel()
     self._add_producer_tracks()
@@ -304,7 +304,7 @@ class WebRTCAnswerStream(WebRTCBaseStream):
     self._parse_incoming_streams(remote_sdp=self.session.sdp)
     await self.peer_connection.setRemoteDescription(self.session)
 
-    self._add_consumer_tracks()
+    self._add_consumer_transceivers()
     if self.enable_messaging:
       self._add_messaging_channel()
     self._add_producer_tracks()
