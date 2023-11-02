@@ -186,20 +186,21 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   };
 
   const auto &item = items_[index.row()];
+  const auto &data = can->lastMessage(item.id);
   if (role == Qt::DisplayRole) {
     switch (index.column()) {
       case Column::NAME: return item.name;
       case Column::SOURCE: return item.id.source != INVALID_SOURCE ? QString::number(item.id.source) : "N/A";
       case Column::ADDRESS: return QString::number(item.id.address, 16);
       case Column::NODE: return item.node;
-      case Column::FREQ: return item.id.source != INVALID_SOURCE ? getFreq(*item.data) : "N/A";
-      case Column::COUNT: return item.id.source != INVALID_SOURCE ? QString::number(item.data->count) : "N/A";
+      case Column::FREQ: return item.id.source != INVALID_SOURCE ? getFreq(data) : "N/A";
+      case Column::COUNT: return item.id.source != INVALID_SOURCE ? QString::number(data.count) : "N/A";
       case Column::DATA: return item.id.source != INVALID_SOURCE ? "" : "N/A";
     }
   } else if (role == ColorsRole) {
-    return QVariant::fromValue((void*)(&item.data->colors));
+    return QVariant::fromValue((void*)(&data.colors));
   } else if (role == BytesRole && index.column() == Column::DATA && item.id.source != INVALID_SOURCE) {
-    return QVariant::fromValue((void*)(&item.data->dat));
+    return QVariant::fromValue((void*)(&data.dat));
   } else if (role == Qt::ToolTipRole && index.column() == Column::NAME) {
     auto msg = dbc()->msg(item.id);
     auto tooltip = item.name;
@@ -219,7 +220,7 @@ void MessageListModel::dbcModified() {
   for (const auto &[_, m] : dbc()->getMessages(-1)) {
     dbc_messages_.insert(MessageId{.source = INVALID_SOURCE, .address = m.address});
   }
-  filterAndSort(true);
+  filterAndSort();
 }
 
 void MessageListModel::sortItems(std::vector<MessageListModel::Item> &items) {
@@ -233,8 +234,8 @@ void MessageListModel::sortItems(std::vector<MessageListModel::Item> &items) {
     case Column::SOURCE: do_sort(items, [](auto &item) { return std::tie(item.id.source, item.id); }); break;
     case Column::ADDRESS: do_sort(items, [](auto &item) { return std::tie(item.id.address, item.id);}); break;
     case Column::NODE: do_sort(items, [](auto &item) { return std::tie(item.node, item.id);}); break;
-    case Column::FREQ: do_sort(items, [](auto &item) { return std::tie(item.data->freq, item.id); }); break;
-    case Column::COUNT: do_sort(items, [](auto &item) { return std::tie(item.data->count, item.id); }); break;
+    case Column::FREQ: do_sort(items, [](auto &item) { return std::make_pair(can->lastMessage(item.id).freq, item.id); }); break;
+    case Column::COUNT: do_sort(items, [](auto &item) { return std::make_pair(can->lastMessage(item.id).count, item.id); }); break;
   }
 }
 
@@ -258,6 +259,7 @@ bool MessageListModel::match(const MessageListModel::Item &item) {
     return true;
 
   bool match = true;
+  const auto &data = can->lastMessage(item.id);
   for (auto it = filters_.cbegin(); it != filters_.cend() && match; ++it) {
     const QString &txt = it.value();
     switch (it.key()) {
@@ -282,20 +284,20 @@ bool MessageListModel::match(const MessageListModel::Item &item) {
         break;
       case Column::FREQ:
         // TODO: Hide stale messages?
-        match = parseRange(txt, item.data->freq);
+        match = parseRange(txt, data.freq);
         break;
       case Column::COUNT:
-        match = parseRange(txt, item.data->count);
+        match = parseRange(txt, data.count);
         break;
       case Column::DATA:
-        match = utils::toHex(item.data->dat).contains(txt, Qt::CaseInsensitive);
+        match = utils::toHex(data.dat).contains(txt, Qt::CaseInsensitive);
         break;
     }
   }
   return match;
 }
 
-void MessageListModel::filterAndSort(bool force_reset) {
+void MessageListModel::filterAndSort() {
   // merge CAN and DBC messages
   std::vector<MessageId> all_messages;
   all_messages.reserve(can->lastMessages().size() + dbc_messages_.size());
@@ -304,7 +306,7 @@ void MessageListModel::filterAndSort(bool force_reset) {
     all_messages.push_back(id);
     dbc_msgs.erase(MessageId{.source = INVALID_SOURCE, .address = id.address});
   }
-  std::copy(dbc_msgs.begin(), dbc_msgs.end(), std::back_inserter(all_messages));
+  all_messages.insert(all_messages.end(), dbc_msgs.begin(), dbc_msgs.end());
 
   // filter and sort
   std::vector<Item> items;
@@ -312,14 +314,13 @@ void MessageListModel::filterAndSort(bool force_reset) {
     auto msg = dbc()->msg(id);
     Item item = {.id = id,
                  .name = msg ? msg->name : UNTITLED,
-                 .node = msg ? msg->transmitter : QString(),
-                 .data = &can->lastMessage(id)};
+                 .node = msg ? msg->transmitter : QString()};
     if (match(item))
       items.emplace_back(item);
   }
   sortItems(items);
 
-  if (force_reset || items_ != items) {
+  if (items_ != items) {
     beginResetModel();
     items_ = std::move(items);
     endResetModel();
