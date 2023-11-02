@@ -27,19 +27,12 @@ def gen_llk(location=LOCATION1):
 class MapBoxInternetDisabledRequestHandler(http.server.BaseHTTPRequestHandler):
   INTERNET_ACTIVE = True
 
-  def setup(self):
-    if self.INTERNET_ACTIVE:
-      super().setup()
-
-  def handle(self):
-    if self.INTERNET_ACTIVE:
-      super().handle()
-
-  def finish(self):
-    if self.INTERNET_ACTIVE:
-      super().finish()
-
   def do_GET(self):
+    if not self.INTERNET_ACTIVE:
+      self.send_response(500)
+      self.end_headers()
+      return
+
     url = f'https://api.mapbox.com{self.path}'
 
     headers = dict(self.headers)
@@ -109,7 +102,6 @@ class TestMapRenderer(unittest.TestCase):
     assert VisionIpcClient.available_streams("navd", False) == {VisionStreamType.VISION_STREAM_MAP, }
     assert self.vipc.connect(False)
     self.vipc.recv()
-
 
   def _run_test(self, expect_valid, location=LOCATION1):
     starting_frame_id = None
@@ -185,7 +177,6 @@ class TestMapRenderer(unittest.TestCase):
     self.server.enable_internet()
     self._run_test(True, LOCATION2)
 
-    self.location = LOCATION1
     self._run_test(True, LOCATION2)
 
 if __name__ == "__main__":

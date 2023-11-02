@@ -1,0 +1,7 @@
+#!/usr/bin/bash -e
+
+cd "$(dirname "$0")"
+
+source ../../system/hardware/force_cpu_rendering.sh
+
+exec ./_mapsd

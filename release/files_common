@@ -216,6 +216,7 @@ system/hardware/tici/iwlist.py
 system/hardware/pc/__init__.py
 system/hardware/pc/hardware.h
 system/hardware/pc/hardware.py
+system/hardware/force_cpu_rendering.sh
 
 system/ubloxd/.gitignore
 system/ubloxd/SConscript
