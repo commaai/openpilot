@@ -12,7 +12,7 @@
 #include "system/hardware/hw.h"
 
 int main(int argc, char *argv[]) {
-  Hardware::force_cpu_rendering();
+  Hardware::config_cpu_rendering();
 
   qInstallMessageHandler(swagLogMessageHandler);
   setpriority(PRIO_PROCESS, 0, -20);

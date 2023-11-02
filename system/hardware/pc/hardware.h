@@ -21,7 +21,7 @@ public:
     std::system(("pactl set-sink-volume @DEFAULT_SINK@ " + std::string(volume_str)).c_str());
   }
 
-  static void force_cpu_rendering() {
+  static void config_cpu_rendering() {
     setenv("QT_QPA_PLATFORM", "offscreen", 1);
     setenv("__GLX_VENDOR_LIBRARY_NAME", "mesa", 1);
   }
