@@ -3,10 +3,11 @@ import asyncio
 import aiortc
 import dataclasses
 import json
+import logging
 
-from openpilot.tools.bodyteleop.webrtc.stream import WebRTCStreamBuilder
+from openpilot.tools.bodyteleop.webrtc import WebRTCStreamBuilder
+from openpilot.tools.bodyteleop.webrtc.stream import StreamingOffer
 from openpilot.tools.bodyteleop.webrtc.tracks import LiveStreamVideoStreamTrack, FrameReaderVideoStreamTrack, DummyVideoStreamTrack
-from openpilot.tools.bodyteleop.webrtc.common import StdioConnectionProvider, StreamingOffer
 
 
 async def async_input():
@@ -29,7 +30,7 @@ async def run_answer(args):
   while True:
     print("-- Please enter a JSON from client --")
     raw_payload = await async_input()
-    
+
     payload = json.loads(raw_payload)
     offer = StreamingOffer(**payload)
     video_tracks = []
@@ -43,12 +44,12 @@ async def run_answer(args):
       video_tracks.append(track)
     audio_tracks = []
 
-    stream_builder = WebRTCStreamBuilder()
-    for track in video_tracks:
-      stream_builder.add_video_producer(track)
+    stream_builder = WebRTCStreamBuilder.answer(offer.sdp)
+    for cam, track in zip(offer.video, video_tracks):
+      stream_builder.add_video_stream(cam, track)
     for track in audio_tracks:
-      stream_builder.add_audio_producer(track)
-    stream = stream_builder.answer(offer)
+      stream_builder.add_audio_stream(track)
+    stream = stream_builder.stream()
     answer = await stream.start()
     streams.append(stream)
 
@@ -59,14 +60,14 @@ async def run_answer(args):
 
 
 async def run_offer(args):
-  connection_provider = StdioConnectionProvider()
-  stream_builder = WebRTCStreamBuilder()
+  stream_builder = WebRTCStreamBuilder.offer(StdioConnectionProvider)
   for cam in args.cameras:
-    stream_builder.add_video_consumer(cam)
+    stream_builder.request_video_stream(cam)
   stream_builder.add_messaging()
-  stream = stream_builder.offer(connection_provider)
+  stream = stream_builder.stream()
   _ = await stream.start()
   await stream.wait_for_connection()
+  print("Connection established and all tracks are ready")
 
   tracks = [stream.get_incoming_video_track(cam, False) for cam in args.cameras]
   while True:
@@ -81,7 +82,7 @@ async def run_offer(args):
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
-  subparsers = parser.add_subparsers(dest="command", choices=["offer", "answer"])
+  subparsers = parser.add_subparsers(dest="command", required=True)
 
   offer_parser = subparsers.add_parser("offer")
   offer_parser.add_argument("cameras", metavar="CAMERA", type=str, nargs="+", default=["driver"], help="Camera types to stream")
