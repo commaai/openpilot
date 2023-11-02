@@ -16,7 +16,6 @@ repos:
     -   id: check-yaml
     -   id: check-merge-conflict
     -   id: check-symlinks
-        exclude: '(third_party/mesa/lib/libEGL_mesa.so)'
     -   id: check-executables-have-shebangs
     -   id: check-shebang-scripts-are-executable
     -   id: check-added-large-files

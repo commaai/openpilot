@@ -96,7 +96,6 @@ if arch == "larch64":
     "/usr/lib",
     "/system/vendor/lib64",
     f"#third_party/acados/{arch}/lib",
-    f"#third_party/mesa/lib",
   ]
 
   libpath += [

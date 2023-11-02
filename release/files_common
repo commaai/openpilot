@@ -437,7 +437,6 @@ third_party/snpe/dsp**
 third_party/acados/.gitignore
 third_party/acados/include/**
 third_party/acados/acados_template/**
-third_party/mesa/**
 
 third_party/bootstrap/**
 third_party/qt5/larch64/bin/**
