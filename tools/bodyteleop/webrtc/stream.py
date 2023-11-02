@@ -177,7 +177,8 @@ class WebRTCBaseStream(abc.ABC):
   def _parse_incoming_streams(self, remote_sdp: str):
     desc = aiortc.sdp.SessionDescription.parse(remote_sdp)
     sending_medias = [m for m in desc.media if m.direction in ["sendonly", "sendrecv"]]
-    self.expected_number_tracks_or_channels = len(sending_medias)
+    channel_medias = [m for m in desc.media if m.kind == "application"]
+    self.expected_number_tracks_or_channels = len(sending_medias) + len(channel_medias)
 
   def has_incoming_video_track(self, camera_type: str) -> bool:
     return camera_type in self.incoming_camera_tracks
