@@ -141,8 +141,6 @@ class TestOnroad(unittest.TestCase):
           route = params.get("CurrentRoute", encoding="utf-8")
           time.sleep(0.1)
 
-        cls.gpu_procs = {psutil.Process(int(f.name)).name() for f in pathlib.Path('/sys/devices/virtual/kgsl/kgsl/proc/').iterdir() if f.is_dir()}
-
         while len(cls.segments) < 3:
           segs = set()
           if Path(Paths.log_root()).exists():
@@ -154,6 +152,8 @@ class TestOnroad(unittest.TestCase):
       cls.segments = cls.segments[:-1]
 
     finally:
+      cls.gpu_procs = {psutil.Process(int(f.name)).name() for f in pathlib.Path('/sys/devices/virtual/kgsl/kgsl/proc/').iterdir() if f.is_dir()}
+
       if proc is not None:
         proc.terminate()
         if proc.wait(60) is None:
