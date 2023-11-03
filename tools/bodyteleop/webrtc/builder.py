@@ -82,7 +82,7 @@ class WebRTCOfferBuilder(WebRTCStreamBuilder):
       consume_audio=self.requested_audio,
       video_producer_tracks=[],
       audio_producer_tracks=self.audio_tracks,
-      add_data_channel=self.messaging_enabled,
+      should_add_data_channel=self.messaging_enabled,
     )
 
 
@@ -126,5 +126,5 @@ class WebRTCAnswerBuilder(WebRTCStreamBuilder):
       consume_audio=self.requested_audio,
       video_producer_tracks=list(self.video_tracks.values()),
       audio_producer_tracks=self.audio_tracks,
-      add_data_channel=False,
+      should_add_data_channel=False,
     )

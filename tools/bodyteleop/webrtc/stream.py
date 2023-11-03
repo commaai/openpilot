@@ -23,7 +23,7 @@ class WebRTCBaseStream(abc.ABC):
                consume_audio: bool,
                video_producer_tracks: List[aiortc.MediaStreamTrack],
                audio_producer_tracks: List[aiortc.MediaStreamTrack],
-               add_data_channel: bool):
+               should_add_data_channel: bool):
     self.peer_connection = aiortc.RTCPeerConnection()
     self.media_relay = MediaRelay()
     self.expected_incoming_camera_types = consumed_camera_types
@@ -35,7 +35,7 @@ class WebRTCBaseStream(abc.ABC):
     self.outgoing_video_tracks = video_producer_tracks
     self.outgoing_audio_tracks = audio_producer_tracks
 
-    self.add_data_channel = add_data_channel
+    self.should_add_data_channel = should_add_data_channel
     self.messaging_channel = None
     self.incoming_message_handlers = []
 
@@ -55,7 +55,8 @@ class WebRTCBaseStream(abc.ABC):
   @property
   def _number_of_incoming_media(self):
     media = len(self.incoming_camera_tracks) + len(self.incoming_audio_tracks)
-    media += int(self.messaging_channel is not None) if not self.add_data_channel else 0
+    # if stream does not add data_channel, then it means its incoming
+    media += int(self.messaging_channel is not None) if not self.should_add_data_channel else 0
     return media
 
   def _add_consumer_transceivers(self):
@@ -126,7 +127,7 @@ class WebRTCBaseStream(abc.ABC):
     desc = aiortc.sdp.SessionDescription.parse(remote_sdp)
     sending_medias = [m for m in desc.media if m.direction in ["sendonly", "sendrecv"]]
     incoming_media_count = len(sending_medias)
-    if not self.add_data_channel:
+    if not self.should_add_data_channel:
       channel_medias = [m for m in desc.media if m.kind == "application"]
       incoming_media_count += len(channel_medias)
     self.expected_number_of_incoming_media = incoming_media_count
@@ -164,7 +165,7 @@ class WebRTCBaseStream(abc.ABC):
 
   def set_message_handler(self, message_handler: Callable[[aiortc.RTCDataChannel, bytes], Awaitable[None]]):
     self.incoming_message_handlers.append(message_handler)
-    if self.is_started:
+    if self.is_started and self.messaging_channel is not None:
       self.messaging_channel.on("message", self._create_channel_handler_wrapper(self.messaging_channel, message_handler))
 
   @property
@@ -195,7 +196,7 @@ class WebRTCOfferStream(WebRTCBaseStream):
 
   async def start(self):
     self._add_consumer_transceivers()
-    if self.add_data_channel:
+    if self.should_add_data_channel:
       self._add_messaging_channel()
     self._add_producer_tracks()
 
