@@ -1,11 +1,11 @@
-import asyncio
-import aiortc
-from aiortc.contrib.media import MediaRelay
-
 import abc
+import asyncio
 import dataclasses
 import logging
-from typing import Callable, Awaitable, List, Any, Optional
+from typing import Callable, Awaitable, Dict, List, Any, Optional
+
+import aiortc
+from aiortc.contrib.media import MediaRelay
 
 
 @dataclasses.dataclass
@@ -15,6 +15,7 @@ class StreamingOffer:
 
 
 ConnectionProvider = Callable[[StreamingOffer], Awaitable[aiortc.RTCSessionDescription]]
+MessageHandler = Callable[[aiortc.RTCDataChannel, bytes], Awaitable[None]]
 
 
 class WebRTCBaseStream(abc.ABC):
@@ -28,16 +29,16 @@ class WebRTCBaseStream(abc.ABC):
     self.media_relay = MediaRelay()
     self.expected_incoming_camera_types = consumed_camera_types
     self.expected_incoming_audio = consume_audio
-    self.expected_number_of_incoming_media = None
+    self.expected_number_of_incoming_media: Optional[int] = None
 
-    self.incoming_camera_tracks = dict()
-    self.incoming_audio_tracks = []
-    self.outgoing_video_tracks = video_producer_tracks
-    self.outgoing_audio_tracks = audio_producer_tracks
+    self.incoming_camera_tracks: Dict[str, aiortc.MediaStreamTrack] = dict()
+    self.incoming_audio_tracks: List[aiortc.MediaStreamTrack] = []
+    self.outgoing_video_tracks: List[aiortc.MediaStreamTrack] = video_producer_tracks
+    self.outgoing_audio_tracks: List[aiortc.MediaStreamTrack] = audio_producer_tracks
 
     self.should_add_data_channel = should_add_data_channel
-    self.messaging_channel = None
-    self.incoming_message_handlers = []
+    self.messaging_channel: Optional[aiortc.RTCDataChannel] = None
+    self.incoming_message_handlers: List[MessageHandler] = []
 
     self.incoming_media_ready_event = asyncio.Event()
     self.connection_attempted_event = asyncio.Event()
@@ -47,7 +48,6 @@ class WebRTCBaseStream(abc.ABC):
     self.peer_connection.on("track", self._on_incoming_track)
 
     self.logger = logging.getLogger("WebRTCStream")
-    self.logger.setLevel(logging.DEBUG)
 
   def _log_debug(self, msg: Any, *args):
     self.logger.debug(f"{type(self)}() {msg}", *args)
@@ -94,12 +94,12 @@ class WebRTCBaseStream(abc.ABC):
     transceiver.setCodecPreferences(codec)
 
   def _on_connectionstatechange(self):
-    self._log_debug("connection state is", self.peer_connection.connectionState)
+    self._log_debug("connection state is %s", self.peer_connection.connectionState)
     if self.peer_connection.connectionState in ['connected', 'failed']:
       self.connection_attempted_event.set()
 
   def _on_incoming_track(self, track: aiortc.MediaStreamTrack):
-    self._log_debug("got track:", track.kind, track.id)
+    self._log_debug("got track: %s %s", track.kind, track.id)
     if track.kind == "video":
       parts = track.id.split(":") # format: "camera_type:camera_id"
       if len(parts) < 2:
@@ -114,7 +114,7 @@ class WebRTCBaseStream(abc.ABC):
     self._on_after_media()
 
   def _on_incoming_datachannel(self, channel: aiortc.RTCDataChannel):
-    self._log_debug("got data channel:", channel.label)
+    self._log_debug("got data channel: %s", channel.label)
     if channel.label == "data" and self.messaging_channel is None:
       self._add_messaging_channel(channel)
     self._on_after_media()
@@ -163,7 +163,7 @@ class WebRTCBaseStream(abc.ABC):
 
     return self.messaging_channel
 
-  def set_message_handler(self, message_handler: Callable[[aiortc.RTCDataChannel, bytes], Awaitable[None]]):
+  def set_message_handler(self, message_handler: MessageHandler):
     self.incoming_message_handlers.append(message_handler)
     if self.messaging_channel is not None:
       self.messaging_channel.on("message", self._create_channel_handler_wrapper(self.messaging_channel, message_handler))
@@ -192,7 +192,7 @@ class WebRTCBaseStream(abc.ABC):
 
   @abc.abstractmethod
   async def start(self):
-    raise NotImplemented
+    raise NotImplementedError
 
 
 class WebRTCOfferStream(WebRTCBaseStream):
@@ -235,14 +235,14 @@ class WebRTCAnswerStream(WebRTCBaseStream):
 
     return codecs
 
-  def _override_incoming_video_codecs(self, remote_sdp: str, preferred_codecs: List[str]) -> str:
+  def _override_incoming_video_codecs(self, remote_sdp: str, codecs: List[str]) -> str:
     desc = aiortc.sdp.SessionDescription.parse(remote_sdp)
-    preferred_codec_mimes = [f"video/{c}" for c in preferred_codecs]
+    codec_mimes = [f"video/{c}" for c in codecs]
     for m in desc.media:
       if m.kind != "video":
         continue
 
-      preferred_codecs = [c for c in m.rtp.codecs if c.mimeType in preferred_codec_mimes]
+      preferred_codecs: List[aiortc.RTCRtpCodecParameters] = [c for c in m.rtp.codecs if c.mimeType in codec_mimes]
       if len(preferred_codecs) == 0:
         raise ValueError(f"None of {preferred_codecs} codecs is supported in remote SDP")
 

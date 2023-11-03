@@ -1,11 +1,12 @@
+import asyncio
+import logging
 import time
 import fractions
-from typing import Optional
+from typing import Optional, Any
 
 import aiortc
 from aiortc.mediastreams import VIDEO_CLOCK_RATE, VIDEO_TIME_BASE
 import av
-import asyncio
 import numpy as np
 
 
@@ -21,6 +22,10 @@ class TiciVideoStreamTrack(aiortc.MediaStreamTrack):
     self._time_base: fractions.Fraction = time_base
     self._clock_rate: int = clock_rate
     self._start: Optional[float] = None
+    self._logger = logging.getLogger("WebRTCStream")
+
+  def log_debug(self, msg: Any, *args):
+    self._logger.debug(f"{type(self)}() {msg}", *args)
 
   async def next_pts(self, current_pts) -> float:
     pts: float = current_pts + self._dt * self._clock_rate
@@ -45,7 +50,7 @@ class DummyVideoStreamTrack(TiciVideoStreamTrack):
     self._pts = 0
 
   async def recv(self):
-    print("-- sending frame", self._pts)
+    self.log_debug("track sending frame %s", self._pts)
     img = np.full((1920, 1080, 3), self._color, dtype=np.uint8)
 
     new_frame = av.VideoFrame.from_ndarray(img, format="rgb24")

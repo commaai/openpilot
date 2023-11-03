@@ -39,6 +39,7 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     packet.time_base = self._time_base
     packet.pts = self._pts
 
+    self.log_debug("track sending frame %s", self._pts)
     self._pts += self._dt * self._clock_rate
 
     return packet
@@ -56,18 +57,18 @@ class AudioInputStreamTrack(aiortc.mediastreams.AudioStreamTrack):
       pyaudio.paFloat32: 'flt',
   }
 
-  def __init__(self, format:int = pyaudio.paInt16, rate: int = 16000, channels: int = 1, packet_time: float = 0.020, device_index: Optional[int] = None):
+  def __init__(self, audio_format: int = pyaudio.paInt16, rate: int = 16000, channels: int = 1, packet_time: float = 0.020, device_index: Optional[int] = None):
     super().__init__()
 
     self.p = pyaudio.PyAudio()
     chunk_size = int(packet_time * rate)
-    self.stream = self.p.open(format=format,
+    self.stream = self.p.open(format=audio_format,
                               channels=channels,
                               rate=rate,
                               frames_per_buffer=chunk_size,
                               input=True,
                               input_device_index=device_index)
-    self.format = format
+    self.format = audio_format
     self.rate = rate
     self.channels = channels
     self.packet_time = packet_time
@@ -98,7 +99,7 @@ class FrameReaderVideoStreamTrack(TiciVideoStreamTrack):
     self._pts = 0
 
   async def recv(self):
-    print("-- sending frame", self._pts)
+    self.log_debug("track sending frame %s", self._pts)
     img = self._frames[self._frame_index]
 
     new_frame = av.VideoFrame.from_ndarray(img, format="rgb24")

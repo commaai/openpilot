@@ -5,6 +5,7 @@ import asyncio
 import aiortc
 import dataclasses
 import json
+import logging
 
 from openpilot.tools.bodyteleop.webrtc import WebRTCStreamBuilder
 from openpilot.tools.bodyteleop.webrtc.stream import StreamingOffer
@@ -94,6 +95,10 @@ if __name__ == "__main__":
   answer_parser.add_argument("--input-video", type=str, required=False, help="Stream from video file instead")
 
   args = parser.parse_args()
+
+  logging.basicConfig(level=logging.CRITICAL, handlers=[logging.StreamHandler()])
+  logger = logging.getLogger("WebRTCStream")
+  logger.setLevel(logging.DEBUG)
 
   loop = asyncio.get_event_loop()
   if args.command == "offer":
