@@ -7,7 +7,8 @@ import logging
 
 from openpilot.tools.bodyteleop.webrtc import WebRTCStreamBuilder
 from openpilot.tools.bodyteleop.webrtc.stream import StreamingOffer
-from openpilot.tools.bodyteleop.webrtc.tracks import LiveStreamVideoStreamTrack, FrameReaderVideoStreamTrack, DummyVideoStreamTrack
+from openpilot.tools.bodyteleop.webrtc.tracks import DummyVideoStreamTrack
+from openpilot.tools.bodyteleop.webrtc.device.tracks import LiveStreamVideoStreamTrack, FrameReaderVideoStreamTrack
 
 
 async def async_input():
