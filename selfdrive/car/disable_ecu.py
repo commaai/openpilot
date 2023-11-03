@@ -32,7 +32,7 @@ def disable_ecu(logcan, sendcan, bus=0, addr=0x7d0, sub_addr=None, com_cont_req=
     except Exception:
       cloudlog.exception("ecu disable exception")
 
-    cloudlog.error(f"ecu disable retry ({i + 1}) ...")
+    cloudlog.error(f"{addr:#x} - ecu disable retry ({i + 1}) ...")
   cloudlog.error("ecu disable failed")
   return False
 
