@@ -53,7 +53,7 @@ class WebRTCBaseStream(abc.ABC):
     self.logger.debug(f"{type(self)}() {msg}", *args)
 
   @property
-  def _number_of_incoming_media(self):
+  def _number_of_incoming_media(self) -> int:
     media = len(self.incoming_camera_tracks) + len(self.incoming_audio_tracks)
     # if stream does not add data_channel, then it means its incoming
     media += int(self.messaging_channel is not None) if not self.should_add_data_channel else 0
@@ -141,7 +141,7 @@ class WebRTCBaseStream(abc.ABC):
   def has_messaging_channel(self) -> bool:
     return self.messaging_channel is not None
 
-  def get_incoming_video_track(self, camera_type: str, buffered: bool):
+  def get_incoming_video_track(self, camera_type: str, buffered: bool) -> aiortc.MediaStreamTrack:
     assert camera_type in self.incoming_camera_tracks, "Video tracks are not enabled on this stream"
     assert self.is_started, "Stream must be started"
 
@@ -149,7 +149,7 @@ class WebRTCBaseStream(abc.ABC):
     relay_track = self.media_relay.subscribe(track, buffered=buffered)
     return relay_track
 
-  def get_incoming_audio_track(self, buffered: bool):
+  def get_incoming_audio_track(self, buffered: bool) -> aiortc.MediaStreamTrack:
     assert len(self.incoming_audio_tracks) > 0, "Audio tracks are not enabled on this stream"
     assert self.is_started, "Stream must be started"
 
@@ -157,7 +157,7 @@ class WebRTCBaseStream(abc.ABC):
     relay_track = self.media_relay.subscribe(track, buffered=buffered)
     return relay_track
 
-  def get_messaging_channel(self):
+  def get_messaging_channel(self) -> aiortc.RTCDataChannel:
     assert self.messaging_channel is not None, "Messaging channel is not enabled on this stream"
     assert self.is_started, "Stream must be started"
 
@@ -191,7 +191,7 @@ class WebRTCBaseStream(abc.ABC):
     await self.peer_connection.close()
 
   @abc.abstractmethod
-  async def start(self):
+  async def start(self) -> aiortc.RTCSessionDescription:
     raise NotImplementedError
 
 
@@ -200,7 +200,7 @@ class WebRTCOfferStream(WebRTCBaseStream):
     super().__init__(*args, **kwargs)
     self.session_provider = session_provider
 
-  async def start(self):
+  async def start(self) -> aiortc.RTCSessionDescription:
     self._add_consumer_transceivers()
     if self.should_add_data_channel:
       self._add_messaging_channel()
@@ -251,7 +251,7 @@ class WebRTCAnswerStream(WebRTCBaseStream):
 
     return str(desc)
 
-  async def start(self):
+  async def start(self) -> aiortc.RTCSessionDescription:
     assert self.peer_connection.remoteDescription is None, "Connection already established"
 
     self._add_consumer_transceivers()
