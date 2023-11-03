@@ -161,7 +161,7 @@ if __name__ == "__main__":
     thread.start()
   else:
     os.environ['MAPS_HOST'] = BASE_URL.rstrip('/')
-  
+
   log_msgs = []
   # run replays
   if not NO_MODEL:
