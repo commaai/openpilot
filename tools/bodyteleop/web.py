@@ -6,6 +6,7 @@ import ssl
 import uuid
 import time
 import subprocess
+from typing import Dict, Awaitable
 
 # aiortc and its dependencies have lots of internal warnings :(
 import warnings
@@ -13,20 +14,20 @@ warnings.resetwarnings()
 warnings.simplefilter("always")
 
 from aiohttp import web
-import aiortc
 
 import cereal.messaging as messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.bodyteleop.bodyav import WebClientSpeaker, play_sound
 from openpilot.tools.bodyteleop.webrtc import WebRTCStreamBuilder
+from openpilot.tools.bodyteleop.webrtc.stream import WebRTCBaseStream
 from openpilot.tools.bodyteleop.webrtc.info import parse_info_from_offer
 from openpilot.tools.bodyteleop.webrtc.device.tracks import LiveStreamVideoStreamTrack, AudioInputStreamTrack
 
 logger = logging.getLogger("pc")
 logging.basicConfig(level=logging.INFO)
 
-streams = {}
-stream_connection_tasks = {}
+streams: Dict[str, WebRTCBaseStream] = dict()
+stream_connection_tasks: Dict[str, Awaitable[None]] = dict()
 pm, sm = None, None
 TELEOPDIR = f"{BASEDIR}/tools/bodyteleop"
 
