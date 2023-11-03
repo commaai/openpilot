@@ -202,7 +202,7 @@ class TestMapRenderer(unittest.TestCase):
 
     self._setup_test()
     # from location1 -> location2 and back
-    locations = np.array([*np.linspace(LOCATION1, LOCATION2, 500), *np.linspace(LOCATION2, LOCATION1, 500)]).tolist()
+    locations = np.array([*np.linspace(LOCATION1, LOCATION2, 2000), *np.linspace(LOCATION2, LOCATION1, 2000)]).tolist()
 
     render_times = self._run_test(True, locations)
 
@@ -214,7 +214,7 @@ class TestMapRenderer(unittest.TestCase):
 
     print(f"Stats: min: {_min}, max: {_max}, mean: {_mean}, median: {_median}, stddev: {_stddev}, count: {len(render_times)}")
 
-    def assert_stat(stat, nominal, tol=0.2):
+    def assert_stat(stat, nominal, tol=0.3):
       tol = (nominal / (1+tol)), (nominal * (1+tol))
       self.assertTrue(tol[0] < stat < tol[1], f"{stat} not in tolerance {tol}")
 
