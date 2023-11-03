@@ -20,6 +20,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.tools.bodyteleop.bodyav import WebClientSpeaker, play_sound
 from openpilot.tools.bodyteleop.webrtc import WebRTCStreamBuilder
 from openpilot.tools.bodyteleop.webrtc.tracks import LiveStreamVideoStreamTrack, AudioInputStreamTrack
+from openpilot.tools.bodyteleop.webrtc.info import parse_info_from_offer
 
 logger = logging.getLogger("pc")
 logging.basicConfig(level=logging.INFO)
@@ -118,13 +119,18 @@ async def offer(request):
   logger.info("\n\nNew Offer!\n\n")
 
   params = await request.json()
-  camera_track = LiveStreamVideoStreamTrack("driver")
-  audio_track = AudioInputStreamTrack()
+  sdp = params["sdp"]
 
-  stream_builder = WebRTCStreamBuilder.answer(params["sdp"])
-  stream_builder.add_video_stream("driver", camera_track)
-  stream_builder.add_audio_stream(audio_track)
-  stream_builder.request_audio_stream()
+  stream_builder = WebRTCStreamBuilder.answer(sdp)
+  media_info = parse_info_from_offer(sdp)
+  if media_info.n_expected_camera_tracks >= 0:
+    camera_track = LiveStreamVideoStreamTrack("driver")
+    stream_builder.add_video_stream("driver", camera_track)
+  if media_info.expected_audio_track:
+    audio_track = AudioInputStreamTrack()
+    stream_builder.add_audio_stream(audio_track)
+  if media_info.incoming_audio_track:
+    stream_builder.request_audio_stream()
 
   stream = stream_builder.stream()
   stream.set_message_handler(on_webrtc_channel_message)

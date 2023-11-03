@@ -14,26 +14,6 @@ class StreamingOffer:
   video: List[str]
 
 
-class StreamingConfig:
-  expected_camera_tracks: List[str]
-  expected_audio_track: bool
-  incoming_audio_track: bool
-  incoming_datachannel: bool
-
-
-def config_from_offer(offer: StreamingOffer) -> StreamingConfig:
-  desc = aiortc.sdp.SessionDescription.parse(offer.sdp)
-  audio_tracks = [m for m in desc.media if m.kind == "audio"]
-  video_tracks = [m for m in desc.media if m.kind == "video" and m.direction in ["recvonly", "sendrecv"]]
-  application_tracks = [m for m in desc.media if m.kind == "application"]
-  has_incoming_audio_track = next((t for t in audio_tracks if t.direction in ["sendonly", "sendrecv"]), None) is not None
-  has_incoming_datachannel = len(application_tracks) > 0
-  expects_outgoing_audio_track = next((t for t in audio_tracks if t.direction in ["recvonly", "sendrecv"]), None) is not None
-  assert len(video_tracks) == len(offer.video), "Number of received video tracks does not match offer"
-
-  return StreamingConfig(offer.video, expects_outgoing_audio_track, has_incoming_audio_track, has_incoming_datachannel)
-
-
 ConnectionProvider = Callable[[StreamingOffer], Awaitable[aiortc.RTCSessionDescription]]
 
 
