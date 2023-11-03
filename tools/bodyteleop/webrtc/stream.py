@@ -165,7 +165,7 @@ class WebRTCBaseStream(abc.ABC):
 
   def set_message_handler(self, message_handler: Callable[[aiortc.RTCDataChannel, bytes], Awaitable[None]]):
     self.incoming_message_handlers.append(message_handler)
-    if self.is_started and self.messaging_channel is not None:
+    if self.messaging_channel is not None:
       self.messaging_channel.on("message", self._create_channel_handler_wrapper(self.messaging_channel, message_handler))
 
   @property
@@ -173,6 +173,12 @@ class WebRTCBaseStream(abc.ABC):
     return self.peer_connection is not None and \
            self.peer_connection.localDescription is not None and \
            self.peer_connection.remoteDescription is not None
+
+  @property
+  def is_connected_and_ready(self) -> bool:
+    return self.peer_connection is not None and \
+           self.peer_connection.connectionState == "connected" and \
+           self.expected_number_of_incoming_media != 0 and self.incoming_media_ready_event.is_set()
 
   async def wait_for_connection(self):
     await self.connection_attempted_event.wait()
