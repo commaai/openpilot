@@ -25,20 +25,18 @@ const int AXIS_X_TOP_MARGIN = 4;
 static inline bool xLessThan(const QPointF &p, float x) { return p.x() < x; }
 
 ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent)
-    : charts_widget(parent), tip_label(this), QChartView(nullptr, parent) {
+    : charts_widget(parent), tip_label(this), QChartView(parent) {
   series_type = (SeriesType)settings.chart_series_type;
-  QChart *chart = new QChart();
-  chart->setBackgroundVisible(false);
+  chart()->setBackgroundVisible(false);
   axis_x = new QValueAxis(this);
   axis_y = new QValueAxis(this);
-  chart->addAxis(axis_x, Qt::AlignBottom);
-  chart->addAxis(axis_y, Qt::AlignLeft);
-  chart->legend()->layout()->setContentsMargins(0, 0, 0, 0);
-  chart->legend()->setShowToolTips(true);
-  chart->setMargins({0, 0, 0, 0});
+  chart()->addAxis(axis_x, Qt::AlignBottom);
+  chart()->addAxis(axis_y, Qt::AlignLeft);
+  chart()->legend()->layout()->setContentsMargins(0, 0, 0, 0);
+  chart()->legend()->setShowToolTips(true);
+  chart()->setMargins({0, 0, 0, 0});
 
   axis_x->setRange(x_range.first, x_range.second);
-  setChart(chart);
 
   createToolButtons();
   setRubberBand(QChartView::HorizontalRubberBand);
