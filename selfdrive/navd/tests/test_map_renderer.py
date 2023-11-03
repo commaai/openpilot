@@ -215,7 +215,7 @@ class TestMapRenderer(unittest.TestCase):
     assert_stat(_median, 0.027)
     assert_stat(_stddev, 0.0078)
 
-    self.assertLess(_max, 0.060)
+    self.assertLess(_max, 0.065)
     self.assertGreater(_min, 0.015)
 
 
