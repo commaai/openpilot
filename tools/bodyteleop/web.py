@@ -18,7 +18,7 @@ import aiortc
 import cereal.messaging as messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.bodyteleop.bodyav import WebClientSpeaker, play_sound
-from openpilot.tools.bodyteleop.webrtc.stream import WebRTCStreamBuilder
+from openpilot.tools.bodyteleop.webrtc import WebRTCStreamBuilder
 from openpilot.tools.bodyteleop.webrtc.tracks import LiveStreamVideoStreamTrack, AudioInputStreamTrack
 
 logger = logging.getLogger("pc")
@@ -118,15 +118,15 @@ async def offer(request):
   logger.info("\n\nNew Offer!\n\n")
 
   params = await request.json()
-  session = aiortc.RTCSessionDescription(sdp=params["sdp"], type=params["type"])
   camera_track = LiveStreamVideoStreamTrack("driver")
   audio_track = AudioInputStreamTrack()
 
-  stream_builder = WebRTCStreamBuilder()
-  stream_builder.add_video_producer(camera_track)
-  stream_builder.add_audio_producer(audio_track)
+  stream_builder = WebRTCStreamBuilder.answer(params["sdp"])
+  stream_builder.add_video_stream(camera_track)
+  stream_builder.add_audio_stream(audio_track)
+  stream_builder.request_audio_stream()
 
-  stream = stream_builder.answer(session)
+  stream = stream_builder.stream()
   stream.set_message_handler(on_webrtc_channel_message)
   description = await stream.start()
   stream_id = "WebRTCStream(%s)" % uuid.uuid4()
