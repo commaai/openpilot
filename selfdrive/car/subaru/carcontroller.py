@@ -2,7 +2,8 @@ from openpilot.common.numpy_fast import clip, interp
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_driver_steer_torque_limits, common_fault_avoidance
 from openpilot.selfdrive.car.subaru import subarucan
-from openpilot.selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, HYBRID_CARS, STEER_RATE_LIMITED, CanBus, CarControllerParams, SubaruFlags
+from openpilot.selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, HYBRID_CARS, STEER_RATE_LIMITED, \
+                                                  GEN2_ES_BUTTONS_DID, GLOBAL_ES_ADDR, CanBus, CarControllerParams, SubaruFlags
 
 # FIXME: These limits aren't exact. The real limit is more than likely over a larger time period and
 # involves the total steering angle change rather than rate, but these limits work well for now
@@ -111,8 +112,35 @@ class CarController:
 
           can_sends.append(subarucan.create_es_brake(self.packer, self.frame // 5, CS.es_brake_msg, CC.enabled, cruise_brake))
 
+          if self.CP.flags & SubaruFlags.EYESIGHT_DISABLED:
+            pcm_cancel_cmd = pcm_cancel_cmd or CS.es_uds_response["Cruise_Main"]
+            pcm_resume_cmd = CS.es_uds_response["Cruise_Resume"]
+            pcm_set_cmd = CS.es_uds_response["Cruise_Set"]
+            button_data = [True, pcm_resume_cmd, pcm_set_cmd]
+          else:
+            button_data = []
+
           can_sends.append(subarucan.create_es_distance(self.packer, self.frame // 5, CS.es_distance_msg, 0, pcm_cancel_cmd,
-                                                        self.CP.openpilotLongitudinalControl, cruise_brake > 0, cruise_throttle))
+                                                        self.CP.openpilotLongitudinalControl, cruise_brake > 0, cruise_throttle, *button_data))
+
+        if self.CP.flags & SubaruFlags.EYESIGHT_DISABLED:
+          # Tester present (keeps eyesight disabled)
+          if self.frame % 100 == 0:
+            can_sends.append([GLOBAL_ES_ADDR, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", CanBus.camera])
+
+          # read button data request
+          if self.frame % 1 == 0:
+            can_sends.append([GLOBAL_ES_ADDR, 0, b'\x03\x22' + GEN2_ES_BUTTONS_DID + b'\x00\x00\x00\x00', CanBus.camera])
+
+          # Create all of the other eyesight messages to keep the rest of the car happy when eyesight is disabled
+          if self.frame % 5 == 0:
+            can_sends.append(subarucan.create_es_highbeamassist(self.packer))
+
+          if self.frame % 10 == 0:
+            can_sends.append(subarucan.create_es_static_1(self.packer))
+
+          if self.frame % 2 == 0:
+            can_sends.append(subarucan.create_es_static_2(self.packer))
       else:
         if pcm_cancel_cmd:
           if self.CP.carFingerprint not in HYBRID_CARS:

@@ -55,6 +55,7 @@ class CarControllerParams:
 
 class SubaruFlags(IntFlag):
   SEND_INFOTAINMENT = 1
+  EYESIGHT_DISABLED = 2
 
 
 class CanBus:
@@ -62,6 +63,8 @@ class CanBus:
   alt = 1
   camera = 2
 
+GLOBAL_ES_ADDR = 0x787
+GEN2_ES_BUTTONS_DID = b'\x11\x30'
 
 class CAR(StrEnum):
   # Global platform
