@@ -24,4 +24,4 @@ def parse_info_from_offer(sdp: str) -> StreamingMediaInfo:
   has_incoming_datachannel = len(application_tracks) > 0
   expects_outgoing_audio_track = next((t for t in audio_tracks if t.direction in ["recvonly", "sendrecv"]), None) is not None
 
-  return StreamingConfig(len(video_tracks), expects_outgoing_audio_track, has_incoming_audio_track, has_incoming_datachannel)
+  return StreamingMediaInfo(len(video_tracks), expects_outgoing_audio_track, has_incoming_audio_track, has_incoming_datachannel)
