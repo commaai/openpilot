@@ -3,7 +3,6 @@ import asyncio
 import aiortc
 import dataclasses
 import json
-import logging
 
 from openpilot.tools.bodyteleop.webrtc import WebRTCStreamBuilder
 from openpilot.tools.bodyteleop.webrtc.stream import StreamingOffer
@@ -37,7 +36,7 @@ async def run_answer(args):
     video_tracks = []
     for cam in offer.video:
       if args.dummy_video:
-        track = DummyVideoStreamTrack(camera_type=cam)
+        track = DummyVideoStreamTrack(dt=1/50, camera_type=cam)
       elif args.input_video:
         track = FrameReaderVideoStreamTrack(args.input_video, camera_type=cam)
       else:
@@ -46,7 +45,7 @@ async def run_answer(args):
     audio_tracks = []
 
     stream_builder = WebRTCStreamBuilder.answer(offer.sdp)
-    for cam, track in zip(offer.video, video_tracks):
+    for cam, track in zip(offer.video, video_tracks, strict=True):
       stream_builder.add_video_stream(cam, track)
     for track in audio_tracks:
       stream_builder.add_audio_stream(track)
@@ -74,7 +73,7 @@ async def run_offer(args):
   while True:
     try:
       frames = await asyncio.gather(*[track.recv() for track in tracks])
-      for key, frame in zip(args.cameras, frames):
+      for key, frame in zip(args.cameras, frames, strict=True):
         print("Received frame from", key, frame.time)
     except aiortc.mediastreams.MediaStreamError:
       return
