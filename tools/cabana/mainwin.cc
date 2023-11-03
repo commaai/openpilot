@@ -9,6 +9,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QJsonObject>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QResizeEvent>
@@ -24,6 +25,7 @@
 #include "tools/replay/replay.h"
 
 MainWindow::MainWindow() : QMainWindow() {
+  loadFingerprints();
   createDockWindows();
   setCentralWidget(center_widget = new CenterWidget(this));
   createActions();
@@ -56,12 +58,6 @@ MainWindow::MainWindow() : QMainWindow() {
     qInfo() << QString::fromStdString(msg);
   });
 
-  // load fingerprints
-  QFile json_file(QApplication::applicationDirPath() + "/dbc/car_fingerprint_to_dbc.json");
-  if (json_file.open(QIODevice::ReadOnly)) {
-    fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
-  }
-
   setStyleSheet(QString(R"(QMainWindow::separator {
     width: %1px; /* when vertical */
     height: %1px; /* when horizontal */
@@ -75,6 +71,16 @@ MainWindow::MainWindow() : QMainWindow() {
   QObject::connect(&settings, &Settings::changed, this, &MainWindow::updateStatus);
   QObject::connect(StreamNotifier::instance(), &StreamNotifier::changingStream, this, &MainWindow::changingStream);
   QObject::connect(StreamNotifier::instance(), &StreamNotifier::streamStarted, this, &MainWindow::streamStarted);
+}
+
+void MainWindow::loadFingerprints() {
+  QFile json_file(QApplication::applicationDirPath() + "/dbc/car_fingerprint_to_dbc.json");
+  if (json_file.open(QIODevice::ReadOnly)) {
+    fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
+    auto dbc_names = fingerprint_to_dbc.object().toVariantMap().values();
+    std::transform(dbc_names.begin(), dbc_names.end(), std::inserter(opendbc_names, opendbc_names.begin()),
+                   [](const auto &name) { return name.toString(); });
+  }
 }
 
 void MainWindow::createActions() {
@@ -102,11 +108,8 @@ void MainWindow::createActions() {
   file_menu->addSeparator();
   QMenu *load_opendbc_menu = file_menu->addMenu(tr("Load DBC from commaai/opendbc"));
   // load_opendbc_menu->setStyleSheet("QMenu { menu-scrollable: true; }");
-  auto dbc_names = allDBCNames();
-  std::sort(dbc_names.begin(), dbc_names.end());
-  for (const auto &name : dbc_names) {
-    QString dbc_name = QString::fromStdString(name);
-    load_opendbc_menu->addAction(dbc_name, [=]() { loadDBCFromOpendbc(dbc_name); });
+  for (const auto &dbc_name : opendbc_names) {
+    load_opendbc_menu->addAction(dbc_name, [this, name = dbc_name]() { loadDBCFromOpendbc(name); });
   }
 
   file_menu->addAction(tr("Load DBC From Clipboard"), [=]() { loadFromClipboard(); });
