@@ -105,10 +105,10 @@ async def offer(request):
       await stream.wait_for_connection()
 
       if stream.has_incoming_audio_track():
-        track = stream.get_incoming_audio_track()
+        track = stream.get_incoming_audio_track(False)
         speaker = WebClientSpeaker()
-        await speaker.start()
         speaker.addTrack(track)
+        await speaker.start()
     except Exception as e:
       logger.info(f"Connection exception with stream {identifier}: {e}")
       await stream.stop()
@@ -122,7 +122,7 @@ async def offer(request):
   audio_track = AudioInputStreamTrack()
 
   stream_builder = WebRTCStreamBuilder.answer(params["sdp"])
-  stream_builder.add_video_stream(camera_track)
+  stream_builder.add_video_stream("driver", camera_track)
   stream_builder.add_audio_stream(audio_track)
   stream_builder.request_audio_stream()
 
