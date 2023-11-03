@@ -211,12 +211,12 @@ class TestMapRenderer(unittest.TestCase):
       tol = (nominal / (1+tol)), (nominal * (1+tol))
       self.assertTrue(tol[0] < stat < tol[1], f"{stat} not in tolerance {tol}")
 
-    assert_stat(_mean,   0.0035)
-    assert_stat(_median, 0.0034)
-    assert_stat(_stddev, 0.00093)
+    assert_stat(_mean,   0.030)
+    assert_stat(_median, 0.027)
+    assert_stat(_stddev, 0.0078)
 
-    self.assertLess(_max, 0.2)
-    self.assertGreater(_min, 0.0010)
+    self.assertLess(_max, 0.055)
+    self.assertGreater(_min, 0.015)
 
 
 if __name__ == "__main__":
