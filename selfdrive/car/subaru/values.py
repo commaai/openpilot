@@ -55,6 +55,11 @@ class CarControllerParams:
 
 class SubaruFlags(IntFlag):
   SEND_INFOTAINMENT = 1
+  EYESIGHT_DISABLED = 2
+
+
+GLOBAL_ES_ADDR = 0x787
+GEN2_ES_BUTTONS_DID = b'\x11\x30'
 
 
 class CanBus:
