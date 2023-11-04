@@ -56,6 +56,7 @@ class CarState(CarStateBase):
     ret.brakeHoldActive = cp.vl["ESP_CONTROL"]["BRAKE_HOLD_ACTIVE"] == 1
     if self.CP.enableGasInterceptor:
       ret.gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) // 2
+      # print('ret.gas', ret.gas)
       ret.gasPressed = ret.gas > 805
     else:
       # TODO: find a common gas pedal percentage signal
