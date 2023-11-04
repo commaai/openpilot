@@ -113,7 +113,7 @@ class TestCarModelBase(unittest.TestCase):
       car_fw = []
       can_msgs = []
       cls.elm_frame = None
-      fingerprint = defaultdict(dict)
+      cls.fingerprint = defaultdict(dict)
       experimental_long = False
       enabled_toggle = True
       dashcam_only = False
@@ -123,7 +123,7 @@ class TestCarModelBase(unittest.TestCase):
           if len(can_msgs) <= FRAME_FINGERPRINT:
             for m in msg.can:
               if m.src < 64:
-                fingerprint[m.src][m.address] = len(m.dat)
+                cls.fingerprint[m.src][m.address] = len(m.dat)
 
         elif msg.which() == "carParams":
           car_fw = msg.carParams.carFw
@@ -159,7 +159,7 @@ class TestCarModelBase(unittest.TestCase):
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
-    cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, car_fw, experimental_long, docs=False)
+    cls.CP = cls.CarInterface.get_params(cls.car_model, cls.fingerprint, car_fw, experimental_long, docs=False)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
 
@@ -198,24 +198,34 @@ class TestCarModelBase(unittest.TestCase):
     # self.safety.init_tests()
 
     # bus = 0  # random.randint(0, 3)
-    # address = 0xaa  # random.randint(0x200, 0x300)
+    address = data.draw(st.sampled_from([i for i in self.fingerprint[0] if i < 0x600]))  # random.randint(0x200, 0x300)
+    size = self.fingerprint[0][address]
+    print(address, size)
 
-    address = data.draw(st.integers(0x201, 0x201))
+    # address = data.draw(st.integers(0x201, 0x226))
     bus = 0
 
     # ORIG:
     # msg_strategy = st.tuples(st.integers(min_value=0, max_value=0), st.integers(min_value=0x100, max_value=0x400), st.binary(min_size=8, max_size=8))
+    # msg_strategy = st.tuples(st.integers(min_value=0xaa, max_value=0xaa), st.binary(min_size=8, max_size=8))
 
-    msg_strategy = st.binary(min_size=8, max_size=8)
+    msg_strategy = st.binary(min_size=size, max_size=size)
     msgs = data.draw(st.lists(msg_strategy, min_size=100))
     # print(len(msgs))
 
     prev_panda_gas = self.safety.get_gas_pressed_prev()
+    prev_panda_brake = self.safety.get_brake_pressed_prev()
+    prev_panda_vehicle_moving = self.safety.get_vehicle_moving()
+    prev_panda_cruise_engaged = self.safety.get_cruise_engaged_prev()
     start_gas = self.safety.get_gas_pressed_prev()
     start_gas_int_detected = self.safety.get_gas_interceptor_detected()
 
     # for bus, address, dat in msgs:
+    # since all toyotas can detect fake interceptor, but we want to test PCM gas too
     for dat in msgs:
+      # if not self.CP.enableGasInterceptor:
+      #   self.safety.set_gas_interceptor_detected(False)
+
       to_send = libpanda_py.make_CANPacket(address, bus, dat)
       did_rx = self.safety.safety_rx_hook(to_send)
 
@@ -239,7 +249,21 @@ class TestCarModelBase(unittest.TestCase):
         self.assertEqual(CS.gasPressed, self.safety.get_gas_pressed_prev())
         # self.assertFalse(True)
 
+      if self.safety.get_brake_pressed_prev() != prev_panda_brake:
+        print('brake change!')
+        print('both', CS.brakePressed, self.safety.get_brake_pressed_prev())
+        self.assertEqual(CS.brakePressed, self.safety.get_brake_pressed_prev())
+
+      if self.safety.get_vehicle_moving() != prev_panda_vehicle_moving:
+        self.assertEqual(not CS.standstill, self.safety.get_vehicle_moving())
+
+      if self.safety.get_cruise_engaged_prev() != prev_panda_cruise_engaged:
+        self.assertEqual(CS.cruiseState.enabled, self.safety.get_cruise_engaged_prev())
+
       prev_panda_gas = self.safety.get_gas_pressed_prev()
+      prev_panda_brake = self.safety.get_brake_pressed_prev()
+      prev_panda_vehicle_moving = self.safety.get_vehicle_moving()
+      prev_panda_cruise_engaged = self.safety.get_cruise_engaged_prev()
       # if self.safety.get_gas_pressed_prev() and self.safety.get_cruise_engaged_prev():
       #   self.assertFalse(True)
       # self.assertFalse(self.safety.get_cruise_engaged_prev())
@@ -278,7 +302,7 @@ class TestCarModelBase(unittest.TestCase):
 
     # print(self.safety.get_gas_pressed_prev(), self.safety.get_brake_pressed_prev(), self.safety.get_vehicle_moving(), self.safety.get_cruise_engaged_prev())
     # assume(state_has_changed(False, self.safety.get_gas_pressed_prev()))
-    assume(state_has_changed(start_gas, self.safety.get_gas_pressed_prev()))  # this just goes on forever
+    # assume(state_has_changed(start_gas, self.safety.get_gas_pressed_prev()))  # this just goes on forever EDIT: actually no it doesn't
     # assume(state_has_changed(start_gas_int_detected, self.safety.get_gas_interceptor_detected()))
     # assume(state_has_changed(False, self.safety.get_brake_pressed_prev()))
     # assume(state_has_changed(False, self.safety.get_vehicle_moving()))
