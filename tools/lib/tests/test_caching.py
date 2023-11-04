@@ -6,8 +6,8 @@ from pathlib import Path
 from parameterized import parameterized
 from unittest import mock
 
-from openpilot.system.hardware.hw import Paths
-from openpilot.tools.lib.url_file import URLFile
+from system.hardware.hw import Paths
+from tools.lib.url_file import URLFile
 
 
 class TestFileDownload(unittest.TestCase):

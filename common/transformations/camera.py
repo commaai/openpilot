@@ -1,6 +1,6 @@
 import numpy as np
 
-import openpilot.common.transformations.orientation as orient
+import common.transformations.orientation as orient
 
 ## -- hardcoded hardware params --
 eon_f_focal_length = 910.0

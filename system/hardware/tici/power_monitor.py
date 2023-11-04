@@ -6,8 +6,8 @@ import numpy as np
 from typing import List
 from collections import deque
 
-from openpilot.common.realtime import Ratekeeper
-from openpilot.common.filter_simple import FirstOrderFilter
+from common.realtime import Ratekeeper
+from common.filter_simple import FirstOrderFilter
 
 
 def read_power():

@@ -17,14 +17,14 @@ from pathlib import Path
 from cereal import car
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
-from openpilot.common.basedir import BASEDIR
-from openpilot.common.timeout import Timeout
-from openpilot.common.params import Params
-from openpilot.selfdrive.controls.lib.events import EVENTS, ET
-from openpilot.system.hardware import HARDWARE
-from openpilot.selfdrive.test.helpers import set_params_enabled, release_only
-from openpilot.system.hardware.hw import Paths
-from openpilot.tools.lib.logreader import LogReader
+from common.basedir import BASEDIR
+from common.timeout import Timeout
+from common.params import Params
+from selfdrive.controls.lib.events import EVENTS, ET
+from system.hardware import HARDWARE
+from selfdrive.test.helpers import set_params_enabled, release_only
+from system.hardware.hw import Paths
+from tools.lib.logreader import LogReader
 
 # Baseline CPU usage by process
 PROCS = {

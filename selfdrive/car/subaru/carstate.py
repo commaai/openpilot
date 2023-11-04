@@ -1,11 +1,11 @@
 import copy
 from cereal import car
 from opendbc.can.can_define import CANDefine
-from openpilot.common.conversions import Conversions as CV
-from openpilot.selfdrive.car.interfaces import CarStateBase
+from common.conversions import Conversions as CV
+from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
-from openpilot.selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, HYBRID_CARS, CanBus, SubaruFlags
-from openpilot.selfdrive.car import CanSignalRateCalculator
+from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, HYBRID_CARS, CanBus, SubaruFlags
+from selfdrive.car import CanSignalRateCalculator
 
 
 class CarState(CarStateBase):

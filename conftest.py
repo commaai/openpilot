@@ -1,7 +1,7 @@
 import os
 import pytest
 
-from openpilot.common.prefix import OpenpilotPrefix
+from common.prefix import OpenpilotPrefix
 
 
 @pytest.fixture(scope="function", autouse=True)

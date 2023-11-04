@@ -1,8 +1,8 @@
 from cereal import car
 from panda import Panda
-from openpilot.selfdrive.car import get_safety_config
-from openpilot.selfdrive.car.interfaces import CarInterfaceBase
-from openpilot.selfdrive.car.subaru.values import CAR, LKAS_ANGLE, GLOBAL_GEN2, PREGLOBAL_CARS, HYBRID_CARS, SubaruFlags
+from selfdrive.car import get_safety_config
+from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.car.subaru.values import CAR, LKAS_ANGLE, GLOBAL_GEN2, PREGLOBAL_CARS, HYBRID_CARS, SubaruFlags
 
 
 class CarInterface(CarInterfaceBase):

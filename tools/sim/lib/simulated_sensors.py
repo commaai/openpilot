@@ -3,13 +3,13 @@ import time
 from cereal import log
 import cereal.messaging as messaging
 
-from openpilot.common.params import Params
-from openpilot.common.realtime import DT_DMON
-from openpilot.tools.sim.lib.camerad import Camerad
+from common.params import Params
+from common.realtime import DT_DMON
+from tools.sim.lib.camerad import Camerad
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-  from openpilot.tools.sim.lib.common import World, SimulatorState
+  from tools.sim.lib.common import World, SimulatorState
 
 
 class SimulatedSensors:

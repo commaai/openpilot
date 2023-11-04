@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # type: ignore
 
-from openpilot.selfdrive.locationd.test import ublox
+from selfdrive.locationd.test import ublox
 import struct
 
 baudrate = 460800

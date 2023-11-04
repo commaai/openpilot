@@ -6,8 +6,8 @@ import pyopencl.array as cl_array
 from cereal.visionipc import VisionIpcServer, VisionStreamType
 from cereal import messaging
 
-from openpilot.common.basedir import BASEDIR
-from openpilot.tools.sim.lib.common import W, H
+from common.basedir import BASEDIR
+from tools.sim.lib.common import W, H
 
 class Camerad:
   """Simulates the camerad daemon"""

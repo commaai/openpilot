@@ -2,9 +2,9 @@
 import unittest
 from unittest.mock import patch
 
-from openpilot.common.params import Params
-from openpilot.selfdrive.test.helpers import noop
-from openpilot.selfdrive.thermald.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
+from common.params import Params
+from selfdrive.test.helpers import noop
+from selfdrive.thermald.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
                                                 CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING, DELAY_SHUTDOWN_TIME_S
 
 

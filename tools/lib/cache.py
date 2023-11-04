@@ -1,6 +1,6 @@
 import os
 import urllib.parse
-from openpilot.common.file_helpers import mkdirs_exists_ok
+from common.file_helpers import mkdirs_exists_ok
 
 DEFAULT_CACHE_DIR = os.getenv("CACHE_ROOT", os.path.expanduser("~/.commacache"))
 

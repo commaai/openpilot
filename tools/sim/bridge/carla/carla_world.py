@@ -1,9 +1,9 @@
 import numpy as np
 
-from openpilot.common.params import Params
-from openpilot.tools.sim.lib.common import SimulatorState, vec3
-from openpilot.tools.sim.bridge.common import World
-from openpilot.tools.sim.lib.camerad import W, H
+from common.params import Params
+from tools.sim.lib.common import SimulatorState, vec3
+from tools.sim.bridge.common import World
+from tools.sim.lib.camerad import W, H
 
 
 class CarlaWorld(World):

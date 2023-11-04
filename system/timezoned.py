@@ -8,10 +8,10 @@ from typing import NoReturn
 import requests
 from timezonefinder import TimezoneFinder
 
-from openpilot.common.params import Params
-from openpilot.system.hardware import AGNOS
-from openpilot.system.swaglog import cloudlog
-from openpilot.system.version import get_version
+from common.params import Params
+from system.hardware import AGNOS
+from system.swaglog import cloudlog
+from system.version import get_version
 
 REQUEST_HEADERS = {'User-Agent': "openpilot-" + get_version()}
 

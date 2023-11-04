@@ -4,15 +4,15 @@ import unittest
 from parameterized import parameterized
 
 from cereal import car, log
-from openpilot.selfdrive.car.car_helpers import interfaces
-from openpilot.selfdrive.car.honda.values import CAR as HONDA
-from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
-from openpilot.selfdrive.car.nissan.values import CAR as NISSAN
-from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
-from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
-from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
-from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
-from openpilot.selfdrive.navd.tests.test_map_renderer import gen_llk
+from selfdrive.car.car_helpers import interfaces
+from selfdrive.car.honda.values import CAR as HONDA
+from selfdrive.car.toyota.values import CAR as TOYOTA
+from selfdrive.car.nissan.values import CAR as NISSAN
+from selfdrive.controls.lib.latcontrol_pid import LatControlPID
+from selfdrive.controls.lib.latcontrol_torque import LatControlTorque
+from selfdrive.controls.lib.latcontrol_angle import LatControlAngle
+from selfdrive.controls.lib.vehicle_model import VehicleModel
+from selfdrive.navd.tests.test_map_renderer import gen_llk
 
 
 class TestLatControl(unittest.TestCase):

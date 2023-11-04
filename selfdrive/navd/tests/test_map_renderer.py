@@ -9,8 +9,8 @@ import cereal.messaging as messaging
 
 from typing import Any
 from cereal.visionipc import VisionIpcClient, VisionStreamType
-from openpilot.selfdrive.manager.process_config import managed_processes
-from openpilot.system.hardware import TICI
+from selfdrive.manager.process_config import managed_processes
+from system.hardware import TICI
 
 LLK_DECIMATION = 10
 CACHE_PATH = "/data/mbgl-cache-navd.db"

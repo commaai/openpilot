@@ -2,7 +2,7 @@
 
 import sys
 import time
-from openpilot.tools.zookeeper import Zookeeper
+from tools.zookeeper import Zookeeper
 
 # Usage: check_consumption.py <averaging_time_sec> <max_average_power_W>
 # Exit code: 0 -> passed

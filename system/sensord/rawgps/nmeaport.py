@@ -118,9 +118,9 @@ def process_nmea_port_messages(device:str="/dev/ttyUSB1") -> NoReturn:
       sleep(1)
 
 def main() -> NoReturn:
-  from openpilot.common.gpio import gpio_init, gpio_set
-  from openpilot.system.hardware.tici.pins import GPIO
-  from openpilot.system.sensord.rawgps.rawgpsd import at_cmd
+  from common.gpio import gpio_init, gpio_set
+  from system.hardware.tici.pins import GPIO
+  from system.sensord.rawgps.rawgpsd import at_cmd
 
   try:
     check_output(["pidof", "rawgpsd"])

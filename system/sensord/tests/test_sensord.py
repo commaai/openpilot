@@ -8,10 +8,10 @@ from collections import namedtuple, defaultdict
 import cereal.messaging as messaging
 from cereal import log
 from cereal.services import SERVICE_LIST
-from openpilot.common.gpio import get_irqs_for_action
-from openpilot.common.timeout import Timeout
-from openpilot.system.hardware import TICI
-from openpilot.selfdrive.manager.process_config import managed_processes
+from common.gpio import get_irqs_for_action
+from common.timeout import Timeout
+from system.hardware import TICI
+from selfdrive.manager.process_config import managed_processes
 
 BMX = {
   ('bmx055', 'acceleration'),

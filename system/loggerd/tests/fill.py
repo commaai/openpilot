@@ -3,9 +3,9 @@
 
 from pathlib import Path
 
-from openpilot.system.hardware.hw import Paths
-from openpilot.system.loggerd.config import get_available_percent
-from openpilot.system.loggerd.tests.loggerd_tests_common import create_random_file
+from system.hardware.hw import Paths
+from system.loggerd.config import get_available_percent
+from system.loggerd.tests.loggerd_tests_common import create_random_file
 
 
 if __name__ == "__main__":

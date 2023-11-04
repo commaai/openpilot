@@ -1,7 +1,7 @@
 import numpy as np
 
-from openpilot.common.transformations.orientation import rot_from_euler
-from openpilot.common.transformations.camera import (
+from common.transformations.orientation import rot_from_euler
+from common.transformations.camera import (
   FULL_FRAME_SIZE, get_view_frame_from_calib_frame, view_frame_from_device_frame,
   eon_fcam_intrinsics, tici_ecam_intrinsics, tici_fcam_intrinsics)
 

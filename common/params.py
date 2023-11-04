@@ -1,4 +1,4 @@
-from openpilot.common.params_pyx import Params, ParamKeyType, UnknownKeyName, put_nonblocking, \
+from common.params_pyx import Params, ParamKeyType, UnknownKeyName, put_nonblocking, \
                                         put_bool_nonblocking
 assert Params
 assert ParamKeyType

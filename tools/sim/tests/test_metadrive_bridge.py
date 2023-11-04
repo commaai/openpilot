@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import unittest
 
-from openpilot.tools.sim.run_bridge import parse_args
-from openpilot.tools.sim.bridge.metadrive.metadrive_bridge import MetaDriveBridge
-from openpilot.tools.sim.tests.test_sim_bridge import TestSimBridgeBase
+from tools.sim.run_bridge import parse_args
+from tools.sim.bridge.metadrive.metadrive_bridge import MetaDriveBridge
+from tools.sim.tests.test_sim_bridge import TestSimBridgeBase
 
 
 class TestMetaDriveBridge(TestSimBridgeBase):

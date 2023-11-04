@@ -7,12 +7,12 @@ import logging
 import json
 from pathlib import Path
 from typing import List, Optional
-from openpilot.system.hardware.hw import Paths
+from system.hardware.hw import Paths
 
-from openpilot.system.swaglog import cloudlog
-from openpilot.system.loggerd.uploader import uploader_fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE
+from system.swaglog import cloudlog
+from system.loggerd.uploader import uploader_fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE
 
-from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase
+from system.loggerd.tests.loggerd_tests_common import UploaderTestCase
 
 
 class FakeLogHandler(logging.Handler):

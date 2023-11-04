@@ -4,8 +4,8 @@ import uuid
 
 from typing import Optional
 
-from openpilot.common.params import Params
-from openpilot.system.hardware.hw import Paths
+from common.params import Params
+from system.hardware.hw import Paths
 
 class OpenpilotPrefix:
   def __init__(self, prefix: Optional[str] = None, clean_dirs_on_exit: bool = True):

@@ -7,9 +7,9 @@ from typing import Iterable, Optional
 from azure.storage.blob import ContainerClient
 from tqdm import tqdm
 
-from openpilot.selfdrive.car.tests.routes import routes as test_car_models_routes
-from openpilot.selfdrive.test.process_replay.test_processes import source_segments as replay_segments
-from openpilot.selfdrive.test.openpilotci import (DATA_CI_ACCOUNT, DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER,
+from selfdrive.car.tests.routes import routes as test_car_models_routes
+from selfdrive.test.process_replay.test_processes import source_segments as replay_segments
+from selfdrive.test.openpilotci import (DATA_CI_ACCOUNT, DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER,
                                                   get_azure_credential, get_container_sas)
 
 DATA_PROD_ACCOUNT = "commadata2"

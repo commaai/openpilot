@@ -1,8 +1,8 @@
 from opendbc.can.packer import CANPacker
-from openpilot.common.realtime import DT_CTRL
-from openpilot.selfdrive.car import apply_meas_steer_torque_limits
-from openpilot.selfdrive.car.chrysler import chryslercan
-from openpilot.selfdrive.car.chrysler.values import RAM_CARS, CarControllerParams, ChryslerFlags
+from common.realtime import DT_CTRL
+from selfdrive.car import apply_meas_steer_torque_limits
+from selfdrive.car.chrysler import chryslercan
+from selfdrive.car.chrysler.values import RAM_CARS, CarControllerParams, ChryslerFlags
 
 
 class CarController:

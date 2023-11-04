@@ -1,7 +1,7 @@
 import json
 import os
-from openpilot.common.file_helpers import mkdirs_exists_ok
-from openpilot.system.hardware import PC
+from common.file_helpers import mkdirs_exists_ok
+from system.hardware import PC
 
 
 class MissingAuthConfigError(Exception):

@@ -13,17 +13,17 @@ from typing import Dict, List
 import cereal.messaging as messaging
 from cereal import log
 from cereal.services import SERVICE_LIST
-from openpilot.common.basedir import BASEDIR
-from openpilot.common.params import Params
-from openpilot.common.timeout import Timeout
-from openpilot.system.hardware.hw import Paths
-from openpilot.system.loggerd.xattr_cache import getxattr
-from openpilot.system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
-from openpilot.selfdrive.manager.process_config import managed_processes
-from openpilot.system.version import get_version
-from openpilot.tools.lib.logreader import LogReader
+from common.basedir import BASEDIR
+from common.params import Params
+from common.timeout import Timeout
+from system.hardware.hw import Paths
+from system.loggerd.xattr_cache import getxattr
+from system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
+from selfdrive.manager.process_config import managed_processes
+from system.version import get_version
+from tools.lib.logreader import LogReader
 from cereal.visionipc import VisionIpcServer, VisionStreamType
-from openpilot.common.transformations.camera import tici_f_frame_size, tici_d_frame_size, tici_e_frame_size
+from common.transformations.camera import tici_f_frame_size, tici_d_frame_size, tici_e_frame_size
 
 SentinelType = log.Sentinel.SentinelType
 

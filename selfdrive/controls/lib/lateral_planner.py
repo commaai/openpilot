@@ -1,6 +1,6 @@
 import numpy as np
-from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, MIN_SPEED, get_speed_error
-from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
+from selfdrive.controls.lib.drive_helpers import CONTROL_N, MIN_SPEED, get_speed_error
+from selfdrive.controls.lib.desire_helper import DesireHelper
 import cereal.messaging as messaging
 from cereal import log
 

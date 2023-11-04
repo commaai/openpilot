@@ -13,13 +13,13 @@ from typing import BinaryIO, Iterator, List, Optional, Tuple, Union
 
 from cereal import log
 import cereal.messaging as messaging
-from openpilot.common.api import Api
-from openpilot.common.params import Params
-from openpilot.common.realtime import set_core_affinity
-from openpilot.system.hardware import TICI
-from openpilot.system.hardware.hw import Paths
-from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
-from openpilot.system.swaglog import cloudlog
+from common.api import Api
+from common.params import Params
+from common.realtime import set_core_affinity
+from system.hardware import TICI
+from system.hardware.hw import Paths
+from system.loggerd.xattr_cache import getxattr, setxattr
+from system.swaglog import cloudlog
 
 NetworkType = log.DeviceState.NetworkType
 UPLOAD_ATTR_NAME = 'user.upload'

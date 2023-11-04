@@ -9,8 +9,8 @@ import warnings
 from typing import Iterable, Iterator
 
 from cereal import log as capnp_log
-from openpilot.tools.lib.filereader import FileReader
-from openpilot.tools.lib.route import Route, SegmentName
+from tools.lib.filereader import FileReader
+from tools.lib.route import Route, SegmentName
 
 LogIterable = Iterable[capnp._DynamicStructReader]
 

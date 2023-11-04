@@ -26,7 +26,7 @@ optional arguments:
   -h, --help            show this help message and exit
   --demo                Use the demo route instead of providing one (default: False)
   --qlog                Use qlogs (default: False)
-  --ci                  Download data from openpilot CI bucket (default: False)
+  --ci                  Download data from CI bucket (default: False)
   --can                 Parse CAN data (default: False)
   --stream              Start PlotJuggler in streaming mode (default: False)
   --layout [LAYOUT]     Run PlotJuggler with a pre-defined layout (default: None)

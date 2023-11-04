@@ -8,13 +8,13 @@ import importlib
 from parameterized import parameterized
 
 from cereal import car, messaging
-from openpilot.common.realtime import DT_CTRL
-from openpilot.selfdrive.car import gen_empty_fingerprint
-from openpilot.selfdrive.car.car_helpers import interfaces
-from openpilot.selfdrive.car.fingerprints import all_known_cars
-from openpilot.selfdrive.car.fw_versions import FW_VERSIONS
-from openpilot.selfdrive.car.interfaces import get_interface_attr
-from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
+from common.realtime import DT_CTRL
+from selfdrive.car import gen_empty_fingerprint
+from selfdrive.car.car_helpers import interfaces
+from selfdrive.car.fingerprints import all_known_cars
+from selfdrive.car.fw_versions import FW_VERSIONS
+from selfdrive.car.interfaces import get_interface_attr
+from selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
 ALL_ECUS = list({ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()})
 

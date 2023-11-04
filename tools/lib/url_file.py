@@ -5,8 +5,8 @@ import pycurl
 from hashlib import sha256
 from io import BytesIO
 from tenacity import retry, wait_random_exponential, stop_after_attempt
-from openpilot.common.file_helpers import mkdirs_exists_ok, atomic_write_in_dir
-from openpilot.system.hardware.hw import Paths
+from common.file_helpers import mkdirs_exists_ok, atomic_write_in_dir
+from system.hardware.hw import Paths
 #  Cache chunk size
 K = 1000
 CHUNK_SIZE = 1000 * K

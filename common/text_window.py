@@ -2,7 +2,7 @@
 import os
 import time
 import subprocess
-from openpilot.common.basedir import BASEDIR
+from common.basedir import BASEDIR
 
 
 class TextWindow:

@@ -14,8 +14,8 @@ cameras = {
 
 import requests
 from PIL import Image
-from openpilot.tools.lib.auth_config import get_token
-from openpilot.tools.lib.framereader import FrameReader
+from tools.lib.auth_config import get_token
+from tools.lib.framereader import FrameReader
 
 jwt = get_token()
 

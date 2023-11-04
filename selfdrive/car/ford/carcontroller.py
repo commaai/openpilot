@@ -1,9 +1,9 @@
 from cereal import car
-from openpilot.common.numpy_fast import clip
+from common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
-from openpilot.selfdrive.car import apply_std_steer_angle_limits
-from openpilot.selfdrive.car.ford import fordcan
-from openpilot.selfdrive.car.ford.values import CANFD_CAR, CarControllerParams
+from selfdrive.car import apply_std_steer_angle_limits
+from selfdrive.car.ford import fordcan
+from selfdrive.car.ford.values import CANFD_CAR, CarControllerParams
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 VisualAlert = car.CarControl.HUDControl.VisualAlert

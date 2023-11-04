@@ -9,9 +9,9 @@ from metadrive.engine.core.image_buffer import ImageBuffer
 from metadrive.envs.metadrive_env import MetaDriveEnv
 from metadrive.obs.image_obs import ImageObservation
 
-from openpilot.common.realtime import Ratekeeper
-from openpilot.tools.sim.lib.common import vec3
-from openpilot.tools.sim.lib.camerad import W, H
+from common.realtime import Ratekeeper
+from tools.sim.lib.common import vec3
+from tools.sim.lib.camerad import W, H
 
 
 metadrive_state = namedtuple("metadrive_state", ["velocity", "position", "bearing", "steering_angle"])

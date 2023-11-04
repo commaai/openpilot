@@ -35,4 +35,4 @@ COPY ./release ${OPENPILOT_PATH}/release
 
 RUN --mount=type=bind,source=.ci_cache/scons_cache,target=/tmp/scons_cache,rw scons -j$(nproc) --cache-readonly
 
-RUN python -c "from openpilot.selfdrive.test.helpers import set_params_enabled; set_params_enabled()"
+RUN python -c "from selfdrive.test.helpers import set_params_enabled; set_params_enabled()"

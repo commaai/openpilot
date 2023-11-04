@@ -3,10 +3,10 @@ import time
 import unittest
 import subprocess as sp
 
-from openpilot.common.params import Params
-from openpilot.system.hardware import TICI
+from common.params import Params
+from system.hardware import TICI
 import cereal.messaging as messaging
-from openpilot.selfdrive.manager.process_config import managed_processes
+from selfdrive.manager.process_config import managed_processes
 
 
 def exec_mmcli(cmd):

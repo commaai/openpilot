@@ -4,10 +4,10 @@ from enum import Enum, StrEnum
 from typing import Dict, List, Union
 
 from cereal import car
-from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
-from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
+from selfdrive.car import AngleRateLimit, dbc_dict
+from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
                                            Device
-from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
 

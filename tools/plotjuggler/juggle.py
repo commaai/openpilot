@@ -10,11 +10,11 @@ import tempfile
 import requests
 import argparse
 
-from openpilot.common.basedir import BASEDIR
-from openpilot.selfdrive.test.openpilotci import get_url
-from openpilot.tools.lib.logreader import LogReader
-from openpilot.tools.lib.route import Route, SegmentName
-from openpilot.tools.lib.helpers import save_log
+from common.basedir import BASEDIR
+from selfdrive.test.openpilotci import get_url
+from tools.lib.logreader import LogReader
+from tools.lib.route import Route, SegmentName
+from tools.lib.helpers import save_log
 from urllib.parse import urlparse, parse_qs
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
@@ -147,7 +147,7 @@ if __name__ == "__main__":
 
   parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
   parser.add_argument("--qlog", action="store_true", help="Use qlogs")
-  parser.add_argument("--ci", action="store_true", help="Download data from openpilot CI bucket")
+  parser.add_argument("--ci", action="store_true", help="Download data from CI bucket")
   parser.add_argument("--can", action="store_true", help="Parse CAN data")
   parser.add_argument("--stream", action="store_true", help="Start PlotJuggler in streaming mode")
   parser.add_argument("--layout", nargs='?', help="Run PlotJuggler with a pre-defined layout")

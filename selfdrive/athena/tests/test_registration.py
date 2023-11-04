@@ -7,9 +7,9 @@ from Crypto.PublicKey import RSA
 from pathlib import Path
 from unittest import mock
 
-from openpilot.common.params import Params
-from openpilot.selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
-from openpilot.selfdrive.athena.tests.helpers import MockResponse
+from common.params import Params
+from selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
+from selfdrive.athena.tests.helpers import MockResponse
 
 
 class TestRegistration(unittest.TestCase):

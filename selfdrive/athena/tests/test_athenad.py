@@ -18,11 +18,11 @@ from unittest import mock
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
-from openpilot.selfdrive.athena import athenad
-from openpilot.selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
-from openpilot.selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
+from selfdrive.athena import athenad
+from selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
+from selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
 from cereal import messaging
-from openpilot.system.hardware.hw import Paths
+from system.hardware.hw import Paths
 
 
 class TestAthenadMethods(unittest.TestCase):

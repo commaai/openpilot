@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
-from openpilot.tools.zookeeper import Zookeeper
+from tools.zookeeper import Zookeeper
 
 
 if __name__ == "__main__":

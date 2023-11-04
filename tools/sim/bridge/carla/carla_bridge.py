@@ -1,5 +1,5 @@
-from openpilot.tools.sim.bridge.common import SimulatorBridge
-from openpilot.tools.sim.bridge.carla.carla_world import CarlaWorld
+from tools.sim.bridge.common import SimulatorBridge
+from tools.sim.bridge.carla.carla_world import CarlaWorld
 
 
 class CarlaBridge(SimulatorBridge):

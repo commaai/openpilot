@@ -1,6 +1,6 @@
 import os
-from openpilot.system.hardware.hw import Paths
-from openpilot.system.loggerd.uploader import UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE
+from system.hardware.hw import Paths
+from system.loggerd.uploader import UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE
 
 for folder in os.walk(Paths.log_root()):
   for file1 in folder[2]:

@@ -5,9 +5,9 @@ from collections import defaultdict
 from enum import Enum
 
 
-from openpilot.selfdrive.test.openpilotci import get_url
-from openpilot.tools.lib.logreader import LogReader
-from openpilot.selfdrive.test.process_replay.process_replay import replay_process_with_name
+from selfdrive.test.openpilotci import get_url
+from tools.lib.logreader import LogReader
+from selfdrive.test.process_replay.process_replay import replay_process_with_name
 
 TEST_ROUTE, TEST_SEG_NUM = "ff2bd20623fcaeaa|2023-09-05--10-14-54", 4
 GPS_MESSAGES = ['gpsLocationExternal', 'gpsLocation']

@@ -6,7 +6,7 @@ import unittest
 from multiprocessing import Queue
 
 from cereal import messaging
-from openpilot.common.basedir import BASEDIR
+from common.basedir import BASEDIR
 
 SIM_DIR = os.path.join(BASEDIR, "tools/sim")
 

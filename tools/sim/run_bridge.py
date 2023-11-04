@@ -5,9 +5,9 @@ import os
 from typing import Any
 from multiprocessing import Queue
 
-from openpilot.tools.sim.bridge.common import SimulatorBridge
-from openpilot.tools.sim.bridge.carla.carla_bridge import CarlaBridge
-from openpilot.tools.sim.bridge.metadrive.metadrive_bridge import MetaDriveBridge
+from tools.sim.bridge.common import SimulatorBridge
+from tools.sim.bridge.carla.carla_bridge import CarlaBridge
+from tools.sim.bridge.metadrive.metadrive_bridge import MetaDriveBridge
 
 
 def parse_args(add_args=None):
@@ -40,12 +40,12 @@ if __name__ == "__main__":
 
   if args.joystick:
     # start input poll for joystick
-    from openpilot.tools.sim.lib.manual_ctrl import wheel_poll_thread
+    from tools.sim.lib.manual_ctrl import wheel_poll_thread
 
     wheel_poll_thread(q)
   else:
     # start input poll for keyboard
-    from openpilot.tools.sim.lib.keyboard_ctrl import keyboard_poll_thread
+    from tools.sim.lib.keyboard_ctrl import keyboard_poll_thread
 
     keyboard_poll_thread(q)
 

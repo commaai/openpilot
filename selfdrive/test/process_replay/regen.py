@@ -7,14 +7,14 @@ import numpy as np
 
 from typing import Union, Iterable, Optional, List, Any, Dict, Tuple
 
-from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, ProcessConfig, replay_process, get_process_config, \
+from selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, ProcessConfig, replay_process, get_process_config, \
                                                                    check_openpilot_enabled, get_custom_params_from_lr
-from openpilot.selfdrive.test.process_replay.vision_meta import DRIVER_FRAME_SIZES
-from openpilot.selfdrive.test.update_ci_routes import upload_route
-from openpilot.tools.lib.route import Route
-from openpilot.tools.lib.framereader import FrameReader, BaseFrameReader, FrameType
-from openpilot.tools.lib.logreader import LogReader, LogIterable
-from openpilot.tools.lib.helpers import save_log
+from selfdrive.test.process_replay.vision_meta import DRIVER_FRAME_SIZES
+from selfdrive.test.update_ci_routes import upload_route
+from tools.lib.route import Route
+from tools.lib.framereader import FrameReader, BaseFrameReader, FrameType
+from tools.lib.logreader import LogReader, LogIterable
+from tools.lib.helpers import save_log
 
 
 class DummyFrameReader(BaseFrameReader):

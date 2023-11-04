@@ -7,9 +7,9 @@ import unittest
 import subprocess
 
 import cereal.messaging as messaging
-from openpilot.system.hardware import TICI
-from openpilot.system.sensord.rawgps.rawgpsd import at_cmd, wait_for_modem
-from openpilot.selfdrive.manager.process_config import managed_processes
+from system.hardware import TICI
+from system.sensord.rawgps.rawgpsd import at_cmd, wait_for_modem
+from selfdrive.manager.process_config import managed_processes
 
 GOOD_SIGNAL = bool(int(os.getenv("GOOD_SIGNAL", '0')))
 

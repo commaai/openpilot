@@ -1,5 +1,5 @@
 from cereal import car
-from openpilot.selfdrive.car import CanBusBase
+from selfdrive.car import CanBusBase
 
 HUDControl = car.CarControl.HUDControl
 

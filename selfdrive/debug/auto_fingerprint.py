@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
-from openpilot.common.basedir import BASEDIR
+from common.basedir import BASEDIR
 
-from openpilot.tools.lib.logreader import MultiLogIterator
-from openpilot.tools.lib.route import Route
-from openpilot.selfdrive.car.fw_versions import match_fw_to_car
-from openpilot.selfdrive.car.interfaces import get_interface_attr
+from tools.lib.logreader import MultiLogIterator
+from tools.lib.route import Route
+from selfdrive.car.fw_versions import match_fw_to_car
+from selfdrive.car.interfaces import get_interface_attr
 
 
 ALL_FW_VERSIONS = get_interface_attr("FW_VERSIONS")

@@ -1,5 +1,5 @@
 import numpy as np
-from openpilot.selfdrive.test.longitudinal_maneuvers.plant import Plant
+from selfdrive.test.longitudinal_maneuvers.plant import Plant
 
 
 class Maneuver:

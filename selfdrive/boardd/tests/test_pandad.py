@@ -5,11 +5,11 @@ import unittest
 
 import cereal.messaging as messaging
 from cereal import log
-from openpilot.common.gpio import gpio_set, gpio_init
+from common.gpio import gpio_set, gpio_init
 from panda import Panda, PandaDFU, PandaProtocolMismatch
-from openpilot.selfdrive.manager.process_config import managed_processes
-from openpilot.system.hardware import HARDWARE, PC
-from openpilot.system.hardware.tici.pins import GPIO
+from selfdrive.manager.process_config import managed_processes
+from system.hardware import HARDWARE, PC
+from system.hardware.tici.pins import GPIO
 
 HERE = os.path.dirname(os.path.realpath(__file__))
 

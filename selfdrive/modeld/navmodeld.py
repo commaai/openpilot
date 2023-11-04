@@ -10,11 +10,11 @@ from typing import Tuple, Dict
 from cereal import messaging
 from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType
-from openpilot.system.swaglog import cloudlog
-from openpilot.common.params import Params
-from openpilot.common.realtime import set_realtime_priority
-from openpilot.selfdrive.modeld.constants import ModelConstants
-from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
+from system.swaglog import cloudlog
+from common.params import Params
+from common.realtime import set_realtime_priority
+from selfdrive.modeld.constants import ModelConstants
+from selfdrive.modeld.runners import ModelRunner, Runtime
 
 NAV_INPUT_SIZE = 256*256
 NAV_FEATURE_LEN = 256

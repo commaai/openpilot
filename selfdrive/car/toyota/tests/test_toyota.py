@@ -3,8 +3,8 @@ from hypothesis import given, settings, strategies as st
 import unittest
 
 from cereal import car
-from openpilot.selfdrive.car.fw_versions import build_fw_dict
-from openpilot.selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, RADAR_ACC_CAR, FW_VERSIONS, \
+from selfdrive.car.fw_versions import build_fw_dict
+from selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, RADAR_ACC_CAR, FW_VERSIONS, \
                                                   FW_QUERY_CONFIG, PLATFORM_CODE_ECUS, FUZZY_EXCLUDED_PLATFORMS, \
                                                   get_platform_codes
 

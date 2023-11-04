@@ -11,12 +11,12 @@ from pathlib import Path
 from parameterized import parameterized
 from tqdm import trange
 
-from openpilot.common.params import Params
-from openpilot.common.timeout import Timeout
-from openpilot.system.hardware import TICI
-from openpilot.selfdrive.manager.process_config import managed_processes
-from openpilot.tools.lib.logreader import LogReader
-from openpilot.system.hardware.hw import Paths
+from common.params import Params
+from common.timeout import Timeout
+from system.hardware import TICI
+from selfdrive.manager.process_config import managed_processes
+from tools.lib.logreader import LogReader
+from system.hardware.hw import Paths
 
 SEGMENT_LENGTH = 2
 FULL_SIZE = 2507572
