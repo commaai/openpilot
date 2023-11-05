@@ -73,7 +73,6 @@ class CAR(StrEnum):
   OUTBACK = "SUBARU OUTBACK 6TH GEN"
   CROSSTREK_HYBRID = "SUBARU CROSSTREK HYBRID 2020"
   FORESTER_HYBRID = "SUBARU FORESTER HYBRID 2020"
-  LEGACY = "SUBARU LEGACY 7TH GEN"
   FORESTER_2022 = "SUBARU FORESTER 2022"
   OUTBACK_2023 = "SUBARU OUTBACK 7TH GEN"
 
@@ -101,8 +100,10 @@ class SubaruCarInfo(CarInfo):
 
 CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-21", "All"),
-  CAR.OUTBACK: SubaruCarInfo("Subaru Outback 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b])),
-  CAR.LEGACY: SubaruCarInfo("Subaru Legacy 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b])),
+  CAR.OUTBACK: [
+    SubaruCarInfo("Subaru Outback 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b])),
+    SubaruCarInfo("Subaru Legacy 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b])),
+  ],
   CAR.IMPREZA: [
     SubaruCarInfo("Subaru Impreza 2017-19"),
     SubaruCarInfo("Subaru Crosstrek 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26"),
@@ -195,31 +196,6 @@ FW_VERSIONS = {
     ],
     (Ecu.transmission, 0x7a3, None): [
       b'\x04\xfe\xf3\x00\x00',
-    ],
-  },
-  CAR.LEGACY: {
-    (Ecu.abs, 0x7b0, None): [
-      b'\xa1\\  x04\x01',
-      b'\xa1  \x03\x03',
-      b'\xa1  \x02\x01',
-    ],
-    (Ecu.eps, 0x746, None): [
-      b'\x9b\xc0\x11\x00',
-      b'\x9b\xc0\x11\x02',
-    ],
-    (Ecu.fwdCamera, 0x787, None): [
-      b'\x00\x00e\x80\x00\x1f@ \x19\x00',
-      b'\x00\x00e\x9a\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.engine, 0x7e0, None): [
-      b'\xde\"a0\x07',
-      b'\xe2"aq\x07',
-      b'\xde,\xa0@\x07',
-    ],
-    (Ecu.transmission, 0x7e1, None): [
-      b'\xa5\xf6\x05@\x00',
-      b'\xa7\xf6\x04@\x00',
-      b'\xa5\xfe\xc7@\x00',
     ],
   },
   CAR.IMPREZA: {
@@ -603,11 +579,16 @@ FW_VERSIONS = {
       b'\xa1  \x07\x02',
       b'\xa1  \x08\x00',
       b'\xa1 "\t\x00',
+      b'\xa1\\  x04\x01',
+      b'\xa1  \x03\x03',
+      b'\xa1  \x02\x01',
     ],
     (Ecu.eps, 0x746, None): [
       b'\x9b\xc0\x10\x00',
       b'\x9b\xc0\x20\x00',
       b'\x1b\xc0\x10\x00',
+      b'\x9b\xc0\x11\x00',
+      b'\x9b\xc0\x11\x02',
     ],
     (Ecu.fwdCamera, 0x787, None): [
       b'\x00\x00eJ\x00\x1f@ \x19\x00',
@@ -615,6 +596,8 @@ FW_VERSIONS = {
       b'\x00\x00e\x9a\x00\x00\x00\x00\x00\x00',
       b'\x00\x00e\x9a\x00\x1f@ 1\x00',
       b'\x00\x00eJ\x00\x00\x00\x00\x00\x00',
+      b'\x00\x00e\x80\x00\x1f@ \x19\x00',
+      b'\x00\x00e\x9a\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xbc,\xa0q\x07',
@@ -628,6 +611,9 @@ FW_VERSIONS = {
       b'\xbc"`q\x07',
       b'\xe3,\xa0@\x07',
       b'\xbc,\xa0u\x07',
+      b'\xde\"a0\x07',
+      b'\xe2"aq\x07',
+      b'\xde,\xa0@\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xa5\xfe\xf7@\x00',
@@ -638,6 +624,9 @@ FW_VERSIONS = {
       b'\xa7\xf6D@\x00',
       b'\xa7\xfe\xf4@\x00',
       b'\xa5\xfe\xf8@\x00',
+      b'\xa5\xf6\x05@\x00',
+      b'\xa7\xf6\x04@\x00',
+      b'\xa5\xfe\xc7@\x00',
     ],
   },
   CAR.FORESTER_2022: {
@@ -703,7 +692,6 @@ DBC = {
   CAR.FORESTER_HYBRID: dbc_dict('subaru_global_2020_hybrid_generated', None),
   CAR.CROSSTREK_HYBRID: dbc_dict('subaru_global_2020_hybrid_generated', None),
   CAR.OUTBACK_2023: dbc_dict('subaru_global_2017_generated', None),
-  CAR.LEGACY: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER_PREGLOBAL: dbc_dict('subaru_forester_2017_generated', None),
   CAR.LEGACY_PREGLOBAL: dbc_dict('subaru_outback_2015_generated', None),
   CAR.OUTBACK_PREGLOBAL: dbc_dict('subaru_outback_2015_generated', None),
@@ -711,7 +699,7 @@ DBC = {
 }
 
 LKAS_ANGLE = {CAR.FORESTER_2022, CAR.OUTBACK_2023, CAR.ASCENT_2023}
-GLOBAL_GEN2 = {CAR.OUTBACK, CAR.LEGACY, CAR.OUTBACK_2023, CAR.ASCENT_2023}
+GLOBAL_GEN2 = {CAR.OUTBACK, CAR.OUTBACK_2023, CAR.ASCENT_2023}
 PREGLOBAL_CARS = {CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018}
 HYBRID_CARS = {CAR.CROSSTREK_HYBRID, CAR.FORESTER_HYBRID}
 
