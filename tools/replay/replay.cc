@@ -66,6 +66,7 @@ void Replay::stop() {
     stream_cv_.notify_one();
     stream_thread_->quit();
     stream_thread_->wait();
+    delete stream_thread_;
     stream_thread_ = nullptr;
   }
   camera_server_.reset(nullptr);
@@ -354,7 +355,6 @@ void Replay::startStream(const Segment *cur_segment) {
   // start stream thread
   stream_thread_ = new QThread();
   QObject::connect(stream_thread_, &QThread::started, [=]() { stream(); });
-  QObject::connect(stream_thread_, &QThread::finished, stream_thread_, &QThread::deleteLater);
   stream_thread_->start();
 
   timeline_future = QtConcurrent::run(this, &Replay::buildTimeline);
