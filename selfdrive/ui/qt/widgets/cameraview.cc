@@ -182,7 +182,6 @@ void CameraWidget::showEvent(QShowEvent *event) {
     clearFrames();
     vipc_thread = new QThread();
     connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
-    connect(vipc_thread, &QThread::finished, vipc_thread, &QObject::deleteLater);
     vipc_thread->start();
   }
 }
@@ -192,6 +191,7 @@ void CameraWidget::stopVipcThread() {
     vipc_thread->requestInterruption();
     vipc_thread->quit();
     vipc_thread->wait();
+    delete vipc_thread;
     vipc_thread = nullptr;
   }
 }
