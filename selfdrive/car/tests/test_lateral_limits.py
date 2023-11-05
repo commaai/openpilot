@@ -25,7 +25,6 @@ JERK_MEAS_T = 0.5
 
 # TODO: put these cars within limits
 ABOVE_LIMITS_CARS = [
-  SUBARU.LEGACY,
   SUBARU.OUTBACK,
 ]
 
