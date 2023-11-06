@@ -21,6 +21,7 @@ QMapboxGLSettings get_mapbox_settings() {
 
   if (!Hardware::PC()) {
     settings.setCacheDatabasePath(MAPS_CACHE_PATH);
+    settings.setCacheDatabaseMaximumSize(100 * 1024 * 1024);
   }
   settings.setApiBaseUrl(MAPS_HOST);
   settings.setAccessToken(get_mapbox_token());
