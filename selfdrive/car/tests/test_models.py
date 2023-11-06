@@ -185,7 +185,7 @@ class TestCarModelBase(unittest.TestCase):
     self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")
     self.safety.init_tests()
 
-  @settings(max_examples=100, deadline=None,
+  @settings(max_examples=500, deadline=None,
             phases=(Phase.reuse, Phase.generate, ),
             suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow, HealthCheck.large_base_example],
             )
@@ -198,9 +198,10 @@ class TestCarModelBase(unittest.TestCase):
     # self.safety.init_tests()
 
     # bus = 0  # random.randint(0, 3)
-    address = data.draw(st.sampled_from([i for i in self.fingerprint[0] if i < 0x600]))  # random.randint(0x200, 0x300)
+    address = data.draw(st.sampled_from([i for i in self.fingerprint[0]]))  # random.randint(0x200, 0x300)
     size = self.fingerprint[0][address]
     print(address, size)
+    # print(self.fingerprint)
 
     # address = data.draw(st.integers(0x201, 0x226))
     bus = 0
@@ -215,8 +216,11 @@ class TestCarModelBase(unittest.TestCase):
 
     prev_panda_gas = self.safety.get_gas_pressed_prev()
     prev_panda_brake = self.safety.get_brake_pressed_prev()
+    prev_panda_regen_braking = self.safety.get_regen_braking_prev()
     prev_panda_vehicle_moving = self.safety.get_vehicle_moving()
     prev_panda_cruise_engaged = self.safety.get_cruise_engaged_prev()
+    prev_panda_acc_main_on = self.safety.get_acc_main_on()
+
     start_gas = self.safety.get_gas_pressed_prev()
     start_gas_int_detected = self.safety.get_gas_interceptor_detected()
 
@@ -238,6 +242,8 @@ class TestCarModelBase(unittest.TestCase):
       if self.safety.get_gas_pressed_prev():
         self.init_gas_pressed = True
 
+      # due to panda updating state selectively, per message, we can only compare on a change
+
       # if self.safety.get_gas_interceptor_detected():# and state_has_changed(start_gas, self.safety.get_gas_pressed_prev()):
       if self.safety.get_gas_pressed_prev() != prev_panda_gas:
         print()
@@ -247,12 +253,18 @@ class TestCarModelBase(unittest.TestCase):
         print('can.can', can.can)
         # self.assertEqual(CS.gasPressed, self.safety.get_gas_interceptor_prev())
         self.assertEqual(CS.gasPressed, self.safety.get_gas_pressed_prev())
+        self.assertEqual(CS.gas, self.safety.get_gas_interceptor_prev())
         # self.assertFalse(True)
 
       if self.safety.get_brake_pressed_prev() != prev_panda_brake:
-        print('brake change!')
-        print('both', CS.brakePressed, self.safety.get_brake_pressed_prev())
+        # print('brake change!')
+        # print('both', CS.brakePressed, self.safety.get_brake_pressed_prev())
         self.assertEqual(CS.brakePressed, self.safety.get_brake_pressed_prev())
+
+      if self.safety.get_regen_braking_prev() != prev_panda_regen_braking:
+        print('regen change!')
+        print('both', CS.regenBraking, self.safety.get_regen_braking_prev())
+        self.assertEqual(CS.regenBraking, self.safety.get_regen_braking_prev())
 
       if self.safety.get_vehicle_moving() != prev_panda_vehicle_moving:
         self.assertEqual(not CS.standstill, self.safety.get_vehicle_moving())
@@ -260,10 +272,16 @@ class TestCarModelBase(unittest.TestCase):
       if self.safety.get_cruise_engaged_prev() != prev_panda_cruise_engaged:
         self.assertEqual(CS.cruiseState.enabled, self.safety.get_cruise_engaged_prev())
 
+      if self.CP.carName == "honda":
+        if self.safety.get_acc_main_on() != prev_panda_acc_main_on:
+          self.assertEqual(CS.cruiseState.available, self.safety.get_acc_main_on())
+
       prev_panda_gas = self.safety.get_gas_pressed_prev()
       prev_panda_brake = self.safety.get_brake_pressed_prev()
+      prev_panda_regen_braking = self.safety.get_regen_braking_prev()
       prev_panda_vehicle_moving = self.safety.get_vehicle_moving()
       prev_panda_cruise_engaged = self.safety.get_cruise_engaged_prev()
+      prev_panda_acc_main_on = self.safety.get_acc_main_on()
       # if self.safety.get_gas_pressed_prev() and self.safety.get_cruise_engaged_prev():
       #   self.assertFalse(True)
       # self.assertFalse(self.safety.get_cruise_engaged_prev())

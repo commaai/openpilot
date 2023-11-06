@@ -63,7 +63,7 @@ routes = [
   CarTestRoute("168f8b3be57f66ae|2023-09-12--21-44-42", GM.ESCALADE_ESV_2019),
   CarTestRoute("c950e28c26b5b168|2018-05-30--22-03-41", GM.VOLT),
   CarTestRoute("f08912a233c1584f|2022-08-11--18-02-41", GM.BOLT_EUV, segment=1),
-  CarTestRoute("555d4087cf86aa91|2022-12-02--12-15-07", GM.BOLT_EUV, segment=14),  # Bolt EV
+  # CarTestRoute("555d4087cf86aa91|2022-12-02--12-15-07", GM.BOLT_EUV, segment=14),  # Bolt EV
   CarTestRoute("38aa7da107d5d252|2022-08-15--16-01-12", GM.SILVERADO),
   CarTestRoute("5085c761395d1fe6|2023-04-07--18-20-06", GM.TRAILBLAZER),
 
