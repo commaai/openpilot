@@ -34,19 +34,12 @@ def gen_llk(location=LOCATION1):
 class MapBoxInternetDisabledRequestHandler(http.server.BaseHTTPRequestHandler):
   INTERNET_ACTIVE = True
 
-  def setup(self):
-    if self.INTERNET_ACTIVE:
-      super().setup()
-
-  def handle(self):
-    if self.INTERNET_ACTIVE:
-      super().handle()
-
-  def finish(self):
-    if self.INTERNET_ACTIVE:
-      super().finish()
-
   def do_GET(self):
+    if not self.INTERNET_ACTIVE:
+      self.send_response(500)
+      self.end_headers()
+      return
+
     url = f'https://api.mapbox.com{self.path}'
 
     headers = dict(self.headers)
@@ -218,12 +211,12 @@ class TestMapRenderer(unittest.TestCase):
       tol = (nominal / (1+tol)), (nominal * (1+tol))
       self.assertTrue(tol[0] < stat < tol[1], f"{stat} not in tolerance {tol}")
 
-    assert_stat(_mean,   0.0035)
-    assert_stat(_median, 0.0034)
-    assert_stat(_stddev, 0.00093, tol=0.5)
+    assert_stat(_mean,   0.030)
+    assert_stat(_median, 0.027)
+    assert_stat(_stddev, 0.0078)
 
-    self.assertLess(_max, 0.2)
-    self.assertGreater(_min, 0.0010)
+    self.assertLess(_max, 0.065)
+    self.assertGreater(_min, 0.015)
 
 
 if __name__ == "__main__":
