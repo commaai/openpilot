@@ -22,7 +22,9 @@
 
 // ChartAxisElement's padding is 4 (https://codebrowser.dev/qt5/qtcharts/src/charts/axis/chartaxiselement_p.h.html)
 const int AXIS_X_TOP_MARGIN = 4;
-static inline bool xLessThan(const QPointF &p, float x) { return p.x() < x; }
+// Define a small value of epsilon to compare double values
+const float EPSILON = 0.000001;
+static inline bool xLessThan(const QPointF &p, float x) { return p.x() < (x - EPSILON); }
 
 ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent)
     : charts_widget(parent), QChartView(parent) {
@@ -768,7 +770,8 @@ void ChartView::drawSignalValue(QPainter *painter) {
   painter->setPen(chart()->legend()->labelColor());
   int i = 0;
   for (auto &s : sigs) {
-    auto it = std::lower_bound(s.vals.crbegin(), s.vals.crend(), cur_sec, [](auto &p, double x) { return p.x() > x; });
+    auto it = std::lower_bound(s.vals.crbegin(), s.vals.crend(), cur_sec,
+                               [](auto &p, double x) { return p.x() > x + EPSILON; });
     QString value = (it != s.vals.crend() && it->x() >= axis_x->min()) ? s.sig->formatValue(it->y()) : "--";
     QRectF marker_rect = legend_markers[i++]->sceneBoundingRect();
     QRectF value_rect(marker_rect.bottomLeft() - QPoint(0, 1), marker_rect.size());

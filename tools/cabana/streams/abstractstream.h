@@ -69,7 +69,7 @@ public:
   virtual QString carFingerprint() const { return ""; }
   virtual QDateTime beginDateTime() const { return {}; }
   virtual double routeStartTime() const { return 0; }
-  virtual double currentSec() const = 0;
+  inline double currentSec() const { return current_sec_; }
   virtual double totalSeconds() const { return lastEventMonoTime() / 1e9 - routeStartTime(); }
   virtual void setSpeed(float speed) {}
   virtual double getSpeed() { return 1; }
@@ -113,6 +113,7 @@ private:
   void updateLastMsgsTo(double sec);
   void updateMasks();
 
+  double current_sec_ = 0;
   MessageEventsMap events_;
   std::unordered_map<MessageId, CanData> last_msgs;
   std::unique_ptr<MonotonicBuffer> event_buffer_;
@@ -140,7 +141,6 @@ public:
   DummyStream(QObject *parent) : AbstractStream(parent) {}
   QString routeName() const override { return tr("No Stream"); }
   void start() override { emit streamStarted(); }
-  double currentSec() const override { return 0; }
 };
 
 class StreamNotifier : public QObject {
