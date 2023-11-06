@@ -8,7 +8,6 @@ from azure.storage.blob import ContainerClient
 from tqdm import tqdm
 
 from openpilot.selfdrive.car.tests.routes import routes as test_car_models_routes
-from openpilot.selfdrive.locationd.test.test_laikad import UBLOX_TEST_ROUTE, QCOM_TEST_ROUTE
 from openpilot.selfdrive.test.process_replay.test_processes import source_segments as replay_segments
 from openpilot.selfdrive.test.openpilotci import (DATA_CI_ACCOUNT, DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER,
                                                   get_azure_credential, get_container_sas)
@@ -90,7 +89,6 @@ if __name__ == "__main__":
 
   if not len(to_sync):
     # sync routes from the car tests routes and process replay
-    to_sync.extend([UBLOX_TEST_ROUTE, QCOM_TEST_ROUTE])
     to_sync.extend([rt.route for rt in test_car_models_routes])
     to_sync.extend([s[1].rsplit('--', 1)[0] for s in replay_segments])
 

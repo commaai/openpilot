@@ -43,13 +43,13 @@ class CarControllerParams:
 
   RPM_INACTIVE = 600             # a good base rpm for zero acceleration
 
-  THROTTLE_LOOKUP_BP = [0, 1]
+  THROTTLE_LOOKUP_BP = [0, 2]
   THROTTLE_LOOKUP_V = [THROTTLE_INACTIVE, THROTTLE_MAX]
 
-  RPM_LOOKUP_BP = [0, 1]
+  RPM_LOOKUP_BP = [0, 2]
   RPM_LOOKUP_V = [RPM_INACTIVE, RPM_MAX]
 
-  BRAKE_LOOKUP_BP = [-1, 0]
+  BRAKE_LOOKUP_BP = [-3.5, 0]
   BRAKE_LOOKUP_V = [BRAKE_MAX, BRAKE_MIN]
 
 
@@ -324,6 +324,7 @@ FW_VERSIONS = {
       b'\x00\x00eq\x1f@ "',
       b'\x00\x00eq\x00\x00\x00\x00',
       b'\x00\x00e\x8f\x00\x00\x00\x00',
+      b'\x00\x00e\x92\x00\x00\x00\x00',
       b'\x00\x00e\xa4\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
@@ -332,6 +333,7 @@ FW_VERSIONS = {
       b'\xca!`0\a',
       b'\xcc\"f0\a',
       b'\xcc!fp\a',
+      b'\xcc!`p\x07',
       b'\xca!f@\x07',
       b'\xca!fp\x07',
       b'\xf3"f@\x07',
@@ -344,6 +346,7 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [
       b'\xe6\xf5\004\000\000',
       b'\xe6\xf5$\000\000',
+      b'\xe7\xf5\x04\x00\x00',
       b'\xe7\xf6B0\000',
       b'\xe7\xf5D0\000',
       b'\xf1\x00\xd7\x10@',
@@ -436,6 +439,7 @@ FW_VERSIONS = {
     (Ecu.abs, 0x7b0, None): [
       b'\x7d\x97\x14\x40',
       b'\xf1\x00\xbb\x0c\x04',
+      b'm\x97\x14@',
     ],
     (Ecu.eps, 0x746, None): [
       b'}\xc0\x10\x00',
@@ -444,13 +448,15 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x787, None): [
       b'\x00\x00\x64\x35\x1f\x40\x20\x09',
       b'\x00\x00c\xe9\x1f@ \x03',
-      b'\x00\x00d\xd3\x1f@ \t'
+      b'\x00\x00d\xd3\x1f@ \t',
+      b'\x00\x00c\xe9\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xba"@p\a',
       b'\xa7)\xa0q\a',
       b'\xf1\x82\xa7)\xa0q\a',
       b'\xba"@@\a',
+      b'\xa7"@p\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xdc\xf2\x60\x60\x00',
@@ -459,6 +465,7 @@ FW_VERSIONS = {
       b'\xdc\xf2`\x81\000',
       b'\xdc\xf2`\x80\x00',
       b'\x1a\xf6F`\x00',
+      b'\xda\xf2`\x80\x00',
     ],
   },
   CAR.LEGACY_PREGLOBAL: {
@@ -467,6 +474,7 @@ FW_VERSIONS = {
       b'[\xba\xc4\x03',
       b'{\x97D\x00',
       b'[\x97D\000',
+      b'k\x9aD\x00',
     ],
     (Ecu.eps, 0x746, None): [
       b'[\xb0\x00\x01',
@@ -483,12 +491,14 @@ FW_VERSIONS = {
       b'\xa0+@p\x07',
       b'\xb4"@0\x07',
       b'\xa0"@q\a',
+      b'\xab+@p\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xbe\xf2\x00p\x00',
       b'\xbf\xfb\xc0\x80\x00',
       b'\xbd\xf2\x00`\x00',
       b'\xbf\xf2\000\x80\000',
+      b'\xbe\xfb\xc0p\x00',
     ],
   },
   CAR.OUTBACK_PREGLOBAL: {
@@ -532,6 +542,7 @@ FW_VERSIONS = {
       b'\xb4"@r\a',
       b'\xa0+@@\x07',
       b'\xa0\"@\x80\a',
+      b'\xa0*@u\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xbd\xfb\xe0\x80\x00',
@@ -625,6 +636,7 @@ FW_VERSIONS = {
       b'\xbc"`q\x07',
       b'\xe3,\xa0@\x07',
       b'\xbc,\xa0u\x07',
+      b'\xde,\xa0@\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xa5\xfe\xf7@\x00',
