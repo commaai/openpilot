@@ -73,7 +73,7 @@ protected:
   QWidget *createCameraWidget();
   QHBoxLayout *createPlaybackController();
   void loopPlaybackClicked();
-  void vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams);
+  void vipcAvailableStreamsUpdated();
 
   CameraWidget *cam_widget;
   double maximum_time = 0;

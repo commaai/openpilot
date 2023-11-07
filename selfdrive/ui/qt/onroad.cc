@@ -10,6 +10,7 @@
 #include <QMouseEvent>
 
 #include "common/timing.h"
+#include "common/swaglog.h"
 #include "selfdrive/ui/qt/util.h"
 #ifdef ENABLE_MAPS
 #include "selfdrive/ui/qt/maps/map_helpers.h"
@@ -44,11 +45,13 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   if (getenv("DUAL_CAMERA_VIEW")) {
     CameraWidget *arCam = new CameraWidget("camerad", VISION_STREAM_ROAD, true, this);
+    arCam->setAutoUpdate(true);
     split->insertWidget(0, arCam);
   }
 
   if (getenv("MAP_RENDER_VIEW")) {
     CameraWidget *map_render = new CameraWidget("navd", VISION_STREAM_MAP, false, this);
+    map_render->setAutoUpdate(true);
     split->insertWidget(0, map_render);
   }
 
@@ -278,8 +281,10 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
 }
 
 void AnnotatedCameraWidget::updateState(const UIState &s) {
-  const int SET_SPEED_NA = 255;
   const SubMaster &sm = *(s.sm);
+  if (!CameraWidget::receiveFrame(sm["uiPlan"].getUiPlan().getFrameId())) {
+    return;
+  }
 
   const bool cs_alive = sm.alive("controlsState");
   const bool nav_alive = sm.alive("navInstruction") && sm["navInstruction"].getValid();
@@ -288,6 +293,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   const auto nav_instruction = sm["navInstruction"].getNavInstruction();
 
   // Handle older routes where vCruiseCluster is not set
+  const int SET_SPEED_NA = 255;
   float v_cruise =  cs.getVCruiseCluster() == 0.0 ? cs.getVCruise() : cs.getVCruiseCluster();
   setSpeed = cs_alive ? v_cruise : SET_SPEED_NA;
   is_cruise_set = setSpeed > 0 && (int)setSpeed != SET_SPEED_NA;
@@ -327,6 +333,8 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
     map_settings_btn->setVisible(!hideBottomIcons);
     main_layout->setAlignment(map_settings_btn, (rightHandDM ? Qt::AlignLeft : Qt::AlignRight) | Qt::AlignBottom);
   }
+
+  update();
 }
 
 void AnnotatedCameraWidget::drawHud(QPainter &p) {
@@ -609,21 +617,6 @@ void AnnotatedCameraWidget::paintGL() {
 
   // draw camera frame
   {
-    std::lock_guard lk(frame_lock);
-
-    if (frames.empty()) {
-      if (skip_frame_count > 0) {
-        skip_frame_count--;
-        qDebug() << "skipping frame, not ready";
-        return;
-      }
-    } else {
-      // skip drawing up to this many frames if we're
-      // missing camera frames. this smooths out the
-      // transitions from the narrow and wide cameras
-      skip_frame_count = 5;
-    }
-
     // Wide or narrow cam dependent on speed
     bool has_wide_cam = available_streams.count(VISION_STREAM_WIDE_ROAD);
     if (has_wide_cam) {
@@ -639,14 +632,13 @@ void AnnotatedCameraWidget::paintGL() {
     }
     CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
 
-    s->scene.wide_cam = CameraWidget::getStreamType() == VISION_STREAM_WIDE_ROAD;
+    s->scene.wide_cam = CameraWidget::streamType() == VISION_STREAM_WIDE_ROAD;
     if (s->scene.calibration_valid) {
       auto calib = s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib;
       CameraWidget::updateCalibration(calib);
     } else {
       CameraWidget::updateCalibration(DEFAULT_CALIBRATION);
     }
-    CameraWidget::setFrameId(model.getFrameId());
     CameraWidget::paintGL();
   }
 

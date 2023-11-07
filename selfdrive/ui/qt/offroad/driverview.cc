@@ -17,7 +17,7 @@ DriverViewWindow::DriverViewWindow(QWidget* parent) : QWidget(parent) {
   layout->addWidget(cameraView);
 
   scene = new DriverViewScene(this);
-  connect(cameraView, &CameraWidget::vipcThreadFrameReceived, scene, &DriverViewScene::frameUpdated);
+  connect(cameraView, &CameraWidget::vipcAvailableStreamsUpdated, scene, &DriverViewScene::frameUpdated);
   layout->addWidget(scene);
   layout->setCurrentWidget(scene);
 
@@ -26,7 +26,6 @@ DriverViewWindow::DriverViewWindow(QWidget* parent) : QWidget(parent) {
 
 void DriverViewWindow::closeView() {
   if (isVisible()) {
-    cameraView->stopVipcThread();
     emit done();
   }
 }
@@ -35,18 +34,20 @@ void DriverViewWindow::mouseReleaseEvent(QMouseEvent* e) {
   closeView();
 }
 
-DriverViewScene::DriverViewScene(QWidget* parent) : QWidget(parent) {
-  face_img = loadPixmap("../assets/img_driver_face_static.png", {FACE_IMG_SIZE, FACE_IMG_SIZE});
-}
-
-void DriverViewScene::showEvent(QShowEvent* event) {
-  frame_updated = false;
+void DriverViewWindow::showEvent(QShowEvent* event) {
+  cameraView->setAutoUpdate(true);
+  scene->frame_updated = false;
   params.putBool("IsDriverViewEnabled", true);
   device()->resetInteractiveTimeout(60);
 }
 
-void DriverViewScene::hideEvent(QHideEvent* event) {
+void DriverViewWindow::hideEvent(QHideEvent* event) {
+  cameraView->setAutoUpdate(false);
   params.putBool("IsDriverViewEnabled", false);
+}
+
+DriverViewScene::DriverViewScene(QWidget* parent) : QWidget(parent) {
+  face_img = loadPixmap("../assets/img_driver_face_static.png", {FACE_IMG_SIZE, FACE_IMG_SIZE});
 }
 
 void DriverViewScene::frameUpdated() {

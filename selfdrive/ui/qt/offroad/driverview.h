@@ -9,20 +9,17 @@ class DriverViewScene : public QWidget {
 
 public:
   explicit DriverViewScene(QWidget *parent);
+  bool frame_updated = false;
 
 public slots:
   void frameUpdated();
 
 protected:
-  void showEvent(QShowEvent *event) override;
-  void hideEvent(QHideEvent *event) override;
   void paintEvent(QPaintEvent *event) override;
 
 private:
-  Params params;
   QPixmap face_img;
   bool is_rhd = false;
-  bool frame_updated = false;
 };
 
 class DriverViewWindow : public QWidget {
@@ -37,8 +34,11 @@ signals:
 protected:
   void mouseReleaseEvent(QMouseEvent* e) override;
   void closeView();
+  void showEvent(QShowEvent *event) override;
+  void hideEvent(QHideEvent *event) override;
 
   CameraWidget *cameraView;
   DriverViewScene *scene;
   QStackedLayout *layout;
+  Params params;
 };

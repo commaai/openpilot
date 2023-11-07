@@ -140,6 +140,7 @@ QWidget *VideoWidget::createCameraWidget() {
   QStackedLayout *stacked = new QStackedLayout();
   stacked->setStackingMode(QStackedLayout::StackAll);
   stacked->addWidget(cam_widget = new CameraWidget("camerad", VISION_STREAM_ROAD, false));
+  cam_widget->setAutoUpdate(true);
   cam_widget->setMinimumHeight(MIN_VIDEO_HEIGHT);
   cam_widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
   stacked->addWidget(alert_label = new InfoLabel(this));
@@ -152,7 +153,6 @@ QWidget *VideoWidget::createCameraWidget() {
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->currentSecond()); });
   QObject::connect(slider, &Slider::updateMaximumTime, this, &VideoWidget::setMaximumTime, Qt::QueuedConnection);
   QObject::connect(static_cast<ReplayStream*>(can), &ReplayStream::qLogLoaded, slider, &Slider::parseQLog);
-  QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(cam_widget, &CameraWidget::vipcAvailableStreamsUpdated, this, &VideoWidget::vipcAvailableStreamsUpdated);
   QObject::connect(camera_tab, &QTabBar::currentChanged, [this](int index) {
     if (index != -1) cam_widget->setStreamType((VisionStreamType)camera_tab->tabData(index).toInt());
@@ -160,12 +160,13 @@ QWidget *VideoWidget::createCameraWidget() {
   return w;
 }
 
-void VideoWidget::vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams) {
+void VideoWidget::vipcAvailableStreamsUpdated() {
   static const QString stream_names[] = {
     [VISION_STREAM_ROAD] = "Road camera",
     [VISION_STREAM_WIDE_ROAD] = "Wide road camera",
     [VISION_STREAM_DRIVER] = "Driver camera"};
 
+  const auto &streams = cam_widget->availableStreams();
   for (int i = 0; i < streams.size(); ++i) {
     if (camera_tab->count() <= i) {
       camera_tab->addTab(QString());
