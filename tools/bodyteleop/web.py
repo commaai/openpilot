@@ -12,12 +12,11 @@ import warnings
 warnings.resetwarnings()
 warnings.simplefilter("always")
 
-from aiohttp import web, ClientSession
+from aiohttp import web
 import pyaudio
 import wave
 
 from openpilot.common.basedir import BASEDIR
-from openpilot.tools.bodyteleop.webrtc import WebRTCStreamBuilder
 from openpilot.tools.bodyteleop.webrtcd import StreamRequestBody
 
 logger = logging.getLogger("bodyteleop")
@@ -54,12 +53,6 @@ async def play_sound(sound):
     stream.close()
     p.terminate()
 
-# TODO body 0,0 messages sent over some interval
-# options:
-# - endpoint for sending control messages
-# - send control on client side, and dummy on server side
-# - dummy on webrtcd side
-
 ## SSL
 def create_ssl_cert(cert_path, key_path):
   try:
@@ -84,32 +77,6 @@ def create_ssl_context():
 
   return ssl_context
 
-## APP EVENTS
-async def internal_stream_startup(app):
-  # this is executed on startup
-  async def connection_provider(offer):
-    body = StreamRequestBody(offer.sdp, offer.video, ["testJoystick"], [])
-    body_json = json.dumps(dataclasses.asdict(body))
-    async with ClientSession() as session, session.post("{WEBRTCD_HOST}/stream", data=body_json) as resp:
-      if resp.status != 200:
-        raise web.HTTPInternalServerError()
-      return await resp.json()
-
-  builder = WebRTCStreamBuilder.offer(connection_provider)
-  builder.add_messaging()
-
-  stream = builder.stream()
-  await stream.start()
-  await stream.wait_for_connection()
-  assert stream.has_messaging_channel()
-  app['control_stream'] = stream
-
-  # yield the execution after startup
-  yield
-  # this is executed on cleanup
-  await stream.stop()
-
-
 ## ENDPOINTS
 async def index(request):
   content = open(TELEOPDIR + "/static/index.html", "r").read()
@@ -120,15 +87,6 @@ async def index(request):
   request.app['mutable_vals']['find_person'] = False
 
   return web.Response(content_type="text/html", text=content)
-
-
-async def control(request):
-  assert request.app['control_stream'].is_connected_and_ready, "RTC control stream not ready"
-  channel = request.app['control_stream'].get_messaging_channel()
-  x, y = request.match_info.get('x'), request.match_info.get('y')
-  msg = {"type": "testJoystick", "data": {"axes": [float(x), float(y)]}}
-  msg_json = json.dumps(msg)
-  channel.send(msg_json)
 
 
 async def ping(request):
@@ -161,12 +119,10 @@ def main():
   app = web.Application()
   app['mutable_vals'] = {}
   app.router.add_get("/", index)
-  app.router.add_get("/control/{x}/{y}", control)
   app.router.add_get("/ping", ping)
   app.router.add_post("/offer", offer)
   app.router.add_post("/sound", sound)
   app.router.add_static('/static', TELEOPDIR + '/static')
-  app.cleanup_ctx.append(internal_stream_startup)
   web.run_app(app, access_log=None, host="0.0.0.0", port=5000, ssl_context=ssl_context)
 
 
