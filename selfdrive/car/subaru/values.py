@@ -55,7 +55,7 @@ class CarControllerParams:
 
 class SubaruFlags(IntFlag):
   SEND_INFOTAINMENT = 1
-  EYESIGHT_DISABLED = 2
+  DISABLE_EYESIGHT = 2
 
 
 GLOBAL_ES_ADDR = 0x787

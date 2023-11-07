@@ -122,7 +122,7 @@ class CarInterface(CarInterfaceBase):
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
 
     if candidate in GLOBAL_GEN2 and ret.openpilotLongitudinalControl:
-      ret.flags |= SubaruFlags.EYESIGHT_DISABLED.value
+      ret.flags |= SubaruFlags.DISABLE_EYESIGHT
 
     if ret.openpilotLongitudinalControl:
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
@@ -146,7 +146,7 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def init(CP, logcan, sendcan):
-    if CP.flags & SubaruFlags.EYESIGHT_DISABLED:
+    if CP.flags & SubaruFlags.DISABLE_EYESIGHT:
       disable_ecu(logcan, sendcan, bus=2, addr=GLOBAL_ES_ADDR, com_cont_req=b'\x28\x03\x01')
 
   def apply(self, c, now_nanos):

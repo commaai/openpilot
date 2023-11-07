@@ -120,7 +120,7 @@ class CarController:
             bus = CanBus.alt if self.CP.carFingerprint in GLOBAL_GEN2 else CanBus.main
             can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg["COUNTER"] + 1, CS.es_distance_msg, bus, pcm_cancel_cmd))
 
-      if self.CP.flags & SubaruFlags.EYESIGHT_DISABLED:
+      if self.CP.flags & SubaruFlags.DISABLE_EYESIGHT:
         # Tester present (keeps eyesight disabled)
         if self.frame % 100 == 0:
           can_sends.append([GLOBAL_ES_ADDR, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", CanBus.camera])
