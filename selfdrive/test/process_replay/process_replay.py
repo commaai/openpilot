@@ -594,10 +594,13 @@ def get_custom_params_from_lr(lr: LogIterable, initial_state: str = "first") -> 
   assert initial_state in ["first", "last"]
   msg_index = 0 if initial_state == "first" else -1
 
-  assert len(car_params) > 0, "carParams required for initial state of liveParameters and liveTorqueCarParams"
+  assert len(car_params) > 0, "carParams required for initial state of liveParameters and CarParamsPrevRoute"
   CP = car_params[msg_index].carParams
 
-  custom_params = {}
+  custom_params = {
+    "CarParamsPrevRoute": CP.as_builder().to_bytes()
+  }
+
   if len(live_calibration) > 0:
     custom_params["CalibrationParams"] = live_calibration[msg_index].as_builder().to_bytes()
   if len(live_parameters) > 0:
@@ -605,7 +608,6 @@ def get_custom_params_from_lr(lr: LogIterable, initial_state: str = "first") -> 
     lp_dict["carFingerprint"] = CP.carFingerprint
     custom_params["LiveParameters"] = json.dumps(lp_dict)
   if len(live_torque_parameters) > 0:
-    custom_params["LiveTorqueCarParams"] = CP.as_builder().to_bytes()
     custom_params["LiveTorqueParameters"] = live_torque_parameters[msg_index].as_builder().to_bytes()
 
   return custom_params
