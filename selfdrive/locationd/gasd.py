@@ -11,7 +11,7 @@ from cereal import car, log
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.common.filter_simple import FirstOrderFilter
-from openpilot.selfdrive.locationd.params_learner import PointBuckets
+from openpilot.selfdrive.locationd.helpers import PointBuckets
 from openpilot.system.swaglog import cloudlog
 
 from selfdrive.car.interfaces import ACCEL_MAX, ACCEL_MIN
@@ -70,6 +70,34 @@ MIN_BUCKET_POINTS = list(BUCKETS.values())
 MIN_ENGAGE_BUFFER = 1  # secs
 
 VERSION = 1  # bump this to invalidate old parameter caches
+
+
+class GasBuckets(PointBuckets):
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.x_size = len(self.x_bounds[0])
+
+  def is_valid(self):
+    return all(
+      len(v) >= min_pts for v, min_pts in zip(self.buckets.values(), self.buckets_min_points.values(), strict=True)) \
+      and (self.__len__() >= self.min_points_total)
+
+  @staticmethod
+  def is_jointly_valid(*pbs: 'GasBuckets'):
+    # TODO: this is kind of a hack
+    x_bounds = pbs[0].x_bounds
+    if not all(pb.x_bounds == x_bounds for pb in pbs):
+      raise ValueError("x_bounds must be the same for all PointBuckets")
+    return all(
+      sum(len(pb.buckets[bounds]) for pb in pbs) >= min_pts
+      for bounds, min_pts in zip(x_bounds, pbs[0].buckets_min_points.values(), strict=True)) \
+      and (sum(len(pb) for pb in pbs) >= pbs[0].min_points_total)
+
+  def add_point(self, x, y):
+    for bounds in self.x_bounds:
+      if all((x[i] >= bounds[i][0]) and (x[i] < bounds[i][1]) for i in range(self.x_size)):
+        self.buckets[bounds].append([*x, 1.0, y])
+        break
 
 
 class GasBrakeEstimator:
@@ -157,9 +185,9 @@ class GasBrakeEstimator:
     self.resets += 1.0
     self.decay = MIN_FILTER_DECAY
     self.raw_points = defaultdict(lambda: deque(maxlen=self.hist_len))
-    self.filtered_gas = PointBuckets(x_bounds=ALL_BUCKET_BOUNDS, min_points_total=self.min_points_total,
+    self.filtered_gas = GasBuckets(x_bounds=ALL_BUCKET_BOUNDS, min_points_total=self.min_points_total,
                                      min_points=MIN_BUCKET_POINTS, points_per_bucket=POINTS_PER_BUCKET)
-    self.filtered_brake = PointBuckets(x_bounds=ALL_BUCKET_BOUNDS, min_points_total=self.min_points_total,
+    self.filtered_brake = GasBuckets(x_bounds=ALL_BUCKET_BOUNDS, min_points_total=self.min_points_total,
                                        min_points=MIN_BUCKET_POINTS, points_per_bucket=POINTS_PER_BUCKET)
 
   def sanity_check(self):
@@ -256,7 +284,7 @@ class GasBrakeEstimator:
     liveGasParameters.version = VERSION
     liveGasParameters.useParams = self.use_params
 
-    if PointBuckets.is_jointly_valid(self.filtered_gas, self.filtered_brake):
+    if GasBuckets.is_jointly_valid(self.filtered_gas, self.filtered_brake):
       x = self.estimate_params()
 
       if any(val is None or np.isnan(val) for val in x.flatten()) or not self.sanity_check():
