@@ -10,7 +10,7 @@ import logging
 from openpilot.tools.bodyteleop.webrtc import WebRTCStreamBuilder
 from openpilot.tools.bodyteleop.webrtc.stream import StreamingOffer
 from openpilot.tools.bodyteleop.webrtc.tracks import DummyVideoStreamTrack
-from openpilot.tools.bodyteleop.webrtc.device.tracks import LiveStreamVideoStreamTrack, FrameReaderVideoStreamTrack
+from openpilot.tools.bodyteleop.webrtc.device.video import LiveStreamVideoStreamTrack, FrameReaderVideoStreamTrack
 
 
 async def async_input():
@@ -39,7 +39,7 @@ async def run_answer(args):
     video_tracks = []
     for cam in offer.video:
       if args.dummy_video:
-        track = DummyVideoStreamTrack(dt=1/50, camera_type=cam)
+        track = DummyVideoStreamTrack(camera_type=cam)
       elif args.input_video:
         track = FrameReaderVideoStreamTrack(args.input_video, camera_type=cam)
       else:
