@@ -1,12 +1,11 @@
 import asyncio
+import dataclasses
 import json
 import logging
 import os
 import ssl
-import uuid
 import time
 import subprocess
-from typing import Dict, Awaitable
 
 # aiortc and its dependencies have lots of internal warnings :(
 import warnings
@@ -14,145 +13,48 @@ warnings.resetwarnings()
 warnings.simplefilter("always")
 
 from aiohttp import web
+import pyaudio
+import wave
 
-import cereal.messaging as messaging
 from openpilot.common.basedir import BASEDIR
-from openpilot.tools.bodyteleop.bodyav import play_sound
-from openpilot.tools.bodyteleop.webrtc import WebRTCStreamBuilder
-from openpilot.tools.bodyteleop.webrtc.stream import WebRTCBaseStream
-from openpilot.tools.bodyteleop.webrtc.info import parse_info_from_offer
-from openpilot.tools.bodyteleop.webrtc.device.video import LiveStreamVideoStreamTrack
-from openpilot.tools.bodyteleop.webrtc.device.audio import AudioInputStreamTrack, AudioOutputSpeaker
+from openpilot.tools.bodyteleop.webrtcd import StreamRequestBody
 
-logger = logging.getLogger("pc")
+logger = logging.getLogger("bodyteleop")
 logging.basicConfig(level=logging.INFO)
 
-streams: Dict[str, WebRTCBaseStream] = dict()
-stream_connection_tasks: Dict[str, Awaitable[None]] = dict()
-pm, sm = None, None
 TELEOPDIR = f"{BASEDIR}/tools/bodyteleop"
 
+## UTILS
+async def play_sound(sound):
+  SOUNDS = {
+    'engage': '../../selfdrive/assets/sounds/engage.wav',
+    'disengage': '../../selfdrive/assets/sounds/disengage.wav',
+    'error': '../../selfdrive/assets/sounds/warning_immediate.wav',
+  }
 
-async def control_body(data, app):
-  now = time.monotonic()
-  if (data['type'] == 'dummy_controls') and (now < (app['mutable_vals']['last_send_time'] + 0.2)):
-    return
-  if (data['type'] == 'control_command') and (app['mutable_vals']['prev_command'] == [data['x'], data['y']] and data['x'] == 0 and data['y'] == 0):
-    return
+  chunk = 5120
+  with wave.open(SOUNDS[sound], 'rb') as wf:
+    def callback(in_data, frame_count, time_info, status):
+      data = wf.readframes(frame_count)
+      return data, pyaudio.paContinue
 
-  logger.info(str(data))
-  x = max(-1.0, min(1.0, data['x']))
-  y = max(-1.0, min(1.0, data['y']))
-  dat = messaging.new_message('testJoystick')
-  dat.testJoystick.axes = [x, y]
-  dat.testJoystick.buttons = [False]
-  pm.send('testJoystick', dat)
-  app['mutable_vals']['last_send_time'] = now
-  if (data['type'] == 'control_command'):
-    app['mutable_vals']['last_override_time'] = now
-    app['mutable_vals']['prev_command'] = [data['x'], data['y']]
+    p = pyaudio.PyAudio()
+    stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                    channels=wf.getnchannels(),
+                    rate=wf.getframerate(),
+                    output=True,
+                    frames_per_buffer=chunk,
+                    stream_callback=callback)
+    stream.start_stream()
+    while stream.is_active():
+      await asyncio.sleep(0)
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
 
+# TODO body 0,0 messages sent over some interval
 
-async def dummy_controls_msg(app):
-  while True:
-    if 'last_send_time' in app['mutable_vals']:
-      this_time = time.monotonic()
-      if (app['mutable_vals']['last_send_time'] + 0.2) < this_time:
-        await control_body({'type': 'dummy_controls', 'x': 0, 'y': 0}, app)
-    await asyncio.sleep(0.2)
-
-
-async def start_background_tasks(app):
-  app['bgtask_dummy_controls_msg'] = asyncio.create_task(dummy_controls_msg(app))
-
-
-async def stop_background_tasks(app):
-  app['bgtask_dummy_controls_msg'].cancel()
-  del app['bgtask_dummy_controls_msg']
-
-
-async def index(request):
-  content = open(TELEOPDIR + "/static/index.html", "r").read()
-  now = time.monotonic()
-  request.app['mutable_vals']['last_send_time'] = now
-  request.app['mutable_vals']['last_override_time'] = now
-  request.app['mutable_vals']['prev_command'] = []
-  request.app['mutable_vals']['find_person'] = False
-
-  return web.Response(content_type="text/html", text=content)
-
-
-async def offer(request):
-  async def on_webrtc_channel_message(channel, message):
-    data = json.loads(message)
-    if data['type'] == 'control_command':
-      await control_body(data, request.app)
-      times = {
-        'type': 'ping_time',
-        'incoming_time': data['dt'],
-        'outgoing_time': int(time.time() * 1000),
-      }
-      channel.send(json.dumps(times))
-    if data['type'] == 'battery_level':
-      sm.update(timeout=0)
-      if sm.updated['carState']:
-        channel.send(json.dumps({'type': 'battery_level', 'value': int(sm['carState'].fuelGauge * 100)}))
-    if data['type'] == 'play_sound':
-      logger.info(f"Playing sound: {data['sound']}")
-      await play_sound(data['sound'])
-    if data['type'] == 'find_person':
-      request.app['mutable_vals']['find_person'] = data['value']
-
-  async def post_connect(stream, identifier):
-    try:
-      await stream.wait_for_connection()
-
-      if stream.has_incoming_audio_track():
-        track = stream.get_incoming_audio_track(False)
-        speaker = AudioOutputSpeaker()
-        speaker.add_track(track)
-        speaker.start()
-    except Exception as e:
-      logger.info(f"Connection exception with stream {identifier}: {e}")
-      await stream.stop()
-      del streams[stream_id]
-      del stream_connection_tasks[stream_id]
-
-  logger.info("\n\nNew Offer!\n\n")
-
-  params = await request.json()
-  sdp = params["sdp"]
-
-  stream_builder = WebRTCStreamBuilder.answer(sdp)
-  media_info = parse_info_from_offer(sdp)
-  if media_info.n_expected_camera_tracks >= 0:
-    camera_track = LiveStreamVideoStreamTrack("driver")
-    stream_builder.add_video_stream("driver", camera_track)
-  if media_info.expected_audio_track:
-    audio_track = AudioInputStreamTrack()
-    stream_builder.add_audio_stream(audio_track)
-  if media_info.incoming_audio_track:
-    stream_builder.request_audio_stream()
-
-  stream = stream_builder.stream()
-  stream.set_message_handler(on_webrtc_channel_message)
-  description = await stream.start()
-  stream_id = "WebRTCStream(%s)" % uuid.uuid4()
-
-  connection_task = asyncio.create_task(post_connect(stream, stream_id))
-  streams[stream_id] = stream
-  stream_connection_tasks[stream_id] = connection_task
-
-  response_content = {"sdp": description.sdp, "type": description.type}
-  return web.json_response(response_content)
-
-
-async def on_shutdown(app):
-  coroutines = [stream.stop() for stream in streams.values()]
-  await asyncio.gather(*coroutines)
-  streams.clear()
-
-
+## SSL
 def create_ssl_cert(cert_path, key_path):
   try:
     proc = subprocess.run(f'openssl req -x509 -newkey rsa:4096 -nodes -out {cert_path} -keyout {key_path} \
@@ -177,23 +79,58 @@ def create_ssl_context():
   return ssl_context
 
 
-def main():
-  global pm, sm
-  pm = messaging.PubMaster(['testJoystick'])
-  sm = messaging.SubMaster(['carState', 'logMessage'])
+## APP EVENTS
+async def on_startup(app):
+  pass
 
+
+async def on_cleanup(app):
+  pass
+
+
+## ENDPOINTS
+async def index(request):
+  content = open(TELEOPDIR + "/static/index.html", "r").read()
+  now = time.monotonic()
+  request.app['mutable_vals']['last_send_time'] = now
+  request.app['mutable_vals']['last_override_time'] = now
+  request.app['mutable_vals']['prev_command'] = []
+  request.app['mutable_vals']['find_person'] = False
+
+  return web.Response(content_type="text/html", text=content)
+
+
+async def sound(request):
+  params = await request.json()
+  sound_to_play = params["sound"]
+
+  try:
+    await play_sound(sound_to_play)
+    return web.json_response({"status": "ok"})
+  except Exception as ex:
+    return web.json_response({"error": str(ex)}, status=400)
+
+
+async def offer(request):
+  params = await request.json()
+  body = StreamRequestBody(params["sdp"], ["driver"], ["testJoystick"], ["carState"])
+  body_json = json.dumps(dataclasses.asdict(body))
+
+  raise web.HTTPFound("http://localhost:5001/stream", text=body_json)
+
+
+def main():
   # App needs to be HTTPS for microphone and audio autoplay to work on the browser
   ssl_context = create_ssl_context()
 
   app = web.Application()
   app['mutable_vals'] = {}
-  app['streams'] = {}
-  app.on_shutdown.append(on_shutdown)
   app.router.add_get("/", index)
   app.router.add_post("/offer", offer)
+  app.router.add_post("/sound", sound)
   app.router.add_static('/static', TELEOPDIR + '/static')
-  app.on_startup.append(start_background_tasks)
-  app.on_cleanup.append(stop_background_tasks)
+  app.on_startup.append(on_startup)
+  app.on_cleanup.append(on_cleanup)
   web.run_app(app, access_log=None, host="0.0.0.0", port=5000, ssl_context=ssl_context)
 
 
