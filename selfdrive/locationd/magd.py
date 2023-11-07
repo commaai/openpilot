@@ -26,10 +26,10 @@ VERSION = 1  # bump this to invalidate old parameter caches
 
 
 class CalibrationParams:
-  def __init__(self, center: Tuple = (0.0, 0.0), axes_lengths: Tuple = (1.0, 1.0), rotation_angle: float = 0.0,
+  def __init__(self, center: Tuple = (0.0, 0.0), axis_lengths: Tuple = (1.0, 1.0), rotation_angle: float = 0.0,
                offset_angle: float = 0.0, calibrated: bool = False) -> None:
     self.center = np.array(center)
-    self.axes_lengths = np.array(axes_lengths)
+    self.axis_lengths = np.array(axis_lengths)
     self.rotation_angle = rotation_angle
     self.offset_angle = offset_angle
     self.calibrated = calibrated
@@ -59,9 +59,9 @@ class MagCalibrator:
           cache_CP = msg
         if self.get_restore_key(cache_CP, cache_mc.version) == self.get_restore_key(CP, VERSION):
           if cache_mc.calibrated:
-            self.calibrationParams = CalibrationParams(
+            self.calibration_params = CalibrationParams(
               (cache_mc.center.x, cache_mc.center.y),
-              (cache_mc.axesLengths.x, cache_mc.axesLengths.y),
+              (cache_mc.axisLengths.x, cache_mc.axisLengths.y),
               cache_mc.rotationAngle,
               cache_mc.offsetAngle,
               cache_mc.calibrated
@@ -77,7 +77,7 @@ class MagCalibrator:
     return (CP.carFingerprint, version)
 
   def reset(self) -> None:
-    self.calibrationParams = CalibrationParams()
+    self.calibration_params = CalibrationParams()
     self.bearingValid = False
     self.filtered_magnetic = [FirstOrderFilter(0, FILTER_DECAY, FILTER_DT) for _ in range(3)]
     self.filtered_vals = np.zeros(3)
@@ -99,9 +99,9 @@ class MagCalibrator:
     ])
     eigenvalues, eigenvectors = np.linalg.eigh(M)
     assert np.all(eigenvalues > 0)
-    axes_lengths = np.sqrt(1 / eigenvalues)
+    axis_lengths = np.sqrt(1 / eigenvalues)
     rotation_angle = np.arctan2(eigenvectors[1, 0], eigenvectors[0, 0])
-    return (axes_lengths[0], axes_lengths[1]), rotation_angle
+    return (axis_lengths[0], axis_lengths[1]), rotation_angle
 
   def get_ellipsoid_center(self, coeffs: np.ndarray) -> Tuple[float, float]:
     a, b, c, d, e = coeffs[:5]
@@ -138,7 +138,7 @@ class MagCalibrator:
     y = y - calibration_params.center[1]
     x_new = x * np.cos(calibration_params.rotation_angle) + y * np.sin(calibration_params.rotation_angle)
     y_new = -x * np.sin(calibration_params.rotation_angle) + y * np.cos(calibration_params.rotation_angle)
-    x_new, y_new = x_new / calibration_params.axes_lengths[0], y_new / calibration_params.axes_lengths[1]
+    x_new, y_new = x_new / calibration_params.axis_lengths[0], y_new / calibration_params.axis_lengths[1]
     bearing = np.arctan2(y_new, x_new)
     bearing = self.reset_angle_range(bearing - calibration_params.offset_angle)
     return bearing
@@ -166,19 +166,19 @@ class MagCalibrator:
     magnetometerCalibration.version = VERSION
 
     bearing, bearingValid = 0.0, False
-    if self.calibrationParams.calibrated:
-      bearing = self.get_calibrated_bearing(self.filtered_vals[0], self.filtered_vals[2], self.calibrationParams)
+    if self.calibration_params.calibrated:
+      bearing = self.get_calibrated_bearing(self.filtered_vals[0], self.filtered_vals[2], self.calibration_params)
       bearingValid = True
 
     calibrationParams = magnetometerCalibration.calibrationParams
-    calibrationParams.center.x = float(self.calibrationParams.center[0])
-    calibrationParams.center.y = float(self.calibrationParams.center[1])
-    calibrationParams.axesLengths.x = float(self.calibrationParams.axes_lengths[0])
-    calibrationParams.axesLengths.y = float(self.calibrationParams.axes_lengths[1])
-    calibrationParams.rotationAngle = float(self.calibrationParams.rotation_angle)
-    calibrationParams.offsetAngle = float(self.calibrationParams.offset_angle)
+    calibrationParams.center.x = float(self.calibration_params.center[0])
+    calibrationParams.center.y = float(self.calibration_params.center[1])
+    calibrationParams.axisLengths.x = float(self.calibration_params.axis_lengths[0])
+    calibrationParams.axisLengths.y = float(self.calibration_params.axis_lengths[1])
+    calibrationParams.rotationAngle = float(self.calibration_params.rotation_angle)
+    calibrationParams.offsetAngle = float(self.calibration_params.offset_angle)
 
-    magnetometerCalibration.calibrated = self.calibrationParams.calibrated
+    magnetometerCalibration.calibrated = self.calibration_params.calibrated
     magnetometerCalibration.bearing = float(bearing)
     magnetometerCalibration.bearingValid = bearingValid
     magnetometerCalibration.totalBucketPoints = len(self.point_buckets)
