@@ -2,6 +2,8 @@ Version 0.9.5 (2023-XX-XX)
 ========================
 * New driving model
   * Improved navigate on openpilot performance using navigation instructions as an additional model input
+  * Do lateral planning inside the model
+  * New vision transformer architecture
 * Cadillac Escalade ESV 2019 support thanks to twilsonco!
 * Hyundai Azera 2022 support thanks to sunnyhaibin!
 * Hyundai Azera Hybrid 2020 support thanks to chanhojung and haram-KONA!
