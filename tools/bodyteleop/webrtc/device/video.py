@@ -1,10 +1,7 @@
 import asyncio
 from typing import Optional
 
-import aiortc
 import av
-import numpy as np
-import pyaudio
 
 from cereal import messaging
 from openpilot.tools.bodyteleop.webrtc.tracks import TiciVideoStreamTrack
@@ -46,46 +43,6 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
 
   def codec_preference(self) -> Optional[str]:
     return "H264"
-
-
-class AudioInputStreamTrack(aiortc.mediastreams.AudioStreamTrack):
-  PYAUDIO_TO_AV_FORMAT_MAP = {
-      pyaudio.paUInt8: 'u8',
-      pyaudio.paInt16: 's16',
-      pyaudio.paInt24: 's24',
-      pyaudio.paInt32: 's32',
-      pyaudio.paFloat32: 'flt',
-  }
-
-  def __init__(self, audio_format: int = pyaudio.paInt16, rate: int = 16000, channels: int = 1, packet_time: float = 0.020, device_index: Optional[int] = None):
-    super().__init__()
-
-    self.p = pyaudio.PyAudio()
-    chunk_size = int(packet_time * rate)
-    self.stream = self.p.open(format=audio_format,
-                              channels=channels,
-                              rate=rate,
-                              frames_per_buffer=chunk_size,
-                              input=True,
-                              input_device_index=device_index)
-    self.format = audio_format
-    self.rate = rate
-    self.channels = channels
-    self.packet_time = packet_time
-    self.chunk_size = chunk_size
-    self.pts = 0
-
-  async def recv(self):
-    mic_data = self.stream.read(self.chunk_size)
-    mic_array = np.frombuffer(mic_data, dtype=np.int16)
-    mic_array = np.expand_dims(mic_array, axis=0)
-    layout = 'stereo' if self.channels > 1 else 'mono'
-    frame = av.AudioFrame.from_ndarray(mic_array, format=self.PYAUDIO_TO_AV_FORMAT_MAP[self.format], layout=layout)
-    frame.rate = self.rate
-    frame.pts = self.pts
-    self.pts += frame.samples
-
-    return frame
 
 
 class FrameReaderVideoStreamTrack(TiciVideoStreamTrack):

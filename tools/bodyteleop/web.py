@@ -17,11 +17,12 @@ from aiohttp import web
 
 import cereal.messaging as messaging
 from openpilot.common.basedir import BASEDIR
-from openpilot.tools.bodyteleop.bodyav import WebClientSpeaker, play_sound
+from openpilot.tools.bodyteleop.bodyav import play_sound
 from openpilot.tools.bodyteleop.webrtc import WebRTCStreamBuilder
 from openpilot.tools.bodyteleop.webrtc.stream import WebRTCBaseStream
 from openpilot.tools.bodyteleop.webrtc.info import parse_info_from_offer
-from openpilot.tools.bodyteleop.webrtc.device.tracks import LiveStreamVideoStreamTrack, AudioInputStreamTrack
+from openpilot.tools.bodyteleop.webrtc.device.video import LiveStreamVideoStreamTrack
+from openpilot.tools.bodyteleop.webrtc.device.audio import AudioInputStreamTrack, AudioOutputSpeaker
 
 logger = logging.getLogger("pc")
 logging.basicConfig(level=logging.INFO)
@@ -108,8 +109,8 @@ async def offer(request):
 
       if stream.has_incoming_audio_track():
         track = stream.get_incoming_audio_track(False)
-        speaker = WebClientSpeaker()
-        speaker.addTrack(track)
+        speaker = AudioOutputSpeaker()
+        speaker.add_track(track)
         await speaker.start()
     except Exception as e:
       logger.info(f"Connection exception with stream {identifier}: {e}")
