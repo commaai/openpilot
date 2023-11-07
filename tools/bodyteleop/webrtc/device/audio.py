@@ -85,7 +85,7 @@ class AudioOutputSpeaker:
       except aiortc.MediaStreamError:
         return
 
-      self.stream.write(bytes(frame.planes[0]))
+      self.buffer.write(bytes(frame.planes[0]))
 
   def has_track(self, track: aiortc.MediaStreamTrack) -> bool:
     return any(t == track for t, _ in self.tracks_and_tasks)

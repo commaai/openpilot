@@ -111,7 +111,7 @@ async def offer(request):
         track = stream.get_incoming_audio_track(False)
         speaker = AudioOutputSpeaker()
         speaker.add_track(track)
-        await speaker.start()
+        speaker.start()
     except Exception as e:
       logger.info(f"Connection exception with stream {identifier}: {e}")
       await stream.stop()
