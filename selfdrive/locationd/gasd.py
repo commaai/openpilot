@@ -113,15 +113,8 @@ class GasBrakeEstimator:
       self.min_points_total = MIN_POINTS_TOTAL
       self.fit_points = FIT_POINTS_TOTAL
 
-    self.offline_gasAccelFactor = CP.longitudinalTuning.gasAccelFactor
-    self.offline_gasVEgoFactor = CP.longitudinalTuning.gasVEgoFactor
-    self.offline_gasPitchFactor = CP.longitudinalTuning.gasPitchFactor
-    self.offline_gasOffset = CP.longitudinalTuning.gasOffset
-
-    self.offline_brakeAccelFactor = CP.longitudinalTuning.brakeAccelFactor
-    self.offline_brakeVEgoFactor = CP.longitudinalTuning.brakeVEgoFactor
-    self.offline_brakePitchFactor = CP.longitudinalTuning.brakePitchFactor
-    self.offline_brakeOffset = CP.longitudinalTuning.brakeOffset
+    self.offline_gasFactor = CP.longitudinalTuning.gasFactor
+    self.offline_brakeFactor = CP.longitudinalTuning.brakeFactor
 
     self.resets = 0.0
     self.use_params = True
@@ -129,14 +122,8 @@ class GasBrakeEstimator:
     self.reset()
 
     initial_params = {
-      'gasAccelFactor': self.offline_gasAccelFactor,
-      'gasVEgoFactor': self.offline_gasVEgoFactor,
-      'gasPitchFactor': self.offline_gasPitchFactor,
-      'gasOffset': self.offline_gasOffset,
-      'brakeAccelFactor': self.offline_brakeAccelFactor,
-      'brakeVEgoFactor': self.offline_brakeVEgoFactor,
-      'brakePitchFactor': self.offline_brakePitchFactor,
-      'brakeOffset': self.offline_brakeOffset,
+      'gasFactor': self.offline_gasFactor,
+      'brakeFactor': self.offline_brakeFactor,
       'points': []
     }
     self.decay = MIN_FILTER_DECAY
@@ -154,14 +141,8 @@ class GasBrakeEstimator:
         if self.get_restore_key(cache_CP, cache_lgp.version) == self.get_restore_key(CP, VERSION):
           if cache_lgp.liveValid:
             initial_params = {
-              'gasAccelFactor': cache_lgp.gasAccelFactor,
-              'gasVEgoFactor': cache_lgp.gasVEgoFactor,
-              'gasPitchFactor': cache_lgp.gasPitchFactor,
-              'gasOffset': cache_lgp.gasOffset,
-              'brakeAccelFactor': cache_lgp.brakeAccelFactor,
-              'brakeVEgoFactor': cache_lgp.brakeVEgoFactor,
-              'brakePitchFactor': cache_lgp.brakePitchFactor,
-              'brakeOffset': cache_lgp.brakeOffset,
+              'gasFactor': cache_lgp.gasFactor,
+              'brakeFactor': cache_lgp.brakeFactor,
             }
           self.decay = cache_lgp.decay
           # TODO: how to simplify this? Slicing doesn't seem to work
@@ -205,23 +186,12 @@ class GasBrakeEstimator:
       (0.0, 10.0, -0.25),
     ]
     for accel, vego, pitch in cases:
-      offline_gas = (self.offline_gasAccelFactor * accel
-                     + self.offline_gasVEgoFactor * vego
-                     + self.offline_gasPitchFactor * pitch
-                     + self.offline_gasOffset)
-      offline_brake = (self.offline_brakeAccelFactor * accel
-                       + self.offline_brakeVEgoFactor * vego
-                       + self.offline_brakePitchFactor * pitch
-                       + self.offline_brakeOffset)
+      x = [accel, vego, pitch, 1]
+      offline_gas = np.dot(self.offline_gasFactor, x)
+      offline_brake = np.dot(self.offline_brakeFactor, x)
 
-      live_gas = (self.filtered_params['gasAccelFactor'].x * accel
-                  + self.filtered_params['gasVEgoFactor'].x * vego
-                  + self.filtered_params['gasPitchFactor'].x * pitch
-                  + self.filtered_params['gasOffset'].x)
-      live_brake = (self.filtered_params['brakeAccelFactor'].x * accel
-                    + self.filtered_params['brakeVEgoFactor'].x * vego
-                    + self.filtered_params['brakePitchFactor'].x * pitch
-                    + self.filtered_params['brakeOffset'].x)
+      live_gas = np.dot(self.filtered_params['gasFactor'].x, x)
+      live_brake = np.dot(self.filtered_params['brakeFactor'].x, x)
 
       if (abs(live_gas - offline_gas) > FACTOR_SANITY * offline_gas
           or abs(live_brake - offline_brake) > FACTOR_SANITY_BRAKE * offline_brake):
@@ -294,14 +264,8 @@ class GasBrakeEstimator:
       else:
         liveGasParameters.liveValid = True
         self.update_params({
-          'gasAccelFactor': float(x[0, 0]),
-          'gasVEgoFactor': float(x[0, 1]),
-          'gasPitchFactor': float(x[0, 2]),
-          'gasOffset': float(x[0, 3]),
-          'brakeAccelFactor': float(x[1, 0]),
-          'brakeVEgoFactor': float(x[1, 1]),
-          'brakePitchFactor': float(x[1, 2]),
-          'brakeOffset': float(x[1, 3]),
+          'gasFactor': [float(x[0, i]) for i in range(x.shape[1])],
+          'brakeFactor': [float(x[1, i]) for i in range(x.shape[1])],
         })
     else:
       liveGasParameters.liveValid = False
@@ -310,14 +274,8 @@ class GasBrakeEstimator:
       liveGasParameters.gasPoints = self.filtered_gas.get_points()[:, [0, 1, 2, 4]].tolist()
       liveGasParameters.brakePoints = self.filtered_brake.get_points()[:, [0, 1, 2, 4]].tolist()
 
-    liveGasParameters.gasAccelFactor = self.filtered_params['gasAccelFactor'].x
-    liveGasParameters.gasVEgoFactor = self.filtered_params['gasVEgoFactor'].x
-    liveGasParameters.gasPitchFactor = self.filtered_params['gasPitchFactor'].x
-    liveGasParameters.gasOffset = self.filtered_params['gasOffset'].x
-    liveGasParameters.brakeAccelFactor = self.filtered_params['brakeAccelFactor'].x
-    liveGasParameters.brakeVEgoFactor = self.filtered_params['brakeVEgoFactor'].x
-    liveGasParameters.brakePitchFactor = self.filtered_params['brakePitchFactor'].x
-    liveGasParameters.brakeOffset = self.filtered_params['brakeOffset'].x
+    liveGasParameters.gasFactor = self.filtered_params['gasFactor'].x
+    liveGasParameters.brakeFactor = self.filtered_params['brakeFactor'].x
     liveGasParameters.totalBucketPoints = len(self.filtered_gas) + len(self.filtered_brake)
     liveGasParameters.decay = self.decay
     liveGasParameters.maxResets = self.resets
