@@ -10,7 +10,12 @@ def openpilot_function_fixture():
 
   # setup a clean environment for each test
   with OpenpilotPrefix():
+    prefix = os.environ["OPENPILOT_PREFIX"]
+
     yield
+
+    # ensure the test doesn't change the prefix
+    assert "OPENPILOT_PREFIX" in os.environ and prefix == os.environ["OPENPILOT_PREFIX"]
 
   os.environ.clear()
   os.environ.update(starting_env)

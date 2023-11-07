@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
+import bz2
 import math
 import json
 import os
+import pathlib
+import psutil
 import shutil
 import subprocess
 import time
@@ -30,13 +33,13 @@ PROCS = {
   "./encoderd": 17.0,
   "./camerad": 14.5,
   "./locationd": 11.0,
-  "./mapsd": 2.0,
+  "./mapsd": 1.5,
   "selfdrive.controls.plannerd": 16.5,
   "./_ui": 18.0,
   "selfdrive.locationd.paramsd": 9.0,
-  "./_sensord": 7.0,
+  "./sensord": 7.0,
   "selfdrive.controls.radard": 4.5,
-  "selfdrive.modeld.modeld": 8.0,
+  "selfdrive.modeld.modeld": 13.0,
   "selfdrive.modeld.dmonitoringmodeld": 8.0,
   "selfdrive.modeld.navmodeld": 1.0,
   "selfdrive.thermald.thermald": 3.87,
@@ -46,7 +49,6 @@ PROCS = {
   "selfdrive.monitoring.dmonitoringd": 4.0,
   "./proclogd": 1.54,
   "system.logmessaged": 0.2,
-  "./clocksd": 0.02,
   "selfdrive.tombstoned": 0,
   "./logcatd": 0,
   "system.micd": 10.0,
@@ -56,7 +58,6 @@ PROCS = {
   "selfdrive.navd.navd": 0.4,
   "system.loggerd.uploader": 3.0,
   "system.loggerd.deleter": 0.1,
-  "selfdrive.locationd.laikad": (1.0, 80.0),  # TODO: better GPS setup in testing closet
 }
 
 PROCS.update({
@@ -152,6 +153,8 @@ class TestOnroad(unittest.TestCase):
       cls.segments = cls.segments[:-1]
 
     finally:
+      cls.gpu_procs = {psutil.Process(int(f.name)).name() for f in pathlib.Path('/sys/devices/virtual/kgsl/kgsl/proc/').iterdir() if f.is_dir()}
+
       if proc is not None:
         proc.terminate()
         if proc.wait(60) is None:
@@ -161,6 +164,7 @@ class TestOnroad(unittest.TestCase):
 
     # use the second segment by default as it's the first full segment
     cls.lr = list(LogReader(os.path.join(str(cls.segments[1]), "rlog")))
+    cls.log_path = cls.segments[1]
 
   @cached_property
   def service_msgs(self):
@@ -190,6 +194,26 @@ class TestOnroad(unittest.TestCase):
     cnt = Counter(json.loads(m.logMessage)['filename'] for m in msgs)
     big_logs = [f for f, n in cnt.most_common(3) if n / sum(cnt.values()) > 30.]
     self.assertEqual(len(big_logs), 0, f"Log spam: {big_logs}")
+
+  def test_log_sizes(self):
+    for f in self.log_path.iterdir():
+      assert f.is_file()
+
+      sz = f.stat().st_size / 1e6
+      if f.name in ("qlog", "rlog"):
+        with open(f, 'rb') as ff:
+          sz = len(bz2.compress(ff.read())) / 1e6
+
+      if f.name == "qcamera.ts":
+        assert 2.15 < sz < 2.35
+      elif f.name == "qlog":
+        assert 0.7 < sz < 1.0
+      elif f.name == "rlog":
+        assert 5 < sz < 50
+      elif f.name.endswith('.hevc'):
+        assert 70 < sz < 77
+      else:
+        raise NotImplementedError
 
   def test_ui_timings(self):
     result = "\n"
@@ -275,6 +299,9 @@ class TestOnroad(unittest.TestCase):
     # check for big leaks. note that memory usage is
     # expected to go up while the MSGQ buffers fill up
     self.assertLessEqual(max(mems) - min(mems), 3.0)
+
+  def test_gpu_usage(self):
+    self.assertEqual(self.gpu_procs, {"weston", "_ui", "camerad", "selfdrive.modeld.modeld"})
 
   def test_camera_processing_time(self):
     result = "\n"

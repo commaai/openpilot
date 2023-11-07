@@ -14,4 +14,4 @@ sensors = [
 libs = [common, cereal, messaging, 'capnp', 'zmq', 'kj', 'pthread']
 if arch == "larch64":
   libs.append('i2c')
-env.Program('_sensord', ['sensors_qcom2.cc'] + sensors, LIBS=libs)
+env.Program('sensord', ['sensors_qcom2.cc'] + sensors, LIBS=libs)

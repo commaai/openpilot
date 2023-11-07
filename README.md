@@ -109,7 +109,6 @@ Directory Structure
     ├── third_party         # External libraries
     └── system              # Generic services
         ├── camerad         # Driver to capture images from the camera sensors
-        ├── clocksd         # Broadcasts current time
         ├── hardware        # Hardware abstraction classes
         ├── logcatd         # systemd journal as a service
         ├── loggerd         # Logger and uploader of car data
