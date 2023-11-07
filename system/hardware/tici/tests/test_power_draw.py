@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import unittest
 import time
-import math
 import threading
 import numpy as np
 from dataclasses import dataclass
