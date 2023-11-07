@@ -4,7 +4,6 @@ import json
 import logging
 import os
 import ssl
-import time
 import subprocess
 
 # aiortc and its dependencies have lots of internal warnings :(
@@ -24,6 +23,7 @@ logging.basicConfig(level=logging.INFO)
 
 TELEOPDIR = f"{BASEDIR}/tools/bodyteleop"
 WEBRTCD_HOST = "http://localhost:5001"
+
 
 ## UTILS
 async def play_sound(sound):
@@ -79,18 +79,13 @@ def create_ssl_context():
 
 ## ENDPOINTS
 async def index(request):
-  content = open(TELEOPDIR + "/static/index.html", "r").read()
-  now = time.monotonic()
-  request.app['mutable_vals']['last_send_time'] = now
-  request.app['mutable_vals']['last_override_time'] = now
-  request.app['mutable_vals']['prev_command'] = []
-  request.app['mutable_vals']['find_person'] = False
-
-  return web.Response(content_type="text/html", text=content)
+  with open(TELEOPDIR + "/static/index.html", "r") as f:
+    content = f.read()
+    return web.Response(content_type="text/html", text=content)
 
 
 async def ping(request):
-  pass
+  return web.Response(text="pong")
 
 
 async def sound(request):
@@ -106,7 +101,7 @@ async def sound(request):
 
 async def offer(request):
   params = await request.json()
-  body = StreamRequestBody(params["sdp"], ["driver"], [], ["carState"])
+  body = StreamRequestBody(params["sdp"], ["driver"], ["testJoystick"], ["carState"])
   body_json = json.dumps(dataclasses.asdict(body))
 
   raise web.HTTPFound("{WEBRTCD_HOST}/stream", text=body_json)
@@ -119,7 +114,7 @@ def main():
   app = web.Application()
   app['mutable_vals'] = {}
   app.router.add_get("/", index)
-  app.router.add_get("/ping", ping)
+  app.router.add_get("/ping", ping, allow_head=True)
   app.router.add_post("/offer", offer)
   app.router.add_post("/sound", sound)
   app.router.add_static('/static', TELEOPDIR + '/static')
