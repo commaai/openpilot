@@ -95,7 +95,7 @@ class TorqueEstimator:
 
     # try to restore cached params
     params = Params()
-    params_cache = params.get("LiveTorqueCarParams")
+    params_cache = params.get("CarParamsPrevRoute")
     torque_cache = params.get("LiveTorqueParameters")
     if params_cache is not None and torque_cache is not None:
       try:
@@ -116,7 +116,6 @@ class TorqueEstimator:
           cloudlog.info("restored torque params from cache")
       except Exception:
         cloudlog.exception("failed to restore cached torque params")
-        params.remove("LiveTorqueCarParams")
         params.remove("LiveTorqueParameters")
 
     self.filtered_params = {}
@@ -233,8 +232,6 @@ def main():
     cloudlog.warning("caching torque params")
 
     params = Params()
-    params.put("LiveTorqueCarParams", CP.as_builder().to_bytes())
-
     msg = estimator.get_msg(with_points=True)
     params.put("LiveTorqueParameters", msg.to_bytes())
 
