@@ -66,10 +66,6 @@ class TestManager(unittest.TestCase):
 
         self.assertNotIn(p.name, BLACKLIST_PROCS, f"{p.name} was started")
 
-        # TODO: mapsd should exit cleanly
-        if p.name == "mapsd":
-          continue
-
         self.assertTrue(exit_code is not None, f"{p.name} failed to exit")
 
         # TODO: interrupted blocking read exits with 1 in cereal. use a more unique return code
