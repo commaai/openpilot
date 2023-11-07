@@ -44,7 +44,7 @@ class TiciVideoStreamTrack(aiortc.MediaStreamTrack):
 
 
 class DummyVideoStreamTrack(TiciVideoStreamTrack):
-  def __init__(self, dt: float, camera_type: str, color: int = 0):
+  def __init__(self, camera_type: str, dt: float = 1/20, color: int = 0):
     super().__init__(camera_type, dt)
     self._color = color
     self._pts = 0
