@@ -29,6 +29,8 @@ from openpilot.selfdrive.controls.lib.alertmanager import AlertManager, set_offr
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 from openpilot.system.hardware import HARDWARE
 
+from selfdrive.locationd.gasd import get_live_gas_features
+
 SOFT_DISABLE_TIME = 3  # seconds
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
 LANE_DEPARTURE_THRESHOLD = 0.1
@@ -637,11 +639,7 @@ class Controls:
         lac_log.output = actuators.steer
         lac_log.saturated = abs(actuators.steer) >= 0.9
 
-    try:  # FIXME
-      pitch = self.sm['liveLocationKalman'].calibratedOrientationNED.value[1]
-    except IndexError:
-      pitch = 0.0
-    actuators.gas, actuators.brake = self.LoC.get_gas_brake(actuators.accel, CS.vEgo, pitch)
+    actuators.gas, actuators.brake = self.LoC.get_gas_brake(get_live_gas_features(actuators, CS, self.sm))
 
     if CS.steeringPressed:
       self.last_steering_pressed_frame = self.sm.frame

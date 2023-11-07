@@ -66,8 +66,8 @@ class LongControl:
   def update_live_gas_params(self, gp: log.LiveGasParametersData):
     self.gas_params = np.array([gp.gasFactor, gp.brakeFactor])
 
-  def get_gas_brake(self, accel, v_ego, pitch):
-    arr = np.array([accel, v_ego, pitch, 1.])
+  def get_gas_brake(self, features):
+    arr = np.array([*features, 1.])
     gas, brake = np.dot(self.gas_params, arr)
     if gas > self.CP.gasCommandOffset:
       brake = 0

@@ -210,8 +210,8 @@ class CarInterfaceBase(ABC):
 
     params = get_gas_params(candidate)
 
-    tune.gasFactorsAndOffset = params['GAS_FACTOR']
-    tune.brakeFactorsAndOffset = params['BRAKE_FACTOR']
+    tune.gasFactor = params['GAS_FACTOR']
+    tune.brakeFactor = params['BRAKE_FACTOR']
 
   @abstractmethod
   def _update(self, c: car.CarControl) -> car.CarState:

@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
+from dataclasses import dataclass
 import os
 import sys
 import signal
+from typing import Callable
+
 import numpy as np
 from collections import deque, defaultdict
 # from itertools import product
@@ -72,10 +75,59 @@ MIN_ENGAGE_BUFFER = 1  # secs
 VERSION = 1  # bump this to invalidate old parameter caches
 
 
+@dataclass(frozen=True)
+class Feature:
+  name: str
+  min_val: float
+  max_val: float
+  log_msg: str
+  extractor: Callable[[log.Event], float]
+  live_extractor: Callable[[car.CarControl.Actuators, car.CarState, messaging.SubMaster], float] = None
+
+
+def _get_pitch(sm: messaging.SubMaster) -> float:
+  try:  # FIXME: on boot, this message sometimes is not populated
+    return sm['liveLocationKalman'].calibratedOrientationNED.value[1]
+  except IndexError:
+    return 0.0
+
+
+GAS_FEATURES = [
+  Feature(
+    'Acceleration', -4.0, 1.5, 'carState',
+    lambda msg: msg.aEgo,
+    lambda actuators, CS, sm: actuators.accel
+  ),  # consider using accelerationCalibrated from liveLocationKalman?
+  Feature(
+    'Velocity', 0.0, 40.0, 'carState',
+    lambda msg: msg.vEgo,
+    lambda actuators, CS, sm: CS.vEgo
+  ),  # consider using velocityCalibrated from liveLocationKalman?
+  Feature(
+    'Pitch', -0.1, 0.1, 'liveLocationKalman',
+    lambda msg: msg.calibratedOrientationNED[1],
+    lambda actuators, CS, sm: _get_pitch(sm)
+  ),
+  # Feature(  # TODO
+  # 'HybridBatterySaturated', 0, 1, 'carState',
+  # lambda msg: 0,
+  # lambda actuators, CS, sm: 0
+  # ),
+]
+FEATURES_BY_MESSAGE = defaultdict(list)
+for _feature in GAS_FEATURES:
+  FEATURES_BY_MESSAGE[_feature.log_msg].append(_feature)
+
+
+def get_live_gas_features(actuators: car.CarControl.Actuators, CS: car.CarState, sm: messaging.SubMaster) -> list[float]:
+  return [feature.live_extractor(actuators, CS, sm) for feature in GAS_FEATURES]
+
+
+
 class GasBuckets(PointBuckets):
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
-    self.x_size = len(self.x_bounds[0])
+    self.rowsize = kwargs['rowsize']
 
   def is_valid(self):
     return all(
@@ -95,7 +147,7 @@ class GasBuckets(PointBuckets):
 
   def add_point(self, x, y):
     for bounds in self.x_bounds:
-      if all((x[i] >= bounds[i][0]) and (x[i] < bounds[i][1]) for i in range(self.x_size)):
+      if all((x[i] >= bounds[i][0]) and (x[i] < bounds[i][1]) for i in range(self.rowsize)):
         self.buckets[bounds].append([*x, 1.0, y])
         break
 
@@ -167,9 +219,11 @@ class GasBrakeEstimator:
     self.decay = MIN_FILTER_DECAY
     self.raw_points = defaultdict(lambda: deque(maxlen=self.hist_len))
     self.filtered_gas = GasBuckets(x_bounds=ALL_BUCKET_BOUNDS, min_points_total=self.min_points_total,
-                                     min_points=MIN_BUCKET_POINTS, points_per_bucket=POINTS_PER_BUCKET)
+                                   min_points=MIN_BUCKET_POINTS, points_per_bucket=POINTS_PER_BUCKET,
+                                   rowsize=len(GAS_FEATURES) + 1)
     self.filtered_brake = GasBuckets(x_bounds=ALL_BUCKET_BOUNDS, min_points_total=self.min_points_total,
-                                       min_points=MIN_BUCKET_POINTS, points_per_bucket=POINTS_PER_BUCKET)
+                                     min_points=MIN_BUCKET_POINTS, points_per_bucket=POINTS_PER_BUCKET,
+                                     rowsize=len(GAS_FEATURES) + 1)
 
   def sanity_check(self):
     cases = [
@@ -226,26 +280,31 @@ class GasBrakeEstimator:
       self.raw_points["gas"].append(msg.actuatorsOutput.gas)
       self.raw_points["brake"].append(msg.actuatorsOutput.brake)
       self.raw_points["active"].append(msg.latActive)
+      for feature in FEATURES_BY_MESSAGE[which]:
+        self.raw_points[feature.name].append(feature.extractor(msg))
     elif which == "carState":
       self.raw_points["carState_t"].append(t + self.lag)
-      self.raw_points["vego"].append(msg.vEgo)  # consider using velocityCalibrated from liveLocationKalman?
-      self.raw_points["aego"].append(msg.aEgo)  # consider using accelerationCalibrated from liveLocationKalman?
       self.raw_points["gas_override"].append(msg.gasPressed)
+      for feature in FEATURES_BY_MESSAGE[which]:
+        self.raw_points[feature.name].append(feature.extractor(msg))
     elif which == "liveLocationKalman":
       if len(self.raw_points['gas']) == self.hist_len:
-        pitch = msg.calibratedOrientationNED.value[1]
         active = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t, DT_MDL), self.raw_points['carControl_t'], self.raw_points['active']).astype(bool)
         gas_override = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t, DT_MDL), self.raw_points['carState_t'], self.raw_points['gas_override']).astype(bool)
-        vego = np.interp(t, self.raw_points['carState_t'], self.raw_points['vego'])
-        aego = np.interp(t, self.raw_points['carState_t'], self.raw_points['aego'])
         gas = np.interp(t, self.raw_points['carControl_t'], self.raw_points['gas'])
         brake = np.interp(t, self.raw_points['carControl_t'], self.raw_points['brake'])
-        if all(active) and (not any(gas_override)) and (vego > MIN_VEL) and (abs(aego) > ACCEL_MIN_THRESHOLD):
-          x = np.array([aego, vego, pitch])
-          if brake > 0:
-            self.filtered_brake.add_point(x, brake)
+        features = []
+        for feature in GAS_FEATURES:
+          if feature.log_msg == which:
+            features.append(feature.extractor(msg))
           else:
-            self.filtered_gas.add_point(x, gas)
+            features.append(np.interp(t, self.raw_points[feature.name + '_t'], self.raw_points[feature.name]))
+        features = np.array(features)
+        if all(active) and (not any(gas_override)): # and (vego > MIN_VEL) and (abs(aego) > ACCEL_MIN_THRESHOLD):  # FIXME
+          if brake > 0:
+            self.filtered_brake.add_point(features, brake)
+          else:
+            self.filtered_gas.add_point(features, gas)
 
   def get_msg(self, valid=True, with_points=False):
     msg = messaging.new_message('liveGasParameters')
@@ -274,8 +333,8 @@ class GasBrakeEstimator:
       liveGasParameters.gasPoints = self.filtered_gas.get_points()[:, [0, 1, 2, 4]].tolist()
       liveGasParameters.brakePoints = self.filtered_brake.get_points()[:, [0, 1, 2, 4]].tolist()
 
-    liveGasParameters.gasFactor = self.filtered_params['gasFactor'].x
-    liveGasParameters.brakeFactor = self.filtered_params['brakeFactor'].x
+    liveGasParameters.gasFactor = [float(y) for y in self.filtered_params['gasFactor'].x]
+    liveGasParameters.brakeFactor = [float(y) for y in self.filtered_params['brakeFactor'].x]
     liveGasParameters.totalBucketPoints = len(self.filtered_gas) + len(self.filtered_brake)
     liveGasParameters.decay = self.decay
     liveGasParameters.maxResets = self.resets
