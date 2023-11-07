@@ -589,7 +589,6 @@ tinygrad_repo/extra/thneed.py
 tinygrad_repo/extra/utils.py
 tinygrad_repo/tinygrad/codegen/kernel.py
 tinygrad_repo/tinygrad/codegen/linearizer.py
-tinygrad_repo/tinygrad/codegen/optimizer.py
 tinygrad_repo/tinygrad/features/image.py
 tinygrad_repo/tinygrad/nn/*
 tinygrad_repo/tinygrad/renderer/cstyle.py
