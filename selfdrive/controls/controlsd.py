@@ -123,7 +123,8 @@ class Controls:
 
     # Write previous route's CarParams
     prev_cp = self.params.get("CarParamsPersistent")
-    self.params.put("CarParamsPrevRoute", prev_cp)
+    if prev_cp is not None:
+      self.params.put("CarParamsPrevRoute", prev_cp)
 
     # Write CarParams for radard
     cp_bytes = self.CP.to_bytes()
