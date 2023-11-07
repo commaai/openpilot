@@ -42,6 +42,7 @@ class WebRTCBaseStream(abc.ABC):
 
     self.incoming_media_ready_event = asyncio.Event()
     self.connection_attempted_event = asyncio.Event()
+    self.connection_stopped_event = asyncio.Event()
 
     self.peer_connection.on("connectionstatechange", self._on_connectionstatechange)
     self.peer_connection.on("datachannel", self._on_incoming_datachannel)
@@ -97,6 +98,8 @@ class WebRTCBaseStream(abc.ABC):
     self._log_debug("connection state is %s", self.peer_connection.connectionState)
     if self.peer_connection.connectionState in ['connected', 'failed']:
       self.connection_attempted_event.set()
+    if self.peer_connection.connectionState in ['disconnected', 'closed', 'failed']:
+      self.connection_stopped_event.set()
 
   def _on_incoming_track(self, track: aiortc.MediaStreamTrack):
     self._log_debug("got track: %s %s", track.kind, track.id)
@@ -186,6 +189,9 @@ class WebRTCBaseStream(abc.ABC):
       raise ValueError("Connection failed.")
     if self.expected_number_of_incoming_media:
       await self.incoming_media_ready_event.wait()
+
+  async def wait_for_disconnection(self):
+    await self.connection_stopped_event.wait()
 
   async def stop(self):
     await self.peer_connection.close()
