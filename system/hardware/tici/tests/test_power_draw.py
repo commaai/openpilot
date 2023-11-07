@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import unittest
 import time
-import math
 import threading
+import numpy as np
 from dataclasses import dataclass
 from tabulate import tabulate
 from typing import List
@@ -94,8 +94,8 @@ class TestPowerDraw(unittest.TestCase):
       msgs_expected = int(sum(SAMPLE_TIME * SERVICE_LIST[msg].frequency for msg in proc.msgs))
       tab.append([proc.name, round(expected, 2), round(cur, 2), msgs_expected, msgs_received])
       with self.subTest(proc=proc.name):
-        self.assertTrue(math.isclose(cur, expected, rel_tol=proc.rtol, abs_tol=proc.atol))
-        self.assertTrue(math.isclose(msgs_expected, msgs_received, rel_tol=.02, abs_tol=2))
+        np.testing.assert_allclose(cur, expected, rtol=proc.rtol, atol=proc.atol)
+        np.testing.assert_allclose(msgs_expected, msgs_received, rtol=.02, atol=2)
     print(tabulate(tab))
     print(f"Baseline {baseline:.2f}W\n")
 
