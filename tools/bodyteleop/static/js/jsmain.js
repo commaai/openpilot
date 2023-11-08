@@ -17,6 +17,7 @@ $(".sound").click((e)=>{
 setInterval( () => {
   const dt = new Date().getTime();
   if ((dt - lastPing) > 1000) {
+    // TODO this is no longer correct
     $(".pre-blob").removeClass('blob');
     $("#battery").text("-");
     $("#ping-time").text('-');
