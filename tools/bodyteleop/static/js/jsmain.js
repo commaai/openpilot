@@ -1,5 +1,5 @@
 import { handleKeyX, executePlan } from "./controls.js";
-import { start, stop, last_ping } from "./webrtc.js";
+import { start, stop, lastPing, playSoundRequest } from "./webrtc.js";
 
 export var pc = null;
 export var dc = null;

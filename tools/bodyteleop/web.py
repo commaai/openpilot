@@ -11,7 +11,7 @@ import warnings
 warnings.resetwarnings()
 warnings.simplefilter("always")
 
-from aiohttp import web
+from aiohttp import web, ClientSession
 import pyaudio
 import wave
 
@@ -22,7 +22,8 @@ logger = logging.getLogger("bodyteleop")
 logging.basicConfig(level=logging.INFO)
 
 TELEOPDIR = f"{BASEDIR}/tools/bodyteleop"
-WEBRTCD_HOST = "http://localhost:5001"
+WEBRTCD_HOST = "localhost"
+WEBRTCD_PORT = 5001
 
 
 ## UTILS
@@ -92,11 +93,8 @@ async def sound(request):
   params = await request.json()
   sound_to_play = params["sound"]
 
-  try:
-    await play_sound(sound_to_play)
-    return web.json_response({"status": "ok"})
-  except Exception as ex:
-    return web.json_response({"error": str(ex)}, status=400)
+  await play_sound(sound_to_play)
+  return web.json_response({"status": "ok"})
 
 
 async def offer(request):
@@ -104,7 +102,12 @@ async def offer(request):
   body = StreamRequestBody(params["sdp"], ["driver"], ["testJoystick"], ["carState"])
   body_json = json.dumps(dataclasses.asdict(body))
 
-  raise web.HTTPFound("{WEBRTCD_HOST}/stream", text=body_json)
+  logger.info("Sending offer to webrtcd...")
+  webrtcd_url = f"http://{WEBRTCD_HOST}:{WEBRTCD_PORT}/stream"
+  async with ClientSession() as session, session.post(webrtcd_url, data=body_json) as resp:
+    assert resp.status == 200
+    answer = await resp.json()
+    return web.json_response(answer)
 
 
 def main():
