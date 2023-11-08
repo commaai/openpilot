@@ -7,7 +7,7 @@ import dataclasses
 import json
 import logging
 
-from openpilot.tools.bodyteleop.webrtc import WebRTCStreamBuilder
+from openpilot.tools.bodyteleop.webrtc import WebRTCOfferBuilder, WebRTCAnswerBuilder
 from openpilot.tools.bodyteleop.webrtc.stream import StreamingOffer
 from openpilot.tools.bodyteleop.webrtc.tracks import DummyVideoStreamTrack
 from openpilot.tools.bodyteleop.webrtc.device.video import LiveStreamVideoStreamTrack, FrameReaderVideoStreamTrack
@@ -47,7 +47,7 @@ async def run_answer(args):
       video_tracks.append(track)
     audio_tracks = []
 
-    stream_builder = WebRTCStreamBuilder.answer(offer.sdp)
+    stream_builder = WebRTCAnswerBuilder(offer.sdp)
     for cam, track in zip(offer.video, video_tracks, strict=True):
       stream_builder.add_video_stream(cam, track)
     for track in audio_tracks:
@@ -63,9 +63,9 @@ async def run_answer(args):
 
 
 async def run_offer(args):
-  stream_builder = WebRTCStreamBuilder.offer(StdioConnectionProvider)
+  stream_builder = WebRTCOfferBuilder(StdioConnectionProvider)
   for cam in args.cameras:
-    stream_builder.request_video_stream(cam)
+    stream_builder.offer_to_receive_video_stream(cam)
   stream_builder.add_messaging()
   stream = stream_builder.stream()
   _ = await stream.start()

@@ -11,7 +11,7 @@ from typing import List, Optional
 import aiortc
 from aiohttp import web
 
-from openpilot.tools.bodyteleop.webrtc import WebRTCStreamBuilder
+from openpilot.tools.bodyteleop.webrtc import WebRTCAnswerBuilder
 from openpilot.tools.bodyteleop.webrtc.info import parse_info_from_offer
 from openpilot.tools.bodyteleop.webrtc.tracks import DummyVideoStreamTrack
 from openpilot.tools.bodyteleop.webrtc.device.video import LiveStreamVideoStreamTrack
@@ -71,7 +71,7 @@ class StreamRequestBody:
 class StreamSession:
   def __init__(self, sdp: str, cameras: List[str], incoming_services: List[str], outgoing_services: List[str], debug_mode: bool = False):
     config = parse_info_from_offer(sdp)
-    builder = WebRTCStreamBuilder.answer(sdp)
+    builder = WebRTCAnswerBuilder(sdp)
 
     assert len(cameras) == config.n_expected_camera_tracks, "Incoming stream has misconfigured number of video tracks"
     for cam in cameras:
@@ -84,7 +84,7 @@ class StreamSession:
       track = AudioInputStreamTrack()
       builder.add_audio_stream(track)
     if config.incoming_audio_track and not debug_mode:
-      builder.request_audio_stream()
+      builder.offer_to_receive_audio_stream()
 
     self.stream = builder.stream()
     self.identifier = str(uuid.uuid4())

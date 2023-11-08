@@ -7,40 +7,9 @@ from openpilot.tools.bodyteleop.webrtc.stream import WebRTCBaseStream, WebRTCOff
 
 
 class WebRTCStreamBuilder(abc.ABC):
-  def __init__(self):
-    raise NotImplementedError("Use static methods (offer, answer) to create a builder")
-
-  @abc.abstractmethod
-  def request_video_stream(self, camera_type: str):
-    raise NotImplementedError
-
-  @abc.abstractmethod
-  def request_audio_stream(self):
-    raise NotImplementedError
-
-  @abc.abstractmethod
-  def add_video_stream(self, camera_type: str, track: aiortc.MediaStreamTrack):
-    raise NotImplementedError
-
-  @abc.abstractmethod
-  def add_audio_stream(self, track: aiortc.MediaStreamTrack):
-    raise NotImplementedError
-
-  @abc.abstractmethod
-  def add_messaging(self):
-    raise NotImplementedError
-
   @abc.abstractmethod
   def stream(self) -> WebRTCBaseStream:
     raise NotImplementedError
-
-  @staticmethod
-  def offer(connection_provider: ConnectionProvider):
-    return WebRTCOfferBuilder(connection_provider)
-
-  @staticmethod
-  def answer(sdp: str):
-    return WebRTCAnswerBuilder(sdp)
 
 
 class WebRTCOfferBuilder(WebRTCStreamBuilder):
@@ -51,15 +20,12 @@ class WebRTCOfferBuilder(WebRTCStreamBuilder):
     self.audio_tracks: List[aiortc.MediaStreamTrack] = []
     self.messaging_enabled = False
 
-  def request_video_stream(self, camera_type: str):
+  def offer_to_receive_video_stream(self, camera_type: str):
     assert camera_type in ["driver", "wideRoad", "road"]
     self.requested_camera_types.append(camera_type)
 
-  def request_audio_stream(self):
+  def offer_to_receive_audio_stream(self):
     self.requested_audio = True
-
-  def add_video_stream(self, camera_type: str, track: aiortc.MediaStreamTrack):
-    raise NotImplementedError("Adding outgoing video tracks is not supported on offer streams")
 
   def add_audio_stream(self, track: aiortc.MediaStreamTrack):
     assert len(self.audio_tracks) == 0
@@ -86,10 +52,7 @@ class WebRTCAnswerBuilder(WebRTCStreamBuilder):
     self.requested_audio = False
     self.audio_tracks: List[aiortc.MediaStreamTrack] = []
 
-  def request_video_stream(self, camera_type: str):
-    raise NotImplementedError("Requesting incoming video tracks is not supported on answer streams")
-
-  def request_audio_stream(self):
+  def offer_to_receive_audio_stream(self):
     self.requested_audio = True
 
   def add_video_stream(self, camera_type: str, track: aiortc.MediaStreamTrack):
@@ -100,9 +63,6 @@ class WebRTCAnswerBuilder(WebRTCStreamBuilder):
   def add_audio_stream(self, track: aiortc.MediaStreamTrack):
     assert len(self.audio_tracks) == 0
     self.audio_tracks = [track]
-
-  def add_messaging(self):
-    raise NotImplementedError("Messaging can be requested by offer stream only")
 
   def stream(self) -> WebRTCBaseStream:
     description = aiortc.RTCSessionDescription(sdp=self.offer_sdp, type="offer")
