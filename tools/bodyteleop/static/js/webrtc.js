@@ -151,13 +151,13 @@ export function start(pc, dc) {
     const initialTime = new Date().getTime();
     pingHeadRequest().then(function() {
       const currentTime = new Date().getTime();
-      const pingtime = currentTime - initialTime;
-      pingPoints.push({'x': currentTime, 'y': pingtime});
-      if (pingPoints.length > 1000) {
-        pingPoints.shift();
-      }
-      chartPing.update();
       if (Math.abs(currentTime - lastChannelMessageTime) < 1000) {
+        const pingtime = currentTime - initialTime;
+        pingPoints.push({'x': currentTime, 'y': pingtime});
+        if (pingPoints.length > 1000) {
+          pingPoints.shift();
+        }
+        chartPing.update();
         $("#ping-time").text((pingtime) + "ms");
       }
     })
