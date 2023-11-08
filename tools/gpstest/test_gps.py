@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import pytest
 import time
 import unittest
 import struct
@@ -6,7 +7,6 @@ import struct
 from openpilot.common.params import Params
 import cereal.messaging as messaging
 import openpilot.system.sensord.pigeond as pd
-from openpilot.system.hardware import TICI
 from openpilot.selfdrive.test.helpers import with_processes
 
 
@@ -107,12 +107,10 @@ def verify_time_to_first_fix(pigeon):
   assert ttff < 40, f"Time to first fix > 40s, {ttff}"
 
 
+@pytest.mark.tici
 class TestGPS(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
-    if not TICI:
-      raise unittest.SkipTest
-
     ublox_available = Params().get_bool("UbloxAvailable")
     if not ublox_available:
       raise unittest.SkipTest

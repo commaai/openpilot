@@ -243,6 +243,30 @@ def create_es_infotainment(packer, frame, es_infotainment_msg, visual_alert):
   return packer.make_can_msg("ES_Infotainment", CanBus.main, values)
 
 
+def create_es_highbeamassist(packer):
+  values = {
+    "HBA_Available": False,
+  }
+
+  return packer.make_can_msg("ES_HighBeamAssist", CanBus.main, values)
+
+
+def create_es_static_1(packer):
+  values = {
+    "SET_3": 3,
+  }
+
+  return packer.make_can_msg("ES_STATIC_1", CanBus.main, values)
+
+
+def create_es_static_2(packer):
+  values = {
+    "SET_3": 3,
+  }
+
+  return packer.make_can_msg("ES_STATIC_2", CanBus.main, values)
+
+
 # *** Subaru Pre-global ***
 
 def subaru_preglobal_checksum(packer, values, addr, checksum_byte=7):

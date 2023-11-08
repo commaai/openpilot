@@ -5,6 +5,7 @@ import json
 import os
 import pathlib
 import psutil
+import pytest
 import shutil
 import subprocess
 import time
@@ -99,6 +100,7 @@ def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
 
 
+@pytest.mark.tici
 class TestOnroad(unittest.TestCase):
 
   @classmethod
