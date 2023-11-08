@@ -6,7 +6,7 @@ launch_openpilot.sh
 
 Jenkinsfile
 SConstruct
-pypoetry.toml
+pyproject.toml
 
 README.md
 RELEASES.md
