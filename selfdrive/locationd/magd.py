@@ -195,7 +195,7 @@ class MagCalibrator:
 def main():
   config_realtime_process([0, 1, 2, 3], 5)
 
-  sm = messaging.SubMaster(['magnetometer', 'carState', 'liveLocationKalman'], poll=['liveLocationKalman'])
+  sm = messaging.SubMaster(['magnetometer', 'carState', 'liveLocationKalman'], poll=['magnetometer'])
   pm = messaging.PubMaster(['magnetometerCalibration'])
 
   params = Params()
