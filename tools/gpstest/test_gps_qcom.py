@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
+import pytest
 import time
 import unittest
 import subprocess as sp
 
 from openpilot.common.params import Params
-from openpilot.system.hardware import TICI
 import cereal.messaging as messaging
 from openpilot.selfdrive.manager.process_config import managed_processes
 
@@ -30,12 +30,10 @@ def wait_for_location(socket, timeout):
     continue
 
 
+@pytest.mark.tici
 class TestGPS(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
-    if not TICI:
-      raise unittest.SkipTest
-
     ublox_available = Params().get_bool("UbloxAvailable")
     if ublox_available:
       raise unittest.SkipTest

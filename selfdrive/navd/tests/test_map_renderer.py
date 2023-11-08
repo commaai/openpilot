@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import numpy as np
 import os
+import pytest
 import unittest
 import requests
 import threading
@@ -10,7 +11,6 @@ import cereal.messaging as messaging
 from typing import Any
 from cereal.visionipc import VisionIpcClient, VisionStreamType
 from openpilot.selfdrive.manager.process_config import managed_processes
-from openpilot.system.hardware import TICI
 
 LLK_DECIMATION = 10
 CACHE_PATH = "/data/mbgl-cache-navd.db"
@@ -189,10 +189,8 @@ class TestMapRenderer(unittest.TestCase):
 
     self._run_test(True, LOCATION2_REPEATED)
 
+  @pytest.mark.tici
   def test_render_time_distribution(self):
-    if not TICI:
-      raise unittest.SkipTest
-
     self._setup_test()
     # from location1 -> location2 and back
     locations = np.array([*np.linspace(LOCATION1, LOCATION2, 2000), *np.linspace(LOCATION2, LOCATION1, 2000)]).tolist()
