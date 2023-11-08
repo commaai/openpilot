@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from cereal import messaging
+from cereal import messaging, log
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
 from openpilot.selfdrive.car.toyota.values import EPS_SCALE
 from openpilot.selfdrive.manager.process_config import managed_processes
@@ -160,6 +160,21 @@ def migrate_carParams(lr, old_logtime=False):
   return all_msgs
 
 
+def migrate_magnetometer(lr):
+  all_msgs = []
+  for msg in lr:
+    # mmc5603nj magnetometer on recent release contains measurements from both polarities
+    if (msg.which() == 'magnetometer') and \
+      (msg.magnetometer.source == log.SensorEventData.SensorSource.mmc5603nj) and \
+      (len(msg.magnetometer.magneticUncalibrated.v) == 3):
+      new_msg = msg.as_builder()
+      new_msg.magnetometer.magneticUncalibrated.v = [*msg.magnetometer.magneticUncalibrated.v] * 2
+      all_msgs.append(new_msg.as_reader())
+    else:
+      all_msgs.append(msg)
+  return all_msgs
+
+
 def migrate_sensorEvents(lr, old_logtime=False):
   all_msgs = []
   for msg in lr:
@@ -197,5 +212,5 @@ def migrate_sensorEvents(lr, old_logtime=False):
       setattr(m_dat, evt.which(), getattr(evt, evt.which()))
 
       all_msgs.append(m.as_reader())
-
+    all_msgs = migrate_magnetometer(all_msgs)
   return all_msgs
