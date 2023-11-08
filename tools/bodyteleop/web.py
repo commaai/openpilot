@@ -6,11 +6,6 @@ import os
 import ssl
 import subprocess
 
-# aiortc and its dependencies have lots of internal warnings :(
-import warnings
-warnings.resetwarnings()
-warnings.simplefilter("always")
-
 from aiohttp import web, ClientSession
 import pyaudio
 import wave
