@@ -54,6 +54,7 @@ class AudioOutputSpeaker:
     chunk_size = int(packet_time * rate)
     self.p = pyaudio.PyAudio()
     self.buffer = io.BytesIO()
+    self.channels = channels
     self.stream = self.p.open(format=audio_format,
                               channels=channels,
                               rate=rate,
@@ -61,7 +62,6 @@ class AudioOutputSpeaker:
                               output=True,
                               output_device_index=device_index,
                               stream_callback=self.__pyaudio_callback)
-    self.channels = channels
     self.tracks_and_tasks: List[Tuple[aiortc.MediaStreamTrack, Optional[asyncio.Task]]] = []
 
   def __pyaudio_callback(self, in_data, frame_count, time_info, status):

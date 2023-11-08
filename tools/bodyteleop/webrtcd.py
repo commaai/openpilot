@@ -129,6 +129,7 @@ class StreamSession:
         self.audio_output = AudioOutputSpeaker()
         self.audio_output.add_track(track)
         self.audio_output.start()
+      self.logger.info("Stream session (%s) connected", self.identifier)
 
       await self.stream.wait_for_disconnection()
       await self.post_run_cleanup()
@@ -180,7 +181,7 @@ def webrtcd_thread(host: str, port: int, debug: bool):
 if __name__=="__main__":
   parser = argparse.ArgumentParser(description="WebRTC daemon")
   parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to listen on")
-  parser.add_argument("--port", type=int, default=2137, help="Port to listen on")
+  parser.add_argument("--port", type=int, default=5001, help="Port to listen on")
   parser.add_argument("--debug", action="store_true", help="Enable debug mode")
   args = parser.parse_args()
 

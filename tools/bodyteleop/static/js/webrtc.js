@@ -144,7 +144,7 @@ export function start(pc, dc) {
 
   function sendJoystickOverDataChannel() {
     const {x, y} = getXY();
-    var message = JSON.stringify({type: "testJoystick", data: {axes: [x, y]}})
+    var message = JSON.stringify({type: "testJoystick", data: {axes: [x, y], buttons: [false]}})
     dc.send(message);
   }
   function checkLatency() {
@@ -168,10 +168,13 @@ export function start(pc, dc) {
     sendJoystickOverDataChannel();
   };
 
+  const textDecoder = new TextDecoder();
+  var carStaterIndex = 0;
   dc.onmessage = function(evt) {
-    const msg = JSON.parse(evt.data);
-    if (msg.type === 'carState') {
-      const batteryLevel = msg.data.fuelGauge * 100;
+    const text = textDecoder.decode(evt.data);
+    const msg = JSON.parse(text);
+    if (carStaterIndex % 100 == 0 && msg.type === 'carState') {
+      const batteryLevel = Math.round(msg.data.fuelGauge * 100);
       $("#battery").text(batteryLevel + "%");
       batteryPoints.push({'x': new Date().getTime(), 'y': batteryLevel});
       if (batteryPoints.length > 1000) {
@@ -179,6 +182,7 @@ export function start(pc, dc) {
       }
       chartBattery.update();
     }
+    carStaterIndex += 1;
   };
 }
 
