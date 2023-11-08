@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import pytest
 import subprocess
 import threading
 import time
@@ -21,7 +20,6 @@ def wifi_radio(on: bool) -> None:
   subprocess.run(["nmcli", "radio", "wifi", "on" if on else "off"], check=True)
 
 
-@pytest.mark.tici
 class TestAthenadPing(unittest.TestCase):
   params: Params
   dongle_id: str
@@ -99,10 +97,12 @@ class TestAthenadPing(unittest.TestCase):
         time.sleep(0.1)
       print("ping received")
 
+  @unittest.skipIf(not TICI, "only run on desk")
   def test_offroad(self) -> None:
     write_onroad_params(False, self.params)
     self.assertTimeout(100)  # expect approx 90s
 
+  @unittest.skipIf(not TICI, "only run on desk")
   def test_onroad(self) -> None:
     write_onroad_params(True, self.params)
     self.assertTimeout(30)  # expect 20-30s
