@@ -73,7 +73,7 @@ def create_ssl_context():
     create_ssl_cert(cert_path, key_path)
   else:
     logger.info("Certificate exists!")
-  ssl_context = ssl.SSLContext()
+  ssl_context = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS_SERVER)
   ssl_context.load_cert_chain(cert_path, key_path)
 
   return ssl_context
