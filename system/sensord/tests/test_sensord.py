@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import pytest
 import time
 import unittest
 import numpy as np
@@ -10,7 +11,6 @@ from cereal import log
 from cereal.services import SERVICE_LIST
 from openpilot.common.gpio import get_irqs_for_action
 from openpilot.common.timeout import Timeout
-from openpilot.system.hardware import TICI
 from openpilot.selfdrive.manager.process_config import managed_processes
 
 BMX = {
@@ -98,12 +98,10 @@ def read_sensor_events(duration_sec):
 
   return {k: v for k, v in events.items() if len(v) > 0}
 
+@pytest.mark.tici
 class TestSensord(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
-    if not TICI:
-      raise unittest.SkipTest
-
     # enable LSM self test
     os.environ["LSM_SELF_TEST"] = "1"
 

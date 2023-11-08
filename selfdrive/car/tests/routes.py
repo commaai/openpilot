@@ -251,6 +251,7 @@ routes = [
   CarTestRoute("791340bc01ed993d|2019-03-10--16-28-08", SUBARU.IMPREZA),
   CarTestRoute("8bf7e79a3ce64055|2021-05-24--09-36-27", SUBARU.IMPREZA_2020),
   # CarTestRoute("8de015561e1ea4a0|2023-08-29--17-08-31", SUBARU.IMPREZA),  # openpilot longitudinal
+  # CarTestRoute("c3d1ccb52f5f9d65|2023-07-22--01-23-20", SUBARU.OUTBACK, segment=9), # gen2 longitudinal, eyesight disabled
   CarTestRoute("1bbe6bf2d62f58a8|2022-07-14--17-11-43", SUBARU.OUTBACK, segment=10),
   CarTestRoute("c56e69bbc74b8fad|2022-08-18--09-43-51", SUBARU.LEGACY, segment=3),
   CarTestRoute("f4e3a0c511a076f4|2022-08-04--16-16-48", SUBARU.CROSSTREK_HYBRID, segment=2),
