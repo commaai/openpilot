@@ -1,5 +1,6 @@
 import os
 import pytest
+import random
 
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.system.hardware import TICI
@@ -8,6 +9,8 @@ from openpilot.system.hardware import TICI
 @pytest.fixture(scope="function", autouse=True)
 def openpilot_function_fixture():
   starting_env = dict(os.environ)
+
+  random.seed(0)
 
   # setup a clean environment for each test
   with OpenpilotPrefix():
