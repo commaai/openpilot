@@ -157,7 +157,9 @@ export function start(pc, dc) {
         pingPoints.shift();
       }
       chartPing.update();
-      $("#ping-time").text((pingtime) + "ms");
+      if (Math.abs(currentTime - lastChannelMessageTime) < 1000) {
+        $("#ping-time").text((pingtime) + "ms");
+      }
     })
   }
   dc.onopen = function() {
