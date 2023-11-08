@@ -94,8 +94,8 @@ class MagCalibrator:
   def get_ellipsoid_rotation(self, coeffs: np.ndarray) -> Tuple[Tuple[float, float], float]:
     a, b, c = coeffs[:3]
     M = np.array([
-        [2 * a, c],
-        [c, 2 * b]
+        [a, c / 2],
+        [c / 2, b]
     ])
     eigenvalues, eigenvectors = np.linalg.eigh(M)
     assert np.all(eigenvalues > 0)
@@ -106,6 +106,7 @@ class MagCalibrator:
   def get_ellipsoid_center(self, coeffs: np.ndarray) -> Tuple[float, float]:
     a, b, c, d, e = coeffs[:5]
     num = (c**2 / 4) - (a * b)
+    assert num != 0
     x0 = ((b * d / 2) - (c / 2 * e / 2)) / num
     y0 = ((a * e / 2) - (c / 2 * d / 2)) / num
     return (x0, y0)
