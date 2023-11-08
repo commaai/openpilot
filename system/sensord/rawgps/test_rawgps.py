@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import pytest
 import json
 import time
 import datetime
@@ -7,19 +8,16 @@ import unittest
 import subprocess
 
 import cereal.messaging as messaging
-from openpilot.system.hardware import TICI
 from openpilot.system.sensord.rawgps.rawgpsd import at_cmd, wait_for_modem
 from openpilot.selfdrive.manager.process_config import managed_processes
 
 GOOD_SIGNAL = bool(int(os.getenv("GOOD_SIGNAL", '0')))
 
 
+@pytest.mark.tici
 class TestRawgpsd(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
-    if not TICI:
-      raise unittest.SkipTest
-
     os.system("sudo systemctl start systemd-resolved")
     os.system("sudo systemctl restart ModemManager lte")
     wait_for_modem()
