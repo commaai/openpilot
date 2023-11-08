@@ -1,5 +1,5 @@
 import { handleKeyX, executePlan } from "./controls.js";
-import { start, stop, lastPing, playSoundRequest } from "./webrtc.js";
+import { start, stop, lastChannelMessageTime, playSoundRequest } from "./webrtc.js";
 
 export var pc = null;
 export var dc = null;
@@ -16,8 +16,7 @@ $(".sound").click((e)=>{
 
 setInterval( () => {
   const dt = new Date().getTime();
-  if ((dt - lastPing) > 1000) {
-    // TODO this is no longer correct
+  if ((dt - lastChannelMessageTime) > 1000) {
     $(".pre-blob").removeClass('blob');
     $("#battery").text("-");
     $("#ping-time").text('-');

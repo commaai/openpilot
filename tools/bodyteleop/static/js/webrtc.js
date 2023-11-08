@@ -3,7 +3,7 @@ import { pingPoints, batteryPoints, chartPing, chartBattery } from "./plots.js";
 
 export let controlCommandInterval = null;
 export let latencyInterval = null;
-export let lastPing = null;
+export let lastChannelMessageTime = null;
 
 
 export function offerRtcRequest(sdp, type) {
@@ -158,8 +158,6 @@ export function start(pc, dc) {
       }
       chartPing.update();
       $("#ping-time").text((pingtime) + "ms");
-      lastPing = currentTime;
-      $(".pre-blob").addClass('blob');
     })
   }
   dc.onopen = function() {
@@ -183,6 +181,8 @@ export function start(pc, dc) {
       chartBattery.update();
     }
     carStaterIndex += 1;
+    lastChannelMessageTime = new Date().getTime();
+    $(".pre-blob").addClass('blob');
   };
 }
 
