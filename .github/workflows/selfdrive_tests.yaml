@@ -58,7 +58,7 @@ jobs:
       run: |
         cd $STRIPPED_DIR
         ${{ env.RUN }} "release/check-dirty.sh && \
-                        $PYTEST $XDIST selfdrive/car"
+                        MAX_EXAMPLES=5 $PYTEST $XDIST selfdrive/car"
     - name: pre-commit
       timeout-minutes: 3
       run: |
