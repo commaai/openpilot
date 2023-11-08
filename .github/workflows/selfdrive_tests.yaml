@@ -58,7 +58,7 @@ jobs:
       run: |
         cd $STRIPPED_DIR
         ${{ env.RUN }} "release/check-dirty.sh && \
-                        python -m unittest discover selfdrive/car"
+                        $PYTEST selfdrive/car"
     - name: pre-commit
       timeout-minutes: 3
       run: |
