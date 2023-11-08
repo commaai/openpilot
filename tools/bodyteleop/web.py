@@ -22,20 +22,20 @@ logger = logging.getLogger("bodyteleop")
 logging.basicConfig(level=logging.INFO)
 
 TELEOPDIR = f"{BASEDIR}/tools/bodyteleop"
-WEBRTCD_HOST = "localhost"
-WEBRTCD_PORT = 5001
+WEBRTCD_HOST, WEBRTCD_PORT = "localhost", 5001
 
 
 ## UTILS
 async def play_sound(sound):
   SOUNDS = {
-    'engage': '../../selfdrive/assets/sounds/engage.wav',
-    'disengage': '../../selfdrive/assets/sounds/disengage.wav',
-    'error': '../../selfdrive/assets/sounds/warning_immediate.wav',
+    'engage': 'selfdrive/assets/sounds/engage.wav',
+    'disengage': 'selfdrive/assets/sounds/disengage.wav',
+    'error': 'selfdrive/assets/sounds/warning_immediate.wav',
   }
+  assert sound in SOUNDS
 
   chunk = 5120
-  with wave.open(SOUNDS[sound], 'rb') as wf:
+  with wave.open(os.path.join(BASEDIR, SOUNDS[sound]), 'rb') as wf:
     def callback(in_data, frame_count, time_info, status):
       data = wf.readframes(frame_count)
       return data, pyaudio.paContinue
@@ -66,8 +66,8 @@ def create_ssl_cert(cert_path, key_path):
 
 
 def create_ssl_context():
-  cert_path = TELEOPDIR + '/cert.pem'
-  key_path = TELEOPDIR + '/key.pem'
+  cert_path = os.path.join(TELEOPDIR, 'cert.pem')
+  key_path = os.path.join(TELEOPDIR, 'key.pem')
   if not os.path.exists(cert_path) or not os.path.exists(key_path):
     logger.info("Creating certificate...")
     create_ssl_cert(cert_path, key_path)
@@ -80,7 +80,7 @@ def create_ssl_context():
 
 ## ENDPOINTS
 async def index(request):
-  with open(TELEOPDIR + "/static/index.html", "r") as f:
+  with open(os.path.join(TELEOPDIR, "static", "index.html"), "r") as f:
     content = f.read()
     return web.Response(content_type="text/html", text=content)
 
@@ -120,7 +120,7 @@ def main():
   app.router.add_get("/ping", ping, allow_head=True)
   app.router.add_post("/offer", offer)
   app.router.add_post("/sound", sound)
-  app.router.add_static('/static', TELEOPDIR + '/static')
+  app.router.add_static('/static', os.path.join(TELEOPDIR, 'static'))
   web.run_app(app, access_log=None, host="0.0.0.0", port=5000, ssl_context=ssl_context)
 
 
