@@ -49,7 +49,6 @@ class CerealOutgoingMessageProxy:
         for service, updated in self.sm.updated.items():
           if not updated:
             continue
-          # dynamic struct reader as dictionary
           msg_dict, mono_time, valid = self.sm[service].to_dict(), self.sm.logMonoTime[service], self.sm.valid[service]
           outgoing_msg = {"type": service, "logMonoTime": mono_time, "valid": valid, "data": msg_dict}
           encoded_msg = json.dumps(outgoing_msg).encode()
@@ -160,6 +159,7 @@ async def get_stream(request):
 async def on_shutdown(app):
   for session in app['streams'].values():
     session.stop()
+  del app['streams']
 
 
 def webrtcd_thread(host: str, port: int, debug: bool):
