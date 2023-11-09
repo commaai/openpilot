@@ -199,6 +199,3 @@ flake8-implicit-str-concat.allow-multiline=false
 "system".msg = "Use openpilot.system"
 "third_party".msg = "Use openpilot.third_party"
 "tools".msg = "Use openpilot.tools"
-
-[tool.coverage.run]
-concurrency = ["multiprocessing", "thread"]
