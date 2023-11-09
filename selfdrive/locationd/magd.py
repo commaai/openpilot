@@ -68,9 +68,13 @@ class MagCalibrator(ParameterEstimator):
             )
           self.point_buckets.load_points(cache_mc.points)
           cloudlog.info("restored magnetometer calibration params from cache")
+        else:
+          cloudlog.info(f"restore key has changed ({cache_CP.carFingerprint}, {CP.carFingerprint}), not restoring magnetometer calibration params")
       except Exception:
         cloudlog.exception("failed to restore cached magnetometer calibration params")
         params.remove("MagnetometerCalibration")
+    else:
+      cloudlog.info("no cached magnetometer calibration params found")
 
   def get_restore_key(self, CP: car.CarParams, version: int) -> Tuple[str, int]:
     return (CP.carFingerprint, version)
