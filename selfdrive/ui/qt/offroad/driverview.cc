@@ -24,19 +24,17 @@ void DriverViewWindow::mouseReleaseEvent(QMouseEvent* e) {
   closeView();
 }
 
-DriverViewScene::DriverViewScene(QWidget* parent) : CameraWidget("camerad", VISION_STREAM_DRIVER, true, parent) {
-  face_img = loadPixmap("../assets/img_driver_face_static.png", {FACE_IMG_SIZE, FACE_IMG_SIZE});
-}
-
-void DriverViewScene::showEvent(QShowEvent* event) {
-  setAutoUpdate(true);
+void DriverViewWindow::showEvent(QShowEvent* event) {
   params.putBool("IsDriverViewEnabled", true);
   device()->resetInteractiveTimeout(60);
 }
 
-void DriverViewScene::hideEvent(QHideEvent* event) {
-  setAutoUpdate(false);
+void DriverViewWindow::hideEvent(QHideEvent* event) {
   params.putBool("IsDriverViewEnabled", false);
+}
+
+DriverViewScene::DriverViewScene(QWidget* parent) : CameraView("camerad", VISION_STREAM_DRIVER, true, parent) {
+  face_img = loadPixmap("../assets/img_driver_face_static.png", {FACE_IMG_SIZE, FACE_IMG_SIZE});
 }
 
 void DriverViewScene::paintGL() {

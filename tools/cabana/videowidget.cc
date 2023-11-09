@@ -139,8 +139,7 @@ QWidget *VideoWidget::createCameraWidget() {
 
   QStackedLayout *stacked = new QStackedLayout();
   stacked->setStackingMode(QStackedLayout::StackAll);
-  stacked->addWidget(cam_widget = new CameraWidget("camerad", VISION_STREAM_ROAD, false));
-  cam_widget->setAutoUpdate(true);
+  stacked->addWidget(cam_widget = new CameraView("camerad", VISION_STREAM_ROAD, false));
   cam_widget->setMinimumHeight(MIN_VIDEO_HEIGHT);
   cam_widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
   stacked->addWidget(alert_label = new InfoLabel(this));

@@ -30,8 +30,6 @@ class CameraWidget : public QOpenGLWidget, protected QOpenGLFunctions {
 public:
   explicit CameraWidget(std::string stream_name, VisionStreamType stream_type, bool zoom, QWidget* parent = nullptr);
   ~CameraWidget();
-  // Auto update based on timer, the default is disabled (i.e. false).
-  void setAutoUpdate(bool enable);
   void setBackgroundColor(const QColor &color) { bg = color; }
   void setStreamType(VisionStreamType type) { requested_stream_type = type; }
   inline VisionStreamType streamType() const { return requested_stream_type; }
@@ -63,12 +61,12 @@ protected:
 
   // vipc
   std::string stream_name;
+  bool conflate = false;
   int stream_width = 0;
   int stream_height = 0;
   int stream_stride = 0;
   VisionStreamType requested_stream_type;
   std::set<VisionStreamType> available_streams;
-  std::unique_ptr<QTimer> vipc_timer;
   std::unique_ptr<VisionIpcClient> vipc_client;
   VisionBuf *frame_ = nullptr;
   uint64_t prev_frame_id = 0;
@@ -79,4 +77,16 @@ protected:
   float zoom = 1.0;
   mat3 calibration = DEFAULT_CALIBRATION;
   mat3 intrinsic_matrix = FCAM_INTRINSIC_MATRIX;
+};
+
+// auto update CameraWidget based on timer
+class CameraView : public CameraWidget {
+  Q_OBJECT
+public:
+  CameraView(const std::string &name, VisionStreamType stream_type, bool zoom, QWidget *parent = nullptr);
+  void showEvent(QShowEvent *event) override { timer->start(); }
+  void hideEvent(QHideEvent *event) override { timer->stop(); }
+
+private:
+  QTimer *timer;
 };
