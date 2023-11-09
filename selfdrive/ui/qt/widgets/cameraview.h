@@ -48,9 +48,6 @@ protected:
   void updateCalibration(const mat3 &calib);
   void vipcConnected();
 
-  int glWidth();
-  int glHeight();
-
   bool zoomed_view;
   GLuint frame_vao, frame_vbo, frame_ibo;
   GLuint textures[2];

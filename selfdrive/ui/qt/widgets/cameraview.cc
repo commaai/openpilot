@@ -89,7 +89,6 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 
 CameraWidget::CameraWidget(std::string stream_name, VisionStreamType type, bool zoom, QWidget* parent) :
                           stream_name(stream_name), requested_stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
-  setAttribute(Qt::WA_OpaquePaintEvent);
 }
 
 CameraWidget::~CameraWidget() {
@@ -108,16 +107,6 @@ CameraWidget::~CameraWidget() {
   egl_images.clear();
 #endif
   doneCurrent();
-}
-
-// Qt uses device-independent pixels, depending on platform this may be
-// different to what OpenGL uses
-int CameraWidget::glWidth() {
-    return width() * devicePixelRatio();
-}
-
-int CameraWidget::glHeight() {
-  return height() * devicePixelRatio();
 }
 
 void CameraWidget::initializeGL() {
@@ -192,7 +181,8 @@ void CameraWidget::setAutoUpdate(bool enable) {
 }
 
 void CameraWidget::updateFrameMat() {
-  int w = glWidth(), h = glHeight();
+  int w = width() * devicePixelRatio();
+  int h = height() * devicePixelRatio();
 
   if (zoomed_view) {
     if (streamType() == VISION_STREAM_DRIVER) {
@@ -264,7 +254,7 @@ void CameraWidget::paintGL() {
 
   updateFrameMat();
 
-  glViewport(0, 0, glWidth(), glHeight());
+  glViewport(0, 0, width() * devicePixelRatio(), height() * devicePixelRatio());
   glBindVertexArray(frame_vao);
   glUseProgram(program->programId());
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -350,18 +340,17 @@ void CameraWidget::vipcConnected() {
 }
 
 bool CameraWidget::receiveFrame(uint64_t preferred_frame_id) {
-  if (!isValid()) {
-    return false;
-  }
+  if (!isValid()) return false;
 
   if (!vipc_client || vipc_client->type != requested_stream_type) {
     qDebug().nospace() << "connecting to stream " << requested_stream_type << ", was connected to "
                        << (vipc_client ? vipc_client->type : requested_stream_type);
+    vipc_buffer_ = nullptr;
     vipc_client.reset(new VisionIpcClient(stream_name, requested_stream_type, conflate));
   }
 
-  vipc_buffer_ = nullptr;
   if (!vipc_client->connected) {
+    vipc_buffer_ = nullptr;
     available_streams = VisionIpcClient::getAvailableStreams(stream_name, false);
     if (available_streams.empty() || !vipc_client->connect(false)) {
       return false;
@@ -373,13 +362,7 @@ bool CameraWidget::receiveFrame(uint64_t preferred_frame_id) {
   VisionIpcBufExtra meta_main = {};
   while (auto buf = vipc_client->recv(&meta_main, 0)) {
     vipc_buffer_ = buf;
-    if (meta_main.frame_id >= preferred_frame_id) {
-      break;
-    }
+    if (meta_main.frame_id >= preferred_frame_id) break;
   }
-  if (!vipc_buffer_) {
-    if (!isVisible()) vipc_client->connected = false;
-    return false;
-  }
-  return true;
+  return vipc_buffer_ != nullptr;
 }

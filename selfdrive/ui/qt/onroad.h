@@ -6,7 +6,6 @@
 #include <QStackedLayout>
 #include <QWidget>
 
-#include "common/util.h"
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
@@ -93,8 +92,6 @@ private:
   bool v_ego_cluster_seen = false;
   int status = STATUS_DISENGAGED;
   std::unique_ptr<PubMaster> pm;
-
-  int skip_frame_count = 0;
   bool wide_cam_requested = false;
 
 protected:
@@ -102,6 +99,7 @@ protected:
   void initializeGL() override;
   void showEvent(QShowEvent *event) override;
   void updateFrameMat() override;
+  void updateFrame();
   void drawLaneLines(QPainter &painter, const UIState *s);
   void drawLead(QPainter &painter, const cereal::RadarState::LeadData::Reader &lead_data, const QPointF &vd);
   void drawHud(QPainter &p);
