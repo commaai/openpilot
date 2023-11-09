@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import os
-import sys
 import signal
 import numpy as np
 from typing import Any, Tuple, Union
+from functools import partial
 
 import cereal.messaging as messaging
 from cereal import car, log
@@ -11,7 +11,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.swaglog import cloudlog
-from openpilot.selfdrive.locationd.helpers import PointBuckets
+from openpilot.selfdrive.locationd.helpers import PointBuckets, ParameterEstimator, cache_points_onexit
 
 POINTS_PER_BUCKET = 3000
 MIN_POINTS_TOTAL = 4000
@@ -43,13 +43,13 @@ class MagBuckets(PointBuckets):
         break
 
 
-class MagCalibrator:
+class MagCalibrator(ParameterEstimator):
   def __init__(self, CP: car.CarParams) -> None:
     self.reset()
 
     # try to restore cached params
     params = Params()
-    params_cache = params.get("MagnetometerCarParams")
+    params_cache = params.get("CarParamsPrevRoute")
     magnetometer_cache = params.get("MagnetometerCalibration")
     if params_cache is not None and magnetometer_cache is not None:
       try:
@@ -70,7 +70,6 @@ class MagCalibrator:
           cloudlog.info("restored magnetometer calibration params from cache")
       except Exception:
         cloudlog.exception("failed to restore cached magnetometer calibration params")
-        params.remove("MagnetometerCarParams")
         params.remove("MagnetometerCalibration")
 
   def get_restore_key(self, CP: car.CarParams, version: int) -> Tuple[str, int]:
@@ -144,7 +143,7 @@ class MagCalibrator:
     bearing = self.reset_angle_range(bearing - calibration_params.offset_angle)
     return bearing
 
-  def handle_log(self, which: str, msg: log.Event) -> None:
+  def handle_log(self, t: int, which: str, msg: log.Event) -> None:
     if which == "carState":
       self.vego = msg.vEgo
     elif which == "liveLocationKalman":
@@ -202,26 +201,16 @@ def main():
   with car.CarParams.from_bytes(params.get("CarParams", block=True)) as CP:
     calibrator = MagCalibrator(CP)
 
-  def cache_params(sig, frame):
-    signal.signal(sig, signal.SIG_DFL)
-    cloudlog.warning("caching mag calib params")
-
-    params = Params()
-    params.put("MagnetometerCarParams", CP.as_builder().to_bytes())
-
-    msg = calibrator.get_msg(valid=True, with_points=True)
-    params.put("MagnetometerCalibration", msg.to_bytes())
-
-    sys.exit(0)
   if "REPLAY" not in os.environ:
-    signal.signal(signal.SIGINT, cache_params)
+    signal.signal(signal.SIGINT, partial(cache_points_onexit, "MagnetometerCalibration", calibrator))
 
   while True:
     sm.update()
     if sm.all_checks():
       for which in sm.updated.keys():
         if sm.updated[which]:
-          calibrator.handle_log(which, sm[which])
+          t = sm.logMonoTime[which] * 1e-9
+          calibrator.handle_log(t, which, sm[which])
 
     if sm.updated['magnetometer']:
       pm.send('magnetometerCalibration', calibrator.get_msg(valid=sm.all_checks()))
