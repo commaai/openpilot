@@ -360,6 +360,9 @@ bool CameraWidget::receiveFrame(uint64_t preferred_frame_id) {
     vipcConnected();
   }
 
+  if (preferred_frame_id > 0 && frame_ && frame_->get_frame_id() >= preferred_frame_id) {
+    return true;
+  }
   VisionIpcBufExtra meta_main = {};
   while (auto buf = vipc_client->recv(&meta_main, 0)) {
     frame_ = buf;
