@@ -33,6 +33,7 @@ public:
   void setAutoUpdate(bool enable);
   void setBackgroundColor(const QColor &color) { bg = color; }
   void setStreamType(VisionStreamType type) { requested_stream_type = type; }
+  void clearFrame();
   inline VisionStreamType streamType() const { return requested_stream_type; }
   inline const std::set<VisionStreamType> &availableStreams() const { return available_streams; }
 
@@ -69,7 +70,7 @@ protected:
   QTimer *vipc_timer = nullptr;
   bool conflate = false;
   std::unique_ptr<VisionIpcClient> vipc_client;
-  VisionBuf *vipc_buffer_ = nullptr;
+  VisionBuf *frame_ = nullptr;
   uint64_t prev_frame_id = 0;
 
   // Calibration

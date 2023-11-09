@@ -173,10 +173,11 @@ void CameraWidget::setAutoUpdate(bool enable) {
     delete vipc_timer;
     vipc_timer = nullptr;
   }
+  clearFrame();
+}
 
-  // clear frame
-  vipc_buffer_ = nullptr;
-  vipc_client.reset(nullptr);
+void CameraWidget::clearFrame() {
+  frame_ = nullptr;
   update();
 }
 
@@ -240,11 +241,11 @@ void CameraWidget::paintGL() {
   glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-  if (!vipc_buffer_)
+  if (!frame_)
     return;
 
   // Log duplicate/dropped frames
-  uint64_t frame_id = vipc_buffer_->get_frame_id();
+  uint64_t frame_id = frame_->get_frame_id();
   if (frame_id == prev_frame_id) {
     qDebug() << "Drawing same frame twice" << frame_id;
   } else if (frame_id != prev_frame_id + 1) {
@@ -262,20 +263,20 @@ void CameraWidget::paintGL() {
 #ifdef QCOM2
   // no frame copy
   glActiveTexture(GL_TEXTURE0);
-  glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_images[vipc_buffer_->idx]);
+  glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_images[frame_->idx]);
   assert(glGetError() == GL_NO_ERROR);
 #else
   // fallback to copy
   glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, textures[0]);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width, stream_height, GL_RED, GL_UNSIGNED_BYTE, vipc_buffer_->y);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width, stream_height, GL_RED, GL_UNSIGNED_BYTE, frame_->y);
   assert(glGetError() == GL_NO_ERROR);
 
   glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride/2);
   glActiveTexture(GL_TEXTURE0 + 1);
   glBindTexture(GL_TEXTURE_2D, textures[1]);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width/2, stream_height/2, GL_RG, GL_UNSIGNED_BYTE, vipc_buffer_->uv);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width/2, stream_height/2, GL_RG, GL_UNSIGNED_BYTE, frame_->uv);
   assert(glGetError() == GL_NO_ERROR);
 #endif
 
@@ -345,12 +346,12 @@ bool CameraWidget::receiveFrame(uint64_t preferred_frame_id) {
   if (!vipc_client || vipc_client->type != requested_stream_type) {
     qDebug().nospace() << "connecting to stream " << requested_stream_type << ", was connected to "
                        << (vipc_client ? vipc_client->type : requested_stream_type);
-    vipc_buffer_ = nullptr;
+    frame_ = nullptr;
     vipc_client.reset(new VisionIpcClient(stream_name, requested_stream_type, conflate));
   }
 
   if (!vipc_client->connected) {
-    vipc_buffer_ = nullptr;
+    frame_ = nullptr;
     available_streams = VisionIpcClient::getAvailableStreams(stream_name, false);
     if (available_streams.empty() || !vipc_client->connect(false)) {
       return false;
@@ -361,8 +362,8 @@ bool CameraWidget::receiveFrame(uint64_t preferred_frame_id) {
 
   VisionIpcBufExtra meta_main = {};
   while (auto buf = vipc_client->recv(&meta_main, 0)) {
-    vipc_buffer_ = buf;
+    frame_ = buf;
     if (meta_main.frame_id >= preferred_frame_id) break;
   }
-  return vipc_buffer_ != nullptr;
+  return frame_ != nullptr;
 }

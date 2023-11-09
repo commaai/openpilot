@@ -43,7 +43,7 @@ void DriverViewScene::paintGL() {
   CameraWidget::paintGL();
   // startup msg
   QPainter p(this);
-  if (!vipc_buffer_) {
+  if (!frame_) {
     p.setPen(Qt::white);
     p.setRenderHint(QPainter::TextAntialiasing);
     p.setFont(InterFont(100, QFont::Bold));
