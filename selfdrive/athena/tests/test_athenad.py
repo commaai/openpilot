@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import multiprocessing
 import os
 import requests
 import shutil
@@ -12,7 +13,6 @@ from datetime import datetime, timedelta
 from parameterized import parameterized
 from typing import Optional
 
-from multiprocessing import Process
 from pympler.tracker import SummaryTracker
 from unittest import mock
 from websocket import ABNF
@@ -75,24 +75,26 @@ class TestAthenadMethods(unittest.TestCase):
     with self.assertRaises(TimeoutError) as _:
       dispatcher["getMessage"]("controlsState")
 
+    end_event = multiprocessing.Event()
+
     def send_deviceState():
       messaging.context = messaging.Context()
       pub_sock = messaging.pub_sock("deviceState")
-      start = time.time()
 
-      while time.time() - start < 1:
+      while not end_event.is_set():
         msg = messaging.new_message('deviceState')
         pub_sock.send(msg.to_bytes())
         time.sleep(0.01)
 
-    p = Process(target=send_deviceState)
+    p = multiprocessing.Process(target=send_deviceState)
     p.start()
-    time.sleep(0.2)
+    time.sleep(0.1)
     try:
       deviceState = dispatcher["getMessage"]("deviceState")
       assert deviceState['deviceState']
     finally:
-      p.terminate()
+      end_event.set()
+      p.join()
 
   def test_listDataDirectory(self):
     route = '2021-03-29--13-32-47'
