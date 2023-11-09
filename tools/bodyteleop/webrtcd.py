@@ -59,14 +59,6 @@ class CerealOutgoingMessageProxy:
       await asyncio.sleep(0.01)
 
 
-@dataclasses.dataclass
-class StreamRequestBody:
-  sdp: str
-  cameras: List[str]
-  bridge_services_in: List[str]
-  bridge_services_out: List[str]
-
-
 class StreamSession:
   def __init__(self, sdp: str, cameras: List[str], incoming_services: List[str], outgoing_services: List[str], debug_mode: bool = False):
     config = parse_info_from_offer(sdp)
@@ -145,6 +137,14 @@ class StreamSession:
     self.outgoing_bridge.stop()
     if self.audio_output:
       self.audio_output.stop()
+
+
+@dataclasses.dataclass
+class StreamRequestBody:
+  sdp: str
+  cameras: List[str]
+  bridge_services_in: List[str]
+  bridge_services_out: List[str]
 
 
 async def get_stream(request: web.Request):
