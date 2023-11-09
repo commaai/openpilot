@@ -324,7 +324,7 @@ jobs:
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
       with:
-        name: ${{ github.job }}
+        name: ${{ github.job }}-${{ matrix.job }}
 
   car_docs_diff:
     name: PR comments
