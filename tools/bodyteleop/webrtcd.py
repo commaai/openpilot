@@ -108,7 +108,7 @@ class StreamSession:
   async def get_answer(self):
     return await self.stream.start()
 
-  async def message_handler(self, channel: aiortc.RTCDataChannel, message: bytes):
+  async def message_handler(self, message: bytes):
     msg_json = json.loads(message)
     try:
       msg_type, msg_data = msg_json["type"], msg_json["data"]

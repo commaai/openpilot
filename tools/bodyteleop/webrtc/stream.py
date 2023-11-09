@@ -15,7 +15,7 @@ class StreamingOffer:
 
 
 ConnectionProvider = Callable[[StreamingOffer], Awaitable[aiortc.RTCSessionDescription]]
-MessageHandler = Callable[[aiortc.RTCDataChannel, bytes], Awaitable[None]]
+MessageHandler = Callable[[bytes], Awaitable[None]]
 
 
 class WebRTCBaseStream(abc.ABC):
@@ -80,19 +80,14 @@ class WebRTCBaseStream(abc.ABC):
       channel = self.peer_connection.createDataChannel("data", ordered=True)
 
     for handler in self.incoming_message_handlers:
-      channel.on("message", self._create_channel_handler_wrapper(channel, handler))
+      channel.on("message", handler)
     self.messaging_channel = channel
 
-  def _create_channel_handler_wrapper(self, channel, message_handler):
-    async def handler_wrapper(message):
-      await message_handler(channel, message)
-    return handler_wrapper
-
-  def _force_codec(self, transceiver, codec, stream_type):
+  def _force_codec(self, transceiver: aiortc.RTCRtpTransceiver, codec: str, stream_type: str):
     codec_mime = f"{stream_type}/{codec.upper()}"
-    codecs = aiortc.RTCRtpSender.getCapabilities(stream_type).codecs
-    codec = [codec for codec in codecs if codec.mimeType == codec_mime]
-    transceiver.setCodecPreferences(codec)
+    rtp_codecs = aiortc.RTCRtpSender.getCapabilities(stream_type).codecs
+    rtp_codec = [c for c in rtp_codecs if c.mimeType == codec_mime]
+    transceiver.setCodecPreferences(rtp_codec)
 
   def _on_connectionstatechange(self):
     self._log_debug("connection state is %s", self.peer_connection.connectionState)
@@ -169,7 +164,7 @@ class WebRTCBaseStream(abc.ABC):
   def set_message_handler(self, message_handler: MessageHandler):
     self.incoming_message_handlers.append(message_handler)
     if self.messaging_channel is not None:
-      self.messaging_channel.on("message", self._create_channel_handler_wrapper(self.messaging_channel, message_handler))
+      self.messaging_channel.on("message", message_handler)
 
   @property
   def is_started(self) -> bool:
