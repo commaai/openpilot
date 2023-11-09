@@ -163,7 +163,6 @@ common/ratekeeper.h
 common/watchdog.cc
 common/watchdog.h
 
-common/modeldata.h
 common/mat.h
 common/timing.h
 
