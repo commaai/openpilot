@@ -87,7 +87,7 @@ class TestAthenadMethods(unittest.TestCase):
 
     p = Process(target=send_deviceState)
     p.start()
-    time.sleep(0.1)
+    time.sleep(0.2)
     try:
       deviceState = dispatcher["getMessage"]("deviceState")
       assert deviceState['deviceState']
