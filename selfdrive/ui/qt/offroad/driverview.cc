@@ -2,25 +2,15 @@
 
 #include <algorithm>
 #include <QPainter>
+#include <QVBoxLayout>
 
-#include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/util.h"
 
 const int FACE_IMG_SIZE = 130;
 
 DriverViewWindow::DriverViewWindow(QWidget* parent) : QWidget(parent) {
-  setAttribute(Qt::WA_OpaquePaintEvent);
-  layout = new QStackedLayout(this);
-  layout->setStackingMode(QStackedLayout::StackAll);
-
-  cameraView = new CameraWidget("camerad", VISION_STREAM_DRIVER, true, this);
-  layout->addWidget(cameraView);
-
-  scene = new DriverViewScene(this);
-  connect(cameraView, &CameraWidget::vipcAvailableStreamsUpdated, scene, &DriverViewScene::frameUpdated);
-  layout->addWidget(scene);
-  layout->setCurrentWidget(scene);
-
+  QVBoxLayout *layout = new QVBoxLayout(this);
+  layout->addWidget(new DriverViewScene(this));
   QObject::connect(device(), &Device::interactiveTimeout, this, &DriverViewWindow::closeView);
 }
 
@@ -34,32 +24,26 @@ void DriverViewWindow::mouseReleaseEvent(QMouseEvent* e) {
   closeView();
 }
 
-void DriverViewWindow::showEvent(QShowEvent* event) {
-  cameraView->setAutoUpdate(true);
-  scene->frame_updated = false;
+DriverViewScene::DriverViewScene(QWidget* parent) : CameraWidget("camerad", VISION_STREAM_DRIVER, true, parent) {
+  face_img = loadPixmap("../assets/img_driver_face_static.png", {FACE_IMG_SIZE, FACE_IMG_SIZE});
+}
+
+void DriverViewScene::showEvent(QShowEvent* event) {
+  setAutoUpdate(true);
   params.putBool("IsDriverViewEnabled", true);
   device()->resetInteractiveTimeout(60);
 }
 
-void DriverViewWindow::hideEvent(QHideEvent* event) {
-  cameraView->setAutoUpdate(false);
+void DriverViewScene::hideEvent(QHideEvent* event) {
+  setAutoUpdate(false);
   params.putBool("IsDriverViewEnabled", false);
 }
 
-DriverViewScene::DriverViewScene(QWidget* parent) : QWidget(parent) {
-  face_img = loadPixmap("../assets/img_driver_face_static.png", {FACE_IMG_SIZE, FACE_IMG_SIZE});
-}
-
-void DriverViewScene::frameUpdated() {
-  frame_updated = true;
-  update();
-}
-
-void DriverViewScene::paintEvent(QPaintEvent* event) {
-  QPainter p(this);
-
+void DriverViewScene::paintGL() {
+  CameraWidget::paintGL();
   // startup msg
-  if (!frame_updated) {
+  QPainter p(this);
+  if (!vipc_buffer_) {
     p.setPen(Qt::white);
     p.setRenderHint(QPainter::TextAntialiasing);
     p.setFont(InterFont(100, QFont::Bold));
@@ -69,11 +53,8 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
 
   const auto &sm = *(uiState()->sm);
   cereal::DriverStateV2::Reader driver_state = sm["driverStateV2"].getDriverStateV2();
-  cereal::DriverStateV2::DriverData::Reader driver_data;
-
-  is_rhd = driver_state.getWheelOnRightProb() > 0.5;
-  driver_data = is_rhd ? driver_state.getRightDriverData() : driver_state.getLeftDriverData();
-
+  bool is_rhd = driver_state.getWheelOnRightProb() > 0.5;
+  auto driver_data = is_rhd ? driver_state.getRightDriverData() : driver_state.getLeftDriverData();
   bool face_detected = driver_data.getFaceProb() > 0.7;
   if (face_detected) {
     auto fxy_list = driver_data.getFacePosition();
