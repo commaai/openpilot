@@ -224,12 +224,15 @@ class CarState(CarStateBase):
       # switch is on for at least 2 consecutive CAN samples
       # brake switch rises earlier than brake pressed but is never 1 when in park
       brake_switch_vals = cp.vl_all["POWERTRAIN_DATA"]["BRAKE_SWITCH"]
+      brake_switch = cp.vl["POWERTRAIN_DATA"]["BRAKE_SWITCH"] != 0
+      print('brake_switch_vals', brake_switch_vals, int(brake_switch))
       if len(brake_switch_vals):
-        brake_switch = cp.vl["POWERTRAIN_DATA"]["BRAKE_SWITCH"] != 0
         if len(brake_switch_vals) > 1:
+          # assert False
           self.brake_switch_prev = brake_switch_vals[-2] != 0
         self.brake_switch_active = brake_switch and self.brake_switch_prev
         self.brake_switch_prev = brake_switch
+      print(cp.vl["POWERTRAIN_DATA"]["BRAKE_PRESSED"], self.brake_switch_active)
       ret.brakePressed = (cp.vl["POWERTRAIN_DATA"]["BRAKE_PRESSED"] != 0) or self.brake_switch_active
 
     ret.brake = cp.vl["VSA_STATUS"]["USER_BRAKE"]
