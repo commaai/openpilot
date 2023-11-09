@@ -2,6 +2,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
@@ -41,7 +42,7 @@ signals:
   void vipcAvailableStreamsUpdated();
 
 protected:
-  bool receiveFrame(uint64_t  preferred_frame_id = 0);
+  bool receiveFrame(std::optional<uint64_t> frame_id = std::nullopt);
   void paintGL() override;
   void initializeGL() override;
   void resizeGL(int w, int h) override { updateFrameMat(); }

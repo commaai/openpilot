@@ -87,8 +87,8 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 
 } // namespace
 
-CameraWidget::CameraWidget(std::string stream_name, VisionStreamType type, bool zoom, QWidget* parent) :
-                          stream_name(stream_name), requested_stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
+CameraWidget::CameraWidget(std::string stream_name, VisionStreamType type, bool zoom, QWidget *parent)
+    : stream_name(stream_name), requested_stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
 }
 
 CameraWidget::~CameraWidget() {
@@ -235,14 +235,14 @@ void CameraWidget::updateFrameMat() {
 
 void CameraWidget::updateCalibration(const mat3 &calib) {
   calibration = calib;
+  updateFrameMat();
 }
 
 void CameraWidget::paintGL() {
   glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-  if (!frame_)
-    return;
+  if (!frame_) return;
 
   // Log duplicate/dropped frames
   uint64_t frame_id = frame_->get_frame_id();
@@ -252,8 +252,6 @@ void CameraWidget::paintGL() {
     qDebug() << "Skipped frame" << frame_id;
   }
   prev_frame_id = frame_id;
-
-  updateFrameMat();
 
   glViewport(0, 0, width() * devicePixelRatio(), height() * devicePixelRatio());
   glBindVertexArray(frame_vao);
@@ -338,9 +336,10 @@ void CameraWidget::vipcConnected() {
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RG8, stream_width/2, stream_height/2, 0, GL_RG, GL_UNSIGNED_BYTE, nullptr);
   assert(glGetError() == GL_NO_ERROR);
 #endif
+  updateFrameMat();
 }
 
-bool CameraWidget::receiveFrame(uint64_t preferred_frame_id) {
+bool CameraWidget::receiveFrame(std::optional<uint64_t> frame_id) {
   if (!isValid()) return false;
 
   if (!vipc_client || vipc_client->type != requested_stream_type) {
@@ -360,13 +359,13 @@ bool CameraWidget::receiveFrame(uint64_t preferred_frame_id) {
     vipcConnected();
   }
 
-  if (preferred_frame_id > 0 && frame_ && frame_->get_frame_id() >= preferred_frame_id) {
+  if (frame_id && frame_ && frame_->get_frame_id() >= *frame_id) {
     return true;
   }
   VisionIpcBufExtra meta_main = {};
   while (auto buf = vipc_client->recv(&meta_main, 0)) {
     frame_ = buf;
-    if (meta_main.frame_id >= preferred_frame_id) break;
+    if (meta_main.frame_id >= frame_id.value_or(0)) break;
   }
   return frame_ != nullptr;
 }
