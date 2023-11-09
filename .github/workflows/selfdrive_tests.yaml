@@ -213,7 +213,6 @@ jobs:
       run: |
         ${{ env.RUN }} "CI=1 coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
                         chmod -R 777 /tmp/comma_download_cache && \
-                        coverage combine && \
                         coverage xml"
     - name: Print diff
       id: print-diff
@@ -283,7 +282,6 @@ jobs:
       run: |
         ${{ env.RUN_CL }} "unset PYTHONWARNINGS && \
                            ONNXCPU=1 CI=1 NO_NAV=1 coverage run selfdrive/test/process_replay/model_replay.py && \
-                           coverage combine && \
                            coverage xml"
     - name: Run unit tests
       timeout-minutes: 4
