@@ -32,14 +32,14 @@ class CerealOutgoingMessageProxy:
     self.channels.append(channel)
 
   def start(self):
-    assert not self.is_running
+    assert self.task is None
     self.task = asyncio.create_task(self.run())
-    self.is_running = True
 
   def stop(self):
-    assert self.is_running
+    if self.task.done():
+      return
     self.task.cancel()
-    self.is_running = False
+    self.task = None
 
   async def run(self):
     while True:
@@ -99,13 +99,16 @@ class StreamSession:
     self.run_task = asyncio.create_task(self.run())
 
   def stop(self):
+    if self.run_task.done():
+      return
     self.run_task.cancel()
+    self.run_task = None
     asyncio.run(self.post_run_cleanup())
 
   async def get_answer(self):
     return await self.stream.start()
 
-  async def message_handler(self, channel, message):
+  async def message_handler(self, channel: aiortc.RTCDataChannel, message: bytes):
     msg_json = json.loads(message)
     try:
       msg_type, msg_data = msg_json["type"], msg_json["data"]
@@ -144,19 +147,21 @@ class StreamSession:
       self.audio_output.stop()
 
 
-async def get_stream(request):
+async def get_stream(request: web.Request):
+  stream_dict, debug_mode = request.app['streams'], request.app['debug']
   raw_body = await request.json()
   body = StreamRequestBody(**raw_body)
-  session = StreamSession(body.sdp, body.cameras, body.bridge_services_in, body.bridge_services_out, request.app['debug'])
+
+  session = StreamSession(body.sdp, body.cameras, body.bridge_services_in, body.bridge_services_out, debug_mode)
   answer = await session.get_answer()
   session.start()
 
-  request.app['streams'][session.identifier] = session
+  stream_dict[session.identifier] = session
 
   return web.json_response({"sdp": answer.sdp, "type": answer.type})
 
 
-async def on_shutdown(app):
+async def on_shutdown(app: web.Application):
   for session in app['streams'].values():
     session.stop()
   del app['streams']
