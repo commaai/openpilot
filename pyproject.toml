@@ -201,4 +201,4 @@ flake8-implicit-str-concat.allow-multiline=false
 "tools".msg = "Use openpilot.tools"
 
 [tool.coverage.run]
-concurrency="multiprocessing"
+concurrency = ["multiprocessing", "thread"]
