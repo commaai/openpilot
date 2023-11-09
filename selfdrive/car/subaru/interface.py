@@ -1,8 +1,9 @@
 from cereal import car
 from panda import Panda
 from openpilot.selfdrive.car import get_safety_config
+from openpilot.selfdrive.car.disable_ecu import disable_ecu
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
-from openpilot.selfdrive.car.subaru.values import CAR, LKAS_ANGLE, GLOBAL_GEN2, PREGLOBAL_CARS, HYBRID_CARS, SubaruFlags
+from openpilot.selfdrive.car.subaru.values import CAR, GLOBAL_ES_ADDR, LKAS_ANGLE, GLOBAL_GEN2, PREGLOBAL_CARS, HYBRID_CARS, SubaruFlags
 
 
 class CarInterface(CarInterfaceBase):
@@ -96,7 +97,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.1
 
     elif candidate in (CAR.FORESTER_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018):
-      ret.safetyConfigs[0].safetyParam = 1  # Outback 2018-2019 and Forester have reversed driver torque signal
+      ret.safetyConfigs[0].safetyParam = Panda.FLAG_SUBARU_PREGLOBAL_REVERSED_DRIVER_TORQUE  # Outback 2018-2019 and Forester have reversed driver torque signal
       ret.mass = 1568
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5
@@ -120,6 +121,9 @@ class CarInterface(CarInterfaceBase):
     #ret.experimentalLongitudinalAvailable = candidate not in (GLOBAL_GEN2 | PREGLOBAL_CARS | LKAS_ANGLE | HYBRID_CARS)
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
 
+    if candidate in GLOBAL_GEN2 and ret.openpilotLongitudinalControl:
+      ret.flags |= SubaruFlags.DISABLE_EYESIGHT
+
     if ret.openpilotLongitudinalControl:
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [0.8, 1.0, 1.5]
@@ -139,6 +143,11 @@ class CarInterface(CarInterfaceBase):
     ret.events = self.create_common_events(ret).to_msg()
 
     return ret
+
+  @staticmethod
+  def init(CP, logcan, sendcan):
+    if CP.flags & SubaruFlags.DISABLE_EYESIGHT:
+      disable_ecu(logcan, sendcan, bus=2, addr=GLOBAL_ES_ADDR, com_cont_req=b'\x28\x03\x01')
 
   def apply(self, c, now_nanos):
     return self.CC.update(c, self.CS, now_nanos)

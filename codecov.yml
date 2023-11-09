@@ -8,3 +8,5 @@ coverage:
 
 ignore:
   - "**/test_*.py"
+  - "selfdrive/test/**"
+  - "system/version.py" # codecov changes depending on if we are in a branch or not
