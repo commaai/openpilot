@@ -245,7 +245,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.TOURAN_MK2: VWCarInfo("Volkswagen Touran 2016-23"),
   CAR.TRANSPORTER_T61: [
     VWCarInfo("Volkswagen Caravelle 2020"),
-    VWCarInfo("Volkswagen California 2021"),
+    VWCarInfo("Volkswagen California 2021-23"),
   ],
   CAR.TROC_MK1: VWCarInfo("Volkswagen T-Roc 2021", footnotes=[Footnote.VW_MQB_A0]),
   CAR.AUDI_A3_MK3: [
@@ -717,12 +717,14 @@ FW_VERSIONS = {
   CAR.PASSAT_NMS: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8706K906016C \xf1\x899609',
+      b'\xf1\x8706K906016E \xf1\x899830',
       b'\xf1\x8706K906016G \xf1\x891124',
       b'\xf1\x8706K906071BJ\xf1\x894891',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927158AB\xf1\x893318',
       b'\xf1\x8709G927158BD\xf1\x893121',
+      b'\xf1\x8709G927158DK\xf1\x893594',
       b'\xf1\x8709G927158FQ\xf1\x893745',
     ],
     (Ecu.srs, 0x715, None): [
@@ -830,6 +832,7 @@ FW_VERSIONS = {
       b'\xf1\x8783A907115F \xf1\x890002',
       b'\xf1\x8783A907115G \xf1\x890001',
       b'\xf1\x8783A907115K \xf1\x890001',
+      b'\xf1\x8783A907115K \xf1\x890002',
       b'\xf1\x8704E906024AP\xf1\x891461',
       b'\xf1\x8783A907115  \xf1\x890007',
     ],
@@ -839,6 +842,7 @@ FW_VERSIONS = {
       b'\xf1\x8709G927158GC\xf1\x893821',
       b'\xf1\x8709G927158GD\xf1\x893820',
       b'\xf1\x8709G927158GM\xf1\x893936',
+      b'\xf1\x8709G927158GN\xf1\x893938',
       b'\xf1\x870D9300043  \xf1\x895202',
       b'\xf1\x870DL300011N \xf1\x892001',
       b'\xf1\x870DL300011N \xf1\x892012',
@@ -877,6 +881,7 @@ FW_VERSIONS = {
       b'\xf1\x875QM909144B \xf1\x891081\xf1\x82\x0521A60604A1',
       b'\xf1\x875QM909144C \xf1\x891082\xf1\x82\x0521A60604A1',
       b'\xf1\x875QM909144C \xf1\x891082\xf1\x82\00521A60804A1',
+      b'\xf1\x875QM907144D \xf1\x891063\xf1\x82\x002RA60A2ROM',
       b'\xf1\x875QM907144D \xf1\x891063\xf1\x82\x002SA6092SOM',
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567A6017A00',
       b'\xf1\x875QM909144B \xf1\x891081\xf1\x82\x0521A60804A1',
@@ -919,12 +924,14 @@ FW_VERSIONS = {
       b'\xf1\x8704L906057AP\xf1\x891186',
       b'\xf1\x8704L906057N \xf1\x890413',
       b'\xf1\x8705L906023E \xf1\x891352',
+      b'\xf1\x8705L906023MR\xf1\x892582',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x870BT300012G \xf1\x893102',
       b'\xf1\x870BT300012E \xf1\x893105',
       b'\xf1\x870BT300046R \xf1\x893102',
       b'\xf1\x870DV300012B \xf1\x893701',
+      b'\xf1\x870DV300012B \xf1\x893702',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x872Q0959655AE\xf1\x890506\xf1\x82\x1316170411110411--04041704161611152S1411',
@@ -1066,10 +1073,14 @@ FW_VERSIONS = {
       b'\xf1\x8705L906022M \xf1\x890901',
       b'\xf1\x8783A906259  \xf1\x890001',
       b'\xf1\x8783A906259  \xf1\x890005',
+      b'\xf1\x8783A906259C \xf1\x890002',
+      b'\xf1\x8783A906259D \xf1\x890001',
       b'\xf1\x8783A906259F \xf1\x890001',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927158CN\xf1\x893608',
+      b'\xf1\x8709G927158FL\xf1\x893758',
+      b'\xf1\x8709G927158GG\xf1\x893825',
       b'\xf1\x8709G927158GP\xf1\x893937',
       b'\xf1\x870GC300045D \xf1\x892802',
       b'\xf1\x870GC300046F \xf1\x892701',
@@ -1079,11 +1090,13 @@ FW_VERSIONS = {
       b'\xf1\x875Q0959655BQ\xf1\x890421\xf1\x82\x132121111121120031112124218C219321532111',
       b'\xf1\x875Q0959655CC\xf1\x890421\xf1\x82\x131111111111120031111224118A119321532111',
       b'\xf1\x875Q0959655CC\xf1\x890421\xf1\x82\x131111111111120031111237116A119321532111',
+      b'\xf1\x875Q0959655BQ\xf1\x890421\xf1\x82\x132121111121120031112124218A219321532111',
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567G6000300',
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567G6000800',
       b'\xf1\x875QF909144B \xf1\x895582\xf1\x82\x0571G60533A1',
+      b'\xf1\x875QF909144B \xf1\x895582\xf1\x82\x0571G60733A1',
       b'\xf1\x875TA907145D \xf1\x891051\xf1\x82\x001PG60A1P7N',
     ],
     (Ecu.fwdRadar, 0x757, None): [

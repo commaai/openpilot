@@ -1,5 +1,15 @@
 <!-- Please copy and paste the relevant template -->
 
+<!--- ***** Template: Fingerprint *****
+
+**Car**
+Which car (make, model, year) this fingerprint is for
+
+**Route**
+A route with the fingerprint
+
+-->
+
 <!--- ***** Template: Car bug fix *****
 
 **Description** [](A description of the bug and the fix. Also link any relevant issues.)

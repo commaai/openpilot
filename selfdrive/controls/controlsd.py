@@ -56,39 +56,33 @@ ENABLED_STATES = (State.preEnabled, *ACTIVE_STATES)
 
 
 class Controls:
-  def __init__(self, sm=None, pm=None, can_sock=None, CI=None):
+  def __init__(self, CI=None):
     config_realtime_process(4, Priority.CTRL_HIGH)
 
     # Ensure the current branch is cached, otherwise the first iteration of controlsd lags
     self.branch = get_short_branch("")
 
     # Setup sockets
-    self.pm = pm
-    if self.pm is None:
-      self.pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState',
-                                     'carControl', 'carEvents', 'carParams'])
+    self.pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState',
+                                   'carControl', 'carEvents', 'carParams'])
 
     self.sensor_packets = ["accelerometer", "gyroscope"]
     self.camera_packets = ["roadCameraState", "driverCameraState", "wideRoadCameraState"]
 
-    self.can_sock = can_sock
-    if can_sock is None:
-      can_timeout = None if os.environ.get('NO_CAN_TIMEOUT', False) else 20
-      self.can_sock = messaging.sub_sock('can', timeout=can_timeout)
+    can_timeout = None if os.environ.get('NO_CAN_TIMEOUT', False) else 20
+    self.can_sock = messaging.sub_sock('can', timeout=can_timeout)
 
     self.log_sock = messaging.sub_sock('androidLog')
 
     self.params = Params()
-    self.sm = sm
-    if self.sm is None:
-      ignore = self.sensor_packets + ['testJoystick']
-      if SIMULATION:
-        ignore += ['driverCameraState', 'managerState']
-      self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
-                                     'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
-                                     'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
-                                     'testJoystick'] + self.camera_packets + self.sensor_packets,
-                                    ignore_alive=ignore, ignore_avg_freq=['radarState', 'testJoystick'])
+    ignore = self.sensor_packets + ['testJoystick']
+    if SIMULATION:
+      ignore += ['driverCameraState', 'managerState']
+    self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
+                                   'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
+                                   'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
+                                   'testJoystick'] + self.camera_packets + self.sensor_packets,
+                                  ignore_alive=ignore, ignore_avg_freq=['radarState', 'testJoystick'])
 
     if CI is None:
       # wait for one pandaState and one CAN packet
@@ -126,6 +120,11 @@ class Controls:
       safety_config = car.CarParams.SafetyConfig.new_message()
       safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
       self.CP.safetyConfigs = [safety_config]
+
+    # Write previous route's CarParams
+    prev_cp = self.params.get("CarParamsPersistent")
+    if prev_cp is not None:
+      self.params.put("CarParamsPrevRoute", prev_cp)
 
     # Write CarParams for radard
     cp_bytes = self.CP.to_bytes()
@@ -625,11 +624,18 @@ class Controls:
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0:
+        # reset joystick if it hasn't been received in a while
+        should_reset_joystick = (self.sm.frame - self.sm.rcv_frame['testJoystick'])*DT_CTRL > 0.2
+        if not should_reset_joystick:
+          joystick_axes = self.sm['testJoystick'].axes
+        else:
+          joystick_axes = [0.0, 0.0]
+
         if CC.longActive:
-          actuators.accel = 4.0*clip(self.sm['testJoystick'].axes[0], -1, 1)
+          actuators.accel = 4.0*clip(joystick_axes[0], -1, 1)
 
         if CC.latActive:
-          steer = clip(self.sm['testJoystick'].axes[1], -1, 1)
+          steer = clip(joystick_axes[1], -1, 1)
           # max angle is 45 for angle-based cars, max curvature is 0.02
           actuators.steer, actuators.steeringAngleDeg, actuators.curvature = steer, steer * 45., steer * -0.02
 
@@ -879,8 +885,8 @@ class Controls:
       self.prof.display()
 
 
-def main(sm=None, pm=None, logcan=None):
-  controls = Controls(sm, pm, logcan)
+def main():
+  controls = Controls()
   controls.controlsd_thread()
 
 

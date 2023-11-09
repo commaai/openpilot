@@ -5,6 +5,7 @@ on:
     branches:
       - master
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
@@ -25,8 +26,8 @@ env:
 
   RUN_CL: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONWARNINGS=error -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $CL_BASE_IMAGE /bin/sh -c
 
-  UNIT_TEST: coverage run --append -m unittest discover
-  PYTEST: pytest --continue-on-collection-errors --cov --cov-report=xml --cov-append --durations=0 --durations-min=5
+  PYTEST: pytest --continue-on-collection-errors --cov --cov-report=xml --cov-append --durations=0 --durations-min=5 --hypothesis-seed 0
+  XDIST: -n auto --dist=loadscope
 
 jobs:
   build_release:
@@ -35,7 +36,7 @@ jobs:
     env:
       STRIPPED_DIR: /tmp/releasepilot
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - run: git lfs pull
@@ -53,11 +54,11 @@ jobs:
         cd $STRIPPED_DIR
         ${{ env.RUN }} "CI=1 python selfdrive/manager/build.py"
     - name: Run tests
-      timeout-minutes: 2
+      timeout-minutes: 3
       run: |
         cd $STRIPPED_DIR
         ${{ env.RUN }} "release/check-dirty.sh && \
-                        python -m unittest discover selfdrive/car"
+                        MAX_EXAMPLES=5 $PYTEST $XDIST selfdrive/car"
     - name: pre-commit
       timeout-minutes: 3
       run: |
@@ -77,7 +78,7 @@ jobs:
                (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && '["x86_64", "aarch64"]' || '["x86_64"]' ) }}
     runs-on: ${{ (matrix.arch == 'aarch64') && 'buildjet-2vcpu-ubuntu-2204-arm' || 'ubuntu-20.04' }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
@@ -97,7 +98,7 @@ jobs:
     runs-on: ${{ (matrix.arch == 'aarch64') && 'buildjet-2vcpu-ubuntu-2204-arm' || 'ubuntu-20.04' }}
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - name: Setup to push to repo
@@ -120,7 +121,7 @@ jobs:
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     needs: [docker_push]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: false
     - name: Setup docker
@@ -135,7 +136,7 @@ jobs:
     name: static analysis
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
@@ -147,7 +148,7 @@ jobs:
     name: valgrind
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
@@ -165,7 +166,7 @@ jobs:
     name: unit tests
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
@@ -175,7 +176,7 @@ jobs:
     - name: Run unit tests
       timeout-minutes: 15
       run: |
-        ${{ env.RUN }} "$PYTEST -n auto --dist=loadscope --timeout 30 -o cpp_files=test_* -m 'not slow' && \
+        ${{ env.RUN }} "$PYTEST $XDIST --timeout 30 -o cpp_files=test_* -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         ./selfdrive/ui/tests/test_translations.py && \
@@ -183,6 +184,8 @@ jobs:
                         ./selfdrive/test/process_replay/test_fuzzy.py"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
+      with:
+        name: ${{ github.job }}
 
   process_replay:
     name: process replay
@@ -190,7 +193,7 @@ jobs:
                    ((github.event_name != 'pull_request') || 
                     (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'buildjet-8vcpu-ubuntu-2004' || 'ubuntu-20.04' }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
@@ -227,12 +230,14 @@ jobs:
         ${{ env.RUN }} "unset PYTHONWARNINGS && CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
+      with:
+        name: ${{ github.job }}
 
   regen:
     name: regen
     runs-on: 'ubuntu-20.04'
     steps: 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
@@ -252,14 +257,14 @@ jobs:
     - name: Run regen
       timeout-minutes: 30
       run: |
-        ${{ env.RUN_CL }} "ONNXCPU=1 $PYTEST -n auto --dist=loadscope selfdrive/test/process_replay/test_regen.py && \
+        ${{ env.RUN_CL }} "ONNXCPU=1 $PYTEST $XDIST selfdrive/test/process_replay/test_regen.py && \
                            chmod -R 777 /tmp/comma_download_cache"
 
   test_modeld:
     name: model tests
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
@@ -282,10 +287,11 @@ jobs:
       timeout-minutes: 4
       run: |
         ${{ env.RUN_CL }} "unset PYTHONWARNINGS && \
-                           $UNIT_TEST selfdrive/modeld && \
-                           coverage xml"
+                           $PYTEST selfdrive/modeld"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
+      with:
+        name: ${{ github.job }}
 
   test_cars:
     name: cars
@@ -295,7 +301,7 @@ jobs:
       matrix:
         job: [0, 1, 2, 3, 4]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
@@ -310,20 +316,22 @@ jobs:
     - name: Test car models
       timeout-minutes: 25
       run: |
-        ${{ env.RUN }} "$PYTEST -n auto --dist=loadscope selfdrive/car/tests/test_models.py && \
+        ${{ env.RUN }} "$PYTEST $XDIST selfdrive/car/tests/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
         NUM_JOBS: 5
         JOB_ID: ${{ matrix.job }}
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
+      with:
+        name: ${{ github.job }}-${{ matrix.job }}
 
   car_docs_diff:
     name: PR comments
     runs-on: ubuntu-20.04
     if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
           ref: ${{ github.event.pull_request.base.ref }}
@@ -333,7 +341,7 @@ jobs:
         run: |
           ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/debug/dump_car_info.py --path /tmp/openpilot_cache/base_car_info"
           sudo chown -R $USER:$USER ${{ github.workspace }}
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
           path: current

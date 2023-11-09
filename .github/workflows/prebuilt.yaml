@@ -24,7 +24,7 @@ jobs:
         wait-interval: 30
         running-workflow-name: 'build prebuilt'
         check-regexp: ^((?!.*(build master-ci).*).)*$
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - run: git lfs pull
