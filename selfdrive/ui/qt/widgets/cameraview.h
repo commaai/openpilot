@@ -34,15 +34,15 @@ public:
   void setAutoUpdate(bool enable);
   void setBackgroundColor(const QColor &color) { bg = color; }
   void setStreamType(VisionStreamType type) { requested_stream_type = type; }
-  void clearFrame();
   inline VisionStreamType streamType() const { return requested_stream_type; }
   inline const std::set<VisionStreamType> &availableStreams() const { return available_streams; }
+  bool receiveFrame(std::optional<uint64_t> frame_id = std::nullopt);
+  void clearFrame();
 
 signals:
   void vipcAvailableStreamsUpdated();
 
 protected:
-  bool receiveFrame(std::optional<uint64_t> frame_id = std::nullopt);
   void paintGL() override;
   void initializeGL() override;
   void resizeGL(int w, int h) override { updateFrameMat(); }
@@ -68,8 +68,7 @@ protected:
   int stream_stride = 0;
   VisionStreamType requested_stream_type;
   std::set<VisionStreamType> available_streams;
-  QTimer *vipc_timer = nullptr;
-  bool conflate = false;
+  std::unique_ptr<QTimer> vipc_timer;
   std::unique_ptr<VisionIpcClient> vipc_client;
   VisionBuf *frame_ = nullptr;
   uint64_t prev_frame_id = 0;

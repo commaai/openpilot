@@ -161,17 +161,12 @@ void CameraWidget::initializeGL() {
 
 void CameraWidget::setAutoUpdate(bool enable) {
   if (enable && !vipc_timer) {
-    conflate = true;  // receive only the last vipc message
-    vipc_timer = new QTimer(this);
+    vipc_timer = std::make_unique<QTimer>(this);
     vipc_timer->setInterval(1000.0 / UI_FREQ);
-    vipc_timer->callOnTimeout(this, [this]() {
-      if (receiveFrame()) update();
-    });
+    vipc_timer->callOnTimeout(this, [this]() { if (receiveFrame()) update(); });
     vipc_timer->start();
   } else if (!enable && vipc_timer) {
-    conflate = false;  // receive all vipc messages
-    delete vipc_timer;
-    vipc_timer = nullptr;
+    vipc_timer.reset(nullptr);
   }
   clearFrame();
 }
@@ -346,6 +341,8 @@ bool CameraWidget::receiveFrame(std::optional<uint64_t> frame_id) {
     qDebug().nospace() << "connecting to stream " << requested_stream_type << ", was connected to "
                        << (vipc_client ? vipc_client->type : requested_stream_type);
     frame_ = nullptr;
+    // receive only the last vipc message if autoUpdate is enabled.
+    bool conflate = vipc_timer != nullptr;
     vipc_client.reset(new VisionIpcClient(stream_name, requested_stream_type, conflate));
   }
 
