@@ -184,6 +184,8 @@ jobs:
                         ./selfdrive/test/process_replay/test_fuzzy.py"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
+      with:
+        name: ${{ github.job }}
 
   process_replay:
     name: process replay
@@ -228,6 +230,8 @@ jobs:
         ${{ env.RUN }} "unset PYTHONWARNINGS && CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
+      with:
+        name: ${{ github.job }}
 
   regen:
     name: regen
@@ -286,6 +290,8 @@ jobs:
                            $PYTEST selfdrive/modeld"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
+      with:
+        name: ${{ github.job }}
 
   test_cars:
     name: cars
@@ -317,6 +323,8 @@ jobs:
         JOB_ID: ${{ matrix.job }}
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
+      with:
+        name: ${{ github.job }}-${{ matrix.job }}
 
   car_docs_diff:
     name: PR comments
