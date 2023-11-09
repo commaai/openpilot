@@ -1,17 +1,17 @@
-if [ $1 = "base" ]; then
+if [ "$1" = "base" ]; then
   export DOCKER_IMAGE=openpilot-base
   export DOCKER_FILE=Dockerfile.openpilot_base
-elif [ $1 = "sim" ]; then
+elif [ "$1" = "sim" ]; then
   export DOCKER_IMAGE=openpilot-sim
   export DOCKER_FILE=tools/sim/Dockerfile.sim
-elif [ $1 = "prebuilt" ]; then
+elif [ "$1" = "prebuilt" ]; then
   export DOCKER_IMAGE=openpilot-prebuilt
   export DOCKER_FILE=Dockerfile.openpilot
-elif [ $1 = "cl" ]; then
+elif [ "$1" = "cl" ]; then
   export DOCKER_IMAGE=openpilot-base-cl
   export DOCKER_FILE=Dockerfile.openpilot_base_cl
 else
-  echo "Invalid docker build image $1"
+  echo "Invalid docker build image: '$1'"
   exit 1
 fi
 

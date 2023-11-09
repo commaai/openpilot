@@ -85,28 +85,28 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.5533
       ret.mass = 4481. * CV.LB_TO_KG  # mean between min and max
 
-    elif candidate in (CAR.CHR, CAR.CHR_TSS2, CAR.CHRH_TSS2):
+    elif candidate in (CAR.CHR, CAR.CHR_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.63906
       ret.steerRatio = 13.6
       ret.tireStiffnessFactor = 0.7933
       ret.mass = 3300. * CV.LB_TO_KG
 
-    elif candidate in (CAR.CAMRY, CAR.CAMRYH, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2):
+    elif candidate in (CAR.CAMRY, CAR.CAMRY_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.82448
       ret.steerRatio = 13.7
       ret.tireStiffnessFactor = 0.7933
       ret.mass = 3400. * CV.LB_TO_KG  # mean between normal and hybrid
 
-    elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2):
+    elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.HIGHLANDER_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.8194  # average of 109.8 and 112.2 in
       ret.steerRatio = 16.0
       ret.tireStiffnessFactor = 0.8
       ret.mass = 4516. * CV.LB_TO_KG  # mean between normal and hybrid
 
-    elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALONH_2019, CAR.AVALON_TSS2, CAR.AVALONH_TSS2):
+    elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALON_TSS2):
       # starting from 2019, all Avalon variants have stop and go
       # https://engage.toyota.com/static/images/toyota_safety_sense/TSS_Applicability_Chart.pdf
       stop_and_go = candidate != CAR.AVALON
@@ -115,8 +115,7 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.7983
       ret.mass = 3505. * CV.LB_TO_KG  # mean between normal and hybrid
 
-    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2_2022,
-                       CAR.RAV4_TSS2_2023, CAR.RAV4H_TSS2_2023):
+    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023):
       ret.wheelbase = 2.68986
       ret.steerRatio = 14.3
       ret.tireStiffnessFactor = 0.7933
@@ -191,7 +190,7 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.8
       ret.mass = 4300. * CV.LB_TO_KG
 
-    elif candidate in (CAR.ALPHARD_TSS2, CAR.ALPHARDH_TSS2):
+    elif candidate == CAR.ALPHARD_TSS2:
       ret.wheelbase = 3.00
       ret.steerRatio = 14.2
       ret.tireStiffnessFactor = 0.444
