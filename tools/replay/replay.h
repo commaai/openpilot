@@ -144,7 +144,7 @@ protected:
   std::vector<std::tuple<double, double, TimelineType>> timeline;
   std::set<cereal::Event::Which> allow_list;
   std::string car_fingerprint_;
-  float speed_ = 1.0;
+  std::atomic<float> speed_ = 1.0;
   replayEventFilter event_filter = nullptr;
   void *filter_opaque = nullptr;
   int segment_cache_limit = MIN_SEGMENTS_CACHE;
