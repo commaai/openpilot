@@ -207,6 +207,7 @@ FW_VERSIONS = {
       b'\xa1\\  x04\x01',
       b'\xa1  \x03\x03',
       b'\xa1  \x02\x01',
+      b'\xa1  \x02\x02',
     ],
     (Ecu.eps, 0x746, None): [
       b'\x9b\xc0\x11\x00',
@@ -220,11 +221,13 @@ FW_VERSIONS = {
       b'\xde\"a0\x07',
       b'\xe2"aq\x07',
       b'\xde,\xa0@\x07',
+      b'\xe2,\xa0@\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xa5\xf6\x05@\x00',
       b'\xa7\xf6\x04@\x00',
       b'\xa5\xfe\xc7@\x00',
+      b'\xa7\xfe\xc4@\x00',
     ],
   },
   CAR.IMPREZA: {
