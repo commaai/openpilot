@@ -232,7 +232,8 @@ void VideoWidget::updatePlayBtnState() {
 
 // Slider
 
-Slider::Slider(QWidget *parent) : thumbnail_label(parent), QSlider(Qt::Horizontal, parent) {
+Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
+  thumbnail_label = new InfoLabel(parent);
   setMouseTracking(true);
 }
 
@@ -321,9 +322,9 @@ void Slider::mouseMoveEvent(QMouseEvent *e) {
   if (!thumb.isNull()) {
     int x = std::clamp(pos - thumb.width() / 2, THUMBNAIL_MARGIN, width() - thumb.width() - THUMBNAIL_MARGIN + 1);
     int y = -thumb.height() - THUMBNAIL_MARGIN;
-    thumbnail_label.showPixmap(mapToParent(QPoint(x, y)), utils::formatSeconds(seconds), thumb, alertInfo(seconds));
+    thumbnail_label->showPixmap(mapToParent(QPoint(x, y)), utils::formatSeconds(seconds), thumb, alertInfo(seconds));
   } else {
-    thumbnail_label.hide();
+    thumbnail_label->hide();
   }
   QSlider::mouseMoveEvent(e);
 }
@@ -335,7 +336,7 @@ bool Slider::event(QEvent *event) {
     case QEvent::FocusIn:
     case QEvent::FocusOut:
     case QEvent::Leave:
-      thumbnail_label.hide();
+      thumbnail_label->hide();
       break;
     default:
       break;
