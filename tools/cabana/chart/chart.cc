@@ -25,7 +25,7 @@ const int AXIS_X_TOP_MARGIN = 4;
 static inline bool xLessThan(const QPointF &p, float x) { return p.x() < x; }
 
 ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent)
-    : charts_widget(parent), tip_label(this), QChartView(parent) {
+    : charts_widget(parent), QChartView(parent) {
   series_type = (SeriesType)settings.chart_series_type;
   chart()->setBackgroundVisible(false);
   axis_x = new QValueAxis(this);
@@ -38,6 +38,7 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
 
   axis_x->setRange(x_range.first, x_range.second);
 
+  tip_label = new TipLabel(this);
   createToolButtons();
   setRubberBand(QChartView::HorizontalRubberBand);
   setMouseTracking(true);
@@ -416,7 +417,7 @@ qreal ChartView::niceNumber(qreal x, bool ceiling) {
 }
 
 void ChartView::leaveEvent(QEvent *event) {
-  if (tip_label.isVisible()) {
+  if (tip_label->isVisible()) {
     charts_widget->showValueTip(-1);
   }
   QChartView::leaveEvent(event);
@@ -543,7 +544,7 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   if (!is_zooming && plot_area.contains(ev->pos())) {
     const double sec = chart()->mapToValue(ev->pos()).x();
     charts_widget->showValueTip(sec);
-  } else if (tip_label.isVisible()) {
+  } else if (tip_label->isVisible()) {
     charts_widget->showValueTip(-1);
   }
 
@@ -563,7 +564,7 @@ void ChartView::showTip(double sec) {
   QRect tip_area(0, chart()->plotArea().top(), rect().width(), chart()->plotArea().height());
   QRect visible_rect = charts_widget->chartVisibleRect(this).intersected(tip_area);
   if (visible_rect.isEmpty()) {
-    tip_label.hide();
+    tip_label->hide();
     return;
   }
 
@@ -593,14 +594,14 @@ void ChartView::showTip(double sec) {
   QPoint pt(x, chart()->plotArea().top());
   text_list.push_front(QString::number(chart()->mapToValue({x, 0}).x(), 'f', 3));
   QString text = "<p style='white-space:pre'>" % text_list.join("<br />") % "</p>";
-  tip_label.showText(pt, text, this, visible_rect);
+  tip_label->showText(pt, text, this, visible_rect);
   viewport()->update();
 }
 
 void ChartView::hideTip() {
   clearTrackPoints();
   tooltip_x = -1;
-  tip_label.hide();
+  tip_label->hide();
   viewport()->update();
 }
 
