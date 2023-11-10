@@ -1,10 +1,7 @@
-import os
-Import('env', 'qt_env', 'arch', 'common', 'messaging', 'visionipc', 'replay_lib',
-       'cereal', 'transformations', 'widgets')
+Import('qt_env', 'arch', 'common', 'messaging', 'visionipc', 'replay_lib', 'cereal', 'widgets')
 
 base_frameworks = qt_env['FRAMEWORKS']
-base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
-             'capnp', 'kj', 'm', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
+base_libs = [common, messaging, cereal, visionipc, 'qt_util', 'zmq', 'capnp', 'kj', 'm', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 
 if arch == "Darwin":
   base_frameworks.append('OpenCL')
@@ -18,8 +15,7 @@ else:
 qt_libs = ['qt_util'] + base_libs
 
 cabana_env = qt_env.Clone()
-cabana_env["LIBPATH"] += ['../../opendbc/can']
-cabana_libs = [widgets, cereal, messaging, visionipc, replay_lib, 'panda', 'libdbc_static', 'avutil', 'avcodec', 'avformat', 'bz2', 'curl', 'yuv', 'usb-1.0'] + qt_libs
+cabana_libs = [widgets, cereal, messaging, visionipc, replay_lib, 'panda', 'avutil', 'avcodec', 'avformat', 'bz2', 'curl', 'yuv', 'usb-1.0'] + qt_libs
 opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../opendbc").abspath)
 cabana_env['CXXFLAGS'] += [opendbc_path]
 

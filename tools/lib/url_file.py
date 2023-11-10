@@ -1,8 +1,6 @@
 import os
 import time
-import tempfile
 import threading
-import urllib.parse
 import pycurl
 from hashlib import sha256
 from io import BytesIO
@@ -17,6 +15,10 @@ CHUNK_SIZE = 1000 * K
 def hash_256(link):
   hsh = str(sha256((link.split("?")[0]).encode('utf-8')).hexdigest())
   return hsh
+
+
+class URLFileException(Exception):
+  pass
 
 
 class URLFile:
@@ -37,7 +39,8 @@ class URLFile:
       self._curl = self._tlocal.curl
     except AttributeError:
       self._curl = self._tlocal.curl = pycurl.Curl()
-    mkdirs_exists_ok(Paths.download_cache_root())
+    if not self._force_download:
+      mkdirs_exists_ok(Paths.download_cache_root())
 
   def __enter__(self):
     return self
@@ -65,15 +68,16 @@ class URLFile:
   def get_length(self):
     if self._length is not None:
       return self._length
+
     file_length_path = os.path.join(Paths.download_cache_root(), hash_256(self._url) + "_length")
-    if os.path.exists(file_length_path) and not self._force_download:
+    if not self._force_download and os.path.exists(file_length_path):
       with open(file_length_path) as file_length:
-          content = file_length.read()
-          self._length = int(content)
-          return self._length
+        content = file_length.read()
+        self._length = int(content)
+        return self._length
 
     self._length = self.get_length_online()
-    if not self._force_download:
+    if not self._force_download and self._length != -1:
       with atomic_write_in_dir(file_length_path, mode="w") as file_length:
         file_length.write(str(self._length))
     return self._length
@@ -158,11 +162,11 @@ class URLFile:
 
     response_code = c.getinfo(pycurl.RESPONSE_CODE)
     if response_code == 416:  # Requested Range Not Satisfiable
-      raise Exception(f"Error, range out of bounds {response_code} {headers} ({self._url}): {repr(dats.getvalue())[:500]}")
+      raise URLFileException(f"Error, range out of bounds {response_code} {headers} ({self._url}): {repr(dats.getvalue())[:500]}")
     if download_range and response_code != 206:  # Partial Content
-      raise Exception(f"Error, requested range but got unexpected response {response_code} {headers} ({self._url}): {repr(dats.getvalue())[:500]}")
+      raise URLFileException(f"Error, requested range but got unexpected response {response_code} {headers} ({self._url}): {repr(dats.getvalue())[:500]}")
     if (not download_range) and response_code != 200:  # OK
-      raise Exception(f"Error {response_code} {headers} ({self._url}): {repr(dats.getvalue())[:500]}")
+      raise URLFileException(f"Error {response_code} {headers} ({self._url}): {repr(dats.getvalue())[:500]}")
 
     ret = dats.getvalue()
     self._pos += len(ret)
@@ -173,24 +177,4 @@ class URLFile:
 
   @property
   def name(self):
-    """Returns a local path to file with the URLFile's contents.
-
-       This can be used to interface with modules that require local files.
-    """
-    if self._local_file is None:
-      _, ext = os.path.splitext(urllib.parse.urlparse(self._url).path)
-      local_fd, local_path = tempfile.mkstemp(suffix=ext)
-      try:
-        os.write(local_fd, self.read())
-        local_file = open(local_path, "rb")
-      except Exception:
-        os.remove(local_path)
-        raise
-      finally:
-        os.close(local_fd)
-
-      self._local_file = local_file
-      self.read = self._local_file.read
-      self.seek = self._local_file.seek
-
-    return self._local_file.name
+    return self._url

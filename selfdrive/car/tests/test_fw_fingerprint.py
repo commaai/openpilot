@@ -97,7 +97,7 @@ class TestFwFingerprint(unittest.TestCase):
 
   def test_fw_version_lists(self):
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model):
+      with self.subTest(car_model=car_model.value):
         for ecu, ecu_fw in ecus.items():
           with self.subTest(ecu):
             duplicates = {fw for fw in ecu_fw if ecu_fw.count(fw) > 1}
@@ -119,13 +119,13 @@ class TestFwFingerprint(unittest.TestCase):
     for brand, config in FW_QUERY_CONFIGS.items():
       for car_model, ecus in VERSIONS[brand].items():
         bad_ecus = set(ecus).intersection(config.extra_ecus)
-        with self.subTest(car_model=car_model):
+        with self.subTest(car_model=car_model.value):
           self.assertFalse(len(bad_ecus), f'{car_model}: Fingerprints contain ECUs added for data collection: {bad_ecus}')
 
   def test_blacklisted_ecus(self):
     blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model):
+      with self.subTest(car_model=car_model.value):
         CP = interfaces[car_model][0].get_non_essential_params(car_model)
         if CP.carName == 'subaru':
           for ecu in ecus.keys():

@@ -103,4 +103,9 @@ public:
 
   static bool get_ssh_enabled() { return Params().getBool("SshEnabled"); }
   static void set_ssh_enabled(bool enabled) { Params().putBool("SshEnabled", enabled); }
+
+  static void config_cpu_rendering() {
+    setenv("QT_QPA_PLATFORM", "eglfs", 1); // offscreen doesn't work with EGL/GLES
+    setenv("LP_NUM_THREADS", "0", 1); // disable threading so we stay on our assigned CPU
+  }
 };
