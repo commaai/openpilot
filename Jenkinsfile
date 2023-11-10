@@ -96,7 +96,6 @@ def pcStage(String stageName, Closure body) {
           sh "git config --global --add safe.directory '*'"
           sh "git submodule update --init --recursive"
           sh "git lfs pull"
-          sh "env"
           body()
         } finally {
           sh "rm -rf ${env.WORKSPACE}/* || true"
