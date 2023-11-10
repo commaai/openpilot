@@ -77,10 +77,9 @@ class TestAthenadMethods(unittest.TestCase):
 
     end_event = multiprocessing.Event()
 
-    def send_deviceState():
-      messaging.context = messaging.Context()
-      pub_sock = messaging.pub_sock("deviceState")
+    pub_sock = messaging.pub_sock("deviceState")
 
+    def send_deviceState():
       while not end_event.is_set():
         msg = messaging.new_message('deviceState')
         pub_sock.send(msg.to_bytes())
