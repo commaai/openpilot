@@ -85,7 +85,7 @@ def pcStage(String stageName, Closure body) {
 
     checkout scm
 
-    def dockerArgs = '--user=batman -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache -e PYTHONPATH=${env.WORKSPACE}';
+    def dockerArgs = "--user=batman -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache -e PYTHONPATH=${env.WORKSPACE}";
     docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .").inside(dockerArgs) {
       timeout(time: 20, unit: 'MINUTES') {
         try {
@@ -96,6 +96,7 @@ def pcStage(String stageName, Closure body) {
           sh "git config --global --add safe.directory '*'"
           sh "git submodule update --init --recursive"
           sh "git lfs pull"
+          sh "env"
           body()
         } finally {
           sh "rm -rf ${env.WORKSPACE}/* || true"
