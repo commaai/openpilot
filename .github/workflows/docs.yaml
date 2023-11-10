@@ -54,6 +54,7 @@ jobs:
 
         cp -r ../build/docs/html/ docs/
         touch docs/.nojekyll
+        echo -n docs.comma.ai > docs/CNAME
         git add -f .
 
         git commit -m "build docs"

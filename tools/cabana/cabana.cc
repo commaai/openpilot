@@ -18,8 +18,6 @@ int main(int argc, char *argv[]) {
   app.setWindowIcon(QIcon(":cabana-icon.png"));
 
   UnixSignalHandler signalHandler;
-
-  settings.load();
   utils::setTheme(settings.theme);
 
   QCommandLineParser cmd_parser;
@@ -28,6 +26,7 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"demo", "use a demo route instead of providing your own"});
   cmd_parser.addOption({"qcam", "load qcamera"});
   cmd_parser.addOption({"ecam", "load wide road camera"});
+  cmd_parser.addOption({"dcam", "load driver camera"});
   cmd_parser.addOption({"stream", "read can messages from live streaming"});
   cmd_parser.addOption({"panda", "read can messages from panda"});
   cmd_parser.addOption({"panda-serial", "read can messages from panda with given serial", "panda-serial"});
@@ -62,13 +61,10 @@ int main(int argc, char *argv[]) {
     stream = new SocketCanStream(&app, config);
   } else {
     uint32_t replay_flags = REPLAY_FLAG_NONE;
-    if (cmd_parser.isSet("ecam")) {
-      replay_flags |= REPLAY_FLAG_ECAM;
-    } else if (cmd_parser.isSet("qcam")) {
-      replay_flags |= REPLAY_FLAG_QCAMERA;
-    } else if (cmd_parser.isSet("no-vipc")) {
-      replay_flags |= REPLAY_FLAG_NO_VIPC;
-    }
+    if (cmd_parser.isSet("ecam")) replay_flags |= REPLAY_FLAG_ECAM;
+    if (cmd_parser.isSet("qcam")) replay_flags |= REPLAY_FLAG_QCAMERA;
+    if (cmd_parser.isSet("dcam")) replay_flags |= REPLAY_FLAG_DCAM;
+    if (cmd_parser.isSet("no-vipc")) replay_flags |= REPLAY_FLAG_NO_VIPC;
 
     const QStringList args = cmd_parser.positionalArguments();
     QString route;

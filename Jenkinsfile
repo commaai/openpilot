@@ -21,6 +21,8 @@ source ~/.bash_profile
 if [ -f /TICI ]; then
   source /etc/profile
 
+  rm -rf ~/.commacache
+
   if ! systemctl is-active --quiet systemd-resolved; then
     echo "restarting resolved"
     sudo systemctl start systemd-resolved
@@ -62,7 +64,9 @@ def deviceStage(String stageName, String deviceType, List env, def steps) {
     docker.image('ghcr.io/commaai/alpine-ssh').inside('--user=root') {
       lock(resource: "", label: deviceType, inversePrecedence: true, variable: 'device_ip', quantity: 1) {
         timeout(time: 20, unit: 'MINUTES') {
-          device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
+          retry (3) {
+            device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
+          }
           steps.each { item ->
             device(device_ip, item[0], item[1])
           }
@@ -154,7 +158,7 @@ node {
           ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR ./build_devel.sh"],
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["check dirty", "release/check-dirty.sh"],
-          ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
+          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
           ["time to onroad", "cd selfdrive/test/ && pytest test_time_to_onroad.py"],
         ])
       },

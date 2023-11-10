@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QObject>
 #include <memory>
 #include <map>
 #include <set>
@@ -66,15 +67,8 @@ private:
 
 DBCManager *dbc();
 
+QString toString(const SourceSet &ss);
 inline QString msgName(const MessageId &id) {
   auto msg = dbc()->msg(id);
   return msg ? msg->name : UNTITLED;
-}
-
-inline QString toString(const SourceSet &ss) {
-  QStringList ret;
-  for (auto s : ss) {
-    ret << (s == -1 ? QString("all") : QString::number(s));
-  }
-  return ret.join(", ");
 }

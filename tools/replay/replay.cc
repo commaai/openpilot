@@ -153,12 +153,10 @@ void Replay::buildTimeline() {
 
   const auto &route_segments = route_->segments();
   for (auto it = route_segments.cbegin(); it != route_segments.cend() && !exit_; ++it) {
-    LogReader log;
-    if (!log.load(it->second.qlog.toStdString(), &exit_,
-                  {cereal::Event::Which::CONTROLS_STATE, cereal::Event::Which::USER_FLAG},
-                  !hasFlag(REPLAY_FLAG_NO_FILE_CACHE), 0, 3)) continue;
+    std::shared_ptr<LogReader> log(new LogReader());
+    if (!log->load(it->second.qlog.toStdString(), &exit_, {}, !hasFlag(REPLAY_FLAG_NO_FILE_CACHE), 0, 3)) continue;
 
-    for (const Event *e : log.events) {
+    for (const Event *e : log->events) {
       if (e->which == cereal::Event::Which::CONTROLS_STATE) {
         auto cs = e->event.getControlsState();
 
@@ -186,6 +184,8 @@ void Replay::buildTimeline() {
         timeline.push_back({toSeconds(e->mono_time), toSeconds(e->mono_time), TimelineType::UserFlag});
       }
     }
+    std::sort(timeline.begin(), timeline.end(), [](auto &l, auto &r) { return std::get<2>(l) < std::get<2>(r); });
+    emit qLogLoaded(it->first, log);
   }
 }
 

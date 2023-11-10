@@ -17,7 +17,6 @@ Currently the following processes are tested:
 * locationd
 * paramsd
 * ubloxd
-* laikad
 * torqued
 
 ### Usage
@@ -71,7 +70,7 @@ lr = LogReader(...)
 output_logs = replay_process_with_name('locationd', lr)
 
 # or list of names
-output_logs = replay_process_with_name(['ubloxd', 'locationd', 'laikad'], lr)
+output_logs = replay_process_with_name(['ubloxd', 'locationd'], lr)
 ```
 
 Supported processes: 
@@ -83,7 +82,6 @@ Supported processes:
 * locationd
 * paramsd 
 * ubloxd
-* laikad
 * torqued
 * modeld
 * dmonitoringmodeld
