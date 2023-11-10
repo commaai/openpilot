@@ -228,7 +228,7 @@ node {
       },
       'car tests': {
         pcStage("car tests") {
-          sh "selfdrive/manager/build.py"
+          sh label: "build", script: "selfdrive/manager/build.py"
           sh label: "test_models.py", script: "INTERNAL_SEG_CNT=250 INTERNAL_SEG_LIST=selfdrive/car/tests/test_models_segs.txt FILEREADER_CACHE=1 \
               pytest -n42 --dist=loadscope selfdrive/car/tests/test_models.py"
           sh label: "test_car_interfaces.py", script: "MAX_EXAMPLES=100 pytest -n42 selfdrive/car/tests/test_car_interfaces.py"
