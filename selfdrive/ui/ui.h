@@ -24,7 +24,6 @@ const int UI_FREQ = 20; // Hz
 const int BACKLIGHT_OFFROAD = 50;
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
-const int TRAJECTORY_SIZE = 33;
 const float MIN_DRAW_DISTANCE = 10.0;
 const float MAX_DRAW_DISTANCE = 100.0;
 constexpr mat3 DEFAULT_CALIBRATION = {{ 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0 }};
