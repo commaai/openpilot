@@ -212,7 +212,7 @@ jobs:
       id: run-replay
       timeout-minutes: 30
       run: |
-        ${{ env.RUN }} "CI=1 $PYTEST -n auto --dist=loadscope selfdrive/test/process_replay/test_processes.py && \
+        ${{ env.RUN }} "CI=1 $PYTEST -n auto --dist=loadscope selfdrive/test/process_replay/test_processes.py --long-diff && \
                         chmod -R 777 /tmp/comma_download_cache"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
