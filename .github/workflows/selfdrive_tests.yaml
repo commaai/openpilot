@@ -216,6 +216,8 @@ jobs:
                         chmod -R 777 /tmp/comma_download_cache"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
+      with:
+        name: ${{ github.job }}
     - name: Upload reference logs
       if: ${{ failure() && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
       run: |
