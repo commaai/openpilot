@@ -26,6 +26,7 @@ git clone --recurse-submodules https://github.com/commaai/openpilot.git
 
 ``` bash
 cd openpilot
+git lfs pull
 tools/ubuntu_setup.sh
 ```
 

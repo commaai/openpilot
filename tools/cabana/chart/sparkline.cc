@@ -1,5 +1,6 @@
 #include "tools/cabana/chart/sparkline.h"
 
+#include <algorithm>
 #include <limits>
 #include <QPainter>
 
@@ -12,52 +13,30 @@ void Sparkline::update(const MessageId &msg_id, const cabana::Signal *sig, doubl
   auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), first_ts, CompareCanEvent());
   auto last = std::upper_bound(first, msgs.cend(), ts, CompareCanEvent());
 
-  bool update_values = last_ts != last_msg_ts || time_range != range;
-  last_ts = last_msg_ts;
-  time_range = range;
-
-  if (first != last) {
-    if (update_values) {
-      values.clear();
-      if (values.capacity() < std::distance(first, last)) {
-        values.reserve(std::distance(first, last) * 2);
-      }
-      min_val = std::numeric_limits<double>::max();
-      max_val = std::numeric_limits<double>::lowest();
-      for (auto it = first; it != last; ++it) {
-        const CanEvent *e = *it;
-        double value = 0;
-        if (sig->getValue(e->dat, e->size, &value)) {
-          values.emplace_back((e->mono_time - (*first)->mono_time) / 1e9, value);
-          if (min_val > value) min_val = value;
-          if (max_val < value) max_val = value;
-        }
-      }
-      if (min_val == max_val) {
-        min_val -= 1;
-        max_val += 1;
+  if (first != last && !size.isEmpty()) {
+    points.clear();
+    double value = 0;
+    for (auto it = first; it != last; ++it) {
+      if (sig->getValue((*it)->dat, (*it)->size, &value)) {
+        points.emplace_back(((*it)->mono_time - (*first)->mono_time) / 1e9, value);
       }
     }
-  } else {
-    values.clear();
-  }
-
-  if (!values.empty()) {
-    render(sig->color, size);
+    const auto [min, max] = std::minmax_element(points.begin(), points.end(),
+                                                [](auto &l, auto &r) { return l.y() < r.y(); });
+    min_val = min->y() == max->y() ? min->y() - 1 : min->y();
+    max_val = min->y() == max->y() ? max->y() + 1 : max->y();
+    freq_ = points.size() / std::max(points.back().x() - points.front().x(), 1.0);
+    render(sig->color, range, size);
   } else {
     pixmap = QPixmap();
-    min_val = -1;
-    max_val = 1;
   }
 }
 
-void Sparkline::render(const QColor &color, QSize size) {
-  const double xscale = (size.width() - 1) / (double)time_range;
+void Sparkline::render(const QColor &color, int range, QSize size) {
+  const double xscale = (size.width() - 1) / (double)range;
   const double yscale = (size.height() - 3) / (max_val - min_val);
-  points.clear();
-  points.reserve(values.capacity());
-  for (auto &v : values) {
-    points.emplace_back(v.x() * xscale, 1 + std::abs(v.y() - max_val) * yscale);
+  for (auto &v : points) {
+    v = QPoint(v.x() * xscale, 1 + std::abs(v.y() - max_val) * yscale);
   }
 
   qreal dpr = qApp->devicePixelRatio();
