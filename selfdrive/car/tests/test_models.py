@@ -15,9 +15,11 @@ from cereal import messaging, log, car
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
+from openpilot.selfdrive.car import CanBusBase
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from openpilot.selfdrive.car.gm.values import CAR as GM
+from openpilot.selfdrive.car.toyota.values import TSS2_CAR
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from openpilot.selfdrive.car.hyundai.values import CAR as HYUNDAI
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
