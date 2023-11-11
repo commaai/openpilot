@@ -4,7 +4,7 @@ from typing import Dict, List, Union
 
 from cereal import car
 from openpilot.selfdrive.car import dbc_dict
-from openpilot.selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
+from openpilot.selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts, DashcamReason
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -39,6 +39,10 @@ class CAR(StrEnum):
 class MazdaCarInfo(CarInfo):
   package: str = "All"
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.mazda]))
+
+  def init_make(self, CP: car.CarParams):
+    if CP.carFingerprint not in (CAR.CX5_2022, CAR.CX9_2021):
+      self.dashcam_reason = DashcamReason.UNKNOWN
 
 
 CAR_INFO: Dict[str, Union[MazdaCarInfo, List[MazdaCarInfo]]] = {

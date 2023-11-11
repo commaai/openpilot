@@ -36,6 +36,7 @@ class DashcamReason(Enum):
                    "Once a test route is available from a user, this car will be supported.")
   SAFETY_UNFINISHED = ("Port in progress, safety is unfinished", "These ports are actively being worked on by either the community or comma, " +
                        "but the safety is unfinished and needs validation.")
+  UNKNOWN = ("Unknown", "")
 
 
 # A part + its comprised parts
