@@ -24,6 +24,8 @@ Dashcam vehicles do not yet work out of the box with openpilot, though there has
 |{% for column in Column %}{{car_info.get_column(column, star_icon, video_icon, footnote_tag)}}|{% endfor %}
 
 {% endfor %}
+
+---
 {% endif %}
 {% endfor %}
 

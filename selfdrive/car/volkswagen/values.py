@@ -174,7 +174,7 @@ class Footnote(Enum):
 
 
 class CarDashcamReason(Enum):
-  PQ_CAR = ("PQ-based car", "The PQ port is in dashcam-only mode due to a fixed six-minute maximum timer on HCA steering. An unsupported " +
+  PQ_CAR = ("PQ-based cars", "The PQ port is in dashcam-only mode due to a fixed six-minute maximum timer on HCA steering. An unsupported " +
             "EPS flash update to work around this timer, and enable steering down to zero, is available from: https://github.com/pd0wm/pq-flasher\n\n" +
             "It is documented in a four-part blog series: https://blog.willemmelching.nl/carhacking/2022/01/02/vw-part1/\n\n" +
             "Panda ALLOW_DEBUG firmware required.")
