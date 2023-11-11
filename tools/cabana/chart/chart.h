@@ -108,7 +108,7 @@ private:
   QGraphicsPixmapItem *move_icon;
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;
-  TipLabel tip_label;
+  TipLabel *tip_label;
   std::vector<SigItem> sigs;
   double cur_sec = 0;
   SeriesType series_type = SeriesType::Line;
