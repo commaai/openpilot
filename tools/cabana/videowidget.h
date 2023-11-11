@@ -56,7 +56,7 @@ private:
 
   QMap<uint64_t, QPixmap> thumbnails;
   std::map<uint64_t, AlertInfo> alerts;
-  InfoLabel thumbnail_label;
+  InfoLabel *thumbnail_label;
 };
 
 class VideoWidget : public QFrame {

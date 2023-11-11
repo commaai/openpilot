@@ -109,8 +109,8 @@ private:
   int column_count = 1;
   int current_column_count = 0;
   int auto_scroll_count = 0;
-  QTimer auto_scroll_timer;
-  QTimer align_timer;
+  QTimer *auto_scroll_timer;
+  QTimer *align_timer;
   int current_theme = 0;
   friend class ZoomCommand;
   friend class ChartView;
