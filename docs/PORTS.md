@@ -15,7 +15,7 @@ Every openpilot platform requires a test route to ensure a minimum standard of q
 |Chevrolet|Malibu Premier 2017[<sup>4</sup>](#footnotes)|Adaptive Cruise Control (ACC)|openpilot|18 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<details><summary>Parts</summary><sub>- 1 OBD-II connector<br>- 1 comma 3X<br>- 2 long OBD-C cable<br>- 1 mount<br>- 1 right angle OBD-C cable (1.5 ft)<br><a href="https://comma.ai/shop/comma-3x.html?make=Chevrolet&model=Malibu Premier 2017">Buy Here</a></sub></details>||
 |Holden|Astra 2017[<sup>4</sup>](#footnotes)|Adaptive Cruise Control (ACC)|openpilot|18 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<details><summary>Parts</summary><sub>- 1 OBD-II connector<br>- 1 comma 3X<br>- 2 long OBD-C cable<br>- 1 mount<br>- 1 right angle OBD-C cable (1.5 ft)<br><a href="https://comma.ai/shop/comma-3x.html?make=Holden&model=Astra 2017">Buy Here</a></sub></details>||
 
----
+<br>
 
 ## Port in progress, safety is unfinished
 These ports are actively being worked on by either the community or comma, but the safety is unfinished and needs validation.
@@ -35,7 +35,7 @@ These ports are actively being worked on by either the community or comma, but t
 |Toyota|RAV4 2023|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<details><summary>Parts</summary><sub>- 1 RJ45 cable (7 ft)<br>- 1 Toyota A connector<br>- 1 comma 3X<br>- 1 comma power v2<br>- 1 harness box<br>- 1 mount<br>- 1 right angle OBD-C cable (1.5 ft)<br><a href="https://comma.ai/shop/comma-3x.html?make=Toyota&model=RAV4 2023">Buy Here</a></sub></details>||
 |Toyota|RAV4 Hybrid 2023|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<details><summary>Parts</summary><sub>- 1 RJ45 cable (7 ft)<br>- 1 Toyota A connector<br>- 1 comma 3X<br>- 1 comma power v2<br>- 1 harness box<br>- 1 mount<br>- 1 right angle OBD-C cable (1.5 ft)<br><a href="https://comma.ai/shop/comma-3x.html?make=Toyota&model=RAV4 Hybrid 2023">Buy Here</a></sub></details>||
 
----
+<br>
 
 ## Tuning issues
 These cars work, but a poor quality tune results in a bad experience. Likely to be supported in the near future.
@@ -45,7 +45,7 @@ These cars work, but a poor quality tune results in a bad experience. Likely to 
 |Ram|2500 2020-22|Adaptive Cruise Control (ACC)|Stock|0 mph|36 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<details><summary>Parts</summary><sub>- 1 RJ45 cable (7 ft)<br>- 1 Ram connector<br>- 1 comma 3X<br>- 1 comma power v2<br>- 1 harness box<br>- 1 mount<br>- 1 right angle OBD-C cable (1.5 ft)<br><a href="https://comma.ai/shop/comma-3x.html?make=Ram&model=2500 2020-22">Buy Here</a></sub></details>||
 |Ram|3500 2019-22|Adaptive Cruise Control (ACC)|Stock|0 mph|36 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<details><summary>Parts</summary><sub>- 1 RJ45 cable (7 ft)<br>- 1 Ram connector<br>- 1 comma 3X<br>- 1 comma power v2<br>- 1 harness box<br>- 1 mount<br>- 1 right angle OBD-C cable (1.5 ft)<br><a href="https://comma.ai/shop/comma-3x.html?make=Ram&model=3500 2019-22">Buy Here</a></sub></details>||
 
----
+<br>
 
 ## Safety model mismatch
 These cars work, but a limitation with the car prevents openpilot's [safety model](https://github.com/commaai/openpilot/blob/master/docs/SAFETY.md) from being entirely implemented. Support can sometimes be found on forks; visit our [Discord](https://discord.comma.ai) or view the [wiki](https://github.com/commaai/openpilot/wiki) for questions.
@@ -55,7 +55,7 @@ These cars work, but a limitation with the car prevents openpilot's [safety mode
 |Tesla|AP1 Model S|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|None||
 |Tesla|AP2 Model S|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|None||
 
----
+<br>
 
 ## Unknown status
 
@@ -67,7 +67,7 @@ These cars work, but a limitation with the car prevents openpilot's [safety mode
 |Mazda|CX-5 2017-21|All|Stock|0 mph|28 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<details><summary>Parts</summary><sub>- 1 Mazda connector<br>- 1 RJ45 cable (7 ft)<br>- 1 comma 3X<br>- 1 comma power v2<br>- 1 harness box<br>- 1 mount<br>- 1 right angle OBD-C cable (1.5 ft)<br><a href="https://comma.ai/shop/comma-3x.html?make=Mazda&model=CX-5 2017-21">Buy Here</a></sub></details>||
 |Mazda|CX-9 2016-20|All|Stock|0 mph|28 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<details><summary>Parts</summary><sub>- 1 Mazda connector<br>- 1 RJ45 cable (7 ft)<br>- 1 comma 3X<br>- 1 comma power v2<br>- 1 harness box<br>- 1 mount<br>- 1 right angle OBD-C cable (1.5 ft)<br><a href="https://comma.ai/shop/comma-3x.html?make=Mazda&model=CX-9 2016-20">Buy Here</a></sub></details>||
 
----
+<br>
 
 ## Kia Optima Hybrid 2017
 The Optima Hybrid 2017 uses a different checksum algorithm for one of the SCC messages. Further exploration is needed.
@@ -76,7 +76,7 @@ The Optima Hybrid 2017 uses a different checksum algorithm for one of the SCC me
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 |Kia|Optima Hybrid 2017|Advanced Smart Cruise Control|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<details><summary>Parts</summary><sub>- 1 Hyundai C connector<br>- 1 RJ45 cable (7 ft)<br>- 1 comma 3X<br>- 1 comma power v2<br>- 1 harness box<br>- 1 mount<br>- 1 right angle OBD-C cable (1.5 ft)<br><a href="https://comma.ai/shop/comma-3x.html?make=Kia&model=Optima Hybrid 2017">Buy Here</a></sub></details>||
 
----
+<br>
 
 ## PQ-based cars
 The PQ port is in dashcam-only mode due to a fixed six-minute maximum timer on HCA steering. An unsupported EPS flash update to work around this timer, and enable steering down to zero, is available from: https://github.com/pd0wm/pq-flasher
@@ -91,7 +91,7 @@ Panda ALLOW_DEBUG firmware required.
 |Volkswagen|Passat NMS 2017-22|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,12</sup>](#footnotes)|12 mph|31 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<details><summary>Parts</summary><sub>- 1 J533 connector<br>- 1 USB-C coupler<br>- 1 comma 3X<br>- 1 harness box<br>- 1 long OBD-C cable<br>- 1 mount<br>- 1 right angle OBD-C cable (1.5 ft)<br><a href="https://comma.ai/shop/comma-3x.html?make=Volkswagen&model=Passat NMS 2017-22">Buy Here</a></sub></details>||
 |Volkswagen|Sharan 2018-22|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,12</sup>](#footnotes)|0 mph|31 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<details><summary>Parts</summary><sub>- 1 J533 connector<br>- 1 USB-C coupler<br>- 1 comma 3X<br>- 1 harness box<br>- 1 long OBD-C cable<br>- 1 mount<br>- 1 right angle OBD-C cable (1.5 ft)<br><a href="https://comma.ai/shop/comma-3x.html?make=Volkswagen&model=Sharan 2018-22">Buy Here</a></sub></details>||
 
----
+<br>
 
 ### Footnotes
 <sup>1</sup>openpilot Longitudinal Control (Alpha) is available behind a toggle; the toggle is only available in non-release branches such as `devel` or `master-ci`. <br />

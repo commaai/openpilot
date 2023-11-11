@@ -25,7 +25,7 @@ Dashcam vehicles do not yet work out of the box with openpilot, though there has
 
 {% endfor %}
 
----
+<br>
 {% endif %}
 {% endfor %}
 
