@@ -18,12 +18,6 @@ class TestCarDocs(unittest.TestCase):
   def setUpClass(cls):
     cls.all_cars = get_all_car_info() + get_all_car_info(dashcam_only=True)
 
-  def test_dashcam_reason(self):
-    for car in self.all_cars:
-      with self.subTest(car=car.name):
-        if car.dashcam_only:
-          self.assertTrue(car.dashcam_reason, "Missing reason for car in dashcam")
-
   def test_generator(self):
     generated_cars_md = generate_cars_md([car for car in self.all_cars if not car.dashcam_only], CARS_MD_TEMPLATE)
     with open(CARS_MD_OUT, "r") as f:
@@ -98,6 +92,12 @@ class TestCarDocs(unittest.TestCase):
         self.assertTrue(car_part_type.count(PartType.connector) == 1, f"Need to specify one harness connector: {car.name}")
         self.assertTrue(car_part_type.count(PartType.mount) == 1, f"Need to specify one mount: {car.name}")
         self.assertTrue(Cable.right_angle_obd_c_cable_1_5ft in car_parts, f"Need to specify a right angle OBD-C cable (1.5ft): {car.name}")
+
+  def test_dashcam_reason(self):
+    for car in self.all_cars:
+      with self.subTest(car=car.name):
+        if car.dashcam_only:
+          self.assertIsNotNone(car.dashcam_reason, "Missing reason for car in dashcam")
 
 
 if __name__ == "__main__":
