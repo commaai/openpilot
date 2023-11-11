@@ -199,13 +199,19 @@ class TestCarModelBase(unittest.TestCase):
     # self.safety.init_tests()
 
     # bus = 0  # random.randint(0, 3)
+    bus_offset = CanBusBase(None, fingerprint=self.fingerprint).offset
+    bus = bus_offset
     # address = data.draw(st.sampled_from([i for i in self.fingerprint[0] if i < 0x700]))  # random.randint(0x200, 0x300)
-    address = 380  # data.draw(st.sampled_from([i for i in self.fingerprint[0]]))  # random.randint(0x200, 0x300)
-    # addresses = [i for i in self.fingerprint[0]]
+    address = data.draw(st.sampled_from([i for i in self.fingerprint[bus]]))  # random.randint(0x200, 0x300)
+    # addresses = [i for i in self.fingerprint[bus_offset]]
     # weighted_address_strategy = st.sampled_from(sorted(addresses, key=lambda x: random.choices(addresses, weights=[(1 / (i + 1)) for i in range(len(addresses))])[0]))
     # address = data.draw(weighted_address_strategy)
-    size = self.fingerprint[0][address]
+    # if address not in self.fingerprint[bus_offset]:
+    #   raise unittest.SkipTest
+    size = self.fingerprint[bus][address]
     print(address, size)
+    # if self.CP.carFingerprint in TSS2_CAR:
+    #   raise unittest.SkipTest
     # print(self.fingerprint)
 
     # address = data.draw(st.integers(0x201, 0x226))
