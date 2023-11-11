@@ -254,7 +254,6 @@ class CarInfo:
 
   # reason for car being behind dashcam; a port in progress, community maintained,
   # waiting for a test route, pending safety being completed, etc.
-  # TODO Now that I'm thinking about it, this is probably better as a namedtuple instead of enum of tuples
   dashcam_reason: Optional[Enum] = None
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
