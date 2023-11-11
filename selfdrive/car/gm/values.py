@@ -6,7 +6,7 @@ from typing import Dict, List, Union
 
 from cereal import car
 from openpilot.selfdrive.car import dbc_dict
-from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
+from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, DashcamReason
 Ecu = car.CarParams.Ecu
 
 
@@ -98,13 +98,13 @@ class GMCarInfo(CarInfo):
 
 
 CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
-  CAR.HOLDEN_ASTRA: GMCarInfo("Holden Astra 2017"),
+  CAR.HOLDEN_ASTRA: GMCarInfo("Holden Astra 2017", dashcam_reason=DashcamReason.MISSING_ROUTE),
   CAR.VOLT: GMCarInfo("Chevrolet Volt 2017-18", min_enable_speed=0, video_link="https://youtu.be/QeMCN_4TFfQ"),
-  CAR.CADILLAC_ATS: GMCarInfo("Cadillac ATS Premium Performance 2018"),
-  CAR.MALIBU: GMCarInfo("Chevrolet Malibu Premier 2017"),
+  CAR.CADILLAC_ATS: GMCarInfo("Cadillac ATS Premium Performance 2018", dashcam_reason=DashcamReason.MISSING_ROUTE),
+  CAR.MALIBU: GMCarInfo("Chevrolet Malibu Premier 2017", dashcam_reason=DashcamReason.MISSING_ROUTE),
   CAR.ACADIA: GMCarInfo("GMC Acadia 2018", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo"),
   CAR.BUICK_LACROSSE: GMCarInfo("Buick LaCrosse 2017-19", "Driver Confidence Package 2"),
-  CAR.BUICK_REGAL: GMCarInfo("Buick Regal Essence 2018"),
+  CAR.BUICK_REGAL: GMCarInfo("Buick Regal Essence 2018", dashcam_reason=DashcamReason.MISSING_ROUTE),
   CAR.ESCALADE: GMCarInfo("Cadillac Escalade 2017", "Driver Assist Package"),
   CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", "Adaptive Cruise Control (ACC) & LKAS"),
   CAR.ESCALADE_ESV_2019: GMCarInfo("Cadillac Escalade ESV 2019", "Adaptive Cruise Control (ACC) & LKAS"),
@@ -116,7 +116,7 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
     GMCarInfo("Chevrolet Silverado 1500 2020-21", "Safety Package II"),
     GMCarInfo("GMC Sierra 1500 2020-21", "Driver Alert Package II", video_link="https://youtu.be/5HbNoBLzRwE"),
   ],
-  CAR.EQUINOX: GMCarInfo("Chevrolet Equinox 2019-22"),
+  CAR.EQUINOX: GMCarInfo("Chevrolet Equinox 2019-22", dashcam_reason=DashcamReason.MISSING_ROUTE),
   CAR.TRAILBLAZER: GMCarInfo("Chevrolet Trailblazer 2021-22"),
 }
 

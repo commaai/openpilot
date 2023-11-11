@@ -6,7 +6,7 @@ from typing import Dict, List, Union
 from cereal import car
 from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
-                                           Device
+                                                     DashcamReason, Device
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -91,7 +91,7 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
     FordCarInfo("Ford Explorer 2020-22"),
     FordCarInfo("Lincoln Aviator 2020-21", "Co-Pilot360 Plus"),
   ],
-  CAR.F_150_MK14: FordCarInfo("Ford F-150 2023", "Co-Pilot360 Active 2.0"),
+  CAR.F_150_MK14: FordCarInfo("Ford F-150 2023", "Co-Pilot360 Active 2.0", dashcam_reason=DashcamReason.SAFETY_UNFINISHED),
   CAR.FOCUS_MK4: FordCarInfo("Ford Focus 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS]),
   CAR.MAVERICK_MK1: [
     FordCarInfo("Ford Maverick 2022", "LARIAT Luxury"),

@@ -18,6 +18,7 @@ class TestCarDocs(unittest.TestCase):
   def setUpClass(cls):
     cls.all_cars = get_all_car_info() + get_all_car_info(dashcam_only=True)
 
+  # TODO: test for CARS.md and PORTS.md
   def test_generator(self):
     generated_cars_md = generate_cars_md([car for car in self.all_cars if not car.dashcam_only], CARS_MD_TEMPLATE)
     with open(CARS_MD_OUT, "r") as f:
@@ -96,8 +97,8 @@ class TestCarDocs(unittest.TestCase):
   def test_dashcam_reason(self):
     for car in self.all_cars:
       with self.subTest(car=car.name):
-        if car.dashcam_only:
-          self.assertIsNotNone(car.dashcam_reason, "Missing reason for car in dashcam")
+        self.assertEqual(car.dashcam_only, car.dashcam_reason is not None,
+                         "Car needs reason for being dashcam, or erroneously has one")
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ from typing import Dict, List
 from cereal import car
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.car import gen_empty_fingerprint
-from openpilot.selfdrive.car.docs_definitions import CarInfo, Column, CommonFootnote, PartType
+from openpilot.selfdrive.car.docs_definitions import CarInfo, Column, CommonFootnote, DashcamReason, PartType
 from openpilot.selfdrive.car.car_helpers import interfaces, get_interface_attr
 
 CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
@@ -67,7 +67,7 @@ def generate_cars_md(all_car_info: List[CarInfo], template_fn: str) -> str:
   footnotes = [fn.value.text for fn in get_all_footnotes()]
   cars_md: str = template.render(all_car_info=all_car_info, PartType=PartType,
                                  group_by_make=group_by_make, footnotes=footnotes,
-                                 Column=Column)
+                                 Column=Column, DashcamReason=DashcamReason)
   return cars_md
 
 
