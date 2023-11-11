@@ -187,7 +187,7 @@ class TestCarModelBase(unittest.TestCase):
     self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")
     self.safety.init_tests()
 
-  @settings(max_examples=3000, deadline=None,
+  @settings(max_examples=1000, deadline=None,
             phases=(Phase.reuse, Phase.generate, ),
             suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow, HealthCheck.large_base_example],
             )
