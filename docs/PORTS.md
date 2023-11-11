@@ -91,7 +91,6 @@ Panda ALLOW_DEBUG firmware required.
 |Volkswagen|Passat NMS 2017-22|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,12</sup>](#footnotes)|12 mph|31 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<details><summary>Parts</summary><sub>- 1 J533 connector<br>- 1 USB-C coupler<br>- 1 comma 3X<br>- 1 harness box<br>- 1 long OBD-C cable<br>- 1 mount<br>- 1 right angle OBD-C cable (1.5 ft)<br><a href="https://comma.ai/shop/comma-3x.html?make=Volkswagen&model=Passat NMS 2017-22">Buy Here</a></sub></details>||
 |Volkswagen|Sharan 2018-22|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,12</sup>](#footnotes)|0 mph|31 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<details><summary>Parts</summary><sub>- 1 J533 connector<br>- 1 USB-C coupler<br>- 1 comma 3X<br>- 1 harness box<br>- 1 long OBD-C cable<br>- 1 mount<br>- 1 right angle OBD-C cable (1.5 ft)<br><a href="https://comma.ai/shop/comma-3x.html?make=Volkswagen&model=Sharan 2018-22">Buy Here</a></sub></details>||
 
-<br>
 
 ### Footnotes
 <sup>1</sup>openpilot Longitudinal Control (Alpha) is available behind a toggle; the toggle is only available in non-release branches such as `devel` or `master-ci`. <br />
