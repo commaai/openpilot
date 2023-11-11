@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 from collections import defaultdict
+from parameterized import parameterized
 import os
 import re
 import unittest
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.car.car_helpers import interfaces, get_interface_attr
-from openpilot.selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_info
+from openpilot.selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, PORTS_MD_OUT, \
+                                         PORTS_MD_TEMPLATE, generate_cars_md, get_all_car_info
 from openpilot.selfdrive.car.docs_definitions import Cable, Column, PartType, Star
 from openpilot.selfdrive.car.honda.values import CAR as HONDA
 from openpilot.selfdrive.debug.dump_car_info import dump_car_info
@@ -18,10 +20,11 @@ class TestCarDocs(unittest.TestCase):
   def setUpClass(cls):
     cls.all_cars = get_all_car_info() + get_all_car_info(dashcam_only=True)
 
-  # TODO: test for CARS.md and PORTS.md
-  def test_generator(self):
-    generated_cars_md = generate_cars_md([car for car in self.all_cars if not car.dashcam_only], CARS_MD_TEMPLATE)
-    with open(CARS_MD_OUT, "r") as f:
+  @parameterized.expand([(False, CARS_MD_TEMPLATE, CARS_MD_OUT), (True, PORTS_MD_TEMPLATE, PORTS_MD_OUT)])
+  def test_generator(self, dashcam_only, template, out):
+    generated_cars_md = generate_cars_md([car for car in self.all_cars if
+                                          car.dashcam_only == dashcam_only], template)
+    with open(out, "r") as f:
       current_cars_md = f.read()
 
     self.assertEqual(generated_cars_md, current_cars_md,

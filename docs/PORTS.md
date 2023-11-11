@@ -60,7 +60,7 @@ These cars work, but a limitation with the car prevents openpilot's [safety mode
 |Mazda|CX-9 2016-20|All|Stock|0 mph|28 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<details><summary>Parts</summary><sub>- 1 Mazda connector<br>- 1 RJ45 cable (7 ft)<br>- 1 comma 3X<br>- 1 comma power v2<br>- 1 harness box<br>- 1 mount<br>- 1 right angle OBD-C cable (1.5 ft)<br><a href="https://comma.ai/shop/comma-3x.html?make=Mazda&model=CX-9 2016-20">Buy Here</a></sub></details>||
 
 ## Kia Optima Hybrid 2017
-The Optima Hybrid 2017 uses a different checksum algorithm for one of the SCC messages.
+The Optima Hybrid 2017 uses a different checksum algorithm for one of the SCC messages. Further exploration is needed.
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|<a href="##"><img width=2000></a>Hardware Needed<br>&nbsp;|Video|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|

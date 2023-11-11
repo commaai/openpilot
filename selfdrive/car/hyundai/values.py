@@ -149,7 +149,8 @@ class Footnote(Enum):
 
 
 class CarDashcamReason(Enum):
-  OPTIMA_HYBRID = ("Kia Optima Hybrid 2017", "The Optima Hybrid 2017 uses a different checksum algorithm for one of the SCC messages.")
+  OPTIMA_HYBRID = ("Kia Optima Hybrid 2017", "The Optima Hybrid 2017 uses a different checksum algorithm for one of the SCC messages. " +
+                                             "Further exploration is needed.")
 
 
 @dataclass
