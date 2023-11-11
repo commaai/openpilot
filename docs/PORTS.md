@@ -5,7 +5,7 @@
 Dashcam vehicles do not yet work out of the box with openpilot, though there has been effort getting support into openpilot's codebase. These cars may range from needing a user to simply test them, fixing a small bug, or [implementing safety](https://github.com/commaai/panda/tree/master/board/safety). Dashcam vehicles reference the US market unless otherwise specified.
 
 ## Missing test route
-Every openpilot platform requires a test route to ensure some minimum quality, and we are missing one for this car. Once a test route is available from a user, this car will be supported.
+Every openpilot platform requires a test route to ensure some minimum quality, and we are missing one for these cars. Once a test route is available from a user, these cars will be supported.
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|<a href="##"><img width=2000></a>Hardware Needed<br>&nbsp;|Video|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
