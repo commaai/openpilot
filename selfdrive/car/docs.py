@@ -27,6 +27,13 @@ def get_all_footnotes() -> Dict[Enum, int]:
   return {fn: idx + 1 for idx, fn in enumerate(all_footnotes)}
 
 
+def get_all_dashcam_reasons() -> List[Enum]:
+  all_dashcam_reasons = list(DashcamReason)
+  for dashcam_reasons in get_interface_attr("CarDashcamReason", ignore_none=True).values():
+    all_dashcam_reasons.extend(dashcam_reasons)
+  return all_dashcam_reasons
+
+
 def get_all_car_info(dashcam_only: bool = False) -> List[CarInfo]:
   all_car_info: List[CarInfo] = []
   footnotes = get_all_footnotes()
@@ -67,7 +74,8 @@ def generate_cars_md(all_car_info: List[CarInfo], template_fn: str) -> str:
   footnotes = [fn.value.text for fn in get_all_footnotes()]
   cars_md: str = template.render(all_car_info=all_car_info, PartType=PartType,
                                  group_by_make=group_by_make, footnotes=footnotes,
-                                 Column=Column, DashcamReason=DashcamReason)
+                                 Column=Column, DashcamReason=DashcamReason,
+                                 dashcam_reasons=get_all_dashcam_reasons())
   return cars_md
 
 

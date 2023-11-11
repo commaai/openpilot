@@ -148,6 +148,10 @@ class Footnote(Enum):
     Column.MODEL, shop_footnote=False)
 
 
+class CarDashcamReason(Enum):
+  OPTIMA_HYBRID = ("Kia Optima Hybrid 2017", "The Optima Hybrid 2017 uses a different checksum algorithm for one of the SCC messages.")
+
+
 @dataclass
 class HyundaiCarInfo(CarInfo):
   package: str = "Smart Cruise Control (SCC)"
@@ -155,6 +159,9 @@ class HyundaiCarInfo(CarInfo):
   def init_make(self, CP: car.CarParams):
     if CP.carFingerprint in CANFD_CAR:
       self.footnotes.insert(0, Footnote.CANFD)
+
+    if CP.carFingerprint == CAR.KIA_OPTIMA_H:
+      self.dashcam_reason = CarDashcamReason.OPTIMA_HYBRID
 
 
 CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {

@@ -8,7 +8,7 @@ from panda.python import uds
 from opendbc.can.can_define import CANDefine
 from openpilot.selfdrive.car import dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
-                                           Device
+                                                     DashcamReason, Device
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
@@ -173,6 +173,13 @@ class Footnote(Enum):
     Column.HARDWARE)
 
 
+class CarDashcamReason(Enum):
+  PQ_CAR = ("PQ-based car", "The PQ port is in dashcam-only mode due to a fixed six-minute maximum timer on HCA steering. An unsupported " +
+            "EPS flash update to work around this timer, and enable steering down to zero, is available from: https://github.com/pd0wm/pq-flasher\n\n" +
+            "It is documented in a four-part blog series: https://blog.willemmelching.nl/carhacking/2022/01/02/vw-part1/\n\n" +
+            "Panda ALLOW_DEBUG firmware required.")
+
+
 @dataclass
 class VWCarInfo(CarInfo):
   package: str = "Adaptive Cruise Control (ACC) & Lane Assist"
@@ -185,6 +192,9 @@ class VWCarInfo(CarInfo):
 
     if CP.carFingerprint in (CAR.CRAFTER_MK2, CAR.TRANSPORTER_T61):
       self.car_parts = CarParts([Device.threex_angled_mount, CarHarness.j533])
+
+    if CP.carFingerprint in PQ_CARS:
+      self.dashcam_reason = CarDashcamReason.PQ_CAR
 
 
 CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {

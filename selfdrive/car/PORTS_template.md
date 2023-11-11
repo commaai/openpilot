@@ -11,10 +11,10 @@
 # {{all_car_info | length}} Dashcam Cars
 
 Dashcam vehicles do not yet work out of the box with openpilot, though there has been effort getting support into openpilot's codebase. These cars may range from needing a user to simply test them, fixing a small bug, or [implementing safety](https://github.com/commaai/panda/tree/master/board/safety). Dashcam vehicles reference the US market unless otherwise specified.
-
-{% for dashcam_reason in DashcamReason %}
+{% for dashcam_reason in dashcam_reasons %}
 {% set dashcam_reason_cars = all_car_info | selectattr('dashcam_reason', 'eq', dashcam_reason) | list %}
 {% if dashcam_reason_cars | length %}
+
 ## {{dashcam_reason.value[0]}}
 {{dashcam_reason.value[1]}}
 
