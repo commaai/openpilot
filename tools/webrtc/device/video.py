@@ -2,9 +2,9 @@ import asyncio
 from typing import Optional
 
 import av
+from bodyrtc.tracks import TiciVideoStreamTrack
 
 from cereal import messaging
-from openpilot.tools.bodyteleop.webrtc.tracks import TiciVideoStreamTrack
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.common.realtime import DT_MDL, DT_DMON
 

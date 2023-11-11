@@ -10,12 +10,12 @@ from typing import List, Optional
 
 import aiortc
 from aiohttp import web
+from bodyrtc import WebRTCAnswerBuilder
+from bodyrtc.info import parse_info_from_offer
+from bodyrtc.tracks import DummyVideoStreamTrack
 
-from openpilot.tools.bodyteleop.webrtc import WebRTCAnswerBuilder
-from openpilot.tools.bodyteleop.webrtc.info import parse_info_from_offer
-from openpilot.tools.bodyteleop.webrtc.tracks import DummyVideoStreamTrack
-from openpilot.tools.bodyteleop.webrtc.device.video import LiveStreamVideoStreamTrack
-from openpilot.tools.bodyteleop.webrtc.device.audio import AudioInputStreamTrack, AudioOutputSpeaker
+from openpilot.tools.webrtc.device.video import LiveStreamVideoStreamTrack
+from openpilot.tools.webrtc.device.audio import AudioInputStreamTrack, AudioOutputSpeaker
 
 from cereal import messaging
 
