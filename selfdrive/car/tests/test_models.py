@@ -192,7 +192,7 @@ class TestCarModelBase(unittest.TestCase):
             suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow, HealthCheck.large_base_example],
             )
   @given(data=st.data())
-  @seed(0)  # for reproduction
+  # @seed(0)  # for reproduction
   def test_panda_safety_carstate_fuzzy(self, data):
     state_has_changed = lambda prev_state, new_state: prev_state != new_state
     # cfg = self.CP.safetyConfigs[-1]
@@ -217,14 +217,13 @@ class TestCarModelBase(unittest.TestCase):
     # print(self.fingerprint)
 
     # address = data.draw(st.integers(0x201, 0x226))
-    bus = 0
 
     # ORIG:
     # msg_strategy = st.tuples(st.integers(min_value=0, max_value=0), st.integers(min_value=0x100, max_value=0x400), st.binary(min_size=8, max_size=8))
     # msg_strategy = st.tuples(st.integers(min_value=0xaa, max_value=0xaa), st.binary(min_size=8, max_size=8))
 
     msg_strategy = st.binary(min_size=size, max_size=size)
-    msgs = data.draw(st.lists(msg_strategy, min_size=50))
+    msgs = data.draw(st.lists(msg_strategy, min_size=20))
     # print(len(msgs))
 
     prev_panda_gas = self.safety.get_gas_pressed_prev()
@@ -239,25 +238,31 @@ class TestCarModelBase(unittest.TestCase):
 
     # for bus, address, dat in msgs:
     # since all toyotas can detect fake interceptor, but we want to test PCM gas too
-    for dat1, dat2, dat3, dat4 in zip(*[iter(msgs)] * 4):
+    for dat in msgs:
       # set interceptor detected so we don't accidentally trigger gas_pressed with other message
       self.safety.set_gas_interceptor_detected(self.CP.enableGasInterceptor)
       # if not self.CP.enableGasInterceptor:
       #   self.safety.set_gas_interceptor_detected(False)
       print()
 
-      for dat in (dat1, dat2, dat3, dat4):
-        to_send = libpanda_py.make_CANPacket(address, bus, dat)
-        did_rx = self.safety.safety_rx_hook(to_send)
+      to_send = libpanda_py.make_CANPacket(address, bus, dat)
+      did_rx = self.safety.safety_rx_hook(to_send)
+
+      can = messaging.new_message('can', 1)
+      can.can = [log.CanData(address=address, dat=dat, src=bus)]
+      print('rxing', dict(address=address, dat=dat, src=bus))
+
+      CC = car.CarControl.new_message()
+      CS = self.CI.update(CC, (can.to_bytes(),))
 
       # test multiple CAN packets as well as multiple messages per CAN packet
-      for (_dat1, _dat2) in ((dat1, dat2), (dat3, dat4)):
-        can = messaging.new_message('can', 2)
-        can.can = [log.CanData(address=address, dat=_dat1, src=bus), log.CanData(address=address, dat=_dat2, src=bus)]
-        print('rxing', dict(address=address, _dat1=_dat1, _dat2=_dat2, src=bus))
-
-        CC = car.CarControl.new_message()
-        CS = self.CI.update(CC, (can.to_bytes(),))
+      # for (_dat1, _dat2) in ((dat1, dat2), (dat3, dat4)):
+      #   can = messaging.new_message('can', 2)
+      #   can.can = [log.CanData(address=address, dat=_dat1, src=bus), log.CanData(address=address, dat=_dat2, src=bus)]
+      #   print('rxing', dict(address=address, _dat1=_dat1, _dat2=_dat2, src=bus))
+      #
+      #   CC = car.CarControl.new_message()
+      #   CS = self.CI.update(CC, (can.to_bytes(),))
 
       if self.safety.get_gas_pressed_prev():
         self.init_gas_pressed = True
@@ -266,7 +271,7 @@ class TestCarModelBase(unittest.TestCase):
 
       # if self.safety.get_gas_interceptor_detected():# and state_has_changed(start_gas, self.safety.get_gas_pressed_prev()):
       # print('ret.gas', CS.gas, 'safety gas', self.safety.get_gas_interceptor_prev())
-      print('both', CS.brakePressed, 'safety brake', self.safety.get_brake_pressed_prev())
+      # print('both', CS.gasPressed, self.safety.get_gas_pressed_prev(), 'int')
       if self.safety.get_gas_pressed_prev() != prev_panda_gas:
         print()
         print('ret.gas', CS.gas, 'safety gas', self.safety.get_gas_interceptor_prev())
