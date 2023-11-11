@@ -32,8 +32,8 @@ class Star(Enum):
 
 
 class DashcamReason(Enum):
-  MISSING_ROUTE = ("Missing test route", "Every openpilot platform requires a test route to ensure some minimum quality, and we are missing one for this car. " +
-                   "Once a test route is available from a user, this car will be supported.")
+  MISSING_ROUTE = ("Missing test route", "Every openpilot platform requires a test route to ensure some minimum quality, " +
+                   "and we are missing one for this car. Once a test route is available from a user, this car will be supported.")
   SAFETY_UNFINISHED = ("Port in progress, safety is unfinished", "These ports are actively being worked on by either the community or comma, " +
                        "but the safety is unfinished and needs validation.")
   TUNING = ("Tuning issues", "These cars work, but a poor quality tune results in a bad experience. Likely to be supported in the near future.")
