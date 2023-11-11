@@ -27,7 +27,6 @@ env:
   RUN_CL: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONWARNINGS=error -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $CL_BASE_IMAGE /bin/sh -c
 
   PYTEST: pytest --continue-on-collection-errors --cov --cov-report=xml --cov-append --durations=0 --durations-min=5 --hypothesis-seed 0
-  XDIST: -n auto --dist=loadscope
 
 jobs:
   build_release:
@@ -58,7 +57,7 @@ jobs:
       run: |
         cd $STRIPPED_DIR
         ${{ env.RUN }} "release/check-dirty.sh && \
-                        MAX_EXAMPLES=5 $PYTEST $XDIST selfdrive/car"
+                        MAX_EXAMPLES=5 $PYTEST selfdrive/car"
     - name: pre-commit
       timeout-minutes: 3
       run: |
@@ -176,7 +175,7 @@ jobs:
     - name: Run unit tests
       timeout-minutes: 15
       run: |
-        ${{ env.RUN }} "$PYTEST $XDIST --timeout 30 -o cpp_files=test_* -m 'not slow' && \
+        ${{ env.RUN }} "$PYTEST --timeout 30 -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         ./selfdrive/ui/tests/test_translations.py && \
@@ -258,7 +257,7 @@ jobs:
     - name: Run regen
       timeout-minutes: 30
       run: |
-        ${{ env.RUN_CL }} "ONNXCPU=1 $PYTEST $XDIST selfdrive/test/process_replay/test_regen.py && \
+        ${{ env.RUN_CL }} "ONNXCPU=1 $PYTEST selfdrive/test/process_replay/test_regen.py && \
                            chmod -R 777 /tmp/comma_download_cache"
 
   test_modeld:
@@ -318,7 +317,7 @@ jobs:
     - name: Test car models
       timeout-minutes: 25
       run: |
-        ${{ env.RUN }} "$PYTEST $XDIST selfdrive/car/tests/test_models.py && \
+        ${{ env.RUN }} "$PYTEST selfdrive/car/tests/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
         NUM_JOBS: 5
