@@ -360,42 +360,6 @@ class TestCarModelBase(unittest.TestCase):
 
     # print(msgs)
     # print('\nresults', self.safety.get_gas_pressed_prev(), self.safety.get_vehicle_moving(), self.safety.get_brake_pressed_prev(), self.safety.get_regen_braking_prev(), self.safety.get_cruise_engaged_prev(), self.safety.get_acc_main_on())
-    return
-
-    for i in range(1000):
-      # self.setUp()
-      dat = os.urandom(8)
-      to_send = libpanda_py.make_CANPacket(address, bus, dat)
-      did_rx = self.safety.safety_rx_hook(to_send)
-
-      can = messaging.new_message('can', 1)
-      can.can = [log.CanData(address=address, dat=dat, src=bus)]
-
-      CC = car.CarControl.new_message()
-      CS = self.CI.update(CC, (can.to_bytes(), ))
-
-      print('gas_pressed', CS.gasPressed, self.safety.get_gas_pressed_prev())
-      print('wheel_speeds', CS.wheelSpeeds)
-      print('standstill', CS.standstill, not self.safety.get_vehicle_moving())
-
-      print('did_rx', did_rx)
-      # if did_rx:
-      #   self.assertFalse(True, 'finally did rx: {}, {}'.format(i, dat))
-      self.assertEqual(not CS.standstill, self.safety.get_vehicle_moving())
-
-    print('\nresults', self.safety.get_gas_pressed_prev(), self.safety.get_vehicle_moving(), self.safety.get_brake_pressed_prev(), self.safety.get_regen_braking_prev(), self.safety.get_cruise_engaged_prev(), self.safety.get_acc_main_on())
-
-    # self.assertEqual(CS.gasPressed, self.safety.get_gas_pressed_prev())
-    # self.assertEqual(not CS.standstill, self.safety.get_vehicle_moving())
-    # self.assertEqual(CS.brakePressed, self.safety.get_brake_pressed_prev())
-    # self.assertEqual(CS.regenBraking, self.safety.get_regen_braking_prev())
-    #
-    # if self.CP.pcmCruise:
-    #   self.assertEqual(CS.cruiseState.enabled, self.safety.get_cruise_engaged_prev())
-    #
-    # if self.CP.carName == "honda":
-    #   self.assertEqual(CS.cruiseState.available, self.safety.get_acc_main_on())
-
 
   # def test_panda_safety_carstate(self):
   #   """
