@@ -115,6 +115,7 @@ tqdm = "*"
 websocket_client = "*"
 polyline = "*"
 sconscontrib = {git = "https://github.com/SCons/scons-contrib.git"}
+bodyrtc = {git = "https://github.com/commaai/body-webrtc.git"}
 
 
 [tool.poetry.group.dev.dependencies]
