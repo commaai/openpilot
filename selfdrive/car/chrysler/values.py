@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Union
 from cereal import car
 from panda.python import uds
 from openpilot.selfdrive.car import dbc_dict
-from openpilot.selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
+from openpilot.selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts, DashcamReason
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
@@ -77,8 +77,8 @@ CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
   CAR.JEEP_CHEROKEE_2019: ChryslerCarInfo("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4"),
   CAR.RAM_1500: ChryslerCarInfo("Ram 1500 2019-23", car_parts=CarParts.common([CarHarness.ram])),
   CAR.RAM_HD: [
-    ChryslerCarInfo("Ram 2500 2020-22", car_parts=CarParts.common([CarHarness.ram])),
-    ChryslerCarInfo("Ram 3500 2019-22", car_parts=CarParts.common([CarHarness.ram])),
+    ChryslerCarInfo("Ram 2500 2020-22", car_parts=CarParts.common([CarHarness.ram]), dashcam_reason=DashcamReason.TUNING),
+    ChryslerCarInfo("Ram 3500 2019-22", car_parts=CarParts.common([CarHarness.ram]), dashcam_reason=DashcamReason.TUNING),
   ],
 }
 

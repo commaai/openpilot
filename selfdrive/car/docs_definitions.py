@@ -36,7 +36,12 @@ class DashcamReason(Enum):
                    "Once a test route is available from a user, this car will be supported.")
   SAFETY_UNFINISHED = ("Port in progress, safety is unfinished", "These ports are actively being worked on by either the community or comma, " +
                        "but the safety is unfinished and needs validation.")
-  UNKNOWN = ("Unknown", "")
+  TUNING = ("Tuning issues", "These cars work, but a poor quality tune results in a bad experience. Likely to be supported in the near future.")
+  SAFETY_MODEL = ("Safety model mismatch", "These cars work, but a limitation with the car prevents openpilot's [safety model]" +
+                  "(https://github.com/commaai/openpilot/blob/master/docs/SAFETY.md) from being entirely implemented. " +
+                  "Support can sometimes be found on forks; visit our [Discord](https://discord.comma.ai) or view the " +
+                  "[wiki](https://github.com/commaai/openpilot/wiki) for questions.")
+  UNKNOWN = ("Unknown status", "")
 
 
 # A part + its comprised parts

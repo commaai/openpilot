@@ -5,7 +5,7 @@ from typing import Dict, List, Union
 
 from cereal import car
 from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
-from openpilot.selfdrive.car.docs_definitions import CarInfo
+from openpilot.selfdrive.car.docs_definitions import CarInfo, DashcamReason
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -19,8 +19,8 @@ class CAR(StrEnum):
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
-  CAR.AP1_MODELS: CarInfo("Tesla AP1 Model S", "All"),
-  CAR.AP2_MODELS: CarInfo("Tesla AP2 Model S", "All"),
+  CAR.AP1_MODELS: CarInfo("Tesla AP1 Model S", "All", dashcam_reason=DashcamReason.SAFETY_MODEL),
+  CAR.AP2_MODELS: CarInfo("Tesla AP2 Model S", "All", dashcam_reason=DashcamReason.SAFETY_MODEL),
 }
 
 FINGERPRINTS = {

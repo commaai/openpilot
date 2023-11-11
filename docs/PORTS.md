@@ -33,7 +33,23 @@ These ports are actively being worked on by either the community or comma, but t
 |Toyota|RAV4 2023|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<details><summary>Parts</summary><sub>- 1 RJ45 cable (7 ft)<br>- 1 Toyota A connector<br>- 1 comma 3X<br>- 1 comma power v2<br>- 1 harness box<br>- 1 mount<br>- 1 right angle OBD-C cable (1.5 ft)<br><a href="https://comma.ai/shop/comma-3x.html?make=Toyota&model=RAV4 2023">Buy Here</a></sub></details>||
 |Toyota|RAV4 Hybrid 2023|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<details><summary>Parts</summary><sub>- 1 RJ45 cable (7 ft)<br>- 1 Toyota A connector<br>- 1 comma 3X<br>- 1 comma power v2<br>- 1 harness box<br>- 1 mount<br>- 1 right angle OBD-C cable (1.5 ft)<br><a href="https://comma.ai/shop/comma-3x.html?make=Toyota&model=RAV4 Hybrid 2023">Buy Here</a></sub></details>||
 
-## Unknown
+## Tuning issues
+These cars work, but a poor quality tune results in a bad experience. Likely to be supported in the near future.
+
+|Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|<a href="##"><img width=2000></a>Hardware Needed<br>&nbsp;|Video|
+|---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+|Ram|2500 2020-22|Adaptive Cruise Control (ACC)|Stock|0 mph|36 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<details><summary>Parts</summary><sub>- 1 RJ45 cable (7 ft)<br>- 1 Ram connector<br>- 1 comma 3X<br>- 1 comma power v2<br>- 1 harness box<br>- 1 mount<br>- 1 right angle OBD-C cable (1.5 ft)<br><a href="https://comma.ai/shop/comma-3x.html?make=Ram&model=2500 2020-22">Buy Here</a></sub></details>||
+|Ram|3500 2019-22|Adaptive Cruise Control (ACC)|Stock|0 mph|36 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<details><summary>Parts</summary><sub>- 1 RJ45 cable (7 ft)<br>- 1 Ram connector<br>- 1 comma 3X<br>- 1 comma power v2<br>- 1 harness box<br>- 1 mount<br>- 1 right angle OBD-C cable (1.5 ft)<br><a href="https://comma.ai/shop/comma-3x.html?make=Ram&model=3500 2019-22">Buy Here</a></sub></details>||
+
+## Safety model mismatch
+These cars work, but a limitation with the car prevents openpilot's [safety model](https://github.com/commaai/openpilot/blob/master/docs/SAFETY.md) from being entirely implemented. Support can sometimes be found on forks; visit our [Discord](https://discord.comma.ai) or view the [wiki](https://github.com/commaai/openpilot/wiki) for questions.
+
+|Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|<a href="##"><img width=2000></a>Hardware Needed<br>&nbsp;|Video|
+|---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+|Tesla|AP1 Model S|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|None||
+|Tesla|AP2 Model S|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|None||
+
+## Unknown status
 
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|<a href="##"><img width=2000></a>Hardware Needed<br>&nbsp;|Video|
