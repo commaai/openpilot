@@ -187,7 +187,7 @@ class TestCarModelBase(unittest.TestCase):
     self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")
     self.safety.init_tests()
 
-  @settings(max_examples=500, deadline=None,
+  @settings(max_examples=1000, deadline=None,
             phases=(Phase.reuse, Phase.generate, ),
             suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow, HealthCheck.large_base_example],
             )
@@ -286,7 +286,7 @@ class TestCarModelBase(unittest.TestCase):
 
       # TODO: don't fully skip
       if self.CP.carFingerprint not in (HONDA.PILOT, HONDA.RIDGELINE):
-        print('both', CS.brakePressed, 'safety brake', self.safety.get_brake_pressed_prev())
+        # print('both', CS.brakePressed, 'safety brake', self.safety.get_brake_pressed_prev())
         if self.safety.get_brake_pressed_prev() != prev_panda_brake:
           # print('brake change!')
           # print('both', CS.brakePressed, self.safety.get_brake_pressed_prev())
@@ -297,6 +297,7 @@ class TestCarModelBase(unittest.TestCase):
         print('both', CS.regenBraking, self.safety.get_regen_braking_prev())
         self.assertEqual(CS.regenBraking, self.safety.get_regen_braking_prev())
 
+      # print('both', not CS.standstill, 'safety moving', self.safety.get_vehicle_moving())
       if self.safety.get_vehicle_moving() != prev_panda_vehicle_moving:
         self.assertEqual(not CS.standstill, self.safety.get_vehicle_moving())
 
@@ -360,6 +361,7 @@ class TestCarModelBase(unittest.TestCase):
 
     # print(msgs)
     # print('\nresults', self.safety.get_gas_pressed_prev(), self.safety.get_vehicle_moving(), self.safety.get_brake_pressed_prev(), self.safety.get_regen_braking_prev(), self.safety.get_cruise_engaged_prev(), self.safety.get_acc_main_on())
+    del msgs
 
   # def test_panda_safety_carstate(self):
   #   """
