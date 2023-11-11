@@ -74,8 +74,7 @@ def generate_cars_md(all_car_info: List[CarInfo], template_fn: str) -> str:
   footnotes = [fn.value.text for fn in get_all_footnotes()]
   cars_md: str = template.render(all_car_info=all_car_info, PartType=PartType,
                                  group_by_make=group_by_make, footnotes=footnotes,
-                                 Column=Column, DashcamReason=DashcamReason,
-                                 dashcam_reasons=get_all_dashcam_reasons())
+                                 Column=Column, dashcam_reasons=get_all_dashcam_reasons())
   return cars_md
 
 
