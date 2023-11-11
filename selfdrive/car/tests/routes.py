@@ -63,7 +63,7 @@ routes = [
   CarTestRoute("168f8b3be57f66ae|2023-09-12--21-44-42", GM.ESCALADE_ESV_2019),
   CarTestRoute("c950e28c26b5b168|2018-05-30--22-03-41", GM.VOLT),
   CarTestRoute("f08912a233c1584f|2022-08-11--18-02-41", GM.BOLT_EUV, segment=1),
-  # CarTestRoute("555d4087cf86aa91|2022-12-02--12-15-07", GM.BOLT_EUV, segment=14),  # Bolt EV
+  CarTestRoute("555d4087cf86aa91|2022-12-02--12-15-07", GM.BOLT_EUV, segment=14),  # Bolt EV
   CarTestRoute("38aa7da107d5d252|2022-08-15--16-01-12", GM.SILVERADO),
   CarTestRoute("5085c761395d1fe6|2023-04-07--18-20-06", GM.TRAILBLAZER),
 
@@ -177,7 +177,7 @@ routes = [
   CarTestRoute("2f37c007683e85ba|2023-09-02--14-39-44", TOYOTA.CAMRY),  # openpilot longitudinal, with radar CAN filter
   CarTestRoute("54034823d30962f5|2021-05-24--06-37-34", TOYOTA.CAMRY),  # hybrid
   CarTestRoute("3456ad0cd7281b24|2020-12-13--17-45-56", TOYOTA.CAMRY_TSS2),
-  # CarTestRoute("ffccc77938ddbc44|2021-01-04--16-55-41", TOYOTA.CAMRY_TSS2),  # hybrid
+  CarTestRoute("ffccc77938ddbc44|2021-01-04--16-55-41", TOYOTA.CAMRY_TSS2),  # hybrid
   CarTestRoute("4e45c89c38e8ec4d|2021-05-02--02-49-28", TOYOTA.COROLLA),
   CarTestRoute("5f5afb36036506e4|2019-05-14--02-09-54", TOYOTA.COROLLA_TSS2),
   CarTestRoute("5ceff72287a5c86c|2019-10-19--10-59-02", TOYOTA.COROLLA_TSS2),  # hybrid
