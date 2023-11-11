@@ -38,6 +38,10 @@ AddOption('--compile_db',
           action='store_true',
           help='build clang compilation database')
 
+AddOption('--fno-inline',
+          action='store_true',
+          help='Disabled inlined functions when compiling to aid with debugging.')
+
 AddOption('--snpe',
           action='store_true',
           help='use SNPE on PC')
@@ -169,6 +173,9 @@ if arch != "Darwin":
 # Enable swaglog include in submodules
 cflags += ['-DSWAGLOG="\\"common/swaglog.h\\""']
 cxxflags += ['-DSWAGLOG="\\"common/swaglog.h\\""']
+
+if GetOption('fno-inline'):
+  ccflags += ["-fno-inline"]
 
 env = Environment(
   ENV=lenv,
