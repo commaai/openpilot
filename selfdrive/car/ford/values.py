@@ -228,15 +228,19 @@ FW_VERSIONS = {
     ],
     (Ecu.abs, 0x760, None): [
       b'PL34-2D053-CA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'NL34-2D053-CA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x764, None): [
       b'ML3T-14D049-AL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x706, None): [
       b'PJ6T-14H102-ABJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'ML3T-14H102-ABS\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7E0, None): [
       b'PL3A-14C204-BRB\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'PL3A-14C204-BTB\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'ML3A-14C204-VHD\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.F_150_LIGHTNING_MK1: {
