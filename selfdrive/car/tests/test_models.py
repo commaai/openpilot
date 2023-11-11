@@ -194,6 +194,7 @@ class TestCarModelBase(unittest.TestCase):
   @given(data=st.data())
   # @seed(0)  # for reproduction
   def test_panda_safety_carstate_fuzzy(self, data):
+    # TODO: how much of test_panda_safety_carstate can we re-use?
     state_has_changed = lambda prev_state, new_state: prev_state != new_state
     # cfg = self.CP.safetyConfigs[-1]
     # set_status = self.safety.set_safety_hooks(cfg.safetyModel.raw, cfg.safetyParam)
@@ -284,7 +285,7 @@ class TestCarModelBase(unittest.TestCase):
         # self.assertFalse(True)
 
       # TODO: don't fully skip
-      if self.CP.carFingerprint not in (CAR.PILOT, CAR.RIDGELINE):
+      if self.CP.carFingerprint not in (HONDA.PILOT, HONDA.RIDGELINE):
         print('both', CS.brakePressed, 'safety brake', self.safety.get_brake_pressed_prev())
         if self.safety.get_brake_pressed_prev() != prev_panda_brake:
           # print('brake change!')
