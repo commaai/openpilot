@@ -31,6 +31,12 @@ class Star(Enum):
   EMPTY = "empty"
 
 
+class DashcamReason(Enum):
+  MISSING_ROUTE = "missing route"
+  SAFETY_UNFINISHED = "safety is unfinished"
+  PORT_IN_PROGRESS = "port in progress"
+
+
 # A part + its comprised parts
 @dataclass
 class BasePart:
@@ -244,10 +250,15 @@ class CarInfo:
   # all the parts needed for the supported car
   car_parts: CarParts = field(default_factory=CarParts)
 
+  # reason for car being behind dashcam; a port in progress, community maintained,
+  # waiting for a test route, pending safety being completed, etc.
+  dashcam_reason: Optional[DashcamReason] = None
+
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
     self.car_name = CP.carName
     self.car_fingerprint = CP.carFingerprint
     self.make, self.model, self.years = split_name(self.name)
+    self.dashcam_only = CP.dashcamOnly
 
     # longitudinal column
     op_long = "Stock"

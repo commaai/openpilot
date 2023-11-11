@@ -16,10 +16,16 @@ from openpilot.selfdrive.debug.print_docs_diff import print_car_info_diff
 class TestCarDocs(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
-    cls.all_cars = get_all_car_info()
+    cls.all_cars = get_all_car_info() + get_all_car_info(dashcam_only=True)
+
+  def test_dashcam_reason(self):
+    for car in self.all_cars:
+      with self.subTest(car=car.name):
+        if car.dashcam_only:
+          self.assertTrue(car.dashcam_reason, "Missing reason for car in dashcam")
 
   def test_generator(self):
-    generated_cars_md = generate_cars_md(self.all_cars, CARS_MD_TEMPLATE)
+    generated_cars_md = generate_cars_md([car for car in self.all_cars if not car.dashcam_only], CARS_MD_TEMPLATE)
     with open(CARS_MD_OUT, "r") as f:
       current_cars_md = f.read()
 
@@ -82,6 +88,8 @@ class TestCarDocs(unittest.TestCase):
     for car in self.all_cars:
       with self.subTest(car=car):
         if car.name == "comma body":
+          raise unittest.SkipTest
+        if car.dashcam_only:
           raise unittest.SkipTest
 
         car_part_type = [p.part_type for p in car.car_parts.all_parts()]
