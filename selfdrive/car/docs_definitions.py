@@ -33,7 +33,7 @@ class Star(Enum):
 
 class DashcamReason(Enum):
   MISSING_ROUTE = "missing route"
-  SAFETY_UNFINISHED = "safety is unfinished"
+  SAFETY_UNFINISHED = "port in progress, safety is unfinished"
   PORT_IN_PROGRESS = "port in progress"
 
 
