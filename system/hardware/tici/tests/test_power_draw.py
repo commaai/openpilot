@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import pytest
 import unittest
 import time
 import threading
@@ -9,7 +10,7 @@ from typing import List
 
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
-from openpilot.system.hardware import HARDWARE, TICI
+from openpilot.system.hardware import HARDWARE
 from openpilot.system.hardware.tici.power_monitor import get_power
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.manager.manager import manager_cleanup
@@ -44,12 +45,8 @@ def send_llk_msg(done):
     time.sleep(1/20.)
 
 
+@pytest.mark.tici
 class TestPowerDraw(unittest.TestCase):
-
-  @classmethod
-  def setUpClass(cls):
-    if not TICI:
-      raise unittest.SkipTest
 
   def setUp(self):
     HARDWARE.initialize_hardware()

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import pytest
 import signal
 import time
 import unittest
@@ -17,6 +18,7 @@ MAX_STARTUP_TIME = 3
 BLACKLIST_PROCS = ['manage_athenad', 'pandad', 'pigeond']
 
 
+@pytest.mark.tici
 class TestManager(unittest.TestCase):
   def setUp(self):
     os.environ['PASSIVE'] = '0'
