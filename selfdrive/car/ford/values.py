@@ -63,7 +63,9 @@ class RADAR:
 DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("ford_lincoln_base_pt", RADAR.DELPHI_MRR))
 
 # CAN-FD radar is not yet supported
-DBC[CAR.F_150_MK14, CAR.F_150_LIGHTNING_MK1, CAR.MUSTANG_MACH_E_MK1] = dbc_dict("ford_lincoln_base_pt", None)
+DBC[CAR.F_150_MK14] = dbc_dict("ford_lincoln_base_pt", None)
+DBC[CAR.F_150_LIGHTNING_MK1] = dbc_dict("ford_lincoln_base_pt", None)
+DBC[CAR.MUSTANG_MACH_E_MK1] = dbc_dict("ford_lincoln_base_pt", None)
 
 
 class Footnote(Enum):
