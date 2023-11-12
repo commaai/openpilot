@@ -83,7 +83,7 @@ class FordCarInfo(CarInfo):
     if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1):
       self.car_parts = CarParts([Device.threex_angled_mount, CarHarness.ford_q3])
     if CP.carFingerprint in (CAR.F_150_LIGHTNING_MK1):
-      SELF.car_parts = CarParts([Device.threex_angled_mount, CarHarness.ford_q4])
+      self.car_parts = CarParts([Device.threex_angled_mount, CarHarness.ford_q4])
     if CP.carFingerprint in (CAR.MUSTANG_MACH_E_MK1):
       self.car_parts = CarParts([CarHarness.ford_q4])
 
