@@ -7,7 +7,6 @@
 #include "cereal/services.h"
 #include "common/params.h"
 #include "common/timing.h"
-#include "system/hardware/hw.h"
 #include "tools/replay/util.h"
 
 Replay::Replay(QString route, QStringList allow, QStringList block, QStringList base_blacklist, SubMaster *sm_, uint32_t flags, QString data_dir, QObject *parent)
@@ -37,9 +36,6 @@ Replay::Replay(QString route, QStringList allow, QStringList block, QStringList 
     // the following events are needed for replay to work properly.
     allow_list.insert(cereal::Event::Which::INIT_DATA);
     allow_list.insert(cereal::Event::Which::CAR_PARAMS);
-    if (sockets_[cereal::Event::Which::PANDA_STATES] != nullptr) {
-      allow_list.insert(cereal::Event::Which::PANDA_STATE_D_E_P_R_E_C_A_T_E_D);
-    }
   }
 
   qDebug() << "services " << s;
@@ -417,16 +413,6 @@ void Replay::stream() {
       cur_which = evt->which;
       cur_mono_time_ = evt->mono_time;
       setCurrentSegment(toSeconds(cur_mono_time_) / 60);
-
-      // migration for pandaState -> pandaStates to keep UI working for old segments
-      if (cur_which == cereal::Event::Which::PANDA_STATE_D_E_P_R_E_C_A_T_E_D &&
-          sockets_[cereal::Event::Which::PANDA_STATES] != nullptr) {
-        MessageBuilder msg;
-        auto ps = msg.initEvent().initPandaStates(1);
-        ps[0].setIgnitionLine(true);
-        ps[0].setPandaType(cereal::PandaState::PandaType::DOS);
-        pm->send(sockets_[cereal::Event::Which::PANDA_STATES], msg);
-      }
 
       if (cur_which < sockets_.size() && sockets_[cur_which] != nullptr) {
         // keep time
