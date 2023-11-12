@@ -256,9 +256,6 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7E0, None): [
       b'NL3A-14C204-BAR\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.shiftByWire, 0x732, None): [
-      b'ML3P-7P470-AK\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
   },
   CAR.MUSTANG_MACH_E_MK1: {
     (Ecu.eps, 0x730, None): [
