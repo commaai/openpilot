@@ -14,7 +14,7 @@ export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
 export MAPBOX_TOKEN='${env.MAPBOX_TOKEN}'
-export PYTEST_ADDOPTS="-c selfdrive/test/pytest-tici.ini"
+export PYTEST_ADDOPTS="-c selfdrive/test/pytest-tici.ini --rootdir ."
 
 
 export GIT_SSH_COMMAND="ssh -i /data/gitkey"
