@@ -183,7 +183,7 @@ def webrtcd_thread(host: str, port: int, debug: bool):
   web.run_app(app, host=host, port=port)
 
 
-if __name__=="__main__":
+def main():
   parser = argparse.ArgumentParser(description="WebRTC daemon")
   parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to listen on")
   parser.add_argument("--port", type=int, default=5001, help="Port to listen on")
@@ -191,3 +191,7 @@ if __name__=="__main__":
   args = parser.parse_args()
 
   webrtcd_thread(args.host, args.port, args.debug)
+
+
+if __name__=="__main__":
+  main()
