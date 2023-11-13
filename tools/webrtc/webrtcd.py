@@ -9,10 +9,10 @@ import logging
 from typing import List, Optional
 
 import aiortc
+from aiortc.mediastreams import VideoStreamTrack
 from aiohttp import web
 from bodyrtc import WebRTCAnswerBuilder
 from bodyrtc.info import parse_info_from_offer
-from bodyrtc.tracks import DummyVideoStreamTrack
 
 from openpilot.tools.webrtc.device.video import LiveStreamVideoStreamTrack
 from openpilot.tools.webrtc.device.audio import AudioInputStreamTrack, AudioOutputSpeaker
@@ -67,7 +67,7 @@ class StreamSession:
     assert len(cameras) == config.n_expected_camera_tracks, "Incoming stream has misconfigured number of video tracks"
     for cam in cameras:
       if debug_mode:
-        track = DummyVideoStreamTrack(cam)
+        track = VideoStreamTrack()
       else:
         track = LiveStreamVideoStreamTrack(cam)
       builder.add_video_stream(cam, track)
