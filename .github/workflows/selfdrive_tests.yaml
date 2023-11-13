@@ -208,30 +208,20 @@ jobs:
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run replay
+      id: run-replay
       timeout-minutes: 30
       run: |
-        ${{ env.RUN }} "CI=1 coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
-                        chmod -R 777 /tmp/comma_download_cache && \
-                        coverage combine && \
-                        coverage xml"
-    - name: Print diff
-      id: print-diff
-      if: always()
-      run: cat selfdrive/test/process_replay/diff.txt
-    - uses: actions/upload-artifact@v3
-      if: always()
-      continue-on-error: true
-      with:
-        name: process_replay_diff.txt
-        path: selfdrive/test/process_replay/diff.txt
-    - name: Upload reference logs
-      if: ${{ failure() && steps.print-diff.outcome == 'success' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
-      run: |
-        ${{ env.RUN }} "unset PYTHONWARNINGS && CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
+        ${{ env.RUN }} "CI=1 $PYTEST -n auto --dist=loadscope selfdrive/test/process_replay/test_processes.py --long-diff && \
+                        chmod -R 777 /tmp/comma_download_cache"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
       with:
         name: ${{ github.job }}
+    - name: Upload reference logs
+      if: ${{ failure() && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
+      run: |
+        ${{ env.RUN }} "unset PYTHONWARNINGS && CI=1 AZURE_TOKEN='$AZURE_TOKEN' \
+                        pytest -n auto --dist=loadscope selfdrive/test/process_replay/test_processes.py --upload-only"
 
   regen:
     name: regen
