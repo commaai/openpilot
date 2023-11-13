@@ -4,7 +4,6 @@
 #include <map>
 #include <memory>
 #include <optional>
-#include <set>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -50,8 +49,8 @@ class Replay : public QObject {
   Q_OBJECT
 
 public:
-  Replay(QString route, QStringList allow, QStringList block, QStringList base_blacklist, SubMaster *sm = nullptr,
-          uint32_t flags = REPLAY_FLAG_NONE, QString data_dir = "", QObject *parent = 0);
+  Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr,
+         uint32_t flags = REPLAY_FLAG_NONE, QString data_dir = "", QObject *parent = 0);
   ~Replay();
   bool load();
   void start(int seconds = 0);
@@ -114,8 +113,6 @@ protected:
   }
 
   QThread *stream_thread_ = nullptr;
-
-  // logs
   std::mutex stream_lock_;
   std::condition_variable stream_cv_;
   std::atomic<bool> updating_events_ = false;
@@ -142,7 +139,6 @@ protected:
   std::mutex timeline_lock;
   QFuture<void> timeline_future;
   std::vector<std::tuple<double, double, TimelineType>> timeline;
-  std::set<cereal::Event::Which> allow_list;
   std::string car_fingerprint_;
   std::atomic<float> speed_ = 1.0;
   replayEventFilter event_filter = nullptr;
