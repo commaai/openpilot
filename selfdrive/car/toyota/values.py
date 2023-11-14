@@ -123,7 +123,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
     ToyotaCarInfo("Toyota Camry Hybrid 2018-20", video_link="https://www.youtube.com/watch?v=Q2DYY0AWKgk"),
   ],
   CAR.CAMRY_TSS2: [
-    ToyotaCarInfo("Toyota Camry 2021-23", footnotes=[Footnote.CAMRY]),
+    ToyotaCarInfo("Toyota Camry 2021-24", footnotes=[Footnote.CAMRY]),
     ToyotaCarInfo("Toyota Camry Hybrid 2021-24"),
   ],
   CAR.CHR: [
