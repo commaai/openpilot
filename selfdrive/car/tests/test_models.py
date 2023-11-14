@@ -78,7 +78,7 @@ class TestCarModelBase(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
-    if cls.__name__ == 'TestCarModel' or cls.__name__.endswith('Base'):
+    if cls.__name__ == 'TestCarModel' or cls.__name__.endswith(('Base', 'Meta')):
       raise unittest.SkipTest
 
     if 'FILTER' in os.environ:
@@ -383,14 +383,52 @@ class TestCarModelBase(unittest.TestCase):
     failed_checks = {k: v for k, v in checks.items() if v > 0}
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
 
+import sys
+
+
+def callback(cls, num, params_dict):
+  print('marking', cls.car_model, cls.test_route, file=sys.stderr)
+  pytest.mark.xdist_group(f"test_models_{cls.car_model}_{cls.test_route}")(cls)
+
+
+@pytest.fixture(autouse=True)
+def group_tests_by_car_model(request):
+  print(request, file=sys.stderr)
+  car_model = getattr(request.cls, 'car_model', None)
+  if car_model:
+    marker = f"test_models_{car_model}"
+    # Dynamically add a marker based on car_model
+    request.node.add_marker(pytest.mark.xdist_group(marker))
+
+
+class _TestCarModelMeta(type):
+  def __new__(cls, *args, **kwargs):
+    # print('new', cls.__name__, args[0].__name__,  file=sys.stderr)
+    # pytest.mark.xdist_group(f"test_models_{args[0].car_model}_{args[0].test_route}")(cls)
+    new_cls = super().__new__(cls, *args, **kwargs)
+    if args[0] != 'TestCarModel':
+      # print('new marked', cls, args, kwargs, file=sys.stderr)
+      # print(args[2])
+      # # print(args[2]['car_model'])
+      # print()
+      pytest.mark.xdist_group(f"test_models_{args[2]['car_model']}_{args[2]['test_route']}")(new_cls)
+    return new_cls
+
+
+# class TestCarModel(metaclass=TestCarModelMeta):
+#   pass
+
 
 @parameterized_class(('car_model', 'test_route'), get_test_cases())
-class TestCarModel(TestCarModelBase):
-  def __init__(self, *args, **kwargs):
-    super().__init__(*args, **kwargs)
-    # setUpClass is slow, run all of each test route's tests in one process
-    pytest.mark.xdist_group(f"test_models_{self.car_model}_{self.test_route}")(self)
+class TestCarModel(TestCarModelBase, metaclass=_TestCarModelMeta):
+  pass
+  # def __init__(self, *args, **kwargs):
+  #   super().__init__(*args, **kwargs)
+  #   # setUpClass is slow, run all of each test route's tests in one process
+  #   print('marking', file=sys.stderr)
+  #   # pytest.mark.xdist_group(f"test_models_{self.car_model}_{self.test_route}")(self)
 
 
 if __name__ == "__main__":
+  print('unittestmain', file=sys.stderr)
   unittest.main()
