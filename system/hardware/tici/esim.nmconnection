@@ -2,15 +2,15 @@
 id=esim
 uuid=fff6553c-3284-4707-a6b1-acc021caaafb
 type=gsm
-interface-name=cdc-wdm0
 permissions=
 autoconnect=true
-autoconnect-retries=5
+autoconnect-retries=100
 
 [gsm]
 apn=
 home-only=false
 auto-config=true
+sim-id=
 
 [ipv4]
 route-metric=1000

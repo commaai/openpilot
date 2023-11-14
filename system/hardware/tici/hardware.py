@@ -3,6 +3,7 @@ import math
 import os
 import subprocess
 import time
+import tempfile
 from enum import IntEnum
 from functools import cached_property, lru_cache
 from pathlib import Path
@@ -532,14 +533,19 @@ class Tici(HardwareBase):
       except Exception:
         pass
 
-    # blue prime config
+    # prime config
     blue_prime = sim_id.startswith('8901410')
     initial_apn = "Broadband" if blue_prime else ""
     os.system(f'mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn={initial_apn}"')
+    if sim_id.startswith('8985235'):
+      # eSIM prime
+      with open('/data/openpilot/system/hardware/tici/esim.nmconnection') as f, tempfile.NamedTemporaryFile(mode='w') as tf:
+        dat = f.read()
+        dat = dat.replace("sim-id=", f"sim-id={sim_id}")
 
-    # new prime
-    if sim_id.startswith('89852'):
-      os.system("sudo cp /data/openpilot/system/hardware/tici/esim.nmconnection /data/etc/NetworkManager/system-connections/esim.nmconnection")
+        tf.write(dat)
+        tf.flush()
+        os.system(f"sudo cp {tf.name} /data/etc/NetworkManager/system-connections/esim.nmconnection")
       os.system("sudo nmcli con reload")
 
   def get_networks(self):
