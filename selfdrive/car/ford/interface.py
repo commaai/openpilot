@@ -14,7 +14,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "ford"
-    ret.dashcamOnly = candidate in {CAR.F_150_MK14, CAR.F_150_LIGHTNING_MK1, CAR.MUSTANG_MACH_E_MK1}
+    ret.dashcamOnly = candidate in CANFD_CAR
 
     ret.radarUnavailable = True
     ret.steerControlType = car.CarParams.SteerControlType.angle
@@ -105,7 +105,7 @@ class CarInterface(CarInterfaceBase):
     events = self.create_common_events(ret, extra_gears=[GearShifter.manumatic])
     if not self.CS.vehicle_sensors_valid:
       events.add(car.CarEvent.EventName.vehicleSensorsInvalid)
-    if self.CS.hybrid_platform:
+    if self.CS.hybrid_platform and self.CP.carFingerprint not in CANFD_CAR:
       events.add(car.CarEvent.EventName.startupNoControl)
 
     ret.events = events.to_msg()
