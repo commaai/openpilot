@@ -388,6 +388,7 @@ class TestCarModelBase(unittest.TestCase):
 class TestCarModel(TestCarModelBase):
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
+    # setUpClass is slow, run all of each test route's tests in one process
     pytest.mark.xdist_group(f"test_models_{self.car_model}_{self.test_route}")(self)
 
 
