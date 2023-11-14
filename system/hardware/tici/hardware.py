@@ -105,7 +105,7 @@ class Tici(HardwareBase):
   def nm(self):
     return self.bus.get_object(NM, '/org/freedesktop/NetworkManager')
 
-  @cached_property
+  @property
   def mm(self):
     return self.bus.get_object(MM, '/org/freedesktop/ModemManager1')
 

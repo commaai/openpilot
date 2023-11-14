@@ -167,6 +167,7 @@ node {
       'HW + Unit Tests': {
         deviceStage("tici", "tici-common", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
+          ["test modem", "pytest selfdrive/thermald/tests/test_modem.py"],
           ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
           ["test power draw", "./system/hardware/tici/tests/test_power_draw.py"],
           ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
