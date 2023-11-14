@@ -14,6 +14,8 @@ export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
 export MAPBOX_TOKEN='${env.MAPBOX_TOKEN}'
+export PYTEST_ADDOPTS="-c selfdrive/test/pytest-tici.ini --rootdir ."
+
 
 export GIT_SSH_COMMAND="ssh -i /data/gitkey"
 
@@ -159,7 +161,7 @@ node {
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["check dirty", "release/check-dirty.sh"],
           ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
-          ["time to onroad", "cd selfdrive/test/ && pytest test_time_to_onroad.py"],
+          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
         ])
       },
       'HW + Unit Tests': {
@@ -194,17 +196,17 @@ node {
       'sensord': {
         deviceStage("LSM + MMC", "tici-lsmc", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
-          ["test sensord", "cd system/sensord/tests && pytest test_sensord.py"],
+          ["test sensord", "pytest system/sensord/tests/test_sensord.py"],
         ])
         deviceStage("BMX + LSM", "tici-bmx-lsm", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
-          ["test sensord", "cd system/sensord/tests && pytest test_sensord.py"],
+          ["test sensord", "pytest system/sensord/tests/test_sensord.py"],
         ])
       },
       'replay': {
         deviceStage("tici", "tici-replay", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
-          ["model replay", "cd selfdrive/test/process_replay && ./model_replay.py"],
+          ["model replay", "selfdrive/test/process_replay/model_replay.py"],
         ])
       },
       'tizi': {
@@ -231,7 +233,7 @@ node {
           sh label: "build", script: "selfdrive/manager/build.py"
           sh label: "test_models.py", script: "INTERNAL_SEG_CNT=250 INTERNAL_SEG_LIST=selfdrive/car/tests/test_models_segs.txt FILEREADER_CACHE=1 \
               pytest -n42 --dist=loadscope selfdrive/car/tests/test_models.py"
-          sh label: "test_car_interfaces.py", script: "MAX_EXAMPLES=100 pytest -n42 selfdrive/car/tests/test_car_interfaces.py"
+          sh label: "test_car_interfaces.py", script: "MAX_EXAMPLES=100 pytest -n42 --dist=load selfdrive/car/tests/test_car_interfaces.py"
         }
       },
 

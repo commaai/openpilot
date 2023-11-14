@@ -163,6 +163,12 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.444
       ret.mass = 3736.8 * CV.LB_TO_KG
 
+    elif candidate == CAR.LEXUS_GS_F:
+      ret.wheelbase = 2.84988
+      ret.steerRatio = 13.3
+      ret.tireStiffnessFactor = 0.444
+      ret.mass = 4034. * CV.LB_TO_KG
+
     elif candidate == CAR.LEXUS_CTH:
       stop_and_go = True
       ret.wheelbase = 2.60

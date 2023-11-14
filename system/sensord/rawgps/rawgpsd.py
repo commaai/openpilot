@@ -8,7 +8,7 @@ import time
 import pycurl
 import shutil
 import subprocess
-from datetime import datetime
+import datetime
 from multiprocessing import Process, Event
 from typing import NoReturn, Optional
 from struct import unpack_from, calcsize, pack
@@ -16,9 +16,6 @@ from struct import unpack_from, calcsize, pack
 from cereal import log
 import cereal.messaging as messaging
 from openpilot.common.gpio import gpio_init, gpio_set
-from laika.gps_time import GPSTime, utc_to_gpst, get_leap_seconds
-from laika.helpers import get_prn_from_nmea_id
-from laika.constants import SECS_IN_HR, SECS_IN_DAY, SECS_IN_WEEK
 from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.system.swaglog import cloudlog
 from openpilot.system.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
@@ -211,7 +208,7 @@ def setup_quectel(diag: ModemDiag) -> bool:
     inject_assistance()
     os.remove(ASSIST_DATA_FILE)
   #at_cmd("AT+QGPSXTRADATA?")
-  time_str = datetime.utcnow().strftime("%Y/%m/%d,%H:%M:%S")
+  time_str = datetime.datetime.utcnow().strftime("%Y/%m/%d,%H:%M:%S")
   at_cmd(f"AT+QGPSXTRATIME=0,\"{time_str}\",1,1,1000")
 
   at_cmd("AT+QGPSCFG=\"outport\",\"usbnmea\"")
@@ -293,7 +290,6 @@ def main() -> NoReturn:
   diag = ModemDiag()
   r = setup_quectel(diag)
   want_assistance = not r
-  current_gps_time = utc_to_gpst(GPSTime.from_datetime(datetime.utcnow()))
   cloudlog.warning("quectel setup done")
   gpio_init(GPIO.GNSS_PWR_EN, True)
   gpio_set(GPIO.GNSS_PWR_EN, True)
@@ -366,8 +362,6 @@ def main() -> NoReturn:
               setattr(sv.measurementStatus, kk, bool(v & (1<<vv)))
           else:
             setattr(sv, k, v)
-      if report.source == log.QcomGnss.MeasurementSource.gps:
-        current_gps_time = GPSTime(report.gpsWeek, report.gpsMilliseconds / 1000.0)
       pm.send('qcomGnss', msg)
     elif log_type == LOG_GNSS_POSITION_REPORT:
       report = unpack_position(log_payload)
@@ -383,8 +377,12 @@ def main() -> NoReturn:
       gps.altitude = report["q_FltFinalPosAlt"]
       gps.speed = math.sqrt(sum([x**2 for x in vNED]))
       gps.bearingDeg = report["q_FltHeadingRad"] * 180/math.pi
-      gps.unixTimestampMillis = GPSTime(report['w_GpsWeekNumber'],
-                                        1e-3*report['q_GpsFixTimeMs']).as_unix_timestamp()*1e3
+
+      # TODO needs update if there is another leap second, after june 2024?
+      dt_timestamp = (datetime.datetime(1980, 1, 6, 0, 0, 0, 0, None) +
+                      datetime.timedelta(weeks=report['w_GpsWeekNumber']) +
+                      datetime.timedelta(seconds=(1e-3*report['q_GpsFixTimeMs'] - 18)))
+      gps.unixTimestampMillis = dt_timestamp.timestamp()*1e3
       gps.source = log.GpsLocationData.SensorSource.qcomdiag
       gps.vNED = vNED
       gps.verticalAccuracy = report["q_FltVdop"]
@@ -395,8 +393,6 @@ def main() -> NoReturn:
       if gps.flags:
         want_assistance = False
         stop_download_event.set()
-
-
       pm.send('gpsLocation', msg)
 
     elif log_type == LOG_GNSS_OEMDRE_SVPOLY_REPORT:
@@ -415,6 +411,10 @@ def main() -> NoReturn:
         else:
           setattr(poly, k, v)
 
+      '''
+      # Timestamp glonass polys with GPSTime
+      from laika.gps_time import GPSTime, utc_to_gpst, get_leap_seconds
+      from laika.helpers import get_prn_from_nmea_id
       prn = get_prn_from_nmea_id(poly.svId)
       if prn[0] == 'R':
         epoch = GPSTime(current_gps_time.week, (poly.t0 - 3*SECS_IN_HR + SECS_IN_DAY) % (SECS_IN_WEEK) + get_leap_seconds(current_gps_time))
@@ -429,6 +429,7 @@ def main() -> NoReturn:
 
       poly.gpsWeek = epoch.week
       poly.gpsTow = epoch.tow
+      '''
       pm.send('qcomGnss', msg)
 
     elif log_type in [LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT]:

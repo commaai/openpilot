@@ -13,6 +13,7 @@ Version 0.9.5 (2023-11-16)
 * Kia K8 Hybrid (with HDA II) 2023 support thanks to sunnyhaibin!
 * Kia Sorento Hybrid 2023 support thanks to sunnyhaibin!
 * Kia Optima Hybrid 2019 support
+* Lexus GS F 2016 support thanks to snyperifle!
 * Lexus IS 2023 support thanks to L3R5!
 
 Version 0.9.4 (2023-07-27)
