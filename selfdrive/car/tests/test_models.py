@@ -78,7 +78,7 @@ class TestCarModelBase(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
-    if cls.__name__ == 'TestCarModel' or cls.__name__.endswith(('Base', 'Meta')):
+    if cls.__name__ == 'TestCarModel' or cls.__name__.endswith('Base'):
       raise unittest.SkipTest
 
     if 'FILTER' in os.environ:
