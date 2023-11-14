@@ -210,6 +210,11 @@ class TestCarModelBase(unittest.TestCase):
   # @seed(0)  # for reproduction
   def test_panda_safety_carstate_fuzzy(self, data):
     # TODO: how much of test_panda_safety_carstate can we re-use?
+    """
+      Assert that panda safety matches openpilot's carState by fuzzing the CAN data
+    """
+    if self.CP.dashcamOnly:
+      self.skipTest("no need to check panda safety for dashcamOnly")
     state_has_changed = lambda prev_state, new_state: prev_state != new_state
     # cfg = self.CP.safetyConfigs[-1]
     # set_status = self.safety.set_safety_hooks(cfg.safetyModel.raw, cfg.safetyParam)
