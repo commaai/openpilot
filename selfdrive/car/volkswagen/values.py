@@ -660,6 +660,7 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8703N906026E \xf1\x892114',
       b'\xf1\x8704E906023AH\xf1\x893379',
+      b'\xf1\x8704E906023BM\xf1\x894522',
       b'\xf1\x8704L906026DP\xf1\x891538',
       b'\xf1\x8704L906026ET\xf1\x891990',
       b'\xf1\x8704L906026FP\xf1\x892012',
@@ -675,6 +676,7 @@ FW_VERSIONS = {
       b'\xf1\x870D9300014L \xf1\x895002',
       b'\xf1\x870D9300041A \xf1\x894801',
       b'\xf1\x870DD300045T \xf1\x891601',
+      b'\xf1\x870DD300046H \xf1\x891601',
       b'\xf1\x870DL300011H \xf1\x895201',
       b'\xf1\x870CW300042H \xf1\x891601',
       b'\xf1\x870CW300042H \xf1\x891607',
