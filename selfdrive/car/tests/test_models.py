@@ -384,16 +384,16 @@ class TestCarModelBase(unittest.TestCase):
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
 
 
-class _TestCarModelMeta(type):
+class MarkParameterizedTestCase(type):
   def __new__(cls, name, bases, dct):
     instance = super().__new__(cls, name, bases, dct)
-    if 'car_model' in dct:
-      pytest.mark.xdist_group(f"test_models_{dct['car_model']}_{dct['test_route']}")(instance)
+    if name != 'TestCarModel':
+      pytest.mark.xdist_group(name)(instance)
     return instance
 
 
 @parameterized_class(('car_model', 'test_route'), get_test_cases())
-class TestCarModel(TestCarModelBase, metaclass=_TestCarModelMeta):
+class TestCarModel(TestCarModelBase, metaclass=MarkParameterizedTestCase):
   pass
 
 
