@@ -536,6 +536,11 @@ class Tici(HardwareBase):
     if sim_id.startswith('8901410'):
       os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn=Broadband"')
 
+    # new prime
+    if sim_id.startswith('89852'):
+      os.system("sudo cp /data/openpilot/system/hardware/tici/esim.nmconnection /data/etc/NetworkManager/system-connections/esim.nmconnection")
+      os.system("sudo nmcli con reload")
+
   def get_networks(self):
     r = {}
 
