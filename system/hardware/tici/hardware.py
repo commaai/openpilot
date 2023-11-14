@@ -533,18 +533,20 @@ class Tici(HardwareBase):
       except Exception:
         pass
 
-    # prime config
+    # blue prime
     blue_prime = sim_id.startswith('8901410')
     initial_apn = "Broadband" if blue_prime else ""
     os.system(f'mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn={initial_apn}"')
+
+    # eSIM prime
     if sim_id.startswith('8985235'):
-      # eSIM prime
       with open('/data/openpilot/system/hardware/tici/esim.nmconnection') as f, tempfile.NamedTemporaryFile(mode='w') as tf:
         dat = f.read()
         dat = dat.replace("sim-id=", f"sim-id={sim_id}")
-
         tf.write(dat)
         tf.flush()
+
+        # needs to be root
         os.system(f"sudo cp {tf.name} /data/etc/NetworkManager/system-connections/esim.nmconnection")
       os.system("sudo nmcli con reload")
 
