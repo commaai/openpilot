@@ -5,9 +5,10 @@ type=gsm
 interface-name=cdc-wdm0
 permissions=
 autoconnect=true
-autoconnect-retries=0
+autoconnect-retries=5
 
 [gsm]
+apn=
 home-only=false
 auto-config=true
 
