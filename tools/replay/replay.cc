@@ -363,7 +363,7 @@ void Replay::publishFrame(const Event *e) {
 
 void Replay::stream() {
   cereal::Event::Which cur_which = cereal::Event::Which::INIT_DATA;
-  double prev_replay_speed = 1.0;
+  double prev_replay_speed = speed_;
   std::unique_lock lk(stream_lock_);
 
   while (true) {

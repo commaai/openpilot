@@ -29,7 +29,7 @@ const std::initializer_list<std::pair<std::string, std::string>> keyboard_shortc
   },
   {
     {"enter", "Enter seek request"},
-    {"+/-", "+/-Replay speed"},
+    {"+/-", "Playback speed"},
     {"q", "Exit"},
   },
 };
@@ -334,14 +334,14 @@ void ConsoleUI::handleKey(char c) {
   } else if (c == '+' || c == '=') {
     auto it = std::upper_bound(speed_array.begin(), speed_array.end(), replay->getSpeed());
     if (it != speed_array.end()) {
-      rWarning("replay at %.1fx", *it);
+      rWarning("playback speed: %.1fx", *it);
       replay->setSpeed(*it);
     }
   } else if (c == '_' || c == '-') {
     auto it = std::lower_bound(speed_array.begin(), speed_array.end(), replay->getSpeed());
     if (it != speed_array.begin()) {
       auto prev = std::prev(it);
-      rWarning("replay at %.1fx", *prev);
+      rWarning("playback speed: %.1fx", *prev);
       replay->setSpeed(*prev);
     }
   } else if (c == 'e') {
