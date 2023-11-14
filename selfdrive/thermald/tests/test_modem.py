@@ -14,13 +14,6 @@ from openpilot.selfdrive.test.helpers import with_processes
 NetworkType = log.DeviceState.NetworkType
 
 
-def get_modem_data_usage():
-  return int(time.time()), int(time.time())
-
-def get_network_type():
-  return NetworkType.cell4G
-
-
 @pytest.mark.tici
 class TestModem(unittest.TestCase):
   def setUp(self):
@@ -57,14 +50,21 @@ class TestModem(unittest.TestCase):
   def restart_mm(self):
     os.system("sudo systemctl restart ModemManager.service")
 
-  @mock.patch('openpilot.system.hardware.HARDWARE.get_network_type', get_network_type)
-  @mock.patch('openpilot.system.hardware.HARDWARE.get_modem_data_usage', get_modem_data_usage)
+  def restart_lte(self):
+    os.system("sudo systemctl restart lte")
+
+  # force LTE codepaths even when wifi is connected
+  @mock.patch('openpilot.system.hardware.HARDWARE.get_network_type', lambda: NetworkType.cell4G)
+  # use wwanTx as a "lastUpdated" timer for hardware state for testing
+  @mock.patch('openpilot.system.hardware.HARDWARE.get_modem_data_usage', lambda: (int(time.time()), int(time.time())))
   @with_processes(['thermald'])
   def test_mm_restart(self):
     self._run_test()
 
     self.restart_mm()
+    self._run_test()
 
+    self.restart_lte()
     self._run_test()
 
 
