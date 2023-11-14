@@ -87,6 +87,10 @@ class TestCarModelBase(unittest.TestCase):
 
     if cls.test_route is None:
       if cls.car_model in non_tested_cars:
+        CarInterface, _, _ = interfaces[cls.car_model]
+        CP = CarInterface.get_non_essential_params(cls.car_model)
+        assert CP.dashcamOnly
+
         print(f"Skipping tests for {cls.car_model}: missing route")
         raise unittest.SkipTest
       raise Exception(f"missing test route for {cls.car_model}")
