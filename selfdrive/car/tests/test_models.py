@@ -386,7 +386,9 @@ class TestCarModelBase(unittest.TestCase):
 
 @parameterized_class(('car_model', 'test_route'), get_test_cases())
 class TestCarModel(TestCarModelBase):
-  pass
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    pytest.mark.xdist_group(f"test_models_{self.car_model}_{self.test_route}")(self)
 
 
 if __name__ == "__main__":
