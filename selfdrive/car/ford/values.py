@@ -52,8 +52,6 @@ class CAR(StrEnum):
 
 
 CANFD_CAR = {CAR.F_150_MK14, CAR.F_150_LIGHTNING_MK1, CAR.MUSTANG_MACH_E_MK1}
-EV_CAR = {CAR.F_150_LIGHTNING_MK1, CAR.MUSTANG_MACH_E_MK1}
-
 
 class RADAR:
   DELPHI_ESR = 'ford_fusion_2018_adas'
@@ -84,10 +82,10 @@ class FordCarInfo(CarInfo):
   def init_make(self, CP: car.CarParams):
     if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1):
       self.car_parts = CarParts([Device.threex_angled_mount, CarHarness.ford_q3])
-    if CP.carFingerprint in (CAR.F_150_LIGHTNING_MK1, CAR.F_150_MK14):
-      self.car_parts = CarParts([Device.threex_angled_mount, CarHarness.ford_q4])
-    if CP.carFingerprint in (CAR.MUSTANG_MACH_E_MK1):
+    if CP.carFingerprint in CANFD_CAR:
       self.car_parts = CarParts([CarHarness.ford_q4])
+    if CP.carFingerprint in (CAR.F_150_LIGHTNING_MK1, CAR.F_150_MK14):
+      self.car_parts = CarParts([Device.threex_angled_mount])
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
