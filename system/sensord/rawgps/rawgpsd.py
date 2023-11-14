@@ -382,7 +382,7 @@ def main() -> NoReturn:
       dt_timestamp = (datetime.datetime(1980, 1, 6, 0, 0, 0, 0, None) +
                       datetime.timedelta(weeks=report['w_GpsWeekNumber']) +
                       datetime.timedelta(seconds=(1e-3*report['q_GpsFixTimeMs'] - 18)))
-      gps.unixTimestampMillis = dt_timestamp.as_unix_timestamp()*1e3
+      gps.unixTimestampMillis = dt_timestamp.timestamp()*1e3
       gps.source = log.GpsLocationData.SensorSource.qcomdiag
       gps.vNED = vNED
       gps.verticalAccuracy = report["q_FltVdop"]
