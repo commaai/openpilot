@@ -18,7 +18,6 @@ from openpilot.selfdrive.car.body.values import CAR as COMMA
 non_tested_cars = [
   FORD.F_150_MK14,
   FORD.MUSTANG_MACH_E_MK1,
-  FORD.F_150_LIGHTNING_MK1,
   GM.CADILLAC_ATS,
   GM.HOLDEN_ASTRA,
   GM.MALIBU,
@@ -55,6 +54,7 @@ routes = [
   CarTestRoute("62241b0c7fea4589|2022-09-01--15-32-49", FORD.EXPLORER_MK6),
   CarTestRoute("e886087f430e7fe7|2023-06-16--23-06-36", FORD.FOCUS_MK4),
   CarTestRoute("bd37e43731e5964b|2023-04-30--10-42-26", FORD.MAVERICK_MK1),
+  CarTestRoute("112e4d6e0cad05e1|2023-11-14--08-21-43", FORD.F_150_LIGHTNING_MK1),
   #TestRoute("f1b4c567731f4a1b|2018-04-30--10-15-35", FORD.FUSION),
 
   CarTestRoute("7cc2a8365b4dd8a9|2018-12-02--12-10-44", GM.ACADIA),
