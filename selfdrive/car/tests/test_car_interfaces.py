@@ -18,7 +18,7 @@ from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
 ALL_ECUS = list({ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()})
 
-MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '5'))
+MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '20'))
 
 
 def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
@@ -133,7 +133,7 @@ class TestCarInterfaces(unittest.TestCase):
 
     # Make sure we can combine dicts
     ret = get_interface_attr('DBC', combine_brands=True)
-    self.assertGreaterEqual(len(ret), 170)
+    self.assertGreaterEqual(len(ret), 160)
 
     # We don't support combining non-dicts
     ret = get_interface_attr('CAR', combine_brands=True)

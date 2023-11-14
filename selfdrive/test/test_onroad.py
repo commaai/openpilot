@@ -3,6 +3,9 @@ import bz2
 import math
 import json
 import os
+import pathlib
+import psutil
+import pytest
 import shutil
 import subprocess
 import time
@@ -31,7 +34,7 @@ PROCS = {
   "./encoderd": 17.0,
   "./camerad": 14.5,
   "./locationd": 11.0,
-  "./mapsd": 2.0,
+  "./mapsd": 1.5,
   "selfdrive.controls.plannerd": 16.5,
   "./_ui": 18.0,
   "selfdrive.locationd.paramsd": 9.0,
@@ -47,7 +50,6 @@ PROCS = {
   "selfdrive.monitoring.dmonitoringd": 4.0,
   "./proclogd": 1.54,
   "system.logmessaged": 0.2,
-  "./clocksd": 0.02,
   "selfdrive.tombstoned": 0,
   "./logcatd": 0,
   "system.micd": 10.0,
@@ -57,7 +59,6 @@ PROCS = {
   "selfdrive.navd.navd": 0.4,
   "system.loggerd.uploader": 3.0,
   "system.loggerd.deleter": 0.1,
-  "selfdrive.locationd.laikad": (1.0, 80.0),  # TODO: better GPS setup in testing closet
 }
 
 PROCS.update({
@@ -98,6 +99,7 @@ def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
 
 
+@pytest.mark.tici
 class TestOnroad(unittest.TestCase):
 
   @classmethod
@@ -153,6 +155,8 @@ class TestOnroad(unittest.TestCase):
       cls.segments = cls.segments[:-1]
 
     finally:
+      cls.gpu_procs = {psutil.Process(int(f.name)).name() for f in pathlib.Path('/sys/devices/virtual/kgsl/kgsl/proc/').iterdir() if f.is_dir()}
+
       if proc is not None:
         proc.terminate()
         if proc.wait(60) is None:
@@ -297,6 +301,9 @@ class TestOnroad(unittest.TestCase):
     # check for big leaks. note that memory usage is
     # expected to go up while the MSGQ buffers fill up
     self.assertLessEqual(max(mems) - min(mems), 3.0)
+
+  def test_gpu_usage(self):
+    self.assertEqual(self.gpu_procs, {"weston", "_ui", "camerad", "selfdrive.modeld.modeld"})
 
   def test_camera_processing_time(self):
     result = "\n"

@@ -13,6 +13,7 @@ from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera
 IMG = np.zeros(int(tici_f_frame_size[0]*tici_f_frame_size[1]*(3/2)), dtype=np.uint8)
 IMG_BYTES = IMG.flatten().tobytes()
 
+
 class TestModeld(unittest.TestCase):
 
   def setUp(self):

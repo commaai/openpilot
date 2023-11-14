@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import math
 import os
+import pytest
 import random
 import shutil
 import subprocess
@@ -31,13 +32,8 @@ CAMERAS = [
 FILE_SIZE_TOLERANCE = 0.5
 
 
+@pytest.mark.tici # TODO: all of loggerd should work on PC
 class TestEncoder(unittest.TestCase):
-
-  # TODO: all of loggerd should work on PC
-  @classmethod
-  def setUpClass(cls):
-    if not TICI:
-      raise unittest.SkipTest
 
   def setUp(self):
     self._clear_logs()

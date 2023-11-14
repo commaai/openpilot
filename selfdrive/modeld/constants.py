@@ -21,10 +21,13 @@ class ModelConstants:
   NAV_FEATURE_LEN = 256
   NAV_INSTRUCTION_LEN = 150
   DRIVING_STYLE_LEN = 12
+  LAT_PLANNER_STATE_LEN = 4
 
   # model outputs constants
   FCW_THRESHOLDS_5MS2 = np.array([.05, .05, .15, .15, .15], dtype=np.float32)
   FCW_THRESHOLDS_3MS2 = np.array([.7, .7], dtype=np.float32)
+  FCW_5MS2_PROBS_WIDTH = 5
+  FCW_3MS2_PROBS_WIDTH = 2
 
   DISENGAGE_WIDTH = 5
   POSE_WIDTH = 6
@@ -35,6 +38,7 @@ class ModelConstants:
   ROAD_EDGES_WIDTH = 2
   PLAN_WIDTH = 15
   DESIRE_PRED_WIDTH = 8
+  LAT_PLANNER_SOLUTION_WIDTH = 4
 
   NUM_LANE_LINES = 4
   NUM_ROAD_EDGES = 2

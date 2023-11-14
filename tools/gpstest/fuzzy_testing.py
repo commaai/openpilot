@@ -33,8 +33,7 @@ def run_remote_checker(lat, lon, alt, duration, ip_addr):
     return False, None, None
 
   matched, log, info = con.root.exposed_run_checker(lat, lon, alt,
-                        timeout=duration,
-                        use_laikad=True)
+                        timeout=duration)
   con.close() # TODO: might wanna fetch more logs here
   con = None
 
@@ -43,7 +42,7 @@ def run_remote_checker(lat, lon, alt, duration, ip_addr):
 
 
 stats = defaultdict(int) # type: ignore
-keys = ['success', 'failed', 'ublox_fail', 'laikad_fail', 'proc_crash', 'checker_crash']
+keys = ['success', 'failed', 'ublox_fail', 'proc_crash', 'checker_crash']
 
 def print_report():
   print("\nFuzzy testing report summary:")
@@ -62,10 +61,7 @@ def update_stats(matched, log, info):
   if log == "CHECKER CRASHED":
     stats['checker_crash'] += 1
   if log == "TIMEOUT":
-    if "LAIKAD" in info:
-      stats['laikad_fail'] += 1
-    else: # "UBLOX" in info
-      stats['ublox_fail'] += 1
+    stats['ublox_fail'] += 1
 
 
 def main(ip_addr, continuous_mode, timeout, pos):

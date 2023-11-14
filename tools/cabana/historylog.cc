@@ -7,7 +7,6 @@
 #include <QVBoxLayout>
 
 #include "tools/cabana/commands.h"
-// HistoryLogModel
 
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
   const bool show_signals = display_signals_mode && sigs.size() > 0;
@@ -17,11 +16,11 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
       return QString::number((m.mono_time / (double)1e9) - can->routeStartTime(), 'f', 2);
     }
     int i = index.column() - 1;
-    return show_signals ? QString::number(m.sig_values[i], 'f', sigs[i]->precision) : toHex(m.data);
+    return show_signals ? QString::number(m.sig_values[i], 'f', sigs[i]->precision) : QString();
   } else if (role == ColorsRole) {
-    return QVariant::fromValue(m.colors);
+    return QVariant::fromValue((void *)(&m.colors));
   } else if (role == BytesRole) {
-    return m.data;
+    return QVariant::fromValue((void *)(&m.data));
   } else if (role == Qt::TextAlignmentRole) {
     return (uint32_t)(Qt::AlignRight | Qt::AlignVCenter);
   }
@@ -123,7 +122,7 @@ void HistoryLogModel::fetchMore(const QModelIndex &parent) {
 template <class InputIt>
 std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, InputIt last, uint64_t min_time) {
   std::deque<HistoryLogModel::Message> msgs;
-  QVector<double> values(sigs.size());
+  std::vector<double> values(sigs.size());
   for (; first != last && (*first)->mono_time > min_time; ++first) {
     const CanEvent *e = *first;
     for (int i = 0; i < sigs.size(); ++i) {
@@ -132,7 +131,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, I
     if (!filter_cmp || filter_cmp(values[filter_sig_idx], filter_value)) {
       auto &m = msgs.emplace_back();
       m.mono_time = e->mono_time;
-      m.data = QByteArray((const char *)e->dat, e->size);
+      m.data.assign(e->dat, e->dat + e->size);
       m.sig_values = values;
       if (msgs.size() >= batch_size && min_time == 0) {
         return msgs;
@@ -146,7 +145,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_ti
   const auto &events = can->events(msg_id);
   const auto freq = can->lastMessage(msg_id).freq;
   const bool update_colors = !display_signals_mode || sigs.empty();
-
+  const std::vector<uint8_t> no_mask;
   const auto speed = can->getSpeed();
   if (dynamic_mode) {
     auto first = std::upper_bound(events.rbegin(), events.rend(), from_time, [](uint64_t ts, auto e) {
@@ -155,7 +154,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_ti
     auto msgs = fetchData(first, events.rend(), min_time);
     if (update_colors && (min_time > 0 || messages.empty())) {
       for (auto it = msgs.rbegin(); it != msgs.rend(); ++it) {
-        hex_colors.compute(msg_id, it->data.data(), it->data.size(), it->mono_time / (double)1e9, speed, nullptr, freq);
+        hex_colors.compute(msg_id, it->data.data(), it->data.size(), it->mono_time / (double)1e9, speed, no_mask, freq);
         it->colors = hex_colors.colors;
       }
     }
@@ -166,7 +165,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_ti
     auto msgs = fetchData(first, events.cend(), 0);
     if (update_colors) {
       for (auto it = msgs.begin(); it != msgs.end(); ++it) {
-        hex_colors.compute(msg_id, it->data.data(), it->data.size(), it->mono_time / (double)1e9, speed, nullptr, freq);
+        hex_colors.compute(msg_id, it->data.data(), it->data.size(), it->mono_time / (double)1e9, speed, no_mask, freq);
         it->colors = hex_colors.colors;
       }
     }
@@ -177,7 +176,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_ti
 // HeaderView
 
 QSize HeaderView::sectionSizeFromContents(int logicalIndex) const {
-  static QSize time_col_size = fontMetrics().boundingRect({0, 0, 200, 200}, defaultAlignment(), "000000.000").size() + QSize(10, 6);
+  static const QSize time_col_size = fontMetrics().boundingRect({0, 0, 200, 200}, defaultAlignment(), "000000.000").size() + QSize(10, 6);
   if (logicalIndex == 0) {
     return time_col_size;
   } else {
@@ -237,10 +236,11 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   main_layout->addWidget(logs = new QTableView(this));
   logs->setModel(model = new HistoryLogModel(this));
   delegate = new MessageBytesDelegate(this);
-  logs->setItemDelegateForColumn(1, new MessageBytesDelegate(this));
   logs->setHorizontalHeader(new HeaderView(Qt::Horizontal, this));
   logs->horizontalHeader()->setDefaultAlignment(Qt::AlignRight | (Qt::Alignment)Qt::TextWordWrap);
   logs->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+  logs->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+  logs->verticalHeader()->setDefaultSectionSize(delegate->sizeForBytes(8).height());
   logs->verticalHeader()->setVisible(false);
   logs->setFrameShape(QFrame::NoFrame);
 
