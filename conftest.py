@@ -42,3 +42,14 @@ def pytest_collection_modifyitems(config, items):
   for item in items:
     if not TICI and "tici" in item.keywords:
       item.add_marker(skipper)
+
+    if "xdist_group_class_property" in item.keywords:
+      item.add_marker(pytest.mark.xdist_group(item.cls.car_model))
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_configure(config):
+    config_line = (
+        "xdist_group_class_property: specify xdist group based on class property"
+    )
+    config.addinivalue_line("markers", config_line)

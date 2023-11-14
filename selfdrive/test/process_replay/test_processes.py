@@ -63,6 +63,7 @@ ALL_CARS = sorted({car for car, _ in segments})
 
 @pytest.mark.slow
 @parameterized_class(('case_name', 'segment'), segments)
+@pytest.mark.xdist_group_class_property('case_name')
 class TestCarProcessReplay(TestProcessReplayDiffBase):
   """
   Runs a replay diff on a segment for each car.
