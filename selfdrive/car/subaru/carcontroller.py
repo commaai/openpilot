@@ -2,7 +2,8 @@ from openpilot.common.numpy_fast import clip, interp
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_driver_steer_torque_limits, common_fault_avoidance
 from openpilot.selfdrive.car.subaru import subarucan
-from openpilot.selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, HYBRID_CARS, STEER_RATE_LIMITED, CanBus, CarControllerParams, SubaruFlags
+from openpilot.selfdrive.car.subaru.values import DBC, GLOBAL_ES_ADDR, GLOBAL_GEN2, PREGLOBAL_CARS, HYBRID_CARS, STEER_RATE_LIMITED, \
+                                                  CanBus, CarControllerParams, SubaruFlags
 
 # FIXME: These limits aren't exact. The real limit is more than likely over a larger time period and
 # involves the total steering angle change rather than rate, but these limits work well for now
@@ -118,6 +119,21 @@ class CarController:
           if self.CP.carFingerprint not in HYBRID_CARS:
             bus = CanBus.alt if self.CP.carFingerprint in GLOBAL_GEN2 else CanBus.main
             can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg["COUNTER"] + 1, CS.es_distance_msg, bus, pcm_cancel_cmd))
+
+      if self.CP.flags & SubaruFlags.DISABLE_EYESIGHT:
+        # Tester present (keeps eyesight disabled)
+        if self.frame % 100 == 0:
+          can_sends.append([GLOBAL_ES_ADDR, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", CanBus.camera])
+
+        # Create all of the other eyesight messages to keep the rest of the car happy when eyesight is disabled
+        if self.frame % 5 == 0:
+          can_sends.append(subarucan.create_es_highbeamassist(self.packer))
+
+        if self.frame % 10 == 0:
+          can_sends.append(subarucan.create_es_static_1(self.packer))
+
+        if self.frame % 2 == 0:
+          can_sends.append(subarucan.create_es_static_2(self.packer))
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX

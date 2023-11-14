@@ -4,7 +4,7 @@ map_env = qt_env.Clone()
 libs = ['qt_widgets', 'qt_util', 'qmapboxgl', common, messaging, cereal, visionipc, transformations,
         'zmq', 'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread', 'json11'] + map_env["LIBS"]
 if arch == 'larch64':
-  libs.append('EGL')
+  libs.append(':libEGL_mesa.so.0')
 
 if arch in ['larch64', 'aarch64', 'x86_64']:
   if arch == 'x86_64':

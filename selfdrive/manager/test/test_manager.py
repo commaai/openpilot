@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import pytest
 import signal
 import time
 import unittest
@@ -17,6 +18,7 @@ MAX_STARTUP_TIME = 3
 BLACKLIST_PROCS = ['manage_athenad', 'pandad', 'pigeond']
 
 
+@pytest.mark.tici
 class TestManager(unittest.TestCase):
   def setUp(self):
     os.environ['PASSIVE'] = '0'
@@ -65,10 +67,6 @@ class TestManager(unittest.TestCase):
         exit_code = p.stop(retry=False)
 
         self.assertNotIn(p.name, BLACKLIST_PROCS, f"{p.name} was started")
-
-        # TODO: mapsd should exit cleanly
-        if p.name == "mapsd":
-          continue
 
         self.assertTrue(exit_code is not None, f"{p.name} failed to exit")
 

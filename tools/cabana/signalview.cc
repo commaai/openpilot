@@ -36,8 +36,8 @@ SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(p
 void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const cabana::Signal *sig) {
   Item *item = new Item{.sig = sig, .parent = parent_item, .title = sig->name, .type = Item::Sig};
   parent_item->children.insert(pos, item);
-  QString titles[]{"Name", "Size", "Node", "Little Endian", "Signed", "Offset", "Factor", "Type", "Multiplex Value", "Extra Info",
-                   "Unit", "Comment", "Minimum Value", "Maximum Value", "Value Descriptions"};
+  QString titles[]{"Name", "Size", "Receiver Nodes", "Little Endian", "Signed", "Offset", "Factor", "Type",
+                   "Multiplex Value", "Extra Info", "Unit", "Comment", "Minimum Value", "Maximum Value", "Value Table"};
   for (int i = 0; i < std::size(titles); ++i) {
     item->children.push_back(new Item{.sig = sig, .parent = item, .title = titles[i], .type = (Item::Type)(i + Item::Name)});
   }
@@ -68,10 +68,7 @@ void SignalModel::refresh() {
 }
 
 SignalModel::Item *SignalModel::getItem(const QModelIndex &index) const {
-  SignalModel::Item *item = nullptr;
-  if (index.isValid()) {
-    item = (SignalModel::Item *)index.internalPointer();
-  }
+  auto item = index.isValid() ? (SignalModel::Item *)index.internalPointer() : nullptr;
   return item ? item : root.get();
 }
 
@@ -354,7 +351,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
       painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
       QRect rect = r.adjusted(sparkline_size.width() + 1, 0, 0, 0);
       int value_adjust = 10;
-      if (item->highlight || option.state & QStyle::State_Selected) {
+      if (!item->sparkline.isEmpty() && (item->highlight || option.state & QStyle::State_Selected)) {
         painter->drawLine(rect.topLeft(), rect.bottomLeft());
         rect.adjust(5, -v_margin, 0, v_margin);
         painter->setFont(minmax_font);
@@ -364,13 +361,12 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
         painter->drawText(rect, Qt::AlignLeft | Qt::AlignBottom, min);
         QFontMetrics fm(minmax_font);
         value_adjust = std::max(fm.width(min), fm.width(max)) + 5;
-      } else if (item->sig->type == cabana::Signal::Type::Multiplexed) {
+      } else if (!item->sparkline.isEmpty()  && item->sig->type == cabana::Signal::Type::Multiplexed) {
         // display freq of multiplexed signal
         painter->setFont(label_font);
         QString freq = QString("%1 hz").arg(item->sparkline.freq(), 0, 'g', 2);
         painter->drawText(rect.adjusted(5, 0, 0, 0), Qt::AlignLeft | Qt::AlignVCenter, freq);
-        QFontMetrics fm(label_font);
-        value_adjust = fm.width(freq) + 10;
+        value_adjust = QFontMetrics(label_font).width(freq) + 10;
       }
       // signal value
       painter->setFont(option.font);
@@ -504,7 +500,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QObject::connect(can, &AbstractStream::msgsReceived, this, &SignalView::updateState);
   QObject::connect(tree->header(), &QHeaderView::sectionResized, [this](int logicalIndex, int oldSize, int newSize) {
     if (logicalIndex == 1) {
-      value_column_width = newSize - delegate->button_size.width();
+      value_column_width = newSize;
       updateState();
     }
   });
@@ -614,21 +610,17 @@ void SignalView::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
 }
 
 void SignalView::handleSignalUpdated(const cabana::Signal *sig) {
-  if (int row = model->signalRow(sig); row != -1) {
-    auto item = model->getItem(model->index(row, 1));
-    // invalidate the sparkline
-    item->sparkline.last_ts = 0;
+  if (int row = model->signalRow(sig); row != -1)
     updateState();
-  }
 }
 
-void SignalView::updateState(const QHash<MessageId, CanData> *msgs) {
+void SignalView::updateState(const std::set<MessageId> *msgs) {
   const auto &last_msg = can->lastMessage(model->msg_id);
-  if (model->rowCount() == 0 || (msgs && !msgs->contains(model->msg_id)) || last_msg.dat.size() == 0) return;
+  if (model->rowCount() == 0 || (msgs && !msgs->count(model->msg_id)) || last_msg.dat.size() == 0) return;
 
   for (auto item : model->root->children) {
     double value = 0;
-    if (item->sig->getValue((uint8_t *)last_msg.dat.constData(), last_msg.dat.size(), &value)) {
+    if (item->sig->getValue(last_msg.dat.data(), last_msg.dat.size(), &value)) {
       item->sig_val = item->sig->formatValue(value);
     }
     max_value_width = std::max(max_value_width, fontMetrics().width(item->sig_val));
@@ -645,17 +637,15 @@ void SignalView::updateState(const QHash<MessageId, CanData> *msgs) {
     }
 
     const static int min_max_width = QFontMetrics(delegate->minmax_font).width("-000.00") + 5;
-    int value_width = std::min<int>(max_value_width + min_max_width, value_column_width / 2);
-    QSize size(value_column_width - value_width,
+    int available_width = value_column_width - delegate->button_size.width();
+    int value_width = std::min<int>(max_value_width + min_max_width, available_width / 2);
+    QSize size(available_width - value_width,
                delegate->button_size.height() - style()->pixelMetric(QStyle::PM_FocusFrameVMargin) * 2);
     QFutureSynchronizer<void> synchronizer;
     for (int i = first_visible_row; i <= last_visible_row; ++i) {
       auto item = model->getItem(model->index(i, 1));
-      auto &s = item->sparkline;
-      if (s.last_ts != last_msg.ts || s.size() != size || s.time_range != settings.sparkline_range) {
-        synchronizer.addFuture(QtConcurrent::run(
-            &s, &Sparkline::update, model->msg_id, item->sig, last_msg.ts, settings.sparkline_range, size));
-      }
+      synchronizer.addFuture(QtConcurrent::run(
+          &item->sparkline, &Sparkline::update, model->msg_id, item->sig, last_msg.ts, settings.sparkline_range, size));
     }
   }
 

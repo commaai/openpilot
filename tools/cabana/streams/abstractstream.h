@@ -1,35 +1,37 @@
 #pragma once
 
 #include <array>
-#include <atomic>
 #include <memory>
-#include <tuple>
+#include <mutex>
+#include <set>
 #include <unordered_map>
 #include <vector>
 
 #include <QColor>
 #include <QDateTime>
-#include <QHash>
 
-#include "common/timing.h"
+#include "cereal/messaging/messaging.h"
 #include "tools/cabana/dbc/dbcmanager.h"
-#include "tools/cabana/settings.h"
 #include "tools/cabana/util.h"
-#include "tools/replay/replay.h"
 
 struct CanData {
-  void compute(const MessageId &msg_id, const char *dat, const int size, double current_sec,
-               double playback_speed, const std::vector<uint8_t> *mask = nullptr, double in_freq = 0);
+  void compute(const MessageId &msg_id, const uint8_t *dat, const int size, double current_sec,
+               double playback_speed, const std::vector<uint8_t> &mask, double in_freq = 0);
 
   double ts = 0.;
   uint32_t count = 0;
   double freq = 0;
-  QByteArray dat;
-  QVector<QColor> colors;
-  std::vector<double> last_change_t;
-  std::vector<std::array<uint32_t, 8>> bit_change_counts;
-  std::vector<int> last_delta;
-  std::vector<int> same_delta_counter;
+  std::vector<uint8_t> dat;
+  std::vector<QColor> colors;
+
+  struct ByteLastChange {
+    double ts;
+    int delta;
+    int same_delta_counter;
+    bool suppressed;
+    std::array<uint32_t, 8> bit_change_counts;
+  };
+  std::vector<ByteLastChange> last_changes;
   double last_freq_update_ts = 0;
 };
 
@@ -61,7 +63,7 @@ public:
   AbstractStream(QObject *parent);
   virtual ~AbstractStream() {}
   virtual void start() = 0;
-  inline bool liveStreaming() const { return route() == nullptr; }
+  virtual bool liveStreaming() const { return true; }
   virtual void seekTo(double ts) {}
   virtual QString routeName() const = 0;
   virtual QString carFingerprint() const { return ""; }
@@ -69,17 +71,20 @@ public:
   virtual double routeStartTime() const { return 0; }
   virtual double currentSec() const = 0;
   virtual double totalSeconds() const { return lastEventMonoTime() / 1e9 - routeStartTime(); }
-  const CanData &lastMessage(const MessageId &id);
-  virtual VisionStreamType visionStreamType() const { return VISION_STREAM_ROAD; }
-  virtual const Route *route() const { return nullptr; }
   virtual void setSpeed(float speed) {}
   virtual double getSpeed() { return 1; }
   virtual bool isPaused() const { return false; }
   virtual void pause(bool pause) {}
-  const MessageEventsMap &eventsMap() const { return events_; }
-  const std::vector<const CanEvent *> &allEvents() const { return all_events_; }
+
+  inline const std::unordered_map<MessageId, CanData> &lastMessages() const { return last_msgs; }
+  inline const MessageEventsMap &eventsMap() const { return events_; }
+  inline const std::vector<const CanEvent *> &allEvents() const { return all_events_; }
+  const CanData &lastMessage(const MessageId &id);
   const std::vector<const CanEvent *> &events(const MessageId &id) const;
-  virtual const std::vector<std::tuple<double, double, TimelineType>> getTimeline() { return {}; }
+
+  size_t suppressHighlighted();
+  void clearSuppressed();
+  void suppressDefinedSignals(bool suppress);
 
 signals:
   void paused();
@@ -87,32 +92,36 @@ signals:
   void seekedTo(double sec);
   void streamStarted();
   void eventsMerged(const MessageEventsMap &events_map);
-  void updated();
-  void msgsReceived(const QHash<MessageId, CanData> *new_msgs, bool has_new_ids);
+  void msgsReceived(const std::set<MessageId> *new_msgs, bool has_new_ids);
   void sourcesUpdated(const SourceSet &s);
+  void privateUpdateLastMsgsSignal();
 
 public:
-  QHash<MessageId, CanData> last_msgs;
   SourceSet sources;
 
 protected:
-  void mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last);
-  bool postEvents();
-  uint64_t lastEventMonoTime() const { return lastest_event_ts; }
+  void mergeEvents(const std::vector<const CanEvent *> &events);
+  const CanEvent *newEvent(uint64_t mono_time, const cereal::CanData::Reader &c);
   void updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size);
-  void updateMessages(QHash<MessageId, CanData> *);
-  void updateMasks();
-  void updateLastMsgsTo(double sec);
+  uint64_t lastEventMonoTime() const { return lastest_event_ts; }
 
-  uint64_t lastest_event_ts = 0;
-  std::atomic<bool> processing = false;
-  std::unique_ptr<QHash<MessageId, CanData>> new_msgs;
-  QHash<MessageId, CanData> all_msgs;
-  MessageEventsMap events_;
   std::vector<const CanEvent *> all_events_;
-  std::unique_ptr<MonotonicBuffer> event_buffer;
-  std::mutex mutex;
-  std::unordered_map<MessageId, std::vector<uint8_t>> masks;
+  uint64_t lastest_event_ts = 0;
+
+private:
+  void updateLastMessages();
+  void updateLastMsgsTo(double sec);
+  void updateMasks();
+
+  MessageEventsMap events_;
+  std::unordered_map<MessageId, CanData> last_msgs;
+  std::unique_ptr<MonotonicBuffer> event_buffer_;
+
+  // Members accessed in multiple threads. (mutex protected)
+  std::mutex mutex_;
+  std::set<MessageId> new_msgs_;
+  std::unordered_map<MessageId, CanData> messages_;
+  std::unordered_map<MessageId, std::vector<uint8_t>> masks_;
 };
 
 class AbstractOpenStreamWidget : public QWidget {

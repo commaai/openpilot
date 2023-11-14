@@ -9,6 +9,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QJsonObject>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QResizeEvent>
@@ -21,8 +22,10 @@
 #include "tools/cabana/commands.h"
 #include "tools/cabana/streamselector.h"
 #include "tools/cabana/tools/findsignal.h"
+#include "tools/replay/replay.h"
 
 MainWindow::MainWindow() : QMainWindow() {
+  loadFingerprints();
   createDockWindows();
   setCentralWidget(center_widget = new CenterWidget(this));
   createActions();
@@ -55,12 +58,6 @@ MainWindow::MainWindow() : QMainWindow() {
     qInfo() << QString::fromStdString(msg);
   });
 
-  // load fingerprints
-  QFile json_file(QApplication::applicationDirPath() + "/dbc/car_fingerprint_to_dbc.json");
-  if (json_file.open(QIODevice::ReadOnly)) {
-    fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
-  }
-
   setStyleSheet(QString(R"(QMainWindow::separator {
     width: %1px; /* when vertical */
     height: %1px; /* when horizontal */
@@ -76,6 +73,16 @@ MainWindow::MainWindow() : QMainWindow() {
   QObject::connect(StreamNotifier::instance(), &StreamNotifier::streamStarted, this, &MainWindow::streamStarted);
 }
 
+void MainWindow::loadFingerprints() {
+  QFile json_file(QApplication::applicationDirPath() + "/dbc/car_fingerprint_to_dbc.json");
+  if (json_file.open(QIODevice::ReadOnly)) {
+    fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
+    auto dbc_names = fingerprint_to_dbc.object().toVariantMap().values();
+    std::transform(dbc_names.begin(), dbc_names.end(), std::inserter(opendbc_names, opendbc_names.begin()),
+                   [](const auto &name) { return name.toString(); });
+  }
+}
+
 void MainWindow::createActions() {
   // File menu
   QMenu *file_menu = menuBar()->addMenu(tr("&File"));
@@ -84,8 +91,8 @@ void MainWindow::createActions() {
   close_stream_act->setEnabled(false);
   file_menu->addSeparator();
 
-  file_menu->addAction(tr("New DBC File"), [this]() { newFile(); })->setShortcuts(QKeySequence::New);
-  file_menu->addAction(tr("Open DBC File..."), [this]() { openFile(); })->setShortcuts(QKeySequence::Open);
+  file_menu->addAction(tr("New DBC File"), [this]() { newFile(); }, QKeySequence::New);
+  file_menu->addAction(tr("Open DBC File..."), [this]() { openFile(); }, QKeySequence::Open);
 
   manage_dbcs_menu = file_menu->addMenu(tr("Manage &DBC Files"));
 
@@ -101,29 +108,22 @@ void MainWindow::createActions() {
   file_menu->addSeparator();
   QMenu *load_opendbc_menu = file_menu->addMenu(tr("Load DBC from commaai/opendbc"));
   // load_opendbc_menu->setStyleSheet("QMenu { menu-scrollable: true; }");
-  auto dbc_names = allDBCNames();
-  std::sort(dbc_names.begin(), dbc_names.end());
-  for (const auto &name : dbc_names) {
-    QString dbc_name = QString::fromStdString(name);
-    load_opendbc_menu->addAction(dbc_name, [=]() { loadDBCFromOpendbc(dbc_name); });
+  for (const auto &dbc_name : opendbc_names) {
+    load_opendbc_menu->addAction(dbc_name, [this, name = dbc_name]() { loadDBCFromOpendbc(name); });
   }
 
   file_menu->addAction(tr("Load DBC From Clipboard"), [=]() { loadFromClipboard(); });
 
   file_menu->addSeparator();
-  save_dbc = file_menu->addAction(tr("Save DBC..."), this, &MainWindow::save);
-  save_dbc->setShortcuts(QKeySequence::Save);
-
-  save_dbc_as = file_menu->addAction(tr("Save DBC As..."), this, &MainWindow::saveAs);
-  save_dbc_as->setShortcuts(QKeySequence::SaveAs);
-
+  save_dbc = file_menu->addAction(tr("Save DBC..."), this, &MainWindow::save, QKeySequence::Save);
+  save_dbc_as = file_menu->addAction(tr("Save DBC As..."), this, &MainWindow::saveAs, QKeySequence::SaveAs);
   copy_dbc_to_clipboard = file_menu->addAction(tr("Copy DBC To Clipboard"), this, &MainWindow::saveToClipboard);
 
   file_menu->addSeparator();
-  file_menu->addAction(tr("Settings..."), this, &MainWindow::setOption)->setShortcuts(QKeySequence::Preferences);
+  file_menu->addAction(tr("Settings..."), this, &MainWindow::setOption, QKeySequence::Preferences);
 
   file_menu->addSeparator();
-  file_menu->addAction(tr("E&xit"), qApp, &QApplication::closeAllWindows)->setShortcuts(QKeySequence::Quit);
+  file_menu->addAction(tr("E&xit"), qApp, &QApplication::closeAllWindows, QKeySequence::Quit);
 
   // Edit Menu
   QMenu *edit_menu = menuBar()->addMenu(tr("&Edit"));
@@ -157,7 +157,7 @@ void MainWindow::createActions() {
 
   // Help Menu
   QMenu *help_menu = menuBar()->addMenu(tr("&Help"));
-  help_menu->addAction(tr("Help"), this, &MainWindow::onlineHelp)->setShortcuts(QKeySequence::HelpContents);
+  help_menu->addAction(tr("Help"), this, &MainWindow::onlineHelp, QKeySequence::HelpContents);
   help_menu->addAction(tr("About &Qt"), qApp, &QApplication::aboutQt);
 }
 
@@ -374,7 +374,7 @@ void MainWindow::eventsMerged() {
       auto dbc_name = fingerprint_to_dbc[car_fingerprint];
       if (dbc_name != QJsonValue::Undefined) {
         // Prevent dialog that load autosaved file from blocking replay->start().
-        QTimer::singleShot(0, [dbc_name, this]() { loadDBCFromOpendbc(dbc_name.toString()); });
+        QTimer::singleShot(0, this, [dbc_name, this]() { loadDBCFromOpendbc(dbc_name.toString()); });
       }
     }
   }
@@ -471,11 +471,7 @@ void MainWindow::saveFileToClipboard(DBCFile *dbc_file) {
 
 void MainWindow::updateLoadSaveMenus() {
   int cnt = dbc()->nonEmptyDBCCount();
-  if (cnt > 1) {
-    save_dbc->setText(tr("Save %1 DBCs...").arg(dbc()->dbcCount()));
-  } else {
-    save_dbc->setText(tr("Save DBC..."));
-  }
+  save_dbc->setText(cnt > 1 ? tr("Save %1 DBCs...").arg(cnt) : tr("Save DBC..."));
   save_dbc->setEnabled(cnt > 0);
   save_dbc_as->setEnabled(cnt == 1);
 
@@ -608,12 +604,6 @@ void MainWindow::closeEvent(QCloseEvent *event) {
   }
   settings.message_header_state = messages_widget->saveHeaderState();
 
-  auto status = settings.save();
-  if (status == QSettings::AccessError) {
-    QString error = tr("Failed to write settings to [%1]: access denied").arg(Settings::filePath());
-    qDebug() << error;
-    QMessageBox::warning(this, tr("Failed to write settings"), error);
-  }
   QWidget::closeEvent(event);
 }
 

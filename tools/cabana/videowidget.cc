@@ -13,6 +13,9 @@
 #include <QVBoxLayout>
 #include <QtConcurrent>
 
+#include "tools/cabana/streams/replaystream.h"
+#include "tools/cabana/util.h"
+
 const int MIN_VIDEO_HEIGHT = 100;
 const int THUMBNAIL_MARGIN = 3;
 
@@ -33,11 +36,9 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   main_layout->addLayout(createPlaybackController());
 
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
-
   QObject::connect(can, &AbstractStream::paused, this, &VideoWidget::updatePlayBtnState);
   QObject::connect(can, &AbstractStream::resume, this, &VideoWidget::updatePlayBtnState);
-  QObject::connect(can, &AbstractStream::updated, this, &VideoWidget::updateState);
-  QObject::connect(&settings, &Settings::changed, this, &VideoWidget::updatePlayBtnState);
+  QObject::connect(can, &AbstractStream::msgsReceived, this, &VideoWidget::updateState);
 
   updatePlayBtnState();
   setWhatsThis(tr(R"(
@@ -131,28 +132,58 @@ QWidget *VideoWidget::createCameraWidget() {
   QWidget *w = new QWidget(this);
   QVBoxLayout *l = new QVBoxLayout(w);
   l->setContentsMargins(0, 0, 0, 0);
+  l->setSpacing(0);
+
+  l->addWidget(camera_tab = new TabBar(w));
+  camera_tab->setAutoHide(true);
+  camera_tab->setExpanding(false);
 
   QStackedLayout *stacked = new QStackedLayout();
   stacked->setStackingMode(QStackedLayout::StackAll);
-  stacked->addWidget(cam_widget = new CameraWidget("camerad", can->visionStreamType(), false));
+  stacked->addWidget(cam_widget = new CameraWidget("camerad", VISION_STREAM_ROAD, false));
   cam_widget->setMinimumHeight(MIN_VIDEO_HEIGHT);
   cam_widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
   stacked->addWidget(alert_label = new InfoLabel(this));
   l->addLayout(stacked);
 
-  l->addWidget(slider = new Slider(this));
+  l->addWidget(slider = new Slider(w));
   slider->setSingleStep(0);
 
   setMaximumTime(can->totalSeconds());
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->currentSecond()); });
   QObject::connect(slider, &Slider::updateMaximumTime, this, &VideoWidget::setMaximumTime, Qt::QueuedConnection);
-  QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(static_cast<ReplayStream*>(can), &ReplayStream::qLogLoaded, slider, &Slider::parseQLog);
+  QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
+  QObject::connect(cam_widget, &CameraWidget::vipcAvailableStreamsUpdated, this, &VideoWidget::vipcAvailableStreamsUpdated);
+  QObject::connect(camera_tab, &QTabBar::currentChanged, [this](int index) {
+    if (index != -1) cam_widget->setStreamType((VisionStreamType)camera_tab->tabData(index).toInt());
+  });
   return w;
+}
+
+void VideoWidget::vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams) {
+  static const QString stream_names[] = {
+    [VISION_STREAM_ROAD] = "Road camera",
+    [VISION_STREAM_WIDE_ROAD] = "Wide road camera",
+    [VISION_STREAM_DRIVER] = "Driver camera"};
+
+  for (int i = 0; i < streams.size(); ++i) {
+    if (camera_tab->count() <= i) {
+      camera_tab->addTab(QString());
+    }
+    int type = *std::next(streams.begin(), i);
+    camera_tab->setTabText(i, stream_names[type]);
+    camera_tab->setTabData(i, type);
+  }
+  while (camera_tab->count() > streams.size()) {
+    camera_tab->removeTab(camera_tab->count() - 1);
+  }
 }
 
 void VideoWidget::loopPlaybackClicked() {
   auto replay = qobject_cast<ReplayStream *>(can)->getReplay();
+  if (!replay) return;
+
   if (replay->hasFlag(REPLAY_FLAG_NO_LOOP)) {
     replay->removeFlag(REPLAY_FLAG_NO_LOOP);
     loop_btn->setIcon("repeat");
@@ -172,12 +203,8 @@ void VideoWidget::updateTimeRange(double min, double max, bool is_zoomed) {
     skip_to_end_btn->setEnabled(!is_zoomed);
     return;
   }
-
-  if (!is_zoomed) {
-    min = 0;
-    max = maximum_time;
-  }
-  slider->setTimeRange(min, max);
+  is_zoomed ? slider->setTimeRange(min, max)
+            : slider->setTimeRange(0, maximum_time);
 }
 
 QString VideoWidget::formatTime(double sec, bool include_milliseconds) {
@@ -205,7 +232,8 @@ void VideoWidget::updatePlayBtnState() {
 
 // Slider
 
-Slider::Slider(QWidget *parent) : thumbnail_label(parent), QSlider(Qt::Horizontal, parent) {
+Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
+  thumbnail_label = new InfoLabel(parent);
   setMouseTracking(true);
 }
 
@@ -262,7 +290,7 @@ void Slider::paintEvent(QPaintEvent *ev) {
   double min = minimum() / factor;
   double max = maximum() / factor;
 
-  for (auto [begin, end, type] : qobject_cast<ReplayStream *>(can)->getTimeline()) {
+  for (auto [begin, end, type] : qobject_cast<ReplayStream *>(can)->getReplay()->getTimeline()) {
     if (begin > max || end < min)
       continue;
     r.setLeft(((std::max(min, begin) - min) / (max - min)) * width());
@@ -282,8 +310,7 @@ void Slider::paintEvent(QPaintEvent *ev) {
 void Slider::mousePressEvent(QMouseEvent *e) {
   QSlider::mousePressEvent(e);
   if (e->button() == Qt::LeftButton && !isSliderDown()) {
-    int value = minimum() + ((maximum() - minimum()) * e->x()) / width();
-    setValue(value);
+    setValue(minimum() + ((maximum() - minimum()) * e->x()) / width());
     emit sliderReleased();
   }
 }
@@ -293,11 +320,11 @@ void Slider::mouseMoveEvent(QMouseEvent *e) {
   double seconds = (minimum() + pos * ((maximum() - minimum()) / (double)width())) / factor;
   QPixmap thumb = thumbnail(seconds);
   if (!thumb.isNull()) {
-    int x = std::clamp(pos - thumb.width() / 2, THUMBNAIL_MARGIN, rect().right() - thumb.width() - THUMBNAIL_MARGIN);
-    int y = -thumb.height();
-    thumbnail_label.showPixmap(mapToParent({x, y}), utils::formatSeconds(seconds), thumb, alertInfo(seconds));
+    int x = std::clamp(pos - thumb.width() / 2, THUMBNAIL_MARGIN, width() - thumb.width() - THUMBNAIL_MARGIN + 1);
+    int y = -thumb.height() - THUMBNAIL_MARGIN;
+    thumbnail_label->showPixmap(mapToParent(QPoint(x, y)), utils::formatSeconds(seconds), thumb, alertInfo(seconds));
   } else {
-    thumbnail_label.hide();
+    thumbnail_label->hide();
   }
   QSlider::mouseMoveEvent(e);
 }
@@ -309,7 +336,7 @@ bool Slider::event(QEvent *event) {
     case QEvent::FocusIn:
     case QEvent::FocusOut:
     case QEvent::Leave:
-      thumbnail_label.hide();
+      thumbnail_label->hide();
       break;
     default:
       break;
