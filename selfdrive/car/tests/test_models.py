@@ -274,10 +274,15 @@ class TestCarModelBase(unittest.TestCase):
 
       can = messaging.new_message('can', 1)
       can.can = [log.CanData(address=address, dat=dat, src=bus)]
+      # del can.can[0]
+      # del can.can
       print('rxing', dict(address=address, dat=dat, src=bus))
+      # continue
 
       CC = car.CarControl.new_message()
       CS = self.CI.update(CC, (can.to_bytes(),))
+      # del can
+      # del CC
       # continue
 
       # test multiple CAN packets as well as multiple messages per CAN packet
