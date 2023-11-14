@@ -18,14 +18,6 @@ cereal
    cereal/README.md
    cereal/messaging/msgq.md
 
-laika
-=========
-
-.. toctree::
-   :maxdepth: 4
-
-   laika_repo/README.md
-
 models
 =========
 

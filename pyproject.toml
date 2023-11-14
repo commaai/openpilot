@@ -1,6 +1,6 @@
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=laika_repo/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadscope"
+addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadscope"
 cpp_files = "test_*"
 python_files = "test_*.py"
 #timeout = "30"  # you get this long by default
@@ -38,8 +38,6 @@ exclude = [
   "cereal/",
   "opendbc/",
   "panda/",
-  "laika/",
-  "laika_repo/",
   "rednose/",
   "rednose_repo/",
   "tinygrad/",
@@ -187,7 +185,6 @@ target-version="py311"
 exclude = [
   "panda",
   "opendbc",
-  "laika_repo",
   "rednose_repo",
   "tinygrad_repo",
   "third_party",
