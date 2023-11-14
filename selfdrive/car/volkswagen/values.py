@@ -247,7 +247,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
     VWCarInfo("Volkswagen Caravelle 2020"),
     VWCarInfo("Volkswagen California 2021-23"),
   ],
-  CAR.TROC_MK1: VWCarInfo("Volkswagen T-Roc 2021", footnotes=[Footnote.VW_MQB_A0]),
+  CAR.TROC_MK1: VWCarInfo("Volkswagen T-Roc 2018-22", footnotes=[Footnote.VW_MQB_A0]),
   CAR.AUDI_A3_MK3: [
     VWCarInfo("Audi A3 2014-19"),
     VWCarInfo("Audi A3 Sportback e-tron 2017-18"),
@@ -955,20 +955,29 @@ FW_VERSIONS = {
   CAR.TROC_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8705E906018AT\xf1\x899640',
+      b'\xf1\x8705E906018CK\xf1\x890863',
+      b'\xf1\x8705E906018P \xf1\x896020',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x870CW300050J \xf1\x891911',
       b'\xf1\x870CW300051M \xf1\x891925',
+      b'\xf1\x870CW300051M \xf1\x891928',
+      b'\xf1\x870CW300041S \xf1\x891615',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x875Q0959655BT\xf1\x890403\xf1\x82\x1311110012333300314240681152119333463100',
       b'\xf1\x875Q0959655CG\xf1\x890421\xf1\x82\x13111100123333003142404M1152119333613100',
+      b'\xf1\x875Q0959655CF\xf1\x890421\xf1\x82\x1311110012333300314240021150119333613100',
+      b'\xf1\x873Q0959655BH\xf1\x890712\xf1\x82\x0e1111001111001105111111052900',
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x875Q0909144AB\xf1\x891082\xf1\x82\x0521060405A1',
+      b'\xf1\x875WA907144M \xf1\x891051\xf1\x82\x001T06081T7N',
+      b'\xf1\x875Q0909144AA\xf1\x891081\xf1\x82\x0521060403A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x872Q0907572T \xf1\x890383',
+      b'\xf1\x872Q0907572M \xf1\x890233',
     ],
   },
   CAR.AUDI_A3_MK3: {
