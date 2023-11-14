@@ -24,7 +24,6 @@ non_tested_cars = [
   HYUNDAI.GENESIS_G90,
   HONDA.ODYSSEY_CHN,
   VOLKSWAGEN.CRAFTER_MK2,  # need a route from an ACC-equipped Crafter
-  TOYOTA.RAV4_TSS2_2023,
   SUBARU.FORESTER_HYBRID,
 ]
 
@@ -185,6 +184,7 @@ routes = [
   CarTestRoute("32a7df20486b0f70|2020-02-06--16-06-50", TOYOTA.RAV4H),
   CarTestRoute("cdf2f7de565d40ae|2019-04-25--03-53-41", TOYOTA.RAV4_TSS2),
   CarTestRoute("a5c341bb250ca2f0|2022-05-18--16-05-17", TOYOTA.RAV4_TSS2_2022),
+  CarTestRoute("ad5a3fa719bc2f83|2023-10-17--19-48-42", TOYOTA.RAV4_TSS2_2023),
   CarTestRoute("7e34a988419b5307|2019-12-18--19-13-30", TOYOTA.RAV4_TSS2),  # hybrid
   CarTestRoute("2475fb3eb2ffcc2e|2022-04-29--12-46-23", TOYOTA.RAV4_TSS2_2022),  # hybrid
   CarTestRoute("7a31f030957b9c85|2023-04-01--14-12-51", TOYOTA.LEXUS_ES),
