@@ -86,6 +86,7 @@ class CAR(StrEnum):
   LEXUS_RX = "LEXUS RX 2016"
   LEXUS_RXH = "LEXUS RX HYBRID 2017"
   LEXUS_RX_TSS2 = "LEXUS RX 2020"
+  LEXUS_GS_F = "LEXUS GS F 2016"
 
 
 class Footnote(Enum):
@@ -194,6 +195,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   ],
   CAR.LEXUS_IS: ToyotaCarInfo("Lexus IS 2017-19"),
   CAR.LEXUS_IS_TSS2: ToyotaCarInfo("Lexus IS 2022-23"),
+  CAR.LEXUS_GS_F: ToyotaCarInfo("Lexus GS F 2016"),
   CAR.LEXUS_NX: [
     ToyotaCarInfo("Lexus NX 2018-19"),
     ToyotaCarInfo("Lexus NX Hybrid 2018-19"),
@@ -1717,6 +1719,26 @@ FW_VERSIONS = {
         b'8646F3302200\x00\x00\x00\x00',
       ],
   },
+  CAR.LEXUS_GS_F: {
+    (Ecu.engine, 0x7E0, None): [
+      b'\x0233075200\x00\x00\x00\x00\x00\x00\x00\x00530B9000\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.abs, 0x7b0, None): [
+      b'F152630700\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.dsu, 0x791, None): [
+      b'881513016200\x00\x00\x00\x00',
+    ],
+    (Ecu.eps, 0x7a1, None): [
+      b'8965B30551\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x750, 0xf): [
+      b'8821F4702000\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'8646F3002100\x00\x00\x00\x00',
+    ],
+  },
   CAR.LEXUS_NX: {
     (Ecu.engine, 0x700, None): [
       b'\x01896637850000\x00\x00\x00\x00',
@@ -2081,6 +2103,7 @@ DBC = {
   CAR.PRIUS_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.MIRAI: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.ALPHARD_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+  CAR.LEXUS_GS_F: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
 }
 
 # These cars have non-standard EPS torque scale factors. All others are 73
@@ -2094,7 +2117,7 @@ TSS2_CAR = {CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023, CAR.COROLLA_T
 NO_DSU_CAR = TSS2_CAR | {CAR.CHR, CAR.CAMRY}
 
 # the DSU uses the AEB message for longitudinal on these cars
-UNSUPPORTED_DSU_CAR = {CAR.LEXUS_IS, CAR.LEXUS_RC}
+UNSUPPORTED_DSU_CAR = {CAR.LEXUS_IS, CAR.LEXUS_RC, CAR.LEXUS_GS_F}
 
 # these cars have a radar which sends ACC messages instead of the camera
 RADAR_ACC_CAR = {CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023, CAR.CHR_TSS2}
