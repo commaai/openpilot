@@ -533,8 +533,9 @@ class Tici(HardwareBase):
         pass
 
     # blue prime config
-    if sim_id.startswith('8901410'):
-      os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn=Broadband"')
+    blue_prime = sim_id.startswith('8901410')
+    initial_apn = "Broadband" if blue_prime else ""
+    os.system(f'mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn={initial_apn}"')
 
   def get_networks(self):
     r = {}
