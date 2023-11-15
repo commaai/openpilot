@@ -1550,27 +1550,6 @@ numpy = ["numpy"]
 test = ["flake8", "pylint", "pytest", "pytest-cov"]
 
 [[package]]
-name = "hatanaka"
-version = "2.4.0"
-description = "Effortlessly compress / decompress any RINEX file"
-optional = false
-python-versions = ">=3.6"
-files = [
-    {file = "hatanaka-2.4.0-py3-none-macosx_10_14_x86_64.whl", hash = "sha256:ef594d63473782fac46df5b0c92a59211a3efea1d47c1a964244a0abffc9f3f6"},
-    {file = "hatanaka-2.4.0-py3-none-manylinux1_x86_64.whl", hash = "sha256:8fda4aa56f27313de75a806a2f5aa83ed5bb2dc7561bebab856a774d06cf1ee7"},
-    {file = "hatanaka-2.4.0-py3-none-win_amd64.whl", hash = "sha256:5a0624f6812b13abb4c996398a60338566885c1786841c4c04de9b1b91da28d2"},
-    {file = "hatanaka-2.4.0.tar.gz", hash = "sha256:c22970b99169bddaf22e5239672e856a6bc9602c435f8793d26ad49619a70a99"},
-]
-
-[package.dependencies]
-importlib-resources = "*"
-ncompress = "*"
-
-[package.extras]
-dev = ["pytest"]
-tests = ["pytest"]
-
-[[package]]
 name = "hexdump"
 version = "3.3"
 description = "dump binary data to hex format and restore from there"
@@ -1687,21 +1666,6 @@ zipp = ">=0.5"
 docs = ["furo", "jaraco.packaging (>=9)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-lint"]
 perf = ["ipython"]
 testing = ["flufl.flake8", "importlib-resources (>=1.3)", "packaging", "pyfakefs", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-mypy (>=0.9.1)", "pytest-perf (>=0.9.2)", "pytest-ruff"]
-
-[[package]]
-name = "importlib-resources"
-version = "6.1.1"
-description = "Read resources from Python packages"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "importlib_resources-6.1.1-py3-none-any.whl", hash = "sha256:e8bf90d8213b486f428c9c39714b920041cb02c184686a3dee24905aaa8105d6"},
-    {file = "importlib_resources-6.1.1.tar.gz", hash = "sha256:3893a00122eafde6894c59914446a512f728a0c1a45f9bb9b63721b6bacf0b4a"},
-]
-
-[package.extras]
-docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (<7.2.5)", "sphinx (>=3.5)", "sphinx-lint"]
-testing = ["pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-mypy (>=0.9.1)", "pytest-ruff", "zipp (>=3.17)"]
 
 [[package]]
 name = "iniconfig"
@@ -2162,16 +2126,6 @@ files = [
     {file = "MarkupSafe-2.1.3-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:5bbe06f8eeafd38e5d0a4894ffec89378b6c6a625ff57e3028921f8ff59318ac"},
     {file = "MarkupSafe-2.1.3-cp311-cp311-win32.whl", hash = "sha256:dd15ff04ffd7e05ffcb7fe79f1b98041b8ea30ae9234aed2a9168b5797c3effb"},
     {file = "MarkupSafe-2.1.3-cp311-cp311-win_amd64.whl", hash = "sha256:134da1eca9ec0ae528110ccc9e48041e0828d79f24121a1a146161103c76e686"},
-    {file = "MarkupSafe-2.1.3-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:f698de3fd0c4e6972b92290a45bd9b1536bffe8c6759c62471efaa8acb4c37bc"},
-    {file = "MarkupSafe-2.1.3-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:aa57bd9cf8ae831a362185ee444e15a93ecb2e344c8e52e4d721ea3ab6ef1823"},
-    {file = "MarkupSafe-2.1.3-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ffcc3f7c66b5f5b7931a5aa68fc9cecc51e685ef90282f4a82f0f5e9b704ad11"},
-    {file = "MarkupSafe-2.1.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:47d4f1c5f80fc62fdd7777d0d40a2e9dda0a05883ab11374334f6c4de38adffd"},
-    {file = "MarkupSafe-2.1.3-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:1f67c7038d560d92149c060157d623c542173016c4babc0c1913cca0564b9939"},
-    {file = "MarkupSafe-2.1.3-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:9aad3c1755095ce347e26488214ef77e0485a3c34a50c5a5e2471dff60b9dd9c"},
-    {file = "MarkupSafe-2.1.3-cp312-cp312-musllinux_1_1_i686.whl", hash = "sha256:14ff806850827afd6b07a5f32bd917fb7f45b046ba40c57abdb636674a8b559c"},
-    {file = "MarkupSafe-2.1.3-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:8f9293864fe09b8149f0cc42ce56e3f0e54de883a9de90cd427f191c346eb2e1"},
-    {file = "MarkupSafe-2.1.3-cp312-cp312-win32.whl", hash = "sha256:715d3562f79d540f251b99ebd6d8baa547118974341db04f5ad06d5ea3eb8007"},
-    {file = "MarkupSafe-2.1.3-cp312-cp312-win_amd64.whl", hash = "sha256:1b8dd8c3fd14349433c79fa8abeb573a55fc0fdd769133baac1f5e07abf54aeb"},
     {file = "MarkupSafe-2.1.3-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:8e254ae696c88d98da6555f5ace2279cf7cd5b3f52be2b5cf97feafe883b58d2"},
     {file = "MarkupSafe-2.1.3-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:cb0932dc158471523c9637e807d9bfb93e06a95cbf010f1a38b98623b929ef2b"},
     {file = "MarkupSafe-2.1.3-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9402b03f1a1b4dc4c19845e5c749e3ab82d5078d16a2a4c2cd2df62d57bb0707"},
@@ -2576,70 +2530,6 @@ files = [
 [package.extras]
 fast = ["fastnumbers (>=2.0.0)"]
 icu = ["PyICU (>=1.0.0)"]
-
-[[package]]
-name = "ncompress"
-version = "1.0.1"
-description = "LZW compression and decompression"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "ncompress-1.0.1-cp310-cp310-macosx_10_14_universal2.whl", hash = "sha256:487f680e369ef2f7cdf26f888dd83dc2bdf36c5764d7be204300db2a8e176e50"},
-    {file = "ncompress-1.0.1-cp310-cp310-macosx_10_14_x86_64.whl", hash = "sha256:ac44c41811b5c1105974f92858cf607de7cd2a9a57ad2e511c603fc90d4dd034"},
-    {file = "ncompress-1.0.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:e37c183901042dbb29f9d24ce5a1239e9c57afdb9eb1a6a9deb5e036cca7149d"},
-    {file = "ncompress-1.0.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:723308a5782bed3ddcfba9e0c3ce6aecfad01e3d7644b44995e2cecc7317685f"},
-    {file = "ncompress-1.0.1-cp310-cp310-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:a6ae50e6e7f15aad30cd73d9261742e683fb660e9598564b14f05fe87e026e65"},
-    {file = "ncompress-1.0.1-cp310-cp310-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:85feb2f4ea85ac8ac9708c9a912e93f75e899d88eab2af6e89aae7a79120e105"},
-    {file = "ncompress-1.0.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7eb3eb16d26acc64e3175e8aec9dc102fe3355e45a701bf8c273c9d9af55b2d0"},
-    {file = "ncompress-1.0.1-cp310-cp310-musllinux_1_1_aarch64.whl", hash = "sha256:497be1959fa0c0c4249f546c059ee0a98e4f86d2bafe846a69acdbcd3bab849b"},
-    {file = "ncompress-1.0.1-cp310-cp310-musllinux_1_1_ppc64le.whl", hash = "sha256:cfba2d01010ee437425c0dd029e27429a6595e3e9447750b5821cb1908d347dc"},
-    {file = "ncompress-1.0.1-cp310-cp310-musllinux_1_1_s390x.whl", hash = "sha256:062d8fb3ea0534a96de052eb68343da831c88a607685a87b0dc144ad1466e9ff"},
-    {file = "ncompress-1.0.1-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:13a719822859605a798cf96e678b31e1dd66541369be48cc3ef544f2c6e14f08"},
-    {file = "ncompress-1.0.1-cp310-cp310-win_amd64.whl", hash = "sha256:7719b8659a9f61b3cfacbbd9c1bb07a3656945aed0bf2c73e34cd1122edc9ff2"},
-    {file = "ncompress-1.0.1-cp310-cp310-win_arm64.whl", hash = "sha256:62a95f693d6964d1b25110afa7b2111a6a471c62727b5efa2e3a8e5e3c5922ff"},
-    {file = "ncompress-1.0.1-cp311-cp311-macosx_10_14_universal2.whl", hash = "sha256:a94fc9e3e047199c29ada85fa3104de6a7b486859337a05259b8ae24c1686e29"},
-    {file = "ncompress-1.0.1-cp311-cp311-macosx_10_14_x86_64.whl", hash = "sha256:938eee75b6084e5fb3cf4fb6a79ba86fb261cade319639893f369401c53687e4"},
-    {file = "ncompress-1.0.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:016a3c60f6a25c50323cbcf4faf7c6ccd1992468eb6c6348a9d164cca3b53083"},
-    {file = "ncompress-1.0.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f49a6aa4e1757a0963bbadea6219c0369afb07265ace6e5c4201c974f5e271a3"},
-    {file = "ncompress-1.0.1-cp311-cp311-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:8101d647f5334c4afb2a11e0c18602a9bdddb4260ee0a4f8ec6241930c89124d"},
-    {file = "ncompress-1.0.1-cp311-cp311-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:39ced149de176fda05198e4d0ede9d88bb2a4b717f559b4826a169dd61ab41d9"},
-    {file = "ncompress-1.0.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0f7c85fb141308e806fecc47791aaa5d03efd05f2b6d0d9bdf0f7ce021f60799"},
-    {file = "ncompress-1.0.1-cp311-cp311-musllinux_1_1_aarch64.whl", hash = "sha256:c242d28f5679319733cf0f9a5342c3a94161214fb6ab4ef0fb15a31c65d69114"},
-    {file = "ncompress-1.0.1-cp311-cp311-musllinux_1_1_ppc64le.whl", hash = "sha256:149464d41c24fa66e1497b8e2b460f312dbe017624b46af1514bf0276485a99f"},
-    {file = "ncompress-1.0.1-cp311-cp311-musllinux_1_1_s390x.whl", hash = "sha256:ba638721c66c1946c32bbb86e9413c8a101b0db09c82afe96dfe1a2201783cab"},
-    {file = "ncompress-1.0.1-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:a9345d3825776440bba31b1998bd11a377e3eb98bb79377ae91739b5e7464c1c"},
-    {file = "ncompress-1.0.1-cp311-cp311-win_amd64.whl", hash = "sha256:0459002f93a2ed501fc76b6cd8806216f242cd86f11dac6df88932214345dd42"},
-    {file = "ncompress-1.0.1-cp311-cp311-win_arm64.whl", hash = "sha256:2039fd029b0c7b7bec320ab5450cdc93ef786bad9ba7a87162aa2892dd7156f9"},
-    {file = "ncompress-1.0.1-cp38-cp38-macosx_10_14_universal2.whl", hash = "sha256:cd1d7c3458f4c345dc47ede17e7777b1a7d6a26f18d08962b0a0804b142fdc1e"},
-    {file = "ncompress-1.0.1-cp38-cp38-macosx_10_14_x86_64.whl", hash = "sha256:213eedd6cf7bf550cce2ff6e72791c8343396d169a248d1b422b17f68cd387ed"},
-    {file = "ncompress-1.0.1-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:068bb0356d74afcf8f38b231e76773116e7346c76a6face3e25ec7cec4d60795"},
-    {file = "ncompress-1.0.1-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:87ea419d904f44833620a14a9815d3aaa70e4b9739a743953c963a56be64d711"},
-    {file = "ncompress-1.0.1-cp38-cp38-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:df2afc9e5ac6a72bed94fd75967cdacf826d94b7b29fe841210fefb1a7c6a6bb"},
-    {file = "ncompress-1.0.1-cp38-cp38-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:9bcb8f79fcaba867768178b98e25106c63a79f077f1ea22ec59e7945236a8ab7"},
-    {file = "ncompress-1.0.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:73a1025f501ea3d0b729da59f557ab67f6533a97ebe0082fd762018132cf92a7"},
-    {file = "ncompress-1.0.1-cp38-cp38-musllinux_1_1_aarch64.whl", hash = "sha256:dbf462b9cc620b56bf824aa20aa9d75de04444d1e43f1b228037d1ecf01ce6be"},
-    {file = "ncompress-1.0.1-cp38-cp38-musllinux_1_1_ppc64le.whl", hash = "sha256:2df08321ed9c8d0bbba34b2859b8a5a2833a3a315f131b81603eb1dc7423c0ba"},
-    {file = "ncompress-1.0.1-cp38-cp38-musllinux_1_1_s390x.whl", hash = "sha256:95a846e1704852c95c7ec347f09fc4bea3dfd3581020e3c694a1081a8fcd3ea1"},
-    {file = "ncompress-1.0.1-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:3c48aac59135cd521ba7a8ee0f6dd9d03946a3f2d2e02d4534dabe7423fd3420"},
-    {file = "ncompress-1.0.1-cp38-cp38-win_amd64.whl", hash = "sha256:47ade5c18733da749ba7371ac27e68ba806d67d430e5eb37c48bf338bb975382"},
-    {file = "ncompress-1.0.1-cp39-cp39-macosx_10_14_universal2.whl", hash = "sha256:29e7fce7e246de8871dc94349a1abf21da675e249acdaac76d95601a7c3da928"},
-    {file = "ncompress-1.0.1-cp39-cp39-macosx_10_14_x86_64.whl", hash = "sha256:c34316051bfc1305b3f51bf03cb78e115d23b153a34d8a1a9d04459e42857f84"},
-    {file = "ncompress-1.0.1-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:7c19380caa250289260576ca5c29558ed00f516ba9844283d6c9a5b7e6a0475f"},
-    {file = "ncompress-1.0.1-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:8207723ff3ba3f27a4bdb7632d5be05a6de5e0e163c4495dd66856d713f96dec"},
-    {file = "ncompress-1.0.1-cp39-cp39-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:8308fb769bb5eb063badd92904f4abe8c0f1c023d71a7cda168a033cbcc60c88"},
-    {file = "ncompress-1.0.1-cp39-cp39-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:d26a0b26e958ea7ffbc41fa6fdfa9e8f1c72b45134ca0ad198ea3f61701ba0b4"},
-    {file = "ncompress-1.0.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0ce207383fa1c1fb47320f3fb593a360ad30cc04b5ffcd868c020210eb57b798"},
-    {file = "ncompress-1.0.1-cp39-cp39-musllinux_1_1_aarch64.whl", hash = "sha256:c62cd047119d897b789955b082c9da76efae5b47f84b0ebe68fbe9e37f932f7b"},
-    {file = "ncompress-1.0.1-cp39-cp39-musllinux_1_1_ppc64le.whl", hash = "sha256:64bf39b339350f099811ab8eaf7a8aece5629a4555838c9744c81cdc39a1ad15"},
-    {file = "ncompress-1.0.1-cp39-cp39-musllinux_1_1_s390x.whl", hash = "sha256:4a707c302c008498afd23959ba6d64b7e4aa3a292d78e10dbb5c35f80b57ad64"},
-    {file = "ncompress-1.0.1-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:4abc4469666f6cf7f7e27fc8c1e629088c075ef5dfb22ad55cb80a193d745fdc"},
-    {file = "ncompress-1.0.1-cp39-cp39-win_amd64.whl", hash = "sha256:a1f9b16445da8af82073b5e7a9b33c024bd4299bfecfba1da636d32da5c9c399"},
-    {file = "ncompress-1.0.1-cp39-cp39-win_arm64.whl", hash = "sha256:7be5cca28b1a7c8df5d989d90c80d316b486bc8d32c67aec2029b27b9589c5df"},
-    {file = "ncompress-1.0.1.tar.gz", hash = "sha256:a27a54b572da8f14ac0c0689660f13cddb02a2822b03048d3c2ce3d28fb11027"},
-]
-
-[package.extras]
-tests = ["pytest"]
 
 [[package]]
 name = "nodeenv"
@@ -4898,17 +4788,6 @@ files = [
 ]
 
 [[package]]
-name = "types-certifi"
-version = "2021.10.8.3"
-description = "Typing stubs for certifi"
-optional = false
-python-versions = "*"
-files = [
-    {file = "types-certifi-2021.10.8.3.tar.gz", hash = "sha256:72cf7798d165bc0b76e1c10dd1ea3097c7063c42c21d664523b928e88b554a4f"},
-    {file = "types_certifi-2021.10.8.3-py3-none-any.whl", hash = "sha256:b2d1e325e69f71f7c78e5943d410e650b4707bb0ef32e4ddf3da37f54176e88a"},
-]
-
-[[package]]
 name = "types-pycurl"
 version = "7.45.2.5"
 description = "Typing stubs for pycurl"
@@ -5150,4 +5029,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "9538e574ca03437994b7b0a0b6cb41842256162a2f14abfd0da26587709f145a"
+content-hash = "f0abc0f53443c3b98eb06fc4dd0ff736e39197bc68c79db9aeffb4736657b676"

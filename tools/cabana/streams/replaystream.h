@@ -25,7 +25,6 @@ public:
   double totalSeconds() const override { return replay->totalSeconds(); }
   inline QDateTime beginDateTime() const { return replay->route()->datetime(); }
   inline double routeStartTime() const override { return replay->routeStartTime() / (double)1e9; }
-  inline double currentSec() const override { return replay->currentSeconds(); }
   inline const Route *route() const { return replay->route(); }
   inline void setSpeed(float speed) override { replay->setSpeed(speed); }
   inline float getSpeed() const { return replay->getSpeed(); }
