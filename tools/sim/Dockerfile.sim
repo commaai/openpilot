@@ -22,8 +22,6 @@ COPY ./body ${OPENPILOT_PATH}/body
 COPY ./third_party ${OPENPILOT_PATH}/third_party
 COPY ./site_scons ${OPENPILOT_PATH}/site_scons
 COPY ./rednose ${OPENPILOT_PATH}/rednose
-COPY ./laika_repo ${OPENPILOT_PATH}/laika_repo
-RUN ln -s ${OPENPILOT_PATH}/laika_repo/laika/ ${OPENPILOT_PATH}/laika
 COPY ./common ${OPENPILOT_PATH}/common
 COPY ./opendbc ${OPENPILOT_PATH}/opendbc
 COPY ./cereal ${OPENPILOT_PATH}/cereal

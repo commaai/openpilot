@@ -14,7 +14,9 @@
 const int MAX_COLUMN_COUNT = 4;
 const int CHART_SPACING = 4;
 
-ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_timer(this), QFrame(parent) {
+ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
+  align_timer = new QTimer(this);
+  auto_scroll_timer = new QTimer(this);
   setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
@@ -95,9 +97,9 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
   range_slider->setValue(max_chart_range);
   updateToolBar();
 
-  align_timer.setSingleShot(true);
-  QObject::connect(&align_timer, &QTimer::timeout, this, &ChartsWidget::alignCharts);
-  QObject::connect(&auto_scroll_timer, &QTimer::timeout, this, &ChartsWidget::doAutoScroll);
+  align_timer->setSingleShot(true);
+  QObject::connect(align_timer, &QTimer::timeout, this, &ChartsWidget::alignCharts);
+  QObject::connect(auto_scroll_timer, &QTimer::timeout, this, &ChartsWidget::doAutoScroll);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
   QObject::connect(can, &AbstractStream::eventsMerged, this, &ChartsWidget::eventsMerged);
   QObject::connect(can, &AbstractStream::msgsReceived, this, &ChartsWidget::updateState);
@@ -253,7 +255,7 @@ ChartView *ChartsWidget::createChart() {
   chart->setFixedHeight(settings.chart_height);
   chart->setMinimumWidth(CHART_MIN_WIDTH);
   chart->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-  QObject::connect(chart, &ChartView::axisYLabelWidthChanged, &align_timer, qOverload<>(&QTimer::start));
+  QObject::connect(chart, &ChartView::axisYLabelWidthChanged, align_timer, qOverload<>(&QTimer::start));
   charts.push_front(chart);
   currentCharts().push_front(chart);
   updateLayout(true);
@@ -334,11 +336,11 @@ void ChartsWidget::updateLayout(bool force) {
 }
 
 void ChartsWidget::startAutoScroll() {
-  auto_scroll_timer.start(50);
+  auto_scroll_timer->start(50);
 }
 
 void ChartsWidget::stopAutoScroll() {
-  auto_scroll_timer.stop();
+  auto_scroll_timer->stop();
   auto_scroll_count = 0;
 }
 
