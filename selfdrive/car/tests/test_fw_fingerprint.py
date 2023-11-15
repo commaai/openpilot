@@ -225,7 +225,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
     self._assert_timing(vin_time / self.N, vin_ref_time)
     print(f'get_vin, query time={vin_time / self.N} seconds')
 
-  @pytest.mark.timeout(60)
+  @pytest.mark.execution_timeout(60)
   def test_fw_query_timing(self):
     total_ref_time = 6.07
     brand_ref_times = {

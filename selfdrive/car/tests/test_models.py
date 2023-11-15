@@ -67,6 +67,7 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
   return test_cases
 
 
+@pytest.mark.setup_timeout(10)
 @pytest.mark.slow
 class TestCarModelBase(unittest.TestCase):
   car_model: Optional[str] = None

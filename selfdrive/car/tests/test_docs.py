@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from collections import defaultdict
 import os
+import pytest
 import re
 import unittest
 
@@ -13,6 +14,7 @@ from openpilot.selfdrive.debug.dump_car_info import dump_car_info
 from openpilot.selfdrive.debug.print_docs_diff import print_car_info_diff
 
 
+@pytest.mark.setup_timeout(10)
 class TestCarDocs(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
