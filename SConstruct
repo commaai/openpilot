@@ -26,6 +26,10 @@ AddOption('--ubsan',
           action='store_true',
           help='turn on UBSan')
 
+AddOption('--coverage',
+          action='store_true',
+          help='build with test coverage options')
+
 AddOption('--clazy',
           action='store_true',
           help='build with clazy')
@@ -52,7 +56,7 @@ AddOption('--pc-thneed',
 AddOption('--minimal',
           action='store_false',
           dest='extras',
-          default=os.path.islink(Dir('#laika/').abspath),
+          default=os.path.islink(Dir('#rednose/').abspath), # minimal by default on release branch (where rednose is not a link)
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
 ## Architecture name breakdown (arch)
@@ -382,7 +386,6 @@ SConscript(['rednose/SConscript'])
 
 # Build system services
 SConscript([
-  'system/clocksd/SConscript',
   'system/proclogd/SConscript',
   'system/ubloxd/SConscript',
   'system/loggerd/SConscript',

@@ -23,6 +23,7 @@ NO_DATES_PLATFORMS = {
   CAR.TUCSON_HYBRID_4TH_GEN,
   # CAN
   CAR.ELANTRA,
+  CAR.ELANTRA_GT_I30,
   CAR.KIA_CEED,
   CAR.KIA_FORTE,
   CAR.KIA_OPTIMA_G4,
@@ -62,7 +63,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     # Asserts no ECUs known to be shared across platforms exist in the database.
     # Tucson having Santa Cruz camera and EPS for example
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model):
+      with self.subTest(car_model=car_model.value):
         if car_model == CAR.SANTA_CRUZ_1ST_GEN:
           raise unittest.SkipTest("Skip checking Santa Cruz for its parts")
 
@@ -79,7 +80,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     """
     expected_fw_prefix = HYUNDAI_VERSION_REQUEST_LONG[1:]
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model):
+      with self.subTest(car_model=car_model.value):
         for ecu, fws in ecus.items():
           # TODO: enable for Ecu.fwdRadar, Ecu.abs, Ecu.eps, Ecu.transmission
           if ecu[0] in (Ecu.fwdCamera,):
@@ -99,11 +100,11 @@ class TestHyundaiFingerprint(unittest.TestCase):
   def test_platform_code_ecus_available(self):
     # TODO: add queries for these non-CAN FD cars to get EPS
     no_eps_platforms = CANFD_CAR | {CAR.KIA_SORENTO, CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL, CAR.KIA_OPTIMA_H,
-                                    CAR.KIA_OPTIMA_H_G4_FL, CAR.SONATA_LF, CAR.TUCSON, CAR.GENESIS_G90, CAR.GENESIS_G80}
+                                    CAR.KIA_OPTIMA_H_G4_FL, CAR.SONATA_LF, CAR.TUCSON, CAR.GENESIS_G90, CAR.GENESIS_G80, CAR.ELANTRA}
 
     # Asserts ECU keys essential for fuzzy fingerprinting are available on all platforms
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model):
+      with self.subTest(car_model=car_model.value):
         for platform_code_ecu in PLATFORM_CODE_ECUS:
           if platform_code_ecu in (Ecu.fwdRadar, Ecu.eps) and car_model == CAR.HYUNDAI_GENESIS:
             continue
@@ -118,7 +119,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     # - expected parsing of ECU FW dates
 
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model):
+      with self.subTest(car_model=car_model.value):
         for ecu, fws in ecus.items():
           if ecu[0] not in PLATFORM_CODE_ECUS:
             continue

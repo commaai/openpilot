@@ -57,6 +57,12 @@ Start bridge processes located in tools/sim:
 
 ## Carla
 
+CARLA is also partially supported, though the performance is not great. It needs to be manually installed with:
+
+```bash
+poetry install --with=carla
+```
+
 openpilot doesn't have any extreme hardware requirements, however CARLA requires an NVIDIA graphics card and is very resource-intensive and may not run smoothly on your system.
 For this case, we have the simulator in low quality by default.
 
