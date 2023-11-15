@@ -105,7 +105,7 @@ class Tici(HardwareBase):
   def nm(self):
     return self.bus.get_object(NM, '/org/freedesktop/NetworkManager')
 
-  @cached_property
+  @property # this should not be cached, in case the modemmanager restarts
   def mm(self):
     return self.bus.get_object(MM, '/org/freedesktop/ModemManager1')
 
@@ -211,8 +211,8 @@ class Tici(HardwareBase):
     return str(self.get_modem().Get(MM_MODEM, 'EquipmentIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
 
   def get_network_info(self):
-    modem = self.get_modem()
     try:
+      modem = self.get_modem()
       info = modem.Command("AT+QNWINFO", math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
       extra = modem.Command('AT+QENG="servingcell"', math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
       state = modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
