@@ -8,7 +8,6 @@
 #include <QFrame>
 #include <QSlider>
 #include <QTabBar>
-#include <QToolButton>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 #include "tools/cabana/util.h"
