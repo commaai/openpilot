@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import pytest
 import time
 import subprocess
 
@@ -9,6 +10,7 @@ from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.test.helpers import set_params_enabled
 
 
+@pytest.mark.tici
 def test_time_to_onroad():
   # launch
   set_params_enabled()

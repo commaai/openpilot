@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import pytest
 import time
 import unittest
 
@@ -7,16 +8,12 @@ from cereal.services import SERVICE_LIST
 from openpilot.common.gpio import gpio_read
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.manager.process_config import managed_processes
-from openpilot.system.hardware import TICI
 from openpilot.system.hardware.tici.pins import GPIO
 
 
 # TODO: test TTFF when we have good A-GNSS
+@pytest.mark.tici
 class TestPigeond(unittest.TestCase):
-  @classmethod
-  def setUpClass(cls):
-    if not TICI:
-      raise unittest.SkipTest
 
   def tearDown(self):
     managed_processes['pigeond'].stop()

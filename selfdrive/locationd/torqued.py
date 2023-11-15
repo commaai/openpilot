@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import os
-import sys
 import signal
 import numpy as np
 from collections import deque, defaultdict
+from functools import partial
 
 import cereal.messaging as messaging
 from cereal import car, log
@@ -12,7 +12,7 @@ from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
-from openpilot.selfdrive.locationd.helpers import PointBuckets
+from openpilot.selfdrive.locationd.helpers import PointBuckets, ParameterEstimator, cache_points_onexit
 
 HISTORY = 5  # secs
 POINTS_PER_BUCKET = 1500
@@ -52,7 +52,7 @@ class TorqueBuckets(PointBuckets):
         break
 
 
-class TorqueEstimator:
+class TorqueEstimator(ParameterEstimator):
   def __init__(self, CP, decimated=False):
     self.hist_len = int(HISTORY / DT_MDL)
     self.lag = CP.steerActuatorDelay + .2   # from controlsd
@@ -95,7 +95,7 @@ class TorqueEstimator:
 
     # try to restore cached params
     params = Params()
-    params_cache = params.get("LiveTorqueCarParams")
+    params_cache = params.get("CarParamsPrevRoute")
     torque_cache = params.get("LiveTorqueParameters")
     if params_cache is not None and torque_cache is not None:
       try:
@@ -116,7 +116,6 @@ class TorqueEstimator:
           cloudlog.info("restored torque params from cache")
       except Exception:
         cloudlog.exception("failed to restore cached torque params")
-        params.remove("LiveTorqueCarParams")
         params.remove("LiveTorqueParameters")
 
     self.filtered_params = {}
@@ -228,19 +227,8 @@ def main():
   with car.CarParams.from_bytes(params.get("CarParams", block=True)) as CP:
     estimator = TorqueEstimator(CP)
 
-  def cache_params(sig, frame):
-    signal.signal(sig, signal.SIG_DFL)
-    cloudlog.warning("caching torque params")
-
-    params = Params()
-    params.put("LiveTorqueCarParams", CP.as_builder().to_bytes())
-
-    msg = estimator.get_msg(with_points=True)
-    params.put("LiveTorqueParameters", msg.to_bytes())
-
-    sys.exit(0)
   if "REPLAY" not in os.environ:
-    signal.signal(signal.SIGINT, cache_params)
+    signal.signal(signal.SIGINT, partial(cache_points_onexit, "LiveTorqueParameters", estimator))
 
   while True:
     sm.update()
