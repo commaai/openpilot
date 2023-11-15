@@ -34,6 +34,8 @@ class TestAthenadMethods(unittest.TestCase):
     athenad.LOCAL_PORT_WHITELIST = {cls.SOCKET_PORT}
 
   def setUp(self):
+    dispatcher["listUploadQueue"]() # ensure queue is empty at start
+
     MockParams.restore_defaults()
     athenad.upload_queue = queue.Queue()
     athenad.cur_upload_items.clear()
@@ -45,8 +47,6 @@ class TestAthenadMethods(unittest.TestCase):
         shutil.rmtree(p)
       else:
         os.unlink(p)
-
-    dispatcher["listUploadQueue"]() # ensure queue is empty at start
 
   # *** test helpers ***
 
