@@ -286,7 +286,6 @@ system/sensord/pigeond.py
 selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
 selfdrive/thermald/fan_controller.py
-selfdrive/thermald/tests/test_modem.py
 
 selfdrive/test/__init__.py
 selfdrive/test/fuzzy_generation.py
