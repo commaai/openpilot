@@ -1,6 +1,6 @@
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=laika_repo/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
+addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
 cpp_files = "test_*"
 python_files = "test_*.py"
 #timeout = "30"  # you get this long by default
@@ -38,8 +38,6 @@ exclude = [
   "cereal/",
   "opendbc/",
   "panda/",
-  "laika/",
-  "laika_repo/",
   "rednose/",
   "rednose_repo/",
   "tinygrad/",
@@ -82,7 +80,6 @@ crcmod = "*"
 cryptography = "*"
 Cython = "*"
 future-fstrings = "*"  # for acados
-hatanaka = "==2.4"
 hexdump = "*"
 Jinja2 = "*"
 json-rpc = "*"
@@ -159,7 +156,6 @@ sphinx-sitemap = "*"
 tabulate = "*"
 tenacity = "*"
 types-atomicwrites = "*"
-types-certifi = "*"
 types-pycurl = "*"
 types-PyYAML = "*"
 types-requests = "*"
@@ -187,7 +183,6 @@ target-version="py311"
 exclude = [
   "panda",
   "opendbc",
-  "laika_repo",
   "rednose_repo",
   "tinygrad_repo",
   "third_party",
