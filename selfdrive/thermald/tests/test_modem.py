@@ -37,7 +37,8 @@ class TestModem(unittest.TestCase):
       assert self.sm.all_checks()
 
       # ensure networkState is being updated at least every 10 seconds
-      self.assertLess(time.time() - self.sm["deviceState"].networkStats.wwanTx, 12)
+      lastUpdateTime = self.sm["deviceState"].networkStats.wwanTx
+      self.assertLess(time.time() - lastUpdateTime, 12)
 
   def send_panda_state(self):
     rk = Ratekeeper(10)
