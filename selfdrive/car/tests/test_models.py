@@ -135,7 +135,6 @@ class TestCarModelBase(unittest.TestCase):
             if cls.car_safety_mode_frame is None and ps.safetyModel not in \
               (SafetyModel.elm327, SafetyModel.noOutput):
               cls.car_safety_mode_frame = len(can_msgs)
-
             if cls.elm_frame is None and ps.safetyModel != SafetyModel.elm327:
               cls.elm_frame = len(can_msgs)
 
