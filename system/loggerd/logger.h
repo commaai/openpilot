@@ -16,8 +16,6 @@
 #include "common/swaglog.h"
 #include "system/hardware/hw.h"
 
-const std::string LOG_ROOT = Path::log_root();
-
 #define LOGGER_MAX_HANDLES 16
 
 class RawFile {

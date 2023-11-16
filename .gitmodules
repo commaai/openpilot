@@ -4,9 +4,6 @@
 [submodule "opendbc"]
   path = opendbc
   url = ../../commaai/opendbc.git
-[submodule "laika_repo"]
-  path = laika_repo
-  url = ../../commaai/laika.git
 [submodule "cereal"]
   path = cereal
   url = ../../commaai/cereal.git

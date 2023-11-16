@@ -20,4 +20,10 @@ public:
     snprintf(volume_str, sizeof(volume_str), "%.3f", volume);
     std::system(("pactl set-sink-volume @DEFAULT_SINK@ " + std::string(volume_str)).c_str());
   }
+
+  static void config_cpu_rendering() {
+    setenv("QT_QPA_PLATFORM", "offscreen", 1);
+    setenv("__GLX_VENDOR_LIBRARY_NAME", "mesa", 1);
+    setenv("LP_NUM_THREADS", "0", 1); // disable threading so we stay on our assigned CPU
+  }
 };

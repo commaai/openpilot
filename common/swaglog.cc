@@ -20,7 +20,7 @@
 
 class SwaglogState : public LogState {
  public:
-  SwaglogState() : LogState("ipc:///tmp/logmessage") {}
+  SwaglogState() : LogState(Path::swaglog_ipc().c_str()) {}
 
   json11::Json::object ctx_j;
 

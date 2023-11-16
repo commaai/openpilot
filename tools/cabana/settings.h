@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QByteArray>
-#include <QCheckBox>
 #include <QComboBox>
 #include <QDialog>
 #include <QGroupBox>
@@ -23,9 +22,9 @@ public:
   };
 
   Settings();
-  void save();
-  void load();
+  ~Settings();
 
+  bool absolute_time = false;
   int fps = 10;
   int max_cached_minutes = 30;
   int chart_height = 200;
@@ -34,7 +33,7 @@ public:
   int chart_series_type = 0;
   int theme = 0;
   int sparkline_range = 15; // 15 seconds
-  bool multiple_lines_bytes = true;
+  bool multiple_lines_hex = false;
   bool log_livestream = true;
   bool suppress_defined_signals = false;
   QString log_path;
@@ -45,15 +44,13 @@ public:
   QByteArray window_state;
   QStringList recent_files;
   QByteArray message_header_state;
-  DragDirection drag_direction;
+  DragDirection drag_direction = MsbFirst;
 
 signals:
   void changed();
 };
 
 class SettingsDlg : public QDialog {
-  Q_OBJECT
-
 public:
   SettingsDlg(QWidget *parent);
   void save();

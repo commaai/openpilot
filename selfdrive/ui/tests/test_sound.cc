@@ -31,7 +31,7 @@ void controls_thread(int loop_cnt) {
 
   const int DT_CTRL = 10;  // ms
   for (int i = 0; i < loop_cnt; ++i) {
-    for (auto &[alert, fn, loops] : sound_list) {
+    for (auto &[alert, fn, loops, volume] : sound_list) {
       printf("testing %s\n", qPrintable(fn));
       for (int j = 0; j < 1000 / DT_CTRL; ++j) {
         MessageBuilder msg;

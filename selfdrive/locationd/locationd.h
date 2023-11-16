@@ -94,6 +94,7 @@ private:
   float gps_variance_factor;
   float gps_vertical_variance_factor;
   double gps_time_offset;
+  Eigen::VectorXd camodo_yawrate_distribution = Eigen::Vector2d(0.0, 10.0); // mean, std
 
   void configure_gnss_source(const LocalizerGnssSource &source);
 };

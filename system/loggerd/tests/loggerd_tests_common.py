@@ -1,11 +1,9 @@
 import os
-import errno
-import shutil
 import random
-import tempfile
 import unittest
 from pathlib import Path
 from typing import Optional
+from openpilot.system.hardware.hw import Paths
 
 import openpilot.system.loggerd.deleter as deleter
 import openpilot.system.loggerd.uploader as uploader
@@ -87,8 +85,6 @@ class UploaderTestCase(unittest.TestCase):
     uploader.Api = MockApiIgnore
 
   def setUp(self):
-    self.root = Path(tempfile.mkdtemp())
-    uploader.ROOT = str(self.root)  # Monkey patch root dir
     uploader.Api = MockApi
     uploader.Params = MockParams
     uploader.fake_upload = True
@@ -99,16 +95,9 @@ class UploaderTestCase(unittest.TestCase):
     self.seg_format2 = "2019-05-18--11-22-33--{}"
     self.seg_dir = self.seg_format.format(self.seg_num)
 
-  def tearDown(self):
-    try:
-      shutil.rmtree(self.root)
-    except OSError as e:
-      if e.errno != errno.ENOENT:
-        raise
-
   def make_file_with_data(self, f_dir: str, fn: str, size_mb: float = .1, lock: bool = False,
                           upload_xattr: Optional[bytes] = None, preserve_xattr: Optional[bytes] = None) -> Path:
-    file_path = self.root / f_dir / fn
+    file_path = Path(Paths.log_root()) / f_dir / fn
     create_random_file(file_path, size_mb, lock, upload_xattr)
 
     if preserve_xattr is not None:

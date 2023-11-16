@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include <QDebug>
 #include <QFontDatabase>
 #include <QHeaderView>
 #include <QMouseEvent>
@@ -24,6 +25,7 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   delegate = new BinaryItemDelegate(this);
   setItemDelegate(delegate);
   horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+  horizontalHeader()->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
   verticalHeader()->setSectionsClickable(false);
   verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
   verticalHeader()->setDefaultSectionSize(CELL_HEIGHT);
@@ -272,7 +274,7 @@ void BinaryViewModel::refresh() {
     row_count = can->lastMessage(msg_id).dat.size();
     items.resize(row_count * column_count);
   }
-  int valid_rows = std::min(can->lastMessage(msg_id).dat.size(), row_count);
+  int valid_rows = std::min<int>(can->lastMessage(msg_id).dat.size(), row_count);
   for (int i = 0; i < valid_rows * column_count; ++i) {
     items[i].valid = true;
   }
@@ -280,7 +282,7 @@ void BinaryViewModel::refresh() {
   updateState();
 }
 
-void BinaryViewModel::updateItem(int row, int col, const QString &val, const QColor &color) {
+void BinaryViewModel::updateItem(int row, int col, uint8_t val, const QColor &color) {
   auto &item = items[row * column_count + col];
   if (item.val != val || item.bg_color != color) {
     item.val = val;
@@ -307,17 +309,17 @@ void BinaryViewModel::updateState() {
   for (int i = 0; i < binary.size(); ++i) {
     for (int j = 0; j < 8; ++j) {
       auto &item = items[i * column_count + j];
-      QString val = ((binary[i] >> (7 - j)) & 1) != 0 ? "1" : "0";
+      int val = ((binary[i] >> (7 - j)) & 1) != 0 ? 1 : 0;
       // Bit update frequency based highlighting
       double offset = !item.sigs.empty() ? 50 : 0;
-      auto n = last_msg.bit_change_counts[i][7 - j];
+      auto n = last_msg.last_changes[i].bit_change_counts[j];
       double min_f = n == 0 ? offset : offset + 25;
       double alpha = std::clamp(offset + log2(1.0 + factor * (double)n / (double)last_msg.count) * scaler, min_f, max_f);
       auto color = item.bg_color;
       color.setAlpha(alpha);
       updateItem(i, j, val, color);
     }
-    updateItem(i, 8, toHex(binary[i]), last_msg.colors[i]);
+    updateItem(i, 8, binary[i], last_msg.colors[i]);
   }
 }
 
@@ -333,13 +335,8 @@ QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, i
 }
 
 QVariant BinaryViewModel::data(const QModelIndex &index, int role) const {
-  if (role == Qt::ToolTipRole) {
-    auto item = (const BinaryViewModel::Item *)index.internalPointer();
-    if (item && !item->sigs.empty()) {
-      return signalToolTip(item->sigs.back());
-    }
-  }
-  return {};
+  auto item = (const BinaryViewModel::Item *)index.internalPointer();
+  return role == Qt::ToolTipRole && item && !item->sigs.empty() ? signalToolTip(item->sigs.back()) : QVariant();
 }
 
 // BinaryItemDelegate
@@ -348,6 +345,13 @@ BinaryItemDelegate::BinaryItemDelegate(QObject *parent) : QStyledItemDelegate(pa
   small_font.setPixelSize(8);
   hex_font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
   hex_font.setBold(true);
+
+  bin_text_table[0].setText("0");
+  bin_text_table[1].setText("1");
+  for (int i = 0; i < 256; ++i) {
+    hex_text_table[i].setText(QStringLiteral("%1").arg(i, 2, 16, QLatin1Char('0')).toUpper());
+    hex_text_table[i].prepare({}, hex_font);
+  }
 }
 
 bool BinaryItemDelegate::hasSignal(const QModelIndex &index, int dx, int dy, const cabana::Signal *sig) const {
@@ -380,7 +384,7 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
           drawSignalCell(painter, option, index, s);
         }
       }
-    } else if (item->valid) {
+    } else if (item->valid && item->bg_color.alpha() > 0) {
       painter->fillRect(option.rect, item->bg_color);
     }
     auto color_role = item->sigs.contains(bin_view->hovered_sig) ? QPalette::BrightText : QPalette::Text;
@@ -392,7 +396,9 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   } else if (!item->valid) {
     painter->fillRect(option.rect, QBrush(Qt::darkGray, Qt::BDiagPattern));
   }
-  painter->drawText(option.rect, Qt::AlignCenter, item->val);
+  if (item->valid) {
+    utils::drawStaticText(painter, option.rect, index.column() == 8 ? hex_text_table[item->val] : bin_text_table[item->val]);
+  }
   if (item->is_msb || item->is_lsb) {
     painter->setFont(small_font);
     painter->drawText(option.rect.adjusted(8, 0, -8, -3), Qt::AlignRight | Qt::AlignBottom, item->is_msb ? "M" : "L");

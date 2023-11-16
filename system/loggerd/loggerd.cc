@@ -24,7 +24,7 @@ struct LoggerdState {
 
 void logger_rotate(LoggerdState *s) {
   int segment = -1;
-  int err = logger_next(&s->logger, LOG_ROOT.c_str(), s->segment_path, sizeof(s->segment_path), &segment);
+  int err = logger_next(&s->logger, Path::log_root().c_str(), s->segment_path, sizeof(s->segment_path), &segment);
   assert(err == 0);
   s->rotate_segment = segment;
   s->ready_to_rotate = 0;

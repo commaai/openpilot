@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import pytest
 import time
 import unittest
 import numpy as np
@@ -7,9 +8,9 @@ from collections import namedtuple, defaultdict
 
 import cereal.messaging as messaging
 from cereal import log
-from cereal.services import service_list
+from cereal.services import SERVICE_LIST
 from openpilot.common.gpio import get_irqs_for_action
-from openpilot.system.hardware import TICI
+from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.manager.process_config import managed_processes
 
 BMX = {
@@ -73,36 +74,42 @@ def get_irq_count(irq: int):
 def read_sensor_events(duration_sec):
   sensor_types = ['accelerometer', 'gyroscope', 'magnetometer', 'accelerometer2',
                   'gyroscope2', 'temperatureSensor', 'temperatureSensor2']
-  esocks = {}
+  socks = {}
+  poller = messaging.Poller()
   events = defaultdict(list)
   for stype in sensor_types:
-    esocks[stype] = messaging.sub_sock(stype, timeout=0.1)
+    socks[stype] = messaging.sub_sock(stype, poller=poller, timeout=100)
 
-  start_time_sec = time.monotonic()
-  while time.monotonic() - start_time_sec < duration_sec:
-    for esock in esocks:
-      events[esock] += messaging.drain_sock(esocks[esock])
+  # wait for sensors to come up
+  with Timeout(int(os.environ.get("SENSOR_WAIT", "5")), "sensors didn't come up"):
+    while len(poller.poll(250)) == 0:
+      pass
+  time.sleep(1)
+  for s in socks.values():
+    messaging.drain_sock_raw(s)
+
+  st = time.monotonic()
+  while time.monotonic() - st < duration_sec:
+    for s in socks:
+      events[s] += messaging.drain_sock(socks[s])
     time.sleep(0.1)
 
   assert sum(map(len, events.values())) != 0, "No sensor events collected!"
 
   return {k: v for k, v in events.items() if len(v) > 0}
 
+@pytest.mark.tici
 class TestSensord(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
-    if not TICI:
-      raise unittest.SkipTest
-
     # enable LSM self test
     os.environ["LSM_SELF_TEST"] = "1"
 
     # read initial sensor values every test case can use
-    os.system("pkill -f ./_sensord")
+    os.system("pkill -f \\\\./sensord")
     try:
       managed_processes["sensord"].start()
-      time.sleep(3)
-      cls.sample_secs = 10
+      cls.sample_secs = int(os.getenv("SAMPLE_SECS", "10"))
       cls.events = read_sensor_events(cls.sample_secs)
 
       # determine sensord's irq
@@ -163,7 +170,7 @@ class TestSensord(unittest.TestCase):
     for s, msgs in self.events.items():
       with self.subTest(sensor=s):
         freq = len(msgs) / self.sample_secs
-        ef = service_list[s].frequency
+        ef = SERVICE_LIST[s].frequency
         assert ef*0.85 <= freq <= ef*1.15
 
   def test_logmonottime_timestamp_diff(self):

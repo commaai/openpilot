@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from math import cos, sin
 from cereal import car
 from opendbc.can.parser import CANParser
