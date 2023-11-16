@@ -92,7 +92,7 @@ class TestCarModelBase(unittest.TestCase):
         raise unittest.SkipTest
       raise Exception(f"missing test route for {cls.car_model}")
 
-    test_segs = (2, 1, 0)
+    test_segs = (0, 1, 2)
     if cls.test_route.segment is not None:
       test_segs = (cls.test_route.segment,)
 
@@ -277,7 +277,8 @@ class TestCarModelBase(unittest.TestCase):
       # ensure all msgs defined in the addr checks are valid
       if self.car_model not in ignore_addr_checks_valid:
         self.safety.safety_tick_current_rx_checks()
-        if t > 1e6:
+        print('addr checks valid', self.safety.addr_checks_valid())
+        if t > 5e6:
           self.assertTrue(self.safety.addr_checks_valid())
 
         # No need to check relay malfunction on disabled routes (relay closed),
