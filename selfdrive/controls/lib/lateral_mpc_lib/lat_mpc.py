@@ -5,7 +5,7 @@ import numpy as np
 
 from casadi import SX, vertcat, sin, cos
 # WARNING: imports outside of constants will not trigger a rebuild
-from openpilot.selfdrive.modeld.constants import T_IDXS
+from openpilot.selfdrive.modeld.constants import ModelConstants
 
 if __name__ == '__main__':  # generating code
   from openpilot.third_party.acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
@@ -66,7 +66,7 @@ def gen_lat_ocp():
   ocp = AcadosOcp()
   ocp.model = gen_lat_model()
 
-  Tf = np.array(T_IDXS)[N]
+  Tf = np.array(ModelConstants.T_IDXS)[N]
 
   # set dimensions
   ocp.dims.N = N
@@ -122,7 +122,7 @@ def gen_lat_ocp():
 
   # set prediction horizon
   ocp.solver_options.tf = Tf
-  ocp.solver_options.shooting_nodes = np.array(T_IDXS)[:N+1]
+  ocp.solver_options.shooting_nodes = np.array(ModelConstants.T_IDXS)[:N+1]
 
   ocp.code_export_directory = EXPORT_DIR
   return ocp

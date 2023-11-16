@@ -226,8 +226,8 @@
         <translation>電源を切る</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilotの本体は、左右4°以内、上5°、下8°以内の角度で取付ける必要があります。継続してキャリブレーションを続けているので、手動でリセットを行う必要はほぼありません。</translation>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
+        <translation>openpilotの本体は、左右4°以内、上5°、下9°以内の角度で取付ける必要があります。継続してキャリブレーションを続けているので、手動でリセットを行う必要はほぼありません。</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
@@ -272,33 +272,6 @@
     <message>
         <source>Review</source>
         <translation>確認</translation>
-    </message>
-</context>
-<context>
-    <name>DriveStats</name>
-    <message>
-        <source>Drives</source>
-        <translation>運転履歴</translation>
-    </message>
-    <message>
-        <source>Hours</source>
-        <translation>時間</translation>
-    </message>
-    <message>
-        <source>ALL TIME</source>
-        <translation>累計</translation>
-    </message>
-    <message>
-        <source>PAST WEEK</source>
-        <translation>先週</translation>
-    </message>
-    <message>
-        <source>KM</source>
-        <translation>km</translation>
-    </message>
-    <message>
-        <source>Miles</source>
-        <translation>マイル</translation>
     </message>
 </context>
 <context>

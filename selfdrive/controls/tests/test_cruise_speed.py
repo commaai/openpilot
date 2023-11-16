@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import itertools
 import numpy as np
 import unittest
 
@@ -31,21 +32,19 @@ def run_cruise_simulation(cruise, e2e, t_end=20.):
   return output[-1, 3]
 
 
+@parameterized_class(("e2e", "personality", "speed"), itertools.product(
+                      [True, False], # e2e
+                      log.LongitudinalPersonality.schema.enumerants, # personality
+                      [5,35])) # speed
 class TestCruiseSpeed(unittest.TestCase):
   def test_cruise_speed(self):
     params = Params()
-    personalities = [log.LongitudinalPersonality.relaxed,
-                     log.LongitudinalPersonality.standard,
-                     log.LongitudinalPersonality.aggressive]
-    for personality in personalities:
-      params.put("LongitudinalPersonality", str(personality))
-      for e2e in [False, True]:
-        for speed in [5,35]:
-          print(f'Testing {speed} m/s')
-          cruise_speed = float(speed)
+    params.put("LongitudinalPersonality", str(self.personality))
+    print(f'Testing {self.speed} m/s')
+    cruise_speed = float(self.speed)
 
-          simulation_steady_state = run_cruise_simulation(cruise_speed, e2e)
-          self.assertAlmostEqual(simulation_steady_state, cruise_speed, delta=.01, msg=f'Did not reach {speed} m/s')
+    simulation_steady_state = run_cruise_simulation(cruise_speed, self.e2e)
+    self.assertAlmostEqual(simulation_steady_state, cruise_speed, delta=.01, msg=f'Did not reach {self.speed} m/s')
 
 
 # TODO: test pcmCruise

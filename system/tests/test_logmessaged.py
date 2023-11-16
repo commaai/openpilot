@@ -21,7 +21,7 @@ class TestLogmessaged(unittest.TestCase):
     self.error_sock = messaging.sub_sock("logMessage", timeout=1000, conflate=False)
 
     # ensure sockets are connected
-    time.sleep(0.2)
+    time.sleep(1)
     messaging.drain_sock(self.sock)
     messaging.drain_sock(self.error_sock)
 
