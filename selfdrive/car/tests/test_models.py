@@ -14,9 +14,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
-from openpilot.selfdrive.car.gm.values import CAR as GM
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
-from openpilot.selfdrive.car.hyundai.values import CAR as HYUNDAI
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.test.openpilotci import get_url
@@ -45,7 +43,7 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
 
     for i, c in enumerate(sorted(all_known_cars())):
       if i % NUM_JOBS == JOB_ID:
-        test_cases.extend(sorted((c, r) for r in routes_by_car.get(c, (None,))))
+        test_cases.extend(sorted((c.value, r) for r in routes_by_car.get(c, (None,))))
 
   else:
     with open(os.path.join(BASEDIR, INTERNAL_SEG_LIST), "r") as f:
@@ -132,6 +130,9 @@ class TestCarModelBase(unittest.TestCase):
               cls.car_safety_mode_frame = len(can_msgs)
             if cls.elm_frame is None and ps.safetyModel != SafetyModel.elm327:
               cls.elm_frame = len(can_msgs)
+            if cls.car_safety_mode_frame is None and ps.safetyModel not in \
+              (SafetyModel.elm327, SafetyModel.noOutput):
+              cls.car_safety_mode_frame = len(can_msgs)
 
         elif msg.which() == 'pandaStateDEPRECATED':
           if cls.car_safety_mode_frame is None and msg.pandaStateDEPRECATED.safetyModel not in \
@@ -139,6 +140,9 @@ class TestCarModelBase(unittest.TestCase):
             cls.car_safety_mode_frame = len(can_msgs)
           if cls.elm_frame is None and msg.pandaStateDEPRECATED.safetyModel != SafetyModel.elm327:
             cls.elm_frame = len(can_msgs)
+          if cls.car_safety_mode_frame is None and msg.pandaStateDEPRECATED.safetyModel not in \
+            (SafetyModel.elm327, SafetyModel.noOutput):
+            cls.car_safety_mode_frame = len(can_msgs)
 
       if len(can_msgs) > int(50 / DT_CTRL):
         break
@@ -249,9 +253,9 @@ class TestCarModelBase(unittest.TestCase):
       if t > 1e6:
         self.assertTrue(self.safety.addr_checks_valid())
 
-      # No need to check relay malfunction on disabled routes (relay closed),
+      # Don't check relay malfunction on disabled routes (relay closed),
       # or before fingerprinting is done (elm327 and noOutput)
-      if self.car_safety_mode_frame is not None and t / 1e4 > self.car_safety_mode_frame:
+      if self.openpilot_enabled and t / 1e4 > self.car_safety_mode_frame:
         self.assertFalse(self.safety.get_relay_malfunction())
       else:
         self.safety.set_relay_malfunction(False)
@@ -379,6 +383,7 @@ class TestCarModelBase(unittest.TestCase):
 
 
 @parameterized_class(('car_model', 'test_route'), get_test_cases())
+@pytest.mark.xdist_group_class_property('car_model')
 class TestCarModel(TestCarModelBase):
   pass
 

@@ -448,7 +448,6 @@ scripts/stop_updater.sh
 
 rednose/.gitignore
 rednose/**
-laika/**
 
 body/.gitignore
 body/board/SConscript
