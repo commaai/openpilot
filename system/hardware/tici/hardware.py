@@ -9,6 +9,7 @@ from functools import cached_property, lru_cache
 from pathlib import Path
 
 from cereal import log
+from openpilot.common.basedir import BASEDIR
 from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
 from openpilot.system.hardware.base import HardwareBase, ThermalConfig
 from openpilot.system.hardware.tici import iwlist
@@ -540,7 +541,7 @@ class Tici(HardwareBase):
 
     # eSIM prime
     if sim_id.startswith('8985235'):
-      with open('/data/openpilot/system/hardware/tici/esim.nmconnection') as f, tempfile.NamedTemporaryFile(mode='w') as tf:
+      with open(os.path.join(BASEDIR, 'system/hardware/tici/esim.nmconnection')) as f, tempfile.NamedTemporaryFile(mode='w') as tf:
         dat = f.read()
         dat = dat.replace("sim-id=", f"sim-id={sim_id}")
         tf.write(dat)
