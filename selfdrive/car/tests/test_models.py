@@ -14,9 +14,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
-from openpilot.selfdrive.car.gm.values import CAR as GM
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
-from openpilot.selfdrive.car.hyundai.values import CAR as HYUNDAI
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.test.openpilotci import get_url
@@ -33,11 +31,6 @@ NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
 INTERNAL_SEG_LIST = os.environ.get("INTERNAL_SEG_LIST", "")
 INTERNAL_SEG_CNT = int(os.environ.get("INTERNAL_SEG_CNT", "0"))
-
-ignore_addr_checks_valid = [
-  GM.BUICK_REGAL,
-  HYUNDAI.GENESIS_G70_2020,
-]
 
 
 def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
@@ -250,17 +243,16 @@ class TestCarModelBase(unittest.TestCase):
           failed_addrs[hex(msg.address)] += 1
 
       # ensure all msgs defined in the addr checks are valid
-      if self.car_model not in ignore_addr_checks_valid:
-        self.safety.safety_tick_current_rx_checks()
-        if t > 1e6:
-          self.assertTrue(self.safety.addr_checks_valid())
+      self.safety.safety_tick_current_rx_checks()
+      if t > 1e6:
+        self.assertTrue(self.safety.addr_checks_valid())
 
-          # No need to check relay malfunction on disabled routes (relay closed),
-          # or before fingerprinting is done (1s of tolerance to exit silent mode)
-          if self.openpilot_enabled and t / 1e4 > (self.elm_frame + 100):
-            self.assertFalse(self.safety.get_relay_malfunction())
-          else:
-            self.safety.set_relay_malfunction(False)
+        # No need to check relay malfunction on disabled routes (relay closed),
+        # or before fingerprinting is done (1s of tolerance to exit silent mode)
+        if self.openpilot_enabled and t / 1e4 > (self.elm_frame + 100):
+          self.assertFalse(self.safety.get_relay_malfunction())
+        else:
+          self.safety.set_relay_malfunction(False)
 
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
