@@ -67,7 +67,7 @@ def sync_to_ci_public(route: str, strip_data: bool = False) -> bool:
   source_containers, dest_container = get_azure_containers()
   key_prefix = route.replace('|', '/')
 
-  if next(dest_container.list_blob_names(name_starts_with=key_prefix), None) is not None and route != 'ad5a3fa719bc2f83|2023-10-17--19-48-42':
+  if next(dest_container.list_blob_names(name_starts_with=key_prefix), None) is not None:# and route != 'ad5a3fa719bc2f83|2023-10-17--19-48-42':
     print("Already exists in dest container:", route)
     return True
 
