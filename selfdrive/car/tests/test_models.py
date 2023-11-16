@@ -92,7 +92,7 @@ class TestCarModelBase(unittest.TestCase):
         raise unittest.SkipTest
       raise Exception(f"missing test route for {cls.car_model}")
 
-    test_segs = (0, 1, 2)
+    test_segs = (2, 1, 0)
     if cls.test_route.segment is not None:
       test_segs = (cls.test_route.segment,)
 
@@ -103,8 +103,6 @@ class TestCarModelBase(unittest.TestCase):
           lr = LogReader(f"cd:/{route_name.dongle_id}/{route_name.time_str}/{seg}/rlog.bz2")
         elif cls.ci:
           lr = LogReader(get_url(cls.test_route.route, seg))
-          print()
-          print(get_url(cls.test_route.route, seg))
         else:
           lr = LogReader(Route(cls.test_route.route).log_paths()[seg])
       except Exception:
@@ -116,9 +114,6 @@ class TestCarModelBase(unittest.TestCase):
       cls.car_safety_mode_frame = None
       fingerprint = defaultdict(dict)
       experimental_long = False
-      # enabled_toggle = True
-      dashcam_only = False
-      in_car_safety_mode = False
       for msg in lr:
         if msg.which() == "can":
           can_msgs.append(msg)
@@ -129,19 +124,13 @@ class TestCarModelBase(unittest.TestCase):
 
         elif msg.which() == "carParams":
           car_fw = msg.carParams.carFw
-          # dashcam_only = msg.carParams.dashcamOnly
           if msg.carParams.openpilotLongitudinalControl:
             experimental_long = True
           if cls.car_model is None and not cls.ci:
             cls.car_model = msg.carParams.carFingerprint
 
-        # elif msg.which() == 'initData':
-        #   for param in msg.initData.params.entries:
-        #     if param.key == 'OpenpilotEnabledToggle':
-        #       enabled_toggle = param.value.strip(b'\x00') == b'1'
-
         # Log which can frame the panda safety mode left ELM327, for CAN validity checks
-        if msg.which() == 'pandaStates':
+        elif msg.which() == 'pandaStates':
           for ps in msg.pandaStates:
             print(ps.safetyModel)
             if cls.car_safety_mode_frame is None and ps.safetyModel not in (SafetyModel.elm327, SafetyModel.noOutput):
@@ -162,16 +151,8 @@ class TestCarModelBase(unittest.TestCase):
     else:
       raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded?")
 
-    print(cls.car_safety_mode_frame)
     # if relay is expected to be open in the route
-    cls.openpilot_enabled = cls.car_safety_mode_frame is not None  # enabled_toggle and not dashcam_only
-    # new_openpilot_enabled = in_car_safety_mode # and not dashcam_only
-
-    import sys
-    # print(enabled_toggle, in_car_safety_mode, dashcam_only, file=sys.stderr)
-    # assert enabled_toggle == (cls.elm_frame is not None)
-    # assert cls.openpilot_enabled == new_openpilot_enabled
-    # assert enabled_toggle == in_car_safety_mode
+    cls.openpilot_enabled = cls.car_safety_mode_frame is not None
 
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
@@ -258,7 +239,7 @@ class TestCarModelBase(unittest.TestCase):
     start_ts = self.can_msgs[0].logMonoTime
 
     failed_addrs = Counter()
-    for idx, can in enumerate(self.can_msgs):
+    for can in self.can_msgs:
       # update panda timer
       t = (can.logMonoTime - start_ts) / 1e3
       self.safety.set_timer(int(t))
@@ -267,8 +248,6 @@ class TestCarModelBase(unittest.TestCase):
       for msg in can.can:
         if msg.src >= 64:
           continue
-        # if msg.address != 80:
-        #   continue
 
         to_send = libpanda_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
         if self.safety.safety_rx_hook(to_send) != 1:
@@ -277,17 +256,14 @@ class TestCarModelBase(unittest.TestCase):
       # ensure all msgs defined in the addr checks are valid
       if self.car_model not in ignore_addr_checks_valid:
         self.safety.safety_tick_current_rx_checks()
-        print('addr checks valid', self.safety.addr_checks_valid())
-        if t > 5e6:
+        if t > 1e6:
           self.assertTrue(self.safety.addr_checks_valid())
 
         # No need to check relay malfunction on disabled routes (relay closed),
         # or before fingerprinting is done (elm327 and noOutput)
         if self.car_safety_mode_frame is not None and t / 1e4 > self.car_safety_mode_frame:
           self.assertFalse(self.safety.get_relay_malfunction())
-          print('no longer resetting. malfunction:', self.safety.get_relay_malfunction(), idx)
         else:
-          print('resetting. malfunction:', self.safety.get_relay_malfunction(), idx)
           self.safety.set_relay_malfunction(False)
 
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
