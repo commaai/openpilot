@@ -6,7 +6,6 @@ import sys
 from functools import lru_cache
 from typing import Iterable, Optional
 
-import azure.core.exceptions
 from azure.storage.blob import ContainerClient
 from tqdm import tqdm
 
