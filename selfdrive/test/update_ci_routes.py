@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-import re
 import bz2
+import os
+import re
 import subprocess
 import sys
 from functools import lru_cache
@@ -12,8 +13,8 @@ from tqdm import tqdm
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.selfdrive.car.tests.routes import routes as test_car_models_routes
 from openpilot.selfdrive.test.process_replay.test_processes import source_segments as replay_segments
-from openpilot.selfdrive.test.openpilotci import (DATA_CI_ACCOUNT, DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER,
-                                                  get_azure_credential, get_container_sas)
+from openpilot.selfdrive.test.openpilotci import (DATA_CI_ACCOUNT, DATA_CI_ACCOUNT_URL, OPENPILOT_CI_CONTAINER,
+                                                  DATA_CI_CONTAINER, get_azure_credential, get_container_sas, upload_file)
 
 PRESERVE_SERVICES = ["can", "carParams", "pandaStates", "pandaStateDEPRECATED"]
 DATA_PROD_ACCOUNT = "commadata2"
@@ -39,28 +40,21 @@ def get_azure_containers():
   source_containers = []
   for source_account, source_bucket in SOURCES:
     source_containers.append(ContainerClient(f"https://{source_account}.blob.core.windows.net", source_bucket, credential=get_azure_credential()))
-  dest_container = ContainerClient(DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER, credential=get_azure_credential())
+  dest_container = ContainerClient(DATA_CI_ACCOUNT_URL, OPENPILOT_CI_CONTAINER, credential=get_azure_credential())
   return source_containers, dest_container
 
 
 def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) -> None:
-  # TODO: use azure-storage-blob instead of azcopy, simplifies auth
-  dest_key = get_container_sas(DATA_CI_ACCOUNT, DATA_CI_CONTAINER)
   if exclude_patterns is None:
-    exclude_patterns = ['*/dcamera.hevc']
+    exclude_patterns = [r'dcamera\.hevc']
 
   r, n = path.rsplit("--", 1)
   r = '/'.join(r.split('/')[-2:])  # strip out anything extra in the path
   destpath = f"{r}/{n}"
-  cmd = [
-    "azcopy",
-    "copy",
-    f"{path}/*",
-    f"https://{DATA_CI_ACCOUNT}.blob.core.windows.net/{DATA_CI_CONTAINER}/{destpath}?{dest_key}",
-    "--recursive=false",
-    "--overwrite=false",
-  ] + [f"--exclude-pattern={p}" for p in exclude_patterns]
-  subprocess.check_call(cmd)
+  for file in os.listdir(path):
+    if any(re.search(pattern, file) for pattern in exclude_patterns):
+      continue
+    upload_file(os.path.join(path, file), f"{destpath}/{file}")
 
 
 def sync_to_ci_public(route: str, strip_data: bool = False) -> bool:
