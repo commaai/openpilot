@@ -132,16 +132,16 @@ class TestCarModelBase(unittest.TestCase):
         # Log which can frame the panda safety mode left ELM327, for CAN validity checks
         elif msg.which() == 'pandaStates':
           for ps in msg.pandaStates:
-            print(ps.safetyModel)
-            if cls.car_safety_mode_frame is None and ps.safetyModel not in (SafetyModel.elm327, SafetyModel.noOutput):
+            if cls.car_safety_mode_frame is None and ps.safetyModel not in \
+              (SafetyModel.elm327, SafetyModel.noOutput):
               cls.car_safety_mode_frame = len(can_msgs)
 
             if cls.elm_frame is None and ps.safetyModel != SafetyModel.elm327:
               cls.elm_frame = len(can_msgs)
 
         elif msg.which() == 'pandaStateDEPRECATED':
-          # print(msg.pandaStateDEPRECATED.safetyModel)
-          if cls.car_safety_mode_frame is None and msg.pandaStateDEPRECATED.safetyModel not in (SafetyModel.elm327, SafetyModel.noOutput):
+          if cls.car_safety_mode_frame is None and msg.pandaStateDEPRECATED.safetyModel not in \
+            (SafetyModel.elm327, SafetyModel.noOutput):
             cls.car_safety_mode_frame = len(can_msgs)
           if cls.elm_frame is None and msg.pandaStateDEPRECATED.safetyModel != SafetyModel.elm327:
             cls.elm_frame = len(can_msgs)
@@ -164,9 +164,6 @@ class TestCarModelBase(unittest.TestCase):
   @classmethod
   def tearDownClass(cls):
     del cls.can_msgs
-
-  def test_something(self):
-    print('hi')
 
   def setUp(self):
     self.CI = self.CarInterface(self.CP.copy(), self.CarController, self.CarState)
