@@ -7,8 +7,9 @@ from typing import IO, Union
 
 DATA_CI_ACCOUNT = "commadataci"
 DATA_CI_ACCOUNT_URL = f"https://{DATA_CI_ACCOUNT}.blob.core.windows.net"
-DATA_CI_CONTAINER = "openpilotci"
-BASE_URL = f"{DATA_CI_ACCOUNT_URL}/{DATA_CI_CONTAINER}/"
+OPENPILOT_CI_CONTAINER = "openpilotci"
+DATA_CI_CONTAINER = "commadataci"
+BASE_URL = f"{DATA_CI_ACCOUNT_URL}/{OPENPILOT_CI_CONTAINER}/"
 
 TOKEN_PATH = Path("/data/azure_token")
 
@@ -51,7 +52,7 @@ def upload_bytes(data: Union[bytes, IO], blob_name: str) -> str:
   from azure.storage.blob import BlobClient
   blob = BlobClient(
     account_url=DATA_CI_ACCOUNT_URL,
-    container_name=DATA_CI_CONTAINER,
+    container_name=OPENPILOT_CI_CONTAINER,
     blob_name=blob_name,
     credential=get_azure_credential(),
   )
