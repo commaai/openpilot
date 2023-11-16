@@ -72,22 +72,23 @@ def sync_to_ci_public(route: str, strip_data: bool = False) -> bool:
   key_prefix = route.replace('|', '/')
   dongle_id = key_prefix.split('/')[0]
 
-  if next(dest_container.list_blob_names(name_starts_with=key_prefix), None) is not None and route != 'ad5a3fa719bc2f83|2023-10-17--19-48-42':
+  if next(dest_container.list_blob_names(name_starts_with=key_prefix), None) is not None:# and route != 'ad5a3fa719bc2f83|2023-10-17--19-48-42':
+    print('Already exists in dest container:', route)
     return True
 
   # Get all blobs (rlogs) for this route, strip personally identifiable data, and upload to CI
   print(f"Downloading {route}")
-  blobs = list(source_container.list_blob_names(name_starts_with=key_prefix))[1:]
+  blobs = list(source_container.list_blob_names(name_starts_with=key_prefix))
   blobs = [b for b in blobs if not re.match(r'.*/dcamera.hevc', b)]
   if not len(blobs):
-    raise Exception(f'No segments found in source container: {DATA_PROD_ACCOUNT}')
+    print(f'No segments found in source container: {DATA_PROD_ACCOUNT}')
+    return False
   print('blobs', blobs)
 
   fail = False
-  for blob_name in blobs:
-    print('deleting', blob_name, 'from container', dest_container.container_name)
-    dest_container.delete_blob(blob_name)
-    # exit(0)
+  for blob_name in tqdm(blobs):
+    # print('deleting', blob_name, 'from container', dest_container.container_name)
+    # dest_container.delete_blob(blob_name)
     data = source_container.download_blob(blob_name).readall()
     if strip_data:
       data = strip_log_data(data)
@@ -98,37 +99,8 @@ def sync_to_ci_public(route: str, strip_data: bool = False) -> bool:
       print('Already exists in dest container:', blob_name)
       fail = True
 
-  if fail:
-    print("Failed")
-  else:
-    print("Success")
+  print("Failed" if fail else "Success")
   return not fail
-  # print(data)
-  exit(1)
-
-  print(f"Uploading {route}")
-  for (source_account, source_bucket), source_key in zip(SOURCES, source_keys, strict=True):
-    # assumes az login has been run
-    print(f"Trying {source_account}/{source_bucket}")
-    cmd = [
-      "azcopy",
-      "copy",
-      f"https://{source_account}.blob.core.windows.net/{source_bucket}/{key_prefix}?{source_key}",
-      f"https://{DATA_CI_ACCOUNT}.blob.core.windows.net/{DATA_CI_CONTAINER}/{dongle_id}?{dest_key}",
-      "--recursive=true",
-      "--overwrite=false",
-      "--exclude-pattern=*/dcamera.hevc",
-    ]
-
-    try:
-      result = subprocess.call(cmd, stdout=subprocess.DEVNULL)
-      if result == 0:
-        print("Success")
-        return True
-    except subprocess.CalledProcessError:
-      print("Failed")
-
-  return False
 
 
 if __name__ == "__main__":
