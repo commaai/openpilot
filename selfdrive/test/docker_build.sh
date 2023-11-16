@@ -17,15 +17,7 @@ fi
 
 source $SCRIPT_DIR/docker_common.sh $1 "$TAG_SUFFIX"
 
-if [ -n "$PUSH_IMAGE" ]; then
-  REG_CACHE="--cache-to type=registry,ref=$REMOTE_CACHE_TAG,mode=max"
-fi
-
-DOCKER_BUILDKIT=1 docker buildx build --platform $PLATFORM --load \
-  --cache-from type=registry,ref=$REMOTE_CACHE_TAG \
-  --cache-from type=registry,ref=$REMOTE_TAG \
-  $REG_CACHE \
-  -t $REMOTE_TAG -t $LOCAL_TAG -f $OPENPILOT_DIR/$DOCKER_FILE $OPENPILOT_DIR
+DOCKER_BUILDKIT=1 docker buildx build --platform $PLATFORM --load --cache-to type=inline --cache-from type=registry,ref=$REMOTE_TAG -t $REMOTE_TAG -t $LOCAL_TAG -f $OPENPILOT_DIR/$DOCKER_FILE $OPENPILOT_DIR
 
 if [ -n "$PUSH_IMAGE" ]; then
   docker push $REMOTE_TAG
