@@ -90,8 +90,6 @@ def sync_to_ci_public(route: str, strip_data: bool = False) -> bool:
     return False
 
   for blob_name in tqdm(blobs):
-    # print("deleting", blob_name, "from container", dest_container.container_name)
-    # dest_container.delete_blob(blob_name)
     data = source_container.download_blob(blob_name).readall()
     if strip_data:
       data = strip_log_data(data)
