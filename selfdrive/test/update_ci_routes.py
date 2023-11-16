@@ -60,30 +60,30 @@ def sync_to_ci_public(route: str, strip_data: bool = False) -> bool:
   source_containers, dest_container = get_azure_containers()
   key_prefix = route.replace('|', '/')
 
-  if next(dest_container.list_blob_names(name_starts_with=key_prefix), None) is not None:# and route != 'ad5a3fa719bc2f83|2023-10-17--19-48-42':
+  if next(dest_container.list_blob_names(name_starts_with=key_prefix), None) is not None:
     print("Already exists in dest container:", route)
     return True
 
   # Get all blobs (rlogs) for this route, strip personally identifiable data, and upload to CI
   print(f"Downloading {route}")
   for source_container in source_containers:
-    print(f"Trying {source_container.container_name}")
+    print(f"Trying {source_container.url}")
     blobs = list(source_container.list_blob_names(name_starts_with=key_prefix))
     blobs = [b for b in blobs if not re.match(r".*/dcamera.hevc", b)]
     print(f"Found {len(blobs)} segments")
     if len(blobs):
       break
   else:
-    print(f"No segments found in source container: {DATA_PROD_ACCOUNT}")
+    print("No segments found in source containers")
     print("Failed")
     return False
 
-  for blob_name in tqdm(blobs):
+  for blob_name in blobs:
     data = source_container.download_blob(blob_name).readall()
     if strip_data:
       data = strip_log_data(data)
 
-    print(f"Uploading {blob_name} to {dest_container.container_name}")
+    print(f"Uploading {blob_name} to {dest_container.url}")
     dest_container.upload_blob(blob_name, data)
 
   print("Success")
