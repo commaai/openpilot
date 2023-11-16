@@ -38,7 +38,6 @@ def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) ->
   r, n = path.rsplit("--", 1)
   r = '/'.join(r.split('/')[-2:])  # strip out anything extra in the path
   destpath = f"{r}/{n}"
-
   for file in os.listdir(path):
     if any(re.search(pattern, file) for pattern in exclude_patterns):
       continue
