@@ -2,7 +2,6 @@
 import bz2
 import os
 import re
-import subprocess
 import sys
 from functools import lru_cache
 from typing import Iterable, Optional
@@ -69,8 +68,8 @@ def sync_to_ci_public(route: str, strip_data: bool = False) -> bool:
   for source_container in source_containers:
     print(f"Trying {source_container.container_name}")
     # Get all blobs (rlogs) for this route, strip personally identifiable data, and upload to CI
-    blobs = list(source_container.list_blob_names(name_starts_with=key_prefix))
-    blobs = [b for b in blobs if not re.match(r".*/dcamera.hevc", b)]
+    blobs = [b for b in source_container.list_blob_names(name_starts_with=key_prefix)
+             if not re.match(r".*/dcamera\.hevc", b)]
     print(f"Found {len(blobs)} segments")
     if len(blobs):
       break
