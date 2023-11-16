@@ -16,7 +16,7 @@ from openpilot.selfdrive.test.process_replay.test_processes import source_segmen
 from openpilot.selfdrive.test.openpilotci import (DATA_CI_ACCOUNT, DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER,
                                                   get_azure_credential, get_container_sas)
 
-PRESERVE_SERVICES = ['can', 'carParams', 'pandaStates', 'pandaStateDEPRECATED']
+PRESERVE_SERVICES = ["can", "carParams", "pandaStates", "pandaStateDEPRECATED"]
 
 DATA_PROD_ACCOUNT = "commadata2"
 DATA_PROD_CONTAINER = "commadata2"
@@ -30,7 +30,7 @@ SOURCES = [
 
 def strip_log_data(data: bytes) -> bytes:
   lr = LogReader.from_bytes(data)
-  new_bytes = b''
+  new_bytes = b""
   for msg in lr:
     if msg.which() in PRESERVE_SERVICES:
       new_bytes += msg.as_builder().to_bytes()
