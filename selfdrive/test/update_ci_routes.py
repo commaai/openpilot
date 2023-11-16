@@ -17,14 +17,11 @@ from openpilot.selfdrive.test.openpilotci import (DATA_CI_ACCOUNT, DATA_CI_ACCOU
                                                   get_azure_credential, get_container_sas)
 
 PRESERVE_SERVICES = ["can", "carParams", "pandaStates", "pandaStateDEPRECATED"]
-
 DATA_PROD_ACCOUNT = "commadata2"
 DATA_PROD_CONTAINER = "commadata2"
 
-# TODO: why is DATA_CI_ACCOUNT in this list? it will just copy from itself to itself...
 SOURCES = [
   (DATA_PROD_ACCOUNT, DATA_PROD_CONTAINER),
-  # (DATA_CI_ACCOUNT, DATA_CI_CONTAINER),
 ]
 
 
