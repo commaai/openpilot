@@ -75,6 +75,7 @@ class TestCarModelBase(unittest.TestCase):
 
   can_msgs: List[capnp.lib.capnp._DynamicStructReader]
   elm_frame: Optional[int]
+  car_safety_mode_frame: Optional[int]
 
   @classmethod
   def setUpClass(cls):
@@ -110,10 +111,9 @@ class TestCarModelBase(unittest.TestCase):
       car_fw = []
       can_msgs = []
       cls.elm_frame = None
+      cls.car_safety_mode_frame = None
       fingerprint = defaultdict(dict)
       experimental_long = False
-      enabled_toggle = True
-      dashcam_only = False
       for msg in lr:
         if msg.which() == "can":
           can_msgs.append(msg)
@@ -124,26 +124,26 @@ class TestCarModelBase(unittest.TestCase):
 
         elif msg.which() == "carParams":
           car_fw = msg.carParams.carFw
-          dashcam_only = msg.carParams.dashcamOnly
           if msg.carParams.openpilotLongitudinalControl:
             experimental_long = True
           if cls.car_model is None and not cls.ci:
             cls.car_model = msg.carParams.carFingerprint
 
-        elif msg.which() == 'initData':
-          for param in msg.initData.params.entries:
-            if param.key == 'OpenpilotEnabledToggle':
-              enabled_toggle = param.value.strip(b'\x00') == b'1'
-
         # Log which can frame the panda safety mode left ELM327, for CAN validity checks
-        if msg.which() == 'pandaStates':
+        elif msg.which() == 'pandaStates':
           for ps in msg.pandaStates:
             if cls.elm_frame is None and ps.safetyModel != SafetyModel.elm327:
               cls.elm_frame = len(can_msgs)
+            if cls.car_safety_mode_frame is None and ps.safetyModel not in \
+              (SafetyModel.elm327, SafetyModel.noOutput):
+              cls.car_safety_mode_frame = len(can_msgs)
 
         elif msg.which() == 'pandaStateDEPRECATED':
           if cls.elm_frame is None and msg.pandaStateDEPRECATED.safetyModel != SafetyModel.elm327:
             cls.elm_frame = len(can_msgs)
+          if cls.car_safety_mode_frame is None and msg.pandaStateDEPRECATED.safetyModel not in \
+            (SafetyModel.elm327, SafetyModel.noOutput):
+            cls.car_safety_mode_frame = len(can_msgs)
 
       if len(can_msgs) > int(50 / DT_CTRL):
         break
@@ -151,7 +151,7 @@ class TestCarModelBase(unittest.TestCase):
       raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded?")
 
     # if relay is expected to be open in the route
-    cls.openpilot_enabled = enabled_toggle and not dashcam_only
+    cls.openpilot_enabled = cls.car_safety_mode_frame is not None
 
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
@@ -256,8 +256,8 @@ class TestCarModelBase(unittest.TestCase):
           self.assertTrue(self.safety.addr_checks_valid())
 
           # No need to check relay malfunction on disabled routes (relay closed),
-          # or before fingerprinting is done (1s of tolerance to exit silent mode)
-          if self.openpilot_enabled and t / 1e4 > (self.elm_frame + 100):
+          # or before fingerprinting is done (elm327 and noOutput)
+          if self.openpilot_enabled and t / 1e4 > self.car_safety_mode_frame:
             self.assertFalse(self.safety.get_relay_malfunction())
           else:
             self.safety.set_relay_malfunction(False)
