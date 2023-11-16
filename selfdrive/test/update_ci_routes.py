@@ -12,8 +12,8 @@ from tqdm import tqdm
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.selfdrive.car.tests.routes import routes as test_car_models_routes
 from openpilot.selfdrive.test.process_replay.test_processes import source_segments as replay_segments
-from openpilot.selfdrive.test.openpilotci import (DATA_CI_ACCOUNT_URL, OPENPILOT_CI_CONTAINER,
-                                                  get_azure_credential, upload_file)
+from openpilot.selfdrive.test.openpilotci import (DATA_CI_ACCOUNT, DATA_CI_ACCOUNT_URL, OPENPILOT_CI_CONTAINER,
+                                                  DATA_CI_CONTAINER, get_azure_credential, upload_file)
 
 PRESERVE_SERVICES = ["can", "carParams", "pandaStates", "pandaStateDEPRECATED"]
 DATA_PROD_ACCOUNT = "commadata2"
@@ -21,6 +21,7 @@ DATA_PROD_CONTAINER = "commadata2"
 
 SOURCES = [
   (DATA_PROD_ACCOUNT, DATA_PROD_CONTAINER),
+  (DATA_CI_ACCOUNT, DATA_CI_CONTAINER),
 ]
 
 
