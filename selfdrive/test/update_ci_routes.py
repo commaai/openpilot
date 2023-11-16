@@ -33,7 +33,7 @@ def get_azure_keys():
 
 def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) -> None:
   if exclude_patterns is None:
-    exclude_patterns = ['.*/dcamera.hevc']
+    exclude_patterns = [r'dcamera\.hevc']
 
   r, n = path.rsplit("--", 1)
   r = '/'.join(r.split('/')[-2:])  # strip out anything extra in the path
