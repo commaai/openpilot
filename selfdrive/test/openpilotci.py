@@ -54,6 +54,7 @@ def upload_bytes(data: Union[bytes, IO], blob_name: str) -> str:
     container_name=DATA_CI_CONTAINER,
     blob_name=blob_name,
     credential=get_azure_credential(),
+    overwrite=False,
   )
   blob.upload_blob(data)
   return BASE_URL + blob_name
