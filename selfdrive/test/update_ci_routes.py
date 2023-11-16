@@ -91,12 +91,6 @@ def sync_to_ci_public(route: str, strip_data: bool = False) -> bool:
 
   fail = False
   for blob_name in tqdm(blobs):
-    # don't overwrite existing blobs, skip if exists
-    if dest_container.get_blob_client(blob_name).exists():
-      print('Already exists in dest container:', blob_name)
-      # TODO: did this fail before?
-      continue
-
     # print('deleting', blob_name, 'from container', dest_container.container_name)
     # dest_container.delete_blob(blob_name)
     data = source_container.download_blob(blob_name).readall()
