@@ -1,32 +1,50 @@
 #!/usr/bin/env python3
+import re
+import bz2
 import subprocess
 import sys
 from functools import lru_cache
 from typing import Iterable, Optional
 
+import azure.core.exceptions
 from azure.storage.blob import ContainerClient
 from tqdm import tqdm
 
+from openpilot.tools.lib.logreader import LogReader
 from openpilot.selfdrive.car.tests.routes import routes as test_car_models_routes
 from openpilot.selfdrive.test.process_replay.test_processes import source_segments as replay_segments
 from openpilot.selfdrive.test.openpilotci import (DATA_CI_ACCOUNT, DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER,
                                                   get_azure_credential, get_container_sas)
 
+PRESERVE_SERVICES = ['can', 'carParams', 'pandaStates', 'pandaStateDEPRECATED']
+
 DATA_PROD_ACCOUNT = "commadata2"
 DATA_PROD_CONTAINER = "commadata2"
 
+# TODO: why is DATA_CI_ACCOUNT in this list? it will just copy from itself to itself...
 SOURCES = [
   (DATA_PROD_ACCOUNT, DATA_PROD_CONTAINER),
   (DATA_CI_ACCOUNT, DATA_CI_CONTAINER),
 ]
 
 
+def strip_log_data(data: bytes) -> bytes:
+  lr = LogReader.from_bytes(data)
+  new_bytes = b''
+  for msg in lr:
+    if msg.which() in PRESERVE_SERVICES:
+      new_bytes += msg.as_builder().to_bytes()
+
+  return bz2.compress(new_bytes)
+
+
 @lru_cache
 def get_azure_keys():
+  source_container = ContainerClient(f"https://{DATA_PROD_ACCOUNT}.blob.core.windows.net", DATA_PROD_CONTAINER, credential=get_azure_credential())
   dest_container = ContainerClient(DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER, credential=get_azure_credential())
   dest_key = get_container_sas(DATA_CI_ACCOUNT, DATA_CI_CONTAINER)
   source_keys = [get_container_sas(*s) for s in SOURCES]
-  return dest_container, dest_key, source_keys
+  return source_container, dest_container, dest_key, source_keys
 
 
 def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) -> None:
@@ -49,13 +67,44 @@ def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) ->
   subprocess.check_call(cmd)
 
 
-def sync_to_ci_public(route: str) -> bool:
-  dest_container, dest_key, source_keys = get_azure_keys()
+def sync_to_ci_public(route: str, strip_data: bool = False) -> bool:
+  source_container, dest_container, dest_key, source_keys = get_azure_keys()
   key_prefix = route.replace('|', '/')
   dongle_id = key_prefix.split('/')[0]
 
-  if next(dest_container.list_blob_names(name_starts_with=key_prefix), None) is not None:
+  if next(dest_container.list_blob_names(name_starts_with=key_prefix), None) is not None and route != 'ad5a3fa719bc2f83|2023-10-17--19-48-42':
     return True
+
+  # Get all blobs (rlogs) for this route, strip personally identifiable data, and upload to CI
+  print(f"Downloading {route}")
+  blobs = list(source_container.list_blob_names(name_starts_with=key_prefix))[1:]
+  blobs = [b for b in blobs if not re.match(r'.*/dcamera.hevc', b)]
+  if not len(blobs):
+    raise Exception(f'No segments found in source container: {DATA_PROD_ACCOUNT}')
+  print('blobs', blobs)
+
+  fail = False
+  for blob_name in blobs:
+    print('deleting', blob_name, 'from container', dest_container.container_name)
+    dest_container.delete_blob(blob_name)
+    # exit(0)
+    data = source_container.download_blob(blob_name).readall()
+    if strip_data:
+      data = strip_log_data(data)
+
+    try:
+      dest_container.upload_blob(blob_name, data)
+    except azure.core.exceptions.ResourceExistsError:
+      print('Already exists in dest container:', blob_name)
+      fail = True
+
+  if fail:
+    print("Failed")
+  else:
+    print("Success")
+  return not fail
+  # print(data)
+  exit(1)
 
   print(f"Uploading {route}")
   for (source_account, source_bucket), source_key in zip(SOURCES, source_keys, strict=True):
