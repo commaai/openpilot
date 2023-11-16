@@ -70,38 +70,37 @@ def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) ->
 def sync_to_ci_public(route: str, strip_data: bool = False) -> bool:
   source_containers, dest_container = get_azure_containers()
   key_prefix = route.replace('|', '/')
-  dongle_id = key_prefix.split('/')[0]
 
   if next(dest_container.list_blob_names(name_starts_with=key_prefix), None) is not None and route != 'ad5a3fa719bc2f83|2023-10-17--19-48-42':
-    print('Already exists in dest container:', route)
+    print("Already exists in dest container:", route)
     return True
 
   print(f"Downloading {route}")
   for source_container in source_containers:
-    print(f'Trying {source_container.container_name}')
+    print(f"Trying {source_container.container_name}")
     # Get all blobs (rlogs) for this route, strip personally identifiable data, and upload to CI
     blobs = list(source_container.list_blob_names(name_starts_with=key_prefix))
-    blobs = [b for b in blobs if not re.match(r'.*/dcamera.hevc', b)]
-    print('blobs', blobs)
+    blobs = [b for b in blobs if not re.match(r".*/dcamera.hevc", b)]
+    print(f"Found {len(blobs)} segments")
     if len(blobs):
       break
   else:
-    print(f'No segments found in source container: {DATA_PROD_ACCOUNT}')
+    print(f"No segments found in source container: {DATA_PROD_ACCOUNT}")
+    print("Failed")
     return False
 
-  fail = False
   for blob_name in tqdm(blobs):
-    # print('deleting', blob_name, 'from container', dest_container.container_name)
+    # print("deleting", blob_name, "from container", dest_container.container_name)
     # dest_container.delete_blob(blob_name)
     data = source_container.download_blob(blob_name).readall()
     if strip_data:
       data = strip_log_data(data)
 
-    print(f'Uploading {blob_name} to {dest_container.container_name}')
+    print(f"Uploading {blob_name} to {dest_container.container_name}")
     dest_container.upload_blob(blob_name, data)
 
-  print("Failed" if fail else "Success")
-  return not fail
+  print("Success")
+  return True
 
 
 if __name__ == "__main__":
