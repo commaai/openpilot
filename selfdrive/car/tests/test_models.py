@@ -255,12 +255,12 @@ class TestCarModelBase(unittest.TestCase):
         if t > 1e6:
           self.assertTrue(self.safety.addr_checks_valid())
 
-          # No need to check relay malfunction on disabled routes (relay closed),
-          # or before fingerprinting is done (elm327 and noOutput)
-          if self.openpilot_enabled and t / 1e4 > self.car_safety_mode_frame:
-            self.assertFalse(self.safety.get_relay_malfunction())
-          else:
-            self.safety.set_relay_malfunction(False)
+        # No need to check relay malfunction on disabled routes (relay closed),
+        # or before fingerprinting is done (elm327 and noOutput)
+        if self.openpilot_enabled and t / 1e4 > self.car_safety_mode_frame:
+          self.assertFalse(self.safety.get_relay_malfunction())
+        else:
+          self.safety.set_relay_malfunction(False)
 
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
