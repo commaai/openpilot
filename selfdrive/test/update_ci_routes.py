@@ -64,12 +64,12 @@ def sync_to_ci_public(route: str, strip_data: bool = False) -> bool:
     print("Already exists in dest container:", route)
     return True
 
+  # Get all blobs (rlogs) for this route, strip personally identifiable data, and upload to CI
   print(f"Downloading {route}")
   for source_container in source_containers:
     print(f"Trying {source_container.container_name}")
-    # Get all blobs (rlogs) for this route, strip personally identifiable data, and upload to CI
-    blobs = [b for b in source_container.list_blob_names(name_starts_with=key_prefix)
-             if not re.match(r".*/dcamera\.hevc", b)]
+    blobs = list(source_container.list_blob_names(name_starts_with=key_prefix))
+    blobs = [b for b in blobs if not re.match(r".*/dcamera.hevc", b)]
     print(f"Found {len(blobs)} segments")
     if len(blobs):
       break
