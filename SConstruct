@@ -37,10 +37,12 @@ AddOption('--clazy',
 AddOption('--compile_db',
           action='store_true',
           help='build clang compilation database')
-
-AddOption('--fno_inline',
-          action='store_true',
-          help='Disables inlined functions when compiling to aid with debugging.')
+          
+AddOption('--ccflags',
+          action='store',
+          type='string',
+          default='',
+          help='pass arbitrary flags over the command line')
 
 AddOption('--snpe',
           action='store_true',
@@ -174,8 +176,9 @@ if arch != "Darwin":
 cflags += ['-DSWAGLOG="\\"common/swaglog.h\\""']
 cxxflags += ['-DSWAGLOG="\\"common/swaglog.h\\""']
 
-if GetOption('fno_inline'):
-  ccflags += ["-fno-inline"]
+ccflags_option = GetOption('ccflags')
+if ccflags_option:
+  ccflags += ccflags_option.split(' ')
 
 env = Environment(
   ENV=lenv,
