@@ -103,6 +103,7 @@ enum PrimeType {
   LITE = 2,
   BLUE = 3,
   MAGENTA_NEW = 4,
+  PURPLE = 5,
 };
 
 const QColor bg_colors [] = {

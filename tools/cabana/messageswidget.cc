@@ -1,6 +1,7 @@
 #include "tools/cabana/messageswidget.h"
 
 #include <limits>
+#include <utility>
 
 #include <QCheckBox>
 #include <QHBoxLayout>
@@ -52,18 +53,18 @@ MessagesWidget::MessagesWidget(QWidget *parent) : menu(new QMenu(this)), QWidget
 
   // signals/slots
   QObject::connect(menu, &QMenu::aboutToShow, this, &MessagesWidget::menuAboutToShow);
-  QObject::connect(header, &MessageViewHeader::filtersUpdated, model, &MessageListModel::setFilterStrings);
   QObject::connect(header, &MessageViewHeader::customContextMenuRequested, this, &MessagesWidget::headerContextMenuEvent);
   QObject::connect(view->horizontalScrollBar(), &QScrollBar::valueChanged, header, &MessageViewHeader::updateHeaderPositions);
   QObject::connect(suppress_defined_signals, &QCheckBox::stateChanged, can, &AbstractStream::suppressDefinedSignals);
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MessagesWidget::dbcModified);
-  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &MessagesWidget::dbcModified);
+  QObject::connect(dbc(), &DBCManager::DBCFileChanged, model, &MessageListModel::dbcModified);
+  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, model, &MessageListModel::dbcModified);
   QObject::connect(model, &MessageListModel::modelReset, [this]() {
     if (current_msg_id) {
       selectMessage(*current_msg_id);
     }
     view->updateBytesSectionSize();
+    updateTitle();
   });
   QObject::connect(view->selectionModel(), &QItemSelectionModel::currentChanged, [=](const QModelIndex &current, const QModelIndex &previous) {
     if (current.isValid() && current.row() < model->items_.size()) {
@@ -103,9 +104,15 @@ QToolBar *MessagesWidget::createToolBar() {
   return toolbar;
 }
 
-void MessagesWidget::dbcModified() {
-  num_msg_label->setText(tr("%1 Messages, %2 Signals").arg(dbc()->msgCount()).arg(dbc()->signalCount()));
-  model->dbcModified();
+void MessagesWidget::updateTitle() {
+  auto stats = std::accumulate(
+      model->items_.begin(), model->items_.end(), std::pair<size_t, size_t>(),
+      [](const auto &pair, const auto &item) {
+        auto m = dbc()->msg(item.id);
+        return m ? std::make_pair(pair.first + 1, pair.second + m->sigs.size()) : pair;
+      });
+  num_msg_label->setText(tr("%1 Messages (%2 DBC Messages, %3 Signals)")
+                      .arg(model->items_.size()).arg(stats.first).arg(stats.second));
 }
 
 void MessagesWidget::selectMessage(const MessageId &msg_id) {
@@ -398,7 +405,7 @@ void MessageViewHeader::updateFilters() {
       filters[i] = editors[i]->text();
     }
   }
-  emit filtersUpdated(filters);
+  qobject_cast<MessageListModel*>(model())->setFilterStrings(filters);
 }
 
 void MessageViewHeader::updateHeaderPositions() {
