@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
 #include <optional>
@@ -25,7 +26,7 @@ typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 const mat3 DEFAULT_CALIBRATION = {{ 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0 }};
 
-const vec3 default_face_kpts_3d[] = {
+constexpr vec3 default_face_kpts_3d[] = {
   {-5.98, -51.20, 8.00}, {-17.64, -49.14, 8.00}, {-23.81, -46.40, 8.00}, {-29.98, -40.91, 8.00}, {-32.04, -37.49, 8.00},
   {-34.10, -32.00, 8.00}, {-36.16, -21.03, 8.00}, {-36.16, 6.40, 8.00}, {-35.47, 10.51, 8.00}, {-32.73, 19.43, 8.00},
   {-29.30, 26.29, 8.00}, {-24.50, 33.83, 8.00}, {-19.01, 41.37, 8.00}, {-14.21, 46.17, 8.00}, {-12.16, 47.54, 8.00},
@@ -95,6 +96,16 @@ typedef enum UIStatus {
   STATUS_ENGAGED,
 } UIStatus;
 
+enum PrimeType {
+  UNKNOWN = -1,
+  NONE = 0,
+  MAGENTA = 1,
+  LITE = 2,
+  BLUE = 3,
+  MAGENTA_NEW = 4,
+  PURPLE = 5,
+};
+
 const QColor bg_colors [] = {
   [STATUS_DISENGAGED] = QColor(0x17, 0x33, 0x49, 0xc8),
   [STATUS_OVERRIDE] = QColor(0x91, 0x9b, 0x95, 0xf1),
@@ -152,8 +163,9 @@ public:
     return scene.started && (*sm)["controlsState"].getControlsState().getEnabled();
   }
 
-  void setPrimeType(int type);
-  inline int primeType() const { return prime_type; }
+  void setPrimeType(PrimeType type);
+  inline PrimeType primeType() const { return prime_type; }
+  inline bool hasPrime() const { return prime_type != PrimeType::UNKNOWN && prime_type != PrimeType::NONE; }
 
   int fb_w = 0, fb_h = 0;
 
@@ -169,7 +181,8 @@ public:
 signals:
   void uiUpdate(const UIState &s);
   void offroadTransition(bool offroad);
-  void primeTypeChanged(int prime_type);
+  void primeChanged(bool prime);
+  void primeTypeChanged(PrimeType prime_type);
 
 private slots:
   void update();
@@ -177,7 +190,7 @@ private slots:
 private:
   QTimer *timer;
   bool started_prev = false;
-  int prime_type = -1;
+  PrimeType prime_type = PrimeType::UNKNOWN;
 };
 
 UIState *uiState();
@@ -212,7 +225,7 @@ signals:
   void interactiveTimeout();
 
 public slots:
-  void resetInteractiveTimeout();
+  void resetInteractiveTimeout(int timeout = -1);
   void update(const UIState &s);
 };
 

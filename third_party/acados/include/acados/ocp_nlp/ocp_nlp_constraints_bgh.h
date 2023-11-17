@@ -1,8 +1,5 @@
 /*
- * Copyright 2019 Gianluca Frison, Dimitris Kouzoupis, Robin Verschueren,
- * Andrea Zanelli, Niels van Duijkeren, Jonathan Frey, Tommaso Sartor,
- * Branimir Novoselnik, Rien Quirynen, Rezart Qelibari, Dang Doan,
- * Jonas Koenemann, Yutao Chen, Tobias Schöls, Jonas Schlagenhauf, Moritz Diehl
+ * Copyright (c) The acados authors.
  *
  * This file is part of acados.
  *
@@ -82,9 +79,6 @@ acados_size_t ocp_nlp_constraints_bgh_dims_calculate_size(void *config);
 //
 void *ocp_nlp_constraints_bgh_dims_assign(void *config, void *raw_memory);
 //
-void ocp_nlp_constraints_bgh_dims_initialize(void *config, void *dims, int nx, int nu, int nz, int nbx,
-                                         int nbu, int ng, int nh, int dummy0, int ns);
-//
 void ocp_nlp_constraints_bgh_dims_get(void *config_, void *dims_, const char *field, int* value);
 //
 void ocp_nlp_constraints_bgh_dims_set(void *config_, void *dims_,
@@ -116,6 +110,9 @@ void *ocp_nlp_constraints_bgh_model_assign(void *config, void *dims, void *raw_m
 int ocp_nlp_constraints_bgh_model_set(void *config_, void *dims_,
                          void *model_, const char *field, void *value);
 
+//
+void ocp_nlp_constraints_bgh_model_get(void *config_, void *dims_,
+                         void *model_, const char *field, void *value);
 
 
 /************************************************

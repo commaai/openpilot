@@ -2,8 +2,8 @@
 import time
 
 from cereal import car, log, messaging
-from common.params import Params
-from selfdrive.manager.process_config import managed_processes
+from openpilot.common.params import Params
+from openpilot.selfdrive.manager.process_config import managed_processes
 
 if __name__ == "__main__":
   CP = car.CarParams(notCar=True)

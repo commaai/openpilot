@@ -2,9 +2,9 @@
 import numpy as np
 
 from cereal import messaging
-from common.filter_simple import FirstOrderFilter
-from common.realtime import Ratekeeper
-from system.swaglog import cloudlog
+from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.realtime import Ratekeeper
+from openpilot.system.swaglog import cloudlog
 
 RATE = 10
 FFT_SAMPLES = 4096
@@ -40,9 +40,9 @@ def apply_a_weighting(measurements: np.ndarray) -> np.ndarray:
 
 
 class Mic:
-  def __init__(self, pm):
-    self.pm = pm
+  def __init__(self):
     self.rk = Ratekeeper(RATE)
+    self.pm = messaging.PubMaster(['microphone'])
 
     self.measurements = np.empty(0)
 
@@ -85,7 +85,7 @@ class Mic:
 
   def micd_thread(self):
     # sounddevice must be imported after forking processes
-    import sounddevice as sd  # pylint: disable=import-outside-toplevel
+    import sounddevice as sd
 
     with sd.InputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback) as stream:
       cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}")
@@ -93,11 +93,8 @@ class Mic:
         self.update()
 
 
-def main(pm=None):
-  if pm is None:
-    pm = messaging.PubMaster(['microphone'])
-
-  mic = Mic(pm)
+def main():
+  mic = Mic()
   mic.micd_thread()
 
 

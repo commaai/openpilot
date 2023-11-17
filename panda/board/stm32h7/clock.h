@@ -56,9 +56,6 @@ void clock_init(void) {
   // Set SysClock source to PLL
   register_set(&(RCC->CFGR), RCC_CFGR_SW_PLL1, 0x7U);
   while((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL1);
-
-  // SYSCFG peripheral clock enable
-  register_set_bits(&(RCC->AHB4ENR), RCC_APB4ENR_SYSCFGEN);
   //////////////END OTHER CLOCKS////////////////////
 
   // Configure clock source for USB (HSI48)
@@ -71,8 +68,4 @@ void clock_init(void) {
   register_set_bits(&(RCC->CR), RCC_CR_CSSHSEON);
   //Enable Vdd33usb supply level detector
   register_set_bits(&(PWR->CR3), PWR_CR3_USB33DEN);
-
-  // Enable CPU access to SRAM1 and SRAM2 (in domain D2)
-  register_set_bits(&(RCC->AHB2ENR), RCC_AHB2ENR_SRAM1EN);
-  register_set_bits(&(RCC->AHB2ENR), RCC_AHB2ENR_SRAM2EN);
 }

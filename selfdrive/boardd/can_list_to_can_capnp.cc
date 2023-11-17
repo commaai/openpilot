@@ -1,5 +1,5 @@
 #include "cereal/messaging/messaging.h"
-#include "panda.h"
+#include "selfdrive/boardd/panda.h"
 
 void can_list_to_can_capnp_cpp(const std::vector<can_frame> &can_list, std::string &out, bool sendCan, bool valid) {
   MessageBuilder msg;

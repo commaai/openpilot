@@ -43,7 +43,7 @@ public:
   LockEx(int fd, std::recursive_mutex &m) : fd(fd), m(m) {
     m.lock();
     flock(fd, LOCK_EX);
-  };
+  }
 
   ~LockEx() {
     flock(fd, LOCK_UN);

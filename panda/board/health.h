@@ -29,6 +29,7 @@ struct __attribute__((packed)) health_t {
   uint8_t fan_stall_count;
   uint16_t sbu1_voltage_mV;
   uint16_t sbu2_voltage_mV;
+  uint8_t som_reset_triggered;
 };
 
 #define CAN_HEALTH_PACKET_VERSION 5

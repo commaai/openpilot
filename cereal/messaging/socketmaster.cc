@@ -15,13 +15,6 @@ static inline uint64_t nanos_since_boot() {
   return t.tv_sec * 1000000000ULL + t.tv_nsec;
 }
 
-static const service *get_service(const char *name) {
-  for (const auto &it : services) {
-    if (strcmp(it.name, name) == 0) return &it;
-  }
-  return nullptr;
-}
-
 static inline bool inList(const std::vector<const char *> &list, const char *value) {
   for (auto &v : list) {
     if (strcmp(value, v) == 0) return true;
@@ -31,7 +24,7 @@ static inline bool inList(const std::vector<const char *> &list, const char *val
 
 class MessageContext {
 public:
-  MessageContext() : ctx_(nullptr) {};
+  MessageContext() : ctx_(nullptr) {}
   ~MessageContext() { delete ctx_; }
   inline Context *context() {
     std::call_once(init_flag, [=]() { ctx_ = Context::create(); });
@@ -61,8 +54,9 @@ SubMaster::SubMaster(const std::vector<const char *> &service_list, const std::v
                      const char *address, const std::vector<const char *> &ignore_alive) {
   poller_ = Poller::create();
   for (auto name : service_list) {
-    const service *serv = get_service(name);
-    assert(serv != nullptr);
+    assert(services.count(std::string(name)) > 0);
+
+    service serv = services.at(std::string(name));
     SubSocket *socket = SubSocket::create(message_context.context(), name, address ? address : "127.0.0.1", true);
     assert(socket != 0);
     bool is_polled = inList(poll, name) || poll.empty();
@@ -70,7 +64,7 @@ SubMaster::SubMaster(const std::vector<const char *> &service_list, const std::v
     SubMessage *m = new SubMessage{
       .name = name,
       .socket = socket,
-      .freq = serv->frequency,
+      .freq = serv.frequency,
       .ignore_alive = inList(ignore_alive, name),
       .allocated_msg_reader = malloc(sizeof(capnp::FlatArrayMessageReader)),
       .is_polled = is_polled};
@@ -184,7 +178,7 @@ uint64_t SubMaster::rcv_time(const char *name) const {
 
 cereal::Event::Reader &SubMaster::operator[](const char *name) const {
   return services_.at(name)->event;
-};
+}
 
 SubMaster::~SubMaster() {
   delete poller_;
@@ -199,7 +193,7 @@ SubMaster::~SubMaster() {
 
 PubMaster::PubMaster(const std::vector<const char *> &service_list) {
   for (auto name : service_list) {
-    assert(get_service(name) != nullptr);
+    assert(services.count(name) > 0);
     PubSocket *socket = PubSocket::create(message_context.context(), name);
     assert(socket);
     sockets_[name] = socket;

@@ -198,8 +198,13 @@ uint16_t string_product_desc[] = {
 
 // default serial number when we're not a panda
 uint16_t string_serial_desc[] = {
+#ifdef PEDAL
+  STRING_DESCRIPTOR_HEADER(5),
+  'p', 'e', 'd', 'a', 'l'
+#else
   STRING_DESCRIPTOR_HEADER(4),
   'n', 'o', 'n', 'e'
+#endif
 };
 
 // a string containing the default configuration index

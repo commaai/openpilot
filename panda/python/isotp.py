@@ -6,10 +6,8 @@ DEBUG = False
 def msg(x):
   if DEBUG:
     print("S:", binascii.hexlify(x))
-  if len(x) <= 7:
-    ret = bytes([len(x)]) + x
-  else:
-    assert False
+  assert len(x) <= 7
+  ret = bytes([len(x)]) + x
   return ret.ljust(8, b"\x00")
 
 kmsgs = []
@@ -56,7 +54,7 @@ def isotp_recv_subaddr(panda, addr, bus, sendaddr, subaddr):
     dat = msg[2:]
   else:
     print(binascii.hexlify(msg))
-    assert False
+    raise AssertionError
 
   return dat[0:tlen]
 
@@ -133,7 +131,7 @@ def isotp_recv(panda, addr, bus=0, sendaddr=None, subaddr=None):
       tlen = msg[0] & 0xf
       dat = msg[1:]
     else:
-      assert False
+      raise AssertionError
     dat = dat[0:tlen]
 
   if DEBUG:

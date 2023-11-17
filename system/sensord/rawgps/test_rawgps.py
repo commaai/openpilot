@@ -1,27 +1,23 @@
 #!/usr/bin/env python3
 import os
+import pytest
 import json
 import time
 import datetime
 import unittest
 import subprocess
-import numpy as np
 
 import cereal.messaging as messaging
-from system.hardware import TICI
-from system.sensord.rawgps.rawgpsd import at_cmd, wait_for_modem
-from selfdrive.manager.process_config import managed_processes
-from common.transformations.coordinates import ecef_from_geodetic
+from openpilot.system.sensord.rawgps.rawgpsd import at_cmd, wait_for_modem
+from openpilot.selfdrive.manager.process_config import managed_processes
 
 GOOD_SIGNAL = bool(int(os.getenv("GOOD_SIGNAL", '0')))
 
 
+@pytest.mark.tici
 class TestRawgpsd(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
-    if not TICI:
-      raise unittest.SkipTest
-
     os.system("sudo systemctl start systemd-resolved")
     os.system("sudo systemctl restart ModemManager lte")
     wait_for_modem()
@@ -122,23 +118,6 @@ class TestRawgpsd(unittest.TestCase):
     time.sleep(15)
     managed_processes['rawgpsd'].stop()
     self.check_assistance(True)
-
-  @unittest.skipIf(not GOOD_SIGNAL, "No good GPS signal")
-  def test_fix(self):
-    managed_processes['rawgpsd'].start()
-    managed_processes['laikad'].start()
-    assert self._wait_for_output(60)
-    assert self.sm.updated['qcomGnss']
-    assert self.sm.updated['gpsLocation']
-    assert self.sm['gpsLocation'].flags == 1
-    module_fix = ecef_from_geodetic([self.sm['gpsLocation'].latitude,
-                                     self.sm['gpsLocation'].longitude,
-                                     self.sm['gpsLocation'].altitude])
-    assert self.sm['gnssMeasurements'].positionECEF.valid
-    total_diff = np.array(self.sm['gnssMeasurements'].positionECEF.value) - module_fix
-    self.assertLess(np.linalg.norm(total_diff), 100)
-    managed_processes['laikad'].stop()
-    managed_processes['rawgpsd'].stop()
 
 if __name__ == "__main__":
   unittest.main(failfast=True)

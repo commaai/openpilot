@@ -7,11 +7,11 @@ from PIL import Image
 
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcClient, VisionStreamType
-from common.params import Params
-from common.realtime import DT_MDL
-from system.hardware import PC
-from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from selfdrive.manager.process_config import managed_processes
+from openpilot.common.params import Params
+from openpilot.common.realtime import DT_MDL
+from openpilot.system.hardware import PC
+from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
+from openpilot.selfdrive.manager.process_config import managed_processes
 
 LM_THRESH = 120  # defined in system/camerad/imgproc/utils.h
 

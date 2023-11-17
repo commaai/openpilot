@@ -13,11 +13,7 @@ void set_power_save_state(int state) {
     bool enable = false;
     if (state == POWER_SAVE_STATUS_ENABLED) {
       print("enable power savings\n");
-      if (current_board->has_gps) {
-        const char UBLOX_SLEEP_MSG[] = "\xb5\x62\x06\x04\x04\x00\x01\x00\x08\x00\x17\x78";
-        uart_ring *ur = get_ring_by_number(1);
-        for (unsigned int i = 0; i < sizeof(UBLOX_SLEEP_MSG) - 1U; i++) while (!putc(ur, UBLOX_SLEEP_MSG[i]));
-      }
+
       // Disable CAN interrupts
       if (harness.status == HARNESS_STATUS_FLIPPED) {
         llcan_irq_disable(cans[0]);
@@ -27,11 +23,6 @@ void set_power_save_state(int state) {
       llcan_irq_disable(cans[1]);
     } else {
       print("disable power savings\n");
-      if (current_board->has_gps) {
-        const char UBLOX_WAKE_MSG[] = "\xb5\x62\x06\x04\x04\x00\x01\x00\x09\x00\x18\x7a";
-        uart_ring *ur = get_ring_by_number(1);
-        for (unsigned int i = 0; i < sizeof(UBLOX_WAKE_MSG) - 1U; i++) while (!putc(ur, UBLOX_WAKE_MSG[i]));
-      }
 
       if (harness.status == HARNESS_STATUS_FLIPPED) {
         llcan_irq_enable(cans[0]);
@@ -44,13 +35,6 @@ void set_power_save_state(int state) {
     }
 
     current_board->enable_can_transceivers(enable);
-
-    // Switch EPS/GPS
-    if (enable) {
-      current_board->set_gps_mode(GPS_ENABLED);
-    } else {
-      current_board->set_gps_mode(GPS_DISABLED);
-    }
 
     if(current_board->has_hw_gmlan){
       // turn on GMLAN

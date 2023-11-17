@@ -44,9 +44,6 @@ git clean -xdff
 echo "[-] copying files T=$SECONDS"
 cd $SOURCE_DIR
 cp -pR --parents $(cat release/files_*) $TARGET_DIR/
-if [ ! -z "$EXTRA_FILES" ]; then
-  cp -pR --parents $EXTRA_FILES $TARGET_DIR/
-fi
 
 # in the directory
 cd $TARGET_DIR

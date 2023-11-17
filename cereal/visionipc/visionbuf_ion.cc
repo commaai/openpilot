@@ -40,30 +40,35 @@
 #define DEVICE_PAGE_SIZE_CL 4096
 #define PADDING_CL 0
 
-static int ion_fd = -1;
-static void ion_init() {
-  if (ion_fd == -1) {
-    ion_fd = open("/dev/ion", O_RDWR | O_NONBLOCK);
+struct IonFileHandle {
+  IonFileHandle() {
+    fd = open("/dev/ion", O_RDWR | O_NONBLOCK);
+    assert(fd >= 0);
   }
+  ~IonFileHandle() {
+    close(fd);
+  }
+  int fd = -1;
+};
+
+int ion_fd() {
+  static IonFileHandle fh;
+  return fh.fd;
 }
 
 void VisionBuf::allocate(size_t length) {
-  int err;
-
-  ion_init();
-
   struct ion_allocation_data ion_alloc = {0};
   ion_alloc.len = length + PADDING_CL + sizeof(uint64_t);
   ion_alloc.align = 4096;
   ion_alloc.heap_id_mask = 1 << ION_IOMMU_HEAP_ID;
   ion_alloc.flags = ION_FLAG_CACHED;
 
-  err = HANDLE_EINTR(ioctl(ion_fd, ION_IOC_ALLOC, &ion_alloc));
+  int err = HANDLE_EINTR(ioctl(ion_fd(), ION_IOC_ALLOC, &ion_alloc));
   assert(err == 0);
 
   struct ion_fd_data ion_fd_data = {0};
   ion_fd_data.handle = ion_alloc.handle;
-  err = HANDLE_EINTR(ioctl(ion_fd, ION_IOC_SHARE, &ion_fd_data));
+  err = HANDLE_EINTR(ioctl(ion_fd(), ION_IOC_SHARE, &ion_fd_data));
   assert(err == 0);
 
   void *mmap_addr = mmap(NULL, ion_alloc.len,
@@ -85,12 +90,10 @@ void VisionBuf::import(){
   int err;
   assert(this->fd >= 0);
 
-  ion_init();
-
   // Get handle
   struct ion_fd_data fd_data = {0};
   fd_data.fd = this->fd;
-  err = HANDLE_EINTR(ioctl(ion_fd, ION_IOC_IMPORT, &fd_data));
+  err = HANDLE_EINTR(ioctl(ion_fd(), ION_IOC_IMPORT, &fd_data));
   assert(err == 0);
 
   this->handle = fd_data.handle;
@@ -136,7 +139,7 @@ int VisionBuf::sync(int dir) {
      ION_IOC_INV_CACHES : ION_IOC_CLEAN_CACHES;
 
   custom_data.arg = (unsigned long)&flush_data;
-  return HANDLE_EINTR(ioctl(ion_fd, ION_IOC_CUSTOM, &custom_data));
+  return HANDLE_EINTR(ioctl(ion_fd(), ION_IOC_CUSTOM, &custom_data));
 }
 
 int VisionBuf::free() {
@@ -154,5 +157,5 @@ int VisionBuf::free() {
   if (err != 0) return err;
 
   struct ion_handle_data handle_data = {.handle = this->handle};
-  return HANDLE_EINTR(ioctl(ion_fd, ION_IOC_FREE, &handle_data));
+  return HANDLE_EINTR(ioctl(ion_fd(), ION_IOC_FREE, &handle_data));
 }

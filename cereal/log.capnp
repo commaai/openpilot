@@ -46,6 +46,8 @@ struct InitData {
 
   commands @19 :Map(Text, Data);
 
+  wallTimeNanos @20 :UInt64;
+
   enum DeviceType {
     unknown @0;
     neo @1;
@@ -586,6 +588,7 @@ struct RadarState @0x9a185389d6fdd05f {
     aLeadTau @12 :Float32;
     modelProb @13 :Float32;
     radar @14 :Bool;
+    radarTrackId @15 :Int32 = -1;
 
     aLeadDEPRECATED @5 :Float32;
   }
@@ -871,6 +874,8 @@ struct ModelDataV2 {
   navEnabled @22 :Bool;
   locationMonoTime @24 :UInt64;
 
+  # e2e lateral planner
+  lateralPlannerSolution @25: LateralPlannerSolution;
 
   struct LeadDataV2 {
     prob @0 :Float32; # probability that car is your lead at time t
@@ -937,6 +942,18 @@ struct ModelDataV2 {
     transStd @2 :List(Float32); # std m/s in device frame
     rotStd @3 :List(Float32); # std rad/s in device frame
   }
+
+  struct LateralPlannerSolution {
+    x @0 :List(Float32);
+    y @1 :List(Float32);
+    yaw @2 :List(Float32);
+    yawRate @3 :List(Float32);
+    xStd @4 :List(Float32);
+    yStd @5 :List(Float32);
+    yawStd @6 :List(Float32);
+    yawRateStd @7 :List(Float32);
+  }
+
 }
 
 struct EncodeIndex {
@@ -2082,6 +2099,8 @@ struct NavInstruction {
   speedLimit @10 :Float32; # m/s
   speedLimitSign @11 :SpeedLimitSign;
 
+  allManeuvers @12 :List(Maneuver);
+
   struct Lane {
     directions @0 :List(Direction);
     active @1 :Bool;
@@ -2093,12 +2112,20 @@ struct NavInstruction {
     left @1;
     right @2;
     straight @3;
+    slightLeft @4;
+    slightRight @5;
   }
 
   enum SpeedLimitSign {
     mutcd @0; # US Style
     vienna @1; # EU Style
-    }
+  }
+
+  struct Maneuver {
+    distance @0 :Float32;
+    type @1 :Text;
+    modifier @2 :Text;
+  }
 }
 
 struct NavRoute {
@@ -2177,6 +2204,7 @@ struct Event {
     magnetometer @95 :SensorEventData;
     lightSensor @96 :SensorEventData;
     temperatureSensor @97 :SensorEventData;
+    temperatureSensor2 @123 :SensorEventData;
     pandaStates @81 :List(PandaState);
     peripheralState @80 :PeripheralState;
     radarState @13 :RadarState;
@@ -2252,6 +2280,10 @@ struct Event {
     livestreamRoadEncodeData @120 :EncodeData;
     livestreamWideRoadEncodeData @121 :EncodeData;
     livestreamDriverEncodeData @122 :EncodeData;
+
+    customReservedRawData0 @124 :Data;
+    customReservedRawData1 @125 :Data;
+    customReservedRawData2 @126 :Data;
 
     # *********** Custom: reserved for forks ***********
     customReserved0 @107 :Custom.CustomReserved0;

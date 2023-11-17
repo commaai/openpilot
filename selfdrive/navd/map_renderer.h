@@ -49,6 +49,7 @@ private:
   }
 
   QTimer* timer;
+  bool ever_loaded = false;
 
 public slots:
   void updatePosition(QMapbox::Coordinate position, float bearing);

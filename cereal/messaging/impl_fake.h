@@ -63,5 +63,5 @@ private:
 public:
   void registerSocket(SubSocket *socket) override;
   std::vector<SubSocket*> poll(int timeout) override;
-  ~FakePoller() {};
+  ~FakePoller() {}
 };

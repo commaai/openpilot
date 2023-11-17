@@ -44,6 +44,8 @@ int get_health_pkt(void *dat) {
   health->sbu1_voltage_mV = harness.sbu1_voltage_mV;
   health->sbu2_voltage_mV = harness.sbu2_voltage_mV;
 
+  health->som_reset_triggered = bootkick_reset_triggered;
+
   return sizeof(*health);
 }
 
@@ -182,8 +184,8 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       (void)memcpy(resp, ((uint8_t *)UID_BASE), 12);
       resp_len = 12;
       break;
+    // **** 0xc4: get interrupt call rate
     case 0xc4:
-      // **** 0xc4: get interrupt call rate
       if (req->param1 < NUM_INTERRUPTS) {
         uint32_t load = interrupts[req->param1].call_rate;
         resp[0] = (load & 0x000000FFU);
@@ -192,6 +194,15 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
         resp[3] = ((load & 0xFF000000U) >> 24U);
         resp_len = 4U;
       }
+      break;
+    // **** 0xc5: DEBUG: drive relay
+    case 0xc5:
+      set_intercept_relay((req->param1 & 0x1U), (req->param1 & 0x2U));
+      break;
+    // **** 0xc6: DEBUG: read SOM GPIO
+    case 0xc6:
+      resp[0] = current_board->read_som_gpio();
+      resp_len = 1;
       break;
     // **** 0xd0: fetch serial (aka the provisioned dongle ID)
     case 0xd0:
@@ -258,28 +269,6 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
     case 0xd8:
       NVIC_SystemReset();
       break;
-    // **** 0xd9: set ESP power
-    case 0xd9:
-      if (req->param1 == 1U) {
-        current_board->set_gps_mode(GPS_ENABLED);
-      } else if (req->param1 == 2U) {
-        current_board->set_gps_mode(GPS_BOOTMODE);
-      } else {
-        current_board->set_gps_mode(GPS_DISABLED);
-      }
-      break;
-    // **** 0xda: reset ESP, with optional boot mode
-    case 0xda:
-      current_board->set_gps_mode(GPS_DISABLED);
-      delay(1000000);
-      if (req->param1 == 1U) {
-        current_board->set_gps_mode(GPS_BOOTMODE);
-      } else {
-        current_board->set_gps_mode(GPS_ENABLED);
-      }
-      delay(1000000);
-      current_board->set_gps_mode(GPS_ENABLED);
-      break;
     // **** 0xdb: set GMLAN (white/grey) or OBD CAN (black) multiplexing mode
     case 0xdb:
       if(current_board->has_obd){
@@ -339,11 +328,6 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
         break;
       }
 
-      // TODO: Remove this again and fix boardd code to hande the message bursts instead of single chars
-      if (ur == &uart_ring_gps) {
-        dma_pointer_handler(ur, DMA2_Stream5->NDTR);
-      }
-
       // read
       while ((resp_len < MIN(req->length, USBPACKET_MAX_SIZE)) &&
                          getc(ur, (char*)&resp[resp_len])) {
@@ -395,6 +379,10 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
     case 0xe5:
       can_loopback = (req->param1 > 0U);
       can_init_all();
+      break;
+    // **** 0xe6: set custom clock source period
+    case 0xe6:
+      clock_source_set_period(req->param1);
       break;
     // **** 0xe7: set power save state
     case 0xe7:
@@ -489,18 +477,6 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
         bool ret = can_init(CAN_NUM_FROM_BUS_NUM(req->param1));
         UNUSED(ret);
       }
-      break;
-    // *** 0xfd: read logs
-    case 0xfd:
-      if (req->param1 == 1U) {
-        logging_init_read_index();
-      }
-
-      if (req->param2 != 0xFFFFU) {
-        logging_find_read_index(req->param2);
-      }
-
-      resp_len = logging_read(resp);
       break;
     default:
       print("NO HANDLER ");

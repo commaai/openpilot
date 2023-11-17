@@ -1,11 +1,12 @@
+# ruff: noqa: E501
 from collections import defaultdict
 from dataclasses import dataclass
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import Dict, List, Union
 
 from cereal import car
-from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
+from openpilot.selfdrive.car import dbc_dict
+from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 Ecu = car.CarParams.Ecu
 
 
@@ -60,7 +61,7 @@ class CarControllerParams:
     self.BRAKE_LOOKUP_V = [self.MAX_BRAKE, 0.]
 
 
-class CAR:
+class CAR(StrEnum):
   HOLDEN_ASTRA = "HOLDEN ASTRA RS-V BK 2017"
   VOLT = "CHEVROLET VOLT PREMIER 2017"
   CADILLAC_ATS = "CADILLAC ATS Premium Performance 2018"
@@ -70,6 +71,7 @@ class CAR:
   BUICK_REGAL = "BUICK REGAL ESSENCE 2018"
   ESCALADE = "CADILLAC ESCALADE 2017"
   ESCALADE_ESV = "CADILLAC ESCALADE ESV 2016"
+  ESCALADE_ESV_2019 = "CADILLAC ESCALADE ESV 2019"
   BOLT_EUV = "CHEVROLET BOLT EUV 2022"
   SILVERADO = "CHEVROLET SILVERADO 1500 2020"
   EQUINOX = "CHEVROLET EQUINOX 2019"
@@ -105,6 +107,7 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
   CAR.BUICK_REGAL: GMCarInfo("Buick Regal Essence 2018"),
   CAR.ESCALADE: GMCarInfo("Cadillac Escalade 2017", "Driver Assist Package"),
   CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", "Adaptive Cruise Control (ACC) & LKAS"),
+  CAR.ESCALADE_ESV_2019: GMCarInfo("Cadillac Escalade ESV 2019", "Adaptive Cruise Control (ACC) & LKAS"),
   CAR.BOLT_EUV: [
     GMCarInfo("Chevrolet Bolt EUV 2022-23", "Premier or Premier Redline Trim without Super Cruise Package", video_link="https://youtu.be/xvwzGMUA210"),
     GMCarInfo("Chevrolet Bolt EV 2022-23", "2LT Trim with Adaptive Cruise Control Package"),
@@ -197,6 +200,10 @@ FINGERPRINTS = {
   {
     309: 1, 848: 8, 849: 8, 850: 8, 851: 8, 852: 8, 853: 8, 854: 3, 1056: 6, 1057: 8, 1058: 8, 1059: 8, 1060: 8, 1061: 8, 1062: 8, 1063: 8, 1064: 8, 1065: 8, 1066: 8, 1067: 8, 1068: 8, 1120: 8, 1121: 8, 1122: 8, 1123: 8, 1124: 8, 1125: 8, 1126: 8, 1127: 8, 1128: 8, 1129: 8, 1130: 8, 1131: 8, 1132: 8, 1133: 8, 1134: 8, 1135: 8, 1136: 8, 1137: 8, 1138: 8, 1139: 8, 1140: 8, 1141: 8, 1142: 8, 1143: 8, 1146: 8, 1147: 8, 1148: 8, 1149: 8, 1150: 8, 1151: 8, 1216: 8, 1217: 8, 1218: 8, 1219: 8, 1220: 8, 1221: 8, 1222: 8, 1223: 8, 1224: 8, 1225: 8, 1226: 8, 1232: 8, 1233: 8, 1234: 8, 1235: 8, 1236: 8, 1237: 8, 1238: 8, 1239: 8, 1240: 8, 1241: 8, 1242: 8, 1787: 8, 1788: 8
   }],
+  CAR.ESCALADE_ESV_2019: [
+  {
+    715: 8, 840: 5, 717: 5, 869: 4, 880: 6, 289: 8, 454: 8, 842: 5, 460: 5, 463: 3, 801: 8, 170: 8, 190: 6, 241: 6, 201: 8, 417: 7, 211: 2, 419: 1, 398: 8, 426: 7, 487: 8, 442: 8, 451: 8, 452: 8, 453: 6, 479: 3, 311: 8, 500: 6, 647: 6, 193: 8, 707: 8, 197: 8, 209: 7, 199: 4, 455: 7, 313: 8, 481: 7, 485: 8, 489: 8, 249: 8, 393: 7, 407: 7, 413: 8, 422: 4, 431: 8, 501: 8, 499: 3, 810: 8, 508: 8, 381: 8, 462: 4, 532: 6, 562: 8, 386: 8, 761: 7, 573: 1, 554: 3, 719: 5, 560: 8, 1279: 4, 388: 8, 288: 5, 1005: 6, 497: 8, 844: 8, 961: 8, 967: 4, 977: 8, 979: 8, 985: 5, 1001: 8, 1017: 8, 1019: 2, 1020: 8, 1217: 8, 510: 8, 866: 4, 304: 1, 969: 8, 384: 4, 1033: 7, 1009: 8, 1034: 7, 1296: 4, 1930: 7, 1105: 5, 1013: 5, 1225: 7, 1919: 7, 320: 3, 534: 2, 352: 5, 298: 8, 1223: 2, 1233: 8, 608: 8, 1265: 8, 609: 6, 1267: 1, 1417: 8, 610: 6, 1906: 7, 611: 6, 612: 8, 613: 8, 208: 8, 564: 5, 309: 8, 1221: 5, 1280: 4, 1249: 8, 1907: 7, 1257: 6, 1300: 8, 1920: 7, 563: 5, 1322: 6, 1323: 4, 1328: 4, 1917: 7, 328: 1, 1912: 7, 1914: 7, 804: 3, 1918: 7
+  }],
   CAR.BOLT_EUV: [
   {
     189: 7, 190: 7, 193: 8, 197: 8, 201: 8, 209: 7, 211: 3, 241: 6, 257: 8, 288: 5, 289: 8, 298: 8, 304: 3, 309: 8, 311: 8, 313: 8, 320: 4, 322: 7, 328: 1, 352: 5, 381: 8, 384: 4, 386: 8, 388: 8, 451: 8, 452: 8, 453: 6, 458: 5, 463: 3, 479: 3, 481: 7, 485: 8, 489: 8, 497: 8, 500: 6, 501: 8, 528: 5, 532: 6, 560: 8, 562: 8, 563: 5, 565: 5, 566: 8, 587: 8, 608: 8, 609: 6, 610: 6, 611: 6, 612: 8, 613: 8, 707: 8, 715: 8, 717: 5, 753: 5, 761: 7, 789: 5, 800: 6, 810: 8, 840: 5, 842: 5, 844: 8, 848: 4, 869: 4, 880: 6, 977: 8, 1001: 8, 1017: 8, 1020: 8, 1217: 8, 1221: 5, 1233: 8, 1249: 8, 1265: 8, 1280: 4, 1296: 4, 1300: 8, 1611: 8, 1930: 7
@@ -211,10 +218,10 @@ FINGERPRINTS = {
   }],
   # Trailblazer also matches as a Silverado, so comment out to avoid conflicts.
   # TODO: split with FW versions
-  CAR.TRAILBLAZER: [
-  {
+  # CAR.TRAILBLAZER: [
+  # {
   #   190: 6, 193: 8, 197: 8, 201: 8, 209: 7, 211: 2, 241: 6, 249: 8, 288: 5, 289: 8, 298: 8, 304: 3, 309: 8, 311: 8, 313: 8, 320: 4, 328: 1, 352: 5, 381: 8, 384: 4, 386: 8, 388: 8, 413: 8, 451: 8, 452: 8, 453: 6, 455: 7, 479: 3, 481: 7, 485: 8, 489: 8, 497: 8, 500: 6, 501: 8, 532: 6, 560: 8, 562: 8, 563: 5, 565: 5, 587: 8, 707: 8, 715: 8, 717: 5, 761: 7, 789: 5, 800: 6, 810: 8, 840: 5, 842: 5, 844: 8, 869: 4, 880: 6, 977: 8, 1001: 8, 1011: 6, 1017: 8, 1020: 8, 1217: 8, 1221: 5, 1233: 8, 1249: 8, 1259: 8, 1261: 7, 1263: 4, 1265: 8, 1267: 1, 1271: 8, 1280: 4, 1296: 4, 1300: 8, 1609: 8, 1611: 8, 1613: 8, 1649: 8, 1792: 8, 1798: 8, 1824: 8, 1825: 8, 1840: 8, 1842: 8, 1858: 8, 1860: 8, 1863: 8, 1872: 8, 1875: 8, 1882: 8, 1888: 8, 1889: 8, 1892: 8, 1930: 7, 1937: 8, 1953: 8, 1968: 8, 2001: 8, 2017: 8, 2018: 8, 2020: 8
-  }],
+  # }],
 }
 
 GM_RX_OFFSET = 0x400

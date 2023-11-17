@@ -19,8 +19,6 @@ private:
   cl_device_id device_id = nullptr;
   cl_context ctx = nullptr;
 
-  void init_msgq(bool conflate);
-
 public:
   bool connected = false;
   VisionStreamType type;

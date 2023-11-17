@@ -16,5 +16,5 @@ if GetOption('kaitai'):
 glonass_obj = env.Object('generated/glonass.cpp')
 env.Program("ubloxd", ["ubloxd.cc", "ublox_msg.cc", "generated/ubx.cpp", "generated/gps.cpp",  glonass_obj], LIBS=loc_libs)
 
-if GetOption('test'):
+if GetOption('extras'):
   env.Program("tests/test_glonass_runner", ['tests/test_glonass_runner.cc', 'tests/test_glonass_kaitai.cc', glonass_obj], LIBS=[loc_libs])

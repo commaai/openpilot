@@ -1,11 +1,11 @@
 import numpy as np
 
-from common.params import Params
-from common.realtime import DT_CTRL
+from openpilot.common.params import Params
+from openpilot.common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
-from selfdrive.car.body import bodycan
-from selfdrive.car.body.values import SPEED_FROM_RPM
-from selfdrive.controls.lib.pid import PIDController
+from openpilot.selfdrive.car.body import bodycan
+from openpilot.selfdrive.car.body.values import SPEED_FROM_RPM
+from openpilot.selfdrive.controls.lib.pid import PIDController
 
 
 MAX_TORQUE = 500
@@ -56,7 +56,7 @@ class CarController:
       speed_error = speed_desired - speed_measured
 
       if self.wheeled_body is None:
-        freeze_integrator = ((speed_error < 0 and self.speed_pid.error_integral <= -MAX_POS_INTEGRATOR) or 
+        freeze_integrator = ((speed_error < 0 and self.speed_pid.error_integral <= -MAX_POS_INTEGRATOR) or
                              (speed_error > 0 and self.speed_pid.error_integral >= MAX_POS_INTEGRATOR))
         angle_setpoint = self.speed_pid.update(speed_error, freeze_integrator=freeze_integrator)
 

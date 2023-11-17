@@ -6,7 +6,7 @@
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/setup/updater.h"
-#include "selfdrive/ui/qt/offroad/networking.h"
+#include "selfdrive/ui/qt/network/networking.h"
 
 Updater::Updater(const QString &updater_path, const QString &manifest_path, QWidget *parent)
   : updater(updater_path), manifest(manifest_path), QStackedWidget(parent) {

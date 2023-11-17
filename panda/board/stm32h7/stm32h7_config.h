@@ -36,6 +36,9 @@ separate IRQs for RX and TX.
 #define TICK_TIMER_IRQ TIM8_BRK_TIM12_IRQn
 #define TICK_TIMER TIM12
 
+#define GMLAN_BITBANG_TIMER_IRQ TIM8_UP_TIM13_IRQn
+#define GMLAN_BITBANG_TIMER TIM13
+
 #define MICROSECOND_TIMER TIM2
 
 #define INTERRUPT_TIMER_IRQ TIM6_DAC_IRQn
@@ -45,12 +48,6 @@ separate IRQs for RX and TX.
 
 #define PROVISION_CHUNK_ADDRESS 0x080FFFE0U
 #define DEVICE_SERIAL_NUMBER_ADDRESS 0x080FFFC0U
-
-#define LOGGING_FLASH_SECTOR_A 5U
-#define LOGGING_FLASH_SECTOR_B 6U
-#define LOGGING_FLASH_BASE_A 0x080A0000U
-#define LOGGING_FLASH_BASE_B 0x080C0000U
-#define LOGGING_FLASH_SECTOR_SIZE 0x20000U
 
 #include "can_definitions.h"
 #include "comms_definitions.h"
@@ -73,9 +70,8 @@ separate IRQs for RX and TX.
 #include "stm32h7/interrupt_handlers.h"
 #include "drivers/timers.h"
 #include "drivers/watchdog.h"
-#include "stm32h7/llflash.h"
 
-#if !defined(BOOTSTUB) && defined(PANDA)
+#if !defined(BOOTSTUB)
   #include "drivers/uart.h"
   #include "stm32h7/lluart.h"
 #endif
@@ -87,7 +83,9 @@ separate IRQs for RX and TX.
   #include "stm32h7/llexti.h"
 #endif
 
-#ifndef BOOTSTUB
+#ifdef BOOTSTUB
+  #include "stm32h7/llflash.h"
+#else
   #include "stm32h7/llfdcan.h"
 #endif
 
@@ -98,7 +96,7 @@ separate IRQs for RX and TX.
 
 void early_gpio_float(void) {
   RCC->AHB4ENR = RCC_AHB4ENR_GPIOAEN | RCC_AHB4ENR_GPIOBEN | RCC_AHB4ENR_GPIOCEN | RCC_AHB4ENR_GPIODEN | RCC_AHB4ENR_GPIOEEN | RCC_AHB4ENR_GPIOFEN | RCC_AHB4ENR_GPIOGEN | RCC_AHB4ENR_GPIOHEN;
-  GPIOA->MODER = 0; GPIOB->MODER = 0; GPIOC->MODER = 0; GPIOD->MODER = 0; GPIOE->MODER = 0; GPIOF->MODER = 0; GPIOG->MODER = 0; GPIOH->MODER = 0;
+  GPIOA->MODER = 0xAB000000; GPIOB->MODER = 0; GPIOC->MODER = 0; GPIOD->MODER = 0; GPIOE->MODER = 0; GPIOF->MODER = 0; GPIOG->MODER = 0; GPIOH->MODER = 0;
   GPIOA->ODR = 0; GPIOB->ODR = 0; GPIOC->ODR = 0; GPIOD->ODR = 0; GPIOE->ODR = 0; GPIOF->ODR = 0; GPIOG->ODR = 0; GPIOH->ODR = 0;
   GPIOA->PUPDR = 0; GPIOB->PUPDR = 0; GPIOC->PUPDR = 0; GPIOD->PUPDR = 0; GPIOE->PUPDR = 0; GPIOF->PUPDR = 0; GPIOG->PUPDR = 0; GPIOH->PUPDR = 0;
 }
