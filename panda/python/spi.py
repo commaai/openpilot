@@ -17,10 +17,8 @@ from .utils import crc8_pedal
 
 try:
   import spidev
-  import spidev2
 except ImportError:
   spidev = None
-  spidev2 = None
 
 # Constants
 SYNC = 0x5A
@@ -194,6 +192,7 @@ class PandaSpiHandle(BaseHandle):
       return dat[3:-1]
 
   def _transfer_kernel_driver(self, spi, endpoint: int, data, timeout: int, max_rx_len: int = 1000, expect_disconnect: bool = False) -> bytes:
+    import spidev2
     self.tx_buf[:len(data)] = data
     self.ioctl_data.endpoint = endpoint
     self.ioctl_data.tx_length = len(data)
@@ -314,7 +313,7 @@ class STBootloaderSPIHandle(BaseSTBootloaderHandle):
 
       self._mcu_type = MCU_TYPE_BY_IDCODE[self.get_chip_id()]
     except PandaSpiException:
-      raise PandaSpiException("failed to connect to panda")  # pylint: disable=W0707
+      raise PandaSpiException("failed to connect to panda") from None
 
   def _get_ack(self, spi, timeout=1.0):
     data = 0x00
@@ -403,12 +402,6 @@ class STBootloaderSPIHandle(BaseSTBootloaderHandle):
 
   # *** PandaDFU API ***
 
-  def erase_app(self):
-    self.erase_sector(1)
-
-  def erase_bootstub(self):
-    self.erase_sector(0)
-
   def get_mcu_type(self):
     return self._mcu_type
 
@@ -421,7 +414,7 @@ class STBootloaderSPIHandle(BaseSTBootloaderHandle):
   def program(self, address, dat):
     bs = 256  # max block size for writing to flash over SPI
     dat += b"\xFF" * ((bs - len(dat)) % bs)
-    for i in range(0, len(dat) // bs):
+    for i in range(len(dat) // bs):
       block = dat[i * bs:(i + 1) * bs]
       self._cmd(0x31, data=[
         struct.pack('>I', address + i*bs),

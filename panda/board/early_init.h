@@ -51,9 +51,9 @@ void early_initialization(void) {
   detect_board_type();
 
   if (enter_bootloader_mode == ENTER_BOOTLOADER_MAGIC) {
-  #ifdef PANDA
-    current_board->set_gps_mode(GPS_DISABLED);
-  #endif
+    #ifdef PANDA
+    current_board->init_bootloader();
+    #endif
     current_board->set_led(LED_GREEN, 1);
     jump_to_bootloader();
   }

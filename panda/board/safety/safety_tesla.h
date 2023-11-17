@@ -226,6 +226,8 @@ static const addr_checks* tesla_init(uint16_t param) {
   tesla_powertrain = GET_FLAG(param, TESLA_FLAG_POWERTRAIN);
   tesla_longitudinal = GET_FLAG(param, TESLA_FLAG_LONGITUDINAL_CONTROL);
 
+  tesla_stock_aeb = false;
+
   return tesla_powertrain ? (&tesla_pt_rx_checks) : (&tesla_rx_checks);
 }
 

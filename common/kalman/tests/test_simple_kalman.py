@@ -3,8 +3,8 @@ import random
 import timeit
 import numpy as np
 
-from common.kalman.simple_kalman import KF1D
-from common.kalman.simple_kalman_old import KF1D as KF1D_old
+from openpilot.common.kalman.simple_kalman import KF1D
+from openpilot.common.kalman.simple_kalman_old import KF1D as KF1D_old
 
 
 class TestSimpleKalman(unittest.TestCase):
@@ -54,8 +54,8 @@ class TestSimpleKalman(unittest.TestCase):
     setup = """
 import numpy as np
 
-from common.kalman.simple_kalman import KF1D
-from common.kalman.simple_kalman_old import KF1D as KF1D_old
+from openpilot.common.kalman.simple_kalman import KF1D
+from openpilot.common.kalman.simple_kalman_old import KF1D as KF1D_old
 
 dt = 0.01
 x0_0 = 0.0

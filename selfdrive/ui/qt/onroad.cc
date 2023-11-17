@@ -1,6 +1,10 @@
 #include "selfdrive/ui/qt/onroad.h"
 
+#include <algorithm>
 #include <cmath>
+#include <map>
+#include <memory>
+#include <sstream>
 
 #include <QDebug>
 #include <QMouseEvent>
@@ -11,6 +15,17 @@
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 #include "selfdrive/ui/qt/maps/map_panel.h"
 #endif
+
+static void drawIcon(QPainter &p, const QPoint &center, const QPixmap &img, const QBrush &bg, float opacity) {
+  p.setRenderHint(QPainter::Antialiasing);
+  p.setOpacity(1.0);  // bg dictates opacity of ellipse
+  p.setPen(Qt::NoPen);
+  p.setBrush(bg);
+  p.drawEllipse(center, btn_size / 2, btn_size / 2);
+  p.setOpacity(opacity);
+  p.drawPixmap(center - QPoint(img.width() / 2, img.height() / 2), img);
+  p.setOpacity(1.0);
+}
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout  = new QVBoxLayout(this);
@@ -49,9 +64,14 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
   QObject::connect(uiState(), &UIState::uiUpdate, this, &OnroadWindow::updateState);
   QObject::connect(uiState(), &UIState::offroadTransition, this, &OnroadWindow::offroadTransition);
+  QObject::connect(uiState(), &UIState::primeChanged, this, &OnroadWindow::primeChanged);
 }
 
 void OnroadWindow::updateState(const UIState &s) {
+  if (!s.scene.started) {
+    return;
+  }
+
   QColor bgColor = bg_colors[s.status];
   Alert alert = Alert::get(*(s.sm), s.scene.started_frame);
   alerts->updateAlert(alert);
@@ -87,7 +107,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
 void OnroadWindow::offroadTransition(bool offroad) {
 #ifdef ENABLE_MAPS
   if (!offroad) {
-    if (map == nullptr && (uiState()->primeType() || !MAPBOX_TOKEN.isEmpty())) {
+    if (map == nullptr && (uiState()->hasPrime() || !MAPBOX_TOKEN.isEmpty())) {
       auto m = new MapPanel(get_mapbox_settings());
       map = m;
 
@@ -105,6 +125,17 @@ void OnroadWindow::offroadTransition(bool offroad) {
 #endif
 
   alerts->updateAlert({});
+}
+
+void OnroadWindow::primeChanged(bool prime) {
+#ifdef ENABLE_MAPS
+  if (map && (!prime && MAPBOX_TOKEN.isEmpty())) {
+    nvg->map_settings_btn->setEnabled(false);
+    nvg->map_settings_btn->setVisible(false);
+    map->deleteLater();
+    map = nullptr;
+  }
+#endif
 }
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
@@ -183,7 +214,6 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 ExperimentalButton::ExperimentalButton(QWidget *parent) : experimental_mode(false), engageable(false), QPushButton(parent) {
   setFixedSize(btn_size, btn_size);
 
-  params = Params();
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
   experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size, img_size});
   QObject::connect(this, &QPushButton::clicked, this, &ExperimentalButton::changeMode);
@@ -209,17 +239,8 @@ void ExperimentalButton::updateState(const UIState &s) {
 
 void ExperimentalButton::paintEvent(QPaintEvent *event) {
   QPainter p(this);
-  p.setRenderHint(QPainter::Antialiasing);
-
-  QPoint center(btn_size / 2, btn_size / 2);
   QPixmap img = experimental_mode ? experimental_img : engage_img;
-
-  p.setOpacity(1.0);
-  p.setPen(Qt::NoPen);
-  p.setBrush(QColor(0, 0, 0, 166));
-  p.drawEllipse(center, btn_size / 2, btn_size / 2);
-  p.setOpacity((isDown() || !engageable) ? 0.6 : 1.0);
-  p.drawPixmap((btn_size - img_size) / 2, (btn_size - img_size) / 2, img);
+  drawIcon(p, QPoint(btn_size / 2, btn_size / 2), img, QColor(0, 0, 0, 166), (isDown() || !engageable) ? 0.6 : 1.0);
 }
 
 
@@ -235,16 +256,7 @@ MapSettingsButton::MapSettingsButton(QWidget *parent) : QPushButton(parent) {
 
 void MapSettingsButton::paintEvent(QPaintEvent *event) {
   QPainter p(this);
-  p.setRenderHint(QPainter::Antialiasing);
-
-  QPoint center(btn_size / 2, btn_size / 2);
-
-  p.setOpacity(1.0);
-  p.setPen(Qt::NoPen);
-  p.setBrush(QColor(0, 0, 0, 166));
-  p.drawEllipse(center, btn_size / 2, btn_size / 2);
-  p.setOpacity(isDown() ? 0.6 : 1.0);
-  p.drawPixmap((btn_size - img_size) / 2, (btn_size - img_size) / 2, settings_img);
+  drawIcon(p, QPoint(btn_size / 2, btn_size / 2), settings_img, QColor(0, 0, 0, 166), isDown() ? 0.6 : 1.0);
 }
 
 
@@ -271,51 +283,42 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
 
   const bool cs_alive = sm.alive("controlsState");
   const bool nav_alive = sm.alive("navInstruction") && sm["navInstruction"].getValid();
-
   const auto cs = sm["controlsState"].getControlsState();
+  const auto car_state = sm["carState"].getCarState();
+  const auto nav_instruction = sm["navInstruction"].getNavInstruction();
 
   // Handle older routes where vCruiseCluster is not set
   float v_cruise =  cs.getVCruiseCluster() == 0.0 ? cs.getVCruise() : cs.getVCruiseCluster();
-  float set_speed = cs_alive ? v_cruise : SET_SPEED_NA;
-  bool cruise_set = set_speed > 0 && (int)set_speed != SET_SPEED_NA;
-  if (cruise_set && !s.scene.is_metric) {
-    set_speed *= KM_TO_MILE;
+  setSpeed = cs_alive ? v_cruise : SET_SPEED_NA;
+  is_cruise_set = setSpeed > 0 && (int)setSpeed != SET_SPEED_NA;
+  if (is_cruise_set && !s.scene.is_metric) {
+    setSpeed *= KM_TO_MILE;
   }
 
   // Handle older routes where vEgoCluster is not set
-  float v_ego;
-  if (sm["carState"].getCarState().getVEgoCluster() == 0.0 && !v_ego_cluster_seen) {
-    v_ego = sm["carState"].getCarState().getVEgo();
-  } else {
-    v_ego = sm["carState"].getCarState().getVEgoCluster();
-    v_ego_cluster_seen = true;
-  }
-  float cur_speed = cs_alive ? std::max<float>(0.0, v_ego) : 0.0;
-  cur_speed *= s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH;
+  v_ego_cluster_seen = v_ego_cluster_seen || car_state.getVEgoCluster() != 0.0;
+  float v_ego = v_ego_cluster_seen ? car_state.getVEgoCluster() : car_state.getVEgo();
+  speed = cs_alive ? std::max<float>(0.0, v_ego) : 0.0;
+  speed *= s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH;
 
-  auto speed_limit_sign = sm["navInstruction"].getNavInstruction().getSpeedLimitSign();
-  float speed_limit = nav_alive ? sm["navInstruction"].getNavInstruction().getSpeedLimit() : 0.0;
-  speed_limit *= (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH);
+  auto speed_limit_sign = nav_instruction.getSpeedLimitSign();
+  speedLimit = nav_alive ? nav_instruction.getSpeedLimit() : 0.0;
+  speedLimit *= (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH);
 
-  setProperty("speedLimit", speed_limit);
-  setProperty("has_us_speed_limit", nav_alive && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::MUTCD);
-  setProperty("has_eu_speed_limit", nav_alive && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::VIENNA);
-
-  setProperty("is_cruise_set", cruise_set);
-  setProperty("is_metric", s.scene.is_metric);
-  setProperty("speed", cur_speed);
-  setProperty("setSpeed", set_speed);
-  setProperty("speedUnit", s.scene.is_metric ? tr("km/h") : tr("mph"));
-  setProperty("hideBottomIcons", (cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE));
-  setProperty("status", s.status);
+  has_us_speed_limit = (nav_alive && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::MUTCD);
+  has_eu_speed_limit = (nav_alive && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::VIENNA);
+  is_metric = s.scene.is_metric;
+  speedUnit =  s.scene.is_metric ? tr("km/h") : tr("mph");
+  hideBottomIcons = (cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
+  status = s.status;
 
   // update engageability/experimental mode button
   experimental_btn->updateState(s);
 
   // update DM icon
   auto dm_state = sm["driverMonitoringState"].getDriverMonitoringState();
-  setProperty("dmActive", dm_state.getIsActiveMode());
-  setProperty("rightHandDM", dm_state.getIsRHD());
+  dmActive = dm_state.getIsActiveMode();
+  rightHandDM = dm_state.getIsRHD();
   // DM icon transition
   dm_fade_state = std::clamp(dm_fade_state+0.2*(0.5-dmActive), 0.0, 1.0);
 
@@ -432,16 +435,6 @@ void AnnotatedCameraWidget::drawText(QPainter &p, int x, int y, const QString &t
   p.drawText(real_rect.x(), real_rect.bottom(), text);
 }
 
-void AnnotatedCameraWidget::drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity) {
-  p.setOpacity(1.0);  // bg dictates opacity of ellipse
-  p.setPen(Qt::NoPen);
-  p.setBrush(bg);
-  p.drawEllipse(x - btn_size / 2, y - btn_size / 2, btn_size, btn_size);
-  p.setOpacity(opacity);
-  p.drawPixmap(x - img.size().width() / 2, y - img.size().height() / 2, img);
-  p.setOpacity(1.0);
-}
-
 void AnnotatedCameraWidget::initializeGL() {
   CameraWidget::initializeGL();
   qInfo() << "OpenGL version:" << QString((const char*)glGetString(GL_VERSION));
@@ -540,7 +533,7 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s)
   int x = rightHandDM ? width() - offset : offset;
   int y = height() - offset;
   float opacity = dmActive ? 0.65 : 0.2;
-  drawIcon(painter, x, y, dm_img, blackColor(70), opacity);
+  drawIcon(painter, QPoint(x, y), dm_img, blackColor(70), opacity);
 
   // face
   QPointF face_kpts_draw[std::size(default_face_kpts_3d)];

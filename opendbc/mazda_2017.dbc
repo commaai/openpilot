@@ -209,6 +209,8 @@ BO_ 1088 CAM_LANEINFO: 8 XXX
  SG_ LINE_VISIBLE : 0|1@0+ (1,0) [0|3] "" XXX
  SG_ LDW_WARN_RL : 58|1@0+ (1,0) [0|1] "" XXX
  SG_ LDW_WARN_LL : 57|1@0+ (1,0) [0|1] "" XXX
+ SG_ TJA : 38|3@0+ (1,0) [0|7] "" XXX
+ SG_ TJA_TRANSITION : 27|2@0+ (1,0) [0|63] "" XXX
 
 BO_ 1479 NEW_MSG_470: 8 XXX
 
@@ -554,6 +556,8 @@ BO_ 535 CURVE_CTRS: 8 XXX
 
 BO_ 540 CRZ_CTRL: 8 XXX
  SG_ NEW_SIGNAL_6 : 10|1@0+ (1,0) [0|1] "" XXX
+ SG_ NEW_SIGNAL_9 : 31|1@0+ (1,0) [0|255] "" XXX
+ SG_ ACC_GAS_MAYBE2 : 29|1@0+ (1,0) [0|1] "" XXX
  SG_ HANDS_OFF_STEERING : 48|1@0+ (1,0) [0|1] "" XXX
  SG_ HANDS_ON_STEER_WARN : 59|4@0+ (1,0) [0|255] "" XXX
  SG_ CRZ_ACTIVE : 3|1@0+ (1,0) [0|1] "" XXX
@@ -561,7 +565,9 @@ BO_ 540 CRZ_CTRL: 8 XXX
  SG_ DISTANCE_SETTING : 20|3@0+ (1,0) [0|7] "" XXX
  SG_ MSG_1_INV : 1|1@0+ (1,0) [0|1] "" XXX
  SG_ MSG_1_COPY : 9|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACC_GAS_MAYBE : 23|1@0+ (1,0) [0|31] "" XXX
  SG_ ACC_ACTIVE_2 : 52|1@0+ (1,0) [0|1] "" XXX
+ SG_ NEW_SIGNAL_10 : 30|1@0+ (1,0) [0|1] "" XXX
  SG_ MSG_1 : 0|1@0+ (1,0) [0|3] "" XXX
  SG_ 5_SEC_DISABLE_TIMER : 45|3@0+ (1,0) [0|7] "" XXX
  SG_ NEW_SIGNAL_3 : 13|1@0+ (1,0) [0|3] "" XXX
@@ -701,6 +707,12 @@ BO_ 1143 BSM: 8 XXX
  SG_ NEW_SIGNAL_1 : 32|1@0+ (1,0) [0|1] "" XXX
  SG_ REAR_CT_ALERT : 23|5@0+ (1,0) [0|63] "" XXX
 
+BO_ 480 ACCEL_TEST: 8 XXX
+ SG_ ACCEL_COMMAND : 7|32@0- (1,0) [-2147483647|2147483647] "" XXX
+ SG_ ENABLED : 32|1@0+ (1,0) [0|1] "" XXX
+ SG_ STARTING : 40|1@0+ (1,0) [0|1] "" XXX
+ SG_ STOPPING : 48|1@0+ (1,0) [0|1] "" XXX
+
 BO_ 1361 KEY_POSITION: 8 XXX
 
 BO_ 1283 KEY_POSITION2: 8 XXX
@@ -760,6 +772,8 @@ CM_ SG_ 1157 LKAS_SENSETIVITY "0 low, 1 high";
 CM_ SG_ 1157 LANEE_DEPARTURE_ALERT "1 off, 2 on";
 CM_ SG_ 1157 WARNING "1 Rare, 0 often";
 CM_ SG_ 1088 LANE_LINES "0 LKAS disabled, 1 no lines, 2 two lines, 3 left line, 4 right line";
+CM_ SG_ 1088 TJA "2: crz not active,  3: TJA not allowed,  4: TJA allowed";
+CM_ SG_ 1088 TJA_TRANSITION "3: if TJA signal is 3, otherwise set to 0";
 CM_ SG_ 1045 ABS_MALFUNCTION "off: 0, solid: 1, slow blink: 2, fast blink: 3";
 CM_ SG_ 120 VEHICLE_ACC_X "Vehicle acceleration of X-axis wrt. NED frame.";
 CM_ SG_ 120 VEHICLE_ACC_Y "Vehicle acceleration of Y-axis wrt. NED frame.";

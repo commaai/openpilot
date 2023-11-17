@@ -1,0 +1,28 @@
+import copy
+
+Import('build_project')
+
+build_projects = {}
+
+build_projects["pedal"] = {
+  "MAIN": "main.c",
+  "BOOTSTUB": "../bootstub.c",
+  "STARTUP_FILE": "../stm32fx/startup_stm32f205xx.s",
+  "LINKER_SCRIPT": "../stm32fx/stm32f2_flash.ld",
+  "APP_START_ADDRESS": "0x8004000",
+  "PROJECT_FLAGS": [
+    "-mcpu=cortex-m3",
+    "-msoft-float",
+    "-DSTM32F2",
+    "-DSTM32F205xx",
+    "-O2",
+    "-DPEDAL",
+  ],
+}
+
+# build with the USB driver enabled
+build_projects["pedal_usb"] = copy.deepcopy(build_projects["pedal"])
+build_projects["pedal_usb"]["PROJECT_FLAGS"].append("-DPEDAL_USB")
+
+for project_name, project in build_projects.items():
+  build_project(project_name, project, [])

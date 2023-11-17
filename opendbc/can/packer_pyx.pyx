@@ -40,7 +40,7 @@ cdef class CANPacker:
 
   cpdef make_can_msg(self, name_or_addr, bus, values):
     cdef int addr
-    if type(name_or_addr) == int:
+    if isinstance(name_or_addr, int):
       addr = name_or_addr
     else:
       addr = self.name_to_address[name_or_addr.encode("utf8")]

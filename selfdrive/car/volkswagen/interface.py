@@ -1,9 +1,9 @@
 from cereal import car
 from panda import Panda
-from common.conversions import Conversions as CV
-from selfdrive.car import STD_CARGO_KG, get_safety_config
-from selfdrive.car.interfaces import CarInterfaceBase
-from selfdrive.car.volkswagen.values import CAR, PQ_CARS, CANBUS, NetworkLocation, TransmissionType, GearShifter
+from openpilot.common.conversions import Conversions as CV
+from openpilot.selfdrive.car import get_safety_config
+from openpilot.selfdrive.car.interfaces import CarInterfaceBase
+from openpilot.selfdrive.car.volkswagen.values import CAR, PQ_CARS, CANBUS, NetworkLocation, TransmissionType, GearShifter
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -101,32 +101,32 @@ class CarInterface(CarInterfaceBase):
     # Per-chassis tuning values, override tuning defaults here if desired
 
     if candidate == CAR.ARTEON_MK1:
-      ret.mass = 1733 + STD_CARGO_KG
+      ret.mass = 1733
       ret.wheelbase = 2.84
 
     elif candidate == CAR.ATLAS_MK1:
-      ret.mass = 2011 + STD_CARGO_KG
+      ret.mass = 2011
       ret.wheelbase = 2.98
 
     elif candidate == CAR.CRAFTER_MK2:
-      ret.mass = 2100 + STD_CARGO_KG
+      ret.mass = 2100
       ret.wheelbase = 3.64  # SWB, LWB is 4.49, TBD how to detect difference
       ret.minSteerSpeed = 50 * CV.KPH_TO_MS
 
     elif candidate == CAR.GOLF_MK7:
-      ret.mass = 1397 + STD_CARGO_KG
+      ret.mass = 1397
       ret.wheelbase = 2.62
 
     elif candidate == CAR.JETTA_MK7:
-      ret.mass = 1328 + STD_CARGO_KG
+      ret.mass = 1328
       ret.wheelbase = 2.71
 
     elif candidate == CAR.PASSAT_MK8:
-      ret.mass = 1551 + STD_CARGO_KG
+      ret.mass = 1551
       ret.wheelbase = 2.79
 
     elif candidate == CAR.PASSAT_NMS:
-      ret.mass = 1503 + STD_CARGO_KG
+      ret.mass = 1503
       ret.wheelbase = 2.80
       ret.minEnableSpeed = 20 * CV.KPH_TO_MS  # ACC "basic", no FtS
       ret.minSteerSpeed = 50 * CV.KPH_TO_MS
@@ -134,86 +134,86 @@ class CarInterface(CarInterfaceBase):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.POLO_MK6:
-      ret.mass = 1230 + STD_CARGO_KG
+      ret.mass = 1230
       ret.wheelbase = 2.55
 
     elif candidate == CAR.SHARAN_MK2:
-      ret.mass = 1639 + STD_CARGO_KG
+      ret.mass = 1639
       ret.wheelbase = 2.92
       ret.minSteerSpeed = 50 * CV.KPH_TO_MS
       ret.steerActuatorDelay = 0.2
 
     elif candidate == CAR.TAOS_MK1:
-      ret.mass = 1498 + STD_CARGO_KG
+      ret.mass = 1498
       ret.wheelbase = 2.69
 
     elif candidate == CAR.TCROSS_MK1:
-      ret.mass = 1150 + STD_CARGO_KG
+      ret.mass = 1150
       ret.wheelbase = 2.60
 
     elif candidate == CAR.TIGUAN_MK2:
-      ret.mass = 1715 + STD_CARGO_KG
+      ret.mass = 1715
       ret.wheelbase = 2.74
 
     elif candidate == CAR.TOURAN_MK2:
-      ret.mass = 1516 + STD_CARGO_KG
+      ret.mass = 1516
       ret.wheelbase = 2.79
 
     elif candidate == CAR.TRANSPORTER_T61:
-      ret.mass = 1926 + STD_CARGO_KG
+      ret.mass = 1926
       ret.wheelbase = 3.00  # SWB, LWB is 3.40, TBD how to detect difference
       ret.minSteerSpeed = 14.0
 
     elif candidate == CAR.TROC_MK1:
-      ret.mass = 1413 + STD_CARGO_KG
+      ret.mass = 1413
       ret.wheelbase = 2.63
 
     elif candidate == CAR.AUDI_A3_MK3:
-      ret.mass = 1335 + STD_CARGO_KG
+      ret.mass = 1335
       ret.wheelbase = 2.61
 
     elif candidate == CAR.AUDI_Q2_MK1:
-      ret.mass = 1205 + STD_CARGO_KG
+      ret.mass = 1205
       ret.wheelbase = 2.61
 
     elif candidate == CAR.AUDI_Q3_MK2:
-      ret.mass = 1623 + STD_CARGO_KG
+      ret.mass = 1623
       ret.wheelbase = 2.68
 
     elif candidate == CAR.SEAT_ATECA_MK1:
-      ret.mass = 1900 + STD_CARGO_KG
+      ret.mass = 1900
       ret.wheelbase = 2.64
 
     elif candidate == CAR.SEAT_LEON_MK3:
-      ret.mass = 1227 + STD_CARGO_KG
+      ret.mass = 1227
       ret.wheelbase = 2.64
 
     elif candidate == CAR.SKODA_FABIA_MK4:
-      ret.mass = 1266 + STD_CARGO_KG
+      ret.mass = 1266
       ret.wheelbase = 2.56
 
     elif candidate == CAR.SKODA_KAMIQ_MK1:
-      ret.mass = 1265 + STD_CARGO_KG
+      ret.mass = 1265
       ret.wheelbase = 2.66
 
     elif candidate == CAR.SKODA_KAROQ_MK1:
-      ret.mass = 1278 + STD_CARGO_KG
+      ret.mass = 1278
       ret.wheelbase = 2.66
 
     elif candidate == CAR.SKODA_KODIAQ_MK1:
-      ret.mass = 1569 + STD_CARGO_KG
+      ret.mass = 1569
       ret.wheelbase = 2.79
 
     elif candidate == CAR.SKODA_OCTAVIA_MK3:
-      ret.mass = 1388 + STD_CARGO_KG
+      ret.mass = 1388
       ret.wheelbase = 2.68
 
     elif candidate == CAR.SKODA_SCALA_MK1:
-      ret.mass = 1192 + STD_CARGO_KG
+      ret.mass = 1192
       ret.wheelbase = 2.65
 
     elif candidate == CAR.SKODA_SUPERB_MK3:
-      ret.mass = 1505 + STD_CARGO_KG
+      ret.mass = 1505
       ret.wheelbase = 2.84
 
     else:

@@ -7,17 +7,13 @@ from logging.handlers import BaseRotatingHandler
 
 import zmq
 
-from common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
-from system.hardware import PC
+from openpilot.common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
+from openpilot.system.hardware.hw import Paths
 
-if PC:
-  SWAGLOG_DIR = os.path.join(str(Path.home()), ".comma", "log")
-else:
-  SWAGLOG_DIR = "/data/log/"
 
 def get_file_handler():
-  Path(SWAGLOG_DIR).mkdir(parents=True, exist_ok=True)
-  base_filename = os.path.join(SWAGLOG_DIR, "swaglog")
+  Path(Paths.swaglog_root()).mkdir(parents=True, exist_ok=True)
+  base_filename = os.path.join(Paths.swaglog_root(), "swaglog")
   handler = SwaglogRotatingFileHandler(base_filename)
   return handler
 
@@ -77,6 +73,9 @@ class UnixDomainSocketHandler(logging.Handler):
     self.sock = None
 
   def __del__(self):
+    self.close()
+
+  def close(self):
     if self.sock is not None:
       self.sock.close()
     if self.zctx is not None:
@@ -86,7 +85,7 @@ class UnixDomainSocketHandler(logging.Handler):
     self.zctx = zmq.Context()
     self.sock = self.zctx.socket(zmq.PUSH)
     self.sock.setsockopt(zmq.LINGER, 10)
-    self.sock.connect("ipc:///tmp/logmessage")
+    self.sock.connect(Paths.swaglog_ipc())
     self.pid = os.getpid()
 
   def emit(self, record):
@@ -129,6 +128,8 @@ elif print_level == 'info':
 elif print_level == 'warning':
   outhandler.setLevel(logging.WARNING)
 
+ipchandler = UnixDomainSocketHandler(SwagFormatter(log))
+
 log.addHandler(outhandler)
 # logs are sent through IPC before writing to disk to prevent disk I/O blocking
-log.addHandler(UnixDomainSocketHandler(SwagFormatter(log)))
+log.addHandler(ipchandler)

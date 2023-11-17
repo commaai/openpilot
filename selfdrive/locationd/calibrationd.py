@@ -14,11 +14,11 @@ from typing import List, NoReturn, Optional
 
 from cereal import log
 import cereal.messaging as messaging
-from common.conversions import Conversions as CV
-from common.params import Params, put_nonblocking
-from common.realtime import set_realtime_priority
-from common.transformations.orientation import rot_from_euler, euler_from_rot
-from system.swaglog import cloudlog
+from openpilot.common.conversions import Conversions as CV
+from openpilot.common.params import Params, put_nonblocking
+from openpilot.common.realtime import set_realtime_priority
+from openpilot.common.transformations.orientation import rot_from_euler, euler_from_rot
+from openpilot.system.swaglog import cloudlog
 
 MIN_SPEED_FILTER = 15 * CV.MPH_TO_MS
 MAX_VEL_ANGLE_STD = np.radians(0.25)
@@ -31,7 +31,8 @@ SMOOTH_CYCLES = 10
 BLOCK_SIZE = 100
 INPUTS_NEEDED = 5   # Minimum blocks needed for valid calibration
 INPUTS_WANTED = 50   # We want a little bit more than we need for stability
-MAX_ALLOWED_SPREAD = np.radians(2)
+MAX_ALLOWED_YAW_SPREAD = np.radians(2)
+MAX_ALLOWED_PITCH_SPREAD = np.radians(4)
 RPY_INIT = np.array([0.0,0.0,0.0])
 WIDE_FROM_DEVICE_EULER_INIT = np.array([0.0, 0.0, 0.0])
 HEIGHT_INIT = np.array([1.22])
@@ -156,7 +157,8 @@ class Calibrator:
     # If spread is too high, assume mounting was changed and reset to last block.
     # Make the transition smooth. Abrupt transitions are not good for feedback loop through supercombo model.
     # TODO: add height spread check with smooth transition too
-    if max(self.calib_spread) > MAX_ALLOWED_SPREAD and self.cal_status == log.LiveCalibrationData.Status.calibrated:
+    spread_too_high = self.calib_spread[1] > MAX_ALLOWED_PITCH_SPREAD or self.calib_spread[2] > MAX_ALLOWED_YAW_SPREAD
+    if spread_too_high and self.cal_status == log.LiveCalibrationData.Status.calibrated:
       self.reset(self.rpys[self.block_idx - 1], valid_blocks=1, smooth_from=self.rpy)
       self.cal_status = log.LiveCalibrationData.Status.recalibrating
 
@@ -211,7 +213,8 @@ class Calibrator:
       new_height = HEIGHT_INIT
 
     self.rpys[self.block_idx] = moving_avg_with_linear_decay(self.rpys[self.block_idx], new_rpy, self.idx, float(BLOCK_SIZE))
-    self.wide_from_device_eulers[self.block_idx] = moving_avg_with_linear_decay(self.wide_from_device_eulers[self.block_idx], new_wide_from_device_euler, self.idx, float(BLOCK_SIZE))
+    self.wide_from_device_eulers[self.block_idx] = moving_avg_with_linear_decay(self.wide_from_device_eulers[self.block_idx],
+                                                                                new_wide_from_device_euler, self.idx, float(BLOCK_SIZE))
     self.heights[self.block_idx] = moving_avg_with_linear_decay(self.heights[self.block_idx], new_height, self.idx, float(BLOCK_SIZE))
 
     self.idx = (self.idx + 1) % BLOCK_SIZE

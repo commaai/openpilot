@@ -174,7 +174,7 @@ void safety_tick(const addr_checks *rx_checks) {
       bool lagging = elapsed_time > MAX(rx_checks->check[i].msg[rx_checks->check[i].index].expected_timestep * MAX_MISSED_MSGS, 1e6);
       rx_checks->check[i].lagging = lagging;
       if (lagging) {
-        controls_allowed = 0;
+        controls_allowed = false;
       }
 
       if (lagging || !is_msg_valid(rx_checks->check, i)) {
@@ -190,7 +190,7 @@ void update_counter(AddrCheckStruct addr_list[], int index, uint8_t counter) {
   if (index != -1) {
     uint8_t expected_counter = (addr_list[index].last_counter + 1U) % (addr_list[index].msg[addr_list[index].index].max_counter + 1U);
     addr_list[index].wrong_counters += (expected_counter == counter) ? -1 : 1;
-    addr_list[index].wrong_counters = MAX(MIN(addr_list[index].wrong_counters, MAX_WRONG_COUNTERS), 0);
+    addr_list[index].wrong_counters = CLAMP(addr_list[index].wrong_counters, 0, MAX_WRONG_COUNTERS);
     addr_list[index].last_counter = counter;
   }
 }
@@ -200,7 +200,7 @@ bool is_msg_valid(AddrCheckStruct addr_list[], int index) {
   if (index != -1) {
     if (!addr_list[index].valid_checksum || !addr_list[index].valid_quality_flag || (addr_list[index].wrong_counters >= MAX_WRONG_COUNTERS)) {
       valid = false;
-      controls_allowed = 0;
+      controls_allowed = false;
     }
   }
   return valid;
@@ -254,19 +254,19 @@ bool addr_safety_check(CANPacket_t *to_push,
 void generic_rx_checks(bool stock_ecu_detected) {
   // exit controls on rising edge of gas press
   if (gas_pressed && !gas_pressed_prev && !(alternative_experience & ALT_EXP_DISABLE_DISENGAGE_ON_GAS)) {
-    controls_allowed = 0;
+    controls_allowed = false;
   }
   gas_pressed_prev = gas_pressed;
 
   // exit controls on rising edge of brake press
   if (brake_pressed && (!brake_pressed_prev || vehicle_moving)) {
-    controls_allowed = 0;
+    controls_allowed = false;
   }
   brake_pressed_prev = brake_pressed;
 
   // exit controls on rising edge of regen paddle
   if (regen_braking && (!regen_braking_prev || vehicle_moving)) {
-    controls_allowed = 0;
+    controls_allowed = false;
   }
   regen_braking_prev = regen_braking;
 
@@ -344,14 +344,11 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
   valid_steer_req_count = 0;
   invalid_steer_req_count = 0;
 
-  vehicle_speed.min = 0;
-  vehicle_speed.max = 0;
-  torque_meas.min = 0;
-  torque_meas.max = 0;
-  torque_driver.min = 0;
-  torque_driver.max = 0;
-  angle_meas.min = 0;
-  angle_meas.max = 0;
+  // reset samples
+  reset_sample(&vehicle_speed);
+  reset_sample(&torque_meas);
+  reset_sample(&torque_driver);
+  reset_sample(&angle_meas);
 
   controls_allowed = false;
   relay_malfunction_reset();
@@ -389,8 +386,7 @@ int to_signed(int d, int bits) {
 
 // given a new sample, update the sample_t struct
 void update_sample(struct sample_t *sample, int sample_new) {
-  int sample_size = sizeof(sample->values) / sizeof(sample->values[0]);
-  for (int i = sample_size - 1; i > 0; i--) {
+  for (int i = MAX_SAMPLE_VALS - 1; i > 0; i--) {
     sample->values[i] = sample->values[i-1];
   }
   sample->values[0] = sample_new;
@@ -398,7 +394,7 @@ void update_sample(struct sample_t *sample, int sample_new) {
   // get the minimum and maximum measured samples
   sample->min = sample->values[0];
   sample->max = sample->values[0];
-  for (int i = 1; i < sample_size; i++) {
+  for (int i = 1; i < MAX_SAMPLE_VALS; i++) {
     if (sample->values[i] < sample->min) {
       sample->min = sample->values[i];
     }
@@ -406,6 +402,14 @@ void update_sample(struct sample_t *sample, int sample_new) {
       sample->max = sample->values[i];
     }
   }
+}
+
+// resets values and min/max for sample_t struct
+void reset_sample(struct sample_t *sample) {
+  for (int i = 0; i < MAX_SAMPLE_VALS; i++) {
+    sample->values[i] = 0;
+  }
+  update_sample(sample, 0);
 }
 
 bool max_limit_check(int val, const int MAX_VAL, const int MIN_VAL) {
@@ -507,6 +511,12 @@ bool longitudinal_accel_checks(int desired_accel, const LongitudinalLimits limit
 
 bool longitudinal_speed_checks(int desired_speed, const LongitudinalLimits limits) {
   return !get_longitudinal_allowed() && (desired_speed != limits.inactive_speed);
+}
+
+bool longitudinal_transmission_rpm_checks(int desired_transmission_rpm, const LongitudinalLimits limits) {
+  bool transmission_rpm_valid = get_longitudinal_allowed() && !max_limit_check(desired_transmission_rpm, limits.max_transmission_rpm, limits.min_transmission_rpm);
+  bool transmission_rpm_inactive = desired_transmission_rpm == limits.inactive_transmission_rpm;
+  return !(transmission_rpm_valid || transmission_rpm_inactive);
 }
 
 bool longitudinal_gas_checks(int desired_gas, const LongitudinalLimits limits) {

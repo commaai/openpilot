@@ -14,13 +14,13 @@ from pathlib import Path
 from typing import List, Union, Optional
 from markdown_it import MarkdownIt
 
-from common.basedir import BASEDIR
-from common.params import Params
-from common.time import system_time_valid
-from system.hardware import AGNOS, HARDWARE
-from system.swaglog import cloudlog
-from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from system.version import is_tested_branch
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.params import Params
+from openpilot.common.time import system_time_valid
+from openpilot.system.hardware import AGNOS, HARDWARE
+from openpilot.system.swaglog import cloudlog
+from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
+from openpilot.system.version import is_tested_branch
 
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
@@ -192,7 +192,7 @@ def finalize_update() -> None:
 
 
 def handle_agnos_update() -> None:
-  from system.hardware.tici.agnos import flash_agnos_update, get_target_slot_number
+  from openpilot.system.hardware.tici.agnos import flash_agnos_update, get_target_slot_number
 
   cur_version = HARDWARE.get_os_version()
   updated_version = run(["bash", "-c", r"unset AGNOS_VERSION && source launch_env.sh && \
@@ -444,7 +444,7 @@ def main() -> None:
       if not system_time_valid():
         wait_helper.sleep(60)
         continue
-        
+
       update_failed_count += 1
 
       # check for update

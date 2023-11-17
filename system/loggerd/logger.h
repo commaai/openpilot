@@ -1,11 +1,12 @@
 #pragma once
 
-#include <cassert>
 #include <pthread.h>
 
+#include <cassert>
 #include <cstdint>
 #include <cstdio>
 #include <memory>
+#include <string>
 
 #include <capnp/serialize.h>
 #include <kj/array.h>
@@ -14,8 +15,6 @@
 #include "common/util.h"
 #include "common/swaglog.h"
 #include "system/hardware/hw.h"
-
-const std::string LOG_ROOT = Path::log_root();
 
 #define LOGGER_MAX_HANDLES 16
 

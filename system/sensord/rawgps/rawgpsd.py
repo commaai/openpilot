@@ -6,22 +6,20 @@ import itertools
 import math
 import time
 import pycurl
+import shutil
 import subprocess
-from datetime import datetime
+import datetime
 from multiprocessing import Process, Event
 from typing import NoReturn, Optional
 from struct import unpack_from, calcsize, pack
 
 from cereal import log
 import cereal.messaging as messaging
-from common.gpio import gpio_init, gpio_set
-from laika.gps_time import GPSTime, utc_to_gpst, get_leap_seconds
-from laika.helpers import get_prn_from_nmea_id
-from laika.constants import SECS_IN_HR, SECS_IN_DAY, SECS_IN_WEEK
-from system.hardware.tici.pins import GPIO
-from system.swaglog import cloudlog
-from system.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
-from system.sensord.rawgps.structs import (dict_unpacker, position_report, relist,
+from openpilot.common.gpio import gpio_init, gpio_set
+from openpilot.system.hardware.tici.pins import GPIO
+from openpilot.system.swaglog import cloudlog
+from openpilot.system.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
+from openpilot.system.sensord.rawgps.structs import (dict_unpacker, position_report, relist,
                                               gps_measurement_report, gps_measurement_report_sv,
                                               glonass_measurement_report, glonass_measurement_report_sv,
                                               oemdre_measurement_report, oemdre_measurement_report_sv, oemdre_svpoly_report,
@@ -144,9 +142,17 @@ def download_assistance():
 def downloader_loop(event):
   if os.path.exists(ASSIST_DATA_FILE):
     os.remove(ASSIST_DATA_FILE)
-  while not os.path.exists(ASSIST_DATA_FILE) and not event.is_set():
-    download_assistance()
-    time.sleep(10)
+
+  alt_path = os.getenv("QCOM_ALT_ASSISTANCE_PATH", None)
+  if alt_path is not None and os.path.exists(alt_path):
+    shutil.copyfile(alt_path, ASSIST_DATA_FILE)
+
+  try:
+    while not os.path.exists(ASSIST_DATA_FILE) and not event.is_set():
+      download_assistance()
+      event.wait(timeout=10)
+  except KeyboardInterrupt:
+    pass
 
 def inject_assistance():
   for _ in range(5):
@@ -181,7 +187,13 @@ def setup_quectel(diag: ModemDiag) -> bool:
 
   if gps_enabled():
     at_cmd("AT+QGPSEND")
-  #at_cmd("AT+QGPSDEL=0")
+
+  if "GPS_COLD_START" in os.environ:
+    # deletes all assistance
+    at_cmd("AT+QGPSDEL=0")
+  else:
+    # allow module to perform hot start
+    at_cmd("AT+QGPSDEL=1")
 
   # disable DPO power savings for more accuracy
   at_cmd("AT+QGPSCFG=\"dpoenable\",0")
@@ -196,7 +208,7 @@ def setup_quectel(diag: ModemDiag) -> bool:
     inject_assistance()
     os.remove(ASSIST_DATA_FILE)
   #at_cmd("AT+QGPSXTRADATA?")
-  time_str = datetime.utcnow().strftime("%Y/%m/%d,%H:%M:%S")
+  time_str = datetime.datetime.utcnow().strftime("%Y/%m/%d,%H:%M:%S")
   at_cmd(f"AT+QGPSXTRATIME=0,\"{time_str}\",1,1,1000")
 
   at_cmd("AT+QGPSCFG=\"outport\",\"usbnmea\"")
@@ -259,23 +271,28 @@ def main() -> NoReturn:
   stop_download_event = Event()
   assist_fetch_proc = Process(target=downloader_loop, args=(stop_download_event,))
   assist_fetch_proc.start()
-  def cleanup(proc):
+  def cleanup(sig, frame):
     cloudlog.warning("caught sig disabling quectel gps")
-    gpio_set(GPIO.UBLOX_PWR_EN, False)
+
+    gpio_set(GPIO.GNSS_PWR_EN, False)
     teardown_quectel(diag)
     cloudlog.warning("quectel cleanup done")
+
+    stop_download_event.set()
+    assist_fetch_proc.kill()
+    assist_fetch_proc.join()
+
     sys.exit(0)
-  signal.signal(signal.SIGINT, lambda sig, frame: cleanup(assist_fetch_proc))
-  signal.signal(signal.SIGTERM, lambda sig, frame: cleanup(assist_fetch_proc))
+  signal.signal(signal.SIGINT, cleanup)
+  signal.signal(signal.SIGTERM, cleanup)
 
   # connect to modem
   diag = ModemDiag()
   r = setup_quectel(diag)
   want_assistance = not r
-  current_gps_time = utc_to_gpst(GPSTime.from_datetime(datetime.utcnow()))
   cloudlog.warning("quectel setup done")
-  gpio_init(GPIO.UBLOX_PWR_EN, True)
-  gpio_set(GPIO.UBLOX_PWR_EN, True)
+  gpio_init(GPIO.GNSS_PWR_EN, True)
+  gpio_set(GPIO.GNSS_PWR_EN, True)
 
   pm = messaging.PubMaster(['qcomGnss', 'gpsLocation'])
 
@@ -345,8 +362,6 @@ def main() -> NoReturn:
               setattr(sv.measurementStatus, kk, bool(v & (1<<vv)))
           else:
             setattr(sv, k, v)
-      if report.source == log.QcomGnss.MeasurementSource.gps:
-        current_gps_time = GPSTime(report.gpsWeek, report.gpsMilliseconds / 1000.0)
       pm.send('qcomGnss', msg)
     elif log_type == LOG_GNSS_POSITION_REPORT:
       report = unpack_position(log_payload)
@@ -362,8 +377,12 @@ def main() -> NoReturn:
       gps.altitude = report["q_FltFinalPosAlt"]
       gps.speed = math.sqrt(sum([x**2 for x in vNED]))
       gps.bearingDeg = report["q_FltHeadingRad"] * 180/math.pi
-      gps.unixTimestampMillis = GPSTime(report['w_GpsWeekNumber'],
-                                        1e-3*report['q_GpsFixTimeMs']).as_unix_timestamp()*1e3
+
+      # TODO needs update if there is another leap second, after june 2024?
+      dt_timestamp = (datetime.datetime(1980, 1, 6, 0, 0, 0, 0, None) +
+                      datetime.timedelta(weeks=report['w_GpsWeekNumber']) +
+                      datetime.timedelta(seconds=(1e-3*report['q_GpsFixTimeMs'] - 18)))
+      gps.unixTimestampMillis = dt_timestamp.timestamp()*1e3
       gps.source = log.GpsLocationData.SensorSource.qcomdiag
       gps.vNED = vNED
       gps.verticalAccuracy = report["q_FltVdop"]
@@ -374,8 +393,6 @@ def main() -> NoReturn:
       if gps.flags:
         want_assistance = False
         stop_download_event.set()
-
-
       pm.send('gpsLocation', msg)
 
     elif log_type == LOG_GNSS_OEMDRE_SVPOLY_REPORT:
@@ -394,6 +411,10 @@ def main() -> NoReturn:
         else:
           setattr(poly, k, v)
 
+      '''
+      # Timestamp glonass polys with GPSTime
+      from laika.gps_time import GPSTime, utc_to_gpst, get_leap_seconds
+      from laika.helpers import get_prn_from_nmea_id
       prn = get_prn_from_nmea_id(poly.svId)
       if prn[0] == 'R':
         epoch = GPSTime(current_gps_time.week, (poly.t0 - 3*SECS_IN_HR + SECS_IN_DAY) % (SECS_IN_WEEK) + get_leap_seconds(current_gps_time))
@@ -408,6 +429,7 @@ def main() -> NoReturn:
 
       poly.gpsWeek = epoch.week
       poly.gpsTow = epoch.tow
+      '''
       pm.send('qcomGnss', msg)
 
     elif log_type in [LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT]:
@@ -431,7 +453,7 @@ def main() -> NoReturn:
         report.source = 1  # glonass
         measurement_status_fields = (measurementStatusFields.items(), measurementStatusGlonassFields.items())
       else:
-        assert False
+        raise RuntimeError(f"invalid log_type: {log_type}")
 
       for k,v in dat.items():
         if k == "version":

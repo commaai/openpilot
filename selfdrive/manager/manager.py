@@ -9,18 +9,18 @@ from typing import List, Tuple, Union
 
 from cereal import log
 import cereal.messaging as messaging
-import selfdrive.sentry as sentry
-from common.basedir import BASEDIR
-from common.params import Params, ParamKeyType
-from common.text_window import TextWindow
-from selfdrive.boardd.set_time import set_time
-from system.hardware import HARDWARE, PC
-from selfdrive.manager.helpers import unblock_stdout, write_onroad_params
-from selfdrive.manager.process import ensure_running
-from selfdrive.manager.process_config import managed_processes
-from selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
-from system.swaglog import cloudlog, add_file_handler
-from system.version import is_dirty, get_commit, get_version, get_origin, get_short_branch, \
+import openpilot.selfdrive.sentry as sentry
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.params import Params, ParamKeyType
+from openpilot.common.text_window import TextWindow
+from openpilot.selfdrive.boardd.set_time import set_time
+from openpilot.system.hardware import HARDWARE, PC
+from openpilot.selfdrive.manager.helpers import unblock_stdout, write_onroad_params
+from openpilot.selfdrive.manager.process import ensure_running
+from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
+from openpilot.system.swaglog import cloudlog, add_file_handler
+from openpilot.system.version import is_dirty, get_commit, get_version, get_origin, get_short_branch, \
                            get_normalized_origin, terms_version, training_version, \
                            is_tested_branch, is_release_branch
 

@@ -6,12 +6,12 @@ from typing import Optional, Dict, Any
 
 import capnp
 from cereal import messaging, log, car
-from common.numpy_fast import interp
-from common.params import Params
-from common.realtime import Ratekeeper, Priority, config_realtime_process
-from system.swaglog import cloudlog
+from openpilot.common.numpy_fast import interp
+from openpilot.common.params import Params
+from openpilot.common.realtime import Ratekeeper, Priority, config_realtime_process
+from openpilot.system.swaglog import cloudlog
 
-from common.kalman.simple_kalman import KF1D
+from openpilot.common.kalman.simple_kalman import KF1D
 
 
 # Default lead acceleration decay set to 50% at 1s
@@ -50,7 +50,8 @@ class KalmanParams:
 
 
 class Track:
-  def __init__(self, v_lead: float, kalman_params: KalmanParams):
+  def __init__(self, identifier: int, v_lead: float, kalman_params: KalmanParams):
+    self.identifier = identifier
     self.cnt = 0
     self.aLeadTau = _LEAD_ACCEL_TAU
     self.K_A = kalman_params.A
@@ -98,11 +99,12 @@ class Track:
       "vLead": float(self.vLead),
       "vLeadK": float(self.vLeadK),
       "aLeadK": float(self.aLeadK),
+      "aLeadTau": float(self.aLeadTau),
       "status": True,
       "fcw": self.is_potential_fcw(model_prob),
       "modelProb": model_prob,
       "radar": True,
-      "aLeadTau": float(self.aLeadTau)
+      "radarTrackId": self.identifier,
     }
 
   def potential_low_speed_lead(self, v_ego: float):
@@ -158,12 +160,14 @@ def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, v_ego: floa
     "aLeadTau": 0.3,
     "fcw": False,
     "modelProb": float(lead_msg.prob),
+    "status": True,
     "radar": False,
-    "status": True
+    "radarTrackId": -1,
   }
 
 
-def get_lead(v_ego: float, ready: bool, tracks: Dict[int, Track], lead_msg: capnp._DynamicStructReader, model_v_ego: float, low_speed_override: bool = True) -> Dict[str, Any]:
+def get_lead(v_ego: float, ready: bool, tracks: Dict[int, Track], lead_msg: capnp._DynamicStructReader,
+             model_v_ego: float, low_speed_override: bool = True) -> Dict[str, Any]:
   # Determine leads, this is where the essential logic happens
   if len(tracks) > 0 and ready and lead_msg.prob > .5:
     track = match_vision_to_track(v_ego, lead_msg, tracks)
@@ -236,7 +240,7 @@ class RadarD:
 
       # create the track if it doesn't exist or it's a new track
       if ids not in self.tracks:
-        self.tracks[ids] = Track(v_lead, self.kalman_params)
+        self.tracks[ids] = Track(ids, v_lead, self.kalman_params)
       self.tracks[ids].update(rpt[0], rpt[1], rpt[2], v_lead, rpt[3])
 
     # *** publish radarState ***

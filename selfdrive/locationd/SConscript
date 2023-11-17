@@ -8,7 +8,3 @@ lenv = env.Clone()
 lenv["_LIBFLAGS"] += f' {libkf[0].get_labspath()}'
 locationd = lenv.Program("locationd", locationd_sources, LIBS=loc_libs + transformations)
 lenv.Depends(locationd, libkf)
-
-if File("liblocationd.cc").exists():
-  liblocationd = lenv.SharedLibrary("liblocationd", ["liblocationd.cc"] + locationd_sources, LIBS=loc_libs + transformations)
-  lenv.Depends(liblocationd, libkf)

@@ -1,7 +1,14 @@
-
-#include "rtc_definitions.h"
-
 #define YEAR_OFFSET 2000U
+
+typedef struct __attribute__((packed)) timestamp_t {
+  uint16_t year;
+  uint8_t month;
+  uint8_t day;
+  uint8_t weekday;
+  uint8_t hour;
+  uint8_t minute;
+  uint8_t second;
+} timestamp_t;
 
 uint8_t to_bcd(uint16_t value){
   return (((value / 10U) & 0x0FU) << 4U) | ((value % 10U) & 0x0FU);
@@ -43,6 +50,14 @@ void rtc_set_time(timestamp_t time){
 
 timestamp_t rtc_get_time(void){
   timestamp_t result;
+  // Init with zero values in case there is no RTC running
+  result.year = 0U;
+  result.month = 0U;
+  result.day = 0U;
+  result.weekday = 0U;
+  result.hour = 0U;
+  result.minute = 0U;
+  result.second = 0U;
 
   // Wait until the register sync flag is set
   while((RTC->ISR & RTC_ISR_RSF) == 0){}

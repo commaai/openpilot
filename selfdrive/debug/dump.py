@@ -3,13 +3,14 @@ import os
 import sys
 import argparse
 import json
-from hexdump import hexdump
 import codecs
-codecs.register_error("strict", codecs.backslashreplace_errors)
-
-from cereal import log
 import cereal.messaging as messaging
-from cereal.services import service_list
+
+from hexdump import hexdump
+from cereal import log
+from cereal.services import SERVICE_LIST
+
+codecs.register_error("strict", codecs.backslashreplace_errors)
 
 if __name__ == "__main__":
 
@@ -30,7 +31,7 @@ if __name__ == "__main__":
 
   poller = messaging.Poller()
 
-  for m in args.socket if len(args.socket) > 0 else service_list:
+  for m in args.socket if len(args.socket) > 0 else SERVICE_LIST:
     messaging.sub_sock(m, poller, addr=args.addr)
 
   values = None

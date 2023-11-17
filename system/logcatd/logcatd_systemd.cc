@@ -5,7 +5,7 @@
 #include <map>
 #include <string>
 
-#include "json11.hpp"
+#include "third_party/json11/json11.hpp"
 
 #include "cereal/messaging/messaging.h"
 #include "common/timing.h"
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
     // Wait for new message if we didn't receive anything
     if (err == 0) {
       err = sd_journal_wait(journal, 1000 * 1000);
-      assert (err >= 0);
+      assert(err >= 0);
       continue; // Try again
     }
 

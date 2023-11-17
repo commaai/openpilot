@@ -1,10 +1,11 @@
 from dataclasses import dataclass, field
+from enum import StrEnum
 from typing import Dict, List, Union
 
 from cereal import car
-from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from openpilot.selfdrive.car import dbc_dict
+from openpilot.selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
 
@@ -25,7 +26,7 @@ class CarControllerParams:
     pass
 
 
-class CAR:
+class CAR(StrEnum):
   CX5 = "MAZDA CX-5"
   CX9 = "MAZDA CX-9"
   MAZDA3 = "MAZDA 3"
@@ -46,7 +47,7 @@ CAR_INFO: Dict[str, Union[MazdaCarInfo, List[MazdaCarInfo]]] = {
   CAR.MAZDA3: MazdaCarInfo("Mazda 3 2017-18"),
   CAR.MAZDA6: MazdaCarInfo("Mazda 6 2017-20"),
   CAR.CX9_2021: MazdaCarInfo("Mazda CX-9 2021-23", video_link="https://youtu.be/dA3duO4a0O4"),
-  CAR.CX5_2022: MazdaCarInfo("Mazda CX-5 2022-23"),
+  CAR.CX5_2022: MazdaCarInfo("Mazda CX-5 2022-24"),
 }
 
 
@@ -88,14 +89,17 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'PX2G-188K2-H\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PX2H-188K2-H\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'PX2H-188K2-J\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PX85-188K2-E\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'SH54-188K2-D\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PXFG-188K2-C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'PEW5-188K2-A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x764, None): [
       b'K131-67XK2-F\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x760, None): [
+      b'KGWD-437K2-A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'KSD5-437K2-A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x706, None): [
@@ -105,9 +109,12 @@ FW_VERSIONS = {
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'PYB2-21PS1-H\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'PYB2-21PS1-J\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'SH51-21PS1-C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PXDL-21PS1-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PXFG-21PS1-A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'PXFG-21PS1-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'PG69-21PS1-A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.CX5: {

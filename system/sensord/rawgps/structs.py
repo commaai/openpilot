@@ -255,7 +255,7 @@ position_report = """
   uint32      q_FltRawAlt;              /* Raw height-above-ellipsoid altitude in meters as computed by WLS */
   uint32      q_FltRawAltSigma;         /* Gaussian 1-sigma value for raw height-above-ellipsoid altitude in meters */
   uint32   align_Flt[14];
-  uint32      q_FltPdop;                /* 3D position dilution of precision as computed from the unweighted 
+  uint32      q_FltPdop;                /* 3D position dilution of precision as computed from the unweighted
   uint32      q_FltHdop;                /* Horizontal position dilution of precision as computed from the unweighted least-squares covariance matrix */
   uint32      q_FltVdop;                /* Vertical position dilution of precision as computed from the unweighted least-squares covariance matrix */
   uint8       u_EllipseConfidence;      /* Statistical measure of the confidence (percentage) associated with the uncertainty ellipse values */
@@ -276,7 +276,7 @@ position_report = """
   uint8       u_TotalGloSvs;            /* Total number of Glonass SVs detected by searcher, including ones not used in position calculation */
   uint8       u_NumBdsSvsUsed;          /* The number of BeiDou SVs used in the fix */
   uint8       u_TotalBdsSvs;            /* Total number of BeiDou SVs detected by searcher, including ones not used in position calculation */
-"""
+""" # noqa: E501
 
 def name_to_camelcase(nam):
   ret = []
@@ -317,8 +317,7 @@ def parse_struct(ss):
     elif typ in ["uint64", "uint64_t"]:
       st += "Q"
     else:
-      print("unknown type", typ)
-      assert False
+      raise RuntimeError(f"unknown type {typ}")
     if '[' in nam:
       cnt = int(nam.split("[")[1].split("]")[0])
       st += st[-1]*(cnt-1)
@@ -333,7 +332,7 @@ def dict_unpacker(ss, camelcase = False):
   if camelcase:
     nams = [name_to_camelcase(x) for x in nams]
   sz = calcsize(st)
-  return lambda x: dict(zip(nams, unpack_from(st, x))), sz
+  return lambda x: dict(zip(nams, unpack_from(st, x), strict=True)), sz
 
 def relist(dat):
   list_keys = set()

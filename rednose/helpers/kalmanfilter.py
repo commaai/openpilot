@@ -10,7 +10,8 @@ class KalmanFilter:
   Q = np.zeros((0, 0))
   obs_noise: Dict[int, Any] = {}
 
-  filter = None  # Should be initialized when initializating a KalmanFilter implementation
+  # Should be initialized when initializating a KalmanFilter implementation
+  filter = None # noqa: A003
 
   @property
   def x(self):

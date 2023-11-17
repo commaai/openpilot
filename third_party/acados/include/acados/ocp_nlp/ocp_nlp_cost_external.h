@@ -1,8 +1,5 @@
 /*
- * Copyright 2019 Gianluca Frison, Dimitris Kouzoupis, Robin Verschueren,
- * Andrea Zanelli, Niels van Duijkeren, Jonathan Frey, Tommaso Sartor,
- * Branimir Novoselnik, Rien Quirynen, Rezart Qelibari, Dang Doan,
- * Jonas Koenemann, Yutao Chen, Tobias Schöls, Jonas Schlagenhauf, Moritz Diehl
+ * Copyright (c) The acados authors.
  *
  * This file is part of acados.
  *
@@ -54,6 +51,7 @@ extern "C" {
 typedef struct
 {
     int nx;  // number of states
+    int nz;  // number of algebraic variables
     int nu;  // number of inputs
     int ns;  // number of slacks
 } ocp_nlp_cost_external_dims;
@@ -62,9 +60,6 @@ typedef struct
 acados_size_t ocp_nlp_cost_external_dims_calculate_size(void *config);
 //
 void *ocp_nlp_cost_external_dims_assign(void *config, void *raw_memory);
-//
-void ocp_nlp_cost_external_dims_initialize(void *config, void *dims, int nx,
-                                           int nu, int ny, int ns, int nz);
 //
 void ocp_nlp_cost_external_dims_set(void *config_, void *dims_, const char *field, int* value);
 //
@@ -122,7 +117,7 @@ typedef struct
 {
     struct blasfeo_dvec grad;    // gradient of cost function
     struct blasfeo_dvec *ux;     // pointer to ux in nlp_out
-    struct blasfeo_dvec *tmp_ux;     // pointer to tmp_ux in nlp_out
+    struct blasfeo_dvec *tmp_ux; // pointer to tmp_ux in nlp_out
     struct blasfeo_dmat *RSQrq;  // pointer to RSQrq in qp_in
     struct blasfeo_dvec *Z;      // pointer to Z in qp_in
     struct blasfeo_dvec *z_alg;         ///< pointer to z in sim_out
@@ -157,7 +152,10 @@ void ocp_nlp_cost_external_memory_set_dzdux_tran_ptr(struct blasfeo_dmat *dzdux_
 
 typedef struct
 {
-    struct blasfeo_dmat tmp_nv_nv;
+    struct blasfeo_dmat tmp_nunx_nunx;
+    struct blasfeo_dmat tmp_nz_nz;
+    struct blasfeo_dmat tmp_nz_nunx;
+    struct blasfeo_dvec tmp_nunxnz;
     struct blasfeo_dvec tmp_2ns;  // temporary vector of dimension 2*ns
 } ocp_nlp_cost_external_workspace;
 
@@ -168,6 +166,8 @@ acados_size_t ocp_nlp_cost_external_workspace_calculate_size(void *config, void 
  * functions
  ************************************************/
 
+//
+void ocp_nlp_cost_external_precompute(void *config_, void *dims_, void *model_, void *opts_, void *memory_, void *work_);
 //
 void ocp_nlp_cost_external_config_initialize_default(void *config);
 //

@@ -63,7 +63,6 @@ static uint8_t volkswagen_pq_get_counter(CANPacket_t *to_push) {
   } else if (addr == MSG_GRA_NEU) {
     counter = (uint8_t)(GET_BYTE(to_push, 2) & 0xF0U) >> 4;
   } else {
-    counter = 0U;
   }
 
   return counter;
@@ -130,7 +129,7 @@ static int volkswagen_pq_rx_hook(CANPacket_t *to_push) {
         // Signal: Motor_5.GRA_Hauptschalter
         acc_main_on = GET_BIT(to_push, 50U);
         if (!acc_main_on) {
-          controls_allowed = 0;
+          controls_allowed = false;
         }
       }
 
@@ -148,7 +147,7 @@ static int volkswagen_pq_rx_hook(CANPacket_t *to_push) {
         // Exit controls on rising edge of Cancel, override Set/Resume if present simultaneously
         // Signal: GRA_ACC_01.GRA_Abbrechen
         if (GET_BIT(to_push, 9U) == 1U) {
-          controls_allowed = 0;
+          controls_allowed = false;
         }
       }
     } else {
@@ -197,7 +196,10 @@ static int volkswagen_pq_tx_hook(CANPacket_t *to_send) {
       desired_torque *= -1;
     }
 
-    if (steer_torque_cmd_checks(desired_torque, -1, VOLKSWAGEN_PQ_STEERING_LIMITS)) {
+    uint32_t hca_status = ((GET_BYTE(to_send, 1) >> 4) & 0xFU);
+    bool steer_req = (hca_status == 5U);
+
+    if (steer_torque_cmd_checks(desired_torque, steer_req, VOLKSWAGEN_PQ_STEERING_LIMITS)) {
       tx = 0;
     }
   }

@@ -64,7 +64,9 @@ bool create_params_path(const std::string &param_path, const std::string &key_pa
 std::string ensure_params_path(const std::string &prefix, const std::string &path = {}) {
   std::string params_path = path.empty() ? Path::params() : path;
   if (!create_params_path(params_path, params_path + prefix)) {
-    throw std::runtime_error(util::string_format("Failed to ensure params path, errno=%d", errno));
+    throw std::runtime_error(util::string_format(
+        "Failed to ensure params path, errno=%d, path=%s, param_prefix=%s",
+        errno, params_path.c_str(), prefix.c_str()));
   }
   return params_path;
 }
@@ -86,7 +88,6 @@ private:
 std::unordered_map<std::string, uint32_t> keys = {
     {"AccessToken", CLEAR_ON_MANAGER_START | DONT_LOG},
     {"ApiCache_Device", PERSISTENT},
-    {"ApiCache_DriveStats", PERSISTENT},
     {"ApiCache_NavDestinations", PERSISTENT},
     {"AssistNowToken", PERSISTENT},
     {"AthenadPid", PERSISTENT},
@@ -98,6 +99,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CarParams", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"CarParamsCache", CLEAR_ON_MANAGER_START},
     {"CarParamsPersistent", PERSISTENT},
+    {"CarParamsPrevRoute", PERSISTENT},
     {"CarVin", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"CompletedTrainingVersion", PERSISTENT},
     {"ControlsReady", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
@@ -153,11 +155,11 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LastUpdateException", CLEAR_ON_MANAGER_START},
     {"LastUpdateTime", PERSISTENT},
     {"LiveParameters", PERSISTENT},
-    {"LiveTorqueCarParams", PERSISTENT},
     {"LiveTorqueParameters", PERSISTENT | DONT_LOG},
     {"LongitudinalPersonality", PERSISTENT},
     {"NavDestination", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"NavDestinationWaypoints", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
+    {"NavPastDestinations", PERSISTENT},
     {"NavSettingLeftSide", PERSISTENT},
     {"NavSettingTime24h", PERSISTENT},
     {"NavdRender", PERSISTENT},
@@ -178,7 +180,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"Offroad_UpdateFailed", CLEAR_ON_MANAGER_START},
     {"OpenpilotEnabledToggle", PERSISTENT},
     {"PandaHeartbeatLost", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
-    {"PandaLogState", PERSISTENT},
+    {"PandaSomResetTriggered", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"PandaSignatures", CLEAR_ON_MANAGER_START},
     {"Passive", PERSISTENT},
     {"PrimeType", PERSISTENT},

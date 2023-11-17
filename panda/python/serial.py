@@ -8,7 +8,7 @@ class PandaSerial(object):
     self.panda.set_uart_baud(self.port, baud)
     self.buf = b""
 
-  def read(self, l=1):  # noqa: E741
+  def read(self, l=1):
     tt = self.panda.serial_read(self.port)
     if len(tt) > 0:
       self.buf += tt

@@ -6,10 +6,13 @@ import urllib.parse
 import capnp
 import warnings
 
+from typing import Iterable, Iterator
 
 from cereal import log as capnp_log
-from tools.lib.filereader import FileReader
-from tools.lib.route import Route, SegmentName
+from openpilot.tools.lib.filereader import FileReader
+from openpilot.tools.lib.route import Route, SegmentName
+
+LogIterable = Iterable[capnp._DynamicStructReader]
 
 # this is an iterator itself, and uses private variables from LogReader
 class MultiLogIterator:
@@ -30,7 +33,7 @@ class MultiLogIterator:
 
     return self._log_readers[i]
 
-  def __iter__(self):
+  def __iter__(self) -> Iterator[capnp._DynamicStructReader]:
     return self
 
   def _inc(self):
@@ -98,7 +101,7 @@ class LogReader:
       for e in ents:
         _ents.append(e)
     except capnp.KjException:
-      warnings.warn("Corrupted events detected", RuntimeWarning)
+      warnings.warn("Corrupted events detected", RuntimeWarning, stacklevel=1)
 
     self._ents = list(sorted(_ents, key=lambda x: x.logMonoTime) if sort_by_time else _ents)
     self._ts = [x.logMonoTime for x in self._ents]
@@ -107,7 +110,7 @@ class LogReader:
   def from_bytes(cls, dat):
     return cls("", dat=dat)
 
-  def __iter__(self):
+  def __iter__(self) -> Iterator[capnp._DynamicStructReader]:
     for ent in self._ents:
       if self._only_union_types:
         try:

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from opendbc.can.parser import CANParser
 from cereal import car
-from selfdrive.car.interfaces import RadarInterfaceBase
-from selfdrive.car.chrysler.values import DBC
+from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
+from openpilot.selfdrive.car.chrysler.values import DBC
 
 RADAR_MSGS_C = list(range(0x2c2, 0x2d4+2, 2))  # c_ messages 706,...,724
 RADAR_MSGS_D = list(range(0x2a2, 0x2b4+2, 2))  # d_ messages
@@ -22,18 +22,12 @@ def _create_radar_can_parser(car_fingerprint):
   #  ('LONG_DIST', 1074),
   #  ('LONG_DIST', 1075),
 
-  signals = list(zip(['LONG_DIST'] * msg_n +
-                     ['LAT_DIST'] * msg_n +
-                     ['REL_SPEED'] * msg_n,
-                     RADAR_MSGS_C * 2 +  # LONG_DIST, LAT_DIST
-                     RADAR_MSGS_D))  # REL_SPEED
+  messages = list(zip(RADAR_MSGS_C +
+                      RADAR_MSGS_D,
+                      [20] * msg_n +  # 20Hz (0.05s)
+                      [20] * msg_n, strict=True))  # 20Hz (0.05s)
 
-  checks = list(zip(RADAR_MSGS_C +
-                    RADAR_MSGS_D,
-                    [20] * msg_n +  # 20Hz (0.05s)
-                    [20] * msg_n))  # 20Hz (0.05s)
-
-  return CANParser(DBC[car_fingerprint]['radar'], signals, checks, 1)
+  return CANParser(DBC[car_fingerprint]['radar'], messages, 1)
 
 def _address_to_track(address):
   if address in RADAR_MSGS_C:

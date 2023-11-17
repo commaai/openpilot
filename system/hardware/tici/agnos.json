@@ -67,6 +67,10 @@
     "size": 10737418240,
     "sparse": true,
     "full_check": false,
-    "has_ab": true
+    "has_ab": true,
+    "alt": {
+      "hash": "256442a55fcb9e8f72969f003a4db91598dee1136f8dda85b553a557d36b93d8",
+      "url": "https://commadist.azureedge.net/agnosupdate/system-skip-chunks-e1fa3018bce9bad01c6967e5e21f1141cf5c8f02d2edfaed51c738f74a32a432.img.xz"
+    }
   }
 ]

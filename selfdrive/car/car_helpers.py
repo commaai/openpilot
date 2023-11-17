@@ -1,17 +1,20 @@
 import os
-from typing import Dict, List
+import time
+from typing import Callable, Dict, List, Optional, Tuple
 
 from cereal import car
-from common.params import Params
-from common.basedir import BASEDIR
-from system.version import is_comma_remote, is_tested_branch
-from selfdrive.car.interfaces import get_interface_attr
-from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
-from selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
-from selfdrive.car.fw_versions import get_fw_versions_ordered, get_present_ecus, match_fw_to_car, set_obd_multiplexing
-from system.swaglog import cloudlog
+from openpilot.common.params import Params
+from openpilot.common.basedir import BASEDIR
+from openpilot.system.version import is_comma_remote, is_tested_branch
+from openpilot.selfdrive.car.interfaces import get_interface_attr
+from openpilot.selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
+from openpilot.selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
+from openpilot.selfdrive.car.fw_versions import get_fw_versions_ordered, get_present_ecus, match_fw_to_car, set_obd_multiplexing
+from openpilot.system.swaglog import cloudlog
 import cereal.messaging as messaging
-from selfdrive.car import gen_empty_fingerprint
+from openpilot.selfdrive.car import gen_empty_fingerprint
+
+FRAME_FINGERPRINT = 100  # 1s
 
 EventName = car.CarEvent.EventName
 
@@ -42,7 +45,7 @@ def get_one_can(logcan):
 def load_interfaces(brand_names):
   ret = {}
   for brand_name in brand_names:
-    path = f'selfdrive.car.{brand_name}'
+    path = f'openpilot.selfdrive.car.{brand_name}'
     CarInterface = __import__(path + '.interface', fromlist=['CarInterface']).CarInterface
 
     if os.path.exists(BASEDIR + '/' + path.replace('.', '/') + '/carstate.py'):
@@ -63,9 +66,8 @@ def load_interfaces(brand_names):
 def _get_interface_names() -> Dict[str, List[str]]:
   # returns a dict of brand name and its respective models
   brand_names = {}
-  for brand_name, model_names in get_interface_attr("CAR").items():
-    model_names = [getattr(model_names, c) for c in model_names.__dict__.keys() if not c.startswith("__")]
-    brand_names[brand_name] = model_names
+  for brand_name, brand_models in get_interface_attr("CAR").items():
+    brand_names[brand_name] = [model.value for model in brand_models]
 
   return brand_names
 
@@ -73,6 +75,46 @@ def _get_interface_names() -> Dict[str, List[str]]:
 # imports from directory selfdrive/car/<name>/
 interface_names = _get_interface_names()
 interfaces = load_interfaces(interface_names)
+
+
+def can_fingerprint(next_can: Callable) -> Tuple[Optional[str], Dict[int, dict]]:
+  finger = gen_empty_fingerprint()
+  candidate_cars = {i: all_legacy_fingerprint_cars() for i in [0, 1]}  # attempt fingerprint on both bus 0 and 1
+  frame = 0
+  car_fingerprint = None
+  done = False
+
+  while not done:
+    a = next_can()
+
+    for can in a.can:
+      # The fingerprint dict is generated for all buses, this way the car interface
+      # can use it to detect a (valid) multipanda setup and initialize accordingly
+      if can.src < 128:
+        if can.src not in finger:
+          finger[can.src] = {}
+        finger[can.src][can.address] = len(can.dat)
+
+      for b in candidate_cars:
+        # Ignore extended messages and VIN query response.
+        if can.src == b and can.address < 0x800 and can.address not in (0x7df, 0x7e0, 0x7e8):
+          candidate_cars[b] = eliminate_incompatible_cars(can, candidate_cars[b])
+
+    # if we only have one car choice and the time since we got our first
+    # message has elapsed, exit
+    for b in candidate_cars:
+      if len(candidate_cars[b]) == 1 and frame > FRAME_FINGERPRINT:
+        # fingerprint done
+        car_fingerprint = candidate_cars[b][0]
+
+    # bail if no cars left or we've been waiting for more than 2s
+    failed = (all(len(cc) == 0 for cc in candidate_cars.values()) and frame > FRAME_FINGERPRINT) or frame > 200
+    succeeded = car_fingerprint is not None
+    done = failed or succeeded
+
+    frame += 1
+
+  return car_fingerprint, finger
 
 
 # **** for use live only ****
@@ -83,6 +125,7 @@ def fingerprint(logcan, sendcan, num_pandas):
   ecu_rx_addrs = set()
   params = Params()
 
+  start_time = time.monotonic()
   if not skip_fw_query:
     # Vin query only reliably works through OBDII
     bus = 1
@@ -123,45 +166,12 @@ def fingerprint(logcan, sendcan, num_pandas):
   set_obd_multiplexing(params, False)
   params.put_bool("FirmwareQueryDone", True)
 
-  finger = gen_empty_fingerprint()
-  candidate_cars = {i: all_legacy_fingerprint_cars() for i in [0, 1]}  # attempt fingerprint on both bus 0 and 1
-  frame = 0
-  frame_fingerprint = 100  # 1s
-  car_fingerprint = None
-  done = False
+  fw_query_time = time.monotonic() - start_time
 
-  # drain CAN socket so we always get the latest messages
+  # CAN fingerprint
+  # drain CAN socket so we get the latest messages
   messaging.drain_sock_raw(logcan)
-
-  while not done:
-    a = get_one_can(logcan)
-
-    for can in a.can:
-      # The fingerprint dict is generated for all buses, this way the car interface
-      # can use it to detect a (valid) multipanda setup and initialize accordingly
-      if can.src < 128:
-        if can.src not in finger:
-          finger[can.src] = {}
-        finger[can.src][can.address] = len(can.dat)
-
-      for b in candidate_cars:
-        # Ignore extended messages and VIN query response.
-        if can.src == b and can.address < 0x800 and can.address not in (0x7df, 0x7e0, 0x7e8):
-          candidate_cars[b] = eliminate_incompatible_cars(can, candidate_cars[b])
-
-    # if we only have one car choice and the time since we got our first
-    # message has elapsed, exit
-    for b in candidate_cars:
-      if len(candidate_cars[b]) == 1 and frame > frame_fingerprint:
-        # fingerprint done
-        car_fingerprint = candidate_cars[b][0]
-
-    # bail if no cars left or we've been waiting for more than 2s
-    failed = (all(len(cc) == 0 for cc in candidate_cars.values()) and frame > frame_fingerprint) or frame > 200
-    succeeded = car_fingerprint is not None
-    done = failed or succeeded
-
-    frame += 1
+  car_fingerprint, finger = can_fingerprint(lambda: get_one_can(logcan))
 
   exact_match = True
   source = car.CarParams.FingerprintSource.can
@@ -177,7 +187,8 @@ def fingerprint(logcan, sendcan, num_pandas):
     source = car.CarParams.FingerprintSource.fixed
 
   cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match, cached=cached,
-                 fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, error=True)
+                 fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, fingerprints=finger,
+                 fw_query_time=fw_query_time, error=True)
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
 

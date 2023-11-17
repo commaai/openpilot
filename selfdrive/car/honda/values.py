@@ -1,13 +1,13 @@
 from dataclasses import dataclass
-from enum import Enum, IntFlag
+from enum import Enum, IntFlag, StrEnum
 from typing import Dict, List, Optional, Union
 
 from cereal import car
-from common.conversions import Conversions as CV
+from openpilot.common.conversions import Conversions as CV
 from panda.python import uds
-from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
+from openpilot.selfdrive.car import dbc_dict
+from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -72,7 +72,7 @@ VISUAL_HUD = {
 }
 
 
-class CAR:
+class CAR(StrEnum):
   ACCORD = "HONDA ACCORD 2018"
   ACCORDH = "HONDA ACCORD HYBRID 2018"
   CIVIC = "HONDA CIVIC 2016"
@@ -123,13 +123,14 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   CAR.ACCORDH: HondaCarInfo("Honda Accord Hybrid 2018-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
   CAR.CIVIC: HondaCarInfo("Honda Civic 2016-18", min_steer_speed=12. * CV.MPH_TO_MS, video_link="https://youtu.be/-IkImTe1NYE"),
   CAR.CIVIC_BOSCH: [
-    HondaCarInfo("Honda Civic 2019-21", "All", video_link="https://www.youtube.com/watch?v=4Iz1Mz5LGF8", footnotes=[Footnote.CIVIC_DIESEL], min_steer_speed=2. * CV.MPH_TO_MS),
+    HondaCarInfo("Honda Civic 2019-21", "All", video_link="https://www.youtube.com/watch?v=4Iz1Mz5LGF8",
+                 footnotes=[Footnote.CIVIC_DIESEL], min_steer_speed=2. * CV.MPH_TO_MS),
     HondaCarInfo("Honda Civic Hatchback 2017-21", min_steer_speed=12. * CV.MPH_TO_MS),
   ],
   CAR.CIVIC_BOSCH_DIESEL: None,  # same platform
   CAR.CIVIC_2022: [
-    HondaCarInfo("Honda Civic 2022", "All", video_link="https://youtu.be/ytiOT5lcp6Q"),
-    HondaCarInfo("Honda Civic Hatchback 2022", "All", video_link="https://youtu.be/ytiOT5lcp6Q"),
+    HondaCarInfo("Honda Civic 2022-23", "All", video_link="https://youtu.be/ytiOT5lcp6Q"),
+    HondaCarInfo("Honda Civic Hatchback 2022-23", "All", video_link="https://youtu.be/ytiOT5lcp6Q"),
   ],
   CAR.ACURA_ILX: HondaCarInfo("Acura ILX 2016-19", "AcuraWatch Plus", min_steer_speed=25. * CV.MPH_TO_MS),
   CAR.CRV: HondaCarInfo("Honda CR-V 2015-16", "Touring Trim", min_steer_speed=12. * CV.MPH_TO_MS),
@@ -1357,6 +1358,7 @@ FW_VERSIONS = {
       b'78109-T6Z-A910\x00\x00',
       b'78109-T6Z-AA10\x00\x00',
       b'78109-T6Z-C620\x00\x00',
+      b'78109-T6Z-C910\x00\x00',
       b'78109-TJZ-A510\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
@@ -1517,6 +1519,7 @@ FW_VERSIONS = {
       b'77959-T47-A940\x00\x00',
       b'77959-T47-A950\x00\x00',
       b'77959-T20-M820\x00\x00',
+      b'77959-T20-A980\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18DA60F1, None): [
       b'78108-T21-A220\x00\x00',
@@ -1525,6 +1528,7 @@ FW_VERSIONS = {
       b'78108-T21-A230\x00\x00',
       b'78108-T22-A020\x00\x00',
       b'78108-T21-MB10\x00\x00',
+      b'78108-T21-A740\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36161-T20-A070\x00\x00',
@@ -1552,6 +1556,7 @@ FW_VERSIONS = {
       b'37805-64A-A540\x00\x00',
       b'37805-64A-A620\x00\x00',
       b'37805-64D-P510\x00\x00',
+      b'37805-64S-AA10\x00\x00',
     ],
   },
 }

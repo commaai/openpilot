@@ -46,6 +46,7 @@ class ZMQPubSocket : public PubSocket {
 private:
   void * sock;
   std::string full_endpoint;
+  int pid = -1;
 public:
   int connect(Context *context, std::string endpoint, bool check_endpoint=true);
   int sendMessage(Message *message);
@@ -63,5 +64,5 @@ private:
 public:
   void registerSocket(SubSocket *socket);
   std::vector<SubSocket*> poll(int timeout);
-  ~ZMQPoller(){};
+  ~ZMQPoller(){}
 };

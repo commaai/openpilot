@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 import os
-import shutil
 import unittest
 
-os.environ["COMMA_CACHE"] = "/tmp/__test_cache__"
-from tools.lib.url_file import URLFile, CACHE_DIR
+from pathlib import Path
+from parameterized import parameterized
+from unittest import mock
+
+from openpilot.system.hardware.hw import Paths
+from openpilot.tools.lib.url_file import URLFile
 
 
 class TestFileDownload(unittest.TestCase):
 
   def compare_loads(self, url, start=0, length=None):
     """Compares range between cached and non cached version"""
-    shutil.rmtree(CACHE_DIR)
-
     file_cached = URLFile(url, cache=True)
     file_downloaded = URLFile(url, cache=False)
 
@@ -63,6 +64,34 @@ class TestFileDownload(unittest.TestCase):
 
     self.compare_loads(large_file_url, length - 100, 100)
     self.compare_loads(large_file_url)
+
+  @parameterized.expand([(True, ), (False, )])
+  def test_recover_from_missing_file(self, cache_enabled):
+    os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
+
+    file_url = "http://localhost:5001/test.png"
+
+    file_exists = False
+
+    def get_length_online_mock(self):
+      if file_exists:
+        return 4
+      return -1
+
+    patch_length = mock.patch.object(URLFile, "get_length_online", get_length_online_mock)
+    patch_length.start()
+    try:
+      length = URLFile(file_url).get_length()
+      self.assertEqual(length, -1)
+
+      file_exists = True
+      length = URLFile(file_url).get_length()
+      self.assertEqual(length, 4)
+    finally:
+      tempfile_length = Path(Paths.download_cache_root()) / "ba2119904385654cb0105a2da174875f8e7648db175f202ecae6d6428b0e838f_length"
+      if tempfile_length.exists():
+        tempfile_length.unlink()
+      patch_length.stop()
 
 
 if __name__ == "__main__":

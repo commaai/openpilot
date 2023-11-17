@@ -1,11 +1,10 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
-cd $DIR
+cd "$DIR/../../"
 
-if [ -f /TICI ]; then
-  export LD_LIBRARY_PATH="/usr/lib/aarch64-linux-gnu:/data/pythonpath/third_party/snpe/larch64:$LD_LIBRARY_PATH"
-else
-  export LD_LIBRARY_PATH="$DIR/../../third_party/snpe/x86_64-linux-clang:$DIR/../../openpilot/third_party/snpe/x86_64:$LD_LIBRARY_PATH"
+if [ -f "$DIR/libthneed.so" ]; then
+  export LD_PRELOAD="$DIR/libthneed.so"
 fi
-exec ./_modeld
+
+exec "$DIR/modeld.py"

@@ -1,10 +1,7 @@
 #pragma once
 
-#include <memory>
-
 #include <QStackedLayout>
 
-#include "common/util.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
 class DriverViewScene : public QWidget {
@@ -23,7 +20,6 @@ protected:
 
 private:
   Params params;
-  SubMaster sm;
   QPixmap face_img;
   bool is_rhd = false;
   bool frame_updated = false;
@@ -40,8 +36,8 @@ signals:
 
 protected:
   void mouseReleaseEvent(QMouseEvent* e) override;
+  void closeView();
 
-private:
   CameraWidget *cameraView;
   DriverViewScene *scene;
   QStackedLayout *layout;

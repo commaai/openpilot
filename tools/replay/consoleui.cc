@@ -1,7 +1,11 @@
 #include "tools/replay/consoleui.h"
 
-#include <QApplication>
 #include <initializer_list>
+#include <string>
+#include <tuple>
+#include <utility>
+
+#include <QApplication>
 
 #include "common/version.h"
 
