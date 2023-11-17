@@ -360,26 +360,14 @@ SConscript([
 # Build rednose library and ekf models
 rednose_deps = [
   "#selfdrive/locationd/models/constants.py",
-  "#selfdrive/locationd/models/gnss_helpers.py",
 ]
-
 rednose_config = {
   'generated_folder': '#selfdrive/locationd/models/generated',
   'to_build': {
-    'gnss': ('#selfdrive/locationd/models/gnss_kf.py', True, [], rednose_deps),
     'live': ('#selfdrive/locationd/models/live_kf.py', True, ['live_kf_constants.h'], rednose_deps),
     'car': ('#selfdrive/locationd/models/car_kf.py', True, [], rednose_deps),
   },
 }
-
-if arch != "larch64":
-  rednose_config['to_build'].update({
-    'loc_4': ('#selfdrive/locationd/models/loc_kf.py', True, [], rednose_deps),
-    'lane': ('#selfdrive/locationd/models/lane_kf.py', True, [], rednose_deps),
-    'pos_computer_4': ('#rednose/helpers/lst_sq_computer.py', False, [], []),
-    'pos_computer_5': ('#rednose/helpers/lst_sq_computer.py', False, [], []),
-    'feature_handler_5': ('#rednose/helpers/feature_handler.py', False, [], []),
-  })
 
 Export('rednose_config')
 SConscript(['rednose/SConscript'])
