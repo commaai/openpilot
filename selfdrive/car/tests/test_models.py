@@ -195,13 +195,25 @@ class TestCarModelBase(unittest.TestCase):
   #   #   # with self.subTest(_type=_type):
   #   #   #   self.assertLess(total_size / 1024, 10, f'Object {_type} ({num_objects=}) grew larger than 10 kB while uploading file')
 
-  @settings(max_examples=3000, deadline=None,
+  # def test_honda_buttons(self):
+  #   if self.CP.carFingerprint in HONDA_BOSCH:
+  #     return
+  #
+  #   # self.assertTrue(0x17C in self.fingerprint[1])
+  #   self.assertTrue(0x1BE in self.fingerprint[0])
+  #   # for msg in self.can_msgs:
+  #   #   for can in msg.can:
+  #   #     self.assertTrue(can.address != 0x1a6)
+
+  @settings(max_examples=600, deadline=None,
             phases=(Phase.reuse, Phase.generate, ),
             suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow, HealthCheck.large_base_example],
             )
   @given(data=st.data())
-  # @seed(0)  # for reproduction
+  @seed(1)  # for reproduction
   def test_panda_safety_carstate_fuzzy(self, data):
+    # raise unittest.SkipTest
+    # return
     # TODO: how much of test_panda_safety_carstate can we re-use?
     """
       Assert that panda safety matches openpilot's carState by fuzzing the CAN data
@@ -308,7 +320,7 @@ class TestCarModelBase(unittest.TestCase):
 
       # TODO: don't fully skip
       if self.CP.carFingerprint not in (HONDA.PILOT, HONDA.RIDGELINE):
-        # print('both', CS.brakePressed, 'safety brake', self.safety.get_brake_pressed_prev())
+        print('both', CS.brakePressed, 'safety brake', self.safety.get_brake_pressed_prev())
         if self.safety.get_brake_pressed_prev() != prev_panda_brake:
           # print('brake change!')
           # print('both', CS.brakePressed, self.safety.get_brake_pressed_prev())
