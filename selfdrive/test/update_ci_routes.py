@@ -57,7 +57,7 @@ def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) ->
     upload_file(os.path.join(path, file), f"{destpath}/{file}")
 
 
-def sync_to_ci_public(route: str, strip_data: bool = False) -> bool:
+def sync_to_ci_public(route: str, strip_data: bool = True) -> bool:
   source_containers, dest_container, source_keys = get_azure_containers()
   key_prefix = route.replace('|', '/')
 
