@@ -214,6 +214,7 @@ system/hardware/tici/agnos.json
 system/hardware/tici/amplifier.py
 system/hardware/tici/updater
 system/hardware/tici/iwlist.py
+system/hardware/tici/esim.nmconnection
 system/hardware/pc/__init__.py
 system/hardware/pc/hardware.h
 system/hardware/pc/hardware.py
