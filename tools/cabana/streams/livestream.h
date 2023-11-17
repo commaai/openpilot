@@ -16,7 +16,6 @@ public:
   void start() override;
   inline QDateTime beginDateTime() const { return begin_date_time; }
   inline double routeStartTime() const override { return begin_event_ts / 1e9; }
-  inline double currentSec() const override { return (current_event_ts - begin_event_ts) / 1e9; }
   void setSpeed(float speed) override { speed_ = speed; }
   double getSpeed() override { return speed_; }
   bool isPaused() const override { return paused_; }
