@@ -62,7 +62,7 @@ def create_steering_control(packer, car_fingerprint, frame, apply_steer, lkas):
   return packer.make_can_msg("CAM_LKAS", 0, values)
 
 
-def create_alert_command(packer, cam_msg: dict, ldw: bool, steer_required: bool):
+def create_alert_command(packer, cam_msg: dict, ldw: bool, steer_required: bool, new_steer: int, lat_active: bool):
   values = {s: cam_msg[s] for s in [
     "LINE_VISIBLE",
     "LINE_NOT_VISIBLE",
@@ -74,6 +74,14 @@ def create_alert_command(packer, cam_msg: dict, ldw: bool, steer_required: bool)
     "S1",
     "S1_HBEAM",
   ]}
+  if lat_active:
+    if new_steer == 0:
+      tja = 3
+    else:
+      tja = 4
+  else:
+    tja = 2
+
   values.update({
     # TODO: what's the difference between all these? do we need to send all?
     "HANDS_WARN_3_BITS": 0b111 if steer_required else 0,
@@ -84,6 +92,13 @@ def create_alert_command(packer, cam_msg: dict, ldw: bool, steer_required: bool)
     # TODO: need to do something about L/R
     "LDW_WARN_LL": 0,
     "LDW_WARN_RL": 0,
+
+    "TJA_TRANSITION": 3 if tja == 3 else 0,
+    "TJA": tja,
+
+    "LINE_VISIBLE": 0 if tja == 2 else 1,
+    "LINE_NOT_VISIBLE": 1 if tja == 2 else 0,
+    "LANE_LINES": 1 if tja == 2 else 2,
   })
   return packer.make_can_msg("CAM_LANEINFO", 0, values)
 
