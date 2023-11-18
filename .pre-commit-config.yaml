@@ -38,7 +38,7 @@ repos:
         entry: mypy
         language: system
         types: [python]
-        args: ['--explicit-package-bases']
+        args: ['--explicit-package-bases', '--local-partial-types']
         exclude: '^(third_party/)|(cereal/)|(opendbc/)|(panda/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(xx/)'
 -   repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.5
