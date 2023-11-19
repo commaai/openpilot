@@ -472,12 +472,15 @@ void panda_state_thread(std::vector<Panda *> pandas, bool spoofing_started) {
 
   LOGD("start panda state thread");
 
-  // run at 2hz
-  RateKeeper rk("panda_state_thread", 2);
+  // run at 10hz
+  RateKeeper rk("panda_state_thread", 10);
 
   while (!do_exit && check_all_connected(pandas)) {
-    // send out peripheralState
-    send_peripheral_state(&pm, peripheral_panda);
+    // send out peripheralState at 2Hz
+    if (sm.frame % 5 == 0) {
+      send_peripheral_state(&pm, peripheral_panda);
+    }
+
     auto ignition_opt = send_panda_states(&pm, pandas, spoofing_started);
 
     if (!ignition_opt) {

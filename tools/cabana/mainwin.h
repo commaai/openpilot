@@ -7,6 +7,7 @@
 #include <QProgressBar>
 #include <QSplitter>
 #include <QStatusBar>
+#include <set>
 
 #include "tools/cabana/chart/chartswidget.h"
 #include "tools/cabana/dbc/dbcmanager.h"
@@ -50,6 +51,7 @@ protected:
   void saveFile(DBCFile *dbc_file);
   void saveFileAs(DBCFile *dbc_file);
   void saveFileToClipboard(DBCFile *dbc_file);
+  void loadFingerprints();
   void loadFromClipboard(SourceSet s = SOURCE_ALL, bool close_all = true);
   void autoSave();
   void cleanupAutoSaveFile();
@@ -84,6 +86,7 @@ protected:
   QProgressBar *progress_bar;
   QLabel *status_label;
   QJsonDocument fingerprint_to_dbc;
+  std::set<QString> opendbc_names;
   QSplitter *video_splitter = nullptr;
   enum { MAX_RECENT_FILES = 15 };
   QAction *recent_files_acts[MAX_RECENT_FILES] = {};

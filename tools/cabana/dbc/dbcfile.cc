@@ -4,10 +4,8 @@
 #include <QFileInfo>
 #include <QRegularExpression>
 #include <QTextStream>
-#include <numeric>
-#include <sstream>
 
-DBCFile::DBCFile(const QString &dbc_file_name, QObject *parent) : QObject(parent) {
+DBCFile::DBCFile(const QString &dbc_file_name) {
   QFile file(dbc_file_name);
   if (file.open(QIODevice::ReadOnly)) {
     name_ = QFileInfo(dbc_file_name).baseName();
@@ -22,7 +20,7 @@ DBCFile::DBCFile(const QString &dbc_file_name, QObject *parent) : QObject(parent
   }
 }
 
-DBCFile::DBCFile(const QString &name, const QString &content, QObject *parent) : QObject(parent), name_(name), filename("") {
+DBCFile::DBCFile(const QString &name, const QString &content) : name_(name), filename("") {
   // Open from clipboard
   parse(content);
 }
@@ -107,7 +105,8 @@ void DBCFile::parse(const QString &content) {
   int multiplexor_cnt = 0;
   while (!stream.atEnd()) {
     ++line_num;
-    line = stream.readLine().trimmed();
+    QString raw_line = stream.readLine();
+    line = raw_line.trimmed();
     if (line.startsWith("BO_ ")) {
       multiplexor_cnt = 0;
       auto match = bo_regexp.match(line);
@@ -170,7 +169,7 @@ void DBCFile::parse(const QString &content) {
       }
     } else if (line.startsWith("CM_ BO_")) {
       if (!line.endsWith("\";")) {
-        int pos = stream.pos() - line.length() - 1;
+        int pos = stream.pos() - raw_line.length() - 1;
         line = content.mid(pos, content.indexOf("\";", pos));
       }
       auto match = msg_comment_regexp.match(line);
@@ -180,7 +179,7 @@ void DBCFile::parse(const QString &content) {
       }
     } else if (line.startsWith("CM_ SG_ ")) {
       if (!line.endsWith("\";")) {
-        int pos = stream.pos() - line.length() - 1;
+        int pos = stream.pos() - raw_line.length() - 1;
         line = content.mid(pos, content.indexOf("\";", pos));
       }
       auto match = sg_comment_regexp.match(line);

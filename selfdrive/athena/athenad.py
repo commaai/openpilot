@@ -20,7 +20,7 @@ from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial
 from queue import Queue
-from typing import BinaryIO, Callable, Dict, List, Optional, Set, Union, cast
+from typing import Callable, Dict, List, Optional, Set, Union, cast
 
 import requests
 from jsonrpc import JSONRPCResponseManager, dispatcher
@@ -29,7 +29,7 @@ from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutExce
 
 import cereal.messaging as messaging
 from cereal import log
-from cereal.services import service_list
+from cereal.services import SERVICE_LIST
 from openpilot.common.api import Api
 from openpilot.common.basedir import PERSIST
 from openpilot.common.file_helpers import CallbackReader
@@ -40,7 +40,7 @@ from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.selfdrive.statsd import STATS_DIR
 from openpilot.system.swaglog import cloudlog
 from openpilot.system.version import get_commit, get_origin, get_short_branch, get_version
-from openpilot.selfdrive.hardware.hw import Paths
+from openpilot.system.hardware.hw import Paths
 
 
 # TODO: use socket constant when mypy recognizes this as a valid attribute
@@ -290,26 +290,22 @@ def _do_upload(upload_item: UploadItem, callback: Optional[Callable] = None) -> 
     compress = True
 
   with open(path, "rb") as f:
-    data: BinaryIO
+    content = f.read()
     if compress:
       cloudlog.event("athena.upload_handler.compress", fn=path, fn_orig=upload_item.path)
-      compressed = bz2.compress(f.read())
-      size = len(compressed)
-      data = io.BytesIO(compressed)
-    else:
-      size = os.fstat(f.fileno()).st_size
-      data = f
+      content = bz2.compress(content)
 
+  with io.BytesIO(content) as data:
     return requests.put(upload_item.url,
-                        data=CallbackReader(data, callback, size) if callback else data,
-                        headers={**upload_item.headers, 'Content-Length': str(size)},
+                        data=CallbackReader(data, callback, len(content)) if callback else data,
+                        headers={**upload_item.headers, 'Content-Length': str(len(content))},
                         timeout=30)
 
 
 # security: user should be able to request any message from their car
 @dispatcher.add_method
 def getMessage(service: str, timeout: int = 1000) -> dict:
-  if service is None or service not in service_list:
+  if service is None or service not in SERVICE_LIST:
     raise Exception("invalid service")
 
   socket = messaging.sub_sock(service, timeout=timeout)

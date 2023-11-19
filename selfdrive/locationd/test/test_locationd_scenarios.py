@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import pytest
 import unittest
 import numpy as np
 from collections import defaultdict
@@ -97,6 +98,7 @@ def run_scenarios(scenario, logs):
   return get_select_fields_data(logs), get_select_fields_data(replayed_logs)
 
 
+@pytest.mark.xdist_group("test_locationd_scenarios")
 class TestLocationdScenarios(unittest.TestCase):
   """
   Test locationd with different scenarios. In all these scenarios, we expect the following:

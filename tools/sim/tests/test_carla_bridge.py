@@ -5,7 +5,7 @@ import unittest
 
 from openpilot.selfdrive.manager.helpers import unblock_stdout
 from openpilot.tools.sim.run_bridge import parse_args
-from openpilot.tools.sim.bridge.carla import CarlaBridge
+from openpilot.tools.sim.bridge.carla.carla_bridge import CarlaBridge
 from openpilot.tools.sim.tests.test_sim_bridge import SIM_DIR, TestSimBridgeBase
 
 
