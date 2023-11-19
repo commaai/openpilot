@@ -18,8 +18,8 @@ import cereal.messaging as messaging
 from openpilot.common.gpio import gpio_init, gpio_set
 from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.system.swaglog import cloudlog
-from openpilot.system.sensord.qcomgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
-from openpilot.system.sensord.qcomgps.structs import (dict_unpacker, position_report, relist,
+from openpilot.system.qcomgpsd.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
+from openpilot.system.qcomgpsd.structs import (dict_unpacker, position_report, relist,
                                               gps_measurement_report, gps_measurement_report_sv,
                                               glonass_measurement_report, glonass_measurement_report_sv,
                                               oemdre_measurement_report, oemdre_measurement_report_sv, oemdre_svpoly_report,
