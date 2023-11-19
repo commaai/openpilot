@@ -54,6 +54,7 @@ signals:
   void seriesChanged();
 
 private:
+  QSize minimumSizeHint() const override;
   void resizeEvent(QResizeEvent *event) override;
   bool event(QEvent *event) override;
   void alignCharts();
@@ -62,7 +63,7 @@ private:
   void removeChart(ChartView *chart);
   void splitChart(ChartView *chart);
   QRect chartVisibleRect(ChartView *chart);
-  void eventsMerged();
+  void eventsMerged(const MessageEventsMap &new_events);
   void updateState();
   void zoomReset();
   void startAutoScroll();
@@ -108,8 +109,8 @@ private:
   int column_count = 1;
   int current_column_count = 0;
   int auto_scroll_count = 0;
-  QTimer auto_scroll_timer;
-  QTimer align_timer;
+  QTimer *auto_scroll_timer;
+  QTimer *align_timer;
   int current_theme = 0;
   friend class ZoomCommand;
   friend class ChartView;

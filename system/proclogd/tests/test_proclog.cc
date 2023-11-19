@@ -33,15 +33,16 @@ TEST_CASE("Parser::procStat") {
   SECTION("all processes") {
     std::vector<int> pids = Parser::pids();
     REQUIRE(pids.size() > 1);
-    int parsed_cnt = 0;
     for (int pid : pids) {
-      if (auto stat = Parser::procStat(util::read_file("/proc/" + std::to_string(pid) + "/stat"))) {
+      std::string stat_path = "/proc/" + std::to_string(pid) + "/stat";
+      INFO(stat_path);
+      if (auto stat = Parser::procStat(util::read_file(stat_path))) {
         REQUIRE(stat->pid == pid);
         REQUIRE(allowed_states.find(stat->state) != std::string::npos);
-        ++parsed_cnt;
+      } else {
+        REQUIRE(util::file_exists(stat_path) == false);
       }
     }
-    REQUIRE(parsed_cnt == pids.size());
   }
 }
 
@@ -109,8 +110,6 @@ TEST_CASE("Parser::cmdline") {
 }
 
 TEST_CASE("buildProcLogerMessage") {
-  std::vector<int> current_pids = Parser::pids();
-
   MessageBuilder msg;
   buildProcLogMessage(msg);
 
@@ -131,10 +130,7 @@ TEST_CASE("buildProcLogerMessage") {
 
   // test cereal::ProcLog::Process
   auto procs = log.getProcs();
-  REQUIRE(procs.size() == current_pids.size());
-
   for (auto p : procs) {
-    REQUIRE_THAT(current_pids, Catch::Matchers::VectorContains(p.getPid()));
     REQUIRE(allowed_states.find(p.getState()) != std::string::npos);
     if (p.getPid() == ::getpid()) {
       REQUIRE(p.getName() == "test_proclog");
@@ -147,8 +143,11 @@ TEST_CASE("buildProcLogerMessage") {
         std::ifstream stream(cmd_path);
         auto cmdline = Parser::cmdline(stream);
         REQUIRE(cmdline.size() == p.getCmdline().size());
-        for (int i = 0; i < p.getCmdline().size(); ++i) {
-          REQUIRE(cmdline[i] == p.getCmdline()[i].cStr());
+        // do not check the cmdline of pytest as it will change.
+        if (cmdline.size() > 0 && cmdline[0].find("[pytest") != 0) {
+          for (int i = 0; i < p.getCmdline().size(); ++i) {
+            REQUIRE(cmdline[i] == p.getCmdline()[i].cStr());
+          }
         }
       }
     }
