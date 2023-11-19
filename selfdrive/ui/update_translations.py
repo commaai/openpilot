@@ -3,8 +3,8 @@ import argparse
 import json
 import os
 
-from cereal import car, messaging
 from openpilot.common.basedir import BASEDIR
+from cereal import car, messaging
 from openpilot.selfdrive.controls.controlsd import CAMERA_PACKETS, CONTROL_PACKETS
 from openpilot.selfdrive.controls.lib.events import EVENTS, Alert
 
