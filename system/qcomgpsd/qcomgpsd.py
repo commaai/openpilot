@@ -18,8 +18,8 @@ import cereal.messaging as messaging
 from openpilot.common.gpio import gpio_init, gpio_set
 from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.system.swaglog import cloudlog
-from openpilot.system.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
-from openpilot.system.sensord.rawgps.structs import (dict_unpacker, position_report, relist,
+from openpilot.system.qcomgpsd.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
+from openpilot.system.qcomgpsd.structs import (dict_unpacker, position_report, relist,
                                               gps_measurement_report, gps_measurement_report_sv,
                                               glonass_measurement_report, glonass_measurement_report_sv,
                                               oemdre_measurement_report, oemdre_measurement_report_sv, oemdre_svpoly_report,
@@ -101,7 +101,7 @@ def at_cmd(cmd: str) -> Optional[str]:
     try:
       return subprocess.check_output(f"mmcli -m any --timeout 30 --command='{cmd}'", shell=True, encoding='utf8')
     except subprocess.CalledProcessError:
-      cloudlog.exception("rawgps.mmcli_command_failed")
+      cloudlog.exception("qcomgps.mmcli_command_failed")
       time.sleep(1.0)
   raise Exception(f"failed to execute mmcli command {cmd=}")
 
@@ -163,7 +163,7 @@ def inject_assistance():
       return
     except subprocess.CalledProcessError as e:
       cloudlog.event(
-        "rawgps.assistance_loading_failed",
+        "qcomgps.assistance_loading_failed",
         error=True,
         cmd=e.cmd,
         output=e.output,
