@@ -4,6 +4,7 @@
 #include <curl/curl.h>
 #include <openssl/sha.h>
 
+#include <cstdarg>
 #include <cstring>
 #include <cassert>
 #include <cmath>
@@ -18,10 +19,7 @@
 #include "common/util.h"
 
 ReplayMessageHandler message_handler = nullptr;
-DownloadProgressHandler download_progress_handler = nullptr;
-
 void installMessageHandler(ReplayMessageHandler handler) { message_handler = handler; }
-void installDownloadProgressHandler(DownloadProgressHandler handler) { download_progress_handler = handler; }
 
 void logMessage(ReplyMsgType type, const char *fmt, ...) {
   static std::mutex lock;
@@ -93,6 +91,11 @@ size_t write_cb(char *data, size_t size, size_t count, void *userp) {
 size_t dumy_write_cb(char *data, size_t size, size_t count, void *userp) { return size * count; }
 
 struct DownloadStats {
+  void installDownloadProgressHandler(DownloadProgressHandler handler) {
+    std::lock_guard lk(lock);
+    download_progress_handler = handler;
+  }
+
   void add(const std::string &url, uint64_t total_bytes) {
     std::lock_guard lk(lock);
     items[url] = {0, total_bytes};
@@ -120,9 +123,16 @@ struct DownloadStats {
   std::mutex lock;
   std::map<std::string, std::pair<uint64_t, uint64_t>> items;
   double prev_tm = 0;
+  DownloadProgressHandler download_progress_handler = nullptr;
 };
 
+static DownloadStats download_stats;
+
 } // namespace
+
+void installDownloadProgressHandler(DownloadProgressHandler handler) {
+  download_stats.installDownloadProgressHandler(handler);
+}
 
 std::string formattedDataSize(size_t size) {
   if (size < 1024) {
@@ -166,7 +176,6 @@ std::string getUrlWithoutQuery(const std::string &url) {
 
 template <class T>
 bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t content_length, std::atomic<bool> *abort) {
-  static DownloadStats download_stats;
   download_stats.add(url, content_length);
 
   int parts = 1;

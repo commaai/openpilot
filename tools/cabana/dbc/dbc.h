@@ -10,9 +10,9 @@
 #include <QMetaType>
 #include <QString>
 
-#include "opendbc/can/common_dbc.h"
 
 const QString UNTITLED = "untitled";
+const QString DEFAULT_NODE_NAME = "XXX";
 
 struct MessageId {
   uint8_t source = 0;
@@ -119,5 +119,4 @@ public:
 double get_raw_value(const uint8_t *data, size_t data_size, const cabana::Signal &sig);
 void updateMsbLsb(cabana::Signal &s);
 inline int flipBitPos(int start_bit) { return 8 * (start_bit / 8) + 7 - start_bit % 8; }
-inline std::vector<std::string> allDBCNames() { return get_dbc_names(); }
 inline QString doubleToString(double value) { return QString::number(value, 'g', std::numeric_limits<double>::digits10); }

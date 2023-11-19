@@ -26,6 +26,10 @@ AddOption('--ubsan',
           action='store_true',
           help='turn on UBSan')
 
+AddOption('--coverage',
+          action='store_true',
+          help='build with test coverage options')
+
 AddOption('--clazy',
           action='store_true',
           help='build with clazy')
@@ -33,6 +37,12 @@ AddOption('--clazy',
 AddOption('--compile_db',
           action='store_true',
           help='build clang compilation database')
+          
+AddOption('--ccflags',
+          action='store',
+          type='string',
+          default='',
+          help='pass arbitrary flags over the command line')
 
 AddOption('--snpe',
           action='store_true',
@@ -52,7 +62,7 @@ AddOption('--pc-thneed',
 AddOption('--minimal',
           action='store_false',
           dest='extras',
-          default=os.path.islink(Dir('#laika/').abspath),
+          default=os.path.islink(Dir('#rednose/').abspath), # minimal by default on release branch (where rednose is not a link)
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
 ## Architecture name breakdown (arch)
@@ -166,6 +176,10 @@ if arch != "Darwin":
 cflags += ['-DSWAGLOG="\\"common/swaglog.h\\""']
 cxxflags += ['-DSWAGLOG="\\"common/swaglog.h\\""']
 
+ccflags_option = GetOption('ccflags')
+if ccflags_option:
+  ccflags += ccflags_option.split(' ')
+
 env = Environment(
   ENV=lenv,
   CCFLAGS=[
@@ -243,18 +257,6 @@ def progress_function(node):
 
 if os.environ.get('SCONS_PROGRESS'):
   Progress(progress_function, interval=node_interval)
-
-SHARED = False
-
-# TODO: this can probably be removed
-def abspath(x):
-  if arch == 'aarch64':
-    pth = os.path.join("/data/pythonpath", x[0].path)
-    env.Depends(pth, x)
-    return File(pth)
-  else:
-    # rpath works elsewhere
-    return x[0].path.rsplit("/", 1)[1][:-3]
 
 # Cython build environment
 py_include = sysconfig.get_paths()['include']
@@ -337,34 +339,35 @@ if GetOption("clazy"):
   qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
   qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
 
-Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED')
+Export('env', 'qt_env', 'arch', 'real_arch')
 
+# Build common module
 SConscript(['common/SConscript'])
 Import('_common', '_gpucommon')
 
-if SHARED:
-  common, gpucommon = abspath(common), abspath(gpucommon)
-else:
-  common = [_common, 'json11']
-  gpucommon = [_gpucommon]
+common = [_common, 'json11']
+gpucommon = [_gpucommon]
 
 Export('common', 'gpucommon')
 
-# cereal and messaging are shared with the system
+# Build cereal and messaging
 SConscript(['cereal/SConscript'])
-if SHARED:
-  cereal = abspath([File('cereal/libcereal_shared.so')])
-  messaging = abspath([File('cereal/libmessaging_shared.so')])
-else:
-  cereal = [File('#cereal/libcereal.a')]
-  messaging = [File('#cereal/libmessaging.a')]
-  visionipc = [File('#cereal/libvisionipc.a')]
+
+cereal = [File('#cereal/libcereal.a')]
+messaging = [File('#cereal/libmessaging.a')]
+visionipc = [File('#cereal/libvisionipc.a')]
 messaging_python = [File('#cereal/messaging/messaging_pyx.so')]
 
 Export('cereal', 'messaging', 'messaging_python', 'visionipc')
 
-# Build rednose library and ekf models
+# Build other submodules
+SConscript([
+  'body/board/SConscript',
+  'opendbc/can/SConscript',
+  'panda/SConscript',
+])
 
+# Build rednose library and ekf models
 rednose_deps = [
   "#selfdrive/locationd/models/constants.py",
   "#selfdrive/locationd/models/gnss_helpers.py",
@@ -393,7 +396,6 @@ SConscript(['rednose/SConscript'])
 
 # Build system services
 SConscript([
-  'system/clocksd/SConscript',
   'system/proclogd/SConscript',
   'system/ubloxd/SConscript',
   'system/loggerd/SConscript',
@@ -406,15 +408,6 @@ if arch != "Darwin":
   ])
 
 # Build openpilot
-
-# build submodules
-SConscript([
-  'body/board/SConscript',
-  'cereal/SConscript',
-  'opendbc/can/SConscript',
-  'panda/SConscript',
-])
-
 SConscript(['third_party/SConscript'])
 
 SConscript(['selfdrive/boardd/SConscript'])

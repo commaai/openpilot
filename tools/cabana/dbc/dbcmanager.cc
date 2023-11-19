@@ -7,7 +7,7 @@ bool DBCManager::open(const SourceSet &sources, const QString &dbc_file_name, QS
   try {
     auto it = std::find_if(dbc_files.begin(), dbc_files.end(),
                            [&](auto &f) { return f.second && f.second->filename == dbc_file_name; });
-    auto file = (it != dbc_files.end()) ? it->second : std::make_shared<DBCFile>(dbc_file_name, this);
+    auto file = (it != dbc_files.end()) ? it->second : std::make_shared<DBCFile>(dbc_file_name);
     for (auto s : sources) {
       dbc_files[s] = file;
     }
@@ -22,7 +22,7 @@ bool DBCManager::open(const SourceSet &sources, const QString &dbc_file_name, QS
 
 bool DBCManager::open(const SourceSet &sources, const QString &name, const QString &content, QString *error) {
   try {
-    auto file = std::make_shared<DBCFile>(name, content, this);
+    auto file = std::make_shared<DBCFile>(name, content);
     for (auto s : sources) {
       dbc_files[s] = file;
     }
@@ -82,10 +82,10 @@ void DBCManager::removeSignal(const MessageId &id, const QString &sig_name) {
   }
 }
 
-void DBCManager::updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &comment) {
+void DBCManager::updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &node, const QString &comment) {
   auto dbc_file = findDBCFile(id);
   assert(dbc_file);  // This should be impossible
-  dbc_file->updateMsg(id, name, size, comment);
+  dbc_file->updateMsg(id, name, size, node, comment);
   emit msgUpdated(id);
 }
 
@@ -187,6 +187,13 @@ const SourceSet DBCManager::sources(const DBCFile *dbc_file) const {
     if (f.get() == dbc_file) sources.insert(s);
   }
   return sources;
+}
+
+QString toString(const SourceSet &ss) {
+  return std::accumulate(ss.cbegin(), ss.cend(), QString(), [](QString str, int source) {
+    if (!str.isEmpty()) str += ", ";
+    return str + (source == -1 ? QStringLiteral("all") : QString::number(source));
+  });
 }
 
 DBCManager *dbc() {

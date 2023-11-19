@@ -5,10 +5,7 @@
 #include <QtSerialBus/QCanBus>
 #include <QtSerialBus/QCanBusDevice>
 #include <QtSerialBus/QCanBusDeviceInfo>
-
 #include <QComboBox>
-#include <QFormLayout>
-#include <QVBoxLayout>
 
 #include "tools/cabana/streams/livestream.h"
 
@@ -21,7 +18,6 @@ class SocketCanStream : public LiveStream {
 public:
   SocketCanStream(QObject *parent, SocketCanStreamConfig config_ = {});
   static AbstractOpenStreamWidget *widget(AbstractStream **stream);
-
   static bool available();
 
   inline QString routeName() const override {

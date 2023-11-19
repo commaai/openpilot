@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import time
 import unittest
 import numpy as np
 import random
@@ -14,6 +13,7 @@ from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera
 IMG = np.zeros(int(tici_f_frame_size[0]*tici_f_frame_size[1]*(3/2)), dtype=np.uint8)
 IMG_BYTES = IMG.flatten().tobytes()
 
+
 class TestModeld(unittest.TestCase):
 
   def setUp(self):
@@ -27,8 +27,7 @@ class TestModeld(unittest.TestCase):
     self.pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'liveCalibration', 'lateralPlan'])
 
     managed_processes['modeld'].start()
-    time.sleep(0.2)
-    self.sm.update(1000)
+    self.pm.wait_for_readers_to_update("roadCameraState", 10)
 
   def tearDown(self):
     managed_processes['modeld'].stop()

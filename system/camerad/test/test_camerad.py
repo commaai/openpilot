@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import pytest
 import time
 import unittest
 import numpy as np
@@ -6,9 +7,8 @@ from collections import defaultdict
 
 import cereal.messaging as messaging
 from cereal import log
-from cereal.services import service_list
+from cereal.services import SERVICE_LIST
 from openpilot.selfdrive.manager.process_config import managed_processes
-from openpilot.system.hardware import TICI
 
 TEST_TIMESPAN = 30
 LAG_FRAME_TOLERANCE = {log.FrameData.ImageSensor.ar0231: 0.5,  # ARs use synced pulses for frame starts
@@ -19,12 +19,10 @@ FRAME_DELTA_TOLERANCE = {log.FrameData.ImageSensor.ar0231: 1.0,
 CAMERAS = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
 
 
+@pytest.mark.tici
 class TestCamerad(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
-    if not TICI:
-      raise unittest.SkipTest
-
     # run camerad and record logs
     managed_processes['camerad'].start()
     time.sleep(3)
@@ -43,10 +41,10 @@ class TestCamerad(unittest.TestCase):
     for cam, msgs in cls.logs.items():
       if cls.sensor_type is None:
         cls.sensor_type = getattr(msgs[0], msgs[0].which()).sensor.raw
-      expected_frames = service_list[cam].frequency * TEST_TIMESPAN
+      expected_frames = SERVICE_LIST[cam].frequency * TEST_TIMESPAN
       assert expected_frames*0.95 < len(msgs) < expected_frames*1.05, f"unexpected frame count {cam}: {expected_frames=}, got {len(msgs)}"
 
-      dts = np.abs(np.diff([getattr(m, m.which()).timestampSof/1e6 for m in msgs]) - 1000/service_list[cam].frequency)
+      dts = np.abs(np.diff([getattr(m, m.which()).timestampSof/1e6 for m in msgs]) - 1000/SERVICE_LIST[cam].frequency)
       assert (dts < FRAME_DELTA_TOLERANCE[cls.sensor_type]).all(), f"{cam} dts(ms) out of spec: max diff {dts.max()}, 99 percentile {np.percentile(dts, 99)}"
 
       for m in msgs:
