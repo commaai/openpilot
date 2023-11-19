@@ -89,18 +89,18 @@ export const constraints = {
 export function createDummyVideoTrack() {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
-  
+
   const frameWidth = 5; // Set the width of the frame
   const frameHeight = 5; // Set the height of the frame
   canvas.width = frameWidth;
   canvas.height = frameHeight;
-  
+
   context.fillStyle = 'black';
   context.fillRect(0, 0, frameWidth, frameHeight);
-  
+
   const stream = canvas.captureStream();
   const videoTrack = stream.getVideoTracks()[0];
-  
+
   return videoTrack;
 }
 
@@ -111,7 +111,7 @@ export function start(pc, dc) {
   // add audio track
   navigator.mediaDevices.enumerateDevices()
     .then(function(devices) {
-      const hasAudioInput = devices.find((device) => { device.kind === "audioinput" });
+      const hasAudioInput = devices.find((device) => device.kind === "audioinput");
       var modifiedConstraints = {};
       modifiedConstraints.video = constraints.video;
       modifiedConstraints.audio = hasAudioInput ? constraints.audio : false;
@@ -143,7 +143,7 @@ export function start(pc, dc) {
   // const dummyMediaStream = new MediaStream();
   // dummyMediaStream.addTrack(dummyVideoTrack);
   // pc.addTrack(dummyVideoTrack, dummyMediaStream);
-  
+
   // setInterval(() => {pc.getStats(null).then((stats) => {stats.forEach((report) => console.log(report))})}, 10000)
   // var video = document.querySelector('video');
   // var print = function (e, f){console.log(e, f);  video.requestVideoFrameCallback(print);};
@@ -167,7 +167,7 @@ export function start(pc, dc) {
     var message = JSON.stringify({type: 'battery_level'});
     dc.send(message);
   }
-  
+
   dc.onopen = function() {
     dcInterval = setInterval(controlCommand, 50);
     batteryInterval = setInterval(batteryLevel, 10000);
