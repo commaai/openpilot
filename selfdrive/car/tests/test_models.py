@@ -14,9 +14,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
-from openpilot.selfdrive.car.gm.values import CAR as GM
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
-from openpilot.selfdrive.car.hyundai.values import CAR as HYUNDAI
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.test.openpilotci import get_url
@@ -34,11 +32,6 @@ JOB_ID = int(os.environ.get("JOB_ID", "0"))
 INTERNAL_SEG_LIST = os.environ.get("INTERNAL_SEG_LIST", "")
 INTERNAL_SEG_CNT = int(os.environ.get("INTERNAL_SEG_CNT", "0"))
 
-ignore_addr_checks_valid = [
-  GM.BUICK_REGAL,
-  HYUNDAI.GENESIS_G70_2020,
-]
-
 
 def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
   # build list of test cases
@@ -50,7 +43,7 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
 
     for i, c in enumerate(sorted(all_known_cars())):
       if i % NUM_JOBS == JOB_ID:
-        test_cases.extend(sorted((c, r) for r in routes_by_car.get(c, (None,))))
+        test_cases.extend(sorted((c.value, r) for r in routes_by_car.get(c, (None,))))
 
   else:
     with open(os.path.join(BASEDIR, INTERNAL_SEG_LIST), "r") as f:
@@ -75,6 +68,7 @@ class TestCarModelBase(unittest.TestCase):
 
   can_msgs: List[capnp.lib.capnp._DynamicStructReader]
   elm_frame: Optional[int]
+  car_safety_mode_frame: Optional[int]
 
   @classmethod
   def setUpClass(cls):
@@ -110,10 +104,9 @@ class TestCarModelBase(unittest.TestCase):
       car_fw = []
       can_msgs = []
       cls.elm_frame = None
+      cls.car_safety_mode_frame = None
       fingerprint = defaultdict(dict)
       experimental_long = False
-      enabled_toggle = True
-      dashcam_only = False
       for msg in lr:
         if msg.which() == "can":
           can_msgs.append(msg)
@@ -124,26 +117,26 @@ class TestCarModelBase(unittest.TestCase):
 
         elif msg.which() == "carParams":
           car_fw = msg.carParams.carFw
-          dashcam_only = msg.carParams.dashcamOnly
           if msg.carParams.openpilotLongitudinalControl:
             experimental_long = True
           if cls.car_model is None and not cls.ci:
             cls.car_model = msg.carParams.carFingerprint
 
-        elif msg.which() == 'initData':
-          for param in msg.initData.params.entries:
-            if param.key == 'OpenpilotEnabledToggle':
-              enabled_toggle = param.value.strip(b'\x00') == b'1'
-
         # Log which can frame the panda safety mode left ELM327, for CAN validity checks
-        if msg.which() == 'pandaStates':
+        elif msg.which() == 'pandaStates':
           for ps in msg.pandaStates:
             if cls.elm_frame is None and ps.safetyModel != SafetyModel.elm327:
               cls.elm_frame = len(can_msgs)
+            if cls.car_safety_mode_frame is None and ps.safetyModel not in \
+              (SafetyModel.elm327, SafetyModel.noOutput):
+              cls.car_safety_mode_frame = len(can_msgs)
 
         elif msg.which() == 'pandaStateDEPRECATED':
           if cls.elm_frame is None and msg.pandaStateDEPRECATED.safetyModel != SafetyModel.elm327:
             cls.elm_frame = len(can_msgs)
+          if cls.car_safety_mode_frame is None and msg.pandaStateDEPRECATED.safetyModel not in \
+            (SafetyModel.elm327, SafetyModel.noOutput):
+            cls.car_safety_mode_frame = len(can_msgs)
 
       if len(can_msgs) > int(50 / DT_CTRL):
         break
@@ -151,7 +144,7 @@ class TestCarModelBase(unittest.TestCase):
       raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded?")
 
     # if relay is expected to be open in the route
-    cls.openpilot_enabled = enabled_toggle and not dashcam_only
+    cls.openpilot_enabled = cls.car_safety_mode_frame is not None
 
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
@@ -250,17 +243,16 @@ class TestCarModelBase(unittest.TestCase):
           failed_addrs[hex(msg.address)] += 1
 
       # ensure all msgs defined in the addr checks are valid
-      if self.car_model not in ignore_addr_checks_valid:
-        self.safety.safety_tick_current_rx_checks()
-        if t > 1e6:
-          self.assertTrue(self.safety.addr_checks_valid())
+      self.safety.safety_tick_current_rx_checks()
+      if t > 1e6:
+        self.assertTrue(self.safety.addr_checks_valid())
 
-          # No need to check relay malfunction on disabled routes (relay closed),
-          # or before fingerprinting is done (1s of tolerance to exit silent mode)
-          if self.openpilot_enabled and t / 1e4 > (self.elm_frame + 100):
-            self.assertFalse(self.safety.get_relay_malfunction())
-          else:
-            self.safety.set_relay_malfunction(False)
+      # Don't check relay malfunction on disabled routes (relay closed),
+      # or before fingerprinting is done (elm327 and noOutput)
+      if self.openpilot_enabled and t / 1e4 > self.car_safety_mode_frame:
+        self.assertFalse(self.safety.get_relay_malfunction())
+      else:
+        self.safety.set_relay_malfunction(False)
 
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
@@ -385,6 +377,7 @@ class TestCarModelBase(unittest.TestCase):
 
 
 @parameterized_class(('car_model', 'test_route'), get_test_cases())
+@pytest.mark.xdist_group_class_property('car_model')
 class TestCarModel(TestCarModelBase):
   pass
 

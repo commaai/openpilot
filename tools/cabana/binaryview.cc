@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include <QDebug>
 #include <QFontDatabase>
 #include <QHeaderView>
 #include <QMouseEvent>
@@ -273,7 +274,7 @@ void BinaryViewModel::refresh() {
     row_count = can->lastMessage(msg_id).dat.size();
     items.resize(row_count * column_count);
   }
-  int valid_rows = std::min(can->lastMessage(msg_id).dat.size(), row_count);
+  int valid_rows = std::min<int>(can->lastMessage(msg_id).dat.size(), row_count);
   for (int i = 0; i < valid_rows * column_count; ++i) {
     items[i].valid = true;
   }
@@ -311,7 +312,7 @@ void BinaryViewModel::updateState() {
       int val = ((binary[i] >> (7 - j)) & 1) != 0 ? 1 : 0;
       // Bit update frequency based highlighting
       double offset = !item.sigs.empty() ? 50 : 0;
-      auto n = last_msg.bit_change_counts[i][7 - j];
+      auto n = last_msg.last_changes[i].bit_change_counts[j];
       double min_f = n == 0 ? offset : offset + 25;
       double alpha = std::clamp(offset + log2(1.0 + factor * (double)n / (double)last_msg.count) * scaler, min_f, max_f);
       auto color = item.bg_color;
@@ -334,13 +335,8 @@ QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, i
 }
 
 QVariant BinaryViewModel::data(const QModelIndex &index, int role) const {
-  if (role == Qt::ToolTipRole) {
-    auto item = (const BinaryViewModel::Item *)index.internalPointer();
-    if (item && !item->sigs.empty()) {
-      return signalToolTip(item->sigs.back());
-    }
-  }
-  return {};
+  auto item = (const BinaryViewModel::Item *)index.internalPointer();
+  return role == Qt::ToolTipRole && item && !item->sigs.empty() ? signalToolTip(item->sigs.back()) : QVariant();
 }
 
 // BinaryItemDelegate
@@ -388,7 +384,7 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
           drawSignalCell(painter, option, index, s);
         }
       }
-    } else if (item->valid) {
+    } else if (item->valid && item->bg_color.alpha() > 0) {
       painter->fillRect(option.rect, item->bg_color);
     }
     auto color_role = item->sigs.contains(bin_view->hovered_sig) ? QPalette::BrightText : QPalette::Text;

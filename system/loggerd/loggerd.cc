@@ -15,9 +15,7 @@ ExitHandler do_exit;
 class RemoteEncoder;
 
 struct LoggerdState {
-  LoggerState logger = {};
-  char segment_path[4096];
-  std::atomic<int> rotate_segment;
+  LoggerState logger;
   std::atomic<double> last_camera_seen_tms;
   std::atomic<int> ready_to_rotate;  // count of encoders ready to rotate
   double last_rotate_tms = 0.;      // last rotate time in ms
@@ -25,13 +23,11 @@ struct LoggerdState {
 };
 
 void logger_rotate(LoggerdState *s) {
-  int segment = -1;
-  int err = logger_next(&s->logger, Path::log_root().c_str(), s->segment_path, sizeof(s->segment_path), &segment);
-  assert(err == 0);
-  s->rotate_segment = segment;
+  bool ret =s->logger.next();
+  assert(ret);
   s->ready_to_rotate = 0;
   s->last_rotate_tms = millis_since_boot();
-  LOGW((s->logger.part == 0) ? "logging to %s" : "rotated to %s", s->segment_path);
+  LOGW((s->logger.segment() == 0) ? "logging to %s" : "rotated to %s", s->logger.segmentPath().c_str());
 }
 
 void rotate_if_needed(LoggerdState *s) {
@@ -90,16 +86,16 @@ int write_encoder_msg(RemoteEncoder &re, LoggerdState *s, Message *msg) {
   }
   int offset_segment_num = idx.getSegmentNum() - re.encoderd_segment_offset;
 
-  if (offset_segment_num == s->rotate_segment) {
+  if (offset_segment_num == s->logger.segment()) {
     // loggerd is now on the segment that matches this packet
 
     // if this is a new segment, we close any possible old segments, move to the new, and process any queued packets
-    if (re.current_segment != s->rotate_segment) {
+    if (re.current_segment != s->logger.segment()) {
       if (re.recording) {
         re.writer.reset();
         re.recording = false;
       }
-      re.current_segment = s->rotate_segment;
+      re.current_segment = s->logger.segment();
       re.marked_ready_to_rotate = false;
       // we are in this segment now, process any queued messages before this one
       if (!re.q.empty()) {
@@ -122,7 +118,7 @@ int write_encoder_msg(RemoteEncoder &re, LoggerdState *s, Message *msg) {
         // if we aren't actually recording, don't create the writer
         if (re.encoder_info.record) {
           assert(re.encoder_info.filename != NULL);
-          re.writer.reset(new VideoWriter(s->segment_path,
+          re.writer.reset(new VideoWriter(s->logger.segmentPath().c_str(),
             re.encoder_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
             re.encoder_info.frame_width, re.encoder_info.frame_height, re.encoder_info.fps, idx.getType()));
           // write the header
@@ -154,28 +150,28 @@ int write_encoder_msg(RemoteEncoder &re, LoggerdState *s, Message *msg) {
     evt.setLogMonoTime(event.getLogMonoTime());
     (evt.*(re.encoder_info.set_encode_idx_func))(idx);
     auto new_msg = bmsg.toBytes();
-    logger_log(&s->logger, (uint8_t *)new_msg.begin(), new_msg.size(), true);   // always in qlog?
+    s->logger.write((uint8_t *)new_msg.begin(), new_msg.size(), true);   // always in qlog?
     bytes_count += new_msg.size();
 
     // free the message, we used it
     delete msg;
-  } else if (offset_segment_num > s->rotate_segment) {
+  } else if (offset_segment_num > s->logger.segment()) {
     // encoderd packet has a newer segment, this means encoderd has rolled over
     if (!re.marked_ready_to_rotate) {
       re.marked_ready_to_rotate = true;
       ++s->ready_to_rotate;
       LOGD("rotate %d -> %d ready %d/%d for %s",
-        s->rotate_segment.load(), offset_segment_num,
+        s->logger.segment(), offset_segment_num,
         s->ready_to_rotate.load(), (int)s->encoders.size(), re.encoder_info.publish_name);
     }
     // queue up all the new segment messages, they go in after the rotate
     re.q.push_back(msg);
   } else {
     LOGE("%s: encoderd packet has a older segment!!! idx.getSegmentNum():%d s->rotate_segment:%d re.encoderd_segment_offset:%d",
-      re.encoder_info.publish_name, idx.getSegmentNum(), s->rotate_segment.load(), re.encoderd_segment_offset);
+      re.encoder_info.publish_name, idx.getSegmentNum(), s->logger.segment(), re.encoderd_segment_offset);
     // free the message, it's useless. this should never happen
     // actually, this can happen if you restart encoderd
-    re.encoderd_segment_offset = -s->rotate_segment.load();
+    re.encoderd_segment_offset = -s->logger.segment();
     delete msg;
   }
 
@@ -184,19 +180,19 @@ int write_encoder_msg(RemoteEncoder &re, LoggerdState *s, Message *msg) {
 
 void handle_user_flag(LoggerdState *s) {
   static int prev_segment = -1;
-  if (s->rotate_segment == prev_segment) return;
+  if (s->logger.segment() == prev_segment) return;
 
-  LOGW("preserving %s", s->segment_path);
+  LOGW("preserving %s", s->logger.segmentPath().c_str());
 
 #ifdef __APPLE__
-  int ret = setxattr(s->segment_path, PRESERVE_ATTR_NAME, &PRESERVE_ATTR_VALUE, 1, 0, 0);
+  int ret = setxattr(s->logger.segmentPath().c_str(), PRESERVE_ATTR_NAME, &PRESERVE_ATTR_VALUE, 1, 0, 0);
 #else
-  int ret = setxattr(s->segment_path, PRESERVE_ATTR_NAME, &PRESERVE_ATTR_VALUE, 1, 0);
+  int ret = setxattr(s->logger.segmentPath().c_str(), PRESERVE_ATTR_NAME, &PRESERVE_ATTR_VALUE, 1, 0);
 #endif
   if (ret) {
-    LOGE("setxattr %s failed for %s: %s", PRESERVE_ATTR_NAME, s->segment_path, strerror(errno));
+    LOGE("setxattr %s failed for %s: %s", PRESERVE_ATTR_NAME, s->logger.segmentPath().c_str(), strerror(errno));
   }
-  prev_segment = s->rotate_segment.load();
+  prev_segment = s->logger.segment();
 }
 
 int handle_encoder_msg(LoggerdState *s, const std::string &name, Message *msg) {
@@ -243,9 +239,8 @@ void loggerd_thread() {
 
   LoggerdState s;
   // init logger
-  logger_init(&s.logger, true);
   logger_rotate(&s);
-  Params().put("CurrentRoute", s.logger.route_name);
+  Params().put("CurrentRoute", s.logger.routeName());
 
   uint64_t msg_count = 0, bytes_count = 0;
   double start_ts = millis_since_boot();
@@ -268,7 +263,7 @@ void loggerd_thread() {
           s.last_camera_seen_tms = millis_since_boot();
           bytes_count += handle_encoder_msg(&s, service.name, msg);
         } else {
-          logger_log(&s.logger, (uint8_t *)msg->getData(), msg->getSize(), in_qlog);
+          s.logger.write((uint8_t *)msg->getData(), msg->getSize(), in_qlog);
           bytes_count += msg->getSize();
           delete msg;
         }
@@ -290,7 +285,7 @@ void loggerd_thread() {
   }
 
   LOGW("closing logger");
-  logger_close(&s.logger, &do_exit);
+  s.logger.setExitSignal(do_exit.signal);
 
   if (do_exit.power_failure) {
     LOGE("power failure");
