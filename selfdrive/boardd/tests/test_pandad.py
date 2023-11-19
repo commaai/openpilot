@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import pytest
 import time
 import unittest
 
@@ -8,17 +9,16 @@ from cereal import log
 from openpilot.common.gpio import gpio_set, gpio_init
 from panda import Panda, PandaDFU, PandaProtocolMismatch
 from openpilot.selfdrive.manager.process_config import managed_processes
-from openpilot.system.hardware import HARDWARE, PC
+from openpilot.system.hardware import HARDWARE
 from openpilot.system.hardware.tici.pins import GPIO
 
 HERE = os.path.dirname(os.path.realpath(__file__))
 
 
+@pytest.mark.tici
 class TestPandad(unittest.TestCase):
 
   def setUp(self):
-    if PC:
-      raise unittest.SkipTest("needs a panda")
     # ensure panda is up
     if len(Panda.list()) == 0:
       self._run_test(60)
