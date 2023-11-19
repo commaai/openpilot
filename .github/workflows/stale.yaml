@@ -14,7 +14,6 @@ jobs:
     steps:
       - uses: actions/stale@v8
         with:
-          debug-only: true
           exempt-milestones: true
 
           # pull request config
