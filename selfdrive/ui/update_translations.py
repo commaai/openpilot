@@ -5,7 +5,7 @@ import os
 
 from openpilot.common.basedir import BASEDIR
 from cereal import car, messaging
-from openpilot.selfdrive.controls.controlsd import CAMERA_PACKETS, CONTROL_PACKETS
+from cereal.services import SERVICE_LIST
 from openpilot.selfdrive.controls.lib.events import EVENTS, Alert
 
 UI_DIR = os.path.join(BASEDIR, "selfdrive", "ui")
@@ -16,7 +16,7 @@ TRANSLATIONS_INCLUDE_FILE = os.path.join(TRANSLATIONS_DIR, "alerts_generated.h")
 def generate_onroad_alert_translations():
   cp = car.CarParams.new_message()
   cs = car.CarState.new_message()
-  sm = messaging.SubMaster(CONTROL_PACKETS + CAMERA_PACKETS)
+  sm = messaging.SubMaster(list(SERVICE_LIST.keys()))
   translated = set()
 
   for event in EVENTS.values():
