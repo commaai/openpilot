@@ -12,7 +12,7 @@ system/camerad/cameras/camera_util.cc
 system/camerad/cameras/camera_util.h
 system/camerad/cameras/real_debayer.cl
 
-system/sensord/rawgps/*
+system/qcomgpsd/*
 
 selfdrive/ui/qt/spinner_larch64
 selfdrive/ui/qt/text_larch64
