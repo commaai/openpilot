@@ -686,10 +686,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Ensure device is mounted securely</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Fan Malfunction</source>
         <translation type="unfinished"></translation>
     </message>
@@ -935,10 +931,6 @@ Gear</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Vehicle Parameter Identification Failed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Vehicle Sensors Calibrating</source>
         <translation type="unfinished"></translation>
     </message>
@@ -972,6 +964,26 @@ Gear</source>
     </message>
     <message>
         <source>Reboot Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Possible Hardware Issue</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>locationd Permanent Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>locationd Temporary Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>paramsd Permanent Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>paramsd Temporary Error</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
