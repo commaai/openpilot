@@ -216,7 +216,7 @@ node {
           ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
           ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
           ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
-          ["test qcomgpsd", "pytest system/qcomgpsd/test_qcomgps.py"],
+          ["test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgps.py"],
         ])
       },
 
