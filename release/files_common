@@ -444,6 +444,7 @@ third_party/qt5/larch64/bin/**
 scripts/update_now.sh
 scripts/stop_updater.sh
 
+rednose_repo/site_scons/site_tools/rednose_filter.py
 rednose/.gitignore
 rednose/**
 
