@@ -63,11 +63,11 @@
         <translation>按流量计费的手机移动网络</translation>
     </message>
     <message>
-        <source>Prevent large data uploads when on a metered connection. Choose 'full upload' if you have unlimited cellular data, and 'low upload' if you want to minimize uploads over cellular as much as possible. The 'default upload' policy is to upload qlog/qcam over cellular, but full logs only once you're back on Wi-Fi.</source>
+        <source>Prevent large data uploads when on a metered connection. Choose &apos;full upload&apos; if you have unlimited cellular data, and &apos;low upload&apos; if you want to minimize uploads over cellular as much as possible. The &apos;default upload&apos; policy is to upload qlog/qcam over cellular, but full logs only once you&apos;re back on Wi-Fi.</source>
         <translation type="unfinished">当使用按流量计费的连接时，避免上传大流量数据</translation>
     </message>
     <message>
-        <source>Prevent large data uploads when on a metered connection. Choose 'low upload' if you want to minimize uploads over cellular as much as possible. The 'default upload' policy is to upload qlog/qcam over cellular, but full logs only once you're back on Wi-Fi.</source>
+        <source>Prevent large data uploads when on a metered connection. Choose &apos;low upload&apos; if you want to minimize uploads over cellular as much as possible. The &apos;default upload&apos; policy is to upload qlog/qcam over cellular, but full logs only once you&apos;re back on Wi-Fi.</source>
         <translation type="unfinished">当使用按流量计费的连接时，避免上传大流量数据</translation>
     </message>
 </context>
