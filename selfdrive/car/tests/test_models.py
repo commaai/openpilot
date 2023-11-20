@@ -243,9 +243,9 @@ class TestCarModelBase(unittest.TestCase):
           failed_addrs[hex(msg.address)] += 1
 
       # ensure all msgs defined in the addr checks are valid
-      self.safety.safety_tick_current_rx_checks()
+      self.safety.safety_tick_current_safety_config()
       if t > 1e6:
-        self.assertTrue(self.safety.addr_checks_valid())
+        self.assertTrue(self.safety.safety_config_valid())
 
       # Don't check relay malfunction on disabled routes (relay closed),
       # or before fingerprinting is done (elm327 and noOutput)
