@@ -63,8 +63,12 @@
         <translation>데이터 요금제</translation>
     </message>
     <message>
-        <source>Prevent large data uploads when on a metered connection</source>
-        <translation>데이터 요금제 연결 시 대용량 데이터 업로드를 방지합니다</translation>
+        <source>Prevent large data uploads when on a metered connection. Choose 'full upload' if you have unlimited cellular data, and 'low upload' if you want to minimize uploads over cellular as much as possible. The 'default upload' policy is to upload qlog/qcam over cellular, but full logs only once you're back on Wi-Fi.</source>
+        <translation type="unfinished">데이터 요금제 연결 시 대용량 데이터 업로드를 방지합니다</translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered connection. Choose 'low upload' if you want to minimize uploads over cellular as much as possible. The 'default upload' policy is to upload qlog/qcam over cellular, but full logs only once you're back on Wi-Fi.</source>
+        <translation type="unfinished">데이터 요금제 연결 시 대용량 데이터 업로드를 방지합니다</translation>
     </message>
 </context>
 <context>

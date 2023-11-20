@@ -63,8 +63,12 @@
         <translation>従量制通信設定</translation>
     </message>
     <message>
-        <source>Prevent large data uploads when on a metered connection</source>
-        <translation>大量のデータのアップロードを防止します。</translation>
+        <source>Prevent large data uploads when on a metered connection. Choose 'full upload' if you have unlimited cellular data, and 'low upload' if you want to minimize uploads over cellular as much as possible. The 'default upload' policy is to upload qlog/qcam over cellular, but full logs only once you're back on Wi-Fi.</source>
+        <translation type="unfinished">大量のデータのアップロードを防止します。</translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered connection. Choose 'low upload' if you want to minimize uploads over cellular as much as possible. The 'default upload' policy is to upload qlog/qcam over cellular, but full logs only once you're back on Wi-Fi.</source>
+        <translation type="unfinished">大量のデータのアップロードを防止します。</translation>
     </message>
 </context>
 <context>

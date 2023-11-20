@@ -63,7 +63,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Prevent large data uploads when on a metered connection</source>
+        <source>Prevent large data uploads when on a metered connection. Choose 'full upload' if you have unlimited cellular data, and 'low upload' if you want to minimize uploads over cellular as much as possible. The 'default upload' policy is to upload qlog/qcam over cellular, but full logs only once you're back on Wi-Fi.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered connection. Choose 'low upload' if you want to minimize uploads over cellular as much as possible. The 'default upload' policy is to upload qlog/qcam over cellular, but full logs only once you're back on Wi-Fi.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
