@@ -110,11 +110,7 @@ else:
   cflags = []
   cxxflags = []
   cpppath = []
-  rpath += [
-    Dir("#cereal").abspath,
-    Dir("#common").abspath,
-    Dir("#rednose/helpers").abspath,
-  ]
+  rpath += []
 
   # MacOS
   if arch == "Darwin":
@@ -208,7 +204,9 @@ env = Environment(
   CXX='clang++',
   LINKFLAGS=ldflags,
 
-  RPATH=rpath,
+  RPATH=rpath + [
+    Dir("#rednose/helpers").abspath,
+  ],
 
   CFLAGS=["-std=gnu11"] + cflags,
   CXXFLAGS=["-std=c++1z"] + cxxflags,
