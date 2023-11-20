@@ -70,6 +70,18 @@
         <source>Prevent large data uploads when on a metered connection. Choose &apos;low upload&apos; if you want to minimize uploads over cellular as much as possible. The &apos;default upload&apos; policy is to upload qlog/qcam over cellular, but full logs only once you&apos;re back on Wi-Fi.</source>
         <translation type="unfinished">منع تحميل البيانات الكبيرة عندما يكون الاتصال محدوداً</translation>
     </message>
+    <message>
+        <source>low upload</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>full upload</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>AnnotatedCameraWidget</name>
