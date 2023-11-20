@@ -112,7 +112,8 @@ else:
   cpppath = []
   rpath += [
     Dir("#cereal").abspath,
-    Dir("#common").abspath
+    Dir("#common").abspath,
+    Dir("#rednose/helpers").abspath,
   ]
 
   # MacOS
@@ -138,8 +139,6 @@ else:
       f"#third_party/acados/{arch}/lib",
       f"#third_party/libyuv/{arch}/lib",
       f"#third_party/mapbox-gl-native-qt/{arch}",
-      "#cereal",
-      "#common",
       "/usr/lib",
       "/usr/local/lib",
     ]
@@ -219,10 +218,13 @@ env = Environment(
     "#opendbc/can",
     "#selfdrive/boardd",
     "#common",
+    "#rednose/helpers",
   ],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
-  tools=["default", "cython", "compilation_db"],
+  REDNOSE_ROOT="#rednose_repo",
+  tools=["default", "cython", "compilation_db", "rednose_filter"],
+  toolpath=["#rednose_repo/site_scons/site_tools"],
 )
 
 if arch == "Darwin":
@@ -357,19 +359,7 @@ SConscript([
   'panda/SConscript',
 ])
 
-# Build rednose library and ekf models
-rednose_deps = [
-  "#selfdrive/locationd/models/constants.py",
-]
-rednose_config = {
-  'generated_folder': '#selfdrive/locationd/models/generated',
-  'to_build': {
-    'live': ('#selfdrive/locationd/models/live_kf.py', True, ['live_kf_constants.h'], rednose_deps),
-    'car': ('#selfdrive/locationd/models/car_kf.py', True, [], rednose_deps),
-  },
-}
-
-Export('rednose_config')
+# Build rednose library
 SConscript(['rednose/SConscript'])
 
 # Build system services
