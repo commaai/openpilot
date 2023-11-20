@@ -212,7 +212,7 @@ def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = Tr
         break
 
 
-def should_allow_upload_immediately(sm, item, network_type: int) -> bool:
+def should_allow_upload_immediately(sm, item, network_metered: bool, network_type: int) -> bool:
   # low_upload     is upload_policy=0
   # default_upload is upload_policy=1
   # full_upload    is upload_policy=2
@@ -230,12 +230,13 @@ def should_allow_upload_immediately(sm, item, network_type: int) -> bool:
   if is_cellular:
     metered = upload_policy in [0, 1]
   else:
+    metered = network_metered
     # e.g. maybe it's a Wi-Fi hotspot but whose underlying cellular connection is being reported as metered
-    metered = sm['deviceState'].networkMetered
 
   # TODO(from yuzisee): does athenad know whether we are using a Comma SIM (i.e. whether the user is subscribed to full prime?)
   using_comma_sim_so_prevent_full_upload = False
-  # For now, we still limit the selection itself (see meteredSetting in selfdrive/ui/qt/network/networking.cc#AdvancedNetworking::AdvancedNetworking) which is maybe enough
+  # For now…
+  #  we do limit the selection itself (see meteredSetting in selfdrive/ui/qt/network/networking.cc#AdvancedNetworking::AdvancedNetworking) which is maybe enough
 
   if upload_policy == 0:
     # 'low upload' policy is to upload nothing until we're connected to a full connection (e.g. home Wi-Fi)
@@ -257,8 +258,9 @@ def should_allow_upload_immediately(sm, item, network_type: int) -> bool:
 def cb(sm, item, tid, sz: int, cur: int) -> None:
   # Abort transfer if connection changed to metered after starting upload
   sm.update(0)
+  metered = sm['deviceState'].networkMetered
   network_type = sm['deviceState'].networkType.raw
-  if not should_allow_upload_immediately(sm, item, network_type):
+  if not should_allow_upload_immediately(sm, item, metered, network_type):
     raise AbortTransferException
 
   cur_upload_items[tid] = replace(item, progress=cur / sz if sz else 1)
@@ -288,8 +290,9 @@ def upload_handler(end_event: threading.Event) -> None:
 
       # Check if uploading over metered connection is allowed
       sm.update(0)
+      metered = sm['deviceState'].networkMetered
       network_type = sm['deviceState'].networkType.raw
-      if not should_allow_upload_immediately(sm, item, network_type):
+      if not should_allow_upload_immediately(sm, item, metered, network_type):
         retry_upload(tid, end_event, False)
         continue
 
