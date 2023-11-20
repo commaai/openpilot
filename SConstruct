@@ -74,7 +74,10 @@ assert arch in ["larch64", "aarch64", "x86_64", "Darwin"]
 
 lenv = {
   "PATH": os.environ['PATH'],
-  "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").abspath],
+  "LD_LIBRARY_PATH": [
+    Dir(f"#third_party/acados/{arch}/lib").abspath,
+    Dir("#rednose/helpers").abspath,
+  ],
   "PYTHONPATH": Dir("#").abspath + ':' + Dir(f"#third_party/acados").abspath,
 
   "ACADOS_SOURCE_DIR": Dir("#third_party/acados").abspath,
@@ -204,9 +207,7 @@ env = Environment(
   CXX='clang++',
   LINKFLAGS=ldflags,
 
-  RPATH=rpath + [
-    Dir("#rednose/helpers").abspath,
-  ],
+  RPATH=rpath,
 
   CFLAGS=["-std=gnu11"] + cflags,
   CXXFLAGS=["-std=c++1z"] + cxxflags,
@@ -220,7 +221,7 @@ env = Environment(
   ],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
-  REDNOSE_ROOT="#rednose_repo",
+  REDNOSE_ROOT="#",
   tools=["default", "cython", "compilation_db", "rednose_filter"],
   toolpath=["#rednose_repo/site_scons/site_tools"],
 )
