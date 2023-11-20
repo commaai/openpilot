@@ -37,6 +37,12 @@ AddOption('--clazy',
 AddOption('--compile_db',
           action='store_true',
           help='build clang compilation database')
+          
+AddOption('--ccflags',
+          action='store',
+          type='string',
+          default='',
+          help='pass arbitrary flags over the command line')
 
 AddOption('--snpe',
           action='store_true',
@@ -169,6 +175,10 @@ if arch != "Darwin":
 # Enable swaglog include in submodules
 cflags += ['-DSWAGLOG="\\"common/swaglog.h\\""']
 cxxflags += ['-DSWAGLOG="\\"common/swaglog.h\\""']
+
+ccflags_option = GetOption('ccflags')
+if ccflags_option:
+  ccflags += ccflags_option.split(' ')
 
 env = Environment(
   ENV=lenv,

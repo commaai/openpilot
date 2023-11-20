@@ -18,11 +18,14 @@ import cereal.messaging as messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.bodyteleop.bodyav import BodyMic, WebClientSpeaker, force_codec, play_sound, MediaBlackhole, EncodedBodyVideo
 
+from typing import Optional
+
 logger = logging.getLogger("pc")
 logging.basicConfig(level=logging.INFO)
 
-pcs = set()
-pm, sm = None, None
+pcs: set[RTCPeerConnection] = set()
+pm: Optional[messaging.PubMaster] = None
+sm: Optional[messaging.SubMaster] = None
 TELEOPDIR = f"{BASEDIR}/tools/bodyteleop"
 
 
