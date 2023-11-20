@@ -153,7 +153,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   roamingToggle = new ToggleControl(tr("Enable Roaming"), "", "", roamingEnabled);
   QObject::connect(roamingToggle, &ToggleControl::toggleFlipped, [=](bool state) {
     params.putBool("GsmRoaming", state);
-    wifi->updateGsmSettings(state, QString::fromStdString(params.get("GsmApn")), params.getBool("GsmMetered"));
+    wifi->updateGsmSettings(state, QString::fromStdString(params.get("GsmApn")), params.get("MeteredUploadPolicy") != "2");
   });
   list->addItem(roamingToggle);
 
@@ -168,27 +168,48 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
     } else {
       params.put("GsmApn", apn.toStdString());
     }
-    wifi->updateGsmSettings(params.getBool("GsmRoaming"), apn, params.getBool("GsmMetered"));
+    wifi->updateGsmSettings(params.getBool("GsmRoaming"), apn, params.get("MeteredUploadPolicy") != "2");
   });
   list->addItem(editApnButton);
 
   // Metered toggle
-  const bool metered = params.getBool("GsmMetered");
-  meteredToggle = new ToggleControl(tr("Cellular Metered"), tr("Prevent large data uploads when on a metered connection"), "", metered);
-  QObject::connect(meteredToggle, &SshToggle::toggleFlipped, [=](bool state) {
-    params.putBool("GsmMetered", state);
-    wifi->updateGsmSettings(params.getBool("GsmRoaming"), QString::fromStdString(params.get("GsmApn")), state);
-  });
-  list->addItem(meteredToggle);
+  int prime_type = uiState()->primeType();
+  if (prime_type == PrimeType::LITE) {
+    // Bring your own SIM, so allow whatever uploads they want
+    std::vector<QString> metered_upload_button_texts{tr("low upload"), tr("default"), tr("full upload")};
+    meteredSetting = new ButtonParamControl("MeteredUploadPolicy", tr("Cellular Metered"),
+                                            tr("Prevent large data uploads when on a metered connection. Choose 'full upload' if you have unlimited cellular data, and "
+                                               "'low upload' if you want to minimize uploads over cellular as much as possible. "
+                                               "The 'default upload' policy is to upload qlog/qcam over cellular, but full logs only once you're back on Wi-Fi."),
+                                            "",
+                                            metered_upload_button_texts);
+  } else {
+    // If they didn't bring their own SIM, presumably the comma SIM is installed. Allow only the lower data-usage choices.
+    std::vector<QString> metered_upload_button_texts{tr("low upload"), tr("default")};
+    meteredSetting = new ButtonParamControl("MeteredUploadPolicy", tr("Cellular Metered"),
+                                            tr("Prevent large data uploads when on a metered connection. "
+                                               "Choose 'low upload' if you want to minimize uploads over cellular as much as possible. "
+                                               "The 'default upload' policy is to upload qlog/qcam over cellular, but full logs only once you're back on Wi-Fi."),
+                                            "",
+                                            metered_upload_button_texts);
+    // TODO(from yuzisee): Does `prime_type == PrimeType::NONE` mean they brought their own SIM, or that they have the Comma SIM but haven't activated it?
+  }
+  // NOTE: We don't have a connect(…) call like the other toggles, because the ButtonParamControl constructor sets that up for us already
+  //       See selfdrive/ui/qt/widgets/controls.h#ButtonParamControl
+  // However, this also means we don't call
+  // ```
+  // wifi->updateGsmSettings(params.getBool("GsmRoaming"), apn, params.get("MeteredUploadPolicy") != "2");
+  // ```
+  // when the setting changes… so for now, we are extra careful inside selfdrive/athena/athenad.py#should_allow_upload_immediately
+  list->addItem(meteredSetting);
 
   // Set initial config
-  wifi->updateGsmSettings(roamingEnabled, QString::fromStdString(params.get("GsmApn")), metered);
+  wifi->updateGsmSettings(roamingEnabled, QString::fromStdString(params.get("GsmApn")), params.get("MeteredUploadPolicy") != "2");
 
   connect(uiState(), &UIState::primeTypeChanged, this, [=](PrimeType prime_type) {
     bool gsmVisible = prime_type == PrimeType::NONE || prime_type == PrimeType::LITE;
     roamingToggle->setVisible(gsmVisible);
     editApnButton->setVisible(gsmVisible);
-    meteredToggle->setVisible(gsmVisible);
   });
 
   main_layout->addWidget(new ScrollView(list, this));

@@ -212,17 +212,61 @@ def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = Tr
         break
 
 
+def should_allow_upload_immediately(sm, item, network_type: int) -> bool:
+  # low_upload     is upload_policy=0
+  # default_upload is upload_policy=1
+  # full_upload    is upload_policy=2
+  # see metered_upload_button_texts in selfdrive/ui/qt/network/networking.cc#AdvancedNetworking::AdvancedNetworking
+
+  param_value = Params().get('MeteredUploadPolicy')
+  if param_value is not None:
+    upload_policy = int(param_value)
+  else:
+    upload_policy = 1
+
+  small_filesize = item.allow_cellular
+
+  is_cellular = network_type not in [NetworkType.wifi, NetworkType.ethernet]
+  if is_cellular:
+    metered = upload_policy in [0, 1]
+  else:
+    # e.g. maybe it's a Wi-Fi hotspot but whose underlying cellular connection is being reported as metered
+    metered = sm['deviceState'].networkMetered
+
+  # TODO(from yuzisee): does athenad know whether we are using a Comma SIM (i.e. whether the user is subscribed to full prime?)
+  using_comma_sim_so_prevent_full_upload = False
+  # For now, we still limit the selection itself (see meteredSetting in selfdrive/ui/qt/network/networking.cc#AdvancedNetworking::AdvancedNetworking) which is maybe enough
+
+  if upload_policy == 0:
+    # 'low upload' policy is to upload nothing until we're connected to a full connection (e.g. home Wi-Fi)
+    # see also https://discord.com/channels/469524606043160576/819046761287909446/1161366616920051914
+    return not metered
+  elif (upload_policy == 2) and (not using_comma_sim_so_prevent_full_upload):
+    # 'full upload' policy is to always allow all uploads
+    return True
+  else:
+    # This is the `default upload` policy. It's believed to use an *average* of 6 GiB/mo or so...
+    # https://discord.com/channels/469524606043160576/819046761287909446/1161369395382202438
+    # https://discord.com/channels/469524606043160576/819046761287909446/1161366312686198905
+    # Here,
+    #  * we upload the qlogs & qcameras while the connection is metered
+    #  * we upload everything if the connection is not metered
+    return (not metered) or small_filesize
+
+
 def cb(sm, item, tid, sz: int, cur: int) -> None:
   # Abort transfer if connection changed to metered after starting upload
   sm.update(0)
-  metered = sm['deviceState'].networkMetered
-  if metered and (not item.allow_cellular):
+  network_type = sm['deviceState'].networkType.raw
+  if not should_allow_upload_immediately(sm, item, network_type):
     raise AbortTransferException
 
   cur_upload_items[tid] = replace(item, progress=cur / sz if sz else 1)
 
 
 def upload_handler(end_event: threading.Event) -> None:
+  # `log_handler` and `stats_handler` add to the queues, but don't actually upload anything themselves
+  # all the upload activity happens here in `upload_handler`
   sm = messaging.SubMaster(['deviceState'])
   tid = threading.get_ident()
 
@@ -244,9 +288,8 @@ def upload_handler(end_event: threading.Event) -> None:
 
       # Check if uploading over metered connection is allowed
       sm.update(0)
-      metered = sm['deviceState'].networkMetered
       network_type = sm['deviceState'].networkType.raw
-      if metered and (not item.allow_cellular):
+      if not should_allow_upload_immediately(sm, item, network_type):
         retry_upload(tid, end_event, False)
         continue
 

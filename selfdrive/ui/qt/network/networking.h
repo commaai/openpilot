@@ -62,7 +62,7 @@ private:
   ToggleControl* tetheringToggle;
   ToggleControl* roamingToggle;
   ButtonControl* editApnButton;
-  ToggleControl* meteredToggle;
+  ButtonParamControl *meteredSetting;
   WifiManager* wifi = nullptr;
   Params params;
 
