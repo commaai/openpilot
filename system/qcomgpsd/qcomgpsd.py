@@ -379,7 +379,7 @@ def main() -> NoReturn:
       gps.bearingDeg = report["q_FltHeadingRad"] * 180/math.pi
 
       # TODO needs update if there is another leap second, after june 2024?
-      dt_timestamp = (datetime.datetime(1980, 1, 6, 0, 0, 0, 0, None) +
+      dt_timestamp = (datetime.datetime(1980, 1, 6, 0, 0, 0, 0, datetime.timezone.utc) +
                       datetime.timedelta(weeks=report['w_GpsWeekNumber']) +
                       datetime.timedelta(seconds=(1e-3*report['q_GpsFixTimeMs'] - 18)))
       gps.unixTimestampMillis = dt_timestamp.timestamp()*1e3
