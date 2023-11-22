@@ -1,7 +1,12 @@
 #!/bin/sh
+cd "$(dirname "$0")"
 
 if [ -f /TICI ] && [ ! -f qt/spinner ]; then
   cp qt/spinner_larch64 qt/spinner
+fi
+
+if [ -f /TICI ]; then
+  export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libEGL.so.1.1.0:/usr/lib/aarch64-linux-gnu/libGLESv2.so.2.1.0
 fi
 
 exec ./qt/spinner "$1"
