@@ -220,12 +220,10 @@ class TestCarModelBase(unittest.TestCase):
     """
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
-    state_has_changed = lambda prev_state, new_state: prev_state != new_state
     # cfg = self.CP.safetyConfigs[-1]
     # set_status = self.safety.set_safety_hooks(cfg.safetyModel.raw, cfg.safetyParam)
     # self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")
     # self.safety.init_tests()
-
 
     # bus = 0  # random.randint(0, 3)
     bus_offset = CanBusBase(None, fingerprint=self.fingerprint).offset
@@ -304,7 +302,6 @@ class TestCarModelBase(unittest.TestCase):
 
       # due to panda updating state selectively, per message, we can only compare on a change
 
-      # if self.safety.get_gas_interceptor_detected():# and state_has_changed(start_gas, self.safety.get_gas_pressed_prev()):
       # print('ret.gas', CS.gas, 'safety gas', self.safety.get_gas_interceptor_prev())
       # print('both', CS.gasPressed, self.safety.get_gas_pressed_prev(), 'int')
       if self.safety.get_gas_pressed_prev() != prev_panda_gas:
@@ -349,52 +346,7 @@ class TestCarModelBase(unittest.TestCase):
       prev_panda_vehicle_moving = self.safety.get_vehicle_moving()
       prev_panda_cruise_engaged = self.safety.get_cruise_engaged_prev()
       prev_panda_acc_main_on = self.safety.get_acc_main_on()
-      # if self.safety.get_gas_pressed_prev() and self.safety.get_cruise_engaged_prev():
-      #   self.assertFalse(True)
-      # self.assertFalse(self.safety.get_cruise_engaged_prev())
 
-      # print('gas_pressed', CS.gasPressed, self.safety.get_gas_pressed_prev())
-      # print('wheel_speeds', CS.wheelSpeeds)
-      # print('standstill', CS.standstill, not self.safety.get_vehicle_moving())
-
-      # print('did_rx', did_rx)
-      # if did_rx:
-      #   self.assertFalse(True, 'finally did rx: {}, {}'.format(i, dat))
-      # self.assertTrue(CS.standstill, (not CS.standstill, self.safety.get_vehicle_moving(), CS.vEgoRaw, CS.wheelSpeeds))
-
-
-      # self.assertEqual(CS.gasPressed, self.safety.get_gas_pressed_prev())
-      # self.assertEqual(not CS.standstill, self.safety.get_vehicle_moving())
-      # self.assertEqual(CS.brakePressed, self.safety.get_brake_pressed_prev())
-      # self.assertEqual(CS.regenBraking, self.safety.get_regen_braking_prev())
-      #
-      # if self.CP.pcmCruise:
-      #   self.assertEqual(CS.cruiseState.enabled, self.safety.get_cruise_engaged_prev())
-      #
-      # if self.CP.carName == "honda":
-      #   self.assertEqual(CS.cruiseState.available, self.safety.get_acc_main_on())
-
-
-    # if self.safety.get_gas_interceptor_detected():
-    #   print('get_gas_interceptor_detected!')
-    #   # self.assertEqual(CS.gasPressed, self.safety.get_gas_interceptor_prev())
-    #   self.assertEqual(CS.gasPressed, self.safety.get_gas_pressed_prev())
-    #   # self.assertFalse(True)
-
-    # return
-    # self.car_state_dict['panda'] = {'gas_pressed': self.safety.get_gas_pressed_prev()}
-    # self.car_state_dict['CS'] = {'gasPressed': CS.gasPressed}
-
-    # print(self.safety.get_gas_pressed_prev(), self.safety.get_brake_pressed_prev(), self.safety.get_vehicle_moving(), self.safety.get_cruise_engaged_prev())
-    # assume(state_has_changed(False, self.safety.get_gas_pressed_prev()))
-    # assume(state_has_changed(start_gas, self.safety.get_gas_pressed_prev()))  # this just goes on forever EDIT: actually no it doesn't
-    # assume(state_has_changed(start_gas_int_detected, self.safety.get_gas_interceptor_detected()))
-    # assume(state_has_changed(False, self.safety.get_brake_pressed_prev()))
-    # assume(state_has_changed(False, self.safety.get_vehicle_moving()))
-    # assume(state_has_changed(False, self.safety.get_cruise_engaged_prev()))
-
-    # print(msgs)
-    # print('\nresults', self.safety.get_gas_pressed_prev(), self.safety.get_vehicle_moving(), self.safety.get_brake_pressed_prev(), self.safety.get_regen_braking_prev(), self.safety.get_cruise_engaged_prev(), self.safety.get_acc_main_on())
     del msgs
 
   # def test_panda_safety_carstate(self):
