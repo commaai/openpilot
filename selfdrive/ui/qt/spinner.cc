@@ -112,8 +112,6 @@ void Spinner::update(int n) {
 }
 
 int main(int argc, char *argv[]) {
-  Hardware::config_cpu_rendering(false);
-
   initApp(argc, argv);
   QApplication a(argc, argv);
   Spinner spinner;
