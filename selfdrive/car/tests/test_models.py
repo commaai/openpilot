@@ -18,10 +18,8 @@ from cereal import messaging, log, car
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
-from openpilot.selfdrive.car import CanBusBase
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
-from openpilot.selfdrive.car.toyota.values import TSS2_CAR
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from openpilot.selfdrive.controls.controlsd import Controls
@@ -236,16 +234,13 @@ class TestCarModelBase(unittest.TestCase):
     prev_panda_cruise_engaged = self.safety.get_cruise_engaged_prev()
     prev_panda_acc_main_on = self.safety.get_acc_main_on()
 
-    start_gas = self.safety.get_gas_pressed_prev()
-    start_gas_int_detected = self.safety.get_gas_interceptor_detected()
-
     # since all toyotas can detect fake interceptor, but we want to test PCM gas too
     for dat in msgs:
       # set interceptor detected so we don't accidentally trigger gas_pressed with other messages
       self.safety.set_gas_interceptor_detected(self.CP.enableGasInterceptor)
 
       to_send = libpanda_py.make_CANPacket(address, bus, dat)
-      did_rx = self.safety.safety_rx_hook(to_send)
+      self.safety.safety_rx_hook(to_send)
 
       can = messaging.new_message('can', 1)
       can.can = [log.CanData(address=address, dat=dat, src=bus)]
