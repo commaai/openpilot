@@ -233,12 +233,10 @@ selfdrive/locationd/paramsd.py
 selfdrive/locationd/models/__init__.py
 selfdrive/locationd/models/.gitignore
 selfdrive/locationd/models/car_kf.py
-selfdrive/locationd/models/gnss_kf.py
 selfdrive/locationd/models/live_kf.py
 selfdrive/locationd/models/live_kf.h
 selfdrive/locationd/models/live_kf.cc
 selfdrive/locationd/models/constants.py
-selfdrive/locationd/models/gnss_helpers.py
 
 selfdrive/locationd/torqued.py
 selfdrive/locationd/calibrationd.py
@@ -446,6 +444,7 @@ third_party/qt5/larch64/bin/**
 scripts/update_now.sh
 scripts/stop_updater.sh
 
+rednose_repo/site_scons/site_tools/rednose_filter.py
 rednose/.gitignore
 rednose/**
 
