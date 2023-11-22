@@ -210,7 +210,7 @@ class TestCarModelBase(unittest.TestCase):
             suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow, HealthCheck.large_base_example],
             )
   @given(data=st.data())
-  # @seed(1)  # for reproduction
+  @seed(1)  # for reproduction
   def test_panda_safety_carstate_fuzzy(self, data):
     """
       For each example, pick a random CAN message on the bus and fuzz its data,
