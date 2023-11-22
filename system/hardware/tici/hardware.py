@@ -540,15 +540,16 @@ class Tici(HardwareBase):
 
     # eSIM prime
     if sim_id.startswith('8985235'):
-      with open('/data/openpilot/system/hardware/tici/esim.nmconnection') as f, tempfile.NamedTemporaryFile(mode='w') as tf:
+      dest = "/etc/NetworkManager/system-connections/esim.nmconnection"
+      with open(Path(__file__).parent/'esim.nmconnection') as f, tempfile.NamedTemporaryFile(mode='w') as tf:
         dat = f.read()
         dat = dat.replace("sim-id=", f"sim-id={sim_id}")
         tf.write(dat)
         tf.flush()
 
         # needs to be root
-        os.system(f"sudo cp {tf.name} /data/etc/NetworkManager/system-connections/esim.nmconnection")
-      os.system("sudo nmcli con reload")
+        os.system(f"sudo cp {tf.name} {dest}")
+      os.system(f"sudo nmcli con load {dest}")
 
   def get_networks(self):
     r = {}
@@ -617,5 +618,6 @@ class Tici(HardwareBase):
 
 if __name__ == "__main__":
   t = Tici()
+  t.configure_modem()
   t.initialize_hardware()
   t.set_power_save(False)
