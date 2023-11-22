@@ -81,7 +81,7 @@ routes = [
   CarTestRoute("1da5847ac2488106|2021-05-24--19-31-50", HONDA.ACCORD),  # 2.0T
   CarTestRoute("085ac1d942c35910|2021-03-25--20-11-15", HONDA.ACCORD),  # 2021 with new style HUD msgs
   CarTestRoute("07585b0da3c88459|2021-05-26--18-52-04", HONDA.ACCORDH),
-  # CarTestRoute("f29e2b57a55e7ad5|2021-03-24--20-52-38", HONDA.ACCORDH), # 2021 with new style HUD msgs
+  CarTestRoute("f29e2b57a55e7ad5|2021-03-24--20-52-38", HONDA.ACCORDH), # 2021 with new style HUD msgs
   CarTestRoute("1ad763dd22ef1a0e|2020-02-29--18-37-03", HONDA.CRV_5G),
   CarTestRoute("0a96f86fcfe35964|2020-02-05--07-25-51", HONDA.ODYSSEY),
   CarTestRoute("d83f36766f8012a5|2020-02-05--18-42-21", HONDA.CIVIC_BOSCH_DIESEL),
@@ -178,7 +178,7 @@ routes = [
   CarTestRoute("54034823d30962f5|2021-05-24--06-37-34", TOYOTA.CAMRY),  # hybrid
   CarTestRoute("3456ad0cd7281b24|2020-12-13--17-45-56", TOYOTA.CAMRY_TSS2),
   CarTestRoute("ffccc77938ddbc44|2021-01-04--16-55-41", TOYOTA.CAMRY_TSS2),  # hybrid
-  CarTestRoute("5f5afb36036506e4|2019-05-14--02-09-54", TOYOTA.COROLLA),
+  CarTestRoute("4e45c89c38e8ec4d|2021-05-02--02-49-28", TOYOTA.COROLLA),
   CarTestRoute("5f5afb36036506e4|2019-05-14--02-09-54", TOYOTA.COROLLA_TSS2),
   CarTestRoute("5ceff72287a5c86c|2019-10-19--10-59-02", TOYOTA.COROLLA_TSS2),  # hybrid
   CarTestRoute("d2525c22173da58b|2021-04-25--16-47-04", TOYOTA.PRIUS),

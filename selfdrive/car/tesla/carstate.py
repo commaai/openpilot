@@ -24,9 +24,9 @@ class CarState(CarStateBase):
     ret = car.CarState.new_message()
 
     # Vehicle speed
-    ret.vEgoRaw = cp.vl["DI_torque2"]["DI_vehicleSpeed"] * CV.MPH_TO_MS
+    ret.vEgoRaw = cp.vl["ESP_B"]["ESP_vehicleSpeed"] * CV.KPH_TO_MS
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.standstill = ret.vEgoRaw <= 0.1
+    ret.standstill = (ret.vEgo < 0.1)
 
     # Gas pedal
     ret.gas = cp.vl["DI_torque1"]["DI_pedalPos"] / 100.0
@@ -103,6 +103,7 @@ class CarState(CarStateBase):
   def get_can_parser(CP):
     messages = [
       # sig_address, frequency
+      ("ESP_B", 50),
       ("DI_torque1", 100),
       ("DI_torque2", 100),
       ("STW_ANGLHP_STAT", 100),
