@@ -12,7 +12,7 @@ from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
-from openpilot.selfdrive.locationd.helpers import PointBuckets, ParameterEstimator, cache_points_onexit
+from openpilot.selfdrive.locationd.helpers import PointBuckets, ParameterEstimator, cache_points_onexit, cache_points
 
 HISTORY = 5  # secs
 POINTS_PER_BUCKET = 1500
@@ -241,6 +241,10 @@ def main():
     # 4Hz driven by liveLocationKalman
     if sm.frame % 5 == 0:
       pm.send('liveTorqueParameters', estimator.get_msg(valid=sm.all_checks()))
+
+    # Cache points every 60 seconds while onroad
+    if sm.frame % 240 == 0:
+      cache_points("LiveTorqueParameters", estimator, sm.all_checks())
 
 
 if __name__ == "__main__":
