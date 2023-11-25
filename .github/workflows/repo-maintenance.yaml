@@ -17,6 +17,7 @@ jobs:
       run: |
         git config --global --add safe.directory '*'
         git -c submodule."tinygrad".update=none submodule update --remote
+        git add .
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@5b4a9f6a9e2af26e5f02351490b90d01eb8ec1e5
       with:
