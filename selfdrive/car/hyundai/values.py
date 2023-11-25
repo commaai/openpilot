@@ -1908,11 +1908,20 @@ FW_VERSIONS = {
   },
   CAR.KIA_SORENTO_PHEV_4TH_GEN: {
     (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00MQhe SCC FHCUP      1.00 1.06 99110-P4000         ',
+      b'\xf1\x00MQhe SCC FHCUP      1.00 1.06 99110-P4000         '
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00MQ4HMFC  AT USA LHD 1.00 1.11 99210-P2000 211217',
-    ]
+      b'\xf1\x00MQ4HMFC  AT USA LHD 1.00 1.11 99210-P2000 211217'
+    ],
+    (Ecu.hvac, 0x7B3, None): [
+     b"\xf1\x00MQ4   97255-P4230CONTROL ASS'Y-DATC  1.02 MQ4 PHEV(-) 0.6     "
+    ],
+    (Ecu.cornerRadar, 0x7B7, None): [
+     b'\xf1\x00MQ4 BCW RR 1.00 , 1.01 (t\x00W!\x02Q\x07I'
+    ],
+    (Ecu.parkingAdas, 0x7B1, None): [
+     b'\xf1\x10MQ4H ADAS_PRK ANL 1.00 1.06 99910-P4150'
+    ],
   },
   CAR.KIA_EV6: {
     (Ecu.fwdRadar, 0x7d0, None): [
