@@ -50,3 +50,4 @@ jobs:
         branch: auto-package-updates
         base: master
         delete-branch: true
+        body: 'Update Python packages and pre-commit hooks'
