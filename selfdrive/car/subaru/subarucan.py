@@ -241,13 +241,13 @@ def create_es_infotainment(packer, frame, es_infotainment_msg, visual_alert):
     if values["LKAS_State_Infotainment"] in (3, 4):
       values["LKAS_State_Infotainment"] = 0
 
-    # Show Keep hands on wheel alert for openpilot steerRequired alert
-    if visual_alert == VisualAlert.steerRequired:
-      values["LKAS_State_Infotainment"] = 3
+  # Show Keep hands on wheel alert for openpilot steerRequired alert
+  if visual_alert == VisualAlert.steerRequired:
+    values["LKAS_State_Infotainment"] = 3
 
-    # Show Obstacle Detected for fcw
-    if visual_alert == VisualAlert.fcw:
-      values["LKAS_State_Infotainment"] = 2
+  # Show Obstacle Detected for fcw
+  if visual_alert == VisualAlert.fcw:
+    values["LKAS_State_Infotainment"] = 2
 
   return packer.make_can_msg("ES_Infotainment", CanBus.main, values)
 
