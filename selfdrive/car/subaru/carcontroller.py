@@ -8,6 +8,7 @@ from openpilot.selfdrive.car.subaru.values import DBC, GLOBAL_ES_ADDR, GLOBAL_GE
 # FIXME: These limits aren't exact. The real limit is more than likely over a larger time period and
 # involves the total steering angle change rather than rate, but these limits work well for now
 MAX_STEER_RATE = 25  # deg/s
+MAX_STEER_ANGLE = 85 # deg
 MAX_STEER_RATE_FRAMES = 7  # tx control frames needed before torque can be cut
 
 
@@ -49,9 +50,9 @@ class CarController:
 
         if self.CP.carFingerprint in STEER_RATE_LIMITED:
           # Steering rate fault prevention
+          fault_condition = abs(CS.out.steeringRateDeg) > MAX_STEER_RATE or abs(CS.out.steeringAngleDeg) > MAX_STEER_ANGLE
           self.steer_rate_counter, apply_steer_req = \
-            common_fault_avoidance(abs(CS.out.steeringRateDeg) > MAX_STEER_RATE, apply_steer_req,
-                                  self.steer_rate_counter, MAX_STEER_RATE_FRAMES)
+            common_fault_avoidance(fault_condition, apply_steer_req, self.steer_rate_counter, MAX_STEER_RATE_FRAMES)
 
         can_sends.append(subarucan.create_steering_control(self.packer, apply_steer, apply_steer_req))
 
