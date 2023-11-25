@@ -79,7 +79,7 @@ def create_es_lkas_state(packer, frame, es_lkas_state_msg, enabled, visual_alert
 
   values["COUNTER"] = frame % 0x10
 
-  if "LKAS_Alert_Msg" in values:
+  if es_lkas_state_msg is not None:
     # Filter the stock LKAS "Keep hands on wheel" alert
     if values["LKAS_Alert_Msg"] == 1:
       values["LKAS_Alert_Msg"] = 0
@@ -100,12 +100,13 @@ def create_es_lkas_state(packer, frame, es_lkas_state_msg, enabled, visual_alert
     if values["LKAS_Alert_Msg"] == 7:
       values["LKAS_Alert_Msg"] = 0
 
-    # Show Keep hands on wheel alert for openpilot steerRequired alert
-    if visual_alert == VisualAlert.steerRequired:
-      values["LKAS_Alert_Msg"] = 1
+  # Show Keep hands on wheel alert for openpilot steerRequired alert
+  if visual_alert == VisualAlert.steerRequired:
+    values["LKAS_Alert_Msg"] = 1
 
-    # Ensure we don't overwrite potentially more important alerts from stock (e.g. FCW)
-    if visual_alert == VisualAlert.ldw and values["LKAS_Alert"] == 0:
+  # Ensure we don't overwrite potentially more important alerts from stock (e.g. FCW)
+  if visual_alert == VisualAlert.ldw:
+    if es_lkas_state_msg is None or values["LKAS_Alert"] == 0:
       if left_lane_depart:
         values["LKAS_Alert"] = 12  # Left lane departure dash alert
       elif right_lane_depart:
@@ -164,7 +165,7 @@ def create_es_dashstatus(packer, frame, es_dashstatus_msg, enabled, long_enabled
     values["PCB_Off"] = 1 # AEB is not presevered, so show the PCB_Off on dash
     values["Cruise_Fault"] = 0
 
-  if "LKAS_State_Msg" in values:
+  if es_dashstatus_msg is not None:
     # Filter stock LKAS disabled and Keep hands on steering wheel OFF alerts
     if values["LKAS_State_Msg"] in (2, 3):
       values["LKAS_State_Msg"] = 0
@@ -237,7 +238,7 @@ def create_es_infotainment(packer, frame, es_infotainment_msg, visual_alert):
 
   values["COUNTER"] = frame % 0x10
 
-  if "LKAS_State_Infotainment" in values:
+  if es_infotainment_msg is not None:
     if values["LKAS_State_Infotainment"] in (3, 4):
       values["LKAS_State_Infotainment"] = 0
 
