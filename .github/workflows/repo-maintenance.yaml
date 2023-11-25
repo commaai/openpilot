@@ -13,6 +13,8 @@ jobs:
       image: ghcr.io/commaai/openpilot-base:latest
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: true
     - name: bump submodules
       run: |
         git config --global --add safe.directory '*'
