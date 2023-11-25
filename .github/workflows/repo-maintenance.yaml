@@ -26,6 +26,7 @@ jobs:
         branch: auto-bump-submodules
         base: master
         delete-branch: true
+        body: 'Bump Submodules'
   package_updates:
     name: package_updates
     runs-on: ubuntu-20.04
@@ -50,3 +51,4 @@ jobs:
         branch: auto-package-updates
         base: master
         delete-branch: true
+        body: 'Update Python packages and pre-commit hooks'
