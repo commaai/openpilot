@@ -8,7 +8,7 @@ import unittest
 import subprocess
 
 import cereal.messaging as messaging
-from openpilot.system.sensord.rawgps.rawgpsd import at_cmd, wait_for_modem
+from openpilot.system.qcomgpsd.qcomgpsd import at_cmd, wait_for_modem
 from openpilot.selfdrive.manager.process_config import managed_processes
 
 GOOD_SIGNAL = bool(int(os.getenv("GOOD_SIGNAL", '0')))
@@ -24,7 +24,7 @@ class TestRawgpsd(unittest.TestCase):
 
   @classmethod
   def tearDownClass(cls):
-    managed_processes['rawgpsd'].stop()
+    managed_processes['qcomgpsd'].stop()
     os.system("sudo systemctl restart systemd-resolved")
     os.system("sudo systemctl restart ModemManager lte")
 
@@ -33,7 +33,7 @@ class TestRawgpsd(unittest.TestCase):
     self.sm = messaging.SubMaster(['qcomGnss', 'gpsLocation', 'gnssMeasurements'])
 
   def tearDown(self):
-    managed_processes['rawgpsd'].stop()
+    managed_processes['qcomgpsd'].stop()
     os.system("sudo systemctl restart systemd-resolved")
 
   def _wait_for_output(self, t):
@@ -51,7 +51,7 @@ class TestRawgpsd(unittest.TestCase):
 
   def test_wait_for_modem(self):
     os.system("sudo systemctl stop ModemManager")
-    managed_processes['rawgpsd'].start()
+    managed_processes['qcomgpsd'].start()
     assert not self._wait_for_output(5)
 
     os.system("sudo systemctl restart ModemManager")
@@ -62,15 +62,15 @@ class TestRawgpsd(unittest.TestCase):
       if not internet:
         os.system("sudo systemctl stop systemd-resolved")
       with self.subTest(internet=internet):
-        managed_processes['rawgpsd'].start()
+        managed_processes['qcomgpsd'].start()
         assert self._wait_for_output(7)
-        managed_processes['rawgpsd'].stop()
+        managed_processes['qcomgpsd'].stop()
 
   def test_turns_off_gnss(self):
     for s in (0.1, 1, 5):
-      managed_processes['rawgpsd'].start()
+      managed_processes['qcomgpsd'].start()
       time.sleep(s)
-      managed_processes['rawgpsd'].stop()
+      managed_processes['qcomgpsd'].stop()
 
       ls = subprocess.check_output("mmcli -m any --location-status --output-json", shell=True, encoding='utf-8')
       loc_status = json.loads(ls)
@@ -94,29 +94,29 @@ class TestRawgpsd(unittest.TestCase):
       assert valid_duration == '0'
 
   def test_assistance_loading(self):
-    managed_processes['rawgpsd'].start()
+    managed_processes['qcomgpsd'].start()
     assert self._wait_for_output(10)
-    managed_processes['rawgpsd'].stop()
+    managed_processes['qcomgpsd'].stop()
     self.check_assistance(True)
 
   def test_no_assistance_loading(self):
     os.system("sudo systemctl stop systemd-resolved")
 
-    managed_processes['rawgpsd'].start()
+    managed_processes['qcomgpsd'].start()
     assert self._wait_for_output(10)
-    managed_processes['rawgpsd'].stop()
+    managed_processes['qcomgpsd'].stop()
     self.check_assistance(False)
 
   def test_late_assistance_loading(self):
     os.system("sudo systemctl stop systemd-resolved")
 
-    managed_processes['rawgpsd'].start()
+    managed_processes['qcomgpsd'].start()
     self._wait_for_output(17)
     assert self.sm.updated['qcomGnss']
 
     os.system("sudo systemctl restart systemd-resolved")
     time.sleep(15)
-    managed_processes['rawgpsd'].stop()
+    managed_processes['qcomgpsd'].stop()
     self.check_assistance(True)
 
 if __name__ == "__main__":

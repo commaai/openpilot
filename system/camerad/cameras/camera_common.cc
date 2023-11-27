@@ -13,7 +13,6 @@
 
 #include "system/camerad/imgproc/utils.h"
 #include "common/clutil.h"
-#include "common/modeldata.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "system/hardware/hw.h"
