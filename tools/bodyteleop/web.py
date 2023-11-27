@@ -11,7 +11,7 @@ import pyaudio
 import wave
 
 from openpilot.common.basedir import BASEDIR
-from openpilot.system.webrtcwebrtcd import StreamRequestBody
+from openpilot.system.webrtc.webrtcd import StreamRequestBody
 
 logger = logging.getLogger("bodyteleop")
 logging.basicConfig(level=logging.INFO)

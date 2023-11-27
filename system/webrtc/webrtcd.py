@@ -14,8 +14,8 @@ from aiohttp import web
 from bodyrtc import WebRTCAnswerBuilder
 from bodyrtc.info import parse_info_from_offer
 
-from openpilot.system.webrtcdevice.video import LiveStreamVideoStreamTrack
-from openpilot.system.webrtcdevice.audio import AudioInputStreamTrack, AudioOutputSpeaker
+from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
+from openpilot.system.webrtc.device.audio import AudioInputStreamTrack, AudioOutputSpeaker
 
 from cereal import messaging
 
