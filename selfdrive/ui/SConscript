@@ -7,7 +7,7 @@ base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
              'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 
 if arch == 'larch64':
-  base_libs.append('EGL')
+  base_libs.append(':libEGL_mesa.so.0')
 
 maps = arch in ['larch64', 'aarch64', 'x86_64']
 

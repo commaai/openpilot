@@ -1,4 +1,10 @@
 #!/bin/sh
 cd "$(dirname "$0")"
 export QT_DBL_CLICK_DIST=150
+
+if [ -f /TICI ]; then
+  export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libEGL.so.1.1.0:/usr/lib/aarch64-linux-gnu/libGLESv2.so.2.1.0:/data/openpilot/third_party/cpu_rendering/overrides/libwayland-egl.so.1:/data/openpilot/third_party/cpu_rendering/overrides/libQt5WaylandClient.so.5
+  export QT_QPA_PLATFORM_PLUGIN_PATH=/data/openpilot/third_party/cpu_rendering/qt_plugins
+fi
+
 exec ./_ui

@@ -32,17 +32,18 @@ const char frame_vertex_shader[] =
   "}\n";
 
 const char frame_fragment_shader[] =
-#ifdef QCOM2
-  "#version 300 es\n"
-  "#extension GL_OES_EGL_image_external_essl3 : enable\n"
-  "precision mediump float;\n"
-  "uniform samplerExternalOES uTexture;\n"
-  "in vec2 vTexCoord;\n"
-  "out vec4 colorOut;\n"
-  "void main() {\n"
-  "  colorOut = texture(uTexture, vTexCoord);\n"
-  "}\n";
-#else
+// #ifdef QCOM2
+// const char frame_fragment_shader[] =
+//   "#version 300 es\n"
+//   "#extension GL_OES_EGL_image_external_essl3 : enable\n"
+//   "precision mediump float;\n"
+//   "uniform samplerExternalOES uTexture;\n"
+//   "in vec2 vTexCoord;\n"
+//   "out vec4 colorOut;\n"
+//   "void main() {\n"
+//   "  colorOut = texture(uTexture, vTexCoord);\n"
+//   "}\n";
+// #else
 #ifdef __APPLE__
   "#version 330 core\n"
 #else
@@ -61,7 +62,7 @@ const char frame_fragment_shader[] =
   "  float b = y + 1.772 * uv.x;\n"
   "  colorOut = vec4(r, g, b, 1.0);\n"
   "}\n";
-#endif
+//#endif
 
 mat4 get_driver_view_transform(int screen_width, int screen_height, int stream_width, int stream_height) {
   const float driver_view_ratio = 2.0;
@@ -167,13 +168,13 @@ void CameraWidget::initializeGL() {
 
   glUseProgram(program->programId());
 
-#ifdef QCOM2
-  glUniform1i(program->uniformLocation("uTexture"), 0);
-#else
+// #ifdef QCOM2
+//   glUniform1i(program->uniformLocation("uTexture"), 0);
+// #else
   glGenTextures(2, textures);
   glUniform1i(program->uniformLocation("uTextureY"), 0);
   glUniform1i(program->uniformLocation("uTextureUV"), 1);
-#endif
+//#endif
 }
 
 void CameraWidget::showEvent(QShowEvent *event) {
@@ -285,12 +286,12 @@ void CameraWidget::paintGL() {
   glUseProgram(program->programId());
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-#ifdef QCOM2
-  // no frame copy
-  glActiveTexture(GL_TEXTURE0);
-  glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_images[frame->idx]);
-  assert(glGetError() == GL_NO_ERROR);
-#else
+// #ifdef QCOM2
+//   // no frame copy
+//   glActiveTexture(GL_TEXTURE0);
+//   glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_images[frame->idx]);
+//   assert(glGetError() == GL_NO_ERROR);
+// #else
   // fallback to copy
   glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride);
   glActiveTexture(GL_TEXTURE0);
@@ -303,7 +304,7 @@ void CameraWidget::paintGL() {
   glBindTexture(GL_TEXTURE_2D, textures[1]);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width/2, stream_height/2, GL_RG, GL_UNSIGNED_BYTE, frame->uv);
   assert(glGetError() == GL_NO_ERROR);
-#endif
+//#endif
 
   glUniformMatrix4fv(program->uniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
   glEnableVertexAttribArray(0);
@@ -322,32 +323,32 @@ void CameraWidget::vipcConnected(VisionIpcClient *vipc_client) {
   stream_height = vipc_client->buffers[0].height;
   stream_stride = vipc_client->buffers[0].stride;
 
-#ifdef QCOM2
-  egl_display = eglGetCurrentDisplay();
+// #ifdef QCOM2
+//   egl_display = eglGetCurrentDisplay();
 
-  for (auto &pair : egl_images) {
-    eglDestroyImageKHR(egl_display, pair.second);
-  }
-  egl_images.clear();
+//   for (auto &pair : egl_images) {
+//     eglDestroyImageKHR(egl_display, pair.second);
+//   }
+//   egl_images.clear();
 
-  for (int i = 0; i < vipc_client->num_buffers; i++) {  // import buffers into OpenGL
-    int fd = dup(vipc_client->buffers[i].fd);  // eglDestroyImageKHR will close, so duplicate
-    EGLint img_attrs[] = {
-      EGL_WIDTH, (int)vipc_client->buffers[i].width,
-      EGL_HEIGHT, (int)vipc_client->buffers[i].height,
-      EGL_LINUX_DRM_FOURCC_EXT, DRM_FORMAT_NV12,
-      EGL_DMA_BUF_PLANE0_FD_EXT, fd,
-      EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
-      EGL_DMA_BUF_PLANE0_PITCH_EXT, (int)vipc_client->buffers[i].stride,
-      EGL_DMA_BUF_PLANE1_FD_EXT, fd,
-      EGL_DMA_BUF_PLANE1_OFFSET_EXT, (int)vipc_client->buffers[i].uv_offset,
-      EGL_DMA_BUF_PLANE1_PITCH_EXT, (int)vipc_client->buffers[i].stride,
-      EGL_NONE
-    };
-    egl_images[i] = eglCreateImageKHR(egl_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, 0, img_attrs);
-    assert(eglGetError() == EGL_SUCCESS);
-  }
-#else
+//   for (int i = 0; i < vipc_client->num_buffers; i++) {  // import buffers into OpenGL
+//     int fd = dup(vipc_client->buffers[i].fd);  // eglDestroyImageKHR will close, so duplicate
+//     EGLint img_attrs[] = {
+//       EGL_WIDTH, (int)vipc_client->buffers[i].width,
+//       EGL_HEIGHT, (int)vipc_client->buffers[i].height,
+//       EGL_LINUX_DRM_FOURCC_EXT, DRM_FORMAT_NV12,
+//       EGL_DMA_BUF_PLANE0_FD_EXT, fd,
+//       EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
+//       EGL_DMA_BUF_PLANE0_PITCH_EXT, (int)vipc_client->buffers[i].stride,
+//       EGL_DMA_BUF_PLANE1_FD_EXT, fd,
+//       EGL_DMA_BUF_PLANE1_OFFSET_EXT, (int)vipc_client->buffers[i].uv_offset,
+//       EGL_DMA_BUF_PLANE1_PITCH_EXT, (int)vipc_client->buffers[i].stride,
+//       EGL_NONE
+//     };
+//     egl_images[i] = eglCreateImageKHR(egl_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, 0, img_attrs);
+//     assert(eglGetError() == EGL_SUCCESS);
+//   }
+// #else
   glBindTexture(GL_TEXTURE_2D, textures[0]);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -363,7 +364,7 @@ void CameraWidget::vipcConnected(VisionIpcClient *vipc_client) {
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RG8, stream_width/2, stream_height/2, 0, GL_RG, GL_UNSIGNED_BYTE, nullptr);
   assert(glGetError() == GL_NO_ERROR);
-#endif
+//#endif
 }
 
 void CameraWidget::vipcFrameReceived() {
@@ -416,12 +417,12 @@ void CameraWidget::vipcThread() {
     }
   }
 
-#ifdef QCOM2
-  for (auto &pair : egl_images) {
-    eglDestroyImageKHR(egl_display, pair.second);
-  }
-  egl_images.clear();
-#endif
+// #ifdef QCOM2
+//   for (auto &pair : egl_images) {
+//     eglDestroyImageKHR(egl_display, pair.second);
+//   }
+//   egl_images.clear();
+// #endif
 }
 
 void CameraWidget::clearFrames() {
