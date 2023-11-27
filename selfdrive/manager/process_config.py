@@ -84,7 +84,7 @@ procs = [
 
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
-  PythonProcess("webrtcd", "tools.webrtc.webrtcd", notcar),
+  PythonProcess("webrtcd", "system.webrtcwebrtcd", notcar),
   PythonProcess("webjoystick", "tools.bodyteleop.web", notcar),
 ]
 
