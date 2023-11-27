@@ -2,7 +2,7 @@ name: repo maintenance
 
 on:
   schedule:
-    - cron: "0 9 * * 1" # every Monday at 9am UTC (4am EST)
+    - cron: "0 12 * * 1" # every Monday at 12am UTC (4am PST)
   workflow_dispatch:
 
 jobs:
