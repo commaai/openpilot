@@ -6,13 +6,14 @@ import dataclasses
 import json
 import uuid
 import logging
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import aiortc
 from aiortc.mediastreams import VideoStreamTrack
 from aiohttp import web
 from bodyrtc import WebRTCAnswerBuilder
 from bodyrtc.info import parse_info_from_offer
+import capnp
 
 from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
 from openpilot.system.webrtc.device.audio import AudioInputStreamTrack, AudioOutputSpeaker
@@ -21,15 +22,45 @@ from cereal import messaging
 
 
 class CerealOutgoingMessageProxy:
-  def __init__(self, services: List[str]):
-    self.sm = messaging.SubMaster(services)
+  def __init__(self, sm: messaging.SubMaster):
+    self.sm = sm
     self.channels: List[aiortc.RTCDataChannel] = []
-    self.is_running = False
-    self.task = None
-    self.logger = logging.getLogger("webrtcd")
 
   def add_channel(self, channel: aiortc.RTCDataChannel):
     self.channels.append(channel)
+
+  def to_json(self, msg_content: Any):
+    if isinstance(msg_content, capnp._DynamicStructReader):
+      msg_dict = msg_content.to_dict()
+    elif isinstance(msg_content, capnp._DynamicListReader):
+      msg_dict = [self.to_json(msg) for msg in msg_content]
+    elif isinstance(msg_content, bytes):
+      msg_dict = msg_content.decode()
+    else:
+      msg_dict = msg_content
+
+    return msg_dict
+
+  def update(self):
+    # this is blocking in async context...
+    self.sm.update(0)
+    for service, updated in self.sm.updated.items():
+      if not updated:
+        continue
+      msg_dict = self.to_json(self.sm[service])
+      mono_time, valid = self.sm.logMonoTime[service], self.sm.valid[service]
+      outgoing_msg = {"type": service, "logMonoTime": mono_time, "valid": valid, "data": msg_dict}
+      encoded_msg = json.dumps(outgoing_msg).encode()
+      for channel in self.channels:
+        channel.send(encoded_msg)
+
+
+class CerealProxyRunner:
+  def __init__(self, proxy: CerealOutgoingMessageProxy):
+    self.proxy = proxy
+    self.is_running = False
+    self.task = None
+    self.logger = logging.getLogger("webrtcd")
 
   def start(self):
     assert self.task is None
@@ -44,16 +75,7 @@ class CerealOutgoingMessageProxy:
   async def run(self):
     while True:
       try:
-        # this is blocking in async context...
-        self.sm.update(0)
-        for service, updated in self.sm.updated.items():
-          if not updated:
-            continue
-          msg_dict, mono_time, valid = self.sm[service].to_dict(), self.sm.logMonoTime[service], self.sm.valid[service]
-          outgoing_msg = {"type": service, "logMonoTime": mono_time, "valid": valid, "data": msg_dict}
-          encoded_msg = json.dumps(outgoing_msg).encode()
-          for channel in self.channels:
-            channel.send(encoded_msg)
+        self.proxy.update()
       except Exception as ex:
         self.logger.error("Cereal outgoing proxy failure: %s", ex)
       await asyncio.sleep(0.01)
@@ -79,7 +101,10 @@ class StreamSession:
 
     self.stream = builder.stream()
     self.identifier = str(uuid.uuid4())
-    self.outgoing_bridge = CerealOutgoingMessageProxy(outgoing_services)
+
+    ougoing_proxy = CerealOutgoingMessageProxy(messaging.SubMaster(outgoing_services))
+    self.outgoing_bridge = CerealProxyRunner(ougoing_proxy)
+
     self.pub_master = messaging.PubMaster(incoming_services)
     self.audio_output: Optional[AudioOutputSpeaker] = None
     self.run_task: Optional[asyncio.Task] = None
@@ -116,7 +141,7 @@ class StreamSession:
       if self.stream.has_messaging_channel():
         self.stream.set_message_handler(self.message_handler)
         channel = self.stream.get_messaging_channel()
-        self.outgoing_bridge.add_channel(channel)
+        self.outgoing_bridge.proxy.add_channel(channel)
         self.outgoing_bridge.start()
       if self.stream.has_incoming_audio_track():
         track = self.stream.get_incoming_audio_track(False)
