@@ -48,7 +48,8 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.JEEP_CHEROKEE_MK5:
       ret.mass = 1747
       ret.wheelbase = 2.70
-      ret.steerRatio = 17  # TODO
+      ret.steerRatio = 17  # TODO: verify against params learner
+      ret.minSteerSpeed = 17.5  # TODO: conservative, need to test
 
     elif candidate in (CAR.JEEP_GRAND_CHEROKEE, CAR.JEEP_GRAND_CHEROKEE_2019):
       ret.mass = 1778
