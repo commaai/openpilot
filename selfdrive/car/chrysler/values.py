@@ -77,7 +77,7 @@ CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
   CAR.JEEP_GRAND_CHEROKEE_2019: ChryslerCarInfo("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4"),
   CAR.RAM_1500: ChryslerCarInfo("Ram 1500 2019-23", car_parts=CarParts.common([CarHarness.ram])),
   CAR.RAM_HD: [
-    ChryslerCarInfo("Ram 2500 2020-22", car_parts=CarParts.common([CarHarness.ram])),
+    ChryslerCarInfo("Ram 2500 2020-24", car_parts=CarParts.common([CarHarness.ram])),
     ChryslerCarInfo("Ram 3500 2019-22", car_parts=CarParts.common([CarHarness.ram])),
   ],
 }
@@ -331,6 +331,7 @@ FW_VERSIONS = {
       b'68525487AB',
       b'68525498AB',
       b'68528791AF',
+      b'68628474AB',
     ],
     (Ecu.srs, 0x744, None): [
       b'68399794AC',
@@ -347,6 +348,7 @@ FW_VERSIONS = {
       b'68530686AB',
       b'68530686AC',
       b'68544596AC',
+      b'68641704AA',
     ],
     (Ecu.fwdRadar, 0x753, None): [
       b'04672895AB',
@@ -356,6 +358,7 @@ FW_VERSIONS = {
       b'68462657AE',
       b'68484694AD',
       b'68484694AE',
+      b'68615489AB',
     ],
     (Ecu.eps, 0x761, None): [
       b'68421036AC',
@@ -366,6 +369,7 @@ FW_VERSIONS = {
       b'52370131AF',
       b'52370231AF',
       b'52370231AG',
+      b'52370491AA',
       b'52370931CT',
       b'52401032AE',
       b'52421132AF',
