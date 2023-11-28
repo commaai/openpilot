@@ -225,7 +225,7 @@ node {
         pcStage("PC tests") {
           // tests that our build system's dependencies are configured properly,
           // needs a machine with lots of cores
-          sh label: "test multi-threaded build", script: "scons --no-cache --random -j42"
+          sh label: "test multi-threaded build", script: "scons --no-cache --random -j$(nproc)"
         }
       },
       'car tests': {
