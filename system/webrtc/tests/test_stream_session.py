@@ -1,10 +1,4 @@
-# 1.a test if messages are proxied out (CerealOutgoingProxy)
-# 1.b test out-proxy message failures (...)
-# 2.a test if messages are proxied in (stream session message handle )
-# 2.b test in-proxy message failures (message format invalid, no type and data fields)
-# 3. test cleanup
-# 4. test video and audio device tracks
-
+#!/usr/bin/env python3
 import asyncio
 import unittest
 from unittest.mock import Mock, MagicMock, patch
