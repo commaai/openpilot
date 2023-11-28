@@ -55,6 +55,22 @@ class CerealOutgoingMessageProxy:
         channel.send(encoded_msg)
 
 
+class CerealIncomingMessageProxy:
+  def __init__(self, pm: messaging.PubMaster):
+    self.pm = pm
+
+  def send(self, message: bytes):
+    msg_json = json.loads(message)
+    msg_type, msg_data = msg_json["type"], msg_json["data"]
+    size = None
+    if not isinstance(msg_data, dict):
+      size = len(msg_data)
+
+    msg = messaging.new_message(msg_type, size=size)
+    setattr(msg, msg_type, msg_data)
+    self.pm.send(msg_type, msg)
+
+
 class CerealProxyRunner:
   def __init__(self, proxy: CerealOutgoingMessageProxy):
     self.proxy = proxy
@@ -102,10 +118,10 @@ class StreamSession:
     self.stream = builder.stream()
     self.identifier = str(uuid.uuid4())
 
-    ougoing_proxy = CerealOutgoingMessageProxy(messaging.SubMaster(outgoing_services))
-    self.outgoing_bridge = CerealProxyRunner(ougoing_proxy)
+    self.outgoing_bridge = CerealOutgoingMessageProxy(messaging.SubMaster(outgoing_services))
+    self.incoming_bridge = CerealIncomingMessageProxy(messaging.PubMaster(incoming_services))
+    self.outgoing_bridge_runner = CerealProxyRunner(self.outgoing_bridge)
 
-    self.pub_master = messaging.PubMaster(incoming_services)
     self.audio_output: Optional[AudioOutputSpeaker] = None
     self.run_task: Optional[asyncio.Task] = None
     self.logger = logging.getLogger("webrtcd")
@@ -126,12 +142,8 @@ class StreamSession:
     return await self.stream.start()
 
   async def message_handler(self, message: bytes):
-    msg_json = json.loads(message)
     try:
-      msg_type, msg_data = msg_json["type"], msg_json["data"]
-      msg = messaging.new_message(msg_type)
-      setattr(msg, msg_type, msg_data)
-      self.pub_master.send(msg_type, msg)
+      self.incoming_bridge.send(message)
     except Exception as ex:
       self.logger.error("Cereal incoming proxy failure: %s", ex)
 
@@ -141,8 +153,8 @@ class StreamSession:
       if self.stream.has_messaging_channel():
         self.stream.set_message_handler(self.message_handler)
         channel = self.stream.get_messaging_channel()
-        self.outgoing_bridge.proxy.add_channel(channel)
-        self.outgoing_bridge.start()
+        self.outgoing_bridge_runner.proxy.add_channel(channel)
+        self.outgoing_bridge_runner.start()
       if self.stream.has_incoming_audio_track():
         track = self.stream.get_incoming_audio_track(False)
         self.audio_output = AudioOutputSpeaker()
@@ -159,7 +171,7 @@ class StreamSession:
 
   async def post_run_cleanup(self):
     await self.stream.stop()
-    self.outgoing_bridge.stop()
+    self.outgoing_bridge_runner.stop()
     if self.audio_output:
       self.audio_output.stop()
 
