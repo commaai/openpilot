@@ -31,8 +31,8 @@ const char frame_vertex_shader[] =
   "  vTexCoord = aTexCoord;\n"
   "}\n";
 
-#ifdef QCOM2
 const char frame_fragment_shader[] =
+#ifdef QCOM2
   "#version 300 es\n"
   "#extension GL_OES_EGL_image_external_essl3 : enable\n"
   "precision mediump float;\n"
@@ -43,7 +43,6 @@ const char frame_fragment_shader[] =
   "  colorOut = texture(uTexture, vTexCoord);\n"
   "}\n";
 #else
-const char frame_fragment_shader[] =
 #ifdef __APPLE__
   "#version 330 core\n"
 #else
