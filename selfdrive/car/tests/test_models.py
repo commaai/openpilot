@@ -11,7 +11,6 @@ from typing import List, Optional, Tuple
 from parameterized import parameterized_class
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, Phase, assume, given, settings, seed
-from pympler.tracker import SummaryTracker
 import gc
 
 from cereal import messaging, log, car
@@ -168,7 +167,6 @@ class TestCarModelBase(unittest.TestCase):
     gc.collect()
 
   def setUp(self):
-    # print('SETUP HEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHEREHERE')
     self.CI = self.CarInterface(self.CP.copy(), self.CarController, self.CarState)
     assert self.CI
 
@@ -182,33 +180,12 @@ class TestCarModelBase(unittest.TestCase):
     self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")
     self.safety.init_tests()
 
-    # self.tracker = SummaryTracker()
-    # for _ in range(5):
-    #   self.tracker.print_diff()
-
-  # def tearDown(self):
-  #   self.tracker.print_diff()
-  #   # for _type, num_objects, total_size in self.tracker.diff():
-  #   #   print(_type, num_objects, total_size)
-  #   #   # with self.subTest(_type=_type):
-  #   #   #   self.assertLess(total_size / 1024, 10, f'Object {_type} ({num_objects=}) grew larger than 10 kB while uploading file')
-
-  # def test_honda_buttons(self):
-  #   if self.CP.carFingerprint in HONDA_BOSCH:
-  #     return
-  #
-  #   # self.assertTrue(0x17C in self.fingerprint[1])
-  #   self.assertTrue(0x1BE in self.fingerprint[0])
-  #   # for msg in self.can_msgs:
-  #   #   for can in msg.can:
-  #   #     self.assertTrue(can.address != 0x1a6)
-
   @settings(max_examples=100, deadline=None,
             phases=(Phase.reuse, Phase.generate, ),
             suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow, HealthCheck.large_base_example],
             )
   @given(data=st.data())
-  # @seed(1)  # for reproduction
+  @seed(1)  # for reproduction
   def test_panda_safety_carstate_fuzzy(self, data):
     """
       For each example, pick a random CAN message on the bus and fuzz its data,
