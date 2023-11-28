@@ -38,10 +38,10 @@ repos:
         entry: mypy
         language: system
         types: [python]
-        args: ['--explicit-package-bases']
+        args: ['--explicit-package-bases', '--local-partial-types']
         exclude: '^(third_party/)|(cereal/)|(opendbc/)|(panda/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(xx/)'
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.5
+    rev: v0.1.6
     hooks:
     -   id: ruff
         exclude: '^(third_party/)|(cereal/)|(panda/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)'
@@ -86,6 +86,6 @@ repos:
         args:
         - --lock
 -   repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.27.1
+    rev: 0.27.2
     hooks:
     -   id: check-github-workflows

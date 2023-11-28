@@ -456,11 +456,6 @@ def cancelUpload(upload_id: Union[str, List[str]]) -> Dict[str, Union[int, str]]
 
 
 @dispatcher.add_method
-def primeActivated(activated: bool) -> Dict[str, int]:
-  return {"success": 1}
-
-
-@dispatcher.add_method
 def setBandwithLimit(upload_speed_kbps: int, download_speed_kbps: int) -> Dict[str, Union[int, str]]:
   if not AGNOS:
     return {"success": 0, "error": "only supported on AGNOS"}
