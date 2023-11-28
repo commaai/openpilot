@@ -2067,11 +2067,21 @@ FW_VERSIONS = {
       b'\xf1\x00KA4 MFC  AT USA LHD 1.00 1.06 99210-R0000 220221',
       b'\xf1\x00KA4CMFC  AT CHN LHD 1.00 1.01 99211-I4000 210525',
       b'\xf1\x00KA4 MFC  AT USA LHD 1.00 1.00 99210-R0100 230105',
+      b'\xf1\x00KA4 MFC  AT KOR LHD 1.00 1.06 99210-R0000 220221',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00KA4_ SCC FHCUP      1.00 1.03 99110-R0000         ',
       b'\xf1\x00KA4c SCC FHCUP      1.00 1.01 99110-I4000         ',
-      b'\xf1\x00KA4_ SCC FHCUP      1.00 1.00 99110-R0100         ',
+      b'\xf1\x00KA4_ SCC FHCUP      1.00 1.00 99110-R0100         ', 
+    ],
+    (Ecu.cornerRadar, 0x7b7, None): [ 
+      b'\xf1\x00KA4 BCW RR 1.01 , 1.03 (w\x04\x98"\x00G\x053',
+    ],
+    (Ecu.hvac, 0x7b3, None): [ 
+      b'\xf1\x00KA4   97255-R0510UNIT-HEATER CONTROL 1.05 KA4 ATC 1.0 1.00    ',
+    ],
+    (Ecu.parkingAdas, 0x7b1, None): [ 
+      b'\xf1\x10KA4  ADAS_PRK ADL 1.00 1.00 99910-R0AA0',
     ],
   },
   CAR.KIA_SORENTO_HEV_4TH_GEN: {
