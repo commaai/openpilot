@@ -45,6 +45,11 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00006
 
     # Jeep
+    elif candidate == CAR.JEEP_CHEROKEE_MK5:
+      ret.mass = 1747
+      ret.wheelbase = 2.70
+      ret.steerRatio = 17  # TODO
+
     elif candidate in (CAR.JEEP_GRAND_CHEROKEE, CAR.JEEP_GRAND_CHEROKEE_2019):
       ret.mass = 1778
       ret.wheelbase = 2.71

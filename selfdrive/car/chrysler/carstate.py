@@ -3,7 +3,7 @@ from openpilot.common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from openpilot.selfdrive.car.interfaces import CarStateBase
-from openpilot.selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD, RAM_CARS
+from openpilot.selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD, RAM_CARS, CUSW_CARS
 
 
 class CarState(CarStateBase):
@@ -22,6 +22,8 @@ class CarState(CarStateBase):
       self.shifter_values = can_define.dv["GEAR"]["PRNDL"]
 
   def update(self, cp, cp_cam):
+    if self.CP.carFingerprint in CUSW_CARS:
+      return self.update_cusw(cp, cp_cam)
 
     ret = car.CarState.new_message()
 
@@ -97,6 +99,60 @@ class CarState(CarStateBase):
 
     return ret
 
+  def update_cusw(self, cp, cp_cam):
+    ret = car.CarState.new_message()
+
+    ret.doorOpen = any([cp.vl["DOORS"]['DOOR_OPEN_FL'],
+                        cp.vl["DOORS"]['DOOR_OPEN_FR'],
+                        cp.vl["DOORS"]['DOOR_OPEN_RL'],
+                        cp.vl["DOORS"]['DOOR_OPEN_RR']])
+    ret.seatbeltUnlatched = cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_UNLATCHED'] == 1
+
+    ret.brakePressed = cp.vl["BRAKE_2"]['BRAKE_HUMAN'] == 1  # human-only
+    ret.brake = 0
+    ret.gas = cp.vl["ACCEL_GAS"]['GAS_HUMAN']
+    ret.gasPressed = ret.gas > 1e-5
+
+    ret.espDisabled = (cp.vl["TRACTION_BUTTON"]['TRACTION_OFF'] == 1)
+
+    ret.vEgoRaw = cp.vl["BRAKE_1"]['VEHICLE_SPEED']  # math sucks
+    ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
+    ret.standstill = not ret.vEgoRaw > 0.001
+    ret.wheelSpeeds = self.get_wheel_speeds(
+      cp.vl['WHEEL_SPEEDS_FRONT']['WHEEL_SPEED_FL'],
+      cp.vl['WHEEL_SPEEDS_REAR']['WHEEL_SPEED_RR'],
+      cp.vl['WHEEL_SPEEDS_REAR']['WHEEL_SPEED_RL'],
+      cp.vl['WHEEL_SPEEDS_FRONT']['WHEEL_SPEED_FR'],
+      unit=1,
+    )
+
+    ret.leftBlinker = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
+    ret.rightBlinker = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
+    ret.steeringAngleDeg = cp.vl["STEERING"]['STEER_ANGLE']
+    ret.steeringRateDeg = cp.vl["STEERING"]['STEERING_RATE']
+    #ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl['GEAR']['PRNDL'], None))
+    ret.gearShifter = car.CarState.GearShifter.drive  # FIXME
+
+    ret.cruiseState.speed = cp.vl["ACC_1"]['ACC_SET_SPEED_KMH'] * CV.KPH_TO_MS
+    acc_status = cp.vl["ACC_1"]['ACC_STATE']
+    if acc_status == 3:
+      ret.cruiseState.available = True
+      ret.cruiseState.enabled = False
+    elif acc_status == 4:
+      ret.cruiseState.available = True
+      ret.cruiseState.enabled = True
+    else:
+      ret.cruiseState.available = False
+      ret.cruiseState.enabled = False
+
+    ret.steeringTorque = cp.vl["EPS_STATUS"]["TORQUE_DRIVER"]
+    ret.steeringTorqueEps = cp.vl["EPS_STATUS"]["TORQUE_MOTOR"]
+    ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
+    ret.steerFaultTemporary = bool(cp.vl["EPS_STATUS"]["LKAS_FAULT"])  # TODO: is this temporary or permanent?
+    ret.genericToggle = bool(cp.vl["STEERING_LEVERS"]['HIGH_BEAM_FLASH'])
+
+    return ret
+
   @staticmethod
   def get_cruise_messages():
     messages = [
@@ -107,6 +163,9 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parser(CP):
+    if CP.carFingerprint in CUSW_CARS:
+      return CarState.get_can_parser_cusw(CP)
+
     messages = [
       # sig_address, frequency
       ("ESP_1", 50),
@@ -139,12 +198,41 @@ class CarState(CarStateBase):
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
 
   @staticmethod
+  def get_can_parser_cusw(CP):
+    messages = [
+      # sig_address, frequency
+      ("ACCEL_GAS", 50),
+      ("TRACTION_BUTTON", 50),
+      ("BRAKE_2", 50),
+      ("EPS_STATUS", 100),
+      ("BRAKE_1", 50),
+      ("WHEEL_SPEEDS_FRONT", 50),
+      ("WHEEL_SPEEDS_REAR", 50),
+      ("STEERING", 100),
+      ("ACC_1", 50),
+      ("DOORS", 10),
+      ("SEATBELT_STATUS", 10),
+      ("STEERING_LEVERS", 10),
+    ]
+
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
+
+  @staticmethod
   def get_cam_can_parser(CP):
+    if CP.carFingerprint in CUSW_CARS:
+      return CarState.get_cam_can_parser_cusw(CP)
+
     messages = [
       ("DAS_6", 4),
     ]
 
     if CP.carFingerprint in RAM_CARS:
       messages += CarState.get_cruise_messages()
+
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)
+
+  @staticmethod
+  def get_cam_can_parser_cusw(CP):
+    messages = []
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)
