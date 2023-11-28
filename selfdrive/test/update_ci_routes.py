@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-import bz2
 import os
 import re
+import subprocess
 import sys
 from functools import lru_cache
 from typing import Iterable, Optional
@@ -9,13 +9,11 @@ from typing import Iterable, Optional
 from azure.storage.blob import ContainerClient
 from tqdm import tqdm
 
-from openpilot.tools.lib.logreader import LogReader
 from openpilot.selfdrive.car.tests.routes import routes as test_car_models_routes
 from openpilot.selfdrive.test.process_replay.test_processes import source_segments as replay_segments
 from openpilot.selfdrive.test.openpilotci import (DATA_CI_ACCOUNT, DATA_CI_ACCOUNT_URL, OPENPILOT_CI_CONTAINER,
                                                   DATA_CI_CONTAINER, get_azure_credential, get_container_sas, upload_file)
 
-PRESERVE_SERVICES = ["can", "carParams", "pandaStates", "pandaStateDEPRECATED"]
 DATA_PROD_ACCOUNT = "commadata2"
 DATA_PROD_CONTAINER = "commadata2"
 
@@ -25,23 +23,12 @@ SOURCES = [
 ]
 
 
-def strip_log_data(data: bytes) -> bytes:
-  lr = LogReader.from_bytes(data)
-  new_bytes = b""
-  for msg in lr:
-    if msg.which() in PRESERVE_SERVICES:
-      new_bytes += msg.as_builder().to_bytes()
-  return bz2.compress(new_bytes)
-
-
 @lru_cache
-def get_azure_containers():
-  source_containers = []
-  for source_account, source_bucket in SOURCES:
-    source_containers.append(ContainerClient(f"https://{source_account}.blob.core.windows.net", source_bucket, credential=get_azure_credential()))
+def get_azure_keys():
   dest_container = ContainerClient(DATA_CI_ACCOUNT_URL, OPENPILOT_CI_CONTAINER, credential=get_azure_credential())
+  dest_key = get_container_sas(DATA_CI_ACCOUNT, OPENPILOT_CI_CONTAINER)
   source_keys = [get_container_sas(*s) for s in SOURCES]
-  return source_containers, dest_container, source_keys
+  return dest_container, dest_key, source_keys
 
 
 def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) -> None:
@@ -57,45 +44,37 @@ def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) ->
     upload_file(os.path.join(path, file), f"{destpath}/{file}")
 
 
-def sync_to_ci_public(route: str, strip_data: bool = True) -> bool:
-  source_containers, dest_container, source_keys = get_azure_containers()
+def sync_to_ci_public(route: str) -> bool:
+  dest_container, dest_key, source_keys = get_azure_keys()
   key_prefix = route.replace('|', '/')
+  dongle_id = key_prefix.split('/')[0]
 
   if next(dest_container.list_blob_names(name_starts_with=key_prefix), None) is not None:
-    print("Already exists in dest container:", route)
     return True
 
-  # Get all blobs (rlogs) for this route, strip personally identifiable data, and upload to CI
-  print(f"Downloading {route}")
-  source_key = None
-  for source_container, source_key in zip(source_containers, source_keys, strict=True):
-    print(f"Trying {source_container.url}")
-    blobs = list(source_container.list_blob_names(name_starts_with=key_prefix))
-    blobs = [b for b in blobs if not re.match(r".*/dcamera.hevc", b)]
-    print(f"Found {len(blobs)} segments")
-    if len(blobs):
-      break
-  else:
-    print("No segments found in source containers")
-    print("Failed")
-    return False
+  print(f"Uploading {route}")
+  for (source_account, source_bucket), source_key in zip(SOURCES, source_keys, strict=True):
+    # assumes az login has been run
+    print(f"Trying {source_account}/{source_bucket}")
+    cmd = [
+      "azcopy",
+      "copy",
+      f"https://{source_account}.blob.core.windows.net/{source_bucket}/{key_prefix}?{source_key}",
+      f"https://{DATA_CI_ACCOUNT}.blob.core.windows.net/{OPENPILOT_CI_CONTAINER}/{dongle_id}?{dest_key}",
+      "--recursive=true",
+      "--overwrite=false",
+      "--exclude-pattern=*/dcamera.hevc",
+    ]
 
-  for blob_name in blobs:
-    if strip_data and re.search(r"rlog|qlog", blob_name):
-      print('downloading', blob_name)
-      data = source_container.download_blob(blob_name).readall()
-      data = strip_log_data(data)
+    try:
+      result = subprocess.call(cmd, stdout=subprocess.DEVNULL)
+      if result == 0:
+        print("Success")
+        return True
+    except subprocess.CalledProcessError:
+      print("Failed")
 
-      print(f"Uploading {blob_name} to {dest_container.url}")
-      dest_container.upload_blob(blob_name, data)
-    else:
-      print('copying', blob_name)
-      dest_blob_client = dest_container.get_blob_client(blob_name)
-      print(source_container.get_blob_client(blob_name).url)
-      dest_blob_client.start_copy_from_url(f"{source_container.get_blob_client(blob_name).url}?{source_key}")
-
-  print("Success")
-  return True
+  return False
 
 
 if __name__ == "__main__":
