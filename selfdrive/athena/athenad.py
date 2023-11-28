@@ -74,7 +74,6 @@ class UploadFile:
   headers: Dict[str, str]
   allow_cellular: bool
 
-
   def upload_on_cellular_allowed_by_params(self) -> bool:
     # low_upload     is upload_policy=0
     # default_upload is upload_policy=1
@@ -88,11 +87,15 @@ class UploadFile:
       upload_policy = 1
 
     # TODO(from yuzisee): does athenad know whether we are using a Comma SIM (i.e. whether the user is subscribed to full prime?)
+    # e.g.
+    # ```
     #   if using_comma_sim_so_prevent_full_upload:
     #     upload_policy = min(1, upload_policy)
+    # ```
     #
-    # Instead, for now…
-    #  we do limit the selection itself (see meteredSetting in selfdrive/ui/qt/network/networking.cc#AdvancedNetworking::AdvancedNetworking) which is maybe enough
+    # Instead, for now we do limit the selection itself…
+    #  (see meteredSetting in selfdrive/ui/qt/network/networking.cc#AdvancedNetworking::AdvancedNetworking)
+    #  …which is maybe enough
 
     if upload_policy == 0:
       # 'low upload' policy is to upload nothing until we're connected to a full connection (e.g. home Wi-Fi)
@@ -108,12 +111,7 @@ class UploadFile:
       # At the moment this means we fall back to the UploadFile's initial `allow_cellular` value which
       #  * will upload the qlogs & qcameras while the connection is metered
       #  * will upload everything if the connection is not metered
-      if isinstance(self.allow_cellular, bool):
-        return self.allow_cellular
-      else:
-        # The "default" value of `self.allow_cellular` appears to be False, see from_dict(…) below
-        return False
-
+      return self.allow_cellular
 
   @classmethod
   def from_dict(cls, d: dict) -> UploadFile:
@@ -253,7 +251,7 @@ def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = Tr
         break
 
 
-def should_allow_upload_immediately(sm, item, network_metered: bool, network_type: int) -> bool:
+def should_allow_upload_immediately(sm, item: UploadItem, network_metered: bool, network_type: int) -> bool:
   is_cellular = network_type not in [NetworkType.wifi, NetworkType.ethernet]
   if is_cellular:
     return item.allow_cellular
