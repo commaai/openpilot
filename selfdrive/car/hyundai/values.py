@@ -571,7 +571,6 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x006T7N0_C2\x00\x006T7VA051\x00\x00TIGSH24KA1\xc7\x85\xe2`',
       b'\xf1\x006T7N0_C2\x00\x006T7Q2051\x00\x00TIG2H24KA2\x12@\x11\xb7',
-      b'\xf1\x816T7Q2051\x00\x00\xf1\x006T7N0_C2\x00\x006T7Q2051\x00\x00TIG2H24KA2\x12@\x11\xb7',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x816H590051\x00\x00\x00\x00\x00\x00\x00\x00',
