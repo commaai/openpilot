@@ -1,6 +1,7 @@
 #include "tools/replay/logreader.h"
 
 #include <algorithm>
+#include "tools/replay/filereader.h"
 #include "tools/replay/util.h"
 
 Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(amsg), frame(frame) {
@@ -40,9 +41,7 @@ LogReader::~LogReader() {
   }
 }
 
-bool LogReader::load(const std::string &url, std::atomic<bool> *abort,
-                     const std::set<cereal::Event::Which> &allow,
-                     bool local_cache, int chunk_size, int retries) {
+bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
   raw_ = FileReader(local_cache, chunk_size, retries).read(url, abort);
   if (raw_.empty()) return false;
 
@@ -50,15 +49,15 @@ bool LogReader::load(const std::string &url, std::atomic<bool> *abort,
     raw_ = decompressBZ2(raw_, abort);
     if (raw_.empty()) return false;
   }
-  return parse(allow, abort);
+  return parse(abort);
 }
 
 bool LogReader::load(const std::byte *data, size_t size, std::atomic<bool> *abort) {
   raw_.assign((const char *)data, size);
-  return parse({}, abort);
+  return parse(abort);
 }
 
-bool LogReader::parse(const std::set<cereal::Event::Which> &allow, std::atomic<bool> *abort) {
+bool LogReader::parse(std::atomic<bool> *abort) {
   try {
     kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
     while (words.size() > 0 && !(abort && *abort)) {
@@ -67,12 +66,6 @@ bool LogReader::parse(const std::set<cereal::Event::Which> &allow, std::atomic<b
 #else
       Event *evt = new Event(words);
 #endif
-      if (!allow.empty() && allow.find(evt->which) == allow.end()) {
-        words = kj::arrayPtr(evt->reader.getEnd(), words.end());
-        delete evt;
-        continue;
-      }
-
       // Add encodeIdx packet again as a frame packet for the video stream
       if (evt->which == cereal::Event::ROAD_ENCODE_IDX ||
           evt->which == cereal::Event::DRIVER_ENCODE_IDX ||

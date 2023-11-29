@@ -20,7 +20,7 @@ from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial
 from queue import Queue
-from typing import BinaryIO, Callable, Dict, List, Optional, Set, Union, cast
+from typing import Callable, Dict, List, Optional, Set, Union, cast
 
 import requests
 from jsonrpc import JSONRPCResponseManager, dispatcher
@@ -290,19 +290,15 @@ def _do_upload(upload_item: UploadItem, callback: Optional[Callable] = None) -> 
     compress = True
 
   with open(path, "rb") as f:
-    data: BinaryIO
+    content = f.read()
     if compress:
       cloudlog.event("athena.upload_handler.compress", fn=path, fn_orig=upload_item.path)
-      compressed = bz2.compress(f.read())
-      size = len(compressed)
-      data = io.BytesIO(compressed)
-    else:
-      size = os.fstat(f.fileno()).st_size
-      data = f
+      content = bz2.compress(content)
 
+  with io.BytesIO(content) as data:
     return requests.put(upload_item.url,
-                        data=CallbackReader(data, callback, size) if callback else data,
-                        headers={**upload_item.headers, 'Content-Length': str(size)},
+                        data=CallbackReader(data, callback, len(content)) if callback else data,
+                        headers={**upload_item.headers, 'Content-Length': str(len(content))},
                         timeout=30)
 
 
@@ -456,11 +452,6 @@ def cancelUpload(upload_id: Union[str, List[str]]) -> Dict[str, Union[int, str]]
     return {"success": 0, "error": "not found"}
 
   cancelled_uploads.update(cancelled_ids)
-  return {"success": 1}
-
-
-@dispatcher.add_method
-def primeActivated(activated: bool) -> Dict[str, int]:
   return {"success": 1}
 
 

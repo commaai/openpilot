@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 #include <QColor>
-#include <QDebug>
+#include <QDateTime>
 #include <QFontDatabase>
 #include <QLocale>
 #include <QPainter>
@@ -19,7 +19,7 @@
 
 // SegmentTree
 
-void SegmentTree::build(const QVector<QPointF> &arr) {
+void SegmentTree::build(const std::vector<QPointF> &arr) {
   size = arr.size();
   tree.resize(4 * size);  // size of the tree is 4 times the size of the array
   if (size > 0) {
@@ -27,7 +27,7 @@ void SegmentTree::build(const QVector<QPointF> &arr) {
   }
 }
 
-void SegmentTree::build_tree(const QVector<QPointF> &arr, int n, int left, int right) {
+void SegmentTree::build_tree(const std::vector<QPointF> &arr, int n, int left, int right) {
   if (left == right) {
     const double y = arr[left].y();
     tree[n] = {y, y};
@@ -59,23 +59,18 @@ MessageBytesDelegate::MessageBytesDelegate(QObject *parent, bool multiple_lines)
     hex_text_table[i].setText(QStringLiteral("%1").arg(i, 2, 16, QLatin1Char('0')).toUpper());
     hex_text_table[i].prepare({}, fixed_font);
   }
+  h_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
+  v_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameVMargin) + 1;
 }
 
-int MessageBytesDelegate::widthForBytes(int n) const {
-  int h_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
-  return n * byte_size.width() + h_margin * 2;
+QSize MessageBytesDelegate::sizeForBytes(int n) const {
+  int rows = multiple_lines ? std::max(1, n / 8) : 1;
+  return {(n / rows) * byte_size.width() + h_margin * 2, rows * byte_size.height() + v_margin * 2};
 }
 
 QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
-  int v_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameVMargin) + 1;
   auto data = index.data(BytesRole);
-  if (!data.isValid()) {
-    return {1, byte_size.height() + 2 * v_margin};
-  }
-  int n = data.toByteArray().size();
-  assert(n >= 0 && n <= 64);
-  return !multiple_lines ? QSize{widthForBytes(n), byte_size.height() + 2 * v_margin}
-                         : QSize{widthForBytes(8), byte_size.height() * std::max(1, n / 8) + 2 * v_margin};
+  return sizeForBytes(data.isValid() ? static_cast<std::vector<uint8_t> *>(data.value<void *>())->size() : 0);
 }
 
 void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
@@ -84,20 +79,17 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
     return QStyledItemDelegate::paint(painter, option, index);
   }
 
-  auto byte_list = data.toByteArray();
-  auto colors = index.data(ColorsRole).value<QVector<QColor>>();
-
-  int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
-  int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
+  QFont old_font = painter->font();
+  QPen old_pen = painter->pen();
   if (option.state & QStyle::State_Selected) {
     painter->fillRect(option.rect, option.palette.brush(QPalette::Normal, QPalette::Highlight));
   }
-
   const QPoint pt{option.rect.left() + h_margin, option.rect.top() + v_margin};
-  QFont old_font = painter->font();
-  QPen old_pen = painter->pen();
   painter->setFont(fixed_font);
-  for (int i = 0; i < byte_list.size(); ++i) {
+
+  const auto &bytes = *static_cast<std::vector<uint8_t>*>(data.value<void*>());
+  const auto &colors = *static_cast<std::vector<QColor>*>(index.data(ColorsRole).value<void*>());
+  for (int i = 0; i < bytes.size(); ++i) {
     int row = !multiple_lines ? 0 : i / 8;
     int column = !multiple_lines ? i : i % 8;
     QRect r = QRect({pt.x() + column * byte_size.width(), pt.y() + row * byte_size.height()}, byte_size);
@@ -110,7 +102,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
     } else if (option.state & QStyle::State_Selected) {
       painter->setPen(option.palette.color(QPalette::HighlightedText));
     }
-    utils::drawStaticText(painter, r, hex_text_table[(uint8_t)(byte_list[i])]);
+    utils::drawStaticText(painter, r, hex_text_table[bytes[i]]);
   }
   painter->setFont(old_font);
   painter->setPen(old_pen);
@@ -242,16 +234,14 @@ void setTheme(int theme) {
   }
 }
 
-}  // namespace utils
-
-QString toHex(uint8_t byte) {
-  static std::array<QString, 256> hex = []() {
-    std::array<QString, 256> ret;
-    for (int i = 0; i < 256; ++i) ret[i] = QStringLiteral("%1").arg(i, 2, 16, QLatin1Char('0')).toUpper();
-    return ret;
-  }();
-  return hex[byte];
+QString formatSeconds(double sec, bool include_milliseconds, bool absolute_time) {
+  QString format = absolute_time ? "yyyy-MM-dd hh:mm:ss"
+                                 : (sec > 60 * 60 ? "hh:mm:ss" : "mm:ss");
+  if (include_milliseconds) format += ".zzz";
+  return QDateTime::fromMSecsSinceEpoch(sec * 1000).toString(format);
 }
+
+}  // namespace utils
 
 int num_decimals(double num) {
   const QString string = QString::number(num);

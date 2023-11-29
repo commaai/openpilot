@@ -8,7 +8,8 @@ from tqdm import tqdm
 
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.test.process_replay.regen import regen_and_save
-from openpilot.selfdrive.test.process_replay.test_processes import FAKEDATA, source_segments as segments
+from openpilot.selfdrive.test.process_replay.process_replay import FAKEDATA
+from openpilot.selfdrive.test.process_replay.test_processes import source_segments as segments
 from openpilot.tools.lib.route import SegmentName
 
 
@@ -18,7 +19,7 @@ def regen_job(segment, upload, disable_tqdm):
     fake_dongle_id = 'regen' + ''.join(random.choice('0123456789ABCDEF') for _ in range(11))
     try:
       relr = regen_and_save(sn.route_name.canonical_name, sn.segment_num, upload=upload, use_route_meta=False,
-                            outdir=os.path.join(FAKEDATA, fake_dongle_id), disable_tqdm=disable_tqdm)
+                            outdir=os.path.join(FAKEDATA, fake_dongle_id), disable_tqdm=disable_tqdm, dummy_driver_cam=True)
       relr = '|'.join(relr.split('/')[-2:])
       return f'  ("{segment[0]}", "{relr}"), '
     except Exception as e:
