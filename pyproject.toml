@@ -30,7 +30,7 @@ testpaths = [
 ]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 plugins = [
   "numpy.typing.mypy_plugin",
 ]
@@ -70,7 +70,7 @@ documentation = "https://docs.comma.ai"
 
 
 [tool.poetry.dependencies]
-python = "~3.11"
+python = "~3.12"
 atomicwrites = "*"
 aiohttp = "*"
 aiortc = "*"
