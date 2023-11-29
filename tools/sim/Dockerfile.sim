@@ -22,6 +22,7 @@ COPY ./body ${OPENPILOT_PATH}/body
 COPY ./third_party ${OPENPILOT_PATH}/third_party
 COPY ./site_scons ${OPENPILOT_PATH}/site_scons
 COPY ./rednose ${OPENPILOT_PATH}/rednose
+COPY ./rednose_repo/site_scons ${OPENPILOT_PATH}/rednose_repo/site_scons
 COPY ./common ${OPENPILOT_PATH}/common
 COPY ./opendbc ${OPENPILOT_PATH}/opendbc
 COPY ./cereal ${OPENPILOT_PATH}/cereal
