@@ -1912,7 +1912,8 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00MQ4HMFC  AT USA LHD 1.00 1.11 99210-P2000 211217',
-    ]
+      b'\xf1\x00MQ4HMFC  AT USA LHD 1.00 1.10 99210-P2000 210406',
+    ],
   },
   CAR.KIA_EV6: {
     (Ecu.fwdRadar, 0x7d0, None): [
