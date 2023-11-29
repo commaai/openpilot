@@ -160,7 +160,7 @@ class HyundaiCarInfo(CarInfo):
 
 CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.AZERA_6TH_GEN: HyundaiCarInfo("Hyundai Azera 2022", "All", car_parts=CarParts.common([CarHarness.hyundai_k])),
-  CAR.AZERA_HEV_5TH_GEN: HyundaiCarInfo("Hyundai Azera Hybrid 2019", "All", car_parts=CarParts.common([CarHarness.hyundai_k])),
+  CAR.AZERA_HEV_5TH_GEN: HyundaiCarInfo("Hyundai Azera Hybrid 2019", "All", car_parts=CarParts.common([CarHarness.hyundai_c])),
   CAR.AZERA_HEV_6TH_GEN: HyundaiCarInfo("Hyundai Azera Hybrid 2020", "All", car_parts=CarParts.common([CarHarness.hyundai_k])),
   CAR.ELANTRA: [
     # TODO: 2017-18 could be Hyundai G
