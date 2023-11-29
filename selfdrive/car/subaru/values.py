@@ -148,6 +148,21 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [SUBARU_VERSION_REQUEST],
       [SUBARU_VERSION_RESPONSE],
     ),
+
+    # Non-OBD requests
+    Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
+      [StdQueries.TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
+      bus=0,
+      logging=True
+    ),
+    Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
+      [StdQueries.TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
+      bus=1,
+      logging=True,
+      obd_multiplexing=False
+    ),
   ],
 )
 
