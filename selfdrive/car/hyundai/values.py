@@ -555,7 +555,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.AZERA_HEV_5TH_GEN: {
-    (Ecu.fwdCamera, 0x7BC, None): [
+    (Ecu.fwdCamera, 0x7C4, None): [
       b'\xf1\x00IGH MFC  AT KOR LHD 1.00 1.00 99211-G8000 180903',
     ],
     (Ecu.eps, 0x7d4, None): [
