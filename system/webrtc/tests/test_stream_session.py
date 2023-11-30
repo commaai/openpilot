@@ -7,15 +7,17 @@ import json
 from aiortc import RTCDataChannel
 from aiortc.mediastreams import VIDEO_CLOCK_RATE, VIDEO_TIME_BASE
 import capnp
+import pyaudio
 
 from cereal import messaging, log
 
 from openpilot.system.webrtc.webrtcd import CerealOutgoingMessageProxy, CerealIncomingMessageProxy
 from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
+from openpilot.system.webrtc.device.audio import AudioInputStreamTrack
 from openpilot.common.realtime import DT_DMON
 
 
-class TestCerealProxy(unittest.TestCase):
+class TestStreamSession(unittest.TestCase):
   def test_outgoing_proxy(self):
     test_msg = log.Event.new_message()
     test_msg.logMonoTime = 123
@@ -74,6 +76,22 @@ class TestCerealProxy(unittest.TestCase):
         self.assertEqual(packet.time_base, VIDEO_TIME_BASE)
         self.assertEqual(packet.pts, int(i * DT_DMON * VIDEO_CLOCK_RATE))
         self.assertEqual(packet.size, 0)
+
+  def test_input_audio_track(self):
+    packet_time, rate = 0.02, 16000
+    sample_count = int(packet_time * rate)
+    mocked_stream = MagicMock(spec=pyaudio.Stream)
+    mocked_stream.read.return_value = b"\x00" * 2 * sample_count
+
+    config = {"open.side_effect": lambda *args, **kwargs: mocked_stream}
+    with patch("pyaudio.PyAudio", spec=True, **config):
+      track = AudioInputStreamTrack(audio_format=pyaudio.paInt16, packet_time=packet_time, rate=rate)
+
+      for i in range(5):
+        frame = asyncio.get_event_loop().run_until_complete(track.recv())
+        self.assertEqual(frame.rate, rate)
+        self.assertEqual(frame.samples, sample_count)
+        self.assertEqual(frame.pts, i * sample_count)
 
 
 if __name__ == "__main__":

@@ -24,6 +24,7 @@ testpaths = [
   "system/proclogd",
   "system/tests",
   "system/ubloxd",
+  "system/webrtc",
   "tools/lib/tests",
   "tools/replay",
   "tools/cabana"
@@ -113,7 +114,7 @@ tqdm = "*"
 websocket_client = "*"
 polyline = "*"
 sconscontrib = {git = "https://github.com/SCons/scons-contrib.git"}
-bodyrtc = {git = "https://github.com/commaai/body-webrtc.git"}
+teleoprtc = {git = "https://github.com/commaai/teleop-rtc.git"}
 
 
 [tool.poetry.group.dev.dependencies]
