@@ -500,10 +500,10 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
 
 @dispatcher.add_method
 def getPublicKey() -> Optional[str]:
-  if not os.path.isfile(Paths().persist_root() + '/comma/id_rsa.pub'):
+  if not os.path.isfile(Paths.persist_root() + '/comma/id_rsa.pub'):
     return None
 
-  with open(Paths().persist_root() + '/comma/id_rsa.pub') as f:
+  with open(Paths.persist_root() + '/comma/id_rsa.pub') as f:
     return f.read()
 
 
@@ -639,7 +639,7 @@ def log_handler(end_event: threading.Event) -> None:
 
 
 def stat_handler(end_event: threading.Event) -> None:
-  STATS_DIR = Paths().stats_root()
+  STATS_DIR = Paths.stats_root()
   while not end_event.is_set():
     last_scan = 0.
     curr_scan = time.monotonic()

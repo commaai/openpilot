@@ -18,7 +18,7 @@ class TestRegistration(unittest.TestCase):
     self.params = Params()
     self.params.clear_all()
 
-    persist_dir = Path(Paths().persist_root()) / "comma"
+    persist_dir = Path(Paths.persist_root()) / "comma"
     persist_dir.mkdir(parents=True, exist_ok=True)
 
     self.priv_key = persist_dir / "id_rsa"
