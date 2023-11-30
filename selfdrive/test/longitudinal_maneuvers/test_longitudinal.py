@@ -156,6 +156,7 @@ class LongitudinalControl(unittest.TestCase):
     os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['NO_CAN_TIMEOUT'] = "1"
 
+  def setUp(self):
     params = Params()
     params.clear_all()
     params.put_bool("Passive", bool(os.getenv("PASSIVE")))
