@@ -221,7 +221,7 @@ class TestCarModelBase(unittest.TestCase):
         error_cnt += car.RadarData.Error.canError in rr.errors
     self.assertEqual(error_cnt, 0)
 
-  def test_panda_safety_rx_valid(self):
+  def test_panda_safety_rx_checks(self):
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
 
@@ -255,6 +255,11 @@ class TestCarModelBase(unittest.TestCase):
         self.safety.set_relay_malfunction(False)
 
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
+
+    # ensure RX checks go invalid after small time with no traffic
+    self.safety.set_timer(int(t + (2*1e6)))
+    self.safety.safety_tick_current_safety_config()
+    self.assertFalse(self.safety.safety_config_valid())
 
   def test_panda_safety_tx_cases(self, data=None):
     """Asserts we can tx common messages"""
