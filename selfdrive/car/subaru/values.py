@@ -141,12 +141,30 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.abs, Ecu.eps, Ecu.fwdCamera, Ecu.engine, Ecu.transmission],
     ),
     # Some Eyesight modules fail on TESTER_PRESENT_REQUEST
     # TODO: check if this resolves the fingerprinting issue for the 2023 Ascent and other new Subaru cars
     Request(
       [SUBARU_VERSION_REQUEST],
       [SUBARU_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.fwdCamera],
+    ),
+    # Non-OBD requests
+    Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
+      [StdQueries.TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.abs, Ecu.eps, Ecu.fwdCamera, Ecu.engine, Ecu.transmission],
+      bus=0,
+      logging=True,
+    ),
+    Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
+      [StdQueries.TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.abs, Ecu.eps, Ecu.fwdCamera, Ecu.engine, Ecu.transmission],
+      bus=1,
+      logging=True,
+      obd_multiplexing=False,
     ),
   ],
 )
