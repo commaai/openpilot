@@ -79,7 +79,9 @@ void MainWindow::loadFingerprints() {
     fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
   }
   // get opendbc names
-  opendbc_names = QDir(OPENDBC_FILE_PATH).entryList({"*.dbc"}, QDir::Files, QDir::Name);
+  for (auto fn : QDir(OPENDBC_FILE_PATH).entryList({"*.dbc"}, QDir::Files, QDir::Name)) {
+    opendbc_names << QFileInfo(fn).baseName();
+  }
 }
 
 void MainWindow::createActions() {
