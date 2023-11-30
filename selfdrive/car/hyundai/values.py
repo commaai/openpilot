@@ -191,7 +191,8 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   # TODO: this is the 2024 US MY, not yet released
   CAR.KONA_EV_2ND_GEN: HyundaiCarInfo("Hyundai Kona Electric (with HDA II, Korea only) 2023", video_link="https://www.youtube.com/watch?v=U2fOCmcQ8hw",
                                       car_parts=CarParts.common([CarHarness.hyundai_r])),
-  CAR.SANTA_FE: HyundaiCarInfo("Hyundai Santa Fe 2019-20", "All", car_parts=CarParts.common([CarHarness.hyundai_d])),
+  CAR.SANTA_FE: HyundaiCarInfo("Hyundai Santa Fe 2019-20", "All", video_link="https://youtu.be/bjDR0YjM__s",
+                               car_parts=CarParts.common([CarHarness.hyundai_d])),
   CAR.SANTA_FE_2022: HyundaiCarInfo("Hyundai Santa Fe 2021-23", "All", video_link="https://youtu.be/VnHzSTygTS4",
                                     car_parts=CarParts.common([CarHarness.hyundai_l])),
   CAR.SANTA_FE_HEV_2022: HyundaiCarInfo("Hyundai Santa Fe Hybrid 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_l])),
@@ -1912,7 +1913,8 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00MQ4HMFC  AT USA LHD 1.00 1.11 99210-P2000 211217',
-    ]
+      b'\xf1\x00MQ4HMFC  AT USA LHD 1.00 1.10 99210-P2000 210406',
+    ],
   },
   CAR.KIA_EV6: {
     (Ecu.fwdRadar, 0x7d0, None): [

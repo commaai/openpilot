@@ -19,6 +19,8 @@ class CarState(CarStateBase):
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
 
+    cp_es_distance = cp_body if self.car_fingerprint in (GLOBAL_GEN2 | HYBRID_CARS) else cp_cam
+
     throttle_msg = cp.vl["Throttle"] if self.car_fingerprint not in HYBRID_CARS else cp_body.vl["Throttle_Hybrid"]
     ret.gas = throttle_msg["Throttle_Pedal"] / 255.
 
@@ -28,6 +30,14 @@ class CarState(CarStateBase):
     else:
       cp_brakes = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp
       ret.brakePressed = cp_brakes.vl["Brake_Status"]["Brake"] == 1
+
+    if self.car_fingerprint not in HYBRID_CARS:
+      eyesight_fault = bool(cp_es_distance.vl["ES_Distance"]["Cruise_Fault"])
+
+      if self.CP.openpilotLongitudinalControl:
+        ret.carFaultedNonCritical = eyesight_fault
+      else:
+        ret.accFaulted = eyesight_fault # if openpilot isn't controlling long, an eyesight fault is an acc fault
 
     cp_wheels = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp
     ret.wheelSpeeds = self.get_wheel_speeds(
@@ -84,7 +94,6 @@ class CarState(CarStateBase):
                         cp.vl["BodyInfo"]["DOOR_OPEN_FL"]])
     ret.steerFaultPermanent = cp.vl["Steering_Torque"]["Steer_Error_1"] == 1
 
-    cp_es_distance = cp_body if self.car_fingerprint in (GLOBAL_GEN2 | HYBRID_CARS) else cp_cam
     if self.car_fingerprint in PREGLOBAL_CARS:
       self.cruise_button = cp_cam.vl["ES_Distance"]["Cruise_Button"]
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
