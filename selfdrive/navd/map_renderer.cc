@@ -109,12 +109,22 @@ void MapRenderer::msgUpdate() {
 
   if (sm->updated("liveLocationKalman")) {
     auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
-    auto pos = location.getPositionGeodetic();
-    auto orientation = location.getCalibratedOrientationNED();
+
+    auto pos = location.getPositionGeodetic().getValue();
+    auto orientation = location.getCalibratedOrientationNED().getValue();
+
+    float latitude = pos[0];
+    float longitude = pos[1];
+    float bearing = RAD2DEG(orientation[2]);
+
+    if (!destination_set) { // render a fixed location if no destination is set
+      latitude = 64.31990695292795;
+      longitude = -149.79038934046247;
+      bearing = 0;
+    }
 
     if ((sm->rcv_frame("liveLocationKalman") % LLK_DECIMATION) == 0) {
-      float bearing = RAD2DEG(orientation.getValue()[2]);
-      updatePosition(get_point_along_line(pos.getValue()[0], pos.getValue()[1], bearing, MAP_OFFSET), bearing);
+      updatePosition(get_point_along_line(latitude, longitude, bearing, MAP_OFFSET), bearing);
 
       // TODO: use the static rendering mode instead
       // retry render a few times

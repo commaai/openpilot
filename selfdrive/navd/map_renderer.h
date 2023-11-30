@@ -14,6 +14,8 @@
 #include "cereal/visionipc/visionipc_server.h"
 #include "cereal/messaging/messaging.h"
 
+#include "common/params.h"
+
 
 class MapRenderer : public QObject {
   Q_OBJECT
