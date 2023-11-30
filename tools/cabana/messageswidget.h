@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <optional>
 #include <set>
-#include <utility>
 #include <vector>
 
 #include <QAbstractTableModel>
@@ -80,11 +79,6 @@ public:
   void updateHeaderPositions();
   void updateGeometries() override;
   QSize sizeHint() const override;
-
-signals:
-  void filtersUpdated(const QMap<int, QString> &filters);
-
-private:
   void updateFilters();
 
   QMap<int, QLineEdit *> editors;
@@ -100,9 +94,6 @@ public:
   bool restoreHeaderState(const QByteArray &state) const { return view->header()->restoreState(state); }
   void suppressHighlighted();
 
-public slots:
-  void dbcModified();
-
 signals:
   void msgSelectionChanged(const MessageId &message_id);
 
@@ -111,6 +102,7 @@ protected:
   void headerContextMenuEvent(const QPoint &pos);
   void menuAboutToShow();
   void setMultiLineBytes(bool multi);
+  void updateTitle();
 
   MessageView *view;
   MessageViewHeader *header;

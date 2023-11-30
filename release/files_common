@@ -6,6 +6,7 @@ launch_openpilot.sh
 
 Jenkinsfile
 SConstruct
+pyproject.toml
 
 README.md
 RELEASES.md
@@ -162,7 +163,6 @@ common/ratekeeper.h
 common/watchdog.cc
 common/watchdog.h
 
-common/modeldata.h
 common/mat.h
 common/timing.h
 
@@ -213,6 +213,7 @@ system/hardware/tici/agnos.json
 system/hardware/tici/amplifier.py
 system/hardware/tici/updater
 system/hardware/tici/iwlist.py
+system/hardware/tici/esim.nmconnection
 system/hardware/pc/__init__.py
 system/hardware/pc/hardware.h
 system/hardware/pc/hardware.py
@@ -232,12 +233,10 @@ selfdrive/locationd/paramsd.py
 selfdrive/locationd/models/__init__.py
 selfdrive/locationd/models/.gitignore
 selfdrive/locationd/models/car_kf.py
-selfdrive/locationd/models/gnss_kf.py
 selfdrive/locationd/models/live_kf.py
 selfdrive/locationd/models/live_kf.h
 selfdrive/locationd/models/live_kf.cc
 selfdrive/locationd/models/constants.py
-selfdrive/locationd/models/gnss_helpers.py
 
 selfdrive/locationd/torqued.py
 selfdrive/locationd/calibrationd.py
@@ -292,6 +291,7 @@ selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
 selfdrive/test/test_onroad.py
 selfdrive/test/test_time_to_onroad.py
+selfdrive/test/pytest-tici.ini
 
 selfdrive/ui/.gitignore
 selfdrive/ui/SConscript
@@ -444,9 +444,9 @@ third_party/qt5/larch64/bin/**
 scripts/update_now.sh
 scripts/stop_updater.sh
 
+rednose_repo/site_scons/site_tools/rednose_filter.py
 rednose/.gitignore
 rednose/**
-laika/**
 
 body/.gitignore
 body/board/SConscript
@@ -582,15 +582,15 @@ opendbc/tesla_can.dbc
 opendbc/tesla_radar.dbc
 opendbc/tesla_powertrain.dbc
 
-tinygrad_repo/openpilot/compile.py
+tinygrad_repo/openpilot/compile2.py
 tinygrad_repo/extra/onnx.py
 tinygrad_repo/extra/onnx_ops.py
 tinygrad_repo/extra/thneed.py
 tinygrad_repo/extra/utils.py
 tinygrad_repo/tinygrad/codegen/kernel.py
 tinygrad_repo/tinygrad/codegen/linearizer.py
-tinygrad_repo/tinygrad/codegen/optimizer.py
 tinygrad_repo/tinygrad/features/image.py
+tinygrad_repo/tinygrad/features/search.py
 tinygrad_repo/tinygrad/nn/*
 tinygrad_repo/tinygrad/renderer/cstyle.py
 tinygrad_repo/tinygrad/renderer/opencl.py

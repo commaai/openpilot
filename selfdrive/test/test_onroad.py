@@ -5,6 +5,7 @@ import json
 import os
 import pathlib
 import psutil
+import pytest
 import shutil
 import subprocess
 import time
@@ -33,7 +34,7 @@ PROCS = {
   "./encoderd": 17.0,
   "./camerad": 14.5,
   "./locationd": 11.0,
-  "./mapsd": 2.0,
+  "./mapsd": 1.5,
   "selfdrive.controls.plannerd": 16.5,
   "./_ui": 18.0,
   "selfdrive.locationd.paramsd": 9.0,
@@ -68,7 +69,7 @@ PROCS.update({
   },
   "tizi": {
      "./boardd": 19.0,
-    "system.sensord.rawgps.rawgpsd": 1.0,
+    "system.qcomgpsd.qcomgpsd": 1.0,
   }
 }.get(HARDWARE.get_device_type(), {}))
 
@@ -98,6 +99,7 @@ def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
 
 
+@pytest.mark.tici
 class TestOnroad(unittest.TestCase):
 
   @classmethod
@@ -301,7 +303,7 @@ class TestOnroad(unittest.TestCase):
     self.assertLessEqual(max(mems) - min(mems), 3.0)
 
   def test_gpu_usage(self):
-    self.assertEqual(self.gpu_procs, {"weston", "_ui", "mapsd", "camerad", "selfdrive.modeld.modeld"})
+    self.assertEqual(self.gpu_procs, {"weston", "_ui", "camerad", "selfdrive.modeld.modeld"})
 
   def test_camera_processing_time(self):
     result = "\n"

@@ -428,6 +428,9 @@ def main() -> None:
   # invalidate old finalized update
   set_consistent_flag(False)
 
+  # wait a bit before first cycle
+  wait_helper.sleep(60)
+
   # Run the update loop
   while True:
     wait_helper.ready_event.clear()

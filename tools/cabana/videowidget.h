@@ -8,7 +8,6 @@
 #include <QFrame>
 #include <QSlider>
 #include <QTabBar>
-#include <QToolButton>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 #include "tools/cabana/util.h"
@@ -56,7 +55,7 @@ private:
 
   QMap<uint64_t, QPixmap> thumbnails;
   std::map<uint64_t, AlertInfo> alerts;
-  InfoLabel thumbnail_label;
+  InfoLabel *thumbnail_label;
 };
 
 class VideoWidget : public QFrame {

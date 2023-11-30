@@ -1,11 +1,13 @@
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=laika_repo/ -Werror --strict-config --strict-markers --durations=10"
-#cpp_files = "test_*" # uncomment when agnos has pytest-cpp and remove from CI
+addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
+cpp_files = "test_*"
+cpp_harness = "selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"
 #timeout = "30"  # you get this long by default
 markers = [
-  "slow: tests that take awhile to run and can be skipped with -m 'not slow'"
+  "slow: tests that take awhile to run and can be skipped with -m 'not slow'",
+  "tici: tests that are only meant to run on the C3/C3X",
 ]
 testpaths = [
   "common",
@@ -37,8 +39,6 @@ exclude = [
   "cereal/",
   "opendbc/",
   "panda/",
-  "laika/",
-  "laika_repo/",
   "rednose/",
   "rednose_repo/",
   "tinygrad/",
@@ -81,7 +81,6 @@ crcmod = "*"
 cryptography = "*"
 Cython = "*"
 future-fstrings = "*"  # for acados
-hatanaka = "==2.4"
 hexdump = "*"
 Jinja2 = "*"
 json-rpc = "*"
@@ -158,7 +157,6 @@ sphinx-sitemap = "*"
 tabulate = "*"
 tenacity = "*"
 types-atomicwrites = "*"
-types-certifi = "*"
 types-pycurl = "*"
 types-PyYAML = "*"
 types-requests = "*"
@@ -186,7 +184,6 @@ target-version="py311"
 exclude = [
   "panda",
   "opendbc",
-  "laika_repo",
   "rednose_repo",
   "tinygrad_repo",
   "third_party",
@@ -198,3 +195,6 @@ flake8-implicit-str-concat.allow-multiline=false
 "system".msg = "Use openpilot.system"
 "third_party".msg = "Use openpilot.third_party"
 "tools".msg = "Use openpilot.tools"
+
+[tool.coverage.run]
+concurrency = ["multiprocessing", "thread"]
