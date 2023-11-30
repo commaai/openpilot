@@ -116,58 +116,8 @@ version = "1.5.0"
 description = "An implementation of WebRTC and ORTC"
 optional = false
 python-versions = ">=3.7"
-files = [
-    {file = "aiortc-1.5.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:d1d3f2d6cc22fae5ea57b0371895b7830e878b9e3705fd3742b3453cdfa0fd51"},
-    {file = "aiortc-1.5.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:2eaf758b5e0bb16f22a9aeb8ab88eb947345f47e2e46cfca18b2815d44726c4e"},
-    {file = "aiortc-1.5.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ee76f6b30d7f39442ba7ac25d58114f077ead1460c5632d0c9e18179d01ad419"},
-    {file = "aiortc-1.5.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4a766052d93474e9bf4186465298b7c8fb9af062ef7f83ba33f191baa79dac1e"},
-    {file = "aiortc-1.5.0-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:fec292636978ed50728f1ce9b7a9f0d7d2e38bd0b920bb53e091e5728b79e231"},
-    {file = "aiortc-1.5.0-cp310-cp310-win32.whl", hash = "sha256:27e879b73377d4b94bd86e4c3e8cd8913905fdca1de90a9a4efb0d9d3779dbf4"},
-    {file = "aiortc-1.5.0-cp310-cp310-win_amd64.whl", hash = "sha256:a720d0dd53553f6dfc28a53bee2ffce4f13283b4cbbc7db548000054cc63a4f9"},
-    {file = "aiortc-1.5.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:a5e8cbfce84badd9a8355819343570bbec1e4eef725996cad6aebe4cc3d03ae8"},
-    {file = "aiortc-1.5.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:7931512dbb2ff91fb78f5512ad9ca96546452d7bb627f61bd7393bf59ee48ad3"},
-    {file = "aiortc-1.5.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a6abeb857a98014fc97265891ebf4fd989987d2ee091e0844e3c8fc543b6e2f0"},
-    {file = "aiortc-1.5.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:dead42dc3a31570fb6f5b94f9be9c78e28b1dc045f71489858116840f299862e"},
-    {file = "aiortc-1.5.0-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3a1a8081ba6d7cabc5896d10462cb50f6db7a8ccf34e6aa3e6c4a0d2d5bc5db5"},
-    {file = "aiortc-1.5.0-cp311-cp311-win32.whl", hash = "sha256:cbd5d35bd34b22b8f711c708d266889c973c0dcb38da14a2a9f757266987a181"},
-    {file = "aiortc-1.5.0-cp311-cp311-win_amd64.whl", hash = "sha256:6749145e3d527ac98c80837d72fd832b0c403eded3546aeb7cec6f25592b4d5e"},
-    {file = "aiortc-1.5.0-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:50e8e8903cf55f6f2cda9b61c115fca8e444d48f299cdd071980a3b5cec594fa"},
-    {file = "aiortc-1.5.0-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:15218a1b81f4fa1521f3b839eefdce638b34c46306e8eaf069cee7283fe8c838"},
-    {file = "aiortc-1.5.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:25bca7c7bbd3619296b5737a810dd0e2fc7f6264e767fca10e65a709a443bf39"},
-    {file = "aiortc-1.5.0-cp37-cp37m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:8f1d88ae0f8b3047a279e4da06f09a35777cfbe0a9177ca8b053865a98a67912"},
-    {file = "aiortc-1.5.0-cp37-cp37m-win32.whl", hash = "sha256:f86b68b182537022d4ada49a7723c7a56f39372d6fbc31a29f57315d335cdc29"},
-    {file = "aiortc-1.5.0-cp37-cp37m-win_amd64.whl", hash = "sha256:e4bbc2f2b97651f7aa6f5e82c69a22590901962454fc02617c4a559a1b51c21a"},
-    {file = "aiortc-1.5.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:7243bce7c3b95e47e56ddf961fbf6015702ddbbf3579b0bbf18c6173b6a6357a"},
-    {file = "aiortc-1.5.0-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:883db8926deaf01fdcd32fbd74fcf055db63e968324ceff41d5a46ec86dff90c"},
-    {file = "aiortc-1.5.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:bd663f67344e6fe240c6372f620988db5285c9b1b8336306e9fec76ffb4e5493"},
-    {file = "aiortc-1.5.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fe2766f5a7a8e10b445cbf83a510b791a88180c7b1f9adef3f730840fa208afc"},
-    {file = "aiortc-1.5.0-cp38-cp38-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:ba212562025843e8d9faf66e6156b682148f8f9995a19e5c66e8ea802f3fa121"},
-    {file = "aiortc-1.5.0-cp38-cp38-win32.whl", hash = "sha256:b7432c9c78e68811ee060ade8b0f867ac42a21677e4d1a9136bb88cd93ab8299"},
-    {file = "aiortc-1.5.0-cp38-cp38-win_amd64.whl", hash = "sha256:2ac6e285d4035298f3025b5767dc8f8b0a5a81b2b8744aaa19c75a8fe76f3ad8"},
-    {file = "aiortc-1.5.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:aa3c9306d892635dd9c38cc83c6ba67fb608c7da289f422d40f9542e104b7a0f"},
-    {file = "aiortc-1.5.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:55dab49a38a212556adadb85ea06f6041d2a9e537e01092f9160b21b186b5039"},
-    {file = "aiortc-1.5.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:db93641b6f31315b8fd4c81e14881aef28fbb0700f220926f82909baedfa9888"},
-    {file = "aiortc-1.5.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f63fd1168df72498afe0ee06555cc86b8496115ef128519a01d1ea8e404784b8"},
-    {file = "aiortc-1.5.0-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:e436f49617887f2009c6ada872c2da201e3c8010b387e7c1057eab229ae438c3"},
-    {file = "aiortc-1.5.0-cp39-cp39-win32.whl", hash = "sha256:6f23495d4e11610117d1bad8686d42d529168d463687a1a1e0bec795d1ec33ce"},
-    {file = "aiortc-1.5.0-cp39-cp39-win_amd64.whl", hash = "sha256:76206601082e39fdb56d86221729f04f8bd79d65f9fd6b82121947eabf7efd6d"},
-    {file = "aiortc-1.5.0-pp37-pypy37_pp73-macosx_10_9_x86_64.whl", hash = "sha256:d3b2a3b4c120a73242ea0b843ecc3efeaea32861682c771e67f7f08f9d18fddc"},
-    {file = "aiortc-1.5.0-pp37-pypy37_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3d3f6511f2442f49dfaf4e69865b47e0d6d95440fee2f66e6a03a8b4fa1b28e3"},
-    {file = "aiortc-1.5.0-pp37-pypy37_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:77ae221c734864c8749c27cc8add22d296ef3e06ae5f6982dbcbe2d0976b10e1"},
-    {file = "aiortc-1.5.0-pp37-pypy37_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:7732c825ee96e9bc7fb779a4008be768e7663f7f9bf0ab3cccdd412dd7f1c820"},
-    {file = "aiortc-1.5.0-pp37-pypy37_pp73-win_amd64.whl", hash = "sha256:56ffdd67161488c6d934b090a8c2d277bba8806906a3a18493f46b42976569c1"},
-    {file = "aiortc-1.5.0-pp38-pypy38_pp73-macosx_10_9_x86_64.whl", hash = "sha256:f73ba04ca3f331b0ddea0b4ff78424ba30bfd7a49d0b8bd926c75a66ad60f447"},
-    {file = "aiortc-1.5.0-pp38-pypy38_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:69eedeec467bd7bcac7ace6ad398133e27f18eeae195a3ad0ffda74255a8b812"},
-    {file = "aiortc-1.5.0-pp38-pypy38_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9e095e5fe22f5a2efd4e0657abec1fea7aca864cb32ae3f0816fbcd340a4f2b7"},
-    {file = "aiortc-1.5.0-pp38-pypy38_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:dffd6899a5d3db4356d2c17521021032468931ae168545b1ff4815764a5e2873"},
-    {file = "aiortc-1.5.0-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:af3eed686d621af93befd7e68bd73d6d8a8aa3e721e8fa3ce7e21b3225e37c38"},
-    {file = "aiortc-1.5.0-pp39-pypy39_pp73-macosx_10_9_x86_64.whl", hash = "sha256:15e222a308dcfc44351bd9acff21723c8065cdcd75d6649d53b2986ada64b6be"},
-    {file = "aiortc-1.5.0-pp39-pypy39_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:d9ecd61c42e6a78c089805a47542a68eeeec6ba98bf7a2e30cafa3d3f4e94a7f"},
-    {file = "aiortc-1.5.0-pp39-pypy39_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2d839437c6000d77511ff1889133150f23fbc8a7365971260c45ce06ff007b0f"},
-    {file = "aiortc-1.5.0-pp39-pypy39_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:025847ad6b8c5686f2895394e1de92c043e20e7d90c266de201eef1b1108c8df"},
-    {file = "aiortc-1.5.0-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:85583166ab9c9052d2539bee3ba05f27af7f7b93b15c2259c2fc1bd3de5b31d5"},
-    {file = "aiortc-1.5.0.tar.gz", hash = "sha256:82b4131d84f862e24e1c3550b73f78412cc9554140a2575577eb3f04675bbad2"},
-]
+files = []
+develop = false
 
 [package.dependencies]
 aioice = ">=0.9.0,<1.0.0"
@@ -180,7 +130,13 @@ pylibsrtp = ">=0.5.6"
 pyopenssl = ">=23.1.0"
 
 [package.extras]
-dev = ["aiohttp (>=3.7.0)", "coverage (>=5.0)", "numpy (>=1.19.0)"]
+dev = ["aiohttp (>=3.7.0)", "coverage[toml] (>=7.2.2)", "numpy (>=1.19.0)"]
+
+[package.source]
+type = "git"
+url = "https://github.com/aiortc/aiortc.git"
+reference = "HEAD"
+resolved_reference = "cdba00d07a3c53659c2a8abfdfa1ecfab4cecebd"
 
 [[package]]
 name = "aiosignal"
@@ -357,27 +313,6 @@ files = [
 
 [package.extras]
 dev = ["freezegun (>=1.0,<2.0)", "pytest (>=6.0)", "pytest-cov"]
-
-[[package]]
-name = "bodyrtc"
-version = "1.0.0"
-description = "Comma body webRTC abstractions"
-optional = false
-python-versions = ">=3.11"
-files = []
-develop = false
-
-[package.dependencies]
-aiohttp = ">=3.7.0"
-aiortc = ">=1.5.0"
-av = ">=9.0.0,<11.0.0"
-numpy = ">=1.19.0"
-
-[package.source]
-type = "git"
-url = "https://github.com/commaai/body-webrtc.git"
-reference = "HEAD"
-resolved_reference = "ad85bdd00dd8c7b57ceb3bf27984bda321d8422a"
 
 [[package]]
 name = "breathe"
@@ -4719,6 +4654,30 @@ files = [
 widechars = ["wcwidth"]
 
 [[package]]
+name = "teleoprtc"
+version = "1.0.0"
+description = "Comma webRTC abstractions"
+optional = false
+python-versions = ">=3.11"
+files = []
+develop = false
+
+[package.dependencies]
+aiohttp = ">=3.7.0"
+aiortc = {git = "https://github.com/aiortc/aiortc.git"}
+av = ">=9.0.0,<11.0.0"
+numpy = ">=1.19.0"
+
+[package.extras]
+dev = ["parameterized (>=0.8)", "pre-commit"]
+
+[package.source]
+type = "git"
+url = "https://github.com/commaai/teleop-rtc.git"
+reference = "HEAD"
+resolved_reference = "0df29154776141d1bb51b544c98d7a8c65da76aa"
+
+[[package]]
 name = "tenacity"
 version = "8.2.3"
 description = "Retry code until it succeeds"
@@ -5053,4 +5012,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "5c6b75a5d86e0439301412a76e3dd8f8a4d60435c558309c76f599abef947810"
+content-hash = "2b48ec901a8d215246f9f77ca8d1ab2ca571b5edcca5cd134d1a3af5d17ddae6"
