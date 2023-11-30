@@ -214,6 +214,9 @@ std::unordered_map<std::string, uint32_t> keys = {
 
 
 Params::Params(const std::string &path) {
+  if (util::getenv("OPENPILOT_PREFIX", "d") == "d"){
+    throw std::runtime_error("bad!!!!");
+  }
   prefix = "/" + util::getenv("OPENPILOT_PREFIX", "d");
   params_path = ensure_params_path(prefix, path);
 }

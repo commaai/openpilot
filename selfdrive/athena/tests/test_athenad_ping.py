@@ -40,8 +40,6 @@ class TestAthenadPing(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls) -> None:
-    cls.params = Params()
-    cls.dongle_id = cls.params.get("DongleId", encoding="utf-8")
     cls._create_connection = athenad.create_connection
     athenad.create_connection = MagicMock(wraps=cls._create_connection)
 
@@ -51,6 +49,9 @@ class TestAthenadPing(unittest.TestCase):
     athenad.create_connection = cls._create_connection
 
   def setUp(self) -> None:
+    self.params = Params()
+    self.dongle_id = self.params.get("DongleId", encoding="utf-8")
+
     wifi_radio(True)
     self._clear_ping_time()
 
