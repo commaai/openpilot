@@ -87,11 +87,11 @@ class AudioOutputSpeaker:
 
       self.buffer.write(bytes(frame.planes[0]))
 
-  def has_track(self, track: aiortc.MediaStreamTrack) -> bool:
+  def hasTrack(self, track: aiortc.MediaStreamTrack) -> bool:
     return any(t == track for t, _ in self.tracks_and_tasks)
 
-  def add_track(self, track: aiortc.MediaStreamTrack):
-    if not self.has_track(track):
+  def addTrack(self, track: aiortc.MediaStreamTrack):
+    if not self.hasTrack(track):
       self.tracks_and_tasks.append((track, None))
 
   def start(self):

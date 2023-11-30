@@ -6,14 +6,15 @@ import dataclasses
 import json
 import uuid
 import logging
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 import aiortc
-from aiortc.mediastreams import VideoStreamTrack
+from aiortc.mediastreams import VideoStreamTrack, AudioStreamTrack
+from aiortc.contrib.media import MediaBlackhole
 from aiohttp import web
-from bodyrtc import WebRTCAnswerBuilder
-from bodyrtc.info import parse_info_from_offer
 import capnp
+from teleoprtc import WebRTCAnswerBuilder
+from teleoprtc.info import parse_info_from_offer
 
 from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
 from openpilot.system.webrtc.device.audio import AudioInputStreamTrack, AudioOutputSpeaker
@@ -104,15 +105,13 @@ class StreamSession:
 
     assert len(cameras) == config.n_expected_camera_tracks, "Incoming stream has misconfigured number of video tracks"
     for cam in cameras:
-      if debug_mode:
-        track = VideoStreamTrack()
-      else:
-        track = LiveStreamVideoStreamTrack(cam)
+      track = LiveStreamVideoStreamTrack(cam) if not debug_mode else VideoStreamTrack()
       builder.add_video_stream(cam, track)
-    if config.expected_audio_track and not debug_mode:
-      track = AudioInputStreamTrack()
+    if config.expected_audio_track:
+      track = AudioInputStreamTrack() if not debug_mode else AudioStreamTrack()
       builder.add_audio_stream(track)
-    if config.incoming_audio_track and not debug_mode:
+    if config.incoming_audio_track:
+      self.audio_output_cls = AudioOutputSpeaker if not debug_mode else MediaBlackhole
       builder.offer_to_receive_audio_stream()
 
     self.stream = builder.stream()
@@ -122,7 +121,7 @@ class StreamSession:
     self.incoming_bridge = CerealIncomingMessageProxy(messaging.PubMaster(incoming_services))
     self.outgoing_bridge_runner = CerealProxyRunner(self.outgoing_bridge)
 
-    self.audio_output: Optional[AudioOutputSpeaker] = None
+    self.audio_output: Optional[Union[AudioOutputSpeaker, MediaBlackhole]] = None
     self.run_task: Optional[asyncio.Task] = None
     self.logger = logging.getLogger("webrtcd")
     self.logger.info("New stream session (%s), cameras %s, audio in %s out %s, incoming services %s, outgoing services %s",
@@ -156,9 +155,9 @@ class StreamSession:
         self.outgoing_bridge_runner.proxy.add_channel(channel)
         self.outgoing_bridge_runner.start()
       if self.stream.has_incoming_audio_track():
-        track = self.stream.get_incoming_audio_track(False)
-        self.audio_output = AudioOutputSpeaker()
-        self.audio_output.add_track(track)
+        track = self.stream.get_incoming_audio_track(buffered=False)
+        self.audio_output = self.audio_output_cls()
+        self.audio_output.addTrack(track)
         self.audio_output.start()
       self.logger.info("Stream session (%s) connected", self.identifier)
 
