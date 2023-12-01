@@ -8,8 +8,7 @@ python_files = "test_*.py"
 markers = [
   "slow: tests that take awhile to run and can be skipped with -m 'not slow'",
   "tici: tests that are only meant to run on the C3/C3X",
-  "jenkins: longer running tests that are only meant to run in jenkins",
-  "gh_actions: test",
+  "jenkins: tests that should be run on jenkins machine",
 ]
 testpaths = [
   "common",
