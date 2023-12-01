@@ -6,6 +6,7 @@ import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 import importlib
 from parameterized import parameterized
+import pytest
 
 from cereal import car, messaging
 from openpilot.common.realtime import DT_CTRL
@@ -53,6 +54,8 @@ class TestCarInterfaces(unittest.TestCase):
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
+  @pytest.mark.jenkins
+  @pytest.mark.gh_actions
   def test_car_interfaces(self, car_name, data):
     CarInterface, CarController, CarState = interfaces[car_name]
 

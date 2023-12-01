@@ -174,9 +174,10 @@ class TestFwFingerprint(unittest.TestCase):
                            f"{brand.title()}: OBD multiplexed request is marked auxiliary: {request_obj}")
 
 
+@pytest.mark.jenkins
 class TestFwFingerprintTiming(unittest.TestCase):
   N: int = 5
-  TOL: float = 0.12
+  TOL: float = 0.1
 
   @staticmethod
   def _run_thread(thread: threading.Thread) -> float:
