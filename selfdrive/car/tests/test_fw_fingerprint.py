@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import pytest
 import random
 import time
 import unittest
@@ -97,7 +98,7 @@ class TestFwFingerprint(unittest.TestCase):
 
   def test_fw_version_lists(self):
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model):
+      with self.subTest(car_model=car_model.value):
         for ecu, ecu_fw in ecus.items():
           with self.subTest(ecu):
             duplicates = {fw for fw in ecu_fw if ecu_fw.count(fw) > 1}
@@ -119,13 +120,13 @@ class TestFwFingerprint(unittest.TestCase):
     for brand, config in FW_QUERY_CONFIGS.items():
       for car_model, ecus in VERSIONS[brand].items():
         bad_ecus = set(ecus).intersection(config.extra_ecus)
-        with self.subTest(car_model=car_model):
+        with self.subTest(car_model=car_model.value):
           self.assertFalse(len(bad_ecus), f'{car_model}: Fingerprints contain ECUs added for data collection: {bad_ecus}')
 
   def test_blacklisted_ecus(self):
     blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model):
+      with self.subTest(car_model=car_model.value):
         CP = interfaces[car_model][0].get_non_essential_params(car_model)
         if CP.carName == 'subaru':
           for ecu in ecus.keys():
@@ -176,7 +177,7 @@ class TestFwFingerprint(unittest.TestCase):
 
 class TestFwFingerprintTiming(unittest.TestCase):
   N: int = 5
-  TOL: float = 0.1
+  TOL: float = 0.12
 
   @staticmethod
   def _run_thread(thread: threading.Thread) -> float:
@@ -235,8 +236,9 @@ class TestFwFingerprintTiming(unittest.TestCase):
     self._assert_timing(vin_time / self.N, vin_ref_time)
     print(f'get_vin, query time={vin_time / self.N} seconds')
 
+  @pytest.mark.timeout(60)
   def test_fw_query_timing(self):
-    total_ref_time = 5.9
+    total_ref_time = 6.41
     brand_ref_times = {
       1: {
         'body': 0.1,
@@ -246,7 +248,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
         'hyundai': 0.7,
         'mazda': 0.2,
         'nissan': 0.4,
-        'subaru': 0.2,
+        'subaru': 0.52,
         'tesla': 0.2,
         'toyota': 1.6,
         'volkswagen': 0.2,

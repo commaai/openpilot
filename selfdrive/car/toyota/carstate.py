@@ -58,9 +58,7 @@ class CarState(CarStateBase):
       ret.gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) // 2
       ret.gasPressed = ret.gas > 805
     else:
-      # TODO: find a new, common signal
-      msg = "GAS_PEDAL_HYBRID" if (self.CP.flags & ToyotaFlags.HYBRID) else "GAS_PEDAL"
-      ret.gas = cp.vl[msg]["GAS_PEDAL"]
+      # TODO: find a common gas pedal percentage signal
       ret.gasPressed = cp.vl["PCM_CRUISE"]["GAS_RELEASED"] == 0
 
     ret.wheelSpeeds = self.get_wheel_speeds(
@@ -76,6 +74,7 @@ class CarState(CarStateBase):
     ret.standstill = ret.vEgoRaw == 0
 
     ret.steeringAngleDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"] + cp.vl["STEER_ANGLE_SENSOR"]["STEER_FRACTION"]
+    ret.steeringRateDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_RATE"]
     torque_sensor_angle_deg = cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]
 
     # On some cars, the angle measurement is non-zero while initializing
@@ -83,15 +82,13 @@ class CarState(CarStateBase):
       self.accurate_steer_angle_seen = True
 
     if self.accurate_steer_angle_seen:
-      # Offset seems to be invalid for large steering angles
-      if abs(ret.steeringAngleDeg) < 90 and cp.can_valid:
+      # Offset seems to be invalid for large steering angles and high angle rates
+      if abs(ret.steeringAngleDeg) < 90 and abs(ret.steeringRateDeg) < 100 and cp.can_valid:
         self.angle_offset.update(torque_sensor_angle_deg - ret.steeringAngleDeg)
 
       if self.angle_offset.initialized:
         ret.steeringAngleOffsetDeg = self.angle_offset.x
         ret.steeringAngleDeg = torque_sensor_angle_deg - self.angle_offset.x
-
-    ret.steeringRateDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_RATE"]
 
     can_gear = int(cp.vl["GEAR_PACKET"]["GEAR"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
@@ -183,11 +180,6 @@ class CarState(CarStateBase):
       ("STEER_TORQUE_SENSOR", 50),
     ]
 
-    if CP.flags & ToyotaFlags.HYBRID:
-      messages.append(("GAS_PEDAL_HYBRID", 33))
-    else:
-      messages.append(("GAS_PEDAL", 33))
-
     if CP.carFingerprint in UNSUPPORTED_DSU_CAR:
       messages.append(("DSU_CRUISE", 5))
       messages.append(("PCM_CRUISE_ALT", 1))
@@ -210,7 +202,7 @@ class CarState(CarStateBase):
         ("PCS_HUD", 1),
       ]
 
-    if CP.carFingerprint not in (TSS2_CAR - RADAR_ACC_CAR) and not CP.enableDsu:
+    if CP.carFingerprint not in (TSS2_CAR - RADAR_ACC_CAR) and not CP.enableDsu and not CP.flags & ToyotaFlags.DISABLE_RADAR.value:
       messages += [
         ("PRE_COLLISION", 33),
       ]

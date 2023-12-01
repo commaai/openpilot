@@ -1,18 +1,15 @@
 #pragma once
 
 #include <map>
-#include <QObject>
 
 #include "tools/cabana/dbc/dbc.h"
 
 const QString AUTO_SAVE_EXTENSION = ".tmp";
 
-class DBCFile : public QObject {
-  Q_OBJECT
-
+class DBCFile {
 public:
-  DBCFile(const QString &dbc_file_name, QObject *parent=nullptr);
-  DBCFile(const QString &name, const QString &content, QObject *parent=nullptr);
+  DBCFile(const QString &dbc_file_name);
+  DBCFile(const QString &name, const QString &content);
   ~DBCFile() {}
 
   bool save();
@@ -22,7 +19,7 @@ public:
   void cleanupAutoSaveFile();
   QString generateDBC();
 
-  void updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &comment);
+  void updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &node, const QString &comment);
   inline void removeMsg(const MessageId &id) { msgs.erase(id.address); }
 
   inline const std::map<uint32_t, cabana::Msg> &getMessages() const { return msgs; }

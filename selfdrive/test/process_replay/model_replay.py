@@ -7,12 +7,10 @@ from typing import Any
 
 import cereal.messaging as messaging
 from openpilot.common.params import Params
-from openpilot.common.spinner import Spinner
 from openpilot.system.hardware import PC
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.test.openpilotci import BASE_URL, get_url
-from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs
-from openpilot.selfdrive.test.process_replay.test_processes import format_diff
+from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process
 from openpilot.system.version import get_commit
 from openpilot.tools.lib.framereader import FrameReader
@@ -25,6 +23,7 @@ MAX_FRAMES = 100 if PC else 600
 NAV_FRAMES = 50
 
 NO_NAV = "NO_NAV" in os.environ
+NO_MODEL = "NO_MODEL" in os.environ
 SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
 
 
@@ -105,14 +104,6 @@ def nav_model_replay(lr):
 
 
 def model_replay(lr, frs):
-  if not PC:
-    spinner = Spinner()
-    spinner.update("starting model replay")
-  else:
-    spinner = None
-
-  log_msgs = []
-
   # modeld is using frame pairs
   modeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"roadCameraState", "wideRoadCameraState"}, {"roadEncodeIdx", "wideRoadEncodeIdx"})
   dmodeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"driverCameraState"}, {"driverEncodeIdx"})
@@ -128,18 +119,9 @@ def model_replay(lr, frs):
   modeld = get_process_config("modeld")
   dmonitoringmodeld = get_process_config("dmonitoringmodeld")
 
-  try:
-    if spinner:
-      spinner.update("running model replay")
-    modeld_msgs = replay_process(modeld, modeld_logs, frs)
-    dmonitoringmodeld_msgs = replay_process(dmonitoringmodeld, dmodeld_logs, frs)
-    log_msgs.extend([m for m in modeld_msgs if m.which() == "modelV2"])
-    log_msgs.extend([m for m in dmonitoringmodeld_msgs if m.which() == "driverStateV2"])
-  finally:
-    if spinner:
-      spinner.close()
-
-  return log_msgs
+  modeld_msgs = replay_process(modeld, modeld_logs, frs)
+  dmonitoringmodeld_msgs = replay_process(dmonitoringmodeld, dmodeld_logs, frs)
+  return modeld_msgs + dmonitoringmodeld_msgs
 
 
 if __name__ == "__main__":
@@ -180,8 +162,10 @@ if __name__ == "__main__":
   else:
     os.environ['MAPS_HOST'] = BASE_URL.rstrip('/')
 
+  log_msgs = []
   # run replays
-  log_msgs = model_replay(lr, frs)
+  if not NO_MODEL:
+    log_msgs += model_replay(lr, frs)
   if not NO_NAV:
     log_msgs += nav_model_replay(lr)
 
@@ -196,10 +180,11 @@ if __name__ == "__main__":
       cmp_log = []
 
       # logs are ordered based on type: modelV2, driverStateV2, nav messages (navThumbnail, mapRenderState, navModel)
-      model_start_index = next(i for i, m in enumerate(all_logs) if m.which() == "modelV2")
-      cmp_log += all_logs[model_start_index:model_start_index + MAX_FRAMES]
-      dmon_start_index = next(i for i, m in enumerate(all_logs) if m.which() == "driverStateV2")
-      cmp_log += all_logs[dmon_start_index:dmon_start_index + MAX_FRAMES]
+      if not NO_MODEL:
+        model_start_index = next(i for i, m in enumerate(all_logs) if m.which() in ("modelV2", "cameraOdometry"))
+        cmp_log += all_logs[model_start_index:model_start_index + MAX_FRAMES*2]
+        dmon_start_index = next(i for i, m in enumerate(all_logs) if m.which() == "driverStateV2")
+        cmp_log += all_logs[dmon_start_index:dmon_start_index + MAX_FRAMES]
       if not NO_NAV:
         nav_start_index = next(i for i, m in enumerate(all_logs) if m.which() in ["navThumbnail", "mapRenderState", "navModel"])
         nav_logs = all_logs[nav_start_index:nav_start_index + NAV_FRAMES*3]
@@ -231,13 +216,13 @@ if __name__ == "__main__":
       results: Any = {TEST_ROUTE: {}}
       log_paths: Any = {TEST_ROUTE: {"models": {'ref': BASE_URL + log_fn, 'new': log_fn}}}
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
-      diff1, diff2, failed = format_diff(results, log_paths, ref_commit)
+      diff_short, diff_long, failed = format_diff(results, log_paths, ref_commit)
 
-      print(diff2)
+      print(diff_long)
       print('-------------\n'*5)
-      print(diff1)
+      print(diff_short)
       with open("model_diff.txt", "w") as f:
-        f.write(diff2)
+        f.write(diff_long)
     except Exception as e:
       print(str(e))
       failed = True

@@ -37,10 +37,10 @@ void FindSignalModel::search(std::function<bool(double)> cmp) {
   filtered_signals.reserve(prev_sigs.size());
   QtConcurrent::blockingMap(prev_sigs, [&](auto &s) {
     const auto &events = can->events(s.id);
-    auto first = std::upper_bound(events.cbegin(), events.cend(), s.mono_time, [](uint64_t ts, auto &e) { return ts < e->mono_time; });
+    auto first = std::upper_bound(events.cbegin(), events.cend(), s.mono_time, CompareCanEvent());
     auto last = events.cend();
     if (last_time < std::numeric_limits<uint64_t>::max()) {
-      last = std::upper_bound(events.cbegin(), events.cend(), last_time, [](uint64_t ts, auto &e) { return ts < e->mono_time; });
+      last = std::upper_bound(events.cbegin(), events.cend(), last_time, CompareCanEvent());
     }
 
     auto it = std::find_if(first, last, [&](const CanEvent *e) { return cmp(get_raw_value(e->dat, e->size, s.sig)); });
@@ -192,7 +192,7 @@ void FindSignalDlg::search() {
   search_btn->setEnabled(false);
   stats_label->setVisible(false);
   search_btn->setText("Finding ....");
-  QTimer::singleShot(0, [=]() { model->search(cmp); });
+  QTimer::singleShot(0, this, [=]() { model->search(cmp); });
 }
 
 void FindSignalDlg::setInitialSignals() {
@@ -214,7 +214,9 @@ void FindSignalDlg::setInitialSignals() {
   sig.factor = factor_edit->text().toDouble();
   sig.offset = offset_edit->text().toDouble();
 
-  auto [first_sec, last_sec] = std::minmax(first_time_edit->text().toDouble(), last_time_edit->text().toDouble());
+  double first_time_val = first_time_edit->text().toDouble();
+  double last_time_val = last_time_edit->text().toDouble();
+  auto [first_sec, last_sec] = std::minmax(first_time_val, last_time_val);
   uint64_t first_time = (can->routeStartTime() + first_sec) * 1e9;
   model->last_time = std::numeric_limits<uint64_t>::max();
   if (last_sec > 0) {
@@ -222,15 +224,15 @@ void FindSignalDlg::setInitialSignals() {
   }
   model->initial_signals.clear();
 
-  for (auto it = can->last_msgs.cbegin(); it != can->last_msgs.cend(); ++it) {
-    if (buses.isEmpty() || buses.contains(it.key().source) && (addresses.isEmpty() || addresses.contains(it.key().address))) {
-      const auto &events = can->events(it.key());
-      auto e = std::lower_bound(events.cbegin(), events.cend(), first_time, [](auto e, uint64_t ts) { return e->mono_time < ts; });
+  for (const auto &[id, m] : can->lastMessages()) {
+    if (buses.isEmpty() || buses.contains(id.source) && (addresses.isEmpty() || addresses.contains(id.address))) {
+      const auto &events = can->events(id);
+      auto e = std::lower_bound(events.cbegin(), events.cend(), first_time, CompareCanEvent());
       if (e != events.cend()) {
-        const int total_size = it.value().dat.size() * 8;
+        const int total_size = m.dat.size() * 8;
         for (int size = min_size->value(); size <= max_size->value(); ++size) {
           for (int start = 0; start <= total_size - size; ++start) {
-            FindSignalModel::SearchSignal s{.id = it.key(), .mono_time = first_time, .sig = sig};
+            FindSignalModel::SearchSignal s{.id = id, .mono_time = first_time, .sig = sig};
             s.sig.start_bit = start;
             s.sig.size = size;
             updateMsbLsb(s.sig);

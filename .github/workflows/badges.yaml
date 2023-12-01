@@ -15,10 +15,10 @@ jobs:
     runs-on: ubuntu-20.04
     if: github.repository == 'commaai/openpilot'
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
+    - uses: ./.github/workflows/setup-with-retry
     - name: Push badges
       run: |
         ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/ui/translations/create_badges.py"

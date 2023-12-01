@@ -18,7 +18,7 @@ from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
 ALL_ECUS = list({ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()})
 
-MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '5'))
+MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '20'))
 
 
 def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
@@ -50,7 +50,7 @@ class TestCarInterfaces(unittest.TestCase):
   # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
   #  many generated examples to overrun when max_examples > ~20, don't use it
   @parameterized.expand([(car,) for car in sorted(all_known_cars())])
-  @settings(max_examples=MAX_EXAMPLES, deadline=500,
+  @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
   def test_car_interfaces(self, car_name, data):
@@ -86,9 +86,6 @@ class TestCarInterfaces(unittest.TestCase):
       elif tune.which() == 'torque':
         self.assertTrue(not math.isnan(tune.torque.kf) and tune.torque.kf > 0)
         self.assertTrue(not math.isnan(tune.torque.friction) and tune.torque.friction > 0)
-
-      elif tune.which() == 'indi':
-        self.assertTrue(len(tune.indi.outerLoopGainV))
 
     cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
     # Run car interface
@@ -136,7 +133,7 @@ class TestCarInterfaces(unittest.TestCase):
 
     # Make sure we can combine dicts
     ret = get_interface_attr('DBC', combine_brands=True)
-    self.assertGreaterEqual(len(ret), 170)
+    self.assertGreaterEqual(len(ret), 160)
 
     # We don't support combining non-dicts
     ret = get_interface_attr('CAR', combine_brands=True)

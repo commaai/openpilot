@@ -19,19 +19,21 @@ TOTAL_SCONS_NODES = 2560
 MAX_BUILD_PROGRESS = 100
 PREBUILT = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
-def build(spinner: Spinner, dirty: bool = False) -> None:
+def build(spinner: Spinner, dirty: bool = False, minimal: bool = False) -> None:
   env = os.environ.copy()
   env['SCONS_PROGRESS'] = "1"
   nproc = os.cpu_count()
   if nproc is None:
     nproc = 2
 
+  extra_args = ["--minimal"] if minimal else []
+
   # building with all cores can result in using too
   # much memory, so retry with less parallelism
   compile_output: List[bytes] = []
   for n in (nproc, nproc/2, 1):
     compile_output.clear()
-    scons: subprocess.Popen = subprocess.Popen(["scons", f"-j{int(n)}", "--cache-populate", "--minimal"], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
+    scons: subprocess.Popen = subprocess.Popen(["scons", f"-j{int(n)}", "--cache-populate", *extra_args], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
     assert scons.stderr is not None
 
     # Read progress from stderr and update spinner
@@ -86,4 +88,4 @@ def build(spinner: Spinner, dirty: bool = False) -> None:
 if __name__ == "__main__" and not PREBUILT:
   spinner = Spinner()
   spinner.update_progress(0, 100)
-  build(spinner, is_dirty())
+  build(spinner, is_dirty(), minimal = AGNOS)

@@ -6,6 +6,7 @@ launch_openpilot.sh
 
 Jenkinsfile
 SConstruct
+pyproject.toml
 
 README.md
 RELEASES.md
@@ -71,7 +72,6 @@ selfdrive/__init__.py
 selfdrive/sentry.py
 selfdrive/tombstoned.py
 selfdrive/updated.py
-selfdrive/rtshield.py
 selfdrive/statsd.py
 
 system/logmessaged.py
@@ -133,10 +133,6 @@ selfdrive/car/tesla/*.py
 selfdrive/car/toyota/*.py
 selfdrive/car/volkswagen/*.py
 
-system/clocksd/.gitignore
-system/clocksd/SConscript
-system/clocksd/clocksd.cc
-
 selfdrive/debug/can_printer.py
 selfdrive/debug/check_freq.py
 selfdrive/debug/dump.py
@@ -167,7 +163,6 @@ common/ratekeeper.h
 common/watchdog.cc
 common/watchdog.h
 
-common/modeldata.h
 common/mat.h
 common/timing.h
 
@@ -201,14 +196,13 @@ selfdrive/controls/lib/longitudinal_mpc_lib/.gitignore
 selfdrive/controls/lib/lateral_mpc_lib/*
 selfdrive/controls/lib/longitudinal_mpc_lib/*
 
-selfdrive/hardware
-
 system/__init__.py
 
 system/hardware/__init__.py
 system/hardware/base.h
 system/hardware/base.py
 system/hardware/hw.h
+system/hardware/hw.py
 system/hardware/tici/__init__.py
 system/hardware/tici/hardware.h
 system/hardware/tici/hardware.py
@@ -219,6 +213,7 @@ system/hardware/tici/agnos.json
 system/hardware/tici/amplifier.py
 system/hardware/tici/updater
 system/hardware/tici/iwlist.py
+system/hardware/tici/esim.nmconnection
 system/hardware/pc/__init__.py
 system/hardware/pc/hardware.h
 system/hardware/pc/hardware.py
@@ -232,22 +227,20 @@ system/ubloxd/*.cc
 selfdrive/locationd/__init__.py
 selfdrive/locationd/SConscript
 selfdrive/locationd/.gitignore
-selfdrive/locationd/laikad.py
 selfdrive/locationd/locationd.h
 selfdrive/locationd/locationd.cc
 selfdrive/locationd/paramsd.py
 selfdrive/locationd/models/__init__.py
 selfdrive/locationd/models/.gitignore
 selfdrive/locationd/models/car_kf.py
-selfdrive/locationd/models/gnss_kf.py
 selfdrive/locationd/models/live_kf.py
 selfdrive/locationd/models/live_kf.h
 selfdrive/locationd/models/live_kf.cc
 selfdrive/locationd/models/constants.py
-selfdrive/locationd/models/gnss_helpers.py
 
 selfdrive/locationd/torqued.py
 selfdrive/locationd/calibrationd.py
+selfdrive/locationd/helpers.py
 
 system/logcatd/.gitignore
 system/logcatd/SConscript
@@ -286,7 +279,6 @@ system/sensord/SConscript
 system/sensord/sensors_qcom2.cc
 system/sensord/sensors/*.cc
 system/sensord/sensors/*.h
-system/sensord/sensord
 system/sensord/pigeond.py
 
 selfdrive/thermald/thermald.py
@@ -299,6 +291,7 @@ selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
 selfdrive/test/test_onroad.py
 selfdrive/test/test_time_to_onroad.py
+selfdrive/test/pytest-tici.ini
 
 selfdrive/ui/.gitignore
 selfdrive/ui/SConscript
@@ -360,12 +353,13 @@ selfdrive/modeld/.gitignore
 selfdrive/modeld/__init__.py
 selfdrive/modeld/SConscript
 selfdrive/modeld/modeld.py
-selfdrive/modeld/navmodeld.cc
-selfdrive/modeld/dmonitoringmodeld.cc
+selfdrive/modeld/parse_model_outputs.py
+selfdrive/modeld/fill_model_msg.py
+selfdrive/modeld/get_model_metadata.py
+selfdrive/modeld/navmodeld.py
+selfdrive/modeld/dmonitoringmodeld.py
 selfdrive/modeld/constants.py
 selfdrive/modeld/modeld
-selfdrive/modeld/navmodeld
-selfdrive/modeld/dmonitoringmodeld
 
 selfdrive/modeld/models/__init__.py
 selfdrive/modeld/models/*.pxd
@@ -374,16 +368,10 @@ selfdrive/modeld/models/*.pyx
 selfdrive/modeld/models/commonmodel.cc
 selfdrive/modeld/models/commonmodel.h
 
-selfdrive/modeld/models/driving.cc
-selfdrive/modeld/models/driving.h
 selfdrive/modeld/models/supercombo.onnx
 
-selfdrive/modeld/models/dmonitoring.cc
-selfdrive/modeld/models/dmonitoring.h
 selfdrive/modeld/models/dmonitoring_model_q.dlc
 
-selfdrive/modeld/models/nav.cc
-selfdrive/modeld/models/nav.h
 selfdrive/modeld/models/navmodel_q.dlc
 
 selfdrive/modeld/transforms/loadyuv.cc
@@ -456,9 +444,9 @@ third_party/qt5/larch64/bin/**
 scripts/update_now.sh
 scripts/stop_updater.sh
 
+rednose_repo/site_scons/site_tools/rednose_filter.py
 rednose/.gitignore
 rednose/**
-laika/**
 
 body/.gitignore
 body/board/SConscript
@@ -594,14 +582,21 @@ opendbc/tesla_can.dbc
 opendbc/tesla_radar.dbc
 opendbc/tesla_powertrain.dbc
 
-tinygrad_repo/openpilot/compile.py
+tinygrad_repo/openpilot/compile2.py
 tinygrad_repo/extra/onnx.py
 tinygrad_repo/extra/onnx_ops.py
 tinygrad_repo/extra/thneed.py
 tinygrad_repo/extra/utils.py
-tinygrad_repo/tinygrad/codegen/ast.py
-tinygrad_repo/tinygrad/codegen/gpu.py
+tinygrad_repo/tinygrad/codegen/kernel.py
+tinygrad_repo/tinygrad/codegen/linearizer.py
+tinygrad_repo/tinygrad/features/image.py
+tinygrad_repo/tinygrad/features/search.py
 tinygrad_repo/tinygrad/nn/*
+tinygrad_repo/tinygrad/renderer/cstyle.py
+tinygrad_repo/tinygrad/renderer/opencl.py
+tinygrad_repo/tinygrad/runtime/lib.py
+tinygrad_repo/tinygrad/runtime/ops_cpu.py
+tinygrad_repo/tinygrad/runtime/ops_disk.py
 tinygrad_repo/tinygrad/runtime/ops_gpu.py
 tinygrad_repo/tinygrad/shape/*
 tinygrad_repo/tinygrad/*.py

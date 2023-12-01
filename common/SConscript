@@ -1,9 +1,4 @@
-Import('env', 'envCython', 'arch', 'SHARED')
-
-if SHARED:
-  fxn = env.SharedLibrary
-else:
-  fxn = env.Library
+Import('env', 'envCython', 'arch')
 
 common_libs = [
   'params.cc',
@@ -18,13 +13,13 @@ common_libs = [
 if arch != "Darwin":
   common_libs.append('gpio.cc')
 
-_common = fxn('common', common_libs, LIBS="json11")
+_common = env.Library('common', common_libs, LIBS="json11")
 
 files = [
   'clutil.cc',
 ]
 
-_gpucommon = fxn('gpucommon', files)
+_gpucommon = env.Library('gpucommon', files)
 Export('_common', '_gpucommon')
 
 if GetOption('extras'):
@@ -32,5 +27,15 @@ if GetOption('extras'):
               ['tests/test_runner.cc', 'tests/test_util.cc', 'tests/test_swaglog.cc', 'tests/test_ratekeeper.cc'],
               LIBS=[_common, 'json11', 'zmq', 'pthread'])
 
-# Cython
-envCython.Program('params_pyx.so', 'params_pyx.pyx', LIBS=envCython['LIBS'] + [_common, 'zmq', 'json11'])
+# Cython bindings
+params_python = envCython.Program('params_pyx.so', 'params_pyx.pyx', LIBS=envCython['LIBS'] + [_common, 'zmq', 'json11'])
+
+SConscript([
+  'kalman/SConscript',
+  'transformations/SConscript'  
+])
+
+Import('simple_kalman_python', 'transformations_python')
+common_python = [params_python, simple_kalman_python, transformations_python]
+
+Export('common_python')

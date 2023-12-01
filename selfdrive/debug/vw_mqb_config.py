@@ -144,6 +144,7 @@ if __name__ == "__main__":
       uds_client.write_data_by_identifier(VOLKSWAGEN_DATA_IDENTIFIER_TYPE.CODING, new_coding)  # type: ignore
     except (NegativeResponseError, MessageTimeoutError):
       print("Writing new configuration failed!")
+      print("Make sure the comma processes are stopped: tmux kill-session -t comma")
       quit()
 
     try:
