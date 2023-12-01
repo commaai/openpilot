@@ -55,7 +55,6 @@ class TestCarInterfaces(unittest.TestCase):
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
   @pytest.mark.jenkins
-  @pytest.mark.gh_actions
   def test_car_interfaces(self, car_name, data):
     CarInterface, CarController, CarState = interfaces[car_name]
 

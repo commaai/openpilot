@@ -174,6 +174,7 @@ class TestFwFingerprint(unittest.TestCase):
                            f"{brand.title()}: OBD multiplexed request is marked auxiliary: {request_obj}")
 
 
+@pytest.mark.slow
 @pytest.mark.jenkins
 class TestFwFingerprintTiming(unittest.TestCase):
   N: int = 5

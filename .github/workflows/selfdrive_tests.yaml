@@ -175,7 +175,7 @@ jobs:
     - name: Run unit tests
       timeout-minutes: 15
       run: |
-        ${{ env.RUN }} "$PYTEST --timeout 30 -m 'not slow and not jenkins' && \
+        ${{ env.RUN }} "$PYTEST --timeout 30 -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         ./selfdrive/ui/tests/test_translations.py && \
