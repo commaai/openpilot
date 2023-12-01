@@ -8,6 +8,11 @@ import uuid
 import logging
 from typing import Any, List, Optional, Union
 
+# aiortc and its dependencies have lots of internal warnings :(
+import warnings
+warnings.resetwarnings()
+warnings.simplefilter("always")
+
 import aiortc
 from aiortc.mediastreams import VideoStreamTrack, AudioStreamTrack
 from aiortc.contrib.media import MediaBlackhole
