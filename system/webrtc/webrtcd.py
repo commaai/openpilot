@@ -10,7 +10,8 @@ from typing import Any, List, Optional, Union
 
 # aiortc and its dependencies have lots of internal warnings :(
 import warnings
-warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.resetwarnings()
+warnings.filterwarnings("ignore")
 
 import aiortc
 from aiortc.mediastreams import VideoStreamTrack, AudioStreamTrack
