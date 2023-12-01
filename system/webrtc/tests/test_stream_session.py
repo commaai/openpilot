@@ -3,6 +3,9 @@ import asyncio
 import unittest
 from unittest.mock import Mock, MagicMock, patch
 import json
+# for aiortc and its dependencies
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from aiortc import RTCDataChannel
 from aiortc.mediastreams import VIDEO_CLOCK_RATE, VIDEO_TIME_BASE

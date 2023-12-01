@@ -2,6 +2,9 @@
 import asyncio
 import unittest
 import multiprocessing
+# for aiortc and its dependencies
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from openpilot.system.webrtc.webrtcd import webrtcd_thread
 
