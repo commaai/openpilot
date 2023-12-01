@@ -5,6 +5,7 @@ import multiprocessing
 # for aiortc and its dependencies
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=ResourceWarning)
 
 from openpilot.system.webrtc.webrtcd import webrtcd_thread
 
