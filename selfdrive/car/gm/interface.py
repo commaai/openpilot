@@ -4,7 +4,7 @@ from math import fabs, exp
 from panda import Panda
 
 from openpilot.common.conversions import Conversions as CV
-from openpilot.selfdrive.car import create_button_event, get_safety_config
+from openpilot.selfdrive.car import create_button_events, get_safety_config
 from openpilot.selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
 from openpilot.selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD
@@ -21,7 +21,8 @@ BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.D
 
 NON_LINEAR_TORQUE_PARAMS = {
   CAR.BOLT_EUV: [2.6531724862969748, 1.0, 0.1919764879840985, 0.009054123646805178],
-  CAR.ACADIA: [4.78003305, 1.0, 0.3122, 0.05591772]
+  CAR.ACADIA: [4.78003305, 1.0, 0.3122, 0.05591772],
+  CAR.SILVERADO: [3.29974374, 1.0, 0.25571356, 0.0465122]
 }
 
 
@@ -197,16 +198,21 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.5
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    elif candidate == CAR.ESCALADE_ESV:
+    elif candidate in (CAR.ESCALADE_ESV, CAR.ESCALADE_ESV_2019):
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
       ret.mass = 2739.
       ret.wheelbase = 3.302
       ret.steerRatio = 17.3
       ret.centerToFront = ret.wheelbase * 0.5
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
-      ret.lateralTuning.pid.kf = 0.000045
       ret.tireStiffnessFactor = 1.0
+
+      if candidate == CAR.ESCALADE_ESV:
+        ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
+        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
+        ret.lateralTuning.pid.kf = 0.000045
+      else:
+        ret.steerActuatorDelay = 0.2
+        CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.BOLT_EUV:
       ret.mass = 1669.
@@ -252,13 +258,10 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_loopback)
 
-    if self.CS.cruise_buttons != self.CS.prev_cruise_buttons and self.CS.prev_cruise_buttons != CruiseButtons.INIT:
-      buttonEvents = [create_button_event(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT, CruiseButtons.UNPRESS)]
-      # Handle ACCButtons changing buttons mid-press
-      if self.CS.cruise_buttons != CruiseButtons.UNPRESS and self.CS.prev_cruise_buttons != CruiseButtons.UNPRESS:
-        buttonEvents.append(create_button_event(CruiseButtons.UNPRESS, self.CS.prev_cruise_buttons, BUTTONS_DICT, CruiseButtons.UNPRESS))
-
-      ret.buttonEvents = buttonEvents
+    # Don't add event if transitioning from INIT, unless it's to an actual button
+    if self.CS.cruise_buttons != CruiseButtons.UNPRESS or self.CS.prev_cruise_buttons != CruiseButtons.INIT:
+      ret.buttonEvents = create_button_events(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT,
+                                              unpressed_btn=CruiseButtons.UNPRESS)
 
     # The ECM allows enabling on falling edge of set, but only rising edge of resume
     events = self.create_common_events(ret, extra_gears=[GearShifter.sport, GearShifter.low,

@@ -77,6 +77,8 @@ float getenv(const char* key, float default_val);
 
 std::string hexdump(const uint8_t* in, const size_t size);
 std::string dir_name(std::string const& path);
+bool starts_with(const std::string &s1, const std::string &s2);
+bool ends_with(const std::string &s1, const std::string &s2);
 
 // ***** random helpers *****
 int random_int(int min, int max);
@@ -115,7 +117,7 @@ public:
 #ifndef __APPLE__
     std::signal(SIGPWR, (sighandler_t)set_do_exit);
 #endif
-  };
+  }
   inline static std::atomic<bool> power_failure = false;
   inline static std::atomic<int> signal = 0;
   inline operator bool() { return do_exit; }
@@ -151,12 +153,18 @@ struct unique_fd {
 
 class FirstOrderFilter {
 public:
-  FirstOrderFilter(float x0, float ts, float dt) {
+  FirstOrderFilter(float x0, float ts, float dt, bool initialized = true) {
     k_ = (dt / ts) / (1.0 + dt / ts);
     x_ = x0;
+    initialized_ = initialized;
   }
   inline float update(float x) {
-    x_ = (1. - k_) * x_ + k_ * x;
+    if (initialized_) {
+      x_ = (1. - k_) * x_ + k_ * x;
+    } else {
+      initialized_ = true;
+      x_ = x;
+    }
     return x_;
   }
   inline void reset(float x) { x_ = x; }
@@ -164,12 +172,13 @@ public:
 
 private:
   float x_, k_;
+  bool initialized_;
 };
 
 template<typename T>
 void update_max_atomic(std::atomic<T>& max, T const& value) {
   T prev = max;
-  while(prev < value && !max.compare_exchange_weak(prev, value)) {}
+  while (prev < value && !max.compare_exchange_weak(prev, value)) {}
 }
 
 class LogState {
@@ -179,9 +188,9 @@ class LogState {
   void *zctx = nullptr;
   void *sock = nullptr;
   int print_level;
-  const char* endpoint;
+  std::string endpoint;
 
-  LogState(const char* _endpoint) {
+  LogState(std::string _endpoint) {
     endpoint = _endpoint;
   }
 
@@ -193,7 +202,7 @@ class LogState {
     int timeout = 100;
     zmq_setsockopt(sock, ZMQ_LINGER, &timeout, sizeof(timeout));
 
-    zmq_connect(sock, endpoint);
+    zmq_connect(sock, endpoint.c_str());
     initialized = true;
   }
 

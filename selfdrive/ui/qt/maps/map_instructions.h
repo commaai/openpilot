@@ -1,5 +1,8 @@
 #pragma once
 
+#include <map>
+#include <vector>
+
 #include <QHash>
 #include <QHBoxLayout>
 #include <QLabel>

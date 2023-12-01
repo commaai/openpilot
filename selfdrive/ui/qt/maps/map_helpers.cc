@@ -1,5 +1,9 @@
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 
+#include <algorithm>
+#include <string>
+#include <utility>
+
 #include <QJsonDocument>
 #include <QJsonObject>
 
@@ -17,6 +21,7 @@ QMapboxGLSettings get_mapbox_settings() {
 
   if (!Hardware::PC()) {
     settings.setCacheDatabasePath(MAPS_CACHE_PATH);
+    settings.setCacheDatabaseMaximumSize(100 * 1024 * 1024);
   }
   settings.setApiBaseUrl(MAPS_HOST);
   settings.setAccessToken(get_mapbox_token());
@@ -57,7 +62,7 @@ QMapbox::CoordinatesCollections coordinate_to_collection(const QMapbox::Coordina
 
 QMapbox::CoordinatesCollections capnp_coordinate_list_to_collection(const capnp::List<cereal::NavRoute::Coordinate>::Reader& coordinate_list) {
   QMapbox::Coordinates coordinates;
-  for (auto const &c: coordinate_list) {
+  for (auto const &c : coordinate_list) {
     coordinates.push_back({c.getLatitude(), c.getLongitude()});
   }
   return {QMapbox::CoordinatesCollection{coordinates}};
@@ -144,9 +149,4 @@ std::pair<QString, QString> map_format_distance(float d, bool is_metric) {
     return (feet > 500) ? std::pair{QString::number(round_distance(d * METER_TO_MILE)), QObject::tr("mi")}
                         : std::pair{QString::number(50 * std::nearbyint(d / 50)), QObject::tr("ft")};
   }
-}
-
-double angle_difference(double angle1, double angle2) {
-  double diff = fmod(angle2 - angle1 + 180.0, 360.0) - 180.0;
-  return diff < -180.0 ? diff + 360.0 : diff;
 }

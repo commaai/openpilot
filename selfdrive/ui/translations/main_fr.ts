@@ -234,8 +234,8 @@
         <translation>Éteindre</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot nécessite que l&apos;appareil soit monté à 4° à gauche ou à droite et à 5° vers le haut ou 8° vers le bas. openpilot se calibre en continu, la réinitialisation est rarement nécessaire.</translation>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
+        <translation>openpilot nécessite que l&apos;appareil soit monté à 4° à gauche ou à droite et à 5° vers le haut ou 9° vers le bas. openpilot se calibre en continu, la réinitialisation est rarement nécessaire.</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
@@ -272,33 +272,6 @@
     <message>
         <source>Disengage to Power Off</source>
         <translation>Désengager pour éteindre</translation>
-    </message>
-</context>
-<context>
-    <name>DriveStats</name>
-    <message>
-        <source>Drives</source>
-        <translation>Trajets</translation>
-    </message>
-    <message>
-        <source>Hours</source>
-        <translation>Heures</translation>
-    </message>
-    <message>
-        <source>ALL TIME</source>
-        <translation>DEPUIS TOUJOURS</translation>
-    </message>
-    <message>
-        <source>PAST WEEK</source>
-        <translation>CETTE SEMAINE</translation>
-    </message>
-    <message>
-        <source>KM</source>
-        <translation>KM</translation>
-    </message>
-    <message>
-        <source>Miles</source>
-        <translation>Miles</translation>
     </message>
 </context>
 <context>
@@ -517,7 +490,7 @@
     <name>PrimeAdWidget</name>
     <message>
         <source>Upgrade Now</source>
-        <translation>Mettre à niveau maintenant</translation>
+        <translation>Mettre à niveau</translation>
     </message>
     <message>
         <source>Become a comma prime member at connect.comma.ai</source>
@@ -753,6 +726,10 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
         <source>Start over</source>
         <translation>Recommencer</translation>
     </message>
+    <message>
+        <source>Select a language</source>
+        <translation>Choisir une langue</translation>
+    </message>
 </context>
 <context>
     <name>SetupWidget</name>
@@ -856,7 +833,7 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     <name>SoftwarePanel</name>
     <message>
         <source>Updates are only downloaded while the car is off.</source>
-        <translation>Les mises à jour sont téléchargées uniquement lorsque la voiture est éteinte.</translation>
+        <translation>Les MàJ sont téléchargées uniquement si la voiture est éteinte.</translation>
     </message>
     <message>
         <source>Current Version</source>
@@ -1170,7 +1147,7 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     <name>WiFiPromptWidget</name>
     <message>
         <source>Setup Wi-Fi</source>
-        <translation>Configurer le Wi-Fi</translation>
+        <translation>Configurer Wi-Fi</translation>
     </message>
     <message>
         <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>

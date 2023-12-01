@@ -1,8 +1,10 @@
 #pragma once
 
+#include <QObject>
 #include <memory>
 #include <map>
 #include <set>
+#include <vector>
 
 #include "tools/cabana/dbc/dbcfile.h"
 
@@ -27,7 +29,7 @@ public:
   void updateSignal(const MessageId &id, const QString &sig_name, const cabana::Signal &sig);
   void removeSignal(const MessageId &id, const QString &sig_name);
 
-  void updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &comment);
+  void updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &node, const QString &comment);
   void removeMsg(const MessageId &id);
 
   QString newMsgName(const MessageId &id);
@@ -65,15 +67,8 @@ private:
 
 DBCManager *dbc();
 
+QString toString(const SourceSet &ss);
 inline QString msgName(const MessageId &id) {
   auto msg = dbc()->msg(id);
   return msg ? msg->name : UNTITLED;
-}
-
-inline QString toString(const SourceSet &ss) {
-  QStringList ret;
-  for (auto s : ss) {
-    ret << (s == -1 ? QString("all") : QString::number(s));
-  }
-  return ret.join(", ");
 }

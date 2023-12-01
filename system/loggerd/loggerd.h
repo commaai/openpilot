@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "cereal/messaging/messaging.h"
 #include "cereal/services.h"
 #include "cereal/visionipc/visionipc_client.h"

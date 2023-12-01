@@ -290,7 +290,7 @@ class LongitudinalMpc:
     self.x0[1] = v
     self.x0[2] = a
     if abs(v_prev - v) > 2.:  # probably only helps if v < v_prev
-      for i in range(0, N+1):
+      for i in range(N+1):
         self.solver.set(i, 'x', self.x0)
 
   @staticmethod

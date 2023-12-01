@@ -3,6 +3,7 @@ import math
 import os
 import subprocess
 import time
+import tempfile
 from enum import IntEnum
 from functools import cached_property, lru_cache
 from pathlib import Path
@@ -97,14 +98,14 @@ def get_device_type():
 class Tici(HardwareBase):
   @cached_property
   def bus(self):
-    import dbus  # pylint: disable=import-error
+    import dbus
     return dbus.SystemBus()
 
   @cached_property
   def nm(self):
     return self.bus.get_object(NM, '/org/freedesktop/NetworkManager')
 
-  @cached_property
+  @property # this should not be cached, in case the modemmanager restarts
   def mm(self):
     return self.bus.get_object(MM, '/org/freedesktop/ModemManager1')
 
@@ -210,8 +211,8 @@ class Tici(HardwareBase):
     return str(self.get_modem().Get(MM_MODEM, 'EquipmentIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
 
   def get_network_info(self):
-    modem = self.get_modem()
     try:
+      modem = self.get_modem()
       info = modem.Command("AT+QNWINFO", math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
       extra = modem.Command('AT+QENG="servingcell"', math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
       state = modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
@@ -505,7 +506,7 @@ class Tici(HardwareBase):
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_rail_on")
     sudo_write("1000", "/sys/class/kgsl/kgsl-3d0/idle_timer")
     sudo_write("performance", "/sys/class/kgsl/kgsl-3d0/devfreq/governor")
-    sudo_write("596", "/sys/class/kgsl/kgsl-3d0/max_clock_mhz")
+    sudo_write("710", "/sys/class/kgsl/kgsl-3d0/max_clock_mhz")
 
     # setup governors
     sudo_write("performance", "/sys/class/devfreq/soc:qcom,cpubw/governor")
@@ -532,9 +533,23 @@ class Tici(HardwareBase):
       except Exception:
         pass
 
-    # blue prime config
-    if sim_id.startswith('8901410'):
-      os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn=Broadband"')
+    # blue prime
+    blue_prime = sim_id.startswith('8901410')
+    initial_apn = "Broadband" if blue_prime else ""
+    os.system(f'mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn={initial_apn}"')
+
+    # eSIM prime
+    if sim_id.startswith('8985235'):
+      dest = "/etc/NetworkManager/system-connections/esim.nmconnection"
+      with open(Path(__file__).parent/'esim.nmconnection') as f, tempfile.NamedTemporaryFile(mode='w') as tf:
+        dat = f.read()
+        dat = dat.replace("sim-id=", f"sim-id={sim_id}")
+        tf.write(dat)
+        tf.flush()
+
+        # needs to be root
+        os.system(f"sudo cp {tf.name} {dest}")
+      os.system(f"sudo nmcli con load {dest}")
 
   def get_networks(self):
     r = {}
@@ -586,7 +601,7 @@ class Tici(HardwareBase):
     gpio_init(GPIO.STM_RST_N, True)
 
     gpio_set(GPIO.STM_RST_N, 1)
-    time.sleep(2)
+    time.sleep(1)
     gpio_set(GPIO.STM_RST_N, 0)
 
   def recover_internal_panda(self):
@@ -595,13 +610,14 @@ class Tici(HardwareBase):
 
     gpio_set(GPIO.STM_RST_N, 1)
     gpio_set(GPIO.STM_BOOT0, 1)
-    time.sleep(1)
+    time.sleep(0.5)
     gpio_set(GPIO.STM_RST_N, 0)
-    time.sleep(1)
+    time.sleep(0.5)
     gpio_set(GPIO.STM_BOOT0, 0)
 
 
 if __name__ == "__main__":
   t = Tici()
+  t.configure_modem()
   t.initialize_hardware()
   t.set_power_save(False)

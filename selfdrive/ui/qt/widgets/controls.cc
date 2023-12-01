@@ -12,18 +12,19 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   hlayout->setSpacing(20);
 
   // left icon
-  icon_label = new QLabel();
+  icon_label = new QLabel(this);
+  hlayout->addWidget(icon_label);
   if (!icon.isEmpty()) {
     icon_pixmap = QPixmap(icon).scaledToWidth(80, Qt::SmoothTransformation);
     icon_label->setPixmap(icon_pixmap);
     icon_label->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-    hlayout->addWidget(icon_label);
   }
+  icon_label->setVisible(!icon.isEmpty());
 
   // title
   title_label = new QPushButton(title);
   title_label->setFixedHeight(120);
-  title_label->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left");
+  title_label->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left; border: none;");
   hlayout->addWidget(title_label, 1);
 
   // value next to control button

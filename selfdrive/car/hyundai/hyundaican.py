@@ -37,7 +37,8 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
                          CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KIA_SELTOS, CAR.ELANTRA_2021, CAR.GENESIS_G70_2020,
                          CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022,
                          CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022,
-                         CAR.SANTA_FE_PHEV_2022, CAR.KIA_STINGER_2022, CAR.KIA_K5_HEV_2020, CAR.KIA_CEED):
+                         CAR.SANTA_FE_PHEV_2022, CAR.KIA_STINGER_2022, CAR.KIA_K5_HEV_2020, CAR.KIA_CEED,
+                         CAR.AZERA_6TH_GEN, CAR.AZERA_HEV_6TH_GEN, CAR.CUSTIN_1ST_GEN):
     values["CF_Lkas_LdwsActivemode"] = int(left_lane) + (int(right_lane) << 1)
     values["CF_Lkas_LdwsOpt_USM"] = 2
 
@@ -148,6 +149,13 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
     "aReqValue": accel,  # stock ramps up and down respecting jerk limit until it reaches aReqRaw
     "CR_VSM_Alive": idx % 0xF,
   }
+
+  # show AEB disabled indicator on dash with SCC12 if not sending FCA messages.
+  # these signals also prevent a TCS fault on non-FCA cars with alpha longitudinal
+  if not use_fca:
+    scc12_values["CF_VSM_ConfMode"] = 1
+    scc12_values["AEB_Status"] = 1  # AEB disabled
+
   scc12_dat = packer.make_can_msg("SCC12", 0, scc12_values)[2]
   scc12_values["CR_VSM_ChkSum"] = 0x10 - sum(sum(divmod(i, 16)) for i in scc12_dat) % 0x10
 
@@ -171,7 +179,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
       "CR_FCA_Alive": idx % 0xF,
       "PAINT1_Status": 1,
       "FCA_DrvSetStatus": 1,
-      "FCA_Status": 1, # AEB disabled
+      "FCA_Status": 1,  # AEB disabled
     }
     fca11_dat = packer.make_can_msg("FCA11", 0, fca11_values)[2]
     fca11_values["CR_FCA_ChkSum"] = hyundai_checksum(fca11_dat[:7])

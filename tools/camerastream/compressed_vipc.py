@@ -19,14 +19,18 @@ ENCODE_SOCKETS = {
   VisionStreamType.VISION_STREAM_DRIVER: "driverEncodeData",
 }
 
-def decoder(addr, vipc_server, vst, nvidia, debug=False):
+def decoder(addr, vst, nvidia, debug=False):
+  vipc_server = VisionIpcServer("camerad")
+  vipc_server.create_buffers(vst, 4, False, W, H)
+  vipc_server.start_listener()
+
   sock_name = ENCODE_SOCKETS[vst]
   if debug:
     print("start decoder for %s" % sock_name)
   if nvidia:
     os.environ["NV_LOW_LATENCY"] = "3"    # both bLowLatency and CUVID_PKT_ENDOFPICTURE
     sys.path += os.environ["LD_LIBRARY_PATH"].split(":")
-    import PyNvCodec as nvc # pylint: disable=import-error
+    import PyNvCodec as nvc
 
     nvDec = nvc.PyNvDecoder(W, H, nvc.PixelFormat.NV12, nvc.CudaVideoCodec.HEVC, 0)
     cc1 = nvc.ColorspaceConversionContext(nvc.ColorSpace.BT_709, nvc.ColorRange.JPEG)
@@ -101,14 +105,9 @@ def decoder(addr, vipc_server, vst, nvidia, debug=False):
 
 class CompressedVipc:
   def __init__(self, addr, vision_streams, nvidia=False, debug=False):
-    self.vipc_server = VisionIpcServer("camerad")
-    for vst in vision_streams:
-      self.vipc_server.create_buffers(vst, 4, False, W, H)
-    self.vipc_server.start_listener()
-
     self.procs = []
     for vst in vision_streams:
-      p = multiprocessing.Process(target=decoder, args=(addr, self.vipc_server, vst, nvidia, debug))
+      p = multiprocessing.Process(target=decoder, args=(addr, vst, nvidia, debug))
       p.start()
       self.procs.append(p)
 

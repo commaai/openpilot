@@ -226,8 +226,8 @@
         <translation>Ausschalten</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>Damit Openpilot funktioniert, darf die Installationsposition nicht mehr als 4° nach rechts/links, 5° nach oben und 8° nach unten abweichen. Openpilot kalibriert sich durchgehend, ein Zurücksetzen ist selten notwendig.</translation>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
+        <translation>Damit Openpilot funktioniert, darf die Installationsposition nicht mehr als 4° nach rechts/links, 5° nach oben und 9° nach unten abweichen. Openpilot kalibriert sich durchgehend, ein Zurücksetzen ist selten notwendig.</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
@@ -272,33 +272,6 @@
     <message>
         <source>Review</source>
         <translation>Überprüfen</translation>
-    </message>
-</context>
-<context>
-    <name>DriveStats</name>
-    <message>
-        <source>Drives</source>
-        <translation>Fahrten</translation>
-    </message>
-    <message>
-        <source>Hours</source>
-        <translation>Stunden</translation>
-    </message>
-    <message>
-        <source>ALL TIME</source>
-        <translation>Gesamtzeit</translation>
-    </message>
-    <message>
-        <source>PAST WEEK</source>
-        <translation>Letzte Woche</translation>
-    </message>
-    <message>
-        <source>KM</source>
-        <translation>KM</translation>
-    </message>
-    <message>
-        <source>Miles</source>
-        <translation>Meilen</translation>
     </message>
 </context>
 <context>
@@ -751,6 +724,10 @@ This may take up to a minute.</source>
         <source>Something went wrong. Reboot the device.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Select a language</source>
+        <translation>Sprache wählen</translation>
+    </message>
 </context>
 <context>
     <name>SetupWidget</name>
@@ -1073,19 +1050,11 @@ This may take up to a minute.</source>
         <translation>Der experimentelle Modus ist momentan für dieses Auto nicht verfügbar da es den eingebauten adaptiven Tempomaten des Autos benutzt.</translation>
     </message>
     <message>
-        <source>openpilot longitudinal control may come in a future update.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1105,23 +1074,19 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <source>End-to-End Longitudinal Control</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Navigate on openpilot</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>End-to-End Longitudinal Control</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1130,6 +1095,18 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

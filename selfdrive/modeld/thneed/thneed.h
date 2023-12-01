@@ -12,7 +12,7 @@
 
 #include <CL/cl.h>
 
-#include "msm_kgsl.h"
+#include "third_party/linux/include/msm_kgsl.h"
 
 using namespace std;
 

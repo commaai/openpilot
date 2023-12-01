@@ -5,12 +5,8 @@ on:
   workflow_dispatch:
 
 env:
-  BASE_IMAGE: openpilot-base
-  DOCKER_REGISTRY: ghcr.io/commaai
-
   DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-  BUILD: |
-      DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
+  BUILD: selfdrive/test/docker_build.sh prebuilt
 
 jobs:
   build_prebuilt:
@@ -18,7 +14,7 @@ jobs:
     runs-on: ubuntu-20.04
     if: github.repository == 'commaai/openpilot'
     env:
-      IMAGE_NAME: openpilot-prebuilt
+      PUSH_IMAGE: true
     steps:
     - name: Wait for green check mark
       if: ${{ github.event_name != 'workflow_dispatch' }}
@@ -28,16 +24,11 @@ jobs:
         wait-interval: 30
         running-workflow-name: 'build prebuilt'
         check-regexp: ^((?!.*(build master-ci).*).)*$
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
-    - name: Build Docker image
-      run: |
-        eval "$BUILD"
-        DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f Dockerfile.openpilot .
-    - name: Push to container registry
+    - run: git lfs pull
+    - name: Build and Push docker image
       run: |
         $DOCKER_LOGIN
-        docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest
-        docker tag $DOCKER_REGISTRY/$IMAGE_NAME:latest $DOCKER_REGISTRY/$IMAGE_NAME:$GITHUB_SHA
-        docker push $DOCKER_REGISTRY/$IMAGE_NAME:$GITHUB_SHA
+        eval "$BUILD"

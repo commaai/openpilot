@@ -5,18 +5,18 @@
 #include <cassert>
 #include <cstdio>
 #include <chrono>
+#include <string>
 #include <thread>
 
-#include "libyuv.h"
+#include "third_party/libyuv/include/libyuv.h"
 #include <jpeglib.h>
 
 #include "system/camerad/imgproc/utils.h"
 #include "common/clutil.h"
-#include "common/modeldata.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "system/hardware/hw.h"
-#include "msm_media_info.h"
+#include "third_party/linux/include/msm_media_info.h"
 
 #include "system/camerad/cameras/camera_qcom2.h"
 #ifdef QCOM2

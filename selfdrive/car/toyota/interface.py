@@ -1,10 +1,11 @@
-#!/usr/bin/env python3
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
 from panda import Panda
+from panda.python import uds
 from openpilot.selfdrive.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
-                                        MIN_ACC_SPEED, EPS_SCALE, EV_HYBRID_CAR, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR
+                                        MIN_ACC_SPEED, EPS_SCALE, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR
 from openpilot.selfdrive.car import get_safety_config
+from openpilot.selfdrive.car.disable_ecu import disable_ecu
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 EventName = car.CarEvent.EventName
@@ -76,7 +77,7 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.444  # not optimized yet
       ret.mass = 2860. * CV.LB_TO_KG  # mean between normal and hybrid
 
-    elif candidate in (CAR.LEXUS_RX, CAR.LEXUS_RXH, CAR.LEXUS_RX_TSS2, CAR.LEXUS_RXH_TSS2):
+    elif candidate in (CAR.LEXUS_RX, CAR.LEXUS_RXH, CAR.LEXUS_RX_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.79
       ret.steerRatio = 16.  # 14.8 is spec end-to-end
@@ -84,28 +85,28 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.5533
       ret.mass = 4481. * CV.LB_TO_KG  # mean between min and max
 
-    elif candidate in (CAR.CHR, CAR.CHRH, CAR.CHR_TSS2, CAR.CHRH_TSS2):
+    elif candidate in (CAR.CHR, CAR.CHR_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.63906
       ret.steerRatio = 13.6
       ret.tireStiffnessFactor = 0.7933
       ret.mass = 3300. * CV.LB_TO_KG
 
-    elif candidate in (CAR.CAMRY, CAR.CAMRYH, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2):
+    elif candidate in (CAR.CAMRY, CAR.CAMRY_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.82448
       ret.steerRatio = 13.7
       ret.tireStiffnessFactor = 0.7933
       ret.mass = 3400. * CV.LB_TO_KG  # mean between normal and hybrid
 
-    elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2):
+    elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.HIGHLANDER_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.8194  # average of 109.8 and 112.2 in
       ret.steerRatio = 16.0
       ret.tireStiffnessFactor = 0.8
       ret.mass = 4516. * CV.LB_TO_KG  # mean between normal and hybrid
 
-    elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALONH_2019, CAR.AVALON_TSS2, CAR.AVALONH_TSS2):
+    elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALON_TSS2):
       # starting from 2019, all Avalon variants have stop and go
       # https://engage.toyota.com/static/images/toyota_safety_sense/TSS_Applicability_Chart.pdf
       stop_and_go = candidate != CAR.AVALON
@@ -114,8 +115,7 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.7983
       ret.mass = 3505. * CV.LB_TO_KG  # mean between normal and hybrid
 
-    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022,
-                       CAR.RAV4_TSS2_2023, CAR.RAV4H_TSS2_2023):
+    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023):
       ret.wheelbase = 2.68986
       ret.steerRatio = 14.3
       ret.tireStiffnessFactor = 0.7933
@@ -136,13 +136,13 @@ class CarInterface(CarInterfaceBase):
           ret.lateralTuning.pid.kf = 0.00004
           break
 
-    elif candidate in (CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2):
+    elif candidate == CAR.COROLLA_TSS2:
       ret.wheelbase = 2.67  # Average between 2.70 for sedan and 2.64 for hatchback
       ret.steerRatio = 13.9
       ret.tireStiffnessFactor = 0.444  # not optimized yet
       ret.mass = 3060. * CV.LB_TO_KG
 
-    elif candidate in (CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2):
+    elif candidate in (CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_ES_TSS2):
       if candidate not in (CAR.LEXUS_ES,):  # TODO: LEXUS_ES may have sng
         stop_and_go = True
       ret.wheelbase = 2.8702
@@ -163,6 +163,12 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.444
       ret.mass = 3736.8 * CV.LB_TO_KG
 
+    elif candidate == CAR.LEXUS_GS_F:
+      ret.wheelbase = 2.84988
+      ret.steerRatio = 13.3
+      ret.tireStiffnessFactor = 0.444
+      ret.mass = 4034. * CV.LB_TO_KG
+
     elif candidate == CAR.LEXUS_CTH:
       stop_and_go = True
       ret.wheelbase = 2.60
@@ -170,7 +176,7 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.517
       ret.mass = 3108 * CV.LB_TO_KG  # mean between min and max
 
-    elif candidate in (CAR.LEXUS_NX, CAR.LEXUS_NXH, CAR.LEXUS_NX_TSS2, CAR.LEXUS_NXH_TSS2):
+    elif candidate in (CAR.LEXUS_NX, CAR.LEXUS_NX_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.66
       ret.steerRatio = 14.7
@@ -190,17 +196,21 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.8
       ret.mass = 4300. * CV.LB_TO_KG
 
-    elif candidate in (CAR.ALPHARD_TSS2, CAR.ALPHARDH_TSS2):
+    elif candidate == CAR.ALPHARD_TSS2:
       ret.wheelbase = 3.00
       ret.steerRatio = 14.2
       ret.tireStiffnessFactor = 0.444
       ret.mass = 4305. * CV.LB_TO_KG
 
     ret.centerToFront = ret.wheelbase * 0.44
+
+    # TODO: Some TSS-P platforms have BSM, but are flipped based on region or driving direction.
+    # Detect flipped signals and enable for C-HR and others
     ret.enableBsm = 0x3F6 in fingerprint[0] and candidate in TSS2_CAR
 
     # Detect smartDSU, which intercepts ACC_CMD from the DSU (or radar) allowing openpilot to send it
-    if 0x2FF in fingerprint[0]:
+    # 0x2AA is sent by a similar device which intercepts the radar instead of DSU on NO_DSU_CARs
+    if 0x2FF in fingerprint[0] or (0x2AA in fingerprint[0] and candidate in NO_DSU_CAR):
       ret.flags |= ToyotaFlags.SMART_DSU.value
 
     # No radar dbc for cars without DSU which are not TSS 2.0
@@ -214,11 +224,17 @@ class CarInterface(CarInterfaceBase):
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
 
     # if the smartDSU is detected, openpilot can send ACC_CONTROL and the smartDSU will block it from the DSU or radar.
-    # since we don't yet parse radar on TSS2 radar-based ACC cars, gate longitudinal behind experimental toggle
+    # since we don't yet parse radar on TSS2/TSS-P radar-based ACC cars, gate longitudinal behind experimental toggle
     use_sdsu = bool(ret.flags & ToyotaFlags.SMART_DSU)
-    if candidate in RADAR_ACC_CAR:
+    if candidate in (RADAR_ACC_CAR | NO_DSU_CAR):
       ret.experimentalLongitudinalAvailable = use_sdsu
-      use_sdsu = use_sdsu and experimental_long
+
+      if not use_sdsu:
+        # Disabling radar is only supported on TSS2 radar-ACC cars
+        if experimental_long and candidate in RADAR_ACC_CAR and False:  # TODO: disabling radar isn't supported yet
+          ret.flags |= ToyotaFlags.DISABLE_RADAR.value
+      else:
+        use_sdsu = use_sdsu and experimental_long
 
     # openpilot longitudinal enabled by default:
     #  - non-(TSS2 radar ACC cars) w/ smartDSU installed
@@ -226,16 +242,13 @@ class CarInterface(CarInterfaceBase):
     #  - TSS2 cars with camera sending ACC_CONTROL where we can block it
     # openpilot longitudinal behind experimental long toggle:
     #  - TSS2 radar ACC cars w/ smartDSU installed
-    ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
+    #  - TSS2 radar ACC cars w/o smartDSU installed (disables radar)
+    #  - TSS-P DSU-less cars w/ CAN filter installed (no radar parser yet)
+    ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR) or bool(ret.flags & ToyotaFlags.DISABLE_RADAR.value)
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
 
     if not ret.openpilotLongitudinalControl:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL
-
-    # we can't use the fingerprint to detect this reliably, since
-    # the EV gas pedal signal can take a couple seconds to appear
-    if candidate in EV_HYBRID_CAR:
-      ret.flags |= ToyotaFlags.HYBRID.value
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
@@ -260,6 +273,13 @@ class CarInterface(CarInterfaceBase):
       tune.kiV = [0.54, 0.36]
 
     return ret
+
+  @staticmethod
+  def init(CP, logcan, sendcan):
+    # disable radar if alpha longitudinal toggled on radar-ACC car without CAN filter/smartDSU
+    if CP.flags & ToyotaFlags.DISABLE_RADAR.value:
+      communication_control = bytes([uds.SERVICE_TYPE.COMMUNICATION_CONTROL, uds.CONTROL_TYPE.ENABLE_RX_DISABLE_TX, uds.MESSAGE_TYPE.NORMAL])
+      disable_ecu(logcan, sendcan, bus=0, addr=0x750, sub_addr=0xf, com_cont_req=communication_control)
 
   # returns a car.CarState
   def _update(self, c):

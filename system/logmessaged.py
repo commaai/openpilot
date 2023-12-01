@@ -4,6 +4,7 @@ from typing import NoReturn
 
 import cereal.messaging as messaging
 from openpilot.common.logging_extra import SwagLogFileFormatter
+from openpilot.system.hardware.hw import Paths
 from openpilot.system.swaglog import get_file_handler
 
 
@@ -14,7 +15,7 @@ def main() -> NoReturn:
 
   ctx = zmq.Context.instance()
   sock = ctx.socket(zmq.PULL)
-  sock.bind("ipc:///tmp/logmessage")
+  sock.bind(Paths.swaglog_ipc())
 
   # and we publish them
   log_message_sock = messaging.pub_sock('logMessage')

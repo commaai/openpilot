@@ -53,7 +53,7 @@ class TestValgrind(unittest.TestCase):
     os.chdir(os.path.join(BASEDIR, cwd))
     # Run valgrind on a process
     command = "valgrind --leak-check=full " + arg
-    p = subprocess.Popen(command, stderr=subprocess.PIPE, shell=True, preexec_fn=os.setsid)  # pylint: disable=W1509
+    p = subprocess.Popen(command, stderr=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
 
     while not self.replay_done:
       time.sleep(0.1)

@@ -82,7 +82,7 @@ void PandaTest::test_can_recv(uint32_t rx_chunk_size) {
       this->receive_buffer_size = 0;
       uint32_t pos = 0;
 
-      while(pos < size) {
+      while (pos < size) {
         uint32_t chunk_size = std::min(rx_chunk_size, size - pos);
         memcpy(&this->receive_buffer[this->receive_buffer_size], &data[pos], chunk_size);
         this->receive_buffer_size += chunk_size;

@@ -1,8 +1,33 @@
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=laika_repo/"
+addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
+cpp_files = "test_*"
+cpp_harness = "selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"
-timeout = "30"  # you get this long by default
+#timeout = "30"  # you get this long by default
+markers = [
+  "slow: tests that take awhile to run and can be skipped with -m 'not slow'",
+  "tici: tests that are only meant to run on the C3/C3X",
+]
+testpaths = [
+  "common",
+  "selfdrive/athena",
+  "selfdrive/boardd",
+  "selfdrive/car",
+  "selfdrive/controls",
+  "selfdrive/locationd",
+  "selfdrive/monitoring",
+  "selfdrive/thermald",
+  "selfdrive/test/longitudinal_maneuvers",
+  "system/hardware/tici",
+  "system/loggerd",
+  "system/proclogd",
+  "system/tests",
+  "system/ubloxd",
+  "tools/lib/tests",
+  "tools/replay",
+  "tools/cabana"
+]
 
 [tool.mypy]
 python_version = "3.11"
@@ -14,8 +39,6 @@ exclude = [
   "cereal/",
   "opendbc/",
   "panda/",
-  "laika/",
-  "laika_repo/",
   "rednose/",
   "rednose_repo/",
   "tinygrad/",
@@ -53,23 +76,24 @@ aiohttp = "*"
 aiortc = "*"
 casadi = "==3.6.3"
 cffi = "*"
+control = "*"
 crcmod = "*"
 cryptography = "*"
 Cython = "*"
 future-fstrings = "*"  # for acados
-hatanaka = "==2.4"
 hexdump = "*"
 Jinja2 = "*"
 json-rpc = "*"
 libusb1 = "*"
 numpy = "*"
 onnx = ">=1.14.0"
+onnxruntime = { version = ">=1.15.1", platform = "linux", markers = "platform_machine == 'aarch64'" }
 onnxruntime-gpu = { version = ">=1.15.1", platform = "linux", markers = "platform_machine == 'x86_64'" }
-pillow = "*"
 psutil = "*"
 pyaudio = "*"
 pycapnp = "*"
 pycryptodome = "*"
+pycurl = "*"
 pydub = "*"
 PyJWT = "*"
 pyopencl = "*"
@@ -83,11 +107,9 @@ setproctitle = "*"
 smbus2 = "*"
 sounddevice = "*"
 spidev = { version = "*", platform = "linux" }
-spidev2 = { version = "*", platform = "linux" }
 sympy = "*"
 timezonefinder = "*"
 tqdm = "*"
-urllib3 = "*"
 websocket_client = "*"
 polyline = "*"
 sconscontrib = {git = "https://github.com/SCons/scons-contrib.git"}
@@ -95,17 +117,18 @@ sconscontrib = {git = "https://github.com/SCons/scons-contrib.git"}
 
 [tool.poetry.group.dev.dependencies]
 av = "*"
-azure-storage-blob = "~2.1"
+azure-identity = "*"
+azure-storage-blob = "*"
 breathe = "*"
-carla = { url = "https://github.com/commaai/carla/releases/download/3.11.4/carla-0.9.14-cp311-cp311-linux_x86_64.whl", platform = "linux", markers = "platform_machine == 'x86_64'" }
 coverage = "*"
 dictdiffer = "*"
 ft4222 = "*"
-hypothesis = "==6.46.7"
+hypothesis = "~6.47"
 inputs = "*"
 lru-dict = "*"
 markdown-it-py = "*"
 matplotlib = "*"
+metadrive-simulator = { git = "https://github.com/metadriverse/metadrive.git", rev ="72e842cd1d025bf676e4af8797a01e4aa282109f", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
 mpld3 = "*"
 mypy = "*"
 myst-parser = "*"
@@ -115,11 +138,18 @@ pandas = "*"
 parameterized = "^0.8"
 pprofile = "*"
 pre-commit = "*"
-pycurl = "*"
 pygame = "*"
+pympler = "*"
 pyprof2calltree = "*"
 pytest = "*"
+pytest-cov = "*"
+pytest-cpp = "*"
+pytest-subtests = "*"
 pytest-xdist = "*"
+pytest-timeout = "*"
+pytest-timeouts = "*"
+pytest-random-order = "*"
+ruff = "*"
 scipy = "*"
 sphinx = "*"
 sphinx-rtd-theme = "*"
@@ -127,13 +157,19 @@ sphinx-sitemap = "*"
 tabulate = "*"
 tenacity = "*"
 types-atomicwrites = "*"
-types-certifi = "*"
 types-pycurl = "*"
 types-PyYAML = "*"
 types-requests = "*"
 types-tabulate = "*"
-pyqt5 = { version = "*", markers = "platform_machine == 'x86_64'" } # no aarch64 wheels for macOS/linux
 
+# this is only pinned since 5.15.11 is broken
+pyqt5 = { version = "==5.15.2", markers = "platform_machine == 'x86_64'" } # no aarch64 wheels for macOS/linux
+
+[tool.poetry.group.carla]
+optional = true
+
+[tool.poetry.group.carla.dependencies]
+carla = { url = "https://github.com/commaai/carla/releases/download/3.11.4/carla-0.9.14-cp311-cp311-linux_x86_64.whl", platform = "linux", markers = "platform_machine == 'x86_64'" }
 
 [build-system]
 requires = ["poetry-core"]
@@ -141,16 +177,24 @@ build-backend = "poetry.core.masonry.api"
 
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]
-select = ["E", "F", "W", "PIE", "C4", "ISC", "RUF100", "A", "B"]
+select = ["E", "F", "W", "PIE", "C4", "ISC", "RUF008", "RUF100", "A", "B", "TID251"]
 ignore = ["W292", "E741", "E402", "C408", "ISC003", "B027", "B024"]
 line-length = 160
 target-version="py311"
 exclude = [
   "panda",
   "opendbc",
-  "laika_repo",
   "rednose_repo",
   "tinygrad_repo",
   "third_party",
 ]
 flake8-implicit-str-concat.allow-multiline=false
+[tool.ruff.flake8-tidy-imports.banned-api]
+"selfdrive".msg = "Use openpilot.selfdrive"
+"common".msg = "Use openpilot.common"
+"system".msg = "Use openpilot.system"
+"third_party".msg = "Use openpilot.third_party"
+"tools".msg = "Use openpilot.tools"
+
+[tool.coverage.run]
+concurrency = ["multiprocessing", "thread"]

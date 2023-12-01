@@ -1,5 +1,7 @@
 #include "selfdrive/modeld/runners/thneedmodel.h"
 
+#include <string>
+
 #include "common/swaglog.h"
 
 ThneedModel::ThneedModel(const std::string path, float *_output, size_t _output_size, int runtime, bool luse_tf8, cl_context context) {

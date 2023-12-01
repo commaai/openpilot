@@ -41,9 +41,9 @@ int main() {
     size_t len = ubloxRaw.size();
     size_t bytes_consumed = 0;
 
-    while(bytes_consumed < len && !do_exit) {
+    while (bytes_consumed < len && !do_exit) {
       size_t bytes_consumed_this_time = 0U;
-      if(parser.add_data(log_time, data + bytes_consumed, (uint32_t)(len - bytes_consumed), bytes_consumed_this_time)) {
+      if (parser.add_data(log_time, data + bytes_consumed, (uint32_t)(len - bytes_consumed), bytes_consumed_this_time)) {
 
         try {
           auto ublox_msg = parser.gen_msg();

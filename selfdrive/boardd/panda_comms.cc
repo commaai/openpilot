@@ -199,7 +199,7 @@ int PandaUsbHandle::bulk_write(unsigned char endpoint, unsigned char* data, int 
     } else if (err != 0 || length != transferred) {
       handle_usb_issue(err, __func__);
     }
-  } while(err != 0 && connected);
+  } while (err != 0 && connected);
 
   return transferred;
 }
@@ -226,7 +226,7 @@ int PandaUsbHandle::bulk_read(unsigned char endpoint, unsigned char* data, int l
       handle_usb_issue(err, __func__);
     }
 
-  } while(err != 0 && connected);
+  } while (err != 0 && connected);
 
   return transferred;
 }

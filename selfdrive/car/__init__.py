@@ -1,6 +1,6 @@
 # functions common among cars
 from collections import namedtuple
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import capnp
 
@@ -24,20 +24,23 @@ def apply_hysteresis(val: float, val_steady: float, hyst_gap: float) -> float:
   return val_steady
 
 
-def create_button_event(cur_but: int, prev_but: int, buttons_dict: Dict[int, capnp.lib.capnp._EnumModule],
-                        unpressed: int = 0) -> capnp.lib.capnp._DynamicStructBuilder:
-  if cur_but != unpressed:
-    be = car.CarState.ButtonEvent(pressed=True)
-    but = cur_but
-  else:
-    be = car.CarState.ButtonEvent(pressed=False)
-    but = prev_but
-  be.type = buttons_dict.get(but, ButtonType.unknown)
-  return be
+def create_button_events(cur_btn: int, prev_btn: int, buttons_dict: Dict[int, capnp.lib.capnp._EnumModule],
+                         unpressed_btn: int = 0) -> List[capnp.lib.capnp._DynamicStructBuilder]:
+  events: List[capnp.lib.capnp._DynamicStructBuilder] = []
+
+  if cur_btn == prev_btn:
+    return events
+
+  # Add events for button presses, multiple when a button switches without going to unpressed
+  for pressed, btn in ((False, prev_btn), (True, cur_btn)):
+    if btn != unpressed_btn:
+      events.append(car.CarState.ButtonEvent(pressed=pressed,
+                                             type=buttons_dict.get(btn, ButtonType.unknown)))
+  return events
 
 
 def gen_empty_fingerprint():
-  return {i: {} for i in range(0, 8)}
+  return {i: {} for i in range(8)}
 
 
 # these params were derived for the Civic and used to calculate params for other cars

@@ -61,4 +61,4 @@ Now start your car and openpilot should go into joystick mode with an alert on s
 
 Make sure the conditions are met in the panda to allow controls (e.g. cruise control engaged). You can also make a modification to the panda code to always allow controls.
 
-![](steer.gif)
+![](https://github.com/commaai/openpilot/assets/8762862/e640cbca-cb7a-4dcb-abce-b23b036ad8e7)

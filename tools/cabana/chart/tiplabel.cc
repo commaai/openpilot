@@ -1,5 +1,7 @@
 #include "tools/cabana/chart/tiplabel.h"
 
+#include <utility>
+
 #include <QApplication>
 #include <QStylePainter>
 #include <QToolTip>

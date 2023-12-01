@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import math
 
 from cereal import car
@@ -9,6 +8,7 @@ from openpilot.selfdrive.car.hyundai.values import DBC
 RADAR_START_ADDR = 0x500
 RADAR_MSG_COUNT = 32
 
+# POC for parsing corner radars: https://github.com/commaai/openpilot/pull/24221/
 
 def get_radar_can_parser(CP):
   if DBC[CP.carFingerprint]['radar'] is None:

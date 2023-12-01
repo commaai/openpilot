@@ -23,7 +23,7 @@ webcam_intrinsics = np.array([
   [  0.,    0.,     1.]])
 
 if __name__ == "__main__":
-  import cv2  # pylint: disable=import-error
+  import cv2
   trans_webcam_to_eon_rear = np.dot(eon_intrinsics, np.linalg.inv(webcam_intrinsics))
   trans_webcam_to_eon_front = np.dot(eon_dcam_intrinsics, np.linalg.inv(webcam_intrinsics))
   print("trans_webcam_to_eon_rear:\n", trans_webcam_to_eon_rear)

@@ -1,5 +1,5 @@
 from openpilot.common.params_pyx import Params, ParamKeyType, UnknownKeyName, put_nonblocking, \
-                                        put_bool_nonblocking # pylint: disable=no-name-in-module, import-error
+                                        put_bool_nonblocking
 assert Params
 assert ParamKeyType
 assert UnknownKeyName

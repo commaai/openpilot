@@ -13,6 +13,7 @@ import psutil
 
 import cereal.messaging as messaging
 from cereal import log
+from cereal.services import SERVICE_LIST
 from openpilot.common.dict_helpers import strip_deprecated_keys
 from openpilot.common.time import MIN_DATE
 from openpilot.common.filter_simple import FirstOrderFilter
@@ -33,7 +34,7 @@ NetworkStrength = log.DeviceState.NetworkStrength
 CURRENT_TAU = 15.   # 15s time constant
 TEMP_TAU = 5.   # 5s time constant
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
-PANDA_STATES_TIMEOUT = int(1000 * 1.5 * DT_TRML)  # 1.5x the expected pandaState frequency
+PANDA_STATES_TIMEOUT = round(1000 / SERVICE_LIST['pandaStates'].frequency * 1.5)  # 1.5x the expected pandaState frequency
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
 HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'network_strength', 'network_stats',
@@ -118,8 +119,8 @@ def hw_state_thread(end_event, hw_queue):
 
         # Log modem version once
         if AGNOS and ((modem_version is None) or (modem_nv is None)):
-          modem_version = HARDWARE.get_modem_version()  # pylint: disable=assignment-from-none
-          modem_nv = HARDWARE.get_modem_nv()  # pylint: disable=assignment-from-none
+          modem_version = HARDWARE.get_modem_version()
+          modem_nv = HARDWARE.get_modem_nv()
 
           if (modem_version is not None) and (modem_nv is not None):
             cloudlog.event("modem version", version=modem_version, nv=modem_nv)
@@ -165,7 +166,7 @@ def hw_state_thread(end_event, hw_queue):
     time.sleep(DT_TRML)
 
 
-def thermald_thread(end_event, hw_queue):
+def thermald_thread(end_event, hw_queue) -> None:
   pm = messaging.PubMaster(['deviceState'])
   sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "controlsState", "pandaStates"], poll=["pandaStates"])
 
@@ -177,10 +178,10 @@ def thermald_thread(end_event, hw_queue):
   startup_conditions: Dict[str, bool] = {}
   startup_conditions_prev: Dict[str, bool] = {}
 
-  off_ts = None
-  started_ts = None
+  off_ts: Optional[float] = None
+  started_ts: Optional[float] = None
   started_seen = False
-  startup_blocked_ts = None
+  startup_blocked_ts: Optional[float] = None
   thermal_status = ThermalStatus.yellow
 
   last_hw_state = HardwareState(
@@ -209,6 +210,10 @@ def thermald_thread(end_event, hw_queue):
 
   while not end_event.is_set():
     sm.update(PANDA_STATES_TIMEOUT)
+
+    # Run at 2Hz
+    if sm.frame % round(SERVICE_LIST['pandaStates'].frequency * DT_TRML) != 0:
+      continue
 
     pandaStates = sm['pandaStates']
     peripheralState = sm['peripheralState']

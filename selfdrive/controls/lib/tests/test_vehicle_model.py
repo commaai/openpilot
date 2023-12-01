@@ -38,7 +38,7 @@ class TestVehicleModel(unittest.TestCase):
 
           # Compute yaw rate using direct computations
           yr2 = self.VM.yaw_rate(sa, u, roll)
-          self.assertAlmostEqual(float(yr1), yr2)
+          self.assertAlmostEqual(float(yr1[0]), yr2)
 
   def test_syn_ss_sol_simulate(self):
     """Verifies that dyn_ss_sol matches a simulation"""

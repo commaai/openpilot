@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import math
 import os
 from enum import IntEnum
@@ -423,19 +424,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
 
   # ********** events only containing alerts that display while engaged **********
 
-  # openpilot tries to learn certain parameters about your car by observing
-  # how the car behaves to steering inputs from both human and openpilot driving.
-  # This includes:
-  # - steer ratio: gear ratio of the steering rack. Steering angle divided by tire angle
-  # - tire stiffness: how much grip your tires have
-  # - angle offset: most steering angle sensors are offset and measure a non zero angle when driving straight
-  # This alert is thrown when any of these values exceed a sanity check. This can be caused by
-  # bad alignment or bad sensor data. If this happens consistently consider creating an issue on GitHub
-  EventName.vehicleModelInvalid: {
-    ET.NO_ENTRY: NoEntryAlert("Vehicle Parameter Identification Failed"),
-    ET.SOFT_DISABLE: soft_disable_alert("Vehicle Parameter Identification Failed"),
-  },
-
   EventName.steerTempUnavailableSilent: {
     ET.WARNING: Alert(
       "Steering Temporarily Unavailable",
@@ -575,11 +563,34 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.PERMANENT: NormalPermanentAlert("GPS Malfunction", "Likely Hardware Issue"),
   },
 
-  # When the GPS position and localizer diverge the localizer is reset to the
-  # current GPS position. This alert is thrown when the localizer is reset
-  # more often than expected.
-  EventName.localizerMalfunction: {
-    # ET.PERMANENT: NormalPermanentAlert("Sensor Malfunction", "Hardware Malfunction"),
+  EventName.locationdTemporaryError: {
+    ET.NO_ENTRY: NoEntryAlert("locationd Temporary Error"),
+    ET.SOFT_DISABLE: soft_disable_alert("locationd Temporary Error"),
+  },
+
+  EventName.locationdPermanentError: {
+    ET.NO_ENTRY: NoEntryAlert("locationd Permanent Error"),
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("locationd Permanent Error"),
+    ET.PERMANENT: NormalPermanentAlert("locationd Permanent Error"),
+  },
+
+  # openpilot tries to learn certain parameters about your car by observing
+  # how the car behaves to steering inputs from both human and openpilot driving.
+  # This includes:
+  # - steer ratio: gear ratio of the steering rack. Steering angle divided by tire angle
+  # - tire stiffness: how much grip your tires have
+  # - angle offset: most steering angle sensors are offset and measure a non zero angle when driving straight
+  # This alert is thrown when any of these values exceed a sanity check. This can be caused by
+  # bad alignment or bad sensor data. If this happens consistently consider creating an issue on GitHub
+  EventName.paramsdTemporaryError: {
+    ET.NO_ENTRY: NoEntryAlert("paramsd Temporary Error"),
+    ET.SOFT_DISABLE: soft_disable_alert("paramsd Temporary Error"),
+  },
+
+  EventName.paramsdPermanentError: {
+    ET.NO_ENTRY: NoEntryAlert("paramsd Permanent Error"),
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("paramsd Permanent Error"),
+    ET.PERMANENT: NormalPermanentAlert("paramsd Permanent Error"),
   },
 
   # ********** events that affect controls state transitions **********
@@ -677,7 +688,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   EventName.sensorDataInvalid: {
     ET.PERMANENT: Alert(
       "Sensor Data Invalid",
-      "Ensure device is mounted securely",
+      "Possible Hardware Issue",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, .2, creation_delay=1.),
     ET.NO_ENTRY: NoEntryAlert("Sensor Data Invalid"),
@@ -958,32 +969,28 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
 
 if __name__ == '__main__':
   # print all alerts by type and priority
-  from cereal.services import service_list
-  from collections import defaultdict, OrderedDict
+  from cereal.services import SERVICE_LIST
+  from collections import defaultdict
 
   event_names = {v: k for k, v in EventName.schema.enumerants.items()}
-  alerts_by_type: Dict[str, Dict[int, List[str]]] = defaultdict(lambda: defaultdict(list))
+  alerts_by_type: Dict[str, Dict[Priority, List[str]]] = defaultdict(lambda: defaultdict(list))
 
   CP = car.CarParams.new_message()
   CS = car.CarState.new_message()
-  sm = messaging.SubMaster(list(service_list.keys()))
+  sm = messaging.SubMaster(list(SERVICE_LIST.keys()))
 
   for i, alerts in EVENTS.items():
     for et, alert in alerts.items():
       if callable(alert):
         alert = alert(CP, CS, sm, False, 1)
-      priority = alert.priority
-      alerts_by_type[et][priority].append(event_names[i])
+      alerts_by_type[et][alert.priority].append(event_names[i])
 
-  all_alerts = {}
+  all_alerts: Dict[str, List[tuple[Priority, List[str]]]] = {}
   for et, priority_alerts in alerts_by_type.items():
-    all_alerts[et] = OrderedDict([
-      (str(priority), l)
-      for priority, l in sorted(priority_alerts.items(), key=lambda x: -int(x[0]))
-    ])
+    all_alerts[et] = sorted(priority_alerts.items(), key=lambda x: x[0], reverse=True)
 
   for status, evs in sorted(all_alerts.items(), key=lambda x: x[0]):
     print(f"**** {status} ****")
-    for p, alert_list in evs.items():
-      print(f"  {p}:")
+    for p, alert_list in evs:
+      print(f"  {repr(p)}:")
       print("   ", ', '.join(alert_list), "\n")

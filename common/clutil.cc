@@ -75,6 +75,10 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
   return nullptr;
 }
 
+cl_context cl_create_context(cl_device_id device_id) {
+  return CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
+}
+
 cl_program cl_program_from_file(cl_context ctx, cl_device_id device_id, const char* path, const char* args) {
   return cl_program_from_source(ctx, device_id, util::read_file(path), args);
 }

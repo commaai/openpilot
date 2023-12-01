@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include <QPushButton>
 #include <QStackedLayout>
 #include <QWidget>
@@ -18,7 +20,7 @@ class OnroadAlerts : public QWidget {
   Q_OBJECT
 
 public:
-  OnroadAlerts(QWidget *parent = 0) : QWidget(parent) {};
+  OnroadAlerts(QWidget *parent = 0) : QWidget(parent) {}
   void updateAlert(const Alert &a);
 
 protected:
@@ -63,19 +65,6 @@ private:
 // container window for the NVG UI
 class AnnotatedCameraWidget : public CameraWidget {
   Q_OBJECT
-  Q_PROPERTY(float speed MEMBER speed);
-  Q_PROPERTY(QString speedUnit MEMBER speedUnit);
-  Q_PROPERTY(float setSpeed MEMBER setSpeed);
-  Q_PROPERTY(float speedLimit MEMBER speedLimit);
-  Q_PROPERTY(bool is_cruise_set MEMBER is_cruise_set);
-  Q_PROPERTY(bool has_eu_speed_limit MEMBER has_eu_speed_limit);
-  Q_PROPERTY(bool has_us_speed_limit MEMBER has_us_speed_limit);
-  Q_PROPERTY(bool is_metric MEMBER is_metric);
-
-  Q_PROPERTY(bool dmActive MEMBER dmActive);
-  Q_PROPERTY(bool hideBottomIcons MEMBER hideBottomIcons);
-  Q_PROPERTY(bool rightHandDM MEMBER rightHandDM);
-  Q_PROPERTY(int status MEMBER status);
 
 public:
   explicit AnnotatedCameraWidget(VisionStreamType type, QWidget* parent = 0);
@@ -148,5 +137,6 @@ private:
 
 private slots:
   void offroadTransition(bool offroad);
+  void primeChanged(bool prime);
   void updateState(const UIState &s);
 };

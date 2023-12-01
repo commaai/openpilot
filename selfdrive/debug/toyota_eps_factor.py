@@ -2,7 +2,7 @@
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn import linear_model  # pylint: disable=import-error
+from sklearn import linear_model
 from openpilot.selfdrive.car.toyota.values import STEER_THRESHOLD
 
 from openpilot.tools.lib.route import Route

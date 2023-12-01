@@ -1,9 +1,9 @@
-#!/usr/bin/env python3
 from cereal import car
 from panda import Panda
 from openpilot.selfdrive.car import get_safety_config
+from openpilot.selfdrive.car.disable_ecu import disable_ecu
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
-from openpilot.selfdrive.car.subaru.values import CAR, LKAS_ANGLE, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags
+from openpilot.selfdrive.car.subaru.values import CAR, GLOBAL_ES_ADDR, LKAS_ANGLE, GLOBAL_GEN2, PREGLOBAL_CARS, HYBRID_CARS, SubaruFlags
 
 
 class CarInterface(CarInterfaceBase):
@@ -12,7 +12,11 @@ class CarInterface(CarInterfaceBase):
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "subaru"
     ret.radarUnavailable = True
-    ret.dashcamOnly = candidate in (PREGLOBAL_CARS | LKAS_ANGLE)
+    # for HYBRID CARS to be upstreamed, we need:
+    # - replacement for ES_Distance so we can cancel the cruise control
+    # - to find the Cruise_Activated bit from the car
+    # - proper panda safety setup (use the correct cruise_activated bit, throttle from Throttle_Hybrid, etc)
+    ret.dashcamOnly = candidate in (PREGLOBAL_CARS | LKAS_ANGLE | HYBRID_CARS)
     ret.autoResumeSng = False
 
     # Detect infotainment message sent from the camera
@@ -36,7 +40,7 @@ class CarInterface(CarInterfaceBase):
     else:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    if candidate == CAR.ASCENT:
+    if candidate in (CAR.ASCENT, CAR.ASCENT_2023):
       ret.mass = 2031.
       ret.wheelbase = 2.89
       ret.centerToFront = ret.wheelbase * 0.5
@@ -68,7 +72,14 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 14., 23.], [0., 14., 23.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.045, 0.042, 0.20], [0.04, 0.035, 0.045]]
 
-    elif candidate in (CAR.FORESTER, CAR.FORESTER_2022):
+    elif candidate == CAR.CROSSTREK_HYBRID:
+      ret.mass = 1668.
+      ret.wheelbase = 2.67
+      ret.centerToFront = ret.wheelbase * 0.5
+      ret.steerRatio = 17
+      ret.steerActuatorDelay = 0.1
+
+    elif candidate in (CAR.FORESTER, CAR.FORESTER_2022, CAR.FORESTER_HYBRID):
       ret.mass = 1568.
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5
@@ -86,7 +97,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.1
 
     elif candidate in (CAR.FORESTER_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018):
-      ret.safetyConfigs[0].safetyParam = 1  # Outback 2018-2019 and Forester have reversed driver torque signal
+      ret.safetyConfigs[0].safetyParam = Panda.FLAG_SUBARU_PREGLOBAL_REVERSED_DRIVER_TORQUE  # Outback 2018-2019 and Forester have reversed driver torque signal
       ret.mass = 1568
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5
@@ -107,8 +118,11 @@ class CarInterface(CarInterfaceBase):
     else:
       raise ValueError(f"unknown car: {candidate}")
 
-    #ret.experimentalLongitudinalAvailable = candidate not in (GLOBAL_GEN2 | PREGLOBAL_CARS | LKAS_ANGLE)
+    #ret.experimentalLongitudinalAvailable = candidate not in (GLOBAL_GEN2 | PREGLOBAL_CARS | LKAS_ANGLE | HYBRID_CARS)
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
+
+    if candidate in GLOBAL_GEN2 and ret.openpilotLongitudinalControl:
+      ret.flags |= SubaruFlags.DISABLE_EYESIGHT
 
     if ret.openpilotLongitudinalControl:
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
@@ -129,6 +143,11 @@ class CarInterface(CarInterfaceBase):
     ret.events = self.create_common_events(ret).to_msg()
 
     return ret
+
+  @staticmethod
+  def init(CP, logcan, sendcan):
+    if CP.flags & SubaruFlags.DISABLE_EYESIGHT:
+      disable_ecu(logcan, sendcan, bus=2, addr=GLOBAL_ES_ADDR, com_cont_req=b'\x28\x03\x01')
 
   def apply(self, c, now_nanos):
     return self.CC.update(c, self.CS, now_nanos)

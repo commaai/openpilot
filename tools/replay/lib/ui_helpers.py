@@ -3,7 +3,7 @@ from typing import Any, Dict, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pygame  # pylint: disable=import-error
+import pygame
 
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 

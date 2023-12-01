@@ -15,7 +15,7 @@ if __name__ == '__main__':  # Generating sympy
   import sympy as sp
   from rednose.helpers.ekf_sym import gen_code
 else:
-  from rednose.helpers.ekf_sym_pyx import EKF_sym_pyx  # pylint: disable=no-name-in-module, import-error
+  from rednose.helpers.ekf_sym_pyx import EKF_sym_pyx
 
 
 i = 0
@@ -160,7 +160,7 @@ class CarKalman(KalmanFilter):
 
     gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, global_vars=global_vars)
 
-  def __init__(self, generated_dir, steer_ratio=15, stiffness_factor=1, angle_offset=0, P_initial=None):  # pylint: disable=super-init-not-called
+  def __init__(self, generated_dir, steer_ratio=15, stiffness_factor=1, angle_offset=0, P_initial=None):
     dim_state = self.initial_x.shape[0]
     dim_state_err = self.P_initial.shape[0]
     x_init = self.initial_x

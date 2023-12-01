@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # type: ignore
-# pylint: skip-file
 
 from openpilot.selfdrive.locationd.test import ublox
 import struct

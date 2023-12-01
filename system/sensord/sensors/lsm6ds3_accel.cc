@@ -1,4 +1,4 @@
-#include "lsm6ds3_accel.h"
+#include "system/sensord/sensors/lsm6ds3_accel.h"
 
 #include <cassert>
 #include <cmath>
@@ -121,7 +121,7 @@ int LSM6DS3_Accel::init() {
   uint8_t value = 0;
   bool do_self_test = false;
 
-  const char* env_lsm_selftest =env_lsm_selftest = std::getenv("LSM_SELF_TEST");
+  const char* env_lsm_selftest = std::getenv("LSM_SELF_TEST");
   if (env_lsm_selftest != nullptr && strncmp(env_lsm_selftest, "1", 1) == 0) {
     do_self_test = true;
   }
