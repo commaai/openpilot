@@ -177,7 +177,7 @@ class TestFwFingerprint(unittest.TestCase):
 
 class TestFwFingerprintTiming(unittest.TestCase):
   N: int = 5
-  TOL: float = 0.12
+  TOL: float = 0.1
 
   @staticmethod
   def _run_thread(thread: threading.Thread) -> float:
@@ -244,11 +244,11 @@ class TestFwFingerprintTiming(unittest.TestCase):
         'body': 0.1,
         'chrysler': 0.3,
         'ford': 0.2,
-        'honda': 0.5,
-        'hyundai': 0.7,
+        'honda': 0.4,
+        'hyundai': 0.6,
         'mazda': 0.2,
         'nissan': 0.4,
-        'subaru': 0.5,
+        'subaru': 0.4,
         'tesla': 0.2,
         'toyota': 1.6,
         'volkswagen': 0.2,
