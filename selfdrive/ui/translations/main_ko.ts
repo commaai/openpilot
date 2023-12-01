@@ -66,6 +66,14 @@
         <source>Prevent large data uploads when on a metered connection</source>
         <translation>데이터 요금제 연결 시 대용량 데이터 업로드를 방지합니다</translation>
     </message>
+    <message>
+        <source>Upload when Metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Allow uploads when on a metered connection (such as if the cellular SIM is on a limited data plan, or if connected to a Wi-Fi hotspot that is reporting as a metered connection of its own)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>AnnotatedCameraWidget</name>

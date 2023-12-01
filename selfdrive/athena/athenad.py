@@ -74,6 +74,22 @@ class UploadFile:
   headers: Dict[str, str]
   allow_cellular: bool
 
+  def upload_on_cellular_allowed_by_params(self) -> bool:
+    # see uploadPolicyToggle in selfdrive/ui/qt/network/networking.cc#AdvancedNetworking::AdvancedNetworking
+
+    if Params().get_bool("AllowMeteredUploads", True):
+      # ^^^ This is the `default upload` policy. It's believed to use an *average* of 6 GiB/mo or so...
+      # https://discord.com/channels/469524606043160576/819046761287909446/1161369395382202438
+      # https://discord.com/channels/469524606043160576/819046761287909446/1161366312686198905
+      # At the moment this means we fall back to the UploadFile's initial `allow_cellular` value which
+      #  * will upload the qlogs & qcameras while the connection is metered
+      #  * will upload everything if the connection is not metered
+      return self.allow_cellular
+    else:
+      # 'low upload' policy is to upload nothing until we're connected to a full connection (e.g. home Wi-Fi)
+      # see also https://discord.com/channels/469524606043160576/819046761287909446/1161366616920051914
+      return False
+
   @classmethod
   def from_dict(cls, d: dict) -> UploadFile:
     return cls(d.get("fn", ""), d.get("url", ""), d.get("headers", {}), d.get("allow_cellular", False))
@@ -223,6 +239,8 @@ def cb(sm, item, tid, sz: int, cur: int) -> None:
 
 
 def upload_handler(end_event: threading.Event) -> None:
+  # `log_handler` and `stats_handler` add to the queues, but don't actually upload anything themselves
+  # all the upload activity happens here in `upload_handler`
   sm = messaging.SubMaster(['deviceState'])
   tid = threading.get_ident()
 
@@ -419,7 +437,7 @@ def uploadFilesToUrls(files_data: List[UploadFileDict]) -> UploadFilesToUrlRespo
       headers=file.headers,
       created_at=int(time.time() * 1000),
       id=None,
-      allow_cellular=file.allow_cellular,
+      allow_cellular=file.upload_on_cellular_allowed_by_params(),
     )
     upload_id = hashlib.sha1(str(item).encode()).hexdigest()
     item = replace(item, id=upload_id)

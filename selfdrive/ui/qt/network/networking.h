@@ -63,6 +63,7 @@ private:
   ToggleControl* roamingToggle;
   ButtonControl* editApnButton;
   ToggleControl* meteredToggle;
+  ToggleControl* uploadPolicyToggle;
   WifiManager* wifi = nullptr;
   Params params;
 

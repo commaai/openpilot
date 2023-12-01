@@ -181,14 +181,34 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   });
   list->addItem(meteredToggle);
 
+  // Upload Policy toggle
+  const bool upload_policy = params.getBool("AllowMeteredUploads");
+  uploadPolicyToggle = new ToggleControl(tr("Upload when Metered"),
+                                    tr("Allow uploads when on a metered connection "
+                                       "(such as if the cellular SIM is on a limited data plan, or "
+                                       "if connected to a Wi-Fi hotspot that is reporting as a metered connection of its own)"),
+                                    "", upload_policy);
+  QObject::connect(uploadPolicyToggle, &SshToggle::toggleFlipped, [=](bool state) {
+    params.putBool("AllowMeteredUploads", state);
+  });
+  list->addItem(uploadPolicyToggle);
+
   // Set initial config
   wifi->updateGsmSettings(roamingEnabled, QString::fromStdString(params.get("GsmApn")), metered);
 
   connect(uiState(), &UIState::primeTypeChanged, this, [=](PrimeType prime_type) {
     bool gsmVisible = prime_type == PrimeType::NONE || prime_type == PrimeType::LITE;
+    // gsmVisible: `true` means "Bring your own SIM", so allow whatever uploads they want
     roamingToggle->setVisible(gsmVisible);
     editApnButton->setVisible(gsmVisible);
     meteredToggle->setVisible(gsmVisible);
+    // TODO(from yuzisee): It seems like there's an exploit here...
+    //   * if I sign up for PrimeType::LITE (with my own SIM) couldn't I set roamingToggle and meteredToggle?
+    // ...and then, immediately after that...
+    //   * if I upgrade to regular Comma Prime and put the Comma SIM back in wouldn't it read back the values of GsmRoaming and GsmMetered
+    // ...even though these toggles are disabled
+    //
+    // As far as I can tell, it doesn't look like selfdrive/athena/athenad.py checks whether the user is a Lite or Regular Prime customer.
   });
 
   main_layout->addWidget(new ScrollView(list, this));
