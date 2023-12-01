@@ -77,9 +77,10 @@ void MainWindow::loadFingerprints() {
   QFile json_file(QApplication::applicationDirPath() + "/dbc/car_fingerprint_to_dbc.json");
   if (json_file.open(QIODevice::ReadOnly)) {
     fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
-    auto dbc_names = fingerprint_to_dbc.object().toVariantMap().values();
-    std::transform(dbc_names.begin(), dbc_names.end(), std::inserter(opendbc_names, opendbc_names.begin()),
-                   [](const auto &name) { return name.toString(); });
+  }
+  // get opendbc names
+  for (auto fn : QDir(OPENDBC_FILE_PATH).entryList({"*.dbc"}, QDir::Files, QDir::Name)) {
+    opendbc_names << QFileInfo(fn).baseName();
   }
 }
 

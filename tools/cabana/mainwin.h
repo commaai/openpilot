@@ -86,7 +86,7 @@ protected:
   QProgressBar *progress_bar;
   QLabel *status_label;
   QJsonDocument fingerprint_to_dbc;
-  std::set<QString> opendbc_names;
+  QStringList opendbc_names;
   QSplitter *video_splitter = nullptr;
   enum { MAX_RECENT_FILES = 15 };
   QAction *recent_files_acts[MAX_RECENT_FILES] = {};
