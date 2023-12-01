@@ -159,7 +159,10 @@ class HyundaiCarInfo(CarInfo):
 
 CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.AZERA_6TH_GEN: HyundaiCarInfo("Hyundai Azera 2022", "All", car_parts=CarParts.common([CarHarness.hyundai_k])),
-  CAR.AZERA_HEV_6TH_GEN: HyundaiCarInfo("Hyundai Azera Hybrid 2020", "All", car_parts=CarParts.common([CarHarness.hyundai_k])),
+  CAR.AZERA_HEV_6TH_GEN: [
+    HyundaiCarInfo("Hyundai Azera Hybrid 2019", "All", car_parts=CarParts.common([CarHarness.hyundai_c])),
+    HyundaiCarInfo("Hyundai Azera Hybrid 2020", "All", car_parts=CarParts.common([CarHarness.hyundai_k])),
+  ],
   CAR.ELANTRA: [
     # TODO: 2017-18 could be Hyundai G
     HyundaiCarInfo("Hyundai Elantra 2017-18", min_enable_speed=19 * CV.MPH_TO_MS, car_parts=CarParts.common([CarHarness.hyundai_b])),
@@ -556,18 +559,23 @@ FW_VERSIONS = {
   CAR.AZERA_HEV_6TH_GEN: {
     (Ecu.fwdCamera, 0x7C4, None): [
       b'\xf1\x00IGH MFC  AT KOR LHD 1.00 1.02 99211-G8100 191029',
+      b'\xf1\x00IGH MFC  AT KOR LHD 1.00 1.00 99211-G8000 180903',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00IG  MDPS C 1.00 1.00 56310M9600\x00 4IHSC100',
+      b'\xf1\x00IG  MDPS C 1.00 1.01 56310M9350\x00 4IH8C101',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00IGhe SCC FHCUP      1.00 1.00 99110-M9100         ',
+      b'\xf1\x00IGhe SCC FHCUP      1.00 1.01 99110-M9000         ',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x006T7N0_C2\x00\x006T7VA051\x00\x00TIGSH24KA1\xc7\x85\xe2`',
+      b'\xf1\x006T7N0_C2\x00\x006T7Q2051\x00\x00TIG2H24KA2\x12@\x11\xb7',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x816H590051\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\xf1\x816H570051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.HYUNDAI_GENESIS: {
