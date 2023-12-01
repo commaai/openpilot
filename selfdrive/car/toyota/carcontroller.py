@@ -21,7 +21,7 @@ MAX_USER_TORQUE = 500
 
 # LTA limits
 # EPS ignores commands above this angle and causes PCS to fault
-MAX_LTA_STEER_ANGLE = 94.9461  # deg
+MAX_LTA_ANGLE = 94.9461  # deg
 MAX_LTA_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some resistance when changing lanes
 
 
@@ -76,7 +76,7 @@ class CarController:
         if not lat_active:
           apply_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
 
-        self.last_angle = clip(apply_angle, -MAX_LTA_STEER_ANGLE, MAX_LTA_STEER_ANGLE)
+        self.last_angle = clip(apply_angle, -MAX_LTA_ANGLE, MAX_LTA_ANGLE)
 
     self.last_steer = apply_steer
 
