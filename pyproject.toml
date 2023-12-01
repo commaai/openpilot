@@ -114,7 +114,6 @@ tqdm = "*"
 websocket_client = "*"
 polyline = "*"
 sconscontrib = {git = "https://github.com/SCons/scons-contrib.git"}
-teleoprtc = {git = "https://github.com/commaai/teleop-rtc.git"}
 
 
 [tool.poetry.group.dev.dependencies]

@@ -112,16 +112,39 @@ ifaddr = ">=0.2.0"
 
 [[package]]
 name = "aiortc"
-version = "1.5.0"
+version = "1.6.0"
 description = "An implementation of WebRTC and ORTC"
 optional = false
-python-versions = ">=3.7"
-files = []
-develop = false
+python-versions = ">=3.8"
+files = [
+    {file = "aiortc-1.6.0-cp38-abi3-macosx_10_9_x86_64.whl", hash = "sha256:4675e04d8441797fef6c8a669b3a67d750670d1b897f08886072a084d743e07d"},
+    {file = "aiortc-1.6.0-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:836c0686fca67f142c52e5af8043206c2bb702ad0ddcdc94ef19caf1c22f8d54"},
+    {file = "aiortc-1.6.0-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:33f846abd753935881158751994a51f14e345762130688b19c26cab42c01266f"},
+    {file = "aiortc-1.6.0-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:eb4bd45397945a5323bd077d43c702a3a991d75023f23649c1d18df5d80c221d"},
+    {file = "aiortc-1.6.0-cp38-abi3-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:f93561b515ff478b068bb9b047d8b1e896c747dcf3ee465463047c51a7bea24d"},
+    {file = "aiortc-1.6.0-cp38-abi3-win32.whl", hash = "sha256:325f847397af2892aa051dc2880a75e9bd79f535cc05ec8f4538b5ed098b3c5d"},
+    {file = "aiortc-1.6.0-cp38-abi3-win_amd64.whl", hash = "sha256:98b118d53ae874126b2e9ec6bb1397ea169b85550c4bd5453e279507ff7f0cf9"},
+    {file = "aiortc-1.6.0-pp310-pypy310_pp73-macosx_10_9_x86_64.whl", hash = "sha256:6677018833a5d648754c99c70e6c6f6d4f3942682cda07ed5afa73422f8a009a"},
+    {file = "aiortc-1.6.0-pp310-pypy310_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:090936c719225e50cd4d66f476e6c17293a8062cf7687a1baa5080f3c90ec8b1"},
+    {file = "aiortc-1.6.0-pp310-pypy310_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4e60d5bc269d4d12f1f5f47e2c17aa3799f3b5c8b73fd6d8d246ddc11bb29776"},
+    {file = "aiortc-1.6.0-pp310-pypy310_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:607b9496b4a3c8cd9d32afb6d5bce07f9170831ec44a20ab8af54d53879aafc8"},
+    {file = "aiortc-1.6.0-pp310-pypy310_pp73-win_amd64.whl", hash = "sha256:0a41f4c0b31e45548e7c7397ef1aecc4be49ab68afd8fa134c07581fe0b3a9c2"},
+    {file = "aiortc-1.6.0-pp38-pypy38_pp73-macosx_10_9_x86_64.whl", hash = "sha256:64a9939016edbc8f300de6189983c983753827813ac9acd9b5be8ce61cc32684"},
+    {file = "aiortc-1.6.0-pp38-pypy38_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:813e7985665c94a0e3387b66e39dba6c751e5e588aedbca06d7e52068c6e37fb"},
+    {file = "aiortc-1.6.0-pp38-pypy38_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:672d0b4ad35c4d8f014f44a142aa55529ec82cfe2809226e1275e35a71fd4422"},
+    {file = "aiortc-1.6.0-pp38-pypy38_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:1526a1904174bb11958b8f7e93f01f37f80df2190e5089f0501984bdef79595e"},
+    {file = "aiortc-1.6.0-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:cecfa5f462e73218cadc9acd8013cb3a0d9007a4515bceba6e7755d77bb80061"},
+    {file = "aiortc-1.6.0-pp39-pypy39_pp73-macosx_10_9_x86_64.whl", hash = "sha256:febca6773de18a6bb9e5569ae87c8be55ed184695f1f9fc99aa4744a7b0375f8"},
+    {file = "aiortc-1.6.0-pp39-pypy39_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b5ba865be9708713397ec584ed1baeb2f15d2fa9c32594ce19a41ffa6e2517cb"},
+    {file = "aiortc-1.6.0-pp39-pypy39_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f9759a3c00e46ba1c3499dbf5a8513ae37ba65b940a56b0e7fa5070478e9379f"},
+    {file = "aiortc-1.6.0-pp39-pypy39_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:9cff7868663d9d1c74e237b86e45126022466240439a5f63c3440e3acdf0305b"},
+    {file = "aiortc-1.6.0-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:9f20479d0dd06116ac81d332850fab874d83b561a73fd7252d218f55c6bd5b79"},
+    {file = "aiortc-1.6.0.tar.gz", hash = "sha256:08cffbcde3401b33731b1d4169b9ff860b0aaaca200b62e10ce5978238671ad7"},
+]
 
 [package.dependencies]
 aioice = ">=0.9.0,<1.0.0"
-av = ">=9.0.0,<11.0.0"
+av = ">=9.0.0,<12.0.0"
 cffi = ">=1.0.0"
 cryptography = ">=2.2"
 google-crc32c = ">=1.1"
@@ -131,12 +154,6 @@ pyopenssl = ">=23.1.0"
 
 [package.extras]
 dev = ["aiohttp (>=3.7.0)", "coverage[toml] (>=7.2.2)", "numpy (>=1.19.0)"]
-
-[package.source]
-type = "git"
-url = "https://github.com/aiortc/aiortc.git"
-reference = "HEAD"
-resolved_reference = "cdba00d07a3c53659c2a8abfdfa1ecfab4cecebd"
 
 [[package]]
 name = "aiosignal"
@@ -4660,30 +4677,6 @@ files = [
 widechars = ["wcwidth"]
 
 [[package]]
-name = "teleoprtc"
-version = "1.0.0"
-description = "Comma webRTC abstractions"
-optional = false
-python-versions = ">=3.11"
-files = []
-develop = false
-
-[package.dependencies]
-aiohttp = ">=3.7.0"
-aiortc = {git = "https://github.com/aiortc/aiortc.git"}
-av = ">=9.0.0,<11.0.0"
-numpy = ">=1.19.0"
-
-[package.extras]
-dev = ["parameterized (>=0.8)", "pre-commit"]
-
-[package.source]
-type = "git"
-url = "https://github.com/commaai/teleop-rtc.git"
-reference = "HEAD"
-resolved_reference = "0df29154776141d1bb51b544c98d7a8c65da76aa"
-
-[[package]]
 name = "tenacity"
 version = "8.2.3"
 description = "Retry code until it succeeds"
@@ -5018,4 +5011,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "2b48ec901a8d215246f9f77ca8d1ab2ca571b5edcca5cd134d1a3af5d17ddae6"
+content-hash = "f0abc0f53443c3b98eb06fc4dd0ff736e39197bc68c79db9aeffb4736657b676"
