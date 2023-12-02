@@ -2,10 +2,10 @@
 
 import argparse
 import asyncio
-import dataclasses
 import json
 import uuid
 import logging
+from dataclasses import dataclass, field
 from typing import Any, List, Optional, Union
 
 # aiortc and its dependencies have lots of internal warnings :(
@@ -179,12 +179,12 @@ class StreamSession:
       self.audio_output.stop()
 
 
-@dataclasses.dataclass
+@dataclass
 class StreamRequestBody:
   sdp: str
   cameras: List[str]
-  bridge_services_in: List[str]
-  bridge_services_out: List[str]
+  bridge_services_in: List[str] = field(default_factory=list)
+  bridge_services_out: List[str] = field(default_factory=list)
 
 
 async def get_stream(request: web.Request):
