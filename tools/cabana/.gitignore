@@ -1,7 +1,6 @@
 moc_*
 *.moc
 
-_cabana
-settings
-car_fingerprint_to_dbc.json
-tests/_test_cabana
+cabana
+dbc/car_fingerprint_to_dbc.json
+tests/test_cabana

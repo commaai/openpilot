@@ -4,9 +4,9 @@ import os
 from parameterized import parameterized_class
 import unittest
 
-from common.params import Params
-from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import STOP_DISTANCE
-from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
+from openpilot.common.params import Params
+from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import STOP_DISTANCE
+from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
 
 # TODO: make new FCW tests
@@ -156,6 +156,7 @@ class LongitudinalControl(unittest.TestCase):
     os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['NO_CAN_TIMEOUT'] = "1"
 
+  def setUp(self):
     params = Params()
     params.clear_all()
     params.put_bool("Passive", bool(os.getenv("PASSIVE")))

@@ -79,7 +79,14 @@ Reset::Reset(ResetMode mode, QWidget *parent) : QWidget(parent) {
 #endif
 
   confirmBtn = new QPushButton(tr("Confirm"));
-  confirmBtn->setStyleSheet("background-color: #465BEA;");
+  confirmBtn->setStyleSheet(R"(
+    QPushButton {
+      background-color: #465BEA;
+    }
+    QPushButton:pressed {
+      background-color: #3049F4;
+    }
+  )");
   blayout->addWidget(confirmBtn);
   QObject::connect(confirmBtn, &QPushButton::clicked, this, &Reset::confirm);
 
@@ -110,6 +117,9 @@ Reset::Reset(ResetMode mode, QWidget *parent) : QWidget(parent) {
       font-weight: 400;
       border-radius: 10px;
       background-color: #333333;
+    }
+    QPushButton:pressed {
+      background-color: #444444;
     }
   )");
 }

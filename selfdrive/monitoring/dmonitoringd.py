@@ -3,26 +3,23 @@ import gc
 
 import cereal.messaging as messaging
 from cereal import car
-from common.params import Params, put_bool_nonblocking
-from common.realtime import set_realtime_priority
-from selfdrive.controls.lib.events import Events
-from selfdrive.locationd.calibrationd import Calibration
-from selfdrive.monitoring.driver_monitor import DriverStatus
+from cereal import log
+from openpilot.common.params import Params, put_bool_nonblocking
+from openpilot.common.realtime import set_realtime_priority
+from openpilot.selfdrive.controls.lib.events import Events
+from openpilot.selfdrive.monitoring.driver_monitor import DriverStatus
 
 
-def dmonitoringd_thread(sm=None, pm=None):
+def dmonitoringd_thread():
   gc.disable()
   set_realtime_priority(2)
 
-  if pm is None:
-    pm = messaging.PubMaster(['driverMonitoringState'])
-
-  if sm is None:
-    sm = messaging.SubMaster(['driverStateV2', 'liveCalibration', 'carState', 'controlsState', 'modelV2'], poll=['driverStateV2'])
+  pm = messaging.PubMaster(['driverMonitoringState'])
+  sm = messaging.SubMaster(['driverStateV2', 'liveCalibration', 'carState', 'controlsState', 'modelV2'], poll=['driverStateV2'])
 
   driver_status = DriverStatus(rhd_saved=Params().get_bool("IsRhdDetected"))
 
-  sm['liveCalibration'].calStatus = Calibration.INVALID
+  sm['liveCalibration'].calStatus = log.LiveCalibrationData.Status.invalid
   sm['liveCalibration'].rpyCalib = [0, 0, 0]
   sm['carState'].buttonEvents = []
   sm['carState'].standstill = True
@@ -89,8 +86,8 @@ def dmonitoringd_thread(sm=None, pm=None):
      driver_status.wheel_on_right == (driver_status.wheelpos_learner.filtered_stat.M > driver_status.settings._WHEELPOS_THRESHOLD)):
       put_bool_nonblocking("IsRhdDetected", driver_status.wheel_on_right)
 
-def main(sm=None, pm=None):
-  dmonitoringd_thread(sm, pm)
+def main():
+  dmonitoringd_thread()
 
 
 if __name__ == '__main__':

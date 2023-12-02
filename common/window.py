@@ -1,6 +1,6 @@
 import sys
-import pygame  # pylint: disable=import-error
-import cv2  # pylint: disable=import-error
+import pygame
+import cv2
 
 class Window:
   def __init__(self, w, h, caption="window", double=False, halve=False):

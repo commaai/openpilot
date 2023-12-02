@@ -8,7 +8,7 @@ import sys
 from bisect import bisect_left, bisect_right
 from collections import defaultdict
 
-from tools.lib.logreader import logreader_from_route_or_segment
+from openpilot.tools.lib.logreader import logreader_from_route_or_segment
 
 DEMO_ROUTE = "9f583b1d93915c31|2022-05-18--10-49-51--0"
 

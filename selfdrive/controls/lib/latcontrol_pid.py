@@ -1,8 +1,8 @@
 import math
 
 from cereal import log
-from selfdrive.controls.lib.latcontrol import LatControl
-from selfdrive.controls.lib.pid import PIDController
+from openpilot.selfdrive.controls.lib.latcontrol import LatControl
+from openpilot.selfdrive.controls.lib.pid import PIDController
 
 
 class LatControlPID(LatControl):

@@ -7,15 +7,19 @@
 enum ParamKeyType {
   PERSISTENT = 0x02,
   CLEAR_ON_MANAGER_START = 0x04,
-  CLEAR_ON_IGNITION_ON = 0x08,
-  CLEAR_ON_IGNITION_OFF = 0x10,
+  CLEAR_ON_ONROAD_TRANSITION = 0x08,
+  CLEAR_ON_OFFROAD_TRANSITION = 0x10,
   DONT_LOG = 0x20,
   ALL = 0xFFFFFFFF
 };
 
 class Params {
 public:
-  Params(const std::string &path = {});
+  explicit Params(const std::string &path = {});
+  // Not copyable.
+  Params(const Params&) = delete;
+  Params& operator=(const Params&) = delete;
+
   std::vector<std::string> allKeys() const;
   bool checkKey(const std::string &key);
   ParamKeyType getKeyType(const std::string &key);

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
 
-# copied from common.transformations/camera.py
+# copied from openpilot.common.transformations/camera.py
 eon_focal_length = 910.0  # pixels
 eon_dcam_focal_length = 860.0  # pixels
 
@@ -23,7 +23,7 @@ webcam_intrinsics = np.array([
   [  0.,    0.,     1.]])
 
 if __name__ == "__main__":
-  import cv2  # pylint: disable=import-error
+  import cv2
   trans_webcam_to_eon_rear = np.dot(eon_intrinsics, np.linalg.inv(webcam_intrinsics))
   trans_webcam_to_eon_front = np.dot(eon_dcam_intrinsics, np.linalg.inv(webcam_intrinsics))
   print("trans_webcam_to_eon_rear:\n", trans_webcam_to_eon_rear)

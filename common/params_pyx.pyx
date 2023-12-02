@@ -9,12 +9,12 @@ cdef extern from "common/params.h":
   cpdef enum ParamKeyType:
     PERSISTENT
     CLEAR_ON_MANAGER_START
-    CLEAR_ON_IGNITION_ON
-    CLEAR_ON_IGNITION_OFF
+    CLEAR_ON_ONROAD_TRANSITION
+    CLEAR_ON_OFFROAD_TRANSITION
     ALL
 
   cdef cppclass c_Params "Params":
-    c_Params(string) nogil
+    c_Params(string) except + nogil
     string get(string, bool) nogil
     bool getBool(string, bool) nogil
     int remove(string) nogil

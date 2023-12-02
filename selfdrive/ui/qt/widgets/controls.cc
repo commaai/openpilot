@@ -3,20 +3,6 @@
 #include <QPainter>
 #include <QStyleOption>
 
-QFrame *horizontal_line(QWidget *parent) {
-  QFrame *line = new QFrame(parent);
-  line->setFrameShape(QFrame::StyledPanel);
-  line->setStyleSheet(R"(
-    margin-left: 40px;
-    margin-right: 40px;
-    border-width: 1px;
-    border-bottom-style: solid;
-    border-color: gray;
-  )");
-  line->setFixedHeight(2);
-  return line;
-}
-
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, QWidget *parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setMargin(0);
@@ -26,18 +12,19 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   hlayout->setSpacing(20);
 
   // left icon
-  icon_label = new QLabel();
+  icon_label = new QLabel(this);
+  hlayout->addWidget(icon_label);
   if (!icon.isEmpty()) {
     icon_pixmap = QPixmap(icon).scaledToWidth(80, Qt::SmoothTransformation);
     icon_label->setPixmap(icon_pixmap);
     icon_label->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-    hlayout->addWidget(icon_label);
   }
+  icon_label->setVisible(!icon.isEmpty());
 
   // title
   title_label = new QPushButton(title);
   title_label->setFixedHeight(120);
-  title_label->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left");
+  title_label->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left; border: none;");
   hlayout->addWidget(title_label, 1);
 
   // value next to control button
@@ -126,20 +113,4 @@ void ElidedLabel::paintEvent(QPaintEvent *event) {
   QStyleOption opt;
   opt.initFrom(this);
   style()->drawItemText(&painter, contentsRect(), alignment(), opt.palette, isEnabled(), elidedText_, foregroundRole());
-}
-
-ClickableWidget::ClickableWidget(QWidget *parent) : QWidget(parent) { }
-
-void ClickableWidget::mouseReleaseEvent(QMouseEvent *event) {
-  if (rect().contains(event->pos())) {
-    emit clicked();
-  }
-}
-
-// Fix stylesheets
-void ClickableWidget::paintEvent(QPaintEvent *) {
-  QStyleOption opt;
-  opt.init(this);
-  QPainter p(this);
-  style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 }

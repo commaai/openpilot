@@ -1,76 +1,25 @@
 #include "tools/cabana/util.h"
 
-#include <QApplication>
+#include <algorithm>
+#include <csignal>
+#include <limits>
+#include <memory>
+#include <string>
+#include <sys/socket.h>
+#include <unistd.h>
+
+#include <QColor>
+#include <QDateTime>
 #include <QFontDatabase>
+#include <QLocale>
 #include <QPainter>
 #include <QPixmapCache>
-#include <QDebug>
-
-#include <limits>
-#include <cmath>
 
 #include "selfdrive/ui/qt/util.h"
 
-static QColor blend(QColor a, QColor b) {
-  return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
-}
-
-void ChangeTracker::compute(const QByteArray &dat, double ts, uint32_t freq) {
-  if (prev_dat.size() != dat.size()) {
-    colors.resize(dat.size());
-    last_change_t.resize(dat.size());
-    bit_change_counts.resize(dat.size());
-    std::fill(colors.begin(), colors.end(), QColor(0, 0, 0, 0));
-    std::fill(last_change_t.begin(), last_change_t.end(), ts);
-  } else {
-    for (int i = 0; i < dat.size(); ++i) {
-      const uint8_t last = prev_dat[i];
-      const uint8_t cur = dat[i];
-
-      if (last != cur) {
-        double delta_t = ts - last_change_t[i];
-        if (delta_t * freq > periodic_threshold) {
-          // Last change was while ago, choose color based on delta up or down
-          if (cur > last) {
-            colors[i] = QColor(0, 187, 255, start_alpha);  // Cyan
-          } else {
-            colors[i] = QColor(255, 0, 0, start_alpha);  // Red
-          }
-        } else {
-          // Periodic changes
-          colors[i] = blend(colors[i], QColor(102, 86, 169, start_alpha / 2));  // Greyish/Blue
-        }
-
-        // Track bit level changes
-        for (int bit = 0; bit < 8; bit++){
-          if ((cur ^ last) & (1 << bit)) {
-            bit_change_counts[i][bit] += 1;
-          }
-        }
-
-        last_change_t[i] = ts;
-      } else {
-        // Fade out
-        float alpha_delta = 1.0 / (freq + 1) / fade_time;
-        colors[i].setAlphaF(std::max(0.0, colors[i].alphaF() - alpha_delta));
-      }
-    }
-  }
-
-  prev_dat = dat;
-}
-
-void ChangeTracker::clear() {
-  prev_dat.clear();
-  last_change_t.clear();
-  bit_change_counts.clear();
-  colors.clear();
-}
-
-
 // SegmentTree
 
-void SegmentTree::build(const QVector<QPointF> &arr) {
+void SegmentTree::build(const std::vector<QPointF> &arr) {
   size = arr.size();
   tree.resize(4 * size);  // size of the tree is 4 times the size of the array
   if (size > 0) {
@@ -78,7 +27,7 @@ void SegmentTree::build(const QVector<QPointF> &arr) {
   }
 }
 
-void SegmentTree::build_tree(const QVector<QPointF> &arr, int n, int left, int right) {
+void SegmentTree::build_tree(const std::vector<QPointF> &arr, int n, int left, int right) {
   if (left == right) {
     const double y = arr[left].y();
     tree[n] = {y, y};
@@ -103,53 +52,136 @@ std::pair<double, double> SegmentTree::get_minmax(int n, int left, int right, in
 
 // MessageBytesDelegate
 
-MessageBytesDelegate::MessageBytesDelegate(QObject *parent) : QStyledItemDelegate(parent) {
+MessageBytesDelegate::MessageBytesDelegate(QObject *parent, bool multiple_lines) : multiple_lines(multiple_lines), QStyledItemDelegate(parent) {
   fixed_font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-  byte_width = QFontMetrics(fixed_font).width("00 ");
+  byte_size = QFontMetrics(fixed_font).size(Qt::TextSingleLine, "00 ") + QSize(0, 2);
+  for (int i = 0; i < 256; ++i) {
+    hex_text_table[i].setText(QStringLiteral("%1").arg(i, 2, 16, QLatin1Char('0')).toUpper());
+    hex_text_table[i].prepare({}, fixed_font);
+  }
+  h_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
+  v_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameVMargin) + 1;
+}
+
+QSize MessageBytesDelegate::sizeForBytes(int n) const {
+  int rows = multiple_lines ? std::max(1, n / 8) : 1;
+  return {(n / rows) * byte_size.width() + h_margin * 2, rows * byte_size.height() + v_margin * 2};
+}
+
+QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  auto data = index.data(BytesRole);
+  return sizeForBytes(data.isValid() ? static_cast<std::vector<uint8_t> *>(data.value<void *>())->size() : 0);
 }
 
 void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
-  auto colors = index.data(ColorsRole).value<QVector<QColor>>();
-  auto byte_list = index.data(BytesRole).toByteArray();
+  auto data = index.data(BytesRole);
+  if (!data.isValid()) {
+    return QStyledItemDelegate::paint(painter, option, index);
+  }
 
-  int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
-  int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
-  QRect rc{option.rect.left() + h_margin, option.rect.top() + v_margin, byte_width, option.rect.height() - 2 * v_margin};
-
-  auto color_role = option.state & QStyle::State_Selected ? QPalette::HighlightedText: QPalette::Text;
-  painter->setPen(option.palette.color(color_role));
+  QFont old_font = painter->font();
+  QPen old_pen = painter->pen();
+  if (option.state & QStyle::State_Selected) {
+    painter->fillRect(option.rect, option.palette.brush(QPalette::Normal, QPalette::Highlight));
+  }
+  const QPoint pt{option.rect.left() + h_margin, option.rect.top() + v_margin};
   painter->setFont(fixed_font);
-  for (int i = 0; i < byte_list.size(); ++i) {
+
+  const auto &bytes = *static_cast<std::vector<uint8_t>*>(data.value<void*>());
+  const auto &colors = *static_cast<std::vector<QColor>*>(index.data(ColorsRole).value<void*>());
+  for (int i = 0; i < bytes.size(); ++i) {
+    int row = !multiple_lines ? 0 : i / 8;
+    int column = !multiple_lines ? i : i % 8;
+    QRect r = QRect({pt.x() + column * byte_size.width(), pt.y() + row * byte_size.height()}, byte_size);
     if (i < colors.size() && colors[i].alpha() > 0) {
-      painter->fillRect(rc, colors[i]);
+      if (option.state & QStyle::State_Selected) {
+        painter->setPen(option.palette.color(QPalette::Text));
+        painter->fillRect(r, option.palette.color(QPalette::Window));
+      }
+      painter->fillRect(r, colors[i]);
+    } else if (option.state & QStyle::State_Selected) {
+      painter->setPen(option.palette.color(QPalette::HighlightedText));
     }
-    painter->drawText(rc, Qt::AlignCenter, toHex(byte_list[i]));
-    rc.moveLeft(rc.right() + 1);
+    utils::drawStaticText(painter, r, hex_text_table[bytes[i]]);
+  }
+  painter->setFont(old_font);
+  painter->setPen(old_pen);
+}
+
+// TabBar
+
+int TabBar::addTab(const QString &text) {
+  int index = QTabBar::addTab(text);
+  QToolButton *btn = new ToolButton("x", tr("Close Tab"));
+  int width = style()->pixelMetric(QStyle::PM_TabCloseIndicatorWidth, nullptr, btn);
+  int height = style()->pixelMetric(QStyle::PM_TabCloseIndicatorHeight, nullptr, btn);
+  btn->setFixedSize({width, height});
+  setTabButton(index, QTabBar::RightSide, btn);
+  QObject::connect(btn, &QToolButton::clicked, this, &TabBar::closeTabClicked);
+  return index;
+}
+
+void TabBar::closeTabClicked() {
+  QObject *object = sender();
+  for (int i = 0; i < count(); ++i) {
+    if (tabButton(i, QTabBar::RightSide) == object) {
+      emit tabCloseRequested(i);
+      break;
+    }
   }
 }
 
-QColor getColor(const cabana::Signal *sig) {
-  float h = 19 * (float)sig->lsb / 64.0;
-  h = fmod(h, 1.0);
+// UnixSignalHandler
 
-  size_t hash = qHash(sig->name);
-  float s = 0.25 + 0.25 * (float)(hash & 0xff) / 255.0;
-  float v = 0.75 + 0.25 * (float)((hash >> 8) & 0xff) / 255.0;
+UnixSignalHandler::UnixSignalHandler(QObject *parent) : QObject(nullptr) {
+  if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sig_fd)) {
+    qFatal("Couldn't create TERM socketpair");
+  }
 
-  return QColor::fromHsvF(h, s, v);
+  sn = new QSocketNotifier(sig_fd[1], QSocketNotifier::Read, this);
+  connect(sn, &QSocketNotifier::activated, this, &UnixSignalHandler::handleSigTerm);
+  std::signal(SIGINT, signalHandler);
+  std::signal(SIGTERM, UnixSignalHandler::signalHandler);
 }
 
-NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) { }
+UnixSignalHandler::~UnixSignalHandler() {
+  ::close(sig_fd[0]);
+  ::close(sig_fd[1]);
+}
+
+void UnixSignalHandler::signalHandler(int s) {
+  ::write(sig_fd[0], &s, sizeof(s));
+}
+
+void UnixSignalHandler::handleSigTerm() {
+  sn->setEnabled(false);
+  int tmp;
+  ::read(sig_fd[1], &tmp, sizeof(tmp));
+
+  printf("\nexiting...\n");
+  qApp->closeAllWindows();
+  qApp->exit();
+}
+
+// NameValidator
+
+NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) {}
 
 QValidator::State NameValidator::validate(QString &input, int &pos) const {
   input.replace(' ', '_');
   return QRegExpValidator::validate(input, pos);
 }
 
+DoubleValidator::DoubleValidator(QObject *parent) : QDoubleValidator(parent) {
+  // Match locale of QString::toDouble() instead of system
+  QLocale locale(QLocale::C);
+  locale.setNumberOptions(QLocale::RejectGroupSeparator);
+  setLocale(locale);
+}
+
 namespace utils {
 QPixmap icon(const QString &id) {
-  static bool dark_theme = QApplication::palette().color(QPalette::WindowText).value() >
-                           QApplication::palette().color(QPalette::Background).value();
+  bool dark_theme = settings.theme == DARK_THEME;
   QPixmap pm;
   QString key = "bootstrap_" % id % (dark_theme ? "1" : "0");
   if (!QPixmapCache::find(key, &pm)) {
@@ -157,40 +189,95 @@ QPixmap icon(const QString &id) {
     if (dark_theme) {
       QPainter p(&pm);
       p.setCompositionMode(QPainter::CompositionMode_SourceIn);
-      p.fillRect(pm.rect(), Qt::lightGray);
+      p.fillRect(pm.rect(), QColor("#bbbbbb"));
     }
     QPixmapCache::insert(key, pm);
   }
   return pm;
 }
-}  // namespace utils
 
-QToolButton *toolButton(const QString &icon, const QString &tooltip) {
-  auto btn = new QToolButton();
-  btn->setIcon(utils::icon(icon));
-  btn->setToolTip(tooltip);
-  btn->setAutoRaise(true);
-  const int metric = qApp->style()->pixelMetric(QStyle::PM_SmallIconSize);
-  btn->setIconSize({metric, metric});
-  return btn;
-};
+void setTheme(int theme) {
+  auto style = QApplication::style();
+  if (!style) return;
 
-
-QString toHex(uint8_t byte) {
-  static std::array<QString, 256> hex = []() {
-    std::array<QString, 256> ret;
-    for (int i = 0; i < 256; ++i) ret[i] = QStringLiteral("%1").arg(i, 2, 16, QLatin1Char('0')).toUpper();
-    return ret;
-  }();
-  return hex[byte];
+  static int prev_theme = 0;
+  if (theme != prev_theme) {
+    prev_theme = theme;
+    QPalette new_palette;
+    if (theme == DARK_THEME) {
+      // "Darcula" like dark theme
+      new_palette.setColor(QPalette::Window, QColor("#353535"));
+      new_palette.setColor(QPalette::WindowText, QColor("#bbbbbb"));
+      new_palette.setColor(QPalette::Base, QColor("#3c3f41"));
+      new_palette.setColor(QPalette::AlternateBase, QColor("#3c3f41"));
+      new_palette.setColor(QPalette::ToolTipBase, QColor("#3c3f41"));
+      new_palette.setColor(QPalette::ToolTipText, QColor("#bbb"));
+      new_palette.setColor(QPalette::Text, QColor("#bbbbbb"));
+      new_palette.setColor(QPalette::Button, QColor("#3c3f41"));
+      new_palette.setColor(QPalette::ButtonText, QColor("#bbbbbb"));
+      new_palette.setColor(QPalette::Highlight, QColor("#2f65ca"));
+      new_palette.setColor(QPalette::HighlightedText, QColor("#bbbbbb"));
+      new_palette.setColor(QPalette::BrightText, QColor("#f0f0f0"));
+      new_palette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor("#777777"));
+      new_palette.setColor(QPalette::Disabled, QPalette::WindowText, QColor("#777777"));
+      new_palette.setColor(QPalette::Disabled, QPalette::Text, QColor("#777777"));
+      new_palette.setColor(QPalette::Light, QColor("#777777"));
+      new_palette.setColor(QPalette::Dark, QColor("#353535"));
+    } else {
+      new_palette = style->standardPalette();
+    }
+    qApp->setPalette(new_palette);
+    style->polish(qApp);
+    for (auto w : QApplication::allWidgets()) {
+      w->setPalette(new_palette);
+    }
+  }
 }
 
+QString formatSeconds(double sec, bool include_milliseconds, bool absolute_time) {
+  QString format = absolute_time ? "yyyy-MM-dd hh:mm:ss"
+                                 : (sec > 60 * 60 ? "hh:mm:ss" : "mm:ss");
+  if (include_milliseconds) format += ".zzz";
+  return QDateTime::fromMSecsSinceEpoch(sec * 1000).toString(format);
+}
+
+}  // namespace utils
+
 int num_decimals(double num) {
-   const QString string = QString::number(num);
-   const QStringList split = string.split('.');
-   if (split.size() == 1) {
-     return 0;
-   } else {
-     return split[1].size();
-   }
- }
+  const QString string = QString::number(num);
+  auto dot_pos = string.indexOf('.');
+  return dot_pos == -1 ? 0 : string.size() - dot_pos - 1;
+}
+
+QString signalToolTip(const cabana::Signal *sig) {
+  return QObject::tr(R"(
+    %1<br /><span font-size:small">
+    Start Bit: %2 Size: %3<br />
+    MSB: %4 LSB: %5<br />
+    Little Endian: %6 Signed: %7</span>
+  )").arg(sig->name).arg(sig->start_bit).arg(sig->size).arg(sig->msb).arg(sig->lsb)
+     .arg(sig->is_little_endian ? "Y" : "N").arg(sig->is_signed ? "Y" : "N");
+}
+
+// MonotonicBuffer
+
+void *MonotonicBuffer::allocate(size_t bytes, size_t alignment) {
+  assert(bytes > 0);
+  void *p = std::align(alignment, bytes, current_buf, available);
+  if (p == nullptr) {
+    available = next_buffer_size = std::max(next_buffer_size, bytes);
+    current_buf = buffers.emplace_back(std::aligned_alloc(alignment, next_buffer_size));
+    next_buffer_size *= growth_factor;
+    p = current_buf;
+  }
+
+  current_buf = (char *)current_buf + bytes;
+  available -= bytes;
+  return p;
+}
+
+MonotonicBuffer::~MonotonicBuffer() {
+  for (auto buf : buffers) {
+    free(buf);
+  }
+}

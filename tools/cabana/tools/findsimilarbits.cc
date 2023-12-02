@@ -1,5 +1,7 @@
 #include "tools/cabana/tools/findsimilarbits.h"
 
+#include <algorithm>
+
 #include <QGridLayout>
 #include <QHeaderView>
 #include <QHBoxLayout>
@@ -8,7 +10,7 @@
 #include <QPushButton>
 #include <QRadioButton>
 
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 
 FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent, Qt::WindowFlags() | Qt::Window) {
@@ -20,22 +22,16 @@ FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent, Qt::Wi
   QHBoxLayout *src_layout = new QHBoxLayout();
   src_bus_combo = new QComboBox(this);
   find_bus_combo = new QComboBox(this);
-  QSet<uint8_t> bus_set;
-  for (auto it = can->last_msgs.begin(); it != can->last_msgs.end(); ++it) {
-    bus_set << it.key().source;
-  }
   for (auto cb : {src_bus_combo, find_bus_combo}) {
-    for (uint8_t bus : bus_set) {
+    for (uint8_t bus : can->sources) {
       cb->addItem(QString::number(bus), bus);
     }
-    cb->model()->sort(0);
-    cb->setCurrentIndex(0);
   }
 
   msg_cb = new QComboBox(this);
   // TODO: update when src_bus_combo changes
-  for (auto &[id, msg] : dbc()->getMessages(0)) {
-    msg_cb->addItem(msg.name, id.address);
+  for (auto &[address, msg] : dbc()->getMessages(-1)) {
+    msg_cb->addItem(msg.name, address);
   }
   msg_cb->model()->sort(0);
   msg_cb->setCurrentIndex(0);
@@ -122,33 +118,26 @@ QList<FindSimilarBitsDlg::mismatched_struct> FindSimilarBitsDlg::calcBits(uint8_
                                                                           int bit_idx, uint8_t find_bus, bool equal, int min_msgs_cnt) {
   QHash<uint32_t, QVector<uint32_t>> mismatches;
   QHash<uint32_t, uint32_t> msg_count;
-  auto events = can->rawEvents();
+  const auto &events = can->allEvents();
   int bit_to_find = -1;
-  for (auto e : *events) {
-    if (e->which == cereal::Event::Which::CAN) {
-      for (const auto &c : e->event.getCan()) {
-        uint8_t src = c.getSrc();
-        uint32_t address = c.getAddress();
-        const auto dat = c.getDat();
-        if (src == bus) {
-          if (address == selected_address && dat.size() > byte_idx) {
-            bit_to_find = ((dat[byte_idx] >> (7 - bit_idx)) & 1) != 0;
-          }
-        }
-        if (src == find_bus) {
-          ++msg_count[address];
-          if (bit_to_find == -1) continue;
+  for (const CanEvent *e : events) {
+    if (e->src == bus) {
+      if (e->address == selected_address && e->size > byte_idx) {
+        bit_to_find = ((e->dat[byte_idx] >> (7 - bit_idx)) & 1) != 0;
+      }
+    }
+    if (e->src == find_bus) {
+      ++msg_count[e->address];
+      if (bit_to_find == -1) continue;
 
-          auto &mismatched = mismatches[address];
-          if (mismatched.size() < dat.size() * 8) {
-            mismatched.resize(dat.size() * 8);
-          }
-          for (int i = 0; i < dat.size(); ++i) {
-            for (int j = 0; j < 8; ++j) {
-              int bit = ((dat[i] >> (7 - j)) & 1) != 0;
-              mismatched[i * 8 + j] += equal ? (bit != bit_to_find) : (bit == bit_to_find);
-            }
-          }
+      auto &mismatched = mismatches[e->address];
+      if (mismatched.size() < e->size * 8) {
+        mismatched.resize(e->size * 8);
+      }
+      for (int i = 0; i < e->size; ++i) {
+        for (int j = 0; j < 8; ++j) {
+          int bit = ((e->dat[i] >> (7 - j)) & 1) != 0;
+          mismatched[i * 8 + j] += equal ? (bit != bit_to_find) : (bit == bit_to_find);
         }
       }
     }

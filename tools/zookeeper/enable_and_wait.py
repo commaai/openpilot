@@ -3,7 +3,7 @@ import os
 import sys
 import time
 from socket import gethostbyname, gaierror
-from tools.zookeeper import Zookeeper
+from openpilot.tools.zookeeper import Zookeeper
 
 def is_online(ip):
   try:

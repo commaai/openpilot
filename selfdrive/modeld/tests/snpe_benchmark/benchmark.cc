@@ -96,7 +96,7 @@ void test(char *filename) {
 void get_testframe(int index, std::unique_ptr<zdl::DlSystem::ITensor> &input) {
   FILE * pFile;
   string filepath="/data/ipt/quantize_samples/sample_input_"+std::to_string(index);
-  pFile = fopen(filepath.c_str(),"rb");
+  pFile = fopen(filepath.c_str(), "rb");
   int length = 1*6*160*320*4;
   float * frame_buffer = new float[length/4]; // 32/8
   fread(frame_buffer, length, 1, pFile);
@@ -156,18 +156,18 @@ void testrun(char* modelfile) {
   static zdl::DlSystem::TensorMap inputTensorMap;
   static zdl::DlSystem::TensorMap outputTensorMap;
 
-  assert (strList.size() == 1);
+  assert(strList.size() == 1);
   const auto &inputDims_opt = snpe->getInputDimensions(strList.at(0));
   const auto &inputShape = *inputDims_opt;
   std::cout << "winkwink" << std::endl;
 
-  for (int i=0;i<10000;i++) {
+  for (int i=0; i<10000; i++) {
     std::unique_ptr<zdl::DlSystem::ITensor> input;
     input = zdl::SNPE::SNPEFactory::getTensorFactory().createTensor(inputShape);
-    get_testframe(i,input);
+    get_testframe(i, input);
     snpe->execute(input.get(), outputTensorMap);
     zdl::DlSystem::StringList tensorNames = outputTensorMap.getTensorNames();
-    std::for_each( tensorNames.begin(), tensorNames.end(), [&](const char* name) {
+    std::for_each(tensorNames.begin(), tensorNames.end(), [&](const char* name) {
       std::ostringstream path;
       path << "/data/opt/Result_" << std::to_string(i) << ".raw";
       auto tensorPtr = outputTensorMap.getTensor(name);

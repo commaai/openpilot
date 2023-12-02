@@ -5,10 +5,10 @@
 
 #include <algorithm>
 #include <climits>
+#include <fstream>
 #include <random>
 #include <string>
 
-#define CATCH_CONFIG_MAIN
 #include "catch2/catch.hpp"
 #include "common/util.h"
 
@@ -38,7 +38,8 @@ TEST_CASE("util::read_file") {
     std::string content = random_bytes(64 * 1024);
     write(fd, content.c_str(), content.size());
     std::string ret = util::read_file(filename);
-    REQUIRE(ret == content);
+    bool equal = (ret == content);
+    REQUIRE(equal);
     close(fd);
   }
   SECTION("read directory") {
@@ -108,7 +109,8 @@ TEST_CASE("util::safe_fwrite") {
   REQUIRE(ret == 0);
   ret = fclose(f);
   REQUIRE(ret == 0);
-  REQUIRE(dat == util::read_file(filename));
+  bool equal = (dat == util::read_file(filename));
+  REQUIRE(equal);
 }
 
 TEST_CASE("util::create_directories") {
@@ -142,21 +144,4 @@ TEST_CASE("util::create_directories") {
   SECTION("empty") {
     REQUIRE(util::create_directories("", 0755) == false);
   }
-}
-
-TEST_CASE("util::remove_files_in_dir") {
-  std::string tmp_dir = "/tmp/test_remove_all_in_dir";
-  system("rm /tmp/test_remove_all_in_dir -rf");
-  REQUIRE(util::create_directories(tmp_dir, 0755));
-  const int tmp_file_cnt = 10;
-  for (int i = 0; i < tmp_file_cnt; ++i) {
-    std::string tmp_file = tmp_dir + "/test_XXXXXX";
-    int fd = mkstemp((char*)tmp_file.c_str());
-    close(fd);
-    REQUIRE(util::file_exists(tmp_file.c_str()));
-  }
-
-  REQUIRE(util::read_files_in_dir(tmp_dir).size() == tmp_file_cnt);
-  util::remove_files_in_dir(tmp_dir);
-  REQUIRE(util::read_files_in_dir(tmp_dir).empty());
 }

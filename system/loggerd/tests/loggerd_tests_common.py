@@ -1,29 +1,32 @@
 import os
-import errno
-import shutil
 import random
-import tempfile
 import unittest
+from pathlib import Path
+from typing import Optional
+from openpilot.system.hardware.hw import Paths
 
-import system.loggerd.uploader as uploader
+import openpilot.system.loggerd.deleter as deleter
+import openpilot.system.loggerd.uploader as uploader
+from openpilot.system.loggerd.xattr_cache import setxattr
 
-def create_random_file(file_path, size_mb, lock=False):
-  try:
-    os.mkdir(os.path.dirname(file_path))
-  except OSError:
-    pass
 
-  lock_path = file_path + ".lock"
+def create_random_file(file_path: Path, size_mb: float, lock: bool = False, upload_xattr: Optional[bytes] = None) -> None:
+  file_path.parent.mkdir(parents=True, exist_ok=True)
+
   if lock:
+    lock_path = str(file_path) + ".lock"
     os.close(os.open(lock_path, os.O_CREAT | os.O_EXCL))
 
   chunks = 128
   chunk_bytes = int(size_mb * 1024 * 1024 / chunks)
   data = os.urandom(chunk_bytes)
 
-  with open(file_path, 'wb') as f:
+  with open(file_path, "wb") as f:
     for _ in range(chunks):
       f.write(data)
+
+  if upload_xattr is not None:
+    setxattr(str(file_path), uploader.UPLOAD_ATTR_NAME, upload_xattr)
 
 class MockResponse():
   def __init__(self, text, status_code):
@@ -72,12 +75,16 @@ class MockParams():
 class UploaderTestCase(unittest.TestCase):
   f_type = "UNKNOWN"
 
+  root: Path
+  seg_num: int
+  seg_format: str
+  seg_format2: str
+  seg_dir: str
+
   def set_ignore(self):
     uploader.Api = MockApiIgnore
 
   def setUp(self):
-    self.root = tempfile.mkdtemp()
-    uploader.ROOT = self.root  # Monkey patch root dir
     uploader.Api = MockApi
     uploader.Params = MockParams
     uploader.fake_upload = True
@@ -88,15 +95,12 @@ class UploaderTestCase(unittest.TestCase):
     self.seg_format2 = "2019-05-18--11-22-33--{}"
     self.seg_dir = self.seg_format.format(self.seg_num)
 
-  def tearDown(self):
-    try:
-      shutil.rmtree(self.root)
-    except OSError as e:
-      if e.errno != errno.ENOENT:
-        raise
+  def make_file_with_data(self, f_dir: str, fn: str, size_mb: float = .1, lock: bool = False,
+                          upload_xattr: Optional[bytes] = None, preserve_xattr: Optional[bytes] = None) -> Path:
+    file_path = Path(Paths.log_root()) / f_dir / fn
+    create_random_file(file_path, size_mb, lock, upload_xattr)
 
-  def make_file_with_data(self, f_dir, fn, size_mb=.1, lock=False):
-    file_path = os.path.join(self.root, f_dir, fn)
-    create_random_file(file_path, size_mb, lock)
+    if preserve_xattr is not None:
+      setxattr(str(file_path.parent), deleter.PRESERVE_ATTR_NAME, preserve_xattr)
 
     return file_path

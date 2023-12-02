@@ -2,9 +2,10 @@
 
 #include <QFormLayout>
 #include <QMenu>
-#include <QMessageBox>
+#include <QSpacerItem>
 
 #include "tools/cabana/commands.h"
+#include "tools/cabana/mainwin.h"
 
 // DetailWidget
 
@@ -13,8 +14,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   main_layout->setContentsMargins(0, 0, 0, 0);
 
   // tabbar
-  tabbar = new QTabBar(this);
-  tabbar->setTabsClosable(true);
+  tabbar = new TabBar(this);
   tabbar->setUsesScrollButtons(true);
   tabbar->setAutoHide(true);
   tabbar->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -22,20 +22,16 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 
   // message title
   QHBoxLayout *title_layout = new QHBoxLayout();
-  title_layout->setContentsMargins(0, 6, 0, 0);
-  time_label = new QLabel(this);
-  time_label->setToolTip(tr("Current time"));
-  time_label->setStyleSheet("QLabel{font-weight:bold;}");
-  title_layout->addWidget(time_label);
-  name_label = new ElidedLabel(this);
+  title_layout->setContentsMargins(3, 6, 3, 0);
+  auto spacer = new QSpacerItem(0, 1);
+  title_layout->addItem(spacer);
+  title_layout->addWidget(name_label = new ElidedLabel(this), 1);
   name_label->setStyleSheet("QLabel{font-weight:bold;}");
   name_label->setAlignment(Qt::AlignCenter);
-  name_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  title_layout->addWidget(name_label);
-  auto edit_btn = toolButton("pencil", tr("Edit Message"));
+  auto edit_btn = new ToolButton("pencil", tr("Edit Message"));
   title_layout->addWidget(edit_btn);
-  remove_btn = toolButton("x-lg", tr("Remove Message"));
-  title_layout->addWidget(remove_btn);
+  title_layout->addWidget(remove_btn = new ToolButton("x-lg", tr("Remove Message")));
+  spacer->changeSize(edit_btn->sizeHint().width() * 2 + 9, 1);
   main_layout->addLayout(title_layout);
 
   // warning
@@ -48,7 +44,6 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 
   // msg widget
   splitter = new QSplitter(Qt::Vertical, this);
-  splitter->setAutoFillBackground(true);
   splitter->addWidget(binary_view = new BinaryView(this));
   splitter->addWidget(signal_view = new SignalView(charts, this));
   binary_view->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
@@ -65,12 +60,9 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 
   QObject::connect(edit_btn, &QToolButton::clicked, this, &DetailWidget::editMsg);
   QObject::connect(remove_btn, &QToolButton::clicked, this, &DetailWidget::removeMsg);
-  QObject::connect(binary_view, &BinaryView::resizeSignal, signal_view->model, &SignalModel::resizeSignal);
-  QObject::connect(binary_view, &BinaryView::addSignal, signal_view->model, &SignalModel::addSignal);
   QObject::connect(binary_view, &BinaryView::signalHovered, signal_view, &SignalView::signalHovered);
   QObject::connect(binary_view, &BinaryView::signalClicked, [this](const cabana::Signal *s) { signal_view->selectSignal(s, true); });
   QObject::connect(binary_view, &BinaryView::editSignal, signal_view->model, &SignalModel::saveSignal);
-  QObject::connect(binary_view, &BinaryView::removeSignal, signal_view->model, &SignalModel::removeSignal);
   QObject::connect(binary_view, &BinaryView::showChart, charts, &ChartsWidget::showChart);
   QObject::connect(signal_view, &SignalView::showChart, charts, &ChartsWidget::showChart);
   QObject::connect(signal_view, &SignalView::highlight, binary_view, &BinaryView::highlight);
@@ -131,7 +123,9 @@ void DetailWidget::refresh() {
   QStringList warnings;
   auto msg = dbc()->msg(msg_id);
   if (msg) {
-    if (msg->size != can->lastMessage(msg_id).dat.size()) {
+    if (msg_id.source == INVALID_SOURCE) {
+      warnings.push_back(tr("No messages received."));
+    } else if (msg->size != can->lastMessage(msg_id).dat.size()) {
       warnings.push_back(tr("Message size (%1) is incorrect.").arg(msg->size));
     }
     for (auto s : binary_view->getOverlappingSignals()) {
@@ -140,8 +134,11 @@ void DetailWidget::refresh() {
   } else {
     warnings.push_back(tr("Drag-Select in binary view to create new signal."));
   }
+
+  QString msg_name = msg ? QString("%1 (%2)").arg(msg->name, msg->transmitter) : msgName(msg_id);
+  name_label->setText(msg_name);
+  name_label->setToolTip(msg_name);
   remove_btn->setEnabled(msg != nullptr);
-  name_label->setText(msgName(msg_id));
 
   if (!warnings.isEmpty()) {
     warning_label->setText(warnings.join('\n'));
@@ -150,9 +147,8 @@ void DetailWidget::refresh() {
   warning_widget->setVisible(!warnings.isEmpty());
 }
 
-void DetailWidget::updateState(const QHash<MessageId, CanData> *msgs) {
-  time_label->setText(QString::number(can->currentSec(), 'f', 3));
-  if ((msgs && !msgs->contains(msg_id)))
+void DetailWidget::updateState(const std::set<MessageId> *msgs) {
+  if ((msgs && !msgs->count(msg_id)))
     return;
 
   if (tab_widget->currentIndex() == 0)
@@ -166,7 +162,8 @@ void DetailWidget::editMsg() {
   int size = msg ? msg->size : can->lastMessage(msg_id).dat.size();
   EditMessageDialog dlg(msg_id, msgName(msg_id), size, this);
   if (dlg.exec()) {
-    UndoStack::push(new EditMsgCommand(msg_id, dlg.name_edit->text(), dlg.size_spin->value()));
+    UndoStack::push(new EditMsgCommand(msg_id, dlg.name_edit->text().trimmed(), dlg.size_spin->value(),
+                                       dlg.node->text().trimmed(), dlg.comment_edit->toPlainText().trimmed()));
   }
 }
 
@@ -183,20 +180,24 @@ EditMessageDialog::EditMessageDialog(const MessageId &msg_id, const QString &tit
 
   form_layout->addRow("", error_label = new QLabel);
   error_label->setVisible(false);
-  name_edit = new QLineEdit(title, this);
+  form_layout->addRow(tr("Name"), name_edit = new QLineEdit(title, this));
   name_edit->setValidator(new NameValidator(name_edit));
-  form_layout->addRow(tr("Name"), name_edit);
 
-  size_spin = new QSpinBox(this);
+  form_layout->addRow(tr("Size"), size_spin = new QSpinBox(this));
   // TODO: limit the maximum?
   size_spin->setMinimum(1);
   size_spin->setValue(size);
-  form_layout->addRow(tr("Size"), size_spin);
 
-  btn_box = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+  form_layout->addRow(tr("Node"), node = new QLineEdit(this));
+  node->setValidator(new NameValidator(name_edit));
+  form_layout->addRow(tr("Comment"), comment_edit = new QTextEdit(this));
+  form_layout->addRow(btn_box = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel));
+
+  if (auto msg = dbc()->msg(msg_id)) {
+    node->setText(msg->transmitter);
+    comment_edit->setText(msg->comment);
+  }
   validateName(name_edit->text());
-  form_layout->addRow(btn_box);
-
   setFixedWidth(parent->width() * 0.9);
   connect(name_edit, &QLineEdit::textEdited, this, &EditMessageDialog::validateName);
   connect(btn_box, &QDialogButtonBox::accepted, this, &QDialog::accept);
@@ -218,7 +219,7 @@ void EditMessageDialog::validateName(const QString &text) {
 
 // CenterWidget
 
-CenterWidget::CenterWidget(ChartsWidget *charts, QWidget *parent) : charts(charts), QWidget(parent) {
+CenterWidget::CenterWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->addWidget(welcome_widget = createWelcomeWidget());
@@ -228,7 +229,7 @@ void CenterWidget::setMessage(const MessageId &msg_id) {
   if (!detail_widget) {
     delete welcome_widget;
     welcome_widget = nullptr;
-    layout()->addWidget(detail_widget = new DetailWidget(charts, this));
+    layout()->addWidget(detail_widget = new DetailWidget(((MainWindow*)parentWidget())->charts_widget, this));
   }
   detail_widget->setMessage(msg_id);
 }

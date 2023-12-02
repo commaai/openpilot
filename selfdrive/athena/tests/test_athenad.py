@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
 import json
+import multiprocessing
 import os
 import requests
 import shutil
-import tempfile
 import time
 import threading
 import queue
 import unittest
 from dataclasses import asdict, replace
 from datetime import datetime, timedelta
+from parameterized import parameterized
 from typing import Optional
 
-from multiprocessing import Process
-from pathlib import Path
+from pympler.tracker import SummaryTracker
 from unittest import mock
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
-from system import swaglog
-from selfdrive.athena import athenad
-from selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
-from selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
+from openpilot.selfdrive.athena import athenad
+from openpilot.selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
+from openpilot.selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
 from cereal import messaging
+from openpilot.system.hardware.hw import Paths
 
 
 class TestAthenadMethods(unittest.TestCase):
@@ -30,8 +30,6 @@ class TestAthenadMethods(unittest.TestCase):
   def setUpClass(cls):
     cls.SOCKET_PORT = 45454
     athenad.Params = MockParams
-    athenad.ROOT = tempfile.mkdtemp()
-    athenad.SWAGLOG_DIR = swaglog.SWAGLOG_DIR = tempfile.mkdtemp()
     athenad.Api = MockApi
     athenad.LOCAL_PORT_WHITELIST = {cls.SOCKET_PORT}
 
@@ -41,13 +39,14 @@ class TestAthenadMethods(unittest.TestCase):
     athenad.cur_upload_items.clear()
     athenad.cancelled_uploads.clear()
 
-    for i in os.listdir(athenad.ROOT):
-      p = os.path.join(athenad.ROOT, i)
+    for i in os.listdir(Paths.log_root()):
+      p = os.path.join(Paths.log_root(), i)
       if os.path.isdir(p):
         shutil.rmtree(p)
       else:
         os.unlink(p)
 
+    dispatcher["listUploadQueue"]() # ensure queue is empty at start
 
   # *** test helpers ***
 
@@ -59,10 +58,11 @@ class TestAthenadMethods(unittest.TestCase):
         break
 
   @staticmethod
-  def _create_file(file: str, parent: Optional[str] = None) -> str:
-    fn = os.path.join(athenad.ROOT if parent is None else parent, file)
+  def _create_file(file: str, parent: Optional[str] = None, data: bytes = b'') -> str:
+    fn = os.path.join(Paths.log_root() if parent is None else parent, file)
     os.makedirs(os.path.dirname(fn), exist_ok=True)
-    Path(fn).touch()
+    with open(fn, 'wb') as f:
+      f.write(data)
     return fn
 
 
@@ -75,24 +75,25 @@ class TestAthenadMethods(unittest.TestCase):
     with self.assertRaises(TimeoutError) as _:
       dispatcher["getMessage"]("controlsState")
 
-    def send_deviceState():
-      messaging.context = messaging.Context()
-      pub_sock = messaging.pub_sock("deviceState")
-      start = time.time()
+    end_event = multiprocessing.Event()
 
-      while time.time() - start < 1:
+    pub_sock = messaging.pub_sock("deviceState")
+
+    def send_deviceState():
+      while not end_event.is_set():
         msg = messaging.new_message('deviceState')
         pub_sock.send(msg.to_bytes())
         time.sleep(0.01)
 
-    p = Process(target=send_deviceState)
+    p = multiprocessing.Process(target=send_deviceState)
     p.start()
     time.sleep(0.1)
     try:
       deviceState = dispatcher["getMessage"]("deviceState")
       assert deviceState['deviceState']
     finally:
-      p.terminate()
+      end_event.set()
+      p.join()
 
   def test_listDataDirectory(self):
     route = '2021-03-29--13-32-47'
@@ -139,18 +140,30 @@ class TestAthenadMethods(unittest.TestCase):
     if fn.endswith('.bz2'):
       self.assertEqual(athenad.strip_bz2_extension(fn), fn[:-4])
 
-
+  @parameterized.expand([(True,), (False,)])
   @with_http_server
-  def test_do_upload(self, host):
-    fn = self._create_file('qlog.bz2')
+  def test_do_upload(self, compress, host):
+    # random bytes to ensure rather large object post-compression
+    fn = self._create_file('qlog', data=os.urandom(10000 * 1024))
 
-    item = athenad.UploadItem(path=fn, url="http://localhost:1238", headers={}, created_at=int(time.time()*1000), id='')
+    # warm up object tracker
+    tracker = SummaryTracker()
+    for _ in range(5):
+      tracker.diff()
+
+    upload_fn = fn + ('.bz2' if compress else '')
+    item = athenad.UploadItem(path=upload_fn, url="http://localhost:1238", headers={}, created_at=int(time.time()*1000), id='')
     with self.assertRaises(requests.exceptions.ConnectionError):
       athenad._do_upload(item)
 
-    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='')
+    item = athenad.UploadItem(path=upload_fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='')
     resp = athenad._do_upload(item)
     self.assertEqual(resp.status_code, 201)
+
+    # assert memory cleaned up
+    for _type, num_objects, total_size in tracker.diff():
+      with self.subTest(_type=_type):
+        self.assertLess(total_size / 1024, 10, f'Object {_type} ({num_objects=}) grew larger than 10 kB while uploading file')
 
   @with_http_server
   def test_uploadFileToUrl(self, host):
@@ -159,7 +172,7 @@ class TestAthenadMethods(unittest.TestCase):
     resp = dispatcher["uploadFileToUrl"]("qlog.bz2", f"{host}/qlog.bz2", {})
     self.assertEqual(resp['enqueued'], 1)
     self.assertNotIn('failed', resp)
-    self.assertDictContainsSubset({"path": fn, "url": f"{host}/qlog.bz2", "headers": {}}, resp['items'][0])
+    self.assertLessEqual({"path": fn, "url": f"{host}/qlog.bz2", "headers": {}}.items(), resp['items'][0].items())
     self.assertIsNotNone(resp['items'][0].get('id'))
     self.assertEqual(athenad.upload_queue.qsize(), 1)
 
@@ -253,7 +266,8 @@ class TestAthenadMethods(unittest.TestCase):
       end_event.set()
 
   def test_cancelUpload(self):
-    item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='id', allow_cellular=True)
+    item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={},
+                              created_at=int(time.time()*1000), id='id', allow_cellular=True)
     athenad.upload_queue.put_nowait(item)
     dispatcher["cancelUpload"](item.id)
 
@@ -317,7 +331,8 @@ class TestAthenadMethods(unittest.TestCase):
       end_event.set()
 
   def test_listUploadQueue(self):
-    item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='id', allow_cellular=True)
+    item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={},
+                              created_at=int(time.time()*1000), id='id', allow_cellular=True)
     athenad.upload_queue.put_nowait(item)
 
     items = dispatcher["listUploadQueue"]()
@@ -349,7 +364,7 @@ class TestAthenadMethods(unittest.TestCase):
     self.assertEqual(athenad.upload_queue.qsize(), 1)
     self.assertDictEqual(asdict(athenad.upload_queue.queue[-1]), asdict(item1))
 
-  @mock.patch('selfdrive.athena.athenad.create_connection')
+  @mock.patch('openpilot.selfdrive.athena.athenad.create_connection')
   def test_startLocalProxy(self, mock_create_connection):
     end_event = threading.Event()
 
@@ -376,6 +391,10 @@ class TestAthenadMethods(unittest.TestCase):
   def test_getSshAuthorizedKeys(self):
     keys = dispatcher["getSshAuthorizedKeys"]()
     self.assertEqual(keys, MockParams().params["GithubSshKeys"].decode('utf-8'))
+
+  def test_getGithubUsername(self):
+    keys = dispatcher["getGithubUsername"]()
+    self.assertEqual(keys, MockParams().params["GithubUsername"].decode('utf-8'))
 
   def test_getVersion(self):
     resp = dispatcher["getVersion"]()
@@ -411,7 +430,7 @@ class TestAthenadMethods(unittest.TestCase):
     fl = list()
     for i in range(10):
       file = f'swaglog.{i:010}'
-      self._create_file(file, athenad.SWAGLOG_DIR)
+      self._create_file(file, Paths.swaglog_root())
       fl.append(file)
 
     # ensure the list is all logs except most recent

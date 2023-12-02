@@ -1,12 +1,12 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <root>
  <tabbed_widget name="Main Window" parent="main_window">
-  <Tab tab_name="tab1" containers="1">
+  <Tab containers="1" tab_name="tab1">
    <Container>
-    <DockSplitter orientation="-" count="5" sizes="0.199688;0.200468;0.199688;0.200468;0.199688">
+    <DockSplitter count="6" orientation="-" sizes="0.166785;0.166785;0.166075;0.166785;0.166785;0.166785">
      <DockArea name="...">
-      <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-       <range left="0.001973" right="4522.285082" bottom="59.907502" top="80.592498"/>
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range left="0.006955" top="87.987497" bottom="75.912497" right="301.842654"/>
        <limitY/>
        <curve name="/deviceState/cpuTempC/0" color="#1f77b4"/>
        <curve name="/deviceState/cpuTempC/1" color="#d62728"/>
@@ -19,8 +19,8 @@
       </plot>
      </DockArea>
      <DockArea name="...">
-      <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-       <range left="0.001973" right="4522.285082" bottom="53.190350" top="81.063652"/>
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range left="0.006955" top="85.861052" bottom="66.496950" right="301.842654"/>
        <limitY/>
        <curve name="/deviceState/pmicTempC/0" color="#1f77b4"/>
        <curve name="/deviceState/gpuTempC/0" color="#d62728"/>
@@ -29,40 +29,47 @@
       </plot>
      </DockArea>
      <DockArea name="...">
-      <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-       <range left="0.001973" right="4522.285082" bottom="-0.100000" top="0.100000"/>
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range left="0.006955" top="86.207876" bottom="70.665918" right="301.842654"/>
+       <limitY/>
+       <curve name="/deviceState/maxTempC" color="#1f77b4"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+       <range left="0.006955" top="1.025000" bottom="-0.025000" right="301.842654"/>
        <limitY/>
        <curve name="/deviceState/thermalStatus" color="#1f77b4"/>
       </plot>
      </DockArea>
-     <DockSplitter orientation="|" count="3" sizes="0.333333;0.333333;0.333333">
+     <DockSplitter count="3" orientation="|" sizes="0.333124;0.333752;0.333124">
       <DockArea name="...">
-       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-        <range left="0.001973" right="4522.285082" bottom="4.522255" top="12.156595"/>
+       <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+        <range left="0.006955" top="12.057358" bottom="4.843517" right="301.842654"/>
         <limitY/>
         <curve name="/deviceState/powerDrawW" color="#ff7f0e"/>
        </plot>
       </DockArea>
       <DockArea name="...">
-       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-        <range left="0.001973" right="4522.285082" bottom="0.000000" top="100.000000"/>
+       <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+        <range left="0.006955" top="100.000000" bottom="0.000000" right="301.842654"/>
         <limitY min="0" max="100"/>
         <curve name="/deviceState/fanSpeedPercentDesired" color="#9467bd"/>
         <curve name="/pandaStates/0/fanPower" color="#1f77b4"/>
        </plot>
       </DockArea>
       <DockArea name="...">
-       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-        <range left="0.001973" right="4522.285082" bottom="-118.075000" top="4841.075000"/>
+       <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+        <range left="0.006955" top="5018.400000" bottom="255.600000" right="301.842654"/>
         <limitY/>
         <curve name="/peripheralState/fanSpeedRpm" color="#1f77b4"/>
        </plot>
       </DockArea>
      </DockSplitter>
-     <DockSplitter orientation="|" count="2" sizes="0.502445;0.497555">
+     <DockSplitter count="2" orientation="|" sizes="0.502513;0.497487">
       <DockArea name="...">
-       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-        <range left="0.001973" right="4522.285082" bottom="-2.300000" top="94.300000"/>
+       <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+        <range left="0.006955" top="100.025000" bottom="14.975000" right="301.842654"/>
         <limitY/>
         <curve name="/deviceState/cpuUsagePercent/0" color="#1f77b4"/>
         <curve name="/deviceState/cpuUsagePercent/1" color="#d62728"/>
@@ -71,8 +78,8 @@
        </plot>
       </DockArea>
       <DockArea name="...">
-       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-        <range left="0.001973" right="4522.285082" bottom="-2.450000" top="100.450000"/>
+       <plot flip_y="false" style="Lines" mode="TimeSeries" flip_x="false">
+        <range left="0.006955" top="102.500000" bottom="-2.500000" right="301.842654"/>
         <limitY/>
         <curve name="/deviceState/cpuUsagePercent/4" color="#f14cc1"/>
         <curve name="/deviceState/cpuUsagePercent/5" color="#9467bd"/>

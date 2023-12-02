@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import datetime
 import os
+import pytest
 import time
 import tempfile
 import unittest
@@ -9,10 +10,11 @@ import signal
 import subprocess
 import random
 
-from common.basedir import BASEDIR
-from common.params import Params
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.params import Params
 
 
+@pytest.mark.tici
 class TestUpdated(unittest.TestCase):
 
   def setUp(self):

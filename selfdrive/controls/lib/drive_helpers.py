@@ -1,10 +1,10 @@
 import math
 
-from cereal import car
-from common.conversions import Conversions as CV
-from common.numpy_fast import clip, interp
-from common.realtime import DT_MDL
-from selfdrive.modeld.constants import T_IDXS
+from cereal import car, log
+from openpilot.common.conversions import Conversions as CV
+from openpilot.common.numpy_fast import clip, interp
+from openpilot.common.realtime import DT_MDL
+from openpilot.selfdrive.modeld.constants import ModelConstants
 
 # WARNING: this value was determined based on the model's training distribution,
 #          model predictions above this speed can be unpredictable
@@ -22,6 +22,8 @@ CAR_ROTATION_RADIUS = 0.0
 
 # EU guidelines
 MAX_LATERAL_JERK = 5.0
+
+MAX_VEL_ERR = 5.0
 
 ButtonEvent = car.CarState.ButtonEvent
 ButtonType = car.CarState.ButtonEvent.Type
@@ -175,7 +177,7 @@ def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates):
   # in high delay cases some corrections never even get commanded. So just use
   # psi to calculate a simple linearization of desired curvature
   current_curvature_desired = curvatures[0]
-  psi = interp(delay, T_IDXS[:CONTROL_N], psis)
+  psi = interp(delay, ModelConstants.T_IDXS[:CONTROL_N], psis)
   average_curvature_desired = psi / (v_ego * delay)
   desired_curvature = 2 * average_curvature_desired - current_curvature_desired
 
@@ -190,3 +192,22 @@ def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates):
                                 current_curvature_desired + max_curvature_rate * DT_MDL)
 
   return safe_desired_curvature, safe_desired_curvature_rate
+
+
+def get_friction(lateral_accel_error: float, lateral_accel_deadzone: float, friction_threshold: float,
+                 torque_params: car.CarParams.LateralTorqueTuning, friction_compensation: bool) -> float:
+  friction_interp = interp(
+    apply_center_deadzone(lateral_accel_error, lateral_accel_deadzone),
+    [-friction_threshold, friction_threshold],
+    [-torque_params.friction, torque_params.friction]
+  )
+  friction = float(friction_interp) if friction_compensation else 0.0
+  return friction
+
+
+def get_speed_error(modelV2: log.ModelDataV2, v_ego: float) -> float:
+  # ToDo: Try relative error, and absolute speed
+  if len(modelV2.temporalPose.trans):
+    vel_err = clip(modelV2.temporalPose.trans[0] - v_ego, -MAX_VEL_ERR, MAX_VEL_ERR)
+    return float(vel_err)
+  return 0.0
