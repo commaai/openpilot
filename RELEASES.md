@@ -1,5 +1,7 @@
 Version 0.9.6 (2023-XX-XX)
 ========================
+* Toyota RAV4 2023 support
+* Toyota RAV4 Hybrid 2023 support
 
 Version 0.9.5 (2023-11-17)
 ========================
