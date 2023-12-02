@@ -19,15 +19,15 @@ class CustomTableView : public QTableView {
     Q_OBJECT
 
 public:
-  using QTableView::QTableView; // Inherit constructors
+  using QTableView::QTableView;
 
 protected:
   void keyPressEvent(QKeyEvent *event) override {
     if (event->key() == Qt::Key_C && (event->modifiers() & Qt::ControlModifier)) {
       copySelectionToClipboard();
-      event->accept(); // Prevent further processing
+      event->accept();
     } else {
-      QTableView::keyPressEvent(event); // Default behavior for other keys
+      QTableView::keyPressEvent(event);
     }
   }
 
@@ -39,9 +39,9 @@ private:
     QString selectedText;
     for (const QModelIndex &index : selectedIndexes) {
       QVariant data = model()->data(index, Qt::DisplayRole);
-      selectedText += data.toString() + ", "; // Tab-separated values
+      selectedText += data.toString() + ", "; // Comma-separated values
       if (index.column() == model()->columnCount() - 1) {
-        selectedText.chop(2); // Remove the last comma
+        selectedText.chop(2); // Remove the last comma and space
         selectedText += "\n"; // New line for new row
       }
     }
