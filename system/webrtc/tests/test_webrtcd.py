@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 import asyncio
-import unittest
+from contextlib import closing
 import multiprocessing
+import socket
+import unittest
 # for aiortc and its dependencies
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=ResourceWarning)
 
 from openpilot.system.webrtc.webrtcd import webrtcd_thread
 
@@ -14,13 +15,19 @@ import aiohttp
 from teleoprtc import WebRTCOfferBuilder
 
 
-class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
-  HOST = "0.0.0.0"
-  PORT = 48888
+def get_free_port():
+  with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+    s.bind(('', 0))
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    return s.getsockname()[1]
 
+
+class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
   def setUp(self):
     # run webrtcd in debug mode
-    self.proc = multiprocessing.Process(target=webrtcd_thread, args=(self.HOST, self.PORT, True))
+    self.host = "0.0.0.0"
+    self.port = get_free_port()
+    self.proc = multiprocessing.Process(target=webrtcd_thread, args=(self.host, self.port, True))
     self.proc.start()
 
   def tearDown(self) -> None:
@@ -36,9 +43,9 @@ class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
   async def test_webrtcd(self):
     self.assertTrue(self.proc.is_alive())
 
-    url = f"http://{self.HOST}:{self.PORT}/stream"
+    url = f"http://{self.host}:{self.port}/stream"
     async def connect(offer):
-      async with aiohttp.ClientSession() as session:
+      async with aiohttp.ClientSession(raise_for_status=True) as session:
         body = {'sdp': offer.sdp, 'cameras': offer.video, 'bridge_services_in': [], 'bridge_services_out': []}
         async with session.post(url, json=body) as resp:
           payload = await resp.json()
