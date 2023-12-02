@@ -92,7 +92,7 @@ class CarController:
                                abs(CS.out.steeringTorque) < MAX_LTA_DRIVER_TORQUE_ALLOWANCE)
 
       setme_x64 = 100 if lta_active and full_torque_condition else 0
-      can_sends.append(toyotacan.create_lta_steer_command(self.packer, self.last_angle, self.CP.steerControlType,
+      can_sends.append(toyotacan.create_lta_steer_command(self.packer, self.CP.steerControlType, self.last_angle,
                                                           lta_active, self.frame // 2, setme_x64))
 
     # *** gas and brake ***
