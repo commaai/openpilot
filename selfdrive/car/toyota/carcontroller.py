@@ -93,7 +93,7 @@ class CarController:
       full_torque_condition = (abs(CS.out.steeringTorqueEps) < self.params.STEER_MAX and
                                abs(CS.out.steeringTorque) < MAX_LTA_DRIVER_TORQUE_ALLOWANCE)
 
-      # SETME_X64 at 0 ramps down torque at roughly the max down rate
+      # SETME_X64 at 0 ramps down torque at roughly the max down rate of 1500 units/sec
       setme_x64 = 100 if lta_active and full_torque_condition else 0
       can_sends.append(toyotacan.create_lta_steer_command(self.packer, self.CP.steerControlType, self.last_angle,
                                                           lta_active, self.frame // 2, setme_x64))
