@@ -73,6 +73,7 @@ def dmonitoringd_thread():
       "isActiveMode": driver_status.active_monitoring_mode,
       "isRHD": driver_status.wheel_on_right,
     }
+    dat.valid = sm.all_checks()
     pm.send('driverMonitoringState', dat)
 
     # save rhd virtual toggle every 5 mins
