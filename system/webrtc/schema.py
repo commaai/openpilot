@@ -19,7 +19,7 @@ def generate_struct(schema: capnp.lib.capnp._StructSchema) -> Dict[str, Any]:
   return {field: generate_field(schema.fields[field]) for field in schema.fields if not field.endswith("DEPRECATED")}
 
 
-def generate_field(field: capnp.lib.capnp._StructSchemaField):
+def generate_field(field: capnp.lib.capnp._StructSchemaField) -> Union[str, List[Any], Dict[str, Any]]:
   def schema_walker(field):
     yield field.schema
 
