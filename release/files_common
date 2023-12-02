@@ -281,6 +281,11 @@ system/sensord/sensors/*.cc
 system/sensord/sensors/*.h
 system/sensord/pigeond.py
 
+system/webrtc/__init__.py
+system/webrtc/webrtcd.py
+system/webrtc/device/audio.py
+system/webrtc/device/video.py
+
 selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
 selfdrive/thermald/fan_controller.py
@@ -334,11 +339,6 @@ system/camerad/snapshot/*
 system/camerad/cameras/camera_common.h
 system/camerad/cameras/camera_common.cc
 system/camerad/cameras/sensor2_i2c.h
-
-system/camerad/imgproc/conv.cl
-system/camerad/imgproc/pool.cl
-system/camerad/imgproc/utils.cc
-system/camerad/imgproc/utils.h
 
 selfdrive/manager/__init__.py
 selfdrive/manager/build.py
@@ -443,6 +443,8 @@ third_party/qt5/larch64/bin/**
 
 scripts/update_now.sh
 scripts/stop_updater.sh
+
+teleoprtc/**
 
 rednose_repo/site_scons/site_tools/rednose_filter.py
 rednose/.gitignore

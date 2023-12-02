@@ -80,7 +80,7 @@ class CarController:
 
     self.last_steer = apply_steer
 
-    # toyota can trace shows STEERING_LTA at 42Hz, with counter adding alternatively 1 and 2;
+    # toyota can trace shows STEERING_LKA at 42Hz, with counter adding alternatively 1 and 2;
     # sending it at 100Hz seem to allow a higher rate limit, as the rate limit seems imposed
     # on consecutive messages
     can_sends.append(toyotacan.create_steer_command(self.packer, apply_steer, apply_steer_req))
@@ -88,13 +88,15 @@ class CarController:
     # STEERING_LTA does not seem to allow more rate by sending faster, and may wind up easier
     if self.frame % 2 == 0 and self.CP.carFingerprint in TSS2_CAR:
       lta_active = lat_active and self.CP.steerControlType == SteerControlType.angle
-      # cut steering torque with SETME_X64 when either output torque or driver torque is above
-      # the threshold, to limit max lateral acceleration and for driver torque blending respectively
+      # cut steering torque with SETME_X64 when either EPS torque or driver torque is above
+      # the threshold, to limit max lateral acceleration and for driver torque blending respectively.
       full_torque_condition = (abs(CS.out.steeringTorqueEps) < self.params.STEER_MAX and
                                abs(CS.out.steeringTorque) < MAX_LTA_DRIVER_TORQUE_ALLOWANCE)
 
+      # SETME_X64 at 0 ramps down torque at roughly the max down rate of 1500 units/sec
       setme_x64 = 100 if lta_active and full_torque_condition else 0
-      can_sends.append(toyotacan.create_lta_steer_command(self.packer, self.last_angle, lta_active, self.frame // 2, setme_x64))
+      can_sends.append(toyotacan.create_lta_steer_command(self.packer, self.CP.steerControlType, self.last_angle,
+                                                          lta_active, self.frame // 2, setme_x64))
 
     # *** gas and brake ***
     if self.CP.enableGasInterceptor and CC.longActive:
