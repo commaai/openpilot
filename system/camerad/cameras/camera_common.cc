@@ -11,7 +11,6 @@
 #include "third_party/libyuv/include/libyuv.h"
 #include <jpeglib.h>
 
-#include "system/camerad/imgproc/utils.h"
 #include "common/clutil.h"
 #include "common/swaglog.h"
 #include "common/util.h"

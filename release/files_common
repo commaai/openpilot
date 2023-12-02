@@ -337,8 +337,6 @@ system/camerad/cameras/sensor2_i2c.h
 
 system/camerad/imgproc/conv.cl
 system/camerad/imgproc/pool.cl
-system/camerad/imgproc/utils.cc
-system/camerad/imgproc/utils.h
 
 selfdrive/manager/__init__.py
 selfdrive/manager/build.py
