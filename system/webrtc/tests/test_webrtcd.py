@@ -45,6 +45,10 @@ class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
       self.fail("Timeout while waiting for awaitable to complete")
 
   async def test_webrtcd(self):
+    import random
+    asyncio.sleep(random.random() * 5)
+
+
     self.start_proc()
 
     url = f"http://{self.host}:{self.port}/stream"
