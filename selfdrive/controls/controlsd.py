@@ -64,7 +64,7 @@ class Controls:
 
     # Setup sockets
     self.pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState',
-                                   'carControl', 'carEvents', 'carParams'])
+                                   'carControl', 'onroadEvents', 'carParams'])
 
     self.sensor_packets = ["accelerometer", "gyroscope"]
     self.camera_packets = ["roadCameraState", "driverCameraState", "wideRoadCameraState"]
@@ -212,7 +212,7 @@ class Controls:
         self.state = State.enabled
 
   def update_events(self, CS):
-    """Compute carEvents from carState"""
+    """Compute onroadEvents from carState"""
 
     self.events.clear()
 
@@ -823,11 +823,11 @@ class Controls:
     cs_send.carState.events = car_events
     self.pm.send('carState', cs_send)
 
-    # carEvents - logged every second or on change
+    # onroadEvents - logged every second or on change
     if (self.sm.frame % int(1. / DT_CTRL) == 0) or (self.events.names != self.events_prev):
-      ce_send = messaging.new_message('carEvents', len(self.events))
-      ce_send.carEvents = car_events
-      self.pm.send('carEvents', ce_send)
+      ce_send = messaging.new_message('onroadEvents', len(self.events))
+      ce_send.onroadEvents = car_events
+      self.pm.send('onroadEvents', ce_send)
     self.events_prev = self.events.names.copy()
 
     # carParams - logged every 50 seconds (> 1 per segment)

@@ -442,8 +442,8 @@ def controlsd_config_callback(params, cfg, lr):
       controlsState = msg.controlsState
       if initialized:
         break
-    elif msg.which() == "carEvents":
-      initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.carEvents]
+    elif msg.which() == "onroadEvents":
+      initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.onroadEvents]
 
   assert controlsState is not None and initialized, "controlsState never initialized"
   params.put("ReplayControlsState", controlsState.as_builder().to_bytes())
@@ -465,7 +465,7 @@ CONFIGS = [
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
       "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope"
     ],
-    subs=["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
+    subs=["controlsState", "carState", "carControl", "sendcan", "onroadEvents", "carParams"],
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     config_callback=controlsd_config_callback,
     init_callback=controlsd_fingerprint_callback,
