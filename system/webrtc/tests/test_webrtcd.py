@@ -46,7 +46,7 @@ class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
 
   async def test_webrtcd(self):
     import random
-    asyncio.sleep(random.random() * 5)
+    await asyncio.sleep(random.random() * 5)
 
 
     self.start_proc()
