@@ -47,7 +47,7 @@ typedef struct FrameMetadata {
   uint32_t frame_id;
 
   // Timestamps
-  uint64_t timestamp_sof; // only set on tici
+  uint64_t timestamp_sof;
   uint64_t timestamp_eof;
 
   // Exposure

@@ -665,51 +665,51 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
   if (!enabled) return;
 
   struct cam_isp_in_port_info in_port_info = {
-      .res_type = (uint32_t[]){CAM_ISP_IFE_IN_RES_PHY_0, CAM_ISP_IFE_IN_RES_PHY_1, CAM_ISP_IFE_IN_RES_PHY_2}[camera_num],
+    .res_type = (uint32_t[]){CAM_ISP_IFE_IN_RES_PHY_0, CAM_ISP_IFE_IN_RES_PHY_1, CAM_ISP_IFE_IN_RES_PHY_2}[camera_num],
 
-      .lane_type = CAM_ISP_LANE_TYPE_DPHY,
-      .lane_num = 4,
-      .lane_cfg = 0x3210,
+    .lane_type = CAM_ISP_LANE_TYPE_DPHY,
+    .lane_num = 4,
+    .lane_cfg = 0x3210,
 
-      .vc = 0x0,
-      .dt = dt,
+    .vc = 0x0,
+    .dt = dt,
+    .format = CAM_FORMAT_MIPI_RAW_12,
+
+    .test_pattern = 0x2,  // 0x3?
+    .usage_type = 0x0,
+
+    .left_start = 0,
+    .left_stop = ci.frame_width - 1,
+    .left_width = ci.frame_width,
+
+    .right_start = 0,
+    .right_stop = ci.frame_width - 1,
+    .right_width = ci.frame_width,
+
+    .line_start = 0,
+    .line_stop = ci.frame_height + ci.extra_height - 1,
+    .height = ci.frame_height + ci.extra_height,
+
+    .pixel_clk = 0x0,
+    .batch_size = 0x0,
+    .dsp_mode = CAM_ISP_DSP_MODE_NONE,
+    .hbi_cnt = 0x0,
+    .custom_csid = 0x0,
+
+    .num_out_res = 0x1,
+    .data[0] = (struct cam_isp_out_port_info){
+      .res_type = CAM_ISP_IFE_OUT_RES_RDI_0,
       .format = CAM_FORMAT_MIPI_RAW_12,
-
-      .test_pattern = 0x2,  // 0x3?
-      .usage_type = 0x0,
-
-      .left_start = 0,
-      .left_stop = ci.frame_width - 1,
-      .left_width = ci.frame_width,
-
-      .right_start = 0,
-      .right_stop = ci.frame_width - 1,
-      .right_width = ci.frame_width,
-
-      .line_start = 0,
-      .line_stop = ci.frame_height + ci.extra_height - 1,
+      .width = ci.frame_width,
       .height = ci.frame_height + ci.extra_height,
-
-      .pixel_clk = 0x0,
-      .batch_size = 0x0,
-      .dsp_mode = CAM_ISP_DSP_MODE_NONE,
-      .hbi_cnt = 0x0,
-      .custom_csid = 0x0,
-
-      .num_out_res = 0x1,
-      .data[0] = (struct cam_isp_out_port_info){
-          .res_type = CAM_ISP_IFE_OUT_RES_RDI_0,
-          .format = CAM_FORMAT_MIPI_RAW_12,
-          .width = ci.frame_width,
-          .height = ci.frame_height + ci.extra_height,
-          .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
-      },
+      .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
+    },
   };
   struct cam_isp_resource isp_resource = {
-      .resource_id = CAM_ISP_RES_ID_PORT,
-      .handle_type = CAM_HANDLE_USER_POINTER,
-      .res_hdl = (uint64_t)&in_port_info,
-      .length = sizeof(in_port_info),
+    .resource_id = CAM_ISP_RES_ID_PORT,
+    .handle_type = CAM_HANDLE_USER_POINTER,
+    .res_hdl = (uint64_t)&in_port_info,
+    .length = sizeof(in_port_info),
   };
 
   auto isp_dev_handle_ = device_acquire(multi_cam_state->isp_fd, session_handle, &isp_resource);
@@ -1098,8 +1098,8 @@ void CameraState::set_camera_exposure(float grey_frac) {
 
   std::string gain_bytes, time_bytes;
   if (env_ctrl_exp_from_params) {
-    gain_bytes = Params().get("CameraDebugExpGain");
-    time_bytes = Params().get("CameraDebugExpTime");
+    gain_bytes = params.get("CameraDebugExpGain");
+    time_bytes = params.get("CameraDebugExpTime");
   }
 
   if (gain_bytes.size() > 0 && time_bytes.size() > 0) {
