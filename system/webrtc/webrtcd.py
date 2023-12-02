@@ -88,7 +88,7 @@ class CerealProxyRunner:
     self.task = asyncio.create_task(self.run())
 
   def stop(self):
-    if self.task.done():
+    if self.task is None or self.task.done():
       return
     self.task.cancel()
     self.task = None

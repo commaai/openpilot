@@ -1,42 +1,19 @@
 #!/usr/bin/env python
 import asyncio
-from contextlib import closing
-import multiprocessing
-import socket
+import json
 import unittest
+from unittest.mock import MagicMock, AsyncMock
 # for aiortc and its dependencies
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-from openpilot.system.webrtc.webrtcd import webrtcd_thread
+from openpilot.system.webrtc.webrtcd import get_stream
 
 import aiortc
-import aiohttp
 from teleoprtc import WebRTCOfferBuilder
 
 
-def get_free_port():
-  with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-    s.bind(('', 0))
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    return s.getsockname()[1]
-
-
 class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
-  def setUp(self):
-    self.host = "0.0.0.0"
-    self.proc = None
-
-  def tearDown(self):
-    if self.proc is not None and self.proc.is_alive():
-      self.proc.kill()
-
-  def start_proc(self):
-    # run webrtcd in debug mode
-    self.port = get_free_port()
-    self.proc = multiprocessing.Process(target=webrtcd_thread, args=(self.host, self.port, True))
-    self.proc.start()
-
   async def assertCompletesWithTimeout(self, awaitable, timeout=1):
     try:
       async with asyncio.timeout(timeout):
@@ -45,20 +22,13 @@ class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
       self.fail("Timeout while waiting for awaitable to complete")
 
   async def test_webrtcd(self):
-    import random
-    await asyncio.sleep(random.random() * 5)
-
-
-    self.start_proc()
-
-    url = f"http://{self.host}:{self.port}/stream"
+    mock_request = MagicMock()
     async def connect(offer):
-      async with aiohttp.ClientSession(raise_for_status=True) as session:
-        body = {'sdp': offer.sdp, 'cameras': offer.video, 'bridge_services_in': [], 'bridge_services_out': []}
-        async with session.post(url, json=body) as resp:
-          payload = await resp.json()
-          answer = aiortc.RTCSessionDescription(**payload)
-          return answer
+      body = {'sdp': offer.sdp, 'cameras': offer.video, 'bridge_services_in': [], 'bridge_services_out': []}
+      mock_request.json.side_effect = AsyncMock(return_value=body)
+      response = await get_stream(mock_request)
+      response_json = json.loads(response.text)
+      return aiortc.RTCSessionDescription(**response_json)
 
     builder = WebRTCOfferBuilder(connect)
     builder.offer_to_receive_video_stream("road")
@@ -79,6 +49,11 @@ class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
     await self.assertCompletesWithTimeout(audio_track.recv())
 
     await self.assertCompletesWithTimeout(stream.stop())
+
+    # cleanup
+    self.assertTrue(mock_request.app["streams"].__setitem__.called, "Implementation changed, please update this test")
+    _, session = mock_request.app["streams"].__setitem__.call_args.args
+    await self.assertCompletesWithTimeout(session.post_run_cleanup())
 
 
 if __name__ == "__main__":
