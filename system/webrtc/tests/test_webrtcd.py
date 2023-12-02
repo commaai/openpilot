@@ -24,14 +24,18 @@ def get_free_port():
 
 class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
   def setUp(self):
-    # run webrtcd in debug mode
     self.host = "0.0.0.0"
+    self.proc = None
+
+  def tearDown(self):
+    if self.proc is not None and self.proc.is_alive():
+      self.proc.kill()
+
+  def start_proc(self):
+    # run webrtcd in debug mode
     self.port = get_free_port()
     self.proc = multiprocessing.Process(target=webrtcd_thread, args=(self.host, self.port, True))
     self.proc.start()
-
-  def tearDown(self) -> None:
-    self.proc.kill()
 
   async def assertCompletesWithTimeout(self, awaitable, timeout=1):
     try:
@@ -41,7 +45,7 @@ class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
       self.fail("Timeout while waiting for awaitable to complete")
 
   async def test_webrtcd(self):
-    self.assertTrue(self.proc.is_alive())
+    self.start_proc()
 
     url = f"http://{self.host}:{self.port}/stream"
     async def connect(offer):
