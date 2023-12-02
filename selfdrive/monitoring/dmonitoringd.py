@@ -3,7 +3,6 @@ import gc
 
 import cereal.messaging as messaging
 from cereal import car
-from cereal import log
 from openpilot.common.params import Params, put_bool_nonblocking
 from openpilot.common.realtime import set_realtime_priority
 from openpilot.selfdrive.controls.lib.events import Events
@@ -18,11 +17,6 @@ def dmonitoringd_thread():
   sm = messaging.SubMaster(['driverStateV2', 'liveCalibration', 'carState', 'controlsState', 'modelV2'], poll=['driverStateV2'])
 
   driver_status = DriverStatus(rhd_saved=Params().get_bool("IsRhdDetected"))
-
-  sm['liveCalibration'].calStatus = log.LiveCalibrationData.Status.invalid
-  sm['liveCalibration'].rpyCalib = [0, 0, 0]
-  sm['carState'].buttonEvents = []
-  sm['carState'].standstill = True
 
   v_cruise_last = 0
   driver_engaged = False
@@ -48,7 +42,9 @@ def dmonitoringd_thread():
 
     # Get data from dmonitoringmodeld
     events = Events()
-    driver_status.update_states(sm['driverStateV2'], sm['liveCalibration'].rpyCalib, sm['carState'].vEgo, sm['controlsState'].enabled)
+
+    if sm.all_checks():
+      driver_status.update_states(sm['driverStateV2'], sm['liveCalibration'].rpyCalib, sm['carState'].vEgo, sm['controlsState'].enabled)
 
     # Block engaging after max number of distrations
     if driver_status.terminal_alert_cnt >= driver_status.settings._MAX_TERMINAL_ALERTS or \
