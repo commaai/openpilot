@@ -24,6 +24,7 @@ testpaths = [
   "system/proclogd",
   "system/tests",
   "system/ubloxd",
+  "system/webrtc",
   "tools/lib/tests",
   "tools/replay",
   "tools/cabana"
@@ -43,6 +44,8 @@ exclude = [
   "rednose_repo/",
   "tinygrad/",
   "tinygrad_repo/",
+  "teleoprtc/",
+  "teleoprtc_repo/",
   "third_party/",
 ]
 
@@ -186,6 +189,7 @@ exclude = [
   "opendbc",
   "rednose_repo",
   "tinygrad_repo",
+  "teleoprtc",
   "third_party",
 ]
 flake8-implicit-str-concat.allow-multiline=false
