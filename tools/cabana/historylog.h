@@ -8,48 +8,11 @@
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QTableView>
-#include <QKeyEvent>
 #include <QClipboard>
 
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 #include "tools/cabana/util.h"
-
-class CustomTableView : public QTableView {
-    Q_OBJECT
-
-public:
-  using QTableView::QTableView;
-
-protected:
-  void keyPressEvent(QKeyEvent *event) override {
-    if (event->key() == Qt::Key_C && (event->modifiers() & Qt::ControlModifier)) {
-      copySelectionToClipboard();
-      event->accept();
-    } else {
-      QTableView::keyPressEvent(event);
-    }
-  }
-
-private:
-  void copySelectionToClipboard() {
-    QItemSelectionModel *selectionModel = this->selectionModel();
-    QModelIndexList selectedIndexes = selectionModel->selectedIndexes();
-
-    QString selectedText;
-    for (const QModelIndex &index : selectedIndexes) {
-      QVariant data = model()->data(index, Qt::DisplayRole);
-      selectedText += data.toString() + ", "; // Comma-separated values
-      if (index.column() == model()->columnCount() - 1) {
-        selectedText.chop(2); // Remove the last comma and space
-        selectedText += "\n"; // New line for new row
-      }
-    }
-
-    QClipboard *clipboard = QApplication::clipboard();
-    clipboard->setText(selectedText);
-  }
-};
 
 class HeaderView : public QHeaderView {
 public:
@@ -119,10 +82,14 @@ public:
 private slots:
   void setFilter();
 
+protected:
+  bool eventFilter(QObject *watched, QEvent *event) override;
+
 private:
   void refresh();
+  void copySelectionToClipboard();
 
-  CustomTableView *logs;
+  QTableView *logs;
   HistoryLogModel *model;
   QCheckBox *dynamic_mode;
   QComboBox *signals_cb, *comp_box, *display_type_cb;
