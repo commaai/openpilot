@@ -233,7 +233,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   QFrame *line = new QFrame(this);
   line->setFrameStyle(QFrame::HLine | QFrame::Sunken);
   main_layout->addWidget(line);
-  main_layout->addWidget(logs = new QTableView(this));
+  main_layout->addWidget(logs = new CustomTableView(this));
   logs->setModel(model = new HistoryLogModel(this));
   delegate = new MessageBytesDelegate(this);
   logs->setHorizontalHeader(new HeaderView(Qt::Horizontal, this));
