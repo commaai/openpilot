@@ -4,5 +4,4 @@ if [ -f /TICI ] && [ ! -f qt/spinner ]; then
   cp qt/spinner_larch64 qt/spinner
 fi
 
-export LD_LIBRARY_PATH="/system/lib64:$LD_LIBRARY_PATH"
 exec ./qt/spinner "$1"

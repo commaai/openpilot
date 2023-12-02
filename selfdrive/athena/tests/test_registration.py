@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 import json
-import os
-import tempfile
 import unittest
 from Crypto.PublicKey import RSA
 from pathlib import Path
@@ -10,6 +8,7 @@ from unittest import mock
 from openpilot.common.params import Params
 from openpilot.selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
 from openpilot.selfdrive.athena.tests.helpers import MockResponse
+from openpilot.system.hardware.hw import Paths
 
 
 class TestRegistration(unittest.TestCase):
@@ -19,16 +18,11 @@ class TestRegistration(unittest.TestCase):
     self.params = Params()
     self.params.clear_all()
 
-    self.persist = tempfile.TemporaryDirectory()
-    os.mkdir(os.path.join(self.persist.name, "comma"))
-    self.priv_key = Path(os.path.join(self.persist.name, "comma/id_rsa"))
-    self.pub_key = Path(os.path.join(self.persist.name, "comma/id_rsa.pub"))
-    self.persist_patcher = mock.patch("openpilot.selfdrive.athena.registration.PERSIST", self.persist.name)
-    self.persist_patcher.start()
+    persist_dir = Path(Paths.persist_root()) / "comma"
+    persist_dir.mkdir(parents=True, exist_ok=True)
 
-  def tearDown(self):
-    self.persist_patcher.stop()
-    self.persist.cleanup()
+    self.priv_key = persist_dir / "id_rsa"
+    self.pub_key = persist_dir / "id_rsa.pub"
 
   def _generate_keys(self):
     self.pub_key.touch()

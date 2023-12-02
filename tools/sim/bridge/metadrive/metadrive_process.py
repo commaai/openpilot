@@ -45,7 +45,12 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, controls_re
   road_image = np.frombuffer(camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
 
   env = MetaDriveEnv(config)
-  env.reset()
+
+  def reset():
+    env.reset()
+    env.vehicle.config["max_speed_km_h"] = 1000
+
+  reset()
 
   def get_cam_as_rgb(cam):
     cam = env.engine.sensors[cam]
@@ -71,21 +76,21 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, controls_re
 
     if controls_recv.poll(0):
       while controls_recv.poll(0):
-        steer_angle, gas, reset = controls_recv.recv()
+        steer_angle, gas, should_reset = controls_recv.recv()
 
       steer_metadrive = steer_angle * 1 / (env.vehicle.MAX_STEERING * steer_ratio)
       steer_metadrive = np.clip(steer_metadrive, -1, 1)
 
       vc = [steer_metadrive, gas]
 
-      if reset:
-        env.reset()
+      if should_reset:
+        reset()
 
     if rk.frame % 5 == 0:
       obs, _, terminated, _, info = env.step(vc)
 
       if terminated:
-        env.reset()
+        reset()
 
       #if dual_camera:
       #  wide_road_image = get_cam_as_rgb("rgb_wide")

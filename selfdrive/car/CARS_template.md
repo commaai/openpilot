@@ -53,7 +53,7 @@ If your car has the following packages or features, then it's a good candidate f
 
 ### FlexRay
 
-All the cars that openpilot supports use a [CAN bus](https://en.wikipedia.org/wiki/CAN_bus) for communication between all the car's computers, however a CAN bus isn't the only way that the cars in your computer can communicate. Most, if not all, vehicles from the following manufacturers use [FlexRay](https://en.wikipedia.org/wiki/FlexRay) instead of a CAN bus: **BMW, Mercedes, Audi, Land Rover, and some Volvo**. These cars may one day be supported, but we have no immediate plans to support FlexRay.
+All the cars that openpilot supports use a [CAN bus](https://en.wikipedia.org/wiki/CAN_bus) for communication between all the car's computers, however a CAN bus isn't the only way that the computers in your car can communicate. Most, if not all, vehicles from the following manufacturers use [FlexRay](https://en.wikipedia.org/wiki/FlexRay) instead of a CAN bus: **BMW, Mercedes, Audi, Land Rover, and some Volvo**. These cars may one day be supported, but we have no immediate plans to support FlexRay.
 
 ### Toyota Security
 
