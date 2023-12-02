@@ -335,8 +335,6 @@ system/camerad/cameras/camera_common.h
 system/camerad/cameras/camera_common.cc
 system/camerad/cameras/sensor2_i2c.h
 
-system/camerad/imgproc/conv.cl
-
 selfdrive/manager/__init__.py
 selfdrive/manager/build.py
 selfdrive/manager/helpers.py
