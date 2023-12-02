@@ -233,7 +233,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   QFrame *line = new QFrame(this);
   line->setFrameStyle(QFrame::HLine | QFrame::Sunken);
   main_layout->addWidget(line);
-  main_layout->addWidget(logs = new CustomTableView(this));
+  main_layout->addWidget(logs = new QTableView(this));
   logs->setModel(model = new HistoryLogModel(this));
   delegate = new MessageBytesDelegate(this);
   logs->setHorizontalHeader(new HeaderView(Qt::Horizontal, this));
@@ -243,6 +243,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   logs->verticalHeader()->setDefaultSectionSize(delegate->sizeForBytes(8).height());
   logs->verticalHeader()->setVisible(false);
   logs->setFrameShape(QFrame::NoFrame);
+  logs->installEventFilter(this);  // copySelectionToClipboard
 
   QObject::connect(display_type_cb, qOverload<int>(&QComboBox::activated), [this](int index) {
     logs->setItemDelegateForColumn(1, index == 1 ? delegate : nullptr);
@@ -303,4 +304,31 @@ void LogsWidget::showEvent(QShowEvent *event) {
   if (dynamic_mode->isChecked() || model->canFetchMore({}) && model->rowCount() == 0) {
     model->refresh();
   }
+}
+
+bool LogsWidget::eventFilter(QObject *watched, QEvent *event) {
+  if (watched == logs && event->type() == QEvent::KeyPress) {
+    QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+    if (keyEvent->key() == Qt::Key_C && (keyEvent->modifiers() & Qt::ControlModifier)) {
+      copySelectionToClipboard();
+      return true;
+    }
+  }
+  return QFrame::eventFilter(watched, event);  // Default processing
+}
+
+void LogsWidget::copySelectionToClipboard() {
+  QItemSelectionModel *selectionModel = logs->selectionModel();
+  QModelIndexList selectedIndexes = selectionModel->selectedIndexes();
+  QClipboard *clipboard = QApplication::clipboard();
+  QString selectedText;
+  for (const QModelIndex &index : selectedIndexes) {
+    QVariant data = model->data(index, Qt::DisplayRole);
+    selectedText += data.toString() + ", ";
+    if (index.column() == model->columnCount() - 1) {
+      selectedText.chop(2);  // Remove the last comma and space
+      selectedText += "\n";  // New line for new row
+    }
+  }
+  clipboard->setText(selectedText);
 }
