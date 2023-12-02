@@ -167,7 +167,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1337.
       ret.wheelbase = 2.63
       ret.steerRatio = 14.56
-    elif candidate == CAR.KIA_SPORTAGE_5TH_GEN:
+    elif candidate in CAR.KIA_SPORTAGE_5TH_GEN:
       ret.mass = 1700.  # weight from SX and above trims, average of FWD and AWD versions
       ret.wheelbase = 2.756
       ret.steerRatio = 13.6  # steering ratio according to Kia News https://www.kiamedia.com/us/en/models/sportage/2023/specifications
@@ -202,8 +202,8 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.9
       ret.steerRatio = 16.
       ret.tireStiffnessFactor = 0.65
-    elif candidate == CAR.KIA_SPORTAGE_HYBRID_5TH_GEN:
-      ret.mass = 1767.  # SX Prestige trim support only
+    elif candidate in (CAR.KIA_SPORTAGE_HYBRID_5TH_GEN, CAR.KIA_SPORTAGE_PHEV_5TH_GEN):
+      ret.mass = {CAR.KIA_SPORTAGE_PHEV_5TH_GEN: 1923., }.get(candidate, 1767.)  # HYBRID: SX Prestige trim support only
       ret.wheelbase = 2.756
       ret.steerRatio = 13.6
     elif candidate in (CAR.KIA_SORENTO_4TH_GEN, CAR.KIA_SORENTO_HEV_4TH_GEN, CAR.KIA_SORENTO_PHEV_4TH_GEN):
