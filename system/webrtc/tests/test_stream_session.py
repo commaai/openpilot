@@ -21,6 +21,13 @@ from openpilot.common.realtime import DT_DMON
 
 
 class TestStreamSession(unittest.TestCase):
+  def setUp(self):
+    self.loop = asyncio.new_event_loop()
+
+  def tearDown(self):
+    self.loop.stop()
+    self.loop.close()
+
   def test_outgoing_proxy(self):
     test_msg = log.Event.new_message()
     test_msg.logMonoTime = 123
@@ -75,7 +82,7 @@ class TestStreamSession(unittest.TestCase):
       self.assertEqual(track.codec_preference(), "H264")
 
       for i in range(5):
-        packet = asyncio.get_event_loop().run_until_complete(track.recv())
+        packet = self.loop.run_until_complete(track.recv())
         self.assertEqual(packet.time_base, VIDEO_TIME_BASE)
         self.assertEqual(packet.pts, int(i * DT_DMON * VIDEO_CLOCK_RATE))
         self.assertEqual(packet.size, 0)
@@ -91,7 +98,7 @@ class TestStreamSession(unittest.TestCase):
       track = AudioInputStreamTrack(audio_format=pyaudio.paInt16, packet_time=packet_time, rate=rate)
 
       for i in range(5):
-        frame = asyncio.get_event_loop().run_until_complete(track.recv())
+        frame = self.loop.run_until_complete(track.recv())
         self.assertEqual(frame.rate, rate)
         self.assertEqual(frame.samples, sample_count)
         self.assertEqual(frame.pts, i * sample_count)
