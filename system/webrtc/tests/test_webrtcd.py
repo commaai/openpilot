@@ -50,7 +50,7 @@ class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
 
     await self.assertCompletesWithTimeout(stream.stop())
 
-    # cleanup
+    # cleanup, very implementation specific, test may break if it changes
     self.assertTrue(mock_request.app["streams"].__setitem__.called, "Implementation changed, please update this test")
     _, session = mock_request.app["streams"].__setitem__.call_args.args
     await self.assertCompletesWithTimeout(session.post_run_cleanup())
