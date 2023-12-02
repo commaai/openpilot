@@ -11,7 +11,6 @@
 #include "third_party/libyuv/include/libyuv.h"
 #include <jpeglib.h>
 
-#include "system/camerad/imgproc/utils.h"
 #include "common/clutil.h"
 #include "common/swaglog.h"
 #include "common/util.h"
@@ -93,12 +92,8 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
 
   debayer = new Debayer(device_id, context, this, s, nv12_width, nv12_uv_offset);
 
-#ifdef __APPLE__
-  q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
-#else
   const cl_queue_properties props[] = {0};  //CL_QUEUE_PRIORITY_KHR, CL_QUEUE_PRIORITY_HIGH_KHR, 0};
   q = CL_CHECK_ERR(clCreateCommandQueueWithProperties(context, device_id, props, &err));
-#endif
 }
 
 CameraBuf::~CameraBuf() {
@@ -280,7 +275,6 @@ float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip
       lum_total += 1;
     }
   }
-
 
   // Find mean lumimance value
   unsigned int lum_cur = 0;
