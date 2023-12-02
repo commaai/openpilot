@@ -80,7 +80,7 @@ class CarController:
 
     self.last_steer = apply_steer
 
-    # toyota can trace shows STEERING_LTA at 42Hz, with counter adding alternatively 1 and 2;
+    # toyota can trace shows STEERING_LKA at 42Hz, with counter adding alternatively 1 and 2;
     # sending it at 100Hz seem to allow a higher rate limit, as the rate limit seems imposed
     # on consecutive messages
     can_sends.append(toyotacan.create_steer_command(self.packer, apply_steer, apply_steer_req))
