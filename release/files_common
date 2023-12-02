@@ -281,6 +281,11 @@ system/sensord/sensors/*.cc
 system/sensord/sensors/*.h
 system/sensord/pigeond.py
 
+system/webrtc/__init__.py
+system/webrtc/webrtcd.py
+system/webrtc/device/audio.py
+system/webrtc/device/video.py
+
 selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
 selfdrive/thermald/fan_controller.py
