@@ -21,8 +21,8 @@ MAX_USER_TORQUE = 500
 
 # LTA limits
 # EPS ignores commands above this angle and causes PCS to fault
-MAX_STEER_ANGLE = 94.9461  # deg
-MAX_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some resistance when changing lanes
+MAX_LTA_ANGLE = 94.9461  # deg
+MAX_LTA_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some resistance when changing lanes
 
 
 class CarController:
@@ -76,7 +76,7 @@ class CarController:
         if not lat_active:
           apply_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
 
-        self.last_angle = clip(apply_angle, -MAX_STEER_ANGLE, MAX_STEER_ANGLE)
+        self.last_angle = clip(apply_angle, -MAX_LTA_ANGLE, MAX_LTA_ANGLE)
 
     self.last_steer = apply_steer
 
@@ -89,7 +89,7 @@ class CarController:
     if self.frame % 2 == 0 and self.CP.carFingerprint in TSS2_CAR:
       lta_active = lat_active and self.CP.steerControlType == SteerControlType.angle
       full_torque_condition = (abs(CS.out.steeringTorqueEps) < self.params.STEER_MAX and
-                               abs(CS.out.steeringTorque) < MAX_DRIVER_TORQUE_ALLOWANCE)
+                               abs(CS.out.steeringTorque) < MAX_LTA_DRIVER_TORQUE_ALLOWANCE)
 
       setme_x64 = 100 if lta_active and full_torque_condition else 0
       can_sends.append(toyotacan.create_lta_steer_command(self.packer, self.last_angle, self.CP.steerControlType,
