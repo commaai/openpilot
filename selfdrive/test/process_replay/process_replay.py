@@ -475,6 +475,18 @@ CONFIGS = [
     main_pub="can",
   ),
   ProcessConfig(
+    proc_name="card",
+    pubs=["can", "carState", "sendcan"],
+    subs=["carControl"],
+    ignore=["logMonoTime", "valid"],
+    config_callback=controlsd_config_callback,
+    init_callback=controlsd_fingerprint_callback,
+    should_recv_callback=controlsd_rcv_callback,
+    tolerance=NUMPY_TOLERANCE,
+    processing_time=0.004,
+    main_pub="can",
+  ),
+  ProcessConfig(
     proc_name="radard",
     pubs=["can", "carState", "modelV2"],
     subs=["radarState", "liveTracks"],
