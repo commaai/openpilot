@@ -4,7 +4,7 @@ import time
 import cereal.messaging as messaging
 from panda import ALTERNATIVE_EXPERIENCE
 from openpilot.common.params import Params
-from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
+from openpilot.common.realtime import config_realtime_process, Priority
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
 from openpilot.system.swaglog import cloudlog
@@ -12,7 +12,7 @@ from openpilot.system.swaglog import cloudlog
 # a simple daemon for talking to cars
 
 def main():
-  can = messaging.sub_sock('can', timeout=20)
+  can = messaging.sub_sock('can', timeout=15)
   sm = messaging.SubMaster(['carControl', 'pandaStates'])
   pm = messaging.PubMaster(['carState', 'sendcan'])
 
@@ -47,7 +47,7 @@ def main():
   params.put("CarParamsCache", cp_bytes)
   params.put("CarParamsPersistent", cp_bytes)
 
-  rk = Ratekeeper(int(1 / DT_CTRL), print_delay_threshold=None)
+  # driven by CAN
   while True:
     can_strs = messaging.drain_sock_raw(can, wait_for_one=True)
     sm.update(0)
@@ -58,10 +58,9 @@ def main():
     pm.send('carState', cs_send)
 
     # commands -> car bytes
-    _, can_sends = CI.apply(sm['carControl'].as_builder(), int(time.monotonic() * 1e9))
-    pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
-
-    rk.keep_time()
+    if not CP.passive:
+      _, can_sends = CI.apply(sm['carControl'].as_builder(), int(time.monotonic() * 1e9))
+      pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
 if __name__ == "__main__":
   main()
