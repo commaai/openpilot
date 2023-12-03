@@ -321,7 +321,7 @@ def main() -> NoReturn:
       print("%.4f: got log: %x len %d" % (time.time(), log_type, len(log_payload)))
 
     if log_type == LOG_GNSS_OEMDRE_MEASUREMENT_REPORT:
-      msg = messaging.new_message('qcomGnss')
+      msg = messaging.new_message('qcomGnss', valid=True)
 
       gnss = msg.qcomGnss
       gnss.logTs = log_time
@@ -370,7 +370,7 @@ def main() -> NoReturn:
       vNED = [report["q_FltVelEnuMps[1]"], report["q_FltVelEnuMps[0]"], -report["q_FltVelEnuMps[2]"]]
       vNEDsigma = [report["q_FltVelSigmaMps[1]"], report["q_FltVelSigmaMps[0]"], -report["q_FltVelSigmaMps[2]"]]
 
-      msg = messaging.new_message('gpsLocation')
+      msg = messaging.new_message('gpsLocation', valid=True)
       gps = msg.gpsLocation
       gps.latitude = report["t_DblFinalPosLatLon[0]"] * 180/math.pi
       gps.longitude = report["t_DblFinalPosLatLon[1]"] * 180/math.pi
@@ -396,7 +396,7 @@ def main() -> NoReturn:
       pm.send('gpsLocation', msg)
 
     elif log_type == LOG_GNSS_OEMDRE_SVPOLY_REPORT:
-      msg = messaging.new_message('qcomGnss')
+      msg = messaging.new_message('qcomGnss', valid=True)
       dat = unpack_svpoly(log_payload)
       dat = relist(dat)
       gnss = msg.qcomGnss
@@ -433,7 +433,7 @@ def main() -> NoReturn:
       pm.send('qcomGnss', msg)
 
     elif log_type in [LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT]:
-      msg = messaging.new_message('qcomGnss')
+      msg = messaging.new_message('qcomGnss', valid=True)
 
       gnss = msg.qcomGnss
       gnss.logTs = log_time
