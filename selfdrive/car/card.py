@@ -47,7 +47,7 @@ def main():
   params.put("CarParamsCache", cp_bytes)
   params.put("CarParamsPersistent", cp_bytes)
 
-  # cleanup old params
+  # cleanup params for options that aren't available anymore
   if not CP.experimentalLongitudinalAvailable:
     params.remove("ExperimentalLongitudinalEnabled")
   if not CP.openpilotLongitudinalControl:
@@ -63,6 +63,7 @@ def main():
     cs_send = messaging.new_message(None, valid=CS.canValid, carState=CS)
     pm.send('carState', cs_send)
 
+    # TODO: only do this once we're initialized
     # commands -> car bytes
     if not CP.passive:
       _, can_sends = CI.apply(sm['carControl'].as_builder(), int(time.monotonic() * 1e9))

@@ -29,7 +29,8 @@ from openpilot.tools.lib.logreader import LogReader
 
 # Baseline CPU usage by process
 PROCS = {
-  "selfdrive.controls.controlsd": 39.0,
+  "selfdrive.controls.controlsd": 25.0,
+  "selfdrive.car.card": 19.0,
   "./loggerd": 14.0,
   "./encoderd": 17.0,
   "./camerad": 14.5,
@@ -39,7 +40,6 @@ PROCS = {
   "./_ui": 18.0,
   "selfdrive.locationd.paramsd": 9.0,
   "./sensord": 7.0,
-  "selfdrive.car.card": 5.0,
   "selfdrive.controls.radard": 4.5,
   "selfdrive.modeld.modeld": 13.0,
   "selfdrive.modeld.dmonitoringmodeld": 8.0,
