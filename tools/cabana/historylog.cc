@@ -322,10 +322,12 @@ void LogsWidget::copySelectionToClipboard() {
   QModelIndexList selectedIndexes = selectionModel->selectedIndexes();
   QClipboard *clipboard = QApplication::clipboard();
   QString selectedText;
-  for (const QModelIndex &index : selectedIndexes) {
+  for (int i = 0; i < selectedIndexes.count(); ++i) {
+    const QModelIndex &index = selectedIndexes[i];
     QVariant data = model->data(index, Qt::DisplayRole);
     selectedText += data.toString() + ", ";
-    if (index.column() == model->columnCount() - 1) {
+    // Check if this is the last index or the next index is in a different row
+    if (i == selectedIndexes.count() - 1 || selectedIndexes[i + 1].row() != index.row()) {
       selectedText.chop(2);  // Remove the last comma and space
       selectedText += "\n";  // New line for new row
     }
