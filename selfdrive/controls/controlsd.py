@@ -61,7 +61,7 @@ class Controls:
     self.branch = get_short_branch("")
 
     # Setup sockets
-    self.pm = messaging.PubMaster(['controlsState', 'onroadEvents', 'carParams', 'carControl'])
+    self.pm = messaging.PubMaster(['controlsState', 'onroadEvents', 'carControl'])
 
     self.sensor_packets = ["accelerometer", "gyroscope"]
     self.camera_packets = ["roadCameraState", "driverCameraState", "wideRoadCameraState"]
@@ -102,12 +102,6 @@ class Controls:
 
     # TODO: fix this
     controller_available = True
-
-    # cleanup old params
-    if not self.CP.experimentalLongitudinalAvailable:
-      self.params.remove("ExperimentalLongitudinalEnabled")
-    if not self.CP.openpilotLongitudinalControl:
-      self.params.remove("ExperimentalMode")
 
     self.CC = car.CarControl.new_message()
     self.CS_prev = car.CarState.new_message()
@@ -392,7 +386,7 @@ class Controls:
 
   def data_sample(self):
     """Receive data from sockets"""
-    self.sm.update(100)
+    self.sm.update(20)
 
     if not self.initialized:
       all_valid = self.sm['carState'].canValid and self.sm.all_checks()
@@ -773,13 +767,6 @@ class Controls:
       self.pm.send('onroadEvents', ce_send)
     self.events_prev = self.events.names.copy()
 
-    # carParams - logged every 50 seconds (> 1 per segment)
-    if (self.sm.frame % int(50. / DT_CTRL) == 0):
-      cp_send = messaging.new_message('carParams')
-      cp_send.valid = True
-      cp_send.carParams = self.CP
-      self.pm.send('carParams', cp_send)
-
     # carControl
     cc_send = messaging.new_message('carControl')
     cc_send.valid = CS.canValid
@@ -795,12 +782,8 @@ class Controls:
     self.is_metric = self.params.get_bool("IsMetric")
     self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
 
-    # Sample data from sockets and get a carState
     self.data_sample()
-    cloudlog.timestamp("Data sampled")
-
     self.update_events()
-    cloudlog.timestamp("Events updated")
 
     if not self.CP.passive and self.initialized:
       # Update control state
@@ -808,7 +791,6 @@ class Controls:
 
     # Compute actuators (runs PID loops and lateral MPC)
     CC, lac_log = self.state_control()
-
 
     # Publish data
     self.publish_logs(start_time, CC, lac_log)

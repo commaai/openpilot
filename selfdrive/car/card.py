@@ -4,7 +4,7 @@ import time
 import cereal.messaging as messaging
 from panda import ALTERNATIVE_EXPERIENCE
 from openpilot.common.params import Params
-from openpilot.common.realtime import config_realtime_process, Priority
+from openpilot.common.realtime import config_realtime_process, Priority, DT_CTRL
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
 from openpilot.system.swaglog import cloudlog
@@ -14,7 +14,7 @@ from openpilot.system.swaglog import cloudlog
 def main():
   can = messaging.sub_sock('can', timeout=15)
   sm = messaging.SubMaster(['carControl', 'pandaStates'])
-  pm = messaging.PubMaster(['carState', 'sendcan'])
+  pm = messaging.PubMaster(['carState', 'sendcan', 'carParams'])
 
   params = Params()
   config_realtime_process(4, Priority.CTRL_HIGH)
@@ -47,6 +47,12 @@ def main():
   params.put("CarParamsCache", cp_bytes)
   params.put("CarParamsPersistent", cp_bytes)
 
+  # cleanup old params
+  if not CP.experimentalLongitudinalAvailable:
+    params.remove("ExperimentalLongitudinalEnabled")
+  if not CP.openpilotLongitudinalControl:
+    params.remove("ExperimentalMode")
+
   # driven by CAN
   while True:
     can_strs = messaging.drain_sock_raw(can, wait_for_one=True)
@@ -61,6 +67,11 @@ def main():
     if not CP.passive:
       _, can_sends = CI.apply(sm['carControl'].as_builder(), int(time.monotonic() * 1e9))
       pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
+
+    # carParams - logged every 50 seconds (> 1 per segment)
+    if (sm.frame % int(50. / DT_CTRL) == 0):
+      pm.send('carParams', messaging.new_message(None, valid=True, carParams=CP))
+
 
 if __name__ == "__main__":
   main()
