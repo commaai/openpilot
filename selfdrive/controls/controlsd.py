@@ -72,14 +72,21 @@ class Controls:
     self.log_sock = messaging.sub_sock('androidLog')
     self.can_sock = messaging.sub_sock('can', timeout=20)
 
+    extras = []
+    ignore = self.sensor_packets.copy()
+
+    self.joystick_mode = self.params.get_bool("JoystickDebugMode") or self.CP.notCar
+    if self.joystick_mode:
+      extras.append('testJoystick')
+      ignore.append('testJoystick')
+
     self.params = Params()
-    ignore = self.sensor_packets + ['testJoystick']
     if SIMULATION:
       ignore += ['driverCameraState', 'managerState']
     self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                    'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
-                                   'testJoystick'] + self.camera_packets + self.sensor_packets,
+                                  ] + self.camera_packets + self.sensor_packets + extras,
                                   ignore_alive=ignore, ignore_avg_freq=['radarState', 'testJoystick'])
 
     if CI is None:
@@ -92,8 +99,6 @@ class Controls:
       self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], experimental_long_allowed, num_pandas)
     else:
       self.CI, self.CP = CI, CI.CP
-
-    self.joystick_mode = self.params.get_bool("JoystickDebugMode") or self.CP.notCar
 
     # set alternative experiences from parameters
     self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
