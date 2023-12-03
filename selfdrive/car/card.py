@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 import time
 
 from cereal import car
@@ -14,11 +13,9 @@ from openpilot.system.swaglog import cloudlog
 # a simple daemon for talking to cars
 
 def main():
+  can = messaging.sub_sock('can', timeout=20)
   sm = messaging.SubMaster(['carControl', 'pandaStates'])
   pm = messaging.PubMaster(['carState', 'sendcan'])
-
-  can_timeout = None if os.environ.get('NO_CAN_TIMEOUT', False) else 20
-  can = messaging.sub_sock('can', timeout=can_timeout)
 
   params = Params()
   config_realtime_process(4, Priority.CTRL_HIGH)
