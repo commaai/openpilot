@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import time
 
-from cereal import car
 import cereal.messaging as messaging
 from panda import ALTERNATIVE_EXPERIENCE
 from openpilot.common.params import Params
@@ -34,11 +33,9 @@ def main():
   car_recognized = CP.carName != 'mock'
   passive = params.get_bool("Passive") or not params.get_bool("OpenpilotEnabledToggle")
   controller_available = CI.CC is not None and not passive and not CP.dashcamOnly
-  read_only = not car_recognized or not controller_available or CP.dashcamOnly
-  if read_only:
-    safety_config = car.CarParams.SafetyConfig.new_message()
-    safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
-    CP.safetyConfigs = [safety_config]
+  CP.passive = not car_recognized or not controller_available or CP.dashcamOnly
+  if CP.passive:
+    CP.safetyConfigs = []
 
   # Write previous route's CarParams
   prev_cp = params.get("CarParamsPersistent")
