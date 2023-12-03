@@ -1,6 +1,5 @@
 #!/bin/bash
 
-export PASSIVE="0"
 export NOBOARD="1"
 export SIMULATION="1"
 export SKIP_FW_QUERY="1"
