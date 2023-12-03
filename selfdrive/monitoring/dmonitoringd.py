@@ -54,7 +54,7 @@ def dmonitoringd_thread():
     driver_status.update_events(events, driver_engaged, sm['controlsState'].enabled, sm['carState'].standstill)
 
     # build driverMonitoringState packet
-    dat = messaging.new_message('driverMonitoringState')
+    dat = messaging.new_message('driverMonitoringState', valid=sm.all_checks())
     dat.driverMonitoringState = {
       "events": events.to_msg(),
       "faceDetected": driver_status.face_detected,
@@ -73,7 +73,6 @@ def dmonitoringd_thread():
       "isActiveMode": driver_status.active_monitoring_mode,
       "isRHD": driver_status.wheel_on_right,
     }
-    dat.valid = sm.all_checks()
     pm.send('driverMonitoringState', dat)
 
     # save rhd virtual toggle every 5 mins
