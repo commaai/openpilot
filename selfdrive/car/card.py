@@ -2,7 +2,9 @@
 import os
 import time
 
+from cereal import car
 import cereal.messaging as messaging
+from panda import ALTERNATIVE_EXPERIENCE
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
@@ -27,7 +29,29 @@ def main():
 
   num_pandas = len(messaging.recv_one_retry(sm.sock['pandaStates']).pandaStates)
   CI, CP = get_car(can, pm.sock['sendcan'], params.get_bool("ExperimentalLongitudinalEnabled"), num_pandas)
-  params.put("CarParams2", CP.to_bytes())
+
+  CP.alternativeExperience = 0
+  if not params.get_bool("DisengageOnAccelerator"):
+    CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
+
+  car_recognized = CP.carName != 'mock'
+  passive = params.get_bool("Passive") or not params.get_bool("OpenpilotEnabledToggle")
+  controller_available = CI.CC is not None and not passive and not CP.dashcamOnly
+  read_only = not car_recognized or not controller_available or CP.dashcamOnly
+  if read_only:
+    safety_config = car.CarParams.SafetyConfig.new_message()
+    safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
+    CP.safetyConfigs = [safety_config]
+
+  # Write previous route's CarParams
+  prev_cp = params.get("CarParamsPersistent")
+  if prev_cp is not None:
+    params.put("CarParamsPrevRoute", prev_cp)
+
+  cp_bytes = CP.to_bytes()
+  params.put("CarParams", cp_bytes)
+  params.put("CarParamsCache", cp_bytes)
+  params.put("CarParamsPersistent", cp_bytes)
 
   rk = Ratekeeper(int(1 / DT_CTRL), print_delay_threshold=None)
   while True:

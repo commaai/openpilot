@@ -7,8 +7,7 @@ from typing import SupportsFloat
 from cereal import car, log
 from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
-from openpilot.common.profiler import Profiler
-from openpilot.common.params import Params, put_nonblocking, put_bool_nonblocking
+from openpilot.common.params import Params, put_bool_nonblocking
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcClient, VisionStreamType
 from openpilot.common.conversions import Conversions as CV
@@ -78,51 +77,32 @@ class Controls:
                                    'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
                                    'testJoystick', 'carState'] + self.camera_packets + self.sensor_packets,
-                                  ignore_alive=ignore, ignore_avg_freq=['radarState', 'testJoystick'], ignore_valid=['testJoystick', ])
+                                  ignore_alive=ignore, ignore_avg_freq=['radarState', 'testJoystick'], ignore_valid=['testJoystick', ], poll=['carState'])
 
     # get CI/CP from carParams
     cloudlog.warning("waiting for carParams")
-    with car.CarParams.from_bytes(self.params.get("CarParams2", block=True)) as msg:
+    with car.CarParams.from_bytes(self.params.get("CarParams", block=True)) as msg:
+      # TODO: this shouldn't need to be a builder
       self.CP = msg.as_builder()
       CarInterface, CarController, CarState = interfaces[self.CP.carFingerprint]
       self.CI = CarInterface(self.CP, CarController, CarState)
 
     self.joystick_mode = self.params.get_bool("JoystickDebugMode") or self.CP.notCar
 
-    # set alternative experiences from parameters
-    self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
-    self.CP.alternativeExperience = 0
-    if not self.disengage_on_accelerator:
-      self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
+    self.disengage_on_accelerator = bool(self.CP.alternativeExperience & ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS)
 
     # read params
     self.is_metric = self.params.get_bool("IsMetric")
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
-    openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
-    passive = self.params.get_bool("Passive") or not openpilot_enabled_toggle
 
     # detect sound card presence and ensure successful init
     sounds_available = HARDWARE.get_sound_card_online()
 
     car_recognized = self.CP.carName != 'mock'
 
-    controller_available = self.CI.CC is not None and not passive and not self.CP.dashcamOnly
-    self.read_only = not car_recognized or not controller_available or self.CP.dashcamOnly
-    if self.read_only:
-      safety_config = car.CarParams.SafetyConfig.new_message()
-      safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
-      self.CP.safetyConfigs = [safety_config]
-
-    # Write previous route's CarParams
-    prev_cp = self.params.get("CarParamsPersistent")
-    if prev_cp is not None:
-      self.params.put("CarParamsPrevRoute", prev_cp)
-
-    # Write CarParams for radard
-    cp_bytes = self.CP.to_bytes()
-    self.params.put("CarParams", cp_bytes)
-    put_nonblocking("CarParamsCache", cp_bytes)
-    put_nonblocking("CarParamsPersistent", cp_bytes)
+    # TODO: fix this
+    self.read_only = False
+    controller_available = True
 
     # cleanup old params
     if not self.CP.experimentalLongitudinalAvailable:
@@ -171,8 +151,6 @@ class Controls:
     self.v_cruise_helper = VCruiseHelper(self.CP)
     self.recalibrating_seen = False
 
-    self.can_log_mono_time = 0
-
     self.startup_event = get_startup_event(car_recognized, controller_available, len(self.CP.carFw) > 0)
 
     if not sounds_available:
@@ -189,9 +167,7 @@ class Controls:
       self.events.add(EventName.joystickDebug, static=True)
       self.startup_event = None
 
-    # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
-    self.prof = Profiler(False)  # off by default
 
   def set_initial_state(self):
     if REPLAY:
@@ -417,7 +393,7 @@ class Controls:
 
   def data_sample(self):
     """Receive data from sockets"""
-    self.sm.update(0)
+    self.sm.update(100)
 
     if not self.initialized:
       all_valid = self.sm['carState'].canValid and self.sm.all_checks()
@@ -565,7 +541,7 @@ class Controls:
     # Check which actuators can be enabled
     standstill = CS.vEgo <= max(self.CP.minSteerSpeed, MIN_LATERAL_CONTROL_SPEED) or CS.standstill
     CC.latActive = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
-                   not standstill
+                   (not standstill or self.joystick_mode)
     CC.longActive = self.enabled and not self.events.contains(ET.OVERRIDE_LONGITUDINAL) and self.CP.openpilotLongitudinalControl
 
     actuators = CC.actuators
@@ -819,7 +795,6 @@ class Controls:
 
   def step(self):
     start_time = time.monotonic()
-    self.prof.checkpoint("Ratekeeper", ignore=True)
 
     self.is_metric = self.params.get_bool("IsMetric")
     self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
@@ -827,7 +802,6 @@ class Controls:
     # Sample data from sockets and get a carState
     self.data_sample()
     cloudlog.timestamp("Data sampled")
-    self.prof.checkpoint("Sample")
 
     self.update_events()
     cloudlog.timestamp("Events updated")
@@ -835,16 +809,13 @@ class Controls:
     if not self.read_only and self.initialized:
       # Update control state
       self.state_transition()
-      self.prof.checkpoint("State transition")
 
     # Compute actuators (runs PID loops and lateral MPC)
     CC, lac_log = self.state_control()
 
-    self.prof.checkpoint("State Control")
 
     # Publish data
     self.publish_logs(start_time, CC, lac_log)
-    self.prof.checkpoint("Sent")
 
     self.CS_prev = self.sm['carState']
 
@@ -852,7 +823,6 @@ class Controls:
     while True:
       self.step()
       self.rk.keep_time()
-      self.prof.display()
 
 
 def main():
