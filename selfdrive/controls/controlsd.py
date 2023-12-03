@@ -7,7 +7,7 @@ from typing import SupportsFloat
 from cereal import car, log
 from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
-from openpilot.common.params import Params, put_bool_nonblocking
+from openpilot.common.params import Params
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcClient, VisionStreamType
 from openpilot.common.conversions import Conversions as CV
@@ -395,7 +395,6 @@ class Controls:
 
         self.initialized = True
         self.set_initial_state()
-        put_bool_nonblocking("ControlsReady", True)
 
     # When the panda and controlsd do not agree on controls_allowed
     # we want to disengage openpilot. However the status from the panda goes through

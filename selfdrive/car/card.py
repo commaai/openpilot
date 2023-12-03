@@ -3,7 +3,7 @@ import time
 
 import cereal.messaging as messaging
 from panda import ALTERNATIVE_EXPERIENCE
-from openpilot.common.params import Params
+from openpilot.common.params import Params, put_bool_nonblocking
 from openpilot.common.realtime import config_realtime_process, Priority, DT_CTRL
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
@@ -53,6 +53,7 @@ def main():
     params.remove("ExperimentalMode")
 
   # driven by CAN
+  initialized = False
   while True:
     can_strs = messaging.drain_sock_raw(can, wait_for_one=True)
     sm.update(0)
@@ -62,9 +63,15 @@ def main():
     cs_send = messaging.new_message(None, valid=CS.canValid, carState=CS)
     pm.send('carState', cs_send)
 
-    # TODO: only do this once we're initialized
+    # TODO: this can make us miss at least a few cycles on cars with experimental long
+    # that need an ECU knockout
+    if not initialized and sm.updated['carControl']:
+      initialized = True
+      CI.init(CP, can, pm.sock['sendcan'])
+      put_bool_nonblocking("ControlsReady", True)
+
     # commands -> car bytes
-    if not CP.passive:
+    if not CP.passive and initialized:
       _, can_sends = CI.apply(sm['carControl'].as_builder(), int(time.monotonic() * 1e9))
       pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
