@@ -255,15 +255,12 @@ class Calibrator:
     pm.send('liveCalibration', self.get_msg(valid))
 
 
-def calibrationd_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[messaging.PubMaster] = None) -> NoReturn:
+def main() -> NoReturn:
   gc.disable()
   set_realtime_priority(1)
 
-  if sm is None:
-    sm = messaging.SubMaster(['cameraOdometry', 'carState', 'carParams'], poll=['cameraOdometry'])
-
-  if pm is None:
-    pm = messaging.PubMaster(['liveCalibration'])
+  pm = messaging.PubMaster(['liveCalibration'])
+  sm = messaging.SubMaster(['cameraOdometry', 'carState', 'carParams'], poll=['cameraOdometry'])
 
   calibrator = Calibrator(param_put=True)
 
@@ -288,10 +285,6 @@ def calibrationd_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[m
     # 4Hz driven by cameraOdometry
     if sm.frame % 5 == 0:
       calibrator.send_data(pm, sm.all_checks())
-
-
-def main(sm: Optional[messaging.SubMaster] = None, pm: Optional[messaging.PubMaster] = None) -> NoReturn:
-  calibrationd_thread(sm, pm)
 
 
 if __name__ == "__main__":
