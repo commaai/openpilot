@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import pytest
 import time
 import subprocess
 
@@ -9,6 +10,7 @@ from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.test.helpers import set_params_enabled
 
 
+@pytest.mark.tici
 def test_time_to_onroad():
   # launch
   set_params_enabled()
@@ -16,7 +18,7 @@ def test_time_to_onroad():
   proc = subprocess.Popen(["python", manager_path])
 
   start_time = time.monotonic()
-  sm = messaging.SubMaster(['controlsState', 'deviceState', 'carEvents'])
+  sm = messaging.SubMaster(['controlsState', 'deviceState', 'onroadEvents'])
   try:
     # wait for onroad
     with Timeout(20, "timed out waiting to go onroad"):
@@ -38,7 +40,7 @@ def test_time_to_onroad():
     # once we're enageable, must be for the next few seconds
     for _ in range(500):
       sm.update(100)
-      assert sm['controlsState'].engageable, f"events: {sm['carEvents']}"
+      assert sm['controlsState'].engageable, f"events: {sm['onroadEvents']}"
   finally:
     proc.terminate()
     if proc.wait(60) is None:

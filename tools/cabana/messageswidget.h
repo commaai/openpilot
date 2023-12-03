@@ -1,8 +1,8 @@
 #pragma once
 
 #include <algorithm>
+#include <optional>
 #include <set>
-#include <utility>
 #include <vector>
 
 #include <QAbstractTableModel>
@@ -38,15 +38,16 @@ public:
   void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
   void setFilterStrings(const QMap<int, QString> &filters);
   void msgsReceived(const std::set<MessageId> *new_msgs, bool has_new_ids);
-  void filterAndSort(bool force_reset = false);
+  void filterAndSort();
   void dbcModified();
 
   struct Item {
     MessageId id;
     QString name;
     QString node;
-    const CanData *data;
-    bool operator==(const Item &other) const { return id == other.id; }
+    bool operator==(const Item &other) const {
+      return id == other.id && name == other.name && node == other.node;
+    }
   };
   std::vector<Item> items_;
 
@@ -78,11 +79,6 @@ public:
   void updateHeaderPositions();
   void updateGeometries() override;
   QSize sizeHint() const override;
-
-signals:
-  void filtersUpdated(const QMap<int, QString> &filters);
-
-private:
   void updateFilters();
 
   QMap<int, QLineEdit *> editors;
@@ -98,9 +94,6 @@ public:
   bool restoreHeaderState(const QByteArray &state) const { return view->header()->restoreState(state); }
   void suppressHighlighted();
 
-public slots:
-  void dbcModified();
-
 signals:
   void msgSelectionChanged(const MessageId &message_id);
 
@@ -109,6 +102,7 @@ protected:
   void headerContextMenuEvent(const QPoint &pos);
   void menuAboutToShow();
   void setMultiLineBytes(bool multi);
+  void updateTitle();
 
   MessageView *view;
   MessageViewHeader *header;

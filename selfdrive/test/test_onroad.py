@@ -3,6 +3,9 @@ import bz2
 import math
 import json
 import os
+import pathlib
+import psutil
+import pytest
 import shutil
 import subprocess
 import time
@@ -31,7 +34,7 @@ PROCS = {
   "./encoderd": 17.0,
   "./camerad": 14.5,
   "./locationd": 11.0,
-  "./mapsd": 2.0,
+  "./mapsd": 1.5,
   "selfdrive.controls.plannerd": 16.5,
   "./_ui": 18.0,
   "selfdrive.locationd.paramsd": 9.0,
@@ -66,7 +69,7 @@ PROCS.update({
   },
   "tizi": {
      "./boardd": 19.0,
-    "system.sensord.rawgps.rawgpsd": 1.0,
+    "system.qcomgpsd.qcomgpsd": 1.0,
   }
 }.get(HARDWARE.get_device_type(), {}))
 
@@ -96,6 +99,7 @@ def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
 
 
+@pytest.mark.tici
 class TestOnroad(unittest.TestCase):
 
   @classmethod
@@ -151,6 +155,8 @@ class TestOnroad(unittest.TestCase):
       cls.segments = cls.segments[:-1]
 
     finally:
+      cls.gpu_procs = {psutil.Process(int(f.name)).name() for f in pathlib.Path('/sys/devices/virtual/kgsl/kgsl/proc/').iterdir() if f.is_dir()}
+
       if proc is not None:
         proc.terminate()
         if proc.wait(60) is None:
@@ -296,6 +302,9 @@ class TestOnroad(unittest.TestCase):
     # expected to go up while the MSGQ buffers fill up
     self.assertLessEqual(max(mems) - min(mems), 3.0)
 
+  def test_gpu_usage(self):
+    self.assertEqual(self.gpu_procs, {"weston", "_ui", "camerad", "selfdrive.modeld.modeld"})
+
   def test_camera_processing_time(self):
     result = "\n"
     result += "------------------------------------------------\n"
@@ -399,7 +408,7 @@ class TestOnroad(unittest.TestCase):
   def test_startup(self):
     startup_alert = None
     for msg in self.lrs[0]:
-      # can't use carEvents because the first msg can be dropped while loggerd is starting up
+      # can't use onroadEvents because the first msg can be dropped while loggerd is starting up
       if msg.which() == "controlsState":
         startup_alert = msg.controlsState.alertText1
         break
@@ -408,8 +417,8 @@ class TestOnroad(unittest.TestCase):
 
   def test_engagable(self):
     no_entries = Counter()
-    for m in self.service_msgs['carEvents']:
-      for evt in m.carEvents:
+    for m in self.service_msgs['onroadEvents']:
+      for evt in m.onroadEvents:
         if evt.noEntry:
           no_entries[evt.name] += 1
 

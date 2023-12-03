@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
+import pytest
 import unittest
 import time
-import math
 import threading
+import numpy as np
 from dataclasses import dataclass
 from tabulate import tabulate
 from typing import List
 
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
-from openpilot.system.hardware import HARDWARE, TICI
+from openpilot.system.hardware import HARDWARE
 from openpilot.system.hardware.tici.power_monitor import get_power
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.manager.manager import manager_cleanup
@@ -28,7 +29,7 @@ class Proc:
 
 PROCS = [
   Proc('camerad', 2.1, msgs=['roadCameraState', 'wideRoadCameraState', 'driverCameraState']),
-  Proc('modeld', 1.0, atol=0.2, msgs=['modelV2']),
+  Proc('modeld', 1.12, atol=0.2, msgs=['modelV2']),
   Proc('dmonitoringmodeld', 0.4, msgs=['driverStateV2']),
   Proc('encoderd', 0.23, msgs=[]),
   Proc('mapsd', 0.05, msgs=['mapRenderState']),
@@ -44,12 +45,8 @@ def send_llk_msg(done):
     time.sleep(1/20.)
 
 
+@pytest.mark.tici
 class TestPowerDraw(unittest.TestCase):
-
-  @classmethod
-  def setUpClass(cls):
-    if not TICI:
-      raise unittest.SkipTest
 
   def setUp(self):
     HARDWARE.initialize_hardware()
@@ -94,8 +91,8 @@ class TestPowerDraw(unittest.TestCase):
       msgs_expected = int(sum(SAMPLE_TIME * SERVICE_LIST[msg].frequency for msg in proc.msgs))
       tab.append([proc.name, round(expected, 2), round(cur, 2), msgs_expected, msgs_received])
       with self.subTest(proc=proc.name):
-        self.assertTrue(math.isclose(cur, expected, rel_tol=proc.rtol, abs_tol=proc.atol))
-        self.assertTrue(math.isclose(msgs_expected, msgs_received, rel_tol=.02, abs_tol=2))
+        np.testing.assert_allclose(cur, expected, rtol=proc.rtol, atol=proc.atol)
+        np.testing.assert_allclose(msgs_expected, msgs_received, rtol=.02, atol=2)
     print(tabulate(tab))
     print(f"Baseline {baseline:.2f}W\n")
 
