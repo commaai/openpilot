@@ -13,6 +13,7 @@ AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 @pytest.mark.tici
 class TestSoundd(unittest.TestCase):
   SOUND_PLAY_TIME = 1.5
+  SOUND_DELAY_TIME = 3 # time inbetween each sound
   TOL = 0.3
 
   SOUNDS_TO_TEST = [AudibleAlert.engage, AudibleAlert.disengage, AudibleAlert.refuse, AudibleAlert.prompt, \
@@ -20,13 +21,13 @@ class TestSoundd(unittest.TestCase):
 
   REFERENCE_LEVELS = { # dB above ambient
     AudibleAlert.engage: 8,
-    AudibleAlert.disengage: 7,
-    AudibleAlert.refuse: 12,
+    AudibleAlert.disengage: 9,
+    AudibleAlert.refuse: 13,
     AudibleAlert.prompt: 6,
-    AudibleAlert.promptRepeat: 7.5,
-    AudibleAlert.promptDistracted: 20,
-    AudibleAlert.warningSoft: 23,
-    AudibleAlert.warningImmediate: 16.5,
+    AudibleAlert.promptRepeat: 7,
+    AudibleAlert.promptDistracted: 21,
+    AudibleAlert.warningSoft: 24,
+    AudibleAlert.warningImmediate: 23,
   }
 
   @with_processes(["soundd", "micd"])
@@ -62,8 +63,9 @@ class TestSoundd(unittest.TestCase):
         else:
           self.levels_for_sounds[sound] = np.mean(db_history) - self.ambient_db
 
-      send_sound(AudibleAlert.none, self.SOUND_PLAY_TIME*3)
+      send_sound(AudibleAlert.none, self.SOUND_DELAY_TIME)
       send_sound(self.SOUNDS_TO_TEST[i], self.SOUND_PLAY_TIME)
+      send_sound(AudibleAlert.none, self.SOUND_DELAY_TIME)
 
     print(self.levels_for_sounds)
 
