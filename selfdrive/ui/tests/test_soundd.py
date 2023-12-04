@@ -57,7 +57,7 @@ class TestSoundd(unittest.TestCase):
 
       if sound != AudibleAlert.none or update_ambient:
         levels_for_sounds[sound] = np.mean(db_history)
-    
+
     send_sound(AudibleAlert.none, self.AMBIENT_SOUND_TIME, True)
 
     for i in range(len(self.SOUNDS_TO_TEST)):
