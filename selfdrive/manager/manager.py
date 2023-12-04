@@ -60,8 +60,12 @@ def manager_init() -> None:
     if params.get(k) is None:
       params.put(k, v)
 
-  # is this a dashcam build?
-  params.put_bool("Passive", bool(int(os.getenv("PASSIVE", "0"))))
+  # is this dashcam?
+  if os.getenv("PASSIVE") is not None:
+    params.put_bool("Passive", bool(int(os.getenv("PASSIVE", "0"))))
+
+  if params.get("Passive") is None:
+    raise Exception("Passive must be set to continue")
 
   # Create folders needed for msgq
   try:
