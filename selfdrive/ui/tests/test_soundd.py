@@ -64,7 +64,7 @@ class TestSoundd(unittest.TestCase):
 
       send_sound(AudibleAlert.none, self.SOUND_PLAY_TIME*3)
       send_sound(self.SOUNDS_TO_TEST[i], self.SOUND_PLAY_TIME)
-    
+
     print(self.levels_for_sounds)
 
     for sound in self.REFERENCE_LEVELS:
