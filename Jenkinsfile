@@ -173,6 +173,7 @@ node {
           ["test pigeond", "pytest system/sensord/tests/test_pigeond.py"],
           ["test manager", "pytest selfdrive/manager/test/test_manager.py"],
           ["test nav", "pytest selfdrive/navd/tests/"],
+          ["test soundd", "pytest selfdrive/ui/tests/test_soundd.py"],
         ])
       },
       'loopback': {
