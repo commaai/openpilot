@@ -16,7 +16,7 @@ def pytest_addoption(parser: pytest.Parser):
   parser.addoption("--ignore-fields", type=str, nargs="*", default=[],
                       help="Extra fields or msgs to ignore (e.g. carState.events)")
   parser.addoption("--ignore-msgs", type=str, nargs="*", default=[],
-                      help="Msgs to ignore (e.g. carEvents)")
+                      help="Msgs to ignore (e.g. onroadEvents)")
   parser.addoption("--update-refs", action="store_true",
                       help="Updates reference logs using current commit")
   parser.addoption("--upload-only", action="store_true",

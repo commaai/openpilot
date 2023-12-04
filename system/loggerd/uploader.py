@@ -228,7 +228,7 @@ class Uploader:
     return success
 
   def get_msg(self):
-    msg = messaging.new_message("uploaderState")
+    msg = messaging.new_message("uploaderState", valid=True)
     us = msg.uploaderState
     us.immediateQueueSize = int(self.immediate_size / 1e6)
     us.immediateQueueCount = self.immediate_count
