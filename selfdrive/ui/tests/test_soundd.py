@@ -13,7 +13,7 @@ AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 @pytest.mark.tici
 class TestSoundd(unittest.TestCase):
   SOUND_PLAY_TIME = 1.5
-  SOUND_DELAY_TIME = 3 # time in between each sound
+  AMBIENT_SOUND_TIME = 6 # time to capture the ambient sound level
   TOL = 0.3
 
   SOUNDS_TO_TEST = [AudibleAlert.engage, AudibleAlert.disengage, AudibleAlert.refuse, AudibleAlert.prompt, \
@@ -39,33 +39,33 @@ class TestSoundd(unittest.TestCase):
 
     self.levels_for_sounds = {}
 
+    def send_sound(sound, play_time):
+      db_history = []
+      ambient = []
+
+      play_start = time.monotonic()
+      while time.monotonic() - play_start < play_time:
+        sm.update(0)
+
+        if sm.updated['microphone']:
+          db_history.append(sm["microphone"].soundPressureWeightedDb)
+          ambient.append(sm["microphone"].filteredSoundPressureWeightedDb)
+
+        m1 = messaging.new_message('controlsState')
+        m1.controlsState.alertSound = sound
+
+        pm.send('controlsState', m1)
+        time.sleep(0.01)
+
+      if sound == AudibleAlert.none:
+        self.ambient_db = np.median(ambient)
+      else:
+        self.levels_for_sounds[sound] = np.mean(db_history) - self.ambient_db
+
+    send_sound(AudibleAlert.none, self.AMBIENT_SOUND_TIME)
+
     for i in range(len(self.SOUNDS_TO_TEST)):
-      def send_sound(sound, play_time):
-        db_history = []
-        ambient = []
-
-        play_start = time.monotonic()
-        while time.monotonic() - play_start < play_time:
-          sm.update(0)
-
-          if sm.updated['microphone']:
-            db_history.append(sm["microphone"].soundPressureWeightedDb)
-            ambient.append(sm["microphone"].filteredSoundPressureWeightedDb)
-
-          m1 = messaging.new_message('controlsState')
-          m1.controlsState.alertSound = sound
-
-          pm.send('controlsState', m1)
-          time.sleep(0.01)
-
-        if sound == AudibleAlert.none:
-          self.ambient_db = np.mean(ambient)
-        else:
-          self.levels_for_sounds[sound] = np.mean(db_history) - self.ambient_db
-
-      send_sound(AudibleAlert.none, self.SOUND_DELAY_TIME)
       send_sound(self.SOUNDS_TO_TEST[i], self.SOUND_PLAY_TIME)
-      send_sound(AudibleAlert.none, self.SOUND_DELAY_TIME)
 
     print(self.levels_for_sounds)
 
