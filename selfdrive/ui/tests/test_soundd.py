@@ -13,7 +13,7 @@ AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 @pytest.mark.tici
 class TestSoundd(unittest.TestCase):
   SOUND_PLAY_TIME = 1.5
-  SOUND_DELAY_TIME = 3 # time inbetween each sound
+  SOUND_DELAY_TIME = 3 # time in between each sound
   TOL = 0.3
 
   SOUNDS_TO_TEST = [AudibleAlert.engage, AudibleAlert.disengage, AudibleAlert.refuse, AudibleAlert.prompt, \
