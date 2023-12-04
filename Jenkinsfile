@@ -169,11 +169,11 @@ node {
           ["build", "cd selfdrive/manager && ./build.py"],
           ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
           ["test power draw", "./system/hardware/tici/tests/test_power_draw.py"],
+          ["test soundd", "pytest selfdrive/ui/tests/test_soundd.py"],
           ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
           ["test pigeond", "pytest system/sensord/tests/test_pigeond.py"],
           ["test manager", "pytest selfdrive/manager/test/test_manager.py"],
           ["test nav", "pytest selfdrive/navd/tests/"],
-          ["test soundd", "pytest selfdrive/ui/tests/test_soundd.py"],
         ])
       },
       'loopback': {
