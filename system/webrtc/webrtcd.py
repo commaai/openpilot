@@ -208,6 +208,7 @@ async def get_stream(request: web.Request):
 
 async def get_schema(request: web.Request):
   services = request.query["services"].split(",")
+  services = [s for s in services if s]
   assert all(s in log.Event.schema.fields and not s.endswith("DEPRECATED") for s in services), "Invalid service name"
   schema_dict = {s: generate_field(log.Event.schema.fields[s]) for s in services}
   return web.json_response(schema_dict)
