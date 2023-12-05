@@ -15,6 +15,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 import aiortc
 from aiortc.mediastreams import VideoStreamTrack, AudioStreamTrack
 from aiortc.contrib.media import MediaBlackhole
+from aiortc.exceptions import InvalidStateError
 from aiohttp import web
 import capnp
 from teleoprtc import WebRTCAnswerBuilder
@@ -97,6 +98,9 @@ class CerealProxyRunner:
     while True:
       try:
         self.proxy.update()
+      except InvalidStateError:
+        self.logger.warning("Cereal outgoing proxy invalid state (connection closed)")
+        break
       except Exception as ex:
         self.logger.error("Cereal outgoing proxy failure: %s", ex)
       await asyncio.sleep(0.01)
