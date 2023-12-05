@@ -233,6 +233,8 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser_cusw(CP):
-    messages = []
+    messages = [
+      ("DAS_6", 4),
+    ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)
