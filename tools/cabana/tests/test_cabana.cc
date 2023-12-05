@@ -1,5 +1,7 @@
 
 #undef INFO
+#include <QDir>
+
 #include "catch2/catch.hpp"
 #include "tools/replay/logreader.h"
 #include "tools/cabana/dbc/dbcmanager.h"
@@ -84,4 +86,18 @@ CM_ SG_ 160 signal_2 "multiple line comment
   REQUIRE(msg->sigs[1]->start_bit == 12);
   REQUIRE(msg->sigs[1]->size == 1);
   REQUIRE(msg->sigs[1]->receiver_name == "XXX");
+}
+
+TEST_CASE("parse_opendbc") {
+  QDir dir(OPENDBC_FILE_PATH);
+  QStringList errors;
+  for (auto fn : dir.entryList({"*.dbc"}, QDir::Files, QDir::Name)) {
+    try {
+      auto dbc = DBCFile(dir.filePath(fn));
+    } catch (std::exception &e) {
+      errors.push_back(e.what());
+    }
+  }
+  INFO(errors.join("\n").toStdString());
+  REQUIRE(errors.empty());
 }
