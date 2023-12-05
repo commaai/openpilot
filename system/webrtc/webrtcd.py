@@ -23,9 +23,8 @@ from teleoprtc.info import parse_info_from_offer
 
 from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
 from openpilot.system.webrtc.device.audio import AudioInputStreamTrack, AudioOutputSpeaker
-from openpilot.system.webrtc.schema import generate_field
 
-from cereal import messaging, log
+from cereal import messaging
 
 
 class CerealOutgoingMessageProxy:
@@ -206,14 +205,6 @@ async def get_stream(request: web.Request):
   return web.json_response({"sdp": answer.sdp, "type": answer.type})
 
 
-async def get_schema(request: web.Request):
-  services = request.query["services"].split(",")
-  services = [s for s in services if s]
-  assert all(s in log.Event.schema.fields and not s.endswith("DEPRECATED") for s in services), "Invalid service name"
-  schema_dict = {s: generate_field(log.Event.schema.fields[s]) for s in services}
-  return web.json_response(schema_dict)
-
-
 async def on_shutdown(app: web.Application):
   for session in app['streams'].values():
     session.stop()
@@ -232,7 +223,6 @@ def webrtcd_thread(host: str, port: int, debug: bool):
   app['debug'] = debug
   app.on_shutdown.append(on_shutdown)
   app.router.add_post("/stream", get_stream)
-  app.router.add_get("/schema", get_schema)
 
   web.run_app(app, host=host, port=port)
 
