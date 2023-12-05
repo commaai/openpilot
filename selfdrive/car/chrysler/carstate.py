@@ -209,7 +209,7 @@ class CarState(CarStateBase):
       ("WHEEL_SPEEDS_FRONT", 50),
       ("WHEEL_SPEEDS_REAR", 50),
       ("STEERING", 100),
-      ("ACC_1", 50),
+      ("ACC_1", 17),
       ("DOORS", 10),
       ("SEATBELT_STATUS", 10),
       ("STEERING_LEVERS", 10),
