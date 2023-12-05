@@ -41,10 +41,12 @@ def create_lkas_hud(packer, CP, lkas_active, hud_alert, hud_count, car_model, au
 
   values = {
     "LKAS_ICON_COLOR": color,
-    "CAR_MODEL": car_model,
     "LKAS_LANE_LINES": lines,
-    "LKAS_ALERTS": alerts,
   }
+
+  if CP.carFingerprint not in CUSW_CARS:
+    values['CAR_MODEL'] = car_model
+    values['LKAS_ALERTS'] = alerts
 
   if CP.carFingerprint in RAM_CARS:
     values['AUTO_HIGH_BEAM_ON'] = auto_high_beam
