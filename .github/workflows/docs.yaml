@@ -32,7 +32,7 @@ jobs:
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Build docs
       run: |
-        ${{ env.RUN }} "apt update && apt install -y doxygen && cd docs && make html"
+        ${{ env.RUN }} "apt update && apt install -y doxygen && cd docs && make -j$(nproc) html"
 
     - uses: actions/checkout@v4
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
@@ -54,6 +54,7 @@ jobs:
 
         cp -r ../build/docs/html/ docs/
         touch docs/.nojekyll
+        echo -n docs.comma.ai > docs/CNAME
         git add -f .
 
         git commit -m "build docs"

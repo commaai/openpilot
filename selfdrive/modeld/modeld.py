@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys
+import os
 import time
 import pickle
 import numpy as np
@@ -11,14 +11,20 @@ from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.system.swaglog import cloudlog
 from openpilot.common.params import Params
+from openpilot.common.realtime import DT_MDL
+from openpilot.common.numpy_fast import interp
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.model import get_warp_matrix
+from openpilot.selfdrive import sentry
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
+
+PROCESS_NAME = "selfdrive.modeld.modeld"
+SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
 MODEL_PATHS = {
   ModelRunner.THNEED: Path(__file__).parent / 'models/supercombo.thneed',
@@ -50,6 +56,7 @@ class ModelState:
     self.inputs = {
       'desire': np.zeros(ModelConstants.DESIRE_LEN * (ModelConstants.HISTORY_BUFFER_LEN+1), dtype=np.float32),
       'traffic_convention': np.zeros(ModelConstants.TRAFFIC_CONVENTION_LEN, dtype=np.float32),
+      'lat_planner_state': np.zeros(ModelConstants.LAT_PLANNER_STATE_LEN, dtype=np.float32),
       'nav_features': np.zeros(ModelConstants.NAV_FEATURE_LEN, dtype=np.float32),
       'nav_instructions': np.zeros(ModelConstants.NAV_INSTRUCTION_LEN, dtype=np.float32),
       'features_buffer': np.zeros(ModelConstants.HISTORY_BUFFER_LEN * ModelConstants.FEATURE_LEN, dtype=np.float32),
@@ -70,7 +77,10 @@ class ModelState:
       self.model.addInput(k, v)
 
   def slice_outputs(self, model_outputs: np.ndarray) -> Dict[str, np.ndarray]:
-    return {k: model_outputs[np.newaxis, v] for k,v in self.output_slices.items()}
+    parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in self.output_slices.items()}
+    if SEND_RAW_PRED:
+      parsed_model_outputs['raw_pred'] = model_outputs.copy()
+    return parsed_model_outputs
 
   def run(self, buf: VisionBuf, wbuf: VisionBuf, transform: np.ndarray, transform_wide: np.ndarray,
                 inputs: Dict[str, np.ndarray], prepare_only: bool) -> Optional[Dict[str, np.ndarray]]:
@@ -98,12 +108,15 @@ class ModelState:
 
     self.inputs['features_buffer'][:-ModelConstants.FEATURE_LEN] = self.inputs['features_buffer'][ModelConstants.FEATURE_LEN:]
     self.inputs['features_buffer'][-ModelConstants.FEATURE_LEN:] = outputs['hidden_state'][0, :]
+    self.inputs['lat_planner_state'][2] = interp(DT_MDL, ModelConstants.T_IDXS, outputs['lat_planner_solution'][0, :, 2])
+    self.inputs['lat_planner_state'][3] = interp(DT_MDL, ModelConstants.T_IDXS, outputs['lat_planner_solution'][0, :, 3])
     return outputs
 
 
 def main():
-  cloudlog.bind(daemon="selfdrive.modeld.modeld")
-  setproctitle("selfdrive.modeld.modeld")
+  sentry.set_tag("daemon", PROCESS_NAME)
+  cloudlog.bind(daemon=PROCESS_NAME)
+  setproctitle(PROCESS_NAME)
   config_realtime_process(7, 54)
 
   cl_context = CLContext()
@@ -274,4 +287,7 @@ if __name__ == "__main__":
   try:
     main()
   except KeyboardInterrupt:
-    sys.exit()
+    cloudlog.warning(f"child {PROCESS_NAME} got SIGINT")
+  except Exception:
+    sentry.capture_exception()
+    raise

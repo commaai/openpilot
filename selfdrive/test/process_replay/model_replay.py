@@ -23,6 +23,7 @@ MAX_FRAMES = 100 if PC else 600
 NAV_FRAMES = 50
 
 NO_NAV = "NO_NAV" in os.environ
+NO_MODEL = "NO_MODEL" in os.environ
 SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
 
 
@@ -161,8 +162,10 @@ if __name__ == "__main__":
   else:
     os.environ['MAPS_HOST'] = BASE_URL.rstrip('/')
 
+  log_msgs = []
   # run replays
-  log_msgs = model_replay(lr, frs)
+  if not NO_MODEL:
+    log_msgs += model_replay(lr, frs)
   if not NO_NAV:
     log_msgs += nav_model_replay(lr)
 
@@ -177,10 +180,11 @@ if __name__ == "__main__":
       cmp_log = []
 
       # logs are ordered based on type: modelV2, driverStateV2, nav messages (navThumbnail, mapRenderState, navModel)
-      model_start_index = next(i for i, m in enumerate(all_logs) if m.which() in ("modelV2", "cameraOdometry"))
-      cmp_log += all_logs[model_start_index:model_start_index + MAX_FRAMES*2]
-      dmon_start_index = next(i for i, m in enumerate(all_logs) if m.which() == "driverStateV2")
-      cmp_log += all_logs[dmon_start_index:dmon_start_index + MAX_FRAMES]
+      if not NO_MODEL:
+        model_start_index = next(i for i, m in enumerate(all_logs) if m.which() in ("modelV2", "cameraOdometry"))
+        cmp_log += all_logs[model_start_index:model_start_index + MAX_FRAMES*2]
+        dmon_start_index = next(i for i, m in enumerate(all_logs) if m.which() == "driverStateV2")
+        cmp_log += all_logs[dmon_start_index:dmon_start_index + MAX_FRAMES]
       if not NO_NAV:
         nav_start_index = next(i for i, m in enumerate(all_logs) if m.which() in ["navThumbnail", "mapRenderState", "navModel"])
         nav_logs = all_logs[nav_start_index:nav_start_index + NAV_FRAMES*3]

@@ -3,16 +3,40 @@ import os
 import argparse
 import time
 import capnp
+import numpy as np
 
 from typing import Union, Iterable, Optional, List, Any, Dict, Tuple
 
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, ProcessConfig, replay_process, get_process_config, \
                                                                    check_openpilot_enabled, get_custom_params_from_lr
+from openpilot.selfdrive.test.process_replay.vision_meta import DRIVER_FRAME_SIZES
 from openpilot.selfdrive.test.update_ci_routes import upload_route
 from openpilot.tools.lib.route import Route
-from openpilot.tools.lib.framereader import FrameReader
+from openpilot.tools.lib.framereader import FrameReader, BaseFrameReader, FrameType
 from openpilot.tools.lib.logreader import LogReader, LogIterable
 from openpilot.tools.lib.helpers import save_log
+
+
+class DummyFrameReader(BaseFrameReader):
+  def __init__(self, w: int, h: int, frame_count: int, pix_val: int):
+    self.pix_val = pix_val
+    self.w, self.h = w, h
+    self.frame_count = frame_count
+    self.frame_type = FrameType.raw
+
+  def get(self, idx, count=1, pix_fmt="yuv420p"):
+    if pix_fmt == "rgb24":
+      shape = (self.h, self.w, 3)
+    elif pix_fmt == "nv12" or pix_fmt == "yuv420p":
+      shape = (int((self.h * self.w) * 3 / 2),)
+    else:
+      raise NotImplementedError
+
+    return [np.full(shape, self.pix_val, dtype=np.uint8) for _ in range(count)]
+
+  @staticmethod
+  def zero_dcamera():
+    return DummyFrameReader(*DRIVER_FRAME_SIZES["tici"], 1200, 0)
 
 
 def regen_segment(
@@ -31,7 +55,8 @@ def regen_segment(
 
 
 def setup_data_readers(
-    route: str, sidx: int, use_route_meta: bool, needs_driver_cam: bool = True, needs_road_cam: bool = True
+    route: str, sidx: int, use_route_meta: bool,
+    needs_driver_cam: bool = True, needs_road_cam: bool = True, dummy_driver_cam: bool = False
 ) -> Tuple[LogReader, Dict[str, Any]]:
   if use_route_meta:
     r = Route(route)
@@ -41,8 +66,13 @@ def setup_data_readers(
       frs['roadCameraState'] = FrameReader(r.camera_paths()[sidx])
     if needs_road_cam and  len(r.ecamera_paths()) > sidx and r.ecamera_paths()[sidx] is not None:
       frs['wideRoadCameraState'] = FrameReader(r.ecamera_paths()[sidx])
-    if needs_driver_cam and len(r.dcamera_paths()) > sidx and r.dcamera_paths()[sidx] is not None:
-      frs['driverCameraState'] = FrameReader(r.dcamera_paths()[sidx])
+    if needs_driver_cam:
+      if dummy_driver_cam:
+        frs['driverCameraState'] = DummyFrameReader.zero_dcamera()
+      elif len(r.dcamera_paths()) > sidx and r.dcamera_paths()[sidx] is not None:
+        device_type = next(str(msg.initData.deviceType) for msg in lr if msg.which() == "initData")
+        assert device_type != "neo", "Driver camera not supported on neo segments. Use dummy dcamera."
+        frs['driverCameraState'] = FrameReader(r.dcamera_paths()[sidx])
   else:
     lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
     frs = {}
@@ -51,14 +81,19 @@ def setup_data_readers(
       if next((True for m in lr if m.which() == "wideRoadCameraState"), False):
         frs['wideRoadCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/ecamera.hevc")
     if needs_driver_cam:
-      frs['driverCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/dcamera.hevc")
+      if dummy_driver_cam:
+        frs['driverCameraState'] = DummyFrameReader.zero_dcamera()
+      else:
+        device_type = next(str(msg.initData.deviceType) for msg in lr if msg.which() == "initData")
+        assert device_type != "neo", "Driver camera not supported on neo segments. Use dummy dcamera."
+        frs['driverCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/dcamera.hevc")
 
   return lr, frs
 
 
 def regen_and_save(
   route: str, sidx: int, processes: Union[str, Iterable[str]] = "all", outdir: str = FAKEDATA,
-  upload: bool = False, use_route_meta: bool = False, disable_tqdm: bool = False
+  upload: bool = False, use_route_meta: bool = False, disable_tqdm: bool = False, dummy_driver_cam: bool = False
 ) -> str:
   if not isinstance(processes, str) and not hasattr(processes, "__iter__"):
     raise ValueError("whitelist_proc must be a string or iterable")
@@ -77,7 +112,8 @@ def regen_and_save(
   all_vision_pubs = {pub for cfg in replayed_processes for pub in cfg.vision_pubs}
   lr, frs = setup_data_readers(route, sidx, use_route_meta,
                                needs_driver_cam="driverCameraState" in all_vision_pubs,
-                               needs_road_cam="roadCameraState" in all_vision_pubs or "wideRoadCameraState" in all_vision_pubs)
+                               needs_road_cam="roadCameraState" in all_vision_pubs or "wideRoadCameraState" in all_vision_pubs,
+                               dummy_driver_cam=dummy_driver_cam)
   output_logs = regen_segment(lr, frs, replayed_processes, disable_tqdm=disable_tqdm)
 
   log_dir = os.path.join(outdir, time.strftime("%Y-%m-%d--%H-%M-%S--0", time.gmtime()))
@@ -107,6 +143,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Generate new segments from old ones")
   parser.add_argument("--upload", action="store_true", help="Upload the new segment to the CI bucket")
   parser.add_argument("--outdir", help="log output dir", default=FAKEDATA)
+  parser.add_argument("--dummy-dcamera", action='store_true', help="Use dummy blank driver camera")
   parser.add_argument("--whitelist-procs", type=comma_separated_list, default=all_procs,
                       help="Comma-separated whitelist of processes to regen (e.g. controlsd,radard)")
   parser.add_argument("--blacklist-procs", type=comma_separated_list, default=[],
@@ -117,4 +154,4 @@ if __name__ == "__main__":
 
   blacklist_set = set(args.blacklist_procs)
   processes = [p for p in args.whitelist_procs if p not in blacklist_set]
-  regen_and_save(args.route, args.seg, processes=processes, upload=args.upload, outdir=args.outdir)
+  regen_and_save(args.route, args.seg, processes=processes, upload=args.upload, outdir=args.outdir, dummy_driver_cam=args.dummy_dcamera)

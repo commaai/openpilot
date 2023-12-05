@@ -43,18 +43,23 @@ class CarControllerParams:
 
   RPM_INACTIVE = 600             # a good base rpm for zero acceleration
 
-  THROTTLE_LOOKUP_BP = [0, 1]
+  THROTTLE_LOOKUP_BP = [0, 2]
   THROTTLE_LOOKUP_V = [THROTTLE_INACTIVE, THROTTLE_MAX]
 
-  RPM_LOOKUP_BP = [0, 1]
+  RPM_LOOKUP_BP = [0, 2]
   RPM_LOOKUP_V = [RPM_INACTIVE, RPM_MAX]
 
-  BRAKE_LOOKUP_BP = [-1, 0]
+  BRAKE_LOOKUP_BP = [-3.5, 0]
   BRAKE_LOOKUP_V = [BRAKE_MAX, BRAKE_MIN]
 
 
 class SubaruFlags(IntFlag):
   SEND_INFOTAINMENT = 1
+  DISABLE_EYESIGHT = 2
+
+
+GLOBAL_ES_ADDR = 0x787
+GEN2_ES_BUTTONS_DID = b'\x11\x30'
 
 
 class CanBus:
@@ -121,7 +126,7 @@ CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   CAR.LEGACY_PREGLOBAL: SubaruCarInfo("Subaru Legacy 2015-18"),
   CAR.OUTBACK_PREGLOBAL: SubaruCarInfo("Subaru Outback 2015-17"),
   CAR.OUTBACK_PREGLOBAL_2018: SubaruCarInfo("Subaru Outback 2018-19"),
-  CAR.FORESTER_2022: SubaruCarInfo("Subaru Forester 2022", "All", car_parts=CarParts.common([CarHarness.subaru_c])),
+  CAR.FORESTER_2022: SubaruCarInfo("Subaru Forester 2022-23", "All", car_parts=CarParts.common([CarHarness.subaru_c])),
   CAR.OUTBACK_2023: SubaruCarInfo("Subaru Outback 2023", "All", car_parts=CarParts.common([CarHarness.subaru_d])),
   CAR.ASCENT_2023: SubaruCarInfo("Subaru Ascent 2023", "All", car_parts=CarParts.common([CarHarness.subaru_d])),
 }
@@ -136,12 +141,30 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.abs, Ecu.eps, Ecu.fwdCamera, Ecu.engine, Ecu.transmission],
     ),
     # Some Eyesight modules fail on TESTER_PRESENT_REQUEST
     # TODO: check if this resolves the fingerprinting issue for the 2023 Ascent and other new Subaru cars
     Request(
       [SUBARU_VERSION_REQUEST],
       [SUBARU_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.fwdCamera],
+    ),
+    # Non-OBD requests
+    Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
+      [StdQueries.TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.abs, Ecu.eps, Ecu.fwdCamera, Ecu.engine, Ecu.transmission],
+      bus=0,
+      logging=True,
+    ),
+    Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
+      [StdQueries.TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.abs, Ecu.eps, Ecu.fwdCamera, Ecu.engine, Ecu.transmission],
+      bus=1,
+      logging=True,
+      obd_multiplexing=False,
     ),
   ],
 )
@@ -202,6 +225,7 @@ FW_VERSIONS = {
       b'\xa1\\  x04\x01',
       b'\xa1  \x03\x03',
       b'\xa1  \x02\x01',
+      b'\xa1  \x02\x02',
     ],
     (Ecu.eps, 0x746, None): [
       b'\x9b\xc0\x11\x00',
@@ -215,11 +239,13 @@ FW_VERSIONS = {
       b'\xde\"a0\x07',
       b'\xe2"aq\x07',
       b'\xde,\xa0@\x07',
+      b'\xe2,\xa0@\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xa5\xf6\x05@\x00',
       b'\xa7\xf6\x04@\x00',
       b'\xa5\xfe\xc7@\x00',
+      b'\xa7\xfe\xc4@\x00',
     ],
   },
   CAR.IMPREZA: {
@@ -439,6 +465,7 @@ FW_VERSIONS = {
     (Ecu.abs, 0x7b0, None): [
       b'\x7d\x97\x14\x40',
       b'\xf1\x00\xbb\x0c\x04',
+      b'm\x97\x14@',
     ],
     (Ecu.eps, 0x746, None): [
       b'}\xc0\x10\x00',
@@ -447,13 +474,15 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x787, None): [
       b'\x00\x00\x64\x35\x1f\x40\x20\x09',
       b'\x00\x00c\xe9\x1f@ \x03',
-      b'\x00\x00d\xd3\x1f@ \t'
+      b'\x00\x00d\xd3\x1f@ \t',
+      b'\x00\x00c\xe9\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xba"@p\a',
       b'\xa7)\xa0q\a',
       b'\xf1\x82\xa7)\xa0q\a',
       b'\xba"@@\a',
+      b'\xa7"@p\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xdc\xf2\x60\x60\x00',
@@ -462,6 +491,7 @@ FW_VERSIONS = {
       b'\xdc\xf2`\x81\000',
       b'\xdc\xf2`\x80\x00',
       b'\x1a\xf6F`\x00',
+      b'\xda\xf2`\x80\x00',
     ],
   },
   CAR.LEGACY_PREGLOBAL: {
@@ -470,6 +500,7 @@ FW_VERSIONS = {
       b'[\xba\xc4\x03',
       b'{\x97D\x00',
       b'[\x97D\000',
+      b'k\x9aD\x00',
     ],
     (Ecu.eps, 0x746, None): [
       b'[\xb0\x00\x01',
@@ -486,12 +517,14 @@ FW_VERSIONS = {
       b'\xa0+@p\x07',
       b'\xb4"@0\x07',
       b'\xa0"@q\a',
+      b'\xab+@p\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xbe\xf2\x00p\x00',
       b'\xbf\xfb\xc0\x80\x00',
       b'\xbd\xf2\x00`\x00',
       b'\xbf\xf2\000\x80\000',
+      b'\xbe\xfb\xc0p\x00',
     ],
   },
   CAR.OUTBACK_PREGLOBAL: {
@@ -535,6 +568,7 @@ FW_VERSIONS = {
       b'\xb4"@r\a',
       b'\xa0+@@\x07',
       b'\xa0\"@\x80\a',
+      b'\xa0*@u\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xbd\xfb\xe0\x80\x00',
@@ -628,6 +662,7 @@ FW_VERSIONS = {
       b'\xbc"`q\x07',
       b'\xe3,\xa0@\x07',
       b'\xbc,\xa0u\x07',
+      b'\xde,\xa0@\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xa5\xfe\xf7@\x00',
@@ -654,7 +689,8 @@ FW_VERSIONS = {
       b'=\xc04\x02',
     ],
     (Ecu.fwdCamera, 0x787, None): [
-      b'\x04!\x01\x1eD\x07!\x00\x04,'
+      b'\x04!\x01\x1eD\x07!\x00\x04,',
+      b'\x04!\x08\x01.\x07!\x08\x022',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xd5"a0\x07',
@@ -716,5 +752,5 @@ PREGLOBAL_CARS = {CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREG
 HYBRID_CARS = {CAR.CROSSTREK_HYBRID, CAR.FORESTER_HYBRID}
 
 # Cars that temporarily fault when steering angle rate is greater than some threshold.
-# Appears to be all cars that started production after 2020
-STEER_RATE_LIMITED = GLOBAL_GEN2 | {CAR.IMPREZA_2020}
+# Appears to be all torque-based cars produced around 2019 - present
+STEER_RATE_LIMITED = GLOBAL_GEN2 | {CAR.IMPREZA_2020, CAR.FORESTER}

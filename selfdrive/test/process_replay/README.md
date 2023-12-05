@@ -17,7 +17,6 @@ Currently the following processes are tested:
 * locationd
 * paramsd
 * ubloxd
-* laikad
 * torqued
 
 ### Usage
@@ -32,7 +31,7 @@ optional arguments:
   --blacklist-procs BLACKLIST_PROCS     Blacklist given processes from the test (e.g. controlsd)
   --blacklist-cars BLACKLIST_CARS       Blacklist given cars from the test (e.g. HONDA)
   --ignore-fields IGNORE_FIELDS         Extra fields or msgs to ignore (e.g. carState.events)
-  --ignore-msgs IGNORE_MSGS             Msgs to ignore (e.g. carEvents)
+  --ignore-msgs IGNORE_MSGS             Msgs to ignore (e.g. onroadEvents)
   --update-refs                         Updates reference logs using current commit
   --upload-only                         Skips testing processes and uploads logs from previous test run
 ```
@@ -71,7 +70,7 @@ lr = LogReader(...)
 output_logs = replay_process_with_name('locationd', lr)
 
 # or list of names
-output_logs = replay_process_with_name(['ubloxd', 'locationd', 'laikad'], lr)
+output_logs = replay_process_with_name(['ubloxd', 'locationd'], lr)
 ```
 
 Supported processes: 
@@ -83,7 +82,6 @@ Supported processes:
 * locationd
 * paramsd 
 * ubloxd
-* laikad
 * torqued
 * modeld
 * dmonitoringmodeld
