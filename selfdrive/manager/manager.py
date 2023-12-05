@@ -37,6 +37,8 @@ def manager_init() -> None:
   params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
   params.clear_all(ParamKeyType.CLEAR_ON_ONROAD_TRANSITION)
   params.clear_all(ParamKeyType.CLEAR_ON_OFFROAD_TRANSITION)
+  if is_release_branch():
+    params.clear_all(ParamKeyType.DEVELOPMENT_ONLY)
 
   default_params: List[Tuple[str, Union[str, bytes]]] = [
     ("CompletedTrainingVersion", "0"),
@@ -169,7 +171,7 @@ def manager_thread() -> None:
     cloudlog.debug(running)
 
     # send managerState
-    msg = messaging.new_message('managerState')
+    msg = messaging.new_message('managerState', valid=True)
     msg.managerState.processes = [p.get_process_state_msg() for p in managed_processes.values()]
     pm.send('managerState', msg)
 
