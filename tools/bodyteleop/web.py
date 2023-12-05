@@ -106,7 +106,7 @@ async def offer(request):
     return web.json_response(answer)
 
 
-def web_thread():
+def main():
   # Enable joystick debug mode
   Params().put_bool("JoystickDebugMode", True)
 
@@ -123,4 +123,4 @@ def web_thread():
 
 
 if __name__ == "__main__":
-  web_thread()
+  main()
