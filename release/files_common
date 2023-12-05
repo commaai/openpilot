@@ -283,6 +283,7 @@ system/sensord/pigeond.py
 
 system/webrtc/__init__.py
 system/webrtc/webrtcd.py
+system/webrtc/schema.py
 system/webrtc/device/audio.py
 system/webrtc/device/video.py
 
