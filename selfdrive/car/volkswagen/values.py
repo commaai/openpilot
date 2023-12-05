@@ -239,7 +239,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.TAOS_MK1: VWCarInfo("Volkswagen Taos 2022-23"),
   CAR.TCROSS_MK1: VWCarInfo("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_MQB_A0]),
   CAR.TIGUAN_MK2: [
-    VWCarInfo("Volkswagen Tiguan 2018-23"),
+    VWCarInfo("Volkswagen Tiguan 2018-24"),
     VWCarInfo("Volkswagen Tiguan eHybrid 2021-23"),
   ],
   CAR.TOURAN_MK2: VWCarInfo("Volkswagen Touran 2016-23"),
