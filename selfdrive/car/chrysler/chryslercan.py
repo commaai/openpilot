@@ -59,9 +59,8 @@ def create_lkas_command(packer, CP, apply_steer, lkas_control_bit):
 
   if CP.carFingerprint not in CUSW_CARS:
     enabled_val = 2 if CP.carFingerprint in RAM_CARS else 1
-    values.append({
-      "LKAS_CONTROL_BIT": enabled_val if lkas_control_bit else 0,
-    })
+    values["LKAS_CONTROL_BIT"] = enabled_val if lkas_control_bit else 0,
+
   return packer.make_can_msg("LKAS_COMMAND", 0, values)
 
 
