@@ -12,6 +12,7 @@ import wave
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.system.webrtc.webrtcd import StreamRequestBody
+from openpilot.common.params import Params
 
 logger = logging.getLogger("bodyteleop")
 logging.basicConfig(level=logging.INFO)
@@ -105,7 +106,10 @@ async def offer(request):
     return web.json_response(answer)
 
 
-def main():
+def web_thread():
+  # Enable joystick debug mode
+  Params().put_bool('JoystickDebugMode', True)
+
   # App needs to be HTTPS for microphone and audio autoplay to work on the browser
   ssl_context = create_ssl_context()
 
@@ -120,4 +124,4 @@ def main():
 
 
 if __name__ == "__main__":
-  main()
+  web_thread()
