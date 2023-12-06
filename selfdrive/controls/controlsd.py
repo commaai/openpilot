@@ -80,7 +80,7 @@ class Controls:
                                    'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
                                    'testJoystick'] + self.camera_packets + self.sensor_packets,
-                                  ignore_alive=ignore, ignore_avg_freq=['radarState', 'testJoystick'])
+                                  ignore_alive=ignore, ignore_avg_freq=['radarState', 'testJoystick'], ignore_valid=['testJoystick', ])
 
     if CI is None:
       # wait for one pandaState and one CAN packet
@@ -113,8 +113,8 @@ class Controls:
     car_recognized = self.CP.carName != 'mock'
 
     controller_available = self.CI.CC is not None and not passive and not self.CP.dashcamOnly
-    self.read_only = not car_recognized or not controller_available or self.CP.dashcamOnly
-    if self.read_only:
+    self.CP.passive = not car_recognized or not controller_available or self.CP.dashcamOnly
+    if self.CP.passive:
       safety_config = car.CarParams.SafetyConfig.new_message()
       safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
       self.CP.safetyConfigs = [safety_config]
@@ -189,7 +189,7 @@ class Controls:
         set_offroad_alert("Offroad_CarUnrecognized", True)
       else:
         set_offroad_alert("Offroad_NoFirmware", True)
-    elif self.read_only:
+    elif self.CP.passive:
       self.events.add(EventName.dashcamMode, static=True)
     elif self.joystick_mode:
       self.events.add(EventName.joystickDebug, static=True)
@@ -225,7 +225,7 @@ class Controls:
       return
 
     # no more events while in dashcam mode
-    if self.read_only:
+    if self.CP.passive:
       return
 
     # Block resume if cruise never previously enabled
@@ -440,7 +440,7 @@ class Controls:
         if VisionStreamType.VISION_STREAM_WIDE_ROAD not in available_streams:
           self.sm.ignore_alive.append('wideRoadCameraState')
 
-        if not self.read_only:
+        if not self.CP.passive:
           self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
 
         self.initialized = True
@@ -614,7 +614,7 @@ class Controls:
                                                                                        lat_plan.curvatures,
                                                                                        lat_plan.curvatureRates)
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
-                                                                             self.last_actuators, self.steer_limited, self.desired_curvature,
+                                                                             self.steer_limited, self.desired_curvature,
                                                                              self.desired_curvature_rate, self.sm['liveLocationKalman'])
       actuators.curvature = self.desired_curvature
     else:
@@ -633,7 +633,7 @@ class Controls:
         if CC.latActive:
           steer = clip(joystick_axes[1], -1, 1)
           # max angle is 45 for angle-based cars, max curvature is 0.02
-          actuators.steer, actuators.steeringAngleDeg, actuators.curvature = steer, steer * 45., steer * -0.02
+          actuators.steer, actuators.steeringAngleDeg, actuators.curvature = steer, steer * 90., steer * -0.02
 
         lac_log.active = self.active
         lac_log.steeringAngleDeg = CS.steeringAngleDeg
@@ -745,7 +745,7 @@ class Controls:
     if current_alert:
       hudControl.visualAlert = current_alert.visual_alert
 
-    if not self.read_only and self.initialized:
+    if not self.CP.passive and self.initialized:
       # send car controls over can
       now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
       self.last_actuators, can_sends = self.CI.apply(CC, now_nanos)
@@ -824,6 +824,7 @@ class Controls:
     # onroadEvents - logged every second or on change
     if (self.sm.frame % int(1. / DT_CTRL) == 0) or (self.events.names != self.events_prev):
       ce_send = messaging.new_message('onroadEvents', len(self.events))
+      ce_send.valid = True
       ce_send.onroadEvents = car_events
       self.pm.send('onroadEvents', ce_send)
     self.events_prev = self.events.names.copy()
@@ -831,6 +832,7 @@ class Controls:
     # carParams - logged every 50 seconds (> 1 per segment)
     if (self.sm.frame % int(50. / DT_CTRL) == 0):
       cp_send = messaging.new_message('carParams')
+      cp_send.valid = True
       cp_send.carParams = self.CP
       self.pm.send('carParams', cp_send)
 
@@ -858,7 +860,7 @@ class Controls:
     self.update_events(CS)
     cloudlog.timestamp("Events updated")
 
-    if not self.read_only and self.initialized:
+    if not self.CP.passive and self.initialized:
       # Update control state
       self.state_transition(CS)
       self.prof.checkpoint("State transition")

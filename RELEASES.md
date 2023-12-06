@@ -1,5 +1,6 @@
 Version 0.9.6 (2023-XX-XX)
 ========================
+* AGNOS 9
 * Hyundai Kona 2024 support
 
 Version 0.9.5 (2023-11-17)

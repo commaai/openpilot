@@ -12,6 +12,7 @@ import wave
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.system.webrtc.webrtcd import StreamRequestBody
+from openpilot.common.params import Params
 
 logger = logging.getLogger("bodyteleop")
 logging.basicConfig(level=logging.INFO)
@@ -23,14 +24,14 @@ WEBRTCD_HOST, WEBRTCD_PORT = "localhost", 5001
 ## UTILS
 async def play_sound(sound):
   SOUNDS = {
-    'engage': 'selfdrive/assets/sounds/engage.wav',
-    'disengage': 'selfdrive/assets/sounds/disengage.wav',
-    'error': 'selfdrive/assets/sounds/warning_immediate.wav',
+    "engage": "selfdrive/assets/sounds/engage.wav",
+    "disengage": "selfdrive/assets/sounds/disengage.wav",
+    "error": "selfdrive/assets/sounds/warning_immediate.wav",
   }
   assert sound in SOUNDS
 
   chunk = 5120
-  with wave.open(os.path.join(BASEDIR, SOUNDS[sound]), 'rb') as wf:
+  with wave.open(os.path.join(BASEDIR, SOUNDS[sound]), "rb") as wf:
     def callback(in_data, frame_count, time_info, status):
       data = wf.readframes(frame_count)
       return data, pyaudio.paContinue
@@ -61,8 +62,8 @@ def create_ssl_cert(cert_path, key_path):
 
 
 def create_ssl_context():
-  cert_path = os.path.join(TELEOPDIR, 'cert.pem')
-  key_path = os.path.join(TELEOPDIR, 'key.pem')
+  cert_path = os.path.join(TELEOPDIR, "cert.pem")
+  key_path = os.path.join(TELEOPDIR, "key.pem")
   if not os.path.exists(cert_path) or not os.path.exists(key_path):
     logger.info("Creating certificate...")
     create_ssl_cert(cert_path, key_path)
@@ -106,11 +107,13 @@ async def offer(request):
 
 
 def main():
+  # Enable joystick debug mode
+  Params().put_bool("JoystickDebugMode", True)
+
   # App needs to be HTTPS for microphone and audio autoplay to work on the browser
   ssl_context = create_ssl_context()
 
   app = web.Application()
-  app['mutable_vals'] = {}
   app.router.add_get("/", index)
   app.router.add_get("/ping", ping, allow_head=True)
   app.router.add_post("/offer", offer)

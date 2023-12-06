@@ -291,7 +291,7 @@ def run_receiving(pigeon: TTYPigeon, pm: messaging.PubMaster, duration: int = 0)
         continue
 
       # send out to socket
-      msg = messaging.new_message('ubloxRaw', len(dat))
+      msg = messaging.new_message('ubloxRaw', len(dat), valid=True)
       msg.ubloxRaw = dat[:]
       pm.send('ubloxRaw', msg)
     else:
