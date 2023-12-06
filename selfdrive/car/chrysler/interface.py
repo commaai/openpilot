@@ -54,6 +54,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.70
       ret.steerRatio = 17  # TODO: verify against params learner
       ret.minSteerSpeed = 17.5  # TODO: conservative, need to test
+      ret.flags |= ChryslerFlags.HIGHER_MIN_STEERING_SPEED.value
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, 1.0, False)
 
     elif candidate in (CAR.JEEP_GRAND_CHEROKEE, CAR.JEEP_GRAND_CHEROKEE_2019):
