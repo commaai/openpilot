@@ -190,6 +190,7 @@ exclude = [
   "rednose_repo",
   "tinygrad_repo",
   "teleoprtc",
+  "teleoprtc_repo",
   "third_party",
 ]
 flake8-implicit-str-concat.allow-multiline=false
