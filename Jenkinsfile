@@ -14,7 +14,8 @@ export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
 export MAPBOX_TOKEN='${env.MAPBOX_TOKEN}'
-export PYTEST_ADDOPTS="-c selfdrive/test/pytest-tici.ini --rootdir ."
+# only use 1 thread for tici tests since most require HIL
+export PYTEST_ADDOPTS="-n 1"
 
 
 export GIT_SSH_COMMAND="ssh -i /data/gitkey"
