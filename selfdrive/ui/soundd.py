@@ -1,7 +1,6 @@
 import math
 import time
 import numpy as np
-import os
 import wave
 
 from typing import Dict, Optional, Tuple
@@ -56,9 +55,6 @@ class Soundd:
     self.current_sound_frame = 0
 
     self.controls_timeout_alert = False
-
-    if not PC:
-      os.system("pactl set-sink-volume @DEFAULT_SINK@ 0.9") # set to max volume and control volume within soundd
 
   def load_sounds(self):
     self.loaded_sounds: Dict[int, np.ndarray] = {}
@@ -134,7 +130,7 @@ class Soundd:
     if PC:
       device = None
     else:
-      device = "pulse" # "sdm845-tavil-snd-card: - (hw:0,0)"
+      device = "sdm845-tavil-snd-card: - (hw:0,0)"
 
     with sd.OutputStream(device=device, channels=1, samplerate=SAMPLE_RATE, callback=self.callback) as stream:
       cloudlog.info(f"soundd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}")
