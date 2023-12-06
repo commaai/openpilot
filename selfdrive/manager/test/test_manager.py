@@ -21,6 +21,7 @@ BLACKLIST_PROCS = ['manage_athenad', 'pandad', 'pigeond']
 @pytest.mark.tici
 class TestManager(unittest.TestCase):
   def setUp(self):
+    os.environ['PASSIVE'] = '0'
     HARDWARE.set_power_save(False)
 
     # ensure clean CarParams
