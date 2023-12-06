@@ -1,7 +1,7 @@
 [
   {
     "name": "boot",
-    "url": "https://commadist.azureedge.net/agnosupdate-staging/boot-fd30f580375279ff4605034ec13711890a2b227205571a087cdc5226a2710275.img.xz",
+    "url": "https://commadist.azureedge.net/agnosupdate/boot-fd30f580375279ff4605034ec13711890a2b227205571a087cdc5226a2710275.img.xz",
     "hash": "fd30f580375279ff4605034ec13711890a2b227205571a087cdc5226a2710275",
     "hash_raw": "fd30f580375279ff4605034ec13711890a2b227205571a087cdc5226a2710275",
     "size": 15636480,
@@ -11,7 +11,7 @@
   },
   {
     "name": "abl",
-    "url": "https://commadist.azureedge.net/agnosupdate-staging/abl-bb234733816781b3d09266f91f741436e9bf17e1a7caf468cf7d09ee788cef4a.img.xz",
+    "url": "https://commadist.azureedge.net/agnosupdate/abl-bb234733816781b3d09266f91f741436e9bf17e1a7caf468cf7d09ee788cef4a.img.xz",
     "hash": "bb234733816781b3d09266f91f741436e9bf17e1a7caf468cf7d09ee788cef4a",
     "hash_raw": "bb234733816781b3d09266f91f741436e9bf17e1a7caf468cf7d09ee788cef4a",
     "size": 274432,
@@ -21,7 +21,7 @@
   },
   {
     "name": "xbl",
-    "url": "https://commadist.azureedge.net/agnosupdate-staging/xbl-bcef195b00a1ab685da601f4072722569773ab161e91c8753ad99ca4217a28f5.img.xz",
+    "url": "https://commadist.azureedge.net/agnosupdate/xbl-bcef195b00a1ab685da601f4072722569773ab161e91c8753ad99ca4217a28f5.img.xz",
     "hash": "bcef195b00a1ab685da601f4072722569773ab161e91c8753ad99ca4217a28f5",
     "hash_raw": "bcef195b00a1ab685da601f4072722569773ab161e91c8753ad99ca4217a28f5",
     "size": 3282672,
@@ -31,7 +31,7 @@
   },
   {
     "name": "xbl_config",
-    "url": "https://commadist.azureedge.net/agnosupdate-staging/xbl_config-19791056558c16f8dae787531b5e30b3b3db2ded9d666688df45ce1b91a72bac.img.xz",
+    "url": "https://commadist.azureedge.net/agnosupdate/xbl_config-19791056558c16f8dae787531b5e30b3b3db2ded9d666688df45ce1b91a72bac.img.xz",
     "hash": "19791056558c16f8dae787531b5e30b3b3db2ded9d666688df45ce1b91a72bac",
     "hash_raw": "19791056558c16f8dae787531b5e30b3b3db2ded9d666688df45ce1b91a72bac",
     "size": 98124,
@@ -41,7 +41,7 @@
   },
   {
     "name": "devcfg",
-    "url": "https://commadist.azureedge.net/agnosupdate-staging/devcfg-be44b73dda5be840b09d5347d536459e31098da3fea97596956c0bdad19bdf27.img.xz",
+    "url": "https://commadist.azureedge.net/agnosupdate/devcfg-be44b73dda5be840b09d5347d536459e31098da3fea97596956c0bdad19bdf27.img.xz",
     "hash": "be44b73dda5be840b09d5347d536459e31098da3fea97596956c0bdad19bdf27",
     "hash_raw": "be44b73dda5be840b09d5347d536459e31098da3fea97596956c0bdad19bdf27",
     "size": 40336,
@@ -51,7 +51,7 @@
   },
   {
     "name": "aop",
-    "url": "https://commadist.azureedge.net/agnosupdate-staging/aop-5d764611a683d6a738cf06a1dcf8a926d0f47b5117ad40d3054167de6dd8bd0f.img.xz",
+    "url": "https://commadist.azureedge.net/agnosupdate/aop-5d764611a683d6a738cf06a1dcf8a926d0f47b5117ad40d3054167de6dd8bd0f.img.xz",
     "hash": "5d764611a683d6a738cf06a1dcf8a926d0f47b5117ad40d3054167de6dd8bd0f",
     "hash_raw": "5d764611a683d6a738cf06a1dcf8a926d0f47b5117ad40d3054167de6dd8bd0f",
     "size": 184364,
@@ -61,7 +61,7 @@
   },
   {
     "name": "system",
-    "url": "https://commadist.azureedge.net/agnosupdate-staging/system-e1952bb363688c0f5c0646e39bcdfb45be25b5e2baed37d1ba7801aa1a3a9c98.img.xz",
+    "url": "https://commadist.azureedge.net/agnosupdate/system-e1952bb363688c0f5c0646e39bcdfb45be25b5e2baed37d1ba7801aa1a3a9c98.img.xz",
     "hash": "3b6cdf9bd881a5e90b21dd02c6faa923b415e32ecae9bfdc96753d4208fb82fe",
     "hash_raw": "e1952bb363688c0f5c0646e39bcdfb45be25b5e2baed37d1ba7801aa1a3a9c98",
     "size": 10737418240,
@@ -70,7 +70,7 @@
     "has_ab": true,
     "alt": {
       "hash": "2fb81e58f4bc6c4e5e71c8e7ac7553f85082c430627d7a5cc54a6bbc82862500",
-      "url": "https://commadist.azureedge.net/agnosupdate-staging/system-skip-chunks-e1952bb363688c0f5c0646e39bcdfb45be25b5e2baed37d1ba7801aa1a3a9c98.img.xz"
+      "url": "https://commadist.azureedge.net/agnosupdate/system-skip-chunks-e1952bb363688c0f5c0646e39bcdfb45be25b5e2baed37d1ba7801aa1a3a9c98.img.xz"
     }
   }
 ]
