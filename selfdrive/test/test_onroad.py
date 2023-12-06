@@ -46,7 +46,7 @@ PROCS = {
   "selfdrive.thermald.thermald": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
   "selfdrive.locationd.torqued": 5.0,
-  "./_soundd": (1.0, 65.0),
+  "selfdrive.ui.soundd": 5.8,
   "selfdrive.monitoring.dmonitoringd": 4.0,
   "./proclogd": 1.54,
   "system.logmessaged": 0.2,
