@@ -107,6 +107,9 @@ private:
   // Register parsing
   std::map<uint16_t, std::pair<int, int>> ar0231_register_lut;
   std::map<uint16_t, std::pair<int, int>> ar0231_build_register_lut(uint8_t *data);
+
+  // for debugging
+  Params params;
 };
 
 typedef struct MultiCameraState {

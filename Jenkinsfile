@@ -14,7 +14,8 @@ export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
 export MAPBOX_TOKEN='${env.MAPBOX_TOKEN}'
-export PYTEST_ADDOPTS="-c selfdrive/test/pytest-tici.ini --rootdir ."
+# only use 1 thread for tici tests since most require HIL
+export PYTEST_ADDOPTS="-n 1"
 
 
 export GIT_SSH_COMMAND="ssh -i /data/gitkey"
@@ -225,15 +226,17 @@ node {
         pcStage("PC tests") {
           // tests that our build system's dependencies are configured properly,
           // needs a machine with lots of cores
-          sh label: "test multi-threaded build", script: "scons --no-cache --random -j42"
+          sh label: "test multi-threaded build",
+             script: '''#!/bin/bash
+                        scons --no-cache --random -j$(nproc)'''
         }
       },
       'car tests': {
         pcStage("car tests") {
           sh label: "build", script: "selfdrive/manager/build.py"
           sh label: "test_models.py", script: "INTERNAL_SEG_CNT=250 INTERNAL_SEG_LIST=selfdrive/car/tests/test_models_segs.txt FILEREADER_CACHE=1 \
-              pytest -n42 --dist=loadscope selfdrive/car/tests/test_models.py"
-          sh label: "test_car_interfaces.py", script: "MAX_EXAMPLES=100 pytest -n42 --dist=load selfdrive/car/tests/test_car_interfaces.py"
+              pytest -n auto --dist=loadscope selfdrive/car/tests/test_models.py"
+          sh label: "test_car_interfaces.py", script: "MAX_EXAMPLES=100 pytest -n auto --dist=load selfdrive/car/tests/test_car_interfaces.py"
         }
       },
 
