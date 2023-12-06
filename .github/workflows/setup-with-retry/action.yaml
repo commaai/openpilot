@@ -19,6 +19,7 @@ runs:
   steps:
     - id: setup1
       uses: ./.github/workflows/setup
+      timeout-minutes: 15
       continue-on-error: true
       with:
         docker_hub_pat: ${{ inputs.docker_hub_pat }}
@@ -30,6 +31,7 @@ runs:
     - id: setup2
       if: steps.setup1.outcome == 'failure'
       uses: ./.github/workflows/setup
+      timeout-minutes: 15
       continue-on-error: true
       with:
         docker_hub_pat: ${{ inputs.docker_hub_pat }}
@@ -41,6 +43,7 @@ runs:
     - id: setup3
       if: steps.setup2.outcome == 'failure'
       uses: ./.github/workflows/setup
+      timeout-minutes: 15
       with:
         docker_hub_pat: ${{ inputs.docker_hub_pat }}
         cache_key_prefix: ${{ inputs.cache_key_prefix }}
