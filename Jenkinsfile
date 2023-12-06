@@ -15,7 +15,7 @@ export GIT_COMMIT=${env.GIT_COMMIT}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
 export MAPBOX_TOKEN='${env.MAPBOX_TOKEN}'
 # only use 1 thread for tici tests since most require HIL
-export PYTEST_ADDOPTS="-n 1"
+export PYTEST_ADDOPTS="-n 0"
 
 
 export GIT_SSH_COMMAND="ssh -i /data/gitkey"
