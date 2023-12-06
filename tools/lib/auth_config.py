@@ -1,6 +1,5 @@
 import json
 import os
-from openpilot.common.file_helpers import mkdirs_exists_ok
 from openpilot.system.hardware.hw import Paths
 
 
@@ -18,7 +17,7 @@ def get_token():
 
 
 def set_token(token):
-  mkdirs_exists_ok(Paths.config_root())
+  os.makedirs(Paths.config_root(), exist_ok=True)
   with open(os.path.join(Paths.config_root(), 'auth.json'), 'w') as f:
     json.dump({'access_token': token}, f)
 
