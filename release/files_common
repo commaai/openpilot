@@ -306,10 +306,7 @@ selfdrive/ui/*.h
 selfdrive/ui/ui
 selfdrive/ui/text
 selfdrive/ui/spinner
-selfdrive/ui/soundd/*.cc
-selfdrive/ui/soundd/*.h
-selfdrive/ui/soundd/soundd
-selfdrive/ui/soundd/.gitignore
+selfdrive/ui/soundd.py
 selfdrive/ui/translations/*.ts
 selfdrive/ui/translations/languages.json
 selfdrive/ui/update_translations.py
