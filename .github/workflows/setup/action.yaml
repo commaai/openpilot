@@ -76,3 +76,4 @@ runs:
     # build our docker image
     - shell: bash
       run: eval ${{ env.BUILD }}
+      timeout-minutes: 15
