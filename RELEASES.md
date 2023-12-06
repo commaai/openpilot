@@ -1,5 +1,6 @@
 Version 0.9.6 (2023-XX-XX)
 ========================
+* AGNOS 9
 * Toyota RAV4 2023 support
 * Toyota RAV4 Hybrid 2023 support
 
