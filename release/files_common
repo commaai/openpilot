@@ -297,7 +297,6 @@ selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
 selfdrive/test/test_onroad.py
 selfdrive/test/test_time_to_onroad.py
-selfdrive/test/pytest-tici.ini
 
 selfdrive/ui/.gitignore
 selfdrive/ui/SConscript

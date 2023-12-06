@@ -1,12 +1,16 @@
 import math
-import time
 import numpy as np
+import time
 import wave
 
 from typing import Dict, Optional, Tuple
 
 from cereal import car, messaging
 from openpilot.common.basedir import BASEDIR
+from openpilot.common.filter_simple import FirstOrderFilter
+
+from openpilot.system import micd
+
 from openpilot.common.realtime import Ratekeeper
 from openpilot.system.hardware import PC
 from openpilot.system.swaglog import cloudlog
@@ -15,6 +19,7 @@ SAMPLE_RATE = 48000
 MAX_VOLUME = 1.0
 MIN_VOLUME = 0.1
 CONTROLS_TIMEOUT = 5 # 5 seconds
+FILTER_DT = 1. / (micd.SAMPLE_RATE / micd.FFT_SAMPLES)
 
 AMBIENT_DB = 30 # DB where MIN_VOLUME is applied
 DB_SCALE = 30 # AMBIENT_DB + DB_SCALE is where MAX_VOLUME is applied
@@ -55,6 +60,8 @@ class Soundd:
     self.current_sound_frame = 0
 
     self.controls_timeout_alert = False
+
+    self.spl_filter_weighted = FirstOrderFilter(0, 2.5, FILTER_DT, initialized=False)
 
   def load_sounds(self):
     self.loaded_sounds: Dict[int, np.ndarray] = {}
@@ -137,8 +144,9 @@ class Soundd:
       while True:
         sm.update(0)
 
-        if sm.updated['microphone']:
-          self.current_volume = self.calculate_volume(sm["microphone"].filteredSoundPressureWeightedDb)
+        if sm.updated['microphone'] and self.current_alert == AudibleAlert.none: # only update volume filter when not playing alert
+          self.spl_filter_weighted.update(sm["microphone"].soundPressureWeightedDb)
+          self.current_volume = self.calculate_volume(float(self.spl_filter_weighted.x))
 
         self.get_audible_alert(sm)
 
