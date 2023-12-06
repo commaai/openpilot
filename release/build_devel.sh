@@ -23,10 +23,8 @@ pre-commit uninstall || true
 echo "[-] bringing master-ci and devel in sync T=$SECONDS"
 cd $TARGET_DIR
 
-source scripts/retry.sh
-
-retry git fetch --depth 1 origin master-ci
-retry git fetch --depth 1 origin devel
+git fetch --depth 1 origin master-ci
+git fetch --depth 1 origin devel
 
 git checkout -f --track origin/master-ci
 git reset --hard master-ci

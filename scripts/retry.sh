@@ -21,3 +21,7 @@ function retry {
     }
   done
 }
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    retry "$@"
+fi
