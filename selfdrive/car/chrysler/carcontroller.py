@@ -52,6 +52,10 @@ class CarController:
       lkas_control_bit = self.lkas_control_bit_prev
       if CS.out.vEgo > self.CP.minSteerSpeed:
         lkas_control_bit = True
+      elif self.CP.carFingerprint in CUSW_CARS:
+        # TODO: more limits probing needed, 2016 pops right at minSteerSpeed, 2019 kept working till 13 m/s
+        if CS.out.vEgo < self.CP.minSteerSpeed:
+          lkas_control_bit = False
       elif self.CP.flags & ChryslerFlags.HIGHER_MIN_STEERING_SPEED:
         if CS.out.vEgo < (self.CP.minSteerSpeed - 3.0):
           lkas_control_bit = False
