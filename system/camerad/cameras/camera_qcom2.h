@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <map>
+#include <memory>
 #include <utility>
 
 #include <media/cam_req_mgr.h>
