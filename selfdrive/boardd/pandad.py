@@ -12,7 +12,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.selfdrive.boardd.set_time import set_time
 from openpilot.system.hardware import HARDWARE
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 
 
 def get_expected_signature(panda: Panda) -> bytes:
