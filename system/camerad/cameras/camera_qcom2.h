@@ -94,7 +94,6 @@ public:
   CameraBuf buf;
   MemoryManager mm;
 
-private:
   void config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset);
   void enqueue_req_multi(int start, int n, bool dp);
   void enqueue_buffer(int i, bool dp);
@@ -106,8 +105,8 @@ private:
 
   // Register parsing
   std::map<uint16_t, std::pair<int, int>> ar0231_register_lut;
-  std::map<uint16_t, std::pair<int, int>> ar0231_build_register_lut(uint8_t *data);
 
+private:
   // for debugging
   Params params;
 };
