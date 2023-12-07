@@ -87,7 +87,7 @@ measurementStatusGlonassFields = {
 
 @retry(attempts=10, delay=1.0)
 def try_setup_logs(diag, logs):
-  return setup_logs
+  return setup_logs(diag, logs)
 
 @retry(attempts=3, delay=1.0)
 def at_cmd(cmd: str) -> Optional[str]:
