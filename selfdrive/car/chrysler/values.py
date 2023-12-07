@@ -52,7 +52,10 @@ class CarControllerParams:
     else:
       self.STEER_DELTA_UP = 3
       self.STEER_DELTA_DOWN = 3
-      self.STEER_MAX = 261  # higher than this faults the EPS
+      if CP.carFingerprint in CUSW_CARS:
+        self.STEER_MAX = 250  # TODO: validate this
+      else:
+        self.STEER_MAX = 261  # higher than this faults the EPS
 
 
 STEER_THRESHOLD = 120
