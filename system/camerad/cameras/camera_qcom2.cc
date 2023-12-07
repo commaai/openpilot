@@ -23,7 +23,8 @@
 #include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sync.h"
 #include "common/swaglog.h"
-#include "system/camerad/cameras/sensor2_i2c.h"
+#include "system/camerad/sensors/ar0231_registers.h"
+#include "system/camerad/sensors/ox03c10_registers.h"
 
 // For debugging:
 // echo "4294967295" > /sys/module/cam_debug_util/parameters/debug_mdl
