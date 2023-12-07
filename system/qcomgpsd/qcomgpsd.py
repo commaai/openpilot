@@ -16,6 +16,7 @@ from struct import unpack_from, calcsize, pack
 from cereal import log
 import cereal.messaging as messaging
 from openpilot.common.gpio import gpio_init, gpio_set
+from openpilot.common.retry import retry
 from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.qcomgpsd.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
@@ -84,27 +85,13 @@ measurementStatusGlonassFields = {
   "glonassTimeMarkValid": 17
 }
 
+@retry(attempts=10, delay=1.0)
+def try_setup_logs(diag, logs):
+  return setup_logs(diag, logs)
 
-def try_setup_logs(diag, log_types):
-  for _ in range(10):
-    try:
-      setup_logs(diag, log_types)
-      break
-    except Exception:
-      cloudlog.exception("setup logs failed, trying again")
-      time.sleep(1.0)
-  else:
-    raise Exception(f"setup logs failed, {log_types=}")
-
+@retry(attempts=3, delay=1.0)
 def at_cmd(cmd: str) -> Optional[str]:
-  for _ in range(3):
-    try:
-      return subprocess.check_output(f"mmcli -m any --timeout 30 --command='{cmd}'", shell=True, encoding='utf8')
-    except subprocess.CalledProcessError:
-      cloudlog.exception("qcomgps.mmcli_command_failed")
-      time.sleep(1.0)
-  raise Exception(f"failed to execute mmcli command {cmd=}")
-
+  return subprocess.check_output(f"mmcli -m any --timeout 30 --command='{cmd}'", shell=True, encoding='utf8')
 
 def gps_enabled() -> bool:
   try:
@@ -154,23 +141,11 @@ def downloader_loop(event):
   except KeyboardInterrupt:
     pass
 
+@retry(attempts=5, delay=0.2, ignore_failure=True)
 def inject_assistance():
-  for _ in range(5):
-    try:
-      cmd = f"mmcli -m any --timeout 30 --location-inject-assistance-data={ASSIST_DATA_FILE}"
-      subprocess.check_output(cmd, stderr=subprocess.PIPE, shell=True)
-      cloudlog.info("successfully loaded assistance data")
-      return
-    except subprocess.CalledProcessError as e:
-      cloudlog.event(
-        "qcomgps.assistance_loading_failed",
-        error=True,
-        cmd=e.cmd,
-        output=e.output,
-        returncode=e.returncode
-      )
-    time.sleep(0.2)
-  cloudlog.error("failed to load assistance after retry")
+  cmd = f"mmcli -m any --timeout 30 --location-inject-assistance-data={ASSIST_DATA_FILE}"
+  subprocess.check_output(cmd, stderr=subprocess.PIPE, shell=True)
+  cloudlog.info("successfully loaded assistance data")
 
 def setup_quectel(diag: ModemDiag) -> bool:
   ret = False
