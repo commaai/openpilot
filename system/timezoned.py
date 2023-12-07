@@ -10,7 +10,7 @@ from timezonefinder import TimezoneFinder
 
 from openpilot.common.params import Params
 from openpilot.system.hardware import AGNOS
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_version
 
 REQUEST_HEADERS = {'User-Agent': "openpilot-" + get_version()}

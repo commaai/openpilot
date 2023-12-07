@@ -76,7 +76,7 @@ selfdrive/statsd.py
 
 system/logmessaged.py
 system/micd.py
-system/swaglog.py
+common.swaglog.py
 system/version.py
 
 selfdrive/athena/__init__.py
