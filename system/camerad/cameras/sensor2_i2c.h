@@ -1,3 +1,5 @@
+#pragma once
+
 struct i2c_random_wr_payload start_reg_array_ar0231[] = {{0x301A, 0x91C}};
 struct i2c_random_wr_payload stop_reg_array_ar0231[] = {{0x301A, 0x918}};
 struct i2c_random_wr_payload start_reg_array_ox03c10[] = {{0x100, 1}};
