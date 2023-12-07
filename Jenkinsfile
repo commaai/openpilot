@@ -89,20 +89,22 @@ def pcStage(String stageName, Closure body) {
     checkout scm
 
     def dockerArgs = "--user=batman -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache -e PYTHONPATH=${env.WORKSPACE}";
-    docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .").inside(dockerArgs) {
-      timeout(time: 20, unit: 'MINUTES') {
-        try {
-          // TODO: remove these after all jenkins jobs are running as batman (merged with master)
-          sh "sudo chown -R batman:batman /tmp/scons_cache"
-          sh "sudo chown -R batman:batman /tmp/comma_download_cache"
+    retry (3) {
+      docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .").inside(dockerArgs) {
+        timeout(time: 20, unit: 'MINUTES') {
+          try {
+            // TODO: remove these after all jenkins jobs are running as batman (merged with master)
+            sh "sudo chown -R batman:batman /tmp/scons_cache"
+            sh "sudo chown -R batman:batman /tmp/comma_download_cache"
 
-          sh "git config --global --add safe.directory '*'"
-          sh "git submodule update --init --recursive"
-          sh "git lfs pull"
-          body()
-        } finally {
-          sh "rm -rf ${env.WORKSPACE}/* || true"
-          sh "rm -rf .* || true"
+            sh "git config --global --add safe.directory '*'"
+            sh "git submodule update --init --recursive"
+            sh "git lfs pull"
+            body()
+          } finally {
+            sh "rm -rf ${env.WORKSPACE}/* || true"
+            sh "rm -rf .* || true"
+          }
         }
       }
     }
