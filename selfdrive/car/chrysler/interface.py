@@ -34,7 +34,7 @@ class CarInterface(CarInterfaceBase):
         ret.flags |= ChryslerFlags.HIGHER_MIN_STEERING_SPEED.value
 
     # Chrysler
-    if candidate in (CAR.PACIFICA_2017_HYBRID, CAR.PACIFICA_2018, CAR.PACIFICA_2018_HYBRID, CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020):
+    if candidate in (CAR.PACIFICA_2017_HYBRID, CAR.PACIFICA_2018, CAR.PACIFICA_2018_HYBRID, CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.DURANGO):
       ret.mass = 2242.
       ret.wheelbase = 3.089
       ret.steerRatio = 16.2  # Pacifica Hybrid 2017
