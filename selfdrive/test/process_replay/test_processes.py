@@ -21,6 +21,7 @@ source_segments = [
   ("HONDA", "eb140f119469d9ab|2021-06-12--10-46-24--27"),      # HONDA.CIVIC (NIDEC)
   ("HONDA2", "7d2244f34d1bbcda|2021-06-25--12-25-37--26"),     # HONDA.ACCORD (BOSCH)
   ("CHRYSLER", "4deb27de11bee626|2021-02-20--11-28-55--8"),    # CHRYSLER.PACIFICA_2018_HYBRID
+  # TODO: add process_replay route for Chrysler CUSW
   ("RAM", "17fc16d840fe9d21|2023-04-26--13-28-44--5"),         # CHRYSLER.RAM_1500
   ("CHRYSLER2", "c5e3aa51055c8f47|2023-12-06--20-01-44--4"),   # CHRYSLER.JEEP_CHEROKEE_MK5
   ("SUBARU", "341dccd5359e3c97|2022-09-12--10-35-33--3"),      # SUBARU.OUTBACK
@@ -46,6 +47,7 @@ segments = [
   ("HONDA", "regen048F8FA0B24|2023-10-30--23-15-53--0"),
   ("HONDA2", "regen7D2D3F82D5B|2023-10-30--23-15-55--0"),
   ("CHRYSLER", "regen7125C42780C|2023-10-30--23-16-21--0"),
+  # TODO: add process_replay route for Chrysler CUSW
   ("RAM", "regen2731F3213D2|2023-10-30--23-18-11--0"),
   ("SUBARU", "regen86E4C1B4DDD|2023-10-30--23-18-14--0"),
   ("GM", "regenF6393D64745|2023-10-30--23-17-18--0"),
