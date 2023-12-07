@@ -382,7 +382,7 @@ class TestCarModelBase(unittest.TestCase):
 
 
 @parameterized_class(('car_model', 'test_route'), get_test_cases())
-@pytest.mark.xdist_group_class_property('car_model')
+@pytest.mark.xdist_group_class_property('test_route')
 class TestCarModel(TestCarModelBase):
   pass
 
