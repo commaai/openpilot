@@ -21,24 +21,8 @@ openpilot/**
 
 common/.gitignore
 common/__init__.py
-common/conversions.py
-common/gpio.py
-common/realtime.py
-common/timeout.py
-common/ffi_wrapper.py
-common/file_helpers.py
-common/logging_extra.py
-common/numpy_fast.py
-common/params.py
-common/params_pyx.pyx
-common/profiler.py
-common/basedir.py
-common/dict_helpers.py
-common/filter_simple.py
-common/stat_live.py
-common/spinner.py
-common/text_window.py
-common/time.py
+common/*.py
+common/*.pyx
 
 common/kalman/.gitignore
 common/kalman/*
@@ -76,7 +60,6 @@ selfdrive/statsd.py
 
 system/logmessaged.py
 system/micd.py
-system/swaglog.py
 system/version.py
 
 selfdrive/athena/__init__.py

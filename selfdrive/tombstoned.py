@@ -11,7 +11,7 @@ from typing import NoReturn
 
 import openpilot.selfdrive.sentry as sentry
 from openpilot.system.hardware.hw import Paths
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_commit
 
 MAX_SIZE = 1_000_000 * 100  # allow up to 100M

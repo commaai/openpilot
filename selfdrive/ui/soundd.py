@@ -13,7 +13,7 @@ from openpilot.system import micd
 
 from openpilot.common.realtime import Ratekeeper
 from openpilot.system.hardware import PC
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 
 SAMPLE_RATE = 48000
 MAX_VOLUME = 1.0
