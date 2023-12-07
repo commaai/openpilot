@@ -103,3 +103,6 @@ void cameras_close(MultiCameraState *s);
 void camerad_thread();
 
 int open_v4l_by_name_and_index(const char name[], int index = 0, int flags = O_RDWR | O_NONBLOCK);
+
+void ar0231_process_registers(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder &framed);
+

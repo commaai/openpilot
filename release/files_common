@@ -319,6 +319,7 @@ system/camerad/snapshot/*
 system/camerad/cameras/camera_common.h
 system/camerad/cameras/camera_common.cc
 system/camerad/cameras/sensor2_i2c.h
+system/camerad/sensors/ar0231.cc
 
 selfdrive/manager/__init__.py
 selfdrive/manager/build.py
