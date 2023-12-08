@@ -106,6 +106,8 @@ static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
 }
 
 int CameraState::sensors_init() {
+  create_sensor();
+
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*2;
   auto pkt = mm.alloc<struct cam_packet>(size, &cam_packet_handle);
@@ -401,7 +403,7 @@ void CameraState::enqueue_req_multi(int start, int n, bool dp) {
 
 // ******************* camera *******************
 
-void CameraState::camera_set_parameters() {
+void CameraState::create_sensor() {
   if (camera_id == CAMERA_ID_AR0231) {
     ci = std::make_unique<AR0231>();
   } else if (camera_id == CAMERA_ID_OX03C10) {
@@ -476,8 +478,6 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
     enabled = false;
     return;
   }
-
-  camera_set_parameters();
 
   // create session
   struct cam_req_mgr_session_info session_info = {};
