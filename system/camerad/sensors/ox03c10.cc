@@ -76,11 +76,11 @@ OX03C10::OX03C10() {
   target_grey_factor = TARGET_GREY_FACTOR_OX03C10;
 }
 
-std::vector<struct i2c_random_wr_payload> ox03c10_get_exp_registers(const SensorInfo *ci, int exposure_time, int new_exp_g, bool dc_gain_enabled) {
+std::vector<i2c_random_wr_payload> OX03C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {
  // t_HCG&t_LCG + t_VS on LPD, t_SPD on SPD
   uint32_t hcg_time = exposure_time;
   uint32_t lcg_time = hcg_time;
-  uint32_t spd_time = std::min(std::max((uint32_t)exposure_time, (ci->exposure_time_max + VS_TIME_MAX_OX03C10) / 3), ci->exposure_time_max + VS_TIME_MAX_OX03C10);
+  uint32_t spd_time = std::min(std::max((uint32_t)exposure_time, (exposure_time_max + VS_TIME_MAX_OX03C10) / 3), exposure_time_max + VS_TIME_MAX_OX03C10);
   uint32_t vs_time = std::min(std::max((uint32_t)exposure_time / 40, VS_TIME_MIN_OX03C10), VS_TIME_MAX_OX03C10);
 
   uint32_t real_gain = ox03c10_analog_gains_reg[new_exp_g];
@@ -93,4 +93,19 @@ std::vector<struct i2c_random_wr_payload> ox03c10_get_exp_registers(const Sensor
 
     {0x3508, real_gain>>8}, {0x3509, real_gain&0xFF},
   };
+}
+
+int OX03C10::getSlaveAddress(int port) const {
+  assert(port >= 0 && port <= 2);
+  return (int[]){0x6C, 0x20, 0x6C}[port];
+}
+
+float OX03C10::getExposureScore(float desired_ev, int exp_t, int exp_g_idx, float exp_gain, int gain_idx) const {
+  float score = std::abs(desired_ev - (exp_t * exp_gain));
+  float m = exp_g_idx > analog_gain_rec_idx ? analog_gain_cost_high : analog_gain_cost_low;
+  score += std::abs(exp_g_idx - (int)analog_gain_rec_idx) * m;
+  score += ((1 - analog_gain_cost_delta) +
+            analog_gain_cost_delta * (exp_g_idx - analog_gain_min_idx) / (analog_gain_max_idx - analog_gain_min_idx)) *
+           std::abs(exp_g_idx - gain_idx) * 5.0;
+  return score;
 }

@@ -121,21 +121,7 @@ int CameraState::sensors_init() {
   auto probe = (struct cam_cmd_probe *)(i2c_info.get() + 1);
 
   probe->camera_id = camera_num;
-  switch (camera_num) {
-    case 0:
-      // port 0
-      i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x20 : 0x6C; // 6C = 0x36*2
-      break;
-    case 1:
-      // port 1
-      i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x30 : 0x20;
-      break;
-    case 2:
-      // port 2
-      i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x20 : 0x6C;
-      break;
-  }
-
+  i2c_info->slave_addr = ci->getSlaveAddress(camera_num);
   // 0(I2C_STANDARD_MODE) = 100khz, 1(I2C_FAST_MODE) = 400khz
   //i2c_info->i2c_freq_mode = I2C_STANDARD_MODE;
   i2c_info->i2c_freq_mode = I2C_FAST_MODE;
@@ -816,22 +802,7 @@ void CameraState::handle_camera_event(void *evdat) {
 }
 
 void CameraState::update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain) {
-  float score = 1e6;
-  if (camera_id == CAMERA_ID_AR0231) {
-    // Cost of ev diff
-    score = std::abs(desired_ev - (exp_t * exp_gain)) * 10;
-    // Cost of absolute gain
-    float m = exp_g_idx > ci->analog_gain_rec_idx ? ci->analog_gain_cost_high : ci->analog_gain_cost_low;
-    score += std::abs(exp_g_idx - (int)ci->analog_gain_rec_idx) * m;
-    // Cost of changing gain
-    score += std::abs(exp_g_idx - gain_idx) * (score + 1.0) / 10.0;
-  } else if (camera_id == CAMERA_ID_OX03C10) {
-    score = std::abs(desired_ev - (exp_t * exp_gain));
-    float m = exp_g_idx > ci->analog_gain_rec_idx ? ci->analog_gain_cost_high : ci->analog_gain_cost_low;
-    score += std::abs(exp_g_idx - (int)ci->analog_gain_rec_idx) * m;
-    score += ((1 - ci->analog_gain_cost_delta) + ci->analog_gain_cost_delta * (exp_g_idx - ci->analog_gain_min_idx) / (ci->analog_gain_max_idx - ci->analog_gain_min_idx)) * std::abs(exp_g_idx - gain_idx) * 5.0;
-  }
-
+  float score = ci->getExposureScore(desired_ev, exp_t, exp_g_idx, exp_gain, gain_idx);
   if (score < best_ev_score) {
     new_exp_t = exp_t;
     new_exp_g = exp_g_idx;
@@ -937,13 +908,8 @@ void CameraState::set_camera_exposure(float grey_frac) {
   }
   // LOGE("ae - camera %d, cur_t %.5f, sof %.5f, dt %.5f", camera_num, 1e-9 * nanos_since_boot(), 1e-9 * buf.cur_frame_data.timestamp_sof, 1e-9 * (nanos_since_boot() - buf.cur_frame_data.timestamp_sof));
 
-  if (camera_id == CAMERA_ID_AR0231) {
-    auto exp_reg_array = ar0231_get_exp_registers(ci.get(), exposure_time, new_exp_g, dc_gain_enabled);
-    sensors_i2c(exp_reg_array.data(), exp_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
-  } else if (camera_id == CAMERA_ID_OX03C10) {
-    auto exp_reg_array = ox03c10_get_exp_registers(ci.get(), exposure_time, new_exp_g, dc_gain_enabled);
-    sensors_i2c(exp_reg_array.data(), exp_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
-  }
+  auto exp_reg_array = ci->getExposureRegisters(exposure_time, new_exp_g, dc_gain_enabled);
+  sensors_i2c(exp_reg_array.data(), exp_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, ci->data_word);
 }
 
 static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
@@ -954,9 +920,7 @@ static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
   fill_frame_data(framed, c->buf.cur_frame_data, c);
 
-  if (c->camera_id == CAMERA_ID_AR0231) {
-    ar0231_process_registers(s, c, framed);
-  }
+  c->ci->processRegisters(s, c, framed);
   s->pm->send("driverCameraState", msg);
 }
 
@@ -971,10 +935,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   }
   LOGT(c->buf.cur_frame_data.frame_id, "%s: Image set", c == &s->road_cam ? "RoadCamera" : "WideRoadCamera");
 
-  if (c->camera_id == CAMERA_ID_AR0231) {
-    ar0231_process_registers(s, c, framed);
-  }
-
+  c->ci->processRegisters(s, c, framed);
   s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
 
   const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
