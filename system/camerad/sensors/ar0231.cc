@@ -10,31 +10,11 @@ const size_t AR0231_REGISTERS_HEIGHT = 2;
 // TODO: this extra height is universal and doesn't apply per camera
 const size_t AR0231_STATS_HEIGHT = 2 + 8;
 
-const float DC_GAIN_AR0231 = 2.5;
-
-const float DC_GAIN_ON_GREY_AR0231 = 0.2;
-const float DC_GAIN_OFF_GREY_AR0231 = 0.3;
-
-const int DC_GAIN_MIN_WEIGHT_AR0231 = 0;
-const int DC_GAIN_MAX_WEIGHT_AR0231 = 1;
-
-const float TARGET_GREY_FACTOR_AR0231 = 1.0;
-
 const float sensor_analog_gains_AR0231[] = {
     1.0 / 8.0, 2.0 / 8.0, 2.0 / 7.0, 3.0 / 7.0,  // 0, 1, 2, 3
     3.0 / 6.0, 4.0 / 6.0, 4.0 / 5.0, 5.0 / 5.0,  // 4, 5, 6, 7
     5.0 / 4.0, 6.0 / 4.0, 6.0 / 3.0, 7.0 / 3.0,  // 8, 9, 10, 11
     7.0 / 2.0, 8.0 / 2.0, 8.0 / 1.0};            // 12, 13, 14, 15 = bypass
-
-const int ANALOG_GAIN_MIN_IDX_AR0231 = 0x1;  // 0.25x
-const int ANALOG_GAIN_REC_IDX_AR0231 = 0x6;  // 0.8x
-const int ANALOG_GAIN_MAX_IDX_AR0231 = 0xD;  // 4.0x
-const int ANALOG_GAIN_COST_DELTA_AR0231 = 0;
-const float ANALOG_GAIN_COST_LOW_AR0231 = 0.1;
-const float ANALOG_GAIN_COST_HIGH_AR0231 = 5.0;
-
-const int EXPOSURE_TIME_MIN_AR0231 = 2;       // with HDR, fastest ss
-const int EXPOSURE_TIME_MAX_AR0231 = 0x0855;  // with HDR, slowest ss, 40ms
 
 std::map<uint16_t, std::pair<int, int>> ar0231_build_register_lut(CameraState *c, uint8_t *data) {
   // This function builds a lookup table from register address, to a pair of indices in the
@@ -119,25 +99,25 @@ AR0231::AR0231() {
   frame_offset = AR0231_REGISTERS_HEIGHT;
   stats_offset = AR0231_REGISTERS_HEIGHT + FRAME_HEIGHT;
 
-  dc_gain_factor = DC_GAIN_AR0231;
-  dc_gain_min_weight = DC_GAIN_MIN_WEIGHT_AR0231;
-  dc_gain_max_weight = DC_GAIN_MAX_WEIGHT_AR0231;
-  dc_gain_on_grey = DC_GAIN_ON_GREY_AR0231;
-  dc_gain_off_grey = DC_GAIN_OFF_GREY_AR0231;
-  exposure_time_min = EXPOSURE_TIME_MIN_AR0231;
-  exposure_time_max = EXPOSURE_TIME_MAX_AR0231;
-  analog_gain_min_idx = ANALOG_GAIN_MIN_IDX_AR0231;
-  analog_gain_rec_idx = ANALOG_GAIN_REC_IDX_AR0231;
-  analog_gain_max_idx = ANALOG_GAIN_MAX_IDX_AR0231;
-  analog_gain_cost_delta = ANALOG_GAIN_COST_DELTA_AR0231;
-  analog_gain_cost_low = ANALOG_GAIN_COST_LOW_AR0231;
-  analog_gain_cost_high = ANALOG_GAIN_COST_HIGH_AR0231;
+  dc_gain_factor = 2.5;
+  dc_gain_min_weight = 0;
+  dc_gain_max_weight = 1;
+  dc_gain_on_grey = 0.2;
+  dc_gain_off_grey = 0.3;
+  exposure_time_min = 2;       // with HDR, fastest ss
+  exposure_time_max = 0x0855;  // with HDR, slowest ss, 40ms
+  analog_gain_min_idx = 0x1;   // 0.25x
+  analog_gain_rec_idx = 0x6;   // 0.8x
+  analog_gain_max_idx = 0xD;   // 4.0x
+  analog_gain_cost_delta = 0;
+  analog_gain_cost_low = 0.1;
+  analog_gain_cost_high = 5.0;
   for (int i = 0; i <= analog_gain_max_idx; i++) {
     sensor_analog_gains[i] = sensor_analog_gains_AR0231[i];
   }
   min_ev = exposure_time_min * sensor_analog_gains[analog_gain_min_idx];
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
-  target_grey_factor = TARGET_GREY_FACTOR_AR0231;
+  target_grey_factor = 1.0;
 }
 
 void ar0231_process_registers(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder &framed) {
