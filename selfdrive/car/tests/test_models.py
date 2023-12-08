@@ -3,6 +3,7 @@ import capnp
 import os
 import importlib
 import pytest
+import random
 import unittest
 from collections import defaultdict, Counter
 from typing import List, Optional, Tuple
@@ -31,6 +32,7 @@ NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
 INTERNAL_SEG_LIST = os.environ.get("INTERNAL_SEG_LIST", "")
 INTERNAL_SEG_CNT = int(os.environ.get("INTERNAL_SEG_CNT", "0"))
+RANDOM_SEED = int(os.environ.get("RANDOM_SEED", "0"))
 
 
 def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
@@ -49,12 +51,13 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
     with open(os.path.join(BASEDIR, INTERNAL_SEG_LIST), "r") as f:
       seg_list = f.read().splitlines()
 
-    cnt = INTERNAL_SEG_CNT or len(seg_list)
-    seg_list_iter = iter(seg_list[:cnt])
+    if RANDOM_SEED:
+      random.seed(RANDOM_SEED)
 
-    for platform in seg_list_iter:
-      platform = platform[2:]  # get rid of comment
-      segment_name = SegmentName(next(seg_list_iter))
+    seg_list_grouped = [(platform[2:], segment) for platform, segment in zip(seg_list[::2], seg_list[1::2])]
+    seg_list_grouped = random.sample(seg_list_grouped, INTERNAL_SEG_CNT or len(seg_list_grouped))
+    for platform, segment in seg_list_grouped:
+      segment_name = SegmentName(segment)
       test_cases.append((platform, CarTestRoute(segment_name.route_name.canonical_name, platform,
                                                 segment=segment_name.segment_num)))
   return test_cases
