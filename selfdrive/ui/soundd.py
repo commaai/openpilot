@@ -12,6 +12,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system import micd
 
 from openpilot.common.realtime import Ratekeeper
+from openpilot.common.retry import retry
 from openpilot.common.swaglog import cloudlog
 
 SAMPLE_RATE = 48000
@@ -125,15 +126,22 @@ class Soundd:
     volume = ((weighted_db - AMBIENT_DB) / DB_SCALE) * (MAX_VOLUME - MIN_VOLUME) + MIN_VOLUME
     return math.pow(10, (np.clip(volume, MIN_VOLUME, MAX_VOLUME) - 1))
 
+  @retry(attempts=7, delay=3)
+  def get_stream(self):
+    import sounddevice as sd
+    sd._terminate()
+    sd._initialize()
+
+    return sd.OutputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback) 
+
   def soundd_thread(self):
     # sounddevice must be imported after forking processes
     import sounddevice as sd
 
-    rk = Ratekeeper(20)
+    with self.get_stream() as stream:
+      rk = Ratekeeper(20)
+      sm = messaging.SubMaster(['controlsState', 'microphone'])
 
-    sm = messaging.SubMaster(['controlsState', 'microphone'])
-
-    with sd.OutputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback) as stream:
       cloudlog.info(f"soundd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}")
       while True:
         sm.update(0)

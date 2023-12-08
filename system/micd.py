@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import numpy as np
+import time
 
 from cereal import messaging
 from openpilot.common.realtime import Ratekeeper
+from openpilot.common.retry import retry
 from openpilot.common.swaglog import cloudlog
 
 RATE = 10
@@ -77,11 +79,16 @@ class Mic:
 
       self.measurements = self.measurements[FFT_SAMPLES:]
 
-  def micd_thread(self):
-    # sounddevice must be imported after forking processes
+  @retry(attempts=7, delay=3)
+  def get_stream(self):
     import sounddevice as sd
+    sd._terminate()
+    sd._initialize()
 
-    with sd.InputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback) as stream:
+    return sd.InputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback)
+
+  def micd_thread(self):
+    with self.get_stream() as stream:
       cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}")
       while True:
         self.update()
