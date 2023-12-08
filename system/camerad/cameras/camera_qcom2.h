@@ -48,9 +48,9 @@ public:
   void sensors_start();
 
   void camera_open(MultiCameraState *multi_cam_state, int camera_num, bool enabled);
-  void create_sensor();
+  void sensor_set_parameters();
   void camera_map_bufs(MultiCameraState *s);
-  void camera_init(MultiCameraState *s, VisionIpcServer *v, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type);
+  void camera_init(MultiCameraState *s, VisionIpcServer *v, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type);
   void camera_close();
 
   int32_t session_handle;
@@ -68,7 +68,6 @@ public:
   int frame_id_last;
   int idx_offset;
   bool skipped;
-  int camera_id;
 
   CameraBuf buf;
   MemoryManager mm;

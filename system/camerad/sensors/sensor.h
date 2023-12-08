@@ -22,6 +22,7 @@ public:
   virtual float getExposureScore(float desired_ev, int exp_t, int exp_g_idx, float exp_gain, int gain_idx) const {return 0; }
   virtual int getSlaveAddress(int port) const { assert(0); }
   virtual void processRegisters(CameraState *c, cereal::FrameData::Builder &framed) const {}
+  virtual cereal::FrameData::ImageSensor sensorType() const { return cereal::FrameData::ImageSensor::UNKNOWN; }
 
   uint32_t frame_width, frame_height;
   uint32_t frame_stride;
@@ -66,6 +67,7 @@ public:
   float getExposureScore(float desired_ev, int exp_t, int exp_g_idx, float exp_gain, int gain_idx) const override;
   int getSlaveAddress(int port) const override;
   void processRegisters(CameraState *c, cereal::FrameData::Builder &framed) const override;
+  cereal::FrameData::ImageSensor sensorType() const override { return cereal::FrameData::ImageSensor::AR0231; }
 
 private:
   mutable std::map<uint16_t, std::pair<int, int>> ar0231_register_lut;
@@ -77,4 +79,5 @@ public:
   std::vector<i2c_random_wr_payload> getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const override;
   float getExposureScore(float desired_ev, int exp_t, int exp_g_idx, float exp_gain, int gain_idx) const override;
   int getSlaveAddress(int port) const override;
+  cereal::FrameData::ImageSensor sensorType() const override { return cereal::FrameData::ImageSensor::OX03C10; }
 };
