@@ -48,10 +48,10 @@ OX03C10::OX03C10() {
   extra_height = 16;            // top 2 + bot 14
   frame_offset = 2;
 
-  probe_reg_addr = 0x300a;
-  probe_expected_data = 0x5803;
   start_reg_array.assign(std::begin(start_reg_array_ox03c10), std::end(start_reg_array_ox03c10));
   init_reg_array.assign(std::begin(init_array_ox03c10), std::end(init_array_ox03c10));
+  probe_reg_addr = 0x300a;
+  probe_expected_data = 0x5803;
   in_port_info_dt = 0x2c; // one is 0x2a, two are 0x2b
   power_config_val_low = 24000000; //Hz
 
