@@ -12,7 +12,7 @@ import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcClient, VisionStreamType
 from openpilot.common.conversions import Conversions as CV
 from panda import ALTERNATIVE_EXPERIENCE
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_short_branch
 from openpilot.selfdrive.car.car_helpers import get_startup_event, interfaces
 from openpilot.selfdrive.controls.lib.lateral_planner import CAMERA_OFFSET
@@ -87,7 +87,8 @@ class Controls:
       CarInterface, CarController, CarState = interfaces[self.CP.carFingerprint]
       self.CI = CarInterface(self.CP, CarController, CarState)
 
-    self.joystick_mode = self.params.get_bool("JoystickDebugMode") or self.CP.notCar
+    self.joystick_enabled = self.params.get_bool("JoystickDebugMode")
+    self.joystick_mode = self.joystick_enabled or self.CP.notCar
 
     self.disengage_on_accelerator = bool(self.CP.alternativeExperience & ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS)
 
@@ -330,16 +331,17 @@ class Controls:
     else:
       self.logged_comm_issue = None
 
-    if not self.sm['lateralPlan'].mpcSolutionValid:
-      self.events.add(EventName.plannerError)
-    if not self.sm['liveLocationKalman'].posenetOK:
-      self.events.add(EventName.posenetInvalid)
-    if not self.sm['liveLocationKalman'].deviceStable:
-      self.events.add(EventName.deviceFalling)
-    if not self.sm['liveLocationKalman'].inputsOK:
-      self.events.add(EventName.locationdTemporaryError)
-    if not self.sm['liveParameters'].valid and not TESTING_CLOSET and (not SIMULATION or REPLAY):
-      self.events.add(EventName.paramsdTemporaryError)
+    if not (self.CP.notCar and self.joystick_enabled):
+      if not self.sm['lateralPlan'].mpcSolutionValid:
+        self.events.add(EventName.plannerError)
+      if not self.sm['liveLocationKalman'].posenetOK:
+        self.events.add(EventName.posenetInvalid)
+      if not self.sm['liveLocationKalman'].deviceStable:
+        self.events.add(EventName.deviceFalling)
+      if not self.sm['liveLocationKalman'].inputsOK:
+        self.events.add(EventName.locationdTemporaryError)
+      if not self.sm['liveParameters'].valid and not TESTING_CLOSET and (not SIMULATION or REPLAY):
+        self.events.add(EventName.paramsdTemporaryError)
 
     # conservative HW alert. if the data or frequency are off, locationd will throw an error
     if any((self.sm.frame - self.sm.rcv_frame[s])*DT_CTRL > 10. for s in self.sensor_packets):
