@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import numpy as np
-import time
 
 from cereal import messaging
 from openpilot.common.realtime import Ratekeeper

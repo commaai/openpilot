@@ -132,11 +132,10 @@ class Soundd:
     sd._terminate()
     sd._initialize()
 
-    return sd.OutputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback) 
+    return sd.OutputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback)
 
   def soundd_thread(self):
     # sounddevice must be imported after forking processes
-    import sounddevice as sd
 
     with self.get_stream() as stream:
       rk = Ratekeeper(20)
