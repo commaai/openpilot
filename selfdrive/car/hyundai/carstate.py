@@ -33,7 +33,7 @@ class CarState(CarStateBase):
       self.shifter_values = can_define.dv["CLU15"]["CF_Clu_Gear"]
     elif self.CP.carFingerprint in CAN_GEARS["use_tcu_gears"]:
       self.shifter_values = can_define.dv["TCU12"]["CUR_GR"]
-    elif self.CP.carFingerprint in CAN_GEARS["use_ems_gears"]:
+    elif self.CP.carFingerprint in FCEV_CAR:
       self.shifter_values = can_define.dv["EMS20"]["HYDROGEN_GEAR_SHIFTER"]
     else:  # preferred and elect gear methods use same definition
       self.shifter_values = can_define.dv["LVR12"]["CF_Lvr_Gear"]
@@ -141,7 +141,7 @@ class CarState(CarStateBase):
       gear = cp.vl["CLU15"]["CF_Clu_Gear"]
     elif self.CP.carFingerprint in CAN_GEARS["use_tcu_gears"]:
       gear = cp.vl["TCU12"]["CUR_GR"]
-    elif self.CP.carFingerprint in CAN_GEARS["use_ems_gears"]:
+    elif self.CP.carFingerprint in FCEV_CAR:
       gear = cp.vl["EMS20"]["HYDROGEN_GEAR_SHIFTER"]
     else:
       gear = cp.vl["LVR12"]["CF_Lvr_Gear"]
@@ -298,7 +298,7 @@ class CarState(CarStateBase):
       pass
     elif CP.carFingerprint in CAN_GEARS["use_tcu_gears"]:
       messages.append(("TCU12", 100))
-    elif CP.carFingerprint in CAN_GEARS["use_ems_gears"]:
+    elif CP.carFingerprint in FCEV_CAR:
       messages.append(("EMS20", 100))
     else:
       messages.append(("LVR12", 100))
