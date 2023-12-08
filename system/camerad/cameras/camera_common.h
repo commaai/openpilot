@@ -16,8 +16,8 @@
 
 #define CAMERA_ID_AR0231 0
 #define CAMERA_ID_OX03C10 1
+#define CAMERA_ID_MAX 2
 
-#define ANALOG_GAIN_MAX_CNT 55
 const int YUV_BUFFER_COUNT = 20;
 
 enum CameraType {
@@ -41,26 +41,6 @@ typedef struct CameraInfo {
   uint32_t extra_height = 0;
   int registers_offset = -1;
   int stats_offset = -1;
-
-  int exposure_time_min;
-  int exposure_time_max;
-
-  float dc_gain_factor;
-  int dc_gain_min_weight;
-  int dc_gain_max_weight;
-  float dc_gain_on_grey;
-  float dc_gain_off_grey;
-
-  float sensor_analog_gains[ANALOG_GAIN_MAX_CNT];
-  int analog_gain_min_idx;
-  int analog_gain_max_idx;
-  int analog_gain_rec_idx;
-  int analog_gain_cost_delta;
-  float analog_gain_cost_low;
-  float analog_gain_cost_high;
-  float target_grey_factor;
-  float min_ev;
-  float max_ev;
 } CameraInfo;
 
 typedef struct FrameMetadata {
