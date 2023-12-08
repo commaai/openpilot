@@ -68,7 +68,7 @@ CameraOx03c10::CameraOx03c10() {
   target_grey_factor = TARGET_GREY_FACTOR_OX03C10;
 }
 
-std::vector<struct i2c_random_wr_payload> ox03c10_get_exp_registers(const CameraInfo *ci, int exposure_time, int new_exp_g, bool dc_gain_enabled) {
+std::vector<struct i2c_random_wr_payload> ox03c10_get_exp_registers(const SensorInfo *ci, int exposure_time, int new_exp_g, bool dc_gain_enabled) {
  // t_HCG&t_LCG + t_VS on LPD, t_SPD on SPD
   uint32_t hcg_time = exposure_time;
   uint32_t lcg_time = hcg_time;
