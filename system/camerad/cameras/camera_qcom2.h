@@ -49,7 +49,7 @@ public:
   void sensors_start();
 
   void camera_open(MultiCameraState *multi_cam_state, int camera_num, bool enabled);
-  void camera_set_parameters();
+  void create_sensor();
   void camera_map_bufs(MultiCameraState *s);
   void camera_init(MultiCameraState *s, VisionIpcServer *v, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type);
   void camera_close();

@@ -22,11 +22,19 @@ const uint32_t VS_TIME_MAX_OX03C10 = 34;  // vs < 35
 }  // namespace
 
 OX03C10::OX03C10() {
+  data_word = false;
   frame_width = FRAME_WIDTH;
   frame_height = FRAME_HEIGHT;
   frame_stride = FRAME_STRIDE;  // (0xa80*12//8)
   extra_height = 16;            // top 2 + bot 14
   frame_offset = 2;
+
+  start_reg_array.assign(std::begin(start_reg_array_ox03c10), std::end(start_reg_array_ox03c10));
+  init_reg_array.assign(std::begin(init_array_ox03c10), std::end(init_array_ox03c10));
+  probe_reg_addr = 0x300a;
+  probe_expected_data = 0x5803;
+  in_port_info_dt = 0x2c; // one is 0x2a, two are 0x2b
+  power_config_val_low = 24000000; //Hz
 
   dc_gain_factor = 7.32;
   dc_gain_min_weight = 1;  // always on is fine
@@ -49,11 +57,11 @@ OX03C10::OX03C10() {
   target_grey_factor = 0.01;
 }
 
-std::vector<struct i2c_random_wr_payload> ox03c10_get_exp_registers(const SensorInfo *ci, int exposure_time, int new_exp_g, bool dc_gain_enabled) {
+std::vector<i2c_random_wr_payload> OX03C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {
  // t_HCG&t_LCG + t_VS on LPD, t_SPD on SPD
   uint32_t hcg_time = exposure_time;
   uint32_t lcg_time = hcg_time;
-  uint32_t spd_time = std::min(std::max((uint32_t)exposure_time, (ci->exposure_time_max + VS_TIME_MAX_OX03C10) / 3), ci->exposure_time_max + VS_TIME_MAX_OX03C10);
+  uint32_t spd_time = std::min(std::max((uint32_t)exposure_time, (exposure_time_max + VS_TIME_MAX_OX03C10) / 3), exposure_time_max + VS_TIME_MAX_OX03C10);
   uint32_t vs_time = std::min(std::max((uint32_t)exposure_time / 40, VS_TIME_MIN_OX03C10), VS_TIME_MAX_OX03C10);
 
   uint32_t real_gain = ox03c10_analog_gains_reg[new_exp_g];
@@ -66,4 +74,19 @@ std::vector<struct i2c_random_wr_payload> ox03c10_get_exp_registers(const Sensor
 
     {0x3508, real_gain>>8}, {0x3509, real_gain&0xFF},
   };
+}
+
+int OX03C10::getSlaveAddress(int port) const {
+  assert(port >= 0 && port <= 2);
+  return (int[]){0x6C, 0x20, 0x6C}[port];
+}
+
+float OX03C10::getExposureScore(float desired_ev, int exp_t, int exp_g_idx, float exp_gain, int gain_idx) const {
+  float score = std::abs(desired_ev - (exp_t * exp_gain));
+  float m = exp_g_idx > analog_gain_rec_idx ? analog_gain_cost_high : analog_gain_cost_low;
+  score += std::abs(exp_g_idx - (int)analog_gain_rec_idx) * m;
+  score += ((1 - analog_gain_cost_delta) +
+            analog_gain_cost_delta * (exp_g_idx - analog_gain_min_idx) / (analog_gain_max_idx - analog_gain_min_idx)) *
+           std::abs(exp_g_idx - gain_idx) * 5.0;
+  return score;
 }
