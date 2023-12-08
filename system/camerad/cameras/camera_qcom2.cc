@@ -597,8 +597,6 @@ void CameraState::camera_init(MultiCameraState *s, VisionIpcServer * v, int came
   request_id_last = 0;
   skipped = true;
 
-  camera_set_parameters();
-
   buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, yuv_type);
   camera_map_bufs(s);
 }
@@ -633,6 +631,8 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
     enabled = false;
     return;
   }
+
+  camera_set_parameters();
 
   // create session
   struct cam_req_mgr_session_info session_info = {};
