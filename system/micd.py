@@ -5,6 +5,7 @@ from cereal import messaging
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.retry import retry
 from openpilot.common.swaglog import cloudlog
+from openpilot.system.hardware import TICI
 
 RATE = 10
 FFT_SAMPLES = 4096
