@@ -36,7 +36,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
 from openpilot.system.hardware import HARDWARE, PC, AGNOS
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_commit, get_origin, get_short_branch, get_version
 from openpilot.system.hardware.hw import Paths
 

@@ -19,7 +19,7 @@ from openpilot.common.realtime import set_core_affinity
 from openpilot.system.hardware import TICI
 from openpilot.system.hardware.hw import Paths
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 
 NetworkType = log.DeviceState.NetworkType
 UPLOAD_ATTR_NAME = 'user.upload'
