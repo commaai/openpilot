@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <map>
 #include <memory>
 #include <utility>
 
@@ -54,8 +53,6 @@ public:
   void camera_init(MultiCameraState *s, VisionIpcServer *v, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type);
   void camera_close();
 
-  std::map<uint16_t, uint16_t> ar0231_parse_registers(uint8_t *data, std::initializer_list<uint16_t> addrs);
-
   int32_t session_handle;
   int32_t sensor_dev_handle;
   int32_t isp_dev_handle;
@@ -84,9 +81,6 @@ public:
   int sensors_init();
   void sensors_poke(int request_id);
   void sensors_i2c(const struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word);
-
-  // Register parsing
-  std::map<uint16_t, std::pair<int, int>> ar0231_register_lut;
 
 private:
   // for debugging
