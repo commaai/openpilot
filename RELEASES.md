@@ -2,6 +2,7 @@ Version 0.9.6 (2023-12-14)
 ========================
 * AGNOS 9
 * comma body streaming and controls over WebRTC
+* Hyundai Nexo 2021 support thanks to sunnyhaibin!
 
 Version 0.9.5 (2023-11-17)
 ========================
@@ -15,7 +16,6 @@ Version 0.9.5 (2023-11-17)
 * Hyundai Custin 2023 support thanks to sunnyhaibin and Saber422!
 * Hyundai Ioniq 6 2023 support thanks to sunnyhaibin and alamo3!
 * Hyundai Kona Electric 2023 (Korean version) support thanks to sunnyhaibin and haram-KONA!
-* Hyundai Nexo 2021 support thanks to sunnyhaibin!
 * Kia K8 Hybrid (with HDA II) 2023 support thanks to sunnyhaibin!
 * Kia Optima Hybrid 2019 support
 * Kia Sorento Hybrid 2023 support thanks to sunnyhaibin!
