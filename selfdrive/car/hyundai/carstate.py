@@ -122,12 +122,13 @@ class CarState(CarStateBase):
     ret.parkingBrake = cp.vl["TCS13"]["PBRAKE_ACT"] == 1
     ret.accFaulted = cp.vl["TCS13"]["ACCEnable"] != 0  # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
 
-    if self.CP.carFingerprint in (EV_CAR | HYBRID_CAR | FCEV_CAR):
-      gas_msg = "ACCELERATOR" if self.CP.carFingerprint in FCEV_CAR else "E_EMS11"
-      gas_sig = "Accel_Pedal_Pos" if self.CP.carFingerprint in EV_CAR else \
-                "ACCELERATOR_PEDAL" if self.CP.carFingerprint in FCEV_CAR else \
-                "CR_Vcu_AccPedDep_Pos"
-      ret.gas = cp.vl[gas_msg][gas_sig] / 254.
+    if self.CP.carFingerprint in (HYBRID_CAR | EV_CAR | FCEV_CAR):
+      if self.CP.carFingerprint in FCEV_CAR:
+        ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / 254.
+      elif self.CP.carFingerprint in HYBRID_CAR:
+        ret.gas = cp.vl["E_EMS11"]["CR_Vcu_AccPedDep_Pos"] / 254.
+      else:
+        ret.gas = cp.vl["E_EMS11"]["Accel_Pedal_Pos"] / 254.
       ret.gasPressed = ret.gas > 0
     else:
       ret.gas = cp.vl["EMS12"]["PV_AV_CAN"] / 100.
