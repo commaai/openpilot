@@ -134,12 +134,7 @@ class Soundd:
 
     sm = messaging.SubMaster(['controlsState', 'microphone'])
 
-    if PC:
-      device = None
-    else:
-      device = "sdm845-tavil-snd-card: - (hw:0,0)"
-
-    with sd.OutputStream(device=device, channels=1, samplerate=SAMPLE_RATE, callback=self.callback) as stream:
+    with sd.OutputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback) as stream:
       cloudlog.info(f"soundd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}")
       while True:
         sm.update(0)
