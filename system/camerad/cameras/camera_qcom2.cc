@@ -430,9 +430,9 @@ void CameraState::enqueue_req_multi(int start, int n, bool dp) {
 
 void CameraState::camera_set_parameters() {
   if (camera_id == CAMERA_ID_AR0231) {
-    ci = std::make_unique<CameraAR0231>();
+    ci = std::make_unique<AR0231>();
   } else if (camera_id == CAMERA_ID_OX03C10) {
-    ci = std::make_unique<CameraOx03c10>();
+    ci = std::make_unique<OX03C10>();
   } else {
     assert(false);
   }

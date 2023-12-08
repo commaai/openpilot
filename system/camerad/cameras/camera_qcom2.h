@@ -18,7 +18,7 @@
 class CameraState {
 public:
   MultiCameraState *multi_cam_state;
-  std::unique_ptr<const CameraInfo> ci;
+  std::unique_ptr<const SensorInfo> ci;
   bool enabled;
 
   std::mutex exp_lock;
