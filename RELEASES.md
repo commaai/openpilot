@@ -2,6 +2,8 @@ Version 0.9.6 (2023-12-14)
 ========================
 * AGNOS 9
 * comma body streaming and controls over WebRTC
+* Toyota RAV4 2023 support
+* Toyota RAV4 Hybrid 2023 support
 
 Version 0.9.5 (2023-11-17)
 ========================
