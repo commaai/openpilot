@@ -90,6 +90,7 @@ float ar0231_parse_temp_sensor(uint16_t calib1, uint16_t calib2, uint16_t data_r
 }  // namespace
 
 AR0231::AR0231() {
+  data_word = true;
   frame_width = FRAME_WIDTH;
   frame_height = FRAME_HEIGHT;
   frame_stride = FRAME_STRIDE;
@@ -98,6 +99,13 @@ AR0231::AR0231() {
   registers_offset = 0;
   frame_offset = AR0231_REGISTERS_HEIGHT;
   stats_offset = AR0231_REGISTERS_HEIGHT + FRAME_HEIGHT;
+
+  start_reg_array.assign(std::begin(start_reg_array_ar0231), std::end(start_reg_array_ar0231));
+  init_reg_array.assign(std::begin(init_array_ar0231), std::end(init_array_ar0231));
+  probe_reg_addr = 0x3000;
+  probe_expected_data = 0x354;
+  in_port_info_dt = 0x12;  // Changing stats to 0x2C doesn't work, so change pixels to 0x12 instead
+  power_config_val_low = 19200000; //Hz
 
   dc_gain_factor = 2.5;
   dc_gain_min_weight = 0;
@@ -120,7 +128,7 @@ AR0231::AR0231() {
   target_grey_factor = 1.0;
 }
 
-void ar0231_process_registers(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder &framed) {
+void AR0231::processRegisters(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder &framed) const {
   const uint8_t expected_preamble[] = {0x0a, 0xaa, 0x55, 0x20, 0xa5, 0x55};
   uint8_t *data = (uint8_t *)c->buf.cur_camera_buf->addr + c->ci->registers_offset;
 
@@ -140,11 +148,27 @@ void ar0231_process_registers(MultiCameraState *s, CameraState *c, cereal::Frame
 }
 
 
-std::vector<struct i2c_random_wr_payload> ar0231_get_exp_registers(const SensorInfo *ci, int exposure_time, int new_exp_g, bool dc_gain_enabled) {
+std::vector<i2c_random_wr_payload> AR0231::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {
   uint16_t analog_gain_reg = 0xFF00 | (new_exp_g << 4) | new_exp_g;
   return {
     {0x3366, analog_gain_reg},
     {0x3362, (uint16_t)(dc_gain_enabled ? 0x1 : 0x0)},
     {0x3012, (uint16_t)exposure_time},
   };
+}
+
+int AR0231::getSlaveAddress(int port) const {
+  assert(port >= 0 && port <= 2);
+  return (int[]){0x20, 0x30, 0x20}[port];
+}
+
+float AR0231::getExposureScore(float desired_ev, int exp_t, int exp_g_idx, float exp_gain, int gain_idx) const {
+  // Cost of ev diff
+  float score = std::abs(desired_ev - (exp_t * exp_gain)) * 10;
+  // Cost of absolute gain
+  float m = exp_g_idx > analog_gain_rec_idx ? analog_gain_cost_high : analog_gain_cost_low;
+  score += std::abs(exp_g_idx - (int)analog_gain_rec_idx) * m;
+  // Cost of changing gain
+  score += std::abs(exp_g_idx - gain_idx) * (score + 1.0) / 10.0;
+  return score;
 }

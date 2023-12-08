@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <cstdint>
 #include <vector>
 #include "media/cam_sensor.h"
@@ -15,6 +16,10 @@ const size_t FRAME_STRIDE = 2896;  // for 12 bit output. 1928 * 12 / 8 + 4 (alig
 class SensorInfo {
 public:
   SensorInfo() = default;
+  virtual std::vector<i2c_random_wr_payload> getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const { return {}; }
+  virtual float getExposureScore(float desired_ev, int exp_t, int exp_g_idx, float exp_gain, int gain_idx) const {return 0; }
+  virtual int getSlaveAddress(int port) const { assert(0); }
+  virtual void processRegisters(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder &framed) const {}
 
   uint32_t frame_width, frame_height;
   uint32_t frame_stride;
@@ -42,18 +47,29 @@ public:
   float target_grey_factor;
   float min_ev;
   float max_ev;
+
+  bool data_word;
+  uint32_t probe_reg_addr;
+  uint32_t probe_expected_data;
+  std::vector<i2c_random_wr_payload> start_reg_array;
+  std::vector<i2c_random_wr_payload> init_reg_array;
+  uint32_t in_port_info_dt;
+  uint32_t power_config_val_low;
 };
 
 class AR0231 : public SensorInfo {
 public:
   AR0231();
+  std::vector<i2c_random_wr_payload> getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const override;
+  float getExposureScore(float desired_ev, int exp_t, int exp_g_idx, float exp_gain, int gain_idx) const override;
+  int getSlaveAddress(int port) const override;
+  void processRegisters(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder &framed) const override;
 };
 
 class OX03C10 : public SensorInfo {
 public:
   OX03C10();
+  std::vector<i2c_random_wr_payload> getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const override;
+  float getExposureScore(float desired_ev, int exp_t, int exp_g_idx, float exp_gain, int gain_idx) const override;
+  int getSlaveAddress(int port) const override;
 };
-
-void ar0231_process_registers(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder &framed);
-std::vector<struct i2c_random_wr_payload> ox03c10_get_exp_registers(const SensorInfo *ci, int exposure_time, int new_exp_g, bool dc_gain_enabled);
-std::vector<struct i2c_random_wr_payload> ar0231_get_exp_registers(const SensorInfo *ci, int exposure_time, int new_exp_g, bool dc_gain_enabled);
