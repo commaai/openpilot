@@ -17,7 +17,6 @@
 #define CAMERA_ID_AR0231 0
 #define CAMERA_ID_OX03C10 1
 
-#define ANALOG_GAIN_MAX_CNT 55
 const int YUV_BUFFER_COUNT = 20;
 
 enum CameraType {
@@ -33,35 +32,6 @@ const bool env_disable_driver = getenv("DISABLE_DRIVER") != NULL;
 const bool env_debug_frames = getenv("DEBUG_FRAMES") != NULL;
 const bool env_log_raw_frames = getenv("LOG_RAW_FRAMES") != NULL;
 const bool env_ctrl_exp_from_params = getenv("CTRL_EXP_FROM_PARAMS") != NULL;
-
-typedef struct CameraInfo {
-  uint32_t frame_width, frame_height;
-  uint32_t frame_stride;
-  uint32_t frame_offset = 0;
-  uint32_t extra_height = 0;
-  int registers_offset = -1;
-  int stats_offset = -1;
-
-  int exposure_time_min;
-  int exposure_time_max;
-
-  float dc_gain_factor;
-  int dc_gain_min_weight;
-  int dc_gain_max_weight;
-  float dc_gain_on_grey;
-  float dc_gain_off_grey;
-
-  float sensor_analog_gains[ANALOG_GAIN_MAX_CNT];
-  int analog_gain_min_idx;
-  int analog_gain_max_idx;
-  int analog_gain_rec_idx;
-  int analog_gain_cost_delta;
-  float analog_gain_cost_low;
-  float analog_gain_cost_high;
-  float target_grey_factor;
-  float min_ev;
-  float max_ev;
-} CameraInfo;
 
 typedef struct FrameMetadata {
   uint32_t frame_id;
@@ -123,6 +93,3 @@ void cameras_close(MultiCameraState *s);
 void camerad_thread();
 
 int open_v4l_by_name_and_index(const char name[], int index = 0, int flags = O_RDWR | O_NONBLOCK);
-
-void ar0231_process_registers(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder &framed);
-
