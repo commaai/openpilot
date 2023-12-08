@@ -152,8 +152,8 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 17.0  # from learner
     elif candidate == CAR.NEXO_1ST_GEN:
       ret.mass = 3990 * CV.LB_TO_KG  # https://www.hyundainews.com/assets/documents/original/42768-2021NEXOProductGuideSpecs.pdf
-      ret.wheelbase = 2.79  # https://www.hyundainews.com/assets/documents/original/42768-2021NEXOProductGuideSpecs.pdf
-      ret.steerRatio = 14.19  # https://www.hyundainews.com/assets/documents/original/42768-2021NEXOProductGuideSpecs.pdf
+      ret.wheelbase = 2.79
+      ret.steerRatio = 14.19
 
     # Kia
     elif candidate == CAR.KIA_SORENTO:
