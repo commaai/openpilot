@@ -109,7 +109,7 @@ float ar0231_parse_temp_sensor(uint16_t calib1, uint16_t calib2, uint16_t data_r
 
 }  // namespace
 
-CameraAR0231::CameraAR0231() {
+AR0231::AR0231() {
   frame_width = FRAME_WIDTH;
   frame_height = FRAME_HEIGHT;
   frame_stride = FRAME_STRIDE;
@@ -160,7 +160,7 @@ void ar0231_process_registers(MultiCameraState *s, CameraState *c, cereal::Frame
 }
 
 
-std::vector<struct i2c_random_wr_payload> ar0231_get_exp_registers(const CameraInfo *ci, int exposure_time, int new_exp_g, bool dc_gain_enabled) {
+std::vector<struct i2c_random_wr_payload> ar0231_get_exp_registers(const SensorInfo *ci, int exposure_time, int new_exp_g, bool dc_gain_enabled) {
   uint16_t analog_gain_reg = 0xFF00 | (new_exp_g << 4) | new_exp_g;
   return {
     {0x3366, analog_gain_reg},

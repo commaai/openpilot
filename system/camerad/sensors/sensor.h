@@ -12,9 +12,9 @@ const size_t FRAME_WIDTH = 1928;
 const size_t FRAME_HEIGHT = 1208;
 const size_t FRAME_STRIDE = 2896;  // for 12 bit output. 1928 * 12 / 8 + 4 (alignment)
 
-class CameraInfo {
+class SensorInfo {
 public:
-  CameraInfo() = default;
+  SensorInfo() = default;
 
   uint32_t frame_width, frame_height;
   uint32_t frame_stride;
@@ -44,16 +44,16 @@ public:
   float max_ev;
 };
 
-class CameraAR0231 : public CameraInfo {
+class AR0231 : public SensorInfo {
 public:
-  CameraAR0231();
+  AR0231();
 };
 
-class CameraOx03c10 : public CameraInfo {
+class OX03C10 : public SensorInfo {
 public:
-  CameraOx03c10();
+  OX03C10();
 };
 
 void ar0231_process_registers(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder &framed);
-std::vector<struct i2c_random_wr_payload> ox03c10_get_exp_registers(const CameraInfo *ci, int exposure_time, int new_exp_g, bool dc_gain_enabled);
-std::vector<struct i2c_random_wr_payload> ar0231_get_exp_registers(const CameraInfo *ci, int exposure_time, int new_exp_g, bool dc_gain_enabled);
+std::vector<struct i2c_random_wr_payload> ox03c10_get_exp_registers(const SensorInfo *ci, int exposure_time, int new_exp_g, bool dc_gain_enabled);
+std::vector<struct i2c_random_wr_payload> ar0231_get_exp_registers(const SensorInfo *ci, int exposure_time, int new_exp_g, bool dc_gain_enabled);
