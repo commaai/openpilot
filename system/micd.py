@@ -12,6 +12,15 @@ REFERENCE_SPL = 2e-5  # newtons/m^2
 SAMPLE_RATE = 44100
 
 
+@retry(attempts=7, delay=3)
+def wait_for_devices(sd):
+  # reload sounddevice to reinitialize portaudio
+  sd._terminate()
+  sd._initialize()
+
+  assert len(sd.query_devices()) > 0
+
+
 def calculate_spl(measurements):
   # https://www.engineeringtoolbox.com/sound-pressure-d_711.html
   sound_pressure = np.sqrt(np.mean(measurements ** 2))  # RMS of amplitudes
@@ -78,17 +87,13 @@ class Mic:
 
       self.measurements = self.measurements[FFT_SAMPLES:]
 
-  @retry(attempts=7, delay=3)
-  def get_stream(self):
+  def micd_thread(self):
     # sounddevice must be imported after forking processes
     import sounddevice as sd
-    # reload sounddevice to reinitialize portaudio
-    sd._terminate()
-    sd._initialize()
 
-    return sd.InputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback)
+    if TICI:
+      wait_for_devices(sd) # wait for alsa to be initialized on device
 
-  def micd_thread(self):
     with self.get_stream() as stream:
       cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}")
       while True:
