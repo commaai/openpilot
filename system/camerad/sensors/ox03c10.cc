@@ -2,16 +2,6 @@
 
 namespace {
 
-const float DC_GAIN_OX03C10 = 7.32;
-
-const float DC_GAIN_ON_GREY_OX03C10 = 0.9;
-const float DC_GAIN_OFF_GREY_OX03C10 = 1.0;
-
-const int DC_GAIN_MIN_WEIGHT_OX03C10 = 1;  // always on is fine
-const int DC_GAIN_MAX_WEIGHT_OX03C10 = 1;
-
-const float TARGET_GREY_FACTOR_OX03C10 = 0.01;
-
 const float sensor_analog_gains_OX03C10[] = {
     1.0, 1.0625, 1.125, 1.1875, 1.25, 1.3125, 1.375, 1.4375, 1.5, 1.5625, 1.6875,
     1.8125, 1.9375, 2.0, 2.125, 2.25, 2.375, 2.5, 2.625, 2.75, 2.875, 3.0,
@@ -26,15 +16,6 @@ const uint32_t ox03c10_analog_gains_reg[] = {
     0x5C0, 0x600, 0x640, 0x680, 0x700, 0x780, 0x800, 0x880, 0x900, 0x980, 0xA00,
     0xA80, 0xB00, 0xB80, 0xC00, 0xC80, 0xD00, 0xD80, 0xE00, 0xE80, 0xF00, 0xF80};
 
-const int ANALOG_GAIN_MIN_IDX_OX03C10 = 0x0;
-const int ANALOG_GAIN_REC_IDX_OX03C10 = 0x0;  // 1x
-const int ANALOG_GAIN_MAX_IDX_OX03C10 = 0x36;
-const int ANALOG_GAIN_COST_DELTA_OX03C10 = -1;
-const float ANALOG_GAIN_COST_LOW_OX03C10 = 0.4;
-const float ANALOG_GAIN_COST_HIGH_OX03C10 = 6.4;
-
-const int EXPOSURE_TIME_MIN_OX03C10 = 2;  // 1x
-const int EXPOSURE_TIME_MAX_OX03C10 = 2016;
 const uint32_t VS_TIME_MIN_OX03C10 = 1;
 const uint32_t VS_TIME_MAX_OX03C10 = 34;  // vs < 35
 
@@ -47,25 +28,25 @@ OX03C10::OX03C10() {
   extra_height = 16;            // top 2 + bot 14
   frame_offset = 2;
 
-  dc_gain_factor = DC_GAIN_OX03C10;
-  dc_gain_min_weight = DC_GAIN_MIN_WEIGHT_OX03C10;
-  dc_gain_max_weight = DC_GAIN_MAX_WEIGHT_OX03C10;
-  dc_gain_on_grey = DC_GAIN_ON_GREY_OX03C10;
-  dc_gain_off_grey = DC_GAIN_OFF_GREY_OX03C10;
-  exposure_time_min = EXPOSURE_TIME_MIN_OX03C10;
-  exposure_time_max = EXPOSURE_TIME_MAX_OX03C10;
-  analog_gain_min_idx = ANALOG_GAIN_MIN_IDX_OX03C10;
-  analog_gain_rec_idx = ANALOG_GAIN_REC_IDX_OX03C10;
-  analog_gain_max_idx = ANALOG_GAIN_MAX_IDX_OX03C10;
-  analog_gain_cost_delta = ANALOG_GAIN_COST_DELTA_OX03C10;
-  analog_gain_cost_low = ANALOG_GAIN_COST_LOW_OX03C10;
-  analog_gain_cost_high = ANALOG_GAIN_COST_HIGH_OX03C10;
+  dc_gain_factor = 7.32;
+  dc_gain_min_weight = 1;  // always on is fine
+  dc_gain_max_weight = 1;
+  dc_gain_on_grey = 0.9;
+  dc_gain_off_grey = 1.0;
+  exposure_time_min = 2;  // 1x
+  exposure_time_max = 2016;
+  analog_gain_min_idx = 0x0;
+  analog_gain_rec_idx = 0x0;  // 1x
+  analog_gain_max_idx = 0x36;
+  analog_gain_cost_delta = -1;
+  analog_gain_cost_low = 0.4;
+  analog_gain_cost_high = 6.4;
   for (int i = 0; i <= analog_gain_max_idx; i++) {
     sensor_analog_gains[i] = sensor_analog_gains_OX03C10[i];
   }
   min_ev = (exposure_time_min + VS_TIME_MIN_OX03C10) * sensor_analog_gains[analog_gain_min_idx];
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
-  target_grey_factor = TARGET_GREY_FACTOR_OX03C10;
+  target_grey_factor = 0.01;
 }
 
 std::vector<struct i2c_random_wr_payload> ox03c10_get_exp_registers(const SensorInfo *ci, int exposure_time, int new_exp_g, bool dc_gain_enabled) {
