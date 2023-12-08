@@ -920,7 +920,7 @@ static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
   fill_frame_data(framed, c->buf.cur_frame_data, c);
 
-  c->ci->processRegisters(s, c, framed);
+  c->ci->processRegisters(c, framed);
   s->pm->send("driverCameraState", msg);
 }
 
@@ -935,7 +935,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   }
   LOGT(c->buf.cur_frame_data.frame_id, "%s: Image set", c == &s->road_cam ? "RoadCamera" : "WideRoadCamera");
 
-  c->ci->processRegisters(s, c, framed);
+  c->ci->processRegisters(c, framed);
   s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
 
   const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
