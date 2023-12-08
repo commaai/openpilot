@@ -28,7 +28,7 @@ class Debayer {
 public:
   Debayer(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s, int buf_width, int uv_offset) {
     char args[4096];
-    const CameraInfo *ci = &s->ci;
+    const CameraInfo *ci = s->ci.get();
     snprintf(args, sizeof(args),
              "-cl-fast-relaxed-math -cl-denorms-are-zero "
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
@@ -66,7 +66,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   this->yuv_type = init_yuv_type;
   frame_buf_count = frame_cnt;
 
-  const CameraInfo *ci = &s->ci;
+  const CameraInfo *ci = s->ci.get();
   // RAW frame
   const int frame_size = (ci->frame_height + ci->extra_height) * ci->frame_stride;
   camera_bufs = std::make_unique<VisionBuf[]>(frame_buf_count);
@@ -152,7 +152,7 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setProcessingTime(frame_data.processing_time);
 
   const float ev = c->cur_ev[frame_data.frame_id % 3];
-  const float perc = util::map_val(ev, c->min_ev, c->max_ev, 0.0f, 100.0f);
+  const float perc = util::map_val(ev, c->ci->min_ev, c->ci->max_ev, 0.0f, 100.0f);
   framed.setExposureValPercent(perc);
 
   if (c->camera_id == CAMERA_ID_AR0231) {
