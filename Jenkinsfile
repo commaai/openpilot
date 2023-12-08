@@ -15,7 +15,7 @@ export GIT_COMMIT=${env.GIT_COMMIT}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
 export MAPBOX_TOKEN='${env.MAPBOX_TOKEN}'
 # only use 1 thread for tici tests since most require HIL
-export PYTEST_ADDOPTS="-n 1"
+export PYTEST_ADDOPTS="-n 0"
 
 
 export GIT_SSH_COMMAND="ssh -i /data/gitkey"
@@ -158,7 +158,7 @@ node {
       // tici tests
       'onroad tests': {
         deviceStage("onroad", "tici-needs-can", ["SKIP_COPY=1"], [
-          ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR ./build_devel.sh"],
+          ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["check dirty", "release/check-dirty.sh"],
           ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
@@ -235,8 +235,8 @@ node {
         pcStage("car tests") {
           sh label: "build", script: "selfdrive/manager/build.py"
           sh label: "test_models.py", script: "INTERNAL_SEG_CNT=250 INTERNAL_SEG_LIST=selfdrive/car/tests/test_models_segs.txt FILEREADER_CACHE=1 \
-              pytest -n auto --dist=loadscope selfdrive/car/tests/test_models.py"
-          sh label: "test_car_interfaces.py", script: "MAX_EXAMPLES=100 pytest -n auto --dist=load selfdrive/car/tests/test_car_interfaces.py"
+              pytest selfdrive/car/tests/test_models.py"
+          sh label: "test_car_interfaces.py", script: "MAX_EXAMPLES=100 pytest selfdrive/car/tests/test_car_interfaces.py"
         }
       },
 
