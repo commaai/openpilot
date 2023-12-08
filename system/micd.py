@@ -95,7 +95,7 @@ class Mic:
     if TICI:
       wait_for_devices(sd) # wait for alsa to be initialized on device
 
-    with self.get_stream() as stream:
+    with sd.InputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback)  as stream:
       cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}")
       while True:
         self.update()
