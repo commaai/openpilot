@@ -12,7 +12,6 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system import micd
 
 from openpilot.common.realtime import Ratekeeper
-from openpilot.system.hardware import PC
 from openpilot.common.swaglog import cloudlog
 
 SAMPLE_RATE = 48000
