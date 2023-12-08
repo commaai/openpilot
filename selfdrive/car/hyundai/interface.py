@@ -33,6 +33,10 @@ class CarInterface(CarInterfaceBase):
     hda2 = Ecu.adas in [fw.ecu for fw in car_fw]
     CAN = CanBus(None, hda2, fingerprint)
 
+    if not hda2 and 0x12a in fingerprint[CAN.ACAN]:
+      hda2 = True
+      CAN = CanBus(None, hda2, fingerprint)
+
     if candidate in CANFD_CAR:
       # detect HDA2 with ADAS Driving ECU
       if hda2:
@@ -43,14 +47,15 @@ class CarInterface(CarInterfaceBase):
         # non-HDA2
         if 0x1cf not in fingerprint[CAN.ECAN]:
           ret.flags |= HyundaiFlags.CANFD_ALT_BUTTONS.value
-        # ICE cars do not have 0x130; GEARS message on 0x40 or 0x70 instead
-        if 0x130 not in fingerprint[CAN.ECAN]:
-          if 0x40 not in fingerprint[CAN.ECAN]:
-            ret.flags |= HyundaiFlags.CANFD_ALT_GEARS_2.value
-          else:
-            ret.flags |= HyundaiFlags.CANFD_ALT_GEARS.value
         if candidate not in CANFD_RADAR_SCC_CAR:
           ret.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
+
+      # ICE cars do not have 0x130; GEARS message on 0x40 or 0x70 instead
+      if 0x130 not in fingerprint[CAN.ECAN]:
+        if 0x40 not in fingerprint[CAN.ECAN]:
+          ret.flags |= HyundaiFlags.CANFD_ALT_GEARS_2.value
+        else:
+          ret.flags |= HyundaiFlags.CANFD_ALT_GEARS.value
     else:
       # Send LFA message on cars with HDA
       if 0x485 in fingerprint[2]:
