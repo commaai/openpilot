@@ -5,7 +5,7 @@ import pycurl
 from hashlib import sha256
 from io import BytesIO
 from tenacity import retry, wait_random_exponential, stop_after_attempt
-from openpilot.common.file_helpers import mkdirs_exists_ok, atomic_write_in_dir
+from openpilot.common.file_helpers import atomic_write_in_dir
 from openpilot.system.hardware.hw import Paths
 #  Cache chunk size
 K = 1000
@@ -40,7 +40,7 @@ class URLFile:
     except AttributeError:
       self._curl = self._tlocal.curl = pycurl.Curl()
     if not self._force_download:
-      mkdirs_exists_ok(Paths.download_cache_root())
+      os.makedirs(Paths.download_cache_root(), exist_ok=True)
 
   def __enter__(self):
     return self
