@@ -67,19 +67,6 @@ std::map<uint16_t, std::pair<int, int>> ar0231_build_register_lut(CameraState *c
   return registers;
 }
 
-std::map<uint16_t, uint16_t> ar0231_parse_registers(CameraState *c, uint8_t *data, std::initializer_list<uint16_t> addrs) {
-  if (c->ar0231_register_lut.empty()) {
-    c->ar0231_register_lut = ar0231_build_register_lut(c, data);
-  }
-
-  std::map<uint16_t, uint16_t> registers;
-  for (uint16_t addr : addrs) {
-    auto offset = c->ar0231_register_lut[addr];
-    registers[addr] = ((uint16_t)data[offset.first] << 8) | data[offset.second];
-  }
-  return registers;
-}
-
 float ar0231_parse_temp_sensor(uint16_t calib1, uint16_t calib2, uint16_t data_reg) {
   // See AR0231 Developer Guide - page 36
   float slope = (125.0 - 55.0) / ((float)calib1 - (float)calib2);
@@ -128,7 +115,7 @@ AR0231::AR0231() {
   target_grey_factor = 1.0;
 }
 
-void AR0231::processRegisters(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder &framed) const {
+void AR0231::processRegisters(CameraState *c, cereal::FrameData::Builder &framed) const {
   const uint8_t expected_preamble[] = {0x0a, 0xaa, 0x55, 0x20, 0xa5, 0x55};
   uint8_t *data = (uint8_t *)c->buf.cur_camera_buf->addr + c->ci->registers_offset;
 
@@ -137,7 +124,14 @@ void AR0231::processRegisters(MultiCameraState *s, CameraState *c, cereal::Frame
     return;
   }
 
-  auto registers = ar0231_parse_registers(c, data, {0x2000, 0x2002, 0x20b0, 0x20b2, 0x30c6, 0x30c8, 0x30ca, 0x30cc});
+  if (ar0231_register_lut.empty()) {
+    ar0231_register_lut = ar0231_build_register_lut(c, data);
+  }
+  std::map<uint16_t, uint16_t> registers;
+  for (uint16_t addr : {0x2000, 0x2002, 0x20b0, 0x20b2, 0x30c6, 0x30c8, 0x30ca, 0x30cc}) {
+    auto offset = ar0231_register_lut[addr];
+    registers[addr] = ((uint16_t)data[offset.first] << 8) | data[offset.second];
+  }
 
   uint32_t frame_id = ((uint32_t)registers[0x2000] << 16) | registers[0x2002];
   framed.setFrameIdSensor(frame_id);
