@@ -6,10 +6,13 @@ import urllib.parse
 import capnp
 import warnings
 
+from typing import Iterable, Iterator
 
 from cereal import log as capnp_log
 from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.route import Route, SegmentName
+
+LogIterable = Iterable[capnp._DynamicStructReader]
 
 # this is an iterator itself, and uses private variables from LogReader
 class MultiLogIterator:
@@ -30,7 +33,7 @@ class MultiLogIterator:
 
     return self._log_readers[i]
 
-  def __iter__(self):
+  def __iter__(self) -> Iterator[capnp._DynamicStructReader]:
     return self
 
   def _inc(self):
@@ -107,7 +110,7 @@ class LogReader:
   def from_bytes(cls, dat):
     return cls("", dat=dat)
 
-  def __iter__(self):
+  def __iter__(self) -> Iterator[capnp._DynamicStructReader]:
     for ent in self._ents:
       if self._only_union_types:
         try:

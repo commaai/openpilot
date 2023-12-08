@@ -1,6 +1,7 @@
 
-#include "opendbc/can/common.h"
 #undef INFO
+#include <QDir>
+
 #include "catch2/catch.hpp"
 #include "tools/replay/logreader.h"
 #include "tools/cabana/dbc/dbcmanager.h"
@@ -29,47 +30,7 @@ TEST_CASE("DBCFile::generateDBC") {
   }
 }
 
-TEST_CASE("Parse can messages") {
-  DBCManager dbc(nullptr);
-  dbc.open({0}, "toyota_new_mc_pt_generated");
-  CANParser can_parser(0, "toyota_new_mc_pt_generated", {}, {});
-
-  LogReader log;
-  REQUIRE(log.load(TEST_RLOG_URL, nullptr, {}, true));
-  REQUIRE(log.events.size() > 0);
-  for (auto e : log.events) {
-    if (e->which == cereal::Event::Which::CAN) {
-      std::map<std::pair<uint32_t, QString>, std::vector<double>> values_1;
-      for (const auto &c : e->event.getCan()) {
-        const auto msg = dbc.msg({.source = c.getSrc(), .address = c.getAddress()});
-        if (c.getSrc() == 0 && msg) {
-          for (auto sig : msg->getSignals()) {
-            double val = get_raw_value((uint8_t *)c.getDat().begin(), c.getDat().size(), *sig);
-            values_1[{c.getAddress(), sig->name}].push_back(val);
-          }
-        }
-      }
-
-      can_parser.UpdateCans(e->mono_time, e->event.getCan());
-      std::vector<SignalValue> values_2;
-      can_parser.query_latest(values_2);
-      for (auto &[key, v1] : values_1) {
-        bool found = false;
-        for (auto &v2 : values_2) {
-          if (v2.address == key.first && key.second == v2.name.c_str()) {
-            REQUIRE(v2.all_values.size() == v1.size());
-            REQUIRE(v2.all_values == v1);
-            found = true;
-            break;
-          }
-        }
-        REQUIRE(found);
-      }
-    }
-  }
-}
-
-TEST_CASE("Parse dbc") {
+TEST_CASE("parse_dbc") {
   QString content = R"(
 BO_ 160 message_1: 8 EON
   SG_ signal_1 : 0|12@1+ (1,0) [0|4095] "unit"  XXX
@@ -83,7 +44,7 @@ VAL_ 160 signal_1 0 "disabled" 1.2 "initializing" 2 "fault";
 
 CM_ BO_ 160 "message comment" ;
 CM_ SG_ 160 signal_1 "signal comment";
-CM_ SG_ 160 signal_2 "multiple line comment
+CM_ SG_ 160 signal_2 "multiple line comment 
 1
 2
 ";)";
@@ -113,7 +74,7 @@ CM_ SG_ 160 signal_2 "multiple line comment
   REQUIRE(sig_1->val_desc[2] == std::pair<double, QString>{2, "fault"});
 
   auto &sig_2 = msg->sigs[1];
-  REQUIRE(sig_2->comment == "multiple line comment\n1\n2");
+  REQUIRE(sig_2->comment == "multiple line comment \n1\n2");
 
   // multiplexed signals
   msg = file.msg(162);
@@ -125,4 +86,18 @@ CM_ SG_ 160 signal_2 "multiple line comment
   REQUIRE(msg->sigs[1]->start_bit == 12);
   REQUIRE(msg->sigs[1]->size == 1);
   REQUIRE(msg->sigs[1]->receiver_name == "XXX");
+}
+
+TEST_CASE("parse_opendbc") {
+  QDir dir(OPENDBC_FILE_PATH);
+  QStringList errors;
+  for (auto fn : dir.entryList({"*.dbc"}, QDir::Files, QDir::Name)) {
+    try {
+      auto dbc = DBCFile(dir.filePath(fn));
+    } catch (std::exception &e) {
+      errors.push_back(e.what());
+    }
+  }
+  INFO(errors.join("\n").toStdString());
+  REQUIRE(errors.empty());
 }

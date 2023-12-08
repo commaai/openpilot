@@ -4,7 +4,6 @@
 #include <map>
 #include <memory>
 #include <optional>
-#include <set>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -28,7 +27,6 @@ enum REPLAY_FLAGS {
   REPLAY_FLAG_NO_FILE_CACHE = 0x0020,
   REPLAY_FLAG_QCAMERA = 0x0040,
   REPLAY_FLAG_NO_HW_DECODER = 0x0100,
-  REPLAY_FLAG_FULL_SPEED = 0x0200,
   REPLAY_FLAG_NO_VIPC = 0x0400,
   REPLAY_FLAG_ALL_SERVICES = 0x0800,
 };
@@ -44,13 +42,14 @@ enum class FindFlag {
 
 enum class TimelineType { None, Engaged, AlertInfo, AlertWarning, AlertCritical, UserFlag };
 typedef bool (*replayEventFilter)(const Event *, void *);
+Q_DECLARE_METATYPE(std::shared_ptr<LogReader>);
 
 class Replay : public QObject {
   Q_OBJECT
 
 public:
-  Replay(QString route, QStringList allow, QStringList block, QStringList base_blacklist, SubMaster *sm = nullptr,
-          uint32_t flags = REPLAY_FLAG_NONE, QString data_dir = "", QObject *parent = 0);
+  Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr,
+         uint32_t flags = REPLAY_FLAG_NONE, QString data_dir = "", QObject *parent = 0);
   ~Replay();
   bool load();
   void start(int seconds = 0);
@@ -91,6 +90,7 @@ signals:
   void streamStarted();
   void segmentsMerged();
   void seekedTo(double sec);
+  void qLogLoaded(int segnum, std::shared_ptr<LogReader> qlog);
 
 protected slots:
   void segmentLoadFinished(bool success);
@@ -112,8 +112,6 @@ protected:
   }
 
   QThread *stream_thread_ = nullptr;
-
-  // logs
   std::mutex stream_lock_;
   std::condition_variable stream_cv_;
   std::atomic<bool> updating_events_ = false;
@@ -140,9 +138,8 @@ protected:
   std::mutex timeline_lock;
   QFuture<void> timeline_future;
   std::vector<std::tuple<double, double, TimelineType>> timeline;
-  std::set<cereal::Event::Which> allow_list;
   std::string car_fingerprint_;
-  float speed_ = 1.0;
+  std::atomic<float> speed_ = 1.0;
   replayEventFilter event_filter = nullptr;
   void *filter_opaque = nullptr;
   int segment_cache_limit = MIN_SEGMENTS_CACHE;

@@ -29,7 +29,6 @@ sudo abctl --set_success
 
 # patch sshd config
 sudo mount -o rw,remount /
-echo tici-$(cat /proc/cmdline | sed -e 's/^.*androidboot.serialno=//' -e 's/ .*$//') | sudo tee /etc/hostname
 sudo sed -i "s,/data/params/d/GithubSshKeys,/usr/comma/setup_keys," /etc/ssh/sshd_config
 sudo systemctl daemon-reload
 sudo systemctl restart ssh
@@ -43,11 +42,11 @@ while true; do
     sudo systemctl start ssh
   fi
 
-  if ! pgrep -f 'ciui.py' > /dev/null 2>&1; then
-    echo 'starting UI'
-    cp $SOURCE_DIR/selfdrive/test/ciui.py /data/
-    /data/ciui.py &
-  fi
+  #if ! pgrep -f 'ciui.py' > /dev/null 2>&1; then
+  #  echo 'starting UI'
+  #  cp $SOURCE_DIR/selfdrive/test/ciui.py /data/
+  #  /data/ciui.py &
+  #fi
 
   sleep 5s
 done

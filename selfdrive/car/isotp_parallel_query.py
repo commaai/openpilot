@@ -3,7 +3,7 @@ from collections import defaultdict
 from functools import partial
 
 import cereal.messaging as messaging
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_addr_for_tx_addr
 

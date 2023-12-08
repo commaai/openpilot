@@ -14,19 +14,11 @@
 #include "common/swaglog.h"
 #include "system/hardware/hw.h"
 
-#define CAMERA_ID_IMX298 0
-#define CAMERA_ID_IMX179 1
-#define CAMERA_ID_S5K3P8SP 2
-#define CAMERA_ID_OV8865 3
-#define CAMERA_ID_IMX298_FLIPPED 4
-#define CAMERA_ID_OV10640 5
-#define CAMERA_ID_LGC920 6
-#define CAMERA_ID_LGC615 7
-#define CAMERA_ID_AR0231 8
-#define CAMERA_ID_OX03C10 9
-#define CAMERA_ID_MAX 10
+#define CAMERA_ID_AR0231 0
+#define CAMERA_ID_OX03C10 1
+#define CAMERA_ID_MAX 2
 
-const int YUV_BUFFER_COUNT = 40;
+const int YUV_BUFFER_COUNT = 20;
 
 enum CameraType {
   RoadCam = 0,
@@ -55,7 +47,7 @@ typedef struct FrameMetadata {
   uint32_t frame_id;
 
   // Timestamps
-  uint64_t timestamp_sof; // only set on tici
+  uint64_t timestamp_sof;
   uint64_t timestamp_eof;
 
   // Exposure
@@ -111,3 +103,6 @@ void cameras_close(MultiCameraState *s);
 void camerad_thread();
 
 int open_v4l_by_name_and_index(const char name[], int index = 0, int flags = O_RDWR | O_NONBLOCK);
+
+void ar0231_process_registers(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder &framed);
+

@@ -14,12 +14,17 @@ export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
 export MAPBOX_TOKEN='${env.MAPBOX_TOKEN}'
+# only use 1 thread for tici tests since most require HIL
+export PYTEST_ADDOPTS="-n 0"
+
 
 export GIT_SSH_COMMAND="ssh -i /data/gitkey"
 
 source ~/.bash_profile
 if [ -f /TICI ]; then
   source /etc/profile
+
+  rm -rf ~/.commacache
 
   if ! systemctl is-active --quiet systemd-resolved; then
     echo "restarting resolved"
@@ -62,7 +67,9 @@ def deviceStage(String stageName, String deviceType, List env, def steps) {
     docker.image('ghcr.io/commaai/alpine-ssh').inside('--user=root') {
       lock(resource: "", label: deviceType, inversePrecedence: true, variable: 'device_ip', quantity: 1) {
         timeout(time: 20, unit: 'MINUTES') {
-          device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
+          retry (3) {
+            device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
+          }
           steps.each { item ->
             device(device_ip, item[0], item[1])
           }
@@ -81,10 +88,14 @@ def pcStage(String stageName, Closure body) {
 
     checkout scm
 
-    def dockerArgs = '--user=root -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache';
+    def dockerArgs = "--user=batman -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache -e PYTHONPATH=${env.WORKSPACE}";
     docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .").inside(dockerArgs) {
       timeout(time: 20, unit: 'MINUTES') {
         try {
+          // TODO: remove these after all jenkins jobs are running as batman (merged with master)
+          sh "sudo chown -R batman:batman /tmp/scons_cache"
+          sh "sudo chown -R batman:batman /tmp/comma_download_cache"
+
           sh "git config --global --add safe.directory '*'"
           sh "git submodule update --init --recursive"
           sh "git lfs pull"
@@ -147,11 +158,11 @@ node {
       // tici tests
       'onroad tests': {
         deviceStage("onroad", "tici-needs-can", ["SKIP_COPY=1"], [
-          ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR ./build_devel.sh"],
+          ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["check dirty", "release/check-dirty.sh"],
-          ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
-          ["time to onroad", "cd selfdrive/test/ && pytest test_time_to_onroad.py"],
+          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
+          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
         ])
       },
       'HW + Unit Tests': {
@@ -186,17 +197,17 @@ node {
       'sensord': {
         deviceStage("LSM + MMC", "tici-lsmc", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
-          ["test sensord", "cd system/sensord/tests && pytest test_sensord.py"],
+          ["test sensord", "pytest system/sensord/tests/test_sensord.py"],
         ])
         deviceStage("BMX + LSM", "tici-bmx-lsm", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
-          ["test sensord", "cd system/sensord/tests && pytest test_sensord.py"],
+          ["test sensord", "pytest system/sensord/tests/test_sensord.py"],
         ])
       },
       'replay': {
         deviceStage("tici", "tici-replay", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
-          ["model replay", "cd selfdrive/test/process_replay && ./model_replay.py"],
+          ["model replay", "selfdrive/test/process_replay/model_replay.py"],
         ])
       },
       'tizi': {
@@ -206,7 +217,7 @@ node {
           ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
           ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
           ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
-          ["test rawgpsd", "pytest system/sensord/rawgps/test_rawgps.py"],
+          ["test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py"],
         ])
       },
 
@@ -215,15 +226,17 @@ node {
         pcStage("PC tests") {
           // tests that our build system's dependencies are configured properly,
           // needs a machine with lots of cores
-          sh label: "test multi-threaded build", script: "scons --no-cache --random -j42"
+          sh label: "test multi-threaded build",
+             script: '''#!/bin/bash
+                        scons --no-cache --random -j$(nproc)'''
         }
       },
       'car tests': {
         pcStage("car tests") {
-          sh "scons -j30"
+          sh label: "build", script: "selfdrive/manager/build.py"
           sh label: "test_models.py", script: "INTERNAL_SEG_CNT=250 INTERNAL_SEG_LIST=selfdrive/car/tests/test_models_segs.txt FILEREADER_CACHE=1 \
-              pytest -n42 --dist=loadscope selfdrive/car/tests/test_models.py"
-          sh label: "test_car_interfaces.py", script: "MAX_EXAMPLES=100 pytest -n42 selfdrive/car/tests/test_car_interfaces.py"
+              pytest selfdrive/car/tests/test_models.py"
+          sh label: "test_car_interfaces.py", script: "MAX_EXAMPLES=100 pytest selfdrive/car/tests/test_car_interfaces.py"
         }
       },
 

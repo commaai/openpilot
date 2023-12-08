@@ -105,6 +105,7 @@ void Networking::showEvent(QShowEvent *event) {
 }
 
 void Networking::hideEvent(QHideEvent *event) {
+  main_layout->setCurrentWidget(wifiScreen);
   wifi->stop();
 }
 

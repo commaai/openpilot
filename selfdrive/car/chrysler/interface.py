@@ -28,7 +28,7 @@ class CarInterface(CarInterfaceBase):
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
     if candidate not in RAM_CARS:
       # Newer FW versions standard on the following platforms, or flashed by a dealer onto older platforms have a higher minimum steering speed.
-      new_eps_platform = candidate in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE_2019)
+      new_eps_platform = candidate in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_GRAND_CHEROKEE_2019)
       new_eps_firmware = any(fw.ecu == 'eps' and fw.fwVersion[:4] >= b"6841" for fw in car_fw)
       if new_eps_platform or new_eps_firmware:
         ret.flags |= ChryslerFlags.HIGHER_MIN_STEERING_SPEED.value
@@ -45,7 +45,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00006
 
     # Jeep
-    elif candidate in (CAR.JEEP_CHEROKEE, CAR.JEEP_CHEROKEE_2019):
+    elif candidate in (CAR.JEEP_GRAND_CHEROKEE, CAR.JEEP_GRAND_CHEROKEE_2019):
       ret.mass = 1778
       ret.wheelbase = 2.71
       ret.steerRatio = 16.7
@@ -64,7 +64,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2493.
       ret.minSteerSpeed = 14.5
       # Older EPS FW allow steer to zero
-      if any(fw.ecu == 'eps' and fw.fwVersion[:4] <= b"6831" for fw in car_fw):
+      if any(fw.ecu == 'eps' and b"68" < fw.fwVersion[:4] <= b"6831" for fw in car_fw):
         ret.minSteerSpeed = 0.
 
     elif candidate == CAR.RAM_HD:

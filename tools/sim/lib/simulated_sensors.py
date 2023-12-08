@@ -123,5 +123,3 @@ class SimulatedSensors:
     if (now - self.last_perp_update) > 0.25:
       self.send_peripheral_state()
       self.last_perp_update = now
-
-    self.send_camera_images(world)

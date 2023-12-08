@@ -16,6 +16,7 @@ class ConsoleUI : public QObject {
 public:
   ConsoleUI(Replay *replay, QObject *parent = 0);
   ~ConsoleUI();
+  inline static const std::array speed_array = {0.2f, 0.5f, 1.0f, 2.0f, 3.0f};
 
 private:
   void initWindows();

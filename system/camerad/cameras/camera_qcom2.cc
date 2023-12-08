@@ -23,7 +23,8 @@
 #include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sync.h"
 #include "common/swaglog.h"
-#include "system/camerad/cameras/sensor2_i2c.h"
+#include "system/camerad/sensors/ar0231_registers.h"
+#include "system/camerad/sensors/ox03c10_registers.h"
 
 // For debugging:
 // echo "4294967295" > /sys/module/cam_debug_util/parameters/debug_mdl
@@ -596,8 +597,6 @@ void CameraState::camera_init(MultiCameraState *s, VisionIpcServer * v, int came
   request_id_last = 0;
   skipped = true;
 
-  camera_set_parameters();
-
   buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, yuv_type);
   camera_map_bufs(s);
 }
@@ -633,6 +632,8 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
     return;
   }
 
+  camera_set_parameters();
+
   // create session
   struct cam_req_mgr_session_info session_info = {};
   ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_CREATE_SESSION, &session_info, sizeof(session_info));
@@ -665,51 +666,51 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
   if (!enabled) return;
 
   struct cam_isp_in_port_info in_port_info = {
-      .res_type = (uint32_t[]){CAM_ISP_IFE_IN_RES_PHY_0, CAM_ISP_IFE_IN_RES_PHY_1, CAM_ISP_IFE_IN_RES_PHY_2}[camera_num],
+    .res_type = (uint32_t[]){CAM_ISP_IFE_IN_RES_PHY_0, CAM_ISP_IFE_IN_RES_PHY_1, CAM_ISP_IFE_IN_RES_PHY_2}[camera_num],
 
-      .lane_type = CAM_ISP_LANE_TYPE_DPHY,
-      .lane_num = 4,
-      .lane_cfg = 0x3210,
+    .lane_type = CAM_ISP_LANE_TYPE_DPHY,
+    .lane_num = 4,
+    .lane_cfg = 0x3210,
 
-      .vc = 0x0,
-      .dt = dt,
+    .vc = 0x0,
+    .dt = dt,
+    .format = CAM_FORMAT_MIPI_RAW_12,
+
+    .test_pattern = 0x2,  // 0x3?
+    .usage_type = 0x0,
+
+    .left_start = 0,
+    .left_stop = ci.frame_width - 1,
+    .left_width = ci.frame_width,
+
+    .right_start = 0,
+    .right_stop = ci.frame_width - 1,
+    .right_width = ci.frame_width,
+
+    .line_start = 0,
+    .line_stop = ci.frame_height + ci.extra_height - 1,
+    .height = ci.frame_height + ci.extra_height,
+
+    .pixel_clk = 0x0,
+    .batch_size = 0x0,
+    .dsp_mode = CAM_ISP_DSP_MODE_NONE,
+    .hbi_cnt = 0x0,
+    .custom_csid = 0x0,
+
+    .num_out_res = 0x1,
+    .data[0] = (struct cam_isp_out_port_info){
+      .res_type = CAM_ISP_IFE_OUT_RES_RDI_0,
       .format = CAM_FORMAT_MIPI_RAW_12,
-
-      .test_pattern = 0x2,  // 0x3?
-      .usage_type = 0x0,
-
-      .left_start = 0,
-      .left_stop = ci.frame_width - 1,
-      .left_width = ci.frame_width,
-
-      .right_start = 0,
-      .right_stop = ci.frame_width - 1,
-      .right_width = ci.frame_width,
-
-      .line_start = 0,
-      .line_stop = ci.frame_height + ci.extra_height - 1,
+      .width = ci.frame_width,
       .height = ci.frame_height + ci.extra_height,
-
-      .pixel_clk = 0x0,
-      .batch_size = 0x0,
-      .dsp_mode = CAM_ISP_DSP_MODE_NONE,
-      .hbi_cnt = 0x0,
-      .custom_csid = 0x0,
-
-      .num_out_res = 0x1,
-      .data[0] = (struct cam_isp_out_port_info){
-          .res_type = CAM_ISP_IFE_OUT_RES_RDI_0,
-          .format = CAM_FORMAT_MIPI_RAW_12,
-          .width = ci.frame_width,
-          .height = ci.frame_height + ci.extra_height,
-          .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
-      },
+      .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
+    },
   };
   struct cam_isp_resource isp_resource = {
-      .resource_id = CAM_ISP_RES_ID_PORT,
-      .handle_type = CAM_HANDLE_USER_POINTER,
-      .res_hdl = (uint64_t)&in_port_info,
-      .length = sizeof(in_port_info),
+    .resource_id = CAM_ISP_RES_ID_PORT,
+    .handle_type = CAM_HANDLE_USER_POINTER,
+    .res_hdl = (uint64_t)&in_port_info,
+    .length = sizeof(in_port_info),
   };
 
   auto isp_dev_handle_ = device_acquire(multi_cam_state->isp_fd, session_handle, &isp_resource);
@@ -907,70 +908,6 @@ void cameras_close(MultiCameraState *s) {
   delete s->pm;
 }
 
-std::map<uint16_t, std::pair<int, int>> CameraState::ar0231_build_register_lut(uint8_t *data) {
-  // This function builds a lookup table from register address, to a pair of indices in the
-  // buffer where to read this address. The buffer contains padding bytes,
-  // as well as markers to indicate the type of the next byte.
-  //
-  // 0xAA is used to indicate the MSB of the address, 0xA5 for the LSB of the address.
-  // Every byte of data (MSB and LSB) is preceded by 0x5A. Specifying an address is optional
-  // for contiguous ranges. See page 27-29 of the AR0231 Developer guide for more information.
-
-  int max_i[] = {1828 / 2 * 3, 1500 / 2 * 3};
-  auto get_next_idx = [](int cur_idx) {
-    return (cur_idx % 3 == 1) ? cur_idx + 2 : cur_idx + 1; // Every third byte is padding
-  };
-
-  std::map<uint16_t, std::pair<int, int>> registers;
-  for (int register_row = 0; register_row < 2; register_row++) {
-    uint8_t *registers_raw = data + ci.frame_stride * register_row;
-    assert(registers_raw[0] == 0x0a); // Start of line
-
-    int value_tag_count = 0;
-    int first_val_idx = 0;
-    uint16_t cur_addr = 0;
-
-    for (int i = 1; i <= max_i[register_row]; i = get_next_idx(get_next_idx(i))) {
-      int val_idx = get_next_idx(i);
-
-      uint8_t tag = registers_raw[i];
-      uint16_t val = registers_raw[val_idx];
-
-      if (tag == 0xAA) { // Register MSB tag
-        cur_addr = val << 8;
-      } else if (tag == 0xA5) { // Register LSB tag
-        cur_addr |= val;
-        cur_addr -= 2; // Next value tag will increment address again
-      } else if (tag == 0x5A) { // Value tag
-
-        // First tag
-        if (value_tag_count % 2 == 0) {
-          cur_addr += 2;
-          first_val_idx = val_idx;
-        } else {
-          registers[cur_addr] = std::make_pair(first_val_idx + ci.frame_stride * register_row, val_idx + ci.frame_stride * register_row);
-        }
-
-        value_tag_count++;
-      }
-    }
-  }
-  return registers;
-}
-
-std::map<uint16_t, uint16_t> CameraState::ar0231_parse_registers(uint8_t *data, std::initializer_list<uint16_t> addrs) {
-  if (ar0231_register_lut.empty()) {
-    ar0231_register_lut = ar0231_build_register_lut(data);
-  }
-
-  std::map<uint16_t, uint16_t> registers;
-  for (uint16_t addr : addrs) {
-    auto offset = ar0231_register_lut[addr];
-    registers[addr] = ((uint16_t)data[offset.first] << 8) | data[offset.second];
-  }
-  return registers;
-}
-
 void CameraState::handle_camera_event(void *evdat) {
   if (!enabled) return;
   struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)evdat;
@@ -1098,8 +1035,8 @@ void CameraState::set_camera_exposure(float grey_frac) {
 
   std::string gain_bytes, time_bytes;
   if (env_ctrl_exp_from_params) {
-    gain_bytes = Params().get("CameraDebugExpGain");
-    time_bytes = Params().get("CameraDebugExpTime");
+    gain_bytes = params.get("CameraDebugExpGain");
+    time_bytes = params.get("CameraDebugExpTime");
   }
 
   if (gain_bytes.size() > 0 && time_bytes.size() > 0) {
@@ -1178,32 +1115,6 @@ void CameraState::set_camera_exposure(float grey_frac) {
     };
     sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
   }
-}
-
-static float ar0231_parse_temp_sensor(uint16_t calib1, uint16_t calib2, uint16_t data_reg) {
-  // See AR0231 Developer Guide - page 36
-  float slope = (125.0 - 55.0) / ((float)calib1 - (float)calib2);
-  float t0 = 55.0 - slope * (float)calib2;
-  return t0 + slope * (float)data_reg;
-}
-
-static void ar0231_process_registers(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder &framed){
-  const uint8_t expected_preamble[] = {0x0a, 0xaa, 0x55, 0x20, 0xa5, 0x55};
-  uint8_t *data = (uint8_t*)c->buf.cur_camera_buf->addr + c->ci.registers_offset;
-
-  if (memcmp(data, expected_preamble, std::size(expected_preamble)) != 0){
-    LOGE("unexpected register data found");
-    return;
-  }
-
-  auto registers = c->ar0231_parse_registers(data, {0x2000, 0x2002, 0x20b0, 0x20b2, 0x30c6, 0x30c8, 0x30ca, 0x30cc});
-
-  uint32_t frame_id = ((uint32_t)registers[0x2000] << 16) | registers[0x2002];
-  framed.setFrameIdSensor(frame_id);
-
-  float temp_0 = ar0231_parse_temp_sensor(registers[0x30c6], registers[0x30c8], registers[0x20b0]);
-  float temp_1 = ar0231_parse_temp_sensor(registers[0x30ca], registers[0x30cc], registers[0x20b2]);
-  framed.setTemperaturesC({temp_0, temp_1});
 }
 
 static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
