@@ -9,6 +9,7 @@
 
 #include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/cameras/camera_util.h"
+#include "system/camerad/sensors/sensor.h"
 #include "common/params.h"
 #include "common/util.h"
 
@@ -82,7 +83,7 @@ public:
 
   int sensors_init();
   void sensors_poke(int request_id);
-  void sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word);
+  void sensors_i2c(const struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word);
 
   // Register parsing
   std::map<uint16_t, std::pair<int, int>> ar0231_register_lut;
