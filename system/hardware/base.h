@@ -29,7 +29,6 @@ public:
   static void poweroff() {}
   static void set_brightness(int percent) {}
   static void set_display_power(bool on) {}
-  static void set_volume(float volume) {}
 
   static bool get_ssh_enabled() { return false; }
   static void set_ssh_enabled(bool enabled) {}
