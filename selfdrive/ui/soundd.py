@@ -128,15 +128,15 @@ class Soundd:
 
   @retry(attempts=7, delay=3)
   def get_stream(self):
+    # sounddevice must be imported after forking processes
     import sounddevice as sd
+    # reload sounddevice to reinitialize portaudio
     sd._terminate()
     sd._initialize()
 
     return sd.OutputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback)
 
   def soundd_thread(self):
-    # sounddevice must be imported after forking processes
-
     with self.get_stream() as stream:
       rk = Ratekeeper(20)
       sm = messaging.SubMaster(['controlsState', 'microphone'])
