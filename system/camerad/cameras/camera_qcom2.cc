@@ -46,13 +46,7 @@ int CameraState::clear_req_queue() {
 void CameraState::sensors_start() {
   if (!enabled) return;
   LOGD("starting sensor %d", camera_num);
-  if (camera_id == CAMERA_ID_AR0231) {
-    sensors_i2c(start_reg_array_ar0231, std::size(start_reg_array_ar0231), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
-  } else if (camera_id == CAMERA_ID_OX03C10) {
-    sensors_i2c(start_reg_array_ox03c10, std::size(start_reg_array_ox03c10), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
-  } else {
-    assert(false);
-  }
+  sensors_i2c(ci->start_reg_array.data(), ci->start_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, ci->data_word);
 }
 
 void CameraState::sensors_poke(int request_id) {
@@ -151,15 +145,8 @@ int CameraState::sensors_init() {
   probe->addr_type = CAMERA_SENSOR_I2C_TYPE_WORD;
   probe->op_code = 3;   // don't care?
   probe->cmd_type = CAMERA_SENSOR_CMD_TYPE_PROBE;
-  if (camera_id == CAMERA_ID_AR0231) {
-    probe->reg_addr = 0x3000;
-    probe->expected_data = 0x354;
-  } else if (camera_id == CAMERA_ID_OX03C10) {
-    probe->reg_addr = 0x300a;
-    probe->expected_data = 0x5803;
-  } else {
-    assert(false);
-  }
+  probe->reg_addr = ci->probe_reg_addr;
+  probe->expected_data = ci->probe_expected_data;
   probe->data_mask = 0;
 
   //buf_desc[1].size = buf_desc[1].length = 148;
@@ -182,7 +169,7 @@ int CameraState::sensors_init() {
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
   power->power_settings[0].power_seq_type = 0;
-  power->power_settings[0].config_val_low = (camera_id == CAMERA_ID_AR0231) ? 19200000 : 24000000; //Hz
+  power->power_settings[0].config_val_low = ci->power_config_val_low;
   power = power_set_wait(power, 1);
 
   // reset high
@@ -520,18 +507,8 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
   LOGD("acquire sensor dev");
 
   LOG("-- Configuring sensor");
-  uint32_t dt;
-  if (camera_id == CAMERA_ID_AR0231) {
-    sensors_i2c(init_array_ar0231, std::size(init_array_ar0231), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
-    dt = 0x12;  // Changing stats to 0x2C doesn't work, so change pixels to 0x12 instead
-  } else if (camera_id == CAMERA_ID_OX03C10) {
-    sensors_i2c(init_array_ox03c10, std::size(init_array_ox03c10), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
-    // one is 0x2a, two are 0x2b
-    dt = 0x2c;
-  } else {
-    assert(false);
-  }
-  printf("dt is %x\n", dt);
+  sensors_i2c(ci->init_reg_array.data(), ci->init_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, ci->data_word);
+  printf("dt is %x\n", ci->in_port_info_dt);
 
   // NOTE: to be able to disable road and wide road, we still have to configure the sensor over i2c
   // If you don't do this, the strobe GPIO is an output (even in reset it seems!)
@@ -545,7 +522,7 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
     .lane_cfg = 0x3210,
 
     .vc = 0x0,
-    .dt = dt,
+    .dt = ci->in_port_info_dt,
     .format = CAM_FORMAT_MIPI_RAW_12,
 
     .test_pattern = 0x2,  // 0x3?

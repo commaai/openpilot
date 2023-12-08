@@ -110,6 +110,7 @@ float ar0231_parse_temp_sensor(uint16_t calib1, uint16_t calib2, uint16_t data_r
 }  // namespace
 
 CameraAR0231::CameraAR0231() {
+  data_word = true;
   frame_width = FRAME_WIDTH;
   frame_height = FRAME_HEIGHT;
   frame_stride = FRAME_STRIDE;
@@ -118,6 +119,13 @@ CameraAR0231::CameraAR0231() {
   registers_offset = 0;
   frame_offset = AR0231_REGISTERS_HEIGHT;
   stats_offset = AR0231_REGISTERS_HEIGHT + FRAME_HEIGHT;
+
+  start_reg_array.assign(std::begin(start_reg_array_ar0231), std::end(start_reg_array_ar0231));
+  init_reg_array.assign(std::begin(init_array_ar0231), std::end(init_array_ar0231));
+  probe_reg_addr = 0x3000;
+  probe_expected_data = 0x354;
+  in_port_info_dt = 0x12;  // Changing stats to 0x2C doesn't work, so change pixels to 0x12 instead
+  power_config_val_low = 19200000; //Hz
 
   dc_gain_factor = DC_GAIN_AR0231;
   dc_gain_min_weight = DC_GAIN_MIN_WEIGHT_AR0231;

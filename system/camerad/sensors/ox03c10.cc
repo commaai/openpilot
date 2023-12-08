@@ -41,11 +41,19 @@ const uint32_t VS_TIME_MAX_OX03C10 = 34;  // vs < 35
 }  // namespace
 
 CameraOx03c10::CameraOx03c10() {
+  data_word = false;
   frame_width = FRAME_WIDTH;
   frame_height = FRAME_HEIGHT;
   frame_stride = FRAME_STRIDE;  // (0xa80*12//8)
   extra_height = 16;            // top 2 + bot 14
   frame_offset = 2;
+
+  probe_reg_addr = 0x300a;
+  probe_expected_data = 0x5803;
+  start_reg_array.assign(std::begin(start_reg_array_ox03c10), std::end(start_reg_array_ox03c10));
+  init_reg_array.assign(std::begin(init_array_ox03c10), std::end(init_array_ox03c10));
+  in_port_info_dt = 0x2c; // one is 0x2a, two are 0x2b
+  power_config_val_low = 24000000; //Hz
 
   dc_gain_factor = DC_GAIN_OX03C10;
   dc_gain_min_weight = DC_GAIN_MIN_WEIGHT_OX03C10;

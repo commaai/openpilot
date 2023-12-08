@@ -42,6 +42,14 @@ public:
   float target_grey_factor;
   float min_ev;
   float max_ev;
+
+  bool data_word;
+  uint32_t probe_reg_addr;
+  uint32_t probe_expected_data;
+  std::vector<i2c_random_wr_payload> start_reg_array;
+  std::vector<i2c_random_wr_payload> init_reg_array;
+  uint32_t in_port_info_dt;
+  uint32_t power_config_val_low;
 };
 
 class CameraAR0231 : public CameraInfo {
