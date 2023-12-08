@@ -77,6 +77,7 @@ float ar0231_parse_temp_sensor(uint16_t calib1, uint16_t calib2, uint16_t data_r
 }  // namespace
 
 AR0231::AR0231() {
+  image_sensor = cereal::FrameData::ImageSensor::AR0231;
   data_word = true;
   frame_width = FRAME_WIDTH;
   frame_height = FRAME_HEIGHT;
