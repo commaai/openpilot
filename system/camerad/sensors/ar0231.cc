@@ -109,7 +109,7 @@ float ar0231_parse_temp_sensor(uint16_t calib1, uint16_t calib2, uint16_t data_r
 
 }  // namespace
 
-CameraAR0231::CameraAR0231() {
+AR0231::AR0231() {
   frame_width = FRAME_WIDTH;
   frame_height = FRAME_HEIGHT;
   frame_stride = FRAME_STRIDE;

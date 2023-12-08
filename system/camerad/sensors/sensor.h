@@ -44,14 +44,14 @@ public:
   float max_ev;
 };
 
-class CameraAR0231 : public SensorInfo {
+class AR0231 : public SensorInfo {
 public:
-  CameraAR0231();
+  AR0231();
 };
 
-class CameraOx03c10 : public SensorInfo {
+class OX03C10 : public SensorInfo {
 public:
-  CameraOx03c10();
+  OX03C10();
 };
 
 void ar0231_process_registers(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder &framed);

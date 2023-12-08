@@ -40,7 +40,7 @@ const uint32_t VS_TIME_MAX_OX03C10 = 34;  // vs < 35
 
 }  // namespace
 
-CameraOx03c10::CameraOx03c10() {
+OX03C10::OX03C10() {
   frame_width = FRAME_WIDTH;
   frame_height = FRAME_HEIGHT;
   frame_stride = FRAME_STRIDE;  // (0xa80*12//8)
