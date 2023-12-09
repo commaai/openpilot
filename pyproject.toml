@@ -13,7 +13,7 @@ testpaths = [
 #  "common",
   "selfdrive/athena",
 #  "selfdrive/boardd",
-  "selfdrive/car",
+  "selfdrive/car/tests",
 #  "selfdrive/controls",
 #  "selfdrive/locationd",
 #  "selfdrive/monitoring",
