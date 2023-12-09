@@ -106,8 +106,6 @@ static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
 }
 
 int CameraState::sensors_init() {
-  create_sensor();
-
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*2;
   auto pkt = mm.alloc<struct cam_packet>(size, &cam_packet_handle);
@@ -403,15 +401,7 @@ void CameraState::enqueue_req_multi(int start, int n, bool dp) {
 
 // ******************* camera *******************
 
-void CameraState::create_sensor() {
-  if (camera_id == CAMERA_ID_AR0231) {
-    ci = std::make_unique<AR0231>();
-  } else if (camera_id == CAMERA_ID_OX03C10) {
-    ci = std::make_unique<OX03C10>();
-  } else {
-    assert(false);
-  }
-
+void CameraState::sensor_set_parameters() {
   target_grey_fraction = 0.3;
 
   dc_gain_enabled = false;
@@ -436,9 +426,8 @@ void CameraState::camera_map_bufs(MultiCameraState *s) {
   enqueue_req_multi(1, FRAME_BUF_COUNT, 0);
 }
 
-void CameraState::camera_init(MultiCameraState *s, VisionIpcServer * v, int camera_id_, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type) {
+void CameraState::camera_init(MultiCameraState *s, VisionIpcServer * v, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type) {
   if (!enabled) return;
-  camera_id = camera_id_;
 
   LOGD("camera init %d", camera_num);
   request_id_last = 0;
@@ -462,22 +451,25 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
   // init memorymanager for this camera
   mm.init(multi_cam_state->video0_fd);
 
-  // probe the sensor
   LOGD("-- Probing sensor %d", camera_num);
-  camera_id = CAMERA_ID_AR0231;
-  ret = sensors_init();
-  if (ret != 0) {
-    // TODO: use build flag instead?
-    LOGD("AR0231 init failed, trying OX03C10");
-    camera_id = CAMERA_ID_OX03C10;
-    ret = sensors_init();
-  }
-  LOGD("-- Probing sensor %d done with %d", camera_num, ret);
-  if (ret != 0) {
+
+  auto init_sensor_lambda = [this](SensorInfo *sensor) {
+    ci.reset(sensor);
+    int ret = sensors_init();
+    if (ret == 0) {
+      sensor_set_parameters();
+    }
+    return ret == 0;
+  };
+
+  // Try different sensors one by one until it success.
+  if (!init_sensor_lambda(new AR0231) &&
+      !init_sensor_lambda(new OX03C10)) {
     LOGE("** sensor %d FAILED bringup, disabling", camera_num);
     enabled = false;
     return;
   }
+  LOGD("-- Probing sensor %d success", camera_num);
 
   // create session
   struct cam_req_mgr_session_info session_info = {};
@@ -626,9 +618,9 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
 }
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  s->driver_cam.camera_init(s, v, s->driver_cam.camera_id, 20, device_id, ctx, VISION_STREAM_DRIVER);
-  s->road_cam.camera_init(s, v, s->road_cam.camera_id, 20, device_id, ctx, VISION_STREAM_ROAD);
-  s->wide_road_cam.camera_init(s, v, s->wide_road_cam.camera_id, 20, device_id, ctx, VISION_STREAM_WIDE_ROAD);
+  s->driver_cam.camera_init(s, v, 20, device_id, ctx, VISION_STREAM_DRIVER);
+  s->road_cam.camera_init(s, v, 20, device_id, ctx, VISION_STREAM_ROAD);
+  s->wide_road_cam.camera_init(s, v, 20, device_id, ctx, VISION_STREAM_WIDE_ROAD);
 
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
 }

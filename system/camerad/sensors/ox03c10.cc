@@ -22,6 +22,7 @@ const uint32_t VS_TIME_MAX_OX03C10 = 34;  // vs < 35
 }  // namespace
 
 OX03C10::OX03C10() {
+  image_sensor = cereal::FrameData::ImageSensor::OX03C10;
   data_word = false;
   frame_width = FRAME_WIDTH;
   frame_height = FRAME_HEIGHT;
