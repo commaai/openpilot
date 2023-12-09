@@ -19,7 +19,10 @@ def wait_for_devices(sd):
   sd._terminate()
   sd._initialize()
 
-  assert len(sd.query_devices()) > 0
+  devices = sd.query_devices()
+  cloudlog.info(f"sounddevice available devices: {list(devices)}")
+
+  assert len(devices) > 0
 
 
 def calculate_spl(measurements):
