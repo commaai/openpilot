@@ -3717,18 +3717,18 @@ colorama = "*"
 pytest = ">=7.0"
 
 [[package]]
-name = "pytest-randomly"
-version = "3.15.0"
-description = "Pytest plugin to randomly order tests and control random.seed."
+name = "pytest-random-order"
+version = "1.1.0"
+description = "Randomise the order in which pytest tests are run with some control over the randomness"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.5.0"
 files = [
-    {file = "pytest_randomly-3.15.0-py3-none-any.whl", hash = "sha256:0516f4344b29f4e9cdae8bce31c4aeebf59d0b9ef05927c33354ff3859eeeca6"},
-    {file = "pytest_randomly-3.15.0.tar.gz", hash = "sha256:b908529648667ba5e54723088edd6f82252f540cc340d748d1fa985539687047"},
+    {file = "pytest-random-order-1.1.0.tar.gz", hash = "sha256:dbe6debb9353a7af984cc9eddbeb3577dd4dbbcc1529a79e3d21f68ed9b45605"},
+    {file = "pytest_random_order-1.1.0-py3-none-any.whl", hash = "sha256:6cb1e59ab0f798bb0c3488c11ae0c70d7d3340306a466d28b28ccd8ef8c20b7e"},
 ]
 
 [package.dependencies]
-pytest = "*"
+pytest = ">=3.0.0"
 
 [[package]]
 name = "pytest-subtests"
@@ -5009,4 +5009,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "7f7244a89280a41937066ebf80aa64fcb375852484c9d034ea7f2de3eae4d90a"
+content-hash = "f0abc0f53443c3b98eb06fc4dd0ff736e39197bc68c79db9aeffb4736657b676"
