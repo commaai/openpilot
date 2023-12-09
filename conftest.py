@@ -5,6 +5,24 @@ import random
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.system.hardware import TICI
 
+global_seed = None
+
+
+# @pytest.fixture(scope="session", autouse=True)
+def pytest_sessionstart(session):
+  # session.config.cache.clear_cache()
+  seed = random.randint(0, 100000)
+  print('setting seed in sessionstart', seed)
+  session.config.cache.set('worker/seed', seed)
+
+
+#     global global_seed
+#     global_seed = 0#random.randint(0, 10000)
+#     os.environ['PYTEST_SEED'] = '0'
+#     # random.seed(seed)
+#     # print(f"Random seed set to {seed} for worker")
+#     print(f"Random seed selected for this session: {global_seed}")
+
 
 @pytest.fixture(scope="function", autouse=True)
 def openpilot_function_fixture():
