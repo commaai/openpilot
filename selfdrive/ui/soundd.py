@@ -13,7 +13,6 @@ from openpilot.system import micd
 from openpilot.system.hardware import TICI
 
 from openpilot.common.realtime import Ratekeeper
-from openpilot.common.retry import retry
 from openpilot.common.swaglog import cloudlog
 
 SAMPLE_RATE = 48000
