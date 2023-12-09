@@ -6,6 +6,12 @@ from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.system.hardware import TICI
 
 
+def pytest_sessionstart(session):
+  # TODO: fix tests and enable test order randomization
+  if session.config.pluginmanager.hasplugin('randomly'):
+    session.config.option.randomly_reorganize = False
+
+
 @pytest.fixture(scope="function", autouse=True)
 def openpilot_function_fixture():
   starting_env = dict(os.environ)
