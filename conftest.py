@@ -9,7 +9,6 @@ from openpilot.system.hardware import TICI
 def pytest_sessionstart(session):
   # TODO: fix tests and enable test order randomization
   if session.config.pluginmanager.hasplugin('randomly'):
-    print('HAS RANDOMLY PLUGIN')
     session.config.option.randomly_reorganize = False
 
 
