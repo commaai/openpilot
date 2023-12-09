@@ -14,7 +14,7 @@ testpaths = [
   "selfdrive/athena",
 #  "selfdrive/boardd",
 #  "selfdrive/car",
-#  "selfdrive/controls",
+  "selfdrive/controls",
 #  "selfdrive/locationd",
 #  "selfdrive/monitoring",
 #  "selfdrive/thermald",
