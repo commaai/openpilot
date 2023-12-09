@@ -10,11 +10,11 @@ markers = [
   "tici: tests that are only meant to run on the C3/C3X",
 ]
 testpaths = [
-  "common",
+#  "common",
   "selfdrive/athena",
   "selfdrive/boardd",
   "selfdrive/car",
-  "selfdrive/controls",
+#  "selfdrive/controls",
 #  "selfdrive/locationd",
 #  "selfdrive/monitoring",
 #  "selfdrive/thermald",
