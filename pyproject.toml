@@ -19,7 +19,7 @@ testpaths = [
   "selfdrive/monitoring",
   "selfdrive/thermald",
   "selfdrive/test/longitudinal_maneuvers",
-#  "system/hardware/tici",
+  "system/hardware/tici",
 #  "system/loggerd",
 #  "system/proclogd",
 #  "system/tests",
