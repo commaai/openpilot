@@ -14,9 +14,6 @@
 #include "common/swaglog.h"
 #include "system/hardware/hw.h"
 
-#define CAMERA_ID_AR0231 0
-#define CAMERA_ID_OX03C10 1
-
 const int YUV_BUFFER_COUNT = 20;
 
 enum CameraType {
