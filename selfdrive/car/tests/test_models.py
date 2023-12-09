@@ -32,7 +32,6 @@ NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
 INTERNAL_SEG_LIST = os.environ.get("INTERNAL_SEG_LIST", "")
 INTERNAL_SEG_CNT = int(os.environ.get("INTERNAL_SEG_CNT", "0"))
-RANDOM_SEED = int(os.environ.get("RANDOM_SEED", "0"))
 
 
 def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
@@ -50,9 +49,6 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
   else:
     with open(os.path.join(BASEDIR, INTERNAL_SEG_LIST), "r") as f:
       seg_list = f.read().splitlines()
-
-    if RANDOM_SEED:
-      random.seed(RANDOM_SEED)
 
     seg_list_grouped = [(platform[2:], segment) for platform, segment in zip(seg_list[::2], seg_list[1::2])]
     seg_list_grouped = random.sample(seg_list_grouped, INTERNAL_SEG_CNT or len(seg_list_grouped))
