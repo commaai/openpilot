@@ -52,7 +52,7 @@ def pytest_collection_modifyitems(config, items):
 
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config):
-    config_line = (
-        "xdist_group_class_property: group tests by a property of the class that contains them"
-    )
-    config.addinivalue_line("markers", config_line)
+  config_line = (
+    "xdist_group_class_property: group tests by a property of the class that contains them"
+  )
+  config.addinivalue_line("markers", config_line)
