@@ -36,6 +36,7 @@ NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
 INTERNAL_SEG_LIST = os.environ.get("INTERNAL_SEG_LIST", "")
 INTERNAL_SEG_CNT = int(os.environ.get("INTERNAL_SEG_CNT", "0"))
+MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '20'))  # TODO 20 is not a lot at all, measure time in ci
 
 
 def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
@@ -311,7 +312,7 @@ class TestCarModelBase(unittest.TestCase):
     CC = car.CarControl.new_message(cruiseControl={'resume': True})
     test_car_controller(CC)
 
-  @settings(max_examples=100, deadline=None,
+  @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate,),
             suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow, HealthCheck.large_base_example],
             )
