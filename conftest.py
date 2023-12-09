@@ -5,24 +5,6 @@ import random
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.system.hardware import TICI
 
-global_seed = None
-
-
-# @pytest.fixture(scope="session", autouse=True)
-def pytest_sessionstart(session):
-  # session.config.cache.clear_cache()
-  seed = random.randint(0, 100000)
-  print('setting seed in sessionstart', seed)
-  session.config.cache.set('worker/seed', seed)
-
-
-#     global global_seed
-#     global_seed = 0#random.randint(0, 10000)
-#     os.environ['PYTEST_SEED'] = '0'
-#     # random.seed(seed)
-#     # print(f"Random seed set to {seed} for worker")
-#     print(f"Random seed selected for this session: {global_seed}")
-
 
 @pytest.fixture(scope="function", autouse=True)
 def openpilot_function_fixture():
@@ -70,12 +52,11 @@ def pytest_collection_modifyitems(config, items):
 
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config):
-    if config.cache.get('worker/seed', None) is None:
-      config.cache.set('worker/seed', random.randint(0, 100000))
-    seed = config.cache.get('worker/seed', None)
-    random.seed(seed)
-    print('setting seed in configure', seed)
-    config_line = (
-        "xdist_group_class_property: group tests by a property of the class that contains them"
-    )
-    config.addinivalue_line("markers", config_line)
+  config_line = (
+    "xdist_group_class_property: group tests by a property of the class that contains them"
+  )
+  config.addinivalue_line("markers", config_line)
+
+  # TODO: fix tests and enable test order randomization
+  if config.pluginmanager.hasplugin('randomly'):
+    config.addinivalue_line("addopts", "--randomly-dont-reorganize")
