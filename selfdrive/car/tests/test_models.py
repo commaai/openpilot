@@ -319,6 +319,7 @@ class TestCarModelBase(unittest.TestCase):
   @given(data=st.data())
   @seed(1)  # for reproduction
   def test_panda_safety_carstate_fuzzy(self, data):
+    raise Exception
     if self.CP.enableGasInterceptor:  # TODO known failure for now
       raise unittest.SkipTest
     """
