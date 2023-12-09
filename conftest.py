@@ -52,6 +52,11 @@ def pytest_collection_modifyitems(config, items):
 
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config):
+    if config.cache.get('worker/seed', None) is None:
+      config.cache.set('worker/seed', random.randint(0, 100000))
+    seed = config.cache.get('worker/seed', None)
+    random.seed(seed)
+    print('setting seed in configure', seed)
     config_line = (
         "xdist_group_class_property: group tests by a property of the class that contains them"
     )
