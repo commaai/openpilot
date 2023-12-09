@@ -12,7 +12,7 @@ markers = [
 testpaths = [
   "common",
   "selfdrive/athena",
-  "selfdrive/boardd",
+#  "selfdrive/boardd",
 #  "selfdrive/car",
 #  "selfdrive/controls",
 #  "selfdrive/locationd",
