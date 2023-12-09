@@ -6,6 +6,13 @@ from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.system.hardware import TICI
 
 
+def pytest_sessionstart(session):
+  # TODO: fix tests and enable test order randomization
+  if session.config.pluginmanager.hasplugin('randomly'):
+    print('HAS RANDOMLY PLUGIN')
+    session.config.option.randomly_reorganize = False
+
+
 @pytest.fixture(scope="function", autouse=True)
 def openpilot_function_fixture():
   starting_env = dict(os.environ)
@@ -56,7 +63,3 @@ def pytest_configure(config):
     "xdist_group_class_property: group tests by a property of the class that contains them"
   )
   config.addinivalue_line("markers", config_line)
-
-  # TODO: fix tests and enable test order randomization
-  if config.pluginmanager.hasplugin('randomly'):
-    config.addinivalue_line("addopts", "--randomly-dont-reorganize")
