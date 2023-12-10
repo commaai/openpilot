@@ -112,6 +112,8 @@ void initApp(int argc, char *argv[], bool disable_hidpi) {
 #endif
   }
 
+  qputenv("QT_DBL_CLICK_DIST", QByteArray::number(150));
+
   setQtSurfaceFormat();
 }
 

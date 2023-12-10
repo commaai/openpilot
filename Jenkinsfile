@@ -14,7 +14,8 @@ export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
 export MAPBOX_TOKEN='${env.MAPBOX_TOKEN}'
-export PYTEST_ADDOPTS="-c selfdrive/test/pytest-tici.ini --rootdir ."
+# only use 1 thread for tici tests since most require HIL
+export PYTEST_ADDOPTS="-n 0"
 
 
 export GIT_SSH_COMMAND="ssh -i /data/gitkey"
@@ -157,7 +158,7 @@ node {
       // tici tests
       'onroad tests': {
         deviceStage("onroad", "tici-needs-can", ["SKIP_COPY=1"], [
-          ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR ./build_devel.sh"],
+          ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["check dirty", "release/check-dirty.sh"],
           ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
@@ -225,15 +226,16 @@ node {
         pcStage("PC tests") {
           // tests that our build system's dependencies are configured properly,
           // needs a machine with lots of cores
-          sh label: "test multi-threaded build", script: "scons --no-cache --random -j42"
+          sh label: "test multi-threaded build",
+             script: '''#!/bin/bash
+                        scons --no-cache --random -j$(nproc)'''
         }
       },
       'car tests': {
         pcStage("car tests") {
           sh label: "build", script: "selfdrive/manager/build.py"
-          sh label: "test_models.py", script: "INTERNAL_SEG_CNT=250 INTERNAL_SEG_LIST=selfdrive/car/tests/test_models_segs.txt FILEREADER_CACHE=1 \
-              pytest -n42 --dist=loadscope selfdrive/car/tests/test_models.py"
-          sh label: "test_car_interfaces.py", script: "MAX_EXAMPLES=100 pytest -n42 --dist=load selfdrive/car/tests/test_car_interfaces.py"
+          sh label: "run car tests", script: "cd selfdrive/car/tests && MAX_EXAMPLES=100 INTERNAL_SEG_CNT=250 FILEREADER_CACHE=1 \
+              INTERNAL_SEG_LIST=selfdrive/car/tests/test_models_segs.txt pytest test_models.py test_car_interfaces.py"
         }
       },
 
