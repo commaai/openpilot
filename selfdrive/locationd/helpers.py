@@ -5,7 +5,7 @@ from typing import List, Optional, Tuple, Any
 
 from cereal import log
 from openpilot.common.params import Params
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 
 
 class NPQueue:

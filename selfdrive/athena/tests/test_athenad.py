@@ -46,8 +46,6 @@ class TestAthenadMethods(unittest.TestCase):
       else:
         os.unlink(p)
 
-    dispatcher["listUploadQueue"]() # ensure queue is empty at start
-
   # *** test helpers ***
 
   @staticmethod
