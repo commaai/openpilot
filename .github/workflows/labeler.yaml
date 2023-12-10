@@ -1,4 +1,4 @@
-name: "Pull Request Labeler"
+name: "PR review"
 on:
   pull_request_target:
 
@@ -16,3 +16,16 @@ jobs:
       with:
         dot: true
         configuration-path: .github/labeler.yaml
+
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: comment
+        uses: thollander/actions-comment-pull-request@1d3973dc4b8e1399c0620d3f2b1aa5e795465308
+        with:
+          message: |
+              Thank you for your contribution. We will review as soon as we're able to.
+
+              Remember to check the [contributing docs](https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md).
+          comment_includes: "Thank you"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
