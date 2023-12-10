@@ -2,18 +2,20 @@
 import subprocess
 import time
 import unittest
+from subprocess import Popen
 
 from openpilot.selfdrive.manager.helpers import unblock_stdout
 from openpilot.tools.sim.run_bridge import parse_args
 from openpilot.tools.sim.bridge.carla.carla_bridge import CarlaBridge
 from openpilot.tools.sim.tests.test_sim_bridge import SIM_DIR, TestSimBridgeBase
 
+from typing import Optional
 
 class TestCarlaBridge(TestSimBridgeBase):
   """
   Tests need Carla simulator to run
   """
-  carla_process = None
+  carla_process: Optional[Popen] = None
 
   def setUp(self):
     super().setUp()

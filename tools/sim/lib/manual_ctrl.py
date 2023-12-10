@@ -4,7 +4,7 @@ import array
 import os
 import struct
 from fcntl import ioctl
-from typing import NoReturn
+from typing import NoReturn, Dict, List
 
 # Iterate over the joystick devices.
 print('Available devices:')
@@ -13,8 +13,8 @@ for fn in os.listdir('/dev/input'):
     print(f'  /dev/input/{fn}')
 
 # We'll store the states here.
-axis_states = {}
-button_states = {}
+axis_states: Dict[str, float] = {}
+button_states: Dict[str, float] = {}
 
 # These constants were borrowed from linux/input.h
 axis_names = {
@@ -88,8 +88,8 @@ button_names = {
   0x2c3 : 'dpad_down',
 }
 
-axis_map = []
-button_map = []
+axis_name_list: List[str] = []
+button_name_list: List[str] = []
 
 def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
   # Open the joystick device.
@@ -119,7 +119,7 @@ def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
 
   for _axis in buf[:num_axes]:
     axis_name = axis_names.get(_axis, f'unknown(0x{_axis:02x})')
-    axis_map.append(axis_name)
+    axis_name_list.append(axis_name)
     axis_states[axis_name] = 0.0
 
   # Get the button map.
@@ -128,11 +128,11 @@ def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
 
   for btn in buf[:num_buttons]:
     btn_name = button_names.get(btn, f'unknown(0x{btn:03x})')
-    button_map.append(btn_name)
+    button_name_list.append(btn_name)
     button_states[btn_name] = 0
 
-  print('%d axes found: %s' % (num_axes, ', '.join(axis_map)))
-  print('%d buttons found: %s' % (num_buttons, ', '.join(button_map)))
+  print('%d axes found: %s' % (num_axes, ', '.join(axis_name_list)))
+  print('%d buttons found: %s' % (num_buttons, ', '.join(button_name_list)))
 
   # Enable FF
   import evdev
@@ -147,7 +147,7 @@ def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
     value, mtype, number = struct.unpack('4xhBB', evbuf)
     # print(mtype, number, value)
     if mtype & 0x02:  # wheel & paddles
-      axis = axis_map[number]
+      axis = axis_name_list[number]
 
       if axis == "z":  # gas
         fvalue = value / 32767.0

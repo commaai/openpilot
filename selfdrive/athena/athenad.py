@@ -31,20 +31,15 @@ import cereal.messaging as messaging
 from cereal import log
 from cereal.services import SERVICE_LIST
 from openpilot.common.api import Api
-from openpilot.common.basedir import PERSIST
 from openpilot.common.file_helpers import CallbackReader
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
 from openpilot.system.hardware import HARDWARE, PC, AGNOS
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
-from openpilot.selfdrive.statsd import STATS_DIR
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_commit, get_origin, get_short_branch, get_version
 from openpilot.system.hardware.hw import Paths
 
-
-# TODO: use socket constant when mypy recognizes this as a valid attribute
-TCP_USER_TIMEOUT = 18
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
@@ -456,11 +451,6 @@ def cancelUpload(upload_id: Union[str, List[str]]) -> Dict[str, Union[int, str]]
 
 
 @dispatcher.add_method
-def primeActivated(activated: bool) -> Dict[str, int]:
-  return {"success": 1}
-
-
-@dispatcher.add_method
 def setBandwithLimit(upload_speed_kbps: int, download_speed_kbps: int) -> Dict[str, Union[int, str]]:
   if not AGNOS:
     return {"success": 0, "error": "only supported on AGNOS"}
@@ -507,10 +497,10 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
 
 @dispatcher.add_method
 def getPublicKey() -> Optional[str]:
-  if not os.path.isfile(PERSIST + '/comma/id_rsa.pub'):
+  if not os.path.isfile(Paths.persist_root() + '/comma/id_rsa.pub'):
     return None
 
-  with open(PERSIST + '/comma/id_rsa.pub') as f:
+  with open(Paths.persist_root() + '/comma/id_rsa.pub') as f:
     return f.read()
 
 
@@ -646,6 +636,7 @@ def log_handler(end_event: threading.Event) -> None:
 
 
 def stat_handler(end_event: threading.Event) -> None:
+  STATS_DIR = Paths.stats_root()
   while not end_event.is_set():
     last_scan = 0.
     curr_scan = time.monotonic()
@@ -766,7 +757,7 @@ def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
     if onroad != onroad_prev:
       onroad_prev = onroad
 
-      sock.setsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT, 16000 if onroad else 0)
+      sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_USER_TIMEOUT, 16000 if onroad else 0)
       sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 7 if onroad else 30)
       sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 7 if onroad else 10)
       sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 2 if onroad else 3)

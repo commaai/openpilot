@@ -14,18 +14,6 @@
 #include "common/swaglog.h"
 #include "system/hardware/hw.h"
 
-#define CAMERA_ID_IMX298 0
-#define CAMERA_ID_IMX179 1
-#define CAMERA_ID_S5K3P8SP 2
-#define CAMERA_ID_OV8865 3
-#define CAMERA_ID_IMX298_FLIPPED 4
-#define CAMERA_ID_OV10640 5
-#define CAMERA_ID_LGC920 6
-#define CAMERA_ID_LGC615 7
-#define CAMERA_ID_AR0231 8
-#define CAMERA_ID_OX03C10 9
-#define CAMERA_ID_MAX 10
-
 const int YUV_BUFFER_COUNT = 20;
 
 enum CameraType {
@@ -42,20 +30,11 @@ const bool env_debug_frames = getenv("DEBUG_FRAMES") != NULL;
 const bool env_log_raw_frames = getenv("LOG_RAW_FRAMES") != NULL;
 const bool env_ctrl_exp_from_params = getenv("CTRL_EXP_FROM_PARAMS") != NULL;
 
-typedef struct CameraInfo {
-  uint32_t frame_width, frame_height;
-  uint32_t frame_stride;
-  uint32_t frame_offset = 0;
-  uint32_t extra_height = 0;
-  int registers_offset = -1;
-  int stats_offset = -1;
-} CameraInfo;
-
 typedef struct FrameMetadata {
   uint32_t frame_id;
 
   // Timestamps
-  uint64_t timestamp_sof; // only set on tici
+  uint64_t timestamp_sof;
   uint64_t timestamp_eof;
 
   // Exposure
