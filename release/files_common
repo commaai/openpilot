@@ -285,7 +285,6 @@ selfdrive/ui/.gitignore
 selfdrive/ui/SConscript
 selfdrive/ui/*.cc
 selfdrive/ui/*.h
-selfdrive/ui/ui
 selfdrive/ui/text
 selfdrive/ui/spinner
 selfdrive/ui/soundd.py
