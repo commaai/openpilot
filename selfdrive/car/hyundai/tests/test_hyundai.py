@@ -6,7 +6,8 @@ from cereal import car
 from openpilot.selfdrive.car.fw_versions import build_fw_dict
 from openpilot.selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
                                          HYBRID_CAR, EV_CAR, FW_QUERY_CONFIG, FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, \
-                                         UNSUPPORTED_LONGITUDINAL_CAR, PLATFORM_CODE_ECUS, get_platform_codes
+                                         UNSUPPORTED_LONGITUDINAL_CAR, PLATFORM_CODE_ECUS, HYUNDAI_VERSION_REQUEST_LONG, \
+                                         get_platform_codes
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
@@ -22,6 +23,7 @@ NO_DATES_PLATFORMS = {
   CAR.TUCSON_HYBRID_4TH_GEN,
   # CAN
   CAR.ELANTRA,
+  CAR.ELANTRA_GT_I30,
   CAR.KIA_CEED,
   CAR.KIA_FORTE,
   CAR.KIA_OPTIMA_G4,
@@ -61,7 +63,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     # Asserts no ECUs known to be shared across platforms exist in the database.
     # Tucson having Santa Cruz camera and EPS for example
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model):
+      with self.subTest(car_model=car_model.value):
         if car_model == CAR.SANTA_CRUZ_1ST_GEN:
           raise unittest.SkipTest("Skip checking Santa Cruz for its parts")
 
@@ -70,6 +72,20 @@ class TestHyundaiFingerprint(unittest.TestCase):
             continue
           part = code.split(b"-")[1]
           self.assertFalse(part.startswith(b'CW'), "Car has bad part number")
+
+  def test_correct_ecu_response_database(self):
+    """
+    Assert standard responses for certain ECUs, since they can
+    respond to multiple queries with different data
+    """
+    expected_fw_prefix = HYUNDAI_VERSION_REQUEST_LONG[1:]
+    for car_model, ecus in FW_VERSIONS.items():
+      with self.subTest(car_model=car_model.value):
+        for ecu, fws in ecus.items():
+          # TODO: enable for Ecu.fwdRadar, Ecu.abs, Ecu.eps, Ecu.transmission
+          if ecu[0] in (Ecu.fwdCamera,):
+            self.assertTrue(all(fw.startswith(expected_fw_prefix) for fw in fws),
+                            f"FW from unexpected request in database: {(ecu, fws)}")
 
   @settings(max_examples=100)
   @given(data=st.data())
@@ -84,11 +100,11 @@ class TestHyundaiFingerprint(unittest.TestCase):
   def test_platform_code_ecus_available(self):
     # TODO: add queries for these non-CAN FD cars to get EPS
     no_eps_platforms = CANFD_CAR | {CAR.KIA_SORENTO, CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL, CAR.KIA_OPTIMA_H,
-                                    CAR.KIA_OPTIMA_H_G4_FL, CAR.SONATA_LF, CAR.TUCSON, CAR.GENESIS_G90, CAR.GENESIS_G80}
+                                    CAR.KIA_OPTIMA_H_G4_FL, CAR.SONATA_LF, CAR.TUCSON, CAR.GENESIS_G90, CAR.GENESIS_G80, CAR.ELANTRA}
 
     # Asserts ECU keys essential for fuzzy fingerprinting are available on all platforms
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model):
+      with self.subTest(car_model=car_model.value):
         for platform_code_ecu in PLATFORM_CODE_ECUS:
           if platform_code_ecu in (Ecu.fwdRadar, Ecu.eps) and car_model == CAR.HYUNDAI_GENESIS:
             continue
@@ -103,7 +119,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     # - expected parsing of ECU FW dates
 
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model):
+      with self.subTest(car_model=car_model.value):
         for ecu, fws in ecus.items():
           if ecu[0] not in PLATFORM_CODE_ECUS:
             continue

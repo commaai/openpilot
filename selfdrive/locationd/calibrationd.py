@@ -18,7 +18,7 @@ from openpilot.common.conversions import Conversions as CV
 from openpilot.common.params import Params, put_nonblocking
 from openpilot.common.realtime import set_realtime_priority
 from openpilot.common.transformations.orientation import rot_from_euler, euler_from_rot
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 
 MIN_SPEED_FILTER = 15 * CV.MPH_TO_MS
 MAX_VEL_ANGLE_STD = np.radians(0.25)
@@ -31,7 +31,8 @@ SMOOTH_CYCLES = 10
 BLOCK_SIZE = 100
 INPUTS_NEEDED = 5   # Minimum blocks needed for valid calibration
 INPUTS_WANTED = 50   # We want a little bit more than we need for stability
-MAX_ALLOWED_SPREAD = np.radians(2)
+MAX_ALLOWED_YAW_SPREAD = np.radians(2)
+MAX_ALLOWED_PITCH_SPREAD = np.radians(4)
 RPY_INIT = np.array([0.0,0.0,0.0])
 WIDE_FROM_DEVICE_EULER_INIT = np.array([0.0, 0.0, 0.0])
 HEIGHT_INIT = np.array([1.22])
@@ -156,13 +157,14 @@ class Calibrator:
     # If spread is too high, assume mounting was changed and reset to last block.
     # Make the transition smooth. Abrupt transitions are not good for feedback loop through supercombo model.
     # TODO: add height spread check with smooth transition too
-    if max(self.calib_spread) > MAX_ALLOWED_SPREAD and self.cal_status == log.LiveCalibrationData.Status.calibrated:
+    spread_too_high = self.calib_spread[1] > MAX_ALLOWED_PITCH_SPREAD or self.calib_spread[2] > MAX_ALLOWED_YAW_SPREAD
+    if spread_too_high and self.cal_status == log.LiveCalibrationData.Status.calibrated:
       self.reset(self.rpys[self.block_idx - 1], valid_blocks=1, smooth_from=self.rpy)
       self.cal_status = log.LiveCalibrationData.Status.recalibrating
 
     write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 5)
     if self.param_put and write_this_cycle:
-      put_nonblocking("CalibrationParams", self.get_msg().to_bytes())
+      put_nonblocking("CalibrationParams", self.get_msg(True).to_bytes())
 
   def handle_v_ego(self, v_ego: float) -> None:
     self.v_ego = v_ego
@@ -225,12 +227,13 @@ class Calibrator:
 
     return new_rpy
 
-  def get_msg(self) -> capnp.lib.capnp._DynamicStructBuilder:
+  def get_msg(self, valid: bool) -> capnp.lib.capnp._DynamicStructBuilder:
     smooth_rpy = self.get_smooth_rpy()
 
     msg = messaging.new_message('liveCalibration')
-    liveCalibration = msg.liveCalibration
+    msg.valid = valid
 
+    liveCalibration = msg.liveCalibration
     liveCalibration.validBlocks = self.valid_blocks
     liveCalibration.calStatus = self.cal_status
     liveCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
@@ -248,19 +251,16 @@ class Calibrator:
 
     return msg
 
-  def send_data(self, pm: messaging.PubMaster) -> None:
-    pm.send('liveCalibration', self.get_msg())
+  def send_data(self, pm: messaging.PubMaster, valid: bool) -> None:
+    pm.send('liveCalibration', self.get_msg(valid))
 
 
-def calibrationd_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[messaging.PubMaster] = None) -> NoReturn:
+def main() -> NoReturn:
   gc.disable()
   set_realtime_priority(1)
 
-  if sm is None:
-    sm = messaging.SubMaster(['cameraOdometry', 'carState', 'carParams'], poll=['cameraOdometry'])
-
-  if pm is None:
-    pm = messaging.PubMaster(['liveCalibration'])
+  pm = messaging.PubMaster(['liveCalibration'])
+  sm = messaging.SubMaster(['cameraOdometry', 'carState', 'carParams'], poll=['cameraOdometry'])
 
   calibrator = Calibrator(param_put=True)
 
@@ -284,11 +284,7 @@ def calibrationd_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[m
 
     # 4Hz driven by cameraOdometry
     if sm.frame % 5 == 0:
-      calibrator.send_data(pm)
-
-
-def main(sm: Optional[messaging.SubMaster] = None, pm: Optional[messaging.PubMaster] = None) -> NoReturn:
-  calibrationd_thread(sm, pm)
+      calibrator.send_data(pm, sm.all_checks())
 
 
 if __name__ == "__main__":

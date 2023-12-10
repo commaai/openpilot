@@ -1,9 +1,9 @@
 #pragma once
 
+#include <QObject>
 #include <memory>
 #include <map>
 #include <set>
-#include <vector>
 
 #include "tools/cabana/dbc/dbcfile.h"
 
@@ -33,17 +33,13 @@ public:
 
   QString newMsgName(const MessageId &id);
   QString newSignalName(const MessageId &id);
-  const std::vector<uint8_t>& mask(const MessageId &id);
 
   const std::map<uint32_t, cabana::Msg> &getMessages(uint8_t source);
   cabana::Msg *msg(const MessageId &id);
   cabana::Msg* msg(uint8_t source, const QString &name);
 
   QStringList signalNames();
-  int signalCount(const MessageId &id);
-  int signalCount();
-  int msgCount();
-  int dbcCount();
+  inline int dbcCount() { return allDBCFiles().size(); }
   int nonEmptyDBCCount();
 
   const SourceSet sources(const DBCFile *dbc_file) const;
@@ -66,15 +62,8 @@ private:
 
 DBCManager *dbc();
 
+QString toString(const SourceSet &ss);
 inline QString msgName(const MessageId &id) {
   auto msg = dbc()->msg(id);
   return msg ? msg->name : UNTITLED;
-}
-
-inline QString toString(const SourceSet &ss) {
-  QStringList ret;
-  for (auto s : ss) {
-    ret << (s == -1 ? QString("all") : QString::number(s));
-  }
-  return ret.join(", ");
 }
