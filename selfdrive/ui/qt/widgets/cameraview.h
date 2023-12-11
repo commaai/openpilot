@@ -39,11 +39,13 @@ public:
 
 signals:
   void vipcAvailableStreamsUpdated();
+  void clicked();
 
 protected:
   void paintGL() override;
   void initializeGL() override;
   void resizeGL(int w, int h) override { updateFrameMat(); }
+  void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
   virtual void updateFrameMat();
   void updateCalibration(const mat3 &calib);
   void vipcConnected();

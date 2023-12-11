@@ -2,17 +2,7 @@
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
-class DriverViewScene : public CameraView {
-  Q_OBJECT
-
-public:
-  explicit DriverViewScene(QWidget *parent);
-  void paintGL() override;
-
-  QPixmap face_img;
-};
-
-class DriverViewWindow : public QWidget {
+class DriverViewWindow : public CameraWidget {
   Q_OBJECT
 
 public:
@@ -22,9 +12,10 @@ signals:
   void done();
 
 protected:
-  void mouseReleaseEvent(QMouseEvent* e) override;
-  void showEvent(QShowEvent *event);
-  void hideEvent(QHideEvent *event);
-  void closeView();
+  void showEvent(QShowEvent *event) override;
+  void hideEvent(QHideEvent *event) override;
+  void paintGL() override;
+
   Params params;
+  QPixmap face_img;
 };

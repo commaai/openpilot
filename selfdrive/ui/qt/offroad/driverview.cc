@@ -8,39 +8,32 @@
 
 const int FACE_IMG_SIZE = 130;
 
-DriverViewWindow::DriverViewWindow(QWidget* parent) : QWidget(parent) {
-  QVBoxLayout *layout = new QVBoxLayout(this);
-  layout->addWidget(new DriverViewScene(this));
-  QObject::connect(device(), &Device::interactiveTimeout, this, &DriverViewWindow::closeView);
-}
-
-void DriverViewWindow::closeView() {
-  if (isVisible()) {
-    emit done();
-  }
-}
-
-void DriverViewWindow::mouseReleaseEvent(QMouseEvent* e) {
-  closeView();
+DriverViewWindow::DriverViewWindow(QWidget* parent) : CameraWidget("camerad", VISION_STREAM_DRIVER, true, parent) {
+  face_img = loadPixmap("../assets/img_driver_face_static.png", {FACE_IMG_SIZE, FACE_IMG_SIZE});
+  QObject::connect(this, &CameraWidget::clicked, this, &DriverViewWindow::done);
+  QObject::connect(device(), &Device::interactiveTimeout, this, [this]() {
+    if (isVisible()) {
+      emit done();
+    }
+  });
 }
 
 void DriverViewWindow::showEvent(QShowEvent* event) {
   params.putBool("IsDriverViewEnabled", true);
   device()->resetInteractiveTimeout(60);
+  CameraWidget::showEvent(event);
 }
 
 void DriverViewWindow::hideEvent(QHideEvent* event) {
   params.putBool("IsDriverViewEnabled", false);
+  CameraWidget::hideEvent(event);
 }
 
-DriverViewScene::DriverViewScene(QWidget* parent) : CameraView("camerad", VISION_STREAM_DRIVER, true, parent) {
-  face_img = loadPixmap("../assets/img_driver_face_static.png", {FACE_IMG_SIZE, FACE_IMG_SIZE});
-}
-
-void DriverViewScene::paintGL() {
+void DriverViewWindow::paintGL() {
   CameraWidget::paintGL();
-  // startup msg
+
   QPainter p(this);
+  // startup msg
   if (!frame_) {
     p.setPen(Qt::white);
     p.setRenderHint(QPainter::TextAntialiasing);
