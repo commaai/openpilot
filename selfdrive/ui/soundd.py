@@ -16,6 +16,7 @@ from openpilot.system.hardware import PC
 from openpilot.common.swaglog import cloudlog
 
 SAMPLE_RATE = 48000
+SAMPLE_BUFFER = 2048
 MAX_VOLUME = 1.0
 MIN_VOLUME = 0.1
 CONTROLS_TIMEOUT = 5 # 5 seconds
@@ -139,8 +140,8 @@ class Soundd:
     else:
       device = "sdm845-tavil-snd-card: - (hw:0,0)"
 
-    with sd.OutputStream(device=device, channels=1, samplerate=SAMPLE_RATE, callback=self.callback) as stream:
-      cloudlog.info(f"soundd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}")
+    with sd.OutputStream(device=device, channels=1, samplerate=SAMPLE_RATE, callback=self.callback, blocksize=SAMPLE_BUFFER) as stream:
+      cloudlog.info(f"soundd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=} {stream.blocksize=}")
       while True:
         sm.update(0)
 
