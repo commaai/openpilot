@@ -27,10 +27,8 @@ public:
   cabana::Msg *msg(const QString &name);
   inline cabana::Msg *msg(const MessageId &id) { return msg(id.address); }
 
-  int signalCount();
-  inline int msgCount() { return msgs.size(); }
-  inline QString name() { return name_.isEmpty() ? "untitled" : name_; }
-  inline bool isEmpty() { return (signalCount() == 0) && name_.isEmpty(); }
+  inline QString name() const { return name_.isEmpty() ? "untitled" : name_; }
+  inline bool isEmpty() const { return msgs.empty() && name_.isEmpty(); }
 
   QString filename;
 
