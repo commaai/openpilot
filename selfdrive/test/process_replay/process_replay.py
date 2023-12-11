@@ -730,6 +730,14 @@ def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=Non
     "DisableLogging": False,
   }
 
+  initData = next((msg.initData for msg in lr if msg.which() == "initData"), None)
+  if initData is not None:
+    all_valid_keys = set(Params().all_keys())
+    for entry in initData.params.entries:
+      if entry.key not in all_valid_keys:
+        continue
+      params_dict[entry.key] = entry.value
+
   if custom_params is not None:
     params_dict.update(custom_params)
   if lr is not None:
