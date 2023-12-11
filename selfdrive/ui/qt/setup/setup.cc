@@ -35,7 +35,7 @@ bool is_elf(char *fname) {
 
 void Setup::download(QString url) {
   // autocomplete incomplete urls
-  if (!url.contains("installer.comma.ai")) {
+  if (QRegularExpression("^([^/.]+)/([^/]+)$").match(url).hasMatch()) {
     url.prepend("https://installer.comma.ai/");
   }
 
