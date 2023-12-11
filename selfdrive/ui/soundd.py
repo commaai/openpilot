@@ -16,7 +16,7 @@ from openpilot.common.realtime import Ratekeeper
 from openpilot.common.swaglog import cloudlog
 
 SAMPLE_RATE = 48000
-SAMPLE_BUFFER = 2048
+SAMPLE_BUFFER = 4096 # (approx 100ms)
 MAX_VOLUME = 1.0
 MIN_VOLUME = 0.1
 CONTROLS_TIMEOUT = 5 # 5 seconds

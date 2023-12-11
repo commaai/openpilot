@@ -8,10 +8,10 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import TICI
 
 RATE = 10
-FFT_SAMPLES = 4096
+FFT_SAMPLES = 4096 # (approx 100ms)
 REFERENCE_SPL = 2e-5  # newtons/m^2
 SAMPLE_RATE = 44100
-SAMPLE_BUFFER = 2048
+SAMPLE_BUFFER = 4096
 
 
 @retry(attempts=7, delay=3)
