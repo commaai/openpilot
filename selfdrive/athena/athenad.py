@@ -77,18 +77,18 @@ class UploadFile:
   def upload_on_cellular_allowed_by_params(self) -> bool:
     # see uploadPolicyToggle in selfdrive/ui/qt/network/networking.cc#AdvancedNetworking::AdvancedNetworking
 
-    if Params().get_bool("AllowMeteredUploads", True):
-      # ^^^ This is the `default upload` policy. It's believed to use an *average* of 6 GiB/mo or so...
+    if not Params().get_bool("AllowMeteredUploads"):
+      # User has requested 'low upload' policy… upload nothing until we're connected to a full connection (e.g. home Wi-Fi)
+      # see also https://discord.com/channels/469524606043160576/819046761287909446/1161366616920051914
+      return False
+    else:
+      # This is the `default upload` policy. It's believed to use an *average* of 6 GiB/mo or so...
       # https://discord.com/channels/469524606043160576/819046761287909446/1161369395382202438
       # https://discord.com/channels/469524606043160576/819046761287909446/1161366312686198905
       # At the moment this means we fall back to the UploadFile's initial `allow_cellular` value which
       #  * will upload the qlogs & qcameras while the connection is metered
       #  * will upload everything if the connection is not metered
       return self.allow_cellular
-    else:
-      # 'low upload' policy is to upload nothing until we're connected to a full connection (e.g. home Wi-Fi)
-      # see also https://discord.com/channels/469524606043160576/819046761287909446/1161366616920051914
-      return False
 
   @classmethod
   def from_dict(cls, d: dict) -> UploadFile:
