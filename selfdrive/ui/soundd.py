@@ -10,9 +10,9 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.filter_simple import FirstOrderFilter
 
 from openpilot.system import micd
+from openpilot.system.hardware import TICI
 
 from openpilot.common.realtime import Ratekeeper
-from openpilot.system.hardware import PC
 from openpilot.common.swaglog import cloudlog
 
 SAMPLE_RATE = 48000
@@ -130,16 +130,13 @@ class Soundd:
     # sounddevice must be imported after forking processes
     import sounddevice as sd
 
-    rk = Ratekeeper(20)
+    if TICI:
+      micd.wait_for_devices(sd) # wait for alsa to be initialized on device
 
-    sm = messaging.SubMaster(['controlsState', 'microphone'])
+    with sd.OutputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback) as stream:
+      rk = Ratekeeper(20)
+      sm = messaging.SubMaster(['controlsState', 'microphone'])
 
-    if PC:
-      device = None
-    else:
-      device = "sdm845-tavil-snd-card: - (hw:0,0)"
-
-    with sd.OutputStream(device=device, channels=1, samplerate=SAMPLE_RATE, callback=self.callback) as stream:
       cloudlog.info(f"soundd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}")
       while True:
         sm.update(0)

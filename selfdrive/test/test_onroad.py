@@ -35,8 +35,8 @@ PROCS = {
   "./camerad": 14.5,
   "./locationd": 11.0,
   "./mapsd": (1.0, 10.0),
-  "selfdrive.controls.plannerd": 16.5,
-  "./_ui": 18.0,
+  "selfdrive.controls.plannerd": 11.0,
+  "./ui": 18.0,
   "selfdrive.locationd.paramsd": 9.0,
   "./sensord": 7.0,
   "selfdrive.controls.radard": 4.5,
@@ -303,7 +303,7 @@ class TestOnroad(unittest.TestCase):
     self.assertLessEqual(max(mems) - min(mems), 3.0)
 
   def test_gpu_usage(self):
-    self.assertEqual(self.gpu_procs, {"weston", "_ui", "camerad", "selfdrive.modeld.modeld"})
+    self.assertEqual(self.gpu_procs, {"weston", "ui", "camerad", "selfdrive.modeld.modeld"})
 
   def test_camera_processing_time(self):
     result = "\n"
