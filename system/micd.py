@@ -3,13 +3,27 @@ import numpy as np
 
 from cereal import messaging
 from openpilot.common.realtime import Ratekeeper
+from openpilot.common.retry import retry
 from openpilot.common.swaglog import cloudlog
+from openpilot.system.hardware import TICI
 
 RATE = 10
 FFT_SAMPLES = 4096
 REFERENCE_SPL = 2e-5  # newtons/m^2
 SAMPLE_RATE = 44100
 SAMPLE_BUFFER = 2048
+
+
+@retry(attempts=7, delay=3)
+def wait_for_devices(sd):
+  # reload sounddevice to reinitialize portaudio
+  sd._terminate()
+  sd._initialize()
+
+  devices = sd.query_devices()
+  cloudlog.info(f"sounddevice available devices: {list(devices)}")
+
+  assert len(devices) > 0
 
 
 def calculate_spl(measurements):
@@ -82,8 +96,11 @@ class Mic:
     # sounddevice must be imported after forking processes
     import sounddevice as sd
 
+    if TICI:
+      wait_for_devices(sd) # wait for alsa to be initialized on device
+
     with sd.InputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback, blocksize=SAMPLE_BUFFER) as stream:
-      cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=} {stream.blocksize=}")
+      cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}, {stream.blocksize=}")
       while True:
         self.update()
 
