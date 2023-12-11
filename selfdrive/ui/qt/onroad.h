@@ -6,6 +6,7 @@
 #include <QStackedLayout>
 #include <QWidget>
 
+#include "common/util.h"
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
@@ -99,7 +100,6 @@ protected:
   void initializeGL() override;
   void showEvent(QShowEvent *event) override;
   void updateFrameMat() override;
-  void updateFrame();
   void drawLaneLines(QPainter &painter, const UIState *s);
   void drawLead(QPainter &painter, const cereal::RadarState::LeadData::Reader &lead_data, const QPointF &vd);
   void drawHud(QPainter &p);

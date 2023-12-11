@@ -28,6 +28,7 @@ class CameraWidget : public QOpenGLWidget, protected QOpenGLFunctions {
   Q_OBJECT
 
 public:
+  using QOpenGLWidget::QOpenGLWidget;
   explicit CameraWidget(std::string stream_name, VisionStreamType stream_type, bool zoom, QWidget* parent = nullptr);
   ~CameraWidget();
   void setBackgroundColor(const QColor &color) { bg = color; }
@@ -49,6 +50,9 @@ protected:
   virtual void updateFrameMat();
   void updateCalibration(const mat3 &calib);
   void vipcConnected();
+
+  int glWidth();
+  int glHeight();
 
   bool zoomed_view;
   GLuint frame_vao, frame_vbo, frame_ibo;

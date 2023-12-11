@@ -2,13 +2,12 @@
 
 #include <algorithm>
 #include <QPainter>
-#include <QVBoxLayout>
 
 #include "selfdrive/ui/qt/util.h"
 
 const int FACE_IMG_SIZE = 130;
 
-DriverViewWindow::DriverViewWindow(QWidget* parent) : CameraWidget("camerad", VISION_STREAM_DRIVER, true, parent) {
+DriverViewWindow::DriverViewWindow(QWidget* parent) : CameraView("camerad", VISION_STREAM_DRIVER, true, parent) {
   face_img = loadPixmap("../assets/img_driver_face_static.png", {FACE_IMG_SIZE, FACE_IMG_SIZE});
   QObject::connect(this, &CameraWidget::clicked, this, &DriverViewWindow::done);
   QObject::connect(device(), &Device::interactiveTimeout, this, [this]() {

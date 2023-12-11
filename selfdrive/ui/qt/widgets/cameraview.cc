@@ -109,6 +109,16 @@ CameraWidget::~CameraWidget() {
   doneCurrent();
 }
 
+// Qt uses device-independent pixels, depending on platform this may be
+// different to what OpenGL uses
+int CameraWidget::glWidth() {
+    return width() * devicePixelRatio();
+}
+
+int CameraWidget::glHeight() {
+  return height() * devicePixelRatio();
+}
+
 void CameraWidget::initializeGL() {
   initializeOpenGLFunctions();
 
@@ -165,8 +175,7 @@ void CameraWidget::clearFrame() {
 }
 
 void CameraWidget::updateFrameMat() {
-  int w = width() * devicePixelRatio();
-  int h = height() * devicePixelRatio();
+  int w = glWidth(), h = glHeight();
 
   if (zoomed_view) {
     if (streamType() == VISION_STREAM_DRIVER) {
@@ -236,7 +245,7 @@ void CameraWidget::paintGL() {
   }
   prev_frame_id = frame_id;
 
-  glViewport(0, 0, width() * devicePixelRatio(), height() * devicePixelRatio());
+  glViewport(0, 0, glWidth(), glHeight());
   glBindVertexArray(frame_vao);
   glUseProgram(program->programId());
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -323,12 +332,9 @@ void CameraWidget::vipcConnected() {
 }
 
 bool CameraWidget::receiveFrame(std::optional<uint64_t> frame_id) {
-  if (!isValid()) return false;
-
   if (!vipc_client || vipc_client->type != requested_stream_type) {
-    qDebug().nospace() << "connecting to stream " << requested_stream_type << ", was connected to "
-                       << (vipc_client ? vipc_client->type : requested_stream_type);
-    frame_ = nullptr;
+    qDebug().nospace() << "connecting to stream" << requested_stream_type
+                       << (vipc_client ? QString(", was connected to %1").arg(vipc_client->type) : "");
     vipc_client.reset(new VisionIpcClient(stream_name, requested_stream_type, conflate));
   }
 
@@ -354,6 +360,7 @@ bool CameraWidget::receiveFrame(std::optional<uint64_t> frame_id) {
 }
 
 // Cameraview
+
 CameraView::CameraView(const std::string &name, VisionStreamType stream_type, bool zoom, QWidget *parent)
     : CameraWidget(name, stream_type, zoom, parent) {
   conflate = true;  // receive only the last vipc message.
