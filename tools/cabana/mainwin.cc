@@ -46,7 +46,6 @@ MainWindow::MainWindow() : QMainWindow() {
   static auto static_main_win = this;
   qRegisterMetaType<uint64_t>("uint64_t");
   qRegisterMetaType<SourceSet>("SourceSet");
-  qRegisterMetaType<ReplyMsgType>("ReplyMsgType");
   installDownloadProgressHandler([](uint64_t cur, uint64_t total, bool success) {
     emit static_main_win->updateProgressBar(cur, total, success);
   });
@@ -54,9 +53,7 @@ MainWindow::MainWindow() : QMainWindow() {
     if (type == QtDebugMsg) std::cout << msg.toStdString() << std::endl;
     emit static_main_win->showMessage(msg, 2000);
   });
-  installMessageHandler([](ReplyMsgType type, const std::string msg) {
-    qInfo() << QString::fromStdString(msg);
-  });
+  installMessageHandler([](ReplyMsgType type, const std::string msg) { qInfo() << msg.c_str(); });
 
   setStyleSheet(QString(R"(QMainWindow::separator {
     width: %1px; /* when vertical */
@@ -77,9 +74,10 @@ void MainWindow::loadFingerprints() {
   QFile json_file(QApplication::applicationDirPath() + "/dbc/car_fingerprint_to_dbc.json");
   if (json_file.open(QIODevice::ReadOnly)) {
     fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
-    auto dbc_names = fingerprint_to_dbc.object().toVariantMap().values();
-    std::transform(dbc_names.begin(), dbc_names.end(), std::inserter(opendbc_names, opendbc_names.begin()),
-                   [](const auto &name) { return name.toString(); });
+  }
+  // get opendbc names
+  for (auto fn : QDir(OPENDBC_FILE_PATH).entryList({"*.dbc"}, QDir::Files, QDir::Name)) {
+    opendbc_names << QFileInfo(fn).baseName();
   }
 }
 
@@ -328,7 +326,7 @@ void MainWindow::loadFromClipboard(SourceSet s, bool close_all) {
   QString dbc_str = QGuiApplication::clipboard()->text();
   QString error;
   bool ret = dbc()->open(s, "", dbc_str, &error);
-  if (ret && dbc()->msgCount() > 0) {
+  if (ret && dbc()->nonEmptyDBCCount() > 0) {
     QMessageBox::information(this, tr("Load From Clipboard"), tr("DBC Successfully Loaded!"));
   } else {
     QMessageBox msg_box(QMessageBox::Warning, tr("Failed to load DBC from clipboard"), tr("Make sure that you paste the text with correct format."));
@@ -355,7 +353,7 @@ void MainWindow::streamStarted() {
     video_splitter->setSizes({1, 1});
   }
   // Don't overwrite already loaded DBC
-  if (!dbc()->msgCount()) {
+  if (!dbc()->nonEmptyDBCCount()) {
     newFile();
   }
 
@@ -370,7 +368,7 @@ void MainWindow::eventsMerged() {
                                     .arg(can->routeName())
                                     .arg(car_fingerprint.isEmpty() ? tr("Unknown Car") : car_fingerprint));
     // Don't overwrite already loaded DBC
-    if (!dbc()->msgCount() && !car_fingerprint.isEmpty()) {
+    if (!dbc()->nonEmptyDBCCount() && !car_fingerprint.isEmpty()) {
       auto dbc_name = fingerprint_to_dbc[car_fingerprint];
       if (dbc_name != QJsonValue::Undefined) {
         // Prevent dialog that load autosaved file from blocking replay->start().
@@ -528,7 +526,6 @@ void MainWindow::updateRecentFiles(const QString &fn) {
 
 void MainWindow::updateRecentFileActions() {
   int num_recent_files = std::min<int>(settings.recent_files.size(), MAX_RECENT_FILES);
-
   for (int i = 0; i < num_recent_files; ++i) {
     QString text = tr("&%1 %2").arg(i + 1).arg(QFileInfo(settings.recent_files[i]).fileName());
     recent_files_acts[i]->setText(text);
@@ -542,15 +539,11 @@ void MainWindow::updateRecentFileActions() {
 }
 
 void MainWindow::remindSaveChanges() {
-  bool discard_changes = false;
-  while (!UndoStack::instance()->isClean() && !discard_changes) {
+  while (!UndoStack::instance()->isClean()) {
     QString text = tr("You have unsaved changes. Press ok to save them, cancel to discard.");
-    int ret = (QMessageBox::question(this, tr("Unsaved Changes"), text, QMessageBox::Ok | QMessageBox::Cancel));
-    if (ret == QMessageBox::Ok) {
-      save();
-    } else {
-      discard_changes = true;
-    }
+    int ret = QMessageBox::question(this, tr("Unsaved Changes"), text, QMessageBox::Ok | QMessageBox::Cancel);
+    if (ret != QMessageBox::Ok) break;
+    save();
   }
   UndoStack::instance()->clear();
 }
@@ -659,7 +652,7 @@ HelpOverlay::HelpOverlay(MainWindow *parent) : QWidget(parent) {
 void HelpOverlay::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
   painter.fillRect(rect(), QColor(0, 0, 0, 50));
-  MainWindow *parent = (MainWindow *)parentWidget();
+  auto parent = parentWidget();
   drawHelpForWidget(painter, parent->findChild<MessagesWidget *>());
   drawHelpForWidget(painter, parent->findChild<BinaryView *>());
   drawHelpForWidget(painter, parent->findChild<SignalView *>());

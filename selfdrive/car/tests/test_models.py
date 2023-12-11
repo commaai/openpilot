@@ -3,6 +3,7 @@ import capnp
 import os
 import importlib
 import pytest
+import random
 import unittest
 from collections import defaultdict, Counter
 from typing import List, Optional, Tuple
@@ -49,12 +50,10 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
     with open(os.path.join(BASEDIR, INTERNAL_SEG_LIST), "r") as f:
       seg_list = f.read().splitlines()
 
-    cnt = INTERNAL_SEG_CNT or len(seg_list)
-    seg_list_iter = iter(seg_list[:cnt])
-
-    for platform in seg_list_iter:
-      platform = platform[2:]  # get rid of comment
-      segment_name = SegmentName(next(seg_list_iter))
+    seg_list_grouped = [(platform[2:], segment) for platform, segment in zip(seg_list[::2], seg_list[1::2], strict=True)]
+    seg_list_grouped = random.sample(seg_list_grouped, INTERNAL_SEG_CNT or len(seg_list_grouped))
+    for platform, segment in seg_list_grouped:
+      segment_name = SegmentName(segment)
       test_cases.append((platform, CarTestRoute(segment_name.route_name.canonical_name, platform,
                                                 segment=segment_name.segment_num)))
   return test_cases
@@ -221,7 +220,7 @@ class TestCarModelBase(unittest.TestCase):
         error_cnt += car.RadarData.Error.canError in rr.errors
     self.assertEqual(error_cnt, 0)
 
-  def test_panda_safety_rx_valid(self):
+  def test_panda_safety_rx_checks(self):
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
 
@@ -255,6 +254,11 @@ class TestCarModelBase(unittest.TestCase):
         self.safety.set_relay_malfunction(False)
 
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
+
+    # ensure RX checks go invalid after small time with no traffic
+    self.safety.set_timer(int(t + (2*1e6)))
+    self.safety.safety_tick_current_safety_config()
+    self.assertFalse(self.safety.safety_config_valid())
 
   def test_panda_safety_tx_cases(self, data=None):
     """Asserts we can tx common messages"""
@@ -377,7 +381,7 @@ class TestCarModelBase(unittest.TestCase):
 
 
 @parameterized_class(('car_model', 'test_route'), get_test_cases())
-@pytest.mark.xdist_group_class_property('car_model')
+@pytest.mark.xdist_group_class_property('test_route')
 class TestCarModel(TestCarModelBase):
   pass
 

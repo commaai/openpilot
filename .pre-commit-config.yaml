@@ -26,7 +26,7 @@ repos:
     rev: v2.2.6
     hooks:
     -   id: codespell
-        exclude: '^(third_party/)|(body/)|(cereal/)|(panda/)|(opendbc/)|(rednose/)|(rednose_repo/)|(selfdrive/ui/translations/.*.ts)|(poetry.lock)'
+        exclude: '^(third_party/)|(body/)|(cereal/)|(panda/)|(opendbc/)|(rednose/)|(rednose_repo/)|(teleoprtc/)|(teleoprtc_repo/)|(selfdrive/ui/translations/.*.ts)|(poetry.lock)'
         args:
         # if you've got a short variable name that's getting flagged, add it here
         - -L bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints
@@ -39,12 +39,12 @@ repos:
         language: system
         types: [python]
         args: ['--explicit-package-bases', '--local-partial-types']
-        exclude: '^(third_party/)|(cereal/)|(opendbc/)|(panda/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(xx/)'
+        exclude: '^(third_party/)|(cereal/)|(opendbc/)|(panda/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(teleoprtc/)|(teleoprtc_repo/)|(xx/)'
 -   repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.6
     hooks:
     -   id: ruff
-        exclude: '^(third_party/)|(cereal/)|(panda/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)'
+        exclude: '^(third_party/)|(cereal/)|(panda/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(teleoprtc/)|(teleoprtc_repo/)'
 -   repo: local
     hooks:
     -   id: cppcheck
