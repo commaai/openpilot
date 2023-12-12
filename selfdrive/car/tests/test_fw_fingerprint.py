@@ -191,21 +191,22 @@ class TestFwFingerprintTiming(unittest.TestCase):
         params.put_bool("ObdMultiplexingChanged", True)
     return time.perf_counter() - t
 
-  def fake_get_data(self, timeout):
-    self.fake_timeout_time += timeout
-    return {}
-
   def _benchmark_brand(self, brand, num_pandas):
-    query_patch = mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", self.fake_get_data)
+    def fake_get_data(_, timeout):
+      nonlocal fake_timeout_time
+      fake_timeout_time += timeout
+      return {}
+
+    query_patch = mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", fake_get_data)
     query_patch.start()
 
     fake_socket = FakeSocket()
     brand_time = 0
     for _ in range(self.N):
-      self.fake_timeout_time = 0
+      fake_timeout_time = 0
       thread = threading.Thread(target=get_fw_versions, args=(fake_socket, fake_socket, brand),
                                 kwargs=dict(num_pandas=num_pandas))
-      brand_time += self._run_thread(thread) + self.fake_timeout_time
+      brand_time += self._run_thread(thread) + fake_timeout_time
 
     query_patch.stop()
     return brand_time / self.N
