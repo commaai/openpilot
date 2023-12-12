@@ -257,10 +257,10 @@ class CarInterface(CarInterfaceBase):
     ret.stopAccel = -2.5
 
     tune = ret.longitudinalTuning
-    tune.kpBP = [0.]
-    tune.kiBP = [0.]
+    tune.kpBP = [0.,]
+    tune.kiBP = [0., 3.]
     tune.kpV = [1.]
-    tune.kiV = [1.]
+    tune.kiV = [.8, 1.]
 
     return ret
 
