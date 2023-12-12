@@ -11,12 +11,26 @@ Most open source development activity is coordinated through our [GitHub Discuss
  * Make sure you have a [GitHub account](https://github.com/signup/free)
  * Fork [our repositories](https://github.com/commaai) on GitHub
 
-### First contribution
-Try out some of these first pull requests ideas to dive into the codebase:
+### What contributions are we looking for?
 
-* Increase our [mypy](http://mypy-lang.org/) coverage
-* Write some documentation
-* Tackle an open [good first issue](https://github.com/commaai/openpilot/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+openpilot's priorities are safety (as defined by [SAFETY.md](docs/SAFETY.md)), stability, quality, and features, in that order.
+
+Simple, well-tested bug fixes are the easiest to merge.
+Features are the hardest to get merged.
+
+The probability of a pull request being merged is a fucntion of its value to the project and the time it will take us to get it merged.
+If a PR offers *some* value but will take lots of time to get merged, it will be closed.
+
+### What doesn't get merged?
+
+* style changes
+* new controllers
+* 500+ line PRs: it should be either cleaned up, broken up into smaller PRs, or both
+* new features
+
+### First contribution
+
+Tackle an open [good first issue](https://github.com/commaai/openpilot/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) to get started.
 
 ## Pull Requests
 
@@ -36,5 +50,4 @@ A good pull request has all of the following:
 We've released a [Model Port guide](https://blog.comma.ai/openpilot-port-guide-for-toyota-models/) for porting to Toyota/Lexus models.
 
 If you port openpilot to a substantially new car brand, see this more generic [Brand Port guide](https://blog.comma.ai/how-to-write-a-car-port-for-openpilot/).
-
 
