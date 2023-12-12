@@ -27,6 +27,9 @@ pytest .
 
 # test just logging services
 cd system/loggerd && pytest .
+
+# run the linter
+pre-commit run --all
 ```
 
 ## Testing
