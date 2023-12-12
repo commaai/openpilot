@@ -167,7 +167,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1337.
       ret.wheelbase = 2.63
       ret.steerRatio = 14.56
-    elif candidate in CAR.KIA_SPORTAGE_5TH_GEN:
+    elif candidate == CAR.KIA_SPORTAGE_5TH_GEN:
       ret.mass = 1700.  # weight from SX and above trims, average of FWD and AWD versions
       ret.wheelbase = 2.756
       ret.steerRatio = 13.6  # steering ratio according to Kia News https://www.kiamedia.com/us/en/models/sportage/2023/specifications
