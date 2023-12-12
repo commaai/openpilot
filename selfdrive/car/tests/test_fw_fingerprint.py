@@ -4,6 +4,7 @@ import random
 import time
 import unittest
 from collections import defaultdict
+from unittest import mock
 from parameterized import parameterized
 import threading
 
@@ -195,7 +196,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
     return {}
 
   def _benchmark_brand(self, brand, num_pandas):
-    query_patch = unittest.mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", self.fake_get_data)
+    query_patch = mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", self.fake_get_data)
     query_patch.start()
 
     fake_socket = FakeSocket()
