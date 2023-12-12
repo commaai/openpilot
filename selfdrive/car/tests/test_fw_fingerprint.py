@@ -187,7 +187,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
     t = time.perf_counter()
 
     while thread.is_alive():
-      time.sleep(0.001)
+      time.sleep(0.02)
       if not params.get_bool("ObdMultiplexingChanged"):
         params.put_bool("ObdMultiplexingChanged", True)
     return time.perf_counter() - t
@@ -238,24 +238,24 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
   @pytest.mark.timeout(60)
   def test_fw_query_timing(self):
-    total_ref_time = 6.4
+    total_ref_time = 5.97
     brand_ref_times = {
       1: {
-        'body': 0.1,
-        'chrysler': 0.3,
-        'ford': 0.2,
-        'honda': 0.4,
-        'hyundai': 0.6,
-        'mazda': 0.2,
-        'nissan': 0.4,
-        'subaru': 0.4,
-        'tesla': 0.2,
-        'toyota': 1.6,
-        'volkswagen': 0.2,
+        'body': 0.12,
+        'chrysler': 0.32,
+        'ford': 0.22,
+        'honda': 0.53,
+        'hyundai': 0.73,
+        'mazda': 0.22,
+        'nissan': 0.42,
+        'subaru': 0.53,
+        'tesla': 0.22,
+        'toyota': 1.62,
+        'volkswagen': 0.22,
       },
       2: {
-        'ford': 0.3,
-        'hyundai': 1,
+        'ford': 0.32,
+        'hyundai': 1.13,
       }
     }
 
