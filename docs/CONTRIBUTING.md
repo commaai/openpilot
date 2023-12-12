@@ -37,12 +37,4 @@ We've released a [Model Port guide](https://blog.comma.ai/openpilot-port-guide-f
 
 If you port openpilot to a substantially new car brand, see this more generic [Brand Port guide](https://blog.comma.ai/how-to-write-a-car-port-for-openpilot/).
 
-## Testing
 
-### Automated Testing
-
-All PRs and commits are automatically checked by GitHub Actions. Check out `.github/workflows/` for what GitHub Actions runs. Any new tests should be added to GitHub Actions.
-
-### Code Style and Linting
-
-Code is automatically checked for style by GitHub Actions as part of the automated tests. You can also run these tests yourself by running `pre-commit run --all`.
