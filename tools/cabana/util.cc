@@ -12,7 +12,6 @@
 #include <QDateTime>
 #include <QFontDatabase>
 #include <QLocale>
-#include <QPainter>
 #include <QPixmapCache>
 
 #include "selfdrive/ui/qt/util.h"
