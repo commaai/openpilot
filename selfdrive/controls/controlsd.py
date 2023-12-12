@@ -211,6 +211,7 @@ class Controls:
 
     self.events.clear()
 
+    # Add joystick event, static on cars, dynamic on nonCars
     if self.joystick_mode:
       self.events.add(EventName.joystickDebug)
       self.startup_event = None
