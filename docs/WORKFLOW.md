@@ -15,7 +15,6 @@ git submodule update --init --recursive
 tools/ubuntu_setup.sh
 
 # build everything
-cd ~/openpilot/
 scons -j$(nproc)
 
 # build just the ui with either of these
