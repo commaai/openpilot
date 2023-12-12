@@ -2,7 +2,7 @@
 
 Aside from the ML models, most tools used for openpilot development are in this repo.
 
-Most development happens on Ubuntu workstations, and not in cars or directly on comma devices.
+Most development happens on normal Ubuntu workstations, and not in cars or directly on comma devices.
 
 ## Quick start
 
