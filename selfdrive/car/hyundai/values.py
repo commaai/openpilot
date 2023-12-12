@@ -112,6 +112,7 @@ class CAR(StrEnum):
   KIA_NIRO_EV = "KIA NIRO EV 2020"
   KIA_NIRO_EV_2ND_GEN = "KIA NIRO EV 2ND GEN"
   KIA_NIRO_PHEV = "KIA NIRO HYBRID 2019"
+  KIA_NIRO_PHEV_2022 = "KIA NIRO PLUG-IN HYBRID 2022"
   KIA_NIRO_HEV_2021 = "KIA NIRO HYBRID 2021"
   KIA_NIRO_HEV_2ND_GEN = "KIA NIRO HYBRID 2ND GEN"
   KIA_OPTIMA_G4 = "KIA OPTIMA 4TH GEN"
@@ -248,6 +249,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Kia Niro Plug-in Hybrid 2018-19", "All", min_enable_speed=10. * CV.MPH_TO_MS, car_parts=CarParts.common([CarHarness.hyundai_c])),
     HyundaiCarInfo("Kia Niro Plug-in Hybrid 2020", "All", car_parts=CarParts.common([CarHarness.hyundai_d])),
   ],
+  CAR.KIA_NIRO_PHEV_2022: HyundaiCarInfo("Kia Niro Plug-in Hybrid 2022", "All", car_parts=CarParts.common([CarHarness.hyundai_f])),
   CAR.KIA_NIRO_HEV_2021: [
     HyundaiCarInfo("Kia Niro Hybrid 2021-22", car_parts=CarParts.common([CarHarness.hyundai_f])),  # TODO: 2021 could be hyundai_d, verify
   ],
@@ -1623,6 +1625,23 @@ FW_VERSIONS = {
       b'\xf1\x00DEhe SCC F-CUP      1.00 1.02 99110-G5100         ',
     ],
   },
+  CAR.KIA_NIRO_PHEV_2022: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x816H6G6051\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x006U3H1_C2\x00\x006U3J9051\x00\x00PDE0G16NL3\x00\x00\x00\x00',
+    ],
+    (Ecu.eps, 0x7D4, None): [
+      b'\xf1\x00DE  MDPS C 1.00 1.01 56310G5520\x00 4DEPC101',
+    ],
+    (Ecu.fwdCamera, 0x7C4, None): [
+      b'\xf1\x00DEP MFC  AT USA LHD 1.00 1.00 99211-G5500 210428',
+    ],
+    (Ecu.fwdRadar, 0x7D0, None): [
+      b'\xf1\x00DEhe SCC F-CUP      1.00 1.00 99110-G5600         ',
+    ],
+  },
   CAR.KIA_NIRO_HEV_2021: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x816H6G5051\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -2144,7 +2163,7 @@ HYBRID_CAR = {CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.KIA_NIRO_PHEV, CAR.KIA_N
               CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.IONIQ_PHEV_2019, CAR.TUCSON_HYBRID_4TH_GEN,
               CAR.KIA_SPORTAGE_HYBRID_5TH_GEN, CAR.KIA_SORENTO_PHEV_4TH_GEN, CAR.KIA_K5_HEV_2020, CAR.KIA_NIRO_HEV_2ND_GEN,
               CAR.KIA_SORENTO_HEV_4TH_GEN, CAR.KIA_OPTIMA_H, CAR.KIA_OPTIMA_H_G4_FL, CAR.KIA_K8_HEV_1ST_GEN,
-              CAR.AZERA_HEV_6TH_GEN}
+              CAR.AZERA_HEV_6TH_GEN, CAR.KIA_NIRO_PHEV_2022}
 
 EV_CAR = {CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV, CAR.KIA_NIRO_EV_2ND_GEN, CAR.KONA_EV_2022,
           CAR.KIA_EV6, CAR.IONIQ_5, CAR.IONIQ_6, CAR.GENESIS_GV60_EV_1ST_GEN, CAR.KONA_EV_2ND_GEN}
@@ -2227,4 +2246,5 @@ DBC = {
   CAR.KONA_EV_2ND_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KIA_K8_HEV_1ST_GEN: dbc_dict('hyundai_canfd', None),
   CAR.CUSTIN_1ST_GEN: dbc_dict('hyundai_kia_generic', None),
+  CAR.KIA_NIRO_PHEV_2022: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
 }
