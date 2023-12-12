@@ -4,8 +4,8 @@ import random
 import time
 import unittest
 from collections import defaultdict
-from unittest import mock
 from parameterized import parameterized
+from unittest import mock
 import threading
 
 from cereal import car
