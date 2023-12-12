@@ -191,9 +191,6 @@ class Controls:
         set_offroad_alert("Offroad_NoFirmware", True)
     elif self.CP.passive:
       self.events.add(EventName.dashcamMode, static=True)
-    elif self.joystick_mode:
-      self.events.add(EventName.joystickDebug, static=True)
-      self.startup_event = None
 
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
@@ -213,6 +210,10 @@ class Controls:
     """Compute onroadEvents from carState"""
 
     self.events.clear()
+
+    if self.joystick_mode:
+      self.events.add(EventName.joystickDebug)
+      self.startup_event = None
 
     # Add startup event
     if self.startup_event is not None:
