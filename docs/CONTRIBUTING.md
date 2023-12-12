@@ -2,7 +2,7 @@
 
 Our software is open source so you can solve your own problems without needing help from others. And if you solve a problem and are so kind, you can upstream it for the rest of the world to use. Check out our [post about externalization](https://blog.comma.ai/a-2020-theme-externalization/).
 
-Most open source development activity is coordinated through our [GitHub Discussions](https://github.com/commaai/openpilot/discussions) and [Discord](https://discord.comma.ai). A lot of documentation is available at https://docs.comma.ai and on our [blog](https://blog.comma.ai/).
+Development activity is coordinated through our GitHub Issues, [GitHub Discussions](https://github.com/commaai/openpilot/discussions), and [Discord](https://discord.comma.ai). A lot of documentation is available at https://docs.comma.ai and on our [blog](https://blog.comma.ai/).
 
 ### Getting Started
 
@@ -21,6 +21,10 @@ Features are the hardest to get merged.
 The probability of a pull request being merged is a fucntion of its value to the project and the time it will take us to get it merged.
 If a PR offers *some* value but will take lots of time to get merged, it will be closed.
 
+These are all good example PRs of various sizes:
+* simple variable rename: https://github.com/commaai/openpilot/pull/30695
+* simple car model port: https://github.com/commaai/openpilot/pull/30245
+
 ### What doesn't get merged?
 
 * style changes
@@ -30,7 +34,7 @@ If a PR offers *some* value but will take lots of time to get merged, it will be
 
 ### First contribution
 
-Tackle an open [good first issue](https://github.com/commaai/openpilot/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) to get started.
+Check out any [good first issue](https://github.com/commaai/openpilot/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) to get started.
 
 ## Pull Requests
 
@@ -51,3 +55,10 @@ We've released a [Model Port guide](https://blog.comma.ai/openpilot-port-guide-f
 
 If you port openpilot to a substantially new car brand, see this more generic [Brand Port guide](https://blog.comma.ai/how-to-write-a-car-port-for-openpilot/).
 
+### Contributing without Code
+
+* Report bugs in GitHub issues.
+* Report driving issues in the `#driving-feedback` Discord channel.
+* Consider opting into driver camera uploads to improve the driver monitoring model.
+* Connect your device to Wi-Fi regularly, so that we can pull data for training better driving models.
+* Run the `nightly` branch and report issues. This branch is like `master` but it's built just like a release.
