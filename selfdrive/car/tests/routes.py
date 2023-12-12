@@ -136,6 +136,7 @@ routes = [
   CarTestRoute("012c95f06918eca4|2023-01-15--11-19-36", HYUNDAI.IONIQ),  # openpilot longitudinal enabled
   CarTestRoute("ab59fe909f626921|2021-10-18--18-34-28", HYUNDAI.IONIQ_HEV_2022),
   CarTestRoute("22d955b2cd499c22|2020-08-10--19-58-21", HYUNDAI.KONA),
+  CarTestRoute("81e77f6b5f80e624|2023-12-11--20-17-22", HYUNDAI.KONA_2ND_GEN),
   CarTestRoute("efc48acf44b1e64d|2021-05-28--21-05-04", HYUNDAI.KONA_EV),
   CarTestRoute("f90d3cd06caeb6fa|2023-09-06--17-15-47", HYUNDAI.KONA_EV),  # openpilot longitudinal enabled
   CarTestRoute("ff973b941a69366f|2022-07-28--22-01-19", HYUNDAI.KONA_EV_2022, segment=11),
