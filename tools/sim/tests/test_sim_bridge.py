@@ -24,7 +24,7 @@ class TestSimBridgeBase(unittest.TestCase):
     p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR)
     self.processes.append(p_manager)
 
-    sm = messaging.SubMaster(['controlsState', 'carEvents', 'managerState'])
+    sm = messaging.SubMaster(['controlsState', 'onroadEvents', 'managerState'])
     q = Queue()
     carla_bridge = self.create_bridge()
     p_bridge = carla_bridge.run(q, retries=10)
@@ -46,7 +46,7 @@ class TestSimBridgeBase(unittest.TestCase):
       sm.update()
 
       not_running = [p.name for p in sm['managerState'].processes if not p.running and p.shouldBeRunning]
-      car_event_issues = [event.name for event in sm['carEvents'] if any([event.noEntry, event.softDisable, event.immediateDisable])]
+      car_event_issues = [event.name for event in sm['onroadEvents'] if any([event.noEntry, event.softDisable, event.immediateDisable])]
 
       if sm.all_alive() and len(car_event_issues) == 0 and len(not_running) == 0:
         no_car_events_issues_once = True
