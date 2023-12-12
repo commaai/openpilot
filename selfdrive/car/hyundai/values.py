@@ -281,7 +281,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Kia EV6 (with HDA II) 2022-23", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_p]))
   ],
   CAR.KIA_CARNIVAL_4TH_GEN: [
-    HyundaiCarInfo("Kia Carnival 2022-24", car_parts=CarParts.common([CarHarness.hyundai_a])),
+    HyundaiCarInfo("Kia Carnival 2023-24", car_parts=CarParts.common([CarHarness.hyundai_a])),
     HyundaiCarInfo("Kia Carnival (China only) 2023", car_parts=CarParts.common([CarHarness.hyundai_k]))
   ],
 
@@ -2101,7 +2101,6 @@ FW_VERSIONS = {
       b'\xf1\x00KA4CMFC  AT CHN LHD 1.00 1.01 99211-I4000 210525',
       b'\xf1\x00KA4 MFC  AT USA LHD 1.00 1.00 99210-R0100 230105',
       b'\xf1\x00KA4 MFC  AT KOR LHD 1.00 1.06 99210-R0000 220221',
-      b'\xf1\x00KA4 MFC  AT USA LHD 1.00 1.05 99210-R0000 201221',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00KA4_ SCC FHCUP      1.00 1.03 99110-R0000         ',
