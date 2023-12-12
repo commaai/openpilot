@@ -2,15 +2,28 @@
 import numpy as np
 
 from cereal import messaging
-from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import Ratekeeper
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.retry import retry
+from openpilot.common.swaglog import cloudlog
+from openpilot.system.hardware import TICI
 
 RATE = 10
 FFT_SAMPLES = 4096
 REFERENCE_SPL = 2e-5  # newtons/m^2
 SAMPLE_RATE = 44100
-FILTER_DT = 1. / (SAMPLE_RATE / FFT_SAMPLES)
+SAMPLE_BUFFER = 4096 # (approx 100ms)
+
+
+@retry(attempts=7, delay=3)
+def wait_for_devices(sd):
+  # reload sounddevice to reinitialize portaudio
+  sd._terminate()
+  sd._initialize()
+
+  devices = sd.query_devices()
+  cloudlog.info(f"sounddevice available devices: {list(devices)}")
+
+  assert len(devices) > 0
 
 
 def calculate_spl(measurements):
@@ -50,15 +63,12 @@ class Mic:
     self.sound_pressure_weighted = 0
     self.sound_pressure_level_weighted = 0
 
-    self.spl_filter_weighted = FirstOrderFilter(0, 2.5, FILTER_DT, initialized=False)
-
   def update(self):
     msg = messaging.new_message('microphone', valid=True)
     msg.microphone.soundPressure = float(self.sound_pressure)
     msg.microphone.soundPressureWeighted = float(self.sound_pressure_weighted)
 
     msg.microphone.soundPressureWeightedDb = float(self.sound_pressure_level_weighted)
-    msg.microphone.filteredSoundPressureWeightedDb = float(self.spl_filter_weighted.x)
 
     self.pm.send('microphone', msg)
     self.rk.keep_time()
@@ -79,7 +89,6 @@ class Mic:
       self.sound_pressure, _ = calculate_spl(measurements)
       measurements_weighted = apply_a_weighting(measurements)
       self.sound_pressure_weighted, self.sound_pressure_level_weighted = calculate_spl(measurements_weighted)
-      self.spl_filter_weighted.update(self.sound_pressure_level_weighted)
 
       self.measurements = self.measurements[FFT_SAMPLES:]
 
@@ -87,8 +96,11 @@ class Mic:
     # sounddevice must be imported after forking processes
     import sounddevice as sd
 
-    with sd.InputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback) as stream:
-      cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}")
+    if TICI:
+      wait_for_devices(sd) # wait for alsa to be initialized on device
+
+    with sd.InputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback, blocksize=SAMPLE_BUFFER) as stream:
+      cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}, {stream.blocksize=}")
       while True:
         self.update()
 

@@ -23,7 +23,7 @@ class SimulatedSensors:
 
   def send_imu_message(self, simulator_state: 'SimulatorState'):
     for _ in range(5):
-      dat = messaging.new_message('accelerometer')
+      dat = messaging.new_message('accelerometer', valid=True)
       dat.accelerometer.sensor = 4
       dat.accelerometer.type = 0x10
       dat.accelerometer.timestamp = dat.logMonoTime  # TODO: use the IMU timestamp
@@ -32,7 +32,7 @@ class SimulatedSensors:
       self.pm.send('accelerometer', dat)
 
       # copied these numbers from locationd
-      dat = messaging.new_message('gyroscope')
+      dat = messaging.new_message('gyroscope', valid=True)
       dat.gyroscope.sensor = 5
       dat.gyroscope.type = 0x10
       dat.gyroscope.timestamp = dat.logMonoTime  # TODO: use the IMU timestamp
@@ -53,7 +53,7 @@ class SimulatedSensors:
     ]
 
     for _ in range(10):
-      dat = messaging.new_message('gpsLocationExternal')
+      dat = messaging.new_message('gpsLocationExternal', valid=True)
       dat.gpsLocationExternal = {
         "unixTimestampMillis": int(time.time() * 1000),
         "flags": 1,  # valid fix
@@ -94,7 +94,7 @@ class SimulatedSensors:
     self.pm.send('driverStateV2', dat)
 
     # dmonitoringd output
-    dat = messaging.new_message('driverMonitoringState')
+    dat = messaging.new_message('driverMonitoringState', valid=True)
     dat.driverMonitoringState = {
       "faceDetected": True,
       "isDistracted": False,
