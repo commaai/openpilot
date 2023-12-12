@@ -1,10 +1,7 @@
 #pragma once
 
-#include <cstdint>
 #include <memory>
 #include <utility>
-
-#include <media/cam_req_mgr.h>
 
 #include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/cameras/camera_util.h"
