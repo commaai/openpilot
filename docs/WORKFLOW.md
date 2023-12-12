@@ -1,4 +1,4 @@
-# the openpilot development workflow
+# openpilot development workflow
 
 Aside from the ML models, most tools used for openpilot development are in this repo.
 
@@ -28,7 +28,6 @@ pytest .
 # test just logging services
 cd system/loggerd && pytest .
 ```
-
 
 ## Testing
 
