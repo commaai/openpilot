@@ -47,9 +47,10 @@ class CAR(StrEnum):
   F_150_MK14 = "FORD F-150 14TH GEN"
   FOCUS_MK4 = "FORD FOCUS 4TH GEN"
   MAVERICK_MK1 = "FORD MAVERICK 1ST GEN"
+  F_150_LIGHTNING_MK1 = "FORD F-150 LIGHTNING 1ST GEN"
 
 
-CANFD_CAR = {CAR.F_150_MK14}
+CANFD_CAR = {CAR.F_150_MK14, CAR.F_150_LIGHTNING_MK1}
 
 
 class RADAR:
@@ -61,6 +62,7 @@ DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("ford_lincoln_base
 
 # F-150 radar is not yet supported
 DBC[CAR.F_150_MK14] = dbc_dict("ford_lincoln_base_pt", None)
+DBC[CAR.F_150_LIGHTNING_MK1] = dbc_dict("ford_lincoln_base_pt", None)
 
 
 class Footnote(Enum):
@@ -79,6 +81,10 @@ class FordCarInfo(CarInfo):
   def init_make(self, CP: car.CarParams):
     if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1):
       self.car_parts = CarParts([Device.threex_angled_mount, CarHarness.ford_q3])
+    if CP.carFingerprint in (CAR.F_150_LIGHTNING_MK1, CAR.F_150_MK14):
+      self.car_parts = CarParts([CarHarness.ford_q4])
+    if CP.carFingerprint in (CAR.F_150_LIGHTNING_MK1):
+      self.car_parts = CarParts([Device.threex_angled_mount])
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
@@ -92,6 +98,7 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
     FordCarInfo("Lincoln Aviator 2020-21", "Co-Pilot360 Plus"),
   ],
   CAR.F_150_MK14: FordCarInfo("Ford F-150 2023", "Co-Pilot360 Active 2.0"),
+  CAR.F_150_LIGHTNING_MK1: FordCarInfo("Ford F-150 Lightning 2021-23", "Co-Pilot360 Active 2.0"),
   CAR.FOCUS_MK4: FordCarInfo("Ford Focus 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS]),
   CAR.MAVERICK_MK1: [
     FordCarInfo("Ford Maverick 2022", "LARIAT Luxury"),
@@ -233,6 +240,20 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7E0, None): [
       b'PL3A-14C204-BRB\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+  },
+   CAR.F_150_LIGHTNING_MK1: {
+    (Ecu.abs, 0x760, None): [
+      b'PL38-2D053-AA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x706, None): [
+      b'ML3T-14H102-ABT\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x764, None): [
+      b'ML3T-14D049-AL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.engine, 0x7E0, None): [
+      b'NL3A-14C204-BAR\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.FOCUS_MK4: {
