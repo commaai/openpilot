@@ -197,18 +197,15 @@ class TestFwFingerprintTiming(unittest.TestCase):
       fake_timeout_time += timeout
       return {}
 
-    query_patch = mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", fake_get_data)
-    query_patch.start()
+    with mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", fake_get_data):
+      fake_socket = FakeSocket()
+      brand_time = 0
+      for _ in range(self.N):
+        fake_timeout_time = 0
+        thread = threading.Thread(target=get_fw_versions, args=(fake_socket, fake_socket, brand),
+                                  kwargs=dict(num_pandas=num_pandas))
+        brand_time += self._run_thread(thread) + fake_timeout_time
 
-    fake_socket = FakeSocket()
-    brand_time = 0
-    for _ in range(self.N):
-      fake_timeout_time = 0
-      thread = threading.Thread(target=get_fw_versions, args=(fake_socket, fake_socket, brand),
-                                kwargs=dict(num_pandas=num_pandas))
-      brand_time += self._run_thread(thread) + fake_timeout_time
-
-    query_patch.stop()
     return brand_time / self.N
 
   def _assert_timing(self, avg_time, ref_time):
