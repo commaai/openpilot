@@ -5,6 +5,7 @@ import time
 import unittest
 from collections import defaultdict
 from parameterized import parameterized
+from unittest import mock
 import threading
 
 from cereal import car
@@ -176,7 +177,7 @@ class TestFwFingerprint(unittest.TestCase):
 
 class TestFwFingerprintTiming(unittest.TestCase):
   N: int = 5
-  TOL: float = 0.12
+  TOL: float = 0.1
 
   @staticmethod
   def _run_thread(thread: threading.Thread) -> float:
@@ -191,12 +192,19 @@ class TestFwFingerprintTiming(unittest.TestCase):
     return time.perf_counter() - t
 
   def _benchmark_brand(self, brand, num_pandas):
-    fake_socket = FakeSocket()
-    brand_time = 0
-    for _ in range(self.N):
-      thread = threading.Thread(target=get_fw_versions, args=(fake_socket, fake_socket, brand),
-                                kwargs=dict(num_pandas=num_pandas))
-      brand_time += self._run_thread(thread)
+    def fake_get_data(_, timeout):
+      nonlocal fake_timeout_time
+      fake_timeout_time += timeout
+      return {}
+
+    with mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", fake_get_data):
+      fake_socket = FakeSocket()
+      brand_time = 0
+      for _ in range(self.N):
+        fake_timeout_time = 0
+        thread = threading.Thread(target=get_fw_versions, args=(fake_socket, fake_socket, brand),
+                                  kwargs=dict(num_pandas=num_pandas))
+        brand_time += self._run_thread(thread) + fake_timeout_time
 
     return brand_time / self.N
 
@@ -227,7 +235,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
   @pytest.mark.timeout(60)
   def test_fw_query_timing(self):
-    total_ref_time = 6.41
+    total_ref_time = 6.58
     brand_ref_times = {
       1: {
         'body': 0.11,
