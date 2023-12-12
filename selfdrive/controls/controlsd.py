@@ -852,7 +852,8 @@ class Controls:
 
     self.is_metric = self.params.get_bool("IsMetric")
     self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
-    self.joystick_mode = self.params.get_bool("JoystickDebugMode")
+    if self.CP.notCar:
+      self.joystick_mode = self.params.get_bool("JoystickDebugMode")
 
     # Sample data from sockets and get a carState
     CS = self.data_sample()
