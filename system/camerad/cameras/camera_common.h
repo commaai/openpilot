@@ -55,7 +55,7 @@ class CameraBuf {
 private:
   VisionIpcServer *vipc_server;
   Debayer *debayer = nullptr;
-  VisionStreamType yuv_type;
+  VisionStreamType stream_type;
   int cur_buf_idx;
   SafeQueue<int> safe_queue;
   int frame_buf_count;
@@ -71,7 +71,7 @@ public:
 
   CameraBuf() = default;
   ~CameraBuf();
-  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType yuv_type);
+  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType type);
   bool acquire();
   void queue(size_t buf_idx);
 };
