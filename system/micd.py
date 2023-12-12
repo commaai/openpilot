@@ -11,6 +11,7 @@ RATE = 10
 FFT_SAMPLES = 4096
 REFERENCE_SPL = 2e-5  # newtons/m^2
 SAMPLE_RATE = 44100
+SAMPLE_BUFFER = 4096 # (approx 100ms)
 
 
 @retry(attempts=7, delay=3)
@@ -98,8 +99,8 @@ class Mic:
     if TICI:
       wait_for_devices(sd) # wait for alsa to be initialized on device
 
-    with sd.InputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback)  as stream:
-      cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}")
+    with sd.InputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback, blocksize=SAMPLE_BUFFER) as stream:
+      cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}, {stream.blocksize=}")
       while True:
         self.update()
 
