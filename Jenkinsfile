@@ -79,6 +79,20 @@ def deviceStage(String stageName, String deviceType, List env, def steps) {
   }
 }
 
+def retryWithDelay(int maxRetries, int delay, Closure body) {
+  for (int i = 0; i < maxRetries; i++) {
+    try {
+      body()
+      return
+    } catch (Exception e) {
+      if (i >= maxRetries - 1) {
+        throw e
+      }
+      sleep(delay)
+    }
+  }
+}
+
 def pcStage(String stageName, Closure body) {
   node {
   stage(stageName) {
@@ -92,20 +106,15 @@ def pcStage(String stageName, Closure body) {
     docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .").inside(dockerArgs) {
       timeout(time: 20, unit: 'MINUTES') {
         try {
-          retry (3) {
-            try {
-              // TODO: remove these after all jenkins jobs are running as batman (merged with master)
-              sh "sudo chown -R batman:batman /tmp/scons_cache"
-              sh "sudo chown -R batman:batman /tmp/comma_download_cache"
+          retryWithDelay (3, 15) {
+            sh "exit 1"
+            // TODO: remove these after all jenkins jobs are running as batman (merged with master)
+            sh "sudo chown -R batman:batman /tmp/scons_cache"
+            sh "sudo chown -R batman:batman /tmp/comma_download_cache"
 
-              sh "git config --global --add safe.directory '*'"
-              sh "git submodule update --init --recursive"
-              sh "git lfs pull"
-            }
-            catch (Exception e) {
-              sleep(15) // sleep 15 seconds between attempts
-              throw e
-            }
+            sh "git config --global --add safe.directory '*'"
+            sh "git submodule update --init --recursive"
+            sh "git lfs pull"
           }
           body()
         } finally {
