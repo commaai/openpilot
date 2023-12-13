@@ -7,6 +7,7 @@ import logging
 import json
 from pathlib import Path
 from typing import List, Optional
+import cereal.messaging as messaging
 from openpilot.system.hardware.hw import Paths
 
 from openpilot.system.swaglog import cloudlog
@@ -96,6 +97,10 @@ class TestUploader(UploaderTestCase):
     self.gen_files(lock=False)
 
     MockParams().put('AllowMeteredUploads', b'0')
+
+    sm = messaging.SubMaster(['deviceState'])
+    sm.update(0)  # timeout=0 during tests
+    self.assertTrue(sm['deviceState'].networkMetered, "For this test we should be testing what happens on a metered connection")
 
     self.start_thread()
     # allow enough time that files would upload
