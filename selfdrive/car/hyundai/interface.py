@@ -150,13 +150,17 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1690.  # from https://www.hyundai-motor.com.tw/clicktobuy/custin#spec_0
       ret.wheelbase = 3.055
       ret.steerRatio = 17.0  # from learner
+    elif candidate == CAR.STARIA_4TH_GEN:
+      ret.mass = 2205.
+      ret.wheelbase = 3.273
+      ret.steerRatio = 11.94  # https://www.hyundai.com/content/dam/hyundai/au/en/models/staria-load/premium-pip-update-2023/spec-sheet/STARIA_Load_Spec-Table_March_2023_v3.1.pdf
 
     # Kia
     elif candidate == CAR.KIA_SORENTO:
       ret.mass = 1985.
       ret.wheelbase = 2.78
       ret.steerRatio = 14.4 * 1.1   # 10% higher at the center seems reasonable
-    elif candidate in (CAR.KIA_NIRO_EV, CAR.KIA_NIRO_EV_2ND_GEN, CAR.KIA_NIRO_PHEV, CAR.KIA_NIRO_HEV_2021, CAR.KIA_NIRO_HEV_2ND_GEN):
+    elif candidate in (CAR.KIA_NIRO_EV, CAR.KIA_NIRO_EV_2ND_GEN, CAR.KIA_NIRO_PHEV, CAR.KIA_NIRO_HEV_2021, CAR.KIA_NIRO_HEV_2ND_GEN, CAR.KIA_NIRO_PHEV_2022):
       ret.mass = 3543. * CV.LB_TO_KG  # average of all the cars
       ret.wheelbase = 2.7
       ret.steerRatio = 13.6  # average of all the cars

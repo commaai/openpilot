@@ -14,7 +14,7 @@ class TestSimBridgeBase(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     if cls is TestSimBridgeBase:
-      raise unittest.SkipTest("Don't run this base class, run test_carla_bridge.py instead")
+      raise unittest.SkipTest("Don't run this base class, run test_metadrive_bridge.py instead")
 
   def setUp(self):
     self.processes = []
@@ -26,15 +26,15 @@ class TestSimBridgeBase(unittest.TestCase):
 
     sm = messaging.SubMaster(['controlsState', 'onroadEvents', 'managerState'])
     q = Queue()
-    carla_bridge = self.create_bridge()
-    p_bridge = carla_bridge.run(q, retries=10)
+    bridge = self.create_bridge()
+    p_bridge = bridge.run(q, retries=10)
     self.processes.append(p_bridge)
 
     max_time_per_step = 60
 
     # Wait for bridge to startup
     start_waiting = time.monotonic()
-    while not carla_bridge.started and time.monotonic() < start_waiting + max_time_per_step:
+    while not bridge.started and time.monotonic() < start_waiting + max_time_per_step:
       time.sleep(0.1)
     self.assertEqual(p_bridge.exitcode, None, f"Bridge process should be running, but exited with code {p_bridge.exitcode}")
 
