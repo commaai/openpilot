@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: Check for template
         run: |
           # Replace "" with the actual template string
@@ -18,6 +19,7 @@ jobs:
             echo "Error: PR template is missing!"
             exit 1
           fi
+
       - name: Set draft status
         if: always()
         uses: actions/github-script@v6
@@ -29,6 +31,7 @@ jobs:
               issue_number: context.issue.number,
               state: 'draft'
             })
+
       - name: Add bot-review label
         if: always()
         uses: actions/github-script@v6
@@ -40,8 +43,9 @@ jobs:
               issue_number: context.issue.number,
               labels: ['bot-review']
             })
+
       - name: Remove bot-review label
-        if: github.event.pull_request.body.includes('# Pull Request Template')
+        if: always()
         uses: actions/github-script@v6
         with:
           script: |
