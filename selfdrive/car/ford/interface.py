@@ -62,6 +62,11 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.9
       ret.mass = 2948
 
+    elif candidate == CAR.MUSTANG_MACH_E_MK1:
+      ret.wheelbase = 2.984
+      ret.steerRatio = 17.0  # guess
+      ret.mass = 2200
+
     elif candidate == CAR.FOCUS_MK4:
       ret.wheelbase = 2.7
       ret.steerRatio = 15.0
