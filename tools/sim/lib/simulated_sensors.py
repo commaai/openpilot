@@ -44,11 +44,10 @@ class SimulatedSensors:
     if not simulator_state.valid:
       return
 
-    # transform vel from carla to NED
-    # north is -Y in CARLA
+    # transform from vel to NED
     velNED = [
-      -simulator_state.velocity.y,  # north/south component of NED is negative when moving south
-      simulator_state.velocity.x,  # positive when moving east, which is x in carla
+      -simulator_state.velocity.y,
+      simulator_state.velocity.x,
       simulator_state.velocity.z,
     ]
 

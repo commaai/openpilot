@@ -426,7 +426,7 @@ void CameraState::camera_map_bufs(MultiCameraState *s) {
   enqueue_req_multi(1, FRAME_BUF_COUNT, 0);
 }
 
-void CameraState::camera_init(MultiCameraState *s, VisionIpcServer * v, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type) {
+void CameraState::camera_init(MultiCameraState *s, VisionIpcServer * v, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type) {
   if (!enabled) return;
 
   LOGD("camera init %d", camera_num);
@@ -618,9 +618,9 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
 }
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  s->driver_cam.camera_init(s, v, 20, device_id, ctx, VISION_STREAM_DRIVER);
-  s->road_cam.camera_init(s, v, 20, device_id, ctx, VISION_STREAM_ROAD);
-  s->wide_road_cam.camera_init(s, v, 20, device_id, ctx, VISION_STREAM_WIDE_ROAD);
+  s->driver_cam.camera_init(s, v, device_id, ctx, VISION_STREAM_DRIVER);
+  s->road_cam.camera_init(s, v, device_id, ctx, VISION_STREAM_ROAD);
+  s->wide_road_cam.camera_init(s, v, device_id, ctx, VISION_STREAM_WIDE_ROAD);
 
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
 }
