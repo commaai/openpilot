@@ -4,6 +4,8 @@ Aside from the ML models, most tools used for openpilot development are in this 
 
 Most development happens on normal Ubuntu workstations, and not in cars or directly on comma devices.
 
+[Dev Containers](https://containers.dev/), which are customizable and consistent development environments wrapped inside a container with integration with VS Code and other popular editors are also available. WSL is also unofficially supported, [learn more here.](https://github.com/commaai/openpilot/tree/master/tools#dev-container-on-any-linux-or-macos).
+
 ## Quick start
 
 ```bash
