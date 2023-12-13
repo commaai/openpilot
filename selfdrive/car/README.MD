@@ -1,6 +1,6 @@
 # selfdrive/car
 
-### Checkout this blogpost for a high level overview of car ports
+### Check out this blogpost for a high level overview of car ports
 https://blog.comma.ai/how-to-write-a-car-port-for-openpilot/
 
 ## Useful car porting utilities
@@ -9,7 +9,7 @@ Testing car ports in your car is very time consuming! Checkout these utilities t
 
 ### [Cabana](/tools/cabana/README.md)
 
-View your cars CAN signals through DBC files, which openpilot uses to parse and create messages that talk to the car.
+View your car's CAN signals through DBC files, which openpilot uses to parse and create messages that talk to the car.
 
 Example:
 ```bash
@@ -18,7 +18,7 @@ Example:
 
 ### [selfdrive/debug/auto_fingerprint.py](/selfdrive/debug/auto_fingerprint.py)
 
-Given a route and platform, automatically inserts fw fingerprints from the platform into the correct place in values.py
+Given a route and platform, automatically inserts FW fingerprints from the platform into the correct place in values.py
 
 Example:
 ```bash
