@@ -7,7 +7,7 @@ https://blog.comma.ai/how-to-write-a-car-port-for-openpilot/
 
 Testing car ports in your car is very time consuming! Checkout these utilities to do basic checks on your work before running it in your car.
 
-### [Cabana](tools/cabana/README.md)
+### [Cabana](/tools/cabana/README.md)
 
 View your cars CAN signals through DBC files, which openpilot uses to parse and create messages that talk to the car.
 
@@ -16,7 +16,7 @@ Example:
 > tools/cabana/cabana '1bbe6bf2d62f58a8|2022-07-14--17-11-43'
 ```
 
-### [selfdrive/debug/auto_fingerprint.py](selfdrive/debug/auto_fingerprint.py)
+### [/selfdrive/debug/auto_fingerprint.py](selfdrive/debug/auto_fingerprint.py)
 
 Given a route and platform, automatically inserts fw fingerprints from the platform into the correct place in values.py
 
@@ -26,7 +26,7 @@ Example:
 Attempting to add fw version for:  SUBARU OUTBACK 6TH GEN
 ```
 
-### [selfdrive/debug/test_car_interfaces.py](selfdrive/debug/test_car_interfaces.py)
+### [/selfdrive/debug/test_car_interfaces.py](selfdrive/debug/test_car_interfaces.py)
 
 Finds common bugs for car interfaces, without even requiring a route!
 
@@ -40,7 +40,7 @@ FAILED selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::test_car_i
 
 ```
 
-### [selfdrive/debug/test_car_model.py](selfdrive/debug/test_car_model.py)
+### [/selfdrive/debug/test_car_model.py](selfdrive/debug/test_car_model.py)
 
 Given a route, runs most of the car interface to check for common errors like missing signals, blocked panda messages, and mismatches.
 
