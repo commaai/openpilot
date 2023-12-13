@@ -1,5 +1,8 @@
 Version 0.9.6 (2023-12-14)
 ========================
+* New driving model
+  * Vision model trained on more data
+  * Improved driving performance
 * AGNOS 9
 * comma body streaming and controls over WebRTC
 * Hyundai Staria 2023 support thanks to sunnyhaibin!
