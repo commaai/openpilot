@@ -5,6 +5,7 @@ Version 0.9.6 (2023-12-14)
   * Improved driving performance
 * AGNOS 9
 * comma body streaming and controls over WebRTC
+* Hyundai Staria 2023 support thanks to sunnyhaibin!
 * Kia Niro Plug-in Hybrid 2022 support thanks to sunnyhaibin!
 * Toyota RAV4 2023 support
 * Toyota RAV4 Hybrid 2023 support
