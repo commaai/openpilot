@@ -103,8 +103,8 @@ def pcStage(String stageName, Closure body) {
               sh "git submodule update --init --recursive"
               sh "git lfs pull"
             }
-            catch {
-              sleep(15)
+            catch (Exception e) {
+              sleep(15) // sleep 15 seconds between attempts
               throw it
             }
           }
