@@ -93,13 +93,20 @@ def pcStage(String stageName, Closure body) {
       timeout(time: 20, unit: 'MINUTES') {
         try {
           retry (3) {
-            // TODO: remove these after all jenkins jobs are running as batman (merged with master)
-            sh "sudo chown -R batman:batman /tmp/scons_cache"
-            sh "sudo chown -R batman:batman /tmp/comma_download_cache"
+            try {
+              sh "exit 1"
+              // TODO: remove these after all jenkins jobs are running as batman (merged with master)
+              sh "sudo chown -R batman:batman /tmp/scons_cache"
+              sh "sudo chown -R batman:batman /tmp/comma_download_cache"
 
-            sh "git config --global --add safe.directory '*'"
-            sh "git submodule update --init --recursive"
-            sh "git lfs pull"
+              sh "git config --global --add safe.directory '*'"
+              sh "git submodule update --init --recursive"
+              sh "git lfs pull"
+            }
+            catch {
+              sleep(15)
+              throw it
+            }
           }
           body()
         } finally {
