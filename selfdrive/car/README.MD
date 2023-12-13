@@ -26,7 +26,7 @@ Example:
 Attempting to add fw version for:  SUBARU OUTBACK 6TH GEN
 ```
 
-### [selfdrive/debug/test_car_interfaces.py](/selfdrive/debug/test_car_interfaces.py)
+### [selfdrive/car/tests/test_car_interfaces.py](/selfdrive/car/tests/test_car_interfaces.py)
 
 Finds common bugs for car interfaces, without even requiring a route!
 
