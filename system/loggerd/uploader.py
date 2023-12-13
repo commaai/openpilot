@@ -270,6 +270,11 @@ def uploader_fn(exit_event: threading.Event) -> None:
         time.sleep(60 if offroad else 5)
       continue
 
+    if sm['deviceState'].networkMetered and not params.get_bool("AllowMeteredUploads"):  # Metered uploads, user toggle
+      if allow_sleep:
+        time.sleep(60 if offroad else 5)
+      continue
+
     d = uploader.next_file_to_upload()
     if d is None:  # Nothing to upload
       if allow_sleep:

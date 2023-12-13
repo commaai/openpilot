@@ -12,7 +12,7 @@ from openpilot.system.hardware.hw import Paths
 from openpilot.system.swaglog import cloudlog
 from openpilot.system.loggerd.uploader import uploader_fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE
 
-from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase
+from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase, MockParams
 
 
 class FakeLogHandler(logging.Handler):
@@ -21,12 +21,15 @@ class FakeLogHandler(logging.Handler):
     self.reset()
 
   def reset(self):
+    self.upload_started = list()
     self.upload_order = list()
     self.upload_ignored = list()
 
   def emit(self, record):
     try:
       j = json.loads(record.getMessage())
+      if j["event"] == "upload_start":
+        self.upload_started.append(j["key"])
       if j["event"] == "upload_success":
         self.upload_order.append(j["key"])
       if j["event"] == "upload_ignored":
@@ -88,6 +91,20 @@ class TestUploader(UploaderTestCase):
       self.assertEqual(os.getxattr((Path(Paths.log_root()) / f_path).with_suffix(""), UPLOAD_ATTR_NAME), UPLOAD_ATTR_VALUE, "All files not uploaded")
 
     self.assertTrue(log_handler.upload_order == exp_order, "Files uploaded in wrong order")
+
+  def test_upload_metered_connection_no_cellular_allowed(self):
+    self.gen_files(lock=False)
+
+    MockParams().put('AllowMeteredUploads', b'0')
+
+    self.start_thread()
+    # allow enough time that files would upload
+    time.sleep(5)
+    self.join_thread()
+
+    # Look for `cloudlog.*` calls from system/loggerd/uploader.py
+    self.assertTrue(len(log_handler.upload_started) == 0, "Some files were still triggered to upload, even though AllowMeteredUploads is False")
+    self.assertTrue(len(log_handler.upload_order) == 0, "No files should have been uploaded")
 
   def test_upload_with_wrong_xattr(self):
     self.gen_files(lock=False, xattr=b'0')
