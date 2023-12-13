@@ -61,9 +61,9 @@ private:
   cl_kernel krnl_;
 };
 
-void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType init_yuv_type) {
+void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType type) {
   vipc_server = v;
-  this->yuv_type = init_yuv_type;
+  stream_type = type;
   frame_buf_count = frame_cnt;
 
   const SensorInfo *ci = s->ci.get();
@@ -87,7 +87,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   assert(nv12_height/2 == VENUS_UV_SCANLINES(COLOR_FMT_NV12, rgb_height));
   size_t nv12_size = 2346 * nv12_width;  // comes from v4l2_format.fmt.pix_mp.plane_fmt[0].sizeimage
   size_t nv12_uv_offset = nv12_width * nv12_height;
-  vipc_server->create_buffers_with_sizes(yuv_type, YUV_BUFFER_COUNT, false, rgb_width, rgb_height, nv12_size, nv12_width, nv12_uv_offset);
+  vipc_server->create_buffers_with_sizes(stream_type, YUV_BUFFER_COUNT, false, rgb_width, rgb_height, nv12_size, nv12_width, nv12_uv_offset);
   LOGD("created %d YUV vipc buffers with size %dx%d", YUV_BUFFER_COUNT, nv12_width, nv12_height);
 
   debayer = new Debayer(device_id, context, this, s, nv12_width, nv12_uv_offset);
@@ -113,7 +113,7 @@ bool CameraBuf::acquire() {
   }
 
   cur_frame_data = camera_bufs_metadata[cur_buf_idx];
-  cur_yuv_buf = vipc_server->get_buffer(yuv_type);
+  cur_yuv_buf = vipc_server->get_buffer(stream_type);
   cur_camera_buf = &camera_bufs[cur_buf_idx];
 
   double start_time = millis_since_boot();
