@@ -1,0 +1,57 @@
+name: PR Review
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check for template
+        run: |
+          # Replace "" with the actual template string
+          if grep -q "## Pull Request Template" ${{ github.event.pull_request.body }}; then
+            echo "Template found!"
+          else
+            echo "Error: PR template is missing!"
+            exit 1
+          fi
+
+      - name: Set draft status
+        if: always()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              state: 'draft'
+            })
+
+      - name: Add bot-review label
+        if: always()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['bot-review']
+            })
+
+      - name: Remove bot-review label
+        if: always()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.removeLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              name: 'bot-review'
+            })
