@@ -12,7 +12,7 @@ Our software is open source so you can solve your own problems without needing h
 
 ### What contributions are we looking for?
 
-**openpilot's priorities are [safety](SAFETY.md), stability, quality, and features, in that order.**
+**openpilot's priorities are [safety](SAFETY.md), stability, quality, and features, in that order.** openpilot is part of comma's mission to *solve self-driving cars while delivering shippable intermediaries*, and all developoment is towards that goal.
 
 Simple, well-tested bug fixes are the easiest to merge.
 Features are the hardest to get merged, and 
@@ -29,6 +29,7 @@ These are all good example PRs of various sizes:
 * new features
 * arbitrary style changes
 * new controllers
+* changes without a clear goal
 * 500+ line PRs: it should be either cleaned up, broken up into smaller PRs, or both
 
 ### First contribution
@@ -37,7 +38,7 @@ Check out any [good first issue](https://github.com/commaai/openpilot/issues?q=i
 
 ## Pull Requests
 
-Pull requests should be against the master branch. Welcomed contributions include bug reports, car ports, and any [open issue](https://github.com/commaai/openpilot/issues). If you're unsure about a contribution, feel free to open a discussion, issue, or draft PR to discuss the problem you're trying to solve.
+Pull requests should be against the master branch. If you're unsure about a contribution, feel free to open a discussion, issue, or draft PR to discuss the problem you're trying to solve.
 
 A good pull request has all of the following:
 * a clearly stated purpose
