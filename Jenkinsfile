@@ -1,8 +1,7 @@
 def retryWithDelay(int maxRetries, int delay, Closure body) {
   for (int i = 0; i < maxRetries; i++) {
     try {
-      body()
-      return
+      return body()
     } catch (Exception e) {
       sleep(delay)
     }
@@ -101,7 +100,12 @@ def pcStage(String stageName, Closure body) {
     checkout scm
 
     def dockerArgs = "--user=batman -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache -e PYTHONPATH=${env.WORKSPACE}";
-    docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .").inside(dockerArgs) {
+
+    def openpilot_base = retryWithDelay (3, 15) {
+      return docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .")
+    }
+    
+    openpilot_base.inside(dockerArgs) {
       timeout(time: 20, unit: 'MINUTES') {
         try {
           retryWithDelay (3, 15) {
