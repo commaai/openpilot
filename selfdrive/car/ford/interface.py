@@ -100,9 +100,7 @@ class CarInterface(CarInterfaceBase):
     events = self.create_common_events(ret, extra_gears=[GearShifter.manumatic])
     if not self.CS.vehicle_sensors_valid:
       events.add(car.CarEvent.EventName.vehicleSensorsInvalid)
-
-    # Ford Q3 Hybrids are disabled due to occasional incorrect checksums some stock messages. This must be root caused before enabling support.
-    if self.CS.hybrid_platform and self.CP.carFingerprint not in CANFD_CAR:
+    if self.CS.unsupported_platform:
       events.add(car.CarEvent.EventName.startupNoControl)
 
     ret.events = events.to_msg()
