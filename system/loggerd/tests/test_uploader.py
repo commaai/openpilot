@@ -96,11 +96,21 @@ class TestUploader(UploaderTestCase):
   def test_upload_metered_connection_no_cellular_allowed(self):
     self.gen_files(lock=False)
 
-    MockParams().put('AllowMeteredUploads', b'0')
-
     sm = messaging.SubMaster(['deviceState'])
     sm.update(0)  # timeout=0 during tests
+
+    # msg = messaging.new_message('deviceState')
+    msg = messaging.DeviceState.from_bytes(sm['deviceState'].to_bytes())
+    # https://capnproto.github.io/pycapnp/quickstart.html#serializing-deserializing
+    # https://github.com/commaai/cereal/blob/d11688a90a1cebacb3fe00dcfbba5f27551b2d89/log.capnp#L308
+    msg.deviceState.networkMetered = True
+    pm = messaging.PubMaster(['deviceState'])
+    pm.send("deviceState", msg)
+
+    sm.update(0)
     self.assertTrue(sm['deviceState'].networkMetered, "For this test we should be testing what happens on a metered connection")
+
+    MockParams().put('AllowMeteredUploads', b'0')
 
     self.start_thread()
     # allow enough time that files would upload
