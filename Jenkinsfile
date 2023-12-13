@@ -107,7 +107,6 @@ def pcStage(String stageName, Closure body) {
       timeout(time: 20, unit: 'MINUTES') {
         try {
           retryWithDelay (3, 15) {
-            sh "exit 1"
             // TODO: remove these after all jenkins jobs are running as batman (merged with master)
             sh "sudo chown -R batman:batman /tmp/scons_cache"
             sh "sudo chown -R batman:batman /tmp/comma_download_cache"
