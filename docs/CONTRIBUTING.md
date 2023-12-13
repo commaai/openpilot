@@ -13,12 +13,10 @@ Our software is open source so you can solve your own problems without needing h
 ### What contributions are we looking for?
 
 **openpilot's priorities are [safety](SAFETY.md), stability, quality, and features, in that order.** openpilot is part of comma's mission to *solve self-driving cars while delivering shippable intermediaries*, and all developoment is towards that goal.
-
-Simple, well-tested bug fixes are the easiest to merge.
-Features are the hardest to get merged, and 
-
-The probability of a pull request being merged is a fucntion of its value to the project and the time it will take us to get it merged.
+s
+The probability of a pull request being merged is a function of its value to the project and the effort it will take us to get it merged.
 If a PR offers *some* value but will take lots of time to get merged, it will be closed.
+Simple, well-tested bug fixes are the easiest to merge. Features are the hardet to get merged. 
 
 These are all good example PRs of various sizes:
 * simple variable rename: https://github.com/commaai/openpilot/pull/30695
