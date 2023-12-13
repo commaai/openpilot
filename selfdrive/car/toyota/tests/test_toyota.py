@@ -17,6 +17,10 @@ class TestToyotaInterfaces(unittest.TestCase):
     self.assertTrue(len(ANGLE_CONTROL_CAR - TSS2_CAR) == 0)
     self.assertTrue(len(RADAR_ACC_CAR - TSS2_CAR) == 0)
 
+  def test_lta_platforms(self):
+    # At this time, only RAV4 2023 is expected to use LTA/angle control
+    self.assertEqual(ANGLE_CONTROL_CAR, {CAR.RAV4_TSS2_2023})
+
   def test_tss2_dbc(self):
     # We make some assumptions about TSS2 platforms,
     # like looking up certain signals only in this DBC

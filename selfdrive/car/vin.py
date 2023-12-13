@@ -5,7 +5,7 @@ import cereal.messaging as messaging
 from panda.python.uds import get_rx_addr_for_tx_addr, FUNCTIONAL_ADDRS
 from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from openpilot.selfdrive.car.fw_query_definitions import StdQueries
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 
 VIN_UNKNOWN = "0" * 17
 VIN_RE = "[A-HJ-NPR-Z0-9]{17}"

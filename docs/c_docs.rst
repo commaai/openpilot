@@ -29,8 +29,6 @@ camerad
 ^^^^^^^
 .. autodoxygenindex::
    :project: system_camerad_cameras
-.. autodoxygenindex::
-   :project: system_camerad_imgproc
 
 locationd
 ^^^^^^^^^
@@ -42,12 +40,6 @@ ui
 
 .. autodoxygenindex::
    :project: selfdrive_ui
-
-soundd
-""""""
-.. autodoxygenindex::
-   :project: selfdrive_ui_soundd
-
 
 replay
 """"""

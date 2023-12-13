@@ -46,7 +46,6 @@ selfdrive/boardd/boardd
 selfdrive/logcatd/logcatd
 selfdrive/mapd/default_speeds_by_region.json
 system/proclogd/proclogd
-selfdrive/ui/_ui
 selfdrive/ui/translations/alerts_generated.h
 selfdrive/ui/translations/tmp
 selfdrive/test/longitudinal_maneuvers/out

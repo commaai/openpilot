@@ -1,7 +1,8 @@
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=laika_repo/ -Werror --strict-config --strict-markers --durations=10"
-#cpp_files = "test_*" # uncomment when agnos has pytest-cpp and remove from CI
+addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
+cpp_files = "test_*"
+cpp_harness = "selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"
 #timeout = "30"  # you get this long by default
 markers = [
@@ -23,6 +24,7 @@ testpaths = [
   "system/proclogd",
   "system/tests",
   "system/ubloxd",
+  "system/webrtc",
   "tools/lib/tests",
   "tools/replay",
   "tools/cabana"
@@ -38,12 +40,12 @@ exclude = [
   "cereal/",
   "opendbc/",
   "panda/",
-  "laika/",
-  "laika_repo/",
   "rednose/",
   "rednose_repo/",
   "tinygrad/",
   "tinygrad_repo/",
+  "teleoprtc/",
+  "teleoprtc_repo/",
   "third_party/",
 ]
 
@@ -82,7 +84,6 @@ crcmod = "*"
 cryptography = "*"
 Cython = "*"
 future-fstrings = "*"  # for acados
-hatanaka = "==2.4"
 hexdump = "*"
 Jinja2 = "*"
 json-rpc = "*"
@@ -150,7 +151,7 @@ pytest-subtests = "*"
 pytest-xdist = "*"
 pytest-timeout = "*"
 pytest-timeouts = "*"
-pytest-random-order = "*"
+pytest-randomly = "*"
 ruff = "*"
 scipy = "*"
 sphinx = "*"
@@ -159,7 +160,6 @@ sphinx-sitemap = "*"
 tabulate = "*"
 tenacity = "*"
 types-atomicwrites = "*"
-types-certifi = "*"
 types-pycurl = "*"
 types-PyYAML = "*"
 types-requests = "*"
@@ -168,12 +168,6 @@ types-tabulate = "*"
 # this is only pinned since 5.15.11 is broken
 pyqt5 = { version = "==5.15.2", markers = "platform_machine == 'x86_64'" } # no aarch64 wheels for macOS/linux
 
-[tool.poetry.group.carla]
-optional = true
-
-[tool.poetry.group.carla.dependencies]
-carla = { url = "https://github.com/commaai/carla/releases/download/3.11.4/carla-0.9.14-cp311-cp311-linux_x86_64.whl", platform = "linux", markers = "platform_machine == 'x86_64'" }
-
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
@@ -181,15 +175,16 @@ build-backend = "poetry.core.masonry.api"
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]
 select = ["E", "F", "W", "PIE", "C4", "ISC", "RUF008", "RUF100", "A", "B", "TID251"]
-ignore = ["W292", "E741", "E402", "C408", "ISC003", "B027", "B024"]
+ignore = ["E741", "E402", "C408", "ISC003", "B027", "B024"]
 line-length = 160
 target-version="py311"
 exclude = [
   "panda",
   "opendbc",
-  "laika_repo",
   "rednose_repo",
   "tinygrad_repo",
+  "teleoprtc",
+  "teleoprtc_repo",
   "third_party",
 ]
 flake8-implicit-str-concat.allow-multiline=false
@@ -199,3 +194,6 @@ flake8-implicit-str-concat.allow-multiline=false
 "system".msg = "Use openpilot.system"
 "third_party".msg = "Use openpilot.third_party"
 "tools".msg = "Use openpilot.tools"
+
+[tool.coverage.run]
+concurrency = ["multiprocessing", "thread"]

@@ -6,6 +6,12 @@ from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.system.hardware import TICI
 
 
+def pytest_sessionstart(session):
+  # TODO: fix tests and enable test order randomization
+  if session.config.pluginmanager.hasplugin('randomly'):
+    session.config.option.randomly_reorganize = False
+
+
 @pytest.fixture(scope="function", autouse=True)
 def openpilot_function_fixture():
   starting_env = dict(os.environ)
@@ -37,8 +43,22 @@ def openpilot_class_fixture():
   os.environ.update(starting_env)
 
 
+@pytest.hookimpl(tryfirst=True)
 def pytest_collection_modifyitems(config, items):
   skipper = pytest.mark.skip(reason="Skipping tici test on PC")
   for item in items:
     if not TICI and "tici" in item.keywords:
       item.add_marker(skipper)
+
+    if "xdist_group_class_property" in item.keywords:
+      class_property_name = item.get_closest_marker('xdist_group_class_property').args[0]
+      class_property_value = getattr(item.cls, class_property_name)
+      item.add_marker(pytest.mark.xdist_group(class_property_value))
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_configure(config):
+  config_line = (
+    "xdist_group_class_property: group tests by a property of the class that contains them"
+  )
+  config.addinivalue_line("markers", config_line)

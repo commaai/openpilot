@@ -91,7 +91,9 @@ void AbstractStream::updateLastMessages() {
   {
     std::lock_guard lk(mutex_);
     for (const auto &id : new_msgs_) {
-      last_msgs[id] = messages_[id];
+      const auto &can_data = messages_[id];
+      current_sec_ = std::max(current_sec_, can_data.ts);
+      last_msgs[id] = can_data;
       sources.insert(id.source);
     }
     msgs = std::move(new_msgs_);
@@ -128,6 +130,7 @@ void AbstractStream::updateLastMsgsTo(double sec) {
   new_msgs_.clear();
   messages_.clear();
 
+  current_sec_ = sec;
   uint64_t last_ts = (sec + routeStartTime()) * 1e9;
   for (const auto &[id, ev] : events_) {
     auto it = std::upper_bound(ev.begin(), ev.end(), last_ts, CompareCanEvent());

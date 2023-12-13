@@ -27,8 +27,11 @@ void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t 
   edat.setData(dat);
   if (flags & V4L2_BUF_FLAG_KEYFRAME) edat.setHeader(header);
 
-  auto words = new kj::Array<capnp::word>(capnp::messageToFlatArray(msg));
-  auto bytes = words->asBytes();
-  e->pm->send(e->encoder_info.publish_name, bytes.begin(), bytes.size());
-  delete words;
+  uint32_t bytes_size = capnp::computeSerializedSizeInWords(msg) * sizeof(capnp::word);
+  if (e->msg_cache.size() < bytes_size) {
+    e->msg_cache.resize(bytes_size);
+  }
+  kj::ArrayOutputStream output_stream(kj::ArrayPtr<capnp::byte>(e->msg_cache.data(), bytes_size));
+  capnp::writeMessage(output_stream, msg);
+  e->pm->send(e->encoder_info.publish_name, e->msg_cache.data(), bytes_size);
 }

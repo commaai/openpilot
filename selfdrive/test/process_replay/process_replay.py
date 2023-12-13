@@ -442,8 +442,8 @@ def controlsd_config_callback(params, cfg, lr):
       controlsState = msg.controlsState
       if initialized:
         break
-    elif msg.which() == "carEvents":
-      initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.carEvents]
+    elif msg.which() == "onroadEvents":
+      initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.onroadEvents]
 
   assert controlsState is not None and initialized, "controlsState never initialized"
   params.put("ReplayControlsState", controlsState.as_builder().to_bytes())
@@ -465,8 +465,8 @@ CONFIGS = [
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
       "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope"
     ],
-    subs=["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
-    ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
+    subs=["controlsState", "carState", "carControl", "sendcan", "onroadEvents", "carParams"],
+    ignore=["logMonoTime", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     config_callback=controlsd_config_callback,
     init_callback=controlsd_fingerprint_callback,
     should_recv_callback=controlsd_rcv_callback,
@@ -478,7 +478,7 @@ CONFIGS = [
     proc_name="radard",
     pubs=["can", "carState", "modelV2"],
     subs=["radarState", "liveTracks"],
-    ignore=["logMonoTime", "valid", "radarState.cumLagMs"],
+    ignore=["logMonoTime", "radarState.cumLagMs"],
     init_callback=get_car_params_callback,
     should_recv_callback=MessageBasedRcvCallback("can"),
     main_pub="can",
@@ -487,7 +487,7 @@ CONFIGS = [
     proc_name="plannerd",
     pubs=["modelV2", "carControl", "carState", "controlsState", "radarState"],
     subs=["lateralPlan", "longitudinalPlan", "uiPlan"],
-    ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime", "lateralPlan.solverExecutionTime"],
+    ignore=["logMonoTime", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime", "lateralPlan.solverExecutionTime"],
     init_callback=get_car_params_callback,
     should_recv_callback=FrequencyBasedRcvCallback("modelV2"),
     tolerance=NUMPY_TOLERANCE,
@@ -496,14 +496,14 @@ CONFIGS = [
     proc_name="calibrationd",
     pubs=["carState", "cameraOdometry", "carParams"],
     subs=["liveCalibration"],
-    ignore=["logMonoTime", "valid"],
+    ignore=["logMonoTime"],
     should_recv_callback=calibration_rcv_callback,
   ),
   ProcessConfig(
     proc_name="dmonitoringd",
     pubs=["driverStateV2", "liveCalibration", "carState", "modelV2", "controlsState"],
     subs=["driverMonitoringState"],
-    ignore=["logMonoTime", "valid"],
+    ignore=["logMonoTime"],
     should_recv_callback=FrequencyBasedRcvCallback("driverStateV2"),
     tolerance=NUMPY_TOLERANCE,
   ),
@@ -514,7 +514,7 @@ CONFIGS = [
       "liveCalibration", "carState", "carParams", "gpsLocation"
     ],
     subs=["liveLocationKalman"],
-    ignore=["logMonoTime", "valid"],
+    ignore=["logMonoTime"],
     config_callback=locationd_config_pubsub_callback,
     tolerance=NUMPY_TOLERANCE,
   ),
@@ -522,7 +522,7 @@ CONFIGS = [
     proc_name="paramsd",
     pubs=["liveLocationKalman", "carState"],
     subs=["liveParameters"],
-    ignore=["logMonoTime", "valid"],
+    ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
     should_recv_callback=FrequencyBasedRcvCallback("liveLocationKalman"),
     tolerance=NUMPY_TOLERANCE,
@@ -748,6 +748,9 @@ def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=Non
 
     if CP.openpilotLongitudinalControl:
       params_dict["ExperimentalLongitudinalEnabled"] = True
+
+    if CP.notCar:
+      params_dict["JoystickDebugMode"] = True
 
   return params_dict
 

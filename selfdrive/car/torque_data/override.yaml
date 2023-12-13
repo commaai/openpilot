@@ -26,6 +26,7 @@ FORD EXPLORER 6TH GEN: [.nan, 1.5, .nan]
 FORD F-150 14TH GEN: [.nan, 1.5, .nan]
 FORD FOCUS 4TH GEN: [.nan, 1.5, .nan]
 FORD MAVERICK 1ST GEN: [.nan, 1.5, .nan]
+FORD F-150 LIGHTNING 1ST GEN: [.nan, 1.5, .nan]
 ###
 
 # No steering wheel
@@ -63,6 +64,7 @@ HYUNDAI AZERA 6TH GEN: [1.8, 1.8, 0.1]
 HYUNDAI AZERA HYBRID 6TH GEN: [1.8, 1.8, 0.1]
 KIA K8 HYBRID 1ST GEN: [2.5, 2.5, 0.1]
 HYUNDAI CUSTIN 1ST GEN: [2.5, 2.5, 0.1]
+LEXUS GS F 2016: [2.5, 2.5, 0.08]
 
 # Dashcam or fallback configured as ideal car
 mock: [10.0, 10, 0.0]

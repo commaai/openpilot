@@ -4,16 +4,6 @@ import tempfile
 from atomicwrites import AtomicWriter
 
 
-def mkdirs_exists_ok(path):
-  if path.startswith(('http://', 'https://')):
-    raise ValueError('URL path')
-  try:
-    os.makedirs(path)
-  except OSError:
-    if not os.path.isdir(path):
-      raise
-
-
 def rm_not_exists_ok(path):
   try:
     os.remove(path)
