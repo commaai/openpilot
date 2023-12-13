@@ -1,7 +1,6 @@
 # selfdrive/car
 
-### Check out this blog post for a high-level overview of porting a car
-https://blog.comma.ai/how-to-write-a-car-port-for-openpilot/
+Check out [this blog post](https://blog.comma.ai/how-to-write-a-car-port-for-openpilot/) for a high-level overview of porting a car.
 
 ## Useful car porting utilities
 
