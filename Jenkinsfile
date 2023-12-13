@@ -102,8 +102,10 @@ def pcStage(String stageName, Closure body) {
 
     def dockerArgs = "--user=batman -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache -e PYTHONPATH=${env.WORKSPACE}";
 
+    def openpilot_base = null;
+
     retryWithDelay (3, 15) {
-      def openpilot_base = docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .")
+      openpilot_base = docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .")
     }
     
     openpilot_base.inside(dockerArgs) {
