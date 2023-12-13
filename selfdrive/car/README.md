@@ -1,11 +1,10 @@
 # selfdrive/car
 
-### Check out this blogpost for a high level overview of car ports
-https://blog.comma.ai/how-to-write-a-car-port-for-openpilot/
+Check out [this blog post](https://blog.comma.ai/how-to-write-a-car-port-for-openpilot/) for a high-level overview of porting a car.
 
 ## Useful car porting utilities
 
-Testing car ports in your car is very time consuming! Checkout these utilities to do basic checks on your work before running it in your car.
+Testing car ports in your car is very time-consuming. Check out these utilities to do basic checks on your work before running it in your car.
 
 ### [Cabana](/tools/cabana/README.md)
 
@@ -28,12 +27,12 @@ Attempting to add fw version for:  SUBARU OUTBACK 6TH GEN
 
 ### [selfdrive/car/tests/test_car_interfaces.py](/selfdrive/car/tests/test_car_interfaces.py)
 
-Finds common bugs for car interfaces, without even requiring a route!
+Finds common bugs for car interfaces, without even requiring a route.
 
 
 #### Example: Typo in signal name
 ```bash
-> pytest selfdrive/car/tests/test_car_interfaces.py -k subaru # (replace with the brand you are working on!)
+> pytest selfdrive/car/tests/test_car_interfaces.py -k subaru  # replace with the brand you are working on
 
 =====================================================================
 FAILED selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::test_car_interfaces_165_SUBARU_LEGACY_7TH_GEN - KeyError: 'CruiseControlOOPS'
@@ -42,9 +41,9 @@ FAILED selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::test_car_i
 
 ### [selfdrive/debug/test_car_model.py](/selfdrive/debug/test_car_model.py)
 
-Given a route, runs most of the car interface to check for common errors like missing signals, blocked panda messages, and mismatches.
+Given a route, runs most of the car interface to check for common errors like missing signals, blocked panda messages, and safety mismatches.
 
-#### Example: Panda safety mismatch for gasPressed
+#### Example: panda safety mismatch for gasPressed
 ```bash
 > python selfdrive/debug/test_car_model.py '4822a427b188122a|2023-08-14--16-22-21'
 
@@ -59,7 +58,7 @@ AssertionError: 1 is not false : panda safety doesn't agree with openpilot: {'ga
 ```
 
 
-## Car Port structure
+## Car port structure
 
 ### interface.py
 Generic interface to send and receive messages from CAN (controlsd uses this to communicate with car)
@@ -71,7 +70,7 @@ Builds CAN messages to send to car
 Reads CAN from car and builds openpilot CarState message
 
 ##### values.py
-Fingerprints, limits for actuation, car doc information, etc
+Fingerprints, limits for actuation, and supported car documentation
 
 ##### radar_interface.py
 Interface for parsing radar points from the car
