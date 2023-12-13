@@ -14,7 +14,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "ford"
-    ret.dashcamOnly = candidate in {CAR.F_150_MK14}
+    ret.dashcamOnly = candidate in CANFD_CAR
 
     ret.radarUnavailable = True
     ret.steerControlType = car.CarParams.SteerControlType.angle
@@ -56,6 +56,12 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 17.0
       ret.mass = 2000
 
+    elif candidate == CAR.F_150_LIGHTNING_MK1:
+      # required trim only on SuperCrew
+      ret.wheelbase = 3.70
+      ret.steerRatio = 16.9
+      ret.mass = 2948
+
     elif candidate == CAR.FOCUS_MK4:
       ret.wheelbase = 2.7
       ret.steerRatio = 15.0
@@ -94,7 +100,9 @@ class CarInterface(CarInterfaceBase):
     events = self.create_common_events(ret, extra_gears=[GearShifter.manumatic])
     if not self.CS.vehicle_sensors_valid:
       events.add(car.CarEvent.EventName.vehicleSensorsInvalid)
-    if self.CS.hybrid_platform:
+
+    # Ford Q3 Hybrids are disabled due to occasional incorrect checksums some stock messages. This must be root caused before enabling support.
+    if self.CS.hybrid_platform and self.CP.carFingerprint not in CANFD_CAR:
       events.add(car.CarEvent.EventName.startupNoControl)
 
     ret.events = events.to_msg()
