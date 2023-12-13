@@ -23,11 +23,6 @@ All of these are examples of good PRs:
 * simple car model port: https://github.com/commaai/openpilot/pull/30245
 * car brand port: https://github.com/commaai/openpilot/pull/23331
 
-The following contributions are welcomed:
-* bug fixes
-* car ports
-* documentation
-
 ### What doesn't get merged?
 
 * arbitrary style changes
@@ -37,6 +32,11 @@ The following contributions are welcomed:
 ### First contribution
 
 Check out any [good first issue](https://github.com/commaai/openpilot/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) to get started.
+
+### What do I need to contribute?
+
+A lot of openpilot work requires only a PC, and some requires a comma device.
+Most car-related contributions require access to that car, plus a comma device installed in the car.
 
 ## Pull Requests
 
