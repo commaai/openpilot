@@ -2024,6 +2024,14 @@ FW_VERSIONS = {
       b'\xf1\x00NQ5__               1.01 1.03 99110-CH000         ',
     ],
   },
+  CAR.KIA_SPORTAGE_PHEV_5TH_GEN: {
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00NQ5__               1.01 1.03 99110-CH000         ',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00NQ5 FR_CMR AT USA LHD 1.00 1.01 99211-P1060 680',
+    ],
+  },
   CAR.SANTA_CRUZ_1ST_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-CW000 14M',
@@ -2128,14 +2136,6 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00GL3_ RDR -----      1.00 1.02 99110-L8000         ',
-    ],
-  },
-  CAR.KIA_SPORTAGE_PHEV_5TH_GEN: {
-    (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00NQ5__               1.01 1.03 99110-CH000         ',
-    ],
-    (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00NQ5 FR_CMR AT USA LHD 1.00 1.01 99211-P1060 680',
     ],
   },
 }
@@ -2246,6 +2246,7 @@ DBC = {
   CAR.SANTA_CRUZ_1ST_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KIA_SPORTAGE_5TH_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KIA_SPORTAGE_HYBRID_5TH_GEN: dbc_dict('hyundai_canfd', None),
+  CAR.KIA_SPORTAGE_PHEV_5TH_GEN: dbc_dict('hyundai_canfd', None),
   CAR.GENESIS_GV70_1ST_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KIA_SORENTO_PHEV_4TH_GEN: dbc_dict('hyundai_canfd', None),
   CAR.GENESIS_GV60_EV_1ST_GEN: dbc_dict('hyundai_canfd', None),
@@ -2259,5 +2260,4 @@ DBC = {
   CAR.KIA_K8_HEV_1ST_GEN: dbc_dict('hyundai_canfd', None),
   CAR.CUSTIN_1ST_GEN: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_NIRO_PHEV_2022: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
-  CAR.KIA_SPORTAGE_PHEV_5TH_GEN: dbc_dict('hyundai_canfd', None),
 }
