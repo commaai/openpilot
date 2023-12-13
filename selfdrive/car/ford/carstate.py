@@ -24,7 +24,7 @@ class CarState(CarStateBase):
     ret = car.CarState.new_message()
 
     # Ford Q3 hybrid variants experience a bug where a message from the PCM sends invalid checksums,
-    # this must be root caused before enabling support. Ford Q4 hybrids do not have this problem.
+    # this must be root-caused before enabling support. Ford Q4 hybrids do not have this problem.
     # TrnAin_Tq_Actl and its quality flag are only set on ICE platform variants
     self.unsupported_platform = (cp.vl["VehicleOperatingModes"]["TrnAinTq_D_Qf"] == 0 and
                                  self.CP.carFingerprint not in CANFD_CAR)
