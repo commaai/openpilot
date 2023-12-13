@@ -8,7 +8,6 @@ import json
 from pathlib import Path
 from typing import List, Optional
 import cereal.messaging as messaging
-from cereal import log
 from openpilot.system.hardware.hw import Paths
 
 from openpilot.system.swaglog import cloudlog
@@ -102,8 +101,7 @@ class TestUploader(UploaderTestCase):
 
     msg = messaging.new_message('deviceState')
     # https://github.com/commaai/cereal/blob/d11688a90a1cebacb3fe00dcfbba5f27551b2d89/log.capnp#L308
-    # https://capnproto.github.io/pycapnp/quickstart.html#serializing-deserializing
-    msg.deviceState = log.DeviceState.from_bytes(sm['deviceState'].to_bytes())
+    msg.deviceState = sm['deviceState']
     # Keep everything the same, except `.networkMetered` is now True
     msg.deviceState.networkMetered = True
     pm = messaging.PubMaster(['deviceState'])
