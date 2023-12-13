@@ -54,14 +54,20 @@ class MockApiIgnore():
     return "fake-token"
 
 class MockParams():
-  def __init__(self):
-    self.params = {
-      "DongleId": b"0000000000000000",
-      "IsOffroad": b"1",
-    }
+  # Follow a pattern similar to selfdrive/athena/tests/helpers.py#MockParams
+  default_params = {
+    "DongleId": b"0000000000000000",
+    "IsOffroad": b"1",
+    "AllowMeteredUploads": b"1",
+  }
+  params = default_params.copy()
+
+  @staticmethod
+  def restore_defaults():
+    MockParams.params = MockParams.default_params.copy()
 
   def get(self, k, block=False, encoding=None):
-    val = self.params[k]
+    val = MockParams.params.get(k)
 
     if encoding is not None:
       return val.decode(encoding)
@@ -69,8 +75,13 @@ class MockParams():
       return val
 
   def get_bool(self, k):
-    val = self.params[k]
+    val = MockParams.params.get(k)
     return (val == b'1')
+
+  def put(self, k, v):
+    if k not in MockParams.params:
+      raise KeyError(f"key: {k} not in MockParams")
+    MockParams.params[k] = v
 
 class UploaderTestCase(unittest.TestCase):
   f_type = "UNKNOWN"
@@ -90,6 +101,10 @@ class UploaderTestCase(unittest.TestCase):
     uploader.fake_upload = True
     uploader.force_wifi = True
     uploader.allow_sleep = False
+
+    # Follow a pattern similar to selfdrive/athena/tests/helpers.py#TestAthenadMethods
+    MockParams.restore_defaults()
+
     self.seg_num = random.randint(1, 300)
     self.seg_format = "2019-04-18--12-52-54--{}"
     self.seg_format2 = "2019-05-18--11-22-33--{}"
