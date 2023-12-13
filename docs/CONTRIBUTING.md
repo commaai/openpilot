@@ -1,22 +1,21 @@
 # How to contribute
 
-Our software is open source so you can solve your own problems without needing help from others. And if you solve a problem and are so kind, you can upstream it for the rest of the world to use. Check out our [post about externalization](https://blog.comma.ai/a-2020-theme-externalization/).
-
-Development activity is coordinated through our GitHub Issues, [GitHub Discussions](https://github.com/commaai/openpilot/discussions), and [Discord](https://discord.comma.ai). A lot of documentation is available at https://docs.comma.ai and on our [blog](https://blog.comma.ai/).
+Our software is open source so you can solve your own problems without needing help from others. And if you solve a problem and are so kind, you can upstream it for the rest of the world to use. Check out our [post about externalization](https://blog.comma.ai/a-2020-theme-externalization/). Development activity is coordinated through our GitHub Issues, [GitHub Discussions](https://github.com/commaai/openpilot/discussions), and [Discord](https://discord.comma.ai).
 
 ### Getting Started
 
- * Setup your [development environment](../tools/)
- * Join our [Discord](https://discord.comma.ai)
- * Make sure you have a [GitHub account](https://github.com/signup/free)
- * Fork [our repositories](https://github.com/commaai) on GitHub
+* Setup your [development environment](../tools/)
+* Join our [Discord](https://discord.comma.ai)
+* Make sure you have a [GitHub account](https://github.com/signup/free)
+* Fork [our repositories](https://github.com/commaai) on GitHub
+* Docs are at https://docs.comma.ai and https://blog.comma.ai
 
 ### What contributions are we looking for?
 
-openpilot's priorities are safety (as defined by [SAFETY.md](docs/SAFETY.md)), stability, quality, and features, in that order.
+**openpilot's priorities are [safety](SAFETY.md), stability, quality, and features, in that order.**
 
 Simple, well-tested bug fixes are the easiest to merge.
-Features are the hardest to get merged.
+Features are the hardest to get merged, and 
 
 The probability of a pull request being merged is a fucntion of its value to the project and the time it will take us to get it merged.
 If a PR offers *some* value but will take lots of time to get merged, it will be closed.
@@ -27,10 +26,10 @@ These are all good example PRs of various sizes:
 
 ### What doesn't get merged?
 
-* style changes
+* new features
+* arbitrary style changes
 * new controllers
 * 500+ line PRs: it should be either cleaned up, broken up into smaller PRs, or both
-* new features
 
 ### First contribution
 
