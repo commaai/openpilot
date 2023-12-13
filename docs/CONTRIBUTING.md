@@ -17,9 +17,16 @@ The probability of a pull request being merged is a function of its value to the
 If a PR offers *some* value but will take lots of time to get merged, it will be closed.
 Simple, well-tested bug fixes are the easiest to merge. Features are the hardet to get merged. 
 
-These are all good example PRs of various sizes:
-* simple variable rename: https://github.com/commaai/openpilot/pull/30695
+All of these are examples of good PRs:
+* typo fix: https://github.com/commaai/openpilot/pull/30678
+* removing unused code: https://github.com/commaai/openpilot/pull/30573
 * simple car model port: https://github.com/commaai/openpilot/pull/30245
+* car brand port: https://github.com/commaai/openpilot/pull/23331
+
+The following contributions are welcomed:
+* bug fixes
+* car ports
+* documentation
 
 ### What doesn't get merged?
 
