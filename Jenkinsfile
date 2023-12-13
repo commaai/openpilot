@@ -1,3 +1,17 @@
+def retryWithDelay(int maxRetries, int delay, Closure body) {
+  for (int i = 0; i < maxRetries; i++) {
+    try {
+      body()
+      return
+    } catch (Exception e) {
+      if (i >= maxRetries - 1) {
+        throw e
+      }
+      sleep(delay)
+    }
+  }
+}
+
 def device(String ip, String step_label, String cmd) {
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
     def ssh_cmd = """
@@ -75,20 +89,6 @@ def deviceStage(String stageName, String deviceType, List env, def steps) {
           }
         }
       }
-    }
-  }
-}
-
-def retryWithDelay(int maxRetries, int delay, Closure body) {
-  for (int i = 0; i < maxRetries; i++) {
-    try {
-      body()
-      return
-    } catch (Exception e) {
-      if (i >= maxRetries - 1) {
-        throw e
-      }
-      sleep(delay)
     }
   }
 }
