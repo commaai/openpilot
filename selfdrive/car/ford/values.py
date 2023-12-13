@@ -1,12 +1,12 @@
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum, StrEnum
 from typing import Dict, List, Union
 
 from cereal import car
 from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
-                                           Device
+                                                     Device
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -74,11 +74,13 @@ class Footnote(Enum):
 @dataclass
 class FordCarInfo(CarInfo):
   package: str = "Co-Pilot360 Assist+"
-  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.ford_q3]))
 
   def init_make(self, CP: car.CarParams):
-    if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1):
-      self.car_parts = CarParts([Device.threex_angled_mount, CarHarness.ford_q3])
+    harness = CarHarness.ford_q4 if CP.carFingerprint in CANFD_CAR else CarHarness.ford_q3
+    if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1, CAR.F_150_MK14):
+      self.car_parts = CarParts([Device.threex_angled_mount, harness])
+    else:
+      self.car_parts = CarParts([Device.threex, harness])
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
@@ -88,7 +90,7 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
     FordCarInfo("Ford Kuga 2020-22", "Adaptive Cruise Control with Lane Centering"),
   ],
   CAR.EXPLORER_MK6: [
-    FordCarInfo("Ford Explorer 2020-22"),
+    FordCarInfo("Ford Explorer 2020-23"),
     FordCarInfo("Lincoln Aviator 2020-21", "Co-Pilot360 Plus"),
   ],
   CAR.F_150_MK14: FordCarInfo("Ford F-150 2023", "Co-Pilot360 Active 2.0"),
@@ -185,6 +187,7 @@ FW_VERSIONS = {
       b'L1MC-14D003-AL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'M1MC-14D003-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'M1MC-14D003-AC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'P1MC-14D003-AA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x760, None): [
       b'L1MC-2D053-AJ\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -192,6 +195,7 @@ FW_VERSIONS = {
       b'L1MC-2D053-BB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'L1MC-2D053-BF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'L1MC-2D053-KB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'L1MC-2D053-BD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x764, None): [
       b'LB5T-14D049-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -212,6 +216,8 @@ FW_VERSIONS = {
       b'MB5A-14C204-RC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'NB5A-14C204-AZD\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'NB5A-14C204-HB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'PB5A-14C204-DA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'LB5A-14C204-ATS\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.F_150_MK14: {

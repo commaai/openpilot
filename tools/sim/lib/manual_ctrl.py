@@ -183,6 +183,6 @@ def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
 
 if __name__ == '__main__':
   from multiprocessing import Process, Queue
-  q: Queue[str] = Queue()
+  q: 'Queue[str]' = Queue()
   p = Process(target=wheel_poll_thread, args=(q,))
   p.start()
