@@ -62,11 +62,11 @@ def keyboard_poll_thread(q: 'Queue[str]'):
     elif c == 'w':
       q.put("throttle_%f" % 1.0)
     elif c == 'a':
-      q.put("steer_%f" % 0.15)
+      q.put("steer_%f" % -0.15)
     elif c == 's':
       q.put("brake_%f" % 1.0)
     elif c == 'd':
-      q.put("steer_%f" % -0.15)
+      q.put("steer_%f" % 0.15)
     elif c == 'z':
       q.put("blinker_left")
     elif c == 'x':
