@@ -176,6 +176,10 @@ class TestAthenadMethods(unittest.TestCase):
     self.assertIsNotNone(resp['items'][0].get('id'))
     self.assertEqual(athenad.upload_queue.qsize(), 1)
 
+    # Compare selfdrive/athena/athenad.py#uploadFileToUrl vs. selfdrive/athena/athenad.py#UploadFile.from_dict
+    # Even with 'GsmMetered' and 'AllowMeteredUploads' set, athenad uploadFileToUrl logs aren't uploaded on metered connections by default
+    self.assertEqual(resp['items'][0].get('allow_cellular'), False)
+
   @with_http_server
   def test_uploadFileToUrl_duplicate(self, host):
     self._create_file('qlog.bz2')

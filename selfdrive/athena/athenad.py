@@ -240,7 +240,11 @@ def cb(sm, item, tid, sz: int, cur: int) -> None:
 
 def upload_handler(end_event: threading.Event) -> None:
   # `log_handler` and `stats_handler` add to the queues, but don't actually upload anything themselves
-  # all the upload activity happens here in `upload_handler`
+  # all the athenad upload activity happens here in `upload_handler`
+  #
+  # Meanwhile, loggerd has its own uploads:
+  # * system/loggerd/uploader.py#Uploader.upload
+  # * system/loggerd/uploader.py#Uploader.normal_upload
   sm = messaging.SubMaster(['deviceState'])
   tid = threading.get_ident()
 
