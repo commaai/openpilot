@@ -15,7 +15,7 @@ Our software is open source so you can solve your own problems without needing h
 
 The probability of a pull request being merged is a function of its value to the project and the effort it will take us to get it merged.
 If a PR offers *some* value but will take lots of time to get merged, it will be closed.
-Simple, well-tested bug fixes are the easiest to merge. Features are the hardet to get merged. 
+Simple, well-tested bug fixes are the easiest to merge, and new features are the hardest to get merged. 
 
 All of these are examples of good PRs:
 * typo fix: https://github.com/commaai/openpilot/pull/30678
