@@ -5,15 +5,14 @@ Our software is open source so you can solve your own problems without needing h
 ### Getting Started
 
 * Setup your [development environment](../tools/)
+* Read about the [development workflow](WORKFLOW.md)
 * Join our [Discord](https://discord.comma.ai)
-* Make sure you have a [GitHub account](https://github.com/signup/free)
-* Fork [our repositories](https://github.com/commaai) on GitHub
 * Docs are at https://docs.comma.ai and https://blog.comma.ai
 
 ### What contributions are we looking for?
 
 **openpilot's priorities are [safety](SAFETY.md), stability, quality, and features, in that order.** openpilot is part of comma's mission to *solve self-driving cars while delivering shippable intermediaries*, and all developoment is towards that goal.
-s
+
 The probability of a pull request being merged is a function of its value to the project and the effort it will take us to get it merged.
 If a PR offers *some* value but will take lots of time to get merged, it will be closed.
 Simple, well-tested bug fixes are the easiest to merge. Features are the hardet to get merged. 
@@ -24,10 +23,8 @@ These are all good example PRs of various sizes:
 
 ### What doesn't get merged?
 
-* new features
 * arbitrary style changes
-* new controllers
-* changes without a clear goal
+* PRs without a clear goal
 * 500+ line PRs: it should be either cleaned up, broken up into smaller PRs, or both
 
 ### First contribution
@@ -53,7 +50,7 @@ We've released a [Model Port guide](https://blog.comma.ai/openpilot-port-guide-f
 
 If you port openpilot to a substantially new car brand, see this more generic [Brand Port guide](https://blog.comma.ai/how-to-write-a-car-port-for-openpilot/).
 
-### Contributing without Code
+## Contributing without Code
 
 * Report bugs in GitHub issues.
 * Report driving issues in the `#driving-feedback` Discord channel.
