@@ -1,3 +1,15 @@
+def retryWithDelay(int maxRetries, int delay, Closure body) {
+  for (int i = 0; i < maxRetries; i++) {
+    try {
+      body()
+      return
+    } catch (Exception e) {
+      sleep(delay)
+    }
+  }
+  throw Exception("Failed after ${maxRetries} retries")
+}
+
 def device(String ip, String step_label, String cmd) {
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
     def ssh_cmd = """
@@ -92,17 +104,19 @@ def pcStage(String stageName, Closure body) {
     docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .").inside(dockerArgs) {
       timeout(time: 20, unit: 'MINUTES') {
         try {
-          sh "git config --global --add safe.directory '*'"
-          sh "git submodule update --init --recursive"
-          sh "git lfs pull"
+          retryWithDelay (3, 15) {
+            sh "git config --global --add safe.directory '*'"
+            sh "git submodule update --init --recursive"
+            sh "git lfs pull"
+          }
           body()
         } finally {
-          sh "rm -rf ${env.WORKSPACE}/* || true"
-          sh "rm -rf .* || true"
+            sh "rm -rf ${env.WORKSPACE}/* || true"
+            sh "rm -rf .* || true"
+          }
         }
       }
     }
-  }
   }
 }
 
