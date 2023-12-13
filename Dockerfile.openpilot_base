@@ -44,5 +44,3 @@ RUN cd /tmp && \
 
 USER root
 RUN sudo git config --global --add safe.directory /tmp/openpilot
-
-RUN exit 1
