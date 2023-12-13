@@ -185,6 +185,8 @@ jobs:
       uses: codecov/codecov-action@v3
       with:
         name: ${{ github.job }}
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   process_replay:
     name: process replay
@@ -232,6 +234,8 @@ jobs:
       uses: codecov/codecov-action@v3
       with:
         name: ${{ github.job }}
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   regen:
     name: regen
@@ -293,6 +297,8 @@ jobs:
       uses: codecov/codecov-action@v3
       with:
         name: ${{ github.job }}
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   test_cars:
     name: cars
@@ -326,6 +332,8 @@ jobs:
       uses: codecov/codecov-action@v3
       with:
         name: ${{ github.job }}-${{ matrix.job }}
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   car_docs_diff:
     name: PR comments
