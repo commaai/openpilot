@@ -105,7 +105,7 @@ def pcStage(String stageName, Closure body) {
             }
             catch (Exception e) {
               sleep(15) // sleep 15 seconds between attempts
-              throw it
+              throw e
             }
           }
           body()
