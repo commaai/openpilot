@@ -55,12 +55,10 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
     with open(os.path.join(BASEDIR, INTERNAL_SEG_LIST), "r") as f:
       seg_list = f.read().splitlines()
 
-    cnt = INTERNAL_SEG_CNT or len(seg_list)
-    seg_list_iter = iter(seg_list[:cnt])
-
-    for platform in seg_list_iter:
-      platform = platform[2:]  # get rid of comment
-      segment_name = SegmentName(next(seg_list_iter))
+    seg_list_grouped = [(platform[2:], segment) for platform, segment in zip(seg_list[::2], seg_list[1::2], strict=True)]
+    seg_list_grouped = random.sample(seg_list_grouped, INTERNAL_SEG_CNT or len(seg_list_grouped))
+    for platform, segment in seg_list_grouped:
+      segment_name = SegmentName(segment)
       test_cases.append((platform, CarTestRoute(segment_name.route_name.canonical_name, platform,
                                                 segment=segment_name.segment_num)))
   return test_cases

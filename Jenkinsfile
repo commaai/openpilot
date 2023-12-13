@@ -1,3 +1,14 @@
+def retryWithDelay(int maxRetries, int delay, Closure body) {
+  for (int i = 0; i < maxRetries; i++) {
+    try {
+      return body()
+    } catch (Exception e) {
+      sleep(delay)
+    }
+  }
+  throw Exception("Failed after ${maxRetries} retries")
+}
+
 def device(String ip, String step_label, String cmd) {
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
     def ssh_cmd = """
@@ -89,24 +100,27 @@ def pcStage(String stageName, Closure body) {
     checkout scm
 
     def dockerArgs = "--user=batman -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache -e PYTHONPATH=${env.WORKSPACE}";
-    docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .").inside(dockerArgs) {
+
+    def openpilot_base = retryWithDelay (3, 15) {
+      return docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .")
+    }
+    
+    openpilot_base.inside(dockerArgs) {
       timeout(time: 20, unit: 'MINUTES') {
         try {
-          // TODO: remove these after all jenkins jobs are running as batman (merged with master)
-          sh "sudo chown -R batman:batman /tmp/scons_cache"
-          sh "sudo chown -R batman:batman /tmp/comma_download_cache"
-
-          sh "git config --global --add safe.directory '*'"
-          sh "git submodule update --init --recursive"
-          sh "git lfs pull"
+          retryWithDelay (3, 15) {
+            sh "git config --global --add safe.directory '*'"
+            sh "git submodule update --init --recursive"
+            sh "git lfs pull"
+          }
           body()
         } finally {
-          sh "rm -rf ${env.WORKSPACE}/* || true"
-          sh "rm -rf .* || true"
+            sh "rm -rf ${env.WORKSPACE}/* || true"
+            sh "rm -rf .* || true"
+          }
         }
       }
     }
-  }
   }
 }
 

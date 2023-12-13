@@ -50,7 +50,7 @@ public:
   void camera_open(MultiCameraState *multi_cam_state, int camera_num, bool enabled);
   void sensor_set_parameters();
   void camera_map_bufs(MultiCameraState *s);
-  void camera_init(MultiCameraState *s, VisionIpcServer *v, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type);
+  void camera_init(MultiCameraState *s, VisionIpcServer *v, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type);
   void camera_close();
 
   int32_t session_handle;

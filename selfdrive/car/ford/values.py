@@ -1,12 +1,12 @@
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum, StrEnum
 from typing import Dict, List, Union
 
 from cereal import car
 from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
-                                           Device
+                                                     Device
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -74,11 +74,13 @@ class Footnote(Enum):
 @dataclass
 class FordCarInfo(CarInfo):
   package: str = "Co-Pilot360 Assist+"
-  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.ford_q3]))
 
   def init_make(self, CP: car.CarParams):
-    if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1):
-      self.car_parts = CarParts([Device.threex_angled_mount, CarHarness.ford_q3])
+    harness = CarHarness.ford_q4 if CP.carFingerprint in CANFD_CAR else CarHarness.ford_q3
+    if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1, CAR.F_150_MK14):
+      self.car_parts = CarParts([Device.threex_angled_mount, harness])
+    else:
+      self.car_parts = CarParts([Device.threex, harness])
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
