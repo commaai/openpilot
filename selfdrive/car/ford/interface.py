@@ -101,10 +101,7 @@ class CarInterface(CarInterfaceBase):
     if not self.CS.vehicle_sensors_valid:
       events.add(car.CarEvent.EventName.vehicleSensorsInvalid)
 
-    # Ford Q3 Hybrids have an issue where sometimes an incorrect checksum is used and causes the PSCM to fault.
-    # This causes OpenPilot to have a controls mismatch and tells the user to take control immediately.
-    # This has been tested and only affects Q3 vehicles, not Q4. CAN-FD vehicles are free from this issue
-    
+    # Ford Q3 Hybrids are disabled due to occasional incorrect checksums some stock messages. This must be root caused before enabling support.
     if self.CS.hybrid_platform and self.CP.carFingerprint not in CANFD_CAR:
       events.add(car.CarEvent.EventName.startupNoControl)
 
