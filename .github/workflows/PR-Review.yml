@@ -2,7 +2,7 @@ name: PR Review
 
 on:
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   review:
@@ -12,8 +12,8 @@ jobs:
 
       - name: Check for template
         run: |
-          # Replace "" with the actual template string
-          if grep -q "## Pull Request Template" ${{ github.event.pull_request.body }}; then
+          # Replace "## Pull Request Template" with the actual template string
+          if echo "${{ github.event.pull_request.body }}" | grep "## Pull Request Template" > /dev/null; then
             echo "Template found!"
           else
             echo "Error: PR template is missing!"
