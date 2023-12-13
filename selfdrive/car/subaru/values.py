@@ -93,13 +93,16 @@ class Footnote(Enum):
   GLOBAL = CarFootnote(
     "In the non-US market, openpilot requires the car to come equipped with EyeSight with Lane Keep Assistance.",
     Column.PACKAGE)
+  EXP_LONG = CarFootnote(
+    "Enabling longitudinal control will disable all EyeSight functionality, including AEB, LDW, and RAB.",
+    Column.LONGITUDINAL)
 
 
 @dataclass
 class SubaruCarInfo(CarInfo):
   package: str = "EyeSight Driver Assistance"
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.subaru_a]))
-  footnotes: List[Enum] = field(default_factory=lambda: [Footnote.GLOBAL])
+  footnotes: List[Enum] = field(default_factory=lambda: [Footnote.GLOBAL, Footnote.EXP_LONG])
 
   def init_make(self, CP: car.CarParams):
     self.car_parts.parts.extend([Tool.socket_8mm_deep, Tool.pry_tool])
