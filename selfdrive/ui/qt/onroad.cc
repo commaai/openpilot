@@ -633,7 +633,10 @@ void AnnotatedCameraWidget::paintGL() {
     } else {
       CameraWidget::updateCalibration(DEFAULT_CALIBRATION);
     }
-    CameraWidget::receiveFrame(sm["uiPlan"].getUiPlan().getFrameId());
+    if (!CameraWidget::receiveFrame(sm["uiPlan"].getUiPlan().getFrameId())) {
+      qDebug() << "skipping frame, not ready";
+      return;
+    }
     CameraWidget::paintGL();
   }
 
