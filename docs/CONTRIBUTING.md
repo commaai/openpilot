@@ -11,7 +11,7 @@ Our software is open source so you can solve your own problems without needing h
 
 ## What contributions are we looking for?
 
-**openpilot's priorities are [safety](SAFETY.md), stability, quality, and features, in that order.** openpilot is part of comma's mission to *solve self-driving cars while delivering shippable intermediaries*, and all developoment is towards that goal.
+**openpilot's priorities are [safety](SAFETY.md), stability, quality, and features, in that order.** openpilot is part of comma's mission to *solve self-driving cars while delivering shippable intermediaries*, and **all** developoment is towards that goal. 
 
 ### What gets merged?
 
@@ -27,9 +27,11 @@ All of these are examples of good PRs:
 
 ### What doesn't get merged?
 
-* arbitrary style changes
-* PRs without a clear goal
-* 500+ line PRs: it should be either cleaned up, broken up into smaller PRs, or both
+* **arbitrary style changes**: code is art, and it's up to the author to make it beautiful
+* **500+ line PRs**: clean it up, break it up into smaller PRs, or both
+* **PRs without a clear goal**: every PR must have a singular and clear goal
+* **UI design changes**: we do not have a good review process for this yet
+* **New features**: We believe openpilot is mostly feature-complete, and the rest is a matter of refinement and fixing bugs. As a result of this, most feature PRs will be immediately closed, however the beauty of open source is that forks can and do offer features that upstream openpilot doesn't.
 
 ### First contribution
 
