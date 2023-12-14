@@ -222,7 +222,6 @@ void CameraWidget::updateFrameMat() {
 
 void CameraWidget::updateCalibration(const mat3 &calib) {
   calibration = calib;
-  updateFrameMat();
 }
 
 void CameraWidget::paintGL() {
@@ -239,6 +238,8 @@ void CameraWidget::paintGL() {
     qDebug() << "Skipped frame" << frame_id;
   }
   prev_frame_id = frame_id;
+
+  updateFrameMat();
 
   glViewport(0, 0, glWidth(), glHeight());
   glBindVertexArray(frame_vao);
@@ -324,7 +325,6 @@ void CameraWidget::vipcConnected() {
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RG8, stream_width/2, stream_height/2, 0, GL_RG, GL_UNSIGNED_BYTE, nullptr);
   assert(glGetError() == GL_NO_ERROR);
 #endif
-  updateFrameMat();
 }
 
 bool CameraWidget::receiveFrame(std::optional<uint64_t> frame_id) {
