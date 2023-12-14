@@ -3,7 +3,6 @@ from typing import List, Optional, Tuple, Any
 
 from cereal import log
 from openpilot.common.params import put_nonblocking
-from openpilot.common.swaglog import cloudlog
 
 
 class NPQueue:
@@ -67,6 +66,5 @@ class ParameterEstimator:
 
 
 def cache_points(param_name, estimator, valid):
-  cloudlog.warning(f"Caching {param_name} param")
   msg = estimator.get_msg(valid=valid, with_points=True)
   put_nonblocking(param_name, msg.to_bytes())
