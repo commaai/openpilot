@@ -9,9 +9,11 @@ Our software is open source so you can solve your own problems without needing h
 * Join our [Discord](https://discord.comma.ai)
 * Docs are at https://docs.comma.ai and https://blog.comma.ai
 
-### What contributions are we looking for?
+## What contributions are we looking for?
 
 **openpilot's priorities are [safety](SAFETY.md), stability, quality, and features, in that order.** openpilot is part of comma's mission to *solve self-driving cars while delivering shippable intermediaries*, and all developoment is towards that goal.
+
+### What gets merged?
 
 The probability of a pull request being merged is a function of its value to the project and the effort it will take us to get it merged.
 If a PR offers *some* value but will take lots of time to get merged, it will be closed.
@@ -50,12 +52,6 @@ A good pull request has all of the following:
   * if you've optimized something, post benchmarks to prove it's better
   * if you've improved your car's tuning, post before and after plots
 * passes the CI tests
-
-### Car Ports
-
-We've released a [Model Port guide](https://blog.comma.ai/openpilot-port-guide-for-toyota-models/) for porting to Toyota/Lexus models.
-
-If you port openpilot to a substantially new car brand, see this more generic [Brand Port guide](https://blog.comma.ai/how-to-write-a-car-port-for-openpilot/).
 
 ## Contributing without Code
 
