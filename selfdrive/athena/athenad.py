@@ -36,13 +36,10 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
 from openpilot.system.hardware import HARDWARE, PC, AGNOS
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_commit, get_origin, get_short_branch, get_version
 from openpilot.system.hardware.hw import Paths
 
-
-# TODO: use socket constant when mypy recognizes this as a valid attribute
-TCP_USER_TIMEOUT = 18
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
@@ -760,7 +757,7 @@ def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
     if onroad != onroad_prev:
       onroad_prev = onroad
 
-      sock.setsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT, 16000 if onroad else 0)
+      sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_USER_TIMEOUT, 16000 if onroad else 0)
       sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 7 if onroad else 30)
       sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 7 if onroad else 10)
       sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 2 if onroad else 3)
