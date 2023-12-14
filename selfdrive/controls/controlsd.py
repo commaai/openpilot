@@ -2,6 +2,7 @@
 import os
 import math
 import time
+import threading
 from typing import SupportsFloat
 
 from cereal import car, log
@@ -87,8 +88,7 @@ class Controls:
       CarInterface, CarController, CarState = interfaces[self.CP.carFingerprint]
       self.CI = CarInterface(self.CP, CarController, CarState)
 
-    self.joystick_enabled = self.params.get_bool("JoystickDebugMode")
-    self.joystick_mode = self.joystick_enabled or self.CP.notCar
+    self.joystick_mode = self.params.get_bool("JoystickDebugMode")
 
     self.disengage_on_accelerator = bool(self.CP.alternativeExperience & ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS)
 
@@ -154,9 +154,6 @@ class Controls:
         set_offroad_alert("Offroad_NoFirmware", True)
     elif self.CP.passive:
       self.events.add(EventName.dashcamMode, static=True)
-    elif self.joystick_mode:
-      self.events.add(EventName.joystickDebug, static=True)
-      self.startup_event = None
 
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
@@ -176,6 +173,11 @@ class Controls:
     CS = self.sm['carState']
 
     self.events.clear()
+
+    # Add joystick event, static on cars, dynamic on nonCars
+    if self.joystick_mode:
+      self.events.add(EventName.joystickDebug)
+      self.startup_event = None
 
     # Add startup event
     if self.startup_event is not None:
@@ -331,7 +333,7 @@ class Controls:
     else:
       self.logged_comm_issue = None
 
-    if not (self.CP.notCar and self.joystick_enabled):
+    if not (self.CP.notCar and self.joystick_mode):
       if not self.sm['lateralPlan'].mpcSolutionValid:
         self.events.add(EventName.plannerError)
       if not self.sm['liveLocationKalman'].posenetOK:
@@ -771,11 +773,13 @@ class Controls:
   def step(self):
     start_time = time.monotonic()
 
-    self.is_metric = self.params.get_bool("IsMetric")
-    self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+    # Sample data from sockets and get a carState
+    CS = self.data_sample()
+    cloudlog.timestamp("Data sampled")
+    self.prof.checkpoint("Sample")
 
-    self.data_sample()
-    self.update_events()
+    self.update_events(CS)
+    cloudlog.timestamp("Events updated")
 
     if not self.CP.passive and self.initialized:
       self.state_transition()
@@ -785,10 +789,25 @@ class Controls:
 
     self.CS_prev = self.sm['carState']
 
+  def params_thread(self, evt):
+    while not evt.is_set():
+      self.is_metric = self.params.get_bool("IsMetric")
+      self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+      if self.CP.notCar:
+        self.joystick_mode = self.params.get_bool("JoystickDebugMode")
+      time.sleep(0.1)
+
   def controlsd_thread(self):
-    while True:
-      self.step()
-      self.rk.monitor_time()
+    e = threading.Event()
+    t = threading.Thread(target=self.params_thread, args=(e, ))
+    try:
+      t.start()
+      while True:
+        self.step()
+        self.rk.monitor_time()
+    except SystemExit:
+      e.set()
+      t.join()
 
 
 def main():

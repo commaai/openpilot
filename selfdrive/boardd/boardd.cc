@@ -1,11 +1,5 @@
 #include "selfdrive/boardd/boardd.h"
 
-#include <sched.h>
-#include <sys/cdefs.h>
-#include <sys/resource.h>
-#include <sys/types.h>
-#include <unistd.h>
-
 #include <algorithm>
 #include <array>
 #include <atomic>
@@ -13,10 +7,6 @@
 #include <cassert>
 #include <cerrno>
 #include <chrono>
-#include <cmath>
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
 #include <future>
 #include <memory>
 #include <thread>
