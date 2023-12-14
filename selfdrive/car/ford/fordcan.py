@@ -128,7 +128,6 @@ def create_acc_msg(packer, CAN: CanBus, long_active: bool, gas: float, accel: fl
   Frequency is 50Hz.
   """
 
-  decel = accel < 0 and long_active
   actuateBrakes = gas == -5 and long_active
   values = {
     "AccBrkTot_A_Rq": accel,                          # Brake total accel request: [-20|11.9449] m/s^2
