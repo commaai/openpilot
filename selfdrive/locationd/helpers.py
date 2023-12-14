@@ -4,7 +4,7 @@ import sys
 from typing import List, Optional, Tuple, Any
 
 from cereal import log
-from openpilot.common.params import Params, put_nonblocking
+from openpilot.common.params import put_nonblocking
 from openpilot.common.swaglog import cloudlog
 
 
