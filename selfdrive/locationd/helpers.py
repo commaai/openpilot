@@ -4,7 +4,7 @@ import sys
 from typing import List, Optional, Tuple, Any
 
 from cereal import log
-from openpilot.common.params import Params
+from openpilot.common.params import Params, put_nonblocking
 from openpilot.system.swaglog import cloudlog
 
 
@@ -78,4 +78,4 @@ def cache_points(param_name, estimator, valid):
   cloudlog.warning(f"Caching {param_name} param")
   params = Params()
   msg = estimator.get_msg(valid=valid, with_points=True)
-  params.put(param_name, msg.to_bytes())
+  put_nonblocking(param_name, msg.to_bytes())
