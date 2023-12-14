@@ -2,33 +2,33 @@
 
 #include <cassert>
 #include <stdexcept>
+#include <memory>
 
 #include "common/swaglog.h"
 
-static int init_usb_ctx(libusb_context **context) {
-  assert(context != nullptr);
-
-  int err = libusb_init(context);
+static libusb_context *init_usb_ctx() {
+  libusb_context *context = nullptr;
+  int err = libusb_init(&context);
   if (err != 0) {
     LOGE("libusb initialization error");
-    return err;
+    return nullptr;
   }
 
 #if LIBUSB_API_VERSION >= 0x01000106
-  libusb_set_option(*context, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
+  libusb_set_option(context, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
 #else
-  libusb_set_debug(*context, 3);
+  libusb_set_debug(context, 3);
 #endif
-
-  return err;
+  return context;
 }
 
 PandaUsbHandle::PandaUsbHandle(std::string serial) : PandaCommsHandle(serial) {
   // init libusb
   ssize_t num_devices;
   libusb_device **dev_list = NULL;
-  int err = init_usb_ctx(&ctx);
-  if (err != 0) { goto fail; }
+  int err = 0;
+  ctx = init_usb_ctx();
+  if (!ctx) { goto fail; }
 
   // connect by serial
   num_devices = libusb_get_device_list(ctx, &dev_list);
@@ -94,16 +94,14 @@ void PandaUsbHandle::cleanup() {
 }
 
 std::vector<std::string> PandaUsbHandle::list() {
+  static std::unique_ptr<libusb_context, decltype(&libusb_exit)> context(init_usb_ctx(), libusb_exit);
   // init libusb
   ssize_t num_devices;
-  libusb_context *context = NULL;
   libusb_device **dev_list = NULL;
   std::vector<std::string> serials;
+  if (!context) { return serials; }
 
-  int err = init_usb_ctx(&context);
-  if (err != 0) { return serials; }
-
-  num_devices = libusb_get_device_list(context, &dev_list);
+  num_devices = libusb_get_device_list(context.get(), &dev_list);
   if (num_devices < 0) {
     LOGE("libusb can't get device list");
     goto finish;
@@ -129,9 +127,6 @@ std::vector<std::string> PandaUsbHandle::list() {
 finish:
   if (dev_list != NULL) {
     libusb_free_device_list(dev_list, 1);
-  }
-  if (context) {
-    libusb_exit(context);
   }
   return serials;
 }
