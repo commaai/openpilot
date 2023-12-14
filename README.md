@@ -1,3 +1,6 @@
+
+![openpilot_3x](https://github.com/commaai/openpilot/assets/8762862/d0c00691-6e68-4110-909a-42ec2f22e394)
+
 What is openpilot?
 ------
 
@@ -93,5 +96,3 @@ NO WARRANTY EXPRESSED OR IMPLIED.**
 
 [![openpilot tests](https://github.com/commaai/openpilot/workflows/openpilot%20tests/badge.svg?event=push)](https://github.com/commaai/openpilot/actions)
 [![codecov](https://codecov.io/gh/commaai/openpilot/branch/master/graph/badge.svg)](https://codecov.io/gh/commaai/openpilot)
-
-![openpilot on the comma 3X](https://github.com/commaai/openpilot/assets/4038174/f1081737-8718-4241-a22a-3ceba526361a)
