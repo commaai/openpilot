@@ -285,7 +285,6 @@ selfdrive/ui/.gitignore
 selfdrive/ui/SConscript
 selfdrive/ui/*.cc
 selfdrive/ui/*.h
-selfdrive/ui/ui
 selfdrive/ui/text
 selfdrive/ui/spinner
 selfdrive/ui/soundd.py
@@ -318,7 +317,11 @@ system/camerad/main.cc
 system/camerad/snapshot/*
 system/camerad/cameras/camera_common.h
 system/camerad/cameras/camera_common.cc
-system/camerad/cameras/sensor2_i2c.h
+system/camerad/sensors/ar0231.cc
+system/camerad/sensors/ar0231_registers.h
+system/camerad/sensors/ox03c10.cc
+system/camerad/sensors/ox03c10_registers.h
+system/camerad/sensors/sensor.h
 
 selfdrive/manager/__init__.py
 selfdrive/manager/build.py

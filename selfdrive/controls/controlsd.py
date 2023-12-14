@@ -93,7 +93,7 @@ class Controls:
     else:
       self.CI, self.CP = CI, CI.CP
 
-    self.joystick_mode = self.params.get_bool("JoystickDebugMode") or self.CP.notCar
+    self.joystick_mode = self.params.get_bool("JoystickDebugMode")
 
     # set alternative experiences from parameters
     self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
@@ -191,9 +191,6 @@ class Controls:
         set_offroad_alert("Offroad_NoFirmware", True)
     elif self.CP.passive:
       self.events.add(EventName.dashcamMode, static=True)
-    elif self.joystick_mode:
-      self.events.add(EventName.joystickDebug, static=True)
-      self.startup_event = None
 
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
@@ -213,6 +210,11 @@ class Controls:
     """Compute onroadEvents from carState"""
 
     self.events.clear()
+
+    # Add joystick event, static on cars, dynamic on nonCars
+    if self.joystick_mode:
+      self.events.add(EventName.joystickDebug)
+      self.startup_event = None
 
     # Add startup event
     if self.startup_event is not None:
@@ -370,16 +372,17 @@ class Controls:
     else:
       self.logged_comm_issue = None
 
-    if not self.sm['lateralPlan'].mpcSolutionValid:
-      self.events.add(EventName.plannerError)
-    if not self.sm['liveLocationKalman'].posenetOK:
-      self.events.add(EventName.posenetInvalid)
-    if not self.sm['liveLocationKalman'].deviceStable:
-      self.events.add(EventName.deviceFalling)
-    if not self.sm['liveLocationKalman'].inputsOK:
-      self.events.add(EventName.locationdTemporaryError)
-    if not self.sm['liveParameters'].valid and not TESTING_CLOSET and (not SIMULATION or REPLAY):
-      self.events.add(EventName.paramsdTemporaryError)
+    if not (self.CP.notCar and self.joystick_mode):
+      if not self.sm['lateralPlan'].mpcSolutionValid:
+        self.events.add(EventName.plannerError)
+      if not self.sm['liveLocationKalman'].posenetOK:
+        self.events.add(EventName.posenetInvalid)
+      if not self.sm['liveLocationKalman'].deviceStable:
+        self.events.add(EventName.deviceFalling)
+      if not self.sm['liveLocationKalman'].inputsOK:
+        self.events.add(EventName.locationdTemporaryError)
+      if not self.sm['liveParameters'].valid and not TESTING_CLOSET and (not SIMULATION or REPLAY):
+        self.events.add(EventName.paramsdTemporaryError)
 
     # conservative HW alert. if the data or frequency are off, locationd will throw an error
     if any((self.sm.frame - self.sm.rcv_frame[s])*DT_CTRL > 10. for s in self.sensor_packets):
@@ -851,6 +854,8 @@ class Controls:
 
     self.is_metric = self.params.get_bool("IsMetric")
     self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+    if self.CP.notCar:
+      self.joystick_mode = self.params.get_bool("JoystickDebugMode")
 
     # Sample data from sockets and get a carState
     CS = self.data_sample()

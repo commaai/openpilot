@@ -101,7 +101,6 @@ protected:
   int prev_undostack_index = 0;
   int prev_undostack_count = 0;
   QByteArray default_state;
-  friend class OnlineHelp;
 };
 
 class HelpOverlay : public QWidget {

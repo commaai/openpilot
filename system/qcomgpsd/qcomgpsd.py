@@ -147,6 +147,7 @@ def inject_assistance():
   subprocess.check_output(cmd, stderr=subprocess.PIPE, shell=True)
   cloudlog.info("successfully loaded assistance data")
 
+@retry(attempts=5, delay=1.0)
 def setup_quectel(diag: ModemDiag) -> bool:
   ret = False
 
