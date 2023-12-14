@@ -19,9 +19,7 @@ Running on a dedicated device in a car
 
 To use openpilot in a car, you need four things:
 1. **Supported Device:** a comma 3/3X, available at [comma.ai/shop](https://comma.ai/shop/comma-3x).
-2. **Software:** The setup procedure for the comma 3/3X allows users to enter a URL for custom software.
-  To install the release version of openpilot, use the URL `openpilot.comma.ai`.
-  To install openpilot master (for more advanced users), use the URL `installer.comma.ai/commaai/master`. You can replace "commaai" with another GitHub username to install a fork.
+2. **Software:** The setup procedure for the comma 3/3X allows users to enter a URL for custom software. Use the URL `openpilot.comma.ai` to install the release version.
 3. **Supported Car:** Ensure that you have one of [the 250+ supported cars](docs/CARS.md).
 4. **Car Harness:** You will also need a [car harness](https://comma.ai/shop/car-harness) to connect your comma 3/3X to your car.
 
@@ -41,13 +39,14 @@ A PC running openpilot can also control your vehicle if it is connected to a [we
 Community and Contributing
 ------
 
-openpilot is developed by [comma](https://comma.ai/) and by users like you. We welcome both pull requests and issues on [GitHub](http://github.com/commaai/openpilot). Bug fixes and new car ports are encouraged. Check out [the contributing docs](docs/CONTRIBUTING.md).
+openpilot is developed by [comma](https://comma.ai/) and by users like you. We welcome both pull requests and issues on [GitHub](http://github.com/commaai/openpilot).
 
+* Join the [community Discord](https://discord.comma.ai)
 * Check out [the contributing docs](docs/CONTRIBUTING.md)
-* https://docs.comma.ai for
-* Check out the [community wiki](https://github.com/commaai/openpilot/wiki)
-* [community wiki](https://github.com/commaai/openpilot/wiki)
-* Want to get paid to work on openpilot? [comma is hiring](https://comma.ai/jobs#open-positions) and offers lots of [bounties](docs/BOUNTIES.md).
+* Code documentation lives at https://docs.comma.ai
+* Information about running openpilot lives on the [community wiki](https://github.com/commaai/openpilot/wiki)
+
+Want to get paid to work on openpilot? [comma is hiring](https://comma.ai/jobs#open-positions) and offers lots of [bounties](docs/BOUNTIES.md).
 
 Safety and Testing
 ----
