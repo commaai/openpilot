@@ -136,9 +136,6 @@ def create_acc_msg(packer, CAN: CanBus, long_active: bool, gas: float, accel: fl
     "AccPrpl_A_Pred": gas,                            # Acceleration request: [-5|5.23] m/s^2
     "AccResumEnbl_B_Rq": 1 if long_active else 0,
     "AccVeh_V_Trg": v_ego_kph,                        # Target speed: [0|255] km/h
-    # Precharging and actuating the actual brake signals are typically only done ine BlueCruise when approaching INACTIVE_GAS (-5)
-    # We've changed the logic to resemble this. Previously, precharging and actuation of the friction brakes would happen anytime
-    # There was no gas input, even if just coasting was intended
     "AccBrkPrchg_B_Rq": 1 if actuateBrakes else 0,            # Pre-charge brake request: 0=No, 1=Yes
     "AccBrkDecel_B_Rq": 1 if actuateBrakes else 0,            # Deceleration request: 0=Inactive, 1=Active
     "AccStopStat_B_Rq": 1 if stopping else 0,
