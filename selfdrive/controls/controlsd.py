@@ -2,6 +2,7 @@
 import os
 import math
 import time
+import threading
 from typing import SupportsFloat
 
 from cereal import car, log
@@ -852,11 +853,6 @@ class Controls:
     start_time = time.monotonic()
     self.prof.checkpoint("Ratekeeper", ignore=True)
 
-    self.is_metric = self.params.get_bool("IsMetric")
-    self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
-    if self.CP.notCar:
-      self.joystick_mode = self.params.get_bool("JoystickDebugMode")
-
     # Sample data from sockets and get a carState
     CS = self.data_sample()
     cloudlog.timestamp("Data sampled")
@@ -881,11 +877,26 @@ class Controls:
 
     self.CS_prev = CS
 
+  def params_thread(self, evt):
+    while not evt.is_set():
+      self.is_metric = self.params.get_bool("IsMetric")
+      self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+      if self.CP.notCar:
+        self.joystick_mode = self.params.get_bool("JoystickDebugMode")
+      time.sleep(0.1)
+
   def controlsd_thread(self):
-    while True:
-      self.step()
-      self.rk.monitor_time()
-      self.prof.display()
+    e = threading.Event()
+    t = threading.Thread(target=self.params_thread, args=(e, ))
+    try:
+      t.start()
+      while True:
+        self.step()
+        self.rk.monitor_time()
+        self.prof.display()
+    except SystemExit:
+      e.set()
+      t.join()
 
 
 def main():
