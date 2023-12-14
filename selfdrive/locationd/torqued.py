@@ -12,7 +12,7 @@ from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
-from openpilot.selfdrive.locationd.helpers import PointBuckets, ParameterEstimator, cache_points_onexit, cache_points
+from openpilot.selfdrive.locationd.helpers import PointBuckets, ParameterEstimator, cache_points
 
 HISTORY = 5  # secs
 POINTS_PER_BUCKET = 1500
@@ -226,9 +226,6 @@ def main():
   params = Params()
   with car.CarParams.from_bytes(params.get("CarParams", block=True)) as CP:
     estimator = TorqueEstimator(CP)
-
-  if "REPLAY" not in os.environ:
-    signal.signal(signal.SIGINT, partial(cache_points_onexit, "LiveTorqueParameters", estimator))
 
   while True:
     sm.update()

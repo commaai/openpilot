@@ -68,14 +68,7 @@ class ParameterEstimator:
     raise NotImplementedError
 
 
-def cache_points_onexit(param_name, estimator, sig, frame):
-  signal.signal(sig, signal.SIG_DFL)
-  cache_points(param_name, estimator, True)
-  sys.exit(0)
-
-
 def cache_points(param_name, estimator, valid):
   cloudlog.warning(f"Caching {param_name} param")
-  params = Params()
   msg = estimator.get_msg(valid=valid, with_points=True)
   put_nonblocking(param_name, msg.to_bytes())
