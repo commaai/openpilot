@@ -151,7 +151,7 @@ void MessagesWidget::menuAboutToShow() {
     action->setEnabled(logical_index > 0);
   }
   menu->addSeparator();
-  auto action = menu->addAction(tr("Mutlti-Line bytes"), this, &MessagesWidget::setMultiLineBytes);
+  auto action = menu->addAction(tr("Multi-Line bytes"), this, &MessagesWidget::setMultiLineBytes);
   action->setCheckable(true);
   action->setChecked(settings.multiple_lines_hex);
 }
