@@ -3,7 +3,7 @@ from openpilot.common.conversions import Conversions as CV
 from panda import Panda
 from panda.python import uds
 from openpilot.selfdrive.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
-                                        MIN_ACC_SPEED, EPS_SCALE, EV_HYBRID_CAR, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR
+                                        MIN_ACC_SPEED, EPS_SCALE, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR
 from openpilot.selfdrive.car import get_safety_config
 from openpilot.selfdrive.car.disable_ecu import disable_ecu
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
@@ -28,12 +28,11 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE
 
     if candidate in ANGLE_CONTROL_CAR:
-      ret.dashcamOnly = True
       ret.steerControlType = SteerControlType.angle
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
 
       # LTA control can be more delayed and winds up more often
-      ret.steerActuatorDelay = 0.25
+      ret.steerActuatorDelay = 0.18
       ret.steerLimitTimer = 0.8
     else:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
@@ -77,7 +76,7 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.444  # not optimized yet
       ret.mass = 2860. * CV.LB_TO_KG  # mean between normal and hybrid
 
-    elif candidate in (CAR.LEXUS_RX, CAR.LEXUS_RXH, CAR.LEXUS_RX_TSS2, CAR.LEXUS_RXH_TSS2):
+    elif candidate in (CAR.LEXUS_RX, CAR.LEXUS_RXH, CAR.LEXUS_RX_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.79
       ret.steerRatio = 16.  # 14.8 is spec end-to-end
@@ -85,28 +84,28 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.5533
       ret.mass = 4481. * CV.LB_TO_KG  # mean between min and max
 
-    elif candidate in (CAR.CHR, CAR.CHRH, CAR.CHR_TSS2, CAR.CHRH_TSS2):
+    elif candidate in (CAR.CHR, CAR.CHR_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.63906
       ret.steerRatio = 13.6
       ret.tireStiffnessFactor = 0.7933
       ret.mass = 3300. * CV.LB_TO_KG
 
-    elif candidate in (CAR.CAMRY, CAR.CAMRYH, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2):
+    elif candidate in (CAR.CAMRY, CAR.CAMRY_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.82448
       ret.steerRatio = 13.7
       ret.tireStiffnessFactor = 0.7933
       ret.mass = 3400. * CV.LB_TO_KG  # mean between normal and hybrid
 
-    elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2):
+    elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.HIGHLANDER_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.8194  # average of 109.8 and 112.2 in
       ret.steerRatio = 16.0
       ret.tireStiffnessFactor = 0.8
       ret.mass = 4516. * CV.LB_TO_KG  # mean between normal and hybrid
 
-    elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALONH_2019, CAR.AVALON_TSS2, CAR.AVALONH_TSS2):
+    elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALON_TSS2):
       # starting from 2019, all Avalon variants have stop and go
       # https://engage.toyota.com/static/images/toyota_safety_sense/TSS_Applicability_Chart.pdf
       stop_and_go = candidate != CAR.AVALON
@@ -115,8 +114,7 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.7983
       ret.mass = 3505. * CV.LB_TO_KG  # mean between normal and hybrid
 
-    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022,
-                       CAR.RAV4_TSS2_2023, CAR.RAV4H_TSS2_2023):
+    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023):
       ret.wheelbase = 2.68986
       ret.steerRatio = 14.3
       ret.tireStiffnessFactor = 0.7933
@@ -137,13 +135,13 @@ class CarInterface(CarInterfaceBase):
           ret.lateralTuning.pid.kf = 0.00004
           break
 
-    elif candidate in (CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2):
+    elif candidate == CAR.COROLLA_TSS2:
       ret.wheelbase = 2.67  # Average between 2.70 for sedan and 2.64 for hatchback
       ret.steerRatio = 13.9
       ret.tireStiffnessFactor = 0.444  # not optimized yet
       ret.mass = 3060. * CV.LB_TO_KG
 
-    elif candidate in (CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2):
+    elif candidate in (CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_ES_TSS2):
       if candidate not in (CAR.LEXUS_ES,):  # TODO: LEXUS_ES may have sng
         stop_and_go = True
       ret.wheelbase = 2.8702
@@ -164,6 +162,12 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.444
       ret.mass = 3736.8 * CV.LB_TO_KG
 
+    elif candidate == CAR.LEXUS_GS_F:
+      ret.wheelbase = 2.84988
+      ret.steerRatio = 13.3
+      ret.tireStiffnessFactor = 0.444
+      ret.mass = 4034. * CV.LB_TO_KG
+
     elif candidate == CAR.LEXUS_CTH:
       stop_and_go = True
       ret.wheelbase = 2.60
@@ -171,7 +175,7 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.517
       ret.mass = 3108 * CV.LB_TO_KG  # mean between min and max
 
-    elif candidate in (CAR.LEXUS_NX, CAR.LEXUS_NXH, CAR.LEXUS_NX_TSS2, CAR.LEXUS_NXH_TSS2):
+    elif candidate in (CAR.LEXUS_NX, CAR.LEXUS_NX_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.66
       ret.steerRatio = 14.7
@@ -191,7 +195,7 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.8
       ret.mass = 4300. * CV.LB_TO_KG
 
-    elif candidate in (CAR.ALPHARD_TSS2, CAR.ALPHARDH_TSS2):
+    elif candidate == CAR.ALPHARD_TSS2:
       ret.wheelbase = 3.00
       ret.steerRatio = 14.2
       ret.tireStiffnessFactor = 0.444
@@ -244,11 +248,6 @@ class CarInterface(CarInterfaceBase):
 
     if not ret.openpilotLongitudinalControl:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL
-
-    # we can't use the fingerprint to detect this reliably, since
-    # the EV gas pedal signal can take a couple seconds to appear
-    if candidate in EV_HYBRID_CAR:
-      ret.flags |= ToyotaFlags.HYBRID.value
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.

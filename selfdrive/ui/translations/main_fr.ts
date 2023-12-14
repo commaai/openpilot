@@ -275,34 +275,7 @@
     </message>
 </context>
 <context>
-    <name>DriveStats</name>
-    <message>
-        <source>Drives</source>
-        <translation>Trajets</translation>
-    </message>
-    <message>
-        <source>Hours</source>
-        <translation>Heures</translation>
-    </message>
-    <message>
-        <source>ALL TIME</source>
-        <translation>DEPUIS TOUJOURS</translation>
-    </message>
-    <message>
-        <source>PAST WEEK</source>
-        <translation>CETTE SEMAINE</translation>
-    </message>
-    <message>
-        <source>KM</source>
-        <translation>KM</translation>
-    </message>
-    <message>
-        <source>Miles</source>
-        <translation>Miles</translation>
-    </message>
-</context>
-<context>
-    <name>DriverViewScene</name>
+    <name>DriverViewWindow</name>
     <message>
         <source>camera starting</source>
         <translation>démarrage de la caméra</translation>

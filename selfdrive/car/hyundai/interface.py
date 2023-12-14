@@ -3,8 +3,8 @@ from panda import Panda
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
 from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, CANFD_RADAR_SCC_CAR, \
-                                         EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, UNSUPPORTED_LONGITUDINAL_CAR, \
-                                         Buttons
+                                         CANFD_UNSUPPORTED_LONGITUDINAL_CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, \
+                                         UNSUPPORTED_LONGITUDINAL_CAR, Buttons
 from openpilot.selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from openpilot.selfdrive.car import create_button_events, get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
@@ -88,7 +88,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.90
       ret.steerRatio = 15.6 * 1.15
       ret.tireStiffnessFactor = 0.63
-    elif candidate == CAR.ELANTRA:
+    elif candidate in (CAR.ELANTRA, CAR.ELANTRA_GT_I30):
       ret.mass = 1275.
       ret.wheelbase = 2.7
       ret.steerRatio = 15.4            # 14 is Stock | Settled Params Learner values are steerRatio: 15.401566348670535
@@ -121,6 +121,11 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.385
       if candidate in (CAR.IONIQ, CAR.IONIQ_EV_LTD, CAR.IONIQ_PHEV_2019):
         ret.minSteerSpeed = 32 * CV.MPH_TO_MS
+    elif candidate in (CAR.IONIQ_5, CAR.IONIQ_6):
+      ret.mass = 1948
+      ret.wheelbase = 2.97
+      ret.steerRatio = 14.26
+      ret.tireStiffnessFactor = 0.65
     elif candidate == CAR.VELOSTER:
       ret.mass = 2917. * CV.LB_TO_KG
       ret.wheelbase = 2.80
@@ -141,13 +146,21 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.000
       # steering ratio according to Hyundai News https://www.hyundainews.com/assets/documents/original/48035-2022SantaCruzProductGuideSpecsv2081521.pdf
       ret.steerRatio = 14.2
+    elif candidate == CAR.CUSTIN_1ST_GEN:
+      ret.mass = 1690.  # from https://www.hyundai-motor.com.tw/clicktobuy/custin#spec_0
+      ret.wheelbase = 3.055
+      ret.steerRatio = 17.0  # from learner
+    elif candidate == CAR.STARIA_4TH_GEN:
+      ret.mass = 2205.
+      ret.wheelbase = 3.273
+      ret.steerRatio = 11.94  # https://www.hyundai.com/content/dam/hyundai/au/en/models/staria-load/premium-pip-update-2023/spec-sheet/STARIA_Load_Spec-Table_March_2023_v3.1.pdf
 
     # Kia
     elif candidate == CAR.KIA_SORENTO:
       ret.mass = 1985.
       ret.wheelbase = 2.78
       ret.steerRatio = 14.4 * 1.1   # 10% higher at the center seems reasonable
-    elif candidate in (CAR.KIA_NIRO_EV, CAR.KIA_NIRO_EV_2ND_GEN, CAR.KIA_NIRO_PHEV, CAR.KIA_NIRO_HEV_2021, CAR.KIA_NIRO_HEV_2ND_GEN):
+    elif candidate in (CAR.KIA_NIRO_EV, CAR.KIA_NIRO_EV_2ND_GEN, CAR.KIA_NIRO_PHEV, CAR.KIA_NIRO_HEV_2021, CAR.KIA_NIRO_HEV_2ND_GEN, CAR.KIA_NIRO_PHEV_2022):
       ret.mass = 3543. * CV.LB_TO_KG  # average of all the cars
       ret.wheelbase = 2.7
       ret.steerRatio = 13.6  # average of all the cars
@@ -192,11 +205,6 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2055
       ret.wheelbase = 2.9
       ret.steerRatio = 16.
-      ret.tireStiffnessFactor = 0.65
-    elif candidate in (CAR.IONIQ_5, CAR.IONIQ_6):
-      ret.mass = 1948
-      ret.wheelbase = 2.97
-      ret.steerRatio = 14.26
       ret.tireStiffnessFactor = 0.65
     elif candidate == CAR.KIA_SPORTAGE_HYBRID_5TH_GEN:
       ret.mass = 1767.  # SX Prestige trim support only
@@ -256,7 +264,7 @@ class CarInterface(CarInterfaceBase):
     if candidate in CANFD_CAR:
       ret.longitudinalTuning.kpV = [0.1]
       ret.longitudinalTuning.kiV = [0.0]
-      ret.experimentalLongitudinalAvailable = candidate in (HYBRID_CAR | EV_CAR) and candidate not in CANFD_RADAR_SCC_CAR
+      ret.experimentalLongitudinalAvailable = candidate not in (CANFD_UNSUPPORTED_LONGITUDINAL_CAR | CANFD_RADAR_SCC_CAR)
     else:
       ret.longitudinalTuning.kpV = [0.5]
       ret.longitudinalTuning.kiV = [0.0]
