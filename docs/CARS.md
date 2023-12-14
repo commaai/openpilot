@@ -290,7 +290,7 @@ A supported vehicle is one that just works when you install a comma device. All 
 <sup>5</sup>2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph. <br />
 <sup>6</sup>Requires a <a href="https://comma.ai/shop/can-fd-panda-kit" target="_blank">CAN FD panda kit</a> if not using comma 3X for this <a href="https://en.wikipedia.org/wiki/CAN_FD" target="_blank">CAN FD car</a>. <br />
 <sup>7</sup>In the non-US market, openpilot requires the car to come equipped with EyeSight with Lane Keep Assistance. <br />
-<sup>8</sup>Enabling longitudinal control will disable all EyeSight functionality, including AEB, LDW, and RAB. <br />
+<sup>8</sup>Enabling longitudinal control (alpha) will disable all EyeSight functionality, including AEB, LDW, and RAB. <br />
 <sup>9</sup>openpilot operates above 28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control. <br />
 <sup>10</sup>Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform. <br />
 <sup>11</sup>Refers only to the MQB-based European B8 Passat, not the NMS Passat in the USA/China/Mideast markets. <br />
