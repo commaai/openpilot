@@ -179,6 +179,8 @@ class TestCarModelBase(unittest.TestCase):
     self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")
     self.safety.init_tests()
 
+    self.CS_prev = car.CarState.new_message()
+
   def test_car_params(self):
     raise unittest.SkipTest
     if self.CP.dashcamOnly:
@@ -374,7 +376,7 @@ class TestCarModelBase(unittest.TestCase):
 
       # print('ret.gas', CS.gas, 'safety gas', self.safety.get_gas_interceptor_prev())
       # print('both', CS.gasPressed, self.safety.get_gas_pressed_prev(), 'int')
-      if self.safety.get_gas_pressed_prev() != prev_panda_gas:
+      if self.safety.get_gas_pressed_prev() != prev_panda_gas or CS.gasPressed != self.CS_prev.gasPressed:
         print()
         print('ret.gas', CS.gas, 'safety gas', self.safety.get_gas_interceptor_prev())
         print('both', CS.gasPressed, self.safety.get_gas_pressed_prev(), 'int')
@@ -416,6 +418,8 @@ class TestCarModelBase(unittest.TestCase):
       prev_panda_vehicle_moving = self.safety.get_vehicle_moving()
       prev_panda_cruise_engaged = self.safety.get_cruise_engaged_prev()
       prev_panda_acc_main_on = self.safety.get_acc_main_on()
+
+      self.CS_prev = CS
 
     del msgs
 
