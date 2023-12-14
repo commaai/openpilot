@@ -289,6 +289,7 @@ void CameraWidget::vipcConnected() {
 
 #ifdef QCOM2
   EGLDisplay egl_display = eglGetCurrentDisplay();
+  assert(egl_display != EGL_NO_DISPLAY);
   for (auto &pair : egl_images) {
     eglDestroyImageKHR(egl_display, pair.second);
   }

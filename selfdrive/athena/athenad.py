@@ -11,7 +11,6 @@ import queue
 import random
 import select
 import socket
-import subprocess
 import sys
 import tempfile
 import threading
@@ -34,7 +33,7 @@ from openpilot.common.api import Api
 from openpilot.common.file_helpers import CallbackReader
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
-from openpilot.system.hardware import HARDWARE, PC, AGNOS
+from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_commit, get_origin, get_short_branch, get_version
@@ -361,22 +360,6 @@ def listDataDirectory(prefix='') -> List[str]:
 
 
 @dispatcher.add_method
-def reboot() -> Dict[str, int]:
-  sock = messaging.sub_sock("deviceState", timeout=1000)
-  ret = messaging.recv_one(sock)
-  if ret is None or ret.deviceState.started:
-    raise Exception("Reboot unavailable")
-
-  def do_reboot() -> None:
-    time.sleep(2)
-    HARDWARE.reboot()
-
-  threading.Thread(target=do_reboot).start()
-
-  return {"success": 1}
-
-
-@dispatcher.add_method
 def uploadFileToUrl(fn: str, url: str, headers: Dict[str, str]) -> UploadFilesToUrlResponse:
   # this is because mypy doesn't understand that the decorator doesn't change the return type
   response: UploadFilesToUrlResponse = uploadFilesToUrls([{
@@ -448,18 +431,6 @@ def cancelUpload(upload_id: Union[str, List[str]]) -> Dict[str, Union[int, str]]
 
   cancelled_uploads.update(cancelled_ids)
   return {"success": 1}
-
-
-@dispatcher.add_method
-def setBandwithLimit(upload_speed_kbps: int, download_speed_kbps: int) -> Dict[str, Union[int, str]]:
-  if not AGNOS:
-    return {"success": 0, "error": "only supported on AGNOS"}
-
-  try:
-    HARDWARE.set_bandwidth_limit(upload_speed_kbps, download_speed_kbps)
-    return {"success": 1}
-  except subprocess.CalledProcessError as e:
-    return {"success": 0, "error": "failed to set limit", "stdout": e.stdout, "stderr": e.stderr}
 
 
 def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local_port: int) -> Dict[str, int]:
