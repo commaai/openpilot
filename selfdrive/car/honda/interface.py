@@ -51,6 +51,10 @@ class CarInterface(CarInterfaceBase):
 
       ret.pcmCruise = not ret.enableGasInterceptor
 
+      if ret.enableGasInterceptor:
+        print('honda', 'setting')
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_GAS_INTERCEPTOR
+
     if candidate == CAR.CRV_5G:
       ret.enableBsm = 0x12f8bfa7 in fingerprint[0]
 
