@@ -2,7 +2,7 @@ import numpy as np
 from typing import List, Optional, Tuple, Any
 
 from cereal import log
-from openpilot.common.params import put_nonblocking
+from openpilot.common.params import Params
 
 
 class NPQueue:
@@ -67,4 +67,4 @@ class ParameterEstimator:
 
 def cache_points(param_name, estimator, valid):
   msg = estimator.get_msg(valid=valid, with_points=True)
-  put_nonblocking(param_name, msg.to_bytes())
+  Params().put_nonblocking(param_name, msg.to_bytes())
