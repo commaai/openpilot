@@ -15,7 +15,7 @@ import cereal.messaging as messaging
 import openpilot.selfdrive.sentry as sentry
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 
 WATCHDOG_FN = "/dev/shm/wd_"
 ENABLE_WATCHDOG = os.getenv("NO_WATCHDOG") is None

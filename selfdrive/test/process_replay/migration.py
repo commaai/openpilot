@@ -85,6 +85,7 @@ def migrate_peripheralState(lr):
       continue
 
     new_msg = messaging.new_message("peripheralState")
+    new_msg.valid = msg.valid
     new_msg.logMonoTime = msg.logMonoTime
     all_msg.append(new_msg.as_reader())
 
@@ -149,6 +150,7 @@ def migrate_carParams(lr, old_logtime=False):
   for msg in lr:
     if msg.which() == 'carParams':
       CP = messaging.new_message('carParams')
+      CP.valid = True
       CP.carParams = msg.carParams.as_builder()
       for car_fw in CP.carParams.carFw:
         car_fw.brand = CP.carParams.carName

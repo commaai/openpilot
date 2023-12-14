@@ -9,7 +9,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.spinner import Spinner
 from openpilot.common.text_window import TextWindow
 from openpilot.system.hardware import AGNOS
-from openpilot.system.swaglog import cloudlog, add_file_handler
+from openpilot.common.swaglog import cloudlog, add_file_handler
 from openpilot.system.version import is_dirty
 
 MAX_CACHE_SIZE = 4e9 if "CI" in os.environ else 2e9

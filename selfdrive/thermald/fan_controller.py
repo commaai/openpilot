@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 from openpilot.common.realtime import DT_TRML
 from openpilot.common.numpy_fast import interp
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.pid import PIDController
 
 class BaseFanController(ABC):

@@ -32,8 +32,8 @@ if __name__ == "__main__":
       end_time = max(end_time, msg.logMonoTime)
       start_time = min(start_time, msg.logMonoTime)
 
-      if msg.which() == 'carEvents':
-        for e in msg.carEvents:
+      if msg.which() == 'onroadEvents':
+        for e in msg.onroadEvents:
           cnt_events[e.name] += 1
       elif msg.which() == 'controlsState':
         if len(alerts) == 0 or alerts[-1][1] != msg.controlsState.alertType:
