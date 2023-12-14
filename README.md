@@ -14,19 +14,15 @@ What is openpilot?
   </tr>
 </table>
 
-
 Running on a dedicated device in a car
 ------
 
 To use openpilot in a car, you need four things:
 1. **Supported Device:** a comma 3/3X, available at [comma.ai/shop](https://comma.ai/shop/comma-3x).
-
 2. **Software:** The setup procedure for the comma 3/3X allows users to enter a URL for custom software.
   To install the release version of openpilot, use the URL `openpilot.comma.ai`.
   To install openpilot master (for more advanced users), use the URL `installer.comma.ai/commaai/master`. You can replace "commaai" with another GitHub username to install a fork.
-
 3. **Supported Car:** Ensure that you have one of [the 250+ supported cars](docs/CARS.md).
-
 4. **Car Harness:** You will also need a [car harness](https://comma.ai/shop/car-harness) to connect your comma 3/3X to your car.
 
 We have detailed instructions for [how to install the harness and device in a car](https://comma.ai/setup).
@@ -47,13 +43,11 @@ Community and Contributing
 
 openpilot is developed by [comma](https://comma.ai/) and by users like you. We welcome both pull requests and issues on [GitHub](http://github.com/commaai/openpilot). Bug fixes and new car ports are encouraged. Check out [the contributing docs](docs/CONTRIBUTING.md).
 
-* https://docs.comma.ai
+* Check out [the contributing docs](docs/CONTRIBUTING.md)
+* https://docs.comma.ai for
+* Check out the [community wiki](https://github.com/commaai/openpilot/wiki)
 * [community wiki](https://github.com/commaai/openpilot/wiki)
-* 
-
-Documentation related to openpilot development can be found on [docs.comma.ai](https://docs.comma.ai). Information about running openpilot (e.g. FAQ, fingerprinting, troubleshooting, custom forks, community hardware) should go on the [wiki](https://github.com/commaai/openpilot/wiki).
-
-Want to get paid to work on openpilot? [comma is hiring](https://comma.ai/jobs#open-positions).
+* Want to get paid to work on openpilot? [comma is hiring](https://comma.ai/jobs#open-positions) and offers lots of [bounties](docs/BOUNTIES.md).
 
 Safety and Testing
 ----
@@ -93,5 +87,5 @@ NO WARRANTY EXPRESSED OR IMPLIED.**
 
 <img src="https://d1qb2nb5cznatu.cloudfront.net/startups/i/1061157-bc7e9bf3b246ece7322e6ffe653f6af8-medium_jpg.jpg?buster=1458363130" width="75"></img> <img src="https://cdn-images-1.medium.com/max/1600/1*C87EjxGeMPrkTuVRVWVg4w.png" width="225"></img>
 
-[![openpilot tests](https://github.com/commaai/openpilot/workflows/openpilot%20tests/badge.svg?event=push)](https://github.com/commaai/openpilot/actions)
+![openpilot tests](https://github.com/commaai/openpilot/actions/workflows/selfdrive_tests.yaml/badge.svg)
 [![codecov](https://codecov.io/gh/commaai/openpilot/branch/master/graph/badge.svg)](https://codecov.io/gh/commaai/openpilot)
