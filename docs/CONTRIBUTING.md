@@ -64,3 +64,4 @@ If you port openpilot to a substantially new car brand, see this more generic [B
 * Consider opting into driver camera uploads to improve the driver monitoring model.
 * Connect your device to Wi-Fi regularly, so that we can pull data for training better driving models.
 * Run the `nightly` branch and report issues. This branch is like `master` but it's built just like a release.
+* Annotate images in the [comma10k dateset](https://github.com/commaai/comma10k).
