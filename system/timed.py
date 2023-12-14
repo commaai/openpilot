@@ -55,7 +55,6 @@ def main() -> NoReturn:
     # Set timezone with param
     timezone = params.get("Timezone", encoding='utf8')
     if timezone is not None:
-      print('par')
       cloudlog.debug("Setting timezone based on param")
       set_timezone(valid_timezones, timezone)
     else:
@@ -64,7 +63,6 @@ def main() -> NoReturn:
       # Set timezone with IP lookup
       location = params.get("LastGPSPosition", encoding='utf8')
       if location is None:
-        print('ip')
         cloudlog.debug("Setting timezone based on IP lookup")
         try:
           r = requests.get("https://ipapi.co/timezone", headers=REQUEST_HEADERS, timeout=10)
@@ -81,7 +79,6 @@ def main() -> NoReturn:
       # Set timezone with GPS
       else:
         cloudlog.debug("Setting timezone based on GPS location")
-        print('gps')
         try:
           location = json.loads(location)
         except Exception:
@@ -97,7 +94,6 @@ def main() -> NoReturn:
     # Set time from modem
     try:
       cloudlog.debug("Setting time based on modem")
-      print('m')
       output = subprocess.check_output("mmcli -m 0 --time", shell=True).decode()
 
       date_pattern = r"current: (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}-\d{2})"
@@ -116,7 +112,7 @@ def main() -> NoReturn:
       # Fix offset
       date = date - timedelta(days=682, hours=11)
 
-      # Fix format
+      # Set time
       os.system(f"TZ=UTC date -s '{date.strftime('%Y-%m-%d %H:%M:%S')}'")
 
     except Exception as e:
