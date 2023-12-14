@@ -124,8 +124,8 @@ void peripherals_init(void) {
   RCC->APB1LENR |= RCC_APB1LENR_TIM3EN;  // fan pwm
   RCC->APB1LENR |= RCC_APB1LENR_TIM6EN;  // interrupt timer
   RCC->APB1LENR |= RCC_APB1LENR_TIM7EN;  // DMA trigger timer
-  RCC->APB1LENR |= RCC_APB1LENR_TIM12EN;  // tick timer
-  RCC->APB1LENR |= RCC_APB1LENR_TIM13EN;  // gmlan bitbang timer
+  RCC->APB2ENR |= RCC_APB2ENR_TIM8EN;  // tick timer
+  RCC->APB1LENR |= RCC_APB1LENR_TIM12EN;  // slow loop
 
 #ifdef PANDA_JUNGLE
   RCC->AHB3ENR |= RCC_AHB3ENR_SDMMC1EN; // SDMMC

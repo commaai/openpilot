@@ -12,7 +12,8 @@
 
 #include <eigen3/Eigen/Dense>
 
-#include "common_ekf.h"
+#include "ekf.h"
+#include "ekf_load.h"
 
 #define REWIND_TO_KEEP 512
 

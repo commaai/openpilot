@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <memory>
 #include <thread>
+#include <vector>
 
 #include "cereal/messaging/messaging.h"
 #include "cereal/visionipc/visionipc.h"
@@ -23,7 +24,6 @@ public:
 
   static void publisher_publish(VideoEncoder *e, int segment_num, uint32_t idx, VisionIpcBufExtra &extra, unsigned int flags, kj::ArrayPtr<capnp::byte> header, kj::ArrayPtr<capnp::byte> dat);
 
-
 protected:
   int in_width, in_height;
   const EncoderInfo encoder_info;
@@ -32,4 +32,5 @@ private:
   // total frames encoded
   int cnt = 0;
   std::unique_ptr<PubMaster> pm;
+  std::vector<capnp::byte> msg_cache;
 };

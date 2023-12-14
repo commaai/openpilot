@@ -879,63 +879,6 @@ class Panda:
     """
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xf2, port_number, 0, b'')
 
-  # ******************* kline *******************
-
-  # pulse low for wakeup
-  def kline_wakeup(self, k=True, l=True):
-    assert k or l, "must specify k-line, l-line, or both"
-    logging.debug("kline wakeup...")
-    self._handle.controlWrite(Panda.REQUEST_OUT, 0xf0, 2 if k and l else int(l), 0, b'')
-    logging.debug("kline wakeup done")
-
-  def kline_5baud(self, addr, k=True, l=True):
-    assert k or l, "must specify k-line, l-line, or both"
-    logging.debug("kline 5 baud...")
-    self._handle.controlWrite(Panda.REQUEST_OUT, 0xf4, 2 if k and l else int(l), addr, b'')
-    logging.debug("kline 5 baud done")
-
-  def kline_drain(self, bus=2):
-    # drain buffer
-    bret = bytearray()
-    while True:
-      ret = self._handle.controlRead(Panda.REQUEST_IN, 0xe0, bus, 0, 0x40)
-      if len(ret) == 0:
-        break
-      logging.debug(f"kline drain: 0x{ret.hex()}")
-      bret += ret
-    return bytes(bret)
-
-  def kline_ll_recv(self, cnt, bus=2):
-    echo = bytearray()
-    while len(echo) != cnt:
-      ret = self._handle.controlRead(Panda.REQUEST_OUT, 0xe0, bus, 0, cnt - len(echo))
-      if len(ret) > 0:
-        logging.debug(f"kline recv: 0x{ret.hex()}")
-      echo += ret
-    return bytes(echo)
-
-  def kline_send(self, x, bus=2, checksum=True):
-    self.kline_drain(bus=bus)
-    if checksum:
-      x += bytes([sum(x) % 0x100])
-    for i in range(0, len(x), 0xf):
-      ts = x[i:i + 0xf]
-      logging.debug(f"kline send: 0x{ts.hex()}")
-      self._handle.bulkWrite(2, bytes([bus]) + ts)
-      echo = self.kline_ll_recv(len(ts), bus=bus)
-      if echo != ts:
-        logging.error(f"**** ECHO ERROR {i} ****")
-        logging.error(f"0x{echo.hex()}")
-        logging.error(f"0x{ts.hex()}")
-    assert echo == ts
-
-  def kline_recv(self, bus=2, header_len=4):
-    # read header (last byte is length)
-    msg = self.kline_ll_recv(header_len, bus=bus)
-    # read data (add one byte to length for checksum)
-    msg += self.kline_ll_recv(msg[-1]+1, bus=bus)
-    return msg
-
   def send_heartbeat(self, engaged=True):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xf3, engaged, 0, b'')
 
@@ -976,10 +919,6 @@ class Panda:
     dat = self._handle.controlRead(Panda.REQUEST_IN, 0xb2, 0, 0, 2)
     a = struct.unpack("H", dat)
     return a[0]
-
-  # ****************** Phone *****************
-  def set_phone_power(self, enabled):
-    self._handle.controlWrite(Panda.REQUEST_OUT, 0xb3, int(enabled), 0, b'')
 
   # ****************** Siren *****************
   def set_siren(self, enabled):

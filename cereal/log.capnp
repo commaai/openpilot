@@ -166,6 +166,7 @@ struct FrameData {
     unknown @0;
     ar0231 @1;
     ox03c10 @2;
+    os04c10 @3;
   }
 
   frameLengthDEPRECATED @3 :Int32;
@@ -2226,7 +2227,7 @@ struct Event {
     liveTorqueParameters @94 :LiveTorqueParametersData;
     cameraOdometry @63 :CameraOdometry;
     thumbnail @66: Thumbnail;
-    carEvents @68: List(Car.CarEvent);
+    onroadEvents @68: List(Car.CarEvent);
     carParams @69: Car.CarParams;
     driverMonitoringState @71: DriverMonitoringState;
     liveLocationKalman @72 :LiveLocationKalman;

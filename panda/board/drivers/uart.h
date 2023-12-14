@@ -41,11 +41,6 @@ void uart_send_break(uart_ring *u);
 
 // ******************************** UART buffers ********************************
 
-// lin1, K-LINE = UART5
-// lin2, L-LINE = USART3
-UART_BUFFER(lin1, FIFO_SIZE_INT, FIFO_SIZE_INT, UART5, NULL, false)
-UART_BUFFER(lin2, FIFO_SIZE_INT, FIFO_SIZE_INT, USART3, NULL, false)
-
 // debug = USART2
 UART_BUFFER(debug, FIFO_SIZE_INT, FIFO_SIZE_INT, USART2, debug_ring_callback, true)
 
@@ -62,12 +57,6 @@ uart_ring *get_ring_by_number(int a) {
   switch(a) {
     case 0:
       ring = &uart_ring_debug;
-      break;
-    case 2:
-      ring = &uart_ring_lin1;
-      break;
-    case 3:
-      ring = &uart_ring_lin2;
       break;
     case 4:
       ring = &uart_ring_som_debug;

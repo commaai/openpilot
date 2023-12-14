@@ -109,6 +109,10 @@ BO_ 1265 CLU11: 4 CLU
  SG_ CF_Clu_AmpInfo : 25|1@1+ (1.0,0.0) [0.0|1.0] ""  BCM
  SG_ CF_Clu_AliveCnt1 : 28|4@1+ (1.0,0.0) [0.0|15.0] ""  AHLS,EMS,EPB,LDWS_LKAS,MDPS,SCC
 
+BO_ 1260 Sign_Detection: 8 XXX
+ SG_ SpeedLim_Nav_Cam : 40|8@1+ (1,0) [0|255] "km/h / mph" XXX
+ SG_ SpeedLim_Nav_Cam2 : 48|8@1+ (1,0) [0|255] "km/h / mph" XXX
+ 
 BO_ 1492 TMU_GW_PE_01: 8 CLU
  SG_ TMU_IVRActivity : 0|2@1+ (1.0,0.0) [0.0|3.0] ""  DATC
  SG_ TMU_PhoneActivity : 2|2@1+ (1.0,0.0) [0.0|3.0] ""  DATC

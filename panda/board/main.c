@@ -4,7 +4,6 @@
 #include "drivers/pwm.h"
 #include "drivers/usb.h"
 #include "drivers/gmlan_alt.h"
-#include "drivers/kline_init.h"
 #include "drivers/simple_watchdog.h"
 #include "drivers/bootkick.h"
 
@@ -272,7 +271,7 @@ void tick_handler(void) {
       ignition_can_cnt += 1U;
 
       // synchronous safety check
-      safety_tick(current_rx_checks);
+      safety_tick(&current_safety_config);
     }
 
     loop_counter++;
@@ -346,14 +345,6 @@ int main(void) {
 
   // panda has an FPU, let's use it!
   enable_fpu();
-
-  if (current_board->has_lin) {
-    // enable LIN
-    uart_init(&uart_ring_lin1, 10400);
-    UART5->CR2 |= USART_CR2_LINEN;
-    uart_init(&uart_ring_lin2, 10400);
-    USART3->CR2 |= USART_CR2_LINEN;
-  }
 
   if (current_board->fan_max_rpm > 0U) {
     fan_init();

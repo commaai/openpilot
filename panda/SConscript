@@ -75,7 +75,7 @@ def build_project(project_name, project, extra_flags):
     "-nostdlib",
     "-fno-builtin",
     "-std=gnu11",
-    "-fmax-errors=3",
+    "-fmax-errors=1",
     f"-T{linkerscript_fn}",
   ]
 

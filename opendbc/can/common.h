@@ -54,7 +54,7 @@ public:
   bool ignore_checksum = false;
   bool ignore_counter = false;
 
-  bool parse(uint64_t sec, const std::vector<uint8_t> &dat);
+  bool parse(uint64_t nanos, const std::vector<uint8_t> &dat);
   bool update_counter_generic(int64_t v, int cnt_size);
 };
 
@@ -69,9 +69,9 @@ private:
 public:
   bool can_valid = false;
   bool bus_timeout = false;
-  uint64_t first_sec = 0;
-  uint64_t last_sec = 0;
-  uint64_t last_nonempty_sec = 0;
+  uint64_t first_nanos = 0;
+  uint64_t last_nanos = 0;
+  uint64_t last_nonempty_nanos = 0;
   uint64_t bus_timeout_threshold = 0;
   uint64_t can_invalid_cnt = CAN_INVALID_CNT;
 
@@ -81,10 +81,10 @@ public:
   #ifndef DYNAMIC_CAPNP
   void update_string(const std::string &data, bool sendcan);
   void update_strings(const std::vector<std::string> &data, std::vector<SignalValue> &vals, bool sendcan);
-  void UpdateCans(uint64_t sec, const capnp::List<cereal::CanData>::Reader& cans);
+  void UpdateCans(uint64_t nanos, const capnp::List<cereal::CanData>::Reader& cans);
   #endif
-  void UpdateCans(uint64_t sec, const capnp::DynamicStruct::Reader& cans);
-  void UpdateValid(uint64_t sec);
+  void UpdateCans(uint64_t nanos, const capnp::DynamicStruct::Reader& cans);
+  void UpdateValid(uint64_t nanos);
   void query_latest(std::vector<SignalValue> &vals, uint64_t last_ts = 0);
 };
 

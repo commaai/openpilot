@@ -227,7 +227,6 @@ const board board_white = {
   .harness_config = &white_harness_config,
   .has_hw_gmlan = true,
   .has_obd = false,
-  .has_lin = true,
   .has_spi = false,
   .has_canfd = false,
   .has_rtc_battery = false,
@@ -245,7 +244,6 @@ const board board_white = {
   .read_current = white_read_current,
   .set_fan_enabled = unused_set_fan_enabled,
   .set_ir_power = unused_set_ir_power,
-  .set_phone_power = unused_set_phone_power,
   .set_siren = unused_set_siren,
   .read_som_gpio = unused_read_som_gpio
 };

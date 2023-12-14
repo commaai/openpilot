@@ -38,16 +38,14 @@ const CanMsg VOLKSWAGEN_MQB_STOCK_TX_MSGS[] = {{MSG_HCA_01, 0, 8}, {MSG_GRA_ACC_
 const CanMsg VOLKSWAGEN_MQB_LONG_TX_MSGS[] = {{MSG_HCA_01, 0, 8}, {MSG_LDW_02, 0, 8},
                                               {MSG_ACC_02, 0, 8}, {MSG_ACC_06, 0, 8}, {MSG_ACC_07, 0, 8}};
 
-AddrCheckStruct volkswagen_mqb_addr_checks[] = {
-  {.msg = {{MSG_ESP_19, 0, 8, .check_checksum = false, .max_counter = 0U, .expected_timestep = 10000U}, { 0 }, { 0 }}},
-  {.msg = {{MSG_LH_EPS_03, 0, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 10000U}, { 0 }, { 0 }}},
-  {.msg = {{MSG_ESP_05, 0, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 20000U}, { 0 }, { 0 }}},
-  {.msg = {{MSG_TSK_06, 0, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 20000U}, { 0 }, { 0 }}},
-  {.msg = {{MSG_MOTOR_20, 0, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 20000U}, { 0 }, { 0 }}},
-  {.msg = {{MSG_MOTOR_14, 0, 8, .check_checksum = false, .max_counter = 0U, .expected_timestep = 100000U}, { 0 }, { 0 }}},
+RxCheck volkswagen_mqb_rx_checks[] = {
+  {.msg = {{MSG_ESP_19, 0, 8, .check_checksum = false, .max_counter = 0U, .frequency = 100U}, { 0 }, { 0 }}},
+  {.msg = {{MSG_LH_EPS_03, 0, 8, .check_checksum = true, .max_counter = 15U, .frequency = 100U}, { 0 }, { 0 }}},
+  {.msg = {{MSG_ESP_05, 0, 8, .check_checksum = true, .max_counter = 15U, .frequency = 50U}, { 0 }, { 0 }}},
+  {.msg = {{MSG_TSK_06, 0, 8, .check_checksum = true, .max_counter = 15U, .frequency = 50U}, { 0 }, { 0 }}},
+  {.msg = {{MSG_MOTOR_20, 0, 8, .check_checksum = true, .max_counter = 15U, .frequency = 50U}, { 0 }, { 0 }}},
+  {.msg = {{MSG_MOTOR_14, 0, 8, .check_checksum = false, .max_counter = 0U, .frequency = 10U}, { 0 }, { 0 }}},
 };
-#define VOLKSWAGEN_MQB_ADDR_CHECKS_LEN (sizeof(volkswagen_mqb_addr_checks) / sizeof(volkswagen_mqb_addr_checks[0]))
-addr_checks volkswagen_mqb_rx_checks = {volkswagen_mqb_addr_checks, VOLKSWAGEN_MQB_ADDR_CHECKS_LEN};
 
 uint8_t volkswagen_crc8_lut_8h2f[256]; // Static lookup table for CRC8 poly 0x2F, aka 8H2F/AUTOSAR
 bool volkswagen_mqb_brake_pedal_switch = false;
@@ -84,14 +82,15 @@ static uint32_t volkswagen_mqb_compute_crc(CANPacket_t *to_push) {
     crc ^= (uint8_t[]){0xC4,0xE2,0x4F,0xE4,0xF8,0x2F,0x56,0x81,0x9F,0xE5,0x83,0x44,0x05,0x3F,0x97,0xDF}[counter];
   } else if (addr == MSG_MOTOR_20) {
     crc ^= (uint8_t[]){0xE9,0x65,0xAE,0x6B,0x7B,0x35,0xE5,0x5F,0x4E,0xC7,0x86,0xA2,0xBB,0xDD,0xEB,0xB4}[counter];
-  } else {  // Undefined CAN message, CRC check expected to fail
+  } else {
+    // Undefined CAN message, CRC check expected to fail
   }
   crc = volkswagen_crc8_lut_8h2f[crc];
 
   return (uint8_t)(crc ^ 0xFFU);
 }
 
-static const addr_checks* volkswagen_mqb_init(uint16_t param) {
+static safety_config volkswagen_mqb_init(uint16_t param) {
   UNUSED(param);
 
   volkswagen_set_button_prev = false;
@@ -103,15 +102,12 @@ static const addr_checks* volkswagen_mqb_init(uint16_t param) {
   volkswagen_longitudinal = GET_FLAG(param, FLAG_VOLKSWAGEN_LONG_CONTROL);
 #endif
   gen_crc_lookup_table_8(0x2F, volkswagen_crc8_lut_8h2f);
-  return &volkswagen_mqb_rx_checks;
+  return volkswagen_longitudinal ? BUILD_SAFETY_CFG(volkswagen_mqb_rx_checks, VOLKSWAGEN_MQB_LONG_TX_MSGS) : \
+                                   BUILD_SAFETY_CFG(volkswagen_mqb_rx_checks, VOLKSWAGEN_MQB_STOCK_TX_MSGS);
 }
 
-static int volkswagen_mqb_rx_hook(CANPacket_t *to_push) {
-
-  bool valid = addr_safety_check(to_push, &volkswagen_mqb_rx_checks,
-                                 volkswagen_mqb_get_checksum, volkswagen_mqb_compute_crc, volkswagen_mqb_get_counter, NULL);
-
-  if (valid && (GET_BUS(to_push) == 0U)) {
+static void volkswagen_mqb_rx_hook(CANPacket_t *to_push) {
+  if (GET_BUS(to_push) == 0U) {
     int addr = GET_ADDR(to_push);
 
     // Update in-motion state by sampling wheel speeds
@@ -194,18 +190,11 @@ static int volkswagen_mqb_rx_hook(CANPacket_t *to_push) {
 
     generic_rx_checks((addr == MSG_HCA_01));
   }
-  return valid;
 }
 
-static int volkswagen_mqb_tx_hook(CANPacket_t *to_send) {
+static bool volkswagen_mqb_tx_hook(CANPacket_t *to_send) {
   int addr = GET_ADDR(to_send);
-  int tx = 1;
-
-  if (volkswagen_longitudinal) {
-    tx = msg_allowed(to_send, VOLKSWAGEN_MQB_LONG_TX_MSGS, sizeof(VOLKSWAGEN_MQB_LONG_TX_MSGS) / sizeof(VOLKSWAGEN_MQB_LONG_TX_MSGS[0]));
-  } else {
-    tx = msg_allowed(to_send, VOLKSWAGEN_MQB_STOCK_TX_MSGS, sizeof(VOLKSWAGEN_MQB_STOCK_TX_MSGS) / sizeof(VOLKSWAGEN_MQB_STOCK_TX_MSGS[0]));
-  }
+  bool tx = true;
 
   // Safety check for HCA_01 Heading Control Assist torque
   // Signal: HCA_01.HCA_01_LM_Offset (absolute torque)
@@ -220,7 +209,7 @@ static int volkswagen_mqb_tx_hook(CANPacket_t *to_send) {
     bool steer_req = GET_BIT(to_send, 30U) != 0U;
 
     if (steer_torque_cmd_checks(desired_torque, steer_req, VOLKSWAGEN_MQB_STEERING_LIMITS)) {
-      tx = 0;
+      tx = false;
     }
   }
 
@@ -244,7 +233,7 @@ static int volkswagen_mqb_tx_hook(CANPacket_t *to_send) {
     violation |= longitudinal_accel_checks(desired_accel, VOLKSWAGEN_MQB_LONG_LIMITS);
 
     if (violation) {
-      tx = 0;
+      tx = false;
     }
   }
 
@@ -253,11 +242,10 @@ static int volkswagen_mqb_tx_hook(CANPacket_t *to_send) {
   if ((addr == MSG_GRA_ACC_01) && !controls_allowed) {
     // disallow resume and set: bits 16 and 19
     if ((GET_BYTE(to_send, 2) & 0x9U) != 0U) {
-      tx = 0;
+      tx = false;
     }
   }
 
-  // 1 allows the message through
   return tx;
 }
 
@@ -294,6 +282,8 @@ const safety_hooks volkswagen_mqb_hooks = {
   .init = volkswagen_mqb_init,
   .rx = volkswagen_mqb_rx_hook,
   .tx = volkswagen_mqb_tx_hook,
-  .tx_lin = nooutput_tx_lin_hook,
   .fwd = volkswagen_mqb_fwd_hook,
+  .get_counter = volkswagen_mqb_get_counter,
+  .get_checksum = volkswagen_mqb_get_checksum,
+  .compute_checksum = volkswagen_mqb_compute_crc,
 };

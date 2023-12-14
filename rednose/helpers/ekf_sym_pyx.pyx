@@ -11,11 +11,15 @@ cimport numpy as np
 
 import numpy as np
 
+
 cdef extern from "<optional>" namespace "std" nogil:
   cdef cppclass optional[T]:
     ctypedef T value_type
     bool has_value()
     T& value()
+
+cdef extern from "rednose/helpers/ekf_load.h":
+  cdef void ekf_load_and_register(string directory, string name)
 
 cdef extern from "rednose/helpers/ekf_sym.h" namespace "EKFS":
   cdef cppclass MapVectorXd "Eigen::Map<Eigen::VectorXd>":
@@ -85,6 +89,7 @@ cdef class EKF_sym_pyx:
       int dim_main_err, int N=0, int dim_augment=0, int dim_augment_err=0, list maha_test_kinds=[],
       list quaternion_idxs=[], list global_vars=[], double max_rewind_age=1.0, logger=None):
     # TODO logger
+    ekf_load_and_register(gen_dir.encode('utf8'), name.encode('utf8'))
 
     cdef np.ndarray[np.float64_t, ndim=2, mode='c'] Q_b = np.ascontiguousarray(Q, dtype=np.double)
     cdef np.ndarray[np.float64_t, ndim=1, mode='c'] x_initial_b = np.ascontiguousarray(x_initial, dtype=np.double)

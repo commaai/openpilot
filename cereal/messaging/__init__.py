@@ -41,10 +41,13 @@ def log_from_bytes(dat: bytes) -> capnp.lib.capnp._DynamicStructReader:
     return msg
 
 
-def new_message(service: Optional[str] = None, size: Optional[int] = None) -> capnp.lib.capnp._DynamicStructBuilder:
-  dat = log.Event.new_message()
-  dat.logMonoTime = int(time.monotonic() * 1e9)
-  dat.valid = True
+def new_message(service: Optional[str], size: Optional[int] = None, **kwargs) -> capnp.lib.capnp._DynamicStructBuilder:
+  args = {
+    'valid': False,
+    'logMonoTime': int(time.monotonic() * 1e9),
+    **kwargs
+  }
+  dat = log.Event.new_message(**args)
   if service is not None:
     if size is None:
       dat.init(service)
@@ -154,7 +157,7 @@ def recv_one_retry(sock: SubSocket) -> capnp.lib.capnp._DynamicStructReader:
 class SubMaster:
   def __init__(self, services: List[str], poll: Optional[List[str]] = None,
                ignore_alive: Optional[List[str]] = None, ignore_avg_freq: Optional[List[str]] = None,
-               addr: str = "127.0.0.1"):
+               ignore_valid: Optional[List[str]] = None, addr: str = "127.0.0.1"):
     self.frame = -1
     self.updated = {s: False for s in services}
     self.rcv_time = {s: 0. for s in services}
@@ -174,6 +177,7 @@ class SubMaster:
 
     self.ignore_average_freq = [] if ignore_avg_freq is None else ignore_avg_freq
     self.ignore_alive = [] if ignore_alive is None else ignore_alive
+    self.ignore_valid = [] if ignore_valid is None else ignore_valid
     self.simulation = bool(int(os.getenv("SIMULATION", "0")))
 
     for s in services:
@@ -187,9 +191,10 @@ class SubMaster:
       except capnp.lib.capnp.KjException:  # pylint: disable=c-extension-no-member
         data = new_message(s, 0) # lists
 
-      self.data[s] = getattr(data, s)
+      self.data[s] = getattr(data.as_reader(), s)
       self.logMonoTime[s] = 0
-      self.valid[s] = data.valid
+      # TODO: this should default to False
+      self.valid[s] = True
 
   def __getitem__(self, s: str) -> capnp.lib.capnp._DynamicStructReader:
     return self.data[s]
@@ -266,7 +271,7 @@ class SubMaster:
   def all_valid(self, service_list=None) -> bool:
     if service_list is None:  # check all
       service_list = self.valid.keys()
-    return all(self.valid[s] for s in service_list)
+    return all(self.valid[s] for s in service_list if s not in self.ignore_valid)
 
   def all_checks(self, service_list=None) -> bool:
     if service_list is None:  # check all

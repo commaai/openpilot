@@ -196,7 +196,6 @@ const board board_dos = {
   .harness_config = &dos_harness_config,
   .has_hw_gmlan = false,
   .has_obd = true,
-  .has_lin = false,
 #ifdef ENABLE_SPI
   .has_spi = true,
 #else
@@ -218,7 +217,6 @@ const board board_dos = {
   .read_current = unused_read_current,
   .set_fan_enabled = dos_set_fan_enabled,
   .set_ir_power = dos_set_ir_power,
-  .set_phone_power = unused_set_phone_power,
   .set_siren = dos_set_siren,
   .set_bootkick = dos_set_bootkick,
   .read_som_gpio = dos_read_som_gpio

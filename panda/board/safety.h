@@ -55,26 +55,34 @@
 uint16_t current_safety_mode = SAFETY_SILENT;
 uint16_t current_safety_param = 0;
 const safety_hooks *current_hooks = &nooutput_hooks;
-const addr_checks *current_rx_checks = &default_rx_checks;
+safety_config current_safety_config;
 
-int safety_rx_hook(CANPacket_t *to_push) {
+bool safety_rx_hook(CANPacket_t *to_push) {
   bool controls_allowed_prev = controls_allowed;
-  int ret = current_hooks->rx(to_push);
+
+  bool valid = rx_msg_safety_check(to_push, &current_safety_config, current_hooks->get_checksum,
+                                 current_hooks->compute_checksum, current_hooks->get_counter,
+                                 current_hooks->get_quality_flag_valid);
+  if (valid) {
+    current_hooks->rx(to_push);
+  }
 
   // reset mismatches on rising edge of controls_allowed to avoid rare race condition
   if (controls_allowed && !controls_allowed_prev) {
     heartbeat_engaged_mismatches = 0;
   }
 
-  return ret;
+  return valid;
 }
 
-int safety_tx_hook(CANPacket_t *to_send) {
-  return (relay_malfunction ? -1 : current_hooks->tx(to_send));
-}
+bool safety_tx_hook(CANPacket_t *to_send) {
+  bool whitelisted = msg_allowed(to_send, current_safety_config.tx_msgs, current_safety_config.tx_msgs_len);
+  if ((current_safety_mode == SAFETY_ALLOUTPUT) || (current_safety_mode == SAFETY_ELM327)) {
+    whitelisted = true;
+  }
 
-int safety_tx_lin_hook(int lin_num, uint8_t *data, int len) {
-  return current_hooks->tx_lin(lin_num, data, len);
+  const bool safety_allowed = current_hooks->tx(to_send);
+  return !relay_malfunction && whitelisted && safety_allowed;
 }
 
 int safety_fwd_hook(int bus_num, int addr) {
@@ -130,7 +138,7 @@ bool msg_allowed(CANPacket_t *to_send, const CanMsg msg_list[], int len) {
   return allowed;
 }
 
-int get_addr_check_index(CANPacket_t *to_push, AddrCheckStruct addr_list[], const int len) {
+int get_addr_check_index(CANPacket_t *to_push, RxCheck addr_list[], const int len) {
   int bus = GET_BUS(to_push);
   int addr = GET_ADDR(to_push);
   int length = GET_LEN(to_push);
@@ -162,22 +170,23 @@ int get_addr_check_index(CANPacket_t *to_push, AddrCheckStruct addr_list[], cons
 }
 
 // 1Hz safety function called by main. Now just a check for lagging safety messages
-void safety_tick(const addr_checks *rx_checks) {
+void safety_tick(const safety_config *cfg) {
   bool rx_checks_invalid = false;
   uint32_t ts = microsecond_timer_get();
-  if (rx_checks != NULL) {
-    for (int i=0; i < rx_checks->len; i++) {
-      uint32_t elapsed_time = get_ts_elapsed(ts, rx_checks->check[i].last_timestamp);
+  if (cfg != NULL) {
+    for (int i=0; i < cfg->rx_checks_len; i++) {
+      uint32_t elapsed_time = get_ts_elapsed(ts, cfg->rx_checks[i].last_timestamp);
       // lag threshold is max of: 1s and MAX_MISSED_MSGS * expected timestep.
       // Quite conservative to not risk false triggers.
       // 2s of lag is worse case, since the function is called at 1Hz
-      bool lagging = elapsed_time > MAX(rx_checks->check[i].msg[rx_checks->check[i].index].expected_timestep * MAX_MISSED_MSGS, 1e6);
-      rx_checks->check[i].lagging = lagging;
+      uint32_t timestep = 1e6 / cfg->rx_checks[i].msg[cfg->rx_checks[i].index].frequency;
+      bool lagging = elapsed_time > MAX(timestep * MAX_MISSED_MSGS, 1e6);
+      cfg->rx_checks[i].lagging = lagging;
       if (lagging) {
         controls_allowed = false;
       }
 
-      if (lagging || !is_msg_valid(rx_checks->check, i)) {
+      if (lagging || !is_msg_valid(cfg->rx_checks, i)) {
         rx_checks_invalid = true;
       }
     }
@@ -186,7 +195,7 @@ void safety_tick(const addr_checks *rx_checks) {
   safety_rx_checks_invalid = rx_checks_invalid;
 }
 
-void update_counter(AddrCheckStruct addr_list[], int index, uint8_t counter) {
+void update_counter(RxCheck addr_list[], int index, uint8_t counter) {
   if (index != -1) {
     uint8_t expected_counter = (addr_list[index].last_counter + 1U) % (addr_list[index].msg[addr_list[index].index].max_counter + 1U);
     addr_list[index].wrong_counters += (expected_counter == counter) ? -1 : 1;
@@ -195,7 +204,7 @@ void update_counter(AddrCheckStruct addr_list[], int index, uint8_t counter) {
   }
 }
 
-bool is_msg_valid(AddrCheckStruct addr_list[], int index) {
+bool is_msg_valid(RxCheck addr_list[], int index) {
   bool valid = true;
   if (index != -1) {
     if (!addr_list[index].valid_checksum || !addr_list[index].valid_quality_flag || (addr_list[index].wrong_counters >= MAX_WRONG_COUNTERS)) {
@@ -206,49 +215,49 @@ bool is_msg_valid(AddrCheckStruct addr_list[], int index) {
   return valid;
 }
 
-void update_addr_timestamp(AddrCheckStruct addr_list[], int index) {
+void update_addr_timestamp(RxCheck addr_list[], int index) {
   if (index != -1) {
     uint32_t ts = microsecond_timer_get();
     addr_list[index].last_timestamp = ts;
   }
 }
 
-bool addr_safety_check(CANPacket_t *to_push,
-                       const addr_checks *rx_checks,
-                       uint32_t (*get_checksum)(CANPacket_t *to_push),
-                       uint32_t (*compute_checksum)(CANPacket_t *to_push),
-                       uint8_t (*get_counter)(CANPacket_t *to_push),
-                       bool (*get_quality_flag_valid)(CANPacket_t *to_push)) {
+bool rx_msg_safety_check(CANPacket_t *to_push,
+                       const safety_config *cfg,
+                       const get_checksum_t get_checksum,
+                       const compute_checksum_t compute_checksum,
+                       const get_counter_t get_counter,
+                       const get_quality_flag_valid_t get_quality_flag_valid) {
 
-  int index = get_addr_check_index(to_push, rx_checks->check, rx_checks->len);
-  update_addr_timestamp(rx_checks->check, index);
+  int index = get_addr_check_index(to_push, cfg->rx_checks, cfg->rx_checks_len);
+  update_addr_timestamp(cfg->rx_checks, index);
 
   if (index != -1) {
     // checksum check
-    if ((get_checksum != NULL) && (compute_checksum != NULL) && rx_checks->check[index].msg[rx_checks->check[index].index].check_checksum) {
+    if ((get_checksum != NULL) && (compute_checksum != NULL) && cfg->rx_checks[index].msg[cfg->rx_checks[index].index].check_checksum) {
       uint32_t checksum = get_checksum(to_push);
       uint32_t checksum_comp = compute_checksum(to_push);
-      rx_checks->check[index].valid_checksum = checksum_comp == checksum;
+      cfg->rx_checks[index].valid_checksum = checksum_comp == checksum;
     } else {
-      rx_checks->check[index].valid_checksum = true;
+      cfg->rx_checks[index].valid_checksum = true;
     }
 
     // counter check (max_counter == 0 means skip check)
-    if ((get_counter != NULL) && (rx_checks->check[index].msg[rx_checks->check[index].index].max_counter > 0U)) {
+    if ((get_counter != NULL) && (cfg->rx_checks[index].msg[cfg->rx_checks[index].index].max_counter > 0U)) {
       uint8_t counter = get_counter(to_push);
-      update_counter(rx_checks->check, index, counter);
+      update_counter(cfg->rx_checks, index, counter);
     } else {
-      rx_checks->check[index].wrong_counters = 0U;
+      cfg->rx_checks[index].wrong_counters = 0U;
     }
 
     // quality flag check
-    if ((get_quality_flag_valid != NULL) && rx_checks->check[index].msg[rx_checks->check[index].index].quality_flag) {
-      rx_checks->check[index].valid_quality_flag = get_quality_flag_valid(to_push);
+    if ((get_quality_flag_valid != NULL) && cfg->rx_checks[index].msg[cfg->rx_checks[index].index].quality_flag) {
+      cfg->rx_checks[index].valid_quality_flag = get_quality_flag_valid(to_push);
     } else {
-      rx_checks->check[index].valid_quality_flag = true;
+      cfg->rx_checks[index].valid_quality_flag = true;
     }
   }
-  return is_msg_valid(rx_checks->check, index);
+  return is_msg_valid(cfg->rx_checks, index);
 }
 
 void generic_rx_checks(bool stock_ecu_detected) {
@@ -354,6 +363,11 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
   relay_malfunction_reset();
   safety_rx_checks_invalid = false;
 
+  current_safety_config.rx_checks = NULL;
+  current_safety_config.rx_checks_len = 0;
+  current_safety_config.tx_msgs = NULL;
+  current_safety_config.tx_msgs_len = 0;
+
   int set_status = -1;  // not set
   int hook_config_count = sizeof(safety_hook_registry) / sizeof(safety_hook_config);
   for (int i = 0; i < hook_config_count; i++) {
@@ -365,11 +379,15 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
     }
   }
   if ((set_status == 0) && (current_hooks->init != NULL)) {
-    current_rx_checks = current_hooks->init(param);
+    safety_config cfg = current_hooks->init(param);
+    current_safety_config.rx_checks = cfg.rx_checks;
+    current_safety_config.rx_checks_len = cfg.rx_checks_len;
+    current_safety_config.tx_msgs = cfg.tx_msgs;
+    current_safety_config.tx_msgs_len = cfg.tx_msgs_len;
     // reset message index and seen flags in addr struct
-    for (int j = 0; j < current_rx_checks->len; j++) {
-      current_rx_checks->check[j].index = 0;
-      current_rx_checks->check[j].msg_seen = false;
+    for (int j = 0; j < current_safety_config.rx_checks_len; j++) {
+      current_safety_config.rx_checks[j].index = 0;
+      current_safety_config.rx_checks[j].msg_seen = false;
     }
   }
   return set_status;
@@ -487,9 +505,7 @@ float interpolate(struct lookup_t xy, float x) {
         float dx = xy.x[i+1] - x0;
         float dy = xy.y[i+1] - y0;
         // dx should not be zero as xy.x is supposed to be monotonic
-        if (dx <= 0.) {
-          dx = 0.0001;
-        }
+        dx = MAX(dx, 0.0001);
         ret = (dy * (x - x0) / dx) + y0;
         break;
       }

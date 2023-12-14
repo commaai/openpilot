@@ -79,18 +79,16 @@ void uart_interrupt_handler(uart_ring *q) {
 }
 
 void USART2_IRQ_Handler(void) { uart_interrupt_handler(&uart_ring_debug); }
-void USART3_IRQ_Handler(void) { uart_interrupt_handler(&uart_ring_lin2); }
-void UART5_IRQ_Handler(void) { uart_interrupt_handler(&uart_ring_lin1); }
 
 // ***************************** Hardware setup *****************************
 
-#define __DIV(_PCLK_, _BAUD_)                    (((_PCLK_) * 25U) / (4U * (_BAUD_)))
-#define __DIVMANT(_PCLK_, _BAUD_)                (__DIV((_PCLK_), (_BAUD_)) / 100U)
-#define __DIVFRAQ(_PCLK_, _BAUD_)                ((((__DIV((_PCLK_), (_BAUD_)) - (__DIVMANT((_PCLK_), (_BAUD_)) * 100U)) * 16U) + 50U) / 100U)
-#define __USART_BRR(_PCLK_, _BAUD_)              ((__DIVMANT((_PCLK_), (_BAUD_)) << 4) | (__DIVFRAQ((_PCLK_), (_BAUD_)) & 0x0FU))
+#define DIV_(_PCLK_, _BAUD_)                    (((_PCLK_) * 25U) / (4U * (_BAUD_)))
+#define DIVMANT_(_PCLK_, _BAUD_)                (DIV_((_PCLK_), (_BAUD_)) / 100U)
+#define DIVFRAQ_(_PCLK_, _BAUD_)                ((((DIV_((_PCLK_), (_BAUD_)) - (DIVMANT_((_PCLK_), (_BAUD_)) * 100U)) * 16U) + 50U) / 100U)
+#define USART_BRR_(_PCLK_, _BAUD_)              ((DIVMANT_((_PCLK_), (_BAUD_)) << 4) | (DIVFRAQ_((_PCLK_), (_BAUD_)) & 0x0FU))
 
 void uart_set_baud(USART_TypeDef *u, unsigned int baud) {
-  u->BRR = __USART_BRR(APB1_FREQ*1000000U, baud);
+  u->BRR = USART_BRR_(APB1_FREQ*1000000U, baud);
 }
 
 void uart_init(uart_ring *q, int baud) {
@@ -98,10 +96,6 @@ void uart_init(uart_ring *q, int baud) {
     // Register interrupts (max data rate: 115200 baud)
     if (q->uart == USART2){
       REGISTER_INTERRUPT(USART2_IRQn, USART2_IRQ_Handler, 150000U, FAULT_INTERRUPT_RATE_UART_2)
-    } else if (q->uart == USART3){
-      REGISTER_INTERRUPT(USART3_IRQn, USART3_IRQ_Handler, 150000U, FAULT_INTERRUPT_RATE_UART_3)
-    } else if (q->uart == UART5){
-      REGISTER_INTERRUPT(UART5_IRQn, UART5_IRQ_Handler, 150000U, FAULT_INTERRUPT_RATE_UART_5)
     } else {
       // UART not used. Skip registering interrupts
     }

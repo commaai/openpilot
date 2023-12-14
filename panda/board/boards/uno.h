@@ -58,10 +58,6 @@ void uno_set_bootkick(BootState state) {
   }
 }
 
-void uno_set_phone_power(bool enabled){
-  set_gpio_output(GPIOB, 4, enabled);
-}
-
 void uno_set_can_mode(uint8_t mode) {
   uno_enable_can_transceiver(2U, false);
   uno_enable_can_transceiver(4U, false);
@@ -141,7 +137,7 @@ void uno_init(void) {
   set_gpio_alternate(GPIOC, 8, GPIO_AF2_TIM3);
 
   // Turn on phone regulator
-  uno_set_phone_power(true);
+  set_gpio_output(GPIOB, 4, true);
 
   // Initialize IR PWM and set to 0%
   set_gpio_alternate(GPIOB, 7, GPIO_AF2_TIM4);
@@ -207,7 +203,6 @@ const board board_uno = {
   .harness_config = &uno_harness_config,
   .has_hw_gmlan = false,
   .has_obd = true,
-  .has_lin = false,
   .has_spi = false,
   .has_canfd = false,
   .has_rtc_battery = true,
@@ -225,7 +220,6 @@ const board board_uno = {
   .read_current = unused_read_current,
   .set_fan_enabled = uno_set_fan_enabled,
   .set_ir_power = uno_set_ir_power,
-  .set_phone_power = uno_set_phone_power,
   .set_siren = unused_set_siren,
   .set_bootkick = uno_set_bootkick,
   .read_som_gpio = unused_read_som_gpio
