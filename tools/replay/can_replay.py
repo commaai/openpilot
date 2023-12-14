@@ -22,6 +22,8 @@ def send_thread(s, flock):
 
     for i in [0, 1, 2, 3, 0xFFFF]:
       s.can_clear(i)
+      s.set_can_speed_kbps(i, 500)
+      s.set_can_data_speed_kbps(i, 500)
     s.set_ignition(False)
     time.sleep(5)
     s.set_ignition(True)
@@ -64,6 +66,11 @@ def connect():
 
       for s in p.list():
         if s not in serials:
+          with p(s) as pp:
+            if pp.get_type() == Panda.HW_TYPE_TRES:
+              serials[s] = None
+              continue
+
           print("starting send thread for", s)
           serials[s] = threading.Thread(target=send_thread, args=(p(s), flashing_lock))
           serials[s].start()
@@ -71,9 +78,10 @@ def connect():
     # try to join all send threads
     cur_serials = serials.copy()
     for s, t in cur_serials.items():
-      t.join(0.01)
-      if not t.is_alive():
-        del serials[s]
+      if t is  not None:
+        t.join(0.01)
+        if not t.is_alive():
+          del serials[s]
 
     time.sleep(1)
 
