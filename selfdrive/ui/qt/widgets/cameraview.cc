@@ -229,10 +229,10 @@ void CameraWidget::paintGL() {
   glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-  if (!frame_) return;
+  if (!frame) return;
 
   // Log duplicate/dropped frames
-  uint64_t frame_id = frame_->get_frame_id();
+  uint64_t frame_id = frame->get_frame_id();
   if (frame_id == prev_frame_id) {
     qDebug() << "Drawing same frame twice" << frame_id;
   } else if (frame_id != prev_frame_id + 1) {
@@ -248,20 +248,20 @@ void CameraWidget::paintGL() {
 #ifdef QCOM2
   // no frame copy
   glActiveTexture(GL_TEXTURE0);
-  glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_images[frame_->idx]);
+  glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_images[frame->idx]);
   assert(glGetError() == GL_NO_ERROR);
 #else
   // fallback to copy
   glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, textures[0]);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width, stream_height, GL_RED, GL_UNSIGNED_BYTE, frame_->y);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width, stream_height, GL_RED, GL_UNSIGNED_BYTE, frame->y);
   assert(glGetError() == GL_NO_ERROR);
 
   glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride/2);
   glActiveTexture(GL_TEXTURE0 + 1);
   glBindTexture(GL_TEXTURE_2D, textures[1]);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width/2, stream_height/2, GL_RG, GL_UNSIGNED_BYTE, frame_->uv);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width/2, stream_height/2, GL_RG, GL_UNSIGNED_BYTE, frame->uv);
   assert(glGetError() == GL_NO_ERROR);
 #endif
 
@@ -335,7 +335,7 @@ bool CameraWidget::receiveFrame(std::optional<uint64_t> frame_id) {
   }
 
   if (!vipc_client->connected) {
-    frame_ = nullptr;
+    frame = nullptr;
     available_streams = VisionIpcClient::getAvailableStreams(stream_name, false);
     if (available_streams.empty() || !vipc_client->connect(false)) {
       return false;
@@ -344,20 +344,20 @@ bool CameraWidget::receiveFrame(std::optional<uint64_t> frame_id) {
     vipcConnected();
   }
 
-  if (frame_id && frame_ && frame_->get_frame_id() >= *frame_id) {
+  if (frame_id && frame && frame->get_frame_id() >= *frame_id) {
     return true;
   }
 
   VisionIpcBufExtra meta_main = {};
   while (auto buf = vipc_client->recv(&meta_main, 0)) {
-    frame_ = buf;
+    frame = buf;
     if (meta_main.frame_id >= frame_id.value_or(0)) break;
   }
-  return frame_ != nullptr;
+  return frame != nullptr;
 }
 
 void CameraWidget::disconnectVipc() {
-  frame_ = nullptr;
+  frame = nullptr;
   vipc_client.reset(nullptr);
 }
 

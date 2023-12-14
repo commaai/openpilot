@@ -634,12 +634,15 @@ void AnnotatedCameraWidget::paintGL() {
     } else {
       CameraWidget::updateCalibration(DEFAULT_CALIBRATION);
     }
-    uint64_t frame_id = sm["uiPlan"].getUiPlan().getFrameId();
+
+    std::optional<uint64_t> frame_id = sm.rcv_frame("uiPlan") >= s->scene.started_frame
+                                           ? std::optional(sm["uiPlan"].getUiPlan().getFrameId())
+                                           : std::nullopt;
     if (!CameraWidget::receiveFrame(frame_id)) {
       qDebug() << "skipping frame, not ready";
       return;
-    } else if (frame_->get_frame_id() != frame_id) {
-      qDebug() << QString("inconsistent frame, vipc frame:%1, uiplan frame:%2").arg(frame_->get_frame_id()).arg(frame_id);
+    } else if (frame_id && frame->get_frame_id() != *frame_id) {
+      qDebug() << QString("inconsistent frame, vipc frame:%1, uiplan frame:%2").arg(frame->get_frame_id()).arg(*frame_id);
     }
     CameraWidget::paintGL();
   }

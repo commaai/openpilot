@@ -73,7 +73,7 @@ protected:
   VisionStreamType requested_stream_type;
   std::set<VisionStreamType> available_streams;
   std::unique_ptr<VisionIpcClient> vipc_client;
-  VisionBuf *frame_ = nullptr;
+  VisionBuf *frame = nullptr;
   uint64_t prev_frame_id = 0;
 
   // Calibration

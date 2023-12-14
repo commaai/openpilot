@@ -33,7 +33,7 @@ void DriverViewWindow::paintGL() {
 
   QPainter p(this);
   // startup msg
-  if (!frame_) {
+  if (!frame) {
     p.setPen(Qt::white);
     p.setRenderHint(QPainter::TextAntialiasing);
     p.setFont(InterFont(100, QFont::Bold));
