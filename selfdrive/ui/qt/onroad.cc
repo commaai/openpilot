@@ -634,9 +634,12 @@ void AnnotatedCameraWidget::paintGL() {
     } else {
       CameraWidget::updateCalibration(DEFAULT_CALIBRATION);
     }
-    if (!CameraWidget::receiveFrame(sm["uiPlan"].getUiPlan().getFrameId())) {
+    uint64_t frame_id = sm["uiPlan"].getUiPlan().getFrameId();
+    if (!CameraWidget::receiveFrame(frame_id)) {
       qDebug() << "skipping frame, not ready";
       return;
+    } else if (frame_->get_frame_id() != frame_id) {
+      qDebug() << QString("inconsistent frame, vipc frame:%1, uiplan frame:%2").arg(frame_->get_frame_id()).arg(frame_id);
     }
     CameraWidget::paintGL();
   }

@@ -344,6 +344,10 @@ bool CameraWidget::receiveFrame(std::optional<uint64_t> frame_id) {
     vipcConnected();
   }
 
+  if (frame_id && frame_ && frame_->get_frame_id() >= *frame_id) {
+    return true;
+  }
+
   VisionIpcBufExtra meta_main = {};
   while (auto buf = vipc_client->recv(&meta_main, 0)) {
     frame_ = buf;
