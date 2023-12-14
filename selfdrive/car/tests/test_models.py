@@ -384,7 +384,7 @@ class TestCarModelBase(unittest.TestCase):
         print('can.can', can.can)
         self.assertEqual(CS.gasPressed, self.safety.get_gas_pressed_prev())
 
-      if self.safety.get_brake_pressed_prev() != prev_panda_brake:
+      if self.safety.get_brake_pressed_prev() != prev_panda_brake or CS.brakePressed != self.CS_prev.brakePressed:
         brake_pressed = CS.brakePressed
         if CS.brakePressed and not self.safety.get_brake_pressed_prev():
           if self.CP.carFingerprint in (HONDA.PILOT, HONDA.RIDGELINE) and CS.brake > 0.05:
@@ -395,21 +395,21 @@ class TestCarModelBase(unittest.TestCase):
         # print('both', CS.brakePressed, self.safety.get_brake_pressed_prev())
         self.assertEqual(brake_pressed, self.safety.get_brake_pressed_prev())
 
-      if self.safety.get_regen_braking_prev() != prev_panda_regen_braking:
+      if self.safety.get_regen_braking_prev() != prev_panda_regen_braking or CS.regenBraking != self.CS_prev.regenBraking:
         print('regen change!')
         print('both', CS.regenBraking, self.safety.get_regen_braking_prev())
         self.assertEqual(CS.regenBraking, self.safety.get_regen_braking_prev())
 
       # print('both', not CS.standstill, 'safety moving', self.safety.get_vehicle_moving())
-      if self.safety.get_vehicle_moving() != prev_panda_vehicle_moving:
+      if self.safety.get_vehicle_moving() != prev_panda_vehicle_moving or CS.standstill != self.CS_prev.standstill:
         self.assertEqual(not CS.standstill, self.safety.get_vehicle_moving())
 
       if not (self.CP.carName == "honda" and self.CP.carFingerprint not in HONDA_BOSCH):
-        if self.safety.get_cruise_engaged_prev() != prev_panda_cruise_engaged:
+        if self.safety.get_cruise_engaged_prev() != prev_panda_cruise_engaged or CS.cruiseState.enabled != self.CS_prev.cruiseState.enabled:
           self.assertEqual(CS.cruiseState.enabled, self.safety.get_cruise_engaged_prev())
 
       if self.CP.carName == "honda":
-        if self.safety.get_acc_main_on() != prev_panda_acc_main_on:
+        if self.safety.get_acc_main_on() != prev_panda_acc_main_on or CS.cruiseState.available != self.CS_prev.cruiseState.available:
           self.assertEqual(CS.cruiseState.available, self.safety.get_acc_main_on())
 
       prev_panda_gas = self.safety.get_gas_pressed_prev()
