@@ -319,8 +319,8 @@ class TestCarModelBase(unittest.TestCase):
   @given(data=st.data())
   @seed(1)  # for reproduction
   def test_panda_safety_carstate_fuzzy(self, data):
-    if self.CP.enableGasInterceptor:  # TODO known failure for now
-      raise unittest.SkipTest
+    # if not self.CP.enableGasInterceptor:  # TODO known failure for now
+    #   raise unittest.SkipTest
     """
       For each example, pick a random CAN message on the bus and fuzz its data,
       checking for panda state mismatches.
@@ -332,7 +332,9 @@ class TestCarModelBase(unittest.TestCase):
 
     valid_addrs = [(addr, bus) for bus, addrs in self.fingerprint.items() for addr in addrs]
     address, bus = data.draw(st.sampled_from(valid_addrs))
-    print('addr, bus:', address, bus)
+    # address = 0x201
+    # bus = 0
+    # print('addr, bus:', address, bus)
     size = self.fingerprint[bus][address]
 
     msg_strategy = st.binary(min_size=size, max_size=size)
@@ -347,15 +349,16 @@ class TestCarModelBase(unittest.TestCase):
 
     # since all toyotas can detect fake interceptor, but we want to test PCM gas too
     for dat in msgs:
+      # not needed with param, TODO: remove
       # set interceptor detected so we don't accidentally trigger gas_pressed with other messages
-      self.safety.set_gas_interceptor_detected(self.CP.enableGasInterceptor)
+      # self.safety.set_gas_interceptor_detected(self.CP.enableGasInterceptor)
 
       to_send = libpanda_py.make_CANPacket(address, bus, dat)
       self.safety.safety_rx_hook(to_send)
 
       can = messaging.new_message('can', 1)
       can.can = [log.CanData(address=address, dat=dat, src=bus)]
-      print('rxing', dict(address=address, dat=dat, src=bus))
+      # print('rxing', dict(address=address, dat=dat, src=bus))
 
       CC = car.CarControl.new_message()
       CS = self.CI.update(CC, (can.to_bytes(),))
