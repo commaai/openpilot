@@ -30,6 +30,7 @@ class CameraWidget : public QOpenGLWidget, protected QOpenGLFunctions {
 public:
   explicit CameraWidget(std::string stream_name, VisionStreamType stream_type, bool zoom, QWidget* parent = nullptr);
   ~CameraWidget();
+  void disconnectVipc();
   void setBackgroundColor(const QColor &color) { bg = color; }
   void setStreamType(VisionStreamType type) { requested_stream_type = type; }
   inline VisionStreamType streamType() const { return requested_stream_type; }
@@ -83,7 +84,7 @@ protected:
   mat3 intrinsic_matrix = FCAM_INTRINSIC_MATRIX;
 };
 
-// auto update CameraWidget based on timer
+// update frames based on timer
 class CameraView : public CameraWidget {
   Q_OBJECT
 public:

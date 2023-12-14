@@ -152,6 +152,7 @@ QWidget *VideoWidget::createCameraWidget() {
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->currentSecond()); });
   QObject::connect(slider, &Slider::updateMaximumTime, this, &VideoWidget::setMaximumTime, Qt::QueuedConnection);
   QObject::connect(static_cast<ReplayStream*>(can), &ReplayStream::qLogLoaded, slider, &Slider::parseQLog);
+  QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(cam_widget, &CameraWidget::vipcAvailableStreamsUpdated, this, &VideoWidget::vipcAvailableStreamsUpdated);
   QObject::connect(camera_tab, &QTabBar::currentChanged, [this](int index) {
     if (index != -1) cam_widget->setStreamType((VisionStreamType)camera_tab->tabData(index).toInt());

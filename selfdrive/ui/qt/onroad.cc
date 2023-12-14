@@ -126,6 +126,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
 #endif
 
   alerts->updateAlert({});
+  nvg->disconnectVipc();
 }
 
 void OnroadWindow::primeChanged(bool prime) {

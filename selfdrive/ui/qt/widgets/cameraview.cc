@@ -352,6 +352,11 @@ bool CameraWidget::receiveFrame(std::optional<uint64_t> frame_id) {
   return frame_ != nullptr;
 }
 
+void CameraWidget::disconnectVipc() {
+  frame_ = nullptr;
+  vipc_client.reset(nullptr);
+}
+
 // Cameraview
 
 CameraView::CameraView(const std::string &name, VisionStreamType stream_type, bool zoom, QWidget *parent)
@@ -363,10 +368,10 @@ CameraView::CameraView(const std::string &name, VisionStreamType stream_type, bo
 }
 
 void CameraView::showEvent(QShowEvent *event) {
-  frame_ = nullptr;  // clear old frame
   timer->start();
 }
 
 void CameraView::hideEvent(QHideEvent *event) {
   timer->stop();
+  disconnectVipc();
 }
