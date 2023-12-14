@@ -358,7 +358,9 @@ bool CameraWidget::receiveFrame(std::optional<uint64_t> frame_id) {
 
 void CameraWidget::disconnectVipc() {
   frame = nullptr;
-  vipc_client.reset(nullptr);
+  if (vipc_client) {
+    vipc_client->connected = false;
+  }
 }
 
 // Cameraview
