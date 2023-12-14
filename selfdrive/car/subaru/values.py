@@ -93,6 +93,9 @@ class Footnote(Enum):
   GLOBAL = CarFootnote(
     "In the non-US market, openpilot requires the car to come equipped with EyeSight with Lane Keep Assistance.",
     Column.PACKAGE)
+  EXP_LONG = CarFootnote(
+    "Enabling longitudinal control (alpha) will disable all EyeSight functionality, including AEB, LDW, and RAB.",
+    Column.LONGITUDINAL)
 
 
 @dataclass
@@ -103,6 +106,9 @@ class SubaruCarInfo(CarInfo):
 
   def init_make(self, CP: car.CarParams):
     self.car_parts.parts.extend([Tool.socket_8mm_deep, Tool.pry_tool])
+
+    if CP.experimentalLongitudinalAvailable:
+      self.footnotes.append(Footnote.EXP_LONG)
 
 CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-21", "All"),
