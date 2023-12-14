@@ -52,6 +52,8 @@ routes = [
   CarTestRoute("62241b0c7fea4589|2022-09-01--15-32-49", FORD.EXPLORER_MK6),
   CarTestRoute("e886087f430e7fe7|2023-06-16--23-06-36", FORD.FOCUS_MK4),
   CarTestRoute("bd37e43731e5964b|2023-04-30--10-42-26", FORD.MAVERICK_MK1),
+  CarTestRoute("112e4d6e0cad05e1|2023-11-14--08-21-43", FORD.F_150_LIGHTNING_MK1),
+  CarTestRoute("83a4e056c7072678|2023-11-13--16-51-33", FORD.MUSTANG_MACH_E_MK1),
   #TestRoute("f1b4c567731f4a1b|2018-04-30--10-15-35", FORD.FUSION),
 
   CarTestRoute("7cc2a8365b4dd8a9|2018-12-02--12-10-44", GM.ACADIA),
@@ -117,6 +119,7 @@ routes = [
   CarTestRoute("b3537035ffe6a7d6|2022-10-17--15-23-49", HYUNDAI.KIA_SPORTAGE_HYBRID_5TH_GEN),
   CarTestRoute("5b7c365c50084530|2020-04-15--16-13-24", HYUNDAI.SONATA),
   CarTestRoute("b2a38c712dcf90bd|2020-05-18--18-12-48", HYUNDAI.SONATA_LF),
+  CarTestRoute("c344fd2492c7a9d2|2023-12-11--09-03-23", HYUNDAI.STARIA_4TH_GEN),
   CarTestRoute("fb3fd42f0baaa2f8|2022-03-30--15-25-05", HYUNDAI.TUCSON),
   CarTestRoute("db68bbe12250812c|2022-12-05--00-54-12", HYUNDAI.TUCSON_4TH_GEN),  # 2023
   CarTestRoute("36e10531feea61a4|2022-07-25--13-37-42", HYUNDAI.TUCSON_HYBRID_4TH_GEN),
@@ -254,7 +257,7 @@ routes = [
   CarTestRoute("c321c6b697c5a5ff|2020-06-23--11-04-33", SUBARU.FORESTER),
   CarTestRoute("791340bc01ed993d|2019-03-10--16-28-08", SUBARU.IMPREZA),
   CarTestRoute("8bf7e79a3ce64055|2021-05-24--09-36-27", SUBARU.IMPREZA_2020),
-  # CarTestRoute("8de015561e1ea4a0|2023-08-29--17-08-31", SUBARU.IMPREZA),  # openpilot longitudinal
+  CarTestRoute("8de015561e1ea4a0|2023-08-29--17-08-31", SUBARU.IMPREZA),  # openpilot longitudinal
   # CarTestRoute("c3d1ccb52f5f9d65|2023-07-22--01-23-20", SUBARU.OUTBACK, segment=9), # gen2 longitudinal, eyesight disabled
   CarTestRoute("1bbe6bf2d62f58a8|2022-07-14--17-11-43", SUBARU.OUTBACK, segment=10),
   CarTestRoute("c56e69bbc74b8fad|2022-08-18--09-43-51", SUBARU.LEGACY, segment=3),
