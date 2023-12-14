@@ -169,11 +169,6 @@ void CameraWidget::initializeGL() {
 #endif
 }
 
-void CameraWidget::clearFrame() {
-  frame_ = nullptr;
-  update();
-}
-
 void CameraWidget::updateFrameMat() {
   int w = glWidth(), h = glHeight();
 
@@ -349,9 +344,6 @@ bool CameraWidget::receiveFrame(std::optional<uint64_t> frame_id) {
     vipcConnected();
   }
 
-  if (frame_id && frame_ && frame_->get_frame_id() >= *frame_id) {
-    return true;
-  }
   VisionIpcBufExtra meta_main = {};
   while (auto buf = vipc_client->recv(&meta_main, 0)) {
     frame_ = buf;
@@ -368,5 +360,13 @@ CameraView::CameraView(const std::string &name, VisionStreamType stream_type, bo
   timer = new QTimer(this);
   timer->setInterval(1000.0 / UI_FREQ);
   timer->callOnTimeout(this, [this]() { if (receiveFrame()) update(); });
+}
+
+void CameraView::showEvent(QShowEvent *event) {
+  frame_ = nullptr;  // clear old frame
   timer->start();
+}
+
+void CameraView::hideEvent(QHideEvent *event) {
+  timer->stop();
 }

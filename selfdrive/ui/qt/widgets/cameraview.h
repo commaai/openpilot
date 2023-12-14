@@ -28,7 +28,6 @@ class CameraWidget : public QOpenGLWidget, protected QOpenGLFunctions {
   Q_OBJECT
 
 public:
-  using QOpenGLWidget::QOpenGLWidget;
   explicit CameraWidget(std::string stream_name, VisionStreamType stream_type, bool zoom, QWidget* parent = nullptr);
   ~CameraWidget();
   void setBackgroundColor(const QColor &color) { bg = color; }
@@ -36,7 +35,6 @@ public:
   inline VisionStreamType streamType() const { return requested_stream_type; }
   inline const std::set<VisionStreamType> &availableStreams() const { return available_streams; }
   bool receiveFrame(std::optional<uint64_t> frame_id = std::nullopt);
-  void clearFrame();
 
 signals:
   void vipcAvailableStreamsUpdated();
@@ -90,8 +88,8 @@ class CameraView : public CameraWidget {
   Q_OBJECT
 public:
   CameraView(const std::string &name, VisionStreamType stream_type, bool zoom, QWidget *parent = nullptr);
-  void showEvent(QShowEvent *event) override { timer->start(); }
-  void hideEvent(QHideEvent *event) override { timer->stop(); }
+  void showEvent(QShowEvent *event) override;
+  void hideEvent(QHideEvent *event) override;
 
 private:
   QTimer *timer;
