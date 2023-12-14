@@ -20,16 +20,16 @@ DriverViewWindow::DriverViewWindow(QWidget* parent) : CameraView("camerad", VISI
 void DriverViewWindow::showEvent(QShowEvent* event) {
   params.putBool("IsDriverViewEnabled", true);
   device()->resetInteractiveTimeout(60);
-  CameraWidget::showEvent(event);
+  CameraView::showEvent(event);
 }
 
 void DriverViewWindow::hideEvent(QHideEvent* event) {
   params.putBool("IsDriverViewEnabled", false);
-  CameraWidget::hideEvent(event);
+  CameraView::hideEvent(event);
 }
 
 void DriverViewWindow::paintGL() {
-  CameraWidget::paintGL();
+  CameraView::paintGL();
 
   QPainter p(this);
   // startup msg
