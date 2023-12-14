@@ -94,7 +94,7 @@ class Footnote(Enum):
     "In the non-US market, openpilot requires the car to come equipped with EyeSight with Lane Keep Assistance.",
     Column.PACKAGE)
   EXP_LONG = CarFootnote(
-    "Enabling longitudinal control will disable all EyeSight functionality, including AEB, LDW, and RAB.",
+    "Enabling longitudinal control (alpha) will disable all EyeSight functionality, including AEB, LDW, and RAB.",
     Column.LONGITUDINAL)
 
 
