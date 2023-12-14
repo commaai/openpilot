@@ -35,7 +35,7 @@ class CarInterface(CarInterfaceBase):
     if candidate in CANFD_CAR:
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_FORD_CANFD
 
-    # We have tested these values with CAN-FD Ford. This can be included for all vehicles after 
+    # We have tested these values with CAN-FD Ford. This can be included for all vehicles after
     # we have validated that CAN (Q3) Ford users also enjoy these changes.
     # This prevents massive amounts of brake pumping when coming to a stop.
     if candidate in CANFD_CAR:
@@ -44,7 +44,7 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiV = [0.]
       ret.longitudinalTuning.deadzoneBP = [0., 9.]
       ret.longitudinalTuning.deadzoneV = [.0, .20]
-    
+
     if candidate == CAR.BRONCO_SPORT_MK1:
       ret.wheelbase = 2.67
       ret.steerRatio = 17.7
@@ -86,7 +86,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.076
       ret.steerRatio = 17.0
       ret.mass = 1650
-    
+
     else:
       raise ValueError(f"Unsupported car: {candidate}")
 
