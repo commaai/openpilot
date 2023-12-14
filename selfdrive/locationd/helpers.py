@@ -1,6 +1,4 @@
 import numpy as np
-import signal
-import sys
 from typing import List, Optional, Tuple, Any
 
 from cereal import log

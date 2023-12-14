@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
-import os
-import signal
 import numpy as np
 from collections import deque, defaultdict
-from functools import partial
 
 import cereal.messaging as messaging
 from cereal import car, log
