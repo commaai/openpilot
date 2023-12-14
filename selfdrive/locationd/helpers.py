@@ -1,11 +1,8 @@
 import numpy as np
-import signal
-import sys
 from typing import List, Optional, Tuple, Any
 
 from cereal import log
-from openpilot.common.params import Params
-from openpilot.common.swaglog import cloudlog
+from openpilot.common.params import put_nonblocking
 
 
 class NPQueue:
@@ -68,10 +65,6 @@ class ParameterEstimator:
     raise NotImplementedError
 
 
-def cache_points_onexit(param_name, estimator, sig, frame):
-  signal.signal(sig, signal.SIG_DFL)
-  cloudlog.warning(f"Caching {param_name} param")
-  params = Params()
-  msg = estimator.get_msg(valid=True, with_points=True)
-  params.put(param_name, msg.to_bytes())
-  sys.exit(0)
+def cache_points(param_name, estimator, valid):
+  msg = estimator.get_msg(valid=valid, with_points=True)
+  put_nonblocking(param_name, msg.to_bytes())
