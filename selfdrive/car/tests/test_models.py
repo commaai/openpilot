@@ -158,7 +158,6 @@ class TestCarModelBase(unittest.TestCase):
     assert cls.CP.carFingerprint == cls.car_model
 
     cls.car_state_dict = {'panda': {'gas_pressed': False}, 'CS': {'gasPressed': False}}
-    cls.init_gas_pressed = False
 
   @classmethod
   def tearDownClass(cls):
@@ -365,9 +364,6 @@ class TestCarModelBase(unittest.TestCase):
       #
       #   CC = car.CarControl.new_message()
       #   CS = self.CI.update(CC, (can.to_bytes(),))
-
-      if self.safety.get_gas_pressed_prev():
-        self.init_gas_pressed = True
 
       # due to panda updating state selectively, only edges are expected to match
 
