@@ -1,4 +1,4 @@
-name: Pull Request Format Check
+name: Pull Request Review Bot
 
 on:
   pull_request:
