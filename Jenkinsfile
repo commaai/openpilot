@@ -126,57 +126,57 @@ node {
     parallel (
       // tici tests
       'onroad tests': {
-        deviceStage("onroad", "tici-needs-can", ["SKIP_COPY=1"], [
-          sh label: "build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh",
-          sh label: "build openpilot", "cd selfdrive/manager && ./build.py"],
-          sh label: "check dirty", "release/check-dirty.sh"],
-          sh label: "onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
-          sh label: "time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
-        ])
+        deviceStage("onroad", "tici-needs-can", ["SKIP_COPY=1"], {
+          sh label: "build master-ci", script: "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh",
+          sh label: "build openpilot", script: "cd selfdrive/manager && ./build.py",
+          sh label: "check dirty", script: "release/check-dirty.sh",
+          sh label: "onroad tests", script: "pytest selfdrive/test/test_onroad.py -s",
+          sh label: "time to onroad", script: "pytest selfdrive/test/test_time_to_onroad.py",
+        })
       },
       'HW + Unit Tests': {
-        deviceStage("tici", "tici-common", ["UNSAFE=1"], [
-          sh label: "build", "cd selfdrive/manager && ./build.py"],
-          sh label: "test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
-          sh label: "test power draw", "./system/hardware/tici/tests/test_power_draw.py"],
-          sh label: "test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
-          sh label: "test pigeond", "pytest system/sensord/tests/test_pigeond.py"],
-          sh label: "test manager", "pytest selfdrive/manager/test/test_manager.py"],
-        ])
+        deviceStage("tici", "tici-common", ["UNSAFE=1"], {
+          sh label: "build", script: "cd selfdrive/manager && ./build.py",
+          sh label: "test pandad", script: "pytest selfdrive/boardd/tests/test_pandad.py",
+          sh label: "test power draw", script: "./system/hardware/tici/tests/test_power_draw.py",
+          sh label: "test encoder", script: "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py",
+          sh label: "test pigeond", script: "pytest system/sensord/tests/test_pigeond.py",
+          sh label: "test manager", script: "pytest selfdrive/manager/test/test_manager.py",
+        })
       },
       'loopback': {
-        deviceStage("tici", "tici-loopback", ["UNSAFE=1"], [
-          sh label: "build openpilot", "cd selfdrive/manager && ./build.py"],
-          sh label: "test boardd loopback", "pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
-        ])
+        deviceStage("tici", "tici-loopback", ["UNSAFE=1"], {
+          sh label: "build openpilot", script: "cd selfdrive/manager && ./build.py",
+          sh label: "test boardd loopback", script: "pytest selfdrive/boardd/tests/test_boardd_loopback.py",
+        })
       },
       'camerad': {
-        deviceStage("AR0231", "tici-ar0231", ["UNSAFE=1"], [
-          sh label: "build", "cd selfdrive/manager && ./build.py"],
-          sh label: "test camerad", "pytest system/camerad/test/test_camerad.py"],
-          sh label: "test exposure", "pytest system/camerad/test/test_exposure.py"],
-        ])
-        deviceStage("OX03C10", "tici-ox03c10", ["UNSAFE=1"], [
-          sh label: "build", "cd selfdrive/manager && ./build.py"],
-          sh label: "test camerad", "pytest system/camerad/test/test_camerad.py"],
-          sh label: "test exposure", "pytest system/camerad/test/test_exposure.py"],
-        ])
+        deviceStage("AR0231", "tici-ar0231", ["UNSAFE=1"], {
+          sh label: "build", script: "cd selfdrive/manager && ./build.py",
+          sh label: "test camerad", script: "pytest system/camerad/test/test_camerad.py",
+          sh label: "test exposure", script: "pytest system/camerad/test/test_exposure.py",
+        }),
+        deviceStage("OX03C10", "tici-ox03c10", ["UNSAFE=1"], {
+          sh label: "build", script: "cd selfdrive/manager && ./build.py",
+          sh label: "test camerad", script: "pytest system/camerad/test/test_camerad.py",
+          sh label: "test exposure", script: "pytest system/camerad/test/test_exposure.py",
+        })
       },
       'sensord': {
-        deviceStage("LSM + MMC", "tici-lsmc", ["UNSAFE=1"], [
-          sh label: "build", "cd selfdrive/manager && ./build.py"],
-          sh label: "test sensord", "pytest system/sensord/tests/test_sensord.py"],
-        ])
-        deviceStage("BMX + LSM", "tici-bmx-lsm", ["UNSAFE=1"], [
-          sh label: "build", script: "cd selfdrive/manager && ./build.py"],
-          sh label: "test sensord", script: "pytest system/sensord/tests/test_sensord.py"],
-        ])
+        deviceStage("LSM + MMC", "tici-lsmc", ["UNSAFE=1"], {
+          sh label: "build", script: "cd selfdrive/manager && ./build.py",
+          sh label: "test sensord", script: "pytest system/sensord/tests/test_sensord.py",
+        }),
+        deviceStage("BMX + LSM", "tici-bmx-lsm", ["UNSAFE=1"], {
+          sh label: "build", script: "cd selfdrive/manager && ./build.py",
+          sh label: "test sensord", script: "pytest system/sensord/tests/test_sensord.py",
+        })
       },
       'replay': {
-        deviceStage("tici", "tici-replay", ["UNSAFE=1"], [
-          sh label: "build", script: "cd selfdrive/manager && ./build.py"],
-          sh label: "model replay", script: "selfdrive/test/process_replay/model_replay.py"],
-        ])
+        deviceStage("tici", "tici-replay", ["UNSAFE=1"], {
+          sh label: "build", script: "cd selfdrive/manager && ./build.py",
+          sh label: "model replay", script: "selfdrive/test/process_replay/model_replay.py",
+        })
       },
       'tizi': {
         deviceStage("tizi", "tizi", ["UNSAFE=1"]) {
