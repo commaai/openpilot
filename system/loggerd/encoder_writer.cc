@@ -1,6 +1,8 @@
 #include "system/loggerd/encoder/encoder.h"
 #include "system/loggerd/encoder_writer.h"
 
+#include <utility>
+
 size_t EncoderWriter::write(LoggerState *logger, Message *msg) {
   std::unique_ptr<Message> m(msg);
   capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)m->getData(), m->getSize() / sizeof(capnp::word)));

@@ -1,6 +1,9 @@
 #pragma once
 
 #include <deque>
+#include <memory>
+#include <string>
+
 #include "system/loggerd/logger.h"
 #include "system/loggerd/loggerd.h"
 #include "system/loggerd/video_writer.h"
