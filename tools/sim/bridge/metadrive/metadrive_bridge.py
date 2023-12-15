@@ -36,7 +36,7 @@ class RGBCameraWide(CopyRamRGBCamera):
     cam = self.get_cam()
     cam.setPos(C3_POSITION)
     lens = self.get_lens()
-    lens.setFov(160)
+    lens.setFov(120)
 
 class RGBCameraRoad(CopyRamRGBCamera):
   def __init__(self, *args, **kwargs):
