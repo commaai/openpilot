@@ -3,7 +3,7 @@
 #include "cereal/messaging/messaging.h"
 #include "common/util.h"
 
-#define private public  // access prvate members for testing purpose
+#define private public  // access private members for testing purpose
 #include "system/loggerd/encoder_writer.h"
 
 static Message *generate_msg(const EncoderInfo &info, uint32_t segment_num, uint32_t frame_id, uint32_t flags = 0) {
