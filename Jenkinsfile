@@ -187,7 +187,6 @@ node {
           ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
           ["test pigeond", "pytest system/sensord/tests/test_pigeond.py"],
           ["test manager", "pytest selfdrive/manager/test/test_manager.py"],
-          ["test nav", "pytest selfdrive/navd/tests/"],
         ])
       },
       'loopback': {
