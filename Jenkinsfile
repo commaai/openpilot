@@ -67,13 +67,14 @@ END"""
   }
 }
 
-def deviceStage(String stageName, String deviceType, List env, def steps) {
+def deviceStage(String stageName, String deviceType, List extra_env, def steps) {
   stage(stageName) {
     if (currentBuild.result != null) {
         return
     }
 
-    def extra = env.collect { "export ${it}" }.join('\n');
+    def extra = extra_env.collect { "export ${it}" }.join('\n');
+    def branch = env.BRANCH_NAME ?: 'master';
 
     docker.image('ghcr.io/commaai/alpine-ssh').inside('--user=root') {
       lock(resource: "", label: deviceType, inversePrecedence: true, variable: 'device_ip', quantity: 1) {
@@ -82,6 +83,10 @@ def deviceStage(String stageName, String deviceType, List env, def steps) {
             device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
           }
           steps.each { item ->
+            if (branch != "master" && item.size() == 3 && !hasDirectoryChanged(item[2])) {
+              println "Skipped '${item[0]}', no relevant changes were detected."
+              return;
+            }
             device(device_ip, item[0], item[1])
           }
         }
@@ -134,6 +139,21 @@ def setupCredentials() {
   }
 }
 
+def hasDirectoryChanged(List<String> paths) {
+  for (change in currentBuild.changeSets) {
+    for (item in change.items) {
+      for (affectedPath in item.affectedPaths) {
+        for (path in paths) {
+          if (affectedPath.startsWith(path)) {
+            return true
+          }
+        }
+      }
+    }
+  }
+  return false
+}
+
 node {
   env.CI = "1"
   env.PYTHONWARNINGS = "error"
@@ -171,7 +191,7 @@ node {
     parallel (
       // tici tests
       'onroad tests': {
-        deviceStage("onroad", "tici-needs-can", [], [
+        deviceStage("onroad", "tici-needs-can", ["UNSAFE=1"], [
           // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
           //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
@@ -183,7 +203,7 @@ node {
       'HW + Unit Tests': {
         deviceStage("tici", "tici-common", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
-          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
+          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py", ["panda/", "selfdrive/boardd/"]],
           ["test power draw", "./system/hardware/tici/tests/test_power_draw.py"],
           ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
           ["test pigeond", "pytest system/sensord/tests/test_pigeond.py"],
@@ -228,7 +248,7 @@ node {
         deviceStage("tizi", "tizi", ["UNSAFE=1"], [
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["test boardd loopback", "SINGLE_PANDA=1 pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
-          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
+          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py", ["panda/", "selfdrive/boardd/"]],
           ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
           ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
           ["test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py"],
