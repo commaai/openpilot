@@ -104,7 +104,7 @@ def pcStage(String stageName, Closure body) {
     def openpilot_base = retryWithDelay (3, 15) {
       return docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .")
     }
-    
+
     openpilot_base.inside(dockerArgs) {
       timeout(time: 20, unit: 'MINUTES') {
         try {
@@ -171,8 +171,9 @@ node {
     parallel (
       // tici tests
       'onroad tests': {
-        deviceStage("onroad", "tici-needs-can", ["SKIP_COPY=1"], [
-          ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
+        deviceStage("onroad", "tici-needs-can", [], [
+          // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
+          //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["check dirty", "release/check-dirty.sh"],
           ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
