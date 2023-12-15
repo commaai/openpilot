@@ -23,8 +23,7 @@ from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import Route, SegmentName, RouteName
 
 from panda.tests.libpanda import libpanda_py
-
-VEHICLE_SPEED_FACTOR = 100
+from panda.tests.safety.common import VEHICLE_SPEED_FACTOR
 
 EventName = car.CarEvent.EventName
 PandaType = log.PandaState.PandaType
