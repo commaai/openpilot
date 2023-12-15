@@ -6,6 +6,7 @@ import subprocess
 import psutil
 import shutil
 import signal
+import socket
 import fcntl
 import time
 import threading
@@ -82,6 +83,18 @@ def parse_release_notes(basedir: str) -> bytes:
   except Exception:
     cloudlog.exception("failed to parse release notes")
   return b""
+
+# Server to check for internet connection
+REMOTE_SERVER = "one.one.one.one"
+REMOVE_PORT = 80
+def is_connected(hostname, port):
+  try:
+    host = socket.gethostbyname(hostname)
+    s = socket.create_connection((host, port), 2)
+    s.close()
+    return True
+  except Exception:
+    return False
 
 def setup_git_options(cwd: str) -> None:
   # We sync FS object atimes (which NEOS doesn't use) and mtimes, but ctimes
@@ -428,8 +441,11 @@ def main() -> None:
   # invalidate old finalized update
   set_consistent_flag(False)
 
-  # wait a bit before first cycle
-  wait_helper.sleep(60)
+  # wait for internet before the first cycle (max of 60 seconds)
+  start_time = time.monotonic()
+  while (time.monotonic() - start_time) < 60 and not is_connected(REMOTE_SERVER, REMOVE_PORT):
+    cloudlog.info("updatedd: waiting for internet...")
+    wait_helper.sleep(5)
 
   # Run the update loop
   while True:
