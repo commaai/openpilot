@@ -15,7 +15,7 @@ ExitHandler do_exit;
 
 struct LoggerdState {
   LoggerState logger;
-  double last_camera_seen_tms;
+  double last_camera_seen_tms = 0;
   double last_rotate_tms = 0.;      // last rotate time in ms
   std::unordered_map<std::string, std::unique_ptr<EncoderWriter>> remote_encoders;
 };
