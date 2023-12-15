@@ -67,13 +67,13 @@ END"""
   }
 }
 
-def deviceStage(String stageName, String deviceType, List env, def steps) {
+def deviceStage(String stageName, String deviceType, List extra_env, def steps) {
   stage(stageName) {
     if (currentBuild.result != null) {
         return
     }
 
-    def extra = env.collect { "export ${it}" }.join('\n');
+    def extra = extra_env.collect { "export ${it}" }.join('\n');
     def branch = env.BRANCH_NAME ?: 'master';
 
     docker.image('ghcr.io/commaai/alpine-ssh').inside('--user=root') {
@@ -83,7 +83,7 @@ def deviceStage(String stageName, String deviceType, List env, def steps) {
             device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
           }
           steps.each { item ->
-            if (branch != "master" && steps.size() == 3 && !hasDirectoryChanged(item[2])) {
+            if (branch != "master" && item.size() == 3 && !hasDirectoryChanged(item[2])) {
               println "Skipped '${item[0]}', no relevant changes were detected."
               return;
             }
