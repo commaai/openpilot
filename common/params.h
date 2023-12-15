@@ -1,8 +1,13 @@
 #pragma once
 
+#include <future>
 #include <map>
 #include <string>
+#include <tuple>
+#include <utility>
 #include <vector>
+
+#include "common/queue.h"
 
 enum ParamKeyType {
   PERSISTENT = 0x02,
@@ -17,6 +22,7 @@ enum ParamKeyType {
 class Params {
 public:
   explicit Params(const std::string &path = {});
+  ~Params();
   // Not copyable.
   Params(const Params&) = delete;
   Params& operator=(const Params&) = delete;
@@ -25,7 +31,7 @@ public:
   bool checkKey(const std::string &key);
   ParamKeyType getKeyType(const std::string &key);
   inline std::string getParamPath(const std::string &key = {}) {
-    return params_path + prefix + (key.empty() ? "" : "/" + key);
+    return params_path + params_prefix + (key.empty() ? "" : "/" + key);
   }
 
   // Delete a value
@@ -47,8 +53,18 @@ public:
   inline int putBool(const std::string &key, bool val) {
     return put(key.c_str(), val ? "1" : "0", 1);
   }
+  void putNonBlocking(const std::string &key, const std::string &val);
+  inline void putBoolNonBlocking(const std::string &key, bool val) {
+    putNonBlocking(key, val ? "1" : "0");
+  }
 
 private:
+  void asyncWriteThread();
+
   std::string params_path;
-  std::string prefix;
+  std::string params_prefix;
+
+  // for nonblocking write
+  std::future<void> future;
+  SafeQueue<std::pair<std::string, std::string>> queue;
 };
