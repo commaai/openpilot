@@ -15,6 +15,10 @@ class MetaDriveWorld(World):
     super().__init__(dual_camera)
     self.camera_array = Array(ctypes.c_uint8, W*H*3)
     self.road_image = np.frombuffer(self.camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
+    self.wide_camera_array = None
+    if dual_camera:
+      self.wide_camera_array = Array(ctypes.c_uint8, W*H*3)
+      self.wide_road_image = np.frombuffer(self.wide_camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
 
     self.controls_send, self.controls_recv = Pipe()
     self.state_send, self.state_recv = Pipe()
@@ -23,7 +27,7 @@ class MetaDriveWorld(World):
 
     self.metadrive_process = multiprocessing.Process(name="metadrive process", target=
                               functools.partial(metadrive_process, dual_camera, config,
-                                                self.camera_array, self.controls_recv, self.state_send, self.exit_event))
+                                                self.camera_array, self.wide_camera_array, self.controls_recv, self.state_send, self.exit_event))
     self.metadrive_process.start()
 
     print("----------------------------------------------------------")
