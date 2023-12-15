@@ -168,6 +168,15 @@ class TestOnroad(unittest.TestCase):
     cls.lr = list(LogReader(os.path.join(str(cls.segments[1]), "rlog")))
     cls.log_path = cls.segments[1]
 
+    cls.log_sizes = {}
+    for f in cls.log_path.iterdir():
+      assert f.is_file()
+      cls.log_sizes[f]  = f.stat().st_size / 1e6
+      if f.name in ("qlog", "rlog"):
+        with open(f, 'rb') as ff:
+          cls.log_sizes[f] = len(bz2.compress(ff.read())) / 1e6
+
+
   @cached_property
   def service_msgs(self):
     msgs = defaultdict(list)
@@ -198,14 +207,7 @@ class TestOnroad(unittest.TestCase):
     self.assertEqual(len(big_logs), 0, f"Log spam: {big_logs}")
 
   def test_log_sizes(self):
-    for f in self.log_path.iterdir():
-      assert f.is_file()
-
-      sz = f.stat().st_size / 1e6
-      if f.name in ("qlog", "rlog"):
-        with open(f, 'rb') as ff:
-          sz = len(bz2.compress(ff.read())) / 1e6
-
+    for f, sz in self.log_sizes.items():
       if f.name == "qcamera.ts":
         assert 2.15 < sz < 2.35
       elif f.name == "qlog":
