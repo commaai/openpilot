@@ -2,7 +2,6 @@
 
 #include <map>
 #include <memory>
-#include <optional>
 #include <set>
 #include <string>
 #include <utility>
@@ -35,7 +34,7 @@ public:
   void setStreamType(VisionStreamType type) { requested_stream_type = type; }
   inline VisionStreamType streamType() const { return requested_stream_type; }
   inline const std::set<VisionStreamType> &availableStreams() const { return available_streams; }
-  bool receiveFrame(std::optional<uint64_t> frame_id = std::nullopt);
+  bool receiveFrame(uint64_t request_frame_id = 0);
 
 signals:
   void vipcAvailableStreamsUpdated();
@@ -74,7 +73,10 @@ protected:
   std::set<VisionStreamType> available_streams;
   std::unique_ptr<VisionIpcClient> vipc_client;
   VisionBuf *frame = nullptr;
+  uint64_t frame_id = 0;
   uint64_t prev_frame_id = 0;
+  uint64_t prev_request_frame_id = 0;
+
 
   // Calibration
   float x_offset = 0;

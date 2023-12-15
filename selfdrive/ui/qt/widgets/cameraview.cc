@@ -231,7 +231,6 @@ void CameraWidget::paintGL() {
   if (!frame) return;
 
   // Log duplicate/dropped frames
-  uint64_t frame_id = frame->get_frame_id();
   if (frame_id == prev_frame_id) {
     qDebug() << "Drawing same frame twice" << frame_id;
   } else if (frame_id != prev_frame_id + 1) {
@@ -327,12 +326,14 @@ void CameraWidget::vipcConnected() {
 #endif
 }
 
-bool CameraWidget::receiveFrame(std::optional<uint64_t> frame_id) {
-  if (!vipc_client || vipc_client->type != requested_stream_type) {
+bool CameraWidget::receiveFrame(uint64_t request_frame_id) {
+  bool need_reset = request_frame_id < prev_request_frame_id;  //  camerad reboot or seeking back in replay
+  if (!vipc_client || vipc_client->type != requested_stream_type || need_reset) {
     qDebug().nospace() << "connecting to stream" << requested_stream_type
                        << (vipc_client ? QString(", was connected to %1").arg(vipc_client->type) : "");
     vipc_client.reset(new VisionIpcClient(stream_name, requested_stream_type, conflate));
   }
+  prev_request_frame_id = request_frame_id;
 
   if (!vipc_client->connected) {
     frame = nullptr;
@@ -344,20 +345,24 @@ bool CameraWidget::receiveFrame(std::optional<uint64_t> frame_id) {
     vipcConnected();
   }
 
-  if (frame_id && frame && frame->get_frame_id() >= *frame_id) {
+  if (request_frame_id > 0 && frame && frame_id >= request_frame_id) {
     return true;
   }
 
   VisionIpcBufExtra meta_main = {};
   while (auto buf = vipc_client->recv(&meta_main, 0)) {
     frame = buf;
-    if (meta_main.frame_id >= frame_id.value_or(0)) break;
+    frame_id = meta_main.frame_id;
+    if (meta_main.frame_id >= request_frame_id) break;
   }
   return frame != nullptr;
 }
 
 void CameraWidget::disconnectVipc() {
   frame = nullptr;
+  frame_id = 0;
+  prev_frame_id = 0;
+  prev_request_frame_id = 0;
   if (vipc_client) {
     vipc_client->connected = false;
   }
