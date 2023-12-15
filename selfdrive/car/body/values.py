@@ -1,9 +1,10 @@
+from enum import StrEnum
 from typing import Dict
 
 from cereal import car
-from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from openpilot.selfdrive.car import dbc_dict
+from openpilot.selfdrive.car.docs_definitions import CarInfo
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
 
@@ -21,7 +22,7 @@ class CarControllerParams:
     pass
 
 
-class CAR:
+class CAR(StrEnum):
   BODY = "COMMA BODY"
 
 

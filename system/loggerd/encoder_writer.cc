@@ -62,7 +62,7 @@ size_t EncoderWriter::write_encoder_data(LoggerState *logger, const cereal::Even
   evt.setLogMonoTime(event.getLogMonoTime());
   (evt.*(info.set_encode_idx_func))(idx);
   auto bytes = msg.toBytes();
-  logger_log(logger, (uint8_t *)bytes.begin(), bytes.size(), true);  // always in qlog?
+  logger->write((uint8_t *)bytes.begin(), bytes.size(), true);  // always in qlog?
   return bytes.size();
 }
 

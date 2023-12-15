@@ -23,8 +23,8 @@ if [ ! -d acados_repo/ ]; then
 fi
 cd acados_repo
 git fetch --all
-git checkout 8ea8827fafb1b23b4c7da1c4cf650de1cbd73584
-git submodule update --recursive --init
+git checkout 8af9b0ad180940ef611884574a0b27a43504311d # v0.2.2
+git submodule update --depth=1 --recursive --init
 
 # build
 mkdir -p build
@@ -50,7 +50,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   cargo build --verbose --release --target aarch64-apple-darwin
   cargo build --verbose --release --target x86_64-apple-darwin
   lipo -create -output target/release/t_renderer target/x86_64-apple-darwin/release/t_renderer target/aarch64-apple-darwin/release/t_renderer
-else 
+else
   cargo build --verbose --release
 fi
 cp target/release/t_renderer $INSTALL_DIR/

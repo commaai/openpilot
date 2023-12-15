@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import pytest
 import random
 import time
 import unittest
@@ -7,11 +8,12 @@ from parameterized import parameterized
 import threading
 
 from cereal import car
-from common.params import Params
-from selfdrive.car.car_helpers import interfaces
-from selfdrive.car.fingerprints import FW_VERSIONS
-from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, match_fw_to_car, get_fw_versions, get_present_ecus
-from selfdrive.car.vin import get_vin
+from openpilot.common.params import Params
+from openpilot.selfdrive.car.car_helpers import interfaces
+from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
+from openpilot.selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, \
+                                                match_fw_to_car, get_fw_versions, get_present_ecus
+from openpilot.selfdrive.car.vin import get_vin
 
 CarFw = car.CarParams.CarFw
 Ecu = car.CarParams.Ecu
@@ -95,7 +97,7 @@ class TestFwFingerprint(unittest.TestCase):
 
   def test_fw_version_lists(self):
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model):
+      with self.subTest(car_model=car_model.value):
         for ecu, ecu_fw in ecus.items():
           with self.subTest(ecu):
             duplicates = {fw for fw in ecu_fw if ecu_fw.count(fw) > 1}
@@ -117,13 +119,13 @@ class TestFwFingerprint(unittest.TestCase):
     for brand, config in FW_QUERY_CONFIGS.items():
       for car_model, ecus in VERSIONS[brand].items():
         bad_ecus = set(ecus).intersection(config.extra_ecus)
-        with self.subTest(car_model=car_model):
+        with self.subTest(car_model=car_model.value):
           self.assertFalse(len(bad_ecus), f'{car_model}: Fingerprints contain ECUs added for data collection: {bad_ecus}')
 
   def test_blacklisted_ecus(self):
     blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model):
+      with self.subTest(car_model=car_model.value):
         CP = interfaces[car_model][0].get_non_essential_params(car_model)
         if CP.carName == 'subaru':
           for ecu in ecus.keys():
@@ -167,10 +169,14 @@ class TestFwFingerprint(unittest.TestCase):
         for request_obj in config.requests:
           self.assertEqual(len(request_obj.request), len(request_obj.response))
 
+          # No request on the OBD port (bus 1, multiplexed) should be run on an aux panda
+          self.assertFalse(request_obj.auxiliary and request_obj.bus == 1 and request_obj.obd_multiplexing,
+                           f"{brand.title()}: OBD multiplexed request is marked auxiliary: {request_obj}")
+
 
 class TestFwFingerprintTiming(unittest.TestCase):
   N: int = 5
-  TOL: float = 0.1
+  TOL: float = 0.12
 
   @staticmethod
   def _run_thread(thread: threading.Thread) -> float:
@@ -192,7 +198,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
                                 kwargs=dict(num_pandas=num_pandas))
       brand_time += self._run_thread(thread)
 
-    return round(brand_time / self.N, 2)
+    return brand_time / self.N
 
   def _assert_timing(self, avg_time, ref_time):
     self.assertLess(avg_time, ref_time + self.TOL)
@@ -219,24 +225,26 @@ class TestFwFingerprintTiming(unittest.TestCase):
     self._assert_timing(vin_time / self.N, vin_ref_time)
     print(f'get_vin, query time={vin_time / self.N} seconds')
 
+  @pytest.mark.timeout(60)
   def test_fw_query_timing(self):
-    total_ref_time = 6.2
+    total_ref_time = 6.41
     brand_ref_times = {
       1: {
-        'body': 0.1,
+        'body': 0.11,
         'chrysler': 0.3,
         'ford': 0.2,
-        'honda': 0.5,
-        'hyundai': 0.7,
+        'honda': 0.52,
+        'hyundai': 0.72,
         'mazda': 0.2,
-        'nissan': 0.9,
-        'subaru': 0.1,
+        'nissan': 0.4,
+        'subaru': 0.52,
         'tesla': 0.2,
         'toyota': 1.6,
         'volkswagen': 0.2,
       },
       2: {
-        'hyundai': 1.1,
+        'ford': 0.3,
+        'hyundai': 1.12,
       }
     }
 
@@ -250,10 +258,12 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
           avg_time = self._benchmark_brand(brand, num_pandas)
           total_time += avg_time
+          avg_time = round(avg_time, 2)
           self._assert_timing(avg_time, brand_ref_times[num_pandas][brand])
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
 
     with self.subTest(brand='all_brands'):
+      total_time = round(total_time, 2)
       self._assert_timing(total_time, total_ref_time)
       print(f'all brands, total FW query time={total_time} seconds')
 

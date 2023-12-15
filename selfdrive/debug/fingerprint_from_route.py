@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import sys
-from tools.lib.route import Route
-from tools.lib.logreader import MultiLogIterator
+from openpilot.tools.lib.route import Route
+from openpilot.tools.lib.logreader import MultiLogIterator
 
 
 def get_fingerprint(lr):

@@ -12,7 +12,7 @@ python tools/lib/auth.py
 tools/replay/replay <route-name>
 
 # Example:
-tools/replay/replay '4cf7a6ad03080c90|2021-09-29--13-46-36'
+tools/replay/replay 'a2a0ccea32023010|2023-07-27--13-01-19'
 # or use --demo to replay the default demo route:
 tools/replay/replay --demo
 

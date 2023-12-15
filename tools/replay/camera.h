@@ -1,10 +1,17 @@
 #pragma once
 
 #include <unistd.h>
+
+#include <memory>
+#include <tuple>
+#include <utility>
+
 #include "cereal/visionipc/visionipc_server.h"
 #include "common/queue.h"
 #include "tools/replay/framereader.h"
 #include "tools/replay/logreader.h"
+
+std::tuple<size_t, size_t, size_t> get_nv12_info(int width, int height);
 
 class CameraServer {
 public:

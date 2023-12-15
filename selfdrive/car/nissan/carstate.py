@@ -2,10 +2,10 @@ import copy
 from collections import deque
 from cereal import car
 from opendbc.can.can_define import CANDefine
-from selfdrive.car.interfaces import CarStateBase
-from common.conversions import Conversions as CV
+from openpilot.selfdrive.car.interfaces import CarStateBase
+from openpilot.common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
-from selfdrive.car.nissan.values import CAR, DBC, CarControllerParams
+from openpilot.selfdrive.car.nissan.values import CAR, DBC, CarControllerParams
 
 TORQUE_SAMPLES = 12
 
@@ -119,29 +119,7 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parser(CP):
-    signals = [
-      # sig_name, sig_address
-      ("WHEEL_SPEED_FL", "WHEEL_SPEEDS_FRONT"),
-      ("WHEEL_SPEED_FR", "WHEEL_SPEEDS_FRONT"),
-      ("WHEEL_SPEED_RL", "WHEEL_SPEEDS_REAR"),
-      ("WHEEL_SPEED_RR", "WHEEL_SPEEDS_REAR"),
-
-      ("STEER_ANGLE", "STEER_ANGLE_SENSOR"),
-
-      ("DOOR_OPEN_FR", "DOORS_LIGHTS"),
-      ("DOOR_OPEN_FL", "DOORS_LIGHTS"),
-      ("DOOR_OPEN_RR", "DOORS_LIGHTS"),
-      ("DOOR_OPEN_RL", "DOORS_LIGHTS"),
-
-      ("RIGHT_BLINKER", "LIGHTS"),
-      ("LEFT_BLINKER", "LIGHTS"),
-
-      ("ESP_DISABLED", "ESP"),
-
-      ("GEAR_SHIFTER", "GEARBOX"),
-    ]
-
-    checks = [
+    messages = [
       # sig_address, frequency
       ("STEER_ANGLE_SENSOR", 100),
       ("WHEEL_SPEEDS_REAR", 50),
@@ -153,51 +131,14 @@ class CarState(CarStateBase):
     ]
 
     if CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA):
-      signals += [
-        ("USER_BRAKE_PRESSED", "DOORS_LIGHTS"),
-
-        ("GAS_PEDAL", "GAS_PEDAL"),
-        ("SEATBELT_DRIVER_LATCHED", "HUD"),
-        ("SPEED_MPH", "HUD"),
-
-        ("PROPILOT_BUTTON", "CRUISE_THROTTLE"),
-        ("CANCEL_BUTTON", "CRUISE_THROTTLE"),
-        ("GAS_PEDAL_INVERTED", "CRUISE_THROTTLE"),
-        ("SET_BUTTON", "CRUISE_THROTTLE"),
-        ("RES_BUTTON", "CRUISE_THROTTLE"),
-        ("FOLLOW_DISTANCE_BUTTON", "CRUISE_THROTTLE"),
-        ("NO_BUTTON_PRESSED", "CRUISE_THROTTLE"),
-        ("GAS_PEDAL", "CRUISE_THROTTLE"),
-        ("USER_BRAKE_PRESSED", "CRUISE_THROTTLE"),
-        ("NEW_SIGNAL_2", "CRUISE_THROTTLE"),
-        ("GAS_PRESSED_INVERTED", "CRUISE_THROTTLE"),
-        ("COUNTER", "CRUISE_THROTTLE"),
-        ("unsure1", "CRUISE_THROTTLE"),
-        ("unsure2", "CRUISE_THROTTLE"),
-        ("unsure3", "CRUISE_THROTTLE"),
-      ]
-
-      checks += [
+      messages += [
         ("GAS_PEDAL", 100),
         ("CRUISE_THROTTLE", 50),
         ("HUD", 25),
       ]
 
     elif CP.carFingerprint in (CAR.LEAF, CAR.LEAF_IC):
-      signals += [
-        ("USER_BRAKE_PRESSED", "CRUISE_THROTTLE"),
-        ("GAS_PEDAL", "CRUISE_THROTTLE"),
-        ("CRUISE_AVAILABLE", "CRUISE_THROTTLE"),
-        ("SPEED_MPH", "HUD_SETTINGS"),
-        ("SEATBELT_DRIVER_LATCHED", "SEATBELT"),
-
-        # Copy other values, we use this to cancel
-        ("CANCEL_SEATBELT", "CANCEL_MSG"),
-        ("NEW_SIGNAL_1", "CANCEL_MSG"),
-        ("NEW_SIGNAL_2", "CANCEL_MSG"),
-        ("NEW_SIGNAL_3", "CANCEL_MSG"),
-      ]
-      checks += [
+      messages += [
         ("BRAKE_PEDAL", 100),
         ("CRUISE_THROTTLE", 50),
         ("CANCEL_MSG", 50),
@@ -206,126 +147,28 @@ class CarState(CarStateBase):
       ]
 
     if CP.carFingerprint == CAR.ALTIMA:
-      signals += [
-        ("LKAS_ENABLED", "LKAS_SETTINGS"),
-        ("CRUISE_ENABLED", "CRUISE_STATE"),
-        ("SET_SPEED", "PROPILOT_HUD"),
-      ]
-      checks += [
+      messages += [
         ("CRUISE_STATE", 10),
         ("LKAS_SETTINGS", 10),
         ("PROPILOT_HUD", 50),
       ]
-      return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)
+      return CANParser(DBC[CP.carFingerprint]["pt"], messages, 1)
 
-    signals.append(("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR"))
-    checks.append(("STEER_TORQUE_SENSOR", 100))
+    messages.append(("STEER_TORQUE_SENSOR", 100))
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
 
   @staticmethod
   def get_adas_can_parser(CP):
     # this function generates lists for signal, messages and initial values
 
     if CP.carFingerprint == CAR.ALTIMA:
-      signals = [
-        ("DESIRED_ANGLE", "LKAS"),
-        ("SET_0x80_2", "LKAS"),
-        ("MAX_TORQUE", "LKAS"),
-        ("SET_0x80", "LKAS"),
-        ("COUNTER", "LKAS"),
-        ("LKA_ACTIVE", "LKAS"),
-
-        ("CRUISE_ON", "PRO_PILOT"),
-      ]
-      checks = [
+      messages = [
         ("LKAS", 100),
         ("PRO_PILOT", 100),
       ]
     else:
-      signals = [
-        # sig_name, sig_address
-        ("LKAS_ENABLED", "LKAS_SETTINGS"),
-
-        ("CRUISE_ENABLED", "CRUISE_STATE"),
-
-        ("DESIRED_ANGLE", "LKAS"),
-        ("SET_0x80_2", "LKAS"),
-        ("MAX_TORQUE", "LKAS"),
-        ("SET_0x80", "LKAS"),
-        ("COUNTER", "LKAS"),
-        ("LKA_ACTIVE", "LKAS"),
-
-        # Below are the HUD messages. We copy the stock message and modify
-        ("LARGE_WARNING_FLASHING", "PROPILOT_HUD"),
-        ("SIDE_RADAR_ERROR_FLASHING1", "PROPILOT_HUD"),
-        ("SIDE_RADAR_ERROR_FLASHING2", "PROPILOT_HUD"),
-        ("LEAD_CAR", "PROPILOT_HUD"),
-        ("LEAD_CAR_ERROR", "PROPILOT_HUD"),
-        ("FRONT_RADAR_ERROR", "PROPILOT_HUD"),
-        ("FRONT_RADAR_ERROR_FLASHING", "PROPILOT_HUD"),
-        ("SIDE_RADAR_ERROR_FLASHING3", "PROPILOT_HUD"),
-        ("LKAS_ERROR_FLASHING", "PROPILOT_HUD"),
-        ("SAFETY_SHIELD_ACTIVE", "PROPILOT_HUD"),
-        ("RIGHT_LANE_GREEN_FLASH", "PROPILOT_HUD"),
-        ("LEFT_LANE_GREEN_FLASH", "PROPILOT_HUD"),
-        ("FOLLOW_DISTANCE", "PROPILOT_HUD"),
-        ("AUDIBLE_TONE", "PROPILOT_HUD"),
-        ("SPEED_SET_ICON", "PROPILOT_HUD"),
-        ("SMALL_STEERING_WHEEL_ICON", "PROPILOT_HUD"),
-        ("unknown59", "PROPILOT_HUD"),
-        ("unknown55", "PROPILOT_HUD"),
-        ("unknown26", "PROPILOT_HUD"),
-        ("unknown28", "PROPILOT_HUD"),
-        ("unknown31", "PROPILOT_HUD"),
-        ("SET_SPEED", "PROPILOT_HUD"),
-        ("unknown43", "PROPILOT_HUD"),
-        ("unknown08", "PROPILOT_HUD"),
-        ("unknown05", "PROPILOT_HUD"),
-        ("unknown02", "PROPILOT_HUD"),
-
-        ("NA_HIGH_ACCEL_TEMP", "PROPILOT_HUD_INFO_MSG"),
-        ("SIDE_RADAR_NA_HIGH_CABIN_TEMP", "PROPILOT_HUD_INFO_MSG"),
-        ("SIDE_RADAR_MALFUNCTION", "PROPILOT_HUD_INFO_MSG"),
-        ("LKAS_MALFUNCTION", "PROPILOT_HUD_INFO_MSG"),
-        ("FRONT_RADAR_MALFUNCTION", "PROPILOT_HUD_INFO_MSG"),
-        ("SIDE_RADAR_NA_CLEAN_REAR_CAMERA", "PROPILOT_HUD_INFO_MSG"),
-        ("NA_POOR_ROAD_CONDITIONS", "PROPILOT_HUD_INFO_MSG"),
-        ("CURRENTLY_UNAVAILABLE", "PROPILOT_HUD_INFO_MSG"),
-        ("SAFETY_SHIELD_OFF", "PROPILOT_HUD_INFO_MSG"),
-        ("FRONT_COLLISION_NA_FRONT_RADAR_OBSTRUCTION", "PROPILOT_HUD_INFO_MSG"),
-        ("PEDAL_MISSAPPLICATION_SYSTEM_ACTIVATED", "PROPILOT_HUD_INFO_MSG"),
-        ("SIDE_IMPACT_NA_RADAR_OBSTRUCTION", "PROPILOT_HUD_INFO_MSG"),
-        ("WARNING_DO_NOT_ENTER", "PROPILOT_HUD_INFO_MSG"),
-        ("SIDE_IMPACT_SYSTEM_OFF", "PROPILOT_HUD_INFO_MSG"),
-        ("SIDE_IMPACT_MALFUNCTION", "PROPILOT_HUD_INFO_MSG"),
-        ("FRONT_COLLISION_MALFUNCTION", "PROPILOT_HUD_INFO_MSG"),
-        ("SIDE_RADAR_MALFUNCTION2", "PROPILOT_HUD_INFO_MSG"),
-        ("LKAS_MALFUNCTION2", "PROPILOT_HUD_INFO_MSG"),
-        ("FRONT_RADAR_MALFUNCTION2", "PROPILOT_HUD_INFO_MSG"),
-        ("PROPILOT_NA_MSGS", "PROPILOT_HUD_INFO_MSG"),
-        ("BOTTOM_MSG", "PROPILOT_HUD_INFO_MSG"),
-        ("HANDS_ON_WHEEL_WARNING", "PROPILOT_HUD_INFO_MSG"),
-        ("WARNING_STEP_ON_BRAKE_NOW", "PROPILOT_HUD_INFO_MSG"),
-        ("PROPILOT_NA_FRONT_CAMERA_OBSTRUCTED", "PROPILOT_HUD_INFO_MSG"),
-        ("PROPILOT_NA_HIGH_CABIN_TEMP", "PROPILOT_HUD_INFO_MSG"),
-        ("WARNING_PROPILOT_MALFUNCTION", "PROPILOT_HUD_INFO_MSG"),
-        ("ACC_UNAVAILABLE_HIGH_CABIN_TEMP", "PROPILOT_HUD_INFO_MSG"),
-        ("ACC_NA_FRONT_CAMERA_IMPARED", "PROPILOT_HUD_INFO_MSG"),
-        ("unknown07", "PROPILOT_HUD_INFO_MSG"),
-        ("unknown10", "PROPILOT_HUD_INFO_MSG"),
-        ("unknown15", "PROPILOT_HUD_INFO_MSG"),
-        ("unknown23", "PROPILOT_HUD_INFO_MSG"),
-        ("unknown19", "PROPILOT_HUD_INFO_MSG"),
-        ("unknown31", "PROPILOT_HUD_INFO_MSG"),
-        ("unknown32", "PROPILOT_HUD_INFO_MSG"),
-        ("unknown46", "PROPILOT_HUD_INFO_MSG"),
-        ("unknown61", "PROPILOT_HUD_INFO_MSG"),
-        ("unknown55", "PROPILOT_HUD_INFO_MSG"),
-        ("unknown50", "PROPILOT_HUD_INFO_MSG"),
-      ]
-
-      checks = [
+      messages = [
         ("PROPILOT_HUD_INFO_MSG", 2),
         ("LKAS_SETTINGS", 10),
         ("CRUISE_STATE", 50),
@@ -333,19 +176,16 @@ class CarState(CarStateBase):
         ("LKAS", 100),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)
 
   @staticmethod
   def get_cam_can_parser(CP):
-    signals = []
-    checks = []
+    messages = []
 
     if CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL):
-      signals.append(("CRUISE_ON", "PRO_PILOT"))
-      checks.append(("PRO_PILOT", 100))
+      messages.append(("PRO_PILOT", 100))
     elif CP.carFingerprint == CAR.ALTIMA:
-      signals.append(("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR"))
-      checks.append(("STEER_TORQUE_SENSOR", 100))
-      return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
+      messages.append(("STEER_TORQUE_SENSOR", 100))
+      return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 1)

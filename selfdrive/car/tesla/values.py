@@ -1,17 +1,19 @@
+# ruff: noqa: E501
 from collections import namedtuple
+from enum import StrEnum
 from typing import Dict, List, Union
 
 from cereal import car
-from selfdrive.car import AngleRateLimit, dbc_dict
-from selfdrive.car.docs_definitions import CarInfo
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
+from openpilot.selfdrive.car.docs_definitions import CarInfo
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
 
 Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 
 
-class CAR:
+class CAR(StrEnum):
   AP1_MODELS = 'TESLA AP1 MODEL S'
   AP2_MODELS = 'TESLA AP2 MODEL S'
 

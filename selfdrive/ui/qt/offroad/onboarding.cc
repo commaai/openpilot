@@ -1,5 +1,7 @@
 #include "selfdrive/ui/qt/offroad/onboarding.h"
 
+#include <string>
+
 #include <QLabel>
 #include <QPainter>
 #include <QQmlContext>

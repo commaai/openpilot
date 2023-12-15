@@ -4,9 +4,9 @@ import os
 import requests
 import xml.etree.ElementTree as ET
 
-from common.basedir import BASEDIR
-from selfdrive.ui.tests.test_translations import UNFINISHED_TRANSLATION_TAG
-from selfdrive.ui.update_translations import LANGUAGES_FILE, TRANSLATIONS_DIR
+from openpilot.common.basedir import BASEDIR
+from openpilot.selfdrive.ui.tests.test_translations import UNFINISHED_TRANSLATION_TAG
+from openpilot.selfdrive.ui.update_translations import LANGUAGES_FILE, TRANSLATIONS_DIR
 
 TRANSLATION_TAG = "<translation"
 BADGE_HEIGHT = 20 + 8
@@ -54,7 +54,8 @@ if __name__ == "__main__":
 
     badge_svg.extend([f'<g transform="translate(0, {idx * BADGE_HEIGHT})">', content_svg, "</g>"])
 
-  badge_svg.insert(0, f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" height="{len(translation_files) * BADGE_HEIGHT}" width="{max_badge_width}">')
+  badge_svg.insert(0, f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" \
+                             height="{len(translation_files) * BADGE_HEIGHT}" width="{max_badge_width}">')
   badge_svg.append("</svg>")
 
   with open(os.path.join(BASEDIR, "translation_badge.svg"), "w") as badge_f:

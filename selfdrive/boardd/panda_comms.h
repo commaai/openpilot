@@ -14,14 +14,14 @@
 
 
 #define TIMEOUT 0
-#define SPI_BUF_SIZE 1024
+#define SPI_BUF_SIZE 2048
 
 
 // comms base class
 class PandaCommsHandle {
 public:
-  PandaCommsHandle(std::string serial) {};
-  virtual ~PandaCommsHandle() {};
+  PandaCommsHandle(std::string serial) {}
+  virtual ~PandaCommsHandle() {}
   virtual void cleanup() = 0;
 
   std::string hw_serial;

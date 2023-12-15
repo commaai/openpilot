@@ -4,9 +4,11 @@
 #include <sys/file.h>
 
 #include <algorithm>
+#include <cassert>
 #include <csignal>
 #include <unordered_map>
 
+#include "common/queue.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "system/hardware/hw.h"
@@ -64,7 +66,9 @@ bool create_params_path(const std::string &param_path, const std::string &key_pa
 std::string ensure_params_path(const std::string &prefix, const std::string &path = {}) {
   std::string params_path = path.empty() ? Path::params() : path;
   if (!create_params_path(params_path, params_path + prefix)) {
-    throw std::runtime_error(util::string_format("Failed to ensure params path, errno=%d", errno));
+    throw std::runtime_error(util::string_format(
+        "Failed to ensure params path, errno=%d, path=%s, param_prefix=%s",
+        errno, params_path.c_str(), prefix.c_str()));
   }
   return params_path;
 }
@@ -86,7 +90,6 @@ private:
 std::unordered_map<std::string, uint32_t> keys = {
     {"AccessToken", CLEAR_ON_MANAGER_START | DONT_LOG},
     {"ApiCache_Device", PERSISTENT},
-    {"ApiCache_DriveStats", PERSISTENT},
     {"ApiCache_NavDestinations", PERSISTENT},
     {"AssistNowToken", PERSISTENT},
     {"AthenadPid", PERSISTENT},
@@ -98,6 +101,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CarParams", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"CarParamsCache", CLEAR_ON_MANAGER_START},
     {"CarParamsPersistent", PERSISTENT},
+    {"CarParamsPrevRoute", PERSISTENT},
     {"CarVin", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"CompletedTrainingVersion", PERSISTENT},
     {"ControlsReady", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
@@ -107,11 +111,12 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DisablePowerDown", PERSISTENT},
     {"DisableUpdates", PERSISTENT},
     {"DisengageOnAccelerator", PERSISTENT},
+    {"DmModelInitialized", CLEAR_ON_ONROAD_TRANSITION},
     {"DongleId", PERSISTENT},
     {"DoReboot", CLEAR_ON_MANAGER_START},
     {"DoShutdown", CLEAR_ON_MANAGER_START},
     {"DoUninstall", CLEAR_ON_MANAGER_START},
-    {"ExperimentalLongitudinalEnabled", PERSISTENT},
+    {"ExperimentalLongitudinalEnabled", PERSISTENT | DEVELOPMENT_ONLY},
     {"ExperimentalMode", PERSISTENT},
     {"ExperimentalModeConfirmed", PERSISTENT},
     {"FirmwareQueryDone", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
@@ -152,11 +157,11 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LastUpdateException", CLEAR_ON_MANAGER_START},
     {"LastUpdateTime", PERSISTENT},
     {"LiveParameters", PERSISTENT},
-    {"LiveTorqueCarParams", PERSISTENT},
     {"LiveTorqueParameters", PERSISTENT | DONT_LOG},
     {"LongitudinalPersonality", PERSISTENT},
     {"NavDestination", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"NavDestinationWaypoints", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
+    {"NavPastDestinations", PERSISTENT},
     {"NavSettingLeftSide", PERSISTENT},
     {"NavSettingTime24h", PERSISTENT},
     {"NavdRender", PERSISTENT},
@@ -177,6 +182,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"Offroad_UpdateFailed", CLEAR_ON_MANAGER_START},
     {"OpenpilotEnabledToggle", PERSISTENT},
     {"PandaHeartbeatLost", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
+    {"PandaSomResetTriggered", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"PandaSignatures", CLEAR_ON_MANAGER_START},
     {"Passive", PERSISTENT},
     {"PrimeType", PERSISTENT},
@@ -203,14 +209,22 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"UpdaterTargetBranch", CLEAR_ON_MANAGER_START},
     {"Version", PERSISTENT},
     {"VisionRadarToggle", PERSISTENT},
+    {"WheeledBody", PERSISTENT},
 };
 
 } // namespace
 
 
 Params::Params(const std::string &path) {
-  prefix = "/" + util::getenv("OPENPILOT_PREFIX", "d");
-  params_path = ensure_params_path(prefix, path);
+  params_prefix = "/" + util::getenv("OPENPILOT_PREFIX", "d");
+  params_path = ensure_params_path(params_prefix, path);
+}
+
+Params::~Params() {
+  if (future.valid()) {
+    future.wait();
+  }
+  assert(queue.empty());
 }
 
 std::vector<std::string> Params::allKeys() const {
@@ -322,4 +336,21 @@ void Params::clearAll(ParamKeyType key_type) {
   }
 
   fsync_dir(getParamPath());
+}
+
+void Params::putNonBlocking(const std::string &key, const std::string &val) {
+   queue.push(std::make_pair(key, val));
+  // start thread on demand
+  if (!future.valid() || future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+    future = std::async(std::launch::async, &Params::asyncWriteThread, this);
+  }
+}
+
+void Params::asyncWriteThread() {
+  // TODO: write the latest one if a key has multiple values in the queue.
+  std::pair<std::string, std::string> p;
+  while (queue.try_pop(p, 0)) {
+    // Params::put is Thread-Safe
+    put(p.first, p.second);
+  }
 }

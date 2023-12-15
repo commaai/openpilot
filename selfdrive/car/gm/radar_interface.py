@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import math
 from cereal import car
-from common.conversions import Conversions as CV
+from openpilot.common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
-from selfdrive.car.gm.values import DBC, CanBus
-from selfdrive.car.interfaces import RadarInterfaceBase
+from openpilot.selfdrive.car.gm.values import DBC, CanBus
+from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 
 RADAR_HEADER_MSG = 1120
 SLOT_1_MSG = RADAR_HEADER_MSG + 1
@@ -25,11 +25,11 @@ def create_radar_can_parser(car_fingerprint):
                      ['TrkRange'] * NUM_SLOTS + ['TrkRangeRate'] * NUM_SLOTS +
                      ['TrkRangeAccel'] * NUM_SLOTS + ['TrkAzimuth'] * NUM_SLOTS +
                      ['TrkWidth'] * NUM_SLOTS + ['TrkObjectID'] * NUM_SLOTS,
-                     [RADAR_HEADER_MSG] * 7 + radar_targets * 6))
+                     [RADAR_HEADER_MSG] * 7 + radar_targets * 6, strict=True))
 
-  checks = list({(s[1], 14) for s in signals})
+  messages = list({(s[1], 14) for s in signals})
 
-  return CANParser(DBC[car_fingerprint]['radar'], signals, checks, CanBus.OBSTACLE)
+  return CANParser(DBC[car_fingerprint]['radar'], messages, CanBus.OBSTACLE)
 
 
 class RadarInterface(RadarInterfaceBase):

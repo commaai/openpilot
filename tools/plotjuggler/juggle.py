@@ -10,16 +10,16 @@ import tempfile
 import requests
 import argparse
 
-from common.basedir import BASEDIR
-from selfdrive.test.openpilotci import get_url
-from tools.lib.logreader import LogReader
-from tools.lib.route import Route, SegmentName
-from tools.lib.helpers import save_log
+from openpilot.common.basedir import BASEDIR
+from openpilot.selfdrive.test.openpilotci import get_url
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.route import Route, SegmentName
+from openpilot.tools.lib.helpers import save_log
 from urllib.parse import urlparse, parse_qs
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
 
-DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36"
+DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 RELEASES_URL="https://github.com/commaai/PlotJuggler/releases/download/latest"
 INSTALL_DIR = os.path.join(juggle_dir, "bin")
 PLOTJUGGLER_BIN = os.path.join(juggle_dir, "bin/plotjuggler")
@@ -129,7 +129,7 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
   if dbc is None:
     for cp in [m for m in all_data if m.which() == 'carParams']:
       try:
-        DBC = __import__(f"selfdrive.car.{cp.carParams.carName}.values", fromlist=['DBC']).DBC
+        DBC = __import__(f"openpilot.selfdrive.car.{cp.carParams.carName}.values", fromlist=['DBC']).DBC
         dbc = DBC[cp.carParams.carFingerprint]['pt']
       except Exception:
         pass
@@ -168,7 +168,7 @@ if __name__ == "__main__":
   if not os.path.exists(PLOTJUGGLER_BIN):
     print("PlotJuggler is missing. Downloading...")
     install()
-  
+
   if get_plotjuggler_version() < MINIMUM_PLOTJUGGLER_VERSION:
     print("PlotJuggler is out of date. Installing update...")
     install()

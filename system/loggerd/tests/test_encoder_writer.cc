@@ -37,8 +37,6 @@ static Message *generate_msg(const EncoderInfo &info, uint32_t segment_num, uint
 }
 
 static void test(LoggerState *logger, std::vector<std::unique_ptr<EncoderWriter>> &encoders, const std::vector<int> &segments) {
-  int logger_segment = -1;
-  char segment_path[4096];
   const int frames = 10;
   int prev_seg = -1;
   for (auto seg : segments) {
@@ -61,10 +59,9 @@ static void test(LoggerState *logger, std::vector<std::unique_ptr<EncoderWriter>
         if (e->ready_to_rotate == encoders.size()) {
           // q should not empty
           REQUIRE(e->q.size() > 0);
-          int err = logger_next(logger, LOG_ROOT.c_str(), segment_path, sizeof(segment_path), &logger_segment);
-          REQUIRE(err == 0);
+          REQUIRE(logger->next());
           for (auto &en : encoders) {
-            en->rotate(segment_path);
+            en->rotate(logger->segmentPath());
           }
           e->ready_to_rotate = 0;
         }
@@ -78,21 +75,15 @@ static void test(LoggerState *logger, std::vector<std::unique_ptr<EncoderWriter>
     REQUIRE(e->q.size() == 0);
   }
 
-  REQUIRE(segments.size() == logger_segment + 1);
+  REQUIRE(segments.size() == logger->segment() + 1);
 }
 
 TEST_CASE("EncoderWriter") {
-  LoggerState logger{};
-  logger_init(&logger, true);
-
-  int segment = -1;
-  char segment_path[4096];
-  int err = logger_next(&logger, LOG_ROOT.c_str(), segment_path, sizeof(segment_path), &segment);
-  REQUIRE(err == 0);
-
+  LoggerState logger;
+  REQUIRE(logger.next());
   std::vector<std::unique_ptr<EncoderWriter>> encoders;
   for (const auto &info : {main_road_encoder_info, main_wide_road_encoder_info, main_driver_encoder_info}) {
-    encoders.emplace_back(std::make_unique<EncoderWriter>(segment_path, info));
+    encoders.emplace_back(std::make_unique<EncoderWriter>(logger.segmentPath(), info));
   }
 
   SECTION("encoderd run after loggerd") {

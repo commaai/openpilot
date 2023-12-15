@@ -3,7 +3,7 @@ import os
 import datetime
 from panda import Panda
 
-from common.time import MIN_DATE
+from openpilot.common.time import MIN_DATE
 
 def set_time(logger):
   sys_time = datetime.datetime.today()

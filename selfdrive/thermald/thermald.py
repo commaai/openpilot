@@ -13,19 +13,20 @@ import psutil
 
 import cereal.messaging as messaging
 from cereal import log
-from common.dict_helpers import strip_deprecated_keys
-from common.time import MIN_DATE
-from common.filter_simple import FirstOrderFilter
-from common.params import Params
-from common.realtime import DT_TRML, sec_since_boot
-from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from system.hardware import HARDWARE, TICI, AGNOS
-from system.loggerd.config import get_available_percent
-from selfdrive.statsd import statlog
-from system.swaglog import cloudlog
-from selfdrive.thermald.power_monitoring import PowerMonitoring
-from selfdrive.thermald.fan_controller import TiciFanController
-from system.version import terms_version, training_version
+from cereal.services import SERVICE_LIST
+from openpilot.common.dict_helpers import strip_deprecated_keys
+from openpilot.common.time import MIN_DATE
+from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.params import Params
+from openpilot.common.realtime import DT_TRML
+from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
+from openpilot.system.hardware import HARDWARE, TICI, AGNOS
+from openpilot.system.loggerd.config import get_available_percent
+from openpilot.selfdrive.statsd import statlog
+from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.thermald.power_monitoring import PowerMonitoring
+from openpilot.selfdrive.thermald.fan_controller import TiciFanController
+from openpilot.system.version import terms_version, training_version
 
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
@@ -33,10 +34,11 @@ NetworkStrength = log.DeviceState.NetworkStrength
 CURRENT_TAU = 15.   # 15s time constant
 TEMP_TAU = 5.   # 5s time constant
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
-PANDA_STATES_TIMEOUT = int(1000 * 1.5 * DT_TRML)  # 1.5x the expected pandaState frequency
+PANDA_STATES_TIMEOUT = round(1000 / SERVICE_LIST['pandaStates'].frequency * 1.5)  # 1.5x the expected pandaState frequency
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
-HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'network_strength', 'network_stats', 'network_metered', 'nvme_temps', 'modem_temps'])
+HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'network_strength', 'network_stats',
+                                             'network_metered', 'nvme_temps', 'modem_temps'])
 
 # List of thermal bands. We will stay within this region as long as we are within the bounds.
 # When exiting the bounds, we'll jump to the lower or higher band. Bands are ordered in the dict.
@@ -60,7 +62,7 @@ def populate_tz_by_type():
     if not n.startswith("thermal_zone"):
       continue
     with open(os.path.join("/sys/devices/virtual/thermal", n, "type")) as f:
-      tz_by_type[f.read().strip()] = int(n.lstrip("thermal_zone"))
+      tz_by_type[f.read().strip()] = int(n.removeprefix("thermal_zone"))
 
 def read_tz(x):
   if x is None:
@@ -79,7 +81,7 @@ def read_tz(x):
 
 
 def read_thermal(thermal_config):
-  dat = messaging.new_message('deviceState')
+  dat = messaging.new_message('deviceState', valid=True)
   dat.deviceState.cpuTempC = [read_tz(z) / thermal_config.cpu[1] for z in thermal_config.cpu[0]]
   dat.deviceState.gpuTempC = [read_tz(z) / thermal_config.gpu[1] for z in thermal_config.gpu[0]]
   dat.deviceState.memoryTempC = read_tz(thermal_config.mem[0]) / thermal_config.mem[1]
@@ -103,6 +105,8 @@ def hw_state_thread(end_event, hw_queue):
   modem_version = None
   modem_nv = None
   modem_configured = False
+  modem_restarted = False
+  modem_missing_count = 0
 
   while not end_event.is_set():
     # these are expensive calls. update every 10s
@@ -115,11 +119,21 @@ def hw_state_thread(end_event, hw_queue):
 
         # Log modem version once
         if AGNOS and ((modem_version is None) or (modem_nv is None)):
-          modem_version = HARDWARE.get_modem_version()  # pylint: disable=assignment-from-none
-          modem_nv = HARDWARE.get_modem_nv()  # pylint: disable=assignment-from-none
+          modem_version = HARDWARE.get_modem_version()
+          modem_nv = HARDWARE.get_modem_nv()
 
           if (modem_version is not None) and (modem_nv is not None):
             cloudlog.event("modem version", version=modem_version, nv=modem_nv)
+          else:
+            if not modem_restarted:
+              # TODO: we may be able to remove this with a MM update
+              # ModemManager's probing on startup can fail
+              # rarely, restart the service to probe again.
+              modem_missing_count += 1
+              if modem_missing_count > 3:
+                modem_restarted = True
+                cloudlog.event("restarting ModemManager")
+                os.system("sudo systemctl restart --no-block ModemManager")
 
         tx, rx = HARDWARE.get_modem_data_usage()
 
@@ -152,7 +166,7 @@ def hw_state_thread(end_event, hw_queue):
     time.sleep(DT_TRML)
 
 
-def thermald_thread(end_event, hw_queue):
+def thermald_thread(end_event, hw_queue) -> None:
   pm = messaging.PubMaster(['deviceState'])
   sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "controlsState", "pandaStates"], poll=["pandaStates"])
 
@@ -164,10 +178,10 @@ def thermald_thread(end_event, hw_queue):
   startup_conditions: Dict[str, bool] = {}
   startup_conditions_prev: Dict[str, bool] = {}
 
-  off_ts = None
-  started_ts = None
+  off_ts: Optional[float] = None
+  started_ts: Optional[float] = None
   started_seen = False
-  startup_blocked_ts = None
+  startup_blocked_ts: Optional[float] = None
   thermal_status = ThermalStatus.yellow
 
   last_hw_state = HardwareState(
@@ -197,8 +211,13 @@ def thermald_thread(end_event, hw_queue):
   while not end_event.is_set():
     sm.update(PANDA_STATES_TIMEOUT)
 
+    # Run at 2Hz
+    if sm.frame % round(SERVICE_LIST['pandaStates'].frequency * DT_TRML) != 0:
+      continue
+
     pandaStates = sm['pandaStates']
     peripheralState = sm['peripheralState']
+    peripheral_panda_present = peripheralState.pandaType != log.PandaState.PandaType.unknown
 
     msg = read_thermal(thermal_config)
 
@@ -212,11 +231,11 @@ def thermald_thread(end_event, hw_queue):
       in_car = pandaState.harnessStatus != log.PandaState.HarnessStatus.notConnected
 
       # Setup fan handler on first connect to panda
-      if fan_controller is None and peripheralState.pandaType != log.PandaState.PandaType.unknown:
+      if fan_controller is None and peripheral_panda_present:
         if TICI:
           fan_controller = TiciFanController()
 
-    elif (sec_since_boot() - sm.rcv_time['pandaStates']) > DISCONNECT_TIMEOUT:
+    elif (time.monotonic() - sm.rcv_time['pandaStates']) > DISCONNECT_TIMEOUT:
       if onroad_conditions["ignition"]:
         onroad_conditions["ignition"] = False
         cloudlog.error("panda timed out onroad")
@@ -259,7 +278,7 @@ def thermald_thread(end_event, hw_queue):
     if fan_controller is not None:
       msg.deviceState.fanSpeedPercentDesired = fan_controller.update(all_comp_temp, onroad_conditions["ignition"])
 
-    is_offroad_for_5_min = (started_ts is None) and ((not started_seen) or (off_ts is None) or (sec_since_boot() - off_ts > 60 * 5))
+    is_offroad_for_5_min = (started_ts is None) and ((not started_seen) or (off_ts is None) or (time.monotonic() - off_ts > 60 * 5))
     if is_offroad_for_5_min and offroad_comp_temp > OFFROAD_DANGER_TEMP:
       # if device is offroad and already hot without the extra onroad load,
       # we want to cool down first before increasing load
@@ -277,7 +296,7 @@ def thermald_thread(end_event, hw_queue):
     # Ensure date/time are valid
     now = datetime.datetime.utcnow()
     startup_conditions["time_valid"] = now > MIN_DATE
-    set_offroad_alert_if_changed("Offroad_InvalidTime", (not startup_conditions["time_valid"]))
+    set_offroad_alert_if_changed("Offroad_InvalidTime", (not startup_conditions["time_valid"]) and peripheral_panda_present)
 
     startup_conditions["up_to_date"] = params.get("Offroad_ConnectivityNeeded") is None or params.get_bool("DisableUpdates") or params.get_bool("SnoozeUpdate")
     startup_conditions["not_uninstalling"] = not params.get_bool("DoUninstall")
@@ -340,10 +359,10 @@ def thermald_thread(end_event, hw_queue):
     if should_start:
       off_ts = None
       if started_ts is None:
-        started_ts = sec_since_boot()
+        started_ts = time.monotonic()
         started_seen = True
         if startup_blocked_ts is not None:
-          cloudlog.event("Startup after block", block_duration=(sec_since_boot() - startup_blocked_ts),
+          cloudlog.event("Startup after block", block_duration=(time.monotonic() - startup_blocked_ts),
                          startup_conditions=startup_conditions, onroad_conditions=onroad_conditions,
                          startup_conditions_prev=startup_conditions_prev, error=True)
       startup_blocked_ts = None
@@ -351,11 +370,11 @@ def thermald_thread(end_event, hw_queue):
       if onroad_conditions["ignition"] and (startup_conditions != startup_conditions_prev):
         cloudlog.event("Startup blocked", startup_conditions=startup_conditions, onroad_conditions=onroad_conditions, error=True)
         startup_conditions_prev = startup_conditions.copy()
-        startup_blocked_ts = sec_since_boot()
+        startup_blocked_ts = time.monotonic()
 
       started_ts = None
       if off_ts is None:
-        off_ts = sec_since_boot()
+        off_ts = time.monotonic()
 
     # Offroad power monitoring
     voltage = None if peripheralState.pandaType == log.PandaState.PandaType.unknown else peripheralState.voltage

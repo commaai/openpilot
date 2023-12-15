@@ -4,7 +4,7 @@ import unittest
 import tempfile
 import subprocess
 
-import system.hardware.tici.casync as casync
+import openpilot.system.hardware.tici.casync as casync
 
 # dd if=/dev/zero of=/tmp/img.raw bs=1M count=2
 # sudo losetup -f /tmp/img.raw

@@ -4,9 +4,8 @@ import os
 
 from tqdm import tqdm
 
-from common.file_helpers import mkdirs_exists_ok
-from tools.lib.logreader import LogReader
-from tools.lib.route import Route
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.route import Route
 
 import argparse
 
@@ -17,7 +16,7 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   out_path = os.path.join("jpegs", f"{args.route.replace('|', '_')}_{args.segment}")
-  mkdirs_exists_ok(out_path)
+  os.makedirs(out_path, exist_ok=True)
 
   r = Route(args.route)
   path = r.log_paths()[args.segment] or r.qlog_paths()[args.segment]

@@ -5,10 +5,10 @@ import threading
 from inputs import get_gamepad
 
 import cereal.messaging as messaging
-from common.realtime import Ratekeeper
-from common.numpy_fast import interp, clip
-from common.params import Params
-from tools.lib.kbhit import KBHit
+from openpilot.common.realtime import Ratekeeper
+from openpilot.common.numpy_fast import interp, clip
+from openpilot.common.params import Params
+from openpilot.tools.lib.kbhit import KBHit
 
 
 class Keyboard:
@@ -82,9 +82,6 @@ def send_thread(joystick):
     dat.testJoystick.buttons = [joystick.cancel]
     joystick_sock.send(dat.to_bytes())
     print('\n' + ', '.join(f'{name}: {round(v, 3)}' for name, v in joystick.axes_values.items()))
-    if "WEB" in os.environ:
-      import requests
-      requests.get("http://"+os.environ["WEB"]+":5000/control/%f/%f" % tuple([joystick.axes_values[a] for a in joystick.axes_order][::-1]), timeout=None)
     rk.keep_time()
 
 def joystick_thread(joystick):
@@ -101,7 +98,7 @@ if __name__ == '__main__':
   parser.add_argument('--gamepad', action='store_true', help='Use gamepad configuration instead of joystick')
   args = parser.parse_args()
 
-  if not Params().get_bool("IsOffroad") and "ZMQ" not in os.environ and "WEB" not in os.environ:
+  if not Params().get_bool("IsOffroad") and "ZMQ" not in os.environ:
     print("The car must be off before running joystickd.")
     exit()
 

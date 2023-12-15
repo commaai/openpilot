@@ -1,8 +1,5 @@
 /*
- * Copyright 2019 Gianluca Frison, Dimitris Kouzoupis, Robin Verschueren,
- * Andrea Zanelli, Niels van Duijkeren, Jonathan Frey, Tommaso Sartor,
- * Branimir Novoselnik, Rien Quirynen, Rezart Qelibari, Dang Doan,
- * Jonas Koenemann, Yutao Chen, Tobias Schöls, Jonas Schlagenhauf, Moritz Diehl
+ * Copyright (c) The acados authors.
  *
  * This file is part of acados.
  *
@@ -33,8 +30,8 @@
 
 
 ///
-/// \defgroup ocp_nlp_cost ocp_nlp_cost 
-/// 
+/// \defgroup ocp_nlp_cost ocp_nlp_cost
+///
 
 /// \addtogroup ocp_nlp_cost ocp_nlp_cost
 /// @{
@@ -62,7 +59,6 @@ typedef struct
 {
     acados_size_t (*dims_calculate_size)(void *config);
     void *(*dims_assign)(void *config, void *raw_memory);
-    void (*dims_initialize)(void *config, void *dims, int nx, int nu, int ny, int ns, int nz);
     void (*dims_set)(void *config_, void *dims_, const char *field, int *value);
     void (*dims_get)(void *config_, void *dims_, const char *field, int *value);
     acados_size_t (*model_calculate_size)(void *config, void *dims);
@@ -91,6 +87,8 @@ typedef struct
     // computes the cost function value (intended for globalization)
     void (*compute_fun)(void *config_, void *dims, void *model_, void *opts_, void *mem_, void *work_);
     void (*config_initialize_default)(void *config);
+    void (*precompute)(void *config_, void *dims_, void *model_, void *opts_, void *memory_, void *work_);
+
 } ocp_nlp_cost_config;
 
 //
@@ -105,5 +103,5 @@ ocp_nlp_cost_config *ocp_nlp_cost_config_assign(void *raw_memory);
 #endif
 
 #endif  // ACADOS_OCP_NLP_OCP_NLP_COST_COMMON_H_
-/// @} 
-/// @} 
+/// @}
+/// @}

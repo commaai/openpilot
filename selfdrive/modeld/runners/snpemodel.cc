@@ -3,6 +3,10 @@
 #include "selfdrive/modeld/runners/snpemodel.h"
 
 #include <cstring>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "common/util.h"
 #include "common/timing.h"
@@ -71,12 +75,6 @@ SNPEModel::SNPEModel(const std::string path, float *_output, size_t _output_size
   std::vector<size_t> output_strides = {output_size * sizeof(float), sizeof(float)};
   output_buffer = ub_factory.createUserBuffer(output, output_size * sizeof(float), output_strides, &ub_encoding_float);
   output_map.add(output_tensor_name, output_buffer.get());
-
-#ifdef USE_THNEED
-  if (snpe_runtime == zdl::DlSystem::Runtime_t::GPU) {
-    thneed.reset(new Thneed());
-  }
-#endif
 }
 
 void SNPEModel::addInput(const std::string name, float *buffer, int size) {

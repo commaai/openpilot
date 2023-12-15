@@ -1,18 +1,22 @@
 #pragma once
 
+#include <array>
 #include <cmath>
+#include <deque>
+#include <vector>
+#include <utility>
 
 #include <QApplication>
 #include <QByteArray>
-#include <QDateTime>
 #include <QDoubleValidator>
 #include <QFont>
+#include <QPainter>
 #include <QRegExpValidator>
 #include <QSocketNotifier>
+#include <QStaticText>
 #include <QStringBuilder>
 #include <QStyledItemDelegate>
 #include <QToolButton>
-#include <QVector>
 
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/settings.h"
@@ -51,13 +55,13 @@ enum {
 class SegmentTree {
 public:
   SegmentTree() = default;
-  void build(const QVector<QPointF> &arr);
+  void build(const std::vector<QPointF> &arr);
   inline std::pair<double, double> minmax(int left, int right) const { return get_minmax(1, 0, size - 1, left, right); }
 
 private:
   std::pair<double, double> get_minmax(int n, int left, int right, int range_left, int range_right) const;
-  void build_tree(const QVector<QPointF> &arr, int n, int left, int right);
-  std::vector<std::pair<double ,double>> tree;
+  void build_tree(const std::vector<QPointF> &arr, int n, int left, int right);
+  std::vector<std::pair<double, double>> tree;
   int size = 0;
 };
 
@@ -67,19 +71,17 @@ public:
   MessageBytesDelegate(QObject *parent, bool multiple_lines = false);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-  void setMultipleLines(bool v);
-  int widthForBytes(int n) const;
   bool multipleLines() const { return multiple_lines; }
+  void setMultipleLines(bool v) { multiple_lines = v; }
+  QSize sizeForBytes(int n) const;
 
 private:
+  std::array<QStaticText, 256> hex_text_table;
   QFont fixed_font;
   QSize byte_size = {};
   bool multiple_lines = false;
-  mutable QSize size_cache[65] = {};
+  int h_margin, v_margin;
 };
-
-inline QString toHex(const QByteArray &dat) { return dat.toHex(' ').toUpper(); }
-QString toHex(uint8_t byte);
 
 class NameValidator : public QRegExpValidator {
   Q_OBJECT
@@ -97,9 +99,15 @@ public:
 namespace utils {
 QPixmap icon(const QString &id);
 void setTheme(int theme);
-inline QString formatSeconds(int seconds) {
-  return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
+QString formatSeconds(double sec, bool include_milliseconds = false, bool absolute_time = false);
+inline void drawStaticText(QPainter *p, const QRect &r, const QStaticText &text) {
+  auto size = (r.size() - text.size()) / 2;
+  p->drawStaticText(r.left() + size.width(), r.top() + size.height(), text);
 }
+inline QString toHex(const std::vector<uint8_t> &dat, char separator = '\0') {
+  return QByteArray::fromRawData((const char *)dat.data(), dat.size()).toHex(separator).toUpper();
+}
+
 }
 
 class ToolButton : public QToolButton {
@@ -150,6 +158,21 @@ public slots:
 private:
   inline static int sig_fd[2] = {};
   QSocketNotifier *sn;
+};
+
+class MonotonicBuffer {
+public:
+  MonotonicBuffer(size_t initial_size) : next_buffer_size(initial_size) {}
+  ~MonotonicBuffer();
+  void *allocate(size_t bytes, size_t alignment = 16ul);
+  void deallocate(void *p) {}
+
+private:
+  void *current_buf = nullptr;
+  size_t next_buffer_size = 0;
+  size_t available = 0;
+  std::deque<void *> buffers;
+  static constexpr float growth_factor = 1.5;
 };
 
 int num_decimals(double num);

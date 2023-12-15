@@ -1,7 +1,7 @@
 name: release
 on:
   schedule:
-    - cron: '0 * * * *'
+    - cron: '0 10 * * *'
   workflow_dispatch:
 
 jobs:
@@ -20,13 +20,14 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libyaml-dev
     - name: Wait for green check mark
+      if: ${{ github.event_name != 'workflow_dispatch' }}
       uses: lewagon/wait-on-check-action@e2558238c09778af25867eb5de5a3ce4bbae3dcd
       with:
         ref: master
         wait-interval: 30
         running-workflow-name: 'build master-ci'
         check-regexp: ^((?!.*(build prebuilt).*).)*$
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
         fetch-depth: 0

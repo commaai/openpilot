@@ -1,5 +1,5 @@
 from cereal import car
-from selfdrive.car.chrysler.values import RAM_CARS
+from openpilot.selfdrive.car.chrysler.values import RAM_CARS
 
 GearShifter = car.CarState.GearShifter
 VisualAlert = car.CarControl.HUDControl.VisualAlert
