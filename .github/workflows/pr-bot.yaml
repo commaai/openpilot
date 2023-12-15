@@ -18,11 +18,11 @@ jobs:
         PR_MESSAGE=$(jq -r .pull_request.body "$GITHUB_EVENT_PATH")
 
         # Read templates from files
-        FINGERPRINT_TEMPLATE=$(cat .github/templates/fingerprint_template.md)
-        CAR_BUG_FIX_TEMPLATE=$(cat .github/templates/car_bug_fix_template.md)
-        BUG_FIX_TEMPLATE=$(cat .github/templates/bug_fix_template.md)
-        CAR_PORT_TEMPLATE=$(cat .github/templates/car_port_template.md)
-        REFACTOR_TEMPLATE=$(cat .github/templates/refactor_template.md)
+        FINGERPRINT_TEMPLATE=$(cat .github/PULL_REQUEST_TEMPLATE/fingerprint_template.md)
+        CAR_BUG_FIX_TEMPLATE=$(cat .github/PULL_REQUEST_TEMPLATE/car_bug_fix_template.md)
+        BUG_FIX_TEMPLATE=$(cat .github/PULL_REQUEST_TEMPLATE/bug_fix_template.md)
+        CAR_PORT_TEMPLATE=$(cat .github/PULL_REQUEST_TEMPLATE/car_port_template.md)
+        REFACTOR_TEMPLATE=$(cat .github/PULL_REQUEST_TEMPLATE/refactor_template.md)
 
         # Check if PR message matches any template
         if [[ ! "$PR_MESSAGE" =~ "$FINGERPRINT_TEMPLATE" ]] && \
