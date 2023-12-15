@@ -2,7 +2,7 @@ name: Pull Request Format Check
 
 on:
   pull_request:
-    types: [opened, edited, reopened]
+    types: [opened, synchronize, reopened]
 
 jobs:
   check-pr-format:
@@ -11,6 +11,18 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v2
+
+    - name: Add label
+      uses: actions/github-script@v5
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          github.rest.issues.addLabels({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            labels: ['bot-review']
+          })
 
     - name: Check PR Format
       run: |
