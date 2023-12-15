@@ -319,8 +319,6 @@ class TestCarModelBase(unittest.TestCase):
   @given(data=st.data())
   @seed(1)  # for reproduction
   def test_panda_safety_carstate_fuzzy(self, data):
-    # if not self.CP.enableGasInterceptor:  # TODO known failure for now
-    #   raise unittest.SkipTest
     """
       For each example, pick a random CAN message on the bus and fuzz its data,
       checking for panda state mismatches.
@@ -347,11 +345,7 @@ class TestCarModelBase(unittest.TestCase):
     prev_panda_cruise_engaged = self.safety.get_cruise_engaged_prev()
     prev_panda_acc_main_on = self.safety.get_acc_main_on()
 
-    # since all toyotas can detect fake interceptor, but we want to test PCM gas too
     for dat in msgs:
-      # not needed with param, TODO: remove
-      # set interceptor detected so we don't accidentally trigger gas_pressed with other messages
-      # self.safety.set_gas_interceptor_detected(self.CP.enableGasInterceptor)
 
       to_send = libpanda_py.make_CANPacket(address, bus, dat)
       self.safety.safety_rx_hook(to_send)
@@ -383,7 +377,6 @@ class TestCarModelBase(unittest.TestCase):
         print()
         print('ret.gas', CS.gas, 'safety gas', self.safety.get_gas_interceptor_prev())
         print('both', CS.gasPressed, self.safety.get_gas_pressed_prev(), 'int')
-        print('get_gas_interceptor_detected!')
         print('can.can', can.can)
         self.assertEqual(CS.gasPressed, self.safety.get_gas_pressed_prev())
 
