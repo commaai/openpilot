@@ -157,13 +157,13 @@ class TestCarModelBase(unittest.TestCase):
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
 
-    cls.car_state_dict = {'panda': {'gas_pressed': False}, 'CS': {'gasPressed': False}}
-    cls.init_gas_pressed = False
+    # cls.car_state_dict = {'panda': {'gas_pressed': False}, 'CS': {'gasPressed': False}}
+    # cls.init_gas_pressed = False
 
   @classmethod
   def tearDownClass(cls):
     del cls.can_msgs
-    gc.collect()
+    # gc.collect()
 
   def setUp(self):
     self.CI = self.CarInterface(self.CP.copy(), self.CarController, self.CarState)
@@ -328,15 +328,28 @@ class TestCarModelBase(unittest.TestCase):
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
 
-    valid_addrs = [(addr, bus) for bus, addrs in self.fingerprint.items() for addr in addrs]
-    address, bus = data.draw(st.sampled_from(valid_addrs))
+    valid_addrs = [(addr, bus, size) for bus, addrs in self.fingerprint.items() for addr, size in addrs.items()]
+
+    # addrs = [data.draw(st.sampled_from(valid_addrs)) for _ in range(10)]
+    # addrs = data.draw(st.sets(st.sampled_from(valid_addrs), min_size=10, max_size=10))
+    addrs = st.lists(st.sampled_from(valid_addrs), min_size=10, max_size=10, unique=True)
+    # print(addrs)
+    # return
+
+
+    # address, bus = data.draw(st.sampled_from(valid_addrs))
     # address = 0x201
     # bus = 0
     # print('addr, bus:', address, bus)
-    size = self.fingerprint[bus][address]
+    # size = self.fingerprint[bus][address]
 
-    msg_strategy = st.binary(min_size=size, max_size=size)
-    msgs = data.draw(st.lists(msg_strategy, min_size=20))
+    # msg_strategy = st.binary(min_size=size, max_size=size)
+    msgs = [(addr, bus, data.draw(st.binary(min_size=size, max_size=size))) for addr, bus, size in data.draw(addrs) for _ in range(20)]
+    random.shuffle(msgs)
+    print(msgs)
+    return
+    # msgs = data.draw(st.lists(msg_strategy, min_size=20))
+    # print(msgs)
 
     prev_panda_gas = self.safety.get_gas_pressed_prev()
     prev_panda_brake = self.safety.get_brake_pressed_prev()
@@ -345,7 +358,7 @@ class TestCarModelBase(unittest.TestCase):
     prev_panda_cruise_engaged = self.safety.get_cruise_engaged_prev()
     prev_panda_acc_main_on = self.safety.get_acc_main_on()
 
-    for dat in msgs:
+    for address, bus, dat in msgs:
 
       to_send = libpanda_py.make_CANPacket(address, bus, dat)
       self.safety.safety_rx_hook(to_send)
