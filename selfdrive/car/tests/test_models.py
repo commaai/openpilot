@@ -24,6 +24,8 @@ from openpilot.tools.lib.route import Route, SegmentName, RouteName
 
 from panda.tests.libpanda import libpanda_py
 
+VEHICLE_SPEED_FACTOR = 100
+
 EventName = car.CarEvent.EventName
 PandaType = log.PandaState.PandaType
 SafetyModel = car.CarParams.SafetyModel
@@ -344,6 +346,11 @@ class TestCarModelBase(unittest.TestCase):
           brake_pressed = False
       checks['brakePressed'] += brake_pressed != self.safety.get_brake_pressed_prev()
       checks['regenBraking'] += CS.regenBraking != self.safety.get_regen_braking_prev()
+
+      # Verify that panda has the correct velocity for cars that use it (angle based cars)
+      if self.CP.steerControlType in [car.CarParams.SteerControlType.angle]:
+        panda_velocity = (self.safety.get_vehicle_speed_min() + self.safety.get_vehicle_speed_max()) / 2 / VEHICLE_SPEED_FACTOR
+        checks['vEgo'] += abs(CS.vEgo - panda_velocity) > 3
 
       if self.CP.pcmCruise:
         # On most pcmCruise cars, openpilot's state is always tied to the PCM's cruise state.
