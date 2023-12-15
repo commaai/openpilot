@@ -1,6 +1,6 @@
 name: "Pull Request Labeler"
 on:
-  push:
+  pull_request_target:
 
 jobs:
   labeler:
@@ -14,10 +14,6 @@ jobs:
         submodules: false
     - uses: actions/labeler@v5.0.0-alpha.1
       with:
-        pr-number: 2
         dot: true
+        sync-labels: true
         configuration-path: .github/labeler.yaml
-    - id: print-labels
-      if: always()
-      run: |
-        echo "added labels: ${{ steps.labeler.outputs.added-labels }}"
