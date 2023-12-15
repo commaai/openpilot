@@ -111,15 +111,15 @@ node {
 
   try {
     if (env.BRANCH_NAME == 'devel-staging') {
-      deviceStage("build release3-staging", "tici-needs-can", [], [
-        ["build release3-staging & dashcam3-staging", "RELEASE_BRANCH=release3-staging DASHCAM_BRANCH=dashcam3-staging $SOURCE_DIR/release/build_release.sh"],
-      ])
+      deviceStage("build release3-staging", "tici-needs-can", [], {
+        sh label: "build release3-staging & dashcam3-staging", script: "RELEASE_BRANCH=release3-staging DASHCAM_BRANCH=dashcam3-staging $SOURCE_DIR/release/build_release.sh",
+      })
     }
 
     if (env.BRANCH_NAME == 'master-ci') {
-      deviceStage("build nightly", "tici-needs-can", [], [
-        ["build nightly", "RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_release.sh"],
-      ])
+      deviceStage("build nightly", "tici-needs-can", [], {
+        sh label: "build nightly", script: "RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_release.sh",
+      })
     }
 
     if (!env.BRANCH_NAME.matches(excludeRegex)) {
