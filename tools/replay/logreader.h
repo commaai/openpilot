@@ -12,6 +12,12 @@
 #include "cereal/gen/cpp/log.capnp.h"
 #include "system/camerad/cameras/camera_common.h"
 
+enum CameraType {
+  RoadCam = 0,
+  DriverCam,
+  WideRoadCam
+};
+
 const CameraType ALL_CAMERAS[] = {RoadCam, DriverCam, WideRoadCam};
 const int MAX_CAMERAS = std::size(ALL_CAMERAS);
 const int DEFAULT_EVENT_MEMORY_POOL_BLOCK_SIZE = 65000;
