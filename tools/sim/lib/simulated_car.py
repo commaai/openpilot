@@ -107,6 +107,7 @@ class SimulatedCar:
       'controlsAllowed': True,
       'safetyModel': 'hondaNidec',
       'alternativeExperience': self.sm["carParams"].alternativeExperience
+      'safetyParam': 16
     }
     self.pm.send('pandaStates', dat)
 
