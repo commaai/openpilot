@@ -83,7 +83,7 @@ def deviceStage(String stageName, String deviceType, List env, def steps) {
             device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
           }
           steps.each { item ->
-            if (branch != "master" && item.size() == 3 && !hasDirectoryChanged(item[2])) {
+            if (branch != "master" && steps.size() == 3 && !hasDirectoryChanged(item[2])) {
               println "Skipped '${item[0]}', no relevant changes were detected."
               return;
             }
@@ -191,7 +191,7 @@ node {
     parallel (
       // tici tests
       'onroad tests': {
-        deviceStage("onroad", "tici-needs-can", [], [
+        deviceStage("onroad", "tici-needs-can", ["UNSAFE=1"], [
           // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
           //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
