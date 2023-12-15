@@ -1200,6 +1200,7 @@ FW_VERSIONS = {
     (Ecu.abs, 0x7b0, None): [
       b'\x01F15265337200\x00\x00\x00\x00',
       b'\x01F15265342000\x00\x00\x00\x00',
+      b'addedFW!',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B53450\x00\x00\x00\x00\x00\x00',

@@ -1,6 +1,6 @@
 name: "Pull Request Labeler"
 on:
-  pull_request_target:
+  push:
 
 jobs:
   labeler:
@@ -16,3 +16,7 @@ jobs:
       with:
         dot: true
         configuration-path: .github/labeler.yaml
+    - id: print-labels
+      if: always()
+      run: |
+        echo "added labels: ${{ steps.labeler.outputs.added-labels }}"
