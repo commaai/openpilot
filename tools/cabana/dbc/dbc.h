@@ -1,12 +1,10 @@
 #pragma once
 
 #include <limits>
-#include <string>
 #include <utility>
 #include <vector>
 
 #include <QColor>
-#include <QList>
 #include <QMetaType>
 #include <QString>
 
@@ -47,7 +45,7 @@ struct std::hash<MessageId> {
   std::size_t operator()(const MessageId &k) const noexcept { return qHash(k); }
 };
 
-typedef QList<std::pair<double, QString>> ValueDescription;
+typedef std::vector<std::pair<double, QString>> ValueDescription;
 
 namespace cabana {
 
