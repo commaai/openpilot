@@ -4,6 +4,7 @@ from cereal import car
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import mean
 from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.params import Params, put_nonblocking
 from openpilot.common.realtime import DT_CTRL
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
@@ -43,6 +44,9 @@ class CarState(CarStateBase):
     self.low_speed_lockout = False
     self.acc_type = 1
     self.lkas_hud = {}
+
+    self.personality_profile = 0
+    self.previous_personality_profile = int(Params().get('LongitudinalPersonality'))
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -160,6 +164,22 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint != CAR.PRIUS_V:
       self.lkas_hud = copy.copy(cp_cam.vl["LKAS_HUD"])
 
+    if ret.cruiseState.available:
+      self.personality_profile = cp.vl["PCM_CRUISE_SM"]["DISTANCE_LINES"] - 1
+
+      if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
+        self.distance_button = cp_cam.vl["ACC_CONTROL"]["DISTANCE"]
+
+      elif self.CP.carFingerprint in RADAR_ACC_CAR:
+        self.distance_button = cp.vl["ACC_CONTROL"]["DISTANCE"]
+
+      elif self.CP.flags & ToyotaFlags.SMART_DSU:
+        self.distance_button = cp.vl["SDSU"]["FD_BUTTON"]
+
+      if self.personality_profile != self.previous_personality_profile:
+        put_nonblocking("LongitudinalPersonality", str(self.personality_profile))
+        self.previous_personality_profile = self.personality_profile
+
     return ret
 
   @staticmethod
@@ -206,6 +226,9 @@ class CarState(CarStateBase):
       messages += [
         ("PRE_COLLISION", 33),
       ]
+
+    if CP.flags & ToyotaFlags.SMART_DSU:
+      messages.append(("SDSU", 33))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
 
