@@ -328,12 +328,12 @@ class TestCarModelBase(unittest.TestCase):
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
 
-    valid_addrs = [(addr, bus) for bus, addrs in self.fingerprint.items() for addr in addrs]
-    address, bus = data.draw(st.sampled_from(valid_addrs))
+    valid_addrs = [(addr, bus, size) for bus, addrs in self.fingerprint.items() for addr, size in addrs.items()]
+    address, bus, size = data.draw(st.sampled_from(valid_addrs))
     # address = 0x201
     # bus = 0
     # print('addr, bus:', address, bus)
-    size = self.fingerprint[bus][address]
+    # size = self.fingerprint[bus][address]
 
     msg_strategy = st.binary(min_size=size, max_size=size)
     msgs = data.draw(st.lists(msg_strategy, min_size=20))
