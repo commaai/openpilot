@@ -9,65 +9,20 @@ def retryWithDelay(int maxRetries, int delay, Closure body) {
   throw Exception("Failed after ${maxRetries} retries")
 }
 
-def device(String ip, String step_label, String cmd) {
+def device(String ip, Closure body) {
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
-    def ssh_cmd = """
-ssh -tt -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' /usr/bin/bash <<'END'
-
-set -e
-
-export CI=1
-export PYTHONWARNINGS=error
-export LOGPRINT=debug
-export TEST_DIR=${env.TEST_DIR}
-export SOURCE_DIR=${env.SOURCE_DIR}
-export GIT_BRANCH=${env.GIT_BRANCH}
-export GIT_COMMIT=${env.GIT_COMMIT}
-export AZURE_TOKEN='${env.AZURE_TOKEN}'
-export MAPBOX_TOKEN='${env.MAPBOX_TOKEN}'
-# only use 1 thread for tici tests since most require HIL
-export PYTEST_ADDOPTS="-n 0"
+    sh label: ssh_setup, script:
 
 
-export GIT_SSH_COMMAND="ssh -i /data/gitkey"
+    body()
+  }
 
-source ~/.bash_profile
-if [ -f /TICI ]; then
-  source /etc/profile
-
-  rm -rf ~/.commacache
-
-  if ! systemctl is-active --quiet systemd-resolved; then
-    echo "restarting resolved"
-    sudo systemctl start systemd-resolved
-    sleep 3
-  fi
-
-  # restart aux USB
-  if [ -e /sys/bus/usb/drivers/hub/3-0:1.0 ]; then
-    echo "restarting aux usb"
-    echo "3-0:1.0" | sudo tee /sys/bus/usb/drivers/hub/unbind
-    sleep 0.5
-    echo "3-0:1.0" | sudo tee /sys/bus/usb/drivers/hub/bind
-  fi
-fi
-if [ -f /data/openpilot/launch_env.sh ]; then
-  source /data/openpilot/launch_env.sh
-fi
-
-ln -snf ${env.TEST_DIR} /data/pythonpath
-
-cd ${env.TEST_DIR} || true
-${cmd}
-exit 0
-
-END"""
-
-    sh script: ssh_cmd, label: step_label
+  def alpine_ssh = retryWithDelay (3, 15) {
+    return docker.image('ghcr.io/commaai/alpine-ssh')
   }
 }
 
-def deviceStage(String stageName, String deviceType, List env, def steps) {
+def deviceStage(String stageName, String deviceType, List env, Closure body) {
   stage(stageName) {
     if (currentBuild.result != null) {
         return
@@ -75,14 +30,14 @@ def deviceStage(String stageName, String deviceType, List env, def steps) {
 
     def extra = env.collect { "export ${it}" }.join('\n');
 
-    docker.image('ghcr.io/commaai/alpine-ssh').inside('--user=root') {
-      lock(resource: "", label: deviceType, inversePrecedence: true, variable: 'device_ip', quantity: 1) {
-        timeout(time: 20, unit: 'MINUTES') {
-          retry (3) {
-            device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
-          }
-          steps.each { item ->
-            device(device_ip, item[0], item[1])
+    lock(resource: "", label: deviceType, inversePrecedence: true, variable: 'device_ip', quantity: 1) {
+      timeout(time: 20, unit: 'MINUTES') {
+        alpine_ssh.inside('--user=root --entrypoint=') {
+          device(device_ip) {
+            retry (3) {
+              sh label: "git checkout", script: extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh")
+            }
+            body()
           }
         }
       }
@@ -172,66 +127,66 @@ node {
       // tici tests
       'onroad tests': {
         deviceStage("onroad", "tici-needs-can", ["SKIP_COPY=1"], [
-          ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
-          ["build openpilot", "cd selfdrive/manager && ./build.py"],
-          ["check dirty", "release/check-dirty.sh"],
-          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
-          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
+          sh label: "build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh",
+          sh label: "build openpilot", "cd selfdrive/manager && ./build.py"],
+          sh label: "check dirty", "release/check-dirty.sh"],
+          sh label: "onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
+          sh label: "time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
         ])
       },
       'HW + Unit Tests': {
         deviceStage("tici", "tici-common", ["UNSAFE=1"], [
-          ["build", "cd selfdrive/manager && ./build.py"],
-          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
-          ["test power draw", "./system/hardware/tici/tests/test_power_draw.py"],
-          ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
-          ["test pigeond", "pytest system/sensord/tests/test_pigeond.py"],
-          ["test manager", "pytest selfdrive/manager/test/test_manager.py"],
+          sh label: "build", "cd selfdrive/manager && ./build.py"],
+          sh label: "test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
+          sh label: "test power draw", "./system/hardware/tici/tests/test_power_draw.py"],
+          sh label: "test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
+          sh label: "test pigeond", "pytest system/sensord/tests/test_pigeond.py"],
+          sh label: "test manager", "pytest selfdrive/manager/test/test_manager.py"],
         ])
       },
       'loopback': {
         deviceStage("tici", "tici-loopback", ["UNSAFE=1"], [
-          ["build openpilot", "cd selfdrive/manager && ./build.py"],
-          ["test boardd loopback", "pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
+          sh label: "build openpilot", "cd selfdrive/manager && ./build.py"],
+          sh label: "test boardd loopback", "pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
         ])
       },
       'camerad': {
         deviceStage("AR0231", "tici-ar0231", ["UNSAFE=1"], [
-          ["build", "cd selfdrive/manager && ./build.py"],
-          ["test camerad", "pytest system/camerad/test/test_camerad.py"],
-          ["test exposure", "pytest system/camerad/test/test_exposure.py"],
+          sh label: "build", "cd selfdrive/manager && ./build.py"],
+          sh label: "test camerad", "pytest system/camerad/test/test_camerad.py"],
+          sh label: "test exposure", "pytest system/camerad/test/test_exposure.py"],
         ])
         deviceStage("OX03C10", "tici-ox03c10", ["UNSAFE=1"], [
-          ["build", "cd selfdrive/manager && ./build.py"],
-          ["test camerad", "pytest system/camerad/test/test_camerad.py"],
-          ["test exposure", "pytest system/camerad/test/test_exposure.py"],
+          sh label: "build", "cd selfdrive/manager && ./build.py"],
+          sh label: "test camerad", "pytest system/camerad/test/test_camerad.py"],
+          sh label: "test exposure", "pytest system/camerad/test/test_exposure.py"],
         ])
       },
       'sensord': {
         deviceStage("LSM + MMC", "tici-lsmc", ["UNSAFE=1"], [
-          ["build", "cd selfdrive/manager && ./build.py"],
-          ["test sensord", "pytest system/sensord/tests/test_sensord.py"],
+          sh label: "build", "cd selfdrive/manager && ./build.py"],
+          sh label: "test sensord", "pytest system/sensord/tests/test_sensord.py"],
         ])
         deviceStage("BMX + LSM", "tici-bmx-lsm", ["UNSAFE=1"], [
-          ["build", "cd selfdrive/manager && ./build.py"],
-          ["test sensord", "pytest system/sensord/tests/test_sensord.py"],
+          sh label: "build", script: "cd selfdrive/manager && ./build.py"],
+          sh label: "test sensord", script: "pytest system/sensord/tests/test_sensord.py"],
         ])
       },
       'replay': {
         deviceStage("tici", "tici-replay", ["UNSAFE=1"], [
-          ["build", "cd selfdrive/manager && ./build.py"],
-          ["model replay", "selfdrive/test/process_replay/model_replay.py"],
+          sh label: "build", script: "cd selfdrive/manager && ./build.py"],
+          sh label: "model replay", script: "selfdrive/test/process_replay/model_replay.py"],
         ])
       },
       'tizi': {
-        deviceStage("tizi", "tizi", ["UNSAFE=1"], [
-          ["build openpilot", "cd selfdrive/manager && ./build.py"],
-          ["test boardd loopback", "SINGLE_PANDA=1 pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
-          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
-          ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
-          ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
-          ["test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py"],
-        ])
+        deviceStage("tizi", "tizi", ["UNSAFE=1"]) {
+          sh label: "build", script: "cd selfdrive/manager && ./build.py",
+          sh label: "test boardd loopback", script: "SINGLE_PANDA=1 pytest selfdrive/boardd/tests/test_boardd_loopback.py",
+          sh label: "test pandad", script: "pytest selfdrive/boardd/tests/test_pandad.py",
+          sh label: "test amp", script: "pytest system/hardware/tici/tests/test_amplifier.py",
+          sh label: "test hw", script: "pytest system/hardware/tici/tests/test_hardware.py",
+          sh label: "test qcomgpsd", script: "pytest system/qcomgpsd/tests/test_qcomgpsd.py",
+        }
       },
 
       // *** PC tests ***
