@@ -116,4 +116,4 @@ class MetaDriveBridge(SimulatorBridge):
       preload_models=False
     )
 
-    return MetaDriveWorld(config)
+    return MetaDriveWorld(config, self.dual_camera)
