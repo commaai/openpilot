@@ -1,0 +1,35 @@
+name: Pull Request Format Check
+
+on:
+  pull_request:
+    types: [opened, edited, reopened]
+
+jobs:
+  check-pr-format:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Check PR Format
+      run: |
+        # Script to check PR against templates
+        PR_MESSAGE=$(jq -r .pull_request.body "$GITHUB_EVENT_PATH")
+
+        # Read templates from files
+        FINGERPRINT_TEMPLATE=$(cat .github/templates/fingerprint_template.md)
+        CAR_BUG_FIX_TEMPLATE=$(cat .github/templates/car_bug_fix_template.md)
+        BUG_FIX_TEMPLATE=$(cat .github/templates/bug_fix_template.md)
+        CAR_PORT_TEMPLATE=$(cat .github/templates/car_port_template.md)
+        REFACTOR_TEMPLATE=$(cat .github/templates/refactor_template.md)
+
+        # Check if PR message matches any template
+        if [[ ! "$PR_MESSAGE" =~ "$FINGERPRINT_TEMPLATE" ]] && \
+           [[ ! "$PR_MESSAGE" =~ "$CAR_BUG_FIX_TEMPLATE" ]] && \
+           [[ ! "$PR_MESSAGE" =~ "$BUG_FIX_TEMPLATE" ]] && \
+           [[ ! "$PR_MESSAGE" =~ "$CAR_PORT_TEMPLATE" ]] && \
+           [[ ! "$PR_MESSAGE" =~ "$REFACTOR_TEMPLATE" ]]; then
+          echo "PR does not match any template"
+          exit 1
+        fi
