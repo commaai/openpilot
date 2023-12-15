@@ -349,7 +349,7 @@ class TestCarModelBase(unittest.TestCase):
       # Verify that panda has the correct velocity for cars that use it (angle based cars)
       if self.CP.steerControlType in [car.CarParams.SteerControlType.angle] and not self.CP.notCar:
         avg_panda_velocity = self.safety.get_vehicle_speed_last() / VEHICLE_SPEED_FACTOR
-        checks['vEgo'] += abs(avg_panda_velocity - CS.vEgoRaw) > 0.5
+        checks['vEgo'] += abs(avg_panda_velocity - CS.vEgoRaw) > 0.1
 
       if self.CP.pcmCruise:
         # On most pcmCruise cars, openpilot's state is always tied to the PCM's cruise state.
