@@ -14,6 +14,7 @@ jobs:
         submodules: false
     - uses: actions/labeler@v5.0.0-alpha.1
       with:
+        pr-number: 2
         dot: true
         configuration-path: .github/labeler.yaml
     - id: print-labels
