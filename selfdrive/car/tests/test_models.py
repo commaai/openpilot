@@ -416,8 +416,6 @@ class TestCarModelBase(unittest.TestCase):
 
       self.CS_prev = CS
 
-    del msgs
-
   def test_panda_safety_carstate(self):
     raise unittest.SkipTest
     """
