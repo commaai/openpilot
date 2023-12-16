@@ -15,9 +15,8 @@ def pytest_sessionstart(session):
 @pytest.hookimpl(hookwrapper=True, trylast=True)
 def pytest_runtest_call(item):
   # ensure we run as a hook after capturemanager's
-  capmanager = item.config.pluginmanager.getplugin("capturemanager")
-
   if item.get_closest_marker("nocapture") is not None:
+    capmanager = item.config.pluginmanager.getplugin("capturemanager")
     with capmanager.global_and_fixture_disabled():
       yield
   else:
