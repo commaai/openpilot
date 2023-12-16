@@ -6,10 +6,10 @@ import pytest
 import random
 import unittest
 from collections import defaultdict, Counter
-from typing import List, Optional, Tuple
-from parameterized import parameterized_class
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, Phase, given, settings, seed
+from typing import List, Optional, Tuple
+from parameterized import parameterized_class
 
 from cereal import messaging, log, car
 from openpilot.common.basedir import BASEDIR
