@@ -1,5 +1,6 @@
 #pragma once
 
+#include <deque>
 #include <map>
 #include <memory>
 #include <set>
@@ -21,7 +22,11 @@
 #endif
 
 #include "cereal/visionipc/visionipc_client.h"
+#include "system/camerad/cameras/camera_common.h"
 #include "selfdrive/ui/ui.h"
+
+const int FRAME_BUFFER_SIZE = 5;
+static_assert(FRAME_BUFFER_SIZE <= YUV_BUFFER_COUNT);
 
 class CameraWidget : public QOpenGLWidget, protected QOpenGLFunctions {
   Q_OBJECT
@@ -65,7 +70,6 @@ protected:
 
   // vipc
   std::string stream_name;
-  bool conflate = false;
   int stream_width = 0;
   int stream_height = 0;
   int stream_stride = 0;
@@ -75,7 +79,6 @@ protected:
   VisionBuf *frame = nullptr;
   uint64_t frame_id = 0;
   uint64_t prev_frame_id = 0;
-  uint64_t prev_request_frame_id = 0;
 
 
   // Calibration
@@ -84,6 +87,8 @@ protected:
   float zoom = 1.0;
   mat3 calibration = DEFAULT_CALIBRATION;
   mat3 intrinsic_matrix = FCAM_INTRINSIC_MATRIX;
+
+  std::deque<std::pair<uint32_t, VisionBuf*>> frames;
 };
 
 // update frames based on timer

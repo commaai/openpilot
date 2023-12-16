@@ -327,16 +327,14 @@ void CameraWidget::vipcConnected() {
 }
 
 bool CameraWidget::receiveFrame(uint64_t request_frame_id) {
-  bool need_reset = request_frame_id < prev_request_frame_id;  //  camerad reboot or seeking back in replay
-  if (!vipc_client || vipc_client->type != requested_stream_type || need_reset) {
+  if (!vipc_client || vipc_client->type != requested_stream_type) {
     qDebug().nospace() << "connecting to stream" << requested_stream_type
                        << (vipc_client ? QString(", was connected to %1").arg(vipc_client->type) : "");
-    vipc_client.reset(new VisionIpcClient(stream_name, requested_stream_type, conflate));
+    vipc_client.reset(new VisionIpcClient(stream_name, requested_stream_type, false));
   }
-  prev_request_frame_id = request_frame_id;
 
   if (!vipc_client->connected) {
-    frame = nullptr;
+    frames.clear();
     available_streams = VisionIpcClient::getAvailableStreams(stream_name, false);
     if (available_streams.empty() || !vipc_client->connect(false)) {
       return false;
@@ -345,24 +343,32 @@ bool CameraWidget::receiveFrame(uint64_t request_frame_id) {
     vipcConnected();
   }
 
-  if (request_frame_id > 0 && frame && frame_id >= request_frame_id) {
-    return true;
-  }
-
   VisionIpcBufExtra meta_main = {};
   while (auto buf = vipc_client->recv(&meta_main, 0)) {
-    frame = buf;
-    frame_id = meta_main.frame_id;
-    if (meta_main.frame_id >= request_frame_id) break;
+    if (frames.size() > FRAME_BUFFER_SIZE) {
+      frames.pop_front();
+    }
+    frames.emplace_back(meta_main.frame_id, buf);
+  }
+
+  frame = nullptr;
+  if (request_frame_id > 0) {
+    auto it = std::find_if(frames.begin(), frames.end(),
+                           [request_frame_id](auto &f) { return f.first == request_frame_id; });
+    if (it != frames.end()) {
+      std::tie(frame_id, frame) = *it;
+    }
+  } else if (!frames.empty()) {
+    std::tie(frame_id, frame) = frames.back();
   }
   return frame != nullptr;
 }
 
 void CameraWidget::disconnectVipc() {
+  frames.clear();
   frame = nullptr;
   frame_id = 0;
   prev_frame_id = 0;
-  prev_request_frame_id = 0;
   if (vipc_client) {
     vipc_client->connected = false;
   }
@@ -372,7 +378,6 @@ void CameraWidget::disconnectVipc() {
 
 CameraView::CameraView(const std::string &name, VisionStreamType stream_type, bool zoom, QWidget *parent)
     : CameraWidget(name, stream_type, zoom, parent) {
-  conflate = true;  // receive only the last vipc message.
   timer = new QTimer(this);
   timer->setInterval(1000.0 / UI_FREQ);
   timer->callOnTimeout(this, [this]() { if (receiveFrame()) update(); });
