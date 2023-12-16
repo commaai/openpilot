@@ -323,17 +323,17 @@ class TestCarModelBase(unittest.TestCase):
     msg_strategy = st.binary(min_size=size, max_size=size)
     msgs = data.draw(st.lists(msg_strategy, min_size=20))
 
-    # due to panda updating state selectively, only edges are expected to match
-    # TODO: warm up CarState with real CAN messages to check edge of both sources
-    #  (toyota's gasPressed is the inverse of a signal being set)
-    prev_panda_gas = self.safety.get_gas_pressed_prev()
-    prev_panda_brake = self.safety.get_brake_pressed_prev()
-    prev_panda_regen_braking = self.safety.get_regen_braking_prev()
-    prev_panda_vehicle_moving = self.safety.get_vehicle_moving()
-    prev_panda_cruise_engaged = self.safety.get_cruise_engaged_prev()
-    prev_panda_acc_main_on = self.safety.get_acc_main_on()
-
     for dat in msgs:
+      # due to panda updating state selectively, only edges are expected to match
+      # TODO: warm up CarState with real CAN messages to check edge of both sources
+      #  (toyota's gasPressed is the inverse of a signal being set)
+      prev_panda_gas = self.safety.get_gas_pressed_prev()
+      prev_panda_brake = self.safety.get_brake_pressed_prev()
+      prev_panda_regen_braking = self.safety.get_regen_braking_prev()
+      prev_panda_vehicle_moving = self.safety.get_vehicle_moving()
+      prev_panda_cruise_engaged = self.safety.get_cruise_engaged_prev()
+      prev_panda_acc_main_on = self.safety.get_acc_main_on()
+
       to_send = libpanda_py.make_CANPacket(address, bus, dat)
       self.safety.safety_rx_hook(to_send)
 
