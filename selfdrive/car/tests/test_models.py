@@ -343,16 +343,6 @@ class TestCarModelBase(unittest.TestCase):
       CC = car.CarControl.new_message()
       CS = self.CI.update(CC, (can.to_bytes(),))
 
-      # test multiple CAN packets as well as multiple messages per CAN packet
-      # for (_dat1, _dat2) in ((dat1, dat2), (dat3, dat4)):
-      #   can = messaging.new_message('can', 2)
-      #   can.can = [log.CanData(address=address, dat=_dat1, src=bus), log.CanData(address=address, dat=_dat2, src=bus)]
-      #   print('rxing', dict(address=address, _dat1=_dat1, _dat2=_dat2, src=bus))
-      #
-      #   CC = car.CarControl.new_message()
-      #   CS = self.CI.update(CC, (can.to_bytes(),))
-
-
       # print('ret.gas', CS.gas, 'safety gas', self.safety.get_gas_interceptor_prev())
       # print('both', CS.gasPressed, self.safety.get_gas_pressed_prev(), 'int')
       if self.safety.get_gas_pressed_prev() != prev_panda_gas:
