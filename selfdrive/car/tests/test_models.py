@@ -11,7 +11,6 @@ from typing import List, Optional, Tuple
 from parameterized import parameterized_class
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, Phase, assume, given, settings, seed
-import gc
 
 from cereal import messaging, log, car
 from openpilot.common.basedir import BASEDIR
@@ -171,7 +170,6 @@ class TestCarModelBase(unittest.TestCase):
   @classmethod
   def tearDownClass(cls):
     del cls.can_msgs
-    gc.collect()
 
   def setUp(self):
     self.CI = self.CarInterface(self.CP.copy(), self.CarController, self.CarState)
