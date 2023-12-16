@@ -52,7 +52,7 @@ def main() -> NoReturn:
       continue
 
 
-    # Set timezone with param
+    # set timezone with param
     timezone = params.get("Timezone", encoding='utf8')
     if timezone is not None:
       cloudlog.debug("Setting timezone based on param")
@@ -60,7 +60,7 @@ def main() -> NoReturn:
     else:
 
 
-      # Set timezone with IP lookup
+      # set timezone with IP lookup
       location = params.get("LastGPSPosition", encoding='utf8')
       if location is None:
         cloudlog.debug("Setting timezone based on IP lookup")
@@ -76,7 +76,7 @@ def main() -> NoReturn:
           continue
 
 
-      # Set timezone with GPS
+      # set timezone with GPS
       else:
         cloudlog.debug("Setting timezone based on GPS location")
         try:
@@ -91,29 +91,26 @@ def main() -> NoReturn:
         set_timezone(valid_timezones, timezone)
 
 
-    # Set time from modem
+    #sSet time from modem
     try:
       cloudlog.debug("Setting time based on modem")
-      output = subprocess.check_output("mmcli -m 0 --time", shell=True).decode()
+      output = subprocess.check_output("mmcli -m 0 --command AT+QLTS=1", shell=True).decode()
 
-      date_pattern = r"current: (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}-\d{2})"
-      timezone_pattern = r"Timezone \| current: (-?\d+)"
+      # formated utc date
+      utcdate = datetime.strptime(output[19:-8], "%Y/%m/%d,%H:%M:%S").strftime("%Y-%m-%d %H:%M:%S")
 
-      # Extract date/timezone
-      date = re.search(date_pattern, output).group(1) if re.search(date_pattern, output) else None
-      timezone = re.search(timezone_pattern, output).group(1) if re.search(timezone_pattern, output) else None
+      # difference between the local time and GMT is expressed in quarters of an hour plus daylight saving time
+      tz = output[39:-5]
 
-      # Remove timezone from date
-      date = date[:-3]
+      # 0 - includes no adjustment for daylight saving time
+      # 1 - includes +1 hour (equals 4 quarters in <tz>) adjustment for daylight saving time
+      # 2 - includes +2 hours (equals 8 quarters in <tz>) adjustment for daylight saving time
+      dst = output[42:-3]
 
-      # Convert to datetime
-      date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S")
+      # set time
+      os.system(f"TZ=UTC date -s '{utcdate}'")
 
-      # Fix offset
-      date = date - timedelta(days=682, hours=11)
-
-      # Set time
-      os.system(f"TZ=UTC date -s '{date.strftime('%Y-%m-%d %H:%M:%S')}'")
+      # todo - set timezone from tz, but how do pick from the list of cities when all we have is the time difference
 
     except Exception as e:
         cloudlog.error(f"Error getting time from modem, {e}")
