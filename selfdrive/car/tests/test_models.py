@@ -71,6 +71,7 @@ class TestCarModelBase(unittest.TestCase):
   ci: bool = True
 
   can_msgs: List[capnp.lib.capnp._DynamicStructReader]
+  fingerprint: dict[int, dict[int, int]]
   elm_frame: Optional[int]
   car_safety_mode_frame: Optional[int]
 
