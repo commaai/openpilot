@@ -181,7 +181,6 @@ class TestCarModelBase(unittest.TestCase):
     self.CS_prev = car.CarState.new_message()
 
   def test_car_params(self):
-    raise unittest.SkipTest
     if self.CP.dashcamOnly:
       self.skipTest("no need to check carParams for dashcamOnly")
 
@@ -198,7 +197,6 @@ class TestCarModelBase(unittest.TestCase):
         raise Exception("unknown tuning")
 
   def test_car_interface(self):
-    raise unittest.SkipTest
     # TODO: also check for checksum violations from can parser
     can_invalid_cnt = 0
     can_valid = False
@@ -218,7 +216,6 @@ class TestCarModelBase(unittest.TestCase):
     self.assertEqual(can_invalid_cnt, 0)
 
   def test_radar_interface(self):
-    raise unittest.SkipTest
     os.environ['NO_RADAR_SLEEP'] = "1"
     RadarInterface = importlib.import_module(f'selfdrive.car.{self.CP.carName}.radar_interface').RadarInterface
     RI = RadarInterface(self.CP)
@@ -234,7 +231,6 @@ class TestCarModelBase(unittest.TestCase):
     self.assertEqual(error_cnt, 0)
 
   def test_panda_safety_rx_checks(self):
-    raise unittest.SkipTest
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
 
@@ -275,7 +271,6 @@ class TestCarModelBase(unittest.TestCase):
     self.assertFalse(self.safety.safety_config_valid())
 
   def test_panda_safety_tx_cases(self, data=None):
-    raise unittest.SkipTest
     """Asserts we can tx common messages"""
     if self.CP.notCar:
       self.skipTest("Skipping test for notCar")
@@ -415,7 +410,6 @@ class TestCarModelBase(unittest.TestCase):
       self.CS_prev = CS
 
   def test_panda_safety_carstate(self):
-    raise unittest.SkipTest
     """
       Assert that panda safety matches openpilot's carState
     """
