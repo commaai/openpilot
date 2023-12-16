@@ -94,13 +94,6 @@ class TestCarModelBase(unittest.TestCase):
     if cls.test_route.segment is not None:
       test_segs = (cls.test_route.segment,)
 
-    # cls.can_msgs = [os.urandom(17476) for _ in range(6000)]  # about 100 mb
-    #
-    # cls.fingerprint = gen_empty_fingerprint()
-    #
-    # for _ in range(200):
-    #   cls.fingerprint[random.randint(0, 7)][random.randint(0, 64)] = random.randint(0, 8)
-
     for seg in test_segs:
       try:
         if len(INTERNAL_SEG_LIST):
