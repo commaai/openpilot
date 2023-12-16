@@ -307,7 +307,6 @@ class TestCarModelBase(unittest.TestCase):
             suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow, HealthCheck.large_base_example],
             )
   @given(data=st.data())
-  @seed(1)  # for reproduction
   def test_panda_safety_carstate_fuzzy(self, data):
     """
       For each example, pick a random CAN message on the bus and fuzz its data,
@@ -322,6 +321,8 @@ class TestCarModelBase(unittest.TestCase):
 
     msg_strategy = st.binary(min_size=size, max_size=size)
     msgs = data.draw(st.lists(msg_strategy, min_size=20))
+
+    CC = car.CarControl.new_message()
 
     for dat in msgs:
       # due to panda updating state selectively, only edges are expected to match
@@ -340,7 +341,6 @@ class TestCarModelBase(unittest.TestCase):
       can = messaging.new_message('can', 1)
       can.can = [log.CanData(address=address, dat=dat, src=bus)]
 
-      CC = car.CarControl.new_message()
       CS = self.CI.update(CC, (can.to_bytes(),))
 
       if self.safety.get_gas_pressed_prev() != prev_panda_gas:
