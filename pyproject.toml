@@ -17,6 +17,7 @@ testpaths = [
   "selfdrive/controls",
   "selfdrive/locationd",
   "selfdrive/monitoring",
+  "selfdrive/navd/tests",
   "selfdrive/thermald",
   "selfdrive/test/longitudinal_maneuvers",
   "system/hardware/tici",
