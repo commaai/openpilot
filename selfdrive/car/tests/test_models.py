@@ -380,13 +380,6 @@ class TestCarModelBase(unittest.TestCase):
         if self.safety.get_acc_main_on() != prev_panda_acc_main_on:
           self.assertEqual(CS.cruiseState.available, self.safety.get_acc_main_on())
 
-      prev_panda_gas = self.safety.get_gas_pressed_prev()
-      prev_panda_brake = self.safety.get_brake_pressed_prev()
-      prev_panda_regen_braking = self.safety.get_regen_braking_prev()
-      prev_panda_vehicle_moving = self.safety.get_vehicle_moving()
-      prev_panda_cruise_engaged = self.safety.get_cruise_engaged_prev()
-      prev_panda_acc_main_on = self.safety.get_acc_main_on()
-
   def test_panda_safety_carstate(self):
     """
       Assert that panda safety matches openpilot's carState
