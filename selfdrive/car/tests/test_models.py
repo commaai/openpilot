@@ -326,7 +326,7 @@ class TestCarModelBase(unittest.TestCase):
     for dat in msgs:
       # due to panda updating state selectively, only edges are expected to match
       # TODO: warm up CarState with real CAN messages to check edge of both sources
-      #  (toyota's gasPressed is the inverse of a signal being set)
+      #  (eg. toyota's gasPressed is the inverse of a signal being set)
       prev_panda_gas = self.safety.get_gas_pressed_prev()
       prev_panda_brake = self.safety.get_brake_pressed_prev()
       prev_panda_regen_braking = self.safety.get_regen_braking_prev()
@@ -343,13 +343,7 @@ class TestCarModelBase(unittest.TestCase):
       CC = car.CarControl.new_message()
       CS = self.CI.update(CC, (can.to_bytes(),))
 
-      # print('ret.gas', CS.gas, 'safety gas', self.safety.get_gas_interceptor_prev())
-      # print('both', CS.gasPressed, self.safety.get_gas_pressed_prev(), 'int')
       if self.safety.get_gas_pressed_prev() != prev_panda_gas:
-        print()
-        print('ret.gas', CS.gas, 'safety gas', self.safety.get_gas_interceptor_prev())
-        print('both', CS.gasPressed, self.safety.get_gas_pressed_prev(), 'int')
-        print('can.can', can.can)
         self.assertEqual(CS.gasPressed, self.safety.get_gas_pressed_prev())
 
       if self.safety.get_brake_pressed_prev() != prev_panda_brake:
@@ -358,17 +352,11 @@ class TestCarModelBase(unittest.TestCase):
           if self.CP.carFingerprint in (HONDA.PILOT, HONDA.RIDGELINE) and CS.brake > 0.05:
             brake_pressed = False
 
-        print('both', CS.brakePressed, 'safety brake', self.safety.get_brake_pressed_prev())
-        # print('brake change!')
-        # print('both', CS.brakePressed, self.safety.get_brake_pressed_prev())
         self.assertEqual(brake_pressed, self.safety.get_brake_pressed_prev())
 
       if self.safety.get_regen_braking_prev() != prev_panda_regen_braking:
-        print('regen change!')
-        print('both', CS.regenBraking, self.safety.get_regen_braking_prev())
         self.assertEqual(CS.regenBraking, self.safety.get_regen_braking_prev())
 
-      # print('both', not CS.standstill, 'safety moving', self.safety.get_vehicle_moving())
       if self.safety.get_vehicle_moving() != prev_panda_vehicle_moving:
         self.assertEqual(not CS.standstill, self.safety.get_vehicle_moving())
 
