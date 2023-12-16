@@ -8,12 +8,11 @@ from typing import Dict, Optional, Tuple
 from cereal import car, messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.realtime import Ratekeeper
+from openpilot.common.retry import retry
+from openpilot.common.swaglog import cloudlog
 
 from openpilot.system import micd
-from openpilot.system.hardware import TICI
-
-from openpilot.common.realtime import Ratekeeper
-from openpilot.common.swaglog import cloudlog
 
 SAMPLE_RATE = 48000
 SAMPLE_BUFFER = 4096 # (approx 100ms)
@@ -127,16 +126,21 @@ class Soundd:
     volume = ((weighted_db - AMBIENT_DB) / DB_SCALE) * (MAX_VOLUME - MIN_VOLUME) + MIN_VOLUME
     return math.pow(10, (np.clip(volume, MIN_VOLUME, MAX_VOLUME) - 1))
 
+  @retry(attempts=7, delay=3)
+  def get_stream(self, sd):
+    # reload sounddevice to reinitialize portaudio
+    sd._terminate()
+    sd._initialize()
+    return sd.OutputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback, blocksize=SAMPLE_BUFFER)
+
   def soundd_thread(self):
     # sounddevice must be imported after forking processes
     import sounddevice as sd
 
-    if TICI:
-      micd.wait_for_devices(sd) # wait for alsa to be initialized on device
+    sm = messaging.SubMaster(['controlsState', 'microphone'])
 
-    with sd.OutputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback, blocksize=SAMPLE_BUFFER) as stream:
+    with self.get_stream(sd) as stream:
       rk = Ratekeeper(20)
-      sm = messaging.SubMaster(['controlsState', 'microphone'])
 
       cloudlog.info(f"soundd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}, {stream.blocksize=}")
       while True:
