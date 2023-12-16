@@ -637,10 +637,10 @@ void AnnotatedCameraWidget::paintGL() {
 
     uint64_t request_id = sm.rcv_frame("uiPlan") >= s->scene.started_frame ? sm["uiPlan"].getUiPlan().getFrameId() : 0;
     if (!CameraWidget::receiveFrame(request_id)) {
-      qWarning() << "skipping frame, not ready";
+      qDebug() << "skipping frame, not ready";
       return;
     } else if (request_id > 0 && request_id != frame_id) {
-      qWarning() << "inconsistent frame, vipc frame:" << frame_id << "uiplan frame:" << request_id;
+      qDebug() << "inconsistent frame, vipc frame:" << frame_id << "uiplan frame:" << request_id;
     }
     CameraWidget::paintGL();
   }
