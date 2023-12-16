@@ -641,7 +641,7 @@ void AnnotatedCameraWidget::paintGL() {
       return;
     } else if (request_id > 0 && request_id != frame_id) {
       qWarning() << "inconsistent frame, vipc frame:" << frame_id << "uiplan frame:" << request_id;
-    } 
+    }
     CameraWidget::paintGL();
   }
 
