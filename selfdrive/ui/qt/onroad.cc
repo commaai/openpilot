@@ -10,7 +10,6 @@
 #include <QMouseEvent>
 
 #include "common/timing.h"
-#include "common/swaglog.h"
 #include "selfdrive/ui/qt/util.h"
 #ifdef ENABLE_MAPS
 #include "selfdrive/ui/qt/maps/map_helpers.h"
@@ -635,8 +634,7 @@ void AnnotatedCameraWidget::paintGL() {
       CameraWidget::updateCalibration(DEFAULT_CALIBRATION);
     }
 
-    uint64_t request_frame = sm.rcv_frame("uiPlan") >= s->scene.started_frame ? sm["uiPlan"].getUiPlan().getFrameId() : 0;
-    if (!CameraWidget::receiveFrame(request_frame)) {
+    if (!CameraWidget::receiveFrame(sm["uiPlan"].getUiPlan().getFrameId())) {
       qDebug() << "skipping frame, not ready";
       return;
     }

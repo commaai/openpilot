@@ -334,7 +334,8 @@ bool CameraWidget::receiveFrame(uint64_t request_frame_id) {
   }
 
   if (!vipc_client->connected) {
-    frames.clear();
+    frame = nullptr;
+    recent_frames.clear();
     available_streams = VisionIpcClient::getAvailableStreams(stream_name, false);
     if (available_streams.empty() || !vipc_client->connect(false)) {
       return false;
@@ -345,27 +346,27 @@ bool CameraWidget::receiveFrame(uint64_t request_frame_id) {
 
   VisionIpcBufExtra meta_main = {};
   while (auto buf = vipc_client->recv(&meta_main, 0)) {
-    if (frames.size() > FRAME_BUFFER_SIZE) {
-      frames.pop_front();
+    if (recent_frames.size() > FRAME_BUFFER_SIZE) {
+      recent_frames.pop_front();
     }
-    frames.emplace_back(meta_main.frame_id, buf);
+    recent_frames.emplace_back(meta_main.frame_id, buf);
   }
 
   frame = nullptr;
   if (request_frame_id > 0) {
-    auto it = std::find_if(frames.begin(), frames.end(),
+    auto it = std::find_if(recent_frames.begin(), recent_frames.end(),
                            [request_frame_id](auto &f) { return f.first == request_frame_id; });
-    if (it != frames.end()) {
+    if (it != recent_frames.end()) {
       std::tie(frame_id, frame) = *it;
     }
-  } else if (!frames.empty()) {
-    std::tie(frame_id, frame) = frames.back();
+  } else if (!recent_frames.empty()) {
+    std::tie(frame_id, frame) = recent_frames.back();
   }
   return frame != nullptr;
 }
 
 void CameraWidget::disconnectVipc() {
-  frames.clear();
+  recent_frames.clear();
   frame = nullptr;
   frame_id = 0;
   prev_frame_id = 0;

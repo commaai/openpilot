@@ -76,10 +76,10 @@ protected:
   VisionStreamType requested_stream_type;
   std::set<VisionStreamType> available_streams;
   std::unique_ptr<VisionIpcClient> vipc_client;
+  std::deque<std::pair<uint32_t, VisionBuf*>> recent_frames;
   VisionBuf *frame = nullptr;
   uint64_t frame_id = 0;
   uint64_t prev_frame_id = 0;
-
 
   // Calibration
   float x_offset = 0;
@@ -87,8 +87,6 @@ protected:
   float zoom = 1.0;
   mat3 calibration = DEFAULT_CALIBRATION;
   mat3 intrinsic_matrix = FCAM_INTRINSIC_MATRIX;
-
-  std::deque<std::pair<uint32_t, VisionBuf*>> frames;
 };
 
 // update frames based on timer
