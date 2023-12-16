@@ -191,7 +191,7 @@ node {
     parallel (
       // tici tests
       'onroad tests': {
-        deviceStage("onroad", "tici-needs-can", ["UNSAFE=1"], [
+        deviceStage("onroad", "tici-needs-can", [], [
           // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
           //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
