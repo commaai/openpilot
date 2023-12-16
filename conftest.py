@@ -13,11 +13,9 @@ def pytest_sessionstart(session):
 
 
 @pytest.fixture(scope="function", autouse=True)
-def nocapture_fixture(request, capsys):
-  if request.node.get_closest_marker("nocapture") is not None:
-    with capsys.disabled():
-      yield
-  else:
+def nocapture_fixture(caplog):
+  # print("nocapture_fixture")
+  with caplog.at_level(logging.CRITICAL + 1):
     yield
 
 
