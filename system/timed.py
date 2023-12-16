@@ -91,7 +91,7 @@ def main() -> NoReturn:
         set_timezone(valid_timezones, timezone)
 
 
-    #sSet time from modem
+    # set time from modem
     try:
       cloudlog.debug("Setting time based on modem")
       output = subprocess.check_output("mmcli -m 0 --command AT+QLTS=1", shell=True).decode()
@@ -109,8 +109,6 @@ def main() -> NoReturn:
 
       # set time
       os.system(f"TZ=UTC date -s '{utcdate}'")
-
-      # todo - set timezone from tz, but how do pick from the list of cities when all we have is the time difference
 
     except Exception as e:
         cloudlog.error(f"Error getting time from modem, {e}")
