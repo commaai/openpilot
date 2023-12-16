@@ -12,10 +12,15 @@ def pytest_sessionstart(session):
     session.config.option.randomly_reorganize = False
 
 
-@pytest.fixture(scope="function", autouse=True)
-def nocapture_fixture(caplog):
-  # print("nocapture_fixture")
-  with caplog.at_level(logging.CRITICAL + 1):
+@pytest.hookimpl(hookwrapper=True, trylast=True)
+def pytest_runtest_call(item):
+  # ensure we run as a hook after capturemanager's
+  capmanager = item.config.pluginmanager.getplugin("capturemanager")
+
+  if item.get_closest_marker("nocapture") is not None:
+    with capmanager.global_and_fixture_disabled():
+      yield
+  else:
     yield
 
 
