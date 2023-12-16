@@ -2,7 +2,6 @@
 import capnp
 import os
 import importlib
-import time
 import pytest
 import random
 import unittest
@@ -10,7 +9,7 @@ from collections import defaultdict, Counter
 from typing import List, Optional, Tuple
 from parameterized import parameterized_class
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, Phase, assume, given, settings, seed
+from hypothesis import HealthCheck, Phase, given, settings, seed
 
 from cereal import messaging, log, car
 from openpilot.common.basedir import BASEDIR
@@ -158,8 +157,6 @@ class TestCarModelBase(unittest.TestCase):
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
 
-    cls.car_state_dict = {'panda': {'gas_pressed': False}, 'CS': {'gasPressed': False}}
-
   @classmethod
   def tearDownClass(cls):
     del cls.can_msgs
@@ -177,8 +174,6 @@ class TestCarModelBase(unittest.TestCase):
     set_status = self.safety.set_safety_hooks(cfg.safetyModel.raw, cfg.safetyParam)
     self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")
     self.safety.init_tests()
-
-    self.CS_prev = car.CarState.new_message()
 
   def test_car_params(self):
     if self.CP.dashcamOnly:
@@ -319,20 +314,18 @@ class TestCarModelBase(unittest.TestCase):
       checking for panda state mismatches.
     """
 
-    # TODO: how much of test_panda_safety_carstate can we re-use?
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
 
     valid_addrs = [(addr, bus, size) for bus, addrs in self.fingerprint.items() for addr, size in addrs.items()]
     address, bus, size = data.draw(st.sampled_from(valid_addrs))
-    # address = 0x201
-    # bus = 0
-    # print('addr, bus:', address, bus)
-    # size = self.fingerprint[bus][address]
 
     msg_strategy = st.binary(min_size=size, max_size=size)
     msgs = data.draw(st.lists(msg_strategy, min_size=20))
 
+    # due to panda updating state selectively, only edges are expected to match
+    # TODO: warm up CarState with real CAN messages to check edge of both sources
+    #  (toyota's gasPressed is the inverse of a signal being set)
     prev_panda_gas = self.safety.get_gas_pressed_prev()
     prev_panda_brake = self.safety.get_brake_pressed_prev()
     prev_panda_regen_braking = self.safety.get_regen_braking_prev()
@@ -341,13 +334,11 @@ class TestCarModelBase(unittest.TestCase):
     prev_panda_acc_main_on = self.safety.get_acc_main_on()
 
     for dat in msgs:
-
       to_send = libpanda_py.make_CANPacket(address, bus, dat)
       self.safety.safety_rx_hook(to_send)
 
       can = messaging.new_message('can', 1)
       can.can = [log.CanData(address=address, dat=dat, src=bus)]
-      # print('rxing', dict(address=address, dat=dat, src=bus))
 
       CC = car.CarControl.new_message()
       CS = self.CI.update(CC, (can.to_bytes(),))
@@ -361,18 +352,17 @@ class TestCarModelBase(unittest.TestCase):
       #   CC = car.CarControl.new_message()
       #   CS = self.CI.update(CC, (can.to_bytes(),))
 
-      # due to panda updating state selectively, only edges are expected to match
 
       # print('ret.gas', CS.gas, 'safety gas', self.safety.get_gas_interceptor_prev())
       # print('both', CS.gasPressed, self.safety.get_gas_pressed_prev(), 'int')
-      if self.safety.get_gas_pressed_prev() != prev_panda_gas:# or CS.gasPressed != self.CS_prev.gasPressed:
+      if self.safety.get_gas_pressed_prev() != prev_panda_gas:
         print()
         print('ret.gas', CS.gas, 'safety gas', self.safety.get_gas_interceptor_prev())
         print('both', CS.gasPressed, self.safety.get_gas_pressed_prev(), 'int')
         print('can.can', can.can)
         self.assertEqual(CS.gasPressed, self.safety.get_gas_pressed_prev())
 
-      if self.safety.get_brake_pressed_prev() != prev_panda_brake:# or CS.brakePressed != self.CS_prev.brakePressed:
+      if self.safety.get_brake_pressed_prev() != prev_panda_brake:
         brake_pressed = CS.brakePressed
         if CS.brakePressed and not self.safety.get_brake_pressed_prev():
           if self.CP.carFingerprint in (HONDA.PILOT, HONDA.RIDGELINE) and CS.brake > 0.05:
@@ -383,21 +373,21 @@ class TestCarModelBase(unittest.TestCase):
         # print('both', CS.brakePressed, self.safety.get_brake_pressed_prev())
         self.assertEqual(brake_pressed, self.safety.get_brake_pressed_prev())
 
-      if self.safety.get_regen_braking_prev() != prev_panda_regen_braking:# or CS.regenBraking != self.CS_prev.regenBraking:
+      if self.safety.get_regen_braking_prev() != prev_panda_regen_braking:
         print('regen change!')
         print('both', CS.regenBraking, self.safety.get_regen_braking_prev())
         self.assertEqual(CS.regenBraking, self.safety.get_regen_braking_prev())
 
       # print('both', not CS.standstill, 'safety moving', self.safety.get_vehicle_moving())
-      if self.safety.get_vehicle_moving() != prev_panda_vehicle_moving:# or CS.standstill != self.CS_prev.standstill:
+      if self.safety.get_vehicle_moving() != prev_panda_vehicle_moving:
         self.assertEqual(not CS.standstill, self.safety.get_vehicle_moving())
 
       if not (self.CP.carName == "honda" and self.CP.carFingerprint not in HONDA_BOSCH):
-        if self.safety.get_cruise_engaged_prev() != prev_panda_cruise_engaged:# or CS.cruiseState.enabled != self.CS_prev.cruiseState.enabled:
+        if self.safety.get_cruise_engaged_prev() != prev_panda_cruise_engaged:
           self.assertEqual(CS.cruiseState.enabled, self.safety.get_cruise_engaged_prev())
 
       if self.CP.carName == "honda":
-        if self.safety.get_acc_main_on() != prev_panda_acc_main_on:# or CS.cruiseState.available != self.CS_prev.cruiseState.available:
+        if self.safety.get_acc_main_on() != prev_panda_acc_main_on:
           self.assertEqual(CS.cruiseState.available, self.safety.get_acc_main_on())
 
       prev_panda_gas = self.safety.get_gas_pressed_prev()
@@ -406,8 +396,6 @@ class TestCarModelBase(unittest.TestCase):
       prev_panda_vehicle_moving = self.safety.get_vehicle_moving()
       prev_panda_cruise_engaged = self.safety.get_cruise_engaged_prev()
       prev_panda_acc_main_on = self.safety.get_acc_main_on()
-
-      self.CS_prev = CS
 
   def test_panda_safety_carstate(self):
     """
