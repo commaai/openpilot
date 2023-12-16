@@ -311,6 +311,7 @@ class TestCarModelBase(unittest.TestCase):
     CC = car.CarControl.new_message(cruiseControl={'resume': True})
     test_car_controller(CC)
 
+  @pytest.mark.nocapture
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate,),
             suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow, HealthCheck.large_base_example],
