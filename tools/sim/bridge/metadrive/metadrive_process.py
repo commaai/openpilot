@@ -39,10 +39,13 @@ def apply_metadrive_patches():
 
   MetaDriveEnv._is_arrive_destination = arrive_destination_patch
 
-def metadrive_process(dual_camera: bool, config: dict, camera_array, controls_recv: Connection, state_send: Connection, exit_event):
+def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera_array, controls_recv: Connection, state_send: Connection, exit_event):
   apply_metadrive_patches()
 
   road_image = np.frombuffer(camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
+  if dual_camera:
+    assert wide_camera_array is not None
+    wide_road_image = np.frombuffer(wide_camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
 
   env = MetaDriveEnv(config)
 
@@ -92,8 +95,8 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, controls_re
       if terminated:
         reset()
 
-      #if dual_camera:
-      #  wide_road_image = get_cam_as_rgb("rgb_wide")
+      if dual_camera:
+        wide_road_image[...] = get_cam_as_rgb("rgb_wide")
       road_image[...] = get_cam_as_rgb("rgb_road")
 
     rk.keep_time()
