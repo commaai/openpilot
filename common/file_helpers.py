@@ -73,22 +73,22 @@ def _get_fileobject_func(writer, temp_dir):
 
 @contextlib.contextmanager
 def atomic_write_on_fs_tmp(path, mode='w', buffering=-1, encoding=None, newline=None):
-    """Write to a file atomically using a temporary file in a temporary directory on the same filesystem as path."""
-    temp_dir = get_tmpdir_on_same_filesystem(path)
-    with tempfile.NamedTemporaryFile(mode=mode, buffering=buffering, encoding=encoding, newline=newline, dir=temp_dir, delete=False) as tmp_file:
-        yield tmp_file
-        tmp_file_name = tmp_file.name
-    os.replace(tmp_file_name, path)
+  """Write to a file atomically using a temporary file in a temporary directory on the same filesystem as path."""
+  temp_dir = get_tmpdir_on_same_filesystem(path)
+  with tempfile.NamedTemporaryFile(mode=mode, buffering=buffering, encoding=encoding, newline=newline, dir=temp_dir, delete=False) as tmp_file:
+    yield tmp_file
+    tmp_file_name = tmp_file.name
+  os.replace(tmp_file_name, path)
 
 @contextlib.contextmanager
 def atomic_write_in_dir(path, mode='w', buffering=-1, encoding=None, newline=None, overwrite=False):
-    """Write to a file atomically using a temporary file in the same directory as the destination file."""
-    dir_name = os.path.dirname(path)
+  """Write to a file atomically using a temporary file in the same directory as the destination file."""
+  dir_name = os.path.dirname(path)
 
-    if not overwrite and os.path.exists(path):
-        raise FileExistsError(f"File '{path}' already exists. To overwrite it, set 'overwrite' to True.")
+  if not overwrite and os.path.exists(path):
+    raise FileExistsError(f"File '{path}' already exists. To overwrite it, set 'overwrite' to True.")
 
-    with tempfile.NamedTemporaryFile(mode=mode, buffering=buffering, encoding=encoding, newline=newline, dir=dir_name, delete=False) as tmp_file:
-        yield tmp_file
-        tmp_file_name = tmp_file.name
-    os.replace(tmp_file_name, path)
+  with tempfile.NamedTemporaryFile(mode=mode, buffering=buffering, encoding=encoding, newline=newline, dir=dir_name, delete=False) as tmp_file:
+    yield tmp_file
+    tmp_file_name = tmp_file.name
+  os.replace(tmp_file_name, path)
