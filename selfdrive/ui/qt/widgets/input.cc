@@ -129,6 +129,7 @@ InputDialog::InputDialog(const QString &title, QWidget *parent, const QString &s
         line->setEchoMode(QLineEdit::Normal);
       }
     });
+    eye_btn->toggle();
     eye_btn->setChecked(false);
     textbox_layout->addWidget(eye_btn);
   }
