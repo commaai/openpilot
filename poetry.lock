@@ -4688,17 +4688,6 @@ files = [
 ]
 
 [[package]]
-name = "types-pyyaml"
-version = "6.0.12.12"
-description = "Typing stubs for PyYAML"
-optional = false
-python-versions = "*"
-files = [
-    {file = "types-PyYAML-6.0.12.12.tar.gz", hash = "sha256:334373d392fde0fdf95af5c3f1661885fa10c52167b14593eb856289e1855062"},
-    {file = "types_PyYAML-6.0.12.12-py3-none-any.whl", hash = "sha256:c05bc6c158facb0676674b7f11fe3960db4f389718e19e62bd2b84d6205cfd24"},
-]
-
-[[package]]
 name = "types-requests"
 version = "2.31.0.10"
 description = "Typing stubs for requests"
@@ -4934,4 +4923,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "cee6c08a80e55f31e99f6cadaf3635fc63d2f2f2df1175b19f186a2c7f576386"
+content-hash = "68be4dd5356e38c1e5a004a6e40b4fef963aacd1cad902b5fba70c51c442d981"
