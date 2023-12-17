@@ -23,7 +23,7 @@ env:
 
   RUN_CL: docker run --shm-size 1G -v $GITHUB_WORKSPACE:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $CL_BASE_IMAGE /bin/bash -c
 
-  RUN_CL_SIM: docker run --shm-size 1G -v $GITHUB_WORKSPACE:/tmp/openpilot -w /tmp/openpilot --device=/dev/dri:/dev/dri --device=/dev/input:/dev/input -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=$DISPLAY -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $CL_BASE_IMAGE /bin/bash -c
+  RUN_CL_SIM: docker run --shm-size 1G -v $GITHUB_WORKSPACE:/tmp/openpilot -w /tmp/openpilot --device=/dev/dri:/dev/dri --device=/dev/input:/dev/input -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $CL_BASE_IMAGE /bin/bash -c
 
 
 jobs:
@@ -83,8 +83,7 @@ jobs:
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run bridge test
       run: |
-        selfdrive/test/setup_xvfb.sh
-        ${{ env.RUN_CL_SIM }} "export DISPLAY=:99 && sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 & python -m metadrive.examples.verify_headless_installation"
+        ${{ env.RUN_CL_SIM }} "source selfdrive/test/setup_xvfb.sh && python -m metadrive.examples.verify_headless_installation"
 
   devcontainer:
     name: devcontainer
