@@ -81,7 +81,6 @@ aiortc = "*"
 casadi = "==3.6.3"
 cffi = "*"
 crcmod = "*"
-cryptography = "*"
 Cython = "*"
 hexdump = "*"
 json-rpc = "*"
@@ -109,7 +108,6 @@ sounddevice = "*"
 spidev = { version = "*", platform = "linux" }
 sympy = "*"
 timezonefinder = "*"
-tqdm = "*"
 websocket_client = "*"
 polyline = "*"
 sconscontrib = {git = "https://github.com/SCons/scons-contrib.git"}
@@ -163,6 +161,7 @@ types-pycurl = "*"
 types-PyYAML = "*"
 types-requests = "*"
 types-tabulate = "*"
+tqdm = "*"
 
 # this is only pinned since 5.15.11 is broken
 pyqt5 = { version = "==5.15.2", markers = "platform_machine == 'x86_64'" } # no aarch64 wheels for macOS/linux
