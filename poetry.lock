@@ -3207,16 +3207,6 @@ files = [
 ]
 
 [[package]]
-name = "pycurl"
-version = "7.45.2"
-description = "PycURL -- A Python Interface To The cURL library"
-optional = false
-python-versions = ">=3.5"
-files = [
-    {file = "pycurl-7.45.2.tar.gz", hash = "sha256:5730590be0271364a5bddd9e245c9cc0fb710c4cbacbdd95264a3122d23224ca"},
-]
-
-[[package]]
 name = "pyee"
 version = "11.1.0"
 description = "A rough port of Node.js's EventEmitter to Python with a few tricks of its own"
@@ -4656,17 +4646,6 @@ slack = ["slack-sdk"]
 telegram = ["requests"]
 
 [[package]]
-name = "types-pycurl"
-version = "7.45.2.5"
-description = "Typing stubs for pycurl"
-optional = false
-python-versions = "*"
-files = [
-    {file = "types-pycurl-7.45.2.5.tar.gz", hash = "sha256:cc07e4b1e388b98e1a935bc12ef33eec8e7294496d0a81ed50c46a31bf5df5ee"},
-    {file = "types_pycurl-7.45.2.5-py3-none-any.whl", hash = "sha256:e433f13a266245be770018eabc6a50139ea26150f75df5b0ee698d291575582b"},
-]
-
-[[package]]
 name = "types-requests"
 version = "2.31.0.10"
 description = "Typing stubs for requests"
@@ -4902,4 +4881,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "eeb5efb6161eaec95fb863ddc9ec08afb540ed3cd5d521646a6a759ddf33ab2e"
+content-hash = "26e963a3e9236b0e29466a0bca243215395a780c88485e9c17f6518969334890"
