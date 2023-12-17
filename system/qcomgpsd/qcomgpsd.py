@@ -104,7 +104,7 @@ def gps_enabled() -> bool:
 def download_assistance():
   try:
     response = requests.get(ASSISTANCE_URL, timeout=5, stream=True)
-    downloaded_size = 0 
+    downloaded_size = 0
 
     with open(ASSIST_DATA_FILE_DOWNLOAD, 'wb') as fp:
       for chunk in response.iter_content(chunk_size=8192):
