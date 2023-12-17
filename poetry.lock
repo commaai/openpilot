@@ -181,16 +181,6 @@ files = [
 ]
 
 [[package]]
-name = "atomicwrites"
-version = "1.4.1"
-description = "Atomic file writes."
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-files = [
-    {file = "atomicwrites-1.4.1.tar.gz", hash = "sha256:81b2c9071a49367a7f770170e5eec8cb66567cfbbc8c73d20ce5ca4a8d71cf11"},
-]
-
-[[package]]
 name = "attrs"
 version = "23.1.0"
 description = "Classes Without Boilerplate"
@@ -4666,17 +4656,6 @@ slack = ["slack-sdk"]
 telegram = ["requests"]
 
 [[package]]
-name = "types-atomicwrites"
-version = "1.4.5.1"
-description = "Typing stubs for atomicwrites"
-optional = false
-python-versions = "*"
-files = [
-    {file = "types-atomicwrites-1.4.5.1.tar.gz", hash = "sha256:9e9f0923ebf93524b28bcece5a23ac8c3820f39b060df29f671936d2e4bc04bc"},
-    {file = "types_atomicwrites-1.4.5.1-py3-none-any.whl", hash = "sha256:2f1febbdc78b55453b189fa5b136dce34bab7d1d82319163d470e404aab55c83"},
-]
-
-[[package]]
 name = "types-pycurl"
 version = "7.45.2.5"
 description = "Typing stubs for pycurl"
@@ -4923,4 +4902,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "68be4dd5356e38c1e5a004a6e40b4fef963aacd1cad902b5fba70c51c442d981"
+content-hash = "eeb5efb6161eaec95fb863ddc9ec08afb540ed3cd5d521646a6a759ddf33ab2e"
