@@ -127,8 +127,6 @@ common/version.h
 common/prefix.h
 common/swaglog.h
 common/swaglog.cc
-common/statlog.h
-common/statlog.cc
 common/util.cc
 common/util.h
 common/queue.h
