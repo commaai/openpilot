@@ -134,7 +134,7 @@ class URLFile:
     if self._debug:
       t2 = time.time()
       if t2 - t1 > 0.1:
-        print(f"get {self._url} {headers!r} {t2 - t1:.f} slow")
+        print(f"get {self._url} {headers!r} {t2 - t1:.3f} slow")
 
     response_code = response.status
     if response_code == 416:  # Requested Range Not Satisfiable
