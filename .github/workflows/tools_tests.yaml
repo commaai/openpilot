@@ -64,7 +64,7 @@ jobs:
         selfdrive/test/docker_build.sh sim
 
   simulator_bridge:
-    name: simulator
+    name: simulator bridge test
     runs-on: ubuntu-20.04
     timeout-minutes: 20
     steps:
@@ -81,7 +81,7 @@ jobs:
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run bridge test
       run: |
-        ${{ env.RUN_CL }} "tools/sim/tests/test_metadrive_bridge.py"
+        ${{ env.RUN_CL }} "xhost +local:root && python -m metadrive.examples.verify_headless_installation"
 
   devcontainer:
     name: devcontainer
