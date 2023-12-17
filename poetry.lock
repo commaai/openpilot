@@ -3413,17 +3413,6 @@ files = [
 cffi = ">=1.0.0"
 
 [[package]]
-name = "pympler"
-version = "1.0.1"
-description = "A development tool to measure, monitor and analyze the memory behavior of Python objects."
-optional = false
-python-versions = ">=3.6"
-files = [
-    {file = "Pympler-1.0.1-py3-none-any.whl", hash = "sha256:d260dda9ae781e1eab6ea15bacb84015849833ba5555f141d2d9b7b7473b307d"},
-    {file = "Pympler-1.0.1.tar.gz", hash = "sha256:993f1a3599ca3f4fcd7160c7545ad06310c9e12f70174ae7ae8d4e25f6c5d3fa"},
-]
-
-[[package]]
 name = "pyopencl"
 version = "2023.1.4"
 description = "Python wrapper for OpenCL"
@@ -4972,4 +4961,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "05f6312c5ec48983969f2767b7ee743c8b38fa2fa06d2034236d1547afa64d8d"
+content-hash = "63d0167f85b1e66ac961353854f9a0b37860982e3134467f0e975e1b9544ef65"
