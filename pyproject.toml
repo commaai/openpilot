@@ -83,7 +83,6 @@ cffi = "*"
 crcmod = "*"
 cryptography = "*"
 Cython = "*"
-future-fstrings = "*"  # for acados
 hexdump = "*"
 json-rpc = "*"
 libusb1 = "*"
