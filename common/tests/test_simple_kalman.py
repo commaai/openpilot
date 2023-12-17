@@ -1,6 +1,6 @@
 import unittest
 
-from openpilot.common.kalman.simple_kalman import KF1D
+from openpilot.common.simple_kalman import KF1D
 
 
 class TestSimpleKalman(unittest.TestCase):

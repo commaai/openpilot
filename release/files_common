@@ -24,9 +24,6 @@ common/__init__.py
 common/*.py
 common/*.pyx
 
-common/kalman/.gitignore
-common/kalman/*
-
 common/transformations/__init__.py
 common/transformations/camera.py
 common/transformations/model.py
