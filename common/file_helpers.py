@@ -82,7 +82,8 @@ def atomic_write_on_fs_tmp(path: str, mode: str = 'w', buffering: int = -1, enco
   os.replace(tmp_file_name, path)
 
 @contextlib.contextmanager
-def atomic_write_in_dir(path: str, mode: str = 'w', buffering: int = -1, encoding: Optional[str] = None, newline: Optional[str] = None, overwrite: bool = False):
+def atomic_write_in_dir(path: str, mode: str = 'w', buffering: int = -1, encoding: Optional[str] = None, newline: Optional[str] = None, 
+                        overwrite: bool = False):
   """Write to a file atomically using a temporary file in the same directory as the destination file."""
   dir_name = os.path.dirname(path)
 
