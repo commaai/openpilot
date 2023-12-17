@@ -103,16 +103,15 @@ def gps_enabled() -> bool:
 
 def download_assistance():
   try:
-    response = requests.head(ASSISTANCE_URL, timeout=2)
-    bytes_n = int(response.headers.get('content-length', 0))
-
-    if bytes_n > 1e5:
-      cloudlog.error("Qcom assistance data larger than expected")
-      return
-
     response = requests.get(ASSISTANCE_URL, timeout=5, stream=True)
+    downloaded_size = 0 
+
     with open(ASSIST_DATA_FILE_DOWNLOAD, 'wb') as fp:
       for chunk in response.iter_content(chunk_size=8192):
+        downloaded_size += len(chunk)
+        if downloaded_size > 1e5:
+          cloudlog.error("Qcom assistance data larger than expected")
+          return
         fp.write(chunk)
 
     os.rename(ASSIST_DATA_FILE_DOWNLOAD, ASSIST_DATA_FILE)
