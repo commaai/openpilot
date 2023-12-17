@@ -1,7 +1,7 @@
-import yaml
 import os
 import time
 import numpy as np
+import tomllib
 from abc import abstractmethod, ABC
 from typing import Any, Dict, Optional, Tuple, List, Callable
 
@@ -26,21 +26,21 @@ ACCEL_MAX = 2.0
 ACCEL_MIN = -3.5
 FRICTION_THRESHOLD = 0.3
 
-TORQUE_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/params.yaml')
-TORQUE_OVERRIDE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/override.yaml')
-TORQUE_SUBSTITUTE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/substitute.yaml')
+TORQUE_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/params.toml')
+TORQUE_OVERRIDE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/override.toml')
+TORQUE_SUBSTITUTE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/substitute.toml')
 
 
 def get_torque_params(candidate):
-  with open(TORQUE_SUBSTITUTE_PATH) as f:
-    sub = yaml.load(f, Loader=yaml.CSafeLoader)
+  with open(TORQUE_SUBSTITUTE_PATH, 'rb') as f:
+    sub = tomllib.load(f)
   if candidate in sub:
     candidate = sub[candidate]
 
-  with open(TORQUE_PARAMS_PATH) as f:
-    params = yaml.load(f, Loader=yaml.CSafeLoader)
-  with open(TORQUE_OVERRIDE_PATH) as f:
-    override = yaml.load(f, Loader=yaml.CSafeLoader)
+  with open(TORQUE_PARAMS_PATH, 'rb') as f:
+    params = tomllib.load(f)
+  with open(TORQUE_OVERRIDE_PATH, 'rb') as f:
+    override = tomllib.load(f)
 
   # Ensure no overlap
   if sum([candidate in x for x in [sub, params, override]]) > 1:
