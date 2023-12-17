@@ -32,6 +32,7 @@ jobs:
   build_release:
     name: build release
     runs-on: ubuntu-20.04
+    if: github.repository == 'commaai/openpilot'
     env:
       STRIPPED_DIR: /tmp/releasepilot
     steps:
@@ -44,7 +45,7 @@ jobs:
       run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
     - uses: ./.github/workflows/setup-with-retry
     - name: Check submodules
-      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      if: github.ref == 'refs/heads/master'
       timeout-minutes: 1
       run: release/check-submodules.sh
     - name: Build openpilot and run checks
