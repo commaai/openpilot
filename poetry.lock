@@ -2193,9 +2193,7 @@ version = "0.4.1.2"
 description = "An open-ended driving simulator with infinite scenes"
 optional = false
 python-versions = ">=3.6, <3.12"
-files = [
-    ,
-]
+files = []
 develop = false
 
 [package.dependencies]
