@@ -6,7 +6,6 @@ import itertools
 import math
 import time
 import requests
-from requests.exceptions import RequestException
 import shutil
 import subprocess
 import datetime
@@ -116,7 +115,7 @@ def download_assistance():
 
     os.rename(ASSIST_DATA_FILE_DOWNLOAD, ASSIST_DATA_FILE)
 
-  except RequestException:
+  except requests.exceptions.RequestException:
     cloudlog.exception("Failed to download assistance file")
     return
 
