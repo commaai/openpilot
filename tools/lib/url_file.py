@@ -2,12 +2,13 @@ import os
 import time
 import threading
 from hashlib import sha256
-from tenacity import retry, wait_random_exponential, stop_after_attempt
-from openpilot.common.file_helpers import atomic_write_in_dir
-from openpilot.system.hardware.hw import Paths
 import urllib3
 from urllib3 import PoolManager, Retry
 from urllib3.util import Timeout
+
+from tenacity import retry, wait_random_exponential, stop_after_attempt
+from openpilot.common.file_helpers import atomic_write_in_dir
+from openpilot.system.hardware.hw import Paths
 #  Cache chunk size
 K = 1000
 CHUNK_SIZE = 1000 * K
