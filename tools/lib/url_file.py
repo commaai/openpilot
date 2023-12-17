@@ -2,7 +2,6 @@ import os
 import time
 import threading
 from hashlib import sha256
-import urllib3
 from urllib3 import PoolManager, Retry
 from urllib3.util import Timeout
 from tenacity import retry, wait_random_exponential, stop_after_attempt
