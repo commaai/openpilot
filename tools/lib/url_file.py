@@ -128,13 +128,9 @@ class URLFile:
     if self._debug:
       t1 = time.time()
 
-    response = self._get_http_client().request(
-      'GET',
-      self._url,
-      headers=headers,
-      preload_content=False
-    )
-
+    retries = Retry(connect=3, read=2, redirect=5)
+    timeout = Timeout(connect=50.0, read=500.0)
+    response = self._get_http_client().request('GET', self._url, retries=retries, timeout=timeout, preload_content=False)
     ret = response.data
 
     if self._debug:
