@@ -63,6 +63,26 @@ jobs:
       run: |
         selfdrive/test/docker_build.sh sim
 
+  simulator_bridge:
+    name: simulator
+    runs-on: ubuntu-20.04
+    timeout-minutes: 20
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - uses: ./.github/workflows/setup-with-retry
+    - name: Build base docker image
+      run: eval "$BUILD"
+    - name: Build base cl image
+      run: eval "$BUILD_CL"
+    - name: Build openpilot
+      run: |
+        ${{ env.RUN }} "scons -j$(nproc)"
+    - name: Run bridge test
+      run: |
+        ${{ env.RUN_CL }} "tools/sim/tests/test_metadrive_bridge.py"
+
   devcontainer:
     name: devcontainer
     runs-on: ubuntu-latest
