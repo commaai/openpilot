@@ -2871,26 +2871,6 @@ test = ["hypothesis (>=6.46.1)", "pytest (>=7.3.2)", "pytest-xdist (>=2.2.0)"]
 xml = ["lxml (>=4.8.0)"]
 
 [[package]]
-name = "panflute"
-version = "2.3.0"
-description = "Pythonic Pandoc filters"
-optional = false
-python-versions = ">=3.6"
-files = [
-    {file = "panflute-2.3.0-py3-none-any.whl", hash = "sha256:02673bcbdb521a805f08a2ca0ce864de86ad409ad406a01b3700fcf2aca81635"},
-    {file = "panflute-2.3.0.tar.gz", hash = "sha256:cefd9dfc48ccd9732a53db57610701d22806da397a8a97e5cc8dc070b55865ca"},
-]
-
-[package.dependencies]
-click = ">=6,<9"
-pyyaml = ">=3,<7"
-
-[package.extras]
-dev = ["configparser", "coverage", "flake8", "pandocfilters", "pytest", "pytest-cov", "requests"]
-extras = ["yamlloader (>=1,<2)"]
-pypi = ["Pygments", "docutils", "twine", "wheel"]
-
-[[package]]
 name = "parameterized"
 version = "0.8.1"
 description = "Parameterized testing with any Python test framework"
@@ -4091,27 +4071,6 @@ files = [
 setuptools = "*"
 
 [[package]]
-name = "sconscontrib"
-version = "1.0"
-description = "Contributed builders and other useful logic for the SCons build system.,"
-optional = false
-python-versions = "<4,>=3.6"
-files = []
-develop = false
-
-[package.dependencies]
-docutils = "*"
-panflute = "*"
-SCons = ">=4"
-sphinx = "*"
-
-[package.source]
-type = "git"
-url = "https://github.com/SCons/scons-contrib.git"
-reference = "HEAD"
-resolved_reference = "f3b0100d3a628e4d18f496815903660a99489bae"
-
-[[package]]
 name = "seaborn"
 version = "0.13.0"
 description = "Statistical data visualization"
@@ -4975,4 +4934,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "765614c2f5d309dc09e84b87c77b92df4e0cb1258b7317cc64c6a3f1559a82bc"
+content-hash = "cee6c08a80e55f31e99f6cadaf3635fc63d2f2f2df1175b19f186a2c7f576386"

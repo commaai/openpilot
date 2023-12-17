@@ -107,7 +107,6 @@ spidev = { version = "*", platform = "linux" }
 sympy = "*"
 websocket_client = "*"
 polyline = "*"
-sconscontrib = {git = "https://github.com/SCons/scons-contrib.git"}
 
 # these should be removed
 atomicwrites = "*"
