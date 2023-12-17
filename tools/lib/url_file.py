@@ -57,7 +57,7 @@ class URLFile:
   @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
   def get_length_online(self):
     retries = Retry(connect=3, read=2, redirect=5)
-    timeout = Timeout(connect=5.0, read=50.0)
+    timeout = Timeout(connect=50.0, read=500.0)
     try:
       response = self._get_http_client().request('HEAD', self._url, retries=retries, timeout=timeout, preload_content=False)
       length = response.headers.get('content-length', 0)
