@@ -7,8 +7,6 @@ from openpilot.common.file_helpers import atomic_write_in_dir
 from openpilot.system.hardware.hw import Paths
 from urllib3 import PoolManager, Retry
 from urllib3.util import Timeout
-from urllib3.util.retry import Retry
-import urllib3
 #  Cache chunk size
 K = 1000
 CHUNK_SIZE = 1000 * K
