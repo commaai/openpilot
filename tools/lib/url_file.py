@@ -40,9 +40,9 @@ class URLFile:
       os.makedirs(Paths.download_cache_root(), exist_ok=True)
 
   def _get_http_client(self):
-      if not hasattr(self._tlocal, 'http_client'):
-          self._tlocal.http_client = PoolManager()
-      return self._tlocal.http_client
+    if not hasattr(self._tlocal, 'http_client'):
+      self._tlocal.http_client = PoolManager()
+    return self._tlocal.http_client
 
   def __enter__(self):
     return self
