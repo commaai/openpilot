@@ -40,10 +40,9 @@ class URLFile:
     if not self._force_download:
       os.makedirs(Paths.download_cache_root(), exist_ok=True)
 
-  def _get_http_client(self):
-    if not hasattr(self._tlocal, 'http_client'):
-      self._tlocal.http_client = PoolManager()
-    return self._tlocal.http_client
+    if not hasattr(URLFile._tlocal, 'http_client'):
+      URLFile._tlocal.http_client = PoolManager()
+    self._http_client = URLFile._tlocal.http_client
 
   def __enter__(self):
     return self
@@ -58,7 +57,7 @@ class URLFile:
   def get_length_online(self):
     retries = Retry(connect=3, read=2, redirect=5)
     timeout = Timeout(connect=50.0, read=500.0)
-    response = self._get_http_client().request('HEAD', self._url, retries=retries, timeout=timeout, preload_content=False)
+    response = self._http_client.request('HEAD', self._url, retries=retries, timeout=timeout, preload_content=False)
     length = response.headers.get('content-length', 0)
     return int(length)
 
@@ -130,7 +129,7 @@ class URLFile:
 
     retries = Retry(connect=3, read=2, redirect=5)
     timeout = Timeout(connect=50.0, read=500.0)
-    response = self._get_http_client().request('GET', self._url, retries=retries, timeout=timeout, preload_content=False, headers=headers)
+    response = self._http_client.request('GET', self._url, retries=retries, timeout=timeout, preload_content=False, headers=headers)
     ret = response.data
 
     if self._debug:
