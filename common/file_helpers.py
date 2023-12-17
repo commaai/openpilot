@@ -2,6 +2,7 @@ import os
 import shutil
 import tempfile
 import contextlib
+from typing import Optional
 
 
 def rm_not_exists_ok(path):
@@ -72,7 +73,7 @@ def _get_fileobject_func(writer, temp_dir):
   return _get_fileobject
 
 @contextlib.contextmanager
-def atomic_write_on_fs_tmp(path: str, mode: str = 'w', buffering: int = -1, encoding: str = None, newline: str = None):
+def atomic_write_on_fs_tmp(path: str, mode: str = 'w', buffering: int = -1, encoding: Optional[str] = None, newline: Optional[str] = None):
   """Write to a file atomically using a temporary file in a temporary directory on the same filesystem as path."""
   temp_dir = get_tmpdir_on_same_filesystem(path)
   with tempfile.NamedTemporaryFile(mode=mode, buffering=buffering, encoding=encoding, newline=newline, dir=temp_dir, delete=False) as tmp_file:
@@ -81,7 +82,7 @@ def atomic_write_on_fs_tmp(path: str, mode: str = 'w', buffering: int = -1, enco
   os.replace(tmp_file_name, path)
 
 @contextlib.contextmanager
-def atomic_write_in_dir(path: str, mode: str = 'w', buffering: int = -1, encoding: str = None, newline: str = None, overwrite: bool = False):
+def atomic_write_in_dir(path: str, mode: str = 'w', buffering: int = -1, encoding: Optional[str] = None, newline: Optional[str] = None, overwrite: bool = False):
   """Write to a file atomically using a temporary file in the same directory as the destination file."""
   dir_name = os.path.dirname(path)
 
