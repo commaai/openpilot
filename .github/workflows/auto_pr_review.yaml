@@ -1,9 +1,10 @@
-name: "Pull Request Labeler"
+name: "PR review"
 on:
   pull_request_target:
 
 jobs:
   labeler:
+    name: apply labels
     permissions:
       contents: read
       pull-requests: write
@@ -16,7 +17,9 @@ jobs:
       with:
         dot: true
         configuration-path: .github/labeler.yaml
+
   pr_branch_check:
+    name: check branch
     runs-on: ubuntu-latest
     if: github.repository == 'commaai/openpilot'
     steps:
