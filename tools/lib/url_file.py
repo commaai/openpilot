@@ -58,12 +58,9 @@ class URLFile:
   def get_length_online(self):
     retries = Retry(connect=3, read=2, redirect=5)
     timeout = Timeout(connect=50.0, read=500.0)
-    try:
-      response = self._get_http_client().request('HEAD', self._url, retries=retries, timeout=timeout, preload_content=False)
-      length = response.headers.get('content-length', 0)
-      return int(length)
-    except urllib3.exceptions.HTTPError as e:
-      raise e
+    response = self._get_http_client().request('HEAD', self._url, retries=retries, timeout=timeout, preload_content=False)
+    length = response.headers.get('content-length', 0)
+    return int(length)
 
   def get_length(self):
     if self._length is not None:
