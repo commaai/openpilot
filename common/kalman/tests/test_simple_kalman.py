@@ -81,6 +81,8 @@ kf = KF1D(x0=[[x0_0], [x1_0]],
     """
     kf_speed = timeit.timeit("kf.update(1234)", setup=setup, number=10000)
     kf_old_speed = timeit.timeit("kf_old.update(1234)", setup=setup, number=10000)
+    print("speed", kf_speed)
+    print("speed old", kf_old_speed)
     self.assertTrue(kf_speed < kf_old_speed / 4)
 
 if __name__ == "__main__":
