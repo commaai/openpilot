@@ -30,11 +30,10 @@ if GetOption('extras'):
 params_python = envCython.Program('params_pyx.so', 'params_pyx.pyx', LIBS=envCython['LIBS'] + [_common, 'zmq', 'json11'])
 
 SConscript([
-  'kalman/SConscript',
-  'transformations/SConscript'  
+  'transformations/SConscript',
 ])
 
-Import('simple_kalman_python', 'transformations_python')
-common_python = [params_python, simple_kalman_python, transformations_python]
+Import('transformations_python')
+common_python = [params_python, transformations_python]
 
 Export('common_python')
