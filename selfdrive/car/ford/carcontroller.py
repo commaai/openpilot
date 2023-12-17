@@ -21,6 +21,15 @@ def apply_ford_curvature_limits(apply_curvature, apply_curvature_last, current_c
 
   return clip(apply_curvature, -CarControllerParams.CURVATURE_MAX, CarControllerParams.CURVATURE_MAX)
 
+def hysteresis(current_value, old_value, target, stdDev):
+  if target - stdDev <= current_value <= target + stdDev:
+    result = old_value
+  elif current_value < target - stdDev:
+    result = 1
+  elif current_value > target + stdDev:
+    result = 0
+
+  return result
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
@@ -34,6 +43,7 @@ class CarController:
     self.main_on_last = False
     self.lkas_enabled_last = False
     self.steer_alert_last = False
+    self.accel_old = 0
 
   def update(self, CC, CS, now_nanos):
     can_sends = []
@@ -89,8 +99,18 @@ class CarController:
       gas = accel
       if not CC.longActive or gas < CarControllerParams.MIN_GAS:
         gas = CarControllerParams.INACTIVE_GAS
+
       stopping = CC.actuators.longControlState == LongCtrlState.stopping
-      can_sends.append(fordcan.create_acc_msg(self.packer, self.CAN, CC.longActive, gas, accel, stopping, v_ego_kph=40 * CV.MPH_TO_KPH))
+
+      # Calculate targetSpeed
+      targetSpeed = actuators.speed
+      if not CC.longActive and hud_control.setSpeed:
+        targetSpeed = hud_control.setSpeed
+
+      actuate = hysteresis(accel, self.accel_old, 0, 0.1)
+      self.accel_old = accel
+
+      can_sends.append(fordcan.create_acc_msg(self.packer, self.CAN, CC.longActive, gas, accel, stopping, actuate, v_ego_kph=targetSpeed * CV.MS_TO_KPH))
 
     ### ui ###
     send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)
@@ -101,7 +121,7 @@ class CarController:
     if (self.frame % CarControllerParams.ACC_UI_STEP) == 0 or send_ui:
       can_sends.append(fordcan.create_acc_ui_msg(self.packer, self.CAN, self.CP, main_on, CC.latActive,
                                          fcw_alert, CS.out.cruiseState.standstill, hud_control,
-                                         CS.acc_tja_status_stock_values))
+                                         CS.acc_tja_status_stock_values, CS.gac_tr_cluster))
 
     self.main_on_last = main_on
     self.lkas_enabled_last = CC.latActive
