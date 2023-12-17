@@ -131,7 +131,7 @@ def create_acc_msg(packer, CAN: CanBus, long_active: bool, gas: float, accel: fl
   """
 
   # precharge_actuator = accel < -0.25 and long_active
-  # brake_actuator = gas == -5 and long_active # and accel < -.75  
+  # brake_actuator = gas == -5 and long_active # and accel < -.75
   decel = actuate and long_active
   brake_actuator = precharge_actuator = decel
   gas_pred = clip(accel, -5, 0) if gas == -5 else accel
