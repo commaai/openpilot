@@ -1296,6 +1296,20 @@ files = [
 ]
 
 [[package]]
+name = "future-fstrings"
+version = "1.2.0"
+description = "A backport of fstrings to python<3.6"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
+files = [
+    {file = "future_fstrings-1.2.0-py2.py3-none-any.whl", hash = "sha256:90e49598b553d8746c4dc7d9442e0359d038c3039d802c91c0a55505da318c63"},
+    {file = "future_fstrings-1.2.0.tar.gz", hash = "sha256:6cf41cbe97c398ab5a81168ce0dbb8ad95862d3caf23c21e4430627b90844089"},
+]
+
+[package.extras]
+rewrite = ["tokenize-rt (>=3)"]
+
+[[package]]
 name = "geopandas"
 version = "0.14.1"
 description = "Geographic pandas extensions"
@@ -4961,4 +4975,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "63d0167f85b1e66ac961353854f9a0b37860982e3134467f0e975e1b9544ef65"
+content-hash = "765614c2f5d309dc09e84b87c77b92df4e0cb1258b7317cc64c6a3f1559a82bc"
