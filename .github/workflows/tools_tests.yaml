@@ -81,7 +81,7 @@ jobs:
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run bridge test
       run: |
-        ${{ env.RUN_CL }} "xhost +local:root && python -m metadrive.examples.verify_headless_installation"
+        ${{ env.RUN_CL }} "python -m metadrive.examples.profile_metadrive && python -m metadrive.examples.verify_headless_installation"
 
   devcontainer:
     name: devcontainer
