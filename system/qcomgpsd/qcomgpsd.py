@@ -5,8 +5,8 @@ import signal
 import itertools
 import math
 import time
-import requests
-from requests.exceptions import RequestException
+import urllib3
+from urllib3.exceptions import HTTPError
 import shutil
 import subprocess
 import datetime
@@ -102,23 +102,23 @@ def gps_enabled() -> bool:
     raise Exception("failed to execute QGPS mmcli command") from exc
 
 def download_assistance():
-  try:
-    response = requests.head(ASSISTANCE_URL, timeout=2)
-    bytes_n = int(response.headers.get('content-length', 0))
+  http = urllib3.PoolManager()
 
-    if bytes_n > 1e5:
+  try:
+    response = http.request('HEAD', ASSISTANCE_URL)
+    content_length = int(response.headers.get('content-length', 0))
+
+    if content_length > 1e5:
       cloudlog.error("Qcom assistance data larger than expected")
       return
 
-    response = requests.get(ASSISTANCE_URL, timeout=5, stream=True)
-    with open(ASSIST_DATA_FILE_DOWNLOAD, 'wb') as fp:
-      for chunk in response.iter_content(chunk_size=8192):
-        fp.write(chunk)
+    with http.request('GET', ASSISTANCE_URL, preload_content=False) as resp, open(ASSIST_DATA_FILE_DOWNLOAD, 'wb') as out_file:
+        shutil.copyfileobj(resp, out_file)
 
     os.rename(ASSIST_DATA_FILE_DOWNLOAD, ASSIST_DATA_FILE)
 
-  except RequestException:
-    cloudlog.exception("Failed to download assistance file")
+  except HTTPError as e:
+    cloudlog.exception("Failed to download assistance file: {}".format(e))
     return
 
 def downloader_loop(event):
