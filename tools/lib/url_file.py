@@ -39,9 +39,10 @@ class URLFile:
     if not self._force_download:
       os.makedirs(Paths.download_cache_root(), exist_ok=True)
 
-    if not hasattr(URLFile._tlocal, 'http_client'):
-      URLFile._tlocal.http_client = PoolManager()
-    self._http_client = URLFile._tlocal.http_client
+    try:
+      self._http_client = URLFile._tlocal.http_client
+    except AttributeError:
+      self._http_client = URLFile._tlocal.http_client = PoolManager()
 
   def __enter__(self):
     return self
