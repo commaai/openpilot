@@ -83,7 +83,7 @@ jobs:
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run bridge test
       run: |
-        ${{ env.RUN_CL_SIM }} "source selfdrive/test/setup_xvfb.sh && python -m metadrive.examples.verify_headless_installation"
+        ${{ env.RUN_CL_SIM }} "source selfdrive/test/setup_xvfb.sh && tools/sim/tests/test_metadrive_bridge.py"
 
   devcontainer:
     name: devcontainer
