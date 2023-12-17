@@ -84,7 +84,7 @@ jobs:
     - name: Run bridge test
       run: |
         selfdrive/test/setup_xvfb.sh
-        ${{ env.RUN_CL_SIM }} "python -m metadrive.examples.verify_headless_installation"
+        ${{ env.RUN_CL_SIM }} "export DISPLAY=:99 && sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 & python -m metadrive.examples.verify_headless_installation"
 
   devcontainer:
     name: devcontainer
