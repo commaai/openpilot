@@ -128,15 +128,15 @@ class URLFile:
       headers['Range'] = f"bytes={self._pos}-{end}"
       download_range = True
 
+    if self._debug:
+      t1 = time.time()
+
     response = self._get_http_client().request(
       'GET',
       self._url,
       headers=headers,
       preload_content=False
     )
-
-    if self._debug:
-      t1 = time.time()
 
     ret = response.data
 
