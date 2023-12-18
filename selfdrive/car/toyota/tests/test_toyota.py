@@ -139,7 +139,7 @@ class TestToyotaFingerprint(unittest.TestCase):
                          "subAddress": 0 if sub_addr is None else sub_addr})
 
       CP = car.CarParams.new_message(carFw=car_fw)
-      matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw))
+      matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw), FW_VERSIONS)
       if len(matches) == 1:
         self.assertEqual(list(matches)[0], platform)
       else:
