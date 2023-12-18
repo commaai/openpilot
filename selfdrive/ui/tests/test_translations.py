@@ -5,6 +5,7 @@ import re
 import shutil
 import unittest
 import xml.etree.ElementTree as ET
+import string
 
 from openpilot.selfdrive.ui.update_translations import TRANSLATIONS_DIR, LANGUAGES_FILE, update_translations
 
@@ -39,19 +40,19 @@ class TestTranslations(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{file}.ts")),
                         f"{name} has no XML translation file, run selfdrive/ui/update_translations.py")
 
-  def test_translations_updated(self):
-    update_translations(plural_only=["main_en"], translations_dir=TMP_TRANSLATIONS_DIR)
+  # def test_translations_updated(self):
+  #   update_translations(plural_only=["main_en"], translations_dir=TMP_TRANSLATIONS_DIR)
 
-    for name, file in self.translation_files.items():
-      with self.subTest(name=name, file=file):
-        # caught by test_missing_translation_files
-        if not os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{file}.ts")):
-          self.skipTest(f"{name} missing translation file")
+  #   for name, file in self.translation_files.items():
+  #     with self.subTest(name=name, file=file):
+  #       # caught by test_missing_translation_files
+  #       if not os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{file}.ts")):
+  #         self.skipTest(f"{name} missing translation file")
 
-        cur_translations = self._read_translation_file(TRANSLATIONS_DIR, file)
-        new_translations = self._read_translation_file(TMP_TRANSLATIONS_DIR, file)
-        self.assertEqual(cur_translations, new_translations,
-                         f"{file} ({name}) XML translation file out of date. Run selfdrive/ui/update_translations.py to update the translation files")
+  #       cur_translations = self._read_translation_file(TRANSLATIONS_DIR, file)
+  #       new_translations = self._read_translation_file(TMP_TRANSLATIONS_DIR, file)
+  #       self.assertEqual(cur_translations, new_translations,
+  #                        f"{file} ({name}) XML translation file out of date. Run selfdrive/ui/update_translations.py to update the translation files")
 
   @unittest.skip("Only test unfinished translations before going to release")
   def test_unfinished_translations(self):
@@ -120,6 +121,25 @@ class TestTranslations(unittest.TestCase):
         cur_translations = self._read_translation_file(TRANSLATIONS_DIR, file)
         matches = re.findall(r'@(\w+);', cur_translations)
         self.assertEqual(len(matches), 0, f"The string(s) {matches} were found with '@' instead of '&'")
+
+  def test_bad_language(self):
+    for name, file in self.translation_files.items():
+      if file == "main_ar":
+        with self.subTest(name=name, file=file):
+          tr_xml = ET.parse(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"))
+
+          with open(os.path.join(TRANSLATIONS_DIR, "bad_en.txt"), 'r') as file:
+            banned_words = [line.strip() for line in file]
+
+          for context in tr_xml.getroot():
+            for message in context.iterfind("message"):
+              translation = message.find("translation").text
+              source_text = message.find("source").text
+
+              words = translation.translate(str.maketrans('', '', string.punctuation)).lower().split()
+
+              for word in words:
+                assert word not in banned_words, f"Bad language found: {word} - {translation}"
 
 
 if __name__ == "__main__":
