@@ -128,8 +128,8 @@ class TestTranslations(unittest.TestCase):
       with self.subTest(name=name, file=file):
         tr_xml = ET.parse(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"))
 
-        available_language_codes = ["ar", "cs", "da", "de", "en", "eo", "es", "fa", "fi", "fil", "fr", "hi", "hu", "it", "ja", "kab", "ko", "nl", "no", "pl", "pt",
-                                    "ru", "sv", "th", "tlh", "tr", "zh"]
+        available_language_codes = ["ar", "cs", "da", "de", "en", "eo", "es", "fa", "fi", "fil", "fr", "hi", "hu", "it", "ja", "kab", "ko", "nl", "no", "pl",
+                                    "pt", "ru", "sv", "th", "tlh", "tr", "zh"]
 
         match = re.search(r'_([a-zA-Z]{2,3})', file)
         if not match:
