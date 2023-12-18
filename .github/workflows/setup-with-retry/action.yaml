@@ -1,47 +1,61 @@
 name: 'openpilot env setup, with retry on failure'
 
-inputs:
-  docker_hub_pat:
-    description: 'Auth token for Docker Hub, required for BuildJet jobs'
-    required: false
-    default: ''
-  cache_key_prefix:
-    description: 'Prefix for caching key'
-    required: false
-    default: 'scons_x86_64'
-  sleep_time:
-    description: 'Time to sleep between retries'
-    required: false
-    default: 30
+on:
+  push:
+    branches:
+      - main  # Adjust this to match your branch name
 
-runs:
-  using: "composite"
-  steps:
-    - id: setup1
-      uses: ./.github/workflows/setup
-      continue-on-error: true
-      with:
-        docker_hub_pat: ${{ inputs.docker_hub_pat }}
-        cache_key_prefix: ${{ inputs.cache_key_prefix }}
-        is_retried: true
-    - if: steps.setup1.outcome == 'failure'
-      shell: bash
-      run: sleep ${{ inputs.sleep_time }}
-    - id: setup2
-      if: steps.setup1.outcome == 'failure'
-      uses: ./.github/workflows/setup
-      continue-on-error: true
-      with:
-        docker_hub_pat: ${{ inputs.docker_hub_pat }}
-        cache_key_prefix: ${{ inputs.cache_key_prefix }}
-        is_retried: true
-    - if: steps.setup2.outcome == 'failure'
-      shell: bash
-      run: sleep ${{ inputs.sleep_time }}
-    - id: setup3
-      if: steps.setup2.outcome == 'failure'
-      uses: ./.github/workflows/setup
-      with:
-        docker_hub_pat: ${{ inputs.docker_hub_pat }}
-        cache_key_prefix: ${{ inputs.cache_key_prefix }}
-        is_retried: true
+jobs:
+  setup_and_build:
+    runs-on: ubuntu-latest
+
+    inputs:
+      docker_hub_pat:
+        description: 'Auth token for Docker Hub, required for BuildJet jobs'
+        required: false
+        default: ''
+      cache_key_prefix:
+        description: 'Prefix for caching key'
+        required: false
+        default: 'scons_x86_64'
+      sleep_time:
+        description: 'Time to sleep between retries'
+        required: false
+        default: 30
+
+    steps:
+      - name: 'Build Docker image'
+        run: |
+          docker build -t my-image:latest .
+          docker push my-image:latest
+      - name: 'Pull Docker image'
+        run: |
+          docker pull my-image:latest
+      - id: setup1
+        uses: ./.github/workflows/setup
+        continue-on-error: true
+        with:
+          docker_hub_pat: ${{ inputs.docker_hub_pat }}
+          cache_key_prefix: ${{ inputs.cache_key_prefix }}
+          is_retried: true
+      - if: steps.setup1.outcome == 'failure'
+        shell: bash
+        run: sleep ${{ inputs.sleep_time }}
+      - id: setup2
+        if: steps.setup1.outcome == 'failure'
+        uses: ./.github/workflows/setup
+        continue-on-error: true
+        with:
+          docker_hub_pat: ${{ inputs.docker_hub_pat }}
+          cache_key_prefix: ${{ inputs.cache_key_prefix }}
+          is_retried: true
+      - if: steps.setup2.outcome == 'failure'
+        shell: bash
+        run: sleep ${{ inputs.sleep_time }}
+      - id: setup3
+        if: steps.setup2.outcome == 'failure'
+        uses: ./.github/workflows/setup
+        with:
+          docker_hub_pat: ${{ inputs.docker_hub_pat }}
+          cache_key_prefix: ${{ inputs.cache_key_prefix }}
+          is_retried: true
