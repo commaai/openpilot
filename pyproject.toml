@@ -110,7 +110,6 @@ polyline = "*"
 # these should be removed
 markdown-it-py = "*"
 timezonefinder = "*"
-pycurl = "*"
 setproctitle = "*"
 
 
@@ -153,7 +152,6 @@ sphinx-rtd-theme = "*"
 sphinx-sitemap = "*"
 tabulate = "*"
 tenacity = "*"
-types-pycurl = "*"
 types-requests = "*"
 types-tabulate = "*"
 tqdm = "*"
