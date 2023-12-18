@@ -166,7 +166,7 @@ class TestTranslations(unittest.TestCase):
 
             for word in words:
               if word in banned_words and word not in override_words:
-                assert False, f"Bad language found: {word} - {translation_text}"
+                raise AssertionError(f"Bad language found: {word} - {translation_text}")
 
 
 if __name__ == "__main__":
