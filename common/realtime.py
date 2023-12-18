@@ -5,8 +5,6 @@ import time
 from collections import deque
 from typing import Optional, List, Union
 
-from setproctitle import getproctitle
-
 from openpilot.system.hardware import PC
 
 
@@ -53,7 +51,6 @@ class Ratekeeper:
     self._print_delay_threshold = print_delay_threshold
     self._frame = 0
     self._remaining = 0.0
-    self._process_name = getproctitle()
     self._dts = deque([self._interval], maxlen=100)
     self._last_monitor_time = time.monotonic()
 
@@ -88,7 +85,7 @@ class Ratekeeper:
     remaining = self._next_frame_time - time.monotonic()
     self._next_frame_time += self._interval
     if self._print_delay_threshold is not None and remaining < -self._print_delay_threshold:
-      print(f"{self._process_name} lagging by {-remaining * 1000:.2f} ms")
+      print(f"lagging by {-remaining * 1000:.2f} ms")
       lagged = True
     self._frame += 1
     self._remaining = remaining

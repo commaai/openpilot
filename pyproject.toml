@@ -111,7 +111,6 @@ polyline = "*"
 markdown-it-py = "*"
 timezonefinder = "*"
 pycurl = "*"
-setproctitle = "*"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -6,7 +6,6 @@ import numpy as np
 import cereal.messaging as messaging
 from pathlib import Path
 from typing import Dict, Optional
-from setproctitle import setproctitle
 from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
@@ -16,6 +15,7 @@ from openpilot.common.numpy_fast import interp
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.model import get_warp_matrix
+from openpilot.common.proc import setproctitle
 from openpilot.selfdrive import sentry
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser

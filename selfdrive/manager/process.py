@@ -8,11 +8,11 @@ from typing import Optional, Callable, List, ValuesView
 from abc import ABC, abstractmethod
 from multiprocessing import Process
 
-from setproctitle import setproctitle
 
 from cereal import car, log
 import cereal.messaging as messaging
 import openpilot.selfdrive.sentry as sentry
+from openpilot.common.proc import setproctitle
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog

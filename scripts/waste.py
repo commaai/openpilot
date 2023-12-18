@@ -3,7 +3,7 @@ import os
 import time
 import numpy as np
 from multiprocessing import Process
-from setproctitle import setproctitle
+from openpilot.common.proc import setproctitle
 
 def waste(core):
   os.sched_setaffinity(0, [core,])
