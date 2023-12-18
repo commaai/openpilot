@@ -52,11 +52,11 @@ public:
   static void reboot() { std::system("sudo reboot"); }
   static void poweroff() { std::system("sudo poweroff"); }
   static void set_brightness(int percent) {
-    std::string max = util::read_file("/sys/class/backlight/panel0-backlight/max_brightness");
+    static const float max = std::stof(util::read_file("/sys/class/backlight/panel0-backlight/max_brightness"));
 
     std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
     if (brightness_control.is_open()) {
-      brightness_control << (int)(percent * (std::stof(max)/100.)) << "\n";
+      brightness_control << (int)(percent * (max/100.)) << "\n";
       brightness_control.close();
     }
   }
