@@ -43,7 +43,7 @@ class CarController:
     self.main_on_last = False
     self.lkas_enabled_last = False
     self.steer_alert_last = False
-    self.accel_old = 0
+    self.actuate_last = 0
 
   def update(self, CC, CS, now_nanos):
     can_sends = []
@@ -107,8 +107,8 @@ class CarController:
       if not CC.longActive and hud_control.setSpeed:
         targetSpeed = hud_control.setSpeed
 
-      actuate = hysteresis(accel, self.accel_old, 0, 0.1)
-      self.accel_old = accel
+      actuate = hysteresis(accel, self.actuate_last, -0.05, 0.05)
+      self.actuate_last = actuate
 
       can_sends.append(fordcan.create_acc_msg(self.packer, self.CAN, CC.longActive, gas, accel, stopping, actuate, v_ego_kph=targetSpeed * CV.MS_TO_KPH))
 
