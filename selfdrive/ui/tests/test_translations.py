@@ -6,6 +6,7 @@ import shutil
 import unittest
 import xml.etree.ElementTree as ET
 import string
+import requests
 
 from openpilot.selfdrive.ui.update_translations import TRANSLATIONS_DIR, LANGUAGES_FILE, update_translations
 
@@ -124,22 +125,45 @@ class TestTranslations(unittest.TestCase):
 
   def test_bad_language(self):
     for name, file in self.translation_files.items():
-      if file == "main_ar":
-        with self.subTest(name=name, file=file):
-          tr_xml = ET.parse(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"))
+      with self.subTest(name=name, file=file):
+        tr_xml = ET.parse(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"))
 
-          with open(os.path.join(TRANSLATIONS_DIR, "bad_en.txt"), 'r') as file:
-            banned_words = [line.strip() for line in file]
+        available_language_codes = ["ar", "cs", "da", "de", "en", "eo", "es", "fa", "fi", "fil", "fr", "hi", "hu", "it", "ja", "kab", "ko", "nl", "no", "pl", "pt",
+                                    "ru", "sv", "th", "tlh", "tr", "zh"]
 
-          for context in tr_xml.getroot():
-            for message in context.iterfind("message"):
-              translation = message.find("translation").text
-              source_text = message.find("source").text
+        match = re.search(r'_([a-zA-Z]{2,3})', file)
+        if not match:
+          print(f"{file} - could not parse language")
+          continue
 
-              words = translation.translate(str.maketrans('', '', string.punctuation)).lower().split()
+        if match.group(1) not in available_language_codes:
+          print(f"{file} - language not supported")
+          continue
 
-              for word in words:
-                assert word not in banned_words, f"Bad language found: {word} - {translation}"
+        print(f"checking {file}")
+        url = f"https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/{match.group(1)}"
+        response = requests.get(url)
+        assert response.status_code == 200, f"{file}  - failed to retrieve data: {url}"
+
+        banned_words = [line.strip() for line in response.text.splitlines()]
+
+        for context in tr_xml.getroot():
+          for message in context.iterfind("message"):
+            translation = message.find("translation")
+            translation_text = translation.text
+            source_text = message.find("source").text
+
+            if translation.get("type") == "unfinished":
+              continue
+
+            if translation_text is not None:
+              words = translation_text.translate(str.maketrans('', '', string.punctuation)).lower().split()
+            else:
+              print(translation_text)
+              print(source_text)
+
+            for word in words:
+              assert word not in banned_words, f"Bad language found: {word} - {translation_text}"
 
 
 if __name__ == "__main__":
