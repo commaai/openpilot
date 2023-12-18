@@ -135,7 +135,6 @@ int CameraState::sensors_init() {
   buf_desc[1].size = buf_desc[1].length = 196;
   buf_desc[1].type = CAM_CMD_BUF_I2C;
   auto power_settings = mm.alloc<struct cam_cmd_power>(buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
-  memset(power_settings.get(), 0, buf_desc[1].size);
 
   // power on
   struct cam_cmd_power *power = power_settings.get();
