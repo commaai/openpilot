@@ -2,6 +2,8 @@
 
 Get paid to improve openpilot!
 
+## Please check [here](https://github.com/orgs/commaai/projects/26/views/1) for a full list of open bounties
+
 ## Rules
 
 * code must be merged into openpilot master
