@@ -56,9 +56,11 @@ static void dump(NullStruct, string &out) {
 
 static void dump(double value, string &out) {
     if (std::isfinite(value)) {
-        char buf[32];
-        std::to_chars(buf, buf + sizeof buf, value, std::chars_format::general, 17);
-        out += buf;
+        std::ostringstream s;
+        s.imbue(std::locale::classic());
+        s.precision(17);
+        s << value;
+        out += s.str();
     } else {
         out += "null";
     }
