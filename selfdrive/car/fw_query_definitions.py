@@ -9,6 +9,10 @@ import panda.python.uds as uds
 
 AddrType = Tuple[int, Optional[int]]
 EcuAddrBusType = Tuple[int, Optional[int], int]
+EcuAddrSubAddr = Tuple[int, int, Optional[int]]
+
+LIVE_FW_VERSIONS = Dict[AddrType, Set[bytes]]
+OFFLINE_FW_VERSIONS = Dict[str, Dict[EcuAddrSubAddr, List[bytes]]]
 
 
 def p16(val):
@@ -79,7 +83,7 @@ class FwQueryConfig:
   extra_ecus: List[Tuple[capnp.lib.capnp._EnumModule, int, Optional[int]]] = field(default_factory=list)
   # Function a brand can implement to provide better fuzzy matching. Takes in FW versions,
   # returns set of candidates. Only will match if one candidate is returned
-  match_fw_to_car_fuzzy: Optional[Callable[[Dict[AddrType, Set[bytes]]], Set[str]]] = None
+  match_fw_to_car_fuzzy: Optional[Callable[[LIVE_FW_VERSIONS, OFFLINE_FW_VERSIONS], Set[str]]] = None
 
   def __post_init__(self):
     for i in range(len(self.requests)):
