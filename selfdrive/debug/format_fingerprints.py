@@ -14,15 +14,15 @@ ECU_NUMBER_TO_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 FINGERPRINTS_PY_TEMPLATE = """{% if brand in FINGERPRINTS %}
 # ruff: noqa: E501
 {% endif %}
-{% if brand in FW_VERSIONS %}
+{% if FW_VERSIONS[brand] %}
 from cereal import car
 {% endif %}
 from openpilot.selfdrive.car.{{brand}}.values import CAR
-{% if brand in FW_VERSIONS %}
+{% if FW_VERSIONS[brand] %}
 Ecu = car.CarParams.Ecu
 {% endif %}
 
-{% if brand in FINGERPRINTS %}
+{% if FINGERPRINTS[brand] %}
 FINGERPRINTS = {
 {% for car, fingerprints in FINGERPRINTS[brand].items() %}
   CAR.{{PLATFORM_TO_PYTHON_CAR_NAME[brand][car]}}: [
@@ -33,7 +33,7 @@ FINGERPRINTS = {
 }
 {% endif %}
 
-{% if brand in FW_VERSIONS %}
+{% if FW_VERSIONS[brand] %}
 FW_VERSIONS = {
 {% for car, _ in FW_VERSIONS[brand].items() %}
   CAR.{{PLATFORM_TO_PYTHON_CAR_NAME[brand][car]}}: {
