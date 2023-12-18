@@ -1,4 +1,3 @@
-from collections import defaultdict
 import os
 import time
 import numpy as np
@@ -434,10 +433,10 @@ class CarStateBase(ABC):
     return None
 
 
-INTERFACE_ATTR_FILE = defaultdict(lambda: "values", {
+INTERFACE_ATTR_FILE = {
   "FINGERPRINTS": "fingerprints",
   "FW_VERSIONS": "fingerprints",
-})
+}
 
 # interface-specific helpers
 
@@ -449,7 +448,7 @@ def get_interface_attr(attr: str, combine_brands: bool = False, ignore_none: boo
   for car_folder in sorted([x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]):
     try:
       brand_name = car_folder.split('/')[-1]
-      brand_values = __import__(f'openpilot.selfdrive.car.{brand_name}.{INTERFACE_ATTR_FILE[attr]}', fromlist=[attr])
+      brand_values = __import__(f'openpilot.selfdrive.car.{brand_name}.{INTERFACE_ATTR_FILE.get(attr, "values")}', fromlist=[attr])
       if hasattr(brand_values, attr) or not ignore_none:
         attr_data = getattr(brand_values, attr, None)
       else:
