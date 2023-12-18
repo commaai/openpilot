@@ -1,7 +1,7 @@
-# ruff: noqa: E501
-from openpilot.selfdrive.car.fw_versions import Ecu
+from cereal import car
 from openpilot.selfdrive.car.subaru.values import CAR
 
+Ecu = car.CarParams.Ecu
 
 FW_VERSIONS = {
   CAR.ASCENT: {

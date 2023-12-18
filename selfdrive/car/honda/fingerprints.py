@@ -1,7 +1,8 @@
 
-from openpilot.selfdrive.car.fw_versions import Ecu
+from cereal import car
 from openpilot.selfdrive.car.honda.values import CAR
 
+Ecu = car.CarParams.Ecu
 
 FW_VERSIONS = {
   CAR.ACCORD: {

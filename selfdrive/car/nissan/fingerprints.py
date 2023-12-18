@@ -1,7 +1,8 @@
 # ruff: noqa: E501
-from openpilot.selfdrive.car.fw_versions import Ecu
+from cereal import car
 from openpilot.selfdrive.car.nissan.values import CAR
 
+Ecu = car.CarParams.Ecu
 
 FINGERPRINTS = {
   CAR.XTRAIL: [

@@ -1,5 +1,7 @@
-from openpilot.selfdrive.car.fw_versions import Ecu
+from cereal import car
 from openpilot.selfdrive.car.volkswagen.values import CAR
+
+Ecu = car.CarParams.Ecu
 
 
 FW_VERSIONS = {
