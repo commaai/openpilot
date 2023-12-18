@@ -11,7 +11,7 @@ FINGERPRINTS = get_interface_attr('FINGERPRINTS')
 PLATFORM_TO_PYTHON_CAR_NAME = {brand: {car.value: car.name for car in CARS[brand]} for brand in CARS}
 ECU_NUMBER_TO_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
-FINGERPRINTS_PY_TEMPLATE = """{% if brand in FINGERPRINTS %}
+FINGERPRINTS_PY_TEMPLATE = """{% if FINGERPRINTS[brand] %}
 # ruff: noqa: E501
 {% endif %}
 {% if FW_VERSIONS[brand] %}
