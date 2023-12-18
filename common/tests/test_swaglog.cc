@@ -1,6 +1,7 @@
 #include <zmq.h>
 
 #include <iostream>
+#include <locale>
 
 #include "catch2/catch.hpp"
 #include "common/swaglog.h"
@@ -75,6 +76,7 @@ TEST_CASE("swaglog") {
   setenv("MANAGER_DAEMON", daemon_name.c_str(), 1);
   setenv("DONGLE_ID", dongle_id.c_str(), 1);
   setenv("dirty", "1", 1);
+  setlocale(LC_ALL, "de_DE.UTF-8");
   const int thread_cnt = 5;
   const int thread_msg_cnt = 100;
 
