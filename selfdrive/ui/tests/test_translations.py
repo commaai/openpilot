@@ -147,6 +147,8 @@ class TestTranslations(unittest.TestCase):
 
         banned_words = [line.strip() for line in response.text.splitlines()]
 
+        override_words = ['pédale']
+
         for context in tr_xml.getroot():
           for message in context.iterfind("message"):
             translation = message.find("translation")
@@ -163,7 +165,8 @@ class TestTranslations(unittest.TestCase):
               print(source_text)
 
             for word in words:
-              assert word not in banned_words, f"Bad language found: {word} - {translation_text}"
+              if word in banned_words and word not in override_words:
+                assert False, f"Bad language found: {word} - {translation_text}"
 
 
 if __name__ == "__main__":
