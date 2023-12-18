@@ -55,7 +55,6 @@
 #include <map>
 #include <memory>
 #include <initializer_list>
-#include <cstring>
 #include <sstream>
 
 #ifdef _MSC_VER
