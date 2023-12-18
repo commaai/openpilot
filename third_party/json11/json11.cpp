@@ -57,7 +57,7 @@ static void dump(NullStruct, string &out) {
 static void dump(double value, string &out) {
     if (std::isfinite(value)) {
         char buf[32];
-        snprintf(buf, sizeof buf, "%.17g", value);
+        std::to_chars(buf, buf + sizeof buf, value, std::chars_format::general, 17);
         out += buf;
     } else {
         out += "null";
