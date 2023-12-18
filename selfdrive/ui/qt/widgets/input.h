@@ -10,23 +10,23 @@
 #include "selfdrive/ui/qt/widgets/keyboard.h"
 
 
-class QDialogBase : public QDialog {
+class DialogBase : public QDialog {
   Q_OBJECT
 
 protected:
-  QDialogBase(QWidget *parent);
+  DialogBase(QWidget *parent);
   bool eventFilter(QObject *o, QEvent *e) override;
 
 public slots:
   int exec() override;
 };
 
-class InputDialog : public QDialogBase {
+class InputDialog : public DialogBase {
   Q_OBJECT
 
 public:
   explicit InputDialog(const QString &title, QWidget *parent, const QString &subtitle = "", bool secret = false);
-  static QString getText(const QString &title, QWidget *parent, const QString &substitle = "",
+  static QString getText(const QString &title, QWidget *parent, const QString &subtitle = "",
                          bool secret = false, int minLength = -1, const QString &defaultText = "");
   QString text();
   void setMessage(const QString &message, bool clearInputField = true);
@@ -50,21 +50,22 @@ signals:
   void emitText(const QString &text);
 };
 
-class ConfirmationDialog : public QDialogBase {
+class ConfirmationDialog : public DialogBase {
   Q_OBJECT
 
 public:
   explicit ConfirmationDialog(const QString &prompt_text, const QString &confirm_text,
-                              const QString &cancel_text, QWidget* parent);
+                              const QString &cancel_text, const bool rich, QWidget* parent);
   static bool alert(const QString &prompt_text, QWidget *parent);
-  static bool confirm(const QString &prompt_text, QWidget *parent);
+  static bool confirm(const QString &prompt_text, const QString &confirm_text, QWidget *parent);
+  static bool rich(const QString &prompt_text, QWidget *parent);
 };
 
-// larger ConfirmationDialog for rich text
-class RichTextDialog : public QDialogBase {
+class MultiOptionDialog : public DialogBase {
   Q_OBJECT
 
 public:
-  explicit RichTextDialog(const QString &prompt_text, const QString &btn_text, QWidget* parent);
-  static bool alert(const QString &prompt_text, QWidget *parent);
+  explicit MultiOptionDialog(const QString &prompt_text, const QStringList &l, const QString &current, QWidget *parent);
+  static QString getSelection(const QString &prompt_text, const QStringList &l, const QString &current, QWidget *parent);
+  QString selection;
 };

@@ -1,3 +1,5 @@
 #pragma once
 
-bool watchdog_kick();
+#include <cstdint>
+
+bool watchdog_kick(uint64_t ts);

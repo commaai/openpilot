@@ -1,8 +1,7 @@
-from common.params_pyx import Params, ParamKeyType, UnknownKeyName, put_nonblocking # pylint: disable=no-name-in-module, import-error
+from openpilot.common.params_pyx import Params, ParamKeyType, UnknownKeyName
 assert Params
 assert ParamKeyType
 assert UnknownKeyName
-assert put_nonblocking
 
 if __name__ == "__main__":
   import sys

@@ -1,8 +1,13 @@
 #include "tools/replay/consoleui.h"
 
-#include <QApplication>
 #include <initializer_list>
+#include <string>
+#include <tuple>
+#include <utility>
 
+#include <QApplication>
+
+#include "common/util.h"
 #include "common/version.h"
 
 namespace {
@@ -18,10 +23,14 @@ const std::initializer_list<std::pair<std::string, std::string>> keyboard_shortc
     {"space", "Pause/Resume"},
     {"e", "Next Engagement"},
     {"d", "Next Disengagement"},
+    {"t", "Next User Tag"},
+    {"i", "Next Info"},
+    {"w", "Next Warning"},
+    {"c", "Next Critical"},
   },
   {
     {"enter", "Enter seek request"},
-    {"x", "+/-Replay speed"},
+    {"+/-", "Playback speed"},
     {"q", "Exit"},
   },
 };
@@ -32,6 +41,7 @@ enum Color {
   Yellow,
   Green,
   Red,
+  Cyan,
   BrightWhite,
   Engaged,
   Disengaged,
@@ -43,14 +53,6 @@ void add_str(WINDOW *w, const char *str, Color color = Color::Default, bool bold
   waddstr(w, str);
   if (bold) wattroff(w, A_BOLD);
   if (color != Color::Default) wattroff(w, COLOR_PAIR(color));
-}
-
-std::string format_seconds(int s) {
-  int total_minutes = s / 60;
-  int seconds = s % 60;
-  int hours = total_minutes / 60;
-  int minutes = total_minutes % 60;
-  return util::string_format("%02d:%02d:%02d", hours, minutes, seconds);
 }
 
 }  // namespace
@@ -70,6 +72,7 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   init_pair(Color::Debug, 246, COLOR_BLACK);  // #949494
   init_pair(Color::Yellow, 184, COLOR_BLACK);
   init_pair(Color::Red, COLOR_RED, COLOR_BLACK);
+  init_pair(Color::Cyan, COLOR_CYAN, COLOR_BLACK);
   init_pair(Color::BrightWhite, 15, COLOR_BLACK);
   init_pair(Color::Disengaged, COLOR_BLUE, COLOR_BLUE);
   init_pair(Color::Engaged, 28, 28);
@@ -150,13 +153,13 @@ void ConsoleUI::timerEvent(QTimerEvent *ev) {
 }
 
 void ConsoleUI::updateStatus() {
-  auto write_item = [this](int y, int x, const char *key, const std::string &value, const char *unit,
+  auto write_item = [this](int y, int x, const char *key, const std::string &value, const std::string &unit,
                            bool bold = false, Color color = Color::BrightWhite) {
     auto win = w[Win::CarState];
     wmove(win, y, x);
     add_str(win, key);
     add_str(win, value.c_str(), color, bold);
-    add_str(win, unit);
+    add_str(win, unit.c_str());
   };
   static const std::pair<const char *, Color> status_text[] = {
       {"loading...", Color::Red},
@@ -167,13 +170,15 @@ void ConsoleUI::updateStatus() {
   sm.update(0);
 
   if (status != Status::Paused) {
-    status = (sm.updated("carState") || sm.updated("liveParameters")) ? Status::Playing : Status::Waiting;
+    auto events = replay->events();
+    uint64_t current_mono_time = replay->routeStartTime() + replay->currentSeconds() * 1e9;
+    bool playing = !events->empty() && events->back()->mono_time > current_mono_time;
+    status = playing ? Status::Playing : Status::Waiting;
   }
   auto [status_str, status_color] = status_text[status];
   write_item(0, 0, "STATUS:    ", status_str, "      ", false, status_color);
-  std::string suffix = util::string_format(" / %s [%d/%d]      ", format_seconds(replay->totalSeconds()).c_str(),
-                                           replay->currentSeconds() / 60, replay->route()->segments().size());
-  write_item(0, 25, "TIME:  ", format_seconds(replay->currentSeconds()), suffix.c_str(), true);
+  std::string current_segment = " - " + std::to_string((int)(replay->currentSeconds() / 60));
+  write_item(0, 25, "TIME:  ", replay->currentDateTime().toString("ddd MMMM dd hh:mm:ss").toStdString(), current_segment, true);
 
   auto p = sm["liveParameters"].getLiveParameters();
   write_item(1, 0, "STIFFNESS: ", util::string_format("%.2f %%", p.getStiffnessFactor() * 100), "  ");
@@ -205,6 +210,7 @@ void ConsoleUI::displayTimelineDesc() {
       {Color::Green, " Info ", true},
       {Color::Yellow, " Warning ", true},
       {Color::Red, " Critical ", true},
+      {Color::Cyan, " User Tag ", true},
   };
   for (auto [color, name, bold] : indicators) {
     add_str(w[Win::TimelineDesc], "__", color, bold);
@@ -258,11 +264,13 @@ void ConsoleUI::updateTimeline() {
 
   const int total_sec = replay->totalSeconds();
   for (auto [begin, end, type] : replay->getTimeline()) {
-    int start_pos = ((double)begin / total_sec) * width;
-    int end_pos = ((double)end / total_sec) * width;
+    int start_pos = (begin / total_sec) * width;
+    int end_pos = (end / total_sec) * width;
     if (type == TimelineType::Engaged) {
       mvwchgat(win, 1, start_pos, end_pos - start_pos + 1, A_COLOR, Color::Engaged, NULL);
       mvwchgat(win, 2, start_pos, end_pos - start_pos + 1, A_COLOR, Color::Engaged, NULL);
+    } else if (type == TimelineType::UserFlag) {
+      mvwchgat(win, 3, start_pos, end_pos - start_pos + 1, ACS_S3, Color::Cyan, NULL);
     } else {
       auto color_id = Color::Green;
       if (type != TimelineType::AlertInfo) {
@@ -324,18 +332,31 @@ void ConsoleUI::handleKey(char c) {
     refresh();
     getch_timer.start(1000, this);
 
-  } else if (c == 'x') {
-    if (replay->hasFlag(REPLAY_FLAG_FULL_SPEED)) {
-      replay->removeFlag(REPLAY_FLAG_FULL_SPEED);
-      rWarning("replay at normal speed");
-    } else {
-      replay->addFlag(REPLAY_FLAG_FULL_SPEED);
-      rWarning("replay at full speed");
+  } else if (c == '+' || c == '=') {
+    auto it = std::upper_bound(speed_array.begin(), speed_array.end(), replay->getSpeed());
+    if (it != speed_array.end()) {
+      rWarning("playback speed: %.1fx", *it);
+      replay->setSpeed(*it);
+    }
+  } else if (c == '_' || c == '-') {
+    auto it = std::lower_bound(speed_array.begin(), speed_array.end(), replay->getSpeed());
+    if (it != speed_array.begin()) {
+      auto prev = std::prev(it);
+      rWarning("playback speed: %.1fx", *prev);
+      replay->setSpeed(*prev);
     }
   } else if (c == 'e') {
     replay->seekToFlag(FindFlag::nextEngagement);
   } else if (c == 'd') {
     replay->seekToFlag(FindFlag::nextDisEngagement);
+  } else if (c == 't') {
+    replay->seekToFlag(FindFlag::nextUserFlag);
+  } else if (c == 'i') {
+    replay->seekToFlag(FindFlag::nextInfo);
+  } else if (c == 'w') {
+    replay->seekToFlag(FindFlag::nextWarning);
+  } else if (c == 'c') {
+    replay->seekToFlag(FindFlag::nextCritical);
   } else if (c == 'm') {
     replay->seekTo(+60, true);
   } else if (c == 'M') {

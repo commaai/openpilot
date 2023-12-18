@@ -3,7 +3,7 @@
 import numpy as np
 import unittest
 
-import common.transformations.coordinates as coord
+import openpilot.common.transformations.coordinates as coord
 
 geodetic_positions = np.array([[37.7610403, -122.4778699, 115],
                                  [27.4840915, -68.5867592, 2380],

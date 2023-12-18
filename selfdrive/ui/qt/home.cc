@@ -1,14 +1,17 @@
 #include "selfdrive/ui/qt/home.h"
 
-#include <QDateTime>
 #include <QHBoxLayout>
 #include <QMouseEvent>
+#include <QStackedWidget>
 #include <QVBoxLayout>
 
-#include "common/params.h"
+#include "selfdrive/ui/qt/offroad/experimental_mode.h"
 #include "selfdrive/ui/qt/util.h"
-#include "selfdrive/ui/qt/widgets/drive_stats.h"
 #include "selfdrive/ui/qt/widgets/prime.h"
+
+#ifdef ENABLE_MAPS
+#include "selfdrive/ui/qt/maps/map_settings.h"
+#endif
 
 // HomeWindow: the container for the offroad and onroad UIs
 
@@ -24,10 +27,12 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   slayout = new QStackedLayout();
   main_layout->addLayout(slayout);
 
-  home = new OffroadHome();
+  home = new OffroadHome(this);
+  QObject::connect(home, &OffroadHome::openSettings, this, &HomeWindow::openSettings);
   slayout->addWidget(home);
 
   onroad = new OnroadWindow(this);
+  QObject::connect(onroad, &OnroadWindow::mapPanelRequested, this, [=] { sidebar->hide(); });
   slayout->addWidget(onroad);
 
   body = new BodyWindow(this);
@@ -41,10 +46,15 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   setAttribute(Qt::WA_NoSystemBackground);
   QObject::connect(uiState(), &UIState::uiUpdate, this, &HomeWindow::updateState);
   QObject::connect(uiState(), &UIState::offroadTransition, this, &HomeWindow::offroadTransition);
+  QObject::connect(uiState(), &UIState::offroadTransition, sidebar, &Sidebar::offroadTransition);
 }
 
 void HomeWindow::showSidebar(bool show) {
   sidebar->setVisible(show);
+}
+
+void HomeWindow::showMapPanel(bool show) {
+  onroad->showMapPanel(show);
 }
 
 void HomeWindow::updateState(const UIState &s) {
@@ -101,29 +111,27 @@ void HomeWindow::mouseDoubleClickEvent(QMouseEvent* e) {
 
 OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(40, 40, 40, 45);
+  main_layout->setContentsMargins(40, 40, 40, 40);
 
   // top header
   QHBoxLayout* header_layout = new QHBoxLayout();
-  header_layout->setContentsMargins(15, 15, 15, 0);
+  header_layout->setContentsMargins(0, 0, 0, 0);
   header_layout->setSpacing(16);
-
-  date = new QLabel();
-  header_layout->addWidget(date, 1, Qt::AlignHCenter | Qt::AlignLeft);
 
   update_notif = new QPushButton(tr("UPDATE"));
   update_notif->setVisible(false);
   update_notif->setStyleSheet("background-color: #364DEF;");
   QObject::connect(update_notif, &QPushButton::clicked, [=]() { center_layout->setCurrentIndex(1); });
-  header_layout->addWidget(update_notif, 0, Qt::AlignHCenter | Qt::AlignRight);
+  header_layout->addWidget(update_notif, 0, Qt::AlignHCenter | Qt::AlignLeft);
 
   alert_notif = new QPushButton();
   alert_notif->setVisible(false);
   alert_notif->setStyleSheet("background-color: #E22C2C;");
   QObject::connect(alert_notif, &QPushButton::clicked, [=] { center_layout->setCurrentIndex(2); });
-  header_layout->addWidget(alert_notif, 0, Qt::AlignHCenter | Qt::AlignRight);
+  header_layout->addWidget(alert_notif, 0, Qt::AlignHCenter | Qt::AlignLeft);
 
-  header_layout->addWidget(new QLabel(getBrandVersion()), 0, Qt::AlignHCenter | Qt::AlignRight);
+  version = new ElidedLabel();
+  header_layout->addWidget(version, 0, Qt::AlignHCenter | Qt::AlignRight);
 
   main_layout->addLayout(header_layout);
 
@@ -131,14 +139,47 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   main_layout->addSpacing(25);
   center_layout = new QStackedLayout();
 
-  QWidget* statsAndSetupWidget = new QWidget(this);
-  QHBoxLayout* statsAndSetup = new QHBoxLayout(statsAndSetupWidget);
-  statsAndSetup->setMargin(0);
-  statsAndSetup->setSpacing(30);
-  statsAndSetup->addWidget(new DriveStats, 1);
-  statsAndSetup->addWidget(new SetupWidget);
+  QWidget *home_widget = new QWidget(this);
+  {
+    QHBoxLayout *home_layout = new QHBoxLayout(home_widget);
+    home_layout->setContentsMargins(0, 0, 0, 0);
+    home_layout->setSpacing(30);
 
-  center_layout->addWidget(statsAndSetupWidget);
+    // left: MapSettings/PrimeAdWidget
+    QStackedWidget *left_widget = new QStackedWidget(this);
+#ifdef ENABLE_MAPS
+    left_widget->addWidget(new MapSettings);
+#else
+    left_widget->addWidget(new QWidget);
+#endif
+    left_widget->addWidget(new PrimeAdWidget);
+    left_widget->setStyleSheet("border-radius: 10px;");
+
+    left_widget->setCurrentIndex(uiState()->hasPrime() ? 0 : 1);
+    connect(uiState(), &UIState::primeChanged, [=](bool prime) {
+      left_widget->setCurrentIndex(prime ? 0 : 1);
+    });
+
+    home_layout->addWidget(left_widget, 1);
+
+    // right: ExperimentalModeButton, SetupWidget
+    QWidget* right_widget = new QWidget(this);
+    QVBoxLayout* right_column = new QVBoxLayout(right_widget);
+    right_column->setContentsMargins(0, 0, 0, 0);
+    right_widget->setFixedWidth(750);
+    right_column->setSpacing(30);
+
+    ExperimentalModeButton *experimental_mode = new ExperimentalModeButton(this);
+    QObject::connect(experimental_mode, &ExperimentalModeButton::openSettings, this, &OffroadHome::openSettings);
+    right_column->addWidget(experimental_mode, 1);
+
+    SetupWidget *setup_widget = new SetupWidget;
+    QObject::connect(setup_widget, &SetupWidget::openSettings, this, &OffroadHome::openSettings);
+    right_column->addWidget(setup_widget, 1);
+
+    home_layout->addWidget(right_widget, 1);
+  }
+  center_layout->addWidget(home_widget);
 
   // add update & alerts widgets
   update_widget = new UpdateAlert();
@@ -156,7 +197,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
 
   setStyleSheet(R"(
     * {
-     color: white;
+      color: white;
     }
     OffroadHome {
       background-color: black;
@@ -183,7 +224,7 @@ void OffroadHome::hideEvent(QHideEvent *event) {
 }
 
 void OffroadHome::refresh() {
-  date->setText(QDateTime::currentDateTime().toString("dddd, MMMM d"));
+  version->setText(getBrand() + " " +  QString::fromStdString(params.get("UpdaterCurrentDescription")));
 
   bool updateAvailable = update_widget->refresh();
   int alerts = alerts_widget->refresh();

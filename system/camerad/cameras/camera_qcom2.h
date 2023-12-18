@@ -1,48 +1,37 @@
 #pragma once
 
-#include <cstdint>
-#include <map>
+#include <memory>
 #include <utility>
 
-#include <media/cam_req_mgr.h>
-
 #include "system/camerad/cameras/camera_common.h"
+#include "system/camerad/cameras/camera_util.h"
+#include "system/camerad/sensors/sensor.h"
+#include "common/params.h"
 #include "common/util.h"
 
 #define FRAME_BUF_COUNT 4
 
-class MemoryManager {
-  public:
-    void init(int _video0_fd) { video0_fd = _video0_fd; }
-    void *alloc(int len, uint32_t *handle);
-    void free(void *ptr);
-    ~MemoryManager();
-  private:
-    std::mutex lock;
-    std::map<void *, uint32_t> handle_lookup;
-    std::map<void *, int> size_lookup;
-    std::map<int, std::queue<void *> > cached_allocations;
-    int video0_fd;
-};
-
 class CameraState {
 public:
   MultiCameraState *multi_cam_state;
-  CameraInfo ci;
+  std::unique_ptr<const SensorInfo> ci;
   bool enabled;
 
   std::mutex exp_lock;
 
   int exposure_time;
   bool dc_gain_enabled;
+  int dc_gain_weight;
+  int gain_idx;
   float analog_gain_frac;
 
   float cur_ev[3];
-  float min_ev, max_ev;
+  float best_ev_score;
+  int new_exp_g;
+  int new_exp_t;
 
   float measured_grey_fraction;
   float target_grey_fraction;
-  int gain_idx;
 
   unique_fd sensor_fd;
   unique_fd csiphy_fd;
@@ -50,15 +39,16 @@ public:
   int camera_num;
 
   void handle_camera_event(void *evdat);
+  void update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain);
   void set_camera_exposure(float grey_frac);
 
   void sensors_start();
 
-  void camera_open();
-  void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, int camera_id, int camera_num, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type, bool enabled);
+  void camera_open(MultiCameraState *multi_cam_state, int camera_num, bool enabled);
+  void sensor_set_parameters();
+  void camera_map_bufs(MultiCameraState *s);
+  void camera_init(MultiCameraState *s, VisionIpcServer *v, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type);
   void camera_close();
-
-  std::map<uint16_t, uint16_t> ar0231_parse_registers(uint8_t *data, std::initializer_list<uint16_t> addrs);
 
   int32_t session_handle;
   int32_t sensor_dev_handle;
@@ -75,12 +65,10 @@ public:
   int frame_id_last;
   int idx_offset;
   bool skipped;
-  int camera_id;
 
   CameraBuf buf;
   MemoryManager mm;
 
-private:
   void config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset);
   void enqueue_req_multi(int start, int n, bool dp);
   void enqueue_buffer(int i, bool dp);
@@ -88,11 +76,11 @@ private:
 
   int sensors_init();
   void sensors_poke(int request_id);
-  void sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word);
+  void sensors_i2c(const struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word);
 
-  // Register parsing
-  std::map<uint16_t, std::pair<int, int>> ar0231_register_lut;
-  std::map<uint16_t, std::pair<int, int>> ar0231_build_register_lut(uint8_t *data);
+private:
+  // for debugging
+  Params params;
 };
 
 typedef struct MultiCameraState {

@@ -1,6 +1,6 @@
 ---
 name: Car Bug fix
-about: For vehicle/brand specifc bug fixes
+about: For vehicle/brand specific bug fixes
 title: ''
 labels: 'car bug fix'
 assignees: ''

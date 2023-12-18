@@ -5,7 +5,7 @@ openpilot
    :maxdepth: 4
 
    Debugging <selfdrive/debug/README.md>
-   selfdrive/loggerd/README.md
+   system/loggerd/README.md
    Driver Monitoring <selfdrive/monitoring/README.md>
    Process Replay <selfdrive/test/process_replay/README.md>
 
@@ -17,14 +17,6 @@ cereal
 
    cereal/README.md
    cereal/messaging/msgq.md
-
-laika
-=========
-
-.. toctree::
-   :maxdepth: 4
-
-   laika_repo/README.md
 
 models
 =========
@@ -77,3 +69,4 @@ tools
    Simulator <tools/sim/README.md>
    tools/ssh/README.md
    Webcam <tools/webcam/README.md>
+   tools/cabana/README.md

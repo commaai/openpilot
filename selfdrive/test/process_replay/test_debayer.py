@@ -6,13 +6,13 @@ import numpy as np
 
 import pyopencl as cl  # install with `PYOPENCL_CL_PRETEND_VERSION=2.0 pip install pyopencl`
 
-from system.hardware import PC, TICI
-from common.basedir import BASEDIR
-from selfdrive.test.openpilotci import BASE_URL, get_url
-from system.version import get_commit
-from system.camerad.snapshot.snapshot import yuv_to_rgb
-from tools.lib.logreader import LogReader
-from tools.lib.filereader import FileReader
+from openpilot.system.hardware import PC, TICI
+from openpilot.common.basedir import BASEDIR
+from openpilot.selfdrive.test.openpilotci import BASE_URL, get_url
+from openpilot.system.version import get_commit
+from openpilot.system.camerad.snapshot.snapshot import yuv_to_rgb
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.filereader import FileReader
 
 TEST_ROUTE = "8345e3b82948d454|2022-05-04--13-45-33"
 SEGMENT = 0
@@ -137,7 +137,7 @@ if __name__ == "__main__":
         failed = True
         diff += 'amount of frames not equal\n'
 
-      for i, (frame, cmp_frame) in enumerate(zip(frames, cmp_frames)):
+      for i, (frame, cmp_frame) in enumerate(zip(frames, cmp_frames, strict=True)):
         for j in range(3):
           fr = frame[j]
           cmp_f = cmp_frame[j]
@@ -159,7 +159,7 @@ if __name__ == "__main__":
               diff += f'different at a large amount of pixels ({diff_len})\n'
             else:
               diff += 'different at (frame, yuv, pixel, ref, HEAD):\n'
-              for k in zip(*np.nonzero(frame_diff)):
+              for k in zip(*np.nonzero(frame_diff), strict=True):
                 diff += f'{i}, {yuv_i[j]}, {k}, {cmp_f[k]}, {fr[k]}\n'
 
       if failed:
@@ -172,7 +172,7 @@ if __name__ == "__main__":
 
   # upload new refs
   if update or (failed and TICI):
-    from selfdrive.test.openpilotci import upload_file
+    from openpilot.selfdrive.test.openpilotci import upload_file
 
     print("Uploading new refs")
 

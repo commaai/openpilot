@@ -1,8 +1,11 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Report model bugs
+    url: https://github.com/commaai/openpilot/discussions/categories/model-feedback
+    about: Provide feedback for the driving or driver monitoring models
   - name: Discussions
     url: https://github.com/commaai/openpilot/discussions
-    about: For questions and discussion about openpilot
+    about: For questions and general discussion about openpilot
   - name: Community Wiki
     url: https://github.com/commaai/openpilot/wiki
     about: Check out our community wiki

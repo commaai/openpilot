@@ -7,11 +7,11 @@ In order to SSH into your device, you'll need a GitHub account with SSH keys. Se
 * Enable SSH in your device's settings
 * Enter your GitHub username in the device's settings
 * Connect to your device
-  * Username: `comma` (comma three)
+  * Username: `comma`
   * Port: `22` or `8022`
 
-Here's an example command for connecting to your device using its tethered connection:
-`ssh root@192.168.43.1`
+Here's an example command for connecting to your device using its tethered connection:<br />
+`ssh comma@192.168.43.1`
 
 For doing development work on device, it's recommended to use [SSH agent forwarding](https://docs.github.com/en/developers/overview/using-ssh-agent-forwarding).
 
@@ -24,17 +24,16 @@ The `id_rsa` key in this directory only works while your device is in the setup 
 See the [community wiki](https://github.com/commaai/openpilot/wiki/SSH) for more detailed instructions and information.
 
 # Connecting to ssh.comma.ai
-SSH into your comma device from anywhere with `ssh.comma.ai`.
+SSH into your comma device from anywhere with `ssh.comma.ai`. Requires a [comma prime subscription](https://comma.ai/connect).
 
 ## Setup
 
 With software version 0.6.1 or newer, enter your GitHub username on your device under Developer Settings. Your GitHub authorized public keys will become your authorized SSH keys for `ssh.comma.ai`. You can add any additional keys in `/system/comma/home/.ssh/authorized_keys.persist`.
 
-Requires [comma SIM with comma prime](https://comma.ai/shop) activated with comma connect, available on iOS and Android. comma two and EON ship with a pre-inserted comma SIM.
-
 ## Recommended .ssh/config
 
-With the below ssh configuration, you can type `ssh comma-{dongleid}` to connect to your device through `ssh.comma.ai`. For example, `ssh comma-ffffffffffffffff`.
+With the below SSH configuration, you can type `ssh comma-{dongleid}` to connect to your device through `ssh.comma.ai`.<br />
+For example: `ssh comma-ffffffffffffffff`
 
 ```
 Host comma-*

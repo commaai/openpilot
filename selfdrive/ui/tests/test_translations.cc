@@ -17,30 +17,27 @@ QStringList getParentWidgets(QWidget* widget){
 
 template <typename T>
 void checkWidgetTrWrap(MainWindow &w) {
-  int i = 0;
   for (auto widget : w.findChildren<T>()) {
-    const QString text = widget->text();
-    SECTION(text.toStdString() + "-" + std::to_string(i)) {
-      bool isNumber = RE_NUM.exactMatch(text);
-      bool wrapped = text.contains(TEST_TEXT);
-      QString parentWidgets = getParentWidgets(widget).join("->");
+  const QString text = widget->text();
+    bool isNumber = RE_NUM.exactMatch(text);
+    bool wrapped = text.contains(TEST_TEXT);
+    QString parentWidgets = getParentWidgets(widget).join("->");
 
-      if (!text.isEmpty() && !isNumber && !wrapped) {
-        FAIL(("\"" + text + "\" must be wrapped. Parent widgets: " + parentWidgets).toStdString());
-      }
-
-      // warn if source string wrapped, but UI adds text
-      // TODO: add way to ignore this
-      if (wrapped && text != TEST_TEXT) {
-        WARN(("\"" + text + "\" is dynamic and needs a custom retranslate function. Parent widgets: " + parentWidgets).toStdString());
-      }
+    if (!text.isEmpty() && !isNumber && !wrapped) {
+      FAIL(("\"" + text + "\" must be wrapped. Parent widgets: " + parentWidgets).toStdString());
     }
-    i++;
+
+    // warn if source string wrapped, but UI adds text
+    // TODO: add way to ignore this
+    if (wrapped && text != TEST_TEXT) {
+      WARN(("\"" + text + "\" is dynamic and needs a custom retranslate function. Parent widgets: " + parentWidgets).toStdString());
+    }
   }
 }
 
 // Tests all strings in the UI are wrapped with tr()
 TEST_CASE("UI: test all strings wrapped") {
+  Params().remove("LanguageSetting");
   Params().remove("HardwareSerial");
   Params().remove("DongleId");
   qputenv("TICI", "1");

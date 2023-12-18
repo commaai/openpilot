@@ -8,7 +8,7 @@
 void transform_init(Transform* s, cl_context ctx, cl_device_id device_id) {
   memset(s, 0, sizeof(*s));
 
-  cl_program prg = cl_program_from_file(ctx, device_id, "transforms/transform.cl", "");
+  cl_program prg = cl_program_from_file(ctx, device_id, TRANSFORM_PATH, "");
   s->krnl = CL_CHECK_ERR(clCreateKernel(prg, "warpPerspective", &err));
   // done with this
   CL_CHECK(clReleaseProgram(prg));
@@ -32,7 +32,7 @@ void transform_queue(Transform* s,
   const int zero = 0;
 
   // sampled using pixel center origin
-  // (because thats how fastcv and opencv does it)
+  // (because that's how fastcv and opencv does it)
 
   mat3 projection_y = projection;
 

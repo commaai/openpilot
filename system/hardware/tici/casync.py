@@ -22,7 +22,7 @@ CA_TABLE_HEADER_LEN = 16
 CA_TABLE_ENTRY_LEN = 40
 CA_TABLE_MIN_LEN = CA_TABLE_HEADER_LEN + CA_TABLE_ENTRY_LEN
 
-CHUNK_DOWNLOAD_TIMEOUT = 10
+CHUNK_DOWNLOAD_TIMEOUT = 60
 CHUNK_DOWNLOAD_RETRIES = 3
 
 CAIBX_DOWNLOAD_TIMEOUT = 120
@@ -40,9 +40,11 @@ class ChunkReader(ABC):
 class FileChunkReader(ChunkReader):
   """Reads chunks from a local file"""
   def __init__(self, fn: str) -> None:
-
     super().__init__()
     self.f = open(fn, 'rb')
+
+  def __del__(self):
+    self.f.close()
 
   def read(self, chunk: Chunk) -> bytes:
     self.f.seek(chunk.offset)
@@ -61,24 +63,30 @@ class RemoteChunkReader(ChunkReader):
     sha_hex = chunk.sha.hex()
     url = os.path.join(self.url, sha_hex[:4], sha_hex + ".cacnk")
 
-    for i in range(CHUNK_DOWNLOAD_RETRIES):
-      try:
-        resp = self.session.get(url, timeout=CHUNK_DOWNLOAD_TIMEOUT)
-        break
-      except Exception:
-        if i == CHUNK_DOWNLOAD_RETRIES - 1:
-          raise
-        time.sleep(CHUNK_DOWNLOAD_TIMEOUT)
+    if os.path.isfile(url):
+      with open(url, 'rb') as f:
+        contents = f.read()
+    else:
+      for i in range(CHUNK_DOWNLOAD_RETRIES):
+        try:
+          resp = self.session.get(url, timeout=CHUNK_DOWNLOAD_TIMEOUT)
+          break
+        except Exception:
+          if i == CHUNK_DOWNLOAD_RETRIES - 1:
+            raise
+          time.sleep(CHUNK_DOWNLOAD_TIMEOUT)
 
-    resp.raise_for_status()
+      resp.raise_for_status()
+      contents = resp.content
 
     decompressor = lzma.LZMADecompressor(format=lzma.FORMAT_AUTO)
-    return decompressor.decompress(resp.content)
+    return decompressor.decompress(contents)
 
 
 def parse_caibx(caibx_path: str) -> List[Chunk]:
   """Parses the chunks from a caibx file. Can handle both local and remote files.
   Returns a list of chunks with hash, offset and length"""
+  caibx: io.BufferedIOBase
   if os.path.isfile(caibx_path):
     caibx = open(caibx_path, 'rb')
   else:
@@ -120,6 +128,7 @@ def parse_caibx(caibx_path: str) -> List[Chunk]:
     chunks.append(Chunk(sha, offset, length))
     offset = new_offset
 
+  caibx.close()
   return chunks
 
 
@@ -139,7 +148,8 @@ def extract(target: List[Chunk],
             progress: Optional[Callable[[int], None]] = None):
   stats: Dict[str, int] = defaultdict(int)
 
-  with open(out_path, 'wb') as out:
+  mode = 'rb+' if os.path.exists(out_path) else 'wb'
+  with open(out_path, mode) as out:
     for cur_chunk in target:
 
       # Find source for desired chunk

@@ -10,7 +10,7 @@ from typing import Dict, Generator, List, Tuple, Union
 
 import requests
 
-import system.hardware.tici.casync as casync
+import openpilot.system.hardware.tici.casync as casync
 
 SPARSE_CHUNK_FMT = struct.Struct('H2xI4x')
 CAIBX_URL = "https://commadist.azureedge.net/agnosupdate/"
@@ -20,7 +20,7 @@ class StreamingDecompressor:
   def __init__(self, url: str) -> None:
     self.buf = b""
 
-    self.req = requests.get(url, stream=True, headers={'Accept-Encoding': None})  # type: ignore
+    self.req = requests.get(url, stream=True, headers={'Accept-Encoding': None}, timeout=60)  # type: ignore
     self.it = self.req.iter_content(chunk_size=1024 * 1024)
     self.decompressor = lzma.LZMADecompressor(format=lzma.FORMAT_AUTO)
     self.eof = False
@@ -186,14 +186,18 @@ def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
 
   sources: List[Tuple[str, casync.ChunkReader, casync.ChunkDict]] = []
 
-  # First source is the current partition. Index file for current version is provided in the manifest
-  raw_hash = get_raw_hash(seed_path, partition['size'])
-  caibx_url = f"{CAIBX_URL}{partition['name']}-{raw_hash}.caibx"
+  # First source is the current partition.
   try:
-    cloudlog.info(f"casync fetching {caibx_url}")
-    sources += [('seed', casync.FileChunkReader(seed_path), casync.build_chunk_dict(casync.parse_caibx(caibx_url)))]
-  except requests.RequestException:
-    cloudlog.error(f"casync failed to load {caibx_url}")
+    raw_hash = get_raw_hash(seed_path, partition['size'])
+    caibx_url = f"{CAIBX_URL}{partition['name']}-{raw_hash}.caibx"
+
+    try:
+      cloudlog.info(f"casync fetching {caibx_url}")
+      sources += [('seed', casync.FileChunkReader(seed_path), casync.build_chunk_dict(casync.parse_caibx(caibx_url)))]
+    except requests.RequestException:
+      cloudlog.error(f"casync failed to load {caibx_url}")
+  except Exception:
+    cloudlog.exception("casync failed to hash seed partition")
 
   # Second source is the target partition, this allows for resuming
   sources += [('target', casync.FileChunkReader(path), casync.build_chunk_dict(target))]
@@ -218,7 +222,7 @@ def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
     raise Exception(f"Raw hash mismatch '{partition['hash_raw'].lower()}'")
 
 
-def flash_partition(target_slot_number: int, partition: dict, cloudlog):
+def flash_partition(target_slot_number: int, partition: dict, cloudlog, standalone=False):
   cloudlog.info(f"Downloading and writing {partition['name']}")
 
   if verify_partition(target_slot_number, partition):
@@ -232,12 +236,12 @@ def flash_partition(target_slot_number: int, partition: dict, cloudlog):
 
   path = get_partition_path(target_slot_number, partition)
 
-  if 'casync_caibx' in partition:
+  if ('casync_caibx' in partition) and not standalone:
     extract_casync_image(target_slot_number, partition, cloudlog)
   else:
     extract_compressed_image(target_slot_number, partition, cloudlog)
 
-  # Write hash after successfull flash
+  # Write hash after successful flash
   if not full_check:
     with open(path, 'wb+') as out:
       out.seek(partition['size'])
@@ -253,13 +257,13 @@ def swap(manifest_path: str, target_slot_number: int, cloudlog) -> None:
   while True:
     out = subprocess.check_output(f"abctl --set_active {target_slot_number}", shell=True, stderr=subprocess.STDOUT, encoding='utf8')
     if ("No such file or directory" not in out) and ("lun as boot lun" in out):
-      cloudlog.info(f"Swap successfull {out}")
+      cloudlog.info(f"Swap successful {out}")
       break
     else:
       cloudlog.error(f"Swap failed {out}")
 
 
-def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog) -> None:
+def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog, standalone=False) -> None:
   update = json.load(open(manifest_path))
 
   cloudlog.info(f"Target slot {target_slot_number}")
@@ -272,7 +276,7 @@ def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog) ->
 
     for retries in range(10):
       try:
-        flash_partition(target_slot_number, partition, cloudlog)
+        flash_partition(target_slot_number, partition, cloudlog, standalone)
         success = True
         break
 
@@ -316,9 +320,9 @@ if __name__ == "__main__":
   elif args.swap:
     while not verify_agnos_update(args.manifest, target_slot_number):
       logging.error("Verification failed. Flashing AGNOS")
-      flash_agnos_update(args.manifest, target_slot_number, logging)
+      flash_agnos_update(args.manifest, target_slot_number, logging, standalone=True)
 
     logging.warning(f"Verification succeeded. Swapping to slot {target_slot_number}")
     swap(args.manifest, target_slot_number, logging)
   else:
-    flash_agnos_update(args.manifest, target_slot_number, logging)
+    flash_agnos_update(args.manifest, target_slot_number, logging, standalone=True)

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import os
 import time
 import threading
@@ -7,20 +8,11 @@ from tqdm import tqdm
 
 os.environ['FILEREADER_CACHE'] = '1'
 
-from common.basedir import BASEDIR
-from common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
-from selfdrive.boardd.boardd import can_capnp_to_can_list
-from tools.plotjuggler.juggle import load_segment
-from panda import Panda
-
-try:
-  # this bool can be replaced when mypy understands this pattern
-  panda_jungle_imported = True
-  from panda_jungle import PandaJungle  # pylint: disable=import-error  # type: ignore
-except ImportError:
-  PandaJungle = None
-  panda_jungle_imported = False
-
+from openpilot.common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
+from openpilot.selfdrive.boardd.boardd import can_capnp_to_can_list
+from openpilot.tools.plotjuggler.juggle import load_segment
+from openpilot.tools.lib.logreader import logreader_from_route_or_segment
+from panda import Panda, PandaJungle
 
 def send_thread(s, flock):
   if "Jungle" in str(type(s)):
@@ -30,6 +22,8 @@ def send_thread(s, flock):
 
     for i in [0, 1, 2, 3, 0xFFFF]:
       s.can_clear(i)
+      s.set_can_speed_kbps(i, 500)
+      s.set_can_data_speed_kbps(i, 500)
     s.set_ignition(False)
     time.sleep(5)
     s.set_ignition(True)
@@ -72,6 +66,11 @@ def connect():
 
       for s in p.list():
         if s not in serials:
+          with p(s) as pp:
+            if pp.get_type() == Panda.HW_TYPE_TRES:
+              serials[s] = None
+              continue
+
           print("starting send thread for", s)
           serials[s] = threading.Thread(target=send_thread, args=(p(s), flashing_lock))
           serials[s].start()
@@ -79,26 +78,32 @@ def connect():
     # try to join all send threads
     cur_serials = serials.copy()
     for s, t in cur_serials.items():
-      t.join(0.01)
-      if not t.is_alive():
-        del serials[s]
+      if t is  not None:
+        t.join(0.01)
+        if not t.is_alive():
+          del serials[s]
 
     time.sleep(1)
 
 
 if __name__ == "__main__":
-  if not panda_jungle_imported:
-    print("\33[31m", "WARNING: cannot connect to jungles. Clone the jungle library to enable support:", "\033[0m")
-    print("\033[34m", f"cd {BASEDIR} && git clone https://github.com/commaai/panda_jungle", "\033[0m")
+  parser = argparse.ArgumentParser(description="Replay CAN messages from a route to all connected pandas and jungles in a loop.",
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+  parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to replay. If not specified, a default public route will be used.")
+  args = parser.parse_args()
 
   print("Loading log...")
-  ROUTE = "77611a1fac303767/2020-03-24--09-50-38"
-  REPLAY_SEGS = list(range(10, 16))  # route has 82 segments available
-  CAN_MSGS = []
-  logs = [f"https://commadataci.blob.core.windows.net/openpilotci/{ROUTE}/{i}/rlog.bz2" for i in REPLAY_SEGS]
-  with multiprocessing.Pool(24) as pool:
-    for lr in tqdm(pool.map(load_segment, logs)):
-      CAN_MSGS += [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
+  if args.route_or_segment_name is None:
+    ROUTE = "77611a1fac303767/2020-03-24--09-50-38"
+    REPLAY_SEGS = list(range(10, 16))  # route has 82 segments available
+    CAN_MSGS = []
+    logs = [f"https://commadataci.blob.core.windows.net/openpilotci/{ROUTE}/{i}/rlog.bz2" for i in REPLAY_SEGS]
+    with multiprocessing.Pool(24) as pool:
+      for lr in tqdm(pool.map(load_segment, logs)):
+        CAN_MSGS += [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
+  else:
+    lr = logreader_from_route_or_segment(args.route_or_segment_name)
+    CAN_MSGS = [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
 
   # set both to cycle ignition
   IGN_ON = int(os.getenv("ON", "0"))

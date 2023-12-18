@@ -3,14 +3,14 @@ import argparse
 import os
 import sys
 
-import cv2  # pylint: disable=import-error
+import cv2
 import numpy as np
-import pygame  # pylint: disable=import-error
+import pygame
 
 import cereal.messaging as messaging
-from common.numpy_fast import clip
-from common.basedir import BASEDIR
-from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, UP,
+from openpilot.common.numpy_fast import clip
+from openpilot.common.basedir import BASEDIR
+from openpilot.tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, UP,
                                          _INTRINSICS, BLACK, GREEN,
                                          YELLOW, Calibration,
                                          get_blank_lid_overlay, init_plots,
@@ -113,12 +113,12 @@ def ui_thread(addr):
 
     yuv_img_raw = vipc_client.recv()
 
-    if yuv_img_raw is None or not yuv_img_raw.any():
+    if yuv_img_raw is None or not yuv_img_raw.data.any():
       continue
 
-    imgff = np.frombuffer(yuv_img_raw, dtype=np.uint8).reshape((vipc_client.height * 3 // 2, vipc_client.width))
+    imgff = np.frombuffer(yuv_img_raw.data, dtype=np.uint8).reshape((len(yuv_img_raw.data) // vipc_client.stride, vipc_client.stride))
     num_px = vipc_client.width * vipc_client.height
-    bgr = cv2.cvtColor(imgff, cv2.COLOR_YUV2RGB_NV12)
+    bgr = cv2.cvtColor(imgff[:vipc_client.height * 3 // 2, :vipc_client.width], cv2.COLOR_YUV2RGB_NV12)
 
     zoom_matrix = _BB_TO_FULL_FRAME[num_px]
     cv2.warpAffine(bgr, zoom_matrix[:2], (img.shape[1], img.shape[0]), dst=img, flags=cv2.WARP_INVERSE_MAP)
@@ -128,8 +128,8 @@ def ui_thread(addr):
     sm.update(0)
 
     w = sm['controlsState'].lateralControlState.which()
-    if w == 'lqrState':
-      angle_steers_k = sm['controlsState'].lateralControlState.lqrState.steeringAngleDeg
+    if w == 'lqrStateDEPRECATED':
+      angle_steers_k = sm['controlsState'].lateralControlState.lqrStateDEPRECATED.steeringAngleDeg
     elif w == 'indiState':
       angle_steers_k = sm['controlsState'].lateralControlState.indiState.steeringAngleDeg
     else:

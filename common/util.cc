@@ -1,7 +1,8 @@
 #include "common/util.h"
 
+#include <sys/ioctl.h>
 #include <sys/stat.h>
-#include <dirent.h>
+#include <sys/resource.h>
 
 #include <cassert>
 #include <cerrno>
@@ -9,6 +10,7 @@
 #include <dirent.h>
 #include <fstream>
 #include <iomanip>
+#include <random>
 #include <sstream>
 
 #ifdef __linux__
@@ -56,6 +58,20 @@ int set_core_affinity(std::vector<int> cores) {
 #else
   return -1;
 #endif
+}
+
+int set_file_descriptor_limit(uint64_t limit_val) {
+  struct rlimit limit;
+  int status;
+
+  if ((status = getrlimit(RLIMIT_NOFILE, &limit)) < 0)
+    return status;
+
+  limit.rlim_cur = limit_val;
+  if ((status = setrlimit(RLIMIT_NOFILE, &limit)) < 0)
+    return status;
+
+  return 0;
 }
 
 std::string read_file(const std::string& fn) {
@@ -133,6 +149,14 @@ int safe_fflush(FILE *stream) {
   return ret;
 }
 
+int safe_ioctl(int fd, unsigned long request, void *argp) {
+  int ret;
+  do {
+    ret = ioctl(fd, request, argp);
+  } while ((ret == -1) && (errno == EINTR));
+  return ret;
+}
+
 std::string readlink(const std::string &path) {
   char buff[4096];
   ssize_t len = ::readlink(path.c_str(), buff, sizeof(buff)-1);
@@ -179,7 +203,7 @@ bool create_directories(const std::string& dir, mode_t mode) {
   return createDirectory(dir, mode);
 }
 
-std::string getenv(const char* key, const char* default_val) {
+std::string getenv(const char* key, std::string default_val) {
   const char* val = ::getenv(key);
   return val ? val : default_val;
 }
@@ -203,10 +227,37 @@ std::string hexdump(const uint8_t* in, const size_t size) {
   return ss.str();
 }
 
+int random_int(int min, int max) {
+  std::random_device dev;
+  std::mt19937 rng(dev());
+  std::uniform_int_distribution<std::mt19937::result_type> dist(min, max);
+  return dist(rng);
+}
+
+std::string random_string(std::string::size_type length) {
+  const std::string chrs = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  std::mt19937 rg{std::random_device{}()};
+  std::uniform_int_distribution<std::string::size_type> pick(0, chrs.length() - 1);
+  std::string s;
+  s.reserve(length);
+  while (length--) {
+    s += chrs[pick(rg)];
+  }
+  return s;
+}
+
 std::string dir_name(std::string const &path) {
   size_t pos = path.find_last_of("/");
   if (pos == std::string::npos) return "";
   return path.substr(0, pos);
+}
+
+bool starts_with(const std::string &s1, const std::string &s2) {
+  return strncmp(s1.c_str(), s2.c_str(), s2.size()) == 0;
+}
+
+bool ends_with(const std::string &s1, const std::string &s2) {
+  return strcmp(s1.c_str() + (s1.size() - s2.size()), s2.c_str()) == 0;
 }
 
 std::string check_output(const std::string& command) {
@@ -238,7 +289,7 @@ struct tm get_time() {
 bool time_valid(struct tm sys_time) {
   int year = 1900 + sys_time.tm_year;
   int month = 1 + sys_time.tm_mon;
-  return (year > 2021) || (year == 2021 && month >= 6);
+  return (year > 2023) || (year == 2023 && month >= 6);
 }
 
 }  // namespace util

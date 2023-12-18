@@ -1,0 +1,20 @@
+Import('qt_env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'transformations')
+
+map_env = qt_env.Clone()
+libs = ['qt_widgets', 'qt_util', 'qmapboxgl', common, messaging, cereal, visionipc, transformations,
+        'zmq', 'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread', 'json11'] + map_env["LIBS"]
+if arch == 'larch64':
+  libs.append(':libEGL_mesa.so.0')
+
+if arch in ['larch64', 'aarch64', 'x86_64']:
+  if arch == 'x86_64':
+    rpath = Dir(f"#third_party/mapbox-gl-native-qt/{arch}").srcnode().abspath
+    map_env["RPATH"] += [rpath, ]
+
+  style_path = File("style.json").abspath
+  map_env['CXXFLAGS'].append(f'-DSTYLE_PATH=\\"{style_path}\\"')
+
+  map_env["RPATH"].append(Dir('.').abspath)
+  map_env["LIBPATH"].append(Dir('.').abspath)
+  maplib = map_env.SharedLibrary("maprender", ["map_renderer.cc"], LIBS=libs)
+  map_env.Program("mapsd", ["main.cc", ], LIBS=[maplib[0].get_path(), ] + libs)
