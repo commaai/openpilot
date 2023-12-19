@@ -48,6 +48,7 @@ routes = [
   CarTestRoute("8fb5eabf914632ae|2022-08-04--17-28-53", CHRYSLER.RAM_HD, segment=6),
 
   CarTestRoute("54827bf84c38b14f|2023-01-25--14-14-11", FORD.BRONCO_SPORT_MK1),
+  CarTestRoute("3d4e31f900dd3a88|2023-12-15--11-19-47", FORD.EDGE_MK2),
   CarTestRoute("f8eaaccd2a90aef8|2023-05-04--15-10-09", FORD.ESCAPE_MK4),
   CarTestRoute("62241b0c7fea4589|2022-09-01--15-32-49", FORD.EXPLORER_MK6),
   CarTestRoute("e886087f430e7fe7|2023-06-16--23-06-36", FORD.FOCUS_MK4),

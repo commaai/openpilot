@@ -4,7 +4,7 @@ from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.selfdrive.car.ford.fordcan import CanBus
-from openpilot.selfdrive.car.ford.values import CANFD_CAR, CarControllerParams, DBC
+from openpilot.selfdrive.car.ford.values import CANFD_CAR, CAN_EDGE, CarControllerParams, DBC
 
 GearShifter = car.CarState.GearShifter
 TransmissionType = car.CarParams.TransmissionType
@@ -29,9 +29,14 @@ class CarState(CarStateBase):
     self.unsupported_platform = (cp.vl["VehicleOperatingModes"]["TrnAinTq_D_Qf"] == 0 and
                                  self.CP.carFingerprint not in CANFD_CAR)
 
-    # Occasionally on startup, the ABS module recalibrates the steering pinion offset, so we need to block engagement
-    # The vehicle usually recovers out of this state within a minute of normal driving
-    self.vehicle_sensors_valid = cp.vl["SteeringPinion_Data"]["StePinCompAnEst_D_Qf"] == 3
+    if self.CP.carFingerprint in CAN_EDGE:
+      # Ford Edge calibrated steering wheel angle comes from the IPMA_ADAS instead of PSCM
+      # Check for Ford Edge Unknown/Invalid steering wheel position
+      self.vehicle_sensors_valid = cp.vl["ParkAid_Data"]["ExtSteeringAngleReq2"] < 32766
+    else:
+      # Occasionally on startup, the ABS module recalibrates the steering pinion offset, so we need to block engagement
+      # The vehicle usually recovers out of this state within a minute of normal driving
+      self.vehicle_sensors_valid = cp.vl["SteeringPinion_Data"]["StePinCompAnEst_D_Qf"] == 3
 
     # car speed
     ret.vEgoRaw = cp.vl["BrakeSysFeatures"]["Veh_V_ActlBrk"] * CV.KPH_TO_MS
@@ -49,7 +54,10 @@ class CarState(CarStateBase):
     ret.parkingBrake = cp.vl["DesiredTorqBrk"]["PrkBrkStatus"] in (1, 2)
 
     # steering wheel
-    ret.steeringAngleDeg = cp.vl["SteeringPinion_Data"]["StePinComp_An_Est"]
+    if self.CP.carFingerprint in CAN_EDGE:
+      ret.steeringAngleDeg = cp.vl["ParkAid_Data"]["ExtSteeringAngleReq2"]
+    else:
+      ret.steeringAngleDeg = cp.vl["SteeringPinion_Data"]["StePinComp_An_Est"]
     ret.steeringTorque = cp.vl["EPAS_INFO"]["SteeringColumnTorque"]
     ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > CarControllerParams.STEER_DRIVER_ALLOWANCE, 5)
     ret.steerFaultTemporary = cp.vl["EPAS_INFO"]["EPAS_Failure"] == 1
@@ -122,7 +130,6 @@ class CarState(CarStateBase):
       ("BrakeSnData_4", 50),
       ("EngBrakeData", 10),
       ("Cluster_Info1_FD1", 10),
-      ("SteeringPinion_Data", 100),
       ("EPAS_INFO", 50),
       ("Steering_Data_FD1", 10),
       ("BodyInfo_3_FD1", 2),
@@ -133,6 +140,17 @@ class CarState(CarStateBase):
       messages += [
         ("Lane_Assist_Data3_FD1", 33),
       ]
+
+    # Ford Edge gets steering wheel angle from IPMA instead of PSCM
+    if CP.carFingerprint in CAN_EDGE:
+      messages += [
+        ("ParkAid_Data", 50),
+      ]
+    else:
+      messages += [
+        ("SteeringPinion_Data", 100),
+      ]
+
 
     if CP.transmissionType == TransmissionType.automatic:
       messages += [
