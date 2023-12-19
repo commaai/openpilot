@@ -154,7 +154,7 @@ class TestCarModelBase(unittest.TestCase):
       if len(can_msgs) > int(50 / DT_CTRL):
         break
     else:
-      raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded?")
+      raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded and public?")
 
     # if relay is expected to be open in the route
     cls.openpilot_enabled = cls.car_safety_mode_frame is not None
