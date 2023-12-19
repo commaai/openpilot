@@ -35,7 +35,7 @@ NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
 INTERNAL_SEG_LIST = os.environ.get("INTERNAL_SEG_LIST", "")
 INTERNAL_SEG_CNT = int(os.environ.get("INTERNAL_SEG_CNT", "0"))
-MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '50'))
+MAX_EXAMPLES = int(os.environ.get("MAX_EXAMPLES", "50"))
 
 
 def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
