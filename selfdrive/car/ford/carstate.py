@@ -151,7 +151,6 @@ class CarState(CarStateBase):
         ("SteeringPinion_Data", 100),
       ]
 
-
     if CP.transmissionType == TransmissionType.automatic:
       messages += [
         ("Gear_Shift_by_Wire_FD1", 10),
