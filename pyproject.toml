@@ -62,6 +62,11 @@ warn_unused_ignores=true
 # restrict dynamic typing
 warn_return_any=true
 
+[[tool.mypy.overrides]]
+module = [
+    "cereal"
+]
+follow_imports="skip"
 
 [tool.poetry]
 name = "openpilot"
