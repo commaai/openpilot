@@ -55,6 +55,7 @@ FW_VERSIONS = {
 {% endif %}
 """
 
+
 def format_brand_fw_versions(brand):
   with open(f"selfdrive/car/{brand}/fingerprints.py", "w") as f:
     template = jinja2.Template(FINGERPRINTS_PY_TEMPLATE, trim_blocks=True)
@@ -62,5 +63,7 @@ def format_brand_fw_versions(brand):
     f.write(template.render(brand=brand, ECU_NUMBER_TO_NAME=ECU_NUMBER_TO_NAME, PLATFORM_TO_PYTHON_CAR_NAME=PLATFORM_TO_PYTHON_CAR_NAME,
                             FINGERPRINTS=FINGERPRINTS, FW_VERSIONS=FW_VERSIONS))
 
-for brand in FW_VERSIONS.keys():
-  format_brand_fw_versions(brand)
+
+if __name__ == "__main__":
+  for brand in FW_VERSIONS.keys():
+    format_brand_fw_versions(brand)
