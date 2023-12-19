@@ -7,9 +7,9 @@ on:
   pull_request:
   workflow_dispatch:
 
-#concurrency:
-#  group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
-#  cancel-in-progress: true
+concurrency:
+  group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
+  cancel-in-progress: true
 
 env:
   PYTHONWARNINGS: error
@@ -73,7 +73,7 @@ jobs:
       matrix:
         arch: ${{ fromJson(
            ((github.repository == 'commaai/openpilot') &&
-              ((github.event_name != 'pull_request') ||
+              ((github.event_name != 'pull_request') || 
                (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && '["x86_64", "aarch64"]' || '["x86_64"]' ) }}
     runs-on: ${{ (matrix.arch == 'aarch64') && 'buildjet-2vcpu-ubuntu-2204-arm' || 'ubuntu-20.04' }}
     steps:
@@ -192,7 +192,7 @@ jobs:
   process_replay:
     name: process replay
     runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
-                   ((github.event_name != 'pull_request') ||
+                   ((github.event_name != 'pull_request') || 
                     (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'buildjet-8vcpu-ubuntu-2004' || 'ubuntu-20.04' }}
     steps:
     - uses: actions/checkout@v4
@@ -241,7 +241,7 @@ jobs:
   regen:
     name: regen
     runs-on: 'ubuntu-20.04'
-    steps:
+    steps: 
     - uses: actions/checkout@v4
       with:
         submodules: true
@@ -339,7 +339,7 @@ jobs:
   car_docs_diff:
     name: PR comments
     runs-on: ubuntu-20.04
-    if: github.event_name == 'never'
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
         with:
