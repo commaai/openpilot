@@ -13,7 +13,7 @@ What is openpilot?
   </tr>
 </table>
 
-Running on a dedicated device in a car
+To start using openpilot in a car
 ------
 
 To use openpilot in a car, you need four things:
@@ -22,30 +22,21 @@ To use openpilot in a car, you need four things:
 3. **Supported Car:** Ensure that you have one of [the 250+ supported cars](docs/CARS.md).
 4. **Car Harness:** You will also need a [car harness](https://comma.ai/shop/car-harness) to connect your comma 3/3X to your car.
 
-We have detailed instructions for [how to install the harness and device in a car](https://comma.ai/setup).
+We have detailed instructions for [how to install the harness and device in a car](https://comma.ai/setup). Note that it's possible to run openpilot on [other hardware](https://blog.comma.ai/self-driving-car-for-free/), although it's not plug-and-play.
 
-Running on PC
-------
-
-All openpilot services can run as usual on a PC without requiring special hardware or a car. You can also run openpilot on recorded or simulated data to develop or experiment with openpilot.
-
-With openpilot's tools, you can plot logs, replay drives, and watch the full-res camera streams. See [the tools README](tools/README.md) for more information.
-
-You can also run openpilot in simulation [with the MetaDrive simulator](tools/sim/README.md). This allows openpilot to drive around a virtual car on your Ubuntu machine.
-
-A PC running openpilot can also control your vehicle if it is connected to a [webcam](https://github.com/commaai/openpilot/tree/master/tools/webcam), a [black panda](https://comma.ai/shop/products/panda), and a [harness](https://comma.ai/shop/products/car-harness).
-
-Community and Contributing
+To start developing openpilot
 ------
 
 openpilot is developed by [comma](https://comma.ai/) and by users like you. We welcome both pull requests and issues on [GitHub](http://github.com/commaai/openpilot).
 
 * Join the [community Discord](https://discord.comma.ai)
 * Check out [the contributing docs](docs/CONTRIBUTING.md)
+* Check out the [openpilot tools](tools/)
+* Read about the [development workflow](docs/WORKFLOW.md)
 * Code documentation lives at https://docs.comma.ai
 * Information about running openpilot lives on the [community wiki](https://github.com/commaai/openpilot/wiki)
 
-Want to get paid to work on openpilot? [comma is hiring](https://comma.ai/jobs#open-positions) and offers lots of [bounties](docs/BOUNTIES.md).
+Want to get paid to work on openpilot? [comma is hiring](https://comma.ai/jobs#open-positions) and offers lots of [bounties](docs/BOUNTIES.md) for external contributors.
 
 Safety and Testing
 ----
