@@ -121,6 +121,7 @@ av = "*"
 azure-identity = "*"
 azure-storage-blob = "*"
 breathe = "*"
+capnp-stub-generator = { git = "https://github.com/jnewb1/capnp-stub-generator.git", rev ="66876789c7fc3f1ba436eb326dafbd3a6b1651ef"}
 control = "*"
 coverage = "*"
 dictdiffer = "*"
