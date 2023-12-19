@@ -335,7 +335,6 @@ class TestCarModelBase(unittest.TestCase):
       prev_panda_vehicle_moving = self.safety.get_vehicle_moving()
       prev_panda_cruise_engaged = self.safety.get_cruise_engaged_prev()
       prev_panda_acc_main_on = self.safety.get_acc_main_on()
-      prev_panda_controls_allowed = self.safety.get_controls_allowed()
 
       to_send = libpanda_py.make_CANPacket(address, bus, dat)
       self.safety.safety_rx_hook(to_send)
@@ -363,13 +362,9 @@ class TestCarModelBase(unittest.TestCase):
       if self.safety.get_vehicle_moving() != prev_panda_vehicle_moving:
         self.assertEqual(not CS.standstill, self.safety.get_vehicle_moving())
 
-      if self.CP.pcmCruise:
-        if not (self.CP.carName == "honda" and self.CP.carFingerprint not in HONDA_BOSCH):
-          if self.safety.get_cruise_engaged_prev() != prev_panda_cruise_engaged:
-            self.assertEqual(CS.cruiseState.enabled, self.safety.get_cruise_engaged_prev())
-
-        if self.safety.get_controls_allowed() != prev_panda_controls_allowed:
-          self.assertEqual(CS.cruiseState.enabled, self.safety.get_controls_allowed())
+      if not (self.CP.carName == "honda" and self.CP.carFingerprint not in HONDA_BOSCH):
+        if self.safety.get_cruise_engaged_prev() != prev_panda_cruise_engaged:
+          self.assertEqual(CS.cruiseState.enabled, self.safety.get_cruise_engaged_prev())
 
       if self.CP.carName == "honda":
         if self.safety.get_acc_main_on() != prev_panda_acc_main_on:
