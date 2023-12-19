@@ -7,6 +7,7 @@
 
 #include <QApplication>
 
+#include "common/util.h"
 #include "common/version.h"
 
 namespace {
