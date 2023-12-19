@@ -13,7 +13,6 @@ EcuAddrSubAddr = Tuple[int, int, Optional[int]]
 
 LiveFwVersions = Dict[AddrType, Set[bytes]]
 OfflineFwVersions = Dict[str, Dict[EcuAddrSubAddr, List[bytes]]]
-OfflineCanFingerprints = Dict[str, List[Dict[int, int]]]
 
 def p16(val):
   return struct.pack("!H", val)

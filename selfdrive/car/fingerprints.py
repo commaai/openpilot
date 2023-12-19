@@ -1,6 +1,7 @@
-from openpilot.selfdrive.car.fw_query_definitions import OfflineCanFingerprints
+from typing import Dict, List
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 
+OfflineCanFingerprints = Dict[str, List[Dict[int, int]]]
 
 FW_VERSIONS = get_interface_attr('FW_VERSIONS', combine_brands=True, ignore_none=True)
 _FINGERPRINTS = get_interface_attr('FINGERPRINTS', combine_brands=True, ignore_none=True)
