@@ -61,6 +61,9 @@ class FuzzyGenerator:
       else:
         return self.generate_native_type(field_type.which())
 
+    if field.proto.name == "logMonoTime":
+      return st.integers(min_value=0, max_value=2**32-1)
+
     if 'slot' in field.proto.to_dict():
       base_type = field.proto.slot.type.which()
       return rec(field.proto.slot.type)
