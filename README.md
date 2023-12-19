@@ -13,7 +13,7 @@ What is openpilot?
   </tr>
 </table>
 
-Running on a dedicated device in a car
+To use openpilot in a car
 ------
 
 To use openpilot in a car, you need four things:
@@ -22,16 +22,15 @@ To use openpilot in a car, you need four things:
 3. **Supported Car:** Ensure that you have one of [the 250+ supported cars](docs/CARS.md).
 4. **Car Harness:** You will also need a [car harness](https://comma.ai/shop/car-harness) to connect your comma 3/3X to your car.
 
-We have detailed instructions for [how to install the harness and device in a car](https://comma.ai/setup).
+We have detailed instructions for [how to install the harness and device in a car](https://comma.ai/setup). Note that it's possible to run openpilot on other hardware, although it's not plug-and-play.
 
-Running on PC
+To develop openpilot
 ------
 
 All openpilot services can run as usual on a PC without requiring special hardware or a car. You can also run openpilot on recorded or simulated data to develop or experiment with openpilot.
 
-With openpilot's tools, you can plot logs, replay drives, and watch the full-res camera streams. See [the tools README](tools/README.md) for more information.
-
-You can also run openpilot in simulation [with the MetaDrive simulator](tools/sim/README.md). This allows openpilot to drive around a virtual car on your Ubuntu machine.
+* Run the tools to plot logs, replay drives, and watch the full-res camera streams. See [the tools README](tools/README.md).
+* Run openpilot in simulation [with the MetaDrive simulator](tools/sim/README.md). This allows openpilot to drive around a virtual car.
 
 A PC running openpilot can also control your vehicle if it is connected to a [webcam](https://github.com/commaai/openpilot/tree/master/tools/webcam), a [black panda](https://comma.ai/shop/products/panda), and a [harness](https://comma.ai/shop/products/car-harness).
 
