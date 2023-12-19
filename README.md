@@ -32,6 +32,7 @@ openpilot is developed by [comma](https://comma.ai/) and by users like you. We w
 * Join the [community Discord](https://discord.comma.ai)
 * Check out [the contributing docs](docs/CONTRIBUTING.md)
 * Check out the [openpilot tools](tools/)
+* Read about the [development workflow](docs/WORKFLOW.md)
 * Code documentation lives at https://docs.comma.ai
 * Information about running openpilot lives on the [community wiki](https://github.com/commaai/openpilot/wiki)
 
