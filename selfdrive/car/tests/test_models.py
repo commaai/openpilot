@@ -79,15 +79,16 @@ class TestCarModelBase(unittest.TestCase):
       # Attempt to use CI bucket first
       try:
         return LogReader(get_url(cls.test_route.route, seg))
-      except Exception as e:
-        print(f"Route is not accessible via CI bucket. Attempting to use public bucket. {e}")
+      except Exception:
         cls.test_route_on_bucket = False
 
       # Fallback to public route, which will fail the test_route_on_ci_bucket when running in CI
       try:
         return LogReader(Route(cls.test_route.route).log_paths()[seg])
-      except Exception as e:
-        print(f"Route is not valid or not a publicly accessible route. {e}")
+      except Exception:
+        pass
+
+      raise Exception("Unable to get route. Check that the route is valid, and either public or uploaded to the CI bucket.")
 
   @classmethod
   def setUpClass(cls):
