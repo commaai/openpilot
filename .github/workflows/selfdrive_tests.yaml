@@ -7,9 +7,9 @@ on:
   pull_request:
   workflow_dispatch:
 
-concurrency:
-  group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
-  cancel-in-progress: true
+#concurrency:
+#  group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
+#  cancel-in-progress: true
 
 env:
   PYTHONWARNINGS: error
@@ -163,6 +163,10 @@ jobs:
 
   unit_tests:
     name: unit tests
+    strategy:
+      fail-fast: false
+      matrix:
+        job: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 ]
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v4
