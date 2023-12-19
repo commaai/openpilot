@@ -301,6 +301,7 @@ class TestCarModelBase(unittest.TestCase):
     CC = car.CarControl.new_message(cruiseControl={'resume': True})
     test_car_controller(CC)
 
+  # Skip stdout/stderr capture with pytest, causes elevated memory usage
   @pytest.mark.nocapture
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate,),
