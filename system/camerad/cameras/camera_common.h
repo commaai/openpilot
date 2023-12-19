@@ -1,18 +1,12 @@
 #pragma once
 
-#include <cstdint>
-#include <cstdlib>
+#include <fcntl.h>
 #include <memory>
 #include <thread>
 
 #include "cereal/messaging/messaging.h"
-#include "cereal/visionipc/visionbuf.h"
-#include "cereal/visionipc/visionipc.h"
 #include "cereal/visionipc/visionipc_server.h"
-#include "common/mat.h"
 #include "common/queue.h"
-#include "common/swaglog.h"
-#include "system/hardware/hw.h"
 
 const int YUV_BUFFER_COUNT = 20;
 

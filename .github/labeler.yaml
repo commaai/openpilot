@@ -43,6 +43,10 @@ volkswagen:
   - all:
     - changed-files: ['selfdrive/car/volkswagen/*']
 
+fingerprint:
+  - all:
+    - changed-files: ['selfdrive/car/*/fingerprints.py']
+
 simulation:
   - all:
     - changed-files: ['tools/sim/**']
