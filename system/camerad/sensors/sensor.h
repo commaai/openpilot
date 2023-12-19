@@ -9,6 +9,7 @@
 #include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/sensors/ar0231_registers.h"
 #include "system/camerad/sensors/ox03c10_registers.h"
+#include "system/camerad/sensors/os04c10_registers.h"
 
 #define ANALOG_GAIN_MAX_CNT 55
 const size_t FRAME_WIDTH = 1928;
@@ -75,6 +76,14 @@ private:
 class OX03C10 : public SensorInfo {
 public:
   OX03C10();
+  std::vector<i2c_random_wr_payload> getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const override;
+  float getExposureScore(float desired_ev, int exp_t, int exp_g_idx, float exp_gain, int gain_idx) const override;
+  int getSlaveAddress(int port) const override;
+};
+
+class OS04C10 : public SensorInfo {
+public:
+  OS04C10();
   std::vector<i2c_random_wr_payload> getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const override;
   float getExposureScore(float desired_ev, int exp_t, int exp_g_idx, float exp_gain, int gain_idx) const override;
   int getSlaveAddress(int port) const override;

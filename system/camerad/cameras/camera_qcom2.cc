@@ -316,10 +316,10 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
       .h_init = 0x0,
       .v_init = 0x0,
     };
-    io_cfg[0].format = CAM_FORMAT_MIPI_RAW_12;             // CAM_FORMAT_UBWC_TP10 for YUV
+    io_cfg[0].format = CAM_FORMAT_MIPI_RAW_10;             // CAM_FORMAT_UBWC_TP10 for YUV
     io_cfg[0].color_space = CAM_COLOR_SPACE_BASE;          // CAM_COLOR_SPACE_BT601_FULL for YUV
     io_cfg[0].color_pattern = 0x5;                         // 0x0 for YUV
-    io_cfg[0].bpp = 0xc;
+    io_cfg[0].bpp = 0xa;  // bits per pixel
     io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_RDI_0;   // CAM_ISP_IFE_OUT_RES_FULL for YUV
     io_cfg[0].fence = fence;
     io_cfg[0].direction = CAM_BUF_OUTPUT;
@@ -342,7 +342,7 @@ void CameraState::enqueue_buffer(int i, bool dp) {
     // wait
     struct cam_sync_wait sync_wait = {0};
     sync_wait.sync_obj = sync_objs[i];
-    sync_wait.timeout_ms = 50; // max dt tolerance, typical should be 23
+    sync_wait.timeout_ms = 1000; // max dt tolerance, typical should be 23
     ret = do_cam_control(multi_cam_state->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
     if (ret != 0) {
       LOGE("failed to wait for sync: %d %d", ret, sync_wait.sync_obj);
@@ -459,7 +459,8 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
 
   // Try different sensors one by one until it success.
   if (!init_sensor_lambda(new AR0231) &&
-      !init_sensor_lambda(new OX03C10)) {
+      !init_sensor_lambda(new OX03C10) &&
+      !init_sensor_lambda(new OS04C10)) {
     LOGE("** sensor %d FAILED bringup, disabling", camera_num);
     enabled = false;
     return;
@@ -496,7 +497,7 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
 
     .vc = 0x0,
     .dt = ci->in_port_info_dt,
-    .format = CAM_FORMAT_MIPI_RAW_12,
+    .format = CAM_FORMAT_MIPI_RAW_10,
 
     .test_pattern = 0x2,  // 0x3?
     .usage_type = 0x0,
@@ -522,7 +523,7 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
     .num_out_res = 0x1,
     .data[0] = (struct cam_isp_out_port_info){
       .res_type = CAM_ISP_IFE_OUT_RES_RDI_0,
-      .format = CAM_FORMAT_MIPI_RAW_12,
+      .format = CAM_FORMAT_MIPI_RAW_10,
       .width = ci->frame_width,
       .height = ci->frame_height + ci->extra_height,
       .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
@@ -901,6 +902,10 @@ void CameraState::set_camera_exposure(float grey_frac) {
 }
 
 static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
+  const CameraBuf *b = &c->buf;
+  const uint8_t *dat = (const uint8_t *)b->cur_camera_buf->addr;
+  printf("here %2x %2x %2x %2x %2x %2x\n", dat[0], dat[1], dat[2], dat[3], dat[1000], dat[10000]);
+
   c->set_camera_exposure(set_exposure_target(&c->buf, 96, 1832, 2, 242, 1148, 4));
 
   MessageBuilder msg;
@@ -913,6 +918,7 @@ static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
 }
 
 void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
+  printf("road cam frame\n");
   const CameraBuf *b = &c->buf;
 
   MessageBuilder msg;
@@ -971,6 +977,8 @@ void cameras_run(MultiCameraState *s) {
                  event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp/1e6, event_data->u.frame_msg.sof_status);
         }
 
+        do_exit = do_exit || event_data->u.frame_msg.frame_id > (30*20);
+
         if (event_data->session_hdl == s->road_cam.session_handle) {
           s->road_cam.handle_camera_event(event_data);
         } else if (event_data->session_hdl == s->wide_road_cam.session_handle) {
@@ -981,6 +989,8 @@ void cameras_run(MultiCameraState *s) {
           LOGE("Unknown vidioc event source");
           assert(false);
         }
+      } else {
+        LOGE("unhandled event %d\n", ev.type);
       }
     } else {
       LOGE("VIDIOC_DQEVENT failed, errno=%d", errno);
