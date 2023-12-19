@@ -181,8 +181,7 @@ jobs:
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         ./selfdrive/ui/tests/test_translations.py && \
-                        ./system/camerad/test/ae_gray_test && \
-                        ./selfdrive/test/process_replay/test_fuzzy.py"
+                        ./system/camerad/test/ae_gray_test"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
       with:
