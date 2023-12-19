@@ -26,8 +26,12 @@ Ecu = car.CarParams.Ecu
 FINGERPRINTS = {
 {% for car, fingerprints in FINGERPRINTS[brand].items() %}
   CAR.{{PLATFORM_TO_PYTHON_CAR_NAME[brand][car]}}: [
-  {% for fingerprint in fingerprints %}    { {% for key, value in fingerprint.items() %}{{key}}: {{value}}, {% endfor %}},
-  {% endfor %}
+{% for fingerprint in fingerprints %}
+    {
+      {% for key, value in fingerprint.items() %}{{key}}: {{value}}{% if not loop.last %}, {% endif %}{% endfor %}
+
+    },
+{% endfor %}
   ],
 {% endfor %}
 }
@@ -37,14 +41,14 @@ FINGERPRINTS = {
 FW_VERSIONS = {
 {% for car, _ in FW_VERSIONS[brand].items() %}
   CAR.{{PLATFORM_TO_PYTHON_CAR_NAME[brand][car]}}: {
-  {% for key, fw_versions in FW_VERSIONS[brand][car].items() %}
+{% for key, fw_versions in FW_VERSIONS[brand][car].items() %}
     (Ecu.{{ECU_NUMBER_TO_NAME[key[0]]}}, 0x{{"%0x" | format(key[1] | int)}}, \
 {% if key[2] %}0x{{"%0x" | format(key[2] | int)}}{% else %}{{key[2]}}{% endif %}): [
-    {% for fw_version in fw_versions %}
-      {{fw_version}},
-    {% endfor %}
-    ],
+  {% for fw_version in fw_versions %}
+    {{fw_version}},
   {% endfor %}
+  ],
+{% endfor %}
   },
 {% endfor %}
 }
@@ -53,7 +57,7 @@ FW_VERSIONS = {
 
 def format_brand_fw_versions(brand):
   with open(f"selfdrive/car/{brand}/fingerprints.py", "w") as f:
-    template = jinja2.Template(FINGERPRINTS_PY_TEMPLATE, trim_blocks=True, lstrip_blocks=True)
+    template = jinja2.Template(FINGERPRINTS_PY_TEMPLATE, trim_blocks=True)
 
     f.write(template.render(brand=brand, ECU_NUMBER_TO_NAME=ECU_NUMBER_TO_NAME, PLATFORM_TO_PYTHON_CAR_NAME=PLATFORM_TO_PYTHON_CAR_NAME,
                             FINGERPRINTS=FINGERPRINTS, FW_VERSIONS=FW_VERSIONS))
