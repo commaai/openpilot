@@ -1188,5 +1188,17 @@ Isso pode levar até um minuto.</translation>
         <source>Forget</source>
         <translation>Esquecer</translation>
     </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter password</source>
+        <translation type="unfinished">Insira a senha</translation>
+    </message>
+    <message>
+        <source>for &quot;%1&quot;</source>
+        <translation type="unfinished">para &quot;%1&quot;</translation>
+    </message>
 </context>
 </TS>

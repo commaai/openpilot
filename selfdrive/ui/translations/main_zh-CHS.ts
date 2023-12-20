@@ -1184,5 +1184,17 @@ This may take up to a minute.</source>
         <source>Forget</source>
         <translation>忽略</translation>
     </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter password</source>
+        <translation type="unfinished">输入密码</translation>
+    </message>
+    <message>
+        <source>for &quot;%1&quot;</source>
+        <translation type="unfinished">网络名称：&quot;%1&quot;</translation>
+    </message>
 </context>
 </TS>

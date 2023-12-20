@@ -1204,5 +1204,17 @@ This may take up to a minute.</source>
         <source>Forget</source>
         <translation>نسيان</translation>
     </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter password</source>
+        <translation type="unfinished">أدخل كلمة المرور</translation>
+    </message>
+    <message>
+        <source>for &quot;%1&quot;</source>
+        <translation type="unfinished">من أجل &quot;%1&quot;</translation>
+    </message>
 </context>
 </TS>

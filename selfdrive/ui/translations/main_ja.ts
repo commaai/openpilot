@@ -1182,5 +1182,17 @@ This may take up to a minute.</source>
         <source>Forget</source>
         <translation>削除</translation>
     </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter password</source>
+        <translation type="unfinished">パスワードを入力</translation>
+    </message>
+    <message>
+        <source>for &quot;%1&quot;</source>
+        <translation type="unfinished">ﾈｯﾄﾜｰｸ名：%1</translation>
+    </message>
 </context>
 </TS>

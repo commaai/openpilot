@@ -1184,5 +1184,17 @@ This may take up to a minute.</source>
         <source>Forget</source>
         <translation>เลิกใช้</translation>
     </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter password</source>
+        <translation type="unfinished">ใส่รหัสผ่าน</translation>
+    </message>
+    <message>
+        <source>for &quot;%1&quot;</source>
+        <translation type="unfinished">สำหรับ &quot;%1&quot;</translation>
+    </message>
 </context>
 </TS>
