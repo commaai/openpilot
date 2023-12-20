@@ -3,7 +3,6 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <zmq.h>
 
 #include <algorithm>
 #include <atomic>
@@ -180,36 +179,3 @@ void update_max_atomic(std::atomic<T>& max, T const& value) {
   T prev = max;
   while (prev < value && !max.compare_exchange_weak(prev, value)) {}
 }
-
-class LogState {
- public:
-  bool initialized = false;
-  std::mutex lock;
-  void *zctx = nullptr;
-  void *sock = nullptr;
-  int print_level;
-  std::string endpoint;
-
-  LogState(std::string _endpoint) {
-    endpoint = _endpoint;
-  }
-
-  inline void initialize() {
-    zctx = zmq_ctx_new();
-    sock = zmq_socket(zctx, ZMQ_PUSH);
-
-    // Timeout on shutdown for messages to be received by the logging process
-    int timeout = 100;
-    zmq_setsockopt(sock, ZMQ_LINGER, &timeout, sizeof(timeout));
-
-    zmq_connect(sock, endpoint.c_str());
-    initialized = true;
-  }
-
-  ~LogState() {
-    if (initialized) {
-      zmq_close(sock);
-      zmq_ctx_destroy(zctx);
-    }
-  }
-};

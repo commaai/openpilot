@@ -64,7 +64,7 @@ class TestFwFingerprint(unittest.TestCase):
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
       CP.carFw = fw
       _, matches = match_fw_to_car(CP.carFw, allow_exact=False, log=False)
-      brand_matches = config.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw))
+      brand_matches = config.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw), VERSIONS[brand])
 
       # If both have matches, they must agree
       if len(matches) == 1 and len(brand_matches) == 1:
