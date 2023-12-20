@@ -87,6 +87,7 @@ FW_VERSIONS = {
   },
   CAR.RAM_1500: {
     (Ecu.combinationMeter, 0x742, None): [
+      b'0000',
       b'68294051AG',
       b'68294051AI',
       b'68294052AG',
@@ -106,6 +107,8 @@ FW_VERSIONS = {
       b'68527346AE',
       b'68527375AD',
       b'68527382AE',
+      b'BI THERE THIS IS COOL',
+      b'YOOOOOOO',
     ],
     (Ecu.srs, 0x744, None): [
       b'68428609AB',
