@@ -292,7 +292,7 @@ FW_VERSIONS = {
       b'\xd2\xa1`r\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
-       b'\x1b\xa7@a\x00',
+      b'\x1b\xa7@a\x00',
     ],
   },
   CAR.FORESTER_PREGLOBAL: {

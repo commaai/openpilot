@@ -1269,26 +1269,26 @@ FW_VERSIONS = {
     ],
   },
   CAR.LEXUS_ESH: {
-      (Ecu.engine, 0x7e0, None): [
-        b'\x02333M4200\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
-      ],
-      (Ecu.abs, 0x7b0, None): [
-        b'F152633171\x00\x00\x00\x00\x00\x00',
-      ],
-      (Ecu.dsu, 0x791, None): [
-        b'881513310400\x00\x00\x00\x00',
-      ],
-      (Ecu.eps, 0x7a1, None): [
-        b'8965B33512\x00\x00\x00\x00\x00\x00',
-      ],
-      (Ecu.fwdRadar, 0x750, 0xf): [
-        b'8821F4701100\x00\x00\x00\x00',
-        b'8821F4701300\x00\x00\x00\x00',
-      ],
-      (Ecu.fwdCamera, 0x750, 0x6d): [
-        b'8646F3302001\x00\x00\x00\x00',
-        b'8646F3302200\x00\x00\x00\x00',
-      ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\x02333M4200\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.abs, 0x7b0, None): [
+      b'F152633171\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.dsu, 0x791, None): [
+      b'881513310400\x00\x00\x00\x00',
+    ],
+    (Ecu.eps, 0x7a1, None): [
+      b'8965B33512\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x750, 0xf): [
+      b'8821F4701100\x00\x00\x00\x00',
+      b'8821F4701300\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'8646F3302001\x00\x00\x00\x00',
+      b'8646F3302200\x00\x00\x00\x00',
+    ],
   },
   CAR.LEXUS_GS_F: {
     (Ecu.engine, 0x7E0, None): [

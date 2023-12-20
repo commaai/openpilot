@@ -67,7 +67,6 @@ FINGERPRINTS = {
   }],
 }
 
-
 FW_VERSIONS = {
   CAR.JEEP_GRAND_CHEROKEE_2019: {
     (Ecu.combinationMeter, 0x742, None): [
