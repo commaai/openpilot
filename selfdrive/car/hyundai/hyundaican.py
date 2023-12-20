@@ -139,7 +139,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
     "ACC_ObjLatPos": 0,
     "ACC_ObjRelSpd": 0,
     "ACC_ObjDist": 1,  # close lead makes controls tighter
-  }
+    }
   commands.append(packer.make_can_msg("SCC11", 0, scc11_values))
 
   scc12_values = {

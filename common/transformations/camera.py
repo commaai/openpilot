@@ -18,7 +18,6 @@ eon_fcam_intrinsics = np.array([
   [0.0,  eon_f_focal_length,  float(eon_f_frame_size[1])/2],
   [0.0,  0.0,                                          1.0]])
 eon_intrinsics = eon_fcam_intrinsics  # xx
-eon_intrinsics = eon_fcam_intrinsics  # xx
 
 eon_dcam_intrinsics = np.array([
   [eon_d_focal_length,  0.0,  float(eon_d_frame_size[0])/2],
