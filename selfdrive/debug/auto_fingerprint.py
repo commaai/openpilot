@@ -17,7 +17,7 @@ BRAND_TO_PLATFORMS = {brand: [car.value for car in ALL_CARS[brand]] for brand in
 PLATFORM_TO_BRAND = dict(sum([[(platform, brand) for platform in BRAND_TO_PLATFORMS[brand]] for brand in BRAND_TO_PLATFORMS], []))
 
 def add_fw_versions(brand, platform, new_fw_versions):
-  filename = f"{BASEDIR}/selfdrive/car/{brand}/values.py"
+  filename = f"{BASEDIR}/selfdrive/car/{brand}/fingerprints.py"
   with open(filename, "r") as f:
     values_py = f.read()
 

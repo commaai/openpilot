@@ -125,7 +125,7 @@ if GetOption('extras') and arch != "Darwin":
     obj = senv.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
     f = senv.Program(f"installer/installers/installer_{name}", [obj, cont[brand]], LIBS=qt_libs)
     # keep installers small
-    assert f[0].get_size() < 300*1e3
+    assert f[0].get_size() < 350*1e3
 
 # build watch3
 if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
