@@ -1,5 +1,6 @@
 from cereal import car
 from openpilot.selfdrive.car.volkswagen.values import CAR
+
 Ecu = car.CarParams.Ecu
 
 

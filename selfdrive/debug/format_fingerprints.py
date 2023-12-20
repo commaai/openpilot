@@ -23,6 +23,7 @@ from cereal import car
 {% endif %}
 from openpilot.selfdrive.car.{{brand}}.values import CAR
 {% if FW_VERSIONS[brand] %}
+
 Ecu = car.CarParams.Ecu
 {% endif %}
 

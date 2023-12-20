@@ -1,6 +1,7 @@
 # ruff: noqa: E501
 from cereal import car
 from openpilot.selfdrive.car.hyundai.values import CAR
+
 Ecu = car.CarParams.Ecu
 
 FINGERPRINTS = {
