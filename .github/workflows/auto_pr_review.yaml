@@ -1,0 +1,34 @@
+name: "PR review"
+on:
+  pull_request_target:
+
+jobs:
+  labeler:
+    name: apply labels
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: false
+    - uses: actions/labeler@v5.0.0-alpha.1
+      with:
+        dot: true
+        configuration-path: .github/labeler.yaml
+
+  pr_branch_check:
+    name: check branch
+    runs-on: ubuntu-latest
+    if: github.repository == 'commaai/openpilot'
+    steps:
+    - uses: Vankka/pr-target-branch-action@69ab6dd5c221de3548b3b6c4d102c1f4913d3baa
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        target: /^(?!master$).*/
+        exclude: /commaai:.*/
+        change-to: ${{ github.base_ref }}
+        already-exists-action: close_this
+        already-exists-comment: "Your PR should be made against the `master` branch"

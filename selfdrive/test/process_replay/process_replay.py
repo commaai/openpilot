@@ -749,6 +749,9 @@ def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=Non
     if CP.openpilotLongitudinalControl:
       params_dict["ExperimentalLongitudinalEnabled"] = True
 
+    if CP.notCar:
+      params_dict["JoystickDebugMode"] = True
+
   return params_dict
 
 

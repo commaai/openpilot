@@ -46,18 +46,18 @@ PROCS = {
   "selfdrive.thermald.thermald": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
   "selfdrive.locationd.torqued": 5.0,
-  "selfdrive.ui.soundd": 5.8,
+  "selfdrive.ui.soundd": 3.5,
   "selfdrive.monitoring.dmonitoringd": 4.0,
   "./proclogd": 1.54,
   "system.logmessaged": 0.2,
   "selfdrive.tombstoned": 0,
   "./logcatd": 0,
-  "system.micd": 10.0,
+  "system.micd": 6.0,
   "system.timezoned": 0,
   "selfdrive.boardd.pandad": 0,
   "selfdrive.statsd": 0.4,
   "selfdrive.navd.navd": 0.4,
-  "system.loggerd.uploader": 3.0,
+  "system.loggerd.uploader": (0.5, 10.0),
   "system.loggerd.deleter": 0.1,
 }
 
@@ -168,6 +168,15 @@ class TestOnroad(unittest.TestCase):
     cls.lr = list(LogReader(os.path.join(str(cls.segments[1]), "rlog")))
     cls.log_path = cls.segments[1]
 
+    cls.log_sizes = {}
+    for f in cls.log_path.iterdir():
+      assert f.is_file()
+      cls.log_sizes[f]  = f.stat().st_size / 1e6
+      if f.name in ("qlog", "rlog"):
+        with open(f, 'rb') as ff:
+          cls.log_sizes[f] = len(bz2.compress(ff.read())) / 1e6
+
+
   @cached_property
   def service_msgs(self):
     msgs = defaultdict(list)
@@ -198,14 +207,7 @@ class TestOnroad(unittest.TestCase):
     self.assertEqual(len(big_logs), 0, f"Log spam: {big_logs}")
 
   def test_log_sizes(self):
-    for f in self.log_path.iterdir():
-      assert f.is_file()
-
-      sz = f.stat().st_size / 1e6
-      if f.name in ("qlog", "rlog"):
-        with open(f, 'rb') as ff:
-          sz = len(bz2.compress(ff.read())) / 1e6
-
+    for f, sz in self.log_sizes.items():
       if f.name == "qcamera.ts":
         assert 2.15 < sz < 2.35
       elif f.name == "qlog":

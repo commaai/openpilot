@@ -1,5 +1,5 @@
 import math
-import threading
+import multiprocessing
 import numpy as np
 
 from abc import ABC, abstractmethod
@@ -65,7 +65,7 @@ class World(ABC):
   def __init__(self, dual_camera):
     self.dual_camera = dual_camera
 
-    self.image_lock = threading.Lock()
+    self.image_lock = multiprocessing.Semaphore(value=0)
     self.road_image = np.zeros((H, W, 3), dtype=np.uint8)
     self.wide_road_image = np.zeros((H, W, 3), dtype=np.uint8)
 

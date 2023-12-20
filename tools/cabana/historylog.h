@@ -11,7 +11,7 @@
 
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
-#include "tools/cabana/util.h"
+#include "tools/cabana/utils/util.h"
 
 class HeaderView : public QHeaderView {
 public:
@@ -80,6 +80,7 @@ public:
 
 private slots:
   void setFilter();
+  void exportToCSV();
 
 private:
   void refresh();
