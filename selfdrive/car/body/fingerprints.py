@@ -17,8 +17,8 @@ FW_VERSIONS = {
   CAR.BODY: {
     (Ecu.engine, 0x720, None): [
       b'0.0.01',
-      b'02/27/2022',
       b'0.3.00a',
+      b'02/27/2022',
     ],
     (Ecu.debug, 0x721, None): [
       b'166bd860',
