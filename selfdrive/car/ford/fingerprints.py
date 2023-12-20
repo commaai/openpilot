@@ -19,7 +19,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x706, None): [
       b'M1PT-14F397-AC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.engine, 0x7E0, None): [
+    (Ecu.engine, 0x7e0, None): [
       b'M1PA-14C204-GF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'N1PA-14C204-AC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'N1PA-14C204-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -47,7 +47,7 @@ FW_VERSIONS = {
       b'LJ6T-14F397-AE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LV4T-14F397-GG\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.engine, 0x7E0, None): [
+    (Ecu.engine, 0x7e0, None): [
       b'LX6A-14C204-BJV\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LX6A-14C204-BJX\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LX6A-14C204-CNG\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -85,7 +85,7 @@ FW_VERSIONS = {
       b'LB5T-14F397-AF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LC5T-14F397-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.engine, 0x7E0, None): [
+    (Ecu.engine, 0x7e0, None): [
       b'LB5A-14C204-ATJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LB5A-14C204-AUJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LB5A-14C204-AZL\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -112,7 +112,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x706, None): [
       b'PJ6T-14H102-ABJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.engine, 0x7E0, None): [
+    (Ecu.engine, 0x7e0, None): [
       b'PL3A-14C204-BRB\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
@@ -126,7 +126,7 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x764, None): [
       b'ML3T-14D049-AL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.engine, 0x7E0, None): [
+    (Ecu.engine, 0x7e0, None): [
       b'NL3A-14C204-BAR\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
@@ -144,7 +144,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x706, None): [
       b'ML3T-14H102-ABS\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.engine, 0x7E0, None): [
+    (Ecu.engine, 0x7e0, None): [
       b'NJ98-14C204-VH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'MJ98-14C204-BBS\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
@@ -162,7 +162,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x706, None): [
       b'JX7T-14F397-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.engine, 0x7E0, None): [
+    (Ecu.engine, 0x7e0, None): [
       b'JX6A-14C204-BPL\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
@@ -181,7 +181,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x706, None): [
       b'NZ6T-14F397-AC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.engine, 0x7E0, None): [
+    (Ecu.engine, 0x7e0, None): [
       b'NZ6A-14C204-AAA\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'NZ6A-14C204-PA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'NZ6A-14C204-ZA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
