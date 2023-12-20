@@ -242,7 +242,7 @@ node {
       'replay': {
         deviceStage("tici", "tici-replay", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
-          ["model replay", "selfdrive/test/process_replay/model_replay.py", ["tinygrad/", "selfdrive/modeld/"]],
+          ["model replay", "selfdrive/test/process_replay/model_replay.py"],
         ])
       },
       'tizi': {
