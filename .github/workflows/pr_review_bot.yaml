@@ -16,71 +16,15 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Set PR as Draft
-        run: |
-          PR_NUMBER=$(jq --raw-output .pull_request.number $GITHUB_EVENT_PATH)
-          REPO_OWNER=$(jq --raw-output .repository.owner.login $GITHUB_EVENT_PATH)
-          REPO_NAME=$(jq --raw-output .repository.name $GITHUB_EVENT_PATH)
-          query='
-            query ggg($owner: String!, $name: String!, $number: Int!) {
-              repository(owner: $owner, name: $name) {
-                pullRequest(number: $number) {
-                  id
-                }
-              }
-            }
-          '
-          variables='
-          {
-            "owner": "'"$REPO_OWNER"'",
-            "name": "'"$REPO_NAME"'",
-            "number": '"$PR_NUMBER"'
-          }
-          '
-          base64_encoded_id=$(curl -v -X POST \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            --data '{"query":"'"$query"'","variables":'"$variables"'}' \
-            https://api.github.com/graphql | jq -r .data.repository.pullRequest.id)
-
-          # Output the base64-encoded ID for reference
-          echo "Base64 Encoded ID: $base64_encoded_id"
-
-          # If the base64-encoded ID is available, proceed with updating the pull request
-          # Use the obtained ID to convert the pull request to draft status
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H "Content-Type: application/json" \
-            --data-raw "{
-              \"query\": \"mutation {
-                convertPullRequestToDraft(input: {pullRequestId: \\\"$base64_encoded_id\\\"}) {}
-              }\"
-            }" \
-          "https://api.github.com/graphql"
-
       - name: Set Up Python
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
 
       - name: Install Dependencies
-        run: pip install PyGithub
+        run: pip install PyGithub requests
 
       - name: Run Bot Review
         run: python scripts/review_bot.py "${{ github.event_path }}"
 
-      - name: Set PR as Ready
-        if: success()
-        run: |
-          PR_NUMBER=$(jq --raw-output .pull_request.number $GITHUB_EVENT_PATH)
-          REPO_OWNER=$(jq --raw-output .repository.owner.login $GITHUB_EVENT_PATH)
-          REPO_NAME=$(jq --raw-output .repository.name $GITHUB_EVENT_PATH)
-          graphql_query='mutation ConvertToReady { markPullRequestReadyForReview(input: {pullRequestId: "'$PR_NUMBER'"}) { clientMutationId } }'
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H "Content-Type: application/json" \
-            --data-raw '{"query": "'"$graphql_query"'"}' \
-            "https://api.github.com/graphql"
 
