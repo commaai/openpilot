@@ -15,8 +15,6 @@ ISPEED = 4
 OSPEED = 5
 CC = 6
 
-STDIN_FD = sys.stdin.fileno()
-
 
 KEYBOARD_HELP = """
   | key  |   functionality       |
@@ -32,6 +30,7 @@ KEYBOARD_HELP = """
 
 
 def getch() -> str:
+  STDIN_FD = sys.stdin.fileno()
   old_settings = termios.tcgetattr(STDIN_FD)
   try:
     # set
