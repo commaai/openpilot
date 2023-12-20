@@ -11,7 +11,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import Ratekeeper, Priority, config_realtime_process
 from openpilot.common.swaglog import cloudlog
 
-from openpilot.common.kalman.simple_kalman import KF1D
+from openpilot.common.simple_kalman import KF1D
 
 
 # Default lead acceleration decay set to 50% at 1s

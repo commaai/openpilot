@@ -3,6 +3,7 @@ moc_*
 
 translations/main_test_en.*
 
+ui
 watch3
 installer/installers/*
 qt/text

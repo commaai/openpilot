@@ -29,6 +29,7 @@ public:
 public slots:
   void openStream();
   void closeStream();
+  void exportToCSV();
   void changingStream();
   void streamStarted();
 
@@ -94,6 +95,7 @@ protected:
   QMenu *manage_dbcs_menu = nullptr;
   QMenu *tools_menu = nullptr;
   QAction *close_stream_act = nullptr;
+  QAction *export_to_csv_act = nullptr;
   QAction *save_dbc = nullptr;
   QAction *save_dbc_as = nullptr;
   QAction *copy_dbc_to_clipboard = nullptr;
@@ -101,7 +103,6 @@ protected:
   int prev_undostack_index = 0;
   int prev_undostack_count = 0;
   QByteArray default_state;
-  friend class OnlineHelp;
 };
 
 class HelpOverlay : public QWidget {
