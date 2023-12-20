@@ -21,12 +21,16 @@ jobs:
           PR_NUMBER=$(jq --raw-output .pull_request.number $GITHUB_EVENT_PATH)
           REPO_OWNER=$(jq --raw-output .repository.owner.login $GITHUB_EVENT_PATH)
           REPO_NAME=$(jq --raw-output .repository.name $GITHUB_EVENT_PATH)
-          graphql_query='mutation ConvertToDraft { convertPullRequestToDraft(input: {pullRequestId: "'$PR_NUMBER'"}) { clientMutationId } }'
+          graphql_query=''
           curl -X POST \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github.v3+json" \
             -H "Content-Type: application/json" \
-            --data-raw '{"query": "'"$graphql_query"'"}' \
+            --data-raw '{
+              "query": "mutation {
+                convertPullRequestToDraft(input: {pullRequestId: "'$PR_NUMBER'"}){}
+              }"
+            }' \
             "https://api.github.com/graphql"
 
       - name: Set Up Python
