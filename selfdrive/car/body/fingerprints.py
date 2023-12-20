@@ -5,10 +5,9 @@ Ecu = car.CarParams.Ecu
 
 FINGERPRINTS = {
   CAR.BODY: [
-    {
-      513: 8, 516: 8, 514: 3, 515: 4
-    },
-  ],
+  {
+    513: 8, 516: 8, 514: 3, 515: 4
+  }],
 }
 
 FW_VERSIONS = {

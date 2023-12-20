@@ -31,12 +31,11 @@ FINGERPRINTS = {
 {% for car, fingerprints in FINGERPRINTS[brand].items() %}
   CAR.{{PLATFORM_TO_PYTHON_CAR_NAME[brand][car]}}: [
 {% for fingerprint in fingerprints %}
-    {
-      {% for key, value in fingerprint.items() %}{{key}}: {{value}}{% if not loop.last %}, {% endif %}{% endfor %}
+  {
+    {% for key, value in fingerprint.items() %}{{key}}: {{value}}{% if not loop.last %}, {% endif %}{% endfor %}
 
-    },
+  }{% if loop.last %}]{% endif %},
 {% endfor %}
-  ],
 {% endfor %}
 }
 {% endif %}
