@@ -2,6 +2,7 @@
 import sys
 import json
 import re
+import time
 
 # Read the file passed in as first arg
 def get_pr_body():
@@ -41,6 +42,7 @@ if __name__ == "__main__":
         if fields_in_pr_body.issuperset(required_fields):
             possible_template_matches.append(template_name)
 
+    time.sleep(20)
     # Return results
     if len(possible_template_matches) > 0:
         print("PR matches template(s): ",", ".join(possible_template_matches))
