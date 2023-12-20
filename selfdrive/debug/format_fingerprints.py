@@ -12,7 +12,7 @@ CARS = get_interface_attr('CAR')
 FW_VERSIONS = get_interface_attr('FW_VERSIONS')
 FINGERPRINTS = get_interface_attr('FINGERPRINTS')
 PLATFORM_TO_PYTHON_CAR_NAME = {brand: {car.value: car.name for car in CARS[brand]} for brand in CARS}
-ECU_NUMBER_TO_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
+ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
 FINGERPRINTS_PY_TEMPLATE = jinja2.Template("""
 {%- if FINGERPRINTS[brand] %}
@@ -46,7 +46,7 @@ FW_VERSIONS = {
 {% for car, _ in FW_VERSIONS[brand].items() %}
   CAR.{{PLATFORM_TO_PYTHON_CAR_NAME[brand][car]}}: {
 {% for key, fw_versions in FW_VERSIONS[brand][car].items() %}
-    (Ecu.{{ECU_NUMBER_TO_NAME[key[0]]}}, 0x{{"%0x" | format(key[1] | int)}}, \
+    (Ecu.{{ECU_NAME[key[0]]}}, 0x{{"%0x" | format(key[1] | int)}}, \
 {% if key[2] %}0x{{"%0x" | format(key[2] | int)}}{% else %}{{key[2]}}{% endif %}): [
   {% for fw_version in fw_versions %}
     {{fw_version}},
@@ -62,7 +62,7 @@ FW_VERSIONS = {
 
 def format_brand_fw_versions(brand):
   with open(os.path.join(BASEDIR, f"selfdrive/car/{brand}/fingerprints.py"), "w") as f:
-    f.write(FINGERPRINTS_PY_TEMPLATE.render(brand=brand, ECU_NUMBER_TO_NAME=ECU_NUMBER_TO_NAME, PLATFORM_TO_PYTHON_CAR_NAME=PLATFORM_TO_PYTHON_CAR_NAME,
+    f.write(FINGERPRINTS_PY_TEMPLATE.render(brand=brand, ECU_NAME=ECU_NAME, PLATFORM_TO_PYTHON_CAR_NAME=PLATFORM_TO_PYTHON_CAR_NAME,
                                             FINGERPRINTS=FINGERPRINTS, FW_VERSIONS=FW_VERSIONS))
 
 
