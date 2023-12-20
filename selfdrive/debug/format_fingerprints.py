@@ -32,9 +32,11 @@ Ecu = car.CarParams.Ecu
 
 FINGERPRINTS = {
 {% for car, fingerprints in FINGERPRINTS[brand].items() %}
-  CAR.{{car.name}}: [
+  CAR.{{car.name}}: [{
 {% for fingerprint in fingerprints %}
-  {
+{% if not loop.first %}
+  {{ "{" }}
+{% endif %}
     {% for key, value in fingerprint.items() %}{{key}}: {{value}}{% if not loop.last %}, {% endif %}{% endfor %}
 
   }{% if loop.last %}]{% endif %},
