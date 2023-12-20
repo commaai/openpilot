@@ -57,6 +57,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x707, None): [
       b'6WK2CDB\x04\x18\x00\x00\x00\x00\x00R=1\x18\x99\x10\x00\x00\x00\x80',
+      b'6WK2BDB\x04\x18\x00\x00\x00\x00\x00R;1\x18\x99\x10\x00\x00\x00\x80',
     ],
     (Ecu.gateway, 0x18dad0f1, None): [
       b'284U26WK0C',
