@@ -35,6 +35,7 @@ def find_field_set(content):
 
 # use GraphQL to get pull request id
 def get_pull_request_graphql_id(accessToken,name,number):
+    headers = {"Authorization": f"Bearer {accessToken}"}
     owner,name = name.split('/')
     query = f"""query {{
       repository(owner:"{owner}", name:"{name}"){{
@@ -48,6 +49,7 @@ def get_pull_request_graphql_id(accessToken,name,number):
 
 # use GraphQL to set pull request as draft
 def set_pr_draft(accessToken,id):
+    headers = {"Authorization": f"Bearer {accessToken}"}
     query = f"""mutation {{
         convertPullRequestToDraft(input:{{pullRequestId:"{id}"}}){{
             pullRequest {{
@@ -59,6 +61,7 @@ def set_pr_draft(accessToken,id):
 
 # use GraphQL to set pull request as ready
 def set_pr_ready(accessToken,id):
+    headers = {"Authorization": f"Bearer {accessToken}"}
     query = f"""mutation {{
         markPullRequestReadyForReview(input:{{pullRequestId:"{id}"}}){{
             pullRequest {{
