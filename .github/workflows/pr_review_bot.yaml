@@ -1,0 +1,37 @@
+name: Bot Review
+
+on:
+  pull_request:
+    types:
+      - opened
+jobs:
+  bot_review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install GitHub CLI
+        run: sudo apt-get install gh
+
+      - name: Add bot-review Label
+        run: gh pr edit ${{ github.event.number }} --add-label bot-review
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set Up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install Dependencies
+        run: pip install frontmatter
+
+      - name: Run Bot Review
+        run: python scripts/review_bot.py "${{ github.event_path }}"
+
+      - name: Remove bot-review Label
+        if: success()
+        run: gh pr edit ${{ github.event.number }} --remove-label bot-review
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
