@@ -142,7 +142,6 @@ def setupCredentials() {
 def hasDirectoryChanged(List<String> paths) {
   for (change in currentBuild.changeSets) {
     for (item in change.items) {
-      echo "  Path: ${item.path}, Comment: ${item.comment}"
       for (affectedPath in item.affectedPaths) {
         for (path in paths) {
           if (affectedPath.startsWith(path)) {
