@@ -321,7 +321,6 @@ void WifiUI::handleHiddenNetwork() {
     if (!pass.isEmpty()) {
       Network hidden_network;
       hidden_network.ssid = ssid.toUtf8();
-      hidden_network.security_type = SecurityType::WPA; // or adjust based on your needs
       wifi->connect(hidden_network, pass);
     }
   }
