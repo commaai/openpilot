@@ -3,6 +3,7 @@ import sys
 import json
 import re
 from github import Github
+import os
 import time
 
 BOT_REVIEW_LABEL = "bot-review"
