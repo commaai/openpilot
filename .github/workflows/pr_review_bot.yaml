@@ -21,22 +21,27 @@ jobs:
           PR_NUMBER=$(jq --raw-output .pull_request.number $GITHUB_EVENT_PATH)
           REPO_OWNER=$(jq --raw-output .repository.owner.login $GITHUB_EVENT_PATH)
           REPO_NAME=$(jq --raw-output .repository.name $GITHUB_EVENT_PATH)
-
-          # Query GitHub API v4 to get the base64-encoded ID of the pull request
-          base64_encoded_id=$(curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H "Content-Type: application/json" \
-            --data-raw "{
-              \"query\": \"query {
-                repository(owner: \\\"$REPO_OWNER\\\", name: \\\"$REPO_NAME\\\"){
-                  pullRequest(number: $PR_NUMBER) {
-                    id
-                  }
+          query='
+            query ggg($owner: String!, $name: String!, $number: Int!) {
+              repository(owner: $owner, name: $name) {
+                pullRequest(number: $number) {
+                  id
                 }
-              }\"
-            }" \
-            "https://api.github.com/graphql" | jq -r .data.repository.pullRequest.id)
+              }
+            }
+          '
+          variables='
+          {
+            "owner": "'"$REPO_OWNER"'",
+            "name": "'"$REPO_NAME"'",
+            "number": '"$PR_NUMBER"'
+          }
+          '
+          base64_encoded_id=$(curl -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+            --data '{"query":"'"$query"'","variables":'"$variables"'}' \
+            https://api.github.com/graphql | jq -r .data.repository.pullRequest.id)
 
           # Output the base64-encoded ID for reference
           echo "Base64 Encoded ID: $base64_encoded_id"
