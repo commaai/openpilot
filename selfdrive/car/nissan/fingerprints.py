@@ -39,7 +39,6 @@ FINGERPRINTS = {
   ]
 }
 
-
 FW_VERSIONS = {
   CAR.ALTIMA: {
     (Ecu.fwdCamera, 0x707, None): [
@@ -55,7 +54,7 @@ FW_VERSIONS = {
       b'284U29HE0A',
     ],
   },
-    CAR.LEAF: {
+  CAR.LEAF: {
     (Ecu.abs, 0x740, None): [
       b'476606WK9B',
     ],

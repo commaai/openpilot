@@ -1,7 +1,6 @@
 # ruff: noqa: E501
 from openpilot.selfdrive.car.gm.values import CAR
 
-
 FINGERPRINTS = {
   CAR.HOLDEN_ASTRA: [
   # Astra BK MY17, ASCM unplugged
