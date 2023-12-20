@@ -50,9 +50,10 @@ jobs:
         cd openpilot-docs
 
         git checkout --orphan tmp
-        git rm -rf --cached .
+        git rm -rf .
 
         cp -r ../build/docs/html/ docs/
+        cp -r ../docs/README.md .
         touch docs/.nojekyll
         echo -n docs.comma.ai > docs/CNAME
         git add -f .
