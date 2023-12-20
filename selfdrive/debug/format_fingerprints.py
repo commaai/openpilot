@@ -70,7 +70,7 @@ def format_brand_fw_versions(brand, extra_fw_versions: None | dict[str, dict[tup
   if extra_fw_versions is not None:
     for platform, ecus in extra_fw_versions.items():
       for ecu, fws in ecus.items():
-        fw_versions[brand][platform][ecu] += fws
+        fw_versions[brand][platform][ecu] += set(fws) - set(fw_versions[brand][platform][ecu])
 
   fingerprints_file = os.path.join(BASEDIR, f"selfdrive/car/{brand}/fingerprints.py")
   with open(fingerprints_file, "r") as f:
