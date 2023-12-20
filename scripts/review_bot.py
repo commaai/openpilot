@@ -21,7 +21,7 @@ def read_template_file():
     return combined_templates
 
 # Separate out each template
-template_separator = re.compile(r"<!--- \*{5}+ Template: (.*?) \*{5}\n\n(.*?)\n\n-->", re.DOTALL)
+template_separator = re.compile(r"<!--- \*{5} Template: (.*?) \*{5}\n\n(.*?)\n\n-->", re.DOTALL)
 def separate_templates(combined_templates):
     matches = template_separator.findall(combined_templates)
     for (name,content) in matches:
