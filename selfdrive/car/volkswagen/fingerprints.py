@@ -3,7 +3,6 @@ from openpilot.selfdrive.car.volkswagen.values import CAR
 
 Ecu = car.CarParams.Ecu
 
-
 FW_VERSIONS = {
   CAR.ARTEON_MK1: {
     (Ecu.engine, 0x7e0, None): [
