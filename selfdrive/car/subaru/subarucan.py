@@ -53,7 +53,7 @@ def create_es_distance(packer, frame, es_distance_msg, bus, pcm_cancel_cmd, long
 
   if pcm_cancel_cmd:
     values["Cruise_Cancel"] = 1
-    values["Cruise_Throttle"] = 1818 # inactive throttle
+    values["Cruise_Throttle"] = 1818  # inactive throttle
 
   return packer.make_can_msg("ES_Distance", bus, values)
 

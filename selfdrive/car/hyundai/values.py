@@ -14,8 +14,8 @@ Ecu = car.CarParams.Ecu
 
 
 class CarControllerParams:
-  ACCEL_MIN = -3.5 # m/s
-  ACCEL_MAX = 2.0 # m/s
+  ACCEL_MIN = -3.5  # m/s
+  ACCEL_MAX = 2.0  # m/s
 
   def __init__(self, CP):
     self.STEER_DELTA_UP = 3
@@ -546,7 +546,7 @@ DBC = {
   CAR.KIA_OPTIMA_H: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_OPTIMA_H_G4_FL: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_SELTOS: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_SORENTO: dbc_dict('hyundai_kia_generic', None), # Has 0x5XX messages, but different format
+  CAR.KIA_SORENTO: dbc_dict('hyundai_kia_generic', None),  # Has 0x5XX messages, but different format
   CAR.KIA_STINGER: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_STINGER_2022: dbc_dict('hyundai_kia_generic', None),
   CAR.KONA: dbc_dict('hyundai_kia_generic', None),
@@ -558,7 +558,7 @@ DBC = {
   CAR.SANTA_FE_HEV_2022: dbc_dict('hyundai_kia_generic', None),
   CAR.SANTA_FE_PHEV_2022: dbc_dict('hyundai_kia_generic', None),
   CAR.SONATA: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
-  CAR.SONATA_LF: dbc_dict('hyundai_kia_generic', None), # Has 0x5XX messages, but different format
+  CAR.SONATA_LF: dbc_dict('hyundai_kia_generic', None),  # Has 0x5XX messages, but different format
   CAR.TUCSON: dbc_dict('hyundai_kia_generic', None),
   CAR.PALISADE: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
   CAR.VELOSTER: dbc_dict('hyundai_kia_generic', None),

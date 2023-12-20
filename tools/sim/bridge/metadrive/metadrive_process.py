@@ -19,7 +19,7 @@ metadrive_state = namedtuple("metadrive_state", ["velocity", "position", "bearin
 def apply_metadrive_patches():
   # By default, metadrive won't try to use cuda images unless it's used as a sensor for vehicles, so patch that in
   def add_image_sensor_patched(self, name: str, cls, args):
-    if self.global_config["image_on_cuda"]:# and name == self.global_config["vehicle_config"]["image_source"]:
+    if self.global_config["image_on_cuda"]:  # and name == self.global_config["vehicle_config"]["image_source"]:
         sensor = cls(*args, self, cuda=True)
     else:
         sensor = cls(*args, self, cuda=False)
@@ -60,7 +60,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
     cam = env.engine.sensors[cam]
     img = cam.perceive(env.vehicle, clip=False)
     if type(img) != np.ndarray:
-      img = img.get() # convert cupy array to numpy
+      img = img.get()  # convert cupy array to numpy
     return img
 
   rk = Ratekeeper(100, None)

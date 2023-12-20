@@ -119,7 +119,7 @@ class TTYPigeon():
     for _ in range(5):
       # device cold start
       self.send(b"\xb5\x62\x06\x04\x04\x00\xff\xff\x00\x00\x0c\x5d")
-      time.sleep(1) # wait for cold start
+      time.sleep(1)  # wait for cold start
       init_baudrate(self)
 
       # clear configuration

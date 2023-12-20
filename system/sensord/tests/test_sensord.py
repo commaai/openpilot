@@ -139,8 +139,8 @@ class TestSensord(unittest.TestCase):
     # verify measurements are sampled and published at 104Hz
 
     sensor_t = {
-      1: [], # accel
-      5: [], # gyro
+      1: [],  # accel
+      5: [],  # gyro
     }
 
     for measurement in self.events['accelerometer']:
@@ -154,7 +154,7 @@ class TestSensord(unittest.TestCase):
     for s, vals in sensor_t.items():
       with self.subTest(sensor=s):
         assert len(vals) > 0
-        tdiffs = np.diff(vals) / 1e6 # millis
+        tdiffs = np.diff(vals) / 1e6  # millis
 
         high_delay_diffs = list(filter(lambda d: d >= 20., tdiffs))
         assert len(high_delay_diffs) < 15, f"Too many large diffs: {high_delay_diffs}"

@@ -37,7 +37,7 @@ class SimulatedCar:
 
     # *** powertrain bus ***
 
-    speed = simulator_state.speed * 3.6 # convert m/s to kph
+    speed = simulator_state.speed * 3.6  # convert m/s to kph
     msg.append(self.packer.make_can_msg("ENGINE_DATA", 0, {"XMISSION_SPEED": speed}))
     msg.append(self.packer.make_can_msg("WHEEL_SPEEDS", 0, {
       "WHEEL_SPEED_FL": speed,
@@ -115,7 +115,7 @@ class SimulatedCar:
   def update(self, simulator_state: SimulatorState):
     self.send_can_messages(simulator_state)
 
-    if self.idx % 50 == 0: # only send panda states at 2hz
+    if self.idx % 50 == 0:  # only send panda states at 2hz
       self.send_panda_state(simulator_state)
 
     self.idx += 1

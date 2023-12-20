@@ -168,7 +168,7 @@ def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
         q.put(f"steer_{normalized:f}")
 
     elif mtype & 0x01:  # buttons
-      if value == 1: # press down
+      if value == 1:  # press down
         if number in [0, 19]:  # X
           q.put("cruise_down")
 

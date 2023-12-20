@@ -36,7 +36,7 @@ class MetaDriveWorld(World):
     print("---- Spawning Metadrive world, this might take awhile ----")
     print("----------------------------------------------------------")
 
-    self.state_recv.recv() # wait for a state message to ensure metadrive is launched
+    self.state_recv.recv()   # wait for a state message to ensure metadrive is launched
 
     self.steer_ratio = 15
     self.vc = [0.0,0.0]

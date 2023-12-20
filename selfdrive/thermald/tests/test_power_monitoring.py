@@ -101,7 +101,7 @@ class TestPowerMonitoring(unittest.TestCase):
   # Test to check policy of stopping charging after MAX_TIME_OFFROAD_S
   def test_max_time_offroad(self):
     MOCKED_MAX_OFFROAD_TIME = 3600
-    POWER_DRAW = 0 # To stop shutting down for other reasons
+    POWER_DRAW = 0  # To stop shutting down for other reasons
     with pm_patch("MAX_TIME_OFFROAD_S", MOCKED_MAX_OFFROAD_TIME, constant=True), pm_patch("HARDWARE.get_current_power_draw", POWER_DRAW):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
@@ -114,7 +114,7 @@ class TestPowerMonitoring(unittest.TestCase):
       self.assertTrue(pm.should_shutdown(ignition, True, start_time, False))
 
   def test_car_voltage(self):
-    POWER_DRAW = 0 # To stop shutting down for other reasons
+    POWER_DRAW = 0  # To stop shutting down for other reasons
     TEST_TIME = 350
     VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S = 50
     with pm_patch("VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S", VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S, constant=True), \
@@ -134,7 +134,7 @@ class TestPowerMonitoring(unittest.TestCase):
 
   # Test to check policy of not stopping charging when DisablePowerDown is set
   def test_disable_power_down(self):
-    POWER_DRAW = 0 # To stop shutting down for other reasons
+    POWER_DRAW = 0  # To stop shutting down for other reasons
     TEST_TIME = 100
     self.params.put_bool("DisablePowerDown", True)
     with pm_patch("HARDWARE.get_current_power_draw", POWER_DRAW):
@@ -149,7 +149,7 @@ class TestPowerMonitoring(unittest.TestCase):
 
   # Test to check policy of not stopping charging when ignition
   def test_ignition(self):
-    POWER_DRAW = 0 # To stop shutting down for other reasons
+    POWER_DRAW = 0  # To stop shutting down for other reasons
     TEST_TIME = 100
     with pm_patch("HARDWARE.get_current_power_draw", POWER_DRAW):
       pm = PowerMonitoring()
@@ -163,7 +163,7 @@ class TestPowerMonitoring(unittest.TestCase):
 
   # Test to check policy of not stopping charging when harness is not connected
   def test_harness_connection(self):
-    POWER_DRAW = 0 # To stop shutting down for other reasons
+    POWER_DRAW = 0  # To stop shutting down for other reasons
     TEST_TIME = 100
     with pm_patch("HARDWARE.get_current_power_draw", POWER_DRAW):
       pm = PowerMonitoring()

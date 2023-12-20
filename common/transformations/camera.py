@@ -6,7 +6,7 @@ import openpilot.common.transformations.orientation as orient
 eon_f_focal_length = 910.0
 eon_d_focal_length = 650.0
 tici_f_focal_length = 2648.0
-tici_e_focal_length = tici_d_focal_length = 567.0 # probably wrong? magnification is not consistent across frame
+tici_e_focal_length = tici_d_focal_length = 567.0  # probably wrong? magnification is not consistent across frame
 
 eon_f_frame_size = (1164, 874)
 eon_d_frame_size = (816, 612)
@@ -18,6 +18,7 @@ eon_fcam_intrinsics = np.array([
   [0.0,  eon_f_focal_length,  float(eon_f_frame_size[1])/2],
   [0.0,  0.0,                                          1.0]])
 eon_intrinsics = eon_fcam_intrinsics # xx
+eon_intrinsics = eon_fcam_intrinsics  # xx
 
 eon_dcam_intrinsics = np.array([
   [eon_d_focal_length,  0.0,  float(eon_d_frame_size[0])/2],
@@ -38,7 +39,7 @@ tici_ecam_intrinsics = tici_dcam_intrinsics
 
 # aka 'K_inv' aka view_frame_from_camera_frame
 eon_fcam_intrinsics_inv = np.linalg.inv(eon_fcam_intrinsics)
-eon_intrinsics_inv = eon_fcam_intrinsics_inv # xx
+eon_intrinsics_inv = eon_fcam_intrinsics_inv  # xx
 
 tici_fcam_intrinsics_inv = np.linalg.inv(tici_fcam_intrinsics)
 tici_ecam_intrinsics_inv = np.linalg.inv(tici_ecam_intrinsics)

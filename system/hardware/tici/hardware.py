@@ -105,7 +105,7 @@ class Tici(HardwareBase):
   def nm(self):
     return self.bus.get_object(NM, '/org/freedesktop/NetworkManager')
 
-  @property # this should not be cached, in case the modemmanager restarts
+  @property  # this should not be cached, in case the modemmanager restarts
   def mm(self):
     return self.bus.get_object(MM, '/org/freedesktop/ModemManager1')
 

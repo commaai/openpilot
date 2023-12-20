@@ -11,7 +11,7 @@ SEGNET_SIZE = (512, 384)
 def get_segnet_frame_from_camera_frame(segnet_size=SEGNET_SIZE, full_frame_size=FULL_FRAME_SIZE):
   return np.array([[float(segnet_size[0]) / full_frame_size[0],  0.0],
                    [0.0,  float(segnet_size[1]) / full_frame_size[1]]])
-segnet_frame_from_camera_frame = get_segnet_frame_from_camera_frame() # xx
+segnet_frame_from_camera_frame = get_segnet_frame_from_camera_frame()  # xx
 
 
 # MED model

@@ -221,19 +221,19 @@ def get_hevc_slice_type(dat: bytes, nal_unit_start: int, nal_unit_type: HevcNalU
     # TODO: parse dependent_slice_segment_flag and slice_segment_address and get real slice_type
     # for now since we don't use it return -1 for slice_type
     return (-1, is_first_slice)
-  skip_bits += 1 # skip past first_slice_segment_in_pic_flag
+  skip_bits += 1  # skip past first_slice_segment_in_pic_flag
 
   if nal_unit_type >= HevcNalUnitType.BLA_W_LP and nal_unit_type <= HevcNalUnitType.RSV_IRAP_VCL23:
     # 7.4.7.1 General slice segment header semantics
     # no_output_of_prior_pics_flag affects the output of previously-decoded pictures in the decoded picture buffer after the
     # decoding of an IDR or a BLA picture that is not the first picture in the bitstream as specified in Annex C.
-    skip_bits += 1 # skip past no_output_of_prior_pics_flag
+    skip_bits += 1  # skip past no_output_of_prior_pics_flag
 
   # 7.4.7.1 General slice segment header semantics
   # slice_pic_parameter_set_id specifies the value of pps_pic_parameter_set_id for the PPS in use.
   # The value of slice_pic_parameter_set_id shall be in the range of 0 to 63, inclusive.
   _, size = get_ue(dat, rbsp_start, skip_bits)
-  skip_bits += size # skip past slice_pic_parameter_set_id
+  skip_bits += size  # skip past slice_pic_parameter_set_id
 
   # 7.4.3.3.1 General picture parameter set RBSP semanal_unit_lenntics
   # num_extra_slice_header_bits specifies the number of extra slice header bits that are present in the slice header RBSP
@@ -272,7 +272,7 @@ def hevc_index(hevc_file_name: str, allow_corrupt: bool=False) -> Tuple[list, in
   prefix_dat = b""
   frame_types = list()
 
-  i = 1 # skip past first byte 0x00
+  i = 1  # skip past first byte 0x00
   try:
     while i < len(dat):
       require_nal_unit_start(dat, i)

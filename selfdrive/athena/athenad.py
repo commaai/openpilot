@@ -79,7 +79,7 @@ class UploadItem:
   url: str
   headers: Dict[str, str]
   created_at: int
-  id: Optional[str] # noqa: A003 (to match the response from the remote server)
+  id: Optional[str]  # noqa: A003 (to match the response from the remote server)
   retry_count: int = 0
   current: bool = False
   progress: float = 0
@@ -560,7 +560,7 @@ def log_handler(end_event: threading.Event) -> None:
       # send one log
       curr_log = None
       if len(log_files) > 0:
-        log_entry = log_files.pop() # newest log file
+        log_entry = log_files.pop()  # newest log file
         cloudlog.debug(f"athena.log_handler.forward_request {log_entry}")
         try:
           curr_time = int(time.time())

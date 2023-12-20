@@ -20,12 +20,12 @@ class GnssClockNmeaPort:
   flags: int
   leap_seconds: int
   time_ns: int
-  time_uncertainty_ns: int # 1-sigma
+  time_uncertainty_ns: int  # 1-sigma
   full_bias_ns: int
   bias_ns: float
-  bias_uncertainty_ns: float # 1-sigma
+  bias_uncertainty_ns: float  # 1-sigma
   drift_nsps: float
-  drift_uncertainty_nsps: float # 1-sigma
+  drift_uncertainty_nsps: float  # 1-sigma
 
   def __post_init__(self):
     for field in fields(self):
@@ -46,7 +46,7 @@ class GnssMeasNmeaPort:
   # 6 = GALILEO
   constellation: int
   svId: int
-  flags: int # always zero
+  flags: int  # always zero
   time_offset_ns: int
   # state bit mask:
   # 0x0001 = CODE LOCK
@@ -65,10 +65,10 @@ class GnssMeasNmeaPort:
   # 0x2000 = GALILEO E1B PAGE SYNC
   state: int
   time_of_week_ns: int
-  time_of_week_uncertainty_ns: int # 1-sigma
+  time_of_week_uncertainty_ns: int  # 1-sigma
   carrier_to_noise_ratio: float
   pseudorange_rate: float
-  pseudorange_rate_uncertainty: float # 1-sigma
+  pseudorange_rate_uncertainty: float  # 1-sigma
 
   def __post_init__(self):
     for field in fields(self):
@@ -79,7 +79,7 @@ def nmea_checksum_ok(s):
   checksum = 0
   for i, c in enumerate(s[1:]):
     if c == "*":
-      if i != len(s) - 4: # should be 3rd to last character
+      if i != len(s) - 4:  # should be 3rd to last character
         print("ERROR: NMEA string does not have checksum delimiter in correct location:", s)
         return False
       break
@@ -98,7 +98,7 @@ def process_nmea_port_messages(device:str="/dev/ttyUSB1") -> NoReturn:
           line = line.strip()
           if DEBUG:
             print(line)
-          if not line.startswith("$"): # all NMEA messages start with $
+          if not line.startswith("$"):  # all NMEA messages start with $
             continue
           if not nmea_checksum_ok(line):
             continue
@@ -107,11 +107,11 @@ def process_nmea_port_messages(device:str="/dev/ttyUSB1") -> NoReturn:
           match fields[0]:
             case "$GNCLK":
               # fields at end are reserved (not used)
-              gnss_clock = GnssClockNmeaPort(*fields[1:10]) # type: ignore[arg-type]
+              gnss_clock = GnssClockNmeaPort(*fields[1:10])  # type: ignore[arg-type]
               print(gnss_clock)
             case "$GNMEAS":
               # fields at end are reserved (not used)
-              gnss_meas = GnssMeasNmeaPort(*fields[1:14]) # type: ignore[arg-type]
+              gnss_meas = GnssMeasNmeaPort(*fields[1:14])  # type: ignore[arg-type]
               print(gnss_meas)
     except Exception as e:
       print(e)
@@ -127,7 +127,7 @@ def main() -> NoReturn:
     print("qcomgpsd is running, please kill openpilot before running this script! (aborted)")
     sys.exit(1)
   except CalledProcessError as e:
-    if e.returncode != 1: # 1 == no process found (boardd not running)
+    if e.returncode != 1:  # 1 == no process found (boardd not running)
       raise e
 
   print("power up antenna ...")
@@ -140,7 +140,7 @@ def main() -> NoReturn:
 
   if b'+QGPSCFG: "outport",usbnmea' not in (at_cmd('AT+QGPSCFG="outport"') or b""):
     print("configure outport ...")
-    at_cmd('AT+QGPSCFG="outport","usbnmea"') # usbnmea = /dev/ttyUSB1
+    at_cmd('AT+QGPSCFG="outport","usbnmea"')  # usbnmea = /dev/ttyUSB1
 
   if b'+QGPSCFG: "gnssrawdata",3,0' not in (at_cmd('AT+QGPSCFG="gnssrawdata"') or b""):
     print("configure gnssrawdata ...")
@@ -154,7 +154,7 @@ def main() -> NoReturn:
     # <port> values:
     # 0 = NMEA port
     # 1 = AT port
-    at_cmd('AT+QGPSCFG="gnssrawdata",3,0') # enable all constellations, output data to NMEA port
+    at_cmd('AT+QGPSCFG="gnssrawdata",3,0')  # enable all constellations, output data to NMEA port
     print("rebooting ...")
     at_cmd('AT+CFUN=1,1')
     print("re-run this script when it is back up")

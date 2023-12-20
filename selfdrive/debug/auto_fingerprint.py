@@ -65,7 +65,7 @@ if __name__ == "__main__":
   if carFw is None:
     raise Exception("No fw versions in the provided route...")
 
-  if args.platform is None: # attempt to auto-determine platform with other fuzzy fingerprints
+  if args.platform is None:  # attempt to auto-determine platform with other fuzzy fingerprints
     _, possible_platforms = match_fw_to_car(carFw, log=False)
 
     if len(possible_platforms) != 1:

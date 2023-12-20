@@ -223,7 +223,7 @@ def main():
 
     # Enable/disable nav features
     timestamp_llk = sm["navModel"].locationMonoTime
-    nav_valid = sm.valid["navModel"] # and (nanos_since_boot() - timestamp_llk < 1e9)
+    nav_valid = sm.valid["navModel"]  # and (nanos_since_boot() - timestamp_llk < 1e9)
     nav_enabled = nav_valid and params.get_bool("ExperimentalMode")
 
     if not nav_enabled:
@@ -248,7 +248,7 @@ def main():
     # tracked dropped frames
     vipc_dropped_frames = max(0, meta_main.frame_id - last_vipc_frame_id - 1)
     frames_dropped = frame_dropped_filter.update(min(vipc_dropped_frames, 10))
-    if run_count < 10: # let frame drops warm up
+    if run_count < 10:  # let frame drops warm up
       frame_dropped_filter.x = 0.
       frames_dropped = 0.
     run_count = run_count + 1

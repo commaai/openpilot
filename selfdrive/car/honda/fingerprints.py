@@ -1,4 +1,3 @@
-
 from cereal import car
 from openpilot.selfdrive.car.honda.values import CAR
 
@@ -89,7 +88,7 @@ FW_VERSIONS = {
       b'39990-TVA-A340\x00\x00',
       b'39990-TVA-X030\x00\x00',
       b'39990-TVA-X040\x00\x00',
-      b'39990-TVA,A150\x00\x00', # modified firmware
+      b'39990-TVA,A150\x00\x00',  # modified firmware
       b'39990-TVE-H130\x00\x00',
     ],
     (Ecu.unknown, 0x18da3af1, None): [
@@ -275,7 +274,7 @@ FW_VERSIONS = {
       b'57114-TEA-Q220\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
-      b'39990-TBA,A030\x00\x00', # modified firmware
+      b'39990-TBA,A030\x00\x00',  # modified firmware
       b'39990-TBA-A030\x00\x00',
       b'39990-TBG-A030\x00\x00',
       b'39990-TEA-T020\x00\x00',
@@ -617,7 +616,7 @@ FW_VERSIONS = {
       b'39990-TLA-A040\x00\x00',
       b'39990-TLA-A110\x00\x00',
       b'39990-TLA-A220\x00\x00',
-      b'39990-TLA,A040\x00\x00', # modified firmware
+      b'39990-TLA,A040\x00\x00',  # modified firmware
       b'39990-TME-T030\x00\x00',
       b'39990-TME-T120\x00\x00',
       b'39990-TMT-T010\x00\x00',

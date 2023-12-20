@@ -85,7 +85,7 @@ class TestMapRenderer(unittest.TestCase):
     cls.original_token = os.environ["MAPBOX_TOKEN"]
     cls.server = MapBoxInternetDisabledServer()
     cls.server.start()
-    time.sleep(0.5) # wait for server to startup
+    time.sleep(0.5)  # wait for server to startup
 
   @classmethod
   def tearDownClass(cls) -> None:

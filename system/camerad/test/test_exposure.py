@@ -44,7 +44,7 @@ class TestCamerad(unittest.TestCase):
       res = res and self._is_exposure_okay(wpic)
 
       if passed > 0 and not res:
-        passed = -passed # fails test if any failure after first sus
+        passed = -passed  # fails test if any failure after first sus
         break
 
       passed += int(res)

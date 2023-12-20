@@ -419,7 +419,7 @@ def main() -> None:
     params.put("InstallDate", t.encode('utf8'))
 
   updater = Updater()
-  update_failed_count = 0 # TODO: Load from param?
+  update_failed_count = 0  # TODO: Load from param?
 
   # no fetch on the first time
   wait_helper = WaitTimeHelper()

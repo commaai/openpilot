@@ -73,7 +73,7 @@ class CarInterface(CarInterfaceBase):
     if candidate in HONDA_BOSCH:
       ret.longitudinalTuning.kpV = [0.25]
       ret.longitudinalTuning.kiV = [0.05]
-      ret.longitudinalActuatorDelayUpperBound = 0.5 # s
+      ret.longitudinalActuatorDelayUpperBound = 0.5  # s
       if candidate in HONDA_BOSCH_RADARLESS:
         ret.stopAccel = CarControllerParams.BOSCH_ACCEL_MIN  # stock uses -4.0 m/s^2 once stopped but limited by safety model
     else:
@@ -269,7 +269,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.71
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       ret.tireStiffnessFactor = 0.82
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]] # TODO: can probably use some tuning
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]  # TODO: can probably use some tuning
 
     else:
       raise ValueError(f"unsupported car {candidate}")

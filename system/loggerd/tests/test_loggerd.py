@@ -207,7 +207,7 @@ class TestLoggerd(unittest.TestCase):
 
     # sanity check values
     boot = bootlog_msgs.pop().boot
-    assert abs(boot.wallTimeNanos - time.time_ns()) < 5*1e9 # within 5s
+    assert abs(boot.wallTimeNanos - time.time_ns()) < 5*1e9  # within 5s
     assert boot.launchLog == launch_log
 
     for fn in ["console-ramoops", "pmsg-ramoops-0"]:
@@ -259,7 +259,7 @@ class TestLoggerd(unittest.TestCase):
     self._check_sentinel(lr, True)
 
     # check all messages were logged and in order
-    lr = lr[2:-1] # slice off initData and both sentinels
+    lr = lr[2:-1]  # slice off initData and both sentinels
     for m in lr:
       sent = sent_msgs[m.which()].pop(0)
       sent.clear_write_flag()

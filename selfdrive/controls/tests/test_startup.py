@@ -92,7 +92,7 @@ class TestStartup(unittest.TestCase):
       cp.carFw = car_fw
       params.put("CarParamsCache", cp.to_bytes())
 
-    time.sleep(2) # wait for controlsd to be ready
+    time.sleep(2)  # wait for controlsd to be ready
 
     pm.send('can', can_list_to_can_capnp([[0, 0, b"", 0]]))
     time.sleep(0.1)

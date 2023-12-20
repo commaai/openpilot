@@ -24,9 +24,9 @@ class CopyRamRGBCamera(RGBCamera):
     origin_img = self.cpu_texture
     img = np.frombuffer(origin_img.getRamImage().getData(), dtype=np.uint8)
     img = img.reshape((origin_img.getYSize(), origin_img.getXSize(), -1))
-    img = img[:,:,:3] # RGBA to RGB
+    img = img[:,:,:3]  # RGBA to RGB
     # img = np.swapaxes(img, 1, 0)
-    img = img[::-1] # Flip on vertical axis
+    img = img[::-1]  # Flip on vertical axis
     return img
 
 
@@ -98,7 +98,7 @@ class MetaDriveBridge(SimulatorBridge):
       on_continuous_line_done=False,
       crash_vehicle_done=False,
       crash_object_done=False,
-      traffic_density=0.0, # traffic is incredibly expensive
+      traffic_density=0.0,  # traffic is incredibly expensive
       map_config=dict(
         type=MapGenerateMethod.PG_MAP_FILE,
         config=[

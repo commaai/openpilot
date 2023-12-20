@@ -205,7 +205,7 @@ class SegmentName:
     seg_num_delim = "--" if self._name_str.count("--") == 2 else "/"
     name_parts = self._name_str.rsplit(seg_num_delim, 1)
     if allow_route_name and len(name_parts) == 1:
-      name_parts.append("-1") # no segment number
+      name_parts.append("-1")  # no segment number
     self._route_name = RouteName(name_parts[0])
     self._num = int(name_parts[1])
     self._canonical_name = f"{self._route_name._dongle_id}|{self._route_name._time_str}--{self._num}"

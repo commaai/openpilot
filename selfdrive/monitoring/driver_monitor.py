@@ -19,10 +19,10 @@ class DRIVER_MONITOR_SETTINGS():
   def __init__(self):
     self._DT_DMON = DT_DMON
     # ref (page15-16): https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:42018X1947&rid=2
-    self._AWARENESS_TIME = 30. # passive wheeltouch total timeout
+    self._AWARENESS_TIME = 30.  # passive wheeltouch total timeout
     self._AWARENESS_PRE_TIME_TILL_TERMINAL = 15.
     self._AWARENESS_PROMPT_TIME_TILL_TERMINAL = 6.
-    self._DISTRACTED_TIME = 11. # active monitoring total timeout
+    self._DISTRACTED_TIME = 11.  # active monitoring total timeout
     self._DISTRACTED_PRE_TIME_TILL_TERMINAL = 8.
     self._DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
 
@@ -44,9 +44,9 @@ class DRIVER_MONITOR_SETTINGS():
     self._POSE_YAW_THRESHOLD = 0.4020
     self._POSE_YAW_THRESHOLD_SLACK = 0.5042
     self._POSE_YAW_THRESHOLD_STRICT = self._POSE_YAW_THRESHOLD
-    self._PITCH_NATURAL_OFFSET = 0.029 # initial value before offset is learned
+    self._PITCH_NATURAL_OFFSET = 0.029  # initial value before offset is learned
     self._PITCH_NATURAL_THRESHOLD = 0.449
-    self._YAW_NATURAL_OFFSET = 0.097 # initial value before offset is learned
+    self._YAW_NATURAL_OFFSET = 0.097  # initial value before offset is learned
     self._PITCH_MAX_OFFSET = 0.124
     self._PITCH_MIN_OFFSET = -0.0881
     self._YAW_MAX_OFFSET = 0.289
@@ -62,7 +62,7 @@ class DRIVER_MONITOR_SETTINGS():
 
     self._WHEELPOS_CALIB_MIN_SPEED = 11
     self._WHEELPOS_THRESHOLD = 0.5
-    self._WHEELPOS_FILTER_MIN_COUNT = int(15 / self._DT_DMON) # allow 15 seconds to converge wheel side
+    self._WHEELPOS_FILTER_MIN_COUNT = int(15 / self._DT_DMON)  # allow 15 seconds to converge wheel side
 
     self._RECOVERY_FACTOR_MAX = 5.  # relative to minus step change
     self._RECOVERY_FACTOR_MIN = 1.25  # relative to minus step change
@@ -72,8 +72,8 @@ class DRIVER_MONITOR_SETTINGS():
 
 
 # model output refers to center of undistorted+leveled image
-EFL = 598.0 # focal length in K
-W, H = tici_d_frame_size # corrected image has same size as raw
+EFL = 598.0  # focal length in K
+W, H = tici_d_frame_size  # corrected image has same size as raw
 
 class DistractedType:
   NOT_DISTRACTED = 0
@@ -228,9 +228,9 @@ class DriverStatus():
     return distracted_types
 
   def set_policy(self, model_data, car_speed):
-    bp = model_data.meta.disengagePredictions.brakeDisengageProbs[0] # brake disengage prob in next 2s
     k1 = max(-0.00156*((car_speed-16)**2)+0.6, 0.2)
     bp_normal = max(min(bp / k1, 0.5),0)
+    bp = model_data.meta.disengagePredictions.brakeDisengageProbs[0]  # brake disengage prob in next 2s
     self.pose.cfactor_pitch = interp(bp_normal, [0, 0.5],
                                            [self.settings._POSE_PITCH_THRESHOLD_SLACK,
                                             self.settings._POSE_PITCH_THRESHOLD_STRICT]) / self.settings._POSE_PITCH_THRESHOLD
@@ -247,7 +247,7 @@ class DriverStatus():
     if self.wheelpos_learner.filtered_stat.n > self.settings._WHEELPOS_FILTER_MIN_COUNT:
       self.wheel_on_right = self.wheelpos_learner.filtered_stat.M > self.settings._WHEELPOS_THRESHOLD
     else:
-      self.wheel_on_right = self.wheel_on_right_default # use default/saved if calibration is unfinished
+      self.wheel_on_right = self.wheel_on_right_default  # use default/saved if calibration is unfinished
     # make sure no switching when engaged
     if op_engaged and self.wheel_on_right_last is not None and self.wheel_on_right_last != self.wheel_on_right:
       self.wheel_on_right = self.wheel_on_right_last
@@ -300,7 +300,7 @@ class DriverStatus():
       self.hi_stds = 0
 
   def update_events(self, events, driver_engaged, ctrl_active, standstill):
-    if (driver_engaged and self.awareness > 0 and not self.active_monitoring_mode) or not ctrl_active: # reset only when on disengagement if red reached
+    if (driver_engaged and self.awareness > 0 and not self.active_monitoring_mode) or not ctrl_active:  # reset only when on disengagement if red reached
       self._reset_awareness()
       return
 

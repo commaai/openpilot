@@ -15,14 +15,14 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.system import micd
 
 SAMPLE_RATE = 48000
-SAMPLE_BUFFER = 4096 # (approx 100ms)
+SAMPLE_BUFFER = 4096  # (approx 100ms)
 MAX_VOLUME = 1.0
 MIN_VOLUME = 0.1
-CONTROLS_TIMEOUT = 5 # 5 seconds
+CONTROLS_TIMEOUT = 5  # 5 seconds
 FILTER_DT = 1. / (micd.SAMPLE_RATE / micd.FFT_SAMPLES)
 
-AMBIENT_DB = 30 # DB where MIN_VOLUME is applied
-DB_SCALE = 30 # AMBIENT_DB + DB_SCALE is where MAX_VOLUME is applied
+AMBIENT_DB = 30  # DB where MIN_VOLUME is applied
+DB_SCALE = 30  # AMBIENT_DB + DB_SCALE is where MAX_VOLUME is applied
 
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 
@@ -79,7 +79,7 @@ class Soundd:
       length = wavefile.getnframes()
       self.loaded_sounds[sound] = np.frombuffer(wavefile.readframes(length), dtype=np.int16).astype(np.float32) / (2**16/2)
 
-  def get_sound_data(self, frames): # get "frames" worth of data from the current alert sound, looping when required
+  def get_sound_data(self, frames):  # get "frames" worth of data from the current alert sound, looping when required
 
     ret = np.zeros(frames, dtype=np.float32)
 
@@ -146,7 +146,7 @@ class Soundd:
       while True:
         sm.update(0)
 
-        if sm.updated['microphone'] and self.current_alert == AudibleAlert.none: # only update volume filter when not playing alert
+        if sm.updated['microphone'] and self.current_alert == AudibleAlert.none:  # only update volume filter when not playing alert
           self.spl_filter_weighted.update(sm["microphone"].soundPressureWeightedDb)
           self.current_volume = self.calculate_volume(float(self.spl_filter_weighted.x))
 
