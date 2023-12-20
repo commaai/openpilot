@@ -303,10 +303,19 @@ void WifiUI::refresh() {
   }
   for (; n < wifi_items.size(); ++n) wifi_items[n]->setVisible(false);
 
-  if (!hiddenNetworkButton) {
-    hiddenNetworkButton = new QPushButton("Hidden Network");
-    connect(hiddenNetworkButton, &QPushButton::clicked, this, &WifiUI::handleHiddenNetwork);
-    wifi_list_widget->addItem(hiddenNetworkButton);
+  if (n == wifi_items.size()) {
+    Network hidden_network;
+    hidden_network.ssid = "Hidden Network";
+    hidden_network.security_type = SecurityType::WPA;
+
+    QPixmap status_icon = lock;
+    QPixmap strength_icon = 0;
+
+    auto hiddenNetworkItem = getItem(n++);
+    hiddenNetworkItem->setItem(hidden_network, status_icon, false, strength_icon);
+    hiddenNetworkItem->setVisible(true);
+
+    QObject::connect(hiddenNetworkItem, &WifiItem::connectToNetwork, this, &WifiUI::handleHiddenNetwork);
   }
 
   setUpdatesEnabled(true);
