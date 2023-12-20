@@ -4,7 +4,6 @@ import json
 import re
 from github import Github
 import os
-import time
 
 BOT_REVIEW_LABEL = "bot-review"
 
@@ -54,7 +53,6 @@ if __name__ == "__main__":
         if fields_in_pr_body.issuperset(required_fields):
             possible_template_matches.append(template_name)
 
-    time.sleep(20)
     # Return results
     if len(possible_template_matches) > 0:
         print("PR matches template(s): ",", ".join(possible_template_matches))
