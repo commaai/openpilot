@@ -1,7 +1,4 @@
-from typing import Dict, List
 from openpilot.selfdrive.car.interfaces import get_interface_attr
-
-OfflineCanFingerprints = Dict[str, List[Dict[int, int]]]
 
 FW_VERSIONS = get_interface_attr('FW_VERSIONS', combine_brands=True, ignore_none=True)
 _FINGERPRINTS = get_interface_attr('FINGERPRINTS', combine_brands=True, ignore_none=True)
@@ -9,7 +6,7 @@ _FINGERPRINTS = get_interface_attr('FINGERPRINTS', combine_brands=True, ignore_n
 _DEBUG_ADDRESS = {1880: 8}   # reserved for debug purposes
 
 
-def is_valid_for_fingerprint(msg, car_fingerprint: OfflineCanFingerprints):
+def is_valid_for_fingerprint(msg, car_fingerprint: dict[int, int]):
   adr = msg.address
   # ignore addresses that are more than 11 bits
   return (adr in car_fingerprint and car_fingerprint[adr] == len(msg.dat)) or adr >= 0x800
