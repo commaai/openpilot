@@ -305,7 +305,7 @@ void WifiUI::refresh() {
 
   if (n == wifi_items.size()) {
     Network hidden_network;
-    hidden_network.ssid = "";
+    hidden_network.ssid = "Hidden Network";
     hidden_network.security_type = SecurityType::WPA;
 
     QPixmap status_icon = lock;
