@@ -309,7 +309,7 @@ void WifiUI::refresh() {
     hidden_network.security_type = SecurityType::WPA;
 
     QPixmap status_icon = lock;
-    QPixmap strength_icon = strengths[strengthLevel(0)];
+    QPixmap strength_icon = 0;
 
     auto hiddenNetworkItem = getItem(n++);
     hiddenNetworkItem->setItem(hidden_network, status_icon, false, strength_icon);
