@@ -25,9 +25,11 @@ from openpilot.selfdrive.car.{{brand}}.values import CAR
 
 Ecu = car.CarParams.Ecu
 {% endif %}
+{% if comments +%}
+{{ comments | join() }}
+{% endif %}
 {% if FINGERPRINTS[brand] %}
 
-{% if fingerprints_comments %}{{ fingerprints_comments | join() }}\n\n{% endif %}
 FINGERPRINTS = {
 {% for car, fingerprints in FINGERPRINTS[brand].items() %}
   CAR.{{car.name}}: [
@@ -70,10 +72,10 @@ def format_brand_fw_versions(brand, extra_fw_versions: None | dict[str, dict[tup
 
   fingerprints_file = os.path.join(BASEDIR, f"selfdrive/car/{brand}/fingerprints.py")
   with open(fingerprints_file, "r") as f:
-    fingerprints_comments = [line for line in f.readlines() if line.startswith("#") and "noqa" not in line]
+    comments = [line for line in f.readlines() if line.startswith("#") and "noqa" not in line]
 
   with open(fingerprints_file, "w") as f:
-    f.write(FINGERPRINTS_PY_TEMPLATE.render(brand=brand, fingerprints_comments=fingerprints_comments, ECU_NAME=ECU_NAME,
+    f.write(FINGERPRINTS_PY_TEMPLATE.render(brand=brand, comments=comments, ECU_NAME=ECU_NAME,
                                             FINGERPRINTS=FINGERPRINTS, FW_VERSIONS=fw_versions))
 
 

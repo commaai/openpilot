@@ -3,6 +3,12 @@ from openpilot.selfdrive.car.honda.values import CAR
 
 Ecu = car.CarParams.Ecu
 
+# Modified FW can be identified by the second dash being replaced by a comma
+# For example: `b'39990-TVA,A150\x00\x00'`
+#
+# TODO: vsa is "essential" for fpv2 but doesn't appear on some CAR.FREED models
+
+
 FW_VERSIONS = {
   CAR.ACCORD: {
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
