@@ -6,6 +6,7 @@ Ecu = car.CarParams.Ecu
 
 # debug ecu fw version is the git hash of the firmware
 
+
 FINGERPRINTS = {
   CAR.BODY: [{
     513: 8, 516: 8, 514: 3, 515: 4
