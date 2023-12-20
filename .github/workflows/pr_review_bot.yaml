@@ -16,6 +16,17 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
+      - name: Set PR as Draft
+        run: |
+          PR_NUMBER=$(jq --raw-output .pull_request.number $GITHUB_EVENT_PATH)
+          REPO_OWNER=$(jq --raw-output .repository.owner.login $GITHUB_EVENT_PATH)
+          REPO_NAME=$(jq --raw-output .repository.name $GITHUB_EVENT_PATH)
+          curl -X PATCH \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -d '{"draft": true}' \
+            "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PR_NUMBER}"
+
       - name: Set Up Python
         uses: actions/setup-python@v2
         with:
@@ -26,3 +37,15 @@ jobs:
 
       - name: Run Bot Review
         run: python scripts/review_bot.py "${{ github.event_path }}"
+
+      - name: Set PR as Ready
+        if: success()
+        run: |
+          PR_NUMBER=$(jq --raw-output .pull_request.number $GITHUB_EVENT_PATH)
+          REPO_OWNER=$(jq --raw-output .repository.owner.login $GITHUB_EVENT_PATH)
+          REPO_NAME=$(jq --raw-output .repository.name $GITHUB_EVENT_PATH)
+          curl -X PATCH \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -d '{"draft": false}' \
+            "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PR_NUMBER}"
