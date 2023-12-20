@@ -70,7 +70,6 @@ protected:
   QColor bg = QColor("#000000");
 
 #ifdef QCOM2
-  EGLDisplay egl_display;
   std::map<int, EGLImageKHR> egl_images;
 #endif
 
