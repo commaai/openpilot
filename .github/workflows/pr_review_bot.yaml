@@ -37,9 +37,9 @@ jobs:
             "number": '"$PR_NUMBER"'
           }
           '
-          base64_encoded_id=$(curl -X POST \
+          base64_encoded_id=$(curl -v -X POST \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             --data '{"query":"'"$query"'","variables":'"$variables"'}' \
             https://api.github.com/graphql | jq -r .data.repository.pullRequest.id)
 
