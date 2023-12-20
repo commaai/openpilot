@@ -50,7 +50,7 @@ jobs:
         cd openpilot-docs
 
         git checkout --orphan tmp
-        git rm -rf --cached .
+        git rm -rf .
 
         cp -r ../build/docs/html/ docs/
         touch docs/.nojekyll
