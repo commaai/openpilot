@@ -303,10 +303,11 @@ void WifiUI::refresh() {
   }
   for (; n < wifi_items.size(); ++n) wifi_items[n]->setVisible(false);
 
-  // Add 'Hidden Network' option at the end
-  auto hiddenNetworkItem = new QPushButton("Hidden Network");
-  connect(hiddenNetworkItem, &QPushButton::clicked, this, &WifiUI::handleHiddenNetwork);
-  wifi_list_widget->addItem(hiddenNetworkItem);
+  if (!hiddenNetworkButton) {
+    hiddenNetworkButton = new QPushButton("Hidden Network");
+    connect(hiddenNetworkButton, &QPushButton::clicked, this, &WifiUI::handleHiddenNetwork);
+    wifi_list_widget->addItem(hiddenNetworkButton);
+  }
 
   setUpdatesEnabled(true);
 }

@@ -44,6 +44,7 @@ private:
   QVector<QPixmap> strengths;
   ListWidget *wifi_list_widget = nullptr;
   std::vector<WifiItem*> wifi_items;
+  QPushButton *hiddenNetworkButton = nullptr;
 
 signals:
   void connectToNetwork(const Network n);
