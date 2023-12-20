@@ -2,8 +2,9 @@
 import sys
 import json
 import re
-from github import Github
 import os
+import requests
+from github import Github
 
 BOT_REVIEW_LABEL = "bot-review"
 
