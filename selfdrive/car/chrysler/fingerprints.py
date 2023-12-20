@@ -72,7 +72,6 @@ FW_VERSIONS = {
   CAR.JEEP_GRAND_CHEROKEE_2019: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68402971AD',
-      b'68454144AD',
     ],
     (Ecu.srs, 0x744, None): [
       b'68355363AB',
@@ -85,15 +84,12 @@ FW_VERSIONS = {
     ],
     (Ecu.eps, 0x75a, None): [
       b'68453431AA',
-      b'68453433AA',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'05035674AB ',
-      b'68496223AA ',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'05035707AA',
-      b'68495807AA',
     ],
   },
   CAR.RAM_1500: {
@@ -117,13 +113,6 @@ FW_VERSIONS = {
       b'68527346AE',
       b'68527375AD',
       b'68527382AE',
-      b'68510282AH',
-      b'68505633AB',
-      b'68527383AD',
-      b'68434847AC',
-      b'68527403AC',
-      b'68453505AD',
-      b'68434859AC',
     ],
     (Ecu.srs, 0x744, None): [
       b'68428609AB',
@@ -183,8 +172,6 @@ FW_VERSIONS = {
       b'68585106AB',
       b'68585109AB',
       b'68585112AB',
-      b'68466110AA',
-      b'68552794AA',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'05036065AE ',
@@ -201,16 +188,6 @@ FW_VERSIONS = {
       b'68500630AD',
       b'68500630AE',
       b'68539650AD',
-      b'05149591AE ',
-      b'68378695AJ ',
-      b'68502741AF ',
-      b'68467915AC ',
-      b'68539651AD',
-      b'68455111AC ',
-      b'05036026AB ',
-      b'68455146AC ',
-      b'68378696AJ ',
-      b'68378710AL ',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'05149536AC',
@@ -225,13 +202,6 @@ FW_VERSIONS = {
       b'68502994AD',
       b'68520867AE',
       b'68540431AB',
-      b'68360085AJ',
-      b'68466087AB',
-      b'68540433AB',
-      b'68445536AB',
-      b'05035842AB',
-      b'05036069AA',
-      b'68360080AL',
     ],
   },
   CAR.RAM_HD: {
@@ -244,7 +214,6 @@ FW_VERSIONS = {
       b'68525498AB',
       b'68528791AF',
       b'68628474AB',
-      b'68528791AG',
     ],
     (Ecu.srs, 0x744, None): [
       b'68399794AC',
@@ -290,7 +259,6 @@ FW_VERSIONS = {
       b'68527616AD ',
       b'M2370131MB',
       b'M2421132MB',
-      b'52371331AG',
     ],
   },
 }
