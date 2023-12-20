@@ -10,6 +10,24 @@ def create_steering_control(packer, bus, apply_steer, lkas_enabled):
   return packer.make_can_msg("HCA_01", bus, values)
 
 
+def create_eps_update(packer, bus, eps_stock_values, ea_simulated_torque):
+  values = {s: eps_stock_values[s] for s in [
+    "COUNTER",                     # Sync counter value to EPS output
+    "EPS_Lenkungstyp",             # EPS rack type
+    "EPS_Berechneter_LW",          # Absolute raw steering angle
+    "EPS_VZ_BLW",                  # Raw steering angle sign
+    "EPS_HCA_Status",              # EPS HCA control status
+  ]}
+
+  values.update({
+    # Absolute driver torque input and sign, with EA inactivity mitigation
+    "EPS_Lenkmoment": abs(ea_simulated_torque),
+    "EPS_VZ_Lenkmoment": 1 if ea_simulated_torque < 0 else 0,
+  })
+
+  return packer.make_can_msg("LH_EPS_03", bus, values)
+
+
 def create_lka_hud_control(packer, bus, ldw_stock_values, enabled, steering_pressed, hud_alert, hud_control):
   values = {}
   if len(ldw_stock_values):
