@@ -2,13 +2,16 @@
 import sys
 import json
 import re
+from github import Github
 import time
 
-# Read the file passed in as first arg
-def get_pr_body():
+BOT_REVIEW_LABEL = "bot-review"
+
+# Read the pr event file, which is passed in as first arg
+def read_pr_event():
     with open(sys.argv[1], 'r') as file:
         event_payload = json.load(file)
-    return event_payload["pull_request"]["body"]
+    return event_payload
 
 # Read template file
 def read_template_file():
@@ -30,10 +33,18 @@ def find_field_set(content):
     return set(field_finder.findall(content))
 
 if __name__ == "__main__":
-    pr_body            = get_pr_body()
-    fields_in_pr_body  = find_field_set(pr_body)
+    g = Github(os.environ['GITHUB_TOKEN'])
+
+    pr_event = read_pr_event()
+    repo_name = pr_event['repository']['full_name']
+    pr_number = pr_event['pull_request']['number']
+    pr_body = pr_event["pull_request"]["body"]
+    pr = g.get_repo(repo_name).get_pull(pr_number)
+    pr.add_to_labels(BOT_REVIEW_LABEL)
+
+    fields_in_pr_body = find_field_set(pr_body)
     combined_templates = read_template_file()
-    templates          = separate_templates(combined_templates)
+    templates = separate_templates(combined_templates)
 
     # Calculate which templates match
     possible_template_matches = []
@@ -46,6 +57,7 @@ if __name__ == "__main__":
     # Return results
     if len(possible_template_matches) > 0:
         print("PR matches template(s): ",", ".join(possible_template_matches))
+        pr.remove_from_labels(BOT_REVIEW_LABEL)
         sys.exit(0) # Pass
     else:
         print("PR does not match any known templates")
