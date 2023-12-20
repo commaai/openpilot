@@ -60,4 +60,4 @@ jobs:
         git commit -m "build docs"
 
         # docs live in different repo to not bloat openpilot's full clone size
-        git push -f origin gh-pages
+        git push -f origin tmp:gh-pages
