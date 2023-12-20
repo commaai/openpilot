@@ -315,12 +315,7 @@ void WifiUI::refresh() {
     hiddenNetworkItem->setItem(hidden_network, status_icon, false, strength_icon);
     hiddenNetworkItem->setVisible(true);
 
-    // Disconnect the existing signal-slot connection if any
-    QObject::disconnect(hiddenNetworkItem, &WifiItem::connectToNetwork, nullptr, nullptr);
-
-    // Connect the item's clicked signal to handleHiddenNetwork
-    QObject::connect(hiddenNetworkItem, &WifiItem::clicked, this, &WifiUI::handleHiddenNetwork);
-
+    QObject::connect(hiddenNetworkItem, &WifiItem::connectToNetwork, this, &WifiUI::handleHiddenNetwork);
   }
 
   setUpdatesEnabled(true);
@@ -329,12 +324,11 @@ void WifiUI::refresh() {
 void WifiUI::handleHiddenNetwork() {
   QString ssid = InputDialog::getText(tr("Enter SSID"), this, "", false);
   if (!ssid.isEmpty()) {
-    Network hidden_network;
-    hidden_network.ssid = ssid.toUtf8();
-    hidden_network.security_type = SecurityType::WPA; // Adjust as necessary
-
     QString pass = InputDialog::getText(tr("Enter password"), this, tr("for \"%1\"").arg(ssid), true, 8);
     if (!pass.isEmpty()) {
+      Network hidden_network;
+      hidden_network.ssid = ssid.toUtf8();
+      hidden_network.security_type = SecurityType::WPA; // or adjust based on your needs
       wifi->connect(hidden_network, pass);
     }
   }
