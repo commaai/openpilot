@@ -21,11 +21,13 @@ jobs:
           PR_NUMBER=$(jq --raw-output .pull_request.number $GITHUB_EVENT_PATH)
           REPO_OWNER=$(jq --raw-output .repository.owner.login $GITHUB_EVENT_PATH)
           REPO_NAME=$(jq --raw-output .repository.name $GITHUB_EVENT_PATH)
-          curl -X PATCH \
-            -H "Accept: application/vnd.github.v3+json" \
+          graphql_query='mutation ConvertToDraft { convertPullRequestToDraft(input: {pullRequestId: "'$PR_NUMBER'"}) { clientMutationId } }'
+          curl -X POST \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -d '{"draft": true}' \
-            "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PR_NUMBER}"
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Content-Type: application/json" \
+            --data-raw '{"query": "'"$graphql_query"'"}' \
+            "https://api.github.com/graphql"
 
       - name: Set Up Python
         uses: actions/setup-python@v2
@@ -44,8 +46,11 @@ jobs:
           PR_NUMBER=$(jq --raw-output .pull_request.number $GITHUB_EVENT_PATH)
           REPO_OWNER=$(jq --raw-output .repository.owner.login $GITHUB_EVENT_PATH)
           REPO_NAME=$(jq --raw-output .repository.name $GITHUB_EVENT_PATH)
-          curl -X PATCH \
-            -H "Accept: application/vnd.github.v3+json" \
+          graphql_query='mutation ConvertToReady { markPullRequestReadyForReview(input: {pullRequestId: "'$PR_NUMBER'"}) { clientMutationId } }'
+          curl -X POST \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -d '{"draft": false}' \
-            "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PR_NUMBER}"
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Content-Type: application/json" \
+            --data-raw '{"query": "'"$graphql_query"'"}' \
+            "https://api.github.com/graphql"
+
