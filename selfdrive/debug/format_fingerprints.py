@@ -76,6 +76,7 @@ def format_brand_fw_versions(brand, extra_fw_versions: None | dict[str, dict[tup
   with open(fingerprints_file, "r") as f:
     comments = [line for line in f.readlines() if line.startswith("#") and "noqa" not in line]
 
+  # sort fw versions
   if fw_versions[brand] is not None:
     for platform in fw_versions[brand]:
       for ecu in fw_versions[brand][platform]:
