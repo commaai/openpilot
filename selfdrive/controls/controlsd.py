@@ -60,6 +60,9 @@ class Controls:
   def __init__(self, CI=None):
     config_realtime_process(4, Priority.CTRL_HIGH)
 
+    self.lock = threading.Lock()
+    self.camera_error_events = []
+
     # Ensure the current branch is cached, otherwise the first iteration of controlsd lags
     self.branch = get_short_branch("")
 
@@ -70,7 +73,6 @@ class Controls:
     self.sensor_packets = ["accelerometer", "gyroscope"]
     self.camera_packets = ["roadCameraState", "driverCameraState", "wideRoadCameraState"]
 
-    self.log_sock = messaging.sub_sock('androidLog')
     self.can_sock = messaging.sub_sock('can', timeout=20)
 
     self.params = Params()
@@ -403,16 +405,9 @@ class Controls:
     if planner_fcw or model_fcw:
       self.events.add(EventName.fcw)
 
-    for m in messaging.drain_sock(self.log_sock, wait_for_one=False):
-      try:
-        msg = m.androidLog.message
-        if any(err in msg for err in ("ERROR_CRC", "ERROR_ECC", "ERROR_STREAM_UNDERFLOW", "APPLY FAILED")):
-          csid = msg.split("CSID:")[-1].split(" ")[0]
-          evt = CSID_MAP.get(csid, None)
-          if evt is not None:
-            self.events.add(evt)
-      except UnicodeDecodeError:
-        pass
+    with self.lock:
+      for evt in self.camera_error_events:
+        self.events.add(evt)
 
     # TODO: fix simulator
     if not SIMULATION or REPLAY:
@@ -878,11 +873,29 @@ class Controls:
     self.CS_prev = CS
 
   def params_thread(self, evt):
+    log_sock = messaging.sub_sock('androidLog')
+
     while not evt.is_set():
       self.is_metric = self.params.get_bool("IsMetric")
       self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
       if self.CP.notCar:
         self.joystick_mode = self.params.get_bool("JoystickDebugMode")
+
+      events = []
+      for m in messaging.drain_sock(log_sock, wait_for_one=False):
+        try:
+          msg = m.androidLog.message
+          if any(err in msg for err in ("ERROR_CRC", "ERROR_ECC", "ERROR_STREAM_UNDERFLOW", "APPLY FAILED")):
+            csid = msg.split("CSID:")[-1].split(" ")[0]
+            evt = CSID_MAP.get(csid, None)
+            if evt is not None:
+              events.append(evt)
+        except UnicodeDecodeError:
+          pass
+
+      with self.lock:
+        self.camera_error_events = events
+
       time.sleep(0.1)
 
   def controlsd_thread(self):
