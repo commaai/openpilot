@@ -21,4 +21,4 @@
   url = https://github.com/geohot/tinygrad.git
 [submodule "test_routes"]
   path = test_routes
-  url = https://github.com/jnewb1/openpilot-test-segments.git
+  url = https://github.com/jnewb1/openpilot-test-routes.git
