@@ -315,7 +315,7 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Cache test routes
       id: dependency-cache
-      uses: actions/cache@v3
+      uses: actions/cache/restore@v3
       with:
         path: .ci_cache/comma_download_cache
         key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'selfdrive/car/tests/routes.py') }}-${{ matrix.job }}
@@ -335,6 +335,13 @@ jobs:
         name: ${{ github.job }}-${{ matrix.job }}
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    - name: Save scons cache
+      uses: actions/cache/save@v3
+      if: github.ref == 'refs/heads/master'
+      with:
+        path: .ci_cache/comma_download_cache
+        key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'selfdrive/car/tests/routes.py') }}-${{ matrix.job }}
+
 
   car_docs_diff:
     name: PR comments
