@@ -4,7 +4,7 @@ import os
 
 from cereal import car
 from openpilot.common.basedir import BASEDIR
-from openpilot.selfdrive.car.interfaces import get_interface_attr
+from openpilot.selfdrive.car import get_interface_attr
 
 Ecu = car.CarParams.Ecu
 

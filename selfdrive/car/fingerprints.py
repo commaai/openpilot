@@ -1,4 +1,4 @@
-from openpilot.selfdrive.car.interfaces import get_interface_attr
+from openpilot.selfdrive.car import get_interface_attr
 
 FW_VERSIONS = get_interface_attr('FW_VERSIONS', combine_brands=True, ignore_none=True)
 _FINGERPRINTS = get_interface_attr('FINGERPRINTS', combine_brands=True, ignore_none=True)

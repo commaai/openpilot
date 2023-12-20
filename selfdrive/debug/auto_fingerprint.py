@@ -8,7 +8,7 @@ from openpilot.selfdrive.debug.format_fingerprints import format_brand_fw_versio
 from openpilot.tools.lib.logreader import MultiLogIterator
 from openpilot.tools.lib.route import Route
 from openpilot.selfdrive.car.fw_versions import match_fw_to_car
-from openpilot.selfdrive.car.interfaces import get_interface_attr
+from openpilot.selfdrive.car import get_interface_attr
 
 
 ALL_FW_VERSIONS = get_interface_attr("FW_VERSIONS")

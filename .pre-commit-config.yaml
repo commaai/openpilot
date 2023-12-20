@@ -1,5 +1,13 @@
 exclude: '^(tinygrad_repo)'
 repos:
+-   repo: local
+    hooks:
+    -   id: format-fingerprints
+        name: format-fingerprints
+        entry: selfdrive/debug/format_fingerprints.py
+        language: system
+        types: [python]
+        pass_filenames: false
 -   repo: meta
     hooks:
     -   id: check-hooks-apply
@@ -89,10 +97,3 @@ repos:
     rev: 0.27.2
     hooks:
     -   id: check-github-workflows
-# -   repo: local
-#     hooks:
-#     -   id: format-fingerprints
-#         name: format-fingerprints
-#         entry: selfdrive/debug/format_fingerprints.py
-#         language: system
-#         types: [python]

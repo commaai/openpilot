@@ -9,7 +9,7 @@ from cereal import car
 from openpilot.common.params import Params
 from openpilot.selfdrive.car.ecu_addrs import get_ecu_addrs
 from openpilot.selfdrive.car.fw_query_definitions import AddrType, EcuAddrBusType
-from openpilot.selfdrive.car.interfaces import get_interface_attr
+from openpilot.selfdrive.car import get_interface_attr
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
 from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from openpilot.common.swaglog import cloudlog
