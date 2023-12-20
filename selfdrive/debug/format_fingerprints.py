@@ -26,8 +26,8 @@ from openpilot.selfdrive.car.{{brand}}.values import CAR
 
 Ecu = car.CarParams.Ecu
 {% endif %}
-
 {% if FINGERPRINTS[brand] %}
+
 {% if fingerprints_comments %}{{ fingerprints_comments | join() }}\n\n{% endif %}
 FINGERPRINTS = {
 {% for car, fingerprints in FINGERPRINTS[brand].items() %}
@@ -41,8 +41,8 @@ FINGERPRINTS = {
 {% endfor %}
 }
 {% endif %}
-
 {% if FW_VERSIONS[brand] %}
+
 FW_VERSIONS = {
 {% for car, _ in FW_VERSIONS[brand].items() %}
   CAR.{{PLATFORM_TO_ENUM_NAME[car]}}: {

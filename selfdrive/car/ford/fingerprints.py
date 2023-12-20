@@ -3,7 +3,6 @@ from openpilot.selfdrive.car.ford.values import CAR
 
 Ecu = car.CarParams.Ecu
 
-
 FW_VERSIONS = {
   CAR.BRONCO_SPORT_MK1: {
     (Ecu.eps, 0x730, None): [

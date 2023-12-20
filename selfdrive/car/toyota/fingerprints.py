@@ -3,7 +3,6 @@ from openpilot.selfdrive.car.toyota.values import CAR
 
 Ecu = car.CarParams.Ecu
 
-
 FW_VERSIONS = {
   CAR.AVALON: {
     (Ecu.abs, 0x7b0, None): [

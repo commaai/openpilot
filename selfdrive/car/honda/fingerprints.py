@@ -3,7 +3,6 @@ from openpilot.selfdrive.car.honda.values import CAR
 
 Ecu = car.CarParams.Ecu
 
-
 FW_VERSIONS = {
   CAR.ACCORD: {
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
