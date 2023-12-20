@@ -27,11 +27,11 @@ def run_following_distance_simulation(v_lead, t_end=100.0, e2e=False):
 
 
 @parameterized_class(("e2e", "personality", "speed"), itertools.product(
-                      [True, False], # e2e
-                      [log.LongitudinalPersonality.relaxed, # personality
+                      [True, False],  # e2e
+                      [log.LongitudinalPersonality.relaxed,  # personality
                        log.LongitudinalPersonality.standard,
                        log.LongitudinalPersonality.aggressive],
-                      [0,10,35])) # speed
+                      [0,10,35]))  # speed
 class TestFollowingDistance(unittest.TestCase):
   def test_following_distance(self):
     params = Params()

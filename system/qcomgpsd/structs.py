@@ -276,7 +276,7 @@ position_report = """
   uint8       u_TotalGloSvs;            /* Total number of Glonass SVs detected by searcher, including ones not used in position calculation */
   uint8       u_NumBdsSvsUsed;          /* The number of BeiDou SVs used in the fix */
   uint8       u_TotalBdsSvs;            /* Total number of BeiDou SVs detected by searcher, including ones not used in position calculation */
-""" # noqa: E501
+"""  # noqa: E501
 
 def name_to_camelcase(nam):
   ret = []

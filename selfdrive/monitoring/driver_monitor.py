@@ -204,7 +204,7 @@ class DriverStatus():
                                                        self.settings._PITCH_MIN_OFFSET), self.settings._PITCH_MAX_OFFSET)
       yaw_error = self.pose.yaw - min(max(self.pose.yaw_offseter.filtered_stat.mean(),
                                                     self.settings._YAW_MIN_OFFSET), self.settings._YAW_MAX_OFFSET)
-    pitch_error = 0 if pitch_error > 0 else abs(pitch_error) # no positive pitch limit
+    pitch_error = 0 if pitch_error > 0 else abs(pitch_error)  # no positive pitch limit
     yaw_error = abs(yaw_error)
     if pitch_error > (self.settings._POSE_PITCH_THRESHOLD*self.pose.cfactor_pitch if self.pose_calibrated else self.settings._PITCH_NATURAL_THRESHOLD) or \
        yaw_error > self.settings._POSE_YAW_THRESHOLD*self.pose.cfactor_yaw:
@@ -228,9 +228,9 @@ class DriverStatus():
     return distracted_types
 
   def set_policy(self, model_data, car_speed):
+    bp = model_data.meta.disengagePredictions.brakeDisengageProbs[0]  # brake disengage prob in next 2s
     k1 = max(-0.00156*((car_speed-16)**2)+0.6, 0.2)
     bp_normal = max(min(bp / k1, 0.5),0)
-    bp = model_data.meta.disengagePredictions.brakeDisengageProbs[0]  # brake disengage prob in next 2s
     self.pose.cfactor_pitch = interp(bp_normal, [0, 0.5],
                                            [self.settings._POSE_PITCH_THRESHOLD_SLACK,
                                             self.settings._POSE_PITCH_THRESHOLD_STRICT]) / self.settings._POSE_PITCH_THRESHOLD
