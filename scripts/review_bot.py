@@ -41,6 +41,7 @@ if __name__ == "__main__":
     pr_body = pr_event["pull_request"]["body"]
     pr = g.get_repo(repo_name).get_pull(pr_number)
     pr.add_to_labels(BOT_REVIEW_LABEL)
+    pr.edit(draft=True)
 
     fields_in_pr_body = find_field_set(pr_body)
     combined_templates = read_template_file()
@@ -57,6 +58,7 @@ if __name__ == "__main__":
     if len(possible_template_matches) > 0:
         print("PR matches template(s): ",", ".join(possible_template_matches))
         pr.remove_from_labels(BOT_REVIEW_LABEL)
+        pr.edit(draft=False)
         sys.exit(0) # Pass
     else:
         print("PR does not match any known templates")
