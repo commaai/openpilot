@@ -315,7 +315,7 @@ void WifiUI::refresh() {
 }
 
 void WifiUI::handleHiddenNetwork() {
-  QString ssid = InputDialog::getText(tr("Enter SSID"), this, "", false);
+  QString ssid = InputDialog::getText(tr("Enter SSID"), this, "", true, 1);
   if (!ssid.isEmpty()) {
     QString pass = InputDialog::getText(tr("Enter password"), this, tr("for \"%1\"").arg(ssid), true, 8);
     if (!pass.isEmpty()) {
