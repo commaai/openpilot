@@ -1206,15 +1206,15 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Enter SSID</source>
-        <translation type="unfinished"></translation>
+        <translation>أدخل SSID</translation>
     </message>
     <message>
         <source>Enter password</source>
-        <translation type="unfinished">أدخل كلمة المرور</translation>
+        <translation>أدخل كلمة المرور</translation>
     </message>
     <message>
         <source>for &quot;%1&quot;</source>
-        <translation type="unfinished">من أجل &quot;%1&quot;</translation>
+        <translation>من أجل &quot;%1&quot;</translation>
     </message>
 </context>
 </TS>

@@ -1190,15 +1190,15 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     </message>
     <message>
         <source>Enter SSID</source>
-        <translation type="unfinished"></translation>
+        <translation>Entrer le SSID</translation>
     </message>
     <message>
         <source>Enter password</source>
-        <translation type="unfinished">Entrer le mot de passe</translation>
+        <translation>Entrer le mot de passe</translation>
     </message>
     <message>
         <source>for &quot;%1&quot;</source>
-        <translation type="unfinished">pour &quot;%1&quot;</translation>
+        <translation>pour &quot;%1&quot;</translation>
     </message>
 </context>
 </TS>

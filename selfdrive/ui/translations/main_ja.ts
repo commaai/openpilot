@@ -1184,15 +1184,15 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Enter SSID</source>
-        <translation type="unfinished"></translation>
+        <translation>SSID を入力</translation>
     </message>
     <message>
         <source>Enter password</source>
-        <translation type="unfinished">パスワードを入力</translation>
+        <translation>パスワードを入力</translation>
     </message>
     <message>
         <source>for &quot;%1&quot;</source>
-        <translation type="unfinished">ﾈｯﾄﾜｰｸ名：%1</translation>
+        <translation>ﾈｯﾄﾜｰｸ名：%1</translation>
     </message>
 </context>
 </TS>

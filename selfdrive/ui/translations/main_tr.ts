@@ -1184,15 +1184,15 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Enter SSID</source>
-        <translation type="unfinished"></translation>
+        <translation>APN Gir</translation>
     </message>
     <message>
         <source>Enter password</source>
-        <translation type="unfinished">Parolayı girin</translation>
+        <translation>Parolayı girin</translation>
     </message>
     <message>
         <source>for &quot;%1&quot;</source>
-        <translation type="unfinished">için &quot;%1&quot;</translation>
+        <translation>için &quot;%1&quot;</translation>
     </message>
 </context>
 </TS>

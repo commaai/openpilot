@@ -1186,15 +1186,15 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Enter SSID</source>
-        <translation type="unfinished"></translation>
+        <translation>ป้อนค่า SSID</translation>
     </message>
     <message>
         <source>Enter password</source>
-        <translation type="unfinished">ใส่รหัสผ่าน</translation>
+        <translation>ใส่รหัสผ่าน</translation>
     </message>
     <message>
         <source>for &quot;%1&quot;</source>
-        <translation type="unfinished">สำหรับ &quot;%1&quot;</translation>
+        <translation>สำหรับ &quot;%1&quot;</translation>
     </message>
 </context>
 </TS>

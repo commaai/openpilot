@@ -1186,15 +1186,15 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Enter SSID</source>
-        <translation type="unfinished"></translation>
+        <translation>SSID 입력</translation>
     </message>
     <message>
         <source>Enter password</source>
-        <translation type="unfinished">비밀번호를 입력하세요</translation>
+        <translation>비밀번호를 입력하세요</translation>
     </message>
     <message>
         <source>for &quot;%1&quot;</source>
-        <translation type="unfinished">&quot;%1&quot;에 접속하려면 비밀번호가 필요합니다</translation>
+        <translation>&quot;%1&quot;에 접속하려면 비밀번호가 필요합니다</translation>
     </message>
 </context>
 </TS>
