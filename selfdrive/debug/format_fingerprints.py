@@ -28,6 +28,7 @@ Ecu = car.CarParams.Ecu
 {% endif %}
 
 {% if FINGERPRINTS[brand] %}
+{% if fingerprints_comments %}{{ fingerprints_comments | join() }}\n\n{% endif %}
 FINGERPRINTS = {
 {% for car, fingerprints in FINGERPRINTS[brand].items() %}
   CAR.{{PLATFORM_TO_ENUM_NAME[car]}}: [
@@ -61,9 +62,13 @@ FW_VERSIONS = {
 
 
 def format_brand_fw_versions(brand):
-  with open(os.path.join(BASEDIR, f"selfdrive/car/{brand}/fingerprints.py"), "w") as f:
-    f.write(FINGERPRINTS_PY_TEMPLATE.render(brand=brand, ECU_NAME=ECU_NAME, PLATFORM_TO_ENUM_NAME=PLATFORM_TO_ENUM_NAME,
-                                            FINGERPRINTS=FINGERPRINTS, FW_VERSIONS=FW_VERSIONS))
+  fingerprints_file = os.path.join(BASEDIR, f"selfdrive/car/{brand}/fingerprints.py")
+  with open(fingerprints_file, "r") as f:
+    fingerprints_comments = [line for line in f.readlines() if line.startswith("#") and "noqa" not in line]
+
+  with open(fingerprints_file, "w") as f:
+    f.write(FINGERPRINTS_PY_TEMPLATE.render(brand=brand, fingerprints_comments=fingerprints_comments, ECU_NAME=ECU_NAME,
+                                            PLATFORM_TO_ENUM_NAME=PLATFORM_TO_ENUM_NAME, FINGERPRINTS=FINGERPRINTS, FW_VERSIONS=FW_VERSIONS))
 
 
 if __name__ == "__main__":

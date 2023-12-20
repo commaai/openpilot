@@ -4,6 +4,18 @@ from openpilot.selfdrive.car.chrysler.values import CAR
 
 Ecu = car.CarParams.Ecu
 
+# Unique CAN messages:
+# Only the hybrids have 270: 8
+# Only the gas have 55: 8, 416: 7
+# For 564, All 2017 have length 4, whereas 2018-19 have length 8.
+# For 924, Pacifica 2017 has length 3, whereas all 2018-19 have length 8.
+# For 560, All 2019 have length 8, whereas all 2017-18 have length 4.
+#
+# Jeep Grand Cherokee unique messages:
+# 2017 Trailhawk: 618: 8
+# For 924, Trailhawk 2017 has length 3, whereas 2018 V6 has length 8.
+
+
 FINGERPRINTS = {
   CAR.PACIFICA_2017_HYBRID: [
   {
