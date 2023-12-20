@@ -18,20 +18,41 @@ jobs:
 
       - name: Set PR as Draft
         run: |
-          PR_NUMBER=$(jq --raw-output .pull_request.number $GITHUB_EVENT_PATH)
-          REPO_OWNER=$(jq --raw-output .repository.owner.login $GITHUB_EVENT_PATH)
-          REPO_NAME=$(jq --raw-output .repository.name $GITHUB_EVENT_PATH)
-          graphql_query=''
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H "Content-Type: application/json" \
-            --data-raw '{
-              "query": "mutation {
-                convertPullRequestToDraft(input: {pullRequestId: "'$PR_NUMBER'"}){}
-              }"
-            }' \
-            "https://api.github.com/graphql"
+        PR_NUMBER=$(jq --raw-output .pull_request.number $GITHUB_EVENT_PATH)
+        REPO_OWNER=$(jq --raw-output .repository.owner.login $GITHUB_EVENT_PATH)
+        REPO_NAME=$(jq --raw-output .repository.name $GITHUB_EVENT_PATH)
+
+        # Query GitHub API v4 to get the base64-encoded ID of the pull request
+        base64_encoded_id=$(curl -X POST \
+          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Content-Type: application/json" \
+          --data-raw "{
+            \"query\": \"query {
+              repository(owner: \\\"$REPO_OWNER\\\", name: \\\"$REPO_NAME\\\"){
+                pullRequest(number: $PR_NUMBER) {
+                  id
+                }
+              }
+            }\"
+          }" \
+          "https://api.github.com/graphql" | jq -r .data.repository.pullRequest.id)
+
+        # Output the base64-encoded ID for reference
+        echo "Base64 Encoded ID: $base64_encoded_id"
+
+        # If the base64-encoded ID is available, proceed with updating the pull request
+        # Use the obtained ID to convert the pull request to draft status
+        curl -X POST \
+          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Content-Type: application/json" \
+          --data-raw "{
+            \"query\": \"mutation {
+              convertPullRequestToDraft(input: {pullRequestId: \\\"$base64_encoded_id\\\"}) {}
+            }\"
+          }" \
+        "https://api.github.com/graphql"
 
       - name: Set Up Python
         uses: actions/setup-python@v2
