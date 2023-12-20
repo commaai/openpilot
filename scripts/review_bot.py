@@ -7,6 +7,7 @@ import requests
 from github import Github
 
 BOT_REVIEW_LABEL = "bot-review"
+GRAPHQL_ENDPOINT = "https://api.github.com/graphql"
 
 # Read the pr event file, which is passed in as first arg
 def read_pr_event():
@@ -44,7 +45,7 @@ def get_pull_request_graphql_id(accessToken,name,number):
         }}
       }}
     }}"""
-    r = requests.post(endpoint, json={"query": query}, headers=headers)
+    r = requests.post(GRAPHQL_ENDPOINT, json={"query": query}, headers=headers)
     return r.json()["data"]["repository"]["pullRequest"]["id"]
 
 # use GraphQL to set pull request as draft
@@ -57,7 +58,7 @@ def set_pr_draft(accessToken,id):
             }}
         }}
     }}"""
-    requests.post(endpoint, json={"query": query}, headers=headers)
+    requests.post(GRAPHQL_ENDPOINT, json={"query": query}, headers=headers)
 
 # use GraphQL to set pull request as ready
 def set_pr_ready(accessToken,id):
@@ -69,7 +70,7 @@ def set_pr_ready(accessToken,id):
             }}
         }}
     }}"""
-    requests.post(endpoint, json={"query": query}, headers=headers)
+    requests.post(GRAPHQL_ENDPOINT, json={"query": query}, headers=headers)
 
 if __name__ == "__main__":
     accessToken = os.environ['GITHUB_TOKEN']
