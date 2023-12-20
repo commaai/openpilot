@@ -305,7 +305,7 @@ void WifiUI::refresh() {
 
   if (!hiddenNetworkButton) {
     hiddenNetworkButton = new QPushButton("Hidden Network");
-    hiddenNetworkButton->setStyleSheet("text-align: left;border: none;padding-top: 50px;padding-bottom: 50px;");
+    hiddenNetworkButton->setStyleSheet("text-align: left;border: none;padding-top: 50px;padding-bottom: 50px;padding-left: 43px;");
     connect(hiddenNetworkButton, &QPushButton::clicked, this, &WifiUI::handleHiddenNetwork);
   }
   wifi_list_widget->addItem(hiddenNetworkButton);
