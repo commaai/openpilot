@@ -50,6 +50,7 @@ signals:
 
 public slots:
   void refresh();
+  void handleHiddenNetwork();
 };
 
 class AdvancedNetworking : public QWidget {

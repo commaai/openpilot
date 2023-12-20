@@ -303,7 +303,25 @@ void WifiUI::refresh() {
   }
   for (; n < wifi_items.size(); ++n) wifi_items[n]->setVisible(false);
 
+  // Add 'Hidden Network' option at the end
+  auto hiddenNetworkItem = new QPushButton("Hidden Network");
+  connect(hiddenNetworkItem, &QPushButton::clicked, this, &WifiUI::handleHiddenNetwork);
+  wifi_list_widget->addItem(hiddenNetworkItem);
+
   setUpdatesEnabled(true);
+}
+
+void WifiUI::handleHiddenNetwork() {
+  QString ssid = InputDialog::getText(tr("Enter SSID"), this, "", false);
+  if (!ssid.isEmpty()) {
+    QString pass = InputDialog::getText(tr("Enter password"), this, tr("for \"%1\"").arg(ssid), true, 8);
+    if (!pass.isEmpty()) {
+      Network hidden_network;
+      hidden_network.ssid = ssid.toUtf8();
+      hidden_network.security_type = SecurityType::WPA; // or adjust based on your needs
+      wifi->connect(hidden_network, pass);
+    }
+  }
 }
 
 WifiItem *WifiUI::getItem(int n) {
