@@ -104,5 +104,5 @@ if __name__ == "__main__":
         sys.exit(0) # Pass
     else:
         print("PR does not match any known templates")
-        sys.exit(1) # Fail
+        sys.exit(1) # Faill
 
