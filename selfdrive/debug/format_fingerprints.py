@@ -60,14 +60,21 @@ FW_VERSIONS = {
 """, trim_blocks=True)
 
 
-def format_brand_fw_versions(brand):
+def format_brand_fw_versions(brand, extra_fw_versions: None | dict[str, dict[tuple, list[bytes]]] = None):
+  fw_versions = FW_VERSIONS.copy()
+  # TODO: this modifies FW_VERSIONS in place
+  if extra_fw_versions is not None:
+    for platform, ecus in extra_fw_versions.items():
+      for ecu, fws in ecus.items():
+        fw_versions[brand][platform][ecu] += fws
+
   fingerprints_file = os.path.join(BASEDIR, f"selfdrive/car/{brand}/fingerprints.py")
   with open(fingerprints_file, "r") as f:
     fingerprints_comments = [line for line in f.readlines() if line.startswith("#") and "noqa" not in line]
 
   with open(fingerprints_file, "w") as f:
     f.write(FINGERPRINTS_PY_TEMPLATE.render(brand=brand, fingerprints_comments=fingerprints_comments, ECU_NAME=ECU_NAME,
-                                            FINGERPRINTS=FINGERPRINTS, FW_VERSIONS=FW_VERSIONS))
+                                            FINGERPRINTS=FINGERPRINTS, FW_VERSIONS=fw_versions))
 
 
 if __name__ == "__main__":
