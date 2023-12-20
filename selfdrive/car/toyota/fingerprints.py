@@ -182,7 +182,7 @@ FW_VERSIONS = {
       b'8965B33551\x00\x00\x00\x00\x00\x00',
       b'8965B33611\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.fwdRadar, 0x750, 0xf): [  # Same as 0x791
+    (Ecu.fwdRadar, 0x750, 0xf): [
       b'8821F0601200    ',
       b'8821F0601300    ',
       b'8821F0602000    ',
@@ -609,7 +609,9 @@ FW_VERSIONS = {
       b'8965B48150\x00\x00\x00\x00\x00\x00',
       b'8965B48210\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.abs, 0x7b0, None): [b'F15260E011\x00\x00\x00\x00\x00\x00'],
+    (Ecu.abs, 0x7b0, None): [
+      b'F15260E011\x00\x00\x00\x00\x00\x00',
+    ],
     (Ecu.dsu, 0x791, None): [
       b'881510E01100\x00\x00\x00\x00',
       b'881510E01200\x00\x00\x00\x00',
@@ -835,7 +837,7 @@ FW_VERSIONS = {
       b'8965B47022\x00\x00\x00\x00\x00\x00',
       b'8965B47023\x00\x00\x00\x00\x00\x00',
       b'8965B47050\x00\x00\x00\x00\x00\x00',
-      b'8965B47060\x00\x00\x00\x00\x00\x00',  # This is the EPS with good angle sensor
+      b'8965B47060\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
       b'F152647290\x00\x00\x00\x00\x00\x00',
@@ -1291,7 +1293,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.LEXUS_GS_F: {
-    (Ecu.engine, 0x7E0, None): [
+    (Ecu.engine, 0x7e0, None): [
       b'\x0233075200\x00\x00\x00\x00\x00\x00\x00\x00530B9000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
@@ -1376,7 +1378,7 @@ FW_VERSIONS = {
       b'8965B78120\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
-      b"\x018821F3301400\x00\x00\x00\x00",
+      b'\x018821F3301400\x00\x00\x00\x00',
       b'\x018821F3301200\x00\x00\x00\x00',
       b'\x018821F3301300\x00\x00\x00\x00',
     ],
@@ -1606,14 +1608,22 @@ FW_VERSIONS = {
     ],
   },
   CAR.MIRAI: {
-    (Ecu.abs, 0x7D1, None): [b'\x01898A36203000\x00\x00\x00\x00',],
-    (Ecu.abs, 0x7B0, None): [  # a second ABS ECU
+    (Ecu.abs, 0x7d1, None): [
+      b'\x01898A36203000\x00\x00\x00\x00',
+    ],
+    (Ecu.abs, 0x7b0, None): [
       b'\x01F15266203200\x00\x00\x00\x00',
       b'\x01F15266203500\x00\x00\x00\x00',
     ],
-    (Ecu.eps, 0x7A1, None): [b'\x028965B6204100\x00\x00\x00\x008965B6203100\x00\x00\x00\x00',],
-    (Ecu.fwdRadar, 0x750, 0xf): [b'\x018821F6201200\x00\x00\x00\x00',],
-    (Ecu.fwdCamera, 0x750, 0x6d): [b'\x028646F6201400\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',],
+    (Ecu.eps, 0x7a1, None): [
+      b'\x028965B6204100\x00\x00\x00\x008965B6203100\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x750, 0xf): [
+      b'\x018821F6201200\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'\x028646F6201400\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
+    ],
   },
   CAR.ALPHARD_TSS2: {
     (Ecu.engine, 0x7e0, None): [
@@ -1626,7 +1636,7 @@ FW_VERSIONS = {
       b'8965B58052\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
-      b'F152658341\x00\x00\x00\x00\x00\x00'
+      b'F152658341\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301200\x00\x00\x00\x00',
