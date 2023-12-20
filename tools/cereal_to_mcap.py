@@ -45,7 +45,11 @@ def list_schema_to_json(schema, et, bind = None):
     return { "type": "array", "items": typeMap[str(w)] }
   elif str(w) == 'struct':
     name = schema.elementType.node.displayName
-    field_schema = name_to_schema(name)
+    try:
+      field_schema = name_to_schema(name)
+    except:
+      print("skipping legacy data")
+      return None
     return { "type": "array", "items": schema_to_json(field_schema, bind) }
   elif str(w) == 'enum':
     return { "type": "array", "items": { "type": "string", "enum": list(schema.elementType.enumerants.keys()) } }
@@ -66,11 +70,14 @@ def schema_to_json(schema, bind = None):
         ft = f.proto.slot.type.which
         if ft == 'struct':
           name = f.schema.node.displayName
-          field_schema = name_to_schema(name)
-          if f.schema.node.isGeneric:
-            base["properties"][f.proto.name] = schema_to_json(field_schema, f.proto.slot.type.struct.brand.scopes[0].bind)
-          else:
-            base["properties"][f.proto.name] = schema_to_json(field_schema)
+          try:
+            field_schema = name_to_schema(name)
+            if f.schema.node.isGeneric:
+              base["properties"][f.proto.name] = schema_to_json(field_schema, f.proto.slot.type.struct.brand.scopes[0].bind)
+            else:
+              base["properties"][f.proto.name] = schema_to_json(field_schema)
+          except:
+            print("skipping legacy data")
         elif str(ft) in typeMap:
           base["properties"][f.proto.name] = typeMap[str(ft)]
         elif str(ft) == 'list':
