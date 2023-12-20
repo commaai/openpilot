@@ -1,9 +1,12 @@
+#!/usr/bin/env python3
 import jinja2
+import os
 
 from cereal import car
-Ecu = car.CarParams.Ecu
-
+from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.car.interfaces import get_interface_attr
+
+Ecu = car.CarParams.Ecu
 
 CARS = get_interface_attr('CAR')
 FW_VERSIONS = get_interface_attr('FW_VERSIONS')
@@ -57,7 +60,7 @@ FW_VERSIONS = {
 
 
 def format_brand_fw_versions(brand):
-  with open(f"selfdrive/car/{brand}/fingerprints.py", "w") as f:
+  with open(os.path.join(BASEDIR, f"selfdrive/car/{brand}/fingerprints.py"), "w") as f:
     template = jinja2.Template(FINGERPRINTS_PY_TEMPLATE, trim_blocks=True)
 
     f.write(template.render(brand=brand, ECU_NUMBER_TO_NAME=ECU_NUMBER_TO_NAME, PLATFORM_TO_PYTHON_CAR_NAME=PLATFORM_TO_PYTHON_CAR_NAME,
