@@ -52,7 +52,6 @@ FW_VERSIONS = {
 {% for key, fw_versions in FW_VERSIONS[brand][car].items() %}
     (Ecu.{{ECU_NAME[key[0]]}}, 0x{{"%0x" | format(key[1] | int)}}, \
 {% if key[2] %}0x{{"%0x" | format(key[2] | int)}}{% else %}{{key[2]}}{% endif %}): [
-{# sort unique FW versions #}
   {% for fw_version in (fw_versions + extra_fw_versions.get(car, {}).get(key, [])) | unique | sort %}
     {{fw_version}},
   {% endfor %}
