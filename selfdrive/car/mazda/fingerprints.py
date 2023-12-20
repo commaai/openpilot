@@ -109,7 +109,7 @@ FW_VERSIONS = {
     ],
   },
 
-  CAR.CX9 : {
+  CAR.CX9: {
     (Ecu.eps, 0x730, None): [
       b'K070-3210X-C-00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'KJ01-3210X-G-00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -146,7 +146,7 @@ FW_VERSIONS = {
       b'GSH7-67XK2-J\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'GSH7-67XK2-K\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'TK80-67XK2-C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-   ],
+    ],
     (Ecu.transmission, 0x7e1, None): [
       b'PXM4-21PS1-A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PXM7-21PS1-A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -230,7 +230,7 @@ FW_VERSIONS = {
     ],
   },
 
-  CAR.CX9_2021 : {
+  CAR.CX9_2021: {
     (Ecu.eps, 0x730, None): [
       b'TC3M-3210X-A-00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],

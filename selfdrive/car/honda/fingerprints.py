@@ -1280,29 +1280,29 @@ FW_VERSIONS = {
       b'78109-TV9-A510\x00\x00',
     ],
   },
-  CAR.HONDA_E:{
-    (Ecu.eps, 0x18DA30F1, None):[
+  CAR.HONDA_E: {
+    (Ecu.eps, 0x18DA30F1, None): [
       b'39990-TYF-N030\x00\x00'
     ],
-    (Ecu.gateway, 0x18DAEFF1, None):[
+    (Ecu.gateway, 0x18DAEFF1, None): [
       b'38897-TYF-E140\x00\x00'
     ],
-    (Ecu.shiftByWire, 0x18DA0BF1, None):[
+    (Ecu.shiftByWire, 0x18DA0BF1, None): [
       b'54008-TYF-E010\x00\x00'
     ],
-    (Ecu.srs, 0x18DA53F1, None):[
+    (Ecu.srs, 0x18DA53F1, None): [
       b'77959-TYF-G430\x00\x00'
     ],
-    (Ecu.combinationMeter, 0x18DA60F1, None):[
+    (Ecu.combinationMeter, 0x18DA60F1, None): [
       b'78108-TYF-G610\x00\x00'
     ],
-    (Ecu.fwdRadar, 0x18DAB0F1, None):[
+    (Ecu.fwdRadar, 0x18DAB0F1, None): [
       b'36802-TYF-E030\x00\x00'
     ],
-    (Ecu.fwdCamera, 0x18DAB5F1, None):[
+    (Ecu.fwdCamera, 0x18DAB5F1, None): [
       b'36161-TYF-E020\x00\x00'
     ],
-    (Ecu.vsa, 0x18DA28F1, None):[
+    (Ecu.vsa, 0x18DA28F1, None): [
       b'57114-TYF-E030\x00\x00'
     ],
   },
