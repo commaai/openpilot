@@ -4,6 +4,7 @@ on:
   pull_request:
     types:
       - opened
+      - edited
 jobs:
   bot_review:
     runs-on: ubuntu-latest
