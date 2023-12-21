@@ -11,7 +11,7 @@ if arch in ['larch64', 'aarch64', 'x86_64']:
     rpath = Dir(f"#third_party/mapbox-gl-native-qt/{arch}").srcnode().abspath
     map_env["RPATH"] += [rpath, ]
 
-  style_path = File("style.json").abspath
+  style_path = "style.json"
   map_env['CXXFLAGS'].append(f'-DSTYLE_PATH=\\"{style_path}\\"')
 
   map_env["RPATH"].append(Dir('.').abspath)
