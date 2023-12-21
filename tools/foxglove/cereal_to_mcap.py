@@ -14,17 +14,32 @@ import sys
 import os
 import tempfile
 import multiprocessing
+import math
+import numbers
 from openpilot.selfdrive.test.openpilotci import get_url
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
 
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 
+def nan2None(obj):
+    if isinstance(obj, dict):
+        return {k:nan2None(v) for k,v in obj.items()}
+    elif isinstance(obj, list):
+        return [nan2None(v) for v in obj]
+    elif isinstance(obj, float) and math.isnan(obj):
+        return None
+    return obj
+
 class Base64Encoder(json.JSONEncoder):
+    def encode(self, obj, *args, **kwargs):
+        return super().encode(nan2None(obj), *args, **kwargs)
     # pylint: disable=method-hidden
     def default(self, o):
         if isinstance(o, bytes):
             return b64encode(o).decode()
+        if math.isnan(o):
+            return 0
         return json.JSONEncoder.default(self, o)
 
 typeMap = {
