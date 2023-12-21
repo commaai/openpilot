@@ -24,9 +24,6 @@ common/__init__.py
 common/*.py
 common/*.pyx
 
-common/kalman/.gitignore
-common/kalman/*
-
 common/transformations/__init__.py
 common/transformations/camera.py
 common/transformations/model.py
@@ -118,6 +115,7 @@ selfdrive/debug/can_printer.py
 selfdrive/debug/check_freq.py
 selfdrive/debug/dump.py
 selfdrive/debug/filter_log_message.py
+selfdrive/debug/format_fingerprints.py
 selfdrive/debug/get_fingerprint.py
 selfdrive/debug/uiview.py
 
@@ -127,30 +125,8 @@ selfdrive/debug/vw_mqb_config.py
 common/SConscript
 common/version.h
 
-common/prefix.h
-common/swaglog.h
-common/swaglog.cc
-common/statlog.h
-common/statlog.cc
-common/util.cc
-common/util.h
-common/queue.h
-common/clutil.cc
-common/clutil.h
-common/params.h
-common/params.cc
-common/ratekeeper.cc
-common/ratekeeper.h
-common/watchdog.cc
-common/watchdog.h
-
-common/mat.h
-common/timing.h
-
-common/gpio.cc
-common/gpio.h
-common/i2c.cc
-common/i2c.h
+common/*.h
+common/*.cc
 
 selfdrive/controls/__init__.py
 selfdrive/controls/controlsd.py

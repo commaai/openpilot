@@ -89,3 +89,10 @@ repos:
     rev: 0.27.2
     hooks:
     -   id: check-github-workflows
+# -   repo: local
+#     hooks:
+#     -   id: format-fingerprints
+#         name: format-fingerprints
+#         entry: selfdrive/debug/format_fingerprints.py
+#         language: system
+#         types: [python]

@@ -1,6 +1,6 @@
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
+addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
 cpp_files = "test_*"
 cpp_harness = "selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"
@@ -20,6 +20,7 @@ testpaths = [
   "selfdrive/navd/tests",
   "selfdrive/thermald",
   "selfdrive/test/longitudinal_maneuvers",
+  "selfdrive/test/process_replay/test_fuzzy.py",
   "system/hardware/tici",
   "system/loggerd",
   "system/proclogd",
@@ -82,7 +83,6 @@ cffi = "*"
 crcmod = "*"
 Cython = "*"
 future-fstrings = "*"  # for acados
-hexdump = "*"
 json-rpc = "*"
 libusb1 = "*"
 numpy = "*"
@@ -94,7 +94,6 @@ pyaudio = "*"
 pycapnp = "*"
 pycryptodome = "*"
 PyJWT = "*"
-pyopencl = "*"
 pyserial = "*"
 pyzmq = "*"
 requests = "*"
@@ -105,12 +104,10 @@ sounddevice = "*"
 spidev = { version = "*", platform = "linux" }
 sympy = "*"
 websocket_client = "*"
-polyline = "*"
 
 # these should be removed
 markdown-it-py = "*"
 timezonefinder = "*"
-pycurl = "*"
 setproctitle = "*"
 
 
@@ -136,7 +133,9 @@ natsort = "*"
 opencv-python-headless = "*"
 parameterized = "^0.8"
 pprofile = "*"
+polyline = "*"
 pre-commit = "*"
+pyopencl = "*"
 pygame = "*"
 pyprof2calltree = "*"
 pytest = "*"
@@ -153,7 +152,6 @@ sphinx-rtd-theme = "*"
 sphinx-sitemap = "*"
 tabulate = "*"
 tenacity = "*"
-types-pycurl = "*"
 types-requests = "*"
 types-tabulate = "*"
 tqdm = "*"
