@@ -106,8 +106,46 @@ def schema_to_json(schema, bind = None):
     print(f"warning, unsupported schema type: {t}")
     return None
 
+def get_event_schemas():
+  schemas = {}
+  base_template = { "type": "object", "properties": { "logMonoTime": {"type": "string"}, "valid": {"type": "boolean"} } }
+  for field in cereal.log.Event.schema.fields_list:
+    base = copy.deepcopy(base_template)
+    w = field.proto.which
+    if field.proto.name not in cereal.log.Event.schema.union_fields:
+      continue
+    if w == 'slot':
+      ft = field.proto.slot.type.which
+      if ft == 'struct':
+        name = field.schema.node.displayName
+        try:
+          field_schema = name_to_schema(name)
+          if field.schema.node.isGeneric:
+            base["properties"][field.proto.name] = schema_to_json(field_schema, field.proto.slot.type.struct.brand.scopes[0].bind)
+          else:
+            base["properties"][field.proto.name] = schema_to_json(field_schema)
+        except:
+          print("skipping legacy data")
+      elif str(ft) in typeMap:
+        base["properties"][field.proto.name] = typeMap[str(ft)]
+      elif str(ft) == 'list':
+        et = field.proto.slot.type.list.elementType
+        l = list_schema_to_json(field.schema, et)
+        if l is not None:
+          base["properties"][field.proto.name] = l
+        else:
+          print("warning, foxglove does not support lists in lists, skipping field")
+      elif str(ft) == 'enum':
+        base["properties"][field.proto.name] = {"type": "string", "enum": list(field.schema.enumerants.keys())}
+      else:
+        print(f"warning, unsupported schema type: {ft}")
+    schemas[field.proto.name] = base
 
-schema = schema_to_json(cereal.log.Event.schema)
+  return schemas
+
+schemas = get_event_schemas()
+
+
 
 channel_exclusions = ['logMonoTime', 'valid']
 
@@ -115,20 +153,23 @@ with open("test.mcap", "wb") as f:
   writer = Writer(f)
   writer.start()
 
-  schema_id = writer.register_schema(
-    name="Event",
-    encoding=SchemaEncoding.JSONSchema,
-    data=bytes(json.dumps(schema), "utf-8"),
-  )
+  type_to_schema = {}
+  for k in list(schemas.keys()):
+    schema_id = writer.register_schema(
+      name=k,
+      encoding=SchemaEncoding.JSONSchema,
+      data=bytes(json.dumps(schemas[k]), "utf-8"),
+    )
+    type_to_schema[k] = schema_id
 
   typeToChannel = {}
-  for k in list(schema["properties"].keys()):
+  for k in list(schemas.keys()):
     if k in channel_exclusions:
       continue
     typeToChannel[k] = channel_id = writer.register_channel(
       topic=k,
       message_encoding=MessageEncoding.JSON,
-      schema_id=schema_id,
+      schema_id=type_to_schema[k],
     )
   logf = open('example.qlog', 'rb')
   events = cereal.log.Event.read_multiple(logf)
