@@ -57,7 +57,7 @@ PROCS = {
   "selfdrive.boardd.pandad": 0,
   "selfdrive.statsd": 0.4,
   "selfdrive.navd.navd": 0.4,
-  "system.loggerd.uploader": 3.0,
+  "system.loggerd.uploader": (0.5, 10.0),
   "system.loggerd.deleter": 0.1,
 }
 
