@@ -45,4 +45,4 @@ RUN cd /tmp && \
     rm -rf /home/$USER/pyenv/versions/3.11.4/lib/python3.11/test
 
 USER root
-RUN sudo git config --global --add safe.directory /home/batman/openpilot
+RUN sudo git config --global --add safe.directory /home/batman/openpilot && sudo git config --global --add safe.directory /tmp/openpilot
