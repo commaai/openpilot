@@ -80,7 +80,7 @@ assert arch in ["larch64", "aarch64", "x86_64", "Darwin"]
 
 lenv = {
   "PATH": os.environ['PATH'],
-  "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").abspath],
+  "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").relpath],
   "PYTHONPATH": Dir("#").abspath + ':' + Dir(f"#third_party/acados").abspath,
 
   "ACADOS_SOURCE_DIR": Dir("#third_party/acados").abspath,
@@ -150,7 +150,7 @@ else:
         f"#third_party/snpe/{arch}"
       ]
       rpath += [
-        Dir(f"#third_party/snpe/{arch}").abspath,
+        Dir(f"#third_party/snpe/{arch}").relpath,
       ]
 
 if GetOption('asan'):
@@ -244,7 +244,7 @@ if GetOption('compile_db'):
 # Setup cache dir
 cache_dir = '/data/scons_cache' if AGNOS else '/tmp/scons_cache'
 CacheDir(cache_dir)
-Clean(["."], cache_dir)
+#Clean(["."], cache_dir)
 
 node_interval = 5
 node_count = 0
@@ -299,7 +299,7 @@ else:
   qt_libs = [f"Qt5{m}" for m in qt_modules]
   if arch == "larch64":
     qt_libs += ["GLESv2", "wayland-client"]
-    qt_env.PrependENVPath('PATH', Dir("#third_party/qt5/larch64/bin/").abspath)
+    qt_env.PrependENVPath('PATH', Dir("#third_party/qt5/larch64/bin/").relpath)
   elif arch != "Darwin":
     qt_libs += ["GL"]
 qt_env['QT3DIR'] = qt_env['QTDIR']

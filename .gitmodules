@@ -1,21 +1,21 @@
-[submodule "panda"]
-  path = panda
-  url = ../../commaai/panda.git
-[submodule "opendbc"]
-  path = opendbc
-  url = ../../commaai/opendbc.git
 [submodule "cereal"]
   path = cereal
   url = ../../commaai/cereal.git
 [submodule "rednose_repo"]
   path = rednose_repo
   url = ../../commaai/rednose.git
-[submodule "body"]
-  path = body
-  url = ../../commaai/body.git
 [submodule "teleoprtc_repo"]
   path = teleoprtc_repo
   url = ../../commaai/teleoprtc
 [submodule "tinygrad"]
   path = tinygrad_repo
   url = https://github.com/geohot/tinygrad.git
+[submodule "panda"]
+	path = panda
+	url = git@github.com:bongbui321/panda.git
+[submodule "opendbc"]
+	path = opendbc
+	url = git@github.com:bongbui321/opendbc.git
+[submodule "body"]
+	path = body
+	url = git@github.com:bongbui321/body.git
