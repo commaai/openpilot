@@ -254,11 +254,15 @@ def convert_log(log_file):
       )
     logf = open(log_file, 'rb')
     events = cereal.log.Event.read_multiple(logf)
+
+    offset = 0
     for event in events:
       e = event.to_dict()
+      if str(event.which) == "initData":
+        offset = int(e["initData"]["wallTimeNanos"]) - int(e["logMonoTime"])
       writer.add_message(
           typeToChannel[str(event.which)],
-          log_time=int(e["logMonoTime"]),
+          log_time=int(e["logMonoTime"]) + offset,
           data=json.dumps(e, cls=Base64Encoder).encode("utf-8"),
           publish_time=int(e["logMonoTime"]),
       )
