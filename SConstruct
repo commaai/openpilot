@@ -227,7 +227,7 @@ env = Environment(
     "#rednose/helpers",
   ],
   CYTHONCFILESUFFIX=".cpp",
-  COMPILATIONDB_USE_ABSPATH=True,
+  COMPILATIONDB_USE_ABSPATH=False,
   REDNOSE_ROOT="#",
   tools=["default", "cython", "compilation_db", "rednose_filter"],
   toolpath=["#rednose_repo/site_scons/site_tools"],
@@ -299,7 +299,7 @@ else:
   qt_libs = [f"Qt5{m}" for m in qt_modules]
   if arch == "larch64":
     qt_libs += ["GLESv2", "wayland-client"]
-    qt_env.PrependENVPath('PATH', Dir("#third_party/qt5/larch64/bin/").relpath)
+    qt_env.PrependENVPath('PATH', Dir("#third_party/qt5/larch64/bin/").abspath)
   elif arch != "Darwin":
     qt_libs += ["GL"]
 qt_env['QT3DIR'] = qt_env['QTDIR']

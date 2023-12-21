@@ -8,13 +8,15 @@ if arch == 'larch64':
 
 if arch in ['larch64', 'aarch64', 'x86_64']:
   if arch == 'x86_64':
-    rpath = Dir(f"#third_party/mapbox-gl-native-qt/{arch}").srcnode().abspath
+    rpath = Dir(f"#third_party/mapbox-gl-native-qt/{arch}").srcnode().relpath
     map_env["RPATH"] += [rpath, ]
+    print(map_env["RPATH"])
+    exit(0)
 
   style_path = "style.json"
   map_env['CXXFLAGS'].append(f'-DSTYLE_PATH=\\"{style_path}\\"')
 
-  map_env["RPATH"].append(Dir('.').abspath)
-  map_env["LIBPATH"].append(Dir('.').abspath)
+  map_env["RPATH"].append('.')
+  map_env["LIBPATH"].append('.')
   maplib = map_env.SharedLibrary("maprender", ["map_renderer.cc"], LIBS=libs)
   map_env.Program("mapsd", ["main.cc", ], LIBS=[maplib[0].get_path(), ] + libs)
