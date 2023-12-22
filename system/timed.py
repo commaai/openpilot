@@ -5,6 +5,7 @@ import re
 import subprocess
 import time
 import requests
+from typing import NoReturn
 from datetime import datetime, timedelta
 from timezonefinder import TimezoneFinder
 
@@ -12,7 +13,6 @@ from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import AGNOS
 from openpilot.system.version import get_version
-from typing import NoReturn
 
 REQUEST_HEADERS = {'User-Agent': "openpilot-" + get_version()}
 
