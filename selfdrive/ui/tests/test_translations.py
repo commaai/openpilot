@@ -159,19 +159,13 @@ class TestTranslations(unittest.TestCase):
           if translation.get("type") == "unfinished":
             continue
 
-          if message.get("numerus") == "yes":
-            numerusforms = [t.text for t in translation.findall("numerusform")]
-            for numerusform in numerusforms:
-              words = numerusform.translate(str.maketrans('', '', string.punctuation + '%n')).lower().split()
-              for word in words:
-                if word in banned_words and word not in OVERRIDE_WORDS:
-                  raise AssertionError(f"Bad language found: {word} - {numerusform}")
-          else:
-            translation_text = translation.text
-            words = translation_text.translate(str.maketrans('', '', string.punctuation)).lower().split()
-            for word in words:
+          translation_text = " ".join([t.text for t in translation.findall("numerusform")]) if message.get("numerus") == "yes" else translation.text
+          words = translation_text.translate(str.maketrans('', '', string.punctuation + '%n')).lower().split()
+          print(words)
+          for word in words:
               if word in banned_words and word not in OVERRIDE_WORDS:
-                raise AssertionError(f"Bad language found: {word} - {translation_text}")
+                  raise AssertionError(f"Bad language found: {word} - {translation_text}")
+
 
 
 if __name__ == "__main__":
