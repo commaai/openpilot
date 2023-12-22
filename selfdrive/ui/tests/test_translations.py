@@ -168,9 +168,6 @@ class TestTranslations(unittest.TestCase):
                     raise AssertionError(f"Bad language found: {word} - {numerusform}")
             else:
               translation_text = translation.text
-              if translation_text is None:
-                continue
-
               words = translation_text.translate(str.maketrans('', '', string.punctuation)).lower().split()
               for word in words:
                 if word in banned_words and word not in OVERRIDE_WORDS:
