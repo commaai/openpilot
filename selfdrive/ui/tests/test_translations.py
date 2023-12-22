@@ -138,7 +138,7 @@ class TestTranslations(unittest.TestCase):
       print(f"{name} - checking")
       tr_xml = ET.parse(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"))
 
-      response = requests.get(f"https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bsad-Words/master/{match.group(1)}")
+      response = requests.get(f"https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/{match.group(1)}")
       response.raise_for_status()
 
       banned_words = set(line.strip() for line in response.text.splitlines())
