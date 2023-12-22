@@ -132,46 +132,46 @@ class TestTranslations(unittest.TestCase):
     OVERRIDE_WORDS = ['pédale']
 
     for name, file in self.translation_files.items():
-        match = re.search(r'_([a-zA-Z]{2,3})', file)
-        if not match:
-            print(f"{name} - could not parse language")
+      match = re.search(r'_([a-zA-Z]{2,3})', file)
+      if not match:
+        print(f"{name} - could not parse language")
+        continue
+
+      language_code = match.group(1)
+      if language_code not in AVAILABLE_LANGUAGE_CODES:
+        print(f"{name} - language not supported")
+        continue
+
+      print(f"{name} - checking")
+      tr_xml = ET.parse(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"))
+
+      url = f"https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/{language_code}"
+      response = requests.get(url)
+      if response.status_code != 200:
+        print(f"{name} - failed to retrieve banned words")
+        continue
+
+      banned_words = [line.strip() for line in response.text.splitlines()]
+
+      for context in tr_xml.getroot():
+        for message in context.iterfind("message"):
+          translation = message.find("translation")
+          if translation.get("type") == "unfinished":
             continue
 
-        language_code = match.group(1)
-        if language_code not in AVAILABLE_LANGUAGE_CODES:
-            print(f"{name} - language not supported")
-            continue
-
-        print(f"{name} - checking")
-        tr_xml = ET.parse(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"))
-
-        url = f"https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/{language_code}"
-        response = requests.get(url)
-        if response.status_code != 200:
-            print(f"{name} - failed to retrieve banned words")
-            continue
-
-        banned_words = [line.strip() for line in response.text.splitlines()]
-
-        for context in tr_xml.getroot():
-          for message in context.iterfind("message"):
-            translation = message.find("translation")
-            if translation.get("type") == "unfinished":
-              continue
-
-            if message.get("numerus") == "yes":
-              numerusforms = [t.text for t in translation.findall("numerusform")]
-              for numerusform in numerusforms:
-                words = numerusform.translate(str.maketrans('', '', string.punctuation + '%n')).lower().split()
-                for word in words:
-                  if word in banned_words and word not in OVERRIDE_WORDS:
-                    raise AssertionError(f"Bad language found: {word} - {numerusform}")
-            else:
-              translation_text = translation.text
-              words = translation_text.translate(str.maketrans('', '', string.punctuation)).lower().split()
+          if message.get("numerus") == "yes":
+            numerusforms = [t.text for t in translation.findall("numerusform")]
+            for numerusform in numerusforms:
+              words = numerusform.translate(str.maketrans('', '', string.punctuation + '%n')).lower().split()
               for word in words:
                 if word in banned_words and word not in OVERRIDE_WORDS:
-                  raise AssertionError(f"Bad language found: {word} - {translation_text}")
+                  raise AssertionError(f"Bad language found: {word} - {numerusform}")
+          else:
+            translation_text = translation.text
+            words = translation_text.translate(str.maketrans('', '', string.punctuation)).lower().split()
+            for word in words:
+              if word in banned_words and word not in OVERRIDE_WORDS:
+                raise AssertionError(f"Bad language found: {word} - {translation_text}")
 
 
 if __name__ == "__main__":
