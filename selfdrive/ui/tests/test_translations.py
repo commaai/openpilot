@@ -127,9 +127,9 @@ class TestTranslations(unittest.TestCase):
     """
     Tests if the given translation files contain any bad language using LDNOOBW.
     """
-    AVAILABLE_LANGUAGE_CODES = ['ar', 'cs', 'da', 'de', 'en', 'eo', 'es', 'fa', 'fi', 'fil', 'fr', 'hi', 'hu', 'it', 'ja', 'kab', 'ko', 'nl', 'no', 'pl',
-                                'pt', 'ru', 'sv', 'th', 'tlh', 'tr', 'zh']
-    OVERRIDE_WORDS = ['pédale']
+    AVAILABLE_LANGUAGE_CODES = set(['ar', 'cs', 'da', 'de', 'en', 'eo', 'es', 'fa', 'fi', 'fil', 'fr', 'hi', 'hu', 'it', 'ja', 'kab', 'ko', 'nl', 'no', 'pl',
+                                'pt', 'ru', 'sv', 'th', 'tlh', 'tr', 'zh'])
+    OVERRIDE_WORDS = set(['pédale'])
 
     for name, file in self.translation_files.items():
       match = re.search(r'_([a-zA-Z]{2,3})', file)
@@ -151,7 +151,7 @@ class TestTranslations(unittest.TestCase):
         print(f"{name} - failed to retrieve banned words")
         continue
 
-      banned_words = [line.strip() for line in response.text.splitlines()]
+      banned_words = set(line.strip() for line in response.text.splitlines())
 
       for context in tr_xml.getroot():
         for message in context.iterfind("message"):
@@ -161,10 +161,9 @@ class TestTranslations(unittest.TestCase):
 
           translation_text = " ".join([t.text for t in translation.findall("numerusform")]) if message.get("numerus") == "yes" else translation.text
           words = translation_text.translate(str.maketrans('', '', string.punctuation + '%n')).lower().split()
-          print(words)
           for word in words:
-              if word in banned_words and word not in OVERRIDE_WORDS:
-                  raise AssertionError(f"Bad language found: {word} - {translation_text}")
+            if word in banned_words and word not in OVERRIDE_WORDS:
+              raise AssertionError(f"Bad language found: {word} - {translation_text}")
 
 
 
