@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 import json
 import os
-import re
 import subprocess
 import time
 import requests
 from typing import NoReturn
-from datetime import datetime, timedelta
+from datetime import datetime
 from timezonefinder import TimezoneFinder
 
 from openpilot.common.params import Params
@@ -92,16 +91,18 @@ def main() -> NoReturn:
       cloudlog.debug("Setting time based on modem")
       output = subprocess.check_output("mmcli -m 0 --command AT+QLTS=1", shell=True).decode()
 
-      # formated utc date
+      # formatted utc date
       utcdate = datetime.strptime(output[19:-8], "%Y/%m/%d,%H:%M:%S").strftime("%Y-%m-%d %H:%M:%S")
 
       # difference between the local time and GMT is expressed in quarters of an hour plus daylight saving time
       tz = output[39:-5]
+      print(tz)
 
       # 0 - includes no adjustment for daylight saving time
       # 1 - includes +1 hour (equals 4 quarters in <tz>) adjustment for daylight saving time
       # 2 - includes +2 hours (equals 8 quarters in <tz>) adjustment for daylight saving time
       dst = output[42:-3]
+      print(dst)
 
       # set time
       os.system(f"TZ=UTC date -s '{utcdate}'")
