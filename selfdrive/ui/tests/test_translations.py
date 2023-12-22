@@ -154,19 +154,27 @@ class TestTranslations(unittest.TestCase):
         banned_words = [line.strip() for line in response.text.splitlines()]
 
         for context in tr_xml.getroot():
-            for message in context.iterfind("message"):
-                translation = message.find("translation")
-                if translation.get("type") == "unfinished":
-                    continue
+          for message in context.iterfind("message"):
+            translation = message.find("translation")
+            if translation.get("type") == "unfinished":
+              continue
 
-                translation_text = translation.text
-                if translation_text is None:
-                    continue
-
-                words = translation_text.translate(str.maketrans('', '', string.punctuation)).lower().split()
+            if message.get("numerus") == "yes":
+              numerusforms = [t.text for t in translation.findall("numerusform")]
+              for numerusform in numerusforms:
+                words = numerusform.translate(str.maketrans('', '', string.punctuation + '%n')).lower().split()
                 for word in words:
-                    if word in banned_words and word not in OVERRIDE_WORDS:
-                        raise AssertionError(f"Bad language found: {word} - {translation_text}")
+                  if word in banned_words and word not in OVERRIDE_WORDS:
+                    raise AssertionError(f"Bad language found: {word} - {numerusform}")
+            else:
+              translation_text = translation.text
+              if translation_text is None:
+                continue
+
+              words = translation_text.translate(str.maketrans('', '', string.punctuation)).lower().split()
+              for word in words:
+                if word in banned_words and word not in OVERRIDE_WORDS:
+                  raise AssertionError(f"Bad language found: {word} - {translation_text}")
 
 
 if __name__ == "__main__":
