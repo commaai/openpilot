@@ -138,11 +138,11 @@ class TestTranslations(unittest.TestCase):
       print(f"{name} - checking")
       tr_xml = ET.parse(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"))
 
-      url = f"https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/{match.group(1)}"
-      response = requests.get(url)
-      if response.status_code != 200:
-        raise AssertionError(f"{name} - failed to retrieve banned words")
-        continue
+      try:
+        response = requests.get(f"https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bsad-Words/master/{match.group(1)}")
+        response.raise_for_status()
+      except requests.HTTPError as e:
+        raise AssertionError(f"{name} - {e}")
 
       banned_words = set(line.strip() for line in response.text.splitlines())
 
