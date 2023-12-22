@@ -35,7 +35,7 @@ class CarState(CarStateBase):
       self.shifter_values = can_define.dv["CLU15"]["CF_Clu_Gear"]
     elif self.CP.carFingerprint in CAN_GEARS["use_tcu_gears"]:
       self.shifter_values = can_define.dv["TCU12"]["CUR_GR"]
-    else:  # preferred and elect gear methods use same definition
+    else:
       self.shifter_values = can_define.dv["LVR12"]["CF_Lvr_Gear"]
 
     self.accelerator_msg_canfd = "ACCELERATOR" if CP.carFingerprint in EV_CAR else \
