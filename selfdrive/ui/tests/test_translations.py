@@ -134,21 +134,21 @@ class TestTranslations(unittest.TestCase):
     for name, file in self.translation_files.items():
         match = re.search(r'_([a-zA-Z]{2,3})', file)
         if not match:
-            print(f"{file} - could not parse language")
+            print(f"{name} - could not parse language")
             continue
 
         language_code = match.group(1)
         if language_code not in AVAILABLE_LANGUAGE_CODES:
-            print(f"{file} - language not supported")
+            print(f"{name} - language not supported")
             continue
 
-        print(f"{file} - checking")
+        print(f"{name} - checking")
         tr_xml = ET.parse(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"))
 
         url = f"https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/{language_code}"
         response = requests.get(url)
         if response.status_code != 200:
-            print(f"{file} - failed to retrieve banned words")
+            print(f"{name} - failed to retrieve banned words")
             continue
 
         banned_words = [line.strip() for line in response.text.splitlines()]
