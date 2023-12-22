@@ -108,8 +108,7 @@ def main() -> NoReturn:
       os.system(f"TZ=UTC date -s '{utcdate}'")
 
     except Exception as e:
-        cloudlog.error(f"Error getting time from modem, {e}")
-        return None, None
+      cloudlog.error(f"Error getting time from modem, {e}")
 
 
 if __name__ == "__main__":
