@@ -17,7 +17,6 @@ from openpilot.system.version import get_version
 REQUEST_HEADERS = {'User-Agent': "openpilot-" + get_version()}
 
 
-
 def set_timezone(valid_timezones, timezone):
   if timezone not in valid_timezones:
     cloudlog.error(f"Timezone not supported {timezone}")
