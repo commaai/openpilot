@@ -123,7 +123,7 @@ class TestTranslations(unittest.TestCase):
         matches = re.findall(r'@(\w+);', cur_translations)
         self.assertEqual(len(matches), 0, f"The string(s) {matches} were found with '@' instead of '&'")
 
-  def test_bad_language(translation_files):
+  def test_bad_language(self):
     """
     Tests if the given translation files contain any bad language using LDNOOBW.
     """
@@ -131,7 +131,7 @@ class TestTranslations(unittest.TestCase):
                                 'pt', 'ru', 'sv', 'th', 'tlh', 'tr', 'zh']
     OVERRIDE_WORDS = ['pédale']
 
-    for name, file in translation_files.items():
+    for name, file in self.translation_files.items():
         match = re.search(r'_([a-zA-Z]{2,3})', file)
         if not match:
             print(f"{file} - could not parse language")
