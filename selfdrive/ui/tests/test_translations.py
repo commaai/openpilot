@@ -127,46 +127,46 @@ class TestTranslations(unittest.TestCase):
     """
     Tests if the given translation files contain any bad language using LDNOOBW.
     """
-      AVAILABLE_LANGUAGE_CODES = ['ar', 'cs', 'da', 'de', 'en', 'eo', 'es', 'fa', 'fi', 'fil', 'fr', 'hi', 'hu', 'it', 'ja', 'kab', 'ko', 'nl', 'no', 'pl',
-                                  'pt', 'ru', 'sv', 'th', 'tlh', 'tr', 'zh']
-      OVERRIDE_WORDS = ['pédale']
+    AVAILABLE_LANGUAGE_CODES = ['ar', 'cs', 'da', 'de', 'en', 'eo', 'es', 'fa', 'fi', 'fil', 'fr', 'hi', 'hu', 'it', 'ja', 'kab', 'ko', 'nl', 'no', 'pl',
+                                'pt', 'ru', 'sv', 'th', 'tlh', 'tr', 'zh']
+    OVERRIDE_WORDS = ['pédale']
 
-      for name, file in translation_files.items():
-          match = re.search(r'_([a-zA-Z]{2,3})', file)
-          if not match:
-              print(f"{file} - could not parse language")
-              continue
+    for name, file in translation_files.items():
+        match = re.search(r'_([a-zA-Z]{2,3})', file)
+        if not match:
+            print(f"{file} - could not parse language")
+            continue
 
-          language_code = match.group(1)
-          if language_code not in AVAILABLE_LANGUAGE_CODES:
-              print(f"{file} - language not supported")
-              continue
+        language_code = match.group(1)
+        if language_code not in AVAILABLE_LANGUAGE_CODES:
+            print(f"{file} - language not supported")
+            continue
 
-          print(f"{file} - checking")
-          tr_xml = ET.parse(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"))
+        print(f"{file} - checking")
+        tr_xml = ET.parse(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"))
 
-          url = f"https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/{language_code}"
-          response = requests.get(url)
-          if response.status_code != 200:
-              print(f"{file} - failed to retrieve banned words")
-              continue
+        url = f"https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/{language_code}"
+        response = requests.get(url)
+        if response.status_code != 200:
+            print(f"{file} - failed to retrieve banned words")
+            continue
 
-          banned_words = [line.strip() for line in response.text.splitlines()]
+        banned_words = [line.strip() for line in response.text.splitlines()]
 
-          for context in tr_xml.getroot():
-              for message in context.iterfind("message"):
-                  translation = message.find("translation")
-                  if translation.get("type") == "unfinished":
-                      continue
+        for context in tr_xml.getroot():
+            for message in context.iterfind("message"):
+                translation = message.find("translation")
+                if translation.get("type") == "unfinished":
+                    continue
 
-                  translation_text = translation.text
-                  if translation_text is None:
-                      continue
+                translation_text = translation.text
+                if translation_text is None:
+                    continue
 
-                  words = translation_text.translate(str.maketrans('', '', string.punctuation)).lower().split()
-                  for word in words:
-                      if word in banned_words and word not in OVERRIDE_WORDS:
-                          raise AssertionError(f"Bad language found: {word} - {translation_text}")
+                words = translation_text.translate(str.maketrans('', '', string.punctuation)).lower().split()
+                for word in words:
+                    if word in banned_words and word not in OVERRIDE_WORDS:
+                        raise AssertionError(f"Bad language found: {word} - {translation_text}")
 
 
 if __name__ == "__main__":
