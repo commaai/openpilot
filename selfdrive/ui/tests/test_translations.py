@@ -127,19 +127,12 @@ class TestTranslations(unittest.TestCase):
     """
     Tests if the given translation files contain any bad language using LDNOOBW.
     """
-    AVAILABLE_LANGUAGE_CODES = set(['ar', 'cs', 'da', 'de', 'en', 'eo', 'es', 'fa', 'fi', 'fil', 'fr', 'hi', 'hu', 'it', 'ja', 'kab', 'ko', 'nl', 'no', 'pl',
-                                'pt', 'ru', 'sv', 'th', 'tlh', 'tr', 'zh'])
     OVERRIDE_WORDS = set(['pédale'])
 
     for name, file in self.translation_files.items():
       match = re.search(r'_([a-zA-Z]{2,3})', file)
       if not match:
         print(f"{name} - could not parse language")
-        continue
-
-      language_code = match.group(1)
-      if language_code not in AVAILABLE_LANGUAGE_CODES:
-        print(f"{name} - language not supported")
         continue
 
       print(f"{name} - checking")
