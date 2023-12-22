@@ -132,7 +132,7 @@ class TestTranslations(unittest.TestCase):
     for name, file in self.translation_files.items():
       match = re.search(r'_([a-zA-Z]{2,3})', file)
       if not match:
-        print(f"{name} - could not parse language")
+        raise AssertionError(f"{name} - could not parse language")
         continue
 
       print(f"{name} - checking")
@@ -141,7 +141,7 @@ class TestTranslations(unittest.TestCase):
       url = f"https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/{match.group(1)}"
       response = requests.get(url)
       if response.status_code != 200:
-        print(f"{name} - failed to retrieve banned words")
+        raise AssertionError(f"{name} - failed to retrieve banned words")
         continue
 
       banned_words = set(line.strip() for line in response.text.splitlines())
