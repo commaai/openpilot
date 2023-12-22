@@ -4,9 +4,8 @@ import os
 import re
 import subprocess
 import time
-from datetime import datetime, timedelta
-
 import requests
+from datetime import datetime, timedelta
 from timezonefinder import TimezoneFinder
 
 from openpilot.common.params import Params
@@ -42,6 +41,7 @@ def main() -> NoReturn:
   params = Params()
   tf = TimezoneFinder()
 
+  # get allowed timezones
   valid_timezones = subprocess.check_output('timedatectl list-timezones', shell=True, encoding='utf8').strip().split('\n')
 
   while True:
@@ -51,14 +51,12 @@ def main() -> NoReturn:
     if is_onroad:
       continue
 
-
     # set timezone with param
     timezone = params.get("Timezone", encoding='utf8')
     if timezone is not None:
       cloudlog.debug("Setting timezone based on param")
       set_timezone(valid_timezones, timezone)
     else:
-
 
       # set timezone with IP lookup
       location = params.get("LastGPSPosition", encoding='utf8')
@@ -74,7 +72,6 @@ def main() -> NoReturn:
         except requests.exceptions.RequestException:
           cloudlog.exception("Error getting timezone based on IP")
           continue
-
 
       # set timezone with GPS
       else:
@@ -115,7 +112,5 @@ def main() -> NoReturn:
         return None, None
 
 
-
 if __name__ == "__main__":
   main()
-
