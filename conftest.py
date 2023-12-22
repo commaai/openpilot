@@ -12,6 +12,17 @@ def pytest_sessionstart(session):
     session.config.option.randomly_reorganize = False
 
 
+@pytest.hookimpl(hookwrapper=True, trylast=True)
+def pytest_runtest_call(item):
+  # ensure we run as a hook after capturemanager's
+  if item.get_closest_marker("nocapture") is not None:
+    capmanager = item.config.pluginmanager.getplugin("capturemanager")
+    with capmanager.global_and_fixture_disabled():
+      yield
+  else:
+    yield
+
+
 @pytest.fixture(scope="function", autouse=True)
 def openpilot_function_fixture():
   starting_env = dict(os.environ)
@@ -58,7 +69,8 @@ def pytest_collection_modifyitems(config, items):
 
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config):
-  config_line = (
-    "xdist_group_class_property: group tests by a property of the class that contains them"
-  )
+  config_line = "xdist_group_class_property: group tests by a property of the class that contains them"
+  config.addinivalue_line("markers", config_line)
+
+  config_line = "nocapture: don't capture test output"
   config.addinivalue_line("markers", config_line)
