@@ -1,14 +1,11 @@
 #pragma once
 
-#include <cstdint>
-#include <map>
 #include <memory>
 #include <utility>
 
-#include <media/cam_req_mgr.h>
-
 #include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/cameras/camera_util.h"
+#include "system/camerad/sensors/sensor.h"
 #include "common/params.h"
 #include "common/util.h"
 
@@ -17,7 +14,7 @@
 class CameraState {
 public:
   MultiCameraState *multi_cam_state;
-  std::unique_ptr<const CameraInfo> ci;
+  std::unique_ptr<const SensorInfo> ci;
   bool enabled;
 
   std::mutex exp_lock;
@@ -48,12 +45,10 @@ public:
   void sensors_start();
 
   void camera_open(MultiCameraState *multi_cam_state, int camera_num, bool enabled);
-  void camera_set_parameters();
+  void sensor_set_parameters();
   void camera_map_bufs(MultiCameraState *s);
-  void camera_init(MultiCameraState *s, VisionIpcServer *v, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type);
+  void camera_init(MultiCameraState *s, VisionIpcServer *v, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type);
   void camera_close();
-
-  std::map<uint16_t, uint16_t> ar0231_parse_registers(uint8_t *data, std::initializer_list<uint16_t> addrs);
 
   int32_t session_handle;
   int32_t sensor_dev_handle;
@@ -70,7 +65,6 @@ public:
   int frame_id_last;
   int idx_offset;
   bool skipped;
-  int camera_id;
 
   CameraBuf buf;
   MemoryManager mm;
@@ -82,10 +76,7 @@ public:
 
   int sensors_init();
   void sensors_poke(int request_id);
-  void sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word);
-
-  // Register parsing
-  std::map<uint16_t, std::pair<int, int>> ar0231_register_lut;
+  void sensors_i2c(const struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word);
 
 private:
   // for debugging
