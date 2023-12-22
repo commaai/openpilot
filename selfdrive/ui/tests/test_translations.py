@@ -133,7 +133,6 @@ class TestTranslations(unittest.TestCase):
       match = re.search(r'_([a-zA-Z]{2,3})', file)
       if not match:
         raise AssertionError(f"{name} - could not parse language")
-        continue
 
       print(f"{name} - checking")
       tr_xml = ET.parse(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"))
@@ -158,7 +157,6 @@ class TestTranslations(unittest.TestCase):
           for word in words:
             if word in banned_words and word not in OVERRIDE_WORDS:
               raise AssertionError(f"Bad language found: {word} - {translation_text}")
-
 
 
 if __name__ == "__main__":
