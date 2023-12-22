@@ -153,6 +153,10 @@ class TestTranslations(unittest.TestCase):
             continue
 
           translation_text = " ".join([t.text for t in translation.findall("numerusform")]) if message.get("numerus") == "yes" else translation.text
+
+          if translation_text is None:
+            continue
+
           words = translation_text.translate(str.maketrans('', '', string.punctuation + '%n')).lower().split()
           for word in words:
             if word in banned_words and word not in OVERRIDE_WORDS:
