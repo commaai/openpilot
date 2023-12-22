@@ -123,50 +123,50 @@ class TestTranslations(unittest.TestCase):
         matches = re.findall(r'@(\w+);', cur_translations)
         self.assertEqual(len(matches), 0, f"The string(s) {matches} were found with '@' instead of '&'")
 
-  def test_bad_language(self):
-    for name, file in self.translation_files.items():
-      with self.subTest(name=name, file=file):
-        tr_xml = ET.parse(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"))
+  def test_bad_language(translation_files):
+    """
+    Tests if the given translation files contain any bad language using LDNOOBW.
+    """
+      AVAILABLE_LANGUAGE_CODES = ['ar', 'cs', 'da', 'de', 'en', 'eo', 'es', 'fa', 'fi', 'fil', 'fr', 'hi', 'hu', 'it', 'ja', 'kab', 'ko', 'nl', 'no', 'pl',
+                                  'pt', 'ru', 'sv', 'th', 'tlh', 'tr', 'zh']
+      OVERRIDE_WORDS = ['pédale']
 
-        available_language_codes = ["ar", "cs", "da", "de", "en", "eo", "es", "fa", "fi", "fil", "fr", "hi", "hu", "it", "ja", "kab", "ko", "nl", "no", "pl",
-                                    "pt", "ru", "sv", "th", "tlh", "tr", "zh"]
-
-        match = re.search(r'_([a-zA-Z]{2,3})', file)
-        if not match:
-          print(f"{file} - could not parse language")
-          continue
-
-        if match.group(1) not in available_language_codes:
-          print(f"{file} - language not supported")
-          continue
-
-        print(f"checking {file}")
-        url = f"https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/{match.group(1)}"
-        response = requests.get(url)
-        assert response.status_code == 200, f"{file}  - failed to retrieve data: {url}"
-
-        banned_words = [line.strip() for line in response.text.splitlines()]
-
-        override_words = ['pédale']
-
-        for context in tr_xml.getroot():
-          for message in context.iterfind("message"):
-            translation = message.find("translation")
-            translation_text = translation.text
-            source_text = message.find("source").text
-
-            if translation.get("type") == "unfinished":
+      for name, file in translation_files.items():
+          match = re.search(r'_([a-zA-Z]{2,3})', file)
+          if not match:
+              print(f"{file} - could not parse language")
               continue
 
-            if translation_text is not None:
-              words = translation_text.translate(str.maketrans('', '', string.punctuation)).lower().split()
-            else:
-              print(translation_text)
-              print(source_text)
+          language_code = match.group(1)
+          if language_code not in AVAILABLE_LANGUAGE_CODES:
+              print(f"{file} - language not supported")
+              continue
 
-            for word in words:
-              if word in banned_words and word not in override_words:
-                raise AssertionError(f"Bad language found: {word} - {translation_text}")
+          print(f"{file} - checking")
+          tr_xml = ET.parse(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"))
+
+          url = f"https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/{language_code}"
+          response = requests.get(url)
+          if response.status_code != 200:
+              print(f"{file} - failed to retrieve banned words")
+              continue
+
+          banned_words = [line.strip() for line in response.text.splitlines()]
+
+          for context in tr_xml.getroot():
+              for message in context.iterfind("message"):
+                  translation = message.find("translation")
+                  if translation.get("type") == "unfinished":
+                      continue
+
+                  translation_text = translation.text
+                  if translation_text is None:
+                      continue
+
+                  words = translation_text.translate(str.maketrans('', '', string.punctuation)).lower().split()
+                  for word in words:
+                      if word in banned_words and word not in OVERRIDE_WORDS:
+                          raise AssertionError(f"Bad language found: {word} - {translation_text}")
 
 
 if __name__ == "__main__":
