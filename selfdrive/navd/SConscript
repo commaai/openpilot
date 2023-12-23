@@ -9,8 +9,7 @@ if arch == 'larch64':
 
 if arch in ['larch64', 'aarch64', 'x86_64']:
   if arch == 'x86_64':
-    rpath = Dir(f"#third_party/mapbox-gl-native-qt/{arch}").srcnode().abspath
-    #rpath = map_env.Literal(os.path.join('\\$$ORIGIN',os.pardir, os.pardir, f"third_party/mapbox-gl-native-qt/{arch}"))
+    rpath = map_env.Literal(os.path.join('\\$$ORIGIN',os.pardir, os.pardir, f"third_party/mapbox-gl-native-qt/{arch}"))
     map_env["RPATH"] += [rpath, ]
 
   style_path = File("style.json").abspath
