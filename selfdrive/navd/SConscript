@@ -12,7 +12,7 @@ if arch in ['larch64', 'aarch64', 'x86_64']:
     rpath = map_env.Literal(os.path.join('\\$$ORIGIN',os.pardir, os.pardir, f"third_party/mapbox-gl-native-qt/{arch}"))
     map_env["RPATH"] += [rpath, ]
 
-  style_path = File("style.json").abspath
+  style_path = File("#style.json").relpath
   map_env['CXXFLAGS'].append(f'-DSTYLE_PATH=\\"{style_path}\\"')
 
   #https://github.com/SCons/scons/wiki/UsingOrigin
