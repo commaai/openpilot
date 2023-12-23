@@ -124,9 +124,6 @@ class TestTranslations(unittest.TestCase):
         self.assertEqual(len(matches), 0, f"The string(s) {matches} were found with '@' instead of '&'")
 
   def test_bad_language(self):
-    """
-    Tests if the given translation files contain any bad language using LDNOOBW.
-    """
     OVERRIDE_WORDS = {'pédale'}
 
     for name, file in self.translation_files.items():
