@@ -18,7 +18,7 @@ if arch in ['larch64', 'aarch64', 'x86_64']:
 
   #https://github.com/SCons/scons/wiki/UsingOrigin
   map_env.Append(LINKFLAGS = Split('-z origin'))
-  map_env["RPATH"].append(map_env.Literal('\\$$ORIGIN'))
+  map_env["RPATH"].append(map_env.Literal("\'$$ORIGIN\'"))
   map_env["LIBPATH"].append(Dir('.').abspath)
   maplib = map_env.SharedLibrary("maprender", ["map_renderer.cc"], LIBS=libs)
   map_env.Program("mapsd", ["main.cc", ], LIBS=[maplib[0].get_path(), ] + libs)
