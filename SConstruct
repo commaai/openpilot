@@ -227,7 +227,7 @@ env = Environment(
     "#rednose/helpers",
   ],
   CYTHONCFILESUFFIX=".cpp",
-  COMPILATIONDB_USE_ABSPATH=False,
+  COMPILATIONDB_USE_ABSPATH=True,
   REDNOSE_ROOT="#",
   tools=["default", "cython", "compilation_db", "rednose_filter"],
   toolpath=["#rednose_repo/site_scons/site_tools"],
