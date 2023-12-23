@@ -127,21 +127,19 @@ class TestTranslations(unittest.TestCase):
     """
     Tests if the given translation files contain any bad language using LDNOOBW.
     """
-    OVERRIDE_WORDS = {'pédajle'}
+    OVERRIDE_WORDS = {'pédale'}
 
     for name, file in self.translation_files.items():
       match = re.search(r'_([a-zA-Z]{2,3})', file)
       if not match:
         raise AssertionError(f"{name} - could not parse language")
 
-      tr_xml = ET.parse(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"))
-
       response = requests.get(f"https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/{match.group(1)}")
       response.raise_for_status()
 
       banned_words = {line.strip() for line in response.text.splitlines()}
 
-      for context in tr_xml.getroot():
+      for context in ET.parse(os.path.join(TRANSLATIONS_DIR, f"{file}.ts")).getroot():
         for message in context.iterfind("message"):
           translation = message.find("translation")
           if translation.get("type") == "unfinished":
