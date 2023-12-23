@@ -153,10 +153,9 @@ class TestTranslations(unittest.TestCase):
           if translation_text is None:
             continue
 
-          words = translation_text.translate(str.maketrans('', '', string.punctuation + '%n')).lower().split()
-          for word in words:
-            if word in banned_words and word not in OVERRIDE_WORDS:
-              raise AssertionError(f"Bad language found: {word} - {translation_text}")
+          words = set(translation_text.translate(str.maketrans('', '', string.punctuation + '%n')).lower().split())
+          if words & banned_words - OVERRIDE_WORDS:
+            raise AssertionError(f"Bad language found in {name}: '{translation_text}'")
 
 
 if __name__ == "__main__":
