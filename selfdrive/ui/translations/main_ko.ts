@@ -91,6 +91,13 @@
     </message>
 </context>
 <context>
+    <name>ChartView</name>
+    <message>
+        <source>Close</source>
+        <translation type="obsolete">닫기</translation>
+    </message>
+</context>
+<context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
@@ -293,6 +300,13 @@
     </message>
 </context>
 <context>
+    <name>FindSignalDlg</name>
+    <message>
+        <source>Reset</source>
+        <translation type="obsolete">초기화</translation>
+    </message>
+</context>
+<context>
     <name>InputDialog</name>
     <message>
         <source>Cancel</source>
@@ -453,6 +467,20 @@
     <message>
         <source> ALERT</source>
         <translation> 알림</translation>
+    </message>
+</context>
+<context>
+    <name>OpenPandaWidget</name>
+    <message>
+        <source>Serial</source>
+        <translation type="obsolete">시리얼</translation>
+    </message>
+</context>
+<context>
+    <name>OpenSocketCanWidget</name>
+    <message>
+        <source>Device</source>
+        <translation type="obsolete">장치</translation>
     </message>
 </context>
 <context>

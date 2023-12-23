@@ -91,6 +91,13 @@
     </message>
 </context>
 <context>
+    <name>ChartView</name>
+    <message>
+        <source>Close</source>
+        <translation type="obsolete">ปิด</translation>
+    </message>
+</context>
+<context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
@@ -293,6 +300,13 @@
     </message>
 </context>
 <context>
+    <name>FindSignalDlg</name>
+    <message>
+        <source>Reset</source>
+        <translation type="obsolete">รีเซ็ต</translation>
+    </message>
+</context>
+<context>
     <name>InputDialog</name>
     <message>
         <source>Cancel</source>
@@ -453,6 +467,20 @@
     <message>
         <source> ALERT</source>
         <translation> การแจ้งเตือน</translation>
+    </message>
+</context>
+<context>
+    <name>OpenPandaWidget</name>
+    <message>
+        <source>Serial</source>
+        <translation type="obsolete">ซีเรียล</translation>
+    </message>
+</context>
+<context>
+    <name>OpenSocketCanWidget</name>
+    <message>
+        <source>Device</source>
+        <translation type="obsolete">อุปกรณ์</translation>
     </message>
 </context>
 <context>

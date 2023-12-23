@@ -91,6 +91,13 @@
     </message>
 </context>
 <context>
+    <name>ChartView</name>
+    <message>
+        <source>Close</source>
+        <translation type="obsolete">Fermer</translation>
+    </message>
+</context>
+<context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
@@ -293,6 +300,13 @@
     </message>
 </context>
 <context>
+    <name>FindSignalDlg</name>
+    <message>
+        <source>Reset</source>
+        <translation type="obsolete">Réinitialiser</translation>
+    </message>
+</context>
+<context>
     <name>InputDialog</name>
     <message>
         <source>Cancel</source>
@@ -454,6 +468,20 @@
     <message>
         <source> ALERT</source>
         <translation> ALERTE</translation>
+    </message>
+</context>
+<context>
+    <name>OpenPandaWidget</name>
+    <message>
+        <source>Serial</source>
+        <translation type="obsolete">N° de série</translation>
+    </message>
+</context>
+<context>
+    <name>OpenSocketCanWidget</name>
+    <message>
+        <source>Device</source>
+        <translation type="obsolete">Appareil</translation>
     </message>
 </context>
 <context>

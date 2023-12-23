@@ -91,6 +91,13 @@
     </message>
 </context>
 <context>
+    <name>ChartView</name>
+    <message>
+        <source>Close</source>
+        <translation type="obsolete">Kapat</translation>
+    </message>
+</context>
+<context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
@@ -455,6 +462,20 @@
     </message>
 </context>
 <context>
+    <name>OpenPandaWidget</name>
+    <message>
+        <source>Serial</source>
+        <translation type="obsolete">Seri Numara</translation>
+    </message>
+</context>
+<context>
+    <name>OpenSocketCanWidget</name>
+    <message>
+        <source>Device</source>
+        <translation type="obsolete">Cihaz</translation>
+    </message>
+</context>
+<context>
     <name>PairingPopup</name>
     <message>
         <source>Pair your device to your comma account</source>
@@ -713,16 +734,16 @@ This may take up to a minute.</source>
         <translation>Zacznij od początku</translation>
     </message>
     <message>
+        <source>Select a language</source>
+        <translation>Dil seçin</translation>
+    </message>
+    <message>
         <source>Something went wrong. Reboot the device.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No custom software found at this URL.</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select a language</source>
-        <translation>Dil seçin</translation>
     </message>
 </context>
 <context>
@@ -1026,6 +1047,10 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Experimental Mode</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1047,10 +1072,6 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Driving Personality</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

@@ -91,6 +91,13 @@
     </message>
 </context>
 <context>
+    <name>ChartView</name>
+    <message>
+        <source>Close</source>
+        <translation type="obsolete">閉じる</translation>
+    </message>
+</context>
+<context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
@@ -131,15 +138,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>No %1 location set</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>home</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>work</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No %1 location set</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -293,6 +300,13 @@
     </message>
 </context>
 <context>
+    <name>FindSignalDlg</name>
+    <message>
+        <source>Reset</source>
+        <translation type="obsolete">リセット</translation>
+    </message>
+</context>
+<context>
     <name>InputDialog</name>
     <message>
         <source>Cancel</source>
@@ -386,6 +400,10 @@
 <context>
     <name>OffroadAlert</name>
     <message>
+        <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won&apos;t engage in %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -434,10 +452,6 @@
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>OffroadHome</name>
@@ -452,6 +466,20 @@
     <message>
         <source> ALERT</source>
         <translation> 警告</translation>
+    </message>
+</context>
+<context>
+    <name>OpenPandaWidget</name>
+    <message>
+        <source>Serial</source>
+        <translation type="obsolete">シリアル番号</translation>
+    </message>
+</context>
+<context>
+    <name>OpenSocketCanWidget</name>
+    <message>
+        <source>Device</source>
+        <translation type="obsolete">デバイス</translation>
     </message>
 </context>
 <context>
@@ -507,11 +535,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
+        <source>1 year of drive storage</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>1 year of drive storage</source>
+        <source>Turn-by-turn navigation</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -606,7 +634,8 @@
         <translation>確認</translation>
     </message>
     <message>
-        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
+        <source>Resetting device...
+This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -614,8 +643,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Resetting device...
-This may take up to a minute.</source>
+        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -713,16 +741,16 @@ This may take up to a minute.</source>
         <translation>最初からやり直す</translation>
     </message>
     <message>
-        <source>No custom software found at this URL.</source>
-        <translation type="unfinished"></translation>
+        <source>Select a language</source>
+        <translation>言語を選択</translation>
     </message>
     <message>
         <source>Something went wrong. Reboot the device.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Select a language</source>
-        <translation>言語を選択</translation>
+        <source>No custom software found at this URL.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -882,10 +910,6 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>up to date, last checked %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>DOWNLOAD</source>
         <translation type="unfinished"></translation>
     </message>
@@ -895,6 +919,10 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>never</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>up to date, last checked %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1050,6 +1078,10 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Aggressive</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1063,10 +1095,6 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Driving Personality</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
