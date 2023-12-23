@@ -244,7 +244,7 @@ if GetOption('compile_db'):
 # Setup cache dir
 cache_dir = '/data/scons_cache' if AGNOS else '/tmp/scons_cache'
 CacheDir(cache_dir)
-Clean(["."], cache_dir)
+#Clean(["."], cache_dir)
 
 node_interval = 5
 node_count = 0
