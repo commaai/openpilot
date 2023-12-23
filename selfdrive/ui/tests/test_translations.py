@@ -10,7 +10,7 @@ from parameterized import parameterized, parameterized_class
 from openpilot.selfdrive.ui.update_translations import TRANSLATIONS_DIR, LANGUAGES_FILE, update_translations
 
 with open(LANGUAGES_FILE, "r") as f:
-    translation_files = json.load(f)
+  translation_files = json.load(f)
 
 translations_updated = False
 
@@ -29,8 +29,8 @@ class TestTranslations(unittest.TestCase):
     # Set up temp directory
     shutil.copytree(TRANSLATIONS_DIR, TMP_TRANSLATIONS_DIR, dirs_exist_ok=True)
     if not translations_updated:
-        update_translations(plural_only=["main_en"], translations_dir=TMP_TRANSLATIONS_DIR)
-        translations_updated = True
+      update_translations(plural_only=["main_en"], translations_dir=TMP_TRANSLATIONS_DIR)
+      translations_updated = True
 
   @classmethod
   def tearDownClass(cls):
@@ -43,8 +43,8 @@ class TestTranslations(unittest.TestCase):
       return f.read()
 
   def test_missing_translation_files(self):
-      self.assertTrue(os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{self.file}.ts")),
-                        f"{self.name} has no XML translation file, run selfdrive/ui/update_translations.py")
+    self.assertTrue(os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{self.file}.ts")),
+                      f"{self.name} has no XML translation file, run selfdrive/ui/update_translations.py")
 
   def test_translations_updated(self):
     # caught by test_missing_translation_files
