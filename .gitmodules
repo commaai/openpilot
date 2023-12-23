@@ -13,9 +13,9 @@
 [submodule "panda"]
 	path = panda
 	url = git@github.com:bongbui321/panda.git
-[submodule "opendbc"]
-	path = opendbc
-	url = git@github.com:bongbui321/opendbc.git
 [submodule "body"]
 	path = body
 	url = git@github.com:bongbui321/body.git
+[submodule "opendbc"]
+	path = opendbc
+	url = git@github.com:bongbui321/opendbc.git
