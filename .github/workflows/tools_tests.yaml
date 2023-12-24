@@ -42,7 +42,7 @@ jobs:
     - name: Test PlotJuggler
       timeout-minutes: 2
       run: |
-          ${{ env.RUN }} "pytest tools/plotjuggler/"
+        ${{ env.RUN }} "pytest tools/plotjuggler/"
       id: build_openpilot
     - name: check if cached by relative path
       if: contains(steps.build_openpilot.outputs.BUILD_LOG, env.WORKSPACE)
