@@ -38,9 +38,9 @@ jobs:
         } >> $GITHUB_OUTPUT
       id: build_openpilot
     - name: unit test - if cached by abspath
-      if: contains(${{ steps.build_openpilot.outputs.BUILD_LOG }}, ${{ env.WORKSPACE }})
+      if: contains(steps.build_openpilot.outputs.BUILD_LOG, env.WORKSPACE)
       run: |
-        echo "${{ (steps.build_openpilot.outputs.BUILD_LOG) }}"
+        echo "'${{ (steps.build_openpilot.outputs.BUILD_LOG) }}'"
         echo "Failed - contains abspath while building"
         exit 1
     - name: Build docs
