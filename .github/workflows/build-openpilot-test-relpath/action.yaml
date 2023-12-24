@@ -11,7 +11,7 @@ runs:
         ${{ env.RUN }} "scons -j$(nproc) --cache-show"
         echo EOF
         } >> $GITHUB_OUTPUT
-        echo "${{ GITHUB_OUTPUT }}"
+        echo "$(cat $GITHUB_OUTPUT)"
     - name: check if cached by relative path
       if: contains(steps.build_openpilot.outputs.BUILD_LOG, env.WORKSPACE)
       shell: bash

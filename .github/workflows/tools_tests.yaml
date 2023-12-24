@@ -38,18 +38,11 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
       timeout-minutes: 5
-      run: | 
-      
-      ${{ env.RUN }} "scons -j$(nproc) cereal/ common/ --minimal"
+      run: ${{ env.RUN }} "scons -j$(nproc) cereal/ common/ --minimal"
     - name: Test PlotJuggler
       timeout-minutes: 2
       run: |
-        {
-          echo 'BUILD_LOG<<EOF'
           ${{ env.RUN }} "pytest tools/plotjuggler/"
-          echo EOF
-        } >> $GITHUB_OUTPUT
-        echo "${{ GITHUB_OUTPUT }}"
       id: build_openpilot
     - name: check if cached by relative path
       if: contains(steps.build_openpilot.outputs.BUILD_LOG, env.WORKSPACE)
