@@ -14,7 +14,7 @@ import tempfile
 import multiprocessing
 import math
 from openpilot.selfdrive.test.openpilotci import get_url
-from openpilot.tools.foxglove.json_schema import get_event_schemas, rawImage
+from openpilot.tools.foxglove.json_schema import get_event_schemas, rawImage, compressedImage, frameTransform, locationFix, logs
 from openpilot.tools.lib.framereader import FrameReader
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
@@ -178,6 +178,47 @@ def convert_log(log_file, fcam=None, dcam=None, ecam=None):
         message_encoding=MessageEncoding.JSON,
         schema_id=type_to_schema[k],
       )
+
+    compressedImageSchema = writer.register_schema(
+        name="foxglove.CompressedImage",
+        encoding=SchemaEncoding.JSONSchema,
+        data=bytes(json.dumps(compressedImage), "utf-8"),
+    )
+    thumbnailChannel = writer.register_channel(
+      topic="/thumbnail",
+      message_encoding=MessageEncoding.JSON,
+      schema_id=compressedImageSchema,
+    )
+    frameTransformSchema = writer.register_schema(
+        name="foxglove.FrameTransform",
+        encoding=SchemaEncoding.JSONSchema,
+        data=bytes(json.dumps(frameTransform), "utf-8"),
+    )
+    frameTransformChannel = writer.register_channel(
+      topic="/frameTransform",
+      message_encoding=MessageEncoding.JSON,
+      schema_id=frameTransformSchema,
+    )
+    locationFixSchema = writer.register_schema(
+        name="foxglove.LocationFix",
+        encoding=SchemaEncoding.JSONSchema,
+        data=bytes(json.dumps(locationFix), "utf-8"),
+    )
+    locationFixChannel = writer.register_channel(
+      topic="/liveLocation",
+      message_encoding=MessageEncoding.JSON,
+      schema_id=locationFixSchema,
+    )
+    logsSchema = writer.register_schema(
+        name="foxglove.Log",
+        encoding=SchemaEncoding.JSONSchema,
+        data=bytes(json.dumps(logs), "utf-8"),
+    )
+    logsChannel = writer.register_channel(
+      topic="/log",
+      message_encoding=MessageEncoding.JSON,
+      schema_id=logsSchema,
+    )
     logf = open(log_file, 'rb')
     events = cereal.log.Event.read_multiple(logf)
 
@@ -252,6 +293,97 @@ def convert_log(log_file, fcam=None, dcam=None, ecam=None):
             publish_time=int(e["logMonoTime"]) + offset,
         )
         ecam_index += 1
+      elif str(event.which) == "modelV2":
+        position = e["modelV2"]["temporalPose"]["transStd"]
+        orientation = e["modelV2"]["temporalPose"]["rotStd"]
+        data = {
+            "timestamp": {
+                "nsec": (int(e["logMonoTime"]) + offset) % 1000000000,
+                "sec": (int(e["logMonoTime"]) + offset) // 1000000000
+            },
+            "parent_frame_id": str(e["modelV2"]["frameId"] - 1),
+            "child_frame_id": str(e["modelV2"]["frameId"]),
+            "translation": {"x":position[0], "y": position[1], "z": position[2]},
+            "rotation": toQuaternion(orientation[0], orientation[1], orientation[2])
+        }
+        writer.add_message(
+          frameTransformChannel,
+          log_time=int(e["logMonoTime"]) + offset,
+          data=json.dumps(data, cls=Base64Encoder).encode("utf-8"),
+          publish_time=int(e["logMonoTime"]) + offset,
+        )
+      elif str(event.which) == "liveLocationKalman":
+        data = {
+            "timestamp": {
+                "nsec": (int(e["logMonoTime"]) + offset) % 1000000000,
+                "sec": (int(e["logMonoTime"]) + offset) // 1000000000
+            },
+            "frame_id": e["logMonoTime"],
+            "latitude": e["liveLocationKalman"]["positionGeodetic"]["value"][0],
+            "longitude": e["liveLocationKalman"]["positionGeodetic"]["value"][1],
+            "altitude": e["liveLocationKalman"]["positionGeodetic"]["value"][2],
+            "position_covariance_type": 1,
+            "position_covariance": [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        }
+        writer.add_message(
+          locationFixChannel,
+          log_time=int(e["logMonoTime"]) + offset,
+          data=json.dumps(data, cls=Base64Encoder).encode("utf-8"),
+          publish_time=int(e["logMonoTime"]) + offset,
+        )
+      elif str(event.which) == "thumbnail":
+        data = {
+            "timestamp": {
+                "nsec": (int(e["logMonoTime"]) + offset) % 1000000000,
+                "sec": (int(e["logMonoTime"]) + offset) // 1000000000
+            },
+            "frame_id": str(e["thumbnail"]["frameId"]),
+            "format": "jpeg",
+            "data": e["thumbnail"]["thumbnail"],
+        }
+        writer.add_message(
+          thumbnailChannel,
+          log_time=int(e["logMonoTime"]) + offset,
+          data=json.dumps(data, cls=Base64Encoder).encode("utf-8"),
+          publish_time=int(e["logMonoTime"]) + offset,
+        )
+      elif str(event.which) == "errorLogMessage":
+        message = json.loads(e["errorLogMessage"])
+        name = "Unknown"
+        file = "Unknown"
+        line = 0
+        level = 0
+        if "level" in message:
+            if message["level"] == "ERROR":
+                level = 4
+            elif message["level"] == "WARNING":
+                level = 3
+            elif message["level"] == "INFO":
+                level = 2
+        if "ctx" in message and "daemon" in message["ctx"]:
+            name = message["ctx"]["daemon"]
+        if "filename" in message:
+            file = message["filename"]
+        if "lineno" in message:
+            line = message["lineno"]
+
+        data = {
+            "timestamp": {
+                "nsec": (int(e["logMonoTime"]) + offset) % 1000000000,
+                "sec": (int(e["logMonoTime"]) + offset) // 1000000000
+            },
+            "level": level,
+            "message": e["errorLogMessage"],
+            "name": name,
+            "file": file,
+            "line": line,
+        }
+        writer.add_message(
+          logsChannel,
+          log_time=int(e["logMonoTime"]) + offset,
+          data=json.dumps(data, cls=Base64Encoder).encode("utf-8"),
+          publish_time=int(e["logMonoTime"]) + offset,
+        )
 
       writer.add_message(
           typeToChannel[str(event.which)],
@@ -262,6 +394,22 @@ def convert_log(log_file, fcam=None, dcam=None, ecam=None):
 
 
     writer.finish()
+
+def toQuaternion(roll, pitch, yaw):
+    cr = math.cos(roll * 0.5)
+    sr = math.sin(roll * 0.5)
+    cp = math.cos(pitch * 0.5)
+    sp = math.sin(pitch * 0.5)
+    cy = math.cos(yaw * 0.5)
+    sy = math.sin(yaw * 0.5)
+
+    q = {"w": 0, "x": 0, "y": 0, "z": 0}
+    q["w"] = cr * cp * cy + sr * sp * sy
+    q["x"] = sr * cp * cy - cr * sp * sy
+    q["y"] = cr * sp * cy + sr * cp * sy
+    q["z"] = cr * cp * sy - sr * sp * cy
+
+    return q
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="A helper to run PlotJuggler on openpilot routes",
