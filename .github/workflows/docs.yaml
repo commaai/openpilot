@@ -30,19 +30,7 @@ jobs:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
-      run: |
-        {
-        echo 'BUILD_LOG<<EOF'
-        echo $(${{ env.RUN }} "scons -j$(nproc) --cache-show")
-        echo EOF
-        } >> $GITHUB_OUTPUT
-      id: build_openpilot
-    - name: unit test - if cached by abspath
-      if: contains(steps.build_openpilot.outputs.BUILD_LOG, env.WORKSPACE)
-      run: |
-        echo "'${{ (steps.build_openpilot.outputs.BUILD_LOG) }}'"
-        echo "Failed - contains abspath while building"
-        exit 1
+      uses: ./.github/workflows/build-openpilot-test-relpath
     - name: Build docs
       run: |
         ${{ env.RUN }} "apt update && apt install -y doxygen && cd docs && make -j$(nproc) html"

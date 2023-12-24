@@ -1,0 +1,18 @@
+name: 'build openpilot and test caching by relative path'
+
+runs: 
+  using: "composite"
+  steps:
+    - id: build_openpilot
+      run: |
+        {
+        echo 'BUILD_LOG<<EOF'
+        ${{ env.RUN }} "scons -j$(nproc) --cache-show"
+        echo EOF
+        } >> $GITHUB_OUTPUT
+    - name: check if cached by relative path
+      if: contains(steps.build_openpilot.outputs.BUILD_LOG, env.WORKSPACE)
+      run: |
+        echo "${{ (steps.build_openpilot.outputs.BUILD_LOG) }}"
+        echo "Failed - contains abspath while building"
+        exit 1
