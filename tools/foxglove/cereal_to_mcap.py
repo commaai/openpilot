@@ -110,7 +110,7 @@ def juggle_route(route_or_segment_name, segment_count, qlog, ci=False, fcam=Fals
   with tempfile.NamedTemporaryFile(suffix='.rlog', dir=juggle_dir) as tmp:
     save_log(tmp.name, all_data, compress=False)
     del all_data
-    convert_log(tmp.name, fcamera, dcamera, ecamera)
+    convert_log(f"{str(route_or_segment_name.canonical_name).split('|')[1]}.mcap", tmp.name, fcamera, dcamera, ecamera)
 
 def load_segment(segment_name):
   if segment_name is None:
@@ -122,12 +122,12 @@ def load_segment(segment_name):
     print(f"Error parsing {segment_name}: {e}")
     return []
 
-def convert_log(log_file, fcam=None, dcam=None, ecam=None):
+def convert_log(name, log_file, fcam=None, dcam=None, ecam=None):
   channel_exclusions = ['logMonoTime', 'valid']
   fcam_index = 0
   dcam_index = 0
   ecam_index = 0
-  with open("test.mcap", "wb") as f:
+  with open(name, "wb") as f:
     writer = Writer(f)
     writer.start()
 
@@ -412,7 +412,7 @@ def toQuaternion(roll, pitch, yaw):
     return q
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="A helper to run PlotJuggler on openpilot routes",
+  parser = argparse.ArgumentParser(description="A helper to convert openpilot routes to mcap files for foxglove studio",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
   parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
