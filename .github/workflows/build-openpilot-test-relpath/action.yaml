@@ -4,6 +4,7 @@ runs:
   using: "composite"
   steps:
     - id: build_openpilot
+      shell: bash
       run: |
         {
         echo 'BUILD_LOG<<EOF'
@@ -13,6 +14,7 @@ runs:
         echo "$GITHUB_OUTPUT"
     - name: check if cached by relative path
       if: contains(steps.build_openpilot.outputs.BUILD_LOG, env.WORKSPACE)
+      shell: bash
       run: |
         echo "${{ (steps.build_openpilot.outputs.BUILD_LOG) }}"
         echo "Failed - contains abspath while building"
