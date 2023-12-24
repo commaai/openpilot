@@ -17,7 +17,9 @@ env:
 
   BUILD: selfdrive/test/docker_build.sh base
 
-  RUN: docker run --shm-size 1G -v $GITHUB_WORKSPACE:/tmp/openpilot -w /tmp/openpilot -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/bash -c
+  WORKSPACE: /tmp/openpilot/
+
+  RUN: docker run --shm-size 1G -v $GITHUB_WORKSPACE:$WORKSPACE -w $WORKSPACE -e FILEREADER_CACHE=1 -e PYTHONPATH=$WORKSPACE -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/bash -c
 
   BUILD_CL: selfdrive/test/docker_build.sh cl
 
@@ -36,12 +38,25 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
       timeout-minutes: 5
-      run: ${{ env.RUN }} "scons -j$(nproc) cereal/ common/ --minimal"
+      run: | 
+      
+      ${{ env.RUN }} "scons -j$(nproc) cereal/ common/ --minimal"
     - name: Test PlotJuggler
       timeout-minutes: 2
       run: |
-        ${{ env.RUN }} "pytest tools/plotjuggler/"
-
+        {
+          echo 'BUILD_LOG<<EOF'
+          ${{ env.RUN }} "pytest tools/plotjuggler/"
+          echo EOF
+        } >> $GITHUB_OUTPUT
+        echo "${{ GITHUB_OUTPUT }}"
+      id: build_openpilot
+    - name: check if cached by relative path
+      if: contains(steps.build_openpilot.outputs.BUILD_LOG, env.WORKSPACE)
+      run: |
+        echo "${{ (steps.build_openpilot.outputs.BUILD_LOG) }}"
+        echo "Failed - contains abspath while building"
+        exit 1
   simulator:
     name: simulator
     runs-on: ubuntu-20.04
@@ -85,7 +100,18 @@ jobs:
         devcontainer up --workspace-folder .
     - name: Test environment
       run: |
-        devcontainer exec --workspace-folder . scons -j$(nproc)
+        {
+          echo 'BUILD_LOG<<EOF'
+          devcontainer exec --workspace-folder . scons -j$(nproc) --cache-show
+          echo EOF
+        } >> $GITHUB_OUTPUT
         devcontainer exec --workspace-folder . pip install pip-install-test
         devcontainer exec --workspace-folder . touch /home/batman/.comma/auth.json
         devcontainer exec --workspace-folder . sudo touch /root/test.txt
+      id: build_openpilot
+    - name: Unit test - if build cached relpath
+      if: contains(steps.build_openpilot.BUILDLOG, env.WORKSPACE)
+      run: |
+        echo "${{ (steps.build_openpilot.outputs.BUILD_LOG) }}"
+        echo "Failed - contains abspath while building"
+        exit 1

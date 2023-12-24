@@ -154,7 +154,7 @@ jobs:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
-      run: ${{ env.RUN }} "scons -j$(nproc)"
+      uses: ./.github/workflows/build-openpilot-test-relpath
     - name: Run valgrind
       timeout-minutes: 1
       run: |
@@ -173,7 +173,7 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
-      run: ${{ env.RUN }} "scons -j$(nproc)"
+      uses: ./.github/workflows/build-openpilot-test-relpath
     - name: Run unit tests
       timeout-minutes: 15
       run: |
@@ -210,8 +210,7 @@ jobs:
         path: .ci_cache/comma_download_cache
         key: proc-replay-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/ref_commit') }}
     - name: Build openpilot
-      run: |
-        ${{ env.RUN }} "scons -j$(nproc)"
+      uses: ./.github/workflows/build-openpilot-test-relpath
     - name: Run replay
       timeout-minutes: 30
       run: |
@@ -259,8 +258,7 @@ jobs:
     - name: Build Docker image
       run: eval "$BUILD_CL"
     - name: Build openpilot
-      run: |
-        ${{ env.RUN }} "scons -j$(nproc)"
+      uses: ./.github/workflows/build-openpilot-test-relpath
     - name: Run regen
       timeout-minutes: 30
       run: |
@@ -281,8 +279,7 @@ jobs:
       # Sim docker is needed to get the OpenCL drivers
       run: eval "$BUILD_CL"
     - name: Build openpilot
-      run: |
-        ${{ env.RUN }} "scons -j$(nproc)"
+      uses: ./.github/workflows/build-openpilot-test-relpath
     # PYTHONWARNINGS triggers a SyntaxError in onnxruntime
     - name: Run model replay with ONNX
       timeout-minutes: 4
@@ -322,7 +319,7 @@ jobs:
         path: .ci_cache/comma_download_cache
         key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'selfdrive/car/tests/routes.py') }}-${{ matrix.job }}
     - name: Build openpilot
-      run: ${{ env.RUN }} "scons -j$(nproc)"
+      uses: ./.github/workflows/build-openpilot-test-relpath
     - name: Test car models
       timeout-minutes: 25
       run: |
