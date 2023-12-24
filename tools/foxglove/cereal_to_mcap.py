@@ -14,7 +14,8 @@ import tempfile
 import multiprocessing
 import math
 from openpilot.selfdrive.test.openpilotci import get_url
-from openpilot.tools.foxglove.json_schema import get_event_schemas
+from openpilot.tools.foxglove.json_schema import get_event_schemas, rawImage
+from openpilot.tools.lib.framereader import FrameReader
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -42,8 +43,11 @@ class Base64Encoder(json.JSONEncoder):
 
 schemas = get_event_schemas()
 
-def juggle_route(route_or_segment_name, segment_count, qlog, ci=False):
+def juggle_route(route_or_segment_name, segment_count, qlog, ci=False, fcam=False, dcam=False, ecam=False):
   segment_start = 0
+  fcam_paths = []
+  dcamera_paths = []
+  ecamera_paths = []
   if 'cabana' in route_or_segment_name:
     query = parse_qs(urlparse(route_or_segment_name).query)
     route_or_segment_name = query["route"][0]
@@ -63,10 +67,16 @@ def juggle_route(route_or_segment_name, segment_count, qlog, ci=False):
       segment_count = 1
 
     r = Route(route_or_segment_name.route_name.canonical_name, route_or_segment_name.data_dir)
+    fcam_paths = r.camera_paths()
+    dcam_paths = r.dcamera_paths()
+    ecam_paths = r.ecamera_paths()
     logs = r.qlog_paths() if qlog else r.log_paths()
 
   segment_end = segment_start + segment_count if segment_count else None
   logs = logs[segment_start:segment_end]
+  fcam_paths = fcam_paths[segment_start:segment_end]
+  dcam_paths = dcam_paths[segment_start:segment_end]
+  ecam_paths = ecam_paths[segment_start:segment_end]
 
   if None in logs:
     resp = input(f"{logs.count(None)}/{len(logs)} of the rlogs in this segment are missing, would you like to fall back to the qlogs? (y/n) ")
@@ -81,10 +91,26 @@ def juggle_route(route_or_segment_name, segment_count, qlog, ci=False):
     for d in pool.map(load_segment, logs):
       all_data += d
 
+  fcamera = None
+  dcamera = None
+  ecamera = None
+  if fcam:
+    fcamera = []
+    for p in fcam_paths:
+      fcamera.append(FrameReader(p))
+  if dcam:
+    dcamera = []
+    for p in dcam_paths:
+      dcamera.append(FrameReader(p))
+  if ecam:
+    ecamera = []
+    for p in ecam_paths:
+      ecamera.append(FrameReader(p))
+
   with tempfile.NamedTemporaryFile(suffix='.rlog', dir=juggle_dir) as tmp:
     save_log(tmp.name, all_data, compress=False)
     del all_data
-    convert_log(tmp.name)
+    convert_log(tmp.name, fcamera, dcamera, ecamera)
 
 def load_segment(segment_name):
   if segment_name is None:
@@ -96,11 +122,43 @@ def load_segment(segment_name):
     print(f"Error parsing {segment_name}: {e}")
     return []
 
-def convert_log(log_file):
+def convert_log(log_file, fcam=None, dcam=None, ecam=None):
   channel_exclusions = ['logMonoTime', 'valid']
+  fcam_index = 0
+  dcam_index = 0
+  ecam_index = 0
   with open("test.mcap", "wb") as f:
     writer = Writer(f)
     writer.start()
+
+    cam_schema_id = 0
+    fcam_channel = None
+    dcam_channel = None
+    ecam_channel = None
+    if fcam is not None or dcam is not None or ecam is not None:
+      cam_schema_id = writer.register_schema(
+        name="foxglove.RawImage",
+        encoding=SchemaEncoding.JSONSchema,
+        data=bytes(json.dumps(rawImage), "utf-8"),
+      )
+    if fcam is not None:
+      fcam_channel = writer.register_channel(
+        topic="/fcam",
+        message_encoding=MessageEncoding.JSON,
+        schema_id=cam_schema_id,
+      )
+    if dcam is not None:
+      dcam_channel = writer.register_channel(
+        topic="/dcam",
+        message_encoding=MessageEncoding.JSON,
+        schema_id=cam_schema_id,
+      )
+    if ecam is not None:
+      ecam_channel = writer.register_channel(
+        topic="/ecam",
+        message_encoding=MessageEncoding.JSON,
+        schema_id=cam_schema_id,
+      )
 
     type_to_schema = {}
     for k in list(schemas.keys()):
@@ -128,12 +186,80 @@ def convert_log(log_file):
       e = event.to_dict()
       if str(event.which) == "initData":
         offset = int(e["initData"]["wallTimeNanos"]) - int(e["logMonoTime"])
+      elif str(event.which) == "roadCameraState" and fcam is not None:
+        segment = fcam_index // 1200
+        idx = fcam_index % 1200
+        frame = {
+          "timestamp": {
+            "nsec": (int(e["logMonoTime"]) + offset) % 1000000000,
+            "sec": (int(e["logMonoTime"]) + offset) // 1000000000
+          },
+          "frame_id": str(e["roadCameraState"]["frameId"]),
+          "data": bytes(fcam[segment].get(idx, pix_fmt="rgb24")[0]),
+          "width": fcam[segment].w,
+          "height": fcam[segment].h,
+          "encoding": "rgb8",
+          "step": fcam[segment].w*3,
+        }
+        writer.add_message(
+            fcam_channel,
+            log_time=int(e["logMonoTime"]) + offset,
+            data=json.dumps(frame, cls=Base64Encoder).encode("utf-8"),
+            publish_time=int(e["logMonoTime"]) + offset,
+        )
+        fcam_index += 1
+      elif str(event.which) == "driverCameraState" and dcam is not None:
+        segment = dcam_index // 1200
+        idx = dcam_index % 1200
+        frame = {
+          "timestamp": {
+            "nsec": (int(e["logMonoTime"]) + offset) % 1000000000,
+            "sec": (int(e["logMonoTime"]) + offset) // 1000000000
+          },
+          "frame_id": str(e["roadCameraState"]["frameId"]),
+          "data": bytes(dcam[segment].get(idx, pix_fmt="rgb24")[0]),
+          "width": dcam[segment].w,
+          "height": dcam[segment].h,
+          "encoding": "rgb8",
+          "step": dcam[segment].w*3,
+        }
+        writer.add_message(
+            dcam_channel,
+            log_time=int(e["logMonoTime"]) + offset,
+            data=json.dumps(frame, cls=Base64Encoder).encode("utf-8"),
+            publish_time=int(e["logMonoTime"]) + offset,
+        )
+        dcam_index += 1
+      elif str(event.which) == "wideRoadCameraState" and ecam is not None:
+        segment = ecam_index // 1200
+        idx = ecam_index % 1200
+        frame = {
+          "timestamp": {
+            "nsec": (int(e["logMonoTime"]) + offset) % 1000000000,
+            "sec": (int(e["logMonoTime"]) + offset) // 1000000000
+          },
+          "frame_id": str(e["roadCameraState"]["frameId"]),
+          "data": bytes(ecam[segment].get(idx, pix_fmt="rgb24")[0]),
+          "width": ecam[segment].w,
+          "height": ecam[segment].h,
+          "encoding": "rgb8",
+          "step": ecam[segment].w*3,
+        }
+        writer.add_message(
+            ecam_channel,
+            log_time=int(e["logMonoTime"]) + offset,
+            data=json.dumps(frame, cls=Base64Encoder).encode("utf-8"),
+            publish_time=int(e["logMonoTime"]) + offset,
+        )
+        ecam_index += 1
+
       writer.add_message(
           typeToChannel[str(event.which)],
           log_time=int(e["logMonoTime"]) + offset,
           data=json.dumps(e, cls=Base64Encoder).encode("utf-8"),
-          publish_time=int(e["logMonoTime"]),
+          publish_time=int(e["logMonoTime"]) + offset,
       )
+
 
     writer.finish()
 
@@ -144,6 +270,9 @@ if __name__ == "__main__":
   parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
   parser.add_argument("--qlog", action="store_true", help="Use qlogs")
   parser.add_argument("--ci", action="store_true", help="Download data from openpilot CI bucket")
+  parser.add_argument("--fcam", action="store_true", help="Include fcamera data")
+  parser.add_argument("--dcam", action="store_true", help="Include dcamera data")
+  parser.add_argument("--ecam", action="store_true", help="Include ecamera data")
   parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to plot (cabana share URL accepted)")
   parser.add_argument("segment_count", type=int, nargs='?', help="The number of segments to plot")
 
@@ -153,7 +282,7 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
-  juggle_route(route_or_segment_name, args.segment_count, args.qlog, args.ci)
+  juggle_route(route_or_segment_name, args.segment_count, args.qlog, args.ci, args.fcam, args.dcam, args.ecam)
 
 
 
