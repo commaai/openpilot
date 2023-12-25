@@ -336,6 +336,8 @@ class CarStateBase(ABC):
     self.right_blinker_prev = False
     self.cluster_speed_hyst_gap = 0.0
     self.cluster_min_speed = 0.0  # min speed before dropping to 0
+    self.distance_button = 0
+    self.prev_distance_button = 0
 
     Q = [[0.0, 0.0], [0.0, 100.0]]
     R = 0.3

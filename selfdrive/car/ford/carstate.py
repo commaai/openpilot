@@ -23,6 +23,9 @@ class CarState(CarStateBase):
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
+    self.prev_distance_buttons = self.distance_button
+    self.distance_button = cp.vl["Steering_Data_FD1"]["AccButtnGapTogglePress"]
+
     # Ford Q3 hybrid variants experience a bug where a message from the PCM sends invalid checksums,
     # this must be root-caused before enabling support. Ford Q4 hybrids do not have this problem.
     # TrnAin_Tq_Actl and its quality flag are only set on ICE platform variants

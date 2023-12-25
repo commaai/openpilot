@@ -160,6 +160,13 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint != CAR.PRIUS_V:
       self.lkas_hud = copy.copy(cp_cam.vl["LKAS_HUD"])
 
+    if self.CP.carFingerprint in TSS2_CAR or (self.CP.flags & ToyotaFlags.SMART_DSU):
+      self.prev_distance_button = self.distance_button
+      dist_bus = cp if self.CP.flags & ToyotaFlags.SMART_DSU else cp_acc
+      dist_src = "SDSU" if self.CP.flags & ToyotaFlags.SMART_DSU else "ACC_CONTROL"
+      dist_sig = "FD_BUTTON" if self.CP.flags & ToyotaFlags.SMART_DSU else "DISTANCE"
+      self.distance_button = dist_bus.vl[dist_src][dist_sig]
+
     return ret
 
   @staticmethod
@@ -206,6 +213,9 @@ class CarState(CarStateBase):
       messages += [
         ("PRE_COLLISION", 33),
       ]
+
+    if CP.flags & ToyotaFlags.SMART_DSU:
+      messages.append(("SDSU", 33))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
 

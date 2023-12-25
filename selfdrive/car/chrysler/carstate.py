@@ -25,6 +25,9 @@ class CarState(CarStateBase):
 
     ret = car.CarState.new_message()
 
+    self.prev_distance_button = self.distance_button
+    self.distance_button = cp.vl["CRUISE_BUTTONS"]["ACC_Distance_Dec"]
+
     # lock info
     ret.doorOpen = any([cp.vl["BCM_1"]["DOOR_OPEN_FL"],
                         cp.vl["BCM_1"]["DOOR_OPEN_FR"],

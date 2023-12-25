@@ -116,6 +116,12 @@ class CarState(CarStateBase):
     if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
       self.es_infotainment_msg = copy.copy(cp_cam.vl["ES_Infotainment"])
 
+    self.prev_distance_button = self.distance_button
+    if self.car_fingerprint in PREGLOBAL_CARS:
+      self.distance_button = cp_cam.vl["ES_Distance"]["Distance_Swap"]
+    elif self.car_fingerprint not in HYBRID_CARS:
+      self.distance_button = cp_es_distance.vl["ES_Distance"]["Distance_Swap"]
+
     return ret
 
   @staticmethod
