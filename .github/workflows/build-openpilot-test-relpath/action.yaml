@@ -13,9 +13,8 @@ runs:
         } >> $GITHUB_OUTPUT
         echo "$(cat $GITHUB_OUTPUT)"
     - name: check if cached by relative path
-      if: contains(steps.build_openpilot.outputs.BUILD_LOG, env.WORKSPACE)
       shell: bash
       run: |
-        echo "${{ (steps.build_openpilot.outputs.BUILD_LOG) }}"
-        echo "Failed - contains abspath while building"
-        exit 1
+        echo "${{ steps.build_openpilot.outputs.BUILD_LOG }}" >> $GITHUB_WORKSPACE/output.txt
+        ${{ env.RUN }} "python3 scripts/test_relcache.py output.txt '${{ env.WORKSPACE }}'"
+        rm $GITHUB_WORKSPACE/output.txt

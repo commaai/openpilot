@@ -1,4 +1,0 @@
-Compiling /
-[1/1] Cythonizing
-
-/tmp/openpilot

@@ -15,7 +15,7 @@ class Test_RelCached(unittest.TestCase):
         else:
           words = line.split(" ")
           for wrd in words:
-            if wrd == WORKSPACE:
+            if WORKSPACE in wrd:
               self.fail("Contains absolute path while building")
 
 if __name__ == "__main__":
