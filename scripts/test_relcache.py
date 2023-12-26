@@ -2,7 +2,7 @@ import sys
 import unittest
 
 OUTPUT_FILE = sys.argv[1]
-WORKSPACE = sys.argv[2] 
+WORKSPACE = sys.argv[2]
 
 class Test_RelCached(unittest.TestCase):
 
@@ -10,7 +10,7 @@ class Test_RelCached(unittest.TestCase):
     valid_start_strings = ['Compiling /', '[1/1] Cythonizing']
     with open(OUTPUT_FILE, 'r') as f:
       for line in f:
-        if line.startswith(valid_start_strings[0]) or line.startswith(valid_start_strings[1]):
+        if line.startswith((valid_start_strings[0], valid_start_strings[1])):
           continue
         else:
           words = line.split(" ")
