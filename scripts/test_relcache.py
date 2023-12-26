@@ -4,6 +4,7 @@ import unittest
 OUTPUT_FILE = sys.argv[1]
 WORKSPACE = sys.argv[2]
 print("****WORKSPACE: ", WORKSPACE)
+print("****WORKSPACE: ", type(WORKSPACE))
 
 class Test_RelCached(unittest.TestCase):
   def relcache(self):
@@ -20,4 +21,4 @@ class Test_RelCached(unittest.TestCase):
               self.fail("Contains absolute path while building")
 
 if __name__ == "__main__":
-    unittest.main()
+  unittest.main()

@@ -41,7 +41,7 @@ jobs:
       run: |
         echo "${{ steps.build_openpilot.outputs.BUILD_LOG }}" >> $GITHUB_WORKSPACE/output.txt
         echo "${{ env.WORKSPACE }}" >> $GITHUB_WORKSPACE/workspace.txt
-        ${{ env.RUN }} "python3 scripts/test_relcache.py output.txt ${{ env.WORKSPACE }}"
+        ${{ env.RUN }} "python3 scripts/test_relcache.py output.txt '${{ env.WORKSPACE }}'"
         rm $GITHUB_WORKSPACE/output.txt
         rm $GITHUB_WORKSPACE/workspace.txt
     - name: Build docs
