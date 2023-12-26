@@ -7,7 +7,7 @@ print("****WORKSPACE: ", WORKSPACE)
 print("****WORKSPACE: ", type(WORKSPACE))
 
 class Test_RelCached(unittest.TestCase):
-  def relcache(self):
+  def test_relcache(self):
     valid_start_strings = ['Compiling /', '[1/1] Cythonizing']
     with open(OUTPUT_FILE, 'r') as f:
       for line in f:
