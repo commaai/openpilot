@@ -39,7 +39,7 @@ jobs:
       id: build_openpilot
     - name: unit test if rel cached
       run: |
-        echo "${{ steps.build_openpilot.BUILD_LOG }}" >> $GITHUB_WORKSPACE/output.txt
+        echo "${{ steps.build_openpilot.outputs.BUILD_LOG }}" >> $GITHUB_WORKSPACE/output.txt
         ${{ env.RUN }} "python3 test.py output.txt"
     - name: Build docs
       run: |
