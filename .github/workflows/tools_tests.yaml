@@ -105,6 +105,6 @@ jobs:
     - name: Unit test - if build cached relpath
       if: contains(steps.build_openpilot.BUILDLOG, env.WORKSPACE)
       run: |
-        echo "${{ (steps.build_openpilot.outputs.BUILD_LOG) }}"
-        echo "Failed - contains abspath while building"
-        exit 1
+        echo "${{ steps.build_openpilot.outputs.BUILD_LOG }}" >> $GITHUB_WORKSPACE/output.txt
+        ${{ env.RUN }} "python3 scripts/test_relcache.py output.txt '${{ env.WORKSPACE }}'"
+        rm $GITHUB_WORKSPACE/output.txt
