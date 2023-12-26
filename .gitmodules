@@ -1,6 +1,3 @@
-[submodule "cereal"]
-  path = cereal
-  url = ../../commaai/cereal.git
 [submodule "teleoprtc_repo"]
   path = teleoprtc_repo
   url = ../../commaai/teleoprtc
@@ -19,3 +16,6 @@
 [submodule "rednose_repo"]
 	path = rednose_repo
 	url = git@github.com:bongbui321/rednose_repo.git
+[submodule "cereal"]
+	path = cereal
+	url = git@github.com:bongbui321/cereal.git

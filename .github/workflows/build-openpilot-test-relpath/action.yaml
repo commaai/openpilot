@@ -8,7 +8,7 @@ runs:
       run: |
         {
         echo 'BUILD_LOG<<EOF'
-        ${{ env.RUN }} "scons -j$(nproc) --warn=all --cache-show"
+        ${{ env.RUN }} "scons -j$(nproc) --cache-show --warn=all"
         echo EOF
         } >> $GITHUB_OUTPUT
         echo "$(cat $GITHUB_OUTPUT)"
