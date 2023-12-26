@@ -260,6 +260,8 @@ class CarInterface(CarInterfaceBase):
     ret.stopAccel = -2.5
 
     tune = ret.longitudinalTuning
+    tune.deadzoneBP = [0., 9.]
+    tune.deadzoneV = [.0, .15]
     tune.kpBP = [0.,]
     tune.kiBP = [0., 3.]
     tune.kpV = [1.]
