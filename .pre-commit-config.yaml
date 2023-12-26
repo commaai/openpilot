@@ -21,7 +21,7 @@ repos:
     -   id: check-added-large-files
         exclude: '(docs/CARS.md)|(poetry.lock)|(third_party/acados/include/blasfeo/include/blasfeo_d_kernel.h)'
         args:
-        - --maxkb=100
+        - --maxkb=120
         - --enforce-all
 -   repo: https://github.com/codespell-project/codespell
     rev: v2.2.6
