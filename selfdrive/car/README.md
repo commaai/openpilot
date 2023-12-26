@@ -63,6 +63,9 @@ AssertionError: 1 is not false : panda safety doesn't agree with openpilot: {'ga
 ### interface.py
 Generic interface to send and receive messages from CAN (controlsd uses this to communicate with car)
 
+### fingerprints.py
+Fingerprints for matching to a specific car
+
 ### carcontroller.py
 Builds CAN messages to send to car
 
@@ -70,7 +73,7 @@ Builds CAN messages to send to car
 Reads CAN from car and builds openpilot CarState message
 
 ##### values.py
-Fingerprints, limits for actuation, and supported car documentation
+Limits for actuation, general constants for cars, and supported car documentation
 
 ##### radar_interface.py
 Interface for parsing radar points from the car

@@ -1,17 +1,12 @@
 #include "system/camerad/cameras/camera_qcom2.h"
 
-#include <fcntl.h>
 #include <poll.h>
 #include <sys/ioctl.h>
-#include <sys/mman.h>
-#include <unistd.h>
 
 #include <algorithm>
-#include <atomic>
 #include <cassert>
 #include <cerrno>
 #include <cmath>
-#include <cstdio>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -19,6 +14,7 @@
 #include "media/cam_defs.h"
 #include "media/cam_isp.h"
 #include "media/cam_isp_ife.h"
+#include "media/cam_req_mgr.h"
 #include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sync.h"
 #include "common/swaglog.h"
@@ -139,7 +135,6 @@ int CameraState::sensors_init() {
   buf_desc[1].size = buf_desc[1].length = 196;
   buf_desc[1].type = CAM_CMD_BUF_I2C;
   auto power_settings = mm.alloc<struct cam_cmd_power>(buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
-  memset(power_settings.get(), 0, buf_desc[1].size);
 
   // power on
   struct cam_cmd_power *power = power_settings.get();
