@@ -38,7 +38,7 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
       timeout-minutes: 5
-      run: ${{ env.RUN }} "scons -j$(nproc) cereal/ common/ --minimal"
+      run: ${{ env.RUN }} "scons -j$(nproc) cereal/ common/ --minimal --warn=all"
     - name: Test PlotJuggler
       timeout-minutes: 2
       run: |
@@ -95,7 +95,7 @@ jobs:
       run: |
         {
           echo 'BUILD_LOG<<EOF'
-          devcontainer exec --workspace-folder . scons -j$(nproc) --cache-show
+          devcontainer exec --workspace-folder . scons -j$(nproc) --cache-show --warn=all
           echo EOF
         } >> $GITHUB_OUTPUT
         devcontainer exec --workspace-folder . pip install pip-install-test

@@ -4,10 +4,12 @@ import sys
 import sysconfig
 import platform
 import numpy as np
+import re
 
 import SCons.Errors
 
 SCons.Warnings.warningAsException(True)
+
 
 TICI = os.path.isfile('/TICI')
 AGNOS = TICI
@@ -338,6 +340,31 @@ if GetOption("clazy"):
   qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
 
 Export('env', 'qt_env', 'arch', 'real_arch')
+
+# Define custom scanner for only existing files and non-std files
+def exist_scan(node, env, path):
+  fname = str(node)
+  if  fname == "selfdrive/locationd/models/live_kf.cc" or fname == "selfdrive/locationd/locationd.cc":
+    env.Depends("selfdrive/locationd/models/live_kf.cc", ["selfdrive/locationd/models/generated/live_kf_constants.h","selfdrive/locationd/models/generated/live_kf_constants.cc"])
+    env.Depends("selfdrive/locationd/locationd.cc", ["selfdrive/locationd/models/generated/live_kf_constants.h","selfdrive/locationd/models/generated/live_kf_constants.cc"])
+  include_re = re.compile(r'^#include\s+(\S+)$', re.M)
+  exist_files = []
+  contents = node.get_text_contents()
+  include_dirs = include_re.findall(contents)
+  cpppaths = env["CPPPATH"]
+  for file in include_dirs:
+    file = file.strip('"<>"')
+    for cpppath in cpppaths:
+      cpppath = Dir(cpppath).relpath
+      fpath = os.path.join(cpppath, file)
+      if os.path.isfile(fpath):
+        exist_files.append(File(fpath))
+  return exist_files
+  
+my_exist_scan = Scanner(name="EXIST_SCANNER",function=exist_scan)
+file_extensions = ['.c', '.h', '.cc', '.cpp']
+for e in file_extensions:
+  SourceFileScanner.add_scanner(e,my_exist_scan)
 
 # Build common module
 SConscript(['common/SConscript'])
