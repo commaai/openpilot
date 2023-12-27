@@ -113,6 +113,10 @@ class CarState(CarStateBase):
       if self.CP.pcmCruise:
         ret.cruiseState.nonAdaptive = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCCruiseState"] not in (2, 3)
 
+    if self.CP.networkLocation == NetworkLocation.fwdCamera:
+      ret.leftBlindspot = pt_cp.vl["BCMBSM"]["Left_BSM"] == 1
+      ret.rightBlindspot = pt_cp.vl["BCMBSM"]["Right_BSM"] == 1
+
     return ret
 
   @staticmethod
@@ -131,6 +135,7 @@ class CarState(CarStateBase):
   def get_can_parser(CP):
     messages = [
       ("BCMTurnSignals", 1),
+      ("BCMBSM", 10),
       ("ECMPRDNL2", 10),
       ("PSCMStatus", 10),
       ("ESPStatus", 10),
