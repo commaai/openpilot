@@ -73,9 +73,46 @@ def errorLogMessage(event, offset):
           "line": line,
         }
 
+def logMessage(event, offset):
+  log_message = json.loads(event["errorLogMessage"])
+  name = "Unknown"
+  file = "Unknown"
+  line = 0
+  level = 2
+
+  if "level" in message:
+    if message["level"] == "ERROR":
+      level = 4
+    elif message["level"] == "WARNING":
+      level = 3
+    elif message["level"] == "INFO":
+      level = 2
+    elif message["level"] == "DEBUG":
+      level = 1
+
+  if "ctx" in log_message and "daemon" in log_message["ctx"]:
+    name = log_message["ctx"]["daemon"]
+    if "filename" in log_message:
+      file = log_message["filename"]
+      if "lineno" in log_message:
+        line = log_message["lineno"]
+
+        data = {
+          "timestamp": {
+            "nsec": (int(event["logMonoTime"]) + offset) % 1000000000,
+            "sec": (int(event["logMonoTime"]) + offset) // 1000000000
+          },
+          "level": level,
+          "message": event["errorLogMessage"],
+          "name": name,
+          "file": file,
+          "line": line,
+        }
+
 TRANSFORMERS = {
   "modelV2": modelV2,
   "liveLocationKalman": liveLocationKalman,
   "thumbnail": thumbnail,
-  "errorLogMessage": errorLogMessage
+  "errorLogMessage": errorLogMessage,
+  "logMessage": logMessage
 }

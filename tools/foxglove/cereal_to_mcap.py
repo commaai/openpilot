@@ -140,6 +140,7 @@ def convert_log(name, log_file, cams):
       "modelV2": frameTransformChannel,
       "liveLocationKalman": liveLocationChannel,
       "errorLogMessage": logsChannel,
+      "logMessage": logsChannel,
     }
 
     logf = open(log_file, 'rb')
@@ -186,6 +187,3 @@ if __name__ == "__main__":
 
   route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
   juggle_route(route_or_segment_name, args.segment_count, args.qlog, args.ci, args.fcam, args.dcam, args.ecam)
-
-
-
