@@ -1,25 +1,3 @@
-# Limitations
-## Limitations of openpilot ALC and LDW
-
-openpilot ALC and openpilot LDW do not automatically drive the vehicle or reduce the amount of attention that must be paid to operate your vehicle. The driver must always keep control of the steering wheel and be ready to correct the openpilot ALC action at all times.
-
-While changing lanes, openpilot is not capable of looking next to you or checking your blind spot. Only nudge the wheel to initiate a lane change after you have confirmed it's safe to do so.
-
-Many factors can impact the performance of openpilot ALC and openpilot LDW, causing them to be unable to function as intended. These include, but are not limited to:
-
-* Poor visibility (heavy rain, snow, fog, etc.) or weather conditions that may interfere with sensor operation.
-* The road facing camera is obstructed, covered or damaged by mud, ice, snow, etc.
-* Obstruction caused by applying excessive paint or adhesive products (such as wraps, stickers, rubber coating, etc.) onto the vehicle.
-* The device is mounted incorrectly.
-* When in sharp curves, like on-off ramps, intersections etc...; openpilot is designed to be limited in the amount of steering torque it can produce.
-* In the presence of restricted lanes or construction zones.
-* When driving on highly banked roads or in presence of strong cross-wind.
-* Extremely hot or cold temperatures.
-* Bright light (due to oncoming headlights, direct sunlight, etc.).
-* Driving on hills, narrow, or winding roads.
-
-The list above does not represent an exhaustive list of situations that may interfere with proper operation of openpilot components. It is the driver's responsibility to be in control of the vehicle at all times.
-
 ## Limitations of openpilot ACC and FCW
 
 openpilot ACC and openpilot FCW are not systems that allow careless or inattentive driving. It is still necessary for the driver to pay close attention to the vehicle’s surroundings and to be ready to re-take control of the gas and the brake at all times.
