@@ -110,13 +110,13 @@ def convert_log(name, log_file, cams):
 
     cam_schema_id = 0
     cam_channels = {}
-    if fcam is not None or dcam is not None or ecam is not None:
+    if len(cams.keys()) > 0:
       cam_schema_id = register_schema(writer, "foxglove.RawImage", RAW_IMAGE)
-    if fcam is not None:
+    if "roadCameraState" in cams:
       cam_channels["roadCameraState"] = register_channel(writer, "/fcam", cam_schema_id)
-    if dcam is not None:
+    if "driverCameraState" in cams:
       cam_channels["driverCameraState"] = register_channel(writer, "/dcam", cam_schema_id)
-    if ecam is not None:
+    if "wideRoadCameraState" in cams:
       cam_channels["wideRoadCameraState"] = register_channel(writer, "/ecam", cam_schema_id)
 
     type_to_schema = {}
