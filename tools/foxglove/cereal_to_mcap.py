@@ -2,7 +2,6 @@ import cereal
 import json
 from mcap.writer import Writer
 from mcap.well_known import SchemaEncoding, MessageEncoding
-from base64 import b64encode
 import argparse
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import Route, SegmentName
@@ -12,34 +11,15 @@ import sys
 import os
 import tempfile
 import multiprocessing
-import math
 from openpilot.selfdrive.test.openpilotci import get_url
-from openpilot.tools.foxglove.json_schema import get_event_schemas, rawImage, compressedImage, frameTransform, locationFix, logs
+from openpilot.tools.foxglove.json_schema import get_event_schemas
+from openpilot.tools.foxglove.foxglove_schemas import RAW_IMAGE, COMPRESSED_IMAGE, FRAME_TRANSFORM, LOCATION_FIX, LOG
+from openpilot.tools.foxglove.utils import register_schema, register_channel, register, message, toQuaternion
 from openpilot.tools.lib.framereader import FrameReader
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
 
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
-
-def nan2None(obj):
-    if isinstance(obj, dict):
-        return {k:nan2None(v) for k,v in obj.items()}
-    elif isinstance(obj, list):
-        return [nan2None(v) for v in obj]
-    elif isinstance(obj, float) and math.isnan(obj):
-        return None
-    return obj
-
-class Base64Encoder(json.JSONEncoder):
-    def encode(self, obj, *args, **kwargs):
-        return super().encode(nan2None(obj), *args, **kwargs)
-    # pylint: disable=method-hidden
-    def default(self, o):
-        if isinstance(o, bytes):
-            return b64encode(o).decode()
-        if math.isnan(o):
-            return 0
-        return json.JSONEncoder.default(self, o)
 
 schemas = get_event_schemas()
 
@@ -136,89 +116,29 @@ def convert_log(name, log_file, fcam=None, dcam=None, ecam=None):
     dcam_channel = None
     ecam_channel = None
     if fcam is not None or dcam is not None or ecam is not None:
-      cam_schema_id = writer.register_schema(
-        name="foxglove.RawImage",
-        encoding=SchemaEncoding.JSONSchema,
-        data=bytes(json.dumps(rawImage), "utf-8"),
-      )
+      cam_schema_id = register_schema(writer, "foxglove.RawImage", RAW_IMAGE)
     if fcam is not None:
-      fcam_channel = writer.register_channel(
-        topic="/fcam",
-        message_encoding=MessageEncoding.JSON,
-        schema_id=cam_schema_id,
-      )
+      fcam_channel = register_channel(writer, "/fcam", cam_schema_id)
     if dcam is not None:
-      dcam_channel = writer.register_channel(
-        topic="/dcam",
-        message_encoding=MessageEncoding.JSON,
-        schema_id=cam_schema_id,
-      )
+      dcam_channel = register_channel(writer, "/dcam", cam_schema_id)
     if ecam is not None:
-      ecam_channel = writer.register_channel(
-        topic="/ecam",
-        message_encoding=MessageEncoding.JSON,
-        schema_id=cam_schema_id,
-      )
+      ecam_channel = register_channel(writer, "/ecam", cam_schema_id)
 
     type_to_schema = {}
     for k in list(schemas.keys()):
-      schema_id = writer.register_schema(
-        name=k,
-        encoding=SchemaEncoding.JSONSchema,
-        data=bytes(json.dumps(schemas[k]), "utf-8"),
-      )
+      schema_id = register_schema(writer, k, schemas[k])
       type_to_schema[k] = schema_id
 
     typeToChannel = {}
     for k in list(schemas.keys()):
       if k in channel_exclusions:
         continue
-      typeToChannel[k] = writer.register_channel(
-        topic=k,
-        message_encoding=MessageEncoding.JSON,
-        schema_id=type_to_schema[k],
-      )
+      typeToChannel[k] = register_channel(writer, k, type_to_schema[k])
 
-    compressedImageSchema = writer.register_schema(
-        name="foxglove.CompressedImage",
-        encoding=SchemaEncoding.JSONSchema,
-        data=bytes(json.dumps(compressedImage), "utf-8"),
-    )
-    thumbnailChannel = writer.register_channel(
-      topic="/thumbnail",
-      message_encoding=MessageEncoding.JSON,
-      schema_id=compressedImageSchema,
-    )
-    frameTransformSchema = writer.register_schema(
-        name="foxglove.FrameTransform",
-        encoding=SchemaEncoding.JSONSchema,
-        data=bytes(json.dumps(frameTransform), "utf-8"),
-    )
-    frameTransformChannel = writer.register_channel(
-      topic="/frameTransform",
-      message_encoding=MessageEncoding.JSON,
-      schema_id=frameTransformSchema,
-    )
-    locationFixSchema = writer.register_schema(
-        name="foxglove.LocationFix",
-        encoding=SchemaEncoding.JSONSchema,
-        data=bytes(json.dumps(locationFix), "utf-8"),
-    )
-    locationFixChannel = writer.register_channel(
-      topic="/liveLocation",
-      message_encoding=MessageEncoding.JSON,
-      schema_id=locationFixSchema,
-    )
-    logsSchema = writer.register_schema(
-        name="foxglove.Log",
-        encoding=SchemaEncoding.JSONSchema,
-        data=bytes(json.dumps(logs), "utf-8"),
-    )
-    logsChannel = writer.register_channel(
-      topic="/log",
-      message_encoding=MessageEncoding.JSON,
-      schema_id=logsSchema,
-    )
+    compressedImageSchema, thumbnailChannel = register(writer, "/thumbnail", "foxglove.CompressedImage", COMPRESSED_IMAGE)
+    frameTransformSchema, frameTransformChannel = register(writer, "/frameTransform", "foxglove.FrameTransform", FRAME_TRANSFORM)
+    locationFixSchema, liveLocationChannel = register(writer, "/liveLocation", "foxglove.LocationFix", LOCATION_FIX)
+    logsSchema, logsChannel = register(writer, "/log", "foxglove.Log", LOG)
     logf = open(log_file, 'rb')
     events = cereal.log.Event.read_multiple(logf)
 
@@ -242,12 +162,7 @@ def convert_log(name, log_file, fcam=None, dcam=None, ecam=None):
           "encoding": "rgb8",
           "step": fcam[segment].w*3,
         }
-        writer.add_message(
-            fcam_channel,
-            log_time=int(e["logMonoTime"]) + offset,
-            data=json.dumps(frame, cls=Base64Encoder).encode("utf-8"),
-            publish_time=int(e["logMonoTime"]) + offset,
-        )
+        message(writer, fcam_channel, e, offset, frame)
         fcam_index += 1
       elif str(event.which) == "driverCameraState" and dcam is not None:
         segment = dcam_index // 1200
@@ -264,12 +179,7 @@ def convert_log(name, log_file, fcam=None, dcam=None, ecam=None):
           "encoding": "rgb8",
           "step": dcam[segment].w*3,
         }
-        writer.add_message(
-            dcam_channel,
-            log_time=int(e["logMonoTime"]) + offset,
-            data=json.dumps(frame, cls=Base64Encoder).encode("utf-8"),
-            publish_time=int(e["logMonoTime"]) + offset,
-        )
+        message(writer, dcam_channel, e, offset, frame)
         dcam_index += 1
       elif str(event.which) == "wideRoadCameraState" and ecam is not None:
         segment = ecam_index // 1200
@@ -286,12 +196,7 @@ def convert_log(name, log_file, fcam=None, dcam=None, ecam=None):
           "encoding": "rgb8",
           "step": ecam[segment].w*3,
         }
-        writer.add_message(
-            ecam_channel,
-            log_time=int(e["logMonoTime"]) + offset,
-            data=json.dumps(frame, cls=Base64Encoder).encode("utf-8"),
-            publish_time=int(e["logMonoTime"]) + offset,
-        )
+        message(writer, ecam_channel, e, offset, frame)
         ecam_index += 1
       elif str(event.which) == "modelV2":
         position = e["modelV2"]["temporalPose"]["transStd"]
@@ -306,12 +211,7 @@ def convert_log(name, log_file, fcam=None, dcam=None, ecam=None):
             "translation": {"x":position[0], "y": position[1], "z": position[2]},
             "rotation": toQuaternion(orientation[0], orientation[1], orientation[2])
         }
-        writer.add_message(
-          frameTransformChannel,
-          log_time=int(e["logMonoTime"]) + offset,
-          data=json.dumps(data, cls=Base64Encoder).encode("utf-8"),
-          publish_time=int(e["logMonoTime"]) + offset,
-        )
+        message(writer, frameTransformChannel, e, offset, data)
       elif str(event.which) == "liveLocationKalman":
         data = {
             "timestamp": {
@@ -325,12 +225,7 @@ def convert_log(name, log_file, fcam=None, dcam=None, ecam=None):
             "position_covariance_type": 1,
             "position_covariance": [0, 0, 0, 0, 0, 0, 0, 0, 0],
         }
-        writer.add_message(
-          locationFixChannel,
-          log_time=int(e["logMonoTime"]) + offset,
-          data=json.dumps(data, cls=Base64Encoder).encode("utf-8"),
-          publish_time=int(e["logMonoTime"]) + offset,
-        )
+        message(writer, liveLocationChannel, e, offset, data)
       elif str(event.which) == "thumbnail":
         data = {
             "timestamp": {
@@ -341,31 +236,19 @@ def convert_log(name, log_file, fcam=None, dcam=None, ecam=None):
             "format": "jpeg",
             "data": e["thumbnail"]["thumbnail"],
         }
-        writer.add_message(
-          thumbnailChannel,
-          log_time=int(e["logMonoTime"]) + offset,
-          data=json.dumps(data, cls=Base64Encoder).encode("utf-8"),
-          publish_time=int(e["logMonoTime"]) + offset,
-        )
+        message(writer, thumbnailChannel, e, offset, data)
       elif str(event.which) == "errorLogMessage":
-        message = json.loads(e["errorLogMessage"])
+        log_message = json.loads(e["errorLogMessage"])
         name = "Unknown"
         file = "Unknown"
         line = 0
-        level = 0
-        if "level" in message:
-            if message["level"] == "ERROR":
-                level = 4
-            elif message["level"] == "WARNING":
-                level = 3
-            elif message["level"] == "INFO":
-                level = 2
-        if "ctx" in message and "daemon" in message["ctx"]:
-            name = message["ctx"]["daemon"]
-        if "filename" in message:
-            file = message["filename"]
-        if "lineno" in message:
-            line = message["lineno"]
+        level = 4
+        if "ctx" in log_message and "daemon" in log_message["ctx"]:
+            name = log_message["ctx"]["daemon"]
+        if "filename" in log_message:
+            file = log_message["filename"]
+        if "lineno" in log_message:
+            line = log_message["lineno"]
 
         data = {
             "timestamp": {
@@ -378,38 +261,12 @@ def convert_log(name, log_file, fcam=None, dcam=None, ecam=None):
             "file": file,
             "line": line,
         }
-        writer.add_message(
-          logsChannel,
-          log_time=int(e["logMonoTime"]) + offset,
-          data=json.dumps(data, cls=Base64Encoder).encode("utf-8"),
-          publish_time=int(e["logMonoTime"]) + offset,
-        )
+        message(writer, logsChannel, e, offset, data)
 
-      writer.add_message(
-          typeToChannel[str(event.which)],
-          log_time=int(e["logMonoTime"]) + offset,
-          data=json.dumps(e, cls=Base64Encoder).encode("utf-8"),
-          publish_time=int(e["logMonoTime"]) + offset,
-      )
+      message(writer, typeToChannel[str(event.which)], e, offset, e)
 
 
     writer.finish()
-
-def toQuaternion(roll, pitch, yaw):
-    cr = math.cos(roll * 0.5)
-    sr = math.sin(roll * 0.5)
-    cp = math.cos(pitch * 0.5)
-    sp = math.sin(pitch * 0.5)
-    cy = math.cos(yaw * 0.5)
-    sy = math.sin(yaw * 0.5)
-
-    q = {"w": 0, "x": 0, "y": 0, "z": 0}
-    q["w"] = cr * cp * cy + sr * sp * sy
-    q["x"] = sr * cp * cy - cr * sp * sy
-    q["y"] = cr * sp * cy + sr * cp * sy
-    q["z"] = cr * cp * sy - sr * sp * cy
-
-    return q
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="A helper to convert openpilot routes to mcap files for foxglove studio",
