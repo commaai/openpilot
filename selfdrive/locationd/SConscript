@@ -31,7 +31,7 @@ if arch != "Darwin":
   lenv["LINKFLAGS"] += ["-Wl,--no-as-needed"]
 
 lenv["LIBPATH"].append(Dir(rednose_gen_dir).abspath)
-lenv["RPATH"].append(Dir(rednose_gen_dir).abspath)
+lenv["RPATH"].append(lenv.Literal(f'\\$$ORIGIN/{rednose_gen_dir}'))
 locationd = lenv.Program("locationd", locationd_sources, LIBS=["live", "ekf_sym"] + loc_libs + transformations)
 lenv.Depends(locationd, rednose)
 lenv.Depends(locationd, live_ekf)
