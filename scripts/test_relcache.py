@@ -15,8 +15,7 @@ class Test_RelCached(unittest.TestCase):
         else:
           words = line.split(" ")
           for wrd in words:
-            if WORKSPACE in wrd:
-              self.fail(f"Contains absolute path for build on line {i+1}:\n {line}")
+            self.assertNotIn(WORKSPACE, wrd, msg=f"Uses abspath for building in line {i+1}:\n {line}")
 
 if __name__ == "__main__":
   del sys.argv[1:]
