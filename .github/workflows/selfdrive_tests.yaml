@@ -152,7 +152,7 @@ jobs:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
-      run: ${{ env.RUN }} "scons -j$(nproc) --warn=all"
+      run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run valgrind
       timeout-minutes: 1
       run: |
@@ -171,7 +171,7 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
-      run: ${{ env.RUN }} "scons -j$(nproc) --warn=all"
+      run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run unit tests
       timeout-minutes: 15
       run: |
@@ -209,7 +209,7 @@ jobs:
         key: proc-replay-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/ref_commit') }}
     - name: Build openpilot
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) --warn=all"
+        ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run replay
       timeout-minutes: 30
       run: |
@@ -258,7 +258,7 @@ jobs:
       run: eval "$BUILD_CL"
     - name: Build openpilot
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) --warn=all"
+        ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run regen
       timeout-minutes: 30
       run: |
@@ -280,7 +280,7 @@ jobs:
       run: eval "$BUILD_CL"
     - name: Build openpilot
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) --warn=all"
+        ${{ env.RUN }} "scons -j$(nproc)"
     # PYTHONWARNINGS triggers a SyntaxError in onnxruntime
     - name: Run model replay with ONNX
       timeout-minutes: 4
@@ -320,7 +320,7 @@ jobs:
         path: .ci_cache/comma_download_cache
         key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'selfdrive/car/tests/routes.py') }}-${{ matrix.job }}
     - name: Build openpilot
-      run: ${{ env.RUN }} "scons -j$(nproc) --warn=all"
+      run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test car models
       timeout-minutes: 25
       run: |
@@ -348,7 +348,7 @@ jobs:
       - uses: ./.github/workflows/setup-with-retry
       - name: Get base car info
         run: |
-          ${{ env.RUN }} "scons -j$(nproc) --warn=all && python selfdrive/debug/dump_car_info.py --path /tmp/openpilot_cache/base_car_info"
+          ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/debug/dump_car_info.py --path /tmp/openpilot_cache/base_car_info"
           sudo chown -R $USER:$USER ${{ github.workspace }}
       - uses: actions/checkout@v4
         with:
@@ -359,7 +359,7 @@ jobs:
         id: save_diff
         run: |
           cd current
-          ${{ env.RUN }} "scons -j$(nproc) --warn=all"
+          ${{ env.RUN }} "scons -j$(nproc)"
           output=$(${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/base_car_info")
           output="${output//$'\n'/'%0A'}"
           echo "::set-output name=diff::$output"

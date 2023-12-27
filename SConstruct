@@ -9,6 +9,7 @@ import re
 import SCons.Errors
 
 SCons.Warnings.warningAsException(True)
+SetOption('warn', 'all')
 
 TICI = os.path.isfile('/TICI')
 AGNOS = TICI
