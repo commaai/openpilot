@@ -10,7 +10,6 @@ import SCons.Errors
 
 SCons.Warnings.warningAsException(True)
 
-
 TICI = os.path.isfile('/TICI')
 AGNOS = TICI
 
@@ -360,7 +359,6 @@ def exist_scan(node, env, path):
       if os.path.isfile(fpath):
         exist_files.append(File(fpath))
   return exist_files
-  
 my_exist_scan = Scanner(name="EXIST_SCANNER",function=exist_scan)
 file_extensions = ['.c', '.h', '.cc', '.cpp']
 for e in file_extensions:

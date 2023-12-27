@@ -2,8 +2,6 @@ name: selfdrive
 
 on:
   push:
-    branches:
-      - master
   pull_request:
   workflow_dispatch:
 
@@ -338,12 +336,10 @@ jobs:
   car_docs_diff:
     name: PR comments
     runs-on: ubuntu-20.04
-    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
-          ref: ${{ github.event.pull_request.base.ref }}
       - run: git lfs pull
       - uses: ./.github/workflows/setup-with-retry
       - name: Get base car info
