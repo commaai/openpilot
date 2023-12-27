@@ -135,7 +135,6 @@ class CarState(CarStateBase):
   def get_can_parser(CP):
     messages = [
       ("BCMTurnSignals", 1),
-      ("BCMBSM", 10),
       ("ECMPRDNL2", 10),
       ("PSCMStatus", 10),
       ("ESPStatus", 10),
@@ -155,6 +154,7 @@ class CarState(CarStateBase):
     if CP.networkLocation == NetworkLocation.fwdCamera:
       messages += [
         ("ASCMLKASteeringCmd", 0),
+        ("BCMBSM", 10),
       ]
 
     if CP.transmissionType == TransmissionType.direct:
