@@ -16,6 +16,7 @@ from openpilot.tools.foxglove.json_schema import get_event_schemas
 from openpilot.tools.foxglove.foxglove_schemas import RAW_IMAGE, COMPRESSED_IMAGE, FRAME_TRANSFORM, LOCATION_FIX, LOG
 from openpilot.tools.foxglove.utils import register_schema, register_channel, register, message, toQuaternion
 from openpilot.tools.lib.framereader import FrameReader
+from openpilot.tools.foxglove.transforms import transform_camera, TRANSFORMERS
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -71,26 +72,24 @@ def juggle_route(route_or_segment_name, segment_count, qlog, ci=False, fcam=Fals
     for d in pool.map(load_segment, logs):
       all_data += d
 
-  fcamera = None
-  dcamera = None
-  ecamera = None
+  cams = {}
   if fcam:
-    fcamera = []
+    cams["roadCameraState"] = { "data": [], "idx": 0 }
     for p in fcam_paths:
-      fcamera.append(FrameReader(p))
+      cams["roadCameraState"]["data"].append(FrameReader(p))
   if dcam:
-    dcamera = []
+    cams["driverCameraState"] = { "data": [], "idx": 0 }
     for p in dcam_paths:
-      dcamera.append(FrameReader(p))
+      cams["driverCameraState"]["data"].append(FrameReader(p))
   if ecam:
-    ecamera = []
+    cams["wideRoadCameraState"] = { "data": [], "idx": 0 }
     for p in ecam_paths:
-      ecamera.append(FrameReader(p))
+      cams["wideRoadCameraState"]["data"].append(FrameReader(p))
 
   with tempfile.NamedTemporaryFile(suffix='.rlog', dir=juggle_dir) as tmp:
     save_log(tmp.name, all_data, compress=False)
     del all_data
-    convert_log(f"{str(route_or_segment_name.canonical_name).split('|')[1]}.mcap", tmp.name, fcamera, dcamera, ecamera)
+    convert_log(f"{str(route_or_segment_name.canonical_name).split('|')[1]}.mcap", tmp.name, cams)
 
 def load_segment(segment_name):
   if segment_name is None:
@@ -102,27 +101,23 @@ def load_segment(segment_name):
     print(f"Error parsing {segment_name}: {e}")
     return []
 
-def convert_log(name, log_file, fcam=None, dcam=None, ecam=None):
+def convert_log(name, log_file, cams):
   channel_exclusions = ['logMonoTime', 'valid']
-  fcam_index = 0
-  dcam_index = 0
-  ecam_index = 0
+
   with open(name, "wb") as f:
     writer = Writer(f)
     writer.start()
 
     cam_schema_id = 0
-    fcam_channel = None
-    dcam_channel = None
-    ecam_channel = None
+    cam_channels = {}
     if fcam is not None or dcam is not None or ecam is not None:
       cam_schema_id = register_schema(writer, "foxglove.RawImage", RAW_IMAGE)
     if fcam is not None:
-      fcam_channel = register_channel(writer, "/fcam", cam_schema_id)
+      cam_channels["roadCameraState"] = register_channel(writer, "/fcam", cam_schema_id)
     if dcam is not None:
-      dcam_channel = register_channel(writer, "/dcam", cam_schema_id)
+      cam_channels["driverCameraState"] = register_channel(writer, "/dcam", cam_schema_id)
     if ecam is not None:
-      ecam_channel = register_channel(writer, "/ecam", cam_schema_id)
+      cam_channels["wideRoadCameraState"] = register_channel(writer, "/ecam", cam_schema_id)
 
     type_to_schema = {}
     for k in list(schemas.keys()):
@@ -139,129 +134,32 @@ def convert_log(name, log_file, fcam=None, dcam=None, ecam=None):
     frameTransformSchema, frameTransformChannel = register(writer, "/frameTransform", "foxglove.FrameTransform", FRAME_TRANSFORM)
     locationFixSchema, liveLocationChannel = register(writer, "/liveLocation", "foxglove.LocationFix", LOCATION_FIX)
     logsSchema, logsChannel = register(writer, "/log", "foxglove.Log", LOG)
+
+    channel_map = {
+      "thumbnail": thumbnailChannel,
+      "modelV2": frameTransformChannel,
+      "liveLocationKalman": liveLocationChannel,
+      "errorLogMessage": logsChannel,
+    }
+
     logf = open(log_file, 'rb')
     events = cereal.log.Event.read_multiple(logf)
 
     offset = 0
     for event in events:
       e = event.to_dict()
-      if str(event.which) == "initData":
+      w = str(event.which)
+      if w == "initData":
         offset = int(e["initData"]["wallTimeNanos"]) - int(e["logMonoTime"])
-      elif str(event.which) == "roadCameraState" and fcam is not None:
-        segment = fcam_index // 1200
-        idx = fcam_index % 1200
-        frame = {
-          "timestamp": {
-            "nsec": (int(e["logMonoTime"]) + offset) % 1000000000,
-            "sec": (int(e["logMonoTime"]) + offset) // 1000000000
-          },
-          "frame_id": str(e["roadCameraState"]["frameId"]),
-          "data": bytes(fcam[segment].get(idx, pix_fmt="rgb24")[0]),
-          "width": fcam[segment].w,
-          "height": fcam[segment].h,
-          "encoding": "rgb8",
-          "step": fcam[segment].w*3,
-        }
-        message(writer, fcam_channel, e, offset, frame)
-        fcam_index += 1
-      elif str(event.which) == "driverCameraState" and dcam is not None:
-        segment = dcam_index // 1200
-        idx = dcam_index % 1200
-        frame = {
-          "timestamp": {
-            "nsec": (int(e["logMonoTime"]) + offset) % 1000000000,
-            "sec": (int(e["logMonoTime"]) + offset) // 1000000000
-          },
-          "frame_id": str(e["roadCameraState"]["frameId"]),
-          "data": bytes(dcam[segment].get(idx, pix_fmt="rgb24")[0]),
-          "width": dcam[segment].w,
-          "height": dcam[segment].h,
-          "encoding": "rgb8",
-          "step": dcam[segment].w*3,
-        }
-        message(writer, dcam_channel, e, offset, frame)
-        dcam_index += 1
-      elif str(event.which) == "wideRoadCameraState" and ecam is not None:
-        segment = ecam_index // 1200
-        idx = ecam_index % 1200
-        frame = {
-          "timestamp": {
-            "nsec": (int(e["logMonoTime"]) + offset) % 1000000000,
-            "sec": (int(e["logMonoTime"]) + offset) // 1000000000
-          },
-          "frame_id": str(e["roadCameraState"]["frameId"]),
-          "data": bytes(ecam[segment].get(idx, pix_fmt="rgb24")[0]),
-          "width": ecam[segment].w,
-          "height": ecam[segment].h,
-          "encoding": "rgb8",
-          "step": ecam[segment].w*3,
-        }
-        message(writer, ecam_channel, e, offset, frame)
-        ecam_index += 1
-      elif str(event.which) == "modelV2":
-        position = e["modelV2"]["temporalPose"]["transStd"]
-        orientation = e["modelV2"]["temporalPose"]["rotStd"]
-        data = {
-            "timestamp": {
-                "nsec": (int(e["logMonoTime"]) + offset) % 1000000000,
-                "sec": (int(e["logMonoTime"]) + offset) // 1000000000
-            },
-            "parent_frame_id": str(e["modelV2"]["frameId"] - 1),
-            "child_frame_id": str(e["modelV2"]["frameId"]),
-            "translation": {"x":position[0], "y": position[1], "z": position[2]},
-            "rotation": toQuaternion(orientation[0], orientation[1], orientation[2])
-        }
-        message(writer, frameTransformChannel, e, offset, data)
-      elif str(event.which) == "liveLocationKalman":
-        data = {
-            "timestamp": {
-                "nsec": (int(e["logMonoTime"]) + offset) % 1000000000,
-                "sec": (int(e["logMonoTime"]) + offset) // 1000000000
-            },
-            "frame_id": e["logMonoTime"],
-            "latitude": e["liveLocationKalman"]["positionGeodetic"]["value"][0],
-            "longitude": e["liveLocationKalman"]["positionGeodetic"]["value"][1],
-            "altitude": e["liveLocationKalman"]["positionGeodetic"]["value"][2],
-            "position_covariance_type": 1,
-            "position_covariance": [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        }
-        message(writer, liveLocationChannel, e, offset, data)
-      elif str(event.which) == "thumbnail":
-        data = {
-            "timestamp": {
-                "nsec": (int(e["logMonoTime"]) + offset) % 1000000000,
-                "sec": (int(e["logMonoTime"]) + offset) // 1000000000
-            },
-            "frame_id": str(e["thumbnail"]["frameId"]),
-            "format": "jpeg",
-            "data": e["thumbnail"]["thumbnail"],
-        }
-        message(writer, thumbnailChannel, e, offset, data)
-      elif str(event.which) == "errorLogMessage":
-        log_message = json.loads(e["errorLogMessage"])
-        name = "Unknown"
-        file = "Unknown"
-        line = 0
-        level = 4
-        if "ctx" in log_message and "daemon" in log_message["ctx"]:
-            name = log_message["ctx"]["daemon"]
-        if "filename" in log_message:
-            file = log_message["filename"]
-        if "lineno" in log_message:
-            line = log_message["lineno"]
-
-        data = {
-            "timestamp": {
-                "nsec": (int(e["logMonoTime"]) + offset) % 1000000000,
-                "sec": (int(e["logMonoTime"]) + offset) // 1000000000
-            },
-            "level": level,
-            "message": e["errorLogMessage"],
-            "name": name,
-            "file": file,
-            "line": line,
-        }
-        message(writer, logsChannel, e, offset, data)
+      elif w in cams:
+        segment = cams[w]["index"] // 1200
+        idx = cams[w]["index"] % 1200
+        frame = transform_camera(e, offset, w, cams[w]["data"][segment], idx)
+        message(writer, cam_channels[w], e, offset, frame)
+        cams[w]["index"] += 1
+      elif w in TRANSFORMERS:
+        data = TRANSFORMERS[w](e, offset)
+        message(writer, channel_map[w], e, offset, data)
 
       message(writer, typeToChannel[str(event.which)], e, offset, e)
 
