@@ -128,8 +128,7 @@ class TestTranslations(unittest.TestCase):
 
     for name, file in self.translation_files.items():
       match = re.search(r'_([a-zA-Z]{2,3})', file)
-      if not match:
-        raise AssertionError(f"{name} - could not parse language")
+      assert match, f"{name} - could not parse language"
 
       response = requests.get(f"https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/{match.group(1)}")
       response.raise_for_status()
