@@ -38,7 +38,6 @@ def list_schema_to_json(schema, et, bind = None):
     try:
       field_schema = name_to_schema(name)
     except:
-      print("skipping legacy data")
       return None
     return { "type": "array", "items": schema_to_json(field_schema, bind) }
   elif str(w) == 'enum':
@@ -66,8 +65,7 @@ def schema_to_json(schema, bind = None):
               base["properties"][f.proto.name] = schema_to_json(field_schema, f.proto.slot.type.struct.brand.scopes[0].bind)
             else:
               base["properties"][f.proto.name] = schema_to_json(field_schema)
-          except:
-            print("skipping legacy data")
+          except: pass
         elif str(ft) in typeMap:
           base["properties"][f.proto.name] = typeMap[str(ft)]
         elif str(ft) == 'list':
@@ -76,7 +74,7 @@ def schema_to_json(schema, bind = None):
           if l is not None:
             base["properties"][f.proto.name] = l
           else:
-            print("warning, foxglove does not support lists in lists, skipping field")
+            print(f"warning, foxglove does not support lists in lists, skipping field: {f.proto.name}")
         elif str(ft) == 'enum':
           base["properties"][f.proto.name] = {"type": "string", "enum": list(f.schema.enumerants.keys())}
         elif str(ft) == 'anyPointer':
@@ -114,8 +112,7 @@ def get_event_schemas():
             base["properties"][field.proto.name] = schema_to_json(field_schema, field.proto.slot.type.struct.brand.scopes[0].bind)
           else:
             base["properties"][field.proto.name] = schema_to_json(field_schema)
-        except:
-          print("skipping legacy data")
+        except: pass
       elif str(ft) in typeMap:
         base["properties"][field.proto.name] = typeMap[str(ft)]
       elif str(ft) == 'list':
@@ -124,7 +121,7 @@ def get_event_schemas():
         if l is not None:
           base["properties"][field.proto.name] = l
         else:
-          print("warning, foxglove does not support lists in lists, skipping field")
+          print(f"warning, foxglove does not support lists in lists, skipping field: {field.proto.name}")
       elif str(ft) == 'enum':
         base["properties"][field.proto.name] = {"type": "string", "enum": list(field.schema.enumerants.keys())}
       else:

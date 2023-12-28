@@ -68,6 +68,7 @@ def juggle_route(route_or_segment_name, segment_count, qlog, ci=False, fcam=Fals
       print("Please try a different route or segment")
       return
 
+  print("Loading Segment(s)")
   all_data = []
   with multiprocessing.Pool(24) as pool:
     for d in pool.map(load_segment, logs):
@@ -90,6 +91,7 @@ def juggle_route(route_or_segment_name, segment_count, qlog, ci=False, fcam=Fals
   with tempfile.NamedTemporaryFile(suffix='.rlog', dir=juggle_dir) as tmp:
     save_log(tmp.name, all_data, compress=False)
     del all_data
+    print("Segment(s) Loaded")
     convert_log(f"{str(route_or_segment_name.canonical_name).split('|')[1]}.mcap", tmp.name, cams)
 
 def load_segment(segment_name):
@@ -174,7 +176,7 @@ def convert_log(name, log_file, cams):
 
     print(f"\rPercent converted: 100.00%")
     writer.finish()
-    print(f"Done converting: {name}\n")
+    print(f"Done converting: {name}")
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="A helper to convert openpilot routes to mcap files for foxglove studio",
