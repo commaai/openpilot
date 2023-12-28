@@ -18,6 +18,7 @@ NetworkLocation = car.CarParams.NetworkLocation
 BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
                 CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
 
+BSM_MSG = 0x142
 
 NON_LINEAR_TORQUE_PARAMS = {
   CAR.BOLT_EUV: [2.6531724862969748, 1.0, 0.1919764879840985, 0.009054123646805178],
@@ -253,7 +254,7 @@ class CarInterface(CarInterfaceBase):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     # Detect if BSM message is present
-    ret.enableBsm = 0x142 in fingerprint[0]
+    ret.enableBsm = BSM_MSG in fingerprint[CanBus.POWERTRAIN]
 
     return ret
 
