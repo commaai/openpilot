@@ -1,5 +1,6 @@
 from openpilot.tools.foxglove.utils import toQuaternion
 import json
+import math
 
 def timestamp(event, offset):
   return {
@@ -55,6 +56,21 @@ def errorLogMessage(event, offset):
   file = "Unknown"
   line = 0
   level = 4
+
+  if "level" in log_message:
+    l = log_message["level"]
+    if l == "ERROR":
+      level = 4
+    elif l == "WARNING":
+      level = 3
+    elif l == "INFO":
+      level = 2
+    elif l == "DEBUG":
+      level = 1
+  elif "levelnum" in log_message:
+    l = log_message["levelnum"]
+    level = math.floor(l / 10)
+
   if "ctx" in log_message and "daemon" in log_message["ctx"]:
     name = log_message["ctx"]["daemon"]
   if "filename" in log_message:
@@ -82,14 +98,19 @@ def logMessage(event, offset):
   level = 2
 
   if "level" in log_message:
-    if log_message["level"] == "ERROR":
+    l = log_message["level"]
+    if l == "ERROR":
       level = 4
-    elif log_message["level"] == "WARNING":
+    elif l == "WARNING":
       level = 3
-    elif log_message["level"] == "INFO":
+    elif l == "INFO":
       level = 2
-    elif log_message["level"] == "DEBUG":
+    elif l == "DEBUG":
       level = 1
+  elif "levelnum" in log_message:
+    l = log_message["levelnum"]
+    level = math.floor(l / 10)
+
 
   if "ctx" in log_message and "daemon" in log_message["ctx"]:
     name = log_message["ctx"]["daemon"]
