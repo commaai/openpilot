@@ -1,59 +1,59 @@
 CI / testing:
-  - any-glob-all-files: "{'.github/**','**/test_*','Jenkinsfile'}"
+  - any-glob-to-all-files: "{'.github/**','**/test_*','Jenkinsfile'}"
 
 car:
-  - any-glob-all-files: 'selfdrive/car/**'
+  - any-glob-to-all-files: 'selfdrive/car/**'
 
 body:
-  - any-glob-all-files: 'selfdrive/car/body/*'
+  - any-glob-to-all-files: 'selfdrive/car/body/*'
 
 chrysler:
-  - any-glob-all-files: 'selfdrive/car/chrysler/*'
+  - any-glob-to-all-files: 'selfdrive/car/chrysler/*'
 
 ford:
-  - any-glob-all-files: 'selfdrive/car/ford/*'
+  - any-glob-to-all-files: 'selfdrive/car/ford/*'
 
 gm:
-  - any-glob-all-files: 'selfdrive/car/gm/*'
+  - any-glob-to-all-files: 'selfdrive/car/gm/*'
 
 honda:
-  - any-glob-all-files: 'selfdrive/car/honda/*'
+  - any-glob-to-all-files: 'selfdrive/car/honda/*'
 
 hyundai:
-  - any-glob-all-files: 'selfdrive/car/hyundai/*'
+  - any-glob-to-all-files: 'selfdrive/car/hyundai/*'
 
 mazda:
-  - any-glob-all-files: 'selfdrive/car/mazda/*'
+  - any-glob-to-all-files: 'selfdrive/car/mazda/*'
 
 nissan:
-  - any-glob-all-files: 'selfdrive/car/nissan/*'
+  - any-glob-to-all-files: 'selfdrive/car/nissan/*'
 
 subaru:
-  - any-glob-all-files: 'selfdrive/car/subaru/*'
+  - any-glob-to-all-files: 'selfdrive/car/subaru/*'
 
 tesla:
-  - any-glob-all-files: 'selfdrive/car/telsa/*'
+  - any-glob-to-all-files: 'selfdrive/car/telsa/*'
 
 toyota:
-  - any-glob-all-files: 'selfdrive/car/toyota/*'
+  - any-glob-to-all-files: 'selfdrive/car/toyota/*'
 
 volkswagen:
-  - any-glob-all-files: 'selfdrive/car/volkswagen/*'
+  - any-glob-to-all-files: 'selfdrive/car/volkswagen/*'
 
 fingerprint:
-  - any-glob-all-files: 'selfdrive/car/*/fingerprints.py'
+  - any-glob-to-all-files: 'selfdrive/car/*/fingerprints.py'
 
 simulation:
-  - any-glob-all-files: 'tools/sim/**'
+  - any-glob-to-all-files: 'tools/sim/**'
 
 ui:
-  - any-glob-all-files: 'selfdrive/ui/**'
+  - any-glob-to-all-files: 'selfdrive/ui/**'
 
 tools:
-  - any-glob-all-files: 'tools/**'
+  - any-glob-to-all-files: 'tools/**'
 
 multilanguage:
-  - any-glob-all-files: 'selfdrive/ui/translations/**'
+  - any-glob-to-all-files: 'selfdrive/ui/translations/**'
 
 research:
-  - any-glob-all-files: "{'selfdrive/modeld/models/**','selfdrive/test/process_replay/model_replay_ref_commit'}"
+  - any-glob-to-all-files: "{'selfdrive/modeld/models/**','selfdrive/test/process_replay/model_replay_ref_commit'}"
