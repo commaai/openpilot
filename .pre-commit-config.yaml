@@ -19,8 +19,9 @@ repos:
     -   id: check-executables-have-shebangs
     -   id: check-shebang-scripts-are-executable
     -   id: check-added-large-files
+        exclude: '(docs/CARS.md)|(poetry.lock)|(third_party/acados/include/blasfeo/include/blasfeo_d_kernel.h)'
         args:
-        - --maxkb=500
+        - --maxkb=120
         - --enforce-all
 -   repo: https://github.com/codespell-project/codespell
     rev: v2.2.6
@@ -89,3 +90,10 @@ repos:
     rev: 0.27.2
     hooks:
     -   id: check-github-workflows
+# -   repo: local
+#     hooks:
+#     -   id: format-fingerprints
+#         name: format-fingerprints
+#         entry: selfdrive/debug/format_fingerprints.py
+#         language: system
+#         types: [python]

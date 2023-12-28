@@ -5,7 +5,7 @@ import signal
 import itertools
 import math
 import time
-import pycurl
+import requests
 import shutil
 import subprocess
 import datetime
@@ -102,27 +102,18 @@ def gps_enabled() -> bool:
 
 def download_assistance():
   try:
-    c = pycurl.Curl()
-    c.setopt(pycurl.URL, ASSISTANCE_URL)
-    c.setopt(pycurl.NOBODY, 1)
-    c.setopt(pycurl.CONNECTTIMEOUT, 2)
-    c.perform()
-    bytes_n = c.getinfo(pycurl.CONTENT_LENGTH_DOWNLOAD)
-    c.close()
-    if bytes_n > 1e5:
-      cloudlog.error("Qcom assistance data larger than expected")
-      return
+    response = requests.get(ASSISTANCE_URL, timeout=5, stream=True)
 
     with open(ASSIST_DATA_FILE_DOWNLOAD, 'wb') as fp:
-      c = pycurl.Curl()
-      c.setopt(pycurl.URL, ASSISTANCE_URL)
-      c.setopt(pycurl.CONNECTTIMEOUT, 5)
+      for chunk in response.iter_content(chunk_size=8192):
+        fp.write(chunk)
+        if fp.tell() > 1e5:
+          cloudlog.error("Qcom assistance data larger than expected")
+          return
 
-      c.setopt(pycurl.WRITEDATA, fp)
-      c.perform()
-      c.close()
-      os.rename(ASSIST_DATA_FILE_DOWNLOAD, ASSIST_DATA_FILE)
-  except pycurl.error:
+    os.rename(ASSIST_DATA_FILE_DOWNLOAD, ASSIST_DATA_FILE)
+
+  except requests.exceptions.RequestException:
     cloudlog.exception("Failed to download assistance file")
     return
 
