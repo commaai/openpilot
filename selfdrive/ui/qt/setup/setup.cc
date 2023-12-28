@@ -34,6 +34,11 @@ bool is_elf(char *fname) {
 }
 
 void Setup::download(QString url) {
+  // autocomplete incomplete urls
+  if (QRegularExpression("^([^/.]+)/([^/]+)$").match(url).hasMatch()) {
+    url.prepend("https://installer.comma.ai/");
+  }
+
   CURL *curl = curl_easy_init();
   if (!curl) {
     emit finished(url, tr("Something went wrong. Reboot the device."));
