@@ -26,7 +26,7 @@ class TestTranslations(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     super(TestTranslations, cls).setUpClass()
-    cls.temp_dir = tempfile.NamedTemporaryDirectory()
+    cls.temp_dir = tempfile.TemporaryDirectory()
     shutil.copytree(TRANSLATIONS_DIR, cls.temp_dir.name, dirs_exist_ok=True)
     if not translations_updated:
       update_translations(plural_only=["main_en"], translations_dir=cls.temp_dir.name)
