@@ -143,7 +143,7 @@ class TestTranslations(unittest.TestCase):
 
           translation_text = " ".join([t.text for t in translation.findall("numerusform")]) if message.get("numerus") == "yes" else translation.text
 
-          if translation_text is None:
+          if not translation_text:
             continue
 
           words = set(translation_text.translate(str.maketrans('', '', string.punctuation + '%n')).lower().split())
