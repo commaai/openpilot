@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import unittest
+import tempfile
 import xml.etree.ElementTree as ET
 from parameterized import parameterized_class
 
@@ -25,16 +26,16 @@ class TestTranslations(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     super(TestTranslations, cls).setUpClass()
-    global translations_updated
-    # Set up temp directory
-    shutil.copytree(TRANSLATIONS_DIR, TMP_TRANSLATIONS_DIR, dirs_exist_ok=True)
+    cls.temp_dir = tempfile.NamedTemporaryDirectory()
+    shutil.copytree(TRANSLATIONS_DIR, cls.temp_dir.name, dirs_exist_ok=True)
     if not translations_updated:
-      update_translations(plural_only=["main_en"], translations_dir=TMP_TRANSLATIONS_DIR)
+      update_translations(plural_only=["main_en"], translations_dir=cls.temp_dir.name)
       translations_updated = True
 
   @classmethod
   def tearDownClass(cls):
-    shutil.rmtree(TMP_TRANSLATIONS_DIR, ignore_errors=True)
+    cls.temp_dir.cleanup()
+    super(TestTranslations, cls).tearDownClass()
 
   @staticmethod
   def _read_translation_file(path, file):
