@@ -1,6 +1,6 @@
 CI / testing:
   - changed-files:
-    - any-glob-to-all-files: "{'.github/**','**/test_*','Jenkinsfile'}"
+    - any-glob-to-all-files: "{.github/**,**/test_*,Jenkinsfile}"
 
 car:
   - changed-files:
@@ -76,4 +76,4 @@ multilanguage:
 
 research:
   - changed-files:
-    - any-glob-to-all-files: "{'selfdrive/modeld/models/**','selfdrive/test/process_replay/model_replay_ref_commit'}"
+    - any-glob-to-all-files: "{selfdrive/modeld/models/**,selfdrive/test/process_replay/model_replay_ref_commit}"
