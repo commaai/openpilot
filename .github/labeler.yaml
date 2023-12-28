@@ -43,10 +43,6 @@ volkswagen:
 fingerprint:
   - any-glob-all-files: 'selfdrive/car/*/fingerprints.py'
 
-fingerprint:
-  - all:
-    - changed-files: ['selfdrive/car/*/fingerprints.py']
-
 simulation:
   - any-glob-all-files: 'tools/sim/**'
 
