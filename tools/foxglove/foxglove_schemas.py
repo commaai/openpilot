@@ -22,7 +22,8 @@ RAW_IMAGE = {
     },
     "frame_id": {
       "type": "string",
-      "description": "Frame of reference for the image. The origin of the frame is the optical center of the camera. +x points to the right in the image, +y points down, and +z points into the plane of the image."
+      "description": "Frame of reference for the image. The origin of the frame is the optical center of the camera. " \
+                     "+x points to the right in the image, +y points down, and +z points into the plane of the image."
     },
     "width": {
       "type": "integer",
@@ -36,7 +37,9 @@ RAW_IMAGE = {
     },
     "encoding": {
       "type": "string",
-      "description": "Encoding of the raw image data\n\nSupported values: `8UC1`, `8UC3`, `16UC1`, `32FC1`, `bayer_bggr8`, `bayer_gbrg8`, `bayer_grbg8`, `bayer_rggb8`, `bgr8`, `bgra8`, `mono8`, `mono16`, `rgb8`, `rgba8`, `uyvy` or `yuv422`, `yuyv` or `yuv422_yuy2`"
+      "description": "Encoding of the raw image data\n\nSupported values: `8UC1`, `8UC3`, `16UC1`, `32FC1`, " \
+                     "`bayer_bggr8`, `bayer_gbrg8`, `bayer_grbg8`, `bayer_rggb8`, `bgr8`, `bgra8`, `mono8`, `mono16`," \
+                     " `rgb8`, `rgba8`, `uyvy` or `yuv422`, `yuyv` or `yuv422_yuy2`"
     },
     "step": {
       "type": "integer",
@@ -75,7 +78,8 @@ COMPRESSED_IMAGE = {
     },
     "frame_id": {
       "type": "string",
-      "description": "Frame of reference for the image. The origin of the frame is the optical center of the camera. +x points to the right in the image, +y points down, and +z points into the plane of the image."
+      "description": "Frame of reference for the image. The origin of the frame is the optical center of the camera. "\
+                     "+x points to the right in the image, +y points down, and +z points into the plane of the image."
     },
     "data": {
       "type": "string",
@@ -209,7 +213,8 @@ LOCATION_FIX = {
       },
       "minItems": 9,
       "maxItems": 9,
-      "description": "Position covariance (m^2) defined relative to a tangential plane through the reported position. The components are East, North, and Up (ENU), in row-major order."
+      "description": "Position covariance (m^2) defined relative to a tangential plane through the reported position." \
+                     " The components are East, North, and Up (ENU), in row-major order."
     },
     "position_covariance_type": {
       "title": "foxglove.PositionCovarianceType",

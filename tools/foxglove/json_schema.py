@@ -37,7 +37,7 @@ def list_schema_to_json(schema, et, bind = None):
     name = schema.elementType.node.displayName
     try:
       field_schema = name_to_schema(name)
-    except:
+    except KeyError:
       return None
     return { "type": "array", "items": schema_to_json(field_schema, bind) }
   elif str(w) == 'enum':
@@ -65,7 +65,7 @@ def schema_to_json(schema, bind = None):
               base["properties"][f.proto.name] = schema_to_json(field_schema, f.proto.slot.type.struct.brand.scopes[0].bind)
             else:
               base["properties"][f.proto.name] = schema_to_json(field_schema)
-          except: pass
+          except KeyError: pass
         elif str(ft) in typeMap:
           base["properties"][f.proto.name] = typeMap[str(ft)]
         elif str(ft) == 'list':
@@ -112,7 +112,7 @@ def get_event_schemas():
             base["properties"][field.proto.name] = schema_to_json(field_schema, field.proto.slot.type.struct.brand.scopes[0].bind)
           else:
             base["properties"][field.proto.name] = schema_to_json(field_schema)
-        except: pass
+        except KeyError: pass
       elif str(ft) in typeMap:
         base["properties"][field.proto.name] = typeMap[str(ft)]
       elif str(ft) == 'list':

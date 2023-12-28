@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
 import cereal
-import json
 from mcap.writer import Writer
-from mcap.well_known import SchemaEncoding, MessageEncoding
 import argparse
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import Route, SegmentName
@@ -16,10 +14,9 @@ import multiprocessing
 from openpilot.selfdrive.test.openpilotci import get_url
 from openpilot.tools.foxglove.json_schema import get_event_schemas
 from openpilot.tools.foxglove.foxglove_schemas import RAW_IMAGE, COMPRESSED_IMAGE, FRAME_TRANSFORM, LOCATION_FIX, LOG
-from openpilot.tools.foxglove.utils import register_schema, register_channel, register, message, toQuaternion
+from openpilot.tools.foxglove.utils import register_schema, register_channel, register, message
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.foxglove.transforms import transform_camera, TRANSFORMERS
-import os
 
 foxglove_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -30,8 +27,8 @@ schemas = get_event_schemas()
 def download_and_convert_route(route_or_segment_name, segment_count, qlog, ci=False, fcam=False, dcam=False, ecam=False):
   segment_start = 0
   fcam_paths = []
-  dcamera_paths = []
-  ecamera_paths = []
+  dcam_paths = []
+  ecam_paths = []
   if 'cabana' in route_or_segment_name:
     query = parse_qs(urlparse(route_or_segment_name).query)
     route_or_segment_name = query["route"][0]
@@ -176,7 +173,7 @@ def convert_log(name, log_file, cams):
       processedBytes += event.total_size.word_count * 8
       print(f"\rPercent converted: {(processedBytes/totalSize)*100:.2f}%", end = "")
 
-    print(f"\rPercent converted: 100.00%")
+    print("\rPercent converted: 100.00%")
     writer.finish()
     print(f"Done converting: {name}")
 

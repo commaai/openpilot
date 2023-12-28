@@ -57,19 +57,22 @@ def errorLogMessage(event, offset):
   level = 4
   if "ctx" in log_message and "daemon" in log_message["ctx"]:
     name = log_message["ctx"]["daemon"]
-    if "filename" in log_message:
-      file = log_message["filename"]
-      if "lineno" in log_message:
-        line = log_message["lineno"]
+  if "filename" in log_message:
+    file = log_message["filename"]
+  if "lineno" in log_message:
+    line = log_message["lineno"]
 
-        data = {
-          "timestamp": timestamp(event, offset),
-          "level": level,
-          "message": event["errorLogMessage"],
-          "name": name,
-          "file": file,
-          "line": line,
-        }
+  data = {
+    "timestamp": timestamp(event, offset),
+    "level": level,
+    "message": event["errorLogMessage"],
+    "name": name,
+    "file": file,
+    "line": line,
+  }
+
+  return data
+
 
 def logMessage(event, offset):
   log_message = json.loads(event["logMessage"])
@@ -90,19 +93,21 @@ def logMessage(event, offset):
 
   if "ctx" in log_message and "daemon" in log_message["ctx"]:
     name = log_message["ctx"]["daemon"]
-    if "filename" in log_message:
-      file = log_message["filename"]
-      if "lineno" in log_message:
-        line = log_message["lineno"]
+  if "filename" in log_message:
+    file = log_message["filename"]
+  if "lineno" in log_message:
+    line = log_message["lineno"]
 
-        data = {
-          "timestamp": timestamp(event, offset),
-          "level": level,
-          "message": event["logMessage"],
-          "name": name,
-          "file": file,
-          "line": line,
-        }
+  data = {
+    "timestamp": timestamp(event, offset),
+    "level": level,
+    "message": event["logMessage"],
+    "name": name,
+    "file": file,
+    "line": line,
+  }
+
+  return data
 
 TRANSFORMERS = {
   "modelV2": modelV2,
