@@ -252,6 +252,9 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
+    # Detect if BSM message is present
+    ret.enableBsm = 0x142 in fingerprint[0]
+
     return ret
 
   # returns a car.CarState
