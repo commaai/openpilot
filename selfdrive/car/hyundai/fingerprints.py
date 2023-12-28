@@ -943,6 +943,14 @@ FW_VERSIONS = {
       b'\xf1\x816U2VE051\x00\x00\xf1\x006U2V0_C2\x00\x006U2VE051\x00\x00DOS4T16NS3\x00\x00\x00\x00',
     ],
   },
+  CAR.KONA_2ND_GEN: {
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00SX2_ RDR -----      1.00 1.02 99110-BE000         ',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00SX2 MFC  AT USA LHD 1.00 1.03 99211-BE000 230517',
+    ],
+  },
   CAR.KIA_CEED: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00CD__ SCC F-CUP      1.00 1.02 99110-J7000         ',
