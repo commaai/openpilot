@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import cereal
 import json
 from mcap.writer import Writer
