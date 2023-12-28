@@ -160,11 +160,11 @@ def convert_log(name, log_file, cams):
       if w == "initData":
         offset = int(e["initData"]["wallTimeNanos"]) - int(e["logMonoTime"])
       elif w in cams:
-        segment = cams[w]["index"] // 1200
-        idx = cams[w]["index"] % 1200
+        segment = cams[w]["idx"] // 1200
+        idx = cams[w]["idx"] % 1200
         frame = transform_camera(e, offset, w, cams[w]["data"][segment], idx)
         message(writer, cam_channels[w], e, offset, frame)
-        cams[w]["index"] += 1
+        cams[w]["idx"] += 1
       elif w in TRANSFORMERS:
         data = TRANSFORMERS[w](e, offset)
         message(writer, channel_map[w], e, offset, data)
