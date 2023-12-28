@@ -124,7 +124,7 @@ class TestTranslations(unittest.TestCase):
         self.assertEqual(len(matches), 0, f"The string(s) {matches} were found with '@' instead of '&'")
 
   def test_bad_language(self):
-    OVERRIDE_WORDS = {'pédale'}
+    IGNORED_WORDS = {'pédale'}
 
     for name, file in self.translation_files.items():
       match = re.search(r'_([a-zA-Z]{2,3})', file)
@@ -148,7 +148,7 @@ class TestTranslations(unittest.TestCase):
             continue
 
           words = set(translation_text.translate(str.maketrans('', '', string.punctuation + '%n')).lower().split())
-          if words & (banned_words - OVERRIDE_WORDS):
+          if words & (banned_words - IGNORED_WORDS):
             raise AssertionError(f"Bad language found in {name}: '{translation_text}'")
 
 
