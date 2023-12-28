@@ -19,13 +19,13 @@ from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.foxglove.transforms import transform_camera, TRANSFORMERS
 import os
 
-juggle_dir = os.path.dirname(os.path.realpath(__file__))
+foxglove_dir = os.path.dirname(os.path.realpath(__file__))
 
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 
 schemas = get_event_schemas()
 
-def juggle_route(route_or_segment_name, segment_count, qlog, ci=False, fcam=False, dcam=False, ecam=False):
+def download_and_convert_route(route_or_segment_name, segment_count, qlog, ci=False, fcam=False, dcam=False, ecam=False):
   segment_start = 0
   fcam_paths = []
   dcamera_paths = []
@@ -88,7 +88,7 @@ def juggle_route(route_or_segment_name, segment_count, qlog, ci=False, fcam=Fals
     for p in ecam_paths:
       cams["wideRoadCameraState"]["data"].append(FrameReader(p))
 
-  with tempfile.NamedTemporaryFile(suffix='.rlog', dir=juggle_dir) as tmp:
+  with tempfile.NamedTemporaryFile(suffix='.rlog', dir=foxglove_dir) as tmp:
     save_log(tmp.name, all_data, compress=False)
     del all_data
     print("Segment(s) Loaded")
@@ -197,4 +197,4 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
-  juggle_route(route_or_segment_name, args.segment_count, args.qlog, args.ci, args.fcam, args.dcam, args.ecam)
+  download_and_convert_route(route_or_segment_name, args.segment_count, args.qlog, args.ci, args.fcam, args.dcam, args.ecam)
