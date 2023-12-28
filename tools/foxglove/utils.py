@@ -62,6 +62,4 @@ class Encoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, bytes):
             return b64encode(o).decode()
-        if math.isnan(o):
-            return 0
         return json.JSONEncoder.default(self, o)

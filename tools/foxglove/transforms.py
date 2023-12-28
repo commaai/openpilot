@@ -10,7 +10,7 @@ def timestamp(event, offset):
 
 
 def transform_camera(event, offset, camera, segment, frame):
-  frame = {
+  return {
     "timestamp": timestamp(event, offset),
     "frame_id": str(event[camera]["frameId"]),
     "data": bytes(segment.get(frame, pix_fmt="rgb24")[0]),
