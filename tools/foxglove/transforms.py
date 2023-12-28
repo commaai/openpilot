@@ -1,4 +1,5 @@
 from openpilot.tools.foxglove.utils import toQuaternion
+import json
 
 def timestamp(event, offset):
   return {
@@ -62,10 +63,7 @@ def errorLogMessage(event, offset):
         line = log_message["lineno"]
 
         data = {
-          "timestamp": {
-            "nsec": (int(event["logMonoTime"]) + offset) % 1000000000,
-            "sec": (int(event["logMonoTime"]) + offset) // 1000000000
-          },
+          "timestamp": timestamp(event, offset),
           "level": level,
           "message": event["errorLogMessage"],
           "name": name,
@@ -74,20 +72,20 @@ def errorLogMessage(event, offset):
         }
 
 def logMessage(event, offset):
-  log_message = json.loads(event["errorLogMessage"])
+  log_message = json.loads(event["logMessage"])
   name = "Unknown"
   file = "Unknown"
   line = 0
   level = 2
 
-  if "level" in message:
-    if message["level"] == "ERROR":
+  if "level" in log_message:
+    if log_message["level"] == "ERROR":
       level = 4
-    elif message["level"] == "WARNING":
+    elif log_message["level"] == "WARNING":
       level = 3
-    elif message["level"] == "INFO":
+    elif log_message["level"] == "INFO":
       level = 2
-    elif message["level"] == "DEBUG":
+    elif log_message["level"] == "DEBUG":
       level = 1
 
   if "ctx" in log_message and "daemon" in log_message["ctx"]:
@@ -98,12 +96,9 @@ def logMessage(event, offset):
         line = log_message["lineno"]
 
         data = {
-          "timestamp": {
-            "nsec": (int(event["logMonoTime"]) + offset) % 1000000000,
-            "sec": (int(event["logMonoTime"]) + offset) // 1000000000
-          },
+          "timestamp": timestamp(event, offset),
           "level": level,
-          "message": event["errorLogMessage"],
+          "message": event["logMessage"],
           "name": name,
           "file": file,
           "line": line,

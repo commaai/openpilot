@@ -17,6 +17,7 @@ from openpilot.tools.foxglove.foxglove_schemas import RAW_IMAGE, COMPRESSED_IMAG
 from openpilot.tools.foxglove.utils import register_schema, register_channel, register, message, toQuaternion
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.foxglove.transforms import transform_camera, TRANSFORMERS
+import numpy as np
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -146,10 +147,11 @@ def convert_log(name, log_file, cams):
     logf = open(log_file, 'rb')
     events = cereal.log.Event.read_multiple(logf)
 
+    event_dicts = [(event.to_dict(), str(event.which)) for event in events]
+
     offset = 0
-    for event in events:
-      e = event.to_dict()
-      w = str(event.which)
+    for idx in np.arange(0, len(event_dicts)):
+      e, w = event_dicts[idx]
       if w == "initData":
         offset = int(e["initData"]["wallTimeNanos"]) - int(e["logMonoTime"])
       elif w in cams:
@@ -162,7 +164,7 @@ def convert_log(name, log_file, cams):
         data = TRANSFORMERS[w](e, offset)
         message(writer, channel_map[w], e, offset, data)
 
-      message(writer, typeToChannel[str(event.which)], e, offset, e)
+      message(writer, typeToChannel[w], e, offset, e)
 
 
     writer.finish()
