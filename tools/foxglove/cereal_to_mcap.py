@@ -17,6 +17,7 @@ from openpilot.tools.foxglove.foxglove_schemas import RAW_IMAGE, COMPRESSED_IMAG
 from openpilot.tools.foxglove.utils import register_schema, register_channel, register, message, toQuaternion
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.foxglove.transforms import transform_camera, TRANSFORMERS
+import os
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -102,6 +103,8 @@ def load_segment(segment_name):
     return []
 
 def convert_log(name, log_file, cams):
+
+  print("Starting Conversion")
   channel_exclusions = ['logMonoTime', 'valid']
 
   with open(name, "wb") as f:
@@ -145,7 +148,10 @@ def convert_log(name, log_file, cams):
 
     logf = open(log_file, 'rb')
     events = cereal.log.Event.read_multiple(logf)
+    stats = os.stat(log_file)
+    totalSize = stats.st_size
 
+    processedBytes = 0
     offset = 0
     for event in events:
       e = event.to_dict()
@@ -163,9 +169,12 @@ def convert_log(name, log_file, cams):
         message(writer, channel_map[w], e, offset, data)
 
       message(writer, typeToChannel[str(event.which)], e, offset, e)
+      processedBytes += event.total_size.word_count * 8
+      print(f"\rPercent converted: {(processedBytes/totalSize)*100:.2f}%", end = "")
 
-
+    print(f"\rPercent converted: 100.00%")
     writer.finish()
+    print(f"Done converting: {name}\n")
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="A helper to convert openpilot routes to mcap files for foxglove studio",
