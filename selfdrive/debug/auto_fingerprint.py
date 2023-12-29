@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import argparse
-from openpilot.common.basedir import BASEDIR
+from collections import defaultdict
+from typing import Optional
+from openpilot.selfdrive.debug.format_fingerprints import format_brand_fw_versions
 
 from openpilot.tools.lib.logreader import MultiLogIterator
 from openpilot.tools.lib.route import Route
@@ -16,31 +18,6 @@ PLATFORM_TO_PYTHON_CAR_NAME = {brand: {car.value: car.name for car in ALL_CARS[b
 BRAND_TO_PLATFORMS = {brand: [car.value for car in ALL_CARS[brand]] for brand in ALL_CARS}
 PLATFORM_TO_BRAND = dict(sum([[(platform, brand) for platform in BRAND_TO_PLATFORMS[brand]] for brand in BRAND_TO_PLATFORMS], []))
 
-def add_fw_versions(brand, platform, new_fw_versions):
-  filename = f"{BASEDIR}/selfdrive/car/{brand}/fingerprints.py"
-  with open(filename, "r") as f:
-    values_py = f.read()
-
-  for key in new_fw_versions.keys():
-    ecu, addr, subAddr = key
-    fw_version = new_fw_versions[key]
-
-    platform_start = values_py.index(f"CAR.{PLATFORM_TO_PYTHON_CAR_NAME[brand][platform]}: {{")
-
-    start = values_py.index(f"(Ecu.{ecu}, {hex(addr)}, {subAddr}): [", platform_start)
-
-    try:
-      end_str = "],\n"
-      end = values_py.index(end_str, start)
-    except ValueError:
-      end_str = "]\n"
-      end = values_py.index(end_str, start)
-
-    values_py = values_py[:end] + f"  {fw_version},\n    " + values_py[end:]
-
-  with open(filename, "w") as f:
-    f.write(values_py)
-
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Auto fingerprint from a route")
@@ -54,6 +31,8 @@ if __name__ == "__main__":
   carFw = None
   carVin = None
   carPlatform = None
+
+  platform: Optional[str] = None
 
   for msg in lr:
     if msg.which() == "carParams":
@@ -75,31 +54,26 @@ if __name__ == "__main__":
         print("Using platform from route")
         platform = carPlatform
       else:
-        raise Exception("unable to determine platform, try manually specifying the fingerprint.")
+        platform = None
     else:
       platform = list(possible_platforms)[0]
-
   else:
     platform = args.platform
 
+  if platform is None:
+    raise Exception("unable to determine platform, try manually specifying the fingerprint.")
+
   print("Attempting to add fw version for: ", platform)
 
+  fw_versions: dict[str, dict[tuple, list[bytes]]] = defaultdict(lambda: defaultdict(list))
   brand = PLATFORM_TO_BRAND[platform]
 
-  new_fw_versions = {}
-
   for fw in carFw:
-    if fw.brand == brand:
+    if fw.brand == brand and not fw.logging:
       addr = fw.address
       subAddr = None if fw.subAddress == 0 else fw.subAddress
       key = (fw.ecu.raw, addr, subAddr)
 
-      if key in ALL_FW_VERSIONS[brand][platform]:
-        fw_versions = set(ALL_FW_VERSIONS[brand][platform][key])
-        if fw.fwVersion not in fw_versions:
-          new_fw_versions[(fw.ecu, addr, subAddr)] = fw.fwVersion
+      fw_versions[platform][key].append(fw.fwVersion)
 
-  if not new_fw_versions:
-    print("No new fw versions found...")
-
-  add_fw_versions(brand, platform, new_fw_versions)
+  format_brand_fw_versions(brand, fw_versions)
