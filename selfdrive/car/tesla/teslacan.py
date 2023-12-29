@@ -100,7 +100,7 @@ class TeslaCAN:
       "APS_eacAllow": 1,
       "APS_eacMonitorCounter": counter,
     }
-    data = self.packer.make_can_msg("APS_eacMonitor", CANBUS.chassis, values)
+    data = self.packer.make_can_msg("APS_eacMonitor", CANBUS.chassis, values)[2]
     values["APS_eacMonitorChecksum"] = self.checksum(0x27d, data[:2])
     return self.packer.make_can_msg("APS_eacMonitor", CANBUS.chassis, values)
 >>>>>>> 599e36194 (bug)
