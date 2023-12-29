@@ -154,7 +154,7 @@ def create_es_dashstatus(packer, frame, dashstatus_msg, enabled, long_enabled, l
 
   if long_enabled:
     values["Cruise_State"] = 0
-    values["Cruise_Activated"] = long_active
+    values["Cruise_Activated"] = enabled
     values["Cruise_Disengaged"] = 0
     values["Car_Follow"] = int(lead_visible)
 
