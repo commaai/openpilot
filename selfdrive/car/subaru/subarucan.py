@@ -48,8 +48,7 @@ def create_es_distance(packer, frame, es_distance_msg, bus, pcm_cancel_cmd, long
     values["Cruise_Soft_Disable"] = 0
     values["Cruise_Fault"] = 0
 
-    if brake_cmd:
-      values["Cruise_Brake_Active"] = 1
+    values["Cruise_Brake_Active"] = brake_cmd
 
   if pcm_cancel_cmd:
     values["Cruise_Cancel"] = 1
@@ -186,9 +185,7 @@ def create_es_brake(packer, frame, es_brake_msg, long_enabled, long_active, brak
 
   if long_enabled:
     values["Cruise_Brake_Fault"] = 0
-
-    if long_active:
-      values["Cruise_Activated"] = 1
+    values["Cruise_Activated"] = long_active
 
   values["Brake_Pressure"] = brake_value
 
@@ -217,8 +214,7 @@ def create_es_status(packer, frame, es_status_msg, long_enabled, long_active, cr
     values["Cruise_RPM"] = cruise_rpm
     values["Cruise_Fault"] = 0
 
-    if long_active:
-      values["Cruise_Activated"] = 1
+    values["Cruise_Activated"] = long_active
 
   return packer.make_can_msg("ES_Status", CanBus.main, values)
 
