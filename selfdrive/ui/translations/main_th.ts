@@ -382,6 +382,10 @@
         <source>Wrong password</source>
         <translation>รหัสผ่านผิด</translation>
     </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation>ป้อนค่า SSID</translation>
+    </message>
 </context>
 <context>
     <name>OffroadAlert</name>
@@ -1183,18 +1187,6 @@ This may take up to a minute.</source>
     <message>
         <source>Forget</source>
         <translation>เลิกใช้</translation>
-    </message>
-    <message>
-        <source>Enter SSID</source>
-        <translation>ป้อนค่า SSID</translation>
-    </message>
-    <message>
-        <source>Enter password</source>
-        <translation>ใส่รหัสผ่าน</translation>
-    </message>
-    <message>
-        <source>for &quot;%1&quot;</source>
-        <translation>สำหรับ &quot;%1&quot;</translation>
     </message>
 </context>
 </TS>

@@ -382,6 +382,10 @@
         <source>Wrong password</source>
         <translation>密碼錯誤</translation>
     </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation>輸入 SSID</translation>
+    </message>
 </context>
 <context>
     <name>OffroadAlert</name>
@@ -1183,18 +1187,6 @@ This may take up to a minute.</source>
     <message>
         <source>Forget</source>
         <translation>清除</translation>
-    </message>
-    <message>
-        <source>Enter SSID</source>
-        <translation>輸入 SSID</translation>
-    </message>
-    <message>
-        <source>Enter password</source>
-        <translation>輸入密碼</translation>
-    </message>
-    <message>
-        <source>for &quot;%1&quot;</source>
-        <translation>給 &quot;%1&quot;</translation>
     </message>
 </context>
 </TS>

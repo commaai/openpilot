@@ -382,6 +382,10 @@
         <source>Wrong password</source>
         <translation>ﾊﾟｽﾜｰﾄﾞが間違っています</translation>
     </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation>SSID を入力</translation>
+    </message>
 </context>
 <context>
     <name>OffroadAlert</name>
@@ -1181,18 +1185,6 @@ This may take up to a minute.</source>
     <message>
         <source>Forget</source>
         <translation>削除</translation>
-    </message>
-    <message>
-        <source>Enter SSID</source>
-        <translation>SSID を入力</translation>
-    </message>
-    <message>
-        <source>Enter password</source>
-        <translation>パスワードを入力</translation>
-    </message>
-    <message>
-        <source>for &quot;%1&quot;</source>
-        <translation>ﾈｯﾄﾜｰｸ名：%1</translation>
     </message>
 </context>
 </TS>

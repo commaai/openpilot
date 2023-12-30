@@ -382,6 +382,10 @@
         <source>Wrong password</source>
         <translation>密码错误</translation>
     </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation>输入SSID</translation>
+    </message>
 </context>
 <context>
     <name>OffroadAlert</name>
@@ -1183,18 +1187,6 @@ This may take up to a minute.</source>
     <message>
         <source>Forget</source>
         <translation>忽略</translation>
-    </message>
-    <message>
-        <source>Enter SSID</source>
-        <translation>输入SSID</translation>
-    </message>
-    <message>
-        <source>Enter password</source>
-        <translation>输入密码</translation>
-    </message>
-    <message>
-        <source>for &quot;%1&quot;</source>
-        <translation>网络名称：&quot;%1&quot;</translation>
     </message>
 </context>
 </TS>

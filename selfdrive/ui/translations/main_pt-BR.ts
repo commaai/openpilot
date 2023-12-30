@@ -383,6 +383,10 @@
         <source>Wrong password</source>
         <translation>Senha incorreta</translation>
     </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation>Insira SSID</translation>
+    </message>
 </context>
 <context>
     <name>OffroadAlert</name>
@@ -1187,18 +1191,6 @@ Isso pode levar até um minuto.</translation>
     <message>
         <source>Forget</source>
         <translation>Esquecer</translation>
-    </message>
-    <message>
-        <source>Enter SSID</source>
-        <translation>Insira SSID</translation>
-    </message>
-    <message>
-        <source>Enter password</source>
-        <translation>Insira a senha</translation>
-    </message>
-    <message>
-        <source>for &quot;%1&quot;</source>
-        <translation>para &quot;%1&quot;</translation>
     </message>
 </context>
 </TS>

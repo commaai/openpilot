@@ -387,6 +387,10 @@
         <source>Wrong password</source>
         <translation>كلمة مرور خاطئة</translation>
     </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation>أدخل SSID</translation>
+    </message>
 </context>
 <context>
     <name>OffroadAlert</name>
@@ -1203,18 +1207,6 @@ This may take up to a minute.</source>
     <message>
         <source>Forget</source>
         <translation>نسيان</translation>
-    </message>
-    <message>
-        <source>Enter SSID</source>
-        <translation>أدخل SSID</translation>
-    </message>
-    <message>
-        <source>Enter password</source>
-        <translation>أدخل كلمة المرور</translation>
-    </message>
-    <message>
-        <source>for &quot;%1&quot;</source>
-        <translation>من أجل &quot;%1&quot;</translation>
     </message>
 </context>
 </TS>
