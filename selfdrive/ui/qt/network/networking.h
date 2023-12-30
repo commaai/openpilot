@@ -44,14 +44,12 @@ private:
   QVector<QPixmap> strengths;
   ListWidget *wifi_list_widget = nullptr;
   std::vector<WifiItem*> wifi_items;
-  QPushButton *hiddenNetworkButton = nullptr;
 
 signals:
   void connectToNetwork(const Network n);
 
 public slots:
   void refresh();
-  void handleHiddenNetwork();
 };
 
 class AdvancedNetworking : public QWidget {
@@ -89,11 +87,13 @@ private:
   AdvancedNetworking* an = nullptr;
   WifiUI* wifiWidget;
 
+  QPushButton *hiddenNetworkButton = nullptr;
   void showEvent(QShowEvent* event) override;
   void hideEvent(QHideEvent* event) override;
 
 public slots:
   void refresh();
+  void handleHiddenNetwork();
 
 private slots:
   void connectToNetwork(const Network n);
