@@ -189,9 +189,8 @@ def create_es_brake(packer, frame, es_brake_msg, long_enabled, long_active, brak
 
     values["Brake_Pressure"] = brake_value
 
-    if brake_value > 0:
-      values["Cruise_Brake_Active"] = 1
-      values["Cruise_Brake_Lights"] = 1 if brake_value >= 70 else 0
+    values["Cruise_Brake_Active"] = brake_value > 0
+    values["Cruise_Brake_Lights"] = brake_value >= 70
 
   return packer.make_can_msg("ES_Brake", CanBus.main, values)
 
