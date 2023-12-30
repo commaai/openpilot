@@ -9,13 +9,11 @@ from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import AGNOS
 
-params = Params()
-
 
 def set_timezone(timezone):
   valid_timezones = subprocess.check_output('timedatectl list-timezones', shell=True, encoding='utf8').strip().split('\n')
 
-  use_timezone_param = params.get("Timezone", encoding='utf8')
+  use_timezone_param = Params().get("Timezone", encoding='utf8')
   if use_timezone_param is not None:
     cloudlog.debug("Using timezone from param")
     timezone = use_timezone_param.strip()
@@ -68,10 +66,6 @@ def parse_and_format_utc_date(modem_output):
 def main() -> NoReturn:
   while True:
     time.sleep(60)
-
-    is_onroad = not params.get_bool("IsOffroad")
-    if is_onroad:
-      continue
 
     try:
       cloudlog.debug("Setting time based on modem")
