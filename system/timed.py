@@ -56,16 +56,16 @@ def get_modem_time_output():
 
 
 def calculate_time_zone_offset(modem_output):
-    return int(modem_output[38:-5])
+  return int(modem_output[38:-5])
 
 
 def determine_time_zone(offset):
-    hour_offset = -round(offset / 4)
-    return f"Etc/GMT+{hour_offset}" if hour_offset >= 0 else f"Etc/GMT{hour_offset}"
+  hour_offset = -round(offset / 4)
+  return f"Etc/GMT+{hour_offset}" if hour_offset >= 0 else f"Etc/GMT{hour_offset}"
 
 
 def parse_and_format_utc_date(modem_output):
-    return datetime.strptime(modem_output[19:-8], "%Y/%m/%d,%H:%M:%S").strftime("%Y-%m-%d %H:%M:%S")
+  return datetime.strptime(modem_output[19:-8], "%Y/%m/%d,%H:%M:%S").strftime("%Y-%m-%d %H:%M:%S")
 
 
 def main() -> NoReturn:
