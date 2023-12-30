@@ -48,8 +48,7 @@ def create_es_distance(packer, frame, es_distance_msg, bus, pcm_cancel_cmd, long
     values["Cruise_Soft_Disable"] = 0
     values["Cruise_Fault"] = 0
 
-    if brake_cmd:
-      values["Cruise_Brake_Active"] = 1
+    values["Cruise_Brake_Active"] = brake_cmd
 
   if pcm_cancel_cmd:
     values["Cruise_Cancel"] = 1
@@ -153,14 +152,14 @@ def create_es_dashstatus(packer, frame, dashstatus_msg, enabled, long_enabled, l
 
   values["COUNTER"] = frame % 0x10
 
-  if enabled and long_active:
+  if long_enabled:
     values["Cruise_State"] = 0
-    values["Cruise_Activated"] = 1
+    values["Cruise_Activated"] = enabled
     values["Cruise_Disengaged"] = 0
     values["Car_Follow"] = int(lead_visible)
 
-  if long_enabled:
     values["PCB_Off"] = 1 # AEB is not presevered, so show the PCB_Off on dash
+    values["LDW_Off"] = 0
     values["Cruise_Fault"] = 0
 
   # Filter stock LKAS disabled and Keep hands on steering wheel OFF alerts
@@ -186,15 +185,12 @@ def create_es_brake(packer, frame, es_brake_msg, long_enabled, long_active, brak
 
   if long_enabled:
     values["Cruise_Brake_Fault"] = 0
+    values["Cruise_Activated"] = long_active
 
-    if long_active:
-      values["Cruise_Activated"] = 1
+    values["Brake_Pressure"] = brake_value
 
-  values["Brake_Pressure"] = brake_value
-
-  if brake_value > 0:
-    values["Cruise_Brake_Active"] = 1
-    values["Cruise_Brake_Lights"] = 1 if brake_value >= 70 else 0
+    values["Cruise_Brake_Active"] = brake_value > 0
+    values["Cruise_Brake_Lights"] = brake_value >= 70
 
   return packer.make_can_msg("ES_Brake", CanBus.main, values)
 
@@ -216,8 +212,7 @@ def create_es_status(packer, frame, es_status_msg, long_enabled, long_active, cr
     values["Cruise_RPM"] = cruise_rpm
     values["Cruise_Fault"] = 0
 
-    if long_active:
-      values["Cruise_Activated"] = 1
+    values["Cruise_Activated"] = long_active
 
   return packer.make_can_msg("ES_Status", CanBus.main, values)
 
