@@ -324,7 +324,7 @@ void WifiUI::handleHiddenNetwork() {
       hidden_network.security_type = SecurityType::WPA;
       wifi->connect(hidden_network, pass);
     } else {
-      wifi->connect(n);
+      wifi->connect(hidden_network);
     }
   }
 }
