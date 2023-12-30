@@ -87,7 +87,6 @@ private:
   AdvancedNetworking* an = nullptr;
   WifiUI* wifiWidget;
 
-  QPushButton *hiddenNetworkButton = nullptr;
   void showEvent(QShowEvent* event) override;
   void hideEvent(QHideEvent* event) override;
 
