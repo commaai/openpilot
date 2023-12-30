@@ -159,6 +159,8 @@ def convert_log(name, log_file, cams):
       w = str(event.which)
       if w == "initData":
         offset = int(e["initData"]["wallTimeNanos"]) - int(e["logMonoTime"])
+        if int(e["initData"]["wallTimeNanos"]) <= 0:
+          offset = 0
       elif w in cams:
         segment = cams[w]["idx"] // 1200
         idx = cams[w]["idx"] % 1200
