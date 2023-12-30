@@ -52,7 +52,7 @@ FW_VERSIONS = {
 {% for key, fw_versions in FW_VERSIONS[brand][car].items() %}
     (Ecu.{{ECU_NAME[key[0]]}}, 0x{{"%0x" | format(key[1] | int)}}, \
 {% if key[2] %}0x{{"%0x" | format(key[2] | int)}}{% else %}{{key[2]}}{% endif %}): [
-  {% for fw_version in fw_versions %}
+  {% for fw_version in (fw_versions + extra_fw_versions.get(car, {}).get(key, [])) | unique | sort %}
     {{fw_version}},
   {% endfor %}
   ],
@@ -65,26 +65,16 @@ FW_VERSIONS = {
 
 
 def format_brand_fw_versions(brand, extra_fw_versions: None | dict[str, dict[tuple, list[bytes]]] = None):
-  fw_versions = FW_VERSIONS.copy()
-  # TODO: this modifies FW_VERSIONS in place
-  if extra_fw_versions is not None:
-    for platform, ecus in extra_fw_versions.items():
-      for ecu, fws in ecus.items():
-        fw_versions[brand][platform][ecu] += set(fws) - set(fw_versions[brand][platform][ecu])
+  extra_fw_versions = extra_fw_versions or {}
 
   fingerprints_file = os.path.join(BASEDIR, f"selfdrive/car/{brand}/fingerprints.py")
   with open(fingerprints_file, "r") as f:
     comments = [line for line in f.readlines() if line.startswith("#") and "noqa" not in line]
 
-  # sort fw versions
-  if fw_versions[brand] is not None:
-    for platform in fw_versions[brand]:
-      for ecu in fw_versions[brand][platform]:
-        fw_versions[brand][platform][ecu] = sorted(fw_versions[brand][platform][ecu])
-
   with open(fingerprints_file, "w") as f:
     f.write(FINGERPRINTS_PY_TEMPLATE.render(brand=brand, comments=comments, ECU_NAME=ECU_NAME,
-                                            FINGERPRINTS=FINGERPRINTS, FW_VERSIONS=fw_versions))
+                                            FINGERPRINTS=FINGERPRINTS, FW_VERSIONS=FW_VERSIONS,
+                                            extra_fw_versions=extra_fw_versions))
 
 
 if __name__ == "__main__":

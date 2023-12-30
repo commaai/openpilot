@@ -50,7 +50,7 @@ def get_directory_sort(d: str) -> List[str]:
 
 def listdir_by_creation(d: str) -> List[str]:
   try:
-    paths = os.listdir(d)
+    paths = [f for f in os.listdir(d) if os.path.isdir(os.path.join(d, f))]
     paths = sorted(paths, key=get_directory_sort)
     return paths
   except OSError:
