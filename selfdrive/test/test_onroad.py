@@ -34,9 +34,9 @@ PROCS = {
   "./encoderd": 17.0,
   "./camerad": 14.5,
   "./locationd": 11.0,
-  "./mapsd": 1.5,
-  "selfdrive.controls.plannerd": 16.5,
-  "./_ui": 18.0,
+  "./mapsd": (1.0, 10.0),
+  "selfdrive.controls.plannerd": 11.0,
+  "./ui": 18.0,
   "selfdrive.locationd.paramsd": 9.0,
   "./sensord": 7.0,
   "selfdrive.controls.radard": 4.5,
@@ -46,18 +46,18 @@ PROCS = {
   "selfdrive.thermald.thermald": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
   "selfdrive.locationd.torqued": 5.0,
-  "./_soundd": (1.0, 65.0),
+  "selfdrive.ui.soundd": 3.5,
   "selfdrive.monitoring.dmonitoringd": 4.0,
   "./proclogd": 1.54,
   "system.logmessaged": 0.2,
   "selfdrive.tombstoned": 0,
   "./logcatd": 0,
-  "system.micd": 10.0,
+  "system.micd": 6.0,
   "system.timezoned": 0,
   "selfdrive.boardd.pandad": 0,
   "selfdrive.statsd": 0.4,
   "selfdrive.navd.navd": 0.4,
-  "system.loggerd.uploader": 3.0,
+  "system.loggerd.uploader": (0.5, 10.0),
   "system.loggerd.deleter": 0.1,
 }
 
@@ -168,6 +168,15 @@ class TestOnroad(unittest.TestCase):
     cls.lr = list(LogReader(os.path.join(str(cls.segments[1]), "rlog")))
     cls.log_path = cls.segments[1]
 
+    cls.log_sizes = {}
+    for f in cls.log_path.iterdir():
+      assert f.is_file()
+      cls.log_sizes[f]  = f.stat().st_size / 1e6
+      if f.name in ("qlog", "rlog"):
+        with open(f, 'rb') as ff:
+          cls.log_sizes[f] = len(bz2.compress(ff.read())) / 1e6
+
+
   @cached_property
   def service_msgs(self):
     msgs = defaultdict(list)
@@ -198,14 +207,7 @@ class TestOnroad(unittest.TestCase):
     self.assertEqual(len(big_logs), 0, f"Log spam: {big_logs}")
 
   def test_log_sizes(self):
-    for f in self.log_path.iterdir():
-      assert f.is_file()
-
-      sz = f.stat().st_size / 1e6
-      if f.name in ("qlog", "rlog"):
-        with open(f, 'rb') as ff:
-          sz = len(bz2.compress(ff.read())) / 1e6
-
+    for f, sz in self.log_sizes.items():
       if f.name == "qcamera.ts":
         assert 2.15 < sz < 2.35
       elif f.name == "qlog":
@@ -303,7 +305,7 @@ class TestOnroad(unittest.TestCase):
     self.assertLessEqual(max(mems) - min(mems), 3.0)
 
   def test_gpu_usage(self):
-    self.assertEqual(self.gpu_procs, {"weston", "_ui", "camerad", "selfdrive.modeld.modeld"})
+    self.assertEqual(self.gpu_procs, {"weston", "ui", "camerad", "selfdrive.modeld.modeld"})
 
   def test_camera_processing_time(self):
     result = "\n"
@@ -408,7 +410,7 @@ class TestOnroad(unittest.TestCase):
   def test_startup(self):
     startup_alert = None
     for msg in self.lrs[0]:
-      # can't use carEvents because the first msg can be dropped while loggerd is starting up
+      # can't use onroadEvents because the first msg can be dropped while loggerd is starting up
       if msg.which() == "controlsState":
         startup_alert = msg.controlsState.alertText1
         break
@@ -417,8 +419,8 @@ class TestOnroad(unittest.TestCase):
 
   def test_engagable(self):
     no_entries = Counter()
-    for m in self.service_msgs['carEvents']:
-      for evt in m.carEvents:
+    for m in self.service_msgs['onroadEvents']:
+      for evt in m.onroadEvents:
         if evt.noEntry:
           no_entries[evt.name] += 1
 

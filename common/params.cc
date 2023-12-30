@@ -4,9 +4,11 @@
 #include <sys/file.h>
 
 #include <algorithm>
+#include <cassert>
 #include <csignal>
 #include <unordered_map>
 
+#include "common/queue.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "system/hardware/hw.h"
@@ -114,7 +116,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DoReboot", CLEAR_ON_MANAGER_START},
     {"DoShutdown", CLEAR_ON_MANAGER_START},
     {"DoUninstall", CLEAR_ON_MANAGER_START},
-    {"ExperimentalLongitudinalEnabled", PERSISTENT},
+    {"ExperimentalLongitudinalEnabled", PERSISTENT | DEVELOPMENT_ONLY},
     {"ExperimentalMode", PERSISTENT},
     {"ExperimentalModeConfirmed", PERSISTENT},
     {"FirmwareQueryDone", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
@@ -214,8 +216,15 @@ std::unordered_map<std::string, uint32_t> keys = {
 
 
 Params::Params(const std::string &path) {
-  prefix = "/" + util::getenv("OPENPILOT_PREFIX", "d");
-  params_path = ensure_params_path(prefix, path);
+  params_prefix = "/" + util::getenv("OPENPILOT_PREFIX", "d");
+  params_path = ensure_params_path(params_prefix, path);
+}
+
+Params::~Params() {
+  if (future.valid()) {
+    future.wait();
+  }
+  assert(queue.empty());
 }
 
 std::vector<std::string> Params::allKeys() const {
@@ -327,4 +336,21 @@ void Params::clearAll(ParamKeyType key_type) {
   }
 
   fsync_dir(getParamPath());
+}
+
+void Params::putNonBlocking(const std::string &key, const std::string &val) {
+   queue.push(std::make_pair(key, val));
+  // start thread on demand
+  if (!future.valid() || future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+    future = std::async(std::launch::async, &Params::asyncWriteThread, this);
+  }
+}
+
+void Params::asyncWriteThread() {
+  // TODO: write the latest one if a key has multiple values in the queue.
+  std::pair<std::string, std::string> p;
+  while (queue.try_pop(p, 0)) {
+    // Params::put is Thread-Safe
+    put(p.first, p.second);
+  }
 }

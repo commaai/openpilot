@@ -285,6 +285,9 @@ class CarInterface(CarInterfaceBase):
     if ret.openpilotLongitudinalControl and candidate in HONDA_BOSCH:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_BOSCH_LONG
 
+    if ret.enableGasInterceptor and candidate not in HONDA_BOSCH:
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_GAS_INTERCEPTOR
+
     if candidate in HONDA_BOSCH_RADARLESS:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_RADARLESS
 
