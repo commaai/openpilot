@@ -1,29 +1,33 @@
 #!/usr/bin/env python3
 import unittest
-from openpilot.system.timed import send_at_command, parse_modem_response, get_time_and_timezone_from_modem
+
+from openpilot.system.timed import get_modem_time_output, calculate_time_zone_offset, determine_time_zone, parse_and_format_utc_date
+
 
 class TestTimed(unittest.TestCase):
 
-    def test_send_at_command(self):
-        # Testing with a known AT command
-        response = send_at_command('AT+QLTS=1')
-        self.assertIsNotNone(response)
+  def test_get_modem_time_output_length(self):
+    output = get_modem_time_output()
+    self.assertEqual(len(output), 46)
 
-    def test_parse_modem_response(self):
-        # Test with a valid response format
-        response = '+CTZE: "+01",0,"2023/03/15,12:34:56"'
-        timezone, time_str = parse_modem_response(response)
-        self.assertEqual(timezone, '+01')
-        self.assertEqual(time_str, '2023/03/15,12:34:56')
 
-        # Test with an invalid response format
-        response = 'Invalid response'
-        timezone, time_str = parse_modem_response(response)
-        self.assertIsNone(timezone)
-        self.assertIsNone(time_str)
+  def test_calculate_time_zone_offset(self):
+    known_output = "response: '+QLTS: \"2023/12/30,02:51:17-20,0\"' "
+    expected_offset = -20
+    self.assertEqual(calculate_time_zone_offset(known_output), expected_offset)
 
-    def test_get_time_and_timezone_from_modem(self):
-        timezone, modem_time = get_time_and_timezone_from_modem()
+
+  def test_determine_time_zone(self):
+    test_cases = [(-4, 'Etc/GMT+1'), (4, 'Etc/GMT-1'), (0, 'Etc/GMT+0')]
+    for offset, expected_timezone in test_cases:
+      self.assertEqual(determine_time_zone(offset), expected_timezone)
+
+
+  def test_parse_and_format_utc_date(self):
+    known_output = "response: '+QLTS: \"2023/12/30,02:51:17-20,0\"' "
+    expected_utc_date = "2023-12-30 02:51:17"
+    self.assertEqual(parse_and_format_utc_date(known_output), expected_utc_date)
+
 
 if __name__ == '__main__':
-    unittest.main()
+  unittest.main()
