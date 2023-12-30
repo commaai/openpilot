@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
-import json
 import os
-import subprocess
 import time
-import requests
+import subprocess
 from typing import NoReturn
 from datetime import datetime
-from timezonefinder import TimezoneFinder
 
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
@@ -15,8 +12,17 @@ from openpilot.system.version import get_version
 
 REQUEST_HEADERS = {'User-Agent': "openpilot-" + get_version()}
 
+params = Params()
 
-def set_timezone(valid_timezones, timezone):
+
+def set_timezone(timezone):
+  valid_timezones = subprocess.check_output('timedatectl list-timezones', shell=True, encoding='utf8').strip().split('\n')
+
+  use_timezone_param = params.get("Timezone", encoding='utf8')
+  if use_timezone_param is not None:
+    cloudlog.debug("Using timezone from param")
+    timezone = use_timezone_param.strip()
+
   if timezone not in valid_timezones:
     cloudlog.error(f"Timezone not supported {timezone}")
     return
@@ -34,14 +40,35 @@ def set_timezone(valid_timezones, timezone):
     cloudlog.exception(f"Error setting timezone to {timezone}")
 
 
+def set_time(modem_time):
+  try:
+    cloudlog.info(f"Setting time to {modem_time}")
+    result = subprocess.run(f"TZ=UTC date -s '{modem_time}'", shell=True, check=True)
+  except subprocess.CalledProcessError:
+    cloudlog.exception(f"Error setting time to {modem_time}")
+
+
+def get_modem_time_output():
+  try:
+    return subprocess.check_output("mmcli -m 0 --command AT+QLTS=1", shell=True).decode()
+  except subprocess.CalledProcessError:
+    cloudlog.exception("Error getting modem time output")
+
+
+def calculate_time_zone_offset(modem_output):
+    return int(modem_output[38:-5])
+
+
+def determine_time_zone(offset):
+    hour_offset = -round(offset / 4)
+    return f"Etc/GMT+{hour_offset}" if hour_offset >= 0 else f"Etc/GMT{hour_offset}"
+
+
+def parse_and_format_utc_date(modem_output):
+    return datetime.strptime(modem_output[19:-8], "%Y/%m/%d,%H:%M:%S").strftime("%Y-%m-%d %H:%M:%S")
+
 
 def main() -> NoReturn:
-  params = Params()
-  tf = TimezoneFinder()
-
-  # get allowed timezones
-  valid_timezones = subprocess.check_output('timedatectl list-timezones', shell=True, encoding='utf8').strip().split('\n')
-
   while True:
     time.sleep(60)
 
@@ -49,63 +76,16 @@ def main() -> NoReturn:
     if is_onroad:
       continue
 
-    # set timezone with param
-    timezone = params.get("Timezone", encoding='utf8')
-    if timezone is not None:
-      cloudlog.debug("Setting timezone based on param")
-      set_timezone(valid_timezones, timezone)
-    else:
-
-      # set timezone with IP lookup
-      location = params.get("LastGPSPosition", encoding='utf8')
-      if location is None:
-        cloudlog.debug("Setting timezone based on IP lookup")
-        try:
-          r = requests.get("https://ipapi.co/timezone", headers=REQUEST_HEADERS, timeout=10)
-          if r.status_code == 200:
-            set_timezone(valid_timezones, r.text)
-          else:
-            cloudlog.error(f"Unexpected status code from api {r.status_code}")
-          time.sleep(3600)  # Don't make too many API requests
-        except requests.exceptions.RequestException:
-          cloudlog.exception("Error getting timezone based on IP")
-          continue
-
-      # set timezone with GPS
-      else:
-        cloudlog.debug("Setting timezone based on GPS location")
-        try:
-          location = json.loads(location)
-        except Exception:
-          cloudlog.exception("Error parsing location")
-          continue
-        timezone = tf.timezone_at(lng=location['longitude'], lat=location['latitude'])
-        if timezone is None:
-          cloudlog.error(f"No timezone found based on location, {location}")
-          continue
-        set_timezone(valid_timezones, timezone)
-
-
-    # set time from modem
     try:
       cloudlog.debug("Setting time based on modem")
-      output = subprocess.check_output("mmcli -m 0 --command AT+QLTS=1", shell=True).decode()
+      output = get_modem_time_output()
 
-      # formatted utc date
-      utcdate = datetime.strptime(output[19:-8], "%Y/%m/%d,%H:%M:%S").strftime("%Y-%m-%d %H:%M:%S")
+      quarter_hour_offset = calculate_time_zone_offset(output)
+      modem_timezone = determine_time_zone(quarter_hour_offset)
+      set_timezone(modem_timezone)
 
-      # difference between the local time and GMT is expressed in quarters of an hour plus daylight saving time
-      tz = output[39:-5]
-      print(tz)
-
-      # 0 - includes no adjustment for daylight saving time
-      # 1 - includes +1 hour (equals 4 quarters in <tz>) adjustment for daylight saving time
-      # 2 - includes +2 hours (equals 8 quarters in <tz>) adjustment for daylight saving time
-      dst = output[42:-3]
-      print(dst)
-
-      # set time
-      os.system(f"TZ=UTC date -s '{utcdate}'")
+      modem_time = parse_and_format_utc_date(output)
+      set_time(modem_time)
 
     except Exception as e:
       cloudlog.error(f"Error getting time from modem, {e}")
