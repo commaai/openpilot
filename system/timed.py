@@ -8,7 +8,6 @@ from datetime import datetime
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import AGNOS
-from openpilot.system.version import get_version
 
 params = Params()
 
