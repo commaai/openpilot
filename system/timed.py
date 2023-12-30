@@ -43,7 +43,7 @@ def set_timezone(timezone):
 def set_time(modem_time):
   try:
     cloudlog.info(f"Setting time to {modem_time}")
-    result = subprocess.run(f"TZ=UTC date -s '{modem_time}'", shell=True, check=True)
+    subprocess.run(f"TZ=UTC date -s '{modem_time}'", shell=True, check=True)
   except subprocess.CalledProcessError:
     cloudlog.exception(f"Error setting time to {modem_time}")
 
