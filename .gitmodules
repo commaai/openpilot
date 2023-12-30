@@ -1,9 +1,9 @@
 [submodule "panda"]
   path = panda
-  url = ../../jnewb1/panda.git
+  url = ../../commaai/panda.git
 [submodule "opendbc"]
   path = opendbc
-  url = ../../jnewb1/opendbc.git
+  url = ../../commaai/opendbc.git
 [submodule "cereal"]
   path = cereal
   url = ../../commaai/cereal.git
