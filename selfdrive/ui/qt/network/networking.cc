@@ -69,13 +69,13 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
       background-color:  #4a4a4a;
     }
   )");
-  main_layout->setCurrentWidget(wifiScreen);
 
   hiddenNetworkButton = new QPushButton("Hidden Network");
   hiddenNetworkButton->setStyleSheet("text-align: left;border: none;padding-top: 50px;padding-bottom: 50px;padding-left: 43px;");
   connect(hiddenNetworkButton, &QPushButton::clicked, this, &Networking::handleHiddenNetwork);
+  wifiWidget->layout()->addWidget(hiddenNetworkButton);
 
-  vlayout->addWidget(hiddenNetworkButton);
+  main_layout->setCurrentWidget(wifiScreen);
 }
 
 
