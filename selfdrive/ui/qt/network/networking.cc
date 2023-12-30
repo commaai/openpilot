@@ -77,7 +77,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
 
   hiddenNetworkButton = new QPushButton("Hidden Network");
   hiddenNetworkButton->setStyleSheet("text-align: left;border: none;padding-top: 50px;padding-bottom: 50px;padding-left: 43px;");
-  connect(hiddenNetworkButton, &QPushButton::clicked, this, &Networking::handleHiddenNetwork);
+  connect(hiddenNetworkButton, &QPushButton::clicked, this, &Networking::connectToHiddenNetwork);
   wifiWidget->layout()->addWidget(hiddenNetworkButton);
 
   main_layout->setCurrentWidget(wifiScreen);
@@ -111,7 +111,7 @@ void Networking::wrongPassword(const QString &ssid) {
   }
 }
 
-void Networking::handleHiddenNetwork() {
+void Networking::connectToHiddenNetwork() {
   QString ssid = InputDialog::getText(tr("Enter SSID"), this, "", false, 1);
   if (!ssid.isEmpty()) {
     QString pass = InputDialog::getText(tr("Enter password"), this, tr("for \"%1\"").arg(ssid), true, -1);
