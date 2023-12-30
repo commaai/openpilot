@@ -86,19 +86,29 @@ def main() -> NoReturn:
         set_timezone(valid_timezones, timezone)
 
 
-  # set time from modem
-  try:
-    cloudlog.debug("Setting timezone/time based on modem")
-    output = subprocess.check_output("mmcli -m 0 --command AT+QLTS=1", shell=True).decode()
+    # set time from modem
+    try:
+      cloudlog.debug("Setting time based on modem")
+      output = subprocess.check_output("mmcli -m 0 --command AT+QLTS=1", shell=True).decode()
 
-    # set timezone
-    set_timezone(valid_timezones, f"Etc/GMT{'+' if (hour_offset := round(int(output[39:-5]) / 4)) >= 0 else ''}{hour_offset}")
+      # formatted utc date
+      utcdate = datetime.strptime(output[19:-8], "%Y/%m/%d,%H:%M:%S").strftime("%Y-%m-%d %H:%M:%S")
 
-    # set time
-    os.system("TZ=UTC date -s '" + datetime.strptime(output[19:-8], "%Y/%m/%d,%H:%M:%S").strftime("%Y-%m-%d %H:%M:%S") + "'")
+      # difference between the local time and GMT is expressed in quarters of an hour plus daylight saving time
+      tz = output[39:-5]
+      print(tz)
 
-  except Exception as e:
-    cloudlog.error(f"Error getting time from modem, {e}")
+      # 0 - includes no adjustment for daylight saving time
+      # 1 - includes +1 hour (equals 4 quarters in <tz>) adjustment for daylight saving time
+      # 2 - includes +2 hours (equals 8 quarters in <tz>) adjustment for daylight saving time
+      dst = output[42:-3]
+      print(dst)
+
+      # set time
+      os.system(f"TZ=UTC date -s '{utcdate}'")
+
+    except Exception as e:
+      cloudlog.error(f"Error getting time from modem, {e}")
 
 
 if __name__ == "__main__":
