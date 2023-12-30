@@ -10,8 +10,6 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import AGNOS
 from openpilot.system.version import get_version
 
-REQUEST_HEADERS = {'User-Agent': "openpilot-" + get_version()}
-
 params = Params()
 
 
