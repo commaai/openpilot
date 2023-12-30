@@ -318,11 +318,13 @@ void WifiUI::handleHiddenNetwork() {
   QString ssid = InputDialog::getText(tr("Enter SSID"), this, "", false, 1);
   if (!ssid.isEmpty()) {
     QString pass = InputDialog::getText(tr("Enter password"), this, tr("for \"%1\"").arg(ssid), true, -1);
+    Network hidden_network;
+    hidden_network.ssid = ssid.toUtf8();
     if (!pass.isEmpty()) {
-      Network hidden_network;
-      hidden_network.ssid = ssid.toUtf8();
       hidden_network.security_type = SecurityType::WPA;
       wifi->connect(hidden_network, pass);
+    } else {
+      wifi->connect(n);
     }
   }
 }
