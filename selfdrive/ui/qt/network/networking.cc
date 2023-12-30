@@ -79,8 +79,9 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
   hiddenNetworkButton->setStyleSheet("text-align: left;border: none;padding-top: 50px;padding-bottom: 50px;padding-left: 43px;");
   connect(hiddenNetworkButton, &QPushButton::clicked, this, &Networking::handleHiddenNetwork);
   wifiWidget->layout()->addWidget(hiddenNetworkButton);
-}
 
+  main_layout->setCurrentWidget(wifiScreen);
+}
 
 void Networking::refresh() {
   wifiWidget->refresh();
