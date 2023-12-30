@@ -73,6 +73,8 @@ class CarController:
       cruise_rpm = CarControllerParams.RPM_MIN
       cruise_brake = CarControllerParams.BRAKE_MIN
 
+    pt_bus = CanBus.alt if self.CP.carFingerprint in GLOBAL_GEN2 else CanBus.main
+
     # *** alerts and pcm cancel ***
     if self.CP.carFingerprint in PREGLOBAL_CARS:
       if self.frame % 5 == 0:
@@ -107,19 +109,18 @@ class CarController:
 
       if self.CP.openpilotLongitudinalControl:
         if self.frame % 5 == 0:
-          can_sends.append(subarucan.create_es_status(self.packer, self.frame // 5, CS.es_status_msg,
+          can_sends.append(subarucan.create_es_status(self.packer, self.frame // 5, CS.es_status_msg, pt_bus,
                                                       self.CP.openpilotLongitudinalControl, CC.longActive, cruise_rpm))
 
-          can_sends.append(subarucan.create_es_brake(self.packer, self.frame // 5, CS.es_brake_msg,
+          can_sends.append(subarucan.create_es_brake(self.packer, self.frame // 5, CS.es_brake_msg, pt_bus,
                                                      self.CP.openpilotLongitudinalControl, CC.longActive, cruise_brake))
 
-          can_sends.append(subarucan.create_es_distance(self.packer, self.frame // 5, CS.es_distance_msg, 0, pcm_cancel_cmd,
+          can_sends.append(subarucan.create_es_distance(self.packer, self.frame // 5, CS.es_distance_msg, pt_bus, pcm_cancel_cmd,
                                                         self.CP.openpilotLongitudinalControl, cruise_brake > 0, cruise_throttle))
       else:
         if pcm_cancel_cmd:
           if self.CP.carFingerprint not in HYBRID_CARS:
-            bus = CanBus.alt if self.CP.carFingerprint in GLOBAL_GEN2 else CanBus.main
-            can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg["COUNTER"] + 1, CS.es_distance_msg, bus, pcm_cancel_cmd))
+            can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg["COUNTER"] + 1, CS.es_distance_msg, pt_bus, pcm_cancel_cmd))
 
       if self.CP.flags & SubaruFlags.DISABLE_EYESIGHT:
         # Tester present (keeps eyesight disabled)

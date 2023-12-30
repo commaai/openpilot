@@ -78,7 +78,11 @@ class CarState(CarStateBase):
     else:
       ret.cruiseState.enabled = cp_cruise.vl["CruiseControl"]["Cruise_Activated"] != 0
       ret.cruiseState.available = cp_cruise.vl["CruiseControl"]["Cruise_On"] != 0
-    ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]["Cruise_Set_Speed"] * CV.KPH_TO_MS
+
+    if not (self.CP.flags & SubaruFlags.DISABLE_EYESIGHT):
+      ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]["Cruise_Set_Speed"] * CV.KPH_TO_MS
+    else:
+      ret.cruiseState.speed = cp_cruise.vl["Cruise_Status"]["Cruise_Set_Speed"] * CV.KPH_TO_MS
 
     if (self.car_fingerprint in PREGLOBAL_CARS and cp.vl["Dash_State2"]["UNITS"] == 1) or \
        (self.car_fingerprint not in PREGLOBAL_CARS and cp.vl["Dashlights"]["UNITS"] == 1):
@@ -97,15 +101,17 @@ class CarState(CarStateBase):
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
     else:
       ret.steerFaultTemporary = cp.vl["Steering_Torque"]["Steer_Warning"] == 1
-      ret.cruiseState.nonAdaptive = cp_cam.vl["ES_DashStatus"]["Conventional_Cruise"] == 1
-      ret.cruiseState.standstill = cp_cam.vl["ES_DashStatus"]["Cruise_State"] == 3
-      ret.stockFcw = (cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 1) or \
-                     (cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 2)
-      # TODO: Hybrid cars don't have ES_Distance, need a replacement
-      if self.car_fingerprint not in HYBRID_CARS:
-        # 8 is known AEB, there are a few other values related to AEB we ignore
-        ret.stockAeb = (cp_es_distance.vl["ES_Brake"]["AEB_Status"] == 8) and \
-                       (cp_es_distance.vl["ES_Brake"]["Brake_Pressure"] != 0)
+
+      if not (self.CP.flags & SubaruFlags.DISABLE_EYESIGHT):
+        ret.cruiseState.nonAdaptive = cp_cam.vl["ES_DashStatus"]["Conventional_Cruise"] == 1
+        ret.cruiseState.standstill = cp_cam.vl["ES_DashStatus"]["Cruise_State"] == 3
+        ret.stockFcw = (cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 1) or \
+                      (cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 2)
+        # TODO: Hybrid cars don't have ES_Distance, need a replacement
+        if self.car_fingerprint not in HYBRID_CARS:
+          # 8 is known AEB, there are a few other values related to AEB we ignore
+          ret.stockAeb = (cp_es_distance.vl["ES_Brake"]["AEB_Status"] == 8) and \
+                        (cp_es_distance.vl["ES_Brake"]["Brake_Pressure"] != 0)
 
     # Copy stock eyesight messages
     if not (self.CP.flags & SubaruFlags.DISABLE_EYESIGHT):
@@ -138,6 +144,7 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint not in HYBRID_CARS:
       messages.append(("CruiseControl", 20))
+      messages.append(("Cruise_Status", 20))
 
     return messages
 
