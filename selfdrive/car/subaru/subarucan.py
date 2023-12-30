@@ -204,7 +204,6 @@ def create_es_status(packer, frame, es_status_msg, long_enabled, long_active, cr
     "Signal1",
     "Cruise_Fault",
     "Cruise_RPM",
-    "Signal2",
     "Cruise_Activated",
     "Brake_Lights",
     "Cruise_Hold",
