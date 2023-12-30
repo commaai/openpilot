@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
+import pytest
 import unittest
 
 from openpilot.system.timed import get_modem_time_output, calculate_time_zone_offset, determine_time_zone, parse_and_format_utc_date
 
 
+@pytest.mark.tici
 class TestTimed(unittest.TestCase):
 
   def test_get_modem_time_output_length(self):
