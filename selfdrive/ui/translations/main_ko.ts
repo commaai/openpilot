@@ -386,6 +386,10 @@
         <source>Enter SSID</source>
         <translation>SSID 입력</translation>
     </message>
+    <message>
+        <source>Hidden Network</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>OffroadAlert</name>

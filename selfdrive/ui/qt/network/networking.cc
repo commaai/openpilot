@@ -75,7 +75,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
   dividerLine->setStyleSheet("background-color: #bdbdbd; margin-left: 40px; margin-right: 40px;");
   wifiWidget->layout()->addWidget(dividerLine);
 
-  hiddenNetworkButton = new QPushButton("Hidden Network");
+  hiddenNetworkButton = new QPushButton(tr("Hidden Network"));
   hiddenNetworkButton->setStyleSheet("text-align: left;border: none;padding-top: 50px;padding-bottom: 50px;padding-left: 43px;");
   connect(hiddenNetworkButton, &QPushButton::clicked, this, &Networking::connectToHiddenNetwork);
   wifiWidget->layout()->addWidget(hiddenNetworkButton);

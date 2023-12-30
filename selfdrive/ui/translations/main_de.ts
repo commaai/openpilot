@@ -387,6 +387,10 @@
         <source>Enter SSID</source>
         <translation>SSID eingeben</translation>
     </message>
+    <message>
+        <source>Hidden Network</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>OffroadAlert</name>

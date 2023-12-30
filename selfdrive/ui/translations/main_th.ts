@@ -386,6 +386,10 @@
         <source>Enter SSID</source>
         <translation>ป้อนค่า SSID</translation>
     </message>
+    <message>
+        <source>Hidden Network</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>OffroadAlert</name>
