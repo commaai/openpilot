@@ -53,7 +53,7 @@ PROCS = {
   "selfdrive.tombstoned": 0,
   "./logcatd": 0,
   "system.micd": 6.0,
-  "system.timezoned": 0,
+  "system.timed": 0,
   "selfdrive.boardd.pandad": 0,
   "selfdrive.statsd": 0.4,
   "selfdrive.navd.navd": 0.4,
