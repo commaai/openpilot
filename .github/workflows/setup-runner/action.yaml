@@ -24,7 +24,7 @@ runs:
       shell: bash
       run: git lfs pull
     - id: setup-up-apt-pkgs
-      uses: awalsh128/cache-apt-pkgs-action@latest
+      uses: awalsh128/cache-apt-pkgs-action@master
       with:
         packages: ${{ env.APT_PACKAGES }}
         version: 1.0

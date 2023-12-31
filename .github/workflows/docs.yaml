@@ -2,8 +2,6 @@ name: docs
 
 on:
   push:
-    branch:
-      - master
   pull_request:
 
 concurrency:
