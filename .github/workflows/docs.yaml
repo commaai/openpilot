@@ -28,7 +28,6 @@ jobs:
       run: python -m poetry run scons -j$(nproc)
     - name: Build docs
       run: bash -i -c "sudo apt update && sudo apt install -y doxygen && cd docs && python -m poetry run make -j$(nproc) html"
-
     - uses: actions/checkout@v4
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       with:
