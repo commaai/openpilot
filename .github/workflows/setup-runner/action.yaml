@@ -1,0 +1,69 @@
+name: 'Set up ubuntu 20.04 runner'
+
+inputs:
+  docker_hub_pat:
+    description: 'Auth token for Docker Hub, required for BuildJet jobs'
+    required: true
+    default: ''
+  cache_key_prefix:
+    description: 'Prefix for caching key'
+    required: true
+    default: 'scons_x86_64'
+  is_retried:
+    description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
+    required: false
+    default: 'false'
+
+runs: 
+  using: "composite"
+  steps:
+    - id: date
+      shell: bash
+      run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
+    - id: lfs-pull
+      shell: bash
+      run: git lfs pull
+    - id: setup-up-apt-pkgs
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: ${{ env.APT_PACKAGES }}
+        version: 1.0
+    - id: cache-python-dep
+      uses: actions/cache@v3
+      with: 
+        path: |
+          ${{ github.workspace }}/.venv
+        key: poetry-cache-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock')}}
+    - id: setup-python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION}}
+    - id: cache-poetry-package
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.Python3_ROOT_DIR }}/lib/python3.11/site-packages
+        key: poetry-pip-${{ env.PYTHON_VERSION }}
+    - id: poetry-setup
+      shell: bash
+      if: steps.cache-poetry-package.outputs.cache-hit != 'true'
+      run: pip install poetry==1.6.1
+    - id: pre-poetry-install
+      shell: bash
+      if: steps.cache-python-dep.outputs.cache-hit != true
+      run: rm -rf ~/.cache/virtualenvs/*
+    - id: poetry-install
+      shell: bash
+      run: | 
+          python -m poetry env use ${{ env.PYTHON_VERSION }}
+          python -m poetry config virtualenvs.in-project true
+          echo "PYTHONPATH=${{ github.workspace }}" > ${{ github.workspace }}/.env
+          python -m poetry self add poetry-dotenv-plugin@^0.1.0
+          python -m poetry install --no-root
+    - id: restore-scons-cache
+      uses: actions/cache@v3
+      with: 
+        path: /tmp/scons_cache
+        key: ${{ inputs.cache_key_prefix }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          ${{ inputs.cache_key_prefix }}-${{ env.CACHE_COMMIT_DATE }}-
+          ${{ inputs.cache_key_prefix }}-
