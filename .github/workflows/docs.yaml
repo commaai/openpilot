@@ -23,7 +23,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: ./.github/workflows/setup-with-retry-new
+    - uses: ./.github/workflows/setup-with-retry-test
     - name: Build openpilot
       run: python -m poetry run scons -j$(nproc)
     - name: Build docs
