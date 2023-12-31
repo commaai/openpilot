@@ -10,7 +10,7 @@ Get paid to improve openpilot!
 * open a ticket at [comma.ai/support](https://comma.ai/support/shop-order) with links to your PRs to claim
 * get an extra 20% if you redeem your bounty in [comma shop](https://comma.ai/shop) credit
 
-New bounties can be proposed in the **#contributing** channel in Discord.
+New bounties can be proposed in the [**#contributing**](https://discord.com/channels/469524606043160576/1183173332531687454) channel in Discord.
 
 ## Issue bounties
 
