@@ -54,7 +54,6 @@ runs:
     - id: poetry-install
       shell: bash
       run: | 
-          python -m poetry env use ${{ env.PYTHON_VERSION }}
           python -m poetry config virtualenvs.in-project true
           echo "PYTHONPATH=${{ github.workspace }}" > ${{ github.workspace }}/.env
           python -m poetry self add poetry-dotenv-plugin@^0.1.0
