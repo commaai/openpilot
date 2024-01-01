@@ -11,7 +11,7 @@ Our software is open source so you can solve your own problems without needing h
 
 ## What contributions are we looking for?
 
-**openpilot's priorities are [safety](SAFETY.md), stability, quality, and features, in that order.** openpilot is part of comma's mission to *solve self-driving cars while delivering shippable intermediaries*, and **all** developoment is towards that goal. 
+**openpilot's priorities are [safety](SAFETY.md), stability, quality, and features, in that order.** openpilot is part of comma's mission to *solve self-driving cars while delivering shippable intermediaries*, and **all** development is towards that goal. 
 
 ### What gets merged?
 
