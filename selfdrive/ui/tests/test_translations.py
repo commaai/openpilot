@@ -6,6 +6,8 @@ import unittest
 import shutil
 import tempfile
 import xml.etree.ElementTree as ET
+import string
+import requests
 from parameterized import parameterized_class
 
 from openpilot.selfdrive.ui.update_translations import TRANSLATIONS_DIR, LANGUAGES_FILE, update_translations
@@ -97,6 +99,32 @@ class TestTranslations(unittest.TestCase):
     cur_translations = self._read_translation_file(TRANSLATIONS_DIR, self.file)
     matches = re.findall(r'@(\w+);', cur_translations)
     self.assertEqual(len(matches), 0, f"The string(s) {matches} were found with '@' instead of '&'")
+
+  def test_bad_language(self):
+    IGNORED_WORDS = {'pédale'}
+
+    match = re.search(r'_([a-zA-Z]{2,3})', self.file)
+    assert match, f"{self.name} - could not parse language"
+
+    response = requests.get(f"https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/{match.group(1)}")
+    response.raise_for_status()
+
+    banned_words = {line.strip() for line in response.text.splitlines()}
+
+    for context in ET.parse(os.path.join(TRANSLATIONS_DIR, f"{self.file}.ts")).getroot():
+      for message in context.iterfind("message"):
+        translation = message.find("translation")
+        if translation.get("type") == "unfinished":
+          continue
+
+        translation_text = " ".join([t.text for t in translation.findall("numerusform")]) if message.get("numerus") == "yes" else translation.text
+
+        if not translation_text:
+          continue
+
+        words = set(translation_text.translate(str.maketrans('', '', string.punctuation + '%n')).lower().split())
+        bad_words_found = words & (banned_words - IGNORED_WORDS)
+        assert not bad_words_found, f"Bad language found in {self.name}: '{translation_text}'. Bad word(s): {', '.join(bad_words_found)}"
 
 
 if __name__ == "__main__":

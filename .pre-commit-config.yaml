@@ -19,8 +19,9 @@ repos:
     -   id: check-executables-have-shebangs
     -   id: check-shebang-scripts-are-executable
     -   id: check-added-large-files
+        exclude: '(docs/CARS.md)|(poetry.lock)|(third_party/acados/include/blasfeo/include/blasfeo_d_kernel.h)'
         args:
-        - --maxkb=500
+        - --maxkb=120
         - --enforce-all
 -   repo: https://github.com/codespell-project/codespell
     rev: v2.2.6
