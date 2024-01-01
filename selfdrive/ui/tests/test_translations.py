@@ -2,8 +2,8 @@
 import json
 import os
 import re
-import shutil
 import unittest
+import shutil
 import tempfile
 import xml.etree.ElementTree as ET
 from parameterized import parameterized_class
@@ -13,9 +13,6 @@ from openpilot.selfdrive.ui.update_translations import TRANSLATIONS_DIR, LANGUAG
 with open(LANGUAGES_FILE, "r") as f:
   translation_files = json.load(f)
 
-translations_updated = False
-
-TMP_TRANSLATIONS_DIR = os.path.join(TRANSLATIONS_DIR, "tmp")
 UNFINISHED_TRANSLATION_TAG = "<translation type=\"unfinished\""  # non-empty translations can be marked unfinished
 LOCATION_TAG = "<location "
 FORMAT_ARG = re.compile("%[0-9]+")
@@ -23,20 +20,6 @@ FORMAT_ARG = re.compile("%[0-9]+")
 
 @parameterized_class(("name", "file"), translation_files.items())
 class TestTranslations(unittest.TestCase):
-  @classmethod
-  def setUpClass(cls):
-    super(TestTranslations, cls).setUpClass()
-    cls.temp_dir = tempfile.TemporaryDirectory()
-    shutil.copytree(TRANSLATIONS_DIR, cls.temp_dir.name, dirs_exist_ok=True)
-    if not translations_updated:
-      update_translations(plural_only=["main_en"], translations_dir=cls.temp_dir.name)
-      translations_updated = True
-
-  @classmethod
-  def tearDownClass(cls):
-    cls.temp_dir.cleanup()
-    super(TestTranslations, cls).tearDownClass()
-
   @staticmethod
   def _read_translation_file(path, file):
     tr_file = os.path.join(path, f"{file}.ts")
@@ -48,14 +31,14 @@ class TestTranslations(unittest.TestCase):
                       f"{self.name} has no XML translation file, run selfdrive/ui/update_translations.py")
 
   def test_translations_updated(self):
-    # caught by test_missing_translation_files
-    if not os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{self.file}.ts")):
-      self.skipTest(f"{self.name} missing translation file")
+    with tempfile.TemporaryDirectory() as tmpdir:
+      shutil.copytree(TRANSLATIONS_DIR, tmpdir, dirs_exist_ok=True)
+      update_translations(plural_only=["main_en"], translations_dir=tmpdir)
 
-    cur_translations = self._read_translation_file(TRANSLATIONS_DIR, self.file)
-    new_translations = self._read_translation_file(TMP_TRANSLATIONS_DIR, self.file)
-    self.assertEqual(cur_translations, new_translations,
-                     f"{self.file} ({self.name}) XML translation file out of date. Run selfdrive/ui/update_translations.py to update the translation files")
+      cur_translations = self._read_translation_file(TRANSLATIONS_DIR, self.file)
+      new_translations = self._read_translation_file(tmpdir, self.file)
+      self.assertEqual(cur_translations, new_translations,
+                       f"{self.file} ({self.name}) XML translation file out of date. Run selfdrive/ui/update_translations.py to update the translation files")
 
   @unittest.skip("Only test unfinished translations before going to release")
   def test_unfinished_translations(self):
