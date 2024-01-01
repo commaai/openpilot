@@ -341,19 +341,18 @@ if GetOption("clazy"):
 
 Export('env', 'qt_env', 'arch', 'real_arch')
 
+#Replacement for default scons scanner that look for dependencies (Ignore non-existent and C standard header files)
 def exist_scan(node, env, path):
   fname = str(node)
   if  fname == "selfdrive/locationd/models/live_kf.cc" or fname == "selfdrive/locationd/locationd.cc":
-    env.Depends("selfdrive/locationd/models/live_kf.cc", ["selfdrive/locationd/models/generated/live_kf_constants.h","selfdrive/locationd/models/generated/live_kf_constants.cc"])
-    env.Depends("selfdrive/locationd/locationd.cc", ["selfdrive/locationd/models/generated/live_kf_constants.h","selfdrive/locationd/models/generated/live_kf_constants.cc"])
+    env.Depends(fname, ["#selfdrive/locationd/models/generated/live_kf_constants.h","#selfdrive/locationd/models/generated/live_kf_constants.cc"])
   include_re = re.compile(r'^#include\s+(\S+)$', re.M)
   exist_files = []
   contents = node.get_text_contents()
-  include_dirs = include_re.findall(contents)
-  cpppaths = env["CPPPATH"]
-  for file in include_dirs:
+  include_files = include_re.findall(contents)
+  for file in include_files:
     file = file.strip('"<>"')
-    for cpppath in cpppaths:
+    for cpppath in env["CPPPATH"]:
       cpppath = Dir(cpppath).relpath
       fpath = os.path.join(cpppath, file)
       if os.path.isfile(fpath):
