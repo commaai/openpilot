@@ -32,7 +32,7 @@ const char* get_opendbc_file_path(int distance_from_root) {
   char cwd[PATH_MAX];
   getcwd(cwd, sizeof(cwd));
   std::string to_root;
-  for (int i=0; i<distance_from_root;i++) {
+  for (int i=0; i<distance_from_root; i++) {
     to_root += "../";
   }
   static const std::string opendbc_file_path = std::string(cwd) + "/" + to_root + "opendbc";
