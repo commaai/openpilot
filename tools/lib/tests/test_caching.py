@@ -37,6 +37,7 @@ class CachingTestServer(threading.Thread):
     self.server.serve_forever()
 
   def stop(self):
+    self.server.server_close()
     self.server.shutdown()
 
 def with_caching_server(func):
