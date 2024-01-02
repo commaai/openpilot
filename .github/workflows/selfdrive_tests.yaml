@@ -28,6 +28,8 @@ env:
 
   PYTEST: pytest --continue-on-collection-errors --cov --cov-report=xml --cov-append --durations=0 --durations-min=5 --hypothesis-seed 0
 
+  CI: 1
+
 jobs:
   build_release:
     name: build release
@@ -51,7 +53,7 @@ jobs:
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: |
         cd $STRIPPED_DIR
-        ${{ env.RUN }} "CI=1 python selfdrive/manager/build.py"
+        ${{ env.RUN }} "python selfdrive/manager/build.py"
     - name: Run tests
       timeout-minutes: 3
       run: |
@@ -213,7 +215,7 @@ jobs:
     - name: Run replay
       timeout-minutes: 30
       run: |
-        ${{ env.RUN }} "CI=1 coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
+        ${{ env.RUN }} "coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
                         chmod -R 777 /tmp/comma_download_cache && \
                         coverage combine && \
                         coverage xml"
@@ -230,7 +232,7 @@ jobs:
     - name: Upload reference logs
       if: ${{ failure() && steps.print-diff.outcome == 'success' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
       run: |
-        ${{ env.RUN }} "unset PYTHONWARNINGS && CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
+        ${{ env.RUN }} "unset PYTHONWARNINGS && AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
       with:
@@ -286,7 +288,7 @@ jobs:
       timeout-minutes: 4
       run: |
         ${{ env.RUN_CL }} "unset PYTHONWARNINGS && \
-                           ONNXCPU=1 CI=1 NO_NAV=1 coverage run selfdrive/test/process_replay/model_replay.py && \
+                           ONNXCPU=1 NO_NAV=1 coverage run selfdrive/test/process_replay/model_replay.py && \
                            coverage combine && \
                            coverage xml"
     - name: Run unit tests
