@@ -28,8 +28,6 @@ env:
 
   PYTEST: pytest --continue-on-collection-errors --cov --cov-report=xml --cov-append --durations=0 --durations-min=5 --hypothesis-seed 0
 
-  CI: 1
-
 jobs:
   build_release:
     name: build release
