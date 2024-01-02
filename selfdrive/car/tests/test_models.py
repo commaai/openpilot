@@ -38,7 +38,6 @@ INTERNAL_SEG_CNT = int(os.environ.get("INTERNAL_SEG_CNT", "0"))
 MAX_EXAMPLES = int(os.environ.get("MAX_EXAMPLES", "50"))
 
 CI = os.environ.get("CI", None) is not None
-print(CI)
 
 def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
   # build list of test cases
@@ -69,6 +68,7 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
 class TestCarModelBase(unittest.TestCase):
   car_model: Optional[str] = None
   test_route: Optional[CarTestRoute] = None
+  test_route_on_bucket: bool = True # whether the route is on the preserved CI bucket
 
   can_msgs: List[capnp.lib.capnp._DynamicStructReader]
   fingerprint: dict[int, dict[int, int]]
@@ -85,9 +85,7 @@ class TestCarModelBase(unittest.TestCase):
       try:
         return LogReader(get_url(cls.test_route.route, seg))
       except Exception:
-        if CI:
-          raise Exception("Route not on CI bucket. " +
-                          "This is fine to fail for WIP car ports, just let us know and we can upload your routes to the CI bucket.")
+        cls.test_route_on_bucket = False
 
       # Fallback to public route, which will fail the test_route_on_ci_bucket when running in CI
       try:
@@ -467,6 +465,11 @@ class TestCarModelBase(unittest.TestCase):
 
     failed_checks = {k: v for k, v in checks.items() if v > 0}
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
+
+  @pytest.mark.skipif(not CI, reason="When running in CI we want to make sure all the routes are uploaded to the preserved CI bucket.")
+  def test_route_on_ci_bucket(self):
+    assert self.test_route_on_bucket, "Route not on CI bucket. \
+                                       This is fine to fail for WIP car ports, just let us know and we can upload your routes to the CI bucket."
 
 
 @parameterized_class(('car_model', 'test_route'), get_test_cases())
