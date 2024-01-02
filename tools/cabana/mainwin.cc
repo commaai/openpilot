@@ -25,6 +25,19 @@
 #include "tools/cabana/utils/export.h"
 #include "tools/replay/replay.h"
 
+#include <unistd.h>
+#include <linux/limits.h>
+
+const char* get_opendbc_file_path(int distance_from_root) {
+  char cwd[PATH_MAX];
+  getcwd(cwd, sizeof(cwd));
+  std::string to_root;
+  for (int i=0; i<distance_from_root;i++)
+    to_root += "../";
+  static const std::string opendbc_file_path = std::string(cwd) + "/" + to_root + "opendbc";
+  return opendbc_file_path.c_str();
+}
+
 MainWindow::MainWindow() : QMainWindow() {
   loadFingerprints();
   createDockWindows();
@@ -77,7 +90,7 @@ void MainWindow::loadFingerprints() {
     fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
   }
   // get opendbc names
-  for (auto fn : QDir(OPENDBC_FILE_PATH).entryList({"*.dbc"}, QDir::Files, QDir::Name)) {
+  for (auto fn : QDir(get_opendbc_file_path(2)).entryList({"*.dbc"}, QDir::Files, QDir::Name)) {
     opendbc_names << QFileInfo(fn).baseName();
   }
 }
@@ -327,7 +340,7 @@ void MainWindow::openRecentFile() {
 }
 
 void MainWindow::loadDBCFromOpendbc(const QString &name) {
-  QString opendbc_file_path = QString("%1/%2.dbc").arg(OPENDBC_FILE_PATH, name);
+  QString opendbc_file_path = QString("%1/%2.dbc").arg(get_opendbc_file_path(2), name);
   loadFile(opendbc_file_path);
 }
 
