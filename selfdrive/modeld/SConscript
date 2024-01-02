@@ -53,8 +53,8 @@ lenvCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LI
 # Get model metadata
 fn = File("models/supercombo").relpath
 cmd = f'python3 {Dir("#selfdrive/modeld").relpath}/get_model_metadata.py {fn}.onnx'
-files = sum([lenv.Glob("#"+x) for x in open(File("#release/files_common").abspath).read().split("\n") if x.endswith("get_model_metadata.py")], [])
-lenv.Command("#"+fn + "_metadata.pkl", ["#"+fn + ".onnx"]+files, cmd)
+files = sum([lenv.Glob(f"#{x}") for x in open(File("#release/files_common").abspath).read().split("\n") if x.endswith("get_model_metadata.py")], [])
+lenv.Command(f"#{fn}_metadata.pkl", [f"#{fn}.onnx"]+files, cmd)
 
 # Build thneed model
 if arch == "larch64" or GetOption('pc_thneed'):
