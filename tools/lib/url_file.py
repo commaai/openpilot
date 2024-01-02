@@ -57,7 +57,7 @@ class URLFile:
   def get_length_online(self):
     timeout = Timeout(connect=50.0, read=500.0)
     response = self._http_client.request('HEAD', self._url, timeout=timeout, preload_content=False)
-    if not (200 <= status <= 299):
+    if not (200 <= response.status <= 299):
       return -1
     length = response.headers.get('content-length', 0)
     return int(length)
