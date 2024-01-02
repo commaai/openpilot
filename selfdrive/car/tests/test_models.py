@@ -68,7 +68,7 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
 class TestCarModelBase(unittest.TestCase):
   car_model: Optional[str] = None
   test_route: Optional[CarTestRoute] = None
-  test_route_on_bucket: bool = True # whether the route is on the preserved CI bucket
+  test_route_on_bucket: bool = True  # whether the route is on the preserved CI bucket
 
   can_msgs: List[capnp.lib.capnp._DynamicStructReader]
   fingerprint: dict[int, dict[int, int]]
@@ -84,16 +84,12 @@ class TestCarModelBase(unittest.TestCase):
       # Attempt to use CI bucket first
       try:
         return LogReader(get_url(cls.test_route.route, seg))
-      except Exception:
+      except AssertionError:
         cls.test_route_on_bucket = False
 
-      # Fallback to public route, which will fail the test_route_on_ci_bucket when running in CI
-      try:
-        return LogReader(Route(cls.test_route.route).log_paths()[seg])
-      except Exception:
-        pass
-
-      raise Exception("Unable to get route. Check that the route is valid, and either public or uploaded to the CI bucket.")
+      # Route is not in CI bucket, assume either user has access (private), or it is public
+      # test_route_on_ci_bucket will fail when running in CI
+      return LogReader(Route(cls.test_route.route).log_paths()[seg])
 
   @classmethod
   def setUpClass(cls):
