@@ -482,7 +482,6 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
 
   LOG("-- Configuring sensor");
   sensors_i2c(ci->init_reg_array.data(), ci->init_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, ci->data_word);
-  printf("dt is %x\n", ci->in_port_info_dt);
 
   // NOTE: to be able to disable road and wide road, we still have to configure the sensor over i2c
   // If you don't do this, the strobe GPIO is an output (even in reset it seems!)
@@ -902,10 +901,6 @@ void CameraState::set_camera_exposure(float grey_frac) {
 }
 
 static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  const CameraBuf *b = &c->buf;
-  const uint8_t *dat = (const uint8_t *)b->cur_camera_buf->addr;
-  printf("here %2x %2x %2x %2x %2x %2x\n", dat[0], dat[1], dat[2], dat[3], dat[1000], dat[10000]);
-
   c->set_camera_exposure(set_exposure_target(&c->buf, 96, 1832, 2, 242, 1148, 4));
 
   MessageBuilder msg;
@@ -918,7 +913,6 @@ static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
 }
 
 void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  printf("road cam frame\n");
   const CameraBuf *b = &c->buf;
 
   MessageBuilder msg;

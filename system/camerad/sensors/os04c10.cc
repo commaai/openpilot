@@ -25,15 +25,15 @@ OS04C10::OS04C10() {
   image_sensor = cereal::FrameData::ImageSensor::OS04C10;
   data_word = false;
 
-  /*
   frame_width = 1920;
   frame_height = 1080;
   frame_stride = (1920*10/8);
-  */
 
+  /*
   frame_width = 0xa80;
   frame_height = 0x5f0;
   frame_stride = 0xd20;
+  */
 
   extra_height = 0;
   frame_offset = 0;
@@ -42,7 +42,7 @@ OS04C10::OS04C10() {
   init_reg_array.assign(std::begin(init_array_os04c10), std::end(init_array_os04c10));
   probe_reg_addr = 0x300a;
   probe_expected_data = 0x5304;
-  in_port_info_dt = 0x2b; // one is 0x2a, two are 0x2b
+  in_port_info_dt = 0x2b;
   power_config_val_low = 24000000; // Hz
 
   dc_gain_factor = 7.32;
@@ -67,7 +67,7 @@ OS04C10::OS04C10() {
 }
 
 std::vector<i2c_random_wr_payload> OS04C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {
- // t_HCG&t_LCG + t_VS on LPD, t_SPD on SPD
+  // t_HCG&t_LCG + t_VS on LPD, t_SPD on SPD
   uint32_t hcg_time = exposure_time;
   uint32_t lcg_time = hcg_time;
   uint32_t spd_time = std::min(std::max((uint32_t)exposure_time, (exposure_time_max + VS_TIME_MAX_OS04C10) / 3), exposure_time_max + VS_TIME_MAX_OS04C10);
@@ -75,11 +75,14 @@ std::vector<i2c_random_wr_payload> OS04C10::getExposureRegisters(int exposure_ti
 
   uint32_t real_gain = os04c10_analog_gains_reg[new_exp_g];
 
+  hcg_time = 100;
+  real_gain = 0x320;
+
   return {
     {0x3501, hcg_time>>8}, {0x3502, hcg_time&0xFF},
-    {0x3581, lcg_time>>8}, {0x3582, lcg_time&0xFF},
-    {0x3541, spd_time>>8}, {0x3542, spd_time&0xFF},
-    {0x35c2, vs_time&0xFF},
+    //{0x3581, lcg_time>>8}, {0x3582, lcg_time&0xFF},
+    //{0x3541, spd_time>>8}, {0x3542, spd_time&0xFF},
+    //{0x35c2, vs_time&0xFF},
 
     {0x3508, real_gain>>8}, {0x3509, real_gain&0xFF},
   };
