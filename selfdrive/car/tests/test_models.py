@@ -462,7 +462,7 @@ class TestCarModelBase(unittest.TestCase):
     failed_checks = {k: v for k, v in checks.items() if v > 0}
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
 
-  @unittest.skipIf(not CI, "When running in CI we want to make sure all the routes are uploaded to the preserved CI bucket.")
+  @unittest.skipIf(not CI, "Accessing non CI-bucket routes is allowed only when not in CI")
   def test_route_on_ci_bucket(self):
     self.assertTrue(self.test_route_on_bucket, "Route not in CI bucket. " +
                     "This is fine to fail for WIP car ports, just let us know and we can upload your routes to the CI bucket.")
