@@ -4,22 +4,9 @@
 
 #include "catch2/catch.hpp"
 #include "tools/cabana/dbc/dbcmanager.h"
+#include "tools/cabana/get_opendbc_file_path.h"
 
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
-
-#include <unistd.h>
-#include <linux/limits.h>
-
-const char* get_opendbc_file_path(int distance_from_root) {
-  char cwd[PATH_MAX];
-  getcwd(cwd, sizeof(cwd));
-  std::string to_root;
-  for (int i=0; i<distance_from_root; i++) {
-    to_root += "../";
-  }
-  static const std::string opendbc_file_path = std::string(cwd) + "/" + to_root + "opendbc";
-  return opendbc_file_path.c_str();
-}
 
 TEST_CASE("DBCFile::generateDBC") {
   QString fn = QString("%1/%2.dbc").arg(get_opendbc_file_path(3), "tesla_can");
