@@ -129,7 +129,9 @@ class TestCarModelBase(unittest.TestCase):
 
   @classmethod
   def get_route_data(cls, test_segs):
-    # Attempt to get route data for one of test_segs, first trying
+    # Attempt to get the required data from one of test_segs
+
+    # Try the primary method first (CI or internal)
     for seg in test_segs:
       try:
         lr = cls.get_logreader_primary(seg)
@@ -137,11 +139,11 @@ class TestCarModelBase(unittest.TestCase):
       except Exception:
         pass
 
+    # Route is not in CI bucket, assume either user has access (private), or it is public
+    # test_route_on_ci_bucket will fail when running in CI
     if not len(INTERNAL_SEG_LIST):
       cls.test_route_on_bucket = False
 
-      # Route is not in CI bucket, assume either user has access (private), or it is public
-      # test_route_on_ci_bucket will fail when running in CI
       for seg in test_segs:
         try:
           lr = LogReader(Route(cls.test_route.route).log_paths()[seg])
