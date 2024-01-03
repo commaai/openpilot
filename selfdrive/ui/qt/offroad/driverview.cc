@@ -7,7 +7,7 @@
 
 const int FACE_IMG_SIZE = 130;
 
-DriverViewWindow::DriverViewWindow(QWidget* parent) : CameraWidget("camerad", VISION_STREAM_DRIVER, true, parent) {
+DriverViewWindow::DriverViewWindow(QWidget* parent) : CameraView("camerad", VISION_STREAM_DRIVER, true, parent) {
   face_img = loadPixmap("../assets/img_driver_face_static.png", {FACE_IMG_SIZE, FACE_IMG_SIZE});
   QObject::connect(this, &CameraWidget::clicked, this, &DriverViewWindow::done);
   QObject::connect(device(), &Device::interactiveTimeout, this, [this]() {
@@ -20,22 +20,20 @@ DriverViewWindow::DriverViewWindow(QWidget* parent) : CameraWidget("camerad", VI
 void DriverViewWindow::showEvent(QShowEvent* event) {
   params.putBool("IsDriverViewEnabled", true);
   device()->resetInteractiveTimeout(60);
-  CameraWidget::showEvent(event);
+  CameraView::showEvent(event);
 }
 
 void DriverViewWindow::hideEvent(QHideEvent* event) {
   params.putBool("IsDriverViewEnabled", false);
-  stopVipcThread();
-  CameraWidget::hideEvent(event);
+  CameraView::hideEvent(event);
 }
 
 void DriverViewWindow::paintGL() {
-  CameraWidget::paintGL();
+  CameraView::paintGL();
 
-  std::lock_guard lk(frame_lock);
   QPainter p(this);
   // startup msg
-  if (frames.empty()) {
+  if (!frame) {
     p.setPen(Qt::white);
     p.setRenderHint(QPainter::TextAntialiasing);
     p.setFont(InterFont(100, QFont::Bold));
@@ -47,7 +45,6 @@ void DriverViewWindow::paintGL() {
   cereal::DriverStateV2::Reader driver_state = sm["driverStateV2"].getDriverStateV2();
   bool is_rhd = driver_state.getWheelOnRightProb() > 0.5;
   auto driver_data = is_rhd ? driver_state.getRightDriverData() : driver_state.getLeftDriverData();
-
   bool face_detected = driver_data.getFaceProb() > 0.7;
   if (face_detected) {
     auto fxy_list = driver_data.getFacePosition();
