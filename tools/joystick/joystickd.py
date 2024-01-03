@@ -40,14 +40,14 @@ class Keyboard:
 class Joystick:
   def __init__(self, gamepad=False):
     # TODO: find a way to get this from API, perhaps "inputs" doesn't support it
+    # TODO: unknown why self.cancel_button doesn't cancel anything when testing with an Xbox One controller
     if gamepad:
-      self.cancel_button = 'BTN_NORTH'  # (BTN_NORTH=X, ABS_RZ=Right Trigger)
-      accel_axis = 'ABS_Y'
-      steer_axis = 'ABS_RX'
+      self.cancel_button = 'BTN_NORTH'  # (BTN_NORTH=X, ABS_RX=Right Trigger)
     else:
       self.cancel_button = 'BTN_TRIGGER'
-      accel_axis = 'ABS_Y'
-      steer_axis = 'ABS_RX'
+    accel_axis = 'ABS_Y'
+    steer_axis = 'ABS_RX'
+    
     self.min_axis_value = {accel_axis: 0., steer_axis: 0.}
     self.max_axis_value = {accel_axis: 255., steer_axis: 255.}
     self.axes_values = {accel_axis: 0., steer_axis: 0.}
