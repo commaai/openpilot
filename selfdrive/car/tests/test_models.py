@@ -81,7 +81,6 @@ class TestCarModelBase(unittest.TestCase):
       route_name = RouteName(cls.test_route.route)
       return LogReader(f"cd:/{route_name.dongle_id}/{route_name.time_str}/{seg}/rlog.bz2")
     else:
-      # Attempt to use CI bucket first
       return LogReader(get_url(cls.test_route.route, seg))
 
   @classmethod
@@ -130,7 +129,7 @@ class TestCarModelBase(unittest.TestCase):
 
   @classmethod
   def get_route_data(cls, test_segs):
-    # Attempt to get route data for one of test_segs
+    # Attempt to get route data for one of test_segs, first trying
     for seg in test_segs:
       try:
         lr = cls.get_logreader_primary(seg)
@@ -141,7 +140,8 @@ class TestCarModelBase(unittest.TestCase):
     if not len(INTERNAL_SEG_LIST):
       cls.test_route_on_bucket = False
 
-      # fallback to public route
+      # Route is not in CI bucket, assume either user has access (private), or it is public
+      # test_route_on_ci_bucket will fail when running in CI
       for seg in test_segs:
         try:
           lr = LogReader(Route(cls.test_route.route).log_paths()[seg])
