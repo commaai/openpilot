@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 import xml.etree.ElementTree as ET
+from typing import cast
 
 import requests
 
@@ -46,7 +47,7 @@ def translate_phrase(text: str, to: str) -> str:
 
     data = response.json()
 
-    return data["choices"][0]["message"]["content"]
+    return cast(str, data["choices"][0]["message"]["content"])
 
 
 def translate_file(
@@ -60,6 +61,8 @@ def translate_file(
 
     for context in root.findall("./context"):
         name = context.find("name")
+        if name is None:
+            raise ValueError("name not found")
 
         logger.info("Context: %s", name.text)
 
@@ -67,10 +70,13 @@ def translate_file(
             source = message.find("source")
             translation = message.find("translation")
 
+            if source is None or translation is None:
+                raise ValueError("source or translation not found")
+
             if only_unfinished and translation.attrib.get("type") != "unfinished":
                 continue
 
-            llm_translation = translate_phrase(source.text, language)
+            llm_translation = translate_phrase(cast(str, source.text), language)
 
             logger.info("Source: %s", source.text)
             logger.info("Current translation: %s", translation.text)
