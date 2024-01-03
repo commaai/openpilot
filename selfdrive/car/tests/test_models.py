@@ -84,7 +84,7 @@ class TestCarModelBase(unittest.TestCase):
       # Attempt to use CI bucket first
       try:
         return LogReader(get_url(cls.test_route.route, seg))
-      except AssertionError:
+      except Exception:
         cls.test_route_on_bucket = False
 
       # Route is not in CI bucket, assume either user has access (private), or it is public
