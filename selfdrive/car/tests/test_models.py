@@ -84,7 +84,7 @@ class TestCarModelBase(unittest.TestCase):
       return LogReader(get_url(cls.test_route.route, seg))
 
   @classmethod
-  def get_testing_data(cls, lr):
+  def get_testing_data_from_lr(cls, lr):
     car_fw = []
     can_msgs = []
     cls.elm_frame = None
@@ -128,7 +128,7 @@ class TestCarModelBase(unittest.TestCase):
     raise Exception("no can data found")
 
   @classmethod
-  def get_route_data(cls):
+  def get_testing_data(cls):
     test_segs = (2, 1, 0)
     if cls.test_route.segment is not None:
       test_segs = (cls.test_route.segment,)
@@ -137,7 +137,7 @@ class TestCarModelBase(unittest.TestCase):
     for seg in test_segs:
       try:
         lr = cls.get_logreader_primary(seg)
-        return cls.get_testing_data(lr)
+        return cls.get_testing_data_from_lr(lr)
       except Exception:
         pass
 
@@ -149,7 +149,7 @@ class TestCarModelBase(unittest.TestCase):
       for seg in test_segs:
         try:
           lr = LogReader(Route(cls.test_route.route).log_paths()[seg])
-          return cls.get_testing_data(lr)
+          return cls.get_testing_data_from_lr(lr)
         except Exception:
           pass
 
@@ -171,7 +171,7 @@ class TestCarModelBase(unittest.TestCase):
         raise unittest.SkipTest
       raise Exception(f"missing test route for {cls.car_model}")
 
-    car_fw, can_msgs, experimental_long = cls.get_route_data()
+    car_fw, can_msgs, experimental_long = cls.get_testing_data()
 
     # if relay is expected to be open in the route
     cls.openpilot_enabled = cls.car_safety_mode_frame is not None
