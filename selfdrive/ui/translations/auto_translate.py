@@ -10,7 +10,7 @@ import requests
 
 OPENAI_MODEL = "gpt-4"
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-OPENAI_PROMPT = "You are a professional translator from English to {language} (ISO 639 language code)." \
+OPENAI_PROMPT = "You are a professional translator from English to {language} (ISO 639 language code)." + \
                 "The following sentence or word is in the GUI of a software called openpilot, translate it accordingly."
 
 
@@ -49,7 +49,7 @@ def translate_phrase(text: str, language: str) -> str:
   return cast(str, data["choices"][0]["message"]["content"])
 
 
-def translate_file(input_file: TextIO, output_file: TextIO, language: str, all: bool) -> None:
+def translate_file(input_file: TextIO, output_file: TextIO, language: str, all_: bool) -> None:
   tree = ET.parse(input_file)
 
   root = tree.getroot()
@@ -70,13 +70,13 @@ def translate_file(input_file: TextIO, output_file: TextIO, language: str, all: 
       if source is None or translation is None:
         raise ValueError("source or translation not found")
 
-      if not all and translation.attrib.get("type") != "unfinished":
+      if not all_ and translation.attrib.get("type") != "unfinished":
         continue
 
       llm_translation = translate_phrase(cast(str, source.text), language)
 
-      print_log(f"Source: {source.text}\n"
-                f"Current translation: {translation.text}\n"
+      print_log(f"Source: {source.text}\n" + \
+                f"Current translation: {translation.text}\n" + \
                 f"LLM translation: {llm_translation}")
 
       translation.text = llm_translation
@@ -88,7 +88,7 @@ def translate_file(input_file: TextIO, output_file: TextIO, language: str, all: 
 
 def main() -> None:
   if OPENAI_API_KEY is None:
-    print("OpenAI api key is missing. (Hint: use `export OPENAI_API_KEY=YOUR-KEY` before you run the script).\n"
+    print("OpenAI api key is missing. (Hint: use `export OPENAI_API_KEY=YOUR-KEY` before you run the script).\n" + \
           "If you don't have one go to: https://beta.openai.com/account/api-keys.")
     exit(1)
 
