@@ -87,11 +87,6 @@ def translate_file(input_file: TextIO, output_file: TextIO, language: str, all_:
 
 
 def main() -> None:
-  if OPENAI_API_KEY is None:
-    print("OpenAI api key is missing. (Hint: use `export OPENAI_API_KEY=YOUR-KEY` before you run the script).\n" + \
-          "If you don't have one go to: https://beta.openai.com/account/api-keys.")
-    exit(1)
-
   arg_parser = argparse.ArgumentParser()
   arg_parser.add_argument("input", nargs="?", type=argparse.FileType("r"), help="The input file")
   arg_parser.add_argument("output", nargs="?", type=argparse.FileType("w", encoding="utf-8"), default=sys.stdout, help="The output file")
@@ -99,6 +94,11 @@ def main() -> None:
   arg_parser.add_argument("-l", "--language", required=True, help="Translate to (Language code)")
 
   args = arg_parser.parse_args()
+
+  if OPENAI_API_KEY is None:
+    print("OpenAI api key is missing. (Hint: use `export OPENAI_API_KEY=YOUR-KEY` before you run the script).\n" + \
+          "If you don't have one go to: https://beta.openai.com/account/api-keys.")
+    exit(1)
 
   print_log(f"Translates to {args.language} ({'all' if args.all else 'only unfinished'})")
 
