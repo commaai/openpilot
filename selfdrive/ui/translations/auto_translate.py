@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 
 import requests
 
-MODEL = "gpt-3.5-turbo"
+MODEL = "gpt-4"
 
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 
