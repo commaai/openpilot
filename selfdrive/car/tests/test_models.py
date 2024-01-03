@@ -128,8 +128,10 @@ class TestCarModelBase(unittest.TestCase):
     raise Exception("no can data found")
 
   @classmethod
-  def get_route_data(cls, test_segs):
-    # Attempt to get the required data from one of test_segs
+  def get_route_data(cls):
+    test_segs = (2, 1, 0)
+    if cls.test_route.segment is not None:
+      test_segs = (cls.test_route.segment,)
 
     # Try the primary method first (CI or internal)
     for seg in test_segs:
@@ -169,11 +171,7 @@ class TestCarModelBase(unittest.TestCase):
         raise unittest.SkipTest
       raise Exception(f"missing test route for {cls.car_model}")
 
-    test_segs = (2, 1, 0)
-    if cls.test_route.segment is not None:
-      test_segs = (cls.test_route.segment,)
-
-    car_fw, can_msgs, experimental_long = cls.get_route_data(test_segs)
+    car_fw, can_msgs, experimental_long = cls.get_route_data()
 
     # if relay is expected to be open in the route
     cls.openpilot_enabled = cls.car_safety_mode_frame is not None
