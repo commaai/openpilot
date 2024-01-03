@@ -76,7 +76,7 @@ class TestCarModelBase(unittest.TestCase):
   car_safety_mode_frame: Optional[int]
 
   @classmethod
-  def get_logreader_primary(cls, seg):
+  def get_logreader(cls, seg):
     if len(INTERNAL_SEG_LIST):
       route_name = RouteName(cls.test_route.route)
       return LogReader(f"cd:/{route_name.dongle_id}/{route_name.time_str}/{seg}/rlog.bz2")
@@ -84,7 +84,7 @@ class TestCarModelBase(unittest.TestCase):
       return LogReader(get_url(cls.test_route.route, seg))
 
   @classmethod
-  def get_testing_data_from_lr(cls, lr):
+  def get_testing_data_from_logreader(cls, lr):
     car_fw = []
     can_msgs = []
     cls.elm_frame = None
@@ -136,8 +136,8 @@ class TestCarModelBase(unittest.TestCase):
     # Try the primary method first (CI or internal)
     for seg in test_segs:
       try:
-        lr = cls.get_logreader_primary(seg)
-        return cls.get_testing_data_from_lr(lr)
+        lr = cls.get_logreader(seg)
+        return cls.get_testing_data_from_logreader(lr)
       except Exception:
         pass
 
@@ -149,7 +149,7 @@ class TestCarModelBase(unittest.TestCase):
       for seg in test_segs:
         try:
           lr = LogReader(Route(cls.test_route.route).log_paths()[seg])
-          return cls.get_testing_data_from_lr(lr)
+          return cls.get_testing_data_from_logreader(lr)
         except Exception:
           pass
 
