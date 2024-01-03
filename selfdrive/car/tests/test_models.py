@@ -76,20 +76,81 @@ class TestCarModelBase(unittest.TestCase):
   car_safety_mode_frame: Optional[int]
 
   @classmethod
-  def get_logreader(cls, seg):
+  def get_logreader_primary(cls, seg):
     if len(INTERNAL_SEG_LIST):
       route_name = RouteName(cls.test_route.route)
       return LogReader(f"cd:/{route_name.dongle_id}/{route_name.time_str}/{seg}/rlog.bz2")
     else:
       # Attempt to use CI bucket first
-      try:
-        return LogReader(get_url(cls.test_route.route, seg))
-      except Exception:
-        cls.test_route_on_bucket = False
+      return LogReader(get_url(cls.test_route.route, seg))
 
-      # Route is not in CI bucket, assume either user has access (private), or it is public
-      # test_route_on_ci_bucket will fail when running in CI
-      return LogReader(Route(cls.test_route.route).log_paths()[seg])
+  @classmethod
+  def get_testing_data(cls, lr):
+    car_fw = []
+    can_msgs = []
+    cls.elm_frame = None
+    cls.car_safety_mode_frame = None
+    cls.fingerprint = gen_empty_fingerprint()
+    experimental_long = False
+    for msg in lr:
+      if msg.which() == "can":
+        can_msgs.append(msg)
+        if len(can_msgs) <= FRAME_FINGERPRINT:
+          for m in msg.can:
+            if m.src < 64:
+              cls.fingerprint[m.src][m.address] = len(m.dat)
+
+      elif msg.which() == "carParams":
+        car_fw = msg.carParams.carFw
+        if msg.carParams.openpilotLongitudinalControl:
+          experimental_long = True
+        if cls.car_model is None and not cls.ci:
+          cls.car_model = msg.carParams.carFingerprint
+
+      # Log which can frame the panda safety mode left ELM327, for CAN validity checks
+      elif msg.which() == 'pandaStates':
+        for ps in msg.pandaStates:
+          if cls.elm_frame is None and ps.safetyModel != SafetyModel.elm327:
+            cls.elm_frame = len(can_msgs)
+          if cls.car_safety_mode_frame is None and ps.safetyModel not in \
+            (SafetyModel.elm327, SafetyModel.noOutput):
+            cls.car_safety_mode_frame = len(can_msgs)
+
+      elif msg.which() == 'pandaStateDEPRECATED':
+        if cls.elm_frame is None and msg.pandaStateDEPRECATED.safetyModel != SafetyModel.elm327:
+          cls.elm_frame = len(can_msgs)
+        if cls.car_safety_mode_frame is None and msg.pandaStateDEPRECATED.safetyModel not in \
+          (SafetyModel.elm327, SafetyModel.noOutput):
+          cls.car_safety_mode_frame = len(can_msgs)
+
+    if len(can_msgs) > int(50 / DT_CTRL):
+      return car_fw, can_msgs, experimental_long
+
+    raise Exception("no can data found")
+
+  @classmethod
+  def get_route_data(cls, test_segs):
+    # Attempt to get route data for one of test_segs
+    for seg in test_segs:
+      try:
+        lr = cls.get_logreader_primary(seg)
+        return cls.get_testing_data(lr)
+      except Exception:
+        pass
+
+    if not len(INTERNAL_SEG_LIST):
+      cls.test_route_on_bucket = False
+
+      # fallback to public route
+      for seg in test_segs:
+        try:
+          lr = LogReader(Route(cls.test_route.route).log_paths()[seg])
+          return cls.get_testing_data(lr)
+        except Exception:
+          pass
+
+    raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded and public?")
+
 
   @classmethod
   def setUpClass(cls):
@@ -110,53 +171,7 @@ class TestCarModelBase(unittest.TestCase):
     if cls.test_route.segment is not None:
       test_segs = (cls.test_route.segment,)
 
-    for seg in test_segs:
-      try:
-        lr = cls.get_logreader(seg)
-      except Exception:
-        continue
-
-      car_fw = []
-      can_msgs = []
-      cls.elm_frame = None
-      cls.car_safety_mode_frame = None
-      cls.fingerprint = gen_empty_fingerprint()
-      experimental_long = False
-      for msg in lr:
-        if msg.which() == "can":
-          can_msgs.append(msg)
-          if len(can_msgs) <= FRAME_FINGERPRINT:
-            for m in msg.can:
-              if m.src < 64:
-                cls.fingerprint[m.src][m.address] = len(m.dat)
-
-        elif msg.which() == "carParams":
-          car_fw = msg.carParams.carFw
-          if msg.carParams.openpilotLongitudinalControl:
-            experimental_long = True
-          if cls.car_model is None and not cls.ci:
-            cls.car_model = msg.carParams.carFingerprint
-
-        # Log which can frame the panda safety mode left ELM327, for CAN validity checks
-        elif msg.which() == 'pandaStates':
-          for ps in msg.pandaStates:
-            if cls.elm_frame is None and ps.safetyModel != SafetyModel.elm327:
-              cls.elm_frame = len(can_msgs)
-            if cls.car_safety_mode_frame is None and ps.safetyModel not in \
-              (SafetyModel.elm327, SafetyModel.noOutput):
-              cls.car_safety_mode_frame = len(can_msgs)
-
-        elif msg.which() == 'pandaStateDEPRECATED':
-          if cls.elm_frame is None and msg.pandaStateDEPRECATED.safetyModel != SafetyModel.elm327:
-            cls.elm_frame = len(can_msgs)
-          if cls.car_safety_mode_frame is None and msg.pandaStateDEPRECATED.safetyModel not in \
-            (SafetyModel.elm327, SafetyModel.noOutput):
-            cls.car_safety_mode_frame = len(can_msgs)
-
-      if len(can_msgs) > int(50 / DT_CTRL):
-        break
-    else:
-      raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded and public?")
+    car_fw, can_msgs, experimental_long = cls.get_route_data(test_segs)
 
     # if relay is expected to be open in the route
     cls.openpilot_enabled = cls.car_safety_mode_frame is not None
