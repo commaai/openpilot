@@ -1,125 +1,109 @@
 #!/usr/bin/env python3
 
 import argparse
-import logging
 import os
 import sys
 import xml.etree.ElementTree as ET
-from typing import cast
+from typing import TextIO, cast
 
 import requests
 
-MODEL = "gpt-4"
-
-OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
-
-logger = logging.getLogger()
-
-handler = logging.StreamHandler(sys.stdout)
-
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
+OPENAI_MODEL = "gpt-4"
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+OPENAI_PROMPT = "You are a professional translator from English to {language} (ISO 639 language code)." \
+                "The following sentence or word is in the GUI of a software called openpilot, translate it accordingly."
 
 
-def translate_phrase(text: str, to: str) -> str:
-    response = requests.post(
-        "https://api.openai.com/v1/chat/completions",
-        json={
-            "model": MODEL,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": f"Translate the following text from English to {to} (ISO 639 language code)",
-                },
-                {
-                    "role": "user",
-                    "content": text,
-                },
-            ],
-            "temperature": 0.8,
-            "max_tokens": 64,
-            "top_p": 1,
+def print_log(text: str) -> None:
+  print(text, file=sys.stderr)
+
+
+def translate_phrase(text: str, language: str) -> str:
+  response = requests.post(
+    "https://api.openai.com/v1/chat/completions",
+    json={
+      "model": OPENAI_MODEL,
+      "messages": [
+        {
+          "role": "system",
+          "content": OPENAI_PROMPT.format(language=language),
         },
-        headers={
-            "Authorization": f"Bearer {OPENAI_API_KEY}",
+        {
+          "role": "user",
+          "content": text,
         },
-    )
+      ],
+      "temperature": 0.8,
+      "max_tokens": 128,
+      "top_p": 1,
+    },
+    headers={
+      "Authorization": f"Bearer {OPENAI_API_KEY}",
+    },
+  )
 
-    data = response.json()
+  response.raise_for_status()
 
-    return cast(str, data["choices"][0]["message"]["content"])
+  data = response.json()
+
+  return cast(str, data["choices"][0]["message"]["content"])
 
 
-def translate_file(
-    path: str, language: str, only_unfinished: bool, output_path: str
-) -> None:
-    tree = ET.parse(path)
+def translate_file(input_file: TextIO, output_file: TextIO, language: str, all: bool) -> None:
+  tree = ET.parse(input_file)
 
-    root = tree.getroot()
+  root = tree.getroot()
 
-    root.attrib["language"] = language
+  root.attrib["language"] = language
 
-    for context in root.findall("./context"):
-        name = context.find("name")
-        if name is None:
-            raise ValueError("name not found")
+  for context in root.findall("./context"):
+    name = context.find("name")
+    if name is None:
+      raise ValueError("name not found")
 
-        logger.info("Context: %s", name.text)
+    print_log(f"Context: {name.text}")
 
-        for message in context.findall("./message"):
-            source = message.find("source")
-            translation = message.find("translation")
+    for message in context.findall("./message"):
+      source = message.find("source")
+      translation = message.find("translation")
 
-            if source is None or translation is None:
-                raise ValueError("source or translation not found")
+      if source is None or translation is None:
+        raise ValueError("source or translation not found")
 
-            if only_unfinished and translation.attrib.get("type") != "unfinished":
-                continue
+      if not all and translation.attrib.get("type") != "unfinished":
+        continue
 
-            llm_translation = translate_phrase(cast(str, source.text), language)
+      llm_translation = translate_phrase(cast(str, source.text), language)
 
-            logger.info("Source: %s", source.text)
-            logger.info("Current translation: %s", translation.text)
-            logger.info("LLM translation: %s", llm_translation)
+      print_log(f"Source: {source.text}\n"
+                f"Current translation: {translation.text}\n"
+                f"LLM translation: {llm_translation}")
 
-            translation.text = llm_translation
+      translation.text = llm_translation
 
-    # tree.write(output_path, encoding="utf-8", xml_declaration=True) not add <!DOCTYPE TS>
-
-    with open(output_path, "w", encoding="utf-8") as fp:
-        doc_type = '<?xml version="1.0" encoding="utf-8"?>\n<!DOCTYPE TS>\n'
-        tostring = ET.tostring(root, encoding="utf-8")
-
-        fp.write(doc_type)
-        fp.write(tostring.decode())
+  output_file.write('<?xml version="1.0" encoding="utf-8"?>\n' +
+                    '<!DOCTYPE TS>\n' +
+                    ET.tostring(root, encoding="utf-8").decode())
 
 
 def main() -> None:
-    arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument("-s", "--source", help="The source file")
-    arg_parser.add_argument(
-        "-u",
-        "--only-unfinished",
-        action="store_true",
-        default=False,
-        help="Translate only unfinished",
-    )
-    arg_parser.add_argument(
-        "-l", "--language", required=True, help="Translate to (Language code)"
-    )
-    arg_parser.add_argument("-o", "--output", required=True, help="Path to output file")
+  if OPENAI_API_KEY is None:
+    print("OpenAI api key is missing. (Hint: use `export OPENAI_API_KEY=YOUR-KEY` before you run the script).\n"
+          "If you don't have one go to: https://beta.openai.com/account/api-keys.")
+    exit(1)
 
-    args = arg_parser.parse_args()
+  arg_parser = argparse.ArgumentParser()
+  arg_parser.add_argument("input", nargs="?", type=argparse.FileType("r"), help="The input file")
+  arg_parser.add_argument("output", nargs="?", type=argparse.FileType("w", encoding="utf-8"), default=sys.stdout, help="The output file")
+  arg_parser.add_argument("-a", "--all", action="store_true", default=False, help="Translate all")
+  arg_parser.add_argument("-l", "--language", required=True, help="Translate to (Language code)")
 
-    logger.info(
-        "Translates %s (%s) from English to %s.",
-        args.source,
-        "only unfinished" if args.only_unfinished else "all",
-        args.language,
-    )
+  args = arg_parser.parse_args()
 
-    translate_file(args.source, args.language, args.only_unfinished, args.output)
+  print_log(f"Translates to {args.language} ({'all' if args.all else 'only unfinished'})")
+
+  translate_file(args.input, args.output, args.language, args.all)
 
 
 if __name__ == "__main__":
-    main()
+  main()
