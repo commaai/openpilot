@@ -41,12 +41,26 @@ class Joystick:
   def __init__(self, gamepad=False):
     # TODO: find a way to get this from API, perhaps "inputs" doesn't support it
     # TODO: unknown why self.cancel_button doesn't cancel anything when testing with an Xbox One controller
+    
+    # All controller definitions can be found here:
+    # https://www.kernel.org/doc/html/v4.12/input/gamepad.html
+    
+    # Some examples:
+    # ABS_X = Horizontal Left Joystick
+    # ABS_Y = Vertical Left Joystick
+    # ABS_RX = Horizontal Right Joystick
+    # ABS_RY = Vertical Right Joystick
+    # BTN_THUMBL = Left Joystick Thumb-press
+    # BTN_THUMBR = Right Joystick Thumb-press
+    # ABS_Z = Left Trigger
+    # ABS_RZ = Right Trigger
+    
     if gamepad:
-      self.cancel_button = 'BTN_NORTH'  # (BTN_NORTH=X, ABS_RX=Right Trigger)
+      self.cancel_button = 'BTN_NORTH'
     else:
       self.cancel_button = 'BTN_TRIGGER'
-    accel_axis = 'ABS_Y'
-    steer_axis = 'ABS_RX'
+    accel_axis = 'ABS_Y' # Left Joystick Vertical
+    steer_axis = 'ABS_RX' # Right Joystick Horizontal
     
     self.min_axis_value = {accel_axis: 0., steer_axis: 0.}
     self.max_axis_value = {accel_axis: 255., steer_axis: 255.}
