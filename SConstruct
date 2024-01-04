@@ -14,6 +14,8 @@ AGNOS = TICI
 
 Decider('MD5-timestamp')
 
+SetOption('num_jobs', int(os.cpu_count()/2))
+
 AddOption('--kaitai',
           action='store_true',
           help='Regenerate kaitai struct parsers')
@@ -37,7 +39,7 @@ AddOption('--clazy',
 AddOption('--compile_db',
           action='store_true',
           help='build clang compilation database')
-          
+
 AddOption('--ccflags',
           action='store',
           type='string',
