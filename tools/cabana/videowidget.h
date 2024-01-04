@@ -10,7 +10,7 @@
 #include <QTabBar>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
-#include "tools/cabana/util.h"
+#include "tools/cabana/utils/util.h"
 #include "tools/replay/logreader.h"
 
 struct AlertInfo {
@@ -73,9 +73,9 @@ protected:
   QWidget *createCameraWidget();
   QHBoxLayout *createPlaybackController();
   void loopPlaybackClicked();
-  void vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams);
+  void vipcAvailableStreamsUpdated();
 
-  CameraWidget *cam_widget;
+  CameraView *cam_widget;
   double maximum_time = 0;
   QToolButton *time_btn = nullptr;
   ToolButton *seek_backward_btn = nullptr;

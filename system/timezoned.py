@@ -5,12 +5,11 @@ import time
 import subprocess
 from typing import NoReturn
 
-import requests
 from timezonefinder import TimezoneFinder
 
 from openpilot.common.params import Params
 from openpilot.system.hardware import AGNOS
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_version
 
 REQUEST_HEADERS = {'User-Agent': "openpilot-" + get_version()}
@@ -41,39 +40,18 @@ def main() -> NoReturn:
   # Get allowed timezones
   valid_timezones = subprocess.check_output('timedatectl list-timezones', shell=True, encoding='utf8').strip().split('\n')
 
+  timezone = params.get("Timezone", encoding='utf8')
+  if timezone is not None:
+    cloudlog.debug("Setting timezone based on param")
+    set_timezone(valid_timezones, timezone)
+
   while True:
     time.sleep(60)
 
-    is_onroad = not params.get_bool("IsOffroad")
-    if is_onroad:
-      continue
-
-    # Set based on param
-    timezone = params.get("Timezone", encoding='utf8')
-    if timezone is not None:
-      cloudlog.debug("Setting timezone based on param")
-      set_timezone(valid_timezones, timezone)
-      continue
-
     location = params.get("LastGPSPosition", encoding='utf8')
 
-    # Find timezone based on IP geolocation if no gps location is available
-    if location is None:
-      cloudlog.debug("Setting timezone based on IP lookup")
-      try:
-        r = requests.get("https://ipapi.co/timezone", headers=REQUEST_HEADERS, timeout=10)
-        if r.status_code == 200:
-          set_timezone(valid_timezones, r.text)
-        else:
-          cloudlog.error(f"Unexpected status code from api {r.status_code}")
-
-        time.sleep(3600)  # Don't make too many API requests
-      except requests.exceptions.RequestException:
-        cloudlog.exception("Error getting timezone based on IP")
-        continue
-
     # Find timezone by reverse geocoding the last known gps location
-    else:
+    if location is not None:
       cloudlog.debug("Setting timezone based on GPS location")
       try:
         location = json.loads(location)

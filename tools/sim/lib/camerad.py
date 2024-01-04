@@ -59,7 +59,7 @@ class Camerad:
     eof = int(frame_id * 0.05 * 1e9)
     self.vipc_server.send(yuv_type, yuv, frame_id, eof, eof)
 
-    dat = messaging.new_message(pub_type)
+    dat = messaging.new_message(pub_type, valid=True)
     msg = {
       "frameId": frame_id,
       "transform": [1.0, 0.0, 0.0,

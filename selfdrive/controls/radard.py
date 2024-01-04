@@ -9,9 +9,9 @@ from cereal import messaging, log, car
 from openpilot.common.numpy_fast import interp
 from openpilot.common.params import Params
 from openpilot.common.realtime import Ratekeeper, Priority, config_realtime_process
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 
-from openpilot.common.kalman.simple_kalman import KF1D
+from openpilot.common.simple_kalman import KF1D
 
 
 # Default lead acceleration decay set to 50% at 1s
@@ -270,6 +270,7 @@ class RadarD:
 
     # publish tracks for UI debugging (keep last)
     tracks_msg = messaging.new_message('liveTracks', len(self.tracks))
+    tracks_msg.valid = self.radar_state_valid
     for index, tid in enumerate(sorted(self.tracks.keys())):
       tracks_msg.liveTracks[index] = {
         "trackId": tid,

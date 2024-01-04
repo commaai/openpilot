@@ -114,3 +114,28 @@ void ElidedLabel::paintEvent(QPaintEvent *event) {
   opt.initFrom(this);
   style()->drawItemText(&painter, contentsRect(), alignment(), opt.palette, isEnabled(), elidedText_, foregroundRole());
 }
+
+// ParamControl
+
+ParamControl::ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, QWidget *parent)
+    : ToggleControl(title, desc, icon, false, parent) {
+  key = param.toStdString();
+  QObject::connect(this, &ParamControl::toggleFlipped, this, &ParamControl::toggleClicked);
+}
+
+void ParamControl::toggleClicked(bool state) {
+  auto do_confirm = [this]() {
+    QString content("<body><h2 style=\"text-align: center;\">" + title_label->text() + "</h2><br>"
+                    "<p style=\"text-align: center; margin: 0 128px; font-size: 50px;\">" + getDescription() + "</p></body>");
+    return ConfirmationDialog(content, tr("Enable"), tr("Cancel"), true, this).exec();
+  };
+
+  bool confirmed = store_confirm && params.getBool(key + "Confirmed");
+  if (!confirm || confirmed || !state || do_confirm()) {
+    if (store_confirm && state) params.putBool(key + "Confirmed", true);
+    params.putBool(key, state);
+    setIcon(state);
+  } else {
+    toggle.togglePosition();
+  }
+}
