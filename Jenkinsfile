@@ -110,7 +110,7 @@ def pcStage(String stageName, Closure body) {
       return docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .")
     }
 
-    lock(resource: "", label: 'pc', inversePrecedence: true, variable: 'device_ip', quantity: 1) {
+    lock(resource: "", label: 'pc', inversePrecedence: true, quantity: 1) {
       openpilot_base.inside(dockerArgs) {
         timeout(time: 20, unit: 'MINUTES') {
           try {
