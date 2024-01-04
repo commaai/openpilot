@@ -88,7 +88,7 @@ def translate_file(input_file: TextIO, output_file: TextIO, language: str, all_:
 
 def main() -> None:
   arg_parser = argparse.ArgumentParser()
-  arg_parser.add_argument("input", nargs="?", type=argparse.FileType("r"), help="The input file")
+  arg_parser.add_argument("input", type=argparse.FileType("r"), help="The input file")
   arg_parser.add_argument("output", nargs="?", type=argparse.FileType("w", encoding="utf-8"), default=sys.stdout, help="The output file")
   arg_parser.add_argument("-a", "--all", action="store_true", default=False, help="Translate all")
   arg_parser.add_argument("-l", "--language", required=True, help="Translate to (Language code)")
