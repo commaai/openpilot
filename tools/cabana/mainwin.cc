@@ -24,7 +24,7 @@
 #include "tools/cabana/tools/findsignal.h"
 #include "tools/cabana/utils/export.h"
 #include "tools/replay/replay.h"
-#include "tools/cabana/get_opendbc_file_path.h"
+#include "tools/cabana/utils/get_opendbc_file_path.h"
 
 #define DIST_TO_ROOT 2
 

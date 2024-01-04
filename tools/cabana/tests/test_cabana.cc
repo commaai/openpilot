@@ -4,7 +4,7 @@
 
 #include "catch2/catch.hpp"
 #include "tools/cabana/dbc/dbcmanager.h"
-#include "tools/cabana/get_opendbc_file_path.h"
+#include "tools/cabana/utils/get_opendbc_file_path.h"
 
 #define DIST_TO_ROOT 3
 
