@@ -44,10 +44,6 @@ def main() -> NoReturn:
   while True:
     time.sleep(60)
 
-    is_onroad = not params.get_bool("IsOffroad")
-    if is_onroad:
-      continue
-
     # Set based on param
     timezone = params.get("Timezone", encoding='utf8')
     if timezone is not None:
