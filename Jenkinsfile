@@ -110,18 +110,20 @@ def pcStage(String stageName, Closure body) {
       return docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .")
     }
 
-    openpilot_base.inside(dockerArgs) {
-      timeout(time: 20, unit: 'MINUTES') {
-        try {
-          retryWithDelay (3, 15) {
-            sh "git config --global --add safe.directory '*'"
-            sh "git submodule update --init --recursive"
-            sh "git lfs pull"
-          }
-          body()
-        } finally {
-            sh "rm -rf ${env.WORKSPACE}/* || true"
-            sh "rm -rf .* || true"
+    lock(resource: "", label: 'pc', inversePrecedence: true, quantity: 1) {
+      openpilot_base.inside(dockerArgs) {
+        timeout(time: 20, unit: 'MINUTES') {
+          try {
+            retryWithDelay (3, 15) {
+              sh "git config --global --add safe.directory '*'"
+              sh "git submodule update --init --recursive"
+              sh "git lfs pull"
+            }
+            body()
+          } finally {
+              sh "rm -rf ${env.WORKSPACE}/* || true"
+              sh "rm -rf .* || true"
+            }
           }
         }
       }
