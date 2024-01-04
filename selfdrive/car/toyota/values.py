@@ -181,7 +181,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   ],
   CAR.RAV4_TSS2_2023: [
     ToyotaCarInfo("Toyota RAV4 2023"),
-    ToyotaCarInfo("Toyota RAV4 Hybrid 2023"),
+    ToyotaCarInfo("Toyota RAV4 Hybrid 2023-24"),
   ],
   CAR.MIRAI: ToyotaCarInfo("Toyota Mirai 2021"),
   CAR.SIENNA: ToyotaCarInfo("Toyota Sienna 2018-20", video_link="https://www.youtube.com/watch?v=q1UPOo4Sh68", min_enable_speed=MIN_ACC_SPEED),
