@@ -5,7 +5,6 @@ import time
 import subprocess
 from typing import NoReturn
 
-import requests
 from timezonefinder import TimezoneFinder
 
 from openpilot.common.params import Params
