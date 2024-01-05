@@ -4,7 +4,7 @@ from collections import defaultdict
 import difflib
 import pickle
 
-from openpilot.selfdrive.car.docs import get_all_car_info
+from openpilot.selfdrive.car.docs import get_all_car_info, group_by_platform
 from openpilot.selfdrive.car.docs_definitions import Column
 
 FOOTNOTE_TAG = "<sup>{}</sup>"
@@ -58,14 +58,8 @@ def format_row(builder):
 
 
 def print_car_info_diff(path):
-  base_car_info = defaultdict(list)
-  new_car_info = defaultdict(list)
-
-
-  for car in load_base_car_info(path):
-    base_car_info[car.car_fingerprint].append(car)
-  for car in get_all_car_info():
-    new_car_info[car.car_fingerprint].append(car)
+  base_car_info = group_by_platform(load_base_car_info(path))
+  new_car_info = group_by_platform(get_all_car_info())
 
   # Add new platforms to base cars so we can detect additions and removals in one pass
   base_car_info.update({car: [] for car in new_car_info if car not in base_car_info})
@@ -73,7 +67,7 @@ def print_car_info_diff(path):
   changes = defaultdict(list)
   for base_car_model, base_cars in base_car_info.items():
     # Match car info changes, and get additions and removals
-    new_cars = new_car_info[base_car_model]
+    new_cars = new_car_info.get(base_car_model, [])
     car_changes, car_additions, car_removals = match_cars(base_cars, new_cars)
 
     # Removals
