@@ -56,3 +56,11 @@ Traceback (most recent call last):
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
 AssertionError: 1 is not false : panda safety doesn't agree with openpilot: {'gasPressed': 116}
 ```
+
+### [tools/car_porting/examples/subaru_steer_temp_fault.ipynb](/tools/car_porting/examples/subaru_steer_temp_fault.ipynb)
+
+An example of searching through a database of segments for a specific condition, and plotting the results.
+
+![steer warning example](https://github.com/commaai/openpilot/assets/9648890/d60ad120-4b44-4974-ac79-adc660fb8fe2)
+
+*a plot of the steer_warning vs steering angle, where we can see it is clearly caused by a large steering angle change*
