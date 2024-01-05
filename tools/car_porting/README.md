@@ -60,3 +60,7 @@ AssertionError: 1 is not false : panda safety doesn't agree with openpilot: {'ga
 ### [tools/car_porting/examples/subaru_steer_temp_fault.ipynb](/tools/car_porting/examples/subaru_steer_temp_fault.ipynb)
 
 An example of searching through a database of segments for a specific condition, and plotting the results.
+
+![steer warning example](examples/images/steer_warning_example.png)
+
+*a plot of the steer_warning vs steering angle, where we can see it is clearly caused by a large steering angle change*
