@@ -37,6 +37,23 @@ FW_VERSIONS = {
       b'\x01\xfe\xfa\x00\x00',
     ],
   },
+  CAR.ASCENT_2019: {
+(Ecu.eps, 0x1862, None): [
+      b'\x85\xc0\xd0\x00',
+(Ecu.engine, 0x7E0, None): [
+      b'\xf1\x82\xbb,\xa0t\x07',
+(Ecu.transmission, 0x7E1, None): [
+      b'\xf1\x00\xa4\x10@',
+(Ecu.abs, 0x7B0, None): [
+      b'\xa5 \x19\x02\x00',
+(Ecu.fwdCamera, 0x787, None): [
+      b'\x00\x00d\xb9\x00\x00\x00\x00',
+(Ecu.fwdRadar, 0x7D0, None): [
+      b'\xf1\x00\x00\x00\x02',
+(Ecu.fwdCamera, 0x7C4, None): [
+      b'\xf1\x00\xac\x04\x00',
+    ],
+  },  
   CAR.ASCENT_2023: {
     (Ecu.abs, 0x7b0, None): [
       b'\xa5 #\x03\x00',
