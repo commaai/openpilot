@@ -1,17 +1,38 @@
 #!/usr/bin/env python3
 
 import argparse
+import json
 import os
+import pathlib
 import sys
 import xml.etree.ElementTree as ET
-from typing import TextIO, cast
+from typing import cast
 
 import requests
+
+TRANSLATIONS_DIR = pathlib.Path(__file__).resolve().parent
+TRANSLATIONS_LANGUAGES = TRANSLATIONS_DIR / "languages.json"
 
 OPENAI_MODEL = "gpt-4"
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 OPENAI_PROMPT = "You are a professional translator from English to {language} (ISO 639 language code)." + \
                 "The following sentence or word is in the GUI of a software called openpilot, translate it accordingly."
+
+
+def get_language_files(languages: list[str] | None = None) -> dict[str, pathlib.Path]:
+  files = {}
+
+  with open(TRANSLATIONS_LANGUAGES) as fp:
+    language_dict = json.load(fp)
+
+    for filename in language_dict.values():
+      path = TRANSLATIONS_DIR / f"{filename}.ts"
+      language = path.stem.split("main_")[1]
+
+      if languages is None or language in languages:
+        files[language] = path
+
+  return files
 
 
 def print_log(text: str) -> None:
@@ -34,7 +55,7 @@ def translate_phrase(text: str, language: str) -> str:
         },
       ],
       "temperature": 0.8,
-      "max_tokens": 128,
+      "max_tokens": 1024,
       "top_p": 1,
     },
     headers={
@@ -49,12 +70,10 @@ def translate_phrase(text: str, language: str) -> str:
   return cast(str, data["choices"][0]["message"]["content"])
 
 
-def translate_file(input_file: TextIO, output_file: TextIO, language: str, all_: bool) -> None:
-  tree = ET.parse(input_file)
+def translate_file(path: pathlib.Path, language: str, all_: bool) -> None:
+  tree = ET.parse(path)
 
   root = tree.getroot()
-
-  root.attrib["language"] = language
 
   for context in root.findall("./context"):
     name = context.find("name")
@@ -81,28 +100,41 @@ def translate_file(input_file: TextIO, output_file: TextIO, language: str, all_:
 
       translation.text = llm_translation
 
-  output_file.write('<?xml version="1.0" encoding="utf-8"?>\n' +
-                    '<!DOCTYPE TS>\n' +
-                    ET.tostring(root, encoding="utf-8").decode())
+  with path.open("w", encoding="utf-8") as fp:
+    fp.write('<?xml version="1.0" encoding="utf-8"?>\n' +
+             '<!DOCTYPE TS>\n' +
+             ET.tostring(root, encoding="utf-8").decode())
 
 
-def main() -> None:
-  arg_parser = argparse.ArgumentParser()
-  arg_parser.add_argument("input", type=argparse.FileType("r"), help="The input file")
-  arg_parser.add_argument("output", nargs="?", type=argparse.FileType("w", encoding="utf-8"), default=sys.stdout, help="The output file")
-  arg_parser.add_argument("-a", "--all", action="store_true", default=False, help="Translate all")
-  arg_parser.add_argument("-l", "--language", required=True, help="Translate to (Language code)")
+def main():
+  arg_parser = argparse.ArgumentParser("Auto translate")
+
+  group = arg_parser.add_mutually_exclusive_group(required=True)
+  group.add_argument("-a", "--all-files", action="store_true", help="Translate all files")
+  group.add_argument("-f", "--file", nargs="+", help="Translate the selected files. (Example: -f fr de)")
+
+  arg_parser.add_argument("-t", "--all-translations", action="store_true", default=False, help="Translate all sections. (Default: only unfinished)")
 
   args = arg_parser.parse_args()
 
   if OPENAI_API_KEY is None:
-    print("OpenAI api key is missing. (Hint: use `export OPENAI_API_KEY=YOUR-KEY` before you run the script).\n" + \
+    print("OpenAI API key is missing. (Hint: use `export OPENAI_API_KEY=YOUR-KEY` before you run the script).\n" + \
           "If you don't have one go to: https://beta.openai.com/account/api-keys.")
     exit(1)
 
-  print_log(f"Translates to {args.language} ({'all' if args.all else 'only unfinished'})")
+  files = get_language_files(None if args.all_files else args.file)
 
-  translate_file(args.input, args.output, args.language, args.all)
+  if args.file:
+    missing_files = set(args.file) - set(files)
+    if len(missing_files):
+      print_log(f"No language files found: {missing_files}")
+      exit(1)
+
+  print_log(f"Translation mode: {'all' if args.all_translations else 'only unfinished'}. Files: {list(files)}")
+
+  for lang, path in files.items():
+    print_log(f"Translate {lang} ({path})")
+    translate_file(path, lang, args.all_translations)
 
 
 if __name__ == "__main__":
