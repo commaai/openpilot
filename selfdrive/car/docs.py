@@ -58,6 +58,13 @@ def group_by_make(all_car_info: List[CarInfo]) -> Dict[str, List[CarInfo]]:
   return dict(sorted_car_info)
 
 
+def group_by_platform(all_car_info: List[CarInfo]) -> Dict[str, List[CarInfo]]:
+  grouped_car_info = defaultdict(list)
+  for car_info in all_car_info:
+    grouped_car_info[car_info.car_fingerprint].append(car_info)
+  return dict(grouped_car_info)
+
+
 def generate_cars_md(all_car_info: List[CarInfo], template_fn: str) -> str:
   with open(template_fn, "r") as f:
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)

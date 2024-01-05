@@ -61,6 +61,7 @@ def print_car_info_diff(path):
   base_car_info = defaultdict(list)
   new_car_info = defaultdict(list)
 
+
   for car in load_base_car_info(path):
     base_car_info[car.car_fingerprint].append(car)
   for car in get_all_car_info():
