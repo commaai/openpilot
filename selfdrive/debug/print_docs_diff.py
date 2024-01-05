@@ -8,9 +8,10 @@ from openpilot.selfdrive.car.docs import get_all_car_info
 from openpilot.selfdrive.car.docs_definitions import Column
 
 FOOTNOTE_TAG = "<sup>{}</sup>"
-STAR_ICON = '<a href="##"><img valign="top" src="https://raw.githubusercontent.com/commaai/openpilot/master/docs/assets/icon-star-{}.svg" width="22" /></a>'
-VIDEO_ICON = '<a href="{}" target="_blank">\
-                          <img height="18px" src="https://raw.githubusercontent.com/commaai/openpilot/master/docs/assets/icon-youtube.svg"></img></a>'
+STAR_ICON = '<a href="##"><img valign="top" ' + \
+            'src="https://media.githubusercontent.com/media/commaai/openpilot/master/docs/assets/icon-star-{}.svg" width="22" /></a>'
+VIDEO_ICON = '<a href="{}" target="_blank">' + \
+             '<img height="18px" src="https://media.githubusercontent.com/media/commaai/openpilot/master/docs/assets/icon-youtube.svg"></img></a>'
 COLUMNS = "|" + "|".join([column.value for column in Column]) + "|"
 COLUMN_HEADER = "|---|---|---|{}|".format("|".join([":---:"] * (len(Column) - 3)))
 ARROW_SYMBOL = "➡️"
