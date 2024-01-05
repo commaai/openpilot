@@ -56,3 +56,7 @@ Traceback (most recent call last):
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
 AssertionError: 1 is not false : panda safety doesn't agree with openpilot: {'gasPressed': 116}
 ```
+
+### [tools/car_ports/examples/subaru_steer_temp_fault.ipynb](/tools/car_ports/examples/subaru_steer_temp_fault.ipynb)
+
+An example of searching through a database of segments for a specific condition, and plotting the results.
