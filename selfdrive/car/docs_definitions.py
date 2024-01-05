@@ -244,10 +244,13 @@ class CarInfo:
   # all the parts needed for the supported car
   car_parts: CarParts = field(default_factory=CarParts)
 
+  def __post_init__(self):
+    self.make, self.model, self.years = split_name(self.name)
+    self.year_list = get_year_list(self.years)
+
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
     self.car_name = CP.carName
     self.car_fingerprint = CP.carFingerprint
-    self.make, self.model, self.years = split_name(self.name)
 
     # longitudinal column
     op_long = "Stock"
@@ -309,7 +312,6 @@ class CarInfo:
       self.row[Column.STEERING_TORQUE] = Star.FULL
 
     self.all_footnotes = all_footnotes
-    self.year_list = get_year_list(self.years)
     self.detail_sentence = self.get_detail_sentence(CP)
 
     return self
