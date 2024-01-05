@@ -1,4 +1,4 @@
-# Utilities for sanitizing routes of only essential data
+# Utilities for sanitizing routes of only essential data for testing car ports and doing validation.
 
 from openpilot.tools.lib.logreader import LogIterable
 
