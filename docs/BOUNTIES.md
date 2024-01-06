@@ -1,4 +1,4 @@
-# [Bounties](https://github.com/orgs/commaai/projects/26/views/1)
+
 
 Get paid to improve openpilot!
 
