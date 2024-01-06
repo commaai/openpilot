@@ -4,10 +4,8 @@
 #include <QFileInfo>
 #include <QRegularExpression>
 #include <QTextStream>
-#include <numeric>
-#include <sstream>
 
-DBCFile::DBCFile(const QString &dbc_file_name, QObject *parent) : QObject(parent) {
+DBCFile::DBCFile(const QString &dbc_file_name) {
   QFile file(dbc_file_name);
   if (file.open(QIODevice::ReadOnly)) {
     name_ = QFileInfo(dbc_file_name).baseName();
@@ -22,7 +20,7 @@ DBCFile::DBCFile(const QString &dbc_file_name, QObject *parent) : QObject(parent
   }
 }
 
-DBCFile::DBCFile(const QString &name, const QString &content, QObject *parent) : QObject(parent), name_(name), filename("") {
+DBCFile::DBCFile(const QString &name, const QString &content) : name_(name), filename("") {
   // Open from clipboard
   parse(content);
 }
@@ -54,8 +52,7 @@ void DBCFile::cleanupAutoSaveFile() {
 bool DBCFile::writeContents(const QString &fn) {
   QFile file(fn);
   if (file.open(QIODevice::WriteOnly)) {
-    file.write(generateDBC().toUtf8());
-    return true;
+    return file.write(generateDBC().toUtf8()) >= 0;
   }
   return false;
 }
@@ -77,10 +74,6 @@ cabana::Msg *DBCFile::msg(uint32_t address) {
 cabana::Msg *DBCFile::msg(const QString &name) {
   auto it = std::find_if(msgs.begin(), msgs.end(), [&name](auto &m) { return m.second.name == name; });
   return it != msgs.end() ? &(it->second) : nullptr;
-}
-
-int DBCFile::signalCount() {
-  return std::accumulate(msgs.cbegin(), msgs.cend(), 0, [](int &n, const auto &m) { return n + m.second.sigs.size(); });
 }
 
 void DBCFile::parse(const QString &content) {
@@ -228,7 +221,7 @@ QString DBCFile::generateDBC() {
       if (!sig->comment.isEmpty()) {
         signal_comment += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(address).arg(sig->name).arg(sig->comment);
       }
-      if (!sig->val_desc.isEmpty()) {
+      if (!sig->val_desc.empty()) {
         QStringList text;
         for (auto &[val, desc] : sig->val_desc) {
           text << QString("%1 \"%2\"").arg(val).arg(desc);

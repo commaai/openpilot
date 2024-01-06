@@ -28,12 +28,11 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE
 
     if candidate in ANGLE_CONTROL_CAR:
-      ret.dashcamOnly = True
       ret.steerControlType = SteerControlType.angle
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
 
       # LTA control can be more delayed and winds up more often
-      ret.steerActuatorDelay = 0.25
+      ret.steerActuatorDelay = 0.18
       ret.steerLimitTimer = 0.8
     else:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
@@ -85,28 +84,28 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.5533
       ret.mass = 4481. * CV.LB_TO_KG  # mean between min and max
 
-    elif candidate in (CAR.CHR, CAR.CHR_TSS2, CAR.CHRH_TSS2):
+    elif candidate in (CAR.CHR, CAR.CHR_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.63906
       ret.steerRatio = 13.6
       ret.tireStiffnessFactor = 0.7933
       ret.mass = 3300. * CV.LB_TO_KG
 
-    elif candidate in (CAR.CAMRY, CAR.CAMRYH, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2):
+    elif candidate in (CAR.CAMRY, CAR.CAMRY_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.82448
       ret.steerRatio = 13.7
       ret.tireStiffnessFactor = 0.7933
       ret.mass = 3400. * CV.LB_TO_KG  # mean between normal and hybrid
 
-    elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2):
+    elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.HIGHLANDER_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.8194  # average of 109.8 and 112.2 in
       ret.steerRatio = 16.0
       ret.tireStiffnessFactor = 0.8
       ret.mass = 4516. * CV.LB_TO_KG  # mean between normal and hybrid
 
-    elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALONH_2019, CAR.AVALON_TSS2, CAR.AVALONH_TSS2):
+    elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALON_TSS2):
       # starting from 2019, all Avalon variants have stop and go
       # https://engage.toyota.com/static/images/toyota_safety_sense/TSS_Applicability_Chart.pdf
       stop_and_go = candidate != CAR.AVALON
@@ -115,8 +114,7 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.7983
       ret.mass = 3505. * CV.LB_TO_KG  # mean between normal and hybrid
 
-    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2_2022,
-                       CAR.RAV4_TSS2_2023, CAR.RAV4H_TSS2_2023):
+    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023):
       ret.wheelbase = 2.68986
       ret.steerRatio = 14.3
       ret.tireStiffnessFactor = 0.7933
@@ -164,6 +162,12 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.444
       ret.mass = 3736.8 * CV.LB_TO_KG
 
+    elif candidate == CAR.LEXUS_GS_F:
+      ret.wheelbase = 2.84988
+      ret.steerRatio = 13.3
+      ret.tireStiffnessFactor = 0.444
+      ret.mass = 4034. * CV.LB_TO_KG
+
     elif candidate == CAR.LEXUS_CTH:
       stop_and_go = True
       ret.wheelbase = 2.60
@@ -191,7 +195,7 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.8
       ret.mass = 4300. * CV.LB_TO_KG
 
-    elif candidate in (CAR.ALPHARD_TSS2, CAR.ALPHARDH_TSS2):
+    elif candidate == CAR.ALPHARD_TSS2:
       ret.wheelbase = 3.00
       ret.steerRatio = 14.2
       ret.tireStiffnessFactor = 0.444
@@ -217,6 +221,9 @@ class CarInterface(CarInterfaceBase):
     ret.enableDsu = len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR) \
                                         and not (ret.flags & ToyotaFlags.SMART_DSU)
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
+
+    if ret.enableGasInterceptor:
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_GAS_INTERCEPTOR
 
     # if the smartDSU is detected, openpilot can send ACC_CONTROL and the smartDSU will block it from the DSU or radar.
     # since we don't yet parse radar on TSS2/TSS-P radar-based ACC cars, gate longitudinal behind experimental toggle

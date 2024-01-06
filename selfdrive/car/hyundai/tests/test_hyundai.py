@@ -5,9 +5,10 @@ import unittest
 from cereal import car
 from openpilot.selfdrive.car.fw_versions import build_fw_dict
 from openpilot.selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
-                                         HYBRID_CAR, EV_CAR, FW_QUERY_CONFIG, FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, \
+                                         HYBRID_CAR, EV_CAR, FW_QUERY_CONFIG, LEGACY_SAFETY_MODE_CAR, \
                                          UNSUPPORTED_LONGITUDINAL_CAR, PLATFORM_CODE_ECUS, HYUNDAI_VERSION_REQUEST_LONG, \
                                          get_platform_codes
+from openpilot.selfdrive.car.hyundai.fingerprints import FW_VERSIONS
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
@@ -23,6 +24,7 @@ NO_DATES_PLATFORMS = {
   CAR.TUCSON_HYBRID_4TH_GEN,
   # CAN
   CAR.ELANTRA,
+  CAR.ELANTRA_GT_I30,
   CAR.KIA_CEED,
   CAR.KIA_FORTE,
   CAR.KIA_OPTIMA_G4,
@@ -99,7 +101,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
   def test_platform_code_ecus_available(self):
     # TODO: add queries for these non-CAN FD cars to get EPS
     no_eps_platforms = CANFD_CAR | {CAR.KIA_SORENTO, CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL, CAR.KIA_OPTIMA_H,
-                                    CAR.KIA_OPTIMA_H_G4_FL, CAR.SONATA_LF, CAR.TUCSON, CAR.GENESIS_G90, CAR.GENESIS_G80}
+                                    CAR.KIA_OPTIMA_H_G4_FL, CAR.SONATA_LF, CAR.TUCSON, CAR.GENESIS_G90, CAR.GENESIS_G80, CAR.ELANTRA}
 
     # Asserts ECU keys essential for fuzzy fingerprinting are available on all platforms
     for car_model, ecus in FW_VERSIONS.items():
@@ -192,7 +194,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
                          "subAddress": 0 if sub_addr is None else sub_addr})
 
       CP = car.CarParams.new_message(carFw=car_fw)
-      matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw))
+      matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw), FW_VERSIONS)
       if len(matches) == 1:
         self.assertEqual(list(matches)[0], platform)
       else:

@@ -26,7 +26,8 @@ from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.selfdrive.test.process_replay.capture import ProcessOutputCapture
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.logreader import LogIterable
+from openpilot.tools.lib.framereader import BaseFrameReader
 
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7
@@ -201,16 +202,15 @@ class ProcessContainer:
 
     self.environ_config = environ_config
 
-  def _setup_vision_ipc(self, all_msgs):
+  def _setup_vision_ipc(self, all_msgs: LogIterable, frs: Dict[str, Any]):
     assert len(self.cfg.vision_pubs) != 0
-
-    device_type = next(str(msg.initData.deviceType) for msg in all_msgs if msg.which() == "initData")
 
     vipc_server = VisionIpcServer("camerad")
     streams_metas = available_streams(all_msgs)
     for meta in streams_metas:
       if meta.camera_state in self.cfg.vision_pubs:
-        vipc_server.create_buffers(meta.stream, 2, False, *meta.frame_sizes[device_type])
+        frame_size = (frs[meta.camera_state].w, frs[meta.camera_state].h)
+        vipc_server.create_buffers(meta.stream, 2, False, *frame_size)
     vipc_server.start_listener()
 
     self.vipc_server = vipc_server
@@ -224,7 +224,7 @@ class ProcessContainer:
 
   def start(
     self, params_config: Dict[str, Any], environ_config: Dict[str, Any],
-    all_msgs: Union[LogReader, List[capnp._DynamicStructReader]],
+    all_msgs: LogIterable, frs: Optional[Dict[str, BaseFrameReader]],
     fingerprint: Optional[str], capture_output: bool
   ):
     with self.prefix as p:
@@ -241,7 +241,8 @@ class ProcessContainer:
       self.sockets = [messaging.sub_sock(s, timeout=100) for s in self.cfg.subs]
 
       if len(self.cfg.vision_pubs) != 0:
-        self._setup_vision_ipc(all_msgs)
+        assert frs is not None
+        self._setup_vision_ipc(all_msgs, frs)
         assert self.vipc_server is not None
 
       if capture_output:
@@ -265,7 +266,7 @@ class ProcessContainer:
       self.prefix.clean_dirs()
       self._clean_env()
 
-  def run_step(self, msg: capnp._DynamicStructReader, frs: Optional[Dict[str, Any]]) -> List[capnp._DynamicStructReader]:
+  def run_step(self, msg: capnp._DynamicStructReader, frs: Optional[Dict[str, BaseFrameReader]]) -> List[capnp._DynamicStructReader]:
     assert self.rc and self.pm and self.sockets and self.process.proc
 
     output_msgs = []
@@ -441,21 +442,11 @@ def controlsd_config_callback(params, cfg, lr):
       controlsState = msg.controlsState
       if initialized:
         break
-    elif msg.which() == "carEvents":
-      initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.carEvents]
+    elif msg.which() == "onroadEvents":
+      initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.onroadEvents]
 
   assert controlsState is not None and initialized, "controlsState never initialized"
   params.put("ReplayControlsState", controlsState.as_builder().to_bytes())
-
-
-def laikad_config_pubsub_callback(params, cfg, lr):
-  ublox = params.get_bool("UbloxAvailable")
-  main_key = "ubloxGnss" if ublox else "qcomGnss"
-  sub_keys = ({"qcomGnss", } if ublox else {"ubloxGnss", })
-
-  cfg.pubs = set(cfg.pubs) - sub_keys
-  cfg.main_pub = main_key
-  cfg.main_pub_drained = True
 
 
 def locationd_config_pubsub_callback(params, cfg, lr):
@@ -474,8 +465,8 @@ CONFIGS = [
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
       "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope"
     ],
-    subs=["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
-    ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
+    subs=["controlsState", "carState", "carControl", "sendcan", "onroadEvents", "carParams"],
+    ignore=["logMonoTime", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     config_callback=controlsd_config_callback,
     init_callback=controlsd_fingerprint_callback,
     should_recv_callback=controlsd_rcv_callback,
@@ -487,7 +478,7 @@ CONFIGS = [
     proc_name="radard",
     pubs=["can", "carState", "modelV2"],
     subs=["radarState", "liveTracks"],
-    ignore=["logMonoTime", "valid", "radarState.cumLagMs"],
+    ignore=["logMonoTime", "radarState.cumLagMs"],
     init_callback=get_car_params_callback,
     should_recv_callback=MessageBasedRcvCallback("can"),
     main_pub="can",
@@ -496,7 +487,7 @@ CONFIGS = [
     proc_name="plannerd",
     pubs=["modelV2", "carControl", "carState", "controlsState", "radarState"],
     subs=["lateralPlan", "longitudinalPlan", "uiPlan"],
-    ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime", "lateralPlan.solverExecutionTime"],
+    ignore=["logMonoTime", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime", "lateralPlan.solverExecutionTime"],
     init_callback=get_car_params_callback,
     should_recv_callback=FrequencyBasedRcvCallback("modelV2"),
     tolerance=NUMPY_TOLERANCE,
@@ -505,14 +496,14 @@ CONFIGS = [
     proc_name="calibrationd",
     pubs=["carState", "cameraOdometry", "carParams"],
     subs=["liveCalibration"],
-    ignore=["logMonoTime", "valid"],
+    ignore=["logMonoTime"],
     should_recv_callback=calibration_rcv_callback,
   ),
   ProcessConfig(
     proc_name="dmonitoringd",
     pubs=["driverStateV2", "liveCalibration", "carState", "modelV2", "controlsState"],
     subs=["driverMonitoringState"],
-    ignore=["logMonoTime", "valid"],
+    ignore=["logMonoTime"],
     should_recv_callback=FrequencyBasedRcvCallback("driverStateV2"),
     tolerance=NUMPY_TOLERANCE,
   ),
@@ -523,7 +514,7 @@ CONFIGS = [
       "liveCalibration", "carState", "carParams", "gpsLocation"
     ],
     subs=["liveLocationKalman"],
-    ignore=["logMonoTime", "valid"],
+    ignore=["logMonoTime"],
     config_callback=locationd_config_pubsub_callback,
     tolerance=NUMPY_TOLERANCE,
   ),
@@ -531,7 +522,7 @@ CONFIGS = [
     proc_name="paramsd",
     pubs=["liveLocationKalman", "carState"],
     subs=["liveParameters"],
-    ignore=["logMonoTime", "valid"],
+    ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
     should_recv_callback=FrequencyBasedRcvCallback("liveLocationKalman"),
     tolerance=NUMPY_TOLERANCE,
@@ -542,17 +533,6 @@ CONFIGS = [
     pubs=["ubloxRaw"],
     subs=["ubloxGnss", "gpsLocationExternal"],
     ignore=["logMonoTime"],
-  ),
-  ProcessConfig(
-    proc_name="laikad",
-    pubs=["ubloxGnss", "qcomGnss"],
-    subs=["gnssMeasurements"],
-    ignore=["logMonoTime"],
-    config_callback=laikad_config_pubsub_callback,
-    tolerance=NUMPY_TOLERANCE,
-    processing_time=0.002,
-    timeout=60*10,  # first messages are blocked on internet assistance
-    main_pub="ubloxGnss", # config_callback will switch this to qcom if needed
   ),
   ProcessConfig(
     proc_name="torqued",
@@ -599,7 +579,7 @@ def get_process_config(name: str) -> ProcessConfig:
     raise Exception(f"Cannot find process config with name: {name}") from ex
 
 
-def get_custom_params_from_lr(lr: Union[LogReader, List[capnp._DynamicStructReader]], initial_state: str = "first") -> Dict[str, Any]:
+def get_custom_params_from_lr(lr: LogIterable, initial_state: str = "first") -> Dict[str, Any]:
   """
   Use this to get custom params dict based on provided logs.
   Useful when replaying following processes: calibrationd, paramsd, torqued
@@ -614,10 +594,13 @@ def get_custom_params_from_lr(lr: Union[LogReader, List[capnp._DynamicStructRead
   assert initial_state in ["first", "last"]
   msg_index = 0 if initial_state == "first" else -1
 
-  assert len(car_params) > 0, "carParams required for initial state of liveParameters and liveTorqueCarParams"
+  assert len(car_params) > 0, "carParams required for initial state of liveParameters and CarParamsPrevRoute"
   CP = car_params[msg_index].carParams
 
-  custom_params = {}
+  custom_params = {
+    "CarParamsPrevRoute": CP.as_builder().to_bytes()
+  }
+
   if len(live_calibration) > 0:
     custom_params["CalibrationParams"] = live_calibration[msg_index].as_builder().to_bytes()
   if len(live_parameters) > 0:
@@ -625,14 +608,12 @@ def get_custom_params_from_lr(lr: Union[LogReader, List[capnp._DynamicStructRead
     lp_dict["carFingerprint"] = CP.carFingerprint
     custom_params["LiveParameters"] = json.dumps(lp_dict)
   if len(live_torque_parameters) > 0:
-    custom_params["LiveTorqueCarParams"] = CP.as_builder().to_bytes()
     custom_params["LiveTorqueParameters"] = live_torque_parameters[msg_index].as_builder().to_bytes()
 
   return custom_params
 
 
-def replay_process_with_name(name: Union[str, Iterable[str]], lr: Union[LogReader,
-                             List[capnp._DynamicStructReader]], *args, **kwargs) -> List[capnp._DynamicStructReader]:
+def replay_process_with_name(name: Union[str, Iterable[str]], lr: LogIterable, *args, **kwargs) -> List[capnp._DynamicStructReader]:
   if isinstance(name, str):
     cfgs = [get_process_config(name)]
   elif isinstance(name, Iterable):
@@ -644,7 +625,7 @@ def replay_process_with_name(name: Union[str, Iterable[str]], lr: Union[LogReade
 
 
 def replay_process(
-  cfg: Union[ProcessConfig, Iterable[ProcessConfig]], lr: Union[LogReader, List[capnp._DynamicStructReader]], frs: Optional[Dict[str, Any]] = None,
+  cfg: Union[ProcessConfig, Iterable[ProcessConfig]], lr: LogIterable, frs: Optional[Dict[str, BaseFrameReader]] = None,
   fingerprint: Optional[str] = None, return_all_logs: bool = False, custom_params: Optional[Dict[str, Any]] = None,
   captured_output_store: Optional[Dict[str, Dict[str, str]]] = None, disable_progress: bool = False
 ) -> List[capnp._DynamicStructReader]:
@@ -672,7 +653,7 @@ def replay_process(
 
 
 def _replay_multi_process(
-  cfgs: List[ProcessConfig], lr: Union[LogReader, List[capnp._DynamicStructReader]], frs: Optional[Dict[str, Any]], fingerprint: Optional[str],
+  cfgs: List[ProcessConfig], lr: LogIterable, frs: Optional[Dict[str, BaseFrameReader]], fingerprint: Optional[str],
   custom_params: Optional[Dict[str, Any]], captured_output_store: Optional[Dict[str, Dict[str, str]]], disable_progress: bool
 ) -> List[capnp._DynamicStructReader]:
   if fingerprint is not None:
@@ -699,7 +680,7 @@ def _replay_multi_process(
     for cfg in cfgs:
       container = ProcessContainer(cfg)
       containers.append(container)
-      container.start(params_config, env_config, all_msgs, fingerprint, captured_output_store is not None)
+      container.start(params_config, env_config, all_msgs, frs, fingerprint, captured_output_store is not None)
 
     all_pubs = {pub for container in containers for pub in container.pubs}
     all_subs = {sub for container in containers for sub in container.subs}
@@ -768,6 +749,9 @@ def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=Non
     if CP.openpilotLongitudinalControl:
       params_dict["ExperimentalLongitudinalEnabled"] = True
 
+    if CP.notCar:
+      params_dict["JoystickDebugMode"] = True
+
   return params_dict
 
 
@@ -799,7 +783,7 @@ def generate_environ_config(CP=None, fingerprint=None, log_dir=None) -> Dict[str
   return environ_dict
 
 
-def check_openpilot_enabled(msgs: Union[LogReader, List[capnp._DynamicStructReader]]) -> bool:
+def check_openpilot_enabled(msgs: LogIterable) -> bool:
   cur_enabled_count = 0
   max_enabled_count = 0
   for msg in msgs:

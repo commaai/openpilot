@@ -12,7 +12,7 @@ from openpilot.selfdrive.car.fw_query_definitions import AddrType, EcuAddrBusTyp
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
 from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
 ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
@@ -159,7 +159,7 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True, log=True):
       # If specified and no matches so far, fall back to brand's fuzzy fingerprinting function
       config = FW_QUERY_CONFIGS[brand]
       if not exact_match and not len(matches) and config.match_fw_to_car_fuzzy is not None:
-        matches |= config.match_fw_to_car_fuzzy(fw_versions_dict)
+        matches |= config.match_fw_to_car_fuzzy(fw_versions_dict, VERSIONS[brand])
 
     if len(matches):
       return exact_match, matches

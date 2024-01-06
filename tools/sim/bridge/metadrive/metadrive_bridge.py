@@ -10,7 +10,7 @@ from openpilot.tools.sim.bridge.metadrive.metadrive_world import MetaDriveWorld
 from openpilot.tools.sim.lib.camerad import W, H
 
 
-C3_POSITION = Vec3(0, 0, 1)
+C3_POSITION = Vec3(0.0, 1.0, 1.22)
 
 
 class CopyRamRGBCamera(RGBCamera):
@@ -36,7 +36,8 @@ class RGBCameraWide(CopyRamRGBCamera):
     cam = self.get_cam()
     cam.setPos(C3_POSITION)
     lens = self.get_lens()
-    lens.setFov(160)
+    lens.setFov(120)
+    lens.setNear(0.1)
 
 class RGBCameraRoad(CopyRamRGBCamera):
   def __init__(self, *args, **kwargs):
@@ -45,6 +46,7 @@ class RGBCameraRoad(CopyRamRGBCamera):
     cam.setPos(C3_POSITION)
     lens = self.get_lens()
     lens.setFov(40)
+    lens.setNear(0.1)
 
 
 def straight_block(length):
@@ -116,4 +118,4 @@ class MetaDriveBridge(SimulatorBridge):
       preload_models=False
     )
 
-    return MetaDriveWorld(config)
+    return MetaDriveWorld(config, self.dual_camera)

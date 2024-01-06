@@ -12,7 +12,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.selfdrive.boardd.set_time import set_time
 from openpilot.system.hardware import HARDWARE
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 
 
 def get_expected_signature(panda: Panda) -> bytes:
@@ -144,6 +144,9 @@ def main() -> NoReturn:
         if health["heartbeat_lost"]:
           params.put_bool("PandaHeartbeatLost", True)
           cloudlog.event("heartbeat lost", deviceState=health, serial=panda.get_usb_serial())
+        if health["som_reset_triggered"]:
+          params.put_bool("PandaSomResetTriggered", True)
+          cloudlog.event("panda.som_reset_triggered", health=health, serial=panda.get_usb_serial())
 
         if first_run:
           if panda.is_internal():

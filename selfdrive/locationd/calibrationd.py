@@ -15,10 +15,10 @@ from typing import List, NoReturn, Optional
 from cereal import log
 import cereal.messaging as messaging
 from openpilot.common.conversions import Conversions as CV
-from openpilot.common.params import Params, put_nonblocking
+from openpilot.common.params import Params
 from openpilot.common.realtime import set_realtime_priority
 from openpilot.common.transformations.orientation import rot_from_euler, euler_from_rot
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 
 MIN_SPEED_FILTER = 15 * CV.MPH_TO_MS
 MAX_VEL_ANGLE_STD = np.radians(0.25)
@@ -64,8 +64,8 @@ class Calibrator:
     self.not_car = False
 
     # Read saved calibration
-    params = Params()
-    calibration_params = params.get("CalibrationParams")
+    self.params = Params()
+    calibration_params = self.params.get("CalibrationParams")
     rpy_init = RPY_INIT
     wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT
     height = HEIGHT_INIT
@@ -164,7 +164,7 @@ class Calibrator:
 
     write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 5)
     if self.param_put and write_this_cycle:
-      put_nonblocking("CalibrationParams", self.get_msg().to_bytes())
+      self.params.put_nonblocking("CalibrationParams", self.get_msg(True).to_bytes())
 
   def handle_v_ego(self, v_ego: float) -> None:
     self.v_ego = v_ego
@@ -227,12 +227,13 @@ class Calibrator:
 
     return new_rpy
 
-  def get_msg(self) -> capnp.lib.capnp._DynamicStructBuilder:
+  def get_msg(self, valid: bool) -> capnp.lib.capnp._DynamicStructBuilder:
     smooth_rpy = self.get_smooth_rpy()
 
     msg = messaging.new_message('liveCalibration')
-    liveCalibration = msg.liveCalibration
+    msg.valid = valid
 
+    liveCalibration = msg.liveCalibration
     liveCalibration.validBlocks = self.valid_blocks
     liveCalibration.calStatus = self.cal_status
     liveCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
@@ -250,19 +251,16 @@ class Calibrator:
 
     return msg
 
-  def send_data(self, pm: messaging.PubMaster) -> None:
-    pm.send('liveCalibration', self.get_msg())
+  def send_data(self, pm: messaging.PubMaster, valid: bool) -> None:
+    pm.send('liveCalibration', self.get_msg(valid))
 
 
-def calibrationd_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[messaging.PubMaster] = None) -> NoReturn:
+def main() -> NoReturn:
   gc.disable()
   set_realtime_priority(1)
 
-  if sm is None:
-    sm = messaging.SubMaster(['cameraOdometry', 'carState', 'carParams'], poll=['cameraOdometry'])
-
-  if pm is None:
-    pm = messaging.PubMaster(['liveCalibration'])
+  pm = messaging.PubMaster(['liveCalibration'])
+  sm = messaging.SubMaster(['cameraOdometry', 'carState', 'carParams'], poll=['cameraOdometry'])
 
   calibrator = Calibrator(param_put=True)
 
@@ -286,11 +284,7 @@ def calibrationd_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[m
 
     # 4Hz driven by cameraOdometry
     if sm.frame % 5 == 0:
-      calibrator.send_data(pm)
-
-
-def main(sm: Optional[messaging.SubMaster] = None, pm: Optional[messaging.PubMaster] = None) -> NoReturn:
-  calibrationd_thread(sm, pm)
+      calibrator.send_data(pm, sm.all_checks())
 
 
 if __name__ == "__main__":

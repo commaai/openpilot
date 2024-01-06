@@ -11,7 +11,7 @@
 
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
-#include "tools/cabana/util.h"
+#include "tools/cabana/utils/util.h"
 
 class HeaderView : public QHeaderView {
 public:
@@ -46,9 +46,9 @@ public slots:
 public:
   struct Message {
     uint64_t mono_time = 0;
-    QVector<double> sig_values;
-    QByteArray data;
-    QVector<QColor> colors;
+    std::vector<double> sig_values;
+    std::vector<uint8_t> data;
+    std::vector<QColor> colors;
   };
 
   template <class InputIt>
@@ -80,6 +80,7 @@ public:
 
 private slots:
   void setFilter();
+  void exportToCSV();
 
 private:
   void refresh();

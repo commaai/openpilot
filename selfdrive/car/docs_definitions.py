@@ -114,7 +114,7 @@ class CarHarness(EnumBase):
   hyundai_r = BaseCarHarness("Hyundai R connector")
   custom = BaseCarHarness("Developer connector")
   obd_ii = BaseCarHarness("OBD-II connector", parts=[Cable.long_obdc_cable, Cable.long_obdc_cable], has_connector=False)
-  gm = BaseCarHarness("GM connector")
+  gm = BaseCarHarness("GM connector", parts=[Accessory.harness_box])
   nissan_a = BaseCarHarness("Nissan A connector", parts=[Accessory.harness_box, Cable.rj45_cable_7ft, Cable.long_obdc_cable, Cable.usbc_coupler])
   nissan_b = BaseCarHarness("Nissan B connector", parts=[Accessory.harness_box, Cable.rj45_cable_7ft, Cable.long_obdc_cable, Cable.usbc_coupler])
   mazda = BaseCarHarness("Mazda connector")
@@ -244,10 +244,13 @@ class CarInfo:
   # all the parts needed for the supported car
   car_parts: CarParts = field(default_factory=CarParts)
 
+  def __post_init__(self):
+    self.make, self.model, self.years = split_name(self.name)
+    self.year_list = get_year_list(self.years)
+
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
     self.car_name = CP.carName
     self.car_fingerprint = CP.carFingerprint
-    self.make, self.model, self.years = split_name(self.name)
 
     # longitudinal column
     op_long = "Stock"
@@ -309,7 +312,6 @@ class CarInfo:
       self.row[Column.STEERING_TORQUE] = Star.FULL
 
     self.all_footnotes = all_footnotes
-    self.year_list = get_year_list(self.years)
     self.detail_sentence = self.get_detail_sentence(CP)
 
     return self

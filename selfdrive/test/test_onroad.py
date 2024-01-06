@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
+import bz2
 import math
 import json
 import os
+import pathlib
+import psutil
+import pytest
 import shutil
 import subprocess
 import time
@@ -30,33 +34,31 @@ PROCS = {
   "./encoderd": 17.0,
   "./camerad": 14.5,
   "./locationd": 11.0,
-  "./mapsd": 2.0,
-  "selfdrive.controls.plannerd": 16.5,
-  "./_ui": 18.0,
+  "./mapsd": (1.0, 10.0),
+  "selfdrive.controls.plannerd": 11.0,
+  "./ui": 18.0,
   "selfdrive.locationd.paramsd": 9.0,
-  "./_sensord": 7.0,
+  "./sensord": 7.0,
   "selfdrive.controls.radard": 4.5,
-  "selfdrive.modeld.modeld": 8.0,
+  "selfdrive.modeld.modeld": 13.0,
   "selfdrive.modeld.dmonitoringmodeld": 8.0,
   "selfdrive.modeld.navmodeld": 1.0,
   "selfdrive.thermald.thermald": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
   "selfdrive.locationd.torqued": 5.0,
-  "./_soundd": (1.0, 65.0),
+  "selfdrive.ui.soundd": 3.5,
   "selfdrive.monitoring.dmonitoringd": 4.0,
   "./proclogd": 1.54,
   "system.logmessaged": 0.2,
-  "./clocksd": 0.02,
   "selfdrive.tombstoned": 0,
   "./logcatd": 0,
-  "system.micd": 10.0,
+  "system.micd": 6.0,
   "system.timezoned": 0,
   "selfdrive.boardd.pandad": 0,
   "selfdrive.statsd": 0.4,
   "selfdrive.navd.navd": 0.4,
-  "system.loggerd.uploader": 3.0,
+  "system.loggerd.uploader": (0.5, 10.0),
   "system.loggerd.deleter": 0.1,
-  "selfdrive.locationd.laikad": (1.0, 80.0),  # TODO: better GPS setup in testing closet
 }
 
 PROCS.update({
@@ -67,7 +69,7 @@ PROCS.update({
   },
   "tizi": {
      "./boardd": 19.0,
-    "system.sensord.rawgps.rawgpsd": 1.0,
+    "system.qcomgpsd.qcomgpsd": 1.0,
   }
 }.get(HARDWARE.get_device_type(), {}))
 
@@ -97,6 +99,7 @@ def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
 
 
+@pytest.mark.tici
 class TestOnroad(unittest.TestCase):
 
   @classmethod
@@ -152,6 +155,8 @@ class TestOnroad(unittest.TestCase):
       cls.segments = cls.segments[:-1]
 
     finally:
+      cls.gpu_procs = {psutil.Process(int(f.name)).name() for f in pathlib.Path('/sys/devices/virtual/kgsl/kgsl/proc/').iterdir() if f.is_dir()}
+
       if proc is not None:
         proc.terminate()
         if proc.wait(60) is None:
@@ -161,6 +166,16 @@ class TestOnroad(unittest.TestCase):
 
     # use the second segment by default as it's the first full segment
     cls.lr = list(LogReader(os.path.join(str(cls.segments[1]), "rlog")))
+    cls.log_path = cls.segments[1]
+
+    cls.log_sizes = {}
+    for f in cls.log_path.iterdir():
+      assert f.is_file()
+      cls.log_sizes[f]  = f.stat().st_size / 1e6
+      if f.name in ("qlog", "rlog"):
+        with open(f, 'rb') as ff:
+          cls.log_sizes[f] = len(bz2.compress(ff.read())) / 1e6
+
 
   @cached_property
   def service_msgs(self):
@@ -190,6 +205,19 @@ class TestOnroad(unittest.TestCase):
     cnt = Counter(json.loads(m.logMessage)['filename'] for m in msgs)
     big_logs = [f for f, n in cnt.most_common(3) if n / sum(cnt.values()) > 30.]
     self.assertEqual(len(big_logs), 0, f"Log spam: {big_logs}")
+
+  def test_log_sizes(self):
+    for f, sz in self.log_sizes.items():
+      if f.name == "qcamera.ts":
+        assert 2.15 < sz < 2.35
+      elif f.name == "qlog":
+        assert 0.7 < sz < 1.0
+      elif f.name == "rlog":
+        assert 5 < sz < 50
+      elif f.name.endswith('.hevc'):
+        assert 70 < sz < 77
+      else:
+        raise NotImplementedError
 
   def test_ui_timings(self):
     result = "\n"
@@ -275,6 +303,9 @@ class TestOnroad(unittest.TestCase):
     # check for big leaks. note that memory usage is
     # expected to go up while the MSGQ buffers fill up
     self.assertLessEqual(max(mems) - min(mems), 3.0)
+
+  def test_gpu_usage(self):
+    self.assertEqual(self.gpu_procs, {"weston", "ui", "camerad", "selfdrive.modeld.modeld"})
 
   def test_camera_processing_time(self):
     result = "\n"
@@ -379,7 +410,7 @@ class TestOnroad(unittest.TestCase):
   def test_startup(self):
     startup_alert = None
     for msg in self.lrs[0]:
-      # can't use carEvents because the first msg can be dropped while loggerd is starting up
+      # can't use onroadEvents because the first msg can be dropped while loggerd is starting up
       if msg.which() == "controlsState":
         startup_alert = msg.controlsState.alertText1
         break
@@ -388,8 +419,8 @@ class TestOnroad(unittest.TestCase):
 
   def test_engagable(self):
     no_entries = Counter()
-    for m in self.service_msgs['carEvents']:
-      for evt in m.carEvents:
+    for m in self.service_msgs['onroadEvents']:
+      for evt in m.onroadEvents:
         if evt.noEntry:
           no_entries[evt.name] += 1
 

@@ -40,7 +40,7 @@ def migrate_pandaStates(lr):
   # TODO: safety param migration should be handled automatically
   safety_param_migration = {
     "TOYOTA PRIUS 2017": EPS_SCALE["TOYOTA PRIUS 2017"] | Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL,
-    "TOYOTA RAV4 2017": EPS_SCALE["TOYOTA RAV4 2017"] | Panda.FLAG_TOYOTA_ALT_BRAKE,
+    "TOYOTA RAV4 2017": EPS_SCALE["TOYOTA RAV4 2017"] | Panda.FLAG_TOYOTA_ALT_BRAKE | Panda.FLAG_TOYOTA_GAS_INTERCEPTOR,
     "KIA EV6 2022": Panda.FLAG_HYUNDAI_EV_GAS | Panda.FLAG_HYUNDAI_CANFD_HDA2,
   }
 
@@ -85,6 +85,7 @@ def migrate_peripheralState(lr):
       continue
 
     new_msg = messaging.new_message("peripheralState")
+    new_msg.valid = msg.valid
     new_msg.logMonoTime = msg.logMonoTime
     all_msg.append(new_msg.as_reader())
 
@@ -94,6 +95,8 @@ def migrate_peripheralState(lr):
 def migrate_cameraStates(lr):
   all_msgs = []
   frame_to_encode_id = defaultdict(dict)
+  # just for encodeId fallback mechanism
+  min_frame_id = defaultdict(lambda: float('inf'))
 
   for msg in lr:
     if msg.which() not in ["roadEncodeIdx", "wideRoadEncodeIdx", "driverEncodeIdx"]:
@@ -111,10 +114,18 @@ def migrate_cameraStates(lr):
       continue
 
     camera_state = getattr(msg, msg.which())
+    min_frame_id[msg.which()] = min(min_frame_id[msg.which()], camera_state.frameId)
+
     encode_id = frame_to_encode_id[msg.which()].get(camera_state.frameId)
     if encode_id is None:
       print(f"Missing encoded frame for camera feed {msg.which()} with frameId: {camera_state.frameId}")
-      continue
+      if len(frame_to_encode_id[msg.which()]) != 0:
+        continue
+
+      # fallback mechanism for logs without encodeIdx (e.g. logs from before 2022 with dcamera recording disabled)
+      # try to fake encode_id by subtracting lowest frameId
+      encode_id = camera_state.frameId - min_frame_id[msg.which()]
+      print(f"Faking encodeId to {encode_id} for camera feed {msg.which()} with frameId: {camera_state.frameId}")
 
     new_msg = messaging.new_message(msg.which())
     new_camera_state = getattr(new_msg, new_msg.which())
@@ -139,6 +150,7 @@ def migrate_carParams(lr, old_logtime=False):
   for msg in lr:
     if msg.which() == 'carParams':
       CP = messaging.new_message('carParams')
+      CP.valid = True
       CP.carParams = msg.carParams.as_builder()
       for car_fw in CP.carParams.carFw:
         car_fw.brand = CP.carParams.carName

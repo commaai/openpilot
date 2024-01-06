@@ -41,13 +41,13 @@ clean:
 
 	@echo "Building rst files..."
 	sphinx-apidoc -o "$(DOCSBUILDDIR)" ../ \
-		../xx ../laika_repo ../rednose_repo ../notebooks ../panda_jungle \
+		../xx ../rednose_repo ../notebooks ../panda_jungle \
 		../third_party \
 		../panda/examples \
 		../scripts \
 		../selfdrive/modeld \
 		../selfdrive/debug \
-		$(shell find .. -type d -name "*test*")
+		$(shell find .. -type d -name "*test* -not -path "**.venv**" \")
 
 	@echo "Building html files..."
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(DOCSBUILDDIR)" $(SPHINXOPTS) $(O)
