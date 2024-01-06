@@ -4,7 +4,6 @@ import argparse
 import json
 import os
 import pathlib
-import sys
 import xml.etree.ElementTree as ET
 from typing import cast
 
@@ -33,10 +32,6 @@ def get_language_files(languages: list[str] | None = None) -> dict[str, pathlib.
         files[language] = path
 
   return files
-
-
-def print_log(text: str) -> None:
-  print(text, file=sys.stderr)
 
 
 def translate_phrase(text: str, language: str) -> str:
@@ -80,7 +75,7 @@ def translate_file(path: pathlib.Path, language: str, all_: bool) -> None:
     if name is None:
       raise ValueError("name not found")
 
-    print_log(f"Context: {name.text}")
+    print(f"Context: {name.text}")
 
     for message in context.findall("./message"):
       source = message.find("source")
@@ -94,7 +89,7 @@ def translate_file(path: pathlib.Path, language: str, all_: bool) -> None:
 
       llm_translation = translate_phrase(cast(str, source.text), language)
 
-      print_log(f"Source: {source.text}\n" + \
+      print(f"Source: {source.text}\n" + \
                 f"Current translation: {translation.text}\n" + \
                 f"LLM translation: {llm_translation}")
 
@@ -127,13 +122,13 @@ def main():
   if args.file:
     missing_files = set(args.file) - set(files)
     if len(missing_files):
-      print_log(f"No language files found: {missing_files}")
+      print(f"No language files found: {missing_files}")
       exit(1)
 
-  print_log(f"Translation mode: {'all' if args.all_translations else 'only unfinished'}. Files: {list(files)}")
+  print(f"Translation mode: {'all' if args.all_translations else 'only unfinished'}. Files: {list(files)}")
 
   for lang, path in files.items():
-    print_log(f"Translate {lang} ({path})")
+    print(f"Translate {lang} ({path})")
     translate_file(path, lang, args.all_translations)
 
 
