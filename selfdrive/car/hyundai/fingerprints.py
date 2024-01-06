@@ -1410,21 +1410,21 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00CN7_ RDR -----      1.00 1.01 99110-AA500         ',
     ],
-    (Ecu.eps, 0x7d4, None): [
-      b'\xf1\x00CN7 MDPS C 1.00 1.02 56300AA670\x00 4CSDC102',
-    ],
+    # (Ecu.eps, 0x7d4, None): [
+    #   b'\xf1\x00CN7 MDPS C 1.00 1.02 56300AA670\x00 4CSDC102',
+    # ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.02 99210-AA500 230420',
     ],
-    (Ecu.abs, 0x7d1, None): [
-      b'\xf1\x00CN ESC \t 104#\x07\x03 58910-AA850',
-    ],
-    (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x87PCU\x00\x00\x00\x00\x00\x00\x00\xf1\x81HT6VAB20A1',
-    ],
-    (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x87391002J341\xf1\x81HM6M2_0a0_PG0',
-    ],
+    # (Ecu.abs, 0x7d1, None): [
+    #   b'\xf1\x00CN ESC \t 104#\x07\x03 58910-AA850',
+    # ],
+    # (Ecu.transmission, 0x7e1, None): [
+    #   b'\xf1\x87PCU\x00\x00\x00\x00\x00\x00\x00\xf1\x81HT6VAB20A1',
+    # ],
+    # (Ecu.engine, 0x7e0, None): [
+    #   b'\xf1\x87391002J341\xf1\x81HM6M2_0a0_PG0',
+    # ],
   },
   CAR.ELANTRA_HEV_2021: {
     (Ecu.fwdCamera, 0x7c4, None): [
