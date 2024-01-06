@@ -14,7 +14,7 @@ TRANSLATIONS_LANGUAGES = TRANSLATIONS_DIR / "languages.json"
 
 OPENAI_MODEL = "gpt-4"
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-OPENAI_PROMPT = "You are a professional translator from English to {language} (ISO 639 language code)." + \
+OPENAI_PROMPT = "You are a professional translator from English to {language} (ISO 639 language code). " + \
                 "The following sentence or word is in the GUI of a software called openpilot, translate it accordingly."
 
 
@@ -55,10 +55,12 @@ def translate_phrase(text: str, language: str) -> str:
     },
     headers={
       "Authorization": f"Bearer {OPENAI_API_KEY}",
+      "Content-Type": "application/json",
     },
   )
 
-  response.raise_for_status()
+  if 400 <= response.status_code < 600:
+    raise requests.HTTPError(f'Error {response.status_code}: {response.json()}', response=response)
 
   data = response.json()
 
@@ -89,9 +91,9 @@ def translate_file(path: pathlib.Path, language: str, all_: bool) -> None:
 
       llm_translation = translate_phrase(cast(str, source.text), language)
 
-      print(f"Source: {source.text}\n" + \
-                f"Current translation: {translation.text}\n" + \
-                f"LLM translation: {llm_translation}")
+      print(f"Source: {source.text}\n" +
+            f"Current translation: {translation.text}\n" +
+            f"LLM translation: {llm_translation}")
 
       translation.text = llm_translation
 
@@ -113,7 +115,7 @@ def main():
   args = arg_parser.parse_args()
 
   if OPENAI_API_KEY is None:
-    print("OpenAI API key is missing. (Hint: use `export OPENAI_API_KEY=YOUR-KEY` before you run the script).\n" + \
+    print("OpenAI API key is missing. (Hint: use `export OPENAI_API_KEY=YOUR-KEY` before you run the script).\n" +
           "If you don't have one go to: https://beta.openai.com/account/api-keys.")
     exit(1)
 
