@@ -774,10 +774,10 @@ class Controls:
     start_time = time.monotonic()
 
     # Sample data from sockets and get a carState
-    CS = self.data_sample()
+    self.data_sample()
     cloudlog.timestamp("Data sampled")
 
-    self.update_events(CS)
+    self.update_events()
     cloudlog.timestamp("Events updated")
 
     if not self.CP.passive and self.initialized:
