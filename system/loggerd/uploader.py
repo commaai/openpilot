@@ -25,7 +25,7 @@ NetworkType = log.DeviceState.NetworkType
 UPLOAD_ATTR_NAME = 'user.upload'
 UPLOAD_ATTR_VALUE = b'1'
 
-UPLOAD_QLOG_QCAM_MAX_SIZE = 100 * 1e6  # MB
+UPLOAD_QLOG_QCAM_MAX_SIZE = 5 * 1e6  # MB
 
 allow_sleep = bool(os.getenv("UPLOADER_SLEEP", "1"))
 force_wifi = os.getenv("FORCEWIFI") is not None
@@ -50,7 +50,7 @@ def get_directory_sort(d: str) -> List[str]:
 
 def listdir_by_creation(d: str) -> List[str]:
   try:
-    paths = os.listdir(d)
+    paths = [f for f in os.listdir(d) if os.path.isdir(os.path.join(d, f))]
     paths = sorted(paths, key=get_directory_sort)
     return paths
   except OSError:

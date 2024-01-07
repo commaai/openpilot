@@ -776,7 +776,6 @@ class Controls:
     # Sample data from sockets and get a carState
     CS = self.data_sample()
     cloudlog.timestamp("Data sampled")
-    self.prof.checkpoint("Sample")
 
     self.update_events(CS)
     cloudlog.timestamp("Events updated")

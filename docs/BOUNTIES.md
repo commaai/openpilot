@@ -1,4 +1,4 @@
-# Bounties
+# [Bounties](https://github.com/orgs/commaai/projects/26/views/1)
 
 Get paid to improve openpilot!
 
@@ -10,11 +10,11 @@ Get paid to improve openpilot!
 * open a ticket at [comma.ai/support](https://comma.ai/support/shop-order) with links to your PRs to claim
 * get an extra 20% if you redeem your bounty in [comma shop](https://comma.ai/shop) credit
 
-New bounties can be proposed in the **#contributing** channel in Discord.
+New bounties can be proposed in the [**#contributing**](https://discord.com/channels/469524606043160576/1183173332531687454) channel in Discord.
 
 ## Issue bounties
 
-We've tagged bounty eligible issues across openpilot and the rest of our repos; check out all the open ones [here](https://github.com/search?q=org%3Acommaai+is%3Aissue+label%3Abounty++&type=issues&state=open). These bounties roughly work out like this:
+We've tagged bounty-eligible issues across openpilot and the rest of our repos; check out all the open ones [here](https://github.com/orgs/commaai/projects/26/views/1). These bounties roughly work out like this:
 * **$100** - a few hours of work for an experienced openpilot developer; a good intro for someone new to openpilot
 * **$300** - a day of work for an experienced openpilot developer
 * **$500** - a few days of work for an experienced openpilot developer
