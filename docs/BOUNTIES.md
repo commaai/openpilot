@@ -1,7 +1,5 @@
 
 
-Get paid to improve openpilot!
-
 ## Rules
 
 * code must be merged into openpilot master
