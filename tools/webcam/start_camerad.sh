@@ -1,5 +1,4 @@
 #!/bin/bash
-
 export DUAL="0"
 export BLOCK="${BLOCK},camerad"
 
