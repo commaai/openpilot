@@ -23,4 +23,3 @@ class Camera:
       yuv = Camera.bgr2nv12(frame)
       yield yuv.tobytes()
     self.cam.release()
-    cv.destroyAllWindows()
