@@ -3,11 +3,11 @@ import time
 
 import cereal.messaging as messaging
 from panda import ALTERNATIVE_EXPERIENCE
-from openpilot.common.params import Params, put_bool_nonblocking
+from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, DT_CTRL
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 
 # a simple daemon for talking to cars
 
@@ -68,7 +68,7 @@ def main():
     if not initialized and sm.updated['carControl']:
       initialized = True
       CI.init(CP, can, pm.sock['sendcan'])
-      put_bool_nonblocking("ControlsReady", True)
+      params.put_bool_nonblocking("ControlsReady", True)
 
     # commands -> car bytes
     if not CP.passive and initialized:
