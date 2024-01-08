@@ -561,7 +561,7 @@ class Tici(HardwareBase):
 
   def booted(self):
     if time.monotonic() < 60*2:
-      # this normally boots within 8s, but on rare occassions takes 30+s
+      # this normally boots within 8s, but on rare occasions takes 30+s
       encoder_state = sudo_read("/sys/kernel/debug/msm_vidc/core0/info")
       if "Core state: 0" in encoder_state:
         return False
