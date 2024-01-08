@@ -766,6 +766,7 @@ void CameraState::handle_camera_event(void *evdat) {
 
     auto &meta_data = buf.camera_bufs_metadata[buf_idx];
     meta_data.frame_id = main_id - idx_offset;
+    meta_data.request_id = real_id;
     meta_data.timestamp_sof = timestamp;
     exp_lock.lock();
     meta_data.gain = analog_gain_frac * (1 + dc_gain_weight * (ci->dc_gain_factor-1) / ci->dc_gain_max_weight);
