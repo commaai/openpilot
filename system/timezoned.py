@@ -24,8 +24,8 @@ def set_timezone(valid_timezones, timezone):
   try:
     if AGNOS:
       tzpath = os.path.join("/usr/share/zoneinfo/", timezone)
-      subprocess.check_call(f'sudo su -c "ln -snf {tzpath} /data/etc/tmptime && \
-                              mv /data/etc/tmptime /data/etc/localtime"', shell=True)
+      subprocess.check_call(f'sudo su -c "ln -snf {tzpath} /data/etc/tmptime && ' +
+                            'mv /data/etc/tmptime /data/etc/localtime"', shell=True)
       subprocess.check_call(f'sudo su -c "echo \"{timezone}\" > /data/etc/timezone"', shell=True)
     else:
       subprocess.check_call(f'sudo timedatectl set-timezone {timezone}', shell=True)

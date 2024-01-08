@@ -53,8 +53,8 @@ async def play_sound(sound):
 ## SSL
 def create_ssl_cert(cert_path, key_path):
   try:
-    proc = subprocess.run(f'openssl req -x509 -newkey rsa:4096 -nodes -out {cert_path} -keyout {key_path} \
-                          -days 365 -subj "/C=US/ST=California/O=commaai/OU=comma body"',
+    proc = subprocess.run(f'openssl req -x509 -newkey rsa:4096 -nodes -out {cert_path} -keyout {key_path} ' +
+                          '-days 365 -subj "/C=US/ST=California/O=commaai/OU=comma body"',
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     proc.check_returncode()
   except subprocess.CalledProcessError as ex:

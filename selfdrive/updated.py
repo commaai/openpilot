@@ -195,8 +195,8 @@ def handle_agnos_update() -> None:
   from openpilot.system.hardware.tici.agnos import flash_agnos_update, get_target_slot_number
 
   cur_version = HARDWARE.get_os_version()
-  updated_version = run(["bash", "-c", r"unset AGNOS_VERSION && source launch_env.sh && \
-                          echo -n $AGNOS_VERSION"], OVERLAY_MERGED).strip()
+  updated_version = run(["bash", "-c", r"unset AGNOS_VERSION && source launch_env.sh && " +
+                         "echo -n $AGNOS_VERSION"], OVERLAY_MERGED).strip()
 
   cloudlog.info(f"AGNOS version check: {cur_version} vs {updated_version}")
   if cur_version == updated_version:
