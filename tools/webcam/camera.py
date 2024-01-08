@@ -18,7 +18,7 @@ class Camera:
     uv_plane = np.transpose(yuv[uv_row_cnt * 2:].reshape(2, -1), [1, 0])
     yuv[uv_row_cnt * 2:] = uv_plane.reshape(uv_row_cnt, -1)
     return yuv
-  
+
   def read_frames(self):
     while True:
       sts , frame = self.cap.read()

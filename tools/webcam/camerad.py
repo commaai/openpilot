@@ -7,11 +7,7 @@ from cereal import messaging
 
 from openpilot.tools.webcam.camera import Camera
 from openpilot.common.realtime import Ratekeeper
-from openpilot.selfdrive.test.helpers import set_params_enabled
 
-from openpilot.tools.sim.lib.simulated_car import SimulatedCar
-from openpilot.tools.sim.lib.common import SimulatorState, World
-import functools
 
 YUV_BUFFER_COUNT = int(os.getenv("YUV_BUFFER_COUNT", "20"))
 CAMERA_TYPE_STATE = {"roadCameraState":VisionStreamType.VISION_STREAM_ROAD,
@@ -31,14 +27,14 @@ class Camerad:
 
     self.dual_camera = bool(int(os.getenv("DUAL","0")))
     self.cameras, self.camera_threads = [], [] # ORDER: road_cam, driver_cam, wide_cam
-  
+
     for cam_type, stream_type in CAMERA_TYPE_STATE.items():
       if cam_type == "roadCameraState":
         cam = Camera(cam_type, stream_type, int(os.getenv("CAMERA_WIDE_ID", "0")))
       elif cam_type == "driverCameraState":
         cam = Camera(cam_type, stream_type, int(os.getenv("CAMERA_WIDE_ID", "1")))
       else:
-        if not self.dual_camera: 
+        if not self.dual_camera:
           break
         cam = Camera(cam_type, stream_type, int(os.getenv("CAMERA_WIDE_ID", "2")))
       assert cam.cap.isOpened(), f"Can't find {cam_type}"
@@ -68,7 +64,7 @@ class Camerad:
         self._send_yuv(yuv, cam.cur_frame_id, cam.cam_type_state, cam.stream_type)
         cam.cur_frame_id += 1
         rk.keep_time()
-  
+
   def start_camera_threads(self):
     assert len(self.cameras) == 3
     for cam in self.cameras:
@@ -77,7 +73,7 @@ class Camerad:
       cam_thread = threading.Thread(target=self.daemon_alive, args=(cam,))
       cam_thread.start()
       self.camera_threads.append(cam_thread)
-  
+
   def join_camera_threads(self):
     for thread in self.camera_threads:
       thread.join()
