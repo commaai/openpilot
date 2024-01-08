@@ -5,7 +5,6 @@ class Camera:
   def __init__(self, cam_type, camera_id):
     self.cam_type = cam_type
     self.cap = cv.VideoCapture(camera_id)
-    print(camera_id)
     self.W = self.cap.get(cv.CAP_PROP_FRAME_WIDTH)
     self.H = self.cap.get(cv.CAP_PROP_FRAME_HEIGHT)
 

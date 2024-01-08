@@ -28,7 +28,8 @@ class Camerad:
           break
         cam = Camera(cam_type, int(os.getenv("CAMERA_WIDE_ID", "2")))
       elif cam_type == "road_cam":
-        cam = Camera(cam_type, int(os.getenv("CAMERA_ROAD_ID", "0")))
+        #cam = Camera(cam_type, int(os.getenv("CAMERA_ROAD_ID", "0")))
+        cam = Camera(cam_type, "/home/bongb/unlearn/calib_challenge/labeled/1.hevc")
       else:
         #cam = Camera(cam_type, int(os.getenv("CAMERA_DRIVER_ID", "1")))
         cam = Camera(cam_type, "/home/bongb/unlearn/calib_challenge/labeled/0.hevc")
@@ -54,8 +55,7 @@ class Camerad:
 
   @classmethod
   def daemon_alive(self, cam, send_yuv):
-    #while cam.cap.isOpened():
-    while True:
+    while cam.cap.isOpened():
       for yuv in cam.read_frames():
         send_yuv(yuv)
 

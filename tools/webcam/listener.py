@@ -5,9 +5,9 @@ def main():
   print("LISTENING...")
   while True:
     rear, front = get_snapshots()
-    front = cv.cvtColor(front, cv.COLOR_RGB2BGR)
+    rear= cv.cvtColor(rear, cv.COLOR_RGB2BGR)
     cv.imshow("preview", rear)
-    cv.waitKey(10)
+    cv.waitKey(1)
 
 if __name__ == "__main__":
   main()
