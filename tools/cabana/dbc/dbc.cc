@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-#include "tools/cabana/util.h"
+#include "tools/cabana/utils/util.h"
 
 uint qHash(const MessageId &item) {
   return qHash(item.source) ^ qHash(item.address);
