@@ -2,10 +2,12 @@ import cv2 as cv
 import numpy as np
 
 class Camera:
-  def __init__(self, camera_id):
-    self.cam = cv.VideoCapture(camera_id)
-    self.W = self.cam.get(cv.CAP_PROP_FRAME_WIDTH)
-    self.H = self.cam.get(cv.CAP_PROP_FRAME_HEIGHT)
+  def __init__(self, cam_type, camera_id):
+    self.cam_type = cam_type
+    self.cap = cv.VideoCapture(camera_id)
+    print(camera_id)
+    self.W = self.cap.get(cv.CAP_PROP_FRAME_WIDTH)
+    self.H = self.cap.get(cv.CAP_PROP_FRAME_HEIGHT)
 
   @classmethod
   def bgr2nv12(self, bgr):
@@ -17,9 +19,9 @@ class Camera:
 
   def read_frames(self):
     while True:
-      sts , frame = self.cam.read()
+      sts , frame = self.cap.read()
       if not sts:
         break
       yuv = Camera.bgr2nv12(frame)
       yield yuv.tobytes()
-    self.cam.release()
+    self.cap.release()
