@@ -24,6 +24,10 @@ class HardwareBase(ABC):
       return default
 
   @abstractmethod
+  def booted(self) -> bool:
+    pass
+
+  @abstractmethod
   def reboot(self, reason=None):
     pass
 
