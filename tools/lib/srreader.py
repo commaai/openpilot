@@ -8,7 +8,7 @@ def parse_start_end(sr: SegmentRange):
 
   return start, end
 
-def comma_azure_source(sr: SegmentRange):
+def comma_api_source(sr: SegmentRange):
   start, end = parse_start_end(sr)
 
   route = Route(sr.route_name)
@@ -30,7 +30,7 @@ def internal_source(sr: SegmentRange):
 
 
 class SegmentRangeReader:
-  def __init__(self, segment_range: str, source=comma_azure_source):
+  def __init__(self, segment_range: str, source=comma_api_source):
     sr = SegmentRange(segment_range)
     self.lrs = source(sr)
 
