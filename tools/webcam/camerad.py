@@ -66,7 +66,6 @@ class Camerad:
         rk.keep_time()
 
   def start_camera_threads(self):
-    assert len(self.cameras) == 3
     for cam in self.cameras:
       if cam.cam_type_state == "wideRoadCameraState" and not self.dual_camera:
         break
