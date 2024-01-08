@@ -24,7 +24,8 @@ from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.selfdrive.test.openpilotci import get_url
 from openpilot.tools.lib.logreader import LogReader
-from openpilot.tools.lib.route import Route, SegmentName, RouteName
+from openpilot.tools.lib.route import Route, SegmentName
+from openpilot.tools.lib.srreader import SegmentRangeReader, internal_source
 
 from panda.tests.libpanda import libpanda_py
 
@@ -76,8 +77,7 @@ class TestCarModelBase(unittest.TestCase):
   @classmethod
   def get_logreader(cls, seg):
     if len(INTERNAL_SEG_LIST):
-      route_name = RouteName(cls.test_route.route)
-      return LogReader(f"cd:/{route_name.dongle_id}/{route_name.time_str}/{seg}/rlog.bz2")
+      return SegmentRangeReader(cls.test_route.route, source=internal_source)
     else:
       return LogReader(get_url(cls.test_route.route, seg))
 
