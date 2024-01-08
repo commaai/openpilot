@@ -341,6 +341,7 @@ if GetOption("clazy"):
 
 Export('env', 'qt_env', 'arch', 'real_arch')
 
+"""
 #Replacement for default scons scanner that look for dependencies (Ignore non-existent and C standard header files)
 def exist_scan(node, env, path):
   fname = str(node)
@@ -362,6 +363,14 @@ my_exist_scan = Scanner(name="EXIST_SCANNER",function=exist_scan)
 file_extensions = ['.c', '.h', '.cc', '.cpp']
 for e in file_extensions:
   SourceFileScanner.add_scanner(e,my_exist_scan)
+"""
+
+from SCons.Scanner.C import CConditionalScanner
+
+file_extensions = ['.c', '.h', '.cc', '.cpp']
+for e in file_extensions:
+  SourceFileScanner.add_scanner(e, CConditionalScanner())
+print(SourceFileScanner.function)
 
 # Build common module
 SConscript(['common/SConscript'])
