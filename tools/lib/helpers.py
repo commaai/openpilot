@@ -9,12 +9,13 @@ class RE:
   TIMESTAMP = r'(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2}--[0-9]{2}-[0-9]{2}-[0-9]{2})'
   ROUTE_NAME = r'(?P<route_name>{}[|_/]{})'.format(DONGLE_ID, TIMESTAMP)
   SEGMENT_NAME = r'{}(?:--|/)(?P<segment_num>[0-9]+)'.format(ROUTE_NAME)
-  SEGMENT_RANGE = r'{}(?:--|/)?(?P<start>[0-9]+)?/?(?P<end>-?[0-9]+)?'.format(ROUTE_NAME)
+  SEGMENT_RANGE = r'{}(?:--|/)?(?P<start>-?[0-9]+)?/?(?P<end>-?[0-9]+)?'.format(ROUTE_NAME)
   BOOTLOG_NAME = ROUTE_NAME
 
   EXPLORER_FILE = r'^(?P<segment_name>{})--(?P<file_name>[a-z]+\.[a-z0-9]+)$'.format(SEGMENT_NAME)
   OP_SEGMENT_DIR = r'^(?P<segment_name>{})$'.format(SEGMENT_NAME)
 
+print(RE.SEGMENT_RANGE)
 
 def timestamp_to_datetime(t: str) -> datetime.datetime:
   """
