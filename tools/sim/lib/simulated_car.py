@@ -5,6 +5,7 @@ from opendbc.can.parser import CANParser
 from openpilot.selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp
 from openpilot.selfdrive.car import crc8_pedal
 from openpilot.tools.sim.lib.common import SimulatorState
+from panda.python import Panda
 
 
 class SimulatedCar:
@@ -106,7 +107,8 @@ class SimulatedCar:
       'pandaType': "blackPanda",
       'controlsAllowed': True,
       'safetyModel': 'hondaNidec',
-      'alternativeExperience': self.sm["carParams"].alternativeExperience
+      'alternativeExperience': self.sm["carParams"].alternativeExperience,
+      'safetyParam': Panda.FLAG_HONDA_GAS_INTERCEPTOR
     }
     self.pm.send('pandaStates', dat)
 

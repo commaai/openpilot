@@ -5,7 +5,7 @@ from multiprocessing import Process
 
 from openpilot.common.params import Params
 from openpilot.selfdrive.manager.process import launcher
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_version, is_dirty
 
 ATHENA_MGR_PID_PARAM = "AthenadPid"

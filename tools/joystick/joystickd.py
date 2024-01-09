@@ -47,7 +47,7 @@ class Joystick:
     else:
       self.cancel_button = 'BTN_TRIGGER'
       accel_axis = 'ABS_Y'
-      steer_axis = 'ABS_RZ'
+      steer_axis = 'ABS_RX'
     self.min_axis_value = {accel_axis: 0., steer_axis: 0.}
     self.max_axis_value = {accel_axis: 255., steer_axis: 255.}
     self.axes_values = {accel_axis: 0., steer_axis: 0.}
@@ -82,9 +82,6 @@ def send_thread(joystick):
     dat.testJoystick.buttons = [joystick.cancel]
     joystick_sock.send(dat.to_bytes())
     print('\n' + ', '.join(f'{name}: {round(v, 3)}' for name, v in joystick.axes_values.items()))
-    if "WEB" in os.environ:
-      import requests
-      requests.get("http://"+os.environ["WEB"]+":5000/control/%f/%f" % tuple([joystick.axes_values[a] for a in joystick.axes_order][::-1]), timeout=None)
     rk.keep_time()
 
 def joystick_thread(joystick):
@@ -101,7 +98,7 @@ if __name__ == '__main__':
   parser.add_argument('--gamepad', action='store_true', help='Use gamepad configuration instead of joystick')
   args = parser.parse_args()
 
-  if not Params().get_bool("IsOffroad") and "ZMQ" not in os.environ and "WEB" not in os.environ:
+  if not Params().get_bool("IsOffroad") and "ZMQ" not in os.environ:
     print("The car must be off before running joystickd.")
     exit()
 
