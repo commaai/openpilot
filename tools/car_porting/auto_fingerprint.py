@@ -7,7 +7,7 @@ from openpilot.selfdrive.debug.format_fingerprints import format_brand_fw_versio
 
 from openpilot.selfdrive.car.fw_versions import match_fw_to_car
 from openpilot.selfdrive.car.interfaces import get_interface_attr
-from openpilot.tools.lib.srreader import SegmentRangeReader, comma_api_source_qlog
+from openpilot.tools.lib.srreader import SegmentRangeReader, ReadMode
 
 
 ALL_FW_VERSIONS = get_interface_attr("FW_VERSIONS")
@@ -24,7 +24,7 @@ if __name__ == "__main__":
   parser.add_argument("platform", help="The platform, or leave empty to auto-determine using fuzzy", default=None, nargs='?')
   args = parser.parse_args()
 
-  lr = SegmentRangeReader(args.route, comma_api_source_qlog)
+  lr = SegmentRangeReader(args.route, ReadMode.QLOG)
 
   carFw = None
   carVin = None

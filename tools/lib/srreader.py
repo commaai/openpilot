@@ -1,9 +1,13 @@
+import enum
 import numpy as np
-from functools import partial
-
 from openpilot.selfdrive.test.openpilotci import get_url
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import Route, SegmentRange
+
+class ReadMode(enum.Enum):
+  RLOG = 0 # only read rlogs
+  QLOG = 1 # only read qlogs
+  #AUTO = 2 # default to rlogs, fallback to qlogs, not supported yet
 
 
 def parse_start_end(sr: SegmentRange, route = None):
@@ -26,31 +30,47 @@ def parse_start_end(sr: SegmentRange, route = None):
 
   return segs
 
-def comma_api_source(sr: SegmentRange, rlog=True):
+def comma_api_source(sr: SegmentRange, mode=ReadMode.RLOG):
   route = Route(sr.route_name)
   segs = parse_start_end(sr, route)
 
-  log_paths = route.log_paths() if rlog else route.qlog_paths()
+  log_paths = route.log_paths() if mode == ReadMode.RLOG else route.qlog_paths()
 
   for seg in segs:
     yield LogReader(log_paths[seg])
 
-comma_api_source_qlog = partial(comma_api_source, rlog=False)
-
-def internal_source(sr: SegmentRange):
+def internal_source(sr: SegmentRange, mode=ReadMode.RLOG):
   segs = parse_start_end(sr)
 
   for seg in segs:
-    yield LogReader(f"cd:/{sr.dongle_id}/{sr.timestamp}/{seg}/rlog.bz2")
+    yield LogReader(f"cd:/{sr.dongle_id}/{sr.timestamp}/{seg}/{'rlog' if mode == ReadMode.RLOG else 'qlog'}.bz2")
 
-def openpilotci_source(sr: SegmentRange):
+def openpilotci_source(sr: SegmentRange, mode=ReadMode.RLOG):
   segs = parse_start_end(sr)
 
   for seg in segs:
-    yield LogReader(get_url(sr.route_name, seg))
+    yield LogReader(get_url(sr.route_name, seg, 'rlog' if mode == ReadMode.RLOG else 'qlog'))
+
+def auto_source(sr: SegmentRange, mode=ReadMode.RLOG):
+  # Automatically determine viable source
+
+  try:
+    next(internal_source(sr, mode))
+    return internal_source(sr, mode)
+  except Exception:
+    pass
+
+  try:
+    next(openpilotci_source(sr, mode))
+    return openpilotci_source(sr, mode)
+  except Exception:
+    pass
+
+  return comma_api_source(sr, mode)
+
 
 class SegmentRangeReader:
-  def __init__(self, segment_range: str, source=comma_api_source):
+  def __init__(self, segment_range: str, read_mode=ReadMode.RLOG, source=auto_source):
     sr = SegmentRange(segment_range)
     self.lrs = source(sr)
 
