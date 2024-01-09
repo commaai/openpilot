@@ -971,7 +971,8 @@ void cameras_run(MultiCameraState *s) {
                  event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp/1e6, event_data->u.frame_msg.sof_status);
         }
 
-        do_exit = do_exit || event_data->u.frame_msg.frame_id > (30*20);
+        // for debugging
+        //do_exit = do_exit || event_data->u.frame_msg.frame_id > (30*20);
 
         if (event_data->session_hdl == s->road_cam.session_handle) {
           s->road_cam.handle_camera_event(event_data);
