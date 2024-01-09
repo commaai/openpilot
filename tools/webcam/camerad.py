@@ -9,30 +9,26 @@ from cereal import messaging
 from openpilot.tools.webcam.camera import Camera
 from openpilot.common.realtime import Ratekeeper
 
-YUV_BUFFER_COUNT = 20
-
 DUAL_CAM = os.getenv("DUAL_CAMERA")
-CameraType = namedtuple("CameraType", ["stream_type", "cam_id"])
-CAMERA_TYPE_STATES =('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
-
-CAMERAS = {
-  CAMERA_TYPE_STATES[0]: CameraType(VisionStreamType.VISION_STREAM_ROAD, os.getenv("CAMERA_ROAD_ID", "0")),
-  CAMERA_TYPE_STATES[1]: CameraType(VisionStreamType.VISION_STREAM_DRIVER, os.getenv("CAMERA_DRIVER_ID", "1")),
-}
+CameraType = namedtuple("CameraType", ["msg_name", "stream_type", "cam_id"])
+CAMERAS = [
+  CameraType("roadCameraState", VisionStreamType.VISION_STREAM_ROAD, os.getenv("CAMERA_ROAD_ID", "0")),
+  CameraType("driverCameraState", VisionStreamType.VISION_STREAM_DRIVER, os.getenv("CAMERA_DRIVER_ID", "1")),
+]
 if DUAL_CAM:
-  CAMERAS[CAMERA_TYPE_STATES[2]] = CameraType(VisionStreamType.VISION_STREAM_WIDE_ROAD, DUAL_CAM)
+  CAMERAS.append(CameraType("wideRoadCameraState", VisionStreamType.VISION_STREAM_WIDE_ROAD, DUAL_CAM))
 
 class Camerad:
   def __init__(self):
-    self.pm = messaging.PubMaster(CAMERA_TYPE_STATES)
+    self.pm = messaging.PubMaster([c.msg_name for c in CAMERAS])
     self.vipc_server = VisionIpcServer("camerad")
 
-    self.cameras, self.camera_threads = [], []
-    for cam_type_state, specs in CAMERAS.items():
-      cam = Camera(cam_type_state, specs.stream_type, int(specs.cam_id))
-      assert cam.cap.isOpened(), f"Can't find {cam_type_state}"
+    self.cameras = []
+    for c in CAMERAS:
+      cam = Camera(c.msg_name, c.stream_type, int(c.cam_id))
+      assert cam.cap.isOpened(), f"Can't find camera {c}"
       self.cameras.append(cam)
-      self.vipc_server.create_buffers(cam.stream_type, YUV_BUFFER_COUNT, False, cam.W, cam.H)
+      self.vipc_server.create_buffers(c.stream_type, 20, False, cam.W, cam.H)
 
     self.vipc_server.start_listener()
 
@@ -58,13 +54,14 @@ class Camerad:
         rk.keep_time()
 
   def run(self):
+    threads = []
     for cam in self.cameras:
       cam_thread = threading.Thread(target=self.camera_runner, args=(cam,))
       cam_thread.start()
-      self.camera_threads.append(cam_thread)
+      threads.append(cam_thread)
 
-    for thread in self.camera_threads:
-      thread.join()
+    for t in threads:
+      t.join()
 
 if __name__ == "__main__":
   camerad = Camerad()
