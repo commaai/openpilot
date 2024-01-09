@@ -29,7 +29,6 @@ class Camerad:
 
     self.cameras, self.camera_threads = [], []
     for cam_type_state, specs in CAMERAS.items():
-      print(specs.stream_type, specs.cam_id)
       cam = Camera(cam_type_state, specs.stream_type, int(specs.cam_id))
       assert cam.cap.isOpened(), f"Can't find {cam_type_state}"
       self.cameras.append(cam)
