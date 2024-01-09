@@ -70,9 +70,9 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG):
 
 
 class SegmentRangeReader:
-  def __init__(self, segment_range: str, read_mode=ReadMode.RLOG, source=auto_source):
+  def __init__(self, segment_range: str, mode=ReadMode.RLOG, source=auto_source):
     sr = SegmentRange(segment_range)
-    self.lrs = source(sr)
+    self.lrs = source(sr, mode)
 
   def __iter__(self):
     for lr in self.lrs:
