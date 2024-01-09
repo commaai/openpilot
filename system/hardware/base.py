@@ -23,6 +23,9 @@ class HardwareBase(ABC):
     except Exception:
       return default
 
+  def booted(self) -> bool:
+    return True
+
   @abstractmethod
   def reboot(self, reason=None):
     pass
