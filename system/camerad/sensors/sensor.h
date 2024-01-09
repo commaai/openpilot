@@ -16,6 +16,7 @@ const size_t FRAME_WIDTH = 1928;
 const size_t FRAME_HEIGHT = 1208;
 const size_t FRAME_STRIDE = 2896;  // for 12 bit output. 1928 * 12 / 8 + 4 (alignment)
 
+
 class SensorInfo {
 public:
   SensorInfo() = default;
@@ -57,8 +58,10 @@ public:
   uint32_t probe_expected_data;
   std::vector<i2c_random_wr_payload> start_reg_array;
   std::vector<i2c_random_wr_payload> init_reg_array;
-  uint32_t in_port_info_dt;
-  uint32_t power_config_val_low;
+
+  uint32_t mipi_format;
+  uint32_t mclk_frequency;
+  uint32_t frame_data_type;
 };
 
 class AR0231 : public SensorInfo {

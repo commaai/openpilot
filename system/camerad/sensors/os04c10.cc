@@ -42,8 +42,9 @@ OS04C10::OS04C10() {
   init_reg_array.assign(std::begin(init_array_os04c10), std::end(init_array_os04c10));
   probe_reg_addr = 0x300a;
   probe_expected_data = 0x5304;
-  in_port_info_dt = 0x2b;
-  power_config_val_low = 24000000; // Hz
+  mipi_format = CAM_FORMAT_MIPI_RAW_10;
+  frame_data_type = 0x2b;
+  mclk_frequency = 24000000; // Hz
 
   dc_gain_factor = 7.32;
   dc_gain_min_weight = 1;  // always on is fine
