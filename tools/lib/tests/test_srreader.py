@@ -1,8 +1,8 @@
-import unittest
 import numpy as np
+import unittest
 from parameterized import parameterized
-from openpilot.tools.lib.route import Route, SegmentRange
 
+from openpilot.tools.lib.route import Route, SegmentRange
 from openpilot.tools.lib.srreader import parse_start_end
 
 NUM_SEGS = 17 # number of segments in the test route
