@@ -14,6 +14,8 @@ jobs:
       image: ghcr.io/commaai/openpilot-base:latest
     runs-on: ubuntu-20.04
     if: github.repository == 'commaai/openpilot'
+    permissions:
+      checks: read
     steps:
     - name: Install wait-on-check-action dependencies
       run: |
@@ -26,6 +28,7 @@ jobs:
         ref: master
         wait-interval: 30
         running-workflow-name: 'build master-ci'
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
         check-regexp: ^((?!.*(build prebuilt).*).)*$
     - uses: actions/checkout@v4
       with:
