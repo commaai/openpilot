@@ -12,7 +12,7 @@ from openpilot.common.realtime import Ratekeeper
 YUV_BUFFER_COUNT = 20
 
 DUAL_CAM = os.getenv("DUAL_CAMERA")
-CameraType = namedtuple("camera", ["stream_type", "cam_id"])
+CameraType = namedtuple("CameraType", ["stream_type", "cam_id"])
 CAMERA_TYPE_STATES =['roadCameraState', 'driverCameraState', 'wideRoadCameraState']
 
 CAMERAS = {
