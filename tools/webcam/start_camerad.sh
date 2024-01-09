@@ -1,15 +1,15 @@
 #!/bin/bash
 
-export BLOCK="${BLOCK},camerad" #block camerad in terminal that calls manager.py
+# export the block below when call manager.py
+export BLOCK="${BLOCK},camerad"
 export DUAL="0"
-export USE_WEBCAM="1" #export this in shell that calls manager.py
-export YUV_BUFFER_COUNT="20"
+export USE_WEBCAM="1"
 
-#Change camera index according to your setting
+# Change camera index according to your setting
 export CAMERA_ROAD_ID="0"
 export CAMERA_DRIVER_ID="1"
-export CAMERA_WIDE_ID="2"
+export DUAL_CAM="2" # camera index for wide road camera
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
-python3 $DIR/camerad.py
+./$DIR/camerad.py
