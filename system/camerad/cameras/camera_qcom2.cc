@@ -150,7 +150,7 @@ int CameraState::sensors_init() {
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
   power->power_settings[0].power_seq_type = 0;
-  power->power_settings[0].config_val_low = ci->power_config_val_low;
+  power->power_settings[0].config_val_low = ci->mclk_frequency;
   power = power_set_wait(power, 1);
 
   // reset high
@@ -316,10 +316,10 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
       .h_init = 0x0,
       .v_init = 0x0,
     };
-    io_cfg[0].format = CAM_FORMAT_MIPI_RAW_12;             // CAM_FORMAT_UBWC_TP10 for YUV
+    io_cfg[0].format = ci->mipi_format;                    // CAM_FORMAT_UBWC_TP10 for YUV
     io_cfg[0].color_space = CAM_COLOR_SPACE_BASE;          // CAM_COLOR_SPACE_BT601_FULL for YUV
     io_cfg[0].color_pattern = 0x5;                         // 0x0 for YUV
-    io_cfg[0].bpp = 0xc;
+    io_cfg[0].bpp = (ci->mipi_format == CAM_FORMAT_MIPI_RAW_10 ? 0xa : 0xc);  // bits per pixel
     io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_RDI_0;   // CAM_ISP_IFE_OUT_RES_FULL for YUV
     io_cfg[0].fence = fence;
     io_cfg[0].direction = CAM_BUF_OUTPUT;
@@ -459,7 +459,8 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
 
   // Try different sensors one by one until it success.
   if (!init_sensor_lambda(new AR0231) &&
-      !init_sensor_lambda(new OX03C10)) {
+      !init_sensor_lambda(new OX03C10) &&
+      !init_sensor_lambda(new OS04C10)) {
     LOGE("** sensor %d FAILED bringup, disabling", camera_num);
     enabled = false;
     return;
@@ -481,7 +482,6 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
 
   LOG("-- Configuring sensor");
   sensors_i2c(ci->init_reg_array.data(), ci->init_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, ci->data_word);
-  printf("dt is %x\n", ci->in_port_info_dt);
 
   // NOTE: to be able to disable road and wide road, we still have to configure the sensor over i2c
   // If you don't do this, the strobe GPIO is an output (even in reset it seems!)
@@ -495,8 +495,8 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
     .lane_cfg = 0x3210,
 
     .vc = 0x0,
-    .dt = ci->in_port_info_dt,
-    .format = CAM_FORMAT_MIPI_RAW_12,
+    .dt = ci->frame_data_type,
+    .format = ci->mipi_format,
 
     .test_pattern = 0x2,  // 0x3?
     .usage_type = 0x0,
@@ -522,7 +522,7 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
     .num_out_res = 0x1,
     .data[0] = (struct cam_isp_out_port_info){
       .res_type = CAM_ISP_IFE_OUT_RES_RDI_0,
-      .format = CAM_FORMAT_MIPI_RAW_12,
+      .format = ci->mipi_format,
       .width = ci->frame_width,
       .height = ci->frame_height + ci->extra_height,
       .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
@@ -971,6 +971,9 @@ void cameras_run(MultiCameraState *s) {
                  event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp/1e6, event_data->u.frame_msg.sof_status);
         }
 
+        // for debugging
+        //do_exit = do_exit || event_data->u.frame_msg.frame_id > (30*20);
+
         if (event_data->session_hdl == s->road_cam.session_handle) {
           s->road_cam.handle_camera_event(event_data);
         } else if (event_data->session_hdl == s->wide_road_cam.session_handle) {
@@ -981,6 +984,8 @@ void cameras_run(MultiCameraState *s) {
           LOGE("Unknown vidioc event source");
           assert(false);
         }
+      } else {
+        LOGE("unhandled event %d\n", ev.type);
       }
     } else {
       LOGE("VIDIOC_DQEVENT failed, errno=%d", errno);
