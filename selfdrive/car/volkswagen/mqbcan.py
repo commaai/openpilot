@@ -94,7 +94,7 @@ def create_acc_accel_control(packer, bus, acc_type, acc_enabled, accel, acc_cont
     acc_hold_type = 0
 
   acc_07_values = {
-    "ACC_Anhalteweg": 0.75 if stopping else 20.46,  # Distance to stop (stopping coordinator handles terminal roll-out)
+    "ACC_Anhalteweg": 0.3 if stopping else 20.46,  # Distance to stop (stopping coordinator handles terminal roll-out)
     "ACC_Freilauf_Info": 2 if acc_enabled else 0,
     "ACC_Folgebeschl": 3.02,  # Not using secondary controller accel unless and until we understand its impact
     "ACC_Sollbeschleunigung_02": accel if acc_enabled else 3.01,
