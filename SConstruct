@@ -7,6 +7,7 @@ import numpy as np
 import re
 
 import SCons.Errors
+from SCons.Scanner.C import SConsCPPConditionalScanner, dictify_CPPDEFINES
 
 SCons.Warnings.warningAsException(True)
 SetOption('warn', 'all')
@@ -341,36 +342,34 @@ if GetOption("clazy"):
 
 Export('env', 'qt_env', 'arch', 'real_arch')
 
-"""
-#Replacement for default scons scanner that look for dependencies (Ignore non-existent and C standard header files)
-def exist_scan(node, env, path):
-  fname = str(node)
-  if  fname == "selfdrive/locationd/models/live_kf.cc" or fname == "selfdrive/locationd/locationd.cc":
-    env.Depends(fname, ["#selfdrive/locationd/models/generated/live_kf_constants.h","#selfdrive/locationd/models/generated/live_kf_constants.cc"])
-  include_re = re.compile(r'^#include\s+(\S+)$', re.M)
-  exist_files = []
-  contents = node.get_text_contents()
-  include_files = include_re.findall(contents)
-  for file in include_files:
-    file = file.strip('"<>"')
-    for cpppath in env["CPPPATH"]:
-      cpppath = Dir(cpppath).relpath
-      fpath = os.path.join(cpppath, file)
-      if os.path.isfile(fpath):
-        exist_files.append(File(fpath))
-  return exist_files
-my_exist_scan = Scanner(name="EXIST_SCANNER",function=exist_scan)
-file_extensions = ['.c', '.h', '.cc', '.cpp']
-for e in file_extensions:
-  SourceFileScanner.add_scanner(e,my_exist_scan)
-"""
+# https://github.com/SCons/scons/blob/master/SCons/Scanner/C.py
+# NOTE: Modified of not warning the missing deps file (C std file sin our case) 
+# Works only with the assumption that every important implicit dependency is within the repo
+class ModifiedSConsCPPConditionalScanner:
+  def __init__(self, name, variable) -> None:
+    self.name = name
+    self.path = FindPathDirs(variable)
 
-from SCons.Scanner.C import CConditionalScanner
+  def __call__(self, node, env, path=(), depth=-1):
+    result = []
+    cpp = SConsCPPConditionalScanner(
+        current=node.get_dir(),
+        cpppath=path,
+        dict=dictify_CPPDEFINES(env),
+        depth=depth,
+    )
+    deps = cpp(node)
+    # Don't scan C standard, poetry installs, and apt packages
+    result = [f for f in deps if (not os.path.isabs(str(f)) and not str(f).startswith(".venv"))]
+    return result
+  def recurse_nodes(self, nodes):
+    return nodes
+  def select(self, node):
+    return self
 
-file_extensions = ['.c', '.h', '.cc', '.cpp']
+file_extensions = ['.c', '.h', '.cc', '.hpp', '.cpp']
 for e in file_extensions:
-  SourceFileScanner.add_scanner(e, CConditionalScanner())
-print(SourceFileScanner.function)
+  SourceFileScanner.add_scanner(e, ModifiedSConsCPPConditionalScanner("ModifiedCConditionalScanner", "CPPPATH"))
 
 # Build common module
 SConscript(['common/SConscript'])
