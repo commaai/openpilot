@@ -13,7 +13,7 @@ YUV_BUFFER_COUNT = 20
 
 DUAL_CAM = os.getenv("DUAL_CAMERA")
 CameraType = namedtuple("CameraType", ["stream_type", "cam_id"])
-CAMERA_TYPE_STATES =['roadCameraState', 'driverCameraState', 'wideRoadCameraState']
+CAMERA_TYPE_STATES =('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
 
 CAMERAS = {
   CAMERA_TYPE_STATES[0]: CameraType(VisionStreamType.VISION_STREAM_ROAD, os.getenv("CAMERA_ROAD_ID", "0")),
