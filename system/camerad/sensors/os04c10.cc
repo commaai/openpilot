@@ -17,7 +17,7 @@ const uint32_t os04c10_analog_gains_reg[] = {
     0xA80, 0xB00, 0xB80, 0xC00, 0xC80, 0xD00, 0xD80, 0xE00, 0xE80, 0xF00, 0xF80};
 
 const uint32_t VS_TIME_MIN_OS04C10 = 1;
-const uint32_t VS_TIME_MAX_OS04C10 = 34;  // vs < 35
+//const uint32_t VS_TIME_MAX_OS04C10 = 34;  // vs < 35
 
 }  // namespace
 
@@ -70,9 +70,9 @@ OS04C10::OS04C10() {
 std::vector<i2c_random_wr_payload> OS04C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {
   // t_HCG&t_LCG + t_VS on LPD, t_SPD on SPD
   uint32_t hcg_time = exposure_time;
-  uint32_t lcg_time = hcg_time;
-  uint32_t spd_time = std::min(std::max((uint32_t)exposure_time, (exposure_time_max + VS_TIME_MAX_OS04C10) / 3), exposure_time_max + VS_TIME_MAX_OS04C10);
-  uint32_t vs_time = std::min(std::max((uint32_t)exposure_time / 40, VS_TIME_MIN_OS04C10), VS_TIME_MAX_OS04C10);
+  //uint32_t lcg_time = hcg_time;
+  //uint32_t spd_time = std::min(std::max((uint32_t)exposure_time, (exposure_time_max + VS_TIME_MAX_OS04C10) / 3), exposure_time_max + VS_TIME_MAX_OS04C10);
+  //uint32_t vs_time = std::min(std::max((uint32_t)exposure_time / 40, VS_TIME_MIN_OS04C10), VS_TIME_MAX_OS04C10);
 
   uint32_t real_gain = os04c10_analog_gains_reg[new_exp_g];
 

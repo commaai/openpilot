@@ -112,7 +112,6 @@ bool CameraBuf::acquire() {
 
   double start_time = millis_since_boot();
   cl_event event;
-
   debayer->queue(q, camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, &event);
   clWaitForEvents(1, &event);
   CL_CHECK(clReleaseEvent(event));
