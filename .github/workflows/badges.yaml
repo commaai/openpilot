@@ -14,6 +14,8 @@ jobs:
     name: create badges
     runs-on: ubuntu-20.04
     if: github.repository == 'commaai/openpilot'
+    permissions:
+      contents: write
     steps:
     - uses: actions/checkout@v4
       with:
