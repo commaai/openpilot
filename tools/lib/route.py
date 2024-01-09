@@ -233,7 +233,8 @@ class SegmentName:
 
 class SegmentRange:
   def __init__(self, segment_range: str):
-    self.m = re.match(RE.SEGMENT_RANGE, segment_range)
+    self.m = re.fullmatch(RE.SEGMENT_RANGE, segment_range)
+    assert self.m, f"Segment range is not valid {segment_range}"
 
   @property
   def route_name(self):
@@ -248,9 +249,5 @@ class SegmentRange:
     return self.m.group("timestamp")
 
   @property
-  def start(self):
-    return self.m.group("start")
-
-  @property
-  def end(self):
-    return self.m.group("end")
+  def _slice(self):
+    return self.m.group("slice")

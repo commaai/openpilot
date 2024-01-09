@@ -9,7 +9,9 @@ class RE:
   TIMESTAMP = r'(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2}--[0-9]{2}-[0-9]{2}-[0-9]{2})'
   ROUTE_NAME = r'(?P<route_name>{}[|_/]{})'.format(DONGLE_ID, TIMESTAMP)
   SEGMENT_NAME = r'{}(?:--|/)(?P<segment_num>[0-9]+)'.format(ROUTE_NAME)
-  SEGMENT_RANGE = r'{}(?:--|/)?(?P<start>-?[0-9]+)?/?(?P<end>-?[0-9]+)?'.format(ROUTE_NAME)
+  INDEX = r'-?[0-9]+'
+  SLICE = r'(?P<start>{})?:?(?P<end>{})?:?(?P<step>{})?'.format(INDEX, INDEX, INDEX)
+  SEGMENT_RANGE = r'{}(?:--|/)?(?P<slice>({}))?'.format(ROUTE_NAME, SLICE)
   BOOTLOG_NAME = ROUTE_NAME
 
   EXPLORER_FILE = r'^(?P<segment_name>{})--(?P<file_name>[a-z]+\.[a-z0-9]+)$'.format(SEGMENT_NAME)

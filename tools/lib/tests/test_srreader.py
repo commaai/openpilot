@@ -2,8 +2,8 @@ import numpy as np
 import unittest
 from parameterized import parameterized
 
-from openpilot.tools.lib.route import Route, SegmentRange
-from openpilot.tools.lib.srreader import ReadMode, SegmentRangeReader, parse_start_end
+from openpilot.tools.lib.route import SegmentRange
+from openpilot.tools.lib.srreader import ReadMode, SegmentRangeReader, parse_slice
 
 NUM_SEGS = 17 # number of segments in the test route
 ALL_SEGS = list(np.arange(NUM_SEGS))
@@ -17,20 +17,32 @@ class TestSegmentRangeReader(unittest.TestCase):
     (f"{TEST_ROUTE}--5", [5]),
     (f"{TEST_ROUTE}/0", [0]),
     (f"{TEST_ROUTE}/5", [5]),
-    (f"{TEST_ROUTE}/0/10", list(np.arange(0, 10))),
-    (f"{TEST_ROUTE}/0/0", []),
-    (f"{TEST_ROUTE}/4/6", [4,5]),
-    (f"{TEST_ROUTE}/0/-1", ALL_SEGS[:-1]),
-    (f"{TEST_ROUTE}/2/-1", ALL_SEGS[2:-1]),
+    (f"{TEST_ROUTE}/0:10", list(np.arange(0, 10))),
+    (f"{TEST_ROUTE}/0:0", []),
+    (f"{TEST_ROUTE}/4:6", ALL_SEGS[4:6]),
+    (f"{TEST_ROUTE}/0:-1", ALL_SEGS[0:-1]),
+    (f"{TEST_ROUTE}/:5", ALL_SEGS[:5]),
+    (f"{TEST_ROUTE}/2:-1", ALL_SEGS[2:-1]),
     (f"{TEST_ROUTE}/-1", [NUM_SEGS-1]),
-    (f"{TEST_ROUTE}/-2/-1", [NUM_SEGS-2]),
-    (f"{TEST_ROUTE}/-4/-2", [NUM_SEGS-4, NUM_SEGS-3]),
+    (f"{TEST_ROUTE}/-2", [NUM_SEGS-2]),
+    (f"{TEST_ROUTE}/-2:-1", [NUM_SEGS-2]),
+    (f"{TEST_ROUTE}/-4:-2", [NUM_SEGS-4, NUM_SEGS-3]),
   ])
-  def test_parse_start_end(self, segment_range, expected):
+  def test_parse_slice(self, segment_range, expected):
     sr = SegmentRange(segment_range)
-    route = Route(sr.route_name)
-    segs = parse_start_end(sr, route)
+    segs = parse_slice(sr)
     self.assertListEqual(list(segs), expected)
+
+  @parameterized.expand([
+    (f"{TEST_ROUTE}//",),
+    (f"{TEST_ROUTE}---",),
+    (f"{TEST_ROUTE}/-4:--2",),
+    (f"{TEST_ROUTE}/-a",),
+  ])
+  def test_bad_ranges(self, segment_range):
+    with self.assertRaises(AssertionError):
+      sr = SegmentRange(segment_range)
+      parse_slice(sr)
 
   @parameterized.expand([
     (ReadMode.QLOG, 11643),
