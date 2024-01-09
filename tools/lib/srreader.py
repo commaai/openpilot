@@ -5,24 +5,25 @@ from openpilot.tools.lib.route import Route, SegmentRange
 
 
 def parse_start_end(sr: SegmentRange, route = None):
-  start = int(sr.start) if sr.start is not None else 0
-  end = int(sr.end) if sr.end is not None else None if sr.start is None else start
+  start = int(sr.start) if sr.start is not None else None
+  end = int(sr.end) if sr.end is not None else None
 
   if route is None:
     assert start is not None and end is not None, "segment(s) must be provided for non-api sources"
     assert start >= 0 and end >= 0, "relative segment(s) not supported for non-api sources"
 
+  def parse_negative_indexing(i):
+    return route.max_seg_number - abs(i) + 1
+
+  if start is None:
+    start = 0
+  else:
+    start = parse_negative_indexing(start) if start < 0 else start
+
   if end is None:
-    end = route.max_seg_number
-
-  def parse_relative_segment(s):
-    return route.max_seg_number - abs(s) + 1
-
-  if start < 0:
-    start = parse_relative_segment(start)
-
-  if end < 0:
-    end = parse_relative_segment(end)
+    end = route.max_seg_number if sr.start is None else start
+  else:
+    end = parse_negative_indexing(end) if end < 0 else end - 1
 
   return start, end
 
