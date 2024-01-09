@@ -312,6 +312,9 @@ def thermald_thread(end_event, hw_queue) -> None:
     # must be at an engageable thermal band to go onroad
     startup_conditions["device_temp_engageable"] = thermal_status < ThermalStatus.red
 
+    # ensure device is fully booted
+    startup_conditions["device_booted"] = startup_conditions.get("device_booted", False) or HARDWARE.booted()
+
     # if the temperature enters the danger zone, go offroad to cool down
     onroad_conditions["device_temp_good"] = thermal_status < ThermalStatus.danger
     extra_text = f"{offroad_comp_temp:.1f}C"
