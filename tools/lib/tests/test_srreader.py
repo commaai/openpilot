@@ -3,7 +3,7 @@ import unittest
 from parameterized import parameterized
 
 from openpilot.tools.lib.route import Route, SegmentRange
-from openpilot.tools.lib.srreader import parse_start_end
+from openpilot.tools.lib.srreader import ReadMode, SegmentRangeReader, parse_start_end
 
 NUM_SEGS = 17 # number of segments in the test route
 ALL_SEGS = list(np.arange(NUM_SEGS))
@@ -31,6 +31,15 @@ class TestSegmentRangeReader(unittest.TestCase):
     route = Route(sr.route_name)
     segs = parse_start_end(sr, route)
     self.assertListEqual(list(segs), expected)
+
+  @parameterized.expand([
+    (ReadMode.QLOG, 11643),
+    (ReadMode.RLOG, 70577),
+  ])
+  def test_modes(self, mode, expected):
+    lr = SegmentRangeReader(TEST_ROUTE+"/0", mode)
+
+    self.assertEqual(len(list(lr)), expected)
 
 
 if __name__ == "__main__":
