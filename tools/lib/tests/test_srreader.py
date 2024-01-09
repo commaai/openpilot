@@ -28,6 +28,8 @@ class TestSegmentRangeReader(unittest.TestCase):
     (f"{TEST_ROUTE}/-2", [NUM_SEGS-2]),
     (f"{TEST_ROUTE}/-2:-1", [NUM_SEGS-2]),
     (f"{TEST_ROUTE}/-4:-2", [NUM_SEGS-4, NUM_SEGS-3]),
+    (f"{TEST_ROUTE}/:10:2", ALL_SEGS[:10:2]),
+    (f"{TEST_ROUTE}/5::2", ALL_SEGS[5::2]),
   ])
   def test_parse_slice(self, segment_range, expected):
     sr = SegmentRange(segment_range)
@@ -39,6 +41,8 @@ class TestSegmentRangeReader(unittest.TestCase):
     (f"{TEST_ROUTE}---",),
     (f"{TEST_ROUTE}/-4:--2",),
     (f"{TEST_ROUTE}/-a",),
+    (f"{TEST_ROUTE}/0:1:2:3",),
+    (f"{TEST_ROUTE}/:::3",),
   ])
   def test_bad_ranges(self, segment_range):
     with self.assertRaises(AssertionError):
