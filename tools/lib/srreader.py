@@ -20,7 +20,7 @@ def create_slice_from_string(s: str):
   end = int(end) if end is not None else None
   step = int(step) if step is not None else None
 
-  if start is not None and end is None and step is None:
+  if start is not None and ":" not in s and end is None and step is None:
     return start
   return slice(start, end, step)
 

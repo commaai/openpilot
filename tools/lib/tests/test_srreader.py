@@ -22,6 +22,7 @@ class TestSegmentRangeReader(unittest.TestCase):
     (f"{TEST_ROUTE}/4:6", ALL_SEGS[4:6]),
     (f"{TEST_ROUTE}/0:-1", ALL_SEGS[0:-1]),
     (f"{TEST_ROUTE}/:5", ALL_SEGS[:5]),
+    (f"{TEST_ROUTE}/2:", ALL_SEGS[2:]),
     (f"{TEST_ROUTE}/2:-1", ALL_SEGS[2:-1]),
     (f"{TEST_ROUTE}/-1", [NUM_SEGS-1]),
     (f"{TEST_ROUTE}/-2", [NUM_SEGS-2]),
