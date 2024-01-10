@@ -98,5 +98,4 @@ public slots:
 private slots:
   void connectToNetwork(const Network n);
   void wrongPassword(const QString &ssid);
-  void connectToHiddenNetwork();
 };

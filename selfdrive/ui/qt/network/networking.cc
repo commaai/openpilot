@@ -70,17 +70,6 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
       background-color:  #4a4a4a;
     }
   )");
-
-  QLabel* dividerLine = new QLabel();
-  dividerLine->setFixedHeight(1);
-  dividerLine->setStyleSheet("background-color: #bdbdbd; margin-left: 40px; margin-right: 40px;");
-  wifiWidget->layout()->addWidget(dividerLine);
-
-  auto hiddenNetworkButton = new QPushButton(tr("Hidden Network"));
-  hiddenNetworkButton->setStyleSheet("text-align: left;border: none;padding-top: 50px;padding-bottom: 50px;padding-left: 43px;");
-  connect(hiddenNetworkButton, &QPushButton::clicked, this, &Networking::connectToHiddenNetwork);
-  wifiWidget->layout()->addWidget(hiddenNetworkButton);
-
   main_layout->setCurrentWidget(wifiScreen);
 }
 
@@ -108,21 +97,6 @@ void Networking::wrongPassword(const QString &ssid) {
     QString pass = InputDialog::getText(tr("Wrong password"), this, tr("for \"%1\"").arg(QString::fromUtf8(n.ssid)), true, 8);
     if (!pass.isEmpty()) {
       wifi->connect(n, pass);
-    }
-  }
-}
-
-void Networking::connectToHiddenNetwork() {
-  QString ssid = InputDialog::getText(tr("Enter SSID"), this, "", false, 1);
-  if (!ssid.isEmpty()) {
-    QString pass = InputDialog::getText(tr("Enter password"), this, tr("for \"%1\"").arg(ssid), true, -1);
-    Network hidden_network;
-    hidden_network.ssid = ssid.toUtf8();
-    if (!pass.isEmpty()) {
-      hidden_network.security_type = SecurityType::WPA;
-      wifi->connect(hidden_network, pass);
-    } else {
-      wifi->connect(hidden_network);
     }
   }
 }
