@@ -14,6 +14,8 @@ jobs:
     name: create badges
     runs-on: ubuntu-20.04
     if: github.repository == 'commaai/openpilot'
+    permissions:
+      contents: write
     steps:
     - uses: actions/checkout@v4
       with:
@@ -22,6 +24,8 @@ jobs:
     - name: Push badges
       run: |
         ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/ui/translations/create_badges.py"
+
+        rm .gitattributes
 
         git checkout --orphan badges
         git rm -rf --cached .
