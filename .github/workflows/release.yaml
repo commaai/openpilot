@@ -16,6 +16,7 @@ jobs:
     if: github.repository == 'commaai/openpilot'
     permissions:
       checks: read
+      contents: write
     steps:
     - name: Install wait-on-check-action dependencies
       run: |
