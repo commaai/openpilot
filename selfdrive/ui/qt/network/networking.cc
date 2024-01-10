@@ -196,7 +196,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
       } else {
         wifi->connect(hidden_network);
       }
-      emit requestWidgetChange();
+      emit requestWifiScreen();
     }
   });
   list->addItem(hiddenNetworkButton);
