@@ -66,6 +66,26 @@
         <source>Prevent large data uploads when on a metered connection</source>
         <translation>데이터 요금제 연결 시 대용량 데이터 업로드를 방지합니다</translation>
     </message>
+    <message>
+        <source>Hidden Network</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CONNECT</source>
+        <translation type="unfinished">연결됨</translation>
+    </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation type="unfinished">SSID 입력</translation>
+    </message>
+    <message>
+        <source>Enter password</source>
+        <translation type="unfinished">비밀번호를 입력하세요</translation>
+    </message>
+    <message>
+        <source>for &quot;%1&quot;</source>
+        <translation type="unfinished">&quot;%1&quot;에 접속하려면 비밀번호가 필요합니다</translation>
+    </message>
 </context>
 <context>
     <name>AnnotatedCameraWidget</name>
@@ -381,14 +401,6 @@
     <message>
         <source>Wrong password</source>
         <translation>비밀번호가 틀렸습니다</translation>
-    </message>
-    <message>
-        <source>Enter SSID</source>
-        <translation>SSID 입력</translation>
-    </message>
-    <message>
-        <source>Hidden Network</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
