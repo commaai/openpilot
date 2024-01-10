@@ -31,49 +31,49 @@ def parse_slice(sr: SegmentRange):
   s = create_slice_from_string(sr._slice)
   return segs[s] if isinstance(s, slice) else [segs[s]]
 
-def comma_api_source(sr: SegmentRange, mode=ReadMode.RLOG):
+def comma_api_source(sr: SegmentRange, mode=ReadMode.RLOG, sort_by_time=False):
   segs = parse_slice(sr)
   route = Route(sr.route_name)
 
   log_paths = route.log_paths() if mode == ReadMode.RLOG else route.qlog_paths()
 
   for seg in segs:
-    yield LogReader(log_paths[seg])
+    yield LogReader(log_paths[seg], sort_by_time=sort_by_time)
 
-def internal_source(sr: SegmentRange, mode=ReadMode.RLOG):
+def internal_source(sr: SegmentRange, mode=ReadMode.RLOG, sort_by_time=False):
   segs = parse_slice(sr)
 
   for seg in segs:
-    yield LogReader(f"cd:/{sr.dongle_id}/{sr.timestamp}/{seg}/{'rlog' if mode == ReadMode.RLOG else 'qlog'}.bz2")
+    yield LogReader(f"cd:/{sr.dongle_id}/{sr.timestamp}/{seg}/{'rlog' if mode == ReadMode.RLOG else 'qlog'}.bz2", sort_by_time=sort_by_time)
 
-def openpilotci_source(sr: SegmentRange, mode=ReadMode.RLOG):
+def openpilotci_source(sr: SegmentRange, mode=ReadMode.RLOG, sort_by_time=False):
   segs = parse_slice(sr)
 
   for seg in segs:
-    yield LogReader(get_url(sr.route_name, seg, 'rlog' if mode == ReadMode.RLOG else 'qlog'))
+    yield LogReader(get_url(sr.route_name, seg, 'rlog' if mode == ReadMode.RLOG else 'qlog'), sort_by_time=sort_by_time)
 
-def auto_source(sr: SegmentRange, mode=ReadMode.RLOG):
+def auto_source(*args, **kwargs):
   # Automatically determine viable source
 
   try:
-    next(internal_source(sr, mode))
-    return internal_source(sr, mode)
+    next(internal_source(*args, **kwargs))
+    return internal_source(*args, **kwargs)
   except Exception:
     pass
 
   try:
-    next(openpilotci_source(sr, mode))
-    return openpilotci_source(sr, mode)
+    next(openpilotci_source(*args, **kwargs))
+    return openpilotci_source(*args, **kwargs)
   except Exception:
     pass
 
-  return comma_api_source(sr, mode)
+  return comma_api_source(*args, **kwargs)
 
 
 class SegmentRangeReader:
-  def __init__(self, segment_range: str, mode=ReadMode.RLOG, source=auto_source):
+  def __init__(self, segment_range: str, mode=ReadMode.RLOG, source=auto_source, sort_by_time=False):
     sr = SegmentRange(segment_range)
-    self.lrs = source(sr, mode)
+    self.lrs = source(sr, mode, sort_by_time)
 
   def __iter__(self):
     for lr in self.lrs:
