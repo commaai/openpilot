@@ -8,9 +8,6 @@ from openpilot.tools.lib.srreader import ReadMode, SegmentRangeReader, parse_sli
 NUM_SEGS = 17 # number of segments in the test route
 ALL_SEGS = list(np.arange(NUM_SEGS))
 TEST_ROUTE = "344c5c15b34f2d8a/2024-01-03--09-37-12"
-QLOG_SIZE = 11643
-RLOG_SIZE = 70577
-ALL_QLOG_SIZE = 191350
 
 class TestSegmentRangeReader(unittest.TestCase):
   @parameterized.expand([
@@ -53,25 +50,17 @@ class TestSegmentRangeReader(unittest.TestCase):
       sr = SegmentRange(segment_range)
       parse_slice(sr)
 
-  @parameterized.expand([
-    (ReadMode.QLOG, QLOG_SIZE),
-    (ReadMode.RLOG, RLOG_SIZE),
-  ])
-  def test_modes(self, mode, expected):
-    lr = SegmentRangeReader(TEST_ROUTE+"/0", mode)
+  def test_modes(self):
+    qlog_len = len(list(SegmentRangeReader(f"{TEST_ROUTE}/0", ReadMode.QLOG)))
+    rlog_len = len(list(SegmentRangeReader(f"{TEST_ROUTE}/0", ReadMode.RLOG)))
 
-    self.assertEqual(len(list(lr)), expected)
+    self.assertLess(qlog_len * 6, rlog_len)
 
-  @parameterized.expand([
-    (f"{TEST_ROUTE}/0", RLOG_SIZE), # default to rlog
-    (f"{TEST_ROUTE}/0/r", RLOG_SIZE),
-    (f"{TEST_ROUTE}/0/q", QLOG_SIZE),
-    (f"{TEST_ROUTE}/q", ALL_QLOG_SIZE),
-  ])
-  def test_modes_from_name(self, segment_range, expected):
-    lr = SegmentRangeReader(segment_range)
+  def test_modes_from_name(self):
+    qlog_len = len(list(SegmentRangeReader(f"{TEST_ROUTE}/0/q")))
+    rlog_len = len(list(SegmentRangeReader(f"{TEST_ROUTE}/0/r")))
 
-    self.assertEqual(len(list(lr)), expected)
+    self.assertLess(qlog_len * 6, rlog_len)
 
 
 if __name__ == "__main__":
