@@ -245,7 +245,7 @@ class Updater:
 
   @property
   def update_available(self) -> bool:
-    if os.path.isdir(OVERLAY_MERGED):
+    if os.path.isdir(OVERLAY_MERGED) and len(self.branches) > 0:
       hash_mismatch = self.get_commit_hash(OVERLAY_MERGED) != self.branches[self.target_branch]
       branch_mismatch = self.get_branch(OVERLAY_MERGED) != self.target_branch
       return hash_mismatch or branch_mismatch
@@ -261,7 +261,8 @@ class Updater:
     self.params.put("UpdateFailedCount", str(failed_count))
 
     self.params.put_bool("UpdaterFetchAvailable", self.update_available)
-    self.params.put("UpdaterAvailableBranches", ','.join(self.branches.keys()))
+    if len(self.branches):
+      self.params.put("UpdaterAvailableBranches", ','.join(self.branches.keys()))
 
     last_update = datetime.datetime.utcnow()
     if update_success:
@@ -428,10 +429,11 @@ def main() -> None:
   # invalidate old finalized update
   set_consistent_flag(False)
 
-  # wait a bit before first cycle
-  wait_helper.sleep(60)
+  # set initial state
+  params.put("UpdaterState", "idle")
 
   # Run the update loop
+  first_run = True
   while True:
     wait_helper.ready_event.clear()
 
@@ -444,7 +446,8 @@ def main() -> None:
       # ensure we have some params written soon after startup
       updater.set_params(False, update_failed_count, exception)
 
-      if not system_time_valid():
+      if not system_time_valid() or first_run:
+        first_run = False
         wait_helper.sleep(60)
         continue
 
