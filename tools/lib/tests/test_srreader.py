@@ -10,6 +10,7 @@ ALL_SEGS = list(np.arange(NUM_SEGS))
 TEST_ROUTE = "344c5c15b34f2d8a/2024-01-03--09-37-12"
 QLOG_SIZE = 11643
 RLOG_SIZE = 70577
+ALL_QLOG_SIZE = 191350
 
 class TestSegmentRangeReader(unittest.TestCase):
   @parameterized.expand([
@@ -63,7 +64,7 @@ class TestSegmentRangeReader(unittest.TestCase):
   @parameterized.expand([
     (f"{TEST_ROUTE}/0", RLOG_SIZE), # default to rlog
     (f"{TEST_ROUTE}/0/r", RLOG_SIZE),
-    (f"{TEST_ROUTE}/0/q", QLOG_SIZE),
+    (f"{TEST_ROUTE}/q", ALL_QLOG_SIZE),
   ])
   def test_modes_from_name(self, segment_range, expected):
     lr = SegmentRangeReader(segment_range)
