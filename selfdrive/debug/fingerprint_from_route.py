@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
-from openpilot.tools.lib.route import Route
-from openpilot.tools.lib.logreader import MultiLogIterator
+from openpilot.tools.lib.srreader import ReadMode, SegmentRangeReader
 
 
 def get_fingerprint(lr):
@@ -40,6 +39,5 @@ if __name__ == "__main__":
     print("Usage: ./fingerprint_from_route.py <route>")
     sys.exit(1)
 
-  route = Route(sys.argv[1])
-  lr = MultiLogIterator(route.log_paths()[:5])
+  lr = SegmentRangeReader(sys.argv[1], mode=ReadMode.QLOG)
   get_fingerprint(lr)
