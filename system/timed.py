@@ -73,17 +73,17 @@ def main() -> NoReturn:
   while True:
     time.sleep(60)
 
-    # Use timezone param
+    # Use timezone from param if set
     timezone = params.get("Timezone", encoding='utf8')
     if timezone is not None:
       cloudlog.debug("Setting timezone based on param")
       set_timezone(timezone)
-      set_time(get_gps_time())
+      # set time manually if using timezone param
       continue
 
     location = params.get("LastGPSPosition", encoding='utf8')
 
-    # Use timezone and time from modem
+    # Use timezone and time from modem if GPS not available
     if location is None:
       try:
         cloudlog.debug("Setting time based on modem")
@@ -98,7 +98,7 @@ def main() -> NoReturn:
         cloudlog.error(f"Error getting time from modem, {e}")
       continue
 
-    # Find timezone by reverse geocoding the last known gps location
+    # Use timezone and time from gps location
     cloudlog.debug("Setting timezone based on GPS location")
     try:
       location = json.loads(location)
