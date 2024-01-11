@@ -19,25 +19,27 @@ class TestSimBridgeBase(unittest.TestCase):
     TestSimBridgeBase.drive_time = cls.drive_time if cls.drive_time else 60
 
   def setUp(self):
-    self.p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR)
-    self.sm = messaging.SubMaster(['controlsState', 'onroadEvents', 'managerState'])
-    self.q = Queue()
-    self.bridge = self.create_bridge()
-    self.bridge.started = Value('b', False)
-    self.p_bridge = self.bridge.run(self.q, retries=10)
-    self.processes = [self.p_manager, self.p_bridge]
-
+    self.processes = []
 
   def test_engage(self):
     # Startup manager and bridge.py. Check processes are running, then engage and verify.
+    p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR)
+    sm = messaging.SubMaster(['controlsState', 'onroadEvents', 'managerState'])
+    self.processes.append(p_manager)
+
+    q = Queue()
+    bridge = self.create_bridge()
+    bridge.started = Value('b', False)
+    p_bridge = bridge.run(q, retries=10)
+    self.processes.append(p_bridge)
 
     # Wait for bridge to startup
     max_time_per_step = 60
 
     start_waiting = time.monotonic()
-    while not self.bridge.started and time.monotonic() < start_waiting + max_time_per_step:
+    while not bridge.started and time.monotonic() < start_waiting + max_time_per_step:
       time.sleep(0.1)
-    self.assertEqual(self.p_bridge.exitcode, None, f"Bridge process should be running, but exited with code {self.p_bridge.exitcode}")
+    self.assertEqual(p_bridge.exitcode, None, f"Bridge process should be running, but exited with code {p_bridge.exitcode}")
 
     start_time = time.monotonic()
     no_car_events_issues_once = False
@@ -45,10 +47,10 @@ class TestSimBridgeBase(unittest.TestCase):
     not_running = []
 
     while time.monotonic() < start_time + max_time_per_step:
-      self.sm.update()
-      not_running = [p.name for p in self.sm['managerState'].processes if not p.running and p.shouldBeRunning]
-      car_event_issues = [event.name for event in self.sm['onroadEvents'] if any([event.noEntry, event.softDisable, event.immediateDisable])]
-      if self.sm.all_alive() and len(car_event_issues) == 0 and len(not_running) == 0:
+      sm.update()
+      not_running = [p.name for p in sm['managerState'].processes if not p.running and p.shouldBeRunning]
+      car_event_issues = [event.name for event in sm['onroadEvents'] if any([event.noEntry, event.softDisable, event.immediateDisable])]
+      if sm.all_alive() and len(car_event_issues) == 0 and len(not_running) == 0:
         no_car_events_issues_once = True
         break
     self.assertTrue(no_car_events_issues_once,
@@ -59,23 +61,23 @@ class TestSimBridgeBase(unittest.TestCase):
     control_active = 0
 
     while time.monotonic() < start_time + max_time_per_step:
-      self.sm.update()
-      self.q.put("cruise_down")  # Try engaging
-      if self.sm.all_alive() and self.sm['controlsState'].active:
+      sm.update()
+      q.put("cruise_down")  # Try engaging
+      if sm.all_alive() and sm['controlsState'].active:
         control_active += 1
         if control_active == min_counts_control_active:
           break
     self.assertEqual(min_counts_control_active, control_active, f"Simulator did not engage a minimal of {min_counts_control_active} steps was {control_active}")
 
     # Drive course
-    self.q.put("reset")
+    q.put("reset")
     start_time = time.monotonic()
     user_disengage_once = False
     disengage_events = ('stockAeb', 'fcw', 'ldw')
 
     while time.monotonic() < start_time + TestSimBridgeBase.drive_time:
-      self.sm.update()
-      onroadEventNames = [e.name for e in self.sm['onroadEvents']]
+      sm.update()
+      onroadEventNames = [e.name for e in sm['onroadEvents']]
       if any(e in onroadEventNames for e in disengage_events):
         user_disengage_once = True
         break
