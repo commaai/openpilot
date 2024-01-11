@@ -4,18 +4,20 @@ import sys
 import sysconfig
 import platform
 import numpy as np
-import re
 
 import SCons.Errors
-from SCons.Scanner.C import SConsCPPConditionalScanner, dictify_CPPDEFINES
 
 SCons.Warnings.warningAsException(True)
-SetOption('warn', 'all')
+
+# pending upstream fix - https://github.com/SCons/scons/issues/4461
+#SetOption('warn', 'all')
 
 TICI = os.path.isfile('/TICI')
 AGNOS = TICI
 
 Decider('MD5-timestamp')
+
+SetOption('num_jobs', int(os.cpu_count()/2))
 
 AddOption('--kaitai',
           action='store_true',
@@ -40,7 +42,7 @@ AddOption('--clazy',
 AddOption('--compile_db',
           action='store_true',
           help='build clang compilation database')
-          
+
 AddOption('--ccflags',
           action='store',
           type='string',
@@ -341,35 +343,6 @@ if GetOption("clazy"):
   qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
 
 Export('env', 'qt_env', 'arch', 'real_arch')
-
-# https://github.com/SCons/scons/blob/master/SCons/Scanner/C.py
-# NOTE: Modified of not warning the missing deps file (C std file sin our case) 
-# Works only with the assumption that every important implicit dependency is within the repo
-class ModifiedSConsCPPConditionalScanner:
-  def __init__(self, name, variable) -> None:
-    self.name = name
-    self.path = FindPathDirs(variable)
-
-  def __call__(self, node, env, path=(), depth=-1):
-    result = []
-    cpp = SConsCPPConditionalScanner(
-        current=node.get_dir(),
-        cpppath=path,
-        dict=dictify_CPPDEFINES(env),
-        depth=depth,
-    )
-    deps = cpp(node)
-    # Don't scan C standard, poetry installs, and apt packages
-    result = [f for f in deps if (not os.path.isabs(str(f)) and not str(f).startswith(".venv"))]
-    return result
-  def recurse_nodes(self, nodes):
-    return nodes
-  def select(self, node):
-    return self
-
-file_extensions = ['.c', '.h', '.cc', '.hpp', '.cpp']
-for e in file_extensions:
-  SourceFileScanner.add_scanner(e, ModifiedSConsCPPConditionalScanner("ModifiedCConditionalScanner", "CPPPATH"))
 
 # Build common module
 SConscript(['common/SConscript'])
