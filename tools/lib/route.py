@@ -274,7 +274,3 @@ class SegmentRange:
   @property
   def selector(self):
     return self.m.group("selector")
-
-  @property
-  def source(self):
-    return self.source
