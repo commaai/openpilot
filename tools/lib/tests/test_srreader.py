@@ -44,6 +44,7 @@ class TestSegmentRangeReader(unittest.TestCase):
     (f"{TEST_ROUTE}---",),
     (f"{TEST_ROUTE}/-4:--2",),
     (f"{TEST_ROUTE}/-a",),
+    (f"{TEST_ROUTE}/j",),
     (f"{TEST_ROUTE}/0:1:2:3",),
     (f"{TEST_ROUTE}/:::3",),
   ])
