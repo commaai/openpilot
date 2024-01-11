@@ -74,10 +74,7 @@ class SegmentRangeReader:
   def __init__(self, segment_range: str, default_mode=ReadMode.RLOG, source=auto_source, sort_by_time=False):
     sr = SegmentRange(segment_range)
 
-    if sr.selector is not None:
-      mode = ReadMode(sr.selector)
-    else:
-      mode = default_mode
+    mode = default_mode if sr.selector is None else ReadMode(sr.selector)
 
     self.lrs = source(sr, mode, sort_by_time)
 
