@@ -9,7 +9,7 @@ UI_DIR = os.path.join(BASEDIR, "selfdrive", "ui")
 TRANSLATIONS_DIR = os.path.join(UI_DIR, "translations")
 LANGUAGES_FILE = os.path.join(TRANSLATIONS_DIR, "languages.json")
 TRANSLATIONS_INCLUDE_FILE = os.path.join(TRANSLATIONS_DIR, "alerts_generated.h")
-PLURAL_ONLY = ["main_en"]  # only creates entries for copy with plural forms
+PLURAL_ONLY = ["main_en"]  # base language, only creates entries for copy with plural forms
 
 
 def generate_translations_include():
@@ -24,8 +24,7 @@ def generate_translations_include():
     f.write(content)
 
 
-def update_translations(vanish: bool = False, translation_files: None | list[str] = None,
-                        translations_dir: str = TRANSLATIONS_DIR):
+def update_translations(vanish: bool = False, translation_files: None | list[str] = None, translations_dir: str = TRANSLATIONS_DIR):
   generate_translations_include()
 
   if translation_files is None:
