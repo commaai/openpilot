@@ -65,7 +65,7 @@ An example of searching through a database of segments for a specific condition,
 
 *a plot of the steer_warning vs steering angle, where we can see it is clearly caused by a large steering angle change*
 
-### [tools/car_porting/examples/subaru_long_accel.ipynb](/tools/car_porting/examples/subaru_long_accel.ipyn)
+### [tools/car_porting/examples/subaru_long_accel.ipynb](/tools/car_porting/examples/subaru_long_accel.ipynb)
 
 An example of plotting the response of an actuator when it is active.
 
