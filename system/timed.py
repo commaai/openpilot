@@ -42,6 +42,13 @@ def set_time(modem_time):
     cloudlog.exception(f"Error setting time to {modem_time}")
 
 
+def get_gps_time():
+  try:
+    return int(sm[gpsLocation].unixTimestampMillis / 1000)
+  except:
+    cloudlog.exception("Error getting modem time output")
+
+
 def get_modem_time_output():
   try:
     return subprocess.check_output("mmcli -m 0 --command AT+QLTS=1", shell=True).decode()
@@ -71,6 +78,7 @@ def main() -> NoReturn:
     if timezone is not None:
       cloudlog.debug("Setting timezone based on param")
       set_timezone(timezone)
+      set_time(get_gps_time())
       continue
 
     location = params.get("LastGPSPosition", encoding='utf8')
@@ -84,9 +92,7 @@ def main() -> NoReturn:
         quarter_hour_offset = calculate_time_zone_offset(output)
         modem_timezone = determine_time_zone(quarter_hour_offset)
         set_timezone(modem_timezone)
-
-        modem_time = parse_and_format_utc_date(output)
-        set_time(modem_time)
+        set_time(parse_and_format_utc_date(output))
 
       except Exception as e:
         cloudlog.error(f"Error getting time from modem, {e}")
@@ -105,6 +111,7 @@ def main() -> NoReturn:
       cloudlog.error(f"No timezone found based on location, {location}")
       continue
     set_timezone(timezone)
+    set_time(get_gps_time())
 
 
 if __name__ == "__main__":
