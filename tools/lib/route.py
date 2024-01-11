@@ -251,3 +251,7 @@ class SegmentRange:
   @property
   def _slice(self):
     return self.m.group("slice")
+
+  @property
+  def selector(self):
+    return self.m.group("selector")
