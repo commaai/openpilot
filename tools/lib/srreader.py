@@ -71,8 +71,19 @@ def auto_source(*args, **kwargs):
 
 
 class SegmentRangeReader:
-  def __init__(self, segment_range: str, mode=ReadMode.RLOG, source=auto_source, sort_by_time=False):
+  def __init__(self, segment_range: str, default_mode=ReadMode.RLOG, source=auto_source, sort_by_time=False):
     sr = SegmentRange(segment_range)
+
+    if sr.selector is not None:
+      if sr.selector == "q":
+        mode = ReadMode.QLOG
+      elif sr.selector == "r":
+        mode = ReadMode.RLOG
+      else:
+        raise ValueError(f"Invalid selector: {sr.selector}")
+    else:
+      mode = default_mode
+
     self.lrs = source(sr, mode, sort_by_time)
 
   def __iter__(self):
