@@ -11,7 +11,7 @@ os.environ['FILEREADER_CACHE'] = '1'
 from openpilot.common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
 from openpilot.selfdrive.boardd.boardd import can_capnp_to_can_list
 from openpilot.tools.plotjuggler.juggle import load_segment
-from openpilot.tools.lib.logreader import logreader_from_route_or_segment
+from openpilot.tools.lib.srreader import SegmentRangeReader
 from panda import Panda, PandaJungle
 
 def send_thread(s, flock):
@@ -102,7 +102,7 @@ if __name__ == "__main__":
       for lr in tqdm(pool.map(load_segment, logs)):
         CAN_MSGS += [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
   else:
-    lr = logreader_from_route_or_segment(args.route_or_segment_name)
+    lr = SegmentRangeReader(args.route_or_segment_name)
     CAN_MSGS = [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
 
   # set both to cycle ignition
