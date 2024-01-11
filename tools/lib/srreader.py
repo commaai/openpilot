@@ -1,4 +1,5 @@
 import enum
+import multiprocessing
 import re
 import numpy as np
 from openpilot.selfdrive.test.openpilotci import get_url
@@ -82,3 +83,13 @@ class SegmentRangeReader:
     for lr in self.lrs:
       for m in lr:
         yield m
+
+  def fetch(self, processes=1): # preload all the logs with x number of processes
+    if processes == 1:
+      return list(self)
+    else:
+      all_data = []
+      with multiprocessing.Pool(processes) as pool:
+        for d in pool.map(list, self.lrs):
+          all_data += d
+      return all_data
