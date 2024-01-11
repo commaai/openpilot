@@ -104,7 +104,7 @@ def main() -> NoReturn:
     if timezone is None:
       cloudlog.error(f"No timezone found based on location, {location}")
       continue
-    set_timezone(valid_timezones, timezone)
+    set_timezone(timezone)
 
 
 if __name__ == "__main__":
