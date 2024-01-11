@@ -3,14 +3,12 @@
 import argparse
 
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, replay_process
-from openpilot.tools.lib.logreader import MultiLogIterator
-from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.helpers import save_log
+from openpilot.tools.lib.srreader import SegmentRangeReader
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Run process on route and create new logs",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-  parser.add_argument("--qlog", help="Use qlog instead of log", action="store_true")
   parser.add_argument("--fingerprint", help="The fingerprint to use")
   parser.add_argument("route", help="The route name to use")
   parser.add_argument("process", help="The process to run")
@@ -18,8 +16,7 @@ if __name__ == "__main__":
 
   cfg = [c for c in CONFIGS if c.proc_name == args.process][0]
 
-  route = Route(args.route)
-  lr = MultiLogIterator(route.qlog_paths() if args.qlog else route.log_paths())
+  lr = SegmentRangeReader(args.route)
   inputs = list(lr)
 
   outputs = replay_process(cfg, inputs, fingerprint=args.fingerprint)
@@ -29,5 +26,5 @@ if __name__ == "__main__":
   inputs = [i for i in inputs if i.which() not in produces]
   outputs = sorted(inputs + outputs, key=lambda x: x.logMonoTime)
 
-  fn = f"{args.route}_{args.process}.bz2"
+  fn = f"{args.route.replace('/', '_')}_{args.process}.bz2"
   save_log(fn, outputs)
