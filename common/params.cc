@@ -149,7 +149,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LaikadEphemerisV3", PERSISTENT | DONT_LOG},
     {"LanguageSetting", PERSISTENT},
     {"LastAthenaPingTime", CLEAR_ON_MANAGER_START},
-    {"LastGPSPosition", PERSISTENT},
+    {"LastGPSPosition", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"LastManagerExitReason", CLEAR_ON_MANAGER_START},
     {"LastOffroadStatusPacket", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"LastPowerDropDetected", CLEAR_ON_MANAGER_START},
