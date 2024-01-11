@@ -6,11 +6,13 @@ from typing import NoReturn
 from datetime import datetime
 
 from timezonefinder import TimezoneFinder
+import cereal.messaging as messaging
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import AGNOS
 
 params = Params()
+sm = messaging.SubMaster(['gpsLocation'])
 
 
 def set_timezone(timezone):
@@ -73,7 +75,7 @@ def main() -> NoReturn:
 
     location = params.get("LastGPSPosition", encoding='utf8')
 
-    # Find timezone by reverse geocoding the last known gps location
+    # Use timezone and time from modem
     if location is None:
       try:
         cloudlog.debug("Setting time based on modem")
@@ -90,7 +92,7 @@ def main() -> NoReturn:
         cloudlog.error(f"Error getting time from modem, {e}")
       continue
 
-    # Use timezone and time from modem
+    # Find timezone by reverse geocoding the last known gps location
     cloudlog.debug("Setting timezone based on GPS location")
     try:
       location = json.loads(location)
