@@ -2,6 +2,7 @@ import math
 import numpy as np
 
 from collections import namedtuple
+from panda3d.core import Vec3
 from multiprocessing.connection import Connection
 
 from metadrive.engine.core.engine_core import EngineCore
@@ -10,8 +11,12 @@ from metadrive.envs.metadrive_env import MetaDriveEnv
 from metadrive.obs.image_obs import ImageObservation
 
 from openpilot.common.realtime import Ratekeeper
+
 from openpilot.tools.sim.lib.common import vec3
 from openpilot.tools.sim.lib.camerad import W, H
+
+C3_POSITION = Vec3(0.0, 1.0, 500)
+C3_HPR = Vec3(0, 0,0)
 
 
 metadrive_state = namedtuple("metadrive_state", ["velocity", "position", "bearing", "steering_angle"])
@@ -58,7 +63,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
 
   def get_cam_as_rgb(cam):
     cam = env.engine.sensors[cam]
-    img = cam.perceive(clip=False)
+    img = cam.perceive(clip=False, new_parent_node=env.vehicle, position=C3_POSITION, hpr=C3_HPR)
     if type(img) != np.ndarray:
       img = img.get() # convert cupy array to numpy
     return img
