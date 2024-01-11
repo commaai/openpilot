@@ -5,19 +5,16 @@ import subprocess
 from typing import NoReturn
 from datetime import datetime
 
+from timezonefinder import TimezoneFinder
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import AGNOS
 
+params = Params()
+
 
 def set_timezone(timezone):
   valid_timezones = subprocess.check_output('timedatectl list-timezones', shell=True, encoding='utf8').strip().split('\n')
-
-  use_timezone_param = Params().get("Timezone", encoding='utf8')
-  if use_timezone_param is not None:
-    cloudlog.debug("Using timezone from param")
-    timezone = use_timezone_param.strip()
-
   if timezone not in valid_timezones:
     cloudlog.error(f"Timezone not supported {timezone}")
     return
@@ -67,19 +64,45 @@ def main() -> NoReturn:
   while True:
     time.sleep(60)
 
+    # Use timezone param
+    timezone = params.get("Timezone", encoding='utf8')
+    if timezone is not None:
+      cloudlog.debug("Setting timezone based on param")
+      set_timezone(timezone)
+      continue
+
+    location = params.get("LastGPSPosition", encoding='utf8')
+
+    # Find timezone by reverse geocoding the last known gps location
+    if location is None:
+      try:
+        cloudlog.debug("Setting time based on modem")
+        output = get_modem_time_output()
+
+        quarter_hour_offset = calculate_time_zone_offset(output)
+        modem_timezone = determine_time_zone(quarter_hour_offset)
+        set_timezone(modem_timezone)
+
+        modem_time = parse_and_format_utc_date(output)
+        set_time(modem_time)
+
+      except Exception as e:
+        cloudlog.error(f"Error getting time from modem, {e}")
+      continue
+
+    # Use timezone and time from modem
+    cloudlog.debug("Setting timezone based on GPS location")
     try:
-      cloudlog.debug("Setting time based on modem")
-      output = get_modem_time_output()
+      location = json.loads(location)
+    except Exception:
+      cloudlog.exception("Error parsing location")
+      continue
 
-      quarter_hour_offset = calculate_time_zone_offset(output)
-      modem_timezone = determine_time_zone(quarter_hour_offset)
-      set_timezone(modem_timezone)
-
-      modem_time = parse_and_format_utc_date(output)
-      set_time(modem_time)
-
-    except Exception as e:
-      cloudlog.error(f"Error getting time from modem, {e}")
+    timezone = tf.timezone_at(lng=location['longitude'], lat=location['latitude'])
+    if timezone is None:
+      cloudlog.error(f"No timezone found based on location, {location}")
+      continue
+    set_timezone(valid_timezones, timezone)
 
 
 if __name__ == "__main__":
