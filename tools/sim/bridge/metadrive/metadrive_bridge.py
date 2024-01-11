@@ -10,7 +10,7 @@ from openpilot.tools.sim.bridge.metadrive.metadrive_world import MetaDriveWorld
 from openpilot.tools.sim.lib.camerad import W, H
 
 
-C3_POSITION = Vec3(0, 0, 1)
+C3_POSITION = Vec3(0.0, 1.0, 1.22)
 
 
 class CopyRamRGBCamera(RGBCamera):
