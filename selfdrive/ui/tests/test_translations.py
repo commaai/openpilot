@@ -30,7 +30,7 @@ class TestTranslations(unittest.TestCase):
 
   def test_missing_translation_files(self):
     self.assertTrue(os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{self.file}.ts")),
-                      f"{self.name} has no XML translation file, run selfdrive/ui/update_translations.py")
+                    f"{self.name} has no XML translation file, run selfdrive/ui/update_translations.py")
 
   def test_translations_updated(self):
     with tempfile.TemporaryDirectory() as tmpdir:

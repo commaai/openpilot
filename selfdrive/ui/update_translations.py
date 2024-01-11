@@ -22,6 +22,7 @@ def generate_translations_include():
   with open(TRANSLATIONS_INCLUDE_FILE, "w") as f:
     f.write(content)
 
+
 def update_translations(vanish=False, plural_only=None, translations_dir=TRANSLATIONS_DIR):
   generate_translations_include()
 
