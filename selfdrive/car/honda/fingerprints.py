@@ -744,9 +744,6 @@ FW_VERSIONS = {
       b'78109-TPG-A110\x00\x00',
       b'78109-TPG-A210\x00\x00',
     ],
-    (Ecu.hud, 0x18da61f1, None): [
-      b'78209-TLA-X010\x00\x00',
-    ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36802-TMB-H040\x00\x00',
       b'36802-TPA-E040\x00\x00',
