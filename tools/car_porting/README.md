@@ -64,3 +64,11 @@ An example of searching through a database of segments for a specific condition,
 ![steer warning example](https://github.com/commaai/openpilot/assets/9648890/d60ad120-4b44-4974-ac79-adc660fb8fe2)
 
 *a plot of the steer_warning vs steering angle, where we can see it is clearly caused by a large steering angle change*
+
+### [tools/car_porting/examples/subaru_long_accel.ipynb](/tools/car_porting/examples/subaru_long_accel.ipynb)
+
+An example of plotting the response of an actuator when it is active.
+
+![brake pressure example](https://github.com/commaai/openpilot/assets/9648890/8f32cf1d-8fc0-4407-b540-70625ebbf082)
+
+*a plot of the brake_pressure vs acceleration, where we can see it is a fairly linear response.*
