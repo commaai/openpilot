@@ -72,6 +72,39 @@ class TestSimBridgeBase(unittest.TestCase):
           break
 
     self.assertEqual(min_counts_control_active, control_active, f"Simulator did not engage a minimal of {min_counts_control_active} steps was {control_active}")
+  
+  def test_drive_course(self):
+    p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR)
+    self.processes.append(p_manager)
+
+    sm = messaging.SubMaster(['controlsState', 'onroadEvents', 'managerState'])
+    q = Queue()
+    bridge = self.create_bridge()
+    bridge.started = Value('b', False)
+    p_bridge = bridge.run(q, retries=10)
+    self.processes.append(p_bridge)
+
+    max_time_per_step = 60
+
+    start_waiting = time.monotonic()
+    while not bridge.started and time.monotonic() < start_waiting + max_time_per_step:
+      time.sleep(0.1)
+    self.assertEqual(p_bridge.exitcode, None, f"Bridge process should be running, but exited with code {p_bridge.exitcode}")
+
+    start_time = time.monotonic()
+    user_disengage_once = False
+    disengage_events = ('stockAeb', 'fcw', 'ldw')
+
+    while time.monotonic() < start_time + max_time_per_step:
+      sm.update()
+
+      onroadEventNames = [e.name for e in sm['onroadEvents']]
+
+      if any(e in onroadEventNames for e in disengage_events):
+        user_disengage_once = True
+        break
+
+    self.assertFalse(user_disengage_once, "Failed because user has to disengage")
 
   def tearDown(self):
     print("Test shutting down. CommIssues are acceptable")
@@ -83,7 +116,6 @@ class TestSimBridgeBase(unittest.TestCase):
         p.wait(15)
       else:
         p.join(15)
-
 
 if __name__ == "__main__":
   unittest.main()
