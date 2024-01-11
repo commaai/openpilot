@@ -230,7 +230,6 @@ class Updater:
     b: Union[str, None] = self.params.get("UpdaterTargetBranch", encoding='utf-8')
     if b is None:
       b = self.get_branch(BASEDIR)
-      self.params.put("UpdaterTargetBranch", b)
     return b
 
   @property
@@ -259,6 +258,7 @@ class Updater:
 
   def set_params(self, update_success: bool, failed_count: int, exception: Optional[str]) -> None:
     self.params.put("UpdateFailedCount", str(failed_count))
+    self.params.put("UpdaterTargetBranch", self.target_branch)
 
     self.params.put_bool("UpdaterFetchAvailable", self.update_available)
     if len(self.branches):
@@ -349,7 +349,7 @@ class Updater:
 
     cur_branch = self.get_branch(OVERLAY_MERGED)
     cur_commit = self.get_commit_hash(OVERLAY_MERGED)
-    new_branch = self.target_branch
+    new_branch = 2elf.target_branch
     new_commit = self.branches[new_branch]
     if (cur_branch, cur_commit) != (new_branch, new_commit):
       cloudlog.info(f"update available, {cur_branch} ({str(cur_commit)[:7]}) -> {new_branch} ({str(new_commit)[:7]})")
