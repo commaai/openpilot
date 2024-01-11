@@ -64,6 +64,7 @@ class TestSegmentRangeReader(unittest.TestCase):
   @parameterized.expand([
     (f"{TEST_ROUTE}/0", RLOG_SIZE), # default to rlog
     (f"{TEST_ROUTE}/0/r", RLOG_SIZE),
+    (f"{TEST_ROUTE}/0/q", QLOG_SIZE),
     (f"{TEST_ROUTE}/q", ALL_QLOG_SIZE),
   ])
   def test_modes_from_name(self, segment_range, expected):
