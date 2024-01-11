@@ -10,7 +10,7 @@ if __name__ == "__main__":
   parser.add_argument("route", help="The route name")
   args = parser.parse_args()
 
-  out_path = os.path.join("jpegs", f"{args.route.replace('|', '_')}_{args.segment}")
+  out_path = os.path.join("jpegs", f"{args.route.replace('|', '_').replace('/', '_')}")
   os.makedirs(out_path, exist_ok=True)
 
   lr = SegmentRangeReader(args.route)
