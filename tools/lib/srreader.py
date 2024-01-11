@@ -75,16 +75,18 @@ def parse_useradmin(segment_range):
   if "useradmin.comma.ai" in segment_range:
     query = parse_qs(urlparse(segment_range).query)
     return query["onebox"][0]
-  return segment_range
+  return None
 
 def parse_cabana(segment_range):
   if "cabana.comma.ai" in segment_range:
     query = parse_qs(urlparse(segment_range).query)
     return query["route"][0]
-  return segment_range
+  return None
 
 def parse_cd(segment_range):
-  return segment_range.replace("cd:/", "")
+  if "cd:/" in segment_range:
+    return segment_range.replace("cd:/", "")
+  return None
 
 def parse_identifier(identifier: str):
   ret = parse_useradmin(identifier)

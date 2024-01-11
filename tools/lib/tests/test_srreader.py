@@ -3,7 +3,7 @@ import unittest
 from parameterized import parameterized
 
 from openpilot.tools.lib.route import SegmentRange
-from openpilot.tools.lib.srreader import ReadMode, SegmentRangeReader, parse_slice
+from openpilot.tools.lib.srreader import ReadMode, SegmentRangeReader, parse_identifier, parse_slice
 
 NUM_SEGS = 17 # number of segments in the test route
 ALL_SEGS = list(np.arange(NUM_SEGS))
@@ -37,6 +37,7 @@ class TestSegmentRangeReader(unittest.TestCase):
     (f"cd:/{TEST_ROUTE}", ALL_SEGS),
   ])
   def test_parse_slice(self, segment_range, expected):
+    segment_range, _ = parse_identifier(segment_range)
     sr = SegmentRange(segment_range)
     segs = parse_slice(sr)
     self.assertListEqual(list(segs), expected)
