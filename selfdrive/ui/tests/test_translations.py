@@ -22,6 +22,9 @@ FORMAT_ARG = re.compile("%[0-9]+")
 
 @parameterized_class(("name", "file"), translation_files.items())
 class TestTranslations(unittest.TestCase):
+  name: str
+  file: str
+
   @staticmethod
   def _read_translation_file(path, file):
     tr_file = os.path.join(path, f"{file}.ts")
