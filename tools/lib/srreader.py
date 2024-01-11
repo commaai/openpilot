@@ -6,10 +6,10 @@ from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import Route, SegmentRange
 
-class ReadMode(enum.Enum):
-  RLOG = 0 # only read rlogs
-  QLOG = 1 # only read qlogs
-  #AUTO = 2 # default to rlogs, fallback to qlogs, not supported yet
+class ReadMode(enum.StrEnum):
+  RLOG = "r" # only read rlogs
+  QLOG = "q" # only read qlogs
+  #AUTO = "a" # default to rlogs, fallback to qlogs, not supported yet
 
 
 def create_slice_from_string(s: str):
@@ -75,12 +75,7 @@ class SegmentRangeReader:
     sr = SegmentRange(segment_range)
 
     if sr.selector is not None:
-      if sr.selector == "q":
-        mode = ReadMode.QLOG
-      elif sr.selector == "r":
-        mode = ReadMode.RLOG
-      else:
-        raise ValueError(f"Invalid selector: {sr.selector}")
+      mode = ReadMode(sr.selector)
     else:
       mode = default_mode
 
