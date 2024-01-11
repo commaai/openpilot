@@ -11,7 +11,7 @@ class RE:
   SEGMENT_NAME = r'{}(?:--|/)(?P<segment_num>[0-9]+)'.format(ROUTE_NAME)
   INDEX = r'-?[0-9]+'
   SLICE = r'(?P<start>{})?:?(?P<end>{})?:?(?P<step>{})?'.format(INDEX, INDEX, INDEX)
-  SEGMENT_RANGE = r'{}(?:--|/)?(?P<slice>({}))?'.format(ROUTE_NAME, SLICE)
+  SEGMENT_RANGE = r'{}(?:--|/)?(?P<slice>({}))?/?(?P<selector>([qr]))?'.format(ROUTE_NAME, SLICE)
   BOOTLOG_NAME = ROUTE_NAME
 
   EXPLORER_FILE = r'^(?P<segment_name>{})--(?P<file_name>[a-z]+\.[a-z0-9]+)$'.format(SEGMENT_NAME)

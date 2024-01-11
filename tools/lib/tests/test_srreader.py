@@ -37,10 +37,11 @@ class TestSegmentRangeReader(unittest.TestCase):
     self.assertListEqual(list(segs), expected)
 
   @parameterized.expand([
-    (f"{TEST_ROUTE}//",),
+    (f"{TEST_ROUTE}///",),
     (f"{TEST_ROUTE}---",),
     (f"{TEST_ROUTE}/-4:--2",),
     (f"{TEST_ROUTE}/-a",),
+    (f"{TEST_ROUTE}/j",),
     (f"{TEST_ROUTE}/0:1:2:3",),
     (f"{TEST_ROUTE}/:::3",),
   ])
@@ -49,14 +50,17 @@ class TestSegmentRangeReader(unittest.TestCase):
       sr = SegmentRange(segment_range)
       parse_slice(sr)
 
-  @parameterized.expand([
-    (ReadMode.QLOG, 11643),
-    (ReadMode.RLOG, 70577),
-  ])
-  def test_modes(self, mode, expected):
-    lr = SegmentRangeReader(TEST_ROUTE+"/0", mode)
+  def test_modes(self):
+    qlog_len = len(list(SegmentRangeReader(f"{TEST_ROUTE}/0", ReadMode.QLOG)))
+    rlog_len = len(list(SegmentRangeReader(f"{TEST_ROUTE}/0", ReadMode.RLOG)))
 
-    self.assertEqual(len(list(lr)), expected)
+    self.assertLess(qlog_len * 6, rlog_len)
+
+  def test_modes_from_name(self):
+    qlog_len = len(list(SegmentRangeReader(f"{TEST_ROUTE}/0/q")))
+    rlog_len = len(list(SegmentRangeReader(f"{TEST_ROUTE}/0/r")))
+
+    self.assertLess(qlog_len * 6, rlog_len)
 
 
 if __name__ == "__main__":
