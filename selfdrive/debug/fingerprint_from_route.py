@@ -39,5 +39,5 @@ if __name__ == "__main__":
     print("Usage: ./fingerprint_from_route.py <route>")
     sys.exit(1)
 
-  lr = SegmentRangeReader(sys.argv[1], mode=ReadMode.QLOG)
+  lr = SegmentRangeReader(sys.argv[1], ReadMode.QLOG)
   get_fingerprint(lr)
