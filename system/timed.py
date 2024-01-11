@@ -46,8 +46,8 @@ def set_time(the_time):
 
 def get_gps_time():
   try:
-    return int(sm[gpsLocation].unixTimestampMillis / 1000)
-  except:
+    return int(sm['gpsLocation'].unixTimestampMillis / 1000)
+  except KeyError:
     cloudlog.exception("Error getting GPS time output")
 
 
