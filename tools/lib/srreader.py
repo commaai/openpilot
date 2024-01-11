@@ -10,7 +10,7 @@ from openpilot.tools.lib.route import Route, SegmentRange
 class ReadMode(enum.StrEnum):
   RLOG = "r" # only read rlogs
   QLOG = "q" # only read qlogs
-  AUTO = "a" # default to rlogs, fallback to qlogs, not supported yet
+  #AUTO = "a" # default to rlogs, fallback to qlogs, not supported yet
 
 
 def create_slice_from_string(s: str):
