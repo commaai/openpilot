@@ -1,7 +1,8 @@
 import enum
+import numpy as np
 import re
 from urllib.parse import parse_qs, urlparse
-import numpy as np
+
 from openpilot.selfdrive.test.openpilotci import get_url
 from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.logreader import LogReader
