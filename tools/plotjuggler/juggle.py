@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import multiprocessing
 import os
 import sys
 import platform
@@ -8,6 +9,7 @@ import tarfile
 import tempfile
 import requests
 import argparse
+from functools import partial
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.lib.helpers import save_log
@@ -68,14 +70,16 @@ def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None):
   cmd = f'{PLOTJUGGLER_BIN} --buffer_size {MAX_STREAMING_BUFFER_SIZE} --plugin_folders {INSTALL_DIR}{extra_args}'
   subprocess.call(cmd, shell=True, env=env, cwd=juggle_dir)
 
+def process(can, lr):
+  return [d for d in lr if can or d.which() not in ['can', 'sendcan']]
 
 def juggle_route(route_or_segment_name, can, layout, dbc=None):
-  lr = SegmentRangeReader(route_or_segment_name)
+  sr = SegmentRangeReader(route_or_segment_name)
 
-  all_data = lr.fetch(24)
-
-  if not can:
-    all_data = [d for d in all_data if d.which() not in ['can', 'sendcan']]
+  with multiprocessing.Pool(24) as pool:
+    all_data = []
+    for p in pool.map(partial(process, can), sr.lrs):
+      all_data.extend(p)
 
   # Infer DBC name from logs
   if dbc is None:
