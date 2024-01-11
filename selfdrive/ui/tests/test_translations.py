@@ -38,7 +38,7 @@ class TestTranslations(unittest.TestCase):
   def test_translations_updated(self):
     with tempfile.TemporaryDirectory() as tmpdir:
       shutil.copytree(TRANSLATIONS_DIR, tmpdir, dirs_exist_ok=True)
-      update_translations(plural_only=["main_en"], translations_dir=tmpdir)
+      update_translations(translation_files=[self.file], translations_dir=tmpdir)
 
       cur_translations = self._read_translation_file(TRANSLATIONS_DIR, self.file)
       new_translations = self._read_translation_file(tmpdir, self.file)
