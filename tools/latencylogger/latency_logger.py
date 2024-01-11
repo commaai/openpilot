@@ -8,7 +8,7 @@ import sys
 from bisect import bisect_left, bisect_right
 from collections import defaultdict
 
-from openpilot.tools.lib.logreader import logreader_from_route_or_segment
+from openpilot.tools.lib.srreader import SegmentRangeReader
 
 DEMO_ROUTE = "9f583b1d93915c31|2022-05-18--10-49-51--0"
 
@@ -236,7 +236,7 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   r = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
-  lr = logreader_from_route_or_segment(r, sort_by_time=True)
+  lr = SegmentRangeReader(r, sort_by_time=True)
 
   data, _ = get_timestamps(lr)
   print_timestamps(data['timestamp'], data['duration'], data['start'], args.relative)
