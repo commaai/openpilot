@@ -1,5 +1,6 @@
 import enum
 import re
+from urllib.parse import parse_qs, urlparse
 import numpy as np
 from openpilot.selfdrive.test.openpilotci import get_url
 from openpilot.tools.lib.helpers import RE
@@ -9,7 +10,7 @@ from openpilot.tools.lib.route import Route, SegmentRange
 class ReadMode(enum.StrEnum):
   RLOG = "r" # only read rlogs
   QLOG = "q" # only read qlogs
-  #AUTO = "a" # default to rlogs, fallback to qlogs, not supported yet
+  AUTO = "a" # default to rlogs, fallback to qlogs, not supported yet
 
 
 def create_slice_from_string(s: str):
@@ -69,14 +70,47 @@ def auto_source(*args, **kwargs):
 
   return comma_api_source(*args, **kwargs)
 
+def parse_useradmin(segment_range):
+  if "useradmin.comma.ai" in segment_range:
+    query = parse_qs(urlparse(segment_range).query)
+    return query["onebox"][0]
+  return segment_range
+
+def parse_cabana(segment_range):
+  if "cabana.comma.ai" in segment_range:
+    query = parse_qs(urlparse(segment_range).query)
+    return query["route"][0]
+  return segment_range
+
+def parse_cd(segment_range):
+  return segment_range.replace("cd:/", "")
+
+def parse_identifier(identifier: str):
+  ret = parse_useradmin(identifier)
+  if ret is not None:
+    return ret, comma_api_source
+
+  ret = parse_cabana(identifier)
+  if ret is not None:
+    return ret, comma_api_source
+
+  ret = parse_cd(identifier)
+  if ret is not None:
+    return ret, internal_source
+
+  return identifier, None
+
 
 class SegmentRangeReader:
-  def __init__(self, segment_range: str, default_mode=ReadMode.RLOG, default_source=auto_source, sort_by_time=False):
+  def __init__(self, identifier: str, default_mode=ReadMode.RLOG, default_source=auto_source, sort_by_time=False):
+    segment_range, source = parse_identifier(identifier)
+
     sr = SegmentRange(segment_range)
 
     mode = default_mode if sr.selector is None else ReadMode(sr.selector)
+    source = default_source if source is None else source
 
-    self.lrs = default_source(sr, mode, sort_by_time)
+    self.lrs = source(sr, mode, sort_by_time)
 
   def __iter__(self):
     for lr in self.lrs:

@@ -1,6 +1,6 @@
 import os
 import re
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import urlparse
 from collections import defaultdict
 from itertools import chain
 from typing import Optional
@@ -231,27 +231,8 @@ class SegmentName:
   def __str__(self) -> str: return self._canonical_name
 
 
-def parse_useradmin(segment_range):
-  if "useradmin.comma.ai" in segment_range:
-    query = parse_qs(urlparse(segment_range).query)
-    return query["onebox"][0]
-  return segment_range
-
-def parse_cabana(segment_range):
-  if "cabana.comma.ai" in segment_range:
-    query = parse_qs(urlparse(segment_range).query)
-    return query["route"][0]
-  return segment_range
-
-def parse_cd(segment_range):
-  return segment_range.replace("cd:/", "")
-
 class SegmentRange:
   def __init__(self, segment_range: str):
-    segment_range = parse_useradmin(segment_range)
-    segment_range = parse_cabana(segment_range)
-    segment_range = parse_cd(segment_range)
-
     self.m = re.fullmatch(RE.SEGMENT_RANGE, segment_range)
     assert self.m, f"Segment range is not valid {segment_range}"
 
