@@ -43,5 +43,11 @@ lr = LogReader("a2a0ccea32023010|2023-07-27--13-01-19/4:6") # 4th and 5th segmen
 lr = LogReader("a2a0ccea32023010|2023-07-27--13-01-19/-1")  # last segment
 lr = LogReader("a2a0ccea32023010|2023-07-27--13-01-19/:5")  # first 5 segments
 lr = LogReader("a2a0ccea32023010|2023-07-27--13-01-19/1:")  # all except first segment
+```
 
+and can select which type of logs to grab
+
+```python
+lr = LogReader("a2a0ccea32023010|2023-07-27--13-01-19/4/q") # get qlogs
+lr = LogReader("a2a0ccea32023010|2023-07-27--13-01-19/4/r") # get rlogs (default)
 ```
