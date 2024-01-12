@@ -1,6 +1,9 @@
 import enum
-import re
 import numpy as np
+import pathlib
+import re
+from urllib.parse import parse_qs, urlparse
+
 from openpilot.selfdrive.test.openpilotci import get_url
 from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.logreader import LogReader
@@ -37,6 +40,10 @@ def comma_api_source(sr: SegmentRange, mode=ReadMode.RLOG, sort_by_time=False):
 
   log_paths = route.log_paths() if mode == ReadMode.RLOG else route.qlog_paths()
 
+  invalid_segs = [seg for seg in segs if log_paths[seg] is None]
+
+  assert not len(invalid_segs), f"Some of the requested segments are not available: {invalid_segs}"
+
   for seg in segs:
     yield LogReader(log_paths[seg], sort_by_time=sort_by_time)
 
@@ -51,6 +58,9 @@ def openpilotci_source(sr: SegmentRange, mode=ReadMode.RLOG, sort_by_time=False)
 
   for seg in segs:
     yield LogReader(get_url(sr.route_name, seg, 'rlog' if mode == ReadMode.RLOG else 'qlog'), sort_by_time=sort_by_time)
+
+def direct_source(file_or_url, sort_by_time):
+  yield LogReader(file_or_url, sort_by_time=sort_by_time)
 
 def auto_source(*args, **kwargs):
   # Automatically determine viable source
@@ -69,14 +79,61 @@ def auto_source(*args, **kwargs):
 
   return comma_api_source(*args, **kwargs)
 
+def parse_useradmin(identifier):
+  if "useradmin.comma.ai" in identifier:
+    query = parse_qs(urlparse(identifier).query)
+    return query["onebox"][0]
+  return None
+
+def parse_cabana(identifier):
+  if "cabana.comma.ai" in identifier:
+    query = parse_qs(urlparse(identifier).query)
+    return query["route"][0]
+  return None
+
+def parse_cd(identifier):
+  if "cd:/" in identifier:
+    return identifier.replace("cd:/", "")
+  return None
+
+def parse_direct(identifier):
+  if "https://" in identifier or "http://" in identifier or pathlib.Path(identifier).exists():
+    return identifier
+  return None
+
+def parse_indirect(identifier):
+  parsed = parse_useradmin(identifier) or parse_cabana(identifier)
+
+  if parsed is not None:
+    return parsed, comma_api_source, True
+
+  parsed = parse_cd(identifier)
+  if parsed is not None:
+    return parsed, internal_source, True
+
+  return identifier, None, False
 
 class SegmentRangeReader:
-  def __init__(self, segment_range: str, default_mode=ReadMode.RLOG, default_source=auto_source, sort_by_time=False):
-    sr = SegmentRange(segment_range)
+  def _logreaders_from_identifier(self, identifier):
+    parsed, source, is_indirect = parse_indirect(identifier)
 
-    mode = default_mode if sr.selector is None else ReadMode(sr.selector)
+    if not is_indirect:
+      direct_parsed = parse_direct(identifier)
+      if direct_parsed is not None:
+        return direct_source(identifier, sort_by_time=self.sort_by_time)
 
-    self.lrs = default_source(sr, mode, sort_by_time)
+    sr = SegmentRange(parsed)
+    mode = self.default_mode if sr.selector is None else ReadMode(sr.selector)
+    source = self.default_source if source is None else source
+
+    return source(sr, mode, sort_by_time=self.sort_by_time)
+
+  def __init__(self, identifier: str, default_mode=ReadMode.RLOG, default_source=auto_source, sort_by_time=False):
+    self.default_mode = default_mode
+    self.default_source = default_source
+    self.sort_by_time = sort_by_time
+
+    self.lrs = self._logreaders_from_identifier(identifier)
 
   def __iter__(self):
     for lr in self.lrs:
