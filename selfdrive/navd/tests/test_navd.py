@@ -37,8 +37,8 @@ class TestNavd(unittest.TestCase):
     managed_processes['navd'].stop()
 
     # ensure start and end match up
-    coords = self.sm['navRoute'].coordinates
-    if check_coords or len(coords) > 2:
+    if check_coords:
+      coords = self.sm['navRoute'].coordinates
       assert np.allclose([start['latitude'], start['longitude'], end['latitude'], end['longitude']],
                          [coords[0].latitude, coords[0].longitude, coords[-1].latitude, coords[-1].longitude],
                          rtol=1e-3)
