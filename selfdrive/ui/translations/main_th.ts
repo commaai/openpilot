@@ -66,6 +66,26 @@
         <source>Prevent large data uploads when on a metered connection</source>
         <translation>ปิดการอัพโหลดข้อมูลขนาดใหญ่เมื่อเชื่อมต่อผ่านเซลลูล่าร์</translation>
     </message>
+    <message>
+        <source>Hidden Network</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CONNECT</source>
+        <translation type="unfinished">เชื่อมต่อ</translation>
+    </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation type="unfinished">ป้อนค่า SSID</translation>
+    </message>
+    <message>
+        <source>Enter password</source>
+        <translation type="unfinished">ใส่รหัสผ่าน</translation>
+    </message>
+    <message>
+        <source>for &quot;%1&quot;</source>
+        <translation type="unfinished">สำหรับ &quot;%1&quot;</translation>
+    </message>
 </context>
 <context>
     <name>AnnotatedCameraWidget</name>
