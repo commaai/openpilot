@@ -1,5 +1,6 @@
 import enum
 import numpy as np
+import pathlib
 import re
 from urllib.parse import parse_qs, urlparse
 
@@ -71,49 +72,63 @@ def auto_source(*args, **kwargs):
 
   return comma_api_source(*args, **kwargs)
 
-def parse_useradmin(segment_range):
-  if "useradmin.comma.ai" in segment_range:
-    query = parse_qs(urlparse(segment_range).query)
+def parse_useradmin(identifier):
+  if "useradmin.comma.ai" in identifier:
+    query = parse_qs(urlparse(identifier).query)
     return query["onebox"][0]
   return None
 
-def parse_cabana(segment_range):
-  if "cabana.comma.ai" in segment_range:
-    query = parse_qs(urlparse(segment_range).query)
+def parse_cabana(identifier):
+  if "cabana.comma.ai" in identifier:
+    query = parse_qs(urlparse(identifier).query)
     return query["route"][0]
   return None
 
-def parse_cd(segment_range):
-  if "cd:/" in segment_range:
-    return segment_range.replace("cd:/", "")
+def parse_cd(identifier):
+  if "cd:/" in identifier:
+    return identifier.replace("cd:/", "")
   return None
 
-def parse_identifier(identifier: str):
-  ret = parse_useradmin(identifier)
-  if ret is not None:
-    return ret, comma_api_source
+def parse_direct(identifier):
+  if "https://" in identifier or "http://" in identifier or pathlib.Path(identifier).exists():
+    return identifier
+  return None
 
-  ret = parse_cabana(identifier)
-  if ret is not None:
-    return ret, comma_api_source
+def parse_indirect(identifier):
+  parsed = parse_useradmin(identifier) or parse_cabana(identifier)
 
-  ret = parse_cd(identifier)
-  if ret is not None:
-    return ret, internal_source
+  if parsed is not None:
+    return parsed, comma_api_source
+
+  parsed = parse_cd(identifier)
+  if parsed is not None:
+    return parsed, internal_source
 
   return identifier, None
 
+def direct_logreader(identifier, sort_by_time):
+  yield LogReader(identifier, sort_by_time=sort_by_time)
 
 class SegmentRangeReader:
+  def _logreaders_from_identifier(self, identifier):
+    parsed = parse_direct(identifier)
+    if parsed is not None:
+      return direct_logreader(identifier, sort_by_time=self.sort_by_time)
+
+    parsed, source = parse_indirect(identifier)
+
+    sr = SegmentRange(parsed)
+    mode = self.default_mode if sr.selector is None else ReadMode(sr.selector)
+    source = self.default_source if source is None else source
+
+    return source(sr, mode, sort_by_time=self.sort_by_time)
+
   def __init__(self, identifier: str, default_mode=ReadMode.RLOG, default_source=auto_source, sort_by_time=False):
-    segment_range, source = parse_identifier(identifier)
+    self.default_mode = default_mode
+    self.default_source = default_source
+    self.sort_by_time = sort_by_time
 
-    sr = SegmentRange(segment_range)
-
-    mode = default_mode if sr.selector is None else ReadMode(sr.selector)
-    source = default_source if source is None else source
-
-    self.lrs = source(sr, mode, sort_by_time)
+    self.lrs = self._logreaders_from_identifier(identifier)
 
   def __iter__(self):
     for lr in self.lrs:
