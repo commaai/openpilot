@@ -147,13 +147,8 @@ def parse_cabana(identifier):
     return query["route"][0]
   return None
 
-def parse_cd(identifier):
-  if "cd:/" in identifier:
-    return identifier.replace("cd:/", "")
-  return None
-
 def parse_direct(identifier):
-  if "https://" in identifier or "http://" in identifier or pathlib.Path(identifier).exists():
+  if identifier.startswith(("http://", "https://", "cd:/")) or pathlib.Path(identifier).exists():
     return identifier
   return None
 
@@ -162,10 +157,6 @@ def parse_indirect(identifier):
 
   if parsed is not None:
     return parsed, comma_api_source, True
-
-  parsed = parse_cd(identifier)
-  if parsed is not None:
-    return parsed, internal_source, True
 
   return identifier, None, False
 
