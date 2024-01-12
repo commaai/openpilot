@@ -1412,6 +1412,7 @@ FW_VERSIONS = {
   CAR.LEXUS_RC: {
     (Ecu.engine, 0x700, None): [
       b'\x01896632461100\x00\x00\x00\x00',
+      b'\x01896632478100\x00\x00\x00\x00',
       b'\x01896632478200\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
