@@ -9,7 +9,7 @@ os.environ['FILEREADER_CACHE'] = '1'
 
 from openpilot.common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
 from openpilot.selfdrive.boardd.boardd import can_capnp_to_can_list
-from openpilot.tools.lib.srreader import SegmentRangeReader
+from openpilot.tools.lib.logreader import LogReader
 from panda import Panda, PandaJungle
 
 def send_thread(s, flock):
@@ -97,7 +97,7 @@ if __name__ == "__main__":
   if args.route_or_segment_name is None:
     args.route_or_segment_name = "77611a1fac303767/2020-03-24--09-50-38/10:16"
 
-  sr = SegmentRangeReader(args.route_or_segment_name)
+  sr = LogReader(args.route_or_segment_name)
 
   with multiprocessing.Pool(24) as pool:
     CAN_MSGS = []

@@ -3,7 +3,7 @@ import argparse
 import os
 import sys
 from openpilot.common.basedir import BASEDIR
-from openpilot.tools.lib.srreader import SegmentRangeReader
+from openpilot.tools.lib.logreader import LogReader
 
 os.environ['BASEDIR'] = BASEDIR
 
@@ -23,7 +23,7 @@ def get_arg_parser():
 def main():
   args = get_arg_parser().parse_args(sys.argv[1:])
 
-  lr = SegmentRangeReader(args.route)
+  lr = LogReader(args.route)
 
   with open(args.out_path, 'wb') as f:
     try:

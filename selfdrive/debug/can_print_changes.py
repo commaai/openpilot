@@ -7,8 +7,7 @@ from typing import Optional
 
 import cereal.messaging as messaging
 from openpilot.selfdrive.debug.can_table import can_table
-from openpilot.tools.lib.logreader import LogIterable
-from openpilot.tools.lib.srreader import SegmentRangeReader
+from openpilot.tools.lib.logreader import LogIterable, LogReader
 
 RED = '\033[91m'
 CLEAR = '\033[0m'
@@ -104,8 +103,8 @@ if __name__ == "__main__":
     if args.init == '':
       init_lr = []
     else:
-      init_lr = SegmentRangeReader(args.init)
+      init_lr = LogReader(args.init)
   if args.comp:
-    new_lr = SegmentRangeReader(args.comp)
+    new_lr = LogReader(args.comp)
 
   can_printer(args.bus, init_msgs=init_lr, new_msgs=new_lr, table=args.table)
