@@ -1,4 +1,5 @@
 import enum
+import itertools
 import numpy as np
 import pathlib
 import re
@@ -132,10 +133,16 @@ class SegmentRangeReader:
     self.default_mode = default_mode
     self.default_source = default_source
     self.sort_by_time = sort_by_time
+    self.identifier = identifier
 
-    self.lrs = self._logreaders_from_identifier(identifier)
+    self.reset()
 
   def __iter__(self):
-    for lr in self.lrs:
-      for m in lr:
-        yield m
+    return self
+
+  def __next__(self):
+    return next(self.chain)
+
+  def reset(self):
+    self.lrs = self._logreaders_from_identifier(self.identifier)
+    self.chain = itertools.chain(*self.lrs)
