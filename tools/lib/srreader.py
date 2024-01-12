@@ -55,6 +55,9 @@ def openpilotci_source(sr: SegmentRange, mode=ReadMode.RLOG, sort_by_time=False)
   for seg in segs:
     yield LogReader(get_url(sr.route_name, seg, 'rlog' if mode == ReadMode.RLOG else 'qlog'), sort_by_time=sort_by_time)
 
+def direct_source(file_or_url, sort_by_time):
+  yield LogReader(file_or_url, sort_by_time=sort_by_time)
+
 def auto_source(*args, **kwargs):
   # Automatically determine viable source
 
@@ -106,14 +109,11 @@ def parse_indirect(identifier):
 
   return identifier, None
 
-def direct_logreader(identifier, sort_by_time):
-  yield LogReader(identifier, sort_by_time=sort_by_time)
-
 class SegmentRangeReader:
   def _logreaders_from_identifier(self, identifier):
     parsed = parse_direct(identifier)
     if parsed is not None:
-      return direct_logreader(identifier, sort_by_time=self.sort_by_time)
+      return direct_source(identifier, sort_by_time=self.sort_by_time)
 
     parsed, source = parse_indirect(identifier)
 
