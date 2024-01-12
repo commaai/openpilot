@@ -3,7 +3,7 @@ import argparse
 import os
 from tqdm import tqdm
 
-from openpilot.tools.lib.srreader import SegmentRangeReader
+from openpilot.tools.lib.logreader import LogReader
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
@@ -13,7 +13,7 @@ if __name__ == "__main__":
   out_path = os.path.join("jpegs", f"{args.route.replace('|', '_').replace('/', '_')}")
   os.makedirs(out_path, exist_ok=True)
 
-  lr = SegmentRangeReader(args.route)
+  lr = LogReader(args.route)
 
   for msg in tqdm(lr):
     if msg.which() == 'thumbnail':

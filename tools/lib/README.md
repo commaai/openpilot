@@ -31,3 +31,23 @@ for msg in lr:
   if msg.which() == "carState":
     print(msg.carState.steeringAngleDeg)
 ```
+
+### Segment Ranges
+
+We also support a new format called a "segment range", where you can specify which segments from a route to load.
+
+```python
+
+lr = LogReader("a2a0ccea32023010|2023-07-27--13-01-19/4")   # 4th segment
+lr = LogReader("a2a0ccea32023010|2023-07-27--13-01-19/4:6") # 4th and 5th segment
+lr = LogReader("a2a0ccea32023010|2023-07-27--13-01-19/-1")  # last segment
+lr = LogReader("a2a0ccea32023010|2023-07-27--13-01-19/:5")  # first 5 segments
+lr = LogReader("a2a0ccea32023010|2023-07-27--13-01-19/1:")  # all except first segment
+```
+
+and can select which type of logs to grab
+
+```python
+lr = LogReader("a2a0ccea32023010|2023-07-27--13-01-19/4/q") # get qlogs
+lr = LogReader("a2a0ccea32023010|2023-07-27--13-01-19/4/r") # get rlogs (default)
+```
