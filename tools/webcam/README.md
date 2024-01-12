@@ -1,5 +1,3 @@
-# NOTE: this README is outdated. #24590 tracks adding back webcam support
-
 # Run openpilot with webcam on PC
 
 What's needed:
@@ -24,9 +22,6 @@ git clone https://github.com/commaai/openpilot.git
 ## Build openpilot for webcam
 ```
 cd ~/openpilot
-```
-- check out system/camerad/cameras/camera_webcam.cc lines 72 and 146 before building if any camera is upside down
-```
 USE_WEBCAM=1 scons -j$(nproc)
 ```
 
