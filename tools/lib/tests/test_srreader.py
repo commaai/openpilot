@@ -1,13 +1,17 @@
+import shutil
+import tempfile
 import numpy as np
 import unittest
 from parameterized import parameterized
+import requests
 
 from openpilot.tools.lib.route import SegmentRange
-from openpilot.tools.lib.srreader import ReadMode, SegmentRangeReader, parse_slice
+from openpilot.tools.lib.srreader import ReadMode, SegmentRangeReader, parse_slice, parse_indirect
 
 NUM_SEGS = 17 # number of segments in the test route
 ALL_SEGS = list(np.arange(NUM_SEGS))
 TEST_ROUTE = "344c5c15b34f2d8a/2024-01-03--09-37-12"
+QLOG_FILE = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/qlog.bz2"
 
 class TestSegmentRangeReader(unittest.TestCase):
   @parameterized.expand([
@@ -36,10 +40,22 @@ class TestSegmentRangeReader(unittest.TestCase):
     (f"https://cabana.comma.ai/?route={TEST_ROUTE}", ALL_SEGS),
     (f"cd:/{TEST_ROUTE}", ALL_SEGS),
   ])
-  def test_parse_slice(self, segment_range, expected):
-    sr = SegmentRange(segment_range)
+  def test_indirect_parsing(self, identifier, expected):
+    parsed, _, _ = parse_indirect(identifier)
+    sr = SegmentRange(parsed)
     segs = parse_slice(sr)
     self.assertListEqual(list(segs), expected)
+
+  def test_direct_parsing(self):
+    qlog = tempfile.NamedTemporaryFile(mode='wb', delete=False)
+
+    with requests.get(QLOG_FILE, stream=True) as r:
+      with qlog as f:
+        shutil.copyfileobj(r.raw, f)
+
+    for f in [QLOG_FILE, qlog.name]:
+      l = len(list(SegmentRangeReader(f)))
+      self.assertGreater(l, 100)
 
   @parameterized.expand([
     (f"{TEST_ROUTE}///",),
