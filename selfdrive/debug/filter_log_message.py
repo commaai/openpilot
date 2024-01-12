@@ -3,7 +3,7 @@ import argparse
 import json
 
 import cereal.messaging as messaging
-from openpilot.tools.lib.srreader import SegmentRangeReader
+from openpilot.tools.lib.logreader import LogReader
 
 LEVELS = {
   "DEBUG": 10,
@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
   if args.route:
     for route in args.route:
-      lr = SegmentRangeReader(route)
+      lr = LogReader(route)
       for m in lr:
         if m.which() == 'logMessage':
           print_logmessage(m.logMonoTime, m.logMessage, min_level)

@@ -4,7 +4,7 @@ import argparse
 
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, replay_process
 from openpilot.tools.lib.helpers import save_log
-from openpilot.tools.lib.srreader import SegmentRangeReader
+from openpilot.tools.lib.logreader import LogReader
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Run process on route and create new logs",
@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
   cfg = [c for c in CONFIGS if c.proc_name == args.process][0]
 
-  lr = SegmentRangeReader(args.route)
+  lr = LogReader(args.route)
   inputs = list(lr)
 
   outputs = replay_process(cfg, inputs, fingerprint=args.fingerprint)
