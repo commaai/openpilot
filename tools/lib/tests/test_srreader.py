@@ -46,6 +46,17 @@ class TestSegmentRangeReader(unittest.TestCase):
     segs = parse_slice(sr)
     self.assertListEqual(list(segs), expected)
 
+  def test_direct_parsing(self):
+    qlog = tempfile.NamedTemporaryFile(mode='wb', delete=False)
+
+    with requests.get(QLOG_FILE, stream=True) as r:
+      with qlog as f:
+        shutil.copyfileobj(r.raw, f)
+
+    for f in [QLOG_FILE, qlog.name]:
+      l = len(list(SegmentRangeReader(f)))
+      self.assertGreater(l, 100)
+
   @parameterized.expand([
     (f"{TEST_ROUTE}///",),
     (f"{TEST_ROUTE}---",),
@@ -71,17 +82,6 @@ class TestSegmentRangeReader(unittest.TestCase):
     rlog_len = len(list(SegmentRangeReader(f"{TEST_ROUTE}/0/r")))
 
     self.assertLess(qlog_len * 6, rlog_len)
-
-  def test_direct_segments(self):
-    qlog = tempfile.NamedTemporaryFile(mode='wb', delete=False)
-
-    with requests.get(QLOG_FILE, stream=True) as r:
-      with qlog as f:
-        shutil.copyfileobj(r.raw, f)
-
-    for f in [QLOG_FILE, qlog.name]:
-      l = len(list(SegmentRangeReader(f)))
-      self.assertGreater(l, 100)
 
 
 if __name__ == "__main__":
