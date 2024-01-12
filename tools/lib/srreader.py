@@ -40,6 +40,10 @@ def comma_api_source(sr: SegmentRange, mode=ReadMode.RLOG, sort_by_time=False):
 
   log_paths = route.log_paths() if mode == ReadMode.RLOG else route.qlog_paths()
 
+  invalid_segs = [seg for seg in segs if log_paths[seg] is None]
+
+  assert not len(invalid_segs), f"Some of the requested segments are not available: {invalid_segs}"
+
   for seg in segs:
     yield LogReader(log_paths[seg], sort_by_time=sort_by_time)
 
