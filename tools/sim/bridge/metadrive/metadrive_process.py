@@ -63,7 +63,10 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
 
   def get_cam_as_rgb(cam):
     cam = env.engine.sensors[cam]
-    img = cam.perceive(clip=False, new_parent_node=env.vehicle.origin, position=C3_POSITION, hpr=C3_HPR)
+    cam.get_cam().reparentTo(env.vehicle.origin)
+    cam.get_cam().setPos(C3_POSITION)
+    cam.get_cam().setHpr(C3_HPR)
+    img = cam.perceive(clip=False)
     if type(img) != np.ndarray:
       img = img.get() # convert cupy array to numpy
     return img
