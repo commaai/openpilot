@@ -54,10 +54,6 @@ class _LogFileReader:
     self._ents = list(sorted(_ents, key=lambda x: x.logMonoTime) if sort_by_time else _ents)
     self._ts = [x.logMonoTime for x in self._ents]
 
-  @classmethod
-  def from_bytes(cls, dat):
-    return cls("", dat=dat)
-
   def __iter__(self) -> Iterator[capnp._DynamicStructReader]:
     for ent in self._ents:
       if self._only_union_types:
@@ -206,6 +202,10 @@ class LogReader:
   def reset(self):
     self.lrs = self._logreaders_from_identifier(self.identifier)
     self.chain = itertools.chain(*self.lrs)
+
+  @staticmethod
+  def from_bytes(dat):
+    return _LogFileReader("", dat=dat)
 
 
 if __name__ == "__main__":
