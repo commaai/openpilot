@@ -23,7 +23,6 @@ from openpilot.tools.lib.route import Route, SegmentRange
 LogIterable = Iterable[capnp._DynamicStructReader]
 
 
-
 class _LogFileReader:
   def __init__(self, fn, canonicalize=True, only_union_types=False, sort_by_time=False, dat=None):
     self.data_version = None
