@@ -15,7 +15,7 @@ from openpilot.common.realtime import Ratekeeper
 from openpilot.tools.sim.lib.common import vec3
 from openpilot.tools.sim.lib.camerad import W, H
 
-C3_POSITION = Vec3(0.0, 1.0, 1.22)
+C3_POSITION = Vec3(0.0, 0, 1.22)
 C3_HPR = Vec3(0, 0,0)
 
 
@@ -73,7 +73,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
 
   rk = Ratekeeper(100, None)
 
-  steer_ratio = 15
+  steer_ratio = 8
   vc = [0,0]
 
   while not exit_event.is_set():
