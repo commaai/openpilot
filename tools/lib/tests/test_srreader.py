@@ -6,7 +6,7 @@ from parameterized import parameterized
 import requests
 
 from openpilot.tools.lib.route import SegmentRange
-from openpilot.tools.lib.srreader import ReadMode, SegmentRangeReader, parse_slice
+from openpilot.tools.lib.srreader import ReadMode, SegmentRangeReader, parse_slice, parse_indirect
 
 NUM_SEGS = 17 # number of segments in the test route
 ALL_SEGS = list(np.arange(NUM_SEGS))
@@ -40,9 +40,11 @@ class TestSegmentRangeReader(unittest.TestCase):
     (f"https://cabana.comma.ai/?route={TEST_ROUTE}", ALL_SEGS),
     (f"cd:/{TEST_ROUTE}", ALL_SEGS),
   ])
-  def test_indirect_parsing(self, segment_range, expected):
-    sr = SegmentRangeReader(segment_range)
-    self.assertEqual(len(list(sr.lrs)), len(expected))
+  def test_indirect_parsing(self, identifier, expected):
+    parsed, _, _ = parse_indirect(identifier)
+    sr = SegmentRange(parsed)
+    segs = parse_slice(sr)
+    self.assertListEqual(list(segs), expected)
 
   def test_direct_parsing(self):
     qlog = tempfile.NamedTemporaryFile(mode='wb', delete=False)
