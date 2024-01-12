@@ -16,6 +16,7 @@ from urllib.parse import parse_qs, urlparse
 
 from cereal import log as capnp_log
 from openpilot.selfdrive.test.openpilotci import get_url
+from openpilot.selfdrive.test.openpilotdata import get_url as get_url_opdata
 from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.route import Route, SegmentRange
@@ -113,6 +114,15 @@ def openpilotci_source(sr: SegmentRange, mode=ReadMode.RLOG, sort_by_time=False)
 
   for seg in segs:
     yield _LogFileReader(get_url(sr.route_name, seg, 'rlog' if mode == ReadMode.RLOG else 'qlog'), sort_by_time=sort_by_time)
+
+def openpilotdata_source(sr: SegmentRange, mode=ReadMode.RLOG, sort_by_time=False):
+  segs = parse_slice(sr)
+
+  if mode != ReadMode.RLOG:
+    raise NotImplementedError("openpilotdata only supports rlogs")
+
+  for seg in segs:
+    yield LogReader(get_url_opdata(sr.route_name, seg), sort_by_time=sort_by_time)
 
 def direct_source(file_or_url, sort_by_time):
   yield _LogFileReader(file_or_url, sort_by_time=sort_by_time)
