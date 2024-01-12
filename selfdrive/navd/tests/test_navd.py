@@ -8,10 +8,6 @@ import cereal.messaging as messaging
 from openpilot.common.params import Params
 from openpilot.selfdrive.manager.process_config import managed_processes
 
-"""
-TODO:
-- test language settings for all supported languages
-"""
 
 class TestNavd(unittest.TestCase):
   def setUp(self):
@@ -55,7 +51,7 @@ class TestNavd(unittest.TestCase):
     self._check_route(start, end)
 
   def test_random(self):
-    for i in range(10):
+    for _ in range(10):
       start = {"latitude": random.uniform(-90, 90), "longitude": random.uniform(-180, 180)}
       end = {"latitude": random.uniform(-90, 90), "longitude": random.uniform(-180, 180)}
       self._check_route(start, end, check_coords=False)
