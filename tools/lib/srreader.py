@@ -101,21 +101,22 @@ def parse_indirect(identifier):
   parsed = parse_useradmin(identifier) or parse_cabana(identifier)
 
   if parsed is not None:
-    return parsed, comma_api_source
+    return parsed, comma_api_source, True
 
   parsed = parse_cd(identifier)
   if parsed is not None:
-    return parsed, internal_source
+    return parsed, internal_source, True
 
-  return identifier, None
+  return identifier, None, False
 
 class SegmentRangeReader:
   def _logreaders_from_identifier(self, identifier):
-    parsed = parse_direct(identifier)
-    if parsed is not None:
-      return direct_source(identifier, sort_by_time=self.sort_by_time)
+    parsed, source, is_indirect = parse_indirect(identifier)
 
-    parsed, source = parse_indirect(identifier)
+    if not is_indirect:
+      direct_parsed = parse_direct(identifier)
+      if direct_parsed is not None:
+        return direct_source(identifier, sort_by_time=self.sort_by_time)
 
     sr = SegmentRange(parsed)
     mode = self.default_mode if sr.selector is None else ReadMode(sr.selector)
