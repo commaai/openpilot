@@ -3,8 +3,7 @@ import argparse
 import os
 import sys
 from openpilot.common.basedir import BASEDIR
-from openpilot.tools.lib.logreader import MultiLogIterator
-from openpilot.tools.lib.route import Route
+from openpilot.tools.lib.srreader import SegmentRangeReader
 
 os.environ['BASEDIR'] = BASEDIR
 
@@ -14,28 +13,17 @@ def get_arg_parser():
       description="Unlogging and save to file",
       formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-  parser.add_argument("data_dir", nargs='?',
-                              help="Path to directory in which log and camera files are located.")
-  parser.add_argument("route_name", type=(lambda x: x.replace("#", "|")), nargs="?",
+  parser.add_argument("route", type=(lambda x: x.replace("#", "|")), nargs="?",
                       help="The route whose messages will be published.")
   parser.add_argument("--out_path", nargs='?', default='/data/ubloxRaw.stream',
                       help="Output pickle file path")
   return parser
 
 
-def main(argv):
+def main():
   args = get_arg_parser().parse_args(sys.argv[1:])
-  if not args.data_dir:
-    print('Data directory invalid.')
-    return
 
-  if not args.route_name:
-    # Extract route name from path
-    args.route_name = os.path.basename(args.data_dir)
-    args.data_dir = os.path.dirname(args.data_dir)
-
-  route = Route(args.route_name, args.data_dir)
-  lr = MultiLogIterator(route.log_paths())
+  lr = SegmentRangeReader(args.route)
 
   with open(args.out_path, 'wb') as f:
     try:
@@ -56,4 +44,4 @@ def main(argv):
 
 
 if __name__ == "__main__":
-  sys.exit(main(sys.argv[1:]))
+  main()
