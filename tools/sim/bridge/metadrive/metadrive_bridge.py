@@ -60,6 +60,24 @@ def curve_block(length, angle=45, direction=0):
     "dir": direction
   }
 
+def create_map(track_size=60):
+  return dict(
+    type=MapGenerateMethod.PG_MAP_FILE,
+    lane_num=2,
+    lane_width=3.5,
+    config=[
+      None,
+      straight_block(track_size),
+      curve_block(track_size*2, 90),
+      straight_block(track_size),
+      curve_block(track_size*2, 90),
+      straight_block(track_size),
+      curve_block(track_size*2, 90),
+      straight_block(track_size),
+      curve_block(track_size*2, 90),
+    ]
+  )
+
 
 class MetaDriveBridge(SimulatorBridge):
   TICKS_PER_FRAME = 5
@@ -82,7 +100,6 @@ class MetaDriveBridge(SimulatorBridge):
       vehicle_config=dict(
         enable_reverse=False,
         image_source="rgb_road",
-        spawn_longitude=15
       ),
       sensors=sensors,
       image_on_cuda=_cuda_enable,
@@ -93,20 +110,7 @@ class MetaDriveBridge(SimulatorBridge):
       crash_vehicle_done=False,
       crash_object_done=False,
       traffic_density=0.0, # traffic is incredibly expensive
-      map_config=dict(
-        type=MapGenerateMethod.PG_MAP_FILE,
-        config=[
-          None,
-          straight_block(120),
-          curve_block(240, 90),
-          straight_block(120),
-          curve_block(240, 90),
-          straight_block(120),
-          curve_block(240, 90),
-          straight_block(120),
-          curve_block(240, 90),
-        ]
-      ),
+      map_config=create_map(),
       decision_repeat=1,
       physics_world_step_size=self.TICKS_PER_FRAME/100,
       preload_models=False
