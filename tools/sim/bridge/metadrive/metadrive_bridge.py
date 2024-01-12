@@ -83,7 +83,7 @@ class MetaDriveBridge(SimulatorBridge):
   TICKS_PER_FRAME = 5
 
   def __init__(self, args):
-    self.should_render = True
+    self.should_render = False
 
     super(MetaDriveBridge, self).__init__(args)
 
