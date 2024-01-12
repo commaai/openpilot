@@ -194,6 +194,7 @@ class LogReader:
     self.reset()
 
   def __iter__(self):
+    self.reset()
     return self
 
   def __next__(self):
