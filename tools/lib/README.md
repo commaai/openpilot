@@ -31,21 +31,3 @@ for msg in lr:
   if msg.which() == "carState":
     print(msg.carState.steeringAngleDeg)
 ```
-
-### MultiLogIterator
-
-`MultiLogIterator` is similar to `LogReader`, but reads multiple logs. 
-
-```python
-from openpilot.tools.lib.route import Route
-from openpilot.tools.lib.logreader import MultiLogIterator
-
-# setup a MultiLogIterator to read all the logs in the route
-r = Route("a2a0ccea32023010|2023-07-27--13-01-19")
-lr = MultiLogIterator(r.log_paths())
-
-# print all the steering angles values from all the logs in the route
-for msg in lr:
-  if msg.which() == "carState":
-    print(msg.carState.steeringAngleDeg)
-```
