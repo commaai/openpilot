@@ -3,14 +3,12 @@ import numpy as np
 from metadrive.component.sensors.rgb_camera import RGBCamera
 from metadrive.component.sensors.base_camera import _cuda_enable
 from metadrive.component.map.pg_map import MapGenerateMethod
-from panda3d.core import Vec3, Texture, GraphicsOutput
+from panda3d.core import Texture, GraphicsOutput
 
 from openpilot.tools.sim.bridge.common import SimulatorBridge
 from openpilot.tools.sim.bridge.metadrive.metadrive_world import MetaDriveWorld
 from openpilot.tools.sim.lib.camerad import W, H
 
-
-C3_POSITION = Vec3(0.0, 1.0, 1.22)
 
 
 class CopyRamRGBCamera(RGBCamera):
@@ -33,8 +31,6 @@ class CopyRamRGBCamera(RGBCamera):
 class RGBCameraWide(CopyRamRGBCamera):
   def __init__(self, *args, **kwargs):
     super(RGBCameraWide, self).__init__(*args, **kwargs)
-    cam = self.get_cam()
-    cam.setPos(C3_POSITION)
     lens = self.get_lens()
     lens.setFov(120)
     lens.setNear(0.1)
@@ -42,8 +38,6 @@ class RGBCameraWide(CopyRamRGBCamera):
 class RGBCameraRoad(CopyRamRGBCamera):
   def __init__(self, *args, **kwargs):
     super(RGBCameraRoad, self).__init__(*args, **kwargs)
-    cam = self.get_cam()
-    cam.setPos(C3_POSITION)
     lens = self.get_lens()
     lens.setFov(40)
     lens.setNear(0.1)
