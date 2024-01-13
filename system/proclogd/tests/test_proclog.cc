@@ -143,11 +143,10 @@ TEST_CASE("buildProcLogerMessage") {
         std::ifstream stream(cmd_path);
         auto cmdline = Parser::cmdline(stream);
         REQUIRE(cmdline.size() == p.getCmdline().size());
-        // do not check the cmdline of pytest as it will change.
-        if (cmdline.size() > 0 && cmdline[0].find("[pytest") != 0) {
-          for (int i = 0; i < p.getCmdline().size(); ++i) {
-            REQUIRE(cmdline[i] == p.getCmdline()[i].cStr());
-          }
+        for (int i = 0; i < p.getCmdline().size(); ++i) {
+          // do not check the cmdline of pytest as it will change.
+          if (cmdline[i].find("[pytest") || std::string(p.getCmdline()[i]).find("[pytest")) continue; 
+          REQUIRE(cmdline[i] == p.getCmdline()[i].cStr());
         }
       }
     }
