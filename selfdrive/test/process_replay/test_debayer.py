@@ -8,14 +8,13 @@ import pyopencl as cl  # install with `PYOPENCL_CL_PRETEND_VERSION=2.0 pip insta
 
 from openpilot.system.hardware import PC, TICI
 from openpilot.common.basedir import BASEDIR
-from openpilot.selfdrive.test.openpilotci import BASE_URL, get_url
+from openpilot.selfdrive.test.openpilotci import BASE_URL
 from openpilot.system.version import get_commit
 from openpilot.system.camerad.snapshot.snapshot import yuv_to_rgb
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.filereader import FileReader
 
-TEST_ROUTE = "8345e3b82948d454|2022-05-04--13-45-33"
-SEGMENT = 0
+TEST_ROUTE = "8345e3b82948d454|2022-05-04--13-45-33/0"
 
 FRAME_WIDTH = 1928
 FRAME_HEIGHT = 1208
@@ -116,7 +115,7 @@ if __name__ == "__main__":
   ref_commit_fn = os.path.join(replay_dir, "debayer_replay_ref_commit")
 
   # load logs
-  lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT)))
+  lr = list(LogReader(TEST_ROUTE))
 
   # run replay
   frames = debayer_replay(lr)
