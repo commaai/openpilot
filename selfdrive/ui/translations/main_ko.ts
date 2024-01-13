@@ -68,23 +68,23 @@
     </message>
     <message>
         <source>Hidden Network</source>
-        <translation type="unfinished"></translation>
+        <translation>숨겨진 네트워크</translation>
     </message>
     <message>
         <source>CONNECT</source>
-        <translation type="unfinished">연결됨</translation>
+        <translation>연결됨</translation>
     </message>
     <message>
         <source>Enter SSID</source>
-        <translation type="unfinished">SSID 입력</translation>
+        <translation>SSID 입력</translation>
     </message>
     <message>
         <source>Enter password</source>
-        <translation type="unfinished">비밀번호를 입력하세요</translation>
+        <translation>비밀번호를 입력하세요</translation>
     </message>
     <message>
         <source>for &quot;%1&quot;</source>
-        <translation type="unfinished">&quot;%1&quot;에 접속하려면 비밀번호가 필요합니다</translation>
+        <translation>&quot;%1&quot;에 접속하려면 비밀번호가 필요합니다</translation>
     </message>
 </context>
 <context>
