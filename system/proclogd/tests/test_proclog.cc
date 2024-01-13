@@ -145,7 +145,7 @@ TEST_CASE("buildProcLogerMessage") {
         REQUIRE(cmdline.size() == p.getCmdline().size());
         for (int i = 0; i < p.getCmdline().size(); ++i) {
           // do not check the cmdline of pytest as it will change.
-          if(cmdline[i].find("[pytest") || std::string(p.getCmdline()[i]).find("[pytest")) continue; 
+          if (cmdline[i].find("[pytest") || std::string(p.getCmdline()[i]).find("[pytest")) continue; 
           REQUIRE(cmdline[i] == p.getCmdline()[i].cStr());
         }
       }
