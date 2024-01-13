@@ -1,8 +1,17 @@
 #define CATCH_CONFIG_MAIN
 #include "catch2/catch.hpp"
 
+#include <cassert>
+
+#include <cmath>
+#include <cstring>
+
+#include "common/util.h"
+#include "system/camerad/cameras/camera_common.h"
+
 #define W 240
 #define H 160
+
 
 #define TONE_SPLITS 3
 
@@ -17,13 +26,6 @@ float gts[TONE_SPLITS * TONE_SPLITS * TONE_SPLITS * TONE_SPLITS] = {
   0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
   0.000000};
 
-#include <cassert>
-
-#include <cmath>
-#include <cstring>
-
-#include "common/util.h"
-#include "system/camerad/cameras/camera_common.h"
 
 TEST_CASE("camera.test_set_exposure_target") {
   // set up fake camerabuf
