@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-import time
 import unittest
 from parameterized import parameterized
 
@@ -12,7 +11,6 @@ from openpilot.selfdrive.car.fingerprints import _FINGERPRINTS
 from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
 from openpilot.selfdrive.car.mazda.values import CAR as MAZDA
 from openpilot.selfdrive.controls.lib.events import EVENT_NAME
-from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.manager.process_config import managed_processes
 
 EventName = car.CarEvent.EventName
