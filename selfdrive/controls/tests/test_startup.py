@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import time
+import os
 import unittest
 from parameterized import parameterized
 
@@ -11,7 +11,7 @@ from openpilot.selfdrive.car.fingerprints import _FINGERPRINTS
 from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
 from openpilot.selfdrive.car.mazda.values import CAR as MAZDA
 from openpilot.selfdrive.controls.lib.events import EVENT_NAME
-from openpilot.selfdrive.test.helpers import with_processes
+from openpilot.selfdrive.manager.process_config import managed_processes
 
 EventName = car.CarEvent.EventName
 Ecu = car.CarParams.Ecu
@@ -38,6 +38,9 @@ CX5_FW_VERSIONS = [
 
 class TestStartup(unittest.TestCase):
 
+  def tearDown(self):
+    managed_processes['controlsd'].stop()
+
   @parameterized.expand([
     # TODO: test EventName.startup for release branches
 
@@ -61,15 +64,11 @@ class TestStartup(unittest.TestCase):
     (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS_FUZZY, "toyota"),
     (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS_FUZZY, "toyota"),
   ])
-  @with_processes(['controlsd'])
   def test_startup_alert(self, expected_event, car_model, fw_versions, brand):
-
-    # TODO: this should be done without any real sockets
     controls_sock = messaging.sub_sock("controlsState")
     pm = messaging.PubMaster(['can', 'pandaStates'])
 
     params = Params()
-    params.clear_all()
     params.put_bool("Passive", False)
     params.put_bool("OpenpilotEnabledToggle", True)
 
@@ -91,11 +90,13 @@ class TestStartup(unittest.TestCase):
       cp.carVin = "1" * 17
       cp.carFw = car_fw
       params.put("CarParamsCache", cp.to_bytes())
+    else:
+      os.environ['SKIP_FW_QUERY'] = '1'
 
-    time.sleep(2) # wait for controlsd to be ready
+    managed_processes['controlsd'].start()
 
+    assert pm.wait_for_readers_to_update('can', 5)
     pm.send('can', can_list_to_can_capnp([[0, 0, b"", 0]]))
-    time.sleep(0.1)
 
     msg = messaging.new_message('pandaStates', 1)
     msg.pandaStates[0].pandaType = log.PandaState.PandaType.uno
@@ -107,18 +108,18 @@ class TestStartup(unittest.TestCase):
     else:
       finger = _FINGERPRINTS[car_model][0]
 
+    msgs = [[addr, 0, b'\x00'*length, 0] for addr, length in finger.items()]
     for _ in range(1000):
       # controlsd waits for boardd to echo back that it has changed the multiplexing mode
       if not params.get_bool("ObdMultiplexingChanged"):
         params.put_bool("ObdMultiplexingChanged", True)
 
-      msgs = [[addr, 0, b'\x00'*length, 0] for addr, length in finger.items()]
       pm.send('can', can_list_to_can_capnp(msgs))
+      assert pm.wait_for_readers_to_update('can', 2, dt=0.001)
 
-      time.sleep(0.01)
-      msgs = messaging.drain_sock(controls_sock)
-      if len(msgs):
-        event_name = msgs[0].controlsState.alertType.split("/")[0]
+      ctrls = messaging.drain_sock(controls_sock)
+      if len(ctrls):
+        event_name = ctrls[0].controlsState.alertType.split("/")[0]
         self.assertEqual(EVENT_NAME[expected_event], event_name,
                          f"expected {EVENT_NAME[expected_event]} for '{car_model}', got {event_name}")
         break
