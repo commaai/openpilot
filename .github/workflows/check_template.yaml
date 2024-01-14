@@ -1,0 +1,164 @@
+on: 
+  pull_request_target:
+    types: [edited, opened, reopened]
+name: Check for PR template
+
+jobs:
+  check-pr-template:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      actions: read
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            // Comment to add to the PR if no template has been used
+            const NO_TEMPLATE_MESSAGE =
+              "It looks like you didn't use on of the Pull Request templates. Please check [the contributing docs](https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md).";
+            // body data for future requests
+            const body_data = {
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            };
+
+            // Utility function to extract sections of interest
+            const extractSections = (text) =>
+              (text.match(/---(.*?)---/gs) || []).map((match) => match.trim());
+
+            // Add an 'in-bot-review' label while this PR is under review
+            github.rest.issues.addLabels({
+              ...body_data,
+              labels: ["in-bot-review"],
+            });
+
+            // Get filenames of all currently checked-in PR templates
+            const template_contents = await github.rest.repos.getContent({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              path: ".github/PULL_REQUEST_TEMPLATE",
+            });
+            var template_filenames = [];
+            for (const content of template_contents.data) {
+              template_filenames.push(content.path);
+            }
+            console.log(template_filenames);
+            // Retrieve templates
+            var templates = [];
+            for (const template_filename of template_filenames) {
+              const template_response = await github.rest.repos.getContent({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                path: template_filename,
+              });
+              // Convert Base64 content back
+              const decoded_template = atob(template_response.data.content);
+              const lines = decoded_template.split(/\r?\n/);
+              var template_name = "";
+              var template_about = "";
+              for (const line of lines) {
+                if (line.startsWith("name:")) {
+                  template_name = line.replace("name: ", "");
+                } else if (line.startsWith("about:")) {
+                  template_about = line.replace("about: ", "");
+                }
+              }
+              if (!template_name || !template_about) {
+                throw new Error(
+                  "Invalid template! Could not find required fields in template with content: \n" +
+                    decoded_template
+                );
+              }
+              templates.push({ name: template_name, about: template_about });
+            }
+            console.log(templates);
+
+            // Retrieve the PR Body
+            const pull_request = await github.rest.issues.get({
+              ...body_data,
+            });
+            const pull_request_text = pull_request.data.body;
+            console.log(pull_request_text);
+
+            /* Check if the PR Body matches one of the templates
+            All of the templates have a first section that looks like this:
+            ---
+            name: Car Bug fix
+            about: For vehicle/brand specific bug fixes
+            title: ''
+            labels: 'car bug fix'
+            assignees: ''
+            ---
+            In this section we just look for the exact lines which specify this template ('name:' and 'about:') in a section separated by opening and closing '---'
+            */
+            const sections = extractSections(pull_request_text);
+            var template_found = false;
+            // Iterate over each template to check if it applies
+            for (const template of templates) {
+              var template_name_matches = false;
+              var template_about_matches = false;
+              // Iterate over each section of interest to try to find the wanted lines
+              for (const section of sections) {
+                console.log("Checking section:\n" + section);
+                // Iterate over lines
+                const lines = section.split(/\r?\n/);
+                for (const line of lines) {
+                  console.log("Checking line: " + line);
+                  if (
+                    line.startsWith("name:") &&
+                    line.replace("name: ", "") === template.name
+                  ) {
+                    template_name_matches = true;
+                  } else if (
+                    line.startsWith("about:") &&
+                    line.replace("about: ", "") === template.about
+                  ) {
+                    template_about_matches = true;
+                  }
+                }
+              }
+              if (template_about_matches && template_name_matches) {
+                console.log("Found matching template! (" + template.name + ")");
+                template_found = true;
+              }
+            }
+
+            // List comments from previous runs
+            var existing_comments = [];
+            const comments = await github.rest.issues.listComments({
+              ...body_data,
+            });
+            for (const comment of comments.data) {
+              if (comment.body === NO_TEMPLATE_MESSAGE) {
+                existing_comments.push(comment);
+              }
+            }
+
+            // Add a comment to the PR that it is not using a the template (but only if this comment does not exist already)
+            if (!template_found) {
+              var comment_already_sent = false;
+
+              if (existing_comments.length < 1) {
+                github.rest.issues.createComment({
+                  ...body_data,
+                  body: NO_TEMPLATE_MESSAGE,
+                });
+              }
+            } else {
+              // If template has been found, delete any old comment about missing template
+              for (const existing_comment of existing_comments) {
+                github.rest.issues.deleteComment({
+                  ...body_data,
+                  comment_id: existing_comment.id,
+                });
+              }
+            }
+
+            // Remove the 'in-bot-review' label after the review is done
+            github.rest.issues.removeLabel({
+              ...body_data,
+              name: "in-bot-review",
+            });
