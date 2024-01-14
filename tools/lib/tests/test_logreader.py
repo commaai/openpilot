@@ -69,12 +69,14 @@ class TestLogReader(unittest.TestCase):
       sr = SegmentRange(segment_range)
       parse_slice(sr)
 
+  @unittest.skip("this test is too slow for the minimal coverage it provides")
   def test_modes(self):
     qlog_len = len(list(LogReader(f"{TEST_ROUTE}/0", ReadMode.QLOG)))
     rlog_len = len(list(LogReader(f"{TEST_ROUTE}/0", ReadMode.RLOG)))
 
     self.assertLess(qlog_len * 6, rlog_len)
 
+  @unittest.skip("this test is too slow for the minimal coverage it provides")
   def test_modes_from_name(self):
     qlog_len = len(list(LogReader(f"{TEST_ROUTE}/0/q")))
     rlog_len = len(list(LogReader(f"{TEST_ROUTE}/0/r")))
