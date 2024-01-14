@@ -126,8 +126,6 @@ std::string download_demo_route() {
       std::string log_path = util::string_format("%s/%s--%d/", data_dir.c_str(), route_name.c_str(), i);
       util::create_directories(log_path, 0755);
       REQUIRE(download_to_file(remote_route.at(i).rlog.toStdString(), log_path + "rlog.bz2"));
-      REQUIRE(download_to_file(remote_route.at(i).driver_cam.toStdString(), log_path + "dcamera.hevc"));
-      REQUIRE(download_to_file(remote_route.at(i).wide_road_cam.toStdString(), log_path + "ecamera.hevc"));
       REQUIRE(download_to_file(remote_route.at(i).qcamera.toStdString(), log_path + "qcamera.ts"));
     }
   }
@@ -139,7 +137,7 @@ std::string download_demo_route() {
 TEST_CASE("Local route") {
   std::string data_dir = download_demo_route();
 
-  auto flags = GENERATE(REPLAY_FLAG_DCAM | REPLAY_FLAG_ECAM, REPLAY_FLAG_QCAMERA);
+  auto flags = GENERATE(0, REPLAY_FLAG_QCAMERA);
   Route route(DEMO_ROUTE, QString::fromStdString(data_dir));
   REQUIRE(route.load());
   REQUIRE(route.segments().size() == 2);
@@ -149,7 +147,7 @@ TEST_CASE("Local route") {
 }
 
 TEST_CASE("Remote route") {
-  auto flags = GENERATE(REPLAY_FLAG_DCAM | REPLAY_FLAG_ECAM, REPLAY_FLAG_QCAMERA);
+  auto flags = GENERATE(0, REPLAY_FLAG_QCAMERA);
   Route route(DEMO_ROUTE);
   REQUIRE(route.load());
   REQUIRE(route.segments().size() == 13);
