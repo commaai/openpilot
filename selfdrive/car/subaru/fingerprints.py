@@ -54,7 +54,7 @@ FW_VERSIONS = {
       b'\xa1  \x02\x01',
       b'\xa1  \x02\x02',
       b'\xa1  \x03\x03',
-      b'\xa1\\  x04\x01',
+      b'\xa1  \x04\x01',
     ],
     (Ecu.eps, 0x746, None): [
       b'\x9b\xc0\x11\x00',
@@ -373,7 +373,6 @@ FW_VERSIONS = {
       b'\x00\x00c\xb7\x1f@\x10\x16',
       b'\x00\x00c\xd1\x1f@\x10\x17',
       b'\x00\x00c\xec\x1f@ \x04',
-      b'\x00\x00c\xec7@\x04',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xa0"@\x80\x07',
@@ -447,9 +446,9 @@ FW_VERSIONS = {
   },
   CAR.OUTBACK: {
     (Ecu.abs, 0x7b0, None): [
-      b'\xa1 \x06\x02',
       b'\xa1  \x06\x00',
       b'\xa1  \x06\x01',
+      b'\xa1  \x06\x02',
       b'\xa1  \x07\x00',
       b'\xa1  \x07\x02',
       b'\xa1  \x08\x00',
