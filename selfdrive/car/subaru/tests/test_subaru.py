@@ -21,7 +21,6 @@ class TestSubaruFingerprint(unittest.TestCase):
     for platform, fws_per_ecu in FW_VERSIONS.items():
       for (ecu, _, _), fws in fws_per_ecu.items():
         for fw in fws:
-          print(len(fw), get_fw_sizes(platform)[ecu], ECU_NAME[ecu])
           self.assertEqual(len(fw), get_fw_sizes(platform)[ecu], f"{platform}, {ECU_NAME[ecu]}")
 
 
