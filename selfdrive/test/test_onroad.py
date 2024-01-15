@@ -118,6 +118,7 @@ class TestOnroad(unittest.TestCase):
     params.remove("CurrentRoute")
     set_params_enabled()
     os.environ['TESTING_CLOSET'] = '1'
+    os.environ['MSGQ_PREALLOCATE'] = '1'
     if os.path.exists(Paths.log_root()):
       shutil.rmtree(Paths.log_root())
     os.system("rm /dev/shm/*")
