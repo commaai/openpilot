@@ -57,7 +57,9 @@ class WaitTimeHelper:
 
 
 def run(cmd: List[str], cwd: Optional[str] = None) -> str:
-  return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
+  # TODO: also configure CPU limits
+  srun = "systemd-run --user --scope -p MemoryMax=200M -p MemorySwapMax=300M"
+  return subprocess.check_output(srun + " " + cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
 
 
 def set_consistent_flag(consistent: bool) -> None:
