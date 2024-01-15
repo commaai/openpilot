@@ -373,7 +373,6 @@ FW_VERSIONS = {
       b'\x00\x00c\xb7\x1f@\x10\x16',
       b'\x00\x00c\xd1\x1f@\x10\x17',
       b'\x00\x00c\xec\x1f@ \x04',
-      b'\x00\x00c\xec7@ \x04',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xa0"@\x80\x07',
