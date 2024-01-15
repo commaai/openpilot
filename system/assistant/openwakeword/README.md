@@ -2,6 +2,8 @@ This code was copied from https://github.com/dscripka/openWakeWord
 
 To test wake word detection on the comma device or PC, run wakeword.py and say "alexa".
 
+You can also run google_speech.py which will wait for the "WakeWordDetected" param to be set. you will need to follow the steps below to use google speech api.
+
 Install google cloud cli on comma 3 with:
 
 sudo apt-get update

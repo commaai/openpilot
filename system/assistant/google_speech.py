@@ -1,5 +1,4 @@
 import os
-import pyaudio
 import google.cloud.speech as speech
 from openpilot.common.params import Params
 from openpilot.common.retry import retry
