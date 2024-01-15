@@ -1,7 +1,6 @@
 from cereal import car
 import unittest
 from openpilot.selfdrive.car.subaru.fingerprints import FW_VERSIONS
-from openpilot.selfdrive.car.subaru.values import GLOBAL_GEN2, LKAS_ANGLE, CAR, PREGLOBAL_CARS
 
 Ecu = car.CarParams.Ecu
 
