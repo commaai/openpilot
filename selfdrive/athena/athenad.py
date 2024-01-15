@@ -79,7 +79,7 @@ class UploadItem:
   url: str
   headers: Dict[str, str]
   created_at: int
-  id: Optional[str] # noqa: A003 (to match the response from the remote server)
+  id: Optional[str]
   retry_count: int = 0
   current: bool = False
   progress: float = 0
