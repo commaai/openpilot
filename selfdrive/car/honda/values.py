@@ -134,47 +134,16 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   ],
   CAR.ACURA_ILX: HondaCarInfo("Acura ILX 2016-19", "AcuraWatch Plus", min_steer_speed=25. * CV.MPH_TO_MS),
   CAR.CRV: HondaCarInfo("Honda CR-V 2015-16", "Touring Trim", min_steer_speed=12. * CV.MPH_TO_MS),
-  CAR.CRV_5G: {'address': 416952561,
-                          'brand': 'honda',
-                          'bus': 1,
-                          'ecu': 'eps',
-                          'fwVersion': b'39990-TLA-A220\x00\x00',
-                          'logging': True,
-                          'obdMultiplexing': False,
-                          'request': [b'"\xf1\x81'],
-                          'responseAddress': 417001776,
-                          'subAddress': 0},
-                         {'address': 416986609,
-                          'brand': 'honda',
-                          'bus': 1,
-                          'ecu': 'fwdCamera',
-                          'fwVersion': b'36161-TNY-A030\x00\x00',
-                          'logging': True,
-                          'obdMultiplexing': False,
-                          'request': [b'"\xf1\x81'],
-                          'responseAddress': 417001909,
-                          'subAddress': 0},
-                         {'address': 416961521,
-                          'brand': 'honda',
-                          'bus': 1,
-                          'ecu': 'srs',
-                          'fwVersion': b'77959-TLA-A420\x00\x00',
-                          'logging': True,
-                          'obdMultiplexing': False,
-                          'request': [b'"\xf1\x81'],
-                          'responseAddress': 417001811,
-                          'subAddress': 0},
-                         {'address': 416985329,
-                          'brand': 'honda',
-                          'bus': 1,
-                          'ecu': 'fwdRadar',
-                          'fwVersion': b'36802-TNY-A030\x00\x00',
-                          'logging': True,
-                          'obdMultiplexing': False,
-                          'request': [b'"\xf1\x81'],
-                          'responseAddress': 417001904,
-                          'subAddress': 0},
-    HondaCarInfo("Honda CR-V 2017-22", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.CRV_5G: {
+      (Ecu.eps, 0x18da30f1, None): [
+          b'39990-TLA-A220\x00\x00',]
+      (Ecu.fwdCamera, 0x18dab5f1, None): [
+          b'36161-TNY-A030\x00\x00',]
+      (Ecu.srs, 0x18da53f1, None): [
+          b'77959-TLA-A420\x00\x00',]
+      (Ecu.fwdRadar, 0x18dab0f1, None): [
+          b'36802-TNY-A030\x00\x00',]             
+    HondaCarInfo("Honda CR-V 2017-22", min_steer_speed=12. * CV.MPH_TO_MS),}
   CAR.CRV_EU: None,  # HondaCarInfo("Honda CR-V EU", "Touring"),  # Euro version of CRV Touring
   CAR.CRV_HYBRID: HondaCarInfo("Honda CR-V Hybrid 2017-19", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.FIT: HondaCarInfo("Honda Fit 2018-20", min_steer_speed=12. * CV.MPH_TO_MS),
