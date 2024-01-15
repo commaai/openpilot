@@ -25,7 +25,7 @@ CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
 CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 
 
-def get_all_car_info() -> List[CarInfo]:
+def get_all_car_info(include_dashcam_only: bool = False) -> List[CarInfo]:
   all_car_info: List[CarInfo] = []
   footnotes = get_all_footnotes()
   for model, car_info in get_interface_attr("CAR_INFO", combine_brands=True).items():
@@ -33,7 +33,7 @@ def get_all_car_info() -> List[CarInfo]:
     CP = interfaces[model][0].get_params(model, fingerprint=gen_empty_fingerprint(),
                                          car_fw=[car.CarParams.CarFw(ecu="unknown")], experimental_long=True, docs=True)
 
-    if CP.dashcamOnly or car_info is None:
+    if (CP.dashcamOnly and not include_dashcam_only) or car_info is None:
       continue
 
     # A platform can include multiple car models

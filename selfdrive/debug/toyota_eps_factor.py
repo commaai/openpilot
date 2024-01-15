@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from sklearn import linear_model
 from openpilot.selfdrive.car.toyota.values import STEER_THRESHOLD
 
-from openpilot.tools.lib.srreader import SegmentRangeReader
+from openpilot.tools.lib.logreader import LogReader
 
 MIN_SAMPLES = 30 * 100
 
@@ -57,6 +57,6 @@ def get_eps_factor(lr, plot=False):
 
 
 if __name__ == "__main__":
-  lr = SegmentRangeReader(sys.argv[1])
+  lr = LogReader(sys.argv[1])
   n = get_eps_factor(lr, plot="--plot" in sys.argv)
   print("EPS torque factor: ", n)

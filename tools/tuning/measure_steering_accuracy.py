@@ -8,7 +8,7 @@ import signal
 from collections import defaultdict
 
 import cereal.messaging as messaging
-from openpilot.tools.lib.srreader import SegmentRangeReader
+from openpilot.tools.lib.logreader import LogReader
 
 def sigint_handler(signal, frame):
   exit(0)
@@ -128,7 +128,7 @@ if __name__ == "__main__":
 
   if args.route is not None:
     print(f"loading {args.route}...")
-    lr = SegmentRangeReader(args.route, sort_by_time=True)
+    lr = LogReader(args.route, sort_by_time=True)
 
     sm = {}
     for msg in lr:
