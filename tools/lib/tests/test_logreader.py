@@ -83,6 +83,13 @@ class TestLogReader(unittest.TestCase):
 
     self.assertLess(qlog_len * 6, rlog_len)
 
+  @unittest.skip("this test is too slow for the minimal coverage it provides")
+  def test_list(self):
+    qlog_len = len(list(LogReader(f"{TEST_ROUTE}/0/q")))
+    qlog_len_2 = len(list(LogReader([f"{TEST_ROUTE}/0/q", f"{TEST_ROUTE}/0/q"])))
+
+    self.assertEqual(qlog_len*2, qlog_len_2)
+
 
 if __name__ == "__main__":
   unittest.main()
