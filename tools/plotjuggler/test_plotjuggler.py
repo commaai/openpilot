@@ -31,7 +31,7 @@ class TestPlotJuggler(unittest.TestCase):
       self.assertEqual(p.poll(), None)
       os.killpg(os.getpgid(p.pid), signal.SIGTERM)
 
-      self.assertNotIn("Raw file read failed, larger than 2GB?", output)
+      self.assertNotIn("Raw file read failed", output)
 
   # TODO: also test that layouts successfully load
   def test_layouts(self):
