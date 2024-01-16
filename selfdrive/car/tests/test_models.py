@@ -21,7 +21,7 @@ from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from openpilot.selfdrive.controls.controlsd import Controls
-from openpilot.selfdrive.test.helpers import read_segment_list
+from openpilot.selfdrive.test.helpers import read_segment_list, sanitize
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import Route, SegmentName, RouteName
@@ -83,6 +83,7 @@ class TestCarModelBase(unittest.TestCase):
 
   @classmethod
   def get_testing_data_from_logreader(cls, lr):
+    lr = sanitize(lr)
     car_fw = []
     can_msgs = []
     cls.elm_frame = None
