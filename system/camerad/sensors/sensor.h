@@ -9,11 +9,13 @@
 #include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/sensors/ar0231_registers.h"
 #include "system/camerad/sensors/ox03c10_registers.h"
+#include "system/camerad/sensors/os04c10_registers.h"
 
 #define ANALOG_GAIN_MAX_CNT 55
 const size_t FRAME_WIDTH = 1928;
 const size_t FRAME_HEIGHT = 1208;
 const size_t FRAME_STRIDE = 2896;  // for 12 bit output. 1928 * 12 / 8 + 4 (alignment)
+
 
 class SensorInfo {
 public:
@@ -56,8 +58,10 @@ public:
   uint32_t probe_expected_data;
   std::vector<i2c_random_wr_payload> start_reg_array;
   std::vector<i2c_random_wr_payload> init_reg_array;
-  uint32_t in_port_info_dt;
-  uint32_t power_config_val_low;
+
+  uint32_t mipi_format;
+  uint32_t mclk_frequency;
+  uint32_t frame_data_type;
 };
 
 class AR0231 : public SensorInfo {
@@ -75,6 +79,14 @@ private:
 class OX03C10 : public SensorInfo {
 public:
   OX03C10();
+  std::vector<i2c_random_wr_payload> getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const override;
+  float getExposureScore(float desired_ev, int exp_t, int exp_g_idx, float exp_gain, int gain_idx) const override;
+  int getSlaveAddress(int port) const override;
+};
+
+class OS04C10 : public SensorInfo {
+public:
+  OS04C10();
   std::vector<i2c_random_wr_payload> getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const override;
   float getExposureScore(float desired_ev, int exp_t, int exp_g_idx, float exp_gain, int gain_idx) const override;
   int getSlaveAddress(int port) const override;

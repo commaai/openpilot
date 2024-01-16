@@ -66,6 +66,26 @@
         <source>Prevent large data uploads when on a metered connection</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Hidden Network</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CONNECT</source>
+        <translation type="unfinished">BAĞLANTI</translation>
+    </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation type="unfinished">APN Gir</translation>
+    </message>
+    <message>
+        <source>Enter password</source>
+        <translation type="unfinished">Parolayı girin</translation>
+    </message>
+    <message>
+        <source>for &quot;%1&quot;</source>
+        <translation type="unfinished">için &quot;%1&quot;</translation>
+    </message>
 </context>
 <context>
     <name>AnnotatedCameraWidget</name>
