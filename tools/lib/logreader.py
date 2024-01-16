@@ -196,7 +196,7 @@ class LogReader:
     return next(self.chain)
 
   def reset(self):
-    self.lrs = self._logreaders_from_identifier(self.identifier)
+    self.lrs = list(self._logreaders_from_identifier(self.identifier))
     self.chain = itertools.chain(*self.lrs)
 
   @staticmethod
