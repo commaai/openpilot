@@ -74,6 +74,11 @@ def sudo_write(val, path):
       # fallback for debugfs files
       os.system(f"sudo su -c 'echo {val} > {path}'")
 
+def sudo_read(path: str) -> str:
+  try:
+    return subprocess.check_output(f"sudo cat {path}", shell=True, encoding='utf8')
+  except Exception:
+    return ""
 
 def affine_irq(val, action):
   irqs = get_irqs_for_action(action)
@@ -554,6 +559,12 @@ class Tici(HardwareBase):
     time.sleep(0.5)
     gpio_set(GPIO.STM_BOOT0, 0)
 
+  def booted(self):
+    # this normally boots within 8s, but on rare occasions takes 30+s
+    encoder_state = sudo_read("/sys/kernel/debug/msm_vidc/core0/info")
+    if "Core state: 0" in encoder_state and (time.monotonic() < 60*2):
+      return False
+    return True
 
 if __name__ == "__main__":
   t = Tici()
