@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import multiprocessing
 import os
 import sys
 import platform
@@ -76,10 +75,7 @@ def process(can, lr):
 def juggle_route(route_or_segment_name, can, layout, dbc=None):
   sr = LogReader(route_or_segment_name)
 
-  with multiprocessing.Pool(24) as pool:
-    all_data = []
-    for p in pool.map(partial(process, can), sr.lrs):
-      all_data.extend(p)
+  all_data = sr.run_across_segments(24, partial(process, can))
 
   # Infer DBC name from logs
   if dbc is None:
