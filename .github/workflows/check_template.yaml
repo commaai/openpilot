@@ -18,7 +18,7 @@ jobs:
             // Comment to add to the PR if no template has been used
             const NO_TEMPLATE_MESSAGE =
               "It looks like you didn't use on of the Pull Request templates. Please check [the contributing docs](https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md).\
-              Please ensure that you didn't modify any of the checkboxes or headings to ensure the detection process works.";
+            Please ensure that you didn't modify any of the checkboxes or headings to ensure the detection process works.";
             // body data for future requests
             const body_data = {
               issue_number: context.issue.number,
@@ -29,10 +29,15 @@ jobs:
             // Utility function to extract all headings
             const extractHeadings = (markdown) => {
               const headingRegex = /^(#{1,6})\s+(.+)$/gm;
+              const boldTextRegex = /^(?:\*\*|__)(.+?)(?:\*\*|__)\s*$/gm;
               const headings = [];
-              let match;
-              while ((match = headingRegex.exec(markdown))) {
-                headings.push(match[2].trim());
+              let headingMatch;
+              while ((headingMatch = headingRegex.exec(markdown))) {
+                headings.push(headingMatch[2].trim());
+              }
+              let boldMatch;
+              while ((boldMatch = boldTextRegex.exec(markdown))) {
+                headings.push(boldMatch[1].trim());
               }
               return headings;
             };
@@ -82,13 +87,14 @@ jobs:
               const decoded_template = atob(template_response.data.content);
               const headings = extractHeadings(decoded_template);
               const checkboxes = extractCheckBoxTexts(decoded_template);
-              if (!headings.length || !checkboxes.length) {
-                throw new Error(
-                  "Invalid template! Could not find any headings or checkboxes in template with content: \n" +
+              if (!headings.length && !checkboxes.length) {
+                console.warn(
+                  "Invalid template! Contains neither headings nor checkboxes, ignoring it: \n" +
                     decoded_template
                 );
+              } else {
+                templates.push({ headings: headings, checkboxes: checkboxes });
               }
-              templates.push({ headings: headings, checkboxes: checkboxes });
             }
             // Retrieve the PR Body
             const pull_request = await github.rest.issues.get({
@@ -103,9 +109,17 @@ jobs:
             */
             const pr_headings = extractHeadings(pull_request_text);
             const pr_checkboxes = extractCheckBoxTexts(pull_request_text);
+            console.debug("Found Headings in PR body:\n" + pr_headings);
+            console.debug("Found Checkboxes in PR body:\n" + pr_checkboxes);
             var template_found = false;
             // Iterate over each template to check if it applies
             for (const template of templates) {
+              console.log(
+                "Checking for headings: [" +
+                  template.headings +
+                  "] and checkboxes: [" +
+                  template.checkboxes + "]"
+              );
               if (
                 isSubset(template.checkboxes, pr_checkboxes) &&
                 isSubset(template.headings, pr_headings)
