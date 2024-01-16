@@ -89,7 +89,7 @@ def parse_slice(sr: SegmentRange):
   s = create_slice_from_string(sr._slice)
   return segs[s] if isinstance(s, slice) else [segs[s]]
 
-def comma_api_source(sr: SegmentRange, mode=ReadMode.RLOG, sort_by_time=False):
+def comma_api_source(sr: SegmentRange, mode=ReadMode.RLOG, **kwargs):
   segs = parse_slice(sr)
   route = Route(sr.route_name)
 
@@ -100,22 +100,22 @@ def comma_api_source(sr: SegmentRange, mode=ReadMode.RLOG, sort_by_time=False):
   assert not len(invalid_segs), f"Some of the requested segments are not available: {invalid_segs}"
 
   for seg in segs:
-    yield _LogFileReader(log_paths[seg], sort_by_time=sort_by_time)
+    yield _LogFileReader(log_paths[seg], **kwargs)
 
-def internal_source(sr: SegmentRange, mode=ReadMode.RLOG, sort_by_time=False):
+def internal_source(sr: SegmentRange, mode=ReadMode.RLOG, **kwargs):
   segs = parse_slice(sr)
 
   for seg in segs:
-    yield _LogFileReader(f"cd:/{sr.dongle_id}/{sr.timestamp}/{seg}/{'rlog' if mode == ReadMode.RLOG else 'qlog'}.bz2", sort_by_time=sort_by_time)
+    yield _LogFileReader(f"cd:/{sr.dongle_id}/{sr.timestamp}/{seg}/{'rlog' if mode == ReadMode.RLOG else 'qlog'}.bz2", **kwargs)
 
-def openpilotci_source(sr: SegmentRange, mode=ReadMode.RLOG, sort_by_time=False):
+def openpilotci_source(sr: SegmentRange, mode=ReadMode.RLOG, **kwargs):
   segs = parse_slice(sr)
 
   for seg in segs:
-    yield _LogFileReader(get_url(sr.route_name, seg, 'rlog' if mode == ReadMode.RLOG else 'qlog'), sort_by_time=sort_by_time)
+    yield _LogFileReader(get_url(sr.route_name, seg, 'rlog' if mode == ReadMode.RLOG else 'qlog'), **kwargs)
 
-def direct_source(file_or_url, sort_by_time):
-  yield _LogFileReader(file_or_url, sort_by_time=sort_by_time)
+def direct_source(file_or_url, **kwargs):
+  yield _LogFileReader(file_or_url, **kwargs)
 
 def auto_source(*args, **kwargs):
   # Automatically determine viable source
@@ -173,13 +173,15 @@ class LogReader:
     mode = self.default_mode if sr.selector is None else ReadMode(sr.selector)
     source = self.default_source if source is None else source
 
-    return source(sr, mode, sort_by_time=self.sort_by_time)
+    return source(sr, mode, sort_by_time=self.sort_by_time, only_union_types=self.only_union_types)
 
-  def __init__(self, identifier: str, default_mode=ReadMode.RLOG, default_source=auto_source, sort_by_time=False):
+  def __init__(self, identifier: str, default_mode=ReadMode.RLOG, default_source=auto_source, sort_by_time=False, only_union_types=False):
     self.default_mode = default_mode
     self.default_source = default_source
-    self.sort_by_time = sort_by_time
     self.identifier = identifier
+
+    self.sort_by_time = sort_by_time
+    self.only_union_types = only_union_types
 
     self.reset()
 
