@@ -9,6 +9,10 @@ inputs:
     description: 'Prefix for caching key'
     required: true
     default: 'scons_x86_64'
+  compile_openpilot:
+    description: 'Whether to compile openpilot'
+    required: false
+    default: 'true'
   is_retried:
     description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
     required: false

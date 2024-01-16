@@ -9,6 +9,10 @@ inputs:
     description: 'Prefix for caching key'
     required: false
     default: 'scons_x86_64'
+  compile_openpilot:
+    description: 'Whether to compile openpilot'
+    required: false
+    default: 'true'
   sleep_time:
     description: 'Time to sleep between retries'
     required: false
@@ -23,6 +27,7 @@ runs:
       with:
         docker_hub_pat: ${{ inputs.docker_hub_pat }}
         cache_key_prefix: ${{ inputs.cache_key_prefix }}
+        compile_openpilot: ${{ inputs.compile_openpilot }}
         is_retried: true
     - if: steps.setup1.outcome == 'failure'
       shell: bash
@@ -34,6 +39,7 @@ runs:
       with:
         docker_hub_pat: ${{ inputs.docker_hub_pat }}
         cache_key_prefix: ${{ inputs.cache_key_prefix }}
+        compile_openpilot: ${{ inputs.compile_openpilot }}
         is_retried: true
     - if: steps.setup2.outcome == 'failure'
       shell: bash
@@ -44,4 +50,5 @@ runs:
       with:
         docker_hub_pat: ${{ inputs.docker_hub_pat }}
         cache_key_prefix: ${{ inputs.cache_key_prefix }}
+        compile_openpilot: ${{ inputs.compile_openpilot }}
         is_retried: true

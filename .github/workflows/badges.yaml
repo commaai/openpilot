@@ -21,9 +21,11 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
+      with:
+        compile_openpilot: true
     - name: Push badges
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/ui/translations/create_badges.py"
+        ${{ env.RUN }} "python selfdrive/ui/translations/create_badges.py"
 
         rm .gitattributes
 

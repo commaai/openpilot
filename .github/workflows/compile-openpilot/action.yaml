@@ -16,6 +16,7 @@ runs:
         ${{ env.RUN }} "release/check-dirty.sh"
     - shell: bash
       name: Cleanup scons cache and rebuild
+      if: github.ref == 'refs/heads/master'
       run: |
           ${{ env.RUN }} "rm -rf /tmp/scons_cache/* && \
                           scons -j$(nproc) --cache-populate"
