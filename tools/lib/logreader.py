@@ -119,13 +119,15 @@ def auto_source(*args):
   # Automatically determine viable source
 
   try:
-    next(internal_source(*args))
+    identifiers = internal_source(*args)
+    _LogFileReader(identifiers[0])
     return internal_source(*args)
   except Exception:
     pass
 
   try:
-    next(openpilotci_source(*args))
+    identifiers = openpilotci_source(*args)
+    _LogFileReader(identifiers[0])
     return openpilotci_source(*args)
   except Exception:
     pass
