@@ -119,7 +119,7 @@ def check_source(source, *args):
     files = internal_source(*args)
     assert all(file_exists(f) for f in files)
     return True, files
-  except AssertionError:
+  except Exception:
     return False, None
 
 def auto_source(*args):
