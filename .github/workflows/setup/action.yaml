@@ -12,7 +12,7 @@ inputs:
   compile_openpilot:
     description: 'Whether to compile openpilot'
     required: false
-    default: 'true'
+    default: 'false'
   is_retried:
     description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
     required: false
@@ -78,5 +78,13 @@ runs:
       with:
         driver: docker-container
     # build our docker image
-    - shell: bash
+    - name: build docker image
+      shell: bash
       run: eval ${{ env.BUILD }}
+
+    - name: compile openpilot
+      if: ${{ inputs.is_retried == 'true' }}
+      uses: ./.github/workflows/compile-openpilot
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 15 || 30) }} # allow more time when we missed the scons cache
+      with:
+        cache_key_prefix: scons_${{ matrix.arch }}
