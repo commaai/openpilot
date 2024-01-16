@@ -6,7 +6,7 @@ from parameterized import parameterized
 
 from openpilot.selfdrive.test.process_replay.regen import regen_segment, DummyFrameReader
 from openpilot.selfdrive.test.process_replay.process_replay import check_openpilot_enabled
-from openpilot.selfdrive.test.openpilotci import get_url
+from openpilot.tools.lib.openpilotci import get_url
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.framereader import FrameReader
 
