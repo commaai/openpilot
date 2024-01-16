@@ -6,6 +6,7 @@ from openpilot.common.retry import retry
 from openpilot.system.assistant.openwakeword import Model
 from openpilot.system.assistant.openwakeword.utils import download_models
 from openpilot.common.params import Params
+from cereal import messaging
 
 
 RATE = 12.5
@@ -24,49 +25,30 @@ class WakeWordListener:
     self.owwModel = Model(wakeword_models=[model_path], melspec_model_path=melspec_model_path, embedding_model_path=embedding_model_path)
     self.n_models = len(self.owwModel.models.keys())
     self.params = Params()
+    self.sm = messaging.SubMaster(['microphone'])
     
     self.detected = False
     self.curr_score = 0
 
   def update(self):
-    print(self.curr_score)
-    if self.detected:
-      print("wake word detected")
-    
-    self.rk.keep_time()
-    return self.detected
-
-  def callback(self, indata, frames, time, status):
-    if status:
-      print(f"Stream error: {status}")
-      return
-    self.raw_sample[:] = indata[:, 0]
-    self.sample_idx+=1
-    self.owwModel.predict(self.raw_sample)
+    self.owwModel.predict(np.frombuffer(self.sm['microphone'].rawSample[0], dtype=np.int16))
     for mdl in self.owwModel.prediction_buffer.keys():
         scores = list(self.owwModel.prediction_buffer[mdl])
-        self.detected = scores[-1] >= 0.5
-        self.curr_score = "{:.20f}".format(abs(scores[-1]))
-
-  @retry(attempts=7, delay=3)
-  def get_stream(self, sd):
-    # reload sounddevice to reinitialize portaudio
-    sd._terminate()
-    sd._initialize()
-    return sd.InputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback, blocksize=SAMPLE_BUFFER, dtype="int16")
+        detected = scores[-1] >= 0.5
+        #curr_score = "{:.20f}".format(abs(scores[-1]))
+    #print(curr_score)
+    #if detected:
+      #print("wake word detected")
+    self.params.put_bool("WakeWordDetected", detected) 
+    
+    return self.detected
 
   def wake_word_listener_thread(self):
-    self.params.put_bool("WakeWordDetected", False)
-    # sounddevice must be imported after forking processes
-    import sounddevice as sd
-    with self.get_stream(sd) as stream:
-      print(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}, {stream.blocksize=}")
-      self.rk = Ratekeeper(RATE)
-      detected = False
-      while not detected:
-        detected = self.update() # just get it one time for now then exit
-    #close sd so google-speech can open
-    self.params.put_bool("WakeWordDetected", True) 
+    while True:
+        self.sm.update(0)
+        if self.sm.updated['microphone']:
+            print(self.sm['microphone'].frameIndex)
+            self.update()
 
 def main():
   model = "alexa_v0.1"
