@@ -1,12 +1,7 @@
 import http.server
-import random
-import requests
+import threading
 import socket
-import time
 from functools import wraps
-from multiprocessing import Process
-
-from openpilot.common.timeout import Timeout
 
 
 class MockResponse:
@@ -101,30 +96,23 @@ class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     self.end_headers()
 
 
-def with_http_server(func):
+def with_http_server(func, handler=http.server.BaseHTTPRequestHandler, setup=None):
   @wraps(func)
   def inner(*args, **kwargs):
-    with Timeout(2, 'HTTP Server did not start'):
-      p = None
-      host = '127.0.0.1'
-      while p is None or p.exitcode is not None:
-        port = random.randrange(40000, 50000)
-        p = Process(target=http.server.test,
-                    kwargs={'port': port, 'HandlerClass': HTTPRequestHandler, 'bind': host})
-        p.start()
-        time.sleep(0.1)
+    host = '127.0.0.1'
+    server = http.server.HTTPServer((host, 0), handler)
+    port = server.server_port
+    t = threading.Thread(target=server.serve_forever)
+    t.start()
 
-    with Timeout(2, 'HTTP Server seeding failed'):
-      while True:
-        try:
-          requests.put(f'http://{host}:{port}/qlog.bz2', data='', timeout=10)
-          break
-        except requests.exceptions.ConnectionError:
-          time.sleep(0.1)
+    if setup is not None:
+      setup(host, port)
 
     try:
       return func(*args, f'http://{host}:{port}', **kwargs)
     finally:
-      p.terminate()
+      server.shutdown()
+      server.server_close()
+      t.join()
 
   return inner
