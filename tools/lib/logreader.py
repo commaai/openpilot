@@ -116,7 +116,7 @@ def direct_source(file_or_url):
 
 def check_source(source, *args):
   try:
-    files = internal_source(*args)
+    files = source(*args)
     assert all(file_exists(f) for f in files)
     return True, files
   except Exception:
