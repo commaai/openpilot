@@ -15,7 +15,7 @@ from typing import Iterable, Iterator, List
 from urllib.parse import parse_qs, urlparse
 
 from cereal import log as capnp_log
-from openpilot.selfdrive.test.openpilotci import get_url
+from openpilot.tools.lib.openpilotci import get_url
 from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.route import Route, SegmentRange
