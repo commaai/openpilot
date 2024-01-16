@@ -41,6 +41,7 @@ jobs:
       issues: write
       pull-requests: write
       actions: read
+    if: github.event.pull_request.head.repo.full_name != 'commaai/openpilot'
     steps:
       - uses: actions/github-script@v7
         with:
