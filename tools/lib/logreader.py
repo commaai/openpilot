@@ -11,7 +11,7 @@ import sys
 import urllib.parse
 import warnings
 
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, List
 from urllib.parse import parse_qs, urlparse
 
 from cereal import log as capnp_log
@@ -161,7 +161,10 @@ def parse_indirect(identifier):
 
 
 class LogReader:
-  def _logreaders_from_identifier(self, identifier):
+  def _logreaders_from_identifier(self, identifier: str | List[str]):
+    if isinstance(identifier, list):
+      return [LogReader(i) for i in identifier]
+
     parsed, source, is_indirect = parse_indirect(identifier)
 
     if not is_indirect:
@@ -175,7 +178,7 @@ class LogReader:
 
     return source(sr, mode, sort_by_time=self.sort_by_time, only_union_types=self.only_union_types)
 
-  def __init__(self, identifier: str, default_mode=ReadMode.RLOG, default_source=auto_source, sort_by_time=False, only_union_types=False):
+  def __init__(self, identifier: str | List[str], default_mode=ReadMode.RLOG, default_source=auto_source, sort_by_time=False, only_union_types=False):
     self.default_mode = default_mode
     self.default_source = default_source
     self.identifier = identifier
