@@ -22,7 +22,7 @@ from openpilot.selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.test.helpers import read_segment_list
-from openpilot.selfdrive.test.openpilotci import get_url
+from openpilot.tools.lib.openpilotci import get_url
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import Route, SegmentName, RouteName
 
