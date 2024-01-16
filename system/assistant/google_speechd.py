@@ -1,12 +1,10 @@
 import os
-import google.cloud.speech as speech
-from openpilot.common.params import Params
-from openpilot.common.retry import retry
 import time
 import numpy as np
-import queue
 
-p = Params()
+import google.cloud.speech as speech
+from openpilot.common.params import Params
+from cereal import messaging
 
 # Google Cloud Speech Client
 try:
@@ -22,8 +20,6 @@ client = speech.SpeechClient()
 RATE = 16000
 CHUNK = 1280  # 100ms
 
-audio_queue = queue.Queue()
-
 # Configure the speech recognition
 streaming_config = speech.StreamingRecognitionConfig(
     config=speech.RecognitionConfig(
@@ -36,42 +32,46 @@ streaming_config = speech.StreamingRecognitionConfig(
     enable_voice_activity_events=False,
 )
 
-def audio_callback(indata, frames, time, status):
-    """This is called for each audio block."""
-    if status:
-        print(f"Stream error: {status}", flush=True)
-    audio_queue.put(indata.copy())
-
 def microphone_stream():
-    from cereal import messaging
-    sm = messaging.SubMaster(['microphone'])
     """Generator that yields audio chunks from the queue."""
+    sm = messaging.SubMaster(['microphone'])
     while True:
         sm.update(0)
         if sm.updated['microphone']:
-            data = np.frombuffer(sm['microphone'].rawSample[0], dtype=np.float32)
-            idx = sm['microphone'].frameIndex
+            data = np.frombuffer(sm['microphone'].rawSample, dtype=np.float32)
+            print(sm['microphone'].frameIndex)
             print("streaming mic")
-            yield np.ndarray.tobytes(data)         
+            yield np.ndarray.tobytes(data)
 
 def listen_print_loop(responses):
     """Processes the streaming responses from Google Speech API."""
     for response in responses:
         for result in response.results:
-            print("Transcript: {}".format(result.alternatives[0].transcript))
+            print(f'Transcript: {result.alternatives[0].transcript}')
             if result.is_final:
-                print("Final transcript: {}".format(result.alternatives[0].transcript))
+                print(f'Final transcript: {result.alternatives[0].transcript}')
                 return result.alternatives[0].transcript
 
-def process_request():
+def process_request(timeout=10):  # timeout in seconds
+    start_time = time.time()
     audio_generator = microphone_stream()
-    #next(audio_generator)  # Prime the generator
-    requests = (speech.StreamingRecognizeRequest(audio_content=chunk) for chunk in audio_generator)
+
+    def timed_audio_generator():
+        """Yields audio chunks with a timeout."""
+        for chunk in audio_generator:
+            current_time = time.time()
+            if current_time - start_time > timeout:
+                print("Timeout reached")
+                break  # Stop yielding
+            yield chunk
+
+    requests = (speech.StreamingRecognizeRequest(audio_content=chunk) for chunk in timed_audio_generator())
     responses = client.streaming_recognize(streaming_config, requests)
-    final_text = listen_print_loop(responses)
-    return final_text
+
+    return listen_print_loop(responses)
 
 if __name__ == "__main__":
+    p = Params()
     while True:  # Continuous outer loop
         while not p.get_bool("WakeWordDetected"):
             time.sleep(.1)

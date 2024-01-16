@@ -68,7 +68,7 @@ class Mic:
     msg.microphone.soundPressureWeightedDb = float(self.sound_pressure_level_weighted)
     self.data_ready_event.wait()
     data = self.raw_sample.copy().tobytes()
-    msg.microphone.rawSample = [data,]
+    msg.microphone.rawSample = data
     
     msg.microphone.frameIndex = self.frame_index
     print(self.frame_index)
