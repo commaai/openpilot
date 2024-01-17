@@ -4,7 +4,7 @@ GITHUB_FOLDER = pathlib.Path(__file__).parent.parent
 
 PULL_REQUEST_TEMPLATES = (GITHUB_FOLDER / "PULL_REQUEST_TEMPLATE")
 
-order = ["fingerprint", "car_bugfix", "bugfix", "car_port", "refactor", "tuning"]
+order = ["fingerprint", "car_bugfix", "bugfix", "car_port", "refactor"]
 
 def create_pull_request_template():
   with open(GITHUB_FOLDER / "pull_request_template.md", "w") as f:
