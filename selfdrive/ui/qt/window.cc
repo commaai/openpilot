@@ -32,6 +32,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   if (!onboardingWindow->completed()) {
     main_layout->setCurrentWidget(onboardingWindow);
   }
+  assistantOverlay = new AssistantOverlay(this);
 
   QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
     if (!offroad) {
