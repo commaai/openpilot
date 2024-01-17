@@ -49,6 +49,7 @@ PROCS = {
   "selfdrive.ui.soundd": 3.5,
   "selfdrive.monitoring.dmonitoringd": 4.0,
   "./proclogd": 1.54,
+  "selfdrive.updated": 1.0,
   "system.logmessaged": 0.2,
   "selfdrive.tombstoned": 0,
   "./logcatd": 0,
