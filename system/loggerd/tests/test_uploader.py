@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import List, Optional
 from openpilot.system.hardware.hw import Paths
 
-import openpilot.system.loggerd.uploader as uploader
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.loggerd.uploader import main, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE
 
