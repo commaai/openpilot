@@ -63,7 +63,7 @@ class WakeWordListener:
       print(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}, {stream.blocksize=}")
       self.rk = Ratekeeper(RATE)
       detected = False
-      while not detected:
+      while True:
         detected = self.update() # just get it one time for now then exit
     #close sd so google-speech can open
     self.params.put_bool("WakeWordDetected", True) 
