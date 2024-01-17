@@ -303,6 +303,11 @@ class Controls:
     elif self.sm['lateralPlan'].laneChangeState in (LaneChangeState.laneChangeStarting,
                                                     LaneChangeState.laneChangeFinishing):
       self.events.add(EventName.laneChange)
+    else:
+      if CS.leftBlindspot:
+        self.events.add(EventName.joystickDebug)
+      if CS.rightBlindspot:
+        self.events.add(EventName.controlsInitializing)
 
     for i, pandaState in enumerate(self.sm['pandaStates']):
       # All pandas must match the list of safetyConfigs, and if outside this list, must be silent or noOutput
