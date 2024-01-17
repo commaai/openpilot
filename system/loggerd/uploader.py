@@ -43,8 +43,6 @@ class FakeResponse:
     self.request = FakeRequest()
 
 
-UploadResponse = Union[requests.Response, FakeResponse]
-
 def get_directory_sort(d: str) -> List[str]:
   return [s.rjust(10, '0') for s in d.rsplit('--', 1)]
 
@@ -74,7 +72,7 @@ class Uploader:
     self.api = Api(dongle_id)
     self.root = root
 
-    self.last_resp: Optional[UploadResponse] = None
+    self.last_resp: Optional[Union[requests.Response, FakeResponse]] = None
     self.last_exc: Optional[Tuple[Exception, str]] = None
 
     # stats for last successfully uploaded file
@@ -153,17 +151,6 @@ class Uploader:
       self.last_exc = (e, traceback.format_exc())
       raise
 
-  def normal_upload(self, key: str, fn: str) -> Optional[UploadResponse]:
-    self.last_resp = None
-    self.last_exc = None
-
-    try:
-      self.do_upload(key, fn)
-    except Exception:
-      pass
-
-    return self.last_resp
-
   def upload(self, name: str, key: str, fn: str, network_type: int, metered: bool) -> bool:
     try:
       sz = os.path.getsize(fn)
@@ -181,7 +168,15 @@ class Uploader:
       success = True
     else:
       start_time = time.monotonic()
-      stat = self.normal_upload(key, fn)
+
+      self.last_resp = None
+      self.last_exc = None
+      try:
+        self.do_upload(key, fn)
+      except Exception:
+        pass
+
+      stat = self.last_resp
       if stat is not None and stat.status_code in (200, 201, 401, 403, 412):
         self.last_filename = fn
         dt = time.monotonic() - start_time
