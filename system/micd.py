@@ -2,12 +2,10 @@
 import numpy as np
 
 from cereal import messaging
-from openpilot.common.realtime import Ratekeeper
 from openpilot.common.retry import retry
 from openpilot.common.swaglog import cloudlog
 import threading
 
-RATE = 12.5
 FFT_SAMPLES = 1280
 REFERENCE_SPL = 2e-5  # newtons/m^2
 SAMPLE_RATE = 16000
@@ -74,7 +72,6 @@ class Mic:
     self.frame_index_last = self.frame_index
     self.pm.send('microphoneRaw', msg)
     self.indata_ready_event.clear()
-    self.rk.monitor_time() # Don't enforce
 
   def callback(self, indata, frames, time, status):
     """
@@ -112,8 +109,6 @@ class Mic:
 
     with self.get_stream(sd) as stream:
       cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}, {stream.blocksize=}")
-      self.indata_ready_event.wait()
-      self.rk = Ratekeeper(RATE)
       while True:
         self.update()
 
