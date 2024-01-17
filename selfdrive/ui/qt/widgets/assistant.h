@@ -23,5 +23,3 @@ private:
 private slots:
     void updateState(const UIState &s);
 };
-
-

@@ -46,8 +46,8 @@ def microphone_stream():
     with get_stream(sd):
         while True:
             data = audio_queue.get()
-            yield np.ndarray.tobytes(data)         
-            
+            yield np.ndarray.tobytes(data)
+
 @retry(attempts=7, delay=3)
 def get_stream(sd):
     # reload sounddevice to reinitialize portaudio

@@ -18,8 +18,8 @@ AssistantOverlay::AssistantOverlay(QWidget *parent) : QLabel(parent) {
     hideAnimation->setDuration(250);
 
     int height = 100; // Fixed height
-    int initialWidth = 0; 
-    int centerX = parentWidget()->width() / 2; 
+    int initialWidth = 0;
+    int centerX = parentWidget()->width() / 2;
     setGeometry(centerX, 0, initialWidth, height);
 
     QObject::connect(uiState(), &UIState::uiUpdate, this, &AssistantOverlay::updateState);
@@ -27,12 +27,12 @@ AssistantOverlay::AssistantOverlay(QWidget *parent) : QLabel(parent) {
 }
 
 void AssistantOverlay::animateShow() {
-    
+
     int parentCenterX = parentWidget()->width() / 2;
     int finalWidth = parentWidget()->width() * 0.5;
     int startX = parentCenterX - finalWidth / 2;
     QRect startRect(parentCenterX, 0, 0, height()); // Centered, zero width
-    QRect endRect(startX, 0, finalWidth, height()); // Adjusted x, final width    
+    QRect endRect(startX, 0, finalWidth, height()); // Adjusted x, final width
     showAnimation->setStartValue(startRect);
     showAnimation->setEndValue(endRect);
     show();
@@ -63,9 +63,3 @@ void AssistantOverlay::updateState(const UIState &s) {
     }
   }
 }
-
-
-
-
-
-
