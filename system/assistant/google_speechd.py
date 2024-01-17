@@ -26,8 +26,9 @@ pm = PubMaster(['speechToText'])
 RATE = SAMPLE_RATE
 CHUNK = SAMPLE_BUFFER
 BUFFERS_PER_SECOND = SAMPLE_RATE/SAMPLE_BUFFER
-TIMEOUT = 10
-audio_queue = Queue(maxsize=BUFFERS_PER_SECOND*TIMEOUT)
+QUEUE_TIME = 10 # Save the first 10 seconds to the queue
+CONNECTION_TIMEOUT = 20 # Connection timeout after 20 seconds
+audio_queue = Queue(maxsize=BUFFERS_PER_SECOND*QUEUE_TIME)
 
 # Configure the speech recognition
 streaming_config = speech.StreamingRecognitionConfig(
@@ -44,6 +45,7 @@ streaming_config = speech.StreamingRecognitionConfig(
 def microphone_data_collector():
     """Thread function for collecting microphone data."""
     sm = SubMaster(['microphoneRaw'])
+    audio_queue.queue.clear()
     while not stop_thread.is_set():
         sm.update(0)
         if sm.updated['microphoneRaw']:
@@ -62,33 +64,31 @@ def microphone_stream():
 
 def listen_print_loop(responses):
     """Processes the streaming responses from Google Speech API."""
-    msg = new_message('speechToText', valid=True)
     for response in responses:
         for result in response.results:
+            msg = new_message('speechToText', valid=True)
             msg.speechToText.result = result.alternatives[0].transcript
-            #print(f'Transcript: {result.alternatives[0].transcript}')
             if result.is_final:
                 msg.speechToText.finalResultReady = True
                 #print(f'Final transcript: {result.alternatives[0].transcript}')
                 pm.send('speechToText', msg)
                 return result.alternatives[0].transcript
             else:
+                #print(f'Transcript: {result.alternatives[0].transcript}')
                 msg.speechToText.finalResultReady = False
                 pm.send('speechToText', msg)
 
 def process_request():
     audio_generator = microphone_stream()
-    max_loops = BUFFERS_PER_SECOND * TIMEOUT
-    loop_count = 0
     start_time = time.time()
 
     def timed_audio_generator():
         """Yields audio chunks with a loop-based and time-based timeout."""
-        nonlocal loop_count  # Use the loop_count from the outer scope
+        loop_count = 0  # Use the loop_count from the outer scope
         for chunk in audio_generator:
             current_time = time.time()
-            if loop_count >= max_loops or current_time - start_time > TIMEOUT:
-                print("Timeout reached")
+            if loop_count >= audio_queue.maxsize or current_time - start_time > CONNECTION_TIMEOUT:
+                print(f'Timeout reached. {loop_count=}, {current_time-start_time=}')
                 break
             yield chunk
             loop_count += 1
