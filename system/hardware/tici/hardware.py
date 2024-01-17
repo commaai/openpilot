@@ -334,10 +334,6 @@ class Tici(HardwareBase):
       pass
     return ret
 
-  def get_usb_present(self):
-    # Not sure if relevant on tici, but the file exists
-    return self.read_param_file("/sys/class/power_supply/usb/present", lambda x: bool(int(x)), False)
-
   def get_current_power_draw(self):
     return (self.read_param_file("/sys/class/hwmon/hwmon1/power1_input", int) / 1e6)
 
