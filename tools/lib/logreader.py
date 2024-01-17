@@ -187,7 +187,6 @@ class LogReader:
     self.reset()
 
   def __iter__(self):
-    self.reset()
     for identifier in self.logreader_identifiers:
       yield from _LogFileReader(identifier)
 
