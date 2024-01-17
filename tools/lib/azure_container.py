@@ -4,6 +4,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import IO, Union
 
+from azure.storage.blob import ContainerClient
+
 TOKEN_PATH = Path("/data/azure_token")
 
 @lru_cache
@@ -17,7 +19,7 @@ def get_azure_credential():
     return AzureCliCredential()
 
 @lru_cache
-def get_container_sas(self, account_name: str, container_name: str):
+def get_container_sas(account_name: str, container_name: str):
   from azure.storage.blob import BlobServiceClient, ContainerSasPermissions, generate_container_sas
   start_time = datetime.utcnow()
   expiry_time = start_time + timedelta(hours=1)
@@ -34,8 +36,9 @@ def get_container_sas(self, account_name: str, container_name: str):
   )
 
 class AzureContainer:
-  ACCOUNT = "commadataci"
-  CONTAINER = None
+  def __init__(self, account, container):
+    self.ACCOUNT = account
+    self.CONTAINER = container
 
   @property
   def ACCOUNT_URL(self):
@@ -45,6 +48,12 @@ class AzureContainer:
   def BASE_URL(self):
     return f"{self.ACCOUNT_URL}/{self.CONTAINER}/"
 
+  @lru_cache
+  def get_client_and_key(self):
+    client = ContainerClient(self.ACCOUNT_URL, self.CONTAINER, credential=get_azure_credential())
+    key = get_container_sas(self.ACCOUNT, self.CONTAINER)
+    return client, key
+
   def get_url(self, route_name: str, segment_num, log_type="rlog") -> str:
     ext = "hevc" if log_type.endswith('camera') else "bz2"
     return self.BASE_URL + f"{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
@@ -52,7 +61,7 @@ class AzureContainer:
   def upload_bytes(self, data: Union[bytes, IO], blob_name: str) -> str:
     from azure.storage.blob import BlobClient
     blob = BlobClient(
-      account_url=self.DATA_CI_ACCOUNT_URL,
+      account_url=self.ACCOUNT_URL,
       container_name=self.CONTAINER,
       blob_name=blob_name,
       credential=get_azure_credential(),
