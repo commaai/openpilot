@@ -13,7 +13,7 @@ def resolve_name(fn):
 def file_exists(fn):
   fn = resolve_name(fn)
   if fn.startswith(("http://", "https://")):
-    return requests.head(fn).status_code == 200
+    return requests.head(fn, allow_redirects=True).status_code == 200
   return os.path.exists(fn)
 
 def FileReader(fn, debug=False):
