@@ -1,6 +1,6 @@
 import pathlib
 
-GITHUB_FOLDER = pathlib.Path(__file__).parent.parent
+GITHUB_FOLDER = pathlib.Path(__file__).parent
 
 PULL_REQUEST_TEMPLATES = (GITHUB_FOLDER / "PULL_REQUEST_TEMPLATE")
 
