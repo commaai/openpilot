@@ -27,11 +27,11 @@ def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) ->
   for file in os.listdir(path):
     if any(re.search(pattern, file) for pattern in exclude_patterns):
       continue
-    DataCIContainer.upload_file(os.path.join(path, file), f"{destpath}/{file}")
+    OpenpilotCIContainer.upload_file(os.path.join(path, file), f"{destpath}/{file}")
 
 
 def sync_to_ci_public(route: str) -> bool:
-  dest_container, dest_key = DataCIContainer.get_client_and_key()
+  dest_container, dest_key = OpenpilotCIContainer.get_client_and_key()
   key_prefix = route.replace('|', '/')
   dongle_id = key_prefix.split('/')[0]
 
