@@ -17,6 +17,8 @@ SOURCES: List[AzureContainer] = [
   DataCIContainer
 ]
 
+DEST = OpenpilotCIContainer
+
 def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) -> None:
   if exclude_patterns is None:
     exclude_patterns = [r'dcamera\.hevc']
@@ -27,11 +29,11 @@ def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) ->
   for file in os.listdir(path):
     if any(re.search(pattern, file) for pattern in exclude_patterns):
       continue
-    OpenpilotCIContainer.upload_file(os.path.join(path, file), f"{destpath}/{file}")
+    DEST.upload_file(os.path.join(path, file), f"{destpath}/{file}")
 
 
 def sync_to_ci_public(route: str) -> bool:
-  dest_container, dest_key = OpenpilotCIContainer.get_client_and_key()
+  dest_container, dest_key = DEST.get_client_and_key()
   key_prefix = route.replace('|', '/')
   dongle_id = key_prefix.split('/')[0]
 
@@ -47,16 +49,14 @@ def sync_to_ci_public(route: str) -> bool:
       "azcopy",
       "copy",
       f"{source_container.BASE_URL}{key_prefix}?{source_key}",
-      f"{OpenpilotCIContainer.BASE_URL}{dongle_id}?{dest_key}",
+      f"{DEST.BASE_URL}{dongle_id}?{dest_key}",
       "--recursive=true",
       "--overwrite=false",
       "--exclude-pattern=*/dcamera.hevc",
     ]
 
-    print(cmd)
-
     try:
-      result = subprocess.call(cmd)
+      result = subprocess.call(cmd, stdout=subprocess.DEVNULL)
       if result == 0:
         print("Success")
         return True
