@@ -78,8 +78,6 @@ class Uploader:
     self.last_exc: Optional[Tuple[Exception, str]] = None
 
     # stats for last successfully uploaded file
-    self.last_time = 0.0
-    self.last_speed = 0.0
     self.last_filename = ""
 
     self.immediate_folders = ["crash/", "boot/"]
@@ -186,15 +184,14 @@ class Uploader:
       stat = self.normal_upload(key, fn)
       if stat is not None and stat.status_code in (200, 201, 401, 403, 412):
         self.last_filename = fn
-        self.last_time = time.monotonic() - start_time
+        dt = time.monotonic() - start_time
         if stat.status_code == 412:
-          self.last_speed = 0
           cloudlog.event("upload_ignored", key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
         else:
           content_length = int(stat.request.headers.get("Content-Length", 0))
-          self.last_speed = (content_length / 1e6) / self.last_time
+          speed = (content_length / 1e6) / dt
           cloudlog.event("upload_success", key=key, fn=fn, sz=sz, content_length=content_length,
-                         network_type=network_type, metered=metered, speed=self.last_speed)
+                         network_type=network_type, metered=metered, speed=speed)
         success = True
       else:
         success = False
@@ -242,9 +239,6 @@ def main(exit_event: Optional[threading.Event] = None) -> None:
     cloudlog.info("uploader missing dongle_id")
     raise Exception("uploader can't start without dongle id")
 
-  if TICI and not Path("/data/media").is_mount():
-    cloudlog.warning("NVME not mounted")
-
   sm = messaging.SubMaster(['deviceState'])
   uploader = Uploader(dongle_id, Paths.log_root())
 
@@ -259,7 +253,6 @@ def main(exit_event: Optional[threading.Event] = None) -> None:
       continue
 
     success = uploader.step(sm['deviceState'].networkType.raw, sm['deviceState'].networkMetered)
-
     if success:
       backoff = 0.1
     elif allow_sleep:
