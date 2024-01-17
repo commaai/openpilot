@@ -92,6 +92,14 @@ class TestLogReader(unittest.TestCase):
 
     self.assertEqual(qlog_len*2, qlog_len_2)
 
+  @pytest.mark.slow
+  def test_multiple_loops(self):
+    lr = LogReader(f"{TEST_ROUTE}/0/q")
+    qlog_len1 = len(list(lr))
+    qlog_len2 = len(list(lr))
+
+    self.assertEqual(qlog_len1, qlog_len2)
+
 
 if __name__ == "__main__":
   unittest.main()
