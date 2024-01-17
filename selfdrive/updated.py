@@ -55,6 +55,17 @@ class WaitTimeHelper:
   def sleep(self, t: float) -> None:
     self.ready_event.wait(timeout=t)
 
+def write_time_to_param(params, param) -> None:
+  t = datetime.datetime.utcnow()
+  params.put(param, t.isoformat().encode('utf8'))
+
+def read_time_from_param(params, param) -> Optional[datetime.datetime]:
+  t = params.get(param, encoding='utf8')
+  try:
+    return datetime.datetime.fromisoformat(t)
+  except (TypeError, ValueError):
+    pass
+  return None
 
 def run(cmd: List[str], cwd: Optional[str] = None) -> str:
   return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
@@ -266,14 +277,11 @@ class Updater:
 
     last_update = datetime.datetime.utcnow()
     if update_success:
-      t = last_update.isoformat()
-      self.params.put("LastUpdateTime", t.encode('utf8'))
+      write_time_to_param(self.params, "LastUpdateTime")
     else:
-      try:
-        t = self.params.get("LastUpdateTime", encoding='utf8')
-        last_update = datetime.datetime.fromisoformat(t)
-      except (TypeError, ValueError):
-        pass
+      t = read_time_from_param(self.params, "LastUpdateTime")
+      if t is not None:
+        last_update = t
 
     if exception is None:
       self.params.remove("LastUpdateException")
@@ -461,7 +469,11 @@ def main() -> None:
       if wait_helper.only_check_for_update:
         cloudlog.info("skipping fetch this cycle")
       else:
-        updater.fetch_update()
+        last_fetch = read_time_from_param(params, "UpdaterLastFetchTime")
+        timed_out = last_fetch is None or (datetime.datetime.utcnow() - last_fetch > datetime.timedelta(days=3))
+        if not params.get_bool("NetworkMetered") or timed_out:
+          updater.fetch_update()
+          write_time_to_param(params, "UpdaterLastFetchTime")
       update_failed_count = 0
     except subprocess.CalledProcessError as e:
       cloudlog.event(
