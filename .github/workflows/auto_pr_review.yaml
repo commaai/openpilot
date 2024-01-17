@@ -89,12 +89,6 @@ jobs:
               return subset.every((item) => superset.includes(item));
             };
 
-            // Add an 'in-bot-review' label while this PR is under review
-            github.rest.issues.addLabels({
-              ...body_data,
-              labels: ["in-bot-review"],
-            });
-
             // Get filenames of all currently checked-in PR templates
             const template_contents = await github.rest.repos.getContent({
               owner: context.repo.owner,
@@ -174,6 +168,12 @@ jobs:
             // Add a comment to the PR that it is not using a the template (but only if this comment does not exist already)
             if (!template_found) {
               var comment_already_sent = false;
+
+              // Add an 'in-bot-review' label since this PR doesn't have the template
+              github.rest.issues.addLabels({
+                ...body_data,
+                labels: ["in-bot-review"],
+              });
 
               if (existing_comments.length < 1) {
                 github.rest.issues.createComment({
