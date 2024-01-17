@@ -209,6 +209,21 @@ class Uploader:
 
     return success
 
+
+  def step(self, network_type: int, metered: bool) -> bool:
+    d = self.next_file_to_upload()
+    if d is None:
+      return True
+
+    name, key, fn = d
+
+    # qlogs and bootlogs need to be compressed before uploading
+    if key.endswith(('qlog', 'rlog')) or (key.startswith('boot/') and not key.endswith('.bz2')):
+      key += ".bz2"
+
+    return self.upload(name, key, fn, network_type, metered)
+
+
 def main(exit_event: Optional[threading.Event] = None) -> None:
   if exit_event is None:
     exit_event = threading.Event()
@@ -243,19 +258,8 @@ def main(exit_event: Optional[threading.Event] = None) -> None:
         time.sleep(60 if offroad else 5)
       continue
 
-    d = uploader.next_file_to_upload()
-    if d is None:  # Nothing to upload
-      if allow_sleep:
-        time.sleep(60 if offroad else 5)
-      continue
+    success = uploader.step(sm['deviceState'].networkType.raw, sm['deviceState'].networkMetered)
 
-    name, key, fn = d
-
-    # qlogs and bootlogs need to be compressed before uploading
-    if key.endswith(('qlog', 'rlog')) or (key.startswith('boot/') and not key.endswith('.bz2')):
-      key += ".bz2"
-
-    success = uploader.upload(name, key, fn, sm['deviceState'].networkType.raw, sm['deviceState'].networkMetered)
     if success:
       backoff = 0.1
     elif allow_sleep:
