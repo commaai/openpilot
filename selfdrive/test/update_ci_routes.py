@@ -46,8 +46,8 @@ def sync_to_ci_public(route: str) -> bool:
     cmd = [
       "azcopy",
       "copy",
-      f"{source_container.BASE_URL}/{key_prefix}?{source_key}",
-      f"{OpenpilotCIContainer.BASE_URL}/{dongle_id}?{dest_key}",
+      f"{source_container.BASE_URL}{key_prefix}?{source_key}",
+      f"{OpenpilotCIContainer.BASE_URL}{dongle_id}?{dest_key}",
       "--recursive=true",
       "--overwrite=false",
       "--exclude-pattern=*/dcamera.hevc",
