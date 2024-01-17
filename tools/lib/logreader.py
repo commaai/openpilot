@@ -17,7 +17,7 @@ from urllib.parse import parse_qs, urlparse
 
 from cereal import log as capnp_log
 from openpilot.tools.lib.openpilotci import get_url
-from openpilot.tools.lib.filereader import FileReader
+from openpilot.tools.lib.filereader import FileReader, file_exists
 from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.route import Route, SegmentRange
 
@@ -84,15 +84,13 @@ def create_slice_from_string(s: str):
     return start
   return slice(start, end, step)
 
-def parse_slice(sr: SegmentRange):
-  route = Route(sr.route_name)
+def parse_slice(sr: SegmentRange, route: Route):
   segs = np.arange(route.max_seg_number+1)
   s = create_slice_from_string(sr._slice)
   return segs[s] if isinstance(s, slice) else [segs[s]]
 
-def comma_api_source(sr: SegmentRange, mode=ReadMode.RLOG):
-  segs = parse_slice(sr)
-  route = Route(sr.route_name)
+def comma_api_source(sr: SegmentRange, route: Route, mode=ReadMode.RLOG):
+  segs = parse_slice(sr, route)
 
   log_paths = route.log_paths() if mode == ReadMode.RLOG else route.qlog_paths()
 
@@ -102,35 +100,33 @@ def comma_api_source(sr: SegmentRange, mode=ReadMode.RLOG):
 
   return [(log_paths[seg]) for seg in segs]
 
-def internal_source(sr: SegmentRange, mode=ReadMode.RLOG):
-  segs = parse_slice(sr)
+def internal_source(sr: SegmentRange, route: Route, mode=ReadMode.RLOG):
+  segs = parse_slice(sr, route)
 
   return [f"cd:/{sr.dongle_id}/{sr.timestamp}/{seg}/{'rlog' if mode == ReadMode.RLOG else 'qlog'}.bz2" for seg in segs]
 
-def openpilotci_source(sr: SegmentRange, mode=ReadMode.RLOG):
-  segs = parse_slice(sr)
+def openpilotci_source(sr: SegmentRange, route: Route, mode=ReadMode.RLOG):
+  segs = parse_slice(sr, route)
 
   return [get_url(sr.route_name, seg, 'rlog' if mode == ReadMode.RLOG else 'qlog') for seg in segs]
 
 def direct_source(file_or_url):
   return [file_or_url]
 
+def check_source(source, *args):
+  try:
+    files = source(*args)
+    assert all(file_exists(f) for f in files)
+    return True, files
+  except Exception:
+    return False, None
+
 def auto_source(*args):
   # Automatically determine viable source
-
-  try:
-    identifiers = internal_source(*args)
-    _LogFileReader(identifiers[0])
-    return internal_source(*args)
-  except Exception:
-    pass
-
-  try:
-    identifiers = openpilotci_source(*args)
-    _LogFileReader(identifiers[0])
-    return openpilotci_source(*args)
-  except Exception:
-    pass
+  for source in [internal_source, openpilotci_source]:
+    valid, ret = check_source(source, *args)
+    if valid:
+      return ret
 
   return comma_api_source(*args)
 
@@ -173,10 +169,11 @@ class LogReader:
         return direct_source(identifier)
 
     sr = SegmentRange(parsed)
+    route = Route(sr.route_name)
     mode = self.default_mode if sr.selector is None else ReadMode(sr.selector)
     source = self.default_source if source is None else source
 
-    return source(sr, mode)
+    return source(sr, route, mode)
 
   def __init__(self, identifier: str | List[str], default_mode=ReadMode.RLOG, default_source=auto_source, sort_by_time=False, only_union_types=False):
     self.default_mode = default_mode
@@ -189,7 +186,6 @@ class LogReader:
     self.reset()
 
   def __iter__(self):
-    self.reset()
     for identifier in self.logreader_identifiers:
       yield from _LogFileReader(identifier)
 
