@@ -209,7 +209,10 @@ class Uploader:
 
     return success
 
-def uploader_fn(exit_event: threading.Event) -> None:
+def main(exit_event: Optional[threading.Event] = None) -> None:
+  if exit_event is None:
+    exit_event = threading.Event()
+
   try:
     set_core_affinity([0, 1, 2, 3])
   except Exception:
@@ -259,10 +262,6 @@ def uploader_fn(exit_event: threading.Event) -> None:
       cloudlog.info("upload backoff %r", backoff)
       time.sleep(backoff + random.uniform(0, backoff))
       backoff = min(backoff*2, 120)
-
-
-def main() -> None:
-  uploader_fn(threading.Event())
 
 
 if __name__ == "__main__":
