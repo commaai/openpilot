@@ -22,7 +22,7 @@ def create_pull_request_template():
       # Remove comments
       text = text.replace("<!-- ", "").replace("-->", "")
 
-      f.write(f"<!-- ***** Template: {template.stem.replace('_', ' ').title()} *****\n")
+      f.write(f"<!--- ***** Template: {template.stem.replace('_', ' ').title()} *****\n")
       f.write(text)
       f.write("\n\n")
       f.write("-->\n\n")

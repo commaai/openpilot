@@ -1,6 +1,6 @@
 <!-- Please copy and paste the relevant template -->
 
-<!-- ***** Template: Fingerprint *****
+<!--- ***** Template: Fingerprint *****
 
 **Car**
 Which car (make, model, year) this fingerprint is for
@@ -10,7 +10,7 @@ A route with the fingerprint
 
 -->
 
-<!-- ***** Template: Car Bugfix *****
+<!--- ***** Template: Car Bugfix *****
 
 **Description**
 
@@ -27,7 +27,7 @@ Route: [a route with the bug fix]
 
 -->
 
-<!-- ***** Template: Bugfix *****
+<!--- ***** Template: Bugfix *****
 
 **Description**
 
@@ -40,7 +40,7 @@ Explain how you tested this bug fix.
 
 -->
 
-<!-- ***** Template: Car Port *****
+<!--- ***** Template: Car Port *****
 
 **Checklist**
 
@@ -53,7 +53,7 @@ Explain how you tested this bug fix.
 
 -->
 
-<!-- ***** Template: Refactor *****
+<!--- ***** Template: Refactor *****
 
 **Description**
 
