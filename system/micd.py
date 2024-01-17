@@ -7,7 +7,7 @@ from openpilot.common.retry import retry
 from openpilot.common.swaglog import cloudlog
 import threading
 
-RATE = 10
+RATE = 12.5
 FFT_SAMPLES = 1280
 REFERENCE_SPL = 2e-5  # newtons/m^2
 SAMPLE_RATE = 16000
@@ -42,7 +42,7 @@ def apply_a_weighting(measurements: np.ndarray) -> np.ndarray:
 
 class Mic:
   def __init__(self):
-    self.rk = Ratekeeper(RATE)
+    
     self.pm = messaging.PubMaster(['microphone', 'microphoneRaw'])
     self.indata_ready_event = threading.Event()
 
@@ -63,14 +63,15 @@ class Mic:
     msg.microphone.soundPressureWeightedDb = float(self.sound_pressure_level_weighted)
     self.pm.send('microphone', msg)
     msg = messaging.new_message('microphoneRaw', valid=True)
+    
+    self.indata_ready_event.wait(.9)
+    msg.microphoneRaw.rawSample =  np.int16(self.raw_sample * 32767).tobytes()
+    msg.microphoneRaw.frameIndex = self.frame_index
     if not (self.frame_index_last == self.frame_index or
             self.frame_index - self.frame_index_last == SAMPLE_BUFFER):
       cloudlog.info(f'skipped {(self.frame_index - self.frame_index_last)//SAMPLE_BUFFER-1} samples')
 
     self.frame_index_last = self.frame_index
-    self.indata_ready_event.wait(.1)
-    msg.microphoneRaw.rawSample =  np.int16(self.raw_sample * 32767).tobytes()
-    msg.microphoneRaw.frameIndex = self.frame_index
     self.pm.send('microphoneRaw', msg)
     self.indata_ready_event.clear()
     self.rk.monitor_time() # Don't enforce
@@ -111,6 +112,8 @@ class Mic:
 
     with self.get_stream(sd) as stream:
       cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}, {stream.blocksize=}")
+      self.indata_ready_event.wait()
+      self.rk = Ratekeeper(RATE)
       while True:
         self.update()
 
