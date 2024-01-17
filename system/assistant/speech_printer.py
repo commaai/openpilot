@@ -3,9 +3,19 @@ from cereal.messaging import SubMaster
 sm = SubMaster(["speechToText"])
 
 while True:
+    navigate = False
+    result: str = ""
     sm.update(0)
     if sm.updated["speechToText"]:
-        if sm["speechToText"].finalResultReady:
-            print(f'Final result: {sm["speechToText"].result}')
+        result = sm["speechToText"].result
+        if not sm["speechToText"].finalResultReady:
+            print(f'Interim result: {result}')
         else:
-            print(f'Interim result: {sm["speechToText"].result}')
+            print(f'Final result: {result}')
+            if "navigate" in result or "directions" in result:
+                navigate = True
+
+    if navigate:
+        address = result.split("to ")[1]
+        print(f'Getting Directions to {address}')
+
