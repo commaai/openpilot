@@ -41,14 +41,13 @@ class AzureContainer:
     self.CONTAINER = container
 
   @property
-  def ACCOUNT_URL(self):
+  def ACCOUNT_URL(self) -> str:
     return f"https://{self.ACCOUNT}.blob.core.windows.net"
 
   @property
-  def BASE_URL(self):
+  def BASE_URL(self) -> str:
     return f"{self.ACCOUNT_URL}/{self.CONTAINER}/"
 
-  @lru_cache
   def get_client_and_key(self):
     client = ContainerClient(self.ACCOUNT_URL, self.CONTAINER, credential=get_azure_credential())
     key = get_container_sas(self.ACCOUNT, self.CONTAINER)
