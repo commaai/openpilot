@@ -77,9 +77,6 @@ class Uploader:
     self.last_resp: Optional[UploadResponse] = None
     self.last_exc: Optional[Tuple[Exception, str]] = None
 
-    self.immediate_size = 0
-    self.immediate_count = 0
-
     # stats for last successfully uploaded file
     self.last_time = 0.0
     self.last_speed = 0.0
@@ -88,17 +85,9 @@ class Uploader:
     self.immediate_folders = ["crash/", "boot/"]
     self.immediate_priority = {"qlog": 0, "qlog.bz2": 0, "qcamera.ts": 1}
 
-  def get_upload_sort(self, name: str) -> int:
-    if name in self.immediate_priority:
-      return self.immediate_priority[name]
-    return 1000
-
   def list_upload_files(self) -> Iterator[Tuple[str, str, str]]:
     if not os.path.isdir(self.root):
       return
-
-    self.immediate_size = 0
-    self.immediate_count = 0
 
     for logname in listdir_by_creation(self.root):
       path = os.path.join(self.root, logname)
@@ -110,7 +99,7 @@ class Uploader:
       if any(name.endswith(".lock") for name in names):
         continue
 
-      for name in sorted(names, key=self.get_upload_sort):
+      for name in sorted(names, key=lambda n: self.immediate_priority.get(n, 1000)):
         key = os.path.join(logname, name)
         fn = os.path.join(path, name)
         # skip files already uploaded
@@ -121,13 +110,6 @@ class Uploader:
           is_uploaded = True  # deleter could have deleted
         if is_uploaded:
           continue
-
-        try:
-          if name in self.immediate_priority:
-            self.immediate_count += 1
-            self.immediate_size += os.path.getsize(fn)
-        except OSError:
-          pass
 
         yield name, key, fn
 
@@ -227,18 +209,25 @@ class Uploader:
 
     return success
 
-  def get_msg(self):
-    msg = messaging.new_message("uploaderState", valid=True)
-    us = msg.uploaderState
-    us.immediateQueueSize = int(self.immediate_size / 1e6)
-    us.immediateQueueCount = self.immediate_count
-    us.lastTime = self.last_time
-    us.lastSpeed = self.last_speed
-    us.lastFilename = self.last_filename
-    return msg
+
+  def step(self, network_type: int, metered: bool) -> bool:
+    d = self.next_file_to_upload()
+    if d is None:
+      return True
+
+    name, key, fn = d
+
+    # qlogs and bootlogs need to be compressed before uploading
+    if key.endswith(('qlog', 'rlog')) or (key.startswith('boot/') and not key.endswith('.bz2')):
+      key += ".bz2"
+
+    return self.upload(name, key, fn, network_type, metered)
 
 
-def uploader_fn(exit_event: threading.Event) -> None:
+def main(exit_event: Optional[threading.Event] = None) -> None:
+  if exit_event is None:
+    exit_event = threading.Event()
+
   try:
     set_core_affinity([0, 1, 2, 3])
   except Exception:
@@ -257,7 +246,6 @@ def uploader_fn(exit_event: threading.Event) -> None:
     cloudlog.warning("NVME not mounted")
 
   sm = messaging.SubMaster(['deviceState'])
-  pm = messaging.PubMaster(['uploaderState'])
   uploader = Uploader(dongle_id, Paths.log_root())
 
   backoff = 0.1
@@ -270,31 +258,14 @@ def uploader_fn(exit_event: threading.Event) -> None:
         time.sleep(60 if offroad else 5)
       continue
 
-    d = uploader.next_file_to_upload()
-    if d is None:  # Nothing to upload
-      if allow_sleep:
-        time.sleep(60 if offroad else 5)
-      continue
+    success = uploader.step(sm['deviceState'].networkType.raw, sm['deviceState'].networkMetered)
 
-    name, key, fn = d
-
-    # qlogs and bootlogs need to be compressed before uploading
-    if key.endswith(('qlog', 'rlog')) or (key.startswith('boot/') and not key.endswith('.bz2')):
-      key += ".bz2"
-
-    success = uploader.upload(name, key, fn, sm['deviceState'].networkType.raw, sm['deviceState'].networkMetered)
     if success:
       backoff = 0.1
     elif allow_sleep:
       cloudlog.info("upload backoff %r", backoff)
       time.sleep(backoff + random.uniform(0, backoff))
       backoff = min(backoff*2, 120)
-
-    pm.send("uploaderState", uploader.get_msg())
-
-
-def main() -> None:
-  uploader_fn(threading.Event())
 
 
 if __name__ == "__main__":
