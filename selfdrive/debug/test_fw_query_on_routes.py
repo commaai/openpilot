@@ -113,7 +113,7 @@ if __name__ == "__main__":
           for version in sorted(car_fw, key=lambda fw: fw.brand):
             subaddr = None if version.subAddress == 0 else hex(version.subAddress)
             print(f"  Brand: {version.brand or UNKNOWN_BRAND:{padding}}, bus: {version.bus} - " +
-                  "(Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}],")
+                  f"(Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}],")
 
           print("Mismatches")
           found = False
