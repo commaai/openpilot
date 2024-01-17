@@ -34,12 +34,12 @@ streaming_config = speech.StreamingRecognitionConfig(
 
 def microphone_stream():
     """Generator that yields audio chunks from the queue."""
-    sm = messaging.SubMaster(['microphone'])
+    sm = messaging.SubMaster(['microphoneRaw'])
     while True:
         sm.update(0)
-        if sm.updated['microphone']:
-            data = np.frombuffer(sm['microphone'].rawSample, dtype=np.float32)
-            print(sm['microphone'].frameIndex)
+        if sm.updated['microphoneRaw']:
+            data = np.frombuffer(sm['microphoneRaw'].rawSample, dtype=np.float32)
+            print(sm['microphoneRaw'].frameIndex)
             print("streaming mic")
             yield np.ndarray.tobytes(data)
 

@@ -21,11 +21,11 @@ class WakeWordListener:
     embedding_model_path = Path(__file__).parent / 'models/embedding_model.onnx'
     self.owwModel = Model(wakeword_models=[model_path], melspec_model_path=melspec_model_path, embedding_model_path=embedding_model_path)
     self.params = Params()
-    self.sm = messaging.SubMaster(['microphone'])
+    self.sm = messaging.SubMaster(['microphoneRaw'])
 
 
   def update(self):
-    self.owwModel.predict(np.frombuffer(self.sm['microphone'].rawSample, dtype=np.int16))
+    self.owwModel.predict(np.frombuffer(self.sm['microphoneRaw'].rawSample, dtype=np.int16))
     for mdl in self.owwModel.prediction_buffer.keys():
         scores = list(self.owwModel.prediction_buffer[mdl])
         detected = scores[-1] >= 0.5
@@ -40,8 +40,8 @@ class WakeWordListener:
   def wake_word_listener_thread(self):
     while True:
         self.sm.update(0)
-        if self.sm.updated['microphone']:
-            print(self.sm['microphone'].frameIndex)
+        if self.sm.updated['microphoneRaw']:
+            print(self.sm['microphoneRaw'].frameIndex)
             self.update()
 
 def main():
