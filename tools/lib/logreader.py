@@ -17,10 +17,9 @@ from urllib.parse import parse_qs, urlparse
 
 from cereal import log as capnp_log
 from openpilot.tools.lib.openpilotci import get_url
-from openpilot.tools.lib.filereader import FileReader
+from openpilot.tools.lib.filereader import FileReader, file_exists
 from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.route import Route, SegmentRange
-from openpilot.tools.lib.filereader import file_exists
 
 LogIterable = Iterable[capnp._DynamicStructReader]
 
