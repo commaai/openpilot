@@ -67,7 +67,7 @@ def listen_print_loop(responses):
 if __name__ == "__main__":
     audio_generator = microphone_stream()
     requests = (speech.StreamingRecognizeRequest(audio_content=chunk) for chunk in audio_generator)
-    while not p.get_bool("WakeWordDetected"):
-        time.sleep(.1)
+    #while not p.get_bool("WakeWordDetected"):
+        #time.sleep(.1)
     responses = client.streaming_recognize(streaming_config, requests)
     listen_print_loop(responses)
