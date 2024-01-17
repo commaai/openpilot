@@ -20,10 +20,11 @@ from websocket._exceptions import WebSocketConnectionClosedException
 
 from cereal import messaging
 
+from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.athena import athenad
 from openpilot.selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
-from openpilot.selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
+from openpilot.selfdrive.athena.tests.helpers import MockWebsocket, MockApi, EchoSocket, with_http_server
 from openpilot.system.hardware.hw import Paths
 from openpilot.selfdrive.athena.tests.helpers import HTTPRequestHandler
 
@@ -45,12 +46,22 @@ class TestAthenadMethods(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     cls.SOCKET_PORT = 45454
-    athenad.Params = MockParams
     athenad.Api = MockApi
     athenad.LOCAL_PORT_WHITELIST = {cls.SOCKET_PORT}
 
   def setUp(self):
-    MockParams.restore_defaults()
+    self.default_params = {
+      "DongleId": "0000000000000000",
+      "GithubSshKeys": b"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC307aE+nuHzTAgaJhzSf5v7ZZQW9gaperjhCmyPyl4PzY7T1mDGenTlVTN7yoVFZ9UfO9oMQqo0n1OwDIiqbIFxqnhrHU0cYfj88rI85m5BEKlNu5RdaVTj1tcbaPpQc5kZEolaI1nDDjzV0lwS7jo5VYDHseiJHlik3HH1SgtdtsuamGR2T80q1SyW+5rHoMOJG73IH2553NnWuikKiuikGHUYBd00K1ilVAK2xSiMWJp55tQfZ0ecr9QjEsJ+J/efL4HqGNXhffxvypCXvbUYAFSddOwXUPo5BTKevpxMtH+2YrkpSjocWA04VnTYFiPG6U4ItKmbLOTFZtPzoez private", # noqa: E501
+      "GithubUsername": b"commaci",
+      "AthenadUploadQueue": '[]',
+    }
+
+    self.params = Params()
+    for k, v in self.default_params.items():
+      self.params.put(k, v)
+    self.params.put_bool("GsmMetered", True)
+
     athenad.upload_queue = queue.Queue()
     athenad.cur_upload_items.clear()
     athenad.cancelled_uploads.clear()
@@ -394,11 +405,11 @@ class TestAthenadMethods(unittest.TestCase):
 
   def test_getSshAuthorizedKeys(self):
     keys = dispatcher["getSshAuthorizedKeys"]()
-    self.assertEqual(keys, MockParams().params["GithubSshKeys"].decode('utf-8'))
+    self.assertEqual(keys, self.default_params["GithubSshKeys"].decode('utf-8'))
 
   def test_getGithubUsername(self):
     keys = dispatcher["getGithubUsername"]()
-    self.assertEqual(keys, MockParams().params["GithubUsername"].decode('utf-8'))
+    self.assertEqual(keys, self.default_params["GithubUsername"].decode('utf-8'))
 
   def test_getVersion(self):
     resp = dispatcher["getVersion"]()

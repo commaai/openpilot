@@ -44,35 +44,6 @@ class MockApi():
     return "fake-token"
 
 
-class MockParams():
-  default_params = {
-    "DongleId": b"0000000000000000",
-    "GithubSshKeys": b"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC307aE+nuHzTAgaJhzSf5v7ZZQW9gaperjhCmyPyl4PzY7T1mDGenTlVTN7yoVFZ9UfO9oMQqo0n1OwDIiqbIFxqnhrHU0cYfj88rI85m5BEKlNu5RdaVTj1tcbaPpQc5kZEolaI1nDDjzV0lwS7jo5VYDHseiJHlik3HH1SgtdtsuamGR2T80q1SyW+5rHoMOJG73IH2553NnWuikKiuikGHUYBd00K1ilVAK2xSiMWJp55tQfZ0ecr9QjEsJ+J/efL4HqGNXhffxvypCXvbUYAFSddOwXUPo5BTKevpxMtH+2YrkpSjocWA04VnTYFiPG6U4ItKmbLOTFZtPzoez private", # noqa: E501
-    "GithubUsername": b"commaci",
-    "GsmMetered": True,
-    "AthenadUploadQueue": '[]',
-  }
-  params = default_params.copy()
-
-  @staticmethod
-  def restore_defaults():
-    MockParams.params = MockParams.default_params.copy()
-
-  def get_bool(self, k):
-    return bool(MockParams.params.get(k))
-
-  def get(self, k, encoding=None):
-    ret = MockParams.params.get(k)
-    if ret is not None and encoding is not None:
-      ret = ret.decode(encoding)
-    return ret
-
-  def put(self, k, v):
-    if k not in MockParams.params:
-      raise KeyError(f"key: {k} not in MockParams")
-    MockParams.params[k] = v
-
-
 class MockWebsocket():
   def __init__(self, recv_queue, send_queue):
     self.recv_queue = recv_queue
