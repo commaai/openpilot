@@ -48,7 +48,7 @@ jobs:
           script: |
             // Comment to add to the PR if no template has been used
             const NO_TEMPLATE_MESSAGE =
-              "It looks like you didn't use on of the Pull Request templates. Please check [the contributing docs](https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md). \
+              "It looks like you didn't use one of the Pull Request templates. Please check [the contributing docs](https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md). \
             Also make sure that you didn't modify any of the checkboxes or headings within the template.";
             // body data for future requests
             const body_data = {
