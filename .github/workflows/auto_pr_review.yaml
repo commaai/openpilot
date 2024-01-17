@@ -193,6 +193,8 @@ jobs:
               github.rest.issues.removeLabel({
                 ...body_data,
                 name: "in-bot-review",
+              }).catch((error) => {
+                console.log("Label 'in-bot-review' not found, ignoring");
               });
             }
 
