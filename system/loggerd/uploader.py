@@ -8,7 +8,7 @@ import requests
 import threading
 import time
 import traceback
-from typing import BinaryIO, Iterator, List, Optional, Tuple, Union
+from typing import BinaryIO, Iterator, List, Optional, Tuple
 
 from cereal import log
 import cereal.messaging as messaging
@@ -70,9 +70,6 @@ class Uploader:
     self.api = Api(dongle_id)
     self.root = root
 
-    self.last_resp: Optional[Union[requests.Response, FakeResponse]] = None
-    self.last_exc: Optional[Tuple[Exception, str]] = None
-
     # stats for last successfully uploaded file
     self.last_filename = ""
 
@@ -100,7 +97,7 @@ class Uploader:
         try:
           is_uploaded = getxattr(fn, UPLOAD_ATTR_NAME) == UPLOAD_ATTR_VALUE
         except OSError:
-          cloudlog.event("uploader_getxattr_failed", exc=self.last_exc, key=key, fn=fn)
+          cloudlog.event("uploader_getxattr_failed", key=key, fn=fn)
           is_uploaded = True  # deleter could have deleted
         if is_uploaded:
           continue
@@ -120,34 +117,28 @@ class Uploader:
 
     return None
 
-  def do_upload(self, key: str, fn: str) -> None:
-    try:
-      url_resp = self.api.get("v1.4/" + self.dongle_id + "/upload_url/", timeout=10, path=key, access_token=self.api.get_token())
-      if url_resp.status_code == 412:
-        self.last_resp = url_resp
-        return
+  def do_upload(self, key: str, fn: str):
+    url_resp = self.api.get("v1.4/" + self.dongle_id + "/upload_url/", timeout=10, path=key, access_token=self.api.get_token())
+    if url_resp.status_code == 412:
+      return url_resp
 
-      url_resp_json = json.loads(url_resp.text)
-      url = url_resp_json['url']
-      headers = url_resp_json['headers']
-      cloudlog.debug("upload_url v1.4 %s %s", url, str(headers))
+    url_resp_json = json.loads(url_resp.text)
+    url = url_resp_json['url']
+    headers = url_resp_json['headers']
+    cloudlog.debug("upload_url v1.4 %s %s", url, str(headers))
 
-      if fake_upload:
-        cloudlog.debug(f"*** WARNING, THIS IS A FAKE UPLOAD TO {url} ***")
-        self.last_resp = FakeResponse()
+    if fake_upload:
+      return FakeResponse()
+
+    with open(fn, "rb") as f:
+      data: BinaryIO
+      if key.endswith('.bz2') and not fn.endswith('.bz2'):
+        compressed = bz2.compress(f.read())
+        data = io.BytesIO(compressed)
       else:
-        with open(fn, "rb") as f:
-          data: BinaryIO
-          if key.endswith('.bz2') and not fn.endswith('.bz2'):
-            compressed = bz2.compress(f.read())
-            data = io.BytesIO(compressed)
-          else:
-            data = f
+        data = f
 
-          self.last_resp = requests.put(url, data=data, headers=headers, timeout=10)
-    except Exception as e:
-      self.last_exc = (e, traceback.format_exc())
-      raise
+      return requests.put(url, data=data, headers=headers, timeout=10)
 
   def upload(self, name: str, key: str, fn: str, network_type: int, metered: bool) -> bool:
     try:
@@ -167,14 +158,13 @@ class Uploader:
     else:
       start_time = time.monotonic()
 
-      self.last_resp = None
-      self.last_exc = None
+      stat = None
+      last_exc = None
       try:
-        self.do_upload(key, fn)
-      except Exception:
-        pass
+        stat = self.do_upload(key, fn)
+      except Exception as e:
+        last_exc = (e, traceback.format_exc())
 
-      stat = self.last_resp
       if stat is not None and stat.status_code in (200, 201, 401, 403, 412):
         self.last_filename = fn
         dt = time.monotonic() - start_time
@@ -188,14 +178,14 @@ class Uploader:
         success = True
       else:
         success = False
-        cloudlog.event("upload_failed", stat=stat, exc=self.last_exc, key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
+        cloudlog.event("upload_failed", stat=stat, exc=last_exc, key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
 
     if success:
       # tag file as uploaded
       try:
         setxattr(fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE)
       except OSError:
-        cloudlog.event("uploader_setxattr_failed", exc=self.last_exc, key=key, fn=fn, sz=sz)
+        cloudlog.event("uploader_setxattr_failed", exc=last_exc, key=key, fn=fn, sz=sz)
 
     return success
 
