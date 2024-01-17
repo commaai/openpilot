@@ -2,10 +2,11 @@ import shutil
 import tempfile
 import numpy as np
 import unittest
+import pytest
 from parameterized import parameterized
 import requests
 from openpilot.tools.lib.logreader import LogReader, parse_indirect, parse_slice, ReadMode
-from openpilot.tools.lib.route import SegmentRange
+from openpilot.tools.lib.route import Route, SegmentRange
 
 NUM_SEGS = 17 # number of segments in the test route
 ALL_SEGS = list(np.arange(NUM_SEGS))
@@ -41,7 +42,8 @@ class TestLogReader(unittest.TestCase):
   def test_indirect_parsing(self, identifier, expected):
     parsed, _, _ = parse_indirect(identifier)
     sr = SegmentRange(parsed)
-    segs = parse_slice(sr)
+    route = Route(sr.route_name)
+    segs = parse_slice(sr, route)
     self.assertListEqual(list(segs), expected)
 
   def test_direct_parsing(self):
@@ -69,19 +71,34 @@ class TestLogReader(unittest.TestCase):
       sr = SegmentRange(segment_range)
       parse_slice(sr)
 
-  @unittest.skip("this test is too slow for the minimal coverage it provides")
+  @pytest.mark.slow
   def test_modes(self):
     qlog_len = len(list(LogReader(f"{TEST_ROUTE}/0", ReadMode.QLOG)))
     rlog_len = len(list(LogReader(f"{TEST_ROUTE}/0", ReadMode.RLOG)))
 
     self.assertLess(qlog_len * 6, rlog_len)
 
-  @unittest.skip("this test is too slow for the minimal coverage it provides")
+  @pytest.mark.slow
   def test_modes_from_name(self):
     qlog_len = len(list(LogReader(f"{TEST_ROUTE}/0/q")))
     rlog_len = len(list(LogReader(f"{TEST_ROUTE}/0/r")))
 
     self.assertLess(qlog_len * 6, rlog_len)
+
+  @pytest.mark.slow
+  def test_list(self):
+    qlog_len = len(list(LogReader(f"{TEST_ROUTE}/0/q")))
+    qlog_len_2 = len(list(LogReader([f"{TEST_ROUTE}/0/q", f"{TEST_ROUTE}/0/q"])))
+
+    self.assertEqual(qlog_len*2, qlog_len_2)
+
+  @pytest.mark.slow
+  def test_multiple_iterations(self):
+    lr = LogReader(f"{TEST_ROUTE}/0/q")
+    qlog_len1 = len(list(lr))
+    qlog_len2 = len(list(lr))
+
+    self.assertEqual(qlog_len1, qlog_len2)
 
 
 if __name__ == "__main__":

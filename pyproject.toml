@@ -88,8 +88,8 @@ json-rpc = "*"
 libusb1 = "*"
 numpy = "*"
 onnx = ">=1.14.0"
-onnxruntime = { version = ">=1.15.1", platform = "linux", markers = "platform_machine == 'aarch64'" }
-onnxruntime-gpu = { version = ">=1.15.1", platform = "linux", markers = "platform_machine == 'x86_64'" }
+onnxruntime = { version = ">=1.16.3", platform = "linux", markers = "platform_machine == 'aarch64'" }
+onnxruntime-gpu = { version = ">=1.16.3", platform = "linux", markers = "platform_machine == 'x86_64'" }
 psutil = "*"
 pyaudio = "*"
 pycapnp = "*"
