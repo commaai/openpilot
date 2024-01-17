@@ -14,7 +14,7 @@ class WakeWordListener:
     model_path = Path(__file__).parent / f'models/{model}.onnx'
     melspec_model_path = Path(__file__).parent / 'models/melspectrogram.onnx'
     embedding_model_path = Path(__file__).parent / 'models/embedding_model.onnx'
-    self.owwModel = Model(wakeword_models=[model_path], melspec_model_path=melspec_model_path, embedding_model_path=embedding_model_path, chunk_size=SAMPLE_BUFFER, sr=SAMPLE_RATE)
+    self.owwModel = Model(wakeword_models=[model_path], melspec_model_path=melspec_model_path, embedding_model_path=embedding_model_path, sr=SAMPLE_RATE)
 
     self.sm = messaging.SubMaster(['microphoneRaw'])
     self.params = Params()
@@ -29,6 +29,8 @@ class WakeWordListener:
     if not (self.frame_index_last == self.frame_index or
             self.frame_index - self.frame_index_last == SAMPLE_BUFFER):
       print(f'skipped {(self.frame_index - self.frame_index_last)//SAMPLE_BUFFER-1} sample(s)')
+    if self.frame_index_last == self.frame_index:
+      print("got the same frame")
     self.frame_index_last = self.frame_index
     sample = np.frombuffer(self.sm['microphoneRaw'].rawSample, dtype=np.int16)
     self.owwModel.predict(sample)
