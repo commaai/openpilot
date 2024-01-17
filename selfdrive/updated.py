@@ -57,10 +57,13 @@ class WaitTimeHelper:
 
 
 def run(cmd: List[str], cwd: Optional[str] = None) -> str:
-  s = "systemd-run --user --scope"
-  s += " -p CPUQuota=50% -p AllowedCPUs=0,1"
-  s += " -p MemoryMax=200M -p MemorySwapMax=300M"
-  return subprocess.check_output(s + " " + cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
+  c = [
+    "systemd-run", "--user", "--scope",
+    "-p", "CPUQuota=50%",
+    "-p", "MemoryMax=200M",
+    "-p", "AllowedCPUs=0,1"
+  ] + cmd
+  return subprocess.check_output(c, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
 
 
 def set_consistent_flag(consistent: bool) -> None:
