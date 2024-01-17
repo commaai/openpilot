@@ -5,6 +5,7 @@ import numpy as np
 import google.cloud.speech as speech
 from openpilot.common.params import Params
 from cereal import messaging
+from openpilot.system.micd import SAMPLE_BUFFER, SAMPLE_RATE
 
 # Google Cloud Speech Client
 try:
@@ -17,8 +18,8 @@ except:
 client = speech.SpeechClient()
 
 # Audio recording parameters
-RATE = 16000
-CHUNK = 1280  # 100ms
+RATE = SAMPLE_RATE
+CHUNK = SAMPLE_BUFFER
 
 # Configure the speech recognition
 streaming_config = speech.StreamingRecognitionConfig(
@@ -38,7 +39,7 @@ def microphone_stream():
     while True:
         sm.update(0)
         if sm.updated['microphoneRaw']:
-            data = np.frombuffer(sm['microphoneRaw'].rawSample, dtype=np.float32)
+            data = np.frombuffer(sm['microphoneRaw'].rawSample, dtype=np.int16)
             print(sm['microphoneRaw'].frameIndex)
             print("streaming mic")
             yield np.ndarray.tobytes(data)
