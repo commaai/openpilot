@@ -549,8 +549,15 @@ FW_VERSIONS = {
       b'57114-T1W-A240\x00\x00',
       b'57114-TFF-A940\x00\x00',
     ],
+    (Ecu.eps, 0x18da30f1, None): [
+      b'39990-TLA-A220\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x18dab5f1, None): [
+      b'36161-TNY-A030\x00\x00',
+    ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-T0A-A230\x00\x00',
+      b'77959-TLA-A420\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-T1W-A210\x00\x00',
@@ -561,6 +568,7 @@ FW_VERSIONS = {
       b'36161-T1W-A830\x00\x00',
       b'36161-T1W-C830\x00\x00',
       b'36161-T1X-A830\x00\x00',
+      b'36802-TNY-A030\x00\x00',
     ],
   },
   CAR.CRV_5G: {
