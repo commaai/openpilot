@@ -199,7 +199,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"UbloxAvailable", PERSISTENT},
     {"UpdateAvailable", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"UpdateFailedCount", CLEAR_ON_MANAGER_START},
-    {"UpdaterAvailableBranches", CLEAR_ON_MANAGER_START},
+    {"UpdaterAvailableBranches", PERSISTENT},
     {"UpdaterCurrentDescription", CLEAR_ON_MANAGER_START},
     {"UpdaterCurrentReleaseNotes", CLEAR_ON_MANAGER_START},
     {"UpdaterFetchAvailable", CLEAR_ON_MANAGER_START},

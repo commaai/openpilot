@@ -66,6 +66,26 @@
         <source>Prevent large data uploads when on a metered connection</source>
         <translation>Éviter les transferts de données importants sur une connexion limitée</translation>
     </message>
+    <message>
+        <source>Hidden Network</source>
+        <translation>Réseau Caché</translation>
+    </message>
+    <message>
+        <source>CONNECT</source>
+        <translation>CONNECTER</translation>
+    </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation>Entrer le SSID</translation>
+    </message>
+    <message>
+        <source>Enter password</source>
+        <translation>Entrer le mot de passe</translation>
+    </message>
+    <message>
+        <source>for &quot;%1&quot;</source>
+        <translation>pour &quot;%1&quot;</translation>
+    </message>
 </context>
 <context>
     <name>AnnotatedCameraWidget</name>
