@@ -8,7 +8,6 @@ import requests
 import threading
 import time
 import traceback
-from pathlib import Path
 from typing import BinaryIO, Iterator, List, Optional, Tuple, Union
 
 from cereal import log
@@ -16,7 +15,6 @@ import cereal.messaging as messaging
 from openpilot.common.api import Api
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
-from openpilot.system.hardware import TICI
 from openpilot.system.hardware.hw import Paths
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
