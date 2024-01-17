@@ -206,9 +206,6 @@ class Tici(HardwareBase):
         'data_connected': modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT) == MM_MODEM_STATE.CONNECTED,
       }
 
-  def get_subscriber_info(self):
-    return ""
-
   def get_imei(self, slot):
     if slot != 0:
       return ""
@@ -336,10 +333,6 @@ class Tici(HardwareBase):
     except Exception:
       pass
     return ret
-
-  def get_usb_present(self):
-    # Not sure if relevant on tici, but the file exists
-    return self.read_param_file("/sys/class/power_supply/usb/present", lambda x: bool(int(x)), False)
 
   def get_current_power_draw(self):
     return (self.read_param_file("/sys/class/hwmon/hwmon1/power1_input", int) / 1e6)

@@ -55,10 +55,6 @@ class HardwareBase(ABC):
     pass
 
   @abstractmethod
-  def get_subscriber_info(self):
-    pass
-
-  @abstractmethod
   def get_network_info(self):
     pass
 
