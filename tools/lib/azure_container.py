@@ -4,7 +4,6 @@ from functools import lru_cache
 from pathlib import Path
 from typing import IO, Union
 
-from azure.storage.blob import ContainerClient
 
 TOKEN_PATH = Path("/data/azure_token")
 
@@ -49,6 +48,7 @@ class AzureContainer:
     return f"{self.ACCOUNT_URL}/{self.CONTAINER}/"
 
   def get_client_and_key(self):
+    from azure.storage.blob import ContainerClient
     client = ContainerClient(self.ACCOUNT_URL, self.CONTAINER, credential=get_azure_credential())
     key = get_container_sas(self.ACCOUNT, self.CONTAINER)
     return client, key
