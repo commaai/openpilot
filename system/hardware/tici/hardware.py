@@ -206,9 +206,6 @@ class Tici(HardwareBase):
         'data_connected': modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT) == MM_MODEM_STATE.CONNECTED,
       }
 
-  def get_subscriber_info(self):
-    return ""
-
   def get_imei(self, slot):
     if slot != 0:
       return ""
