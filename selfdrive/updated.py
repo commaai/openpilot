@@ -35,21 +35,26 @@ OVERLAY_INIT = Path(os.path.join(BASEDIR, ".overlay_init"))
 DAYS_NO_CONNECTIVITY_MAX = 14     # do not allow to engage after this many days
 DAYS_NO_CONNECTIVITY_PROMPT = 10  # send an offroad prompt after this many days
 
+class UserRequest:
+  NONE = 0
+  CHECK = 1
+  FETCH = 2
+
 class WaitTimeHelper:
   def __init__(self):
     self.ready_event = threading.Event()
-    self.only_check_for_update = False
+    self.user_request = UserRequest.NONE
     signal.signal(signal.SIGHUP, self.update_now)
     signal.signal(signal.SIGUSR1, self.check_now)
 
   def update_now(self, signum: int, frame) -> None:
     cloudlog.info("caught SIGHUP, attempting to downloading update")
-    self.only_check_for_update = False
+    self.user_request = UserRequest.FETCH
     self.ready_event.set()
 
   def check_now(self, signum: int, frame) -> None:
     cloudlog.info("caught SIGUSR1, checking for updates")
-    self.only_check_for_update = True
+    self.user_request = UserRequest.CHECK
     self.ready_event.set()
 
   def sleep(self, t: float) -> None:
@@ -429,10 +434,7 @@ def main() -> None:
 
   updater = Updater()
   update_failed_count = 0 # TODO: Load from param?
-
-  # no fetch on the first time
   wait_helper = WaitTimeHelper()
-  wait_helper.only_check_for_update = True
 
   # invalidate old finalized update
   set_consistent_flag(False)
@@ -466,14 +468,16 @@ def main() -> None:
       updater.check_for_update()
 
       # download update
-      if wait_helper.only_check_for_update:
-        cloudlog.info("skipping fetch this cycle")
+      last_fetch = read_time_from_param(params, "UpdaterLastFetchTime")
+      timed_out = last_fetch is None or (datetime.datetime.utcnow() - last_fetch > datetime.timedelta(days=3))
+      user_requested_fetch = wait_helper.user_request == UserRequest.FETCH
+      if params.get_bool("NetworkMetered") and not timed_out and not user_requested_fetch:
+        cloudlog.info("skipping fetch, connection metered")
+      elif wait_helper.user_request == UserRequest.CHECK:
+        cloudlog.info("skipping fetch, only checking")
       else:
-        last_fetch = read_time_from_param(params, "UpdaterLastFetchTime")
-        timed_out = last_fetch is None or (datetime.datetime.utcnow() - last_fetch > datetime.timedelta(days=3))
-        if not params.get_bool("NetworkMetered") or timed_out:
-          updater.fetch_update()
-          write_time_to_param(params, "UpdaterLastFetchTime")
+        updater.fetch_update()
+        write_time_to_param(params, "UpdaterLastFetchTime")
       update_failed_count = 0
     except subprocess.CalledProcessError as e:
       cloudlog.event(
@@ -497,7 +501,7 @@ def main() -> None:
       cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
 
     # infrequent attempts if we successfully updated recently
-    wait_helper.only_check_for_update = False
+    wait_helper.user_request = UserRequest.NONE
     wait_helper.sleep(5*60 if update_failed_count > 0 else 1.5*60*60)
 
 
