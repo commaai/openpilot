@@ -436,13 +436,15 @@ def cancelUpload(upload_id: Union[str, List[str]]) -> Dict[str, Union[int, str]]
 def setRouteViewed(route: str) -> Dict[str, Union[int, str]]:
   # maintain a list of the last 10 routes viewed in connect
   params = Params()
+
   r = params.get("AthenadRecentlyViewedRoutes", encoding="utf8")
   routes = [] if r is None else r.split(",")
-
   routes.append(route)
-  params.put("AthenadRecentlyViewedRoutes", ",".join(routes[-10:]))
-  print(route, routes)
 
+  # remove duplicates
+  routes = list(dict.fromkeys(routes))
+
+  params.put("AthenadRecentlyViewedRoutes", ",".join(routes[-10:]))
   return {"success": 1}
 
 
