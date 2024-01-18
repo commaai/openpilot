@@ -5,21 +5,24 @@
 #include <QPropertyAnimation>
 
 class AssistantOverlay : public QLabel {
-    Q_OBJECT
+  Q_OBJECT
 
 public:
-    explicit AssistantOverlay(QWidget *parent = nullptr);
-
-    void updateText(const QString &newText);
-    void animateShow();
-    void animateHide();
+  explicit AssistantOverlay(QWidget *parent = nullptr);
+  
+  void updateText(const QString &newText);
+  void animateShow();
+  void animateHide();
 
 private:
-    QTimer *updateTimer;
-    QPropertyAnimation *showAnimation;
-    QPropertyAnimation *hideAnimation;
-
-
+  QTimer *hideTimer;
+  QPropertyAnimation *showAnimation;
+  QPropertyAnimation *hideAnimation;
+  int parentCenterX;
+  int finalWidth;
+  int startX;
+  
 private slots:
-    void updateState(const UIState &s);
+  void updateState(const UIState &s);
+
 };

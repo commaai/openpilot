@@ -69,6 +69,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 void MainWindow::openSettings(int index, const QString &param) {
   main_layout->setCurrentWidget(settingsWindow);
   settingsWindow->setCurrentPanel(index, param);
+  assistantOverlay->raise();
 }
 
 void MainWindow::closeSettings() {
@@ -81,6 +82,7 @@ void MainWindow::closeSettings() {
       homeWindow->showMapPanel(true);
     }
   }
+  assistantOverlay->raise();
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
