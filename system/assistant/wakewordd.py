@@ -47,7 +47,6 @@ class WakeWordListener:
     while True:
         self.sm.update(0)
         if self.sm.updated['microphoneRaw']:
-            print(self.sm['microphoneRaw'].frameIndex)
             self.update()
 
 def main():
