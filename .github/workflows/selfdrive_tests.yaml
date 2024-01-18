@@ -182,11 +182,6 @@ jobs:
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         ./selfdrive/ui/tests/test_translations.py"
-    - name: Breakpoint if tests failed
-      if: failure()
-      uses: namespacelabs/breakpoint-action@v0
-      with:
-        duration: 30m
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
       with:
