@@ -83,7 +83,7 @@ class Uploader:
     self.immediate_priority = {"qlog": 0, "qlog.bz2": 0, "qcamera.ts": 1}
 
   def list_upload_files(self, metered: bool) -> Iterator[Tuple[str, str, str]]:
-    r = self.params.get("AthenadRoutesViewed")
+    r = self.params.get("AthenadRoutesViewed", encoding='utf8')
     requested_routes = [] if r is None else r.split(",")
 
     for logdir in listdir_by_creation(self.root):
