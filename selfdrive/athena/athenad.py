@@ -432,6 +432,17 @@ def cancelUpload(upload_id: Union[str, List[str]]) -> Dict[str, Union[int, str]]
   cancelled_uploads.update(cancelled_ids)
   return {"success": 1}
 
+@dispatcher.add_method
+def requestQcamUpload(route: str) -> Dict[str, Union[int, str]]:
+  params = Params()
+  r = params.get("AthenadQcamUploadRequests")
+  routes = [] if r is None else r.split(",")
+
+  routes.append(route)
+  params.put("AthenadQcamUploadRequests", ','.join(routes[-10:]))
+
+  return {"success": 1}
+
 
 def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local_port: int) -> Dict[str, int]:
   try:
