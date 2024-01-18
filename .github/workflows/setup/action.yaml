@@ -44,7 +44,7 @@ runs:
     - shell: bash
       run: echo "$CACHE_COMMIT_DATE"
     - id: scons-cache
-      uses: jnewb1/namespace-utils/auto-cache.yaml@main
+      uses: jnewb1/namespace-utils/auto-cache@main
       with:
         path: .ci_cache/scons_cache
     # if we didn't get a cache hit, make the directory manually so it doesn't fail on future steps
