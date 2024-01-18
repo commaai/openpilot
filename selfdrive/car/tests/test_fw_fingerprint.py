@@ -174,7 +174,7 @@ class TestFwFingerprint(unittest.TestCase):
 
 
 class TestFwFingerprintTiming(unittest.TestCase):
-  N: int = 1
+  N: int = 5
   TOL: float = 0.05
 
   # for patched functions
