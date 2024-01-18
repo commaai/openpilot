@@ -179,22 +179,6 @@ class TestFwFingerprintTiming(unittest.TestCase):
   N: int = 1
   TOL: float = 0.05
 
-  @staticmethod
-  def _run_thread(thread: threading.Thread) -> float:
-    # params = Params()
-    # params.put_bool("ObdMultiplexingEnabled", True)
-    thread.start()
-    # print('is running', thread.is_alive())
-    t = time.perf_counter()
-    # time.sleep(0.5)
-    while thread.is_alive():
-      time.sleep(0.001)
-      # if not params.get_bool("ObdMultiplexingChanged"):
-      #   params.put_bool("ObdMultiplexingChanged", True)
-    # # thread.join()
-    # # del thread
-    return time.perf_counter() - t
-
   def _benchmark_brand(self, brand, num_pandas):
     def fake_get_data(_, timeout):
       nonlocal brand_time
@@ -230,53 +214,72 @@ class TestFwFingerprintTiming(unittest.TestCase):
   def test_startup_timing(self):
     # Tests worse-case VIN query time and typical present ECU query time
     vin_ref_time = 1.0
-    present_ecu_ref_time = 0.8
+    present_ecu_ref_time = 0.75
+
+    def fake_get_ecu_addrs(*_, timeout):
+      nonlocal present_ecu_time
+      present_ecu_time += timeout
+      return set()
+
+    def fake_set_obd_multiplexing(_, obd_multiplexing):
+      """The 10Hz blocking params loop adds on average 50ms to the query time for each OBD multiplexing change"""
+      nonlocal current_obd_multiplexing
+      nonlocal present_ecu_time
+      if obd_multiplexing != current_obd_multiplexing:
+        current_obd_multiplexing = obd_multiplexing
+        present_ecu_time += 0.1 / 2
+
+    def fake_get_data(_, timeout):
+      nonlocal vin_time
+      vin_time += timeout
+      return {}
 
     fake_socket = FakeSocket()
-    present_ecu_time = 0.0
-    for _ in range(self.N):
-      thread = threading.Thread(target=get_present_ecus, args=(fake_socket, fake_socket),
-                                kwargs=dict(num_pandas=2))
-      present_ecu_time += self._run_thread(thread)
-    self._assert_timing(present_ecu_time / self.N, present_ecu_ref_time)
-    print(f'get_present_ecus, query time={present_ecu_time / self.N} seconds')
+    with (mock.patch("openpilot.selfdrive.car.fw_versions.set_obd_multiplexing", fake_set_obd_multiplexing),
+          mock.patch("openpilot.selfdrive.car.fw_versions.get_ecu_addrs", fake_get_ecu_addrs)):
+      present_ecu_time = 0.0
+      for _ in range(self.N):
+        current_obd_multiplexing = True
+        get_present_ecus(fake_socket, fake_socket, num_pandas=2)
+      self._assert_timing(present_ecu_time / self.N, present_ecu_ref_time)
+      print(f'get_present_ecus, query time={present_ecu_time / self.N} seconds')
 
-    vin_time = 0.0
-    for _ in range(self.N):
-      thread = threading.Thread(target=get_vin, args=(fake_socket, fake_socket, 1))
-      vin_time += self._run_thread(thread)
-    self._assert_timing(vin_time / self.N, vin_ref_time)
-    print(f'get_vin, query time={vin_time / self.N} seconds')
+    with (mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", fake_get_data)):
+      vin_time = 0.0
+      for _ in range(self.N):
+        get_vin(fake_socket, fake_socket, 1)
+      self._assert_timing(vin_time / self.N, vin_ref_time)
+      print(f'get_vin, query time={vin_time / self.N} seconds')
 
   @pytest.mark.timeout(60)
   def test_fw_query_timing(self):
     total_ref_time = 6.58
     brand_ref_times = {
       1: {
-        'body': 0.11,
+        'body': 0.1,
         'chrysler': 0.3,
         'ford': 0.2,
-        'honda': 0.52,
-        'hyundai': 0.72,
+        'honda': 0.45,
+        'hyundai': 0.65,
         'mazda': 0.2,
         'nissan': 0.4,
-        'subaru': 0.52,
+        'subaru': 0.45,
         'tesla': 0.2,
         'toyota': 1.6,
         'volkswagen': 0.2,
       },
       2: {
         'ford': 0.3,
-        'hyundai': 1.12,
+        'hyundai': 1.05,
       }
     }
 
     total_time = 0
     for num_pandas in (1, 2):
       for brand, config in FW_QUERY_CONFIGS.items():
-        if brand not in ('subaru', 'body'):
-          continue
-        print(f'\nbenchmarking brand {brand.upper()}:'.upper())
+        # if brand not in ('subaru', 'body'):
+        #   continue
+        # print(f'\nbenchmarking brand {brand.upper()}:'.upper())
         with self.subTest(brand=brand, num_pandas=num_pandas):
           multi_panda_requests = [r for r in config.requests if r.bus > 3]
           if not len(multi_panda_requests) and num_pandas > 1:
@@ -284,8 +287,8 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
           avg_time = self._benchmark_brand(brand, num_pandas)
           total_time += avg_time
-          # avg_time = round(avg_time, 2)
-          # self._assert_timing(avg_time, brand_ref_times[num_pandas][brand])
+          avg_time = round(avg_time, 2)
+          self._assert_timing(avg_time, brand_ref_times[num_pandas][brand])
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
 
     # with self.subTest(brand='all_brands'):
