@@ -192,10 +192,10 @@ class TestFwFingerprintTiming(unittest.TestCase):
     return {}
 
   def _benchmark_brand(self, brand, num_pandas):
+    fake_socket = FakeSocket()
+    self.total_time = 0
     with (mock.patch("openpilot.selfdrive.car.fw_versions.set_obd_multiplexing", self.fake_set_obd_multiplexing),
           mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", self.fake_get_data)):
-      fake_socket = FakeSocket()
-      self.total_time = 0
       for _ in range(self.N):
         # Treat each brand as the most likely (aka, the first) brand with OBD multiplexing initially on
         self.current_obd_multiplexing = True
@@ -204,7 +204,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
         get_fw_versions(fake_socket, fake_socket, brand, num_pandas=num_pandas)
         self.total_time += time.perf_counter() - t
 
-      return self.total_time / self.N
+    return self.total_time / self.N
 
   def _assert_timing(self, avg_time, ref_time):
     self.assertLess(avg_time, ref_time + self.TOL)
