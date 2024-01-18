@@ -1,0 +1,27 @@
+name: 'cache'
+
+inputs:
+  path:
+    description: 'Auth token for Docker Hub, required for BuildJet jobs'
+    required: true
+    default: ''
+
+
+runs:
+  using: "composite"
+  steps:
+    - name: setup namespace cache
+      if: ${{ contains(runner.name, 'nsc') }} 
+      uses: namespacelabs/nscloud-cache-action@v1
+      with:
+        path: ${{ inputs.path }}
+
+    - name: setup github cache
+      if: ${{ !contains(runner.name, 'nsc') }}
+      uses: actions/cache@v2
+      with:
+        path: ${{ inputs.path }}
+        key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
+          scons-${{ runner.arch }}
