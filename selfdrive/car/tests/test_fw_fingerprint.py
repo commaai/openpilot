@@ -6,10 +6,8 @@ import unittest
 from collections import defaultdict
 from parameterized import parameterized
 from unittest import mock
-import threading
 
 from cereal import car
-from openpilot.common.params import Params
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
 from openpilot.selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, \
@@ -179,33 +177,34 @@ class TestFwFingerprintTiming(unittest.TestCase):
   N: int = 1
   TOL: float = 0.05
 
+  # for patched functions
+  current_obd_multiplexing: bool
+  total_time: float
+
+  def fake_set_obd_multiplexing(self, _, obd_multiplexing):
+    """The 10Hz blocking params loop adds on average 50ms to the query time for each OBD multiplexing change"""
+    if obd_multiplexing != self.current_obd_multiplexing:
+      self.current_obd_multiplexing = obd_multiplexing
+      self.total_time += 0.1 / 2
+
+  def fake_get_data(self, timeout):
+    self.total_time += timeout
+    return {}
+
   def _benchmark_brand(self, brand, num_pandas):
-    def fake_get_data(_, timeout):
-      nonlocal brand_time
-      brand_time += timeout
-      return {}
-
-    def fake_set_obd_multiplexing(_, obd_multiplexing):
-      """The 10Hz blocking params loop adds on average 50ms to the query time for each OBD multiplexing change"""
-      nonlocal current_obd_multiplexing
-      nonlocal brand_time
-      if obd_multiplexing != current_obd_multiplexing:
-        current_obd_multiplexing = obd_multiplexing
-        brand_time += 0.1 / 2
-
-    with (mock.patch("openpilot.selfdrive.car.fw_versions.set_obd_multiplexing", fake_set_obd_multiplexing),
-          mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", fake_get_data)):
+    with (mock.patch("openpilot.selfdrive.car.fw_versions.set_obd_multiplexing", self.fake_set_obd_multiplexing),
+          mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", self.fake_get_data)):
       fake_socket = FakeSocket()
-      brand_time = 0
+      self.total_time = 0
       for _ in range(self.N):
         # Treat each brand as the most likely (aka, the first) brand with OBD multiplexing initially on
-        current_obd_multiplexing = True
+        self.current_obd_multiplexing = True
 
         t = time.perf_counter()
         get_fw_versions(fake_socket, fake_socket, brand, num_pandas=num_pandas)
-        brand_time += time.perf_counter() - t
+        self.total_time += time.perf_counter() - t
 
-      return brand_time / self.N
+      return self.total_time / self.N
 
   def _assert_timing(self, avg_time, ref_time):
     self.assertLess(avg_time, ref_time + self.TOL)
@@ -217,39 +216,25 @@ class TestFwFingerprintTiming(unittest.TestCase):
     present_ecu_ref_time = 0.75
 
     def fake_get_ecu_addrs(*_, timeout):
-      nonlocal present_ecu_time
-      present_ecu_time += timeout
+      self.total_time += timeout
       return set()
 
-    def fake_set_obd_multiplexing(_, obd_multiplexing):
-      """The 10Hz blocking params loop adds on average 50ms to the query time for each OBD multiplexing change"""
-      nonlocal current_obd_multiplexing
-      nonlocal present_ecu_time
-      if obd_multiplexing != current_obd_multiplexing:
-        current_obd_multiplexing = obd_multiplexing
-        present_ecu_time += 0.1 / 2
-
-    def fake_get_data(_, timeout):
-      nonlocal vin_time
-      vin_time += timeout
-      return {}
-
     fake_socket = FakeSocket()
-    with (mock.patch("openpilot.selfdrive.car.fw_versions.set_obd_multiplexing", fake_set_obd_multiplexing),
+    with (mock.patch("openpilot.selfdrive.car.fw_versions.set_obd_multiplexing", self.fake_set_obd_multiplexing),
           mock.patch("openpilot.selfdrive.car.fw_versions.get_ecu_addrs", fake_get_ecu_addrs)):
-      present_ecu_time = 0.0
+      self.total_time = 0.0
       for _ in range(self.N):
-        current_obd_multiplexing = True
+        self.current_obd_multiplexing = True
         get_present_ecus(fake_socket, fake_socket, num_pandas=2)
-      self._assert_timing(present_ecu_time / self.N, present_ecu_ref_time)
-      print(f'get_present_ecus, query time={present_ecu_time / self.N} seconds')
+      self._assert_timing(self.total_time / self.N, present_ecu_ref_time)
+      print(f'get_present_ecus, query time={self.total_time / self.N} seconds')
 
-    with (mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", fake_get_data)):
-      vin_time = 0.0
+    with (mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", self.fake_get_data)):
+      self.total_time = 0.0
       for _ in range(self.N):
         get_vin(fake_socket, fake_socket, 1)
-      self._assert_timing(vin_time / self.N, vin_ref_time)
-      print(f'get_vin, query time={vin_time / self.N} seconds')
+      self._assert_timing(self.total_time / self.N, vin_ref_time)
+      print(f'get_vin, query time={self.total_time / self.N} seconds')
 
   @pytest.mark.timeout(60)
   def test_fw_query_timing(self):
