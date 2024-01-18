@@ -48,7 +48,7 @@ procs = [
   NativeProcess("logcatd", "system/logcatd", ["./logcatd"], only_onroad),
   NativeProcess("proclogd", "system/proclogd", ["./proclogd"], only_onroad),
   PythonProcess("logmessaged", "system.logmessaged", always_run),
-  PythonProcess("micd", "system.micd", iscar),
+  PythonProcess("micd", "system.micd", always_run),
   PythonProcess("timezoned", "system.timezoned", always_run, enabled=not PC),
 
   PythonProcess("dmonitoringmodeld", "selfdrive.modeld.dmonitoringmodeld", driverview, enabled=(not PC or WEBCAM)),
@@ -81,6 +81,8 @@ procs = [
   PythonProcess("updated", "selfdrive.updated", only_offroad, enabled=not PC),
   PythonProcess("uploader", "system.loggerd.uploader", always_run),
   PythonProcess("statsd", "selfdrive.statsd", always_run),
+  PythonProcess("speechd", "system.assistant.rev_speechd", always_run),
+  PythonProcess("wakewordd", "system.assistant.wakewordd", always_run),
 
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
