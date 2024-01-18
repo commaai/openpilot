@@ -1,5 +1,5 @@
 import os
-from openwakeword.model import Model
+from openpilot.system.assistant.openwakeword.model import Model
 
 FEATURE_MODELS = {
   "embedding": {

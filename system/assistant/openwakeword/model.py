@@ -14,7 +14,7 @@
 
 # Imports
 import numpy as np
-from openwakeword.utils import AudioFeatures
+from openpilot.system.assistant.openwakeword.utils import AudioFeatures
 
 import onnxruntime as ort
 import os

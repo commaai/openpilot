@@ -22,7 +22,7 @@ from multiprocessing import Process, Queue
 import time
 import logging
 from tqdm import tqdm
-import openwakeword
+import openpilot.system.assistant.openwakeword as openwakeword
 from numpy.lib.format import open_memmap
 from typing import Union, List, Callable, Deque
 import requests
