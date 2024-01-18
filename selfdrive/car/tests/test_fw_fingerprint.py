@@ -197,33 +197,29 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
   def _benchmark_brand(self, brand, num_pandas):
     def fake_get_data(_, timeout):
-      nonlocal fake_timeout_time
-      fake_timeout_time += timeout
+      nonlocal brand_time
+      brand_time += timeout
       return {}
 
     def fake_set_obd_multiplexing(_, obd_multiplexing):
-      nonlocal global_obd_multiplexing
-      nonlocal fake_timeout_time
-      print('fake_set_obd_multiplexing!!')
-      if obd_multiplexing != global_obd_multiplexing:
-        print('changed mp mode')
-        global_obd_multiplexing = obd_multiplexing
-        fake_timeout_time += 0.1 / 2
+      """The 10Hz blocking params loop adds on average 50ms to the query time for each OBD multiplexing change"""
+      nonlocal current_obd_multiplexing
+      nonlocal brand_time
+      if obd_multiplexing != current_obd_multiplexing:
+        current_obd_multiplexing = obd_multiplexing
+        brand_time += 0.1 / 2
 
     with (mock.patch("openpilot.selfdrive.car.fw_versions.set_obd_multiplexing", fake_set_obd_multiplexing),
           mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", fake_get_data)):
       fake_socket = FakeSocket()
       brand_time = 0
       for _ in range(self.N):
-        global_obd_multiplexing = True
-        fake_timeout_time = 0
-        # thread = threading.Thread(target=get_fw_versions, args=(fake_socket, fake_socket, brand),
-        #                           kwargs=dict(num_pandas=num_pandas))
-        # brand_time += self._run_thread(thread) + fake_timeout_time
+        # Treat each brand as the most likely (aka, the first) brand with OBD multiplexing initially on
+        current_obd_multiplexing = True
+
         t = time.perf_counter()
         get_fw_versions(fake_socket, fake_socket, brand, num_pandas=num_pandas)
-        t = time.perf_counter() - t
-        brand_time += t + fake_timeout_time
+        brand_time += time.perf_counter() - t
 
       return brand_time / self.N
 
