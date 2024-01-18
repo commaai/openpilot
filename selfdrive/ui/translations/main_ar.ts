@@ -66,6 +66,26 @@
         <source>Prevent large data uploads when on a metered connection</source>
         <translation>منع تحميل البيانات الكبيرة عندما يكون الاتصال محدوداً</translation>
     </message>
+    <message>
+        <source>Hidden Network</source>
+        <translation>شبكة مخفية</translation>
+    </message>
+    <message>
+        <source>CONNECT</source>
+        <translation>الاتصال</translation>
+    </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation>أدخل SSID</translation>
+    </message>
+    <message>
+        <source>Enter password</source>
+        <translation>أدخل كلمة المرور</translation>
+    </message>
+    <message>
+        <source>for &quot;%1&quot;</source>
+        <translation>من أجل &quot;%1&quot;</translation>
+    </message>
 </context>
 <context>
     <name>AnnotatedCameraWidget</name>

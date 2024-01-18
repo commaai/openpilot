@@ -9,6 +9,9 @@ import SCons.Errors
 
 SCons.Warnings.warningAsException(True)
 
+# pending upstream fix - https://github.com/SCons/scons/issues/4461
+#SetOption('warn', 'all')
+
 TICI = os.path.isfile('/TICI')
 AGNOS = TICI
 
