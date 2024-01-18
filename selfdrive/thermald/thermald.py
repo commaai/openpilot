@@ -447,6 +447,8 @@ def thermald_thread(end_event, hw_queue) -> None:
         except Exception:
           cloudlog.exception("failed to save offroad status")
 
+    params.put_bool_nonblocking("NetworkMetered", (msg.deviceState.networkType != NetworkType.wifi))
+
     count += 1
     should_start_prev = should_start
 
