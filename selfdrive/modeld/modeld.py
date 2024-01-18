@@ -8,6 +8,7 @@ from cereal import car, log
 from pathlib import Path
 from typing import Dict, Optional
 from setproctitle import setproctitle
+from cereal import car
 from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
@@ -150,14 +151,14 @@ def main(demo=False):
 
   # messaging
   pm = PubMaster(["modelV2", "cameraOdometry"])
-<<<<<<< HEAD
   sm = SubMaster(["carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel", "navInstruction", "carControl"])
-=======
-  sm = SubMaster(["lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel", "navInstruction", "carState"])
->>>>>>> Updates
+
 
   publish_state = PublishState()
   params = Params()
+  with car.CarParams.from_bytes(params.get("CarParams", block=True)) as msg:
+    steer_delay = msg.steerActuatorDelay + .2
+
 
   # setup filter to track dropped frames
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_FREQ)
@@ -226,7 +227,7 @@ def main(demo=False):
     is_rhd = sm["driverMonitoringState"].isRHD
     frame_id = sm["roadCameraState"].frameId
     # TODO add lag
-    lateral_control_params = np.array([sm["carState"].vEgo, 0.1], dtype=np.float32)
+    lateral_control_params = np.array([sm["carState"].vEgo, steer_delay], dtype=np.float32)
     if sm.updated["liveCalibration"]:
       device_from_calib_euler = np.array(sm["liveCalibration"].rpyCalib, dtype=np.float32)
       model_transform_main = get_warp_matrix(device_from_calib_euler, main_wide_camera, False).astype(np.float32)
