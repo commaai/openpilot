@@ -220,21 +220,21 @@ class TestFwFingerprintTiming(unittest.TestCase):
       return set()
 
     fake_socket = FakeSocket()
+    self.total_time = 0.0
     with (mock.patch("openpilot.selfdrive.car.fw_versions.set_obd_multiplexing", self.fake_set_obd_multiplexing),
           mock.patch("openpilot.selfdrive.car.fw_versions.get_ecu_addrs", fake_get_ecu_addrs)):
-      self.total_time = 0.0
       for _ in range(self.N):
         self.current_obd_multiplexing = True
         get_present_ecus(fake_socket, fake_socket, num_pandas=2)
-      self._assert_timing(self.total_time / self.N, present_ecu_ref_time)
-      print(f'get_present_ecus, query time={self.total_time / self.N} seconds')
+    self._assert_timing(self.total_time / self.N, present_ecu_ref_time)
+    print(f'get_present_ecus, query time={self.total_time / self.N} seconds')
 
+    self.total_time = 0.0
     with (mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", self.fake_get_data)):
-      self.total_time = 0.0
       for _ in range(self.N):
         get_vin(fake_socket, fake_socket, 1)
-      self._assert_timing(self.total_time / self.N, vin_ref_time)
-      print(f'get_vin, query time={self.total_time / self.N} seconds')
+    self._assert_timing(self.total_time / self.N, vin_ref_time)
+    print(f'get_vin, query time={self.total_time / self.N} seconds')
 
   @pytest.mark.timeout(60)
   def test_fw_query_timing(self):
