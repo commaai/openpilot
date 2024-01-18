@@ -8,7 +8,7 @@ from cereal import car, log
 from pathlib import Path
 from typing import Dict, Optional
 from setproctitle import setproctitle
-from cereal import car
+#from cereal import car
 from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
@@ -156,9 +156,9 @@ def main(demo=False):
 
   publish_state = PublishState()
   params = Params()
-  with car.CarParams.from_bytes(params.get("CarParams", block=True)) as msg:
-    steer_delay = msg.steerActuatorDelay + .2
-
+  #with car.CarParams.from_bytes(params.get("CarParams", block=True)) as msg:
+  #  steer_delay = msg.steerActuatorDelay + .2
+  steer_delay = 0.4
 
   # setup filter to track dropped frames
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_FREQ)
