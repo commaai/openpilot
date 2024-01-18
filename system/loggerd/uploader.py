@@ -8,6 +8,7 @@ import requests
 import threading
 import time
 import traceback
+import datetime
 from typing import BinaryIO, Iterator, List, Optional, Tuple
 
 from cereal import log
@@ -45,17 +46,20 @@ def get_directory_sort(d: str) -> List[str]:
   return [s.rjust(10, '0') for s in d.rsplit('--', 1)]
 
 def listdir_by_creation(d: str) -> List[str]:
+  if not os.path.isdir(d):
+    return []
+
   try:
     paths = [f for f in os.listdir(d) if os.path.isdir(os.path.join(d, f))]
     paths = sorted(paths, key=get_directory_sort)
     return paths
   except OSError:
     cloudlog.exception("listdir_by_creation failed")
-    return list()
+    return []
 
 def clear_locks(root: str) -> None:
-  for logname in os.listdir(root):
-    path = os.path.join(root, logname)
+  for logdir in os.listdir(root):
+    path = os.path.join(root, logdir)
     try:
       for fname in os.listdir(path):
         if fname.endswith(".lock"):
@@ -76,12 +80,9 @@ class Uploader:
     self.immediate_folders = ["crash/", "boot/"]
     self.immediate_priority = {"qlog": 0, "qlog.bz2": 0, "qcamera.ts": 1}
 
-  def list_upload_files(self) -> Iterator[Tuple[str, str, str]]:
-    if not os.path.isdir(self.root):
-      return
-
-    for logname in listdir_by_creation(self.root):
-      path = os.path.join(self.root, logname)
+  def list_upload_files(self, metered: bool) -> Iterator[Tuple[str, str, str]]:
+    for logdir in listdir_by_creation(self.root):
+      path = os.path.join(self.root, logdir)
       try:
         names = os.listdir(path)
       except OSError:
@@ -91,21 +92,28 @@ class Uploader:
         continue
 
       for name in sorted(names, key=lambda n: self.immediate_priority.get(n, 1000)):
-        key = os.path.join(logname, name)
+        key = os.path.join(logdir, name)
         fn = os.path.join(path, name)
         # skip files already uploaded
         try:
+          ctime = os.path.getctime(fn)
           is_uploaded = getxattr(fn, UPLOAD_ATTR_NAME) == UPLOAD_ATTR_VALUE
         except OSError:
           cloudlog.event("uploader_getxattr_failed", key=key, fn=fn)
-          is_uploaded = True  # deleter could have deleted
+          # deleter could have deleted, so skip
+          continue
         if is_uploaded:
+          continue
+
+        # delay uploading crash and boot logs on metered connections
+        dt = datetime.timedelta(hours=12)
+        if metered and logdir in self.immediate_folders and (datetime.datetime.now() - datetime.datetime.fromtimestamp(ctime)) < dt:
           continue
 
         yield name, key, fn
 
-  def next_file_to_upload(self) -> Optional[Tuple[str, str, str]]:
-    upload_files = list(self.list_upload_files())
+  def next_file_to_upload(self, metered: bool) -> Optional[Tuple[str, str, str]]:
+    upload_files = list(self.list_upload_files(metered))
 
     for name, key, fn in upload_files:
       if any(f in fn for f in self.immediate_folders):
@@ -191,7 +199,7 @@ class Uploader:
 
 
   def step(self, network_type: int, metered: bool) -> bool:
-    d = self.next_file_to_upload()
+    d = self.next_file_to_upload(metered)
     if d is None:
       return True
 
