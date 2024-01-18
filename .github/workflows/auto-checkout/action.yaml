@@ -1,0 +1,23 @@
+name: 'checkout'
+
+inputs:
+  submodules:
+    description: 'submodules'
+    required: false
+    default: 'false'
+
+
+runs:
+  using: "composite"
+  steps:
+    - name: checkout with namespace cache
+      if: ${{ contains(runner.name, 'nsc') }} 
+      uses: namespacelabs/nscloud-checkout-action@v1
+      with:
+        submodules: ${{ inputs.submodules }}
+
+    - name: checkout normally
+      if: ${{ !contains(runner.name, 'nsc') }}
+      uses: actions/checkout@v4
+      with:
+        submodules: ${{ inputs.submodules }}
