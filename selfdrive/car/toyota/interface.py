@@ -99,6 +99,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3400. * CV.LB_TO_KG  # mean between normal and hybrid
 
     elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.HIGHLANDER_TSS2):
+      # TODO: TSS-P models can do stop and go, but unclear if it requires sDSU or unplugging DSU
       stop_and_go = True
       ret.wheelbase = 2.8194  # average of 109.8 and 112.2 in
       ret.steerRatio = 16.0
