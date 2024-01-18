@@ -2,7 +2,7 @@ name: 'cache'
 
 inputs:
   path:
-    description: 'Auth token for Docker Hub, required for BuildJet jobs'
+    description: 'path to cache'
     required: true
     default: ''
 
