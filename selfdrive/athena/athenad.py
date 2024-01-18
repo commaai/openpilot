@@ -433,13 +433,14 @@ def cancelUpload(upload_id: Union[str, List[str]]) -> Dict[str, Union[int, str]]
   return {"success": 1}
 
 @dispatcher.add_method
-def requestQcamUpload(route: str) -> Dict[str, Union[int, str]]:
+def setRouteViewed(route: str) -> Dict[str, Union[int, str]]:
+  # maintain a list of the last 10 routes viewed in connect
   params = Params()
-  r = params.get("AthenadQcamUploadRequests")
+  r = params.get("AthenadRoutesViewed")
   routes = [] if r is None else r.split(",")
 
   routes.append(route)
-  params.put("AthenadQcamUploadRequests", ','.join(routes[-10:]))
+  params.put("AthenadRoutesViewed", ','.join(routes[-10:]))
 
   return {"success": 1}
 
