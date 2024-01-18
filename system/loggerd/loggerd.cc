@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "common/params.h"
 #include "system/loggerd/encoder/encoder.h"
 #include "system/loggerd/loggerd.h"
 #include "system/loggerd/video_writer.h"
@@ -187,6 +188,12 @@ void handle_user_flag(LoggerdState *s) {
   if (ret) {
     LOGE("setxattr %s failed for %s: %s", PRESERVE_ATTR_NAME, s->logger.segmentPath().c_str(), strerror(errno));
   }
+
+  // mark route for uploading
+  Params params;
+  std::string routes = Params().get("AthenadRecentlyViewedRoutes");
+  params.put("AthenadRecentlyViewedRoutes", routes + "," + s->logger.routeName());
+
   prev_segment = s->logger.segment();
 }
 

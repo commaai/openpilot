@@ -432,6 +432,21 @@ def cancelUpload(upload_id: Union[str, List[str]]) -> Dict[str, Union[int, str]]
   cancelled_uploads.update(cancelled_ids)
   return {"success": 1}
 
+@dispatcher.add_method
+def setRouteViewed(route: str) -> Dict[str, Union[int, str]]:
+  # maintain a list of the last 10 routes viewed in connect
+  params = Params()
+
+  r = params.get("AthenadRecentlyViewedRoutes", encoding="utf8")
+  routes = [] if r is None else r.split(",")
+  routes.append(route)
+
+  # remove duplicates
+  routes = list(dict.fromkeys(routes))
+
+  params.put("AthenadRecentlyViewedRoutes", ",".join(routes[-10:]))
+  return {"success": 1}
+
 
 def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local_port: int) -> Dict[str, int]:
   try:
