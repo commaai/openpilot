@@ -105,10 +105,14 @@ class Uploader:
         if is_uploaded:
           continue
 
-        # delay uploading crash and boot logs on metered connections
-        dt = datetime.timedelta(hours=12)
-        if metered and logdir in self.immediate_folders and (datetime.datetime.now() - datetime.datetime.fromtimestamp(ctime)) < dt:
-          continue
+        # limit uploading on metered connections
+        if metered:
+          dt = datetime.timedelta(hours=12)
+          if logdir in self.immediate_folders and (datetime.datetime.now() - datetime.datetime.fromtimestamp(ctime)) < dt:
+            continue
+
+          if name == "qcamera.ts":
+            continue
 
         yield name, key, fn
 
