@@ -50,9 +50,7 @@ runs:
     # if we didn't get a cache hit, make the directory manually so it doesn't fail on future steps
     - id: scons-cache-setup
       shell: bash
-      run: |
-        mkdir -p $GITHUB_WORKSPACE/.ci_cache/scons_cache
-        touch $GITHUB_WORKSPACE/.ci_cache/scons_cache/test
+      run: mkdir -p $GITHUB_WORKSPACE/.ci_cache/scons_cache
     # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
     - id: normalize-file-permissions
       shell: bash
