@@ -19,7 +19,7 @@ runs:
       run: |
         echo "You should not run this action directly. Use setup-with-retry instead"
         exit 1
-    
+
     # do this after checkout to ensure our custom LFS config is used to pull from GitLab
     - shell: bash
       run: git lfs pull
