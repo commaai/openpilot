@@ -122,7 +122,7 @@ def run():
     # Start the microphone data collector thread
     collector_thread = Thread(target=microphone_data_collector, args=(stop_thread,))
     collector_thread.start()
-
+    final_transcript = ""
     try:
       # Start streaming to Rev.ai with a new generator instance
       response_gen = streamclient.start(microphone_stream(),
