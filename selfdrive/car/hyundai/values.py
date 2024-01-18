@@ -591,3 +591,13 @@ DBC = {
   CAR.KIA_NIRO_PHEV_2022: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
   CAR.STARIA_4TH_GEN: dbc_dict('hyundai_canfd', None),
 }
+CAR.IONIQ_EV_2021: {
+  (Ecu.eps, 0x7d4, None): [
+    b'\xf1\x00AE  MDPS C 1.00 1.01 56310/G7310 4APEC101',
+  ],
+  (Ecu.fwdCamera, 0x7c4, None): [
+    b'\xf1\x00AEE MFC  AT EUR LHD 1.00 1.00 95740-G2700 201027',
+  ],
+  (Ecu.fwdRadar, 0x7d0, None): [
+    b'\xf1\x00AEev SCC F-CUP      1.00 1.00 99110-G7500         ',
+  ],
