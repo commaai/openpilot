@@ -74,6 +74,11 @@ def sudo_write(val, path):
       # fallback for debugfs files
       os.system(f"sudo su -c 'echo {val} > {path}'")
 
+def sudo_read(path: str) -> str:
+  try:
+    return subprocess.check_output(f"sudo cat {path}", shell=True, encoding='utf8')
+  except Exception:
+    return ""
 
 def affine_irq(val, action):
   irqs = get_irqs_for_action(action)
@@ -201,9 +206,6 @@ class Tici(HardwareBase):
         'data_connected': modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT) == MM_MODEM_STATE.CONNECTED,
       }
 
-  def get_subscriber_info(self):
-    return ""
-
   def get_imei(self, slot):
     if slot != 0:
       return ""
@@ -293,67 +295,6 @@ class Tici(HardwareBase):
 
     return super().get_network_metered(network_type)
 
-  @staticmethod
-  def set_bandwidth_limit(upload_speed_kbps: int, download_speed_kbps: int) -> None:
-    upload_speed_kbps = int(upload_speed_kbps)  # Ensure integer value
-    download_speed_kbps = int(download_speed_kbps)  # Ensure integer value
-
-    adapter = "wwan0"
-    ifb = "ifb0"
-
-    sudo = ["sudo"]
-    tc = sudo + ["tc"]
-
-    # check, cmd
-    cleanup = [
-      # Clean up old rules
-      (False, tc + ["qdisc", "del", "dev", adapter, "root"]),
-      (False, tc + ["qdisc", "del", "dev", ifb, "root"]),
-      (False, tc + ["qdisc", "del", "dev", adapter, "ingress"]),
-      (False, tc + ["qdisc", "del", "dev", ifb, "ingress"]),
-
-      # Bring ifb0 down
-      (False, sudo + ["ip", "link", "set", "dev", ifb, "down"]),
-    ]
-
-    upload = [
-      # Create root Hierarchy Token Bucket that sends all traffic to 1:20
-      (True, tc + ["qdisc", "add", "dev", adapter, "root", "handle", "1:", "htb", "default", "20"]),
-
-      # Create class 1:20 with specified rate limit
-      (True, tc + ["class", "add", "dev", adapter, "parent", "1:", "classid", "1:20", "htb", "rate", f"{upload_speed_kbps}kbit"]),
-
-      # Create universal 32 bit filter on adapter that sends all outbound ip traffic through the class
-      (True, tc + ["filter", "add", "dev", adapter, "parent", "1:", "protocol", "ip", "prio", \
-                   "10", "u32", "match", "ip", "dst", "0.0.0.0/0", "flowid", "1:20"]),
-    ]
-
-    download = [
-      # Bring ifb0 up
-      (True, sudo + ["ip", "link", "set", "dev", ifb, "up"]),
-
-      # Redirect ingress (incoming) to egress ifb0
-      (True, tc + ["qdisc", "add", "dev", adapter, "handle", "ffff:", "ingress"]),
-      (True, tc + ["filter", "add", "dev", adapter, "parent", "ffff:", "protocol", "ip", "u32", \
-                   "match", "u32", "0", "0", "action", "mirred", "egress", "redirect", "dev", ifb]),
-
-      # Add class and rules for virtual interface
-      (True, tc + ["qdisc", "add", "dev", ifb, "root", "handle", "2:", "htb"]),
-      (True, tc + ["class", "add", "dev", ifb, "parent", "2:", "classid", "2:1", "htb", "rate", f"{download_speed_kbps}kbit"]),
-
-      # Add filter to rule for IP address
-      (True, tc + ["filter", "add", "dev", ifb, "protocol", "ip", "parent", "2:", "prio", "1", "u32", "match", "ip", "src", "0.0.0.0/0", "flowid", "2:1"]),
-    ]
-
-    commands = cleanup
-    if upload_speed_kbps != -1:
-      commands += upload
-    if download_speed_kbps != -1:
-      commands += download
-
-    for check, cmd in commands:
-      subprocess.run(cmd, check=check)
-
   def get_modem_version(self):
     try:
       modem = self.get_modem()
@@ -392,10 +333,6 @@ class Tici(HardwareBase):
     except Exception:
       pass
     return ret
-
-  def get_usb_present(self):
-    # Not sure if relevant on tici, but the file exists
-    return self.read_param_file("/sys/class/power_supply/usb/present", lambda x: bool(int(x)), False)
 
   def get_current_power_draw(self):
     return (self.read_param_file("/sys/class/hwmon/hwmon1/power1_input", int) / 1e6)
@@ -615,6 +552,12 @@ class Tici(HardwareBase):
     time.sleep(0.5)
     gpio_set(GPIO.STM_BOOT0, 0)
 
+  def booted(self):
+    # this normally boots within 8s, but on rare occasions takes 30+s
+    encoder_state = sudo_read("/sys/kernel/debug/msm_vidc/core0/info")
+    if "Core state: 0" in encoder_state and (time.monotonic() < 60*2):
+      return False
+    return True
 
 if __name__ == "__main__":
   t = Tici()

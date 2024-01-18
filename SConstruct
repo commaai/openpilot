@@ -9,10 +9,15 @@ import SCons.Errors
 
 SCons.Warnings.warningAsException(True)
 
+# pending upstream fix - https://github.com/SCons/scons/issues/4461
+#SetOption('warn', 'all')
+
 TICI = os.path.isfile('/TICI')
 AGNOS = TICI
 
 Decider('MD5-timestamp')
+
+SetOption('num_jobs', int(os.cpu_count()/2))
 
 AddOption('--kaitai',
           action='store_true',
@@ -37,7 +42,7 @@ AddOption('--clazy',
 AddOption('--compile_db',
           action='store_true',
           help='build clang compilation database')
-          
+
 AddOption('--ccflags',
           action='store',
           type='string',

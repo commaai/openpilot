@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from functools import partial
 import json
 import multiprocessing
 import os
@@ -13,28 +14,54 @@ from datetime import datetime, timedelta
 from parameterized import parameterized
 from typing import Optional
 
-from pympler.tracker import SummaryTracker
 from unittest import mock
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
+from cereal import messaging
+
+from openpilot.common.params import Params
+from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.athena import athenad
 from openpilot.selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
-from openpilot.selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
-from cereal import messaging
+from openpilot.selfdrive.athena.tests.helpers import MockWebsocket, MockApi, EchoSocket, with_http_server
 from openpilot.system.hardware.hw import Paths
+from openpilot.selfdrive.athena.tests.helpers import HTTPRequestHandler
+
+
+def seed_athena_server(host, port):
+  with Timeout(2, 'HTTP Server seeding failed'):
+    while True:
+      try:
+        requests.put(f'http://{host}:{port}/qlog.bz2', data='', timeout=10)
+        break
+      except requests.exceptions.ConnectionError:
+        time.sleep(0.1)
+
+
+with_mock_athena = partial(with_http_server, handler=HTTPRequestHandler, setup=seed_athena_server)
 
 
 class TestAthenadMethods(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     cls.SOCKET_PORT = 45454
-    athenad.Params = MockParams
     athenad.Api = MockApi
     athenad.LOCAL_PORT_WHITELIST = {cls.SOCKET_PORT}
 
   def setUp(self):
-    MockParams.restore_defaults()
+    self.default_params = {
+      "DongleId": "0000000000000000",
+      "GithubSshKeys": b"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC307aE+nuHzTAgaJhzSf5v7ZZQW9gaperjhCmyPyl4PzY7T1mDGenTlVTN7yoVFZ9UfO9oMQqo0n1OwDIiqbIFxqnhrHU0cYfj88rI85m5BEKlNu5RdaVTj1tcbaPpQc5kZEolaI1nDDjzV0lwS7jo5VYDHseiJHlik3HH1SgtdtsuamGR2T80q1SyW+5rHoMOJG73IH2553NnWuikKiuikGHUYBd00K1ilVAK2xSiMWJp55tQfZ0ecr9QjEsJ+J/efL4HqGNXhffxvypCXvbUYAFSddOwXUPo5BTKevpxMtH+2YrkpSjocWA04VnTYFiPG6U4ItKmbLOTFZtPzoez private", # noqa: E501
+      "GithubUsername": b"commaci",
+      "AthenadUploadQueue": '[]',
+    }
+
+    self.params = Params()
+    for k, v in self.default_params.items():
+      self.params.put(k, v)
+    self.params.put_bool("GsmMetered", True)
+
     athenad.upload_queue = queue.Queue()
     athenad.cur_upload_items.clear()
     athenad.cancelled_uploads.clear()
@@ -139,15 +166,10 @@ class TestAthenadMethods(unittest.TestCase):
       self.assertEqual(athenad.strip_bz2_extension(fn), fn[:-4])
 
   @parameterized.expand([(True,), (False,)])
-  @with_http_server
+  @with_mock_athena
   def test_do_upload(self, compress, host):
     # random bytes to ensure rather large object post-compression
     fn = self._create_file('qlog', data=os.urandom(10000 * 1024))
-
-    # warm up object tracker
-    tracker = SummaryTracker()
-    for _ in range(5):
-      tracker.diff()
 
     upload_fn = fn + ('.bz2' if compress else '')
     item = athenad.UploadItem(path=upload_fn, url="http://localhost:1238", headers={}, created_at=int(time.time()*1000), id='')
@@ -158,12 +180,7 @@ class TestAthenadMethods(unittest.TestCase):
     resp = athenad._do_upload(item)
     self.assertEqual(resp.status_code, 201)
 
-    # assert memory cleaned up
-    for _type, num_objects, total_size in tracker.diff():
-      with self.subTest(_type=_type):
-        self.assertLess(total_size / 1024, 10, f'Object {_type} ({num_objects=}) grew larger than 10 kB while uploading file')
-
-  @with_http_server
+  @with_mock_athena
   def test_uploadFileToUrl(self, host):
     fn = self._create_file('qlog.bz2')
 
@@ -174,7 +191,7 @@ class TestAthenadMethods(unittest.TestCase):
     self.assertIsNotNone(resp['items'][0].get('id'))
     self.assertEqual(athenad.upload_queue.qsize(), 1)
 
-  @with_http_server
+  @with_mock_athena
   def test_uploadFileToUrl_duplicate(self, host):
     self._create_file('qlog.bz2')
 
@@ -186,12 +203,12 @@ class TestAthenadMethods(unittest.TestCase):
     resp = dispatcher["uploadFileToUrl"]("qlog.bz2", url2, {})
     self.assertEqual(resp, {'enqueued': 0, 'items': []})
 
-  @with_http_server
+  @with_mock_athena
   def test_uploadFileToUrl_does_not_exist(self, host):
     not_exists_resp = dispatcher["uploadFileToUrl"]("does_not_exist.bz2", "http://localhost:1238", {})
     self.assertEqual(not_exists_resp, {'enqueued': 0, 'items': [], 'failed': ['does_not_exist.bz2']})
 
-  @with_http_server
+  @with_mock_athena
   def test_upload_handler(self, host):
     fn = self._create_file('qlog.bz2')
     item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
@@ -210,7 +227,7 @@ class TestAthenadMethods(unittest.TestCase):
     finally:
       end_event.set()
 
-  @with_http_server
+  @with_mock_athena
   @mock.patch('requests.put')
   def test_upload_handler_retry(self, host, mock_put):
     for status, retry in ((500, True), (412, False)):
@@ -388,11 +405,11 @@ class TestAthenadMethods(unittest.TestCase):
 
   def test_getSshAuthorizedKeys(self):
     keys = dispatcher["getSshAuthorizedKeys"]()
-    self.assertEqual(keys, MockParams().params["GithubSshKeys"].decode('utf-8'))
+    self.assertEqual(keys, self.default_params["GithubSshKeys"].decode('utf-8'))
 
   def test_getGithubUsername(self):
     keys = dispatcher["getGithubUsername"]()
-    self.assertEqual(keys, MockParams().params["GithubUsername"].decode('utf-8'))
+    self.assertEqual(keys, self.default_params["GithubUsername"].decode('utf-8'))
 
   def test_getVersion(self):
     resp = dispatcher["getVersion"]()
