@@ -572,6 +572,10 @@ class Controls:
 
     long_plan = self.sm['longitudinalPlan']
     model_v2 = self.sm['modelV2']
+<<<<<<< HEAD
+=======
+
+>>>>>>> Update curvature grep
 
     CC = car.CarControl.new_message()
     CC.enabled = self.enabled
@@ -608,7 +612,10 @@ class Controls:
 
       # Steering PID loop and lateral MPC
       self.desired_curvature = clip_curvature(CS.vEgo, self.desired_curvature, model_v2.action.desiredCurvature)
+<<<<<<< HEAD
       actuators.curvature = self.desired_curvature
+=======
+>>>>>>> Update curvature grep
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
                                                                              self.steer_limited, self.desired_curvature,
                                                                              self.sm['liveLocationKalman'])
