@@ -74,6 +74,8 @@ class Uploader:
     self.api = Api(dongle_id)
     self.root = root
 
+    self.params = Params()
+
     # stats for last successfully uploaded file
     self.last_filename = ""
 
@@ -81,6 +83,9 @@ class Uploader:
     self.immediate_priority = {"qlog": 0, "qlog.bz2": 0, "qcamera.ts": 1}
 
   def list_upload_files(self, metered: bool) -> Iterator[Tuple[str, str, str]]:
+    r = self.params.get("AthenadRecentlyViewedRoutes", encoding="utf8")
+    requested_routes = [] if r is None else r.split(",")
+
     for logdir in listdir_by_creation(self.root):
       path = os.path.join(self.root, logdir)
       try:
@@ -105,10 +110,14 @@ class Uploader:
         if is_uploaded:
           continue
 
-        # delay uploading crash and boot logs on metered connections
-        dt = datetime.timedelta(hours=12)
-        if metered and logdir in self.immediate_folders and (datetime.datetime.now() - datetime.datetime.fromtimestamp(ctime)) < dt:
-          continue
+        # limit uploading on metered connections
+        if metered:
+          dt = datetime.timedelta(hours=12)
+          if logdir in self.immediate_folders and (datetime.datetime.now() - datetime.datetime.fromtimestamp(ctime)) < dt:
+            continue
+
+          if name == "qcamera.ts" and not any(logdir.startswith(r.split('|')[-1]) for r in requested_routes):
+            continue
 
         yield name, key, fn
 
