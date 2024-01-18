@@ -8,7 +8,7 @@ Get paid to improve openpilot!
 * bounty eligibility is solely at our discretion
 * once you open a PR, the bounty is locked to you until you stop working on it
 * open a ticket at [comma.ai/support](https://comma.ai/support/shop-order) with links to your PRs to claim
-* get an extra 20% if you redeem your bounty in [comma shop](https://comma.ai/shop) credit
+* get an extra 20% if you redeem your bounty in [comma shop](https://comma.ai/shop) credit (including refunds on previous orders)
 
 New bounties can be proposed in the [**#contributing**](https://discord.com/channels/469524606043160576/1183173332531687454) channel in Discord.
 
