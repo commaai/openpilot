@@ -162,7 +162,9 @@ jobs:
 
   unit_tests:
     name: unit tests
-    runs-on: ubuntu-20.04
+    runs-on: ${{ ((github.repository == 'jnewb1/openpilot') &&
+                   ((github.event_name != 'pull_request') || 
+                    (github.event.pull_request.head.repo.full_name == 'jnewb1/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-20.04' }}
     steps:
     - uses: jnewb1/namespace-utils/auto-checkout@main
       with:
