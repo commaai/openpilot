@@ -291,10 +291,13 @@ else:
   qt_install_prefix = subprocess.check_output(['qmake', '-query', 'QT_INSTALL_PREFIX'], encoding='utf8').strip()
   qt_install_headers = subprocess.check_output(['qmake', '-query', 'QT_INSTALL_HEADERS'], encoding='utf8').strip()
 
+  qt_gui_dirs = [d for d in os.listdir(f"{qt_install_headers}/QtGui") if os.path.isdir(os.path.join(qt_install_headers, "QtGui", d))]
+  qt_gui_version = sorted(qt_gui_dirs, reverse=True)[0]
+
   qt_env['QTDIR'] = qt_install_prefix
   qt_dirs = [
     f"{qt_install_headers}",
-    f"{qt_install_headers}/QtGui/5.12.8/QtGui",
+    f"{qt_install_headers}/QtGui/{qt_gui_version}/QtGui",
   ]
   qt_dirs += [f"{qt_install_headers}/Qt{m}" for m in qt_modules]
 
