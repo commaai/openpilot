@@ -58,8 +58,8 @@ def listdir_by_creation(d: str) -> List[str]:
     return []
 
 def clear_locks(root: str) -> None:
-  for logname in os.listdir(root):
-    path = os.path.join(root, logname)
+  for logdir in os.listdir(root):
+    path = os.path.join(root, logdir)
     try:
       for fname in os.listdir(path):
         if fname.endswith(".lock"):
@@ -81,8 +81,8 @@ class Uploader:
     self.immediate_priority = {"qlog": 0, "qlog.bz2": 0, "qcamera.ts": 1}
 
   def list_upload_files(self, metered: bool) -> Iterator[Tuple[str, str, str]]:
-    for logname in listdir_by_creation(self.root):
-      path = os.path.join(self.root, logname)
+    for logdir in listdir_by_creation(self.root):
+      path = os.path.join(self.root, logdir)
       try:
         names = os.listdir(path)
       except OSError:
@@ -92,7 +92,7 @@ class Uploader:
         continue
 
       for name in sorted(names, key=lambda n: self.immediate_priority.get(n, 1000)):
-        key = os.path.join(logname, name)
+        key = os.path.join(logdir, name)
         fn = os.path.join(path, name)
         # skip files already uploaded
         try:
@@ -105,9 +105,9 @@ class Uploader:
         if is_uploaded:
           continue
 
-        # check if it's time to upload it
-        dt = datetime.timedelta(hours=(0 if "qlog" in name else 12))
-        if metered and (datetime.datetime.now() - datetime.datetime.fromtimestamp(ctime)) < dt:
+        # delay uploading crash and boot logs on metered connections
+        dt = datetime.timedelta(hours=12)
+        if metered and logdir in self.immediate_folders and (datetime.datetime.now() - datetime.datetime.fromtimestamp(ctime)) < dt:
           continue
 
         yield name, key, fn
