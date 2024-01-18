@@ -1,5 +1,6 @@
 import os
 from openpilot.system.assistant.openwakeword.model import Model
+assert Model
 
 FEATURE_MODELS = {
   "embedding": {
