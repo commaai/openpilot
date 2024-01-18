@@ -238,7 +238,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
   @pytest.mark.timeout(60)
   def test_fw_query_timing(self):
-    total_ref_time = 6.58
+    total_ref_time = 6.1
     brand_ref_times = {
       1: {
         'body': 0.1,
@@ -262,9 +262,6 @@ class TestFwFingerprintTiming(unittest.TestCase):
     total_time = 0
     for num_pandas in (1, 2):
       for brand, config in FW_QUERY_CONFIGS.items():
-        # if brand not in ('subaru', 'body'):
-        #   continue
-        # print(f'\nbenchmarking brand {brand.upper()}:'.upper())
         with self.subTest(brand=brand, num_pandas=num_pandas):
           multi_panda_requests = [r for r in config.requests if r.bus > 3]
           if not len(multi_panda_requests) and num_pandas > 1:
@@ -276,10 +273,10 @@ class TestFwFingerprintTiming(unittest.TestCase):
           self._assert_timing(avg_time, brand_ref_times[num_pandas][brand])
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
 
-    # with self.subTest(brand='all_brands'):
-    #   total_time = round(total_time, 2)
-    #   self._assert_timing(total_time, total_ref_time)
-    #   print(f'all brands, total FW query time={total_time} seconds')
+    with self.subTest(brand='all_brands'):
+      total_time = round(total_time, 2)
+      self._assert_timing(total_time, total_ref_time)
+      print(f'all brands, total FW query time={total_time} seconds')
 
 
 if __name__ == "__main__":
