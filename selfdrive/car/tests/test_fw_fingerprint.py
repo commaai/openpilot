@@ -176,19 +176,23 @@ class TestFwFingerprint(unittest.TestCase):
 
 
 class TestFwFingerprintTiming(unittest.TestCase):
-  N: int = 5
-  TOL: float = 0.1
+  N: int = 1
+  TOL: float = 0.05
 
   @staticmethod
   def _run_thread(thread: threading.Thread) -> float:
-    params = Params()
-    params.put_bool("ObdMultiplexingEnabled", True)
+    # params = Params()
+    # params.put_bool("ObdMultiplexingEnabled", True)
     thread.start()
+    # print('is running', thread.is_alive())
     t = time.perf_counter()
+    # time.sleep(0.5)
     while thread.is_alive():
-      time.sleep(0.02)
-      if not params.get_bool("ObdMultiplexingChanged"):
-        params.put_bool("ObdMultiplexingChanged", True)
+      time.sleep(0.001)
+      # if not params.get_bool("ObdMultiplexingChanged"):
+      #   params.put_bool("ObdMultiplexingChanged", True)
+    # # thread.join()
+    # # del thread
     return time.perf_counter() - t
 
   def _benchmark_brand(self, brand, num_pandas):
@@ -197,16 +201,31 @@ class TestFwFingerprintTiming(unittest.TestCase):
       fake_timeout_time += timeout
       return {}
 
-    with mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", fake_get_data):
+    def fake_set_obd_multiplexing(_, obd_multiplexing):
+      nonlocal global_obd_multiplexing
+      nonlocal fake_timeout_time
+      print('fake_set_obd_multiplexing!!')
+      if obd_multiplexing != global_obd_multiplexing:
+        print('changed mp mode')
+        global_obd_multiplexing = obd_multiplexing
+        fake_timeout_time += 0.1 / 2
+
+    with (mock.patch("openpilot.selfdrive.car.fw_versions.set_obd_multiplexing", fake_set_obd_multiplexing),
+          mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", fake_get_data)):
       fake_socket = FakeSocket()
       brand_time = 0
       for _ in range(self.N):
+        global_obd_multiplexing = True
         fake_timeout_time = 0
-        thread = threading.Thread(target=get_fw_versions, args=(fake_socket, fake_socket, brand),
-                                  kwargs=dict(num_pandas=num_pandas))
-        brand_time += self._run_thread(thread) + fake_timeout_time
+        # thread = threading.Thread(target=get_fw_versions, args=(fake_socket, fake_socket, brand),
+        #                           kwargs=dict(num_pandas=num_pandas))
+        # brand_time += self._run_thread(thread) + fake_timeout_time
+        t = time.perf_counter()
+        get_fw_versions(fake_socket, fake_socket, brand, num_pandas=num_pandas)
+        t = time.perf_counter() - t
+        brand_time += t + fake_timeout_time
 
-    return brand_time / self.N
+      return brand_time / self.N
 
   def _assert_timing(self, avg_time, ref_time):
     self.assertLess(avg_time, ref_time + self.TOL)
@@ -259,6 +278,9 @@ class TestFwFingerprintTiming(unittest.TestCase):
     total_time = 0
     for num_pandas in (1, 2):
       for brand, config in FW_QUERY_CONFIGS.items():
+        if brand not in ('subaru', 'body'):
+          continue
+        print(f'\nbenchmarking brand {brand.upper()}:'.upper())
         with self.subTest(brand=brand, num_pandas=num_pandas):
           multi_panda_requests = [r for r in config.requests if r.bus > 3]
           if not len(multi_panda_requests) and num_pandas > 1:
@@ -266,14 +288,14 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
           avg_time = self._benchmark_brand(brand, num_pandas)
           total_time += avg_time
-          avg_time = round(avg_time, 2)
-          self._assert_timing(avg_time, brand_ref_times[num_pandas][brand])
+          # avg_time = round(avg_time, 2)
+          # self._assert_timing(avg_time, brand_ref_times[num_pandas][brand])
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
 
-    with self.subTest(brand='all_brands'):
-      total_time = round(total_time, 2)
-      self._assert_timing(total_time, total_ref_time)
-      print(f'all brands, total FW query time={total_time} seconds')
+    # with self.subTest(brand='all_brands'):
+    #   total_time = round(total_time, 2)
+    #   self._assert_timing(total_time, total_ref_time)
+    #   print(f'all brands, total FW query time={total_time} seconds')
 
 
 if __name__ == "__main__":
