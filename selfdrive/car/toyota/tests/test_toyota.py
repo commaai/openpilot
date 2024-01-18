@@ -144,7 +144,7 @@ class TestToyotaFingerprint(unittest.TestCase):
         self.assertEqual(list(matches)[0], platform)
       else:
         # If a platform has multiple matches, add it and its matches
-        platforms_with_shared_codes |= {platform, *matches}
+        platforms_with_shared_codes |= {str(platform), *matches}
 
     self.assertEqual(platforms_with_shared_codes, FUZZY_EXCLUDED_PLATFORMS, (len(platforms_with_shared_codes), len(FW_VERSIONS)))
 
