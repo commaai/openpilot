@@ -30,13 +30,13 @@ namespace Path {
   }
 
   inline std::string params() {
-    return Hardware::PC() ? util::getenv("PARAMS_ROOT", Path::comma_home() + "/params") : "/data/params";
+    return util::getenv("PARAMS_ROOT", Hardware::PC() ? (Path::comma_home() + "/params") : "/data/params");
   }
 
   inline std::string rsa_file() {
     return Hardware::PC() ? Path::comma_home() + "/persist/comma/id_rsa" : "/persist/comma/id_rsa";
   }
-  
+
   inline std::string swaglog_ipc() {
     return "ipc:///tmp/logmessage" + Path::openpilot_prefix();
   }
