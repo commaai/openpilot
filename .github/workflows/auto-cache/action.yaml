@@ -36,12 +36,18 @@ runs:
     - id: scons-cache-setup
       shell: bash
       run: mkdir -p ${{ inputs.path }}
+    
+     # using inputs.path doesn't work for some reason with the post-run action
+    - id: set-path
+      shell: bash
+      run: |
+        echo "PATH=${{ inputs.path }}" >> "$GITHUB_ENV"
 
     - name: set cache permissions
       uses: gacts/run-and-post-run@v1
       with:
         post: |
-          chmod -R 777 ${{ inputs.path }}
+          chmod -R 777 $PATH
 
     - name: save github cache
       if: ${{ !contains(runner.name, 'nsc') && inputs.save == 'true' }}
