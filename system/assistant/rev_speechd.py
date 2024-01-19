@@ -1,154 +1,156 @@
-import numpy as np
+import json
+import time
+import os
+import re
 from rev_ai.models import MediaConfig
 from rev_ai.streamingclient import RevAiStreamingClient
 from websocket import _exceptions
 from threading import Thread, Event
 from queue import Queue
-from cereal.messaging import SubMaster, PubMaster, new_message
+from cereal import messaging, log
 from openpilot.common.params import Params
 from openpilot.system.micd import SAMPLE_BUFFER, SAMPLE_RATE
-import json
-import time
-import os
-import re
 
+STTState = log.SpeechToText.State
 
-try:
-  REVAI_ACCESS_TOKEN = os.environ["REVAI_ACCESS_TOKEN"] 
-except:
-  print("Set your google project authorization key location with the command:")
-  print("export GOOGLE_APPLICATION_CREDENTIALS=<path/to/projectname.json>")
+class SpeechToTextProcessor:
+  TIMEOUT_DURATION = 10
+  RATE = SAMPLE_RATE
+  CHUNK = SAMPLE_BUFFER
+  BUFFERS_PER_SECOND = SAMPLE_RATE/SAMPLE_BUFFER
+  QUEUE_TIME = 10  # Save the first 10 seconds to the queue
+  CONNECTION_TIMEOUT = 30
+  INITIAL_TEXT = "Hello, I'm listening" # TODO : move to UI code to handle translations
+  NO_RESP_TEXT = "Sorry, I didn't catch that"
+  ERROR_TEXT = "Sorry, an error occorred"
 
-TIMEOUT_DURATION = 10
+  def __init__(self, access_token, queue_size=BUFFERS_PER_SECOND*QUEUE_TIME):
+    self.reva_access_token = access_token
+    self.audio_queue = Queue(maxsize=int(queue_size))
+    self.stop_thread = Event()
+    self.pm = messaging.PubMaster(['speechToText'])
+    self.sm = messaging.SubMaster(['microphoneRaw'])
+    media_config = MediaConfig('audio/x-raw', 'interleaved', 16000, 'S16LE', 1)
+    self.streamclient = RevAiStreamingClient(self.reva_access_token, media_config)
+    self.p = Params()
+    self.error = False
 
-RATE = SAMPLE_RATE
-CHUNK = SAMPLE_BUFFER
-BUFFERS_PER_SECOND = SAMPLE_RATE/SAMPLE_BUFFER
-QUEUE_TIME = 10 # Save the first 10 seconds to the queue
-CONNECTION_TIMEOUT = 30
-audio_queue = Queue(maxsize=int(BUFFERS_PER_SECOND*QUEUE_TIME))
-
-# Global variables
-stop_thread = Event()
-connection_timeout_reset = Event()
-
-pm = PubMaster(['speechToText'])
-
-
-def microphone_data_collector(stop_thread):
-  """Thread function for collecting microphone data."""
-  sm = SubMaster(['microphoneRaw'])
-  audio_queue.queue.clear()
-  while not stop_thread.is_set():
-    sm.update(0)
-    if sm.updated['microphoneRaw']:
-      data = sm['microphoneRaw'].rawSample
-      if not audio_queue.full():
-        print("putting the audio")
-        audio_queue.put(data)
-      else:
-        print("Queue is full, stopping")
-        return
-
-def microphone_stream():
-  """Generator that yields audio chunks from the queue."""
-  loop_count = 0
-  start_time = time.time()
-  while True:
-    if loop_count >= audio_queue.maxsize or time.time() - start_time > CONNECTION_TIMEOUT:
-      print(f'Timeout reached. {loop_count=}, {time.time()-start_time=}')
-      break
-    elif stop_thread.is_set():
-      print(f'stop_thread.is_set()=')
-      break
-    elif not audio_queue.empty():
-      data = audio_queue.get(block=True)
-      loop_count+=1
-      yield data
-    else:
-      time.sleep(.1)
-    
-            
-def listen_print_loop(response_gen):
-  """Processes the streaming responses from Rev.ai."""
-  final_transcript = ""
-  try:
-    for response in response_gen:
-      connection_timeout_reset.set() # Recieved response. Reset timeout
-      data = json.loads(response)
-      
-      if data['type'] == 'final':
-        # Extract and concatenate the final transcript then send it
-        final_transcript = ' '.join([element['value'] for element in data['elements'] if element['type'] == 'text'])
-        stop_thread.set()
-      else:
-        msg = new_message('speechToText', valid=True)
-        # Handle partial transcripts (optional)
-        partial_transcript = ' '.join([element['value'] for element in data['elements'] if element['type'] == 'text'])
-        msg.speechToText.result = re.sub(r'<[^>]*>', '', partial_transcript) # Remove atmospherics if they are present
-        msg.speechToText.finalResultReady = False
-        pm.send('speechToText', msg)
-
-  except _exceptions.WebSocketConnectionClosedException:
-    print("WebSocket connection closed.")
-  except Exception as e:
-    print(f"An error occurred: {e}")
-
-  finally:
-    # Perform any necessary cleanup here
-    print("Exiting listen_print_loop.")
-    return final_transcript
+  def microphone_data_collector(self):
+    """Thread function for collecting microphone data."""
+    while not self.stop_thread.is_set():
+      self.sm.update(0)
+      if self.sm.updated['microphoneRaw']:
+        data = self.sm['microphoneRaw'].rawSample
+        if not self.audio_queue.full():
+          print("putting the audio")
+          self.audio_queue.put(data)
+        else:
+          print("Queue is full, stopping")
+          self.stop_thread.set()
+          msg = messaging.new_message('speechToText', valid=False)
+          msg.sp
+          self.pm.send('speechToText', msg)
           
-def run():
-  global stop_thread, connection_timeout_reset, audio_queue
 
-  example_mc = MediaConfig('audio/x-raw', 'interleaved', 16000, 'S16LE', 1)
-  streamclient = RevAiStreamingClient(REVAI_ACCESS_TOKEN, example_mc)
-  p = Params()
-  while True:
-    p.put_bool("WakeWordDetected", False)
-    while not p.get_bool("WakeWordDetected"):
-        time.sleep(.2)
-        print("waiting for wakeword")
-    msg = new_message('speechToText', valid=True)
-    msg.speechToText.result = "Hello, I'm listening"
-    pm.send('speechToText', msg)
+  def microphone_stream(self):
+    """Generator that yields audio chunks from the queue."""
+    loop_count = 0
+    start_time = time.time()
+    while True:
+      if loop_count >= self.audio_queue.maxsize or time.time() - start_time > self.CONNECTION_TIMEOUT:
+        print(f'Timeout reached. {loop_count=}, {time.time()-start_time=}')
+        break
+      elif self.stop_thread.is_set():
+        print(f'stop_thread.is_set()=')
+        break
+      elif not self.audio_queue.empty():
+        data = self.audio_queue.get(block=True)
+        loop_count += 1
+        yield data
+      else:
+        time.sleep(.1)
 
-        
-    # Reset stop event and audio queue for a new session
-    stop_thread.clear()
-    connection_timeout_reset.set()
+  def listen_print_loop(self, response_gen, final_transcript):
+    """Processes the streaming responses from Rev.ai."""
+    try:
+      for response in response_gen:
+        data = json.loads(response)
+        if data['type'] == 'final':
+          # Extract and concatenate the final transcript then send it
+          final_transcript = ' '.join([element['value'] for element in data['elements'] if element['type'] == 'text'])
+        else:
+          msg = messaging.new_message('speechToText', valid=True)
+          # Handle partial transcripts (optional)
+          partial_transcript = ' '.join([element['value'] for element in data['elements'] if element['type'] == 'text'])
+          msg.speechToText.result = re.sub(r'<[^>]*>', '', partial_transcript)  # Remove atmospherics if they are present
+          msg.speechToText.finalResultReady = False
+          self.pm.send('speechToText', msg)
+
+    except Exception as e:
+      print(f"An error occurred: {e}")
+      self.error=True
+
+    return re.sub(r'<[^>]*>', '', final_transcript) # remove atmospherics. ex: <laugh>
+
+  def run(self):
+    self.audio_queue.queue.clear()
+    collector_thread = Thread(target=self.microphone_data_collector)
+    final_transcript = ""
+    self.error = False
+    while not self.p.get_bool("WakeWordDetected"):
+      # Improve response time by combining wakewordd.py and this script. For now, keep it modular
+      time.sleep(.5)
+      print("waiting for wakeword")
 
     # Start the microphone data collector thread
-    collector_thread = Thread(target=microphone_data_collector, args=(stop_thread,))
     collector_thread.start()
-    final_transcript = ""
+    msg = messaging.new_message('speechToText', valid=True)
+    msg.speechToText.state = STTState.begin # Show
+    self.pm.send('speechToText', msg)
+
     try:
       # Start streaming to Rev.ai with a new generator instance
-      response_gen = streamclient.start(microphone_stream(),
-                                        remove_disfluencies=True,
-                                        filter_profanity=True,
-                                        detailed_partials=False,
-                                        )
-      final_transcript = listen_print_loop(response_gen)
+      response_gen = self.streamclient.start(self.microphone_stream(),
+                                             remove_disfluencies=True, # remove umms
+                                             filter_profanity=True, # brand integridity or something
+                                             detailed_partials=False, # don't need time stamps
+                                            )
+      final_transcript = self.listen_print_loop(response_gen, final_transcript)
 
-    except _exceptions.WebSocketAddressException:
-      print(f"WebSocketAddressException: Address unreachable.")
+    except _exceptions.WebSocketAddressException as e:
+      print(f"WebSocketAddressException: Address unreachable. {e}")
+      self.error = True
+    except Exception as e:
+      # TODO: handle disconnection better? ssl send can hang forever until reconnected.
+      # This tries to catch the error when it reconnects. Needs more testing
+      print(f"An error occurred: {e}")
+      self.error = True
     finally:
-      # End streaming and cleanup
-      print("Closing connection...")
-      stop_thread.set()  # Signal threads to stop
+      print("Waiting for collector_thread to join...")
+      self.stop_thread.set() # end the stream
       collector_thread.join()
-      print("Connection closed.")
-      # Remove atmospherics if they are present
-      msg = new_message('speechToText', valid=True)
-      msg.speechToText.result = re.sub(r'<[^>]*>', '', final_transcript) if final_transcript != "" else "Sorry, I didn't catch that"
+      self.stop_thread.clear()
+      print("collector_thread joined")
+      
+      msg = messaging.new_message('speechToText', valid=not self.error)
+      msg.speechToText.result = final_transcript
+      msg.speechToText.state = STTState.none if final_transcript else STTState.empty
       msg.speechToText.finalResultReady = True
-      pm.send('speechToText', msg)
-        
-            
+      self.pm.send('speechToText', msg)
+
+
 def main():
-  run()
+  try:
+    reva_access_token = os.environ["REVAI_ACCESS_TOKEN"]="02p64wcPoYc2L6wjOjbDTeBUy7kSwP6soz71WQlblVETPaYH33Ua5Jlraa6vhKdLA5l18cvg6zCwmbWRuyrmUubU5dRr0"
+  except KeyError:
+    print("your rev ai acccess token which can be obtained with a free account. https://www.rev.ai/access-token")
+    print("Set your REVAI_ACCESS_TOKEN with the command:")
+    print('export REVAI_ACCESS_TOKEN="your token string"')
+
+  processor = SpeechToTextProcessor(access_token=reva_access_token)
+  while True:
+    processor.p.put_bool("WakeWordDetected", False)
+    processor.run()
 
 if __name__ == "__main__":
   main()
