@@ -44,9 +44,13 @@ runs:
     - shell: bash
       run: echo "$CACHE_COMMIT_DATE"
     - id: scons-cache
-      uses: jnewb1/namespace-utils/auto-cache@main
+      uses: .github/workflows/auto-cache
       with:
         path: .ci_cache/scons_cache
+        key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
+          scons-${{ runner.arch }}
     # if we didn't get a cache hit, make the directory manually so it doesn't fail on future steps
     - id: scons-cache-setup
       shell: bash
