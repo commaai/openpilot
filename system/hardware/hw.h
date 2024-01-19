@@ -30,7 +30,7 @@ namespace Path {
   }
 
   inline std::string params() {
-    return util::getenv("PARAMS_ROOT", Hardware::PC ? (Path::comma_home() + "/params") : "/data/params");
+    return util::getenv("PARAMS_ROOT", Hardware::PC() ? (Path::comma_home() + "/params") : "/data/params");
   }
 
   inline std::string rsa_file() {
