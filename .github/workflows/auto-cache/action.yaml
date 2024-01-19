@@ -10,6 +10,10 @@ inputs:
   restore-keys:
     description: 'restore-keys'
     required: true
+  save:
+    description: 'whether to save the cache'
+    default: 'false'
+    required: false
 
 runs:
   using: "composite"
@@ -20,7 +24,7 @@ runs:
       with:
         path: ${{ inputs.path }}
 
-    - name: setup github cache
+    - name: restore github cache
       if: ${{ !contains(runner.name, 'nsc') }}
       uses: actions/cache/restore@v3
       with:
@@ -32,3 +36,10 @@ runs:
     - id: scons-cache-setup
       shell: bash
       run: mkdir -p ${{ inputs.path }}
+
+    - name: save github cache
+      if: ${{ !contains(runner.name, 'nsc') && inputs.save != 'false' }}
+      uses: actions/cache/save@v3
+      with:
+        path: ${{ inputs.path }}
+        key: ${{ inputs.key }}
