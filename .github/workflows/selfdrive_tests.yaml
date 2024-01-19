@@ -166,7 +166,7 @@ jobs:
                    ((github.event_name != 'pull_request') || 
                     (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-20.04' }}
     steps:
-    - uses: commaai/openpilot/.github/workflows/auto-checkout@auto-checkout
+    - uses: commaai/openpilot/.github/actions/auto-checkout@auto-checkout
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
