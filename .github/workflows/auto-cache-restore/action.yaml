@@ -22,7 +22,7 @@ runs:
 
     - name: setup github cache
       if: ${{ !contains(runner.name, 'nsc') }}
-      uses: actions/cache/restore@v2
+      uses: actions/cache/restore@v3
       with:
         path: ${{ inputs.path }}
         key: ${{ inputs.key }}
