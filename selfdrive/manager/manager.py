@@ -105,8 +105,7 @@ def manager_init() -> None:
                        dirty=is_dirty(),
                        device=HARDWARE.get_device_type())
 
-
-def manager_prepare() -> None:
+  # preimport all processes
   for p in managed_processes.values():
     p.prepare()
 
@@ -186,17 +185,8 @@ def manager_thread() -> None:
 
 
 def main() -> None:
-  prepare_only = os.getenv("PREPAREONLY") is not None
-
   manager_init()
-
-  # Start UI early so prepare can happen in the background
-  if not prepare_only:
-    managed_processes['ui'].start()
-
-  manager_prepare()
-
-  if prepare_only:
+  if os.getenv("PREPAREONLY") is not None:
     return
 
   # SystemExit on sigterm
