@@ -43,4 +43,7 @@ runs:
     # make the directory manually in case we didn't get a hit, so it doesn't fail on future steps
     - id: scons-cache-setup
       shell: bash
-      run: mkdir -p ${{ inputs.path }}
+      run: |
+        mkdir -p ${{ inputs.path }}
+        sudo chmod -R 777 ${{ inputs.path }}
+        sudo chown -R $USER ${{ inputs.path }}
