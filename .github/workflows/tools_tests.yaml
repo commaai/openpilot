@@ -81,7 +81,7 @@ jobs:
     - name: Run dev container
       run: |
         mkdir -p /tmp/devcontainer_scons_cache/
-        cp -r $GITHUB_WORKSPACE/.ci_cache/scons_cache/* /tmp/devcontainer_scons_cache/
+        cp -r $GITHUB_WORKSPACE/.ci_cache/scons_cache/. /tmp/devcontainer_scons_cache/
         devcontainer up --workspace-folder .
     - name: Test environment
       run: |
