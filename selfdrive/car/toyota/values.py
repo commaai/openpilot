@@ -295,17 +295,17 @@ def get_platform_codes(fw_versions: List[bytes]) -> Dict[bytes, Set[bytes]]:
   return dict(codes)
 
 
-def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions) -> Set[str]:
+def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions, platform_code_ecus) -> Set[str]:
   candidates = set()
 
   for candidate, fws in offline_fw_versions.items():
     # Keep track of ECUs which pass all checks (platform codes, within sub-version range)
     valid_found_ecus = set()
-    valid_expected_ecus = {ecu[1:] for ecu in fws if ecu[0] in PLATFORM_CODE_ECUS}
+    valid_expected_ecus = {ecu[1:] for ecu in fws if ecu[0] in platform_code_ecus}
     for ecu, expected_versions in fws.items():
       addr = ecu[1:]
       # Only check ECUs expected to have platform codes
-      if ecu[0] not in PLATFORM_CODE_ECUS:
+      if ecu[0] not in platform_code_ecus:
         continue
 
       # Expected platform codes & versions
@@ -354,7 +354,7 @@ FW_CHUNK_LEN = 16
 #    On the RAV4, it describes the move to the radar doing ACC, and the use of LTA for lane keeping.
 # - abs: differentiates hybrid/ICE on most cars (Corolla TSS2 is an exception)
 # - eps: describes lateral API changes for the EPS, such as using LTA for lane keeping and rejecting LKA messages
-PLATFORM_CODE_ECUS = [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps]
+# PLATFORM_CODE_ECUS = [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps]
 
 # These platforms have at least one platform code for all ECUs shared with another platform.
 FUZZY_EXCLUDED_PLATFORMS: set[CAR] = set()
