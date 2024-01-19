@@ -120,7 +120,7 @@ if GetOption('extras') and arch != "Darwin":
       r.raise_for_status()
       d['SSH_KEYS'] = f'\\"{r.text.strip()}\\"'
     obj = senv.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
-    f = senv.Program(f"installer/installers/installer_{name}", [obj, cont, LIBS=qt_libs)
+    f = senv.Program(f"installer/installers/installer_{name}", [obj, cont], LIBS=qt_libs)
     # keep installers small
     assert f[0].get_size() < 350*1e3
 
