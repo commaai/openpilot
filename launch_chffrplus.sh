@@ -30,9 +30,6 @@ function launch {
   # Remove orphaned git lock if it exists on boot
   [ -f "$DIR/.git/index.lock" ] && rm -f $DIR/.git/index.lock
 
-  # Pull time from panda
-  $DIR/selfdrive/boardd/set_time.py
-
   # Check to see if there's a valid overlay-based update available. Conditions
   # are as follows:
   #
