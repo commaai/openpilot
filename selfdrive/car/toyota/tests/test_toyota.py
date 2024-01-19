@@ -53,10 +53,11 @@ class TestToyotaFingerprint(unittest.TestCase):
   def test_non_essential_ecus(self):
     # Ensures only the cars that have multiple engine ECUs are in the engine non-essential ECU list
     for car_model, ecus in FW_VERSIONS.items():
-      engine_ecus = {ecu for ecu in ecus if ecu[0] == Ecu.engine}
-      self.assertEqual(len(engine_ecus) > 1,
-                       car_model in FW_QUERY_CONFIG.non_essential_ecus[Ecu.engine],
-                       f"Car model unexpectedly {'not ' if len(engine_ecus) > 1 else ''}in non-essential list")
+      with self.subTest(car_model=car_model.value):
+        engine_ecus = {ecu for ecu in ecus if ecu[0] == Ecu.engine}
+        self.assertEqual(len(engine_ecus) > 1,
+                         car_model in FW_QUERY_CONFIG.non_essential_ecus[Ecu.engine],
+                         f"Car model unexpectedly {'not ' if len(engine_ecus) > 1 else ''}in non-essential list")
 
   # Tests for part numbers, platform codes, and sub-versions which Toyota will use to fuzzy
   # fingerprint in the absence of full FW matches:
