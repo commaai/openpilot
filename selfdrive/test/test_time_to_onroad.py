@@ -14,14 +14,15 @@ from openpilot.selfdrive.test.helpers import set_params_enabled
 def test_time_to_onroad():
   # launch
   set_params_enabled()
-  manager_path = os.path.join(BASEDIR, "selfdrive/manager/manager.py")
-  proc = subprocess.Popen(["python", manager_path])
+  env = os.environ.copy()
+  env['PREBUILT'] = '1'
+  proc = subprocess.Popen("./launch_openpilot.sh", env=env, cwd=BASEDIR)
 
   start_time = time.monotonic()
   sm = messaging.SubMaster(['controlsState', 'deviceState', 'onroadEvents'])
   try:
     # wait for onroad
-    with Timeout(20, "timed out waiting to go onroad"):
+    with Timeout(8, "timed out waiting to go onroad"):
       while True:
         sm.update(1000)
         if sm['deviceState'].started:

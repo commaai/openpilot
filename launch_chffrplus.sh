@@ -78,7 +78,7 @@ function launch {
 
   # start manager
   cd selfdrive/manager
-  if [ ! -f $DIR/prebuilt ]; then
+  if [ ! -f $DIR/prebuilt ] && [ -z "$PREBUILT" ]; then
     ./build.py
   fi
   ./manager.py
