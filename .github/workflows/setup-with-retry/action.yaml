@@ -5,6 +5,10 @@ inputs:
     description: 'Auth token for Docker Hub, required for BuildJet jobs'
     required: false
     default: ''
+  cache_key_prefix:
+    description: 'Prefix for caching key'
+    required: false
+    default: 'scons_x86_64'
   sleep_time:
     description: 'Time to sleep between retries'
     required: false
@@ -18,6 +22,7 @@ runs:
       continue-on-error: true
       with:
         docker_hub_pat: ${{ inputs.docker_hub_pat }}
+        cache_key_prefix: ${{ inputs.cache_key_prefix }}
         is_retried: true
     - if: steps.setup1.outcome == 'failure'
       shell: bash
@@ -28,6 +33,7 @@ runs:
       continue-on-error: true
       with:
         docker_hub_pat: ${{ inputs.docker_hub_pat }}
+        cache_key_prefix: ${{ inputs.cache_key_prefix }}
         is_retried: true
     - if: steps.setup2.outcome == 'failure'
       shell: bash
@@ -37,4 +43,5 @@ runs:
       uses: ./.github/workflows/setup
       with:
         docker_hub_pat: ${{ inputs.docker_hub_pat }}
+        cache_key_prefix: ${{ inputs.cache_key_prefix }}
         is_retried: true
