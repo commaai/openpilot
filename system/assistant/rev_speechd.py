@@ -20,9 +20,6 @@ class SpeechToTextProcessor:
   BUFFERS_PER_SECOND = SAMPLE_RATE/SAMPLE_BUFFER
   QUEUE_TIME = 10  # Save the first 10 seconds to the queue
   CONNECTION_TIMEOUT = 30
-  INITIAL_TEXT = "Hello, I'm listening" # TODO : move to UI code to handle translations
-  NO_RESP_TEXT = "Sorry, I didn't catch that"
-  ERROR_TEXT = "Sorry, an error occorred"
 
   def __init__(self, access_token, queue_size=BUFFERS_PER_SECOND*QUEUE_TIME):
     self.reva_access_token = access_token

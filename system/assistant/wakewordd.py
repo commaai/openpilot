@@ -39,8 +39,8 @@ class WakeWordListener:
     sample = np.frombuffer(self.sm['microphoneRaw'].rawSample, dtype=np.int16)
     prediction_score = self.owwModel.predict(sample)
     detected = prediction_score[self.model_name] >= self.threshhold
-    if detected:# != self.detected_last: # Catch the edges only
-      print("wake word detected" if detected else "wake word not detected")
+    if detected:
+      print("wake word detected")
       self.params.put_bool("WakeWordDetected", True)
     self.detected_last = detected
 
