@@ -44,7 +44,7 @@ runs:
     - shell: bash
       run: echo "$CACHE_COMMIT_DATE"
     - id: scons-cache
-      uses: ./.github/workflows/auto-cache-restore
+      uses: ./.github/workflows/auto-cache
       with:
         path: .ci_cache/scons_cache
         key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
