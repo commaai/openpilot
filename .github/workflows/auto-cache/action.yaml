@@ -27,3 +27,8 @@ runs:
         path: ${{ inputs.path }}
         key: ${{ inputs.key }}
         restore-keys: ${{ inputs.restore-keys }}
+
+    # make the directory manually in case we didn't get a hit, so it doesn't fail on future steps
+    - id: scons-cache-setup
+      shell: bash
+      run: mkdir -p ${{ inputs.path }}
