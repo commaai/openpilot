@@ -53,7 +53,6 @@ class TestManager(unittest.TestCase):
     """
     HARDWARE.set_power_save(False)
     manager.manager_init()
-    manager.manager_prepare()
 
     CP = car.CarParams.new_message()
     procs = ensure_running(managed_processes.values(), True, Params(), CP, not_run=BLACKLIST_PROCS)
