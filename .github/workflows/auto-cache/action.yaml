@@ -38,7 +38,7 @@ runs:
       run: mkdir -p ${{ inputs.path }}
 
     - name: save github cache
-      if: ${{ !contains(runner.name, 'nsc') && input.save != 'false' }}
+      if: ${{ !contains(runner.name, 'nsc') && inputs.save != 'false' }}
       uses: actions/cache/save@v3
       with:
         path: ${{ inputs.path }}
