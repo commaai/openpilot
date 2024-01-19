@@ -95,7 +95,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"AthenadPid", PERSISTENT},
     {"AthenadUploadQueue", PERSISTENT},
     {"AthenadRecentlyViewedRoutes", PERSISTENT},
-    {"BootParams", PERSISTENT},
     {"CalibrationParams", PERSISTENT},
     {"CameraDebugExpGain", CLEAR_ON_MANAGER_START},
     {"CameraDebugExpTime", CLEAR_ON_MANAGER_START},
