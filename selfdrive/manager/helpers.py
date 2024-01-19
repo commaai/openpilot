@@ -54,9 +54,11 @@ def save_bootlog():
   tmp = tempfile.mkdtemp()
   shutil.copytree(Params().get_param_path() + "/..", tmp, dirs_exist_ok=True)
 
-  env = os.environ.copy()
-  env['PARAMS_ROOT'] = tmp
-
-  t = threading.Thread(target=subprocess.call, args=("./bootlog", ), kwargs={'cwd': os.path.join(BASEDIR, "system/loggerd"), 'env': env})
+  def fn(tmpdir):
+    env = os.environ.copy()
+    env['PARAMS_ROOT'] = tmpdir
+    subprocess.call("./bootlog", cwd=os.path.join(BASEDIR, "system/loggerd"), env=env)
+    shutil.rmtree(tmpdir)
+  t = threading.Thread(target=fn, args=(tmp, ))
   t.daemon = True
   t.start()
