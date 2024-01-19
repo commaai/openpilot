@@ -3,7 +3,6 @@ import argparse
 import os
 import time
 import threading
-import multiprocessing
 
 os.environ['FILEREADER_CACHE'] = '1'
 
@@ -99,10 +98,7 @@ if __name__ == "__main__":
 
   sr = LogReader(args.route_or_segment_name)
 
-  with multiprocessing.Pool(24) as pool:
-    CAN_MSGS = []
-    for p in pool.map(process, sr.lrs):
-      CAN_MSGS.extend(p)
+  CAN_MSGS = sr.run_across_segments(24, process)
 
   print("Finished loading...")
 
