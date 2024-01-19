@@ -4,6 +4,7 @@ import os
 import signal
 import subprocess
 import sys
+import threading
 import traceback
 from typing import List, Tuple, Union
 
@@ -31,7 +32,9 @@ def manager_init() -> None:
   set_time(cloudlog)
 
   # save boot log
-  subprocess.call("./bootlog", cwd=os.path.join(BASEDIR, "system/loggerd"))
+  t = threading.Thread(target=subprocess.call, args=("./bootlog", ), kwargs={'cwd': os.path.join(BASEDIR, "system/loggerd")})
+  t.daemon = True
+  t.start()
 
   params = Params()
   params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
