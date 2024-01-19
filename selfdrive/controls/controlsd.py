@@ -105,14 +105,13 @@ class Controls:
     self.is_metric = self.params.get_bool("IsMetric")
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
     openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
-    passive = self.params.get_bool("Passive") or not openpilot_enabled_toggle
 
     # detect sound card presence and ensure successful init
     sounds_available = HARDWARE.get_sound_card_online()
 
     car_recognized = self.CP.carName != 'mock'
 
-    controller_available = self.CI.CC is not None and not passive and not self.CP.dashcamOnly
+    controller_available = self.CI.CC is not None and openpilot_enabled_toggle and not self.CP.dashcamOnly
     self.CP.passive = not car_recognized or not controller_available or self.CP.dashcamOnly
     if self.CP.passive:
       safety_config = car.CarParams.SafetyConfig.new_message()
