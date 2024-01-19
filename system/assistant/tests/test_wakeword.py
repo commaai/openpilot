@@ -2,10 +2,9 @@ import unittest
 import numpy as np
 import wave
 import openpilot.system.micd as micd
-from openpilot.system.assistant.wakewordd import WakeWordListener, download_models, MODEL_DIR, PHRASE_MODEL_NAME
+from openpilot.system.assistant.wakewordd import WakeWordListener, download_models, MODEL_DIR, PHRASE_MODEL_NAME, PHRASE_MODEL_PATH
 from openpilot.common.params import Params
 from pathlib import Path
-import time
 
 SOUND_FILE_PATH = Path(__file__).parent / 'sounds'
 EASY = f'{SOUND_FILE_PATH}/alexa_easy.wav'
@@ -14,13 +13,12 @@ HARD = f'{SOUND_FILE_PATH}/alexa_hard.wav'
 CONVERSATION = f'{SOUND_FILE_PATH}/random_conversation.wav'
 
 
-
 class TestMicd(unittest.TestCase):
     
   def setUp(self):
     # Download models if necessary
     download_models([PHRASE_MODEL_NAME], MODEL_DIR)
-    self.wwl = WakeWordListener()
+    self.wwl = WakeWordListener(model_path=PHRASE_MODEL_PATH,threshhold=0.5)
     self.params = Params()
 
   def test_callback_with_wav(self):

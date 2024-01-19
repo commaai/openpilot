@@ -18,7 +18,7 @@ THRESHOLD = .5
 
 
 class WakeWordListener:
-  def __init__(self, model_path=PHRASE_MODEL_PATH):
+  def __init__(self, model_path=PHRASE_MODEL_PATH, threshhold=THRESHOLD):
     self.owwModel = Model(wakeword_models=[model_path], melspec_model_path=MEL_MODEL_PATH, embedding_model_path=EMB_MODEL_PATH, sr=SAMPLE_RATE)
     self.sm = messaging.SubMaster(['microphoneRaw'])
     self.params = Params()
@@ -27,6 +27,7 @@ class WakeWordListener:
     self.frame_index = 0
     self.frame_index_last = 0
     self.detected_last = False
+    self.threshhold = threshhold
 
   def update(self):
     self.frame_index = self.sm['microphoneRaw'].frameIndex
@@ -39,7 +40,7 @@ class WakeWordListener:
     self.frame_index_last = self.frame_index
     sample = np.frombuffer(self.sm['microphoneRaw'].rawSample, dtype=np.int16)
     prediction_score = self.owwModel.predict(sample)
-    detected = prediction_score[self.model_name] >= THRESHOLD
+    detected = prediction_score[self.model_name] >= self.threshhold
     if detected != self.detected_last: # Catch the edges only
       print("wake word detected" if detected else "wake word not detected")
       self.params.put_bool("WakeWordDetected", detected)
