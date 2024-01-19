@@ -37,6 +37,12 @@ runs:
       shell: bash
       run: mkdir -p ${{ inputs.path }}
 
+    - name: set cache permissions
+      uses: gacts/run-and-post-run@v1
+      with:
+        post: |
+          chmod -R 777 ${{ inputs.path }}
+
     - name: save github cache
       if: ${{ !contains(runner.name, 'nsc') && inputs.save != 'false' }}
       uses: actions/cache/save@v3
