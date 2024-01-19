@@ -307,7 +307,9 @@ jobs:
 
   test_cars:
     name: cars
-    runs-on: ubuntu-20.04
+    runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
+                   ((github.event_name != 'pull_request') || 
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-20.04' }}
     strategy:
       fail-fast: false
       matrix:
