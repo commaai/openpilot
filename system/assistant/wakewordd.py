@@ -9,51 +9,52 @@ from openpilot.system.micd import SAMPLE_BUFFER, SAMPLE_RATE
 
 
 RATE = 12.5
-class WakeWordListener:
-  def __init__(self, model):
-    model_path = Path(__file__).parent / f'models/{model}.onnx'
-    melspec_model_path = Path(__file__).parent / 'models/melspectrogram.onnx'
-    embedding_model_path = Path(__file__).parent / 'models/embedding_model.onnx'
-    self.owwModel = Model(wakeword_models=[model_path], melspec_model_path=melspec_model_path, embedding_model_path=embedding_model_path, sr=SAMPLE_RATE)
+PHRASE_MODEL_NAME = "alexa_v0.1"
+MODEL_DIR = Path(__file__).parent / 'models'
+PHRASE_MODEL_PATH = f'{MODEL_DIR}/{PHRASE_MODEL_NAME}.onnx'
+MEL_MODEL_PATH = f'{MODEL_DIR}/melspectrogram.onnx'
+EMB_MODEL_PATH = f'{MODEL_DIR}/embedding_model.onnx'
+THRESHOLD = .5
 
+
+class WakeWordListener:
+  def __init__(self, model_path=PHRASE_MODEL_PATH):
+    self.owwModel = Model(wakeword_models=[model_path], melspec_model_path=MEL_MODEL_PATH, embedding_model_path=EMB_MODEL_PATH, sr=SAMPLE_RATE)
     self.sm = messaging.SubMaster(['microphoneRaw'])
     self.params = Params()
 
+    self.model_name = model_path.split("/")[-1].split(".onnx")[0]
     self.frame_index = 0
     self.frame_index_last = 0
-
+    self.detected_last = False
 
   def update(self):
     self.frame_index = self.sm['microphoneRaw'].frameIndex
-    #print(f'{self.frame_index_last=}, {self.frame_index=}')
     if not (self.frame_index_last == self.frame_index or
             self.frame_index - self.frame_index_last == SAMPLE_BUFFER):
-      print(f'skipped {(self.frame_index - self.frame_index_last)//SAMPLE_BUFFER-1} sample(s)')
+      print(f'skipped {(self.frame_index - self.frame_index_last)//SAMPLE_BUFFER-1} sample(s)') # TODO: Stop it from skipping
     if self.frame_index_last == self.frame_index:
       print("got the same frame")
+      return
     self.frame_index_last = self.frame_index
     sample = np.frombuffer(self.sm['microphoneRaw'].rawSample, dtype=np.int16)
-    self.owwModel.predict(sample)
-    for mdl in self.owwModel.prediction_buffer.keys():
-        scores = list(self.owwModel.prediction_buffer[mdl])
-        detected = scores[-1] >= 0.5
-        #curr_score = "{:.20f}".format(abs(scores[-1]))
-    #print(curr_score)
-    if detected:
-      print("wake word detected")
-    self.params.put_bool("WakeWordDetected", detected)
+    prediction_score = self.owwModel.predict(sample)
+    detected = prediction_score[self.model_name] >= THRESHOLD
+    if detected != self.detected_last: # Catch the edges only
+      print("wake word detected" if detected else "wake word not detected")
+      self.params.put_bool("WakeWordDetected", detected)
+    self.detected_last = detected
 
-  def wake_word_listener_thread(self):
-    while True:
-        self.sm.update(0)
-        if self.sm.updated['microphoneRaw']:
-            self.update()
+  def wake_word_runner(self):
+    self.sm.update(0)
+    if self.sm.updated['microphoneRaw']:
+        self.update()
 
 def main():
-  model = "alexa_v0.1"
-  download_models([model], Path(__file__).parent / 'models')
-  wwl = WakeWordListener(model)
-  wwl.wake_word_listener_thread()
+  download_models([PHRASE_MODEL_NAME], MODEL_DIR)
+  wwl = WakeWordListener()
+  while True:
+    wwl.wake_word_runner()
 
 if __name__ == "__main__":
   main()
