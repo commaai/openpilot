@@ -3,7 +3,13 @@ import sys
 import fcntl
 import errno
 import signal
+import shutil
+import subprocess
+import tempfile
+import threading
 
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.params import Params
 
 def unblock_stdout() -> None:
   # get a non-blocking stdout
@@ -41,3 +47,16 @@ def unblock_stdout() -> None:
 def write_onroad_params(started, params):
   params.put_bool("IsOnroad", started)
   params.put_bool("IsOffroad", not started)
+
+
+def save_bootlog():
+  # copy current params
+  tmp = tempfile.mkdtemp()
+  shutil.copytree(Params().get_param_path() + "/..", tmp, dirs_exist_ok=True)
+
+  env = os.environ.copy()
+  env['PARAMS_ROOT'] = tmp
+
+  t = threading.Thread(target=subprocess.call, args=("./bootlog", ), kwargs={'cwd': os.path.join(BASEDIR, "system/loggerd"), 'env': env})
+  t.daemon = True
+  t.start()
