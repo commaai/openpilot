@@ -205,7 +205,7 @@ jobs:
         docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
     - name: Cache test routes
       id: dependency-cache
-      uses: actions/cache@v3
+      uses: ./.github/workflows/auto-cache
       with:
         path: .ci_cache/comma_download_cache
         key: proc-replay-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/ref_commit') }}
@@ -216,7 +216,6 @@ jobs:
       timeout-minutes: 30
       run: |
         ${{ env.RUN }} "coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
-                        chmod -R 777 /tmp/comma_download_cache && \
                         coverage combine && \
                         coverage xml"
     - name: Print diff
@@ -250,7 +249,7 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Cache test routes
       id: dependency-cache
-      uses: actions/cache@v3
+      uses: ./.github/workflows/auto-cache
       with:
         path: .ci_cache/comma_download_cache
         key: regen-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/test_regen.py') }}
@@ -264,8 +263,7 @@ jobs:
     - name: Run regen
       timeout-minutes: 30
       run: |
-        ${{ env.RUN_CL }} "ONNXCPU=1 $PYTEST selfdrive/test/process_replay/test_regen.py && \
-                           chmod -R 777 /tmp/comma_download_cache"
+        ${{ env.RUN_CL }} "ONNXCPU=1 $PYTEST selfdrive/test/process_replay/test_regen.py"
 
   test_modeld:
     name: model tests
@@ -317,7 +315,7 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Cache test routes
       id: dependency-cache
-      uses: actions/cache@v3
+      uses: ./.github/workflows/auto-cache
       with:
         path: .ci_cache/comma_download_cache
         key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'selfdrive/car/tests/routes.py') }}-${{ matrix.job }}
@@ -326,8 +324,7 @@ jobs:
     - name: Test car models
       timeout-minutes: 25
       run: |
-        ${{ env.RUN }} "$PYTEST selfdrive/car/tests/test_models.py && \
-                        chmod -R 777 /tmp/comma_download_cache"
+        ${{ env.RUN }} "$PYTEST selfdrive/car/tests/test_models.py"
       env:
         NUM_JOBS: 5
         JOB_ID: ${{ matrix.job }}

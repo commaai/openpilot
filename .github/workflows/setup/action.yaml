@@ -47,6 +47,7 @@ runs:
       uses: ./.github/workflows/auto-cache
       with:
         path: .ci_cache/scons_cache
+        save: 'false' # cache is only saved by the compile-openpilot action
         key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
         restore-keys: |
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
