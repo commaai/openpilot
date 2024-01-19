@@ -48,9 +48,8 @@ class SpeechToTextProcessor:
           print("Queue is full, stopping")
           self.stop_thread.set()
           msg = messaging.new_message('speechToText', valid=False)
-          msg.sp
           self.pm.send('speechToText', msg)
-          
+
 
   def microphone_stream(self):
     """Generator that yields audio chunks from the queue."""
@@ -131,7 +130,7 @@ class SpeechToTextProcessor:
       collector_thread.join()
       self.stop_thread.clear()
       print("collector_thread joined")
-      
+
       msg = messaging.new_message('speechToText', valid=not self.error)
       msg.speechToText.result = final_transcript
       msg.speechToText.state = STTState.none if final_transcript else STTState.empty
@@ -141,7 +140,7 @@ class SpeechToTextProcessor:
 
 def main():
   try:
-    reva_access_token = os.environ["REVAI_ACCESS_TOKEN"]="02p64wcPoYc2L6wjOjbDTeBUy7kSwP6soz71WQlblVETPaYH33Ua5Jlraa6vhKdLA5l18cvg6zCwmbWRuyrmUubU5dRr0"
+    reva_access_token = os.environ["REVAI_ACCESS_TOKEN"]
   except KeyError:
     print("your rev ai acccess token which can be obtained with a free account. https://www.rev.ai/access-token")
     print("Set your REVAI_ACCESS_TOKEN with the command:")

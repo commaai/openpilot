@@ -14,7 +14,7 @@ CONVERSATION = f'{SOUND_FILE_PATH}/random_conversation.wav'
 sounds_and_detects = {EASY: True, MEDIUM: True, HARD: True, CONVERSATION: False}
 
 class WakeWordListener(unittest.TestCase):
-    
+
   def setUp(self):
     # Download models if necessary
     download_models([WWL.PHRASE_MODEL_NAME], "./models")
