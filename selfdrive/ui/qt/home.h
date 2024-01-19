@@ -50,6 +50,7 @@ public:
 signals:
   void openSettings(int index = 0, const QString &param = "");
   void closeSettings();
+  void requestRaiseAssistantOverlay();
 
 public slots:
   void offroadTransition(bool offroad);

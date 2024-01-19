@@ -8,10 +8,12 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout(this);
   main_layout->setMargin(0);
 
+  assistantOverlay = new AssistantOverlay(this);
   homeWindow = new HomeWindow(this);
   main_layout->addWidget(homeWindow);
   QObject::connect(homeWindow, &HomeWindow::openSettings, this, &MainWindow::openSettings);
   QObject::connect(homeWindow, &HomeWindow::closeSettings, this, &MainWindow::closeSettings);
+  QObject::connect(homeWindow, &HomeWindow::requestRaiseAssistantOverlay, this, &MainWindow::raiseAssistantOverlay);
 
   settingsWindow = new SettingsWindow(this);
   main_layout->addWidget(settingsWindow);
@@ -32,17 +34,19 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   if (!onboardingWindow->completed()) {
     main_layout->setCurrentWidget(onboardingWindow);
   }
-  assistantOverlay = new AssistantOverlay(this);
+
 
   QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
     if (!offroad) {
       closeSettings();
     }
+    assistantOverlay->raise();
   });
   QObject::connect(device(), &Device::interactiveTimeout, [=]() {
     if (main_layout->currentWidget() == settingsWindow) {
       closeSettings();
     }
+    assistantOverlay->raise();
   });
 
   // load fonts
