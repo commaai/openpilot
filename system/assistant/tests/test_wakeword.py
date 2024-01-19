@@ -25,6 +25,7 @@ class WakeWordListener(unittest.TestCase):
     # Create a Mic instance
     mic_instance = micd.Mic()
     for file,should_detect in sounds_and_detects.items():
+      self.params.put_bool("WakeWordDetected", False) # Reset
       print(f'testing {file}, {should_detect=}')
       with wave.open(file, 'rb') as wf:
         # Ensure the file is mono and has the correct sample rate

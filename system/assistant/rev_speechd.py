@@ -50,7 +50,6 @@ class SpeechToTextProcessor:
           msg = messaging.new_message('speechToText', valid=False)
           self.pm.send('speechToText', msg)
 
-
   def microphone_stream(self):
     """Generator that yields audio chunks from the queue."""
     loop_count = 0
@@ -98,7 +97,7 @@ class SpeechToTextProcessor:
     self.error = False
     while not self.p.get_bool("WakeWordDetected"):
       # Improve response time by combining wakewordd.py and this script. For now, keep it modular
-      time.sleep(.5)
+      time.sleep(.4)
       print("waiting for wakeword")
 
     # Start the microphone data collector thread
@@ -130,7 +129,7 @@ class SpeechToTextProcessor:
       collector_thread.join()
       self.stop_thread.clear()
       print("collector_thread joined")
-
+      
       msg = messaging.new_message('speechToText', valid=not self.error)
       msg.speechToText.result = final_transcript
       msg.speechToText.state = STTState.none if final_transcript else STTState.empty
