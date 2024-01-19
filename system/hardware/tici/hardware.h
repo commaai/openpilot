@@ -82,6 +82,7 @@ public:
     ret["boot temp"] = temp;
 
     // TODO: log something from system and boot
+    /*
     for (std::string part : {"xbl", "abl", "aop", "devcfg", "xbl_config"}) {
       for (std::string slot : {"a", "b"}) {
         std::string partition = part + "_" + slot;
@@ -89,6 +90,7 @@ public:
         ret[partition] = hash.substr(0, hash.find_first_of(" "));
       }
     }
+    */
 
     return ret;
   }
