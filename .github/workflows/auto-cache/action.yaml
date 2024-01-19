@@ -25,8 +25,16 @@ runs:
         path: ${{ inputs.path }}
 
     - name: setup github cache
-      if: ${{ !contains(runner.name, 'nsc') }}
-      uses: ${{ inputs.save != 'false' && 'actions/cache@v3' || 'actions/cache/restore@v3' }}
+      if: ${{ !contains(runner.name, 'nsc') && inputs.save != 'false' }}
+      uses: 'actions/cache@v3'
+      with:
+        path: ${{ inputs.path }}
+        key: ${{ inputs.key }}
+        restore-keys: ${{ inputs.restore-keys }}
+
+    - name: setup github cache
+      if: ${{ !contains(runner.name, 'nsc') && inputs.save == 'false' }}
+      uses: 'actions/cache/restore@v3'
       with:
         path: ${{ inputs.path }}
         key: ${{ inputs.key }}
