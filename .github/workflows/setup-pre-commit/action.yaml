@@ -1,0 +1,13 @@
+name: 'set up pre-commit environment'
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/cache@v3
+      id: restore-cache
+      with: 
+        path: .ci_cache/pre-commit
+        key: pre-commit-${{ hashFiles('**/.pre-commit-config.yaml') }}
+    - shell: bash
+      if: steps.restore-cache.outputs.cache-hit != 'true'
+      run: mkdir -p $GITHUB_WORKSPACE/.ci_cache/pre-commit
