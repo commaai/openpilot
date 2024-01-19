@@ -558,10 +558,6 @@
         <translation>離開</translation>
     </message>
     <message>
-        <source>dashcam</source>
-        <translation>行車記錄器</translation>
-    </message>
-    <message>
         <source>openpilot</source>
         <translation>openpilot</translation>
     </message>
