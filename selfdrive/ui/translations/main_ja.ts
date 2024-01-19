@@ -557,10 +557,6 @@
         <translation>閉じる</translation>
     </message>
     <message>
-        <source>dashcam</source>
-        <translation>ﾄﾞﾗｲﾌﾞﾚｺｰﾀﾞｰ</translation>
-    </message>
-    <message>
         <source>openpilot</source>
         <translation>openpilot</translation>
     </message>
