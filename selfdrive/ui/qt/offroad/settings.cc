@@ -356,7 +356,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     QPushButton {
       font-size: 140px;
       padding-bottom: 20px;
-      border 1px grey solid;
       border-radius: 100px;
       background-color: #292929;
       font-weight: 400;
