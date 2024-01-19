@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 import wave
 import openpilot.system.micd as micd
-from openpilot.system.assistant.wakewordd import WakeWordListener, download_models, MODEL_DIR, PHRASE_MODEL_NAME, PHRASE_MODEL_PATH
+from openpilot.system.assistant.wakewordd import WakeWordListener as WWL, download_models
 from openpilot.common.params import Params
 from pathlib import Path
 
@@ -11,20 +11,19 @@ EASY = f'{SOUND_FILE_PATH}/alexa_easy.wav'
 MEDIUM = f'{SOUND_FILE_PATH}/alexa_medium.wav'
 HARD = f'{SOUND_FILE_PATH}/alexa_hard.wav'
 CONVERSATION = f'{SOUND_FILE_PATH}/random_conversation.wav'
+sounds_and_detects = {EASY: True, MEDIUM: True, HARD: True, CONVERSATION: False}
 
-
-class TestMicd(unittest.TestCase):
+class WakeWordListener(unittest.TestCase):
     
   def setUp(self):
     # Download models if necessary
-    download_models([PHRASE_MODEL_NAME], MODEL_DIR)
-    self.wwl = WakeWordListener(model_path=PHRASE_MODEL_PATH,threshhold=0.5)
+    download_models([WWL.PHRASE_MODEL_NAME], "./models")
+    self.wwl = WWL(model_path=WWL.PHRASE_MODEL_PATH,threshhold=0.5)
     self.params = Params()
 
-  def test_callback_with_wav(self):
+  def test_wake_word(self):
     # Create a Mic instance
     mic_instance = micd.Mic()
-    sounds_and_detects = {EASY: True, MEDIUM: True, HARD: True, CONVERSATION: False}
     for file,should_detect in sounds_and_detects.items():
       print(f'testing {file}, {should_detect=}')
       with wave.open(file, 'rb') as wf:

@@ -8,18 +8,16 @@ from cereal import messaging
 from openpilot.system.micd import SAMPLE_BUFFER, SAMPLE_RATE
 
 
-RATE = 12.5
-PHRASE_MODEL_NAME = "alexa_v0.1"
-MODEL_DIR = Path(__file__).parent / 'models'
-PHRASE_MODEL_PATH = f'{MODEL_DIR}/{PHRASE_MODEL_NAME}.onnx'
-MEL_MODEL_PATH = f'{MODEL_DIR}/melspectrogram.onnx'
-EMB_MODEL_PATH = f'{MODEL_DIR}/embedding_model.onnx'
-THRESHOLD = .5
-
-
 class WakeWordListener:
+  RATE = 12.5
+  PHRASE_MODEL_NAME = "alexa_v0.1"
+  MODEL_DIR = Path(__file__).parent / 'models'
+  PHRASE_MODEL_PATH = f'{MODEL_DIR}/{PHRASE_MODEL_NAME}.onnx'
+  MEL_MODEL_PATH = f'{MODEL_DIR}/melspectrogram.onnx'
+  EMB_MODEL_PATH = f'{MODEL_DIR}/embedding_model.onnx'
+  THRESHOLD = .5
   def __init__(self, model_path=PHRASE_MODEL_PATH, threshhold=THRESHOLD):
-    self.owwModel = Model(wakeword_models=[model_path], melspec_model_path=MEL_MODEL_PATH, embedding_model_path=EMB_MODEL_PATH, sr=SAMPLE_RATE)
+    self.owwModel = Model(wakeword_models=[model_path], melspec_model_path=self.MEL_MODEL_PATH, embedding_model_path=self.EMB_MODEL_PATH, sr=SAMPLE_RATE)
     self.sm = messaging.SubMaster(['microphoneRaw'])
     self.params = Params()
 
@@ -52,7 +50,7 @@ class WakeWordListener:
         self.update()
 
 def main():
-  download_models([PHRASE_MODEL_NAME], MODEL_DIR)
+  download_models([WakeWordListener.PHRASE_MODEL_NAME], WakeWordListener.MODEL_DIR)
   wwl = WakeWordListener()
   while True:
     wwl.wake_word_runner()
