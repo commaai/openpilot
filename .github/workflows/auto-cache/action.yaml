@@ -37,7 +37,7 @@ runs:
       shell: bash
       run: mkdir -p ${{ inputs.path }}
     
-     # using inputs.path doesn't work for some reason with the post-run action
+    # using inputs.path doesn't work for some reason with the post-run action
     - id: set-path
       shell: bash
       run: |
