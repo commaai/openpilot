@@ -49,7 +49,7 @@ class TestMicd(unittest.TestCase):
           self.wwl.wake_word_runner()
           if self.params.get_bool("WakeWordDetected"):
             detected = True
-          self.assertEqual(detected,should_detect, f'{detected=} {should_detect=} for sound {file}')
+        self.assertEqual(detected,should_detect, f'{detected=} {should_detect=} for sound {file}')
 
 if __name__ == '__main__':
   unittest.main()
