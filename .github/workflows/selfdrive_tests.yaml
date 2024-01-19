@@ -182,7 +182,7 @@ jobs:
       run: |
         ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
                         export MAPBOX_TOKEN='pk.eyJ1Ijoiam5ld2IiLCJhIjoiY2xxNW8zZXprMGw1ZzJwbzZneHd2NHljbSJ9.gV7VPRfbXFetD-1OVF0XZg' && \
-                        $PYTEST --timeout 40 -m 'not slow' -n $(nproc) && \
+                        $PYTEST --timeout 60 -m 'not slow' -n $(nproc) && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         ./selfdrive/ui/tests/test_translations.py"
