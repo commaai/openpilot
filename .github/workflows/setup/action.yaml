@@ -44,7 +44,7 @@ runs:
     - shell: bash
       run: echo "$CACHE_COMMIT_DATE"
     - id: scons-cache
-      uses: ./.github/actions/auto-cache-restore
+      uses: commaai/namespace-utils/auto-cache-restore@main
       with:
         path: .ci_cache/scons_cache
         key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
