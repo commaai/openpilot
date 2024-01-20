@@ -555,6 +555,7 @@ CONFIGS = [
     main_pub_drained=False,
     vision_pubs=["roadCameraState", "wideRoadCameraState"],
     ignore_alive_pubs=["wideRoadCameraState"],
+    init_callback=get_car_params_callback,
   ),
   ProcessConfig(
     proc_name="dmonitoringmodeld",
