@@ -108,8 +108,8 @@ def model_replay(lr, frs):
   modeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"roadCameraState", "wideRoadCameraState"}, {"roadEncodeIdx", "wideRoadEncodeIdx"})
   dmodeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"driverCameraState"}, {"driverEncodeIdx"})
   if not SEND_EXTRA_INPUTS:
-    modeld_logs = [msg for msg in modeld_logs if msg.which() not in ["liveCalibration", "lateralPlan"]]
-    dmodeld_logs = [msg for msg in dmodeld_logs if msg.which() not in ["liveCalibration", "lateralPlan"]]
+    modeld_logs = [msg for msg in modeld_logs if msg.which() not in ["liveCalibration",]]
+    dmodeld_logs = [msg for msg in dmodeld_logs if msg.which() not in ["liveCalibration",]]
   # initial calibration
   cal_msg = next(msg for msg in lr if msg.which() == "liveCalibration").as_builder()
   cal_msg.logMonoTime = lr[0].logMonoTime

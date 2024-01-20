@@ -24,7 +24,7 @@ class TestModeld(unittest.TestCase):
     self.vipc_server.start_listener()
 
     self.sm = messaging.SubMaster(['modelV2', 'cameraOdometry'])
-    self.pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'liveCalibration', 'lateralPlan'])
+    self.pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'liveCalibration'])
 
     managed_processes['modeld'].start()
     self.pm.wait_for_readers_to_update("roadCameraState", 10)
