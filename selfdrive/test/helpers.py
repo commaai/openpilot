@@ -8,7 +8,7 @@ from openpilot.common.params import Params
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.system.hardware import PC
 from openpilot.system.version import training_version, terms_version
-from openpilot.tools.lib.logreader import LogIterable
+from openpilot.tools.lib.logreader import LogIterable, LogMessage
 
 
 def set_params_enabled():
@@ -82,7 +82,18 @@ def read_segment_list(segment_list_path):
 
 # Utilities for sanitizing routes of only essential data for testing car ports and doing validation.
 
+def sanetize_vin(vin: str): # remove sentitive data from VIN
+  VIN_SENSITIVE = 6 # number of digits in a VIN that is sensitive (last 6 digits are serial number)
+  return vin[:-VIN_SENSITIVE] + "X" * VIN_SENSITIVE
+
+def sanetize_msg(msg: LogMessage) -> LogMessage:
+  if msg.which() == "carParams":
+    msg.carParams.carVin = sanetize_vin(msg.carParams.carVin)
+  return msg
+
 PRESERVE_SERVICES = ["can", "carParams", "pandaStates", "pandaStateDEPRECATED"]
 
 def sanitize(lr: LogIterable) -> LogIterable:
-  return filter(lambda msg: msg.which() in PRESERVE_SERVICES, lr)
+  filtered = filter(lambda msg: msg.which() in PRESERVE_SERVICES, lr)
+  sanetized = map(sanetize_msg, filtered)
+  return sanetized
