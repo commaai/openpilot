@@ -56,39 +56,44 @@ void AssistantOverlay::updateText(QString text) {
   this->setAlignment(QFontMetrics(this->font()).horizontalAdvance(text) > this->finalWidth ? Qt::AlignRight : Qt::AlignCenter);
 }
 
+
 void AssistantOverlay::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
-  static bool show_allowed = false;
-  static bool visable = false;
-  if (!sm.updated("speechToText")) {
-    return; // Early exit if speechToText is not updated
-  }
-  // Should probably refactor to a switch statement but its working.
-  if (cereal::SpeechToText::State::BEGIN == sm["speechToText"].getSpeechToText().getState()) {
-    show_allowed = true;
-    this->animateShow();
-    updateText("Hello, I'm listening");
-    if (hideTimer->isActive()) {
-      hideTimer->stop();
+  if (!sm.updated("speechToText")) return;
+
+  static cereal::SpeechToText::State current_state = cereal::SpeechToText::State::NONE;
+  cereal::SpeechToText::State requested_state = sm["speechToText"].getSpeechToText().getState();
+
+  // Check for valid state transition
+  if (current_state == cereal::SpeechToText::State::BEGIN ||
+     (current_state == cereal::SpeechToText::State::NONE &&
+     (requested_state == cereal::SpeechToText::State::EMPTY ||
+      requested_state == cereal::SpeechToText::State::FINAL ||
+      requested_state == cereal::SpeechToText::State::NONE)) ||
+      requested_state == cereal::SpeechToText::State::BEGIN) {
+
+    current_state = requested_state;  // Update state
+
+    // Handle UI updates
+    switch (current_state) {
+      case cereal::SpeechToText::State::BEGIN:
+        if (!hideTimer->isActive()) animateShow();
+        updateText("Hello, I'm listening");
+        hideTimer->start(30000);
+        break;
+      case cereal::SpeechToText::State::EMPTY:
+        updateText("Sorry, I didn't catch that");
+        hideTimer->start(8000);
+        break;
+      case cereal::SpeechToText::State::ERROR:
+        updateText("Sorry, an error occorred");
+        hideTimer->start(8000);
+        break;
+      case cereal::SpeechToText::State::FINAL:
+      case cereal::SpeechToText::State::NONE:
+        updateText(QString::fromStdString(sm["speechToText"].getSpeechToText().getTranscript()));
+        hideTimer->start(requested_state == cereal::SpeechToText::State::FINAL ? 8000 : 30000);
+        break;
     }
-    visable = true; // Require begin state or not valid to show
-  } else if (!sm["speechToText"].getValid()){ // show if not valid and show set the error text, then lock out and hide until next begin
-    if (!visable && show_allowed) {this->animateShow(); visable = true;}
-    updateText("Sorry, an error occorred");
-    hideTimer->start(8000);
-    show_allowed = false;
-  } else if (cereal::SpeechToText::State::EMPTY == sm["speechToText"].getSpeechToText().getState()){
-    updateText("Sorry, I didn't catch that");
-    hideTimer->start(8000);
-    visable = false;
-    show_allowed = false;
-  } else if (show_allowed){ // Interim and Final Results
-    updateText(QString::fromStdString(sm["speechToText"].getSpeechToText().getResult()));
-    if (sm["speechToText"].getSpeechToText().getFinalResultReady()) {
-      hideTimer->start(8000);
-      visable = false;
-    }
-  } else { //shouldn't get here unless I missed something
-    qWarning() << "AssistantOverlay in bad state";
   }
 }

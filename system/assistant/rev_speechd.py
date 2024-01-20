@@ -13,6 +13,31 @@ from openpilot.system.micd import SAMPLE_BUFFER, SAMPLE_RATE
 
 STTState = log.SpeechToText.State
 
+class AssistantWidgetControl:
+    def __init__(self):
+        self.pm = messaging.PubMaster(['speechToText'])
+        self.pm.wait_for_readers_to_update('speechToText', timeout=1)
+    def make_msg(self):
+        self.pm.wait_for_readers_to_update('speechToText', timeout=1)
+        return messaging.new_message('speechToText', valid=True)
+    def begin(self):
+        msg = self.make_msg()
+        msg.speechToText.state = STTState.begin # Show
+        self.pm.send('speechToText', msg)
+    def error(self):
+        msg = self.make_msg()
+        msg.speechToText.state = STTState.error
+        self.pm.send('speechToText', msg)
+    def empty(self):
+        msg = self.make_msg()
+        msg.speechToText.state = STTState.empty
+        self.pm.send('speechToText', msg)
+    def set_text(self, text, final=True):
+        msg = self.make_msg()
+        msg.speechToText.transcript = text
+        msg.speechToText.state = STTState.none if not final else STTState.final
+        self.pm.send('speechToText', msg)
+
 class SpeechToTextProcessor:
   TIMEOUT_DURATION = 10
   RATE = SAMPLE_RATE
@@ -25,7 +50,7 @@ class SpeechToTextProcessor:
     self.reva_access_token = access_token
     self.audio_queue = Queue(maxsize=int(queue_size))
     self.stop_thread = Event()
-    self.pm = messaging.PubMaster(['speechToText'])
+    self.awc = AssistantWidgetControl()
     self.sm = messaging.SubMaster(['microphoneRaw'])
     media_config = MediaConfig('audio/x-raw', 'interleaved', 16000, 'S16LE', 1)
     self.streamclient = RevAiStreamingClient(self.reva_access_token, media_config)
@@ -44,8 +69,7 @@ class SpeechToTextProcessor:
         else:
           print("Queue is full, stopping")
           self.stop_thread.set()
-          msg = messaging.new_message('speechToText', valid=False)
-          self.pm.send('speechToText', msg)
+          self.awc.error()
 
   def microphone_stream(self):
     """Generator that yields audio chunks from the queue."""
@@ -74,12 +98,9 @@ class SpeechToTextProcessor:
           # Extract and concatenate the final transcript then send it
           final_transcript = ' '.join([element['value'] for element in data['elements'] if element['type'] == 'text'])
         else:
-          msg = messaging.new_message('speechToText', valid=True)
           # Handle partial transcripts (optional)
           partial_transcript = ' '.join([element['value'] for element in data['elements'] if element['type'] == 'text'])
-          msg.speechToText.result = re.sub(r'<[^>]*>', '', partial_transcript)  # Remove atmospherics if they are present
-          msg.speechToText.finalResultReady = False
-          self.pm.send('speechToText', msg)
+          self.awc.set_text(re.sub(r'<[^>]*>', '', partial_transcript), final=False)
 
     except Exception as e:
       print(f"An error occurred: {e}")
@@ -99,9 +120,7 @@ class SpeechToTextProcessor:
 
     # Start the microphone data collector thread
     collector_thread.start()
-    msg = messaging.new_message('speechToText', valid=True)
-    msg.speechToText.state = STTState.begin # Show
-    self.pm.send('speechToText', msg)
+    self.awc.begin()
 
     try:
       # Start streaming to Rev.ai with a new generator instance
@@ -126,12 +145,7 @@ class SpeechToTextProcessor:
       collector_thread.join()
       self.stop_thread.clear()
       print("collector_thread joined")
-      
-      msg = messaging.new_message('speechToText', valid=not self.error)
-      msg.speechToText.result = final_transcript
-      msg.speechToText.state = STTState.none if final_transcript else STTState.empty
-      msg.speechToText.finalResultReady = True
-      self.pm.send('speechToText', msg)
+      self.awc.set_text(final_transcript, final=True)
 
 
 def main():
