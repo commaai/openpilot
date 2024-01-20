@@ -66,6 +66,26 @@
         <source>Prevent large data uploads when on a metered connection</source>
         <translation>大量のデータのアップロードを防止します。</translation>
     </message>
+    <message>
+        <source>Hidden Network</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CONNECT</source>
+        <translation type="unfinished">接続</translation>
+    </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation type="unfinished">SSID を入力</translation>
+    </message>
+    <message>
+        <source>Enter password</source>
+        <translation type="unfinished">パスワードを入力</translation>
+    </message>
+    <message>
+        <source>for &quot;%1&quot;</source>
+        <translation type="unfinished">ﾈｯﾄﾜｰｸ名：%1</translation>
+    </message>
 </context>
 <context>
     <name>AnnotatedCameraWidget</name>
@@ -535,10 +555,6 @@
     <message>
         <source>Exit</source>
         <translation>閉じる</translation>
-    </message>
-    <message>
-        <source>dashcam</source>
-        <translation>ﾄﾞﾗｲﾌﾞﾚｺｰﾀﾞｰ</translation>
     </message>
     <message>
         <source>openpilot</source>

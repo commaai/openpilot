@@ -215,15 +215,13 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(resetCalibBtn);
 
-  if (!params.getBool("Passive")) {
-    auto retrainingBtn = new ButtonControl(tr("Review Training Guide"), tr("REVIEW"), tr("Review the rules, features, and limitations of openpilot"));
-    connect(retrainingBtn, &ButtonControl::clicked, [=]() {
-      if (ConfirmationDialog::confirm(tr("Are you sure you want to review the training guide?"), tr("Review"), this)) {
-        emit reviewTrainingGuide();
-      }
-    });
-    addItem(retrainingBtn);
-  }
+  auto retrainingBtn = new ButtonControl(tr("Review Training Guide"), tr("REVIEW"), tr("Review the rules, features, and limitations of openpilot"));
+  connect(retrainingBtn, &ButtonControl::clicked, [=]() {
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to review the training guide?"), tr("Review"), this)) {
+      emit reviewTrainingGuide();
+    }
+  });
+  addItem(retrainingBtn);
 
   if (Hardware::TICI()) {
     auto regulatoryBtn = new ButtonControl(tr("Regulatory"), tr("VIEW"), "");
@@ -356,7 +354,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     QPushButton {
       font-size: 140px;
       padding-bottom: 20px;
-      border 1px grey solid;
       border-radius: 100px;
       background-color: #292929;
       font-weight: 400;

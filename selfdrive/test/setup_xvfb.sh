@@ -5,7 +5,7 @@
 DISP_ID=99
 export DISPLAY=:$DISP_ID
 
-sudo Xvfb $DISPLAY -screen 0 2160x1080x24 &
+sudo Xvfb $DISPLAY -screen 0 2160x1080x24 2>/dev/null &
 
 # check for x11 socket for the specified display ID
 while [ ! -S /tmp/.X11-unix/X$DISP_ID ]

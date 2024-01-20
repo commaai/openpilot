@@ -8,10 +8,10 @@ from openpilot.common.params import Params
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.system.hardware import PC
 from openpilot.system.version import training_version, terms_version
+from openpilot.tools.lib.logreader import LogIterable
 
 
 def set_params_enabled():
-  os.environ['PASSIVE'] = "0"
   os.environ['REPLAY'] = "1"
   os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
   os.environ['LOGPRINT'] = "debug"
@@ -20,7 +20,6 @@ def set_params_enabled():
   params.put("HasAcceptedTerms", terms_version)
   params.put("CompletedTrainingVersion", training_version)
   params.put_bool("OpenpilotEnabledToggle", True)
-  params.put_bool("Passive", False)
 
   # valid calib
   msg = messaging.new_message('liveCalibration')
@@ -72,3 +71,18 @@ def with_processes(processes, init_time=0, ignore_stopped=None):
 
 def noop(*args, **kwargs):
   pass
+
+
+def read_segment_list(segment_list_path):
+  with open(segment_list_path, "r") as f:
+    seg_list = f.read().splitlines()
+
+  return [(platform[2:], segment) for platform, segment in zip(seg_list[::2], seg_list[1::2], strict=True)]
+
+
+# Utilities for sanitizing routes of only essential data for testing car ports and doing validation.
+
+PRESERVE_SERVICES = ["can", "carParams", "pandaStates", "pandaStateDEPRECATED"]
+
+def sanitize(lr: LogIterable) -> LogIterable:
+  return filter(lambda msg: msg.which() in PRESERVE_SERVICES, lr)

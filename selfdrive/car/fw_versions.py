@@ -123,6 +123,7 @@ def match_fw_to_car_exact(live_fw_versions, match_brand=None, log=True) -> Set[s
       found_versions = live_fw_versions.get(addr, set())
       if not len(found_versions):
         # Some models can sometimes miss an ecu, or show on two different addresses
+        # FIXME: this logic can be improved to be more specific, should require one of the two addresses
         if candidate in config.non_essential_ecus.get(ecu_type, []):
           continue
 

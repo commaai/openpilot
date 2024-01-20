@@ -66,6 +66,26 @@
         <source>Prevent large data uploads when on a metered connection</source>
         <translation>Evite grandes uploads de dados quando estiver em uma conexão limitada</translation>
     </message>
+    <message>
+        <source>Hidden Network</source>
+        <translation>Rede Oculta</translation>
+    </message>
+    <message>
+        <source>CONNECT</source>
+        <translation>CONECTE</translation>
+    </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation>Digite o SSID</translation>
+    </message>
+    <message>
+        <source>Enter password</source>
+        <translation>Insira a senha</translation>
+    </message>
+    <message>
+        <source>for &quot;%1&quot;</source>
+        <translation>para &quot;%1&quot;</translation>
+    </message>
 </context>
 <context>
     <name>AnnotatedCameraWidget</name>
@@ -537,10 +557,6 @@
     <message>
         <source>Exit</source>
         <translation>Sair</translation>
-    </message>
-    <message>
-        <source>dashcam</source>
-        <translation>dashcam</translation>
     </message>
     <message>
         <source>openpilot</source>
