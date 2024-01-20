@@ -54,8 +54,8 @@ if __name__ == "__main__":
 
     badge_svg.extend([f'<g transform="translate(0, {idx * BADGE_HEIGHT})">', content_svg, "</g>"])
 
-  badge_svg.insert(0, f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" \
-                             height="{len(translation_files) * BADGE_HEIGHT}" width="{max_badge_width}">')
+  badge_svg.insert(0, '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ' +
+                   f'height="{len(translation_files) * BADGE_HEIGHT}" width="{max_badge_width}">')
   badge_svg.append("</svg>")
 
   with open(os.path.join(BASEDIR, "translation_badge.svg"), "w") as badge_f:

@@ -7,7 +7,7 @@ Version 0.9.6 (20XX-XX-XX)
 * comma body streaming and controls over WebRTC
 * Hyundai Staria 2023 support thanks to sunnyhaibin!
 * Kia Niro Plug-in Hybrid 2022 support thanks to sunnyhaibin!
-* Toyota RAV4 2023 support
+* Toyota RAV4 2023-24 support
 * Toyota RAV4 Hybrid 2023-24 support
 
 Version 0.9.5 (2023-11-17)
