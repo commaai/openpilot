@@ -912,14 +912,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Cruise Is Off"),
   },
 
-  # For planning the trajectory Model Predictive Control (MPC) is used. This is
-  # an optimization algorithm that is not guaranteed to find a feasible solution.
-  # If no solution is found or the solution has a very high cost this alert is thrown.
-  EventName.plannerError: {
-    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Planner Solution Error"),
-    ET.NO_ENTRY: NoEntryAlert("Planner Solution Error"),
-  },
-
   # When the relay in the harness box opens the CAN bus between the LKAS camera
   # and the rest of the car is separated. When messages from the LKAS camera
   # are received on the car side this usually means the relay hasn't opened correctly

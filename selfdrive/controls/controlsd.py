@@ -370,8 +370,6 @@ class Controls:
       self.logged_comm_issue = None
 
     if not (self.CP.notCar and self.joystick_mode):
-      if not self.sm['lateralPlan'].mpcSolutionValid:
-        self.events.add(EventName.plannerError)
       if not self.sm['liveLocationKalman'].posenetOK:
         self.events.add(EventName.posenetInvalid)
       if not self.sm['liveLocationKalman'].deviceStable:
@@ -778,7 +776,7 @@ class Controls:
       controlsState.alertSound = current_alert.audible_alert
 
     controlsState.longitudinalPlanMonoTime = self.sm.logMonoTime['longitudinalPlan']
-    controlsState.lateralPlanMonoTime = self.sm.logMonoTime['lateralPlan']
+    controlsState.lateralPlanMonoTime = self.sm.logMonoTime['modelV2']
     controlsState.enabled = self.enabled
     controlsState.active = self.active
     controlsState.curvature = curvature
