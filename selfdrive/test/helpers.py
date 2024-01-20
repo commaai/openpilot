@@ -83,7 +83,7 @@ def read_segment_list(segment_list_path):
 # Utilities for sanitizing routes of only essential data for testing car ports and doing validation.
 
 def sanitize_vin(vin: str): # remove sentitive data from VIN
-  VIN_SENSITIVE = 6 # number of digits in a VIN that is sensitive (last 6 digits are serial number)
+  VIN_SENSITIVE = 6 # (last 6 digits of vin are serial number https://en.wikipedia.org/wiki/Vehicle_identification_number)
   return vin[:-VIN_SENSITIVE] + "X" * VIN_SENSITIVE
 
 def sanitize_msg(msg: LogMessage) -> LogMessage:
