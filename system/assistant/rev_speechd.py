@@ -64,7 +64,6 @@ class SpeechToTextProcessor:
       if self.sm.updated['microphoneRaw']:
         data = self.sm['microphoneRaw'].rawSample
         if not self.audio_queue.full():
-          print("putting the audio")
           self.audio_queue.put(data)
         else:
           print("Queue is full, stopping")
@@ -80,7 +79,6 @@ class SpeechToTextProcessor:
         print(f'Timeout reached. {loop_count=}, {time.time()-start_time=}')
         break
       elif self.stop_thread.is_set():
-        print(f'stop_thread.is_set()=')
         break
       elif not self.audio_queue.empty():
         data = self.audio_queue.get(block=True)
@@ -116,7 +114,6 @@ class SpeechToTextProcessor:
     while not self.p.get_bool("WakeWordDetected"):
       # Improve response time by combining wakewordd.py and this script. For now, keep it modular
       time.sleep(.4)
-      print("waiting for wakeword")
 
     # Start the microphone data collector thread
     collector_thread.start()
