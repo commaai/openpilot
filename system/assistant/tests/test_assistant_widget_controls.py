@@ -10,4 +10,3 @@ if __name__ == "__main__":
     awc.set_text("ENDING TEST", final=True)
     awc.empty()
     awc.error()
-    

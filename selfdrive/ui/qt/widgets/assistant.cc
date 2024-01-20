@@ -13,18 +13,15 @@ AssistantOverlay::AssistantOverlay(QWidget *parent) : QLabel(parent) {
   // Set up the animations
   showAnimation = new QPropertyAnimation(this, "geometry");
   showAnimation->setDuration(250); // Duration in milliseconds
-
   hideAnimation = new QPropertyAnimation(this, "geometry");
   hideAnimation->setDuration(250);
-
   int height = 100; // Fixed height
   setGeometry(0, 0, 0, height);
+  hide();
 
   hideTimer = new QTimer(this);
   connect(hideTimer, &QTimer::timeout, this, &AssistantOverlay::animateHide);
-
   QObject::connect(uiState(), &UIState::uiUpdate, this, &AssistantOverlay::updateState);
-  hide();
 }
 
 void AssistantOverlay::animateShow() {
@@ -56,26 +53,23 @@ void AssistantOverlay::updateText(QString text) {
   this->setAlignment(QFontMetrics(this->font()).horizontalAdvance(text) > this->finalWidth ? Qt::AlignRight : Qt::AlignCenter);
 }
 
-
 void AssistantOverlay::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
   if (!sm.updated("speechToText")) return;
 
   static cereal::SpeechToText::State current_state = cereal::SpeechToText::State::NONE;
-  cereal::SpeechToText::State requested_state = sm["speechToText"].getSpeechToText().getState();
+  cereal::SpeechToText::State request_state = sm["speechToText"].getSpeechToText().getState();
 
   // Check for valid state transition
-  if (current_state == cereal::SpeechToText::State::BEGIN ||
-     (current_state == cereal::SpeechToText::State::NONE &&
-     (requested_state == cereal::SpeechToText::State::EMPTY ||
-      requested_state == cereal::SpeechToText::State::FINAL ||
-      requested_state == cereal::SpeechToText::State::NONE)) ||
-      requested_state == cereal::SpeechToText::State::BEGIN) {
+  if (current_state == cereal::SpeechToText::State::BEGIN  ||
+     (current_state == cereal::SpeechToText::State::NONE   &&
+     (request_state == cereal::SpeechToText::State::EMPTY  ||
+      request_state == cereal::SpeechToText::State::FINAL  ||
+      request_state == cereal::SpeechToText::State::NONE)) ||
+      request_state == cereal::SpeechToText::State::BEGIN) {
 
-    current_state = requested_state;  // Update state
-
-    // Handle UI updates
-    switch (current_state) {
+    current_state = request_state;  // Update state
+    switch (current_state) {  // Handle UI updates
       case cereal::SpeechToText::State::BEGIN:
         if (!hideTimer->isActive()) animateShow();
         updateText("Hello, I'm listening");
@@ -92,7 +86,7 @@ void AssistantOverlay::updateState(const UIState &s) {
       case cereal::SpeechToText::State::FINAL:
       case cereal::SpeechToText::State::NONE:
         updateText(QString::fromStdString(sm["speechToText"].getSpeechToText().getTranscript()));
-        hideTimer->start(requested_state == cereal::SpeechToText::State::FINAL ? 8000 : 30000);
+        hideTimer->start(request_state == cereal::SpeechToText::State::FINAL ? 8000 : 30000);
         break;
     }
   }

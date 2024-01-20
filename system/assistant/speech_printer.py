@@ -20,7 +20,7 @@ def main():
         if navigate:
             address = result.split("to ")[1]
             print(f'Getting Directions to {address}')
-            
+
 if __name__ == "__main__":
     main()
 

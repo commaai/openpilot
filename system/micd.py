@@ -40,7 +40,7 @@ def apply_a_weighting(measurements: np.ndarray) -> np.ndarray:
 
 class Mic:
   def __init__(self):
-    
+
     self.pm = messaging.PubMaster(['microphone', 'microphoneRaw'])
     self.indata_ready_event = threading.Event()
 
@@ -61,7 +61,7 @@ class Mic:
     msg.microphone.soundPressureWeightedDb = float(self.sound_pressure_level_weighted)
     self.pm.send('microphone', msg)
     msg = messaging.new_message('microphoneRaw', valid=True)
-    
+
     self.indata_ready_event.wait(.9)
     msg.microphoneRaw.rawSample =  np.int16(self.raw_sample * 32767).tobytes()
     msg.microphoneRaw.frameIndex = self.frame_index

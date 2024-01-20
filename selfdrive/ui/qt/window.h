@@ -13,12 +13,12 @@ class MainWindow : public QWidget {
 
 public:
   explicit MainWindow(QWidget *parent = 0);
-  
+
 private:
   bool eventFilter(QObject *obj, QEvent *event) override;
   void openSettings(int index = 0, const QString &param = "");
   void closeSettings();
-  void raiseAssistantOverlay() {assistantOverlay->raise();};
+  void raiseAssistantOverlay() {assistantOverlay->raise();}
 
   QStackedLayout *main_layout;
   HomeWindow *homeWindow;
