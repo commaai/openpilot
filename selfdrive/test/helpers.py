@@ -82,18 +82,18 @@ def read_segment_list(segment_list_path):
 
 # Utilities for sanitizing routes of only essential data for testing car ports and doing validation.
 
-def sanetize_vin(vin: str): # remove sentitive data from VIN
+def sanitize_vin(vin: str): # remove sentitive data from VIN
   VIN_SENSITIVE = 6 # number of digits in a VIN that is sensitive (last 6 digits are serial number)
   return vin[:-VIN_SENSITIVE] + "X" * VIN_SENSITIVE
 
-def sanetize_msg(msg: LogMessage) -> LogMessage:
+def sanitize_msg(msg: LogMessage) -> LogMessage:
   if msg.which() == "carParams":
-    msg.carParams.carVin = sanetize_vin(msg.carParams.carVin)
+    msg.carParams.carVin = sanitize_vin(msg.carParams.carVin)
   return msg
 
 PRESERVE_SERVICES = ["can", "carParams", "pandaStates", "pandaStateDEPRECATED"]
 
 def sanitize(lr: LogIterable) -> LogIterable:
   filtered = filter(lambda msg: msg.which() in PRESERVE_SERVICES, lr)
-  sanetized = map(sanetize_msg, filtered)
-  return sanetized
+  sanitized = map(sanitize_msg, filtered)
+  return sanitized
