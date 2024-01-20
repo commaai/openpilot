@@ -3,6 +3,7 @@ import time
 
 from functools import wraps
 
+
 import cereal.messaging as messaging
 from openpilot.common.params import Params
 from openpilot.selfdrive.manager.process_config import managed_processes
@@ -88,7 +89,9 @@ def sanitize_vin(vin: str): # remove sentitive data from VIN
 
 def sanitize_msg(msg: LogMessage) -> LogMessage:
   if msg.which() == "carParams":
+    msg = msg.as_builder()
     msg.carParams.carVin = sanitize_vin(msg.carParams.carVin)
+    msg = msg.as_reader()
   return msg
 
 PRESERVE_SERVICES = ["can", "carParams", "pandaStates", "pandaStateDEPRECATED"]
