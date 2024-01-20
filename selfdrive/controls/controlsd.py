@@ -17,7 +17,6 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_short_branch
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from openpilot.selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
-from openpilot.selfdrive.controls.lib.lateral_planner import CAMERA_OFFSET
 from openpilot.selfdrive.controls.lib.drive_helpers import VCruiseHelper, clip_curvature
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl, MIN_LATERAL_CONTROL_SPEED
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
@@ -32,6 +31,7 @@ from openpilot.system.hardware import HARDWARE
 SOFT_DISABLE_TIME = 3  # seconds
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
 LANE_DEPARTURE_THRESHOLD = 0.1
+CAMERA_OFFSET = 0.04
 
 REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
