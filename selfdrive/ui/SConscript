@@ -91,7 +91,7 @@ if GetOption('extras') and arch != "Darwin":
   # setup and factory resetter
   qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
   qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc", asset_obj],
-                 LIBS=qt_libs + ['curl', 'common', 'json11'])
+                 LIBS=qt_libs + ['curl', 'common'])
 
   # build updater UI
   qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
@@ -126,4 +126,4 @@ if GetOption('extras') and arch != "Darwin":
 
 # build watch3
 if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
-  qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'json11', 'zmq', 'visionipc', 'messaging'])
+  qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'zmq', 'visionipc', 'messaging'])
