@@ -374,8 +374,7 @@ third_party/SConscript
 third_party/linux/**
 third_party/opencl/**
 
-third_party/json11/json11.cpp
-third_party/json11/json11.hpp
+third_party/nlohmann/json.hpp
 
 third_party/qrcode/*.cc
 third_party/qrcode/*.hpp
