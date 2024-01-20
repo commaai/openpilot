@@ -30,7 +30,7 @@ RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 USER $USER
 
 ENV POETRY_VIRTUALENVS_CREATE=false
-ENV PYENV_VERSION=3.11.4
+ENV PYENV_VERSION=3.12.1
 ENV PYENV_ROOT="/home/$USER/pyenv"
 ENV PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
 
@@ -42,7 +42,7 @@ RUN cd /tmp && \
     rm -rf /tmp/* && \
     rm -rf /home/$USER/.cache && \
     find /home/$USER/pyenv -type d -name ".git" | xargs rm -rf && \
-    rm -rf /home/$USER/pyenv/versions/3.11.4/lib/python3.11/test
+    rm -rf /home/$USER/pyenv/versions/3.12.1/lib/python3.12/test
 
 USER root
 RUN sudo git config --global --add safe.directory /tmp/openpilot
