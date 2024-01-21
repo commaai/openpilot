@@ -289,8 +289,8 @@ def main(demo=False):
                       meta_main.timestamp_eof, timestamp_llk, model_execution_time, nav_enabled, v_ego, steer_delay, live_calib_seen)
 
       desire_state = modelv2_send.modelV2.meta.desireState
-      l_lane_change_prob = desire_state[log.LateralPlan.Desire.laneChangeLeft]
-      r_lane_change_prob = desire_state[log.LateralPlan.Desire.laneChangeRight]
+      l_lane_change_prob = desire_state[log.Desire.laneChangeLeft]
+      r_lane_change_prob = desire_state[log.Desire.laneChangeRight]
       lane_change_prob = l_lane_change_prob + r_lane_change_prob
       DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob)
       modelv2_send.modelV2.meta.laneChangeState = DH.lane_change_state
