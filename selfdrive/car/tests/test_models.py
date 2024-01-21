@@ -21,9 +21,10 @@ from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from openpilot.selfdrive.controls.controlsd import Controls
-from openpilot.selfdrive.test.helpers import read_segment_list, sanitize
+from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.sanitizer import sanitize
 from openpilot.tools.lib.route import Route, SegmentName, RouteName
 
 from panda.tests.libpanda import libpanda_py
