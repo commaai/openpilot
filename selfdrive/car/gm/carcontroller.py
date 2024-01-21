@@ -90,11 +90,7 @@ class CarController:
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = 0
         else:
-          self.apply_gas, self.apply_brake = self.params.compute_gas_brake(actuators.accel, CS.out.vEgo)
-          # Don't allow any gas above inactive regen while stopping
-          # FIXME: brakes aren't applied immediately when enabling at a stop
-          if stopping:
-            self.apply_gas = self.params.INACTIVE_REGEN
+          self.apply_gas, self.apply_brake = self.params.compute_gas_brake(actuators.accel, CS.out.vEgo, stopping)
 
         idx = (self.frame // 4) % 4
 

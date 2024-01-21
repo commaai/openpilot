@@ -63,7 +63,7 @@ class CarControllerParams:
 
     self.BRAKE_LOOKUP_V = [self.MAX_BRAKE, 0.]
 
-  def compute_gas_brake(self, desired_accel, v_ego):
+  def compute_gas_brake(self, desired_accel, v_ego, stopping):
     # The regen/engine braking force changes with speed, this ensures we brake earlier at lower
     # speed where we lose this force + ensures we don't apply any gas while stopping
     max_regen_acceleration = interp(v_ego, self.MAX_REGEN_ACCEL_BP, self.MAX_REGEN_ACCEL_V)
@@ -73,6 +73,12 @@ class CarControllerParams:
     # Compute gas and brake with dynamic breakpoints
     apply_gas = int(round(interp(desired_accel, gas_lookup_bp, self.GAS_LOOKUP_V)))
     apply_brake = int(round(interp(desired_accel, brake_lookup_bp, self.BRAKE_LOOKUP_V)))
+
+    # Don't allow any gas above inactive regen while stopping
+    # FIXME: brakes aren't applied immediately when enabling at a stop
+    if stopping:
+      apply_gas = self.INACTIVE_REGEN
+
     return apply_gas, apply_brake
 
 
