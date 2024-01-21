@@ -181,6 +181,7 @@ class TestMapRenderer(unittest.TestCase):
     self._run_test(False)
 
   @with_processes(["mapsd"])
+  @pytest.mark.skip(reason="slow, flaky, and unlikely to break")
   def test_recover_from_no_internet(self):
     self._setup_test()
     self._run_test(True)

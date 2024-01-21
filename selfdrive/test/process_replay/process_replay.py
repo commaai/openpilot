@@ -461,7 +461,7 @@ CONFIGS = [
     proc_name="controlsd",
     pubs=[
       "can", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
-      "longitudinalPlan", "lateralPlan", "liveLocationKalman", "liveParameters", "radarState",
+      "longitudinalPlan", "liveLocationKalman", "liveParameters", "radarState",
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
       "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope"
     ],
@@ -486,8 +486,8 @@ CONFIGS = [
   ProcessConfig(
     proc_name="plannerd",
     pubs=["modelV2", "carControl", "carState", "controlsState", "radarState"],
-    subs=["lateralPlan", "longitudinalPlan", "uiPlan"],
-    ignore=["logMonoTime", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime", "lateralPlan.solverExecutionTime"],
+    subs=["longitudinalPlan", "uiPlan"],
+    ignore=["logMonoTime", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime"],
     init_callback=get_car_params_callback,
     should_recv_callback=FrequencyBasedRcvCallback("modelV2"),
     tolerance=NUMPY_TOLERANCE,
@@ -545,7 +545,7 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="modeld",
-    pubs=["lateralPlan", "roadCameraState", "wideRoadCameraState", "liveCalibration", "driverMonitoringState"],
+    pubs=["roadCameraState", "wideRoadCameraState", "liveCalibration", "driverMonitoringState"],
     subs=["modelV2", "cameraOdometry"],
     ignore=["logMonoTime", "modelV2.frameDropPerc", "modelV2.modelExecutionTime"],
     should_recv_callback=ModeldCameraSyncRcvCallback(),
@@ -555,6 +555,7 @@ CONFIGS = [
     main_pub_drained=False,
     vision_pubs=["roadCameraState", "wideRoadCameraState"],
     ignore_alive_pubs=["wideRoadCameraState"],
+    init_callback=get_car_params_callback,
   ),
   ProcessConfig(
     proc_name="dmonitoringmodeld",

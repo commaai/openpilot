@@ -12,7 +12,7 @@ import sys
 import urllib.parse
 import warnings
 
-from typing import Iterable, Iterator, List
+from typing import Iterable, Iterator, List, Type
 from urllib.parse import parse_qs, urlparse
 
 from cereal import log as capnp_log
@@ -21,7 +21,8 @@ from openpilot.tools.lib.filereader import FileReader, file_exists
 from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.route import Route, SegmentRange
 
-LogIterable = Iterable[capnp._DynamicStructReader]
+LogMessage = Type[capnp._DynamicStructReader]
+LogIterable = Iterable[LogMessage]
 
 
 class _LogFileReader:
