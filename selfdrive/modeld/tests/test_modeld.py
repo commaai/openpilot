@@ -7,6 +7,7 @@ import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcServer, VisionStreamType
 from openpilot.common.transformations.camera import tici_f_frame_size
 from openpilot.common.realtime import DT_MDL
+from openpilot.selfdrive.car.car_helpers import write_car_param
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state
 
@@ -22,6 +23,7 @@ class TestModeld(unittest.TestCase):
     self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_DRIVER, 40, False, *tici_f_frame_size)
     self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, *tici_f_frame_size)
     self.vipc_server.start_listener()
+    write_car_param()
 
     self.sm = messaging.SubMaster(['modelV2', 'cameraOdometry'])
     self.pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'liveCalibration'])
