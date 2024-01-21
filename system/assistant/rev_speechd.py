@@ -1,4 +1,7 @@
-import os, re, json, time
+import os
+import re
+import json
+import time
 from rev_ai.models import MediaConfig
 from rev_ai.streamingclient import RevAiStreamingClient
 from websocket import _exceptions
