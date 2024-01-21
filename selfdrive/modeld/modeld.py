@@ -230,9 +230,11 @@ def main(demo=False):
 
 
   while True:
-    meta_main, meta_extra, buf_main, buf_extra = modeld.receive_frames()
+    frames = None
+    while frames is None:
+      frames = modeld.receive_frames()
+    meta_main, meta_extra, buf_main, buf_extra = frames
 
-    # TODO: path planner timeout?
     sm.update(0)
     desire = DH.desire
     v_ego = sm["carState"].vEgo
