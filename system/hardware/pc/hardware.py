@@ -1,7 +1,7 @@
 import random
 
 from cereal import log
-from system.hardware.base import HardwareBase, ThermalConfig
+from openpilot.system.hardware.base import HardwareBase, ThermalConfig
 
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
@@ -28,9 +28,6 @@ class Pc(HardwareBase):
 
   def get_serial(self):
     return "cccccccc"
-
-  def get_subscriber_info(self):
-    return ""
 
   def get_network_info(self):
     return None

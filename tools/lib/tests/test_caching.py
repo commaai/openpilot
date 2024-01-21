@@ -1,18 +1,62 @@
 #!/usr/bin/env python3
+from functools import wraps
+import http.server
 import os
-import shutil
+import threading
+import time
 import unittest
 
-os.environ["COMMA_CACHE"] = "/tmp/__test_cache__"
-from tools.lib.url_file import URLFile, CACHE_DIR
+from parameterized import parameterized
+
+from openpilot.tools.lib.url_file import URLFile
+
+
+class CachingTestRequestHandler(http.server.BaseHTTPRequestHandler):
+  FILE_EXISTS = True
+
+  def do_GET(self):
+    if self.FILE_EXISTS:
+      self.send_response(200, b'1234')
+    else:
+      self.send_response(404)
+    self.end_headers()
+
+  def do_HEAD(self):
+    if self.FILE_EXISTS:
+      self.send_response(200)
+      self.send_header("Content-Length", "4")
+    else:
+      self.send_response(404)
+    self.end_headers()
+
+
+class CachingTestServer(threading.Thread):
+  def run(self):
+    self.server = http.server.HTTPServer(("127.0.0.1", 0), CachingTestRequestHandler)
+    self.port = self.server.server_port
+    self.server.serve_forever()
+
+  def stop(self):
+    self.server.server_close()
+    self.server.shutdown()
+
+def with_caching_server(func):
+  @wraps(func)
+  def wrapper(*args, **kwargs):
+    server = CachingTestServer()
+    server.start()
+    time.sleep(0.25) # wait for server to get it's port
+    try:
+      func(*args, **kwargs, port=server.port)
+    finally:
+      server.stop()
+  return wrapper
 
 
 class TestFileDownload(unittest.TestCase):
 
   def compare_loads(self, url, start=0, length=None):
     """Compares range between cached and non cached version"""
-    shutil.rmtree(CACHE_DIR)
-
     file_cached = URLFile(url, cache=True)
     file_downloaded = URLFile(url, cache=False)
 
@@ -63,6 +107,22 @@ class TestFileDownload(unittest.TestCase):
 
     self.compare_loads(large_file_url, length - 100, 100)
     self.compare_loads(large_file_url)
+
+  @parameterized.expand([(True, ), (False, )])
+  @with_caching_server
+  def test_recover_from_missing_file(self, cache_enabled, port):
+    os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
+
+    file_url = f"http://localhost:{port}/test.png"
+
+    CachingTestRequestHandler.FILE_EXISTS = False
+    length = URLFile(file_url).get_length()
+    self.assertEqual(length, -1)
+
+    CachingTestRequestHandler.FILE_EXISTS = True
+    length = URLFile(file_url).get_length()
+    self.assertEqual(length, 4)
+
 
 
 if __name__ == "__main__":

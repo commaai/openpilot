@@ -4,10 +4,8 @@
 #include <QFileInfo>
 #include <QRegularExpression>
 #include <QTextStream>
-#include <numeric>
-#include <sstream>
 
-DBCFile::DBCFile(const QString &dbc_file_name, QObject *parent) : QObject(parent) {
+DBCFile::DBCFile(const QString &dbc_file_name) {
   QFile file(dbc_file_name);
   if (file.open(QIODevice::ReadOnly)) {
     name_ = QFileInfo(dbc_file_name).baseName();
@@ -22,7 +20,7 @@ DBCFile::DBCFile(const QString &dbc_file_name, QObject *parent) : QObject(parent
   }
 }
 
-DBCFile::DBCFile(const QString &name, const QString &content, QObject *parent) : QObject(parent), name_(name), filename("") {
+DBCFile::DBCFile(const QString &name, const QString &content) : name_(name), filename("") {
   // Open from clipboard
   parse(content);
 }
@@ -54,17 +52,17 @@ void DBCFile::cleanupAutoSaveFile() {
 bool DBCFile::writeContents(const QString &fn) {
   QFile file(fn);
   if (file.open(QIODevice::WriteOnly)) {
-    file.write(generateDBC().toUtf8());
-    return true;
+    return file.write(generateDBC().toUtf8()) >= 0;
   }
   return false;
 }
 
-void DBCFile::updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &comment) {
+void DBCFile::updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &node, const QString &comment) {
   auto &m = msgs[id.address];
   m.address = id.address;
   m.name = name;
   m.size = size;
+  m.transmitter = node.isEmpty() ? DEFAULT_NODE_NAME : node;
   m.comment = comment;
 }
 
@@ -76,10 +74,6 @@ cabana::Msg *DBCFile::msg(uint32_t address) {
 cabana::Msg *DBCFile::msg(const QString &name) {
   auto it = std::find_if(msgs.begin(), msgs.end(), [&name](auto &m) { return m.second.name == name; });
   return it != msgs.end() ? &(it->second) : nullptr;
-}
-
-int DBCFile::signalCount() {
-  return std::accumulate(msgs.cbegin(), msgs.cend(), 0, [](int &n, const auto &m) { return n + m.second.sigs.size(); });
 }
 
 void DBCFile::parse(const QString &content) {
@@ -106,7 +100,8 @@ void DBCFile::parse(const QString &content) {
   int multiplexor_cnt = 0;
   while (!stream.atEnd()) {
     ++line_num;
-    line = stream.readLine().trimmed();
+    QString raw_line = stream.readLine();
+    line = raw_line.trimmed();
     if (line.startsWith("BO_ ")) {
       multiplexor_cnt = 0;
       auto match = bo_regexp.match(line);
@@ -169,7 +164,7 @@ void DBCFile::parse(const QString &content) {
       }
     } else if (line.startsWith("CM_ BO_")) {
       if (!line.endsWith("\";")) {
-        int pos = stream.pos() - line.length() - 1;
+        int pos = stream.pos() - raw_line.length() - 1;
         line = content.mid(pos, content.indexOf("\";", pos));
       }
       auto match = msg_comment_regexp.match(line);
@@ -179,7 +174,7 @@ void DBCFile::parse(const QString &content) {
       }
     } else if (line.startsWith("CM_ SG_ ")) {
       if (!line.endsWith("\";")) {
-        int pos = stream.pos() - line.length() - 1;
+        int pos = stream.pos() - raw_line.length() - 1;
         line = content.mid(pos, content.indexOf("\";", pos));
       }
       auto match = sg_comment_regexp.match(line);
@@ -198,7 +193,8 @@ void DBCFile::parse(const QString &content) {
 QString DBCFile::generateDBC() {
   QString dbc_string, signal_comment, message_comment, val_desc;
   for (const auto &[address, m] : msgs) {
-    dbc_string += QString("BO_ %1 %2: %3 %4\n").arg(address).arg(m.name).arg(m.size).arg(m.transmitter.isEmpty() ? "XXX" : m.transmitter);
+    const QString transmitter = m.transmitter.isEmpty() ? DEFAULT_NODE_NAME : m.transmitter;
+    dbc_string += QString("BO_ %1 %2: %3 %4\n").arg(address).arg(m.name).arg(m.size).arg(transmitter);
     if (!m.comment.isEmpty()) {
       message_comment += QString("CM_ BO_ %1 \"%2\";\n").arg(address).arg(m.comment);
     }
@@ -221,11 +217,11 @@ QString DBCFile::generateDBC() {
                         .arg(doubleToString(sig->min))
                         .arg(doubleToString(sig->max))
                         .arg(sig->unit)
-                        .arg(sig->receiver_name.isEmpty() ? "XXX" : sig->receiver_name);
+                        .arg(sig->receiver_name.isEmpty() ? DEFAULT_NODE_NAME : sig->receiver_name);
       if (!sig->comment.isEmpty()) {
         signal_comment += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(address).arg(sig->name).arg(sig->comment);
       }
-      if (!sig->val_desc.isEmpty()) {
+      if (!sig->val_desc.empty()) {
         QStringList text;
         for (auto &[val, desc] : sig->val_desc) {
           text << QString("%1 \"%2\"").arg(val).arg(desc);

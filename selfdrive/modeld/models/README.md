@@ -20,7 +20,11 @@ To view the architecture of the ONNX networks, you can use [netron](https://netr
 * **traffic convention**
   * one-hot encoded vector to tell model whether traffic is right-hand or left-hand traffic : 2
 * **feature buffer**
-  * A buffer of intermediate features that gets appended to the current feature to form a 5 seconds temporal context (at 20FPS) : 99 * 128
+  * A buffer of intermediate features that gets appended to the current feature to form a 5 seconds temporal context (at 20FPS) : 99 * 512
+* **nav features**
+  * 1 * 150
+* **nav instructions**
+  * 1 * 256
 
 
 ### Supercombo output format (Full size: XXX x float32)
@@ -32,7 +36,7 @@ Read [here](https://github.com/commaai/openpilot/blob/90af436a121164a51da9fa48d0
 * .dlc file is a pre-quantized model and only runs on qualcomm DSPs
 
 ### input format
-* single image W = 1440  H = 960 represented in planar YUV420 format:
+* single image W = 1440 H = 960 luminance channel (Y) from the planar YUV420 format:
   * full input size is 1440 * 960 = 1382400
   * normalized ranging from 0.0 to 1.0 in float32 (onnx runner) or ranging from 0 to 255 in uint8 (snpe runner)
 * camera calibration angles (roll, pitch, yaw) from liveCalibration: 3 x float32 inputs

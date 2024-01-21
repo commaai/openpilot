@@ -24,7 +24,7 @@ import argparse
 import re
 from collections import defaultdict
 
-from selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.manager.process_config import managed_processes
 
 # Do statistics every 5 seconds
 PRINT_INTERVAL = 5

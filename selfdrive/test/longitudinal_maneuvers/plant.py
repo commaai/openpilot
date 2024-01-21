@@ -4,11 +4,11 @@ import numpy as np
 
 from cereal import log
 import cereal.messaging as messaging
-from common.realtime import Ratekeeper, DT_MDL
-from selfdrive.controls.lib.longcontrol import LongCtrlState
-from selfdrive.modeld.constants import T_IDXS
-from selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
-from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
+from openpilot.common.realtime import Ratekeeper, DT_MDL
+from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
+from openpilot.selfdrive.modeld.constants import ModelConstants
+from openpilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
+from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU
 
 
 class Plant:
@@ -43,11 +43,11 @@ class Plant:
 
     self.rk = Ratekeeper(self.rate, print_delay_threshold=100.0)
     self.ts = 1. / self.rate
-    time.sleep(1)
+    time.sleep(0.1)
     self.sm = messaging.SubMaster(['longitudinalPlan'])
 
-    from selfdrive.car.honda.values import CAR
-    from selfdrive.car.honda.interface import CarInterface
+    from openpilot.selfdrive.car.honda.values import CAR
+    from openpilot.selfdrive.car.honda.interface import CarInterface
 
     self.planner = LongitudinalPlanner(CarInterface.get_non_essential_params(CAR.CIVIC), init_v=self.speed)
 
@@ -100,13 +100,13 @@ class Plant:
     # this is to ensure lead policy is effective when model
     # does not predict slowdown in e2e mode
     position = log.XYZTData.new_message()
-    position.x = [float(x) for x in (self.speed + 0.5) * np.array(T_IDXS)]
+    position.x = [float(x) for x in (self.speed + 0.5) * np.array(ModelConstants.T_IDXS)]
     model.modelV2.position = position
     velocity = log.XYZTData.new_message()
-    velocity.x = [float(x) for x in (self.speed + 0.5) * np.ones_like(T_IDXS)]
+    velocity.x = [float(x) for x in (self.speed + 0.5) * np.ones_like(ModelConstants.T_IDXS)]
     model.modelV2.velocity = velocity
     acceleration = log.XYZTData.new_message()
-    acceleration.x = [float(x) for x in np.zeros_like(T_IDXS)]
+    acceleration.x = [float(x) for x in np.zeros_like(ModelConstants.T_IDXS)]
     model.modelV2.acceleration = acceleration
 
     control.controlsState.longControlState = LongCtrlState.pid if self.enabled else LongCtrlState.off
@@ -144,9 +144,9 @@ class Plant:
       v_rel = 0.
 
     # print at 5hz
-    if (self.rk.frame % (self.rate // 5)) == 0:
-      print("%2.2f sec   %6.2f m  %6.2f m/s  %6.2f m/s2   lead_rel: %6.2f m  %6.2f m/s"
-            % (self.current_time, self.distance, self.speed, self.acceleration, d_rel, v_rel))
+    # if (self.rk.frame % (self.rate // 5)) == 0:
+    #   print("%2.2f sec   %6.2f m  %6.2f m/s  %6.2f m/s2   lead_rel: %6.2f m  %6.2f m/s"
+    #         % (self.current_time, self.distance, self.speed, self.acceleration, d_rel, v_rel))
 
 
     # ******** update prevs ********

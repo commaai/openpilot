@@ -2,7 +2,7 @@
 from collections import Counter
 from pprint import pprint
 
-from selfdrive.car.docs import get_all_car_info
+from openpilot.selfdrive.car.docs import get_all_car_info
 
 if __name__ == "__main__":
   cars = get_all_car_info()

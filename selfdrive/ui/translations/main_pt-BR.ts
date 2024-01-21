@@ -66,6 +66,26 @@
         <source>Prevent large data uploads when on a metered connection</source>
         <translation>Evite grandes uploads de dados quando estiver em uma conexão limitada</translation>
     </message>
+    <message>
+        <source>Hidden Network</source>
+        <translation>Rede Oculta</translation>
+    </message>
+    <message>
+        <source>CONNECT</source>
+        <translation>CONECTE</translation>
+    </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation>Digite o SSID</translation>
+    </message>
+    <message>
+        <source>Enter password</source>
+        <translation>Insira a senha</translation>
+    </message>
+    <message>
+        <source>for &quot;%1&quot;</source>
+        <translation>para &quot;%1&quot;</translation>
+    </message>
 </context>
 <context>
     <name>AnnotatedCameraWidget</name>
@@ -226,8 +246,8 @@
         <translation>Desligar</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>O openpilot requer que o dispositivo seja montado dentro de 4° esquerda ou direita e dentro de 5° para cima ou 8° para baixo. O openpilot está continuamente calibrando, resetar raramente é necessário.</translation>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
+        <translation>O openpilot requer que o dispositivo seja montado dentro de 4° esquerda ou direita e dentro de 5° para cima ou 9° para baixo. O openpilot está continuamente calibrando, resetar raramente é necessário.</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
@@ -275,34 +295,7 @@
     </message>
 </context>
 <context>
-    <name>DriveStats</name>
-    <message>
-        <source>Drives</source>
-        <translation>Dirigidas</translation>
-    </message>
-    <message>
-        <source>Hours</source>
-        <translation>Horas</translation>
-    </message>
-    <message>
-        <source>ALL TIME</source>
-        <translation>TOTAL</translation>
-    </message>
-    <message>
-        <source>PAST WEEK</source>
-        <translation>SEMANA PASSADA</translation>
-    </message>
-    <message>
-        <source>KM</source>
-        <translation>KM</translation>
-    </message>
-    <message>
-        <source>Miles</source>
-        <translation>Milhas</translation>
-    </message>
-</context>
-<context>
-    <name>DriverViewScene</name>
+    <name>DriverViewWindow</name>
     <message>
         <source>camera starting</source>
         <translation>câmera iniciando</translation>
@@ -354,33 +347,6 @@
         <source>hr</source>
         <translation>hr</translation>
     </message>
-    <message>
-        <source>km</source>
-        <translation>km</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>mi</translation>
-    </message>
-</context>
-<context>
-    <name>MapInstructions</name>
-    <message>
-        <source> km</source>
-        <translation> km</translation>
-    </message>
-    <message>
-        <source> m</source>
-        <translation> m</translation>
-    </message>
-    <message>
-        <source> mi</source>
-        <translation> milha</translation>
-    </message>
-    <message>
-        <source> ft</source>
-        <translation> pés</translation>
-    </message>
 </context>
 <context>
     <name>MapSettings</name>
@@ -401,7 +367,11 @@
     </message>
     <message>
         <source>Waiting for GPS</source>
-        <translation>Esperando por GPS</translation>
+        <translation>Aguardando GPS</translation>
+    </message>
+    <message>
+        <source>Waiting for route</source>
+        <translation>Aguardando rota</translation>
     </message>
 </context>
 <context>
@@ -589,10 +559,6 @@
         <translation>Sair</translation>
     </message>
     <message>
-        <source>dashcam</source>
-        <translation>dashcam</translation>
-    </message>
-    <message>
         <source>openpilot</source>
         <translation>openpilot</translation>
     </message>
@@ -616,6 +582,22 @@
             <numerusform>há %n dia</numerusform>
             <numerusform>há %n dias</numerusform>
         </translation>
+    </message>
+    <message>
+        <source>km</source>
+        <translation>km</translation>
+    </message>
+    <message>
+        <source>m</source>
+        <translation>m</translation>
+    </message>
+    <message>
+        <source>mi</source>
+        <translation>milha</translation>
+    </message>
+    <message>
+        <source>ft</source>
+        <translation>pés</translation>
     </message>
 </context>
 <context>
@@ -759,6 +741,10 @@ Isso pode levar até um minuto.</translation>
     <message>
         <source>Something went wrong. Reboot the device.</source>
         <translation>Algo deu errado. Reinicie o dispositivo.</translation>
+    </message>
+    <message>
+        <source>Select a language</source>
+        <translation>Selecione o Idioma</translation>
     </message>
 </context>
 <context>
@@ -1066,10 +1052,6 @@ Isso pode levar até um minuto.</translation>
         <translation>openpilot por padrão funciona em &lt;b&gt;modo chill&lt;/b&gt;. modo Experimental ativa &lt;b&gt;recursos de nível-embrionário&lt;/b&gt; que não estão prontos para o modo chill. Recursos experimentais estão listados abaixo:</translation>
     </message>
     <message>
-        <source>🌮 End-to-End Longitudinal Control 🌮</source>
-        <translation>🌮 Controle Longitudinal de Ponta a Ponta 🌮</translation>
-    </message>
-    <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
         <translation>Deixe o modelo de IA controlar o acelerador e os freios. O openpilot irá dirigir como pensa que um humano faria, incluindo parar em sinais vermelhos e sinais de parada. Uma vez que o modelo de condução decide a velocidade a conduzir, a velocidade definida apenas funcionará como um limite superior. Este é um recurso de qualidade embrionária; erros devem ser esperados.</translation>
     </message>
@@ -1078,20 +1060,12 @@ Isso pode levar até um minuto.</translation>
         <translation>Nova Visualização de Condução</translation>
     </message>
     <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
-        <translation>A visualização da direção fará a transição para a câmera grande angular voltada para a estrada em baixas velocidades para mostrar melhor algumas curvas. O logotipo do modo Experimental também será exibido no canto superior direito.</translation>
-    </message>
-    <message>
         <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
         <translation>O modo Experimental está atualmente indisponível para este carro já que o ACC original do carro é usado para controle longitudinal.</translation>
     </message>
     <message>
         <source>openpilot longitudinal control may come in a future update.</source>
         <translation>O controle longitudinal openpilot poderá vir em uma atualização futura.</translation>
-    </message>
-    <message>
-        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
-        <translation>Ative o controle longitudinal experimental para permitir o modo Experimental.</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
@@ -1128,6 +1102,26 @@ Isso pode levar até um minuto.</translation>
     <message>
         <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
         <translation>Uma versão embrionária do controle longitudinal openpilot pode ser testada em conjunto com o modo Experimental, em branches que não sejam de produção.</translation>
+    </message>
+    <message>
+        <source>Navigate on openpilot</source>
+        <translation>Navegação no openpilot</translation>
+    </message>
+    <message>
+        <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
+        <translation>Habilite o controle longitudinal (embrionário) openpilot para permitir o modo Experimental.</translation>
+    </message>
+    <message>
+        <source>End-to-End Longitudinal Control</source>
+        <translation>Controle Longitudinal de Ponta a Ponta</translation>
+    </message>
+    <message>
+        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
+        <translation>Quando a navegação tem um destino, o openpilot insere as informações do mapa no modelo. Isso fornece contexto útil para o modelo e permite que o openpilot mantenha a esquerda ou a direita apropriadamente em bifurcações/saídas. O comportamento de mudança de faixa permanece inalterado e ainda é ativado somente pelo motorista. Este é um recurso de qualidade embrionária; erros devem ser esperados, principalmente em torno de saídas e bifurcações. Esses erros podem incluir travessias não intencionais na faixa de rodagem, saída tardia, condução em direção a barreiras divisórias nas áreas de marcas de canalização, etc.</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
+        <translation>A visualização de condução fará a transição para a câmera grande angular voltada para a estrada em baixas velocidades para mostrar melhor algumas curvas. O logotipo do modo Experimental também será mostrado no canto superior direito. Quando um destino de navegação é definido e o modelo de condução o utiliza como entrada o caminho de condução no mapa fica verde.</translation>
     </message>
 </context>
 <context>
@@ -1180,12 +1174,12 @@ Isso pode levar até um minuto.</translation>
         <translation>Abrir Configurações</translation>
     </message>
     <message>
-        <source>Uploading training data</source>
-        <translation>Subindo dados</translation>
+        <source>Ready to upload</source>
+        <translation>Pronto para upload</translation>
     </message>
     <message>
-        <source>Your data is used to train driving models and help improve openpilot</source>
-        <translation>Seus dados são utilizados para treinar modelos de direção e ajudar a melhorar o openpilot</translation>
+        <source>Training data will be pulled periodically while your device is on Wi-Fi</source>
+        <translation>Os dados de treinamento serão extraídos periodicamente enquanto o dispositivo estiver no Wi-Fi</translation>
     </message>
 </context>
 <context>

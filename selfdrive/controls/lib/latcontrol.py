@@ -1,7 +1,7 @@
 from abc import abstractmethod, ABC
 
-from common.numpy_fast import clip
-from common.realtime import DT_CTRL
+from openpilot.common.numpy_fast import clip
+from openpilot.common.realtime import DT_CTRL
 
 MIN_LATERAL_CONTROL_SPEED = 0.3  # m/s
 
@@ -17,7 +17,7 @@ class LatControl(ABC):
     self.steer_max = 1.0
 
   @abstractmethod
-  def update(self, active, CS, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
+  def update(self, active, CS, VM, params, steer_limited, desired_curvature, llk):
     pass
 
   def reset(self):

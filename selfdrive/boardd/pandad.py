@@ -7,12 +7,12 @@ import subprocess
 from typing import List, NoReturn
 from functools import cmp_to_key
 
-from panda import Panda, PandaDFU, FW_PATH
-from common.basedir import BASEDIR
-from common.params import Params
-from selfdrive.boardd.set_time import set_time
-from system.hardware import HARDWARE
-from system.swaglog import cloudlog
+from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.params import Params
+from openpilot.selfdrive.boardd.set_time import set_time
+from openpilot.system.hardware import HARDWARE
+from openpilot.common.swaglog import cloudlog
 
 
 def get_expected_signature(panda: Panda) -> bytes:
@@ -23,9 +23,13 @@ def get_expected_signature(panda: Panda) -> bytes:
     cloudlog.exception("Error computing expected signature")
     return b""
 
-
 def flash_panda(panda_serial: str) -> Panda:
-  panda = Panda(panda_serial)
+  try:
+    panda = Panda(panda_serial)
+  except PandaProtocolMismatch:
+    cloudlog.warning("detected protocol mismatch, reflashing panda")
+    HARDWARE.recover_internal_panda()
+    raise
 
   fw_signature = get_expected_signature(panda)
   internal_panda = panda.is_internal()
@@ -45,7 +49,7 @@ def flash_panda(panda_serial: str) -> Panda:
     if internal_panda:
       HARDWARE.recover_internal_panda()
     panda.recover(reset=(not internal_panda))
-    cloudlog.info("Done flashing bootloader")
+    cloudlog.info("Done flashing bootstub")
 
   if panda.bootstub:
     cloudlog.info("Panda still not booting, exiting")
@@ -81,12 +85,23 @@ def main() -> NoReturn:
   count = 0
   first_run = True
   params = Params()
+  no_internal_panda_count = 0
 
   while True:
     try:
       count += 1
       cloudlog.event("pandad.flash_and_connect", count=count)
       params.remove("PandaSignatures")
+
+      # Handle missing internal panda
+      if no_internal_panda_count > 0:
+        if no_internal_panda_count == 3:
+          cloudlog.info("No pandas found, putting internal panda into DFU")
+          HARDWARE.recover_internal_panda()
+        else:
+          cloudlog.info("No pandas found, resetting internal panda")
+          HARDWARE.reset_internal_panda()
+        time.sleep(3)  # wait to come back up
 
       # Flash all Pandas in DFU mode
       dfu_serials = PandaDFU.list()
@@ -98,10 +113,7 @@ def main() -> NoReturn:
 
       panda_serials = Panda.list()
       if len(panda_serials) == 0:
-        if first_run:
-          cloudlog.info("No pandas found, resetting internal panda")
-          HARDWARE.reset_internal_panda()
-          time.sleep(2)  # wait to come back up
+        no_internal_panda_count += 1
         continue
 
       cloudlog.info(f"{len(panda_serials)} panda(s) found, connecting - {panda_serials}")
@@ -114,14 +126,14 @@ def main() -> NoReturn:
       # Ensure internal panda is present if expected
       internal_pandas = [panda for panda in pandas if panda.is_internal()]
       if HARDWARE.has_internal_panda() and len(internal_pandas) == 0:
-        cloudlog.error("Internal panda is missing, resetting")
-        HARDWARE.reset_internal_panda()
-        time.sleep(2)  # wait to come back up
+        cloudlog.error("Internal panda is missing, trying again")
+        no_internal_panda_count += 1
         continue
+      no_internal_panda_count = 0
 
       # sort pandas to have deterministic order
       pandas.sort(key=cmp_to_key(panda_sort_cmp))
-      panda_serials = list(map(lambda p: p.get_usb_serial(), pandas))  # type: ignore
+      panda_serials = [p.get_usb_serial() for p in pandas]
 
       # log panda fw versions
       params.put("PandaSignatures", b','.join(p.get_signature() for p in pandas))
@@ -132,6 +144,9 @@ def main() -> NoReturn:
         if health["heartbeat_lost"]:
           params.put_bool("PandaHeartbeatLost", True)
           cloudlog.event("heartbeat lost", deviceState=health, serial=panda.get_usb_serial())
+        if health["som_reset_triggered"]:
+          params.put_bool("PandaSomResetTriggered", True)
+          cloudlog.event("panda.som_reset_triggered", health=health, serial=panda.get_usb_serial())
 
         if first_run:
           if panda.is_internal():
@@ -151,6 +166,9 @@ def main() -> NoReturn:
     except (usb1.USBErrorNoDevice, usb1.USBErrorPipe):
       # a panda was disconnected while setting everything up. let's try again
       cloudlog.exception("Panda USB exception while setting up")
+      continue
+    except PandaProtocolMismatch:
+      cloudlog.exception("pandad.protocol_mismatch")
       continue
     except Exception:
       cloudlog.exception("pandad.uncaught_exception")

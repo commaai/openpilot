@@ -1,5 +1,7 @@
 #include "selfdrive/ui/qt/offroad/onboarding.h"
 
+#include <string>
+
 #include <QLabel>
 #include <QPainter>
 #include <QQmlContext>
@@ -181,7 +183,7 @@ void DeclinePage::showEvent(QShowEvent *event) {
 void OnboardingWindow::updateActiveScreen() {
   if (!accepted_terms) {
     setCurrentIndex(0);
-  } else if (!training_done && !params.getBool("Passive")) {
+  } else if (!training_done) {
     setCurrentIndex(1);
   } else {
     emit onboardingDone();

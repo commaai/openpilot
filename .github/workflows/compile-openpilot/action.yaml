@@ -1,0 +1,21 @@
+name: 'compile openpilot'
+
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      name: Build openpilot with all flags
+      run: |
+        ${{ env.RUN }} "scons -j$(nproc)"
+        ${{ env.RUN }} "release/check-dirty.sh"
+    - shell: bash
+      name: Cleanup scons cache and rebuild
+      run: |
+          ${{ env.RUN }} "rm -rf /tmp/scons_cache/* && \
+                          scons -j$(nproc) --cache-populate"
+    - name: Save scons cache
+      uses: actions/cache/save@v3
+      if: github.ref == 'refs/heads/master'
+      with:
+        path: .ci_cache/scons_cache
+        key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}

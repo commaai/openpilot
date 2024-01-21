@@ -5,9 +5,9 @@ import unittest
 import subprocess
 
 from panda import Panda
-from system.hardware import TICI
-from system.hardware.tici.hardware import Tici
-from system.hardware.tici.amplifier import Amplifier
+from openpilot.system.hardware import TICI, HARDWARE
+from openpilot.system.hardware.tici.hardware import Tici
+from openpilot.system.hardware.tici.amplifier import Amplifier
 
 
 class TestAmplifier(unittest.TestCase):
@@ -21,12 +21,12 @@ class TestAmplifier(unittest.TestCase):
     # clear dmesg
     subprocess.check_call("sudo dmesg -C", shell=True)
 
+    HARDWARE.reset_internal_panda()
     Panda.wait_for_panda(None, 30)
     self.panda = Panda()
-    self.panda.reset()
 
   def tearDown(self):
-    self.panda.reset(reconnect=False)
+    HARDWARE.reset_internal_panda()
 
   def _check_for_i2c_errors(self, expected):
     dmesg = subprocess.check_output("dmesg", shell=True, encoding='utf8')

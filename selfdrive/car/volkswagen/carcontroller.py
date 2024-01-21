@@ -1,11 +1,11 @@
 from cereal import car
 from opendbc.can.packer import CANPacker
-from common.numpy_fast import clip
-from common.conversions import Conversions as CV
-from common.realtime import DT_CTRL
-from selfdrive.car import apply_driver_steer_torque_limits
-from selfdrive.car.volkswagen import mqbcan, pqcan
-from selfdrive.car.volkswagen.values import CANBUS, PQ_CARS, CarControllerParams
+from openpilot.common.numpy_fast import clip
+from openpilot.common.conversions import Conversions as CV
+from openpilot.common.realtime import DT_CTRL
+from openpilot.selfdrive.car import apply_driver_steer_torque_limits
+from openpilot.selfdrive.car.volkswagen import mqbcan, pqcan
+from openpilot.selfdrive.car.volkswagen.values import CANBUS, PQ_CARS, CarControllerParams, VolkswagenFlags
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
@@ -65,13 +65,22 @@ class CarController:
       self.apply_steer_last = apply_steer
       can_sends.append(self.CCS.create_steering_control(self.packer_pt, CANBUS.pt, apply_steer, hca_enabled))
 
+      if self.CP.flags & VolkswagenFlags.STOCK_HCA_PRESENT:
+        # Pacify VW Emergency Assist driver inactivity detection by changing its view of driver steering input torque
+        # to the greatest of actual driver input or 2x openpilot's output (1x openpilot output is not enough to
+        # consistently reset inactivity detection on straight level roads). See commaai/openpilot#23274 for background.
+        ea_simulated_torque = clip(apply_steer * 2, -self.CCP.STEER_MAX, self.CCP.STEER_MAX)
+        if abs(CS.out.steeringTorque) > abs(ea_simulated_torque):
+          ea_simulated_torque = CS.out.steeringTorque
+        can_sends.append(self.CCS.create_eps_update(self.packer_pt, CANBUS.cam, CS.eps_stock_values, ea_simulated_torque))
+
     # **** Acceleration Controls ******************************************** #
 
     if self.frame % self.CCP.ACC_CONTROL_STEP == 0 and self.CP.openpilotLongitudinalControl:
       acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive)
       accel = clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.longActive else 0
       stopping = actuators.longControlState == LongCtrlState.stopping
-      starting = actuators.longControlState == LongCtrlState.starting
+      starting = actuators.longControlState == LongCtrlState.pid and (CS.esp_hold_confirmation or CS.out.vEgo < self.CP.vEgoStopping)
       can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, CC.longActive, accel,
                                                          acc_control, stopping, starting, CS.esp_hold_confirmation))
 
@@ -89,7 +98,8 @@ class CarController:
       if hud_control.leadVisible and self.frame * DT_CTRL > 1.0:  # Don't display lead until we know the scaling factor
         lead_distance = 512 if CS.upscale_lead_car_signal else 8
       acc_hud_status = self.CCS.acc_hud_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive)
-      set_speed = hud_control.setSpeed * CV.MS_TO_KPH  # FIXME: follow the recent displayed-speed updates, also use mph_kmh toggle to fix display rounding problem?
+      # FIXME: follow the recent displayed-speed updates, also use mph_kmh toggle to fix display rounding problem?
+      set_speed = hud_control.setSpeed * CV.MS_TO_KPH
       can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_hud_status, set_speed,
                                                        lead_distance))
 

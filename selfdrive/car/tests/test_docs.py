@@ -4,13 +4,13 @@ import os
 import re
 import unittest
 
-from common.basedir import BASEDIR
-from selfdrive.car.car_helpers import interfaces, get_interface_attr
-from selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_info
-from selfdrive.car.docs_definitions import Cable, Column, PartType, Star
-from selfdrive.car.honda.values import CAR as HONDA
-from selfdrive.debug.dump_car_info import dump_car_info
-from selfdrive.debug.print_docs_diff import print_car_info_diff
+from openpilot.common.basedir import BASEDIR
+from openpilot.selfdrive.car.car_helpers import interfaces, get_interface_attr
+from openpilot.selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_info
+from openpilot.selfdrive.car.docs_definitions import Cable, Column, PartType, Star
+from openpilot.selfdrive.car.honda.values import CAR as HONDA
+from openpilot.selfdrive.debug.dump_car_info import dump_car_info
+from openpilot.selfdrive.debug.print_docs_diff import print_car_info_diff
 
 
 class TestCarDocs(unittest.TestCase):
@@ -84,8 +84,8 @@ class TestCarDocs(unittest.TestCase):
         if car.name == "comma body":
           raise unittest.SkipTest
 
-        car_part_type = [p.type for p in car.car_parts.all_parts()]
-        car_parts = [p for p in car.car_parts.all_parts()]
+        car_part_type = [p.part_type for p in car.car_parts.all_parts()]
+        car_parts = list(car.car_parts.all_parts())
         self.assertTrue(len(car_parts) > 0, f"Need to specify car parts: {car.name}")
         self.assertTrue(car_part_type.count(PartType.connector) == 1, f"Need to specify one harness connector: {car.name}")
         self.assertTrue(car_part_type.count(PartType.mount) == 1, f"Need to specify one mount: {car.name}")

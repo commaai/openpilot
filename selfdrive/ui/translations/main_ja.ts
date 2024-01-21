@@ -66,6 +66,26 @@
         <source>Prevent large data uploads when on a metered connection</source>
         <translation>大量のデータのアップロードを防止します。</translation>
     </message>
+    <message>
+        <source>Hidden Network</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CONNECT</source>
+        <translation type="unfinished">接続</translation>
+    </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation type="unfinished">SSID を入力</translation>
+    </message>
+    <message>
+        <source>Enter password</source>
+        <translation type="unfinished">パスワードを入力</translation>
+    </message>
+    <message>
+        <source>for &quot;%1&quot;</source>
+        <translation type="unfinished">ﾈｯﾄﾜｰｸ名：%1</translation>
+    </message>
 </context>
 <context>
     <name>AnnotatedCameraWidget</name>
@@ -226,8 +246,8 @@
         <translation>電源を切る</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilotの本体は、左右4°以内、上5°、下8°以内の角度で取付ける必要があります。継続してキャリブレーションを続けているので、手動でリセットを行う必要はほぼありません。</translation>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
+        <translation>openpilotの本体は、左右4°以内、上5°、下9°以内の角度で取付ける必要があります。継続してキャリブレーションを続けているので、手動でリセットを行う必要はほぼありません。</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
@@ -275,34 +295,7 @@
     </message>
 </context>
 <context>
-    <name>DriveStats</name>
-    <message>
-        <source>Drives</source>
-        <translation>運転履歴</translation>
-    </message>
-    <message>
-        <source>Hours</source>
-        <translation>時間</translation>
-    </message>
-    <message>
-        <source>ALL TIME</source>
-        <translation>累計</translation>
-    </message>
-    <message>
-        <source>PAST WEEK</source>
-        <translation>先週</translation>
-    </message>
-    <message>
-        <source>KM</source>
-        <translation>km</translation>
-    </message>
-    <message>
-        <source>Miles</source>
-        <translation>マイル</translation>
-    </message>
-</context>
-<context>
-    <name>DriverViewScene</name>
+    <name>DriverViewWindow</name>
     <message>
         <source>camera starting</source>
         <translation>ｶﾒﾗを起動しています</translation>
@@ -353,33 +346,6 @@
         <source>hr</source>
         <translation>時間</translation>
     </message>
-    <message>
-        <source>km</source>
-        <translation>ｷﾛﾒｰﾄﾙ</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>ﾏｲﾙ</translation>
-    </message>
-</context>
-<context>
-    <name>MapInstructions</name>
-    <message>
-        <source> km</source>
-        <translation> ｷﾛﾒｰﾄﾙ</translation>
-    </message>
-    <message>
-        <source> m</source>
-        <translation> ﾒｰﾄﾙ</translation>
-    </message>
-    <message>
-        <source> mi</source>
-        <translation> ﾏｲﾙ</translation>
-    </message>
-    <message>
-        <source> ft</source>
-        <translation> ﾌｨｰﾄ</translation>
-    </message>
 </context>
 <context>
     <name>MapSettings</name>
@@ -401,6 +367,10 @@
     <message>
         <source>Waiting for GPS</source>
         <translation>GPS信号を探しています</translation>
+    </message>
+    <message>
+        <source>Waiting for route</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -587,10 +557,6 @@
         <translation>閉じる</translation>
     </message>
     <message>
-        <source>dashcam</source>
-        <translation>ﾄﾞﾗｲﾌﾞﾚｺｰﾀﾞｰ</translation>
-    </message>
-    <message>
         <source>openpilot</source>
         <translation>openpilot</translation>
     </message>
@@ -611,6 +577,22 @@
         <translation>
             <numerusform>%n 日前</numerusform>
         </translation>
+    </message>
+    <message>
+        <source>km</source>
+        <translation>ｷﾛﾒｰﾄﾙ</translation>
+    </message>
+    <message>
+        <source>m</source>
+        <translation>ﾒｰﾄﾙ</translation>
+    </message>
+    <message>
+        <source>mi</source>
+        <translation>ﾏｲﾙ</translation>
+    </message>
+    <message>
+        <source>ft</source>
+        <translation>ﾌｨｰﾄ</translation>
     </message>
 </context>
 <context>
@@ -753,6 +735,10 @@ This may take up to a minute.</source>
     <message>
         <source>Something went wrong. Reboot the device.</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a language</source>
+        <translation>言語を選択</translation>
     </message>
 </context>
 <context>
@@ -1060,10 +1046,6 @@ This may take up to a minute.</source>
         <translation>openpilotは標準ではゆっくりとくつろげる運転を提供します。この実験モードを有効にすると、以下のくつろげる段階ではない開発中の機能を利用する事ができます。</translation>
     </message>
     <message>
-        <source>🌮 End-to-End Longitudinal Control 🌮</source>
-        <translation>🌮 エンドツーエンドアクセル制御 🌮</translation>
-    </message>
-    <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
         <translation>openpilotにアクセルとブレーキを任せます。openpilotは赤信号や一時停止サインでの停止を含み、人間と同じように考えて運転を行います。openpilotが運転速度を決定するため、あなたが設定する速度は上限速度になります。この機能は実験段階のため、openpilotの運転ミスに常に備えて注意してください。</translation>
     </message>
@@ -1072,20 +1054,8 @@ This may take up to a minute.</source>
         <translation>新しい運転画面</translation>
     </message>
     <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
-        <translation>新しい運転画面では、低速時に広角カメラの映像を表示することで、曲がる際の道路の視覚を向上します。実験段階を表すマークが右上に表示されます。</translation>
-    </message>
-    <message>
         <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
         <translation>この車のACCがアクセル制御を行うため実験モードを利用することができません。</translation>
-    </message>
-    <message>
-        <source>openpilot longitudinal control may come in a future update.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
-        <translation>実験段階のopenpilotによるアクセル制御を有効にしてください。</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
@@ -1093,10 +1063,6 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1116,11 +1082,39 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>End-to-End Longitudinal Control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Navigate on openpilot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1174,11 +1168,11 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Uploading training data</source>
+        <source>Ready to upload</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Your data is used to train driving models and help improve openpilot</source>
+        <source>Training data will be pulled periodically while your device is on Wi-Fi</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

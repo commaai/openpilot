@@ -4,11 +4,11 @@ import random
 
 from cereal import car, log
 import cereal.messaging as messaging
-from common.realtime import DT_CTRL
-from selfdrive.car.honda.interface import CarInterface
-from selfdrive.controls.lib.events import ET, Events
-from selfdrive.controls.lib.alertmanager import AlertManager
-from selfdrive.manager.process_config import managed_processes
+from openpilot.common.realtime import DT_CTRL
+from openpilot.selfdrive.car.honda.interface import CarInterface
+from openpilot.selfdrive.controls.lib.events import ET, Events
+from openpilot.selfdrive.controls.lib.alertmanager import AlertManager
+from openpilot.selfdrive.manager.process_config import managed_processes
 
 EventName = car.CarEvent.EventName
 
@@ -25,7 +25,8 @@ def cycle_alerts(duration=200, is_metric=False):
     (EventName.buttonCancel, ET.USER_DISABLE),
     (EventName.wrongGear, ET.NO_ENTRY),
 
-    (EventName.vehicleModelInvalid, ET.SOFT_DISABLE),
+    (EventName.locationdTemporaryError, ET.SOFT_DISABLE),
+    (EventName.paramsdTemporaryError, ET.SOFT_DISABLE),
     (EventName.accFaulted, ET.IMMEDIATE_DISABLE),
 
     # DM sequence

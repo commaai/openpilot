@@ -18,8 +18,8 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
     title_layout->setSpacing(32);
     {
       QLabel *icon = new QLabel;
-      QPixmap *pixmap = new QPixmap("../assets/offroad/icon_wifi_strength_full.svg");
-      icon->setPixmap(pixmap->scaledToWidth(80, Qt::SmoothTransformation));
+      QPixmap pixmap("../assets/offroad/icon_wifi_strength_full.svg");
+      icon->setPixmap(pixmap.scaledToWidth(80, Qt::SmoothTransformation));
       title_layout->addWidget(icon);
 
       QLabel *title = new QLabel(tr("Setup Wi-Fi"));
@@ -60,7 +60,7 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
   {
     QHBoxLayout *title_layout = new QHBoxLayout;
     {
-      QLabel *title = new QLabel(tr("Uploading training data"));
+      QLabel *title = new QLabel(tr("Ready to upload"));
       title->setStyleSheet("font-size: 64px; font-weight: 600;");
       title->setWordWrap(true);
       title->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
@@ -68,13 +68,13 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
       title_layout->addStretch();
 
       QLabel *icon = new QLabel;
-      QPixmap *pixmap = new QPixmap("../assets/offroad/icon_wifi_uploading.svg");
-      icon->setPixmap(pixmap->scaledToWidth(120, Qt::SmoothTransformation));
+      QPixmap pixmap("../assets/offroad/icon_wifi_uploading.svg");
+      icon->setPixmap(pixmap.scaledToWidth(120, Qt::SmoothTransformation));
       title_layout->addWidget(icon);
     }
     uploading_layout->addLayout(title_layout);
 
-    QLabel *desc = new QLabel(tr("Your data is used to train driving models and help improve openpilot"));
+    QLabel *desc = new QLabel(tr("Training data will be pulled periodically while your device is on Wi-Fi"));
     desc->setStyleSheet("font-size: 48px; font-weight: 400;");
     desc->setWordWrap(true);
     uploading_layout->addWidget(desc);

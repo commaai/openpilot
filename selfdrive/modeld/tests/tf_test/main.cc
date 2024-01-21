@@ -36,9 +36,9 @@ static void DeallocateBuffer(void* data, size_t) {
 
 int main(int argc, char* argv[]) {
   TF_Buffer* buf;
-	TF_Graph* graph;
-	TF_Status* status;
-	char *path = argv[1];
+  TF_Graph* graph;
+  TF_Status* status;
+  char *path = argv[1];
 
   // load model
   {

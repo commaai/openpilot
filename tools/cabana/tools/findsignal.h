@@ -1,6 +1,10 @@
 #pragma once
 
+#include <algorithm>
+#include <limits>
+
 #include <QAbstractTableModel>
+#include <QCheckBox>
 #include <QLabel>
 #include <QPushButton>
 #include <QTableView>

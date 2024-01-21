@@ -50,11 +50,11 @@ static kj::Array<capnp::word> build_boot_log() {
 
 int main(int argc, char** argv) {
   const std::string timestr = logger_get_route_name();
-  const std::string path = LOG_ROOT + "/boot/" + timestr;
+  const std::string path = Path::log_root() + "/boot/" + timestr;
   LOGW("bootlog to %s", path.c_str());
 
   // Open bootlog
-  bool r = util::create_directories(LOG_ROOT + "/boot/", 0775);
+  bool r = util::create_directories(Path::log_root() + "/boot/", 0775);
   assert(r);
 
   RawFile file(path.c_str());

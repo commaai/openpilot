@@ -8,10 +8,10 @@ from natsort import natsorted
 from typing import Dict, List
 
 from cereal import car
-from common.basedir import BASEDIR
-from selfdrive.car import gen_empty_fingerprint
-from selfdrive.car.docs_definitions import CarInfo, Column, CommonFootnote, PartType
-from selfdrive.car.car_helpers import interfaces, get_interface_attr
+from openpilot.common.basedir import BASEDIR
+from openpilot.selfdrive.car import gen_empty_fingerprint
+from openpilot.selfdrive.car.docs_definitions import CarInfo, Column, CommonFootnote, PartType
+from openpilot.selfdrive.car.car_helpers import interfaces, get_interface_attr
 
 
 def get_all_footnotes() -> Dict[Enum, int]:
@@ -30,7 +30,8 @@ def get_all_car_info() -> List[CarInfo]:
   footnotes = get_all_footnotes()
   for model, car_info in get_interface_attr("CAR_INFO", combine_brands=True).items():
     # If available, uses experimental longitudinal limits for the docs
-    CP = interfaces[model][0].get_params(model, fingerprint=gen_empty_fingerprint(), car_fw=[car.CarParams.CarFw(ecu="unknown")], experimental_long=True, docs=True)
+    CP = interfaces[model][0].get_params(model, fingerprint=gen_empty_fingerprint(),
+                                         car_fw=[car.CarParams.CarFw(ecu="unknown")], experimental_long=True, docs=True)
 
     if CP.dashcamOnly or car_info is None:
       continue

@@ -3,10 +3,12 @@
 #include <cassert>
 #include <cmath>
 #include <string>
+#include <tuple>
+#include <vector>
 
 #include <QDebug>
 
-#include "selfdrive/ui/qt/offroad/networking.h"
+#include "selfdrive/ui/qt/network/networking.h"
 
 #include "common/params.h"
 #include "common/watchdog.h"
@@ -20,7 +22,6 @@
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
-#include "selfdrive/ui/qt/widgets/input.h"
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon
@@ -36,7 +37,8 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       tr("openpilot Longitudinal Control (Alpha)"),
       QString("<b>%1</b><br><br>%2")
       .arg(tr("WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB)."))
-      .arg(tr("On this car, openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.")),
+      .arg(tr("On this car, openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control. "
+              "Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.")),
       "../assets/offroad/icon_speed_limit.png",
     },
     {
@@ -88,7 +90,8 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
 
   std::vector<QString> longi_button_texts{tr("Aggressive"), tr("Standard"), tr("Relaxed")};
   long_personality_setting = new ButtonParamControl("LongitudinalPersonality", tr("Driving Personality"),
-                                          tr("Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars."),
+                                          tr("Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. "
+                                             "In relaxed mode openpilot will stay further away from lead cars."),
                                           "../assets/offroad/icon_speed_limit.png",
                                           longi_button_texts);
   for (auto &[param, title, desc, icon] : toggle_defs) {
@@ -125,19 +128,27 @@ void TogglesPanel::showEvent(QShowEvent *event) {
 }
 
 void TogglesPanel::updateToggles() {
-  auto e2e_toggle = toggles["ExperimentalMode"];
+  auto experimental_mode_toggle = toggles["ExperimentalMode"];
   auto op_long_toggle = toggles["ExperimentalLongitudinalEnabled"];
   const QString e2e_description = QString("%1<br>"
                                           "<h4>%2</h4><br>"
                                           "%3<br>"
                                           "<h4>%4</h4><br>"
-                                          "%5")
+                                          "%5<br>"
+                                          "<h4>%6</h4><br>"
+                                          "%7")
                                   .arg(tr("openpilot defaults to driving in <b>chill mode</b>. Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. Experimental features are listed below:"))
-                                  .arg(tr("🌮 End-to-End Longitudinal Control 🌮"))
+                                  .arg(tr("End-to-End Longitudinal Control"))
                                   .arg(tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. "
-                                       "Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected."))
+                                          "Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; "
+                                          "mistakes should be expected."))
+                                  .arg(tr("Navigate on openpilot"))
+                                  .arg(tr("When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right "
+                                          "appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around "
+                                          "exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc."))
                                   .arg(tr("New Driving Visualization"))
-                                  .arg(tr("The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner."));
+                                  .arg(tr("The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. "
+                                          "When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green."));
 
   const bool is_release = params.getBool("IsReleaseBranch");
   auto cp_bytes = params.get("CarParamsPersistent");
@@ -152,12 +163,12 @@ void TogglesPanel::updateToggles() {
     op_long_toggle->setVisible(CP.getExperimentalLongitudinalAvailable() && !is_release);
     if (hasLongitudinalControl(CP)) {
       // normal description and toggle
-      e2e_toggle->setEnabled(true);
-      e2e_toggle->setDescription(e2e_description);
+      experimental_mode_toggle->setEnabled(true);
+      experimental_mode_toggle->setDescription(e2e_description);
       long_personality_setting->setEnabled(true);
     } else {
       // no long for now
-      e2e_toggle->setEnabled(false);
+      experimental_mode_toggle->setEnabled(false);
       long_personality_setting->setEnabled(false);
       params.remove("ExperimentalMode");
 
@@ -169,15 +180,15 @@ void TogglesPanel::updateToggles() {
         if (is_release) {
           long_desc = unavailable + " " + tr("An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.");
         } else {
-          long_desc = tr("Enable experimental longitudinal control to allow Experimental mode.");
+          long_desc = tr("Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.");
         }
       }
-      e2e_toggle->setDescription("<b>" + long_desc + "</b><br><br>" + e2e_description);
+      experimental_mode_toggle->setDescription("<b>" + long_desc + "</b><br><br>" + e2e_description);
     }
 
-    e2e_toggle->refresh();
+    experimental_mode_toggle->refresh();
   } else {
-    e2e_toggle->setDescription(e2e_description);
+    experimental_mode_toggle->setDescription(e2e_description);
     op_long_toggle->setVisible(false);
   }
 }
@@ -204,15 +215,13 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(resetCalibBtn);
 
-  if (!params.getBool("Passive")) {
-    auto retrainingBtn = new ButtonControl(tr("Review Training Guide"), tr("REVIEW"), tr("Review the rules, features, and limitations of openpilot"));
-    connect(retrainingBtn, &ButtonControl::clicked, [=]() {
-      if (ConfirmationDialog::confirm(tr("Are you sure you want to review the training guide?"), tr("Review"), this)) {
-        emit reviewTrainingGuide();
-      }
-    });
-    addItem(retrainingBtn);
-  }
+  auto retrainingBtn = new ButtonControl(tr("Review Training Guide"), tr("REVIEW"), tr("Review the rules, features, and limitations of openpilot"));
+  connect(retrainingBtn, &ButtonControl::clicked, [=]() {
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to review the training guide?"), tr("Review"), this)) {
+      emit reviewTrainingGuide();
+    }
+  });
+  addItem(retrainingBtn);
 
   if (Hardware::TICI()) {
     auto regulatoryBtn = new ButtonControl(tr("Regulatory"), tr("VIEW"), "");
@@ -229,7 +238,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     QString selection = MultiOptionDialog::getSelection(tr("Select a language"), langs.keys(), langs.key(uiState()->language), this);
     if (!selection.isEmpty()) {
       // put language setting, exit Qt UI, and trigger fast restart
-      Params().put("LanguageSetting", langs[selection].toStdString());
+      params.put("LanguageSetting", langs[selection].toStdString());
       qApp->exit(18);
       watchdog_kick(0);
     }
@@ -272,8 +281,8 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 void DevicePanel::updateCalibDescription() {
   QString desc =
       tr("openpilot requires the device to be mounted within 4° left or right and "
-         "within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.");
-  std::string calib_bytes = Params().get("CalibrationParams");
+         "within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.");
+  std::string calib_bytes = params.get("CalibrationParams");
   if (!calib_bytes.empty()) {
     try {
       AlignedBuffer aligned_buf;
@@ -298,7 +307,7 @@ void DevicePanel::reboot() {
     if (ConfirmationDialog::confirm(tr("Are you sure you want to reboot?"), tr("Reboot"), this)) {
       // Check engaged again in case it changed while the dialog was open
       if (!uiState()->engaged()) {
-        Params().putBool("DoReboot", true);
+        params.putBool("DoReboot", true);
       }
     }
   } else {
@@ -311,7 +320,7 @@ void DevicePanel::poweroff() {
     if (ConfirmationDialog::confirm(tr("Are you sure you want to power off?"), tr("Power Off"), this)) {
       // Check engaged again in case it changed while the dialog was open
       if (!uiState()->engaged()) {
-        Params().putBool("DoShutdown", true);
+        params.putBool("DoShutdown", true);
       }
     }
   } else {
@@ -338,10 +347,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QVBoxLayout *sidebar_layout = new QVBoxLayout(sidebar_widget);
   sidebar_layout->setMargin(0);
   panel_widget = new QStackedWidget();
-  panel_widget->setStyleSheet(R"(
-    border-radius: 30px;
-    background-color: #292929;
-  )");
 
   // close button
   QPushButton *close_btn = new QPushButton(tr("×"));
@@ -349,7 +354,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     QPushButton {
       font-size: 140px;
       padding-bottom: 20px;
-      border 1px grey solid;
       border-radius: 100px;
       background-color: #292929;
       font-weight: 400;
@@ -429,6 +433,10 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     }
     SettingsWindow {
       background-color: black;
+    }
+    QStackedWidget, ScrollView {
+      background-color: #292929;
+      border-radius: 30px;
     }
   )");
 }
