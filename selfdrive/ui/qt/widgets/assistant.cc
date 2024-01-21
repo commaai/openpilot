@@ -1,4 +1,4 @@
-#include "assistant.h"
+#include "selfdrive/ui/qt/widgets/assistant.h"
 
 AssistantOverlay::AssistantOverlay(QWidget *parent) : QLabel(parent) {
 
@@ -20,32 +20,28 @@ AssistantOverlay::AssistantOverlay(QWidget *parent) : QLabel(parent) {
   hide();
 
   hideTimer = new QTimer(this);
-  connect(hideTimer, &QTimer::timeout, this, &AssistantOverlay::animateHide);
+  connect(hideTimer, &QTimer::timeout, this, [this]() { animateOverlay(false); });
   QObject::connect(uiState(), &UIState::uiUpdate, this, &AssistantOverlay::updateState);
 }
 
-void AssistantOverlay::animateShow() {
-  parentCenterX = parentWidget()->width() / 2;
+void AssistantOverlay::animateOverlay(bool show) {
+  int parentCenterX = parentWidget()->width() / 2;
   finalWidth = parentWidget()->width() * 0.5;
-  startX = parentCenterX - finalWidth / 2;
-  QRect startRect(parentCenterX, 0, 0, height()); // Centered, zero width
-  QRect endRect(startX, 0, finalWidth, height()); // Adjusted x, final width
-  showAnimation->setStartValue(startRect);
-  showAnimation->setEndValue(endRect);
-  show();
-  showAnimation->start();
-}
+  int startX = parentCenterX - finalWidth / 2;
+  QRect centerRect(parentCenterX, 0, 0, height()); // Centered, zero width
+  QRect fullRect(startX, 0, finalWidth, height()); // Adjusted x, final width
 
-void AssistantOverlay::animateHide() {
-  parentCenterX = parentWidget()->width() / 2;
-  finalWidth = parentWidget()->width() * 0.5;
-  startX = parentCenterX - finalWidth / 2;
-  QRect startRect(startX, 0, finalWidth, height()); // Adjusted x, final width
-  QRect endRect(parentCenterX, 0, 0, height()); // Centered, zero width
-  hideAnimation->setStartValue(startRect);
-  hideAnimation->setEndValue(endRect);
-  hideAnimation->start();
-  hideTimer->stop();
+  if (show) {
+    showAnimation->setStartValue(centerRect);
+    showAnimation->setEndValue(fullRect);
+    this->show();
+    showAnimation->start();
+  } else {
+    hideAnimation->setStartValue(fullRect);
+    hideAnimation->setEndValue(centerRect);
+    hideAnimation->start();
+    hideTimer->stop();
+  }
 }
 
 void AssistantOverlay::updateText(QString text) {
@@ -59,7 +55,6 @@ void AssistantOverlay::updateState(const UIState &s) {
 
   static cereal::SpeechToText::State current_state = cereal::SpeechToText::State::NONE;
   cereal::SpeechToText::State request_state = sm["speechToText"].getSpeechToText().getState();
-
   // Check for valid state transition
   if (current_state == cereal::SpeechToText::State::BEGIN  ||
      (current_state == cereal::SpeechToText::State::NONE   &&
@@ -71,7 +66,7 @@ void AssistantOverlay::updateState(const UIState &s) {
     current_state = request_state;  // Update state
     switch (current_state) {  // Handle UI updates
       case cereal::SpeechToText::State::BEGIN:
-        if (!hideTimer->isActive()) animateShow();
+        if (!hideTimer->isActive()) animateOverlay(true);
         updateText("Hello, I'm listening");
         hideTimer->start(30000);
         break;

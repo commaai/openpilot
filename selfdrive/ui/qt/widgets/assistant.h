@@ -9,8 +9,7 @@ class AssistantOverlay : public QLabel {
 
 public:
   explicit AssistantOverlay(QWidget *parent = nullptr);
-  void animateShow();
-  void animateHide();
+  void animateOverlay(bool show);
 
 private:
   void updateText(const QString text);
@@ -18,9 +17,7 @@ private:
   QTimer *hideTimer;
   QPropertyAnimation *showAnimation;
   QPropertyAnimation *hideAnimation;
-  int parentCenterX;
   int finalWidth;
-  int startX;
 
 private slots:
   void updateState(const UIState &s);
