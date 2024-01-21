@@ -49,6 +49,7 @@ class CarController:
     pcm_cancel_cmd = CC.cruiseControl.cancel
     lat_active = CC.latActive and abs(CS.out.steeringTorque) < MAX_USER_TORQUE
     stopping = actuators.longControlState == LongCtrlState.stopping
+    stopping_can = stopping and not CS.out.gasPressed
 
     # *** control msgs ***
     can_sends = []
@@ -162,7 +163,7 @@ class CarController:
       if pcm_cancel_cmd and self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
         can_sends.append(toyotacan.create_acc_cancel_command(self.packer))
       elif self.CP.openpilotLongitudinalControl:
-        can_sends.append(toyotacan.create_accel_command(self.packer, pcm_accel_cmd, actuators.accel, pcm_cancel_cmd, stopping,
+        can_sends.append(toyotacan.create_accel_command(self.packer, pcm_accel_cmd, actuators.accel, pcm_cancel_cmd, stopping_can,
                                                         self.standstill_req, lead, CS.acc_type, fcw_alert, hud_control.leadVisible))
         self.accel = pcm_accel_cmd
       else:
