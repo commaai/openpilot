@@ -207,3 +207,9 @@ def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
   CP.fuzzyFingerprint = not exact_match
 
   return CarInterface(CP, CarController, CarState), CP
+
+def write_car_param(fingerprint="mock"):
+  params = Params()
+  CarInterface, _, _ = interfaces[fingerprint]
+  CP = CarInterface.get_non_essential_params(fingerprint)
+  params.put("CarParams", CP.to_bytes())
