@@ -25,10 +25,6 @@ import onnxruntime as ort
 # Base class for computing audio features using Google's speech_embedding
 # model (https://tfhub.dev/google/speech_embedding/1)
 class AudioFeatures():
-  """
-  A class for creating audio features from audio data, including melspectograms and Google's
-  `speech_embedding` features.
-  """
   def __init__(self,
               melspec_model_path: str = pathlib.Path(__file__).parent.parent / "models/melspectrogram.onnx",
               embedding_model_path: str = pathlib.Path(__file__).parent.parent / "models/embedding_model.onnx",
@@ -36,24 +32,20 @@ class AudioFeatures():
               ncpu: int = 1,
               device: str = 'cpu'
               ):
-
     # Initialize ONNX options
     sessionOptions = ort.SessionOptions()
     sessionOptions.inter_op_num_threads = ncpu
     sessionOptions.intra_op_num_threads = ncpu
-
     # Melspectrogram model
     self.melspec_model = ort.InferenceSession(melspec_model_path, sess_options=sessionOptions,
                                                 providers=["CUDAExecutionProvider"] if device == "gpu" else ["CPUExecutionProvider"])
     self.onnx_execution_provider = self.melspec_model.get_providers()[0]
     self.melspec_model_predict = lambda x: self.melspec_model.run(None, {'input': x})
-
     # Audio embedding model
     self.embedding_model = ort.InferenceSession(embedding_model_path, sess_options=sessionOptions,
                                                 providers=["CUDAExecutionProvider"] if device == "gpu"
                                                 else ["CPUExecutionProvider"])
     self.embedding_model_predict = lambda x: self.embedding_model.run(None, {'input_1': x})[0].squeeze()
-
     # Create databuffers
     self.raw_data_buffer: Deque = deque(maxlen=sr*10)
     self.melspectrogram_buffer = np.ones((76, 32))  # n_frames x num_features
@@ -64,7 +56,6 @@ class AudioFeatures():
     self.feature_buffer_max_len = 120  # ~10 seconds of feature buffer history
 
   def _get_melspectrogram(self, x: Union[np.ndarray, List], melspec_transform: Callable = lambda x: x/10 + 2):
-
     x = np.asarray(x, dtype=np.float32)  # Convert to numpy array of type float32 directly
     if x.ndim == 1:
       x = x[np.newaxis, :]  # Add new axis for single sample
@@ -90,11 +81,6 @@ class AudioFeatures():
     return embedding
 
   def _streaming_melspectrogram(self, n_samples):
-    """Note! There seem to be some slight numerical issues depending on the underlying audio data
-    such that the streaming method is not exactly the same as when the melspectrogram of the entire
-    clip is calculated. It's unclear if this difference is significant and will impact model performance.
-    In particular padding with 0 or very small values seems to demonstrate the differences well.
-    """
     if len(self.raw_data_buffer) < 400:
       raise ValueError("The number of input frames must be at least 400 samples @ 16khz (25 ms)!")
 
@@ -106,9 +92,7 @@ class AudioFeatures():
       self.melspectrogram_buffer = self.melspectrogram_buffer[-self.melspectrogram_max_len:, :]
 
   def _buffer_raw_data(self, x):
-    """
-    Adds raw audio data to the input buffer
-    """
+
     self.raw_data_buffer.extend(x.tolist() if isinstance(x, np.ndarray) else x)
 
   def _streaming_features(self, x):
@@ -137,7 +121,6 @@ class AudioFeatures():
     # Only calculate melspectrogram once minimum samples are accumulated
     if self.accumulated_samples >= 1280 and self.accumulated_samples % 1280 == 0:
       self._streaming_melspectrogram(self.accumulated_samples)
-
       # Calculate new audio embeddings/features based on update melspectrograms
       for i in np.arange(self.accumulated_samples//1280-1, -1, -1):
         ndx = -8*i
@@ -146,7 +129,6 @@ class AudioFeatures():
         if x.shape[1] == 76:
           self.feature_buffer = np.vstack((self.feature_buffer,
                                           self.embedding_model_predict(x)))
-
         # Reset raw data buffer counter
         processed_samples = self.accumulated_samples
         self.accumulated_samples = 0
@@ -167,47 +149,26 @@ class AudioFeatures():
   def __call__(self, x):
     return self._streaming_features(x)
 
-# Function to download files from a URL with a progress bar
 def download_file(url, target_directory, file_size=None):
-  """A simple function to download a file from a URL with a progress bar using only the requests library"""
   local_filename = url.split('/')[-1]
-
   with requests.get(url, stream=True) as r:
     if file_size is not None:
       progress_bar = tqdm(total=file_size, unit='iB', unit_scale=True, desc=f"{local_filename}")
     else:
       total_size = int(r.headers.get('content-length', 0))
       progress_bar = tqdm(total=total_size, unit='iB', unit_scale=True, desc=f"{local_filename}")
-
     with open(os.path.join(target_directory, local_filename), 'wb') as f:
       for chunk in r.iter_content(chunk_size=8192):
         f.write(chunk)
         progress_bar.update(len(chunk))
-
   progress_bar.close()
 
 
 # Function to download models from GitHub release assets
-def download_models(
-  model_names: List[str] = [],
-  target_directory: str = os.path.join(pathlib.Path(__file__).parent.resolve(), "resources", "models")
-  ):
-  """
-  Download the specified models from the release assets in the openWakeWord GitHub repository.
-  Uses the official urls in the MODELS dictionary in openwakeword/__init__.py.
-
-  Args:
-      model_names (List[str]): The names of the models to download (e.g., hey_jarvis_v0.1). Both ONNX and
-                                tflite models will be downloaded. If not provided (the default),
-                                the latest versions of all models will be downloaded.
-      target_directory (str): The directory to save the models to. Defaults to the install location
-                              of openWakeWord (i.e., the `resources/models` directory).
-  Returns:
-      None
-  """
+def download_models(model_names: List[str] = [],
+  target_directory: str = os.path.join(pathlib.Path(__file__).parent.resolve(), "resources", "models")):
   if not isinstance(model_names, list):
     raise ValueError("The model_names argument must be a list of strings")
-
   # Always download melspectrogram and embedding models, if they don't already exist
   if not os.path.exists(target_directory):
     os.makedirs(target_directory)
@@ -215,16 +176,13 @@ def download_models(
     if not os.path.exists(os.path.join(target_directory, feature_model["download_url"].split("/")[-1])):
       download_file(feature_model["download_url"], target_directory)
       download_file(feature_model["download_url"].replace(".tflite", ".onnx"), target_directory)
-
   # Always download VAD models, if they don't already exist
   for vad_model in openwakeword.VAD_MODELS.values():
     if not os.path.exists(os.path.join(target_directory, vad_model["download_url"].split("/")[-1])):
       download_file(vad_model["download_url"], target_directory)
-
   # Get all model urls
   official_model_urls = [i["download_url"] for i in openwakeword.MODELS.values()]
   official_model_names = [i["download_url"].split("/")[-1] for i in openwakeword.MODELS.values()]
-
   if model_names != []:
     for model_name in model_names:
       url = [i for i, j in zip(official_model_urls, official_model_names) if model_name in j]
@@ -238,8 +196,6 @@ def download_models(
         download_file(official_model_url, target_directory)
         download_file(official_model_url.replace(".tflite", ".onnx"), target_directory)
 
-
-# Handle deprecated arguments and naming (thanks to https://stackoverflow.com/a/74564394)
 def re_arg(kwarg_map):
   def decorator(func):
     def wrapped(*args, **kwargs):
