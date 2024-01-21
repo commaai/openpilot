@@ -36,7 +36,8 @@ class CarController:
     self.alert_active = False
     self.last_standstill = False
     self.standstill_req = False
-    self.steer_rate_counter = 0
+    self.steer_rate_counter = 0    
+    self.prohibit_neg_calculation = True
 
     self.packer = CANPacker(dbc_name)
     self.gas = 0
@@ -117,11 +118,20 @@ class CarController:
     else:
       interceptor_gas_cmd = 0.
 
+    # set allow negative calculation to False when longActive is False
+    if not CC.longActive:
+      self.prohibit_neg_calculation = True
+    # don't reset until the first positive is reached
+    if CS.pcm_neutral_force > 0.:
+      self.prohibit_neg_calculation = False
     # NO_STOP_TIMER_CAR will creep if compensation is applied when stopping or stopped, don't compensate when stopped or stopping
     should_compensate = True
     if self.CP.carFingerprint in NO_STOP_TIMER_CAR and ((CS.out.vEgo <  1e-3 and actuators.accel < 1e-3) or stopping):
       should_compensate = False
-    if CC.longActive and should_compensate:
+    # limit minimum to only positive until first positive is reached after engagement
+    if CC.longActive and self.prohibit_neg_calculation:
+      accel_offset = min(0, CS.pcm_neutral_force / self.CP.mass)
+    elif CC.longActive and should_compensate:
       accel_offset = CS.pcm_neutral_force / self.CP.mass
     else:
       accel_offset = 0.
