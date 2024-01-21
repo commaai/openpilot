@@ -1,7 +1,4 @@
-import json
-import time
-import os
-import re
+import os, re, json, time
 from rev_ai.models import MediaConfig
 from rev_ai.streamingclient import RevAiStreamingClient
 from websocket import _exceptions
@@ -11,32 +8,30 @@ from cereal import messaging, log
 from openpilot.common.params import Params
 from openpilot.system.micd import SAMPLE_BUFFER, SAMPLE_RATE
 
-STTState = log.SpeechToText.State
-
 class AssistantWidgetControl:
-    def __init__(self):
-        self.pm = messaging.PubMaster(['speechToText'])
-        self.pm.wait_for_readers_to_update('speechToText', timeout=1)
-    def make_msg(self):
-        self.pm.wait_for_readers_to_update('speechToText', timeout=1)
-        return messaging.new_message('speechToText', valid=True)
-    def begin(self):
-        msg = self.make_msg()
-        msg.speechToText.state = STTState.begin # Show
-        self.pm.send('speechToText', msg)
-    def error(self):
-        msg = self.make_msg()
-        msg.speechToText.state = STTState.error
-        self.pm.send('speechToText', msg)
-    def empty(self):
-        msg = self.make_msg()
-        msg.speechToText.state = STTState.empty
-        self.pm.send('speechToText', msg)
-    def set_text(self, text, final=True):
-        msg = self.make_msg()
-        msg.speechToText.transcript = text
-        msg.speechToText.state = STTState.none if not final else STTState.final
-        self.pm.send('speechToText', msg)
+  def __init__(self):
+    self.pm = messaging.PubMaster(['speechToText'])
+    self.pm.wait_for_readers_to_update('speechToText', timeout=1)
+  def make_msg(self):
+    self.pm.wait_for_readers_to_update('speechToText', timeout=1)
+    return messaging.new_message('speechToText', valid=True)
+  def begin(self):
+    msg = self.make_msg()
+    msg.speechToText.state = log.SpeechToText.State.begin # Show
+    self.pm.send('speechToText', msg)
+  def error(self):
+    msg = self.make_msg()
+    msg.speechToText.state = log.SpeechToText.State.error
+    self.pm.send('speechToText', msg)
+  def empty(self):
+    msg = self.make_msg()
+    msg.speechToText.state = log.SpeechToText.State.empty
+    self.pm.send('speechToText', msg)
+  def set_text(self, text, final=True):
+    msg = self.make_msg()
+    msg.speechToText.transcript = text
+    msg.speechToText.state = log.SpeechToText.State.none if not final else log.SpeechToText.State.final
+    self.pm.send('speechToText', msg)
 
 class SpeechToTextProcessor:
   TIMEOUT_DURATION = 10
@@ -88,7 +83,6 @@ class SpeechToTextProcessor:
         time.sleep(.1)
 
   def listen_print_loop(self, response_gen, final_transcript):
-    """Processes the streaming responses from Rev.ai."""
     try:
       for response in response_gen:
         data = json.loads(response)
@@ -99,11 +93,9 @@ class SpeechToTextProcessor:
           # Handle partial transcripts (optional)
           partial_transcript = ' '.join([element['value'] for element in data['elements'] if element['type'] == 'text'])
           self.awc.set_text(re.sub(r'<[^>]*>', '', partial_transcript), final=False)
-
     except Exception as e:
       print(f"An error occurred: {e}")
       self.error=True
-
     return re.sub(r'<[^>]*>', '', final_transcript) # remove atmospherics. ex: <laugh>
 
   def run(self):
@@ -112,28 +104,20 @@ class SpeechToTextProcessor:
     final_transcript = ""
     self.error = False
     while not self.p.get_bool("WakeWordDetected"):
-      # Improve response time by combining wakewordd.py and this script. For now, keep it modular
       time.sleep(.4)
-
-    # Start the microphone data collector thread
     collector_thread.start()
     self.awc.begin()
-
     try:
-      # Start streaming to Rev.ai with a new generator instance
       response_gen = self.streamclient.start(self.microphone_stream(),
                                              remove_disfluencies=True, # remove umms
                                              filter_profanity=True, # brand integridity or something
                                              detailed_partials=False, # don't need time stamps
                                             )
       final_transcript = self.listen_print_loop(response_gen, final_transcript)
-
     except _exceptions.WebSocketAddressException as e:
       print(f"WebSocketAddressException: Address unreachable. {e}")
       self.error = True
     except Exception as e:
-      # TODO: handle disconnection better? ssl send can hang forever until reconnected.
-      # This tries to catch the error when it reconnects. Needs more testing
       print(f"An error occurred: {e}")
       self.error = True
     finally:
@@ -144,7 +128,6 @@ class SpeechToTextProcessor:
       print("collector_thread joined")
       self.awc.set_text(final_transcript, final=True)
 
-
 def main():
   try:
     reva_access_token = os.environ["REVAI_ACCESS_TOKEN"]
@@ -152,7 +135,6 @@ def main():
     print("your rev ai acccess token which can be obtained with a free account. https://www.rev.ai/access-token")
     print("Set your REVAI_ACCESS_TOKEN with the command:")
     print('export REVAI_ACCESS_TOKEN="your token string"')
-
   processor = SpeechToTextProcessor(access_token=reva_access_token)
   while True:
     processor.p.put_bool("WakeWordDetected", False)
@@ -160,3 +142,5 @@ def main():
 
 if __name__ == "__main__":
   main()
+
+
