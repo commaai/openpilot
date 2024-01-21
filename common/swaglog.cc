@@ -92,7 +92,7 @@ static void cloudlog_common(int levelnum, const char* filename, int lineno, cons
 
   std::string log_s;
   log_s += (char)levelnum;
-  log_s = log_j.dump();
+  log_s += log_j.dump();
   s.log(levelnum, filename, lineno, func, msg_buf, log_s);
 
   free(msg_buf);
