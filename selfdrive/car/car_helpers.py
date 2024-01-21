@@ -213,3 +213,9 @@ def write_car_param(fingerprint="mock"):
   CarInterface, _, _ = interfaces[fingerprint]
   CP = CarInterface.get_non_essential_params(fingerprint)
   params.put("CarParams", CP.to_bytes())
+
+def get_demo_car_params():
+  fingerprint="mock"
+  CarInterface, _, _ = interfaces[fingerprint]
+  CP = CarInterface.get_non_essential_params(fingerprint)
+  return CP
