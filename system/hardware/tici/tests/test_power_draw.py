@@ -91,8 +91,8 @@ class TestPowerDraw(unittest.TestCase):
       msgs_expected = int(sum(SAMPLE_TIME * SERVICE_LIST[msg].frequency for msg in proc.msgs))
       tab.append([proc.name, round(expected, 2), round(cur, 2), msgs_expected, msgs_received])
       with self.subTest(proc=proc.name):
-        np.testing.assert_allclose(cur, expected, rtol=proc.rtol, atol=proc.atol)
         np.testing.assert_allclose(msgs_expected, msgs_received, rtol=.02, atol=2)
+        np.testing.assert_allclose(cur, expected, rtol=proc.rtol, atol=proc.atol)
     print(tabulate(tab))
     print(f"Baseline {baseline:.2f}W\n")
 
