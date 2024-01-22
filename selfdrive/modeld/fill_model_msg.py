@@ -3,7 +3,6 @@ import capnp
 import numpy as np
 from typing import Dict
 from cereal import log
-from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_lag_adjusted_curvature, MIN_SPEED
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan, Meta
 
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
