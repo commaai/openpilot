@@ -209,6 +209,13 @@ class LogReader:
     return _LogFileReader("", dat=dat)
 
 
+def get_first(lr: LogIterable, msg_type):
+  for m in lr:
+    if m.which() == msg_type:
+      return getattr(m, msg_type)
+  return None
+
+
 if __name__ == "__main__":
   import codecs
   # capnproto <= 0.8.0 throws errors converting byte data to string

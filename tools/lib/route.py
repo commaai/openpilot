@@ -255,3 +255,7 @@ class SegmentRange:
   @property
   def selector(self):
     return self.m.group("selector")
+
+  @property
+  def path_form(self):
+    return f"{self.route_name.replace('|', '/')}{'/' + self._slice if self._slice else ''}"
