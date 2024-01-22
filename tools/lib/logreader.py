@@ -71,7 +71,8 @@ class _LogFileReader:
 class ReadMode(enum.StrEnum):
   RLOG = "r" # only read rlogs
   QLOG = "q" # only read qlogs
-  AUTO = "a" # default to rlogs, fallback to qlogs, not supported yet
+  AUTO = "a" # default to rlogs, fallback to qlogs
+  AUTO_INTERACIVE = "i" # default to rlogs, fallback to qlogs with a prompt from the user
 
 def create_slice_from_string(s: str):
   m = re.fullmatch(RE.SLICE, s)
@@ -85,10 +86,14 @@ def create_slice_from_string(s: str):
     return start
   return slice(start, end, step)
 
-def auto_strategy(rlog_paths, qlog_paths):
+def auto_strategy(rlog_paths, qlog_paths, interactive):
   # auto select logs based on availability
   if any(rlog is None or not file_exists(rlog) for rlog in rlog_paths):
-    cloudlog.warning("Some rlogs were not found, falling back to qlogs for those segments...")
+    if interactive:
+      if input("Some rlogs were not found, would you like to fallback to qlogs for those semgments? (y/n) ").lower() != "y":
+        return rlog_paths
+    else:
+      cloudlog.warning("Some rlogs were not found, falling back to qlogs for those segments...")
 
     return [rlog if (rlog is not None and file_exists(rlog)) else (qlog if (qlog is not None and file_exists(qlog)) else None)
                                                                 for (rlog, qlog) in zip(rlog_paths, qlog_paths, strict=True)]
@@ -100,7 +105,9 @@ def apply_strategy(mode: ReadMode, rlog_paths, qlog_paths):
   elif mode == ReadMode.QLOG:
     return qlog_paths
   elif mode == ReadMode.AUTO:
-    return auto_strategy(rlog_paths, qlog_paths)
+    return auto_strategy(rlog_paths, qlog_paths, False)
+  elif mode == ReadMode.AUTO_INTERACIVE:
+    return auto_strategy(rlog_paths, qlog_paths, True)
 
 def parse_slice(sr: SegmentRange, route: Route):
   segs = np.arange(route.max_seg_number+1)
@@ -137,10 +144,13 @@ def openpilotci_source(sr: SegmentRange, route: Route, mode: ReadMode):
 def direct_source(file_or_url):
   return [file_or_url]
 
+def get_invalid_files(files):
+  return [f for f in files if f is None or not file_exists(f)]
+
 def check_source(source, *args):
   try:
     files = source(*args)
-    assert all(files)
+    assert len(get_invalid_files(files)) == 0
     return True, files
   except Exception:
     return False, None
@@ -226,7 +236,9 @@ class LogReader:
 
   def reset(self):
     self.logreader_identifiers = self._parse_identifiers(self.identifier)
-    assert all(self.logreader_identifiers), "Some segments could not be loaded, ensure that the segments are uploaded."
+    invalid_count = len(get_invalid_files(self.logreader_identifiers))
+    assert invalid_count == 0, f"{invalid_count}/{len(self.logreader_identifiers)} invalid log(s) found, please ensure all logs \
+are uploaded or fallback to qlogs with '/a' selector at the end of the route name."
 
   @staticmethod
   def from_bytes(dat):
