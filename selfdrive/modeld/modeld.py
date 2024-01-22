@@ -117,17 +117,8 @@ class ModelState:
 
 
 
-class Modeld:
-  def __init__(self):
-    self.init_model_stuff()
-    self.init_camera_streams()
-
-  def init_model_stuff(self):
-    self.cl_context = CLContext()
-    self.model = ModelState(self.cl_context)
-    cloudlog.warning("models loaded, modeld starting")
-
-  def init_camera_streams(self):
+class CameraStreams:
+  def __init__(self, cl_context: CLContext):
     while True:
       available_streams = VisionIpcClient.available_streams("camerad", block=False)
       if available_streams:
@@ -137,8 +128,8 @@ class Modeld:
       time.sleep(.1)
 
     vipc_client_main_stream = VisionStreamType.VISION_STREAM_WIDE_ROAD if self.main_wide_camera else VisionStreamType.VISION_STREAM_ROAD
-    self.vipc_client_main = VisionIpcClient("camerad", vipc_client_main_stream, True, self.cl_context)
-    self.vipc_client_extra = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, False, self.cl_context)
+    self.vipc_client_main = VisionIpcClient("camerad", vipc_client_main_stream, True, cl_context)
+    self.vipc_client_extra = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, False, cl_context)
     cloudlog.warning(f"vision stream set up, main_wide_camera: {self.main_wide_camera}, use_extra_client: {self.use_extra_client}")
 
     while not self.vipc_client_main.connect(False):
@@ -197,7 +188,11 @@ def main(demo=False):
   setproctitle(PROCESS_NAME)
   config_realtime_process(7, 54)
 
-  modeld = Modeld()
+
+  cl_context = CLContext()
+  model = ModelState(cl_context)
+  cloudlog.warning("models loaded, modeld starting")
+  camera_streams = CameraStreams(cl_context)
 
   # messaging
   pm = PubMaster(["modelV2", "cameraOdometry"])
@@ -232,7 +227,7 @@ def main(demo=False):
   while True:
     frames = None
     while frames is None:
-      frames = modeld.receive_frames()
+      frames = camera_streams.receive_frames()
     meta_main, meta_extra, buf_main, buf_extra = frames
 
     sm.update(0)
@@ -242,7 +237,7 @@ def main(demo=False):
     frame_id = sm["roadCameraState"].frameId
     if sm.updated["liveCalibration"]:
       device_from_calib_euler = np.array(sm["liveCalibration"].rpyCalib, dtype=np.float32)
-      model_transform_main = get_warp_matrix(device_from_calib_euler, modeld.main_wide_camera, False).astype(np.float32)
+      model_transform_main = get_warp_matrix(device_from_calib_euler, camera_streams.main_wide_camera, False).astype(np.float32)
       model_transform_extra = get_warp_matrix(device_from_calib_euler, True, True).astype(np.float32)
       live_calib_seen = True
 
@@ -297,7 +292,7 @@ def main(demo=False):
       'nav_instructions': nav_instructions}
 
     mt1 = time.perf_counter()
-    model_output = modeld.model.run(buf_main, buf_extra, model_transform_main, model_transform_extra, inputs, prepare_only)
+    model_output = model.run(buf_main, buf_extra, model_transform_main, model_transform_extra, inputs, prepare_only)
     mt2 = time.perf_counter()
     model_execution_time = mt2 - mt1
 
