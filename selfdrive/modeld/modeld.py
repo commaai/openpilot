@@ -8,7 +8,6 @@ from cereal import car, log
 from pathlib import Path
 from typing import Dict, Optional
 from setproctitle import setproctitle
-from cereal import car
 from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
