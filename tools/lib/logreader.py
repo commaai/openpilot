@@ -16,6 +16,7 @@ from typing import Iterable, Iterator, List, Type
 from urllib.parse import parse_qs, urlparse
 
 from cereal import log as capnp_log
+from openpilot.common.swaglog import cloudlog
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.tools.lib.filereader import FileReader, file_exists
 from openpilot.tools.lib.helpers import RE
@@ -86,8 +87,12 @@ def create_slice_from_string(s: str):
 
 def auto_strategy(rlog_paths, qlog_paths):
   # auto select logs based on availability
-  return [rlog if (rlog is not None and file_exists(rlog)) else (qlog if (qlog is not None and file_exists(qlog)) else None)
+  if any(rlog is None or not file_exists(rlog) for rlog in rlog_paths):
+    cloudlog.warning("Some rlogs were not found, falling back to qlogs for those segments...")
+
+    return [rlog if (rlog is not None and file_exists(rlog)) else (qlog if (qlog is not None and file_exists(qlog)) else None)
                                                                 for (rlog, qlog) in zip(rlog_paths, qlog_paths, strict=True)]
+  return rlog_paths
 
 def apply_strategy(mode: ReadMode, rlog_paths, qlog_paths):
   if mode == ReadMode.RLOG:
@@ -194,7 +199,7 @@ class LogReader:
 
     return source(sr, route, mode)
 
-  def __init__(self, identifier: str | List[str], default_mode=ReadMode.AUTO, default_source=auto_source, sort_by_time=False, only_union_types=False):
+  def __init__(self, identifier: str | List[str], default_mode=ReadMode.RLOG, default_source=auto_source, sort_by_time=False, only_union_types=False):
     self.default_mode = default_mode
     self.default_source = default_source
     self.identifier = identifier
