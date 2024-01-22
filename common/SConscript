@@ -23,7 +23,7 @@ Export('_common', '_gpucommon')
 
 if GetOption('extras'):
   env.Program('tests/test_common',
-              ['tests/test_runner.cc', 'tests/test_params.cc', 'tests/test_util.cc', 'tests/test_swaglog.cc', 'tests/test_ratekeeper.cc'],
+              ['tests/test_runner.cc', 'tests/test_params.cc', 'tests/test_util.cc', 'tests/test_swaglog.cc'],
               LIBS=[_common, 'json11', 'zmq', 'pthread'])
 
 # Cython bindings
