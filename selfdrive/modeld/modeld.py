@@ -115,38 +115,84 @@ class ModelState:
     return outputs
 
 
+
+
+class CameraStreams:
+  def __init__(self, cl_context: CLContext):
+    while True:
+      available_streams = VisionIpcClient.available_streams("camerad", block=False)
+      if available_streams:
+        self.use_extra_client = VisionStreamType.VISION_STREAM_WIDE_ROAD in available_streams and VisionStreamType.VISION_STREAM_ROAD in available_streams
+        self.main_wide_camera = VisionStreamType.VISION_STREAM_ROAD not in available_streams
+        break
+      time.sleep(.1)
+
+    vipc_client_main_stream = VisionStreamType.VISION_STREAM_WIDE_ROAD if self.main_wide_camera else VisionStreamType.VISION_STREAM_ROAD
+    self.vipc_client_main = VisionIpcClient("camerad", vipc_client_main_stream, True, cl_context)
+    self.vipc_client_extra = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, False, cl_context)
+    cloudlog.warning(f"vision stream set up, main_wide_camera: {self.main_wide_camera}, use_extra_client: {self.use_extra_client}")
+
+    while not self.vipc_client_main.connect(False):
+      time.sleep(0.1)
+    while self.use_extra_client and not self.vipc_client_extra.connect(False):
+      time.sleep(0.1)
+
+    cloudlog.warning(f"connected main cam with buffer size: {self.vipc_client_main.buffer_len} \
+                     ({self.vipc_client_main.width} x {self.vipc_client_main.height})")
+    if self.use_extra_client:
+      cloudlog.warning(f"connected extra cam with buffer size: {self.vipc_client_extra.buffer_len} \
+                       ({self.vipc_client_extra.width} x {self.vipc_client_extra.height})")
+
+  def receive_frames(self):
+    buf_main, buf_extra = None, None
+    meta_main = FrameMeta()
+    meta_extra = FrameMeta()
+    # Keep receiving frames until we are at least 1 frame ahead of previous extra frame
+    while meta_main.timestamp_sof < meta_extra.timestamp_sof + 25000000:
+      buf_main = self.vipc_client_main.recv()
+      meta_main = FrameMeta(self.vipc_client_main)
+      if buf_main is None:
+        break
+
+    if buf_main is None:
+      cloudlog.error("vipc_client_main no frame")
+      return None
+
+    if self.use_extra_client:
+      # Keep receiving extra frames until frame id matches main camera
+      while True:
+        buf_extra = self.vipc_client_extra.recv()
+        meta_extra = FrameMeta(self.vipc_client_extra)
+        if buf_extra is None or meta_main.timestamp_sof < meta_extra.timestamp_sof + 25000000:
+          break
+
+      if buf_extra is None:
+        cloudlog.error("vipc_client_extra no frame")
+        return None
+
+      if abs(meta_main.timestamp_sof - meta_extra.timestamp_sof) > 10000000:
+        cloudlog.error("frames out of sync! main: {} ({:.5f}), extra: {} ({:.5f})".format(
+          meta_main.frame_id, meta_main.timestamp_sof / 1e9,
+          meta_extra.frame_id, meta_extra.timestamp_sof / 1e9))
+
+    else:
+      # Use single camera
+      buf_extra = buf_main
+      meta_extra = meta_main
+    return meta_main, meta_extra, buf_main, buf_extra
+
+
 def main(demo=False):
   sentry.set_tag("daemon", PROCESS_NAME)
   cloudlog.bind(daemon=PROCESS_NAME)
   setproctitle(PROCESS_NAME)
   config_realtime_process(7, 54)
 
+
   cl_context = CLContext()
   model = ModelState(cl_context)
   cloudlog.warning("models loaded, modeld starting")
-
-  # visionipc clients
-  while True:
-    available_streams = VisionIpcClient.available_streams("camerad", block=False)
-    if available_streams:
-      use_extra_client = VisionStreamType.VISION_STREAM_WIDE_ROAD in available_streams and VisionStreamType.VISION_STREAM_ROAD in available_streams
-      main_wide_camera = VisionStreamType.VISION_STREAM_ROAD not in available_streams
-      break
-    time.sleep(.1)
-
-  vipc_client_main_stream = VisionStreamType.VISION_STREAM_WIDE_ROAD if main_wide_camera else VisionStreamType.VISION_STREAM_ROAD
-  vipc_client_main = VisionIpcClient("camerad", vipc_client_main_stream, True, cl_context)
-  vipc_client_extra = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, False, cl_context)
-  cloudlog.warning(f"vision stream set up, main_wide_camera: {main_wide_camera}, use_extra_client: {use_extra_client}")
-
-  while not vipc_client_main.connect(False):
-    time.sleep(0.1)
-  while use_extra_client and not vipc_client_extra.connect(False):
-    time.sleep(0.1)
-
-  cloudlog.warning(f"connected main cam with buffer size: {vipc_client_main.buffer_len} ({vipc_client_main.width} x {vipc_client_main.height})")
-  if use_extra_client:
-    cloudlog.warning(f"connected extra cam with buffer size: {vipc_client_extra.buffer_len} ({vipc_client_extra.width} x {vipc_client_extra.height})")
+  camera_streams = CameraStreams(cl_context)
 
   # messaging
   pm = PubMaster(["modelV2", "cameraOdometry"])
@@ -166,9 +212,6 @@ def main(demo=False):
   live_calib_seen = False
   nav_features = np.zeros(ModelConstants.NAV_FEATURE_LEN, dtype=np.float32)
   nav_instructions = np.zeros(ModelConstants.NAV_INSTRUCTION_LEN, dtype=np.float32)
-  buf_main, buf_extra = None, None
-  meta_main = FrameMeta()
-  meta_extra = FrameMeta()
 
 
   if demo:
@@ -182,40 +225,11 @@ def main(demo=False):
 
 
   while True:
-    # Keep receiving frames until we are at least 1 frame ahead of previous extra frame
-    while meta_main.timestamp_sof < meta_extra.timestamp_sof + 25000000:
-      buf_main = vipc_client_main.recv()
-      meta_main = FrameMeta(vipc_client_main)
-      if buf_main is None:
-        break
+    frames = None
+    while frames is None:
+      frames = camera_streams.receive_frames()
+    meta_main, meta_extra, buf_main, buf_extra = frames
 
-    if buf_main is None:
-      cloudlog.error("vipc_client_main no frame")
-      continue
-
-    if use_extra_client:
-      # Keep receiving extra frames until frame id matches main camera
-      while True:
-        buf_extra = vipc_client_extra.recv()
-        meta_extra = FrameMeta(vipc_client_extra)
-        if buf_extra is None or meta_main.timestamp_sof < meta_extra.timestamp_sof + 25000000:
-          break
-
-      if buf_extra is None:
-        cloudlog.error("vipc_client_extra no frame")
-        continue
-
-      if abs(meta_main.timestamp_sof - meta_extra.timestamp_sof) > 10000000:
-        cloudlog.error("frames out of sync! main: {} ({:.5f}), extra: {} ({:.5f})".format(
-          meta_main.frame_id, meta_main.timestamp_sof / 1e9,
-          meta_extra.frame_id, meta_extra.timestamp_sof / 1e9))
-
-    else:
-      # Use single camera
-      buf_extra = buf_main
-      meta_extra = meta_main
-
-    # TODO: path planner timeout?
     sm.update(0)
     desire = DH.desire
     v_ego = sm["carState"].vEgo
@@ -223,7 +237,7 @@ def main(demo=False):
     frame_id = sm["roadCameraState"].frameId
     if sm.updated["liveCalibration"]:
       device_from_calib_euler = np.array(sm["liveCalibration"].rpyCalib, dtype=np.float32)
-      model_transform_main = get_warp_matrix(device_from_calib_euler, main_wide_camera, False).astype(np.float32)
+      model_transform_main = get_warp_matrix(device_from_calib_euler, camera_streams.main_wide_camera, False).astype(np.float32)
       model_transform_extra = get_warp_matrix(device_from_calib_euler, True, True).astype(np.float32)
       live_calib_seen = True
 
