@@ -91,6 +91,7 @@ def test_startup_alert(expected_event, car_model, fw_versions, brand):
   assert pm.wait_for_readers_to_update('can', 5)
   pm.send('can', can_list_to_can_capnp([[0, 0, b"", 0]]))
 
+  assert pm.wait_for_readers_to_update('pandaStates', 5)
   msg = messaging.new_message('pandaStates', 1)
   msg.pandaStates[0].pandaType = log.PandaState.PandaType.uno
   pm.send('pandaStates', msg)
@@ -108,7 +109,7 @@ def test_startup_alert(expected_event, car_model, fw_versions, brand):
       params.put_bool("ObdMultiplexingChanged", True)
 
     pm.send('can', can_list_to_can_capnp(msgs))
-    assert pm.wait_for_readers_to_update('can', 5, dt=0.001)
+    assert pm.wait_for_readers_to_update('can', 5, dt=0.001), f"step: {_}"
 
     ctrls = messaging.drain_sock(controls_sock)
     if len(ctrls):
