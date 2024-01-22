@@ -61,7 +61,7 @@ def main() -> NoReturn:
     sm.update(1000)
 
     llk = sm['liveLocationKalman']
-    if llk.gpsOk and (time.monotonic() - sm.logMonoTime['liveLocationKalman']/1e9) < 0.2:
+    if llk.gpsOK and (time.monotonic() - sm.logMonoTime['liveLocationKalman']/1e9) < 0.2:
       # set time
       # TODO: account for unixTimesatmpMillis being a (usually short) time in the past
       cloudlog.debug("Setting time from GPS")
