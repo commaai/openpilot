@@ -165,7 +165,7 @@ def download_file(url, target_directory, file_size=None):
 
 
 # Function to download models from GitHub release assets
-def download_models(model_names: List[str] = [],
+def download_models(model_names: List[str] = ["",],
   target_directory: str = os.path.join(pathlib.Path(__file__).parent.resolve(), "resources", "models")):
   if not isinstance(model_names, list):
     raise ValueError("The model_names argument must be a list of strings")
@@ -185,7 +185,7 @@ def download_models(model_names: List[str] = [],
   official_model_names = [i["download_url"].split("/")[-1] for i in openwakeword.MODELS.values()]
   if model_names != []:
     for model_name in model_names:
-      url = [i for i, j in zip(official_model_urls, official_model_names) if model_name in j]
+      url = [i for i, j in zip(official_model_urls, official_model_names, strict=False) if model_name in j]
       if url != []:
         if not os.path.exists(os.path.join(target_directory, url[0].split("/")[-1])):
           download_file(url[0], target_directory)

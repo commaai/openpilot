@@ -23,10 +23,10 @@ from openpilot.system.assistant.openwakeword.utils import AudioFeatures
 
 
 class Model():
-  def __init__(self, wakeword_models: List[str] = [], class_mapping_dicts: List[dict] = [], enable_speex_noise_suppression: bool = False, **kwargs ):
+  def __init__(self, wakeword_models: List[str], enable_speex_noise_suppression: bool = False, **kwargs ):
     wakeword_model_names = []
     if len(wakeword_models) >= 1:
-        for ndx, i in enumerate(wakeword_models):
+        for _, i in enumerate(wakeword_models):
             if os.path.exists(i):
                 wakeword_model_names.append(os.path.splitext(os.path.basename(i))[0])
     # Create attributes to store models and metadata
@@ -39,7 +39,7 @@ class Model():
     def onnx_predict(onnx_model, x):
       return onnx_model.run(None, {onnx_model.get_inputs()[0].name: x})
 
-    for mdl_path, mdl_name in zip(wakeword_models, wakeword_model_names):
+    for mdl_path, mdl_name in zip(wakeword_models, wakeword_model_names, strict=False):
       # Load openwakeword models
       sessionOptions = ort.SessionOptions()
       sessionOptions.inter_op_num_threads = 1
@@ -50,10 +50,8 @@ class Model():
       self.model_outputs[mdl_name] = self.models[mdl_name].get_outputs()[0].shape[1]
       pred_function = functools.partial(onnx_predict, self.models[mdl_name])
       self.model_prediction_function[mdl_name] = pred_function
-      if class_mapping_dicts and class_mapping_dicts[wakeword_models.index(mdl_path)].get(mdl_name, None):
-        self.class_mapping[mdl_name] = class_mapping_dicts[wakeword_models.index(mdl_path)]
-      else:
-        self.class_mapping[mdl_name] = {str(i): str(i) for i in range(0, self.model_outputs[mdl_name])}
+
+      self.class_mapping[mdl_name] = {str(i): str(i) for i in range(self.model_outputs[mdl_name])}
     # Create buffer to store frame predictions
     self.prediction_buffer: DefaultDict[str, deque] = defaultdict(partial(deque, maxlen=30))
     # Initialize SpeexDSP noise canceller
@@ -77,7 +75,7 @@ class Model():
   def reset(self):
     self.prediction_buffer = defaultdict(partial(deque, maxlen=30))
 
-  def predict(self, x: np.ndarray, patience: dict = {}, threshold: dict = {}, timing: bool = False):
+  def predict(self, x: np.ndarray, timing: bool = False):
     # Check input data type
     if not isinstance(x, np.ndarray):
       raise ValueError(f"The input audio data (x) must by a Numpy array, instead received an object of type {type(x)}.")
