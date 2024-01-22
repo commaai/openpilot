@@ -70,8 +70,7 @@ class _LogFileReader:
 class ReadMode(enum.StrEnum):
   RLOG = "r" # only read rlogs
   QLOG = "q" # only read qlogs
-  #AUTO = "a" # default to rlogs, fallback to qlogs, not supported yet
-
+  AUTO = "a" # default to rlogs, fallback to qlogs, not supported yet
 
 def create_slice_from_string(s: str):
   m = re.fullmatch(RE.SLICE, s)
@@ -85,31 +84,50 @@ def create_slice_from_string(s: str):
     return start
   return slice(start, end, step)
 
+def auto_strategy(rlog_paths, qlog_paths):
+  # auto select logs based on availability
+  return [rlog if (rlog is not None and file_exists(rlog)) else (qlog if (qlog is not None and file_exists(qlog)) else None)
+                                                                for (rlog, qlog) in zip(rlog_paths, qlog_paths, strict=True)]
+
+def apply_strategy(mode: ReadMode, rlog_paths, qlog_paths):
+  if mode == ReadMode.RLOG:
+    return rlog_paths
+  elif mode == ReadMode.QLOG:
+    return qlog_paths
+  elif mode == ReadMode.AUTO:
+    return auto_strategy(rlog_paths, qlog_paths)
+
 def parse_slice(sr: SegmentRange, route: Route):
   segs = np.arange(route.max_seg_number+1)
   s = create_slice_from_string(sr._slice)
   return segs[s] if isinstance(s, slice) else [segs[s]]
 
-def comma_api_source(sr: SegmentRange, route: Route, mode=ReadMode.RLOG):
+def comma_api_source(sr: SegmentRange, route: Route, mode: ReadMode):
   segs = parse_slice(sr, route)
 
-  log_paths = route.log_paths() if mode == ReadMode.RLOG else route.qlog_paths()
+  rlog_paths = [route.log_paths()[seg] for seg in segs]
+  qlog_paths = [route.log_paths()[seg] for seg in segs]
 
-  invalid_segs = [seg for seg in segs if log_paths[seg] is None]
+  return apply_strategy(mode, rlog_paths, qlog_paths)
 
-  assert not len(invalid_segs), f"Some of the requested segments are not available: {invalid_segs}"
-
-  return [(log_paths[seg]) for seg in segs]
-
-def internal_source(sr: SegmentRange, route: Route, mode=ReadMode.RLOG):
+def internal_source(sr: SegmentRange, route: Route, mode: ReadMode):
   segs = parse_slice(sr, route)
 
-  return [f"cd:/{sr.dongle_id}/{sr.timestamp}/{seg}/{'rlog' if mode == ReadMode.RLOG else 'qlog'}.bz2" for seg in segs]
+  def get_internal_url(sr: SegmentRange, seg, file):
+    return f"cd:/{sr.dongle_id}/{sr.timestamp}/{seg}/{file}.bz2"
 
-def openpilotci_source(sr: SegmentRange, route: Route, mode=ReadMode.RLOG):
+  rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in segs]
+  qlog_paths = [get_internal_url(sr, seg, "qlog")  for seg in segs]
+
+  return apply_strategy(mode, rlog_paths, qlog_paths)
+
+def openpilotci_source(sr: SegmentRange, route: Route, mode: ReadMode):
   segs = parse_slice(sr, route)
 
-  return [get_url(sr.route_name, seg, 'rlog' if mode == ReadMode.RLOG else 'qlog') for seg in segs]
+  rlog_paths = [get_url(sr, seg, "rlog") for seg in segs]
+  qlog_paths = [get_url(sr, seg, "qlog")  for seg in segs]
+
+  return apply_strategy(mode, rlog_paths, qlog_paths)
 
 def direct_source(file_or_url):
   return [file_or_url]
@@ -117,7 +135,7 @@ def direct_source(file_or_url):
 def check_source(source, *args):
   try:
     files = source(*args)
-    assert all(file_exists(f) for f in files)
+    assert all(files)
     return True, files
   except Exception:
     return False, None
@@ -176,7 +194,7 @@ class LogReader:
 
     return source(sr, route, mode)
 
-  def __init__(self, identifier: str | List[str], default_mode=ReadMode.RLOG, default_source=auto_source, sort_by_time=False, only_union_types=False):
+  def __init__(self, identifier: str | List[str], default_mode=ReadMode.AUTO, default_source=auto_source, sort_by_time=False, only_union_types=False):
     self.default_mode = default_mode
     self.default_source = default_source
     self.identifier = identifier
@@ -203,6 +221,7 @@ class LogReader:
 
   def reset(self):
     self.logreader_identifiers = self._parse_identifiers(self.identifier)
+    assert all(self.logreader_identifiers), "Some segments could not be loaded, ensure that the segments are uploaded."
 
   @staticmethod
   def from_bytes(dat):
