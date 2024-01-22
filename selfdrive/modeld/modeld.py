@@ -12,8 +12,6 @@ from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
-from openpilot.common.realtime import DT_MDL
-from openpilot.common.numpy_fast import interp
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.model import get_warp_matrix
@@ -59,7 +57,8 @@ class ModelState:
     self.inputs = {
       'desire': np.zeros(ModelConstants.DESIRE_LEN * (ModelConstants.HISTORY_BUFFER_LEN+1), dtype=np.float32),
       'traffic_convention': np.zeros(ModelConstants.TRAFFIC_CONVENTION_LEN, dtype=np.float32),
-      'lat_planner_state': np.zeros(ModelConstants.LAT_PLANNER_STATE_LEN, dtype=np.float32),
+      'lateral_control_params': np.zeros(ModelConstants.LATERAL_CONTROL_PARAMS_LEN, dtype=np.float32),
+      'prev_desired_curvs': np.zeros(ModelConstants.PREV_DESIRED_CURVS_LEN, dtype=np.float32),
       'nav_features': np.zeros(ModelConstants.NAV_FEATURE_LEN, dtype=np.float32),
       'nav_instructions': np.zeros(ModelConstants.NAV_INSTRUCTION_LEN, dtype=np.float32),
       'features_buffer': np.zeros(ModelConstants.HISTORY_BUFFER_LEN * ModelConstants.FEATURE_LEN, dtype=np.float32),
@@ -94,6 +93,7 @@ class ModelState:
     self.prev_desire[:] = inputs['desire']
 
     self.inputs['traffic_convention'][:] = inputs['traffic_convention']
+    self.inputs['lateral_control_params'][:] = inputs['lateral_control_params']
     self.inputs['nav_features'][:] = inputs['nav_features']
     self.inputs['nav_instructions'][:] = inputs['nav_instructions']
 
@@ -110,8 +110,8 @@ class ModelState:
 
     self.inputs['features_buffer'][:-ModelConstants.FEATURE_LEN] = self.inputs['features_buffer'][ModelConstants.FEATURE_LEN:]
     self.inputs['features_buffer'][-ModelConstants.FEATURE_LEN:] = outputs['hidden_state'][0, :]
-    self.inputs['lat_planner_state'][2] = interp(DT_MDL, ModelConstants.T_IDXS, outputs['lat_planner_solution'][0, :, 2])
-    self.inputs['lat_planner_state'][3] = interp(DT_MDL, ModelConstants.T_IDXS, outputs['lat_planner_solution'][0, :, 3])
+    self.inputs['prev_desired_curvs'][:-1] = self.inputs['prev_desired_curvs'][1:]
+    self.inputs['prev_desired_curvs'][-1] = outputs['desired_curvature'][0, 0]
     return outputs
 
 
@@ -152,8 +152,12 @@ def main(demo=False):
   pm = PubMaster(["modelV2", "cameraOdometry"])
   sm = SubMaster(["carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel", "navInstruction", "carControl"])
 
+
   publish_state = PublishState()
   params = Params()
+  with car.CarParams.from_bytes(params.get("CarParams", block=True)) as msg:
+    steer_delay = msg.steerActuatorDelay + .2
+  #steer_delay = 0.4
 
   # setup filter to track dropped frames
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_FREQ)
@@ -221,6 +225,8 @@ def main(demo=False):
     v_ego = sm["carState"].vEgo
     is_rhd = sm["driverMonitoringState"].isRHD
     frame_id = sm["roadCameraState"].frameId
+    # TODO add lag
+    lateral_control_params = np.array([sm["carState"].vEgo, steer_delay], dtype=np.float32)
     if sm.updated["liveCalibration"]:
       device_from_calib_euler = np.array(sm["liveCalibration"].rpyCalib, dtype=np.float32)
       model_transform_main = get_warp_matrix(device_from_calib_euler, main_wide_camera, False).astype(np.float32)
@@ -274,6 +280,7 @@ def main(demo=False):
     inputs:Dict[str, np.ndarray] = {
       'desire': vec_desire,
       'traffic_convention': traffic_convention,
+      'lateral_control_params': lateral_control_params,
       'nav_features': nav_features,
       'nav_instructions': nav_instructions}
 
