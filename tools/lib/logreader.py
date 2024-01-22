@@ -90,7 +90,7 @@ def auto_strategy(rlog_paths, qlog_paths, interactive):
   # auto select logs based on availability
   if any(rlog is None or not file_exists(rlog) for rlog in rlog_paths):
     if interactive:
-      if input("Some rlogs were not found, would you like to fallback to qlogs for those semgments? (y/n) ").lower() != "y":
+      if input("Some rlogs were not found, would you like to fallback to qlogs for those segments? (y/n) ").lower() != "y":
         return rlog_paths
     else:
       cloudlog.warning("Some rlogs were not found, falling back to qlogs for those segments...")
@@ -238,7 +238,7 @@ class LogReader:
     self.logreader_identifiers = self._parse_identifiers(self.identifier)
     invalid_count = len(get_invalid_files(self.logreader_identifiers))
     assert invalid_count == 0, f"{invalid_count}/{len(self.logreader_identifiers)} invalid log(s) found, please ensure all logs \
-are uploaded or fallback to qlogs with '/a' selector at the end of the route name."
+are uploaded or auto fallback to qlogs with '/a' selector at the end of the route name."
 
   @staticmethod
   def from_bytes(dat):
