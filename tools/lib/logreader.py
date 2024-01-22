@@ -136,8 +136,8 @@ def internal_source(sr: SegmentRange, route: Route, mode: ReadMode):
 def openpilotci_source(sr: SegmentRange, route: Route, mode: ReadMode):
   segs = parse_slice(sr, route)
 
-  rlog_paths = [get_url(sr, seg, "rlog") for seg in segs]
-  qlog_paths = [get_url(sr, seg, "qlog")  for seg in segs]
+  rlog_paths = [get_url(sr.route_name, seg, "rlog") for seg in segs]
+  qlog_paths = [get_url(sr.route_name, seg, "qlog")  for seg in segs]
 
   return apply_strategy(mode, rlog_paths, qlog_paths)
 
