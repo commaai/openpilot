@@ -3,6 +3,7 @@ import pytest
 import random
 
 from openpilot.common.prefix import OpenpilotPrefix
+from openpilot.selfdrive.manager import manager
 from openpilot.system.hardware import TICI
 
 
@@ -41,6 +42,8 @@ def openpilot_function_fixture():
   os.environ.clear()
   os.environ.update(starting_env)
 
+  # cleanup any started processes
+  manager.manager_cleanup()
 
 # If you use setUpClass, the environment variables won't be cleared properly,
 # so we need to hook both the function and class pytest fixtures
