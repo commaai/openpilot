@@ -7,6 +7,7 @@ from typing import NoReturn
 from datetime import datetime
 
 from timezonefinder import TimezoneFinder
+
 import cereal.messaging as messaging
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
@@ -72,11 +73,16 @@ def main() -> NoReturn:
     timed has two responsibilities:
     - getting the current time
     - getting the current timezone
+
+    we have two sources for time:
+    - GPS, this only works while onroad
+    - modem, this only works with an active SIM
+    AGNOS will also pull time from NTP when available
   """
 
   params = Params()
   tf = TimezoneFinder()
-  sm = messaging.SubMaster(['gpsLocation'])
+  sm = messaging.SubMaster(['gpsLocation', 'gpsLocationExternal'])
   while True:
     time.sleep(60)
     sm.update(0)
