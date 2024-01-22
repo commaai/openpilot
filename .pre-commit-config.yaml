@@ -81,6 +81,7 @@ repos:
         entry: selfdrive/ui/tests/test_translations.py
         language: script
         pass_filenames: false
+        files: 'selfdrive/ui/translations/*'
 -   repo: https://github.com/python-poetry/poetry
     rev: '1.7.0'
     hooks:
@@ -92,10 +93,3 @@ repos:
     rev: 0.27.3
     hooks:
     -   id: check-github-workflows
-# -   repo: local
-#     hooks:
-#     -   id: format-fingerprints
-#         name: format-fingerprints
-#         entry: selfdrive/debug/format_fingerprints.py
-#         language: system
-#         types: [python]
