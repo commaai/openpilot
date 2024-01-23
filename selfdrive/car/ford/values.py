@@ -108,7 +108,7 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
 }
 
 
-def get_platform_codes(fw_versions: list[bytes]) -> set[tuple[bytes, bytes | None]]:
+def get_platform_codes(fw_versions: list[bytes]) -> set[tuple[bytes, bytes]]:
   codes = set()  # (platform-part, year-version)
 
   # e.g. NZ6A-14C204-AAA
