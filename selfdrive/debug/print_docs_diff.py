@@ -1,120 +1,152 @@
 #!/usr/bin/env python3
-import argparse
-from collections import defaultdict
-import difflib
-import pickle
-
-from openpilot.selfdrive.car.docs import get_all_car_info
+from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.car.docs_definitions import Column
+import os
+import re
 
-FOOTNOTE_TAG = "<sup>{}</sup>"
-STAR_ICON = '<a href="##"><img valign="top" ' + \
-            'src="https://media.githubusercontent.com/media/commaai/openpilot/master/docs/assets/icon-star-{}.svg" width="22" /></a>'
-VIDEO_ICON = '<a href="{}" target="_blank">' + \
-             '<img height="18px" src="https://media.githubusercontent.com/media/commaai/openpilot/master/docs/assets/icon-youtube.svg"></img></a>'
-COLUMNS = "|" + "|".join([column.value for column in Column]) + "|"
-COLUMN_HEADER = "|---|---|---|{}|".format("|".join([":---:"] * (len(Column) - 3)))
+STAR_ICON_TEMPLATE = '<a href="##"><img valign="top" ' + \
+  'src="https://media.githubusercontent.com/media/commaai/openpilot/master/docs/assets/icon-star-{}.svg" width="22" /></a>'
+VIDEO_ICON_TEMPLATE = '<a href="{}" target="_blank">' + \
+  '<img height="18px" src="https://media.githubusercontent.com/media/commaai/openpilot/master/docs/assets/icon-youtube.svg"></img></a>'
+COLUMN_SEPARATOR = "|"
 ARROW_SYMBOL = "➡️"
 
+def get_column_headers():
+  column_headers = [column.value for column in Column]
+  return COLUMN_SEPARATOR.join(column_headers)
 
-def load_base_car_info(path):
-  with open(path, "rb") as f:
-    return pickle.load(f)
+COLUMNS = f"{COLUMN_SEPARATOR}{get_column_headers()}{COLUMN_SEPARATOR}"
+COLUMN_HEADER = f"|---|---|---|{'|'.join([':---:'] * (len(Column) - 3))}|"
 
+def extract_car_info_from_text(text):
+  pattern = r"<!-- ALL CAR INFO HERE -->(.*?)<!-- ALL CAR INFO HERE ENDS -->"
+  matches = re.search(pattern, text, re.DOTALL)
 
-def match_cars(base_cars, new_cars):
-  changes = []
-  additions = []
-  for new in new_cars:
-    # Addition if no close matches or close match already used
-    # Change if close match and not already used
-    matches = difflib.get_close_matches(new.name, [b.name for b in base_cars], cutoff=0.)
-    if not len(matches) or matches[0] in [c[1].name for c in changes]:
-      additions.append(new)
+  if matches:
+    return matches.group(1).strip()
+  else:
+    raise ValueError("No car info found in CARS.md")
+
+def split_info_by_line(extracted_info):
+  return [info_line.strip() for info_line in extracted_info.split('\n') if info_line.strip()]
+
+def convert_info_to_dict(car_info_lines):
+  processed_car_info = []
+  for line in car_info_lines:
+    info_parts = line.split(COLUMN_SEPARATOR)
+    car_info = {column.value: value.strip() for column, value in zip(Column, info_parts[1:])}
+    car_info['Detail sentence'] = info_parts[-1].strip().replace('<!-- detail sentence:', '').replace(' -->', '')
+    processed_car_info.append(car_info)
+  return processed_car_info
+
+def process_markdown_file(file_path):
+  with open(file_path, 'r') as file:
+    markdown_content = file.read()
+  car_info = extract_car_info_from_text(markdown_content)
+  car_info_lines = split_info_by_line(car_info)
+  return convert_info_to_dict(car_info_lines)
+
+def compare_car_info(old_array, new_array):
+  changes = {
+    "additions": [],
+    "deletions": [],
+    "modifications": [],
+    "detail_sentence_changes": []
+  }
+
+  new_info_dict = {car['Model']: car for car in new_array}
+
+  for old_car in old_array:
+    model = old_car['Model']
+    if model not in new_info_dict:
+      changes['deletions'].append(old_car)
     else:
-      changes.append((new, next(car for car in base_cars if car.name == matches[0])))
+      modified = False
+      current_state = new_info_dict[model].copy()
 
-  # Removal if base car not in changes
-  removals = [b for b in base_cars if b.name not in [c[1].name for c in changes]]
-  return changes, additions, removals
+      # Check for detail sentence changes separately
+      if old_car.get('Detail sentence') != new_info_dict[model].get('Detail sentence'):
+        changes["detail_sentence_changes"].append(f"- Sentence for {model} changed!\n" +
+                                  "  ```diff\n" +
+                                  f"  - {old_car['Detail sentence']}\n" +
+                                  f"  + {new_info_dict[model]['Detail sentence']}\n" +
+                                  "  ```")
 
+      # Check for other modifications
+      for key, value in old_car.items():
+        if key != 'Detail sentence' and new_info_dict[model].get(key) != value:
+          modified = True
+          if 'modified_fields' not in current_state:
+            current_state['modified_fields'] = {}
+          current_state['modified_fields'][key] = value
 
-def build_column_diff(base_car, new_car):
-  row_builder = []
-  for column in Column:
-    base_column = base_car.get_column(column, STAR_ICON, VIDEO_ICON, FOOTNOTE_TAG)
-    new_column = new_car.get_column(column, STAR_ICON, VIDEO_ICON, FOOTNOTE_TAG)
+      if modified:
+        changes['modifications'].append(current_state)
+      # Remove models from 'new' dict that are also in 'old' to avoid marking them as additions.
+      del new_info_dict[model]
 
-    if base_column != new_column:
-      row_builder.append(f"{base_column} {ARROW_SYMBOL} {new_column}")
+  changes['additions'] = list(new_info_dict.values())
+  return changes
+
+def compare_car_dicts(old_car, new_car):
+  return set(old_car) - set(new_car)
+
+def format_changes_as_markdown(changes):
+  markdown_builder = ["### ⚠️ This PR makes changes to the car information ⚠️"]
+  change_titles = {
+    "modifications": "## 🔀 Column Changes",
+    "deletions": "## ❌ Removed",
+    "additions": "## ➕ Added",
+    "detail_sentence_changes": "## 📖 Detail Sentence Changes"
+  }
+
+  for change_type, title in change_titles.items():
+    if changes[change_type]:
+      markdown_builder.append(title)
+      if change_type != "detail_sentence_changes":
+        markdown_builder.append(COLUMNS)
+        markdown_builder.append(COLUMN_HEADER)
+        markdown_builder.extend(format_change_list(changes[change_type], change_type))
+      else:
+        # Special handling for detail sentence changes
+        for detail_change in changes["detail_sentence_changes"]:
+          markdown_builder.append(detail_change)
+
+  return "\n".join(markdown_builder)
+
+def format_change_list(change_list, change_type):
+  formatted_changes = []
+  for change in change_list:
+    if change_type == "modifications":
+      row = format_modified_row(change)
     else:
-      row_builder.append(new_column)
+      row = COLUMN_SEPARATOR.join([change.get(col.value, '') for col in Column])
+    formatted_changes.append(f"{COLUMN_SEPARATOR}{row}{COLUMN_SEPARATOR}")
+  return formatted_changes
 
-  return format_row(row_builder)
+def format_modified_row(modified_car):
+  modified_row = []
+  for col in Column:
+    value = modified_car.get(col.value, '')
+    if col.value in modified_car.get('modified_fields', {}):
+      old_value = modified_car['modified_fields'][col.value]
+      modified_value = f"{old_value} {ARROW_SYMBOL} {value}"
+      modified_row.append(modified_value)
+    else:
+      modified_row.append(value)
+  return COLUMN_SEPARATOR.join(modified_row)
 
+def print_car_info_diff():
+  MD_BEFORE = os.path.join(BASEDIR, "docs", "CARS_1.md")
+  MD_AFTER = os.path.join(BASEDIR, "docs", "CARS_2.md")
 
-def format_row(builder):
-  return "|" + "|".join(builder) + "|"
+  x = process_markdown_file(MD_BEFORE)
+  y = process_markdown_file(MD_AFTER)
 
-
-def print_car_info_diff(path):
-  base_car_info = defaultdict(list)
-  new_car_info = defaultdict(list)
-
-  for car in load_base_car_info(path):
-    base_car_info[car.car_fingerprint].append(car)
-  for car in get_all_car_info():
-    new_car_info[car.car_fingerprint].append(car)
-
-  # Add new platforms to base cars so we can detect additions and removals in one pass
-  base_car_info.update({car: [] for car in new_car_info if car not in base_car_info})
-
-  changes = defaultdict(list)
-  for base_car_model, base_cars in base_car_info.items():
-    # Match car info changes, and get additions and removals
-    new_cars = new_car_info[base_car_model]
-    car_changes, car_additions, car_removals = match_cars(base_cars, new_cars)
-
-    # Removals
-    for car_info in car_removals:
-      changes["removals"].append(format_row([car_info.get_column(column, STAR_ICON, VIDEO_ICON, FOOTNOTE_TAG) for column in Column]))
-
-    # Additions
-    for car_info in car_additions:
-      changes["additions"].append(format_row([car_info.get_column(column, STAR_ICON, VIDEO_ICON, FOOTNOTE_TAG) for column in Column]))
-
-    for new_car, base_car in car_changes:
-      # Column changes
-      row_diff = build_column_diff(base_car, new_car)
-      if ARROW_SYMBOL in row_diff:
-        changes["column"].append(row_diff)
-
-      # Detail sentence changes
-      if base_car.detail_sentence != new_car.detail_sentence:
-        changes["detail"].append(f"- Sentence for {base_car.name} changed!\n" +
-                                 "  ```diff\n" +
-                                 f"  - {base_car.detail_sentence}\n" +
-                                 f"  + {new_car.detail_sentence}\n" +
-                                 "  ```")
-
-  # Print diff
-  if any(len(c) for c in changes.values()):
-    markdown_builder = ["### ⚠️ This PR makes changes to [CARS.md](../blob/master/docs/CARS.md) ⚠️"]
-
-    for title, category in (("## 🔀 Column Changes", "column"), ("## ❌ Removed", "removals"),
-                            ("## ➕ Added", "additions"), ("## 📖 Detail Sentence Changes", "detail")):
-      if len(changes[category]):
-        markdown_builder.append(title)
-        if category not in ("detail",):
-          markdown_builder.append(COLUMNS)
-          markdown_builder.append(COLUMN_HEADER)
-        markdown_builder.extend(changes[category])
-
-    print("\n".join(markdown_builder))
-
+  comparison_result = compare_car_info(x, y)
+  if any(len(c) for c in comparison_result.values()):
+    formatted_changes = format_changes_as_markdown(comparison_result)
+    print(formatted_changes)
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser()
-  parser.add_argument("--path", required=True)
-  args = parser.parse_args()
-  print_car_info_diff(args.path)
+  print_car_info_diff()
