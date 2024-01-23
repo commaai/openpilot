@@ -82,7 +82,7 @@ jobs:
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run bridge test
       run: |
-        ${{ env.RUN_CL }} "source selfdrive/test/setup_xvfb.sh && CI=1 tools/sim/tests/test_metadrive_bridge.py"
+        ${{ env.RUN_CL }} "source selfdrive/test/setup_xvfb.sh && source selfdrive/test/setup_vsound.sh && CI=1 tools/sim/tests/test_metadrive_bridge.py"
 
   devcontainer:
     name: devcontainer

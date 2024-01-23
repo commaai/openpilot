@@ -7,9 +7,6 @@ export SKIP_FW_QUERY="1"
 export FINGERPRINT="HONDA CIVIC 2016"
 
 export BLOCK="${BLOCK},camerad,loggerd,encoderd,micd,logmessaged"
-if [[ "$CI" ]]; then
-  export BLOCK="${BLOCK},soundd"
-fi
 
 python -c "from openpilot.selfdrive.test.helpers import set_params_enabled; set_params_enabled()"
 
