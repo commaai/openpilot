@@ -46,6 +46,18 @@ class TestLogReader(unittest.TestCase):
     segs = parse_slice(sr, route)
     self.assertListEqual(list(segs), expected)
 
+  @parameterized.expand([
+    (f"{TEST_ROUTE}", f"{TEST_ROUTE}"),
+    (f"{TEST_ROUTE.replace('/', '|')}", f"{TEST_ROUTE}"),
+    (f"{TEST_ROUTE}--5", f"{TEST_ROUTE}/5"),
+    (f"{TEST_ROUTE}/0/q", f"{TEST_ROUTE}/0/q"),
+    (f"{TEST_ROUTE}/5:6/r", f"{TEST_ROUTE}/5:6/r"),
+    (f"{TEST_ROUTE}/5", f"{TEST_ROUTE}/5"),
+  ])
+  def test_canonical_name(self, identifier, expected):
+    sr = SegmentRange(identifier)
+    self.assertEqual(str(sr), expected)
+
   def test_direct_parsing(self):
     qlog = tempfile.NamedTemporaryFile(mode='wb', delete=False)
 
