@@ -210,10 +210,7 @@ class LogReader:
 
 
 def get_first(lr: LogIterable, msg_type):
-  for m in lr:
-    if m.which() == msg_type:
-      return getattr(m, msg_type)
-  return None
+  return next(filter(lambda m: m.which() == msg_type, lr), None)
 
 
 if __name__ == "__main__":
