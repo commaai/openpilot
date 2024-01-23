@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import datetime
 import os
 import subprocess
 import time
@@ -37,9 +38,9 @@ def set_time(new_time):
     cloudlog.debug(f"Time diff too small: {diff}")
     return
 
-  cloudlog.debug(f"Setting time to {the_time}")
+  cloudlog.debug(f"Setting time to {new_time}")
   try:
-    subprocess.run(f"TZ=UTC date -s '{the_time}'", shell=True, check=True)
+    subprocess.run(f"TZ=UTC date -s '{new_time}'", shell=True, check=True)
   except subprocess.CalledProcessError:
     cloudlog.exception("timed.failed_setting_time")
 
