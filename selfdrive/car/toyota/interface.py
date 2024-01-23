@@ -257,7 +257,6 @@ class CarInterface(CarInterfaceBase):
 
     # on stock Toyota this is -2.5
     ret.stopAccel = -2.5
-    ret.stoppingDecelRate = 0.1
 
     tune = ret.longitudinalTuning
     tune.deadzoneBP = [0., 16., 20., 30.]
