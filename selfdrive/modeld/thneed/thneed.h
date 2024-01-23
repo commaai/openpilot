@@ -18,6 +18,9 @@ using namespace std;
 
 cl_int thneed_clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value);
 
+namespace json11 {
+  class Json;
+}
 class Thneed;
 
 class GPUMalloc {
@@ -49,6 +52,7 @@ class CLQueuedKernel {
     vector<string> args;
     vector<int> args_size;
     cl_kernel kernel = NULL;
+    json11::Json to_json() const;
 
     cl_uint work_dim;
     size_t global_work_size[3] = {0};

@@ -11,7 +11,7 @@
 
 #include <zmq.h>
 #include <stdarg.h>
-#include "nlohmann/json.hpp"
+#include "third_party/json11/json11.hpp"
 #include "common/version.h"
 #include "system/hardware/hw.h"
 
@@ -37,7 +37,7 @@ public:
       }
     }
 
-    ctx_j = nlohmann::json();
+    ctx_j = json11::Json::object{};
     if (char* dongle_id = getenv("DONGLE_ID")) {
       ctx_j["dongle_id"] = dongle_id;
     }
@@ -66,17 +66,17 @@ public:
   void* zctx = nullptr;
   void* sock = nullptr;
   int print_level;
-  nlohmann::json ctx_j;
+  json11::Json::object ctx_j;
 };
 
 bool LOG_TIMESTAMPS = getenv("LOG_TIMESTAMPS");
 uint32_t NO_FRAME_ID = std::numeric_limits<uint32_t>::max();
 
 static void cloudlog_common(int levelnum, const char* filename, int lineno, const char* func,
-                            char* msg_buf, const nlohmann::json &msg_j={}) {
+                            char* msg_buf, const json11::Json::object &msg_j={}) {
   static SwaglogState s;
 
-  nlohmann::json log_j = nlohmann::json {
+  json11::Json::object log_j = json11::Json::object {
     {"ctx", s.ctx_j},
     {"levelnum", levelnum},
     {"filename", filename},
@@ -92,7 +92,7 @@ static void cloudlog_common(int levelnum, const char* filename, int lineno, cons
 
   std::string log_s;
   log_s += (char)levelnum;
-  log_s += log_j.dump();
+  ((json11::Json)log_j).dump(log_s);
   s.log(levelnum, filename, lineno, func, msg_buf, log_s);
 
   free(msg_buf);
@@ -115,14 +115,14 @@ void cloudlog_t_common(int levelnum, const char* filename, int lineno, const cha
   char* msg_buf = nullptr;
   int ret = vasprintf(&msg_buf, fmt, args);
   if (ret <= 0 || !msg_buf) return;
-  nlohmann::json tspt_j = nlohmann::json{
+  json11::Json::object tspt_j = json11::Json::object{
     {"event", msg_buf},
     {"time", std::to_string(nanos_since_boot())}
   };
   if (frame_id < NO_FRAME_ID) {
     tspt_j["frame_id"] = std::to_string(frame_id);
   }
-  tspt_j = nlohmann::json{{"timestamp", tspt_j}};
+  tspt_j = json11::Json::object{{"timestamp", tspt_j}};
   cloudlog_common(levelnum, filename, lineno, func, msg_buf, tspt_j);
 }
 
