@@ -209,7 +209,7 @@ class LogReader:
     return _LogFileReader("", dat=dat)
 
 
-def get_first(lr: LogIterable, msg_type):
+def get_first_message(lr: LogIterable, msg_type):
   return next(filter(lambda m: m.which() == msg_type, lr), None)
 
 
