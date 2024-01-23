@@ -7,7 +7,7 @@
 #include "common/util.h"
 #include "common/version.h"
 #include "system/hardware/hw.h"
-#include "third_party/json11/json11.hpp"
+#include "nlohmann/json.hpp"
 
 std::string daemon_name = "testy";
 std::string dongle_id = "test_dongle_id";
@@ -39,26 +39,25 @@ void recv_log(int thread_cnt, int thread_msg_cnt) {
 
     REQUIRE(buf[0] == CLOUDLOG_DEBUG);
     std::string err;
-    auto msg = json11::Json::parse(buf + 1, err);
-    REQUIRE(!msg.is_null());
+    nlohmann::json msg = nlohmann::json::parse(buf + 1);
 
-    REQUIRE(msg["levelnum"].int_value() == CLOUDLOG_DEBUG);
-    REQUIRE_THAT(msg["filename"].string_value(), Catch::Contains("test_swaglog.cc"));
-    REQUIRE(msg["funcname"].string_value() == "log_thread");
-    REQUIRE(msg["lineno"].int_value() == LINE_NO);
+    REQUIRE(msg["levelnum"].template get<int>() == CLOUDLOG_DEBUG);
+    REQUIRE_THAT(msg["filename"].template get<std::string>(), Catch::Contains("test_swaglog.cc"));
+    REQUIRE(msg["funcname"].template get<std::string>() == "log_thread");
+    REQUIRE(msg["lineno"].template get<int>() == LINE_NO);
 
     auto ctx = msg["ctx"];
 
-    REQUIRE(ctx["daemon"].string_value() == daemon_name);
-    REQUIRE(ctx["dongle_id"].string_value() == dongle_id);
-    REQUIRE(ctx["dirty"].bool_value() == true);
+    REQUIRE(ctx["daemon"].template get<std::string>() == daemon_name);
+    REQUIRE(ctx["dongle_id"].template get<std::string>() == dongle_id);
+    REQUIRE(ctx["dirty"].template get<bool>() == true);
 
-    REQUIRE(ctx["version"].string_value() == COMMA_VERSION);
+    REQUIRE(ctx["version"].template get<std::string>() == COMMA_VERSION);
 
     std::string device = Hardware::get_name();
-    REQUIRE(ctx["device"].string_value() == device);
+    REQUIRE(ctx["device"].template get<std::string>() == device);
 
-    int thread_id = atoi(msg["msg"].string_value().c_str());
+    int thread_id = atoi(msg["msg"].template get<std::string>().c_str());
     REQUIRE((thread_id >= 0 && thread_id < thread_cnt));
     thread_msgs[thread_id]++;
     total_count++;
