@@ -75,7 +75,7 @@ def main() -> NoReturn:
 
     # set time
     # TODO: account for unixTimesatmpMillis being a (usually short) time in the past
-    gps_time = datetime.fromtimestamp(llk.unixTimestampMillis / 1000.)
+    gps_time = datetime.datetime.fromtimestamp(llk.unixTimestampMillis / 1000.)
     set_time(gps_time)
 
     # set timezone
