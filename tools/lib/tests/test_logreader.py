@@ -6,7 +6,7 @@ import pytest
 from parameterized import parameterized
 import requests
 from openpilot.tools.lib.logreader import LogReader, parse_indirect, parse_slice, ReadMode
-from openpilot.tools.lib.route import Route, SegmentRange
+from openpilot.tools.lib.route import SegmentRange
 
 NUM_SEGS = 17 # number of segments in the test route
 ALL_SEGS = list(np.arange(NUM_SEGS))
@@ -42,9 +42,20 @@ class TestLogReader(unittest.TestCase):
   def test_indirect_parsing(self, identifier, expected):
     parsed, _, _ = parse_indirect(identifier)
     sr = SegmentRange(parsed)
-    route = Route(sr.route_name)
-    segs = parse_slice(sr, route)
+    segs = parse_slice(sr)
     self.assertListEqual(list(segs), expected)
+
+  @parameterized.expand([
+    (f"{TEST_ROUTE}", f"{TEST_ROUTE}"),
+    (f"{TEST_ROUTE.replace('/', '|')}", f"{TEST_ROUTE}"),
+    (f"{TEST_ROUTE}--5", f"{TEST_ROUTE}/5"),
+    (f"{TEST_ROUTE}/0/q", f"{TEST_ROUTE}/0/q"),
+    (f"{TEST_ROUTE}/5:6/r", f"{TEST_ROUTE}/5:6/r"),
+    (f"{TEST_ROUTE}/5", f"{TEST_ROUTE}/5"),
+  ])
+  def test_canonical_name(self, identifier, expected):
+    sr = SegmentRange(identifier)
+    self.assertEqual(str(sr), expected)
 
   def test_direct_parsing(self):
     qlog = tempfile.NamedTemporaryFile(mode='wb', delete=False)
