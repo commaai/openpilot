@@ -65,6 +65,7 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
 
 
 @pytest.mark.slow
+@pytest.mark.shared_download_cache
 class TestCarModelBase(unittest.TestCase):
   car_model: Optional[str] = None
   test_route: Optional[CarTestRoute] = None

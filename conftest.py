@@ -25,13 +25,13 @@ def pytest_runtest_call(item):
 
 
 @pytest.fixture(scope="function", autouse=True)
-def openpilot_function_fixture():
+def openpilot_function_fixture(request):
   starting_env = dict(os.environ)
 
   random.seed(0)
 
   # setup a clean environment for each test
-  with OpenpilotPrefix():
+  with OpenpilotPrefix(shared_download_cache=request.node.get_closest_marker("shared_download_cache") is not None) as prefix:
     prefix = os.environ["OPENPILOT_PREFIX"]
 
     yield
@@ -76,4 +76,7 @@ def pytest_configure(config):
   config.addinivalue_line("markers", config_line)
 
   config_line = "nocapture: don't capture test output"
+  config.addinivalue_line("markers", config_line)
+
+  config_line = "shared_download_cache: share download cache between tests"
   config.addinivalue_line("markers", config_line)
