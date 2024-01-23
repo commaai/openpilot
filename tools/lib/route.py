@@ -235,6 +235,8 @@ class SegmentRange:
   def __init__(self, segment_range: str):
     self.m = re.fullmatch(RE.SEGMENT_RANGE, segment_range)
     assert self.m, f"Segment range is not valid {segment_range}"
+    api = CommaApi(get_token())
+    self.max_seg_number = api.get("/v1/route/" + self.route_name.replace("/", "|"))["segment_numbers"][-1]
 
   @property
   def route_name(self):
