@@ -64,6 +64,10 @@ jobs:
         selfdrive/test/docker_build.sh sim
 
   simulator_bridge:
+    strategy:
+     fail-fast: false
+     matrix:
+       run: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
     name: simulator bridge test
     runs-on: ubuntu-20.04
     timeout-minutes: 20
