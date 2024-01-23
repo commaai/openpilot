@@ -109,7 +109,7 @@ def pcStage(String stageName, Closure body) {
     def dockerArgs = "--user=batman -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache -e PYTHONPATH=${env.WORKSPACE}";
 
     def openpilot_base = retryWithDelay (3, 15) {
-      return docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .")
+      return docker.build("openpilot-base-cl:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base_cl .")
     }
 
     lock(resource: "", label: 'pc', inversePrecedence: true, quantity: 1) {
@@ -274,6 +274,14 @@ node {
           sh label: "build", script: "selfdrive/manager/build.py"
           sh label: "run car tests", script: "cd selfdrive/car/tests && MAX_EXAMPLES=300 INTERNAL_SEG_CNT=300 FILEREADER_CACHE=1 \
               INTERNAL_SEG_LIST=selfdrive/car/tests/test_models_segs.txt pytest test_models.py test_car_interfaces.py"
+        }
+      },
+
+      'sim tests': {
+        pcStage("sim tests") {
+          sh label: "build", script: "selfdrive/manager/build.py"
+          sh label: "run car tests", script: "source selfdrive/test/setup_xvfb.sh && source selfdrive/test/setup_vsound.sh && \
+                                              pytest tools/sim/tests/test_metadrive_bridge.py"
         }
       },
 
