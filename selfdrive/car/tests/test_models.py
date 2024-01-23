@@ -22,9 +22,9 @@ from openpilot.selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.test.helpers import read_segment_list
-from openpilot.tools.lib.openpilotci import get_url
+from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
+from openpilot.tools.lib.comma_car_segments import get_url
 from openpilot.tools.lib.logreader import LogReader
-from openpilot.tools.lib.sanitizer import sanitize
 from openpilot.tools.lib.route import Route, SegmentName, RouteName
 
 from panda.tests.libpanda import libpanda_py
@@ -64,6 +64,7 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
 
 
 @pytest.mark.slow
+@pytest.mark.shared_download_cache
 class TestCarModelBase(unittest.TestCase):
   car_model: Optional[str] = None
   test_route: Optional[CarTestRoute] = None
@@ -84,7 +85,6 @@ class TestCarModelBase(unittest.TestCase):
 
   @classmethod
   def get_testing_data_from_logreader(cls, lr):
-    lr = sanitize(lr)
     car_fw = []
     can_msgs = []
     cls.elm_frame = None
@@ -182,6 +182,8 @@ class TestCarModelBase(unittest.TestCase):
     cls.CP = cls.CarInterface.get_params(cls.car_model, cls.fingerprint, car_fw, experimental_long, docs=False)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
+
+    os.environ["COMMA_CACHE"] = DEFAULT_DOWNLOAD_CACHE_ROOT
 
   @classmethod
   def tearDownClass(cls):

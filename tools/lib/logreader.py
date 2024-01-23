@@ -17,6 +17,7 @@ from urllib.parse import parse_qs, urlparse
 
 from cereal import log as capnp_log
 from openpilot.common.swaglog import cloudlog
+from openpilot.tools.lib.comma_car_segments import get_url as get_comma_segments_url
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.tools.lib.filereader import FileReader, file_exists
 from openpilot.tools.lib.helpers import RE
@@ -141,6 +142,11 @@ def openpilotci_source(sr: SegmentRange, route: Route, mode: ReadMode):
 
   return apply_strategy(mode, rlog_paths, qlog_paths)
 
+def comma_car_segments_source(sr: SegmentRange, route: Route, mode=ReadMode.RLOG):
+  segs = parse_slice(sr, route)
+
+  return [get_comma_segments_url(sr.route_name, seg) for seg in segs]
+
 def direct_source(file_or_url):
   return [file_or_url]
 
@@ -243,6 +249,10 @@ are uploaded or auto fallback to qlogs with '/a' selector at the end of the rout
   @staticmethod
   def from_bytes(dat):
     return _LogFileReader("", dat=dat)
+
+
+def get_first_message(lr: LogIterable, msg_type):
+  return next(filter(lambda m: m.which() == msg_type, lr), None)
 
 
 if __name__ == "__main__":
