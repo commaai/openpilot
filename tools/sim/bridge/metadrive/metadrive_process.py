@@ -34,12 +34,13 @@ def apply_metadrive_patches():
   EngineCore.add_image_sensor = add_image_sensor_patched
 
   # we aren't going to use the built-in observation stack, so disable it to save time
-  def observe_patched(self, vehicle):
+  def observe_patched(self, *args, **kwargs):
     return self.state
 
   ImageObservation.observe = observe_patched
 
-  def arrive_destination_patch(self, vehicle):
+  # disable destination, we want to loop forever
+  def arrive_destination_patch(self, *args, **kwargs):
     return False
 
   MetaDriveEnv._is_arrive_destination = arrive_destination_patch

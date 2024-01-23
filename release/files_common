@@ -153,6 +153,7 @@ selfdrive/controls/lib/lateral_mpc_lib/*
 selfdrive/controls/lib/longitudinal_mpc_lib/*
 
 system/__init__.py
+system/*.py
 
 system/hardware/__init__.py
 system/hardware/base.h
