@@ -89,7 +89,6 @@ class TestLoggerd:
           m = messaging.new_message(s, random.randint(2, 10))
         pm.send(s, m)
         sent_msgs[s].append(m)
-      time.sleep(0.01)
 
     for s in services:
       assert pm.wait_for_readers_to_update(s, timeout=5)
