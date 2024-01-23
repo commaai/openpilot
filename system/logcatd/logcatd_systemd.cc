@@ -5,7 +5,7 @@
 #include <map>
 #include <string>
 
-#include "nlohmann/json.hpp"
+#include "third_party/json11/json11.hpp"
 
 #include "cereal/messaging/messaging.h"
 #include "common/timing.h"
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     // Build message
     auto androidEntry = msg.initEvent().initAndroidLog();
     androidEntry.setTs(timestamp);
-    androidEntry.setMessage(nlohmann::json(kv).dump());
+    androidEntry.setMessage(json11::Json(kv).dump());
     if (kv.count("_PID")) androidEntry.setPid(std::atoi(kv["_PID"].c_str()));
     if (kv.count("PRIORITY")) androidEntry.setPriority(std::atoi(kv["PRIORITY"].c_str()));
     if (kv.count("SYSLOG_IDENTIFIER")) androidEntry.setTag(kv["SYSLOG_IDENTIFIER"]);
