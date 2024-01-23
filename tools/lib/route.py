@@ -253,6 +253,10 @@ class SegmentRange:
     return self.m.group("slice")
 
   @property
+  def segment(self):
+    return int(self._slice) if self._slice else None
+
+  @property
   def selector(self):
     return self.m.group("selector")
 
