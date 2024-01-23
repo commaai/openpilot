@@ -61,7 +61,6 @@ def get_repo_raw_url(path):
     return f"{COMMA_CAR_SEGMENTS_REPO}/raw/{COMMA_CAR_SEGMENTS_BRANCH}/{path}"
 
 def get_repo_url(path):
-  print(path)
   # Automatically switch to LFS if we are requesting a file that is stored in LFS
 
   response = requests.head(get_repo_raw_url(path))
