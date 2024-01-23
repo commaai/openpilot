@@ -111,9 +111,17 @@ def apply_strategy(mode: ReadMode, rlog_paths, qlog_paths):
     return auto_strategy(rlog_paths, qlog_paths, True)
 
 def parse_slice(sr: SegmentRange):
-  segs = np.arange(sr.max_seg_number+1)
   s = create_slice_from_string(sr._slice)
-  return segs[s] if isinstance(s, slice) else [segs[s]]
+  if isinstance(s, slice):
+    if s.stop is None or s.stop < 0 or (s.start is not None and s.start < 0): # we need the number of segments in order to parse this slice
+      segs = np.arange(sr.get_max_seg_number()+1)
+    else:
+      segs = np.arange(s.stop + 1)
+    return segs[s]
+  else:
+    if s < 0:
+      s = sr.get_max_seg_number() + s + 1
+    return [s]
 
 def comma_api_source(sr: SegmentRange, mode: ReadMode):
   segs = parse_slice(sr)
