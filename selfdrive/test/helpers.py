@@ -1,4 +1,5 @@
 import os
+import re
 import time
 
 from functools import wraps
@@ -76,4 +77,17 @@ def read_segment_list(segment_list_path):
   with open(segment_list_path, "r") as f:
     seg_list = f.read().splitlines()
 
-  return [(platform[2:], segment) for platform, segment in zip(seg_list[::2], seg_list[1::2], strict=True)]
+  ret = []
+  for line1, line2 in zip(seg_list[::2], seg_list[1::2], strict=True):
+    platform = line1[2:]
+    segment = re.sub(" +", " ", line2) # remove extra spaces
+    if segment[0] == "#":
+      continue # skip totally commented segments
+
+    comment = segment.find(" #")
+    if comment != -1:
+      segment = segment[:comment] # remove comments
+
+    ret.append((platform, segment))
+
+  return ret
