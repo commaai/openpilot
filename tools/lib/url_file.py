@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 import threading
@@ -12,6 +13,7 @@ from openpilot.system.hardware.hw import Paths
 K = 1000
 CHUNK_SIZE = 1000 * K
 
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 def hash_256(link):
   hsh = str(sha256((link.split("?")[0]).encode('utf-8')).hexdigest())

@@ -10,6 +10,7 @@ from typing import List
 
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
+from openpilot.selfdrive.car.car_helpers import write_car_param
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.hardware.tici.power_monitor import get_power
 from openpilot.selfdrive.manager.process_config import managed_processes
@@ -51,6 +52,7 @@ class TestPowerDraw(unittest.TestCase):
   def setUp(self):
     HARDWARE.initialize_hardware()
     HARDWARE.set_power_save(False)
+    write_car_param()
 
     # wait a bit for power save to disable
     time.sleep(5)

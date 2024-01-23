@@ -13,7 +13,7 @@ from functools import partial
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.lib.helpers import save_log
 
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.logreader import LogReader, ReadMode
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -73,7 +73,7 @@ def process(can, lr):
   return [d for d in lr if can or d.which() not in ['can', 'sendcan']]
 
 def juggle_route(route_or_segment_name, can, layout, dbc=None):
-  sr = LogReader(route_or_segment_name)
+  sr = LogReader(route_or_segment_name, default_mode=ReadMode.AUTO_INTERACIVE)
 
   all_data = sr.run_across_segments(24, partial(process, can))
 
