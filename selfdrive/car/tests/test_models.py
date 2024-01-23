@@ -58,9 +58,8 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
     segment_list = read_segment_list(os.path.join(BASEDIR, INTERNAL_SEG_LIST))
     segment_list = random.sample(segment_list, INTERNAL_SEG_CNT or len(segment_list))
     for platform, segment in segment_list:
-      segment_name = SegmentName(segment)
-      test_cases.append((platform, CarTestRoute(segment_name.route_name.canonical_name, platform,
-                                                segment=segment_name.segment_num)))
+      sr = SegmentName(segment)
+      test_cases.append((platform, CarTestRoute(str(sr), platform)))
   return test_cases
 
 
@@ -125,13 +124,13 @@ class TestCarModelBase(unittest.TestCase):
     try:
       lr = LogReader(cls.test_route.segment_range, default_source=comma_car_segments_source)
       return cls.get_testing_data_from_logreader(lr)
-    except Exception as e:
+    except Exception:
       print(f"unable to load segment from comma_car_segments, falling back to auto_source: \n{traceback.format_exc()}", file=sys.stderr)
 
     try:
       lr = LogReader(cls.test_route.segment_range)
       return cls.get_testing_data_from_logreader(lr)
-    except Exception as e:
+    except Exception:
       print(f"unable to load segment: \n{traceback.format_exc()}", file=sys.stderr)
 
     raise Exception(f"Route: {repr(cls.test_route.segment_range)} not found or no CAN msgs found. Is it uploaded and public?")
