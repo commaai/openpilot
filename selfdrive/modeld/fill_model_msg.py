@@ -3,7 +3,6 @@ import capnp
 import numpy as np
 from typing import Dict
 from cereal import log
-from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_lag_adjusted_curvature, MIN_SPEED
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan, Meta
 
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
@@ -73,14 +72,8 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
   fill_xyzt(orientation_rate, ModelConstants.T_IDXS, *net_output_data['plan'][0,:,Plan.ORIENTATION_RATE].T)
 
   # lateral planning
-  x, y, yaw, yawRate = [net_output_data['lat_planner_solution'][0,:,i].tolist() for i in range(4)]
-  x_sol = np.column_stack([x, y, yaw, yawRate])
-  v_ego = max(MIN_SPEED, v_ego)
-  psis = x_sol[0:CONTROL_N, 2].tolist()
-  curvatures = (x_sol[0:CONTROL_N, 3]/v_ego).tolist()
-
   action = modelV2.action
-  action.desiredCurvature = get_lag_adjusted_curvature(steer_delay, v_ego, psis, curvatures)
+  action.desiredCurvature = float(net_output_data['desired_curvature'][0,0])
 
   # times at X_IDXS according to model plan
   PLAN_T_IDXS = [np.nan] * ModelConstants.IDX_N
