@@ -1,4 +1,50 @@
+my fork is at branch 'personal3'
+the features are explained at this video: (https://youtu.be/HZEI8A6YVkA)
+the url for instalation is
+`https://bit.ly/3HriaWt` or
+
+```
+https://smiskol.com/fork/AlexandreSato/personal3
+```
+or
+```
+https://installer.comma.ai/AlexandreSato/personal3
+```
+
+
+💰 Donate 💰
+---
+
+If you find any of the features useful, feel free to donate to support for future feature development.
+
+Thank you for your continuous love and support! Enjoy 🥰
+
+**PayPal:**
+
+<a href="https://www.paypal.com/donate/?hosted_button_id=JN4E8PTL4QBZG" target="_blank">
+<img src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" alt="PayPal this" title="PayPal - The safer, easier way to pay online!" border="0" />
+</a>
+<br></br>
+
+**PayPal QR Code:**
+
+![Paypall.png.png](Paypall.png)
+
 [![openpilot on the comma 3X](https://github.com/commaai/openpilot/assets/8762862/f09e6d29-db2d-4179-80c2-51e8d92bdb5c)](https://comma.ai/shop/comma-3x)
+
+Table of Contents
+=======================
+
+* [What is openpilot?](#what-is-openpilot)
+* [Running in a car](#running-on-a-dedicated-device-in-a-car)
+* [Running on PC](#running-on-pc)
+* [Community and Contributing](#community-and-contributing)
+* [User Data and comma Account](#user-data-and-comma-account)
+* [Safety and Testing](#safety-and-testing)
+* [Directory Structure](#directory-structure)
+* [Licensing](#licensing)
+
+---
 
 What is openpilot?
 ------
