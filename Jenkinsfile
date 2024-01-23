@@ -35,7 +35,9 @@ source ~/.bash_profile
 if [ -f /TICI ]; then
   source /etc/profile
 
+  rm -rf /tmp/tmp*
   rm -rf ~/.commacache
+  rm -rf /dev/shm/*
 
   if ! systemctl is-active --quiet systemd-resolved; then
     echo "restarting resolved"
@@ -110,18 +112,20 @@ def pcStage(String stageName, Closure body) {
       return docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .")
     }
 
-    openpilot_base.inside(dockerArgs) {
-      timeout(time: 20, unit: 'MINUTES') {
-        try {
-          retryWithDelay (3, 15) {
-            sh "git config --global --add safe.directory '*'"
-            sh "git submodule update --init --recursive"
-            sh "git lfs pull"
-          }
-          body()
-        } finally {
-            sh "rm -rf ${env.WORKSPACE}/* || true"
-            sh "rm -rf .* || true"
+    lock(resource: "", label: 'pc', inversePrecedence: true, quantity: 1) {
+      openpilot_base.inside(dockerArgs) {
+        timeout(time: 20, unit: 'MINUTES') {
+          try {
+            retryWithDelay (3, 15) {
+              sh "git config --global --add safe.directory '*'"
+              sh "git submodule update --init --recursive"
+              sh "git lfs pull"
+            }
+            body()
+          } finally {
+              sh "rm -rf ${env.WORKSPACE}/* || true"
+              sh "rm -rf .* || true"
+            }
           }
         }
       }
@@ -165,7 +169,7 @@ node {
   env.GIT_COMMIT = checkout(scm).GIT_COMMIT
 
   def excludeBranches = ['master-ci', 'devel', 'devel-staging', 'release3', 'release3-staging',
-                         'dashcam3', 'dashcam3-staging', 'testing-closet*', 'hotfix-*']
+                         'testing-closet*', 'hotfix-*']
   def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
 
   if (env.BRANCH_NAME != 'master') {
@@ -177,7 +181,7 @@ node {
   try {
     if (env.BRANCH_NAME == 'devel-staging') {
       deviceStage("build release3-staging", "tici-needs-can", [], [
-        ["build release3-staging & dashcam3-staging", "RELEASE_BRANCH=release3-staging DASHCAM_BRANCH=dashcam3-staging $SOURCE_DIR/release/build_release.sh"],
+        ["build release3-staging", "RELEASE_BRANCH=release3-staging $SOURCE_DIR/release/build_release.sh"],
       ])
     }
 
@@ -241,7 +245,7 @@ node {
       'replay': {
         deviceStage("tici", "tici-replay", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
-          ["model replay", "selfdrive/test/process_replay/model_replay.py", ["tinygrad/", "selfdrive/modeld/"]],
+          ["model replay", "selfdrive/test/process_replay/model_replay.py"],
         ])
       },
       'tizi': {

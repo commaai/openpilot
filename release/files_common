@@ -142,7 +142,6 @@ selfdrive/controls/lib/latcontrol_angle.py
 selfdrive/controls/lib/latcontrol_torque.py
 selfdrive/controls/lib/latcontrol_pid.py
 selfdrive/controls/lib/latcontrol.py
-selfdrive/controls/lib/lateral_planner.py
 selfdrive/controls/lib/longcontrol.py
 selfdrive/controls/lib/longitudinal_planner.py
 selfdrive/controls/lib/pid.py
@@ -154,6 +153,7 @@ selfdrive/controls/lib/lateral_mpc_lib/*
 selfdrive/controls/lib/longitudinal_mpc_lib/*
 
 system/__init__.py
+system/*.py
 
 system/hardware/__init__.py
 system/hardware/base.h
@@ -291,11 +291,8 @@ system/camerad/main.cc
 system/camerad/snapshot/*
 system/camerad/cameras/camera_common.h
 system/camerad/cameras/camera_common.cc
-system/camerad/sensors/ar0231.cc
-system/camerad/sensors/ar0231_registers.h
-system/camerad/sensors/ox03c10.cc
-system/camerad/sensors/ox03c10_registers.h
-system/camerad/sensors/sensor.h
+system/camerad/sensors/*.h
+system/camerad/sensors/*.cc
 
 selfdrive/manager/__init__.py
 selfdrive/manager/build.py
