@@ -1,5 +1,6 @@
 import os
 import re
+from functools import cache
 from urllib.parse import urlparse
 from collections import defaultdict
 from itertools import chain
@@ -231,10 +232,22 @@ class SegmentName:
   def __str__(self) -> str: return self._canonical_name
 
 
+@cache
+def get_max_seg_number_cached(sr: 'SegmentRange'):
+  try:
+    api = CommaApi(get_token())
+    return api.get("/v1/route/" + sr.route_name.replace("/", "|"))["segment_numbers"][-1]
+  except Exception as e:
+    raise Exception("unable to get max_segment_number. ensure you have access to this route or the route is public.") from e
+
+
 class SegmentRange:
   def __init__(self, segment_range: str):
     self.m = re.fullmatch(RE.SEGMENT_RANGE, segment_range)
     assert self.m, f"Segment range is not valid {segment_range}"
+
+  def get_max_seg_number(self):
+    return get_max_seg_number_cached(self)
 
   @property
   def route_name(self):
