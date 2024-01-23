@@ -16,6 +16,7 @@ from typing import Iterable, Iterator, List, Type
 from urllib.parse import parse_qs, urlparse
 
 from cereal import log as capnp_log
+from openpilot.tools.lib.comma_car_segments import get_url as get_comma_segments_url
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.tools.lib.filereader import FileReader, file_exists
 from openpilot.tools.lib.helpers import RE
@@ -110,6 +111,11 @@ def openpilotci_source(sr: SegmentRange, route: Route, mode=ReadMode.RLOG):
   segs = parse_slice(sr, route)
 
   return [get_url(sr.route_name, seg, 'rlog' if mode == ReadMode.RLOG else 'qlog') for seg in segs]
+
+def comma_car_segments_source(sr: SegmentRange, route: Route, mode=ReadMode.RLOG):
+  segs = parse_slice(sr, route)
+
+  return [get_comma_segments_url(sr.route_name, seg) for seg in segs]
 
 def direct_source(file_or_url):
   return [file_or_url]
