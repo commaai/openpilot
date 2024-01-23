@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
+import sys
 import capnp
 import os
 import importlib
 import pytest
 import random
+import traceback
 import unittest
 from collections import defaultdict, Counter
 import hypothesis.strategies as st
@@ -67,7 +69,7 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
 class TestCarModelBase(unittest.TestCase):
   car_model: Optional[str] = None
   test_route: Optional[CarTestRoute] = None
-  test_route_on_bucket: bool = True  # whether the route is on the preserved CI bucket
+  test_route_on_repo: bool = True  # whether the route is on the commaCarSegments repo
 
   can_msgs: List[capnp.lib.capnp._DynamicStructReader]
   fingerprint: dict[int, dict[int, int]]
@@ -120,11 +122,19 @@ class TestCarModelBase(unittest.TestCase):
 
   @classmethod
   def get_testing_data(cls):
-    #try:
-    lr = LogReader(cls.test_route.segment_range, default_source=comma_car_segments_source)
-    return cls.get_testing_data_from_logreader(lr)
-    #except Exception as e:
-    #  raise Exception(f"Route: {repr(cls.test_route.segment_range)} not found or no CAN msgs found. Is it uploaded and public? {e}")
+    try:
+      lr = LogReader(cls.test_route.segment_range, default_source=comma_car_segments_source)
+      return cls.get_testing_data_from_logreader(lr)
+    except Exception as e:
+      print(f"unable to load segment from comma_car_segments, falling back to auto_source: \n{traceback.format_exc()}", file=sys.stderr)
+
+    try:
+      lr = LogReader(cls.test_route.segment_range)
+      return cls.get_testing_data_from_logreader(lr)
+    except Exception as e:
+      print(f"unable to load segment: \n{traceback.format_exc()}", file=sys.stderr)
+
+    raise Exception(f"Route: {repr(cls.test_route.segment_range)} not found or no CAN msgs found. Is it uploaded and public?")
 
   @classmethod
   def setUpClass(cls):
