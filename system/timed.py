@@ -79,14 +79,16 @@ def main() -> NoReturn:
     set_time(gps_time)
 
     # set timezone
-    if len(llk.positionGeodetic) == 3:
-      gps_timezone = tf.timezone_at(lat=llk.positionGeodetic[0], lng=llk.positionGeodetic[1])
+    pos = llk.positionGeodetic.value
+    if len(pos) == 3:
+      gps_timezone = tf.timezone_at(lat=pos[0], lng=pos[1])
       if gps_timezone is None:
-        cloudlog.critical(f"No timezone found based on {llk.positionGeodetic}")
+        cloudlog.critical(f"No timezone found based on {pos=}")
       else:
         set_timezone(gps_timezone)
         params.put_nonblocking("Timezone", gps_timezone)
 
+    time.sleep(10)
 
 if __name__ == "__main__":
   main()
