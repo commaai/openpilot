@@ -255,3 +255,6 @@ class SegmentRange:
   @property
   def selector(self):
     return self.m.group("selector")
+
+  def __str__(self):
+    return f"{self.dongle_id}/{self.timestamp}" + (f"/{self._slice}" if self._slice else "") + (f"/{self.selector}" if self.selector else "")
