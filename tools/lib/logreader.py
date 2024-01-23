@@ -110,21 +110,31 @@ def apply_strategy(mode: ReadMode, rlog_paths, qlog_paths):
   elif mode == ReadMode.AUTO_INTERACIVE:
     return auto_strategy(rlog_paths, qlog_paths, True)
 
-def parse_slice(sr: SegmentRange, route: Route):
-  segs = np.arange(route.max_seg_number+1)
+def parse_slice(sr: SegmentRange):
   s = create_slice_from_string(sr._slice)
-  return segs[s] if isinstance(s, slice) else [segs[s]]
+  if isinstance(s, slice):
+    if s.stop is None or s.stop < 0 or (s.start is not None and s.start < 0): # we need the number of segments in order to parse this slice
+      segs = np.arange(sr.get_max_seg_number()+1)
+    else:
+      segs = np.arange(s.stop + 1)
+    return segs[s]
+  else:
+    if s < 0:
+      s = sr.get_max_seg_number() + s + 1
+    return [s]
 
-def comma_api_source(sr: SegmentRange, route: Route, mode: ReadMode):
-  segs = parse_slice(sr, route)
+def comma_api_source(sr: SegmentRange, mode: ReadMode):
+  segs = parse_slice(sr)
+
+  route = Route(sr.route_name)
 
   rlog_paths = [route.log_paths()[seg] for seg in segs]
   qlog_paths = [route.log_paths()[seg] for seg in segs]
 
   return apply_strategy(mode, rlog_paths, qlog_paths)
 
-def internal_source(sr: SegmentRange, route: Route, mode: ReadMode):
-  segs = parse_slice(sr, route)
+def internal_source(sr: SegmentRange, mode: ReadMode):
+  segs = parse_slice(sr)
 
   def get_internal_url(sr: SegmentRange, seg, file):
     return f"cd:/{sr.dongle_id}/{sr.timestamp}/{seg}/{file}.bz2"
@@ -134,16 +144,16 @@ def internal_source(sr: SegmentRange, route: Route, mode: ReadMode):
 
   return apply_strategy(mode, rlog_paths, qlog_paths)
 
-def openpilotci_source(sr: SegmentRange, route: Route, mode: ReadMode):
-  segs = parse_slice(sr, route)
+def openpilotci_source(sr: SegmentRange, mode: ReadMode):
+  segs = parse_slice(sr)
 
   rlog_paths = [get_url(sr.route_name, seg, "rlog") for seg in segs]
   qlog_paths = [get_url(sr.route_name, seg, "qlog")  for seg in segs]
 
   return apply_strategy(mode, rlog_paths, qlog_paths)
 
-def comma_car_segments_source(sr: SegmentRange, route: Route, mode=ReadMode.RLOG):
-  segs = parse_slice(sr, route)
+def comma_car_segments_source(sr: SegmentRange, mode=ReadMode.RLOG):
+  segs = parse_slice(sr)
 
   return [get_comma_segments_url(sr.route_name, seg) for seg in segs]
 
@@ -209,11 +219,10 @@ class LogReader:
         return direct_source(identifier)
 
     sr = SegmentRange(parsed)
-    route = Route(sr.route_name)
     mode = self.default_mode if sr.selector is None else ReadMode(sr.selector)
     source = self.default_source if source is None else source
 
-    return source(sr, route, mode)
+    return source(sr, mode)
 
   def __init__(self, identifier: str | List[str], default_mode=ReadMode.RLOG, default_source=auto_source, sort_by_time=False, only_union_types=False):
     self.default_mode = default_mode
