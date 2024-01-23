@@ -2,18 +2,12 @@
 from typing import NamedTuple, Optional
 from openpilot.common.basedir import BASEDIR
 
-from openpilot.selfdrive.car.chrysler.values import CAR as CHRYSLER
 from openpilot.selfdrive.car.gm.values import CAR as GM
 from openpilot.selfdrive.car.ford.values import CAR as FORD
 from openpilot.selfdrive.car.honda.values import CAR as HONDA
 from openpilot.selfdrive.car.hyundai.values import CAR as HYUNDAI
-from openpilot.selfdrive.car.nissan.values import CAR as NISSAN
-from openpilot.selfdrive.car.mazda.values import CAR as MAZDA
 from openpilot.selfdrive.car.subaru.values import CAR as SUBARU
-from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
 from openpilot.selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
-from openpilot.selfdrive.car.tesla.values import CAR as TESLA
-from openpilot.selfdrive.car.body.values import CAR as COMMA
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.tools.lib.route import SegmentRange
 
@@ -36,6 +30,5 @@ class CarTestRoute(NamedTuple):
   car_model: Optional[str]
 
 
-routes = [
-  CarTestRoute(str(SegmentRange(segment)), car_model) for car_model, segment in read_segment_list(f"{BASEDIR}/selfdrive/car/tests/routes.txt")
-]
+routes = [CarTestRoute(str(SegmentRange(segment)), car_model) for car_model, segment in read_segment_list(f"{BASEDIR}/selfdrive/car/tests/routes.txt")] + \
+         [CarTestRoute(str(SegmentRange(segment)), car_model) for car_model, segment in read_segment_list(f"{BASEDIR}/selfdrive/car/tests/cases.txt")]

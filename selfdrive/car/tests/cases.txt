@@ -1,0 +1,22 @@
+# HYUNDAI IONIQ PHEV 2020
+e1107f9d04dfb1e2/2023-09-05--22-32-12  # openpilot longitudinal
+# HYUNDAI IONIQ HYBRID 2017-2019
+012c95f06918eca4/2023-01-15--11-19-36  # openpilot longitudinal
+# HYUNDAI KONA ELECTRIC 2019
+f90d3cd06caeb6fa/2023-09-06--17-15-47  # openpilot longitudinal
+# KIA SPORTAGE 5TH GEN
+09559f1fcaed4704/2023-11-16--02-24-57  # openpilot longitudinal
+# TOYOTA CAMRY 2018
+2f37c007683e85ba/2023-09-02--14-39-44  # openpilot longitudinal, with radar CAN filter
+# TOYOTA C-HR 2021
+ea8fbe72b96a185c/2023-02-22--09-20-34  # openpilot longitudinal, with smartDSU
+# VOLKSWAGEN GOLF 7TH GEN
+3cfdec54aa035f3f/2022-10-13--14-58-58  # openpilot longitudinal
+# SUBARU IMPREZA LIMITED 2019
+8de015561e1ea4a0/2023-08-29--17-08-31  # openpilot longitudinal
+# KIA CARNIVAL 4TH GEN
+409c9409979a8abc/2023-07-11--09-06-44  # Chinese model
+# SUBARU OUTBACK6 6TH GEN
+# c3d1ccb52f5f9d65|2023-07-22--01-23-20  #  gen2 longitudinal, eyesight disabled
+# FORD FUSION
+# f1b4c567731f4a1b|2018-04-30--10-15-35  # ford fusion, unsupported currently
