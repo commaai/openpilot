@@ -13,7 +13,7 @@ if __name__ == "__main__":
     for ecu in sorted(ecus, key=lambda x: int(x[0])):
       platform_codes = get_platform_codes(ecus[ecu])
       codes = {code for code, _ in platform_codes}
-      versions = {version for _, version in platform_codes if version is not None}
+      versions = sorted({version for _, version in platform_codes if version is not None})
       min_version, max_version = min(versions), max(versions)
       print(f'  (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])}, {ecu[2]}):')
       print(f'    Codes: {codes}')
