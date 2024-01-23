@@ -107,6 +107,62 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   ],
 }
 
+
+def get_platform_codes(fw_versions: list[bytes]) -> set[tuple[bytes, bytes | None]]:
+  codes = set()  # (platform-part, year-version)
+
+  # e.g. NZ6A-14C204-AAA
+  #      1222-333333-444
+  # 1 = Model year (incremented for each model year)
+  # 2 = Platform hint
+  # 3 = Part number (effectively maps to ECU)
+  # 4 = Software version (reset to AA for each model year)
+  for firmware in fw_versions:
+    prefix, part_number, software_version = firmware.rstrip(b'\0').split(b'-')
+    model_year, platform_hint = prefix[:1], prefix[1:]
+
+    code = b'-'.join([platform_hint, part_number])
+    version = b'-'.join([model_year, software_version])
+    codes.add((code, version))
+
+  return codes
+
+
+def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions) -> set[str]:
+  candidates: set[str] = set()
+
+  for candidate, fws in offline_fw_versions.items():
+    # Keep track of ECUs which pass all checks (platform codes, within version range)
+    valid_found_ecus = set()
+    valid_expected_ecus = {ecu[1:] for ecu in fws}
+    for ecu, ecu_fws in fws.items():
+      addr = ecu[1:]
+
+      # Expected platform codes and versions
+      codes = get_platform_codes(ecu_fws)
+      expected_platform_codes, expected_versions = list(zip(*codes, strict=True))
+
+      # Live platform codes and versions
+      live_codes = get_platform_codes(live_fw_versions.get(addr, set()))
+      found_platform_codes, found_versions = list(zip(*live_codes, strict=True))
+
+      # Check platform code + version matches for any found versions
+      if not any(found_code in expected_platform_codes for found_code in found_platform_codes):
+        break
+
+      # Check version is within expected range
+      if not any(min(expected_versions) <= found_version <= max(expected_versions) for found_version in found_versions):
+        break
+
+      valid_found_ecus.add(ecu)
+
+    # If all live ECUs pass all checks for candidate, add it as a match
+    if valid_expected_ecus.issubset(valid_found_ecus):
+      candidates.add(candidate)
+
+  return candidates
+
+
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     # CAN and CAN FD queries are combined.
@@ -128,4 +184,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
   extra_ecus=[
     (Ecu.shiftByWire, 0x732, None),
   ],
+  # Custom fuzzy fingerprinting function using platform codes, part numbers and software versions
+  match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
 )
