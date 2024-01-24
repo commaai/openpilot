@@ -25,6 +25,9 @@ MAX_USER_TORQUE = 500
 MAX_LTA_ANGLE = 94.9461  # deg
 MAX_LTA_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some resistance when changing lanes
 
+# PCM compensatory force calculation threshold
+COMPENSTAORY_CALCULATION_THRESHOLD = -0.25  # m/s^2
+
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
@@ -121,8 +124,8 @@ class CarController:
     # prohibit negative compensatory calculations when first activating long after accelerator depression or engagement
     if not CC.longActive:
       self.prohibit_neg_calculation = True
-    # don't reset until the first positive is reached
-    if CS.pcm_neutral_force > 0.:
+    # don't reset until a reasonable compensatory value is reached
+    if CS.pcm_neutral_force > COMPENSTAORY_CALCULATION_THRESHOLD * self.CP.mass:
       self.prohibit_neg_calculation = False
     # NO_STOP_TIMER_CAR will creep if compensation is applied when stopping or stopped, don't compensate when stopped or stopping
     should_compensate = True
