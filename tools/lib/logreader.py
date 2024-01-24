@@ -12,7 +12,7 @@ import sys
 import urllib.parse
 import warnings
 
-from typing import Iterable, Iterator, List, Type
+from typing import Dict, Iterable, Iterator, List, Type
 from urllib.parse import parse_qs, urlparse
 
 from cereal import log as capnp_log
@@ -232,20 +232,25 @@ class LogReader:
     self.sort_by_time = sort_by_time
     self.only_union_types = only_union_types
 
+    self.__lrs: Dict[int, _LogFileReader] = {}
     self.reset()
 
-  def __iter__(self):
-    for identifier in self.logreader_identifiers:
-      yield from _LogFileReader(identifier)
+  def _get_lr(self, i):
+    if i not in self.__lrs:
+      self.__lrs[i] = _LogFileReader(self.logreader_identifiers[i])
+    return self.__lrs[i]
 
-  def _run_on_segment(self, func, identifier):
-    lr = _LogFileReader(identifier)
-    return func(lr)
+  def __iter__(self):
+    for i in range(len(self.logreader_identifiers)):
+      yield from self._get_lr(i)
+
+  def _run_on_segment(self, func, i):
+    return func(self._get_lr(i))
 
   def run_across_segments(self, num_processes, func):
     with multiprocessing.Pool(num_processes) as pool:
       ret = []
-      for p in pool.map(partial(self._run_on_segment, func), self.logreader_identifiers):
+      for p in pool.map(partial(self._run_on_segment, func), range(len(self.logreader_identifiers))):
         ret.extend(p)
       return ret
 
