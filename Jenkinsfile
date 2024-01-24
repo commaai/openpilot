@@ -25,8 +25,8 @@ export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
 export MAPBOX_TOKEN='${env.MAPBOX_TOKEN}'
-# only use 1 thread for tici tests since most require HIL
-export PYTEST_ADDOPTS="-n 0"
+# only use 1 thread for tici tests since most require HIL, and print stdout for debuging
+export PYTEST_ADDOPTS="-n 0 -s"
 
 
 export GIT_SSH_COMMAND="ssh -i /data/gitkey"
@@ -200,7 +200,7 @@ node {
           //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["check dirty", "release/check-dirty.sh"],
-          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
+          ["onroad tests", "pytest selfdrive/test/test_onroad.py"],
           ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
         ])
       },
