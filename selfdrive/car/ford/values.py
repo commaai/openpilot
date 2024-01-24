@@ -140,11 +140,13 @@ def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions) -> set[str]:
 
       # Expected platform codes and versions
       codes = get_platform_codes(ecu_fws)
-      expected_platform_codes, expected_versions = list(zip(*codes, strict=True))
+      expected_platform_codes = {code for code, _ in codes}
+      expected_versions = {version for _, version in codes}
 
       # Live platform codes and versions
       live_codes = get_platform_codes(live_fw_versions.get(addr, set()))
-      found_platform_codes, found_versions = list(zip(*live_codes, strict=True))
+      found_platform_codes = {code for code, _ in live_codes}
+      found_versions = {version for _, version in live_codes}
 
       # Check platform code + version matches for any found versions
       if not any(found_code in expected_platform_codes for found_code in found_platform_codes):
@@ -154,7 +156,7 @@ def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions) -> set[str]:
       if not any(min(expected_versions) <= found_version <= max(expected_versions) for found_version in found_versions):
         break
 
-      valid_found_ecus.add(ecu)
+      valid_found_ecus.add(addr)
 
     # If all live ECUs pass all checks for candidate, add it as a match
     if valid_expected_ecus.issubset(valid_found_ecus):
