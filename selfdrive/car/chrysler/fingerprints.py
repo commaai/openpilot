@@ -62,6 +62,29 @@ FINGERPRINTS = {
 }
 
 FW_VERSIONS = {
+  CAR.PACIFICA_2020: {
+    (Ecu.combinationMeter, 0x742, None): [
+      b'68594993AB',
+    ],
+    (Ecu.srs, 0x744, None): [
+      b'68526663AB',
+    ],
+    (Ecu.abs, 0x747, None): [
+      b'68593395AA',
+    ],
+    (Ecu.fwdRadar, 0x753, None): [
+      b'68598670AB',
+    ],
+    (Ecu.eps, 0x75a, None): [
+      b'68594340AB',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'68700306AB ',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'68586231AD',
+    ],
+  },
   CAR.JEEP_GRAND_CHEROKEE_2019: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68402971AD',
