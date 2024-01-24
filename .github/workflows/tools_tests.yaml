@@ -89,3 +89,21 @@ jobs:
         devcontainer exec --workspace-folder . pip install pip-install-test
         devcontainer exec --workspace-folder . touch /home/batman/.comma/auth.json
         devcontainer exec --workspace-folder . sudo touch /root/test.txt
+
+  notebooks:
+    name: notebooks
+    runs-on: ubuntu-20.04
+    if: github.repository == 'commaai/openpilot'
+    timeout-minutes: 45
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - uses: ./.github/workflows/setup-with-retry
+    - name: Build openpilot
+      timeout-minutes: 5
+      run: ${{ env.RUN }} "scons -j$(nproc)"
+    - name: Test notebooks
+      timeout-minutes: 2
+      run: |
+        ${{ env.RUN }} "pip install nbmake && pytest --nbmake tools/car_porting/examples/"

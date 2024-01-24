@@ -59,27 +59,35 @@ NISSAN_VERSION_RESPONSE_KWP = b'\x61\x83'
 NISSAN_RX_OFFSET = 0x20
 
 FW_QUERY_CONFIG = FwQueryConfig(
-  requests=[
+  requests=[request for bus, logging in ((0, True), (1, False)) for request in [
     Request(
       [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
       [NISSAN_DIAGNOSTIC_RESPONSE_KWP, NISSAN_VERSION_RESPONSE_KWP],
+      bus=bus,
+      logging=logging,
     ),
     Request(
       [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
       [NISSAN_DIAGNOSTIC_RESPONSE_KWP, NISSAN_VERSION_RESPONSE_KWP],
       rx_offset=NISSAN_RX_OFFSET,
+      bus=bus,
+      logging=logging,
     ),
     # Rogue's engine solely responds to this
     Request(
       [NISSAN_DIAGNOSTIC_REQUEST_KWP_2, NISSAN_VERSION_REQUEST_KWP],
       [NISSAN_DIAGNOSTIC_RESPONSE_KWP_2, NISSAN_VERSION_RESPONSE_KWP],
+      bus=bus,
+      logging=logging,
     ),
     Request(
       [StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
       [StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
       rx_offset=NISSAN_RX_OFFSET,
+      bus=bus,
+      logging=logging,
     ),
-  ],
+  ]],
 )
 
 DBC = {
