@@ -62,8 +62,38 @@ FINGERPRINTS = {
 }
 
 FW_VERSIONS = {
-  CAR.PACIFICA_2017_HYBRID: {},
-  CAR.PACIFICA_2018: {},
+  CAR.PACIFICA_2017_HYBRID: {
+    (Ecu.combinationMeter, 0x742, None): [
+    ],
+    (Ecu.srs, 0x744, None): [
+    ],
+    (Ecu.abs, 0x747, None): [
+    ],
+    (Ecu.fwdRadar, 0x753, None): [
+    ],
+    (Ecu.eps, 0x75a, None): [
+    ],
+    (Ecu.engine, 0x7e0, None): [
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+    ],
+  },
+  CAR.PACIFICA_2018: {
+    (Ecu.combinationMeter, 0x742, None): [
+    ],
+    (Ecu.srs, 0x744, None): [
+    ],
+    (Ecu.abs, 0x747, None): [
+    ],
+    (Ecu.fwdRadar, 0x753, None): [
+    ],
+    (Ecu.eps, 0x75a, None): [
+    ],
+    (Ecu.engine, 0x7e0, None): [
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+    ],
+  },
   CAR.PACIFICA_2020: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68594993AB',
@@ -87,9 +117,54 @@ FW_VERSIONS = {
       b'68586231AD',
     ],
   },
-  CAR.PACIFICA_2018_HYBRID: {},
-  CAR.PACIFICA_2019_HYBRID: {},
-  CAR.JEEP_GRAND_CHEROKEE: {},
+  CAR.PACIFICA_2018_HYBRID: {
+    (Ecu.combinationMeter, 0x742, None): [
+    ],
+    (Ecu.srs, 0x744, None): [
+    ],
+    (Ecu.abs, 0x747, None): [
+    ],
+    (Ecu.fwdRadar, 0x753, None): [
+    ],
+    (Ecu.eps, 0x75a, None): [
+    ],
+    (Ecu.engine, 0x7e0, None): [
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+    ],
+  },
+  CAR.PACIFICA_2019_HYBRID: {
+    (Ecu.combinationMeter, 0x742, None): [
+    ],
+    (Ecu.srs, 0x744, None): [
+    ],
+    (Ecu.abs, 0x747, None): [
+    ],
+    (Ecu.fwdRadar, 0x753, None): [
+    ],
+    (Ecu.eps, 0x75a, None): [
+    ],
+    (Ecu.engine, 0x7e0, None): [
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+    ],
+  },
+  CAR.JEEP_GRAND_CHEROKEE: {
+    (Ecu.combinationMeter, 0x742, None): [
+    ],
+    (Ecu.srs, 0x744, None): [
+    ],
+    (Ecu.abs, 0x747, None): [
+    ],
+    (Ecu.fwdRadar, 0x753, None): [
+    ],
+    (Ecu.eps, 0x75a, None): [
+    ],
+    (Ecu.engine, 0x7e0, None): [
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+    ],
+  },
   CAR.JEEP_GRAND_CHEROKEE_2019: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68402971AD',
