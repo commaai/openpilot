@@ -67,7 +67,7 @@ FW_VERSIONS = {
     ],
     (Ecu.srs, 0x744, None): [
     ],
-    (Ecu.abs, 0x747, None): [
+    (Ecu.abs, 0x7e4, None): [
     ],
     (Ecu.fwdRadar, 0x753, None): [
     ],
@@ -122,7 +122,7 @@ FW_VERSIONS = {
     ],
     (Ecu.srs, 0x744, None): [
     ],
-    (Ecu.abs, 0x747, None): [
+    (Ecu.abs, 0x7e4, None): [
     ],
     (Ecu.fwdRadar, 0x753, None): [
     ],
@@ -138,7 +138,7 @@ FW_VERSIONS = {
     ],
     (Ecu.srs, 0x744, None): [
     ],
-    (Ecu.abs, 0x747, None): [
+    (Ecu.abs, 0x7e4, None): [
     ],
     (Ecu.fwdRadar, 0x753, None): [
     ],
