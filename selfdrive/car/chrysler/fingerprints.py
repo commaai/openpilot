@@ -75,7 +75,7 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7e0, None): [
     ],
-    (Ecu.transmission, 0x7e1, None): [
+    (Ecu.hybrid, 0x7e2, None): [
     ],
   },
   CAR.PACIFICA_2018: {
@@ -130,7 +130,7 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7e0, None): [
     ],
-    (Ecu.transmission, 0x7e1, None): [
+    (Ecu.hybrid, 0x7e2, None): [
     ],
   },
   CAR.PACIFICA_2019_HYBRID: {
@@ -146,7 +146,7 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7e0, None): [
     ],
-    (Ecu.transmission, 0x7e1, None): [
+    (Ecu.hybrid, 0x7e2, None): [
     ],
   },
   CAR.JEEP_GRAND_CHEROKEE: {

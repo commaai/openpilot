@@ -117,7 +117,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     ),
   ],
   extra_ecus=[
-    (Ecu.hybrid, 0x7e2, None),  # manages transmission on hybrids
+    # (Ecu.hybrid, 0x7e2, None),  # manages transmission on hybrids
     (Ecu.abs, 0x7e4, None),     # alt address for abs on hybrids
   ],
 )
