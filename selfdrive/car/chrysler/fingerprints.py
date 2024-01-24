@@ -417,12 +417,3 @@ FW_VERSIONS = {
     ],
   },
 }
-
-
-for car in FINGERPRINTS:
-  if car not in FW_VERSIONS:
-    print('Add to FW_VERSIONS:', car.name, '   -   ', car.value)
-
-for car in FW_VERSIONS:
-  if car not in FINGERPRINTS:
-    print('Good, not in FINGERPRINTS', car.name, '   -   ', car.value)
