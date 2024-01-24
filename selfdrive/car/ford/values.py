@@ -1,3 +1,4 @@
+import re
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, StrEnum
@@ -108,21 +109,35 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
 }
 
 
+# FW response contains a combined software and part number
+# A-Z except no I, O or W
+# e.g. NZ6A-14C204-AAA
+#      1222-333333-444
+# 1 = Model year (incremented for each model year)
+# 2 = Platform hint
+# 3 = Part number (effectively maps to ECU)
+# 4 = Software version (reset to AA for each model year)
+# https://regexr.com/7qu7h
+FW_ALPHABET = b'A-HJ-NP-VX-Z'
+FW_RE = re.compile(b'^(?P<model_year>[' + FW_ALPHABET + b'])' +
+                   b'(?P<platform_hint>[0-9' + FW_ALPHABET + b']{3})-' +
+                   b'(?P<part_number>[0-9' + FW_ALPHABET + b']{5,6})-' +
+                   b'(?P<software_version>[' + FW_ALPHABET + b']{2,})$')
+
+
 def get_platform_codes(fw_versions: list[bytes]) -> set[tuple[bytes, bytes]]:
   codes = set()  # (platform-part, year-version)
 
-  # e.g. NZ6A-14C204-AAA
-  #      1222-333333-444
-  # 1 = Model year (incremented for each model year)
-  # 2 = Platform hint
-  # 3 = Part number (effectively maps to ECU)
-  # 4 = Software version (reset to AA for each model year)
   for firmware in fw_versions:
-    prefix, part_number, software_version = firmware.rstrip(b'\0').split(b'-')
-    model_year, platform_hint = prefix[:1], prefix[1:]
+    m = FW_RE.match(firmware.rstrip(b'\0'))
+    if m is None:
+      continue
 
-    code = b'-'.join([platform_hint, part_number])
-    version = b'-'.join([model_year, software_version])
+    # since "AAA" is higher than "ZZ", prepend "A" to two-letter versions (i.e. "ZZ" -> "AZZ")
+    software_version = (b'A' + m.group('software_version'))[-3:]
+
+    code = b'-'.join([m.group('platform_hint'), m.group('part_number')])
+    version = b'-'.join([m.group('model_year'), software_version])
     codes.add((code, version))
 
   return codes
