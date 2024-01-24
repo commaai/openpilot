@@ -129,7 +129,7 @@ def comma_api_source(sr: SegmentRange, mode: ReadMode):
   route = Route(sr.route_name)
 
   rlog_paths = [route.log_paths()[seg] for seg in segs]
-  qlog_paths = [route.log_paths()[seg] for seg in segs]
+  qlog_paths = [route.qlog_paths()[seg] for seg in segs]
 
   return apply_strategy(mode, rlog_paths, qlog_paths)
 
