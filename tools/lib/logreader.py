@@ -173,7 +173,7 @@ def check_source(source, *args):
 
 def auto_source(*args):
   # Automatically determine viable source
-  for source in [internal_source, openpilotci_source]:
+  for source in [comma_car_segments_source, internal_source, openpilotci_source]:
     valid, ret = check_source(source, *args)
     if valid:
       return ret
