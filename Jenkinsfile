@@ -25,7 +25,7 @@ export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
 export MAPBOX_TOKEN='${env.MAPBOX_TOKEN}'
-# only use 1 thread for tici tests since most require HIL, and print stdout for debuging
+# only use 1 thread for tici tests since most require HIL, and print stdout for debugging
 export PYTEST_ADDOPTS="-n 0 -s"
 
 
