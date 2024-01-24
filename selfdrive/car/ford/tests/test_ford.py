@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 import unittest
-from parameterized import parameterized
 from typing import Dict, Iterable, Optional, Tuple
 
 import capnp
+from parameterized import parameterized
+from hypothesis import settings, given, strategies as st
 
 from cereal import car
-from openpilot.selfdrive.car.ford.values import FW_QUERY_CONFIG
+from openpilot.selfdrive.car.ford.values import FW_QUERY_CONFIG, get_platform_codes
 from openpilot.selfdrive.car.ford.fingerprints import FW_VERSIONS
 
 Ecu = car.CarParams.Ecu
@@ -75,6 +76,14 @@ class TestFordFW(unittest.TestCase):
         self.assertIn(len(core), (5, 6), "Expected FW core to be 5-6 characters")
         self.assertIn(core, ECU_FW_CORE[ecu], f"Unexpected FW core for {ecu}")
         self.assertIn(len(suffix), (2, 3), "Expected FW suffix to be 2-3 characters")
+
+  @settings(max_examples=100)
+  @given(data=st.data())
+  def test_platform_codes_fuzzy_fw(self, data):
+    """Ensure function doesn't raise an exception"""
+    fw_strategy = st.lists(st.binary())
+    fws = data.draw(fw_strategy)
+    get_platform_codes(fws)
 
 
 if __name__ == "__main__":
