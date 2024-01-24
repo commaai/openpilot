@@ -25,8 +25,8 @@ export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
 export MAPBOX_TOKEN='${env.MAPBOX_TOKEN}'
-# only use 1 thread for tici tests since most require HIL, and print stdout for debugging
-export PYTEST_ADDOPTS="-n 0 -s"
+# disable xdist for tici test since most require HIL anyway.
+export PYTEST_ADDOPTS="-p no:xdist"
 
 
 export GIT_SSH_COMMAND="ssh -i /data/gitkey"

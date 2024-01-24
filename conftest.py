@@ -80,3 +80,11 @@ def pytest_configure(config):
 
   config_line = "shared_download_cache: share download cache between tests"
   config.addinivalue_line("markers", config_line)
+
+
+def pytest_addoption(parser):
+  # when disabling xdist, we want these arguments to be noops
+  group = parser.getgroup("xdist", "distributed and subprocess testing")
+  if len(group.options) == 1:
+    group.addoption("--numprocesses")
+    group.addoption("--dist")
