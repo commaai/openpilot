@@ -4,7 +4,7 @@ import unittest
 
 import requests
 from openpilot.tools.lib.comma_car_segments import get_comma_car_segments_database, get_url
-from openpilot.tools.lib.logreader import LogReader, get_first_message
+from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import SegmentRange
 
 
@@ -32,7 +32,7 @@ class TestCommaCarSegments(unittest.TestCase):
 
     lr = LogReader(url)
 
-    CP = get_first_message(lr, "carParams").carParams
+    CP = lr.first("carParams")
 
     self.assertEqual(CP.carFingerprint, fp)
 
