@@ -7,7 +7,7 @@ from parameterized import parameterized
 from hypothesis import settings, given, strategies as st
 
 from cereal import car
-from openpilot.selfdrive.car.ford.values import FW_QUERY_CONFIG, get_platform_codes
+from openpilot.selfdrive.car.ford.values import CAR, FW_QUERY_CONFIG, get_platform_codes
 from openpilot.selfdrive.car.ford.fingerprints import FW_VERSIONS
 
 Ecu = car.CarParams.Ecu
@@ -79,6 +79,49 @@ class TestFordFW(unittest.TestCase):
     ])
     self.assertEqual(results, {(b"X6A-14C204", b"J-BPL"), (b"Z6T-14F397", b"N-AAC"),
                                (b"J6T-14H102", b"P-ABJ"), (b"B5A-14C204", b"L-EAC")})
+
+  def test_match_fw_fuzzy(self):
+    offline_fw = {
+      (Ecu.eps, 0x730, None): [
+        b"L1MC-14D003-AJ\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+        b"L1MC-14D003-AL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+      ],
+      (Ecu.abs, 0x760, None): [
+        b"L1MC-2D053-BA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+        b"L1MC-2D053-BD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+      ],
+      (Ecu.fwdRadar, 0x764, None): [
+        b"LB5T-14D049-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+        b"LB5T-14D049-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+      ],
+      (Ecu.fwdCamera, 0x706, None): [
+        b"LB5T-14F397-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+        b"LB5T-14F397-AF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+      ],
+      (Ecu.engine, 0x7e0, None): [
+        b"LB5A-14C204-ATJ\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+        b"LB5A-14C204-ATS\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+      ],
+    }
+
+    live_fw = {
+      (0x730, None): {b"L1MC-14D003-AK\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"},
+      (0x760, None): {b"L1MC-2D053-BB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"},
+      (0x764, None): {b"LB5T-14D049-AC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"},
+      (0x706, None): {b"LB5T-14F397-AE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"},
+      (0x7e0, None): {b"LB5A-14C204-ATK\x00\x00\x00\x00\x00\x00\x00\x00\x00"},
+    }
+
+    # for this test, check that none of the live FW matches matches the offline FW exactly
+    for (_, addr, subaddr), fws in offline_fw.items():
+      live_ecu_fw = live_fw.get((addr, subaddr), set())
+      self.assertEqual(0, len(set(fws).intersection(live_ecu_fw)))
+
+    expected_fingerprint = CAR.EXPLORER_MK6
+    candidates = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(live_fw, {
+      expected_fingerprint: offline_fw,
+    })
+    self.assertEqual(candidates, {expected_fingerprint})
 
 
 if __name__ == "__main__":
