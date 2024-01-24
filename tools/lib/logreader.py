@@ -264,9 +264,9 @@ are uploaded or auto fallback to qlogs with '/a' selector at the end of the rout
   def from_bytes(dat):
     return _LogFileReader("", dat=dat)
 
-
-def get_first_message(lr: LogIterable, msg_type):
-  return next(filter(lambda m: m.which() == msg_type, lr), None)
+  def first(self, msg_type: str):
+    m = next(filter(lambda m: m.which() == msg_type, self), None)
+    return None if m is None else getattr(m, msg_type)
 
 
 if __name__ == "__main__":
