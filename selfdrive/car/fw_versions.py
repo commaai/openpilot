@@ -120,7 +120,6 @@ def match_fw_to_car_exact(live_fw_versions, match_brand=None, log=True, extra_fw
   for candidate, fws in candidates.items():
     config = FW_QUERY_CONFIGS[MODEL_TO_BRAND[candidate]]
     for ecu, expected_versions in fws.items():
-      # expected_versions = expected_versions + extra_fw_versions.get((candidate, ecu), [])
       expected_versions = expected_versions + extra_fw_versions.get(candidate, {}).get(ecu, [])
       ecu_type = ecu[0]
       addr = ecu[1:]
