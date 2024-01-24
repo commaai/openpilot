@@ -1,11 +1,13 @@
 import shutil
 import tempfile
-from unittest import mock
 import numpy as np
 import unittest
 import pytest
-from parameterized import parameterized
 import requests
+
+from parameterized import parameterized
+from unittest import mock
+
 from openpilot.tools.lib.logreader import LogReader, parse_indirect, parse_slice, ReadMode
 from openpilot.tools.lib.route import SegmentRange
 
