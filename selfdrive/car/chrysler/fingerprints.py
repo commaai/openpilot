@@ -62,7 +62,7 @@ FINGERPRINTS = {
 }
 
 FW_VERSIONS = {
-  CAR.PACIFICA_2019_HYBRID: {
+  CAR.PACIFICA_2020: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68594993AB',
     ],
