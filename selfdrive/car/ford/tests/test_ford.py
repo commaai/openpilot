@@ -69,6 +69,17 @@ class TestFordFW(unittest.TestCase):
     fws = data.draw(fw_strategy)
     get_platform_codes(fws)
 
+  def test_platform_codes_spot_check(self):
+    # Asserts basic platform code parsing behavior for a few cases
+    results = get_platform_codes([
+      b"JX6A-14C204-BPL\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+      b"NZ6T-14F397-AC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+      b"PJ6T-14H102-ABJ\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+      b"LB5A-14C204-EAC\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+    ])
+    self.assertEqual(results, {(b"X6A-14C204", b"J-BPL"), (b"Z6T-14F397", b"N-AAC"),
+                               (b"J6T-14H102", b"P-ABJ"), (b"B5A-14C204", b"L-EAC")})
+
 
 if __name__ == "__main__":
   unittest.main()
