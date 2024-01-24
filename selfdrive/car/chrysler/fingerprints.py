@@ -122,8 +122,8 @@ FW_VERSIONS = {
     ],
     (Ecu.srs, 0x744, None): [
     ],
-    (Ecu.abs, 0x7e4, None): [
-    ],
+    # (Ecu.abs, 0x7e4, None): [
+    # ],
     (Ecu.fwdRadar, 0x753, None): [
     ],
     (Ecu.eps, 0x75a, None): [
