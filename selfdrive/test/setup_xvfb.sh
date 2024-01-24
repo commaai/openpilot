@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Sets up a virtual display for running map renderer and simulator without an X11 display
 
