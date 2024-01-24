@@ -163,11 +163,11 @@ def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions) -> set[str]:
       found_platform_codes = {code for code, _ in live_codes}
       found_versions = {version for _, version in live_codes}
 
-      # Check platform code + version matches for any found versions
+      # Check platform hint + part number matches for any found firmware
       if not any(found_code in expected_platform_codes for found_code in found_platform_codes):
         break
 
-      # Check version is within expected range
+      # Check version is within range expected range
       if not any(min(expected_versions) <= found_version <= max(expected_versions) for found_version in found_versions):
         break
 
