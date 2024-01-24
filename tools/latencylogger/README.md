@@ -53,9 +53,7 @@ Frame ID: 1202
     modelV2.modelExecutionTime                           23.62649142742157
     modelV2.gpuExecutionTime                             0.0
   plannerd
-    lateralPlan published                                66.915049
     longitudinalPlan published                           69.715999
-    lateralPlan.solverExecutionTime                      0.8170719956979156
     longitudinalPlan.solverExecutionTime                 0.5619999719783664
   controlsd
     Data sampled                                         70.217763

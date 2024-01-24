@@ -342,7 +342,7 @@ class Updater:
   def check_for_update(self) -> None:
     cloudlog.info("checking for updates")
 
-    excluded_branches = ('release2', 'release2-staging', 'dashcam', 'dashcam-staging')
+    excluded_branches = ('release2', 'release2-staging')
 
     try:
       run(["git", "ls-remote", "origin", "HEAD"], OVERLAY_MERGED)
