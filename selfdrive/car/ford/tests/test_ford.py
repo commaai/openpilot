@@ -57,25 +57,9 @@ class TestFordFW(unittest.TestCase):
       self.assertEqual(addr, ECU_ADDRESSES[ecu], "ECU address mismatch")
       self.assertIsNone(subaddr, "Unexpected ECU subaddress")
 
-      # Software part number takes the form: PREFIX-CORE-SUFFIX
-      # Prefix changes based on the family of part. It includes the model year
-      #   and likely the platform.
-      # Core identifies the type of the item (e.g. 14D003 = PSCM, 14C204 = PCM).
-      # Suffix specifies the version of the part. -AA would be followed by -AB.
-      #   Small increments in the suffix are usually compatible.
-      # Details: https://forscan.org/forum/viewtopic.php?p=70008#p70008
       for fw in fws:
-        self.assertEqual(len(fw), 24, "Expected ECU response to be 24 bytes")
-
-        # TODO: parse with regex, don't need detailed error message
-        fw_parts = fw.rstrip(b'\x00').split(b'-')
-        self.assertEqual(len(fw_parts), 3, "Expected FW to be in format: prefix-core-suffix")
-
-        prefix, core, suffix = fw_parts
-        self.assertEqual(len(prefix), 4, "Expected FW prefix to be 4 characters")
-        self.assertIn(len(core), (5, 6), "Expected FW core to be 5-6 characters")
-        self.assertIn(core, ECU_FW_CORE[ecu], f"Unexpected FW core for {ecu}")
-        self.assertIn(len(suffix), (2, 3), "Expected FW suffix to be 2-3 characters")
+        codes = get_platform_codes([fw])
+        self.assertEqual(1, len(codes), f"Unable to parse FW: {fw!r}")
 
   @settings(max_examples=100)
   @given(data=st.data())
