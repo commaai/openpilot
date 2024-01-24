@@ -7,7 +7,7 @@ from openpilot.selfdrive.debug.format_fingerprints import format_brand_fw_versio
 
 from openpilot.selfdrive.car.fw_versions import match_fw_to_car
 from openpilot.selfdrive.car.interfaces import get_interface_attr
-from openpilot.tools.lib.logreader import LogReader, ReadMode
+from openpilot.tools.lib.logreader import LogReader, ReadMode, get_first_message
 
 
 ALL_FW_VERSIONS = get_interface_attr("FW_VERSIONS")
@@ -32,15 +32,14 @@ if __name__ == "__main__":
 
   platform: Optional[str] = None
 
-  for msg in lr:
-    if msg.which() == "carParams":
-      carFw = msg.carParams.carFw
-      carVin = msg.carParams.carVin
-      carPlatform = msg.carParams.carFingerprint
-      break
+  CP = get_first_message(lr, "carParams")
 
-  if carFw is None:
+  if CP is None:
     raise Exception("No fw versions in the provided route...")
+
+  carFw = CP.carParams.carFw
+  carVin = CP.carParams.carVin
+  carPlatform = CP.carParams.carFingerprint
 
   if args.platform is None: # attempt to auto-determine platform with other fuzzy fingerprints
     _, possible_platforms = match_fw_to_car(carFw, log=False)
