@@ -29,9 +29,6 @@ class Pc(HardwareBase):
   def get_serial(self):
     return "cccccccc"
 
-  def get_subscriber_info(self):
-    return ""
-
   def get_network_info(self):
     return None
 

@@ -66,6 +66,26 @@
         <source>Prevent large data uploads when on a metered connection</source>
         <translation>데이터 요금제 연결 시 대용량 데이터 업로드를 방지합니다</translation>
     </message>
+    <message>
+        <source>Hidden Network</source>
+        <translation>숨겨진 네트워크</translation>
+    </message>
+    <message>
+        <source>CONNECT</source>
+        <translation>연결됨</translation>
+    </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation>SSID 입력</translation>
+    </message>
+    <message>
+        <source>Enter password</source>
+        <translation>비밀번호를 입력하세요</translation>
+    </message>
+    <message>
+        <source>for &quot;%1&quot;</source>
+        <translation>&quot;%1&quot;에 접속하려면 비밀번호가 필요합니다</translation>
+    </message>
 </context>
 <context>
     <name>AnnotatedCameraWidget</name>
@@ -536,10 +556,6 @@
     <message>
         <source>Exit</source>
         <translation>종료</translation>
-    </message>
-    <message>
-        <source>dashcam</source>
-        <translation>블랙박스</translation>
     </message>
     <message>
         <source>openpilot</source>
