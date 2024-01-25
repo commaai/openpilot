@@ -353,7 +353,7 @@ FW_CHUNK_LEN = 16
 #    On the RAV4, it describes the move to the radar doing ACC, and the use of LTA for lane keeping.
 #    Note that the platform codes & major versions do not describe features in plain text, only with
 #    matching against other seen FW versions in the database they can describe features.
-# - fwdRadar: sanity check against fwdCamera, commonly share a platform code.
+# - fwdRadar: sanity check against fwdCamera, commonly shares a platform code.
 #    For example the RAV4 2022's new radar architecture is shown for both with platform code.
 # - abs: differentiates hybrid/ICE on most cars (Corolla TSS2 is an exception, not used due to hybrid platform combination)
 # - eps: describes lateral API changes for the EPS, such as using LTA for lane keeping and rejecting LKA messages
