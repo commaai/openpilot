@@ -55,12 +55,10 @@ def get_brand_addrs() -> Dict[str, Set[AddrType]]:
   return dict(brand_addrs)
 
 
-def match_fw_to_car_fuzzy(live_fw_versions, match_brand=None, log=True, exclude=None, extra_fw_versions=None):
+def match_fw_to_car_fuzzy(live_fw_versions, match_brand=None, log=True, exclude=None):
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
   the match is rejected."""
-  if extra_fw_versions is None:
-    extra_fw_versions = {}
   # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
   all_fw_versions = defaultdict(list)
   for candidate, fw_by_addr in FW_VERSIONS.items():
@@ -71,7 +69,6 @@ def match_fw_to_car_fuzzy(live_fw_versions, match_brand=None, log=True, exclude=
       continue
 
     for addr, fws in fw_by_addr.items():
-      fws = fws + extra_fw_versions.get(candidate, {}).get(addr, [])
       # These ECUs are known to be shared between models (EPS only between hybrid/ICE version)
       # Getting this exactly right isn't crucial, but excluding camera and radar makes it almost
       # impossible to get 3 matching versions, even if two models with shared parts are released at the same
