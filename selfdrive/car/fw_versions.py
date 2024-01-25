@@ -59,6 +59,7 @@ def match_fw_to_car_fuzzy(live_fw_versions, match_brand=None, log=True, exclude=
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
   the match is rejected."""
+
   # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
   all_fw_versions = defaultdict(list)
   for candidate, fw_by_addr in FW_VERSIONS.items():
