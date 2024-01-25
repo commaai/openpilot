@@ -2178,8 +2178,10 @@ version = "0.4.2.2"
 description = "An open-ended driving simulator with infinite scenes"
 optional = false
 python-versions = ">=3.6, <3.12"
-files = []
-develop = false
+files = [
+    {file = "metadrive-simulator-0.4.2.2.tar.gz", hash = "sha256:dcce9f9c73b6055e70480af8543058b95e8c4f68d2595107f3ef36c9be03f6bb"},
+    {file = "metadrive_simulator-0.4.2.2-py3-none-any.whl", hash = "sha256:165ba0b5275313a71090ba0e73d51b7b5e05391b071d3a2114d999ac9287d150"},
+]
 
 [package.dependencies]
 filelock = "*"
@@ -2209,12 +2211,6 @@ yapf = "*"
 cuda = ["PyOpenGL (==3.1.6)", "PyOpenGL-accelerate (==3.1.6)", "cuda-python (==12.0.0)", "glfw", "pyrr (==0.10.3)"]
 gym = ["gym (>=0.19.0,<=0.26.0)"]
 ros = ["zmq"]
-
-[package.source]
-type = "git"
-url = "https://github.com/metadriverse/metadrive.git"
-reference = "main"
-resolved_reference = "bc162e1b423bd194a58ef2269103f1bcea5f53c7"
 
 [[package]]
 name = "mouseinfo"
@@ -7791,4 +7787,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "80980e271850e99a5b9005dda4b25a822a4d2b15ba152697c5fb692be4b3bb13"
+content-hash = "4f771435666b64f677d7dd2b4c9b4ec4bbe6fcbb004d13f19e0e79ae138c92b9"
