@@ -78,6 +78,8 @@ function install_ubuntu_common_requirements() {
     libreadline-dev \
     libdw1 \
     xvfb \
+    x11-xserver-utils \
+    gnome-screenshot \
     valgrind
 }
 

@@ -1,11 +1,11 @@
 from collections import namedtuple
 import pathlib
 import shutil
+import sys
 import jinja2
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import pyautogui
 import pywinctl
 import time
 import unittest
@@ -133,6 +133,10 @@ class TestUI(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     os.environ["SCALE"] = "1"
+    sys.modules["mouseinfo"] = 1234
+  
+  def tearDownClass(cls):
+    del sys.modules["mouseinfo"]
 
   def setup(self):
     self.sm = SubMaster(["uiDebug"])
@@ -147,6 +151,7 @@ class TestUI(unittest.TestCase):
       self.ui = namedtuple("bb", ["left", "top", "width", "height"])(0,0,2160,1080)
 
   def screenshot(self):
+    import pyautogui
     im = pyautogui.screenshot(region=(self.ui.left, self.ui.top, self.ui.width, self.ui.height))
     self.assertEqual(im.width, 2160)
     self.assertEqual(im.height, 1080)
@@ -155,6 +160,7 @@ class TestUI(unittest.TestCase):
     return img
 
   def click(self, x, y, *args, **kwargs):
+    import pyautogui
     pyautogui.click(self.ui.left + x, self.ui.top + y, *args, **kwargs)
 
   @parameterized.expand(CASES.items())
