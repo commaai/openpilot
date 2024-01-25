@@ -1,3 +1,4 @@
+from collections import namedtuple
 import pathlib
 import shutil
 import jinja2
@@ -17,11 +18,12 @@ from cereal.messaging import SubMaster, PubMaster
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.transformations.camera import tici_f_frame_size
+from openpilot.selfdrive.navd.tests.test_map_renderer import gen_llk
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state
 from openpilot.tools.webcam.camera import Camera
 
-UI_DELAY = 0.5 # may be slower on CI?
+UI_DELAY = 2 # may be slower on CI?
 
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
@@ -100,6 +102,10 @@ def setup_onroad(click, pm: PubMaster):
 
 def setup_onroad_map(click, pm: PubMaster):
   setup_onroad(click, pm)
+
+  dat = gen_llk()
+  pm.send("liveLocationKalman", dat)
+
   click(500, 500)
   time.sleep(UI_DELAY)
 
@@ -114,7 +120,7 @@ CASES = {
   "settings_network": setup_settings_network,
   "onroad": setup_onroad,
   "onroad_map": setup_onroad_map,
-  "onroad_map_sidebar": setup_onroad_sidebar
+  "onroad_sidebar": setup_onroad_sidebar
 }
 
 TEST_DIR = pathlib.Path(__file__).parent
@@ -130,11 +136,15 @@ class TestUI(unittest.TestCase):
 
   def setup(self):
     self.sm = SubMaster(["uiDebug"])
-    self.pm = PubMaster(["deviceState", "pandaStates", "controlsState", 'roadCameraState', 'wideRoadCameraState'])
+    self.pm = PubMaster(["deviceState", "pandaStates", "controlsState", 'roadCameraState', 'wideRoadCameraState', 'liveLocationKalman'])
     while not self.sm.valid["uiDebug"]:
       self.sm.update(1)
     time.sleep(UI_DELAY) # wait a bit more for the UI to finish rendering
-    self.ui = pywinctl.getWindowsWithTitle("ui")[0]
+    try:
+      self.ui = pywinctl.getWindowsWithTitle("ui")[0]
+    except Exception as e:
+      print(f"failed to find ui window, assuming that it's in the top left (for Xvfb) {e}")
+      self.ui = namedtuple("bb", ["left", "top", "width", "height"])(0,0,2160,1080)
 
   def screenshot(self):
     im = pyautogui.screenshot(region=(self.ui.left, self.ui.top, self.ui.width, self.ui.height))
