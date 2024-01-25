@@ -23,7 +23,7 @@ class ModelConstants:
   DRIVING_STYLE_LEN = 12
   LAT_PLANNER_STATE_LEN = 4
   LATERAL_CONTROL_PARAMS_LEN = 2
-  PREV_DESIRED_CURVS_LEN = 20
+  PREV_DESIRED_CURV_LEN = 1
 
   # model outputs constants
   FCW_THRESHOLDS_5MS2 = np.array([.05, .05, .15, .15, .15], dtype=np.float32)

@@ -64,8 +64,8 @@ class ChryslerCarInfo(CarInfo):
 
 
 CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
-  CAR.PACIFICA_2017_HYBRID: ChryslerCarInfo("Chrysler Pacifica Hybrid 2017-18"),
-  CAR.PACIFICA_2018_HYBRID: None,  # same platforms
+  CAR.PACIFICA_2017_HYBRID: ChryslerCarInfo("Chrysler Pacifica Hybrid 2017"),
+  CAR.PACIFICA_2018_HYBRID: ChryslerCarInfo("Chrysler Pacifica Hybrid 2018"),
   CAR.PACIFICA_2019_HYBRID: ChryslerCarInfo("Chrysler Pacifica Hybrid 2019-23"),
   CAR.PACIFICA_2018: ChryslerCarInfo("Chrysler Pacifica 2017-18"),
   CAR.PACIFICA_2020: [
@@ -117,8 +117,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     ),
   ],
   extra_ecus=[
-    (Ecu.hybrid, 0x7e2, None),  # manages transmission on hybrids
-    (Ecu.abs, 0x7e4, None),     # alt address for abs on hybrids
+    (Ecu.abs, 0x7e4, None),  # alt address for abs on hybrids, NOTE: not on all hybrid platforms
   ],
 )
 

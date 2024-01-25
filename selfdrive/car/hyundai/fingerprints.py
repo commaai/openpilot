@@ -199,6 +199,7 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00AEev SCC F-CUP      1.00 1.00 99110-G7200         ',
       b'\xf1\x00AEev SCC F-CUP      1.00 1.01 99110-G7000         ',
+      b'\xf1\x00AEev SCC F-CUP      1.00 1.00 99110-G7500         ',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00AE  MDPS C 1.00 1.01 56310/G7310 4APEC101',
@@ -209,6 +210,7 @@ FW_VERSIONS = {
       b'\xf1\x00AEE MFC  AT EUR LHD 1.00 1.01 95740-G2600 190819',
       b'\xf1\x00AEE MFC  AT EUR LHD 1.00 1.03 95740-G2500 190516',
       b'\xf1\x00AEE MFC  AT EUR RHD 1.00 1.01 95740-G2600 190819',
+      b'\xf1\x00AEE MFC  AT EUR LHD 1.00 1.00 95740-G2700 201027',
     ],
   },
   CAR.IONIQ_EV_LTD: {
