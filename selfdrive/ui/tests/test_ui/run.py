@@ -133,7 +133,7 @@ class TestUI(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     os.environ["SCALE"] = "1"
-    sys.modules["mouseinfo"] = 1234
+    sys.modules["mouseinfo"] = False
 
   def tearDownClass(cls):
     del sys.modules["mouseinfo"]
