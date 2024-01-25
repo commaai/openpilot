@@ -30,6 +30,7 @@ jobs:
         base: master
         delete-branch: true
         body: 'Automatic PR from repo-maintenance -> bump_submodules'
+        labels: bot
   package_updates:
     name: package_updates
     runs-on: ubuntu-20.04
@@ -55,3 +56,4 @@ jobs:
         base: master
         delete-branch: true
         body: 'Automatic PR from repo-maintenance -> package_updates'
+        labels: bot
