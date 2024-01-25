@@ -168,7 +168,7 @@ def get_invalid_files(files):
 def check_source(source, *args):
   try:
     files = source(*args)
-    assert next(get_invalid_files(files), None) == None
+    assert next(get_invalid_files(files), None) is None
     return True, files
   except Exception:
     return False, None
