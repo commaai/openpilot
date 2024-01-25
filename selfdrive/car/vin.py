@@ -36,13 +36,13 @@ def get_vin(logcan, sendcan, buses, timeout=0.1, retry=5, debug=False):
               if vin.startswith(b'\x11'):
                 vin = vin[1:18]
 
-              return get_rx_addr_for_tx_addr(addr), vin.decode()
+              return get_rx_addr_for_tx_addr(addr), bus, vin.decode()
 
           cloudlog.error(f"vin query retry ({i+1}) ...")
         except Exception:
           cloudlog.exception("VIN query exception")
 
-  return 0, VIN_UNKNOWN
+  return -1, -1, VIN_UNKNOWN
 
 
 if __name__ == "__main__":
@@ -60,5 +60,5 @@ if __name__ == "__main__":
   logcan = messaging.sub_sock('can')
   time.sleep(1)
 
-  vin_rx_addr, vin = get_vin(logcan, sendcan, (args.bus,), args.timeout, args.retry, debug=args.debug)
-  print(f'RX: {hex(vin_rx_addr)}, VIN: {vin}')
+  vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, (args.bus,), args.timeout, args.retry, debug=args.debug)
+  print(f'RX: {hex(vin_rx_addr)}, BUS: {vin_rx_bus}, VIN: {vin}')
