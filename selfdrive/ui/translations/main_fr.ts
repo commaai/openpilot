@@ -621,10 +621,6 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
         <translation>Réinitialisation du système</translation>
     </message>
     <message>
-        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>Appuyez sur confirmer pour effacer tout le contenu et les paramètres. Appuyez sur annuler pour reprendre le démarrage.</translation>
-    </message>
-    <message>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
@@ -639,6 +635,10 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     <message>
         <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
         <translation>Impossible de monter la partition data. La partition peut être corrompue. Appuyez sur confirmer pour effacer et réinitialiser votre appareil.</translation>
+    </message>
+    <message>
+        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
