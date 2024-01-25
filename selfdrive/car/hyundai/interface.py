@@ -137,11 +137,6 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.97
       ret.steerRatio = 14.26
       ret.tireStiffnessFactor = 0.65
-      #ret.lateralTuning.init('indi')
-      #ret.lateralTuning.indi.innerLoopGain = 3.0
-      #ret.lateralTuning.indi.outerLoopGain = 2.0
-      #ret.lateralTuning.indi.timeConstant = 1.0
-      #ret.lateralTuning.indi.actuatorEffectiveness = 1.0
     elif candidate == CAR.VELOSTER:
       ret.mass = 2917. * CV.LB_TO_KG
       ret.wheelbase = 2.80
