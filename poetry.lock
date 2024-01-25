@@ -2213,8 +2213,8 @@ ros = ["zmq"]
 [package.source]
 type = "git"
 url = "https://github.com/metadriverse/metadrive.git"
-reference = "main"
-resolved_reference = "bc162e1b423bd194a58ef2269103f1bcea5f53c7"
+reference = "MetaDrive-0.4.2.2"
+resolved_reference = "8d08034e7cfa6504c1942bb4b5aaeb703d4b204f"
 
 [[package]]
 name = "mouseinfo"
@@ -7791,4 +7791,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "80980e271850e99a5b9005dda4b25a822a4d2b15ba152697c5fb692be4b3bb13"
+content-hash = "655f89fd5a454ec8a22c0223efd3e1f14041e80a60a50ecee9edc6ee8951fd9c"
