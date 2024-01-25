@@ -354,7 +354,7 @@ FW_CHUNK_LEN = 16
 #    On the RAV4, it describes the move to the radar doing ACC, and the use of LTA for lane keeping.
 # - abs: differentiates hybrid/ICE on most cars (Corolla TSS2 is an exception)
 # - eps: describes lateral API changes for the EPS, such as using LTA for lane keeping and rejecting LKA messages
-PLATFORM_CODE_ECUS = [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps]
+PLATFORM_CODE_ECUS = (Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps)
 
 # These platforms have at least one platform code for all ECUs shared with another platform.
 FUZZY_EXCLUDED_PLATFORMS: set[CAR] = set()
