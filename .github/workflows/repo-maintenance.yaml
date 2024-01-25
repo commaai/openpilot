@@ -29,7 +29,7 @@ jobs:
         branch: auto-bump-submodules
         base: master
         delete-branch: true
-        body: 'Automatic PR from repo-maintenance -> bump_submodules'
+        body: '[bot] Automatic PR from repo-maintenance -> bump_submodules'
         labels: bot
   package_updates:
     name: package_updates
@@ -55,5 +55,5 @@ jobs:
         branch: auto-package-updates
         base: master
         delete-branch: true
-        body: 'Automatic PR from repo-maintenance -> package_updates'
+        body: '[bot] Automatic PR from repo-maintenance -> package_updates'
         labels: bot
