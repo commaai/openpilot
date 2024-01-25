@@ -23,7 +23,7 @@ from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state
 from openpilot.tools.webcam.camera import Camera
 
-UI_DELAY = 2 # may be slower on CI?
+UI_DELAY = 0.5 # may be slower on CI?
 
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
@@ -46,8 +46,6 @@ def setup_common(click, pm: PubMaster):
 
   pm.send("deviceState", dat)
 
-  time.sleep(UI_DELAY)
-
 def setup_homescreen(click, pm: PubMaster):
   setup_common(click, pm)
 
@@ -55,14 +53,12 @@ def setup_settings_device(click, pm: PubMaster):
   setup_common(click, pm)
 
   click(100, 100)
-  time.sleep(UI_DELAY)
 
 def setup_settings_network(click, pm: PubMaster):
   setup_common(click, pm)
 
   setup_settings_device(click, pm)
   click(300, 600)
-  time.sleep(UI_DELAY)
 
 def setup_onroad(click, pm: PubMaster):
   setup_common(click, pm)
@@ -79,7 +75,7 @@ def setup_onroad(click, pm: PubMaster):
   server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, *tici_f_frame_size)
   server.start_listener()
 
-  time.sleep(UI_DELAY)
+  time.sleep(0.5) # give time for vipc server to start
 
   IMG = Camera.bgr2nv12(np.random.randint(0, 255, (*tici_f_frame_size,3), dtype=np.uint8))
   IMG_BYTES = IMG.flatten().tobytes()
@@ -98,8 +94,6 @@ def setup_onroad(click, pm: PubMaster):
     pm.send(msg.which(), msg)
     server.send(cam_meta.stream, IMG_BYTES, cs.frameId, cs.timestampSof, cs.timestampEof)
 
-  time.sleep(UI_DELAY)
-
 def setup_onroad_map(click, pm: PubMaster):
   setup_onroad(click, pm)
 
@@ -107,12 +101,10 @@ def setup_onroad_map(click, pm: PubMaster):
   pm.send("liveLocationKalman", dat)
 
   click(500, 500)
-  time.sleep(UI_DELAY)
 
 def setup_onroad_sidebar(click, pm: PubMaster):
   setup_onroad_map(click, pm)
   click(500, 500)
-  time.sleep(UI_DELAY)
 
 CASES = {
   "homescreen": setup_homescreen,
@@ -135,6 +127,7 @@ class TestUI(unittest.TestCase):
     os.environ["SCALE"] = "1"
     sys.modules["mouseinfo"] = False
 
+  @classmethod
   def tearDownClass(cls):
     del sys.modules["mouseinfo"]
 
@@ -143,7 +136,7 @@ class TestUI(unittest.TestCase):
     self.pm = PubMaster(["deviceState", "pandaStates", "controlsState", 'roadCameraState', 'wideRoadCameraState', 'liveLocationKalman'])
     while not self.sm.valid["uiDebug"]:
       self.sm.update(1)
-    time.sleep(UI_DELAY) # wait a bit more for the UI to finish rendering
+    time.sleep(UI_DELAY) # wait a bit more for the UI to start rendering
     try:
       self.ui = pywinctl.getWindowsWithTitle("ui")[0]
     except Exception as e:
@@ -162,6 +155,7 @@ class TestUI(unittest.TestCase):
   def click(self, x, y, *args, **kwargs):
     import pyautogui
     pyautogui.click(self.ui.left + x, self.ui.top + y, *args, **kwargs)
+    time.sleep(UI_DELAY) # give enough time for the UI to react
 
   @parameterized.expand(CASES.items())
   @with_processes(["ui"])
@@ -169,6 +163,8 @@ class TestUI(unittest.TestCase):
     self.setup()
 
     setup_case(self.click, self.pm)
+
+    time.sleep(UI_DELAY) # wait a bit more for the UI to finish rendering
 
     im = self.screenshot()
     plt.imsave(SCREENSHOTS_DIR / f"{name}.png", im)
