@@ -164,10 +164,6 @@ jobs:
 
   unit_tests:
     name: unit tests
-    strategy:
-      fail-fast: false
-      matrix:
-        job: [0, 1, 2, 3, 4, 5, 6, 7]
     runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
                    ((github.event_name != 'pull_request') || 
                     (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-20.04' }}
