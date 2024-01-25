@@ -395,3 +395,25 @@ jobs:
               repo: context.repo.repo,
               comment_id: ${{ steps.fc.outputs.comment-id }}
             })
+
+# need to figure out some stuff with tkinter before enabling this
+
+  # create_ui_report:
+  #   name: Create UI Report
+  #   runs-on: ubuntu-20.04
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         submodules: true
+  #     - uses: ./.github/workflows/setup-with-retry
+  #     - name: Build openpilot
+  #       run: ${{ env.RUN }} "scons -j$(nproc)"
+  #     - name: Create Test Report
+  #       run: ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
+  #                            export MAPBOX_TOKEN='pk.eyJ1Ijoiam5ld2IiLCJhIjoiY2xxNW8zZXprMGw1ZzJwbzZneHd2NHljbSJ9.gV7VPRfbXFetD-1OVF0XZg' && \
+  #                            python selfdrive/ui/tests/test_ui/run.py"
+  #     - name: Upload Test Report
+  #       uses: actions/upload-artifact@v2
+  #       with:
+  #         name: report
+  #         path: selfdrive/ui/tests/test_ui
