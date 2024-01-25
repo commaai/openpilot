@@ -351,7 +351,7 @@ FW_CHUNK_LEN = 16
 # - fwdCamera: describes actual features related to ADAS. For example, on the Avalon it describes
 #    when TSS-P became standard, whether the car supports stop and go, and whether it's TSS2.
 #    On the RAV4, it describes the move to the radar doing ACC, and the use of LTA for lane keeping.
-#    Note that the platform codes' major versions do not describe features in plain text, only with
+#    Note that the platform codes & major versions do not describe features in plain text, only with
 #    matching against other seen FW versions in the database they can describe features.
 # - fwdRadar: sanity check against fwdCamera, commonly share a platform code.
 #    For example the RAV4 2022's new radar architecture is shown for both with platform code.
