@@ -10,6 +10,10 @@ inputs:
   restore-keys:
     description: 'restore-keys'
     required: true
+  save:
+    description: 'whether to save the cache'
+    default: 'false'
+    required: false
 
 runs:
   using: "composite"
@@ -21,8 +25,16 @@ runs:
         path: ${{ inputs.path }}
 
     - name: setup github cache
-      if: ${{ !contains(runner.name, 'nsc') }}
-      uses: actions/cache/restore@v3
+      if: ${{ !contains(runner.name, 'nsc') && inputs.save != 'false' }}
+      uses: 'actions/cache@v3'
+      with:
+        path: ${{ inputs.path }}
+        key: ${{ inputs.key }}
+        restore-keys: ${{ inputs.restore-keys }}
+
+    - name: setup github cache
+      if: ${{ !contains(runner.name, 'nsc') && inputs.save == 'false' }}
+      uses: 'actions/cache/restore@v3'
       with:
         path: ${{ inputs.path }}
         key: ${{ inputs.key }}
@@ -31,4 +43,7 @@ runs:
     # make the directory manually in case we didn't get a hit, so it doesn't fail on future steps
     - id: scons-cache-setup
       shell: bash
-      run: mkdir -p ${{ inputs.path }}
+      run: |
+        mkdir -p ${{ inputs.path }}
+        sudo chmod -R 777 ${{ inputs.path }}
+        sudo chown -R $USER ${{ inputs.path }}

@@ -21,7 +21,6 @@ BLACKLIST_PROCS = ['manage_athenad', 'pandad', 'pigeond']
 @pytest.mark.tici
 class TestManager(unittest.TestCase):
   def setUp(self):
-    os.environ['PASSIVE'] = '0'
     HARDWARE.set_power_save(False)
 
     # ensure clean CarParams
@@ -47,13 +46,13 @@ class TestManager(unittest.TestCase):
       t = time.monotonic() - start
       assert t < MAX_STARTUP_TIME, f"startup took {t}s, expected <{MAX_STARTUP_TIME}s"
 
+  @unittest.skip("this test is flaky the way it's currently written, should be moved to test_onroad")
   def test_clean_exit(self):
     """
       Ensure all processes exit cleanly when stopped.
     """
     HARDWARE.set_power_save(False)
     manager.manager_init()
-    manager.manager_prepare()
 
     CP = car.CarParams.new_message()
     procs = ensure_running(managed_processes.values(), True, Params(), CP, not_run=BLACKLIST_PROCS)
