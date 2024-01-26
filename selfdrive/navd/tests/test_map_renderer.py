@@ -28,8 +28,11 @@ LOCATION2_REPEATED = [LOCATION2] * DEFAULT_ITERATIONS
 def gen_llk(location=LOCATION1):
   msg = messaging.new_message('liveLocationKalman')
   msg.liveLocationKalman.positionGeodetic = {'value': [*location, 0], 'std': [0., 0., 0.], 'valid': True}
+  msg.liveLocationKalman.positionECEF = {'value': [0., 0., 0.], 'std': [0., 0., 0.], 'valid': True}
   msg.liveLocationKalman.calibratedOrientationNED = {'value': [0., 0., 0.], 'std': [0., 0., 0.], 'valid': True}
+  msg.liveLocationKalman.velocityCalibrated = {'value': [0., 0., 0.], 'std': [0., 0., 0.], 'valid': True}
   msg.liveLocationKalman.status = 'valid'
+  msg.liveLocationKalman.gpsOK = True
   return msg
 
 

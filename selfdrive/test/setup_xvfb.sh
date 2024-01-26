@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Sets up a virtual display for running map renderer and simulator without an X11 display
 
@@ -13,3 +13,7 @@ do
   echo "Waiting for Xvfb..."
   sleep 1
 done
+
+touch ~/.Xauthority
+export XDG_SESSION_TYPE="x11"
+xset -q

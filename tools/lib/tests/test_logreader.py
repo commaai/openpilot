@@ -3,8 +3,11 @@ import tempfile
 import numpy as np
 import unittest
 import pytest
-from parameterized import parameterized
 import requests
+
+from parameterized import parameterized
+from unittest import mock
+
 from openpilot.tools.lib.logreader import LogReader, parse_indirect, parse_slice, ReadMode
 from openpilot.tools.lib.route import SegmentRange
 
@@ -104,10 +107,14 @@ class TestLogReader(unittest.TestCase):
     self.assertEqual(qlog_len*2, qlog_len_2)
 
   @pytest.mark.slow
-  def test_multiple_iterations(self):
+  @mock.patch("openpilot.tools.lib.logreader._LogFileReader")
+  def test_multiple_iterations(self, init_mock):
     lr = LogReader(f"{TEST_ROUTE}/0/q")
     qlog_len1 = len(list(lr))
     qlog_len2 = len(list(lr))
+
+    # ensure we don't create multiple instances of _LogFileReader, which means downloading the files twice
+    self.assertEqual(init_mock.call_count, 1)
 
     self.assertEqual(qlog_len1, qlog_len2)
 

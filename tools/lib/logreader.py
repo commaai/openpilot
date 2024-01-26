@@ -12,7 +12,7 @@ import sys
 import urllib.parse
 import warnings
 
-from typing import Iterable, Iterator, List, Type
+from typing import Dict, Iterable, Iterator, List, Type
 from urllib.parse import parse_qs, urlparse
 
 from cereal import log as capnp_log
@@ -161,12 +161,14 @@ def direct_source(file_or_url):
   return [file_or_url]
 
 def get_invalid_files(files):
-  return [f for f in files if f is None or not file_exists(f)]
+  for f in files:
+    if f is None or not file_exists(f):
+      yield f
 
 def check_source(source, *args):
   try:
     files = source(*args)
-    assert len(get_invalid_files(files)) == 0
+    assert next(get_invalid_files(files), None) is None
     return True, files
   except Exception:
     return False, None
@@ -177,7 +179,6 @@ def auto_source(*args):
     valid, ret = check_source(source, *args)
     if valid:
       return ret
-
   return comma_api_source(*args)
 
 def parse_useradmin(identifier):
@@ -232,26 +233,31 @@ class LogReader:
     self.sort_by_time = sort_by_time
     self.only_union_types = only_union_types
 
+    self.__lrs: Dict[int, _LogFileReader] = {}
     self.reset()
 
-  def __iter__(self):
-    for identifier in self.logreader_identifiers:
-      yield from _LogFileReader(identifier)
+  def _get_lr(self, i):
+    if i not in self.__lrs:
+      self.__lrs[i] = _LogFileReader(self.logreader_identifiers[i])
+    return self.__lrs[i]
 
-  def _run_on_segment(self, func, identifier):
-    lr = _LogFileReader(identifier)
-    return func(lr)
+  def __iter__(self):
+    for i in range(len(self.logreader_identifiers)):
+      yield from self._get_lr(i)
+
+  def _run_on_segment(self, func, i):
+    return func(self._get_lr(i))
 
   def run_across_segments(self, num_processes, func):
     with multiprocessing.Pool(num_processes) as pool:
       ret = []
-      for p in pool.map(partial(self._run_on_segment, func), self.logreader_identifiers):
+      for p in pool.map(partial(self._run_on_segment, func), range(len(self.logreader_identifiers))):
         ret.extend(p)
       return ret
 
   def reset(self):
     self.logreader_identifiers = self._parse_identifiers(self.identifier)
-    invalid_count = len(get_invalid_files(self.logreader_identifiers))
+    invalid_count = len(list(get_invalid_files(self.logreader_identifiers)))
     assert invalid_count == 0, f"{invalid_count}/{len(self.logreader_identifiers)} invalid log(s) found, please ensure all logs \
 are uploaded or auto fallback to qlogs with '/a' selector at the end of the route name."
 
@@ -259,9 +265,9 @@ are uploaded or auto fallback to qlogs with '/a' selector at the end of the rout
   def from_bytes(dat):
     return _LogFileReader("", dat=dat)
 
-
-def get_first_message(lr: LogIterable, msg_type):
-  return next(filter(lambda m: m.which() == msg_type, lr), None)
+  def first(self, msg_type: str):
+    m = next(filter(lambda m: m.which() == msg_type, self), None)
+    return None if m is None else getattr(m, msg_type)
 
 
 if __name__ == "__main__":
