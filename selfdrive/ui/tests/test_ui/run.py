@@ -102,6 +102,8 @@ def setup_onroad_map(click, pm: PubMaster):
 
   click(500, 500)
 
+  time.sleep(UI_DELAY) # give time for the map to render
+
 def setup_onroad_sidebar(click, pm: PubMaster):
   setup_onroad_map(click, pm)
   click(500, 500)
