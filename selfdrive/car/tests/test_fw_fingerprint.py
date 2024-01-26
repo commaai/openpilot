@@ -212,7 +212,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
   def test_startup_timing(self):
     # Tests worse-case VIN query time and typical present ECU query time
-    vin_ref_time = 2.0
+    vin_ref_time = 1.2
     present_ecu_ref_time = 0.75
 
     def fake_get_ecu_addrs(*_, timeout):
