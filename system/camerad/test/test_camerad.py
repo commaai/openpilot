@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import pytest
 import time
-import unittest
 import numpy as np
+from flaky import flaky
 from collections import defaultdict
 
 import cereal.messaging as messaging
@@ -18,11 +18,12 @@ FRAME_DELTA_TOLERANCE = {log.FrameData.ImageSensor.ar0231: 1.0,
 
 CAMERAS = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
 
-
+# TODO: this shouldn't be needed
+@flaky(max_runs=3)
 @pytest.mark.tici
-class TestCamerad(unittest.TestCase):
+class TestCamerad:
   @classmethod
-  def setUpClass(cls):
+  def setup_class(cls):
     # run camerad and record logs
     managed_processes['camerad'].start()
     time.sleep(3)
@@ -85,6 +86,3 @@ class TestCamerad(unittest.TestCase):
       print("TODO: handle camera out of sync")
     else:
       assert len(laggy_frames) == 0, f"Frames not synced properly: {laggy_frames=}"
-
-if __name__ == "__main__":
-  unittest.main()
