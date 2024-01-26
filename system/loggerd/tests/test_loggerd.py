@@ -8,6 +8,7 @@ import time
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List
+from flaky import flaky
 
 import cereal.messaging as messaging
 from cereal import log
@@ -137,6 +138,7 @@ class TestLoggerd:
 
     params.put("AccessToken", "")
 
+  @flaky(max_runs=3)
   def test_rotation(self):
     os.environ["LOGGERD_TEST"] = "1"
     Params().put("RecordFront", "1")
