@@ -111,7 +111,6 @@ markdown-it-py = "*"
 timezonefinder = "*"
 setproctitle = "*"
 
-
 [tool.poetry.group.dev.dependencies]
 av = "*"
 azure-identity = "*"
@@ -121,6 +120,7 @@ control = "*"
 coverage = "*"
 dictdiffer = "*"
 ft4222 = "*"
+flaky = "*"
 hypothesis = "~6.47"
 inputs = "*"
 Jinja2 = "*"

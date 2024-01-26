@@ -152,8 +152,8 @@ class TestLoggerd:
       vipc_server.create_buffers_with_sizes(stream_type, 40, False, *(frame_spec))
     vipc_server.start_listener()
 
-    num_segs = 3
-    length = 2
+    num_segs = random.randint(2, 5)
+    length = random.randint(1, 3)
     os.environ["LOGGERD_SEGMENT_LENGTH"] = str(length)
     managed_processes["loggerd"].start()
     managed_processes["encoderd"].start()
