@@ -348,13 +348,16 @@ FW_LEN_CODE = re.compile(b'^[\x01-\x03]')  # highest seen is 3 chunks, 16 bytes 
 FW_CHUNK_LEN = 16
 
 # List of ECUs that are most unique across openpilot platforms
-# TODO: use hybrid ECU, splits similar ICE and hybrid variants
 # - fwdCamera: describes actual features related to ADAS. For example, on the Avalon it describes
 #    when TSS-P became standard, whether the car supports stop and go, and whether it's TSS2.
 #    On the RAV4, it describes the move to the radar doing ACC, and the use of LTA for lane keeping.
-# - abs: differentiates hybrid/ICE on most cars (Corolla TSS2 is an exception)
+#    Note that the platform codes & major versions do not describe features in plain text, only with
+#    matching against other seen FW versions in the database they can describe features.
+# - fwdRadar: sanity check against fwdCamera, commonly shares a platform code.
+#    For example the RAV4 2022's new radar architecture is shown for both with platform code.
+# - abs: differentiates hybrid/ICE on most cars (Corolla TSS2 is an exception, not used due to hybrid platform combination)
 # - eps: describes lateral API changes for the EPS, such as using LTA for lane keeping and rejecting LKA messages
-PLATFORM_CODE_ECUS = [Ecu.fwdCamera, Ecu.abs, Ecu.eps]
+PLATFORM_CODE_ECUS = (Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps)
 
 # These platforms have at least one platform code for all ECUs shared with another platform.
 FUZZY_EXCLUDED_PLATFORMS: set[CAR] = set()
