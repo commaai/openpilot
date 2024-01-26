@@ -93,7 +93,7 @@ routes = [
   CarTestRoute("f34a60d68d83b1e5|2020-10-06--14-35-55", HONDA.ACURA_RDX),
   CarTestRoute("54fd8451b3974762|2021-04-01--14-50-10", HONDA.RIDGELINE),
   CarTestRoute("2d5808fae0b38ac6|2021-09-01--17-14-11", HONDA.HONDA_E),
-  CarTestRoute("f44aa96ace22f34a|2021-12-22--06-22-31", HONDA.CIVIC_2022),
+  CarTestRoute("f44aa96ace22f34a|2021-12-22--06-22-31", HONDA.CIVIC_2022), # TODO: Replace with route where OP sends buttons to the cam when engaged
 
   CarTestRoute("87d7f06ade479c2e|2023-09-11--23-30-11", HYUNDAI.AZERA_6TH_GEN),
   CarTestRoute("66189dd8ec7b50e6|2023-09-20--07-02-12", HYUNDAI.AZERA_HEV_6TH_GEN),

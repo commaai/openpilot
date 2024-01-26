@@ -25,6 +25,7 @@ source_segments = [
   ("TOYOTA3", "f7d7e3538cda1a2a|2021-08-16--08-55-34--6"),     # TOYOTA.COROLLA_TSS2
   ("HONDA", "eb140f119469d9ab|2021-06-12--10-46-24--27"),      # HONDA.CIVIC (NIDEC)
   ("HONDA2", "7d2244f34d1bbcda|2021-06-25--12-25-37--26"),     # HONDA.ACCORD (BOSCH)
+  # TODO: Add 'HONDA3' for radarless cars with OP sending buttons to camera when engaged
   ("CHRYSLER", "4deb27de11bee626|2021-02-20--11-28-55--8"),    # CHRYSLER.PACIFICA_2018_HYBRID
   ("RAM", "17fc16d840fe9d21|2023-04-26--13-28-44--5"),         # CHRYSLER.RAM_1500
   ("SUBARU", "341dccd5359e3c97|2022-09-12--10-35-33--3"),      # SUBARU.OUTBACK
@@ -49,6 +50,7 @@ segments = [
   ("TOYOTA3", "regen7204CA3A498|2023-10-30--23-15-55--0"),
   ("HONDA", "regen048F8FA0B24|2023-10-30--23-15-53--0"),
   ("HONDA2", "regen7D2D3F82D5B|2023-10-30--23-15-55--0"),
+  # TODO: Add 'HONDA3' for radarless cars with OP sending buttons to camera when engaged
   ("CHRYSLER", "regen7125C42780C|2023-10-30--23-16-21--0"),
   ("RAM", "regen2731F3213D2|2023-10-30--23-18-11--0"),
   ("SUBARU", "regen86E4C1B4DDD|2023-10-30--23-18-14--0"),

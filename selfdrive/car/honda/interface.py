@@ -13,8 +13,9 @@ from openpilot.selfdrive.car.disable_ecu import disable_ecu
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 TransmissionType = car.CarParams.TransmissionType
-BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
-                CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
+CRUISE_BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
+                       CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
+SETTINGS_BUTTONS_DICT = {CruiseButtons.DISTANCE: ButtonType.gapAdjustCruise, CruiseButtons.LKAS: ButtonType.altButton1}
 
 
 class CarInterface(CarInterfaceBase):
@@ -312,8 +313,8 @@ class CarInterface(CarInterfaceBase):
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_body)
 
     ret.buttonEvents = [
-      *create_button_events(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT),
-      *create_button_events(self.CS.cruise_setting, self.CS.prev_cruise_setting, {1: ButtonType.altButton1}),
+      *create_button_events(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, CRUISE_BUTTONS_DICT),
+      *create_button_events(self.CS.cruise_setting, self.CS.prev_cruise_setting, SETTINGS_BUTTONS_DICT),
     ]
 
     # events

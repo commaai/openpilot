@@ -57,6 +57,11 @@ class CruiseButtons:
   DECEL_SET = 3
   CANCEL = 2
   MAIN = 1
+  NONE = 0
+
+# CRUISE_SETTINGS
+  DISTANCE = 3
+  LKAS = 1
 
 
 # See dbc files for info on values
