@@ -99,7 +99,7 @@ pyserial = "*"
 pyzmq = "*"
 requests = "*"
 scons = "*"
-sentry-sdk = "==1.28.1"  # needs to be updated with AGNOS
+sentry-sdk = "*"
 smbus2 = "*"
 sounddevice = "*"
 spidev = { version = "*", platform = "linux" }
