@@ -9,6 +9,7 @@ from cereal import car, log
 from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from openpilot.common.params import Params
+from openpilot.common.timeout import Timeout, TimeoutException
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcClient, VisionStreamType
 from openpilot.common.conversions import Conversions as CV
@@ -86,6 +87,14 @@ class Controls:
       # wait for one pandaState and one CAN packet
       print("Waiting for CAN messages...")
       get_one_can(self.can_sock)
+
+      # ensure sendcan is ready to send messages for FW query
+      try:
+        with Timeout(1):
+          while not self.pm.sock['sendcan'].all_readers_updated():
+            time.sleep(0.02)
+      except TimeoutException:
+        cloudlog.exception("timed out waiting for boardd to connect to sendcan")
 
       num_pandas = len(messaging.recv_one_retry(self.sm.sock['pandaStates']).pandaStates)
       experimental_long_allowed = self.params.get_bool("ExperimentalLongitudinalEnabled")
