@@ -215,7 +215,7 @@ class CarController:
         cruise = CruiseButtons.NONE
         if CS.cruise_buttons:
           cruise = CS.cruise_buttons
-        elif CS.cruise_setting and CS.cruise_setting is not CruiseButtons.LKAS:
+        elif CS.cruise_setting and CS.cruise_setting != CruiseButtons.LKAS:
           setting = CS.cruise_setting
         elif CC.cruiseControl.resume:
           cruise = CruiseButtons.RES_ACCEL
