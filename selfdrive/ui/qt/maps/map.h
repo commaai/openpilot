@@ -6,7 +6,8 @@
 #include <QGestureEvent>
 #include <QLabel>
 #include <QMap>
-#include <QMapboxGL>
+#include <QMapLibre/Map>
+#include <QMapLibre/Settings>
 #include <QMouseEvent>
 #include <QOpenGLWidget>
 #include <QPixmap>
@@ -27,7 +28,7 @@ class MapWindow : public QOpenGLWidget {
   Q_OBJECT
 
 public:
-  MapWindow(const QMapboxGLSettings &);
+  MapWindow(const QMapLibre::Settings &);
   ~MapWindow();
 
 private:
@@ -35,8 +36,8 @@ private:
   void paintGL() final;
   void resizeGL(int w, int h) override;
 
-  QMapboxGLSettings m_settings;
-  QScopedPointer<QMapboxGL> m_map;
+  QMapLibre::Settings m_settings;
+  QScopedPointer<QMapLibre::Map> m_map;
 
   void initLayers();
 
@@ -56,8 +57,8 @@ private:
   int interaction_counter = 0;
 
   // Position
-  std::optional<QMapbox::Coordinate> last_valid_nav_dest;
-  std::optional<QMapbox::Coordinate> last_position;
+  std::optional<QMapLibre::Coordinate> last_valid_nav_dest;
+  std::optional<QMapLibre::Coordinate> last_position;
   std::optional<float> last_bearing;
   FirstOrderFilter velocity_filter;
   bool locationd_valid = false;

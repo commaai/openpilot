@@ -18,7 +18,7 @@ const float MAX_PITCH = 50;
 const float MIN_PITCH = 0;
 const float MAP_SCALE = 2;
 
-MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), velocity_filter(0, 10, 0.05, false) {
+MapWindow::MapWindow(const QMapLibre::Settings &settings) : m_settings(settings), velocity_filter(0, 10, 0.05, false) {
   QObject::connect(uiState(), &UIState::uiUpdate, this, &MapWindow::updateState);
 
   map_overlay = new QWidget (this);
@@ -149,7 +149,7 @@ void MapWindow::updateState(const UIState &s) {
     locationd_valid = (locationd_pos.getValid() && locationd_orientation.getValid() && locationd_velocity.getValid() && pos_accurate_enough);
 
     if (locationd_valid) {
-      last_position = QMapbox::Coordinate(locationd_pos.getValue()[0], locationd_pos.getValue()[1]);
+      last_position = QMapLibre::Coordinate(locationd_pos.getValue()[0], locationd_pos.getValue()[1]);
       last_bearing = RAD2DEG(locationd_orientation.getValue()[2]);
       velocity_filter.update(std::max(10.0, locationd_velocity.getValue()[0]));
     }
@@ -186,10 +186,10 @@ void MapWindow::updateState(const UIState &s) {
   if (locationd_valid) {
     // Update current location marker
     auto point = coordinate_to_collection(*last_position);
-    QMapbox::Feature feature1(QMapbox::Feature::PointType, point, {}, {});
+    QMapLibre::Feature feature1(QMapLibre::Feature::PointType, point, {}, {});
     QVariantMap carPosSource;
     carPosSource["type"] = "geojson";
-    carPosSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature1);
+    carPosSource["data"] = QVariant::fromValue<QMapLibre::Feature>(feature1);
     m_map->updateSource("carPosSource", carPosSource);
 
     // Map bearing isn't updated when interacting, keep location marker up to date
@@ -230,10 +230,10 @@ void MapWindow::updateState(const UIState &s) {
     qWarning() << "Updating navLayer with new route";
     auto route = sm["navRoute"].getNavRoute();
     auto route_points = capnp_coordinate_list_to_collection(route.getCoordinates());
-    QMapbox::Feature feature(QMapbox::Feature::LineStringType, route_points, {}, {});
+    QMapLibre::Feature feature(QMapLibre::Feature::LineStringType, route_points, {}, {});
     QVariantMap navSource;
     navSource["type"] = "geojson";
-    navSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
+    navSource["data"] = QVariant::fromValue<QMapLibre::Feature>(feature);
     m_map->updateSource("navSource", navSource);
     m_map->setLayoutProperty("navLayer", "visibility", "visible");
 
@@ -256,24 +256,24 @@ void MapWindow::resizeGL(int w, int h) {
 }
 
 void MapWindow::initializeGL() {
-  m_map.reset(new QMapboxGL(this, m_settings, size(), 1));
+  m_map.reset(new QMapLibre::Map(this, m_settings, size(), 1));
 
   if (last_position) {
     m_map->setCoordinateZoom(*last_position, MAX_ZOOM);
   } else {
-    m_map->setCoordinateZoom(QMapbox::Coordinate(64.31990695292795, -149.79038934046247), MIN_ZOOM);
+    m_map->setCoordinateZoom(QMapLibre::Coordinate(64.31990695292795, -149.79038934046247), MIN_ZOOM);
   }
 
   m_map->setMargins({0, 350, 0, 50});
   m_map->setPitch(MIN_PITCH);
   m_map->setStyleUrl("mapbox://styles/commaai/clkqztk0f00ou01qyhsa5bzpj");
 
-  QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
+  QObject::connect(m_map.data(), &QMapLibre::Map::mapChanged, [=](QMapLibre::Map::MapChange change) {
     // set global animation duration to 0 ms so visibility changes are instant
-    if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingStyle) {
+    if (change == QMapLibre::Map::MapChange::MapChangeDidFinishLoadingStyle) {
       m_map->setTransitionOptions(0, 0);
     }
-    if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingMap) {
+    if (change == QMapLibre::Map::MapChange::MapChangeDidFinishLoadingMap) {
       loaded_once = true;
     }
   });
@@ -381,10 +381,10 @@ void MapWindow::updateDestinationMarker() {
   auto nav_dest = coordinate_from_param("NavDestination");
   if (nav_dest.has_value()) {
     auto point = coordinate_to_collection(*nav_dest);
-    QMapbox::Feature feature(QMapbox::Feature::PointType, point, {}, {});
+    QMapLibre::Feature feature(QMapLibre::Feature::PointType, point, {}, {});
     QVariantMap pinSource;
     pinSource["type"] = "geojson";
-    pinSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
+    pinSource["data"] = QVariant::fromValue<QMapLibre::Feature>(feature);
     m_map->updateSource("pinSource", pinSource);
     m_map->setPaintProperty("pinLayer", "visibility", "visible");
   } else {
