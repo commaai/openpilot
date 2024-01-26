@@ -72,7 +72,7 @@ class _LogFileReader:
 class ReadMode(enum.StrEnum):
   RLOG = "r" # only read rlogs
   QLOG = "q" # only read qlogs
-  SANETIZED = "s" # read sanitized rlogs, from the commaCarSegments database
+  SANITIZED = "s" # read sanitized rlogs, from the commaCarSegments database
   AUTO = "a" # default to rlogs, fallback to qlogs
   AUTO_INTERACIVE = "i" # default to rlogs, fallback to qlogs with a prompt from the user
 
@@ -175,7 +175,7 @@ def check_source(source, *args):
     return False, None
 
 def auto_source(sr: SegmentRange, mode=ReadMode.RLOG):
-  if mode == ReadMode.SANETIZED:
+  if mode == ReadMode.SANITIZED:
     return comma_car_segments_source(sr, mode)
 
   # Automatically determine viable source
