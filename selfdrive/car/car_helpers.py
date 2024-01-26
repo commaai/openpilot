@@ -150,7 +150,7 @@ def fingerprint(logcan, sendcan, num_pandas):
 
     exact_fw_match, fw_candidates = match_fw_to_car(car_fw)
   else:
-    vin, vin_rx_addr, vin_rx_bus = -1, -1, VIN_UNKNOWN
+    vin_rx_addr, vin_rx_bus, vin = -1, -1, VIN_UNKNOWN
     exact_fw_match, fw_candidates, car_fw = True, set(), []
     cached = False
 
