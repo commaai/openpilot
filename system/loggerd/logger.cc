@@ -130,7 +130,7 @@ static void log_sentinel(LoggerState *log, SentinelType type, int eixt_signal = 
 }
 
 LoggerState::LoggerState(const std::string &log_root) {
-  route_name = logger_get_identifier("RouteCount");
+  route_name = logger_get_route_name();
   route_path = log_root + "/" + route_name;
   init_data = logger_build_init_data();
 }
