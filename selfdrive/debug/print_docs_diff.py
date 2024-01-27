@@ -43,9 +43,24 @@ def process_markdown_file(file_path):
   with open(file_path, 'r') as file:
     markdown_content = file.read()
   car_info = extract_car_info_from_text(markdown_content)
-  car_info_lines = split_info_by_line(car_info)
+  # Remove headers by [2:]
+  car_info_lines = split_info_by_line(car_info)[2:]
+
   return convert_info_to_dict(car_info_lines)
 
+def extract_model_name_from_model_data(model_data):
+  # Hack for body
+  if model_data == 'body':
+    return model_data
+
+  # Extract only model name, without years and footnotes markup
+  match = re.compile(r"^(.*?)(?:\s\d{4}|\s\d{4}-\d{2}|\[)", flags=re.MULTILINE).search(model_data)
+
+  if match:
+    return match.group(0)
+  else:
+    raise ValueError("Can't extract model name from", model_data)
+    
 def compare_car_info(old_array, new_array):
   changes = {
     "additions": [],
@@ -58,9 +73,15 @@ def compare_car_info(old_array, new_array):
 
   for old_car in old_array:
     model = old_car['Model']
-    if model not in new_info_dict:
+    old_model_name = extract_model_name_from_model_data(model)
+
+    # Search for the same model name in new info
+    matched_model_in_new_info = next((key for key in new_info_dict if old_model_name in key), None)
+
+    if not matched_model_in_new_info:
       changes['deletions'].append(old_car)
     else:
+      model = matched_model_in_new_info
       modified = False
       current_state = new_info_dict[model].copy()
 
