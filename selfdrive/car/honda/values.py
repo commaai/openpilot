@@ -176,6 +176,24 @@ FW_QUERY_CONFIG = FwQueryConfig(
       bus=0,
       logging=True
     ),
+    Request(
+      [StdQueries.DEFAULT_DIAGNOSTIC_REQUEST, StdQueries.UDS_VERSION_REQUEST],
+      [StdQueries.DEFAULT_DIAGNOSTIC_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
+      bus=0,
+      logging=True
+    ),
+    Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.UDS_VERSION_REQUEST],
+      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
+      bus=2,
+      logging=True
+    ),
+    Request(
+      [StdQueries.DEFAULT_DIAGNOSTIC_REQUEST, StdQueries.UDS_VERSION_REQUEST],
+      [StdQueries.DEFAULT_DIAGNOSTIC_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
+      bus=2,
+      logging=True
+    ),
     # Log extra identifiers for current ECUs
     Request(
       [HONDA_VERSION_REQUEST],
