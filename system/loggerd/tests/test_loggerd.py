@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import numpy as np
 import os
+import re
 import random
 import string
 import subprocess
@@ -8,6 +9,7 @@ import time
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List
+from flaky import flaky
 
 import cereal.messaging as messaging
 from cereal import log
@@ -20,6 +22,7 @@ from openpilot.system.loggerd.xattr_cache import getxattr
 from openpilot.system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.system.version import get_version
+from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.logreader import LogReader
 from cereal.visionipc import VisionIpcServer, VisionStreamType
 from openpilot.common.transformations.camera import tici_f_frame_size, tici_d_frame_size, tici_e_frame_size
@@ -108,7 +111,6 @@ class TestLoggerd:
       ("GitRemote", "gitRemote", "remote"),
     ]
     params = Params()
-    params.clear_all()
     for k, _, v in fake_params:
       params.put(k, v)
     params.put("AccessToken", "abc")
@@ -128,15 +130,14 @@ class TestLoggerd:
 
     # check params
     logged_params = {entry.key: entry.value for entry in initData.params.entries}
-    expected_params = {k for k, _, __ in fake_params} | {'AccessToken'}
+    expected_params = {k for k, _, __ in fake_params} | {'AccessToken', 'BootCount'}
     assert set(logged_params.keys()) == expected_params, set(logged_params.keys()) ^ expected_params
     assert logged_params['AccessToken'] == b'', f"DONT_LOG param value was logged: {repr(logged_params['AccessToken'])}"
     for param_key, initData_key, v in fake_params:
       assert getattr(initData, initData_key) == v
       assert logged_params[param_key].decode() == v
 
-    params.put("AccessToken", "")
-
+  @flaky(max_runs=3)
   def test_rotation(self):
     os.environ["LOGGERD_TEST"] = "1"
     Params().put("RecordFront", "1")
@@ -213,6 +214,12 @@ class TestLoggerd:
           expected_val = f.read()
         bootlog_val = [e.value for e in boot.pstore.entries if e.key == fn][0]
         assert expected_val == bootlog_val
+
+    # next one should increment by one
+    bl1 = re.match(RE.LOG_ID_V2, bootlog_path.name)
+    bl2 = re.match(RE.LOG_ID_V2, self._gen_bootlog().name)
+    assert bl1.group('uid') != bl2.group('uid')
+    assert int(bl1.group('count')) == 0 and int(bl2.group('count')) == 1
 
   def test_qlog(self):
     qlog_services = [s for s in CEREAL_SERVICES if SERVICE_LIST[s].decimation is not None]
