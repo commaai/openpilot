@@ -230,7 +230,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 12.6  # as spec
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
-      ret.tire_stiffness_factor = 0.8467
+      ret.tireStiffnessFactor = 0.8467
 
     elif candidate in (CAR.ODYSSEY, CAR.ODYSSEY_CHN):
       ret.mass = 1900.
