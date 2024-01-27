@@ -69,7 +69,6 @@ legend = ["LAT_ACCEL_FACTOR", "MAX_LAT_ACCEL_MEASURED", "FRICTION"]
 "HYUNDAI STARIA 4TH GEN" = [1.8, 2.0, 0.15]
 "ACURA TLX 2021" = [1.7135052593468778, 0.3461280068322071, 0.21579936052863807]
 
-
 # Dashcam or fallback configured as ideal car
 "mock" = [10.0, 10, 0.0]
 
