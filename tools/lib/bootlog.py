@@ -16,7 +16,7 @@ class Bootlog:
     if not r:
       raise Exception(f"Unable to parse: {url}")
 
-    self._id = r.group('bootlog_id')
+    self._id = r.group('log_id')
     self._dongle_id = r.group('dongle_id')
 
   @property

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import numpy as np
 import os
+import re
 import random
 import string
 import subprocess
@@ -21,6 +22,7 @@ from openpilot.system.loggerd.xattr_cache import getxattr
 from openpilot.system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.system.version import get_version
+from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.logreader import LogReader
 from cereal.visionipc import VisionIpcServer, VisionStreamType
 from openpilot.common.transformations.camera import tici_f_frame_size, tici_d_frame_size, tici_e_frame_size
@@ -215,6 +217,12 @@ class TestLoggerd:
           expected_val = f.read()
         bootlog_val = [e.value for e in boot.pstore.entries if e.key == fn][0]
         assert expected_val == bootlog_val
+
+    # next one should increment by one
+    bl1 = re.match(RE.LOG_ID_V2, bootlog_path.name)
+    bl2 = re.match(RE.LOG_ID_V2, self._gen_bootlog().name)
+    assert bl1.group('uid') != bl2.group('uid')
+    assert int(bl1.group('count')) == 0 and int(bl2.group('count')) == 1
 
   def test_qlog(self):
     qlog_services = [s for s in CEREAL_SERVICES if SERVICE_LIST[s].decimation is not None]
