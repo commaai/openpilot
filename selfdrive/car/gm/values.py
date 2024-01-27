@@ -45,6 +45,12 @@ class CarControllerParams:
       # Camera transitions to MAX_ACC_REGEN from ZERO_GAS and uses friction brakes instantly
       max_regen_acceleration = 0.
 
+    elif CP.carFingerprint in SDGM_CAR:
+      self.MAX_GAS = 3400
+      self.MAX_ACC_REGEN = 1514
+      self.INACTIVE_REGEN = 1554
+      max_regen_acceleration = 0.
+
     else:
       self.MAX_GAS = 3072  # Safety limit, not ACC max. Stock ACC >4096 from standstill.
       self.MAX_ACC_REGEN = 1404  # Max ACC regen is slightly less than max paddle regen
@@ -75,6 +81,7 @@ class CAR(StrEnum):
   SILVERADO = "CHEVROLET SILVERADO 1500 2020"
   EQUINOX = "CHEVROLET EQUINOX 2019"
   TRAILBLAZER = "CHEVROLET TRAILBLAZER 2021"
+  XT4 = "CADILLAC XT4 2023"
 
 
 class Footnote(Enum):
@@ -89,8 +96,10 @@ class GMCarInfo(CarInfo):
   package: str = "Adaptive Cruise Control (ACC)"
 
   def init_make(self, CP: car.CarParams):
-    if CP.networkLocation == car.CarParams.NetworkLocation.fwdCamera:
+    if CP.networkLocation == car.CarParams.NetworkLocation.fwdCamera and CP.carFingerprint not in SDGM_CAR:
       self.car_parts = CarParts.common([CarHarness.gm])
+    elif CP.carFingerprint in SDGM_CAR:
+      self.car_parts = CarParts.common([CarHarness.gmsdgm])
     else:
       self.car_parts = CarParts.common([CarHarness.obd_ii])
       self.footnotes.append(Footnote.OBD_II)
@@ -117,6 +126,7 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
   ],
   CAR.EQUINOX: GMCarInfo("Chevrolet Equinox 2019-22"),
   CAR.TRAILBLAZER: GMCarInfo("Chevrolet Trailblazer 2021-22"),
+  CAR.XT4: GMCarInfo("Cadillac XT4 2023", "Driver Assist Package"),
 }
 
 
@@ -151,5 +161,8 @@ EV_CAR = {CAR.VOLT, CAR.BOLT_EUV}
 
 # We're integrated at the camera with VOACC on these cars (instead of ASCM w/ OBD-II harness)
 CAMERA_ACC_CAR = {CAR.BOLT_EUV, CAR.SILVERADO, CAR.EQUINOX, CAR.TRAILBLAZER}
+
+# We're integrated at the Saftey Data Gateway Module on these cars
+SDGM_CAR = {CAR.XT4}
 
 STEER_THRESHOLD = 1.0

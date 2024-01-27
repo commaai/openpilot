@@ -5,7 +5,7 @@ from openpilot.common.numpy_fast import mean
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.interfaces import CarStateBase
-from openpilot.selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD
+from openpilot.selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD, SDGM_CAR
 
 TransmissionType = car.CarParams.TransmissionType
 NetworkLocation = car.CarParams.NetworkLocation
@@ -30,8 +30,12 @@ class CarState(CarStateBase):
     ret = car.CarState.new_message()
 
     self.prev_cruise_buttons = self.cruise_buttons
-    self.cruise_buttons = pt_cp.vl["ASCMSteeringButton"]["ACCButtons"]
-    self.buttons_counter = pt_cp.vl["ASCMSteeringButton"]["RollingCounter"]
+    if self.CP.carFingerprint not in SDGM_CAR:
+      self.cruise_buttons = pt_cp.vl["ASCMSteeringButton"]["ACCButtons"]
+      self.buttons_counter = pt_cp.vl["ASCMSteeringButton"]["RollingCounter"]
+    else:
+      self.cruise_buttons = cam_cp.vl["ASCMSteeringButton"]["ACCButtons"]
+      self.buttons_counter = cam_cp.vl["ASCMSteeringButton"]["RollingCounter"]
     self.pscm_status = copy.copy(pt_cp.vl["PSCMStatus"])
     self.moving_backward = pt_cp.vl["EBCMWheelSpdRear"]["MovingBackward"] != 0
 
@@ -87,18 +91,32 @@ class CarState(CarStateBase):
     ret.steerFaultTemporary = self.lkas_status == 2
     ret.steerFaultPermanent = self.lkas_status == 3
 
-    # 1 - open, 0 - closed
-    ret.doorOpen = (pt_cp.vl["BCMDoorBeltStatus"]["FrontLeftDoor"] == 1 or
-                    pt_cp.vl["BCMDoorBeltStatus"]["FrontRightDoor"] == 1 or
-                    pt_cp.vl["BCMDoorBeltStatus"]["RearLeftDoor"] == 1 or
-                    pt_cp.vl["BCMDoorBeltStatus"]["RearRightDoor"] == 1)
+    if self.CP.carFingerprint not in SDGM_CAR:
+      # 1 - open, 0 - closed
+      ret.doorOpen = (pt_cp.vl["BCMDoorBeltStatus"]["FrontLeftDoor"] == 1 or
+                      pt_cp.vl["BCMDoorBeltStatus"]["FrontRightDoor"] == 1 or
+                      pt_cp.vl["BCMDoorBeltStatus"]["RearLeftDoor"] == 1 or
+                      pt_cp.vl["BCMDoorBeltStatus"]["RearRightDoor"] == 1)
 
-    # 1 - latched
-    ret.seatbeltUnlatched = pt_cp.vl["BCMDoorBeltStatus"]["LeftSeatBelt"] == 0
-    ret.leftBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 1
-    ret.rightBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 2
+      # 1 - latched
+      ret.seatbeltUnlatched = pt_cp.vl["BCMDoorBeltStatus"]["LeftSeatBelt"] == 0
+      ret.leftBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 1
+      ret.rightBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 2
 
-    ret.parkingBrake = pt_cp.vl["BCMGeneralPlatformStatus"]["ParkBrakeSwActive"] == 1
+      ret.parkingBrake = pt_cp.vl["BCMGeneralPlatformStatus"]["ParkBrakeSwActive"] == 1
+    else:
+        # 1 - open, 0 - closed
+      ret.doorOpen = (cam_cp.vl["BCMDoorBeltStatus"]["FrontLeftDoor"] == 1 or
+                      cam_cp.vl["BCMDoorBeltStatus"]["FrontRightDoor"] == 1 or
+                      cam_cp.vl["BCMDoorBeltStatus"]["RearLeftDoor"] == 1 or
+                      cam_cp.vl["BCMDoorBeltStatus"]["RearRightDoor"] == 1)
+
+      # 1 - latched
+      ret.seatbeltUnlatched = cam_cp.vl["BCMDoorBeltStatus"]["LeftSeatBelt"] == 0
+      ret.leftBlinker = cam_cp.vl["BCMTurnSignals"]["TurnSignals"] == 1
+      ret.rightBlinker = cam_cp.vl["BCMTurnSignals"]["TurnSignals"] == 2
+
+      ret.parkingBrake = cam_cp.vl["BCMGeneralPlatformStatus"]["ParkBrakeSwActive"] == 1
     ret.cruiseState.available = pt_cp.vl["ECMEngineStatus"]["CruiseMainOn"] != 0
     ret.espDisabled = pt_cp.vl["ESPStatus"]["TractionControlOn"] != 1
     ret.accFaulted = (pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.FAULTED or
@@ -108,7 +126,10 @@ class CarState(CarStateBase):
     ret.cruiseState.standstill = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.STANDSTILL
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
       ret.cruiseState.speed = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCSpeedSetpoint"] * CV.KPH_TO_MS
-      ret.stockAeb = cam_cp.vl["AEBCmd"]["AEBCmdActive"] != 0
+      if self.CP.carFingerprint not in SDGM_CAR:
+        ret.stockAeb = cam_cp.vl["AEBCmd"]["AEBCmdActive"] != 0
+      else:
+        ret.stockAeb = False
       # openpilot controls nonAdaptive when not pcmCruise
       if self.CP.pcmCruise:
         ret.cruiseState.nonAdaptive = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCCruiseState"] not in (2, 3)
@@ -120,31 +141,51 @@ class CarState(CarStateBase):
     messages = []
     if CP.networkLocation == NetworkLocation.fwdCamera:
       messages += [
-        ("AEBCmd", 10),
-        ("ASCMLKASteeringCmd", 10),
-        ("ASCMActiveCruiseControlStatus", 25),
-      ]
+          ("ASCMLKASteeringCmd", 10),
+          ("ASCMActiveCruiseControlStatus", 25),
+        ]
+      if CP.carFingerprint in SDGM_CAR:
+        messages += [
+          ("BCMTurnSignals", 1),
+          ("BCMDoorBeltStatus", 10),
+          ("BCMGeneralPlatformStatus", 10),
+          ("ASCMSteeringButton", 33),
+        ]
+      else:
+        messages += [
+          ("AEBCmd", 10),
+        ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus.CAMERA)
 
   @staticmethod
   def get_can_parser(CP):
     messages = [
-      ("BCMTurnSignals", 1),
-      ("ECMPRDNL2", 10),
       ("PSCMStatus", 10),
       ("ESPStatus", 10),
-      ("BCMDoorBeltStatus", 10),
-      ("BCMGeneralPlatformStatus", 10),
       ("EBCMWheelSpdFront", 20),
       ("EBCMWheelSpdRear", 20),
       ("EBCMFrictionBrakeStatus", 20),
-      ("AcceleratorPedal2", 33),
-      ("ASCMSteeringButton", 33),
-      ("ECMEngineStatus", 100),
       ("PSCMSteeringAngle", 100),
       ("ECMAcceleratorPos", 80),
     ]
+
+    if CP.carFingerprint in SDGM_CAR:
+      messages += [
+        ("ECMPRDNL2", 40),
+        ("AcceleratorPedal2", 40),
+        ("ECMEngineStatus", 80),
+      ]
+    else:
+      messages += [
+        ("ECMPRDNL2", 10),
+        ("AcceleratorPedal2", 33),
+        ("ECMEngineStatus", 100),
+        ("BCMTurnSignals", 1),
+        ("BCMDoorBeltStatus", 10),
+        ("BCMGeneralPlatformStatus", 10),
+        ("ASCMSteeringButton", 33),
+      ]
 
     # Used to read back last counter sent to PT by camera
     if CP.networkLocation == NetworkLocation.fwdCamera:
