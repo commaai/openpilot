@@ -114,8 +114,8 @@ class CarState(CarStateBase):
         ret.cruiseState.nonAdaptive = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCCruiseState"] not in (2, 3)
 
     if self.CP.enableBsm:
-      ret.leftBlindspot = pt_cp.vl["BCMBlindSpotMonitors"]["LeftBSM"] == 1
-      ret.rightBlindspot = pt_cp.vl["BCMBlindSpotMonitors"]["RightBSM"] == 1
+      ret.leftBlindspot = pt_cp.vl["BCMBlindSpotMonitor"]["LeftBSM"] == 1
+      ret.rightBlindspot = pt_cp.vl["BCMBlindSpotMonitor"]["RightBSM"] == 1
 
     return ret
 
@@ -151,7 +151,7 @@ class CarState(CarStateBase):
     ]
 
     if CP.enableBsm:
-      messages.append(("BCMBlindSpotMonitors", 10))
+      messages.append(("BCMBlindSpotMonitor", 10))
 
     # Used to read back last counter sent to PT by camera
     if CP.networkLocation == NetworkLocation.fwdCamera:
