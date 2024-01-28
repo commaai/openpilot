@@ -156,6 +156,7 @@ FW_VERSIONS = {
       b'36802-TVA-A150\x00\x00',
       b'36802-TVA-A160\x00\x00',
       b'36802-TVA-A170\x00\x00',
+      b'36802-TVA-A180\x00\x00',
       b'36802-TVA-A330\x00\x00',
       b'36802-TVC-A330\x00\x00',
       b'36802-TVE-H070\x00\x00',
@@ -831,6 +832,7 @@ FW_VERSIONS = {
       b'38897-THR-A020\x00\x00',
     ],
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
+      b'37805-5MR-3250\x00\x00',
       b'37805-5MR-4080\x00\x00',
       b'37805-5MR-4180\x00\x00',
       b'37805-5MR-A240\x00\x00',
@@ -980,6 +982,7 @@ FW_VERSIONS = {
       b'37805-RLV-C530\x00\x00',
       b'37805-RLV-C910\x00\x00',
       b'37805-RLV-F120\x00\x00',
+      b'37805-RLV-L080\x00\x00',
       b'37805-RLV-L090\x00\x00',
       b'37805-RLV-L160\x00\x00',
       b'37805-RLV-L180\x00\x00',
@@ -1102,6 +1105,7 @@ FW_VERSIONS = {
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TX4-A210\x00\x00',
       b'78109-TX4-A310\x00\x00',
+      b'78109-TX5-A210\x00\x00',
       b'78109-TX5-A310\x00\x00',
     ],
   },
