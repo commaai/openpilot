@@ -214,7 +214,7 @@ env = Environment(
     "#third_party",
     "#cereal",
     "#opendbc/can",
-    "#third_party/maplibre-native-qt/include",
+    "#third_party/maplibre-native-qt/src/core",
     "#third_party/maplibre-native-qt/build/src/core/include"
   ],
 
