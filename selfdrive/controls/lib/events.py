@@ -341,12 +341,12 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   # ********** events only containing alerts displayed in all states **********
 
   EventName.joystickDebug: {
-    # ET.WARNING: joystick_alert,
-    ET.PERMANENT: NormalPermanentAlert("Car Detected in Left Blindspot"),
+    ET.WARNING: joystick_alert,
+    ET.PERMANENT: NormalPermanentAlert("Joystick Mode"),
   },
 
   EventName.controlsInitializing: {
-    ET.PERMANENT: NoEntryAlert("Car Detected in Right Blindspot"),
+    ET.NO_ENTRY: NoEntryAlert("System Initializing"),
   },
 
   EventName.startup: {
