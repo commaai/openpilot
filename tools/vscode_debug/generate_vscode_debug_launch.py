@@ -50,7 +50,7 @@ def create_config(proc):
       "cwd": f"${{workspaceFolder}}/{path}",
       "environment": [],
       "preLaunchTask": "prompt-for-env",
-      "envFile": "${workspaceFolder}/tools/vscode_debug/.env.temp",
+      "envFile": "${workspaceFolder}/.env",
       "externalConsole": False,
       "MIMode": "gdb",
       "setupCommands": [
@@ -70,7 +70,7 @@ def create_config(proc):
       "args": [f"${{input:{input_id}}}"],
       "env": {},
       "preLaunchTask": "prompt-for-env",
-      "envFile": "${workspaceFolder}/tools/vscode_debug/.env.temp",
+      "envFile": "${workspaceFolder}/.env",
       "justMyCode" : False
     }
 

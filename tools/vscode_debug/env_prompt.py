@@ -15,9 +15,7 @@ def get_existing_env_vars(env_file_path):
   return existing_env_vars
 
 def main():
-  script_dir = os.path.dirname(__file__)
-  env_file_path = os.path.join(script_dir, ".env.temp")
-  existing_env_vars = get_existing_env_vars(env_file_path)
+  existing_env_vars = get_existing_env_vars(".env")
   # Set up readline history with existing environment variables
   for var in existing_env_vars:
       readline.add_history(f"{var}={existing_env_vars[var]}")
@@ -47,7 +45,7 @@ def main():
     env_value = input(f"Enter the value for {env_name}: ")
     existing_env_vars[env_name] = env_value
 
-  with open(env_file_path, "w", encoding='utf_8') as file:
+  with open(".env", "w", encoding='utf_8') as file:
     for name, value in existing_env_vars.items():
       file.write(f"{name}={value}\n")
 
