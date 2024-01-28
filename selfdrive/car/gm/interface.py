@@ -72,6 +72,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
     ret.autoResumeSng = False
+    ret.enableBsm = 0x142 in fingerprint[CanBus.POWERTRAIN]
 
     if candidate in EV_CAR:
       ret.transmissionType = TransmissionType.direct
@@ -251,8 +252,6 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 1.0
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-
-    ret.enableBsm = 0x142 in fingerprint[CanBus.POWERTRAIN]
 
     return ret
 
