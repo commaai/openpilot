@@ -15,14 +15,12 @@ A supported vehicle is one that just works when you install a comma device. All 
 # {{all_car_info | length}} Supported Cars
 
 <!-- ALL CAR INFO HERE -->
-
 |{{Column | map(attribute='value') | join('|') | replace(hardware_col_name, wide_hardware_col_name)}}|
 |---|---|---|{% for _ in range((Column | length) - 3) %}{{':---:|'}}{% endfor +%}
 {% for car_info in all_car_info %}
 |{% for column in Column %}{{car_info.get_column(column, star_icon, video_icon, footnote_tag)}}|{% endfor %}
 <!-- detail sentence:{{car_info.detail_sentence}} -->
 {% endfor %}
-
 <!-- ALL CAR INFO HERE ENDS -->
 
 ### Footnotes
