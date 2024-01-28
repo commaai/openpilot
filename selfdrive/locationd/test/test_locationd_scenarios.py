@@ -97,6 +97,7 @@ def run_scenarios(scenario, logs):
 
 
 @pytest.mark.xdist_group("test_locationd_scenarios")
+@pytest.mark.shared_download_cache
 class TestLocationdScenarios(unittest.TestCase):
   """
   Test locationd with different scenarios. In all these scenarios, we expect the following:

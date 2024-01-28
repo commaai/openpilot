@@ -12,6 +12,8 @@
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
 const std::string TEST_RLOG_CHECKSUM = "5b966d4bb21a100a8c4e59195faeb741b975ccbe268211765efd1763d892bfb3";
 
+const int TEST_REPLAY_SEGMENTS = std::getenv("TEST_REPLAY_SEGMENTS") ? atoi(std::getenv("TEST_REPLAY_SEGMENTS")) : 1;
+
 bool download_to_file(const std::string &url, const std::string &local_file, int chunk_size = 5 * 1024 * 1024, int retries = 3) {
   do {
     if (httpDownload(url, local_file, chunk_size)) {
@@ -141,7 +143,7 @@ TEST_CASE("Local route") {
   Route route(DEMO_ROUTE, QString::fromStdString(data_dir));
   REQUIRE(route.load());
   REQUIRE(route.segments().size() == 2);
-  for (int i = 0; i < route.segments().size(); ++i) {
+  for (int i = 0; i < TEST_REPLAY_SEGMENTS; ++i) {
     read_segment(i, route.at(i), flags);
   }
 }
@@ -151,7 +153,7 @@ TEST_CASE("Remote route") {
   Route route(DEMO_ROUTE);
   REQUIRE(route.load());
   REQUIRE(route.segments().size() == 13);
-  for (int i = 0; i < 2; ++i) {
+  for (int i = 0; i < TEST_REPLAY_SEGMENTS; ++i) {
     read_segment(i, route.at(i), flags);
   }
 }

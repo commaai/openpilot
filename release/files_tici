@@ -4,8 +4,6 @@ third_party/snpe/aarch64-ubuntu-gcc7.5/*
 third_party/mapbox-gl-native-qt/include/*
 third_party/acados/larch64/**
 
-system/timezoned.py
-
 system/camerad/cameras/camera_qcom2.cc
 system/camerad/cameras/camera_qcom2.h
 system/camerad/cameras/camera_util.cc

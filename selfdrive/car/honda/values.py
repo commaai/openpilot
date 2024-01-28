@@ -169,6 +169,13 @@ FW_QUERY_CONFIG = FwQueryConfig(
     ),
 
     # Data collection requests:
+    # Attempt to get the radarless Civic 2022+ camera FW
+    Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.UDS_VERSION_REQUEST],
+      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
+      bus=0,
+      logging=True
+    ),
     # Log extra identifiers for current ECUs
     Request(
       [HONDA_VERSION_REQUEST],
