@@ -18,7 +18,8 @@ def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
     # when radar is disabled, steering commands are sent directly to powertrain bus
     return get_pt_bus(car_fingerprint)
   # normally steering commands are sent to radar, which forwards them to powertrain bus
-  elif car_fingerprint == CAR.ACURA_TLX return 1
+  elif car_fingerprint == CAR.ACURA_TLX:
+    return 1
   return 0
 
 
