@@ -68,7 +68,6 @@ void MapWindow::initLayers() {
   if (!m_map->layerExists("navLayer")) {
     qDebug() << "Initializing navLayer";
     QVariantMap nav;
-    //nav["id"] = "navLayer";
     nav["type"] = "line";
     nav["source"] = "navSource";
     m_map->addLayer("navLayer", nav, "road-intersection");
@@ -84,7 +83,6 @@ void MapWindow::initLayers() {
     qDebug() << "Initializing pinLayer";
     m_map->addImage("default_marker", QImage("../assets/navigation/default_marker.svg"));
     QVariantMap pin;
-    //pin["id"] = "pinLayer";
     pin["type"] = "symbol";
     pin["source"] = "pinSource";
     m_map->addLayer("pinLayer", pin);
@@ -100,7 +98,6 @@ void MapWindow::initLayers() {
     m_map->addImage("label-arrow", QImage("../assets/images/triangle.svg"));
 
     QVariantMap carPos;
-    //carPos["id"] = "carPosLayer";
     carPos["type"] = "symbol";
     carPos["source"] = "carPosSource";
     m_map->addLayer("carPosLayer", carPos);

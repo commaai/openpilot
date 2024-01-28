@@ -273,7 +273,6 @@ void MapRenderer::initLayers() {
   if (!m_map->layerExists("navLayer")) {
     LOGD("Initializing navLayer");
     QVariantMap nav;
-    //nav["id"] = "navLayer";
     nav["type"] = "line";
     nav["source"] = "navSource";
     m_map->addLayer("navLayer", nav, "road-intersection");
@@ -297,6 +296,7 @@ extern "C" {
     assert(app);
 
     QMapLibre::Settings settings;
+    settings.setProviderTemplate(QMapLibre::Settings::ProviderTemplate::MapboxProvider);
     settings.setApiBaseUrl(maps_host == nullptr ? MAPS_HOST : maps_host);
     settings.setApiKey(token == nullptr ? get_mapbox_token() : token);
 
