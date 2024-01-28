@@ -21,7 +21,6 @@ ECU_ADDRESSES = {
   Ecu.shiftByWire: 0x732,  # Gear Shift Module (GSM)
 }
 
-
 ECU_FW_CORE = {
   Ecu.eps: [
     b"14D003",
@@ -36,9 +35,6 @@ ECU_FW_CORE = {
     b"14F397",  # Ford Q3
     b"14H102",  # Ford Q4
   ],
-  Ecu.engine: [
-    b"14C204",
-  ],
 }
 
 
@@ -52,7 +48,7 @@ class TestFordFW(unittest.TestCase):
   @parameterized.expand(FW_VERSIONS.items())
   def test_fw_versions(self, car_model: str, fw_versions: Dict[Tuple[capnp.lib.capnp._EnumModule, int, Optional[int]], Iterable[bytes]]):
     for (ecu, addr, subaddr), fws in fw_versions.items():
-      self.assertIn(ecu, ECU_ADDRESSES, "Unknown ECU")
+      self.assertIn(ecu, ECU_FW_CORE, "Unexpected ECU")
       self.assertEqual(addr, ECU_ADDRESSES[ecu], "ECU address mismatch")
       self.assertIsNone(subaddr, "Unexpected ECU subaddress")
 
