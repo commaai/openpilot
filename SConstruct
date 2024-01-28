@@ -146,6 +146,7 @@ else:
       f"#third_party/acados/{arch}/lib",
       f"#third_party/libyuv/{arch}/lib",
       f"#third_party/mapbox-gl-native-qt/{arch}",
+      "#third_party/maplibre-native-qt/build/src/core",
       "/usr/lib",
       "/usr/local/lib",
     ]
@@ -213,6 +214,8 @@ env = Environment(
     "#third_party",
     "#cereal",
     "#opendbc/can",
+    "#third_party/maplibre-native-qt/include",
+    "#third_party/maplibre-native-qt/build/src/core/include"
   ],
 
   CC='clang',

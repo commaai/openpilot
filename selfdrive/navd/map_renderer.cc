@@ -37,7 +37,7 @@ QMapLibre::Coordinate get_point_along_line(float lat, float lon, float bearing, 
 }
 
 
-MapRenderer::MapRenderer(const QMapLire::Settings &settings, bool online) : m_settings(settings) {
+MapRenderer::MapRenderer(const QMapLibre::Settings &settings, bool online) : m_settings(settings) {
   QSurfaceFormat fmt;
   fmt.setRenderableType(QSurfaceFormat::OpenGLES);
 
@@ -273,10 +273,10 @@ void MapRenderer::initLayers() {
   if (!m_map->layerExists("navLayer")) {
     LOGD("Initializing navLayer");
     QVariantMap nav;
-    nav["id"] = "navLayer";
+    //nav["id"] = "navLayer";
     nav["type"] = "line";
     nav["source"] = "navSource";
-    m_map->addLayer(nav, "road-intersection");
+    m_map->addLayer("navLayer", nav, "road-intersection");
     m_map->setPaintProperty("navLayer", "line-color", QColor("grey"));
     m_map->setPaintProperty("navLayer", "line-width", 5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");

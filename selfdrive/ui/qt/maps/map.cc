@@ -57,10 +57,10 @@ void MapWindow::initLayers() {
   if (!m_map->layerExists("modelPathLayer")) {
     qDebug() << "Initializing modelPathLayer";
     QVariantMap modelPath;
-    modelPath["id"] = "modelPathLayer";
+    //modelPath["id"] = "modelPathLayer";
     modelPath["type"] = "line";
     modelPath["source"] = "modelPathSource";
-    m_map->addLayer(modelPath);
+    m_map->addLayer("modelPathLayer", modelPath);
     m_map->setPaintProperty("modelPathLayer", "line-color", QColor("red"));
     m_map->setPaintProperty("modelPathLayer", "line-width", 5.0);
     m_map->setLayoutProperty("modelPathLayer", "line-cap", "round");
@@ -68,10 +68,10 @@ void MapWindow::initLayers() {
   if (!m_map->layerExists("navLayer")) {
     qDebug() << "Initializing navLayer";
     QVariantMap nav;
-    nav["id"] = "navLayer";
+    //nav["id"] = "navLayer";
     nav["type"] = "line";
     nav["source"] = "navSource";
-    m_map->addLayer(nav, "road-intersection");
+    m_map->addLayer("navLayer", nav, "road-intersection");
 
     QVariantMap transition;
     transition["duration"] = 400;  // ms
@@ -84,10 +84,10 @@ void MapWindow::initLayers() {
     qDebug() << "Initializing pinLayer";
     m_map->addImage("default_marker", QImage("../assets/navigation/default_marker.svg"));
     QVariantMap pin;
-    pin["id"] = "pinLayer";
+    //pin["id"] = "pinLayer";
     pin["type"] = "symbol";
     pin["source"] = "pinSource";
-    m_map->addLayer(pin);
+    m_map->addLayer("pinLayer", pin);
     m_map->setLayoutProperty("pinLayer", "icon-pitch-alignment", "viewport");
     m_map->setLayoutProperty("pinLayer", "icon-image", "default_marker");
     m_map->setLayoutProperty("pinLayer", "icon-ignore-placement", true);
@@ -100,10 +100,10 @@ void MapWindow::initLayers() {
     m_map->addImage("label-arrow", QImage("../assets/images/triangle.svg"));
 
     QVariantMap carPos;
-    carPos["id"] = "carPosLayer";
+    //carPos["id"] = "carPosLayer";
     carPos["type"] = "symbol";
     carPos["source"] = "carPosSource";
-    m_map->addLayer(carPos);
+    m_map->addLayer("carPosLayer", carPos);
     m_map->setLayoutProperty("carPosLayer", "icon-pitch-alignment", "map");
     m_map->setLayoutProperty("carPosLayer", "icon-image", "label-arrow");
     m_map->setLayoutProperty("carPosLayer", "icon-size", 0.5);
