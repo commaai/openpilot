@@ -6,6 +6,17 @@ from multiprocessing import Queue
 
 from openpilot.tools.sim.bridge.metadrive.metadrive_bridge import MetaDriveBridge
 
+def create_bridge(dual_camera, high_quality):
+  q: Any = Queue()
+
+  simulator_bridge = MetaDriveBridge(dual_camera, high_quality)
+  p = simulator_bridge.run(q)
+
+  return q, p
+
+def main():
+  _, p = create_bridge(True, False)
+  p.join()
 
 def parse_args(add_args=None):
   parser = argparse.ArgumentParser(description='Bridge between the simulator and openpilot.')
@@ -16,11 +27,9 @@ def parse_args(add_args=None):
   return parser.parse_args(add_args)
 
 if __name__ == "__main__":
-  q: Any = Queue()
   args = parse_args()
 
-  simulator_bridge = MetaDriveBridge(args)
-  p = simulator_bridge.run(q)
+  q, p = create_bridge(args.dual_camera, args.high_quality)
 
   if args.joystick:
     # start input poll for joystick
@@ -32,7 +41,5 @@ if __name__ == "__main__":
     from openpilot.tools.sim.lib.keyboard_ctrl import keyboard_poll_thread
 
     keyboard_poll_thread(q)
-
-  simulator_bridge.shutdown()
 
   p.join()
