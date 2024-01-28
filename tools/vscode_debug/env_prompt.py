@@ -5,7 +5,7 @@ def get_existing_env_vars(env_file_path):
   existing_env_vars = {}
   if os.path.exists(env_file_path):
     with open(env_file_path, "r", encoding='utf_8') as file:
-        print("Existing debug enviroment variables:")
+        print("Existing debug environment variables:")
         for line in file:
           line = line.strip()
           if line:
