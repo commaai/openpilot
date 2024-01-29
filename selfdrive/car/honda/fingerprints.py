@@ -832,6 +832,7 @@ FW_VERSIONS = {
       b'38897-THR-A020\x00\x00',
     ],
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
+      b'37805-5MR-3050\x00\x00',
       b'37805-5MR-3250\x00\x00',
       b'37805-5MR-4080\x00\x00',
       b'37805-5MR-4180\x00\x00',
