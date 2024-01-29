@@ -6,6 +6,13 @@ from panda.python import uds
 
 
 def main(route: str, addrs: list[int]):
+  """
+  TODO:
+  - highlight TX vs RX clearly
+  - disambiguate sendcan and can (useful to know if something sent on sendcan made it to the bus on can->128)
+  - print as fixed width table, easier to read
+  """
+
   if not route.endswith('/r'):
     route = route + '/r'
   lr = LogReader(route)
