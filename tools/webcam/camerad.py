@@ -25,7 +25,7 @@ class Camerad:
 
     self.cameras = []
     for c in CAMERAS:
-      cam = Camera(c.msg_name, c.stream_type, int(c.cam_id))
+      cam = Camera(c.msg_name, c.stream_type, c.cam_id)
       assert cam.cap.isOpened(), f"Can't find camera {c}"
       self.cameras.append(cam)
       self.vipc_server.create_buffers(c.stream_type, 20, False, cam.W, cam.H)
