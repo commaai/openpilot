@@ -484,6 +484,7 @@ FW_VERSIONS = {
   },
   CAR.TAOS_MK1: {
     (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8704E906025CK\xf1\x892228',
       b'\xf1\x8704E906027NJ\xf1\x891445',
       b'\xf1\x8704E906027NP\xf1\x891286',
       b'\xf1\x8705E906013BD\xf1\x892496',
@@ -492,6 +493,7 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927158EM\xf1\x893812',
       b'\xf1\x8709S927158BL\xf1\x893791',
+      b'\xf1\x8709S927158CR\xf1\x893924',
       b'\xf1\x8709S927158DN\xf1\x893946',
       b'\xf1\x8709S927158FF\xf1\x893876',
     ],

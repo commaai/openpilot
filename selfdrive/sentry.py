@@ -54,14 +54,13 @@ def init(project: SentryProject) -> bool:
   integrations = []
   if project == SentryProject.SELFDRIVE:
     integrations.append(ThreadingIntegration(propagate_hub=True))
-  else:
-    sentry_sdk.utils.MAX_STRING_LENGTH = 8192
 
   sentry_sdk.init(project.value,
                   default_integrations=False,
                   release=get_version(),
                   integrations=integrations,
                   traces_sample_rate=1.0,
+                  max_value_length=8192,
                   environment=env)
 
   sentry_sdk.set_user({"id": dongle_id})
