@@ -1,10 +1,11 @@
+from collections import namedtuple
 import pathlib
 import shutil
+import sys
 import jinja2
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import pyautogui
 import pywinctl
 import time
 import unittest
@@ -17,6 +18,7 @@ from cereal.messaging import SubMaster, PubMaster
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.transformations.camera import tici_f_frame_size
+from openpilot.selfdrive.navd.tests.test_map_renderer import gen_llk
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state
 from openpilot.tools.webcam.camera import Camera
@@ -44,8 +46,6 @@ def setup_common(click, pm: PubMaster):
 
   pm.send("deviceState", dat)
 
-  time.sleep(UI_DELAY)
-
 def setup_homescreen(click, pm: PubMaster):
   setup_common(click, pm)
 
@@ -53,14 +53,12 @@ def setup_settings_device(click, pm: PubMaster):
   setup_common(click, pm)
 
   click(100, 100)
-  time.sleep(UI_DELAY)
 
 def setup_settings_network(click, pm: PubMaster):
   setup_common(click, pm)
 
   setup_settings_device(click, pm)
   click(300, 600)
-  time.sleep(UI_DELAY)
 
 def setup_onroad(click, pm: PubMaster):
   setup_common(click, pm)
@@ -77,7 +75,7 @@ def setup_onroad(click, pm: PubMaster):
   server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, *tici_f_frame_size)
   server.start_listener()
 
-  time.sleep(UI_DELAY)
+  time.sleep(0.5) # give time for vipc server to start
 
   IMG = Camera.bgr2nv12(np.random.randint(0, 255, (*tici_f_frame_size,3), dtype=np.uint8))
   IMG_BYTES = IMG.flatten().tobytes()
@@ -96,17 +94,19 @@ def setup_onroad(click, pm: PubMaster):
     pm.send(msg.which(), msg)
     server.send(cam_meta.stream, IMG_BYTES, cs.frameId, cs.timestampSof, cs.timestampEof)
 
-  time.sleep(UI_DELAY)
-
 def setup_onroad_map(click, pm: PubMaster):
   setup_onroad(click, pm)
+
+  dat = gen_llk()
+  pm.send("liveLocationKalman", dat)
+
   click(500, 500)
-  time.sleep(UI_DELAY)
+
+  time.sleep(UI_DELAY) # give time for the map to render
 
 def setup_onroad_sidebar(click, pm: PubMaster):
   setup_onroad_map(click, pm)
   click(500, 500)
-  time.sleep(UI_DELAY)
 
 CASES = {
   "homescreen": setup_homescreen,
@@ -114,7 +114,7 @@ CASES = {
   "settings_network": setup_settings_network,
   "onroad": setup_onroad,
   "onroad_map": setup_onroad_map,
-  "onroad_map_sidebar": setup_onroad_sidebar
+  "onroad_sidebar": setup_onroad_sidebar
 }
 
 TEST_DIR = pathlib.Path(__file__).parent
@@ -127,16 +127,26 @@ class TestUI(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     os.environ["SCALE"] = "1"
+    sys.modules["mouseinfo"] = False
+
+  @classmethod
+  def tearDownClass(cls):
+    del sys.modules["mouseinfo"]
 
   def setup(self):
     self.sm = SubMaster(["uiDebug"])
-    self.pm = PubMaster(["deviceState", "pandaStates", "controlsState", 'roadCameraState', 'wideRoadCameraState'])
+    self.pm = PubMaster(["deviceState", "pandaStates", "controlsState", 'roadCameraState', 'wideRoadCameraState', 'liveLocationKalman'])
     while not self.sm.valid["uiDebug"]:
       self.sm.update(1)
-    time.sleep(UI_DELAY) # wait a bit more for the UI to finish rendering
-    self.ui = pywinctl.getWindowsWithTitle("ui")[0]
+    time.sleep(UI_DELAY) # wait a bit more for the UI to start rendering
+    try:
+      self.ui = pywinctl.getWindowsWithTitle("ui")[0]
+    except Exception as e:
+      print(f"failed to find ui window, assuming that it's in the top left (for Xvfb) {e}")
+      self.ui = namedtuple("bb", ["left", "top", "width", "height"])(0,0,2160,1080)
 
   def screenshot(self):
+    import pyautogui
     im = pyautogui.screenshot(region=(self.ui.left, self.ui.top, self.ui.width, self.ui.height))
     self.assertEqual(im.width, 2160)
     self.assertEqual(im.height, 1080)
@@ -145,7 +155,9 @@ class TestUI(unittest.TestCase):
     return img
 
   def click(self, x, y, *args, **kwargs):
+    import pyautogui
     pyautogui.click(self.ui.left + x, self.ui.top + y, *args, **kwargs)
+    time.sleep(UI_DELAY) # give enough time for the UI to react
 
   @parameterized.expand(CASES.items())
   @with_processes(["ui"])
@@ -153,6 +165,8 @@ class TestUI(unittest.TestCase):
     self.setup()
 
     setup_case(self.click, self.pm)
+
+    time.sleep(UI_DELAY) # wait a bit more for the UI to finish rendering
 
     im = self.screenshot()
     plt.imsave(SCREENSHOTS_DIR / f"{name}.png", im)

@@ -9,6 +9,7 @@ import os
 import pathlib
 import re
 import sys
+import tqdm
 import urllib.parse
 import warnings
 
@@ -72,6 +73,7 @@ class _LogFileReader:
 class ReadMode(enum.StrEnum):
   RLOG = "r" # only read rlogs
   QLOG = "q" # only read qlogs
+  SANITIZED = "s" # read from the commaCarSegments database
   AUTO = "a" # default to rlogs, fallback to qlogs
   AUTO_INTERACIVE = "i" # default to rlogs, fallback to qlogs with a prompt from the user
 
@@ -169,17 +171,24 @@ def check_source(source, *args):
   try:
     files = source(*args)
     assert next(get_invalid_files(files), None) is None
-    return True, files
-  except Exception:
-    return False, None
+    return None, files
+  except Exception as e:
+    return e, None
 
-def auto_source(*args):
+def auto_source(sr: SegmentRange, mode=ReadMode.RLOG):
+  if mode == ReadMode.SANITIZED:
+    return comma_car_segments_source(sr, mode)
+
+  exceptions = []
   # Automatically determine viable source
-  for source in [comma_car_segments_source, internal_source, openpilotci_source]:
-    valid, ret = check_source(source, *args)
-    if valid:
+  for source in [internal_source, openpilotci_source, comma_api_source, comma_car_segments_source]:
+    exception, ret = check_source(source, sr, mode)
+    if exception is None:
       return ret
-  return comma_api_source(*args)
+    else:
+      exceptions.append(exception)
+
+  raise Exception(f"auto_source could not find any valid source, exceptions for sources: {exceptions}")
 
 def parse_useradmin(identifier):
   if "useradmin.comma.ai" in identifier:
@@ -251,7 +260,8 @@ class LogReader:
   def run_across_segments(self, num_processes, func):
     with multiprocessing.Pool(num_processes) as pool:
       ret = []
-      for p in pool.map(partial(self._run_on_segment, func), range(len(self.logreader_identifiers))):
+      num_segs = len(self.logreader_identifiers)
+      for p in tqdm.tqdm(pool.imap(partial(self._run_on_segment, func), range(num_segs)), total=num_segs):
         ret.extend(p)
       return ret
 
