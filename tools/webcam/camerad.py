@@ -63,6 +63,11 @@ class Camerad:
     for t in threads:
       t.join()
 
-if __name__ == "__main__":
+
+def main():
   camerad = Camerad()
   camerad.run()
+
+
+if __name__ == "__main__":
+  main()
