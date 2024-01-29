@@ -22,6 +22,9 @@ FORMAT_ARG = re.compile("%[0-9]+")
 
 @parameterized_class(("name", "file"), translation_files.items())
 class TestTranslations(unittest.TestCase):
+  name: str
+  file: str
+
   @staticmethod
   def _read_translation_file(path, file):
     tr_file = os.path.join(path, f"{file}.ts")
@@ -30,12 +33,12 @@ class TestTranslations(unittest.TestCase):
 
   def test_missing_translation_files(self):
     self.assertTrue(os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{self.file}.ts")),
-                      f"{self.name} has no XML translation file, run selfdrive/ui/update_translations.py")
+                    f"{self.name} has no XML translation file, run selfdrive/ui/update_translations.py")
 
   def test_translations_updated(self):
     with tempfile.TemporaryDirectory() as tmpdir:
       shutil.copytree(TRANSLATIONS_DIR, tmpdir, dirs_exist_ok=True)
-      update_translations(plural_only=["main_en"], translations_dir=tmpdir)
+      update_translations(translation_files=[self.file], translations_dir=tmpdir)
 
       cur_translations = self._read_translation_file(TRANSLATIONS_DIR, self.file)
       new_translations = self._read_translation_file(tmpdir, self.file)

@@ -136,6 +136,7 @@ void CameraBuf::queue(size_t buf_idx) {
 
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, CameraState *c) {
   framed.setFrameId(frame_data.frame_id);
+  framed.setRequestId(frame_data.request_id);
   framed.setTimestampEof(frame_data.timestamp_eof);
   framed.setTimestampSof(frame_data.timestamp_sof);
   framed.setIntegLines(frame_data.integ_lines);

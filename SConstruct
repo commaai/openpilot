@@ -9,6 +9,9 @@ import SCons.Errors
 
 SCons.Warnings.warningAsException(True)
 
+# pending upstream fix - https://github.com/SCons/scons/issues/4461
+#SetOption('warn', 'all')
+
 TICI = os.path.isfile('/TICI')
 AGNOS = TICI
 
@@ -294,8 +297,11 @@ else:
   qt_env['QTDIR'] = qt_install_prefix
   qt_dirs = [
     f"{qt_install_headers}",
-    f"{qt_install_headers}/QtGui/5.12.8/QtGui",
   ]
+
+  qt_gui_path = os.path.join(qt_install_headers, "QtGui")
+  qt_gui_dirs = [d for d in os.listdir(qt_gui_path) if os.path.isdir(os.path.join(qt_gui_path, d))]
+  qt_dirs += [f"{qt_install_headers}/QtGui/{qt_gui_dirs[0]}/QtGui", ] if qt_gui_dirs else []
   qt_dirs += [f"{qt_install_headers}/Qt{m}" for m in qt_modules]
 
   qt_libs = [f"Qt5{m}" for m in qt_modules]

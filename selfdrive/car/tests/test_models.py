@@ -21,7 +21,9 @@ from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from openpilot.selfdrive.controls.controlsd import Controls
-from openpilot.selfdrive.test.openpilotci import get_url
+from openpilot.selfdrive.test.helpers import read_segment_list
+from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
+from openpilot.tools.lib.comma_car_segments import get_url
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import Route, SegmentName, RouteName
 
@@ -52,12 +54,9 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
         test_cases.extend(sorted((c.value, r) for r in routes_by_car.get(c, (None,))))
 
   else:
-    with open(os.path.join(BASEDIR, INTERNAL_SEG_LIST), "r") as f:
-      seg_list = f.read().splitlines()
-
-    seg_list_grouped = [(platform[2:], segment) for platform, segment in zip(seg_list[::2], seg_list[1::2], strict=True)]
-    seg_list_grouped = random.sample(seg_list_grouped, INTERNAL_SEG_CNT or len(seg_list_grouped))
-    for platform, segment in seg_list_grouped:
+    segment_list = read_segment_list(os.path.join(BASEDIR, INTERNAL_SEG_LIST))
+    segment_list = random.sample(segment_list, INTERNAL_SEG_CNT or len(segment_list))
+    for platform, segment in segment_list:
       segment_name = SegmentName(segment)
       test_cases.append((platform, CarTestRoute(segment_name.route_name.canonical_name, platform,
                                                 segment=segment_name.segment_num)))
@@ -65,6 +64,7 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
 
 
 @pytest.mark.slow
+@pytest.mark.shared_download_cache
 class TestCarModelBase(unittest.TestCase):
   car_model: Optional[str] = None
   test_route: Optional[CarTestRoute] = None
@@ -182,6 +182,8 @@ class TestCarModelBase(unittest.TestCase):
     cls.CP = cls.CarInterface.get_params(cls.car_model, cls.fingerprint, car_fw, experimental_long, docs=False)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
+
+    os.environ["COMMA_CACHE"] = DEFAULT_DOWNLOAD_CACHE_ROOT
 
   @classmethod
   def tearDownClass(cls):

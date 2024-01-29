@@ -34,7 +34,7 @@ PROCS = {
   "./encoderd": 17.0,
   "./camerad": 14.5,
   "./locationd": 11.0,
-  "./mapsd": (1.0, 10.0),
+  "./mapsd": (0.5, 10.0),
   "selfdrive.controls.plannerd": 11.0,
   "./ui": 18.0,
   "selfdrive.locationd.paramsd": 9.0,
@@ -53,7 +53,7 @@ PROCS = {
   "selfdrive.tombstoned": 0,
   "./logcatd": 0,
   "system.micd": 6.0,
-  "system.timezoned": 0,
+  "system.timed": 0,
   "selfdrive.boardd.pandad": 0,
   "selfdrive.statsd": 0.4,
   "selfdrive.navd.navd": 0.4,
@@ -82,7 +82,6 @@ TIMINGS = {
   "carState": [2.5, 0.35],
   "carControl": [2.5, 0.35],
   "controlsState": [2.5, 0.35],
-  "lateralPlan": [2.5, 0.5],
   "longitudinalPlan": [2.5, 0.5],
   "roadCameraState": [2.5, 0.35],
   "driverCameraState": [2.5, 0.35],
@@ -344,7 +343,7 @@ class TestOnroad(unittest.TestCase):
     result += "-----------------  MPC Timing ------------------\n"
     result += "------------------------------------------------\n"
 
-    cfgs = [("lateralPlan", 0.05, 0.05), ("longitudinalPlan", 0.05, 0.05)]
+    cfgs = [("longitudinalPlan", 0.05, 0.05),]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(m, s).solverExecutionTime for m in self.service_msgs[s]]
       self.assertLess(max(ts), instant_max, f"high '{s}' execution time: {max(ts)}")

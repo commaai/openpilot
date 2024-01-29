@@ -21,6 +21,7 @@ testpaths = [
   "selfdrive/thermald",
   "selfdrive/test/longitudinal_maneuvers",
   "selfdrive/test/process_replay/test_fuzzy.py",
+  "system/camerad",
   "system/hardware/tici",
   "system/loggerd",
   "system/proclogd",
@@ -87,8 +88,8 @@ json-rpc = "*"
 libusb1 = "*"
 numpy = "*"
 onnx = ">=1.14.0"
-onnxruntime = { version = ">=1.15.1", platform = "linux", markers = "platform_machine == 'aarch64'" }
-onnxruntime-gpu = { version = ">=1.15.1", platform = "linux", markers = "platform_machine == 'x86_64'" }
+onnxruntime = { version = ">=1.16.3", platform = "linux", markers = "platform_machine == 'aarch64'" }
+onnxruntime-gpu = { version = ">=1.16.3", platform = "linux", markers = "platform_machine == 'x86_64'" }
 psutil = "*"
 pyaudio = "*"
 pycapnp = "*"
@@ -98,7 +99,7 @@ pyserial = "*"
 pyzmq = "*"
 requests = "*"
 scons = "*"
-sentry-sdk = "==1.28.1"  # needs to be updated with AGNOS
+sentry-sdk = "*"
 smbus2 = "*"
 sounddevice = "*"
 spidev = { version = "*", platform = "linux" }
@@ -110,7 +111,6 @@ markdown-it-py = "*"
 timezonefinder = "*"
 setproctitle = "*"
 
-
 [tool.poetry.group.dev.dependencies]
 av = "*"
 azure-identity = "*"
@@ -120,12 +120,13 @@ control = "*"
 coverage = "*"
 dictdiffer = "*"
 ft4222 = "*"
+flaky = "*"
 hypothesis = "~6.47"
 inputs = "*"
 Jinja2 = "*"
 lru-dict = "*"
 matplotlib = "*"
-metadrive-simulator = { git = "https://github.com/metadriverse/metadrive.git", rev ="72e842cd1d025bf676e4af8797a01e4aa282109f", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
+metadrive-simulator = { version = "0.4.2.2", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
 mpld3 = "*"
 mypy = "*"
 myst-parser = "*"
@@ -135,8 +136,10 @@ parameterized = "^0.8"
 pprofile = "*"
 polyline = "*"
 pre-commit = "*"
-pyopencl = "*"
+pyautogui = "*"
+pyopencl = "==2023.1.4"  # 2024.1 is broken on arm64
 pygame = "*"
+pywinctl = "*"
 pyprof2calltree = "*"
 pytest = "*"
 pytest-cov = "*"
@@ -144,7 +147,6 @@ pytest-cpp = "*"
 pytest-subtests = "*"
 pytest-xdist = "*"
 pytest-timeout = "*"
-pytest-timeouts = "*"
 pytest-randomly = "*"
 ruff = "*"
 sphinx = "*"
