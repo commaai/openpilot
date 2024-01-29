@@ -24,9 +24,13 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\xbb,\xa0t\x07',
       b'\xd1,\xa0q\x07',
+      b'\xd9,\xa0@\x07',
+      b'\xd9,\xa0p\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\x00\xfe\xf7\x00\x00',
+      b'\x00\xfe\xf9\x00\x00',
+      b'\x01>\xf1\x00\x00',
       b'\x01\xfe\xf7\x00\x00',
       b'\x01\xfe\xf9\x00\x00',
       b'\x01\xfe\xfa\x00\x00',
@@ -138,6 +142,7 @@ FW_VERSIONS = {
       b'\xc5!as\x07',
       b'\xc5!dr\x07',
       b'\xc5!ds\x07',
+      b'\xc5!dt\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xe3\xd0\x081\x00',
@@ -175,6 +180,7 @@ FW_VERSIONS = {
       b'\x00\x00eb\x1f@ "',
       b'\x00\x00eq\x00\x00\x00\x00',
       b'\x00\x00eq\x1f@ "',
+      b'\x00\x00e\x87\x1f@ "',
       b'\x00\x00e\x8f\x00\x00\x00\x00',
       b'\x00\x00e\x8f\x1f@ )',
       b'\x00\x00e\x92\x00\x00\x00\x00',
@@ -471,6 +477,7 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xbc"`@\x07',
+      b'\xbc"`p\x07',
       b'\xbc"`q\x07',
       b'\xbc,\xa0q\x07',
       b'\xbc,\xa0u\x07',
