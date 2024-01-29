@@ -105,11 +105,14 @@ def match_fw_to_car_fuzzy(live_fw_versions, match_brand=None, log=True, exclude=
     return set()
 
 
-def match_fw_to_car_exact(live_fw_versions, match_brand=None, log=True) -> Set[str]:
+def match_fw_to_car_exact(live_fw_versions, match_brand=None, log=True, extra_fw_versions=None) -> Set[str]:
   """Do an exact FW match. Returns all cars that match the given
   FW versions for a list of "essential" ECUs. If an ECU is not considered
   essential the FW version can be missing to get a fingerprint, but if it's present it
   needs to match the database."""
+  if extra_fw_versions is None:
+    extra_fw_versions = {}
+
   invalid = set()
   candidates = {c: f for c, f in FW_VERSIONS.items() if
                 is_brand(MODEL_TO_BRAND[c], match_brand)}
@@ -117,12 +120,14 @@ def match_fw_to_car_exact(live_fw_versions, match_brand=None, log=True) -> Set[s
   for candidate, fws in candidates.items():
     config = FW_QUERY_CONFIGS[MODEL_TO_BRAND[candidate]]
     for ecu, expected_versions in fws.items():
+      expected_versions = expected_versions + extra_fw_versions.get(candidate, {}).get(ecu, [])
       ecu_type = ecu[0]
       addr = ecu[1:]
 
       found_versions = live_fw_versions.get(addr, set())
       if not len(found_versions):
         # Some models can sometimes miss an ecu, or show on two different addresses
+        # FIXME: this logic can be improved to be more specific, should require one of the two addresses
         if candidate in config.non_essential_ecus.get(ecu_type, []):
           continue
 
@@ -365,8 +370,8 @@ if __name__ == "__main__":
 
   t = time.time()
   print("Getting vin...")
-  vin_rx_addr, vin = get_vin(logcan, sendcan, 1, retry=10, debug=args.debug)
-  print(f'RX: {hex(vin_rx_addr)}, VIN: {vin}')
+  vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, (1, 0), retry=10, debug=args.debug)
+  print(f'RX: {hex(vin_rx_addr)}, BUS: {vin_rx_bus}, VIN: {vin}')
   print(f"Getting VIN took {time.time() - t:.3f} s")
   print()
 

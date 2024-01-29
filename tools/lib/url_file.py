@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 import threading
@@ -12,6 +13,7 @@ from openpilot.system.hardware.hw import Paths
 K = 1000
 CHUNK_SIZE = 1000 * K
 
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 def hash_256(link):
   hsh = str(sha256((link.split("?")[0]).encode('utf-8')).hexdigest())
@@ -57,6 +59,8 @@ class URLFile:
   def get_length_online(self):
     timeout = Timeout(connect=50.0, read=500.0)
     response = self._http_client.request('HEAD', self._url, timeout=timeout, preload_content=False)
+    if not (200 <= response.status <= 299):
+      return -1
     length = response.headers.get('content-length', 0)
     return int(length)
 

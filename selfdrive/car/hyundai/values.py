@@ -251,7 +251,8 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.KIA_NIRO_PHEV_2022: HyundaiCarInfo("Kia Niro Plug-in Hybrid 2022", "All", car_parts=CarParts.common([CarHarness.hyundai_f])),
   CAR.KIA_NIRO_HEV_2021: [
-    HyundaiCarInfo("Kia Niro Hybrid 2021-22", car_parts=CarParts.common([CarHarness.hyundai_f])),  # TODO: 2021 could be hyundai_d, verify
+    HyundaiCarInfo("Kia Niro Hybrid 2021", car_parts=CarParts.common([CarHarness.hyundai_d])),
+    HyundaiCarInfo("Kia Niro Hybrid 2022", car_parts=CarParts.common([CarHarness.hyundai_f])),
   ],
   CAR.KIA_NIRO_HEV_2ND_GEN: HyundaiCarInfo("Kia Niro Hybrid 2023", car_parts=CarParts.common([CarHarness.hyundai_a])),
   CAR.KIA_OPTIMA_G4: HyundaiCarInfo("Kia Optima 2017", "Advanced Smart Cruise Control",

@@ -25,7 +25,6 @@ def is_registered_device() -> bool:
 
 def register(show_spinner=False) -> Optional[str]:
   params = Params()
-  params.put("SubscriberInfo", HARDWARE.get_subscriber_info())
 
   IMEI = params.get("IMEI", encoding='utf8')
   HardwareSerial = params.get("HardwareSerial", encoding='utf8')

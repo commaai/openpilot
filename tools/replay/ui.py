@@ -55,7 +55,7 @@ def ui_thread(addr):
   top_down_surface = pygame.surface.Surface((UP.lidar_x, UP.lidar_y), 0, 8)
 
   sm = messaging.SubMaster(['carState', 'longitudinalPlan', 'carControl', 'radarState', 'liveCalibration', 'controlsState',
-                            'liveTracks', 'modelV2', 'liveParameters', 'lateralPlan'], addr=addr)
+                            'liveTracks', 'modelV2', 'liveParameters'], addr=addr)
 
   img = np.zeros((480, 640, 3), dtype='uint8')
   imgff = None

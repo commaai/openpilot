@@ -34,7 +34,7 @@ class TestLatControl(unittest.TestCase):
 
     llk = gen_llk()
     for _ in range(1000):
-      _, _, lac_log = controller.update(True, CS, VM, params, False, 1, 0, llk)
+      _, _, lac_log = controller.update(True, CS, VM, params, False, 1, llk)
 
     self.assertTrue(lac_log.saturated)
 

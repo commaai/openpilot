@@ -1,0 +1,34 @@
+<html>
+
+<style>
+ .column {
+  float: left;
+  width: 50%;
+  padding: 5px;
+}
+
+.row::after {
+  content: "";
+  clear: both;
+  display: table;
+} 
+
+.image {
+  width: 100%;
+}
+
+</style>
+
+{% for name, (image, ref_image) in cases.items() %}
+
+<h1>{{name}}</h1>
+<div class="row">
+  <div class="column">
+    <img class="image" src="{{ image }}"  />
+  </div>
+</div>
+
+<br>
+
+{% endfor %}
+</html>

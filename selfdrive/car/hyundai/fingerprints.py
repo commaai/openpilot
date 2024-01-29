@@ -198,6 +198,7 @@ FW_VERSIONS = {
   CAR.IONIQ_EV_2020: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00AEev SCC F-CUP      1.00 1.00 99110-G7200         ',
+      b'\xf1\x00AEev SCC F-CUP      1.00 1.00 99110-G7500         ',
       b'\xf1\x00AEev SCC F-CUP      1.00 1.01 99110-G7000         ',
     ],
     (Ecu.eps, 0x7d4, None): [
@@ -206,6 +207,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00AEE MFC  AT EUR LHD 1.00 1.00 95740-G2600 190730',
+      b'\xf1\x00AEE MFC  AT EUR LHD 1.00 1.00 95740-G2700 201027',
       b'\xf1\x00AEE MFC  AT EUR LHD 1.00 1.01 95740-G2600 190819',
       b'\xf1\x00AEE MFC  AT EUR LHD 1.00 1.03 95740-G2500 190516',
       b'\xf1\x00AEE MFC  AT EUR RHD 1.00 1.01 95740-G2600 190819',
@@ -1543,6 +1545,7 @@ FW_VERSIONS = {
       b'\xf1\x00NE1 MFC  AT EUR RHD 1.00 1.01 99211-GI010 211007',
       b'\xf1\x00NE1 MFC  AT EUR RHD 1.00 1.02 99211-GI010 211206',
       b'\xf1\x00NE1 MFC  AT KOR LHD 1.00 1.05 99211-GI010 220614',
+      b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.00 99211-GI020 230719',
       b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.01 99211-GI010 211007',
       b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.02 99211-GI010 211206',
       b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.03 99211-GI010 220401',
