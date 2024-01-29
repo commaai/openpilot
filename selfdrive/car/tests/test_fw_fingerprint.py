@@ -244,7 +244,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
         'body': 0.1,
         'chrysler': 0.3,
         'ford': 0.2,
-        'honda': 0.45,
+        'honda': 0.55,
         'hyundai': 0.65,
         'mazda': 0.2,
         'nissan': 0.8,

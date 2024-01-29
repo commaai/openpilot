@@ -345,7 +345,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   // setup two main layouts
   sidebar_widget = new QWidget;
   QVBoxLayout *sidebar_layout = new QVBoxLayout(sidebar_widget);
-  sidebar_layout->setMargin(0);
   panel_widget = new QStackedWidget();
 
   // close button
