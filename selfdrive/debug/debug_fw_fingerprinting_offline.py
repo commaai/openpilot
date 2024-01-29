@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.logreader import LogReader, ReadMode
 from panda.python import uds
 
 
@@ -13,9 +13,7 @@ def main(route: str, addrs: list[int]):
   - print as fixed width table, easier to read
   """
 
-  if not route.endswith('/r'):
-    route = route + '/r'
-  lr = LogReader(route)
+  lr = LogReader(route, default_mode=ReadMode.RLOG)
 
   start_mono_time = None
   prev_mono_time = 0
