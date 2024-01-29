@@ -39,7 +39,6 @@ def main(route: str, addrs: list[int]):
 
 
 if __name__ == "__main__":
-  # argparse:
   parser = argparse.ArgumentParser(description='View back and forth ISO-TP communication between various ECUs given an address')
   parser.add_argument('route', help='Route name')
   parser.add_argument('addrs', nargs='*', help='List of tx address to view (0x7e0 for engine)')
