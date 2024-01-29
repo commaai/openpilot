@@ -126,7 +126,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     ),
   ],
   # Only engine does not respond without OBD port, ignore it to allow exact matching
-  non_essential_ecus={Ecu.engine: [car for car in CAR]},
+  non_essential_ecus={Ecu.engine: list(CAR)},
   extra_ecus=[
     (Ecu.shiftByWire, 0x732, None),
   ],
