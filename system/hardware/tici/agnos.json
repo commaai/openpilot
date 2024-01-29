@@ -1,9 +1,9 @@
 [
   {
     "name": "boot",
-    "url": "https://commadist.azureedge.net/agnosupdate-staging/boot-1f107418811394bc29c59755534b586d0a06b52db594364f116e7c3a6604bf86.img.xz",
-    "hash": "1f107418811394bc29c59755534b586d0a06b52db594364f116e7c3a6604bf86",
-    "hash_raw": "1f107418811394bc29c59755534b586d0a06b52db594364f116e7c3a6604bf86",
+    "url": "https://commadist.azureedge.net/agnosupdate/boot-1cc21f31a7c09772fd759e6f2a614974bf4f2fc320c91a799ffadd11abc1f85f.img.xz",
+    "hash": "1cc21f31a7c09772fd759e6f2a614974bf4f2fc320c91a799ffadd11abc1f85f",
+    "hash_raw": "1cc21f31a7c09772fd759e6f2a614974bf4f2fc320c91a799ffadd11abc1f85f",
     "size": 15636480,
     "sparse": false,
     "full_check": true,
@@ -11,7 +11,7 @@
   },
   {
     "name": "abl",
-    "url": "https://commadist.azureedge.net/agnosupdate-staging/abl-eeb89a74c968a5a2ffce96f23158b72e03e2814adf72ef59d1200ba8ea5d2f39.img.xz",
+    "url": "https://commadist.azureedge.net/agnosupdate/abl-eeb89a74c968a5a2ffce96f23158b72e03e2814adf72ef59d1200ba8ea5d2f39.img.xz",
     "hash": "eeb89a74c968a5a2ffce96f23158b72e03e2814adf72ef59d1200ba8ea5d2f39",
     "hash_raw": "eeb89a74c968a5a2ffce96f23158b72e03e2814adf72ef59d1200ba8ea5d2f39",
     "size": 274432,
@@ -21,7 +21,7 @@
   },
   {
     "name": "xbl",
-    "url": "https://commadist.azureedge.net/agnosupdate-staging/xbl-bcef195b00a1ab685da601f4072722569773ab161e91c8753ad99ca4217a28f5.img.xz",
+    "url": "https://commadist.azureedge.net/agnosupdate/xbl-bcef195b00a1ab685da601f4072722569773ab161e91c8753ad99ca4217a28f5.img.xz",
     "hash": "bcef195b00a1ab685da601f4072722569773ab161e91c8753ad99ca4217a28f5",
     "hash_raw": "bcef195b00a1ab685da601f4072722569773ab161e91c8753ad99ca4217a28f5",
     "size": 3282672,
@@ -31,7 +31,7 @@
   },
   {
     "name": "xbl_config",
-    "url": "https://commadist.azureedge.net/agnosupdate-staging/xbl_config-19791056558c16f8dae787531b5e30b3b3db2ded9d666688df45ce1b91a72bac.img.xz",
+    "url": "https://commadist.azureedge.net/agnosupdate/xbl_config-19791056558c16f8dae787531b5e30b3b3db2ded9d666688df45ce1b91a72bac.img.xz",
     "hash": "19791056558c16f8dae787531b5e30b3b3db2ded9d666688df45ce1b91a72bac",
     "hash_raw": "19791056558c16f8dae787531b5e30b3b3db2ded9d666688df45ce1b91a72bac",
     "size": 98124,
@@ -41,7 +41,7 @@
   },
   {
     "name": "devcfg",
-    "url": "https://commadist.azureedge.net/agnosupdate-staging/devcfg-be44b73dda5be840b09d5347d536459e31098da3fea97596956c0bdad19bdf27.img.xz",
+    "url": "https://commadist.azureedge.net/agnosupdate/devcfg-be44b73dda5be840b09d5347d536459e31098da3fea97596956c0bdad19bdf27.img.xz",
     "hash": "be44b73dda5be840b09d5347d536459e31098da3fea97596956c0bdad19bdf27",
     "hash_raw": "be44b73dda5be840b09d5347d536459e31098da3fea97596956c0bdad19bdf27",
     "size": 40336,
@@ -51,7 +51,7 @@
   },
   {
     "name": "aop",
-    "url": "https://commadist.azureedge.net/agnosupdate-staging/aop-5d764611a683d6a738cf06a1dcf8a926d0f47b5117ad40d3054167de6dd8bd0f.img.xz",
+    "url": "https://commadist.azureedge.net/agnosupdate/aop-5d764611a683d6a738cf06a1dcf8a926d0f47b5117ad40d3054167de6dd8bd0f.img.xz",
     "hash": "5d764611a683d6a738cf06a1dcf8a926d0f47b5117ad40d3054167de6dd8bd0f",
     "hash_raw": "5d764611a683d6a738cf06a1dcf8a926d0f47b5117ad40d3054167de6dd8bd0f",
     "size": 184364,
@@ -61,17 +61,17 @@
   },
   {
     "name": "system",
-    "url": "https://commadist.azureedge.net/agnosupdate-staging/system-312cb37a1d86a7e2d98c397136c6190936221a1e16a6f803cdd46d147aa12716.img.xz",
-    "hash": "d1af8a0d10963406f0a099f88a1f445d3afc9a6b244e039523b3366a17b72ea2",
-    "hash_raw": "312cb37a1d86a7e2d98c397136c6190936221a1e16a6f803cdd46d147aa12716",
+    "url": "https://commadist.azureedge.net/agnosupdate/system-38402b90b65729f8a4feb729c8a862cdf306659a85f27431d3ff7e52d4027082.img.xz",
+    "hash": "5dc1718e21c49e4fa910fbb3b2321381f497b38335a0cf3ca923157d589abe89",
+    "hash_raw": "38402b90b65729f8a4feb729c8a862cdf306659a85f27431d3ff7e52d4027082",
     "size": 10737418240,
     "sparse": true,
     "full_check": false,
     "has_ab": true,
     "alt": {
-      "hash": "6d3abe24630c5cb24d17f57b1e53b0dfae0ceac5ea56f416d12b7d70bfe2643e",
-      "url": "https://commadist.azureedge.net/agnosupdate-staging/system-skip-chunks-312cb37a1d86a7e2d98c397136c6190936221a1e16a6f803cdd46d147aa12716.img.xz",
-      "size": 4077243568
+      "hash": "1809e36d8e376e0a0c8348e3f684aba4100fe0382042c051efd0e946af1ce696",
+      "url": "https://commadist.azureedge.net/agnosupdate/system-skip-chunks-38402b90b65729f8a4feb729c8a862cdf306659a85f27431d3ff7e52d4027082.img.xz",
+      "size": 4077270244
     }
   }
 ]
