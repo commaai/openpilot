@@ -99,7 +99,7 @@ pyserial = "*"
 pyzmq = "*"
 requests = "*"
 scons = "*"
-sentry-sdk = "==1.28.1"  # needs to be updated with AGNOS
+sentry-sdk = "*"
 smbus2 = "*"
 sounddevice = "*"
 spidev = { version = "*", platform = "linux" }
@@ -111,7 +111,6 @@ markdown-it-py = "*"
 timezonefinder = "*"
 setproctitle = "*"
 
-
 [tool.poetry.group.dev.dependencies]
 av = "*"
 azure-identity = "*"
@@ -121,12 +120,13 @@ control = "*"
 coverage = "*"
 dictdiffer = "*"
 ft4222 = "*"
+flaky = "*"
 hypothesis = "~6.47"
 inputs = "*"
 Jinja2 = "*"
 lru-dict = "*"
 matplotlib = "*"
-metadrive-simulator = { git = "https://github.com/metadriverse/metadrive.git", rev ="main", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
+metadrive-simulator = { version = "0.4.2.2", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
 mpld3 = "*"
 mypy = "*"
 myst-parser = "*"
@@ -137,7 +137,7 @@ pprofile = "*"
 polyline = "*"
 pre-commit = "*"
 pyautogui = "*"
-pyopencl = "*"
+pyopencl = "==2023.1.4"  # 2024.1 is broken on arm64
 pygame = "*"
 pywinctl = "*"
 pyprof2calltree = "*"

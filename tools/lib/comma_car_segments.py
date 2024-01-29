@@ -4,14 +4,13 @@ import requests
 # Forks with additional car support can fork the commaCarSegments repo on huggingface or host the LFS files themselves
 COMMA_CAR_SEGMENTS_REPO = os.environ.get("COMMA_CAR_SEGMENTS_REPO", "https://huggingface.co/datasets/commaai/commaCarSegments")
 COMMA_CAR_SEGMENTS_BRANCH = os.environ.get("COMMA_CAR_SEGMENTS_BRANCH", "main")
-
-COMMA_CAR_SEGMENTS_LFS_INSTANCE = os.environ.get("COMMA_CAR_SEGMENTS_LFS_INSTANCE", "https://huggingface.co/datasets/commaai/commaCarSegments")
+COMMA_CAR_SEGMENTS_LFS_INSTANCE = os.environ.get("COMMA_CAR_SEGMENTS_LFS_INSTANCE", COMMA_CAR_SEGMENTS_REPO)
 
 def get_comma_car_segments_database():
   return requests.get(get_repo_raw_url("database.json")).json()
 
 
-# Helpers related to interfacing with the openpilot-data repository, which contains a collection of public segments for users to perform validation on.
+# Helpers related to interfacing with the commaCarSegments repository, which contains a collection of public segments for users to perform validation on.
 
 def parse_lfs_pointer(text):
   header, lfs_version = text.splitlines()[0].split(" ")

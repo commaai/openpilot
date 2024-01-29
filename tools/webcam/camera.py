@@ -3,6 +3,10 @@ import numpy as np
 
 class Camera:
   def __init__(self, cam_type_state, stream_type, camera_id):
+    try:
+      camera_id = int(camera_id)
+    except ValueError: # allow strings, ex: /dev/video0
+      pass
     self.cam_type_state = cam_type_state
     self.stream_type = stream_type
     self.cur_frame_id = 0

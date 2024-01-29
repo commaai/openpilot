@@ -72,6 +72,7 @@ class _LogFileReader:
 class ReadMode(enum.StrEnum):
   RLOG = "r" # only read rlogs
   QLOG = "q" # only read qlogs
+  SANITIZED = "s" # read from the commaCarSegments database
   AUTO = "a" # default to rlogs, fallback to qlogs
   AUTO_INTERACIVE = "i" # default to rlogs, fallback to qlogs with a prompt from the user
 
@@ -161,24 +162,32 @@ def direct_source(file_or_url):
   return [file_or_url]
 
 def get_invalid_files(files):
-  return [f for f in files if f is None or not file_exists(f)]
+  for f in files:
+    if f is None or not file_exists(f):
+      yield f
 
 def check_source(source, *args):
   try:
     files = source(*args)
-    assert len(get_invalid_files(files)) == 0
-    return True, files
-  except Exception:
-    return False, None
+    assert next(get_invalid_files(files), None) is None
+    return None, files
+  except Exception as e:
+    return e, None
 
-def auto_source(*args):
+def auto_source(sr: SegmentRange, mode=ReadMode.RLOG):
+  if mode == ReadMode.SANITIZED:
+    return comma_car_segments_source(sr, mode)
+
+  exceptions = []
   # Automatically determine viable source
-  for source in [comma_car_segments_source, internal_source, openpilotci_source]:
-    valid, ret = check_source(source, *args)
-    if valid:
+  for source in [internal_source, openpilotci_source, comma_api_source, comma_car_segments_source]:
+    exception, ret = check_source(source, sr, mode)
+    if exception is None:
       return ret
+    else:
+      exceptions.append(exception)
 
-  return comma_api_source(*args)
+  raise Exception(f"auto_source could not find any valid source, exceptions for sources: {exceptions}")
 
 def parse_useradmin(identifier):
   if "useradmin.comma.ai" in identifier:
@@ -256,7 +265,7 @@ class LogReader:
 
   def reset(self):
     self.logreader_identifiers = self._parse_identifiers(self.identifier)
-    invalid_count = len(get_invalid_files(self.logreader_identifiers))
+    invalid_count = len(list(get_invalid_files(self.logreader_identifiers)))
     assert invalid_count == 0, f"{invalid_count}/{len(self.logreader_identifiers)} invalid log(s) found, please ensure all logs \
 are uploaded or auto fallback to qlogs with '/a' selector at the end of the route name."
 
