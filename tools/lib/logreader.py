@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import bz2
 from functools import partial
+import io
 import multiprocessing
 import capnp
 import enum
@@ -28,7 +29,7 @@ LogIterable = Iterable[LogMessage]
 
 
 class _LogFileReader:
-  def __init__(self, fn, canonicalize=True, only_union_types=False, sort_by_time=False, dat=None):
+  def __init__(self, fn, canonicalize=True, only_union_types=False, sort_by_time=False, dat=None, preload=False):
     self.data_version = None
     self._only_union_types = only_union_types
 
@@ -39,25 +40,35 @@ class _LogFileReader:
         # old rlogs weren't bz2 compressed
         raise Exception(f"unknown extension {ext}")
 
-      with FileReader(fn) as f:
-        dat = f.read()
+      self.reader = FileReader(fn)
+    else:
+      self.reader = io.BytesIO(dat)
 
-    if ext == ".bz2" or dat.startswith(b'BZh9'):
-      dat = bz2.decompress(dat)
+    header = self.reader.read(4)
+    self.reader.seek(0)
 
-    ents = capnp_log.Event.read_multiple_bytes(dat)
+    if ext == ".bz2" or header == b'BZh9':
+      self.compressed_reader = self.reader
+      self.reader = bz2.BZ2File(self.compressed_reader, "r")
+    else:
+      self.compressed_reader = None
 
-    _ents = []
+    if sort_by_time or preload:
+      _ents = self._read_events()
+      self._ents = list(sorted(_ents, key=lambda x: x.logMonoTime) if sort_by_time else _ents)
+      self._ts = [x.logMonoTime for x in self._ents]
+      self.reader.close()
+    else:
+      self._ents = self._read_events()
+
+  def _read_events(self) -> Iterable[LogMessage]:
     try:
-      for e in ents:
-        _ents.append(e)
+      for e in capnp_log.Event.read_multiple_bytes(self.reader):
+        yield e
     except capnp.KjException:
       warnings.warn("Corrupted events detected", RuntimeWarning, stacklevel=1)
 
-    self._ents = list(sorted(_ents, key=lambda x: x.logMonoTime) if sort_by_time else _ents)
-    self._ts = [x.logMonoTime for x in self._ents]
-
-  def __iter__(self) -> Iterator[capnp._DynamicStructReader]:
+  def __iter__(self) -> Iterator[LogMessage]:
     for ent in self._ents:
       if self._only_union_types:
         try:
@@ -67,6 +78,13 @@ class _LogFileReader:
           pass
       else:
         yield ent
+
+  def __del__(self):
+    if self.compressed_reader is not None and not self.compressed_reader.closed:
+      self.compressed_reader.close()
+
+    if not self.reader.closed:
+      self.reader.close()
 
 
 class ReadMode(enum.StrEnum):

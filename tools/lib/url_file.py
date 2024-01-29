@@ -33,6 +33,7 @@ class URLFile:
     self._length = None
     self._local_file = None
     self._debug = debug
+    self.closed = False
     #  True by default, false if FILEREADER_CACHE is defined, but can be overwritten by the cache input
     self._force_download = not int(os.environ.get("FILEREADER_CACHE", "0"))
     if cache is not None:
@@ -50,10 +51,7 @@ class URLFile:
     return self
 
   def __exit__(self, exc_type, exc_value, traceback):
-    if self._local_file is not None:
-      os.remove(self._local_file.name)
-      self._local_file.close()
-      self._local_file = None
+    self.close()
 
   @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
   def get_length_online(self):
@@ -156,3 +154,13 @@ class URLFile:
   @property
   def name(self):
     return self._url
+
+  def close(self):
+    if self._local_file is not None:
+      os.remove(self._local_file.name)
+      self._local_file.close()
+      self._local_file = None
+    self.closed = True
+
+  def fileno(self):
+    return 0
