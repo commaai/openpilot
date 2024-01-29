@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 
-from tools.lib.logreader import LogReader
+from openpilot.tools.lib.logreader import LogReader
 from panda.python import uds
 
 
@@ -27,7 +27,8 @@ def main(route: str, addrs: list[int]):
           if msg.logMonoTime != prev_mono_time:
             print()
             prev_mono_time = msg.logMonoTime
-          print(f"{msg.logMonoTime} rxaddr={can.address}, bus={can.src}, {round((msg.logMonoTime - start_mono_time) * 1e-6, 2)} ms, 0x{can.dat.hex()}, {can.dat}, {len(can.dat)=}")
+          print(f"{msg.logMonoTime} rxaddr={can.address}, bus={can.src}, {round((msg.logMonoTime - start_mono_time) * 1e-6, 2)} ms, " +
+                f"0x{can.dat.hex()}, {can.dat}, {len(can.dat)=}")
 
 
 if __name__ == "__main__":
