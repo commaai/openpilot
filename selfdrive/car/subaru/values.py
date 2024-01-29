@@ -180,6 +180,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       obd_multiplexing=False,
     ),
   ],
+  # We don't get the EPS from non-obd queries on gen2 cars
   non_essential_ecus={
     Ecu.eps: [c.value for c in GLOBAL_GEN2]
   }
