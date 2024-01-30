@@ -278,6 +278,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   parallel_addrs = []
   ecu_types = {}
 
+  # TODO: make this work with only extra_ecus (no platforms)
   for brand, brand_versions in versions.items():
     config = FW_QUERY_CONFIGS[brand]
     for ecu in brand_versions.values():
