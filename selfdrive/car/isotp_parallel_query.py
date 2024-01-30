@@ -9,6 +9,7 @@ from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_a
 
 
 class IsoTpParallelQuery:
+  # TODO: support different rx offsets per addr
   def __init__(self, sendcan, logcan, bus, addrs, request, response, response_offset=0x8, functional_addrs=None, debug=False, response_pending_timeout=10):
     self.sendcan = sendcan
     self.logcan = logcan
