@@ -59,5 +59,5 @@ FINGERPRINTS = {
 }
 
 FW_VERSIONS: dict[str, dict[tuple, list[bytes]]] = {
-  CAR.BOLT_EUV: {},
+  # CAR.BOLT_EUV: {},
 }

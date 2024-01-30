@@ -46,13 +46,8 @@ def build_fw_dict(fw_versions: List[capnp.lib.capnp._DynamicStructBuilder],
 
 
 def get_brand_addrs() -> Dict[str, Set[AddrType]]:
-  brand_addrs: DefaultDict[str, Set[AddrType]] = defaultdict(set)
-  for brand, cars in VERSIONS.items():
-    # Add ecus in database + extra ecus to match against
-    brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in FW_QUERY_CONFIGS[brand].extra_ecus}
-    for fw in cars.values():
-      brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in fw.keys()}
-  return dict(brand_addrs)
+  return {brand: config.get_all_ecus(VERSIONS[brand]) for
+          brand, config in FW_QUERY_CONFIGS.items()}
 
 
 def match_fw_to_car_fuzzy(live_fw_versions, match_brand=None, log=True, exclude=None):
@@ -119,8 +114,8 @@ def match_fw_to_car_exact(live_fw_versions, match_brand=None, log=True, extra_fw
 
   for candidate, fws in candidates.items():
     config = FW_QUERY_CONFIGS[MODEL_TO_BRAND[candidate]]
-    if not len(fws):
-      invalid.add(candidate)
+    # if not len(fws):
+    #   invalid.add(candidate)
 
     for ecu, expected_versions in fws.items():
       expected_versions = expected_versions + extra_fw_versions.get(candidate, {}).get(ecu, [])
