@@ -197,4 +197,3 @@ jobs:
                 console.log("Label 'in-bot-review' not found, ignoring");
               });
             }
-
