@@ -212,7 +212,8 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
   def test_startup_timing(self):
     # Tests worse-case VIN query time and typical present ECU query time
-    vin_ref_time = 1.2
+    best_vin_ref_time = 0.5  # assuming query is last one in the try
+    worst_vin_ref_time = 1.5
     present_ecu_ref_time = 0.75
 
     def fake_get_ecu_addrs(*_, timeout):
@@ -232,9 +233,16 @@ class TestFwFingerprintTiming(unittest.TestCase):
     self.total_time = 0.0
     with (mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", self.fake_get_data)):
       for _ in range(self.N):
-        get_vin(fake_socket, fake_socket, (0, 1))
-    self._assert_timing(self.total_time / self.N, vin_ref_time)
-    print(f'get_vin, query time={self.total_time / self.N} seconds')
+        get_vin(fake_socket, fake_socket)
+    self._assert_timing(self.total_time / self.N, worst_vin_ref_time)
+    print(f'get_vin worst case, query time={self.total_time / self.N} seconds')
+
+    self.total_time = 0.0
+    with (mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", self.fake_get_data)):
+      for _ in range(self.N):
+        get_vin(fake_socket, fake_socket, retry=1)
+    self._assert_timing(self.total_time / self.N, best_vin_ref_time)
+    print(f'get_vin best case, query time={self.total_time / self.N} seconds')
 
   @pytest.mark.timeout(60)
   def test_fw_query_timing(self):

@@ -15,34 +15,36 @@ def is_valid_vin(vin: str):
   return re.fullmatch(VIN_RE, vin) is not None
 
 
-def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
+def get_vin(logcan, sendcan, timeout=0.1, retry=3, debug=False):
   for i in range(retry):
-    for bus in buses:
-      for request, response, vin_addrs, functional_addrs, rx_offset in (
-        (StdQueries.GM_VIN_REQUEST, StdQueries.GM_VIN_RESPONSE, [0x24b], None, 0x400),
-        (StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE, STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
-        (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE, STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8)):
-        try:
-          query = IsoTpParallelQuery(sendcan, logcan, bus, vin_addrs, [request, ], [response, ], response_offset=rx_offset,
-                                     functional_addrs=functional_addrs, debug=debug)
-          results = query.get_data(timeout)
+    for request, response, bus, vin_addrs, functional_addrs, rx_offset in (
+      *[(StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE, bus, STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8) for bus in (0, 1)],
+      *[(StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE, bus, STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8) for bus in (0, 1)],
+      (StdQueries.GM_VIN_REQUEST, StdQueries.GM_VIN_RESPONSE, 0, [0x24b], None, 0x400),  # Bolt fwdCamera
+    ):
+      # print(request, response, bus, vin_addrs, functional_addrs, rx_offset)
+      # continue
+      try:
+        query = IsoTpParallelQuery(sendcan, logcan, bus, vin_addrs, [request, ], [response, ], response_offset=rx_offset,
+                                   functional_addrs=functional_addrs, debug=debug)
+        results = query.get_data(timeout)
 
-          for addr in vin_addrs:
-            vin = results.get((addr, None))
-            if vin is not None:
-              # Ford pads with null bytes
-              if len(vin) == 24:
-                vin = re.sub(b'\x00*$', b'', vin)
+        for addr in vin_addrs:
+          vin = results.get((addr, None))
+          if vin is not None:
+            # Ford pads with null bytes
+            if len(vin) == 24:
+              vin = re.sub(b'\x00*$', b'', vin)
 
-              # Honda Bosch response starts with a length, trim to correct length
-              if vin.startswith(b'\x11'):
-                vin = vin[1:18]
+            # Honda Bosch response starts with a length, trim to correct length
+            if vin.startswith(b'\x11'):
+              vin = vin[1:18]
 
-              return get_rx_addr_for_tx_addr(addr), bus, vin.decode()
+            return get_rx_addr_for_tx_addr(addr), bus, vin.decode()
 
-          cloudlog.error(f"vin query retry ({i+1}) ...")
-        except Exception:
-          cloudlog.exception("VIN query exception")
+        cloudlog.error(f"vin query retry ({i+1}) ...")
+      except Exception:
+        cloudlog.exception("VIN query exception")
 
   return -1, -1, VIN_UNKNOWN
 
@@ -53,7 +55,6 @@ if __name__ == "__main__":
 
   parser = argparse.ArgumentParser(description='Get VIN of the car')
   parser.add_argument('--debug', action='store_true')
-  parser.add_argument('--bus', type=int, default=1)
   parser.add_argument('--timeout', type=float, default=0.1)
   parser.add_argument('--retry', type=int, default=5)
   args = parser.parse_args()
@@ -62,5 +63,5 @@ if __name__ == "__main__":
   logcan = messaging.sub_sock('can')
   time.sleep(1)
 
-  vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, (args.bus,), args.timeout, args.retry, debug=args.debug)
+  vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, args.timeout, args.retry, debug=args.debug)
   print(f'RX: {hex(vin_rx_addr)}, BUS: {vin_rx_bus}, VIN: {vin}')
