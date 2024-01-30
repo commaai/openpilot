@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 import capnp
 import copy
-from collections import defaultdict
 from dataclasses import dataclass, field
 import struct
-from typing import Callable, DefaultDict, Dict, List, Optional, Set, Tuple
+from typing import Callable, Dict, List, Optional, Set, Tuple
 
 import panda.python.uds as uds
 
@@ -86,7 +85,7 @@ class FwQueryConfig:
   # Overrides and removes from essential ecus for specific models and ecus (exact matching)
   non_essential_ecus: Dict[capnp.lib.capnp._EnumModule, List[str]] = field(default_factory=dict)
   # Ecus added for data collection, not to be fingerprinted on
-  extra_ecus: list[EcuAddrSubAddr] = field(default_factory=list)
+  extra_ecus: List[Tuple[capnp.lib.capnp._EnumModule, int, Optional[int]]] = field(default_factory=list)
   # Function a brand can implement to provide better fuzzy matching. Takes in FW versions,
   # returns set of candidates. Only will match if one candidate is returned
   match_fw_to_car_fuzzy: Optional[Callable[[LiveFwVersions, OfflineFwVersions], Set[str]]] = None
