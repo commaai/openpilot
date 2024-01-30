@@ -21,6 +21,7 @@ ECU_ADDRESSES = {
   Ecu.shiftByWire: 0x732,  # Gear Shift Module (GSM)
 }
 
+
 ECU_FW_CORE = {
   Ecu.eps: [
     b"14D003",
@@ -34,6 +35,9 @@ ECU_FW_CORE = {
   Ecu.fwdCamera: [
     b"14F397",  # Ford Q3
     b"14H102",  # Ford Q4
+  ],
+  Ecu.engine: [
+    b"14C204",
   ],
 }
 
