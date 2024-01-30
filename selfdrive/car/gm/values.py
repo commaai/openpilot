@@ -145,10 +145,14 @@ class CanBus:
   DROPPED = 192
 
 
+# In a Data Module an identifier is a string which is used to identify an object,
+# either by itself or in conjunction with the identifiers of parent objects.
+# The identifier string must be one continuous string and cannot contain spaces
+# nor certain reserved characters or consist entirely of a reserved keyword.
 GM_SOFTWARE_MODULE_1_REQUEST = b'\x1a\xc1'
 GM_SOFTWARE_MODULE_2_REQUEST = b'\x1a\xc2'
 GM_SOFTWARE_MODULE_3_REQUEST = b'\x1a\xc3'
-GM_END_MODEL_PART_NUMBER_REQUEST = b'\x1a\xcb'
+GM_END_MODEL_PART_NUMBER_REQUEST = b'\x1a\xcb'  # end model part usually returns results online, base model not so much
 GM_BASE_MODEL_PART_NUMBER_REQUEST = b'\x1a\xcc'
 GM_FW_RESPONSE = b'\x5a'
 
