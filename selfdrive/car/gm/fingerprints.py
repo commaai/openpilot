@@ -1,10 +1,7 @@
 # ruff: noqa: E501
-from cereal import car
 from openpilot.selfdrive.car.gm.values import CAR
 
-Ecu = car.CarParams.Ecu
-
-# Trailblazer also matches as a SILVERADO, TODO: split with fw verisions
+# Trailblazer also matches as a SILVERADO, TODO: split with fw versions
 
 
 FINGERPRINTS = {
@@ -58,6 +55,4 @@ FINGERPRINTS = {
   }],
 }
 
-FW_VERSIONS: dict[str, dict[tuple, list[bytes]]] = {
-  # CAR.BOLT_EUV: {},
-}
+FW_VERSIONS: dict[str, dict[tuple, list[bytes]]] = {}
