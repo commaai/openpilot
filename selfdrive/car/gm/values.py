@@ -6,6 +6,8 @@ from typing import Dict, List, Union
 from cereal import car
 from openpilot.selfdrive.car import dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+
 Ecu = car.CarParams.Ecu
 
 
@@ -143,7 +145,41 @@ class CanBus:
   DROPPED = 192
 
 
+# In a Data Module, an identifier is a string used to recognize an object,
+# either by itself or together with the identifiers of parent objects.
+# Each returns a 4 byte hex representation of the decimal part number. `b"\x02\x8c\xf0'"` -> 42790951
+GM_SOFTWARE_MODULE_1_REQUEST = b'\x1a\xc1'
+GM_SOFTWARE_MODULE_2_REQUEST = b'\x1a\xc2'
+GM_SOFTWARE_MODULE_3_REQUEST = b'\x1a\xc3'
+# This DID is for identifying the part number that reflects the mix of hardware,
+# software, and calibrations in the ECU when it first arrives at the vehicle assembly plant.
+# If there's an Alpha Code, it's associated with this part number and stored in the DID $DB.
+GM_END_MODEL_PART_NUMBER_REQUEST = b'\x1a\xcb'
+GM_BASE_MODEL_PART_NUMBER_REQUEST = b'\x1a\xcc'
+GM_FW_RESPONSE = b'\x5a'
+
+GM_FW_REQUESTS = [
+  GM_SOFTWARE_MODULE_1_REQUEST,
+  GM_SOFTWARE_MODULE_2_REQUEST,
+  GM_SOFTWARE_MODULE_3_REQUEST,
+  GM_END_MODEL_PART_NUMBER_REQUEST,
+  GM_BASE_MODEL_PART_NUMBER_REQUEST,
+]
+
 GM_RX_OFFSET = 0x400
+
+FW_QUERY_CONFIG = FwQueryConfig(
+  requests=[request for req in GM_FW_REQUESTS for request in [
+    Request(
+      [StdQueries.SHORT_TESTER_PRESENT_REQUEST, req],
+      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, GM_FW_RESPONSE + bytes([req[-1]])],
+      rx_offset=GM_RX_OFFSET,
+      bus=0,
+      logging=True,
+    ),
+  ]],
+  extra_ecus=[(Ecu.fwdCamera, 0x24b, None)],
+)
 
 DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'))
 
