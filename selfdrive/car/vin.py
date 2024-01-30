@@ -20,7 +20,7 @@ def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
   for i in range(retry):
     for bus in buses:
       # TODO: can you send to 0x7df on bolt?
-      for request, response, vin_addrs, rx_offset in ((StdQueries.GM_VIN_REQUEST, StdQueries.GM_VIN_RESPONSE, STANDARD_VIN_ADDRS + [0x200], 0x400),
+      for request, response, vin_addrs, rx_offset in ((StdQueries.GM_VIN_REQUEST, StdQueries.GM_VIN_RESPONSE, STANDARD_VIN_ADDRS + [0x24b], 0x400),
                                                       (StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE, STANDARD_VIN_ADDRS, 0x8),
                                                       (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE, STANDARD_VIN_ADDRS, 0x8)):
         try:
