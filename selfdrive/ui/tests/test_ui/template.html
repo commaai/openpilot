@@ -1,34 +1,41 @@
+<!DOCTYPE html>
 <html>
-
+<head>
 <style>
- .column {
-  float: left;
-  width: 50%;
-  padding: 5px;
-}
+  .row {
+    display: flex; /* Use flexbox layout */
+    justify-content: space-between; /* Distributes space between items */
+  }
 
-.row::after {
-  content: "";
-  clear: both;
-  display: table;
-} 
+  .column {
+    flex: 1; /* Each column takes equal space */
+    padding: 5px; /* Optional: adds space around the images */
+  }
 
-.image {
-  width: 100%;
-}
-
+  .image {
+    width: 100%; /* Makes the image take full width of the column */
+    height: auto; /* Keeps the aspect ratio of the image */
+  }
 </style>
+</head>
+<body>
 
 {% for name, (image, ref_image) in cases.items() %}
 
 <h1>{{name}}</h1>
 <div class="row">
   <div class="column">
-    <img class="image" src="{{ image }}"  />
+    <h2>New</h2>
+    <img class="image" src="{{ image }}" />
+  </div>
+  <div class="column">
+    <h2>Master</h2>
+    <img class="image" src="../{{ image }}" />
   </div>
 </div>
-
 <br>
 
 {% endfor %}
+
+</body>
 </html>

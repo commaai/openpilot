@@ -1,0 +1,103 @@
+name: ui
+
+on:
+  push:
+    branches:
+      - test-ui
+  pull_request:
+
+concurrency:
+  group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+env:
+  PYTHONWARNINGS: error
+  BASE_IMAGE: openpilot-base
+  CL_BASE_IMAGE: openpilot-base-cl
+  AZURE_TOKEN: ${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}
+
+  DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+  BUILD: selfdrive/test/docker_build.sh base
+
+  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e CI=1 -e PRE_COMMIT_HOME=/tmp/pre-commit -e PYTHONWARNINGS=error -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/pre-commit:/tmp/pre-commit -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/bash -c
+
+  BUILD_CL: selfdrive/test/docker_build.sh cl
+
+  RUN_CL: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e CI=1 -e PYTHONWARNINGS=error -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $CL_BASE_IMAGE /bin/bash -c
+
+  PYTEST: pytest --continue-on-collection-errors --cov --cov-report=xml --cov-append --durations=0 --durations-min=5 --hypothesis-seed 0
+  
+
+jobs:
+  create_ui_report:
+    name: Create UI Report
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: ./.github/workflows/setup-with-retry
+      - name: Build openpilot
+        run: ${{ env.RUN }} "scons -j$(nproc)"
+      - name: Create Test Report
+        run: >
+            ${{ env.RUN }} "PYTHONWARNINGS=ignore &&
+                            source selfdrive/test/setup_xvfb.sh &&
+                            export MAPBOX_TOKEN='pk.eyJ1Ijoiam5ld2IiLCJhIjoiY2xxNW8zZXprMGw1ZzJwbzZneHd2NHljbSJ9.gV7VPRfbXFetD-1OVF0XZg' && 
+                            python selfdrive/ui/tests/test_ui/run.py"
+      - name: Upload Test Report
+        uses: actions/upload-artifact@v2
+        with:
+          name: report
+          path: selfdrive/ui/tests/test_ui/report
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@4.1.4
+        with:
+          branch: gh-pages
+          repository-name: ${{ github.repository }}
+          target-folder: pr-${{ github.sha }}
+          folder: selfdrive/ui/tests/test_ui/report
+    
+      - name: Append PR Link to Index
+        if: success()
+        run: |
+          git fetch origin gh-pages --depth=1
+          git checkout gh-pages
+          echo "<li><a href='pr-${{ github.sha }}/index.html'>PR #-${{ github.sha }}</a></li>" >> index.html
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add index.html
+          git commit -m "Update index.html with PR #-${{ github.sha }}"
+      
+      - name: Push Changes with Retry
+        if: success()
+        run: |
+          max_attempts=3
+          attempt=0
+          until git push origin gh-pages; do
+              git pull --rebase origin gh-pages
+              attempt=$((attempt+1))
+              if [ "$attempt" -ge "$max_attempts" ]; then
+                  echo "Push failed after $attempt attempts."
+                  exit 1
+              fi
+              sleep 3
+          done
+      - name: Post Update Comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const userLogin = context.payload.pull_request.user.login;
+            const repositoryName = context.payload.repository.name;
+            const ghPagesUrl = `https://${userLogin}.github.io/${repositoryName}/pr-${{ github.sha }}/index.html`;
+            const comment = `You can view the changes at: ${ghPagesUrl}`;
+            
+            github.rest.issues.createComment({
+              issue_number: prNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+           
