@@ -59,7 +59,5 @@ FINGERPRINTS = {
 }
 
 FW_VERSIONS: dict[str, dict[tuple, list[bytes]]] = {
-  CAR.BOLT_EUV: {
-    (Ecu.fwdCamera, 0x24b, None): [],
-  }
+  CAR.BOLT_EUV: {},
 }
