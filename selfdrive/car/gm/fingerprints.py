@@ -58,16 +58,6 @@ FINGERPRINTS = {
   }],
 }
 
-FW_VERSIONS = {
-  CAR.BOLT_EUV: {
-    # Require all to exact or fuzzy function match
-    (Ecu.fwdCamera, 0x24b, None): {
-      'SoftwareModule1': [
-        b'\x02\x8c\xf0)'  # 42790953
-      ],
-      'EndModelPartNumber': [
-        b"\x02\x8c\xf0'",  # 42790951
-      ],
-    }
-  },
+FW_VERSIONS: dict[str, dict[tuple, list[bytes]]] = {
+  CAR.BOLT_EUV: {},
 }

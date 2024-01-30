@@ -65,7 +65,6 @@ class StdQueries:
 
 @dataclass
 class Request:
-  label: str
   request: List[bytes]
   response: List[bytes]
   whitelist_ecus: List[int] = field(default_factory=list)

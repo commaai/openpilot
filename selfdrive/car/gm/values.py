@@ -169,24 +169,15 @@ GM_FW_REQUESTS = [
 GM_RX_OFFSET = 0x400
 
 FW_QUERY_CONFIG = FwQueryConfig(
-  requests=[
+  requests=[request for req in GM_FW_REQUESTS for request in [
     Request(
-      "EndModelPartNumber",
-      [StdQueries.SHORT_TESTER_PRESENT_REQUEST, GM_END_MODEL_PART_NUMBER_REQUEST],
-      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, GM_FW_RESPONSE + bytes([GM_END_MODEL_PART_NUMBER_REQUEST[-1]])],
+      [StdQueries.SHORT_TESTER_PRESENT_REQUEST, req],
+      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, GM_FW_RESPONSE + bytes([req[-1]])],
       rx_offset=GM_RX_OFFSET,
       bus=0,
       logging=True,
     ),
-    Request(
-      "SoftwareModule1",
-      [StdQueries.SHORT_TESTER_PRESENT_REQUEST, GM_SOFTWARE_MODULE_1_REQUEST],
-      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, GM_FW_RESPONSE + bytes([GM_SOFTWARE_MODULE_1_REQUEST[-1]])],
-      rx_offset=GM_RX_OFFSET,
-      bus=0,
-      logging=True,
-    ),
-  ],
+  ]],
   extra_ecus=[(Ecu.fwdCamera, 0x24b, None)],
 )
 
