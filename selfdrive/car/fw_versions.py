@@ -355,7 +355,7 @@ if __name__ == "__main__":
   pandaStates_sock = messaging.sub_sock('pandaStates')
   sendcan = messaging.pub_sock('sendcan')
 
-  # Set up params for boardd to work
+  # Set up params for boardd
   params = Params()
   params.delete("FirmwareQueryDone")
   params.put_bool("IsOnroad", False)
