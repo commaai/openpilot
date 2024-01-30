@@ -71,8 +71,6 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.vEgoCluster = ret.vEgo * 1.015  # minimum of all the cars
 
-    print('wheel speeds', ret.wheelSpeeds)
-    print(ret.vEgoRaw, 'close to zero',  abs(ret.vEgoRaw - 0))
     ret.standstill = abs(ret.vEgoRaw) < 2.5e-3
 
     ret.steeringAngleDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"] + cp.vl["STEER_ANGLE_SENSOR"]["STEER_FRACTION"]
