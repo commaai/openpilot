@@ -1,5 +1,8 @@
 # ruff: noqa: E501
+from cereal import car
 from openpilot.selfdrive.car.gm.values import CAR
+
+Ecu = car.CarParams.Ecu
 
 # Trailblazer also matches as a SILVERADO, TODO: split with fw verisions
 
@@ -56,5 +59,7 @@ FINGERPRINTS = {
 }
 
 FW_VERSIONS = {
-  CAR.BOLT_EUV: {}
+  CAR.BOLT_EUV: {
+    (Ecu.fwdCamera, 0x24b, None): [],
+  }
 }
