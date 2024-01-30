@@ -361,7 +361,7 @@ if __name__ == "__main__":
 
   # Set up params for boardd
   params = Params()
-  params.delete("FirmwareQueryDone")
+  params.remove("FirmwareQueryDone")
   params.put_bool("IsOnroad", False)
   time.sleep(0.2)  # thread is 10 Hz
   params.put_bool("IsOnroad", True)
@@ -380,7 +380,7 @@ if __name__ == "__main__":
 
   t = time.time()
   print("Getting vin...")
-  vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, (1, 0), retry=10, debug=args.debug)
+  vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, (0, 1), retry=10, debug=args.debug)
   print(f'RX: {hex(vin_rx_addr)}, BUS: {vin_rx_bus}, VIN: {vin}')
   print(f"Getting VIN took {time.time() - t:.3f} s")
   print()
