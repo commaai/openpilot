@@ -14,6 +14,9 @@ EcuAddrSubAddr = Tuple[int, int, Optional[int]]
 LiveFwVersions = Dict[AddrType, Set[bytes]]
 OfflineFwVersions = Dict[str, Dict[EcuAddrSubAddr, List[bytes]]]
 
+STANDARD_VIN_ADDRS = [0x7e0, 0x7e2, 0x18da10f1, 0x18da0ef1]  # engine, VMCU, 29-bit engine, PGM-FI
+
+
 def p16(val):
   return struct.pack("!H", val)
 
