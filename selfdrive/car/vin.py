@@ -16,8 +16,6 @@ def is_valid_vin(vin: str):
 
 
 def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
-  # if we're doing a functional query, addrs to process/wait for. we don't send to these
-  addrs = list(range(0x7e0, 0x7e8)) + list(range(0x18DA00F1, 0x18DB00F1, 0x100))
   for i in range(retry):
     for bus in buses:
       for request, response, vin_addrs, functional_addrs, rx_offset in (
@@ -25,7 +23,7 @@ def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
         (StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE, STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
         (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE, STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8)):
         try:
-          query = IsoTpParallelQuery(sendcan, logcan, bus, addrs, [request, ], [response, ], response_offset=rx_offset,
+          query = IsoTpParallelQuery(sendcan, logcan, bus, vin_addrs, [request, ], [response, ], response_offset=rx_offset,
                                      functional_addrs=functional_addrs, debug=debug)
           results = query.get_data(timeout)
 
