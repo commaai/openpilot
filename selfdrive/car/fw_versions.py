@@ -193,11 +193,6 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
   for obd_multiplexing in queries:
     queries[obd_multiplexing].insert(0, parallel_queries[obd_multiplexing])
 
-  print(f'{queries=}')
-  print(f'{responses=}')
-  print()
-  return
-
   ecu_responses = set()
   for obd_multiplexing in queries:
     set_obd_multiplexing(params, obd_multiplexing)
@@ -211,11 +206,6 @@ def get_brand_ecu_matches(ecu_rx_addrs):
 
   brand_addrs = {brand: config.get_all_ecus(VERSIONS[brand]) for
                  brand, config in FW_QUERY_CONFIGS.items()}
-
-  print(f'{brand_addrs=}')
-  print()
-  return
-
   brand_matches = {brand: set() for brand, _, _ in REQUESTS}
 
   brand_rx_offsets = {(brand, r.rx_offset) for brand, _, r in REQUESTS}
@@ -293,10 +283,6 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
           addrs.append([a])
 
   addrs.insert(0, parallel_addrs)
-  print(f'{ecu_types=}')
-  print(f'{addrs=}')
-  print()
-  return
 
   # Get versions and build capnp list to put into CarParams
   car_fw = []
