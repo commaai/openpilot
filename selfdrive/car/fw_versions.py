@@ -174,7 +174,7 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
     if r.bus > num_pandas * 4 - 1:
       continue
 
-    for ecu_type, addr, sub_addr in config.get_all_ecus(VERSIONS[brand], include_ecu_type=True):
+    for ecu_type, addr, sub_addr in config.get_all_ecus(VERSIONS[brand]):
       # Only query ecus in whitelist if whitelist is not empty
       if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
         a = (addr, sub_addr, r.bus)
@@ -204,7 +204,7 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
 def get_brand_ecu_matches(ecu_rx_addrs):
   """Returns dictionary of brands and matches with ECUs in their FW versions"""
 
-  brand_addrs = {brand: config.get_all_ecus(VERSIONS[brand]) for
+  brand_addrs = {brand: config.get_all_ecus(VERSIONS[brand], include_ecu_type=False) for
                  brand, config in FW_QUERY_CONFIGS.items()}
   brand_matches = {brand: set() for brand, _, _ in REQUESTS}
 
@@ -270,7 +270,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
   for brand, brand_versions in versions.items():
     config = FW_QUERY_CONFIGS[brand]
-    for ecu_type, addr, sub_addr in config.get_all_ecus(versions[brand], include_ecu_type=True):
+    for ecu_type, addr, sub_addr in config.get_all_ecus(brand_versions):
       a = (brand, addr, sub_addr)
       if a not in ecu_types:
         ecu_types[a] = ecu_type
