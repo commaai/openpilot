@@ -355,6 +355,13 @@ if __name__ == "__main__":
   pandaStates_sock = messaging.sub_sock('pandaStates')
   sendcan = messaging.pub_sock('sendcan')
 
+  # Set up params for boardd
+  params = Params()
+  params.delete("FirmwareQueryDone")
+  params.put_bool("IsOnroad", False)
+  time.sleep(0.2)  # thread is 10 Hz
+  params.put_bool("IsOnroad", True)
+
   extra: Any = None
   if args.scan:
     extra = {}
@@ -365,7 +372,6 @@ if __name__ == "__main__":
       extra[(Ecu.unknown, 0x750, i)] = []
     extra = {"any": {"debug": extra}}
 
-  time.sleep(1.)
   num_pandas = len(messaging.recv_one_retry(pandaStates_sock).pandaStates)
 
   t = time.time()
