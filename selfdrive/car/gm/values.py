@@ -6,6 +6,8 @@ from typing import Dict, List, Union
 from cereal import car
 from openpilot.selfdrive.car import dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+
 Ecu = car.CarParams.Ecu
 
 
@@ -143,7 +145,53 @@ class CanBus:
   DROPPED = 192
 
 
+GM_VIN_REQUEST = b'\x1a\x90'
+GM_SOFTWARE_MODULE_1_REQUEST = b'\x1a\xc1'
+GM_SOFTWARE_MODULE_2_REQUEST = b'\x1a\xc2'
+GM_SOFTWARE_MODULE_3_REQUEST = b'\x1a\xc3'
+GM_END_MODEL_PART_NUMBER_REQUEST = b'\x1a\xcb'
+GM_BASE_MODEL_PART_NUMBER_REQUEST = b'\x1a\xcc'
+GM_FW_RESPONSE = b'\x5a'
+
+GM_FW_REQUESTS = [
+  # GM_VIN_REQUEST,
+  GM_SOFTWARE_MODULE_1_REQUEST,
+  GM_SOFTWARE_MODULE_2_REQUEST,
+  GM_SOFTWARE_MODULE_3_REQUEST,
+  GM_END_MODEL_PART_NUMBER_REQUEST,
+  GM_BASE_MODEL_PART_NUMBER_REQUEST,
+]
+
 GM_RX_OFFSET = 0x400
+
+FW_QUERY_CONFIG = FwQueryConfig(
+  requests=[
+    Request(
+      [StdQueries.SHORT_TESTER_PRESENT_REQUEST] + GM_FW_REQUESTS,
+      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE] + [GM_FW_RESPONSE] * len(GM_FW_REQUESTS),
+      rx_offset=GM_RX_OFFSET,
+      bus=0,
+    ),
+    Request(
+      [StdQueries.SHORT_TESTER_PRESENT_REQUEST] + GM_FW_REQUESTS,
+      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE] + [GM_FW_RESPONSE] * len(GM_FW_REQUESTS),
+      rx_offset=GM_RX_OFFSET,
+      bus=1,
+    ),
+    Request(
+      [StdQueries.SHORT_TESTER_PRESENT_REQUEST] + GM_FW_REQUESTS,
+      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE] + [GM_FW_RESPONSE] * len(GM_FW_REQUESTS),
+      rx_offset=GM_RX_OFFSET,
+      bus=1,
+      obd_multiplexing=False,
+    ),
+  ],
+  extra_ecus=[(Ecu.fwdCamera, 0x24b, None)],
+)
+
+# FW_VERSIONS = {
+#   CAR.BOLT_EUV: {}
+# }
 
 DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'))
 
