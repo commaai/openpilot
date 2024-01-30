@@ -4,7 +4,7 @@ import re
 import cereal.messaging as messaging
 from panda.python.uds import get_rx_addr_for_tx_addr, FUNCTIONAL_ADDRS
 from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
-from openpilot.selfdrive.car.fw_query_definitions import StdQueries
+from openpilot.selfdrive.car.fw_query_definitions import STANDARD_VIN_ADDRS, StdQueries
 from openpilot.common.swaglog import cloudlog
 
 VIN_UNKNOWN = "0" * 17
@@ -16,16 +16,20 @@ def is_valid_vin(vin: str):
 
 
 def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
-  addrs = list(range(0x7e0, 0x7e8)) + list(range(0x18DA00F1, 0x18DB00F1, 0x100))  # addrs to process/wait for
-  valid_vin_addrs = [0x7e0, 0x7e2, 0x18da10f1, 0x18da0ef1]  # engine, VMCU, 29-bit engine, PGM-FI
+  # if we're doing a functional query, addrs to process/wait for. we don't send to these
+  addrs = list(range(0x7e0, 0x7e8)) + list(range(0x18DA00F1, 0x18DB00F1, 0x100))
   for i in range(retry):
     for bus in buses:
-      for request, response in ((StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE), (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE)):
+      for request, response, vin_addrs, functional_addrs, rx_offset in (
+        (StdQueries.GM_VIN_REQUEST, StdQueries.GM_VIN_RESPONSE, [0x24b], None, 0x400),
+        (StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE, STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
+        (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE, STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8)):
         try:
-          query = IsoTpParallelQuery(sendcan, logcan, bus, addrs, [request, ], [response, ], functional_addrs=FUNCTIONAL_ADDRS, debug=debug)
+          query = IsoTpParallelQuery(sendcan, logcan, bus, addrs, [request, ], [response, ], response_offset=rx_offset,
+                                     functional_addrs=functional_addrs, debug=debug)
           results = query.get_data(timeout)
 
-          for addr in valid_vin_addrs:
+          for addr in vin_addrs:
             vin = results.get((addr, None))
             if vin is not None:
               # Ford pads with null bytes
