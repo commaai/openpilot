@@ -271,22 +271,18 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   parallel_addrs = []
   ecu_types = {}
 
-  # TODO: make this work with only extra_ecus (no platforms)
-  for brand, brand_versions in versions.items():
-    config = FW_QUERY_CONFIGS[brand]
-    for ecu in brand_versions.values():
-      # Each brand can define extra ECUs to query for data collection
-      for ecu_type, addr, sub_addr in list(ecu) + config.extra_ecus:
-        a = (brand, addr, sub_addr)
-        if a not in ecu_types:
-          ecu_types[a] = ecu_type
+  for brand, config in FW_QUERY_CONFIGS.items():
+    for ecu_type, addr, sub_addr in config.get_all_ecus(versions[brand], include_ecu_type=True):
+      a = (brand, addr, sub_addr)
+      if a not in ecu_types:
+        ecu_types[a] = ecu_type
 
-        if sub_addr is None:
-          if a not in parallel_addrs:
-            parallel_addrs.append(a)
-        else:
-          if [a] not in addrs:
-            addrs.append([a])
+      if sub_addr is None:
+        if a not in parallel_addrs:
+          parallel_addrs.append(a)
+      else:
+        if [a] not in addrs:
+          addrs.append([a])
 
   addrs.insert(0, parallel_addrs)
 
