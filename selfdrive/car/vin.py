@@ -16,12 +16,13 @@ def is_valid_vin(vin: str):
 
 
 def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
-  addrs = list(range(0x7e0, 0x7e8)) + list(range(0x18DA00F1, 0x18DB00F1, 0x100))  # addrs to process/wait for
+  addrs = [0x200] + list(range(0x7e0, 0x7e8)) + list(range(0x18DA00F1, 0x18DB00F1, 0x100))  # addrs to process/wait for
   for i in range(retry):
     for bus in buses:
-      for request, response, vin_addrs, rx_offset in ((StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE, STANDARD_VIN_ADDRS, 0x8),
-                                                      (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE, STANDARD_VIN_ADDRS, 0x8),
-                                                      (StdQueries.GM_VIN_REQUEST, StdQueries.GM_VIN_RESPONSE, [0x200], 0x400)):
+      # TODO: can you send to 0x7df on bolt?
+      for request, response, vin_addrs, rx_offset in ((StdQueries.GM_VIN_REQUEST, StdQueries.GM_VIN_RESPONSE, STANDARD_VIN_ADDRS + [0x200], 0x400),
+                                                      (StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE, STANDARD_VIN_ADDRS, 0x8),
+                                                      (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE, STANDARD_VIN_ADDRS, 0x8)):
         try:
           query = IsoTpParallelQuery(sendcan, logcan, bus, addrs, [request, ], [response, ], functional_addrs=FUNCTIONAL_ADDRS, debug=debug)
           results = query.get_data(timeout)

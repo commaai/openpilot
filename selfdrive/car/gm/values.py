@@ -189,10 +189,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
   extra_ecus=[(Ecu.fwdCamera, 0x24b, None)],
 )
 
-# FW_VERSIONS = {
-#   CAR.BOLT_EUV: {}
-# }
-
 DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'))
 
 EV_CAR = {CAR.VOLT, CAR.BOLT_EUV}
