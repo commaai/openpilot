@@ -137,7 +137,7 @@ pprofile = "*"
 polyline = "*"
 pre-commit = "*"
 pyautogui = "*"
-pyopencl = "*"
+pyopencl = "==2023.1.4"  # 2024.1 is broken on arm64
 pygame = "*"
 pywinctl = "*"
 pyprof2calltree = "*"

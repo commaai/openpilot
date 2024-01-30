@@ -25,11 +25,11 @@ jobs:
       with:
         token: ${{ secrets.ACTIONS_CREATE_PR_PAT }}
         commit-message: bump submodules
-        title: 'Bump submodules'
+        title: '[bot] Bump submodules'
         branch: auto-bump-submodules
         base: master
         delete-branch: true
-        body: '[bot] Automatic PR from repo-maintenance -> bump_submodules'
+        body: 'Automatic PR from repo-maintenance -> bump_submodules'
         labels: bot
   package_updates:
     name: package_updates
@@ -51,9 +51,9 @@ jobs:
       with:
         token: ${{ secrets.ACTIONS_CREATE_PR_PAT }}
         commit-message: Update Python packages and pre-commit hooks
-        title: 'Update Python packages and pre-commit hooks'
+        title: '[bot] Update Python packages and pre-commit hooks'
         branch: auto-package-updates
         base: master
         delete-branch: true
-        body: '[bot] Automatic PR from repo-maintenance -> package_updates'
+        body: 'Automatic PR from repo-maintenance -> package_updates'
         labels: bot
