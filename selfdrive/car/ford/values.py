@@ -119,7 +119,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
     ),
   ],
   extra_ecus=[
-    (Ecu.engine, 0x7e0, None),
     (Ecu.shiftByWire, 0x732, None),
   ],
 )
