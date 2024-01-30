@@ -152,6 +152,15 @@ class CanBus:
 GM_SOFTWARE_MODULE_1_REQUEST = b'\x1a\xc1'
 GM_SOFTWARE_MODULE_2_REQUEST = b'\x1a\xc2'
 GM_SOFTWARE_MODULE_3_REQUEST = b'\x1a\xc3'
+# Returns a 4 byte hex representation of the decimal part number. `b"\x02\x8c\xf0'"` -> 42790951
+
+# This DID is used to identify the part number that represents the combination of
+hardware/software/calibrations present in the ECU as it is received in the vehicle assembly plant. This
+part number is also used in service to uniquely identify the combination of
+hardware/software/calibrations programmed into the ECU at the time the part is ordered. Converting the
+four byte USN value to decimal provides the 8-digit part number assigned by the division. If an Alpha
+Code is used, then the Alpha Code associated with this part number shall be stored in dataIdentifier
+$DB.
 GM_END_MODEL_PART_NUMBER_REQUEST = b'\x1a\xcb'  # end model part usually returns results online, base model not so much
 GM_BASE_MODEL_PART_NUMBER_REQUEST = b'\x1a\xcc'
 GM_FW_RESPONSE = b'\x5a'
