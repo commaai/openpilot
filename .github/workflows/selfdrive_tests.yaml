@@ -417,3 +417,57 @@ jobs:
         with:
           name: report
           path: selfdrive/ui/tests/test_ui/report
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@4.1.4
+        with:
+          branch: gh-pages
+          repository-name: ${{ github.repository }}
+          target-folder: pr--${{ github.sha }}
+          folder: selfdrive/ui/tests/test_ui/report
+        
+      - name: Append PR Link to Index
+        if: success()
+        run: |
+          git fetch origin gh-pages --depth=1
+          git checkout gh-pages
+          echo "<li><a href='pr--${{ github.sha }}/index.html'>PR #-${{ github.sha }}</a></li>" >> index.html
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add index.html
+          git commit -m "Update index.html with PR #-${{ github.sha }}"
+      
+      - name: Push Changes with Retry
+        if: success()
+        run: |
+          max_attempts=3
+          attempt=0
+          until git push origin gh-pages; do
+              git pull --rebase origin gh-pages
+              attempt=$((attempt+1))
+              if [ "$attempt" -ge "$max_attempts" ]; then
+                  echo "Push failed after $attempt attempts."
+                  exit 1
+              fi
+              sleep 3
+          done
+
+  post_comment_on_update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write    
+    steps:
+      - name: Post Update Comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const commentBody = 'Testing';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: commentBody
+            });
