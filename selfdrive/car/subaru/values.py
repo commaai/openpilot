@@ -137,6 +137,15 @@ CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   CAR.ASCENT_2023: SubaruCarInfo("Subaru Ascent 2023", "All", car_parts=CarParts.common([CarHarness.subaru_d])),
 }
 
+LKAS_ANGLE = {CAR.FORESTER_2022, CAR.OUTBACK_2023, CAR.ASCENT_2023}
+GLOBAL_GEN2 = {CAR.OUTBACK, CAR.LEGACY, CAR.OUTBACK_2023, CAR.ASCENT_2023}
+PREGLOBAL_CARS = {CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018}
+HYBRID_CARS = {CAR.CROSSTREK_HYBRID, CAR.FORESTER_HYBRID}
+
+# Cars that temporarily fault when steering angle rate is greater than some threshold.
+# Appears to be all torque-based cars produced around 2019 - present
+STEER_RATE_LIMITED = GLOBAL_GEN2 | {CAR.IMPREZA_2020, CAR.FORESTER}
+
 SUBARU_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
 SUBARU_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
@@ -171,6 +180,10 @@ FW_QUERY_CONFIG = FwQueryConfig(
       obd_multiplexing=False,
     ),
   ],
+  # We don't get the EPS from non-OBD queries on GEN2 cars. Note that we still attempt to match when it exists
+  non_essential_ecus={
+    Ecu.eps: list(GLOBAL_GEN2),
+  }
 )
 
 DBC = {
@@ -190,12 +203,3 @@ DBC = {
   CAR.OUTBACK_PREGLOBAL: dbc_dict('subaru_outback_2015_generated', None),
   CAR.OUTBACK_PREGLOBAL_2018: dbc_dict('subaru_outback_2019_generated', None),
 }
-
-LKAS_ANGLE = {CAR.FORESTER_2022, CAR.OUTBACK_2023, CAR.ASCENT_2023}
-GLOBAL_GEN2 = {CAR.OUTBACK, CAR.LEGACY, CAR.OUTBACK_2023, CAR.ASCENT_2023}
-PREGLOBAL_CARS = {CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018}
-HYBRID_CARS = {CAR.CROSSTREK_HYBRID, CAR.FORESTER_HYBRID}
-
-# Cars that temporarily fault when steering angle rate is greater than some threshold.
-# Appears to be all torque-based cars produced around 2019 - present
-STEER_RATE_LIMITED = GLOBAL_GEN2 | {CAR.IMPREZA_2020, CAR.FORESTER}

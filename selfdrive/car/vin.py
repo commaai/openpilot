@@ -16,7 +16,6 @@ def is_valid_vin(vin: str):
 
 
 def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
-  addrs = [0x200] + list(range(0x7e0, 0x7e8)) + list(range(0x18DA00F1, 0x18DB00F1, 0x100))  # addrs to process/wait for
   for i in range(retry):
     for bus in buses:
       # TODO: can you send to 0x7df on bolt?
@@ -24,11 +23,10 @@ def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
                                                       (StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE, STANDARD_VIN_ADDRS, 0x8),
                                                       (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE, STANDARD_VIN_ADDRS, 0x8)):
         try:
-          query = IsoTpParallelQuery(sendcan, logcan, bus, addrs, [request, ], [response, ], response_offset=rx_offset,
-                                     debug=debug)
+          query = IsoTpParallelQuery(sendcan, logcan, bus, STANDARD_VIN_ADDRS, [request, ], [response, ], functional_addrs=FUNCTIONAL_ADDRS, debug=debug)
           results = query.get_data(timeout)
 
-          for addr in vin_addrs:
+          for addr in STANDARD_VIN_ADDRS:
             vin = results.get((addr, None))
             if vin is not None:
               # Ford pads with null bytes
@@ -39,11 +37,12 @@ def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
               if vin.startswith(b'\x11'):
                 vin = vin[1:18]
 
+              cloudlog.warning(f"got vin with {request=}")
               return get_rx_addr_for_tx_addr(addr), bus, vin.decode()
-
-          cloudlog.error(f"vin query retry ({i+1}) ...")
         except Exception:
           cloudlog.exception("VIN query exception")
+
+    cloudlog.error(f"vin query retry ({i+1}) ...")
 
   return -1, -1, VIN_UNKNOWN
 
