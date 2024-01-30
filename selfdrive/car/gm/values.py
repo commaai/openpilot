@@ -145,23 +145,16 @@ class CanBus:
   DROPPED = 192
 
 
-# In a Data Module an identifier is a string which is used to identify an object,
-# either by itself or in conjunction with the identifiers of parent objects.
-# The identifier string must be one continuous string and cannot contain spaces
-# nor certain reserved characters or consist entirely of a reserved keyword.
+# In a Data Module, an identifier is a string used to recognize an object,
+# either by itself or together with the identifiers of parent objects.
+# Each returns a 4 byte hex representation of the decimal part number. `b"\x02\x8c\xf0'"` -> 42790951
 GM_SOFTWARE_MODULE_1_REQUEST = b'\x1a\xc1'
 GM_SOFTWARE_MODULE_2_REQUEST = b'\x1a\xc2'
 GM_SOFTWARE_MODULE_3_REQUEST = b'\x1a\xc3'
-# Returns a 4 byte hex representation of the decimal part number. `b"\x02\x8c\xf0'"` -> 42790951
-
-# This DID is used to identify the part number that represents the combination of
-hardware/software/calibrations present in the ECU as it is received in the vehicle assembly plant. This
-part number is also used in service to uniquely identify the combination of
-hardware/software/calibrations programmed into the ECU at the time the part is ordered. Converting the
-four byte USN value to decimal provides the 8-digit part number assigned by the division. If an Alpha
-Code is used, then the Alpha Code associated with this part number shall be stored in dataIdentifier
-$DB.
-GM_END_MODEL_PART_NUMBER_REQUEST = b'\x1a\xcb'  # end model part usually returns results online, base model not so much
+# This DID is for identifying the part number that reflects the mix of hardware,
+# software, and calibrations in the ECU when it first arrives at the vehicle assembly plant.
+# If there's an Alpha Code, it's associated with this part number and stored in the DID $DB.
+GM_END_MODEL_PART_NUMBER_REQUEST = b'\x1a\xcb'
 GM_BASE_MODEL_PART_NUMBER_REQUEST = b'\x1a\xcc'
 GM_FW_RESPONSE = b'\x5a'
 
