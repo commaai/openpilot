@@ -24,7 +24,8 @@ def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
                                                       (StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE, STANDARD_VIN_ADDRS, 0x8),
                                                       (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE, STANDARD_VIN_ADDRS, 0x8)):
         try:
-          query = IsoTpParallelQuery(sendcan, logcan, bus, addrs, [request, ], [response, ], functional_addrs=FUNCTIONAL_ADDRS, debug=debug)
+          query = IsoTpParallelQuery(sendcan, logcan, bus, addrs, [request, ], [response, ], response_offset=rx_offset,
+                                     functional_addrs=FUNCTIONAL_ADDRS, debug=debug)
           results = query.get_data(timeout)
 
           for addr in vin_addrs:
