@@ -43,11 +43,12 @@ def get_vin(logcan, sendcan, timeout=0.1, retry=3, debug=False):
               if vin.startswith(b'\x11'):
                 vin = vin[1:18]
 
+              cloudlog.warning(f"got vin with {request=}")
               return get_rx_addr_for_tx_addr(addr), bus, vin.decode()
-
-          cloudlog.error(f"vin query retry ({i+1}) ...")
         except Exception:
           cloudlog.exception("VIN query exception")
+
+    cloudlog.error(f"vin query retry ({i+1}) ...")
 
   return -1, -1, VIN_UNKNOWN
 
