@@ -18,12 +18,20 @@ def is_valid_vin(vin: str):
 def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
   for i in range(retry):
     for bus in buses:
-      for request, response in ((StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE), (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE)):
+      for request, response, valid_buses, vin_addrs, functional_addrs, rx_offset in (
+        (StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE, (0, 1), STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
+        (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE, (0, 1), STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
+        (StdQueries.GM_VIN_REQUEST, StdQueries.GM_VIN_RESPONSE, (0,), [0x24b], None, 0x400),  # Bolt fwdCamera
+      ):
+        if bus not in valid_buses:
+          continue
+
         try:
-          query = IsoTpParallelQuery(sendcan, logcan, bus, STANDARD_VIN_ADDRS, [request, ], [response, ], functional_addrs=FUNCTIONAL_ADDRS, debug=debug)
+          query = IsoTpParallelQuery(sendcan, logcan, bus, vin_addrs, [request, ], [response, ], response_offset=rx_offset,
+                                     functional_addrs=functional_addrs, debug=debug)
           results = query.get_data(timeout)
 
-          for addr in STANDARD_VIN_ADDRS:
+          for addr in vin_addrs:
             vin = results.get((addr, None))
             if vin is not None:
               # Ford pads with null bytes
