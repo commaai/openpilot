@@ -98,7 +98,7 @@ class FwQueryConfig:
         new_request.bus += 4
         self.requests.append(new_request)
 
-  def get_all_ecus(self, fw_versions: OfflineFwVersions, include_ecu: bool = False,
+  def get_all_ecus(self, fw_versions: OfflineFwVersions, include_ecu_type: bool = False,
                    include_extra_ecus: bool = True) -> set[EcuAddrSubAddr | AddrType]:
     # Add ecus in database + extra ecus
     brand_ecus = {ecu for ecus in fw_versions.values() for ecu in ecus}
@@ -106,6 +106,6 @@ class FwQueryConfig:
     if include_extra_ecus:
       brand_ecus |= set(self.extra_ecus)
 
-    if include_ecu:
+    if include_ecu_type:
       return brand_ecus
     return {(addr, subaddr) for _, addr, subaddr in brand_ecus}
