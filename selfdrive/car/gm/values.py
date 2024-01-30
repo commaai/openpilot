@@ -163,27 +163,16 @@ GM_FW_REQUESTS = [
 GM_RX_OFFSET = 0x400
 
 FW_QUERY_CONFIG = FwQueryConfig(
-  requests=[
+  requests=[request for bus, obd_multiplexing in ((0, True), (1, True), (1, False)) for req in GM_FW_REQUESTS for request in [
     Request(
-      [StdQueries.SHORT_TESTER_PRESENT_REQUEST] + GM_FW_REQUESTS,
-      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE] + [GM_FW_RESPONSE] * len(GM_FW_REQUESTS),
+      [StdQueries.SHORT_TESTER_PRESENT_REQUEST, req],
+      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, GM_FW_RESPONSE],
       rx_offset=GM_RX_OFFSET,
-      bus=0,
+      bus=bus,
+      logging=True,
+      obd_multiplexing=obd_multiplexing,
     ),
-    Request(
-      [StdQueries.SHORT_TESTER_PRESENT_REQUEST] + GM_FW_REQUESTS,
-      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE] + [GM_FW_RESPONSE] * len(GM_FW_REQUESTS),
-      rx_offset=GM_RX_OFFSET,
-      bus=1,
-    ),
-    Request(
-      [StdQueries.SHORT_TESTER_PRESENT_REQUEST] + GM_FW_REQUESTS,
-      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE] + [GM_FW_RESPONSE] * len(GM_FW_REQUESTS),
-      rx_offset=GM_RX_OFFSET,
-      bus=1,
-      obd_multiplexing=False,
-    ),
-  ],
+  ]],
   extra_ecus=[(Ecu.fwdCamera, 0x24b, None)],
 )
 

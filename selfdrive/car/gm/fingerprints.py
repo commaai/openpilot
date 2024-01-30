@@ -56,5 +56,5 @@ FINGERPRINTS = {
 }
 
 FW_VERSIONS = {
-  # CAR.BOLT_EUV: {}
+  CAR.BOLT_EUV: {}
 }
