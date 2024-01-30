@@ -96,3 +96,16 @@ class FwQueryConfig:
         new_request = copy.deepcopy(self.requests[i])
         new_request.bus += 4
         self.requests.append(new_request)
+
+  def get_all_ecus(self, offline_fw_versions: OfflineFwVersions, include_ecu_type: bool = True,
+                   include_extra_ecus: bool = True) -> set[EcuAddrSubAddr] | set[AddrType]:
+    # Add ecus in database + extra ecus
+    brand_ecus = {ecu for ecus in offline_fw_versions.values() for ecu in ecus}
+
+    if include_extra_ecus:
+      brand_ecus |= set(self.extra_ecus)
+
+    if not include_ecu_type:
+      return {(addr, subaddr) for _, addr, subaddr in brand_ecus}
+
+    return brand_ecus
