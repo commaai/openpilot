@@ -15,9 +15,9 @@ def is_valid_vin(vin: str):
   return re.fullmatch(VIN_RE, vin) is not None
 
 
-def get_vin(logcan, sendcan, timeout=0.1, retry=3, debug=False):
+def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
   for i in range(retry):
-    for bus in (0, 1):
+    for bus in buses:
       for request, response, valid_buses, vin_addrs, functional_addrs, rx_offset in (
         (StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE, (0, 1), STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
         (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE, (0, 1), STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
@@ -25,8 +25,7 @@ def get_vin(logcan, sendcan, timeout=0.1, retry=3, debug=False):
       ):
         if bus not in valid_buses:
           continue
-        # print(request, response, bus, vin_addrs, functional_addrs, rx_offset)
-        # continue
+
         try:
           query = IsoTpParallelQuery(sendcan, logcan, bus, vin_addrs, [request, ], [response, ], response_offset=rx_offset,
                                      functional_addrs=functional_addrs, debug=debug)
@@ -59,6 +58,7 @@ if __name__ == "__main__":
 
   parser = argparse.ArgumentParser(description='Get VIN of the car')
   parser.add_argument('--debug', action='store_true')
+  parser.add_argument('--bus', type=int, default=1)
   parser.add_argument('--timeout', type=float, default=0.1)
   parser.add_argument('--retry', type=int, default=5)
   args = parser.parse_args()
@@ -67,5 +67,5 @@ if __name__ == "__main__":
   logcan = messaging.sub_sock('can')
   time.sleep(1)
 
-  vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, args.timeout, args.retry, debug=args.debug)
+  vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, (args.bus,), args.timeout, args.retry, debug=args.debug)
   print(f'RX: {hex(vin_rx_addr)}, BUS: {vin_rx_bus}, VIN: {vin}')
