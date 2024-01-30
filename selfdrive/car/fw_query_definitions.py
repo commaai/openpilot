@@ -105,6 +105,7 @@ class FwQueryConfig:
     if include_extra_ecus:
       brand_ecus |= set(self.extra_ecus)
 
-    if include_ecu_type:
-      return brand_ecus
-    return {(addr, subaddr) for _, addr, subaddr in brand_ecus}
+    if not include_ecu_type:
+      return {(addr, subaddr) for _, addr, subaddr in brand_ecus}
+
+    return brand_ecus
