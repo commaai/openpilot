@@ -45,11 +45,6 @@ def build_fw_dict(fw_versions: List[capnp.lib.capnp._DynamicStructBuilder],
   return dict(fw_versions_dict)
 
 
-def get_brand_addrs() -> Dict[str, Set[AddrType]]:
-  return {brand: config.get_all_ecus(VERSIONS[brand]) for
-          brand, config in FW_QUERY_CONFIGS.items()}
-
-
 def match_fw_to_car_fuzzy(live_fw_versions, match_brand=None, log=True, exclude=None):
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
@@ -213,7 +208,8 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
 def get_brand_ecu_matches(ecu_rx_addrs):
   """Returns dictionary of brands and matches with ECUs in their FW versions"""
 
-  brand_addrs = get_brand_addrs()
+  brand_addrs = {brand: config.get_all_ecus(VERSIONS[brand]) for
+                 brand, config in FW_QUERY_CONFIGS.items()}
   brand_matches = {brand: set() for brand, _, _ in REQUESTS}
 
   brand_rx_offsets = {(brand, r.rx_offset) for brand, _, r in REQUESTS}
