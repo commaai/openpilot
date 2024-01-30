@@ -12,7 +12,7 @@ if arch == 'larch64':
 maps = arch in ['larch64', 'aarch64', 'x86_64']
 
 if maps and arch != 'larch64':
-  rpath = [Dir(f"#third_party/maplibre-native-qt/build/src/core").srcnode().abspath]
+  rpath = [Dir(f"#third_party/maplibre-native-qt/{arch}/lib").srcnode().abspath]
   qt_env["RPATH"] += rpath
 
 if arch == "Darwin":

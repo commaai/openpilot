@@ -145,8 +145,7 @@ else:
     libpath = [
       f"#third_party/acados/{arch}/lib",
       f"#third_party/libyuv/{arch}/lib",
-      f"#third_party/mapbox-gl-native-qt/{arch}",
-      "#third_party/maplibre-native-qt/build/src/core",
+      f"#third_party/maplibre-native-qt/{arch}/lib",
       "/usr/lib",
       "/usr/local/lib",
     ]
@@ -209,13 +208,12 @@ env = Environment(
     "#third_party/json11",
     "#third_party/linux/include",
     "#third_party/snpe/include",
-    "#third_party/mapbox-gl-native-qt/include",
     "#third_party/qrcode",
     "#third_party",
     "#cereal",
     "#opendbc/can",
-    "#third_party/maplibre-native-qt/src/core",
-    "#third_party/maplibre-native-qt/build/src/core/include"
+    "#third_party/maplibre-native-qt/include",
+    f"#third_party/maplibre-native-qt/{arch}/include"
   ],
 
   CC='clang',

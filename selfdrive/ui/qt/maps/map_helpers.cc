@@ -18,6 +18,7 @@ QString get_mapbox_token() {
 
 QMapLibre::Settings get_mapbox_settings() {
   QMapLibre::Settings settings;
+  settings.setProviderTemplate(QMapLibre::Settings::ProviderTemplate::MapboxProvider);
 
   if (!Hardware::PC()) {
     settings.setCacheDatabasePath(MAPS_CACHE_PATH);
