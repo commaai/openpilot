@@ -357,7 +357,7 @@ if __name__ == "__main__":
 
   # Set up params for boardd
   params = Params()
-  params.delete("FirmwareQueryDone")
+  params.remove("FirmwareQueryDone")
   params.put_bool("IsOnroad", False)
   time.sleep(0.2)  # thread is 10 Hz
   params.put_bool("IsOnroad", True)
