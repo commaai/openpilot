@@ -6,11 +6,11 @@ example in common/tests/test_mock.py
 
 import functools
 import threading
-import time
 from typing import List, Union
 from cereal.messaging import PubMaster
 from cereal.services import SERVICE_LIST
 from openpilot.common.mock.generators import generate_liveLocationKalman
+from openpilot.common.realtime import Ratekeeper
 
 
 MOCK_GENERATOR = {
@@ -20,14 +20,16 @@ MOCK_GENERATOR = {
 
 def generate_messages_loop(services: List[str], done: threading.Event):
   pm = PubMaster(services)
+  rk = Ratekeeper(100)
   i = 0
   while not done.is_set():
     for s in services:
-      if i % 100 == SERVICE_LIST[s].frequency:
+      should_send = i % (100/SERVICE_LIST[s].frequency) == 0
+      if should_send:
         message = MOCK_GENERATOR[s]()
         pm.send(s, message)
     i += 1
-    time.sleep(1/100)
+    rk.keep_time()
 
 
 def mock_messages(services: Union[List[str], str]):
@@ -40,9 +42,10 @@ def mock_messages(services: Union[List[str], str]):
       done = threading.Event()
       t = threading.Thread(target=generate_messages_loop, args=(services, done))
       t.start()
-      ret = func(*args, **kwargs)
-      done.set()
-      t.join()
-      return ret
+      try:
+        return func(*args, **kwargs)
+      finally:
+        done.set()
+        t.join()
     return wrapper
   return decorator
