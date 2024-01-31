@@ -50,7 +50,8 @@ class TestHyundaiFingerprint(unittest.TestCase):
       self.assertNotIn(car_model, can_specific_feature_list, "CAN FD car unexpectedly found in a CAN feature list")
 
   def test_hybrid_ev_sets(self):
-    self.assertEqual(HYBRID_CAR & EV_CAR, set())
+    self.assertEqual(HYBRID_CAR & EV_CAR, set(), "Shared cars between hybrid and EV")
+    self.assertEqual(CANFD_CAR & HYBRID_CAR, set(), "Hard coding CAN FD cars as hybrid is no longer supported")
 
   def test_auxiliary_request_ecu_whitelist(self):
     # Asserts only auxiliary Ecus can exist in database for CAN-FD cars
