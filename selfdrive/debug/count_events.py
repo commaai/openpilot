@@ -7,7 +7,7 @@ from pprint import pprint
 from typing import List, Tuple, cast
 
 from cereal.services import SERVICE_LIST
-from openpilot.tools.lib.srreader import SegmentRangeReader, ReadMode
+from openpilot.tools.lib.logreader import LogReader, ReadMode
 
 if __name__ == "__main__":
   cnt_valid: Counter = Counter()
@@ -20,7 +20,7 @@ if __name__ == "__main__":
   start_time = math.inf
   end_time = -math.inf
   ignition_off = None
-  for msg in SegmentRangeReader(sys.argv[1], ReadMode.QLOG):
+  for msg in LogReader(sys.argv[1], ReadMode.QLOG):
     end_time = max(end_time, msg.logMonoTime)
     start_time = min(start_time, msg.logMonoTime)
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import multiprocessing
 import os
 import sys
 import platform
@@ -14,7 +13,7 @@ from functools import partial
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.lib.helpers import save_log
 
-from openpilot.tools.lib.srreader import SegmentRangeReader
+from openpilot.tools.lib.logreader import LogReader, ReadMode
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -74,12 +73,9 @@ def process(can, lr):
   return [d for d in lr if can or d.which() not in ['can', 'sendcan']]
 
 def juggle_route(route_or_segment_name, can, layout, dbc=None):
-  sr = SegmentRangeReader(route_or_segment_name)
+  sr = LogReader(route_or_segment_name, default_mode=ReadMode.AUTO_INTERACIVE)
 
-  with multiprocessing.Pool(24) as pool:
-    all_data = []
-    for p in pool.map(partial(process, can), sr.lrs):
-      all_data.extend(p)
+  all_data = sr.run_across_segments(24, partial(process, can))
 
   # Infer DBC name from logs
   if dbc is None:
