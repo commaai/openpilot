@@ -100,7 +100,6 @@ class CAR(StrEnum):
   IONIQ_5 = "HYUNDAI IONIQ 5 2022"
   IONIQ_6 = "HYUNDAI IONIQ 6 2023"
   TUCSON_4TH_GEN = "HYUNDAI TUCSON 4TH GEN"
-  TUCSON_HYBRID_4TH_GEN = "HYUNDAI TUCSON HYBRID 4TH GEN"
   SANTA_CRUZ_1ST_GEN = "HYUNDAI SANTA CRUZ 1ST GEN"
   CUSTIN_1ST_GEN = "HYUNDAI CUSTIN 1ST GEN"
 
@@ -225,8 +224,8 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.TUCSON_4TH_GEN: [
     HyundaiCarInfo("Hyundai Tucson 2022", car_parts=CarParts.common([CarHarness.hyundai_n])),
     HyundaiCarInfo("Hyundai Tucson 2023", "All", car_parts=CarParts.common([CarHarness.hyundai_n])),
+    HyundaiCarInfo("Hyundai Tucson Hybrid 2022-24", "All", car_parts=CarParts.common([CarHarness.hyundai_n]))
   ],
-  CAR.TUCSON_HYBRID_4TH_GEN: HyundaiCarInfo("Hyundai Tucson Hybrid 2022-24", "All", car_parts=CarParts.common([CarHarness.hyundai_n])),
   CAR.SANTA_CRUZ_1ST_GEN: HyundaiCarInfo("Hyundai Santa Cruz 2022-23", car_parts=CarParts.common([CarHarness.hyundai_n])),
   CAR.CUSTIN_1ST_GEN: HyundaiCarInfo("Hyundai Custin 2023", "All", car_parts=CarParts.common([CarHarness.hyundai_k])),
 
@@ -480,7 +479,7 @@ CAN_GEARS = {
   "use_tcu_gears": {CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL, CAR.SONATA_LF, CAR.VELOSTER, CAR.TUCSON},
 }
 
-CANFD_CAR = {CAR.KIA_EV6, CAR.IONIQ_5, CAR.IONIQ_6, CAR.TUCSON_4TH_GEN, CAR.TUCSON_HYBRID_4TH_GEN, CAR.KIA_SPORTAGE_HYBRID_5TH_GEN,
+CANFD_CAR = {CAR.KIA_EV6, CAR.IONIQ_5, CAR.IONIQ_6, CAR.TUCSON_4TH_GEN, CAR.KIA_SPORTAGE_HYBRID_5TH_GEN,
              CAR.SANTA_CRUZ_1ST_GEN, CAR.KIA_SPORTAGE_5TH_GEN, CAR.GENESIS_GV70_1ST_GEN, CAR.KIA_SORENTO_PHEV_4TH_GEN,
              CAR.GENESIS_GV60_EV_1ST_GEN, CAR.KIA_SORENTO_4TH_GEN, CAR.KIA_NIRO_HEV_2ND_GEN, CAR.KIA_NIRO_EV_2ND_GEN,
              CAR.GENESIS_GV80, CAR.KIA_CARNIVAL_4TH_GEN, CAR.KIA_SORENTO_HEV_4TH_GEN, CAR.KONA_EV_2ND_GEN, CAR.KIA_K8_HEV_1ST_GEN,
@@ -499,7 +498,7 @@ CAMERA_SCC_CAR = {CAR.KONA_EV_2022, }
 
 # these cars use a different gas signal
 HYBRID_CAR = {CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.KIA_NIRO_PHEV, CAR.KIA_NIRO_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.IONIQ,
-              CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.IONIQ_PHEV_2019, CAR.TUCSON_HYBRID_4TH_GEN,
+              CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.IONIQ_PHEV_2019,
               CAR.KIA_SPORTAGE_HYBRID_5TH_GEN, CAR.KIA_SORENTO_PHEV_4TH_GEN, CAR.KIA_K5_HEV_2020, CAR.KIA_NIRO_HEV_2ND_GEN,
               CAR.KIA_SORENTO_HEV_4TH_GEN, CAR.KIA_OPTIMA_H, CAR.KIA_OPTIMA_H_G4_FL, CAR.KIA_K8_HEV_1ST_GEN,
               CAR.AZERA_HEV_6TH_GEN, CAR.KIA_NIRO_PHEV_2022}
@@ -567,7 +566,6 @@ DBC = {
   CAR.KIA_EV6: dbc_dict('hyundai_canfd', None),
   CAR.SONATA_HYBRID: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
   CAR.TUCSON_4TH_GEN: dbc_dict('hyundai_canfd', None),
-  CAR.TUCSON_HYBRID_4TH_GEN: dbc_dict('hyundai_canfd', None),
   CAR.IONIQ_5: dbc_dict('hyundai_canfd', None),
   CAR.IONIQ_6: dbc_dict('hyundai_canfd', None),
   CAR.SANTA_CRUZ_1ST_GEN: dbc_dict('hyundai_canfd', None),
