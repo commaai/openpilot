@@ -135,18 +135,19 @@ class TestHyundaiFingerprint(unittest.TestCase):
     results = get_platform_codes([b"\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         "])
     self.assertEqual(results, {(b"CV1-CV000", None)})
 
-    results = get_platform_codes([b"\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 2.02 99211-N9000 14E",
-                                  b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N9240 14Q'])
-    self.assertEqual(results, {(b"NX4-N9000", b"14E"), (b"NX4-N9240", b"14Q")})
+    results = get_platform_codes([b"\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 2.02 99211-N9000 14E"])
+    self.assertEqual(results, {(b"NX4-N9000", b"14E")})
 
     results = get_platform_codes([
       b"\xf1\x00DH LKAS 1.1 -150210",
+      b"\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 2.02 99211-N9000 14E",
+      b"\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N9240 14Q",
       b"\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ",
       b"\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ",
-      b"\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 2.02 99211-N9000 14E",
     ])
-    self.assertEqual(results, {(b"DH", b"150210"), (b"AEhe-G2000", None),
-                               (b"CV1-CV000", None), (b"NX4-N9000", b"14E")})
+    self.assertEqual(results, {(b"DH", b"150210"), (b"NX4-N9000", b"14E"),
+                               (b"AEhe-G2000", None), (b"CV1-CV000", None),
+                               (b"NX4-N9240", b"14Q")})
 
     results = get_platform_codes([
       b"\xf1\x00LX2 MFC  AT USA LHD 1.00 1.07 99211-S8100 220222",
