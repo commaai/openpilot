@@ -9,11 +9,22 @@ def retryWithDelay(int maxRetries, int delay, Closure body) {
   throw Exception("Failed after ${maxRetries} retries")
 }
 
-def device(String ip, String step_label, String cmd) {
+
+def ssh(String ip, String step_label, String cmd) {
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
     def ssh_cmd = """
-ssh -tt -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' /usr/bin/bash <<'END'
+      ssh -tt -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' /usr/bin/bash <<'END'
+      ${cmd}
+      exit 0
 
+      END"""
+      sh script: ssh_cmd, label: step_label
+  }
+}
+
+
+def device(String ip, String step_label, String cmd) {
+  ssh(ip, step_label, """
 set -e
 
 export CI=1
@@ -61,12 +72,7 @@ ln -snf ${env.TEST_DIR} /data/pythonpath
 
 cd ${env.TEST_DIR} || true
 ${cmd}
-exit 0
-
-END"""
-
-    sh script: ssh_cmd, label: step_label
-  }
+""")
 }
 
 def deviceStage(String stageName, String deviceType, List extra_env, def steps) {
@@ -282,5 +288,38 @@ node {
   } catch (Exception e) {
     currentBuild.result = 'FAILED'
     throw e
+  }
+}
+
+
+def restart(deviceType) {
+  node {
+    stage("restart ${deviceType}") {
+      lock(resource: "", label: deviceType, inversePrecedence: true, variable: 'device_ip', quantity: "") { // lock all devices
+        device_ip.split(',').each { single_device_ip ->
+          ssh(single_device_ip, "restart", "sudo reboot")
+          sh label: "wait for reboot", script: "ping -c1 -W120 ${single_device_ip}"
+        }
+      }
+    }
+  }
+}
+
+// Daily restart of all CI devices at 4am pst
+
+node {
+  properties([pipelineTriggers([cron('* 4 * * *')])])
+
+  if (env.BRANCH_NAME == 'master') {
+    parallel {
+      restart("tici-needs-can")
+      restart("tici-common")
+      restart("tici-replay")
+      restart("tici-loopback")
+      restart("tici-ar0231")
+      restart("tici-ox03c10")
+      restart("tici-sensord")
+      restart("tizi")
+    }
   }
 }
