@@ -45,6 +45,7 @@ class CarInterface(CarInterfaceBase):
     hda2 = Ecu.adas in [fw.ecu for fw in car_fw]
     CAN = CanBus(None, hda2, fingerprint)
 
+    # TODO: detect EV and hybrid
     if candidate in HYBRID_CAR:
       ret.flags |= HyundaiFlags.HYBRID.value
     elif candidate in EV_CAR:
