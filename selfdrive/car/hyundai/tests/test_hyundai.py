@@ -13,29 +13,6 @@ from openpilot.selfdrive.car.hyundai.fingerprints import FW_VERSIONS
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
-# Some platforms have date codes in a different format we don't yet parse (or are missing).
-# For now, assert list of expected missing date cars
-NO_DATES_PLATFORMS = {
-  # CAN FD
-  CAR.KIA_SPORTAGE_5TH_GEN,
-  CAR.SANTA_CRUZ_1ST_GEN,
-  CAR.TUCSON_4TH_GEN,
-  # CAN
-  CAR.ELANTRA,
-  CAR.ELANTRA_GT_I30,
-  CAR.KIA_CEED,
-  CAR.KIA_FORTE,
-  CAR.KIA_OPTIMA_G4,
-  CAR.KIA_OPTIMA_G4_FL,
-  CAR.KIA_SORENTO,
-  CAR.KONA,
-  CAR.KONA_EV,
-  CAR.KONA_EV_2022,
-  CAR.KONA_HEV,
-  CAR.SONATA_LF,
-  CAR.VELOSTER,
-}
-
 
 class TestHyundaiFingerprint(unittest.TestCase):
   def test_can_features(self):
@@ -133,7 +110,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
             self.assertEqual(1, len(result), f"Unable to parse FW: {fw}")
             codes |= result
 
-          if ecu[0] not in DATE_FW_ECUS or car_model in NO_DATES_PLATFORMS:
+          if ecu[0] not in DATE_FW_ECUS:
             self.assertTrue(all(date is None for _, date in codes))
           else:
             self.assertTrue(all(date is not None for _, date in codes))
@@ -158,12 +135,18 @@ class TestHyundaiFingerprint(unittest.TestCase):
     results = get_platform_codes([b"\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         "])
     self.assertEqual(results, {(b"CV1-CV000", None)})
 
+    results = get_platform_codes([b"\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 2.02 99211-N9000 14E",
+                                  b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N9240 14Q'])
+    self.assertEqual(results, {(b"NX4-N9000", b"14E"), (b"NX4-N9240", b"14Q")})
+
     results = get_platform_codes([
       b"\xf1\x00DH LKAS 1.1 -150210",
       b"\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ",
       b"\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ",
+      b"\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 2.02 99211-N9000 14E",
     ])
-    self.assertEqual(results, {(b"DH", b"150210"), (b"AEhe-G2000", None), (b"CV1-CV000", None)})
+    self.assertEqual(results, {(b"DH", b"150210"), (b"AEhe-G2000", None),
+                               (b"CV1-CV000", None), (b"NX4-N9000", b"14E")})
 
     results = get_platform_codes([
       b"\xf1\x00LX2 MFC  AT USA LHD 1.00 1.07 99211-S8100 220222",
@@ -182,7 +165,6 @@ class TestHyundaiFingerprint(unittest.TestCase):
       CAR.GENESIS_G70_2020,
     }
     excluded_platforms |= CANFD_CAR - EV_CAR - CANFD_FUZZY_WHITELIST  # shared platform codes
-    excluded_platforms |= NO_DATES_PLATFORMS  # date codes are required to match
 
     platforms_with_shared_codes = set()
     for platform, fw_by_addr in FW_VERSIONS.items():

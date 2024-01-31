@@ -398,7 +398,9 @@ HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x4
 # Regex patterns for parsing platform code, FW date, and part number from FW versions
 PLATFORM_CODE_FW_PATTERN = re.compile(b'((?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] +
                                       b')[A-Z]{2}[A-Za-z0-9]{0,2})')
-DATE_FW_PATTERN = re.compile(b'(?<=[ -])([0-9]{6}$)')
+STD_DATE_FW_PATTERN = re.compile(b'(?<=[ -])([0-9]{6}$)')  # 6 digit date code such as 200622
+ALT_DATE_FW_PATTERN = re.compile(b'(?<= )([0-9a-zA-Z]{3}$)')  # 3 character revision code such as 14E
+DATE_FW_PATTERN = re.compile(STD_DATE_FW_PATTERN.pattern + b'|' + ALT_DATE_FW_PATTERN.pattern)
 PART_NUMBER_FW_PATTERN = re.compile(b'(?<=[0-9][.,][0-9]{2} )([0-9]{5}[-/]?[A-Z][A-Z0-9]{3}[0-9])')
 
 # We've seen both ICE and hybrid for these platforms, and they have hybrid descriptors (e.g. MQ4 vs MQ4H)
@@ -410,6 +412,9 @@ PLATFORM_CODE_ECUS = [Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps]
 # So far we've only seen dates in fwdCamera
 # TODO: there are date codes in the ABS firmware versions in hex
 DATE_FW_ECUS = [Ecu.fwdCamera]
+
+print(get_platform_codes([b'\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 2.02 99211-N9000 14E']))
+print(get_platform_codes([b'\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 2.02 99211-N9000 200622']))
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
