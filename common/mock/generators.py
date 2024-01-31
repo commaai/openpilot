@@ -1,6 +1,3 @@
-
-
-
 from cereal import messaging
 
 
