@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from collections import defaultdict
+
 from cereal import car
 from openpilot.selfdrive.car.ford.values import get_platform_codes
 from openpilot.selfdrive.car.ford.fingerprints import FW_VERSIONS
@@ -12,10 +14,12 @@ if __name__ == "__main__":
     print(car_model)
     for ecu in sorted(ecus, key=lambda x: int(x[0])):
       platform_codes = get_platform_codes(ecus[ecu])
-      codes = {code for code, _ in platform_codes}
-      versions = sorted({version for _, version in platform_codes if version is not None})
-      min_version, max_version = min(versions), max(versions)
+
+      code_versions = defaultdict(set)
+      for code, version in platform_codes:
+        code_versions[code].add(version)
+
       print(f'  (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])}, {ecu[2]}):')
-      print(f'    Codes: {codes}')
-      print(f'    Versions: {versions}')
+      for code, versions in code_versions.items():
+        print(f'    {code!r}: {sorted(versions)}')
     print()
