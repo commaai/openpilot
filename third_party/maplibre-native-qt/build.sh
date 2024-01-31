@@ -4,21 +4,26 @@ set -e
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
 ARCHNAME="x86_64"
+MAPLIBRE_FLAGS="-DMLN_QT_WITH_LOCATION=OFF"
 if [[ "$OSTYPE" == "darwin"* ]]; then
   ARCHNAME="Darwin"
+elif [[ "$OSTYPE" == "aarch64"* ]]; then
+  ARCHNAME="aarch64"
+  MAPLIBRE_FLAGS="$MAPLIBRE_FLAGS -DCMAKE_SYSTEM_NAME=Android -DANDROID_ABI=arm64-v8a"
 fi
 
 if [ ! -d maplibre_repo ]; then
   git clone git@github.com:maplibre/maplibre-native-qt.git $DIR/maplibre_repo
 fi
-cd maplibre_repo
+cd $DIR/maplibre_repo
 git fetch --all
-# git checkout (on main right now)
+git checkout 3726266e127c1f94ad64837c9dbe03d238255816
 git submodule update --depth=1 --recursive --init
 
-#build
-mkdir -p build && cd build
-cmake -DMLN_QT_WITH_LOCATION=OFF $DIR/maplibre_repo
+# build
+mkdir -p build
+cd build
+cmake $MAPLIBRE_FLAGS $DIR/maplibre_repo
 make -j$(nproc)
 
 INSTALL_DIR="$DIR/$ARCHNAME"
