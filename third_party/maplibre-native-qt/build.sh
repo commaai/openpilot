@@ -23,8 +23,9 @@ git submodule update --depth=1 --recursive --init
 # build
 mkdir -p build
 cd build
+set -x
 cmake $MAPLIBRE_FLAGS $DIR/maplibre
-make -j$(nproc)
+make -j$(nproc) || make -j2 || make -j1
 
 INSTALL_DIR="$DIR/$ARCHNAME"
 rm -rf $INSTALL_DIR
