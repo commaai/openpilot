@@ -336,8 +336,7 @@ def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions) -> Set[str]:
   # Non-electric CAN FD platforms often do not have platform code specifiers needed
   # to distinguish between hybrid and ICE. All EVs so far are either exclusively
   # electric or specify electric in the platform code.
-  # TODO: whitelist platforms that we've seen hybrid and ICE versions of that have these specifiers
-  fuzzy_platform_blacklist = {str(c) for c in set(CANFD_CAR - EV_CAR)}
+  fuzzy_platform_blacklist = {str(c) for c in (CANFD_CAR - EV_CAR - CANFD_FUZZY_WHITELIST)}
   candidates: Set[str] = set()
 
   for candidate, fws in offline_fw_versions.items():
@@ -401,6 +400,9 @@ PLATFORM_CODE_FW_PATTERN = re.compile(b'((?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:
                                       b')[A-Z]{2}[A-Za-z0-9]{0,2})')
 DATE_FW_PATTERN = re.compile(b'(?<=[ -])([0-9]{6}$)')
 PART_NUMBER_FW_PATTERN = re.compile(b'(?<=[0-9][.,][0-9]{2} )([0-9]{5}[-/]?[A-Z][A-Z0-9]{3}[0-9])')
+
+# We've seen both ICE and hybrid for these platforms, and they have hybrid descriptors (e.g. MQ4 vs MQ4H)
+CANFD_FUZZY_WHITELIST = {CAR.KIA_SORENTO_4TH_GEN, CAR.KIA_SORENTO_HEV_4TH_GEN}
 
 # List of ECUs expected to have platform codes, camera and radar should exist on all cars
 # TODO: use abs, it has the platform code and part number on many platforms
