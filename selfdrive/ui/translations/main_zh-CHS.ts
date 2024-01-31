@@ -627,14 +627,14 @@
         <translation>无法挂载数据分区。分区可能已经损坏。请确认是否要删除并重新设置。</translation>
     </message>
     <message>
-        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>按下确认以删除所有内容及设置。按下取消来继续开机。</translation>
-    </message>
-    <message>
         <source>Resetting device...
 This may take up to a minute.</source>
         <translation>设备重置中…
 这可能需要一分钟的时间。</translation>
+    </message>
+    <message>
+        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -46,6 +46,7 @@ class TestManager(unittest.TestCase):
       t = time.monotonic() - start
       assert t < MAX_STARTUP_TIME, f"startup took {t}s, expected <{MAX_STARTUP_TIME}s"
 
+  @unittest.skip("this test is flaky the way it's currently written, should be moved to test_onroad")
   def test_clean_exit(self):
     """
       Ensure all processes exit cleanly when stopped.

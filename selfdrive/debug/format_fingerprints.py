@@ -44,9 +44,8 @@ FINGERPRINTS = {
 {% endfor %}
 }
 {% endif %}
-{% if FW_VERSIONS[brand] %}
 
-FW_VERSIONS = {
+FW_VERSIONS{% if not FW_VERSIONS[brand] %}: dict[str, dict[tuple, list[bytes]]]{% endif %} = {
 {% for car, _ in FW_VERSIONS[brand].items() %}
   CAR.{{car.name}}: {
 {% for key, fw_versions in FW_VERSIONS[brand][car].items() %}
@@ -60,7 +59,7 @@ FW_VERSIONS = {
   },
 {% endfor %}
 }
-{% endif %}
+
 """, trim_blocks=True)
 
 
