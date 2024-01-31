@@ -118,6 +118,12 @@ class TestLogReader(unittest.TestCase):
 
     self.assertEqual(qlog_len1, qlog_len2)
 
+  @pytest.mark.slow
+  def test_helpers(self):
+    lr = LogReader(f"{TEST_ROUTE}/0/q")
+    self.assertEqual(lr.first("carParams").carFingerprint, "SUBARU OUTBACK 6TH GEN")
+    self.assertTrue(0 < len(list(lr.filter("carParams"))) < len(list(lr)))
+
 
 if __name__ == "__main__":
   unittest.main()
