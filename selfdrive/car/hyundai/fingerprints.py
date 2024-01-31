@@ -1511,15 +1511,6 @@ FW_VERSIONS = {
       b'\xf1\x81640F0051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
-  CAR.KIA_SORENTO_PHEV_4TH_GEN: {
-    (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00MQhe SCC FHCUP      1.00 1.06 99110-P4000         ',
-    ],
-    (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00MQ4HMFC  AT USA LHD 1.00 1.10 99210-P2000 210406',
-      b'\xf1\x00MQ4HMFC  AT USA LHD 1.00 1.11 99210-P2000 211217',
-    ],
-  },
   CAR.KIA_EV6: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ',
@@ -1638,6 +1629,19 @@ FW_VERSIONS = {
       b'\xf1\x00MQ4_ SCC FHCUP      1.00 1.08 99110-P2000         ',
     ],
   },
+  CAR.KIA_SORENTO_HEV_4TH_GEN: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00MQ4HMFC  AT KOR LHD 1.00 1.04 99210-P2000 200330',
+      b'\xf1\x00MQ4HMFC  AT KOR LHD 1.00 1.12 99210-P2000 230331',
+      b'\xf1\x00MQ4HMFC  AT USA LHD 1.00 1.10 99210-P2000 210406',
+      b'\xf1\x00MQ4HMFC  AT USA LHD 1.00 1.11 99210-P2000 211217',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00MQhe SCC FHCUP      1.00 1.04 99110-P4000         ',
+      b'\xf1\x00MQhe SCC FHCUP      1.00 1.06 99110-P4000         ',
+      b'\xf1\x00MQhe SCC FHCUP      1.00 1.07 99110-P4000         ',
+    ],
+  },
   CAR.KIA_NIRO_HEV_2ND_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00SG2HMFC  AT USA LHD 1.01 1.08 99211-AT000 220531',
@@ -1667,17 +1671,6 @@ FW_VERSIONS = {
       b'\xf1\x00KA4_ SCC FHCUP      1.00 1.00 99110-R0100         ',
       b'\xf1\x00KA4_ SCC FHCUP      1.00 1.03 99110-R0000         ',
       b'\xf1\x00KA4c SCC FHCUP      1.00 1.01 99110-I4000         ',
-    ],
-  },
-  CAR.KIA_SORENTO_HEV_4TH_GEN: {
-    (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00MQ4HMFC  AT KOR LHD 1.00 1.04 99210-P2000 200330',
-      b'\xf1\x00MQ4HMFC  AT KOR LHD 1.00 1.12 99210-P2000 230331',
-      b'\xf1\x00MQ4HMFC  AT USA LHD 1.00 1.11 99210-P2000 211217',
-    ],
-    (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00MQhe SCC FHCUP      1.00 1.04 99110-P4000         ',
-      b'\xf1\x00MQhe SCC FHCUP      1.00 1.07 99110-P4000         ',
     ],
   },
   CAR.KIA_K8_HEV_1ST_GEN: {
