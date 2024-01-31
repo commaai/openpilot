@@ -50,6 +50,7 @@ class CarInterface(CarInterfaceBase):
       ret.flags |= HyundaiFlags.EV.value
 
     if candidate in CANFD_CAR:
+      # detect if car is hybrid
       if 0x105 in fingerprint[CAN.ECAN]:
         ret.flags |= HyundaiFlags.HYBRID.value
 
