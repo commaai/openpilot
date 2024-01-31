@@ -40,8 +40,9 @@ class NanoFFModel:
     return 1 / (1 + np.exp(-x))
 
   def forward(self, x):
-    if x.ndim == 1:
-      x = x.reshape(1, -1)
+    # if x.ndim == 1:
+    #   x = x.reshape(1, -1)
+    assert x.ndim == 1
     x = (x - self.input_norm_mat[:, 0]) / (self.input_norm_mat[:, 1] - self.input_norm_mat[:, 0])
     x = self.sigmoid(np.dot(x, self.w_1) + self.b_1)
     x = self.sigmoid(np.dot(x, self.w_2) + self.b_2)
@@ -49,10 +50,10 @@ class NanoFFModel:
     return x
 
   def predict(self, x):
-    x = self.forward(x)
-    pred = np.random.laplace(x[:, 0], np.exp(x[:, 1]) / self.temperature)
+    x = self.forward(np.array(x))
+    pred = np.random.laplace(x[0], np.exp(x[1]) / self.temperature)
     pred = pred * (self.output_norm_mat[1] - self.output_norm_mat[0]) + self.output_norm_mat[0]
-    return pred
+    return float(pred)
 
 
 class LatControlTorque(LatControl):
