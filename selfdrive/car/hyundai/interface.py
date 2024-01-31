@@ -52,7 +52,6 @@ class CarInterface(CarInterfaceBase):
     if candidate in CANFD_CAR:
       if 0x105 in fingerprint[CAN.ECAN]:
         ret.flags |= HyundaiFlags.HYBRID.value
-      assert bool(ret.flags & HyundaiFlags.HYBRID) is (candidate in HYBRID_CAR)
 
       # detect HDA2 with ADAS Driving ECU
       if hda2:
