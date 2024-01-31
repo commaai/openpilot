@@ -3,7 +3,7 @@ import subprocess
 import time
 import unittest
 
-from multiprocessing import Queue
+from multiprocessing import Queue, Value
 
 from cereal import messaging
 from openpilot.common.basedir import BASEDIR
@@ -27,6 +27,7 @@ class TestSimBridgeBase(unittest.TestCase):
     sm = messaging.SubMaster(['controlsState', 'onroadEvents', 'managerState'])
     q = Queue()
     bridge = self.create_bridge()
+    bridge.started = Value('b', False)
     p_bridge = bridge.run(q, retries=10)
     self.processes.append(p_bridge)
 

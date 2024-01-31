@@ -8,7 +8,7 @@ assignees: ''
 
 **Checklist**
 
-- [ ] added to README
+- [ ] added entry to CarInfo in selfdrive/car/*/values.py and ran `selfdrive/car/docs.py` to generate new docs
 - [ ] test route added to [routes.py](https://github.com/commaai/openpilot/blob/master/selfdrive/car/tests/routes.py)
 - [ ] route with openpilot:
 - [ ] route with stock system:

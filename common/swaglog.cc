@@ -5,30 +5,29 @@
 #include "common/swaglog.h"
 
 #include <cassert>
-#include <cstdarg>
-#include <cstring>
 #include <limits>
 #include <mutex>
 #include <string>
 
 #include <zmq.h>
+#include <stdarg.h>
 #include "third_party/json11/json11.hpp"
-
-#include "common/util.h"
 #include "common/version.h"
 #include "system/hardware/hw.h"
 
-class SwaglogState : public LogState {
- public:
-  SwaglogState() : LogState(Path::swaglog_ipc().c_str()) {}
+class SwaglogState {
+public:
+  SwaglogState() {
+    zctx = zmq_ctx_new();
+    sock = zmq_socket(zctx, ZMQ_PUSH);
 
-  json11::Json::object ctx_j;
+    // Timeout on shutdown for messages to be received by the logging process
+    int timeout = 100;
+    zmq_setsockopt(sock, ZMQ_LINGER, &timeout, sizeof(timeout));
+    zmq_connect(sock, Path::swaglog_ipc().c_str());
 
-  inline void initialize() {
-    ctx_j = json11::Json::object {};
     print_level = CLOUDLOG_WARNING;
-    const char* print_lvl = getenv("LOGPRINT");
-    if (print_lvl) {
+    if (const char* print_lvl = getenv("LOGPRINT")) {
       if (strcmp(print_lvl, "debug") == 0) {
         print_level = CLOUDLOG_DEBUG;
       } else if (strcmp(print_lvl, "info") == 0) {
@@ -38,39 +37,44 @@ class SwaglogState : public LogState {
       }
     }
 
-    // openpilot bindings
-    char* dongle_id = getenv("DONGLE_ID");
-    if (dongle_id) {
+    ctx_j = json11::Json::object{};
+    if (char* dongle_id = getenv("DONGLE_ID")) {
       ctx_j["dongle_id"] = dongle_id;
     }
-    char* daemon_name = getenv("MANAGER_DAEMON");
-    if (daemon_name) {
+    if (char* daemon_name = getenv("MANAGER_DAEMON")) {
       ctx_j["daemon"] = daemon_name;
     }
     ctx_j["version"] = COMMA_VERSION;
     ctx_j["dirty"] = !getenv("CLEAN");
-
-    // device type
     ctx_j["device"] = Hardware::get_name();
-    LogState::initialize();
   }
+
+  ~SwaglogState() {
+    zmq_close(sock);
+    zmq_ctx_destroy(zctx);
+  }
+
+  void log(int levelnum, const char* filename, int lineno, const char* func, const char* msg, const std::string& log_s) {
+    std::lock_guard lk(lock);
+    if (levelnum >= print_level) {
+      printf("%s: %s\n", filename, msg);
+    }
+    zmq_send(sock, log_s.data(), log_s.length(), ZMQ_NOBLOCK);
+  }
+
+  std::mutex lock;
+  void* zctx = nullptr;
+  void* sock = nullptr;
+  int print_level;
+  json11::Json::object ctx_j;
 };
 
-static SwaglogState s = {};
 bool LOG_TIMESTAMPS = getenv("LOG_TIMESTAMPS");
 uint32_t NO_FRAME_ID = std::numeric_limits<uint32_t>::max();
 
-static void log(int levelnum, const char* filename, int lineno, const char* func, const char* msg, const std::string& log_s) {
-  if (levelnum >= s.print_level) {
-    printf("%s: %s\n", filename, msg);
-  }
-  zmq_send(s.sock, log_s.data(), log_s.length(), ZMQ_NOBLOCK);
-}
-
 static void cloudlog_common(int levelnum, const char* filename, int lineno, const char* func,
                             char* msg_buf, const json11::Json::object &msg_j={}) {
-  std::lock_guard lk(s.lock);
-  if (!s.initialized) s.initialize();
+  static SwaglogState s;
 
   json11::Json::object log_j = json11::Json::object {
     {"ctx", s.ctx_j},
@@ -89,7 +93,7 @@ static void cloudlog_common(int levelnum, const char* filename, int lineno, cons
   std::string log_s;
   log_s += (char)levelnum;
   ((json11::Json)log_j).dump(log_s);
-  log(levelnum, filename, lineno, func, msg_buf, log_s);
+  s.log(levelnum, filename, lineno, func, msg_buf, log_s);
 
   free(msg_buf);
 }
