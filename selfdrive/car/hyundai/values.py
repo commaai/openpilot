@@ -126,7 +126,6 @@ class CAR(StrEnum):
   KIA_SORENTO_4TH_GEN = "KIA SORENTO 4TH GEN"
   KIA_SORENTO_HEV_4TH_GEN = "KIA SORENTO HYBRID 4TH GEN"
   KIA_SORENTO_PHEV_4TH_GEN = "KIA SORENTO PLUG-IN HYBRID 4TH GEN"
-  KIA_SPORTAGE_HYBRID_5TH_GEN = "KIA SPORTAGE HYBRID 5TH GEN"
   KIA_STINGER = "KIA STINGER GT2 2018"
   KIA_STINGER_2022 = "KIA STINGER 2022"
   KIA_CEED = "KIA CEED INTRO ED 2019"
@@ -263,7 +262,10 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.KIA_OPTIMA_H: HyundaiCarInfo("Kia Optima Hybrid 2017", "Advanced Smart Cruise Control", car_parts=CarParts.common([CarHarness.hyundai_c])),
   CAR.KIA_OPTIMA_H_G4_FL: HyundaiCarInfo("Kia Optima Hybrid 2019", car_parts=CarParts.common([CarHarness.hyundai_h])),
   CAR.KIA_SELTOS: HyundaiCarInfo("Kia Seltos 2021", car_parts=CarParts.common([CarHarness.hyundai_a])),
-  CAR.KIA_SPORTAGE_5TH_GEN: HyundaiCarInfo("Kia Sportage 2023", car_parts=CarParts.common([CarHarness.hyundai_n])),
+  CAR.KIA_SPORTAGE_5TH_GEN: [
+    HyundaiCarInfo("Kia Sportage 2023", car_parts=CarParts.common([CarHarness.hyundai_n])),
+    HyundaiCarInfo("Kia Sportage Hybrid 2023", car_parts=CarParts.common([CarHarness.hyundai_n])),
+  ],
   CAR.KIA_SORENTO: [
     HyundaiCarInfo("Kia Sorento 2018", "Advanced Smart Cruise Control & LKAS", video_link="https://www.youtube.com/watch?v=Fkh3s6WHJz8",
                    car_parts=CarParts.common([CarHarness.hyundai_e])),
@@ -272,7 +274,6 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.KIA_SORENTO_4TH_GEN: HyundaiCarInfo("Kia Sorento 2021-23", car_parts=CarParts.common([CarHarness.hyundai_k])),
   CAR.KIA_SORENTO_HEV_4TH_GEN: HyundaiCarInfo("Kia Sorento Hybrid 2021-23", "All", car_parts=CarParts.common([CarHarness.hyundai_a])),
   CAR.KIA_SORENTO_PHEV_4TH_GEN: HyundaiCarInfo("Kia Sorento Plug-in Hybrid 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_a])),
-  CAR.KIA_SPORTAGE_HYBRID_5TH_GEN: HyundaiCarInfo("Kia Sportage Hybrid 2023", car_parts=CarParts.common([CarHarness.hyundai_n])),
   CAR.KIA_STINGER: HyundaiCarInfo("Kia Stinger 2018-20", video_link="https://www.youtube.com/watch?v=MJ94qoofYw0",
                                   car_parts=CarParts.common([CarHarness.hyundai_c])),
   CAR.KIA_STINGER_2022: HyundaiCarInfo("Kia Stinger 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_k])),
@@ -481,7 +482,7 @@ CAN_GEARS = {
   "use_tcu_gears": {CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL, CAR.SONATA_LF, CAR.VELOSTER, CAR.TUCSON},
 }
 
-CANFD_CAR = {CAR.KIA_EV6, CAR.IONIQ_5, CAR.IONIQ_6, CAR.TUCSON_4TH_GEN, CAR.KIA_SPORTAGE_HYBRID_5TH_GEN,
+CANFD_CAR = {CAR.KIA_EV6, CAR.IONIQ_5, CAR.IONIQ_6, CAR.TUCSON_4TH_GEN,
              CAR.SANTA_CRUZ_1ST_GEN, CAR.KIA_SPORTAGE_5TH_GEN, CAR.GENESIS_GV70_1ST_GEN, CAR.KIA_SORENTO_PHEV_4TH_GEN,
              CAR.GENESIS_GV60_EV_1ST_GEN, CAR.KIA_SORENTO_4TH_GEN, CAR.KIA_NIRO_HEV_2ND_GEN, CAR.KIA_NIRO_EV_2ND_GEN,
              CAR.GENESIS_GV80, CAR.KIA_CARNIVAL_4TH_GEN, CAR.KIA_SORENTO_HEV_4TH_GEN, CAR.KONA_EV_2ND_GEN, CAR.KIA_K8_HEV_1ST_GEN,
@@ -570,7 +571,6 @@ DBC = {
   CAR.IONIQ_6: dbc_dict('hyundai_canfd', None),
   CAR.SANTA_CRUZ_1ST_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KIA_SPORTAGE_5TH_GEN: dbc_dict('hyundai_canfd', None),
-  CAR.KIA_SPORTAGE_HYBRID_5TH_GEN: dbc_dict('hyundai_canfd', None),
   CAR.GENESIS_GV70_1ST_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KIA_SORENTO_PHEV_4TH_GEN: dbc_dict('hyundai_canfd', None),
   CAR.GENESIS_GV60_EV_1ST_GEN: dbc_dict('hyundai_canfd', None),

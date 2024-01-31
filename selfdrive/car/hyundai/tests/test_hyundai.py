@@ -18,7 +18,6 @@ ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 NO_DATES_PLATFORMS = {
   # CAN FD
   CAR.KIA_SPORTAGE_5TH_GEN,
-  CAR.KIA_SPORTAGE_HYBRID_5TH_GEN,
   CAR.SANTA_CRUZ_1ST_GEN,
   CAR.TUCSON_4TH_GEN,
   # CAN
