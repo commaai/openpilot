@@ -308,9 +308,9 @@ node {
 
   // Daily restart of all CI devices at 4am pst
   node {
-    properties([pipelineTriggers([cron('* 4 * * *')])])
+    //properties([pipelineTriggers([cron('* 4 * * *')])])
 
-    if (env.BRANCH_NAME == 'master') {
+    //if (env.BRANCH_NAME == 'master') {
       parallel {
         restart("tici-needs-can")
         restart("tici-common")
@@ -322,5 +322,5 @@ node {
         restart("tizi")
       }
     }
-  }
+  //}
 }
