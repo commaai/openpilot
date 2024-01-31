@@ -180,7 +180,6 @@ class TestHyundaiFingerprint(unittest.TestCase):
     excluded_platforms = {
       CAR.GENESIS_G70,            # shared platform code, part number, and date
       CAR.GENESIS_G70_2020,
-      CAR.TUCSON_4TH_GEN,         # shared platform code and part number
     }
     excluded_platforms |= CANFD_CAR - EV_CAR  # shared platform codes
     excluded_platforms |= NO_DATES_PLATFORMS  # date codes are required to match
