@@ -1,5 +1,7 @@
 import math
 import numpy as np
+from collections import deque
+
 from cereal import log
 from openpilot.common.numpy_fast import interp
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
@@ -63,6 +65,8 @@ class LatControlTorque(LatControl):
     self.use_steering_angle = self.torque_params.useSteeringAngle
     self.steering_angle_deadzone_deg = self.torque_params.steeringAngleDeadzoneDeg
     self.ff_model = NanoFFModel(temperature=10.0)
+    self.history = {key: deque([0, 0, 0], maxlen=3) for key in ["lataccel", "roll_compensation", "vego", "aego"]}
+    self.history_counter = 0
 
   def update_live_torque_params(self, latAccelFactor, latAccelOffset, friction):
     self.torque_params.latAccelFactor = latAccelFactor
@@ -71,38 +75,47 @@ class LatControlTorque(LatControl):
 
   def update(self, active, CS, VM, params, steer_limited, desired_curvature, llk):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
+    actual_curvature_vm = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
+    roll_compensation = math.sin(params.roll) * ACCELERATION_DUE_TO_GRAVITY
 
     if not active:
       output_torque = 0.0
       pid_log.active = False
     else:
       if self.use_steering_angle:
-        actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
-        curvature_deadzone = abs(VM.calc_curvature(math.radians(self.steering_angle_deadzone_deg), CS.vEgo, 0.0))
+        actual_curvature = actual_curvature_vm
+        # curvature_deadzone = abs(VM.calc_curvature(math.radians(self.steering_angle_deadzone_deg), CS.vEgo, 0.0))
       else:
-        actual_curvature_vm = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
         actual_curvature_llk = llk.angularVelocityCalibrated.value[2] / CS.vEgo
         actual_curvature = interp(CS.vEgo, [2.0, 5.0], [actual_curvature_vm, actual_curvature_llk])
-        curvature_deadzone = 0.0
+        # curvature_deadzone = 0.0
       desired_lateral_accel = desired_curvature * CS.vEgo ** 2
 
       # desired rate is the desired rate of change in the setpoint, not the absolute desired curvature
       # desired_lateral_jerk = desired_curvature_rate * CS.vEgo ** 2
       actual_lateral_accel = actual_curvature * CS.vEgo ** 2
-      lateral_accel_deadzone = curvature_deadzone * CS.vEgo ** 2
 
       low_speed_factor = interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y)**2
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
-      gravity_adjusted_lateral_accel = desired_lateral_accel - params.roll * ACCELERATION_DUE_TO_GRAVITY
-      torque_from_setpoint = self.torque_from_lateral_accel(setpoint, self.torque_params, setpoint,
-                                                     lateral_accel_deadzone, friction_compensation=False)
-      torque_from_measurement = self.torque_from_lateral_accel(measurement, self.torque_params, measurement,
-                                                     lateral_accel_deadzone, friction_compensation=False)
+
+      # lateral_accel_deadzone = curvature_deadzone * CS.vEgo ** 2
+      # gravity_adjusted_lateral_accel = desired_lateral_accel - roll_compensation
+      # torque_from_setpoint = self.torque_from_lateral_accel(setpoint, self.torque_params, setpoint,
+      #                                                lateral_accel_deadzone, friction_compensation=False)
+      # torque_from_measurement = self.torque_from_lateral_accel(measurement, self.torque_params, measurement,
+      #                                                lateral_accel_deadzone, friction_compensation=False)
+      # pid_log.error = torque_from_setpoint - torque_from_measurement
+      # ff = self.torque_from_lateral_accel(gravity_adjusted_lateral_accel, self.torque_params,
+      #                                     desired_lateral_accel - actual_lateral_accel,
+      #                                     lateral_accel_deadzone, friction_compensation=True)
+
+      state_vector = [roll_compensation, CS.vEgo, CS.aEgo]
+      history_state_vector = list(self.history["lataccel"]) + list(self.history["roll_compensation"]) + list(self.history["vego"]) + list(self.history["aego"])
+      torque_from_setpoint = self.ff_model.predict([setpoint] + state_vector + history_state_vector)
+      torque_from_measurement = self.ff_model.predict([measurement] + state_vector + history_state_vector)
       pid_log.error = torque_from_setpoint - torque_from_measurement
-      ff = self.torque_from_lateral_accel(gravity_adjusted_lateral_accel, self.torque_params,
-                                          desired_lateral_accel - actual_lateral_accel,
-                                          lateral_accel_deadzone, friction_compensation=True)
+      ff = self.ff_model.predict([desired_lateral_accel] + state_vector + history_state_vector)
 
       freeze_integrator = steer_limited or CS.steeringPressed or CS.vEgo < 5
       output_torque = self.pid.update(pid_log.error,
@@ -119,6 +132,14 @@ class LatControlTorque(LatControl):
       pid_log.actualLateralAccel = actual_lateral_accel
       pid_log.desiredLateralAccel = desired_lateral_accel
       pid_log.saturated = self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS, steer_limited)
+
+    if self.history_counter % 10 == 0:
+      self.history["lataccel"].append(actual_curvature_vm * CS.vEgo ** 2)
+      self.history["roll_compensation"].append(roll_compensation)
+      self.history["vego"].append(CS.vEgo)
+      self.history["aego"].append(CS.aEgo)
+
+    self.history_counter = (self.history_counter + 1) % 10
 
     # TODO left is positive in this convention
     return -output_torque, 0.0, pid_log
