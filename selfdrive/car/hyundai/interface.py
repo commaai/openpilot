@@ -159,7 +159,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.67
       ret.steerRatio = 14.00 * 1.15
       ret.tireStiffnessFactor = 0.385
-    elif candidate in (CAR.TUCSON_4TH_GEN, CAR.TUCSON_HYBRID_4TH_GEN):
+    elif candidate == CAR.TUCSON_4TH_GEN:
       ret.mass = 1630.  # average
       ret.wheelbase = 2.756
       ret.steerRatio = 16.
