@@ -94,7 +94,7 @@ def default_valid_file(fn):
 
 def auto_strategy(rlog_paths, qlog_paths, interactive, valid_file):
   # auto select logs based on availability
-  if any(rlog is None or not file_exists(rlog) for rlog in rlog_paths):
+  if any(rlog is None or not valid_file(rlog) for rlog in rlog_paths):
     if interactive:
       if input("Some rlogs were not found, would you like to fallback to qlogs for those segments? (y/n) ").lower() != "y":
         return rlog_paths
