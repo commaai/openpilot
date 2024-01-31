@@ -1,5 +1,5 @@
 """
-Utilities for generating mock messages for testing. 
+Utilities for generating mock messages for testing.
 example in common/tests/test_mock.py
 """
 
