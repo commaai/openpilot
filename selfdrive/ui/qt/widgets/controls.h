@@ -266,7 +266,7 @@ private:
       if (widget == nullptr || widget->isVisible()) {
         QRect r = inner_layout.itemAt(i)->geometry();
         int bottom = r.bottom() + inner_layout.spacing() / 2;
-        p.drawLine(r.left() + 40, bottom, r.right() - 40, bottom);
+        p.drawLine(r.left(), bottom, r.right(), bottom);
       }
     }
   }
