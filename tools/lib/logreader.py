@@ -9,6 +9,7 @@ import os
 import pathlib
 import re
 import sys
+import tqdm
 import urllib.parse
 import warnings
 
@@ -259,7 +260,8 @@ class LogReader:
   def run_across_segments(self, num_processes, func):
     with multiprocessing.Pool(num_processes) as pool:
       ret = []
-      for p in pool.map(partial(self._run_on_segment, func), range(len(self.logreader_identifiers))):
+      num_segs = len(self.logreader_identifiers)
+      for p in tqdm.tqdm(pool.imap(partial(self._run_on_segment, func), range(num_segs)), total=num_segs):
         ret.extend(p)
       return ret
 
@@ -273,9 +275,11 @@ are uploaded or auto fallback to qlogs with '/a' selector at the end of the rout
   def from_bytes(dat):
     return _LogFileReader("", dat=dat)
 
+  def filter(self, msg_type: str):
+    return (getattr(m, m.which()) for m in filter(lambda m: m.which() == msg_type, self))
+
   def first(self, msg_type: str):
-    m = next(filter(lambda m: m.which() == msg_type, self), None)
-    return None if m is None else getattr(m, msg_type)
+    return next(self.filter(msg_type), None)
 
 
 if __name__ == "__main__":

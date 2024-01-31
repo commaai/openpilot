@@ -14,6 +14,9 @@ EcuAddrSubAddr = Tuple[int, int, Optional[int]]
 LiveFwVersions = Dict[AddrType, Set[bytes]]
 OfflineFwVersions = Dict[str, Dict[EcuAddrSubAddr, List[bytes]]]
 
+STANDARD_VIN_ADDRS = [0x7e0, 0x7e2, 0x18da10f1, 0x18da0ef1]  # engine, VMCU, 29-bit engine, PGM-FI
+
+
 def p16(val):
   return struct.pack("!H", val)
 
@@ -56,6 +59,9 @@ class StdQueries:
   UDS_VIN_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + p16(uds.DATA_IDENTIFIER_TYPE.VIN)
   UDS_VIN_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + p16(uds.DATA_IDENTIFIER_TYPE.VIN)
 
+  GM_VIN_REQUEST = b'\x1a\x90'
+  GM_VIN_RESPONSE = b'\x5a\x90'
+
 
 @dataclass
 class Request:
@@ -90,3 +96,16 @@ class FwQueryConfig:
         new_request = copy.deepcopy(self.requests[i])
         new_request.bus += 4
         self.requests.append(new_request)
+
+  def get_all_ecus(self, offline_fw_versions: OfflineFwVersions, include_ecu_type: bool = True,
+                   include_extra_ecus: bool = True) -> set[EcuAddrSubAddr] | set[AddrType]:
+    # Add ecus in database + extra ecus
+    brand_ecus = {ecu for ecus in offline_fw_versions.values() for ecu in ecus}
+
+    if include_extra_ecus:
+      brand_ecus |= set(self.extra_ecus)
+
+    if not include_ecu_type:
+      return {(addr, subaddr) for _, addr, subaddr in brand_ecus}
+
+    return brand_ecus
