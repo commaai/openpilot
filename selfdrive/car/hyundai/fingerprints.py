@@ -920,7 +920,6 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00HI  LKAS AT USA LHD 1.00 1.00 95895-D2020 160302',
-      b'\xf1\x00HI  LKAS AT USA LHD 1.00 1.00 95895-D2030 170208',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x810000000000\x00',
