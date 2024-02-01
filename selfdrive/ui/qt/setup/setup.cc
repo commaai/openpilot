@@ -20,7 +20,7 @@
 #include "selfdrive/ui/qt/widgets/input.h"
 
 const std::string USER_AGENT = "AGNOSSetup-";
-const QString DASHCAM_URL = "https://dashcam.comma.ai";
+const QString TEST_URL = "https://openpilot.comma.ai";
 
 bool is_elf(char *fname) {
   FILE *fp = fopen(fname, "rb");
@@ -229,11 +229,11 @@ QWidget * Setup::network_setup() {
     }
     repaint();
   });
-  request->sendRequest(DASHCAM_URL);
+  request->sendRequest(TEST_URL);
   QTimer *timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, [=]() {
     if (!request->active() && cont->isVisible()) {
-      request->sendRequest(DASHCAM_URL);
+      request->sendRequest(TEST_URL);
     }
   });
   timer->start(1000);

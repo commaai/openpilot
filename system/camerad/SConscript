@@ -7,4 +7,4 @@ camera_obj = env.Object(['cameras/camera_qcom2.cc', 'cameras/camera_common.cc', 
 env.Program('camerad', ['main.cc', camera_obj], LIBS=libs)
 
 if GetOption("extras") and arch == "x86_64":
-  env.Program('test/ae_gray_test', ['test/ae_gray_test.cc', camera_obj], LIBS=libs)
+  env.Program('test/test_ae_gray', ['test/test_ae_gray.cc', camera_obj], LIBS=libs)

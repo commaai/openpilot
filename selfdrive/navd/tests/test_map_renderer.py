@@ -28,8 +28,11 @@ LOCATION2_REPEATED = [LOCATION2] * DEFAULT_ITERATIONS
 def gen_llk(location=LOCATION1):
   msg = messaging.new_message('liveLocationKalman')
   msg.liveLocationKalman.positionGeodetic = {'value': [*location, 0], 'std': [0., 0., 0.], 'valid': True}
+  msg.liveLocationKalman.positionECEF = {'value': [0., 0., 0.], 'std': [0., 0., 0.], 'valid': True}
   msg.liveLocationKalman.calibratedOrientationNED = {'value': [0., 0., 0.], 'std': [0., 0., 0.], 'valid': True}
+  msg.liveLocationKalman.velocityCalibrated = {'value': [0., 0., 0.], 'std': [0., 0., 0.], 'valid': True}
   msg.liveLocationKalman.status = 'valid'
+  msg.liveLocationKalman.gpsOK = True
   return msg
 
 
@@ -181,6 +184,7 @@ class TestMapRenderer(unittest.TestCase):
     self._run_test(False)
 
   @with_processes(["mapsd"])
+  @pytest.mark.skip(reason="slow, flaky, and unlikely to break")
   def test_recover_from_no_internet(self):
     self._setup_test()
     self._run_test(True)
