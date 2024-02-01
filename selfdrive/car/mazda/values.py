@@ -70,12 +70,12 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
       [StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
+      bus=0,
     ),
-    # Log responses on powertrain bus
+    # Log responses on OBD port
     Request(
       [StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
       [StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
-      bus=0,
       logging=True,
     ),
   ],
