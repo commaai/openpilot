@@ -21,6 +21,7 @@ from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_G
 LOW_SPEED_X = [0, 10, 20, 30]
 LOW_SPEED_Y = [15, 13, 10, 5]
 HISTORY_LEN = 3
+CONTROLSD_FPS = 100
 HISTORY_FPS = 10
 
 
@@ -34,6 +35,8 @@ class LatControlTorque(LatControl):
     self.use_steering_angle = self.torque_params.useSteeringAngle
     self.steering_angle_deadzone_deg = self.torque_params.steeringAngleDeadzoneDeg
     self.history = ControllerStateHistory(max_len=HISTORY_LEN)
+    self.frame_counter = 0
+    self.record_frame_id = CONTROLSD_FPS // HISTORY_FPS
 
   def update_live_torque_params(self, latAccelFactor, latAccelOffset, friction):
     self.torque_params.latAccelFactor = latAccelFactor
@@ -94,5 +97,8 @@ class LatControlTorque(LatControl):
       pid_log.desiredLateralAccel = desired_lateral_accel
       pid_log.saturated = self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS, steer_limited)
 
+    if self.frame_counter % self.record_frame_id == 0:
+      self.history.append(ControllerState(actual_curvature_vm * CS.vEgo ** 2, roll_compensation, CS.vEgo, CS.aEgo))
+    self.frame_counter = (self.frame_counter + 1) % self.record_frame_id
     # TODO left is positive in this convention
     return -output_torque, 0.0, pid_log
