@@ -23,9 +23,8 @@ from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTes
 from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
-from openpilot.tools.lib.comma_car_segments import get_url
-from openpilot.tools.lib.logreader import LogReader
-from openpilot.tools.lib.route import Route, SegmentName, RouteName
+from openpilot.tools.lib.logreader import LogReader, check_source, openpilotci_source
+from openpilot.tools.lib.route import SegmentName, SegmentRange
 
 from panda.tests.libpanda import libpanda_py
 
@@ -74,14 +73,6 @@ class TestCarModelBase(unittest.TestCase):
   fingerprint: dict[int, dict[int, int]]
   elm_frame: Optional[int]
   car_safety_mode_frame: Optional[int]
-
-  @classmethod
-  def get_logreader(cls, seg):
-    if len(INTERNAL_SEG_LIST):
-      route_name = RouteName(cls.test_route.route)
-      return LogReader(f"cd:/{route_name.dongle_id}/{route_name.time_str}/{seg}/rlog.bz2")
-    else:
-      return LogReader(get_url(cls.test_route.route, seg))
 
   @classmethod
   def get_testing_data_from_logreader(cls, lr):
@@ -133,25 +124,15 @@ class TestCarModelBase(unittest.TestCase):
     if cls.test_route.segment is not None:
       test_segs = (cls.test_route.segment,)
 
-    # Try the primary method first (CI or internal)
     for seg in test_segs:
+      segment_range = f"{cls.test_route.route}/{seg}"
+
       try:
-        lr = cls.get_logreader(seg)
+        lr = LogReader(segment_range)
+        cls.test_route_on_bucket = check_source(openpilotci_source, SegmentRange(segment_range))
         return cls.get_testing_data_from_logreader(lr)
       except Exception:
         pass
-
-    # Route is not in CI bucket, assume either user has access (private), or it is public
-    # test_route_on_ci_bucket will fail when running in CI
-    if not len(INTERNAL_SEG_LIST):
-      cls.test_route_on_bucket = False
-
-      for seg in test_segs:
-        try:
-          lr = LogReader(Route(cls.test_route.route).log_paths()[seg])
-          return cls.get_testing_data_from_logreader(lr)
-        except Exception:
-          pass
 
     raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded and public?")
 
