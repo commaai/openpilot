@@ -39,7 +39,7 @@ def build_fw_dict(fw_versions: List[capnp.lib.capnp._DynamicStructBuilder],
                   filter_brand: Optional[str] = None) -> Dict[AddrType, Set[bytes]]:
   fw_versions_dict: DefaultDict[AddrType, Set[bytes]] = defaultdict(set)
   for fw in fw_versions:
-    if is_brand(fw.brand, filter_brand) and fw.logging and fw.bus == 0:
+    if is_brand(fw.brand, filter_brand) and not fw.logging:
       sub_addr = fw.subAddress if fw.subAddress != 0 else None
       fw_versions_dict[(fw.address, sub_addr)].add(fw.fwVersion)
   return dict(fw_versions_dict)
