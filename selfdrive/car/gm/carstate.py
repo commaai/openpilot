@@ -35,6 +35,9 @@ class CarState(CarStateBase):
     self.pscm_status = copy.copy(pt_cp.vl["PSCMStatus"])
     # 0 - unknown, 1 - forward, 2 - reverse, 3 - unsupported, 4 - fault
     self.moving_backward = (pt_cp.vl["EBCMWheelSpdRear"]["RLWheelDir"] != 2) and (pt_cp.vl["EBCMWheelSpdRear"]["RRWheelDir"] != 2)
+    rl_wheel_dir = pt_cp.vl["EBCMWheelSpdRear"]["RLWheelDir"]
+    rr_wheel_dir = pt_cp.vl["EBCMWheelSpdRear"]["RRWheelDir"]
+    assert rl_wheel_dir in (1, 2) and rr_wheel_dir in (1, 2), f"Invalid RLWheelDir: {rl_wheel_dir}, RRWheelDir: {rr_wheel_dir}"
 
     # Variables used for avoiding LKAS faults
     self.loopback_lka_steering_cmd_updated = len(loopback_cp.vl_all["ASCMLKASteeringCmd"]["RollingCounter"]) > 0
