@@ -287,11 +287,8 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   # Get versions and build capnp list to put into CarParams
   car_fw = []
   requests = [(brand, config, r) for brand, config, r in REQUESTS if is_brand(brand, query_brand)]
-  print('addrs', addrs)
-  for _addr in tqdm(addrs, disable=not progress):
-    print(addr)
-    print()
-    for addr_chunk in chunks(_addr):
+  for addr_group in tqdm(addrs, disable=not progress):  # split by subaddr, if any
+    for addr_chunk in chunks(addr_group):
       for brand, config, r in requests:
         # Skip query if no panda available
         if r.bus > num_pandas * 4 - 1:
