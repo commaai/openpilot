@@ -5,7 +5,7 @@ import unittest
 from cereal import car
 from openpilot.selfdrive.car.fw_versions import build_fw_dict
 from openpilot.selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
-                                         HYBRID_CAR, EV_CAR, FW_QUERY_CONFIG, LEGACY_SAFETY_MODE_CAR, \
+                                         HYBRID_CAR, EV_CAR, FW_QUERY_CONFIG, LEGACY_SAFETY_MODE_CAR, CANFD_FUZZY_WHITELIST, \
                                          UNSUPPORTED_LONGITUDINAL_CAR, PLATFORM_CODE_ECUS, HYUNDAI_VERSION_REQUEST_LONG, \
                                          get_platform_codes
 from openpilot.selfdrive.car.hyundai.fingerprints import FW_VERSIONS
@@ -18,7 +18,6 @@ ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 NO_DATES_PLATFORMS = {
   # CAN FD
   CAR.KIA_SPORTAGE_5TH_GEN,
-  CAR.KIA_SPORTAGE_HYBRID_5TH_GEN,
   CAR.SANTA_CRUZ_1ST_GEN,
   CAR.TUCSON_4TH_GEN,
   # CAN
@@ -182,7 +181,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
       CAR.GENESIS_G70,            # shared platform code, part number, and date
       CAR.GENESIS_G70_2020,
     }
-    excluded_platforms |= CANFD_CAR - EV_CAR  # shared platform codes
+    excluded_platforms |= CANFD_CAR - EV_CAR - CANFD_FUZZY_WHITELIST  # shared platform codes
     excluded_platforms |= NO_DATES_PLATFORMS  # date codes are required to match
 
     platforms_with_shared_codes = set()
