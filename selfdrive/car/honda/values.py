@@ -195,7 +195,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [StdQueries.UDS_VERSION_REQUEST],
       [StdQueries.UDS_VERSION_RESPONSE],
       bus=1,
-      logging=True,
       obd_multiplexing=False,
     ),
   ],
