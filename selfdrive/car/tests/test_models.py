@@ -23,7 +23,7 @@ from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTes
 from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
-from openpilot.tools.lib.logreader import LogReader, check_source, openpilotci_source
+from openpilot.tools.lib.logreader import LogReader, ReadMode, check_source, openpilotci_source
 from openpilot.tools.lib.route import SegmentName, SegmentRange
 
 from panda.tests.libpanda import libpanda_py
@@ -129,7 +129,8 @@ class TestCarModelBase(unittest.TestCase):
 
       try:
         lr = LogReader(segment_range)
-        cls.test_route_on_bucket = check_source(openpilotci_source, SegmentRange(segment_range))
+        error, _ = check_source(openpilotci_source, SegmentRange(segment_range), ReadMode.RLOG)
+        cls.test_route_on_bucket = error is None
         return cls.get_testing_data_from_logreader(lr)
       except Exception:
         pass
