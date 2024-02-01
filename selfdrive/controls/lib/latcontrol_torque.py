@@ -2,8 +2,7 @@ import math
 
 from cereal import log
 from openpilot.common.numpy_fast import interp
-from openpilot.common.realtime import DT_CTRL
-from openpilot.selfdrive.car.interfaces import ControllerState, ControllerStateHistory
+from openpilot.selfdrive.car.interfaces import LatControlInputs
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
 from openpilot.selfdrive.controls.lib.pid import PIDController
 from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
@@ -21,8 +20,6 @@ from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_G
 
 LOW_SPEED_X = [0, 10, 20, 30]
 LOW_SPEED_Y = [15, 13, 10, 5]
-HISTORY_LEN = 3
-HISTORY_DT = 0.1
 
 
 class LatControlTorque(LatControl):
@@ -34,9 +31,6 @@ class LatControlTorque(LatControl):
     self.torque_from_lateral_accel = CI.torque_from_lateral_accel()
     self.use_steering_angle = self.torque_params.useSteeringAngle
     self.steering_angle_deadzone_deg = self.torque_params.steeringAngleDeadzoneDeg
-    self.history = ControllerStateHistory(max_len=HISTORY_LEN)
-    self.frame_counter = 0
-    self.record_frame_id = HISTORY_DT // DT_CTRL
 
   def update_live_torque_params(self, latAccelFactor, latAccelOffset, friction):
     self.torque_params.latAccelFactor = latAccelFactor
@@ -70,16 +64,14 @@ class LatControlTorque(LatControl):
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       gravity_adjusted_lateral_accel = desired_lateral_accel - roll_compensation
-      torque_from_setpoint = self.torque_from_lateral_accel(ControllerState(setpoint, roll_compensation, CS.vEgo, CS.aEgo), self.history,
-                                                            self.torque_params, setpoint, lateral_accel_deadzone, friction_compensation=False,
-                                                            gravity_adjusted=False)
-      torque_from_measurement = self.torque_from_lateral_accel(ControllerState(measurement, roll_compensation, CS.vEgo, CS.aEgo), self.history,
-                                                               self.torque_params, measurement, lateral_accel_deadzone, friction_compensation=False,
-                                                               gravity_adjusted=False)
+      torque_from_setpoint = self.torque_from_lateral_accel(LatControlInputs(setpoint, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
+                                                            setpoint, lateral_accel_deadzone, friction_compensation=False, gravity_adjusted=False)
+      torque_from_measurement = self.torque_from_lateral_accel(LatControlInputs(measurement, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
+                                                               measurement, lateral_accel_deadzone, friction_compensation=False, gravity_adjusted=False)
       pid_log.error = torque_from_setpoint - torque_from_measurement
-      ff = self.torque_from_lateral_accel(ControllerState(gravity_adjusted_lateral_accel, roll_compensation, CS.vEgo, CS.aEgo), self.history,
-                                          self.torque_params, desired_lateral_accel - actual_lateral_accel, lateral_accel_deadzone,
-                                          friction_compensation=True, gravity_adjusted=True)
+      ff = self.torque_from_lateral_accel(LatControlInputs(gravity_adjusted_lateral_accel, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
+                                          desired_lateral_accel - actual_lateral_accel, lateral_accel_deadzone, friction_compensation=True,
+                                          gravity_adjusted=True)
 
       freeze_integrator = steer_limited or CS.steeringPressed or CS.vEgo < 5
       output_torque = self.pid.update(pid_log.error,
@@ -97,8 +89,5 @@ class LatControlTorque(LatControl):
       pid_log.desiredLateralAccel = desired_lateral_accel
       pid_log.saturated = self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS, steer_limited)
 
-    if self.frame_counter % self.record_frame_id == 0:
-      self.history.append(ControllerState(actual_curvature_vm * CS.vEgo ** 2, roll_compensation, CS.vEgo, CS.aEgo))
-    self.frame_counter = (self.frame_counter + 1) % self.record_frame_id
     # TODO left is positive in this convention
     return -output_torque, 0.0, pid_log

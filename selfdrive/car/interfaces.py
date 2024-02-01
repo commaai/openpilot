@@ -3,7 +3,6 @@ import time
 import numpy as np
 import tomllib
 from abc import abstractmethod, ABC
-from collections import deque
 from enum import StrEnum
 from typing import Any, Dict, Optional, Tuple, List, Callable, NamedTuple
 
@@ -32,29 +31,14 @@ TORQUE_OVERRIDE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/override
 TORQUE_SUBSTITUTE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/substitute.toml')
 
 
-class ControllerState(NamedTuple):
+class LatControlInputs(NamedTuple):
   lateral_acceleration: float
   roll_compensation: float
   vego: float
   aego: float
 
 
-class ControllerStateHistory:
-  def __init__(self, max_len: int):
-    self.states = deque([ControllerState(0., 0., 0., 0.)] * max_len, maxlen=max_len)
-
-  def append(self, state: ControllerState):
-    assert isinstance(state, ControllerState), "Append a State object"
-    self.states.append(state)
-
-  def __getattr__(self, name: str):
-    return [getattr(s, name) for s in self.states]
-
-  def __repr__(self):
-    return repr(self.states)
-
-
-TorqueFromLateralAccelCallbackType = Callable[[ControllerState, ControllerStateHistory, car.CarParams.LateralTorqueTuning, float, float, bool, bool], float]
+TorqueFromLateralAccelCallbackType = Callable[[LatControlInputs, car.CarParams.LateralTorqueTuning, float, float, bool, bool], float]
 
 
 def get_torque_params(candidate):
@@ -155,12 +139,11 @@ class CarInterfaceBase(ABC):
   def get_steer_feedforward_function(self):
     return self.get_steer_feedforward_default
 
-  def torque_from_lateral_accel_linear(self, controller_state: ControllerState, controller_state_hisatory: ControllerStateHistory,
-                                       torque_params: car.CarParams.LateralTorqueTuning, lateral_accel_error: float, lateral_accel_deadzone: float,
-                                       friction_compensation: bool, gravity_adjusted: bool) -> float:
+  def torque_from_lateral_accel_linear(self, latcontrol_inputs: LatControlInputs, torque_params: car.CarParams.LateralTorqueTuning,
+                                       lateral_accel_error: float, lateral_accel_deadzone: float, friction_compensation: bool, gravity_adjusted: bool) -> float:
     # The default is a linear relationship between torque and lateral acceleration (accounting for road roll and steering friction)
     friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
-    return (controller_state.lateral_acceleration / float(torque_params.latAccelFactor)) + friction
+    return (latcontrol_inputs.lateral_acceleration / float(torque_params.latAccelFactor)) + friction
 
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
     return self.torque_from_lateral_accel_linear
