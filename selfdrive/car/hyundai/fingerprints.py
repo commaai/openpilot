@@ -1511,15 +1511,6 @@ FW_VERSIONS = {
       b'\xf1\x81640F0051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
-  CAR.KIA_SORENTO_PHEV_4TH_GEN: {
-    (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00MQhe SCC FHCUP      1.00 1.06 99110-P4000         ',
-    ],
-    (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00MQ4HMFC  AT USA LHD 1.00 1.10 99210-P2000 210406',
-      b'\xf1\x00MQ4HMFC  AT USA LHD 1.00 1.11 99210-P2000 211217',
-    ],
-  },
   CAR.KIA_EV6: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ',
@@ -1564,36 +1555,19 @@ FW_VERSIONS = {
   },
   CAR.TUCSON_4TH_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N9210 14G',
-      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.01 99211-N9240 14T',
-    ],
-    (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00NX4__               1.00 1.00 99110-N9100         ',
-      b'\xf1\x00NX4__               1.01 1.00 99110-N9100         ',
-    ],
-  },
-  CAR.TUCSON_HYBRID_4TH_GEN: {
-    (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 2.02 99211-N9000 14E',
+      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N9210 14G',
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N9220 14K',
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N9240 14Q',
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N9250 14W',
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N9260 14Y',
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.01 99211-N9100 14A',
+      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.01 99211-N9240 14T',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NX4__               1.00 1.00 99110-N9100         ',
       b'\xf1\x00NX4__               1.00 1.01 99110-N9000         ',
       b'\xf1\x00NX4__               1.01 1.00 99110-N9100         ',
-    ],
-  },
-  CAR.KIA_SPORTAGE_HYBRID_5TH_GEN: {
-    (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00NQ5 FR_CMR AT GEN LHD 1.00 1.00 99211-P1060 665',
-      b'\xf1\x00NQ5 FR_CMR AT USA LHD 1.00 1.00 99211-P1060 665',
-    ],
-    (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00NQ5__               1.01 1.03 99110-CH000         ',
     ],
   },
   CAR.SANTA_CRUZ_1ST_GEN: {
@@ -1609,12 +1583,15 @@ FW_VERSIONS = {
   CAR.KIA_SPORTAGE_5TH_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00NQ5 FR_CMR AT AUS RHD 1.00 1.00 99211-P1040 663',
+      b'\xf1\x00NQ5 FR_CMR AT GEN LHD 1.00 1.00 99211-P1060 665',
       b'\xf1\x00NQ5 FR_CMR AT USA LHD 1.00 1.00 99211-P1030 662',
       b'\xf1\x00NQ5 FR_CMR AT USA LHD 1.00 1.00 99211-P1040 663',
+      b'\xf1\x00NQ5 FR_CMR AT USA LHD 1.00 1.00 99211-P1060 665',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NQ5__               1.00 1.02 99110-P1000         ',
       b'\xf1\x00NQ5__               1.00 1.03 99110-P1000         ',
+      b'\xf1\x00NQ5__               1.01 1.03 99110-CH000         ',
       b'\xf1\x00NQ5__               1.01 1.03 99110-P1000         ',
     ],
   },
@@ -1652,6 +1629,19 @@ FW_VERSIONS = {
       b'\xf1\x00MQ4_ SCC FHCUP      1.00 1.08 99110-P2000         ',
     ],
   },
+  CAR.KIA_SORENTO_HEV_4TH_GEN: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00MQ4HMFC  AT KOR LHD 1.00 1.04 99210-P2000 200330',
+      b'\xf1\x00MQ4HMFC  AT KOR LHD 1.00 1.12 99210-P2000 230331',
+      b'\xf1\x00MQ4HMFC  AT USA LHD 1.00 1.10 99210-P2000 210406',
+      b'\xf1\x00MQ4HMFC  AT USA LHD 1.00 1.11 99210-P2000 211217',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00MQhe SCC FHCUP      1.00 1.04 99110-P4000         ',
+      b'\xf1\x00MQhe SCC FHCUP      1.00 1.06 99110-P4000         ',
+      b'\xf1\x00MQhe SCC FHCUP      1.00 1.07 99110-P4000         ',
+    ],
+  },
   CAR.KIA_NIRO_HEV_2ND_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00SG2HMFC  AT USA LHD 1.01 1.08 99211-AT000 220531',
@@ -1681,17 +1671,6 @@ FW_VERSIONS = {
       b'\xf1\x00KA4_ SCC FHCUP      1.00 1.00 99110-R0100         ',
       b'\xf1\x00KA4_ SCC FHCUP      1.00 1.03 99110-R0000         ',
       b'\xf1\x00KA4c SCC FHCUP      1.00 1.01 99110-I4000         ',
-    ],
-  },
-  CAR.KIA_SORENTO_HEV_4TH_GEN: {
-    (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00MQ4HMFC  AT KOR LHD 1.00 1.04 99210-P2000 200330',
-      b'\xf1\x00MQ4HMFC  AT KOR LHD 1.00 1.12 99210-P2000 230331',
-      b'\xf1\x00MQ4HMFC  AT USA LHD 1.00 1.11 99210-P2000 211217',
-    ],
-    (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00MQhe SCC FHCUP      1.00 1.04 99110-P4000         ',
-      b'\xf1\x00MQhe SCC FHCUP      1.00 1.07 99110-P4000         ',
     ],
   },
   CAR.KIA_K8_HEV_1ST_GEN: {
