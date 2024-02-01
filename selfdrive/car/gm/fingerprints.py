@@ -2,6 +2,7 @@
 from openpilot.selfdrive.car.gm.values import CAR
 
 # Trailblazer also matches as a SILVERADO, TODO: split with fw versions
+# There are Equinox users with different message lengths, specifically 304 and 320
 
 
 FINGERPRINTS = {
