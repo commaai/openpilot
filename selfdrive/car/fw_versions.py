@@ -287,13 +287,8 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   # Get versions and build capnp list to put into CarParams
   car_fw = []
   requests = [(brand, config, r) for brand, config, r in REQUESTS if is_brand(brand, query_brand)]
-  print('before')
-  print([(r[2].obd_multiplexing, r[2].bus) for r in requests])
   # Sort to put OBD multiplexing queries first
   requests = sorted(requests, key=lambda r: r[2].obd_multiplexing and r[2].bus == 1, reverse=True)
-  print('after')
-  print([(r[2].obd_multiplexing, r[2].bus) for r in requests])
-  print()
   for addr in tqdm(addrs, disable=not progress):
     for addr_chunk in chunks(addr):
       for brand, config, r in requests:
