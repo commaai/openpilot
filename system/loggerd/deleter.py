@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from datetime import datetime
 import os
 import shutil
 import threading
@@ -17,6 +18,8 @@ DELETE_LAST = ['boot', 'crash']
 PRESERVE_ATTR_NAME = 'user.preserve'
 PRESERVE_ATTR_VALUE = b'1'
 PRESERVE_COUNT = 5
+
+DATE_FORMAT = "%Y-%m-%d--%H-%M-%S"
 
 
 def has_preserve_xattr(d: str) -> bool:
@@ -44,6 +47,24 @@ def get_preserved_segments(dirs_by_creation: List[str]) -> List[str]:
 
   return preserved
 
+def separate_segments_and_nonsegments(dirs):
+    segments, non_segments = [], []
+    for d in dirs:
+        date_str, _, seg_str = d.rpartition("--")
+
+        try:
+          int(seg_str)
+          datetime.strptime(date_str, DATE_FORMAT)
+          segments.append(d)
+        except ValueError:
+          non_segments.append(d)
+
+    return segments, non_segments
+
+def contains_lockfiles(path: str) -> bool:
+  if not os.path.isdir(path):
+    return False
+  return any(name.endswith(".lock") for name in os.listdir(path))
 
 def deleter_thread(exit_event):
   while not exit_event.is_set():
@@ -52,15 +73,19 @@ def deleter_thread(exit_event):
 
     if out_of_percent or out_of_bytes:
       dirs = listdir_by_creation(Paths.log_root())
+      segments, non_segments = separate_segments_and_nonsegments(dirs)
+      files_only = [f for f in os.listdir(Paths.log_root()) if os.path.isfile(os.path.join(Paths.log_root(), f))]
+
+      all_contents = files_only + non_segments + segments
 
       # skip deleting most recent N preserved segments (and their prior segment)
-      preserved_dirs = get_preserved_segments(dirs)
+      preserved_segments = get_preserved_segments(segments)
 
       # remove the earliest directory we can
-      for delete_dir in sorted(dirs, key=lambda d: (d in DELETE_LAST, d in preserved_dirs)):
-        delete_path = os.path.join(Paths.log_root(), delete_dir)
+      for delete_item in sorted(all_contents, key=lambda d: (d in DELETE_LAST, d in preserved_segments)):
+        delete_path = os.path.join(Paths.log_root(), delete_item)
 
-        if any(name.endswith(".lock") for name in os.listdir(delete_path)):
+        if contains_lockfiles(delete_path):
           continue
 
         try:

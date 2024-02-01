@@ -45,7 +45,7 @@ class TestDeleter(UploaderTestCase):
     finally:
       self.join_thread()
 
-  def assertDeleteOrder(self, f_paths: Sequence[Path], timeout: int = 5) -> None:
+  def get_delete_order(self, f_paths: Sequence[Path], timeout: int = 5):
     deleted_order = []
 
     self.start_thread()
@@ -64,7 +64,14 @@ class TestDeleter(UploaderTestCase):
     finally:
       self.join_thread()
 
-    self.assertEqual(deleted_order, f_paths, "Files not deleted in expected order")
+    return deleted_order
+
+  def assertDeleteOrder(self, f_paths: Sequence[Path], timeout: int = 5) -> None:
+    self.assertEqual(
+      self.get_delete_order(f_paths, timeout),
+      f_paths,
+      "Files not deleted in expected order"
+    )
 
   def test_delete_order(self):
     self.assertDeleteOrder([
@@ -72,6 +79,39 @@ class TestDeleter(UploaderTestCase):
       self.make_file_with_data(self.seg_format.format(1), self.f_type),
       self.make_file_with_data(self.seg_format2.format(0), self.f_type),
     ])
+
+  def test_delete_both_files_and_dirs(self):
+    self.assertDeleteOrder([
+      self.make_file_with_data(f_dir="", fn="some_file"),
+      self.make_file_with_data(f_dir="some_dir", fn="some_file"),
+      self.make_file_with_data(f_dir=self.seg_format.format(0), fn=self.f_type),
+      self.make_file_with_data(f_dir=self.seg_format.format(1), fn=self.f_type),
+      self.make_file_with_data(f_dir=self.seg_format2.format(0), fn=self.f_type),
+      self.make_file_with_data(f_dir=self.seg_format2.format(1), fn=self.f_type)
+      ])
+
+  def test_group_delete_order(self):
+    created = [
+      [self.make_file_with_data(f_dir="", fn="file_1"),
+        self.make_file_with_data(f_dir="", fn="file_2"),
+        self.make_file_with_data(f_dir="", fn="file_3")],
+      [self.make_file_with_data(f_dir="dir_1", fn="nested_file"),
+        self.make_file_with_data(f_dir="dir_2", fn="nested_file"),
+        self.make_file_with_data(f_dir="dir_3", fn="nested_file")],
+      [self.make_file_with_data(f_dir=self.seg_format.format(0), fn=self.f_type),
+        self.make_file_with_data(f_dir=self.seg_format.format(1), fn=self.f_type),
+        self.make_file_with_data(f_dir=self.seg_format2.format(0), fn=self.f_type)],
+      ]
+
+    flattened = [item for group in created for item in group]
+    delete_order = self.get_delete_order(flattened)
+
+    start = 0
+    for group in created:
+      end = start + len(group)
+      deleted = delete_order[start:end]
+      self.assertCountEqual(group, deleted)
+      start = end
 
   def test_delete_many_preserved(self):
     self.assertDeleteOrder([
