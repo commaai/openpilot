@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
+import os
+import json
+import numpy as np
+
 from cereal import car
 from math import fabs, exp
 from panda import Panda
 
+from openpilot.common.basedir import BASEDIR
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car import create_button_events, get_safety_config
 from openpilot.selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
@@ -24,6 +29,34 @@ NON_LINEAR_TORQUE_PARAMS = {
   CAR.ACADIA: [4.78003305, 1.0, 0.3122, 0.05591772],
   CAR.SILVERADO: [3.29974374, 1.0, 0.25571356, 0.0465122]
 }
+NEURAL_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/neural_ff_weights.json')
+
+
+class NanoFFModel:
+  def __init__(self, platform: str, temperature: float = 1.0):
+    self.temperature = temperature
+    self.load_weights(platform)
+
+  def load_weights(self, platform: str):
+    with open(NEURAL_PARAMS_PATH, 'r') as fob:
+      self.weights = {k: np.array(v) for k, v in json.load(fob)[platform].items()}
+
+  def sigmoid(self, x: np.ndarray):
+    return 1 / (1 + np.exp(-x))
+
+  def forward(self, x: np.ndarray):
+    assert x.ndim == 1
+    x = (x - self.weights['input_norm_mat'][:, 0]) / (self.weights['input_norm_mat'][:, 1] - self.weights['input_norm_mat'][:, 0])
+    x = self.sigmoid(np.dot(x, self.weights['w_1']) + self.weights['b_1'])
+    x = self.sigmoid(np.dot(x, self.weights['w_2']) + self.weights['b_2'])
+    x = np.dot(x, self.weights['w_3']) + self.weights['b_3']
+    return x
+
+  def predict(self, x):
+    x = self.forward(np.array(x))
+    pred = np.random.laplace(x[0], np.exp(x[1]) / self.temperature)
+    pred = pred * (self.weights['output_norm_mat'][1] - self.weights['output_norm_mat'][0]) + self.weights['output_norm_mat'][0]
+    return pred
 
 
 class CarInterface(CarInterfaceBase):
@@ -62,8 +95,20 @@ class CarInterface(CarInterfaceBase):
     steer_torque = (sig(controller_state.lateral_acceleration * a) * b) + (controller_state.lateral_acceleration * c)
     return float(steer_torque) + friction
 
+  def torque_from_lateral_accel_neural(self, controller_state: ControllerState, controller_state_history: ControllerStateHistory,
+                                       torque_params: car.CarParams.LateralTorqueTuning, lateral_accel_error: float, lateral_accel_deadzone: float,
+                                       friction_compensation: bool, gravity_adjusted: bool) -> float:
+    inputs = [controller_state.lateral_acceleration, controller_state.roll_compensation, controller_state.vego, controller_state.aego] + \
+      controller_state_history.lateral_acceleration[::-1] + controller_state_history.roll_compensation[::-1] + \
+      controller_state_history.vego[::-1] + controller_state_history.aego[::-1]
+    return float(self.neural_ff_model.predict(inputs))
+
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
-    if self.CP.carFingerprint in NON_LINEAR_TORQUE_PARAMS:
+    if self.CP.carFingerprint == CAR.BOLT_EUV:
+      self.neural_ff_model = NanoFFModel(self.CP.carFingerprint, temperature=100.)
+      return self.torque_from_lateral_accel_neural
+
+    elif self.CP.carFingerprint in NON_LINEAR_TORQUE_PARAMS:
       return self.torque_from_lateral_accel_siglin
     else:
       return self.torque_from_lateral_accel_linear
