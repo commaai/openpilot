@@ -40,14 +40,14 @@ class ControllerState(NamedTuple):
 
 
 class ControllerStateHistory:
-  def __init__(self, max_len):
+  def __init__(self, max_len: int):
     self.states = deque([ControllerState(0., 0., 0., 0.)] * max_len, maxlen=max_len)
 
-  def append(self, state):
+  def append(self, state: ControllerState):
     assert isinstance(state, ControllerState), "Append a State object"
     self.states.append(state)
 
-  def __getattr__(self, name):
+  def __getattr__(self, name: str):
     return [getattr(s, name) for s in self.states]
 
   def __repr__(self):

@@ -2,6 +2,7 @@ import math
 
 from cereal import log
 from openpilot.common.numpy_fast import interp
+from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car.interfaces import ControllerState, ControllerStateHistory
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
 from openpilot.selfdrive.controls.lib.pid import PIDController
@@ -21,8 +22,7 @@ from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_G
 LOW_SPEED_X = [0, 10, 20, 30]
 LOW_SPEED_Y = [15, 13, 10, 5]
 HISTORY_LEN = 3
-CONTROLSD_FPS = 100
-HISTORY_FPS = 10
+HISTORY_DT = 0.1
 
 
 class LatControlTorque(LatControl):
@@ -36,7 +36,7 @@ class LatControlTorque(LatControl):
     self.steering_angle_deadzone_deg = self.torque_params.steeringAngleDeadzoneDeg
     self.history = ControllerStateHistory(max_len=HISTORY_LEN)
     self.frame_counter = 0
-    self.record_frame_id = CONTROLSD_FPS // HISTORY_FPS
+    self.record_frame_id = HISTORY_DT // DT_CTRL
 
   def update_live_torque_params(self, latAccelFactor, latAccelOffset, friction):
     self.torque_params.latAccelFactor = latAccelFactor
