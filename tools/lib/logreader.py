@@ -89,28 +89,31 @@ def create_slice_from_string(s: str):
     return start
   return slice(start, end, step)
 
-def auto_strategy(rlog_paths, qlog_paths, interactive):
+def default_valid_file(fn):
+  return fn is not None and file_exists(fn)
+
+def auto_strategy(rlog_paths, qlog_paths, interactive, valid_file):
   # auto select logs based on availability
-  if any(rlog is None or not file_exists(rlog) for rlog in rlog_paths):
+  if any(rlog is None or not valid_file(rlog) for rlog in rlog_paths):
     if interactive:
       if input("Some rlogs were not found, would you like to fallback to qlogs for those segments? (y/n) ").lower() != "y":
         return rlog_paths
     else:
       cloudlog.warning("Some rlogs were not found, falling back to qlogs for those segments...")
 
-    return [rlog if (rlog is not None and file_exists(rlog)) else (qlog if (qlog is not None and file_exists(qlog)) else None)
-                                                                for (rlog, qlog) in zip(rlog_paths, qlog_paths, strict=True)]
+    return [rlog if (valid_file(rlog)) else (qlog if (valid_file(qlog)) else None)
+                        for (rlog, qlog) in zip(rlog_paths, qlog_paths, strict=True)]
   return rlog_paths
 
-def apply_strategy(mode: ReadMode, rlog_paths, qlog_paths):
+def apply_strategy(mode: ReadMode, rlog_paths, qlog_paths, valid_file=default_valid_file):
   if mode == ReadMode.RLOG:
     return rlog_paths
   elif mode == ReadMode.QLOG:
     return qlog_paths
   elif mode == ReadMode.AUTO:
-    return auto_strategy(rlog_paths, qlog_paths, False)
+    return auto_strategy(rlog_paths, qlog_paths, False, valid_file)
   elif mode == ReadMode.AUTO_INTERACIVE:
-    return auto_strategy(rlog_paths, qlog_paths, True)
+    return auto_strategy(rlog_paths, qlog_paths, True, valid_file)
 
 def parse_slice(sr: SegmentRange):
   s = create_slice_from_string(sr._slice)
@@ -133,7 +136,11 @@ def comma_api_source(sr: SegmentRange, mode: ReadMode):
   rlog_paths = [route.log_paths()[seg] for seg in segs]
   qlog_paths = [route.qlog_paths()[seg] for seg in segs]
 
-  return apply_strategy(mode, rlog_paths, qlog_paths)
+  # comma api will have already checked if the file exists
+  def valid_file(fn):
+    return fn is not None
+
+  return apply_strategy(mode, rlog_paths, qlog_paths, valid_file=valid_file)
 
 def internal_source(sr: SegmentRange, mode: ReadMode):
   segs = parse_slice(sr)
