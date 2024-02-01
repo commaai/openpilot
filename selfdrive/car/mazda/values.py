@@ -67,6 +67,7 @@ class Buttons:
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
+    # Bus 0 should be queried first, may fix spotty ABS response
     Request(
       [StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
       [StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
