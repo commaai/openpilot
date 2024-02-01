@@ -182,7 +182,7 @@ class TestFwFingerprint(unittest.TestCase):
     empty_response = {brand: set() for brand in FW_QUERY_CONFIGS}
     self.assertEqual(get_brand_ecu_matches(set()), empty_response)
 
-    # ignore bus
+    # we ignore bus
     expected_response = empty_response | {'toyota': {(0x750, 0xf)}}
     self.assertEqual(get_brand_ecu_matches({(0x758, 0xf, 99)}), expected_response)
 
