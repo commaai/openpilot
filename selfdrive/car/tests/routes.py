@@ -20,7 +20,6 @@ non_tested_cars = [
   GM.CADILLAC_ATS,
   GM.HOLDEN_ASTRA,
   GM.MALIBU,
-  GM.EQUINOX,
   HYUNDAI.GENESIS_G90,
   HONDA.ODYSSEY_CHN,
   VOLKSWAGEN.CRAFTER_MK2,  # need a route from an ACC-equipped Crafter
