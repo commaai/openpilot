@@ -67,7 +67,7 @@ class Buttons:
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
-    # TODO: check data to ensure ABS does not skip ISO-TP frames
+    # TODO: check data to ensure ABS does not skip ISO-TP frames on bus 0
     Request(
       [StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
       [StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
