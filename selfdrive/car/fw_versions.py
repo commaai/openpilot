@@ -201,12 +201,12 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
   return ecu_responses
 
 
-def get_brand_ecu_matches(ecu_rx_addrs):
+def get_brand_ecu_matches(ecu_rx_addrs: Set[EcuAddrBusType]) -> dict[str, set[AddrType]]:
   """Returns dictionary of brands and matches with ECUs in their FW versions"""
 
   brand_addrs = {brand: config.get_all_ecus(VERSIONS[brand], include_ecu_type=False) for
                  brand, config in FW_QUERY_CONFIGS.items()}
-  brand_matches = {brand: set() for brand, _, _ in REQUESTS}
+  brand_matches: dict[str, set[AddrType]] = {brand: set() for brand, _, _ in REQUESTS}
 
   brand_rx_offsets = {(brand, r.rx_offset) for brand, _, r in REQUESTS}
   for addr, sub_addr, _ in ecu_rx_addrs:
