@@ -179,11 +179,12 @@ class TestFwFingerprint(unittest.TestCase):
                            f"{brand.title()}: OBD multiplexed request is marked auxiliary: {request_obj}")
 
   def test_brand_ecu_matches(self):
-    ret = get_brand_ecu_matches(set())
-    self.assertEqual(ret, {brand: set() for brand in FW_QUERY_CONFIGS})
+    empty_response = {brand: set() for brand in FW_QUERY_CONFIGS}
+    self.assertEqual(get_brand_ecu_matches(set()), empty_response)
 
-    ret = get_brand_ecu_matches({(0x7e0, None, 0), (0x750, 0xf, 0)})
-    print(ret)
+    # we ignore bus
+    expected_response = empty_response | {'toyota': {(0x750, 0xf)}}
+    self.assertEqual(get_brand_ecu_matches({(0x758, 0xf, 99)}), expected_response)
 
 
 class TestFwFingerprintTiming(unittest.TestCase):

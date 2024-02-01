@@ -1,7 +1,6 @@
 third_party/libyuv/larch64/**
 third_party/snpe/larch64**
 third_party/snpe/aarch64-ubuntu-gcc7.5/*
-third_party/mapbox-gl-native-qt/include/*
 third_party/acados/larch64/**
 
 system/camerad/cameras/camera_qcom2.cc
