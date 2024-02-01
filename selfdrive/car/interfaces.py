@@ -498,8 +498,11 @@ class NanoFFModel:
     x = np.dot(x, self.weights['w_4']) + self.weights['b_4']
     return x
 
-  def predict(self, x: List[float]):
+  def predict(self, x: List[float], do_sample: bool = False):
     x = self.forward(np.array(x))
-    pred = np.random.laplace(x[0], np.exp(x[1]) / self.weights['temperature'])
+    if do_sample:
+      pred = np.random.laplace(x[0], np.exp(x[1]) / self.weights['temperature'])
+    else:
+      pred = x[0]
     pred = pred * (self.weights['output_norm_mat'][1] - self.weights['output_norm_mat'][0]) + self.weights['output_norm_mat'][0]
     return pred
