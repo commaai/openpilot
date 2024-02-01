@@ -246,7 +246,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
   @pytest.mark.timeout(60)
   def test_fw_query_timing(self):
-    total_ref_time = 6.9
+    total_ref_time = 6.8
     brand_ref_times = {
       1: {
         'gm': 0.5,
@@ -255,7 +255,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
         'ford': 0.1,
         'honda': 0.55,
         'hyundai': 0.65,
-        'mazda': 0.2,
+        'mazda': 0.1,
         'nissan': 0.8,
         'subaru': 0.45,
         'tesla': 0.2,
