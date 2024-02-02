@@ -113,6 +113,7 @@ class CAR(StrEnum):
   KIA_NIRO_EV = "KIA NIRO EV 2020"
   KIA_NIRO_EV_2ND_GEN = "KIA NIRO EV 2ND GEN"
   KIA_NIRO_PHEV = "KIA NIRO HYBRID 2019"
+  KIA_NIRO_PHEV_2021 = "KIA NIRO PLUG-IN HYBRID 2021"
   KIA_NIRO_PHEV_2022 = "KIA NIRO PLUG-IN HYBRID 2022"
   KIA_NIRO_HEV_2021 = "KIA NIRO HYBRID 2021"
   KIA_NIRO_HEV_2ND_GEN = "KIA NIRO HYBRID 2ND GEN"
@@ -248,6 +249,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Kia Niro Plug-in Hybrid 2018-19", "All", min_enable_speed=10. * CV.MPH_TO_MS, car_parts=CarParts.common([CarHarness.hyundai_c])),
     HyundaiCarInfo("Kia Niro Plug-in Hybrid 2020", "All", car_parts=CarParts.common([CarHarness.hyundai_d])),
   ],
+  CAR.KIA_NIRO_PHEV_2021: HyundaiCarInfo("Kia Niro Plug-in Hybrid 2021", "All", car_parts=CarParts.common([CarHarness.hyundai_d])),
   CAR.KIA_NIRO_PHEV_2022: HyundaiCarInfo("Kia Niro Plug-in Hybrid 2022", "All", car_parts=CarParts.common([CarHarness.hyundai_f])),
   CAR.KIA_NIRO_HEV_2021: [
     HyundaiCarInfo("Kia Niro Hybrid 2021", car_parts=CarParts.common([CarHarness.hyundai_d])),
