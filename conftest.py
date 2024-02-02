@@ -2,7 +2,6 @@ import os
 import pytest
 import random
 
-from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.manager import manager
 from openpilot.system.hardware import TICI, HARDWARE

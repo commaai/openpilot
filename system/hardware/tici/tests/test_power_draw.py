@@ -11,7 +11,6 @@ import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
 from openpilot.common.mock import mock_messages
 from openpilot.selfdrive.car.car_helpers import write_car_param
-from openpilot.system.hardware import HARDWARE
 from openpilot.system.hardware.tici.power_monitor import get_power
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.manager.manager import manager_cleanup
