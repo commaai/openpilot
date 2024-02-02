@@ -29,8 +29,8 @@ FfmpegEncoder::FfmpegEncoder(const EncoderInfo &encoder_info, int in_width, int 
   frame = av_frame_alloc();
   assert(frame);
   frame->format = AV_PIX_FMT_YUV420P;
-  frame->width = encoder_info.frame_width;
-  frame->height = encoder_info.frame_height;
+  frame->width = out_width;
+  frame->height = out_height;
   frame->linesize[0] = encoder_info.frame_width;
   frame->linesize[1] = encoder_info.frame_width/2;
   frame->linesize[2] = encoder_info.frame_width/2;
