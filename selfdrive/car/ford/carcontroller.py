@@ -1,10 +1,10 @@
 from cereal import car
 from openpilot.common.numpy_fast import clip
-from openpilot.common.conversions import Conversions as CV
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_std_steer_angle_limits
 from openpilot.selfdrive.car.ford import fordcan
 from openpilot.selfdrive.car.ford.values import CANFD_CAR, CarControllerParams
+from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -90,7 +90,7 @@ class CarController:
       if not CC.longActive or gas < CarControllerParams.MIN_GAS:
         gas = CarControllerParams.INACTIVE_GAS
       stopping = CC.actuators.longControlState == LongCtrlState.stopping
-      can_sends.append(fordcan.create_acc_msg(self.packer, self.CAN, CC.longActive, gas, accel, stopping, v_ego_kph=40 * CV.MPH_TO_KPH))
+      can_sends.append(fordcan.create_acc_msg(self.packer, self.CAN, CC.longActive, gas, accel, stopping, v_ego_kph=V_CRUISE_MAX))
 
     ### ui ###
     send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)

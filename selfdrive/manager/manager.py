@@ -11,7 +11,6 @@ import cereal.messaging as messaging
 import openpilot.selfdrive.sentry as sentry
 from openpilot.common.params import Params, ParamKeyType
 from openpilot.common.text_window import TextWindow
-from openpilot.selfdrive.boardd.set_time import set_time
 from openpilot.system.hardware import HARDWARE, PC
 from openpilot.selfdrive.manager.helpers import unblock_stdout, write_onroad_params, save_bootlog
 from openpilot.selfdrive.manager.process import ensure_running
@@ -25,10 +24,6 @@ from openpilot.system.version import is_dirty, get_commit, get_version, get_orig
 
 
 def manager_init() -> None:
-  # update system time from panda
-  set_time(cloudlog)
-
-  # save boot log
   save_bootlog()
 
   params = Params()

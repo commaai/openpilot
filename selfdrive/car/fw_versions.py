@@ -8,7 +8,7 @@ import panda.python.uds as uds
 from cereal import car
 from openpilot.common.params import Params
 from openpilot.selfdrive.car.ecu_addrs import get_ecu_addrs
-from openpilot.selfdrive.car.fw_query_definitions import AddrType, EcuAddrBusType
+from openpilot.selfdrive.car.fw_query_definitions import AddrType, EcuAddrBusType, FwQueryConfig
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
 from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
@@ -18,7 +18,7 @@ Ecu = car.CarParams.Ecu
 ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
 FUZZY_EXCLUDE_ECUS = [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.debug]
 
-FW_QUERY_CONFIGS = get_interface_attr('FW_QUERY_CONFIG', ignore_none=True)
+FW_QUERY_CONFIGS: dict[str, FwQueryConfig] = get_interface_attr('FW_QUERY_CONFIG', ignore_none=True)
 VERSIONS = get_interface_attr('FW_VERSIONS', ignore_none=True)
 
 MODEL_TO_BRAND = {c: b for b, e in VERSIONS.items() for c in e}
@@ -43,16 +43,6 @@ def build_fw_dict(fw_versions: List[capnp.lib.capnp._DynamicStructBuilder],
       sub_addr = fw.subAddress if fw.subAddress != 0 else None
       fw_versions_dict[(fw.address, sub_addr)].add(fw.fwVersion)
   return dict(fw_versions_dict)
-
-
-def get_brand_addrs() -> Dict[str, Set[AddrType]]:
-  brand_addrs: DefaultDict[str, Set[AddrType]] = defaultdict(set)
-  for brand, cars in VERSIONS.items():
-    # Add ecus in database + extra ecus to match against
-    brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in FW_QUERY_CONFIGS[brand].extra_ecus}
-    for fw in cars.values():
-      brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in fw.keys()}
-  return dict(brand_addrs)
 
 
 def match_fw_to_car_fuzzy(live_fw_versions, match_brand=None, log=True, exclude=None):
@@ -184,22 +174,21 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
     if r.bus > num_pandas * 4 - 1:
       continue
 
-    for brand_versions in VERSIONS[brand].values():
-      for ecu_type, addr, sub_addr in list(brand_versions) + config.extra_ecus:
-        # Only query ecus in whitelist if whitelist is not empty
-        if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
-          a = (addr, sub_addr, r.bus)
-          # Build set of queries
-          if sub_addr is None:
-            if a not in parallel_queries[r.obd_multiplexing]:
-              parallel_queries[r.obd_multiplexing].append(a)
-          else:  # subaddresses must be queried one by one
-            if [a] not in queries[r.obd_multiplexing]:
-              queries[r.obd_multiplexing].append([a])
+    for ecu_type, addr, sub_addr in config.get_all_ecus(VERSIONS[brand]):
+      # Only query ecus in whitelist if whitelist is not empty
+      if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
+        a = (addr, sub_addr, r.bus)
+        # Build set of queries
+        if sub_addr is None:
+          if a not in parallel_queries[r.obd_multiplexing]:
+            parallel_queries[r.obd_multiplexing].append(a)
+        else:  # subaddresses must be queried one by one
+          if [a] not in queries[r.obd_multiplexing]:
+            queries[r.obd_multiplexing].append([a])
 
-          # Build set of expected responses to filter
-          response_addr = uds.get_rx_addr_for_tx_addr(addr, r.rx_offset)
-          responses.add((response_addr, sub_addr, r.bus))
+        # Build set of expected responses to filter
+        response_addr = uds.get_rx_addr_for_tx_addr(addr, r.rx_offset)
+        responses.add((response_addr, sub_addr, r.bus))
 
   for obd_multiplexing in queries:
     queries[obd_multiplexing].insert(0, parallel_queries[obd_multiplexing])
@@ -212,11 +201,12 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
   return ecu_responses
 
 
-def get_brand_ecu_matches(ecu_rx_addrs):
+def get_brand_ecu_matches(ecu_rx_addrs: Set[EcuAddrBusType]) -> dict[str, set[AddrType]]:
   """Returns dictionary of brands and matches with ECUs in their FW versions"""
 
-  brand_addrs = get_brand_addrs()
-  brand_matches = {brand: set() for brand, _, _ in REQUESTS}
+  brand_addrs = {brand: {(addr, subaddr) for _, addr, subaddr in config.get_all_ecus(VERSIONS[brand])} for
+                 brand, config in FW_QUERY_CONFIGS.items()}
+  brand_matches: dict[str, set[AddrType]] = {brand: set() for brand, _, _ in REQUESTS}
 
   brand_rx_offsets = {(brand, r.rx_offset) for brand, _, r in REQUESTS}
   for addr, sub_addr, _ in ecu_rx_addrs:
@@ -280,27 +270,25 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
   for brand, brand_versions in versions.items():
     config = FW_QUERY_CONFIGS[brand]
-    for ecu in brand_versions.values():
-      # Each brand can define extra ECUs to query for data collection
-      for ecu_type, addr, sub_addr in list(ecu) + config.extra_ecus:
-        a = (brand, addr, sub_addr)
-        if a not in ecu_types:
-          ecu_types[a] = ecu_type
+    for ecu_type, addr, sub_addr in config.get_all_ecus(brand_versions):
+      a = (brand, addr, sub_addr)
+      if a not in ecu_types:
+        ecu_types[a] = ecu_type
 
-        if sub_addr is None:
-          if a not in parallel_addrs:
-            parallel_addrs.append(a)
-        else:
-          if [a] not in addrs:
-            addrs.append([a])
+      if sub_addr is None:
+        if a not in parallel_addrs:
+          parallel_addrs.append(a)
+      else:
+        if [a] not in addrs:
+          addrs.append([a])
 
   addrs.insert(0, parallel_addrs)
 
   # Get versions and build capnp list to put into CarParams
   car_fw = []
   requests = [(brand, config, r) for brand, config, r in REQUESTS if is_brand(brand, query_brand)]
-  for addr in tqdm(addrs, disable=not progress):
-    for addr_chunk in chunks(addr):
+  for addr_group in tqdm(addrs, disable=not progress):  # split by subaddr, if any
+    for addr_chunk in chunks(addr_group):
       for brand, config, r in requests:
         # Skip query if no panda available
         if r.bus > num_pandas * 4 - 1:
@@ -355,6 +343,13 @@ if __name__ == "__main__":
   pandaStates_sock = messaging.sub_sock('pandaStates')
   sendcan = messaging.pub_sock('sendcan')
 
+  # Set up params for boardd
+  params = Params()
+  params.remove("FirmwareQueryDone")
+  params.put_bool("IsOnroad", False)
+  time.sleep(0.2)  # thread is 10 Hz
+  params.put_bool("IsOnroad", True)
+
   extra: Any = None
   if args.scan:
     extra = {}
@@ -365,12 +360,11 @@ if __name__ == "__main__":
       extra[(Ecu.unknown, 0x750, i)] = []
     extra = {"any": {"debug": extra}}
 
-  time.sleep(1.)
   num_pandas = len(messaging.recv_one_retry(pandaStates_sock).pandaStates)
 
   t = time.time()
   print("Getting vin...")
-  vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, (1, 0), retry=10, debug=args.debug)
+  vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, (0, 1), retry=10, debug=args.debug)
   print(f'RX: {hex(vin_rx_addr)}, BUS: {vin_rx_bus}, VIN: {vin}')
   print(f"Getting VIN took {time.time() - t:.3f} s")
   print()
