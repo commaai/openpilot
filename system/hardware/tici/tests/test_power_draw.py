@@ -88,4 +88,4 @@ class TestPowerDraw(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()
