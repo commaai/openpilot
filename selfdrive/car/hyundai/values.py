@@ -340,6 +340,9 @@ def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions) -> Set[str]:
   candidates: Set[str] = set()
 
   for candidate, fws in offline_fw_versions.items():
+    if candidate != CAR.TUCSON_4TH_GEN:
+      continue
+
     # Keep track of ECUs which pass all checks (platform codes, within date range)
     valid_found_ecus = set()
     valid_expected_ecus = {ecu[1:] for ecu in fws if ecu[0] in PLATFORM_CODE_ECUS}
@@ -359,6 +362,14 @@ def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions) -> Set[str]:
       found_platform_codes = {code for code, _ in codes}
       found_dates = {date for _, date in codes if date is not None}
 
+      print()
+      print(ecu)
+      print('expected_platform_codes', expected_platform_codes)
+      print('found_platform_codes', found_platform_codes)
+      print()
+      print('expected_dates', expected_dates)
+      print('found_dates', found_dates)
+
       # Check platform code + part number matches for any found versions
       if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
         break
@@ -369,9 +380,15 @@ def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions) -> Set[str]:
         if not len(expected_dates) or not len(found_dates):
           break
 
-        # Check any date within range in the database, format is %y%m%d
-        if not any(min(expected_dates) <= found_date <= max(expected_dates) for found_date in found_dates):
-          break
+        alt_data_format = any(len(date) == 3 for date in expected_dates)
+        if alt_data_format and False:
+          # Check any revision code in the set of known revisions
+          if len(found_dates & expected_dates) == 0:
+            break
+        else:
+          # Check any date within range in the database, format is %y%m%d
+          if not any(min(expected_dates) <= found_date <= max(expected_dates) for found_date in found_dates):
+            break
 
       valid_found_ecus.add(addr)
 
@@ -413,9 +430,6 @@ PLATFORM_CODE_ECUS = [Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps]
 # So far we've only seen dates in fwdCamera
 # TODO: there are date codes in the ABS firmware versions in hex
 DATE_FW_ECUS = [Ecu.fwdCamera]
-
-print(get_platform_codes([b'\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 2.02 99211-N9000 14E']))
-print(get_platform_codes([b'\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 2.02 99211-N9000 200622']))
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
