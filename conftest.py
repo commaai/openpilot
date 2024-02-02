@@ -70,7 +70,6 @@ def tici_setup_fixture():
 def pytest_collection_modifyitems(config, items):
   skipper = pytest.mark.skip(reason="Skipping tici test on PC")
   for item in items:
-    # Skip tici tests on PC, otherwise add the tici setup marker to setup a consistent state for tici tests
     if "tici" in item.keywords:
       if not TICI:
         item.add_marker(skipper)
