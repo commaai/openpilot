@@ -15,9 +15,6 @@ from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.fw_versions import FW_VERSIONS
 from openpilot.selfdrive.car.interfaces import get_interface_attr
-from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
-from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
-from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
