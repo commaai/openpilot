@@ -3,7 +3,7 @@ import subprocess
 import time
 import unittest
 
-from multiprocessing import Queue, Value
+from multiprocessing import Queue
 
 from cereal import messaging
 from openpilot.common.basedir import BASEDIR
@@ -27,7 +27,6 @@ class TestSimBridgeBase(unittest.TestCase):
     sm = messaging.SubMaster(['controlsState', 'onroadEvents', 'managerState'])
     q = Queue()
     bridge = self.create_bridge()
-    bridge.started = Value('b', False)
     p_bridge = bridge.run(q, retries=10)
     self.processes.append(p_bridge)
 
@@ -35,7 +34,7 @@ class TestSimBridgeBase(unittest.TestCase):
 
     # Wait for bridge to startup
     start_waiting = time.monotonic()
-    while not bridge.started and time.monotonic() < start_waiting + max_time_per_step:
+    while not bridge.started.value and time.monotonic() < start_waiting + max_time_per_step:
       time.sleep(0.1)
     self.assertEqual(p_bridge.exitcode, None, f"Bridge process should be running, but exited with code {p_bridge.exitcode}")
 
