@@ -249,8 +249,10 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Kia Niro Plug-in Hybrid 2018-19", "All", min_enable_speed=10. * CV.MPH_TO_MS, car_parts=CarParts.common([CarHarness.hyundai_c])),
     HyundaiCarInfo("Kia Niro Plug-in Hybrid 2020", "All", car_parts=CarParts.common([CarHarness.hyundai_d])),
   ],
-  CAR.KIA_NIRO_PHEV_2021: HyundaiCarInfo("Kia Niro Plug-in Hybrid 2021", "All", car_parts=CarParts.common([CarHarness.hyundai_d])),
-  CAR.KIA_NIRO_PHEV_2022: HyundaiCarInfo("Kia Niro Plug-in Hybrid 2022", "All", car_parts=CarParts.common([CarHarness.hyundai_f])),
+  CAR.KIA_NIRO_PHEV_2022: [
+    HyundaiCarInfo("Kia Niro Plug-in Hybrid 2021", "All", car_parts=CarParts.common([CarHarness.hyundai_d])),
+    HyundaiCarInfo("Kia Niro Plug-in Hybrid 2022", "All", car_parts=CarParts.common([CarHarness.hyundai_f])),
+  ],
   CAR.KIA_NIRO_HEV_2021: [
     HyundaiCarInfo("Kia Niro Hybrid 2021", car_parts=CarParts.common([CarHarness.hyundai_d])),
     HyundaiCarInfo("Kia Niro Hybrid 2022", car_parts=CarParts.common([CarHarness.hyundai_f])),
@@ -505,7 +507,7 @@ CAMERA_SCC_CAR = {CAR.KONA_EV_2022, }
 # these cars use a different gas signal
 HYBRID_CAR = {CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.KIA_NIRO_PHEV, CAR.KIA_NIRO_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.IONIQ,
               CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.IONIQ_PHEV_2019, CAR.KIA_K5_HEV_2020,
-              CAR.KIA_OPTIMA_H, CAR.KIA_OPTIMA_H_G4_FL, CAR.AZERA_HEV_6TH_GEN, CAR.KIA_NIRO_PHEV_2021, CAR.KIA_NIRO_PHEV_2022}
+              CAR.KIA_OPTIMA_H, CAR.KIA_OPTIMA_H_G4_FL, CAR.AZERA_HEV_6TH_GEN, CAR.KIA_NIRO_PHEV_2022}
 
 EV_CAR = {CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV, CAR.KIA_NIRO_EV_2ND_GEN, CAR.KONA_EV_2022,
           CAR.KIA_EV6, CAR.IONIQ_5, CAR.IONIQ_6, CAR.GENESIS_GV60_EV_1ST_GEN, CAR.KONA_EV_2ND_GEN}
@@ -585,7 +587,6 @@ DBC = {
   CAR.KONA_EV_2ND_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KIA_K8_HEV_1ST_GEN: dbc_dict('hyundai_canfd', None),
   CAR.CUSTIN_1ST_GEN: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_NIRO_PHEV_2021: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
   CAR.KIA_NIRO_PHEV_2022: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
   CAR.STARIA_4TH_GEN: dbc_dict('hyundai_canfd', None),
 }
