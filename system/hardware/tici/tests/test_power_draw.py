@@ -41,8 +41,6 @@ PROCS = [
 class TestPowerDraw(unittest.TestCase):
 
   def setUp(self):
-    HARDWARE.initialize_hardware()
-    HARDWARE.set_power_save(False)
     write_car_param()
 
     # wait a bit for power save to disable
