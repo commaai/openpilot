@@ -112,17 +112,11 @@ class TestOnroad(unittest.TestCase):
 
     # setup env
     params = Params()
-    if "CI" in os.environ:
-      params.clear_all()
     params.remove("CurrentRoute")
     set_params_enabled()
     os.environ['TESTING_CLOSET'] = '1'
     if os.path.exists(Paths.log_root()):
       shutil.rmtree(Paths.log_root())
-    os.system("rm /dev/shm/*")
-
-    # Make sure athena isn't running
-    os.system("pkill -9 -f athena")
 
     # start manager and run openpilot for a minute
     proc = None
@@ -429,4 +423,4 @@ class TestOnroad(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()
