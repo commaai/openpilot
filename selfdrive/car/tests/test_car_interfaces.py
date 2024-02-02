@@ -54,7 +54,7 @@ class TestCarInterfaces(unittest.TestCase):
 
   # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
   #  many generated examples to overrun when max_examples > ~20, don't use it
-  @parameterized.expand([(car,) for car in sorted(all_known_cars()) if 'BOLT EUV' in car])
+  @parameterized.expand([(car,) for car in sorted(all_known_cars())])
   # @parameterized.expand([(car,) for car in sorted(all_known_cars())])
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate))
@@ -93,18 +93,6 @@ class TestCarInterfaces(unittest.TestCase):
       elif tune.which() == 'torque':
         self.assertTrue(not math.isnan(tune.torque.kf) and tune.torque.kf > 0)
         self.assertTrue(not math.isnan(tune.torque.friction) and tune.torque.friction > 0)
-
-    # # Test lat and long controllers
-    # controlsd = Controls(CI=car_interface)
-    # for _ in range(10):
-    #   controlsd.state_control(car.CarState.new_message())
-
-    # if car_params.steerControlType == car.CarParams.SteerControlType.angle:
-    #   lat_control = LatControlAngle(car_params, car_interface)
-    # elif car_params.lateralTuning.which() == 'pid':
-    #   lat_control = LatControlPID(car_params, car_interface)
-    # elif car_params.lateralTuning.which() == 'torque':
-    #   lat_control = LatControlTorque(car_params, car_interface)
 
     cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
     # Run car interface

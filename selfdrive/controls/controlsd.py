@@ -466,7 +466,6 @@ class Controls:
 
     self.distance_traveled += CS.vEgo * DT_CTRL
 
-    # print(CS)
     return CS
 
   def state_transition(self, CS):
@@ -736,7 +735,6 @@ class Controls:
     if self.enabled:
       clear_event_types.add(ET.NO_ENTRY)
 
-    # print(self.events)
     alerts = self.events.create_alerts(self.current_alert_types, [self.CP, CS, self.sm, self.is_metric, self.soft_disable_timer])
     self.AM.add_many(self.sm.frame, alerts)
     current_alert = self.AM.process_alerts(self.sm.frame, clear_event_types)
@@ -843,12 +841,10 @@ class Controls:
     self.CC = CC
 
   def step(self):
-    # print(self.sm.frame)
     start_time = time.monotonic()
 
     # Sample data from sockets and get a carState
     CS = self.data_sample()
-    # print(CS)
     cloudlog.timestamp("Data sampled")
 
     self.update_events(CS)
