@@ -150,7 +150,7 @@ class TestFwFingerprint(unittest.TestCase):
     # Ensure each brand has at least 1 ECU to query, and extra ECU retrieval
     for brand, config in FW_QUERY_CONFIGS.items():
       self.assertEqual(len(config.get_all_ecus({}, include_extra_ecus=False)), 0)
-      self.assertEqual(config.get_all_ecus({}, include_ecu_type=True), set(config.extra_ecus))
+      self.assertEqual(config.get_all_ecus({}), set(config.extra_ecus))
       self.assertGreater(len(config.get_all_ecus(VERSIONS[brand])), 0)
 
   def test_fw_request_ecu_whitelist(self):
