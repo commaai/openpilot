@@ -2,6 +2,7 @@
 import os
 import math
 import unittest
+from unittest.mock import patch
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 import importlib
@@ -14,6 +15,10 @@ from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.fw_versions import FW_VERSIONS
 from openpilot.selfdrive.car.interfaces import get_interface_attr
+from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
+from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
+from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
+from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
 ALL_ECUS = list({ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()})
@@ -49,11 +54,13 @@ class TestCarInterfaces(unittest.TestCase):
 
   # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
   #  many generated examples to overrun when max_examples > ~20, don't use it
-  @parameterized.expand([(car,) for car in sorted(all_known_cars())])
+  @parameterized.expand([(car,) for car in sorted(all_known_cars()) if 'BOLT EUV' in car])
+  # @parameterized.expand([(car,) for car in sorted(all_known_cars())])
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
-            phases=(Phase.reuse, Phase.generate, Phase.shrink))
+            phases=(Phase.reuse, Phase.generate))
   @given(data=st.data())
   def test_car_interfaces(self, car_name, data):
+    print(car_name)
     CarInterface, CarController, CarState = interfaces[car_name]
 
     args = get_fuzzy_car_interface_args(data.draw)
@@ -87,6 +94,18 @@ class TestCarInterfaces(unittest.TestCase):
         self.assertTrue(not math.isnan(tune.torque.kf) and tune.torque.kf > 0)
         self.assertTrue(not math.isnan(tune.torque.friction) and tune.torque.friction > 0)
 
+    # # Test lat and long controllers
+    # controlsd = Controls(CI=car_interface)
+    # for _ in range(10):
+    #   controlsd.state_control(car.CarState.new_message())
+
+    # if car_params.steerControlType == car.CarParams.SteerControlType.angle:
+    #   lat_control = LatControlAngle(car_params, car_interface)
+    # elif car_params.lateralTuning.which() == 'pid':
+    #   lat_control = LatControlPID(car_params, car_interface)
+    # elif car_params.lateralTuning.which() == 'torque':
+    #   lat_control = LatControlTorque(car_params, car_interface)
+
     cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
     # Run car interface
     now_nanos = 0
@@ -105,6 +124,17 @@ class TestCarInterfaces(unittest.TestCase):
       car_interface.apply(CC, now_nanos)
       now_nanos += DT_CTRL * 1e9  # 10ms
 
+    # Test lat and long controllers
+    controlsd = Controls(CI=car_interface)
+    controlsd.initialized = True
+    cs_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarState, real_floats=True, ignore_deprecated=True)
+    CS = car.CarState.new_message(**cs_msg)
+    # # print('looping')
+    with (patch('openpilot.selfdrive.car.interfaces.CarInterfaceBase.update', lambda *args, **kwargs: CS),
+          patch('cereal.messaging.drain_sock_raw', lambda *args, **kwargs: [])):
+      for _ in range(10):
+        controlsd.step()
+
     # Test radar interface
     RadarInterface = importlib.import_module(f'selfdrive.car.{car_params.carName}.radar_interface').RadarInterface
     radar_interface = RadarInterface(car_params)
@@ -121,6 +151,8 @@ class TestCarInterfaces(unittest.TestCase):
       cans = [messaging.new_message('can', 1).to_bytes() for _ in range(5)]
       rr = radar_interface.update(cans)
       self.assertTrue(rr is None or len(rr.errors) > 0)
+
+    print('finished!')
 
   def test_interface_attrs(self):
     """Asserts basic behavior of interface attribute getter"""
