@@ -57,7 +57,6 @@ class TestCarInterfaces(unittest.TestCase):
             phases=(Phase.reuse, Phase.generate))
   @given(data=st.data())
   def test_car_interfaces(self, car_name, data):
-    print(car_name)
     CarInterface, CarController, CarState = interfaces[car_name]
 
     args = get_fuzzy_car_interface_args(data.draw)
@@ -114,7 +113,6 @@ class TestCarInterfaces(unittest.TestCase):
     controlsd.initialized = True
     cs_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarState, real_floats=True, ignore_deprecated=True)
     CS = car.CarState.new_message(**cs_msg)
-    # # print('looping')
     with (patch('openpilot.selfdrive.car.interfaces.CarInterfaceBase.update', lambda *args, **kwargs: CS),
           patch('cereal.messaging.drain_sock_raw', lambda *args, **kwargs: [])):
       for _ in range(10):
@@ -136,8 +134,6 @@ class TestCarInterfaces(unittest.TestCase):
       cans = [messaging.new_message('can', 1).to_bytes() for _ in range(5)]
       rr = radar_interface.update(cans)
       self.assertTrue(rr is None or len(rr.errors) > 0)
-
-    print('finished!')
 
   def test_interface_attrs(self):
     """Asserts basic behavior of interface attribute getter"""
