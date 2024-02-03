@@ -30,41 +30,37 @@ def run_cmd_default(cmd: List[str], default: Optional[str] = None) -> Optional[s
 
 
 @cache
-def get_commit(branch: str = "HEAD", default: Optional[str] = None) -> Optional[str]:
-  return run_cmd_default(["git", "rev-parse", branch], default=default)
+def get_commit(branch: str = "HEAD") -> str:
+  return run_cmd_default(["git", "rev-parse", branch]) or ""
 
 
 @cache
-def get_short_branch(default: Optional[str] = None) -> Optional[str]:
-  return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "HEAD"], default=default)
+def get_short_branch() -> str:
+  return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "HEAD"]) or ""
 
 
 @cache
-def get_branch(default: Optional[str] = None) -> Optional[str]:
-  return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"], default=default)
+def get_branch() -> str:
+  return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"]) or ""
 
 
 @cache
-def get_origin(default: Optional[str] = None) -> Optional[str]:
+def get_origin() -> str:
   try:
     local_branch = run_cmd(["git", "name-rev", "--name-only", "HEAD"])
     tracking_remote = run_cmd(["git", "config", "branch." + local_branch + ".remote"])
     return run_cmd(["git", "config", "remote." + tracking_remote + ".url"])
   except subprocess.CalledProcessError:  # Not on a branch, fallback
-    return run_cmd_default(["git", "config", "--get", "remote.origin.url"], default=default)
+    return run_cmd_default(["git", "config", "--get", "remote.origin.url"]) or ""
 
 
 @cache
-def get_normalized_origin(default: Optional[str] = None) -> Optional[str]:
-  origin: Optional[str] = get_origin()
-
-  if origin is None:
-    return default
-
-  return origin.replace("git@", "", 1) \
-               .replace(".git", "", 1) \
-               .replace("https://", "", 1) \
-               .replace(":", "/", 1)
+def get_normalized_origin() -> str:
+  return get_origin() \
+    .replace("git@", "", 1) \
+    .replace(".git", "", 1) \
+    .replace("https://", "", 1) \
+    .replace(":", "/", 1) or ""
 
 
 @cache
