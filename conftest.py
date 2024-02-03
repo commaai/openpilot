@@ -4,7 +4,7 @@ import random
 
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.manager import manager
-from openpilot.system.hardware import TICI
+from openpilot.system.hardware import TICI, HARDWARE
 
 
 def pytest_sessionstart(session):
@@ -57,12 +57,24 @@ def openpilot_class_fixture():
   os.environ.update(starting_env)
 
 
+@pytest.fixture(scope="class")
+def tici_setup_fixture():
+  """Ensure a consistent state for tests on-device"""
+  HARDWARE.initialize_hardware()
+  HARDWARE.set_power_save(False)
+  os.system("pkill -9 -f athena")
+  os.system("rm /dev/shm/*")
+
+
 @pytest.hookimpl(tryfirst=True)
 def pytest_collection_modifyitems(config, items):
   skipper = pytest.mark.skip(reason="Skipping tici test on PC")
   for item in items:
-    if not TICI and "tici" in item.keywords:
-      item.add_marker(skipper)
+    if "tici" in item.keywords:
+      if not TICI:
+        item.add_marker(skipper)
+      else:
+        item.fixturenames.append('tici_setup_fixture')
 
     if "xdist_group_class_property" in item.keywords:
       class_property_name = item.get_closest_marker('xdist_group_class_property').args[0]

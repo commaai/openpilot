@@ -160,7 +160,7 @@ if __name__ == "__main__":
     sys.exit(1)
 
   cur_commit = get_commit()
-  if cur_commit is None:
+  if not cur_commit:
     raise Exception("Couldn't get current commit")
 
   print(f"***** testing against commit {ref_commit} *****")
