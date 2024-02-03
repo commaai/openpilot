@@ -47,7 +47,7 @@ jobs:
         export PYTHONPATH=$TARGET_DIR
         cd $TARGET_DIR
         scons -j$(nproc)
-        selfdrive/car/tests/test_car_interfaces.py
+        pytest -n logical selfdrive/car/tests/test_car_interfaces.py
     - name: Push master-ci
       run: |
         unset TARGET_DIR
