@@ -6,8 +6,8 @@ launch_openpilot.sh
 
 Jenkinsfile
 SConstruct
-pyproject.toml
 conftest.py
+pyproject.toml
 
 README.md
 RELEASES.md
