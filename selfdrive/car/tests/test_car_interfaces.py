@@ -15,6 +15,7 @@ from openpilot.selfdrive.car import gen_empty_fingerprint
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.fw_versions import FW_VERSIONS
+from openpilot.selfdrive.controls.controlsd import Controls, get_lateral_controller
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
@@ -115,11 +116,11 @@ class TestCarInterfaces(unittest.TestCase):
       car_interface.apply(CC, now_nanos)
       now_nanos += DT_CTRL * 1e9  # 10ms
 
+    # When card is merged, initialize that instead
     # Run controlsd step to test lat and long controllers
-    with patch('openpilot.common.params.Params', FakeParams):
-      from openpilot.selfdrive.controls.controlsd import Controls
-      controlsd = Controls(CI=car_interface)
-      controlsd.initialized = True
+    # with patch('openpilot.common.params.Params', FakeParams):
+    #   controlsd = Controls(CI=car_interface)
+    #   controlsd.initialized = True
 
     cs_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarState, real_floats=True, ignore_deprecated=True)
     CS = car.CarState.new_message(**cs_msg)
