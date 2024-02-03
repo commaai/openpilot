@@ -59,7 +59,7 @@ class TestCarInterfaces(unittest.TestCase):
 
   # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
   #  many generated examples to overrun when max_examples > ~20, don't use it
-  @parameterized.expand([(car,) for car in sorted(all_known_cars()) if 'BOLT' in car])
+  @parameterized.expand([(car,) for car in sorted(all_known_cars())])
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
@@ -136,7 +136,7 @@ class TestCarInterfaces(unittest.TestCase):
     # Run radar interface once
     radar_interface.update([])
     if not car_params.radarUnavailable and radar_interface.rcp is not None and \
-      hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
+       hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
       radar_interface._update([radar_interface.trigger_msg])
 
     # Test radar fault
