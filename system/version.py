@@ -86,12 +86,7 @@ def is_prebuilt() -> bool:
 def is_comma_remote() -> bool:
   # note to fork maintainers, this is used for release metrics. please do not
   # touch this to get rid of the orange startup alert. there's better ways to do that
-  origin: Optional[str] = get_origin()
-  if origin is None:
-    return False
-
-  return origin.startswith(('git@github.com:commaai', 'https://github.com/commaai'))
-
+  return get_normalized_origin() == "github.com/commaai/openpilot"
 
 @cache
 def is_tested_branch() -> bool:
