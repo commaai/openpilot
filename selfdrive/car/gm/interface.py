@@ -27,7 +27,7 @@ NON_LINEAR_TORQUE_PARAMS = {
   CAR.SILVERADO: [3.29974374, 1.0, 0.25571356, 0.0465122]
 }
 
-NEURAL_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/neural_ff_weights1.json')
+NEURAL_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/neural_ff_weights.json')
 
 
 class CarInterface(CarInterfaceBase):
