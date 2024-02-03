@@ -316,9 +316,9 @@ def getMessage(service: str, timeout: int = 1000) -> dict:
 def getVersion() -> Dict[str, str]:
   return {
     "version": get_version(),
-    "remote": get_normalized_origin(''),
-    "branch": get_short_branch(''),
-    "commit": get_commit(default=''),
+    "remote": get_normalized_origin(),
+    "branch": get_short_branch(),
+    "commit": get_commit(),
   }
 
 
