@@ -84,6 +84,7 @@ class FuzzyGenerator:
     return data
 
   @classmethod
-  def get_random_event_msg(cls, draw: DrawType, events: List[str], real_floats: bool = False) -> List[Dict[str, Any]]:
-    fg = cls(draw, real_floats=real_floats)
+  def get_random_event_msg(cls, draw: DrawType, events: List[str], real_floats: bool = False,
+                           ignore_deprecated: bool = False) -> List[Dict[str, Any]]:
+    fg = cls(draw, real_floats=real_floats, ignore_deprecated=ignore_deprecated)
     return [draw(fg.generate_struct(log.Event.schema, e)) for e in sorted(events)]
