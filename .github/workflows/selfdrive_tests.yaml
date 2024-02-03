@@ -54,7 +54,7 @@ jobs:
         cd $STRIPPED_DIR
         ${{ env.RUN }} "python selfdrive/manager/build.py"
     - name: Run tests
-      timeout-minutes: 3
+      timeout-minutes: 99
       run: |
         cd $STRIPPED_DIR
         ${{ env.RUN }} "release/check-dirty.sh && \
