@@ -18,7 +18,7 @@ from openpilot.system.version import get_short_branch
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from openpilot.selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
 from openpilot.selfdrive.controls.lib.drive_helpers import VCruiseHelper, clip_curvature
-from openpilot.selfdrive.controls.lib.latcontrol import MIN_LATERAL_CONTROL_SPEED
+from openpilot.selfdrive.controls.lib.latcontrol import LatControl, MIN_LATERAL_CONTROL_SPEED
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle, STEER_ANGLE_SATURATION_THRESHOLD
@@ -53,16 +53,6 @@ CSID_MAP = {"1": EventName.roadCameraError, "2": EventName.wideRoadCameraError, 
 ACTUATOR_FIELDS = tuple(car.CarControl.Actuators.schema.fields.keys())
 ACTIVE_STATES = (State.enabled, State.softDisabling, State.overriding)
 ENABLED_STATES = (State.preEnabled, *ACTIVE_STATES)
-
-
-def get_lateral_controller(CP, CI):
-  if CP.steerControlType == car.CarParams.SteerControlType.angle:
-    return LatControlAngle(CP, CI)
-  else:
-    if CP.lateralTuning.which() == 'torque':
-      return LatControlPID(CP, CI)
-    else:
-      return LatControlTorque(CP, CI)
 
 
 class Controls:
@@ -152,7 +142,14 @@ class Controls:
 
     self.LoC = LongControl(self.CP)
     self.VM = VehicleModel(self.CP)
-    self.LaC = get_lateral_controller(self.CP, CI)
+
+    self.LaC: LatControl
+    if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+      self.LaC = LatControlAngle(self.CP, self.CI)
+    elif self.CP.lateralTuning.which() == 'pid':
+      self.LaC = LatControlPID(self.CP, self.CI)
+    elif self.CP.lateralTuning.which() == 'torque':
+      self.LaC = LatControlTorque(self.CP, self.CI)
 
     self.initialized = False
     self.state = State.disabled

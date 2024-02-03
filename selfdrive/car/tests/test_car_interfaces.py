@@ -2,34 +2,26 @@
 import os
 import math
 import unittest
-from unittest.mock import patch
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 import importlib
 from parameterized import parameterized
 
 from cereal import car, messaging
-from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import gen_empty_fingerprint
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.fw_versions import FW_VERSIONS
-from openpilot.selfdrive.controls.controlsd import Controls, get_lateral_controller
 from openpilot.selfdrive.car.interfaces import get_interface_attr
+from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
+from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
+from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
 ALL_ECUS = list({ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()})
 
 MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '20'))
-
-
-class FakeParams(Params):
-  def put(self, key, val):
-    pass
-
-  def put_nonblocking(self, key, val):
-    pass
 
 
 def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
@@ -116,18 +108,14 @@ class TestCarInterfaces(unittest.TestCase):
       car_interface.apply(CC, now_nanos)
       now_nanos += DT_CTRL * 1e9  # 10ms
 
-    # When card is merged, initialize that instead
-    # Run controlsd step to test lat and long controllers
-    # with patch('openpilot.common.params.Params', FakeParams):
-    #   controlsd = Controls(CI=car_interface)
-    #   controlsd.initialized = True
-
-    cs_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarState, real_floats=True, ignore_deprecated=True)
-    CS = car.CarState.new_message(**cs_msg)
-    with (patch('openpilot.selfdrive.car.interfaces.CarInterfaceBase.update', lambda *args, **kwargs: CS),
-          patch('cereal.messaging.drain_sock_raw', lambda *args, **kwargs: [])):
-      for _ in range(10):
-        controlsd.step()
+    # Test controller initialization
+    # TODO: wait until card refactor is merged to run controller a few times
+    if car_params.steerControlType == car.CarParams.SteerControlType.angle:
+      LatControlAngle(car_params, car_interface)
+    elif car_params.lateralTuning.which() == 'pid':
+      LatControlPID(car_params, car_interface)
+    elif car_params.lateralTuning.which() == 'torque':
+      LatControlTorque(car_params, car_interface)
 
     # Test radar interface
     RadarInterface = importlib.import_module(f'selfdrive.car.{car_params.carName}.radar_interface').RadarInterface
