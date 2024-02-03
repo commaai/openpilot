@@ -8,10 +8,9 @@ DrawType = Callable[[st.SearchStrategy], Any]
 
 
 class FuzzyGenerator:
-  def __init__(self, draw: DrawType, real_floats: bool, ignore_deprecated: bool):
+  def __init__(self, draw: DrawType, real_floats: bool):
     self.draw = draw
     self.real_floats = real_floats
-    self.ignore_deprecated = ignore_deprecated
 
   def generate_native_type(self, field: str) -> st.SearchStrategy[Union[bool, int, float, str, bytes]]:
     def floats(**kwargs) -> st.SearchStrategy[float]:
@@ -58,10 +57,7 @@ class FuzzyGenerator:
         return st.lists(rec(field_type.list.elementType))
       elif field_type.which() == 'enum':
         schema = field.schema.elementType if base_type == 'list' else field.schema
-        elements = list(schema.enumerants.keys())
-        if self.ignore_deprecated:
-          elements = [k for k in elements if not k.endswith('DEPRECATED')]
-        return st.sampled_from(elements)
+        return st.sampled_from(list(schema.enumerants.keys()))
       else:
         return self.generate_native_type(field_type.which())
 
@@ -77,14 +73,12 @@ class FuzzyGenerator:
     return st.fixed_dictionaries({field: self.generate_field(schema.fields[field]) for field in full_fill + single_fill})
 
   @classmethod
-  def get_random_msg(cls, draw: DrawType, struct: capnp.lib.capnp._StructModule, real_floats: bool = False,
-                     ignore_deprecated: bool = False) -> Dict[str, Any]:
-    fg = cls(draw, real_floats=real_floats, ignore_deprecated=ignore_deprecated)
+  def get_random_msg(cls, draw: DrawType, struct: capnp.lib.capnp._StructModule, real_floats: bool = False) -> Dict[str, Any]:
+    fg = cls(draw, real_floats=real_floats)
     data: Dict[str, Any] = draw(fg.generate_struct(struct.schema))
     return data
 
   @classmethod
-  def get_random_event_msg(cls, draw: DrawType, events: List[str], real_floats: bool = False,
-                           ignore_deprecated: bool = False) -> List[Dict[str, Any]]:
-    fg = cls(draw, real_floats=real_floats, ignore_deprecated=ignore_deprecated)
+  def get_random_event_msg(cls, draw: DrawType, events: List[str], real_floats: bool = False) -> List[Dict[str, Any]]:
+    fg = cls(draw, real_floats=real_floats)
     return [draw(fg.generate_struct(log.Event.schema, e)) for e in sorted(events)]
