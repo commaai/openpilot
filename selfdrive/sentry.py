@@ -44,7 +44,7 @@ def set_tag(key: str, value: str) -> None:
 
 def init(project: SentryProject) -> bool:
   # forks like to mess with this, so double check
-  comma_remote = is_comma_remote() and "commaai" in get_origin(default="")
+  comma_remote = is_comma_remote() and "commaai" in get_origin()
   if not comma_remote or not is_registered_device() or PC:
     return False
 
