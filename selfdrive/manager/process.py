@@ -261,11 +261,12 @@ class DaemonProcess(ManagerProcess):
         pass
 
     cloudlog.info(f"starting daemon {self.name}")
-    proc = subprocess.Popen(['python', '-m', self.module],
-                               stdin=open('/dev/null'),
-                               stdout=open('/dev/null', 'w'),
-                               stderr=open('/dev/null', 'w'),
-                               preexec_fn=os.setpgrp)
+    with open('/dev/null') as f1, open('/dev/null', 'w') as f2, open('/dev/null', 'w') as f3:
+      proc = subprocess.Popen(['python', '-m', self.module],
+                                stdin=f1,
+                                stdout=f2,
+                                stderr=f3,
+                                preexec_fn=os.setpgrp)
 
     self.params.put(self.param_name, str(proc.pid))
 
