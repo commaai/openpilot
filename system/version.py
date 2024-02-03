@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import subprocess
-from typing import List, Optional, cast
+from typing import List, Optional, Callable, TypeVar
 from functools import lru_cache
 
 from openpilot.common.basedir import BASEDIR
@@ -13,8 +13,8 @@ TESTED_BRANCHES = RELEASE_BRANCHES + ['devel', 'devel-staging']
 training_version: bytes = b"0.2.0"
 terms_version: bytes = b"2"
 
-
-def cache(user_function, /):
+_RT = TypeVar("_RT")
+def cache(user_function: Callable[..., _RT], /) -> Callable[..., _RT]:
   return lru_cache(maxsize=None)(user_function)
 
 
@@ -60,7 +60,7 @@ def get_normalized_origin() -> str:
     .replace("git@", "", 1) \
     .replace(".git", "", 1) \
     .replace("https://", "", 1) \
-    .replace(":", "/", 1) or ""
+    .replace(":", "/", 1)
 
 
 @cache
@@ -71,7 +71,7 @@ def get_version() -> str:
 
 @cache
 def get_short_version() -> str:
-  return get_version().split('-')[0]  # type: ignore
+  return get_version().split('-')[0]
 
 @cache
 def is_prebuilt() -> bool:
@@ -82,7 +82,7 @@ def is_prebuilt() -> bool:
 def is_comma_remote() -> bool:
   # note to fork maintainers, this is used for release metrics. please do not
   # touch this to get rid of the orange startup alert. there's better ways to do that
-  return cast(str, get_normalized_origin("")) == "github.com/commaai/openpilot"
+  return get_normalized_origin() == "github.com/commaai/openpilot"
 
 @cache
 def is_tested_branch() -> bool:
@@ -96,7 +96,7 @@ def is_release_branch() -> bool:
 def is_dirty() -> bool:
   origin = get_origin()
   branch = get_branch()
-  if (origin is None) or (branch is None):
+  if not origin or not branch:
     return True
 
   dirty = False
