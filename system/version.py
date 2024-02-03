@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import subprocess
-from typing import List, Optional
+from typing import List, Optional, cast
 from functools import lru_cache
 
 from openpilot.common.basedir import BASEDIR
@@ -86,7 +86,7 @@ def is_prebuilt() -> bool:
 def is_comma_remote() -> bool:
   # note to fork maintainers, this is used for release metrics. please do not
   # touch this to get rid of the orange startup alert. there's better ways to do that
-  return get_normalized_origin() == "github.com/commaai/openpilot"
+  return cast(str, get_normalized_origin("")) == "github.com/commaai/openpilot"
 
 @cache
 def is_tested_branch() -> bool:
