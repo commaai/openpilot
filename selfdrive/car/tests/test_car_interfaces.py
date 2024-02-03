@@ -9,18 +9,26 @@ import importlib
 from parameterized import parameterized
 
 from cereal import car, messaging
+from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import gen_empty_fingerprint
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.fw_versions import FW_VERSIONS
 from openpilot.selfdrive.car.interfaces import get_interface_attr
-from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
 ALL_ECUS = list({ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()})
 
 MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '20'))
+
+
+class FakeParams(Params):
+  def put(self, key, val):
+    pass
+
+  def put_nonblocking(self, key, val):
+    pass
 
 
 def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
@@ -108,8 +116,11 @@ class TestCarInterfaces(unittest.TestCase):
       now_nanos += DT_CTRL * 1e9  # 10ms
 
     # Run controlsd step to test lat and long controllers
-    controlsd = Controls(CI=car_interface)
-    controlsd.initialized = True
+    with patch('openpilot.common.params.Params', FakeParams):
+      from openpilot.selfdrive.controls.controlsd import Controls
+      controlsd = Controls(CI=car_interface)
+      controlsd.initialized = True
+
     cs_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarState, real_floats=True, ignore_deprecated=True)
     CS = car.CarState.new_message(**cs_msg)
     with (patch('openpilot.selfdrive.car.interfaces.CarInterfaceBase.update', lambda *args, **kwargs: CS),
