@@ -481,7 +481,7 @@ class Tici(HardwareBase):
       ]
 
       # clear out old blue prime initial APN
-      os.system(f'mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn="')
+      os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn="')
     for cmd in cmds:
       try:
         modem.Command(cmd, math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
