@@ -5,10 +5,12 @@ import logging
 import os
 import ssl
 import subprocess
+from typing import TYPE_CHECKING
 
-from aiohttp import web, ClientSession
 import pyaudio
 import wave
+if TYPE_CHECKING:
+  from aiohttp import web
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.system.webrtc.webrtcd import StreamRequestBody
@@ -94,6 +96,8 @@ async def sound(request):
 
 
 async def offer(request):
+  from aiohttp import ClientSession
+
   params = await request.json()
   body = StreamRequestBody(params["sdp"], ["driver"], ["testJoystick"], ["carState"])
   body_json = json.dumps(dataclasses.asdict(body))
@@ -107,6 +111,8 @@ async def offer(request):
 
 
 def main():
+  from aiohttp import web
+
   # Enable joystick debug mode
   Params().put_bool("JoystickDebugMode", True)
 
