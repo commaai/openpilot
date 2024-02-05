@@ -11,7 +11,7 @@ from cereal import car
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
 from openpilot.selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, \
-                                                match_fw_to_car, get_fw_versions, get_present_ecus
+                                                match_fw_to_car, get_brand_ecu_matches, get_fw_versions, get_present_ecus
 from openpilot.selfdrive.car.vin import get_vin
 
 CarFw = car.CarParams.CarFw
@@ -150,7 +150,7 @@ class TestFwFingerprint(unittest.TestCase):
     # Ensure each brand has at least 1 ECU to query, and extra ECU retrieval
     for brand, config in FW_QUERY_CONFIGS.items():
       self.assertEqual(len(config.get_all_ecus({}, include_extra_ecus=False)), 0)
-      self.assertEqual(config.get_all_ecus({}, include_ecu_type=True), set(config.extra_ecus))
+      self.assertEqual(config.get_all_ecus({}), set(config.extra_ecus))
       self.assertGreater(len(config.get_all_ecus(VERSIONS[brand])), 0)
 
   def test_fw_request_ecu_whitelist(self):
@@ -177,6 +177,14 @@ class TestFwFingerprint(unittest.TestCase):
           # No request on the OBD port (bus 1, multiplexed) should be run on an aux panda
           self.assertFalse(request_obj.auxiliary and request_obj.bus == 1 and request_obj.obd_multiplexing,
                            f"{brand.title()}: OBD multiplexed request is marked auxiliary: {request_obj}")
+
+  def test_brand_ecu_matches(self):
+    empty_response = {brand: set() for brand in FW_QUERY_CONFIGS}
+    self.assertEqual(get_brand_ecu_matches(set()), empty_response)
+
+    # we ignore bus
+    expected_response = empty_response | {'toyota': {(0x750, 0xf)}}
+    self.assertEqual(get_brand_ecu_matches({(0x758, 0xf, 99)}), expected_response)
 
 
 class TestFwFingerprintTiming(unittest.TestCase):
@@ -246,16 +254,16 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
   @pytest.mark.timeout(60)
   def test_fw_query_timing(self):
-    total_ref_time = 6.9
+    total_ref_time = 7.0
     brand_ref_times = {
       1: {
         'gm': 0.5,
         'body': 0.1,
         'chrysler': 0.3,
-        'ford': 0.1,
+        'ford': 0.2,
         'honda': 0.55,
         'hyundai': 0.65,
-        'mazda': 0.2,
+        'mazda': 0.1,
         'nissan': 0.8,
         'subaru': 0.45,
         'tesla': 0.2,
@@ -263,7 +271,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
         'volkswagen': 0.2,
       },
       2: {
-        'ford': 0.2,
+        'ford': 0.3,
         'hyundai': 1.05,
       }
     }
