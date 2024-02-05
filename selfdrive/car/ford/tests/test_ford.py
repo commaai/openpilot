@@ -52,7 +52,7 @@ class TestFordFW(unittest.TestCase):
   @parameterized.expand(FW_VERSIONS.items())
   def test_fw_versions(self, car_model: str, fw_versions: Dict[Tuple[capnp.lib.capnp._EnumModule, int, Optional[int]], Iterable[bytes]]):
     for (ecu, addr, subaddr), fws in fw_versions.items():
-      self.assertIn(ecu, ECU_FW_CORE, "Unexpected ECU")
+      self.assertIn(ecu, ECU_ADDRESSES, "Unknown ECU")
       self.assertEqual(addr, ECU_ADDRESSES[ecu], "ECU address mismatch")
       self.assertIsNone(subaddr, "Unexpected ECU subaddress")
 
