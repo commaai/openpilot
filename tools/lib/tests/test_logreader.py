@@ -1,6 +1,7 @@
 import shutil
 import tempfile
 import numpy as np
+import os
 import unittest
 import pytest
 import requests
@@ -129,8 +130,10 @@ class TestLogReader(unittest.TestCase):
     self.assertEqual(lr.first("carParams").carFingerprint, "SUBARU OUTBACK 6TH GEN")
     self.assertTrue(0 < len(list(lr.filter("carParams"))) < len(list(lr)))
 
+  @parameterized.expand([(True,), (False,)])
   @pytest.mark.slow
-  def test_run_across_segments(self):
+  def test_run_across_segments(self, cache_enabled):
+    os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
     lr = LogReader(f"{TEST_ROUTE}/0:4")
     self.assertEqual(len(lr.run_across_segments(4, noop)), len(list(lr)))
 
