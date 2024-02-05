@@ -24,7 +24,7 @@ WEBRTCD_HOST, WEBRTCD_PORT = "localhost", 5001
 
 
 ## UTILS
-async def play_sound(sound):
+async def play_sound(sound: str):
   SOUNDS = {
     "engage": "selfdrive/assets/sounds/engage.wav",
     "disengage": "selfdrive/assets/sounds/disengage.wav",
@@ -53,7 +53,7 @@ async def play_sound(sound):
     p.terminate()
 
 ## SSL
-def create_ssl_cert(cert_path, key_path):
+def create_ssl_cert(cert_path: str, key_path: str):
   try:
     proc = subprocess.run(f'openssl req -x509 -newkey rsa:4096 -nodes -out {cert_path} -keyout {key_path} \
                           -days 365 -subj "/C=US/ST=California/O=commaai/OU=comma body"',
@@ -77,17 +77,17 @@ def create_ssl_context():
   return ssl_context
 
 ## ENDPOINTS
-async def index(request):
+async def index(request: 'web.Request'):
   with open(os.path.join(TELEOPDIR, "static", "index.html"), "r") as f:
     content = f.read()
     return web.Response(content_type="text/html", text=content)
 
 
-async def ping(request):
+async def ping(request: 'web.Request'):
   return web.Response(text="pong")
 
 
-async def sound(request):
+async def sound(request: 'web.Request'):
   params = await request.json()
   sound_to_play = params["sound"]
 
@@ -95,7 +95,7 @@ async def sound(request):
   return web.json_response({"status": "ok"})
 
 
-async def offer(request):
+async def offer(request: 'web.Request'):
   from aiohttp import ClientSession
 
   params = await request.json()
