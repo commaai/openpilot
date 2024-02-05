@@ -2,6 +2,7 @@ import shutil
 import tempfile
 import numpy as np
 import unittest
+import pytest
 import requests
 
 from parameterized import parameterized
@@ -89,24 +90,28 @@ class TestLogReader(unittest.TestCase):
       sr = SegmentRange(segment_range)
       parse_slice(sr)
 
+  @pytest.mark.slow
   def test_modes(self):
     qlog_len = len(list(LogReader(f"{TEST_ROUTE}/0", ReadMode.QLOG)))
     rlog_len = len(list(LogReader(f"{TEST_ROUTE}/0", ReadMode.RLOG)))
 
     self.assertLess(qlog_len * 6, rlog_len)
 
+  @pytest.mark.slow
   def test_modes_from_name(self):
     qlog_len = len(list(LogReader(f"{TEST_ROUTE}/0/q")))
     rlog_len = len(list(LogReader(f"{TEST_ROUTE}/0/r")))
 
     self.assertLess(qlog_len * 6, rlog_len)
 
+  @pytest.mark.slow
   def test_list(self):
     qlog_len = len(list(LogReader(f"{TEST_ROUTE}/0/q")))
     qlog_len_2 = len(list(LogReader([f"{TEST_ROUTE}/0/q", f"{TEST_ROUTE}/0/q"])))
 
     self.assertEqual(qlog_len*2, qlog_len_2)
 
+  @pytest.mark.slow
   @mock.patch("openpilot.tools.lib.logreader._LogFileReader")
   def test_multiple_iterations(self, init_mock):
     lr = LogReader(f"{TEST_ROUTE}/0/q")
@@ -118,11 +123,13 @@ class TestLogReader(unittest.TestCase):
 
     self.assertEqual(qlog_len1, qlog_len2)
 
+  @pytest.mark.slow
   def test_helpers(self):
     lr = LogReader(f"{TEST_ROUTE}/0/q")
     self.assertEqual(lr.first("carParams").carFingerprint, "SUBARU OUTBACK 6TH GEN")
     self.assertTrue(0 < len(list(lr.filter("carParams"))) < len(list(lr)))
 
+  @pytest.mark.slow
   def test_run_across_segments(self):
     lr = LogReader(f"{TEST_ROUTE}/0:4")
     self.assertEqual(len(lr.run_across_segments(4, noop)), len(list(lr)))
