@@ -2,19 +2,23 @@ import shutil
 import tempfile
 import numpy as np
 import unittest
-import pytest
 import requests
 
 from parameterized import parameterized
 from unittest import mock
 
-from openpilot.tools.lib.logreader import LogReader, parse_indirect, parse_slice, ReadMode
+from openpilot.tools.lib.logreader import LogIterable, LogReader, parse_indirect, parse_slice, ReadMode
 from openpilot.tools.lib.route import SegmentRange
 
 NUM_SEGS = 17 # number of segments in the test route
 ALL_SEGS = list(np.arange(NUM_SEGS))
 TEST_ROUTE = "344c5c15b34f2d8a/2024-01-03--09-37-12"
 QLOG_FILE = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/qlog.bz2"
+
+
+def noop(segment: LogIterable):
+  return segment
+
 
 class TestLogReader(unittest.TestCase):
   @parameterized.expand([
@@ -85,28 +89,24 @@ class TestLogReader(unittest.TestCase):
       sr = SegmentRange(segment_range)
       parse_slice(sr)
 
-  @pytest.mark.slow
   def test_modes(self):
     qlog_len = len(list(LogReader(f"{TEST_ROUTE}/0", ReadMode.QLOG)))
     rlog_len = len(list(LogReader(f"{TEST_ROUTE}/0", ReadMode.RLOG)))
 
     self.assertLess(qlog_len * 6, rlog_len)
 
-  @pytest.mark.slow
   def test_modes_from_name(self):
     qlog_len = len(list(LogReader(f"{TEST_ROUTE}/0/q")))
     rlog_len = len(list(LogReader(f"{TEST_ROUTE}/0/r")))
 
     self.assertLess(qlog_len * 6, rlog_len)
 
-  @pytest.mark.slow
   def test_list(self):
     qlog_len = len(list(LogReader(f"{TEST_ROUTE}/0/q")))
     qlog_len_2 = len(list(LogReader([f"{TEST_ROUTE}/0/q", f"{TEST_ROUTE}/0/q"])))
 
     self.assertEqual(qlog_len*2, qlog_len_2)
 
-  @pytest.mark.slow
   @mock.patch("openpilot.tools.lib.logreader._LogFileReader")
   def test_multiple_iterations(self, init_mock):
     lr = LogReader(f"{TEST_ROUTE}/0/q")
@@ -118,11 +118,14 @@ class TestLogReader(unittest.TestCase):
 
     self.assertEqual(qlog_len1, qlog_len2)
 
-  @pytest.mark.slow
   def test_helpers(self):
     lr = LogReader(f"{TEST_ROUTE}/0/q")
     self.assertEqual(lr.first("carParams").carFingerprint, "SUBARU OUTBACK 6TH GEN")
     self.assertTrue(0 < len(list(lr.filter("carParams"))) < len(list(lr)))
+
+  def test_run_across_segments(self):
+    lr = LogReader(f"{TEST_ROUTE}/0:4")
+    self.assertEqual(len(lr.run_across_segments(4, noop)), len(list(lr)))
 
 
 if __name__ == "__main__":
