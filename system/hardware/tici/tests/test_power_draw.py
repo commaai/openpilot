@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from collections import defaultdict, deque
 import pytest
 import unittest
 import time
@@ -11,7 +12,7 @@ import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
 from openpilot.common.mock import mock_messages
 from openpilot.selfdrive.car.car_helpers import write_car_param
-from openpilot.system.hardware.tici.power_monitor import get_power, wait_for_power_with_check
+from openpilot.system.hardware.tici.power_monitor import get_power
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.manager.manager import manager_cleanup
 
@@ -54,22 +55,39 @@ class TestPowerDraw(unittest.TestCase):
 
     prev = baseline
     used = {}
-    msg_counts = {}
     for proc in PROCS:
       socks = {msg: messaging.sub_sock(msg) for msg in proc.msgs}
       managed_processes[proc.name].start()
-      last_sample, warmup_successful = wait_for_power_with_check(baseline + proc.power - proc.atol, \
-                                                                 baseline + proc.power - proc.atol, SAMPLE_TIME, MAX_WARMUP_TIME)
-      with self.subTest(f"{proc} warmup"):
-        self.assertTrue(warmup_successful, msg=last_sample)
+
       for sock in socks.values():
         messaging.drain_sock_raw(sock)
 
-      now = get_power(SAMPLE_TIME)
+      msgs_and_power = deque([None] * SAMPLE_TIME)
+
+      def is_valid(proc, m):
+        power, _ = m
+        return (baseline + proc.power - power.atol) < power < (baseline + proc.power + power.atol)
+
+      while True:
+        power = get_power(1)
+        msg_counts = {}
+        for msg,sock in socks.items():
+          msg_counts[msg] = len(messaging.drain_sock_raw(sock))
+        msgs_and_power.append((power, msg_counts))
+
+        if all(is_valid(proc, m) for m in msgs_and_power):
+          break
+
+      now = np.mean([m[0] for m in msgs_and_power])
+      msg_counts = defaultdict(lambda: 0)
+
+      for m in msgs_and_power:
+        power, z = m
+        for msg, count in z:
+          msg_counts[msg] += count
+
       used[proc.name] = now - prev
       prev = now
-      for msg,sock in socks.items():
-        msg_counts[msg] = len(messaging.drain_sock_raw(sock))
 
     manager_cleanup()
 
