@@ -71,10 +71,14 @@ def pytest_collection_modifyitems(config, items):
   skipper = pytest.mark.skip(reason="Skipping tici test on PC")
   for item in items:
     if "tici" in item.keywords:
+      # Skip tici tests on PC, otherwise add the tici fixture
       if not TICI:
         item.add_marker(skipper)
       else:
         item.fixturenames.append('tici_setup_fixture')
+    else:
+      # for pc tests, run each in a forked process to avoid segfaults killing the whole pytest run
+      item.add_marker("forked")
 
     if "xdist_group_class_property" in item.keywords:
       class_property_name = item.get_closest_marker('xdist_group_class_property').args[0]
