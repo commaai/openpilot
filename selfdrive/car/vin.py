@@ -41,7 +41,7 @@ def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
                       config.vin_request is not None] + STD_VIN_QUERIES:
     for bus in vin_request.buses:
       queries[bus].append((vin_request.request, vin_request.response,
-                           vin_request.buses, vin_request.addrs, None, vin_request.rx_offset))
+                           vin_request.addrs, None, vin_request.rx_offset))
 
   # print(queries)
   # raise Exception
@@ -54,10 +54,7 @@ def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
 
   for i in range(retry):
     for bus, bus_queries in queries.items():
-      for request, response, valid_buses, vin_addrs, functional_addrs, rx_offset in bus_queries:
-        if bus not in valid_buses:
-          continue
-
+      for request, response, vin_addrs, functional_addrs, rx_offset in bus_queries:
         try:
           query = IsoTpParallelQuery(sendcan, logcan, bus, vin_addrs, [request, ], [response, ], response_offset=rx_offset,
                                      functional_addrs=functional_addrs, debug=debug)
