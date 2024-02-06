@@ -87,7 +87,7 @@ class TestPowerDraw(unittest.TestCase):
 
       for m in msgs_and_power:
         power, z = m
-        for msg, count in z:
+        for msg, count in z.items():
           msg_counts[msg] += count
 
       used[proc.name] = now - prev
