@@ -37,8 +37,6 @@ class CarController:
     self.last_angle = 0
     self.alert_active = False
     self.standstill_req = False
-    self.last_standstill = False
-    self.last_out_standstill = False
     self.steer_rate_counter = 0
 
     self.packer = CANPacker(dbc_name)
