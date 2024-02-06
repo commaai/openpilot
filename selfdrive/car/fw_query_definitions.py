@@ -79,7 +79,7 @@ class Request:
 class VinRequest:
   request: bytes
   response: bytes
-  addrs: List[int] = field(default_factory=list)
+  addrs: List[int]
   rx_offset: int = 0x8
   bus: int = 1
 
