@@ -26,6 +26,20 @@ def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
         if bus not in valid_buses:
           continue
 
+        # if we are querying the functional address, we ideally need to respond to all possible addresses
+        # so as to not leave them in a state where they are waiting for a flow control continue response, preventing FW querying later on
+
+        # For functional address queries, include all addresses to avoid leaving them awaiting flow control, ensuring future queries can proceed.
+        # This handles the functional address case by covering all potential addresses to prevent devices from getting stuck awaiting a flow control response, facilitating uninterrupted future queries.
+
+        # When querying functional addresses, ideally we respond to everything that sends a first frame to avoid leaving the ECU in a bad state.
+        # Note that we may not cover all ECUs and response offsets. TODO: query physical addrs and put this into the FwQueryConfig
+        # respond to all to prevent them from waiting for flow control, ensuring future queries.
+        # This avoids leaving devices in a wait state by covering all addresses for functional queries, ensuring smooth future interactions.
+
+        if functional_addrs is not None:
+          vin_addrs += list(range(0x700, 0x800)) + list(range(0x18DA00F1, 0x18DB00F1, 0x100))
+
         try:
           query = IsoTpParallelQuery(sendcan, logcan, bus, vin_addrs, [request, ], [response, ], response_offset=rx_offset,
                                      functional_addrs=functional_addrs, debug=debug)
