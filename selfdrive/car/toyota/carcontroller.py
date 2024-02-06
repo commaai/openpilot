@@ -1,5 +1,6 @@
 from cereal import car
 from openpilot.common.numpy_fast import clip, interp
+from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance, \
                           create_gas_interceptor_command, make_can_msg
 from openpilot.selfdrive.car.toyota import toyotacan
@@ -24,6 +25,8 @@ MAX_USER_TORQUE = 500
 MAX_LTA_ANGLE = 94.9461  # deg
 MAX_LTA_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some resistance when changing lanes
 
+# Time values for hysteresis
+RESUME_HYSTERESIS_TIME = 3.  # seconds
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
@@ -33,13 +36,13 @@ class CarController:
     self.last_steer = 0
     self.last_angle = 0
     self.alert_active = False
-    self.last_standstill = False
     self.standstill_req = False
     self.steer_rate_counter = 0
 
     self.packer = CANPacker(dbc_name)
     self.gas = 0
     self.accel = 0
+    self.resume = False
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -121,12 +124,20 @@ class CarController:
     if not CC.enabled and CS.pcm_acc_status:
       pcm_cancel_cmd = 1
 
-    # on entering standstill, send standstill request
-    if CS.out.standstill and not self.last_standstill and (self.CP.carFingerprint not in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor):
-      self.standstill_req = True
-    if CS.pcm_acc_status != 8:
-      # pcm entered standstill or it's disabled
+    # *** resume hysteresis ***
+    # update self.resume = False once every 3 seconds
+    if self.frame % RESUME_HYSTERESIS_TIME / DT_CTRL == 0 and not CC.cruiseControl.resume:
+      self.resume = False
+    # update self.resume = True instantly
+    if CC.cruiseControl.resume:
+      self.resume = True
+
+    # send standstill when vehicle is stopping
+    if self.resume and (self.CP.carFingerprint not in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor):
       self.standstill_req = False
+    # send resume when long planner wants to go
+    else:
+      self.standstill_req = True
 
     self.last_standstill = CS.out.standstill
 
