@@ -28,7 +28,9 @@ def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
 
         # When querying functional addresses, ideally we respond to everything that sends a first frame to avoid leaving the
         # ECU in a temporary bad state. Note that we may not cover all ECUs and response offsets. TODO: query physical addrs
-        tx_addrs = vin_addrs if not functional_addrs else [a for a in range(0x700, 0x800) if a != 0x7DF] + list(range(0x18DA00F1, 0x18DB00F1, 0x100))
+        tx_addrs = vin_addrs
+        if functional_addrs is not None:
+           tx_addrs = [a for a in range(0x700, 0x800) if a != 0x7DF] + list(range(0x18DA00F1, 0x18DB00F1, 0x100))
 
         try:
           query = IsoTpParallelQuery(sendcan, logcan, bus, tx_addrs, [request, ], [response, ], response_offset=rx_offset,
