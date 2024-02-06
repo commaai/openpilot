@@ -6,6 +6,7 @@ from hashlib import sha256
 from urllib3 import PoolManager
 from urllib3.util import Timeout
 from tenacity import retry, wait_random_exponential, stop_after_attempt
+from typing import Optional
 
 from openpilot.common.file_helpers import atomic_write_in_dir
 from openpilot.system.hardware.hw import Paths
@@ -25,8 +26,8 @@ class URLFileException(Exception):
 
 
 class URLFile:
-  _pid = None
-  _pool_manager = None
+  _pid: Optional[int] = None
+  _pool_manager: Optional[PoolManager] = None
   _pool_manager_lock = threading.Lock()
 
   def __init__(self, url, debug=False, cache=None):
