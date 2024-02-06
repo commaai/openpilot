@@ -59,6 +59,8 @@ WifiManager::WifiManager(QObject *parent) : QObject(parent) {
   }
 
   timer.callOnTimeout(this, &WifiManager::requestScan);
+
+  initConnections();
 }
 
 void WifiManager::setup() {
@@ -72,7 +74,6 @@ void WifiManager::setup() {
   raw_adapter_state = call<uint>(adapter, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE, "State");
   activeAp = call<QDBusObjectPath>(adapter, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE_WIRELESS, "ActiveAccessPoint").path();
 
-  initConnections();
   requestScan();
 }
 

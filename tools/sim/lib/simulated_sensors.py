@@ -102,13 +102,13 @@ class SimulatedSensors:
     self.pm.send('driverMonitoringState', dat)
 
   def send_camera_images(self, world: 'World'):
-    with world.image_lock:
-      yuv = self.camerad.rgb_to_yuv(world.road_image)
-      self.camerad.cam_send_yuv_road(yuv)
+    world.image_lock.acquire()
+    yuv = self.camerad.rgb_to_yuv(world.road_image)
+    self.camerad.cam_send_yuv_road(yuv)
 
-      if world.dual_camera:
-        yuv = self.camerad.rgb_to_yuv(world.wide_road_image)
-        self.camerad.cam_send_yuv_wide_road(yuv)
+    if world.dual_camera:
+      yuv = self.camerad.rgb_to_yuv(world.wide_road_image)
+      self.camerad.cam_send_yuv_wide_road(yuv)
 
   def update(self, simulator_state: 'SimulatorState', world: 'World'):
     now = time.time()

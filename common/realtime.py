@@ -78,7 +78,7 @@ class Ratekeeper:
       time.sleep(self._remaining)
     return lagged
 
-  # this only monitor the cumulative lag, but does not enforce a rate
+  # Monitors the cumulative lag, but does not enforce a rate
   def monitor_time(self) -> bool:
     prev = self._last_monitor_time
     self._last_monitor_time = time.monotonic()

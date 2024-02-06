@@ -47,7 +47,7 @@ clean:
 		../scripts \
 		../selfdrive/modeld \
 		../selfdrive/debug \
-		$(shell find .. -type d -name "*test*")
+		$(shell find .. -type d -name "*test* -not -path "**.venv**" \")
 
 	@echo "Building html files..."
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(DOCSBUILDDIR)" $(SPHINXOPTS) $(O)
