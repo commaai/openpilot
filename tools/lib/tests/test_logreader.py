@@ -1,6 +1,7 @@
 import shutil
 import tempfile
 import numpy as np
+import os
 import unittest
 import pytest
 import requests
@@ -8,13 +9,18 @@ import requests
 from parameterized import parameterized
 from unittest import mock
 
-from openpilot.tools.lib.logreader import LogReader, parse_indirect, parse_slice, ReadMode
+from openpilot.tools.lib.logreader import LogIterable, LogReader, parse_indirect, parse_slice, ReadMode
 from openpilot.tools.lib.route import SegmentRange
 
 NUM_SEGS = 17 # number of segments in the test route
 ALL_SEGS = list(np.arange(NUM_SEGS))
 TEST_ROUTE = "344c5c15b34f2d8a/2024-01-03--09-37-12"
 QLOG_FILE = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/qlog.bz2"
+
+
+def noop(segment: LogIterable):
+  return segment
+
 
 class TestLogReader(unittest.TestCase):
   @parameterized.expand([
@@ -123,6 +129,13 @@ class TestLogReader(unittest.TestCase):
     lr = LogReader(f"{TEST_ROUTE}/0/q")
     self.assertEqual(lr.first("carParams").carFingerprint, "SUBARU OUTBACK 6TH GEN")
     self.assertTrue(0 < len(list(lr.filter("carParams"))) < len(list(lr)))
+
+  @parameterized.expand([(True,), (False,)])
+  @pytest.mark.slow
+  def test_run_across_segments(self, cache_enabled):
+    os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
+    lr = LogReader(f"{TEST_ROUTE}/0:4")
+    self.assertEqual(len(lr.run_across_segments(4, noop)), len(list(lr)))
 
 
 if __name__ == "__main__":
