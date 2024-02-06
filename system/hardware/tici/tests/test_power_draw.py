@@ -63,11 +63,11 @@ class TestPowerDraw(unittest.TestCase):
       for sock in socks.values():
         messaging.drain_sock_raw(sock)
 
-      def is_valid(proc, m):
+      def is_valid(proc: Proc, m):
         if m is None:
           return False
         power, _ = m
-        return (baseline + proc.power - power.atol) < power < (baseline + proc.power + power.atol)
+        return (baseline + proc.power - proc.atol) < power < (baseline + proc.power + proc.atol)
 
       start_time = time.time()
       msgs_and_power = deque([None] * SAMPLE_TIME, maxlen=SAMPLE_TIME)
