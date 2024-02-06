@@ -18,7 +18,7 @@ from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.manager.manager import manager_cleanup
 
 SAMPLE_TIME = 8       # seconds to sample power
-MAX_WARMUP_TIME = 30  # seconds to wait for SAMPLE_TIME valid samples
+MAX_WARMUP_TIME = 30  # seconds to wait for SAMPLE_TIME consecutive valid samples
 
 @dataclass
 class Proc:
