@@ -95,7 +95,7 @@ selfdrive/car/ecu_addrs.py
 selfdrive/car/isotp_parallel_query.py
 selfdrive/car/tests/__init__.py
 selfdrive/car/tests/test_car_interfaces.py
-selfdrive/car/torque_data/*.toml
+selfdrive/car/torque_data/*
 
 selfdrive/car/body/*.py
 selfdrive/car/chrysler/*.py
@@ -394,6 +394,7 @@ third_party/acados/acados_template/**
 
 third_party/bootstrap/**
 third_party/qt5/larch64/bin/**
+third_party/maplibre-native-qt/**
 
 scripts/update_now.sh
 scripts/stop_updater.sh

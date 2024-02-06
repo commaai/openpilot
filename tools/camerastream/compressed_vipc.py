@@ -10,7 +10,6 @@ import time
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcServer, VisionStreamType
 
-W, H = 1928, 1208
 V4L2_BUF_FLAG_KEYFRAME = 8
 
 ENCODE_SOCKETS = {
@@ -19,10 +18,11 @@ ENCODE_SOCKETS = {
   VisionStreamType.VISION_STREAM_DRIVER: "driverEncodeData",
 }
 
-def decoder(addr, vipc_server, vst, nvidia, debug=False):
+def decoder(addr, vipc_server, vst, nvidia, W, H, debug=False):
   sock_name = ENCODE_SOCKETS[vst]
   if debug:
     print("start decoder for %s" % sock_name)
+
   if nvidia:
     os.environ["NV_LOW_LATENCY"] = "3"    # both bLowLatency and CUVID_PKT_ENDOFPICTURE
     sys.path += os.environ["LD_LIBRARY_PATH"].split(":")
@@ -99,16 +99,28 @@ def decoder(addr, vipc_server, vst, nvidia, debug=False):
               % (len(msgs), evta.idx.encodeId, evt.logMonoTime/1e9, evta.idx.timestampEof/1e6, frame_latency,
                  process_latency, network_latency, pc_latency, process_latency+network_latency+pc_latency ), len(evta.data), sock_name)
 
+
 class CompressedVipc:
   def __init__(self, addr, vision_streams, nvidia=False, debug=False):
+    print("getting frame sizes")
+    os.environ["ZMQ"] = "1"
+    messaging.context = messaging.Context()
+    sm = messaging.SubMaster([ENCODE_SOCKETS[s] for s in vision_streams], addr=addr)
+    while min(sm.rcv_frame.values()) == 0:
+      sm.update(100)
+    os.environ.pop("ZMQ")
+    messaging.context = messaging.Context()
+
     self.vipc_server = VisionIpcServer("camerad")
     for vst in vision_streams:
-      self.vipc_server.create_buffers(vst, 4, False, W, H)
+      ed = sm[ENCODE_SOCKETS[vst]]
+      self.vipc_server.create_buffers(vst, 4, False, ed.width, ed.height)
     self.vipc_server.start_listener()
 
     self.procs = []
     for vst in vision_streams:
-      p = multiprocessing.Process(target=decoder, args=(addr, self.vipc_server, vst, nvidia, debug))
+      ed = sm[ENCODE_SOCKETS[vst]]
+      p = multiprocessing.Process(target=decoder, args=(addr, self.vipc_server, vst, nvidia, debug, ed.width, ed.height))
       p.start()
       self.procs.append(p)
 

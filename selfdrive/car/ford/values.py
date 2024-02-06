@@ -119,6 +119,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     ),
   ],
   extra_ecus=[
+    # We are unlikely to get a response from the PCM from behind the gateway
     (Ecu.engine, 0x7e0, None),
     (Ecu.shiftByWire, 0x732, None),
   ],
