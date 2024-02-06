@@ -28,14 +28,17 @@ def get_power(seconds=5):
   pwrs = sample_power(seconds)
   return np.mean(pwrs)
 
-def wait_for_power(min_pwr, max_pwr, min_secs_in_range, timeout):
+def wait_for_power_with_check(min_pwr, max_pwr, min_secs_in_range, timeout):
   start_time = time.monotonic()
   pwrs = deque([min_pwr - 1.]*min_secs_in_range, maxlen=min_secs_in_range)
   while (time.monotonic() - start_time < timeout):
     pwrs.append(get_power(1))
     if all(min_pwr <= p <= max_pwr for p in pwrs):
-      break
-  return np.mean(pwrs)
+      return np.mean(pwrs), True
+  return np.mean(pwrs), False
+
+def wait_for_power(*args):
+  return wait_for_power_with_check(*args)[0]
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
 from openpilot.common.mock import mock_messages
 from openpilot.selfdrive.car.car_helpers import write_car_param
-from openpilot.system.hardware.tici.power_monitor import get_power, wait_for_power
+from openpilot.system.hardware.tici.power_monitor import get_power, wait_for_power_with_check
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.manager.manager import manager_cleanup
 
@@ -58,7 +58,10 @@ class TestPowerDraw(unittest.TestCase):
     for proc in PROCS:
       socks = {msg: messaging.sub_sock(msg) for msg in proc.msgs}
       managed_processes[proc.name].start()
-      wait_for_power(baseline + proc.power - proc.atol, baseline + proc.power - proc.atol, SAMPLE_TIME, MAX_WARMUP_TIME)
+      last_sample, warmup_successful = wait_for_power_with_check(baseline + proc.power - proc.atol, \
+                                                                 baseline + proc.power - proc.atol, SAMPLE_TIME, MAX_WARMUP_TIME)
+      with self.subTest(f"{proc} warmup"):
+        self.assertTrue(warmup_successful, msg=last_sample)
       for sock in socks.values():
         messaging.drain_sock_raw(sock)
 
