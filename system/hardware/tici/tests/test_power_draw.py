@@ -86,13 +86,13 @@ class TestPowerDraw(unittest.TestCase):
 
       now = np.mean([m[0] for m in msgs_and_power])
 
+      used[proc.name] = now - prev
+      prev = now
+
       for m in msgs_and_power:
         power, z = m
         for msg, count in z.items():
           msg_counts[msg] += count
-
-      used[proc.name] = now - prev
-      prev = now
 
     manager_cleanup()
 
