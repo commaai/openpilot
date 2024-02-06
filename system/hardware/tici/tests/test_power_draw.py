@@ -66,6 +66,8 @@ class TestPowerDraw(unittest.TestCase):
       msgs_and_power = deque([None] * SAMPLE_TIME)
 
       def is_valid(proc, m):
+        if m is None:
+          return False
         power, _ = m
         return (baseline + proc.power - power.atol) < power < (baseline + proc.power + power.atol)
 
