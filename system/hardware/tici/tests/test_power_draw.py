@@ -25,7 +25,6 @@ class Proc:
   msgs: List[str]
   rtol: float = 0.05
   atol: float = 0.12
-  warmup: float = 6.
 
 PROCS = [
   Proc('camerad', 2.1, msgs=['roadCameraState', 'wideRoadCameraState', 'driverCameraState']),
@@ -59,7 +58,7 @@ class TestPowerDraw(unittest.TestCase):
     for proc in PROCS:
       socks = {msg: messaging.sub_sock(msg) for msg in proc.msgs}
       managed_processes[proc.name].start()
-      wait_for_power(baseline + proc.power - proc.atol, baseline + proc.power - proc.atol, 6, MAX_WARMUP_TIME)
+      wait_for_power(baseline + proc.power - proc.atol, baseline + proc.power - proc.atol, SAMPLE_TIME, MAX_WARMUP_TIME)
       for sock in socks.values():
         messaging.drain_sock_raw(sock)
 
