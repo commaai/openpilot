@@ -19,8 +19,7 @@ def is_valid_vin(vin: str):
 
 
 def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
-  config = FW_QUERY_CONFIGS['gm']
-
+  # build queries
   queries = [
     (StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE, (0, 1), STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
     (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE, (0, 1), STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
