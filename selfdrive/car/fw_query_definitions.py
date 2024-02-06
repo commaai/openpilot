@@ -80,8 +80,9 @@ class VinRequest:
   request: bytes
   response: bytes
   addrs: List[int]
+  functional: bool = True
   rx_offset: int = 0x8
-  bus: int = 1
+  buses: tuple[int] = (0, 1)
 
 
 @dataclass

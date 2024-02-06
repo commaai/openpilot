@@ -1,17 +1,29 @@
 #!/usr/bin/env python3
+from collections import defaultdict
 import re
 
 import cereal.messaging as messaging
 from panda.python.uds import get_rx_addr_for_tx_addr, FUNCTIONAL_ADDRS
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
-from openpilot.selfdrive.car.fw_query_definitions import STANDARD_VIN_ADDRS, FwQueryConfig, StdQueries
+from openpilot.selfdrive.car.fw_query_definitions import STANDARD_VIN_ADDRS, FwQueryConfig, VinRequest, StdQueries
 from openpilot.common.swaglog import cloudlog
 
 FW_QUERY_CONFIGS: dict[str, FwQueryConfig] = get_interface_attr('FW_QUERY_CONFIG', ignore_none=True)
 
 VIN_UNKNOWN = "0" * 17
 VIN_RE = "[A-HJ-NPR-Z0-9]{17}"
+
+STD_VIN_QUERIES = [
+  VinRequest(request=StdQueries.UDS_VIN_REQUEST,
+             response=StdQueries.UDS_VIN_RESPONSE,
+             addrs=STANDARD_VIN_ADDRS,
+             functional=True),
+  VinRequest(request=StdQueries.OBD_VIN_REQUEST,
+             response=StdQueries.OBD_VIN_RESPONSE,
+             addrs=STANDARD_VIN_ADDRS,
+             functional=True),
+]
 
 
 def is_valid_vin(vin: str):
@@ -20,15 +32,27 @@ def is_valid_vin(vin: str):
 
 def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
   # build queries
-  queries = [
-    (StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE, (0, 1), STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
-    (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE, (0, 1), STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
-  ]
-  for brand, config in FW_QUERY_CONFIGS.items():
-    if config.vin_request is not None:
-      queries.append((config.vin_request.request, config.vin_request.response,
-                      (config.vin_request.bus,), config.vin_request.addrs, None, config.vin_request.rx_offset))
+  queries = defaultdict(list)
+  # queries = [
+  #   (StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE, (0, 1), STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
+  #   (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE, (0, 1), STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
+  # ]
+  for vin_request in [config.vin_request for config in FW_QUERY_CONFIGS.values() if
+                      config.vin_request is not None] + STD_VIN_QUERIES:
+    for bus in vin_request.buses:
+      queries[bus].append((vin_request.request, vin_request.response,
+                           vin_request.buses, vin_request.addrs, None, vin_request.rx_offset))
 
+  # print(queries)
+  # raise Exception
+
+  for bus, _queries in queries.items():
+    print('Queries for bus={}:'.format(bus))
+    for query in _queries:
+      print(bus, query[0], query[1])
+    print()
+
+  raise Exception
   for i in range(retry):
     for bus in buses:
       for request, response, valid_buses, vin_addrs, functional_addrs, rx_offset in queries:

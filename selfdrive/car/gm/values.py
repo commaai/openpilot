@@ -182,8 +182,9 @@ FW_QUERY_CONFIG = FwQueryConfig(
     b'\x1a\x90',
     b'\x5a\x90',
     addrs=[0x24b],
+    functional=False,
     rx_offset=GM_RX_OFFSET,
-    bus=0,
+    buses=(0,),
   ),
   extra_ecus=[(Ecu.fwdCamera, 0x24b, None)],
 )
