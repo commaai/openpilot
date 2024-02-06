@@ -1,5 +1,6 @@
 from cereal import car
 from openpilot.common.numpy_fast import clip, interp
+from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance, \
                           create_gas_interceptor_command, make_can_msg
 from openpilot.selfdrive.car.toyota import toyotacan
@@ -24,6 +25,8 @@ MAX_USER_TORQUE = 500
 MAX_LTA_ANGLE = 94.9461  # deg
 MAX_LTA_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some resistance when changing lanes
 
+# Time values for hysteresis
+UI_HYSTERESIS_TIME = 1.  # seconds
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
@@ -40,6 +43,7 @@ class CarController:
     self.packer = CANPacker(dbc_name)
     self.gas = 0
     self.accel = 0
+    self.lead = False
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -130,13 +134,16 @@ class CarController:
 
     self.last_standstill = CS.out.standstill
 
+    # handle UI hysteresis
+    if self.frame % UI_HYSTERESIS_TIME / DT_CTRL == 0:
+      self.lead = hud_control.leadVisible
     # handle UI messages
     fcw_alert = hud_control.visualAlert == VisualAlert.fcw
     steer_alert = hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw)
 
     # we can spam can to cancel the system even if we are using lat only control
     if (self.frame % 3 == 0 and self.CP.openpilotLongitudinalControl) or pcm_cancel_cmd:
-      lead = hud_control.leadVisible or CS.out.vEgo < 12.  # at low speed we always assume the lead is present so ACC can be engaged
+      lead = self.lead or CS.out.vEgo < 12.  # at low speed we always assume the lead is present so ACC can be engaged
 
       # Lexus IS uses a different cancellation message
       if pcm_cancel_cmd and self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
