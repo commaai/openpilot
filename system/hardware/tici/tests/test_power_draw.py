@@ -56,6 +56,8 @@ class TestPowerDraw(unittest.TestCase):
 
     prev = baseline
     used = {}
+    msg_counts = defaultdict(lambda: 0)
+
     for proc in PROCS:
       socks = {msg: messaging.sub_sock(msg) for msg in proc.msgs}
       managed_processes[proc.name].start()
@@ -74,16 +76,15 @@ class TestPowerDraw(unittest.TestCase):
 
       while (time.time() - start_time) < MAX_WARMUP_TIME:
         power = get_power(1)
-        msg_counts = {}
+        local_msg_counts = {}
         for msg,sock in socks.items():
-          msg_counts[msg] = len(messaging.drain_sock_raw(sock))
-        msgs_and_power.append((power, msg_counts))
+          local_msg_counts[msg] = len(messaging.drain_sock_raw(sock))
+        msgs_and_power.append((power, local_msg_counts))
 
         if all(is_valid(proc, m) for m in msgs_and_power):
           break
 
       now = np.mean([m[0] for m in msgs_and_power])
-      msg_counts = defaultdict(lambda: 0)
 
       for m in msgs_and_power:
         power, z = m
