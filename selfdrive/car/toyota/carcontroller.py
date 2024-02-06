@@ -130,11 +130,11 @@ class CarController:
     # *** resume hysteresis ***
     if CC.cruiseControl.resume:
       self.resume = True  # set resume to True immediately when long planner requests
-      self.last_resume_frame = self.frame  # record last res frame
+      self.last_resume_frame = self.frame  # record last resume frame
     elif not CS.out.cruiseControl.standstill:
       self.last_resume_frame = 0.  # reset resume frame when the vehicle moves
     elif self.frame - self.last_resume_frame < RESUME_HYSTERESIS_TIME / DT_CTRL:
-      self.resume = True  # keep resume True for 300 frames after last actual resume frame
+      self.resume = True  # keep resume True for 300 frames after last actual resume frame so vehicle can re-enter resume
     else:
       self.resume = False
 
