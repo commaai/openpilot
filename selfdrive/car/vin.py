@@ -32,7 +32,7 @@ def is_valid_vin(vin: str):
 
 def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
   # build queries
-  queries = defaultdict(list)
+  queries = defaultdict(set)
   # queries = [
   #   (StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE, (0, 1), STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
   #   (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE, (0, 1), STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
@@ -40,8 +40,8 @@ def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
   for vin_request in [config.vin_request for config in FW_QUERY_CONFIGS.values() if
                       config.vin_request is not None] + STD_VIN_QUERIES:
     for bus in vin_request.buses:
-      queries[bus].append((vin_request.request, vin_request.response,
-                           vin_request.addrs, None, vin_request.rx_offset))
+      queries[(bus, tuple(vin_request.addrs))].add((vin_request.request, vin_request.response,
+                        None, vin_request.rx_offset))
 
   # print(queries)
   # raise Exception
@@ -53,8 +53,8 @@ def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
     print()
 
   for i in range(retry):
-    for bus, bus_queries in queries.items():
-      for request, response, vin_addrs, functional_addrs, rx_offset in bus_queries:
+    for (bus, vin_addrs), bus_queries in queries.items():
+      for request, response, functional_addrs, rx_offset in bus_queries:
         try:
           query = IsoTpParallelQuery(sendcan, logcan, bus, vin_addrs, [request, ], [response, ], response_offset=rx_offset,
                                      functional_addrs=functional_addrs, debug=debug)
