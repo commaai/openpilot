@@ -205,7 +205,7 @@ node {
         ])
       },
       'HW + Unit Tests': {
-        deviceStage("tici", "tici-common", ["UNSAFE=1"], [
+        deviceStage("tici-hardware", "tici-common", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
           ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py", ["panda/", "selfdrive/boardd/"]],
           ["test power draw", "pytest -s system/hardware/tici/tests/test_power_draw.py"],
@@ -215,7 +215,7 @@ node {
         ])
       },
       'loopback': {
-        deviceStage("tici", "tici-loopback", ["UNSAFE=1"], [
+        deviceStage("loopback", "tici-loopback", ["UNSAFE=1"], [
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["test boardd loopback", "pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
         ])
@@ -243,7 +243,7 @@ node {
         ])
       },
       'replay': {
-        deviceStage("tici", "tici-replay", ["UNSAFE=1"], [
+        deviceStage("model-replay", "tici-replay", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
           ["model replay", "selfdrive/test/process_replay/model_replay.py"],
         ])
