@@ -26,11 +26,6 @@ def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
         if bus not in valid_buses:
           continue
 
-        # When querying functional addresses, ideally we respond to everything that sends a first frame to avoid leaving the ECU in a temporary bad state.
-        # Note that we may not cover all ECUs and response offsets. TODO: query physical addrs and put this into the FwQueryConfig
-        if functional_addrs is not None:
-          vin_addrs += list(range(0x700, 0x800)) + list(range(0x18DA00F1, 0x18DB00F1, 0x100))
-
         try:
           query = IsoTpParallelQuery(sendcan, logcan, bus, vin_addrs, [request, ], [response, ], response_offset=rx_offset,
                                      functional_addrs=functional_addrs, debug=debug)
