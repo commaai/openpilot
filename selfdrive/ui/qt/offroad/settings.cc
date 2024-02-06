@@ -351,19 +351,23 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QPushButton *close_btn = new QPushButton(tr("×"));
   close_btn->setStyleSheet(R"(
     QPushButton {
-      font-size: 140px;
+      color: grey;
+      background-color: transparent;
+      border: none;
+      font-size: 190px;
+      font-weight: 450;
+      text-align: left;
+      padding-left: 0px;
       padding-bottom: 20px;
-      border-radius: 100px;
-      background-color: #292929;
-      font-weight: 400;
     }
     QPushButton:pressed {
-      background-color: #3B3B3B;
+      color: #ADADAD;
+      background-color: transparent;
     }
   )");
   close_btn->setFixedSize(200, 200);
-  sidebar_layout->addSpacing(45);
-  sidebar_layout->addWidget(close_btn, 0, Qt::AlignCenter);
+  sidebar_layout->addWidget(close_btn, 0, Qt::AlignLeft);
+  sidebar_layout->addSpacing(95);
   QObject::connect(close_btn, &QPushButton::clicked, this, &SettingsWindow::closeSettings);
 
   // setup panels
@@ -393,6 +397,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
         background: none;
         font-size: 65px;
         font-weight: 500;
+        padding-left: 15px;
       }
       QPushButton:checked {
         color: white;
@@ -403,7 +408,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     )");
     btn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     nav_btns->addButton(btn);
-    sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
+    sidebar_layout->addWidget(btn, 0, Qt::AlignLeft);
 
     const int lr_margin = name != tr("Network") ? 50 : 0;  // Network panel handles its own margins
     panel->setContentsMargins(lr_margin, 25, lr_margin, 25);
@@ -416,7 +421,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       panel_widget->setCurrentWidget(w);
     });
   }
-  sidebar_layout->setContentsMargins(50, 50, 100, 50);
+  sidebar_layout->setContentsMargins(50, 0, 100, 50);
 
   // main settings layout, sidebar + main panel
   QHBoxLayout *main_layout = new QHBoxLayout(this);
