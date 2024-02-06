@@ -6,7 +6,7 @@ from typing import Dict, List, Union
 from cereal import car
 from openpilot.selfdrive.car import dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
-from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, VinRequest, StdQueries
 
 Ecu = car.CarParams.Ecu
 
@@ -178,10 +178,10 @@ FW_QUERY_CONFIG = FwQueryConfig(
       logging=True,
     ),
   ]],
-  vin_request=Request(
-    [b'\x1a\x90'],
-    [b'\x5a\x90'],
-    whitelist_ecus=[Ecu.fwdCamera],
+  vin_request=VinRequest(
+    b'\x1a\x90',
+    b'\x5a\x90',
+    addrs=[0x24b],
     rx_offset=GM_RX_OFFSET,
     bus=0,
   ),

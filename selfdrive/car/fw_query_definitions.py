@@ -76,9 +76,18 @@ class Request:
 
 
 @dataclass
+class VinRequest:
+  request: bytes
+  response: bytes
+  addrs: List[int] = field(default_factory=list)
+  rx_offset: int = 0x8
+  bus: int = 1
+
+
+@dataclass
 class FwQueryConfig:
   requests: List[Request]
-  vin_request: Optional[Request] = None
+  vin_request: Optional[VinRequest] = None
   # TODO: make this automatic and remove hardcoded lists, or do fingerprinting with ecus
   # Overrides and removes from essential ecus for specific models and ecus (exact matching)
   non_essential_ecus: Dict[capnp.lib.capnp._EnumModule, List[str]] = field(default_factory=dict)
