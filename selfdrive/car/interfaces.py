@@ -1,3 +1,4 @@
+import json
 import os
 import time
 import numpy as np
@@ -473,3 +474,35 @@ def get_interface_attr(attr: str, combine_brands: bool = False, ignore_none: boo
       pass
 
   return result
+
+
+class NanoFFModel:
+  def __init__(self, weights_loc: str, platform: str):
+    self.weights_loc = weights_loc
+    self.platform = platform
+    self.load_weights(platform)
+
+  def load_weights(self, platform: str):
+    with open(self.weights_loc, 'r') as fob:
+      self.weights = {k: np.array(v) for k, v in json.load(fob)[platform].items()}
+
+  def relu(self, x: np.ndarray):
+    return np.maximum(0.0, x)
+
+  def forward(self, x: np.ndarray):
+    assert x.ndim == 1
+    x = (x - self.weights['input_norm_mat'][:, 0]) / (self.weights['input_norm_mat'][:, 1] - self.weights['input_norm_mat'][:, 0])
+    x = self.relu(np.dot(x, self.weights['w_1']) + self.weights['b_1'])
+    x = self.relu(np.dot(x, self.weights['w_2']) + self.weights['b_2'])
+    x = self.relu(np.dot(x, self.weights['w_3']) + self.weights['b_3'])
+    x = np.dot(x, self.weights['w_4']) + self.weights['b_4']
+    return x
+
+  def predict(self, x: List[float], do_sample: bool = False):
+    x = self.forward(np.array(x))
+    if do_sample:
+      pred = np.random.laplace(x[0], np.exp(x[1]) / self.weights['temperature'])
+    else:
+      pred = x[0]
+    pred = pred * (self.weights['output_norm_mat'][1] - self.weights['output_norm_mat'][0]) + self.weights['output_norm_mat'][0]
+    return pred

@@ -60,7 +60,7 @@ class Controls:
     config_realtime_process(4, Priority.CTRL_HIGH)
 
     # Ensure the current branch is cached, otherwise the first iteration of controlsd lags
-    self.branch = get_short_branch("")
+    self.branch = get_short_branch()
 
     # Setup sockets
     self.pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState',

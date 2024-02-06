@@ -224,7 +224,7 @@ def user_soft_disable_alert(alert_text_2: str) -> AlertCallbackType:
   return func
 
 def startup_master_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
-  branch = get_short_branch("")  # Ensure get_short_branch is cached to avoid lags on startup
+  branch = get_short_branch()  # Ensure get_short_branch is cached to avoid lags on startup
   if "REPLAY" in os.environ:
     branch = "replay"
 

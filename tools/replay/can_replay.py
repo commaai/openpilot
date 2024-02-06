@@ -2,6 +2,7 @@
 import argparse
 import os
 import time
+import usb1
 import threading
 
 os.environ['FILEREADER_CACHE'] = '1'
@@ -42,7 +43,11 @@ def send_thread(s, flock):
 
     snd = CAN_MSGS[idx]
     snd = list(filter(lambda x: x[-1] <= 2, snd))
-    s.can_send_many(snd)
+    try:
+      s.can_send_many(snd)
+    except usb1.USBErrorTimeout:
+      # timeout is fine, just means the CAN TX buffer is full
+      pass
     idx = (idx + 1) % len(CAN_MSGS)
 
     # Drain panda message buffer
@@ -57,20 +62,11 @@ def connect():
   flashing_lock = threading.Lock()
   while True:
     # look for new devices
-    for p in [Panda, PandaJungle]:
-      if p is None:
-        continue
-
-      for s in p.list():
-        if s not in serials:
-          with p(s) as pp:
-            if pp.get_type() == Panda.HW_TYPE_TRES:
-              serials[s] = None
-              continue
-
-          print("starting send thread for", s)
-          serials[s] = threading.Thread(target=send_thread, args=(p(s), flashing_lock))
-          serials[s].start()
+    for s in PandaJungle.list():
+      if s not in serials:
+        print("starting send thread for", s)
+        serials[s] = threading.Thread(target=send_thread, args=(PandaJungle(s), flashing_lock))
+        serials[s].start()
 
     # try to join all send threads
     cur_serials = serials.copy()
@@ -94,7 +90,7 @@ if __name__ == "__main__":
 
   print("Loading log...")
   if args.route_or_segment_name is None:
-    args.route_or_segment_name = "77611a1fac303767/2020-03-24--09-50-38/10:16"
+    args.route_or_segment_name = "77611a1fac303767/2020-03-24--09-50-38/1:3"
 
   sr = LogReader(args.route_or_segment_name)
 
