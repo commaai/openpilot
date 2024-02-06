@@ -41,6 +41,15 @@ public:
     if (char* dongle_id = getenv("DONGLE_ID")) {
       ctx_j["dongle_id"] = dongle_id;
     }
+    if (char* git_origin = getenv("GIT_ORIGIN")) {
+      ctx_j["origin"] = git_origin;
+    }
+    if (char* git_branch = getenv("GIT_BRANCH")) {
+      ctx_j["branch"] = git_branch;
+    }
+    if (char* git_commit = getenv("GIT_COMMIT")) {
+      ctx_j["commit"] = git_commit;
+    }
     if (char* daemon_name = getenv("MANAGER_DAEMON")) {
       ctx_j["daemon"] = daemon_name;
     }

@@ -124,7 +124,7 @@ def report_tombstone_apport(fn):
   clean_path = path.replace('/', '_')
   date = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
 
-  new_fn = f"{date}_{get_commit(default='nocommit')[:8]}_{safe_fn(clean_path)}"[:MAX_TOMBSTONE_FN_LEN]
+  new_fn = f"{date}_{(get_commit() or 'nocommit')[:8]}_{safe_fn(clean_path)}"[:MAX_TOMBSTONE_FN_LEN]
 
   crashlog_dir = os.path.join(Paths.log_root(), "crash")
   os.makedirs(crashlog_dir, exist_ok=True)

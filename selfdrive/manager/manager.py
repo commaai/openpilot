@@ -65,9 +65,9 @@ def manager_init() -> None:
   params.put("Version", get_version())
   params.put("TermsVersion", terms_version)
   params.put("TrainingVersion", training_version)
-  params.put("GitCommit", get_commit(default=""))
-  params.put("GitBranch", get_short_branch(default=""))
-  params.put("GitRemote", get_origin(default=""))
+  params.put("GitCommit", get_commit())
+  params.put("GitBranch", get_short_branch())
+  params.put("GitRemote", get_origin())
   params.put_bool("IsTestedBranch", is_tested_branch())
   params.put_bool("IsReleaseBranch", is_release_branch())
 
@@ -79,6 +79,9 @@ def manager_init() -> None:
     serial = params.get("HardwareSerial")
     raise Exception(f"Registration failed for device {serial}")
   os.environ['DONGLE_ID'] = dongle_id  # Needed for swaglog
+  os.environ['GIT_ORIGIN'] = get_normalized_origin() # Needed for swaglog
+  os.environ['GIT_BRANCH'] = get_short_branch() # Needed for swaglog
+  os.environ['GIT_COMMIT'] = get_commit() # Needed for swaglog
 
   if not is_dirty():
     os.environ['CLEAN'] = '1'
