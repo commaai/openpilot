@@ -46,16 +46,15 @@ def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
   # print(queries)
   # raise Exception
 
-  for bus, _queries in queries.items():
+  for bus, bus_queries in queries.items():
     print('Queries for bus={}:'.format(bus))
-    for query in _queries:
+    for query in bus_queries:
       print(bus, query[0], query[1])
     print()
 
-  raise Exception
   for i in range(retry):
-    for bus in buses:
-      for request, response, valid_buses, vin_addrs, functional_addrs, rx_offset in queries:
+    for bus, bus_queries in queries.items():
+      for request, response, valid_buses, vin_addrs, functional_addrs, rx_offset in bus_queries:
         if bus not in valid_buses:
           continue
 
