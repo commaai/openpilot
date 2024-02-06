@@ -32,11 +32,7 @@ def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
 
   for i in range(retry):
     for bus in buses:
-      for request, response, valid_buses, vin_addrs, functional_addrs, rx_offset in (
-        (StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE, (0, 1), STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
-        (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE, (0, 1), STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
-        # (StdQueries.GM_VIN_REQUEST, StdQueries.GM_VIN_RESPONSE, (0,), [0x24b], None, 0x400),  # Bolt fwdCamera
-      ):
+      for request, response, valid_buses, vin_addrs, functional_addrs, rx_offset in queries:
         if bus not in valid_buses:
           continue
 
