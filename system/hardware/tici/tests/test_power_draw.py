@@ -65,12 +65,6 @@ class TestPowerDraw(unittest.TestCase):
       for sock in socks.values():
         messaging.drain_sock_raw(sock)
 
-      def is_valid(proc: Proc, m):
-        if m is None:
-          return False
-        power, _ = m
-        return (baseline + proc.power - proc.atol) < power < (baseline + proc.power + proc.atol)
-
       start_time = time.time()
       msgs_and_power = deque([None] * SAMPLE_TIME, maxlen=SAMPLE_TIME)
 
@@ -81,7 +75,11 @@ class TestPowerDraw(unittest.TestCase):
           local_msg_counts[msg] = len(messaging.drain_sock_raw(sock))
         msgs_and_power.append((power, local_msg_counts))
 
-        if all(is_valid(proc, m) for m in msgs_and_power):
+        if any(m is None for m in msgs_and_power):
+          continue
+
+        powers = np.mean([m[0] for m in msgs_and_power])
+        if all(np.core.numeric.isclose(powers, proc.power, rtol=proc.rtol, atol=proc.atol)):
           break
 
       now = np.mean([m[0] for m in msgs_and_power])
