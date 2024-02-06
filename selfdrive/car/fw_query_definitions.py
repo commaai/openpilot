@@ -59,9 +59,6 @@ class StdQueries:
   UDS_VIN_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + p16(uds.DATA_IDENTIFIER_TYPE.VIN)
   UDS_VIN_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + p16(uds.DATA_IDENTIFIER_TYPE.VIN)
 
-  GM_VIN_REQUEST = b'\x1a\x90'
-  GM_VIN_RESPONSE = b'\x5a\x90'
-
 
 @dataclass
 class Request:
@@ -81,6 +78,7 @@ class Request:
 @dataclass
 class FwQueryConfig:
   requests: List[Request]
+  vin_request: Request
   # TODO: make this automatic and remove hardcoded lists, or do fingerprinting with ecus
   # Overrides and removes from essential ecus for specific models and ecus (exact matching)
   non_essential_ecus: Dict[capnp.lib.capnp._EnumModule, List[str]] = field(default_factory=dict)

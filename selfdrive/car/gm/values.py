@@ -178,6 +178,13 @@ FW_QUERY_CONFIG = FwQueryConfig(
       logging=True,
     ),
   ]],
+  vin_request=Request(
+    [b'\x1a\x90'],
+    [b'\x5a\x90'],
+    whitelist_ecus=[Ecu.fwdCamera],
+    rx_offset=GM_RX_OFFSET,
+    bus=0,
+  ),
   extra_ecus=[(Ecu.fwdCamera, 0x24b, None)],
 )
 
