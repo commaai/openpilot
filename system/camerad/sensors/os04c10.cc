@@ -77,15 +77,15 @@ std::vector<i2c_random_wr_payload> OS04C10::getExposureRegisters(int exposure_ti
   uint32_t real_gain = os04c10_analog_gains_reg[new_exp_g];
 
   hcg_time = 100;
-  real_gain = 0x320;
+  real_gain = 0x0;
 
   return {
-    {0x3501, hcg_time>>8}, {0x3502, hcg_time&0xFF},
+    //{0x3501, hcg_time>>8}, {0x3502, hcg_time&0xFF},
     //{0x3581, lcg_time>>8}, {0x3582, lcg_time&0xFF},
     //{0x3541, spd_time>>8}, {0x3542, spd_time&0xFF},
     //{0x35c2, vs_time&0xFF},
 
-    {0x3508, real_gain>>8}, {0x3509, real_gain&0xFF},
+    //{0x3508, real_gain>>8}, {0x3509, real_gain&0xFF},
   };
 }
 
