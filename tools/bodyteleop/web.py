@@ -9,6 +9,7 @@ import subprocess
 import pyaudio
 import wave
 from aiohttp import web
+from aiohttp import ClientSession
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.system.webrtc.webrtcd import StreamRequestBody
@@ -94,8 +95,6 @@ async def sound(request: 'web.Request'):
 
 
 async def offer(request: 'web.Request'):
-  from aiohttp import ClientSession
-
   params = await request.json()
   body = StreamRequestBody(params["sdp"], ["driver"], ["testJoystick"], ["carState"])
   body_json = json.dumps(dataclasses.asdict(body))
