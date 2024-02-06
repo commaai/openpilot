@@ -25,7 +25,17 @@ class URLFileException(Exception):
 
 
 class URLFile:
-  _tlocal = threading.local()
+  _pid = os.getpid()
+  _pool_manager = PoolManager()
+  _pool_manager_lock = threading.Lock()
+
+  @staticmethod
+  def _http_client() -> PoolManager:
+    pid = os.getpid()
+    with URLFile._pool_manager_lock:
+      if URLFile._pid != pid: # forked!
+        URLFile._pool_manager = PoolManager()
+    return URLFile._pool_manager
 
   def __init__(self, url, debug=False, cache=None):
     self._url = url
@@ -41,11 +51,6 @@ class URLFile:
     if not self._force_download:
       os.makedirs(Paths.download_cache_root(), exist_ok=True)
 
-    try:
-      self._http_client = URLFile._tlocal.http_client
-    except AttributeError:
-      self._http_client = URLFile._tlocal.http_client = PoolManager()
-
   def __enter__(self):
     return self
 
@@ -58,7 +63,7 @@ class URLFile:
   @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
   def get_length_online(self):
     timeout = Timeout(connect=50.0, read=500.0)
-    response = self._http_client.request('HEAD', self._url, timeout=timeout, preload_content=False)
+    response = URLFile._http_client().request('HEAD', self._url, timeout=timeout, preload_content=False)
     if not (200 <= response.status <= 299):
       return -1
     length = response.headers.get('content-length', 0)
@@ -131,7 +136,7 @@ class URLFile:
       t1 = time.time()
 
     timeout = Timeout(connect=50.0, read=500.0)
-    response = self._http_client.request('GET', self._url, timeout=timeout, preload_content=False, headers=headers)
+    response = URLFile._http_client().request('GET', self._url, timeout=timeout, preload_content=False, headers=headers)
     ret = response.data
 
     if self._debug:
