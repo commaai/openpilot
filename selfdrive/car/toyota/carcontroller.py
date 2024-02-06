@@ -37,12 +37,15 @@ class CarController:
     self.last_angle = 0
     self.alert_active = False
     self.standstill_req = False
+    self.last_standstill = False
+    self.last_out_standstill = False
     self.steer_rate_counter = 0
 
     self.packer = CANPacker(dbc_name)
     self.gas = 0
     self.accel = 0
     self.resume = False
+    self.last_resume_frame = 0.
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -125,12 +128,15 @@ class CarController:
       pcm_cancel_cmd = 1
 
     # *** resume hysteresis ***
-    # update self.resume = False once every 3 seconds
-    if self.frame % RESUME_HYSTERESIS_TIME / DT_CTRL == 0 and not CC.cruiseControl.resume:
-      self.resume = False
-    # update self.resume = True instantly
     if CC.cruiseControl.resume:
-      self.resume = True
+      self.resume = True  # set resume to True immediately when long planner requests
+      self.last_resume_frame = self.frame  # record last res frame
+    elif not CS.out.cruiseControl.standstill:
+      self.last_resume_frame = 0.  # reset resume frame when the vehicle moves
+    elif self.frame - self.last_resume_frame < RESUME_HYSTERESIS_TIME / DT_CTRL:
+      self.resume = True  # keep resume True for 300 frames after last actual resume frame
+    else:
+      self.resume = False
 
     # send standstill when vehicle is stopping
     if self.resume and (self.CP.carFingerprint not in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor):
