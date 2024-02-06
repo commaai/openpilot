@@ -1,11 +1,11 @@
 # Camera stream
 
-`compressed_vipc.py` allows to connect to Comma device and decode video streams. 
+`compressed_vipc.py` connects to a remote device running openpilot, decodes the video streams, and republishes them over VisionIPC. 
 
 ## Usage
 
 ### On the device 
-SSH to the Comma device and run following lines in separate terminals:
+SSH into the device and run following in separate terminals:
 
 `cd /data/openpilot/cereal/messaging && ./bridge`
 
@@ -13,9 +13,7 @@ SSH to the Comma device and run following lines in separate terminals:
 
 `cd /data/openpilot/system/camerad && ./camerad`
 
-Note: Your device need to be on `master` branch.
-Make sure both the device and PC is roughly at the same commit level.
-Run `./scons` on the PC and reboot the comma device if you are updating from older versions.
+Note that both the device and your PC must be on the same openpilot commit.
 
 Alternatively paste this as a single command:
 ```
@@ -39,13 +37,9 @@ Decode the stream with `compressed_vipc.py`:
 
 ```cd ~/openpilot/tools/camerastream && ./compressed_vipc.py <ip>```
 
-Note: make sure you run python scripts in `poetry shell` virtual environment.
-
 To actually display the stream, run `watch3` in separate terminal:
 
 ```cd ~/openpilot/selfdrive/ui/ && ./watch3```
-
-If this step fails, try limiting active cameras by adding `--cams=0` to `compressed_vipc.py`.
 
 ## compressed_vipc.py usage
 ```
