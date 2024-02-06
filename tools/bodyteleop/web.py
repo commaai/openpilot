@@ -5,12 +5,10 @@ import logging
 import os
 import ssl
 import subprocess
-from typing import TYPE_CHECKING
 
 import pyaudio
 import wave
-if TYPE_CHECKING:
-  from aiohttp import web
+from aiohttp import web
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.system.webrtc.webrtcd import StreamRequestBody
@@ -111,8 +109,6 @@ async def offer(request: 'web.Request'):
 
 
 def main():
-  from aiohttp import web
-
   # Enable joystick debug mode
   Params().put_bool("JoystickDebugMode", True)
 

@@ -13,9 +13,9 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import capnp
+from aiohttp import web
 if TYPE_CHECKING:
   from aiortc.rtcdatachannel import RTCDataChannel
-  from aiohttp import web
 
 from openpilot.system.webrtc.schema import generate_field
 from cereal import messaging, log
@@ -223,8 +223,6 @@ async def on_shutdown(app: 'web.Application'):
 
 
 def webrtcd_thread(host: str, port: int, debug: bool):
-  from aiohttp import web
-
   logging.basicConfig(level=logging.CRITICAL, handlers=[logging.StreamHandler()])
   logging_level = logging.DEBUG if debug else logging.INFO
   logging.getLogger("WebRTCStream").setLevel(logging_level)
@@ -252,4 +250,5 @@ def main():
 
 
 if __name__=="__main__":
-  main()
+  pass
+  # main()
