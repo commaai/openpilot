@@ -89,6 +89,13 @@ jobs:
               return subset.every((item) => superset.includes(item));
             };
 
+            // Utility function to check if a list of checkboxes is a subset of another list of checkboxes
+            isCheckboxSubset = (templateCheckBoxTexts, prTextCheckBoxTexts) => {
+              // Check if each template checkbox text is a substring of at least one PR checkbox text 
+              // (user should be allowed to add additional text)
+              return templateCheckBoxTexts.every((item) => prTextCheckBoxTexts.some((element) => element.includes(item)))
+            }
+
             // Get filenames of all currently checked-in PR templates
             const template_contents = await github.rest.repos.getContent({
               owner: context.repo.owner,
@@ -146,7 +153,7 @@ jobs:
                   template.checkboxes + "]"
               );
               if (
-                isSubset(template.checkboxes, pr_checkboxes) &&
+                isCheckboxSubset(template.checkboxes, pr_checkboxes) &&
                 isSubset(template.headings, pr_headings)
               ) {
                 console.debug("Found matching template!");

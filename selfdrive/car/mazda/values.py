@@ -67,16 +67,11 @@ class Buttons:
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
-    Request(
-      [StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
-      [StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
-    ),
-    # Log responses on powertrain bus
+    # TODO: check data to ensure ABS does not skip ISO-TP frames on bus 0
     Request(
       [StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
       [StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
       bus=0,
-      logging=True,
     ),
   ],
 )
