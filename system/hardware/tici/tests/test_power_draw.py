@@ -11,11 +11,12 @@ import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
 from openpilot.common.mock import mock_messages
 from openpilot.selfdrive.car.car_helpers import write_car_param
-from openpilot.system.hardware.tici.power_monitor import get_power
+from openpilot.system.hardware.tici.power_monitor import get_power, wait_for_power
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.manager.manager import manager_cleanup
 
-SAMPLE_TIME = 8   # seconds to sample power
+SAMPLE_TIME = 8       # seconds to sample power
+MAX_WARMUP_TIME = 30  # seconds to wait for SAMPLE_TIME valid samples
 
 @dataclass
 class Proc:
@@ -58,7 +59,7 @@ class TestPowerDraw(unittest.TestCase):
     for proc in PROCS:
       socks = {msg: messaging.sub_sock(msg) for msg in proc.msgs}
       managed_processes[proc.name].start()
-      time.sleep(proc.warmup)
+      wait_for_power(baseline + proc.power - proc.atol, baseline + proc.power - proc.atol, 6, MAX_WARMUP_TIME)
       for sock in socks.values():
         messaging.drain_sock_raw(sock)
 
