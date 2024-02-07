@@ -66,7 +66,6 @@ def tici_setup_fixture():
   os.system("rm /dev/shm/*")
 
 
-@pytest.hookimpl(tryfirst=True)
 def pytest_collection_modifyitems(config, items):
   skipper = pytest.mark.skip(reason="Skipping tici test on PC")
   for item in items:
