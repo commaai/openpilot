@@ -1,3 +1,4 @@
+import gc
 import os
 import pytest
 import random
@@ -44,6 +45,11 @@ def openpilot_function_fixture(request):
 
   # cleanup any started processes
   manager.manager_cleanup()
+
+  # some processes disable gc for performance, re-enable here
+  if not gc.isenabled():
+    gc.enable()
+    gc.collect()
 
 # If you use setUpClass, the environment variables won't be cleared properly,
 # so we need to hook both the function and class pytest fixtures
