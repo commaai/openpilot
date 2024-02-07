@@ -111,21 +111,15 @@ FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     # CAN and CAN FD queries are combined.
     # FIXME: For CAN FD, ECUs respond with frames larger than 8 bytes on the powertrain bus
-    # TODO: properly handle auxiliary requests to separate queries and add back whitelists
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
-      # whitelist_ecus=[Ecu.engine],
-    ),
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
-      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
-      # whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.shiftByWire],
       bus=0,
       auxiliary=True,
     ),
   ],
   extra_ecus=[
+    # We are unlikely to get a response from the PCM from behind the gateway
     (Ecu.engine, 0x7e0, None),
     (Ecu.shiftByWire, 0x732, None),
   ],
