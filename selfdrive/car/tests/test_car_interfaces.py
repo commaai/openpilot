@@ -6,6 +6,7 @@ import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 import importlib
 from parameterized import parameterized
+import pytest
 
 from cereal import car, messaging
 from openpilot.common.realtime import DT_CTRL
@@ -45,6 +46,7 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
   return params
 
 
+@pytest.mark.forked
 class TestCarInterfaces(unittest.TestCase):
 
   @classmethod

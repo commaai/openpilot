@@ -75,10 +75,6 @@ def pytest_collection_modifyitems(config, items):
         item.add_marker(skipper)
       else:
         item.fixturenames.append('tici_setup_fixture')
-    else:
-      if not TICI:
-        # for pc tests, run each in a forked process to avoid segfaults killing the whole pytest run
-        item.add_marker("forked")
 
     if "xdist_group_class_property" in item.keywords:
       class_property_name = item.get_closest_marker('xdist_group_class_property').args[0]
