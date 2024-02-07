@@ -41,8 +41,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ARG INTEL_DRIVER=l_opencl_p_18.1.0.015.tgz
 ARG INTEL_DRIVER_URL=https://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/15532
 RUN mkdir -p /tmp/opencl-driver-intel
-WORKDIR /tmp/opencl-driver-intel
-RUN echo INTEL_DRIVER is $INTEL_DRIVER && \
+
+RUN cd /tmp/opencl-driver-intel && \
+    echo INTEL_DRIVER is $INTEL_DRIVER && \
     curl -O $INTEL_DRIVER_URL/$INTEL_DRIVER && \
     tar -xzf $INTEL_DRIVER && \
     for i in $(basename $INTEL_DRIVER .tgz)/rpm/*.rpm; do alien --to-deb $i; done && \
@@ -50,7 +51,9 @@ RUN echo INTEL_DRIVER is $INTEL_DRIVER && \
     rm -rf $INTEL_DRIVER $(basename $INTEL_DRIVER .tgz) *.deb && \
     mkdir -p /etc/OpenCL/vendors && \
     echo /opt/intel/opencl_compilers_and_libraries_18.1.0.015/linux/compiler/lib/intel64_lin/libintelocl.so > /etc/OpenCL/vendors/intel.icd && \
+    cd / && \
     rm -rf /tmp/opencl-driver-intel
+
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES graphics,utility,compute
 ENV QTWEBENGINE_DISABLE_SANDBOX 1
