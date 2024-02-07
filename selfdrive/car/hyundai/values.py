@@ -470,6 +470,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       whitelist_ecus=[Ecu.parkingAdas, Ecu.hvac],
       bus=0,
       auxiliary=True,
+      logging=True,
     ),
     Request(
       [HYUNDAI_VERSION_REQUEST_ALT],
@@ -477,6 +478,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       whitelist_ecus=[Ecu.parkingAdas, Ecu.hvac],
       bus=1,
       auxiliary=True,
+      logging=True,
       obd_multiplexing=False,
     ),
   ],
