@@ -71,17 +71,17 @@ class TestPowerDraw(unittest.TestCase):
 
     while (time.time() - start_time) < MAX_WARMUP_TIME:
       power = get_power(1)
-      local_msg_counts = {}
+      iteration_msg_counts = {}
       for msg,sock in socks.items():
-        local_msg_counts[msg] = len(messaging.drain_sock_raw(sock))
-      msgs_and_power.append((power, local_msg_counts))
+        iteration_msg_counts[msg] = len(messaging.drain_sock_raw(sock))
+      msgs_and_power.append((power, iteration_msg_counts))
 
       if any(m is None for m in msgs_and_power):
         continue
 
-      warmup_msg_counts = self.tabulate_msg_counts(msgs_and_power)
+      msg_counts = self.tabulate_msg_counts(msgs_and_power)
 
-      msgs_received = sum(warmup_msg_counts[msg] for msg in proc.msgs)
+      msgs_received = sum(msg_counts[msg] for msg in proc.msgs)
       msgs_expected = self.get_expected_messages(proc)
 
       now = np.mean([m[0] for m in msgs_and_power])
@@ -91,7 +91,7 @@ class TestPowerDraw(unittest.TestCase):
       if valid_msg_count and valid_power_draw:
         break
 
-    return now, self.tabulate_msg_counts(msgs_and_power), time.time() - start_time - SAMPLE_TIME
+    return now, msg_counts, time.time() - start_time - SAMPLE_TIME
 
   @mock_messages(['liveLocationKalman'])
   def test_camera_procs(self):
