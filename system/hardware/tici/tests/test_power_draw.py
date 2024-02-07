@@ -53,6 +53,13 @@ class TestPowerDraw(unittest.TestCase):
   def get_expected_messages(self, proc):
     return int(sum(SAMPLE_TIME * SERVICE_LIST[msg].frequency for msg in proc.msgs))
 
+  def tabulate_msg_counts(self, msgs_and_power):
+    msg_counts = defaultdict(lambda: 0)
+    for _, counts in msgs_and_power:
+      for msg, count in counts.items():
+        msg_counts[msg] += count
+    return msg_counts
+
   def get_power_with_warmup_for_target(self, proc, prev):
     socks = {msg: messaging.sub_sock(msg) for msg in proc.msgs}
     for sock in socks.values():
@@ -72,13 +79,9 @@ class TestPowerDraw(unittest.TestCase):
       if any(m is None for m in msgs_and_power):
         continue
 
-      local_msg_counts2 = defaultdict(lambda: 0)
-      for m in msgs_and_power:
-        power, z = m
-        for msg, count in z.items():
-          local_msg_counts2[msg] += count
+      warmup_msg_counts = self.tabulate_msg_counts(msgs_and_power)
 
-      msgs_received = sum(local_msg_counts2[msg] for msg in proc.msgs)
+      msgs_received = sum(warmup_msg_counts[msg] for msg in proc.msgs)
       msgs_expected = self.get_expected_messages(proc)
 
       now = np.mean([m[0] for m in msgs_and_power])
@@ -88,13 +91,7 @@ class TestPowerDraw(unittest.TestCase):
       if valid_msg_count and valid_power_draw:
         break
 
-    msg_counts = defaultdict(lambda: 0)
-    for m in msgs_and_power:
-      power, z = m
-      for msg, count in z.items():
-        msg_counts[msg] += count
-
-    return now, msg_counts, time.time() - start_time - SAMPLE_TIME
+    return now, self.tabulate_msg_counts(msgs_and_power), time.time() - start_time - SAMPLE_TIME
 
   @mock_messages(['liveLocationKalman'])
   def test_camera_procs(self):
