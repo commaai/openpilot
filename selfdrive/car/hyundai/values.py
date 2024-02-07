@@ -466,6 +466,15 @@ FW_QUERY_CONFIG = FwQueryConfig(
       auxiliary=True,
       logging=True,
     ),
+    Request(
+      [HYUNDAI_VERSION_REQUEST_LONG],
+      [HYUNDAI_VERSION_RESPONSE],
+      whitelist_ecus=ALL_HYUNDAI_ECUS,
+      bus=1,
+      auxiliary=True,
+      obd_multiplexing=False,
+      logging=True,
+    ),
 
     # CAN-FD alt request logging queries
     Request(
