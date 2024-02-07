@@ -50,57 +50,78 @@ class TestPowerDraw(unittest.TestCase):
   def tearDown(self):
     manager_cleanup()
 
+  def get_expected_messages(self, proc):
+    return int(sum(SAMPLE_TIME * SERVICE_LIST[msg].frequency for msg in proc.msgs))
+
+  def get_power_with_warmup_for_target(self, proc, prev):
+    socks = {msg: messaging.sub_sock(msg) for msg in proc.msgs}
+    for sock in socks.values():
+      messaging.drain_sock_raw(sock)
+
+    msgs_and_power = deque([None] * SAMPLE_TIME, maxlen=SAMPLE_TIME)
+
+    start_time = time.time()
+
+    while (time.time() - start_time) < MAX_WARMUP_TIME:
+      power = get_power(1)
+      local_msg_counts = {}
+      for msg,sock in socks.items():
+        local_msg_counts[msg] = len(messaging.drain_sock_raw(sock))
+      msgs_and_power.append((power, local_msg_counts))
+
+      if any(m is None for m in msgs_and_power):
+        continue
+
+      local_msg_counts2 = defaultdict(lambda: 0)
+      for m in msgs_and_power:
+        power, z = m
+        for msg, count in z.items():
+          local_msg_counts2[msg] += count
+
+      msgs_received = sum(local_msg_counts2[msg] for msg in proc.msgs)
+      msgs_expected = self.get_expected_messages(proc)
+
+      now = np.mean([m[0] for m in msgs_and_power])
+      valid_msg_count = np.core.numeric.isclose(msgs_expected, msgs_received, rtol=.02, atol=2)
+      valid_power_draw = np.core.numeric.isclose(now - prev, proc.power, rtol=proc.rtol, atol=proc.atol)
+
+      if valid_msg_count and valid_power_draw:
+        break
+
+    msg_counts = defaultdict(lambda: 0)
+    for m in msgs_and_power:
+      power, z = m
+      for msg, count in z.items():
+        msg_counts[msg] += count
+    
+    return now, msg_counts, time.time() - start_time
+
   @mock_messages(['liveLocationKalman'])
   def test_camera_procs(self):
     baseline = get_power()
 
     prev = baseline
     used = {}
-    msg_counts = defaultdict(lambda: 0)
+    warmup_time = {}
+    msg_counts = {}
 
     for proc in PROCS:
-      socks = {msg: messaging.sub_sock(msg) for msg in proc.msgs}
       managed_processes[proc.name].start()
-
-      for sock in socks.values():
-        messaging.drain_sock_raw(sock)
-
-      start_time = time.time()
-      msgs_and_power = deque([None] * SAMPLE_TIME, maxlen=SAMPLE_TIME)
-
-      while (time.time() - start_time) < MAX_WARMUP_TIME:
-        power = get_power(1)
-        local_msg_counts = {}
-        for msg,sock in socks.items():
-          local_msg_counts[msg] = len(messaging.drain_sock_raw(sock))
-        msgs_and_power.append((power, local_msg_counts))
-
-        if any(m is None for m in msgs_and_power):
-          continue
-
-        powers = np.mean([m[0] for m in msgs_and_power])
-        if all(np.core.numeric.isclose(powers, proc.power, rtol=proc.rtol, atol=proc.atol)):
-          break
-
-      now = np.mean([m[0] for m in msgs_and_power])
+      now, local_msg_counts, warmup_time[proc.name] = self.get_power_with_warmup_for_target(proc, prev)
+      msg_counts.update(local_msg_counts)
 
       used[proc.name] = now - prev
       prev = now
 
-      for m in msgs_and_power:
-        power, z = m
-        for msg, count in z.items():
-          msg_counts[msg] += count
-
     manager_cleanup()
 
-    tab = [['process', 'expected (W)', 'measured (W)', '# msgs expected', '# msgs received']]
+    tab = [['process', 'expected (W)', 'measured (W)', '# msgs expected', '# msgs received', "warmup time (s)"]]
     for proc in PROCS:
       cur = used[proc.name]
       expected = proc.power
       msgs_received = sum(msg_counts[msg] for msg in proc.msgs)
-      msgs_expected = int(sum(SAMPLE_TIME * SERVICE_LIST[msg].frequency for msg in proc.msgs))
-      tab.append([proc.name, round(expected, 2), round(cur, 2), msgs_expected, msgs_received])
+      msgs_expected = self.get_expected_messages(proc)
+      tab.append([proc.name, round(expected, 2), round(cur, 2), msgs_expected, msgs_received, warmup_time[proc.name]])
       with self.subTest(proc=proc.name):
         np.testing.assert_allclose(msgs_expected, msgs_received, rtol=.02, atol=2)
         np.testing.assert_allclose(cur, expected, rtol=proc.rtol, atol=proc.atol)
