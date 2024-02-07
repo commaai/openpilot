@@ -7,6 +7,8 @@
 #define AVERAGE(x, y, z, w) ((convert_ushort(x) + convert_ushort(y) + convert_ushort(z) + convert_ushort(w) + 1) >> 1)
 
 float3 color_correct(float3 rgb) {
+  return rgb;
+
   // color correction
   #if IS_OX
   float3 x = rgb.x * (float3)(1.5664815 , -0.29808738, -0.03973474);
