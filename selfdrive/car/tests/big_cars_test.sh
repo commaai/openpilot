@@ -1,5 +1,9 @@
 #!/bin/bash
 
+SCRIPT_DIR=$(dirname "$0")
+BASEDIR=$(realpath "$SCRIPT_DIR/../../../")
+cd $BASEDIR
+
 MAX_EXAMPLES=300
 INTERNAL_SEG_CNT=300
 FILEREADER_CACHE=1
