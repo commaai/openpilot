@@ -396,6 +396,9 @@ HYUNDAI_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]
   p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_SOFTWARE_IDENTIFICATION) + \
   p16(0xf100)
 
+HYUNDAI_ECU_MANUFACTURING_DATE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.ECU_MANUFACTURING_DATE)
+
 HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
 
 # Regex patterns for parsing platform code, FW date, and part number from FW versions
@@ -446,6 +449,25 @@ FW_QUERY_CONFIG = FwQueryConfig(
       whitelist_ecus=[Ecu.fwdCamera, Ecu.adas, Ecu.cornerRadar, Ecu.hvac],
       bus=1,
       auxiliary=True,
+      obd_multiplexing=False,
+    ),
+
+    # CAN FD query to understand the three digit date code
+    Request(
+      [HYUNDAI_ECU_MANUFACTURING_DATE],
+      [HYUNDAI_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.fwdCamera],
+      bus=0,
+      auxiliary=True,
+      logging=True,
+    ),
+    Request(
+      [HYUNDAI_ECU_MANUFACTURING_DATE],
+      [HYUNDAI_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.fwdCamera],
+      bus=1,
+      auxiliary=True,
+      logging=True,
       obd_multiplexing=False,
     ),
 
