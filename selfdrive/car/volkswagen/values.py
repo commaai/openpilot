@@ -271,6 +271,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.SKODA_OCTAVIA_MK3: [
     VWCarInfo("Škoda Octavia 2015-19"),
     VWCarInfo("Škoda Octavia RS 2016"),
+    VWCarInfo("Škoda Octavia Scout 2017-19"),
   ],
 }
 
