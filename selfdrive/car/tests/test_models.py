@@ -23,8 +23,8 @@ from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTes
 from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
-from openpilot.tools.lib.logreader import LogReader, ReadMode, check_source, openpilotci_source
-from openpilot.tools.lib.route import SegmentName, SegmentRange
+from openpilot.tools.lib.logreader import LogReader, openpilotci_source
+from openpilot.tools.lib.route import SegmentName
 
 from panda.tests.libpanda import libpanda_py
 
@@ -128,12 +128,21 @@ class TestCarModelBase(unittest.TestCase):
       segment_range = f"{cls.test_route.route}/{seg}"
 
       try:
-        lr = LogReader(segment_range)
-        error, _ = check_source(openpilotci_source, SegmentRange(segment_range), ReadMode.RLOG)
-        cls.test_route_on_bucket = error is None
+        lr = LogReader(segment_range, default_source=openpilotci_source)
         return cls.get_testing_data_from_logreader(lr)
       except Exception:
         pass
+
+      # Route is not in CI bucket, assume either user has access (private), or it is public
+      # test_route_on_ci_bucket will fail when running in CI
+      if not len(INTERNAL_SEG_LIST):
+        cls.test_route_on_bucket = False
+
+        try:
+          lr = LogReader(segment_range)
+          return cls.get_testing_data_from_logreader(lr)
+        except Exception:
+          pass
 
     raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded and public?")
 
