@@ -447,13 +447,14 @@ FW_QUERY_CONFIG = FwQueryConfig(
       obd_multiplexing=False,
     ),
 
-    # CAN-FD debugging queries
+    # CAN-FD alt request logging queries
     Request(
       [HYUNDAI_VERSION_REQUEST_ALT],
       [HYUNDAI_VERSION_RESPONSE],
       whitelist_ecus=[Ecu.parkingAdas, Ecu.hvac],
       bus=0,
       auxiliary=True,
+      logging=True,
     ),
     Request(
       [HYUNDAI_VERSION_REQUEST_ALT],
@@ -461,6 +462,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       whitelist_ecus=[Ecu.parkingAdas, Ecu.hvac],
       bus=1,
       auxiliary=True,
+      logging=True,
       obd_multiplexing=False,
     ),
   ],
