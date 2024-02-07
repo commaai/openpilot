@@ -1640,6 +1640,7 @@ FW_VERSIONS = {
       b'\xf1\x00MQ4_ SCC F-CUP      1.00 1.06 99110-P2000         ',
       b'\xf1\x00MQ4_ SCC FHCUP      1.00 1.06 99110-P2000         ',
       b'\xf1\x00MQ4_ SCC FHCUP      1.00 1.08 99110-P2000         ',
+      b'\xf1\x00MQ4_ SCC FHCUP      1.00 1.00 99110-R5000         ',
     ],
   },
   CAR.KIA_SORENTO_HEV_4TH_GEN: {
