@@ -93,7 +93,7 @@ class TestPowerDraw(unittest.TestCase):
       power, z = m
       for msg, count in z.items():
         msg_counts[msg] += count
-    
+
     return now, msg_counts, time.time() - start_time
 
   @mock_messages(['liveLocationKalman'])
