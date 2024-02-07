@@ -122,7 +122,7 @@ class TestPowerDraw(unittest.TestCase):
       tab.append([proc.name, round(expected, 2), round(cur, 2), self.get_expected_messages(proc), msgs_received, round(warmup_time[proc.name], 2)])
       with self.subTest(proc=proc.name):
         self.assertTrue(self.valid_msg_count(proc, msg_counts), f"expected {self.get_expected_messages(proc)} msgs, got {msgs_received} msgs")
-        self.assertTrue(self.valid_power_draw(proc, cur, expected), f"expected {expected:.2f}W, got {cur:.2f}W")
+        self.assertTrue(self.valid_power_draw(proc, cur), f"expected {expected:.2f}W, got {cur:.2f}W")
     print(tabulate(tab))
     print(f"Baseline {baseline:.2f}W\n")
 
