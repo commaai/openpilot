@@ -58,8 +58,8 @@ class TestPowerDraw(unittest.TestCase):
     msgs_expected = self.get_expected_messages(proc)
     return np.core.numeric.isclose(msgs_expected, msgs_received, rtol=.02, atol=2)
 
-  def valid_power_draw(self, proc, now, prev):
-    return np.core.numeric.isclose(now - prev, proc.power, rtol=proc.rtol, atol=proc.atol)
+  def valid_power_draw(self, proc, used):
+    return np.core.numeric.isclose(used, proc.power, rtol=proc.rtol, atol=proc.atol)
 
   def tabulate_msg_counts(self, msgs_and_power):
     msg_counts = defaultdict(lambda: 0)
@@ -90,7 +90,7 @@ class TestPowerDraw(unittest.TestCase):
       msg_counts = self.tabulate_msg_counts(msgs_and_power)
       now = np.mean([m[0] for m in msgs_and_power])
 
-      if self.valid_msg_count(proc, msg_counts) and self.valid_power_draw(proc, now, prev):
+      if self.valid_msg_count(proc, msg_counts) and self.valid_power_draw(proc, now - prev):
         break
 
     return now, msg_counts, time.monotonic() - start_time - SAMPLE_TIME
@@ -122,7 +122,7 @@ class TestPowerDraw(unittest.TestCase):
       tab.append([proc.name, round(expected, 2), round(cur, 2), self.get_expected_messages(proc), msgs_received, round(warmup_time[proc.name], 2)])
       with self.subTest(proc=proc.name):
         self.assertTrue(self.valid_msg_count(proc, msg_counts), f"expected {self.get_expected_messages(proc)} msgs, got {msgs_received} msgs")
-        self.assertTrue(self.valid_power_draw(proc, cur, prev), f"expected {expected:.2f}W, got {cur:.2f}W")
+        self.assertTrue(self.valid_power_draw(proc, cur, expected), f"expected {expected:.2f}W, got {cur:.2f}W")
     print(tabulate(tab))
     print(f"Baseline {baseline:.2f}W\n")
 
