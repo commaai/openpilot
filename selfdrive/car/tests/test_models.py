@@ -23,7 +23,7 @@ from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTes
 from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
-from openpilot.tools.lib.logreader import LogReader, openpilotci_source
+from openpilot.tools.lib.logreader import LogReader, internal_source, openpilotci_source
 from openpilot.tools.lib.route import SegmentName
 
 from panda.tests.libpanda import libpanda_py
@@ -124,18 +124,20 @@ class TestCarModelBase(unittest.TestCase):
     if cls.test_route.segment is not None:
       test_segs = (cls.test_route.segment,)
 
+    is_internal = len(INTERNAL_SEG_LIST)
+
     for seg in test_segs:
       segment_range = f"{cls.test_route.route}/{seg}"
 
       try:
-        lr = LogReader(segment_range, default_source=openpilotci_source)
+        lr = LogReader(segment_range, default_source=internal_source if is_internal else openpilotci_source)
         return cls.get_testing_data_from_logreader(lr)
       except Exception:
         pass
 
     # Route is not in CI bucket, assume either user has access (private), or it is public
     # test_route_on_ci_bucket will fail when running in CI
-    if not len(INTERNAL_SEG_LIST):
+    if not is_internal:
       cls.test_route_on_bucket = False
 
       for seg in test_segs:
