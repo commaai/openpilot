@@ -183,7 +183,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.LEXUS_LC_TSS2:
       ret.wheelbase = 2.87
-      ret.steerRatio = 14.7
+      ret.steerRatio = 13.0
       ret.tireStiffnessFactor = 0.444  # not optimized yet
       ret.mass = 4500 * CV.LB_TO_KG
 
