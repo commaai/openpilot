@@ -14,17 +14,12 @@ concurrency:
 env:
   PYTHONWARNINGS: error
   BASE_IMAGE: openpilot-base
-  CL_BASE_IMAGE: openpilot-base-cl
   AZURE_TOKEN: ${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}
 
   DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
   BUILD: selfdrive/test/docker_build.sh base
 
   RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e CI=1 -e PRE_COMMIT_HOME=/tmp/pre-commit -e PYTHONWARNINGS=error -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/pre-commit:/tmp/pre-commit -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/bash -c
-
-  BUILD_CL: selfdrive/test/docker_build.sh cl
-
-  RUN_CL: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e CI=1 -e PYTHONWARNINGS=error -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $CL_BASE_IMAGE /bin/bash -c
 
   PYTEST: pytest --continue-on-collection-errors --cov --cov-report=xml --cov-append --durations=0 --durations-min=5 --hypothesis-seed 0 -n logical
 
@@ -106,11 +101,6 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
       with:
         docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
-    - name: Build and push CL Docker image
-      if: matrix.arch == 'x86_64'
-      run: |
-        unset TARGET_ARCHITECTURE
-        eval "$BUILD_CL"
 
   docker_push_multiarch:
     name: docker push multiarch tag
@@ -258,15 +248,13 @@ jobs:
         key: regen-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/test_regen.py') }}
     - name: Build base Docker image
       run: eval "$BUILD"
-    - name: Build Docker image
-      run: eval "$BUILD_CL"
     - name: Build openpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run regen
       timeout-minutes: 30
       run: |
-        ${{ env.RUN_CL }} "ONNXCPU=1 $PYTEST selfdrive/test/process_replay/test_regen.py && \
+        ${{ env.RUN }} "ONNXCPU=1 $PYTEST selfdrive/test/process_replay/test_regen.py && \
                            chmod -R 777 /tmp/comma_download_cache"
 
   test_modeld:
@@ -279,9 +267,6 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Build base Docker image
       run: eval "$BUILD"
-    - name: Build Docker image
-      # Sim docker is needed to get the OpenCL drivers
-      run: eval "$BUILD_CL"
     - name: Build openpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
@@ -289,14 +274,14 @@ jobs:
     - name: Run model replay with ONNX
       timeout-minutes: 4
       run: |
-        ${{ env.RUN_CL }} "unset PYTHONWARNINGS && \
+        ${{ env.RUN }} "unset PYTHONWARNINGS && \
                            ONNXCPU=1 NO_NAV=1 coverage run selfdrive/test/process_replay/model_replay.py && \
                            coverage combine && \
                            coverage xml"
     - name: Run unit tests
       timeout-minutes: 4
       run: |
-        ${{ env.RUN_CL }} "unset PYTHONWARNINGS && \
+        ${{ env.RUN }} "unset PYTHONWARNINGS && \
                            $PYTEST selfdrive/modeld"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
