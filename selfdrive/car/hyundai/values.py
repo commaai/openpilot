@@ -447,7 +447,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       obd_multiplexing=False,
     ),
 
-    # CAN-FD debugging queries
+    # CAN-FD alt request logging queries
     Request(
       [HYUNDAI_VERSION_REQUEST_ALT],
       [HYUNDAI_VERSION_RESPONSE],
