@@ -280,10 +280,6 @@ class TestFwFingerprintTiming(unittest.TestCase):
     for num_pandas in (1, 2):
       for brand, config in FW_QUERY_CONFIGS.items():
         with self.subTest(brand=brand, num_pandas=num_pandas):
-          # multi_panda_requests = [r for r in config.requests if r.bus > 3]
-          # if not len(multi_panda_requests) and num_pandas > 1:
-          #   raise unittest.SkipTest("No multi-panda FW queries")
-
           avg_time = self._benchmark_brand(brand, num_pandas)
           total_times[num_pandas] += avg_time
           # if num_pandas == 2:
