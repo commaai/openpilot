@@ -65,18 +65,18 @@ class TestPowerDraw(unittest.TestCase):
     for sock in socks.values():
       messaging.drain_sock_raw(sock)
 
-    msgs_and_power = deque([None] * SAMPLE_TIME, maxlen=SAMPLE_TIME)
+    msgs_and_power = deque([], maxlen=SAMPLE_TIME)
 
-    start_time = time.time()
+    start_time = time.monotonic()
 
-    while (time.time() - start_time) < MAX_WARMUP_TIME:
+    while (time.monotonic() - start_time) < MAX_WARMUP_TIME:
       power = get_power(1)
       iteration_msg_counts = {}
       for msg,sock in socks.items():
         iteration_msg_counts[msg] = len(messaging.drain_sock_raw(sock))
       msgs_and_power.append((power, iteration_msg_counts))
 
-      if any(m is None for m in msgs_and_power):
+      if len(msgs_and_power) < SAMPLE_TIME:
         continue
 
       msg_counts = self.tabulate_msg_counts(msgs_and_power)
@@ -91,7 +91,7 @@ class TestPowerDraw(unittest.TestCase):
       if valid_msg_count and valid_power_draw:
         break
 
-    return now, msg_counts, time.time() - start_time - SAMPLE_TIME
+    return now, msg_counts, time.monotonic() - start_time - SAMPLE_TIME
 
   @mock_messages(['liveLocationKalman'])
   def test_camera_procs(self):
