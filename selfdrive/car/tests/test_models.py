@@ -137,6 +137,7 @@ class TestCarModelBase(unittest.TestCase):
     # test_route_on_ci_bucket will fail when running in CI
     if not len(INTERNAL_SEG_LIST):
       cls.test_route_on_bucket = False
+
       for seg in test_segs:
         segment_range = f"{cls.test_route.route}/{seg}"
         try:
