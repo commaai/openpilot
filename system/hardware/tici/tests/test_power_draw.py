@@ -121,7 +121,7 @@ class TestPowerDraw(unittest.TestCase):
       expected = proc.power
       msgs_received = sum(msg_counts[msg] for msg in proc.msgs)
       msgs_expected = self.get_expected_messages(proc)
-      tab.append([proc.name, round(expected, 2), round(cur, 2), msgs_expected, msgs_received, warmup_time[proc.name]])
+      tab.append([proc.name, round(expected, 2), round(cur, 2), msgs_expected, msgs_received, round(warmup_time[proc.name], 2)])
       with self.subTest(proc=proc.name):
         np.testing.assert_allclose(msgs_expected, msgs_received, rtol=.02, atol=2)
         np.testing.assert_allclose(cur, expected, rtol=proc.rtol, atol=proc.atol)
