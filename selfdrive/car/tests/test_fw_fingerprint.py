@@ -254,7 +254,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
   @pytest.mark.timeout(60)
   def test_fw_query_timing(self):
-    total_ref_time = {1: 5.85, 2: 6.65}
+    total_ref_time = {1: 5.55, 2: 6.05}
     brand_ref_times = {
       1: {
         'gm': 0.5,
@@ -280,23 +280,15 @@ class TestFwFingerprintTiming(unittest.TestCase):
     for num_pandas in (1, 2):
       for brand, config in FW_QUERY_CONFIGS.items():
         with self.subTest(brand=brand, num_pandas=num_pandas):
-          # multi_panda_requests = [r for r in config.requests if r.bus > 3]
-          # if not len(multi_panda_requests) and num_pandas > 1:
-          #   raise unittest.SkipTest("No multi-panda FW queries")
-
           avg_time = self._benchmark_brand(brand, num_pandas)
           total_times[num_pandas] += avg_time
-          # if num_pandas == 2:
-          #   total_times[]
-          # for i in range(1, 1 - num_pandas + 3):
-          #   total_times[i] += avg_time
           avg_time = round(avg_time, 2)
 
           ref_time = brand_ref_times[num_pandas].get(brand)
           if ref_time is None:
+            # ref time should be same as 1 panda if no aux queries
             ref_time = brand_ref_times[num_pandas - 1][brand]
 
-          # ref_time = brand_ref_times[num_pandas].get(brand, brand_ref_times.get(num_pandas - 1, {}).get(brand))
           self._assert_timing(avg_time, ref_time)
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
 
