@@ -46,7 +46,7 @@ def openpilot_function_fixture(request):
   # cleanup any started processes
   manager.manager_cleanup()
 
-  # some processes disable gc for performance, re-enable here and run to ensure old memory is cleaned up
+  # some processes disable gc for performance, re-enable here
   if not gc.isenabled():
     gc.enable()
     gc.collect()
