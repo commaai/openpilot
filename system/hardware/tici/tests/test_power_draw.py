@@ -53,6 +53,14 @@ class TestPowerDraw(unittest.TestCase):
   def get_expected_messages(self, proc):
     return int(sum(SAMPLE_TIME * SERVICE_LIST[msg].frequency for msg in proc.msgs))
 
+  def valid_msg_count(self, proc, msg_counts):
+    msgs_received = sum(msg_counts[msg] for msg in proc.msgs)
+    msgs_expected = self.get_expected_messages(proc)
+    return np.core.numeric.isclose(msgs_expected, msgs_received, rtol=.02, atol=2)
+
+  def valid_power_draw(self, proc, now, prev):
+    return np.core.numeric.isclose(now - prev, proc.power, rtol=proc.rtol, atol=proc.atol)
+
   def tabulate_msg_counts(self, msgs_and_power):
     msg_counts = defaultdict(lambda: 0)
     for _, counts in msgs_and_power:
@@ -80,15 +88,9 @@ class TestPowerDraw(unittest.TestCase):
         continue
 
       msg_counts = self.tabulate_msg_counts(msgs_and_power)
-
-      msgs_received = sum(msg_counts[msg] for msg in proc.msgs)
-      msgs_expected = self.get_expected_messages(proc)
-
       now = np.mean([m[0] for m in msgs_and_power])
-      valid_msg_count = np.core.numeric.isclose(msgs_expected, msgs_received, rtol=.02, atol=2)
-      valid_power_draw = np.core.numeric.isclose(now - prev, proc.power, rtol=proc.rtol, atol=proc.atol)
 
-      if valid_msg_count and valid_power_draw:
+      if self.valid_msg_count(proc, msg_counts) and self.valid_power_draw(proc, now, prev):
         break
 
     return now, msg_counts, time.monotonic() - start_time - SAMPLE_TIME
@@ -117,11 +119,10 @@ class TestPowerDraw(unittest.TestCase):
       cur = used[proc.name]
       expected = proc.power
       msgs_received = sum(msg_counts[msg] for msg in proc.msgs)
-      msgs_expected = self.get_expected_messages(proc)
-      tab.append([proc.name, round(expected, 2), round(cur, 2), msgs_expected, msgs_received, round(warmup_time[proc.name], 2)])
+      tab.append([proc.name, round(expected, 2), round(cur, 2), self.get_expected_messages(proc), msgs_received, round(warmup_time[proc.name], 2)])
       with self.subTest(proc=proc.name):
-        np.testing.assert_allclose(msgs_expected, msgs_received, rtol=.02, atol=2)
-        np.testing.assert_allclose(cur, expected, rtol=proc.rtol, atol=proc.atol)
+        self.assertTrue(self.valid_msg_count(proc, msg_counts), f"expected {self.get_expected_messages(proc)} msgs, got {msgs_received} msgs")
+        self.assertTrue(self.valid_power_draw(proc, cur, prev), f"expected {expected:.2f}W, got {cur:.2f}W")
     print(tabulate(tab))
     print(f"Baseline {baseline:.2f}W\n")
 
