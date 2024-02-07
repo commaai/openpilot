@@ -246,7 +246,8 @@ class TestFwFingerprintTiming(unittest.TestCase):
     for name, args in (('worst', {}), ('best', {'retry': 1})):
       with self.subTest(name=name):
         self.total_time = 0.0
-        with (mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", self.fake_get_data)):
+        with (mock.patch("openpilot.selfdrive.car.vin.set_obd_multiplexing", self.fake_set_obd_multiplexing),
+              mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", self.fake_get_data)):
           for _ in range(self.N):
             get_vin(fake_socket, fake_socket, (0, 1), **args)
         self._assert_timing(self.total_time / self.N, vin_ref_times[name])
