@@ -452,7 +452,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
       obd_multiplexing=False,
     ),
 
-    # CAN FD query to understand the three digit date code
+    # CAN & CAN FD query to understand the three digit date code
+    # HDA2 cars usually use 6 digit date codes, so skip bus 1
     Request(
       [HYUNDAI_ECU_MANUFACTURING_DATE],
       [HYUNDAI_VERSION_RESPONSE],
@@ -460,15 +461,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
       bus=0,
       auxiliary=True,
       logging=True,
-    ),
-    Request(
-      [HYUNDAI_ECU_MANUFACTURING_DATE],
-      [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.fwdCamera],
-      bus=1,
-      auxiliary=True,
-      logging=True,
-      obd_multiplexing=False,
     ),
 
     # CAN & CAN FD logging queries (from camera)
