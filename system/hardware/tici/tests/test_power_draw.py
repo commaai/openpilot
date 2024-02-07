@@ -94,7 +94,7 @@ class TestPowerDraw(unittest.TestCase):
       for msg, count in z.items():
         msg_counts[msg] += count
 
-    return now, msg_counts, time.time() - start_time
+    return now, msg_counts, time.time() - start_time - SAMPLE_TIME
 
   @mock_messages(['liveLocationKalman'])
   def test_camera_procs(self):
