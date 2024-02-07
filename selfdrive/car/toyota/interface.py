@@ -181,6 +181,12 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.444  # not optimized yet
       ret.mass = 4070 * CV.LB_TO_KG
 
+    elif candidate == CAR.LEXUS_LC_TSS2:
+      ret.wheelbase = 2.87
+      ret.steerRatio = 14.7
+      ret.tireStiffnessFactor = 0.444  # not optimized yet
+      ret.mass = 4500 * CV.LB_TO_KG
+
     elif candidate == CAR.PRIUS_TSS2:
       ret.wheelbase = 2.70002  # from toyota online sepc.
       ret.steerRatio = 13.4   # True steerRatio from older prius
