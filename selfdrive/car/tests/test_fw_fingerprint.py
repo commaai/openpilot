@@ -282,17 +282,13 @@ class TestFwFingerprintTiming(unittest.TestCase):
         with self.subTest(brand=brand, num_pandas=num_pandas):
           avg_time = self._benchmark_brand(brand, num_pandas)
           total_times[num_pandas] += avg_time
-          # if num_pandas == 2:
-          #   total_times[]
-          # for i in range(1, 1 - num_pandas + 3):
-          #   total_times[i] += avg_time
           avg_time = round(avg_time, 2)
 
           ref_time = brand_ref_times[num_pandas].get(brand)
           if ref_time is None:
+            # ref time should be same as 1 panda if no aux queries
             ref_time = brand_ref_times[num_pandas - 1][brand]
 
-          # ref_time = brand_ref_times[num_pandas].get(brand, brand_ref_times.get(num_pandas - 1, {}).get(brand))
           self._assert_timing(avg_time, ref_time)
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
 
