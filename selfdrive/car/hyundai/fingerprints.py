@@ -1697,7 +1697,7 @@ FW_VERSIONS = {
       b'\xf1\x00DL3HMFC AT KOR LHD 1.00 1.02 99210-L2500 230911'
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00DL3_ RDR ----- 1.00 1.01 99110-L2500 ',
+      b'\xf1\x00DL3_ RDR ----- 1.00 1.01 99110-L2500         ',
     ],
   },
   CAR.STARIA_4TH_GEN: {
