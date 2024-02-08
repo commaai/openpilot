@@ -7,7 +7,7 @@ import time
 import numpy as np
 from dataclasses import dataclass
 from tabulate import tabulate
-from typing import List, Union
+from typing import List
 
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
