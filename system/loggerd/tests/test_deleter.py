@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
+import random
+import string
 import time
 import threading
 import unittest
 from collections import namedtuple
 from pathlib import Path
-from typing import Sequence
+from typing import List, Sequence
+from openpilot.system.hardware.hw import Paths
 
 import openpilot.system.loggerd.deleter as deleter
 from openpilot.common.timeout import Timeout, TimeoutException
@@ -80,24 +83,38 @@ class TestDeleter(UploaderTestCase):
       self.make_file_with_data(self.seg_format2.format(0), self.f_type),
     ])
 
-  def test_delete_both_files_and_dirs(self):
-    self.assertDeleteOrder([
-      self.make_file_with_data(f_dir="", fn="some_file"),
-      self.make_file_with_data(f_dir="some_dir", fn="some_file"),
-      self.make_file_with_data(f_dir=self.seg_format.format(0), fn=self.f_type),
-      self.make_file_with_data(f_dir=self.seg_format.format(1), fn=self.f_type),
-      self.make_file_with_data(f_dir=self.seg_format2.format(0), fn=self.f_type),
-      self.make_file_with_data(f_dir=self.seg_format2.format(1), fn=self.f_type)
-      ])
+  def create_random_files(self, directory: Path, num_files: int) -> List[Path]:
+    file_paths = []
+    for _ in range(num_files):
+      filename = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+      file_path = directory / filename
+      file_path.write_text(''.join(random.choices(string.ascii_letters + string.digits, k=100)))
+      file_paths.append(file_path)
+    return file_paths
 
-  def test_group_delete_order(self):
+  def create_directories(self, base_dir: Path, depth: int, dirs_per_level: int, files_per_dir: int) -> List[Path]:
+    if depth <= 0:
+      return []
+
+    top_level_paths = []
+
+    for _ in range(dirs_per_level):
+      dir_name = ''.join(random.choices(string.ascii_letters + string.digits, k=5))
+      new_dir = base_dir / dir_name
+      new_dir.mkdir(parents=True, exist_ok=True)
+
+      if depth == 1:
+        top_level_paths.append(new_dir)
+
+      self.create_random_files(new_dir, files_per_dir)
+      self.create_directories(new_dir, depth-1, dirs_per_level, files_per_dir)
+
+    return top_level_paths
+
+  def test_delete_both_files_and_dirs(self):
     created = [
-      [self.make_file_with_data(f_dir="", fn="file_1"),
-        self.make_file_with_data(f_dir="", fn="file_2"),
-        self.make_file_with_data(f_dir="", fn="file_3")],
-      [self.make_file_with_data(f_dir="dir_1", fn="nested_file"),
-        self.make_file_with_data(f_dir="dir_2", fn="nested_file"),
-        self.make_file_with_data(f_dir="dir_3", fn="nested_file")],
+      self.create_random_files(Path(Paths.log_root()), 10),
+      self.create_directories(Path(Paths.log_root()), 3, 3, 3),
       [self.make_file_with_data(f_dir=self.seg_format.format(0), fn=self.f_type),
         self.make_file_with_data(f_dir=self.seg_format.format(1), fn=self.f_type),
         self.make_file_with_data(f_dir=self.seg_format2.format(0), fn=self.f_type)],
