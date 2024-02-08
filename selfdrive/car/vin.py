@@ -49,7 +49,7 @@ def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
                 vin = vin[1:18]
 
               cloudlog.error(f"got vin with {request=}")
-              return get_rx_addr_for_tx_addr(addr), bus, vin.decode()
+              return get_rx_addr_for_tx_addr(addr, rx_offset=rx_offset), bus, vin.decode()
         except Exception:
           cloudlog.exception("VIN query exception")
 
