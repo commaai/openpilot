@@ -164,8 +164,8 @@ V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_hei
     .fmt = {
       .pix_mp = {
         // downscales are free with v4l
-        .width = (unsigned int)encoder_info.frame_width,
-        .height = (unsigned int)encoder_info.frame_height,
+        .width = (unsigned int)(out_width),
+        .height = (unsigned int)(out_height),
         .pixelformat = (encoder_info.encode_type == cereal::EncodeIndex::Type::FULL_H_E_V_C) ? V4L2_PIX_FMT_HEVC : V4L2_PIX_FMT_H264,
         .field = V4L2_FIELD_ANY,
         .colorspace = V4L2_COLORSPACE_DEFAULT,

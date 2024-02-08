@@ -914,12 +914,14 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x87VDGMD15352242DD3w\x87gxwvgv\x87wvw\x88wXwffVfffUfw\x88o\xff\x06J\xf1\x81E14\x00\x00\x00\x00\x00\x00\x00\xf1\x00bcshcm49  E14\x00\x00\x00\x00\x00\x00\x00SHI0G50NB1tc5\xb7',
       b'\xf1\x87VDGMD15866192DD3x\x88x\x89wuFvvfUf\x88vWwgwwwvfVgx\x87o\xff\xbc^\xf1\x81E14\x00\x00\x00\x00\x00\x00\x00\xf1\x00bcshcm49  E14\x00\x00\x00\x00\x00\x00\x00SHI0G50NB1tc5\xb7',
+      b'\xf1\x87VDHMD16446682DD3WwwxxvGw\x88\x88\x87\x88\x88whxx\x87\x87\x87\x85fUfwu_\xffT\xf8\xf1\x81E14\x00\x00\x00\x00\x00\x00\x00\xf1\x00bcshcm49  E14\x00\x00\x00\x00\x00\x00\x00SHI0G50NB1tc5\xb7',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00HI__ SCC F-CUP      1.00 1.01 96400-D2100         ',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00HI  LKAS AT USA LHD 1.00 1.00 95895-D2020 160302',
+      b'\xf1\x00HI  LKAS AT USA LHD 1.00 1.00 95895-D2030 170208',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x810000000000\x00',
@@ -972,6 +974,7 @@ FW_VERSIONS = {
       b'\xf1\x00BD  MDPS C 1.00 1.08 56310/M6300 4BDDC108',
       b'\xf1\x00BD  MDPS C 1.00 1.08 56310M6300\x00 4BDDC108',
       b'\xf1\x00BDm MDPS C A.01 1.03 56310M7800\x00 4BPMC103',
+      b'\xf1\x00BDm MDPS C A.01 1.01 56310M7800\x00 4BPMC101',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00BD  LKAS AT USA LHD 1.00 1.04 95740-M6000 J33',
@@ -989,11 +992,13 @@ FW_VERSIONS = {
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x816VGRAH00018.ELF\xf1\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x8758900-M7AB0 \xf1\x816VQRAD00127.ELF\xf1\x00\x00\x00\x00\x00\x00\x00',
+      b'\xf1\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x006V2B0_C2\x00\x006V2C6051\x00\x00CBD0N20NL1\x00\x00\x00\x00',
       b'\xf1\x816U2VC051\x00\x00\xf1\x006U2V0_C2\x00\x006U2VC051\x00\x00DBD0T16SS0\x00\x00\x00\x00',
       b"\xf1\x816U2VC051\x00\x00\xf1\x006U2V0_C2\x00\x006U2VC051\x00\x00DBD0T16SS0\xcf\x1e'\xc3",
+      b'\xf1\x006V2B0_C2\x00\x006V2C6051\x00\x00CBD0N20NL1\x90@\xc6\xae',
     ],
   },
   CAR.KIA_K5_2021: {
@@ -1198,16 +1203,19 @@ FW_VERSIONS = {
   },
   CAR.KIA_NIRO_PHEV_2022: {
     (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x816H6G5051\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x816H6G6051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x006U3H1_C2\x00\x006U3J9051\x00\x00PDE0G16NL3\x00\x00\x00\x00',
+      b'\xf1\x816U3J9051\x00\x00\xf1\x006U3H1_C2\x00\x006U3J9051\x00\x00PDE0G16NL3\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00DE  MDPS C 1.00 1.01 56310G5520\x00 4DEPC101',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00DEP MFC  AT USA LHD 1.00 1.00 99211-G5500 210428',
+      b'\xf1\x00DEP MFC  AT USA LHD 1.00 1.06 99211-G5000 201028',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00DEhe SCC F-CUP      1.00 1.00 99110-G5600         ',
@@ -1347,22 +1355,28 @@ FW_VERSIONS = {
   CAR.ELANTRA_GT_I30: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00PD  LKAS AT KOR LHD 1.00 1.02 95740-G3000 A51',
+      b'\xf1\x00PD  LKAS AT USA LHD 1.00 1.02 95740-G3000 A51',
       b'\xf1\x00PD  LKAS AT USA LHD 1.01 1.01 95740-G3100 A54',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x006U2U0_C2\x00\x006U2T0051\x00\x00DPD0D16KS0u\xce\x1fk',
+      b'\xf1\x006U2V0_C2\x00\x006U2V8051\x00\x00DPD0T16NS4\x00\x00\x00\x00',
+      b'\xf1\x006U2V0_C2\x00\x006U2V8051\x00\x00DPD0T16NS4\xda\x7f\xd6\xa7',
       b'\xf1\x006U2V0_C2\x00\x006U2VA051\x00\x00DPD0H16NS0e\x0e\xcd\x8e',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00PD  MDPS C 1.00 1.00 56310G3300\x00 4PDDC100',
+      b'\xf1\x00PD  MDPS C 1.00 1.03 56310/G3300 4PDDC103',
       b'\xf1\x00PD  MDPS C 1.00 1.04 56310/G3300 4PDDC104',
     ],
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00PD ESC \t 104\x18\t\x03 58920-G3350',
+      b'\xf1\x00PD ESC \x0b 103\x17\x110 58920-G3350',
       b'\xf1\x00PD ESC \x0b 104\x18\t\x03 58920-G3350',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00PD__ SCC F-CUP      1.00 1.00 96400-G3300         ',
+      b'\xf1\x00PD__ SCC F-CUP      1.01 1.00 96400-G3100         ',
       b'\xf1\x00PD__ SCC FNCUP      1.01 1.00 96400-G3000         ',
     ],
   },
@@ -1555,6 +1569,7 @@ FW_VERSIONS = {
   },
   CAR.TUCSON_4TH_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 1.00 99211-N9220 14K',
       b'\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 2.02 99211-N9000 14E',
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N9210 14G',
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N9220 14K',
@@ -1567,6 +1582,7 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NX4__               1.00 1.00 99110-N9100         ',
       b'\xf1\x00NX4__               1.00 1.01 99110-N9000         ',
+      b'\xf1\x00NX4__               1.00 1.02 99110-N9000         ',
       b'\xf1\x00NX4__               1.01 1.00 99110-N9100         ',
     ],
   },
@@ -1625,6 +1641,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00MQ4_ SCC F-CUP      1.00 1.06 99110-P2000         ',
+      b'\xf1\x00MQ4_ SCC FHCUP      1.00 1.00 99110-R5000         ',
       b'\xf1\x00MQ4_ SCC FHCUP      1.00 1.06 99110-P2000         ',
       b'\xf1\x00MQ4_ SCC FHCUP      1.00 1.08 99110-P2000         ',
     ],

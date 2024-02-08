@@ -11,29 +11,15 @@ import cereal.messaging as messaging
 
 from typing import Any
 from cereal.visionipc import VisionIpcClient, VisionStreamType
+from openpilot.common.mock.generators import LLK_DECIMATION, LOCATION1, LOCATION2, generate_liveLocationKalman
 from openpilot.selfdrive.test.helpers import with_processes
 
-LLK_DECIMATION = 10
 CACHE_PATH = "/data/mbgl-cache-navd.db"
-
-LOCATION1 = (32.7174, -117.16277)
-LOCATION2 = (32.7558, -117.2037)
 
 RENDER_FRAMES = 15
 DEFAULT_ITERATIONS = RENDER_FRAMES * LLK_DECIMATION
-
 LOCATION1_REPEATED = [LOCATION1] * DEFAULT_ITERATIONS
 LOCATION2_REPEATED = [LOCATION2] * DEFAULT_ITERATIONS
-
-def gen_llk(location=LOCATION1):
-  msg = messaging.new_message('liveLocationKalman')
-  msg.liveLocationKalman.positionGeodetic = {'value': [*location, 0], 'std': [0., 0., 0.], 'valid': True}
-  msg.liveLocationKalman.positionECEF = {'value': [0., 0., 0.], 'std': [0., 0., 0.], 'valid': True}
-  msg.liveLocationKalman.calibratedOrientationNED = {'value': [0., 0., 0.], 'std': [0., 0., 0.], 'valid': True}
-  msg.liveLocationKalman.velocityCalibrated = {'value': [0., 0., 0.], 'std': [0., 0., 0.], 'valid': True}
-  msg.liveLocationKalman.status = 'valid'
-  msg.liveLocationKalman.gpsOK = True
-  return msg
 
 
 class MapBoxInternetDisabledRequestHandler(http.server.BaseHTTPRequestHandler):
@@ -134,7 +120,7 @@ class TestMapRenderer(unittest.TestCase):
       if starting_frame_id is None:
         starting_frame_id = prev_frame_id
 
-      llk = gen_llk(location)
+      llk = generate_liveLocationKalman(location)
       self.pm.send("liveLocationKalman", llk)
       self.pm.wait_for_readers_to_update("liveLocationKalman", 10)
       self.sm.update(1000 if frame_expected else 0)
