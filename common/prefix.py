@@ -5,21 +5,23 @@ import uuid
 from typing import Optional
 
 from openpilot.common.params import Params
-from openpilot.system.hardware.hw import Paths, DEFAULT_DOWNLOAD_CACHE_ROOT
+from openpilot.system.hardware.hw import Paths
+from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
 
 class OpenpilotPrefix:
   def __init__(self, prefix: Optional[str] = None, clean_dirs_on_exit: bool = True, shared_download_cache: bool = False):
     self.prefix = prefix if prefix else str(uuid.uuid4().hex[0:15])
     self.msgq_path = os.path.join('/dev/shm', self.prefix)
-    self.vipc_path = os.path.join('/tmp', f"{self.prefix}")
     self.clean_dirs_on_exit = clean_dirs_on_exit
     self.shared_download_cache = shared_download_cache
 
   def __enter__(self):
     self.original_prefix = os.environ.get('OPENPILOT_PREFIX', None)
     os.environ['OPENPILOT_PREFIX'] = self.prefix
-    os.makedirs(self.msgq_path, exist_ok=True)
-    os.makedirs(self.vipc_path, exist_ok=True)
+    try:
+      os.mkdir(self.msgq_path)
+    except FileExistsError:
+      pass
     os.makedirs(Paths.log_root(), exist_ok=True)
 
     if self.shared_download_cache:
@@ -44,7 +46,6 @@ class OpenpilotPrefix:
       shutil.rmtree(os.path.realpath(symlink_path), ignore_errors=True)
       os.remove(symlink_path)
     shutil.rmtree(self.msgq_path, ignore_errors=True)
-    shutil.rmtree(self.vipc_path, ignore_errors=True)
     shutil.rmtree(Paths.log_root(), ignore_errors=True)
     if not os.environ.get("COMMA_CACHE", False):
       shutil.rmtree(Paths.download_cache_root(), ignore_errors=True)
