@@ -21,12 +21,15 @@ def test_time_to_onroad():
   sm = messaging.SubMaster(['controlsState', 'deviceState', 'onroadEvents'])
   try:
     # wait for onroad
-    with Timeout(20, "timed out waiting to go onroad"):
-      while True:
-        sm.update(1000)
-        if sm['deviceState'].started:
-          break
-        time.sleep(1)
+    try:
+      with Timeout(20, "timed out waiting to go onroad"):
+        while True:
+          sm.update(1000)
+          if sm['deviceState'].started:
+            break
+          time.sleep(1)
+    finally:
+      print(f"onroad events: {sm['onroadEvents']}")
 
     # wait for engageability
     with Timeout(10, "timed out waiting for engageable"):
