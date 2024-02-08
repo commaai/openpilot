@@ -64,7 +64,7 @@ def openpilot_class_fixture():
 
 
 @pytest.fixture(scope="function")
-def tici_setup_fixture():
+def tici_setup_fixture(openpilot_function_fixture):
   """Ensure a consistent state for tests on-device. Needs the openpilot function fixture to run first."""
   HARDWARE.initialize_hardware()
   HARDWARE.set_power_save(False)
