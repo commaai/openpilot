@@ -113,7 +113,8 @@ class TestPowerDraw(unittest.TestCase):
     msg_counts = {}
 
     for proc in PROCS:
-      managed_processes[proc.name].start()
+      for proc in proc.procs:
+        managed_processes[proc].start()
       now, local_msg_counts, warmup_time[proc.name] = self.get_power_with_warmup_for_target(proc, prev)
       msg_counts.update(local_msg_counts)
 
