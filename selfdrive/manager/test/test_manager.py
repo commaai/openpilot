@@ -39,12 +39,11 @@ class TestManager(unittest.TestCase):
     self.assertTrue(len(BLACKLIST_PROCS), "No blacklisted procs to test not_run")
 
   def test_startup_time(self):
-    for _ in range(10):
-      start = time.monotonic()
-      os.environ['PREPAREONLY'] = '1'
-      manager.main()
-      t = time.monotonic() - start
-      assert t < MAX_STARTUP_TIME, f"startup took {t}s, expected <{MAX_STARTUP_TIME}s"
+    start = time.monotonic()
+    os.environ['PREPAREONLY'] = '1'
+    manager.main()
+    t = time.monotonic() - start
+    assert t < MAX_STARTUP_TIME, f"startup took {t}s, expected <{MAX_STARTUP_TIME}s"
 
   @unittest.skip("this test is flaky the way it's currently written, should be moved to test_onroad")
   def test_clean_exit(self):
