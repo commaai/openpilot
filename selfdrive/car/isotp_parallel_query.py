@@ -22,7 +22,7 @@ class IsoTpParallelQuery:
     self.debug = debug
     self.response_pending_timeout = response_pending_timeout
 
-    real_addrs: list[AddrType] = [a if isinstance(a, tuple) else (a, None) for a in addrs]
+    real_addrs = [a if isinstance(a, tuple) else (a, None) for a in addrs]
     for tx_addr, _ in real_addrs:
       assert tx_addr not in FUNCTIONAL_ADDRS, f"Functional address should be defined in functional_addrs: {hex(tx_addr)}"
 
@@ -84,7 +84,7 @@ class IsoTpParallelQuery:
     request_counter = {}
     request_done = {}
     for tx_addr, rx_addr in self.msg_addrs.items():
-      msgs[tx_addr] = self._create_isotp_msg(tx_addr[0], tx_addr[1], rx_addr)
+      msgs[tx_addr] = self._create_isotp_msg(*tx_addr, rx_addr)
       request_counter[tx_addr] = 0
       request_done[tx_addr] = False
 
@@ -98,7 +98,7 @@ class IsoTpParallelQuery:
     for msg in msgs.values():
       msg.send(self.request[0], setup_only=len(self.functional_addrs) > 0)
 
-    results: dict[AddrType, bytes] = {}
+    results = {}
     start_time = time.monotonic()
     addrs_responded = set()  # track addresses that have ever sent a valid iso-tp frame for timeout logging
     response_timeouts = {tx_addr: start_time + timeout for tx_addr in self.msg_addrs}
