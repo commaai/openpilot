@@ -26,6 +26,8 @@ def test_time_to_onroad():
         sm.update(1000)
         if sm['deviceState'].started:
           break
+        else:
+          print(f"onroad events: {sm['onroadEvents']}")
         time.sleep(1)
 
     # wait for engageability
