@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List, Optional, Set, Iterator, Iterable, TypeVar, Sized, Sequence
+from typing import Any, DefaultDict, Dict, List, Optional, Set, Iterator, Iterable, TypeVar, Sized
 from tqdm import tqdm
 import capnp
 
@@ -27,7 +27,7 @@ REQUESTS = [(brand, config, r) for brand, config in FW_QUERY_CONFIGS.items() for
 T = TypeVar('T')
 
 
-def chunks(l: Sequence[T], n: int = 128) -> Iterator[Sequence[T]]:
+def chunks(l: List[T], n: int = 128) -> Iterator[List[T]]:
   for i in range(0, len(l), n):
     yield l[i:i + n]
 
