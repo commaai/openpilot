@@ -5,6 +5,8 @@ import signal
 import time
 import unittest
 
+from parameterized import parameterized
+
 from cereal import car
 from openpilot.common.params import Params
 import openpilot.selfdrive.manager.manager as manager
@@ -38,6 +40,7 @@ class TestManager(unittest.TestCase):
     # TODO: ensure there are blacklisted procs until we have a dedicated test
     self.assertTrue(len(BLACKLIST_PROCS), "No blacklisted procs to test not_run")
 
+  @parameterized.expand(range(10))
   def test_startup_time(self):
     start = time.monotonic()
     os.environ['PREPAREONLY'] = '1'
