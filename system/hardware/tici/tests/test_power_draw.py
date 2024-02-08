@@ -22,27 +22,23 @@ MAX_WARMUP_TIME = 30  # seconds to wait for SAMPLE_TIME consecutive valid sample
 
 @dataclass
 class Proc:
-  name: str
+  procs: List[str]
   power: float
   msgs: List[str]
   rtol: float = 0.05
   atol: float = 0.12
 
-  _procs: Union[List[str],None] = None
-
   @property
-  def procs(self):
-    if self._procs is None:
-      return [self.name]
-    return self._procs
+  def name(self):
+    return '+'.join(self.procs)
 
 
 PROCS = [
-  Proc('camerad', 2.1, msgs=['roadCameraState', 'wideRoadCameraState', 'driverCameraState']),
-  Proc('modeld', 1.12, atol=0.2, msgs=['modelV2']),
-  Proc('dmonitoringmodeld', 0.4, msgs=['driverStateV2']),
-  Proc('encoderd', 0.23, msgs=[]),
-  Proc('mapsd+navmodeld', 0.05, msgs=['mapRenderState', 'navModel'], _procs=['mapsd', 'navmodeld']),
+  Proc(['camerad'], 2.1, msgs=['roadCameraState', 'wideRoadCameraState', 'driverCameraState']),
+  Proc(['modeld'], 1.12, atol=0.2, msgs=['modelV2']),
+  Proc(['dmonitoringmodeld'], 0.4, msgs=['driverStateV2']),
+  Proc(['encoderd'], 0.23, msgs=[]),
+  Proc(['mapsd', 'navmodeld'], 0.05, msgs=['mapRenderState', 'navModel']),
 ]
 
 
