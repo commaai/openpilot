@@ -47,20 +47,6 @@ def get_preserved_segments(dirs_by_creation: List[str]) -> List[str]:
 
   return preserved
 
-def separate_segments_and_nonsegments(dirs):
-  segments, non_segments = [], []
-  for d in dirs:
-      date_str, _, seg_str = d.rpartition("--")
-
-      try:
-        int(seg_str)
-        datetime.strptime(date_str, DATE_FORMAT)
-        segments.append(d)
-      except ValueError:
-        non_segments.append(d)
-
-  return segments, non_segments
-
 def contains_lockfiles(path: str) -> bool:
   if not os.path.isdir(path):
     return False
