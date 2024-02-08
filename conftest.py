@@ -64,12 +64,11 @@ def openpilot_class_fixture():
 
 
 @pytest.fixture(scope="class")
-def tici_setup_fixture():
-  """Ensure a consistent state for tests on-device"""
+def tici_setup_fixture(openpilot_function_fixture):
+  """Ensure a consistent state for tests on-device. Needs the openpilot function fixture to run first."""
   HARDWARE.initialize_hardware()
   HARDWARE.set_power_save(False)
   os.system("pkill -9 -f athena")
-  os.system("rm /dev/shm/*")
 
 
 @pytest.hookimpl(tryfirst=True)
