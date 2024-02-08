@@ -22,14 +22,17 @@ def hash_256(link):
 class URLFileException(Exception):
   pass
 
+
 def new_pool_manager() -> PoolManager:
   socket_options = [(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),]
   retries = Retry(total=5, backoff_factor=0.5, status_forcelist=[409, 429, 503, 504])
   return PoolManager(num_pools=10, maxsize=100, socket_options=socket_options, retries=retries)
 
+
 def set_pool_manager():
   URLFile._pool_manager = new_pool_manager()
 os.register_at_fork(after_in_child=set_pool_manager)
+
 
 class URLFile:
   _pool_manager = new_pool_manager()
