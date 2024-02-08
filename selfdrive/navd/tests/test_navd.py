@@ -52,7 +52,7 @@ class TestNavd(unittest.TestCase):
     }
     self._check_route(start, end)
 
-  @parameterized.expand(range(10))
+  @parameterized.expand([(i,) for i in range(10)])
   def test_random(self, index):
     start = {"latitude": random.uniform(-90, 90), "longitude": random.uniform(-180, 180)}
     end = {"latitude": random.uniform(-90, 90), "longitude": random.uniform(-180, 180)}
