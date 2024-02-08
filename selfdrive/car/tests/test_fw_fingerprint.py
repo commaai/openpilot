@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import pytest
 import random
 import time
 import unittest
