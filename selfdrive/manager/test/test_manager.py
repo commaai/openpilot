@@ -40,7 +40,7 @@ class TestManager(unittest.TestCase):
     # TODO: ensure there are blacklisted procs until we have a dedicated test
     self.assertTrue(len(BLACKLIST_PROCS), "No blacklisted procs to test not_run")
 
-  @parameterized.expand(range(10))
+  @parameterized.expand([(i,) for i in range(10)])
   def test_startup_time(self, index):
     start = time.monotonic()
     os.environ['PREPAREONLY'] = '1'
