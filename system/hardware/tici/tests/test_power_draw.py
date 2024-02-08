@@ -7,7 +7,7 @@ import time
 import numpy as np
 from dataclasses import dataclass
 from tabulate import tabulate
-from typing import List
+from typing import List, Union
 
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
@@ -28,13 +28,21 @@ class Proc:
   rtol: float = 0.05
   atol: float = 0.12
 
+  _procs: Union[List[str],None] = None
+
+  @property
+  def procs(self):
+    if self._procs is None:
+      return [self.name]
+    return self._procs
+
+
 PROCS = [
   Proc('camerad', 2.1, msgs=['roadCameraState', 'wideRoadCameraState', 'driverCameraState']),
   Proc('modeld', 1.12, atol=0.2, msgs=['modelV2']),
   Proc('dmonitoringmodeld', 0.4, msgs=['driverStateV2']),
   Proc('encoderd', 0.23, msgs=[]),
-  Proc('mapsd', 0.05, msgs=['mapRenderState']),
-  Proc('navmodeld', 0.05, msgs=['navModel']),
+  Proc('mapsd+navmodeld', 0.05, msgs=['mapRenderState', 'navModel'], _procs=['mapsd', 'navmodeld']),
 ]
 
 
