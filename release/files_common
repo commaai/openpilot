@@ -24,9 +24,6 @@ common/__init__.py
 common/*.py
 common/*.pyx
 
-common/kalman/.gitignore
-common/kalman/*
-
 common/transformations/__init__.py
 common/transformations/camera.py
 common/transformations/model.py
@@ -98,9 +95,7 @@ selfdrive/car/ecu_addrs.py
 selfdrive/car/isotp_parallel_query.py
 selfdrive/car/tests/__init__.py
 selfdrive/car/tests/test_car_interfaces.py
-selfdrive/car/torque_data/params.yaml
-selfdrive/car/torque_data/substitute.yaml
-selfdrive/car/torque_data/override.yaml
+selfdrive/car/torque_data/*
 
 selfdrive/car/body/*.py
 selfdrive/car/chrysler/*.py
@@ -120,6 +115,7 @@ selfdrive/debug/can_printer.py
 selfdrive/debug/check_freq.py
 selfdrive/debug/dump.py
 selfdrive/debug/filter_log_message.py
+selfdrive/debug/format_fingerprints.py
 selfdrive/debug/get_fingerprint.py
 selfdrive/debug/uiview.py
 
@@ -129,30 +125,8 @@ selfdrive/debug/vw_mqb_config.py
 common/SConscript
 common/version.h
 
-common/prefix.h
-common/swaglog.h
-common/swaglog.cc
-common/statlog.h
-common/statlog.cc
-common/util.cc
-common/util.h
-common/queue.h
-common/clutil.cc
-common/clutil.h
-common/params.h
-common/params.cc
-common/ratekeeper.cc
-common/ratekeeper.h
-common/watchdog.cc
-common/watchdog.h
-
-common/mat.h
-common/timing.h
-
-common/gpio.cc
-common/gpio.h
-common/i2c.cc
-common/i2c.h
+common/*.h
+common/*.cc
 
 selfdrive/controls/__init__.py
 selfdrive/controls/controlsd.py
@@ -168,7 +142,6 @@ selfdrive/controls/lib/latcontrol_angle.py
 selfdrive/controls/lib/latcontrol_torque.py
 selfdrive/controls/lib/latcontrol_pid.py
 selfdrive/controls/lib/latcontrol.py
-selfdrive/controls/lib/lateral_planner.py
 selfdrive/controls/lib/longcontrol.py
 selfdrive/controls/lib/longitudinal_planner.py
 selfdrive/controls/lib/pid.py
@@ -180,6 +153,7 @@ selfdrive/controls/lib/lateral_mpc_lib/*
 selfdrive/controls/lib/longitudinal_mpc_lib/*
 
 system/__init__.py
+system/*.py
 
 system/hardware/__init__.py
 system/hardware/base.h
@@ -317,11 +291,8 @@ system/camerad/main.cc
 system/camerad/snapshot/*
 system/camerad/cameras/camera_common.h
 system/camerad/cameras/camera_common.cc
-system/camerad/sensors/ar0231.cc
-system/camerad/sensors/ar0231_registers.h
-system/camerad/sensors/ox03c10.cc
-system/camerad/sensors/ox03c10_registers.h
-system/camerad/sensors/sensor.h
+system/camerad/sensors/*.h
+system/camerad/sensors/*.cc
 
 selfdrive/manager/__init__.py
 selfdrive/manager/build.py
@@ -423,6 +394,7 @@ third_party/acados/acados_template/**
 
 third_party/bootstrap/**
 third_party/qt5/larch64/bin/**
+third_party/maplibre-native-qt/**
 
 scripts/update_now.sh
 scripts/stop_updater.sh

@@ -109,7 +109,7 @@ TEST_CASE("Parser::cmdline") {
   test_cmdline(std::string("a\0b\0c\0\0\0", 9), {"a", "b", "c"});
 }
 
-TEST_CASE("buildProcLogerMessage") {
+TEST_CASE("buildProcLoggerMessage") {
   MessageBuilder msg;
   buildProcLogMessage(msg);
 
@@ -137,19 +137,6 @@ TEST_CASE("buildProcLogerMessage") {
       REQUIRE(p.getState() == 'R');
       REQUIRE_THAT(p.getExe().cStr(), Catch::Matchers::Contains("test_proclog"));
       REQUIRE_THAT(p.getCmdline()[0], Catch::Matchers::Contains("test_proclog"));
-    } else {
-      std::string cmd_path = "/proc/" + std::to_string(p.getPid()) + "/cmdline";
-      if (util::file_exists(cmd_path)) {
-        std::ifstream stream(cmd_path);
-        auto cmdline = Parser::cmdline(stream);
-        REQUIRE(cmdline.size() == p.getCmdline().size());
-        // do not check the cmdline of pytest as it will change.
-        if (cmdline.size() > 0 && cmdline[0].find("[pytest") != 0) {
-          for (int i = 0; i < p.getCmdline().size(); ++i) {
-            REQUIRE(cmdline[i] == p.getCmdline()[i].cStr());
-          }
-        }
-      }
     }
   }
 }

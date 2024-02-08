@@ -2,6 +2,7 @@ import math
 import numpy as np
 
 from collections import namedtuple
+from panda3d.core import Vec3
 from multiprocessing.connection import Connection
 
 from metadrive.engine.core.engine_core import EngineCore
@@ -10,8 +11,12 @@ from metadrive.envs.metadrive_env import MetaDriveEnv
 from metadrive.obs.image_obs import ImageObservation
 
 from openpilot.common.realtime import Ratekeeper
+
 from openpilot.tools.sim.lib.common import vec3
 from openpilot.tools.sim.lib.camerad import W, H
+
+C3_POSITION = Vec3(0.0, 0, 1.22)
+C3_HPR = Vec3(0, 0,0)
 
 
 metadrive_state = namedtuple("metadrive_state", ["velocity", "position", "bearing", "steering_angle"])
@@ -29,17 +34,19 @@ def apply_metadrive_patches():
   EngineCore.add_image_sensor = add_image_sensor_patched
 
   # we aren't going to use the built-in observation stack, so disable it to save time
-  def observe_patched(self, vehicle):
+  def observe_patched(self, *args, **kwargs):
     return self.state
 
   ImageObservation.observe = observe_patched
 
-  def arrive_destination_patch(self, vehicle):
+  # disable destination, we want to loop forever
+  def arrive_destination_patch(self, *args, **kwargs):
     return False
 
   MetaDriveEnv._is_arrive_destination = arrive_destination_patch
 
-def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera_array, controls_recv: Connection, state_send: Connection, exit_event):
+def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera_array, image_lock,
+                      controls_recv: Connection, state_send: Connection, exit_event):
   apply_metadrive_patches()
 
   road_image = np.frombuffer(camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
@@ -57,14 +64,17 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
 
   def get_cam_as_rgb(cam):
     cam = env.engine.sensors[cam]
-    img = cam.perceive(env.vehicle, clip=False)
+    cam.get_cam().reparentTo(env.vehicle.origin)
+    cam.get_cam().setPos(C3_POSITION)
+    cam.get_cam().setHpr(C3_HPR)
+    img = cam.perceive(clip=False)
     if type(img) != np.ndarray:
       img = img.get() # convert cupy array to numpy
     return img
 
   rk = Ratekeeper(100, None)
 
-  steer_ratio = 15
+  steer_ratio = 8
   vc = [0,0]
 
   while not exit_event.is_set():
@@ -98,5 +108,6 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
       if dual_camera:
         wide_road_image[...] = get_cam_as_rgb("rgb_wide")
       road_image[...] = get_cam_as_rgb("rgb_road")
+      image_lock.release()
 
     rk.keep_time()

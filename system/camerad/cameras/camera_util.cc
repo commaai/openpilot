@@ -1,5 +1,7 @@
 #include "system/camerad/cameras/camera_util.h"
 
+#include <string.h>
+
 #include <cassert>
 
 #include <sys/ioctl.h>
@@ -111,6 +113,7 @@ void *MemoryManager::alloc_buf(int size, uint32_t *handle) {
     size_lookup[ptr] = size;
   }
   lock.unlock();
+  memset(ptr, 0, size);
   return ptr;
 }
 

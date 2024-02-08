@@ -27,7 +27,9 @@ class MetaDriveWorld(World):
 
     self.metadrive_process = multiprocessing.Process(name="metadrive process", target=
                               functools.partial(metadrive_process, dual_camera, config,
-                                                self.camera_array, self.wide_camera_array, self.controls_recv, self.state_send, self.exit_event))
+                                                self.camera_array, self.wide_camera_array, self.image_lock,
+                                                self.controls_recv, self.state_send, self.exit_event))
+
     self.metadrive_process.start()
 
     print("----------------------------------------------------------")

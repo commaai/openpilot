@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
+import os
 from cereal import car
 from math import fabs, exp
 from panda import Panda
 
+from openpilot.common.basedir import BASEDIR
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car import create_button_events, get_safety_config
 from openpilot.selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
 from openpilot.selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus
-from openpilot.selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD
+from openpilot.selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD, LatControlInputs, NanoFFModel
 from openpilot.selfdrive.controls.lib.drive_helpers import get_friction
 
 ButtonType = car.CarState.ButtonEvent.Type
@@ -24,6 +26,8 @@ NON_LINEAR_TORQUE_PARAMS = {
   CAR.ACADIA: [4.78003305, 1.0, 0.3122, 0.05591772],
   CAR.SILVERADO: [3.29974374, 1.0, 0.25571356, 0.0465122]
 }
+
+NEURAL_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/neural_ff_weights.json')
 
 
 class CarInterface(CarInterfaceBase):
@@ -44,8 +48,8 @@ class CarInterface(CarInterfaceBase):
     else:
       return CarInterfaceBase.get_steer_feedforward_default
 
-  def torque_from_lateral_accel_siglin(self, lateral_accel_value: float, torque_params: car.CarParams.LateralTorqueTuning,
-                                       lateral_accel_error: float, lateral_accel_deadzone: float, friction_compensation: bool) -> float:
+  def torque_from_lateral_accel_siglin(self, latcontrol_inputs: LatControlInputs, torque_params: car.CarParams.LateralTorqueTuning, lateral_accel_error: float,
+                                       lateral_accel_deadzone: float, friction_compensation: bool, gravity_adjusted: bool) -> float:
     friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
 
     def sig(val):
@@ -58,11 +62,22 @@ class CarInterface(CarInterfaceBase):
     non_linear_torque_params = NON_LINEAR_TORQUE_PARAMS.get(self.CP.carFingerprint)
     assert non_linear_torque_params, "The params are not defined"
     a, b, c, _ = non_linear_torque_params
-    steer_torque = (sig(lateral_accel_value * a) * b) + (lateral_accel_value * c)
+    steer_torque = (sig(latcontrol_inputs.lateral_acceleration * a) * b) + (latcontrol_inputs.lateral_acceleration * c)
     return float(steer_torque) + friction
 
+  def torque_from_lateral_accel_neural(self, latcontrol_inputs: LatControlInputs, torque_params: car.CarParams.LateralTorqueTuning, lateral_accel_error: float,
+                                       lateral_accel_deadzone: float, friction_compensation: bool, gravity_adjusted: bool) -> float:
+    friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
+    inputs = list(latcontrol_inputs)
+    if gravity_adjusted:
+      inputs[0] += inputs[1]
+    return float(self.neural_ff_model.predict(inputs)) + friction
+
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
-    if self.CP.carFingerprint in NON_LINEAR_TORQUE_PARAMS:
+    if self.CP.carFingerprint == CAR.BOLT_EUV:
+      self.neural_ff_model = NanoFFModel(NEURAL_PARAMS_PATH, self.CP.carFingerprint)
+      return self.torque_from_lateral_accel_neural
+    elif self.CP.carFingerprint in NON_LINEAR_TORQUE_PARAMS:
       return self.torque_from_lateral_accel_siglin
     else:
       return self.torque_from_lateral_accel_linear
@@ -72,6 +87,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
     ret.autoResumeSng = False
+    ret.enableBsm = 0x142 in fingerprint[CanBus.POWERTRAIN]
 
     if candidate in EV_CAR:
       ret.transmissionType = TransmissionType.direct

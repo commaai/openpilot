@@ -10,7 +10,7 @@ from typing import List, Optional
 from openpilot.system.hardware.hw import Paths
 
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.loggerd.uploader import uploader_fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE
+from openpilot.system.loggerd.uploader import main, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE
 
 from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase
 
@@ -45,7 +45,7 @@ class TestUploader(UploaderTestCase):
 
   def start_thread(self):
     self.end_event = threading.Event()
-    self.up_thread = threading.Thread(target=uploader_fn, args=[self.end_event])
+    self.up_thread = threading.Thread(target=main, args=[self.end_event])
     self.up_thread.daemon = True
     self.up_thread.start()
 

@@ -6,34 +6,27 @@ import json
 import uuid
 import logging
 from dataclasses import dataclass, field
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Union, TYPE_CHECKING
 
 # aiortc and its dependencies have lots of internal warnings :(
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-import aiortc
-from aiortc.mediastreams import VideoStreamTrack, AudioStreamTrack
-from aiortc.contrib.media import MediaBlackhole
-from aiortc.exceptions import InvalidStateError
-from aiohttp import web
 import capnp
-from teleoprtc import WebRTCAnswerBuilder
-from teleoprtc.info import parse_info_from_offer
+from aiohttp import web
+if TYPE_CHECKING:
+  from aiortc.rtcdatachannel import RTCDataChannel
 
-from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
-from openpilot.system.webrtc.device.audio import AudioInputStreamTrack, AudioOutputSpeaker
 from openpilot.system.webrtc.schema import generate_field
-
 from cereal import messaging, log
 
 
 class CerealOutgoingMessageProxy:
   def __init__(self, sm: messaging.SubMaster):
     self.sm = sm
-    self.channels: List[aiortc.RTCDataChannel] = []
+    self.channels: List['RTCDataChannel'] = []
 
-  def add_channel(self, channel: aiortc.RTCDataChannel):
+  def add_channel(self, channel: 'RTCDataChannel'):
     self.channels.append(channel)
 
   def to_json(self, msg_content: Any):
@@ -96,6 +89,8 @@ class CerealProxyRunner:
     self.task = None
 
   async def run(self):
+    from aiortc.exceptions import InvalidStateError
+
     while True:
       try:
         self.proxy.update()
@@ -109,6 +104,13 @@ class CerealProxyRunner:
 
 class StreamSession:
   def __init__(self, sdp: str, cameras: List[str], incoming_services: List[str], outgoing_services: List[str], debug_mode: bool = False):
+    from aiortc.mediastreams import VideoStreamTrack, AudioStreamTrack
+    from aiortc.contrib.media import MediaBlackhole
+    from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
+    from openpilot.system.webrtc.device.audio import AudioInputStreamTrack, AudioOutputSpeaker
+    from teleoprtc import WebRTCAnswerBuilder
+    from teleoprtc.info import parse_info_from_offer
+
     config = parse_info_from_offer(sdp)
     builder = WebRTCAnswerBuilder(sdp)
 
@@ -192,7 +194,7 @@ class StreamRequestBody:
   bridge_services_out: List[str] = field(default_factory=list)
 
 
-async def get_stream(request: web.Request):
+async def get_stream(request: 'web.Request'):
   stream_dict, debug_mode = request.app['streams'], request.app['debug']
   raw_body = await request.json()
   body = StreamRequestBody(**raw_body)
@@ -206,7 +208,7 @@ async def get_stream(request: web.Request):
   return web.json_response({"sdp": answer.sdp, "type": answer.type})
 
 
-async def get_schema(request: web.Request):
+async def get_schema(request: 'web.Request'):
   services = request.query["services"].split(",")
   services = [s for s in services if s]
   assert all(s in log.Event.schema.fields and not s.endswith("DEPRECATED") for s in services), "Invalid service name"
@@ -214,7 +216,7 @@ async def get_schema(request: web.Request):
   return web.json_response(schema_dict)
 
 
-async def on_shutdown(app: web.Application):
+async def on_shutdown(app: 'web.Application'):
   for session in app['streams'].values():
     session.stop()
   del app['streams']

@@ -1,6 +1,6 @@
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
+addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
 cpp_files = "test_*"
 cpp_harness = "selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"
@@ -20,6 +20,8 @@ testpaths = [
   "selfdrive/navd/tests",
   "selfdrive/thermald",
   "selfdrive/test/longitudinal_maneuvers",
+  "selfdrive/test/process_replay/test_fuzzy.py",
+  "system/camerad",
   "system/hardware/tici",
   "system/loggerd",
   "system/proclogd",
@@ -75,75 +77,69 @@ documentation = "https://docs.comma.ai"
 
 [tool.poetry.dependencies]
 python = "~3.11"
-atomicwrites = "*"
 aiohttp = "*"
 aiortc = "*"
 casadi = "==3.6.3"
 cffi = "*"
-control = "*"
 crcmod = "*"
-cryptography = "*"
 Cython = "*"
 future-fstrings = "*"  # for acados
-hexdump = "*"
-Jinja2 = "*"
 json-rpc = "*"
 libusb1 = "*"
 numpy = "*"
 onnx = ">=1.14.0"
-onnxruntime = { version = ">=1.15.1", platform = "linux", markers = "platform_machine == 'aarch64'" }
-onnxruntime-gpu = { version = ">=1.15.1", platform = "linux", markers = "platform_machine == 'x86_64'" }
+onnxruntime = { version = ">=1.16.3", platform = "linux", markers = "platform_machine == 'aarch64'" }
+onnxruntime-gpu = { version = ">=1.16.3", platform = "linux", markers = "platform_machine == 'x86_64'" }
 psutil = "*"
 pyaudio = "*"
 pycapnp = "*"
 pycryptodome = "*"
-pycurl = "*"
-pydub = "*"
 PyJWT = "*"
-pyopencl = "*"
 pyserial = "*"
-PyYAML = "*"
 pyzmq = "*"
 requests = "*"
 scons = "*"
-sentry-sdk = "==1.28.1"  # needs to be updated with AGNOS
-setproctitle = "*"
+sentry-sdk = "*"
 smbus2 = "*"
 sounddevice = "*"
 spidev = { version = "*", platform = "linux" }
 sympy = "*"
-timezonefinder = "*"
-tqdm = "*"
 websocket_client = "*"
-polyline = "*"
-sconscontrib = {git = "https://github.com/SCons/scons-contrib.git"}
 
+# these should be removed
+markdown-it-py = "*"
+timezonefinder = "*"
+setproctitle = "*"
 
 [tool.poetry.group.dev.dependencies]
 av = "*"
 azure-identity = "*"
 azure-storage-blob = "*"
 breathe = "*"
+control = "*"
 coverage = "*"
 dictdiffer = "*"
 ft4222 = "*"
+flaky = "*"
 hypothesis = "~6.47"
 inputs = "*"
+Jinja2 = "*"
 lru-dict = "*"
-markdown-it-py = "*"
 matplotlib = "*"
-metadrive-simulator = { git = "https://github.com/metadriverse/metadrive.git", rev ="72e842cd1d025bf676e4af8797a01e4aa282109f", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
+metadrive-simulator = { version = "0.4.2.3", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
 mpld3 = "*"
 mypy = "*"
 myst-parser = "*"
 natsort = "*"
 opencv-python-headless = "*"
-pandas = "*"
 parameterized = "^0.8"
 pprofile = "*"
+polyline = "*"
 pre-commit = "*"
+pyautogui = "*"
+pyopencl = "==2023.1.4"  # 2024.1 is broken on arm64
 pygame = "*"
-pympler = "*"
+pywinctl = "*"
 pyprof2calltree = "*"
 pytest = "*"
 pytest-cov = "*"
@@ -151,20 +147,16 @@ pytest-cpp = "*"
 pytest-subtests = "*"
 pytest-xdist = "*"
 pytest-timeout = "*"
-pytest-timeouts = "*"
 pytest-randomly = "*"
 ruff = "*"
-scipy = "*"
 sphinx = "*"
 sphinx-rtd-theme = "*"
 sphinx-sitemap = "*"
 tabulate = "*"
 tenacity = "*"
-types-atomicwrites = "*"
-types-pycurl = "*"
-types-PyYAML = "*"
 types-requests = "*"
 types-tabulate = "*"
+tqdm = "*"
 
 # this is only pinned since 5.15.11 is broken
 pyqt5 = { version = "==5.15.2", markers = "platform_machine == 'x86_64'" } # no aarch64 wheels for macOS/linux
@@ -175,8 +167,8 @@ build-backend = "poetry.core.masonry.api"
 
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]
-select = ["E", "F", "W", "PIE", "C4", "ISC", "RUF008", "RUF100", "A", "B", "TID251"]
-ignore = ["E741", "E402", "C408", "ISC003", "B027", "B024"]
+lint.select = ["E", "F", "W", "PIE", "C4", "ISC", "RUF008", "RUF100", "A", "B", "TID251"]
+lint.ignore = ["E741", "E402", "C408", "ISC003", "B027", "B024"]
 line-length = 160
 target-version="py311"
 exclude = [
@@ -188,8 +180,8 @@ exclude = [
   "teleoprtc_repo",
   "third_party",
 ]
-flake8-implicit-str-concat.allow-multiline=false
-[tool.ruff.flake8-tidy-imports.banned-api]
+lint.flake8-implicit-str-concat.allow-multiline=false
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
 "selfdrive".msg = "Use openpilot.selfdrive"
 "common".msg = "Use openpilot.common"
 "system".msg = "Use openpilot.system"

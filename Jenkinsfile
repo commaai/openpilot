@@ -12,7 +12,7 @@ def retryWithDelay(int maxRetries, int delay, Closure body) {
 def device(String ip, String step_label, String cmd) {
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
     def ssh_cmd = """
-ssh -tt -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' /usr/bin/bash <<'END'
+ssh -tt -o ConnectTimeout=30 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o BatchMode=yes -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' /usr/bin/bash <<'END'
 
 set -e
 
@@ -35,7 +35,9 @@ source ~/.bash_profile
 if [ -f /TICI ]; then
   source /etc/profile
 
+  rm -rf /tmp/tmp*
   rm -rf ~/.commacache
+  rm -rf /dev/shm/*
 
   if ! systemctl is-active --quiet systemd-resolved; then
     echo "restarting resolved"
@@ -76,8 +78,8 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
     def extra = extra_env.collect { "export ${it}" }.join('\n');
     def branch = env.BRANCH_NAME ?: 'master';
 
-    docker.image('ghcr.io/commaai/alpine-ssh').inside('--user=root') {
-      lock(resource: "", label: deviceType, inversePrecedence: true, variable: 'device_ip', quantity: 1) {
+    lock(resource: "", label: deviceType, inversePrecedence: true, variable: 'device_ip', quantity: 1, resourceSelectStrategy: 'random') {
+      docker.image('ghcr.io/commaai/alpine-ssh').inside('--user=root') {
         timeout(time: 20, unit: 'MINUTES') {
           retry (3) {
             device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
@@ -104,24 +106,26 @@ def pcStage(String stageName, Closure body) {
 
     checkout scm
 
-    def dockerArgs = "--user=batman -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache -e PYTHONPATH=${env.WORKSPACE}";
+    def dockerArgs = "--user=batman -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache -e PYTHONPATH=${env.WORKSPACE} --cpus=8 --memory 16g -e PYTEST_ADDOPTS='-n8'";
 
     def openpilot_base = retryWithDelay (3, 15) {
       return docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .")
     }
 
-    openpilot_base.inside(dockerArgs) {
-      timeout(time: 20, unit: 'MINUTES') {
-        try {
-          retryWithDelay (3, 15) {
-            sh "git config --global --add safe.directory '*'"
-            sh "git submodule update --init --recursive"
-            sh "git lfs pull"
-          }
-          body()
-        } finally {
-            sh "rm -rf ${env.WORKSPACE}/* || true"
-            sh "rm -rf .* || true"
+    lock(resource: "", label: 'pc', inversePrecedence: true, quantity: 1) {
+      openpilot_base.inside(dockerArgs) {
+        timeout(time: 20, unit: 'MINUTES') {
+          try {
+            retryWithDelay (3, 15) {
+              sh "git config --global --add safe.directory '*'"
+              sh "git submodule update --init --recursive"
+              sh "git lfs pull"
+            }
+            body()
+          } finally {
+              sh "rm -rf ${env.WORKSPACE}/* || true"
+              sh "rm -rf .* || true"
+            }
           }
         }
       }
@@ -165,7 +169,7 @@ node {
   env.GIT_COMMIT = checkout(scm).GIT_COMMIT
 
   def excludeBranches = ['master-ci', 'devel', 'devel-staging', 'release3', 'release3-staging',
-                         'dashcam3', 'dashcam3-staging', 'testing-closet*', 'hotfix-*']
+                         'testing-closet*', 'hotfix-*']
   def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
 
   if (env.BRANCH_NAME != 'master') {
@@ -177,7 +181,7 @@ node {
   try {
     if (env.BRANCH_NAME == 'devel-staging') {
       deviceStage("build release3-staging", "tici-needs-can", [], [
-        ["build release3-staging & dashcam3-staging", "RELEASE_BRANCH=release3-staging DASHCAM_BRANCH=dashcam3-staging $SOURCE_DIR/release/build_release.sh"],
+        ["build release3-staging", "RELEASE_BRANCH=release3-staging $SOURCE_DIR/release/build_release.sh"],
       ])
     }
 
@@ -201,17 +205,17 @@ node {
         ])
       },
       'HW + Unit Tests': {
-        deviceStage("tici", "tici-common", ["UNSAFE=1"], [
+        deviceStage("tici-hardware", "tici-common", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
           ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py", ["panda/", "selfdrive/boardd/"]],
-          ["test power draw", "./system/hardware/tici/tests/test_power_draw.py"],
+          ["test power draw", "pytest -s system/hardware/tici/tests/test_power_draw.py"],
           ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
           ["test pigeond", "pytest system/sensord/tests/test_pigeond.py"],
           ["test manager", "pytest selfdrive/manager/test/test_manager.py"],
         ])
       },
       'loopback': {
-        deviceStage("tici", "tici-loopback", ["UNSAFE=1"], [
+        deviceStage("loopback", "tici-loopback", ["UNSAFE=1"], [
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["test boardd loopback", "pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
         ])
@@ -239,7 +243,7 @@ node {
         ])
       },
       'replay': {
-        deviceStage("tici", "tici-replay", ["UNSAFE=1"], [
+        deviceStage("model-replay", "tici-replay", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
           ["model replay", "selfdrive/test/process_replay/model_replay.py"],
         ])
@@ -253,24 +257,6 @@ node {
           ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
           ["test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py", ["system/qcomgpsd/"]],
         ])
-      },
-
-      // *** PC tests ***
-      'PC tests': {
-        pcStage("PC tests") {
-          // tests that our build system's dependencies are configured properly,
-          // needs a machine with lots of cores
-          sh label: "test multi-threaded build",
-             script: '''#!/bin/bash
-                        scons --no-cache --random -j$(nproc)'''
-        }
-      },
-      'car tests': {
-        pcStage("car tests") {
-          sh label: "build", script: "selfdrive/manager/build.py"
-          sh label: "run car tests", script: "cd selfdrive/car/tests && MAX_EXAMPLES=100 INTERNAL_SEG_CNT=250 FILEREADER_CACHE=1 \
-              INTERNAL_SEG_LIST=selfdrive/car/tests/test_models_segs.txt pytest test_models.py test_car_interfaces.py"
-        }
       },
 
     )

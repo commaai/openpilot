@@ -1,14 +1,19 @@
-Version 0.9.6 (20XX-XX-XX)
+Version 0.9.6 (2024-02-XX)
 ========================
 * New driving model
   * Vision model trained on more data
   * Improved driving performance
+  * Directly outputs curvature for lateral control
+* New driver monitoring model
+  * Trained on larger dataset
 * AGNOS 9
 * comma body streaming and controls over WebRTC
+* Improved fuzzy fingerprinting for many makes and models
 * Hyundai Staria 2023 support thanks to sunnyhaibin!
 * Kia Niro Plug-in Hybrid 2022 support thanks to sunnyhaibin!
-* Toyota RAV4 2023 support
-* Toyota RAV4 Hybrid 2023 support
+* Lexus LC 2024 support thanks to nelsonjchen!
+* Toyota RAV4 2023-24 support
+* Toyota RAV4 Hybrid 2023-24 support
 
 Version 0.9.5 (2023-11-17)
 ========================
