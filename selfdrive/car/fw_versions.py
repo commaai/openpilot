@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List, Optional, Set
+from typing import Any, DefaultDict, Dict, List, Optional, Set, Iterator, Iterable, TypeVar, Sized, Sequence
 from tqdm import tqdm
 import capnp
 
@@ -24,8 +24,10 @@ VERSIONS = get_interface_attr('FW_VERSIONS', ignore_none=True)
 MODEL_TO_BRAND = {c: b for b, e in VERSIONS.items() for c in e}
 REQUESTS = [(brand, config, r) for brand, config in FW_QUERY_CONFIGS.items() for r in config.requests]
 
+T = TypeVar('T')
 
-def chunks(l, n=128):
+
+def chunks(l: Sequence[T], n: int = 128) -> Iterator[Sequence[T]]:
   for i in range(0, len(l), n):
     yield l[i:i + n]
 
@@ -264,7 +266,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
   # Extract ECU addresses to query from fingerprints
   # ECUs using a subaddress need be queried one by one, the rest can be done in parallel
-  addrs = []
+  addrs: list[list[tuple[str, int, int | None]]] = []
   parallel_addrs = []
   ecu_types = {}
 
