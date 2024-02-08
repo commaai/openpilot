@@ -52,7 +52,8 @@ def write_onroad_params(started, params):
 def save_bootlog():
   # copy current params
   tmp = tempfile.mkdtemp()
-  shutil.copytree(Params().get_param_path() + "/..", tmp, dirs_exist_ok=True)
+  params_dir = os.path.join(tmp, "d")
+  shutil.copytree(Params().get_param_path(), params_dir, dirs_exist_ok=True)
 
   def fn(tmpdir):
     env = os.environ.copy()
