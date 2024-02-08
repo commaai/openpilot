@@ -22,19 +22,23 @@ MAX_WARMUP_TIME = 30  # seconds to wait for SAMPLE_TIME consecutive valid sample
 
 @dataclass
 class Proc:
-  name: str
+  procs: List[str]
   power: float
   msgs: List[str]
   rtol: float = 0.05
   atol: float = 0.12
 
+  @property
+  def name(self):
+    return '+'.join(self.procs)
+
+
 PROCS = [
-  Proc('camerad', 2.1, msgs=['roadCameraState', 'wideRoadCameraState', 'driverCameraState']),
-  Proc('modeld', 1.12, atol=0.2, msgs=['modelV2']),
-  Proc('dmonitoringmodeld', 0.4, msgs=['driverStateV2']),
-  Proc('encoderd', 0.23, msgs=[]),
-  Proc('mapsd', 0.05, msgs=['mapRenderState']),
-  Proc('navmodeld', 0.05, msgs=['navModel']),
+  Proc(['camerad'], 2.1, msgs=['roadCameraState', 'wideRoadCameraState', 'driverCameraState']),
+  Proc(['modeld'], 1.12, atol=0.2, msgs=['modelV2']),
+  Proc(['dmonitoringmodeld'], 0.4, msgs=['driverStateV2']),
+  Proc(['encoderd'], 0.23, msgs=[]),
+  Proc(['mapsd', 'navmodeld'], 0.05, msgs=['mapRenderState', 'navModel']),
 ]
 
 
@@ -105,7 +109,8 @@ class TestPowerDraw(unittest.TestCase):
     msg_counts = {}
 
     for proc in PROCS:
-      managed_processes[proc.name].start()
+      for p in proc.procs:
+        managed_processes[p].start()
       now, local_msg_counts, warmup_time[proc.name] = self.get_power_with_warmup_for_target(proc, prev)
       msg_counts.update(local_msg_counts)
 
