@@ -137,6 +137,7 @@ class TestLogReader(unittest.TestCase):
     lr = LogReader(f"{TEST_ROUTE}/0:4")
     self.assertEqual(len(lr.run_across_segments(4, noop)), len(list(lr)))
 
+  @pytest.mark.slow
   def test_auto_mode(self):
     lr = LogReader(f"{TEST_ROUTE}/0/q")
     qlog_len = len(list(lr))
