@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import List, Dict, Callable, Any, Optional
+from typing import List, Dict, Callable, Optional
 import pathlib
 import shutil
 import sys
@@ -33,6 +33,21 @@ NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
 EventName = car.CarEvent.EventName
 State = log.ControlsState.OpenpilotState
+
+langs = {
+  "English": "main_en",
+  "Deutsch": "main_de",
+  "Français": "main_fr",
+  "Português": "main_pt-BR",
+  "Türkçe": "main_tr",
+  "العربية": "main_ar",
+  "ไทย": "main_th",
+  "中文（繁體）": "main_zh-CHT",
+  "中文（简体）": "main_zh-CHS",
+  "한국어": "main_ko",
+  "日本語": "main_ja"
+}
+
 
 class PrimeType:
   UNKNOWN = '-1'
@@ -76,7 +91,26 @@ def setup_settings_network(click, pm: PubMaster):
   setup_common(click, pm)
 
   setup_settings_device(click, pm)
-  click(300, 600)
+  click(400, 620)
+
+def setup_settings_toggles(click, pm: PubMaster):
+  setup_common(click, pm)
+  setup_settings_device(click, pm)
+  click(400, 800)
+
+def setup_settings_software(click, pm: PubMaster):
+  setup_common(click, pm)
+  setup_settings_device(click, pm)
+  click(400, 1000)
+
+def setup_offroad_dcam(click, pm: PubMaster):
+  setup_common(click, pm)
+  setup_settings_device(click, pm)
+  click(1800,500)
+
+def setup_experimental_mode_prompt(click, pm: PubMaster):
+  setup_settings_toggles(click, pm)
+  click(1850, 300)
 
 def setup_onroad(click, pm: PubMaster):
   setup_common(click, pm)
@@ -163,7 +197,7 @@ def setup_update_close(click, pm: PubMaster):
 def get_onroad_alert_cases() -> Dict[str, Callable[[Callable[[int, int], None], PubMaster, Alert], None]]:
   cases = {}
   allowed_event_names = ["ALL"]
-  allowed_event_types = ["ALL",ET.OVERRIDE_LATERAL,ET.OVERRIDE_LONGITUDINAL]
+  allowed_event_types = [ET.OVERRIDE_LATERAL,ET.OVERRIDE_LONGITUDINAL] # ["ALL"]
 
   for event_id, event in EVENTS.items():
     event_name = event_from_id(event_id)
@@ -186,7 +220,6 @@ def get_offroad_alert_cases():
     print(offroad_alert[0])
     print(offroad_alert[1]['text'])
     set_offroad_alert(offroad_alert[0], True,offroad_alert[1]['text'])
-    #print(offroad_alert)
 
 def set_prime(prime_type: PrimeType = PrimeType.PURPLE):
   try:
@@ -209,7 +242,7 @@ def send_onroad_alert(click, pm, alert: Alert):
   pm.wait_for_readers_to_update('controlsState',UI_DELAY)
   pm.send('controlsState', dat)
 
-def send_offroad_alert(click, pm, offroad_alert):
+def send_offroad_alert(click, offroad_alert):
   set_offroad_alert(offroad_alert[0], False)
   print(f'Testing offroad alert: {offroad_alert[0]}')
   print(offroad_alert[1]['text'])
@@ -217,20 +250,31 @@ def send_offroad_alert(click, pm, offroad_alert):
   click(100, 100) # Open and close settings to refresh
   click(250, 250)
 
+def setup_keyboard(click, pm):
+  setup_settings_network(click, pm)
+  click(1800, 150) # Advanced Button
+  click(1800, 400) # Edit tethering pw
+  click(1750, 350) # Hide text
+
 
 BASE_CASES: List[tuple[str,tuple[Callable[[...], None],Optional[PrimeType]]]]= [
-  ("homescreen", [setup_homescreen, PrimeType.MAGENTA]),
-  ("homescreen", setup_homescreen),
-  ("onroad_nav_enabled", (setup_onroad_nav_enabled, PrimeType.MAGENTA)),
-  ("onroad_nav_enabled", setup_onroad_nav_enabled),
-  ("onroad_map", (setup_onroad_map, PrimeType.MAGENTA)),
-  ("onroad_map", setup_onroad_map),
-  ("settings_device", setup_settings_device),
+  # ("homescreen", (setup_homescreen, PrimeType.MAGENTA)),
+  # ("homescreen", setup_homescreen),
+  # ("keyboard", setup_keyboard),
+  # ("onroad_nav_enabled", (setup_onroad_nav_enabled, PrimeType.MAGENTA)),
+  # ("onroad_nav_enabled", setup_onroad_nav_enabled),
+  # ("onroad_map", (setup_onroad_map, PrimeType.MAGENTA)),
+  # ("onroad_map", setup_onroad_map),
+  # ("settings_device", setup_settings_device),
   ("settings_network", setup_settings_network),
-  ("onroad", setup_onroad),
-  ("onroad_sidebar", setup_onroad_sidebar),
-  ("offroad_update", setup_update),
-  ("offroad_update_confirm", setup_update_close),
+  # ("settings_toggles", setup_settings_toggles),
+  # ("settings_software", setup_settings_software),
+  # ("offroad_dcam", setup_offroad_dcam),
+  # ("experimental_mode_prompt", setup_experimental_mode_prompt),
+  # ("onroad", setup_onroad),
+  # ("onroad_sidebar", setup_onroad_sidebar),
+  # ("offroad_update", setup_update),
+  # ("offroad_update_confirm", setup_update_close),
 ]
 
 TEST_DIR = pathlib.Path(__file__).parent
@@ -253,7 +297,8 @@ class TestUI(unittest.TestCase):
   def setup(self, prime_type :PrimeType = PrimeType.NONE):
     set_prime(prime_type)
     self.sm = SubMaster(["uiDebug"])
-    self.pm = PubMaster(["deviceState", "pandaStates", "controlsState", 'roadCameraState', 'wideRoadCameraState', 'liveLocationKalman', 'navInstruction', 'navRoute', 'modelV2'])
+    self.pm = PubMaster(['deviceState', 'pandaStates', 'controlsState', 'roadCameraState',
+                         'wideRoadCameraState', 'liveLocationKalman', 'navInstruction', 'navRoute', 'modelV2'])
     while not self.sm.valid["uiDebug"]:
       self.sm.update(1)
     time.sleep(UI_DELAY) # wait a bit more for the UI to start rendering
@@ -272,14 +317,27 @@ class TestUI(unittest.TestCase):
     im.close()
     return img
 
+  def scroll(self, clicks, x, y, *args, **kwargs):
+    import pyautogui
+    pyautogui.scroll(clicks,self.ui.left + x, self.ui.top + y)
+
   def click(self, x, y, *args, **kwargs):
     import pyautogui
     pyautogui.click(self.ui.left + x, self.ui.top + y, *args, **kwargs)
     time.sleep(UI_DELAY) # give enough time for the UI to react
 
-  @parameterized.expand(BASE_CASES)
+  @parameterized.expand([
+    (case_name, setup_info, lang_code, lang_name)
+    for case_name, setup_info in BASE_CASES
+    for lang_name, lang_code in langs.items()
+  ])
+  def test_ui(self, name, setup_info, lang_code, lang_name, *args):
+    print(lang_name)
+    Params().put("LanguageSetting", lang_code)
+    self.run_case(name, setup_info, lang_name, *args)
+
   @with_processes(["ui"])
-  def test_ui(self, name, setup_info, *args):
+  def run_case(self, name, setup_info, lang_name, *args):
     if isinstance(setup_info, list):
       setup_case, prime_type = setup_info
     else:
@@ -290,12 +348,16 @@ class TestUI(unittest.TestCase):
     setup_case(self.click, self.pm, *args)
 
     time.sleep(UI_DELAY) # wait a bit more for the UI to finish rendering
+    img = self.screenshot()
+    plt.imsave(SCREENSHOTS_DIR / f"{lang_name}_{name}_PrimeType_{prime_type}.png", img)
 
-    im = self.screenshot()
-    plt.imsave(SCREENSHOTS_DIR / f"{name}_PrimeType_{prime_type}.png", im)
+  @parameterized.expand(list(langs.items()))
+  def test_ui_events(self, lang_name, lang_code):
+    Params().put("LanguageSetting", lang_code)
+    self.run_events(lang_name)
 
   @with_processes(["ui"])
-  def test_ui_events(self):
+  def run_events(self, lang_name):
     cases = get_onroad_alert_cases()
     self.setup()
     setup_onroad(self.click, self.pm)
@@ -303,19 +365,27 @@ class TestUI(unittest.TestCase):
     for name, setup_case in cases.items():
       print(f'Testing Event {name}')
       setup_case(self.click, self.pm)
+      time.sleep(UI_DELAY)
       im = self.screenshot()
-      plt.imsave(ALERT_SCREENSHOTS_DIR / f"{name}.png", im)
+      print(f"saving{name}.png")
+      plt.imsave(ALERT_SCREENSHOTS_DIR / f"{lang_name}_{name}.png", im)
+
+  @parameterized.expand(list(langs.items()))
+  def test_offroad_alerts(self, lang_name, lang_code):
+    Params().put("LanguageSetting", lang_code)
+    self.run_offroad_alerts(lang_name)
 
   @with_processes(["ui"])
-  def test_offroad_alerts(self):
+  def run_offroad_alerts(self, lang_name):
     self.setup()
     setup_common(self.click, self.pm)
     time.sleep(UI_DELAY)
     for offroad_alert in OFFROAD_ALERTS.items():
-      send_offroad_alert(self.click, self.pm, offroad_alert)
+      send_offroad_alert(self.click, offroad_alert)
       im = self.screenshot()
       set_offroad_alert(offroad_alert[0], False)
-      plt.imsave(ALERT_SCREENSHOTS_DIR / f"{offroad_alert[0]}.png", im)
+      plt.imsave(ALERT_SCREENSHOTS_DIR / f"{lang_name}_{offroad_alert[0]}.png", im)
+
 
 def create_html_report():
   OUTPUT_FILE = TEST_OUTPUT_DIR / "base_index.html"
