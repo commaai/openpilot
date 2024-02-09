@@ -144,7 +144,7 @@ class TestLogReader(unittest.TestCase):
     with mock.patch("openpilot.tools.lib.route.Route.log_paths") as log_paths_mock:
       log_paths_mock.return_value = [None] * NUM_SEGS
       # Should fall back to qlogs since rlogs are not available
-      lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO, default_source=comma_api_source)
+      lr = LogReader(f"{TEST_ROUTE}/0/a", default_source=comma_api_source)
       log_len = len(list(lr))
 
     self.assertEqual(qlog_len, log_len)
