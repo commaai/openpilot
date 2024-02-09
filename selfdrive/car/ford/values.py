@@ -4,10 +4,11 @@ from enum import Enum, StrEnum
 from typing import Dict, List, Union
 
 from cereal import car
+from panda.python import uds
 from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
                                                      Device
-from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, p16, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
 
@@ -107,6 +108,8 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   ],
 }
 
+FORD_ASBUILT_DID = 0xDE00
+
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     # CAN and CAN FD queries are combined.
@@ -114,13 +117,24 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.abs, Ecu.eps, Ecu.engine, Ecu.fwdCamera, Ecu.fwdRadar, Ecu.shiftByWire],
       bus=0,
       auxiliary=True,
     ),
+    Request(
+      [bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + p16(FORD_ASBUILT_DID + 0x03)],
+      [bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + p16(FORD_ASBUILT_DID + 0x03)],
+      whitelist_ecus=[Ecu.combinationMeter],
+      bus=0,
+      auxiliary=True,
+      logging=True,
+    ),
   ],
   extra_ecus=[
-    # We are unlikely to get a response from the PCM from behind the gateway
-    (Ecu.engine, 0x7e0, None),
-    (Ecu.shiftByWire, 0x732, None),
+    (Ecu.engine, 0x7e0, None),            # Powertrain Control Module (PCM)
+                                          # Note: We are unlikely to get a response from the PCM
+                                          # from behind the gateway.
+    (Ecu.combinationMeter, 0x720, None),  # Instrument Panel Cluster (IPC)
+    (Ecu.shiftByWire, 0x732, None),       # Gear Shift Module (GSM)
   ],
 )
