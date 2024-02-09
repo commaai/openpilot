@@ -1207,6 +1207,7 @@ FW_VERSIONS = {
       b'39990-T6Z-A020\x00\x00',
       b'39990-T6Z-A030\x00\x00',
       b'39990-T6Z-A050\x00\x00',
+      b'39990-T6Z-A110\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36161-T6Z-A020\x00\x00',
@@ -1214,6 +1215,7 @@ FW_VERSIONS = {
       b'36161-T6Z-A420\x00\x00',
       b'36161-T6Z-A520\x00\x00',
       b'36161-T6Z-A620\x00\x00',
+      b'36161-T6Z-A720\x00\x00',
       b'36161-TJZ-A120\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
@@ -1221,6 +1223,7 @@ FW_VERSIONS = {
       b'38897-T6Z-A110\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
+      b'78108-T6Z-AF10\x00\x00',
       b'78109-T6Z-A420\x00\x00',
       b'78109-T6Z-A510\x00\x00',
       b'78109-T6Z-A710\x00\x00',
@@ -1238,6 +1241,7 @@ FW_VERSIONS = {
       b'57114-T6Z-A120\x00\x00',
       b'57114-T6Z-A130\x00\x00',
       b'57114-T6Z-A520\x00\x00',
+      b'57114-T6Z-A610\x00\x00',
       b'57114-TJZ-A520\x00\x00',
     ],
   },
