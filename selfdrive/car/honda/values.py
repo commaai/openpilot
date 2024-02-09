@@ -198,6 +198,16 @@ FW_QUERY_CONFIG = FwQueryConfig(
       obd_multiplexing=False,
     ),
   ],
+  # We lose these ECUs on these cars without OBD access w/ comma power
+  # Note that we still attempt to match when they are present
+  non_essential_ecus={
+    Ecu.programmedFuelInjection: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.transmission: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.vsa: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.combinationMeter: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.gateway: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.electricBrakeBooster: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
+  },
   extra_ecus=[
     # The only other ECU on PT bus accessible by camera on radarless Civic
     (Ecu.unknown, 0x18DAB3F1, None),
