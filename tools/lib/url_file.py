@@ -25,7 +25,7 @@ class URLFileException(Exception):
 
 def new_pool_manager() -> PoolManager:
   socket_options = [(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),]
-  retries = Retry(total=5, backoff_factor=0.5, status_forcelist=[409, 429, 503, 504])
+  retries = Retry(connect=0, total=5, backoff_factor=0.5, status_forcelist=[409, 429, 503, 504])
   return PoolManager(num_pools=10, maxsize=100, socket_options=socket_options, retries=retries)
 
 
