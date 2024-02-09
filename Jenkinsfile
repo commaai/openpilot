@@ -154,11 +154,11 @@ node {
                          'testing-closet*', 'hotfix-*']
   def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
 
-  // if (env.BRANCH_NAME != 'master') {
-  //   properties([
-  //       disableConcurrentBuilds(abortPrevious: true)
-  //   ])
-  // }
+  if (env.BRANCH_NAME != 'master') {
+    properties([
+        disableConcurrentBuilds(abortPrevious: true)
+    ])
+  }
 
   try {
     if (env.BRANCH_NAME == 'devel-staging') {
