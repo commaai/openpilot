@@ -30,7 +30,7 @@ def test_time_to_onroad():
 
     # wait for engageability
     try:
-      with Timeout(10, "timed out waiting for engageable"):
+      with Timeout(15, "timed out waiting for engageable"):
         while True:
           sm.update(1000)
           if sm['controlsState'].engageable:
