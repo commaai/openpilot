@@ -44,7 +44,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
 
 CARS = {
   CAR.BODY: CarData(
-    dbc_dict('comma_body', None),
+    dbc=dbc_dict('comma_body', None),
   )
 }
 
