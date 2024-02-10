@@ -43,7 +43,7 @@ def dmonitoringd_thread():
     # Get data from dmonitoringmodeld
     events = Events()
 
-    if sm.all_checks():
+    if sm.all_checks() and len(sm['liveCalibration'].rpyCalib):
       driver_status.update_states(sm['driverStateV2'], sm['liveCalibration'].rpyCalib, sm['carState'].vEgo, sm['controlsState'].enabled)
 
     # Block engaging after max number of distrations
