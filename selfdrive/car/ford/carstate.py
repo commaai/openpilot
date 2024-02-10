@@ -37,7 +37,7 @@ class CarState(CarStateBase):
     # car speed
     ret.vEgoRaw = cp.vl["BrakeSysFeatures"]["Veh_V_ActlBrk"] * CV.KPH_TO_MS
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.vEgoCluster = 1.035 * ret.vEgo + CV.KPH_TO_MS
+    ret.vEgoCluster = 1.035 * cp.vl["EngVehicleSpThrottle2"]["Veh_V_ActlEng"] + CV.KPH_TO_MS
     ret.yawRate = cp.vl["Yaw_Data_FD1"]["VehYaw_W_Actl"]
     ret.standstill = cp.vl["DesiredTorqBrk"]["VehStop_D_Stat"] == 1
 
@@ -121,6 +121,7 @@ class CarState(CarStateBase):
       ("Yaw_Data_FD1", 100),
       ("DesiredTorqBrk", 50),
       ("EngVehicleSpThrottle", 100),
+      ("EngVehicleSpThrottle2", 50),
       ("BrakeSnData_4", 50),
       ("EngBrakeData", 10),
       ("Cluster_Info1_FD1", 10),
