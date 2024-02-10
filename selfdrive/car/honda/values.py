@@ -198,7 +198,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       obd_multiplexing=False,
     ),
   ],
-  # We lose these ECUs on these cars without OBD access w/ comma power
+  # We lose these ECUs without the comma power on these cars.
   # Note that we still attempt to match with them when they are present
   non_essential_ecus={
     Ecu.programmedFuelInjection: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
