@@ -50,8 +50,8 @@ def with_processes(processes: Processes, init_time=0, ignore_stopped=None):
     @wraps(func)
     def wrap(*args, **kwargs):
       # start and assert started
-      for n, p in enumerate(processes):
-        managed_processes[p].start()
+      for name, process in enumerate(processes):
+        managed_processes[name].start()
         if n < len(processes) - 1:
           time.sleep(init_time)
       assert all(managed_processes[name].proc.exitcode is None for name in processes)
