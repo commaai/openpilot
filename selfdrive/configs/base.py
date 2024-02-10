@@ -13,11 +13,9 @@ Environment = Dict[str, str]
 
 # services required for driving
 CORE_SERVICES: Processes = {
-  LOGCAT,
-  PROCLOG,
-
   MODELD,
   NAVMODELD,
+  MAPSD,
 
   LOCATIOND,
   CALIBRATIOND,
@@ -32,6 +30,8 @@ CORE_SERVICES: Processes = {
 }
 
 LOGGING_SERVICES: Processes = {
+  LOGCAT,
+  PROCLOG,
   LOGGERD,
   LOGMESSAGED,
   ENCODERD,
