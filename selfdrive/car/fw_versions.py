@@ -47,7 +47,7 @@ def build_fw_dict(fw_versions: List[capnp.lib.capnp._DynamicStructBuilder],
   return dict(fw_versions_dict)
 
 
-def match_fw_to_car_fuzzy(live_fw_versions, match_brand=None, log=True, exclude=None, only_non_obd_ecus=False):
+def match_fw_to_car_fuzzy(live_fw_versions, match_brand=None, log=True, exclude=None):
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
   the match is rejected."""
@@ -62,10 +62,6 @@ def match_fw_to_car_fuzzy(live_fw_versions, match_brand=None, log=True, exclude=
       continue
 
     for addr, fws in fw_by_addr.items():
-      # if only_non_obd_ecus:
-      #   if candidate in ('HONDA CIVIC (BOSCH) 2019', 'HONDA CR-V 2017') and addr[0] not in [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.srs]:
-      #     continue
-
       # These ECUs are known to be shared between models (EPS only between hybrid/ICE version)
       # Getting this exactly right isn't crucial, but excluding camera and radar makes it almost
       # impossible to get 3 matching versions, even if two models with shared parts are released at the same
@@ -101,7 +97,7 @@ def match_fw_to_car_fuzzy(live_fw_versions, match_brand=None, log=True, exclude=
     return set()
 
 
-def match_fw_to_car_exact(live_fw_versions, match_brand=None, log=True, extra_fw_versions=None, only_non_obd_ecus=False) -> Set[str]:
+def match_fw_to_car_exact(live_fw_versions, match_brand=None, log=True, extra_fw_versions=None) -> Set[str]:
   """Do an exact FW match. Returns all cars that match the given
   FW versions for a list of "essential" ECUs. If an ECU is not considered
   essential the FW version can be missing to get a fingerprint, but if it's present it
@@ -116,10 +112,6 @@ def match_fw_to_car_exact(live_fw_versions, match_brand=None, log=True, extra_fw
   for candidate, fws in candidates.items():
     config = FW_QUERY_CONFIGS[MODEL_TO_BRAND[candidate]]
     for ecu, expected_versions in fws.items():
-      # if only_non_obd_ecus:
-      #   if candidate in ('HONDA CIVIC (BOSCH) 2019', 'HONDA CR-V 2017') and ecu[0] not in [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.srs]:
-      #     continue
-
       expected_versions = expected_versions + extra_fw_versions.get(candidate, {}).get(ecu, [])
       ecu_type = ecu[0]
       addr = ecu[1:]
@@ -128,10 +120,7 @@ def match_fw_to_car_exact(live_fw_versions, match_brand=None, log=True, extra_fw
       if not len(found_versions):
         # Some models can sometimes miss an ecu, or show on two different addresses
         # FIXME: this logic can be improved to be more specific, should require one of the two addresses
-        non_essential_ecus = config.non_essential_ecus.get(ecu_type, [])
-        if only_non_obd_ecus:
-          non_essential_ecus = []
-        if candidate in non_essential_ecus:
+        if candidate in config.non_essential_ecus.get(ecu_type, []):
           continue
 
         # Ignore non essential ecus
@@ -149,7 +138,7 @@ def match_fw_to_car_exact(live_fw_versions, match_brand=None, log=True, extra_fw
   return set(candidates.keys()) - invalid
 
 
-def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True, log=True, only_non_obd_ecus=False):
+def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True, log=True):
   # Try exact matching first
   exact_matches = []
   if allow_exact:
@@ -162,7 +151,7 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True, log=True, o
     matches = set()
     for brand in VERSIONS.keys():
       fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
-      matches |= match_func(fw_versions_dict, match_brand=brand, log=log, only_non_obd_ecus=only_non_obd_ecus)
+      matches |= match_func(fw_versions_dict, match_brand=brand, log=log)
 
       # If specified and no matches so far, fall back to brand's fuzzy fingerprinting function
       config = FW_QUERY_CONFIGS[brand]
