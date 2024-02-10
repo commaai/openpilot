@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Union
 
 from cereal import car
 from panda.python import uds
-from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
+from openpilot.selfdrive.car import AngleRateLimit, CarData, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarInfo, CarHarness, CarParts
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
@@ -90,10 +90,22 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ]],
 )
 
-DBC = {
-  CAR.XTRAIL: dbc_dict('nissan_x_trail_2017_generated', None),
-  CAR.LEAF: dbc_dict('nissan_leaf_2018_generated', None),
-  CAR.LEAF_IC: dbc_dict('nissan_leaf_2018_generated', None),
-  CAR.ROGUE: dbc_dict('nissan_x_trail_2017_generated', None),
-  CAR.ALTIMA: dbc_dict('nissan_x_trail_2017_generated', None),
+CARS = {
+  CAR.XTRAIL: CarData(
+    dbc_dict('nissan_x_trail_2017_generated', None),
+  ),
+  CAR.LEAF: CarData(
+    dbc_dict('nissan_leaf_2018_generated', None),
+  ),
+  CAR.LEAF_IC: CarData(
+    dbc_dict('nissan_leaf_2018_generated', None),
+  ),
+  CAR.ROGUE: CarData(
+    dbc_dict('nissan_x_trail_2017_generated', None),
+  ),
+  CAR.ALTIMA: CarData(
+    dbc_dict('nissan_x_trail_2017_generated', None),
+  ),
 }
+
+DBC = {c: CARS[c].dbc for c in CARS}

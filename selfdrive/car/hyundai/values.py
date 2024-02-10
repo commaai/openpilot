@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Set, Tuple, Union
 from cereal import car
 from panda.python import uds
 from openpilot.common.conversions import Conversions as CV
-from openpilot.selfdrive.car import dbc_dict
+from openpilot.selfdrive.car import CarData, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
@@ -567,70 +567,202 @@ UNSUPPORTED_LONGITUDINAL_CAR = LEGACY_SAFETY_MODE_CAR | {CAR.KIA_NIRO_PHEV, CAR.
 
 # If 0x500 is present on bus 1 it probably has a Mando radar outputting radar points.
 # If no points are outputted by default it might be possible to turn it on using  selfdrive/debug/hyundai_enable_radar_points.py
-DBC = {
-  CAR.AZERA_6TH_GEN: dbc_dict('hyundai_kia_generic', None),
-  CAR.AZERA_HEV_6TH_GEN: dbc_dict('hyundai_kia_generic', None),
-  CAR.ELANTRA: dbc_dict('hyundai_kia_generic', None),
-  CAR.ELANTRA_GT_I30: dbc_dict('hyundai_kia_generic', None),
-  CAR.ELANTRA_2021: dbc_dict('hyundai_kia_generic', None),
-  CAR.ELANTRA_HEV_2021: dbc_dict('hyundai_kia_generic', None),
-  CAR.GENESIS_G70: dbc_dict('hyundai_kia_generic', None),
-  CAR.GENESIS_G70_2020: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
-  CAR.GENESIS_G80: dbc_dict('hyundai_kia_generic', None),
-  CAR.GENESIS_G90: dbc_dict('hyundai_kia_generic', None),
-  CAR.HYUNDAI_GENESIS: dbc_dict('hyundai_kia_generic', None),
-  CAR.IONIQ_PHEV_2019: dbc_dict('hyundai_kia_generic', None),
-  CAR.IONIQ_PHEV: dbc_dict('hyundai_kia_generic', None),
-  CAR.IONIQ_EV_2020: dbc_dict('hyundai_kia_generic', None),
-  CAR.IONIQ_EV_LTD: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
-  CAR.IONIQ: dbc_dict('hyundai_kia_generic', None),
-  CAR.IONIQ_HEV_2022: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_FORTE: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_K5_2021: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_K5_HEV_2020: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
-  CAR.KIA_NIRO_EV: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
-  CAR.KIA_NIRO_PHEV: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
-  CAR.KIA_NIRO_HEV_2021: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_OPTIMA_G4: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_OPTIMA_G4_FL: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_OPTIMA_H: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_OPTIMA_H_G4_FL: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_SELTOS: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_SORENTO: dbc_dict('hyundai_kia_generic', None), # Has 0x5XX messages, but different format
-  CAR.KIA_STINGER: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_STINGER_2022: dbc_dict('hyundai_kia_generic', None),
-  CAR.KONA: dbc_dict('hyundai_kia_generic', None),
-  CAR.KONA_EV: dbc_dict('hyundai_kia_generic', None),
-  CAR.KONA_EV_2022: dbc_dict('hyundai_kia_generic', None),
-  CAR.KONA_HEV: dbc_dict('hyundai_kia_generic', None),
-  CAR.SANTA_FE: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
-  CAR.SANTA_FE_2022: dbc_dict('hyundai_kia_generic', None),
-  CAR.SANTA_FE_HEV_2022: dbc_dict('hyundai_kia_generic', None),
-  CAR.SANTA_FE_PHEV_2022: dbc_dict('hyundai_kia_generic', None),
-  CAR.SONATA: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
-  CAR.SONATA_LF: dbc_dict('hyundai_kia_generic', None), # Has 0x5XX messages, but different format
-  CAR.TUCSON: dbc_dict('hyundai_kia_generic', None),
-  CAR.PALISADE: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
-  CAR.VELOSTER: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_CEED: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_EV6: dbc_dict('hyundai_canfd', None),
-  CAR.SONATA_HYBRID: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
-  CAR.TUCSON_4TH_GEN: dbc_dict('hyundai_canfd', None),
-  CAR.IONIQ_5: dbc_dict('hyundai_canfd', None),
-  CAR.IONIQ_6: dbc_dict('hyundai_canfd', None),
-  CAR.SANTA_CRUZ_1ST_GEN: dbc_dict('hyundai_canfd', None),
-  CAR.KIA_SPORTAGE_5TH_GEN: dbc_dict('hyundai_canfd', None),
-  CAR.GENESIS_GV70_1ST_GEN: dbc_dict('hyundai_canfd', None),
-  CAR.GENESIS_GV60_EV_1ST_GEN: dbc_dict('hyundai_canfd', None),
-  CAR.KIA_SORENTO_4TH_GEN: dbc_dict('hyundai_canfd', None),
-  CAR.KIA_NIRO_HEV_2ND_GEN: dbc_dict('hyundai_canfd', None),
-  CAR.KIA_NIRO_EV_2ND_GEN: dbc_dict('hyundai_canfd', None),
-  CAR.GENESIS_GV80: dbc_dict('hyundai_canfd', None),
-  CAR.KIA_CARNIVAL_4TH_GEN: dbc_dict('hyundai_canfd', None),
-  CAR.KIA_SORENTO_HEV_4TH_GEN: dbc_dict('hyundai_canfd', None),
-  CAR.KONA_EV_2ND_GEN: dbc_dict('hyundai_canfd', None),
-  CAR.KIA_K8_HEV_1ST_GEN: dbc_dict('hyundai_canfd', None),
-  CAR.CUSTIN_1ST_GEN: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_NIRO_PHEV_2022: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
-  CAR.STARIA_4TH_GEN: dbc_dict('hyundai_canfd', None),
+CARS = {
+  CAR.AZERA_6TH_GEN: CarData(
+    dbc_dict('hyundai_kia_generic', None),
+  ),
+  CAR.AZERA_HEV_6TH_GEN: CarData(
+    dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.ELANTRA: CarData(
+    dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.ELANTRA_GT_I30: CarData(
+    dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.ELANTRA_2021: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.ELANTRA_HEV_2021: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.GENESIS_G70: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.GENESIS_G70_2020: CarData(
+   dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated')
+  ),
+  CAR.GENESIS_G80: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.GENESIS_G90: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.HYUNDAI_GENESIS: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.IONIQ_PHEV_2019: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.IONIQ_PHEV: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.IONIQ_EV_2020: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.IONIQ_EV_LTD: CarData(
+   dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated')
+  ),
+  CAR.IONIQ: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.IONIQ_HEV_2022: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.KIA_FORTE: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.KIA_K5_2021: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.KIA_K5_HEV_2020: CarData(
+   dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated')
+  ),
+  CAR.KIA_NIRO_EV: CarData(
+   dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated')
+  ),
+  CAR.KIA_NIRO_PHEV: CarData(
+   dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated')
+  ),
+  CAR.KIA_NIRO_HEV_2021: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.KIA_OPTIMA_G4: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.KIA_OPTIMA_G4_FL: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.KIA_OPTIMA_H: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.KIA_OPTIMA_H_G4_FL: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.KIA_SELTOS: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.KIA_SORENTO: CarData(
+   dbc_dict('hyundai_kia_generic', None), # Has 0x5XX messages, but different format
+  ),
+  CAR.KIA_STINGER: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.KIA_STINGER_2022: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.KONA: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.KONA_EV: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.KONA_EV_2022: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.KONA_HEV: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.SANTA_FE: CarData(
+   dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated')
+  ),
+  CAR.SANTA_FE_2022: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.SANTA_FE_HEV_2022: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.SANTA_FE_PHEV_2022: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.SONATA: CarData(
+   dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated')
+  ),
+  CAR.SONATA_LF: CarData(
+   dbc_dict('hyundai_kia_generic', None), # Has 0x5XX messages, but different format
+  ),
+  CAR.TUCSON: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.PALISADE: CarData(
+   dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated')
+  ),
+  CAR.VELOSTER: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.KIA_CEED: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.KIA_EV6: CarData(
+   dbc_dict('hyundai_canfd', None)
+  ),
+  CAR.SONATA_HYBRID: CarData(
+   dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated')
+  ),
+  CAR.TUCSON_4TH_GEN: CarData(
+   dbc_dict('hyundai_canfd', None)
+  ),
+  CAR.IONIQ_5: CarData(
+   dbc_dict('hyundai_canfd', None)
+  ),
+  CAR.IONIQ_6: CarData(
+   dbc_dict('hyundai_canfd', None)
+  ),
+  CAR.SANTA_CRUZ_1ST_GEN: CarData(
+   dbc_dict('hyundai_canfd', None)
+  ),
+  CAR.KIA_SPORTAGE_5TH_GEN: CarData(
+   dbc_dict('hyundai_canfd', None)
+  ),
+  CAR.GENESIS_GV70_1ST_GEN: CarData(
+   dbc_dict('hyundai_canfd', None)
+  ),
+  CAR.GENESIS_GV60_EV_1ST_GEN: CarData(
+   dbc_dict('hyundai_canfd', None)
+  ),
+  CAR.KIA_SORENTO_4TH_GEN: CarData(
+   dbc_dict('hyundai_canfd', None)
+  ),
+  CAR.KIA_NIRO_HEV_2ND_GEN: CarData(
+   dbc_dict('hyundai_canfd', None)
+  ),
+  CAR.KIA_NIRO_EV_2ND_GEN: CarData(
+   dbc_dict('hyundai_canfd', None)
+  ),
+  CAR.GENESIS_GV80: CarData(
+   dbc_dict('hyundai_canfd', None)
+  ),
+  CAR.KIA_CARNIVAL_4TH_GEN: CarData(
+   dbc_dict('hyundai_canfd', None)
+  ),
+  CAR.KIA_SORENTO_HEV_4TH_GEN: CarData(
+   dbc_dict('hyundai_canfd', None)
+  ),
+  CAR.KONA_EV_2ND_GEN: CarData(
+   dbc_dict('hyundai_canfd', None)
+  ),
+  CAR.KIA_K8_HEV_1ST_GEN: CarData(
+   dbc_dict('hyundai_canfd', None)
+  ),
+  CAR.CUSTIN_1ST_GEN: CarData(
+   dbc_dict('hyundai_kia_generic', None)
+  ),
+  CAR.KIA_NIRO_PHEV_2022: CarData(
+   dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated')
+  ),
+  CAR.STARIA_4TH_GEN: CarData(
+   dbc_dict('hyundai_canfd', None),
+  ),
 }
+
+DBC = {c: CARS[c].dbc for c in CARS}

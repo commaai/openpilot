@@ -1,10 +1,9 @@
-from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, StrEnum
 from typing import Dict, List, Union
 
 from cereal import car
-from openpilot.selfdrive.car import dbc_dict
+from openpilot.selfdrive.car import CarData, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
@@ -181,7 +180,54 @@ FW_QUERY_CONFIG = FwQueryConfig(
   extra_ecus=[(Ecu.fwdCamera, 0x24b, None)],
 )
 
-DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'))
+COMMON_DBC = dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis')
+
+CARS = {
+  CAR.HOLDEN_ASTRA: CarData(
+    COMMON_DBC,
+  ),
+  CAR.VOLT: CarData(
+    COMMON_DBC,
+  ),
+  CAR.CADILLAC_ATS: CarData(
+    COMMON_DBC,
+  ),
+  CAR.MALIBU: CarData(
+    COMMON_DBC,
+  ),
+  CAR.ACADIA: CarData(
+    COMMON_DBC,
+  ),
+  CAR.BUICK_LACROSSE: CarData(
+    COMMON_DBC,
+  ),
+  CAR.BUICK_REGAL: CarData(
+    COMMON_DBC,
+  ),
+  CAR.ESCALADE: CarData(
+    COMMON_DBC,
+  ),
+  CAR.ESCALADE_ESV: CarData(
+    COMMON_DBC,
+  ),
+  CAR.ESCALADE_ESV_2019: CarData(
+    COMMON_DBC,
+  ),
+  CAR.BOLT_EUV: CarData(
+    COMMON_DBC,
+  ),
+  CAR.SILVERADO: CarData(
+    COMMON_DBC,
+  ),
+  CAR.EQUINOX: CarData(
+    COMMON_DBC,
+  ),
+  CAR.TRAILBLAZER: CarData(
+    COMMON_DBC,
+  ),
+}
+
+DBC = {c: CARS[c].dbc for c in CARS}
 
 EV_CAR = {CAR.VOLT, CAR.BOLT_EUV}
 

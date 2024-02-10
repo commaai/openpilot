@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Union
 
 from cereal import car
 from panda.python import uds
-from openpilot.selfdrive.car import dbc_dict
+from openpilot.selfdrive.car import CarData, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
@@ -121,15 +121,36 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
 )
 
+COMMON_DBC = dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion')
 
-DBC = {
-  CAR.PACIFICA_2017_HYBRID: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
-  CAR.PACIFICA_2018: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
-  CAR.PACIFICA_2020: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
-  CAR.PACIFICA_2018_HYBRID: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
-  CAR.PACIFICA_2019_HYBRID: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
-  CAR.JEEP_GRAND_CHEROKEE: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
-  CAR.JEEP_GRAND_CHEROKEE_2019: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
-  CAR.RAM_1500: dbc_dict('chrysler_ram_dt_generated', None),
-  CAR.RAM_HD: dbc_dict('chrysler_ram_hd_generated', None),
+CARS = {
+  CAR.PACIFICA_2017_HYBRID: CarData(
+    COMMON_DBC,
+  ),
+  CAR.PACIFICA_2018: CarData(
+    COMMON_DBC,
+  ),
+  CAR.PACIFICA_2020: CarData(
+    COMMON_DBC,
+  ),
+  CAR.PACIFICA_2018_HYBRID: CarData(
+    COMMON_DBC,
+  ),
+  CAR.PACIFICA_2019_HYBRID: CarData(
+    COMMON_DBC,
+  ),
+  CAR.JEEP_GRAND_CHEROKEE: CarData(
+    COMMON_DBC,
+  ),
+  CAR.JEEP_GRAND_CHEROKEE_2019: CarData(
+    COMMON_DBC,
+  ),
+  CAR.RAM_1500: CarData(
+    dbc_dict('chrysler_ram_dt_generated', None),
+  ),
+  CAR.RAM_HD: CarData(
+    dbc_dict('chrysler_ram_hd_generated', None),
+  ),
 }
+
+DBC = {c: CARS[c].dbc for c in CARS}

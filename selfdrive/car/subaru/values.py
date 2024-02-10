@@ -4,7 +4,7 @@ from typing import Dict, List, Union
 
 from cereal import car
 from panda.python import uds
-from openpilot.selfdrive.car import dbc_dict
+from openpilot.selfdrive.car import CarData, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Tool, Column
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
@@ -186,20 +186,52 @@ FW_QUERY_CONFIG = FwQueryConfig(
   }
 )
 
-DBC = {
-  CAR.ASCENT: dbc_dict('subaru_global_2017_generated', None),
-  CAR.ASCENT_2023: dbc_dict('subaru_global_2017_generated', None),
-  CAR.IMPREZA: dbc_dict('subaru_global_2017_generated', None),
-  CAR.IMPREZA_2020: dbc_dict('subaru_global_2017_generated', None),
-  CAR.FORESTER: dbc_dict('subaru_global_2017_generated', None),
-  CAR.FORESTER_2022: dbc_dict('subaru_global_2017_generated', None),
-  CAR.OUTBACK: dbc_dict('subaru_global_2017_generated', None),
-  CAR.FORESTER_HYBRID: dbc_dict('subaru_global_2020_hybrid_generated', None),
-  CAR.CROSSTREK_HYBRID: dbc_dict('subaru_global_2020_hybrid_generated', None),
-  CAR.OUTBACK_2023: dbc_dict('subaru_global_2017_generated', None),
-  CAR.LEGACY: dbc_dict('subaru_global_2017_generated', None),
-  CAR.FORESTER_PREGLOBAL: dbc_dict('subaru_forester_2017_generated', None),
-  CAR.LEGACY_PREGLOBAL: dbc_dict('subaru_outback_2015_generated', None),
-  CAR.OUTBACK_PREGLOBAL: dbc_dict('subaru_outback_2015_generated', None),
-  CAR.OUTBACK_PREGLOBAL_2018: dbc_dict('subaru_outback_2019_generated', None),
+CARS = {
+  CAR.ASCENT: CarData(
+    dbc_dict('subaru_global_2017_generated', None),
+  ),
+  CAR.ASCENT_2023: CarData(
+    dbc_dict('subaru_global_2017_generated', None),
+  ),
+  CAR.IMPREZA: CarData(
+    dbc_dict('subaru_global_2017_generated', None),
+  ),
+  CAR.IMPREZA_2020: CarData(
+    dbc_dict('subaru_global_2017_generated', None),
+  ),
+  CAR.FORESTER: CarData(
+    dbc_dict('subaru_global_2017_generated', None),
+  ),
+  CAR.FORESTER_2022: CarData(
+    dbc_dict('subaru_global_2017_generated', None),
+  ),
+  CAR.OUTBACK: CarData(
+    dbc_dict('subaru_global_2017_generated', None),
+  ),
+  CAR.FORESTER_HYBRID: CarData(
+    dbc_dict('subaru_global_2020_hybrid_generated', None),
+  ),
+  CAR.CROSSTREK_HYBRID: CarData(
+    dbc_dict('subaru_global_2020_hybrid_generated', None),
+  ),
+  CAR.OUTBACK_2023: CarData(
+    dbc_dict('subaru_global_2017_generated', None),
+  ),
+  CAR.LEGACY: CarData(
+    dbc_dict('subaru_global_2017_generated', None),
+  ),
+  CAR.FORESTER_PREGLOBAL: CarData(
+    dbc_dict('subaru_forester_2017_generated', None),
+  ),
+  CAR.LEGACY_PREGLOBAL: CarData(
+    dbc_dict('subaru_outback_2015_generated', None),
+  ),
+  CAR.OUTBACK_PREGLOBAL: CarData(
+    dbc_dict('subaru_outback_2015_generated', None),
+  ),
+  CAR.OUTBACK_PREGLOBAL_2018: CarData(
+    dbc_dict('subaru_outback_2019_generated', None),
+  ),
 }
+
+DBC = {c: CARS[c].dbc for c in CARS}

@@ -2,7 +2,7 @@ from enum import StrEnum
 from typing import Dict
 
 from cereal import car
-from openpilot.selfdrive.car import dbc_dict
+from openpilot.selfdrive.car import dbc_dict, CarData
 from openpilot.selfdrive.car.docs_definitions import CarInfo
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
@@ -42,6 +42,10 @@ FW_QUERY_CONFIG = FwQueryConfig(
 )
 
 
-DBC = {
-  CAR.BODY: dbc_dict('comma_body', None),
+CARS = {
+  CAR.BODY: CarData(
+    dbc_dict('comma_body', None),
+  )
 }
+
+DBC = {c: CARS[c].dbc for c in CARS}

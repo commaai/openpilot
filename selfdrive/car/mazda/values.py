@@ -3,7 +3,7 @@ from enum import StrEnum
 from typing import Dict, List, Union
 
 from cereal import car
-from openpilot.selfdrive.car import dbc_dict
+from openpilot.selfdrive.car import CarData, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
@@ -77,14 +77,28 @@ FW_QUERY_CONFIG = FwQueryConfig(
 )
 
 
-DBC = {
-  CAR.CX5: dbc_dict('mazda_2017', None),
-  CAR.CX9: dbc_dict('mazda_2017', None),
-  CAR.MAZDA3: dbc_dict('mazda_2017', None),
-  CAR.MAZDA6: dbc_dict('mazda_2017', None),
-  CAR.CX9_2021: dbc_dict('mazda_2017', None),
-  CAR.CX5_2022: dbc_dict('mazda_2017', None),
+CARS = {
+  CAR.CX5: CarData(
+    dbc_dict('mazda_2017', None),
+  ),
+  CAR.CX9: CarData(
+    dbc_dict('mazda_2017', None),
+  ),
+  CAR.MAZDA3: CarData(
+    dbc_dict('mazda_2017', None),
+  ),
+  CAR.MAZDA6: CarData(
+    dbc_dict('mazda_2017', None),
+  ),
+  CAR.CX9_2021: CarData(
+    dbc_dict('mazda_2017', None),
+  ),
+  CAR.CX5_2022: CarData(
+    dbc_dict('mazda_2017', None),
+  ),
 }
+
+DBC = {c: CARS[c].dbc for c in CARS}
 
 # Gen 1 hardware: same CAN messages and same camera
 GEN1 = {CAR.CX5, CAR.CX9, CAR.CX9_2021, CAR.MAZDA3, CAR.MAZDA6, CAR.CX5_2022}

@@ -1,10 +1,9 @@
-from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, StrEnum
 from typing import Dict, List, Union
 
 from cereal import car
-from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
+from openpilot.selfdrive.car import AngleRateLimit, CarData, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
                                                      Device
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
@@ -59,13 +58,38 @@ class RADAR:
   DELPHI_MRR = 'FORD_CADS'
 
 
-DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("ford_lincoln_base_pt", RADAR.DELPHI_MRR))
+RADAR_DBC = dbc_dict("ford_lincoln_base_pt", RADAR.DELPHI_ESR)
+NO_RADAR_DBC = dbc_dict("ford_lincoln_base_pt", None)
 
-# F-150 radar is not yet supported
-DBC[CAR.F_150_MK14] = dbc_dict("ford_lincoln_base_pt", None)
-DBC[CAR.F_150_LIGHTNING_MK1] = dbc_dict("ford_lincoln_base_pt", None)
-DBC[CAR.MUSTANG_MACH_E_MK1] = dbc_dict("ford_lincoln_base_pt", None)
+CARS = {
+  CAR.BRONCO_SPORT_MK1: CarData(
+    RADAR_DBC,
+  ),
+  CAR.ESCAPE_MK4: CarData(
+    RADAR_DBC,
+  ),
+  CAR.EXPLORER_MK6: CarData(
+    RADAR_DBC,
+  ),
+  CAR.FOCUS_MK4: CarData(
+    RADAR_DBC,
+  ),
+  CAR.MAVERICK_MK1: CarData(
+    RADAR_DBC,
+  ),
+  # F-150 radar is not yet supported
+  CAR.F_150_MK14: CarData(
+    NO_RADAR_DBC,
+  ),
+  CAR.F_150_LIGHTNING_MK1: CarData(
+    NO_RADAR_DBC,
+  ),
+  CAR.MUSTANG_MACH_E_MK1: CarData(
+    NO_RADAR_DBC,
+  ),
+}
 
+DBC = {c: CARS[c].dbc for c in CARS}
 
 class Footnote(Enum):
   FOCUS = CarFootnote(

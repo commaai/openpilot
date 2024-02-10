@@ -3,7 +3,7 @@ from enum import StrEnum
 from typing import Dict, List, Union
 
 from cereal import car
-from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
+from openpilot.selfdrive.car import AngleRateLimit, CarData, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarInfo
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
@@ -22,11 +22,16 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   CAR.AP2_MODELS: CarInfo("Tesla AP2 Model S", "All"),
 }
 
-
-DBC = {
-  CAR.AP2_MODELS: dbc_dict('tesla_powertrain', 'tesla_radar', chassis_dbc='tesla_can'),
-  CAR.AP1_MODELS: dbc_dict('tesla_powertrain', 'tesla_radar', chassis_dbc='tesla_can'),
+CARS = {
+  CAR.AP1_MODELS: CarData(
+    dbc_dict('tesla_powertrain', 'tesla_radar', chassis_dbc='tesla_can'),
+  ),
+  CAR.AP2_MODELS: CarData(
+    dbc_dict('tesla_powertrain', 'tesla_radar', chassis_dbc='tesla_can'),
+  ),
 }
+
+DBC = {c: CARS[c].dbc for c in CARS}
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[

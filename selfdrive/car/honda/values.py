@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Union
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
 from panda.python import uds
-from openpilot.selfdrive.car import dbc_dict
+from openpilot.selfdrive.car import CarData, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
@@ -214,32 +214,79 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
 )
 
-
-DBC = {
-  CAR.ACCORD: dbc_dict('honda_accord_2018_can_generated', None),
-  CAR.ACCORDH: dbc_dict('honda_accord_2018_can_generated', None),
-  CAR.ACURA_ILX: dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.ACURA_RDX: dbc_dict('acura_rdx_2018_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.ACURA_RDX_3G: dbc_dict('acura_rdx_2020_can_generated', None),
-  CAR.CIVIC: dbc_dict('honda_civic_touring_2016_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.CIVIC_BOSCH: dbc_dict('honda_civic_hatchback_ex_2017_can_generated', None),
-  CAR.CIVIC_BOSCH_DIESEL: dbc_dict('honda_accord_2018_can_generated', None),
-  CAR.CRV: dbc_dict('honda_crv_touring_2016_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.CRV_5G: dbc_dict('honda_crv_ex_2017_can_generated', None, body_dbc='honda_crv_ex_2017_body_generated'),
-  CAR.CRV_EU: dbc_dict('honda_crv_executive_2016_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.CRV_HYBRID: dbc_dict('honda_accord_2018_can_generated', None),
-  CAR.FIT: dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.FREED: dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.HRV: dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.HRV_3G: dbc_dict('honda_civic_ex_2022_can_generated', None),
-  CAR.ODYSSEY: dbc_dict('honda_odyssey_exl_2018_generated', 'acura_ilx_2016_nidec'),
-  CAR.ODYSSEY_CHN: dbc_dict('honda_odyssey_extreme_edition_2018_china_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.PILOT: dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.RIDGELINE: dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.INSIGHT: dbc_dict('honda_insight_ex_2019_can_generated', None),
-  CAR.HONDA_E: dbc_dict('acura_rdx_2020_can_generated', None),
-  CAR.CIVIC_2022: dbc_dict('honda_civic_ex_2022_can_generated', None),
+CARS = {
+  CAR.ACCORD: CarData(
+    dbc_dict('honda_accord_2018_can_generated', None),
+  ),
+  CAR.ACCORDH: CarData(
+    dbc_dict('honda_accord_2018_can_generated', None),
+  ),
+  CAR.ACURA_ILX: CarData(
+    dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
+  ),
+  CAR.ACURA_RDX: CarData(
+    dbc_dict('acura_rdx_2018_can_generated', 'acura_ilx_2016_nidec'),
+  ),
+  CAR.ACURA_RDX_3G: CarData(
+    dbc_dict('acura_rdx_2020_can_generated', None),
+  ),
+  CAR.CIVIC: CarData(
+    dbc_dict('honda_civic_touring_2016_can_generated', 'acura_ilx_2016_nidec'),
+  ),
+  CAR.CIVIC_BOSCH: CarData(
+    dbc_dict('honda_civic_hatchback_ex_2017_can_generated', None),
+  ),
+  CAR.CIVIC_BOSCH_DIESEL: CarData(
+    dbc_dict('honda_accord_2018_can_generated', None),
+  ),
+  CAR.CRV: CarData(
+    dbc_dict('honda_crv_touring_2016_can_generated', 'acura_ilx_2016_nidec'),
+  ),
+  CAR.CRV_5G: CarData(
+    dbc_dict('honda_crv_ex_2017_can_generated', None, body_dbc='honda_crv_ex_2017_body_generated'),
+  ),
+  CAR.CRV_EU: CarData(
+    dbc_dict('honda_crv_executive_2016_can_generated', 'acura_ilx_2016_nidec'),
+  ),
+  CAR.CRV_HYBRID: CarData(
+    dbc_dict('honda_accord_2018_can_generated', None),
+  ),
+  CAR.FIT: CarData(
+    dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
+  ),
+  CAR.FREED: CarData(
+    dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
+  ),
+  CAR.HRV: CarData(
+    dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
+  ),
+  CAR.HRV_3G: CarData(
+    dbc_dict('honda_civic_ex_2022_can_generated', None),
+  ),
+  CAR.ODYSSEY: CarData(
+    dbc_dict('honda_odyssey_exl_2018_generated', 'acura_ilx_2016_nidec'),
+  ),
+  CAR.ODYSSEY_CHN: CarData(
+    dbc_dict('honda_odyssey_extreme_edition_2018_china_can_generated', 'acura_ilx_2016_nidec'),
+  ),
+  CAR.PILOT: CarData(
+    dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
+  ),
+  CAR.RIDGELINE: CarData(
+    dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
+  ),
+  CAR.INSIGHT: CarData(
+    dbc_dict('honda_insight_ex_2019_can_generated', None),
+  ),
+  CAR.HONDA_E: CarData(
+    dbc_dict('acura_rdx_2020_can_generated', None),
+  ),
+  CAR.CIVIC_2022: CarData(
+    dbc_dict('honda_civic_ex_2022_can_generated', None),
+  ),
 }
+
+DBC = {c: CARS[c].dbc for c in CARS}
 
 STEER_THRESHOLD = {
   # default is 1200, overrides go here

@@ -1,5 +1,6 @@
 # functions common among cars
 from collections import namedtuple
+from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 import capnp
@@ -72,8 +73,9 @@ def scale_tire_stiffness(mass, wheelbase, center_to_front, tire_stiffness_factor
 
   return tire_stiffness_front, tire_stiffness_rear
 
+DbcDict = Dict[str, str]
 
-def dbc_dict(pt_dbc, radar_dbc, chassis_dbc=None, body_dbc=None) -> Dict[str, str]:
+def dbc_dict(pt_dbc, radar_dbc, chassis_dbc=None, body_dbc=None) -> DbcDict:
   return {'pt': pt_dbc, 'radar': radar_dbc, 'chassis': chassis_dbc, 'body': body_dbc}
 
 
@@ -236,3 +238,8 @@ class CanSignalRateCalculator:
     self.previous_value = current_value
 
     return self.rate
+
+
+@dataclass
+class CarData:
+  dbc: DbcDict

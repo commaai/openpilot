@@ -6,7 +6,7 @@ from typing import Dict, List, Set, Union
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
-from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
+from openpilot.selfdrive.car import AngleRateLimit, CarData, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, CarParts, CarHarness
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
@@ -440,42 +440,112 @@ FW_QUERY_CONFIG = FwQueryConfig(
 
 STEER_THRESHOLD = 100
 
-DBC = {
-  CAR.RAV4H: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-  CAR.RAV4: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-  CAR.PRIUS: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
-  CAR.PRIUS_V: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-  CAR.COROLLA: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-  CAR.LEXUS_LC_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.LEXUS_RC: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-  CAR.LEXUS_RX: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-  CAR.LEXUS_RX_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.CHR: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
-  CAR.CHR_TSS2: dbc_dict('toyota_nodsu_pt_generated', None),
-  CAR.CAMRY: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
-  CAR.CAMRY_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.HIGHLANDER: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-  CAR.HIGHLANDER_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.AVALON: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-  CAR.AVALON_2019: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
-  CAR.AVALON_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.RAV4_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.RAV4_TSS2_2022: dbc_dict('toyota_nodsu_pt_generated', None),
-  CAR.RAV4_TSS2_2023: dbc_dict('toyota_nodsu_pt_generated', None),
-  CAR.COROLLA_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.LEXUS_ES: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-  CAR.LEXUS_ES_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.SIENNA: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-  CAR.LEXUS_IS: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-  CAR.LEXUS_IS_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.LEXUS_CTH: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-  CAR.LEXUS_NX: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-  CAR.LEXUS_NX_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.PRIUS_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.MIRAI: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.ALPHARD_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.LEXUS_GS_F: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
+CARS = {
+  CAR.RAV4H: CarData(
+    dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
+  ),
+  CAR.RAV4: CarData(
+    dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
+  ),
+  CAR.PRIUS: CarData(
+    dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
+  ),
+  CAR.PRIUS_V: CarData(
+    dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
+  ),
+  CAR.COROLLA: CarData(
+    dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
+  ),
+  CAR.LEXUS_LC_TSS2: CarData(
+    dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+  ),
+  CAR.LEXUS_RC: CarData(
+    dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
+  ),
+  CAR.LEXUS_RX: CarData(
+    dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
+  ),
+  CAR.LEXUS_RX_TSS2: CarData(
+    dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+  ),
+  CAR.CHR: CarData(
+    dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
+  ),
+  CAR.CHR_TSS2: CarData(
+    dbc_dict('toyota_nodsu_pt_generated', None),
+  ),
+  CAR.CAMRY: CarData(
+    dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
+  ),
+  CAR.CAMRY_TSS2: CarData(
+    dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+  ),
+  CAR.HIGHLANDER: CarData(
+    dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
+  ),
+  CAR.HIGHLANDER_TSS2: CarData(
+    dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+  ),
+  CAR.AVALON: CarData(
+    dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
+  ),
+  CAR.AVALON_2019: CarData(
+    dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
+  ),
+  CAR.AVALON_TSS2: CarData(
+    dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+  ),
+  CAR.RAV4_TSS2: CarData(
+    dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+  ),
+  CAR.RAV4_TSS2_2022: CarData(
+    dbc_dict('toyota_nodsu_pt_generated', None),
+  ),
+  CAR.RAV4_TSS2_2023: CarData(
+    dbc_dict('toyota_nodsu_pt_generated', None),
+  ),
+  CAR.COROLLA_TSS2: CarData(
+    dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+  ),
+  CAR.LEXUS_ES: CarData(
+    dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
+  ),
+  CAR.LEXUS_ES_TSS2: CarData(
+    dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+  ),
+  CAR.SIENNA: CarData(
+    dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
+  ),
+  CAR.LEXUS_IS: CarData(
+    dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
+  ),
+  CAR.LEXUS_IS_TSS2:CarData(
+    dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+  ),
+  CAR.LEXUS_CTH: CarData(
+    dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
+  ),
+  CAR.LEXUS_NX: CarData(
+    dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
+  ),
+  CAR.LEXUS_NX_TSS2: CarData(
+    dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+  ),
+  CAR.PRIUS_TSS2: CarData(
+    dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+  ),
+  CAR.MIRAI: CarData(
+    dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+  ),
+  CAR.ALPHARD_TSS2: CarData(
+    dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+  ),
+  CAR.LEXUS_GS_F: CarData(
+    dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
+  ),
 }
+
+DBC = {c: CARS[c].dbc for c in CARS}
 
 # These cars have non-standard EPS torque scale factors. All others are 73
 EPS_SCALE = defaultdict(lambda: 73, {CAR.PRIUS: 66, CAR.COROLLA: 88, CAR.LEXUS_IS: 77, CAR.LEXUS_RC: 77, CAR.LEXUS_CTH: 100, CAR.PRIUS_V: 100})
