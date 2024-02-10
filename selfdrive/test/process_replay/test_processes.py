@@ -107,7 +107,7 @@ def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=Non
   # check to make sure openpilot is engaged in the route
   if cfg.proc_name == "controlsd":
     if not check_openpilot_enabled(log_msgs):
-      # FIXME: these segements should work, but the replay enabling logic is too brittle
+      # FIXME: these segments should work, but the replay enabling logic is too brittle
       if segment not in ("regen6CA24BC3035|2023-10-30--23-14-28--0", "regen7D2D3F82D5B|2023-10-30--23-15-55--0"):
         return f"Route did not enable at all or for long enough: {new_log_path}", log_msgs
 
