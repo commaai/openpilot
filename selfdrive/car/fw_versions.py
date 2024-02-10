@@ -62,9 +62,9 @@ def match_fw_to_car_fuzzy(live_fw_versions, match_brand=None, log=True, exclude=
       continue
 
     for addr, fws in fw_by_addr.items():
-      if only_non_obd_ecus:
-        if candidate in ('HONDA CIVIC (BOSCH) 2019', 'HONDA CR-V 2017') and addr[0] not in [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.srs]:
-          continue
+      # if only_non_obd_ecus:
+      #   if candidate in ('HONDA CIVIC (BOSCH) 2019', 'HONDA CR-V 2017') and addr[0] not in [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.srs]:
+      #     continue
 
       # These ECUs are known to be shared between models (EPS only between hybrid/ICE version)
       # Getting this exactly right isn't crucial, but excluding camera and radar makes it almost
@@ -116,9 +116,9 @@ def match_fw_to_car_exact(live_fw_versions, match_brand=None, log=True, extra_fw
   for candidate, fws in candidates.items():
     config = FW_QUERY_CONFIGS[MODEL_TO_BRAND[candidate]]
     for ecu, expected_versions in fws.items():
-      if only_non_obd_ecus:
-        if candidate in ('HONDA CIVIC (BOSCH) 2019', 'HONDA CR-V 2017') and ecu[0] not in [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.srs]:
-          continue
+      # if only_non_obd_ecus:
+      #   if candidate in ('HONDA CIVIC (BOSCH) 2019', 'HONDA CR-V 2017') and ecu[0] not in [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.srs]:
+      #     continue
 
       expected_versions = expected_versions + extra_fw_versions.get(candidate, {}).get(ecu, [])
       ecu_type = ecu[0]
@@ -128,7 +128,10 @@ def match_fw_to_car_exact(live_fw_versions, match_brand=None, log=True, extra_fw
       if not len(found_versions):
         # Some models can sometimes miss an ecu, or show on two different addresses
         # FIXME: this logic can be improved to be more specific, should require one of the two addresses
-        if candidate in config.non_essential_ecus.get(ecu_type, []):
+        non_essential_ecus = config.non_essential_ecus.get(ecu_type, [])
+        if only_non_obd_ecus:
+          non_essential_ecus = []
+        if candidate in non_essential_ecus:
           continue
 
         # Ignore non essential ecus
