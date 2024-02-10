@@ -1,3 +1,4 @@
+import gc
 import os
 import pytest
 import random
@@ -45,6 +46,11 @@ def openpilot_function_fixture(request):
   # cleanup any started processes
   manager.manager_cleanup()
 
+  # some processes disable gc for performance, re-enable here
+  if not gc.isenabled():
+    gc.enable()
+    gc.collect()
+
 # If you use setUpClass, the environment variables won't be cleared properly,
 # so we need to hook both the function and class pytest fixtures
 @pytest.fixture(scope="class", autouse=True)
@@ -57,13 +63,12 @@ def openpilot_class_fixture():
   os.environ.update(starting_env)
 
 
-@pytest.fixture(scope="class")
-def tici_setup_fixture():
-  """Ensure a consistent state for tests on-device"""
+@pytest.fixture(scope="function")
+def tici_setup_fixture(openpilot_function_fixture):
+  """Ensure a consistent state for tests on-device. Needs the openpilot function fixture to run first."""
   HARDWARE.initialize_hardware()
   HARDWARE.set_power_save(False)
   os.system("pkill -9 -f athena")
-  os.system("rm /dev/shm/*")
 
 
 @pytest.hookimpl(tryfirst=True)

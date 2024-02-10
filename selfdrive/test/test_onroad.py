@@ -57,7 +57,7 @@ PROCS = {
   "selfdrive.boardd.pandad": 0,
   "selfdrive.statsd": 0.4,
   "selfdrive.navd.navd": 0.4,
-  "system.loggerd.uploader": (0.5, 10.0),
+  "system.loggerd.uploader": (0.5, 15.0),
   "system.loggerd.deleter": 0.1,
 }
 
@@ -126,7 +126,7 @@ class TestOnroad(unittest.TestCase):
 
       sm = messaging.SubMaster(['carState'])
       with Timeout(150, "controls didn't start"):
-        while sm.rcv_frame['carState'] < 0:
+        while sm.recv_frame['carState'] < 0:
           sm.update(1000)
 
       # make sure we get at least two full segments

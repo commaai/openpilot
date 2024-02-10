@@ -167,8 +167,8 @@ build-backend = "poetry.core.masonry.api"
 
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]
-select = ["E", "F", "W", "PIE", "C4", "ISC", "RUF008", "RUF100", "A", "B", "TID251"]
-ignore = ["E741", "E402", "C408", "ISC003", "B027", "B024"]
+lint.select = ["E", "F", "W", "PIE", "C4", "ISC", "RUF008", "RUF100", "A", "B", "TID251"]
+lint.ignore = ["E741", "E402", "C408", "ISC003", "B027", "B024"]
 line-length = 160
 target-version="py311"
 exclude = [
@@ -180,8 +180,8 @@ exclude = [
   "teleoprtc_repo",
   "third_party",
 ]
-flake8-implicit-str-concat.allow-multiline=false
-[tool.ruff.flake8-tidy-imports.banned-api]
+lint.flake8-implicit-str-concat.allow-multiline=false
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
 "selfdrive".msg = "Use openpilot.selfdrive"
 "common".msg = "Use openpilot.common"
 "system".msg = "Use openpilot.system"
