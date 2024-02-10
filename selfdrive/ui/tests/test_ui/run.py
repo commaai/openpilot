@@ -19,6 +19,7 @@ from openpilot.common.mock import mock_messages
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.transformations.camera import tici_f_frame_size
+from openpilot.selfdrive.manager.process_config import UI
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state
 from openpilot.tools.webcam.camera import Camera
@@ -158,7 +159,7 @@ class TestUI(unittest.TestCase):
     time.sleep(UI_DELAY) # give enough time for the UI to react
 
   @parameterized.expand(CASES.items())
-  @with_processes(["ui"])
+  @with_processes({UI})
   def test_ui(self, name, setup_case):
     self.setup()
 

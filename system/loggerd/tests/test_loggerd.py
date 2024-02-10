@@ -17,10 +17,13 @@ from cereal.services import SERVICE_LIST
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
+from openpilot.selfdrive.manager.process import ManagerProcess
+from openpilot.selfdrive.manager.process_config import LOGGERD
+from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.system.hardware.hw import Paths
 from openpilot.system.loggerd.xattr_cache import getxattr
 from openpilot.system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.manager.manager import managed_processes
 from openpilot.system.version import get_version
 from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.logreader import LogReader
@@ -76,26 +79,25 @@ class TestLoggerd:
     end_type = SentinelType.endOfRoute if route else SentinelType.endOfSegment
     assert msgs[-1].sentinel.type == end_type
 
-  def _publish_random_messages(self, services: List[str]) -> Dict[str, list]:
-    pm = messaging.PubMaster(services)
+  @with_processes({LOGGERD})
+  def _publish_random_messages(self, services: List[ManagerProcess]) -> Dict[str, list]:
+    pm = messaging.PubMaster([s.name for s in services])
 
-    managed_processes["loggerd"].start()
     for s in services:
-      assert pm.wait_for_readers_to_update(s, timeout=5)
+      assert pm.wait_for_readers_to_update(s.name, timeout=5)
 
     sent_msgs = defaultdict(list)
     for _ in range(random.randint(2, 10) * 100):
       for s in services:
         try:
-          m = messaging.new_message(s)
+          m = messaging.new_message(s.name)
         except Exception:
-          m = messaging.new_message(s, random.randint(2, 10))
-        pm.send(s, m)
-        sent_msgs[s].append(m)
+          m = messaging.new_message(s.name, random.randint(2, 10))
+        pm.send(s.name, m)
+        sent_msgs[s.name].append(m)
 
     for s in services:
-      assert pm.wait_for_readers_to_update(s, timeout=5)
-    managed_processes["loggerd"].stop()
+      assert pm.wait_for_readers_to_update(s.name, timeout=5)
 
     return sent_msgs
 

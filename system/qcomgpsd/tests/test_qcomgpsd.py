@@ -9,7 +9,7 @@ import subprocess
 
 import cereal.messaging as messaging
 from openpilot.system.qcomgpsd.qcomgpsd import at_cmd, wait_for_modem
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.manager.manager import managed_processes
 
 GOOD_SIGNAL = bool(int(os.getenv("GOOD_SIGNAL", '0')))
 

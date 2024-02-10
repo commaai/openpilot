@@ -11,6 +11,7 @@ import cereal.messaging as messaging
 
 from typing import Any
 from cereal.visionipc import VisionIpcClient, VisionStreamType
+from openpilot.selfdrive.manager.process_config import MAPSD
 from openpilot.common.mock.generators import LLK_DECIMATION, LOCATION1, LOCATION2, generate_liveLocationKalman
 from openpilot.selfdrive.test.helpers import with_processes
 
@@ -158,18 +159,18 @@ class TestMapRenderer(unittest.TestCase):
 
     return render_times
 
-  @with_processes(["mapsd"])
+  @with_processes({MAPSD})
   def test_with_internet(self):
     self._setup_test()
     self._run_test(True)
 
-  @with_processes(["mapsd"])
+  @with_processes({MAPSD})
   def test_with_no_internet(self):
     self.server.disable_internet()
     self._setup_test()
     self._run_test(False)
 
-  @with_processes(["mapsd"])
+  @with_processes({MAPSD})
   @pytest.mark.skip(reason="slow, flaky, and unlikely to break")
   def test_recover_from_no_internet(self):
     self._setup_test()
@@ -183,7 +184,7 @@ class TestMapRenderer(unittest.TestCase):
     self.server.enable_internet()
     self._run_test(True, LOCATION2_REPEATED)
 
-  @with_processes(["mapsd"])
+  @with_processes({MAPSD})
   @pytest.mark.tici
   def test_render_time_distribution(self):
     self._setup_test()

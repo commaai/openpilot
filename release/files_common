@@ -111,6 +111,8 @@ selfdrive/car/tesla/*.py
 selfdrive/car/toyota/*.py
 selfdrive/car/volkswagen/*.py
 
+selfdrive/configs/*.py
+
 selfdrive/debug/can_printer.py
 selfdrive/debug/check_freq.py
 selfdrive/debug/dump.py

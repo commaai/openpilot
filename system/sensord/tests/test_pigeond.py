@@ -6,8 +6,9 @@ import unittest
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
 from openpilot.common.gpio import gpio_read
+from openpilot.selfdrive.manager.process_config import PIGEOND
 from openpilot.selfdrive.test.helpers import with_processes
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.manager.manager import managed_processes
 from openpilot.system.hardware.tici.pins import GPIO
 
 
@@ -18,7 +19,7 @@ class TestPigeond(unittest.TestCase):
   def tearDown(self):
     managed_processes['pigeond'].stop()
 
-  @with_processes(['pigeond'])
+  @with_processes({PIGEOND})
   def test_frequency(self):
     sm = messaging.SubMaster(['ubloxRaw'])
 

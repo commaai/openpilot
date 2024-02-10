@@ -10,7 +10,7 @@ from cereal.services import SERVICE_LIST
 from openpilot.common.params import Params
 from openpilot.common.transformations.coordinates import ecef2geodetic
 
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.manager.manager import managed_processes
 
 
 class TestLocationdProc(unittest.TestCase):

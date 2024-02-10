@@ -5,7 +5,8 @@ from functools import wraps
 
 import cereal.messaging as messaging
 from openpilot.common.params import Params
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.configs.base import Processes
+from openpilot.selfdrive.manager.manager import managed_processes
 from openpilot.system.hardware import PC
 from openpilot.system.version import training_version, terms_version
 
@@ -42,7 +43,7 @@ def release_only(f):
     f(self, *args, **kwargs)
   return wrap
 
-def with_processes(processes, init_time=0, ignore_stopped=None):
+def with_processes(processes: Processes, init_time=0, ignore_stopped=None):
   ignore_stopped = [] if ignore_stopped is None else ignore_stopped
 
   def wrapper(func):
@@ -57,7 +58,7 @@ def with_processes(processes, init_time=0, ignore_stopped=None):
 
       # call the function
       try:
-        func(*args, **kwargs)
+        func(*args, **kwargs, services=processes)
         # assert processes are still started
         assert all(managed_processes[name].proc.exitcode is None for name in processes if name not in ignore_stopped)
       finally:

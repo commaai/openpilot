@@ -13,6 +13,7 @@ from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from openpilot.selfdrive.car import make_can_msg
+from openpilot.selfdrive.manager.process_config import PANDAD
 from openpilot.system.hardware import TICI
 from openpilot.selfdrive.test.helpers import phone_only, with_processes
 
@@ -25,7 +26,7 @@ class TestBoardd(unittest.TestCase):
     os.environ['BOARDD_LOOPBACK'] = '1'
 
   @phone_only
-  @with_processes(['pandad'])
+  @with_processes({PANDAD})
   def test_loopback(self):
     params = Params()
     params.put_bool("IsOnroad", False)

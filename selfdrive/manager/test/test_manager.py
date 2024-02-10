@@ -11,7 +11,7 @@ from cereal import car
 from openpilot.common.params import Params
 import openpilot.selfdrive.manager.manager as manager
 from openpilot.selfdrive.manager.process import ensure_running
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.manager.manager import managed_processes
 from openpilot.system.hardware import HARDWARE
 
 os.environ['FAKEUPLOAD'] = "1"

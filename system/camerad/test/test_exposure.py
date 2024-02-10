@@ -2,6 +2,7 @@
 import time
 import unittest
 import numpy as np
+from openpilot.selfdrive.manager.process_config import CAMERAD
 
 from openpilot.selfdrive.test.helpers import with_processes, phone_only
 from openpilot.system.camerad.snapshot.snapshot import get_snapshots
@@ -31,7 +32,7 @@ class TestCamerad(unittest.TestCase):
     return med_ex[0] < i_median < med_ex[1] and mean_ex[0] < i_mean < mean_ex[1]
 
   @phone_only
-  @with_processes(['camerad'])
+  @with_processes({CAMERAD})
   def test_camera_operation(self):
     passed = 0
     start = time.time()
