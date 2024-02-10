@@ -143,7 +143,7 @@ def comma_api_source(sr: SegmentRange, mode: ReadMode):
   return apply_strategy(mode, rlog_paths, qlog_paths, valid_file=valid_file)
 
 def internal_source(sr: SegmentRange, mode: ReadMode):
-  if True: #not internal_source_available():
+  if not internal_source_available():
     raise Exception("Internal source not available")
 
   segs = parse_slice(sr)
