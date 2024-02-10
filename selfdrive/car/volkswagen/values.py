@@ -154,87 +154,71 @@ PQ_CARS = {CAR.PASSAT_NMS, CAR.SHARAN_MK2}
 MQB_DBC = dbc_dict("vw_mqb_2010", None)
 PQ_DBC = dbc_dict("vw_golf_mk4", None)
 
+
+@dataclass
+class VolkswagenCarData(CarData):
+  is_pq: bool = False
+
+  def __post_init__(self):
+    self.dbc = PQ_DBC if self.is_pq else MQB_DBC
+
+
 CARS = {
-  CAR.ARTEON_MK1: CarData(
-    MQB_DBC
+  CAR.ARTEON_MK1: VolkswagenCarData(
   ),
-  CAR.ATLAS_MK1: CarData(
-    MQB_DBC
+  CAR.ATLAS_MK1: VolkswagenCarData(
   ),
-  CAR.CRAFTER_MK2: CarData(
-    MQB_DBC
+  CAR.CRAFTER_MK2: VolkswagenCarData(
   ),
-  CAR.GOLF_MK7: CarData(
-    MQB_DBC
+  CAR.GOLF_MK7: VolkswagenCarData(
   ),
-  CAR.JETTA_MK7: CarData(
-    MQB_DBC
+  CAR.JETTA_MK7: VolkswagenCarData(
   ),
-  CAR.PASSAT_MK8: CarData(
-    MQB_DBC
+  CAR.PASSAT_MK8: VolkswagenCarData(
   ),
-  CAR.POLO_MK6: CarData(
-    MQB_DBC
+  CAR.POLO_MK6: VolkswagenCarData(
   ),
-  CAR.TAOS_MK1 : CarData(
-    MQB_DBC
+  CAR.TAOS_MK1 : VolkswagenCarData(
   ),
-  CAR.TCROSS_MK1 : CarData(
-    MQB_DBC
+  CAR.TCROSS_MK1 : VolkswagenCarData(
   ),
-  CAR.TIGUAN_MK2 : CarData(
-    MQB_DBC
+  CAR.TIGUAN_MK2 : VolkswagenCarData(
   ),
-  CAR.TOURAN_MK2 : CarData(
-    MQB_DBC
+  CAR.TOURAN_MK2 : VolkswagenCarData(
   ),
-  CAR.TRANSPORTER_T61: CarData(
-    MQB_DBC
+  CAR.TRANSPORTER_T61: VolkswagenCarData(
   ),
-  CAR.TROC_MK1: CarData(
-    MQB_DBC
+  CAR.TROC_MK1: VolkswagenCarData(
   ),
-  CAR.AUDI_A3_MK3: CarData(
-    MQB_DBC
+  CAR.AUDI_A3_MK3: VolkswagenCarData(
   ),
-  CAR.AUDI_Q2_MK1: CarData(
-    MQB_DBC
+  CAR.AUDI_Q2_MK1: VolkswagenCarData(
   ),
-  CAR.AUDI_Q3_MK2: CarData(
-    MQB_DBC
+  CAR.AUDI_Q3_MK2: VolkswagenCarData(
   ),
-  CAR.SEAT_ATECA_MK1: CarData(
-    MQB_DBC
+  CAR.SEAT_ATECA_MK1: VolkswagenCarData(
   ),
-  CAR.SEAT_LEON_MK3: CarData(
-    MQB_DBC
+  CAR.SEAT_LEON_MK3: VolkswagenCarData(
   ),
-  CAR.SKODA_FABIA_MK4: CarData(
-    MQB_DBC
+  CAR.SKODA_FABIA_MK4: VolkswagenCarData(
   ),
-  CAR.SKODA_KAMIQ_MK1: CarData(
-    MQB_DBC
+  CAR.SKODA_KAMIQ_MK1: VolkswagenCarData(
   ),
-  CAR.SKODA_KAROQ_MK1: CarData(
-    MQB_DBC
+  CAR.SKODA_KAROQ_MK1: VolkswagenCarData(
   ),
-  CAR.SKODA_KODIAQ_MK1: CarData(
-    MQB_DBC
+  CAR.SKODA_KODIAQ_MK1: VolkswagenCarData(
   ),
-  CAR.SKODA_SCALA_MK1: CarData(
-    MQB_DBC
+  CAR.SKODA_SCALA_MK1: VolkswagenCarData(
   ),
-  CAR.SKODA_SUPERB_MK3 : CarData(
-    MQB_DBC
+  CAR.SKODA_SUPERB_MK3 : VolkswagenCarData(
   ),
-  CAR.SKODA_OCTAVIA_MK3: CarData(
-    MQB_DBC
+  CAR.SKODA_OCTAVIA_MK3: VolkswagenCarData(
   ),
-  CAR.PASSAT_NMS: CarData(
-    PQ_DBC
+  CAR.PASSAT_NMS: VolkswagenCarData(
+    is_pq=True
   ),
-  CAR.SHARAN_MK2 : CarData(
-    PQ_DBC
+  CAR.SHARAN_MK2 : VolkswagenCarData(
+    is_pq=True
   ),
 }
 

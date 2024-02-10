@@ -61,31 +61,35 @@ class RADAR:
 RADAR_DBC = dbc_dict("ford_lincoln_base_pt", RADAR.DELPHI_ESR)
 NO_RADAR_DBC = dbc_dict("ford_lincoln_base_pt", None)
 
+
+@dataclass
+class FordCarData(CarData):
+  radar_enabled: bool = True
+
+  def __post_init__(self):
+    self.dbc = RADAR_DBC if self.radar_enabled else NO_RADAR_DBC
+
+
 CARS = {
-  CAR.BRONCO_SPORT_MK1: CarData(
-    RADAR_DBC,
+  CAR.BRONCO_SPORT_MK1: FordCarData(
   ),
-  CAR.ESCAPE_MK4: CarData(
-    RADAR_DBC,
+  CAR.ESCAPE_MK4: FordCarData(
   ),
-  CAR.EXPLORER_MK6: CarData(
-    RADAR_DBC,
+  CAR.EXPLORER_MK6: FordCarData(
   ),
-  CAR.FOCUS_MK4: CarData(
-    RADAR_DBC,
+  CAR.FOCUS_MK4: FordCarData(
   ),
-  CAR.MAVERICK_MK1: CarData(
-    RADAR_DBC,
+  CAR.MAVERICK_MK1: FordCarData(
   ),
   # F-150 radar is not yet supported
-  CAR.F_150_MK14: CarData(
-    NO_RADAR_DBC,
+  CAR.F_150_MK14: FordCarData(
+    radar_enabled=False,
   ),
-  CAR.F_150_LIGHTNING_MK1: CarData(
-    NO_RADAR_DBC,
+  CAR.F_150_LIGHTNING_MK1: FordCarData(
+    radar_enabled=False,
   ),
-  CAR.MUSTANG_MACH_E_MK1: CarData(
-    NO_RADAR_DBC,
+  CAR.MUSTANG_MACH_E_MK1: FordCarData(
+    radar_enabled=False,
   ),
 }
 

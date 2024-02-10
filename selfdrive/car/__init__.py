@@ -1,6 +1,6 @@
 # functions common among cars
 from collections import namedtuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 import capnp
@@ -242,4 +242,4 @@ class CanSignalRateCalculator:
 
 @dataclass
 class CarData:
-  dbc: DbcDict
+  dbc: DbcDict = field(init=False)
