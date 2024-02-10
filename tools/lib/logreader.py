@@ -20,7 +20,7 @@ from cereal import log as capnp_log
 from openpilot.common.swaglog import cloudlog
 from openpilot.tools.lib.comma_car_segments import get_url as get_comma_segments_url
 from openpilot.tools.lib.openpilotci import get_url
-from openpilot.tools.lib.filereader import FileReader, file_exists
+from openpilot.tools.lib.filereader import FileReader, file_exists, internal_source_available
 from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.route import Route, SegmentRange
 
@@ -143,6 +143,9 @@ def comma_api_source(sr: SegmentRange, mode: ReadMode):
   return apply_strategy(mode, rlog_paths, qlog_paths, valid_file=valid_file)
 
 def internal_source(sr: SegmentRange, mode: ReadMode):
+  if not internal_source_available():
+    raise Exception("Internal source not available")
+
   segs = parse_slice(sr)
 
   def get_internal_url(sr: SegmentRange, seg, file):

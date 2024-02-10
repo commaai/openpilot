@@ -154,10 +154,10 @@ def ui_thread(addr):
     if len(sm['longitudinalPlan'].accels):
       plot_arr[-1, name_to_arr_idx['a_target']] = sm['longitudinalPlan'].accels[0]
 
-    if sm.rcv_frame['modelV2']:
+    if sm.recv_frame['modelV2']:
       plot_model(sm['modelV2'], img, calibration, top_down)
 
-    if sm.rcv_frame['radarState']:
+    if sm.recv_frame['radarState']:
       plot_lead(sm['radarState'], top_down)
 
     # draw all radar points
