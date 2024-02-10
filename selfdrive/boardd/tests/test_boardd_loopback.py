@@ -27,7 +27,7 @@ class TestBoardd(unittest.TestCase):
 
   @phone_only
   @with_processes({PANDAD})
-  def test_loopback(self):
+  def test_loopback(self, services):
     params = Params()
     params.put_bool("IsOnroad", False)
 

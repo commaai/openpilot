@@ -50,20 +50,20 @@ def with_processes(processes: Processes, init_time=0, ignore_stopped=None):
     @wraps(func)
     def wrap(*args, **kwargs):
       # start and assert started
-      for name, process in enumerate(processes):
-        managed_processes[name].start()
+      for n, proc in enumerate(processes):
+        managed_processes[proc.name].start()
         if n < len(processes) - 1:
           time.sleep(init_time)
-      assert all(managed_processes[name].proc.exitcode is None for name in processes)
+      assert all(managed_processes[proc.name].proc.exitcode is None for proc in processes)
 
       # call the function
       try:
         func(*args, **kwargs, services=processes)
         # assert processes are still started
-        assert all(managed_processes[name].proc.exitcode is None for name in processes if name not in ignore_stopped)
+        assert all(managed_processes[proc.name].proc.exitcode is None for proc in processes if proc.name not in ignore_stopped)
       finally:
-        for p in processes:
-          managed_processes[p].stop()
+        for proc in processes:
+          managed_processes[proc.name].stop()
 
     return wrap
   return wrapper

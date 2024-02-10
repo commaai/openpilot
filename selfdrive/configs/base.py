@@ -5,7 +5,7 @@ from openpilot.selfdrive.manager.process import ManagerProcess
 
 from openpilot.selfdrive.manager.process_config import ATHENA, CALIBRATIOND, LOGCAT, PROCLOG, MODELD, NAVMODELD, LOCATIOND, TORQUED, CONTROLSD, \
                                                        DELETER, NAVD, PARAMSD, PLANNERD, RADARD, TOMBSTONED, UPDATED, UPLOADERD, THERMALD, \
-                                                       STATSD, LOGGERD, LOGMESSAGED, ENCODERD, DMONITORINGMODELD, DMONITORINGD, UI, SOUNDD, MICD
+                                                       STATSD, LOGGERD, LOGMESSAGED, ENCODERD, DMONITORINGMODELD, DMONITORINGD, UI, SOUNDD, MICD, MAPSD 
 
 
 Processes = Set[ManagerProcess]
