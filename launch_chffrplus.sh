@@ -15,6 +15,9 @@ function agnos_init {
   # set success flag for current boot slot
   sudo abctl --set_success
 
+  # ensure params permissions are set correctly
+  sudo chown -R comma:comma /data/params/
+
   # Check if AGNOS update is required
   if [ $(< /VERSION) != "$AGNOS_VERSION" ]; then
     AGNOS_PY="$DIR/system/hardware/tici/agnos.py"
