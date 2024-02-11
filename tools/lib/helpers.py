@@ -6,12 +6,17 @@ TIME_FMT = "%Y-%m-%d--%H-%M-%S"
 
 # regex patterns
 class RE:
-  DONGLE_ID = r'(?P<dongle_id>[a-f0-9]{16})'
+  DONGLE_ID_BASE = '[a-f0-9]{16}'
+  DONGLE_ID = r'(?P<dongle_id>{})'.format(DONGLE_ID_BASE)
   TIMESTAMP = r'(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2}--[0-9]{2}-[0-9]{2}-[0-9]{2})'
-  LOG_ID_V2 = r'(?P<count>[a-f0-9]{8})--(?P<uid>[a-z0-9]{10})'
-  LOG_ID = r'(?P<log_id>(?:{}|{}))'.format(TIMESTAMP, LOG_ID_V2)
+  LOG_ID_BASE = r'[a-z0-9-]{20}'
+  LOG_ID = r'(?P<log_id>{})'.format(LOG_ID_BASE)
   ROUTE_NAME = r'(?P<route_name>{}[|_/]{})'.format(DONGLE_ID, LOG_ID)
-  SEGMENT_NAME = r'{}(?:--|/)(?P<segment_num>[0-9]+)'.format(ROUTE_NAME)
+  SEGMENT_NUMBER_BASE = r'[0-9]+'
+  SEGMENT_NUMBER = r'(?P<segment_num>{})'.format(SEGMENT_NUMBER_BASE)
+  SEGMENT_NAME = r'{}(?:--|/){}'.format(ROUTE_NAME, SEGMENT_NUMBER)
+  FILE_NAME_BASE = r'([fde]?camera.hevc|[qr]?log.bz2)'
+  FILE_NAME = r'(?P<file_name>{})'.format(FILE_NAME_BASE)
 
   INDEX = r'-?[0-9]+'
   SLICE = r'(?P<start>{})?:?(?P<end>{})?:?(?P<step>{})?'.format(INDEX, INDEX, INDEX)
