@@ -297,7 +297,7 @@ def main():
 
   # *** setup messaging
   can_sock = messaging.sub_sock('can')
-  sm = messaging.SubMaster(['modelV2', 'carState'], ignore_avg_freq=['modelV2', 'carState'])  # Can't check average frequency, since radar determines timing
+  sm = messaging.SubMaster(['modelV2', 'carState'])
   pm = messaging.PubMaster(['radarState', 'liveTracks'])
 
   RI = RadarInterface(CP)
@@ -307,12 +307,10 @@ def main():
 
   while 1:
     can_strings = messaging.drain_sock_raw(can_sock, wait_for_one=True)
+    sm.update(0)
     rr = RI.update(can_strings)
-
     if rr is None:
       continue
-
-    sm.update(0)
 
     RD.update(sm, rr)
     RD.publish(pm, -rk.remaining*1000.0)
