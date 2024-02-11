@@ -87,39 +87,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       bus=bus,
       logging=logging,
     ),
-  ]] + [
-    # try default diag sess
-    Request(
-      [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
-      [NISSAN_DIAGNOSTIC_RESPONSE_KWP, NISSAN_VERSION_RESPONSE_KWP],
-      bus=0,
-      logging=True,
-    ),
-    # try alt diag sess
-    Request(
-      [NISSAN_DIAGNOSTIC_REQUEST_KWP_2, NISSAN_VERSION_REQUEST_KWP],
-      [NISSAN_DIAGNOSTIC_RESPONSE_KWP_2, NISSAN_VERSION_RESPONSE_KWP],
-      bus=0,
-      logging=True,
-      rx_offset=0x3,
-    ),
-    # try no diag sess
-    Request(
-      [NISSAN_VERSION_REQUEST_KWP],
-      [NISSAN_VERSION_RESPONSE_KWP],
-      bus=0,
-      logging=True,
-      rx_offset=0x3,
-    ),
-  ] + [  # try reasonable range, no diag sess
-    Request(
-      [b'\x21' + bytes([i])],
-      [b'\x61' + bytes([i])],
-      bus=0,
-      logging=True,
-      rx_offset=0x3,
-    ) for i in range(0x60, 0xff)],
-  extra_ecus=[(Ecu.unknown, 0x797, None)],
+  ]],
 )
 
 DBC = {
