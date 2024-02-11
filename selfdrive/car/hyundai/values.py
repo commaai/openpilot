@@ -396,6 +396,9 @@ HYUNDAI_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]
   p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_SOFTWARE_IDENTIFICATION) + \
   p16(0xf100)
 
+HYUNDAI_ECU_MANUFACTURING_DATE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.ECU_MANUFACTURING_DATE)
+
 HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
 
 # Regex patterns for parsing platform code, FW date, and part number from FW versions
@@ -413,6 +416,8 @@ PLATFORM_CODE_ECUS = [Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps]
 # So far we've only seen dates in fwdCamera
 # TODO: there are date codes in the ABS firmware versions in hex
 DATE_FW_ECUS = [Ecu.fwdCamera]
+
+ALL_HYUNDAI_ECUS = [Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.engine, Ecu.parkingAdas, Ecu.transmission, Ecu.adas, Ecu.hvac, Ecu.cornerRadar]
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
@@ -447,13 +452,52 @@ FW_QUERY_CONFIG = FwQueryConfig(
       obd_multiplexing=False,
     ),
 
-    # CAN-FD debugging queries
+    # CAN & CAN FD query to understand the three digit date code
+    # HDA2 cars usually use 6 digit date codes, so skip bus 1
+    Request(
+      [HYUNDAI_ECU_MANUFACTURING_DATE],
+      [HYUNDAI_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.fwdCamera],
+      bus=0,
+      auxiliary=True,
+      logging=True,
+    ),
+
+    # CAN & CAN FD logging queries (from camera)
+    Request(
+      [HYUNDAI_VERSION_REQUEST_LONG],
+      [HYUNDAI_VERSION_RESPONSE],
+      whitelist_ecus=ALL_HYUNDAI_ECUS,
+      bus=0,
+      auxiliary=True,
+      logging=True,
+    ),
+    Request(
+      [HYUNDAI_VERSION_REQUEST_MULTI],
+      [HYUNDAI_VERSION_RESPONSE],
+      whitelist_ecus=ALL_HYUNDAI_ECUS,
+      bus=0,
+      auxiliary=True,
+      logging=True,
+    ),
+    Request(
+      [HYUNDAI_VERSION_REQUEST_LONG],
+      [HYUNDAI_VERSION_RESPONSE],
+      whitelist_ecus=ALL_HYUNDAI_ECUS,
+      bus=1,
+      auxiliary=True,
+      obd_multiplexing=False,
+      logging=True,
+    ),
+
+    # CAN-FD alt request logging queries
     Request(
       [HYUNDAI_VERSION_REQUEST_ALT],
       [HYUNDAI_VERSION_RESPONSE],
       whitelist_ecus=[Ecu.parkingAdas, Ecu.hvac],
       bus=0,
       auxiliary=True,
+      logging=True,
     ),
     Request(
       [HYUNDAI_VERSION_REQUEST_ALT],
@@ -461,6 +505,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       whitelist_ecus=[Ecu.parkingAdas, Ecu.hvac],
       bus=1,
       auxiliary=True,
+      logging=True,
       obd_multiplexing=False,
     ),
   ],
