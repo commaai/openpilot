@@ -16,8 +16,6 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     if CP.transmissionType == TransmissionType.automatic:
       self.shifter_values = can_define.dv["Gear_Shift_by_Wire_FD1"]["TrnRng_D_RqGsm"]
-    self.cluster_speed_hyst_gap = CV.KPH_TO_MS / 2.
-    self.cluster_min_speed = CV.KPH_TO_MS * 1.5
     self.vehicle_sensors_valid = False
     self.unsupported_platform = False
 
