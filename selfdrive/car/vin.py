@@ -41,8 +41,8 @@ def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
           for addr in vin_addrs:
             vin = results.get((addr, None))
             if vin is not None:
-              # Ford pads with null bytes
-              if len(vin) == 24:
+              # Ford and Nissan pads with null bytes
+              if len(vin) in (19, 24):
                 vin = re.sub(b'\x00*$', b'', vin)
 
               # Honda Bosch response starts with a length, trim to correct length
