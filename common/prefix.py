@@ -50,3 +50,4 @@ class OpenpilotPrefix:
     if not os.environ.get("COMMA_CACHE", False):
       shutil.rmtree(Paths.download_cache_root(), ignore_errors=True)
     shutil.rmtree(Paths.comma_home(), ignore_errors=True)
+    shutil.rmtree(Paths.temp_dir(), ignore_errors=True)
