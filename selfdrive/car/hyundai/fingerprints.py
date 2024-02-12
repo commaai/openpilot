@@ -1579,23 +1579,12 @@ FW_VERSIONS = {
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.01 99211-N9100 14A',
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.01 99211-N9240 14T',
       b'\xf1\x00NX4 FR_CMR AT CAN LHD 1.00 1.01 99211-N9100 14A',
-      b'\xf1\x8b !\t\x17',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NX4__               1.00 1.00 99110-N9100         ',
       b'\xf1\x00NX4__               1.00 1.01 99110-N9000         ',
       b'\xf1\x00NX4__               1.00 1.02 99110-N9000         ',
       b'\xf1\x00NX4__               1.01 1.00 99110-N9100         ',
-    ],
-    (Ecu.hvac, 0x7B0, None): [
-        b"\xf1\x00NX4   97255-P0260CONTROL ASS'Y-DATC  1.00 NX4PHEV ATC 0.7 1.00",
-    ],
-    (Ecu.cornerRadar, 0x7B0, None): [
-        b'\xf1\x003D',
-    ],
-    (Ecu.parkingAdas, 0x7D8, None): [
-        b'\xf1\x87P99910P0900',
-        b'\xf1\x10NX4H ADAS_PRK ANL 1.00 1.00 99910-P0900',
     ],
   },
   CAR.SANTA_CRUZ_1ST_GEN: {
