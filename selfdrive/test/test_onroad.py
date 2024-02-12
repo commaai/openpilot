@@ -59,6 +59,7 @@ PROCS = {
   "selfdrive.navd.navd": 0.4,
   "system.loggerd.uploader": (0.5, 15.0),
   "system.loggerd.deleter": 0.1,
+  "selfdrive.updated": 0,
 }
 
 PROCS.update({
@@ -423,4 +424,4 @@ class TestOnroad(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  pytest.main()
+  pytest.main(["-n0", "-s"])

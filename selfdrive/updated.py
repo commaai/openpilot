@@ -117,6 +117,7 @@ def setup_git_options(cwd: str) -> None:
     ("protocol.version", "2"),
     ("gc.auto", "0"),
     ("gc.autoDetach", "false"),
+    ("pack.windowMemory", "128m")
   ]
   for option, value in git_cfg:
     run(["git", "config", option, value], cwd)
