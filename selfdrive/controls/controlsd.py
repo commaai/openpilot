@@ -80,7 +80,8 @@ class Controls:
                                    'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman',
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
                                    'testJoystick'] + self.camera_packets + self.sensor_packets,
-                                  ignore_alive=ignore, ignore_avg_freq=['radarState', 'testJoystick'], ignore_valid=['testJoystick', ])
+                                  ignore_alive=ignore, ignore_avg_freq=ignore+['radarState', 'testJoystick'], ignore_valid=['testJoystick', ],
+                                  frequency=int(1/DT_CTRL))
 
     if CI is None:
       # wait for one pandaState and one CAN packet
@@ -452,6 +453,7 @@ class Controls:
             invalid=[s for s, valid in self.sm.valid.items() if not valid],
             not_alive=[s for s, alive in self.sm.alive.items() if not alive],
             not_freq_ok=[s for s, freq_ok in self.sm.freq_ok.items() if not freq_ok],
+            error=True,
           )
 
     # Check for CAN timeout
