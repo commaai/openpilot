@@ -112,3 +112,6 @@ def pytest_configure(config):
 
   config_line = "shared_download_cache: share download cache between tests"
   config.addinivalue_line("markers", config_line)
+
+  config_line = "hardware: lock a specific part of the device for testing"
+  config.addinivalue_line("markers", config_line)
