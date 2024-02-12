@@ -87,7 +87,7 @@ def pytest_collection_modifyitems(config, items):
       class_property_value = getattr(item.cls, class_property_name)
       item.add_marker(pytest.mark.xdist_group(class_property_value))
 
-    if "hardware" in items.keywords:
+    if "hardware" in item.keywords:
       hardware = item.get_closest_marker('hardware').args[0]
       if hardware != "system":
         all_hardware.append(hardware)
