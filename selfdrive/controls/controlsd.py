@@ -79,7 +79,7 @@ class Controls:
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
                                    'testJoystick'] + self.camera_packets + self.sensor_packets,
                                   ignore_alive=ignore, ignore_avg_freq=ignore+['radarState', 'testJoystick'],
-                                  ignore_valid=['testJoystick', ], poll=['carState'])
+                                  ignore_valid=['testJoystick', ], poll='carState')
 
     # get CI/CP from carParams
     cloudlog.warning("waiting for carParams")
