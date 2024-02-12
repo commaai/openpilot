@@ -17,6 +17,8 @@ jobs:
       PUSH_IMAGE: true
     permissions:
       checks: read
+      contents: read
+      packages: write
     steps:
     - name: Wait for green check mark
       if: ${{ github.event_name != 'workflow_dispatch' }}

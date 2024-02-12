@@ -64,3 +64,33 @@ An example of searching through a database of segments for a specific condition,
 ![steer warning example](https://github.com/commaai/openpilot/assets/9648890/d60ad120-4b44-4974-ac79-adc660fb8fe2)
 
 *a plot of the steer_warning vs steering angle, where we can see it is clearly caused by a large steering angle change*
+
+### [tools/car_porting/examples/subaru_long_accel.ipynb](/tools/car_porting/examples/subaru_long_accel.ipynb)
+
+An example of plotting the response of an actuator when it is active.
+
+![brake pressure example](https://github.com/commaai/openpilot/assets/9648890/8f32cf1d-8fc0-4407-b540-70625ebbf082)
+
+*a plot of the brake_pressure vs acceleration, where we can see it is a fairly linear response.*
+
+### [tools/car_porting/examples/ford_vin_fingerprint.ipynb](/tools/car_porting/examples/ford_vin_fingerprint.ipynb)
+
+In this example, we use the public comma car segments database to check if vin fingerprinting is feasible for ford.
+
+```
+vin: 1FM5K8GC7LGXXXXXX real platform: FORD EXPLORER 6TH GEN              determined platform: mock                              correct: False
+vin: 00000000000XXXXXX real platform: FORD ESCAPE 4TH GEN                determined platform: mock                              correct: False
+vin: 3FTTW8F98NRXXXXXX real platform: FORD MAVERICK 1ST GEN              determined platform: mock                              correct: False
+vin: 1FTVW1EL4NWXXXXXX real platform: FORD F-150 LIGHTNING 1ST GEN       determined platform: FORD F-150 LIGHTNING 1ST GEN      correct: True
+vin: 1FM5K7LC0MGXXXXXX real platform: FORD EXPLORER 6TH GEN              determined platform: mock                              correct: False
+vin: WF0NXXGCHNJXXXXXX real platform: FORD FOCUS 4TH GEN                 determined platform: mock                              correct: False
+vin: 1FMCU9J94MUXXXXXX real platform: FORD ESCAPE 4TH GEN                determined platform: mock                              correct: False
+vin: 5LM5J7XC9LGXXXXXX real platform: FORD EXPLORER 6TH GEN              determined platform: mock                              correct: False
+vin: 3FMCR9B69NRXXXXXX real platform: FORD BRONCO SPORT 1ST GEN          determined platform: mock                              correct: False
+vin: 3FMTK3SU0MMXXXXXX real platform: FORD MUSTANG MACH-E 1ST GEN        determined platform: FORD MUSTANG MACH-E 1ST GEN       correct: True
+vin: 1FM5K8HC7MGXXXXXX real platform: FORD EXPLORER 6TH GEN              determined platform: mock                              correct: False
+vin: 1FM5K8GC7NGXXXXXX real platform: FORD EXPLORER 6TH GEN              determined platform: mock                              correct: False
+vin: 5LM5J7XC8MGXXXXXX real platform: FORD EXPLORER 6TH GEN              determined platform: mock                              correct: False
+vin: 3FTTW8E31PRXXXXXX real platform: FORD MAVERICK 1ST GEN              determined platform: mock                              correct: False
+vin: 3FTTW8E99NRXXXXXX real platform: FORD MAVERICK 1ST GEN              determined platform: mock                              correct: False
+```

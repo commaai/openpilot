@@ -493,8 +493,8 @@ CONFIGS = [
   ProcessConfig(
     proc_name="plannerd",
     pubs=["modelV2", "carControl", "carState", "controlsState", "radarState"],
-    subs=["lateralPlan", "longitudinalPlan", "uiPlan"],
-    ignore=["logMonoTime", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime", "lateralPlan.solverExecutionTime"],
+    subs=["longitudinalPlan", "uiPlan"],
+    ignore=["logMonoTime", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime"],
     init_callback=get_car_params_callback,
     should_recv_callback=FrequencyBasedRcvCallback("modelV2"),
     tolerance=NUMPY_TOLERANCE,
@@ -552,7 +552,7 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="modeld",
-    pubs=["lateralPlan", "roadCameraState", "wideRoadCameraState", "liveCalibration", "driverMonitoringState"],
+    pubs=["roadCameraState", "wideRoadCameraState", "liveCalibration", "driverMonitoringState"],
     subs=["modelV2", "cameraOdometry"],
     ignore=["logMonoTime", "modelV2.frameDropPerc", "modelV2.modelExecutionTime"],
     should_recv_callback=ModeldCameraSyncRcvCallback(),
@@ -562,6 +562,7 @@ CONFIGS = [
     main_pub_drained=False,
     vision_pubs=["roadCameraState", "wideRoadCameraState"],
     ignore_alive_pubs=["wideRoadCameraState"],
+    init_callback=get_car_params_callback,
   ),
   ProcessConfig(
     proc_name="dmonitoringmodeld",
@@ -732,7 +733,6 @@ def _replay_multi_process(
 def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=None) -> Dict[str, Any]:
   params_dict = {
     "OpenpilotEnabledToggle": True,
-    "Passive": False,
     "DisengageOnAccelerator": True,
     "DisableLogging": False,
   }

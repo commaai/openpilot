@@ -29,12 +29,15 @@ def test_time_to_onroad():
         time.sleep(1)
 
     # wait for engageability
-    with Timeout(10, "timed out waiting for engageable"):
-      while True:
-        sm.update(1000)
-        if sm['controlsState'].engageable:
-          break
-        time.sleep(1)
+    try:
+      with Timeout(10, "timed out waiting for engageable"):
+        while True:
+          sm.update(1000)
+          if sm['controlsState'].engageable:
+            break
+          time.sleep(1)
+    finally:
+      print(f"onroad events: {sm['onroadEvents']}")
     print(f"engageable after {time.monotonic() - start_time:.2f}s")
 
     # once we're enageable, must be for the next few seconds

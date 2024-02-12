@@ -1,10 +1,11 @@
+import json
 import os
 import time
 import numpy as np
 import tomllib
 from abc import abstractmethod, ABC
 from enum import StrEnum
-from typing import Any, Dict, Optional, Tuple, List, Callable
+from typing import Any, Dict, Optional, Tuple, List, Callable, NamedTuple
 
 from cereal import car
 from openpilot.common.basedir import BASEDIR
@@ -20,7 +21,6 @@ from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 ButtonType = car.CarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
-TorqueFromLateralAccelCallbackType = Callable[[float, car.CarParams.LateralTorqueTuning, float, float, bool], float]
 
 MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS
 ACCEL_MAX = 2.0
@@ -30,6 +30,16 @@ FRICTION_THRESHOLD = 0.3
 TORQUE_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/params.toml')
 TORQUE_OVERRIDE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/override.toml')
 TORQUE_SUBSTITUTE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/substitute.toml')
+
+
+class LatControlInputs(NamedTuple):
+  lateral_acceleration: float
+  roll_compensation: float
+  vego: float
+  aego: float
+
+
+TorqueFromLateralAccelCallbackType = Callable[[LatControlInputs, car.CarParams.LateralTorqueTuning, float, float, bool, bool], float]
 
 
 def get_torque_params(candidate):
@@ -125,17 +135,16 @@ class CarInterfaceBase(ABC):
   @staticmethod
   def get_steer_feedforward_default(desired_angle, v_ego):
     # Proportional to realigning tire momentum: lateral acceleration.
-    # TODO: something with lateralPlan.curvatureRates
     return desired_angle * (v_ego**2)
 
   def get_steer_feedforward_function(self):
     return self.get_steer_feedforward_default
 
-  def torque_from_lateral_accel_linear(self, lateral_accel_value: float, torque_params: car.CarParams.LateralTorqueTuning,
-                                       lateral_accel_error: float, lateral_accel_deadzone: float, friction_compensation: bool) -> float:
+  def torque_from_lateral_accel_linear(self, latcontrol_inputs: LatControlInputs, torque_params: car.CarParams.LateralTorqueTuning,
+                                       lateral_accel_error: float, lateral_accel_deadzone: float, friction_compensation: bool, gravity_adjusted: bool) -> float:
     # The default is a linear relationship between torque and lateral acceleration (accounting for road roll and steering friction)
     friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
-    return (lateral_accel_value / float(torque_params.latAccelFactor)) + friction
+    return (latcontrol_inputs.lateral_acceleration / float(torque_params.latAccelFactor)) + friction
 
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
     return self.torque_from_lateral_accel_linear
@@ -465,3 +474,35 @@ def get_interface_attr(attr: str, combine_brands: bool = False, ignore_none: boo
       pass
 
   return result
+
+
+class NanoFFModel:
+  def __init__(self, weights_loc: str, platform: str):
+    self.weights_loc = weights_loc
+    self.platform = platform
+    self.load_weights(platform)
+
+  def load_weights(self, platform: str):
+    with open(self.weights_loc, 'r') as fob:
+      self.weights = {k: np.array(v) for k, v in json.load(fob)[platform].items()}
+
+  def relu(self, x: np.ndarray):
+    return np.maximum(0.0, x)
+
+  def forward(self, x: np.ndarray):
+    assert x.ndim == 1
+    x = (x - self.weights['input_norm_mat'][:, 0]) / (self.weights['input_norm_mat'][:, 1] - self.weights['input_norm_mat'][:, 0])
+    x = self.relu(np.dot(x, self.weights['w_1']) + self.weights['b_1'])
+    x = self.relu(np.dot(x, self.weights['w_2']) + self.weights['b_2'])
+    x = self.relu(np.dot(x, self.weights['w_3']) + self.weights['b_3'])
+    x = np.dot(x, self.weights['w_4']) + self.weights['b_4']
+    return x
+
+  def predict(self, x: List[float], do_sample: bool = False):
+    x = self.forward(np.array(x))
+    if do_sample:
+      pred = np.random.laplace(x[0], np.exp(x[1]) / self.weights['temperature'])
+    else:
+      pred = x[0]
+    pred = pred * (self.weights['output_norm_mat'][1] - self.weights['output_norm_mat'][0]) + self.weights['output_norm_mat'][0]
+    return pred

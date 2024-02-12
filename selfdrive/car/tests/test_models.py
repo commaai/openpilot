@@ -22,9 +22,9 @@ from openpilot.selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.test.helpers import read_segment_list
-from openpilot.selfdrive.test.openpilotci import get_url
-from openpilot.tools.lib.logreader import LogReader
-from openpilot.tools.lib.route import Route, SegmentName, RouteName
+from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
+from openpilot.tools.lib.logreader import LogReader, internal_source, openpilotci_source
+from openpilot.tools.lib.route import SegmentName
 
 from panda.tests.libpanda import libpanda_py
 
@@ -63,6 +63,7 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
 
 
 @pytest.mark.slow
+@pytest.mark.shared_download_cache
 class TestCarModelBase(unittest.TestCase):
   car_model: Optional[str] = None
   test_route: Optional[CarTestRoute] = None
@@ -72,14 +73,6 @@ class TestCarModelBase(unittest.TestCase):
   fingerprint: dict[int, dict[int, int]]
   elm_frame: Optional[int]
   car_safety_mode_frame: Optional[int]
-
-  @classmethod
-  def get_logreader(cls, seg):
-    if len(INTERNAL_SEG_LIST):
-      route_name = RouteName(cls.test_route.route)
-      return LogReader(f"cd:/{route_name.dongle_id}/{route_name.time_str}/{seg}/rlog.bz2")
-    else:
-      return LogReader(get_url(cls.test_route.route, seg))
 
   @classmethod
   def get_testing_data_from_logreader(cls, lr):
@@ -131,22 +124,26 @@ class TestCarModelBase(unittest.TestCase):
     if cls.test_route.segment is not None:
       test_segs = (cls.test_route.segment,)
 
-    # Try the primary method first (CI or internal)
+    is_internal = len(INTERNAL_SEG_LIST)
+
     for seg in test_segs:
+      segment_range = f"{cls.test_route.route}/{seg}"
+
       try:
-        lr = cls.get_logreader(seg)
+        lr = LogReader(segment_range, default_source=internal_source if is_internal else openpilotci_source)
         return cls.get_testing_data_from_logreader(lr)
       except Exception:
         pass
 
     # Route is not in CI bucket, assume either user has access (private), or it is public
     # test_route_on_ci_bucket will fail when running in CI
-    if not len(INTERNAL_SEG_LIST):
+    if not is_internal:
       cls.test_route_on_bucket = False
 
       for seg in test_segs:
+        segment_range = f"{cls.test_route.route}/{seg}"
         try:
-          lr = LogReader(Route(cls.test_route.route).log_paths()[seg])
+          lr = LogReader(segment_range)
           return cls.get_testing_data_from_logreader(lr)
         except Exception:
           pass
@@ -180,6 +177,8 @@ class TestCarModelBase(unittest.TestCase):
     cls.CP = cls.CarInterface.get_params(cls.car_model, cls.fingerprint, car_fw, experimental_long, docs=False)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
+
+    os.environ["COMMA_CACHE"] = DEFAULT_DOWNLOAD_CACHE_ROOT
 
   @classmethod
   def tearDownClass(cls):
