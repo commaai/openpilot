@@ -115,8 +115,8 @@ void SoftwarePanel::updateLabels() {
   }
 
   // updater only runs offroad
-  onroadLbl->setVisible(is_onroad);
-  downloadBtn->setVisible(!is_onroad);
+  onroadLbl->setVisible(false);
+  downloadBtn->setVisible(true);
 
   // download update
   QString updater_state = QString::fromStdString(params.get("UpdaterState"));
