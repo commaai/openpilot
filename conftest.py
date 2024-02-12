@@ -71,9 +71,28 @@ def tici_setup_fixture(openpilot_function_fixture):
   os.system("pkill -9 -f athena")
 
 
+def manage_hardware(items):
+  all_hardware = []
+  for item in items:
+    hardware_marker = item.get_closest_marker('hardware')
+    if hardware_marker is not None:
+      hardware_name = hardware_marker.args[0]
+      if hardware_name != "system":
+        all_hardware.append(hardware_name)
+        item.add_marker(pytest.mark.xdist_group(f"lock_{hardware_name}"))
+
+  # for the "system" hardware lock, lock all hardware
+  for item in items:
+    hardware_marker = item.get_closest_marker('hardware')
+    if hardware_marker is not None:
+      hardware_name = hardware_marker.args[0]
+      if hardware_name == "system":
+        for h in all_hardware:
+          item.add_marker(pytest.mark.xdist_group(f"lock_{h}"))
+
+
 @pytest.hookimpl(tryfirst=True)
 def pytest_collection_modifyitems(config, items):
-  all_hardware = []
   skipper = pytest.mark.skip(reason="Skipping tici test on PC")
   for item in items:
     if "tici" in item.keywords:
@@ -87,19 +106,7 @@ def pytest_collection_modifyitems(config, items):
       class_property_value = getattr(item.cls, class_property_name)
       item.add_marker(pytest.mark.xdist_group(class_property_value))
 
-    if "hardware" in item.keywords:
-      hardware = item.get_closest_marker('hardware').args[0]
-      if hardware != "system":
-        all_hardware.append(hardware)
-      item.add_marker(pytest.mark.xdist_group(f"lock_{hardware}"))
-
-  # for the "system" hardware lock, lock all hardware
-  for item in items:
-    if "hardware" in item.keywords:
-      hardware = item.get_closest_marker('hardware').args[0]
-      if hardware == "system":
-        for h in all_hardware:
-          item.add_marker(pytest.mark.xdist_group(f"lock_{h}"))
+  manage_hardware(items)
 
 
 @pytest.hookimpl(trylast=True)
