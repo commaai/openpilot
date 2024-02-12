@@ -20,9 +20,11 @@ from openpilot.common.time import system_time_valid
 from openpilot.system.hardware import AGNOS, HARDWARE
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
+from openpilot.system.hardware.hw import Paths
 from openpilot.system.version import is_tested_branch
 
-LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
+
+LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", os.path.join(Paths.temp_dir(), "safe_staging_overlay.lock"))
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
 
 OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")

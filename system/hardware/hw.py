@@ -7,6 +7,10 @@ DEFAULT_DOWNLOAD_CACHE_ROOT = "/tmp/comma_download_cache"
 
 class Paths:
   @staticmethod
+  def temp_dir() -> str:
+    return os.path.join("/tmp", os.environ.get("OPENPILOT_PREFIX", ""))
+
+  @staticmethod
   def comma_home() -> str:
     return os.path.join(str(Path.home()), ".comma" + os.environ.get("OPENPILOT_PREFIX", ""))
 
