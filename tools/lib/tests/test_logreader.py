@@ -11,6 +11,7 @@ from unittest import mock
 
 from openpilot.tools.lib.logreader import LogIterable, LogReader, comma_api_source, parse_indirect, parse_slice, ReadMode
 from openpilot.tools.lib.route import SegmentRange
+from openpilot.tools.lib.url_file import URLFileException
 
 NUM_SEGS = 17 # number of segments in the test route
 ALL_SEGS = list(np.arange(NUM_SEGS))
@@ -76,6 +77,9 @@ class TestLogReader(unittest.TestCase):
     for f in [QLOG_FILE, qlog.name]:
       l = len(list(LogReader(f)))
       self.assertGreater(l, 100)
+
+    with self.assertRaises(URLFileException):
+      l = len(list(LogReader(QLOG_FILE.replace("/3/", "/200/"))))
 
   @parameterized.expand([
     (f"{TEST_ROUTE}///",),
