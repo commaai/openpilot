@@ -21,6 +21,7 @@ CAMERAS = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
 # TODO: this shouldn't be needed
 @flaky(max_runs=3)
 @pytest.mark.tici
+@pytest.mark.hardware("camera")
 class TestCamerad:
   def setup_method(self):
     # run camerad and record logs

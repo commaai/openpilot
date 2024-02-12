@@ -4,12 +4,16 @@ import random
 import unittest
 import subprocess
 
+import pytest
+
 from panda import Panda
 from openpilot.system.hardware import TICI, HARDWARE
 from openpilot.system.hardware.tici.hardware import Tici
 from openpilot.system.hardware.tici.amplifier import Amplifier
 
 
+@pytest.mark.tici
+@pytest.mark.hardware("amplifier")
 class TestAmplifier(unittest.TestCase):
 
   @classmethod

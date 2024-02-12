@@ -21,6 +21,7 @@ BLACKLIST_PROCS = ['manage_athenad', 'pandad', 'pigeond']
 
 
 @pytest.mark.tici
+@pytest.mark.hardware("system")
 class TestManager(unittest.TestCase):
   def setUp(self):
     HARDWARE.set_power_save(False)

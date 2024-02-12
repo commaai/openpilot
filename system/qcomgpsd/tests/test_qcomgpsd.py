@@ -15,6 +15,7 @@ GOOD_SIGNAL = bool(int(os.getenv("GOOD_SIGNAL", '0')))
 
 
 @pytest.mark.tici
+@pytest.mark.hardware("modem")
 class TestRawgpsd(unittest.TestCase):
   @classmethod
   def setUpClass(cls):

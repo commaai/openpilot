@@ -16,6 +16,7 @@ HERE = os.path.dirname(os.path.realpath(__file__))
 
 
 @pytest.mark.tici
+@pytest.mark.hardware("panda")
 class TestPandad(unittest.TestCase):
 
   def setUp(self):

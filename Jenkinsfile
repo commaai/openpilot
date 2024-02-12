@@ -25,9 +25,6 @@ export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
 export MAPBOX_TOKEN='${env.MAPBOX_TOKEN}'
-# only use 1 thread for tici tests since most require HIL
-export PYTEST_ADDOPTS="-n 0"
-
 
 export GIT_SSH_COMMAND="ssh -i /data/gitkey"
 
@@ -189,10 +186,11 @@ node {
       'HW + Unit Tests': {
         deviceStage("tici-hardware", "tici-common", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
-          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
+          ["test hardware", "pytest \
+selfdrive/boardd/tests/test_pandad.py \
+system/loggerd/tests/test_encoder.py \
+system/sensord/tests/test_pigeond.py"],
           ["test power draw", "pytest -s system/hardware/tici/tests/test_power_draw.py"],
-          ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
-          ["test pigeond", "pytest system/sensord/tests/test_pigeond.py"],
           ["test manager", "pytest selfdrive/manager/test/test_manager.py"],
         ])
       },
@@ -233,11 +231,12 @@ node {
       'tizi': {
         deviceStage("tizi", "tizi", ["UNSAFE=1"], [
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
-          ["test boardd loopback", "SINGLE_PANDA=1 pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
-          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
-          ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
-          ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
-          ["test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py"],
+          ["test hardware", "SINGLE_PANDA=1 pytest \
+selfdrive/boardd/tests/test_boardd_loopback.py \
+selfdrive/boardd/tests/test_pandad.py \
+system/hardware/tici/tests/test_amplifier.py \
+system/hardware/tici/tests/test_hardware.py \
+system/qcomgpsd/tests/test_qcomgpsd.py"],
         ])
       },
 

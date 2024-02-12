@@ -7,6 +7,8 @@ import unittest
 from collections import defaultdict
 from pprint import pprint
 
+import pytest
+
 import cereal.messaging as messaging
 from cereal import car, log
 from openpilot.common.params import Params
@@ -17,6 +19,7 @@ from openpilot.system.hardware import TICI
 from openpilot.selfdrive.test.helpers import phone_only, with_processes
 
 
+@pytest.mark.hardware("panda")
 class TestBoardd(unittest.TestCase):
 
   @classmethod

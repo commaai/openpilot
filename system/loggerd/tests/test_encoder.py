@@ -33,6 +33,7 @@ FILE_SIZE_TOLERANCE = 0.5
 
 
 @pytest.mark.tici # TODO: all of loggerd should work on PC
+@pytest.mark.hardware("encoder")
 class TestEncoder(unittest.TestCase):
 
   def setUp(self):

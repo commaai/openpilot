@@ -43,6 +43,7 @@ PROCS = [
 
 
 @pytest.mark.tici
+@pytest.mark.hardware("system")
 class TestPowerDraw(unittest.TestCase):
 
   def setUp(self):

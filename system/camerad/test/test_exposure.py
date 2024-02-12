@@ -2,6 +2,7 @@
 import time
 import unittest
 import numpy as np
+import pytest
 
 from openpilot.selfdrive.test.helpers import with_processes, phone_only
 from openpilot.system.camerad.snapshot.snapshot import get_snapshots
@@ -9,6 +10,8 @@ from openpilot.system.camerad.snapshot.snapshot import get_snapshots
 TEST_TIME = 45
 REPEAT = 5
 
+@pytest.mark.tici
+@pytest.mark.hardware("camera")
 class TestCamerad(unittest.TestCase):
   @classmethod
   def setUpClass(cls):

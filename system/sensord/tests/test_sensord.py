@@ -99,6 +99,7 @@ def read_sensor_events(duration_sec):
   return {k: v for k, v in events.items() if len(v) > 0}
 
 @pytest.mark.tici
+@pytest.mark.hardware("sensors")
 class TestSensord(unittest.TestCase):
   @classmethod
   def setUpClass(cls):

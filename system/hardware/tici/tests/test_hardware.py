@@ -10,6 +10,7 @@ HARDWARE = Tici()
 
 
 @pytest.mark.tici
+@pytest.mark.hardware("system")
 class TestHardware(unittest.TestCase):
 
   def test_power_save_time(self):
