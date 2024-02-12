@@ -26,7 +26,7 @@ class TestNavd(unittest.TestCase):
     managed_processes['navd'].start()
     for _ in range(30):
       self.sm.update(1000)
-      if all(f > 0 for f in self.sm.rcv_frame.values()):
+      if all(f > 0 for f in self.sm.recv_frame.values()):
         break
     else:
       raise Exception("didn't get a route")

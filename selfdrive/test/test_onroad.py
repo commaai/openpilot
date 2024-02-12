@@ -126,7 +126,7 @@ class TestOnroad(unittest.TestCase):
 
       sm = messaging.SubMaster(['carState'])
       with Timeout(150, "controls didn't start"):
-        while sm.rcv_frame['carState'] < 0:
+        while sm.recv_frame['carState'] < 0:
           sm.update(1000)
 
       # make sure we get at least two full segments
