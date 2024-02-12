@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-import os
 import sys
 import argparse
 import json
 import codecs
-import cereal.messaging as messaging
 
 from hexdump import hexdump
 from cereal import log
 from cereal.services import SERVICE_LIST
+from openpilot.tools.lib.logreader import raw_live_logreader
+
 
 codecs.register_error("strict", codecs.backslashreplace_errors)
 
@@ -22,32 +22,20 @@ if __name__ == "__main__":
   parser.add_argument('--no-print', action='store_true')
   parser.add_argument('--addr', default='127.0.0.1')
   parser.add_argument('--values', help='values to monitor (instead of entire event)')
-  parser.add_argument("socket", type=str, nargs='*', help="socket names to dump. defaults to all services defined in cereal")
+  parser.add_argument("socket", type=str, nargs='*', default=list(SERVICE_LIST.keys()), help="socket names to dump. defaults to all services defined in cereal")
   args = parser.parse_args()
 
-  if args.addr != "127.0.0.1":
-    os.environ["ZMQ"] = "1"
-    messaging.context = messaging.Context()
-
-  poller = messaging.Poller()
-
-  for m in args.socket if len(args.socket) > 0 else SERVICE_LIST:
-    messaging.sub_sock(m, poller, addr=args.addr)
+  lr = raw_live_logreader(args.socket, args.addr)
 
   values = None
   if args.values:
     values = [s.strip().split(".") for s in args.values.split(",")]
 
-  while 1:
-    polld = poller.poll(100)
-    for sock in polld:
-      msg = sock.receive()
-      with log.Event.from_bytes(msg) as log_evt:
-        evt = log_evt
-
+  for msg in lr:
+    with log.Event.from_bytes(msg) as evt:
       if not args.no_print:
         if args.pipe:
-          sys.stdout.write(msg)
+          sys.stdout.write(str(msg))
           sys.stdout.flush()
         elif args.raw:
           hexdump(msg)
