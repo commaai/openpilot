@@ -30,9 +30,10 @@ def main():
   if not params.get_bool("DisengageOnAccelerator"):
     CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
-  passive = params.get_bool("Passive") or not params.get_bool("OpenpilotEnabledToggle")
-  controller_available = CI.CC is not None and not passive and not CP.dashcamOnly
-  CP.passive = not controller_available or CP.dashcamOnly
+  openpilot_enabled_toggle = params.get_bool("OpenpilotEnabledToggle")
+  car_recognized = CP.carName != 'mock'
+  controller_available = CI.CC is not None and openpilot_enabled_toggle and not CP.dashcamOnly
+  CP.passive = not car_recognized or not controller_available or CP.dashcamOnly
   if CP.passive:
     CP.safetyConfigs = []
 
