@@ -16,6 +16,8 @@ ssh -tt -o ConnectTimeout=30 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 
 
 set -e
 
+shopt -s huponexit # kill all child processes when the shell exits
+
 export CI=1
 export PYTHONWARNINGS=error
 export LOGPRINT=debug
