@@ -20,7 +20,6 @@ non_tested_cars = [
   GM.CADILLAC_ATS,
   GM.HOLDEN_ASTRA,
   GM.MALIBU,
-  GM.EQUINOX,
   HYUNDAI.GENESIS_G90,
   HONDA.ODYSSEY_CHN,
   VOLKSWAGEN.CRAFTER_MK2,  # need a route from an ACC-equipped Crafter
@@ -60,6 +59,7 @@ routes = [
   CarTestRoute("7cc2a8365b4dd8a9|2018-12-02--12-10-44", GM.ACADIA),
   CarTestRoute("aa20e335f61ba898|2019-02-05--16-59-04", GM.BUICK_REGAL),
   CarTestRoute("75a6bcb9b8b40373|2023-03-11--22-47-33", GM.BUICK_LACROSSE),
+  CarTestRoute("e746f59bc96fd789|2024-01-31--22-25-58", GM.EQUINOX),
   CarTestRoute("ef8f2185104d862e|2023-02-09--18-37-13", GM.ESCALADE),
   CarTestRoute("46460f0da08e621e|2021-10-26--07-21-46", GM.ESCALADE_ESV),
   CarTestRoute("168f8b3be57f66ae|2023-09-12--21-44-42", GM.ESCALADE_ESV_2019),
