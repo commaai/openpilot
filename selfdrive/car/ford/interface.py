@@ -3,7 +3,7 @@ from panda import Panda
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car import get_safety_config
 from openpilot.selfdrive.car.ford.fordcan import CanBus
-from openpilot.selfdrive.car.ford.values import CANFD_CAR, CAR, Ecu
+from openpilot.selfdrive.car.ford.values import CANFD_CAR, CAR, Ecu, FordFlags
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 TransmissionType = car.CarParams.TransmissionType
@@ -38,6 +38,13 @@ class CarInterface(CarInterfaceBase):
 
     if candidate in CANFD_CAR:
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_FORD_CANFD
+
+    # detect IPC metric units
+    ipc_config = next((fw for fw in car_fw if fw.ecu == Ecu.combinationMeter and b'DE03' in fw.request), None)
+    if ipc_config:
+      data = ipc_config.response[7]
+      value = data & 0x80
+      ret.flags |= FordFlags.METRIC_UNITS if value else 0
 
     if candidate == CAR.BRONCO_SPORT_MK1:
       ret.wheelbase = 2.67

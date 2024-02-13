@@ -1,6 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from enum import Enum, StrEnum
+from enum import Enum, IntFlag, StrEnum
 from typing import Dict, List, Union
 
 from cereal import car
@@ -39,6 +39,10 @@ class CarControllerParams:
 
   def __init__(self, CP):
     pass
+
+
+class FordFlags(IntFlag):
+  METRIC_UNITS = 1
 
 
 class CAR(StrEnum):
