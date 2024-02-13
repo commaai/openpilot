@@ -179,7 +179,7 @@ class CarState(CarStateBase):
       ("PCM_CRUISE", 33),
       ("PCM_CRUISE_SM", 1),
       ("STEER_TORQUE_SENSOR", 50),
-      ("ENGINE_RPM", 20),  # no clue
+      ("ENGINE_RPM", 42),
     ]
 
     if CP.carFingerprint in UNSUPPORTED_DSU_CAR:
