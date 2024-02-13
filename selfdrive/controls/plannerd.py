@@ -29,11 +29,10 @@ def plannerd_thread():
   longitudinal_planner = LongitudinalPlanner(CP)
   pm = messaging.PubMaster(['longitudinalPlan', 'uiPlan'])
   sm = messaging.SubMaster(['carControl', 'carState', 'controlsState', 'radarState', 'modelV2'],
-                           poll=['radarState', 'modelV2'], ignore_avg_freq=['radarState'])
+                           poll='modelV2', ignore_avg_freq=['radarState'])
 
   while True:
     sm.update()
-
     if sm.updated['modelV2']:
       longitudinal_planner.update(sm)
       longitudinal_planner.publish(sm, pm)
