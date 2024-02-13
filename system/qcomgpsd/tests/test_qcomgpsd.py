@@ -58,10 +58,7 @@ class TestRawgpsd(unittest.TestCase):
     os.system("sudo systemctl restart ModemManager")
     assert self._wait_for_output(30)
 
-  @parameterized.expand([
-    (True,),
-    (False,),
-  ])
+  @parameterized.expand([(b,) for b in (True, False)])
   def test_startup_time(self, internet):
     if not internet:
       os.system("sudo systemctl stop systemd-resolved")
@@ -70,11 +67,7 @@ class TestRawgpsd(unittest.TestCase):
       assert self._wait_for_output(7)
       managed_processes['qcomgpsd'].stop()
 
-  @parameterized.expand([
-    (0.1,),
-    (1,),
-    (5,),
-  ])
+  @parameterized.expand([(t,) for t in (0.1, 1, 5)])
   def test_turns_off_gnss(self, runtime):
     managed_processes['qcomgpsd'].start()
     time.sleep(runtime)
