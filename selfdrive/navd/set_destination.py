@@ -2,7 +2,7 @@
 import json
 import sys
 
-from common.params import Params
+from openpilot.common.params import Params
 
 if __name__ == "__main__":
   params = Params()

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "system/sensord/sensors/i2c_sensor.h"
 
 // Address of the chip on the bus
@@ -19,9 +21,14 @@
 #define MMC5603NJ_AUTO_SR_EN     (1 << 5)
 #define MMC5603NJ_CMM_EN         (1 << 4)
 #define MMC5603NJ_EN_PRD_SET     (1 << 3)
+#define MMC5603NJ_SET            (1 << 3)
+#define MMC5603NJ_RESET          (1 << 4)
 
 class MMC5603NJ_Magn : public I2CSensor {
+private:
   uint8_t get_device_address() {return MMC5603NJ_I2C_ADDR;}
+  void start_measurement();
+  std::vector<float> read_measurement();
 public:
   MMC5603NJ_Magn(I2CBus *bus);
   int init();

@@ -1,10 +1,10 @@
-#!/usr/bin/env python3
 from math import cos, sin
 from cereal import car
 from opendbc.can.parser import CANParser
-from common.conversions import Conversions as CV
-from selfdrive.car.ford.values import CANBUS, DBC, RADAR
-from selfdrive.car.interfaces import RadarInterfaceBase
+from openpilot.common.conversions import Conversions as CV
+from openpilot.selfdrive.car.ford.fordcan import CanBus
+from openpilot.selfdrive.car.ford.values import DBC, RADAR
+from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 
 DELPHI_ESR_RADAR_MSGS = list(range(0x500, 0x540))
 
@@ -12,32 +12,21 @@ DELPHI_MRR_RADAR_START_ADDR = 0x120
 DELPHI_MRR_RADAR_MSG_COUNT = 64
 
 
-def _create_delphi_esr_radar_can_parser():
+def _create_delphi_esr_radar_can_parser(CP) -> CANParser:
   msg_n = len(DELPHI_ESR_RADAR_MSGS)
-  signals = list(zip(['X_Rel'] * msg_n + ['Angle'] * msg_n + ['V_Rel'] * msg_n,
-                     DELPHI_ESR_RADAR_MSGS * 3))
-  checks = list(zip(DELPHI_ESR_RADAR_MSGS, [20] * msg_n))
+  messages = list(zip(DELPHI_ESR_RADAR_MSGS, [20] * msg_n, strict=True))
 
-  return CANParser(RADAR.DELPHI_ESR, signals, checks, CANBUS.radar)
+  return CANParser(RADAR.DELPHI_ESR, messages, CanBus(CP).radar)
 
 
-def _create_delphi_mrr_radar_can_parser():
-  signals = []
-  checks = []
+def _create_delphi_mrr_radar_can_parser(CP) -> CANParser:
+  messages = []
 
   for i in range(1, DELPHI_MRR_RADAR_MSG_COUNT + 1):
     msg = f"MRR_Detection_{i:03d}"
-    signals += [
-      (f"CAN_DET_VALID_LEVEL_{i:02d}", msg),
-      (f"CAN_DET_AZIMUTH_{i:02d}", msg),
-      (f"CAN_DET_RANGE_{i:02d}", msg),
-      (f"CAN_DET_RANGE_RATE_{i:02d}", msg),
-      (f"CAN_DET_AMPLITUDE_{i:02d}", msg),
-      (f"CAN_SCAN_INDEX_2LSB_{i:02d}", msg),
-    ]
-    checks += [(msg, 20)]
+    messages += [(msg, 20)]
 
-  return CANParser(RADAR.DELPHI_MRR, signals, checks, CANBUS.radar)
+  return CANParser(RADAR.DELPHI_MRR, messages, CanBus(CP).radar)
 
 
 class RadarInterface(RadarInterfaceBase):
@@ -50,11 +39,11 @@ class RadarInterface(RadarInterfaceBase):
     if self.radar is None or CP.radarUnavailable:
       self.rcp = None
     elif self.radar == RADAR.DELPHI_ESR:
-      self.rcp = _create_delphi_esr_radar_can_parser()
+      self.rcp = _create_delphi_esr_radar_can_parser(CP)
       self.trigger_msg = DELPHI_ESR_RADAR_MSGS[-1]
       self.valid_cnt = {key: 0 for key in DELPHI_ESR_RADAR_MSGS}
     elif self.radar == RADAR.DELPHI_MRR:
-      self.rcp = _create_delphi_mrr_radar_can_parser()
+      self.rcp = _create_delphi_mrr_radar_can_parser(CP)
       self.trigger_msg = DELPHI_MRR_RADAR_START_ADDR + DELPHI_MRR_RADAR_MSG_COUNT - 1
     else:
       raise ValueError(f"Unsupported radar: {self.radar}")
@@ -130,17 +119,23 @@ class RadarInterface(RadarInterfaceBase):
         self.track_id += 1
 
       valid = bool(msg[f"CAN_DET_VALID_LEVEL_{ii:02d}"])
-      amplitude = msg[f"CAN_DET_AMPLITUDE_{ii:02d}"]            # dBsm [-64|63]
 
-      if valid and 0 < amplitude <= 15:
+      if valid:
         azimuth = msg[f"CAN_DET_AZIMUTH_{ii:02d}"]              # rad [-3.1416|3.13964]
         dist = msg[f"CAN_DET_RANGE_{ii:02d}"]                   # m [0|255.984]
         distRate = msg[f"CAN_DET_RANGE_RATE_{ii:02d}"]          # m/s [-128|127.984]
+        dRel = cos(azimuth) * dist                              # m from front of car
+        yRel = -sin(azimuth) * dist                             # in car frame's y axis, left is positive
 
-        # *** openpilot radar point ***
-        self.pts[i].dRel = cos(azimuth) * dist                  # m from front of car
-        self.pts[i].yRel = -sin(azimuth) * dist                 # in car frame's y axis, left is positive
-        self.pts[i].vRel = distRate                             # m/s
+        # delphi doesn't notify of track switches, so do it manually
+        # TODO: refactor this to radard if more radars behave this way
+        if abs(self.pts[i].vRel - distRate) > 2 or abs(self.pts[i].dRel - dRel) > 5:
+          self.track_id += 1
+          self.pts[i].trackId = self.track_id
+
+        self.pts[i].dRel = dRel
+        self.pts[i].yRel = yRel
+        self.pts[i].vRel = distRate
 
         self.pts[i].measured = True
 

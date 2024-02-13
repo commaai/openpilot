@@ -1,22 +1,19 @@
 #!/usr/bin/env python3
+import pytest
 import time
 import unittest
 
 import cereal.messaging as messaging
-from cereal.services import service_list
-from common.gpio import gpio_read
-from selfdrive.test.helpers import with_processes
-from selfdrive.manager.process_config import managed_processes
-from system.hardware import TICI
-from system.hardware.tici.pins import GPIO
+from cereal.services import SERVICE_LIST
+from openpilot.common.gpio import gpio_read
+from openpilot.selfdrive.test.helpers import with_processes
+from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.hardware.tici.pins import GPIO
 
 
 # TODO: test TTFF when we have good A-GNSS
+@pytest.mark.tici
 class TestPigeond(unittest.TestCase):
-  @classmethod
-  def setUpClass(cls):
-    if not TICI:
-      raise unittest.SkipTest
 
   def tearDown(self):
     managed_processes['pigeond'].stop()
@@ -26,10 +23,10 @@ class TestPigeond(unittest.TestCase):
     sm = messaging.SubMaster(['ubloxRaw'])
 
     # setup time
-    time.sleep(2)
-    sm.update()
+    for _ in range(int(5 * SERVICE_LIST['ubloxRaw'].frequency)):
+      sm.update()
 
-    for _ in range(int(10 * service_list['ubloxRaw'].frequency)):
+    for _ in range(int(10 * SERVICE_LIST['ubloxRaw'].frequency)):
       sm.update()
       assert sm.all_checks()
 
@@ -43,7 +40,7 @@ class TestPigeond(unittest.TestCase):
         sm.update(1 * 1000)
         if sm.updated['ubloxRaw']:
           break
-      assert sm.rcv_frame['ubloxRaw'] > 0, "pigeond didn't start outputting messages in time"
+      assert sm.recv_frame['ubloxRaw'] > 0, "pigeond didn't start outputting messages in time"
 
       et = time.monotonic() - start_time
       assert et < 5, f"pigeond took {et:.1f}s to start"
@@ -56,7 +53,7 @@ class TestPigeond(unittest.TestCase):
       managed_processes['pigeond'].stop()
 
       assert gpio_read(GPIO.UBLOX_RST_N) == 0
-      assert gpio_read(GPIO.UBLOX_PWR_EN) == 0
+      assert gpio_read(GPIO.GNSS_PWR_EN) == 0
 
 
 if __name__ == "__main__":

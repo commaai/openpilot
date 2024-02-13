@@ -2,9 +2,9 @@
 import sys
 
 from cereal import car
-from common.params import Params
-from tools.lib.route import Route
-from tools.lib.logreader import LogReader
+from openpilot.common.params import Params
+from openpilot.tools.lib.route import Route
+from openpilot.tools.lib.logreader import LogReader
 
 if __name__ == "__main__":
   CP = None

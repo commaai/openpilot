@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
 from cereal import car
 from opendbc.can.parser import CANParser
-from selfdrive.car.interfaces import RadarInterfaceBase
-from selfdrive.car.honda.values import DBC
+from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
+from openpilot.selfdrive.car.honda.values import DBC
 
 
 def _create_nidec_can_parser(car_fingerprint):
   radar_messages = [0x400] + list(range(0x430, 0x43A)) + list(range(0x440, 0x446))
-  signals = list(zip(['RADAR_STATE'] +
-                     ['LONG_DIST'] * 16 + ['NEW_TRACK'] * 16 + ['LAT_DIST'] * 16 +
-                     ['REL_SPEED'] * 16,
-                     [0x400] + radar_messages[1:] * 4))
-  checks = [(s[1], 20) for s in signals]
-  return CANParser(DBC[car_fingerprint]['radar'], signals, checks, 1)
+  messages = [(m, 20) for m in radar_messages]
+  return CANParser(DBC[car_fingerprint]['radar'], messages, 1)
 
 
 class RadarInterface(RadarInterfaceBase):

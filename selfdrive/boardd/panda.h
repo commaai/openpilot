@@ -6,6 +6,7 @@
 #include <list>
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 #include "cereal/gen/cpp/car.capnp.h"
@@ -57,7 +58,7 @@ public:
   std::string hw_serial();
 
   // Static functions
-  static std::vector<std::string> list();
+  static std::vector<std::string> list(bool usb_only=false);
 
   // Panda functionality
   cereal::PandaState::PandaType get_hw_type();
@@ -72,6 +73,7 @@ public:
   std::optional<can_health_t> get_can_state(uint16_t can_number);
   void set_loopback(bool loopback);
   std::optional<std::vector<uint8_t>> get_firmware_version();
+  bool up_to_date();
   std::optional<std::string> get_serial();
   void set_power_saving(bool power_saving);
   void enable_deepsleep();

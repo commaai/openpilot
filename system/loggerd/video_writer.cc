@@ -1,6 +1,5 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #include <cassert>
-#include <cstdlib>
 
 #include "system/loggerd/video_writer.h"
 #include "common/swaglog.h"
@@ -8,7 +7,6 @@
 
 VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, int width, int height, int fps, cereal::EncodeIndex::Type codec)
   : remuxing(remuxing) {
-  raw = codec == cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS;
   vid_path = util::string_format("%s/%s", path, filename);
   lock_path = util::string_format("%s/%s.lock", path, filename);
 
@@ -18,6 +16,7 @@ VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, 
 
   LOGD("encoder_open %s remuxing:%d", this->vid_path.c_str(), this->remuxing);
   if (this->remuxing) {
+    bool raw = (codec == cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS);
     avformat_alloc_output_context2(&this->ofmt_ctx, NULL, raw ? "matroska" : NULL, this->vid_path.c_str());
     assert(this->ofmt_ctx);
 
@@ -89,7 +88,7 @@ void VideoWriter::write(uint8_t *data, int len, long long timestamp, bool codecc
 
       // TODO: can use av_write_frame for non raw?
       int err = av_interleaved_write_frame(ofmt_ctx, &pkt);
-      if (err < 0) { LOGW("ts encoder write issue len: %d ts: %lu", len, timestamp); }
+      if (err < 0) { LOGW("ts encoder write issue len: %d ts: %lld", len, timestamp); }
 
       av_packet_unref(&pkt);
     }
@@ -98,7 +97,6 @@ void VideoWriter::write(uint8_t *data, int len, long long timestamp, bool codecc
 
 VideoWriter::~VideoWriter() {
   if (this->remuxing) {
-    if (this->raw) { avcodec_close(this->codec_ctx); }
     int err = av_write_trailer(this->ofmt_ctx);
     if (err != 0) LOGE("av_write_trailer failed %d", err);
     avcodec_free_context(&this->codec_ctx);

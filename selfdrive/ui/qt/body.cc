@@ -63,9 +63,9 @@ BodyWindow::BodyWindow(QWidget *parent) : fuel_filter(1.0, 5., 1. / UI_FREQ), QW
   face = new QLabel();
   face->setAlignment(Qt::AlignCenter);
   layout->addWidget(face);
-  awake = new QMovie("../assets/body/awake.gif");
+  awake = new QMovie("../assets/body/awake.gif", {}, this);
   awake->setCacheMode(QMovie::CacheAll);
-  sleep = new QMovie("../assets/body/sleep.gif");
+  sleep = new QMovie("../assets/body/sleep.gif", {}, this);
   sleep->setCacheMode(QMovie::CacheAll);
 
   // record button

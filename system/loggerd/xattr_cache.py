@@ -1,6 +1,6 @@
 import os
 import errno
-from typing import Dict, Tuple, Optional
+from typing import Dict, Optional, Tuple
 
 _cached_attributes: Dict[Tuple, Optional[bytes]] = {}
 

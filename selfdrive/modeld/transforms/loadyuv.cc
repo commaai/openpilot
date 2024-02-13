@@ -15,7 +15,7 @@ void loadyuv_init(LoadYUVState* s, cl_context ctx, cl_device_id device_id, int w
            "-cl-fast-relaxed-math -cl-denorms-are-zero "
            "-DTRANSFORMED_WIDTH=%d -DTRANSFORMED_HEIGHT=%d",
            width, height);
-  cl_program prg = cl_program_from_file(ctx, device_id, "transforms/loadyuv.cl", args);
+  cl_program prg = cl_program_from_file(ctx, device_id, LOADYUV_PATH, args);
 
   s->loadys_krnl = CL_CHECK_ERR(clCreateKernel(prg, "loadys", &err));
   s->loaduv_krnl = CL_CHECK_ERR(clCreateKernel(prg, "loaduv", &err));

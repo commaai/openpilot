@@ -1,7 +1,12 @@
 #pragma once
 
+#include <deque>
+#include <map>
 #include <memory>
 #include <mutex>
+#include <set>
+#include <string>
+#include <utility>
 
 #include <QOpenGLFunctions>
 #include <QOpenGLShaderProgram>
@@ -54,15 +59,17 @@ protected:
   void vipcThread();
   void clearFrames();
 
+  int glWidth();
+  int glHeight();
+
   bool zoomed_view;
   GLuint frame_vao, frame_vbo, frame_ibo;
   GLuint textures[2];
-  mat4 frame_mat;
+  mat4 frame_mat = {};
   std::unique_ptr<QOpenGLShaderProgram> program;
   QColor bg = QColor("#000000");
 
 #ifdef QCOM2
-  EGLDisplay egl_display;
   std::map<int, EGLImageKHR> egl_images;
 #endif
 
@@ -80,7 +87,7 @@ protected:
   float y_offset = 0;
   float zoom = 1.0;
   mat3 calibration = DEFAULT_CALIBRATION;
-  mat3 intrinsic_matrix = fcam_intrinsic_matrix;
+  mat3 intrinsic_matrix = FCAM_INTRINSIC_MATRIX;
 
   std::recursive_mutex frame_lock;
   std::deque<std::pair<uint32_t, VisionBuf*>> frames;

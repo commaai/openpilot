@@ -3,11 +3,11 @@ import sentry_sdk
 from enum import Enum
 from sentry_sdk.integrations.threading import ThreadingIntegration
 
-from common.params import Params
-from selfdrive.athena.registration import is_registered_device
-from system.hardware import HARDWARE, PC
-from system.swaglog import cloudlog
-from system.version import get_branch, get_commit, get_origin, get_version, \
+from openpilot.common.params import Params
+from openpilot.selfdrive.athena.registration import is_registered_device
+from openpilot.system.hardware import HARDWARE, PC
+from openpilot.common.swaglog import cloudlog
+from openpilot.system.version import get_branch, get_commit, get_origin, get_version, \
                               is_comma_remote, is_dirty, is_tested_branch
 
 
@@ -42,11 +42,11 @@ def set_tag(key: str, value: str) -> None:
   sentry_sdk.set_tag(key, value)
 
 
-def init(project: SentryProject) -> None:
+def init(project: SentryProject) -> bool:
   # forks like to mess with this, so double check
-  comma_remote = is_comma_remote() and "commaai" in get_origin(default="")
+  comma_remote = is_comma_remote() and "commaai" in get_origin()
   if not comma_remote or not is_registered_device() or PC:
-    return
+    return False
 
   env = "release" if is_tested_branch() else "master"
   dongle_id = Params().get("DongleId", encoding='utf-8')
@@ -54,14 +54,13 @@ def init(project: SentryProject) -> None:
   integrations = []
   if project == SentryProject.SELFDRIVE:
     integrations.append(ThreadingIntegration(propagate_hub=True))
-  else:
-    sentry_sdk.utils.MAX_STRING_LENGTH = 8192
 
   sentry_sdk.init(project.value,
                   default_integrations=False,
                   release=get_version(),
                   integrations=integrations,
                   traces_sample_rate=1.0,
+                  max_value_length=8192,
                   environment=env)
 
   sentry_sdk.set_user({"id": dongle_id})
@@ -73,3 +72,5 @@ def init(project: SentryProject) -> None:
 
   if project == SentryProject.SELFDRIVE:
     sentry_sdk.Hub.current.start_session()
+
+  return True

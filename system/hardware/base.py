@@ -23,6 +23,9 @@ class HardwareBase(ABC):
     except Exception:
       return default
 
+  def booted(self) -> bool:
+    return True
+
   @abstractmethod
   def reboot(self, reason=None):
     pass
@@ -49,10 +52,6 @@ class HardwareBase(ABC):
 
   @abstractmethod
   def get_serial(self):
-    pass
-
-  @abstractmethod
-  def get_subscriber_info(self):
     pass
 
   @abstractmethod
@@ -134,6 +133,9 @@ class HardwareBase(ABC):
   @abstractmethod
   def get_networks(self):
     pass
+
+  def has_internal_panda(self) -> bool:
+    return False
 
   def reset_internal_panda(self):
     pass

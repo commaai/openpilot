@@ -11,7 +11,6 @@ import queue
 import random
 import select
 import socket
-import subprocess
 import sys
 import tempfile
 import threading
@@ -20,7 +19,7 @@ from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial
 from queue import Queue
-from typing import BinaryIO, Callable, Dict, List, Optional, Set, Union, cast
+from typing import Callable, Dict, List, Optional, Set, Union, cast
 
 import requests
 from jsonrpc import JSONRPCResponseManager, dispatcher
@@ -29,18 +28,17 @@ from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutExce
 
 import cereal.messaging as messaging
 from cereal import log
-from cereal.services import service_list
-from common.api import Api
-from common.basedir import PERSIST
-from common.file_helpers import CallbackReader
-from common.params import Params
-from common.realtime import sec_since_boot, set_core_affinity
-from system.hardware import HARDWARE, PC, AGNOS
-from system.loggerd.config import ROOT
-from system.loggerd.xattr_cache import getxattr, setxattr
-from selfdrive.statsd import STATS_DIR
-from system.swaglog import SWAGLOG_DIR, cloudlog
-from system.version import get_commit, get_origin, get_short_branch, get_version
+from cereal.services import SERVICE_LIST
+from openpilot.common.api import Api
+from openpilot.common.file_helpers import CallbackReader
+from openpilot.common.params import Params
+from openpilot.common.realtime import set_core_affinity
+from openpilot.system.hardware import HARDWARE, PC
+from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
+from openpilot.common.swaglog import cloudlog
+from openpilot.system.version import get_commit, get_normalized_origin, get_short_branch, get_version
+from openpilot.system.hardware.hw import Paths
+
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
@@ -71,7 +69,7 @@ class UploadFile:
   allow_cellular: bool
 
   @classmethod
-  def from_dict(cls, d: Dict) -> UploadFile:
+  def from_dict(cls, d: dict) -> UploadFile:
     return cls(d.get("fn", ""), d.get("url", ""), d.get("headers", {}), d.get("allow_cellular", False))
 
 
@@ -88,7 +86,7 @@ class UploadItem:
   allow_cellular: bool = False
 
   @classmethod
-  def from_dict(cls, d: Dict) -> UploadItem:
+  def from_dict(cls, d: dict) -> UploadItem:
     return cls(d["path"], d["url"], d["headers"], d["created_at"], d["id"], d["retry_count"], d["current"],
                d["progress"], d["allow_cellular"])
 
@@ -115,12 +113,11 @@ class AbortTransferException(Exception):
 
 
 class UploadQueueCache:
-  params = Params()
 
   @staticmethod
   def initialize(upload_queue: Queue[UploadItem]) -> None:
     try:
-      upload_queue_json = UploadQueueCache.params.get("AthenadUploadQueue")
+      upload_queue_json = Params().get("AthenadUploadQueue")
       if upload_queue_json is not None:
         for item in json.loads(upload_queue_json):
           upload_queue.put(UploadItem.from_dict(item))
@@ -132,15 +129,16 @@ class UploadQueueCache:
     try:
       queue: List[Optional[UploadItem]] = list(upload_queue.queue)
       items = [asdict(i) for i in queue if i is not None and (i.id not in cancelled_uploads)]
-      UploadQueueCache.params.put("AthenadUploadQueue", json.dumps(items))
+      Params().put("AthenadUploadQueue", json.dumps(items))
     except Exception:
       cloudlog.exception("athena.UploadQueueCache.cache.exception")
 
 
-def handle_long_poll(ws: WebSocket) -> None:
+def handle_long_poll(ws: WebSocket, exit_event: Optional[threading.Event]) -> None:
   end_event = threading.Event()
 
   threads = [
+    threading.Thread(target=ws_manage, args=(ws, end_event), name='ws_manage'),
     threading.Thread(target=ws_recv, args=(ws, end_event), name='ws_recv'),
     threading.Thread(target=ws_send, args=(ws, end_event), name='ws_send'),
     threading.Thread(target=upload_handler, args=(end_event,), name='upload_handler'),
@@ -154,8 +152,9 @@ def handle_long_poll(ws: WebSocket) -> None:
   for thread in threads:
     thread.start()
   try:
-    while not end_event.is_set():
-      time.sleep(0.1)
+    while not end_event.wait(0.1):
+      if exit_event is not None and exit_event.is_set():
+        end_event.set()
   except (KeyboardInterrupt, SystemExit):
     end_event.set()
     raise
@@ -171,7 +170,7 @@ def jsonrpc_handler(end_event: threading.Event) -> None:
     try:
       data = recv_queue.get(timeout=1)
       if "method" in data:
-        cloudlog.debug(f"athena.jsonrpc_handler.call_method {data}")
+        cloudlog.event("athena.jsonrpc_handler.call_method", data=data)
         response = JSONRPCResponseManager.handle(data, dispatcher)
         send_queue.put_nowait(response.json)
       elif "id" in data and ("result" in data or "error" in data):
@@ -207,6 +206,16 @@ def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = Tr
         break
 
 
+def cb(sm, item, tid, sz: int, cur: int) -> None:
+  # Abort transfer if connection changed to metered after starting upload
+  sm.update(0)
+  metered = sm['deviceState'].networkMetered
+  if metered and (not item.allow_cellular):
+    raise AbortTransferException
+
+  cur_upload_items[tid] = replace(item, progress=cur / sz if sz else 1)
+
+
 def upload_handler(end_event: threading.Event) -> None:
   sm = messaging.SubMaster(['deviceState'])
   tid = threading.get_ident()
@@ -236,15 +245,6 @@ def upload_handler(end_event: threading.Event) -> None:
         continue
 
       try:
-        def cb(sz: int, cur: int) -> None:
-          # Abort transfer if connection changed to metered after starting upload
-          sm.update(0)
-          metered = sm['deviceState'].networkMetered
-          if metered and (not item.allow_cellular):
-            raise AbortTransferException
-
-          cur_upload_items[tid] = replace(item, progress=cur / sz if sz else 1)
-
         fn = item.path
         try:
           sz = os.path.getsize(fn)
@@ -252,7 +252,7 @@ def upload_handler(end_event: threading.Event) -> None:
           sz = -1
 
         cloudlog.event("athena.upload_handler.upload_start", fn=fn, sz=sz, network_type=network_type, metered=metered, retry_count=item.retry_count)
-        response = _do_upload(item, cb)
+        response = _do_upload(item, partial(cb, sm, item, tid))
 
         if response.status_code not in (200, 201, 401, 403, 412):
           cloudlog.event("athena.upload_handler.retry", status_code=response.status_code, fn=fn, sz=sz, network_type=network_type, metered=metered)
@@ -284,26 +284,22 @@ def _do_upload(upload_item: UploadItem, callback: Optional[Callable] = None) -> 
     compress = True
 
   with open(path, "rb") as f:
-    data: BinaryIO
+    content = f.read()
     if compress:
       cloudlog.event("athena.upload_handler.compress", fn=path, fn_orig=upload_item.path)
-      compressed = bz2.compress(f.read())
-      size = len(compressed)
-      data = io.BytesIO(compressed)
-    else:
-      size = os.fstat(f.fileno()).st_size
-      data = f
+      content = bz2.compress(content)
 
+  with io.BytesIO(content) as data:
     return requests.put(upload_item.url,
-                        data=CallbackReader(data, callback, size) if callback else data,
-                        headers={**upload_item.headers, 'Content-Length': str(size)},
+                        data=CallbackReader(data, callback, len(content)) if callback else data,
+                        headers={**upload_item.headers, 'Content-Length': str(len(content))},
                         timeout=30)
 
 
 # security: user should be able to request any message from their car
 @dispatcher.add_method
-def getMessage(service: str, timeout: int = 1000) -> Dict:
-  if service is None or service not in service_list:
+def getMessage(service: str, timeout: int = 1000) -> dict:
+  if service is None or service not in SERVICE_LIST:
     raise Exception("invalid service")
 
   socket = messaging.sub_sock(service, timeout=timeout)
@@ -313,16 +309,16 @@ def getMessage(service: str, timeout: int = 1000) -> Dict:
     raise TimeoutError
 
   # this is because capnp._DynamicStructReader doesn't have typing information
-  return cast(Dict, ret.to_dict())
+  return cast(dict, ret.to_dict())
 
 
 @dispatcher.add_method
 def getVersion() -> Dict[str, str]:
   return {
     "version": get_version(),
-    "remote": get_origin(''),
-    "branch": get_short_branch(''),
-    "commit": get_commit(default=''),
+    "remote": get_normalized_origin(),
+    "branch": get_short_branch(),
+    "commit": get_commit(),
   }
 
 
@@ -345,7 +341,7 @@ def scan_dir(path: str, prefix: str) -> List[str]:
   # (glob and friends traverse entire dir tree)
   with os.scandir(path) as i:
     for e in i:
-      rel_path = os.path.relpath(e.path, ROOT)
+      rel_path = os.path.relpath(e.path, Paths.log_root())
       if e.is_dir(follow_symlinks=False):
         # add trailing slash
         rel_path = os.path.join(rel_path, '')
@@ -360,23 +356,7 @@ def scan_dir(path: str, prefix: str) -> List[str]:
 
 @dispatcher.add_method
 def listDataDirectory(prefix='') -> List[str]:
-  return scan_dir(ROOT, prefix)
-
-
-@dispatcher.add_method
-def reboot() -> Dict[str, int]:
-  sock = messaging.sub_sock("deviceState", timeout=1000)
-  ret = messaging.recv_one(sock)
-  if ret is None or ret.deviceState.started:
-    raise Exception("Reboot unavailable")
-
-  def do_reboot() -> None:
-    time.sleep(2)
-    HARDWARE.reboot()
-
-  threading.Thread(target=do_reboot).start()
-
-  return {"success": 1}
+  return scan_dir(Paths.log_root(), prefix)
 
 
 @dispatcher.add_method
@@ -401,7 +381,7 @@ def uploadFilesToUrls(files_data: List[UploadFileDict]) -> UploadFilesToUrlRespo
       failed.append(file.fn)
       continue
 
-    path = os.path.join(ROOT, file.fn)
+    path = os.path.join(Paths.log_root(), file.fn)
     if not os.path.exists(path) and not os.path.exists(strip_bz2_extension(path)):
       failed.append(file.fn)
       continue
@@ -452,22 +432,20 @@ def cancelUpload(upload_id: Union[str, List[str]]) -> Dict[str, Union[int, str]]
   cancelled_uploads.update(cancelled_ids)
   return {"success": 1}
 
-
 @dispatcher.add_method
-def primeActivated(activated: bool) -> Dict[str, int]:
+def setRouteViewed(route: str) -> Dict[str, Union[int, str]]:
+  # maintain a list of the last 10 routes viewed in connect
+  params = Params()
+
+  r = params.get("AthenadRecentlyViewedRoutes", encoding="utf8")
+  routes = [] if r is None else r.split(",")
+  routes.append(route)
+
+  # remove duplicates
+  routes = list(dict.fromkeys(routes))
+
+  params.put("AthenadRecentlyViewedRoutes", ",".join(routes[-10:]))
   return {"success": 1}
-
-
-@dispatcher.add_method
-def setBandwithLimit(upload_speed_kbps: int, download_speed_kbps: int) -> Dict[str, Union[int, str]]:
-  if not AGNOS:
-    return {"success": 0, "error": "only supported on AGNOS"}
-
-  try:
-    HARDWARE.set_bandwidth_limit(upload_speed_kbps, download_speed_kbps)
-    return {"success": 1}
-  except subprocess.CalledProcessError as e:
-    return {"success": 0, "error": "failed to set limit", "stdout": e.stdout, "stderr": e.stderr}
 
 
 def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local_port: int) -> Dict[str, int]:
@@ -505,16 +483,21 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
 
 @dispatcher.add_method
 def getPublicKey() -> Optional[str]:
-  if not os.path.isfile(PERSIST + '/comma/id_rsa.pub'):
+  if not os.path.isfile(Paths.persist_root() + '/comma/id_rsa.pub'):
     return None
 
-  with open(PERSIST + '/comma/id_rsa.pub') as f:
+  with open(Paths.persist_root() + '/comma/id_rsa.pub') as f:
     return f.read()
 
 
 @dispatcher.add_method
 def getSshAuthorizedKeys() -> str:
   return Params().get("GithubSshKeys", encoding='utf8') or ''
+
+
+@dispatcher.add_method
+def getGithubUsername() -> str:
+  return Params().get("GithubUsername", encoding='utf8') or ''
 
 
 @dispatcher.add_method
@@ -540,7 +523,7 @@ def getNetworks():
 
 @dispatcher.add_method
 def takeSnapshot() -> Optional[Union[str, Dict[str, str]]]:
-  from system.camerad.snapshot.snapshot import jpeg_write, snapshot
+  from openpilot.system.camerad.snapshot.snapshot import jpeg_write, snapshot
   ret = snapshot()
   if ret is not None:
     def b64jpeg(x):
@@ -560,8 +543,8 @@ def get_logs_to_send_sorted() -> List[str]:
   # TODO: scan once then use inotify to detect file creation/deletion
   curr_time = int(time.time())
   logs = []
-  for log_entry in os.listdir(SWAGLOG_DIR):
-    log_path = os.path.join(SWAGLOG_DIR, log_entry)
+  for log_entry in os.listdir(Paths.swaglog_root()):
+    log_path = os.path.join(Paths.swaglog_root(), log_entry)
     time_sent = 0
     try:
       value = getxattr(log_path, LOG_ATTR_NAME)
@@ -581,10 +564,10 @@ def log_handler(end_event: threading.Event) -> None:
     return
 
   log_files = []
-  last_scan = 0
+  last_scan = 0.
   while not end_event.is_set():
     try:
-      curr_scan = sec_since_boot()
+      curr_scan = time.monotonic()
       if curr_scan - last_scan > 10:
         log_files = get_logs_to_send_sorted()
         last_scan = curr_scan
@@ -596,7 +579,7 @@ def log_handler(end_event: threading.Event) -> None:
         cloudlog.debug(f"athena.log_handler.forward_request {log_entry}")
         try:
           curr_time = int(time.time())
-          log_path = os.path.join(SWAGLOG_DIR, log_entry)
+          log_path = os.path.join(Paths.swaglog_root(), log_entry)
           setxattr(log_path, LOG_ATTR_NAME, int.to_bytes(curr_time, 4, sys.byteorder))
           with open(log_path) as f:
             jsonrpc = {
@@ -623,7 +606,7 @@ def log_handler(end_event: threading.Event) -> None:
           log_success = "result" in log_resp and log_resp["result"].get("success")
           cloudlog.debug(f"athena.log_handler.forward_response {log_entry} {log_success}")
           if log_entry and log_success:
-            log_path = os.path.join(SWAGLOG_DIR, log_entry)
+            log_path = os.path.join(Paths.swaglog_root(), log_entry)
             try:
               setxattr(log_path, LOG_ATTR_NAME, LOG_ATTR_VALUE_MAX_UNIX_TIME)
             except OSError:
@@ -639,9 +622,10 @@ def log_handler(end_event: threading.Event) -> None:
 
 
 def stat_handler(end_event: threading.Event) -> None:
+  STATS_DIR = Paths.stats_root()
   while not end_event.is_set():
-    last_scan = 0
-    curr_scan = sec_since_boot()
+    last_scan = 0.
+    curr_scan = time.monotonic()
     try:
       if curr_scan - last_scan > 10:
         stat_filenames = list(filter(lambda name: not name.startswith(tempfile.gettempprefix()), os.listdir(STATS_DIR)))
@@ -668,6 +652,8 @@ def ws_proxy_recv(ws: WebSocket, local_sock: socket.socket, ssock: socket.socket
   while not (end_event.is_set() or global_end_event.is_set()):
     try:
       data = ws.recv()
+      if isinstance(data, str):
+        data = data.encode("utf-8")
       local_sock.sendall(data)
     except WebSocketTimeoutException:
       pass
@@ -709,7 +695,7 @@ def ws_proxy_send(ws: WebSocket, local_sock: socket.socket, signal_sock: socket.
 
 
 def ws_recv(ws: WebSocket, end_event: threading.Event) -> None:
-  last_ping = int(sec_since_boot() * 1e9)
+  last_ping = int(time.monotonic() * 1e9)
   while not end_event.is_set():
     try:
       opcode, data = ws.recv_data(control_frame=True)
@@ -718,10 +704,10 @@ def ws_recv(ws: WebSocket, end_event: threading.Event) -> None:
           data = data.decode("utf-8")
         recv_queue.put_nowait(data)
       elif opcode == ABNF.OPCODE_PING:
-        last_ping = int(sec_since_boot() * 1e9)
+        last_ping = int(time.monotonic() * 1e9)
         Params().put("LastAthenaPingTime", str(last_ping))
     except WebSocketTimeoutException:
-      ns_since_last_ping = int(sec_since_boot() * 1e9) - last_ping
+      ns_since_last_ping = int(time.monotonic() * 1e9) - last_ping
       if ns_since_last_ping > RECONNECT_TIMEOUT_S * 1e9:
         cloudlog.exception("athenad.ws_recv.timeout")
         end_event.set()
@@ -749,11 +735,31 @@ def ws_send(ws: WebSocket, end_event: threading.Event) -> None:
       end_event.set()
 
 
+def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
+  params = Params()
+  onroad_prev = None
+  sock = ws.sock
+
+  while True:
+    onroad = params.get_bool("IsOnroad")
+    if onroad != onroad_prev:
+      onroad_prev = onroad
+
+      if sock is not None:
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_USER_TIMEOUT, 16000 if onroad else 0)
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 7 if onroad else 30)
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 7 if onroad else 10)
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 2 if onroad else 3)
+
+    if end_event.wait(5):
+      break
+
+
 def backoff(retries: int) -> int:
   return random.randrange(0, min(128, int(2 ** retries)))
 
 
-def main():
+def main(exit_event: Optional[threading.Event] = None):
   try:
     set_core_affinity([0, 1, 2, 3])
   except Exception:
@@ -766,26 +772,30 @@ def main():
   ws_uri = ATHENA_HOST + "/ws/v2/" + dongle_id
   api = Api(dongle_id)
 
+  conn_start = None
   conn_retries = 0
-  while 1:
+  while exit_event is None or not exit_event.is_set():
     try:
-      cloudlog.event("athenad.main.connecting_ws", ws_uri=ws_uri)
+      if conn_start is None:
+        conn_start = time.monotonic()
+
+      cloudlog.event("athenad.main.connecting_ws", ws_uri=ws_uri, retries=conn_retries)
       ws = create_connection(ws_uri,
                              cookie="jwt=" + api.get_token(),
                              enable_multithread=True,
                              timeout=30.0)
-      cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
+      cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri, retries=conn_retries,
+                     duration=time.monotonic() - conn_start)
+      conn_start = None
 
       conn_retries = 0
       cur_upload_items.clear()
 
-      handle_long_poll(ws)
+      handle_long_poll(ws, exit_event)
     except (KeyboardInterrupt, SystemExit):
       break
     except (ConnectionError, TimeoutError, WebSocketException):
       conn_retries += 1
-      params.remove("LastAthenaPingTime")
-    except socket.timeout:
       params.remove("LastAthenaPingTime")
     except Exception:
       cloudlog.exception("athenad.main.exception")

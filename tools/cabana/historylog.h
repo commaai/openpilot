@@ -1,15 +1,17 @@
 #pragma once
 
 #include <deque>
+#include <vector>
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QTableView>
 
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
-#include "tools/cabana/util.h"
+#include "tools/cabana/utils/util.h"
 
 class HeaderView : public QHeaderView {
 public:
@@ -44,9 +46,9 @@ public slots:
 public:
   struct Message {
     uint64_t mono_time = 0;
-    QVector<double> sig_values;
-    QByteArray data;
-    QVector<QColor> colors;
+    std::vector<double> sig_values;
+    std::vector<uint8_t> data;
+    std::vector<QColor> colors;
   };
 
   template <class InputIt>
@@ -54,7 +56,7 @@ public:
   std::deque<Message> fetchData(uint64_t from_time, uint64_t min_time = 0);
 
   MessageId msg_id;
-  ChangeTracker hex_colors;
+  CanData hex_colors;
   bool has_more_data = true;
   const int batch_size = 50;
   int filter_sig_idx = -1;
@@ -62,7 +64,7 @@ public:
   uint64_t last_fetch_time = 0;
   std::function<bool(double, double)> filter_cmp = nullptr;
   std::deque<Message> messages;
-  std::vector<const cabana::Signal *> sigs;
+  std::vector<cabana::Signal *> sigs;
   bool dynamic_mode = true;
   bool display_signals_mode = true;
 };
@@ -78,6 +80,7 @@ public:
 
 private slots:
   void setFilter();
+  void exportToCSV();
 
 private:
   void refresh();

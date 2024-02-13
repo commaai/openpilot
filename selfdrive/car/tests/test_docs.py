@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 from collections import defaultdict
+import os
 import re
 import unittest
 
-from selfdrive.car.car_helpers import interfaces, get_interface_attr
-from selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_info
-from selfdrive.car.docs_definitions import Column, Harness, Star
-from selfdrive.car.honda.values import CAR as HONDA
+from openpilot.common.basedir import BASEDIR
+from openpilot.selfdrive.car.car_helpers import interfaces, get_interface_attr
+from openpilot.selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_info
+from openpilot.selfdrive.car.docs_definitions import Cable, Column, PartType, Star
+from openpilot.selfdrive.car.honda.values import CAR as HONDA
+from openpilot.selfdrive.debug.dump_car_info import dump_car_info
+from openpilot.selfdrive.debug.print_docs_diff import print_car_info_diff
 
 
 class TestCarDocs(unittest.TestCase):
@@ -21,6 +25,12 @@ class TestCarDocs(unittest.TestCase):
 
     self.assertEqual(generated_cars_md, current_cars_md,
                      "Run selfdrive/car/docs.py to update the compatibility documentation")
+
+  def test_docs_diff(self):
+    dump_path = os.path.join(BASEDIR, "selfdrive", "car", "tests", "cars_dump")
+    dump_car_info(dump_path)
+    print_car_info_diff(dump_path)
+    os.remove(dump_path)
 
   def test_duplicate_years(self):
     make_model_years = defaultdict(list)
@@ -74,7 +84,12 @@ class TestCarDocs(unittest.TestCase):
         if car.name == "comma body":
           raise unittest.SkipTest
 
-        self.assertNotIn(car.harness, [None, Harness.none], f"Need to specify car harness: {car.name}")
+        car_part_type = [p.part_type for p in car.car_parts.all_parts()]
+        car_parts = list(car.car_parts.all_parts())
+        self.assertTrue(len(car_parts) > 0, f"Need to specify car parts: {car.name}")
+        self.assertTrue(car_part_type.count(PartType.connector) == 1, f"Need to specify one harness connector: {car.name}")
+        self.assertTrue(car_part_type.count(PartType.mount) == 1, f"Need to specify one mount: {car.name}")
+        self.assertTrue(Cable.right_angle_obd_c_cable_1_5ft in car_parts, f"Need to specify a right angle OBD-C cable (1.5ft): {car.name}")
 
 
 if __name__ == "__main__":

@@ -4,7 +4,10 @@
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
-SshControl::SshControl() : ButtonControl(tr("SSH Keys"), "", tr("Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.")) {
+SshControl::SshControl() :
+  ButtonControl(tr("SSH Keys"), "", tr("Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username "
+                                       "other than your own. A comma employee will NEVER ask you to add their GitHub username.")) {
+
   QObject::connect(this, &ButtonControl::clicked, [=]() {
     if (text() == tr("ADD")) {
       QString username = InputDialog::getText(tr("Enter your GitHub username"), this);

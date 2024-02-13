@@ -1,7 +1,93 @@
-Version 0.9.2 (2023-03-XX)
+Version 0.9.6 (2024-02-XX)
 ========================
-* Draw MPC path instead of model predicted path, this is a more accurate representation of what the car will do.
+* New driving model
+  * Vision model trained on more data
+  * Improved driving performance
+  * Directly outputs curvature for lateral control
+* New driver monitoring model
+  * Trained on larger dataset
+* AGNOS 9
+* comma body streaming and controls over WebRTC
+* Improved fuzzy fingerprinting for many makes and models
+* Hyundai Staria 2023 support thanks to sunnyhaibin!
+* Kia Niro Plug-in Hybrid 2022 support thanks to sunnyhaibin!
+* Lexus LC 2024 support thanks to nelsonjchen!
+* Toyota RAV4 2023-24 support
+* Toyota RAV4 Hybrid 2023-24 support
+
+Version 0.9.5 (2023-11-17)
+========================
+* New driving model
+  * Improved navigate on openpilot performance using navigation instructions as an additional model input
+  * Do lateral planning inside the model
+  * New vision transformer architecture
+* Cadillac Escalade ESV 2019 support thanks to twilsonco!
+* Hyundai Azera 2022 support thanks to sunnyhaibin!
+* Hyundai Azera Hybrid 2020 support thanks to chanhojung and haram-KONA!
+* Hyundai Custin 2023 support thanks to sunnyhaibin and Saber422!
+* Hyundai Ioniq 6 2023 support thanks to sunnyhaibin and alamo3!
+* Hyundai Kona Electric 2023 (Korean version) support thanks to sunnyhaibin and haram-KONA!
+* Kia K8 Hybrid (with HDA II) 2023 support thanks to sunnyhaibin!
+* Kia Optima Hybrid 2019 support
+* Kia Sorento Hybrid 2023 support thanks to sunnyhaibin!
+* Lexus GS F 2016 support thanks to snyperifle!
+* Lexus IS 2023 support thanks to L3R5!
+
+Version 0.9.4 (2023-07-27)
+========================
+* comma 3X support
+* Navigate on openpilot in Experimental mode
+  * When navigation has a destination, openpilot will input the map information into the model, which provides useful context to help the model understand the scene
+  * When navigating on openpilot, openpilot will keep left or right appropriately at forks and exits
+  * When navigating on openpilot, lane change behavior is unchanged and still activated by the driver
+  * When navigate on openpilot is active, the path on the map is green
+* UI updates
+  * Navigation settings moved to home screen and map
+  * Border color always shows engagement status. Blue means disengaged, green means engaged, and grey means engaged with human overriding
+  * Alerts are shown inside the border. Black means info, orange means warning, and red means critical alert
+* Bookmarked segments are preserved on the device's storage
+* Ford Focus 2018 support
+* Kia Carnival 2023 support thanks to sunnyhaibin!
+
+Version 0.9.3 (2023-06-29)
+========================
+* New driving model
+  * Improved height estimation and added height tracking in liveCalibration
+  * Model inputs refactor
+* New driving personality setting
+  * Three settings: aggressive, standard, and relaxed
+  * Standard is recommended and the default
+  * In aggressive mode, lead follow distance is shorter and acceleration response is quicker
+  * In relaxed mode, lead follow distance is longer
+* Improved fuzzy fingerprinting for Hyundai, Kia, and Genesis
+* Improved thermal management logic
+
+Version 0.9.2 (2023-05-22)
+========================
+* New driving model
+  * Reduced turn diving
+  * Trained on a new dataset
+* UI updates
+  * New experimental mode visualization
+  * Draw MPC path instead of model-predicted path
+* AGNOS 7
+  * Faster boot time
+  * Fixes rare no sounds bug
+  * Fixes bootsplash bug at extreme temperatures
+* Buick LaCrosse 2017-19 support thanks to koch-cf!
+* Chevrolet Trailblazer 2021-22 support thanks to TurboCE!
+* Ford Bronco Sport 2021-22 support
+* Ford Escape 2020-22 support
+* Ford Explorer 2020-22 support
+* Ford Kuga 2020-22 support
+* Ford Maverick 2022-23 support
+* Genesis GV80 2023 support thanks to JWingate80!
+* Honda HR-V 2023 support thanks to AlexandreSato and galegozi!
+* Kia Niro EV 2023 support thanks to JosselinLecocq!
+* Lexus ES 2017-18 support
+* Lincoln Aviator 2021 support
 * Škoda Fabia 2022-23 support thanks to jyoung8607!
+
 
 Version 0.9.1 (2023-02-28)
 ========================

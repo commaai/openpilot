@@ -57,7 +57,7 @@ Reset::Reset(ResetMode mode, QWidget *parent) : QWidget(parent) {
 
   main_layout->addSpacing(60);
 
-  body = new QLabel(tr("Press confirm to erase all content and settings. Press cancel to resume boot."));
+  body = new QLabel(tr("System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot."));
   body->setWordWrap(true);
   body->setStyleSheet("font-size: 80px; font-weight: light;");
   main_layout->addWidget(body, 1, Qt::AlignTop | Qt::AlignLeft);
@@ -79,7 +79,14 @@ Reset::Reset(ResetMode mode, QWidget *parent) : QWidget(parent) {
 #endif
 
   confirmBtn = new QPushButton(tr("Confirm"));
-  confirmBtn->setStyleSheet("background-color: #465BEA;");
+  confirmBtn->setStyleSheet(R"(
+    QPushButton {
+      background-color: #465BEA;
+    }
+    QPushButton:pressed {
+      background-color: #3049F4;
+    }
+  )");
   blayout->addWidget(confirmBtn);
   QObject::connect(confirmBtn, &QPushButton::clicked, this, &Reset::confirm);
 
@@ -88,11 +95,6 @@ Reset::Reset(ResetMode mode, QWidget *parent) : QWidget(parent) {
   rebootBtn->setVisible(recover);
   if (recover) {
     body->setText(tr("Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device."));
-  }
-
-  // automatically start if we're just finishing up an ABL reset
-  if (mode == ResetMode::FORMAT) {
-    startReset();
   }
 
   setStyleSheet(R"(
@@ -111,6 +113,9 @@ Reset::Reset(ResetMode mode, QWidget *parent) : QWidget(parent) {
       border-radius: 10px;
       background-color: #333333;
     }
+    QPushButton:pressed {
+      background-color: #444444;
+    }
   )");
 }
 
@@ -119,8 +124,6 @@ int main(int argc, char *argv[]) {
   if (argc > 1) {
     if (strcmp(argv[1], "--recover") == 0) {
       mode = ResetMode::RECOVER;
-    } else if (strcmp(argv[1], "--format") == 0) {
-      mode = ResetMode::FORMAT;
     }
   }
 

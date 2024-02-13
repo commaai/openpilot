@@ -1,5 +1,7 @@
 #include "system/camerad/cameras/camera_util.h"
 
+#include <string.h>
+
 #include <cassert>
 
 #include <sys/ioctl.h>
@@ -30,20 +32,20 @@ int do_cam_control(int fd, int op_code, void *handle, int size) {
 
 std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data, uint32_t num_resources) {
   struct cam_acquire_dev_cmd cmd = {
-      .session_handle = session_handle,
-      .handle_type = CAM_HANDLE_USER_POINTER,
-      .num_resources = (uint32_t)(data ? num_resources : 0),
-      .resource_hdl = (uint64_t)data,
+    .session_handle = session_handle,
+    .handle_type = CAM_HANDLE_USER_POINTER,
+    .num_resources = (uint32_t)(data ? num_resources : 0),
+    .resource_hdl = (uint64_t)data,
   };
   int err = do_cam_control(fd, CAM_ACQUIRE_DEV, &cmd, sizeof(cmd));
   return err == 0 ? std::make_optional(cmd.dev_handle) : std::nullopt;
-};
+}
 
 int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t packet_handle) {
   struct cam_config_dev_cmd cmd = {
-      .session_handle = session_handle,
-      .dev_handle = dev_handle,
-      .packet_handle = packet_handle,
+    .session_handle = session_handle,
+    .dev_handle = dev_handle,
+    .packet_handle = packet_handle,
   };
   return do_cam_control(fd, CAM_CONFIG_DEV, &cmd, sizeof(cmd));
 }
@@ -98,7 +100,7 @@ void release_fd(int video0_fd, uint32_t handle) {
   release(video0_fd, handle);
 }
 
-void *MemoryManager::alloc(int size, uint32_t *handle) {
+void *MemoryManager::alloc_buf(int size, uint32_t *handle) {
   lock.lock();
   void *ptr;
   if (!cached_allocations[size].empty()) {
@@ -111,6 +113,7 @@ void *MemoryManager::alloc(int size, uint32_t *handle) {
     size_lookup[ptr] = size;
   }
   lock.unlock();
+  memset(ptr, 0, size);
   return ptr;
 }
 

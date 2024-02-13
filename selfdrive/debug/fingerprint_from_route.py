@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
-from tools.lib.route import Route
-from tools.lib.logreader import MultiLogIterator
+from openpilot.tools.lib.logreader import LogReader, ReadMode
 
 
 def get_fingerprint(lr):
@@ -40,6 +39,5 @@ if __name__ == "__main__":
     print("Usage: ./fingerprint_from_route.py <route>")
     sys.exit(1)
 
-  route = Route(sys.argv[1])
-  lr = MultiLogIterator(route.log_paths()[:5])
+  lr = LogReader(sys.argv[1], ReadMode.QLOG)
   get_fingerprint(lr)

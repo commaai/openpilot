@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: skip-file
 
 import argparse
 import bisect
@@ -11,9 +10,9 @@ import tty
 from collections import defaultdict
 
 import cereal.messaging as messaging
-from tools.lib.framereader import FrameReader
-from tools.lib.logreader import LogReader
-from selfdrive.test.openpilotci import get_url
+from openpilot.tools.lib.framereader import FrameReader
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.openpilotci import get_url
 
 IGNORE = ['initData', 'sentinel']
 

@@ -1,13 +1,14 @@
 import os
 import re
+from functools import cache
 from urllib.parse import urlparse
 from collections import defaultdict
 from itertools import chain
 from typing import Optional
 
-from tools.lib.auth_config import get_token
-from tools.lib.api import CommaApi
-from tools.lib.helpers import RE
+from openpilot.tools.lib.auth_config import get_token
+from openpilot.tools.lib.api import CommaApi
+from openpilot.tools.lib.helpers import RE
 
 QLOG_FILENAMES = ['qlog', 'qlog.bz2']
 QCAMERA_FILENAMES = ['qcamera.ts']
@@ -229,3 +230,44 @@ class SegmentName:
   def data_dir(self) -> Optional[str]: return self._data_dir
 
   def __str__(self) -> str: return self._canonical_name
+
+
+@cache
+def get_max_seg_number_cached(sr: 'SegmentRange'):
+  try:
+    api = CommaApi(get_token())
+    return api.get("/v1/route/" + sr.route_name.replace("/", "|"))["segment_numbers"][-1]
+  except Exception as e:
+    raise Exception("unable to get max_segment_number. ensure you have access to this route or the route is public.") from e
+
+
+class SegmentRange:
+  def __init__(self, segment_range: str):
+    self.m = re.fullmatch(RE.SEGMENT_RANGE, segment_range)
+    assert self.m, f"Segment range is not valid {segment_range}"
+
+  def get_max_seg_number(self):
+    return get_max_seg_number_cached(self)
+
+  @property
+  def route_name(self):
+    return self.m.group("route_name")
+
+  @property
+  def dongle_id(self):
+    return self.m.group("dongle_id")
+
+  @property
+  def timestamp(self):
+    return self.m.group("timestamp")
+
+  @property
+  def _slice(self):
+    return self.m.group("slice")
+
+  @property
+  def selector(self):
+    return self.m.group("selector")
+
+  def __str__(self):
+    return f"{self.dongle_id}/{self.timestamp}" + (f"/{self._slice}" if self._slice else "") + (f"/{self.selector}" if self.selector else "")

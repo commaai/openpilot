@@ -11,7 +11,7 @@
 
 #define __STDC_CONSTANT_MACROS
 
-#include "libyuv.h"
+#include "third_party/libyuv/include/libyuv.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -24,7 +24,8 @@ extern "C" {
 
 const int env_debug_encoder = (getenv("DEBUG_ENCODER") != NULL) ? atoi(getenv("DEBUG_ENCODER")) : 0;
 
-void FfmpegEncoder::encoder_init() {
+FfmpegEncoder::FfmpegEncoder(const EncoderInfo &encoder_info, int in_width, int in_height)
+    : VideoEncoder(encoder_info, in_width, in_height) {
   frame = av_frame_alloc();
   assert(frame);
   frame->format = AV_PIX_FMT_YUV420P;
@@ -39,8 +40,6 @@ void FfmpegEncoder::encoder_init() {
   if (in_width != out_width || in_height != out_height) {
     downscale_buf.resize(out_width * out_height * 3 / 2);
   }
-
-  publisher_init();
 }
 
 FfmpegEncoder::~FfmpegEncoder() {
@@ -56,11 +55,10 @@ void FfmpegEncoder::encoder_open(const char* path) {
   this->codec_ctx->width = frame->width;
   this->codec_ctx->height = frame->height;
   this->codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
-  this->codec_ctx->time_base = (AVRational){ 1, fps };
+  this->codec_ctx->time_base = (AVRational){ 1, encoder_info.fps };
   int err = avcodec_open2(this->codec_ctx, codec, NULL);
   assert(err >= 0);
 
-  writer_open(path);
   is_open = true;
   segment_num++;
   counter = 0;
@@ -69,7 +67,6 @@ void FfmpegEncoder::encoder_open(const char* path) {
 void FfmpegEncoder::encoder_close() {
   if (!is_open) return;
 
-  writer_close();
   avcodec_free_context(&codec_ctx);
   is_open = false;
 }
@@ -138,7 +135,7 @@ int FfmpegEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {
     }
 
     if (env_debug_encoder) {
-      printf("%20s got %8d bytes flags %8x idx %4d id %8d\n", this->filename, pkt.size, pkt.flags, counter, extra->frame_id);
+      printf("%20s got %8d bytes flags %8x idx %4d id %8d\n", encoder_info.publish_name, pkt.size, pkt.flags, counter, extra->frame_id);
     }
 
     publisher_publish(this, segment_num, counter, *extra,

@@ -5,8 +5,8 @@ import tempfile
 
 from collections import defaultdict
 import numpy as np
-from tools.lib.framereader import FrameReader
-from tools.lib.logreader import LogReader
+from openpilot.tools.lib.framereader import FrameReader
+from openpilot.tools.lib.logreader import LogReader
 
 
 class TestReaders(unittest.TestCase):

@@ -1,8 +1,5 @@
 /*
- * Copyright 2019 Gianluca Frison, Dimitris Kouzoupis, Robin Verschueren,
- * Andrea Zanelli, Niels van Duijkeren, Jonathan Frey, Tommaso Sartor,
- * Branimir Novoselnik, Rien Quirynen, Rezart Qelibari, Dang Doan,
- * Jonas Koenemann, Yutao Chen, Tobias Schöls, Jonas Schlagenhauf, Moritz Diehl
+ * Copyright (c) The acados authors.
  *
  * This file is part of acados.
  *
@@ -66,6 +63,7 @@ typedef enum
 {
     LINEAR_LS,
     NONLINEAR_LS,
+    CONVEX_OVER_NONLINEAR,
     EXTERNAL,
     INVALID_COST,
 } ocp_nlp_cost_t;
@@ -246,6 +244,10 @@ ACADOS_SYMBOL_EXPORT int ocp_nlp_cost_model_set(ocp_nlp_config *config, ocp_nlp_
 ACADOS_SYMBOL_EXPORT int ocp_nlp_constraints_model_set(ocp_nlp_config *config, ocp_nlp_dims *dims,
         ocp_nlp_in *in, int stage, const char *field, void *value);
 
+///
+ACADOS_SYMBOL_EXPORT void ocp_nlp_constraints_model_get(ocp_nlp_config *config, ocp_nlp_dims *dims,
+        ocp_nlp_in *in, int stage, const char *field, void *value);
+
 /* out */
 
 /// Constructs an output struct for the non-linear program.
@@ -297,7 +299,7 @@ ACADOS_SYMBOL_EXPORT void ocp_nlp_constraint_dims_get_from_attr(ocp_nlp_config *
 ACADOS_SYMBOL_EXPORT void ocp_nlp_cost_dims_get_from_attr(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_out *out,
         int stage, const char *field, int *dims_out);
 
-void ocp_nlp_dynamics_dims_get_from_attr(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_out *out,
+ACADOS_SYMBOL_EXPORT void ocp_nlp_qp_dims_get_from_attr(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_out *out,
         int stage, const char *field, int *dims_out);
 
 /* opts */
@@ -386,8 +388,6 @@ ACADOS_SYMBOL_EXPORT int ocp_nlp_precompute(ocp_nlp_solver *solver, ocp_nlp_in *
 /// \param nlp_out The output struct.
 ACADOS_SYMBOL_EXPORT void ocp_nlp_eval_cost(ocp_nlp_solver *solver, ocp_nlp_in *nlp_in, ocp_nlp_out *nlp_out);
 
-//
-void ocp_nlp_eval_residuals(ocp_nlp_solver *solver, ocp_nlp_in *nlp_in, ocp_nlp_out *nlp_out);
 
 /// Computes the residuals.
 ///

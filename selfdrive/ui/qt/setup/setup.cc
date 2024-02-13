@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sstream>
+#include <string>
 
 #include <QApplication>
 #include <QLabel>
@@ -14,11 +15,12 @@
 #include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/qt/qt_window.h"
-#include "selfdrive/ui/qt/offroad/networking.h"
+#include "selfdrive/ui/qt/network/networking.h"
+#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
 const std::string USER_AGENT = "AGNOSSetup-";
-const QString DASHCAM_URL = "https://dashcam.comma.ai";
+const QString TEST_URL = "https://openpilot.comma.ai";
 
 bool is_elf(char *fname) {
   FILE *fp = fopen(fname, "rb");
@@ -32,6 +34,11 @@ bool is_elf(char *fname) {
 }
 
 void Setup::download(QString url) {
+  // autocomplete incomplete urls
+  if (QRegularExpression("^([^/.]+)/([^/]+)$").match(url).hasMatch()) {
+    url.prepend("https://installer.comma.ai/");
+  }
+
   CURL *curl = curl_easy_init();
   if (!curl) {
     emit finished(url, tr("Something went wrong. Reboot the device."));
@@ -222,11 +229,11 @@ QWidget * Setup::network_setup() {
     }
     repaint();
   });
-  request->sendRequest(DASHCAM_URL);
+  request->sendRequest(TEST_URL);
   QTimer *timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, [=]() {
     if (!request->active() && cont->isVisible()) {
-      request->sendRequest(DASHCAM_URL);
+      request->sendRequest(TEST_URL);
     }
   });
   timer->start(1000);
@@ -306,6 +313,10 @@ void Setup::nextPage() {
 }
 
 Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
+  if (std::getenv("MULTILANG")) {
+    selectLanguage();
+  }
+
   std::stringstream buffer;
   buffer << std::ifstream("/sys/class/hwmon/hwmon1/in1_input").rdbuf();
   float voltage = (float)std::atoi(buffer.str().c_str()) / 1000.;
@@ -366,6 +377,18 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
       background-color: #3049F4;
     }
   )");
+}
+
+void Setup::selectLanguage() {
+  QMap<QString, QString> langs = getSupportedLanguages();
+  QString selection = MultiOptionDialog::getSelection(tr("Select a language"), langs.keys(), "", this);
+  if (!selection.isEmpty()) {
+    QString selectedLang = langs[selection];
+    Params().put("LanguageSetting", selectedLang.toStdString());
+    if (translator.load(":/" + selectedLang)) {
+      qApp->installTranslator(&translator);
+    }
+  }
 }
 
 int main(int argc, char *argv[]) {

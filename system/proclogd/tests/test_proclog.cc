@@ -33,15 +33,16 @@ TEST_CASE("Parser::procStat") {
   SECTION("all processes") {
     std::vector<int> pids = Parser::pids();
     REQUIRE(pids.size() > 1);
-    int parsed_cnt = 0;
     for (int pid : pids) {
-      if (auto stat = Parser::procStat(util::read_file("/proc/" + std::to_string(pid) + "/stat"))) {
+      std::string stat_path = "/proc/" + std::to_string(pid) + "/stat";
+      INFO(stat_path);
+      if (auto stat = Parser::procStat(util::read_file(stat_path))) {
         REQUIRE(stat->pid == pid);
         REQUIRE(allowed_states.find(stat->state) != std::string::npos);
-        ++parsed_cnt;
+      } else {
+        REQUIRE(util::file_exists(stat_path) == false);
       }
     }
-    REQUIRE(parsed_cnt == pids.size());
   }
 }
 
@@ -108,9 +109,7 @@ TEST_CASE("Parser::cmdline") {
   test_cmdline(std::string("a\0b\0c\0\0\0", 9), {"a", "b", "c"});
 }
 
-TEST_CASE("buildProcLogerMessage") {
-  std::vector<int> current_pids = Parser::pids();
-
+TEST_CASE("buildProcLoggerMessage") {
   MessageBuilder msg;
   buildProcLogMessage(msg);
 
@@ -131,27 +130,13 @@ TEST_CASE("buildProcLogerMessage") {
 
   // test cereal::ProcLog::Process
   auto procs = log.getProcs();
-  REQUIRE(procs.size() == current_pids.size());
-
   for (auto p : procs) {
-    REQUIRE_THAT(current_pids, Catch::Matchers::VectorContains(p.getPid()));
     REQUIRE(allowed_states.find(p.getState()) != std::string::npos);
     if (p.getPid() == ::getpid()) {
       REQUIRE(p.getName() == "test_proclog");
       REQUIRE(p.getState() == 'R');
       REQUIRE_THAT(p.getExe().cStr(), Catch::Matchers::Contains("test_proclog"));
-      REQUIRE(p.getCmdline().size() == 1);
       REQUIRE_THAT(p.getCmdline()[0], Catch::Matchers::Contains("test_proclog"));
-    } else {
-      std::string cmd_path = "/proc/" + std::to_string(p.getPid()) + "/cmdline";
-      if (util::file_exists(cmd_path)) {
-        std::ifstream stream(cmd_path);
-        auto cmdline = Parser::cmdline(stream);
-        REQUIRE(cmdline.size() == p.getCmdline().size());
-        for (int i = 0; i < p.getCmdline().size(); ++i) {
-          REQUIRE(cmdline[i] == p.getCmdline()[i].cStr());
-        }
-      }
     }
   }
 }

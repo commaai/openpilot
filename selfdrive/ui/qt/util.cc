@@ -1,7 +1,12 @@
 #include "selfdrive/ui/qt/util.h"
 
+#include <map>
+#include <string>
+#include <vector>
+
 #include <QApplication>
 #include <QFile>
+#include <QFileInfo>
 #include <QHash>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -11,7 +16,6 @@
 #include <QTextStream>
 #include <QtXml/QDomDocument>
 
-#include "common/params.h"
 #include "common/swaglog.h"
 #include "system/hardware/hw.h"
 
@@ -21,7 +25,7 @@ QString getVersion() {
 }
 
 QString getBrand() {
-  return Params().getBool("Passive") ? QObject::tr("dashcam") : QObject::tr("openpilot");
+  return QObject::tr("openpilot");
 }
 
 QString getUserAgent() {
@@ -39,7 +43,7 @@ std::optional<QString> getDongleId() {
 }
 
 QMap<QString, QString> getSupportedLanguages() {
-  QFile f("translations/languages.json");
+  QFile f(":/languages.json");
   f.open(QIODevice::ReadOnly | QIODevice::Text);
   QString val = f.readAll();
 
@@ -49,25 +53,6 @@ QMap<QString, QString> getSupportedLanguages() {
     map[key] = obj[key].toString();
   }
   return map;
-}
-
-void configFont(QPainter &p, const QString &family, int size, const QString &style) {
-  QFont f(family);
-  f.setPixelSize(size);
-  f.setStyleName(style);
-  p.setFont(f);
-}
-
-void clearLayout(QLayout* layout) {
-  while (QLayoutItem* item = layout->takeAt(0)) {
-    if (QWidget* widget = item->widget()) {
-      widget->deleteLater();
-    }
-    if (QLayout* childLayout = item->layout()) {
-      clearLayout(childLayout);
-    }
-    delete item;
-  }
 }
 
 QString timeAgo(const QDateTime &date) {
@@ -102,6 +87,7 @@ void setQtSurfaceFormat() {
   fmt.setRenderableType(QSurfaceFormat::OpenGLES);
 #endif
   fmt.setSamples(16);
+  fmt.setStencilBufferSize(1);
   QSurfaceFormat::setDefaultFormat(fmt);
 }
 
@@ -110,7 +96,7 @@ void sigTermHandler(int s) {
   qApp->quit();
 }
 
-void initApp(int argc, char *argv[]) {
+void initApp(int argc, char *argv[], bool disable_hidpi) {
   Hardware::set_display_power(true);
   Hardware::set_brightness(65);
 
@@ -118,13 +104,15 @@ void initApp(int argc, char *argv[]) {
   std::signal(SIGINT, sigTermHandler);
   std::signal(SIGTERM, sigTermHandler);
 
+  if (disable_hidpi) {
 #ifdef __APPLE__
-  {
     // Get the devicePixelRatio, and scale accordingly to maintain 1:1 rendering
     QApplication tmp(argc, argv);
     qputenv("QT_SCALE_FACTOR", QString::number(1.0 / tmp.devicePixelRatio() ).toLocal8Bit());
-  }
 #endif
+  }
+
+  qputenv("QT_DBL_CLICK_DIST", QByteArray::number(150));
 
   setQtSurfaceFormat();
 }
@@ -148,7 +136,7 @@ void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, co
 }
 
 
-QWidget* topWidget (QWidget* widget) {
+QWidget* topWidget(QWidget* widget) {
   while (widget->parentWidget() != nullptr) widget=widget->parentWidget();
   return widget;
 }
@@ -159,12 +147,6 @@ QPixmap loadPixmap(const QString &fileName, const QSize &size, Qt::AspectRatioMo
   } else {
     return QPixmap(fileName).scaled(size, aspectRatioMode, Qt::SmoothTransformation);
   }
-}
-
-QRect getTextRect(QPainter &p, int flags, const QString &text) {
-  QFontMetrics fm(p.font());
-  QRect init_rect = fm.boundingRect(text);
-  return fm.boundingRect(init_rect, flags, text);
 }
 
 void drawRoundedRect(QPainter &painter, const QRectF &rect, qreal xRadiusTop, qreal yRadiusTop, qreal xRadiusBottom, qreal yRadiusBottom){
@@ -217,8 +199,7 @@ QColor interpColor(float xv, std::vector<float> xp, std::vector<QColor> fp) {
       (xv - xp[low]) * (fp[hi].red() - fp[low].red()) / (xp[hi] - xp[low]) + fp[low].red(),
       (xv - xp[low]) * (fp[hi].green() - fp[low].green()) / (xp[hi] - xp[low]) + fp[low].green(),
       (xv - xp[low]) * (fp[hi].blue() - fp[low].blue()) / (xp[hi] - xp[low]) + fp[low].blue(),
-      (xv - xp[low]) * (fp[hi].alpha() - fp[low].alpha()) / (xp[hi] - xp[low]) + fp[low].alpha()
-    );
+      (xv - xp[low]) * (fp[hi].alpha() - fp[low].alpha()) / (xp[hi] - xp[low]) + fp[low].alpha());
   }
 }
 
@@ -254,4 +235,36 @@ QPixmap bootstrapPixmap(const QString &id) {
     pixmap.loadFromData(it.value(), "svg");
   }
   return pixmap;
+}
+
+bool hasLongitudinalControl(const cereal::CarParams::Reader &car_params) {
+  // Using the experimental longitudinal toggle, returns whether longitudinal control
+  // will be active without needing a restart of openpilot
+  return car_params.getExperimentalLongitudinalAvailable()
+             ? Params().getBool("ExperimentalLongitudinalEnabled")
+             : car_params.getOpenpilotLongitudinalControl();
+}
+
+// ParamWatcher
+
+ParamWatcher::ParamWatcher(QObject *parent) : QObject(parent) {
+  watcher = new QFileSystemWatcher(this);
+  QObject::connect(watcher, &QFileSystemWatcher::fileChanged, this, &ParamWatcher::fileChanged);
+}
+
+void ParamWatcher::fileChanged(const QString &path) {
+  auto param_name = QFileInfo(path).fileName();
+  auto param_value = QString::fromStdString(params.get(param_name.toStdString()));
+
+  auto it = params_hash.find(param_name);
+  bool content_changed = (it == params_hash.end()) || (it.value() != param_value);
+  params_hash[param_name] = param_value;
+  // emit signal when the content changes.
+  if (content_changed) {
+    emit paramChanged(param_name, param_value);
+  }
+}
+
+void ParamWatcher::addParam(const QString &param_name) {
+  watcher->addPath(QString::fromStdString(params.getParamPath(param_name.toStdString())));
 }

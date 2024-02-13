@@ -1,3 +1,8 @@
+from cereal import car
+
+SteerControlType = car.CarParams.SteerControlType
+
+
 def create_steer_command(packer, steer, steer_req):
   """Creates a CAN message for the Toyota Steer Command."""
 
@@ -9,25 +14,26 @@ def create_steer_command(packer, steer, steer_req):
   return packer.make_can_msg("STEERING_LKA", 0, values)
 
 
-def create_lta_steer_command(packer, steer, steer_req, raw_cnt):
+def create_lta_steer_command(packer, steer_control_type, steer_angle, steer_req, frame, torque_wind_down):
   """Creates a CAN message for the Toyota LTA Steer Command."""
 
   values = {
-    "COUNTER": raw_cnt + 128,
-    "SETME_X1": 1,
-    "SETME_X3": 3,
+    "COUNTER": frame + 128,
+    "SETME_X1": 1,  # suspected LTA feature availability
+    # 1 for TSS 2.5 cars, 3 for TSS 2.0. Send based on whether we're using LTA for lateral control
+    "SETME_X3": 1 if steer_control_type == SteerControlType.angle else 3,
     "PERCENTAGE": 100,
-    "SETME_X64": 0x64,
+    "TORQUE_WIND_DOWN": torque_wind_down,
     "ANGLE": 0,
-    "STEER_ANGLE_CMD": steer,
+    "STEER_ANGLE_CMD": steer_angle,
     "STEER_REQUEST": steer_req,
     "STEER_REQUEST_2": steer_req,
-    "BIT": 0,
+    "CLEAR_HOLD_STEERING_ALERT": 0,
   }
   return packer.make_can_msg("STEERING_LTA", 0, values)
 
 
-def create_accel_command(packer, accel, pcm_cancel, standstill_req, lead, acc_type):
+def create_accel_command(packer, accel, pcm_cancel, standstill_req, lead, acc_type, fcw_alert):
   # TODO: find the exact canceling bit that does not create a chime
   values = {
     "ACCEL_CMD": accel,
@@ -38,6 +44,7 @@ def create_accel_command(packer, accel, pcm_cancel, standstill_req, lead, acc_ty
     "RELEASE_STANDSTILL": not standstill_req,
     "CANCEL_REQ": pcm_cancel,
     "ALLOW_LONG_PRESS": 1,
+    "ACC_CUT_IN": fcw_alert,  # only shown when ACC enabled
   }
   return packer.make_can_msg("ACC_CONTROL", 0, values)
 
@@ -46,7 +53,7 @@ def create_acc_cancel_command(packer):
   values = {
     "GAS_RELEASED": 0,
     "CRUISE_ACTIVE": 0,
-    "STANDSTILL_ON": 0,
+    "ACC_BRAKING": 0,
     "ACCEL_NET": 0,
     "CRUISE_STATE": 0,
     "CANCEL_REQ": 1,
@@ -56,14 +63,14 @@ def create_acc_cancel_command(packer):
 
 def create_fcw_command(packer, fcw):
   values = {
-    "PCS_INDICATOR": 1,
+    "PCS_INDICATOR": 1,  # PCS turned off
     "FCW": fcw,
     "SET_ME_X20": 0x20,
     "SET_ME_X10": 0x10,
     "PCS_OFF": 1,
     "PCS_SENSITIVITY": 0,
   }
-  return packer.make_can_msg("ACC_HUD", 0, values)
+  return packer.make_can_msg("PCS_HUD", 0, values)
 
 
 def create_ui_command(packer, steer, chime, left_line, right_line, left_lane_depart, right_lane_depart, enabled, stock_lkas_hud):
@@ -87,7 +94,7 @@ def create_ui_command(packer, steer, chime, left_line, right_line, left_lane_dep
     "LANE_SWAY_SENSITIVITY": 2,
     "LANE_SWAY_TOGGLE": 1,
     "LDA_ON_MESSAGE": 0,
-    "LDA_SPEED_TOO_LOW": 0,
+    "LDA_MESSAGES": 0,
     "LDA_SA_TOGGLE": 1,
     "LDA_SENSITIVITY": 2,
     "LDA_UNAVAILABLE": 0,
@@ -99,6 +106,13 @@ def create_ui_command(packer, steer, chime, left_line, right_line, left_lane_dep
 
   # lane sway functionality
   # not all cars have LKAS_HUD — update with camera values if available
-  values.update(stock_lkas_hud)
+  if len(stock_lkas_hud):
+    values.update({s: stock_lkas_hud[s] for s in [
+      "LANE_SWAY_FLD",
+      "LANE_SWAY_BUZZER",
+      "LANE_SWAY_WARNING",
+      "LANE_SWAY_SENSITIVITY",
+      "LANE_SWAY_TOGGLE",
+    ]})
 
   return packer.make_can_msg("LKAS_HUD", 0, values)

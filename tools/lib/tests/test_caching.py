@@ -1,18 +1,41 @@
 #!/usr/bin/env python3
+from functools import partial
+import http.server
 import os
-import shutil
 import unittest
 
-os.environ["COMMA_CACHE"] = "/tmp/__test_cache__"
-from tools.lib.url_file import URLFile, CACHE_DIR
+from parameterized import parameterized
+from openpilot.selfdrive.athena.tests.helpers import with_http_server
+
+from openpilot.tools.lib.url_file import URLFile
+
+
+class CachingTestRequestHandler(http.server.BaseHTTPRequestHandler):
+  FILE_EXISTS = True
+
+  def do_GET(self):
+    if self.FILE_EXISTS:
+      self.send_response(200, b'1234')
+    else:
+      self.send_response(404)
+    self.end_headers()
+
+  def do_HEAD(self):
+    if self.FILE_EXISTS:
+      self.send_response(200)
+      self.send_header("Content-Length", "4")
+    else:
+      self.send_response(404)
+    self.end_headers()
+
+
+with_caching_server = partial(with_http_server, handler=CachingTestRequestHandler)
 
 
 class TestFileDownload(unittest.TestCase):
 
   def compare_loads(self, url, start=0, length=None):
     """Compares range between cached and non cached version"""
-    shutil.rmtree(CACHE_DIR)
-
     file_cached = URLFile(url, cache=True)
     file_downloaded = URLFile(url, cache=False)
 
@@ -63,6 +86,22 @@ class TestFileDownload(unittest.TestCase):
 
     self.compare_loads(large_file_url, length - 100, 100)
     self.compare_loads(large_file_url)
+
+  @parameterized.expand([(True, ), (False, )])
+  @with_caching_server
+  def test_recover_from_missing_file(self, cache_enabled, host):
+    os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
+
+    file_url = f"{host}/test.png"
+
+    CachingTestRequestHandler.FILE_EXISTS = False
+    length = URLFile(file_url).get_length()
+    self.assertEqual(length, -1)
+
+    CachingTestRequestHandler.FILE_EXISTS = True
+    length = URLFile(file_url).get_length()
+    self.assertEqual(length, 4)
+
 
 
 if __name__ == "__main__":

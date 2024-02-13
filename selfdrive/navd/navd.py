@@ -5,23 +5,20 @@ import os
 import threading
 
 import requests
-import numpy as np
 
 import cereal.messaging as messaging
 from cereal import log
-from common.api import Api
-from common.params import Params
-from common.realtime import Ratekeeper
-from common.transformations.coordinates import ecef2geodetic
-from selfdrive.navd.helpers import (Coordinate, coordinate_from_param,
+from openpilot.common.api import Api
+from openpilot.common.params import Params
+from openpilot.common.realtime import Ratekeeper
+from openpilot.selfdrive.navd.helpers import (Coordinate, coordinate_from_param,
                                     distance_along_geometry, maxspeed_to_ms,
                                     minimum_distance,
                                     parse_banner_instructions)
-from system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 
 REROUTE_DISTANCE = 25
 MANEUVER_TRANSITION_THRESHOLD = 10
-VALID_POS_STD = 50.0
 REROUTE_COUNTER_MIN = 3
 
 
@@ -74,26 +71,21 @@ class RouteEngine:
         self.ui_pid = ui_pid[0]
 
     self.update_location()
-    self.recompute_route()
-    self.send_instruction()
+    try:
+      self.recompute_route()
+      self.send_instruction()
+    except Exception:
+      cloudlog.exception("navd.failed_to_compute")
 
   def update_location(self):
     location = self.sm['liveLocationKalman']
-    laikad = self.sm['gnssMeasurements']
+    self.gps_ok = location.gpsOK
 
-    locationd_valid = (location.status == log.LiveLocationKalman.Status.valid) and location.positionGeodetic.valid
-    laikad_valid = laikad.positionECEF.valid and np.linalg.norm(laikad.positionECEF.std) < VALID_POS_STD
+    self.localizer_valid = (location.status == log.LiveLocationKalman.Status.valid) and location.positionGeodetic.valid
 
-    self.localizer_valid = locationd_valid or laikad_valid
-    self.gps_ok = location.gpsOK or laikad_valid
-
-    if locationd_valid:
+    if self.localizer_valid:
       self.last_bearing = math.degrees(location.calibratedOrientationNED.value[2])
       self.last_position = Coordinate(location.positionGeodetic.value[0], location.positionGeodetic.value[1])
-    elif laikad_valid:
-      geodetic = ecef2geodetic(laikad.positionECEF.value)
-      self.last_position = Coordinate(geodetic[0], geodetic[1])
-      self.last_bearing = None
 
   def recompute_route(self):
     if self.last_position is None:
@@ -102,6 +94,7 @@ class RouteEngine:
     new_destination = coordinate_from_param("NavDestination", self.params)
     if new_destination is None:
       self.clear_route()
+      self.reset_recompute_limits()
       return
 
     should_recompute = self.should_recompute()
@@ -206,7 +199,7 @@ class RouteEngine:
     self.send_route()
 
   def send_instruction(self):
-    msg = messaging.new_message('navInstruction')
+    msg = messaging.new_message('navInstruction', valid=True)
 
     if self.step_idx is None:
       msg.valid = False
@@ -218,9 +211,39 @@ class RouteEngine:
     along_geometry = distance_along_geometry(geometry, self.last_position)
     distance_to_maneuver_along_geometry = step['distance'] - along_geometry
 
+    # Banner instructions are for the following maneuver step, don't use empty last step
+    banner_step = step
+    if not len(banner_step['bannerInstructions']) and self.step_idx == len(self.route) - 1:
+      banner_step = self.route[max(self.step_idx - 1, 0)]
+
     # Current instruction
     msg.navInstruction.maneuverDistance = distance_to_maneuver_along_geometry
-    parse_banner_instructions(msg.navInstruction, step['bannerInstructions'], distance_to_maneuver_along_geometry)
+    instruction = parse_banner_instructions(banner_step['bannerInstructions'], distance_to_maneuver_along_geometry)
+    if instruction is not None:
+      for k,v in instruction.items():
+        setattr(msg.navInstruction, k, v)
+
+    # All instructions
+    maneuvers = []
+    for i, step_i in enumerate(self.route):
+      if i < self.step_idx:
+        distance_to_maneuver = -sum(self.route[j]['distance'] for j in range(i+1, self.step_idx)) - along_geometry
+      elif i == self.step_idx:
+        distance_to_maneuver = distance_to_maneuver_along_geometry
+      else:
+        distance_to_maneuver = distance_to_maneuver_along_geometry + sum(self.route[j]['distance'] for j in range(self.step_idx+1, i+1))
+
+      instruction = parse_banner_instructions(step_i['bannerInstructions'], distance_to_maneuver)
+      if instruction is None:
+        continue
+      maneuver = {'distance': distance_to_maneuver}
+      if 'maneuverType' in instruction:
+        maneuver['type'] = instruction['maneuverType']
+      if 'maneuverModifier' in instruction:
+        maneuver['modifier'] = instruction['maneuverModifier']
+      maneuvers.append(maneuver)
+
+    msg.navInstruction.allManeuvers = maneuvers
 
     # Compute total remaining time and distance
     remaining = 1.0 - along_geometry / max(step['distance'], 1)
@@ -236,7 +259,10 @@ class RouteEngine:
     for i in range(self.step_idx + 1, len(self.route)):
       total_distance += self.route[i]['distance']
       total_time += self.route[i]['duration']
-      total_time_typical += self.route[i]['duration_typical']
+      if self.route[i]['duration_typical'] is None:
+        total_time_typical += self.route[i]['duration']
+      else:
+        total_time_typical += self.route[i]['duration_typical']
 
     msg.navInstruction.distanceRemaining = total_distance
     msg.navInstruction.timeRemaining = total_time
@@ -265,15 +291,14 @@ class RouteEngine:
     if distance_to_maneuver_along_geometry < -MANEUVER_TRANSITION_THRESHOLD:
       if self.step_idx + 1 < len(self.route):
         self.step_idx += 1
-        self.recompute_backoff = 0
-        self.recompute_countdown = 0
+        self.reset_recompute_limits()
       else:
         cloudlog.warning("Destination reached")
-        Params().remove("NavDestination")
 
         # Clear route if driving away from destination
         dist = self.nav_destination.distance_to(self.last_position)
         if dist > REROUTE_DISTANCE:
+          self.params.remove("NavDestination")
           self.clear_route()
 
   def send_route(self):
@@ -283,7 +308,7 @@ class RouteEngine:
       for path in self.route_geometry:
         coords += [c.as_dict() for c in path]
 
-    msg = messaging.new_message('navRoute')
+    msg = messaging.new_message('navRoute', valid=True)
     msg.navRoute.coordinates = coords
     self.pm.send('navRoute', msg)
 
@@ -292,6 +317,10 @@ class RouteEngine:
     self.route_geometry = None
     self.step_idx = None
     self.nav_destination = None
+
+  def reset_recompute_limits(self):
+    self.recompute_backoff = 0
+    self.recompute_countdown = 0
 
   def should_recompute(self):
     if self.step_idx is None or self.route is None:
@@ -321,11 +350,9 @@ class RouteEngine:
     # TODO: Check for going wrong way in segment
 
 
-def main(sm=None, pm=None):
-  if sm is None:
-    sm = messaging.SubMaster(['liveLocationKalman', 'gnssMeasurements', 'managerState'])
-  if pm is None:
-    pm = messaging.PubMaster(['navInstruction', 'navRoute'])
+def main():
+  pm = messaging.PubMaster(['navInstruction', 'navRoute'])
+  sm = messaging.SubMaster(['liveLocationKalman', 'managerState'])
 
   rk = Ratekeeper(1.0)
   route_engine = RouteEngine(sm, pm)

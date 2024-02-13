@@ -1,4 +1,14 @@
+#include <cassert>
+
 #include "system/loggerd/loggerd.h"
+
+#ifdef QCOM2
+#include "system/loggerd/encoder/v4l_encoder.h"
+#define Encoder V4LEncoder
+#else
+#include "system/loggerd/encoder/ffmpeg_encoder.h"
+#define Encoder FfmpegEncoder
+#endif
 
 ExitHandler do_exit;
 
@@ -35,9 +45,9 @@ bool sync_encoders(EncoderdState *s, CameraType cam_type, uint32_t frame_id) {
 
 
 void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
-  util::set_thread_name(cam_info.filename);
+  util::set_thread_name(cam_info.thread_name);
 
-  std::vector<Encoder *> encoders;
+  std::vector<std::unique_ptr<Encoder>> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
 
   int cur_seg = 0;
@@ -50,30 +60,13 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
     // init encoders
     if (encoders.empty()) {
       VisionBuf buf_info = vipc_client.buffers[0];
-      LOGW("encoder %s init %dx%d", cam_info.filename, buf_info.width, buf_info.height);
+      LOGW("encoder %s init %zux%zu", cam_info.thread_name, buf_info.width, buf_info.height);
+      assert(buf_info.width > 0 && buf_info.height > 0);
 
-      if (buf_info.width > 0 && buf_info.height > 0) {
-        // main encoder
-        encoders.push_back(new Encoder(cam_info.filename, cam_info.type, buf_info.width, buf_info.height,
-                                      cam_info.fps, cam_info.bitrate,
-                                      cam_info.is_h265 ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::QCAMERA_H264,
-                                      buf_info.width, buf_info.height, false));
-        // qcamera encoder
-        if (cam_info.has_qcamera) {
-          encoders.push_back(new Encoder(qcam_info.filename, cam_info.type, buf_info.width, buf_info.height,
-                                        qcam_info.fps, qcam_info.bitrate,
-                                        qcam_info.is_h265 ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::QCAMERA_H264,
-                                        qcam_info.frame_width, qcam_info.frame_height, false));
-        }
-      } else {
-        LOGE("not initting empty encoder");
-        s->max_waiting--;
-        break;
+      for (const auto &encoder_info : cam_info.encoder_infos) {
+        auto &e = encoders.emplace_back(new Encoder(encoder_info, buf_info.width, buf_info.height));
+        e->encoder_open(nullptr);
       }
-    }
-
-    for (int i = 0; i < encoders.size(); ++i) {
-      encoders[i]->encoder_open(NULL);
     }
 
     bool lagging = false;
@@ -85,7 +78,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       // detect loop around and drop the frames
       if (buf->get_frame_id() != extra.frame_id) {
         if (!lagging) {
-          LOGE("encoder %s lag  buffer id: %d  extra id: %d", cam_info.filename, buf->get_frame_id(), extra.frame_id);
+          LOGE("encoder %s lag  buffer id: %" PRIu64 " extra id: %d", cam_info.thread_name, buf->get_frame_id(), extra.frame_id);
           lagging = true;
         }
         continue;
@@ -117,26 +110,36 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       }
     }
   }
-
-  LOG("encoder destroy");
-  for(auto &e : encoders) {
-    e->encoder_close();
-    delete e;
-  }
 }
 
-void encoderd_thread() {
+template <size_t N>
+void encoderd_thread(const LogCameraInfo (&cameras)[N]) {
   EncoderdState s;
 
-  std::vector<std::thread> encoder_threads;
-  for (const auto &cam : cameras_logged) {
-    encoder_threads.push_back(std::thread(encoder_thread, &s, cam));
-    s.max_waiting++;
+  std::set<VisionStreamType> streams;
+  while (!do_exit) {
+    streams = VisionIpcClient::getAvailableStreams("camerad", false);
+    if (!streams.empty()) {
+      break;
+    }
+    util::sleep_for(100);
   }
-  for (auto &t : encoder_threads) t.join();
+
+  if (!streams.empty()) {
+    std::vector<std::thread> encoder_threads;
+    for (auto stream : streams) {
+      auto it = std::find_if(std::begin(cameras), std::end(cameras),
+                             [stream](auto &cam) { return cam.stream_type == stream; });
+      assert(it != std::end(cameras));
+      ++s.max_waiting;
+      encoder_threads.push_back(std::thread(encoder_thread, &s, *it));
+    }
+
+    for (auto &t : encoder_threads) t.join();
+  }
 }
 
-int main() {
+int main(int argc, char* argv[]) {
   if (!Hardware::PC()) {
     int ret;
     ret = util::set_realtime_priority(52);
@@ -144,6 +147,15 @@ int main() {
     ret = util::set_core_affinity({3});
     assert(ret == 0);
   }
-  encoderd_thread();
+  if (argc > 1) {
+    std::string arg1(argv[1]);
+    if (arg1 == "--stream") {
+      encoderd_thread(stream_cameras_logged);
+    } else {
+      LOGE("Argument '%s' is not supported", arg1.c_str());
+    }
+  } else {
+    encoderd_thread(cameras_logged);
+  }
   return 0;
 }

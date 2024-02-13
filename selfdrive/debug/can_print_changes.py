@@ -3,10 +3,11 @@ import argparse
 import binascii
 import time
 from collections import defaultdict
+from typing import Optional
 
 import cereal.messaging as messaging
-from selfdrive.debug.can_table import can_table
-from tools.lib.logreader import logreader_from_route_or_segment
+from openpilot.selfdrive.debug.can_table import can_table
+from openpilot.tools.lib.logreader import LogIterable, LogReader
 
 RED = '\033[91m'
 CLEAR = '\033[0m'
@@ -95,13 +96,15 @@ if __name__ == "__main__":
 
   args = parser.parse_args()
 
-  init_lr, new_lr = None, None
+  init_lr: Optional[LogIterable] = None
+  new_lr: Optional[LogIterable] = None
+
   if args.init:
     if args.init == '':
       init_lr = []
     else:
-      init_lr = logreader_from_route_or_segment(args.init)
+      init_lr = LogReader(args.init)
   if args.comp:
-    new_lr = logreader_from_route_or_segment(args.comp)
+    new_lr = LogReader(args.comp)
 
   can_printer(args.bus, init_msgs=init_lr, new_msgs=new_lr, table=args.table)

@@ -11,7 +11,7 @@ by generating a rotation matrix and multiplying.
 | :-------------: |:-------------:| :-----:| :----: |
 | Geodetic | [Latitude, Longitude, Altitude] | geodetic coordinates | Sometimes used as [lon, lat, alt], avoid this frame. |
 | ECEF | [x, y, z] | meters | We use **ITRF14 (IGS14)**, NOT NAD83. <br> This is the global Mesh3D frame. |
-| NED | [North, East, Down] | meters | Relative to earth's surface, useful for vizualizing. |
+| NED | [North, East, Down] | meters | Relative to earth's surface, useful for visualizing. |
 | Device | [Forward, Right, Down] | meters | This is the Mesh3D local frame. <br> Relative to camera, **not imu.** <br> ![img](http://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/RPY_angles_of_airplanes.png/440px-RPY_angles_of_airplanes.png)|
 | Calibrated | [Forward, Right, Down] | meters | This is the frame the model outputs are in. <br> More details below. <br>|
 | Car | [Forward, Right, Down] | meters | This is useful for estimating position of points on the road. <br> More details below. <br>|
