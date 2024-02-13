@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma device. All supported cars provide a better experience than any stock system. Supported vehicles reference the US market unless otherwise specified.
 
-# 278 Supported Cars
+# 279 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|<a href="##"><img width=2000></a>Hardware Needed<br>&nbsp;|Video|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
