@@ -42,7 +42,7 @@ sound_list: Dict[int, Tuple[str, Optional[int], float]] = {
 }
 
 def check_controls_timeout_alert(sm):
-  controls_missing = time.monotonic() - sm.rcv_time['controlsState']
+  controls_missing = time.monotonic() - sm.recv_time['controlsState']
 
   if controls_missing > CONTROLS_TIMEOUT:
     if sm['controlsState'].enabled and (controls_missing - CONTROLS_TIMEOUT) < 10:

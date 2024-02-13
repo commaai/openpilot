@@ -145,7 +145,6 @@ else:
     libpath = [
       f"#third_party/acados/{arch}/lib",
       f"#third_party/libyuv/{arch}/lib",
-      f"#third_party/mapbox-gl-native-qt/{arch}",
       "/usr/lib",
       "/usr/local/lib",
     ]
@@ -208,11 +207,12 @@ env = Environment(
     "#third_party/json11",
     "#third_party/linux/include",
     "#third_party/snpe/include",
-    "#third_party/mapbox-gl-native-qt/include",
     "#third_party/qrcode",
     "#third_party",
     "#cereal",
     "#opendbc/can",
+    "#third_party/maplibre-native-qt/include",
+    f"#third_party/maplibre-native-qt/{arch}/include"
   ],
 
   CC='clang',
@@ -318,7 +318,7 @@ try:
 except SCons.Errors.UserError:
   qt_env.Tool('qt')
 
-qt_env['CPPPATH'] += qt_dirs + ["#selfdrive/ui/qt/"]
+qt_env['CPPPATH'] += qt_dirs# + ["#selfdrive/ui/qt/"]
 qt_flags = [
   "-D_REENTRANT",
   "-DQT_NO_DEBUG",
@@ -331,7 +331,8 @@ qt_flags = [
   "-DQT_MESSAGELOGCONTEXT",
 ]
 qt_env['CXXFLAGS'] += qt_flags
-qt_env['LIBPATH'] += ['#selfdrive/ui']
+qt_env['LIBPATH'] += ['#selfdrive/ui', f"#third_party/maplibre-native-qt/{arch}/lib"]
+qt_env['RPATH'] += [Dir(f"#third_party/maplibre-native-qt/{arch}/lib").srcnode().abspath]
 qt_env['LIBS'] = qt_libs
 
 if GetOption("clazy"):

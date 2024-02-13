@@ -1,8 +1,20 @@
 import os
+import socket
+from urllib.parse import urlparse
 
 from openpilot.tools.lib.url_file import URLFile
 
 DATA_ENDPOINT = os.getenv("DATA_ENDPOINT", "http://data-raw.comma.internal/")
+
+def internal_source_available():
+  try:
+    hostname = urlparse(DATA_ENDPOINT).hostname
+    if hostname:
+      socket.gethostbyname(hostname)
+      return True
+  except socket.gaierror:
+    pass
+  return False
 
 def resolve_name(fn):
   if fn.startswith("cd:/"):

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import pytest
 import random
 import time
 import unittest
@@ -11,7 +10,7 @@ from cereal import car
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
 from openpilot.selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, \
-                                                match_fw_to_car, get_fw_versions, get_present_ecus
+                                                match_fw_to_car, get_brand_ecu_matches, get_fw_versions, get_present_ecus
 from openpilot.selfdrive.car.vin import get_vin
 
 CarFw = car.CarParams.CarFw
@@ -150,7 +149,7 @@ class TestFwFingerprint(unittest.TestCase):
     # Ensure each brand has at least 1 ECU to query, and extra ECU retrieval
     for brand, config in FW_QUERY_CONFIGS.items():
       self.assertEqual(len(config.get_all_ecus({}, include_extra_ecus=False)), 0)
-      self.assertEqual(config.get_all_ecus({}, include_ecu_type=True), set(config.extra_ecus))
+      self.assertEqual(config.get_all_ecus({}), set(config.extra_ecus))
       self.assertGreater(len(config.get_all_ecus(VERSIONS[brand])), 0)
 
   def test_fw_request_ecu_whitelist(self):
@@ -177,6 +176,14 @@ class TestFwFingerprint(unittest.TestCase):
           # No request on the OBD port (bus 1, multiplexed) should be run on an aux panda
           self.assertFalse(request_obj.auxiliary and request_obj.bus == 1 and request_obj.obd_multiplexing,
                            f"{brand.title()}: OBD multiplexed request is marked auxiliary: {request_obj}")
+
+  def test_brand_ecu_matches(self):
+    empty_response = {brand: set() for brand in FW_QUERY_CONFIGS}
+    self.assertEqual(get_brand_ecu_matches(set()), empty_response)
+
+    # we ignore bus
+    expected_response = empty_response | {'toyota': {(0x750, 0xf)}}
+    self.assertEqual(get_brand_ecu_matches({(0x758, 0xf, 99)}), expected_response)
 
 
 class TestFwFingerprintTiming(unittest.TestCase):
@@ -244,9 +251,8 @@ class TestFwFingerprintTiming(unittest.TestCase):
         self._assert_timing(self.total_time / self.N, vin_ref_times[name])
         print(f'get_vin {name} case, query time={self.total_time / self.N} seconds')
 
-  @pytest.mark.timeout(60)
   def test_fw_query_timing(self):
-    total_ref_time = 6.9
+    total_ref_time = {1: 5.95, 2: 6.85}
     brand_ref_times = {
       1: {
         'gm': 0.5,
@@ -254,8 +260,8 @@ class TestFwFingerprintTiming(unittest.TestCase):
         'chrysler': 0.3,
         'ford': 0.1,
         'honda': 0.55,
-        'hyundai': 0.65,
-        'mazda': 0.2,
+        'hyundai': 1.05,
+        'mazda': 0.1,
         'nissan': 0.8,
         'subaru': 0.45,
         'tesla': 0.2,
@@ -264,28 +270,31 @@ class TestFwFingerprintTiming(unittest.TestCase):
       },
       2: {
         'ford': 0.2,
-        'hyundai': 1.05,
+        'hyundai': 1.85,
       }
     }
 
-    total_time = 0
+    total_times = {1: 0.0, 2: 0.0}
     for num_pandas in (1, 2):
       for brand, config in FW_QUERY_CONFIGS.items():
         with self.subTest(brand=brand, num_pandas=num_pandas):
-          multi_panda_requests = [r for r in config.requests if r.bus > 3]
-          if not len(multi_panda_requests) and num_pandas > 1:
-            raise unittest.SkipTest("No multi-panda FW queries")
-
           avg_time = self._benchmark_brand(brand, num_pandas)
-          total_time += avg_time
+          total_times[num_pandas] += avg_time
           avg_time = round(avg_time, 2)
-          self._assert_timing(avg_time, brand_ref_times[num_pandas][brand])
+
+          ref_time = brand_ref_times[num_pandas].get(brand)
+          if ref_time is None:
+            # ref time should be same as 1 panda if no aux queries
+            ref_time = brand_ref_times[num_pandas - 1][brand]
+
+          self._assert_timing(avg_time, ref_time)
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
 
-    with self.subTest(brand='all_brands'):
-      total_time = round(total_time, 2)
-      self._assert_timing(total_time, total_ref_time)
-      print(f'all brands, total FW query time={total_time} seconds')
+    for num_pandas in (1, 2):
+      with self.subTest(brand='all_brands', num_pandas=num_pandas):
+        total_time = round(total_times[num_pandas], 2)
+        self._assert_timing(total_time, total_ref_time[num_pandas])
+        print(f'all brands, total FW query time={total_time} seconds')
 
 
 if __name__ == "__main__":
