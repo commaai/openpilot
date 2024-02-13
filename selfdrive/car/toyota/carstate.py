@@ -41,6 +41,7 @@ class CarState(CarStateBase):
     self.accurate_steer_angle_seen = False
     self.angle_offset = FirstOrderFilter(None, 60.0, DT_CTRL, initialized=False)
 
+    self.has_rpm = any(fw.ecu == Ecu.engine for fw in self.CP.carFw)
     self.low_speed_lockout = False
     self.acc_type = 1
     self.lkas_hud = {}
@@ -96,7 +97,7 @@ class CarState(CarStateBase):
     ret.leftBlinker = cp.vl["BLINKERS_STATE"]["TURN_SIGNALS"] == 1
     ret.rightBlinker = cp.vl["BLINKERS_STATE"]["TURN_SIGNALS"] == 2
 
-    if any(fw.ecu == Ecu.engine for fw in self.CP.carFw):
+    if self.has_rpm:
       ret.engineRpm = cp.vl["ENGINE_RPM"]["RPM"]
 
     ret.steeringTorque = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]
