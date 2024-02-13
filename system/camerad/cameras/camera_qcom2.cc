@@ -193,6 +193,7 @@ int CameraState::sensors_init() {
 
   int ret = do_cam_control(sensor_fd, CAM_SENSOR_PROBE_CMD, (void *)(uintptr_t)cam_packet_handle, 0);
   LOGD("probing the sensor: %d", ret);
+  assert(ret == 0);
   return ret;
 }
 
