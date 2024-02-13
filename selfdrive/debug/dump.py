@@ -7,7 +7,7 @@ import codecs
 from hexdump import hexdump
 from cereal import log
 from cereal.services import SERVICE_LIST
-from openpilot.tools.lib.logreader import raw_live_logreader
+from openpilot.tools.lib.live_logreader import raw_live_logreader
 
 
 codecs.register_error("strict", codecs.backslashreplace_errors)
