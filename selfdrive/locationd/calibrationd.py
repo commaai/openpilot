@@ -260,7 +260,7 @@ def main() -> NoReturn:
   set_realtime_priority(1)
 
   pm = messaging.PubMaster(['liveCalibration'])
-  sm = messaging.SubMaster(['cameraOdometry', 'carState', 'carParams'], poll=['cameraOdometry'])
+  sm = messaging.SubMaster(['cameraOdometry', 'carState', 'carParams'], poll='cameraOdometry')
 
   calibrator = Calibrator(param_put=True)
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import pytest
 import random
 import time
 import unittest
@@ -252,17 +251,16 @@ class TestFwFingerprintTiming(unittest.TestCase):
         self._assert_timing(self.total_time / self.N, vin_ref_times[name])
         print(f'get_vin {name} case, query time={self.total_time / self.N} seconds')
 
-  @pytest.mark.timeout(60)
   def test_fw_query_timing(self):
-    total_ref_time = 7.0
+    total_ref_time = {1: 5.95, 2: 6.85}
     brand_ref_times = {
       1: {
         'gm': 0.5,
         'body': 0.1,
         'chrysler': 0.3,
-        'ford': 0.2,
+        'ford': 0.1,
         'honda': 0.55,
-        'hyundai': 0.65,
+        'hyundai': 1.05,
         'mazda': 0.1,
         'nissan': 0.8,
         'subaru': 0.45,
@@ -271,29 +269,32 @@ class TestFwFingerprintTiming(unittest.TestCase):
         'volkswagen': 0.2,
       },
       2: {
-        'ford': 0.3,
-        'hyundai': 1.05,
+        'ford': 0.2,
+        'hyundai': 1.85,
       }
     }
 
-    total_time = 0
+    total_times = {1: 0.0, 2: 0.0}
     for num_pandas in (1, 2):
       for brand, config in FW_QUERY_CONFIGS.items():
         with self.subTest(brand=brand, num_pandas=num_pandas):
-          multi_panda_requests = [r for r in config.requests if r.bus > 3]
-          if not len(multi_panda_requests) and num_pandas > 1:
-            raise unittest.SkipTest("No multi-panda FW queries")
-
           avg_time = self._benchmark_brand(brand, num_pandas)
-          total_time += avg_time
+          total_times[num_pandas] += avg_time
           avg_time = round(avg_time, 2)
-          self._assert_timing(avg_time, brand_ref_times[num_pandas][brand])
+
+          ref_time = brand_ref_times[num_pandas].get(brand)
+          if ref_time is None:
+            # ref time should be same as 1 panda if no aux queries
+            ref_time = brand_ref_times[num_pandas - 1][brand]
+
+          self._assert_timing(avg_time, ref_time)
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
 
-    with self.subTest(brand='all_brands'):
-      total_time = round(total_time, 2)
-      self._assert_timing(total_time, total_ref_time)
-      print(f'all brands, total FW query time={total_time} seconds')
+    for num_pandas in (1, 2):
+      with self.subTest(brand='all_brands', num_pandas=num_pandas):
+        total_time = round(total_times[num_pandas], 2)
+        self._assert_timing(total_time, total_ref_time[num_pandas])
+        print(f'all brands, total FW query time={total_time} seconds')
 
 
 if __name__ == "__main__":

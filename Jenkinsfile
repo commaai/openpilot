@@ -16,6 +16,8 @@ ssh -tt -o ConnectTimeout=30 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 
 
 set -e
 
+shopt -s huponexit # kill all child processes when the shell exits
+
 export CI=1
 export PYTHONWARNINGS=error
 export LOGPRINT=debug
@@ -78,17 +80,13 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
     def extra = extra_env.collect { "export ${it}" }.join('\n');
     def branch = env.BRANCH_NAME ?: 'master';
 
-    docker.image('ghcr.io/commaai/alpine-ssh').inside('--user=root') {
-      lock(resource: "", label: deviceType, inversePrecedence: true, variable: 'device_ip', quantity: 1, resourceSelectStrategy: 'random') {
+    lock(resource: "", label: deviceType, inversePrecedence: true, variable: 'device_ip', quantity: 1, resourceSelectStrategy: 'random') {
+      docker.image('ghcr.io/commaai/alpine-ssh').inside('--user=root') {
         timeout(time: 20, unit: 'MINUTES') {
           retry (3) {
             device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
           }
           steps.each { item ->
-            if (branch != "master" && item.size() == 3 && !hasDirectoryChanged(item[2])) {
-              println "Skipped '${item[0]}', no relevant changes were detected."
-              return;
-            }
             device(device_ip, item[0], item[1])
           }
         }
@@ -106,7 +104,7 @@ def pcStage(String stageName, Closure body) {
 
     checkout scm
 
-    def dockerArgs = "--user=batman -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache -e PYTHONPATH=${env.WORKSPACE}";
+    def dockerArgs = "--user=batman -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache -e PYTHONPATH=${env.WORKSPACE} --cpus=8 --memory 16g -e PYTEST_ADDOPTS='-n8'";
 
     def openpilot_base = retryWithDelay (3, 15) {
       return docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .")
@@ -143,20 +141,6 @@ def setupCredentials() {
   }
 }
 
-def hasDirectoryChanged(List<String> paths) {
-  for (change in currentBuild.changeSets) {
-    for (item in change.items) {
-      for (affectedPath in item.affectedPaths) {
-        for (path in paths) {
-          if (affectedPath.startsWith(path)) {
-            return true
-          }
-        }
-      }
-    }
-  }
-  return false
-}
 
 node {
   env.CI = "1"
@@ -205,9 +189,9 @@ node {
         ])
       },
       'HW + Unit Tests': {
-        deviceStage("tici", "tici-common", ["UNSAFE=1"], [
+        deviceStage("tici-hardware", "tici-common", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
-          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py", ["panda/", "selfdrive/boardd/"]],
+          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
           ["test power draw", "pytest -s system/hardware/tici/tests/test_power_draw.py"],
           ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
           ["test pigeond", "pytest system/sensord/tests/test_pigeond.py"],
@@ -215,7 +199,7 @@ node {
         ])
       },
       'loopback': {
-        deviceStage("tici", "tici-loopback", ["UNSAFE=1"], [
+        deviceStage("loopback", "tici-loopback", ["UNSAFE=1"], [
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["test boardd loopback", "pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
         ])
@@ -243,7 +227,7 @@ node {
         ])
       },
       'replay': {
-        deviceStage("tici", "tici-replay", ["UNSAFE=1"], [
+        deviceStage("model-replay", "tici-replay", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
           ["model replay", "selfdrive/test/process_replay/model_replay.py"],
         ])
@@ -252,29 +236,11 @@ node {
         deviceStage("tizi", "tizi", ["UNSAFE=1"], [
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["test boardd loopback", "SINGLE_PANDA=1 pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
-          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py", ["panda/", "selfdrive/boardd/"]],
+          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
           ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
           ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
-          ["test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py", ["system/qcomgpsd/"]],
+          ["test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py"],
         ])
-      },
-
-      // *** PC tests ***
-      'PC tests': {
-        pcStage("PC tests") {
-          // tests that our build system's dependencies are configured properly,
-          // needs a machine with lots of cores
-          sh label: "test multi-threaded build",
-             script: '''#!/bin/bash
-                        scons --no-cache --random -j$(nproc)'''
-        }
-      },
-      'car tests': {
-        pcStage("car tests") {
-          sh label: "build", script: "selfdrive/manager/build.py"
-          sh label: "run car tests", script: "cd selfdrive/car/tests && MAX_EXAMPLES=300 INTERNAL_SEG_CNT=300 FILEREADER_CACHE=1 \
-              INTERNAL_SEG_LIST=selfdrive/car/tests/test_models_segs.txt pytest test_models.py test_car_interfaces.py"
-        }
       },
 
     )
