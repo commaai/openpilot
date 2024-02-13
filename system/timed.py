@@ -71,7 +71,7 @@ def main() -> NoReturn:
     sm.update(1000)
 
     msg = messaging.new_message('clocks', valid=True)
-    msg.wallTimeNanos = time.time_ns()
+    msg.clocks.wallTimeNanos = time.time_ns()
     pm.send('clocks', msg)
 
     llk = sm['liveLocationKalman']
