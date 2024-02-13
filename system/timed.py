@@ -70,8 +70,7 @@ def main() -> NoReturn:
   while True:
     sm.update(1000)
 
-    msg = messaging.new_message('clocks')
-    msg.bootTimeNanos = time.monotonic_ns()
+    msg = messaging.new_message('clocks', valid=True)
     msg.wallTimeNanos = time.time_ns()
     pm.send('clocks', msg)
 
