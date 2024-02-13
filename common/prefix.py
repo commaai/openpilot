@@ -27,6 +27,9 @@ class OpenpilotPrefix:
     if self.shared_download_cache:
       os.environ["COMMA_CACHE"] = DEFAULT_DOWNLOAD_CACHE_ROOT
 
+    os.makedirs(Paths.comma_home(), exist_ok=True)
+    os.makedirs(Paths.download_cache_root(), exist_ok=True)
+
     return self
 
   def __exit__(self, exc_type, exc_obj, exc_tb):
