@@ -15,7 +15,9 @@ LiveFwVersions = Dict[AddrType, Set[bytes]]
 OfflineFwVersions = Dict[str, Dict[EcuAddrSubAddr, List[bytes]]]
 
 # A global list of addresses we will only ever consider for VIN responses
-STANDARD_VIN_ADDRS = [0x7e0, 0x7e2, 0x760, 0x18da10f1, 0x18da0ef1]  # engine, hybrid controller, Ford abs, 29-bit engine, PGM-FI
+# engine, hybrid controller, Ford abs, Hyundai CAN FD cluster, 29-bit engine, PGM-FI
+# TODO: move these to each brand's FW query config
+STANDARD_VIN_ADDRS = [0x7e0, 0x7e2, 0x760, 0x7c4, 0x18da10f1, 0x18da0ef1]
 
 
 def p16(val):
