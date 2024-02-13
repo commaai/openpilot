@@ -30,7 +30,7 @@ class TestRawgpsd(unittest.TestCase):
     os.system("sudo systemctl restart ModemManager lte")
 
   def setUp(self):
-    os.system("sudo systemctl start systemd-resolved")
+    wait_for_modem()
     at_cmd("AT+QGPSDEL=0")
     self.sm = messaging.SubMaster(['qcomGnss', 'gpsLocation', 'gnssMeasurements'])
 
