@@ -19,6 +19,7 @@ GOOD_SIGNAL = bool(int(os.getenv("GOOD_SIGNAL", '0')))
 class TestRawgpsd(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
+    os.system("pkill -f -9 mmcli")
     os.system("sudo systemctl start systemd-resolved")
     os.system("sudo systemctl restart ModemManager lte")
     wait_for_modem()
