@@ -55,7 +55,6 @@ class CarState(CarStateBase):
     ret.steerFaultTemporary = cp.vl["EPAS_INFO"]["EPAS_Failure"] == 1
     ret.steerFaultPermanent = cp.vl["EPAS_INFO"]["EPAS_Failure"] in (2, 3)
     ret.espDisabled = cp.vl["Cluster_Info1_FD1"]["DrvSlipCtlMde_D_Rq"] != 0  # 0 is default mode
-    ret.espDisabled = cp.vl["BrakeSysFeatures_2"]["DrvSlipCtlMde_D_Ind"] != 0  # 0 is default mode
 
     if self.CP.carFingerprint in CANFD_CAR:
       # this signal is always 0 on non-CAN FD cars
