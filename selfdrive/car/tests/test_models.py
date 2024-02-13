@@ -410,8 +410,6 @@ class TestCarModelBase(unittest.TestCase):
     controls_allowed_prev = False
     CS_prev = car.CarState.new_message()
     checks = defaultdict(lambda: 0)
-    controlsd = Controls(CI=self.CI)
-    controlsd.initialized = True
     for idx, can in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (can.as_builder().to_bytes(), ))
       for msg in filter(lambda m: m.src in range(64), can.can):
@@ -456,10 +454,8 @@ class TestCarModelBase(unittest.TestCase):
           checks['cruiseState'] += CS.cruiseState.enabled != self.safety.get_cruise_engaged_prev()
       else:
         # Check for enable events on rising edge of controls allowed
-        controlsd.update_events(CS)
-        controlsd.CS_prev = CS
         button_enable = (any(evt.enable for evt in CS.events) and
-                         not any(evt == EventName.pedalPressed for evt in controlsd.events.names))
+                         not any(evt == EventName.pedalPressed for evt in CS.events))
         mismatch = button_enable != (self.safety.get_controls_allowed() and not controls_allowed_prev)
         checks['controlsAllowed'] += mismatch
         controls_allowed_prev = self.safety.get_controls_allowed()
