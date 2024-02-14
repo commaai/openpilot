@@ -1,6 +1,5 @@
 import shutil
 import tempfile
-import numpy as np
 import os
 import unittest
 import pytest
@@ -13,7 +12,7 @@ from openpilot.tools.lib.logreader import LogIterable, LogReader, comma_api_sour
 from openpilot.tools.lib.route import SegmentRange
 
 NUM_SEGS = 17  # number of segments in the test route
-ALL_SEGS = list(np.arange(NUM_SEGS))
+ALL_SEGS = list(range(NUM_SEGS))
 TEST_ROUTE = "344c5c15b34f2d8a/2024-01-03--09-37-12"
 QLOG_FILE = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/qlog.bz2"
 
