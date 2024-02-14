@@ -1,6 +1,5 @@
 import json
 import os
-import time
 import numpy as np
 import tomllib
 from abc import abstractmethod, ABC
@@ -322,13 +321,14 @@ class RadarInterfaceBase(ABC):
     self.pts = {}
     self.delay = 0
     self.radar_ts = CP.radarTimeStep
+    self.frame = 0
     self.no_radar_sleep = 'NO_RADAR_SLEEP' in os.environ
 
   def update(self, can_strings):
-    ret = car.RadarData.new_message()
-    if not self.no_radar_sleep:
-      time.sleep(self.radar_ts)  # radard runs on RI updates
-    return ret
+    self.frame += 1
+    if (self.frame % int(100 * self.radar_ts)) == 0:
+      return car.RadarData.new_message()
+    return None
 
 
 class CarStateBase(ABC):
