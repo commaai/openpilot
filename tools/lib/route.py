@@ -251,6 +251,9 @@ class SegmentRange:
     assert m is not None, f"Segment range is not valid {segment_range}"
     self.m = m
 
+  def get_max_seg_number(self):
+    return get_max_seg_number_cached(self)
+
   @property
   def route_name(self) -> str:
     return self.m.group("route_name")
