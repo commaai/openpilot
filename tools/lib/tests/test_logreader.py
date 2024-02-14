@@ -92,7 +92,7 @@ class TestLogReader(unittest.TestCase):
 
   @parameterized.expand([
     (f"{TEST_ROUTE}/0", False),
-    (f"{TEST_ROUTE}/0:2", False),
+    (f"{TEST_ROUTE}/:2", False),
     (f"{TEST_ROUTE}/0:", True),
     (f"{TEST_ROUTE}/-1", True),
     (f"{TEST_ROUTE}", True),
