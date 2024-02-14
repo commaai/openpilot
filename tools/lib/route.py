@@ -266,19 +266,6 @@ class SegmentRange:
   def _slice(self) -> str:
     return self.m.group("slice")
 
-  def slice(self):
-    s = create_slice_from_string(self._slice)
-    if isinstance(s, slice):
-      if s.stop is None or s.stop < 0 or (s.start is not None and s.start < 0):  # we need the number of segments in order to parse this slice
-        segs = np.arange(self.get_max_seg_number() + 1)
-      else:
-        segs = np.arange(s.stop + 1)
-      return segs[s]
-    else:
-      if s < 0:
-        s = self.get_max_seg_number() + s + 1
-      return [s]
-
   @property
   def selector(self) -> str:
     return self.m.group("selector")
