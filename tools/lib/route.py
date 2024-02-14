@@ -250,23 +250,23 @@ class SegmentRange:
     return get_max_seg_number_cached(self)
 
   @property
-  def route_name(self):
+  def route_name(self) -> str:
     return self.m.group("route_name")
 
   @property
-  def dongle_id(self):
+  def dongle_id(self) -> str:
     return self.m.group("dongle_id")
 
   @property
-  def timestamp(self):
+  def timestamp(self) -> str:
     return self.m.group("timestamp")
 
   @property
-  def _slice(self):
+  def _slice(self) -> str | None:
     return self.m.group("slice")
 
   @property
-  def selector(self):
+  def selector(self) -> str | None:
     return self.m.group("selector")
 
   def __str__(self):
