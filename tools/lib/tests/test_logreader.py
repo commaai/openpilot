@@ -51,7 +51,7 @@ class TestLogReader(unittest.TestCase):
     parsed, _, _ = parse_indirect(identifier)
     sr = SegmentRange(parsed)
     segs = parse_slice(sr)
-    self.assertListEqual(list(segs), expected)
+    self.assertListEqual(list(segs), expected, identifier)
 
   @parameterized.expand([
     (f"{TEST_ROUTE}", f"{TEST_ROUTE}"),
