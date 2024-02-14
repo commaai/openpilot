@@ -268,22 +268,6 @@ class SegmentRange:
     return self.m.group("slice")
 
   @property
-  def seg_idxs(self) -> list[int]:
-    m = re.fullmatch(RE.SLICE, self._slice)
-    assert m is not None, f"Invalid slice: {self._slice}"
-    start, end, step = (None if s is None else int(s) for s in m.groups())
-
-    if start is not None and start < 0:
-      start = get_max_seg_number_cached(self) + start + 1
-
-    # if start is non-negative and end is not specified, set end to get a single segment
-    if start is not None and end is None and ':' not in self._slice:
-      end = start + 1
-
-    ret2 = list(range(get_max_seg_number_cached(self) + 1)[slice(start, end, step)])
-    return ret2
-
-  @property
   def selector(self) -> str:
     return self.m.group("selector")
 

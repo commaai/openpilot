@@ -8,7 +8,7 @@ import requests
 from parameterized import parameterized
 from unittest import mock
 
-from openpilot.tools.lib.logreader import LogIterable, LogReader, comma_api_source, parse_indirect, ReadMode
+from openpilot.tools.lib.logreader import LogIterable, LogReader, comma_api_source, parse_indirect, parse_slice, ReadMode
 from openpilot.tools.lib.route import SegmentRange
 
 NUM_SEGS = 17  # number of segments in the test route
@@ -50,7 +50,8 @@ class TestLogReader(unittest.TestCase):
   def test_indirect_parsing(self, identifier, expected):
     parsed, _, _ = parse_indirect(identifier)
     sr = SegmentRange(parsed)
-    self.assertListEqual(list(sr.seg_idxs), expected, identifier)
+    segs = parse_slice(sr)
+    self.assertListEqual(list(segs), expected)
 
   @parameterized.expand([
     (f"{TEST_ROUTE}", f"{TEST_ROUTE}"),
@@ -86,7 +87,8 @@ class TestLogReader(unittest.TestCase):
   ])
   def test_bad_ranges(self, segment_range):
     with self.assertRaises(AssertionError):
-      _ = SegmentRange(segment_range).seg_idxs
+      sr = SegmentRange(segment_range)
+      parse_slice(sr)
 
   @pytest.mark.slow
   def test_modes(self):
