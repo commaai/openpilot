@@ -7,7 +7,7 @@ import random
 import unittest
 from collections import defaultdict, Counter
 import hypothesis.strategies as st
-from hypothesis import Phase, given, settings
+from hypothesis import Phase, given, settings, reproduce_failure
 from typing import List, Optional, Tuple
 from parameterized import parameterized_class
 
@@ -326,6 +326,7 @@ class TestCarModelBase(unittest.TestCase):
 
   # Skip stdout/stderr capture with pytest, causes elevated memory usage
   @pytest.mark.nocapture
+  @reproduce_failure('6.47.5', b'AXicE2RkYGDgBmIGEIMLxmAY1AwGACJtADs=')
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
