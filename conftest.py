@@ -75,7 +75,7 @@ def process_running(process_name):
   return os.system(f"pgrep -f {process_name} > /dev/null") == 0
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=True)
 def tici_session_fixture():
   """Ensure that the device has a valid environment to run tests, to better highlight cleanup failures."""
 
