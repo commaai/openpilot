@@ -130,13 +130,13 @@ def parse_slice(sr: SegmentRange):
   end = int(end) if end is not None else None
   step = int(step) if step is not None else None
 
-  if start < 0:
+  if start is not None and start < 0:
     start = sr.get_max_seg_number() + start + 1
   # if start < 0:
   #   start += 1
 
   # if start is non-negative and end is not specified, set end to get a single segment
-  if start is not None and end is None:
+  if start is not None and end is None and ':' not in sr._slice:
     end = start + 1
     # end = start + sr.get_max_seg_number() - start + 1
     # end = sr.get_max_seg_number() + start + 2
