@@ -67,7 +67,9 @@ class TestLogReader(unittest.TestCase):
     sr = SegmentRange(identifier)
     self.assertEqual(str(sr), expected)
 
-  def test_direct_parsing(self):
+  @mock.patch("openpilot.tools.lib.filereader.file_exists")
+  def test_direct_parsing(self, file_exists_mock):
+
     qlog = tempfile.NamedTemporaryFile(mode='wb', delete=False)
 
     with requests.get(QLOG_FILE, stream=True) as r:
@@ -80,6 +82,9 @@ class TestLogReader(unittest.TestCase):
 
     with self.assertRaises(URLFileException):
       l = len(list(LogReader(QLOG_FILE.replace("/3/", "/200/"))))
+
+    # file_exists should not be called for direct files
+    self.assertEqual(file_exists_mock.call_count, 0)
 
   @parameterized.expand([
     (f"{TEST_ROUTE}///",),
