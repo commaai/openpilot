@@ -86,6 +86,9 @@ class TestLogReader(unittest.TestCase):
     (f"{TEST_ROUTE}/j",),
     (f"{TEST_ROUTE}/0:1:2:3",),
     (f"{TEST_ROUTE}/:::3",),
+    (f"{TEST_ROUTE}3",),
+    (f"{TEST_ROUTE}-3",),
+    (f"{TEST_ROUTE}--3a",),
   ])
   def test_bad_ranges(self, segment_range):
     with self.assertRaises(AssertionError):
