@@ -101,10 +101,7 @@ class TestLogReader(unittest.TestCase):
     with mock.patch("openpilot.tools.lib.route.get_max_seg_number_cached") as max_seg_mock:
       max_seg_mock.return_value = NUM_SEGS
       parse_slice(SegmentRange(segment_range))
-      if api_call:
-        max_seg_mock.assert_called()
-      else:
-        max_seg_mock.assert_not_called()
+      self.assertEqual(api_call, max_seg_mock.called)
 
   @pytest.mark.slow
   def test_modes(self):
