@@ -15,11 +15,7 @@ class RE:
 
   INDEX = r'-?[0-9]+'
   SLICE = r'(?P<start>{})?:?(?P<end>{})?:?(?P<step>{})?'.format(INDEX, INDEX, INDEX)
-  # SEGMENT_RANGE = re.compile(r'{}(?:(--|/)(?P<slice>({})))?(?:/(?P<selector>([qras])))?'.format(ROUTE_NAME, SLICE))
-  SEGMENT_RANGE = re.compile(r'{}(?:((--|/)(?P<slice>({}))))?(?:/(?P<selector>([qras])))?'.format(ROUTE_NAME, SLICE))
-  # SEGMENT_RANGE = re.compile(r'{}(?P<slice>((--|/){}))?/?(?P<selector>([qras]))?'.format(ROUTE_NAME, SLICE))
-  # SEGMENT_RANGE = re.compile(r'{}(?:((?:--|/)(?P<slice>{}))(?:/(?P<selector>[qras]))?)?'.format(ROUTE_NAME, SLICE))
-  re.compile('(?:(?P<hours>\d+)h)?(?:(?P<minutes>\d+)m)?')
+  SEGMENT_RANGE = re.compile(r'{}(?:(--|/)(?P<slice>({})))?(?:/(?P<selector>([qras])))?'.format(ROUTE_NAME, SLICE))
 
   BOOTLOG_NAME = ROUTE_NAME
 
