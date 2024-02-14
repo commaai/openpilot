@@ -315,7 +315,7 @@ jobs:
     - name: Test car models
       timeout-minutes: 10
       run: |
-        ${{ env.RUN }} "ls -a selfdrive/car/tests && $PYTEST selfdrive/car/tests/test_models.py && \
+        ${{ env.RUN }} "$PYTEST selfdrive/car/tests/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
         NUM_JOBS: 5
