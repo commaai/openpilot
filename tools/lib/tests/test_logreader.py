@@ -67,7 +67,7 @@ class TestLogReader(unittest.TestCase):
     sr = SegmentRange(identifier)
     self.assertEqual(str(sr), expected)
 
-  @mock.patch("openpilot.tools.lib.filereader.file_exists")
+  @mock.patch("openpilot.tools.lib.logreader.file_exists")
   def test_direct_parsing(self, file_exists_mock):
 
     qlog = tempfile.NamedTemporaryFile(mode='wb', delete=False)
