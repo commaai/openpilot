@@ -20,7 +20,6 @@ from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
-from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
 from openpilot.tools.lib.logreader import LogReader, internal_source, openpilotci_source
