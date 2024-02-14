@@ -3,9 +3,10 @@ import datetime
 
 TIME_FMT = "%Y-%m-%d--%H-%M-%S"
 
+
 # regex patterns
 class RE:
-  DONGLE_ID =  r'(?P<dongle_id>[a-f0-9]{16})'
+  DONGLE_ID = r'(?P<dongle_id>[a-f0-9]{16})'
   TIMESTAMP = r'(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2}--[0-9]{2}-[0-9]{2}-[0-9]{2})'
   LOG_ID_V2 = r'(?P<count>[a-f0-9]{8})--(?P<uid>[a-z0-9]{10})'
   LOG_ID = r'(?P<log_id>(?:{}|{}))'.format(TIMESTAMP, LOG_ID_V2)

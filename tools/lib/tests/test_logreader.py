@@ -12,7 +12,7 @@ from unittest import mock
 from openpilot.tools.lib.logreader import LogIterable, LogReader, comma_api_source, parse_indirect, parse_slice, ReadMode
 from openpilot.tools.lib.route import SegmentRange
 
-NUM_SEGS = 17 # number of segments in the test route
+NUM_SEGS = 17  # number of segments in the test route
 ALL_SEGS = list(np.arange(NUM_SEGS))
 TEST_ROUTE = "344c5c15b34f2d8a/2024-01-03--09-37-12"
 QLOG_FILE = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/qlog.bz2"
@@ -110,7 +110,7 @@ class TestLogReader(unittest.TestCase):
     qlog_len = len(list(LogReader(f"{TEST_ROUTE}/0/q")))
     qlog_len_2 = len(list(LogReader([f"{TEST_ROUTE}/0/q", f"{TEST_ROUTE}/0/q"])))
 
-    self.assertEqual(qlog_len*2, qlog_len_2)
+    self.assertEqual(qlog_len * 2, qlog_len_2)
 
   @pytest.mark.slow
   @mock.patch("openpilot.tools.lib.logreader._LogFileReader")
