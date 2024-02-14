@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import shutil
 import tempfile
-import numpy as np
 import os
 import unittest
 import pytest
@@ -10,11 +9,11 @@ import requests
 from parameterized import parameterized
 from unittest import mock
 
-from openpilot.tools.lib.logreader import LogIterable, LogReader, comma_api_source, parse_indirect, parse_slice, ReadMode
+from openpilot.tools.lib.logreader import LogIterable, LogReader, comma_api_source, parse_indirect, ReadMode
 from openpilot.tools.lib.route import SegmentRange
 
-NUM_SEGS = 17 # number of segments in the test route
-ALL_SEGS = list(np.arange(NUM_SEGS))
+NUM_SEGS = 17  # number of segments in the test route
+ALL_SEGS = list(range(NUM_SEGS))
 TEST_ROUTE = "344c5c15b34f2d8a/2024-01-03--09-37-12"
 QLOG_FILE = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/qlog.bz2"
 
@@ -52,8 +51,7 @@ class TestLogReader(unittest.TestCase):
   def test_indirect_parsing(self, identifier, expected):
     parsed, _, _ = parse_indirect(identifier)
     sr = SegmentRange(parsed)
-    segs = parse_slice(sr)
-    self.assertListEqual(list(segs), expected)
+    self.assertListEqual(list(sr.seg_idxs), expected, identifier)
 
   @parameterized.expand([
     (f"{TEST_ROUTE}", f"{TEST_ROUTE}"),
@@ -92,8 +90,20 @@ class TestLogReader(unittest.TestCase):
   ])
   def test_bad_ranges(self, segment_range):
     with self.assertRaises(AssertionError):
-      sr = SegmentRange(segment_range)
-      parse_slice(sr)
+      _ = SegmentRange(segment_range).seg_idxs
+
+  @parameterized.expand([
+    (f"{TEST_ROUTE}/0", False),
+    (f"{TEST_ROUTE}/:2", False),
+    (f"{TEST_ROUTE}/0:", True),
+    (f"{TEST_ROUTE}/-1", True),
+    (f"{TEST_ROUTE}", True),
+  ])
+  def test_slicing_api_call(self, segment_range, api_call):
+    with mock.patch("openpilot.tools.lib.route.get_max_seg_number_cached") as max_seg_mock:
+      max_seg_mock.return_value = NUM_SEGS
+      _ = SegmentRange(segment_range).seg_idxs
+      self.assertEqual(api_call, max_seg_mock.called)
 
   @pytest.mark.slow
   def test_modes(self):
@@ -114,7 +124,7 @@ class TestLogReader(unittest.TestCase):
     qlog_len = len(list(LogReader(f"{TEST_ROUTE}/0/q")))
     qlog_len_2 = len(list(LogReader([f"{TEST_ROUTE}/0/q", f"{TEST_ROUTE}/0/q"])))
 
-    self.assertEqual(qlog_len*2, qlog_len_2)
+    self.assertEqual(qlog_len * 2, qlog_len_2)
 
   @pytest.mark.slow
   @mock.patch("openpilot.tools.lib.logreader._LogFileReader")
