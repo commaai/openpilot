@@ -11,6 +11,7 @@ from openpilot.selfdrive.test.helpers import set_params_enabled
 
 
 @pytest.mark.tici
+@pytest.mark.hardware("system")
 def test_time_to_onroad():
   # launch
   set_params_enabled()

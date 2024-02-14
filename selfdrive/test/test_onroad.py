@@ -99,6 +99,7 @@ def cputime_total(ct):
 
 
 @pytest.mark.tici
+@pytest.mark.hardware("system")
 class TestOnroad(unittest.TestCase):
 
   @classmethod
