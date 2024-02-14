@@ -5,7 +5,7 @@ import random
 
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.manager import manager
-from openpilot.system.hardware import TICI, HARDWARE
+from openpilot.system.hardware import PC, TICI, HARDWARE
 
 
 def pytest_sessionstart(session):
@@ -69,6 +69,27 @@ def tici_setup_fixture(openpilot_function_fixture):
   HARDWARE.initialize_hardware()
   HARDWARE.set_power_save(False)
   os.system("pkill -9 -f athena")
+
+
+def process_running(process_name):
+  return os.system(f"pgrep -f {process_name} > /dev/null") == 0
+
+
+@pytest.fixture(scope="session")
+def tici_session_fixture():
+  """Ensure that the device has a valid environment to run tests, to better highlight cleanup failures."""
+
+  if PC:
+    return # pc tests are isolated with the prefix
+
+  def ensure_no_processes():
+    for proc in manager.managed_processes:
+      if proc not in ["manage_athenad"]:
+        assert not process_running(proc)
+
+  ensure_no_processes()
+  yield
+  ensure_no_processes()
 
 
 @pytest.hookimpl(tryfirst=True)
