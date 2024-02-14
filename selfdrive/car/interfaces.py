@@ -326,7 +326,7 @@ class RadarInterfaceBase(ABC):
 
   def update(self, can_strings):
     self.frame += 1
-    if (self.frame % int(1/self.radar_ts)) == 0:
+    if (self.frame % int(100 * self.radar_ts)) == 0:
       return car.RadarData.new_message()
     return None
 
