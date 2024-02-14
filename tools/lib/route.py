@@ -265,7 +265,11 @@ class SegmentRange:
 
   @property
   def _slice(self) -> str:
-    return self.m.group("slice")
+    return self.m.group("slice") or ""
+
+  @property
+  def selector(self) -> str | None:
+    return self.m.group("selector")
 
   @property
   def seg_idxs(self) -> list[int]:
@@ -285,10 +289,6 @@ class SegmentRange:
       return list(range(get_max_seg_number_cached(self) + 1))[s]
     else:
       return list(range(end + 1))[s]
-
-  @property
-  def selector(self) -> str:
-    return self.m.group("selector")
 
   def __str__(self) -> str:
     return f"{self.dongle_id}/{self.timestamp}" + (f"/{self._slice}" if self._slice else "") + (f"/{self.selector}" if self.selector else "")
