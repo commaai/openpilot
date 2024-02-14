@@ -8,7 +8,7 @@ import requests
 from parameterized import parameterized
 from unittest import mock
 
-from openpilot.tools.lib.logreader import LogIterable, LogReader, comma_api_source, parse_indirect, parse_slice, ReadMode
+from openpilot.tools.lib.logreader import LogIterable, LogReader, comma_api_source, parse_indirect, ReadMode
 from openpilot.tools.lib.route import SegmentRange
 
 NUM_SEGS = 17  # number of segments in the test route
@@ -50,8 +50,7 @@ class TestLogReader(unittest.TestCase):
   def test_indirect_parsing(self, identifier, expected):
     parsed, _, _ = parse_indirect(identifier)
     sr = SegmentRange(parsed)
-    segs = parse_slice(sr)
-    self.assertListEqual(list(segs), expected)
+    self.assertListEqual(list(sr.seg_idxs), expected, identifier)
 
   @parameterized.expand([
     (f"{TEST_ROUTE}", f"{TEST_ROUTE}"),
@@ -87,8 +86,7 @@ class TestLogReader(unittest.TestCase):
   ])
   def test_bad_ranges(self, segment_range):
     with self.assertRaises(AssertionError):
-      sr = SegmentRange(segment_range)
-      parse_slice(sr)
+      _ = SegmentRange(segment_range).seg_idxs
 
   @parameterized.expand([
     (f"{TEST_ROUTE}/0", False),
@@ -100,7 +98,7 @@ class TestLogReader(unittest.TestCase):
   def test_slicing_api_call(self, segment_range, api_call):
     with mock.patch("openpilot.tools.lib.route.get_max_seg_number_cached") as max_seg_mock:
       max_seg_mock.return_value = NUM_SEGS
-      parse_slice(SegmentRange(segment_range))
+      _ = SegmentRange(segment_range).seg_idxs
       self.assertEqual(api_call, max_seg_mock.called)
 
   @pytest.mark.slow

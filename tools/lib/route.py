@@ -251,9 +251,6 @@ class SegmentRange:
     assert m is not None, f"Segment range is not valid {segment_range}"
     self.m = m
 
-  def get_max_seg_number(self):
-    return get_max_seg_number_cached(self)
-
   @property
   def route_name(self) -> str:
     return self.m.group("route_name")
@@ -269,6 +266,25 @@ class SegmentRange:
   @property
   def _slice(self) -> str:
     return self.m.group("slice")
+
+  @property
+  def seg_idxs(self) -> list[int]:
+    m = re.fullmatch(RE.SLICE, self._slice)
+    assert m is not None, f"Invalid slice: {self._slice}"
+    start, end, step = (None if s is None else int(s) for s in m.groups())
+
+    # one segment specified
+    if start is not None and end is None and ':' not in self._slice:
+      if start < 0:
+        start += get_max_seg_number_cached(self) + 1
+      return [start]
+
+    s = slice(start, end, step)
+    # no specified end or using relative indexing, need number of segments
+    if end is None or end < 0 or (start is not None and start < 0):
+      return list(range(get_max_seg_number_cached(self) + 1))[s]
+    else:
+      return list(range(end + 1))[s]
 
   @property
   def selector(self) -> str:
