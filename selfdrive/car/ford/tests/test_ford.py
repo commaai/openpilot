@@ -13,12 +13,13 @@ Ecu = car.CarParams.Ecu
 
 
 ECU_ADDRESSES = {
-  Ecu.eps: 0x730,          # Power Steering Control Module (PSCM)
-  Ecu.abs: 0x760,          # Anti-Lock Brake System (ABS)
-  Ecu.fwdRadar: 0x764,     # Cruise Control Module (CCM)
-  Ecu.fwdCamera: 0x706,    # Image Processing Module A (IPMA)
-  Ecu.engine: 0x7E0,       # Powertrain Control Module (PCM)
-  Ecu.shiftByWire: 0x732,  # Gear Shift Module (GSM)
+  Ecu.eps: 0x730,               # Power Steering Control Module (PSCM)
+  Ecu.abs: 0x760,               # Anti-Lock Brake System (ABS)
+  Ecu.fwdRadar: 0x764,          # Cruise Control Module (CCM)
+  Ecu.fwdCamera: 0x706,         # Image Processing Module A (IPMA)
+  Ecu.engine: 0x7E0,            # Powertrain Control Module (PCM)
+  Ecu.combinationMeter: 0x720,  # Instrument Panel Cluster (IPC)
+  Ecu.shiftByWire: 0x732,       # Gear Shift Module (GSM)
 }
 
 
