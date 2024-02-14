@@ -2,6 +2,7 @@ import gc
 import os
 import pytest
 import random
+import subprocess
 
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.manager import manager
@@ -72,7 +73,8 @@ def tici_setup_fixture(openpilot_function_fixture):
 
 
 def process_running(process_name):
-  return os.system(f"pgrep -f {process_name} > /dev/null") == 0
+  ret = subprocess.run(["pgrep", "-f", process_name]).returncode
+  return ret == 0
 
 
 @pytest.fixture(scope="session", autouse=True)
