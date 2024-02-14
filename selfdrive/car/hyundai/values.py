@@ -512,6 +512,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
   non_essential_ecus={
     Ecu.abs: [CAR.SONATA],  # hybrid does not have ABS
+    Ecu.engine: [CAR.SONATA],  # lose this without OBD
+    Ecu.transmission: [CAR.SONATA],  # lose this without OBD
   },
   extra_ecus=[
     (Ecu.adas, 0x730, None),         # ADAS Driving ECU on HDA2 platforms
