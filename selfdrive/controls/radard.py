@@ -8,7 +8,7 @@ import capnp
 from cereal import messaging, log, car
 from openpilot.common.numpy_fast import interp
 from openpilot.common.params import Params
-from openpilot.common.realtime import DT_CTRL, Ratekeeper, Priority, config_realtime_process
+from openpilot.common.realtime import Ratekeeper, Priority, config_realtime_process
 from openpilot.common.swaglog import cloudlog
 
 from openpilot.common.simple_kalman import KF1D
@@ -201,7 +201,6 @@ class RadarD:
 
     self.v_ego = 0.0
     self.v_ego_hist = deque([0.0], maxlen=delay+1)
-    self.last_v_ego_frame = -1
 
     self.radar_state: Optional[capnp._DynamicStructBuilder] = None
     self.radar_state_valid = False
@@ -209,7 +208,6 @@ class RadarD:
     self.ready = False
 
   def update(self, sm: messaging.SubMaster, rr: Optional[car.RadarData]):
-    self.ready = sm.seen['modelV2']
     self.current_time = 1e-9*max(sm.logMonoTime.values())
 
     radar_points = []
@@ -218,10 +216,11 @@ class RadarD:
       radar_points = rr.points
       radar_errors = rr.errors
 
-    if sm.recv_frame['carState'] != self.last_v_ego_frame:
+    if sm.updated['carState']:
       self.v_ego = sm['carState'].vEgo
       self.v_ego_hist.append(self.v_ego)
-      self.last_v_ego_frame = sm.recv_frame['carState']
+    if sm.updated['modelV2']:
+      self.ready = True
 
     ar_pts = {}
     for pt in radar_points:
@@ -298,7 +297,7 @@ def main():
 
   # *** setup messaging
   can_sock = messaging.sub_sock('can')
-  sm = messaging.SubMaster(['modelV2', 'carState'], frequency=int(1./DT_CTRL))
+  sm = messaging.SubMaster(['modelV2', 'carState'], ignore_avg_freq=['modelV2', 'carState'])  # Can't check average frequency, since radar determines timing
   pm = messaging.PubMaster(['radarState', 'liveTracks'])
 
   RI = RadarInterface(CP)
@@ -309,9 +308,11 @@ def main():
   while 1:
     can_strings = messaging.drain_sock_raw(can_sock, wait_for_one=True)
     rr = RI.update(can_strings)
-    sm.update(0)
+
     if rr is None:
       continue
+
+    sm.update(0)
 
     RD.update(sm, rr)
     RD.publish(pm, -rk.remaining*1000.0)
