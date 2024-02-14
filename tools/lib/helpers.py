@@ -1,5 +1,6 @@
 import bz2
 import datetime
+import re
 
 TIME_FMT = "%Y-%m-%d--%H-%M-%S"
 
@@ -14,7 +15,11 @@ class RE:
 
   INDEX = r'-?[0-9]+'
   SLICE = r'(?P<start>{})?:?(?P<end>{})?:?(?P<step>{})?'.format(INDEX, INDEX, INDEX)
-  SEGMENT_RANGE = r'{}(?:(--|/)(?P<slice>({})))?(?:/(?P<selector>([qras])))?'.format(ROUTE_NAME, SLICE)
+  # SEGMENT_RANGE = re.compile(r'{}(?:(--|/)(?P<slice>({})))?(?:/(?P<selector>([qras])))?'.format(ROUTE_NAME, SLICE))
+  SEGMENT_RANGE = re.compile(r'{}(?:((--|/)(?P<slice>({}))))?(?:/(?P<selector>([qras])))?'.format(ROUTE_NAME, SLICE))
+  # SEGMENT_RANGE = re.compile(r'{}(?P<slice>((--|/){}))?/?(?P<selector>([qras]))?'.format(ROUTE_NAME, SLICE))
+  # SEGMENT_RANGE = re.compile(r'{}(?:((?:--|/)(?P<slice>{}))(?:/(?P<selector>[qras]))?)?'.format(ROUTE_NAME, SLICE))
+  re.compile('(?:(?P<hours>\d+)h)?(?:(?P<minutes>\d+)m)?')
 
   BOOTLOG_NAME = ROUTE_NAME
 
