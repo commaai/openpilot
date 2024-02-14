@@ -14,7 +14,7 @@ class RE:
 
   INDEX = r'-?[0-9]+'
   SLICE = r'(?P<start>{})?:?(?P<end>{})?:?(?P<step>{})?'.format(INDEX, INDEX, INDEX)
-  SEGMENT_RANGE = r'{}(?:--|/)(?P<slice>({}))?/(?P<selector>([qras]))?'.format(ROUTE_NAME, SLICE)
+  SEGMENT_RANGE = '(?P<route_name>(?P<dongle_id>[a-f0-9]{16})[|_\/](?P<log_id>(?:(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2}--[0-9]{2}-[0-9]{2}-[0-9]{2})|(?P<count>[a-f0-9]{8})--(?P<uid>[a-z0-9]{10}))))(?:--|\/(?P<slice>((?P<start>-?[0-9]+)?:?(?P<end>-?[0-9]+)?:?(?P<step>-?[0-9]+)?)))?(?:\/(?P<selector>([qras])))?'
 
   BOOTLOG_NAME = ROUTE_NAME
 
