@@ -17,6 +17,7 @@ CAMERA_FILENAMES = ['fcamera.hevc', 'video.hevc']
 DCAMERA_FILENAMES = ['dcamera.hevc']
 ECAMERA_FILENAMES = ['ecamera.hevc']
 
+
 class Route:
   def __init__(self, name, data_dir=None):
     self._name = RouteName(name)
@@ -37,27 +38,27 @@ class Route:
 
   def log_paths(self):
     log_path_by_seg_num = {s.name.segment_num: s.log_path for s in self._segments}
-    return [log_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
+    return [log_path_by_seg_num.get(i, None) for i in range(self.max_seg_number + 1)]
 
   def qlog_paths(self):
     qlog_path_by_seg_num = {s.name.segment_num: s.qlog_path for s in self._segments}
-    return [qlog_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
+    return [qlog_path_by_seg_num.get(i, None) for i in range(self.max_seg_number + 1)]
 
   def camera_paths(self):
     camera_path_by_seg_num = {s.name.segment_num: s.camera_path for s in self._segments}
-    return [camera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
+    return [camera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number + 1)]
 
   def dcamera_paths(self):
     dcamera_path_by_seg_num = {s.name.segment_num: s.dcamera_path for s in self._segments}
-    return [dcamera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
+    return [dcamera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number + 1)]
 
   def ecamera_paths(self):
     ecamera_path_by_seg_num = {s.name.segment_num: s.ecamera_path for s in self._segments}
-    return [ecamera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
+    return [ecamera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number + 1)]
 
   def qcamera_paths(self):
     qcamera_path_by_seg_num = {s.name.segment_num: s.qcamera_path for s in self._segments}
-    return [qcamera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
+    return [qcamera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number + 1)]
 
   # TODO: refactor this, it's super repetitive
   def _get_segments_remote(self):
@@ -159,6 +160,7 @@ class Route:
       raise ValueError(f'Could not find segments for route {self.name.canonical_name} in data directory {data_dir}')
     return sorted(segments, key=lambda seg: seg.name.segment_num)
 
+
 class Segment:
   def __init__(self, name, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path):
     self._name = SegmentName(name)
@@ -172,6 +174,7 @@ class Segment:
   @property
   def name(self):
     return self._name
+
 
 class RouteName:
   def __init__(self, name_str: str):
@@ -194,6 +197,7 @@ class RouteName:
 
   def __str__(self) -> str: return self._canonical_name
 
+
 class SegmentName:
   # TODO: add constructor that takes dongle_id, time_str, segment_num and then create instances
   # of this class instead of manually constructing a segment name (use canonical_name prop instead)
@@ -206,7 +210,7 @@ class SegmentName:
     seg_num_delim = "--" if self._name_str.count("--") == 2 else "/"
     name_parts = self._name_str.rsplit(seg_num_delim, 1)
     if allow_route_name and len(name_parts) == 1:
-      name_parts.append("-1") # no segment number
+      name_parts.append("-1")  # no segment number
     self._route_name = RouteName(name_parts[0])
     self._num = int(name_parts[1])
     self._canonical_name = f"{self._route_name._dongle_id}|{self._route_name._time_str}--{self._num}"

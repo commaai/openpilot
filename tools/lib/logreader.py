@@ -142,6 +142,7 @@ def comma_car_segments_source(sr: SegmentRange, mode=ReadMode.RLOG):
   return [get_comma_segments_url(sr.route_name, seg) for seg in sr.seg_idxs]
 
 
+
 def direct_source(file_or_url):
   return [file_or_url]
 
