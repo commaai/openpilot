@@ -238,6 +238,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1630.  # https://carprices.ae/brands/kia/2023/k8/1.6-turbo-hybrid
       ret.wheelbase = 2.895
       ret.steerRatio = 13.27  # guesstimate from K5 platform
+
     elif candidate == CAR.KIA_EV9:
       ret.mass = 2625
       ret.wheelbase = 3.1
