@@ -1,4 +1,4 @@
-Version 0.9.6 (2024-02-XX)
+Version 0.9.6 (2024-02-22)
 ========================
 * New driving model
   * Vision model trained on more data
