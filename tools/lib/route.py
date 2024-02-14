@@ -276,7 +276,6 @@ class SegmentRange:
     if start is not None and end is None and ':' not in self._slice:
       end = start + 1
 
-    # TODO: we can just return a slice
     ret2 = list(range(get_max_seg_number_cached(self) + 1)[slice(start, end, step)])
     return ret2
 
