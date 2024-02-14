@@ -108,13 +108,10 @@ def apply_strategy(mode: ReadMode, rlog_paths, qlog_paths, valid_file=default_va
     return auto_strategy(rlog_paths, qlog_paths, True, valid_file)
 
 
-def parse_slice(sr: SegmentRange):
+def parse_slice(sr: SegmentRange) -> list[int]:
   m = re.fullmatch(RE.SLICE, sr._slice)
   assert m is not None, f"Invalid slice: {sr._slice}"
-  start, end, step = m.groups()
-  start = int(start) if start is not None else None
-  end = int(end) if end is not None else None
-  step = int(step) if step is not None else None
+  start, end, step = (None if s is None else int(s) for s in m.groups())
 
   if start is not None and start < 0:
     start = sr.get_max_seg_number() + start + 1
