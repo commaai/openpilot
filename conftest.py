@@ -76,10 +76,13 @@ def manage_hardware(items):
   for item in items:
     hardware_marker = item.get_closest_marker('hardware')
     if hardware_marker is not None:
-      hardware_name = hardware_marker.args[0]
-      if hardware_name != "system":
-        all_hardware.append(hardware_name)
-        item.add_marker(pytest.mark.xdist_group(f"lock_{hardware_name}"))
+      hardware_names = hardware_marker.args[0]
+      if not isinstance(hardware_names, list):
+        hardware_names = [hardware_names]
+      for hardware_name in hardware_names:
+        if hardware_name != "system":
+          all_hardware.append(hardware_name)
+          item.add_marker(pytest.mark.xdist_group(f"lock_{hardware_name}"))
 
   # for the "system" hardware lock, lock all hardware
   for item in items:
