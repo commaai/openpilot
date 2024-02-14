@@ -78,8 +78,8 @@ class ReadMode(enum.StrEnum):
   AUTO = "a" # default to rlogs, fallback to qlogs
   AUTO_INTERACIVE = "i" # default to rlogs, fallback to qlogs with a prompt from the user
 
-def create_slice_from_string(s: str):
-  m = re.fullmatch(RE.SLICE, s)
+def create_slice_from_string(s: str | None):
+  m = re.fullmatch(RE.SLICE, s or '')
   assert m is not None, f"Invalid slice: {s}"
   start, end, step = m.groups()
   start = int(start) if start is not None else None
