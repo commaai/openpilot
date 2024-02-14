@@ -2,7 +2,7 @@ name: repo maintenance
 
 on:
   schedule:
-    - cron: "0 12 * * 1" # every Monday at 12am UTC (4am PST)
+    - cron: "0 14 * * 1" # every Monday at 2am UTC (6am PST)
   workflow_dispatch:
 
 jobs:
@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-20.04
     container:
       image: ghcr.io/commaai/openpilot-base:latest
+    if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v4
       with:
@@ -25,17 +26,18 @@ jobs:
       with:
         token: ${{ secrets.ACTIONS_CREATE_PR_PAT }}
         commit-message: bump submodules
-        title: 'Bump submodules'
+        title: '[bot] Bump submodules'
         branch: auto-bump-submodules
         base: master
         delete-branch: true
-        body: '[bot] Automatic PR from repo-maintenance -> bump_submodules'
+        body: 'Automatic PR from repo-maintenance -> bump_submodules'
         labels: bot
   package_updates:
     name: package_updates
     runs-on: ubuntu-20.04
     container:
       image: ghcr.io/commaai/openpilot-base:latest
+    if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v4
     - name: poetry lock
@@ -51,9 +53,9 @@ jobs:
       with:
         token: ${{ secrets.ACTIONS_CREATE_PR_PAT }}
         commit-message: Update Python packages and pre-commit hooks
-        title: 'Update Python packages and pre-commit hooks'
+        title: '[bot] Update Python packages and pre-commit hooks'
         branch: auto-package-updates
         base: master
         delete-branch: true
-        body: '[bot] Automatic PR from repo-maintenance -> package_updates'
+        body: 'Automatic PR from repo-maintenance -> package_updates'
         labels: bot

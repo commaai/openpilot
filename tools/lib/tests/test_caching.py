@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-from functools import wraps
+from functools import partial
 import http.server
 import os
-import threading
-import time
 import unittest
 
 from parameterized import parameterized
+from openpilot.selfdrive.athena.tests.helpers import with_http_server
 
 from openpilot.tools.lib.url_file import URLFile
 
@@ -30,27 +29,7 @@ class CachingTestRequestHandler(http.server.BaseHTTPRequestHandler):
     self.end_headers()
 
 
-class CachingTestServer(threading.Thread):
-  def run(self):
-    self.server = http.server.HTTPServer(("127.0.0.1", 0), CachingTestRequestHandler)
-    self.port = self.server.server_port
-    self.server.serve_forever()
-
-  def stop(self):
-    self.server.server_close()
-    self.server.shutdown()
-
-def with_caching_server(func):
-  @wraps(func)
-  def wrapper(*args, **kwargs):
-    server = CachingTestServer()
-    server.start()
-    time.sleep(0.25) # wait for server to get it's port
-    try:
-      func(*args, **kwargs, port=server.port)
-    finally:
-      server.stop()
-  return wrapper
+with_caching_server = partial(with_http_server, handler=CachingTestRequestHandler)
 
 
 class TestFileDownload(unittest.TestCase):
@@ -110,10 +89,10 @@ class TestFileDownload(unittest.TestCase):
 
   @parameterized.expand([(True, ), (False, )])
   @with_caching_server
-  def test_recover_from_missing_file(self, cache_enabled, port):
+  def test_recover_from_missing_file(self, cache_enabled, host):
     os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
 
-    file_url = f"http://localhost:{port}/test.png"
+    file_url = f"{host}/test.png"
 
     CachingTestRequestHandler.FILE_EXISTS = False
     length = URLFile(file_url).get_length()
