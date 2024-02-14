@@ -67,9 +67,10 @@ class TestLogReader(unittest.TestCase):
     sr = SegmentRange(identifier)
     self.assertEqual(str(sr), expected)
 
+  @parameterized.expand([(True,), (False,)])
   @mock.patch("openpilot.tools.lib.logreader.file_exists")
-  def test_direct_parsing(self, file_exists_mock):
-
+  def test_direct_parsing(self, cache_enabled, file_exists_mock):
+    os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
     qlog = tempfile.NamedTemporaryFile(mode='wb', delete=False)
 
     with requests.get(QLOG_FILE, stream=True) as r:
@@ -80,7 +81,7 @@ class TestLogReader(unittest.TestCase):
       l = len(list(LogReader(f)))
       self.assertGreater(l, 100)
 
-    with self.assertRaises(URLFileException):
+    with self.assertRaises(URLFileException) if not cache_enabled else self.assertRaises(AssertionError):
       l = len(list(LogReader(QLOG_FILE.replace("/3/", "/200/"))))
 
     # file_exists should not be called for direct files
