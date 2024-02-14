@@ -86,7 +86,7 @@ class CarInterface(CarInterfaceBase):
       # Values from optimizer
       ret.steerRatio = 16.55  # 13.8 is spec end-to-end
       ret.tireStiffnessFactor = 0.82
-    elif candidate in (CAR.SONATA, CAR.SONATA_HYBRID):
+    elif candidate == CAR.SONATA:
       ret.mass = 1513.
       ret.wheelbase = 2.84
       ret.steerRatio = 13.27 * 1.15   # 15% higher at the center seems reasonable
