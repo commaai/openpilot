@@ -83,9 +83,8 @@ def tici_session_fixture():
     return # pc tests are isolated with the prefix
 
   def ensure_no_processes():
-    for proc in manager.managed_processes:
-      if proc not in ["manage_athenad"]:
-        assert not process_running(proc)
+    still_running = [proc for proc in manager.managed_processes if process_running(proc) and proc not in ["manage_athenad"]]
+    assert not still_running, f"Processes still running: {still_running}"
 
   ensure_no_processes()
   yield
