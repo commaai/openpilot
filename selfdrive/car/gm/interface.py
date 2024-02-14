@@ -284,7 +284,11 @@ class CarInterface(CarInterfaceBase):
                                                          GearShifter.eco, GearShifter.manumatic],
                                        pcm_enable=self.CP.pcmCruise, enable_buttons=(ButtonType.decelCruise,))
     if not self.CP.pcmCruise:
-      if any(b.type == ButtonType.accelCruise and b.pressed for b in ret.buttonEvents):
+      # Block resume if cruise never previously enabled
+      resume_pressed = any(b.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for b in ret.buttonEvents)
+      if resume_pressed and not self.CS.cruise_resume_valid:
+        events.add(EventName.resumeBlocked)
+      elif any(b.type == ButtonType.accelCruise and b.pressed for b in ret.buttonEvents):
         events.add(EventName.buttonEnable)
 
     # Enabling at a standstill with brake is allowed
