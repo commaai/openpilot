@@ -3,7 +3,8 @@ import os
 import socket
 import time
 from hashlib import sha256
-from urllib3 import PoolManager, Retry, HTTPResponse
+from urllib3 import PoolManager, Retry
+from urllib3.response import BaseHTTPResponse
 from urllib3.util import Timeout
 
 from openpilot.common.file_helpers import atomic_write_in_dir
@@ -42,8 +43,7 @@ class URLFile:
     self._url = url
     self._timeout = Timeout(connect=timeout, read=timeout)
     self._pos = 0
-    self._length = None
-    self._local_file = None
+    self._length: int|None = None
     self._debug = debug
     #  True by default, false if FILEREADER_CACHE is defined, but can be overwritten by the cache input
     self._force_download = not int(os.environ.get("FILEREADER_CACHE", "0"))
@@ -57,12 +57,9 @@ class URLFile:
     return self
 
   def __exit__(self, exc_type, exc_value, traceback) -> None:
-    if self._local_file is not None:
-      os.remove(self._local_file.name)
-      self._local_file.close()
-      self._local_file = None
+    pass
 
-  def _request(self, method: str, url: str, headers: dict[str, str]|None=None) -> HTTPResponse:
+  def _request(self, method: str, url: str, headers: dict[str, str]|None=None) -> BaseHTTPResponse:
     return URLFile.pool_manager().request(method, url, timeout=self._timeout, headers=headers)
 
   def get_length_online(self) -> int:
