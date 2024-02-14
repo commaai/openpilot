@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import pytest
 import random
 import time
 import unittest
@@ -252,7 +251,6 @@ class TestFwFingerprintTiming(unittest.TestCase):
         self._assert_timing(self.total_time / self.N, vin_ref_times[name])
         print(f'get_vin {name} case, query time={self.total_time / self.N} seconds')
 
-  @pytest.mark.timeout(60)
   def test_fw_query_timing(self):
     total_ref_time = {1: 5.95, 2: 6.85}
     brand_ref_times = {

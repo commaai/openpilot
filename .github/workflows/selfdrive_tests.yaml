@@ -313,7 +313,7 @@ jobs:
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test car models
-      timeout-minutes: 25
+      timeout-minutes: 10
       run: |
         ${{ env.RUN }} "$PYTEST selfdrive/car/tests/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
