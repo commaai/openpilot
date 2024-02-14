@@ -4,10 +4,8 @@ from functools import partial
 import multiprocessing
 import capnp
 import enum
-import numpy as np
 import os
 import pathlib
-import re
 import sys
 import tqdm
 import urllib.parse
@@ -21,7 +19,6 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.tools.lib.comma_car_segments import get_url as get_comma_segments_url
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.tools.lib.filereader import FileReader, file_exists, internal_source_available
-from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.route import Route, SegmentRange
 
 LogMessage = Type[capnp._DynamicStructReader]
@@ -108,29 +105,11 @@ def apply_strategy(mode: ReadMode, rlog_paths, qlog_paths, valid_file=default_va
     return auto_strategy(rlog_paths, qlog_paths, True, valid_file)
 
 
-def parse_slice(sr: SegmentRange) -> list[int]:
-  m = re.fullmatch(RE.SLICE, sr._slice)
-  assert m is not None, f"Invalid slice: {sr._slice}"
-  start, end, step = (None if s is None else int(s) for s in m.groups())
-
-  if start is not None and start < 0:
-    start = sr.get_max_seg_number() + start + 1
-
-  # if start is non-negative and end is not specified, set end to get a single segment
-  if start is not None and end is None and ':' not in sr._slice:
-    end = start + 1
-
-  # TODO: we can just return a slice
-  return list(range(sr.get_max_seg_number() + 1)[slice(start, end, step)])
-
-
 def comma_api_source(sr: SegmentRange, mode: ReadMode):
-  segs = parse_slice(sr)
-
   route = Route(sr.route_name)
 
-  rlog_paths = [route.log_paths()[seg] for seg in segs]
-  qlog_paths = [route.qlog_paths()[seg] for seg in segs]
+  rlog_paths = [route.log_paths()[seg] for seg in sr.seg_idxs]
+  qlog_paths = [route.qlog_paths()[seg] for seg in sr.seg_idxs]
 
   # comma api will have already checked if the file exists
   def valid_file(fn):
@@ -143,30 +122,24 @@ def internal_source(sr: SegmentRange, mode: ReadMode):
   if not internal_source_available():
     raise Exception("Internal source not available")
 
-  segs = parse_slice(sr)
-
   def get_internal_url(sr: SegmentRange, seg, file):
     return f"cd:/{sr.dongle_id}/{sr.timestamp}/{seg}/{file}.bz2"
 
-  rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in segs]
-  qlog_paths = [get_internal_url(sr, seg, "qlog") for seg in segs]
+  rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
+  qlog_paths = [get_internal_url(sr, seg, "qlog") for seg in sr.seg_idxs]
 
   return apply_strategy(mode, rlog_paths, qlog_paths)
 
 
 def openpilotci_source(sr: SegmentRange, mode: ReadMode):
-  segs = parse_slice(sr)
-
-  rlog_paths = [get_url(sr.route_name, seg, "rlog") for seg in segs]
-  qlog_paths = [get_url(sr.route_name, seg, "qlog") for seg in segs]
+  rlog_paths = [get_url(sr.route_name, seg, "rlog") for seg in sr.seg_idxs]
+  qlog_paths = [get_url(sr.route_name, seg, "qlog") for seg in sr.seg_idxs]
 
   return apply_strategy(mode, rlog_paths, qlog_paths)
 
 
 def comma_car_segments_source(sr: SegmentRange, mode=ReadMode.RLOG):
-  segs = parse_slice(sr)
-
-  return [get_comma_segments_url(sr.route_name, seg) for seg in segs]
+  return [get_comma_segments_url(sr.route_name, seg) for seg in sr.seg_idxs]
 
 
 def direct_source(file_or_url):
