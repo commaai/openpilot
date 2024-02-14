@@ -286,7 +286,7 @@ class CarInterface(CarInterfaceBase):
     if not self.CP.pcmCruise:
       # Block resume if cruise never previously enabled
       resume_pressed = any(b.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for b in ret.buttonEvents)
-      if resume_pressed and not self.CS.cruise_resume_valid:
+      if resume_pressed and not self.CS.cruise_resume_allowed:
         events.add(EventName.resumeBlocked)
       elif any(b.type == ButtonType.accelCruise and b.pressed for b in ret.buttonEvents):
         events.add(EventName.buttonEnable)
