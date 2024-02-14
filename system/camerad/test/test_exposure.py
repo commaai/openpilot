@@ -11,7 +11,7 @@ TEST_TIME = 45
 REPEAT = 5
 
 @pytest.mark.tici
-@pytest.mark.hardware("camera")
+@pytest.mark.hardware("cameras")
 class TestCamerad(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
