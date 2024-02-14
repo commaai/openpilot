@@ -9,7 +9,7 @@ import requests
 from parameterized import parameterized
 from unittest import mock
 
-from openpilot.tools.lib.logreader import LogIterable, LogReader, parse_indirect, parse_slice, ReadMode
+from openpilot.tools.lib.logreader import LogIterable, LogReader, comma_api_source, parse_indirect, parse_slice, ReadMode
 from openpilot.tools.lib.route import SegmentRange
 
 NUM_SEGS = 17 # number of segments in the test route
@@ -136,6 +136,18 @@ class TestLogReader(unittest.TestCase):
     os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
     lr = LogReader(f"{TEST_ROUTE}/0:4")
     self.assertEqual(len(lr.run_across_segments(4, noop)), len(list(lr)))
+
+  @pytest.mark.slow
+  def test_auto_mode(self):
+    lr = LogReader(f"{TEST_ROUTE}/0/q")
+    qlog_len = len(list(lr))
+    with mock.patch("openpilot.tools.lib.route.Route.log_paths") as log_paths_mock:
+      log_paths_mock.return_value = [None] * NUM_SEGS
+      # Should fall back to qlogs since rlogs are not available
+      lr = LogReader(f"{TEST_ROUTE}/0/a", default_source=comma_api_source)
+      log_len = len(list(lr))
+
+    self.assertEqual(qlog_len, log_len)
 
 
 if __name__ == "__main__":
