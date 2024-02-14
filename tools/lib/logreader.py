@@ -79,20 +79,6 @@ class ReadMode(enum.StrEnum):
   AUTO_INTERACIVE = "i"  # default to rlogs, fallback to qlogs with a prompt from the user
 
 
-def create_slice_from_string(s: str):
-  m = re.fullmatch(RE.SLICE, s)
-  assert m is not None, f"Invalid slice: {s}"
-  start, end, step = m.groups()
-  print('start:', start, 'end:', end, 'step:', step)
-  start = int(start) if start is not None else None
-  end = int(end) if end is not None else None
-  step = int(step) if step is not None else None
-
-  # if start is not None and ":" not in s and end is None and step is None:
-  #   return start
-  return slice(start, end, step)
-
-
 def default_valid_file(fn):
   return fn is not None and file_exists(fn)
 
@@ -132,32 +118,13 @@ def parse_slice(sr: SegmentRange):
 
   if start is not None and start < 0:
     start = sr.get_max_seg_number() + start + 1
-  # if start < 0:
-  #   start += 1
 
   # if start is non-negative and end is not specified, set end to get a single segment
   if start is not None and end is None and ':' not in sr._slice:
     end = start + 1
-    # end = start + sr.get_max_seg_number() - start + 1
-    # end = sr.get_max_seg_number() + start + 2
 
-  print((start, end, step))
-  print(list(range(sr.get_max_seg_number() + 1)))
-  # return list(range(start or 0, end or sr.get_max_seg_number() + 1, step or 1))
+  # TODO: we can just return a slice
   return list(range(sr.get_max_seg_number() + 1)[slice(start, end, step)])
-
-  # s = create_slice_from_string(sr._slice)
-  # print(s, type(s))
-  # if isinstance(s, slice):
-  #   if s.stop is None or s.stop < 0 or (s.start is not None and s.start < 0):  # we need the number of segments in order to parse this slice
-  #     segs = np.arange(sr.get_max_seg_number() + 1)
-  #   else:
-  #     segs = np.arange(s.stop + 1)
-  #   return segs[s]
-  # else:
-  #   if s < 0:
-  #     s = sr.get_max_seg_number() + s + 1
-  #   return [s]
 
 
 def comma_api_source(sr: SegmentRange, mode: ReadMode):
