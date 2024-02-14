@@ -223,7 +223,12 @@ class LogReader:
     mode = self.default_mode if sr.selector is None else ReadMode(sr.selector)
     source = self.default_source if source is None else source
 
-    return source(sr, mode)
+    identifiers = source(sr, mode)
+
+    invalid_count = len(list(get_invalid_files(identifiers)))
+    assert invalid_count == 0, f"{invalid_count}/{len(identifiers)} invalid log(s) found, please ensure all logs \
+are uploaded or auto fallback to qlogs with '/a' selector at the end of the route name."
+    return identifiers
 
   def __init__(self, identifier: str | List[str], default_mode=ReadMode.RLOG, default_source=auto_source, sort_by_time=False, only_union_types=False):
     self.default_mode = default_mode
@@ -258,9 +263,6 @@ class LogReader:
 
   def reset(self):
     self.logreader_identifiers = self._parse_identifiers(self.identifier)
-    invalid_count = len(list(get_invalid_files(self.logreader_identifiers)))
-    assert invalid_count == 0, f"{invalid_count}/{len(self.logreader_identifiers)} invalid log(s) found, please ensure all logs \
-are uploaded or auto fallback to qlogs with '/a' selector at the end of the route name."
 
   @staticmethod
   def from_bytes(dat):
