@@ -234,7 +234,6 @@ class TestCarModelBase(unittest.TestCase):
     self.assertEqual(can_invalid_cnt, 0)
 
   def test_radar_interface(self):
-    os.environ['NO_RADAR_SLEEP'] = "1"
     RadarInterface = importlib.import_module(f'selfdrive.car.{self.CP.carName}.radar_interface').RadarInterface
     RI = RadarInterface(self.CP)
     assert RI
