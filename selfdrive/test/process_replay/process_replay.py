@@ -475,8 +475,8 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="card",
-    pubs=["can", "carControl", "pandaStates"],
-    subs=["carState", "sendcan"],
+    pubs=["carState", "sendcan"],
+    subs=["can", "carControl", "pandaStates"],
     ignore=["logMonoTime", "valid"],
     config_callback=controlsd_config_callback,
     init_callback=fingerprint_callback,
