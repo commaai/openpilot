@@ -65,6 +65,9 @@ class StdQueries:
   GM_VIN_REQUEST = b'\x1a\x90'
   GM_VIN_RESPONSE = b'\x5a\x90'
 
+  KWP_VIN_REQUEST = b'\x21\x81'
+  KWP_VIN_RESPONSE = b'\x61\x81'
+
 
 @dataclass
 class Request:
