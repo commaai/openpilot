@@ -73,7 +73,7 @@ def tici_setup_fixture(openpilot_function_fixture):
 
 
 def process_running(process_name):
-  ret = subprocess.run(["pgrep", "-f", process_name]).returncode
+  ret = subprocess.run(["pgrep", "-f", f"\\/{process_name}"]).returncode
   return ret == 0
 
 
