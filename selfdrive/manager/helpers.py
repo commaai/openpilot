@@ -8,7 +8,6 @@ import signal
 import subprocess
 import tempfile
 import threading
-from typing import Optional
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params

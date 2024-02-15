@@ -3,8 +3,9 @@ import datetime
 import os
 import signal
 import sys
+import threading
 import traceback
-from typing import List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 from cereal import log
 import cereal.messaging as messaging
@@ -24,8 +25,8 @@ from openpilot.system.version import is_dirty, get_commit, get_version, get_orig
 
 
 class Manager:
-  BOOTLOG_THREAD = None
-  
+  BOOTLOG_THREAD: Optional[threading.Thread] = None
+
   @staticmethod
   def init() -> None:
     Manager.BOOTLOG_THREAD = save_bootlog()
