@@ -33,18 +33,29 @@ class TestFwFingerprint(unittest.TestCase):
     self.assertEqual(len(candidates), 1, f"got more than one candidate: {candidates}")
     self.assertEqual(candidates[0], expected)
 
-  @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
-  def test_exact_match(self, brand, car_model, ecus):
+  @parameterized.expand([(b, c, e[c], n) for b, e in VERSIONS.items() for c in e for n in (True, False)])
+  def test_exact_match(self, brand, car_model, ecus, test_non_essential):
+    config = FW_QUERY_CONFIGS[brand]
     CP = car.CarParams.new_message()
-    for _ in range(200):
+    for _ in range(100):
       fw = []
       for ecu, fw_versions in ecus.items():
+        # Assume non-essential ECUs apply to all cars, so we catch cases where Car A with
+        # missing ECUs won't match to Car B where only Car B has labeled non-essential ECUs
+        if ecu[0] in config.non_essential_ecus and test_non_essential:
+          continue
+
         ecu_name, addr, sub_addr = ecu
         fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
       CP.carFw = fw
       _, matches = match_fw_to_car(CP.carFw, allow_fuzzy=False)
-      self.assertFingerprints(matches, car_model)
+      if not test_non_essential:
+        self.assertFingerprints(matches, car_model)
+      else:
+        # if we're removing ECUs we expect some match loss, but it shouldn't mismatch
+        if len(matches) != 0:
+          self.assertFingerprints(matches, car_model)
 
   @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
   def test_custom_fuzzy_match(self, brand, car_model, ecus):
