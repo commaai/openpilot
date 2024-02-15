@@ -184,8 +184,7 @@ class TestLogReader(unittest.TestCase):
       with self.subTest("non_interactive"):
         lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO, default_source=comma_api_source)
         log_len = len(list(lr))
-
-    self.assertEqual(qlog_len, log_len)
+        self.assertEqual(qlog_len, log_len)
 
 
 if __name__ == "__main__":
