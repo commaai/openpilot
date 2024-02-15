@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import io
 import shutil
 import tempfile
 import os
@@ -168,10 +169,22 @@ class TestLogReader(unittest.TestCase):
     with mock.patch("openpilot.tools.lib.route.Route.log_paths") as log_paths_mock:
       log_paths_mock.return_value = [None] * NUM_SEGS
       # Should fall back to qlogs since rlogs are not available
-      lr = LogReader(f"{TEST_ROUTE}/0/a", default_source=comma_api_source)
-      log_len = len(list(lr))
 
-    self.assertEqual(qlog_len, log_len)
+      with self.subTest("interactive_yes"):
+        with mock.patch("sys.stdin", new=io.StringIO("y\n")):
+          lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, default_source=comma_api_source)
+          log_len = len(list(lr))
+        self.assertEqual(qlog_len, log_len)
+
+      with self.subTest("interactive_no"):
+        with mock.patch("sys.stdin", new=io.StringIO("n\n")):
+          with self.assertRaises(AssertionError):
+            lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, default_source=comma_api_source)
+
+      with self.subTest("non_interactive"):
+        lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO, default_source=comma_api_source)
+        log_len = len(list(lr))
+        self.assertEqual(qlog_len, log_len)
 
 
 if __name__ == "__main__":
