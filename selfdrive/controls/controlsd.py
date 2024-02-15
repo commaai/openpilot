@@ -795,7 +795,7 @@ class Controls:
       self.state_transition(CS)
 
     CC, lac_log = self.state_control(CS)
-    self.publish_logs(start_time, CC, lac_log)
+    self.publish_logs(CS, start_time, CC, lac_log)
 
     self.CS_prev = CS
 
