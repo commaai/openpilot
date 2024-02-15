@@ -45,7 +45,7 @@ class TestFwFingerprint(unittest.TestCase):
         print(ecu)
         # Assume non-essential ECUs apply to all cars, so that missing ECUs on an
         # Accord Hybrid won't match to an Accord where only Accord has labeled non-essential ECUs
-        # if car_model in config.non_essential_ecus.get(ecu[0], []):
+        # if car_model in config.non_essential_ecus.get(ecu[0], []):  # this catches it, but only if we added AccordH to the non-essential dict
         if ecu[0] in config.non_essential_ecus and test_non_essential:
           print('continue')
           continue
