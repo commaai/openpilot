@@ -8,6 +8,7 @@ import signal
 import subprocess
 import tempfile
 import threading
+from typing import Optional
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
@@ -49,6 +50,7 @@ def write_onroad_params(started, params):
   params.put_bool("IsOnroad", started)
   params.put_bool("IsOffroad", not started)
 
+BOOTLOG_THREAD: Optional[threading.Thread] = None
 
 def save_bootlog():
   # copy current params
@@ -62,6 +64,6 @@ def save_bootlog():
     env['PARAMS_COPY_PATH'] = tmpdir
     subprocess.call("./bootlog", cwd=os.path.join(BASEDIR, "system/loggerd"), env=env)
     shutil.rmtree(tmpdir)
-  t = threading.Thread(target=fn, args=(tmp, ))
-  t.daemon = True
-  t.start()
+  BOOTLOG_THREAD = threading.Thread(target=fn, args=(tmp, ))
+  BOOTLOG_THREAD.daemon = True
+  BOOTLOG_THREAD.start()
