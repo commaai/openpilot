@@ -73,7 +73,7 @@ class ReadMode(enum.StrEnum):
   QLOG = "q"  # only read qlogs
   SANITIZED = "s"  # read from the commaCarSegments database
   AUTO = "a"  # default to rlogs, fallback to qlogs
-  AUTO_INTERACIVE = "i"  # default to rlogs, fallback to qlogs with a prompt from the user
+  AUTO_INTERACTIVE = "i"  # default to rlogs, fallback to qlogs with a prompt from the user
 
 
 LogPath = Optional[str]
@@ -106,7 +106,7 @@ def apply_strategy(mode: ReadMode, rlog_paths: LogPaths, qlog_paths: LogPaths, v
     return qlog_paths
   elif mode == ReadMode.AUTO:
     return auto_strategy(rlog_paths, qlog_paths, False, valid_file)
-  elif mode == ReadMode.AUTO_INTERACIVE:
+  elif mode == ReadMode.AUTO_INTERACTIVE:
     return auto_strategy(rlog_paths, qlog_paths, True, valid_file)
   raise Exception(f"invalid mode: {mode}")
 
