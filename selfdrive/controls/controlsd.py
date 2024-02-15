@@ -418,6 +418,7 @@ class Controls:
           not_freq_ok=[s for s, freq_ok in self.sm.freq_ok.items() if not freq_ok],
           error=True,
         )
+        self.distance_traveled += CS.vEgo * DT_CTRL
 
     # When the panda and controlsd do not agree on controls_allowed
     # we want to disengage openpilot. However the status from the panda goes through
@@ -430,8 +431,6 @@ class Controls:
     if self.enabled and any(not ps.controlsAllowed for ps in self.sm['pandaStates']
            if ps.safetyModel not in IGNORED_SAFETY_MODES):
       self.mismatch_counter += 1
-
-    return CS
 
   def state_transition(self, CS):
     """Compute conditional state transitions and execute actions on state transitions"""
