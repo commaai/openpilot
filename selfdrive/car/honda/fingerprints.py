@@ -160,7 +160,7 @@ FW_VERSIONS = {
       b'36802-TVA-A330\x00\x00',
       b'36802-TVC-A330\x00\x00',
       b'36802-TVE-H070\x00\x00',
-      b'36802-TWA-A070\x00\x00',
+      b'36802-TWA-A079\x00\x00',
       b'36802-TWA-A080\x00\x00',
     ],
     (Ecu.fwdCamera, 0x18dab5f1, None): [
@@ -169,7 +169,7 @@ FW_VERSIONS = {
       b'36161-TVA-A330\x00\x00',
       b'36161-TVC-A330\x00\x00',
       b'36161-TVE-H050\x00\x00',
-      b'36161-TWA-A070\x00\x00',
+      b'36161-TWA-A010\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TVA-A010\x00\x00',
