@@ -68,7 +68,7 @@ class TestRawgpsd(unittest.TestCase):
 
   def test_turns_off_gnss(self):
     for s in (0.1, 1, 5):
-      with self.subTest(gps_runtime=s):
+      with self.subTest(runtime=s):
         managed_processes['qcomgpsd'].start()
         time.sleep(s)
         managed_processes['qcomgpsd'].stop()
