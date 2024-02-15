@@ -644,10 +644,8 @@ class Controls:
 
     return CC, lac_log
 
-  def publish_logs(self, start_time, CC, lac_log):
+  def publish_logs(self, CS, start_time, CC, lac_log):
     """Send actuators and hud commands to the car, send controlsstate and MPC logging"""
-
-    CS = self.sm['carState']
 
     # Orientation and angle rates can be useful for carcontroller
     # Only calibrated (car) frame is relevant for the carcontroller
@@ -800,7 +798,7 @@ class Controls:
     CC, lac_log = self.state_control(CS)
     self.publish_logs(start_time, CC, lac_log)
 
-    self.CS_prev = self.sm['carState']
+    self.CS_prev = CS
 
   def params_thread(self, evt):
     while not evt.is_set():
