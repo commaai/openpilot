@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import contextlib
 import io
 import shutil
 import tempfile
@@ -163,16 +162,27 @@ class TestLogReader(unittest.TestCase):
     lr = LogReader(f"{TEST_ROUTE}/0:4")
     self.assertEqual(len(lr.run_across_segments(4, noop)), len(list(lr)))
 
-  @parameterized.expand([(True,), (False,)])
   @pytest.mark.slow
-  def test_auto_mode(self, interactive):
+  def test_auto_mode(self):
     lr = LogReader(f"{TEST_ROUTE}/0/q")
     qlog_len = len(list(lr))
     with mock.patch("openpilot.tools.lib.route.Route.log_paths") as log_paths_mock:
       log_paths_mock.return_value = [None] * NUM_SEGS
       # Should fall back to qlogs since rlogs are not available
-      with mock.patch("sys.stdin", new=io.StringIO("y\n")) if interactive else contextlib.nullcontext():
-        lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE if interactive else ReadMode.AUTO, default_source=comma_api_source)
+
+      with self.subTest("interactive_yes"):
+        with mock.patch("sys.stdin", new=io.StringIO("y\n")):
+          lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, default_source=comma_api_source)
+          log_len = len(list(lr))
+        self.assertEqual(qlog_len, log_len)
+
+      with self.subTest("interactive_no"):
+        with mock.patch("sys.stdin", new=io.StringIO("n\n")):
+          with self.assertRaises(AssertionError):
+            lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, default_source=comma_api_source)
+
+      with self.subTest("non_interactive"):
+        lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO, default_source=comma_api_source)
         log_len = len(list(lr))
 
     self.assertEqual(qlog_len, log_len)
