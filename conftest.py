@@ -1,5 +1,7 @@
+import contextlib
 import gc
 import os
+import psutil
 import pytest
 import random
 
@@ -69,6 +71,29 @@ def tici_setup_fixture(openpilot_function_fixture):
   HARDWARE.initialize_hardware()
   HARDWARE.set_power_save(False)
   os.system("pkill -9 -f athena")
+
+
+@contextlib.contextmanager
+def no_processes_left_behind():
+  current_process = psutil.Process()
+  children = current_process.children(recursive=True)
+
+  yield
+
+  children = current_process.children(recursive=True)
+  assert len(children) == 0, f"test left behind running processes: {children}"
+
+
+@pytest.fixture(scope="function", autouse=True)
+def no_processes_function_fixture():
+  with no_processes_left_behind():
+    yield
+
+
+@pytest.fixture(scope="class", autouse=True)
+def no_processes_class_fixture():
+  with no_processes_left_behind():
+    yield
 
 
 @pytest.hookimpl(tryfirst=True)
