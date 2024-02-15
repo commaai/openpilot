@@ -11,7 +11,7 @@ Version 0.9.6 (2024-02-22)
 * Improved fuzzy fingerprinting for many makes and models
 * Alpha longitudinal support for new Toyota models
 * Chevrolet Equinox 2019-22 support thanks to JasonJShuler and nworb-cire!
-* Dodge Duranago 2020-21 support
+* Dodge Durango 2020-21 support
 * Hyundai Staria 2023 support thanks to sunnyhaibin!
 * Kia Niro Plug-in Hybrid 2022 support thanks to sunnyhaibin!
 * Lexus LC 2024 support thanks to nelsonjchen!
