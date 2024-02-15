@@ -762,7 +762,6 @@ def generate_environ_config(CP=None, fingerprint=None, log_dir=None) -> Dict[str
   if log_dir is not None:
     environ_dict["LOG_ROOT"] = log_dir
 
-  environ_dict["NO_RADAR_SLEEP"] = "1"
   environ_dict["REPLAY"] = "1"
 
   # Regen or python process

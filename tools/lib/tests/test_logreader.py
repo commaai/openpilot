@@ -11,6 +11,7 @@ from unittest import mock
 
 from openpilot.tools.lib.logreader import LogIterable, LogReader, comma_api_source, parse_indirect, ReadMode
 from openpilot.tools.lib.route import SegmentRange
+from openpilot.tools.lib.url_file import URLFileException
 
 NUM_SEGS = 17  # number of segments in the test route
 ALL_SEGS = list(range(NUM_SEGS))
@@ -65,7 +66,10 @@ class TestLogReader(unittest.TestCase):
     sr = SegmentRange(identifier)
     self.assertEqual(str(sr), expected)
 
-  def test_direct_parsing(self):
+  @parameterized.expand([(True,), (False,)])
+  @mock.patch("openpilot.tools.lib.logreader.file_exists")
+  def test_direct_parsing(self, cache_enabled, file_exists_mock):
+    os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
     qlog = tempfile.NamedTemporaryFile(mode='wb', delete=False)
 
     with requests.get(QLOG_FILE, stream=True) as r:
@@ -75,6 +79,12 @@ class TestLogReader(unittest.TestCase):
     for f in [QLOG_FILE, qlog.name]:
       l = len(list(LogReader(f)))
       self.assertGreater(l, 100)
+
+    with self.assertRaises(URLFileException) if not cache_enabled else self.assertRaises(AssertionError):
+      l = len(list(LogReader(QLOG_FILE.replace("/3/", "/200/"))))
+
+    # file_exists should not be called for direct files
+    self.assertEqual(file_exists_mock.call_count, 0)
 
   @parameterized.expand([
     (f"{TEST_ROUTE}///",),
