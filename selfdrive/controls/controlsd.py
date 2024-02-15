@@ -394,10 +394,9 @@ class Controls:
     CS = self.sm['carState']
 
     if not self.initialized:
-      all_valid = self.sm['carState'].canValid and self.sm.all_checks()
+      all_valid = CS.canValid and self.sm.all_checks()
       timed_out = self.sm.frame * DT_CTRL > (6. if REPLAY else 3.5)
       if all_valid or timed_out or (SIMULATION and not REPLAY):
-        CS = self.sm['carState']
         available_streams = VisionIpcClient.available_streams("camerad", block=False)
         if VisionStreamType.VISION_STREAM_ROAD not in available_streams:
           self.sm.ignore_alive.append('roadCameraState')
