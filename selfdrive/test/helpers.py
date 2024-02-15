@@ -1,4 +1,5 @@
 import os
+import psutil
 import time
 
 from functools import wraps
@@ -77,3 +78,13 @@ def read_segment_list(segment_list_path):
     seg_list = f.read().splitlines()
 
   return [(platform[2:], segment) for platform, segment in zip(seg_list[::2], seg_list[1::2], strict=True)]
+
+
+def process_running(process_name):
+  for p in psutil.process_iter():
+    try:
+      if process_name == p.name() or len(p.cmdline()) > 0 and f".{process_name}" in p.cmdline()[0]:
+        return True
+    except psutil.ZombieProcess:
+      pass
+  return False

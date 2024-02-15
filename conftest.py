@@ -2,12 +2,11 @@ import gc
 import os
 import pytest
 import random
-import subprocess
 
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.manager import manager
+from openpilot.selfdrive.test.helpers import process_running
 from openpilot.system.hardware import PC, TICI, HARDWARE
-
 
 def pytest_sessionstart(session):
   # TODO: fix tests and enable test order randomization
@@ -70,11 +69,6 @@ def tici_setup_fixture(openpilot_function_fixture):
   HARDWARE.initialize_hardware()
   HARDWARE.set_power_save(False)
   os.system("pkill -9 -f athena")
-
-
-def process_running(process_name):
-  ret = subprocess.run(["pgrep", "-f", f"\\/{process_name}[^\\/]"]).returncode
-  return ret == 0
 
 
 @pytest.fixture(scope="session", autouse=True)
