@@ -8,7 +8,8 @@ from openpilot.selfdrive.car.volkswagen.values import CAR, PQ_CARS, CANBUS, Netw
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 
-DEFAULT_MIN_STEER_SPEED = 0.4
+DEFAULT_MIN_STEER_SPEED = 0.4  # m/s, some newer EPS racks fault below this speed
+
 
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
