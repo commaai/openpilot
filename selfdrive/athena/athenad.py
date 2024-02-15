@@ -386,10 +386,10 @@ def uploadFilesToUrls(files_data: List[UploadFileDict]) -> UploadFilesToUrlRespo
       failed.append(file.fn)
       continue
 
-    # Skip item if already in queue
+    # Remove existing item
     url = file.url.split('?')[0]
     if any(url == item['url'].split('?')[0] for item in listUploadQueue()):
-      continue
+      del item['url']
 
     item = UploadItem(
       path=path,
