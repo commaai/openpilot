@@ -8,6 +8,7 @@ import signal
 import platform
 from collections import OrderedDict
 from dataclasses import dataclass, field
+from functools import partial
 from typing import Dict, List, Optional, Callable, Union, Any, Iterable, Tuple
 from tqdm import tqdm
 import capnp
@@ -359,7 +360,7 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
   return CP
 
 
-def controlsd_rcv_callback(msg, cfg, frame):
+def card_rcv_callback(msg, cfg, frame):
   socks = [
     s for s in cfg.subs if
     frame % int(SERVICE_LIST[msg.which()].frequency / SERVICE_LIST[s].frequency) == 0
@@ -368,6 +369,9 @@ def controlsd_rcv_callback(msg, cfg, frame):
     socks.remove("sendcan")
   return len(socks) > 0
 
+
+def poll_rcv_callback(msg_to_poll, msg, cfg, frame):
+  return (frame - 1) == 0 or msg.which() == 'cameraOdometry'
 
 def calibration_rcv_callback(msg, cfg, frame):
   # calibrationd publishes 1 calibrationData every 5 cameraOdometry packets.
@@ -465,7 +469,7 @@ CONFIGS = [
     ignore=["logMonoTime", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     config_callback=controlsd_config_callback,
     init_callback=get_car_params_callback,
-    should_recv_callback=controlsd_rcv_callback,
+    should_recv_callback=partial(poll_rcv_callback, "carState"),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
   ),
@@ -476,7 +480,7 @@ CONFIGS = [
     ignore=["logMonoTime", "valid"],
     config_callback=controlsd_config_callback,
     init_callback=fingerprint_callback,
-    should_recv_callback=controlsd_rcv_callback,
+    should_recv_callback=card_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
     main_pub="can",
