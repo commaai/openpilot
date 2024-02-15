@@ -254,7 +254,7 @@ class CarInterface(CarInterfaceBase):
     if not ret.openpilotLongitudinalControl:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL
 
-    # Should only rw gas interceptor if openpilot longitudinal
+    # Should only read gas interceptor if we're using it (longitudinal)
     if ret.enableGasInterceptor:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_GAS_INTERCEPTOR
 
