@@ -15,7 +15,7 @@ def is_valid_vin(vin: str):
   return re.fullmatch(VIN_RE, vin) is not None
 
 
-def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
+def get_vin(logcan, sendcan, buses, timeout=0.1, retry=2, debug=False):
   for i in range(retry):
     for bus in buses:
       for request, response, valid_buses, vin_addrs, functional_addrs, rx_offset in (
