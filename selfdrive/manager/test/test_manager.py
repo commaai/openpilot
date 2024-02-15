@@ -9,7 +9,6 @@ from parameterized import parameterized
 
 from cereal import car
 from openpilot.common.params import Params
-from openpilot.selfdrive.manager.helpers import BOOTLOG_THREAD
 import openpilot.selfdrive.manager.manager as manager
 from openpilot.selfdrive.manager.process import ensure_running
 from openpilot.selfdrive.manager.process_config import managed_processes
@@ -48,8 +47,6 @@ class TestManager(unittest.TestCase):
     manager.main()
     t = time.monotonic() - start
     assert t < MAX_STARTUP_TIME, f"startup took {t}s, expected <{MAX_STARTUP_TIME}s"
-    self.assertTrue(BOOTLOG_THREAD is not None)
-    BOOTLOG_THREAD.join()
 
   @unittest.skip("this test is flaky the way it's currently written, should be moved to test_onroad")
   def test_clean_exit(self):

@@ -23,94 +23,109 @@ from openpilot.system.version import is_dirty, get_commit, get_version, get_orig
 
 
 
+class Manager:
+  BOOTLOG_THREAD = None
+  
+  @staticmethod
+  def init() -> None:
+    Manager.BOOTLOG_THREAD = save_bootlog()
+
+    params = Params()
+    params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
+    params.clear_all(ParamKeyType.CLEAR_ON_ONROAD_TRANSITION)
+    params.clear_all(ParamKeyType.CLEAR_ON_OFFROAD_TRANSITION)
+    if is_release_branch():
+      params.clear_all(ParamKeyType.DEVELOPMENT_ONLY)
+
+    default_params: List[Tuple[str, Union[str, bytes]]] = [
+      ("CompletedTrainingVersion", "0"),
+      ("DisengageOnAccelerator", "0"),
+      ("GsmMetered", "1"),
+      ("HasAcceptedTerms", "0"),
+      ("LanguageSetting", "main_en"),
+      ("OpenpilotEnabledToggle", "1"),
+      ("LongitudinalPersonality", str(log.LongitudinalPersonality.standard)),
+    ]
+    if not PC:
+      default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))
+
+    if params.get_bool("RecordFrontLock"):
+      params.put_bool("RecordFront", True)
+
+    # set unset params
+    for k, v in default_params:
+      if params.get(k) is None:
+        params.put(k, v)
+
+    # Create folders needed for msgq
+    try:
+      os.mkdir("/dev/shm")
+    except FileExistsError:
+      pass
+    except PermissionError:
+      print("WARNING: failed to make /dev/shm")
+
+    # set version params
+    params.put("Version", get_version())
+    params.put("TermsVersion", terms_version)
+    params.put("TrainingVersion", training_version)
+    params.put("GitCommit", get_commit())
+    params.put("GitBranch", get_short_branch())
+    params.put("GitRemote", get_origin())
+    params.put_bool("IsTestedBranch", is_tested_branch())
+    params.put_bool("IsReleaseBranch", is_release_branch())
+
+    # set dongle id
+    reg_res = register(show_spinner=True)
+    if reg_res:
+      dongle_id = reg_res
+    else:
+      serial = params.get("HardwareSerial")
+      raise Exception(f"Registration failed for device {serial}")
+    os.environ['DONGLE_ID'] = dongle_id  # Needed for swaglog
+    os.environ['GIT_ORIGIN'] = get_normalized_origin() # Needed for swaglog
+    os.environ['GIT_BRANCH'] = get_short_branch() # Needed for swaglog
+    os.environ['GIT_COMMIT'] = get_commit() # Needed for swaglog
+
+    if not is_dirty():
+      os.environ['CLEAN'] = '1'
+
+    # init logging
+    sentry.init(sentry.SentryProject.SELFDRIVE)
+    cloudlog.bind_global(dongle_id=dongle_id,
+                        version=get_version(),
+                        origin=get_normalized_origin(),
+                        branch=get_short_branch(),
+                        commit=get_commit(),
+                        dirty=is_dirty(),
+                        device=HARDWARE.get_device_type())
+
+    # preimport all processes
+    for p in managed_processes.values():
+      p.prepare()
+
+  @staticmethod
+  def cleanup() -> None:
+    # send signals to kill all procs
+    for p in managed_processes.values():
+      p.stop(block=False)
+
+    # ensure all are killed
+    for p in managed_processes.values():
+      p.stop(block=True)
+
+    if Manager.BOOTLOG_THREAD is not None:
+      Manager.BOOTLOG_THREAD.join()
+
+    cloudlog.info("everything is dead")
+
+
 def manager_init() -> None:
-  save_bootlog()
-
-  params = Params()
-  params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
-  params.clear_all(ParamKeyType.CLEAR_ON_ONROAD_TRANSITION)
-  params.clear_all(ParamKeyType.CLEAR_ON_OFFROAD_TRANSITION)
-  if is_release_branch():
-    params.clear_all(ParamKeyType.DEVELOPMENT_ONLY)
-
-  default_params: List[Tuple[str, Union[str, bytes]]] = [
-    ("CompletedTrainingVersion", "0"),
-    ("DisengageOnAccelerator", "0"),
-    ("GsmMetered", "1"),
-    ("HasAcceptedTerms", "0"),
-    ("LanguageSetting", "main_en"),
-    ("OpenpilotEnabledToggle", "1"),
-    ("LongitudinalPersonality", str(log.LongitudinalPersonality.standard)),
-  ]
-  if not PC:
-    default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))
-
-  if params.get_bool("RecordFrontLock"):
-    params.put_bool("RecordFront", True)
-
-  # set unset params
-  for k, v in default_params:
-    if params.get(k) is None:
-      params.put(k, v)
-
-  # Create folders needed for msgq
-  try:
-    os.mkdir("/dev/shm")
-  except FileExistsError:
-    pass
-  except PermissionError:
-    print("WARNING: failed to make /dev/shm")
-
-  # set version params
-  params.put("Version", get_version())
-  params.put("TermsVersion", terms_version)
-  params.put("TrainingVersion", training_version)
-  params.put("GitCommit", get_commit())
-  params.put("GitBranch", get_short_branch())
-  params.put("GitRemote", get_origin())
-  params.put_bool("IsTestedBranch", is_tested_branch())
-  params.put_bool("IsReleaseBranch", is_release_branch())
-
-  # set dongle id
-  reg_res = register(show_spinner=True)
-  if reg_res:
-    dongle_id = reg_res
-  else:
-    serial = params.get("HardwareSerial")
-    raise Exception(f"Registration failed for device {serial}")
-  os.environ['DONGLE_ID'] = dongle_id  # Needed for swaglog
-  os.environ['GIT_ORIGIN'] = get_normalized_origin() # Needed for swaglog
-  os.environ['GIT_BRANCH'] = get_short_branch() # Needed for swaglog
-  os.environ['GIT_COMMIT'] = get_commit() # Needed for swaglog
-
-  if not is_dirty():
-    os.environ['CLEAN'] = '1'
-
-  # init logging
-  sentry.init(sentry.SentryProject.SELFDRIVE)
-  cloudlog.bind_global(dongle_id=dongle_id,
-                       version=get_version(),
-                       origin=get_normalized_origin(),
-                       branch=get_short_branch(),
-                       commit=get_commit(),
-                       dirty=is_dirty(),
-                       device=HARDWARE.get_device_type())
-
-  # preimport all processes
-  for p in managed_processes.values():
-    p.prepare()
+  return Manager.init()
 
 
 def manager_cleanup() -> None:
-  # send signals to kill all procs
-  for p in managed_processes.values():
-    p.stop(block=False)
-
-  # ensure all are killed
-  for p in managed_processes.values():
-    p.stop(block=True)
-
-  cloudlog.info("everything is dead")
+  return Manager.cleanup()
 
 
 def manager_thread() -> None:
@@ -154,7 +169,7 @@ def manager_thread() -> None:
     ensure_running(managed_processes.values(), started, params=params, CP=sm['carParams'], not_run=ignore)
 
     running = ' '.join("%s%s\u001b[0m" % ("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
-                       for p in managed_processes.values() if p.proc)
+                      for p in managed_processes.values() if p.proc)
     print(running)
     cloudlog.debug(running)
 
