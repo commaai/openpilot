@@ -35,25 +35,20 @@ class TestFwFingerprint(unittest.TestCase):
 
   @parameterized.expand([(b, c, e[c], n) for b, e in VERSIONS.items() for c in e for n in (True, False)])
   def test_exact_match(self, brand, car_model, ecus, test_non_essential):
-    print()
-    print(brand, car_model)
     config = FW_QUERY_CONFIGS[brand]
     CP = car.CarParams.new_message()
     for _ in range(200):
       fw = []
       for ecu, fw_versions in ecus.items():
-        print(ecu)
         # Assume non-essential ECUs apply to all cars, so that missing ECUs on an
         # Accord Hybrid won't match to an Accord where only Accord has labeled non-essential ECUs
-        # if car_model in config.non_essential_ecus.get(ecu[0], []):  # this catches it, but only if we added AccordH to the non-essential dict
         if ecu[0] in config.non_essential_ecus and test_non_essential:
-          print('continue')
           continue
+
         ecu_name, addr, sub_addr = ecu
         fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
       CP.carFw = fw
-      print(CP.carFw)
       _, matches = match_fw_to_car(CP.carFw, allow_fuzzy=False)
       if not test_non_essential:
         self.assertFingerprints(matches, car_model)
