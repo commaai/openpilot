@@ -15,14 +15,14 @@ def is_valid_vin(vin: str):
   return re.fullmatch(VIN_RE, vin) is not None
 
 
-def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
+def get_vin(logcan, sendcan, buses, timeout=0.1, retry=2, debug=False):
   for i in range(retry):
     for bus in buses:
       for request, response, valid_buses, vin_addrs, functional_addrs, rx_offset in (
         (StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE, (0, 1), STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
         (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE, (0, 1), STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
         (StdQueries.GM_VIN_REQUEST, StdQueries.GM_VIN_RESPONSE, (0,), [0x24b], None, 0x400),  # Bolt fwdCamera
-        (StdQueries.KWP_VIN_REQUEST, StdQueries.KWP_VIN_RESPONSE, (0,), [0x797], None, 0x3),  # Nissan Leaf unknown ECU
+        (StdQueries.KWP_VIN_REQUEST, StdQueries.KWP_VIN_RESPONSE, (0,), [0x797], None, 0x3),  # Nissan Leaf instrument cluster
       ):
         if bus not in valid_buses:
           continue
