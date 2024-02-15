@@ -81,6 +81,8 @@ LogPaths = List[LogPath]
 ValidFileCallable = Callable[[LogPath], bool]
 Source = Callable[[SegmentRange, ReadMode], LogPaths]
 
+InternalUnavailableException = Exception("Internal source not available")
+
 def default_valid_file(fn: LogPath) -> bool:
   return fn is not None and file_exists(fn)
 
@@ -126,7 +128,7 @@ def comma_api_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
 
 def internal_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
   if not internal_source_available():
-    raise Exception("Internal source not available")
+    raise InternalUnavailableException
 
   def get_internal_url(sr: SegmentRange, seg, file):
     return f"cd:/{sr.dongle_id}/{sr.timestamp}/{seg}/{file}.bz2"
@@ -160,7 +162,7 @@ def get_invalid_files(files):
 
 def check_source(source: Source, *args) -> LogPaths:
   files = source(*args)
-  assert next(get_invalid_files(files), None) is None
+  assert next(get_invalid_files(files), False) is False
   return files
 
 
