@@ -33,8 +33,8 @@ class TestFwFingerprint(unittest.TestCase):
     self.assertEqual(len(candidates), 1, f"got more than one candidate: {candidates}")
     self.assertEqual(candidates[0], expected)
 
-  @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
-  def test_exact_match(self, brand, car_model, ecus):
+  @parameterized.expand([(b, c, e[c], n) for b, e in VERSIONS.items() for c in e for n in (True, False)])
+  def test_exact_match(self, brand, car_model, ecus, test_non_essential):
     print()
     print(brand, car_model)
     config = FW_QUERY_CONFIGS[brand]
@@ -43,8 +43,10 @@ class TestFwFingerprint(unittest.TestCase):
       fw = []
       for ecu, fw_versions in ecus.items():
         print(ecu)
+        # Assume non-essential ECUs apply to all cars, so that missing ECUs on an
+        # Accord Hybrid won't match to an Accord where only Accord has labeled non-essential ECUs
         # if car_model in config.non_essential_ecus.get(ecu[0], []):
-        if ecu[0] in config.non_essential_ecus:
+        if ecu[0] in config.non_essential_ecus and test_non_essential:
           print('continue')
           continue
         ecu_name, addr, sub_addr = ecu
@@ -53,10 +55,12 @@ class TestFwFingerprint(unittest.TestCase):
       CP.carFw = fw
       print(CP.carFw)
       _, matches = match_fw_to_car(CP.carFw, allow_fuzzy=False)
-      assert len(matches) < 2
-      if len(matches) == 1:
+      if not test_non_essential:
         self.assertFingerprints(matches, car_model)
-      # self.assertFingerprints(matches, car_model)
+      else:
+        # if we're removing ECUs we expect some match loss, but it shouldn't mismatch
+        if len(matches) != 0:
+          self.assertFingerprints(matches, car_model)
 
   @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
   def test_custom_fuzzy_match(self, brand, car_model, ecus):
