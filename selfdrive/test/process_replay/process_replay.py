@@ -459,9 +459,9 @@ CONFIGS = [
       "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
       "longitudinalPlan", "liveLocationKalman", "liveParameters", "radarState",
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
-      "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope", "carState"
+      "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope"
     ],
-    subs=["controlsState", "carControl", "onroadEvents", "carParams"],
+    subs=["controlsState", "carControl", "carState", "onroadEvents", "carParams"],
     ignore=["logMonoTime", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     config_callback=controlsd_config_callback,
     init_callback=get_car_params_callback,
