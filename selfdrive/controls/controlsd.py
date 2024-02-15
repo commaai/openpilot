@@ -172,10 +172,8 @@ class Controls:
       if any(ps.controlsAllowed for ps in self.sm['pandaStates']):
         self.state = State.enabled
 
-  def update_events(self):
+  def update_events(self, CS):
     """Compute onroadEvents from carState"""
-
-    CS = self.sm['carState']
 
     self.events.clear()
 
@@ -393,6 +391,8 @@ class Controls:
     """Receive data from sockets"""
     self.sm.update(20)
 
+    CS = self.sm['carState']
+
     if not self.initialized:
       all_valid = self.sm['carState'].canValid and self.sm.all_checks()
       timed_out = self.sm.frame * DT_CTRL > (6. if REPLAY else 3.5)
@@ -418,7 +418,6 @@ class Controls:
           not_freq_ok=[s for s, freq_ok in self.sm.freq_ok.items() if not freq_ok],
           error=True,
         )
-        self.distance_traveled += CS.vEgo * DT_CTRL
 
     # When the panda and controlsd do not agree on controls_allowed
     # we want to disengage openpilot. However the status from the panda goes through
@@ -432,10 +431,12 @@ class Controls:
            if ps.safetyModel not in IGNORED_SAFETY_MODES):
       self.mismatch_counter += 1
 
+    self.distance_traveled += CS.vEgo * DT_CTRL
+
+    return CS
+
   def state_transition(self, CS):
     """Compute conditional state transitions and execute actions on state transitions"""
-
-    CS = self.sm['carState']
 
     self.v_cruise_helper.update_v_cruise(CS, self.enabled, self.is_metric)
 
@@ -520,10 +521,8 @@ class Controls:
     if self.active:
       self.current_alert_types.append(ET.WARNING)
 
-  def state_control(self):
+  def state_control(self, CS):
     """Given the state, this function returns a CarControl packet"""
-
-    CS = self.sm['carState']
 
     # Update VehicleModel
     lp = self.sm['liveParameters']
@@ -789,16 +788,16 @@ class Controls:
     start_time = time.monotonic()
 
     # Sample data from sockets and get a carState
-    self.data_sample()
+    CS = self.data_sample()
     cloudlog.timestamp("Data sampled")
 
-    self.update_events()
+    self.update_events(CS)
     cloudlog.timestamp("Events updated")
 
     if not self.CP.passive and self.initialized:
-      self.state_transition()
+      self.state_transition(CS)
 
-    CC, lac_log = self.state_control()
+    CC, lac_log = self.state_control(CS)
     self.publish_logs(start_time, CC, lac_log)
 
     self.CS_prev = self.sm['carState']
