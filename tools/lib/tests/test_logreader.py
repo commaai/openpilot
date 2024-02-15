@@ -205,9 +205,10 @@ class TestLogReader(unittest.TestCase):
         log_len = len(list(lr))
         self.assertEqual(qlog_len, log_len)
 
+  @pytest.mark.slow
   @parameterized.expand([(True,), (False,)])
   def test_auto_source_scenarios(self, is_internal):
-    lr = LogReader(f"{TEST_ROUTE}/0/q")
+    lr = LogReader(QLOG_FILE)
     qlog_len = len(list(lr))
 
     with setup_source_scenario(is_internal=is_internal):
