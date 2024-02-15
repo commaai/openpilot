@@ -27,7 +27,7 @@ def pytest_runtest_call(item):
 
 
 @contextlib.contextmanager
-def clean_env(self):
+def clean_env():
   starting_env = dict(os.environ)
   yield
   os.environ.clear()
