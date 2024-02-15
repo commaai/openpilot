@@ -169,7 +169,7 @@ def manager_thread() -> None:
     ensure_running(managed_processes.values(), started, params=params, CP=sm['carParams'], not_run=ignore)
 
     running = ' '.join("%s%s\u001b[0m" % ("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
-                      for p in managed_processes.values() if p.proc)
+                       for p in managed_processes.values() if p.proc)
     print(running)
     cloudlog.debug(running)
 
