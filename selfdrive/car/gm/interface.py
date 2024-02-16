@@ -284,12 +284,11 @@ class CarInterface(CarInterfaceBase):
                                                          GearShifter.eco, GearShifter.manumatic],
                                        pcm_enable=self.CP.pcmCruise, enable_buttons=(ButtonType.decelCruise,))
     if not self.CP.pcmCruise:
-      # Block resume if cruise never previously enabled
-      resume_pressed = any(b.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for b in ret.buttonEvents)
-      if resume_pressed and not self.CS.cruise_resume_allowed:
-        events.add(EventName.resumeBlocked)
-      elif any(b.type == ButtonType.accelCruise and b.pressed for b in ret.buttonEvents):
-        events.add(EventName.buttonEnable)
+      if any(b.type == ButtonType.accelCruise and b.pressed for b in ret.buttonEvents):
+        if self.CS.cruise_resume_allowed:
+          events.add(EventName.buttonEnable)
+        else:
+          events.add(EventName.resumeBlocked)
 
     # Enabling at a standstill with brake is allowed
     # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs
