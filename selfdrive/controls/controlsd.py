@@ -577,8 +577,8 @@ class Controls:
 
     # Update VehicleModel
     lp = self.sm['liveParameters']
-    x = max(lp.stiffnessFactor, 0.1)
-    sr = max(lp.steerRatio, 0.1)
+    x = max(lp.stiffnessFactor.value, 0.1)
+    sr = max(lp.steerRatio.value, 0.1)
     self.VM.update_params(x, sr)
 
     # Update Torque Params
@@ -777,8 +777,8 @@ class Controls:
     # Curvature & Steering angle
     lp = self.sm['liveParameters']
 
-    steer_angle_without_offset = math.radians(CS.steeringAngleDeg - lp.angleOffsetDeg)
-    curvature = -self.VM.calc_curvature(steer_angle_without_offset, CS.vEgo, lp.roll)
+    steer_angle_without_offset = math.radians(CS.steeringAngleDeg - lp.angleOffsetDeg.value)
+    curvature = -self.VM.calc_curvature(steer_angle_without_offset, CS.vEgo, lp.roll.value)
 
     # controlsState
     dat = messaging.new_message('controlsState')
