@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import subprocess
-from typing import List, Optional, Callable, TypeVar
+from typing import List, Callable, TypeVar
 from functools import lru_cache
 
 from openpilot.common.basedir import BASEDIR
