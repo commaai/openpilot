@@ -175,10 +175,12 @@ def main():
     pInitial = np.array(params['filterState']['std']) if 'filterState' in params else None
 
   learner = ParamsLearner(CP, params['steerRatio'], params['stiffnessFactor'], math.radians(params['angleOffsetAverageDeg']), pInitial)
+  angle_offset_fast = 0.0
   angle_offset_average = params['angleOffsetAverageDeg']
   angle_offset = angle_offset_average
   roll = 0.0
   avg_offset_valid = True
+  fast_offset_valid = True
   total_offset_valid = True
   roll_valid = True
 
@@ -198,12 +200,15 @@ def main():
         learner = ParamsLearner(CP, CP.steerRatio, 1.0, 0.0)
         x = learner.kf.x
 
-      angle_offset_average = clip(math.degrees(x[States.ANGLE_OFFSET].item()),
-                                  angle_offset_average - MAX_ANGLE_OFFSET_DELTA, angle_offset_average + MAX_ANGLE_OFFSET_DELTA)
-      angle_offset = clip(math.degrees(x[States.ANGLE_OFFSET].item() + x[States.ANGLE_OFFSET_FAST].item()),
-                          angle_offset - MAX_ANGLE_OFFSET_DELTA, angle_offset + MAX_ANGLE_OFFSET_DELTA)
+      def clip_angle_offsets(val: float, current_val: float) -> float:
+        # all offsets are in radians, must be converted to degrees
+        val_deg = math.degrees(val)
+        return float(clip(val_deg, current_val - MAX_ANGLE_OFFSET_DELTA, current_val + MAX_ANGLE_OFFSET_DELTA))
+
+      angle_offset_fast = clip_angle_offsets(x[States.ANGLE_OFFSET_FAST].item(), angle_offset_fast)
+      angle_offset_average = clip_angle_offsets(x[States.ANGLE_OFFSET].item(), angle_offset_average)
+      angle_offset = clip(x[States.ANGLE_OFFSET].item() + x[States.ANGLE_OFFSET_FAST].item(), angle_offset)
       roll = clip(float(x[States.ROAD_ROLL].item()), roll - ROLL_MAX_DELTA, roll + ROLL_MAX_DELTA)
-      roll_std = float(P[States.ROAD_ROLL].item())
       if learner.active and learner.speed > LOW_ACTIVE_SPEED:
         # Account for the opposite signs of the yaw rates
         # At low speeds, bumping into a curb can cause the yaw rate to be very high
@@ -211,31 +216,50 @@ def main():
       else:
         sensors_valid = True
       avg_offset_valid = check_valid_with_hysteresis(avg_offset_valid, angle_offset_average, OFFSET_MAX, OFFSET_LOWERED_MAX)
+      fast_offset_valid = check_valid_with_hysteresis(fast_offset_valid, angle_offset_fast, OFFSET_MAX, OFFSET_LOWERED_MAX)
       total_offset_valid = check_valid_with_hysteresis(total_offset_valid, angle_offset, OFFSET_MAX, OFFSET_LOWERED_MAX)
       roll_valid = check_valid_with_hysteresis(roll_valid, roll, ROLL_MAX, ROLL_LOWERED_MAX)
 
       msg = messaging.new_message('liveParameters')
 
       liveParameters = msg.liveParameters
-      liveParameters.posenetValid = True
       liveParameters.sensorValid = sensors_valid
-      liveParameters.steerRatio = float(x[States.STEER_RATIO].item())
-      liveParameters.stiffnessFactor = float(x[States.STIFFNESS].item())
-      liveParameters.roll = roll
-      liveParameters.angleOffsetAverageDeg = angle_offset_average
-      liveParameters.angleOffsetDeg = angle_offset
-      liveParameters.angleOffsetValid = all((avg_offset_valid, total_offset_valid))
+
+      liveParameters.steerRatio.value = float(x[States.STEER_RATIO].item())
+      liveParameters.steerRatio.std = float(P[States.STEER_RATIO].item())
+      liveParameters.steerRatio.valid = min_sr <= liveParameters.steerRatio.value <= max_sr
+
+      liveParameters.stiffnessFactor.value = float(x[States.STIFFNESS].item())
+      liveParameters.stiffnessFactor.std = float(P[States.STIFFNESS].item())
+      liveParameters.stiffnessFactor.valid = 0.2 <= liveParameters.stiffnessFactor.value <= 5.0
+
+      liveParameters.angleOffsetAverageDeg.value = angle_offset_average
+      liveParameters.angleOffsetAverageDeg.std = float(P[States.ANGLE_OFFSET].item())
+      liveParameters.angleOffsetAverageDeg.valid = avg_offset_valid
+
+      liveParameters.angleOffsetFastDeg.value = angle_offset_fast
+      liveParameters.angleOffsetFastDeg.std = float(P[States.ANGLE_OFFSET_FAST].item())
+      liveParameters.angleOffsetFastDeg.valid = fast_offset_valid
+
+      liveParameters.angleOffsetDeg.value = angle_offset
+      liveParameters.angleOffsetDeg.valid = total_offset_valid
+
+      liveParameters.roll.value = roll
+      liveParameters.roll.std = float(P[States.ROAD_ROLL].item())
+      liveParameters.roll.valid = roll_valid and (liveParameters.roll.std < ROLL_STD_MAX)
+
+      liveParameters.yawRate.value = float(x[States.YAW_RATE].item())
+      liveParameters.yawRate.std = float(P[States.YAW_RATE].item())
+      liveParameters.yawRate.valid = sensors_valid
+
       liveParameters.valid = all((
-        roll_valid,
-        roll_std < ROLL_STD_MAX,
-        0.2 <= liveParameters.stiffnessFactor <= 5.0,
-        min_sr <= liveParameters.steerRatio <= max_sr,
-        liveParameters.angleOffsetValid,
+        liveParameters.steerRatio.valid,
+        liveParameters.stiffnessFactor.valid,
+        liveParameters.angleOffsetAverageDeg.valid,
+        liveParameters.angleOffsetFastDeg.valid,
+        liveParameters.angleOffsetDeg.valid,
+        liveParameters.roll.valid,
       ))
-      liveParameters.steerRatioStd = float(P[States.STEER_RATIO].item())
-      liveParameters.stiffnessFactorStd = float(P[States.STIFFNESS].item())
-      liveParameters.angleOffsetAverageStd = float(P[States.ANGLE_OFFSET].item())
-      liveParameters.angleOffsetFastStd = float(P[States.ANGLE_OFFSET_FAST].item())
       if DEBUG:
         liveParameters.filterState = log.LiveLocationKalman.Measurement.new_message()
         liveParameters.filterState.value = x.tolist()
