@@ -81,13 +81,16 @@ class Controls:
                                   ignore_alive=ignore, ignore_avg_freq=ignore+['radarState', 'testJoystick'],
                                   ignore_valid=['testJoystick', ], poll='carState')
 
-    # get CI/CP from carParams
-    cloudlog.warning("waiting for carParams")
-    with car.CarParams.from_bytes(self.params.get("CarParams", block=True)) as msg:
-      # TODO: this shouldn't need to be a builder
-      self.CP = msg.as_builder()
-      CarInterface, CarController, CarState = interfaces[self.CP.carFingerprint]
-      self.CI = CarInterface(self.CP, CarController, CarState)
+    if CI is None:
+      # get CI/CP from carParams
+      cloudlog.warning("waiting for carParams")
+      with car.CarParams.from_bytes(self.params.get("CarParams", block=True)) as msg:
+        # TODO: this shouldn't need to be a builder
+        self.CP = msg.as_builder()
+        CarInterface, CarController, CarState = interfaces[self.CP.carFingerprint]
+        self.CI = CarInterface(self.CP, CarController, CarState)
+    else:
+      self.CI, self.CP = CI, CI.CP
 
     self.joystick_mode = self.params.get_bool("JoystickDebugMode")
 
