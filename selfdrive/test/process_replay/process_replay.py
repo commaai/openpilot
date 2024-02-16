@@ -356,6 +356,9 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     for m in canmsgs[:300]:
       can.send(m.as_builder().to_bytes())
     _, CP = get_car(can, sendcan, Params().get_bool("ExperimentalLongitudinalEnabled"))
+
+    if not params.get_bool("DisengageOnAccelerator"):
+      CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
   params.put("CarParams", CP.to_bytes())
   return CP
 
@@ -752,6 +755,8 @@ def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=Non
 
     if CP.notCar:
       params_dict["JoystickDebugMode"] = True
+
+  print(params_dict)
 
   return params_dict
 
