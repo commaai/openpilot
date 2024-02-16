@@ -38,7 +38,8 @@ WIDE_FROM_DEVICE_EULER_INIT = np.array([0.0, 0.0, 0.0])
 HEIGHT_INIT = np.array([1.22])
 
 # These values are needed to accommodate the model frame in the narrow cam of the C3
-PITCH_LIMITS = np.array([-0.09074112085129739, 0.17])
+# TODO: REMOVE THIS BEFORE PR: Needed to work around stock mount in an EV9 for the purposes of testing
+PITCH_LIMITS = np.array([-0.09074112085129739, 0.2])
 YAW_LIMITS = np.array([-0.06912048084718224, 0.06912048084718235])
 DEBUG = os.getenv("DEBUG") is not None
 
