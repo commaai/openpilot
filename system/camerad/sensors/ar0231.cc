@@ -93,8 +93,9 @@ AR0231::AR0231() {
   init_reg_array.assign(std::begin(init_array_ar0231), std::end(init_array_ar0231));
   probe_reg_addr = 0x3000;
   probe_expected_data = 0x354;
-  in_port_info_dt = 0x12;  // Changing stats to 0x2C doesn't work, so change pixels to 0x12 instead
-  power_config_val_low = 19200000; //Hz
+  mipi_format = CAM_FORMAT_MIPI_RAW_12;
+  frame_data_type = 0x12;  // Changing stats to 0x2C doesn't work, so change pixels to 0x12 instead
+  mclk_frequency = 19200000; //Hz
 
   dc_gain_factor = 2.5;
   dc_gain_min_weight = 0;

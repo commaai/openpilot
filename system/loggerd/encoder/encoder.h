@@ -22,10 +22,11 @@ public:
   virtual void encoder_open(const char* path) = 0;
   virtual void encoder_close() = 0;
 
-  static void publisher_publish(VideoEncoder *e, int segment_num, uint32_t idx, VisionIpcBufExtra &extra, unsigned int flags, kj::ArrayPtr<capnp::byte> header, kj::ArrayPtr<capnp::byte> dat);
+  void publisher_publish(VideoEncoder *e, int segment_num, uint32_t idx, VisionIpcBufExtra &extra, unsigned int flags, kj::ArrayPtr<capnp::byte> header, kj::ArrayPtr<capnp::byte> dat);
 
 protected:
   int in_width, in_height;
+  int out_width, out_height;
   const EncoderInfo encoder_info;
 
 private:

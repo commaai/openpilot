@@ -55,7 +55,7 @@ def ui_thread(addr):
   top_down_surface = pygame.surface.Surface((UP.lidar_x, UP.lidar_y), 0, 8)
 
   sm = messaging.SubMaster(['carState', 'longitudinalPlan', 'carControl', 'radarState', 'liveCalibration', 'controlsState',
-                            'liveTracks', 'modelV2', 'liveParameters', 'lateralPlan'], addr=addr)
+                            'liveTracks', 'modelV2', 'liveParameters'], addr=addr)
 
   img = np.zeros((480, 640, 3), dtype='uint8')
   imgff = None
@@ -118,10 +118,10 @@ def ui_thread(addr):
 
     imgff = np.frombuffer(yuv_img_raw.data, dtype=np.uint8).reshape((len(yuv_img_raw.data) // vipc_client.stride, vipc_client.stride))
     num_px = vipc_client.width * vipc_client.height
-    bgr = cv2.cvtColor(imgff[:vipc_client.height * 3 // 2, :vipc_client.width], cv2.COLOR_YUV2RGB_NV12)
+    rgb = cv2.cvtColor(imgff[:vipc_client.height * 3 // 2, :vipc_client.width], cv2.COLOR_YUV2RGB_NV12)
 
     zoom_matrix = _BB_TO_FULL_FRAME[num_px]
-    cv2.warpAffine(bgr, zoom_matrix[:2], (img.shape[1], img.shape[0]), dst=img, flags=cv2.WARP_INVERSE_MAP)
+    cv2.warpAffine(rgb, zoom_matrix[:2], (img.shape[1], img.shape[0]), dst=img, flags=cv2.WARP_INVERSE_MAP)
 
     intrinsic_matrix = _INTRINSICS[num_px]
 
@@ -154,10 +154,10 @@ def ui_thread(addr):
     if len(sm['longitudinalPlan'].accels):
       plot_arr[-1, name_to_arr_idx['a_target']] = sm['longitudinalPlan'].accels[0]
 
-    if sm.rcv_frame['modelV2']:
+    if sm.recv_frame['modelV2']:
       plot_model(sm['modelV2'], img, calibration, top_down)
 
-    if sm.rcv_frame['radarState']:
+    if sm.recv_frame['radarState']:
       plot_lead(sm['radarState'], top_down)
 
     # draw all radar points

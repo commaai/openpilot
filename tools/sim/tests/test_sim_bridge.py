@@ -34,7 +34,7 @@ class TestSimBridgeBase(unittest.TestCase):
 
     # Wait for bridge to startup
     start_waiting = time.monotonic()
-    while not bridge.started and time.monotonic() < start_waiting + max_time_per_step:
+    while not bridge.started.value and time.monotonic() < start_waiting + max_time_per_step:
       time.sleep(0.1)
     self.assertEqual(p_bridge.exitcode, None, f"Bridge process should be running, but exited with code {p_bridge.exitcode}")
 

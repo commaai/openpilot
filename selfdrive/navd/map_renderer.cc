@@ -28,16 +28,16 @@ float get_zoom_level_for_scale(float lat, float meters_per_pixel) {
   return log2(num_tiles) - 1;
 }
 
-QMapbox::Coordinate get_point_along_line(float lat, float lon, float bearing, float dist) {
+QMapLibre::Coordinate get_point_along_line(float lat, float lon, float bearing, float dist) {
   float ang_dist = dist / EARTH_RADIUS_METERS;
   float lat1 = DEG2RAD(lat), lon1 = DEG2RAD(lon), bearing1 = DEG2RAD(bearing);
   float lat2 = asin(sin(lat1)*cos(ang_dist) + cos(lat1)*sin(ang_dist)*cos(bearing1));
   float lon2 = lon1 + atan2(sin(bearing1)*sin(ang_dist)*cos(lat1), cos(ang_dist)-sin(lat1)*sin(lat2));
-  return QMapbox::Coordinate(RAD2DEG(lat2), RAD2DEG(lon2));
+  return QMapLibre::Coordinate(RAD2DEG(lat2), RAD2DEG(lon2));
 }
 
 
-MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_settings(settings) {
+MapRenderer::MapRenderer(const QMapLibre::Settings &settings, bool online) : m_settings(settings) {
   QSurfaceFormat fmt;
   fmt.setRenderableType(QSurfaceFormat::OpenGLES);
 
@@ -60,8 +60,8 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
   fbo.reset(new QOpenGLFramebufferObject(WIDTH, HEIGHT, fbo_format));
 
   std::string style = util::read_file(STYLE_PATH);
-  m_map.reset(new QMapboxGL(nullptr, m_settings, fbo->size(), 1));
-  m_map->setCoordinateZoom(QMapbox::Coordinate(0, 0), DEFAULT_ZOOM);
+  m_map.reset(new QMapLibre::Map(nullptr, m_settings, fbo->size(), 1));
+  m_map->setCoordinateZoom(QMapLibre::Coordinate(0, 0), DEFAULT_ZOOM);
   m_map->setStyleJson(style.c_str());
   m_map->createRenderer();
   ever_loaded = false;
@@ -70,20 +70,20 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
   m_map->setFramebufferObject(fbo->handle(), fbo->size());
   gl_functions->glViewport(0, 0, WIDTH, HEIGHT);
 
-  QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
+  QObject::connect(m_map.data(), &QMapLibre::Map::mapChanged, [=](QMapLibre::Map::MapChange change) {
     // Ignore expected signals
     // https://github.com/mapbox/mapbox-gl-native/blob/cf734a2fec960025350d8de0d01ad38aeae155a0/platform/qt/include/qmapboxgl.hpp#L116
     if (ever_loaded) {
-      if (change != QMapboxGL::MapChange::MapChangeRegionWillChange &&
-          change != QMapboxGL::MapChange::MapChangeRegionDidChange &&
-          change != QMapboxGL::MapChange::MapChangeWillStartRenderingFrame &&
-          change != QMapboxGL::MapChange::MapChangeDidFinishRenderingFrameFullyRendered) {
+      if (change != QMapLibre::Map::MapChange::MapChangeRegionWillChange &&
+          change != QMapLibre::Map::MapChange::MapChangeRegionDidChange &&
+          change != QMapLibre::Map::MapChange::MapChangeWillStartRenderingFrame &&
+          change != QMapLibre::Map::MapChange::MapChangeDidFinishRenderingFrameFullyRendered) {
         LOGD("New map state: %d", change);
       }
     }
   });
 
-  QObject::connect(m_map.data(), &QMapboxGL::mapLoadingFailed, [=](QMapboxGL::MapLoadingFailure err_code, const QString &reason) {
+  QObject::connect(m_map.data(), &QMapLibre::Map::mapLoadingFailed, [=](QMapLibre::Map::MapLoadingFailure err_code, const QString &reason) {
     LOGE("Map loading failed with %d: '%s'\n", err_code, reason.toStdString().c_str());
   });
 
@@ -145,7 +145,7 @@ void MapRenderer::msgUpdate() {
   timer->start(0);
 }
 
-void MapRenderer::updatePosition(QMapbox::Coordinate position, float bearing) {
+void MapRenderer::updatePosition(QMapLibre::Coordinate position, float bearing) {
   if (m_map.isNull()) {
     return;
   }
@@ -261,10 +261,10 @@ void MapRenderer::updateRoute(QList<QGeoCoordinate> coordinates) {
   initLayers();
 
   auto route_points = coordinate_list_to_collection(coordinates);
-  QMapbox::Feature feature(QMapbox::Feature::LineStringType, route_points, {}, {});
+  QMapLibre::Feature feature(QMapLibre::Feature::LineStringType, route_points, {}, {});
   QVariantMap navSource;
   navSource["type"] = "geojson";
-  navSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
+  navSource["data"] = QVariant::fromValue<QMapLibre::Feature>(feature);
   m_map->updateSource("navSource", navSource);
   m_map->setLayoutProperty("navLayer", "visibility", "visible");
 }
@@ -273,10 +273,9 @@ void MapRenderer::initLayers() {
   if (!m_map->layerExists("navLayer")) {
     LOGD("Initializing navLayer");
     QVariantMap nav;
-    nav["id"] = "navLayer";
     nav["type"] = "line";
     nav["source"] = "navSource";
-    m_map->addLayer(nav, "road-intersection");
+    m_map->addLayer("navLayer", nav, "road-intersection");
     m_map->setPaintProperty("navLayer", "line-color", QColor("grey"));
     m_map->setPaintProperty("navLayer", "line-width", 5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
@@ -296,9 +295,10 @@ extern "C" {
     QApplication *app = new QApplication(argc, argv);
     assert(app);
 
-    QMapboxGLSettings settings;
+    QMapLibre::Settings settings;
+    settings.setProviderTemplate(QMapLibre::Settings::ProviderTemplate::MapboxProvider);
     settings.setApiBaseUrl(maps_host == nullptr ? MAPS_HOST : maps_host);
-    settings.setAccessToken(token == nullptr ? get_mapbox_token() : token);
+    settings.setApiKey(token == nullptr ? get_mapbox_token() : token);
 
     return new MapRenderer(settings, false);
   }
