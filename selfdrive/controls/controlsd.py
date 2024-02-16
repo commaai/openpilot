@@ -411,9 +411,12 @@ class Controls:
 
     # TODO: fix simulator
     if not SIMULATION or REPLAY:
+      # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
       if not self.sm['liveLocationKalman'].gpsOK and self.sm['liveLocationKalman'].inputsOK and (self.distance_traveled > 1000):
-        # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
         self.events.add(EventName.noGps)
+      if self.sm['liveLocationKalman'].gpsOK:
+        self.distance_traveled = 0
+      self.distance_traveled += CS.vEgo * DT_CTRL
 
       if self.sm['modelV2'].frameDropPerc > 20:
         self.events.add(EventName.modeldLagging)
@@ -446,15 +449,16 @@ class Controls:
         self.set_initial_state()
         self.params.put_bool_nonblocking("ControlsReady", True)
 
-        if not all_valid and timed_out:
-          cloudlog.event(
-            "controlsd.init_timeout",
-            canValid=CS.canValid,
-            invalid=[s for s, valid in self.sm.valid.items() if not valid],
-            not_alive=[s for s, alive in self.sm.alive.items() if not alive],
-            not_freq_ok=[s for s, freq_ok in self.sm.freq_ok.items() if not freq_ok],
-            error=True,
-          )
+        cloudlog.event(
+          "controlsd.initialized",
+          dt=self.sm.frame*DT_CTRL,
+          timeout=timed_out,
+          canValid=CS.canValid,
+          invalid=[s for s, valid in self.sm.valid.items() if not valid],
+          not_alive=[s for s, alive in self.sm.alive.items() if not alive],
+          not_freq_ok=[s for s, freq_ok in self.sm.freq_ok.items() if not freq_ok],
+          error=True,
+        )
 
     # Check for CAN timeout
     if not can_strs:
@@ -474,8 +478,6 @@ class Controls:
     if self.enabled and any(not ps.controlsAllowed for ps in self.sm['pandaStates']
            if ps.safetyModel not in IGNORED_SAFETY_MODES):
       self.mismatch_counter += 1
-
-    self.distance_traveled += CS.vEgo * DT_CTRL
 
     return CS
 
