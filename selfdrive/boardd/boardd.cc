@@ -362,11 +362,11 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     ps.setHeartbeatLost((bool)(health.heartbeat_lost_pkt));
     ps.setAlternativeExperience(health.alternative_experience_pkt);
     ps.setHarnessStatus(cereal::PandaState::HarnessStatus(health.car_harness_status_pkt));
-    ps.setInterruptLoad(health.interrupt_load);
+    ps.setInterruptLoad(health.interrupt_load_pkt);
     ps.setFanPower(health.fan_power);
     ps.setFanStallCount(health.fan_stall_count);
-    ps.setSafetyRxChecksInvalid((bool)(health.safety_rx_checks_invalid));
-    ps.setSpiChecksumErrorCount(health.spi_checksum_error_count);
+    ps.setSafetyRxChecksInvalid((bool)(health.safety_rx_checks_invalid_pkt));
+    ps.setSpiChecksumErrorCount(health.spi_checksum_error_count_pkt);
     ps.setSbu1Voltage(health.sbu1_voltage_mV / 1000.0f);
     ps.setSbu2Voltage(health.sbu2_voltage_mV / 1000.0f);
 
