@@ -22,7 +22,7 @@ def run_cmd(cmd: List[str]) -> str:
   return subprocess.check_output(cmd, encoding='utf8').strip()
 
 
-def run_cmd_default(cmd: List[str], default: Optional[str] = None) -> Optional[str]:
+def run_cmd_default(cmd: List[str], default: str = "") -> str:
   try:
     return run_cmd(cmd)
   except subprocess.CalledProcessError:
@@ -31,22 +31,22 @@ def run_cmd_default(cmd: List[str], default: Optional[str] = None) -> Optional[s
 
 @cache
 def get_commit(branch: str = "HEAD") -> str:
-  return run_cmd_default(["git", "rev-parse", branch]) or ""
+  return run_cmd_default(["git", "rev-parse", branch])
 
 
 @cache
-def get_commit_date(branch: str = "HEAD") -> str:
-  return run_cmd_default(["git", "rev-parse", branch]) or ""
+def get_commit_date(commit: str = "HEAD") -> str:
+  return run_cmd_default(["git", "show", "--no-patch", "--format='%ct %ci'", branch])
 
 
 @cache
 def get_short_branch() -> str:
-  return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "HEAD"]) or ""
+  return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "HEAD"])
 
 
 @cache
 def get_branch() -> str:
-  return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"]) or ""
+  return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"])
 
 
 @cache
@@ -56,7 +56,7 @@ def get_origin() -> str:
     tracking_remote = run_cmd(["git", "config", "branch." + local_branch + ".remote"])
     return run_cmd(["git", "config", "remote." + tracking_remote + ".url"])
   except subprocess.CalledProcessError:  # Not on a branch, fallback
-    return run_cmd_default(["git", "config", "--get", "remote.origin.url"]) or ""
+    return run_cmd_default(["git", "config", "--get", "remote.origin.url"])
 
 
 @cache
