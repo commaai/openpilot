@@ -36,7 +36,7 @@ def get_commit(branch: str = "HEAD") -> str:
 
 @cache
 def get_commit_date(commit: str = "HEAD") -> str:
-  return run_cmd_default(["git", "show", "--no-patch", "--format='%ct %ci'", branch])
+  return run_cmd_default(["git", "show", "--no-patch", "--format='%ct %ci'", commit])
 
 
 @cache
@@ -137,3 +137,4 @@ if __name__ == "__main__":
   print(f"Branch: {get_branch()}")
   print(f"Short branch: {get_short_branch()}")
   print(f"Prebuilt: {is_prebuilt()}")
+  print(f"Commit date: {get_commit_date()}")
