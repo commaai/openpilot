@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import gc
-import os
 
 import cereal.messaging as messaging
 from cereal import car
@@ -8,9 +7,6 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import set_realtime_priority
 from openpilot.selfdrive.controls.lib.events import Events
 from openpilot.selfdrive.monitoring.driver_monitor import DriverStatus
-
-
-TESTING_CLOSET = "TESTING_CLOSET" in os.environ
 
 
 def dmonitoringd_thread():
@@ -38,8 +34,7 @@ def dmonitoringd_thread():
       driver_engaged = len(sm['carState'].buttonEvents) > 0 or \
                         v_cruise != v_cruise_last or \
                         sm['carState'].steeringPressed or \
-                        sm['carState'].gasPressed or \
-                        TESTING_CLOSET
+                        sm['carState'].gasPressed
       v_cruise_last = v_cruise
 
     if sm.updated['modelV2']:
