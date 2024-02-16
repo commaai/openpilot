@@ -94,7 +94,7 @@ class Controls:
 
     self.joystick_mode = self.params.get_bool("JoystickDebugMode")
 
-    self.disengage_on_accelerator = bool(self.CP.alternativeExperience & ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS)
+    self.disengage_on_accelerator = not bool(self.CP.alternativeExperience & ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS)
 
     # read params
     self.is_metric = self.params.get_bool("IsMetric")
