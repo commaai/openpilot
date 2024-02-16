@@ -357,8 +357,10 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
       can.send(m.as_builder().to_bytes())
     _, CP = get_car(can, sendcan, Params().get_bool("ExperimentalLongitudinalEnabled"))
 
-    if not params.get_bool("DisengageOnAccelerator"):
-      CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
+
+  if not params.get_bool("DisengageOnAccelerator"):
+    CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
+
   params.put("CarParams", CP.to_bytes())
   return CP
 
