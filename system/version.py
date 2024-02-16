@@ -35,6 +35,11 @@ def get_commit(branch: str = "HEAD") -> str:
 
 
 @cache
+def get_commit_date(branch: str = "HEAD") -> str:
+  return run_cmd_default(["git", "rev-parse", branch]) or ""
+
+
+@cache
 def get_short_branch() -> str:
   return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "HEAD"]) or ""
 
