@@ -36,7 +36,7 @@ from openpilot.common.realtime import set_core_affinity
 from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.version import get_commit, get_origin, get_short_branch, get_version
+from openpilot.system.version import get_commit, get_normalized_origin, get_short_branch, get_version
 from openpilot.system.hardware.hw import Paths
 
 
@@ -79,7 +79,7 @@ class UploadItem:
   url: str
   headers: Dict[str, str]
   created_at: int
-  id: Optional[str] # noqa: A003 (to match the response from the remote server)
+  id: Optional[str]
   retry_count: int = 0
   current: bool = False
   progress: float = 0
@@ -316,9 +316,9 @@ def getMessage(service: str, timeout: int = 1000) -> dict:
 def getVersion() -> Dict[str, str]:
   return {
     "version": get_version(),
-    "remote": get_origin(''),
-    "branch": get_short_branch(''),
-    "commit": get_commit(default=''),
+    "remote": get_normalized_origin(),
+    "branch": get_short_branch(),
+    "commit": get_commit(),
   }
 
 
@@ -430,6 +430,21 @@ def cancelUpload(upload_id: Union[str, List[str]]) -> Dict[str, Union[int, str]]
     return {"success": 0, "error": "not found"}
 
   cancelled_uploads.update(cancelled_ids)
+  return {"success": 1}
+
+@dispatcher.add_method
+def setRouteViewed(route: str) -> Dict[str, Union[int, str]]:
+  # maintain a list of the last 10 routes viewed in connect
+  params = Params()
+
+  r = params.get("AthenadRecentlyViewedRoutes", encoding="utf8")
+  routes = [] if r is None else r.split(",")
+  routes.append(route)
+
+  # remove duplicates
+  routes = list(dict.fromkeys(routes))
+
+  params.put("AthenadRecentlyViewedRoutes", ",".join(routes[-10:]))
   return {"success": 1}
 
 
@@ -637,6 +652,8 @@ def ws_proxy_recv(ws: WebSocket, local_sock: socket.socket, ssock: socket.socket
   while not (end_event.is_set() or global_end_event.is_set()):
     try:
       data = ws.recv()
+      if isinstance(data, str):
+        data = data.encode("utf-8")
       local_sock.sendall(data)
     except WebSocketTimeoutException:
       pass
@@ -728,10 +745,11 @@ def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
     if onroad != onroad_prev:
       onroad_prev = onroad
 
-      sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_USER_TIMEOUT, 16000 if onroad else 0)
-      sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 7 if onroad else 30)
-      sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 7 if onroad else 10)
-      sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 2 if onroad else 3)
+      if sock is not None:
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_USER_TIMEOUT, 16000 if onroad else 0)
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 7 if onroad else 30)
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 7 if onroad else 10)
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 2 if onroad else 3)
 
     if end_event.wait(5):
       break

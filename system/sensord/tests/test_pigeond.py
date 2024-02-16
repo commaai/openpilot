@@ -40,7 +40,7 @@ class TestPigeond(unittest.TestCase):
         sm.update(1 * 1000)
         if sm.updated['ubloxRaw']:
           break
-      assert sm.rcv_frame['ubloxRaw'] > 0, "pigeond didn't start outputting messages in time"
+      assert sm.recv_frame['ubloxRaw'] > 0, "pigeond didn't start outputting messages in time"
 
       et = time.monotonic() - start_time
       assert et < 5, f"pigeond took {et:.1f}s to start"
