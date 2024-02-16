@@ -141,9 +141,10 @@ def fingerprint(logcan, sendcan, num_pandas):
       cached = True
     else:
       cloudlog.warning("Getting VIN & FW versions")
-      # enable OBD multiplexing for Vin query, also allows time for sendcan subscriber to connect
+      # enable OBD multiplexing for VIN query
+      # NOTE: this takes ~0.1s and is relied on to allow sendcan subscriber to connect in time
       set_obd_multiplexing(params, True)
-      # Vin query only reliably works through OBDII
+      # VIN query only reliably works through OBDII
       vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, (0, 1))
       ecu_rx_addrs = get_present_ecus(logcan, sendcan, num_pandas=num_pandas)
       car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, num_pandas=num_pandas)
