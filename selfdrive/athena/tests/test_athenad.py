@@ -215,7 +215,7 @@ class TestAthenadMethods(unittest.TestCase):
     # Upload same file again, but with different signature
     url2 = f"{host}/qlog.bz2?sig=sig2"
     resp = dispatcher["uploadFileToUrl"]("qlog.bz2", url2, {})
-    self.assertEqual(resp, {'enqueued': 0, 'items': []})
+    self.assertEqual(resp['items'][0]['url'], url2)
 
   @with_mock_athena
   def test_uploadFileToUrl_does_not_exist(self, host):
