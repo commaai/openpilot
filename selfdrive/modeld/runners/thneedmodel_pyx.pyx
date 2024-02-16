@@ -10,5 +10,5 @@ from selfdrive.modeld.runners.runmodel_pyx cimport RunModel
 from selfdrive.modeld.runners.runmodel cimport RunModel as cppRunModel
 
 cdef class ThneedModel(RunModel):
-  def __cinit__(self, string path, float[:] output, int runtime, bool use_tf8, CLContext context):
-    self.model = <cppRunModel *> new cppThneedModel(path, &output[0], len(output), runtime, use_tf8, context.context)
+    def __cinit__(self, string path, float[:] output, int runtime, bool use_tf8, CLContext context):
+        self.model = <cppRunModel *> new cppThneedModel(path, &output[0], len(output), runtime, use_tf8, context.context)
