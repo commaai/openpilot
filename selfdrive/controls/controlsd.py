@@ -433,8 +433,6 @@ class Controls:
            if ps.safetyModel not in IGNORED_SAFETY_MODES):
       self.mismatch_counter += 1
 
-    self.distance_traveled += CS.vEgo * DT_CTRL
-
     return CS
 
   def state_transition(self, CS):
