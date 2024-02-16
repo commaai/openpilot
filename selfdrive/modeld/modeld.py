@@ -152,12 +152,8 @@ def main(demo=False):
   pm = PubMaster(["modelV2", "cameraOdometry"])
   sm = SubMaster(["carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel", "navInstruction", "carControl"])
 
-
   publish_state = PublishState()
   params = Params()
-  with car.CarParams.from_bytes(params.get("CarParams", block=True)) as msg:
-    steer_delay = msg.steerActuatorDelay + .2
-  #steer_delay = 0.4
 
   # setup filter to track dropped frames
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_FREQ)
@@ -177,13 +173,15 @@ def main(demo=False):
 
   if demo:
     CP = get_demo_car_params()
-  with car.CarParams.from_bytes(params.get("CarParams", block=True)) as msg:
-    CP = msg
-  cloudlog.info("plannerd got CarParams: %s", CP.carName)
+  else:
+    with car.CarParams.from_bytes(params.get("CarParams", block=True)) as msg:
+      CP = msg
+  cloudlog.info("modeld got CarParams: %s", CP.carName)
+
   # TODO this needs more thought, use .2s extra for now to estimate other delays
   steer_delay = CP.steerActuatorDelay + .2
-  DH = DesireHelper()
 
+  DH = DesireHelper()
 
   while True:
     # Keep receiving frames until we are at least 1 frame ahead of previous extra frame
