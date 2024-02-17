@@ -3,6 +3,7 @@ from cereal import car
 from panda import Panda
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import interp
+from openpilot.selfdrive.car.honda.hondacan import get_pt_bus
 from openpilot.selfdrive.car.honda.values import CarControllerParams, CruiseButtons, HondaFlags, CAR, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, \
                                                                                             HONDA_BOSCH_ALT_BRAKE_SIGNAL, HONDA_BOSCH_RADARLESS
 from openpilot.selfdrive.car import create_button_events, get_safety_config
@@ -275,9 +276,11 @@ class CarInterface(CarInterfaceBase):
       raise ValueError(f"unsupported car {candidate}")
 
     # These cars use alternate user brake msg (0x1BE)
-    if candidate in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
+    if 0x1BE in fingerprint[get_pt_bus(candidate)] and candidate in HONDA_BOSCH:
       ret.flags |= HondaFlags.BOSCH_ALT_BRAKE.value
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_ALT_BRAKE
+
+    assert (candidate in HONDA_BOSCH_ALT_BRAKE_SIGNAL) == bool(ret.flags & HondaFlags.BOSCH_ALT_BRAKE.value), (ret.flags & HondaFlags.BOSCH_ALT_BRAKE.value)
 
     # These cars use alternate SCM messages (SCM_FEEDBACK AND SCM_BUTTON)
     if candidate in HONDA_NIDEC_ALT_SCM_MESSAGES:
