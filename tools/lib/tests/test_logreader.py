@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import contextlib
+import io
 import shutil
 import tempfile
 import os
@@ -9,7 +11,7 @@ import requests
 from parameterized import parameterized
 from unittest import mock
 
-from openpilot.tools.lib.logreader import LogIterable, LogReader, comma_api_source, parse_indirect, ReadMode
+from openpilot.tools.lib.logreader import LogIterable, LogReader, comma_api_source, parse_indirect, ReadMode, InternalUnavailableException
 from openpilot.tools.lib.route import SegmentRange
 from openpilot.tools.lib.url_file import URLFileException
 
@@ -21,6 +23,24 @@ QLOG_FILE = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce5
 
 def noop(segment: LogIterable):
   return segment
+
+
+@contextlib.contextmanager
+def setup_source_scenario(is_internal=False):
+  with (
+    mock.patch("openpilot.tools.lib.logreader.internal_source") as internal_source_mock,
+    mock.patch("openpilot.tools.lib.logreader.openpilotci_source") as openpilotci_source_mock,
+    mock.patch("openpilot.tools.lib.logreader.comma_api_source") as comma_api_source_mock,
+  ):
+    if is_internal:
+      internal_source_mock.return_value = [QLOG_FILE]
+    else:
+      internal_source_mock.side_effect = InternalUnavailableException
+
+    openpilotci_source_mock.return_value = [None]
+    comma_api_source_mock.return_value = [QLOG_FILE]
+
+    yield
 
 
 class TestLogReader(unittest.TestCase):
@@ -168,10 +188,33 @@ class TestLogReader(unittest.TestCase):
     with mock.patch("openpilot.tools.lib.route.Route.log_paths") as log_paths_mock:
       log_paths_mock.return_value = [None] * NUM_SEGS
       # Should fall back to qlogs since rlogs are not available
-      lr = LogReader(f"{TEST_ROUTE}/0/a", default_source=comma_api_source)
-      log_len = len(list(lr))
 
-    self.assertEqual(qlog_len, log_len)
+      with self.subTest("interactive_yes"):
+        with mock.patch("sys.stdin", new=io.StringIO("y\n")):
+          lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, default_source=comma_api_source)
+          log_len = len(list(lr))
+        self.assertEqual(qlog_len, log_len)
+
+      with self.subTest("interactive_no"):
+        with mock.patch("sys.stdin", new=io.StringIO("n\n")):
+          with self.assertRaises(AssertionError):
+            lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, default_source=comma_api_source)
+
+      with self.subTest("non_interactive"):
+        lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO, default_source=comma_api_source)
+        log_len = len(list(lr))
+        self.assertEqual(qlog_len, log_len)
+
+  @parameterized.expand([(True,), (False,)])
+  @pytest.mark.slow
+  def test_auto_source_scenarios(self, is_internal):
+    lr = LogReader(QLOG_FILE)
+    qlog_len = len(list(lr))
+
+    with setup_source_scenario(is_internal=is_internal):
+      lr = LogReader(f"{TEST_ROUTE}/0/q")
+      log_len = len(list(lr))
+      self.assertEqual(qlog_len, log_len)
 
 
 if __name__ == "__main__":

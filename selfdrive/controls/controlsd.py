@@ -411,9 +411,12 @@ class Controls:
 
     # TODO: fix simulator
     if not SIMULATION or REPLAY:
+      # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
       if not self.sm['liveLocationKalman'].gpsOK and self.sm['liveLocationKalman'].inputsOK and (self.distance_traveled > 1000):
-        # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
         self.events.add(EventName.noGps)
+      if self.sm['liveLocationKalman'].gpsOK:
+        self.distance_traveled = 0
+      self.distance_traveled += CS.vEgo * DT_CTRL
 
       if self.sm['modelV2'].frameDropPerc > 20:
         self.events.add(EventName.modeldLagging)
@@ -431,7 +434,7 @@ class Controls:
 
     if not self.initialized:
       all_valid = CS.canValid and self.sm.all_checks()
-      timed_out = self.sm.frame * DT_CTRL > (6. if REPLAY else 3.5)
+      timed_out = self.sm.frame * DT_CTRL > (6. if REPLAY else 4.0)
       if all_valid or timed_out or (SIMULATION and not REPLAY):
         available_streams = VisionIpcClient.available_streams("camerad", block=False)
         if VisionStreamType.VISION_STREAM_ROAD not in available_streams:
@@ -475,8 +478,6 @@ class Controls:
     if self.enabled and any(not ps.controlsAllowed for ps in self.sm['pandaStates']
            if ps.safetyModel not in IGNORED_SAFETY_MODES):
       self.mismatch_counter += 1
-
-    self.distance_traveled += CS.vEgo * DT_CTRL
 
     return CS
 

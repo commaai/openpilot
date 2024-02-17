@@ -73,13 +73,15 @@ class ReadMode(enum.StrEnum):
   QLOG = "q"  # only read qlogs
   SANITIZED = "s"  # read from the commaCarSegments database
   AUTO = "a"  # default to rlogs, fallback to qlogs
-  AUTO_INTERACIVE = "i"  # default to rlogs, fallback to qlogs with a prompt from the user
+  AUTO_INTERACTIVE = "i"  # default to rlogs, fallback to qlogs with a prompt from the user
 
 
 LogPath = Optional[str]
 LogPaths = List[LogPath]
 ValidFileCallable = Callable[[LogPath], bool]
 Source = Callable[[SegmentRange, ReadMode], LogPaths]
+
+InternalUnavailableException = Exception("Internal source not available")
 
 def default_valid_file(fn: LogPath) -> bool:
   return fn is not None and file_exists(fn)
@@ -106,7 +108,7 @@ def apply_strategy(mode: ReadMode, rlog_paths: LogPaths, qlog_paths: LogPaths, v
     return qlog_paths
   elif mode == ReadMode.AUTO:
     return auto_strategy(rlog_paths, qlog_paths, False, valid_file)
-  elif mode == ReadMode.AUTO_INTERACIVE:
+  elif mode == ReadMode.AUTO_INTERACTIVE:
     return auto_strategy(rlog_paths, qlog_paths, True, valid_file)
   raise Exception(f"invalid mode: {mode}")
 
@@ -126,7 +128,7 @@ def comma_api_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
 
 def internal_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
   if not internal_source_available():
-    raise Exception("Internal source not available")
+    raise InternalUnavailableException
 
   def get_internal_url(sr: SegmentRange, seg, file):
     return f"cd:/{sr.dongle_id}/{sr.timestamp}/{seg}/{file}.bz2"
@@ -160,7 +162,7 @@ def get_invalid_files(files):
 
 def check_source(source: Source, *args) -> LogPaths:
   files = source(*args)
-  assert next(get_invalid_files(files), None) is None
+  assert next(get_invalid_files(files), False) is False
   return files
 
 
