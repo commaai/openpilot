@@ -62,6 +62,8 @@ class CarInterface(CarInterfaceBase):
     # Accord 1.5T CVT has different gearbox message
     if candidate == CAR.ACCORD and 0x191 in fingerprint[1]:
       ret.transmissionType = TransmissionType.cvt
+    if candidate == CAR.ACCORDH and 0x191 in fingerprint[1]:
+      assert False, "not supposed to be cvt"
 
     # Certain Hondas have an extra steering sensor at the bottom of the steering rack,
     # which improves controls quality as it removes the steering column torsion from feedback.
