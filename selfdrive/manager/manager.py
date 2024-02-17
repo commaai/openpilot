@@ -19,7 +19,7 @@ from openpilot.selfdrive.athena.registration import register, UNREGISTERED_DONGL
 from openpilot.common.swaglog import cloudlog, add_file_handler
 from openpilot.system.version import is_dirty, get_commit, get_version, get_origin, get_short_branch, \
                            get_normalized_origin, terms_version, training_version, \
-                           is_tested_branch, is_release_branch
+                           is_tested_branch, is_release_branch, get_commit_date
 
 
 
@@ -66,6 +66,7 @@ def manager_init() -> None:
   params.put("TermsVersion", terms_version)
   params.put("TrainingVersion", training_version)
   params.put("GitCommit", get_commit())
+  params.put("GitCommitDate", get_commit_date())
   params.put("GitBranch", get_short_branch())
   params.put("GitRemote", get_origin())
   params.put_bool("IsTestedBranch", is_tested_branch())
@@ -127,7 +128,7 @@ def manager_thread() -> None:
     ignore.append("pandad")
   ignore += [x for x in os.getenv("BLOCK", "").split(",") if len(x) > 0]
 
-  sm = messaging.SubMaster(['deviceState', 'carParams'], poll=['deviceState'])
+  sm = messaging.SubMaster(['deviceState', 'carParams'], poll='deviceState')
   pm = messaging.PubMaster(['managerState'])
 
   write_onroad_params(False, params)
@@ -136,7 +137,7 @@ def manager_thread() -> None:
   started_prev = False
 
   while True:
-    sm.update()
+    sm.update(1000)
 
     started = sm['deviceState'].started
 
