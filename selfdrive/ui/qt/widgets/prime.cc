@@ -121,7 +121,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget *parent) : QFrame(parent) {
   setObjectName("primeWidget");
   QVBoxLayout *mainLayout = new QVBoxLayout(this);
   mainLayout->setContentsMargins(56, 40, 56, 40);
-  mainLayout->setSpacing(20);
+  mainLayout->setSpacing(0); //Set to 0 cause "comma prime" is all lowercase, causing extra top space illusion
 
   QLabel *subscribed = new QLabel(tr("✓ SUBSCRIBED"));
   subscribed->setStyleSheet("font-size: 41px; font-weight: bold; color: #86FF4E;");
@@ -242,6 +242,9 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
     #primeWidget {
       border-radius: 10px;
       background-color: #333333;
+    }
+    PrimeUserWidget#primeWidget {
+      padding: 10px 0px; /*Top & bottom padding to keep the widget the same size as before*/
     }
   )");
 
