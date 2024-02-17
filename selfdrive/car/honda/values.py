@@ -49,6 +49,7 @@ class CarControllerParams:
 class HondaFlags(IntFlag):
   # Bosch models with alternate set of LKAS_HUD messages
   BOSCH_EXT_HUD = 1
+  BOSCH_ALT_BRAKE = 2
 
 
 # Car button codes

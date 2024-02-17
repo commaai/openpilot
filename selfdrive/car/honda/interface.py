@@ -276,6 +276,7 @@ class CarInterface(CarInterfaceBase):
 
     # These cars use alternate user brake msg (0x1BE)
     if candidate in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
+      ret.flags |= HondaFlags.BOSCH_ALT_BRAKE.value
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_ALT_BRAKE
 
     # These cars use alternate SCM messages (SCM_FEEDBACK AND SCM_BUTTON)
