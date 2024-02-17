@@ -162,7 +162,7 @@ def fingerprint(logcan, sendcan, num_pandas):
   cloudlog.warning("VIN %s", vin)
   params.put("CarVin", vin)
 
-  # disable OBD multiplexing for potential ECU knockouts
+  # disable OBD multiplexing for CAN fingerprinting and potential ECU knockouts
   set_obd_multiplexing(params, False)
   params.put_bool("FirmwareQueryDone", True)
 
