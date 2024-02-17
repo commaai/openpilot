@@ -213,8 +213,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Ecu.unknown: [CAR.ACCORD],  # TODO: we shouldn't be fingerprinting on unknown ECUs
     Ecu.srs: [CAR.ACCORD],
     Ecu.hud: [CAR.ACCORD],
-
-    # accordh missing from accord: programmedFuelInjection, transmission, electricBrakeBooster, unknown
   },
   extra_ecus=[
     # The only other ECU on PT bus accessible by camera on radarless Civic
