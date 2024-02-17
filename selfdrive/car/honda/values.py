@@ -210,7 +210,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Ecu.electricBrakeBooster: [CAR.ACCORD, CAR.CIVIC_BOSCH, CAR.CRV_5G],
     Ecu.shiftByWire: [CAR.ACCORD],
     Ecu.eps: [CAR.ACCORD],
-    Ecu.unknown: [CAR.ACCORD],  # TODO: we shouldn't be fingerprinting on unknown ECUs
     Ecu.srs: [CAR.ACCORD],
     Ecu.hud: [CAR.ACCORD],
   },
