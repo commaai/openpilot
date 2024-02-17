@@ -11,7 +11,7 @@ from typing import NoReturn
 
 import openpilot.selfdrive.sentry as sentry
 from openpilot.system.hardware.hw import Paths
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_commit
 
 MAX_SIZE = 1_000_000 * 100  # allow up to 100M
@@ -124,7 +124,7 @@ def report_tombstone_apport(fn):
   clean_path = path.replace('/', '_')
   date = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
 
-  new_fn = f"{date}_{get_commit(default='nocommit')[:8]}_{safe_fn(clean_path)}"[:MAX_TOMBSTONE_FN_LEN]
+  new_fn = f"{date}_{(get_commit() or 'nocommit')[:8]}_{safe_fn(clean_path)}"[:MAX_TOMBSTONE_FN_LEN]
 
   crashlog_dir = os.path.join(Paths.log_root(), "crash")
   os.makedirs(crashlog_dir, exist_ok=True)

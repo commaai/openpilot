@@ -3,12 +3,14 @@ import numpy as np
 
 from cereal import messaging
 from openpilot.common.realtime import Ratekeeper
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.retry import retry
+from openpilot.common.swaglog import cloudlog
 
 RATE = 10
 FFT_SAMPLES = 4096
 REFERENCE_SPL = 2e-5  # newtons/m^2
 SAMPLE_RATE = 44100
+SAMPLE_BUFFER = 4096 # (approx 100ms)
 
 
 def calculate_spl(measurements):
@@ -77,12 +79,19 @@ class Mic:
 
       self.measurements = self.measurements[FFT_SAMPLES:]
 
+  @retry(attempts=7, delay=3)
+  def get_stream(self, sd):
+    # reload sounddevice to reinitialize portaudio
+    sd._terminate()
+    sd._initialize()
+    return sd.InputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback, blocksize=SAMPLE_BUFFER)
+
   def micd_thread(self):
     # sounddevice must be imported after forking processes
     import sounddevice as sd
 
-    with sd.InputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback) as stream:
-      cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}")
+    with self.get_stream(sd) as stream:
+      cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}, {stream.blocksize=}")
       while True:
         self.update()
 

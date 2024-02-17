@@ -66,6 +66,26 @@
         <source>Prevent large data uploads when on a metered connection</source>
         <translation>منع تحميل البيانات الكبيرة عندما يكون الاتصال محدوداً</translation>
     </message>
+    <message>
+        <source>Hidden Network</source>
+        <translation>شبكة مخفية</translation>
+    </message>
+    <message>
+        <source>CONNECT</source>
+        <translation>الاتصال</translation>
+    </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation>أدخل SSID</translation>
+    </message>
+    <message>
+        <source>Enter password</source>
+        <translation>أدخل كلمة المرور</translation>
+    </message>
+    <message>
+        <source>for &quot;%1&quot;</source>
+        <translation>من أجل &quot;%1&quot;</translation>
+    </message>
 </context>
 <context>
     <name>AnnotatedCameraWidget</name>
@@ -275,7 +295,7 @@
     </message>
 </context>
 <context>
-    <name>DriverViewScene</name>
+    <name>DriverViewWindow</name>
     <message>
         <source>camera starting</source>
         <translation>بدء تشغيل الكاميرا</translation>
@@ -543,10 +563,6 @@
         <translation>إغلاق</translation>
     </message>
     <message>
-        <source>dashcam</source>
-        <translation>dashcam</translation>
-    </message>
-    <message>
         <source>openpilot</source>
         <translation>openpilot</translation>
     </message>
@@ -633,12 +649,12 @@ This may take up to a minute.</source>
 قد يستغرق الأمر حوالي الدقيقة.</translation>
     </message>
     <message>
-        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>اضغط على تأكيد لمسح جميع المحتويات والإعدادات. اضغط على إلغاء لمتابعة التشغيل.</translation>
-    </message>
-    <message>
         <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
         <translation>غير قادر على تحميل جزء البيانات. قد يكون الجزء تالفاً. اضغط على تأكيد لمسح جهازك وإعادة ضبطه.</translation>
+    </message>
+    <message>
+        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

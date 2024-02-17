@@ -8,14 +8,14 @@ from typing import Dict, Optional, Tuple
 from cereal import car, messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.realtime import Ratekeeper
+from openpilot.common.retry import retry
+from openpilot.common.swaglog import cloudlog
 
 from openpilot.system import micd
 
-from openpilot.common.realtime import Ratekeeper
-from openpilot.system.hardware import PC
-from openpilot.system.swaglog import cloudlog
-
 SAMPLE_RATE = 48000
+SAMPLE_BUFFER = 4096 # (approx 100ms)
 MAX_VOLUME = 1.0
 MIN_VOLUME = 0.1
 CONTROLS_TIMEOUT = 5 # 5 seconds
@@ -42,7 +42,7 @@ sound_list: Dict[int, Tuple[str, Optional[int], float]] = {
 }
 
 def check_controls_timeout_alert(sm):
-  controls_missing = time.monotonic() - sm.rcv_time['controlsState']
+  controls_missing = time.monotonic() - sm.recv_time['controlsState']
 
   if controls_missing > CONTROLS_TIMEOUT:
     if sm['controlsState'].enabled and (controls_missing - CONTROLS_TIMEOUT) < 10:
@@ -126,21 +126,23 @@ class Soundd:
     volume = ((weighted_db - AMBIENT_DB) / DB_SCALE) * (MAX_VOLUME - MIN_VOLUME) + MIN_VOLUME
     return math.pow(10, (np.clip(volume, MIN_VOLUME, MAX_VOLUME) - 1))
 
+  @retry(attempts=7, delay=3)
+  def get_stream(self, sd):
+    # reload sounddevice to reinitialize portaudio
+    sd._terminate()
+    sd._initialize()
+    return sd.OutputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback, blocksize=SAMPLE_BUFFER)
+
   def soundd_thread(self):
     # sounddevice must be imported after forking processes
     import sounddevice as sd
 
-    rk = Ratekeeper(20)
-
     sm = messaging.SubMaster(['controlsState', 'microphone'])
 
-    if PC:
-      device = None
-    else:
-      device = "sdm845-tavil-snd-card: - (hw:0,0)"
+    with self.get_stream(sd) as stream:
+      rk = Ratekeeper(20)
 
-    with sd.OutputStream(device=device, channels=1, samplerate=SAMPLE_RATE, callback=self.callback) as stream:
-      cloudlog.info(f"soundd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}")
+      cloudlog.info(f"soundd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}, {stream.blocksize=}")
       while True:
         sm.update(0)
 

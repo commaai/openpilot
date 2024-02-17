@@ -6,6 +6,8 @@
 #include <QMessageBox>
 #include <QPushButton>
 
+#include "common/timing.h"
+
 ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent) {
   unsetenv("ZMQ");
   setenv("COMMA_CACHE", "/tmp/comma_download_cache", 1);
