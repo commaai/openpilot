@@ -189,7 +189,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [StdQueries.UDS_VERSION_REQUEST],
       [StdQueries.UDS_VERSION_RESPONSE],
       bus=0,
-      logging=True,
     ),
     # Bosch PT bus
     Request(
@@ -202,11 +201,11 @@ FW_QUERY_CONFIG = FwQueryConfig(
   # We lose these ECUs without the comma power on these cars.
   # Note that we still attempt to match with them when they are present
   non_essential_ecus={
-    Ecu.programmedFuelInjection: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
-    Ecu.transmission: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
-    Ecu.vsa: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
-    Ecu.combinationMeter: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
-    Ecu.gateway: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.programmedFuelInjection: [CAR.CIVIC, CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.transmission: [CAR.CIVIC, CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.vsa: [CAR.CIVIC, CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.combinationMeter: [CAR.CIVIC, CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.gateway: [CAR.CIVIC, CAR.CIVIC_BOSCH, CAR.CRV_5G],
     Ecu.electricBrakeBooster: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
   },
   extra_ecus=[
