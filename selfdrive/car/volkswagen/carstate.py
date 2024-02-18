@@ -404,7 +404,9 @@ class CarState(CarStateBase):
     if CP.networkLocation == NetworkLocation.fwdCamera:
       messages += [
         # sig_address, frequency
-        ("LDW_02", 10)      # From R242 Driver assistance camera
+        ("LDW_02", 10),     # From R242 Driver assistance camera
+        ("SWA_01", 20),     # FIXME: needs to move to MlbExtraSignals when that gets added
+
       ]
 
     # TODO: BSM parsing
