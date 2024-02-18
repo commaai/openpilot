@@ -405,10 +405,10 @@ class CarState(CarStateBase):
       messages += [
         # sig_address, frequency
         ("LDW_02", 10),     # From R242 Driver assistance camera
-        ("SWA_01", 20),     # FIXME: needs to move to MlbExtraSignals when that gets added
       ]
-
-    # TODO: BSM parsing
+    else:
+      if CP.enableBsm:
+        messages += MqbExtraSignals.bsm_radar_messages  # FIXME: switch this to MlbExtraSignals later
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, CANBUS.cam)
 
