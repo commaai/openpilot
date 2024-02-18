@@ -107,6 +107,7 @@ class TestLoggerd:
       # param, initData field, value
       ("DongleId", "dongleId", dongle),
       ("GitCommit", "gitCommit", "commit"),
+      ("GitCommitDate", "gitCommitDate", "date"),
       ("GitBranch", "gitBranch", "branch"),
       ("GitRemote", "gitRemote", "remote"),
     ]

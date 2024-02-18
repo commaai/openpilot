@@ -17,7 +17,7 @@ OfflineFwVersions = Dict[str, Dict[EcuAddrSubAddr, List[bytes]]]
 # A global list of addresses we will only ever consider for VIN responses
 # engine, hybrid controller, Ford abs, Hyundai CAN FD cluster, 29-bit engine, PGM-FI
 # TODO: move these to each brand's FW query config
-STANDARD_VIN_ADDRS = [0x7e0, 0x7e2, 0x760, 0x7c4, 0x18da10f1, 0x18da0ef1]
+STANDARD_VIN_ADDRS = [0x7e0, 0x7e2, 0x760, 0x7c6, 0x18da10f1, 0x18da0ef1]
 
 
 def p16(val):
@@ -64,6 +64,9 @@ class StdQueries:
 
   GM_VIN_REQUEST = b'\x1a\x90'
   GM_VIN_RESPONSE = b'\x5a\x90'
+
+  KWP_VIN_REQUEST = b'\x21\x81'
+  KWP_VIN_RESPONSE = b'\x61\x81'
 
 
 @dataclass

@@ -44,10 +44,14 @@ if __name__ == "__main__":
 
   dongles = []
   for route in tqdm(routes):
-    dongle_id = SegmentRange(route).dongle_id
+    sr = SegmentRange(route)
+    dongle_id = sr.dongle_id
 
     if dongle_id in dongles:
       continue
+
+    if sr.slice == '' and sr.selector is None:
+      route += '/0'
 
     lr = LogReader(route, default_mode=ReadMode.QLOG)
 

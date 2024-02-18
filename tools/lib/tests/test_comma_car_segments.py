@@ -25,7 +25,7 @@ class TestCommaCarSegments(unittest.TestCase):
 
     sr = SegmentRange(segment)
 
-    url = get_url(sr.route_name, sr._slice)
+    url = get_url(sr.route_name, sr.slice)
 
     resp = requests.get(url)
     self.assertEqual(resp.status_code, 200)
