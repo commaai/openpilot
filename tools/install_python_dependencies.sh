@@ -75,12 +75,8 @@ pyenv rehash
 
 [ -n "$POETRY_VIRTUALENVS_CREATE" ] && RUN="" || RUN="poetry run"
 
-if [ "$(uname)" != "Darwin" ]; then
+if [ "$(uname)" != "Darwin" ] && [ -e "$ROOT/.git" ]; then
   echo "pre-commit hooks install..."
-  shopt -s nullglob
-  for f in .pre-commit-config.yaml */.pre-commit-config.yaml; do
-    if [ -e "$ROOT/$(dirname $f)/.git" ]; then
-      $RUN pre-commit install -c "$f"
-    fi
-  done
+  $RUN pre-commit install
+  $RUN git submodule foreach pre-commit install
 fi
