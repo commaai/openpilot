@@ -70,10 +70,9 @@ class CarController:
       self.apply_curvature_last = apply_curvature
 
       steeringPressed = CS.out.steeringPressed
-      steeringTorqueEps = CS.out.steeringTorque
       steeringAngleDeg = CS.out.steeringAngleDeg
 
-      if steeringPressed and (abs(steeringAngleDeg) > 100 or abs(steeringTorqueEps) > 2):
+      if steeringPressed and abs(steeringAngleDeg) > 60:
         apply_curvature = 0
         ramp_type = 3
       else:
