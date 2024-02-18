@@ -124,7 +124,7 @@ def main():
   REPLAY = bool(int(os.getenv("REPLAY", "0")))
 
   pm = messaging.PubMaster(['liveParameters'])
-  sm = messaging.SubMaster(['liveLocationKalman', 'carState'], poll=['liveLocationKalman'])
+  sm = messaging.SubMaster(['liveLocationKalman', 'carState'], poll='liveLocationKalman')
 
   params_reader = Params()
   # wait for stats about the car to come in from controls

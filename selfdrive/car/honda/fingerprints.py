@@ -101,10 +101,6 @@ FW_VERSIONS = {
       b'39990-TVA-X040\x00\x00',
       b'39990-TVE-H130\x00\x00',
     ],
-    (Ecu.unknown, 0x18da3af1, None): [
-      b'39390-TVA-A020\x00\x00',
-      b'39390-TVA-A120\x00\x00',
-    ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TBX-H230\x00\x00',
       b'77959-TVA-A460\x00\x00',
@@ -299,6 +295,7 @@ FW_VERSIONS = {
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TBA-A030\x00\x00',
       b'77959-TBA-A040\x00\x00',
+      b'77959-TBG-A020\x00\x00',
       b'77959-TBG-A030\x00\x00',
       b'77959-TEA-Q820\x00\x00',
     ],
@@ -881,6 +878,7 @@ FW_VERSIONS = {
       b'28102-5MX-A900\x00\x00',
       b'28102-5MX-A910\x00\x00',
       b'28102-5MX-C001\x00\x00',
+      b'28102-5MX-C910\x00\x00',
       b'28102-5MX-D001\x00\x00',
       b'28102-5MX-D710\x00\x00',
       b'28102-5MX-K610\x00\x00',
@@ -918,6 +916,7 @@ FW_VERSIONS = {
       b'78109-THR-C320\x00\x00',
       b'78109-THR-C330\x00\x00',
       b'78109-THR-CE20\x00\x00',
+      b'78109-THR-CL10\x00\x00',
       b'78109-THR-DA20\x00\x00',
       b'78109-THR-DA30\x00\x00',
       b'78109-THR-DA40\x00\x00',
