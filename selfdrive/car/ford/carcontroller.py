@@ -84,7 +84,7 @@ class CarController:
         counter = (self.frame // CarControllerParams.STEER_STEP) % 0xF
         can_sends.append(fordcan.create_lat_ctl2_msg(self.packer, self.CAN, mode, ramp_type, 0., 0., -apply_curvature, 0., counter))
       else:
-        can_sends.append(fordcan.create_lat_ctl_msg(self.packer, self.CAN, CC.latActive, ramp_type, 0., 0., -apply_curvature, 0.))
+        can_sends.append(fordcan.create_lat_ctl_msg(self.packer, self.CAN, ramp_type, CC.latActive, 0., 0., -apply_curvature, 0.))
 
     # send lka msg at 33Hz
     if (self.frame % CarControllerParams.LKA_STEP) == 0:
