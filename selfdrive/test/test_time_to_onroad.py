@@ -31,13 +31,14 @@ def test_time_to_onroad():
         sendcan_frame = None
         while True:
           sm.update(100)
+
           # sendcan is only sent once we're initialized
           if sm.seen['controlsState'] and sendcan_frame is None:
             sendcan_frame = sm.frame
 
           if sendcan_frame is not None and sm.recv_frame['sendcan'] > sendcan_frame:
             sm.update(100)
-            assert sm['controlsState'].engageable, f"{sm.recv_frame}\nevents: {sm['onroadEvents']}"
+            assert sm['controlsState'].engageable, f"events: {sm['onroadEvents']}"
             break
     finally:
       print(f"onroad events: {sm['onroadEvents']}")
