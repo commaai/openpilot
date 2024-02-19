@@ -264,7 +264,7 @@ class SegmentRange:
     return self.m.group("timestamp")
 
   @property
-  def _slice(self) -> str:
+  def slice(self) -> str:
     return self.m.group("slice") or ""
 
   @property
@@ -273,12 +273,12 @@ class SegmentRange:
 
   @property
   def seg_idxs(self) -> list[int]:
-    m = re.fullmatch(RE.SLICE, self._slice)
-    assert m is not None, f"Invalid slice: {self._slice}"
+    m = re.fullmatch(RE.SLICE, self.slice)
+    assert m is not None, f"Invalid slice: {self.slice}"
     start, end, step = (None if s is None else int(s) for s in m.groups())
 
     # one segment specified
-    if start is not None and end is None and ':' not in self._slice:
+    if start is not None and end is None and ':' not in self.slice:
       if start < 0:
         start += get_max_seg_number_cached(self) + 1
       return [start]
@@ -291,7 +291,7 @@ class SegmentRange:
       return list(range(end + 1))[s]
 
   def __str__(self) -> str:
-    return f"{self.dongle_id}/{self.timestamp}" + (f"/{self._slice}" if self._slice else "") + (f"/{self.selector}" if self.selector else "")
+    return f"{self.dongle_id}/{self.timestamp}" + (f"/{self.slice}" if self.slice else "") + (f"/{self.selector}" if self.selector else "")
 
   def __repr__(self) -> str:
     return self.__str__()
