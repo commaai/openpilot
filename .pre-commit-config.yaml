@@ -81,6 +81,7 @@ repos:
         exclude: '^(third_party/)|(cereal/)|(body/)|(rednose/)|(rednose_repo/)|(opendbc/)|(panda/)|(generated/)'
         args:
         - --max-line-length=240
+        - --ignore=E111
 -   repo: local
     hooks:
     -   id: test_translations
