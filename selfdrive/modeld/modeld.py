@@ -121,7 +121,9 @@ def main(demo=False):
   setproctitle(PROCESS_NAME)
   config_realtime_process(7, 54)
 
+  cloudlog.warning("setting up CL context")
   cl_context = CLContext()
+  cloudlog.warning("CL context ready; loading model")
   model = ModelState(cl_context)
   cloudlog.warning("models loaded, modeld starting")
 
