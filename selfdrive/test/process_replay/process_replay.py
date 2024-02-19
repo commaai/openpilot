@@ -451,6 +451,19 @@ def locationd_config_pubsub_callback(params, cfg, lr):
   cfg.pubs = set(cfg.pubs) - sub_keys
 
 
+def card_rcv_callback(msg, cfg, frame):
+  if msg.which() != "can":
+    return False
+
+  socks = [
+    s for s in cfg.subs if
+    frame % int(SERVICE_LIST[msg.which()].frequency / SERVICE_LIST[s].frequency) == 0
+  ]
+  if "sendcan" in socks and (frame - 1) < 2000:
+    socks.remove("sendcan")
+  return len(socks) > 0
+
+
 CONFIGS = [
   ProcessConfig(
     proc_name="controlsd",
@@ -475,7 +488,7 @@ CONFIGS = [
     ignore=["logMonoTime", "valid"],
     config_callback=controlsd_config_callback,
     init_callback=fingerprint_callback,
-    should_recv_callback=MessageBasedRcvCallback("can"),
+    should_recv_callback=card_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
     main_pub="can",
