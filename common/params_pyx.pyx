@@ -29,12 +29,10 @@ cdef extern from "common/params.h":
 
 
 def ensure_bytes(v):
-  return v.encode() if isinstance(v, str) else v
-
+  return v.encode() if isinstance(v, str) else v;
 
 class UnknownKeyName(Exception):
   pass
-
 
 cdef class Params:
   cdef c_Params* p
