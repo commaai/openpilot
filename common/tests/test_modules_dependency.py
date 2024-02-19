@@ -18,11 +18,11 @@ def parse_file(file_path='', leading_folder='', errors=None, main_dirs=None):
         errors = []
     excluded_main_dirs = [item for item in main_dirs if item != leading_folder]
     with open(file_path, 'r') as file:
-        for line_num, line in enumerate(file, start=1): 
+        for line_num, line in enumerate(file, start=1):
             if 'import' in line or 'from' in line:
                 for f_name in excluded_main_dirs:
-                    if ' '+f_name+'.' in line.strip() and not 'openpilot.' in line.strip():
-                        if not f_name+'_repo' in file_path:
+                    if ' '+f_name+'.' in line.strip() and 'openpilot.' not in line.strip():
+                        if f_name+'_repo' not in file_path:
                             error_msg = f"Error: File: {file_path}, External folder: {f_name}, Line #{line_num}: {line.strip()}"
                             errors.append(error_msg)
     return errors
@@ -42,13 +42,13 @@ class TestParseFiles(unittest.TestCase):
 
         self.main_dirs = get_main_directories(self.root_dir)
         self.excluded_dir_list = ['cereal', 'body', 'rednose', 'rednose_repo', 'opendbc', 'panda', 'generated']
-        self.main_dirs = [dir for dir in self.main_dirs if dir not in self.excluded_dir_list]
+        self.main_dirs = [dir_temp for dir_temp in self.main_dirs if dir_temp not in self.excluded_dir_list]
 
 
     def test_parse_files(self):
         error_list = []
 
-        for root, dirs, files in os.walk(self.root_dir, topdown=True):
+        for root, dirs, _ in os.walk(self.root_dir, topdown=True):
             for name in dirs:
                 dir_path = os.path.join(root, name)
                 if dir_path.split(self.root_dir)[1].startswith('/.'):
