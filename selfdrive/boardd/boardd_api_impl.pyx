@@ -14,6 +14,7 @@ cdef extern from "panda.h":
 cdef extern from "can_list_to_can_capnp.cc":
   void can_list_to_can_capnp_cpp(const vector[can_frame] &can_list, string &out, bool sendCan, bool valid)
 
+
 def can_list_to_can_capnp(can_msgs, msgtype='can', valid=True):
   cdef vector[can_frame] can_list
   can_list.reserve(len(can_msgs))

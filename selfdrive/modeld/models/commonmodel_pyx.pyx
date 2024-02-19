@@ -10,8 +10,10 @@ from cereal.visionipc.visionipc_pyx cimport VisionBuf, CLContext as BaseCLContex
 from .commonmodel cimport CL_DEVICE_TYPE_DEFAULT, cl_get_device_id, cl_create_context
 from .commonmodel cimport mat3, sigmoid as cppSigmoid, ModelFrame as cppModelFrame
 
+
 def sigmoid(x):
   return cppSigmoid(x)
+
 
 cdef class CLContext(BaseCLContext):
   def __cinit__(self):

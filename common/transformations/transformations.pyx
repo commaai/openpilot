@@ -16,8 +16,6 @@ from openpilot.common.transformations.transformations cimport geodetic2ecef as g
 from openpilot.common.transformations.transformations cimport ecef2geodetic as ecef2geodetic_c
 from openpilot.common.transformations.transformations cimport LocalCoord_c
 
-
-import cython
 import numpy as np
 cimport numpy as np
 
@@ -34,14 +32,14 @@ cdef Matrix3 numpy2matrix(np.ndarray[double, ndim=2, mode="fortran"] m):
     return Matrix3(<double*>m.data)
 
 cdef ECEF list2ecef(ecef):
-    cdef ECEF e;
+    cdef ECEF e
     e.x = ecef[0]
     e.y = ecef[1]
     e.z = ecef[2]
     return e
 
 cdef NED list2ned(ned):
-    cdef NED n;
+    cdef NED n
     n.n = ned[0]
     n.e = ned[1]
     n.d = ned[2]
@@ -54,38 +52,46 @@ cdef Geodetic list2geodetic(geodetic):
     g.alt = geodetic[2]
     return g
 
+
 def euler2quat_single(euler):
     cdef Vector3 e = Vector3(euler[0], euler[1], euler[2])
     cdef Quaternion q = euler2quat_c(e)
     return [q.w(), q.x(), q.y(), q.z()]
 
+
 def quat2euler_single(quat):
     cdef Quaternion q = Quaternion(quat[0], quat[1], quat[2], quat[3])
-    cdef Vector3 e = quat2euler_c(q);
+    cdef Vector3 e = quat2euler_c(q)
     return [e(0), e(1), e(2)]
+
 
 def quat2rot_single(quat):
     cdef Quaternion q = Quaternion(quat[0], quat[1], quat[2], quat[3])
     cdef Matrix3 r = quat2rot_c(q)
     return matrix2numpy(r)
 
+
 def rot2quat_single(rot):
     cdef Matrix3 r = numpy2matrix(np.asfortranarray(rot, dtype=np.double))
     cdef Quaternion q = rot2quat_c(r)
     return [q.w(), q.x(), q.y(), q.z()]
+
 
 def euler2rot_single(euler):
     cdef Vector3 e = Vector3(euler[0], euler[1], euler[2])
     cdef Matrix3 r = euler2rot_c(e)
     return matrix2numpy(r)
 
+
 def rot2euler_single(rot):
     cdef Matrix3 r = numpy2matrix(np.asfortranarray(rot, dtype=np.double))
     cdef Vector3 e = rot2euler_c(r)
     return [e(0), e(1), e(2)]
 
+
 def rot_matrix(roll, pitch, yaw):
     return matrix2numpy(rot_matrix_c(roll, pitch, yaw))
+
 
 def ecef_euler_from_ned_single(ecef_init, ned_pose):
     cdef ECEF init = list2ecef(ecef_init)
@@ -94,6 +100,7 @@ def ecef_euler_from_ned_single(ecef_init, ned_pose):
     cdef Vector3 e = ecef_euler_from_ned_c(init, pose)
     return [e(0), e(1), e(2)]
 
+
 def ned_euler_from_ecef_single(ecef_init, ecef_pose):
     cdef ECEF init = list2ecef(ecef_init)
     cdef Vector3 pose = Vector3(ecef_pose[0], ecef_pose[1], ecef_pose[2])
@@ -101,10 +108,12 @@ def ned_euler_from_ecef_single(ecef_init, ecef_pose):
     cdef Vector3 e = ned_euler_from_ecef_c(init, pose)
     return [e(0), e(1), e(2)]
 
+
 def geodetic2ecef_single(geodetic):
     cdef Geodetic g = list2geodetic(geodetic)
     cdef ECEF e = geodetic2ecef_c(g)
     return [e.x, e.y, e.z]
+
 
 def ecef2geodetic_single(ecef):
     cdef ECEF e = list2ecef(ecef)
