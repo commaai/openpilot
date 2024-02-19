@@ -11,7 +11,7 @@ using namespace json11;
 extern map<cl_program, string> g_program_source;
 
 void Thneed::load(const char *filename) {
-  LOGI("Thneed::load: loading from %s\n", filename);
+  LOGD("Thneed::load: loading from %s\n", filename);
 
   string buf = util::read_file(filename);
   int jsz = *(int *)buf.data();
@@ -96,7 +96,7 @@ void Thneed::load(const char *filename) {
     cl_mem aa = real_mem[*(cl_mem*)(mobj["buffer_id"].string_value().data())];
     input_clmem.push_back(aa);
     input_sizes.push_back(sz);
-    LOGI("Thneed::load: adding input %s with size %d\n", mobj["name"].string_value().data(), sz);
+    LOGD("Thneed::load: adding input %s with size %d\n", mobj["name"].string_value().data(), sz);
 
     cl_int cl_err;
     void *ret = clEnqueueMapBuffer(command_queue, aa, CL_TRUE, CL_MAP_WRITE, 0, sz, 0, NULL, NULL, &cl_err);
@@ -108,7 +108,7 @@ void Thneed::load(const char *filename) {
   for (auto &obj : jdat["outputs"].array_items()) {
     auto mobj = obj.object_items();
     int sz = mobj["size"].int_value();
-    LOGI("Thneed::save: adding output with size %d\n", sz);
+    LOGD("Thneed::save: adding output with size %d\n", sz);
     // TODO: support multiple outputs
     output = real_mem[*(cl_mem*)(mobj["buffer_id"].string_value().data())];
     assert(output != NULL);
