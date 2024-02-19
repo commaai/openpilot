@@ -74,6 +74,14 @@ repos:
         # https://google.github.io/styleguide/cppguide.html
         # relevant rules are whitelisted, see all options with: cpplint --filter=
         - --filter=-build,-legal,-readability,-runtime,-whitespace,+build/include_subdir,+build/forward_decl,+build/include_what_you_use,+build/deprecated,+whitespace/comma,+whitespace/line_length,+whitespace/empty_if_body,+whitespace/empty_loop_body,+whitespace/empty_conditional_body,+whitespace/forcolon,+whitespace/parens,+whitespace/semicolon,+whitespace/tab,+readability/braces
+-   repo: https://github.com/MarcoGorelli/cython-lint
+    rev: v0.16.0
+    hooks:
+    -   id: cython-lint
+        exclude: '^(third_party/)|(cereal/)|(body/)|(rednose/)|(rednose_repo/)|(opendbc/)|(panda/)|(generated/)'
+        args:
+        - --max-line-length=240
+        - --ignore=E111, E302, E305
 -   repo: local
     hooks:
     -   id: test_translations
