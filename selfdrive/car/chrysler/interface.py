@@ -53,7 +53,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1747
       ret.wheelbase = 2.70
       ret.steerRatio = 17  # TODO: verify against params learner
-      ret.minSteerSpeed = 18.0  # TODO: conservative, need to test
+      ret.minSteerSpeed = 18.5  # TODO: conservative, need to test
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, 1.0, False)
 
