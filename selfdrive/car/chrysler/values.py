@@ -51,13 +51,14 @@ class CarControllerParams:
       self.STEER_DELTA_UP = 6
       self.STEER_DELTA_DOWN = 6
       self.STEER_MAX = 261  # EPS allows more, up to 350?
+    elif CP.carFingerprint in CUSW_CARS:
+      self.STEER_DELTA_UP = 4
+      self.STEER_DELTA_DOWN = 4
+      self.STEER_MAX = 250  # TODO: re-validate this, Panda is at 261
     else:
       self.STEER_DELTA_UP = 3
       self.STEER_DELTA_DOWN = 3
-      if CP.carFingerprint in CUSW_CARS:
-        self.STEER_MAX = 250  # TODO: validate this
-      else:
-        self.STEER_MAX = 261  # higher than this faults the EPS
+      self.STEER_MAX = 261  # higher than this faults the EPS
 
 
 STEER_THRESHOLD = 120
