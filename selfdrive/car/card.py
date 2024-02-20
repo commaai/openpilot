@@ -66,10 +66,9 @@ def main():
 
     # TODO: this can make us miss at least a few cycles on cars with experimental long
     # that need an ECU knockout
-    if not initialized and sm.updated['carControl']:
+    if not initialized and params.get_bool('ControlsReady'):
       initialized = True
       CI.init(CP, can, pm.sock['sendcan'])
-      params.put_bool_nonblocking("ControlsReady", True)
 
     # commands -> car bytes
     if not CP.passive and initialized:

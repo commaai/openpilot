@@ -409,6 +409,7 @@ class Controls:
 
         self.initialized = True
         self.set_initial_state()
+        self.params.put_bool_nonblocking("ControlsReady", True)
 
         cloudlog.event(
           "controlsd.initialized",
