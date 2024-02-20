@@ -368,7 +368,6 @@ FW_VERSIONS = {
       b'\xf1\x873G0906259  \xf1\x890004',
       b'\xf1\x873G0906259B \xf1\x890002',
       b'\xf1\x873G0906264  \xf1\x890004',
-      b'\xf1\x8705L906022F \xf1\x890987', #Passat Alltrack
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x870CW300042H \xf1\x891601',
@@ -385,7 +384,6 @@ FW_VERSIONS = {
       b'\xf1\x870DL300011H \xf1\x895201',
       b'\xf1\x870GC300042H \xf1\x891404',
       b'\xf1\x870GC300043  \xf1\x892301',
-      b'\xf1\x870GC300014K \xf1\x892802', #Passat Alltrack
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x873Q0959655AE\xf1\x890195\xf1\x82\r56140056130012416612124111',
@@ -401,7 +399,6 @@ FW_VERSIONS = {
       b'\xf1\x873Q0959655BK\xf1\x890703\xf1\x82\x0e5915005914001354701311542900',
       b'\xf1\x873Q0959655CN\xf1\x890720\xf1\x82\x0e5915005914001305701311052900',
       b'\xf1\x875Q0959655S \xf1\x890870\xf1\x82\x1315120011111200631145171716121691132111',
-      b'\xf1\x875QF959655AC\xf1\x890719\xf1\x82\x13131100131300111111000102----2211125A49', #Passat Alltrack
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x873Q0909144J \xf1\x895063\xf1\x82\x0566B00611A1',
@@ -415,8 +412,8 @@ FW_VERSIONS = {
       b'\xf1\x875Q0909144T \xf1\x891072\xf1\x82\x0521B00603A1',
       b'\xf1\x875Q0909144T \xf1\x891072\xf1\x82\x0521B00703A1',
       b'\xf1\x875Q0910143B \xf1\x892201\xf1\x82\x0563B0000600',
-      b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567B0020600', 
-      
+      b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567B0020600',
+
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x873Q0907572A \xf1\x890126',
@@ -427,7 +424,6 @@ FW_VERSIONS = {
       b'\xf1\x873Q0907572C \xf1\x890196',
       b'\xf1\x875Q0907572P \xf1\x890682',
       b'\xf1\x875Q0907572R \xf1\x890771',
-      b'\xf1\x875Q0907572S \xf1\x890780', #Passat Alltrack
     ],
   },
   CAR.PASSAT_NMS: {
