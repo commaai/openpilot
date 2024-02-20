@@ -111,7 +111,7 @@ class CarState(CarStateBase):
     ret.brakePressed = bool(cp.vl["BRAKE_2"]["BRAKE_HUMAN"])
     ret.brake = cp.vl["BRAKE_1"]["BRAKE_PSI"]
     ret.gas = cp.vl["ACCEL_GAS"]["GAS_HUMAN"]
-    ret.gasPressed = ret.gas > 1e-5
+    ret.gasPressed = ret.gas > 0
 
     ret.espDisabled = bool(cp.vl["TRACTION_BUTTON"]["TRACTION_OFF"])
 
