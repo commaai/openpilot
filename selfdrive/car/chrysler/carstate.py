@@ -130,8 +130,7 @@ class CarState(CarStateBase):
     ret.rightBlinker = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
     ret.steeringAngleDeg = cp.vl["STEERING"]['STEER_ANGLE']
     ret.steeringRateDeg = cp.vl["STEERING"]['STEERING_RATE']
-    #ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl['GEAR']['PRNDL'], None))
-    ret.gearShifter = car.CarState.GearShifter.drive  # FIXME
+    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl['GEAR']['PRNDL'], None))
 
     ret.cruiseState.speed = cp.vl["ACC_1"]['ACC_SET_SPEED_KMH'] * CV.KPH_TO_MS
     acc_status = cp.vl["ACC_1"]['ACC_STATE']
@@ -209,6 +208,7 @@ class CarState(CarStateBase):
       ("WHEEL_SPEEDS_REAR", 50),
       ("STEERING", 100),
       ("ACC_1", 17),
+      ("GEAR", 10),
       ("DOORS", 10),
       ("SEATBELT_STATUS", 10),
       ("STEERING_LEVERS", 10),
