@@ -767,12 +767,12 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   # is thrown. This can mean a service crashed, did not broadcast a message for
   # ten times the regular interval, or the average interval is more than 10% too high.
   EventName.commIssue: {
-    ET.SOFT_DISABLE: soft_disable_alert("Communication Issue between Processes"),
+    ET.SOFT_DISABLE: soft_disable_alert("Communication Issue Between Processes"),
     ET.NO_ENTRY: comm_issue_alert,
   },
   EventName.commIssueAvgFreq: {
-    ET.SOFT_DISABLE: soft_disable_alert("Low Communication Rate between Processes"),
-    ET.NO_ENTRY: NoEntryAlert("Low Communication Rate between Processes"),
+    ET.SOFT_DISABLE: soft_disable_alert("Low Communication Rate Between Processes"),
+    ET.NO_ENTRY: NoEntryAlert("Low Communication Rate Between Processes"),
   },
 
   EventName.controlsdLagging: {
