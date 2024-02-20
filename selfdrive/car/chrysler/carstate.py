@@ -106,16 +106,16 @@ class CarState(CarStateBase):
                         cp.vl["DOORS"]['DOOR_OPEN_FR'],
                         cp.vl["DOORS"]['DOOR_OPEN_RL'],
                         cp.vl["DOORS"]['DOOR_OPEN_RR']])
-    ret.seatbeltUnlatched = cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_UNLATCHED'] == 1
+    ret.seatbeltUnlatched = bool(cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_UNLATCHED'])
 
-    ret.brakePressed = cp.vl["BRAKE_2"]['BRAKE_HUMAN'] == 1  # human-only
+    ret.brakePressed = bool(cp.vl["BRAKE_2"]['BRAKE_HUMAN'])
     ret.brake = cp.vl["BRAKE_1"]["BRAKE_PSI"]
     ret.gas = cp.vl["ACCEL_GAS"]['GAS_HUMAN']
     ret.gasPressed = ret.gas > 1e-5
 
-    ret.espDisabled = (cp.vl["TRACTION_BUTTON"]['TRACTION_OFF'] == 1)
+    ret.espDisabled = bool(cp.vl["TRACTION_BUTTON"]['TRACTION_OFF'])
 
-    ret.vEgoRaw = cp.vl["BRAKE_1"]['VEHICLE_SPEED']  # math sucks
+    ret.vEgoRaw = cp.vl["BRAKE_1"]['VEHICLE_SPEED']
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = not ret.vEgoRaw > 0.001
     ret.wheelSpeeds = self.get_wheel_speeds(
@@ -149,7 +149,6 @@ class CarState(CarStateBase):
     ret.steeringTorqueEps = cp.vl["EPS_STATUS"]["TORQUE_MOTOR"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
     ret.steerFaultTemporary = bool(cp.vl["EPS_STATUS"]["LKAS_FAULT"])  # TODO: is this temporary or permanent?
-    ret.genericToggle = bool(cp.vl["STEERING_LEVERS"]['HIGH_BEAM_FLASH'])
 
     return ret
 
