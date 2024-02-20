@@ -81,6 +81,7 @@ class CAR(StrEnum):
   LEXUS_IS_TSS2 = "LEXUS IS 2023"
   LEXUS_NX = "LEXUS NX 2018"
   LEXUS_NX_TSS2 = "LEXUS NX 2020"
+  LEXUS_LC_TSS2 = "LEXUS LC 2024"
   LEXUS_RC = "LEXUS RC 2020"
   LEXUS_RX = "LEXUS RX 2016"
   LEXUS_RX_TSS2 = "LEXUS RX 2020"
@@ -193,7 +194,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   ],
   CAR.LEXUS_ES_TSS2: [
     ToyotaCarInfo("Lexus ES 2019-24"),
-    ToyotaCarInfo("Lexus ES Hybrid 2019-23", video_link="https://youtu.be/BZ29osRVJeg?t=12"),
+    ToyotaCarInfo("Lexus ES Hybrid 2019-24", video_link="https://youtu.be/BZ29osRVJeg?t=12"),
   ],
   CAR.LEXUS_IS: ToyotaCarInfo("Lexus IS 2017-19"),
   CAR.LEXUS_IS_TSS2: ToyotaCarInfo("Lexus IS 2022-23"),
@@ -206,6 +207,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
     ToyotaCarInfo("Lexus NX 2020-21"),
     ToyotaCarInfo("Lexus NX Hybrid 2020-21"),
   ],
+  CAR.LEXUS_LC_TSS2: ToyotaCarInfo("Lexus LC 2024"),
   CAR.LEXUS_RC: ToyotaCarInfo("Lexus RC 2018-20"),
   CAR.LEXUS_RX: [
     ToyotaCarInfo("Lexus RX 2016", "Lexus Safety System+"),
@@ -348,13 +350,16 @@ FW_LEN_CODE = re.compile(b'^[\x01-\x03]')  # highest seen is 3 chunks, 16 bytes 
 FW_CHUNK_LEN = 16
 
 # List of ECUs that are most unique across openpilot platforms
-# TODO: use hybrid ECU, splits similar ICE and hybrid variants
 # - fwdCamera: describes actual features related to ADAS. For example, on the Avalon it describes
 #    when TSS-P became standard, whether the car supports stop and go, and whether it's TSS2.
 #    On the RAV4, it describes the move to the radar doing ACC, and the use of LTA for lane keeping.
-# - abs: differentiates hybrid/ICE on most cars (Corolla TSS2 is an exception)
+#    Note that the platform codes & major versions do not describe features in plain text, only with
+#    matching against other seen FW versions in the database they can describe features.
+# - fwdRadar: sanity check against fwdCamera, commonly shares a platform code.
+#    For example the RAV4 2022's new radar architecture is shown for both with platform code.
+# - abs: differentiates hybrid/ICE on most cars (Corolla TSS2 is an exception, not used due to hybrid platform combination)
 # - eps: describes lateral API changes for the EPS, such as using LTA for lane keeping and rejecting LKA messages
-PLATFORM_CODE_ECUS = [Ecu.fwdCamera, Ecu.abs, Ecu.eps]
+PLATFORM_CODE_ECUS = (Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps)
 
 # These platforms have at least one platform code for all ECUs shared with another platform.
 FUZZY_EXCLUDED_PLATFORMS: set[CAR] = set()
@@ -441,6 +446,7 @@ DBC = {
   CAR.PRIUS: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
   CAR.PRIUS_V: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
   CAR.COROLLA: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
+  CAR.LEXUS_LC_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.LEXUS_RC: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
   CAR.LEXUS_RX: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
   CAR.LEXUS_RX_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
@@ -477,7 +483,8 @@ EPS_SCALE = defaultdict(lambda: 73, {CAR.PRIUS: 66, CAR.COROLLA: 88, CAR.LEXUS_I
 # Toyota/Lexus Safety Sense 2.0 and 2.5
 TSS2_CAR = {CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023, CAR.COROLLA_TSS2, CAR.LEXUS_ES_TSS2,
             CAR.LEXUS_RX_TSS2, CAR.HIGHLANDER_TSS2, CAR.PRIUS_TSS2, CAR.CAMRY_TSS2, CAR.LEXUS_IS_TSS2,
-            CAR.MIRAI, CAR.LEXUS_NX_TSS2, CAR.ALPHARD_TSS2, CAR.AVALON_TSS2, CAR.CHR_TSS2}
+            CAR.MIRAI, CAR.LEXUS_NX_TSS2, CAR.LEXUS_LC_TSS2, CAR.ALPHARD_TSS2, CAR.AVALON_TSS2,
+            CAR.CHR_TSS2}
 
 NO_DSU_CAR = TSS2_CAR | {CAR.CHR, CAR.CAMRY}
 

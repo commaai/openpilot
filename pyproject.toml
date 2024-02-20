@@ -99,7 +99,7 @@ pyserial = "*"
 pyzmq = "*"
 requests = "*"
 scons = "*"
-sentry-sdk = "==1.28.1"  # needs to be updated with AGNOS
+sentry-sdk = "*"
 smbus2 = "*"
 sounddevice = "*"
 spidev = { version = "*", platform = "linux" }
@@ -111,7 +111,6 @@ markdown-it-py = "*"
 timezonefinder = "*"
 setproctitle = "*"
 
-
 [tool.poetry.group.dev.dependencies]
 av = "*"
 azure-identity = "*"
@@ -121,12 +120,13 @@ control = "*"
 coverage = "*"
 dictdiffer = "*"
 ft4222 = "*"
+flaky = "*"
 hypothesis = "~6.47"
 inputs = "*"
 Jinja2 = "*"
 lru-dict = "*"
 matplotlib = "*"
-metadrive-simulator = { git = "https://github.com/metadriverse/metadrive.git", rev ="main", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
+metadrive-simulator = { version = "0.4.2.3", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
 mpld3 = "*"
 mypy = "*"
 myst-parser = "*"
@@ -136,8 +136,10 @@ parameterized = "^0.8"
 pprofile = "*"
 polyline = "*"
 pre-commit = "*"
-pyopencl = "*"
+pyautogui = "*"
+pyopencl = "==2023.1.4"  # 2024.1 is broken on arm64
 pygame = "*"
+pywinctl = "*"
 pyprof2calltree = "*"
 pytest = "*"
 pytest-cov = "*"
@@ -165,8 +167,8 @@ build-backend = "poetry.core.masonry.api"
 
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]
-select = ["E", "F", "W", "PIE", "C4", "ISC", "RUF008", "RUF100", "A", "B", "TID251"]
-ignore = ["E741", "E402", "C408", "ISC003", "B027", "B024"]
+lint.select = ["E", "F", "W", "PIE", "C4", "ISC", "RUF008", "RUF100", "A", "B", "TID251"]
+lint.ignore = ["E741", "E402", "C408", "ISC003", "B027", "B024"]
 line-length = 160
 target-version="py311"
 exclude = [
@@ -178,8 +180,8 @@ exclude = [
   "teleoprtc_repo",
   "third_party",
 ]
-flake8-implicit-str-concat.allow-multiline=false
-[tool.ruff.flake8-tidy-imports.banned-api]
+lint.flake8-implicit-str-concat.allow-multiline=false
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
 "selfdrive".msg = "Use openpilot.selfdrive"
 "common".msg = "Use openpilot.common"
 "system".msg = "Use openpilot.system"
