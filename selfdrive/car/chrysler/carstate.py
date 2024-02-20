@@ -148,7 +148,7 @@ class CarState(CarStateBase):
     ret.steeringTorque = cp.vl["EPS_STATUS"]["TORQUE_DRIVER"]
     ret.steeringTorqueEps = cp.vl["EPS_STATUS"]["TORQUE_MOTOR"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
-    ret.steerFaultTemporary = bool(cp.vl["EPS_STATUS"]["LKAS_FAULT"])  # TODO: is this temporary or permanent?
+    ret.steerFaultPermanent = bool(cp.vl["EPS_STATUS"]["LKAS_FAULT"])
 
     return ret
 
