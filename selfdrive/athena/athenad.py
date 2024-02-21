@@ -11,7 +11,6 @@ import queue
 import random
 import select
 import socket
-import subprocess
 import sys
 import tempfile
 import threading
@@ -31,20 +30,15 @@ import cereal.messaging as messaging
 from cereal import log
 from cereal.services import SERVICE_LIST
 from openpilot.common.api import Api
-from openpilot.common.basedir import PERSIST
 from openpilot.common.file_helpers import CallbackReader
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
-from openpilot.system.hardware import HARDWARE, PC, AGNOS
+from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
-from openpilot.selfdrive.statsd import STATS_DIR
-from openpilot.system.swaglog import cloudlog
-from openpilot.system.version import get_commit, get_origin, get_short_branch, get_version
+from openpilot.common.swaglog import cloudlog
+from openpilot.system.version import get_commit, get_normalized_origin, get_short_branch, get_version
 from openpilot.system.hardware.hw import Paths
 
-
-# TODO: use socket constant when mypy recognizes this as a valid attribute
-TCP_USER_TIMEOUT = 18
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
@@ -85,7 +79,7 @@ class UploadItem:
   url: str
   headers: Dict[str, str]
   created_at: int
-  id: Optional[str] # noqa: A003 (to match the response from the remote server)
+  id: Optional[str]
   retry_count: int = 0
   current: bool = False
   progress: float = 0
@@ -322,9 +316,9 @@ def getMessage(service: str, timeout: int = 1000) -> dict:
 def getVersion() -> Dict[str, str]:
   return {
     "version": get_version(),
-    "remote": get_origin(''),
-    "branch": get_short_branch(''),
-    "commit": get_commit(default=''),
+    "remote": get_normalized_origin(),
+    "branch": get_short_branch(),
+    "commit": get_commit(),
   }
 
 
@@ -363,22 +357,6 @@ def scan_dir(path: str, prefix: str) -> List[str]:
 @dispatcher.add_method
 def listDataDirectory(prefix='') -> List[str]:
   return scan_dir(Paths.log_root(), prefix)
-
-
-@dispatcher.add_method
-def reboot() -> Dict[str, int]:
-  sock = messaging.sub_sock("deviceState", timeout=1000)
-  ret = messaging.recv_one(sock)
-  if ret is None or ret.deviceState.started:
-    raise Exception("Reboot unavailable")
-
-  def do_reboot() -> None:
-    time.sleep(2)
-    HARDWARE.reboot()
-
-  threading.Thread(target=do_reboot).start()
-
-  return {"success": 1}
 
 
 @dispatcher.add_method
@@ -454,22 +432,20 @@ def cancelUpload(upload_id: Union[str, List[str]]) -> Dict[str, Union[int, str]]
   cancelled_uploads.update(cancelled_ids)
   return {"success": 1}
 
-
 @dispatcher.add_method
-def primeActivated(activated: bool) -> Dict[str, int]:
+def setRouteViewed(route: str) -> Dict[str, Union[int, str]]:
+  # maintain a list of the last 10 routes viewed in connect
+  params = Params()
+
+  r = params.get("AthenadRecentlyViewedRoutes", encoding="utf8")
+  routes = [] if r is None else r.split(",")
+  routes.append(route)
+
+  # remove duplicates
+  routes = list(dict.fromkeys(routes))
+
+  params.put("AthenadRecentlyViewedRoutes", ",".join(routes[-10:]))
   return {"success": 1}
-
-
-@dispatcher.add_method
-def setBandwithLimit(upload_speed_kbps: int, download_speed_kbps: int) -> Dict[str, Union[int, str]]:
-  if not AGNOS:
-    return {"success": 0, "error": "only supported on AGNOS"}
-
-  try:
-    HARDWARE.set_bandwidth_limit(upload_speed_kbps, download_speed_kbps)
-    return {"success": 1}
-  except subprocess.CalledProcessError as e:
-    return {"success": 0, "error": "failed to set limit", "stdout": e.stdout, "stderr": e.stderr}
 
 
 def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local_port: int) -> Dict[str, int]:
@@ -507,10 +483,10 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
 
 @dispatcher.add_method
 def getPublicKey() -> Optional[str]:
-  if not os.path.isfile(PERSIST + '/comma/id_rsa.pub'):
+  if not os.path.isfile(Paths.persist_root() + '/comma/id_rsa.pub'):
     return None
 
-  with open(PERSIST + '/comma/id_rsa.pub') as f:
+  with open(Paths.persist_root() + '/comma/id_rsa.pub') as f:
     return f.read()
 
 
@@ -646,6 +622,7 @@ def log_handler(end_event: threading.Event) -> None:
 
 
 def stat_handler(end_event: threading.Event) -> None:
+  STATS_DIR = Paths.stats_root()
   while not end_event.is_set():
     last_scan = 0.
     curr_scan = time.monotonic()
@@ -675,6 +652,8 @@ def ws_proxy_recv(ws: WebSocket, local_sock: socket.socket, ssock: socket.socket
   while not (end_event.is_set() or global_end_event.is_set()):
     try:
       data = ws.recv()
+      if isinstance(data, str):
+        data = data.encode("utf-8")
       local_sock.sendall(data)
     except WebSocketTimeoutException:
       pass
@@ -766,10 +745,11 @@ def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
     if onroad != onroad_prev:
       onroad_prev = onroad
 
-      sock.setsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT, 16000 if onroad else 0)
-      sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 7 if onroad else 30)
-      sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 7 if onroad else 10)
-      sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 2 if onroad else 3)
+      if sock is not None:
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_USER_TIMEOUT, 16000 if onroad else 0)
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 7 if onroad else 30)
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 7 if onroad else 10)
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 2 if onroad else 3)
 
     if end_event.wait(5):
       break

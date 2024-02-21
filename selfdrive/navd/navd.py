@@ -15,7 +15,7 @@ from openpilot.selfdrive.navd.helpers import (Coordinate, coordinate_from_param,
                                     distance_along_geometry, maxspeed_to_ms,
                                     minimum_distance,
                                     parse_banner_instructions)
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 
 REROUTE_DISTANCE = 25
 MANEUVER_TRANSITION_THRESHOLD = 10
@@ -71,8 +71,11 @@ class RouteEngine:
         self.ui_pid = ui_pid[0]
 
     self.update_location()
-    self.recompute_route()
-    self.send_instruction()
+    try:
+      self.recompute_route()
+      self.send_instruction()
+    except Exception:
+      cloudlog.exception("navd.failed_to_compute")
 
   def update_location(self):
     location = self.sm['liveLocationKalman']
@@ -196,7 +199,7 @@ class RouteEngine:
     self.send_route()
 
   def send_instruction(self):
-    msg = messaging.new_message('navInstruction')
+    msg = messaging.new_message('navInstruction', valid=True)
 
     if self.step_idx is None:
       msg.valid = False
@@ -256,7 +259,10 @@ class RouteEngine:
     for i in range(self.step_idx + 1, len(self.route)):
       total_distance += self.route[i]['distance']
       total_time += self.route[i]['duration']
-      total_time_typical += self.route[i]['duration_typical']
+      if self.route[i]['duration_typical'] is None:
+        total_time_typical += self.route[i]['duration']
+      else:
+        total_time_typical += self.route[i]['duration_typical']
 
     msg.navInstruction.distanceRemaining = total_distance
     msg.navInstruction.timeRemaining = total_time
@@ -302,7 +308,7 @@ class RouteEngine:
       for path in self.route_geometry:
         coords += [c.as_dict() for c in path]
 
-    msg = messaging.new_message('navRoute')
+    msg = messaging.new_message('navRoute', valid=True)
     msg.navRoute.coordinates = coords
     self.pm.send('navRoute', msg)
 

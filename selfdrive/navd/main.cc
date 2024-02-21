@@ -11,7 +11,7 @@
 #include "system/hardware/hw.h"
 
 int main(int argc, char *argv[]) {
-  Hardware::config_cpu_rendering();
+  Hardware::config_cpu_rendering(true);
 
   qInstallMessageHandler(swagLogMessageHandler);
   setpriority(PRIO_PROCESS, 0, -20);

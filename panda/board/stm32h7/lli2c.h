@@ -5,7 +5,7 @@
 #define I2C_TIMEOUT_US 100000U
 
 // cppcheck-suppress misra-c2012-2.7; not sure why it triggers here?
-bool i2c_status_wait(volatile uint32_t *reg, uint32_t mask, uint32_t val) {
+bool i2c_status_wait(const volatile uint32_t *reg, uint32_t mask, uint32_t val) {
   uint32_t start_time = microsecond_timer_get();
   while(((*reg & mask) != val) && (get_ts_elapsed(microsecond_timer_get(), start_time) < I2C_TIMEOUT_US));
   return ((*reg & mask) == val);
@@ -119,29 +119,29 @@ end:
   return ret;
 }
 
-bool i2c_set_reg_bits(I2C_TypeDef *I2C, uint8_t addr, uint8_t reg, uint8_t bits) {
+bool i2c_set_reg_bits(I2C_TypeDef *I2C, uint8_t address, uint8_t regis, uint8_t bits) {
   uint8_t value;
-  bool ret = i2c_read_reg(I2C, addr, reg, &value);
+  bool ret = i2c_read_reg(I2C, address, regis, &value);
   if(ret) {
-    ret = i2c_write_reg(I2C, addr, reg, value | bits);
+    ret = i2c_write_reg(I2C, address, regis, value | bits);
   }
   return ret;
 }
 
-bool i2c_clear_reg_bits(I2C_TypeDef *I2C, uint8_t addr, uint8_t reg, uint8_t bits) {
+bool i2c_clear_reg_bits(I2C_TypeDef *I2C, uint8_t address, uint8_t regis, uint8_t bits) {
   uint8_t value;
-  bool ret = i2c_read_reg(I2C, addr, reg, &value);
+  bool ret = i2c_read_reg(I2C, address, regis, &value);
   if(ret) {
-    ret = i2c_write_reg(I2C, addr, reg, value & (uint8_t) (~bits));
+    ret = i2c_write_reg(I2C, address, regis, value & (uint8_t) (~bits));
   }
   return ret;
 }
 
-bool i2c_set_reg_mask(I2C_TypeDef *I2C, uint8_t addr, uint8_t reg, uint8_t value, uint8_t mask) {
+bool i2c_set_reg_mask(I2C_TypeDef *I2C, uint8_t address, uint8_t regis, uint8_t value, uint8_t mask) {
   uint8_t old_value;
-  bool ret = i2c_read_reg(I2C, addr, reg, &old_value);
+  bool ret = i2c_read_reg(I2C, address, regis, &old_value);
   if(ret) {
-    ret = i2c_write_reg(I2C, addr, reg, (old_value & (uint8_t) (~mask)) | (value & mask));
+    ret = i2c_write_reg(I2C, address, regis, (old_value & (uint8_t) (~mask)) | (value & mask));
   }
   return ret;
 }

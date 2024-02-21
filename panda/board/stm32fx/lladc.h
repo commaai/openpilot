@@ -1,12 +1,3 @@
-// ACCEL1 = ADC10
-// ACCEL2 = ADC11
-// VOLT_S = ADC12
-// CURR_S = ADC13
-
-#define ADCCHAN_ACCEL0 10
-#define ADCCHAN_ACCEL1 11
-#define ADCCHAN_VIN 12
-#define ADCCHAN_CURRENT 13
 
 void register_set(volatile uint32_t *addr, uint32_t val, uint32_t mask);
 

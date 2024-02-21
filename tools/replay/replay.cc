@@ -363,7 +363,7 @@ void Replay::publishFrame(const Event *e) {
 
 void Replay::stream() {
   cereal::Event::Which cur_which = cereal::Event::Which::INIT_DATA;
-  double prev_replay_speed = 1.0;
+  double prev_replay_speed = speed_;
   std::unique_lock lk(stream_lock_);
 
   while (true) {
@@ -398,14 +398,14 @@ void Replay::stream() {
           evt_start_ts = cur_mono_time_;
           loop_start_ts = nanos_since_boot();
           prev_replay_speed = speed_;
-        } else if (behind_ns > 0 && !hasFlag(REPLAY_FLAG_FULL_SPEED)) {
+        } else if (behind_ns > 0) {
           precise_nano_sleep(behind_ns);
         }
 
         if (!evt->frame) {
           publishMessage(evt);
         } else if (camera_server_) {
-          if (hasFlag(REPLAY_FLAG_FULL_SPEED)) {
+          if (speed_ > 1.0) {
             camera_server_->waitForSent();
           }
           publishFrame(evt);

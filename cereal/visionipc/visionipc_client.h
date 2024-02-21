@@ -2,11 +2,8 @@
 
 #include <set>
 #include <string>
-#include <vector>
-#include <unistd.h>
 
 #include "cereal/messaging/messaging.h"
-#include "cereal/visionipc/visionipc.h"
 #include "cereal/visionipc/visionbuf.h"
 
 class VisionIpcClient {

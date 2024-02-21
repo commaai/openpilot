@@ -13,7 +13,6 @@ from openpilot.system.hardware import PC
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 from openpilot.selfdrive.manager.process_config import managed_processes
 
-LM_THRESH = 120  # defined in system/camerad/imgproc/utils.h
 
 VISION_STREAMS = {
   "roadCameraState": VisionStreamType.VISION_STREAM_ROAD,

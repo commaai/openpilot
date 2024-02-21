@@ -31,7 +31,7 @@ if os.getenv("RELEASE"):
   assert os.path.exists(cert_fn), 'Certificate file not found. Please specify absolute path'
 else:
   BUILD_TYPE = "DEBUG"
-  cert_fn = File("../certs/debug").srcnode().abspath
+  cert_fn = File("../certs/debug").srcnode().relpath
   common_flags += ["-DALLOW_DEBUG"]
 
 if os.getenv("DEBUG"):
@@ -99,7 +99,7 @@ def to_c_uint32(x):
 def get_key_header(name):
   from Crypto.PublicKey import RSA
 
-  public_fn = File(f'../certs/{name}.pub').srcnode().abspath
+  public_fn = f'../certs/{name}.pub'
   rsa = RSA.importKey(open(public_fn).read())
   assert(rsa.size_in_bits() == 1024)
 
@@ -132,7 +132,7 @@ with open("obj/cert.h", "w") as f:
 
 for project_name in build_projects:
   project = build_projects[project_name]
-  linkerscript_fn = File(project["LINKER_SCRIPT"]).srcnode().abspath
+  linkerscript_fn = File(project["LINKER_SCRIPT"]).srcnode().relpath
 
   flags = [
     "-Wall",
@@ -193,5 +193,5 @@ for project_name in build_projects:
   main_bin = project_env.Objcopy(f"obj/{project_name}.bin", main_elf)
 
   # Sign main
-  sign_py = File("../crypto/sign.py").srcnode().abspath
+  sign_py = File("../crypto/sign.py").srcnode().relpath
   panda_bin_signed = project_env.Command(f"obj/{project_name}.bin.signed", main_bin, f"SETLEN=1 {sign_py} $SOURCE $TARGET {cert_fn}")

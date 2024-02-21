@@ -79,7 +79,7 @@ void refresh_can_tx_slots_available(void);
 #define STS_SETUP_COMP                         4
 #define STS_SETUP_UPDT                         6
 
-uint8_t resp[USBPACKET_MAX_SIZE];
+uint8_t response[USBPACKET_MAX_SIZE];
 
 // for the repeating interfaces
 #define DSCR_INTERFACE_LEN 9
@@ -104,7 +104,7 @@ uint8_t resp[USBPACKET_MAX_SIZE];
 
 // Convert machine byte order to USB byte order
 #define TOUSBORDER(num)\
-  ((num) & 0xFFU), (((num) >> 8) & 0xFFU)
+  ((num) & 0xFFU), (((uint16_t)(num) >> 8) & 0xFFU)
 
 // take in string length and return the first 2 bytes of a string descriptor
 #define STRING_DESCRIPTOR_HEADER(size)\
@@ -198,13 +198,8 @@ uint16_t string_product_desc[] = {
 
 // default serial number when we're not a panda
 uint16_t string_serial_desc[] = {
-#ifdef PEDAL
-  STRING_DESCRIPTOR_HEADER(5),
-  'p', 'e', 'd', 'a', 'l'
-#else
   STRING_DESCRIPTOR_HEADER(4),
   'n', 'o', 'n', 'e'
-#endif
 };
 
 // a string containing the default configuration index
@@ -425,15 +420,15 @@ void USB_WritePacket_EP0(uint8_t *src, uint16_t len) {
 
 void usb_reset(void) {
   // unmask endpoint interrupts, so many sets
-  USBx_DEVICE->DAINT = 0xFFFFFFFF;
-  USBx_DEVICE->DAINTMSK = 0xFFFFFFFF;
+  USBx_DEVICE->DAINT = 0xFFFFFFFFU;
+  USBx_DEVICE->DAINTMSK = 0xFFFFFFFFU;
   //USBx_DEVICE->DOEPMSK = (USB_OTG_DOEPMSK_STUPM | USB_OTG_DOEPMSK_XFRCM | USB_OTG_DOEPMSK_EPDM);
   //USBx_DEVICE->DIEPMSK = (USB_OTG_DIEPMSK_TOM | USB_OTG_DIEPMSK_XFRCM | USB_OTG_DIEPMSK_EPDM | USB_OTG_DIEPMSK_ITTXFEMSK);
   //USBx_DEVICE->DIEPMSK = (USB_OTG_DIEPMSK_TOM | USB_OTG_DIEPMSK_XFRCM | USB_OTG_DIEPMSK_EPDM);
 
   // all interrupts for debugging
-  USBx_DEVICE->DIEPMSK = 0xFFFFFFFF;
-  USBx_DEVICE->DOEPMSK = 0xFFFFFFFF;
+  USBx_DEVICE->DIEPMSK = 0xFFFFFFFFU;
+  USBx_DEVICE->DOEPMSK = 0xFFFFFFFFU;
 
   // clear interrupts
   USBx_INEP(0)->DIEPINT = 0xFF;
@@ -447,10 +442,10 @@ void usb_reset(void) {
   USBx->GRXFSIZ = 0x40;
 
   // 0x100 to offset past GRXFSIZ
-  USBx->DIEPTXF0_HNPTXFSIZ = (0x40U << 16) | 0x40U;
+  USBx->DIEPTXF0_HNPTXFSIZ = (0x40UL << 16) | 0x40U;
 
   // EP1, massive
-  USBx->DIEPTXF[0] = (0x40U << 16) | 0x80U;
+  USBx->DIEPTXF[0] = (0x40UL << 16) | 0x80U;
 
   // flush TX fifo
   USBx->GRSTCTL = USB_OTG_GRSTCTL_TXFFLSH | USB_OTG_GRSTCTL_TXFNUM_4;
@@ -463,15 +458,15 @@ void usb_reset(void) {
   USBx_DEVICE->DCTL |= USB_OTG_DCTL_CGINAK;
 
   // ready to receive setup packets
-  USBx_OUTEP(0)->DOEPTSIZ = USB_OTG_DOEPTSIZ_STUPCNT | (USB_OTG_DOEPTSIZ_PKTCNT & (1U << 19)) | (3U << 3);
+  USBx_OUTEP(0)->DOEPTSIZ = USB_OTG_DOEPTSIZ_STUPCNT | (USB_OTG_DOEPTSIZ_PKTCNT & (1UL << 19)) | (3U << 3);
 }
 
-char to_hex_char(int a) {
+char to_hex_char(uint8_t a) {
   char ret;
-  if (a < 10) {
+  if (a < 10U) {
     ret = '0' + a;
   } else {
-    ret = 'a' + (a - 10);
+    ret = 'a' + (a - 10U);
   }
   return ret;
 }
@@ -490,17 +485,17 @@ void usb_setup(void) {
   switch (setup.b.bRequest) {
     case USB_REQ_SET_CONFIGURATION:
       // enable other endpoints, has to be here?
-      USBx_INEP(1)->DIEPCTL = (0x40U & USB_OTG_DIEPCTL_MPSIZ) | (2U << 18) | (1U << 22) |
+      USBx_INEP(1)->DIEPCTL = (0x40U & USB_OTG_DIEPCTL_MPSIZ) | (2UL << 18) | (1UL << 22) |
                               USB_OTG_DIEPCTL_SD0PID_SEVNFRM | USB_OTG_DIEPCTL_USBAEP;
       USBx_INEP(1)->DIEPINT = 0xFF;
 
-      USBx_OUTEP(2)->DOEPTSIZ = (1U << 19) | 0x40U;
-      USBx_OUTEP(2)->DOEPCTL = (0x40U & USB_OTG_DOEPCTL_MPSIZ) | (2U << 18) |
+      USBx_OUTEP(2)->DOEPTSIZ = (1UL << 19) | 0x40U;
+      USBx_OUTEP(2)->DOEPCTL = (0x40U & USB_OTG_DOEPCTL_MPSIZ) | (2UL << 18) |
                                USB_OTG_DOEPCTL_SD0PID_SEVNFRM | USB_OTG_DOEPCTL_USBAEP;
       USBx_OUTEP(2)->DOEPINT = 0xFF;
 
-      USBx_OUTEP(3)->DOEPTSIZ = (32U << 19) | 0x800U;
-      USBx_OUTEP(3)->DOEPCTL = (0x40U & USB_OTG_DOEPCTL_MPSIZ) | (2U << 18) |
+      USBx_OUTEP(3)->DOEPTSIZ = (32UL << 19) | 0x800U;
+      USBx_OUTEP(3)->DOEPCTL = (0x40U & USB_OTG_DOEPCTL_MPSIZ) | (2UL << 18) |
                                USB_OTG_DOEPCTL_SD0PID_SEVNFRM | USB_OTG_DOEPCTL_USBAEP;
       USBx_OUTEP(3)->DOEPINT = 0xFF;
 
@@ -557,19 +552,19 @@ void usb_setup(void) {
               break;
             case STRING_OFFSET_ISERIAL:
               #ifdef UID_BASE
-                resp[0] = 0x02 + (12 * 4);
-                resp[1] = 0x03;
+                response[0] = 0x02 + (12 * 4);
+                response[1] = 0x03;
 
                 // 96 bits = 12 bytes
                 for (int i = 0; i < 12; i++){
                   uint8_t cc = ((uint8_t *)UID_BASE)[i];
-                  resp[2 + (i * 4) + 0] = to_hex_char((cc >> 4) & 0xFU);
-                  resp[2 + (i * 4) + 1] = '\0';
-                  resp[2 + (i * 4) + 2] = to_hex_char((cc >> 0) & 0xFU);
-                  resp[2 + (i * 4) + 3] = '\0';
+                  response[2 + (i * 4)] = to_hex_char((cc >> 4) & 0xFU);
+                  response[2 + (i * 4) + 1] = '\0';
+                  response[2 + (i * 4) + 2] = to_hex_char((cc >> 0) & 0xFU);
+                  response[2 + (i * 4) + 3] = '\0';
                 }
 
-                USB_WritePacket(resp, MIN(resp[0], setup.b.wLength.w), 0);
+                USB_WritePacket(response, MIN(response[0], setup.b.wLength.w), 0);
               #else
                 USB_WritePacket((const uint8_t *)string_serial_desc, MIN(sizeof(string_serial_desc), setup.b.wLength.w), 0);
               #endif
@@ -599,10 +594,10 @@ void usb_setup(void) {
       }
       break;
     case USB_REQ_GET_STATUS:
-      // empty resp?
-      resp[0] = 0;
-      resp[1] = 0;
-      USB_WritePacket((void*)&resp, 2, 0);
+      // empty response?
+      response[0] = 0;
+      response[1] = 0;
+      USB_WritePacket((void*)&response, 2, 0);
       USBx_OUTEP(0)->DOEPCTL |= USB_OTG_DOEPCTL_CNAK;
       break;
     case USB_REQ_SET_INTERFACE:
@@ -648,10 +643,10 @@ void usb_setup(void) {
       control_req.param2 = setup.b.wIndex.w;
       control_req.length = setup.b.wLength.w;
 
-      resp_len = comms_control_handler(&control_req, resp);
+      resp_len = comms_control_handler(&control_req, response);
       // response pending if -1 was returned
       if (resp_len != -1) {
-        USB_WritePacket(resp, MIN(resp_len, setup.b.wLength.w), 0);
+        USB_WritePacket(response, MIN(resp_len, setup.b.wLength.w), 0);
         USBx_OUTEP(0)->DOEPCTL |= USB_OTG_DOEPCTL_CNAK;
       }
   }
@@ -802,7 +797,7 @@ void usb_irqhandler(void) {
       #ifdef DEBUG_USB
         print("  OUT2 PACKET XFRC\n");
       #endif
-      USBx_OUTEP(2)->DOEPTSIZ = (1U << 19) | 0x40U;
+      USBx_OUTEP(2)->DOEPTSIZ = (1UL << 19) | 0x40U;
       USBx_OUTEP(2)->DOEPCTL |= USB_OTG_DOEPCTL_EPENA | USB_OTG_DOEPCTL_CNAK;
     }
 
@@ -833,7 +828,7 @@ void usb_irqhandler(void) {
 
     if ((USBx_OUTEP(0)->DOEPINT & USB_OTG_DIEPINT_XFRC) != 0) {
       // ready for next packet
-      USBx_OUTEP(0)->DOEPTSIZ = USB_OTG_DOEPTSIZ_STUPCNT | (USB_OTG_DOEPTSIZ_PKTCNT & (1U << 19)) | (1U << 3);
+      USBx_OUTEP(0)->DOEPTSIZ = USB_OTG_DOEPTSIZ_STUPCNT | (USB_OTG_DOEPTSIZ_PKTCNT & (1UL << 19)) | (1U << 3);
     }
 
     // respond to setup packets
@@ -877,7 +872,7 @@ void usb_irqhandler(void) {
           print("  IN PACKET QUEUE\n");
           #endif
           // TODO: always assuming max len, can we get the length?
-          USB_WritePacket((void *)resp, comms_can_read(resp, 0x40), 1);
+          USB_WritePacket((void *)response, comms_can_read(response, 0x40), 1);
         }
         break;
 
@@ -888,9 +883,9 @@ void usb_irqhandler(void) {
           print("  IN PACKET QUEUE\n");
           #endif
           // TODO: always assuming max len, can we get the length?
-          int len = comms_can_read(resp, 0x40);
+          int len = comms_can_read(response, 0x40);
           if (len > 0) {
-            USB_WritePacket((void *)resp, len, 1);
+            USB_WritePacket((void *)response, len, 1);
           }
         }
         break;
@@ -933,7 +928,7 @@ void usb_irqhandler(void) {
 void can_tx_comms_resume_usb(void) {
   ENTER_CRITICAL();
   if (!outep3_processing && (USBx_OUTEP(3)->DOEPCTL & USB_OTG_DOEPCTL_NAKSTS) != 0) {
-    USBx_OUTEP(3)->DOEPTSIZ = (32U << 19) | 0x800U;
+    USBx_OUTEP(3)->DOEPTSIZ = (32UL << 19) | 0x800U;
     USBx_OUTEP(3)->DOEPCTL |= USB_OTG_DOEPCTL_EPENA | USB_OTG_DOEPCTL_CNAK;
   }
   EXIT_CRITICAL();

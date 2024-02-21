@@ -3,24 +3,19 @@
 #include <iostream>
 #include <thread>
 
+#include <unistd.h>
 #include "cereal/visionipc/ipc.h"
 #include "cereal/visionipc/visionipc_client.h"
 #include "cereal/visionipc/visionipc_server.h"
 #include "cereal/logger/logger.h"
 
 static int connect_to_vipc_server(const std::string &name, bool blocking) {
-  char* prefix = std::getenv("OPENPILOT_PREFIX");
-  std::string path = "/tmp/";
-  if (prefix) {
-    path = path + std::string(prefix) + "_";
-  }
-  path = path + "visionipc_" + name;
-
-  int socket_fd = ipc_connect(path.c_str());
+  const std::string ipc_path = get_ipc_path(name);
+  int socket_fd = ipc_connect(ipc_path.c_str());
   while (socket_fd < 0 && blocking) {
     std::cout << "VisionIpcClient connecting" << std::endl;
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    socket_fd = ipc_connect(path.c_str());
+    socket_fd = ipc_connect(ipc_path.c_str());
   }
   return socket_fd;
 }

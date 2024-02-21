@@ -26,6 +26,10 @@ cdef class CANPacker:
       msg = self.dbc[0].msgs[i]
       self.name_to_address[string(msg.name)] = msg.address
 
+  def __dealloc__(self):
+    if self.packer:
+      del self.packer
+
   cdef vector[uint8_t] pack(self, addr, values):
     cdef vector[SignalPackValue] values_thing
     values_thing.reserve(len(values))

@@ -11,7 +11,7 @@ from typing import List, Optional, Tuple
 
 from cereal import messaging
 from openpilot.common.params import Params
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import TICI
 from openpilot.common.gpio import gpio_init, gpio_set
 from openpilot.system.hardware.tici.pins import GPIO
@@ -291,7 +291,7 @@ def run_receiving(pigeon: TTYPigeon, pm: messaging.PubMaster, duration: int = 0)
         continue
 
       # send out to socket
-      msg = messaging.new_message('ubloxRaw', len(dat))
+      msg = messaging.new_message('ubloxRaw', len(dat), valid=True)
       msg.ubloxRaw = dat[:]
       pm.send('ubloxRaw', msg)
     else:

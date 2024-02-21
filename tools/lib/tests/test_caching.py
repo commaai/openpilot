@@ -1,13 +1,35 @@
 #!/usr/bin/env python3
+from functools import partial
+import http.server
 import os
 import unittest
 
-from pathlib import Path
 from parameterized import parameterized
-from unittest import mock
+from openpilot.selfdrive.athena.tests.helpers import with_http_server
 
-from openpilot.system.hardware.hw import Paths
 from openpilot.tools.lib.url_file import URLFile
+
+
+class CachingTestRequestHandler(http.server.BaseHTTPRequestHandler):
+  FILE_EXISTS = True
+
+  def do_GET(self):
+    if self.FILE_EXISTS:
+      self.send_response(200, b'1234')
+    else:
+      self.send_response(404)
+    self.end_headers()
+
+  def do_HEAD(self):
+    if self.FILE_EXISTS:
+      self.send_response(200)
+      self.send_header("Content-Length", "4")
+    else:
+      self.send_response(404)
+    self.end_headers()
+
+
+with_caching_server = partial(with_http_server, handler=CachingTestRequestHandler)
 
 
 class TestFileDownload(unittest.TestCase):
@@ -66,32 +88,20 @@ class TestFileDownload(unittest.TestCase):
     self.compare_loads(large_file_url)
 
   @parameterized.expand([(True, ), (False, )])
-  def test_recover_from_missing_file(self, cache_enabled):
+  @with_caching_server
+  def test_recover_from_missing_file(self, cache_enabled, host):
     os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
 
-    file_url = "http://localhost:5001/test.png"
+    file_url = f"{host}/test.png"
 
-    file_exists = False
+    CachingTestRequestHandler.FILE_EXISTS = False
+    length = URLFile(file_url).get_length()
+    self.assertEqual(length, -1)
 
-    def get_length_online_mock(self):
-      if file_exists:
-        return 4
-      return -1
+    CachingTestRequestHandler.FILE_EXISTS = True
+    length = URLFile(file_url).get_length()
+    self.assertEqual(length, 4)
 
-    patch_length = mock.patch.object(URLFile, "get_length_online", get_length_online_mock)
-    patch_length.start()
-    try:
-      length = URLFile(file_url).get_length()
-      self.assertEqual(length, -1)
-
-      file_exists = True
-      length = URLFile(file_url).get_length()
-      self.assertEqual(length, 4)
-    finally:
-      tempfile_length = Path(Paths.download_cache_root()) / "ba2119904385654cb0105a2da174875f8e7648db175f202ecae6d6428b0e838f_length"
-      if tempfile_length.exists():
-        tempfile_length.unlink()
-      patch_length.stop()
 
 
 if __name__ == "__main__":

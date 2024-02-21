@@ -28,7 +28,7 @@ void dac_init(DAC_TypeDef *dac, uint8_t channel, bool dma) {
 
 // Set channel 1 value, in mV
 void dac_set(DAC_TypeDef *dac, uint8_t channel, uint32_t value) {
-  uint32_t raw_val = MAX(MIN(value * (1U << 8U) / 3300U, (1U << 8U)), 0U);  
+  uint32_t raw_val = MAX(MIN(value * (1UL << 8U) / 3300U, (1UL << 8U)), 0U);  
   switch(channel) {
     case 1:
       register_set(&dac->DHR8R1, raw_val, 0xFFU);

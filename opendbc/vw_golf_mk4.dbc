@@ -1518,8 +1518,15 @@ CM_ SG_ 912 BSK_HD_Hauptraste "Status of trunk lid main detent";
 CM_ SG_ 1088 Zaehler_Getriebe_1 "Counter Getriebe_1";
 CM_ SG_ 1088 Waehlhebelposition__Getriebe_1_ "Gear Selector Position";
 CM_ SG_ 1088 inneres_Soll_Motormoment "Desired Inner Torque";
+CM_ SG_ 1088 Gang_eingelegt "Gear Engaged";
 CM_ SG_ 1088 Schaltabsicht "Shift Intent";
+CM_ SG_ 1088 Kuehlleistung "Cooling Power";
 CM_ SG_ 1088 Wandlerverlustmoment "Converter Torque Loss";
+CM_ SG_ 1088 Getriebe_Notlauf "Transmission_Notlauf";
+CM_ SG_ 1088 Zielgang_oder_eingelegter_Gang "target_gear_or_gear_in_engagement";
+CM_ SG_ 1088 Uebertragungsfunktion "transfer function";
+CM_ SG_ 1088 EGS_Anforderung "EGS Requirement";
+CM_ SG_ 1088 Schaltung_aktiv__Getriebe_1_ "Shift Activity";
 
 CM_ SG_ 1056 Fehlerstatus_Aussentemp__4_1 "ambient temp error";
 CM_ SG_ 1056 Fehlerstatus_Oeltemperatur_4_1 "oil temp error";

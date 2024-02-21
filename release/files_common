@@ -21,27 +21,8 @@ openpilot/**
 
 common/.gitignore
 common/__init__.py
-common/conversions.py
-common/gpio.py
-common/realtime.py
-common/timeout.py
-common/ffi_wrapper.py
-common/file_helpers.py
-common/logging_extra.py
-common/numpy_fast.py
-common/params.py
-common/params_pyx.pyx
-common/profiler.py
-common/basedir.py
-common/dict_helpers.py
-common/filter_simple.py
-common/stat_live.py
-common/spinner.py
-common/text_window.py
-common/time.py
-
-common/kalman/.gitignore
-common/kalman/*
+common/*.py
+common/*.pyx
 
 common/transformations/__init__.py
 common/transformations/camera.py
@@ -76,7 +57,6 @@ selfdrive/statsd.py
 
 system/logmessaged.py
 system/micd.py
-system/swaglog.py
 system/version.py
 
 selfdrive/athena/__init__.py
@@ -115,9 +95,7 @@ selfdrive/car/ecu_addrs.py
 selfdrive/car/isotp_parallel_query.py
 selfdrive/car/tests/__init__.py
 selfdrive/car/tests/test_car_interfaces.py
-selfdrive/car/torque_data/params.yaml
-selfdrive/car/torque_data/substitute.yaml
-selfdrive/car/torque_data/override.yaml
+selfdrive/car/torque_data/*
 
 selfdrive/car/body/*.py
 selfdrive/car/chrysler/*.py
@@ -137,6 +115,7 @@ selfdrive/debug/can_printer.py
 selfdrive/debug/check_freq.py
 selfdrive/debug/dump.py
 selfdrive/debug/filter_log_message.py
+selfdrive/debug/format_fingerprints.py
 selfdrive/debug/get_fingerprint.py
 selfdrive/debug/uiview.py
 
@@ -146,31 +125,8 @@ selfdrive/debug/vw_mqb_config.py
 common/SConscript
 common/version.h
 
-common/prefix.h
-common/swaglog.h
-common/swaglog.cc
-common/statlog.h
-common/statlog.cc
-common/util.cc
-common/util.h
-common/queue.h
-common/clutil.cc
-common/clutil.h
-common/params.h
-common/params.cc
-common/ratekeeper.cc
-common/ratekeeper.h
-common/watchdog.cc
-common/watchdog.h
-
-common/modeldata.h
-common/mat.h
-common/timing.h
-
-common/gpio.cc
-common/gpio.h
-common/i2c.cc
-common/i2c.h
+common/*.h
+common/*.cc
 
 selfdrive/controls/__init__.py
 selfdrive/controls/controlsd.py
@@ -186,7 +142,6 @@ selfdrive/controls/lib/latcontrol_angle.py
 selfdrive/controls/lib/latcontrol_torque.py
 selfdrive/controls/lib/latcontrol_pid.py
 selfdrive/controls/lib/latcontrol.py
-selfdrive/controls/lib/lateral_planner.py
 selfdrive/controls/lib/longcontrol.py
 selfdrive/controls/lib/longitudinal_planner.py
 selfdrive/controls/lib/pid.py
@@ -198,6 +153,7 @@ selfdrive/controls/lib/lateral_mpc_lib/*
 selfdrive/controls/lib/longitudinal_mpc_lib/*
 
 system/__init__.py
+system/*.py
 
 system/hardware/__init__.py
 system/hardware/base.h
@@ -234,12 +190,10 @@ selfdrive/locationd/paramsd.py
 selfdrive/locationd/models/__init__.py
 selfdrive/locationd/models/.gitignore
 selfdrive/locationd/models/car_kf.py
-selfdrive/locationd/models/gnss_kf.py
 selfdrive/locationd/models/live_kf.py
 selfdrive/locationd/models/live_kf.h
 selfdrive/locationd/models/live_kf.cc
 selfdrive/locationd/models/constants.py
-selfdrive/locationd/models/gnss_helpers.py
 
 selfdrive/locationd/torqued.py
 selfdrive/locationd/calibrationd.py
@@ -284,6 +238,12 @@ system/sensord/sensors/*.cc
 system/sensord/sensors/*.h
 system/sensord/pigeond.py
 
+system/webrtc/__init__.py
+system/webrtc/webrtcd.py
+system/webrtc/schema.py
+system/webrtc/device/audio.py
+system/webrtc/device/video.py
+
 selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
 selfdrive/thermald/fan_controller.py
@@ -294,19 +254,14 @@ selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
 selfdrive/test/test_onroad.py
 selfdrive/test/test_time_to_onroad.py
-selfdrive/test/pytest-tici.ini
 
 selfdrive/ui/.gitignore
 selfdrive/ui/SConscript
 selfdrive/ui/*.cc
 selfdrive/ui/*.h
-selfdrive/ui/ui
 selfdrive/ui/text
 selfdrive/ui/spinner
-selfdrive/ui/soundd/*.cc
-selfdrive/ui/soundd/*.h
-selfdrive/ui/soundd/soundd
-selfdrive/ui/soundd/.gitignore
+selfdrive/ui/soundd.py
 selfdrive/ui/translations/*.ts
 selfdrive/ui/translations/languages.json
 selfdrive/ui/update_translations.py
@@ -336,12 +291,8 @@ system/camerad/main.cc
 system/camerad/snapshot/*
 system/camerad/cameras/camera_common.h
 system/camerad/cameras/camera_common.cc
-system/camerad/cameras/sensor2_i2c.h
-
-system/camerad/imgproc/conv.cl
-system/camerad/imgproc/pool.cl
-system/camerad/imgproc/utils.cc
-system/camerad/imgproc/utils.h
+system/camerad/sensors/*.h
+system/camerad/sensors/*.cc
 
 selfdrive/manager/__init__.py
 selfdrive/manager/build.py
@@ -443,10 +394,14 @@ third_party/acados/acados_template/**
 
 third_party/bootstrap/**
 third_party/qt5/larch64/bin/**
+third_party/maplibre-native-qt/**
 
 scripts/update_now.sh
 scripts/stop_updater.sh
 
+teleoprtc/**
+
+rednose_repo/site_scons/site_tools/rednose_filter.py
 rednose/.gitignore
 rednose/**
 

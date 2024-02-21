@@ -22,6 +22,14 @@ std::string get_endpoint_name(std::string name, VisionStreamType type){
   }
 }
 
+std::string get_ipc_path(const std::string& name) {
+  std::string path = "/tmp/";
+  if (char* prefix = std::getenv("OPENPILOT_PREFIX")) {
+    path += std::string(prefix) + "_";
+  }
+  return path + "visionipc_" + name;
+}
+
 VisionIpcServer::VisionIpcServer(std::string name, cl_device_id device_id, cl_context ctx) : name(name), device_id(device_id), ctx(ctx) {
   msg_ctx = Context::create();
 
@@ -83,14 +91,8 @@ void VisionIpcServer::start_listener(){
 void VisionIpcServer::listener(){
   std::cout << "Starting listener for: " << name << std::endl;
 
-  char* prefix = std::getenv("OPENPILOT_PREFIX");
-  std::string path = "/tmp/";
-  if (prefix) {
-    path = path + std::string(prefix) + "_";
-  }
-  path = path + "visionipc_" + name;
-
-  int sock = ipc_bind(path.c_str());
+  const std::string ipc_path = get_ipc_path(name);
+  int sock = ipc_bind(ipc_path.c_str());
   assert(sock >= 0);
 
   while (!should_exit){
@@ -160,7 +162,7 @@ void VisionIpcServer::listener(){
 
   std::cout << "Stopping listener for: " << name << std::endl;
   close(sock);
-  unlink(path.c_str());
+  unlink(ipc_path.c_str());
 }
 
 

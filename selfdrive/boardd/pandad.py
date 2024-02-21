@@ -12,7 +12,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.selfdrive.boardd.set_time import set_time
 from openpilot.system.hardware import HARDWARE
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 
 
 def get_expected_signature(panda: Panda) -> bytes:
@@ -92,6 +92,11 @@ def main() -> NoReturn:
       count += 1
       cloudlog.event("pandad.flash_and_connect", count=count)
       params.remove("PandaSignatures")
+
+      # TODO: remove this in the next AGNOS
+      # wait until USB is up before counting
+      if time.monotonic() < 25.:
+        no_internal_panda_count = 0
 
       # Handle missing internal panda
       if no_internal_panda_count > 0:

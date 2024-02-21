@@ -1,3 +1,6 @@
+// ///////////////////////// //
+// Jungle board v2 (STM32H7) //
+// ///////////////////////// //
 
 const gpio_t power_pins[] = {
   {.bank = GPIOA, .pin = 0},
@@ -305,7 +308,6 @@ void board_v2_init(void) {
 void board_v2_tick(void) {}
 
 const board board_v2 = {
-  .board_type = "V2",
   .has_canfd = true,
   .has_sbu_sense = true,
   .avdd_mV = 3300U,

@@ -39,18 +39,16 @@ const CanMsg GM_CAM_LONG_TX_MSGS[] = {{0x180, 0, 4}, {0x315, 0, 5}, {0x2CB, 0, 8
                                       {0x184, 2, 8}};  // camera bus
 
 // TODO: do checksum and counter checks. Add correct timestep, 0.1s for now.
-AddrCheckStruct gm_addr_checks[] = {
-  {.msg = {{0x184, 0, 8, .expected_timestep = 100000U}, { 0 }, { 0 }}},
-  {.msg = {{0x34A, 0, 5, .expected_timestep = 100000U}, { 0 }, { 0 }}},
-  {.msg = {{0x1E1, 0, 7, .expected_timestep = 100000U}, { 0 }, { 0 }}},
-  {.msg = {{0xBE, 0, 6, .expected_timestep = 100000U},    // Volt, Silverado, Acadia Denali
-           {0xBE, 0, 7, .expected_timestep = 100000U},    // Bolt EUV
-           {0xBE, 0, 8, .expected_timestep = 100000U}}},  // Escalade
-  {.msg = {{0x1C4, 0, 8, .expected_timestep = 100000U}, { 0 }, { 0 }}},
-  {.msg = {{0xC9, 0, 8, .expected_timestep = 100000U}, { 0 }, { 0 }}},
+RxCheck gm_rx_checks[] = {
+  {.msg = {{0x184, 0, 8, .frequency = 10U}, { 0 }, { 0 }}},
+  {.msg = {{0x34A, 0, 5, .frequency = 10U}, { 0 }, { 0 }}},
+  {.msg = {{0x1E1, 0, 7, .frequency = 10U}, { 0 }, { 0 }}},
+  {.msg = {{0xBE, 0, 6, .frequency = 10U},    // Volt, Silverado, Acadia Denali
+           {0xBE, 0, 7, .frequency = 10U},    // Bolt EUV
+           {0xBE, 0, 8, .frequency = 10U}}},  // Escalade
+  {.msg = {{0x1C4, 0, 8, .frequency = 10U}, { 0 }, { 0 }}},
+  {.msg = {{0xC9, 0, 8, .frequency = 10U}, { 0 }, { 0 }}},
 };
-#define GM_RX_CHECK_LEN (sizeof(gm_addr_checks) / sizeof(gm_addr_checks[0]))
-addr_checks gm_rx_checks = {gm_addr_checks, GM_RX_CHECK_LEN};
 
 const uint16_t GM_PARAM_HW_CAM = 1;
 const uint16_t GM_PARAM_HW_CAM_LONG = 2;
@@ -66,11 +64,8 @@ enum {GM_ASCM, GM_CAM} gm_hw = GM_ASCM;
 bool gm_cam_long = false;
 bool gm_pcm_cruise = false;
 
-static int gm_rx_hook(CANPacket_t *to_push) {
-
-  bool valid = addr_safety_check(to_push, &gm_rx_checks, NULL, NULL, NULL, NULL);
-
-  if (valid && (GET_BUS(to_push) == 0U)) {
+static void gm_rx_hook(const CANPacket_t *to_push) {
+  if (GET_BUS(to_push) == 0U) {
     int addr = GET_ADDR(to_push);
 
     if (addr == 0x184) {
@@ -113,7 +108,7 @@ static int gm_rx_hook(CANPacket_t *to_push) {
     }
 
     if ((addr == 0xC9) && (gm_hw == GM_CAM)) {
-      brake_pressed = GET_BIT(to_push, 40U) != 0U;
+      brake_pressed = GET_BIT(to_push, 40U);
     }
 
     if (addr == 0x1C4) {
@@ -138,36 +133,18 @@ static int gm_rx_hook(CANPacket_t *to_push) {
     }
     generic_rx_checks(stock_ecu_detected);
   }
-  return valid;
 }
 
-// all commands: gas/regen, friction brake and steering
-// if controls_allowed and no pedals pressed
-//     allow all commands up to limit
-// else
-//     block all commands that produce actuation
-
-static int gm_tx_hook(CANPacket_t *to_send) {
-
-  int tx = 1;
+static bool gm_tx_hook(const CANPacket_t *to_send) {
+  bool tx = true;
   int addr = GET_ADDR(to_send);
-
-  if (gm_hw == GM_CAM) {
-    if (gm_cam_long) {
-      tx = msg_allowed(to_send, GM_CAM_LONG_TX_MSGS, sizeof(GM_CAM_LONG_TX_MSGS)/sizeof(GM_CAM_LONG_TX_MSGS[0]));
-    } else {
-      tx = msg_allowed(to_send, GM_CAM_TX_MSGS, sizeof(GM_CAM_TX_MSGS)/sizeof(GM_CAM_TX_MSGS[0]));
-    }
-  } else {
-    tx = msg_allowed(to_send, GM_ASCM_TX_MSGS, sizeof(GM_ASCM_TX_MSGS)/sizeof(GM_ASCM_TX_MSGS[0]));
-  }
 
   // BRAKE: safety check
   if (addr == 0x315) {
     int brake = ((GET_BYTE(to_send, 0) & 0xFU) << 8) + GET_BYTE(to_send, 1);
     brake = (0x1000 - brake) & 0xFFF;
     if (longitudinal_brake_checks(brake, *gm_long_limits)) {
-      tx = 0;
+      tx = false;
     }
   }
 
@@ -176,16 +153,16 @@ static int gm_tx_hook(CANPacket_t *to_send) {
     int desired_torque = ((GET_BYTE(to_send, 0) & 0x7U) << 8) + GET_BYTE(to_send, 1);
     desired_torque = to_signed(desired_torque, 11);
 
-    bool steer_req = (GET_BIT(to_send, 3U) != 0U);
+    bool steer_req = GET_BIT(to_send, 3U);
 
     if (steer_torque_cmd_checks(desired_torque, steer_req, GM_STEERING_LIMITS)) {
-      tx = 0;
+      tx = false;
     }
   }
 
   // GAS/REGEN: safety check
   if (addr == 0x2CB) {
-    bool apply = GET_BIT(to_send, 0U) != 0U;
+    bool apply = GET_BIT(to_send, 0U);
     int gas_regen = ((GET_BYTE(to_send, 2) & 0x7FU) << 5) + ((GET_BYTE(to_send, 3) & 0xF8U) >> 3);
 
     bool violation = false;
@@ -194,7 +171,7 @@ static int gm_tx_hook(CANPacket_t *to_send) {
     violation |= longitudinal_gas_checks(gas_regen, *gm_long_limits);
 
     if (violation) {
-      tx = 0;
+      tx = false;
     }
   }
 
@@ -204,16 +181,14 @@ static int gm_tx_hook(CANPacket_t *to_send) {
 
     bool allowed_cancel = (button == 6) && cruise_engaged_prev;
     if (!allowed_cancel) {
-      tx = 0;
+      tx = false;
     }
   }
 
-  // 1 allows the message through
   return tx;
 }
 
 static int gm_fwd_hook(int bus_num, int addr) {
-
   int bus_fwd = -1;
 
   if (gm_hw == GM_CAM) {
@@ -229,7 +204,7 @@ static int gm_fwd_hook(int bus_num, int addr) {
       // block lkas message and acc messages if gm_cam_long, forward all others
       bool is_lkas_msg = (addr == 0x180);
       bool is_acc_msg = (addr == 0x315) || (addr == 0x2CB) || (addr == 0x370);
-      int block_msg = is_lkas_msg || (is_acc_msg && gm_cam_long);
+      bool block_msg = is_lkas_msg || (is_acc_msg && gm_cam_long);
       if (!block_msg) {
         bus_fwd = 0;
       }
@@ -239,7 +214,7 @@ static int gm_fwd_hook(int bus_num, int addr) {
   return bus_fwd;
 }
 
-static const addr_checks* gm_init(uint16_t param) {
+static safety_config gm_init(uint16_t param) {
   gm_hw = GET_FLAG(param, GM_PARAM_HW_CAM) ? GM_CAM : GM_ASCM;
 
   if (gm_hw == GM_ASCM) {
@@ -253,13 +228,17 @@ static const addr_checks* gm_init(uint16_t param) {
   gm_cam_long = GET_FLAG(param, GM_PARAM_HW_CAM_LONG);
 #endif
   gm_pcm_cruise = (gm_hw == GM_CAM) && !gm_cam_long;
-  return &gm_rx_checks;
+
+  safety_config ret = BUILD_SAFETY_CFG(gm_rx_checks, GM_ASCM_TX_MSGS);
+  if (gm_hw == GM_CAM) {
+    ret = gm_cam_long ? BUILD_SAFETY_CFG(gm_rx_checks, GM_CAM_LONG_TX_MSGS) : BUILD_SAFETY_CFG(gm_rx_checks, GM_CAM_TX_MSGS);
+  }
+  return ret;
 }
 
 const safety_hooks gm_hooks = {
   .init = gm_init,
   .rx = gm_rx_hook,
   .tx = gm_tx_hook,
-  .tx_lin = nooutput_tx_lin_hook,
   .fwd = gm_fwd_hook,
 };

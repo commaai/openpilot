@@ -4,7 +4,7 @@ from typing import Dict
 
 from cereal import log
 
-ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'ambient', 'pmic'])
+ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'pmic'])
 NetworkType = log.DeviceState.NetworkType
 
 
@@ -22,6 +22,9 @@ class HardwareBase(ABC):
         return parser(f.read())
     except Exception:
       return default
+
+  def booted(self) -> bool:
+    return True
 
   @abstractmethod
   def reboot(self, reason=None):
@@ -49,10 +52,6 @@ class HardwareBase(ABC):
 
   @abstractmethod
   def get_serial(self):
-    pass
-
-  @abstractmethod
-  def get_subscriber_info(self):
     pass
 
   @abstractmethod

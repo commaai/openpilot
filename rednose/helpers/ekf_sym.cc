@@ -9,7 +9,6 @@ EKFSym::EKFSym(std::string name, Map<MatrixXdr> Q, Map<VectorXd> x_initial, Map<
     std::vector<int> quaternion_idxs, std::vector<std::string> global_vars, double max_rewind_age)
 {
   // TODO: add logger
-
   this->ekf = ekf_lookup(name);
   assert(this->ekf);
 

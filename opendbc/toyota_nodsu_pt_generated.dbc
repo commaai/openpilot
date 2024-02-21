@@ -562,7 +562,7 @@ BO_ 401 STEERING_LTA: 8 XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
  SG_ SETME_X3 : 29|2@0+ (1,0) [0|3] "" XXX
  SG_ PERCENTAGE : 39|8@0+ (1,0) [0|255] "" XXX
- SG_ SETME_X64 : 47|8@0+ (1,0) [0|255] "" XXX
+ SG_ TORQUE_WIND_DOWN : 47|8@0+ (1,0) [0|255] "" XXX
  SG_ ANGLE : 55|8@0- (0.5,0) [0|255] "" XXX
  SG_ STEER_ANGLE_CMD : 15|16@0- (0.0573,0) [-540|540] "" XXX
  SG_ STEER_REQUEST_2 : 25|1@0+ (1,0) [0|1] "" XXX
@@ -603,7 +603,7 @@ BO_ 1014 BSM: 8 XXX
  SG_ APPROACHING_ENABLED : 15|1@0+ (1,0) [0|1] "" XXX
 
 CM_ SG_ 401 PERCENTAGE "driver override percentage (0-100), very close to steeringPressed in OP";
-CM_ SG_ 401 SETME_X64 "ramps to 0 smoothly then back on falling edge of STEER_REQUEST if BIT isn't 1";
+CM_ SG_ 401 TORQUE_WIND_DOWN "used to wind down torque on user override";
 CM_ SG_ 401 ANGLE "angle of car relative to lane center on LTA camera";
 CM_ SG_ 401 STEER_ANGLE_CMD "desired angle, OEM steers up to 95 degrees, no angle limit but torque will bottom out";
 CM_ SG_ 401 CLEAR_HOLD_STEERING_ALERT "set to 1 when user clears LKAS_HUD->LDA_ALERT ('Hold Steering') by applying torque to steering wheel";
