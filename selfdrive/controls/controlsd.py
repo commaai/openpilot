@@ -88,6 +88,8 @@ class Card:
 
     # TODO: This should not depend on carControl
 
+    self.sm.update(0)
+
     # Update carState from CAN
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
     self.CS = self.CI.update(CC, can_strs)
