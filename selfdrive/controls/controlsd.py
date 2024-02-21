@@ -56,7 +56,6 @@ ACTIVE_STATES = (State.enabled, State.softDisabling, State.overriding)
 ENABLED_STATES = (State.preEnabled, *ACTIVE_STATES)
 
 
-
 class Card:
   CI: CarInterfaceBase
   CS: car.CarState
