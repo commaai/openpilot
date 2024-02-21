@@ -1437,5 +1437,8 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'8S302-3D4-A050\x00\x00',
     ],
+    (Ecu.fwdCamera, 0x18dab5f1, None): [
+      b'8S102-3D4-A080\x00\x00',
+    ],
   },
 }
