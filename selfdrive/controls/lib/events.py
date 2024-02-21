@@ -593,6 +593,11 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.PERMANENT: NormalPermanentAlert("paramsd Permanent Error"),
   },
 
+  EventName.paramsdOffsetError: {
+    ET.NO_ENTRY: NoEntryAlert("Vehicle Model Error: Likely Wheel Misalignment"),
+    ET.SOFT_DISABLE: soft_disable_alert("Vehicle Model Error: Likely Wheel Misalignment"),
+  },
+
   # ********** events that affect controls state transitions **********
 
   EventName.pcmEnable: {
