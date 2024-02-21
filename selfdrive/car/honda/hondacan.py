@@ -31,7 +31,7 @@ class CanBus(CanBusBase):
     return self.offset + 2
 
 
-def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
+def get_lkas_cmd_bus(CAN, car_fingerprint, radar_disabled=False):
   no_radar = car_fingerprint in HONDA_BOSCH_RADARLESS
   if radar_disabled or no_radar or car_fingerprint in CANFD_CAR:
     # when radar is disabled, steering commands are sent directly to powertrain bus
@@ -66,7 +66,7 @@ def create_brake_command(packer, CAN, apply_brake, pump_on, pcm_override, pcm_ca
     "AEB_REQ_2": 0,
     "AEB_STATUS": 0,
   }
-  return packer.make_can_msg("BRAKE_COMMAND", bus, values)
+  return packer.make_can_msg("BRAKE_COMMAND", CAN.pt, values)
 
 
 def create_acc_commands(packer, CAN, enabled, active, accel, gas, stopping_counter, car_fingerprint):
