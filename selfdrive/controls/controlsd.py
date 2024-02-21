@@ -65,6 +65,9 @@ class Card:
     self.sm = messaging.SubMaster(['pandaStates'])
     self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams'])
 
+    self.can_rcv_timeout_counter = 0      # conseuctive timeout count
+    self.can_rcv_cum_timeout_counter = 0  # cumulative timeout count
+
     self.params = Params()
 
     if CI is None:
@@ -95,10 +98,19 @@ class Card:
 
     can_rcv_valid = len(can_strs) > 0
 
+    # Check for CAN timeout
+    if not can_rcv_valid:
+      self.can_rcv_timeout_counter += 1
+      self.can_rcv_cum_timeout_counter += 1
+    else:
+      self.can_rcv_timeout_counter = 0
+
+    self.can_rcv_timeout = self.can_rcv_timeout_counter >= 5
+
     if can_rcv_valid and REPLAY:
       self.can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
 
-    return self.CS, can_rcv_valid
+    return self.CS
 
   def state_publish(self, car_events):
     """carState and carParams publish loop"""
@@ -226,8 +238,6 @@ class Controls:
     self.soft_disable_timer = 0
     self.mismatch_counter = 0
     self.cruise_mismatch_counter = 0
-    self.can_rcv_timeout_counter = 0      # conseuctive timeout count
-    self.can_rcv_cum_timeout_counter = 0  # cumulative timeout count
     self.last_blinker_frame = 0
     self.last_steering_pressed_frame = 0
     self.distance_traveled = 0
@@ -415,10 +425,9 @@ class Controls:
       self.events.add(EventName.canError)
 
     # generic catch-all. ideally, a more specific event should be added above instead
-    can_rcv_timeout = self.can_rcv_timeout_counter >= 5
     has_disable_events = self.events.contains(ET.NO_ENTRY) and (self.events.contains(ET.SOFT_DISABLE) or self.events.contains(ET.IMMEDIATE_DISABLE))
     no_system_errors = (not has_disable_events) or (len(self.events) == num_events)
-    if (not self.sm.all_checks() or can_rcv_timeout) and no_system_errors:
+    if (not self.sm.all_checks() or self.card.can_rcv_timeout) and no_system_errors:
       if not self.sm.all_alive():
         self.events.add(EventName.commIssue)
       elif not self.sm.all_freq_ok():
@@ -430,7 +439,7 @@ class Controls:
         'invalid': [s for s, valid in self.sm.valid.items() if not valid],
         'not_alive': [s for s, alive in self.sm.alive.items() if not alive],
         'not_freq_ok': [s for s, freq_ok in self.sm.freq_ok.items() if not freq_ok],
-        'can_rcv_timeout': can_rcv_timeout,
+        'can_rcv_timeout': self.card.can_rcv_timeout,
       }
       if logs != self.logged_comm_issue:
         cloudlog.event("commIssue", error=True, **logs)
@@ -492,7 +501,7 @@ class Controls:
   def data_sample(self):
     """Receive data from sockets and update carState"""
 
-    CS, can_rcv_valid = self.card.state_update(self.CC)
+    CS = self.card.state_update(self.CC)
 
     self.sm.update(0)
 
@@ -523,13 +532,6 @@ class Controls:
           not_freq_ok=[s for s, freq_ok in self.sm.freq_ok.items() if not freq_ok],
           error=True,
         )
-
-    # Check for CAN timeout
-    if not can_rcv_valid:
-      self.can_rcv_timeout_counter += 1
-      self.can_rcv_cum_timeout_counter += 1
-    else:
-      self.can_rcv_timeout_counter = 0
 
     # When the panda and controlsd do not agree on controls_allowed
     # we want to disengage openpilot. However the status from the panda goes through
@@ -867,7 +869,7 @@ class Controls:
     controlsState.cumLagMs = -self.rk.remaining * 1000.
     controlsState.startMonoTime = int(start_time * 1e9)
     controlsState.forceDecel = bool(force_decel)
-    controlsState.canErrorCounter = self.can_rcv_cum_timeout_counter
+    controlsState.canErrorCounter = self.card.can_rcv_cum_timeout_counter
     controlsState.experimentalMode = self.experimental_mode
 
     lat_tuning = self.CP.lateralTuning.which()
