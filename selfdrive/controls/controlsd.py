@@ -61,7 +61,7 @@ ACTIVE_STATES = (State.enabled, State.softDisabling, State.overriding)
 ENABLED_STATES = (State.preEnabled, *ACTIVE_STATES)
 
 
-class Card:
+class CarD:
   CI: CarInterfaceBase
   CS: car.CarState
 
@@ -149,7 +149,7 @@ class Card:
 
 class Controls:
   def __init__(self, CI=None):
-    self.card = Card(CI)
+    self.card = CarD(CI)
 
     self.CP = self.card.CP
     self.CI = self.card.CI
