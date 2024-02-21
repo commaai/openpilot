@@ -281,11 +281,13 @@ def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None
   running = []
   for p in procs:
     if p.enabled and p.name not in not_run and p.should_run(started, params, CP):
-      p.start()
       running.append(p)
     else:
       p.stop(block=False)
 
     p.check_watchdog(started)
+
+  for p in running:
+    p.start()
 
   return running
