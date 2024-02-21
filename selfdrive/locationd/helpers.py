@@ -27,11 +27,8 @@ class PointBuckets:
     self.buckets_min_points = dict(zip(x_bounds, min_points, strict=True))
     self.min_points_total = min_points_total
 
-  def bucket_lengths(self) -> List[int]:
-    return [len(v) for v in self.buckets.values()]
-
   def __len__(self) -> int:
-    return sum(self.bucket_lengths())
+    return sum([len(v) for v in self.buckets.values()])
 
   def is_valid(self) -> bool:
     individual_buckets_valid = all(len(v) >= min_pts for v, min_pts in zip(self.buckets.values(), self.buckets_min_points.values(), strict=True))
