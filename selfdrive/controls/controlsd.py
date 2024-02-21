@@ -86,6 +86,7 @@ class CarD:
     else:
       self.CI, self.CP = CI, CI.CP
 
+  def init_params(self):
     # set alternative experiences from parameters
     disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
     self.CP.alternativeExperience = 0
@@ -179,9 +180,6 @@ class Controls:
   def __init__(self, CI=None):
     self.card = CarD(CI)
 
-    self.CP = self.card.CP
-    self.CI = self.card.CI
-
     config_realtime_process(4, Priority.CTRL_HIGH)
 
     # Ensure the current branch is cached, otherwise the first iteration of controlsd lags
@@ -213,6 +211,11 @@ class Controls:
     self.is_metric = self.params.get_bool("IsMetric")
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
     openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
+
+    self.card.init_params()
+
+    self.CP = self.card.CP
+    self.CI = self.card.CI
 
     # detect sound card presence and ensure successful init
     sounds_available = HARDWARE.get_sound_card_online()
