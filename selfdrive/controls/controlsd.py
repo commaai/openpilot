@@ -97,13 +97,26 @@ class Card:
     if can_rcv_valid and REPLAY:
       self.can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
 
+    return self.CS, can_rcv_valid
+
+  def state_publish(self, car_events):
+    """carState and carParams publish loop"""
+
+    # TODO: carState should be independent of the event loop
+
     # carState
     cs_send = messaging.new_message('carState')
     cs_send.valid = self.CS.canValid
     cs_send.carState = self.CS
+    cs_send.carState.events = car_events
     self.pm.send('carState', cs_send)
 
-    return self.CS, can_rcv_valid
+    # carParams - logged every 50 seconds (> 1 per segment)
+    if (self.sm.frame % int(50. / DT_CTRL) == 0):
+      cp_send = messaging.new_message('carParams')
+      cp_send.valid = True
+      cp_send.carParams = self.CP
+      self.pm.send('carParams', cp_send)
 
   def controls_update(self, CC: car.CarControl):
     """control update loop, driven by carControl"""
@@ -129,7 +142,7 @@ class Controls:
     self.branch = get_short_branch()
 
     # Setup sockets
-    self.pm = messaging.PubMaster(['controlsState', 'carControl', 'onroadEvents', 'carParams'])
+    self.pm = messaging.PubMaster(['controlsState', 'carControl', 'onroadEvents'])
 
     self.sensor_packets = ["accelerometer", "gyroscope"]
     self.camera_packets = ["roadCameraState", "driverCameraState", "wideRoadCameraState"]
@@ -870,6 +883,8 @@ class Controls:
 
     car_events = self.events.to_msg()
 
+    self.card.state_publish(car_events)
+
     # onroadEvents - logged every second or on change
     if (self.sm.frame % int(1. / DT_CTRL) == 0) or (self.events.names != self.events_prev):
       ce_send = messaging.new_message('onroadEvents', len(self.events))
@@ -877,13 +892,6 @@ class Controls:
       ce_send.onroadEvents = car_events
       self.pm.send('onroadEvents', ce_send)
     self.events_prev = self.events.names.copy()
-
-    # carParams - logged every 50 seconds (> 1 per segment)
-    if (self.sm.frame % int(50. / DT_CTRL) == 0):
-      cp_send = messaging.new_message('carParams')
-      cp_send.valid = True
-      cp_send.carParams = self.CP
-      self.pm.send('carParams', cp_send)
 
     # carControl
     cc_send = messaging.new_message('carControl')
