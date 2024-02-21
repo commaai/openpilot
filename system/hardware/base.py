@@ -4,7 +4,7 @@ from typing import Dict
 
 from cereal import log
 
-ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'ambient', 'pmic'])
+ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'pmic'])
 NetworkType = log.DeviceState.NetworkType
 
 
