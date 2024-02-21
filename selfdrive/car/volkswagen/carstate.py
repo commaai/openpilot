@@ -10,6 +10,8 @@ from openpilot.selfdrive.car.volkswagen.values import DBC, CANBUS, PQ_CARS, Netw
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
+    self.frame = 0
+    self.eps_init_complete = False
     self.CCP = CarControllerParams(CP)
     self.button_states = {button.event_type: False for button in self.CCP.BUTTONS}
     self.esp_hold_confirmation = False
@@ -56,9 +58,12 @@ class CarState(CarStateBase):
     ret.yawRate = pt_cp.vl["ESP_02"]["ESP_Gierrate"] * (1, -1)[int(pt_cp.vl["ESP_02"]["ESP_VZ_Gierrate"])] * CV.DEG_TO_RAD
 
     # Verify EPS readiness to accept steering commands
+    # Treat INITIALIZING and FAULT as temporary for worst likely EPS recovery time, for cars without factory Lane Assist
     hca_status = self.CCP.hca_status_values.get(pt_cp.vl["LH_EPS_03"]["EPS_HCA_Status"])
-    ret.steerFaultPermanent = hca_status in ("DISABLED", "FAULT")
-    ret.steerFaultTemporary = hca_status in ("INITIALIZING", "REJECTED")
+    hca_available = hca_status not in ("INITIALIZING", "FAULT")
+    self.eps_init_complete = self.eps_init_complete or (self.frame > 600 or hca_available)
+    ret.steerFaultPermanent = hca_status == "DISABLED" or (self.eps_init_complete and not hca_available)
+    ret.steerFaultTemporary = hca_status == "REJECTED" or not self.eps_init_complete
 
     # VW Emergency Assist status tracking and mitigation
     self.eps_stock_values = pt_cp.vl["LH_EPS_03"]
@@ -151,6 +156,7 @@ class CarState(CarStateBase):
     # Digital instrument clusters expect the ACC HUD lead car distance to be scaled differently
     self.upscale_lead_car_signal = bool(pt_cp.vl["Kombi_03"]["KBI_Variante"])
 
+    self.frame += 1
     return ret
 
   def update_pq(self, pt_cp, cam_cp, ext_cp, trans_type):
@@ -177,9 +183,12 @@ class CarState(CarStateBase):
     ret.yawRate = pt_cp.vl["Bremse_5"]["Giergeschwindigkeit"] * (1, -1)[int(pt_cp.vl["Bremse_5"]["Vorzeichen_der_Giergeschwindigk"])] * CV.DEG_TO_RAD
 
     # Verify EPS readiness to accept steering commands
+    # Treat INITIALIZING and FAULT as temporary for worst likely EPS recovery time, for cars without factory Lane Assist
     hca_status = self.CCP.hca_status_values.get(pt_cp.vl["Lenkhilfe_2"]["LH2_Sta_HCA"])
-    ret.steerFaultPermanent = hca_status in ("DISABLED", "FAULT")
-    ret.steerFaultTemporary = hca_status in ("INITIALIZING", "REJECTED")
+    hca_available = hca_status not in ("INITIALIZING", "FAULT")
+    self.eps_init_complete = self.eps_init_complete or (self.frame > 600 or hca_available)
+    ret.steerFaultPermanent = hca_status == "DISABLED" or (self.eps_init_complete and not hca_available)
+    ret.steerFaultTemporary = hca_status == "REJECTED" or not self.eps_init_complete
 
     # Update gas, brakes, and gearshift.
     ret.gas = pt_cp.vl["Motor_3"]["Fahrpedal_Rohsignal"] / 100.0
@@ -253,6 +262,7 @@ class CarState(CarStateBase):
     # Additional safety checks performed in CarInterface.
     ret.espDisabled = bool(pt_cp.vl["Bremse_1"]["ESP_Passiv_getastet"])
 
+    self.frame += 1
     return ret
 
   @staticmethod
