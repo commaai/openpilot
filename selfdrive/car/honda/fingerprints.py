@@ -1433,4 +1433,9 @@ FW_VERSIONS = {
       b'37805-64S-AA10\x00\x00',
     ],
   },
+  CAR.CRV_HYBRID_6G: {
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'8S302-3D4-A050\x00\x00',
+    ],
+  },
 }
