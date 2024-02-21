@@ -287,7 +287,7 @@ class CarState(CarStateBase):
         ("BRAKE_COMMAND", 50),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus(CP).camera))
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus(CP).camera)
 
   @staticmethod
   def get_body_can_parser(CP):
