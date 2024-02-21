@@ -39,9 +39,7 @@ class PointBuckets:
     return individual_buckets_valid and total_points_valid
 
   def is_calculable(self) -> bool:
-    individual_buckets_valid = all(len(v) > 0 for v in self.buckets.values())
-    total_points_valid = self.__len__() > 0
-    return individual_buckets_valid and total_points_valid
+    return all(len(v) > 0 for v in self.buckets.values())
 
   def add_point(self, x: float, y: float, bucket_val: float) -> None:
     raise NotImplementedError
