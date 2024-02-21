@@ -184,8 +184,8 @@ class TorqueEstimator(ParameterEstimator):
     liveTorqueParameters.version = VERSION
     liveTorqueParameters.useParams = self.use_params
 
+    # Calculate raw estimates when possible, only update filters when enough points are gathered
     if self.filtered_points.is_calculable():
-      # Logging raw estimations are useful for spot checking routes
       latAccelFactor, latAccelOffset, frictionCoeff = self.estimate_params()
       liveTorqueParameters.latAccelFactorRaw = float(latAccelFactor)
       liveTorqueParameters.latAccelOffsetRaw = float(latAccelOffset)
