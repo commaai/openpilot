@@ -61,7 +61,7 @@ class CarState(CarStateBase):
     # Treat INITIALIZING and FAULT as temporary for worst likely EPS recovery time, for cars without factory Lane Assist
     # DISABLED means the EPS hasn't been configured to support Lane Assist
     hca_status = self.CCP.hca_status_values.get(pt_cp.vl["LH_EPS_03"]["EPS_HCA_Status"])
-    self.eps_init_complete = self.eps_init_complete or (self.frame > 600 or hca_status in ("DISABLED", "READY", "ACTIVE"))
+    self.eps_init_complete = self.eps_init_complete or (hca_status in ("DISABLED", "READY", "ACTIVE") or self.frame > 600)
     ret.steerFaultPermanent = hca_status == "DISABLED" or (self.eps_init_complete and hca_status in ("INITIALIZING", "FAULT"))
     ret.steerFaultTemporary = hca_status == "REJECTED" or not self.eps_init_complete
 
@@ -186,7 +186,7 @@ class CarState(CarStateBase):
     # Treat INITIALIZING and FAULT as temporary for worst likely EPS recovery time, for cars without factory Lane Assist
     # DISABLED means the EPS hasn't been configured to support Lane Assist
     hca_status = self.CCP.hca_status_values.get(pt_cp.vl["Lenkhilfe_2"]["LH2_Sta_HCA"])
-    self.eps_init_complete = self.eps_init_complete or (self.frame > 600 or hca_status in ("DISABLED", "READY", "ACTIVE"))
+    self.eps_init_complete = self.eps_init_complete or (hca_status in ("DISABLED", "READY", "ACTIVE") or self.frame > 600)
     ret.steerFaultPermanent = hca_status == "DISABLED" or (self.eps_init_complete and hca_status in ("INITIALIZING", "FAULT"))
     ret.steerFaultTemporary = hca_status == "REJECTED" or not self.eps_init_complete
 
