@@ -185,13 +185,13 @@ class TorqueEstimator(ParameterEstimator):
     liveTorqueParameters.useParams = self.use_params
 
     if self.filtered_points.is_calculable():
+      # Logging raw estimations are useful for spot checking routes
       latAccelFactor, latAccelOffset, frictionCoeff = self.estimate_params()
       liveTorqueParameters.latAccelFactorRaw = float(latAccelFactor)
       liveTorqueParameters.latAccelOffsetRaw = float(latAccelOffset)
       liveTorqueParameters.frictionCoefficientRaw = float(frictionCoeff)
 
       if self.filtered_points.is_valid():
-        liveTorqueParameters.liveValid = True
         if any(val is None or np.isnan(val) for val in [latAccelFactor, latAccelOffset, frictionCoeff]):
           cloudlog.exception("Live torque parameters are invalid.")
           liveTorqueParameters.liveValid = False
