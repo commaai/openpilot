@@ -36,14 +36,9 @@ void common_init_gpio(void) {
 
   gpio_usb_init();
 
-   // B8,B9: CAN 1
-  #ifdef STM32F4
-    set_gpio_alternate(GPIOB, 8, GPIO_AF8_CAN1);
-    set_gpio_alternate(GPIOB, 9, GPIO_AF8_CAN1);
-  #else
-    set_gpio_alternate(GPIOB, 8, GPIO_AF9_CAN1);
-    set_gpio_alternate(GPIOB, 9, GPIO_AF9_CAN1);
-  #endif
+  // B8,B9: CAN 1
+  set_gpio_alternate(GPIOB, 8, GPIO_AF8_CAN1);
+  set_gpio_alternate(GPIOB, 9, GPIO_AF8_CAN1);
 }
 
 void flasher_peripherals_init(void) {
@@ -71,14 +66,10 @@ void peripherals_init(void) {
   RCC->AHB2ENR |= RCC_AHB2ENR_OTGFSEN;
   RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
   RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
-  #ifndef PEDAL
-    RCC->APB1ENR |= RCC_APB1ENR_UART5EN;
-  #endif
+  RCC->APB1ENR |= RCC_APB1ENR_UART5EN;
   RCC->APB1ENR |= RCC_APB1ENR_CAN1EN;
   RCC->APB1ENR |= RCC_APB1ENR_CAN2EN;
-  #ifdef CAN3
-    RCC->APB1ENR |= RCC_APB1ENR_CAN3EN;
-  #endif
+  RCC->APB1ENR |= RCC_APB1ENR_CAN3EN;
 
   // Analog
   RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;

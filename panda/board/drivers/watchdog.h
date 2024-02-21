@@ -1,9 +1,3 @@
-// TODO: why doesn't it define these?
-#ifdef STM32F2
-#define IWDG_PR_PR_Msk 0x7U
-#define IWDG_RLR_RL_Msk 0xFFFU
-#endif
-
 typedef enum {
   WATCHDOG_50_MS = (400U - 1U),
   WATCHDOG_500_MS = 4000U,

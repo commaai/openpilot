@@ -66,6 +66,10 @@ cdef class CANParser:
     self.can = new cpp_CANParser(bus, dbc_name, message_v)
     self.update_strings([])
 
+  def __dealloc__(self):
+    if self.can:
+      del self.can
+
   def update_strings(self, strings, sendcan=False):
     for v in self.vl_all.values():
       for l in v.values():  # no-cython-lint

@@ -35,8 +35,8 @@ public:
   const char *publish_name;
   const char *filename = NULL;
   bool record = true;
-  int frame_width = 1928;
-  int frame_height = 1208;
+  int frame_width = -1;
+  int frame_height = -1;
   int fps = MAIN_FPS;
   int bitrate = MAIN_BITRATE;
   cereal::EncodeIndex::Type encode_type = Hardware::PC() ? cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS

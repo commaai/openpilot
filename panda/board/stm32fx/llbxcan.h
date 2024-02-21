@@ -75,7 +75,7 @@ bool llcan_set_speed(CAN_TypeDef *CANx, uint32_t speed, bool loopback, bool sile
   return ret;
 }
 
-void llcan_irq_disable(CAN_TypeDef *CANx) {
+void llcan_irq_disable(const CAN_TypeDef *CANx) {
   if (CANx == CAN1) {
     NVIC_DisableIRQ(CAN1_TX_IRQn);
     NVIC_DisableIRQ(CAN1_RX0_IRQn);
@@ -84,17 +84,15 @@ void llcan_irq_disable(CAN_TypeDef *CANx) {
     NVIC_DisableIRQ(CAN2_TX_IRQn);
     NVIC_DisableIRQ(CAN2_RX0_IRQn);
     NVIC_DisableIRQ(CAN2_SCE_IRQn);
-  #ifdef CAN3
-    } else if (CANx == CAN3) {
-      NVIC_DisableIRQ(CAN3_TX_IRQn);
-      NVIC_DisableIRQ(CAN3_RX0_IRQn);
-      NVIC_DisableIRQ(CAN3_SCE_IRQn);
-  #endif
+  } else if (CANx == CAN3) {
+    NVIC_DisableIRQ(CAN3_TX_IRQn);
+    NVIC_DisableIRQ(CAN3_RX0_IRQn);
+    NVIC_DisableIRQ(CAN3_SCE_IRQn);
   } else {
   }
 }
 
-void llcan_irq_enable(CAN_TypeDef *CANx) {
+void llcan_irq_enable(const CAN_TypeDef *CANx) {
   if (CANx == CAN1) {
     NVIC_EnableIRQ(CAN1_TX_IRQn);
     NVIC_EnableIRQ(CAN1_RX0_IRQn);
@@ -103,12 +101,10 @@ void llcan_irq_enable(CAN_TypeDef *CANx) {
     NVIC_EnableIRQ(CAN2_TX_IRQn);
     NVIC_EnableIRQ(CAN2_RX0_IRQn);
     NVIC_EnableIRQ(CAN2_SCE_IRQn);
-  #ifdef CAN3
-    } else if (CANx == CAN3) {
-      NVIC_EnableIRQ(CAN3_TX_IRQn);
-      NVIC_EnableIRQ(CAN3_RX0_IRQn);
-      NVIC_EnableIRQ(CAN3_SCE_IRQn);
-  #endif
+  } else if (CANx == CAN3) {
+    NVIC_EnableIRQ(CAN3_TX_IRQn);
+    NVIC_EnableIRQ(CAN3_RX0_IRQn);
+    NVIC_EnableIRQ(CAN3_SCE_IRQn);
   } else {
   }
 }
@@ -140,7 +136,7 @@ bool llcan_init(CAN_TypeDef *CANx) {
     CANx->sFilterRegister[0].FR2 = 0U;
     CANx->sFilterRegister[14].FR1 = 0U;
     CANx->sFilterRegister[14].FR2 = 0U;
-    CANx->FA1R |= 1U | (1U << 14);
+    CANx->FA1R |= 1U | (1UL << 14);
 
     // Exit init mode, do not wait
     register_clear_bits(&(CANx->FMR), CAN_FMR_FINIT);

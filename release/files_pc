@@ -1,5 +1,3 @@
-third_party/mapbox-gl-native-qt/x86_64/*.so
-
 third_party/libyuv/x86_64/**
 third_party/snpe/x86_64/**
 third_party/snpe/x86_64-linux-clang/**

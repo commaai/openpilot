@@ -43,6 +43,8 @@ uint16_t spi_data_len_miso;
 uint16_t spi_checksum_error_count = 0;
 bool spi_can_tx_ready = false;
 
+const char version_text[] = "VERSION";
+
 #define SPI_HEADER_SIZE 7U
 
 // low level SPI prototypes
@@ -64,7 +66,7 @@ uint16_t spi_version_packet(uint8_t *out) {
   // VERSION + 2 byte data length + data + CRC8
 
   // echo "VERSION"
-  (void)memcpy(out, "VERSION", 7);
+  (void)memcpy(out, version_text, 7);
 
   // write response
   uint16_t data_len = 0;
@@ -109,7 +111,7 @@ void spi_init(void) {
   llspi_mosi_dma(spi_buf_rx, SPI_HEADER_SIZE);
 }
 
-bool check_checksum(uint8_t *data, uint16_t len) {
+bool validate_checksum(const uint8_t *data, uint16_t len) {
   // TODO: can speed this up by casting the bulk to uint32_t and xor-ing the bytes afterwards
   uint8_t checksum = SPI_CHECKSUM_START;
   for(uint16_t i = 0U; i < len; i++){
@@ -128,11 +130,11 @@ void spi_rx_done(void) {
   spi_data_len_mosi = (spi_buf_rx[3] << 8) | spi_buf_rx[2];
   spi_data_len_miso = (spi_buf_rx[5] << 8) | spi_buf_rx[4];
 
-  if (memcmp(spi_buf_rx, "VERSION", 7) == 0) {
+  if (memcmp(spi_buf_rx, version_text, 7) == 0) {
     response_len = spi_version_packet(spi_buf_tx);
     next_rx_state = SPI_STATE_HEADER_NACK;;
   } else if (spi_state == SPI_STATE_HEADER) {
-    checksum_valid = check_checksum(spi_buf_rx, SPI_HEADER_SIZE);
+    checksum_valid = validate_checksum(spi_buf_rx, SPI_HEADER_SIZE);
     if ((spi_buf_rx[0] == SPI_SYNC_BYTE) && checksum_valid) {
       // response: ACK and start receiving data portion
       spi_buf_tx[0] = SPI_HACK;
@@ -148,7 +150,7 @@ void spi_rx_done(void) {
   } else if (spi_state == SPI_STATE_DATA_RX) {
     // We got everything! Based on the endpoint specified, call the appropriate handler
     bool response_ack = false;
-    checksum_valid = check_checksum(&(spi_buf_rx[SPI_HEADER_SIZE]), spi_data_len_mosi + 1U);
+    checksum_valid = validate_checksum(&(spi_buf_rx[SPI_HEADER_SIZE]), spi_data_len_mosi + 1U);
     if (checksum_valid) {
       if (spi_endpoint == 0U) {
         if (spi_data_len_mosi >= sizeof(ControlPacket_t)) {

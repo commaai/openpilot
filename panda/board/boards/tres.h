@@ -1,6 +1,6 @@
-// /////////////////
-// Tres + Harness //
-// /////////////////
+// ///////////////////////////
+// Tres (STM32H7) + Harness //
+// ///////////////////////////
 
 bool tres_ir_enabled;
 bool tres_fan_enabled;
@@ -71,11 +71,8 @@ void tres_init(void) {
 }
 
 const board board_tres = {
-  .board_type = "Tres",
   .harness_config = &red_chiplet_harness_config,
-  .has_hw_gmlan = false,
   .has_obd = true,
-  .has_lin = false,
   .has_spi = true,
   .has_canfd = true,
   .has_rtc_battery = true,
@@ -90,10 +87,10 @@ const board board_tres = {
   .set_led = red_set_led,
   .set_can_mode = red_chiplet_set_can_mode,
   .check_ignition = red_check_ignition,
-  .read_current = unused_read_current,
+  .read_voltage_mV = red_read_voltage_mV,
+  .read_current_mA = unused_read_current,
   .set_fan_enabled = tres_set_fan_enabled,
   .set_ir_power = tres_set_ir_power,
-  .set_phone_power = unused_set_phone_power,
   .set_siren = fake_siren_set,
   .set_bootkick = tres_set_bootkick,
   .read_som_gpio = tres_read_som_gpio

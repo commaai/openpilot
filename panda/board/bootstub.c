@@ -19,6 +19,7 @@
 #include "obj/gitversion.h"
 #include "flasher.h"
 
+// cppcheck-suppress unusedFunction ; used in headers not included in cppcheck
 void __initialize_hardware_early(void) {
   early_initialization();
 }

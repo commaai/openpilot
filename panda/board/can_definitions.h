@@ -8,7 +8,7 @@ const uint8_t PANDA_BUS_CNT = 4U;
 
 #define CANPACKET_HEAD_SIZE 6U
 
-#if !defined(STM32F4) && !defined(STM32F2)
+#if !defined(STM32F4)
   #define CANFD
   #define CANPACKET_DATA_SIZE_MAX 64U
 #else

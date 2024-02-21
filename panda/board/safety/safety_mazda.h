@@ -25,20 +25,17 @@ const SteeringLimits MAZDA_STEERING_LIMITS = {
 
 const CanMsg MAZDA_TX_MSGS[] = {{MAZDA_LKAS, 0, 8}, {MAZDA_CRZ_BTNS, 0, 8}, {MAZDA_LKAS_HUD, 0, 8}};
 
-AddrCheckStruct mazda_addr_checks[] = {
-  {.msg = {{MAZDA_CRZ_CTRL,     0, 8, .expected_timestep = 20000U}, { 0 }, { 0 }}},
-  {.msg = {{MAZDA_CRZ_BTNS,     0, 8, .expected_timestep = 100000U}, { 0 }, { 0 }}},
-  {.msg = {{MAZDA_STEER_TORQUE, 0, 8, .expected_timestep = 12000U}, { 0 }, { 0 }}},
-  {.msg = {{MAZDA_ENGINE_DATA,  0, 8, .expected_timestep = 10000U}, { 0 }, { 0 }}},
-  {.msg = {{MAZDA_PEDALS,       0, 8, .expected_timestep = 20000U}, { 0 }, { 0 }}},
+RxCheck mazda_rx_checks[] = {
+  {.msg = {{MAZDA_CRZ_CTRL,     0, 8, .frequency = 50U}, { 0 }, { 0 }}},
+  {.msg = {{MAZDA_CRZ_BTNS,     0, 8, .frequency = 10U}, { 0 }, { 0 }}},
+  {.msg = {{MAZDA_STEER_TORQUE, 0, 8, .frequency = 83U}, { 0 }, { 0 }}},
+  {.msg = {{MAZDA_ENGINE_DATA,  0, 8, .frequency = 100U}, { 0 }, { 0 }}},
+  {.msg = {{MAZDA_PEDALS,       0, 8, .frequency = 50U}, { 0 }, { 0 }}},
 };
-#define MAZDA_ADDR_CHECKS_LEN (sizeof(mazda_addr_checks) / sizeof(mazda_addr_checks[0]))
-addr_checks mazda_rx_checks = {mazda_addr_checks, MAZDA_ADDR_CHECKS_LEN};
 
 // track msgs coming from OP so that we know what CAM msgs to drop and what to forward
-static int mazda_rx_hook(CANPacket_t *to_push) {
-  bool valid = addr_safety_check(to_push, &mazda_rx_checks, NULL, NULL, NULL, NULL);
-  if (valid && ((int)GET_BUS(to_push) == MAZDA_MAIN)) {
+static void mazda_rx_hook(const CANPacket_t *to_push) {
+  if ((int)GET_BUS(to_push) == MAZDA_MAIN) {
     int addr = GET_ADDR(to_push);
 
     if (addr == MAZDA_ENGINE_DATA) {
@@ -69,18 +66,12 @@ static int mazda_rx_hook(CANPacket_t *to_push) {
 
     generic_rx_checks((addr == MAZDA_LKAS));
   }
-  return valid;
 }
 
-static int mazda_tx_hook(CANPacket_t *to_send) {
-
-  int tx = 1;
+static bool mazda_tx_hook(const CANPacket_t *to_send) {
+  bool tx = true;
   int addr = GET_ADDR(to_send);
   int bus = GET_BUS(to_send);
-
-  if (!msg_allowed(to_send, MAZDA_TX_MSGS, sizeof(MAZDA_TX_MSGS)/sizeof(MAZDA_TX_MSGS[0]))) {
-    tx = 0;
-  }
 
   // Check if msg is sent on the main BUS
   if (bus == MAZDA_MAIN) {
@@ -90,7 +81,7 @@ static int mazda_tx_hook(CANPacket_t *to_send) {
       int desired_torque = (((GET_BYTE(to_send, 0) & 0x0FU) << 8) | GET_BYTE(to_send, 1)) - 2048U;
 
       if (steer_torque_cmd_checks(desired_torque, -1, MAZDA_STEERING_LIMITS)) {
-        tx = 0;
+        tx = false;
       }
     }
 
@@ -100,7 +91,7 @@ static int mazda_tx_hook(CANPacket_t *to_send) {
       // only allow cancel while contrls not allowed
       bool cancel_cmd = (GET_BYTE(to_send, 0) == 0x1U);
       if (!controls_allowed && !cancel_cmd) {
-        tx = 0;
+        tx = false;
       }
     }
   }
@@ -125,15 +116,14 @@ static int mazda_fwd_hook(int bus, int addr) {
   return bus_fwd;
 }
 
-static const addr_checks* mazda_init(uint16_t param) {
+static safety_config mazda_init(uint16_t param) {
   UNUSED(param);
-  return &mazda_rx_checks;
+  return BUILD_SAFETY_CFG(mazda_rx_checks, MAZDA_TX_MSGS);
 }
 
 const safety_hooks mazda_hooks = {
   .init = mazda_init,
   .rx = mazda_rx_hook,
   .tx = mazda_tx_hook,
-  .tx_lin = nooutput_tx_lin_hook,
   .fwd = mazda_fwd_hook,
 };

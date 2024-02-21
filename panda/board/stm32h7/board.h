@@ -16,8 +16,8 @@
 #include "drivers/clock_source.h"
 #include "boards/red.h"
 #include "boards/red_chiplet.h"
-#include "boards/red_v2.h"
 #include "boards/tres.h"
+#include "boards/cuatro.h"
 
 
 uint8_t get_board_id(void) {
@@ -34,13 +34,22 @@ void detect_board_type(void) {
     hw_type = HW_TYPE_RED_PANDA;
     current_board = &board_red;
   } else if (board_id == 1U) {
-    hw_type = HW_TYPE_RED_PANDA_V2;
-    current_board = &board_red_v2;
+    // deprecated
+    //hw_type = HW_TYPE_RED_PANDA_V2;
   } else if (board_id == 2U) {
     hw_type = HW_TYPE_TRES;
+    current_board = &board_tres;
+  } else if (board_id == 3U) {
+    hw_type = HW_TYPE_CUATRO;
     current_board = &board_tres;
   } else {
     hw_type = HW_TYPE_UNKNOWN;
     print("Hardware type is UNKNOWN!\n");
   }
+
+  // TODO: detect this live
+#ifdef STM32H723
+  hw_type = HW_TYPE_CUATRO;
+  current_board = &board_cuatro;
+#endif
 }

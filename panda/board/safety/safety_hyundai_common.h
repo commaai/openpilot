@@ -45,7 +45,7 @@ void hyundai_common_init(uint16_t param) {
 #endif
 }
 
-void hyundai_common_cruise_state_check(const int cruise_engaged) {
+void hyundai_common_cruise_state_check(const bool cruise_engaged) {
   // some newer HKG models can re-enable after spamming cancel button,
   // so keep track of user button presses to deny engagement if no interaction
 
@@ -62,9 +62,8 @@ void hyundai_common_cruise_state_check(const int cruise_engaged) {
   }
 }
 
-void hyundai_common_cruise_buttons_check(const int cruise_button, const int main_button) {
-  if ((cruise_button == HYUNDAI_BTN_RESUME) || (cruise_button == HYUNDAI_BTN_SET) || (cruise_button == HYUNDAI_BTN_CANCEL) ||
-      (main_button != 0)) {
+void hyundai_common_cruise_buttons_check(const int cruise_button, const bool main_button) {
+  if ((cruise_button == HYUNDAI_BTN_RESUME) || (cruise_button == HYUNDAI_BTN_SET) || (cruise_button == HYUNDAI_BTN_CANCEL) || main_button) {
     hyundai_last_button_interaction = 0U;
   } else {
     hyundai_last_button_interaction = MIN(hyundai_last_button_interaction + 1U, HYUNDAI_PREV_BUTTON_SAMPLES);
@@ -87,7 +86,7 @@ void hyundai_common_cruise_buttons_check(const int cruise_button, const int main
   }
 }
 
-uint32_t hyundai_common_canfd_compute_checksum(CANPacket_t *to_push) {
+uint32_t hyundai_common_canfd_compute_checksum(const CANPacket_t *to_push) {
   int len = GET_LEN(to_push);
   uint32_t address = GET_ADDR(to_push);
 

@@ -1,5 +1,5 @@
 // ********************* Bare interrupt handlers *********************
-// Only implemented the STM32F413 interrupts for now, the STM32F203 specific ones do not fall into the scope of SIL2
+// Only implemented the STM32F413 interrupts for now
 
 void WWDG_IRQHandler(void) {handle_interrupt(WWDG_IRQn);}
 void PVD_IRQHandler(void) {handle_interrupt(PVD_IRQn);}
@@ -73,28 +73,26 @@ void DMA2_Stream7_IRQHandler(void) {handle_interrupt(DMA2_Stream7_IRQn);}
 void USART6_IRQHandler(void) {handle_interrupt(USART6_IRQn);}
 void I2C3_EV_IRQHandler(void) {handle_interrupt(I2C3_EV_IRQn);}
 void I2C3_ER_IRQHandler(void) {handle_interrupt(I2C3_ER_IRQn);}
-#ifdef STM32F4
-  void DFSDM1_FLT0_IRQHandler(void) {handle_interrupt(DFSDM1_FLT0_IRQn);}
-  void DFSDM1_FLT1_IRQHandler(void) {handle_interrupt(DFSDM1_FLT1_IRQn);}
-  void CAN3_TX_IRQHandler(void) {handle_interrupt(CAN3_TX_IRQn);}
-  void CAN3_RX0_IRQHandler(void) {handle_interrupt(CAN3_RX0_IRQn);}
-  void CAN3_RX1_IRQHandler(void) {handle_interrupt(CAN3_RX1_IRQn);}
-  void CAN3_SCE_IRQHandler(void) {handle_interrupt(CAN3_SCE_IRQn);}
-  void RNG_IRQHandler(void) {handle_interrupt(RNG_IRQn);}
-  void FPU_IRQHandler(void) {handle_interrupt(FPU_IRQn);}
-  void UART7_IRQHandler(void) {handle_interrupt(UART7_IRQn);}
-  void UART8_IRQHandler(void) {handle_interrupt(UART8_IRQn);}
-  void SPI4_IRQHandler(void) {handle_interrupt(SPI4_IRQn);}
-  void SPI5_IRQHandler(void) {handle_interrupt(SPI5_IRQn);}
-  void SAI1_IRQHandler(void) {handle_interrupt(SAI1_IRQn);}
-  void UART9_IRQHandler(void) {handle_interrupt(UART9_IRQn);}
-  void UART10_IRQHandler(void) {handle_interrupt(UART10_IRQn);}
-  void QUADSPI_IRQHandler(void) {handle_interrupt(QUADSPI_IRQn);}
-  void FMPI2C1_EV_IRQHandler(void) {handle_interrupt(FMPI2C1_EV_IRQn);}
-  void FMPI2C1_ER_IRQHandler(void) {handle_interrupt(FMPI2C1_ER_IRQn);}
-  void LPTIM1_IRQHandler(void) {handle_interrupt(LPTIM1_IRQn);}
-  void DFSDM2_FLT0_IRQHandler(void) {handle_interrupt(DFSDM2_FLT0_IRQn);}
-  void DFSDM2_FLT1_IRQHandler(void) {handle_interrupt(DFSDM2_FLT1_IRQn);}
-  void DFSDM2_FLT2_IRQHandler(void) {handle_interrupt(DFSDM2_FLT2_IRQn);}
-  void DFSDM2_FLT3_IRQHandler(void) {handle_interrupt(DFSDM2_FLT3_IRQn);}
-#endif
+void DFSDM1_FLT0_IRQHandler(void) {handle_interrupt(DFSDM1_FLT0_IRQn);}
+void DFSDM1_FLT1_IRQHandler(void) {handle_interrupt(DFSDM1_FLT1_IRQn);}
+void CAN3_TX_IRQHandler(void) {handle_interrupt(CAN3_TX_IRQn);}
+void CAN3_RX0_IRQHandler(void) {handle_interrupt(CAN3_RX0_IRQn);}
+void CAN3_RX1_IRQHandler(void) {handle_interrupt(CAN3_RX1_IRQn);}
+void CAN3_SCE_IRQHandler(void) {handle_interrupt(CAN3_SCE_IRQn);}
+void RNG_IRQHandler(void) {handle_interrupt(RNG_IRQn);}
+void FPU_IRQHandler(void) {handle_interrupt(FPU_IRQn);}
+void UART7_IRQHandler(void) {handle_interrupt(UART7_IRQn);}
+void UART8_IRQHandler(void) {handle_interrupt(UART8_IRQn);}
+void SPI4_IRQHandler(void) {handle_interrupt(SPI4_IRQn);}
+void SPI5_IRQHandler(void) {handle_interrupt(SPI5_IRQn);}
+void SAI1_IRQHandler(void) {handle_interrupt(SAI1_IRQn);}
+void UART9_IRQHandler(void) {handle_interrupt(UART9_IRQn);}
+void UART10_IRQHandler(void) {handle_interrupt(UART10_IRQn);}
+void QUADSPI_IRQHandler(void) {handle_interrupt(QUADSPI_IRQn);}
+void FMPI2C1_EV_IRQHandler(void) {handle_interrupt(FMPI2C1_EV_IRQn);}
+void FMPI2C1_ER_IRQHandler(void) {handle_interrupt(FMPI2C1_ER_IRQn);}
+void LPTIM1_IRQHandler(void) {handle_interrupt(LPTIM1_IRQn);}
+void DFSDM2_FLT0_IRQHandler(void) {handle_interrupt(DFSDM2_FLT0_IRQn);}
+void DFSDM2_FLT1_IRQHandler(void) {handle_interrupt(DFSDM2_FLT1_IRQn);}
+void DFSDM2_FLT2_IRQHandler(void) {handle_interrupt(DFSDM2_FLT2_IRQn);}
+void DFSDM2_FLT3_IRQHandler(void) {handle_interrupt(DFSDM2_FLT3_IRQn);}

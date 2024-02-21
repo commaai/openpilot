@@ -1,6 +1,6 @@
-// ///////////// //
-// Uno + Harness //
-// ///////////// //
+// /////////////////////// //
+// Uno (STM32F4) + Harness //
+// /////////////////////// //
 
 void uno_enable_can_transceiver(uint8_t transceiver, bool enabled) {
   switch (transceiver){
@@ -56,10 +56,6 @@ void uno_set_bootkick(BootState state) {
     // We want the pin to be floating, not forced high!
     set_gpio_mode(GPIOB, 14, MODE_INPUT);
   }
-}
-
-void uno_set_phone_power(bool enabled){
-  set_gpio_output(GPIOB, 4, enabled);
 }
 
 void uno_set_can_mode(uint8_t mode) {
@@ -141,7 +137,7 @@ void uno_init(void) {
   set_gpio_alternate(GPIOC, 8, GPIO_AF2_TIM3);
 
   // Turn on phone regulator
-  uno_set_phone_power(true);
+  set_gpio_output(GPIOB, 4, true);
 
   // Initialize IR PWM and set to 0%
   set_gpio_alternate(GPIOB, 7, GPIO_AF2_TIM4);
@@ -165,13 +161,13 @@ void uno_init(void) {
   // Set normal CAN mode
   uno_set_can_mode(CAN_MODE_NORMAL);
 
-  // flip CAN0 and CAN2 if we are flipped
+  // change CAN mapping when flipped
   if (harness.status == HARNESS_STATUS_FLIPPED) {
     can_flip_buses(0, 2);
   }
 
   // Switch to phone usb mode if harness connection is powered by less than 7V
-  if((adc_get_mV(ADCCHAN_VIN) * VIN_READOUT_DIVIDER) < 7000U){
+  if(white_read_voltage_mV() < 7000U){
     uno_set_usb_switch(true);
   } else {
     uno_set_usb_switch(false);
@@ -203,11 +199,8 @@ const harness_configuration uno_harness_config = {
 };
 
 const board board_uno = {
-  .board_type = "Uno",
   .harness_config = &uno_harness_config,
-  .has_hw_gmlan = false,
   .has_obd = true,
-  .has_lin = false,
   .has_spi = false,
   .has_canfd = false,
   .has_rtc_battery = true,
@@ -222,10 +215,10 @@ const board board_uno = {
   .set_led = uno_set_led,
   .set_can_mode = uno_set_can_mode,
   .check_ignition = uno_check_ignition,
-  .read_current = unused_read_current,
+  .read_voltage_mV = white_read_voltage_mV,
+  .read_current_mA = unused_read_current,
   .set_fan_enabled = uno_set_fan_enabled,
   .set_ir_power = uno_set_ir_power,
-  .set_phone_power = uno_set_phone_power,
   .set_siren = unused_set_siren,
   .set_bootkick = uno_set_bootkick,
   .read_som_gpio = unused_read_som_gpio

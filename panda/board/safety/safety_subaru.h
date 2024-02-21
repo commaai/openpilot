@@ -73,47 +73,39 @@ const LongitudinalLimits SUBARU_LONG_LIMITS = {
   {MSG_SUBARU_ES_STATIC_1,       SUBARU_MAIN_BUS, 8}, \
   {MSG_SUBARU_ES_STATIC_2,       SUBARU_MAIN_BUS, 8}, \
 
-#define SUBARU_COMMON_ADDR_CHECKS(alt_bus)                                                                                                            \
-  {.msg = {{MSG_SUBARU_Throttle,        SUBARU_MAIN_BUS, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 10000U}, { 0 }, { 0 }}}, \
-  {.msg = {{MSG_SUBARU_Steering_Torque, SUBARU_MAIN_BUS, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 20000U}, { 0 }, { 0 }}}, \
-  {.msg = {{MSG_SUBARU_Wheel_Speeds,    alt_bus,         8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 20000U}, { 0 }, { 0 }}}, \
-  {.msg = {{MSG_SUBARU_Brake_Status,    alt_bus,         8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 20000U}, { 0 }, { 0 }}}, \
-  {.msg = {{MSG_SUBARU_CruiseControl,   alt_bus,         8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 50000U}, { 0 }, { 0 }}}, \
+#define SUBARU_COMMON_RX_CHECKS(alt_bus)                                                                                                            \
+  {.msg = {{MSG_SUBARU_Throttle,        SUBARU_MAIN_BUS, 8, .check_checksum = true, .max_counter = 15U, .frequency = 100U}, { 0 }, { 0 }}}, \
+  {.msg = {{MSG_SUBARU_Steering_Torque, SUBARU_MAIN_BUS, 8, .check_checksum = true, .max_counter = 15U, .frequency = 50U}, { 0 }, { 0 }}}, \
+  {.msg = {{MSG_SUBARU_Wheel_Speeds,    alt_bus,         8, .check_checksum = true, .max_counter = 15U, .frequency = 50U}, { 0 }, { 0 }}}, \
+  {.msg = {{MSG_SUBARU_Brake_Status,    alt_bus,         8, .check_checksum = true, .max_counter = 15U, .frequency = 50U}, { 0 }, { 0 }}}, \
+  {.msg = {{MSG_SUBARU_CruiseControl,   alt_bus,         8, .check_checksum = true, .max_counter = 15U, .frequency = 20U}, { 0 }, { 0 }}}, \
 
 const CanMsg SUBARU_TX_MSGS[] = {
   SUBARU_COMMON_TX_MSGS(SUBARU_MAIN_BUS, MSG_SUBARU_ES_LKAS)
 };
-#define SUBARU_TX_MSGS_LEN (sizeof(SUBARU_TX_MSGS) / sizeof(SUBARU_TX_MSGS[0]))
 
 const CanMsg SUBARU_LONG_TX_MSGS[] = {
   SUBARU_COMMON_TX_MSGS(SUBARU_MAIN_BUS, MSG_SUBARU_ES_LKAS)
   SUBARU_COMMON_LONG_TX_MSGS(SUBARU_MAIN_BUS)
 };
-#define SUBARU_LONG_TX_MSGS_LEN (sizeof(SUBARU_LONG_TX_MSGS) / sizeof(SUBARU_LONG_TX_MSGS[0]))
 
 const CanMsg SUBARU_GEN2_TX_MSGS[] = {
   SUBARU_COMMON_TX_MSGS(SUBARU_ALT_BUS, MSG_SUBARU_ES_LKAS)
 };
-#define SUBARU_GEN2_TX_MSGS_LEN (sizeof(SUBARU_GEN2_TX_MSGS) / sizeof(SUBARU_GEN2_TX_MSGS[0]))
 
 const CanMsg SUBARU_GEN2_LONG_TX_MSGS[] = {
   SUBARU_COMMON_TX_MSGS(SUBARU_ALT_BUS, MSG_SUBARU_ES_LKAS)
   SUBARU_COMMON_LONG_TX_MSGS(SUBARU_ALT_BUS)
   SUBARU_GEN2_LONG_ADDITIONAL_TX_MSGS()
 };
-#define SUBARU_GEN2_LONG_TX_MSGS_LEN (sizeof(SUBARU_GEN2_LONG_TX_MSGS) / sizeof(SUBARU_GEN2_LONG_TX_MSGS[0]))
 
-AddrCheckStruct subaru_addr_checks[] = {
-  SUBARU_COMMON_ADDR_CHECKS(SUBARU_MAIN_BUS)
+RxCheck subaru_rx_checks[] = {
+  SUBARU_COMMON_RX_CHECKS(SUBARU_MAIN_BUS)
 };
-#define SUBARU_ADDR_CHECK_LEN (sizeof(subaru_addr_checks) / sizeof(subaru_addr_checks[0]))
-addr_checks subaru_rx_checks = {subaru_addr_checks, SUBARU_ADDR_CHECK_LEN};
 
-AddrCheckStruct subaru_gen2_addr_checks[] = {
-  SUBARU_COMMON_ADDR_CHECKS(SUBARU_ALT_BUS)
+RxCheck subaru_gen2_rx_checks[] = {
+  SUBARU_COMMON_RX_CHECKS(SUBARU_ALT_BUS)
 };
-#define SUBARU_GEN2_ADDR_CHECK_LEN (sizeof(subaru_gen2_addr_checks) / sizeof(subaru_gen2_addr_checks[0]))
-addr_checks subaru_gen2_rx_checks = {subaru_gen2_addr_checks, SUBARU_GEN2_ADDR_CHECK_LEN};
 
 
 const uint16_t SUBARU_PARAM_GEN2 = 1;
@@ -123,15 +115,15 @@ bool subaru_gen2 = false;
 bool subaru_longitudinal = false;
 
 
-static uint32_t subaru_get_checksum(CANPacket_t *to_push) {
+static uint32_t subaru_get_checksum(const CANPacket_t *to_push) {
   return (uint8_t)GET_BYTE(to_push, 0);
 }
 
-static uint8_t subaru_get_counter(CANPacket_t *to_push) {
+static uint8_t subaru_get_counter(const CANPacket_t *to_push) {
   return (uint8_t)(GET_BYTE(to_push, 1) & 0xFU);
 }
 
-static uint32_t subaru_compute_checksum(CANPacket_t *to_push) {
+static uint32_t subaru_compute_checksum(const CANPacket_t *to_push) {
   int addr = GET_ADDR(to_push);
   int len = GET_LEN(to_push);
   uint8_t checksum = (uint8_t)(addr) + (uint8_t)((unsigned int)(addr) >> 8U);
@@ -141,82 +133,63 @@ static uint32_t subaru_compute_checksum(CANPacket_t *to_push) {
   return checksum;
 }
 
-static int subaru_rx_hook(CANPacket_t *to_push) {
+static void subaru_rx_hook(const CANPacket_t *to_push) {
+  const int bus = GET_BUS(to_push);
+  const int alt_main_bus = subaru_gen2 ? SUBARU_ALT_BUS : SUBARU_MAIN_BUS;
 
-  bool valid = addr_safety_check(to_push, &subaru_rx_checks,
-                                 subaru_get_checksum, subaru_compute_checksum, subaru_get_counter, NULL);
+  int addr = GET_ADDR(to_push);
+  if ((addr == MSG_SUBARU_Steering_Torque) && (bus == SUBARU_MAIN_BUS)) {
+    int torque_driver_new;
+    torque_driver_new = ((GET_BYTES(to_push, 0, 4) >> 16) & 0x7FFU);
+    torque_driver_new = -1 * to_signed(torque_driver_new, 11);
+    update_sample(&torque_driver, torque_driver_new);
 
-  if (valid) {
-    const int bus = GET_BUS(to_push);
-    const int alt_main_bus = subaru_gen2 ? SUBARU_ALT_BUS : SUBARU_MAIN_BUS;
-
-    int addr = GET_ADDR(to_push);
-    if ((addr == MSG_SUBARU_Steering_Torque) && (bus == SUBARU_MAIN_BUS)) {
-      int torque_driver_new;
-      torque_driver_new = ((GET_BYTES(to_push, 0, 4) >> 16) & 0x7FFU);
-      torque_driver_new = -1 * to_signed(torque_driver_new, 11);
-      update_sample(&torque_driver, torque_driver_new);
-
-      int angle_meas_new = (GET_BYTES(to_push, 4, 2) & 0xFFFFU);
-      // convert Steering_Torque -> Steering_Angle to centidegrees, to match the ES_LKAS_ANGLE angle request units
-      angle_meas_new = ROUND(to_signed(angle_meas_new, 16) * -2.17);
-      update_sample(&angle_meas, angle_meas_new);
-    }
-
-    // enter controls on rising edge of ACC, exit controls on ACC off
-    if ((addr == MSG_SUBARU_CruiseControl) && (bus == alt_main_bus)) {
-      bool cruise_engaged = GET_BIT(to_push, 41U) != 0U;
-      pcm_cruise_check(cruise_engaged);
-    }
-
-    // update vehicle moving with any non-zero wheel speed
-    if ((addr == MSG_SUBARU_Wheel_Speeds) && (bus == alt_main_bus)) {
-      uint32_t fr = (GET_BYTES(to_push, 1, 3) >> 4) & 0x1FFFU;
-      uint32_t rr = (GET_BYTES(to_push, 3, 3) >> 1) & 0x1FFFU;
-      uint32_t rl = (GET_BYTES(to_push, 4, 3) >> 6) & 0x1FFFU;
-      uint32_t fl = (GET_BYTES(to_push, 6, 2) >> 3) & 0x1FFFU;
-
-      vehicle_moving = (fr > 0U) || (rr > 0U) || (rl > 0U) || (fl > 0U);
-
-      float speed = (fr + rr + rl + fl) / 4U * 0.057;
-      update_sample(&vehicle_speed, ROUND(speed * VEHICLE_SPEED_FACTOR));
-    }
-
-    if ((addr == MSG_SUBARU_Brake_Status) && (bus == alt_main_bus)) {
-      brake_pressed = GET_BIT(to_push, 62U) != 0U;
-    }
-
-    if ((addr == MSG_SUBARU_Throttle) && (bus == SUBARU_MAIN_BUS)) {
-      gas_pressed = GET_BYTE(to_push, 4) != 0U;
-    }
-
-    generic_rx_checks((addr == MSG_SUBARU_ES_LKAS) && (bus == SUBARU_MAIN_BUS));
+    int angle_meas_new = (GET_BYTES(to_push, 4, 2) & 0xFFFFU);
+    // convert Steering_Torque -> Steering_Angle to centidegrees, to match the ES_LKAS_ANGLE angle request units
+    angle_meas_new = ROUND(to_signed(angle_meas_new, 16) * -2.17);
+    update_sample(&angle_meas, angle_meas_new);
   }
-  return valid;
+
+  // enter controls on rising edge of ACC, exit controls on ACC off
+  if ((addr == MSG_SUBARU_CruiseControl) && (bus == alt_main_bus)) {
+    bool cruise_engaged = GET_BIT(to_push, 41U);
+    pcm_cruise_check(cruise_engaged);
+  }
+
+  // update vehicle moving with any non-zero wheel speed
+  if ((addr == MSG_SUBARU_Wheel_Speeds) && (bus == alt_main_bus)) {
+    uint32_t fr = (GET_BYTES(to_push, 1, 3) >> 4) & 0x1FFFU;
+    uint32_t rr = (GET_BYTES(to_push, 3, 3) >> 1) & 0x1FFFU;
+    uint32_t rl = (GET_BYTES(to_push, 4, 3) >> 6) & 0x1FFFU;
+    uint32_t fl = (GET_BYTES(to_push, 6, 2) >> 3) & 0x1FFFU;
+
+    vehicle_moving = (fr > 0U) || (rr > 0U) || (rl > 0U) || (fl > 0U);
+
+    UPDATE_VEHICLE_SPEED((fr + rr + rl + fl) / 4U * 0.057);
+  }
+
+  if ((addr == MSG_SUBARU_Brake_Status) && (bus == alt_main_bus)) {
+    brake_pressed = GET_BIT(to_push, 62U);
+  }
+
+  if ((addr == MSG_SUBARU_Throttle) && (bus == SUBARU_MAIN_BUS)) {
+    gas_pressed = GET_BYTE(to_push, 4) != 0U;
+  }
+
+  generic_rx_checks((addr == MSG_SUBARU_ES_LKAS) && (bus == SUBARU_MAIN_BUS));
 }
 
-static int subaru_tx_hook(CANPacket_t *to_send) {
-
-  int tx = 1;
+static bool subaru_tx_hook(const CANPacket_t *to_send) {
+  bool tx = true;
   int addr = GET_ADDR(to_send);
   bool violation = false;
-
-  if (subaru_gen2 && subaru_longitudinal) {
-    tx = msg_allowed(to_send, SUBARU_GEN2_LONG_TX_MSGS, SUBARU_GEN2_LONG_TX_MSGS_LEN);
-  } else if (subaru_gen2) {
-    tx = msg_allowed(to_send, SUBARU_GEN2_TX_MSGS,      SUBARU_GEN2_TX_MSGS_LEN);
-  } else if (subaru_longitudinal) {
-    tx = msg_allowed(to_send, SUBARU_LONG_TX_MSGS,      SUBARU_LONG_TX_MSGS_LEN);
-  } else {
-    tx = msg_allowed(to_send, SUBARU_TX_MSGS,           SUBARU_TX_MSGS_LEN);
-  }
 
   // steer cmd checks
   if (addr == MSG_SUBARU_ES_LKAS) {
     int desired_torque = ((GET_BYTES(to_send, 0, 4) >> 16) & 0x1FFFU);
     desired_torque = -1 * to_signed(desired_torque, 13);
 
-    bool steer_req = GET_BIT(to_send, 29U) != 0U;
+    bool steer_req = GET_BIT(to_send, 29U);
 
     const SteeringLimits limits = subaru_gen2 ? SUBARU_GEN2_STEERING_LIMITS : SUBARU_STEERING_LIMITS;
     violation |= steer_torque_cmd_checks(desired_torque, steer_req, limits);
@@ -230,8 +203,8 @@ static int subaru_tx_hook(CANPacket_t *to_send) {
 
   // check es_distance cruise_throttle limits
   if (addr == MSG_SUBARU_ES_Distance) {
-    int cruise_throttle = (GET_BYTES(to_send, 2, 2) & 0xFFFU);
-    bool cruise_cancel = GET_BIT(to_send, 56U) != 0U;
+    int cruise_throttle = (GET_BYTES(to_send, 2, 2) & 0x1FFFU);
+    bool cruise_cancel = GET_BIT(to_send, 56U);
 
     if (subaru_longitudinal) {
       violation |= longitudinal_gas_checks(cruise_throttle, SUBARU_LONG_LIMITS);
@@ -245,7 +218,7 @@ static int subaru_tx_hook(CANPacket_t *to_send) {
 
   // check es_status transmission_rpm limits
   if (addr == MSG_SUBARU_ES_Status) {
-    int transmission_rpm = (GET_BYTES(to_send, 2, 2) & 0xFFFU);
+    int transmission_rpm = (GET_BYTES(to_send, 2, 2) & 0x1FFFU);
     violation |= longitudinal_transmission_rpm_checks(transmission_rpm, SUBARU_LONG_LIMITS);
   }
 
@@ -260,7 +233,7 @@ static int subaru_tx_hook(CANPacket_t *to_send) {
   }
 
   if (violation){
-    tx = 0;
+    tx = false;
   }
   return tx;
 }
@@ -292,26 +265,30 @@ static int subaru_fwd_hook(int bus_num, int addr) {
   return bus_fwd;
 }
 
-static const addr_checks* subaru_init(uint16_t param) {
+static safety_config subaru_init(uint16_t param) {
   subaru_gen2 = GET_FLAG(param, SUBARU_PARAM_GEN2);
 
 #ifdef ALLOW_DEBUG
   subaru_longitudinal = GET_FLAG(param, SUBARU_PARAM_LONGITUDINAL);
 #endif
 
+  safety_config ret;
   if (subaru_gen2) {
-    subaru_rx_checks = (addr_checks){subaru_gen2_addr_checks, SUBARU_GEN2_ADDR_CHECK_LEN};
+    ret = subaru_longitudinal ? BUILD_SAFETY_CFG(subaru_gen2_rx_checks, SUBARU_GEN2_LONG_TX_MSGS) : \
+                                BUILD_SAFETY_CFG(subaru_gen2_rx_checks, SUBARU_GEN2_TX_MSGS);
   } else {
-    subaru_rx_checks = (addr_checks){subaru_addr_checks, SUBARU_ADDR_CHECK_LEN};
+    ret = subaru_longitudinal ? BUILD_SAFETY_CFG(subaru_rx_checks, SUBARU_LONG_TX_MSGS) : \
+                                BUILD_SAFETY_CFG(subaru_rx_checks, SUBARU_TX_MSGS);
   }
-
-  return &subaru_rx_checks;
+  return ret;
 }
 
 const safety_hooks subaru_hooks = {
   .init = subaru_init,
   .rx = subaru_rx_hook,
   .tx = subaru_tx_hook,
-  .tx_lin = nooutput_tx_lin_hook,
   .fwd = subaru_fwd_hook,
+  .get_counter = subaru_get_counter,
+  .get_checksum = subaru_get_checksum,
+  .compute_checksum = subaru_compute_checksum,
 };

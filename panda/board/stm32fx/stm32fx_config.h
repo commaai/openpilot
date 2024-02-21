@@ -1,12 +1,7 @@
-#ifdef STM32F4
-  #include "stm32fx/inc/stm32f4xx.h"
-  #include "stm32fx/inc/stm32f4xx_hal_gpio_ex.h"
-  #define MCU_IDCODE 0x463U
-#else
-  #include "stm32fx/inc/stm32f2xx.h"
-  #include "stm32fx/inc/stm32f2xx_hal_gpio_ex.h"
-  #define MCU_IDCODE 0x411U
-#endif
+#include "stm32fx/inc/stm32f4xx.h"
+#include "stm32fx/inc/stm32f4xx_hal_gpio_ex.h"
+#define MCU_IDCODE 0x463U
+
 // from the linker script
 #define APP_START_ADDRESS 0x8004000U
 
@@ -28,9 +23,6 @@
 #define TICK_TIMER_IRQ TIM1_BRK_TIM9_IRQn
 #define TICK_TIMER TIM9
 
-#define GMLAN_BITBANG_TIMER_IRQ TIM8_BRK_TIM12_IRQn
-#define GMLAN_BITBANG_TIMER TIM12
-
 #define MICROSECOND_TIMER TIM2
 
 #define INTERRUPT_TIMER_IRQ TIM6_DAC_IRQn
@@ -45,11 +37,7 @@
 #include "comms_definitions.h"
 
 #ifndef BOOTSTUB
-  #ifdef PEDAL
-    #include "pedal/main_declarations.h"
-  #else
-    #include "main_declarations.h"
-  #endif
+  #include "main_declarations.h"
 #else
   #include "bootstub_declarations.h"
 #endif
@@ -69,12 +57,10 @@
 #include "stm32fx/clock.h"
 #include "drivers/watchdog.h"
 
-#if !defined(PEDAL) || defined(BOOTSTUB)
-  #include "drivers/spi.h"
-  #include "stm32fx/llspi.h"
-#endif
+#include "drivers/spi.h"
+#include "stm32fx/llspi.h"
 
-#if !defined(BOOTSTUB) && (!defined(PEDAL) || defined(PEDAL_USB))
+#if !defined(BOOTSTUB)
   #include "drivers/uart.h"
   #include "stm32fx/lluart.h"
 #endif
@@ -89,13 +75,7 @@
   #include "stm32fx/llbxcan.h"
 #endif
 
-#if !defined(PEDAL) || defined(PEDAL_USB) || defined(BOOTSTUB)
-  #include "stm32fx/llusb.h"
-#endif
-
-#ifdef PEDAL
-  #include "stm32fx/lldac.h"
-#endif
+#include "stm32fx/llusb.h"
 
 void early_gpio_float(void) {
   RCC->AHB1ENR = RCC_AHB1ENR_GPIOAEN | RCC_AHB1ENR_GPIOBEN | RCC_AHB1ENR_GPIOCEN;

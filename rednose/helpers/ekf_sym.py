@@ -116,7 +116,7 @@ def gen_code(folder, name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_p
   sympy_header, code = sympy_into_c(sympy_functions, global_vars)
 
   header = "#pragma once\n"
-  header += "#include \"rednose/helpers/common_ekf.h\"\n"
+  header += "#include \"rednose/helpers/ekf.h\"\n"
   header += "extern \"C\" {\n"
 
   pre_code = f"#include \"{name}.h\"\n"
@@ -200,7 +200,7 @@ def gen_code(folder, name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_p
     post_code += f"    {{ \"{f}\", {name}_{f} }},\n"
   post_code += "  },\n"
   post_code += "};\n\n"
-  post_code += f"ekf_init({name});\n"
+  post_code += f"ekf_lib_init({name})\n"
 
   # merge code blocks
   header += "}"
@@ -252,7 +252,7 @@ class EKF_sym():
     self.rewind_obscache = []
     self.init_state(x_initial, P_initial, None)
 
-    ffi, lib = load_code(folder, name, "kf")
+    ffi, lib = load_code(folder, name)
     kinds, self.feature_track_kinds = [], []
     for func in dir(lib):
       if func[:len(name) + 3] == f'{name}_h_':

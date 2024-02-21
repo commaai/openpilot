@@ -102,11 +102,4 @@ if [ ! -z "$RELEASE_BRANCH" ]; then
   git push -f origin $RELEASE_BRANCH:$RELEASE_BRANCH
 fi
 
-if [ ! -z "$DASHCAM_BRANCH" ]; then
-  # Create dashcam
-  git rm selfdrive/car/*/carcontroller.py
-  git commit -m "create dashcam release from release"
-  git push -f origin $RELEASE_BRANCH:$DASHCAM_BRANCH
-fi
-
 echo "[-] done T=$SECONDS"

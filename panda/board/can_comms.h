@@ -56,7 +56,7 @@ int comms_can_read(uint8_t *data, uint32_t max_len) {
 asm_buffer can_write_buffer = {.ptr = 0U, .tail_size = 0U};
 
 // send on CAN
-void comms_can_write(uint8_t *data, uint32_t len) {
+void comms_can_write(const uint8_t *data, uint32_t len) {
   uint32_t pos = 0U;
 
   // Assembling can message with data from buffer

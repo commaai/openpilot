@@ -9,10 +9,15 @@ import SCons.Errors
 
 SCons.Warnings.warningAsException(True)
 
+# pending upstream fix - https://github.com/SCons/scons/issues/4461
+#SetOption('warn', 'all')
+
 TICI = os.path.isfile('/TICI')
 AGNOS = TICI
 
 Decider('MD5-timestamp')
+
+SetOption('num_jobs', int(os.cpu_count()/2))
 
 AddOption('--kaitai',
           action='store_true',
@@ -37,7 +42,7 @@ AddOption('--clazy',
 AddOption('--compile_db',
           action='store_true',
           help='build clang compilation database')
-          
+
 AddOption('--ccflags',
           action='store',
           type='string',
@@ -116,10 +121,7 @@ else:
   cflags = []
   cxxflags = []
   cpppath = []
-  rpath += [
-    Dir("#cereal").abspath,
-    Dir("#common").abspath
-  ]
+  rpath += []
 
   # MacOS
   if arch == "Darwin":
@@ -143,9 +145,6 @@ else:
     libpath = [
       f"#third_party/acados/{arch}/lib",
       f"#third_party/libyuv/{arch}/lib",
-      f"#third_party/mapbox-gl-native-qt/{arch}",
-      "#cereal",
-      "#common",
       "/usr/lib",
       "/usr/local/lib",
     ]
@@ -208,11 +207,12 @@ env = Environment(
     "#third_party/json11",
     "#third_party/linux/include",
     "#third_party/snpe/include",
-    "#third_party/mapbox-gl-native-qt/include",
     "#third_party/qrcode",
     "#third_party",
     "#cereal",
     "#opendbc/can",
+    "#third_party/maplibre-native-qt/include",
+    f"#third_party/maplibre-native-qt/{arch}/include"
   ],
 
   CC='clang',
@@ -229,10 +229,13 @@ env = Environment(
     "#opendbc/can",
     "#selfdrive/boardd",
     "#common",
+    "#rednose/helpers",
   ],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
-  tools=["default", "cython", "compilation_db"],
+  REDNOSE_ROOT="#",
+  tools=["default", "cython", "compilation_db", "rednose_filter"],
+  toolpath=["#rednose_repo/site_scons/site_tools"],
 )
 
 if arch == "Darwin":
@@ -294,8 +297,11 @@ else:
   qt_env['QTDIR'] = qt_install_prefix
   qt_dirs = [
     f"{qt_install_headers}",
-    f"{qt_install_headers}/QtGui/5.12.8/QtGui",
   ]
+
+  qt_gui_path = os.path.join(qt_install_headers, "QtGui")
+  qt_gui_dirs = [d for d in os.listdir(qt_gui_path) if os.path.isdir(os.path.join(qt_gui_path, d))]
+  qt_dirs += [f"{qt_install_headers}/QtGui/{qt_gui_dirs[0]}/QtGui", ] if qt_gui_dirs else []
   qt_dirs += [f"{qt_install_headers}/Qt{m}" for m in qt_modules]
 
   qt_libs = [f"Qt5{m}" for m in qt_modules]
@@ -312,7 +318,7 @@ try:
 except SCons.Errors.UserError:
   qt_env.Tool('qt')
 
-qt_env['CPPPATH'] += qt_dirs + ["#selfdrive/ui/qt/"]
+qt_env['CPPPATH'] += qt_dirs# + ["#selfdrive/ui/qt/"]
 qt_flags = [
   "-D_REENTRANT",
   "-DQT_NO_DEBUG",
@@ -325,7 +331,8 @@ qt_flags = [
   "-DQT_MESSAGELOGCONTEXT",
 ]
 qt_env['CXXFLAGS'] += qt_flags
-qt_env['LIBPATH'] += ['#selfdrive/ui']
+qt_env['LIBPATH'] += ['#selfdrive/ui', f"#third_party/maplibre-native-qt/{arch}/lib"]
+qt_env['RPATH'] += [Dir(f"#third_party/maplibre-native-qt/{arch}/lib").srcnode().abspath]
 qt_env['LIBS'] = qt_libs
 
 if GetOption("clazy"):
@@ -367,31 +374,7 @@ SConscript([
   'panda/SConscript',
 ])
 
-# Build rednose library and ekf models
-rednose_deps = [
-  "#selfdrive/locationd/models/constants.py",
-  "#selfdrive/locationd/models/gnss_helpers.py",
-]
-
-rednose_config = {
-  'generated_folder': '#selfdrive/locationd/models/generated',
-  'to_build': {
-    'gnss': ('#selfdrive/locationd/models/gnss_kf.py', True, [], rednose_deps),
-    'live': ('#selfdrive/locationd/models/live_kf.py', True, ['live_kf_constants.h'], rednose_deps),
-    'car': ('#selfdrive/locationd/models/car_kf.py', True, [], rednose_deps),
-  },
-}
-
-if arch != "larch64":
-  rednose_config['to_build'].update({
-    'loc_4': ('#selfdrive/locationd/models/loc_kf.py', True, [], rednose_deps),
-    'lane': ('#selfdrive/locationd/models/lane_kf.py', True, [], rednose_deps),
-    'pos_computer_4': ('#rednose/helpers/lst_sq_computer.py', False, [], []),
-    'pos_computer_5': ('#rednose/helpers/lst_sq_computer.py', False, [], []),
-    'feature_handler_5': ('#rednose/helpers/feature_handler.py', False, [], []),
-  })
-
-Export('rednose_config')
+# Build rednose library
 SConscript(['rednose/SConscript'])
 
 # Build system services

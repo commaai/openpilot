@@ -27,9 +27,9 @@ void set_gpio_mode(GPIO_TypeDef *GPIO, unsigned int pin, unsigned int mode) {
 void set_gpio_output(GPIO_TypeDef *GPIO, unsigned int pin, bool enabled) {
   ENTER_CRITICAL();
   if (enabled) {
-    register_set_bits(&(GPIO->ODR), (1U << pin));
+    register_set_bits(&(GPIO->ODR), (1UL << pin));
   } else {
-    register_clear_bits(&(GPIO->ODR), (1U << pin));
+    register_clear_bits(&(GPIO->ODR), (1UL << pin));
   }
   set_gpio_mode(GPIO, pin, MODE_OUTPUT);
   EXIT_CRITICAL();
@@ -38,7 +38,7 @@ void set_gpio_output(GPIO_TypeDef *GPIO, unsigned int pin, bool enabled) {
 void set_gpio_output_type(GPIO_TypeDef *GPIO, unsigned int pin, unsigned int output_type){
   ENTER_CRITICAL();
   if(output_type == OUTPUT_TYPE_OPEN_DRAIN) {
-    register_set_bits(&(GPIO->OTYPER), (1U << pin));
+    register_set_bits(&(GPIO->OTYPER), (1UL << pin));
   } else {
     register_clear_bits(&(GPIO->OTYPER), (1U << pin));
   }
@@ -64,8 +64,8 @@ void set_gpio_pullup(GPIO_TypeDef *GPIO, unsigned int pin, unsigned int mode) {
   EXIT_CRITICAL();
 }
 
-int get_gpio_input(GPIO_TypeDef *GPIO, unsigned int pin) {
-  return (GPIO->IDR & (1U << pin)) == (1U << pin);
+int get_gpio_input(const GPIO_TypeDef *GPIO, unsigned int pin) {
+  return (GPIO->IDR & (1UL << pin)) == (1UL << pin);
 }
 
 void gpio_set_all_output(const gpio_t *pins, uint8_t num_pins, bool enabled) {

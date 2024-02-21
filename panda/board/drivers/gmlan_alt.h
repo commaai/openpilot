@@ -12,7 +12,7 @@
 int gmlan_alt_mode = DISABLED;
 
 // returns out_len
-int do_bitstuff(char *out, char *in, int in_len) {
+int do_bitstuff(char *out, const char *in, int in_len) {
   int last_bit = -1;
   int bit_cnt = 0;
   int j = 0;
@@ -22,18 +22,18 @@ int do_bitstuff(char *out, char *in, int in_len) {
     j++;
 
     // do the stuffing
-    if (bit == last_bit) {
+    if (bit == (char)last_bit) {
       bit_cnt++;
       if (bit_cnt == 5) {
         // 5 in a row the same, do stuff
-        last_bit = !bit;
+        last_bit = !bit ? 1 : 0;
         out[j] = last_bit;
         j++;
         bit_cnt = 1;
       }
     } else {
       // this is a new bit
-      last_bit = bit;
+      last_bit = (int)bit;
       bit_cnt = 1;
     }
   }
@@ -57,7 +57,7 @@ int append_crc(char *in, int in_len) {
   return in_len_copy;
 }
 
-int append_bits(char *in, int in_len, char *app, int app_len) {
+int append_bits(char *in, int in_len, const char *app, int app_len) {
   int in_len_copy = in_len;
   for (int i = 0; i < app_len; i++) {
     in[in_len_copy] = app[i];
@@ -75,7 +75,7 @@ int append_int(char *in, int in_len, int val, int val_len) {
   return in_len_copy;
 }
 
-int get_bit_message(char *out, CANPacket_t *to_bang) {
+int get_bit_message(char *out, const CANPacket_t *to_bang) {
   char pkt[MAX_BITS_CAN_PACKET];
   char footer[] = {
     1,  // CRC delimiter
@@ -95,7 +95,7 @@ int get_bit_message(char *out, CANPacket_t *to_bang) {
     // extended identifier
     len = append_int(pkt, len, GET_ADDR(to_bang) >> 18, 11);  // Identifier
     len = append_int(pkt, len, 3, 2);    // SRR+IDE
-    len = append_int(pkt, len, (GET_ADDR(to_bang)) & ((1U << 18) - 1U), 18);  // Identifier
+    len = append_int(pkt, len, (GET_ADDR(to_bang)) & ((1UL << 18) - 1U), 18);  // Identifier
     len = append_int(pkt, len, 0, 3);    // RTR+r1+r0
   } else {
     // standard identifier
@@ -121,23 +121,23 @@ int get_bit_message(char *out, CANPacket_t *to_bang) {
   return len;
 }
 
-void GMLAN_BITBANG_IRQ_Handler(void);
+void TIM12_IRQ_Handler(void);
 
 void setup_timer(void) {
   // register interrupt
-  REGISTER_INTERRUPT(GMLAN_BITBANG_TIMER_IRQ, GMLAN_BITBANG_IRQ_Handler, 40000U, FAULT_INTERRUPT_RATE_GMLAN)
+  REGISTER_INTERRUPT(TIM8_BRK_TIM12_IRQn, TIM12_IRQ_Handler, 40000U, FAULT_INTERRUPT_RATE_GMLAN)
 
   // setup
-  register_set(&(GMLAN_BITBANG_TIMER->PSC), (APB1_TIMER_FREQ-1U), 0xFFFFU);    // Tick on 1 us
-  register_set(&(GMLAN_BITBANG_TIMER->CR1), TIM_CR1_CEN, 0x3FU); // Enable
-  register_set(&(GMLAN_BITBANG_TIMER->ARR), (30U-1U), 0xFFFFU);   // 33.3 kbps
+  register_set(&(TIM12->PSC), (APB1_TIMER_FREQ-1U), 0xFFFFU);    // Tick on 1 us
+  register_set(&(TIM12->CR1), TIM_CR1_CEN, 0x3FU); // Enable
+  register_set(&(TIM12->ARR), (30U-1U), 0xFFFFU);   // 33.3 kbps
 
   // in case it's disabled
-  NVIC_EnableIRQ(GMLAN_BITBANG_TIMER_IRQ);
+  NVIC_EnableIRQ(TIM8_BRK_TIM12_IRQn);
 
   // run the interrupt
-  register_set(&(GMLAN_BITBANG_TIMER->DIER), TIM_DIER_UIE, 0x5F5FU); // Update interrupt
-  GMLAN_BITBANG_TIMER->SR = 0;
+  register_set(&(TIM12->DIER), TIM_DIER_UIE, 0x5F5FU); // Update interrupt
+  TIM12->SR = 0;
 }
 
 int gmlan_timeout_counter = GMLAN_TICKS_PER_TIMEOUT_TICKLE; //GMLAN transceiver times out every 17ms held high; tickle every 15ms
@@ -147,37 +147,11 @@ int inverted_bit_to_send = GMLAN_HIGH;
 int gmlan_switch_below_timeout = -1;
 int gmlan_switch_timeout_enable = 0;
 
-void gmlan_switch_init(int timeout_enable) {
-  gmlan_switch_timeout_enable = timeout_enable;
-  gmlan_alt_mode = GPIO_SWITCH;
-  gmlan_switch_below_timeout = 1;
-  set_gpio_mode(GPIOB, 13, MODE_OUTPUT);
-
-  setup_timer();
-
-  inverted_bit_to_send = GMLAN_LOW; //We got initialized, set the output low
-}
-
-void set_gmlan_digital_output(int to_set) {
-  inverted_bit_to_send = to_set;
-  /*
-  print("Writing ");
-  puth(inverted_bit_to_send);
-  print("\n");
-  */
-}
-
-void reset_gmlan_switch_timeout(void) {
-  can_timeout_counter = GMLAN_TICKS_PER_SECOND;
-  gmlan_switch_below_timeout = 1;
-  gmlan_alt_mode = GPIO_SWITCH;
-}
-
 void set_bitbanged_gmlan(int val) {
   if (val != 0) {
-    register_set_bits(&(GPIOB->ODR), (1U << 13));
+    register_set_bits(&(GPIOB->ODR), (1UL << 13));
   } else {
-    register_clear_bits(&(GPIOB->ODR), (1U << 13));
+    register_clear_bits(&(GPIOB->ODR), (1UL << 13));
   }
 }
 
@@ -191,9 +165,9 @@ int gmlan_fail_count = 0;
 #define REQUIRED_SILENT_TIME 10
 #define MAX_FAIL_COUNT 10
 
-void GMLAN_BITBANG_IRQ_Handler(void) {
+void TIM12_IRQ_Handler(void) {
   if (gmlan_alt_mode == BITBANG) {
-    if ((GMLAN_BITBANG_TIMER->SR & TIM_SR_UIF) && (gmlan_sendmax != -1)) {
+    if ((TIM12->SR & TIM_SR_UIF) && (gmlan_sendmax != -1)) {
       int read = get_gpio_input(GPIOB, 12);
       if (gmlan_silent_count < REQUIRED_SILENT_TIME) {
         if (read == 0) {
@@ -205,7 +179,7 @@ void GMLAN_BITBANG_IRQ_Handler(void) {
         bool retry = 0;
         // in send loop
         if ((gmlan_sending > 0) &&  // not first bit
-           ((read == 0) && (pkt_stuffed[gmlan_sending-1] == 1)) &&  // bus wrongly dominant
+           ((read == 0) && (pkt_stuffed[gmlan_sending-1] == (char)1)) &&  // bus wrongly dominant
            (gmlan_sending != (gmlan_sendmax - 11))) {    //not ack bit
           print("GMLAN ERR: bus driven at ");
           puth(gmlan_sending);
@@ -235,13 +209,13 @@ void GMLAN_BITBANG_IRQ_Handler(void) {
       if ((gmlan_sending == gmlan_sendmax) || (gmlan_fail_count == MAX_FAIL_COUNT)) {
         set_bitbanged_gmlan(1); // recessive
         set_gpio_mode(GPIOB, 13, MODE_INPUT);
-        register_clear_bits(&(GMLAN_BITBANG_TIMER->DIER), TIM_DIER_UIE); // No update interrupt
-        register_set(&(GMLAN_BITBANG_TIMER->CR1), 0U, 0x3FU); // Disable timer
+        register_clear_bits(&(TIM12->DIER), TIM_DIER_UIE); // No update interrupt
+        register_set(&(TIM12->CR1), 0U, 0x3FU); // Disable timer
         gmlan_sendmax = -1;   // exit
       }
     }
   } else if (gmlan_alt_mode == GPIO_SWITCH) {
-    if ((GMLAN_BITBANG_TIMER->SR & TIM_SR_UIF) && (gmlan_switch_below_timeout != -1)) {
+    if ((TIM12->SR & TIM_SR_UIF) && (gmlan_switch_below_timeout != -1)) {
       if ((can_timeout_counter == 0) && gmlan_switch_timeout_enable) {
         //it has been more than 1 second since timeout was reset; disable timer and restore the GMLAN output
         set_gpio_output(GPIOB, 13, GMLAN_LOW);
@@ -265,25 +239,32 @@ void GMLAN_BITBANG_IRQ_Handler(void) {
   } else {
     // Invalid GMLAN mode. Do not put a print statement here, way too fast to keep up with
   }
-  GMLAN_BITBANG_TIMER->SR = 0;
+  TIM12->SR = 0;
 }
 
-bool bitbang_gmlan(CANPacket_t *to_bang) {
+bool bitbang_gmlan(const CANPacket_t *to_bang) {
   gmlan_send_ok = true;
   gmlan_alt_mode = BITBANG;
 
-  if (gmlan_sendmax == -1) {
-    int len = get_bit_message(pkt_stuffed, to_bang);
-    gmlan_fail_count = 0;
-    gmlan_silent_count = 0;
-    gmlan_sending = 0;
-    gmlan_sendmax = len;
-    // setup for bitbang loop
-    set_bitbanged_gmlan(1); // recessive
-    set_gpio_mode(GPIOB, 13, MODE_OUTPUT);
+#ifdef HW_TYPE_DOS
+  if (hw_type == HW_TYPE_DOS) {
+    if (gmlan_sendmax == -1) {
+      int len = get_bit_message(pkt_stuffed, to_bang);
+      gmlan_fail_count = 0;
+      gmlan_silent_count = 0;
+      gmlan_sending = 0;
+      gmlan_sendmax = len;
+      // setup for bitbang loop
+      set_bitbanged_gmlan(1); // recessive
+      set_gpio_mode(GPIOB, 13, MODE_OUTPUT);
 
-    // 33kbps
-    setup_timer();
+      // 33kbps
+      setup_timer();
+    }
   }
+#else
+  UNUSED(to_bang);
+#endif
+
   return gmlan_send_ok;
 }

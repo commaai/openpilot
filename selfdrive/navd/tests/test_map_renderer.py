@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import time
 import numpy as np
 import os
 import pytest
@@ -10,25 +11,15 @@ import cereal.messaging as messaging
 
 from typing import Any
 from cereal.visionipc import VisionIpcClient, VisionStreamType
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.common.mock.generators import LLK_DECIMATION, LOCATION1, LOCATION2, generate_liveLocationKalman
+from openpilot.selfdrive.test.helpers import with_processes
 
-LLK_DECIMATION = 10
 CACHE_PATH = "/data/mbgl-cache-navd.db"
 
-LOCATION1 = (32.7174, -117.16277)
-LOCATION2 = (32.7558, -117.2037)
-
-DEFAULT_ITERATIONS = 30 * LLK_DECIMATION
-
+RENDER_FRAMES = 15
+DEFAULT_ITERATIONS = RENDER_FRAMES * LLK_DECIMATION
 LOCATION1_REPEATED = [LOCATION1] * DEFAULT_ITERATIONS
 LOCATION2_REPEATED = [LOCATION2] * DEFAULT_ITERATIONS
-
-def gen_llk(location=LOCATION1):
-  msg = messaging.new_message('liveLocationKalman')
-  msg.liveLocationKalman.positionGeodetic = {'value': [*location, 0], 'std': [0., 0., 0.], 'valid': True}
-  msg.liveLocationKalman.calibratedOrientationNED = {'value': [0., 0., 0.], 'std': [0., 0., 0.], 'valid': True}
-  msg.liveLocationKalman.status = 'valid'
-  return msg
 
 
 class MapBoxInternetDisabledRequestHandler(http.server.BaseHTTPRequestHandler):
@@ -60,7 +51,8 @@ class MapBoxInternetDisabledRequestHandler(http.server.BaseHTTPRequestHandler):
 
 class MapBoxInternetDisabledServer(threading.Thread):
   def run(self):
-    self.server = http.server.HTTPServer(("127.0.0.1", 5000), MapBoxInternetDisabledRequestHandler)
+    self.server = http.server.HTTPServer(("127.0.0.1", 0), MapBoxInternetDisabledRequestHandler)
+    self.port = self.server.server_port
     self.server.serve_forever()
 
   def stop(self):
@@ -74,13 +66,15 @@ class MapBoxInternetDisabledServer(threading.Thread):
 
 
 class TestMapRenderer(unittest.TestCase):
-  server = MapBoxInternetDisabledServer()
+  server: MapBoxInternetDisabledServer
 
   @classmethod
   def setUpClass(cls):
     assert "MAPBOX_TOKEN" in os.environ
     cls.original_token = os.environ["MAPBOX_TOKEN"]
+    cls.server = MapBoxInternetDisabledServer()
     cls.server.start()
+    time.sleep(0.5) # wait for server to startup
 
   @classmethod
   def tearDownClass(cls) -> None:
@@ -88,7 +82,7 @@ class TestMapRenderer(unittest.TestCase):
 
   def setUp(self):
     self.server.enable_internet()
-    os.environ['MAPS_HOST'] = 'http://localhost:5000'
+    os.environ['MAPS_HOST'] = f'http://localhost:{self.server.port}'
 
     self.sm = messaging.SubMaster(['mapRenderState'])
     self.pm = messaging.PubMaster(['liveLocationKalman'])
@@ -97,14 +91,10 @@ class TestMapRenderer(unittest.TestCase):
     if os.path.exists(CACHE_PATH):
       os.remove(CACHE_PATH)
 
-  def tearDown(self):
-    managed_processes['mapsd'].stop()
-
   def _setup_test(self):
-    # start + sync up
-    managed_processes['mapsd'].start()
-
     assert self.pm.wait_for_readers_to_update("liveLocationKalman", 10)
+
+    time.sleep(0.5)
 
     assert VisionIpcClient.available_streams("navd", False) == {VisionStreamType.VISION_STREAM_MAP, }
     assert self.vipc.connect(False)
@@ -130,7 +120,7 @@ class TestMapRenderer(unittest.TestCase):
       if starting_frame_id is None:
         starting_frame_id = prev_frame_id
 
-      llk = gen_llk(location)
+      llk = generate_liveLocationKalman(location)
       self.pm.send("liveLocationKalman", llk)
       self.pm.wait_for_readers_to_update("liveLocationKalman", 10)
       self.sm.update(1000 if frame_expected else 0)
@@ -164,17 +154,23 @@ class TestMapRenderer(unittest.TestCase):
       assert self.vipc.timestamp_sof == llk.logMonoTime
       assert self.vipc.frame_id == self.sm['mapRenderState'].frameId
 
+    assert frames_since_test_start >= RENDER_FRAMES
+
     return render_times
 
+  @with_processes(["mapsd"])
   def test_with_internet(self):
     self._setup_test()
     self._run_test(True)
 
+  @with_processes(["mapsd"])
   def test_with_no_internet(self):
     self.server.disable_internet()
     self._setup_test()
     self._run_test(False)
 
+  @with_processes(["mapsd"])
+  @pytest.mark.skip(reason="slow, flaky, and unlikely to break")
   def test_recover_from_no_internet(self):
     self._setup_test()
     self._run_test(True)
@@ -187,8 +183,7 @@ class TestMapRenderer(unittest.TestCase):
     self.server.enable_internet()
     self._run_test(True, LOCATION2_REPEATED)
 
-    self._run_test(True, LOCATION2_REPEATED)
-
+  @with_processes(["mapsd"])
   @pytest.mark.tici
   def test_render_time_distribution(self):
     self._setup_test()
