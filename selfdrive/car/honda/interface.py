@@ -285,7 +285,7 @@ class CarInterface(CarInterfaceBase):
       raise ValueError(f"unsupported car {candidate}")
 
     # These cars use alternate user brake msg (0x1BE)
-    if 0x1BE in fingerprint[CanBus(CP).pt)] and candidate in HONDA_BOSCH: # TODO: Properly fix this
+    if 0x1BE in fingerprint[CanBus(CP).pt] and candidate in HONDA_BOSCH: # TODO: Properly fix this
       ret.flags |= HondaFlags.BOSCH_ALT_BRAKE.value
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_ALT_BRAKE
 
