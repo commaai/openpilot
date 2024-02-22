@@ -202,7 +202,7 @@ class CarController:
     if not self.CP.openpilotLongitudinalControl:
       if self.frame % 2 == 0 and self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS:  # radarless cars don't have supplemental message
         can_sends.append(hondacan.create_bosch_supplemental_1(self.packer, self.CP.carFingerprint))
-      # Buttons: spam the cancel or resume buttons
+      # Buttons: spam the cancel or resume buttons.
       cruise = None
       setting = CruiseButtons.NONE
       if pcm_cancel_cmd:
@@ -210,17 +210,18 @@ class CarController:
       elif self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS and CC.cruiseControl.resume:
         cruise = CruiseButtons.RES_ACCEL
       elif self.CP.carFingerprint in HONDA_BOSCH_RADARLESS and CC.enabled and self.frame % 4 == 0:
-        # Intercept buttons when engaged. panda will forward when disengaged. Block the LKAS button coming from the car.
-        # Keep stock LKAS disabled so it can't disengage cruise when the wheel touch timeout expires.
+        # Send buttons to the camera when engaged and block the LKAS button. Keep stock LKAS off so it can't disengage cruise.
+        # Priority: pcm_cancel > user > auto resume > turn off lkas > none/idle
         cruise = CruiseButtons.NONE
-        if CS.cruise_buttons:
+        if CS.cruise_buttons or (CS.cruise_setting and CS.cruise_setting != CruiseButtons.LKAS):
           cruise = CS.cruise_buttons
-        elif CS.cruise_setting and CS.cruise_setting != CruiseButtons.LKAS:
           setting = CS.cruise_setting
-        elif CC.cruiseControl.resume:
-          cruise = CruiseButtons.RES_ACCEL
-        elif CS.lkas_hud['ENABLED']:
-          setting = CruiseButtons.LKAS
+        # simulate a momentary press
+        elif self.frame % 100 <= 50:
+          if CC.cruiseControl.resume:
+            cruise = CruiseButtons.RES_ACCEL
+          elif CS.lkas_hud['ENABLED']:
+            setting = CruiseButtons.LKAS
       if cruise is not None:
         can_sends.append(hondacan.create_buttons_command(self.packer, cruise, setting, CS.scm_buttons, self.CP.carFingerprint))
 
