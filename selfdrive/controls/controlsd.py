@@ -86,6 +86,34 @@ class CarD:
     else:
       self.CI, self.CP = CI, CI.CP
 
+    # set alternative experiences from parameters
+    disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
+    self.CP.alternativeExperience = 0
+    if not disengage_on_accelerator:
+      self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
+
+    car_recognized = self.CP.carName != 'mock'
+    openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
+
+    controller_available = self.CI.CC is not None and openpilot_enabled_toggle and not self.CP.dashcamOnly
+
+    self.CP.passive = not car_recognized or not controller_available or self.CP.dashcamOnly
+    if self.CP.passive:
+      safety_config = car.CarParams.SafetyConfig.new_message()
+      safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
+      self.CP.safetyConfigs = [safety_config]
+
+    # Write previous route's CarParams
+    prev_cp = self.params.get("CarParamsPersistent")
+    if prev_cp is not None:
+      self.params.put("CarParamsPrevRoute", prev_cp)
+
+    # Write CarParams for radard
+    cp_bytes = self.CP.to_bytes()
+    self.params.put("CarParams", cp_bytes)
+    self.params.put_nonblocking("CarParamsCache", cp_bytes)
+    self.params.put_nonblocking("CarParamsPersistent", cp_bytes)
+
   def initialize(self):
     """Initialize CarInterface, once controls are ready"""
     self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
@@ -180,13 +208,8 @@ class Controls:
 
     self.joystick_mode = self.params.get_bool("JoystickDebugMode")
 
-    # set alternative experiences from parameters
-    self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
-    self.CP.alternativeExperience = 0
-    if not self.disengage_on_accelerator:
-      self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
-
     # read params
+    self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
     self.is_metric = self.params.get_bool("IsMetric")
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
     openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
@@ -197,22 +220,6 @@ class Controls:
     car_recognized = self.CP.carName != 'mock'
 
     controller_available = self.CI.CC is not None and openpilot_enabled_toggle and not self.CP.dashcamOnly
-    self.CP.passive = not car_recognized or not controller_available or self.CP.dashcamOnly
-    if self.CP.passive:
-      safety_config = car.CarParams.SafetyConfig.new_message()
-      safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
-      self.CP.safetyConfigs = [safety_config]
-
-    # Write previous route's CarParams
-    prev_cp = self.params.get("CarParamsPersistent")
-    if prev_cp is not None:
-      self.params.put("CarParamsPrevRoute", prev_cp)
-
-    # Write CarParams for radard
-    cp_bytes = self.CP.to_bytes()
-    self.params.put("CarParams", cp_bytes)
-    self.params.put_nonblocking("CarParamsCache", cp_bytes)
-    self.params.put_nonblocking("CarParamsPersistent", cp_bytes)
 
     # cleanup old params
     if not self.CP.experimentalLongitudinalAvailable:
