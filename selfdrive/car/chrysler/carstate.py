@@ -133,16 +133,8 @@ class CarState(CarStateBase):
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl["GEAR"]["PRNDL"], None))
 
     ret.cruiseState.speed = cp.vl["ACC_1"]["ACC_SET_SPEED_KMH"] * CV.KPH_TO_MS
-    acc_status = cp.vl["ACC_1"]["ACC_STATE"]
-    if acc_status == 3:
-      ret.cruiseState.available = True
-      ret.cruiseState.enabled = False
-    elif acc_status == 4:
-      ret.cruiseState.available = True
-      ret.cruiseState.enabled = True
-    else:
-      ret.cruiseState.available = False
-      ret.cruiseState.enabled = False
+    ret.cruiseState.available = bool(cp.vl["ACC_CONTROL"]["ACC_MAIN_ON"])
+    ret.cruiseState.enabled = bool(cp.vl["ACC_CONTROL"]["ACC_ACTIVE"])
 
     ret.steeringTorque = cp.vl["EPS_STATUS"]["TORQUE_DRIVER"]
     ret.steeringTorqueEps = cp.vl["EPS_STATUS"]["TORQUE_MOTOR"]
@@ -199,6 +191,7 @@ class CarState(CarStateBase):
   def get_can_parser_cusw(CP):
     messages = [
       # sig_address, frequency
+      ("ACCEL_CONTROL", 50),
       ("ACCEL_GAS", 50),
       ("TRACTION_BUTTON", 50),
       ("BRAKE_2", 50),
