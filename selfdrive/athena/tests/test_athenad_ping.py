@@ -5,15 +5,12 @@ import time
 import unittest
 from typing import cast, Optional
 from unittest import mock
-from unittest.mock import MagicMock
 
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.athena import athenad
 from openpilot.selfdrive.manager.helpers import write_onroad_params
 from openpilot.system.hardware import TICI
-from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutException,
-                       create_connection)
 
 
 def wifi_radio(on: bool) -> None:
@@ -58,24 +55,19 @@ class TestAthenadPing(unittest.TestCase):
       self.exit_event.set()
       self.athenad.join()
 
-  # @mock.patch('openpilot.selfdrive.athena.athenad.create_connection', new_callable=lambda: MagicMock(wraps=athenad.create_connection))
-  @mock.patch('openpilot.selfdrive.athena.athenad.create_connection', new=MagicMock(wraps=athenad.create_connection))
-  def assertTimeout(self, reconnect_time: float) -> None:
-    print(athenad.create_connection.call_count)
+  @mock.patch('openpilot.selfdrive.athena.athenad.create_connection', new_callable=lambda: mock.MagicMock(wraps=athenad.create_connection))
+  def assertTimeout(self, reconnect_time: float, mock_create_connection: mock.MagicMock) -> None:
     self.athenad.start()
 
     time.sleep(1)
-    print(athenad.create_connection.call_count)
     mock_create_connection.assert_called_once()
     mock_create_connection.reset_mock()
-    print(mock_create_connection.call_count)
 
     # check normal behaviour
     with self.subTest("Wi-Fi: receives ping"), Timeout(70, "no ping received"):
       while not self._received_ping():
         time.sleep(0.1)
       print("ping received")
-    print(mock_create_connection.call_count)
 
     mock_create_connection.assert_not_called()
     return
