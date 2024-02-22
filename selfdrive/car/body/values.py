@@ -37,5 +37,5 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
 )
 
-CAR_INFO = {p.config.platform_str: p.config.car_info for p in CAR}
-DBC = {p.config.platform_str: p.config.dbc_dict for p in CAR}
+CAR_INFO = CAR.create_carinfo_map()
+DBC = CAR.create_dbc_map()
