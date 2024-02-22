@@ -2,12 +2,13 @@
 from functools import partial
 import http.server
 import os
+import shutil
 import socket
 import unittest
 
 from parameterized import parameterized
 from openpilot.selfdrive.athena.tests.helpers import with_http_server
-
+from openpilot.system.hardware.hw import Paths
 from openpilot.tools.lib.url_file import URLFile
 
 
@@ -35,7 +36,8 @@ with_caching_server = partial(with_http_server, handler=CachingTestRequestHandle
 
 class TestFileDownload(unittest.TestCase):
 
-  def test_defaults(self):
+  @with_caching_server
+  def test_pipeline_defaults(self, host):
     # TODO: parameterize the defaults so we don't rely on hard-coded values in xx
 
     self.assertEqual(URLFile.pool_manager().pools._maxsize, 10) # PoolManager num_pools param
@@ -54,12 +56,15 @@ class TestFileDownload(unittest.TestCase):
     for k, v in retry_defaults.items():
       self.assertEqual(getattr(URLFile.pool_manager().connection_pool_kw["retries"], k), v)
 
+    # ensure caching off by default and cache dir doesn't get created
     try:
       del os.environ["FILEREADER_CACHE"]
     except KeyError:
       pass
-     # caching off by default
-    self.assertEqual(URLFile("http://fake.url")._force_download, True)
+    shutil.rmtree(Paths.download_cache_root())
+    URLFile(f"{host}/test.txt").get_length()
+    URLFile(f"{host}/test.txt").read()
+    self.assertEqual(os.path.exists(Paths.download_cache_root()), False)
 
   def compare_loads(self, url, start=0, length=None):
     """Compares range between cached and non cached version"""
