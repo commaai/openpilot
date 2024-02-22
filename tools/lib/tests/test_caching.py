@@ -54,6 +54,10 @@ class TestFileDownload(unittest.TestCase):
     for k, v in retry_defaults.items():
       self.assertEqual(getattr(URLFile.pool_manager().connection_pool_kw["retries"], k), v)
 
+    try:
+      del os.environ["FILEREADER_CACHE"]
+    except KeyError:
+      pass
      # caching off by default
     self.assertEqual(URLFile("http://fake.url")._force_download, True)
 
