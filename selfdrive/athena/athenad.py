@@ -747,7 +747,7 @@ def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
 
       if sock is not None:
         # While not sending data, onroad, we can expect to time out in 7 + (7 * 2) = 21s
-        # While sending data, offroad, we can expect to time out in 30 + (10 * 3) = 60s
+        #                         offroad, we can expect to time out in 30 + (10 * 3) = 60s
         # FIXME: TCP_USER_TIMEOUT is effectively 2x for some reason (32s), so it's mostly unused
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_USER_TIMEOUT, 16000 if onroad else 0)
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 7 if onroad else 30)
