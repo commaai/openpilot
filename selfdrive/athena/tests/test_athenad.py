@@ -233,6 +233,7 @@ class TestAthenadMethods(unittest.TestCase):
     time.sleep(0.1)
 
     # TODO: verify that upload actually succeeded
+    # TODO: also check that end_event and metered network raises AbortTransferException
     self.assertEqual(athenad.upload_queue.qsize(), 0)
 
   @parameterized.expand([(500, True), (412, False)])
