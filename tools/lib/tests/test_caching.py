@@ -57,10 +57,7 @@ class TestFileDownload(unittest.TestCase):
       self.assertEqual(getattr(URLFile.pool_manager().connection_pool_kw["retries"], k), v)
 
     # ensure caching off by default and cache dir doesn't get created
-    try:
-      del os.environ["FILEREADER_CACHE"]
-    except KeyError:
-      pass
+    os.environ.pop("FILEREADER_CACHE", None)
     if os.path.exists(Paths.download_cache_root()):
       shutil.rmtree(Paths.download_cache_root())
     URLFile(f"{host}/test.txt").get_length()
