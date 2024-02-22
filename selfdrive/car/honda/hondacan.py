@@ -37,7 +37,7 @@ def get_lkas_cmd_bus(CAN, car_fingerprint, radar_disabled=False):
     # when radar is disabled, steering commands are sent directly to powertrain bus
     return CAN.pt
   # normally steering commands are sent to radar, which forwards them to powertrain bus
-  return CAN.radar
+  return 0
 
 
 def get_cruise_speed_conversion(car_fingerprint: str, is_metric: bool) -> float:
