@@ -217,7 +217,7 @@ class CarController:
           cruise = CS.cruise_buttons
           setting = CS.cruise_setting
         # simulate a momentary press
-        elif self.frame % 100 <= 50:
+        elif self.frame % 100 <= 25:
           if CC.cruiseControl.resume:
             cruise = CruiseButtons.RES_ACCEL
           elif CS.lkas_hud['ENABLED']:
