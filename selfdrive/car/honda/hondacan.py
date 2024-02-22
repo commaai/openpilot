@@ -186,7 +186,7 @@ def create_buttons_command(packer, button_val, setting_val, stock_scm_buttons, c
   values = {
     'CRUISE_BUTTONS': button_val
   }
-  # Radarless: forward unmodified signals
+  # Radarless: set CRUISE_SETTING & forward unmodified data bits
   if len(stock_scm_buttons):
     values.update({
       'CRUISE_SETTING': setting_val,
