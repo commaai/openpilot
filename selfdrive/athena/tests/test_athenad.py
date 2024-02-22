@@ -23,7 +23,7 @@ from cereal import messaging
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.athena import athenad
-from openpilot.selfdrive.athena.athenad import MAX_RETRY_COUNT, cb, dispatcher
+from openpilot.selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
 from openpilot.selfdrive.athena.tests.helpers import MockWebsocket, MockApi, EchoSocket, with_http_server
 from openpilot.system.hardware.hw import Paths
 from openpilot.selfdrive.athena.tests.helpers import HTTPRequestHandler
@@ -49,7 +49,7 @@ def with_upload_handler(func):
     thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))
     thread.start()
     try:
-      return func(*args, thread, end_event, **kwargs)
+      return func(*args, **kwargs)
     finally:
       end_event.set()
       thread.join()
@@ -93,10 +93,7 @@ class TestAthenadMethods(unittest.TestCase):
   def _wait_for_upload():
     now = time.time()
     while time.time() - now < 5:
-      print('we are here', time.time() - now, athenad.upload_queue.qsize(), athenad.cur_upload_items)
-      time.sleep(0.1)
-      if athenad.upload_queue.qsize() == 0 and list(athenad.cur_upload_items.values())[0] is None:
-        print('BREAKING')
+      if athenad.upload_queue.qsize() == 0:
         break
 
   @staticmethod
@@ -227,91 +224,56 @@ class TestAthenadMethods(unittest.TestCase):
 
   @with_mock_athena
   @with_upload_handler
-  # @mock.patch('openpilot.selfdrive.athena.athenad.cb', new_callable=lambda: mock.MagicMock(wraps=athenad.cb))
-  @mock.patch('openpilot.selfdrive.athena.athenad.cb', autospec=True)
-  def test_upload_handler(self, host, thread, end_event, mock_cb):
-    print((host, end_event, mock_cb))
-    tid = list(athenad.cur_upload_items)[0]
-    print(tid)
-    print('START WITH_UPLOAD_HANDLER TEST')
-
-    slept = False
-
-    def monitor_cb(*args, **kwargs):
-      nonlocal slept
-      print('monitor_cb', athenad.cur_upload_items)
-      _item = athenad.cur_upload_items[tid]
-      print('PROGRESS!', _item.progress)
-      if _item.progress > 0.2 and not slept:
-        print('SLEEPING 5s!')
-        end_event.set()
-        time.sleep(1)
-        slept = True
-      cb(*args, **kwargs)
-
-    mock_cb.side_effect = monitor_cb
-
-    fn = self._create_file('qlog.bz2', data=os.urandom(2 * 1024 * 1024))
-    # item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={'X-Delay-Upload': 'true'}, created_at=int(time.time()*1000), id='', allow_cellular=True)
+  def test_upload_handler(self, host):
+    fn = self._create_file('qlog.bz2')
     item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
-    # print(item)
-
 
     athenad.upload_queue.put_nowait(item)
-    # while 1:
-    #   time.sleep(0.01)
-    #   print(athenad.upload_queue.qsize(), athenad.cur_upload_items)
-    # print()
     self._wait_for_upload()
     time.sleep(0.1)
-    time.sleep(2)
-    print('call count', mock_cb.call_count, len(athenad.cur_upload_items))
-    print('is alive', thread.is_alive(), athenad.cur_upload_items)
-    self.assertEqual(athenad.cur_upload_items[tid].progress < 0.6)
 
     # TODO: verify that upload actually succeeded
     self.assertEqual(athenad.upload_queue.qsize(), 0)
-    self.assertEqual(athenad.cur_upload_items[tid], None)
 
-  # @parameterized.expand([(500, True), (412, False)])
-  # @with_mock_athena
-  # @mock.patch('requests.put')
-  # @with_upload_handler
-  # def test_upload_handler_retry(self, status, retry, mock_put, host):
-  #   mock_put.return_value.status_code = status
-  #   fn = self._create_file('qlog.bz2')
-  #   item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
-  #
-  #   athenad.upload_queue.put_nowait(item)
-  #   self._wait_for_upload()
-  #   time.sleep(0.1)
-  #
-  #   self.assertEqual(athenad.upload_queue.qsize(), 1 if retry else 0)
-  #
-  #   if retry:
-  #     self.assertEqual(athenad.upload_queue.get().retry_count, 1)
+  @parameterized.expand([(500, True), (412, False)])
+  @with_mock_athena
+  @mock.patch('requests.put')
+  @with_upload_handler
+  def test_upload_handler_retry(self, status, retry, mock_put, host):
+    mock_put.return_value.status_code = status
+    fn = self._create_file('qlog.bz2')
+    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
 
-  # @with_upload_handler
-  # def test_upload_handler_timeout(self):
-  #   """When an upload times out or fails to connect it should be placed back in the queue"""
-  #   fn = self._create_file('qlog.bz2')
-  #   item = athenad.UploadItem(path=fn, url="http://localhost:44444/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
-  #   item_no_retry = replace(item, retry_count=MAX_RETRY_COUNT)
-  #
-  #   athenad.upload_queue.put_nowait(item_no_retry)
-  #   self._wait_for_upload()
-  #   time.sleep(0.1)
-  #
-  #   # Check that upload with retry count exceeded is not put back
-  #   self.assertEqual(athenad.upload_queue.qsize(), 0)
-  #
-  #   athenad.upload_queue.put_nowait(item)
-  #   self._wait_for_upload()
-  #   time.sleep(0.1)
-  #
-  #   # Check that upload item was put back in the queue with incremented retry count
-  #   self.assertEqual(athenad.upload_queue.qsize(), 1)
-  #   self.assertEqual(athenad.upload_queue.get().retry_count, 1)
+    athenad.upload_queue.put_nowait(item)
+    self._wait_for_upload()
+    time.sleep(0.1)
+
+    self.assertEqual(athenad.upload_queue.qsize(), 1 if retry else 0)
+
+    if retry:
+      self.assertEqual(athenad.upload_queue.get().retry_count, 1)
+
+  @with_upload_handler
+  def test_upload_handler_timeout(self):
+    """When an upload times out or fails to connect it should be placed back in the queue"""
+    fn = self._create_file('qlog.bz2')
+    item = athenad.UploadItem(path=fn, url="http://localhost:44444/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
+    item_no_retry = replace(item, retry_count=MAX_RETRY_COUNT)
+
+    athenad.upload_queue.put_nowait(item_no_retry)
+    self._wait_for_upload()
+    time.sleep(0.1)
+
+    # Check that upload with retry count exceeded is not put back
+    self.assertEqual(athenad.upload_queue.qsize(), 0)
+
+    athenad.upload_queue.put_nowait(item)
+    self._wait_for_upload()
+    time.sleep(0.1)
+
+    # Check that upload item was put back in the queue with incremented retry count
+    self.assertEqual(athenad.upload_queue.qsize(), 1)
+    self.assertEqual(athenad.upload_queue.get().retry_count, 1)
 
   @with_upload_handler
   def test_cancelUpload(self):

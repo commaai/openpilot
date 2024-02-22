@@ -209,14 +209,12 @@ def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = Tr
 def cb(sm, item, tid, end_event: threading.Event, sz: int, cur: int) -> None:
   # Abort transfer if connection changed to metered after starting upload
   # or if athenad is shutting down to re-connect the websocket
-  print('callback!!!', cur / sz if sz else 1)
   sm.update(0)
   metered = sm['deviceState'].networkMetered
   if metered and (not item.allow_cellular):
     raise AbortTransferException
 
   if end_event.is_set():
-    print('end event set, quitting uploading!!!')
     raise AbortTransferException
 
   cur_upload_items[tid] = replace(item, progress=cur / sz if sz else 1)
@@ -227,12 +225,10 @@ def upload_handler(end_event: threading.Event) -> None:
   tid = threading.get_ident()
 
   while not end_event.is_set():
-    print('here!!!')
     cur_upload_items[tid] = None
 
     try:
       cur_upload_items[tid] = item = replace(upload_queue.get(timeout=1), current=True)
-      print('at top again', item)
 
       if item.id in cancelled_uploads:
         cancelled_uploads.remove(item.id)
@@ -261,19 +257,14 @@ def upload_handler(end_event: threading.Event) -> None:
 
         cloudlog.event("athena.upload_handler.upload_start", fn=fn, sz=sz, network_type=network_type, metered=metered, retry_count=item.retry_count)
         response = _do_upload(item, partial(cb, sm, item, tid, end_event))
-        print('response!', response)
 
         if response.status_code not in (200, 201, 401, 403, 412):
           cloudlog.event("athena.upload_handler.retry", status_code=response.status_code, fn=fn, sz=sz, network_type=network_type, metered=metered)
           retry_upload(tid, end_event)
         else:
-          print('success!!!')
           cloudlog.event("athena.upload_handler.success", fn=fn, sz=sz, network_type=network_type, metered=metered)
-          print('success 2!!!')
 
-        print('caching!!!')
         UploadQueueCache.cache(upload_queue)
-        print('cached!!!')
       except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError):
         cloudlog.event("athena.upload_handler.timeout", fn=fn, sz=sz, network_type=network_type, metered=metered)
         retry_upload(tid, end_event)
