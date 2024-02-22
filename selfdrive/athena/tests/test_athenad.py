@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from functools import partial, wraps
 import json
 import multiprocessing
 import os
@@ -17,23 +18,64 @@ from unittest import mock
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
+from cereal import messaging
+
+from openpilot.common.params import Params
+from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.athena import athenad
 from openpilot.selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
-from openpilot.selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
-from cereal import messaging
+from openpilot.selfdrive.athena.tests.helpers import MockWebsocket, MockApi, EchoSocket, with_http_server
 from openpilot.system.hardware.hw import Paths
+from openpilot.selfdrive.athena.tests.helpers import HTTPRequestHandler
+
+
+def seed_athena_server(host, port):
+  with Timeout(2, 'HTTP Server seeding failed'):
+    while True:
+      try:
+        requests.put(f'http://{host}:{port}/qlog.bz2', data='', timeout=10)
+        break
+      except requests.exceptions.ConnectionError:
+        time.sleep(0.1)
+
+
+with_mock_athena = partial(with_http_server, handler=HTTPRequestHandler, setup=seed_athena_server)
+
+
+def with_upload_handler(func):
+  @wraps(func)
+  def wrapper(*args, **kwargs):
+    end_event = threading.Event()
+    thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))
+    thread.start()
+    try:
+      return func(*args, **kwargs)
+    finally:
+      end_event.set()
+      thread.join()
+  return wrapper
 
 
 class TestAthenadMethods(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     cls.SOCKET_PORT = 45454
-    athenad.Params = MockParams
     athenad.Api = MockApi
     athenad.LOCAL_PORT_WHITELIST = {cls.SOCKET_PORT}
 
   def setUp(self):
-    MockParams.restore_defaults()
+    self.default_params = {
+      "DongleId": "0000000000000000",
+      "GithubSshKeys": b"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC307aE+nuHzTAgaJhzSf5v7ZZQW9gaperjhCmyPyl4PzY7T1mDGenTlVTN7yoVFZ9UfO9oMQqo0n1OwDIiqbIFxqnhrHU0cYfj88rI85m5BEKlNu5RdaVTj1tcbaPpQc5kZEolaI1nDDjzV0lwS7jo5VYDHseiJHlik3HH1SgtdtsuamGR2T80q1SyW+5rHoMOJG73IH2553NnWuikKiuikGHUYBd00K1ilVAK2xSiMWJp55tQfZ0ecr9QjEsJ+J/efL4HqGNXhffxvypCXvbUYAFSddOwXUPo5BTKevpxMtH+2YrkpSjocWA04VnTYFiPG6U4ItKmbLOTFZtPzoez private", # noqa: E501
+      "GithubUsername": b"commaci",
+      "AthenadUploadQueue": '[]',
+    }
+
+    self.params = Params()
+    for k, v in self.default_params.items():
+      self.params.put(k, v)
+    self.params.put_bool("GsmMetered", True)
+
     athenad.upload_queue = queue.Queue()
     athenad.cur_upload_items.clear()
     athenad.cancelled_uploads.clear()
@@ -138,7 +180,7 @@ class TestAthenadMethods(unittest.TestCase):
       self.assertEqual(athenad.strip_bz2_extension(fn), fn[:-4])
 
   @parameterized.expand([(True,), (False,)])
-  @with_http_server
+  @with_mock_athena
   def test_do_upload(self, compress, host):
     # random bytes to ensure rather large object post-compression
     fn = self._create_file('qlog', data=os.urandom(10000 * 1024))
@@ -152,7 +194,7 @@ class TestAthenadMethods(unittest.TestCase):
     resp = athenad._do_upload(item)
     self.assertEqual(resp.status_code, 201)
 
-  @with_http_server
+  @with_mock_athena
   def test_uploadFileToUrl(self, host):
     fn = self._create_file('qlog.bz2')
 
@@ -163,7 +205,7 @@ class TestAthenadMethods(unittest.TestCase):
     self.assertIsNotNone(resp['items'][0].get('id'))
     self.assertEqual(athenad.upload_queue.qsize(), 1)
 
-  @with_http_server
+  @with_mock_athena
   def test_uploadFileToUrl_duplicate(self, host):
     self._create_file('qlog.bz2')
 
@@ -175,83 +217,66 @@ class TestAthenadMethods(unittest.TestCase):
     resp = dispatcher["uploadFileToUrl"]("qlog.bz2", url2, {})
     self.assertEqual(resp, {'enqueued': 0, 'items': []})
 
-  @with_http_server
+  @with_mock_athena
   def test_uploadFileToUrl_does_not_exist(self, host):
     not_exists_resp = dispatcher["uploadFileToUrl"]("does_not_exist.bz2", "http://localhost:1238", {})
     self.assertEqual(not_exists_resp, {'enqueued': 0, 'items': [], 'failed': ['does_not_exist.bz2']})
 
-  @with_http_server
+  @with_mock_athena
+  @with_upload_handler
   def test_upload_handler(self, host):
     fn = self._create_file('qlog.bz2')
     item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
 
-    end_event = threading.Event()
-    thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))
-    thread.start()
+    athenad.upload_queue.put_nowait(item)
+    self._wait_for_upload()
+    time.sleep(0.1)
+
+    # TODO: verify that upload actually succeeded
+    # TODO: also check that end_event and metered network raises AbortTransferException
+    self.assertEqual(athenad.upload_queue.qsize(), 0)
+
+  @parameterized.expand([(500, True), (412, False)])
+  @with_mock_athena
+  @mock.patch('requests.put')
+  @with_upload_handler
+  def test_upload_handler_retry(self, status, retry, mock_put, host):
+    mock_put.return_value.status_code = status
+    fn = self._create_file('qlog.bz2')
+    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
 
     athenad.upload_queue.put_nowait(item)
-    try:
-      self._wait_for_upload()
-      time.sleep(0.1)
+    self._wait_for_upload()
+    time.sleep(0.1)
 
-      # TODO: verify that upload actually succeeded
-      self.assertEqual(athenad.upload_queue.qsize(), 0)
-    finally:
-      end_event.set()
+    self.assertEqual(athenad.upload_queue.qsize(), 1 if retry else 0)
 
-  @with_http_server
-  @mock.patch('requests.put')
-  def test_upload_handler_retry(self, host, mock_put):
-    for status, retry in ((500, True), (412, False)):
-      mock_put.return_value.status_code = status
-      fn = self._create_file('qlog.bz2')
-      item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
+    if retry:
+      self.assertEqual(athenad.upload_queue.get().retry_count, 1)
 
-      end_event = threading.Event()
-      thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))
-      thread.start()
-
-      athenad.upload_queue.put_nowait(item)
-      try:
-        self._wait_for_upload()
-        time.sleep(0.1)
-
-        self.assertEqual(athenad.upload_queue.qsize(), 1 if retry else 0)
-      finally:
-        end_event.set()
-
-      if retry:
-        self.assertEqual(athenad.upload_queue.get().retry_count, 1)
-
+  @with_upload_handler
   def test_upload_handler_timeout(self):
     """When an upload times out or fails to connect it should be placed back in the queue"""
     fn = self._create_file('qlog.bz2')
     item = athenad.UploadItem(path=fn, url="http://localhost:44444/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
     item_no_retry = replace(item, retry_count=MAX_RETRY_COUNT)
 
-    end_event = threading.Event()
-    thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))
-    thread.start()
+    athenad.upload_queue.put_nowait(item_no_retry)
+    self._wait_for_upload()
+    time.sleep(0.1)
 
-    try:
-      athenad.upload_queue.put_nowait(item_no_retry)
-      self._wait_for_upload()
-      time.sleep(0.1)
+    # Check that upload with retry count exceeded is not put back
+    self.assertEqual(athenad.upload_queue.qsize(), 0)
 
-      # Check that upload with retry count exceeded is not put back
-      self.assertEqual(athenad.upload_queue.qsize(), 0)
+    athenad.upload_queue.put_nowait(item)
+    self._wait_for_upload()
+    time.sleep(0.1)
 
-      athenad.upload_queue.put_nowait(item)
-      self._wait_for_upload()
-      time.sleep(0.1)
+    # Check that upload item was put back in the queue with incremented retry count
+    self.assertEqual(athenad.upload_queue.qsize(), 1)
+    self.assertEqual(athenad.upload_queue.get().retry_count, 1)
 
-      # Check that upload item was put back in the queue with incremented retry count
-      self.assertEqual(athenad.upload_queue.qsize(), 1)
-      self.assertEqual(athenad.upload_queue.get().retry_count, 1)
-
-    finally:
-      end_event.set()
-
+  @with_upload_handler
   def test_cancelUpload(self):
     item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={},
                               created_at=int(time.time()*1000), id='id', allow_cellular=True)
@@ -260,18 +285,13 @@ class TestAthenadMethods(unittest.TestCase):
 
     self.assertIn(item.id, athenad.cancelled_uploads)
 
-    end_event = threading.Event()
-    thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))
-    thread.start()
-    try:
-      self._wait_for_upload()
-      time.sleep(0.1)
+    self._wait_for_upload()
+    time.sleep(0.1)
 
-      self.assertEqual(athenad.upload_queue.qsize(), 0)
-      self.assertEqual(len(athenad.cancelled_uploads), 0)
-    finally:
-      end_event.set()
+    self.assertEqual(athenad.upload_queue.qsize(), 0)
+    self.assertEqual(len(athenad.cancelled_uploads), 0)
 
+  @with_upload_handler
   def test_cancelExpiry(self):
     t_future = datetime.now() - timedelta(days=40)
     ts = int(t_future.strftime("%s")) * 1000
@@ -280,42 +300,28 @@ class TestAthenadMethods(unittest.TestCase):
     fn = self._create_file('qlog.bz2')
     item = athenad.UploadItem(path=fn, url="http://localhost:44444/qlog.bz2", headers={}, created_at=ts, id='', allow_cellular=True)
 
+    athenad.upload_queue.put_nowait(item)
+    self._wait_for_upload()
+    time.sleep(0.1)
 
-    end_event = threading.Event()
-    thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))
-    thread.start()
-    try:
-      athenad.upload_queue.put_nowait(item)
-      self._wait_for_upload()
-      time.sleep(0.1)
-
-      self.assertEqual(athenad.upload_queue.qsize(), 0)
-    finally:
-      end_event.set()
+    self.assertEqual(athenad.upload_queue.qsize(), 0)
 
   def test_listUploadQueueEmpty(self):
     items = dispatcher["listUploadQueue"]()
     self.assertEqual(len(items), 0)
 
   @with_http_server
+  @with_upload_handler
   def test_listUploadQueueCurrent(self, host: str):
     fn = self._create_file('qlog.bz2')
     item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
 
-    end_event = threading.Event()
-    thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))
-    thread.start()
+    athenad.upload_queue.put_nowait(item)
+    self._wait_for_upload()
 
-    try:
-      athenad.upload_queue.put_nowait(item)
-      self._wait_for_upload()
-
-      items = dispatcher["listUploadQueue"]()
-      self.assertEqual(len(items), 1)
-      self.assertTrue(items[0]['current'])
-
-    finally:
-      end_event.set()
+    items = dispatcher["listUploadQueue"]()
+    self.assertEqual(len(items), 1)
+    self.assertTrue(items[0]['current'])
 
   def test_listUploadQueue(self):
     item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={},
@@ -377,11 +383,11 @@ class TestAthenadMethods(unittest.TestCase):
 
   def test_getSshAuthorizedKeys(self):
     keys = dispatcher["getSshAuthorizedKeys"]()
-    self.assertEqual(keys, MockParams().params["GithubSshKeys"].decode('utf-8'))
+    self.assertEqual(keys, self.default_params["GithubSshKeys"].decode('utf-8'))
 
   def test_getGithubUsername(self):
     keys = dispatcher["getGithubUsername"]()
-    self.assertEqual(keys, MockParams().params["GithubUsername"].decode('utf-8'))
+    self.assertEqual(keys, self.default_params["GithubUsername"].decode('utf-8'))
 
   def test_getVersion(self):
     resp = dispatcher["getVersion"]()

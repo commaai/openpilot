@@ -8,7 +8,6 @@ FW_VERSIONS = {
     (Ecu.abs, 0x7b0, None): [
       b'\xa5 \x19\x02\x00',
       b'\xa5 !\x02\x00',
-      b'\xf1\x82\xa5 \x19\x02\x00',
     ],
     (Ecu.eps, 0x746, None): [
       b'\x05\xc0\xd0\x00',
@@ -25,10 +24,6 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\xbb,\xa0t\x07',
       b'\xd1,\xa0q\x07',
-      b'\xf1\x82\xbb,\xa0t\x07',
-      b'\xf1\x82\xbb,\xa0t\x87',
-      b'\xf1\x82\xd1,\xa0q\x07',
-      b'\xf1\x82\xd9,\xa0@\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\x00\xfe\xf7\x00\x00',
@@ -59,7 +54,7 @@ FW_VERSIONS = {
       b'\xa1  \x02\x01',
       b'\xa1  \x02\x02',
       b'\xa1  \x03\x03',
-      b'\xa1\\  x04\x01',
+      b'\xa1  \x04\x01',
     ],
     (Ecu.eps, 0x746, None): [
       b'\x9b\xc0\x11\x00',
@@ -96,7 +91,6 @@ FW_VERSIONS = {
       b'\xa2 \x193\x00',
       b'\xa2 \x194\x00',
       b'\xa2 \x19`\x00',
-      b'\xf1\x00\xb2\x06\x04',
     ],
     (Ecu.eps, 0x746, None): [
       b'z\xc0\x00\x00',
@@ -170,7 +164,6 @@ FW_VERSIONS = {
       b'\xa2 !3\x00',
       b'\xa2 !`\x00',
       b'\xa2 !i\x00',
-      b'\xf1\x00\xb2\x06\x04',
     ],
     (Ecu.eps, 0x746, None): [
       b'\n\xc0\x04\x00',
@@ -214,7 +207,6 @@ FW_VERSIONS = {
       b'\xe9\xf5B0\x00',
       b'\xe9\xf6B0\x00',
       b'\xe9\xf6F0\x00',
-      b'\xf1\x00\xd7\x10@',
     ],
   },
   CAR.CROSSTREK_HYBRID: {
@@ -243,7 +235,6 @@ FW_VERSIONS = {
       b'\xa3 \x19&\x00',
       b'\xa3  \x14\x00',
       b'\xa3  \x14\x01',
-      b'\xf1\x00\xbb\r\x05',
     ],
     (Ecu.eps, 0x746, None): [
       b'\x8d\xc0\x00\x00',
@@ -257,7 +248,6 @@ FW_VERSIONS = {
       b'\x00\x00e`\x1f@  ',
       b'\x00\x00e\x97\x00\x00\x00\x00',
       b'\x00\x00e\x97\x1f@ 0',
-      b'\xf1\x00\xac\x02\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xb6"`A\x07',
@@ -266,7 +256,6 @@ FW_VERSIONS = {
       b'\xcb"`p\x07',
       b'\xcf"`0\x07',
       b'\xcf"`p\x07',
-      b'\xf1\x00\xa2\x10\n',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\x1a\xe6B1\x00',
@@ -299,7 +288,6 @@ FW_VERSIONS = {
     (Ecu.abs, 0x7b0, None): [
       b'm\x97\x14@',
       b'}\x97\x14@',
-      b'\xf1\x00\xbb\x0c\x04',
     ],
     (Ecu.eps, 0x746, None): [
       b'm\xc0\x10\x00',
@@ -316,7 +304,6 @@ FW_VERSIONS = {
       b'\xa7)\xa0q\x07',
       b'\xba"@@\x07',
       b'\xba"@p\x07',
-      b'\xf1\x82\xa7)\xa0q\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\x1a\xf6F`\x00',
@@ -386,8 +373,6 @@ FW_VERSIONS = {
       b'\x00\x00c\xb7\x1f@\x10\x16',
       b'\x00\x00c\xd1\x1f@\x10\x17',
       b'\x00\x00c\xec\x1f@ \x04',
-      b'\x00\x00c\xec7@\x04',
-      b'\xf1\x00\xf0\xe0\x0e',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xa0"@\x80\x07',
@@ -461,11 +446,12 @@ FW_VERSIONS = {
   },
   CAR.OUTBACK: {
     (Ecu.abs, 0x7b0, None): [
-      b'\xa1 \x06\x02',
       b'\xa1  \x06\x00',
       b'\xa1  \x06\x01',
+      b'\xa1  \x06\x02',
       b'\xa1  \x07\x00',
       b'\xa1  \x07\x02',
+      b'\xa1  \x07\x03',
       b'\xa1  \x08\x00',
       b'\xa1  \x08\x01',
       b'\xa1  \x08\x02',
@@ -475,6 +461,7 @@ FW_VERSIONS = {
     (Ecu.eps, 0x746, None): [
       b'\x1b\xc0\x10\x00',
       b'\x9b\xc0\x10\x00',
+      b'\x9b\xc0\x10\x02',
       b'\x9b\xc0 \x00',
     ],
     (Ecu.fwdCamera, 0x787, None): [
@@ -493,10 +480,8 @@ FW_VERSIONS = {
       b'\xde,\xa0@\x07',
       b'\xe2"`0\x07',
       b'\xe2"`p\x07',
+      b'\xe2"`q\x07',
       b'\xe3,\xa0@\x07',
-      b'\xf1\x82\xbc,\xa0q\x07',
-      b'\xf1\x82\xe2,\xa0@\x07',
-      b'\xf1\x82\xe3,\xa0@\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xa5\xf6D@\x00',
@@ -506,7 +491,6 @@ FW_VERSIONS = {
       b'\xa7\x8e\xf40\x00',
       b'\xa7\xf6D@\x00',
       b'\xa7\xfe\xf4@\x00',
-      b'\xf1\x82\xa7\xf6D@\x00',
     ],
   },
   CAR.FORESTER_2022: {
@@ -525,17 +509,20 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x787, None): [
       b'\x04!\x01\x1eD\x07!\x00\x04,',
       b'\x04!\x08\x01.\x07!\x08\x022',
+      b'\r!\x08\x017\n!\x08\x003',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xd5"`0\x07',
       b'\xd5"a0\x07',
       b'\xf1"`q\x07',
       b'\xf1"aq\x07',
+      b'\xfa"ap\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\x1d\x86B0\x00',
       b'\x1d\xf6B0\x00',
       b'\x1e\x86B0\x00',
+      b'\x1e\x86F0\x00',
       b'\x1e\xf6D0\x00',
     ],
   },
