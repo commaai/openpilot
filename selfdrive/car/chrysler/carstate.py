@@ -191,20 +191,20 @@ class CarState(CarStateBase):
   def get_can_parser_cusw(CP):
     messages = [
       # sig_address, frequency
-      ("ACCEL_CONTROL", 50),
+      ("ACC_CONTROL", 50),
+      ("ACC_HUD", 17),
       ("ACCEL_GAS", 50),
-      ("TRACTION_BUTTON", 50),
-      ("BRAKE_2", 50),
-      ("EPS_STATUS", 100),
       ("BRAKE_1", 50),
+      ("BRAKE_2", 50),
+      ("DOORS", 10),
+      ("EPS_STATUS", 100),
+      ("GEAR", 10),
+      ("SEATBELT_STATUS", 10),
+      ("STEERING", 100),
+      ("STEERING_LEVERS", 10),
+      ("TRACTION_BUTTON", 50),
       ("WHEEL_SPEEDS_FRONT", 50),
       ("WHEEL_SPEEDS_REAR", 50),
-      ("STEERING", 100),
-      ("ACC_HUD", 17),
-      ("GEAR", 10),
-      ("DOORS", 10),
-      ("SEATBELT_STATUS", 10),
-      ("STEERING_LEVERS", 10),
     ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
