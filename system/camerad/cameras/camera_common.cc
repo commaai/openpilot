@@ -30,7 +30,7 @@ public:
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
              "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DYUV_STRIDE=%d -DUV_OFFSET=%d "
              "-DIS_OX=%d -DCAM_NUM=%d%s",
-             ci->frame_width, ci->frame_height, compat ? 2880 : ci->frame_stride, ci->frame_offset,
+             ci->frame_width, ci->frame_height, compat ? ci->frame_width*12/8 : ci->frame_stride, ci->frame_offset,
              b->rgb_width, b->rgb_height, buf_width, uv_offset,
              ci->image_sensor == cereal::FrameData::ImageSensor::OX03C10, s->camera_num, s->camera_num==1 ? " -DVIGNETTING" : "");
     const char *cl_file = "cameras/real_debayer.cl";
@@ -38,7 +38,7 @@ public:
     krnl_ = CL_CHECK_ERR(clCreateKernel(prg_debayer, "debayer10", &err));
     CL_CHECK(clReleaseProgram(prg_debayer));
 
-    twelve.allocate(2880 * 1080);
+    twelve.allocate(ci->frame_width*12/8 * ci->frame_height);
     twelve.init_cl(device_id, context);
   }
 

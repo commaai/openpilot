@@ -25,9 +25,9 @@ OS04C10::OS04C10() {
   image_sensor = cereal::FrameData::ImageSensor::OS04C10;
   data_word = false;
 
-  frame_width = 1920;
-  frame_height = 1080;
-  frame_stride = (1920*10/8);
+  frame_width = 2688;
+  frame_height = 1520;
+  frame_stride = (frame_width*10/8);
 
   /*
   frame_width = 0xa80;
