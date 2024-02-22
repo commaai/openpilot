@@ -17,7 +17,7 @@ class CachingTestRequestHandler(http.server.BaseHTTPRequestHandler):
 
   def do_GET(self):
     if self.FILE_EXISTS:
-      self.send_response(200, b'1234')
+      self.send_response(206 if "Range" in self.headers else 200, b'1234')
     else:
       self.send_response(404)
     self.end_headers()
