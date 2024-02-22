@@ -698,6 +698,8 @@ def ws_recv(ws: WebSocket, end_event: threading.Event) -> None:
   last_ping = int(time.monotonic() * 1e9)
   while not end_event.is_set():
     try:
+      ret = ws.recv_data(control_frame=True)
+      print(ret, type(ret))
       opcode, data = ws.recv_data(control_frame=True)
       if opcode in (ABNF.OPCODE_TEXT, ABNF.OPCODE_BINARY):
         if opcode == ABNF.OPCODE_TEXT:

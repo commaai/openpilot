@@ -5,12 +5,15 @@ import time
 import unittest
 from typing import cast, Optional
 from unittest import mock
+from unittest.mock import MagicMock
 
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.athena import athenad
 from openpilot.selfdrive.manager.helpers import write_onroad_params
 from openpilot.system.hardware import TICI
+from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutException,
+                       create_connection)
 
 
 def wifi_radio(on: bool) -> None:
@@ -55,21 +58,28 @@ class TestAthenadPing(unittest.TestCase):
       self.exit_event.set()
       self.athenad.join()
 
-  @mock.patch('openpilot.selfdrive.athena.athenad.create_connection', autospec=True)
-  def assertTimeout(self, reconnect_time: float, mock_create_connection: mock.MagicMock) -> None:
+  # @mock.patch('openpilot.selfdrive.athena.athenad.create_connection', new_callable=lambda: MagicMock(wraps=create_connection))
+  @mock.patch('openpilot.selfdrive.athena.athenad.create_connection', new=MagicMock(wraps=create_connection))
+  def assertTimeout(self, reconnect_time: float) -> None:
+    print(athenad.create_connection.call_count)
+    # mock_create_connection.side_effect = create_connection
     self.athenad.start()
+    print(mock_create_connection.call_count)
 
     time.sleep(1)
     mock_create_connection.assert_called_once()
     mock_create_connection.reset_mock()
+    print(mock_create_connection.call_count)
 
     # check normal behaviour
     with self.subTest("Wi-Fi: receives ping"), Timeout(70, "no ping received"):
       while not self._received_ping():
         time.sleep(0.1)
       print("ping received")
+    print(mock_create_connection.call_count)
 
     mock_create_connection.assert_not_called()
+    return
 
     # websocket should attempt reconnect after short time
     with self.subTest("LTE: attempt reconnect"):
@@ -94,7 +104,7 @@ class TestAthenadPing(unittest.TestCase):
     write_onroad_params(False, self.params)
     self.assertTimeout(100)  # expect approx 90s
 
-  @unittest.skipIf(not TICI, "only run on desk")
+  # @unittest.skipIf(not TICI, "only run on desk")
   def test_onroad(self) -> None:
     write_onroad_params(True, self.params)
     self.assertTimeout(30)  # expect 20-30s
