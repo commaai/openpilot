@@ -1,11 +1,14 @@
 # functions common among cars
 from collections import namedtuple
-from typing import Dict, List, Optional
+from dataclasses import dataclass
+from enum import ReprEnum
+from typing import Dict, List, Optional, Union
 
 import capnp
 
 from cereal import car
 from openpilot.common.numpy_fast import clip, interp
+from openpilot.selfdrive.car.docs_definitions import CarInfo
 
 
 # kg of standard extra cargo to count for drive, gas, etc...
@@ -73,7 +76,9 @@ def scale_tire_stiffness(mass, wheelbase, center_to_front, tire_stiffness_factor
   return tire_stiffness_front, tire_stiffness_rear
 
 
-def dbc_dict(pt_dbc, radar_dbc, chassis_dbc=None, body_dbc=None) -> Dict[str, str]:
+DbcDict = Dict[str, str]
+
+def dbc_dict(pt_dbc, radar_dbc, chassis_dbc=None, body_dbc=None) -> DbcDict:
   return {'pt': pt_dbc, 'radar': radar_dbc, 'chassis': chassis_dbc, 'body': body_dbc}
 
 
@@ -236,3 +241,33 @@ class CanSignalRateCalculator:
     self.previous_value = current_value
 
     return self.rate
+
+
+CarInfos = Union[CarInfo, List[CarInfo]]
+
+@dataclass(order=True)
+class PlatformConfig:
+  platform_str: str
+  car_info: CarInfos
+  dbc_dict: DbcDict
+
+  def __hash__(self) -> int:
+    return hash(self.platform_str)
+
+
+class Platforms(str, ReprEnum):
+  config: PlatformConfig
+
+  def __new__(cls, platform_config: PlatformConfig):
+    member = str.__new__(cls, platform_config.platform_str)
+    member.config = platform_config
+    member._value_ = platform_config.platform_str
+    return member
+
+  @classmethod
+  def create_dbc_map(cls) -> Dict[str, DbcDict]:
+    return {p.config.platform_str: p.config.dbc_dict for p in cls}
+
+  @classmethod
+  def create_carinfo_map(cls) -> Dict[str, CarInfos]:
+    return {p.config.platform_str: p.config.car_info for p in cls}
