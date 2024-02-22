@@ -116,12 +116,16 @@ class ModelState:
 
 
 def main(demo=False):
+  cloudlog.warning("modeld init")
+
   sentry.set_tag("daemon", PROCESS_NAME)
   cloudlog.bind(daemon=PROCESS_NAME)
   setproctitle(PROCESS_NAME)
   config_realtime_process(7, 54)
 
+  cloudlog.warning("setting up CL context")
   cl_context = CLContext()
+  cloudlog.warning("CL context ready; loading model")
   model = ModelState(cl_context)
   cloudlog.warning("models loaded, modeld starting")
 
@@ -152,12 +156,8 @@ def main(demo=False):
   pm = PubMaster(["modelV2", "cameraOdometry"])
   sm = SubMaster(["carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel", "navInstruction", "carControl"])
 
-
   publish_state = PublishState()
   params = Params()
-  with car.CarParams.from_bytes(params.get("CarParams", block=True)) as msg:
-    steer_delay = msg.steerActuatorDelay + .2
-  #steer_delay = 0.4
 
   # setup filter to track dropped frames
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_FREQ)
@@ -177,13 +177,15 @@ def main(demo=False):
 
   if demo:
     CP = get_demo_car_params()
-  with car.CarParams.from_bytes(params.get("CarParams", block=True)) as msg:
-    CP = msg
-  cloudlog.info("plannerd got CarParams: %s", CP.carName)
+  else:
+    with car.CarParams.from_bytes(params.get("CarParams", block=True)) as msg:
+      CP = msg
+  cloudlog.info("modeld got CarParams: %s", CP.carName)
+
   # TODO this needs more thought, use .2s extra for now to estimate other delays
   steer_delay = CP.steerActuatorDelay + .2
-  DH = DesireHelper()
 
+  DH = DesireHelper()
 
   while True:
     # Keep receiving frames until we are at least 1 frame ahead of previous extra frame
@@ -219,13 +221,10 @@ def main(demo=False):
       buf_extra = buf_main
       meta_extra = meta_main
 
-    # TODO: path planner timeout?
     sm.update(0)
     desire = DH.desire
-    v_ego = sm["carState"].vEgo
     is_rhd = sm["driverMonitoringState"].isRHD
     frame_id = sm["roadCameraState"].frameId
-    # TODO add lag
     lateral_control_params = np.array([sm["carState"].vEgo, steer_delay], dtype=np.float32)
     if sm.updated["liveCalibration"]:
       device_from_calib_euler = np.array(sm["liveCalibration"].rpyCalib, dtype=np.float32)
@@ -293,7 +292,7 @@ def main(demo=False):
       modelv2_send = messaging.new_message('modelV2')
       posenet_send = messaging.new_message('cameraOdometry')
       fill_model_msg(modelv2_send, model_output, publish_state, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio,
-                      meta_main.timestamp_eof, timestamp_llk, model_execution_time, nav_enabled, v_ego, steer_delay, live_calib_seen)
+                      meta_main.timestamp_eof, timestamp_llk, model_execution_time, nav_enabled, live_calib_seen)
 
       desire_state = modelv2_send.modelV2.meta.desireState
       l_lane_change_prob = desire_state[log.Desire.laneChangeLeft]
