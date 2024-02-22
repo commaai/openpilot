@@ -1,7 +1,7 @@
 # functions common among cars
 from collections import namedtuple
 from dataclasses import dataclass
-from enum import Enum
+from enum import ReprEnum
 from typing import Dict, List, Optional, Union
 
 import capnp
@@ -253,5 +253,11 @@ class PlatformConfig:
     return hash(self.platform_str)
 
 
-class Platforms(PlatformConfig, Enum):
-  pass
+class Platforms(str, ReprEnum):
+  config: PlatformConfig
+
+  def __new__(cls, platform_config: PlatformConfig):
+    member = str.__new__(cls, platform_config.platform_str)
+    member.config = platform_config
+    member._value_ = platform_config.platform_str
+    return member
