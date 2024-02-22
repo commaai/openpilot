@@ -10,7 +10,6 @@ from cereal.services import SERVICE_LIST
 from openpilot.tools.lib.logreader import LogReader, ReadMode
 
 if __name__ == "__main__":
-  cnt_valid: Counter = Counter()
   cnt_events: Counter = Counter()
 
   cams = [s for s in SERVICE_LIST if s.endswith('CameraState')]
@@ -48,17 +47,15 @@ if __name__ == "__main__":
     elif msg.which() in cams:
       cnt_cameras[msg.which()] += 1
 
-    if not msg.valid:
-      cnt_valid[msg.which()] += 1
-
   duration = (end_time - start_time) / 1e9
 
   print("Events")
   pprint(cnt_events)
 
   print("\n")
-  print("Not valid")
-  pprint(cnt_valid)
+  print("Events")
+  for t, evt in events:
+    print(f"{t:8.2f} {evt}")
 
   print("\n")
   print("Cameras")
@@ -71,11 +68,6 @@ if __name__ == "__main__":
   print("Alerts")
   for t, a in alerts:
     print(f"{t:8.2f} {a}")
-
-  print("\n")
-  print("Events")
-  for t, evt in events:
-    print(f"{t:8.2f} {evt}")
 
   print("\n")
   if ignition_off is not None:

@@ -207,10 +207,10 @@ class Uploader:
     return success
 
 
-  def step(self, network_type: int, metered: bool) -> bool:
+  def step(self, network_type: int, metered: bool) -> Optional[bool]:
     d = self.next_file_to_upload(metered)
     if d is None:
-      return True
+      return None
 
     name, key, fn = d
 
@@ -253,12 +253,15 @@ def main(exit_event: Optional[threading.Event] = None) -> None:
       continue
 
     success = uploader.step(sm['deviceState'].networkType.raw, sm['deviceState'].networkMetered)
-    if success:
+    if success is None:
+      backoff = 60 if offroad else 5
+    elif success:
       backoff = 0.1
-    elif allow_sleep:
+    else:
       cloudlog.info("upload backoff %r", backoff)
       backoff = min(backoff*2, 120)
-    time.sleep(backoff + random.uniform(0, backoff))
+    if allow_sleep:
+      time.sleep(backoff + random.uniform(0, backoff))
 
 
 if __name__ == "__main__":
