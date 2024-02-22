@@ -16,7 +16,7 @@ EventName = car.CarEvent.EventName
 TransmissionType = car.CarParams.TransmissionType
 CRUISE_BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
                        CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
-SETTINGS_BUTTONS_DICT = {CruiseButtons.DISTANCE: ButtonType.gapAdjustCruise, CruiseButtons.LKAS: ButtonType.altButton1}
+SETTING_BUTTONS_DICT = {CruiseButtons.DISTANCE: ButtonType.gapAdjustCruise, CruiseButtons.LKAS: ButtonType.altButton1}
 
 
 class CarInterface(CarInterfaceBase):
@@ -316,7 +316,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.buttonEvents = [
       *create_button_events(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, CRUISE_BUTTONS_DICT),
-      *create_button_events(self.CS.cruise_setting, self.CS.prev_cruise_setting, SETTINGS_BUTTONS_DICT),
+      *create_button_events(self.CS.cruise_setting, self.CS.prev_cruise_setting, SETTING_BUTTONS_DICT),
     ]
 
     # events
