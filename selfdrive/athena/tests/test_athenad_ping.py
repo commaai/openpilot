@@ -58,15 +58,14 @@ class TestAthenadPing(unittest.TestCase):
       self.exit_event.set()
       self.athenad.join()
 
-  @mock.patch('openpilot.selfdrive.athena.athenad.create_connection', new_callable=lambda: MagicMock(wraps=athenad.create_connection))
-  # @mock.patch('openpilot.selfdrive.athena.athenad.create_connection', new=MagicMock(wraps=create_connection))
-  def assertTimeout(self, reconnect_time: float, mock_create_connection) -> None:
+  # @mock.patch('openpilot.selfdrive.athena.athenad.create_connection', new_callable=lambda: MagicMock(wraps=athenad.create_connection))
+  @mock.patch('openpilot.selfdrive.athena.athenad.create_connection', new=MagicMock(wraps=athenad.create_connection))
+  def assertTimeout(self, reconnect_time: float) -> None:
     print(athenad.create_connection.call_count)
-    # mock_create_connection.side_effect = create_connection
     self.athenad.start()
-    print(mock_create_connection.call_count)
 
     time.sleep(1)
+    print(athenad.create_connection.call_count)
     mock_create_connection.assert_called_once()
     mock_create_connection.reset_mock()
     print(mock_create_connection.call_count)
