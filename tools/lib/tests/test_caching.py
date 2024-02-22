@@ -61,7 +61,8 @@ class TestFileDownload(unittest.TestCase):
       del os.environ["FILEREADER_CACHE"]
     except KeyError:
       pass
-    shutil.rmtree(Paths.download_cache_root())
+    if os.path.exists(Paths.download_cache_root()):
+      shutil.rmtree(Paths.download_cache_root())
     URLFile(f"{host}/test.txt").get_length()
     URLFile(f"{host}/test.txt").read()
     self.assertEqual(os.path.exists(Paths.download_cache_root()), False)
