@@ -5,8 +5,6 @@ import os
 import socket
 import unittest
 
-from urllib3 import Retry
-
 from parameterized import parameterized
 from openpilot.selfdrive.athena.tests.helpers import with_http_server
 
