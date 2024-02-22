@@ -2,6 +2,7 @@ import http.server
 import threading
 import socket
 from functools import wraps
+import time
 
 
 class MockResponse:
@@ -61,8 +62,21 @@ class MockWebsocket():
 
 class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
   def do_PUT(self):
+    print('do_PUT')
     length = int(self.headers['Content-Length'])
-    self.rfile.read(length)
+    should_delay = self.headers.get('X-Delay-Upload') == 'true'
+    if not should_delay:
+      self.rfile.read(length)
+    else:
+      # time.sleep(10)
+      data = self.rfile.read(16 * 1024)
+      while data:
+      # for i in range(length):
+        data = self.rfile.read(16 * 1024)
+        print('reading')
+        time.sleep(0.01)
+
+    print('after rfile')
     self.send_response(201, "Created")
     self.end_headers()
 
