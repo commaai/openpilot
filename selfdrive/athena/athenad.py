@@ -206,7 +206,7 @@ def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = Tr
         break
 
 
-def cb(sm, item, tid, sz: int, cur: int, end_event: threading.Event) -> None:
+def cb(sm, item, tid, end_event: threading.Event, sz: int, cur: int) -> None:
   # Abort transfer if connection changed to metered after starting upload
   # or if athenad is shutting down to re-connect the websocket
   sm.update(0)
