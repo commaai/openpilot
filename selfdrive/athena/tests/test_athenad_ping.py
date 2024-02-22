@@ -12,6 +12,8 @@ from openpilot.selfdrive.athena import athenad
 from openpilot.selfdrive.manager.helpers import write_onroad_params
 from openpilot.system.hardware import TICI
 
+TIMEOUT_TOLERANCE = 20  # seconds
+
 
 def wifi_radio(on: bool) -> None:
   if not TICI:
@@ -63,7 +65,7 @@ class TestAthenadPing(unittest.TestCase):
     mock_create_connection.assert_called_once()
     mock_create_connection.reset_mock()
 
-    # check normal behaviour
+    # check normal behaviour, server pings on connection
     with self.subTest("Wi-Fi: receives ping"), Timeout(70, "no ping received"):
       while not self._received_ping():
         time.sleep(0.1)
@@ -92,12 +94,12 @@ class TestAthenadPing(unittest.TestCase):
   @unittest.skipIf(not TICI, "only run on desk")
   def test_offroad(self) -> None:
     write_onroad_params(False, self.params)
-    self.assertTimeout(100)  # expect approx 90s
+    self.assertTimeout(60 + TIMEOUT_TOLERANCE)  # based using TCP keepalive settings
 
   @unittest.skipIf(not TICI, "only run on desk")
   def test_onroad(self) -> None:
     write_onroad_params(True, self.params)
-    self.assertTimeout(30)  # expect 20-30s
+    self.assertTimeout(21 + TIMEOUT_TOLERANCE)
 
 
 if __name__ == "__main__":
