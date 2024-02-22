@@ -70,7 +70,6 @@ class TestAthenadPing(unittest.TestCase):
       print("ping received")
 
     mock_create_connection.assert_not_called()
-    return
 
     # websocket should attempt reconnect after short time
     with self.subTest("LTE: attempt reconnect"):
@@ -95,7 +94,7 @@ class TestAthenadPing(unittest.TestCase):
     write_onroad_params(False, self.params)
     self.assertTimeout(100)  # expect approx 90s
 
-  # @unittest.skipIf(not TICI, "only run on desk")
+  @unittest.skipIf(not TICI, "only run on desk")
   def test_onroad(self) -> None:
     write_onroad_params(True, self.params)
     self.assertTimeout(30)  # expect 20-30s
