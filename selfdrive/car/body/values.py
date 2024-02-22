@@ -37,4 +37,5 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
 )
 
+CAR_INFO = {p.platform_str: p.car_info for p in CAR}
 DBC = {p.platform_str: p.dbc_dict for p in CAR}
