@@ -254,6 +254,7 @@ class CarSpecs:
   steerRatio: float
   centerToFrontRatio: float = 0.5
 
+
 @dataclass(order=True)
 class PlatformConfig:
   platform_str: str
