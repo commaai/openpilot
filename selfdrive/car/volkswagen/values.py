@@ -114,7 +114,7 @@ class VolkswagenFlags(IntFlag):
 
 @dataclass
 class VolkswagenMQBPlatformConfig(PlatformConfig):
-  dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('vw_mqb', None))
+  dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('vw_mqb_2010', None))
 
 @dataclass
 class VolkswagenPQPlatformConfig(PlatformConfig):
