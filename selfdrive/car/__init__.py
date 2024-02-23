@@ -247,11 +247,20 @@ class CanSignalRateCalculator:
 CarInfos = Union[CarInfo, List[CarInfo]]
 
 
+@dataclass
+class CarSpecs:
+  mass: float
+  wheelbase: float
+  steerRatio: float
+
+
 @dataclass(order=True)
 class PlatformConfig:
   platform_str: str
   car_info: CarInfos
   dbc_dict: DbcDict
+
+  specs: Optional[CarSpecs] = None
 
   def __hash__(self) -> int:
     return hash(self.platform_str)
@@ -268,8 +277,8 @@ class Platforms(str, ReprEnum):
 
   @classmethod
   def create_dbc_map(cls) -> Dict[str, DbcDict]:
-    return {p.config.platform_str: p.config.dbc_dict for p in cls}
+    return {p: p.config.dbc_dict for p in cls}
 
   @classmethod
   def create_carinfo_map(cls) -> Dict[str, CarInfos]:
-    return {p.config.platform_str: p.config.car_info for p in cls}
+    return {p: p.config.car_info for p in cls}
