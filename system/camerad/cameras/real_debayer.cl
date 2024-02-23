@@ -87,6 +87,24 @@ float4 val4_from_12(uchar8 pvs, float gain) {
 
 }
 
+float4 val4_from_10(uchar8 pvs, uchar ext, bool aligned, float gain) {
+  uint4 parsed;
+  if (aligned) {
+    parsed = (uint4)(((uint)pvs.s0 << 2) + (pvs.s1 & 0b00000011),
+                     ((uint)pvs.s2 << 2) + ((pvs.s6 & 0b11000000) / 64),
+                     ((uint)pvs.s3 << 2) + ((pvs.s6 & 0b00110000) / 16),
+                     ((uint)pvs.s4 << 2) + ((pvs.s6 & 0b00001100) / 4));
+  } else {
+    parsed = (uint4)(((uint)pvs.s0 << 2) + ((pvs.s3 & 0b00110000) / 16),
+                     ((uint)pvs.s1 << 2) + ((pvs.s3 & 0b00001100) / 4),
+                     ((uint)pvs.s2 << 2) + ((pvs.s3 & 0b00000011)),
+                     ((uint)pvs.s4 << 2) + ((ext & 0b11000000) / 64));
+  }
+
+  float4 pv = convert_float4(parsed) / 1024.0;
+  return clamp(pv*gain, 0.0, 1.0);
+}
+
 float get_k(float a, float b, float c, float d) {
   return 2.0 - (fabs(a - b) + fabs(c - d));
 }
@@ -102,14 +120,35 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   float3 rgb;
   uchar3 rgb_out[4];
 
-  int start = (2 * gid_y - 1) * FRAME_STRIDE + (3 * gid_x - 2) + (FRAME_STRIDE * FRAME_OFFSET);
+  int start;
+  #if IS_OS
+    bool aligned10;
 
+    if (gid_x % 2 == 0) {
+      aligned10 = true;
+      start = (2 * gid_y - 1) * FRAME_STRIDE + (5 * gid_x / 2 - 2) + (FRAME_STRIDE * FRAME_OFFSET);
+    } else {
+      aligned10 = false;
+      start = (2 * gid_y - 1) * FRAME_STRIDE + (5 * (gid_x - 1) / 2 + 1) + (FRAME_STRIDE * FRAME_OFFSET);
+    }
+  #else
+    start = (2 * gid_y - 1) * FRAME_STRIDE + (3 * gid_x - 2) + (FRAME_STRIDE * FRAME_OFFSET);
+  #endif
   // read in 8x4 chars
   uchar8 dat[4];
+  uchar extra[4];
   dat[0] = vload8(0, in + start + FRAME_STRIDE*y_top_mod);
   dat[1] = vload8(0, in + start + FRAME_STRIDE*1);
   dat[2] = vload8(0, in + start + FRAME_STRIDE*2);
   dat[3] = vload8(0, in + start + FRAME_STRIDE*y_bot_mod);
+  #if IS_OS
+    if (!aligned10) {
+      extra[0] = in[start + FRAME_STRIDE*y_top_mod + 8];
+      extra[1] = in[start + FRAME_STRIDE*1 + 8];
+      extra[2] = in[start + FRAME_STRIDE*2 + 8];
+      extra[3] = in[start + FRAME_STRIDE*y_bot_mod + 8];
+		}
+  #endif
 
   // correct vignetting
   #if VIGNETTING
@@ -121,10 +160,17 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   #endif
 
   // process them to floats
-  float4 va = val4_from_12(dat[0], gain);
-  float4 vb = val4_from_12(dat[1], gain);
-  float4 vc = val4_from_12(dat[2], gain);
-  float4 vd = val4_from_12(dat[3], gain);
+  #if IS_OS
+    float4 va = val4_from_10(dat[0], extra[0], aligned10, 1.0);
+    float4 vb = val4_from_10(dat[1], extra[1], aligned10, 1.0);
+    float4 vc = val4_from_10(dat[2], extra[2], aligned10, 1.0);
+    float4 vd = val4_from_10(dat[3], extra[3], aligned10, 1.0);
+  #else
+    float4 va = val4_from_12(dat[0], gain);
+    float4 vb = val4_from_12(dat[1], gain);
+    float4 vc = val4_from_12(dat[2], gain);
+    float4 vd = val4_from_12(dat[3], gain);
+  #endif
 
   if (gid_x == 0) {
     va.s0 = va.s2;
