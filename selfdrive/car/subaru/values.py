@@ -1,10 +1,10 @@
 from dataclasses import dataclass, field
-from enum import Enum, IntFlag, StrEnum
-from typing import Dict, List, Union
+from enum import Enum, IntFlag
+from typing import List
 
 from cereal import car
 from panda.python import uds
-from openpilot.selfdrive.car import dbc_dict
+from openpilot.selfdrive.car import DbcDict, PlatformConfig, Platforms, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Tool, Column
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
@@ -68,27 +68,6 @@ class CanBus:
   camera = 2
 
 
-class CAR(StrEnum):
-  # Global platform
-  ASCENT = "SUBARU ASCENT LIMITED 2019"
-  ASCENT_2023 = "SUBARU ASCENT 2023"
-  IMPREZA = "SUBARU IMPREZA LIMITED 2019"
-  IMPREZA_2020 = "SUBARU IMPREZA SPORT 2020"
-  FORESTER = "SUBARU FORESTER 2019"
-  OUTBACK = "SUBARU OUTBACK 6TH GEN"
-  CROSSTREK_HYBRID = "SUBARU CROSSTREK HYBRID 2020"
-  FORESTER_HYBRID = "SUBARU FORESTER HYBRID 2020"
-  LEGACY = "SUBARU LEGACY 7TH GEN"
-  FORESTER_2022 = "SUBARU FORESTER 2022"
-  OUTBACK_2023 = "SUBARU OUTBACK 7TH GEN"
-
-  # Pre-global
-  FORESTER_PREGLOBAL = "SUBARU FORESTER 2017 - 2018"
-  LEGACY_PREGLOBAL = "SUBARU LEGACY 2015 - 2018"
-  OUTBACK_PREGLOBAL = "SUBARU OUTBACK 2015 - 2017"
-  OUTBACK_PREGLOBAL_2018 = "SUBARU OUTBACK 2018 - 2019"
-
-
 class Footnote(Enum):
   GLOBAL = CarFootnote(
     "In the non-US market, openpilot requires the car to come equipped with EyeSight with Lane Keep Assistance.",
@@ -110,32 +89,92 @@ class SubaruCarInfo(CarInfo):
     if CP.experimentalLongitudinalAvailable:
       self.footnotes.append(Footnote.EXP_LONG)
 
-CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
-  CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-21", "All"),
-  CAR.OUTBACK: SubaruCarInfo("Subaru Outback 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b])),
-  CAR.LEGACY: SubaruCarInfo("Subaru Legacy 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b])),
-  CAR.IMPREZA: [
-    SubaruCarInfo("Subaru Impreza 2017-19"),
-    SubaruCarInfo("Subaru Crosstrek 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26"),
-    SubaruCarInfo("Subaru XV 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26"),
-  ],
-  CAR.IMPREZA_2020: [
-    SubaruCarInfo("Subaru Impreza 2020-22"),
-    SubaruCarInfo("Subaru Crosstrek 2020-23"),
-    SubaruCarInfo("Subaru XV 2020-21"),
-  ],
+
+@dataclass
+class SubaruPlatformConfig(PlatformConfig):
+  dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('subaru_global_2017_generated', None))
+
+
+class CAR(Platforms):
+  # Global platform
+  ASCENT = SubaruPlatformConfig(
+    "SUBARU ASCENT LIMITED 2019",
+    SubaruCarInfo("Subaru Ascent 2019-21", "All"),
+  )
+  OUTBACK = SubaruPlatformConfig(
+    "SUBARU OUTBACK 6TH GEN",
+    SubaruCarInfo("Subaru Outback 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b])),
+  )
+  LEGACY = SubaruPlatformConfig(
+    "SUBARU LEGACY 7TH GEN",
+    SubaruCarInfo("Subaru Legacy 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b])),
+  )
+  IMPREZA= SubaruPlatformConfig(
+    "SUBARU IMPREZA LIMITED 2019",
+    [
+      SubaruCarInfo("Subaru Impreza 2017-19"),
+      SubaruCarInfo("Subaru Crosstrek 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26"),
+      SubaruCarInfo("Subaru XV 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26"),
+    ],
+  )
+  IMPREZA_2020 = SubaruPlatformConfig(
+    "SUBARU IMPREZA SPORT 2020",
+    [
+      SubaruCarInfo("Subaru Impreza 2020-22"),
+      SubaruCarInfo("Subaru Crosstrek 2020-23"),
+      SubaruCarInfo("Subaru XV 2020-21"),
+    ],
+  )
   # TODO: is there an XV and Impreza too?
-  CAR.CROSSTREK_HYBRID: SubaruCarInfo("Subaru Crosstrek Hybrid 2020", car_parts=CarParts.common([CarHarness.subaru_b])),
-  CAR.FORESTER_HYBRID: SubaruCarInfo("Subaru Forester Hybrid 2020"),
-  CAR.FORESTER: SubaruCarInfo("Subaru Forester 2019-21", "All"),
-  CAR.FORESTER_PREGLOBAL: SubaruCarInfo("Subaru Forester 2017-18"),
-  CAR.LEGACY_PREGLOBAL: SubaruCarInfo("Subaru Legacy 2015-18"),
-  CAR.OUTBACK_PREGLOBAL: SubaruCarInfo("Subaru Outback 2015-17"),
-  CAR.OUTBACK_PREGLOBAL_2018: SubaruCarInfo("Subaru Outback 2018-19"),
-  CAR.FORESTER_2022: SubaruCarInfo("Subaru Forester 2022-24", "All", car_parts=CarParts.common([CarHarness.subaru_c])),
-  CAR.OUTBACK_2023: SubaruCarInfo("Subaru Outback 2023", "All", car_parts=CarParts.common([CarHarness.subaru_d])),
-  CAR.ASCENT_2023: SubaruCarInfo("Subaru Ascent 2023", "All", car_parts=CarParts.common([CarHarness.subaru_d])),
-}
+  CROSSTREK_HYBRID = SubaruPlatformConfig(
+    "SUBARU CROSSTREK HYBRID 2020",
+    SubaruCarInfo("Subaru Crosstrek Hybrid 2020", car_parts=CarParts.common([CarHarness.subaru_b])),
+    dbc_dict('subaru_global_2020_hybrid_generated', None),
+  )
+  FORESTER_HYBRID = SubaruPlatformConfig(
+    "SUBARU FORESTER HYBRID 2020",
+    SubaruCarInfo("Subaru Forester Hybrid 2020"),
+    dbc_dict('subaru_global_2020_hybrid_generated', None),
+  )
+  FORESTER = SubaruPlatformConfig(
+    "SUBARU FORESTER 2019",
+    SubaruCarInfo("Subaru Forester 2019-21", "All"),
+  )
+  # Pre-global
+  FORESTER_PREGLOBAL = SubaruPlatformConfig(
+    "SUBARU FORESTER 2017 - 2018",
+    SubaruCarInfo("Subaru Forester 2017-18"),
+    dbc_dict('subaru_forester_2017_generated', None),
+  )
+  LEGACY_PREGLOBAL = SubaruPlatformConfig(
+    "SUBARU LEGACY 2015 - 2018",
+    SubaruCarInfo("Subaru Legacy 2015-18"),
+    dbc_dict('subaru_outback_2015_generated', None),
+  )
+  OUTBACK_PREGLOBAL = SubaruPlatformConfig(
+    "SUBARU OUTBACK 2015 - 2017",
+    SubaruCarInfo("Subaru Outback 2015-17"),
+    dbc_dict('subaru_outback_2015_generated', None),
+  )
+  OUTBACK_PREGLOBAL_2018 = SubaruPlatformConfig(
+    "SUBARU OUTBACK 2018 - 2019",
+    SubaruCarInfo("Subaru Outback 2018-19"),
+    dbc_dict('subaru_outback_2019_generated', None),
+  )
+  # Angle LKAS
+  FORESTER_2022= SubaruPlatformConfig(
+    "SUBARU FORESTER 2022",
+    SubaruCarInfo("Subaru Forester 2022-24", "All", car_parts=CarParts.common([CarHarness.subaru_c])),
+  )
+  OUTBACK_2023 = SubaruPlatformConfig(
+    "SUBARU OUTBACK 7TH GEN",
+    SubaruCarInfo("Subaru Outback 2023", "All", car_parts=CarParts.common([CarHarness.subaru_d])),
+  )
+  ASCENT_2023 = SubaruPlatformConfig(
+    "SUBARU ASCENT 2023",
+    SubaruCarInfo("Subaru Ascent 2023", "All", car_parts=CarParts.common([CarHarness.subaru_d]))
+  )
+
 
 LKAS_ANGLE = {CAR.FORESTER_2022, CAR.OUTBACK_2023, CAR.ASCENT_2023}
 GLOBAL_GEN2 = {CAR.OUTBACK, CAR.LEGACY, CAR.OUTBACK_2023, CAR.ASCENT_2023}
@@ -186,20 +225,5 @@ FW_QUERY_CONFIG = FwQueryConfig(
   }
 )
 
-DBC = {
-  CAR.ASCENT: dbc_dict('subaru_global_2017_generated', None),
-  CAR.ASCENT_2023: dbc_dict('subaru_global_2017_generated', None),
-  CAR.IMPREZA: dbc_dict('subaru_global_2017_generated', None),
-  CAR.IMPREZA_2020: dbc_dict('subaru_global_2017_generated', None),
-  CAR.FORESTER: dbc_dict('subaru_global_2017_generated', None),
-  CAR.FORESTER_2022: dbc_dict('subaru_global_2017_generated', None),
-  CAR.OUTBACK: dbc_dict('subaru_global_2017_generated', None),
-  CAR.FORESTER_HYBRID: dbc_dict('subaru_global_2020_hybrid_generated', None),
-  CAR.CROSSTREK_HYBRID: dbc_dict('subaru_global_2020_hybrid_generated', None),
-  CAR.OUTBACK_2023: dbc_dict('subaru_global_2017_generated', None),
-  CAR.LEGACY: dbc_dict('subaru_global_2017_generated', None),
-  CAR.FORESTER_PREGLOBAL: dbc_dict('subaru_forester_2017_generated', None),
-  CAR.LEGACY_PREGLOBAL: dbc_dict('subaru_outback_2015_generated', None),
-  CAR.OUTBACK_PREGLOBAL: dbc_dict('subaru_outback_2015_generated', None),
-  CAR.OUTBACK_PREGLOBAL_2018: dbc_dict('subaru_outback_2019_generated', None),
-}
+CAR_INFO = CAR.create_carinfo_map()
+DBC = CAR.create_dbc_map()
