@@ -112,7 +112,7 @@ class CAR(Platforms):
     SubaruCarInfo("Subaru Legacy 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b])),
     specs=OUTBACK.specs,
   )
-  IMPREZA= SubaruPlatformConfig(
+  IMPREZA = SubaruPlatformConfig(
     "SUBARU IMPREZA LIMITED 2019",
     [
       SubaruCarInfo("Subaru Impreza 2017-19"),
@@ -159,7 +159,7 @@ class CAR(Platforms):
     "SUBARU LEGACY 2015 - 2018",
     SubaruCarInfo("Subaru Legacy 2015-18"),
     dbc_dict('subaru_outback_2015_generated', None),
-    specs=CarSpecs(mass=1568, wheelbase=2.67, steerRatio=17),
+    specs=CarSpecs(mass=1568, wheelbase=2.67, steerRatio=12.5),
   )
   OUTBACK_PREGLOBAL = SubaruPlatformConfig(
     "SUBARU OUTBACK 2015 - 2017",
@@ -174,7 +174,7 @@ class CAR(Platforms):
     specs=FORESTER_PREGLOBAL.specs,
   )
   # Angle LKAS
-  FORESTER_2022= SubaruPlatformConfig(
+  FORESTER_2022 = SubaruPlatformConfig(
     "SUBARU FORESTER 2022",
     SubaruCarInfo("Subaru Forester 2022-24", "All", car_parts=CarParts.common([CarHarness.subaru_c])),
     specs=FORESTER.specs,

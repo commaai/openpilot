@@ -78,6 +78,7 @@ def scale_tire_stiffness(mass, wheelbase, center_to_front, tire_stiffness_factor
 
 DbcDict = Dict[str, str]
 
+
 def dbc_dict(pt_dbc, radar_dbc, chassis_dbc=None, body_dbc=None) -> DbcDict:
   return {'pt': pt_dbc, 'radar': radar_dbc, 'chassis': chassis_dbc, 'body': body_dbc}
 
@@ -254,6 +255,7 @@ class CarSpecs:
   minSteerSpeed: float = field(default=0.)
   minEnableSpeed: float = field(default=-1.)
 
+
 @dataclass(order=True)
 class PlatformConfig:
   platform_str: str
@@ -277,8 +279,8 @@ class Platforms(str, ReprEnum):
 
   @classmethod
   def create_dbc_map(cls) -> Dict[str, DbcDict]:
-    return {p.config.platform_str: p.config.dbc_dict for p in cls}
+    return {p: p.config.dbc_dict for p in cls}
 
   @classmethod
   def create_carinfo_map(cls) -> Dict[str, CarInfos]:
-    return {p.config.platform_str: p.config.car_info for p in cls}
+    return {p: p.config.car_info for p in cls}
