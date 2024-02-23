@@ -81,7 +81,7 @@ class GMCarInfo(CarInfo):
 
 @dataclass
 class GMPlatformConfig(PlatformConfig):
-  dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('subaru_global_2017_generated', None))
+  dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('gm_global_a_poertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'))
 
 
 class CAR(Platforms):
