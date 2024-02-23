@@ -109,7 +109,6 @@ class CarInterfaceBase(ABC):
   @classmethod
   def get_params(cls, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], experimental_long: bool, docs: bool):
     ret = CarInterfaceBase.get_std_params(candidate)
-    ret = cls._get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs)
 
     if hasattr(candidate, "config"):
       platform_config = cast(PlatformConfig, candidate.config)
@@ -117,7 +116,8 @@ class CarInterfaceBase(ABC):
         ret.mass = platform_config.specs.mass
         ret.wheelbase = platform_config.specs.wheelbase
         ret.steerRatio = platform_config.specs.steerRatio
-        ret.centerToFront = ret.wheelbase * 0.5
+
+    ret = cls._get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs)
 
     # Vehicle mass is published curb weight plus assumed payload such as a human driver; notCars have no assumed payload
     if not ret.notCar:
