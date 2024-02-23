@@ -25,7 +25,7 @@ FW_VERSIONS = {
       b'\x10#\x01',
     ],
   },
-  CAR.AP3_MODELS: {
+  CAR.MODELS_RAVEN: {
     (Ecu.electricBrakeBooster, 0x64d, None): [
       b'1037123-00-A',
     ],
