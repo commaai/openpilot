@@ -151,12 +151,6 @@ class CarInterface(CarInterfaceBase):
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
     ret.longitudinalActuatorDelayUpperBound = 0.5  # large delay to initially start braking
 
-    platform_config = CAR(candidate).config
-    ret.mass = platform_config.specs.mass
-    ret.wheelbase = platform_config.specs.wheelbase
-    ret.steerRatio = platform_config.specs.steerRatio
-    ret.centerToFront = ret.wheelbase * platform_config.specs.centerToFrontRatio
-
     if candidate == CAR.VOLT:
       ret.tireStiffnessFactor = 0.469  # Stock Michelin Energy Saver A/S, LiveParameters
 
