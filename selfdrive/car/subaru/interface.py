@@ -44,7 +44,7 @@ class CarInterface(CarInterfaceBase):
     ret.mass = platform_config.specs.mass
     ret.wheelbase = platform_config.specs.wheelbase
     ret.steerRatio = platform_config.specs.steerRatio
-    ret.centerToFront = ret.wheelbase * 0.5
+    ret.centerToFront = ret.wheelbase * platform_config.specs.centerToFrontRatio
 
     if candidate in (CAR.ASCENT, CAR.ASCENT_2023):
       ret.steerActuatorDelay = 0.3   # end-to-end angle controller

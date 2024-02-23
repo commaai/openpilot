@@ -93,7 +93,7 @@ class CAR(Platforms):
   VOLT = GMPlatformConfig(
     "CHEVROLET VOLT PREMIER 2017",
     GMCarInfo("Chevrolet Volt 2017-18", min_enable_speed=0, video_link="https://youtu.be/QeMCN_4TFfQ"),
-    specs=CarSpecs(mass=1607, wheelbase=2.69, steerRatio=17.7),
+    specs=CarSpecs(mass=1607, wheelbase=2.69, steerRatio=17.7, centerToFrontRatio=0.45),
   )
   CADILLAC_ATS = GMPlatformConfig(
     "CADILLAC ATS Premium Performance 2018",
@@ -103,22 +103,22 @@ class CAR(Platforms):
   MALIBU = GMPlatformConfig(
     "CHEVROLET MALIBU PREMIER 2017",
     GMCarInfo("Chevrolet Malibu Premier 2017"),
-    specs=CarSpecs(mass=1496, wheelbase=2.83, steerRatio=15.8),
+    specs=CarSpecs(mass=1496, wheelbase=2.83, steerRatio=15.8, centerToFrontRatio=0.4),
   )
   ACADIA = GMPlatformConfig(
     "GMC ACADIA DENALI 2018",
     GMCarInfo("GMC Acadia 2018", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo"),
-    specs=CarSpecs(mass=1975, wheelbase=2.86, steerRatio=14.4),
+    specs=CarSpecs(mass=1975, wheelbase=2.86, steerRatio=14.4, centerToFrontRatio=0.4),
   )
   BUICK_LACROSSE = GMPlatformConfig(
     "BUICK LACROSSE 2017",
     GMCarInfo("Buick LaCrosse 2017-19", "Driver Confidence Package 2"),
-    specs=CarSpecs(mass=1712, wheelbase=2.91, steerRatio=15.8),
+    specs=CarSpecs(mass=1712, wheelbase=2.91, steerRatio=15.8, centerToFrontRatio=0.4),
   )
   BUICK_REGAL = GMPlatformConfig(
     "BUICK REGAL ESSENCE 2018",
     GMCarInfo("Buick Regal Essence 2018"),
-    specs=CarSpecs(mass=1714, wheelbase=2.83, steerRatio=14.4),
+    specs=CarSpecs(mass=1714, wheelbase=2.83, steerRatio=14.4, centerToFrontRatio=0.4),
   )
   ESCALADE = GMPlatformConfig(
     "CADILLAC ESCALADE 2017",
@@ -141,7 +141,7 @@ class CAR(Platforms):
       GMCarInfo("Chevrolet Bolt EUV 2022-23", "Premier or Premier Redline Trim without Super Cruise Package", video_link="https://youtu.be/xvwzGMUA210"),
       GMCarInfo("Chevrolet Bolt EV 2022-23", "2LT Trim with Adaptive Cruise Control Package"),
     ],
-    specs=CarSpecs(mass=1669, wheelbase=2.63779, steerRatio=16.8),
+    specs=CarSpecs(mass=1669, wheelbase=2.63779, steerRatio=16.8, centerToFrontRatio=0.4),
   )
   SILVERADO = GMPlatformConfig(
     "CHEVROLET SILVERADO 1500 2020",
@@ -154,12 +154,12 @@ class CAR(Platforms):
   EQUINOX = GMPlatformConfig(
     "CHEVROLET EQUINOX 2019",
     GMCarInfo("Chevrolet Equinox 2019-22"),
-    specs=CarSpecs(mass=1588, wheelbase=2.72, steerRatio=14.4),
+    specs=CarSpecs(mass=1588, wheelbase=2.72, steerRatio=14.4, centerToFrontRatio=0.4),
   )
   TRAILBLAZER = GMPlatformConfig(
     "CHEVROLET TRAILBLAZER 2021",
     GMCarInfo("Chevrolet Trailblazer 2021-22"),
-    specs=CarSpecs(mass=1345, wheelbase=2.64, steerRatio=16.8),
+    specs=CarSpecs(mass=1345, wheelbase=2.64, steerRatio=16.8, centerToFrontRatio=0.4),
   )
 
 
