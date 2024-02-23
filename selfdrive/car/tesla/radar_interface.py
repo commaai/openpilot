@@ -8,6 +8,7 @@ from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
     super().__init__(CP)
+    self.CP = CP
 
     if CP.carFingerprint == CAR.MODELS_RAVEN:
       messages = [('RadarStatus', 16)]
@@ -16,7 +17,6 @@ class RadarInterface(RadarInterfaceBase):
       messages = [('TeslaRadarSguInfo', 10)]
       self.num_points = 32
 
-    messages = []
     for i in range(self.num_points):
       messages.extend([
         (f'RadarPoint{i}_A', 16),
@@ -26,7 +26,7 @@ class RadarInterface(RadarInterfaceBase):
     self.rcp = CANParser(DBC[CP.carFingerprint]['radar'], messages, CANBUS.radar)
     self.updated_messages = set()
     self.track_id = 0
-    self.trigger_msg = f'RadarPoint{self.num_points - 1}_B'
+    self.trigger_msg = 1119
 
   def update(self, can_strings):
     if self.rcp is None:
