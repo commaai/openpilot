@@ -2,7 +2,7 @@ from cereal import car
 from panda import Panda
 from openpilot.selfdrive.car import get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
-from openpilot.selfdrive.car.volkswagen.values import CAR, PQ_CARS, CANBUS, NetworkLocation, TransmissionType, GearShifter, VolkswagenFlags
+from openpilot.selfdrive.car.volkswagen.values import PQ_CARS, CANBUS, NetworkLocation, TransmissionType, GearShifter, VolkswagenFlags
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -71,12 +71,12 @@ class CarInterface(CarInterfaceBase):
 
     # Global lateral tuning defaults, can be overridden per-vehicle
 
-    ret.steerLimitTimer = 0.4
-
     if candidate in PQ_CARS:
+      ret.steerLimitTimer = 0.8
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
     else:
+      ret.steerLimitTimer = 0.4
       ret.steerActuatorDelay = 0.1
       ret.lateralTuning.pid.kpBP = [0.]
       ret.lateralTuning.pid.kiBP = [0.]
@@ -102,15 +102,7 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kpV = [0.1]
     ret.longitudinalTuning.kiV = [0.0]
 
-    # Per-chassis tuning values, override tuning defaults here if desired
-
-    # TODO: this should be copied in interfaces.py
-    platform_config = CAR(candidate).config
-    ret.mass = platform_config.specs.mass
-    ret.wheelbase = platform_config.specs.wheelbase
-    ret.steerRatio = platform_config.specs.steerRatio
-    ret.minEnableSpeed = platform_config.specs.minEnableSpeed
-    ret.minSteerSpeed = platform_config.specs.minSteerSpeed
+    # Override per-chassis values here if desired
 
     ret.centerToFront = ret.wheelbase * 0.45
     ret.autoResumeSng = ret.minEnableSpeed == -1
