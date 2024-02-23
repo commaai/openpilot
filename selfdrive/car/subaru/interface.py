@@ -40,11 +40,10 @@ class CarInterface(CarInterfaceBase):
     else:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
+
+    ret.centerToFront = ret.wheelbase * 0.5
+
     if candidate in (CAR.ASCENT, CAR.ASCENT_2023):
-      ret.mass = 2031.
-      ret.wheelbase = 2.89
-      ret.centerToFront = ret.wheelbase * 0.5
-      ret.steerRatio = 13.5
       ret.steerActuatorDelay = 0.3   # end-to-end angle controller
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kf = 0.00003
@@ -52,10 +51,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.0025, 0.1], [0.00025, 0.01]]
 
     elif candidate == CAR.IMPREZA:
-      ret.mass = 1568.
-      ret.wheelbase = 2.67
-      ret.centerToFront = ret.wheelbase * 0.5
-      ret.steerRatio = 15
       ret.steerActuatorDelay = 0.4   # end-to-end angle controller
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kf = 0.00005
@@ -63,58 +58,31 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2, 0.3], [0.02, 0.03]]
 
     elif candidate == CAR.IMPREZA_2020:
-      ret.mass = 1480.
-      ret.wheelbase = 2.67
-      ret.centerToFront = ret.wheelbase * 0.5
-      ret.steerRatio = 17           # learned, 14 stock
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kf = 0.00005
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 14., 23.], [0., 14., 23.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.045, 0.042, 0.20], [0.04, 0.035, 0.045]]
 
     elif candidate == CAR.CROSSTREK_HYBRID:
-      ret.mass = 1668.
-      ret.wheelbase = 2.67
-      ret.centerToFront = ret.wheelbase * 0.5
-      ret.steerRatio = 17
       ret.steerActuatorDelay = 0.1
 
     elif candidate in (CAR.FORESTER, CAR.FORESTER_2022, CAR.FORESTER_HYBRID):
-      ret.mass = 1568.
-      ret.wheelbase = 2.67
-      ret.centerToFront = ret.wheelbase * 0.5
-      ret.steerRatio = 17           # learned, 14 stock
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kf = 0.000038
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 14., 23.], [0., 14., 23.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01, 0.065, 0.2], [0.001, 0.015, 0.025]]
 
     elif candidate in (CAR.OUTBACK, CAR.LEGACY, CAR.OUTBACK_2023):
-      ret.mass = 1568.
-      ret.wheelbase = 2.67
-      ret.centerToFront = ret.wheelbase * 0.5
-      ret.steerRatio = 17
       ret.steerActuatorDelay = 0.1
 
     elif candidate in (CAR.FORESTER_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018):
       ret.safetyConfigs[0].safetyParam = Panda.FLAG_SUBARU_PREGLOBAL_REVERSED_DRIVER_TORQUE  # Outback 2018-2019 and Forester have reversed driver torque signal
-      ret.mass = 1568
-      ret.wheelbase = 2.67
-      ret.centerToFront = ret.wheelbase * 0.5
-      ret.steerRatio = 20           # learned, 14 stock
 
     elif candidate == CAR.LEGACY_PREGLOBAL:
-      ret.mass = 1568
-      ret.wheelbase = 2.67
-      ret.centerToFront = ret.wheelbase * 0.5
-      ret.steerRatio = 12.5   # 14.5 stock
       ret.steerActuatorDelay = 0.15
 
     elif candidate == CAR.OUTBACK_PREGLOBAL:
-      ret.mass = 1568
-      ret.wheelbase = 2.67
-      ret.centerToFront = ret.wheelbase * 0.5
-      ret.steerRatio = 20           # learned, 14 stock
+      pass
     else:
       raise ValueError(f"unknown car: {candidate}")
 
