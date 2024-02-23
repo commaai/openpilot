@@ -293,6 +293,7 @@ VOLKSWAGEN_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 
 VOLKSWAGEN_RX_OFFSET = 0x6a
 
 FW_QUERY_CONFIG = FwQueryConfig(
+  # TODO: add back whitelists after we gather enough data
   requests=[request for bus, obd_multiplexing in [(1, True), (1, False), (0, False)] for request in [
     Request(
       [VOLKSWAGEN_VERSION_REQUEST_MULTI],
