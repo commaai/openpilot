@@ -1,9 +1,8 @@
-from collections import defaultdict
-from dataclasses import dataclass
-from enum import Enum, StrEnum
+from dataclasses import dataclass, field
+from enum import Enum
 
 from cereal import car
-from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
+from openpilot.selfdrive.car import AngleRateLimit, dbc_dict, DbcDict, PlatformConfig, Platforms
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
                                                      Device
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
@@ -39,31 +38,9 @@ class CarControllerParams:
     pass
 
 
-class CAR(StrEnum):
-  BRONCO_SPORT_MK1 = "FORD BRONCO SPORT 1ST GEN"
-  ESCAPE_MK4 = "FORD ESCAPE 4TH GEN"
-  EXPLORER_MK6 = "FORD EXPLORER 6TH GEN"
-  F_150_MK14 = "FORD F-150 14TH GEN"
-  FOCUS_MK4 = "FORD FOCUS 4TH GEN"
-  MAVERICK_MK1 = "FORD MAVERICK 1ST GEN"
-  F_150_LIGHTNING_MK1 = "FORD F-150 LIGHTNING 1ST GEN"
-  MUSTANG_MACH_E_MK1 = "FORD MUSTANG MACH-E 1ST GEN"
-
-
-CANFD_CAR = {CAR.F_150_MK14, CAR.F_150_LIGHTNING_MK1, CAR.MUSTANG_MACH_E_MK1}
-
-
 class RADAR:
   DELPHI_ESR = 'ford_fusion_2018_adas'
   DELPHI_MRR = 'FORD_CADS'
-
-
-DBC: dict[str, dict[str, str]] = defaultdict(lambda: dbc_dict("ford_lincoln_base_pt", RADAR.DELPHI_MRR))
-
-# F-150 radar is not yet supported
-DBC[CAR.F_150_MK14] = dbc_dict("ford_lincoln_base_pt", None)
-DBC[CAR.F_150_LIGHTNING_MK1] = dbc_dict("ford_lincoln_base_pt", None)
-DBC[CAR.MUSTANG_MACH_E_MK1] = dbc_dict("ford_lincoln_base_pt", None)
 
 
 class Footnote(Enum):
@@ -86,39 +63,74 @@ class FordCarInfo(CarInfo):
       self.car_parts = CarParts([Device.threex, harness])
 
 
-CAR_INFO: dict[str, CarInfo | list[CarInfo]] = {
-  CAR.BRONCO_SPORT_MK1: FordCarInfo("Ford Bronco Sport 2021-22"),
-  CAR.ESCAPE_MK4: [
-    FordCarInfo("Ford Escape 2020-22"),
-    FordCarInfo("Ford Escape Hybrid 2020-22"),
-    FordCarInfo("Ford Escape Plug-in Hybrid 2020-22"),
-    FordCarInfo("Ford Kuga 2020-22", "Adaptive Cruise Control with Lane Centering"),
-    FordCarInfo("Ford Kuga Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
-    FordCarInfo("Ford Kuga Plug-in Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
-  ],
-  CAR.EXPLORER_MK6: [
-    FordCarInfo("Ford Explorer 2020-23"),
-    FordCarInfo("Ford Explorer Hybrid 2020-23"),  # Limited and Platinum only
-    FordCarInfo("Lincoln Aviator 2020-23", "Co-Pilot360 Plus"),
-    FordCarInfo("Lincoln Aviator Plug-in Hybrid 2020-23", "Co-Pilot360 Plus"),  # Grand Touring only
-  ],
-  CAR.F_150_MK14: [
-    FordCarInfo("Ford F-150 2023", "Co-Pilot360 Active 2.0"),
-    FordCarInfo("Ford F-150 Hybrid 2023", "Co-Pilot360 Active 2.0"),
-  ],
-  CAR.F_150_LIGHTNING_MK1: FordCarInfo("Ford F-150 Lightning 2021-23", "Co-Pilot360 Active 2.0"),
-  CAR.MUSTANG_MACH_E_MK1: FordCarInfo("Ford Mustang Mach-E 2021-23", "Co-Pilot360 Active 2.0"),
-  CAR.FOCUS_MK4: [
-    FordCarInfo("Ford Focus 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS]),
-    FordCarInfo("Ford Focus Hybrid 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS]),  # mHEV only
-  ],
-  CAR.MAVERICK_MK1: [
-    FordCarInfo("Ford Maverick 2022", "LARIAT Luxury"),
-    FordCarInfo("Ford Maverick Hybrid 2022", "LARIAT Luxury"),
-    FordCarInfo("Ford Maverick 2023", "Co-Pilot360 Assist"),
-    FordCarInfo("Ford Maverick Hybrid 2023", "Co-Pilot360 Assist"),
-  ],
-}
+@dataclass
+class FordPlatformConfig(PlatformConfig):
+  dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('ford_lincoln_base_pt', RADAR.DELPHI_MRR))
+
+
+class CAR(Platforms):
+  BRONCO_SPORT_MK1 = FordPlatformConfig(
+    "FORD BRONCO SPORT 1ST GEN",
+    FordCarInfo("Ford Bronco Sport 2021-22"),
+  )
+  ESCAPE_MK4 = FordPlatformConfig(
+    "FORD ESCAPE 4TH GEN",
+    [
+      FordCarInfo("Ford Escape 2020-22"),
+      FordCarInfo("Ford Escape Hybrid 2020-22"),
+      FordCarInfo("Ford Escape Plug-in Hybrid 2020-22"),
+      FordCarInfo("Ford Kuga 2020-22", "Adaptive Cruise Control with Lane Centering"),
+      FordCarInfo("Ford Kuga Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
+      FordCarInfo("Ford Kuga Plug-in Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
+    ],
+  )
+  EXPLORER_MK6 = FordPlatformConfig(
+    "FORD EXPLORER 6TH GEN",
+    [
+      FordCarInfo("Ford Explorer 2020-23"),
+      FordCarInfo("Ford Explorer Hybrid 2020-23"),  # Limited and Platinum only
+      FordCarInfo("Lincoln Aviator 2020-21", "Co-Pilot360 Plus"),
+      FordCarInfo("Lincoln Aviator Plug-in Hybrid 2020-21", "Co-Pilot360 Plus"),  # Grand Touring only
+    ],
+  )
+  F_150_MK14 = FordPlatformConfig(
+    "FORD F-150 14TH GEN",
+    [
+      FordCarInfo("Ford F-150 2023", "Co-Pilot360 Active 2.0"),
+      FordCarInfo("Ford F-150 Hybrid 2023", "Co-Pilot360 Active 2.0"),
+    ],
+    dbc_dict=dbc_dict('ford_lincoln_base_pt', None),
+  )
+  F_150_LIGHTNING_MK1 = FordPlatformConfig(
+    "FORD F-150 LIGHTNING 1ST GEN",
+    FordCarInfo("Ford F-150 Lightning 2021-23", "Co-Pilot360 Active 2.0"),
+    dbc_dict=dbc_dict('ford_lincoln_base_pt', None),
+  )
+  FOCUS_MK4 = FordPlatformConfig(
+    "FORD FOCUS 4TH GEN",
+    [
+      FordCarInfo("Ford Focus 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS]),
+      FordCarInfo("Ford Focus Hybrid 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS]),  # mHEV only
+    ],
+  )
+  MAVERICK_MK1 = FordPlatformConfig(
+    "FORD MAVERICK 1ST GEN",
+    [
+      FordCarInfo("Ford Maverick 2022", "LARIAT Luxury"),
+      FordCarInfo("Ford Maverick Hybrid 2022", "LARIAT Luxury"),
+      FordCarInfo("Ford Maverick 2023", "Co-Pilot360 Assist"),
+      FordCarInfo("Ford Maverick Hybrid 2023", "Co-Pilot360 Assist"),
+    ],
+  )
+  MUSTANG_MACH_E_MK1 = FordPlatformConfig(
+    "FORD MUSTANG MACH-E 1ST GEN",
+    FordCarInfo("Ford Mustang Mach-E 2021-23", "Co-Pilot360 Active 2.0"),
+    dbc_dict=dbc_dict('ford_lincoln_base_pt', None),
+  )
+
+
+CANFD_CAR = {CAR.F_150_MK14, CAR.F_150_LIGHTNING_MK1, CAR.MUSTANG_MACH_E_MK1}
+
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
@@ -142,3 +154,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.shiftByWire, 0x732, None),
   ],
 )
+
+CAR_INFO = CAR.create_carinfo_map()
+DBC = CAR.create_dbc_map()
