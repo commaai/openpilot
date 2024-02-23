@@ -70,38 +70,22 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.1
 
     elif candidate in (CAR.FORESTER, CAR.FORESTER_2022, CAR.FORESTER_HYBRID):
-      ret.mass = 1568.
-      ret.wheelbase = 2.67
-      ret.centerToFront = ret.wheelbase * 0.5
-      ret.steerRatio = 17           # learned, 14 stock
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kf = 0.000038
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 14., 23.], [0., 14., 23.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01, 0.065, 0.2], [0.001, 0.015, 0.025]]
 
     elif candidate in (CAR.OUTBACK, CAR.LEGACY, CAR.OUTBACK_2023):
-      ret.mass = 1568.
-      ret.wheelbase = 2.67
-      ret.centerToFront = ret.wheelbase * 0.5
-      ret.steerRatio = 17
       ret.steerActuatorDelay = 0.1
 
     elif candidate in (CAR.FORESTER_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018):
       ret.safetyConfigs[0].safetyParam = Panda.FLAG_SUBARU_PREGLOBAL_REVERSED_DRIVER_TORQUE  # Outback 2018-2019 and Forester have reversed driver torque signal
-      ret.centerToFront = ret.wheelbase * 0.5
 
     elif candidate == CAR.LEGACY_PREGLOBAL:
-      ret.mass = 1568
-      ret.wheelbase = 2.67
-      ret.centerToFront = ret.wheelbase * 0.5
-      ret.steerRatio = 12.5   # 14.5 stock
       ret.steerActuatorDelay = 0.15
 
     elif candidate == CAR.OUTBACK_PREGLOBAL:
-      ret.mass = 1568
-      ret.wheelbase = 2.67
-      ret.centerToFront = ret.wheelbase * 0.5
-      ret.steerRatio = 20           # learned, 14 stock
+      pass
     else:
       raise ValueError(f"unknown car: {candidate}")
 
