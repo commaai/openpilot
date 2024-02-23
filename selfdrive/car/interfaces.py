@@ -111,14 +111,15 @@ class CarInterfaceBase(ABC):
   def get_params(cls, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], experimental_long: bool, docs: bool):
     ret = CarInterfaceBase.get_std_params(candidate)
 
-    platform = PLATFORMS[candidate]
-    if hasattr(platform, "config"):
-      platform_config = cast(PlatformConfig, platform.config)
-      if platform_config.specs is not None:
-        ret.mass = platform_config.specs.mass
-        ret.wheelbase = platform_config.specs.wheelbase
-        ret.steerRatio = platform_config.specs.steerRatio
-        ret.centerToFront = ret.wheelbase * platform_config.specs.centerToFrontRatio
+    if candidate in PLATFORMS:
+      platform = PLATFORMS[candidate]
+      if hasattr(platform, "config"):
+        platform_config = cast(PlatformConfig, platform.config)
+        if platform_config.specs is not None:
+          ret.mass = platform_config.specs.mass
+          ret.wheelbase = platform_config.specs.wheelbase
+          ret.steerRatio = platform_config.specs.steerRatio
+          ret.centerToFront = ret.wheelbase * platform_config.specs.centerToFrontRatio
 
     ret = cls._get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs)
 
