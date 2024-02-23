@@ -145,7 +145,7 @@ class CAR(Platforms):
   FORESTER_PREGLOBAL = SubaruPlatformConfig(
     "SUBARU FORESTER 2017 - 2018",
     SubaruCarInfo("Subaru Forester 2017-18"),
-    dbc_dict('subaru_outback_2015_generated', None),
+    dbc_dict('subaru_forester_2017_generated', None),
   )
   LEGACY_PREGLOBAL = SubaruPlatformConfig(
     "SUBARU LEGACY 2015 - 2018",
