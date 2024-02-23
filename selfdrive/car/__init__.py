@@ -252,7 +252,6 @@ class CarSpecs:
   mass: float
   wheelbase: float
   steerRatio: float
-  centerToFrontRatio: float = 0.5
 
 
 @dataclass(order=True)
