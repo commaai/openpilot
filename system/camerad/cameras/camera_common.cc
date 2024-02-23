@@ -21,8 +21,6 @@ ExitHandler do_exit;
 class Debayer {
 public:
   Debayer(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s, int buf_width, int uv_offset) {
-    compat = true;
-
     char args[4096];
     const SensorInfo *ci = s->ci.get();
     snprintf(args, sizeof(args),
@@ -30,7 +28,7 @@ public:
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
              "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DYUV_STRIDE=%d -DUV_OFFSET=%d "
              "-DIS_OX=%d -DCAM_NUM=%d%s",
-             ci->frame_width, ci->frame_height, compat ? ci->frame_width*12/8 : ci->frame_stride, ci->frame_offset,
+             ci->frame_width, ci->frame_height, ci->frame_stride, ci->frame_offset,
              b->rgb_width, b->rgb_height, buf_width, uv_offset,
              ci->image_sensor == cereal::FrameData::ImageSensor::OX03C10, s->camera_num, s->camera_num==1 ? " -DVIGNETTING" : "");
     const char *cl_file = "cameras/real_debayer.cl";
@@ -38,35 +36,18 @@ public:
     krnl_ = CL_CHECK_ERR(clCreateKernel(prg_debayer, "debayer10", &err));
     CL_CHECK(clReleaseProgram(prg_debayer));
 
-    twelve.allocate(ci->frame_width*12/8 * ci->frame_height);
-    twelve.init_cl(device_id, context);
   }
 
-  void queue(cl_command_queue q, VisionBuf cam_buff, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, cl_event *debayer_event) {
-    // 10 -> 12 bit
-    uint8_t *cam_buf = (uint8_t *)cam_buff.addr;
-    uint8_t *raw12 = (uint8_t *)twelve.addr;
-    size_t inidx = 0, outidx = 0;
-    for (size_t i = 0; i < (width*height)/ 4; ++i) {
-      // 4 RAW10 pixels (5 bytes)
-      uint8_t in0 = cam_buf[inidx++];
-      uint8_t in1 = cam_buf[inidx++];
-      uint8_t in2 = cam_buf[inidx++];
-      uint8_t in3 = cam_buf[inidx++];
-      uint8_t in4 = cam_buf[inidx++];
-
-      // 4 RAW12 pixels (6 bytes)
-      raw12[outidx++] = in0;
-      raw12[outidx++] = (in1 & 0x0F) | (in4 << 4 & 0x30);
-      raw12[outidx++] = in1 >> 4 | (in2 << 4 & 0xF0);
-      raw12[outidx++] = in2 >> 4 | (in4 << 2 & 0xC0);
-      raw12[outidx++] = in3;
-      raw12[outidx++] = in3 >> 4 | (in4 << 4 & 0xF0);
+  void queue(cl_command_queue q, VisionBuf cam_buff, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, cl_event *debayer_event, bool todump) {
+    if (todump) {
+      uint8_t *cam_buf = (uint8_t *)cam_buff.addr;
+      printf("queueing buf %zu \n", cam_buff.len);
+      FILE *dump_raw_file = fopen("/tmp/os.raw", "wb");
+      fwrite(cam_buf, cam_buff.len, sizeof(uint8_t), dump_raw_file);
+      fclose(dump_raw_file);
     }
 
-    CL_CHECK(clSetKernelArg(krnl_, 0, sizeof(cl_mem), &twelve.buf_cl));
-
-    if (!compat) CL_CHECK(clSetKernelArg(krnl_, 0, sizeof(cl_mem), &cam_buf_cl));
+    CL_CHECK(clSetKernelArg(krnl_, 0, sizeof(cl_mem), &cam_buf_cl));
     CL_CHECK(clSetKernelArg(krnl_, 1, sizeof(cl_mem), &buf_cl));
 
     const size_t globalWorkSize[] = {size_t(width / 2), size_t(height / 2)};
@@ -81,8 +62,6 @@ public:
 
 private:
   cl_kernel krnl_;
-  VisionBuf twelve;
-  bool compat = false;
 };
 
 void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType type) {
@@ -142,7 +121,7 @@ bool CameraBuf::acquire() {
 
   double start_time = millis_since_boot();
   cl_event event;
-  debayer->queue(q, camera_bufs[cur_buf_idx], camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, &event);
+  debayer->queue(q, camera_bufs[cur_buf_idx], camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, &event, (stream_type==0));
   clWaitForEvents(1, &event);
   CL_CHECK(clReleaseEvent(event));
   cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
