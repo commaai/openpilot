@@ -159,7 +159,7 @@ class CAR(Platforms):
     "SUBARU LEGACY 2015 - 2018",
     SubaruCarInfo("Subaru Legacy 2015-18"),
     dbc_dict('subaru_outback_2015_generated', None),
-    specs=CarSpecs(mass=1568, wheelbase=2.67, steerRatio=17),
+    specs=CarSpecs(mass=1568, wheelbase=2.67, steerRatio=12.5),
   )
   OUTBACK_PREGLOBAL = SubaruPlatformConfig(
     "SUBARU OUTBACK 2015 - 2017",
