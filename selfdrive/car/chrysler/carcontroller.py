@@ -55,8 +55,13 @@ class CarController:
       elif self.CP.flags & ChryslerFlags.HIGHER_MIN_STEERING_SPEED:
         if CS.out.vEgo < (self.CP.minSteerSpeed - 3.0):
           lkas_control_bit = False
-      elif self.CP.carFingerprint in (RAM_CARS, CUSW_CARS):
+      elif self.CP.carFingerprint in RAM_CARS:
         if CS.out.vEgo < (self.CP.minSteerSpeed - 0.5):
+          lkas_control_bit = False
+      elif self.CP.carFingerprint in CUSW_CARS:
+        # TODO: Chrysler 200 appears to support asymmetric down to mid-13s, Cherokee not verified yet, model-year variances likely
+        # TODO: Consolidate with HIGHER_MIN_STEERING_SPEED cars if we can make engage consistently work at 17.5 m/s
+        if CS.out.vEgo < 14.0:
           lkas_control_bit = False
 
       # EPS faults if LKAS re-enables too quickly
@@ -69,6 +74,7 @@ class CarController:
       # steer torque
       new_steer = int(round(CC.actuators.steer * self.params.STEER_MAX))
       apply_steer = apply_meas_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorqueEps, self.params)
+      # CUSW doesn't like being slammed down to zero on disengage, allow torque to fall at MAX_RATE_DOWN
       if (self.CP.carFingerprint not in CUSW_CARS and not lkas_active) or not lkas_control_bit:
         apply_steer = 0
       self.apply_steer_last = apply_steer
