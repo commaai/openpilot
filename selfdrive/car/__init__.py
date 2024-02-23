@@ -245,11 +245,20 @@ class CanSignalRateCalculator:
 
 CarInfos = Union[CarInfo, List[CarInfo]]
 
+
+@dataclass
+class CarSpecs:
+  mass: float
+  wheelbase: float
+  steerRatio: float
+
 @dataclass(order=True)
 class PlatformConfig:
   platform_str: str
   car_info: CarInfos
   dbc_dict: DbcDict
+
+  specs: Optional[CarSpecs] = None
 
   def __hash__(self) -> int:
     return hash(self.platform_str)
