@@ -36,6 +36,11 @@ for msg in lr:
 
 We also support a new format called a "segment range", where you can specify which segments from a route to load.
 
+```
+344c5c15b34f2d8a   /   2024-01-03--09-37-12   /     2:6    /       q
+[   dongle id     ] [       timestamp        ] [ selector ]  [ query type]
+```
+
 ```python
 
 lr = LogReader("a2a0ccea32023010|2023-07-27--13-01-19/4")   # 4th segment
