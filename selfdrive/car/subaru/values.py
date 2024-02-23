@@ -112,7 +112,7 @@ class CAR(Platforms):
     SubaruCarInfo("Subaru Legacy 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b])),
     specs=OUTBACK.specs,
   )
-  IMPREZA= SubaruPlatformConfig(
+  IMPREZA = SubaruPlatformConfig(
     "SUBARU IMPREZA LIMITED 2019",
     [
       SubaruCarInfo("Subaru Impreza 2017-19"),
@@ -174,7 +174,7 @@ class CAR(Platforms):
     specs=FORESTER_PREGLOBAL.specs,
   )
   # Angle LKAS
-  FORESTER_2022= SubaruPlatformConfig(
+  FORESTER_2022 = SubaruPlatformConfig(
     "SUBARU FORESTER 2022",
     SubaruCarInfo("Subaru Forester 2022-24", "All", car_parts=CarParts.common([CarHarness.subaru_c])),
     specs=FORESTER.specs,

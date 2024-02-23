@@ -78,6 +78,7 @@ def scale_tire_stiffness(mass, wheelbase, center_to_front, tire_stiffness_factor
 
 DbcDict = Dict[str, str]
 
+
 def dbc_dict(pt_dbc, radar_dbc, chassis_dbc=None, body_dbc=None) -> DbcDict:
   return {'pt': pt_dbc, 'radar': radar_dbc, 'chassis': chassis_dbc, 'body': body_dbc}
 
@@ -251,6 +252,7 @@ class CarSpecs:
   mass: float
   wheelbase: float
   steerRatio: float
+
 
 @dataclass(order=True)
 class PlatformConfig:
