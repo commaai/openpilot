@@ -102,10 +102,10 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kpV = [0.1]
     ret.longitudinalTuning.kiV = [0.0]
 
-    # Override per-chassis values here if desired
+    # Per-chassis tuning values, override tuning defaults here if desired
 
-    ret.centerToFront = ret.wheelbase * 0.45
     ret.autoResumeSng = ret.minEnableSpeed == -1
+    ret.centerToFront = ret.wheelbase * 0.45
     return ret
 
   # returns a car.CarState
