@@ -1,6 +1,3 @@
- Here is one way to improve the security of the provided code sample:
-
-```cpp
 #pragma once
 
 #include <cstdlib>
