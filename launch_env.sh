@@ -10,5 +10,4 @@ if [ -z "$AGNOS_VERSION" ]; then
   export AGNOS_VERSION="9.6"
 fi
 
-export FINGERPRINT="VOLKSWAGEN CADDY 3RD GEN"
 export STAGING_ROOT="/data/safe_staging"
