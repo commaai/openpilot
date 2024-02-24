@@ -248,7 +248,7 @@ are uploaded or auto fallback to qlogs with '/a' selector at the end of the rout
 
   def _get_lr(self, i):
     if i not in self.__lrs:
-      self.__lrs[i] = _LogFileReader(self.logreader_identifiers[i])
+      self.__lrs[i] = _LogFileReader(self.logreader_identifiers[i], sort_by_time=self.sort_by_time, only_union_types=self.only_union_types)
     return self.__lrs[i]
 
   def __iter__(self):
