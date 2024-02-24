@@ -101,3 +101,8 @@ repos:
     rev: 0.28.0
     hooks:
     -   id: check-github-workflows
+-   repo: https://github.com/asottile/pyupgrade
+    rev: v3.15.1
+    hooks:
+    -   id: pyupgrade
+        args: [--py311-plus]
