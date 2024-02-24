@@ -13,23 +13,30 @@ void Sparkline::update(const MessageId &msg_id, const cabana::Signal *sig, doubl
   auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), first_ts, CompareCanEvent());
   auto last = std::upper_bound(first, msgs.cend(), ts, CompareCanEvent());
 
-  if (first != last && !size.isEmpty()) {
-    points.clear();
-    double value = 0;
-    for (auto it = first; it != last; ++it) {
-      if (sig->getValue((*it)->dat, (*it)->size, &value)) {
-        points.emplace_back(((*it)->mono_time - (*first)->mono_time) / 1e9, value);
-      }
-    }
-    const auto [min, max] = std::minmax_element(points.begin(), points.end(),
-                                                [](auto &l, auto &r) { return l.y() < r.y(); });
-    min_val = min->y() == max->y() ? min->y() - 1 : min->y();
-    max_val = min->y() == max->y() ? max->y() + 1 : max->y();
-    freq_ = points.size() / std::max(points.back().x() - points.front().x(), 1.0);
-    render(sig->color, range, size);
-  } else {
+  if (first == last || size.isEmpty()) {
     pixmap = QPixmap();
+    return;
   }
+
+  points.clear();
+  double value = 0;
+  for (auto it = first; it != last; ++it) {
+    if (sig->getValue((*it)->dat, (*it)->size, &value)) {
+      points.emplace_back(((*it)->mono_time - (*first)->mono_time) / 1e9, value);
+    }
+  }
+
+  if (points.empty()) {
+    pixmap = QPixmap();
+    return;
+  }
+
+  const auto [min, max] = std::minmax_element(points.begin(), points.end(),
+                                              [](auto &l, auto &r) { return l.y() < r.y(); });
+  min_val = min->y() == max->y() ? min->y() - 1 : min->y();
+  max_val = min->y() == max->y() ? max->y() + 1 : max->y();
+  freq_ = points.size() / std::max(points.back().x() - points.front().x(), 1.0);
+  render(sig->color, range, size);
 }
 
 void Sparkline::render(const QColor &color, int range, QSize size) {

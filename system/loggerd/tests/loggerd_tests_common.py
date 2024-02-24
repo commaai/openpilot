@@ -3,10 +3,12 @@ import random
 import unittest
 from pathlib import Path
 from typing import Optional
-from openpilot.system.hardware.hw import Paths
+
 
 import openpilot.system.loggerd.deleter as deleter
 import openpilot.system.loggerd.uploader as uploader
+from openpilot.common.params import Params
+from openpilot.system.hardware.hw import Paths
 from openpilot.system.loggerd.xattr_cache import setxattr
 
 
@@ -53,25 +55,6 @@ class MockApiIgnore():
   def get_token(self):
     return "fake-token"
 
-class MockParams():
-  def __init__(self):
-    self.params = {
-      "DongleId": b"0000000000000000",
-      "IsOffroad": b"1",
-    }
-
-  def get(self, k, block=False, encoding=None):
-    val = self.params[k]
-
-    if encoding is not None:
-      return val.decode(encoding)
-    else:
-      return val
-
-  def get_bool(self, k):
-    val = self.params[k]
-    return (val == b'1')
-
 class UploaderTestCase(unittest.TestCase):
   f_type = "UNKNOWN"
 
@@ -86,7 +69,6 @@ class UploaderTestCase(unittest.TestCase):
 
   def setUp(self):
     uploader.Api = MockApi
-    uploader.Params = MockParams
     uploader.fake_upload = True
     uploader.force_wifi = True
     uploader.allow_sleep = False
@@ -94,6 +76,10 @@ class UploaderTestCase(unittest.TestCase):
     self.seg_format = "2019-04-18--12-52-54--{}"
     self.seg_format2 = "2019-05-18--11-22-33--{}"
     self.seg_dir = self.seg_format.format(self.seg_num)
+
+    self.params = Params()
+    self.params.put("IsOffroad", "1")
+    self.params.put("DongleId", "0000000000000000")
 
   def make_file_with_data(self, f_dir: str, fn: str, size_mb: float = .1, lock: bool = False,
                           upload_xattr: Optional[bytes] = None, preserve_xattr: Optional[bytes] = None) -> Path:

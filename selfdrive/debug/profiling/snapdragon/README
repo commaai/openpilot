@@ -1,7 +1,0 @@
-snapdragon profiler
---------
-
-* download from https://developer.qualcomm.com/software/snapdragon-profiler
-* unzip to selfdrive/debug/profiling/snapdragon/SnapdragonProfiler
-* run ./setup-agnos.sh
-* run selfdrive/debug/adb.sh on device

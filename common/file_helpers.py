@@ -1,60 +1,7 @@
 import os
-import shutil
 import tempfile
-from atomicwrites import AtomicWriter
-
-
-def mkdirs_exists_ok(path):
-  if path.startswith(('http://', 'https://')):
-    raise ValueError('URL path')
-  try:
-    os.makedirs(path)
-  except OSError:
-    if not os.path.isdir(path):
-      raise
-
-
-def rm_not_exists_ok(path):
-  try:
-    os.remove(path)
-  except OSError:
-    if os.path.exists(path):
-      raise
-
-
-def rm_tree_or_link(path):
-  if os.path.islink(path):
-    os.unlink(path)
-  elif os.path.isdir(path):
-    shutil.rmtree(path)
-
-
-def get_tmpdir_on_same_filesystem(path):
-  normpath = os.path.normpath(path)
-  parts = normpath.split("/")
-  if len(parts) > 1 and parts[1] == "scratch":
-    return "/scratch/tmp"
-  elif len(parts) > 2 and parts[2] == "runner":
-    return f"/{parts[1]}/runner/tmp"
-  return "/tmp"
-
-
-class NamedTemporaryDir():
-  def __init__(self, temp_dir=None):
-    self._path = tempfile.mkdtemp(dir=temp_dir)
-
-  @property
-  def name(self):
-    return self._path
-
-  def close(self):
-    shutil.rmtree(self._path)
-
-  def __enter__(self):
-    return self
-
-  def __exit__(self, exc_type, exc_value, traceback):
-    self.close()
+import contextlib
+from typing import Optional
 
 
 class CallbackReader:
@@ -76,24 +23,16 @@ class CallbackReader:
     return chunk
 
 
-def _get_fileobject_func(writer, temp_dir):
-  def _get_fileobject():
-    return writer.get_fileobject(dir=temp_dir)
-  return _get_fileobject
+@contextlib.contextmanager
+def atomic_write_in_dir(path: str, mode: str = 'w', buffering: int = -1, encoding: Optional[str] = None, newline: Optional[str] = None,
+                        overwrite: bool = False):
+  """Write to a file atomically using a temporary file in the same directory as the destination file."""
+  dir_name = os.path.dirname(path)
 
-def atomic_write_on_fs_tmp(path, **kwargs):
-  """Creates an atomic writer using a temporary file in a temporary directory
-     on the same filesystem as path.
-  """
-  # TODO(mgraczyk): This use of AtomicWriter relies on implementation details to set the temp
-  #                 directory.
-  writer = AtomicWriter(path, **kwargs)
-  return writer._open(_get_fileobject_func(writer, get_tmpdir_on_same_filesystem(path)))
+  if not overwrite and os.path.exists(path):
+    raise FileExistsError(f"File '{path}' already exists. To overwrite it, set 'overwrite' to True.")
 
-
-def atomic_write_in_dir(path, **kwargs):
-  """Creates an atomic writer using a temporary file in the same directory
-     as the destination file.
-  """
-  writer = AtomicWriter(path, **kwargs)
-  return writer._open(_get_fileobject_func(writer, os.path.dirname(path)))
+  with tempfile.NamedTemporaryFile(mode=mode, buffering=buffering, encoding=encoding, newline=newline, dir=dir_name, delete=False) as tmp_file:
+    yield tmp_file
+    tmp_file_name = tmp_file.name
+  os.replace(tmp_file_name, path)

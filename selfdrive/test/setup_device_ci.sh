@@ -29,7 +29,6 @@ sudo abctl --set_success
 
 # patch sshd config
 sudo mount -o rw,remount /
-echo tici-$(cat /proc/cmdline | sed -e 's/^.*androidboot.serialno=//' -e 's/ .*$//') | sudo tee /etc/hostname
 sudo sed -i "s,/data/params/d/GithubSshKeys,/usr/comma/setup_keys," /etc/ssh/sshd_config
 sudo systemctl daemon-reload
 sudo systemctl restart ssh
@@ -80,9 +79,7 @@ safe_checkout() {
   echo "git checkout done, t=$SECONDS"
   du -hs $SOURCE_DIR $SOURCE_DIR/.git
 
-  if [ -z "SKIP_COPY" ]; then
-    rsync -a --delete $SOURCE_DIR $TEST_DIR
-  fi
+  rsync -a --delete $SOURCE_DIR $TEST_DIR
 }
 
 unsafe_checkout() {

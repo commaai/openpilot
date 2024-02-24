@@ -15,8 +15,6 @@ ISPEED = 4
 OSPEED = 5
 CC = 6
 
-STDIN_FD = sys.stdin.fileno()
-
 
 KEYBOARD_HELP = """
   | key  |   functionality       |
@@ -32,6 +30,7 @@ KEYBOARD_HELP = """
 
 
 def getch() -> str:
+  STDIN_FD = sys.stdin.fileno()
   old_settings = termios.tcgetattr(STDIN_FD)
   try:
     # set
@@ -62,11 +61,11 @@ def keyboard_poll_thread(q: 'Queue[str]'):
     elif c == 'w':
       q.put("throttle_%f" % 1.0)
     elif c == 'a':
-      q.put("steer_%f" % 0.15)
+      q.put("steer_%f" % -0.15)
     elif c == 's':
       q.put("brake_%f" % 1.0)
     elif c == 'd':
-      q.put("steer_%f" % -0.15)
+      q.put("steer_%f" % 0.15)
     elif c == 'z':
       q.put("blinker_left")
     elif c == 'x':

@@ -214,7 +214,9 @@ void FindSignalDlg::setInitialSignals() {
   sig.factor = factor_edit->text().toDouble();
   sig.offset = offset_edit->text().toDouble();
 
-  auto [first_sec, last_sec] = std::minmax(first_time_edit->text().toDouble(), last_time_edit->text().toDouble());
+  double first_time_val = first_time_edit->text().toDouble();
+  double last_time_val = last_time_edit->text().toDouble();
+  auto [first_sec, last_sec] = std::minmax(first_time_val, last_time_val);
   uint64_t first_time = (can->routeStartTime() + first_sec) * 1e9;
   model->last_time = std::numeric_limits<uint64_t>::max();
   if (last_sec > 0) {

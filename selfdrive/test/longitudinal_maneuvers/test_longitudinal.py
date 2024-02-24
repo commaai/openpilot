@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 import itertools
-import os
-from parameterized import parameterized_class
 import unittest
+from parameterized import parameterized_class
 
-from openpilot.common.params import Params
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import STOP_DISTANCE
 from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
@@ -149,17 +147,6 @@ def create_maneuvers(kwargs):
 class LongitudinalControl(unittest.TestCase):
   e2e: bool
   force_decel: bool
-
-  @classmethod
-  def setUpClass(cls):
-    os.environ['SIMULATION'] = "1"
-    os.environ['SKIP_FW_QUERY'] = "1"
-    os.environ['NO_CAN_TIMEOUT'] = "1"
-
-    params = Params()
-    params.clear_all()
-    params.put_bool("Passive", bool(os.getenv("PASSIVE")))
-    params.put_bool("OpenpilotEnabledToggle", True)
 
   def test_maneuver(self):
     for maneuver in create_maneuvers({"e2e": self.e2e, "force_decel": self.force_decel}):

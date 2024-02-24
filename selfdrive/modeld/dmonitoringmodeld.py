@@ -11,7 +11,7 @@ from typing import Tuple, Dict
 from cereal import messaging
 from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_realtime_priority
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
@@ -101,7 +101,7 @@ def fill_driver_state(msg, ds_result: DriverStateResult):
 
 def get_driverstate_packet(model_output: np.ndarray, frame_id: int, location_ts: int, execution_time: float, dsp_execution_time: float):
   model_result = ctypes.cast(model_output.ctypes.data, ctypes.POINTER(DMonitoringModelResult)).contents
-  msg = messaging.new_message('driverStateV2')
+  msg = messaging.new_message('driverStateV2', valid=True)
   ds = msg.driverStateV2
   ds.frameId = frame_id
   ds.modelExecutionTime = execution_time

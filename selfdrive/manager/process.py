@@ -15,7 +15,7 @@ import cereal.messaging as messaging
 import openpilot.selfdrive.sentry as sentry
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 
 WATCHDOG_FN = "/dev/shm/wd_"
 ENABLE_WATCHDOG = os.getenv("NO_WATCHDOG") is None
@@ -281,11 +281,13 @@ def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None
   running = []
   for p in procs:
     if p.enabled and p.name not in not_run and p.should_run(started, params, CP):
-      p.start()
       running.append(p)
     else:
       p.stop(block=False)
 
     p.check_watchdog(started)
+
+  for p in running:
+    p.start()
 
   return running

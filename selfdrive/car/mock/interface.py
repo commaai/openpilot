@@ -22,7 +22,7 @@ class CarInterface(CarInterfaceBase):
 
   def _update(self, c):
     self.sm.update(0)
-    gps_sock = 'gpsLocationExternal' if self.sm.rcv_frame['gpsLocationExternal'] > 1 else 'gpsLocation'
+    gps_sock = 'gpsLocationExternal' if self.sm.recv_frame['gpsLocationExternal'] > 1 else 'gpsLocation'
 
     ret = car.CarState.new_message()
     ret.vEgo = self.sm[gps_sock].speed

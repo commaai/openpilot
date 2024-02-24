@@ -4,7 +4,8 @@ import unittest
 
 from cereal import car
 from openpilot.selfdrive.car.fw_versions import build_fw_dict
-from openpilot.selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, RADAR_ACC_CAR, FW_VERSIONS, \
+from openpilot.selfdrive.car.toyota.fingerprints import FW_VERSIONS
+from openpilot.selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, RADAR_ACC_CAR, \
                                                   FW_QUERY_CONFIG, PLATFORM_CODE_ECUS, FUZZY_EXCLUDED_PLATFORMS, \
                                                   get_platform_codes
 
@@ -16,6 +17,10 @@ class TestToyotaInterfaces(unittest.TestCase):
   def test_car_sets(self):
     self.assertTrue(len(ANGLE_CONTROL_CAR - TSS2_CAR) == 0)
     self.assertTrue(len(RADAR_ACC_CAR - TSS2_CAR) == 0)
+
+  def test_lta_platforms(self):
+    # At this time, only RAV4 2023 is expected to use LTA/angle control
+    self.assertEqual(ANGLE_CONTROL_CAR, {CAR.RAV4_TSS2_2023})
 
   def test_tss2_dbc(self):
     # We make some assumptions about TSS2 platforms,
@@ -45,6 +50,15 @@ class TestToyotaInterfaces(unittest.TestCase):
 
 
 class TestToyotaFingerprint(unittest.TestCase):
+  def test_non_essential_ecus(self):
+    # Ensures only the cars that have multiple engine ECUs are in the engine non-essential ECU list
+    for car_model, ecus in FW_VERSIONS.items():
+      with self.subTest(car_model=car_model.value):
+        engine_ecus = {ecu for ecu in ecus if ecu[0] == Ecu.engine}
+        self.assertEqual(len(engine_ecus) > 1,
+                         car_model in FW_QUERY_CONFIG.non_essential_ecus[Ecu.engine],
+                         f"Car model unexpectedly {'not ' if len(engine_ecus) > 1 else ''}in non-essential list")
+
   # Tests for part numbers, platform codes, and sub-versions which Toyota will use to fuzzy
   # fingerprint in the absence of full FW matches:
   @settings(max_examples=100)
@@ -134,12 +148,12 @@ class TestToyotaFingerprint(unittest.TestCase):
                          "subAddress": 0 if sub_addr is None else sub_addr})
 
       CP = car.CarParams.new_message(carFw=car_fw)
-      matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw))
+      matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw), FW_VERSIONS)
       if len(matches) == 1:
         self.assertEqual(list(matches)[0], platform)
       else:
         # If a platform has multiple matches, add it and its matches
-        platforms_with_shared_codes |= {platform, *matches}
+        platforms_with_shared_codes |= {str(platform), *matches}
 
     self.assertEqual(platforms_with_shared_codes, FUZZY_EXCLUDED_PLATFORMS, (len(platforms_with_shared_codes), len(FW_VERSIONS)))
 

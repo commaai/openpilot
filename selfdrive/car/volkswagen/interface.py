@@ -3,7 +3,7 @@ from panda import Panda
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car import get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
-from openpilot.selfdrive.car.volkswagen.values import CAR, PQ_CARS, CANBUS, NetworkLocation, TransmissionType, GearShifter
+from openpilot.selfdrive.car.volkswagen.values import CAR, PQ_CARS, CANBUS, NetworkLocation, TransmissionType, GearShifter, VolkswagenFlags
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -67,16 +67,23 @@ class CarInterface(CarInterfaceBase):
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
 
+      if 0x126 in fingerprint[2]:  # HCA_01
+        ret.flags |= VolkswagenFlags.STOCK_HCA_PRESENT.value
+
     # Global lateral tuning defaults, can be overridden per-vehicle
 
-    ret.steerActuatorDelay = 0.1
-    ret.steerLimitTimer = 0.4
     ret.steerRatio = 15.6  # Let the params learner figure this out
-    ret.lateralTuning.pid.kpBP = [0.]
-    ret.lateralTuning.pid.kiBP = [0.]
-    ret.lateralTuning.pid.kf = 0.00006
-    ret.lateralTuning.pid.kpV = [0.6]
-    ret.lateralTuning.pid.kiV = [0.2]
+    ret.steerLimitTimer = 0.4
+    if candidate in PQ_CARS:
+      ret.steerActuatorDelay = 0.2
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+    else:
+      ret.steerActuatorDelay = 0.1
+      ret.lateralTuning.pid.kpBP = [0.]
+      ret.lateralTuning.pid.kiBP = [0.]
+      ret.lateralTuning.pid.kf = 0.00006
+      ret.lateralTuning.pid.kpV = [0.6]
+      ret.lateralTuning.pid.kiV = [0.2]
 
     # Global longitudinal tuning defaults, can be overridden per-vehicle
 
@@ -90,11 +97,9 @@ class CarInterface(CarInterfaceBase):
 
     ret.pcmCruise = not ret.openpilotLongitudinalControl
     ret.stoppingControl = True
-    ret.startingState = True
-    ret.startAccel = 1.0
     ret.stopAccel = -0.55
-    ret.vEgoStarting = 1.0
-    ret.vEgoStopping = 1.0
+    ret.vEgoStarting = 0.1
+    ret.vEgoStopping = 0.5
     ret.longitudinalTuning.kpV = [0.1]
     ret.longitudinalTuning.kiV = [0.0]
 
@@ -130,8 +135,6 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.80
       ret.minEnableSpeed = 20 * CV.KPH_TO_MS  # ACC "basic", no FtS
       ret.minSteerSpeed = 50 * CV.KPH_TO_MS
-      ret.steerActuatorDelay = 0.2
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.POLO_MK6:
       ret.mass = 1230
@@ -141,7 +144,6 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1639
       ret.wheelbase = 2.92
       ret.minSteerSpeed = 50 * CV.KPH_TO_MS
-      ret.steerActuatorDelay = 0.2
 
     elif candidate == CAR.TAOS_MK1:
       ret.mass = 1498
