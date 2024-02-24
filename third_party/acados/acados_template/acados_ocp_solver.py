@@ -1,3 +1,4 @@
+# -*- coding: future_fstrings -*-
 #
 # Copyright (c) The acados authors.
 #
@@ -590,7 +591,7 @@ def make_ocp_dims_consistent(acados_ocp: AcadosOcp):
 def get_simulink_default_opts():
     python_interface_path = get_python_interface_path()
     abs_path = os.path.join(python_interface_path, 'simulink_default_opts.json')
-    with open(abs_path ) as f:
+    with open(abs_path , 'r') as f:
         simulink_default_opts = json.load(f)
     return simulink_default_opts
 
@@ -625,7 +626,7 @@ def ocp_formulation_json_load(json_file='acados_ocp_nlp.json'):
     # Load acados_ocp_nlp structure description
     ocp_layout = get_ocp_nlp_layout()
 
-    with open(json_file) as f:
+    with open(json_file, 'r') as f:
         ocp_nlp_json = json.load(f)
 
     ocp_nlp_dict = json2dict(ocp_nlp_json, ocp_nlp_json['dims'])
@@ -919,7 +920,7 @@ class AcadosOcpSolver:
 
         The default wrapper `AcadosOcpSolver` is based on ctypes.
         """
-        with open(json_file) as f:
+        with open(json_file, 'r') as f:
             acados_ocp_json = json.load(f)
         code_export_directory = acados_ocp_json['code_export_directory']
 
@@ -940,7 +941,7 @@ class AcadosOcpSolver:
             self.generate(acados_ocp, json_file=json_file, simulink_opts=simulink_opts, cmake_builder=cmake_builder)
 
         # load json, store options in object
-        with open(json_file) as f:
+        with open(json_file, 'r') as f:
             acados_ocp_json = json.load(f)
         self.N = acados_ocp_json['dims']['N']
         self.model_name = acados_ocp_json['model']['name']
@@ -1200,7 +1201,7 @@ class AcadosOcpSolver:
 
         self.shared_lib.ocp_nlp_dims_get_from_attr.argtypes = [c_void_p, c_void_p, c_void_p, c_int, c_char_p]
         self.shared_lib.ocp_nlp_dims_get_from_attr.restype = c_int
-        nx = self.shared_lib.ocp_nlp_dims_get_from_attr(self.nlp_config, self.nlp_dims, self.nlp_out, 0, b"x")
+        nx = self.shared_lib.ocp_nlp_dims_get_from_attr(self.nlp_config, self.nlp_dims, self.nlp_out, 0, "x".encode('utf-8'))
 
         if index < 0 or index > nx:
             raise Exception(f'AcadosOcpSolver.eval_param_sens(): index must be in [0, nx-1], got: {index}.')
@@ -1320,7 +1321,7 @@ class AcadosOcpSolver:
             if stat.shape[0]>3:
                 print('\tqp_res_stat\tqp_res_eq\tqp_res_ineq\tqp_res_comp')
             for jj in range(stat.shape[1]):
-                print(f'{int(stat[0][jj]):d}\t{int(stat[1][jj]):d}\t{int(stat[2][jj]):d}')
+                print('{:d}\t{:d}\t{:d}'.format( int(stat[0][jj]), int(stat[1][jj]), int(stat[2][jj])))
                 if stat.shape[0]>3:
                     print('\t{:e}\t{:e}\t{:e}\t{:e}'.format( \
                          stat[3][jj], stat[4][jj], stat[5][jj], stat[6][jj]))
@@ -1419,7 +1420,7 @@ class AcadosOcpSolver:
         if not os.path.isfile(filename):
             raise Exception('load_iterate: failed, file does not exist: ' + os.path.join(os.getcwd(), filename))
 
-        with open(filename) as f:
+        with open(filename, 'r') as f:
             solution = json.load(f)
 
         print(f"loading iterate {filename}")
@@ -1542,7 +1543,7 @@ class AcadosOcpSolver:
         # call getter
         self.shared_lib.ocp_nlp_get.argtypes = [c_void_p, c_void_p, c_char_p, c_void_p]
 
-        field = b"cost_value"
+        field = "cost_value".encode('utf-8')
         self.shared_lib.ocp_nlp_get(self.nlp_config, self.nlp_solver, field, out_data)
 
         return out[0]
@@ -1570,19 +1571,19 @@ class AcadosOcpSolver:
         # call getters
         self.shared_lib.ocp_nlp_get.argtypes = [c_void_p, c_void_p, c_char_p, c_void_p]
 
-        field = b"res_stat"
+        field = "res_stat".encode('utf-8')
         self.shared_lib.ocp_nlp_get(self.nlp_config, self.nlp_solver, field, out_data)
 
         out_data = cast(out[1].ctypes.data, POINTER(c_double))
-        field = b"res_eq"
+        field = "res_eq".encode('utf-8')
         self.shared_lib.ocp_nlp_get(self.nlp_config, self.nlp_solver, field, out_data)
 
         out_data = cast(out[2].ctypes.data, POINTER(c_double))
-        field = b"res_ineq"
+        field = "res_ineq".encode('utf-8')
         self.shared_lib.ocp_nlp_get(self.nlp_config, self.nlp_solver, field, out_data)
 
         out_data = cast(out[3].ctypes.data, POINTER(c_double))
-        field = b"res_comp"
+        field = "res_comp".encode('utf-8')
         self.shared_lib.ocp_nlp_get(self.nlp_config, self.nlp_solver, field, out_data)
         return out.flatten()
 
@@ -1670,7 +1671,7 @@ class AcadosOcpSolver:
                     self.nlp_solver, stage, field, value_data_p)
             # also set z_guess, when setting z.
             if field_ == 'z':
-                field = b'z_guess'
+                field = 'z_guess'.encode('utf-8')
                 self.shared_lib.ocp_nlp_set.argtypes = \
                     [c_void_p, c_void_p, c_int, c_char_p, c_void_p]
                 self.shared_lib.ocp_nlp_set(self.nlp_config, \
@@ -1730,7 +1731,7 @@ class AcadosOcpSolver:
                 # Get elements in column major order
                 value_ = np.ravel(value_, order='F')
             else:
-                raise Exception(f"Unknown api: '{api}'")
+                raise Exception("Unknown api: '{}'".format(api))
 
         if value_shape != tuple(dims):
             raise Exception('AcadosOcpSolver.cost_set(): mismatching dimension' +

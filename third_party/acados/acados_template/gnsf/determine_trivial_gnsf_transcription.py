@@ -125,7 +125,7 @@ def determine_trivial_gnsf_transcription(acados_ocp, print_info):
     gnsf["ipiv_x"] = idx_perm_to_ipiv(gnsf["idx_perm_x"])  # blasfeo-style
     gnsf["idx_perm_z"] = range(nz)
     gnsf["ipiv_z"] = idx_perm_to_ipiv(gnsf["idx_perm_z"])
-    gnsf["idx_perm_f"] = range(nx + nz)
+    gnsf["idx_perm_f"] = range((nx + nz))
     gnsf["ipiv_f"] = idx_perm_to_ipiv(gnsf["idx_perm_f"])
 
     gnsf["nontrivial_f_LO"] = 0

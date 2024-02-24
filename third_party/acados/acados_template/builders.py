@@ -1,3 +1,4 @@
+# -*- coding: future_fstrings -*-
 #
 # Copyright 2019 Gianluca Frison, Dimitris Kouzoupis, Robin Verschueren,
 # Andrea Zanelli, Niels van Duijkeren, Jonathan Frey, Tommaso Sartor,
