@@ -1,6 +1,7 @@
 Version 0.9.7 (2024-XX-XX)
 ========================
 * New driving model
+* Support for many hybrid Ford models
 
 Version 0.9.6 (2024-02-27)
 ========================
@@ -19,7 +20,6 @@ Version 0.9.6 (2024-02-27)
 * Hyundai Staria 2023 support thanks to sunnyhaibin!
 * Kia Niro Plug-in Hybrid 2022 support thanks to sunnyhaibin!
 * Lexus LC 2024 support thanks to nelsonjchen!
-* Support for many hybrid Ford models
 * Toyota RAV4 2023-24 support
 * Toyota RAV4 Hybrid 2023-24 support
 
