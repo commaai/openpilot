@@ -27,16 +27,16 @@ class PointBuckets:
     self.buckets_min_points = dict(zip(x_bounds, min_points, strict=True))
     self.min_points_total = min_points_total
 
-  def bucket_lengths(self) -> List[int]:
-    return [len(v) for v in self.buckets.values()]
-
   def __len__(self) -> int:
-    return sum(self.bucket_lengths())
+    return sum([len(v) for v in self.buckets.values()])
 
   def is_valid(self) -> bool:
     individual_buckets_valid = all(len(v) >= min_pts for v, min_pts in zip(self.buckets.values(), self.buckets_min_points.values(), strict=True))
     total_points_valid = self.__len__() >= self.min_points_total
     return individual_buckets_valid and total_points_valid
+
+  def is_calculable(self) -> bool:
+    return all(len(v) > 0 for v in self.buckets.values())
 
   def add_point(self, x: float, y: float, bucket_val: float) -> None:
     raise NotImplementedError

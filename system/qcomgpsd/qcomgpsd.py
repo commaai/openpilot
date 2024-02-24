@@ -94,11 +94,7 @@ def at_cmd(cmd: str) -> Optional[str]:
   return subprocess.check_output(f"mmcli -m any --timeout 30 --command='{cmd}'", shell=True, encoding='utf8')
 
 def gps_enabled() -> bool:
-  try:
-    p = subprocess.check_output("mmcli -m any --command=\"AT+QGPS?\"", shell=True)
-    return b"QGPS: 1" in p
-  except subprocess.CalledProcessError as exc:
-    raise Exception("failed to execute QGPS mmcli command") from exc
+  return "QGPS: 1" in at_cmd("AT+QGPS?")
 
 def download_assistance():
   try:
