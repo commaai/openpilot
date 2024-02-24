@@ -16,9 +16,6 @@ const uint32_t os04c10_analog_gains_reg[] = {
     0x5C0, 0x600, 0x640, 0x680, 0x700, 0x780, 0x800, 0x880, 0x900, 0x980, 0xA00,
     0xA80, 0xB00, 0xB80, 0xC00, 0xC80, 0xD00, 0xD80, 0xE00, 0xE80, 0xF00, 0xF80};
 
-const uint32_t VS_TIME_MIN_OS04C10 = 1;
-//const uint32_t VS_TIME_MAX_OS04C10 = 34;  // vs < 35
-
 }  // namespace
 
 OS04C10::OS04C10() {
@@ -28,12 +25,6 @@ OS04C10::OS04C10() {
   frame_width = 2688;
   frame_height = 1520;
   frame_stride = (frame_width*10/8);
-
-  /*
-  frame_width = 0xa80;
-  frame_height = 0x5f0;
-  frame_stride = 0xd20;
-  */
 
   extra_height = 0;
   frame_offset = 0;
@@ -46,13 +37,13 @@ OS04C10::OS04C10() {
   frame_data_type = 0x2b;
   mclk_frequency = 24000000; // Hz
 
-  dc_gain_factor = 7.32;
+  dc_gain_factor = 1;
   dc_gain_min_weight = 1;  // always on is fine
   dc_gain_max_weight = 1;
   dc_gain_on_grey = 0.9;
   dc_gain_off_grey = 1.0;
   exposure_time_min = 2;  // 1x
-  exposure_time_max = 2016;
+  exposure_time_max = 3200;
   analog_gain_min_idx = 0x0;
   analog_gain_rec_idx = 0x0;  // 1x
   analog_gain_max_idx = 0x36;
@@ -68,24 +59,12 @@ OS04C10::OS04C10() {
 }
 
 std::vector<i2c_random_wr_payload> OS04C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {
-  // t_HCG&t_LCG + t_VS on LPD, t_SPD on SPD
   uint32_t hcg_time = exposure_time;
-  //uint32_t lcg_time = hcg_time;
-  //uint32_t spd_time = std::min(std::max((uint32_t)exposure_time, (exposure_time_max + VS_TIME_MAX_OS04C10) / 3), exposure_time_max + VS_TIME_MAX_OS04C10);
-  //uint32_t vs_time = std::min(std::max((uint32_t)exposure_time / 40, VS_TIME_MIN_OS04C10), VS_TIME_MAX_OS04C10);
-
   uint32_t real_gain = os04c10_analog_gains_reg[new_exp_g];
 
-  hcg_time = 100;
-  real_gain = 0x0;
-
   return {
-    //{0x3501, hcg_time>>8}, {0x3502, hcg_time&0xFF},
-    //{0x3581, lcg_time>>8}, {0x3582, lcg_time&0xFF},
-    //{0x3541, spd_time>>8}, {0x3542, spd_time&0xFF},
-    //{0x35c2, vs_time&0xFF},
-
-    //{0x3508, real_gain>>8}, {0x3509, real_gain&0xFF},
+    {0x3501, hcg_time>>8}, {0x3502, hcg_time&0xFF},
+    {0x3508, real_gain>>8}, {0x3509, real_gain&0xFF},
   };
 }
 
