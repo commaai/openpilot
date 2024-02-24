@@ -161,10 +161,10 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
 
   // process them to floats
   #if IS_OS
-    float4 va = val4_from_10(dat[0], extra[0], aligned10, 1.0);
-    float4 vb = val4_from_10(dat[1], extra[1], aligned10, 1.0);
-    float4 vc = val4_from_10(dat[2], extra[2], aligned10, 1.0);
-    float4 vd = val4_from_10(dat[3], extra[3], aligned10, 1.0);
+    float4 vd = val4_from_10(dat[0], extra[0], aligned10, 1.0);
+    float4 vc = val4_from_10(dat[1], extra[1], aligned10, 1.0);
+    float4 vb = val4_from_10(dat[2], extra[2], aligned10, 1.0);
+    float4 va = val4_from_10(dat[3], extra[3], aligned10, 1.0);
   #else
     float4 va = val4_from_12(dat[0], gain);
     float4 vb = val4_from_12(dat[1], gain);
@@ -192,7 +192,11 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   rgb.x = (k02*vb.s2+k04*vb.s0)/(k02+k04); // R_G1
   rgb.y = vb.s1; // G1(R)
   rgb.z = (k01*va.s1+k03*vc.s1)/(k01+k03); // B_G1
-  rgb_out[0] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
+  #if IS_OS
+    rgb_out[2] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
+  #else
+    rgb_out[0] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
+  #endif
 
   const float k11 = get_k(va.s1, vc.s1, va.s3, vc.s3);
   const float k12 = get_k(va.s2, vb.s1, vb.s3, vc.s2);
@@ -201,7 +205,11 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   rgb.x = vb.s2; // R
   rgb.y = (k11*(va.s2+vc.s2)*0.5+k13*(vb.s3+vb.s1)*0.5)/(k11+k13); // G_R
   rgb.z = (k12*(va.s3+vc.s1)*0.5+k14*(va.s1+vc.s3)*0.5)/(k12+k14); // B_R
-  rgb_out[1] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
+  #if IS_OS
+    rgb_out[3] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
+  #else
+    rgb_out[1] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
+  #endif
 
   const float k21 = get_k(vb.s0, vd.s0, vb.s2, vd.s2);
   const float k22 = get_k(vb.s1, vc.s0, vc.s2, vd.s1);
@@ -210,7 +218,11 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   rgb.x = (k22*(vb.s2+vd.s0)*0.5+k24*(vb.s0+vd.s2)*0.5)/(k22+k24); // R_B
   rgb.y = (k21*(vb.s1+vd.s1)*0.5+k23*(vc.s2+vc.s0)*0.5)/(k21+k23); // G_B
   rgb.z = vc.s1; // B
-  rgb_out[2] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
+  #if IS_OS
+    rgb_out[0] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
+  #else
+    rgb_out[2] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
+  #endif
 
   const float k31 = get_k(vb.s1, vc.s2, vb.s3, vc.s2);
   const float k32 = get_k(vb.s3, vc.s2, vd.s3, vc.s2);
@@ -219,7 +231,11 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   rgb.x = (k31*vb.s2+k33*vd.s2)/(k31+k33); // R_G2
   rgb.y = vc.s2; // G2(B)
   rgb.z = (k32*vc.s3+k34*vc.s1)/(k32+k34); // B_G2
-  rgb_out[3] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
+  #if IS_OS
+    rgb_out[1] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
+  #else
+    rgb_out[3] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
+  #endif
 
   // write ys
   uchar2 yy = (uchar2)(
