@@ -2,7 +2,7 @@ from opendbc.can.packer import CANPacker
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import apply_meas_steer_torque_limits
 from openpilot.selfdrive.car.chrysler import chryslercan
-from openpilot.selfdrive.car.chrysler.values import RAM_CARS, CarControllerParams, ChryslerFlags
+from openpilot.selfdrive.car.chrysler.values import RAM_CARS, CarControllerParams, ChryslerFlags, CUSW_CARS
 
 
 class CarController:
@@ -40,7 +40,7 @@ class CarController:
 
     # HUD alerts
     if self.frame % 25 == 0:
-      if CS.lkas_car_model != -1:
+      if self.CP.carFingerprint in CUSW_CARS or CS.lkas_car_model != -1:
         can_sends.append(chryslercan.create_lkas_hud(self.packer, self.CP, lkas_active, CC.hudControl.visualAlert,
                                                      self.hud_count, CS.lkas_car_model, CS.auto_high_beam))
         self.hud_count += 1
@@ -58,6 +58,11 @@ class CarController:
       elif self.CP.carFingerprint in RAM_CARS:
         if CS.out.vEgo < (self.CP.minSteerSpeed - 0.5):
           lkas_control_bit = False
+      elif self.CP.carFingerprint in CUSW_CARS:
+        # TODO: Chrysler 200 appears to support asymmetric down to mid-13s, Cherokee not verified yet, model-year variances likely
+        # TODO: Consolidate with HIGHER_MIN_STEERING_SPEED cars if we can make engage consistently work at 17.5 m/s
+        if CS.out.vEgo < 14.0:
+          lkas_control_bit = False
 
       # EPS faults if LKAS re-enables too quickly
       lkas_control_bit = lkas_control_bit and (self.frame - self.last_lkas_falling_edge > 200)
@@ -69,7 +74,8 @@ class CarController:
       # steer torque
       new_steer = int(round(CC.actuators.steer * self.params.STEER_MAX))
       apply_steer = apply_meas_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorqueEps, self.params)
-      if not lkas_active or not lkas_control_bit:
+      # CUSW doesn't like being slammed down to zero on disengage, allow torque to fall at MAX_RATE_DOWN
+      if (self.CP.carFingerprint not in CUSW_CARS and not lkas_active) or not lkas_control_bit:
         apply_steer = 0
       self.apply_steer_last = apply_steer
 

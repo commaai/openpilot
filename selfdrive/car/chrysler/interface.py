@@ -2,7 +2,7 @@
 from cereal import car
 from panda import Panda
 from openpilot.selfdrive.car import get_safety_config
-from openpilot.selfdrive.car.chrysler.values import CAR, RAM_HD, RAM_DT, RAM_CARS, ChryslerFlags
+from openpilot.selfdrive.car.chrysler.values import CAR, RAM_HD, RAM_DT, RAM_CARS, CUSW_CARS, ChryslerFlags
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 
@@ -18,15 +18,19 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
 
     # safety config
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.chrysler)]
-    if candidate in RAM_HD:
-      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_CHRYSLER_RAM_HD
-    elif candidate in RAM_DT:
-      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_CHRYSLER_RAM_DT
+    if candidate in CUSW_CARS:
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.chryslerCusw)]
+    else:
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.chrysler)]
+      if candidate in RAM_HD:
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_CHRYSLER_RAM_HD
+      elif candidate in RAM_DT:
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_CHRYSLER_RAM_DT
 
-    ret.minSteerSpeed = 3.8  # m/s
-    CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-    if candidate not in RAM_CARS:
+      ret.minSteerSpeed = 3.8  # m/s
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+    if candidate not in (RAM_CARS, CUSW_CARS):
       # Newer FW versions standard on the following platforms, or flashed by a dealer onto older platforms have a higher minimum steering speed.
       new_eps_platform = candidate in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_GRAND_CHEROKEE_2019, CAR.DODGE_DURANGO)
       new_eps_firmware = any(fw.ecu == 'eps' and fw.fwVersion[:4] >= b"6841" for fw in car_fw)
@@ -45,6 +49,14 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00006
 
     # Jeep
+    elif candidate == CAR.JEEP_CHEROKEE_MK5:
+      ret.mass = 1747
+      ret.wheelbase = 2.70
+      ret.steerRatio = 17  # TODO: verify against params learner
+      ret.minSteerSpeed = 18.5  # TODO: conservative, need to test
+      ret.steerActuatorDelay = 0.2
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, 1.0, False)
+
     elif candidate in (CAR.JEEP_GRAND_CHEROKEE, CAR.JEEP_GRAND_CHEROKEE_2019):
       ret.mass = 1778
       ret.wheelbase = 2.71
