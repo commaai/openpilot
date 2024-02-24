@@ -3,7 +3,6 @@ import sys
 import time
 import datetime
 import numpy as np
-from typing import List
 from collections import deque
 
 from openpilot.common.realtime import Ratekeeper

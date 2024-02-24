@@ -2,7 +2,6 @@ import os
 import shutil
 import uuid
 
-from typing import Optional
 
 from openpilot.common.params import Params
 from openpilot.system.hardware.hw import Paths

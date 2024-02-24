@@ -1,6 +1,6 @@
 import capnp
 import hypothesis.strategies as st
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 from collections.abc import Callable
 
 from cereal import log

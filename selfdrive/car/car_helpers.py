@@ -1,6 +1,5 @@
 import os
 import time
-from typing import Dict, List, Optional, Tuple
 from collections.abc import Callable
 
 from cereal import car

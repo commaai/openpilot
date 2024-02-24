@@ -19,7 +19,7 @@ from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial
 from queue import Queue
-from typing import Dict, List, Optional, Set, Union, cast
+from typing import Union, cast
 from collections.abc import Callable
 
 import requests

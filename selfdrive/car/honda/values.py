@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from enum import Enum, IntFlag, StrEnum
-from typing import Dict, List, Optional, Union
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV

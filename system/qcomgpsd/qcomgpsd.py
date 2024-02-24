@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import datetime
 from multiprocessing import Process, Event
-from typing import NoReturn, Optional
+from typing import NoReturn
 from struct import unpack_from, calcsize, pack
 
 from cereal import log

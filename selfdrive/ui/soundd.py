@@ -3,7 +3,6 @@ import numpy as np
 import time
 import wave
 
-from typing import Dict, Optional, Tuple
 
 from cereal import car, messaging
 from openpilot.common.basedir import BASEDIR

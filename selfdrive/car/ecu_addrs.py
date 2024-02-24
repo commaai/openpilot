@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import capnp
 import time
-from typing import Optional, Set
 
 import cereal.messaging as messaging
 from panda.python.uds import SERVICE_TYPE

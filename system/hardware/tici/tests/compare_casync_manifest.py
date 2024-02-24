@@ -3,7 +3,6 @@ import argparse
 import collections
 import multiprocessing
 import os
-from typing import Dict, List
 
 import requests
 from tqdm import tqdm

@@ -2,7 +2,6 @@
 
 import argparse
 from collections import defaultdict
-from typing import Optional
 from openpilot.selfdrive.debug.format_fingerprints import format_brand_fw_versions
 
 from openpilot.selfdrive.car.fw_versions import match_fw_to_car

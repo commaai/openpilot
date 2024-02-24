@@ -1,6 +1,5 @@
 import asyncio
 import io
-from typing import Optional, List, Tuple
 
 import aiortc
 import av

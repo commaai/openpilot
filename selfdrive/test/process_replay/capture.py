@@ -1,7 +1,7 @@
 import os
 import sys
 
-from typing import Tuple, no_type_check
+from typing import no_type_check
 
 class FdRedirect:
   def __init__(self, file_prefix: str, fd: int):

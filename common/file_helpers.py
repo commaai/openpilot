@@ -1,7 +1,6 @@
 import os
 import tempfile
 import contextlib
-from typing import Optional
 
 
 class CallbackReader:

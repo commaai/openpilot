@@ -5,7 +5,7 @@ import time
 import capnp
 import numpy as np
 
-from typing import Union, Optional, List, Any, Dict, Tuple
+from typing import Any
 from collections.abc import Iterable
 
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, ProcessConfig, replay_process, get_process_config, \

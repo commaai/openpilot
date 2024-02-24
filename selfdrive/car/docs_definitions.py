@@ -3,7 +3,6 @@ from collections import namedtuple
 import copy
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Tuple, Union
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV

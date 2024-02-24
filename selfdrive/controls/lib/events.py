@@ -2,7 +2,6 @@
 import math
 import os
 from enum import IntEnum
-from typing import Dict, Union, List, Optional
 from collections.abc import Callable
 
 from cereal import log, car

@@ -1,6 +1,5 @@
 import os
 from functools import lru_cache
-from typing import Optional, List
 
 def gpio_init(pin: int, output: bool) -> None:
   try:

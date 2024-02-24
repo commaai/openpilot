@@ -1,5 +1,4 @@
 import asyncio
-from typing import Optional
 
 import av
 from teleoprtc.tracks import TiciVideoStreamTrack

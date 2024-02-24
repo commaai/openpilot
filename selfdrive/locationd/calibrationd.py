@@ -10,7 +10,7 @@ import gc
 import os
 import capnp
 import numpy as np
-from typing import List, NoReturn, Optional
+from typing import NoReturn
 
 from cereal import log
 import cereal.messaging as messaging

@@ -2,7 +2,7 @@
 from collections import namedtuple
 from dataclasses import dataclass
 from enum import ReprEnum
-from typing import Dict, List, Optional, Union
+from typing import Union
 
 import capnp
 

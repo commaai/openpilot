@@ -26,7 +26,7 @@ import sys
 import pprint
 import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Any, Dict
+from typing import Any
 from urllib.parse import parse_qs, urlencode
 
 from openpilot.tools.lib.api import APIError, CommaApi, UnauthorizedError

@@ -6,7 +6,7 @@ import json
 import uuid
 import logging
 from dataclasses import dataclass, field
-from typing import Any, List, Optional, Union, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 # aiortc and its dependencies have lots of internal warnings :(
 import warnings

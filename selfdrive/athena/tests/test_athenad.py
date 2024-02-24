@@ -12,7 +12,6 @@ import unittest
 from dataclasses import asdict, replace
 from datetime import datetime, timedelta
 from parameterized import parameterized
-from typing import Optional
 
 from unittest import mock
 from websocket import ABNF

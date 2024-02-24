@@ -1,6 +1,5 @@
 import time
 import threading
-from typing import Optional
 
 from openpilot.common.params import Params
 from openpilot.system.hardware import HARDWARE

@@ -1,5 +1,5 @@
 import numpy as np
-from typing import List, Optional, Tuple, Any
+from typing import Any
 
 from cereal import log
 

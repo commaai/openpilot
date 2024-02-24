@@ -3,7 +3,6 @@ import time
 import json
 import jwt
 from pathlib import Path
-from typing import Optional
 
 from datetime import datetime, timedelta
 from openpilot.common.api import api_get

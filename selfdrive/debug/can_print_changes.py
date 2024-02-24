@@ -3,7 +3,6 @@ import argparse
 import binascii
 import time
 from collections import defaultdict
-from typing import Optional
 
 import cereal.messaging as messaging
 from openpilot.selfdrive.debug.can_table import can_table

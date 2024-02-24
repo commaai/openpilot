@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import unittest
 from parameterized import parameterized
-from typing import Dict, Optional, Tuple
 from collections.abc import Iterable
 
 import capnp

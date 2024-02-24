@@ -4,7 +4,7 @@ import array
 import os
 import struct
 from fcntl import ioctl
-from typing import NoReturn, Dict, List
+from typing import NoReturn
 
 # Iterate over the joystick devices.
 print('Available devices:')

@@ -7,7 +7,6 @@ import struct
 import requests
 import urllib.parse
 from datetime import datetime
-from typing import List, Optional, Tuple
 
 from cereal import messaging
 from openpilot.common.params import Params

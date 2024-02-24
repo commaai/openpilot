@@ -4,7 +4,7 @@ import numpy as np
 import tomllib
 from abc import abstractmethod, ABC
 from enum import StrEnum
-from typing import Any, Dict, Optional, Tuple, List, NamedTuple, cast
+from typing import Any, NamedTuple, cast
 from collections.abc import Callable
 
 from cereal import car

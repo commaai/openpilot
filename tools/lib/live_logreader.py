@@ -1,5 +1,4 @@
 import os
-from typing import List
 from cereal import log as capnp_log, messaging
 from cereal.services import SERVICE_LIST
 

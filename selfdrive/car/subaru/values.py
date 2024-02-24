@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag
-from typing import List
 
 from cereal import car
 from panda.python import uds

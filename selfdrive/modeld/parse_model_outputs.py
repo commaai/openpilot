@@ -1,5 +1,4 @@
 import numpy as np
-from typing import Dict
 from openpilot.selfdrive.modeld.constants import ModelConstants
 
 def sigmoid(x):

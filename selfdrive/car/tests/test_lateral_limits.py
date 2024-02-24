@@ -3,7 +3,7 @@ from collections import defaultdict
 import importlib
 from parameterized import parameterized_class
 import sys
-from typing import DefaultDict, Dict
+from typing import DefaultDict
 import unittest
 
 from openpilot.common.realtime import DT_CTRL

@@ -5,7 +5,7 @@ import os
 import sys
 from collections import defaultdict
 from tqdm import tqdm
-from typing import Any, DefaultDict, Dict
+from typing import Any, DefaultDict
 
 from openpilot.selfdrive.car.car_helpers import interface_names
 from openpilot.tools.lib.openpilotci import get_url, upload_file

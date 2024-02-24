@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import NoReturn, Union, List, Dict
+from typing import NoReturn
 
 from openpilot.common.params import Params
 from cereal.messaging import SubMaster

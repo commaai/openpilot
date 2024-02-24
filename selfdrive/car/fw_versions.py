@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List, Optional, Set, TypeVar
+from typing import Any, DefaultDict, TypeVar
 from collections.abc import Iterator
 from tqdm import tqdm
 import capnp

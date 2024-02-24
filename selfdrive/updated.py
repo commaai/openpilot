@@ -11,7 +11,6 @@ import time
 import threading
 from collections import defaultdict
 from pathlib import Path
-from typing import List, Union, Optional
 from markdown_it import MarkdownIt
 
 from openpilot.common.basedir import BASEDIR

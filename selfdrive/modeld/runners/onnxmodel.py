@@ -3,7 +3,7 @@ import itertools
 import os
 import sys
 import numpy as np
-from typing import Tuple, Dict, Union, Any
+from typing import Any
 
 from openpilot.selfdrive.modeld.runners.runmodel_pyx import RunModel
 

@@ -5,7 +5,6 @@ import time
 import ctypes
 import numpy as np
 from pathlib import Path
-from typing import Tuple, Dict
 
 from cereal import messaging
 from cereal.messaging import PubMaster, SubMaster

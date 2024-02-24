@@ -2,7 +2,7 @@
 import importlib
 import math
 from collections import deque
-from typing import Optional, Dict, Any
+from typing import Any
 
 import capnp
 from cereal import messaging, log, car

@@ -3,7 +3,7 @@ import capnp
 import copy
 from dataclasses import dataclass, field
 import struct
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Optional
 from collections.abc import Callable
 
 import panda.python.uds as uds

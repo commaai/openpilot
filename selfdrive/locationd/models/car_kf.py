@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import math
 import sys
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 

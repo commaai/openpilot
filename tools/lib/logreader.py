@@ -11,7 +11,7 @@ import tqdm
 import urllib.parse
 import warnings
 
-from typing import Dict, List, Optional, Type
+from typing import Optional
 from collections.abc import Callable, Iterable, Iterator
 from urllib.parse import parse_qs, urlparse
 

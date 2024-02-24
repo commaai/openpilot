@@ -1,6 +1,5 @@
 from abc import abstractmethod, ABC
 from collections import namedtuple
-from typing import Dict
 
 from cereal import log
 

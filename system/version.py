@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import subprocess
-from typing import List, TypeVar
+from typing import TypeVar
 from collections.abc import Callable
 from functools import lru_cache
 

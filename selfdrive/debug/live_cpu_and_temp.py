@@ -5,7 +5,6 @@ from collections import defaultdict
 
 from cereal.messaging import SubMaster
 from openpilot.common.numpy_fast import mean
-from typing import Optional, Dict
 
 def cputime_total(ct):
   return ct.user + ct.nice + ct.system + ct.idle + ct.iowait + ct.irq + ct.softirq

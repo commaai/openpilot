@@ -7,7 +7,6 @@ import sys
 import time
 from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
-from typing import Dict, List, Optional, Tuple
 from collections.abc import Callable
 
 import requests

@@ -3,7 +3,6 @@ import argparse
 import os
 import struct
 from enum import IntEnum
-from typing import Tuple
 
 from openpilot.tools.lib.filereader import FileReader
 

@@ -2,7 +2,7 @@ import os
 from datetime import datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
-from typing import IO, Union
+from typing import IO
 
 
 TOKEN_PATH = Path("/data/azure_token")

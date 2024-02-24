@@ -4,7 +4,7 @@ import math
 import datetime
 from collections import Counter
 from pprint import pprint
-from typing import List, Tuple, cast
+from typing import cast
 
 from cereal.services import SERVICE_LIST
 from openpilot.tools.lib.logreader import LogReader, ReadMode

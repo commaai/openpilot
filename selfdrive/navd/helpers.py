@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, cast
 
 from openpilot.common.conversions import Conversions
 from openpilot.common.numpy_fast import clip

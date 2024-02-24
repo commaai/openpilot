@@ -6,7 +6,6 @@ example in common/tests/test_mock.py
 
 import functools
 import threading
-from typing import List, Union
 from cereal.messaging import PubMaster
 from cereal.services import SERVICE_LIST
 from openpilot.common.mock.generators import generate_liveLocationKalman

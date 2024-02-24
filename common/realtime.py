@@ -3,7 +3,6 @@ import gc
 import os
 import time
 from collections import deque
-from typing import Optional, List, Union
 
 from setproctitle import getproctitle
 

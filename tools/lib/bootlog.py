@@ -1,6 +1,5 @@
 import functools
 import re
-from typing import List, Optional
 
 from openpilot.tools.lib.auth_config import get_token
 from openpilot.tools.lib.api import CommaApi

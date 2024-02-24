@@ -4,7 +4,6 @@ import os
 import signal
 import sys
 import traceback
-from typing import List, Tuple, Union
 
 from cereal import log
 import cereal.messaging as messaging

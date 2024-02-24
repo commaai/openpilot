@@ -2,7 +2,6 @@ import os
 import random
 import unittest
 from pathlib import Path
-from typing import Optional
 
 
 import openpilot.system.loggerd.deleter as deleter

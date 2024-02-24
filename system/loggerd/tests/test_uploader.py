@@ -6,7 +6,6 @@ import unittest
 import logging
 import json
 from pathlib import Path
-from typing import List, Optional
 from openpilot.system.hardware.hw import Paths
 
 from openpilot.common.swaglog import cloudlog

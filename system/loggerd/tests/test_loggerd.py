@@ -8,7 +8,6 @@ import subprocess
 import time
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List
 from flaky import flaky
 
 import cereal.messaging as messaging

@@ -1,5 +1,5 @@
 import capnp
-from typing import Union, List, Dict, Any
+from typing import Any
 
 
 def generate_type(type_walker, schema_walker) -> str | list[Any] | dict[str, Any]:

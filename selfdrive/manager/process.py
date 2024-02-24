@@ -4,7 +4,6 @@ import signal
 import struct
 import time
 import subprocess
-from typing import Optional, List
 from collections.abc import Callable, ValuesView
 from abc import ABC, abstractmethod
 from multiprocessing import Process

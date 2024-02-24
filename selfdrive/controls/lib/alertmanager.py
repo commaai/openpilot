@@ -3,7 +3,6 @@ import os
 import json
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import List, Dict, Optional
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params

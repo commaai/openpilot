@@ -6,7 +6,6 @@ import os
 import struct
 import subprocess
 import time
-from typing import Dict, List, Tuple, Union
 from collections.abc import Generator
 
 import requests

@@ -1,6 +1,5 @@
 from collections import namedtuple
 from enum import StrEnum
-from typing import Dict, List, Union
 
 from cereal import car
 from openpilot.selfdrive.car import AngleRateLimit, dbc_dict

@@ -5,7 +5,6 @@ import capnp
 import numbers
 import dictdiffer
 from collections import Counter
-from typing import Dict
 
 from openpilot.tools.lib.logreader import LogReader
 

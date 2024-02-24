@@ -9,7 +9,7 @@ import threading
 import time
 import traceback
 import datetime
-from typing import BinaryIO, List, Optional, Tuple
+from typing import BinaryIO
 from collections.abc import Iterator
 
 from cereal import log

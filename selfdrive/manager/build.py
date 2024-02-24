@@ -2,7 +2,6 @@
 import os
 import subprocess
 from pathlib import Path
-from typing import List
 
 # NOTE: Do NOT import anything here that needs be built (e.g. params)
 from openpilot.common.basedir import BASEDIR

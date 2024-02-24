@@ -5,7 +5,6 @@ import jinja2
 import os
 from enum import Enum
 from natsort import natsorted
-from typing import Dict, List
 
 from cereal import car
 from openpilot.common.basedir import BASEDIR
