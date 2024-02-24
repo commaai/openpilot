@@ -40,7 +40,7 @@ public:
   }
 
   void queue(cl_command_queue q, VisionBuf cam_buff, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, cl_event *debayer_event, bool todump) {
-    if (todump) {
+    if (todump && false) {
       uint8_t *cam_buf = (uint8_t *)cam_buff.addr;
       printf("queueing buf %zu \n", cam_buff.len);
       FILE *dump_raw_file = fopen("/tmp/os.raw", "wb");
