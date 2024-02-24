@@ -44,7 +44,7 @@ class SimulatorBridge(ABC):
     self._exit = threading.Event()
     self.simulator_state = SimulatorState()
 
-    self.world: Optional[World] = None
+    self.world: World | None = None
 
     self.past_startup_engaged = False
 

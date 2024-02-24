@@ -18,7 +18,7 @@ MOCK_GENERATOR = {
 }
 
 
-def generate_messages_loop(services: List[str], done: threading.Event):
+def generate_messages_loop(services: list[str], done: threading.Event):
   pm = PubMaster(services)
   rk = Ratekeeper(100)
   i = 0
@@ -32,7 +32,7 @@ def generate_messages_loop(services: List[str], done: threading.Event):
     rk.keep_time()
 
 
-def mock_messages(services: Union[List[str], str]):
+def mock_messages(services: list[str] | str):
   if isinstance(services, str):
     services = [services]
 

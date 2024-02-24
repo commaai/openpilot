@@ -92,10 +92,10 @@ def reformulate_with_LOS(acados_ocp, gnsf, print_info):
                 # i.e. xii or xiidot are part of y, and enter phi_expr
                 if print_info:
                     print(f"x_{ii} is part of x1")
-                I_nsf_components = set.union(I_nsf_components, set([ii]))
+                I_nsf_components = set.union(I_nsf_components, {ii})
             else:
                 # i.e. neither xii nor xiidot are part of y, i.e. enter phi_expr
-                I_LOS_candidates = set.union(I_LOS_candidates, set([ii]))
+                I_LOS_candidates = set.union(I_LOS_candidates, {ii})
                 if print_info:
                     print(" ")
         for ii in range(nz):
@@ -103,17 +103,17 @@ def reformulate_with_LOS(acados_ocp, gnsf, print_info):
                 # i.e. xii or xiidot are part of y, and enter phi_expr
                 if print_info:
                     print(f"z_{ii} is part of x1")
-                I_nsf_components = set.union(I_nsf_components, set([ii + nx]))
+                I_nsf_components = set.union(I_nsf_components, {ii + nx})
             else:
                 # i.e. neither xii nor xiidot are part of y, i.e. enter phi_expr
-                I_LOS_candidates = set.union(I_LOS_candidates, set([ii + nx]))
+                I_LOS_candidates = set.union(I_LOS_candidates, {ii + nx})
     else:
-        I_LOS_candidates = set(range((nx + nz)))
+        I_LOS_candidates = set(range(nx + nz))
     if print_info:
         print(" ")
         print(f"I_LOS_candidates {I_LOS_candidates}")
     new_nsf_components = I_nsf_components
-    I_nsf_eq = set([])
+    I_nsf_eq = set()
     unsorted_dyn = set(range(nx + nz))
     xdot_z = vertcat(xdot, z)
 
@@ -234,11 +234,11 @@ def reformulate_with_LOS(acados_ocp, gnsf, print_info):
 
     I_x1 = set.intersection(I_nsf_components, set(range(nx)))
     I_z1 = set.intersection(I_nsf_components, set(range(nx, nx + nz)))
-    I_z1 = set([i - nx for i in I_z1])
+    I_z1 = {i - nx for i in I_z1}
 
     I_x2 = set.intersection(I_LOS_components, set(range(nx)))
     I_z2 = set.intersection(I_LOS_components, set(range(nx, nx + nz)))
-    I_z2 = set([i - nx for i in I_z2])
+    I_z2 = {i - nx for i in I_z2}
 
     if print_info:
         print(f"I_x1 {I_x1}, I_x2 {I_x2}")

@@ -29,7 +29,7 @@ class TestAthenadPing(unittest.TestCase):
   athenad: threading.Thread
   exit_event: threading.Event
 
-  def _get_ping_time(self) -> Optional[str]:
+  def _get_ping_time(self) -> str | None:
     return cast(Optional[str], self.params.get("LastAthenaPingTime", encoding="utf-8"))
 
   def _clear_ping_time(self) -> None:

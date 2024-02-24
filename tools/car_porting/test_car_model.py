@@ -9,7 +9,7 @@ from openpilot.selfdrive.car.tests.test_models import TestCarModel
 from openpilot.tools.lib.route import SegmentName
 
 
-def create_test_models_suite(routes: List[CarTestRoute], ci=False) -> unittest.TestSuite:
+def create_test_models_suite(routes: list[CarTestRoute], ci=False) -> unittest.TestSuite:
   test_suite = unittest.TestSuite()
   for test_route in routes:
     # create new test case and discover tests

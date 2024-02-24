@@ -1,4 +1,3 @@
-# -*- coding: future_fstrings -*-
 #
 # Copyright (c) The acados authors.
 #
@@ -86,7 +85,7 @@ def make_sim_dims_consistent(acados_sim: AcadosSim):
 def get_sim_layout():
     python_interface_path = get_python_interface_path()
     abs_path = os.path.join(python_interface_path, 'acados_sim_layout.json')
-    with open(abs_path, 'r') as f:
+    with open(abs_path) as f:
         sim_layout = json.load(f)
     return sim_layout
 
@@ -271,7 +270,7 @@ class AcadosSimSolver:
     def create_cython_solver(cls, json_file):
         """
         """
-        with open(json_file, 'r') as f:
+        with open(json_file) as f:
             acados_sim_json = json.load(f)
         code_export_directory = acados_sim_json['code_export_directory']
 

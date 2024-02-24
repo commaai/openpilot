@@ -3,7 +3,8 @@ import argparse
 import numpy as np
 import time
 from collections import defaultdict, deque
-from typing import DefaultDict, Deque, MutableSequence
+from typing import DefaultDict, Deque
+from collections.abc import MutableSequence
 
 import cereal.messaging as messaging
 

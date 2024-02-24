@@ -30,7 +30,7 @@ if __name__ == "__main__":
   carVin = None
   carPlatform = None
 
-  platform: Optional[str] = None
+  platform: str | None = None
 
   CP = lr.first("carParams")
 

@@ -3,7 +3,8 @@
 import sys
 import time
 import numpy as np
-from typing import DefaultDict, MutableSequence
+from typing import DefaultDict
+from collections.abc import MutableSequence
 from collections import defaultdict, deque
 
 import cereal.messaging as messaging

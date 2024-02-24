@@ -3,7 +3,8 @@ import os
 import re
 import subprocess
 import sys
-from typing import Iterable, List, Optional
+from typing import List, Optional
+from collections.abc import Iterable
 
 from tqdm import tqdm
 
@@ -12,14 +13,14 @@ from openpilot.selfdrive.test.process_replay.test_processes import source_segmen
 from openpilot.tools.lib.azure_container import AzureContainer
 from openpilot.tools.lib.openpilotcontainers import DataCIContainer, DataProdContainer, OpenpilotCIContainer
 
-SOURCES: List[AzureContainer] = [
+SOURCES: list[AzureContainer] = [
   DataProdContainer,
   DataCIContainer
 ]
 
 DEST = OpenpilotCIContainer
 
-def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) -> None:
+def upload_route(path: str, exclude_patterns: Iterable[str] | None = None) -> None:
   if exclude_patterns is None:
     exclude_patterns = [r'dcamera\.hevc']
 

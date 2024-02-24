@@ -53,7 +53,7 @@ class ProcessOutputCapture:
     self.stdout_redirect.link()
     self.stderr_redirect.link()
 
-  def read_outerr(self) -> Tuple[str, str]:
+  def read_outerr(self) -> tuple[str, str]:
     out_str = self.stdout_redirect.read().decode()
     err_str = self.stderr_redirect.read().decode()
     return out_str, err_str

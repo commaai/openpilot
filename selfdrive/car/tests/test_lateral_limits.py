@@ -29,7 +29,7 @@ ABOVE_LIMITS_CARS = [
   SUBARU.OUTBACK,
 ]
 
-car_model_jerks: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
+car_model_jerks: DefaultDict[str, dict[str, float]] = defaultdict(dict)
 
 
 @parameterized_class('car_model', [(c,) for c in sorted(CAR_MODELS)])

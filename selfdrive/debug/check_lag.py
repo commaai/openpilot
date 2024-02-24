@@ -10,7 +10,7 @@ TO_CHECK = ['carState']
 if __name__ == "__main__":
   sm = messaging.SubMaster(TO_CHECK)
 
-  prev_t: Dict[str, float] = {}
+  prev_t: dict[str, float] = {}
 
   while True:
     sm.update()

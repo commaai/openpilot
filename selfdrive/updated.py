@@ -64,7 +64,7 @@ def write_time_to_param(params, param) -> None:
   t = datetime.datetime.utcnow()
   params.put(param, t.isoformat().encode('utf8'))
 
-def read_time_from_param(params, param) -> Optional[datetime.datetime]:
+def read_time_from_param(params, param) -> datetime.datetime | None:
   t = params.get(param, encoding='utf8')
   try:
     return datetime.datetime.fromisoformat(t)
@@ -72,7 +72,7 @@ def read_time_from_param(params, param) -> Optional[datetime.datetime]:
     pass
   return None
 
-def run(cmd: List[str], cwd: Optional[str] = None) -> str:
+def run(cmd: list[str], cwd: str | None = None) -> str:
   return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
 
 
@@ -234,7 +234,7 @@ def handle_agnos_update() -> None:
 class Updater:
   def __init__(self):
     self.params = Params()
-    self.branches = defaultdict(lambda: '')
+    self.branches = defaultdict(str)
     self._has_internet: bool = False
 
   @property
@@ -243,7 +243,7 @@ class Updater:
 
   @property
   def target_branch(self) -> str:
-    b: Union[str, None] = self.params.get("UpdaterTargetBranch", encoding='utf-8')
+    b: str | None = self.params.get("UpdaterTargetBranch", encoding='utf-8')
     if b is None:
       b = self.get_branch(BASEDIR)
     return b
@@ -272,7 +272,7 @@ class Updater:
   def get_commit_hash(self, path: str = OVERLAY_MERGED) -> str:
     return run(["git", "rev-parse", "HEAD"], path).rstrip()
 
-  def set_params(self, update_success: bool, failed_count: int, exception: Optional[str]) -> None:
+  def set_params(self, update_success: bool, failed_count: int, exception: str | None) -> None:
     self.params.put("UpdateFailedCount", str(failed_count))
     self.params.put("UpdaterTargetBranch", self.target_branch)
 

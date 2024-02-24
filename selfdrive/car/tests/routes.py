@@ -29,8 +29,8 @@ non_tested_cars = [
 
 class CarTestRoute(NamedTuple):
   route: str
-  car_model: Optional[str]
-  segment: Optional[int] = None
+  car_model: str | None
+  segment: int | None = None
 
 
 routes = [

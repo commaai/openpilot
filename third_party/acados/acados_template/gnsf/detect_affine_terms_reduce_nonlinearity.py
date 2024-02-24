@@ -214,7 +214,7 @@ def detect_affine_terms_reduce_nonlinearity(gnsf, acados_ocp, print_info):
         fii = gnsf["phi_expr"][ii]
         fii = simplify(fii)
         if not fii.is_zero():
-            ind_non_zero = list(set.union(set(ind_non_zero), set([ii])))
+            ind_non_zero = list(set.union(set(ind_non_zero), {ii}))
     gnsf["phi_expr"] = gnsf["phi_expr"][ind_non_zero]
 
     # C

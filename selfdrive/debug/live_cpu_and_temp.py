@@ -42,8 +42,8 @@ if __name__ == "__main__":
   total_times = [0.]*8
   busy_times = [0.]*8
 
-  prev_proclog: Optional[capnp._DynamicStructReader] = None
-  prev_proclog_t: Optional[int] = None
+  prev_proclog: capnp._DynamicStructReader | None = None
+  prev_proclog_t: int | None = None
 
   while True:
     sm.update()
@@ -76,7 +76,7 @@ if __name__ == "__main__":
       print(f"CPU {100.0 * mean(cores):.2f}% - RAM: {last_mem:.2f}% - Temp {last_temp:.2f}C")
 
       if args.cpu and prev_proclog is not None and prev_proclog_t is not None:
-        procs: Dict[str, float] = defaultdict(float)
+        procs: dict[str, float] = defaultdict(float)
         dt = (sm.logMonoTime['procLog'] - prev_proclog_t) / 1e9
         for proc in m.procs:
           try:

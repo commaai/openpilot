@@ -1,4 +1,3 @@
-# -*- coding: future_fstrings -*-
 #
 # Copyright (c) The acados authors.
 #
@@ -117,13 +116,13 @@ class AcadosOcpDims:
 
     @property
     def nr(self):
-        """:math:`n_{\pi}` - dimension of the image of the inner nonlinear function in positive definite constraints.
+        r""":math:`n_{\pi}` - dimension of the image of the inner nonlinear function in positive definite constraints.
         Type: int; default: 0"""
         return self.__nr
 
     @property
     def nr_e(self):
-        """:math:`n_{\pi}^e` - dimension of the image of the inner nonlinear function in positive definite constraints.
+        r""":math:`n_{\pi}^e` - dimension of the image of the inner nonlinear function in positive definite constraints.
         Type: int; default: 0"""
         return self.__nr_e
 
@@ -141,13 +140,13 @@ class AcadosOcpDims:
 
     @property
     def nphi(self):
-        """:math:`n_{\phi}` - number of convex-over-nonlinear constraints.
+        r""":math:`n_{\phi}` - number of convex-over-nonlinear constraints.
         Type: int; default: 0"""
         return self.__nphi
 
     @property
     def nphi_e(self):
-        """:math:`n_{\phi}^e` - number of convex-over-nonlinear constraints at terminal shooting node N.
+        r""":math:`n_{\phi}^e` - number of convex-over-nonlinear constraints at terminal shooting node N.
         Type: int; default: 0"""
         return self.__nphi_e
 
@@ -225,13 +224,13 @@ class AcadosOcpDims:
 
     @property
     def nsphi(self):
-        """:math:`n_{{s\phi}}` - number of soft convex-over-nonlinear constraints.
+        r""":math:`n_{{s\phi}}` - number of soft convex-over-nonlinear constraints.
         Type: int; default: 0"""
         return self.__nsphi
 
     @property
     def nsphi_e(self):
-        """:math:`n_{{s\phi}^e}` - number of soft convex-over-nonlinear constraints at terminal shooting node N.
+        r""":math:`n_{{s\phi}^e}` - number of soft convex-over-nonlinear constraints at terminal shooting node N.
         Type: int; default: 0"""
         return self.__nsphi_e
 
@@ -498,16 +497,16 @@ class AcadosOcpCost:
     Class containing the numerical data of the cost:
 
     NOTE: all cost terms, except for the terminal one are weighted with the corresponding time step.
-    This means given the time steps are :math:`\Delta t_0,..., \Delta t_N`, the total cost is given by:
-    :math:`c_\\text{total} = \Delta t_0 \cdot c_0(x_0, u_0, p_0, z_0) + ... + \Delta t_{N-1} \cdot c_{N-1}(x_0, u_0, p_0, z_0) + c_N(x_N, p_N)`.
+    This means given the time steps are :math:`\\Delta t_0,..., \\Delta t_N`, the total cost is given by:
+    :math:`c_\\text{total} = \\Delta t_0 \\cdot c_0(x_0, u_0, p_0, z_0) + ... + \\Delta t_{N-1} \\cdot c_{N-1}(x_0, u_0, p_0, z_0) + c_N(x_N, p_N)`.
 
     This means the Lagrange cost term is given in continuous time, this makes up for a seeminglessly OCP discretization with a nonuniform time grid.
 
     In case of LINEAR_LS:
     stage cost is
-    :math:`l(x,u,z) = || V_x \, x + V_u \, u + V_z \, z - y_\\text{ref}||^2_W`,
+    :math:`l(x,u,z) = || V_x \\, x + V_u \\, u + V_z \\, z - y_\\text{ref}||^2_W`,
     terminal cost is
-    :math:`m(x) = || V^e_x \, x - y_\\text{ref}^e||^2_{W^e}`
+    :math:`m(x) = || V^e_x \\, x - y_\\text{ref}^e||^2_{W^e}`
 
     In case of NONLINEAR_LS:
     stage cost is
@@ -517,9 +516,9 @@ class AcadosOcpCost:
 
     In case of CONVEX_OVER_NONLINEAR:
     stage cost is
-    :math:`l(x,u,p) = \psi(y(x,u,p) - y_\\text{ref}, p)`,
+    :math:`l(x,u,p) = \\psi(y(x,u,p) - y_\\text{ref}, p)`,
     terminal cost is
-    :math:`m(x, p) = \psi^e (y^e(x,p) - y_\\text{ref}^e, p)`
+    :math:`m(x, p) = \\psi^e (y^e(x,p) - y_\\text{ref}^e, p)`
     """
     def __init__(self):
         # initial stage
@@ -1191,7 +1190,7 @@ class AcadosOcpConstraints:
     # polytopic constraints
     @property
     def C(self):
-        """:math:`C` - C matrix in :math:`\\underline{g} \\leq D \, u + C \, x \\leq \\bar{g}`
+        """:math:`C` - C matrix in :math:`\\underline{g} \\leq D \\, u + C \\, x \\leq \\bar{g}`
         at shooting nodes (0 to N-1).
         Type: :code:`np.ndarray`; default: :code:`np.array((0,0))`.
         """
@@ -1199,7 +1198,7 @@ class AcadosOcpConstraints:
 
     @property
     def D(self):
-        """:math:`D` - D matrix in :math:`\\underline{g} \\leq D \, u + C \, x \\leq \\bar{g}`
+        """:math:`D` - D matrix in :math:`\\underline{g} \\leq D \\, u + C \\, x \\leq \\bar{g}`
         at shooting nodes (0 to N-1).
         Type: :code:`np.ndarray`; default: :code:`np.array((0,0))`
         """
@@ -1283,7 +1282,7 @@ class AcadosOcpConstraints:
     # convex-over-nonlinear constraints
     @property
     def lphi(self):
-        """:math:`\\underline{\phi}` - lower bound for convex-over-nonlinear inequalities
+        """:math:`\\underline{\\phi}` - lower bound for convex-over-nonlinear inequalities
         at shooting nodes (0 to N-1).
         Type: :code:`np.ndarray`; default: :code:`np.array([])`.
         """
@@ -1291,7 +1290,7 @@ class AcadosOcpConstraints:
 
     @property
     def uphi(self):
-        """:math:`\\bar{\phi}` - upper bound for convex-over-nonlinear inequalities
+        """:math:`\\bar{\\phi}` - upper bound for convex-over-nonlinear inequalities
         at shooting nodes (0 to N-1).
         Type: :code:`np.ndarray`; default: :code:`np.array([])`.
         """
@@ -1300,7 +1299,7 @@ class AcadosOcpConstraints:
     # convex-over-nonlinear constraints at shooting node N
     @property
     def lphi_e(self):
-        """:math:`\\underline{\phi}^e` - lower bound on convex-over-nonlinear inequalities
+        """:math:`\\underline{\\phi}^e` - lower bound on convex-over-nonlinear inequalities
         at terminal shooting node N.
         Type: :code:`np.ndarray`; default: :code:`np.array([])`.
         """
@@ -1308,7 +1307,7 @@ class AcadosOcpConstraints:
 
     @property
     def uphi_e(self):
-        """:math:`\\bar{\phi}^e` - upper bound on convex-over-nonlinear inequalities
+        """:math:`\\bar{\\phi}^e` - upper bound on convex-over-nonlinear inequalities
         at terminal shooting node N.
         Type: :code:`np.ndarray`; default: :code:`np.array([])`.
         """
@@ -1483,7 +1482,7 @@ class AcadosOcpConstraints:
 
     @property
     def Jsphi(self):
-        """:math:`J_{s, \phi}` - matrix coefficient for soft bounds on convex-over-nonlinear constraints.
+        r""":math:`J_{s, \phi}` - matrix coefficient for soft bounds on convex-over-nonlinear constraints.
         Translated internally into :py:attr:`idxsphi`."""
         print_J_to_idx_note()
         return self.__idxsphi
@@ -1570,7 +1569,7 @@ class AcadosOcpConstraints:
 
     @property
     def x0(self):
-        """:math:`x_0 \\in \mathbb{R}^{n_x}` - initial state --
+        """:math:`x_0 \\in \\mathbb{R}^{n_x}` - initial state --
         Translated internally to :py:attr:`idxbx_0`, :py:attr:`lbx_0`, :py:attr:`ubx_0`, :py:attr:`idxbxe_0` """
         print("x0 is converted to lbx_0, ubx_0, idxbx_0")
         print("idxbx_0: ", self.__idxbx_0)

@@ -41,7 +41,7 @@ class NavModelResult(ctypes.Structure):
     ("features", ctypes.c_float*NAV_FEATURE_LEN)]
 
 class ModelState:
-  inputs: Dict[str, np.ndarray]
+  inputs: dict[str, np.ndarray]
   output: np.ndarray
   model: ModelRunner
 
@@ -52,7 +52,7 @@ class ModelState:
     self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.DSP, True, None)
     self.model.addInput("input_img", None)
 
-  def run(self, buf:np.ndarray) -> Tuple[np.ndarray, float]:
+  def run(self, buf:np.ndarray) -> tuple[np.ndarray, float]:
     self.inputs['input_img'][:] = buf
 
     t1 = time.perf_counter()

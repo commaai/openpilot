@@ -125,7 +125,7 @@ def laplacian_pdf(x: float, mu: float, b: float):
   return math.exp(-abs(x-mu)/b)
 
 
-def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks: Dict[int, Track]):
+def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks: dict[int, Track]):
   offset_vision_dist = lead.x[0] - RADAR_TO_CAMERA
 
   def prob(c):
@@ -166,8 +166,8 @@ def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, v_ego: floa
   }
 
 
-def get_lead(v_ego: float, ready: bool, tracks: Dict[int, Track], lead_msg: capnp._DynamicStructReader,
-             model_v_ego: float, low_speed_override: bool = True) -> Dict[str, Any]:
+def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], lead_msg: capnp._DynamicStructReader,
+             model_v_ego: float, low_speed_override: bool = True) -> dict[str, Any]:
   # Determine leads, this is where the essential logic happens
   if len(tracks) > 0 and ready and lead_msg.prob > .5:
     track = match_vision_to_track(v_ego, lead_msg, tracks)
@@ -196,19 +196,19 @@ class RadarD:
   def __init__(self, radar_ts: float, delay: int = 0):
     self.current_time = 0.0
 
-    self.tracks: Dict[int, Track] = {}
+    self.tracks: dict[int, Track] = {}
     self.kalman_params = KalmanParams(radar_ts)
 
     self.v_ego = 0.0
     self.v_ego_hist = deque([0.0], maxlen=delay+1)
     self.last_v_ego_frame = -1
 
-    self.radar_state: Optional[capnp._DynamicStructBuilder] = None
+    self.radar_state: capnp._DynamicStructBuilder | None = None
     self.radar_state_valid = False
 
     self.ready = False
 
-  def update(self, sm: messaging.SubMaster, rr: Optional[car.RadarData]):
+  def update(self, sm: messaging.SubMaster, rr: car.RadarData | None):
     self.ready = sm.seen['modelV2']
     self.current_time = 1e-9*max(sm.logMonoTime.values())
 

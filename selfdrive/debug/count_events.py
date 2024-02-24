@@ -15,8 +15,8 @@ if __name__ == "__main__":
   cams = [s for s in SERVICE_LIST if s.endswith('CameraState')]
   cnt_cameras = dict.fromkeys(cams, 0)
 
-  events: List[Tuple[float, set[str]]] = []
-  alerts: List[Tuple[float, str]] = []
+  events: list[tuple[float, set[str]]] = []
+  alerts: list[tuple[float, str]] = []
   start_time = math.inf
   end_time = -math.inf
   ignition_off = None

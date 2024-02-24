@@ -1,4 +1,3 @@
-# -*- coding: future_fstrings -*-
 #
 # Copyright (c) The acados authors.
 #
@@ -53,7 +52,7 @@ def get_acados_path():
         acados_path = os.path.join(acados_template_path, '..','..','..')
         ACADOS_PATH = os.path.realpath(acados_path)
         msg = 'Warning: Did not find environment variable ACADOS_SOURCE_DIR, '
-        msg += 'guessed ACADOS_PATH to be {}.\n'.format(ACADOS_PATH)
+        msg += f'guessed ACADOS_PATH to be {ACADOS_PATH}.\n'
         msg += 'Please export ACADOS_SOURCE_DIR to avoid this warning.'
         print(msg)
     return ACADOS_PATH
@@ -85,7 +84,7 @@ def check_casadi_version():
         msg += 'officially supported: {}.\n '.format(" or ".join(ALLOWED_CASADI_VERSIONS))
         msg += 'If there is an incompatibility with the CasADi generated code, '
         msg += 'please consider changing your CasADi version.\n'
-        msg += 'Version {} currently in use.'.format(casadi_version)
+        msg += f'Version {casadi_version} currently in use.'
         print(msg)
 
 
@@ -151,7 +150,7 @@ def make_model_consistent(model):
     elif isinstance(x, SX):
         symbol = SX.sym
     else:
-        raise Exception("model.x must be casadi.SX or casadi.MX, got {}".format(type(x)))
+        raise Exception(f"model.x must be casadi.SX or casadi.MX, got {type(x)}")
 
     if is_empty(p):
         model.p = symbol('p', 0, 0)
@@ -182,24 +181,24 @@ def get_tera():
         repo_url, TERA_VERSION, TERA_VERSION, PLATFORM2TERA[sys.platform])
 
     manual_install = 'For manual installation follow these instructions:\n'
-    manual_install += '1 Download binaries from {}\n'.format(url)
-    manual_install += '2 Copy them in {}/bin\n'.format(acados_path)
+    manual_install += f'1 Download binaries from {url}\n'
+    manual_install += f'2 Copy them in {acados_path}/bin\n'
     manual_install += '3 Strip the version and platform from the binaries: '
     manual_install += 'as t_renderer-v0.0.34-X -> t_renderer)\n'
     manual_install += '4 Enable execution privilege on the file "t_renderer" with:\n'
-    manual_install += '"chmod +x {}"\n\n'.format(tera_path)
+    manual_install += f'"chmod +x {tera_path}"\n\n'
 
     msg = "\n"
     msg += 'Tera template render executable not found, '
-    msg += 'while looking in path:\n{}\n'.format(tera_path)
+    msg += f'while looking in path:\n{tera_path}\n'
     msg += 'In order to be able to render the templates, '
     msg += 'you need to download the tera renderer binaries from:\n'
-    msg += '{}\n\n'.format(repo_url)
+    msg += f'{repo_url}\n\n'
     msg += 'Do you wish to set up Tera renderer automatically?\n'
     msg += 'y/N? (press y to download tera or any key for manual installation)\n'
 
     if input(msg) == 'y':
-        print("Dowloading {}".format(url))
+        print(f"Dowloading {url}")
         with urllib.request.urlopen(url) as response, open(tera_path, 'wb') as out_file:
             shutil.copyfileobj(response, out_file)
         print("Successfully downloaded t_renderer.")
@@ -272,7 +271,7 @@ def format_class_dict(d):
 def get_ocp_nlp_layout() -> dict:
     python_interface_path = get_python_interface_path()
     abs_path = os.path.join(python_interface_path, 'acados_layout.json')
-    with open(abs_path, 'r') as f:
+    with open(abs_path) as f:
         ocp_nlp_layout = json.load(f)
     return ocp_nlp_layout
 
@@ -280,7 +279,7 @@ def get_ocp_nlp_layout() -> dict:
 def get_default_simulink_opts() -> dict:
     python_interface_path = get_python_interface_path()
     abs_path = os.path.join(python_interface_path, 'simulink_default_opts.json')
-    with open(abs_path, 'r') as f:
+    with open(abs_path) as f:
         simulink_opts = json.load(f)
     return simulink_opts
 

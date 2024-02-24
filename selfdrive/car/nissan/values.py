@@ -37,7 +37,7 @@ class NissanCarInfo(CarInfo):
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.nissan_a]))
 
 
-CAR_INFO: Dict[str, Optional[Union[NissanCarInfo, List[NissanCarInfo]]]] = {
+CAR_INFO: dict[str, NissanCarInfo | list[NissanCarInfo] | None] = {
   CAR.XTRAIL: NissanCarInfo("Nissan X-Trail 2017"),
   CAR.LEAF: NissanCarInfo("Nissan Leaf 2018-23", video_link="https://youtu.be/vaMbtAh_0cY"),
   CAR.LEAF_IC: None,  # same platforms

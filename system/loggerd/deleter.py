@@ -23,7 +23,7 @@ def has_preserve_xattr(d: str) -> bool:
   return getxattr(os.path.join(Paths.log_root(), d), PRESERVE_ATTR_NAME) == PRESERVE_ATTR_VALUE
 
 
-def get_preserved_segments(dirs_by_creation: List[str]) -> List[str]:
+def get_preserved_segments(dirs_by_creation: list[str]) -> list[str]:
   preserved = []
   for n, d in enumerate(filter(has_preserve_xattr, reversed(dirs_by_creation))):
     if n == PRESERVE_COUNT:

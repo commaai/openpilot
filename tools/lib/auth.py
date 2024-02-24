@@ -36,7 +36,7 @@ PORT = 3000
 
 
 class ClientRedirectServer(HTTPServer):
-  query_params: Dict[str, Any] = {}
+  query_params: dict[str, Any] = {}
 
 
 class ClientRedirectHandler(BaseHTTPRequestHandler):

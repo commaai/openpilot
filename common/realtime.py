@@ -33,12 +33,12 @@ def set_realtime_priority(level: int) -> None:
     os.sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(level))
 
 
-def set_core_affinity(cores: List[int]) -> None:
+def set_core_affinity(cores: list[int]) -> None:
   if not PC:
     os.sched_setaffinity(0, cores)
 
 
-def config_realtime_process(cores: Union[int, List[int]], priority: int) -> None:
+def config_realtime_process(cores: int | list[int], priority: int) -> None:
   gc.disable()
   set_realtime_priority(priority)
   c = cores if isinstance(cores, list) else [cores, ]
@@ -46,7 +46,7 @@ def config_realtime_process(cores: Union[int, List[int]], priority: int) -> None
 
 
 class Ratekeeper:
-  def __init__(self, rate: float, print_delay_threshold: Optional[float] = 0.0) -> None:
+  def __init__(self, rate: float, print_delay_threshold: float | None = 0.0) -> None:
     """Rate in Hz for ratekeeping. print_delay_threshold must be nonnegative."""
     self._interval = 1. / rate
     self._next_frame_time = time.monotonic() + self._interval

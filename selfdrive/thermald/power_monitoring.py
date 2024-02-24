@@ -38,7 +38,7 @@ class PowerMonitoring:
     self.car_battery_capacity_uWh = max((CAR_BATTERY_CAPACITY_uWh / 10), int(car_battery_capacity_uWh))
 
   # Calculation tick
-  def calculate(self, voltage: Optional[int], ignition: bool):
+  def calculate(self, voltage: int | None, ignition: bool):
     try:
       now = time.monotonic()
 
@@ -108,7 +108,7 @@ class PowerMonitoring:
     return int(self.car_battery_capacity_uWh)
 
   # See if we need to shutdown
-  def should_shutdown(self, ignition: bool, in_car: bool, offroad_timestamp: Optional[float], started_seen: bool):
+  def should_shutdown(self, ignition: bool, in_car: bool, offroad_timestamp: float | None, started_seen: bool):
     if offroad_timestamp is None:
       return False
 

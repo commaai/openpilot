@@ -10,7 +10,7 @@ NetworkType = log.DeviceState.NetworkType
 
 class HardwareBase(ABC):
   @staticmethod
-  def get_cmdline() -> Dict[str, str]:
+  def get_cmdline() -> dict[str, str]:
     with open('/proc/cmdline') as f:
       cmdline = f.read()
     return {kv[0]: kv[1] for kv in [s.split('=') for s in cmdline.split(' ')] if len(kv) == 2}
