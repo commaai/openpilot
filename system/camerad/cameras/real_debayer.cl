@@ -7,10 +7,8 @@
 #define AVERAGE(x, y, z, w) ((convert_ushort(x) + convert_ushort(y) + convert_ushort(z) + convert_ushort(w) + 1) >> 1)
 
 float3 color_correct(float3 rgb) {
-  return rgb;
-
   // color correction
-  #if IS_OX
+  #if IS_OX | IS_OS
   float3 x = rgb.x * (float3)(1.5664815 , -0.29808738, -0.03973474);
   x += rgb.y * (float3)(-0.48672447,  1.41914433, -0.40295248);
   x += rgb.z * (float3)(-0.07975703, -0.12105695,  1.44268722);
@@ -20,7 +18,7 @@ float3 color_correct(float3 rgb) {
   x += rgb.z * (float3)(-0.25277411, -0.05627105, 1.45875782);
   #endif
 
-  #if IS_OX
+  #if IS_OX | IS_OS
   return -0.507089*exp(-12.54124638*x)+0.9655*powr(x,0.5)-0.472597*x+0.507089;
   #else
   // tone mapping params
