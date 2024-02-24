@@ -104,8 +104,8 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
     FordCarInfo("Lincoln Aviator Plug-in Hybrid 2020-23", "Co-Pilot360 Plus"),  # Grand Touring only
   ],
   CAR.F_150_MK14: [
-    FordCarInfo("Ford F-150 2021-23", "Co-Pilot360 Active 2.0"),
-    FordCarInfo("Ford F-150 Hybrid 2021-23", "Co-Pilot360 Active 2.0"),
+    FordCarInfo("Ford F-150 2023", "Co-Pilot360 Active 2.0"),
+    FordCarInfo("Ford F-150 Hybrid 2023", "Co-Pilot360 Active 2.0"),
   ],
   CAR.F_150_LIGHTNING_MK1: FordCarInfo("Ford F-150 Lightning 2021-23", "Co-Pilot360 Active 2.0"),
   CAR.MUSTANG_MACH_E_MK1: FordCarInfo("Ford Mustang Mach-E 2021-23", "Co-Pilot360 Active 2.0"),
