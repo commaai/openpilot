@@ -8,6 +8,7 @@ from collections.abc import Callable
 import panda.python.uds as uds
 
 AddrType = tuple[int, int | None]
+CarFw = list[capnp.lib.capnp._DynamicStructBuilder]
 EcuAddrBusType = tuple[int, int | None, int]
 EcuAddrSubAddr = tuple[int, int, int | None]
 
