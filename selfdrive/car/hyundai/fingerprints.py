@@ -129,18 +129,30 @@ FW_VERSIONS = {
   CAR.IONIQ: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ',
+      b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2100         ',
+      b'\xf1\x00DEhe SCC H-CUP      1.01 1.02 96400-G5100         ',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00AE  MDPS C 1.00 1.07 56310/G2301 4AEHC107',
+      b'\xf1\x00AE  MDPS C 1.00 1.07 56310/G2501 4AEHC107',
+      b'\xf1\x00DE  MDPS C 1.00 1.09 56310G5301\x00 4DEHC109',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00AEH MFC  AT EUR LHD 1.00 1.00 95740-G2400 180222',
+      b'\xf1\x00AEH MFC  AT USA LHD 1.00 1.00 95740-G2400 180222',
+      b'\xf1\x00DEH MFC  AT USA LHD 1.00 1.00 95740-G5010 170117',
     ],
     (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x816H6D0051\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x816H6F2051\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\xf1\x816H6F6051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x006U3H0_C2\x00\x006U3G0051\x00\x00HDE0G16NS2\x00\x00\x00\x00',
+      b'\xf1\x006U3H0_C2\x00\x006U3J2051\x00\x00HAE0G16NS4L\xfad\x91',
+      b'\xf1\x816U3G0051\x00\x00\xf1\x006U3H0_C2\x00\x006U3G0051\x00\x00HDE0G16NS2\x00\x00\x00\x00',
       b'\xf1\x816U3H1051\x00\x00\xf1\x006U3H0_C2\x00\x006U3H1051\x00\x00HAE0G16US2\x00\x00\x00\x00',
+      b'\xf1\x816U3J2051\x00\x00\xf1\x006U3H0_C2\x00\x006U3J2051\x00\x00HAE0G16NS4L\xfad\x91',
     ],
   },
   CAR.IONIQ_PHEV_2019: {
@@ -1075,6 +1087,7 @@ FW_VERSIONS = {
   CAR.KONA_EV: {
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00OS IEB \x01 212 \x11\x13 58520-K4000',
+      b'\xf1\x00OS IEB \x02 210 \x02\x14 58520-K4000',
       b'\xf1\x00OS IEB \x02 212 \x11\x13 58520-K4000',
       b'\xf1\x00OS IEB \x03 210 \x02\x14 58520-K4000',
       b'\xf1\x00OS IEB \x03 212 \x11\x13 58520-K4000',
@@ -1085,6 +1098,7 @@ FW_VERSIONS = {
       b'\xf1\x00OSE LKAS AT EUR LHD 1.00 1.00 95740-K4100 W40',
       b'\xf1\x00OSE LKAS AT EUR RHD 1.00 1.00 95740-K4100 W40',
       b'\xf1\x00OSE LKAS AT KOR LHD 1.00 1.00 95740-K4100 W40',
+      b'\xf1\x00OSE LKAS AT USA LHD 1.00 1.00 95740-K4100 W40',
       b'\xf1\x00OSE LKAS AT USA LHD 1.00 1.00 95740-K4300 W50',
     ],
     (Ecu.eps, 0x7d4, None): [
