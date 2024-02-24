@@ -91,19 +91,33 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   CAR.BRONCO_SPORT_MK1: FordCarInfo("Ford Bronco Sport 2021-22"),
   CAR.ESCAPE_MK4: [
     FordCarInfo("Ford Escape 2020-22"),
+    FordCarInfo("Ford Escape Hybrid 2020-22"),
+    FordCarInfo("Ford Escape Plug-in Hybrid 2020-22"),
     FordCarInfo("Ford Kuga 2020-22", "Adaptive Cruise Control with Lane Centering"),
+    FordCarInfo("Ford Kuga Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
+    FordCarInfo("Ford Kuga Plug-in Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
   ],
   CAR.EXPLORER_MK6: [
     FordCarInfo("Ford Explorer 2020-23"),
-    FordCarInfo("Lincoln Aviator 2020-21", "Co-Pilot360 Plus"),
+    FordCarInfo("Ford Explorer Hybrid 2020-23"),  # Limited and Platinum only
+    FordCarInfo("Lincoln Aviator 2020-23", "Co-Pilot360 Plus"),
+    FordCarInfo("Lincoln Aviator Plug-in Hybrid 2020-23", "Co-Pilot360 Plus"),  # Grand Touring only
   ],
-  CAR.F_150_MK14: FordCarInfo("Ford F-150 2023", "Co-Pilot360 Active 2.0"),
+  CAR.F_150_MK14: [
+    FordCarInfo("Ford F-150 2023", "Co-Pilot360 Active 2.0"),
+    FordCarInfo("Ford F-150 Hybrid 2023", "Co-Pilot360 Active 2.0"),
+  ],
   CAR.F_150_LIGHTNING_MK1: FordCarInfo("Ford F-150 Lightning 2021-23", "Co-Pilot360 Active 2.0"),
   CAR.MUSTANG_MACH_E_MK1: FordCarInfo("Ford Mustang Mach-E 2021-23", "Co-Pilot360 Active 2.0"),
-  CAR.FOCUS_MK4: FordCarInfo("Ford Focus 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS]),
+  CAR.FOCUS_MK4: [
+    FordCarInfo("Ford Focus 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS]),
+    FordCarInfo("Ford Focus Hybrid 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS]),  # mHEV only
+  ],
   CAR.MAVERICK_MK1: [
     FordCarInfo("Ford Maverick 2022", "LARIAT Luxury"),
+    FordCarInfo("Ford Maverick Hybrid 2022", "LARIAT Luxury"),
     FordCarInfo("Ford Maverick 2023", "Co-Pilot360 Assist"),
+    FordCarInfo("Ford Maverick Hybrid 2023", "Co-Pilot360 Assist"),
   ],
 }
 
