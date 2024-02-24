@@ -2,7 +2,6 @@
 from collections import namedtuple
 from dataclasses import dataclass
 from enum import ReprEnum
-from typing import Union
 
 import capnp
 
@@ -244,7 +243,7 @@ class CanSignalRateCalculator:
     return self.rate
 
 
-CarInfos = Union[CarInfo, list[CarInfo]]
+CarInfos = CarInfo | list[CarInfo]
 
 
 @dataclass

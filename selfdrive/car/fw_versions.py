@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-from typing import Any, DefaultDict, TypeVar
+from typing import Any, TypeVar
 from collections.abc import Iterator
 from tqdm import tqdm
 import capnp
@@ -40,7 +40,7 @@ def is_brand(brand: str, filter_brand: str | None) -> bool:
 
 def build_fw_dict(fw_versions: list[capnp.lib.capnp._DynamicStructBuilder],
                   filter_brand: str | None = None) -> dict[AddrType, set[bytes]]:
-  fw_versions_dict: DefaultDict[AddrType, set[bytes]] = defaultdict(set)
+  fw_versions_dict: defaultdict[AddrType, set[bytes]] = defaultdict(set)
   for fw in fw_versions:
     if is_brand(fw.brand, filter_brand) and not fw.logging:
       sub_addr = fw.subAddress if fw.subAddress != 0 else None

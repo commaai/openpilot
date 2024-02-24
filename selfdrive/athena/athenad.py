@@ -19,7 +19,7 @@ from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial
 from queue import Queue
-from typing import Union, cast
+from typing import cast
 from collections.abc import Callable
 
 import requests
@@ -56,10 +56,10 @@ WS_FRAME_SIZE = 4096
 
 NetworkType = log.DeviceState.NetworkType
 
-UploadFileDict = dict[str, Union[str, int, float, bool]]
-UploadItemDict = dict[str, Union[str, bool, int, float, dict[str, str]]]
+UploadFileDict = dict[str, str | int | float | bool]
+UploadItemDict = dict[str, str | bool | int | float | dict[str, str]]
 
-UploadFilesToUrlResponse = dict[str, Union[int, list[UploadItemDict], list[str]]]
+UploadFilesToUrlResponse = dict[str, int | list[UploadItemDict] | list[str]]
 
 
 @dataclass

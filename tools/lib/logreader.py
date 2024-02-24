@@ -11,7 +11,6 @@ import tqdm
 import urllib.parse
 import warnings
 
-from typing import Optional
 from collections.abc import Callable, Iterable, Iterator
 from urllib.parse import parse_qs, urlparse
 
@@ -77,7 +76,7 @@ class ReadMode(enum.StrEnum):
   AUTO_INTERACTIVE = "i"  # default to rlogs, fallback to qlogs with a prompt from the user
 
 
-LogPath = Optional[str]
+LogPath = str | None
 LogPaths = list[LogPath]
 ValidFileCallable = Callable[[LogPath], bool]
 Source = Callable[[SegmentRange, ReadMode], LogPaths]

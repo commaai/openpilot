@@ -5,7 +5,7 @@ import os
 import sys
 from collections import defaultdict
 from tqdm import tqdm
-from typing import Any, DefaultDict
+from typing import Any
 
 from openpilot.selfdrive.car.car_helpers import interface_names
 from openpilot.tools.lib.openpilotci import get_url, upload_file
@@ -172,7 +172,7 @@ if __name__ == "__main__":
     untested = (set(interface_names) - set(excluded_interfaces)) - {c.lower() for c in tested_cars}
     assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
 
-  log_paths: DefaultDict[str, dict[str, dict[str, str]]] = defaultdict(lambda: defaultdict(dict))
+  log_paths: defaultdict[str, dict[str, dict[str, str]]] = defaultdict(lambda: defaultdict(dict))
   with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
     if not args.upload_only:
       download_segments = [seg for car, seg in segments if car in tested_cars]

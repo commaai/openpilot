@@ -3,14 +3,13 @@ import capnp
 import copy
 from dataclasses import dataclass, field
 import struct
-from typing import Optional
 from collections.abc import Callable
 
 import panda.python.uds as uds
 
-AddrType = tuple[int, Optional[int]]
-EcuAddrBusType = tuple[int, Optional[int], int]
-EcuAddrSubAddr = tuple[int, int, Optional[int]]
+AddrType = tuple[int, int | None]
+EcuAddrBusType = tuple[int, int | None, int]
+EcuAddrSubAddr = tuple[int, int, int | None]
 
 LiveFwVersions = dict[AddrType, set[bytes]]
 OfflineFwVersions = dict[str, dict[EcuAddrSubAddr, list[bytes]]]
