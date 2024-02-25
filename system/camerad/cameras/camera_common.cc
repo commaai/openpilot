@@ -31,7 +31,7 @@ public:
              ci->frame_width, ci->frame_height, ci->frame_stride, ci->frame_offset,
              b->rgb_width, b->rgb_height, buf_width, uv_offset,
              ci->image_sensor == cereal::FrameData::ImageSensor::OX03C10, ci->image_sensor == cereal::FrameData::ImageSensor::OS04C10,
-             s->camera_num, s->camera_num==1 ? " -DVIGNETTING" : "");
+             s->camera_num, s->camera_num==1 ? "" : "");
     const char *cl_file = "cameras/real_debayer.cl";
     cl_program prg_debayer = cl_program_from_file(context, device_id, cl_file, args);
     krnl_ = CL_CHECK_ERR(clCreateKernel(prg_debayer, "debayer10", &err));
