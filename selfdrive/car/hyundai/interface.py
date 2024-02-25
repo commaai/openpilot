@@ -34,58 +34,58 @@ class CarInterface(CarInterfaceBase):
     CAN = CanBus(None, hda2, fingerprint)
 
     if candidate in CANFD_CAR:
-      cloudlog.debug("HYK_DEBUG: Is CANFD Car")
+      cloudlog.warning("HYK_DEBUG: Is CANFD Car")
       # detect if car is hybrid
       if 0x105 in fingerprint[CAN.ECAN]:
         ret.flags |= HyundaiFlags.HYBRID.value
-        cloudlog.debug("HYK_DEBUG: Hybrid")
+        cloudlog.warning("HYK_DEBUG: Hybrid")
       elif candidate in EV_CAR:
         ret.flags |= HyundaiFlags.EV.value
-        cloudlog.debug("HYK_DEBUG: EV")
+        cloudlog.warning("HYK_DEBUG: EV")
 
       # detect HDA2 with ADAS Driving ECU
       if hda2:
-        cloudlog.debug("HYK_DEBUG: Is HDA2")
+        cloudlog.warning("HYK_DEBUG: Is HDA2")
         ret.flags |= HyundaiFlags.CANFD_HDA2.value
         if 0x110 in fingerprint[CAN.CAM]:
           ret.flags |= HyundaiFlags.CANFD_HDA2_ALT_STEERING.value
-          cloudlog.debug("HYK_DEBUG: Is HDA2 Alt Steering")
+          cloudlog.warning("HYK_DEBUG: Is HDA2 Alt Steering")
       else:
-        cloudlog.debug("HYK_DEBUG: Not HDA2")
+        cloudlog.warning("HYK_DEBUG: Not HDA2")
         # non-HDA2
         if 0x1cf not in fingerprint[CAN.ECAN]:
           ret.flags |= HyundaiFlags.CANFD_ALT_BUTTONS.value
-          cloudlog.debug("HYK_DEBUG: Is CANFD Alt Buttons")
+          cloudlog.warning("HYK_DEBUG: Is CANFD Alt Buttons")
         # ICE cars do not have 0x130; GEARS message on 0x40 or 0x70 instead
         if 0x130 not in fingerprint[CAN.ECAN]:
           if 0x40 not in fingerprint[CAN.ECAN]:
             ret.flags |= HyundaiFlags.CANFD_ALT_GEARS_2.value
-            cloudlog.debug("HYK_DEBUG: Is CANFD Alt Gears 2")
+            cloudlog.warning("HYK_DEBUG: Is CANFD Alt Gears 2")
           else:
             ret.flags |= HyundaiFlags.CANFD_ALT_GEARS.value
-            cloudlog.debug("HYK_DEBUG: Is CANFD Alt Gears")
+            cloudlog.warning("HYK_DEBUG: Is CANFD Alt Gears")
         if candidate not in CANFD_RADAR_SCC_CAR:
           ret.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
-          cloudlog.debug("HYK_DEBUG: Is CANFD Camera SCC")
+          cloudlog.warning("HYK_DEBUG: Is CANFD Camera SCC")
     else:
-      cloudlog.debug("HYK_DEBUG: NOT CANFD Car")
+      cloudlog.warning("HYK_DEBUG: NOT CANFD Car")
       # TODO: detect EV and hybrid
       if candidate in HYBRID_CAR:
         ret.flags |= HyundaiFlags.HYBRID.value
-        cloudlog.debug("HYK_DEBUG: Is Hybrid Car")
+        cloudlog.warning("HYK_DEBUG: Is Hybrid Car")
       elif candidate in EV_CAR:
         ret.flags |= HyundaiFlags.EV.value
-        cloudlog.debug("HYK_DEBUG: Is EV Car")
+        cloudlog.warning("HYK_DEBUG: Is EV Car")
 
       # Send LFA message on cars with HDA
       if 0x485 in fingerprint[2]:
         ret.flags |= HyundaiFlags.SEND_LFA.value
-        cloudlog.debug("HYK_DEBUG: Is SEND_LFA")
+        cloudlog.warning("HYK_DEBUG: Is SEND_LFA")
 
       # These cars use the FCA11 message for the AEB and FCW signals, all others use SCC12
       if 0x38d in fingerprint[0] or 0x38d in fingerprint[2]:
         ret.flags |= HyundaiFlags.USE_FCA.value
-        cloudlog.debug("HYK_DEBUG: Is USE_FCA")
+        cloudlog.warning("HYK_DEBUG: Is USE_FCA")
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerLimitTimer = 0.4
