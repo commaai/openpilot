@@ -106,12 +106,10 @@ class CarInterfaceBase(ABC):
     """
     Parameters essential to controlling the car may be incomplete or wrong without FW versions or fingerprints.
     """
-    return cls.get_params(candidate, gen_empty_fingerprint(), list(), list(), False, False)
+    return cls.get_params(candidate, gen_empty_fingerprint(), list(), False, False)
 
   @classmethod
-  def get_params(cls, candidate: Platform, fingerprint: dict[int, dict[int, int]],
-                 car_fw: list[car.CarParams.CarFw], car_data: list[car.CarParams.CarFw],
-                 experimental_long: bool, docs: bool):
+  def get_params(cls, candidate: Platform, fingerprint: dict[int, dict[int, int]], car_fw: list[car.CarParams.CarFw], experimental_long: bool, docs: bool):
     ret = CarInterfaceBase.get_std_params(candidate)
 
     if hasattr(candidate, "config"):
@@ -121,7 +119,7 @@ class CarInterfaceBase(ABC):
         ret.wheelbase = platform_config.specs.wheelbase
         ret.steerRatio = platform_config.specs.steerRatio
 
-    ret = cls._get_params(ret, candidate, fingerprint, car_fw, car_data, experimental_long, docs)
+    ret = cls._get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs)
 
     # Vehicle mass is published curb weight plus assumed payload such as a human driver; notCars have no assumed payload
     if not ret.notCar:
@@ -136,8 +134,7 @@ class CarInterfaceBase(ABC):
   @staticmethod
   @abstractmethod
   def _get_params(ret: car.CarParams, candidate: Platform, fingerprint: dict[int, dict[int, int]],
-                  car_fw: list[car.CarParams.CarFw], car_data: list[car.CarParams.CarFw],
-                  experimental_long: bool, docs: bool):
+                  car_fw: list[car.CarParams.CarFw], experimental_long: bool, docs: bool):
     raise NotImplementedError
 
   @staticmethod
