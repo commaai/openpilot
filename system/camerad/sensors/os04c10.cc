@@ -62,7 +62,7 @@ std::vector<i2c_random_wr_payload> OS04C10::getExposureRegisters(int exposure_ti
   uint32_t hcg_time = exposure_time;
   uint32_t real_gain = os04c10_analog_gains_reg[new_exp_g];
 
-  hcg_time *= 16; // shift 4 bits
+  // hcg_time *= 16; // shift 4 bits
 
   return {
     {0x3501, hcg_time>>8}, {0x3502, hcg_time&0xFF},
