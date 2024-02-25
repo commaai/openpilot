@@ -139,7 +139,7 @@ class CAR(Platforms):
   FORESTER = SubaruPlatformConfig(
     "SUBARU FORESTER 2019",
     SubaruCarInfo("Subaru Forester 2019-21", "All"),
-    specs=CarSpecs(mass=1668, wheelbase=2.67, steerRatio=17),
+    specs=CarSpecs(mass=1568, wheelbase=2.67, steerRatio=17),
   )
   FORESTER_HYBRID = SubaruPlatformConfig(
     "SUBARU FORESTER HYBRID 2020",
