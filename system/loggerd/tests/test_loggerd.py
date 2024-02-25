@@ -8,7 +8,6 @@ import subprocess
 import time
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List
 from flaky import flaky
 
 import cereal.messaging as messaging
@@ -76,7 +75,7 @@ class TestLoggerd:
     end_type = SentinelType.endOfRoute if route else SentinelType.endOfSegment
     assert msgs[-1].sentinel.type == end_type
 
-  def _publish_random_messages(self, services: List[str]) -> Dict[str, list]:
+  def _publish_random_messages(self, services: list[str]) -> dict[str, list]:
     pm = messaging.PubMaster(services)
 
     managed_processes["loggerd"].start()

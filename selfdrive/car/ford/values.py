@@ -1,7 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, StrEnum
-from typing import Dict, List, Union
 
 from cereal import car
 from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
@@ -59,7 +58,7 @@ class RADAR:
   DELPHI_MRR = 'FORD_CADS'
 
 
-DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("ford_lincoln_base_pt", RADAR.DELPHI_MRR))
+DBC: dict[str, dict[str, str]] = defaultdict(lambda: dbc_dict("ford_lincoln_base_pt", RADAR.DELPHI_MRR))
 
 # F-150 radar is not yet supported
 DBC[CAR.F_150_MK14] = dbc_dict("ford_lincoln_base_pt", None)
@@ -87,7 +86,7 @@ class FordCarInfo(CarInfo):
       self.car_parts = CarParts([Device.threex, harness])
 
 
-CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
+CAR_INFO: dict[str, CarInfo | list[CarInfo]] = {
   CAR.BRONCO_SPORT_MK1: FordCarInfo("Ford Bronco Sport 2021-22"),
   CAR.ESCAPE_MK4: [
     FordCarInfo("Ford Escape 2020-22"),

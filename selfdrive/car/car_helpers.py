@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
 
 from cereal import car
 from openpilot.common.params import Params
@@ -63,7 +63,7 @@ def load_interfaces(brand_names):
   return ret
 
 
-def _get_interface_names() -> Dict[str, List[str]]:
+def _get_interface_names() -> dict[str, list[str]]:
   # returns a dict of brand name and its respective models
   brand_names = {}
   for brand_name, brand_models in get_interface_attr("CAR").items():
@@ -77,7 +77,7 @@ interface_names = _get_interface_names()
 interfaces = load_interfaces(interface_names)
 
 
-def can_fingerprint(next_can: Callable) -> Tuple[Optional[str], Dict[int, dict]]:
+def can_fingerprint(next_can: Callable) -> tuple[str | None, dict[int, dict]]:
   finger = gen_empty_fingerprint()
   candidate_cars = {i: all_legacy_fingerprint_cars() for i in [0, 1]}  # attempt fingerprint on both bus 0 and 1
   frame = 0

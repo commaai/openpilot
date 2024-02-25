@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, Iterator, List, Optional, Set, TypeVar
+from typing import Any, TypeVar
+from collections.abc import Iterator
 from tqdm import tqdm
 import capnp
 
@@ -27,19 +28,19 @@ REQUESTS = [(brand, config, r) for brand, config in FW_QUERY_CONFIGS.items() for
 T = TypeVar('T')
 
 
-def chunks(l: List[T], n: int = 128) -> Iterator[List[T]]:
+def chunks(l: list[T], n: int = 128) -> Iterator[list[T]]:
   for i in range(0, len(l), n):
     yield l[i:i + n]
 
 
-def is_brand(brand: str, filter_brand: Optional[str]) -> bool:
+def is_brand(brand: str, filter_brand: str | None) -> bool:
   """Returns if brand matches filter_brand or no brand filter is specified"""
   return filter_brand is None or brand == filter_brand
 
 
-def build_fw_dict(fw_versions: List[capnp.lib.capnp._DynamicStructBuilder],
-                  filter_brand: Optional[str] = None) -> Dict[AddrType, Set[bytes]]:
-  fw_versions_dict: DefaultDict[AddrType, Set[bytes]] = defaultdict(set)
+def build_fw_dict(fw_versions: list[capnp.lib.capnp._DynamicStructBuilder],
+                  filter_brand: str | None = None) -> dict[AddrType, set[bytes]]:
+  fw_versions_dict: defaultdict[AddrType, set[bytes]] = defaultdict(set)
   for fw in fw_versions:
     if is_brand(fw.brand, filter_brand) and not fw.logging:
       sub_addr = fw.subAddress if fw.subAddress != 0 else None
@@ -97,7 +98,7 @@ def match_fw_to_car_fuzzy(live_fw_versions, match_brand=None, log=True, exclude=
     return set()
 
 
-def match_fw_to_car_exact(live_fw_versions, match_brand=None, log=True, extra_fw_versions=None) -> Set[str]:
+def match_fw_to_car_exact(live_fw_versions, match_brand=None, log=True, extra_fw_versions=None) -> set[str]:
   """Do an exact FW match. Returns all cars that match the given
   FW versions for a list of "essential" ECUs. If an ECU is not considered
   essential the FW version can be missing to get a fingerprint, but if it's present it
@@ -164,11 +165,11 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True, log=True):
   return True, set()
 
 
-def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
+def get_present_ecus(logcan, sendcan, num_pandas=1) -> set[EcuAddrBusType]:
   params = Params()
   # queries are split by OBD multiplexing mode
-  queries: Dict[bool, List[List[EcuAddrBusType]]] = {True: [], False: []}
-  parallel_queries: Dict[bool, List[EcuAddrBusType]] = {True: [], False: []}
+  queries: dict[bool, list[list[EcuAddrBusType]]] = {True: [], False: []}
+  parallel_queries: dict[bool, list[EcuAddrBusType]] = {True: [], False: []}
   responses = set()
 
   for brand, config, r in REQUESTS:
@@ -203,7 +204,7 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
   return ecu_responses
 
 
-def get_brand_ecu_matches(ecu_rx_addrs: Set[EcuAddrBusType]) -> dict[str, set[AddrType]]:
+def get_brand_ecu_matches(ecu_rx_addrs: set[EcuAddrBusType]) -> dict[str, set[AddrType]]:
   """Returns dictionary of brands and matches with ECUs in their FW versions"""
 
   brand_addrs = {brand: {(addr, subaddr) for _, addr, subaddr in config.get_all_ecus(VERSIONS[brand])} for
@@ -231,7 +232,7 @@ def set_obd_multiplexing(params: Params, obd_multiplexing: bool):
 
 
 def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pandas=1, debug=False, progress=False) -> \
-  List[capnp.lib.capnp._DynamicStructBuilder]:
+  list[capnp.lib.capnp._DynamicStructBuilder]:
   """Queries for FW versions ordering brands by likelihood, breaks when exact match is found"""
 
   all_car_fw = []
@@ -254,7 +255,7 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
 
 
 def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, num_pandas=1, debug=False, progress=False) -> \
-  List[capnp.lib.capnp._DynamicStructBuilder]:
+  list[capnp.lib.capnp._DynamicStructBuilder]:
   versions = VERSIONS.copy()
   params = Params()
 
