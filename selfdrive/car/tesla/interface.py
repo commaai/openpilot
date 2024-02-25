@@ -36,7 +36,7 @@ class CarInterface(CarInterfaceBase):
       ]
     else:
       ret.openpilotLongitudinalControl = False
-      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.tesla, Panda.FLAG_TESLA_RAVEN if candidate in CAR.MODELS_RAVEN else 0)]
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.tesla, Panda.FLAG_TESLA_RAVEN if candidate == CAR.MODELS_RAVEN else 0)]
 
     ret.steerLimitTimer = 1.0
     ret.steerActuatorDelay = 0.25
