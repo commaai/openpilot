@@ -627,9 +627,9 @@ def replay_process_with_name(name: str | Iterable[str], lr: LogIterable, *args, 
 
 
 def replay_process(
-  cfg: ProcessConfig | Iterable[ProcessConfig], lr: LogIterable, frs: dict[str, BaseFrameReader] | None = None,
-  fingerprint: str | None = None, return_all_logs: bool = False, custom_params: dict[str, Any] | None = None,
-  captured_output_store: dict[str, dict[str, str]] | None = None, disable_progress: bool = False
+  cfg: ProcessConfig | Iterable[ProcessConfig], lr: LogIterable, frs: dict[str, BaseFrameReader] = None,
+  fingerprint: str = None, return_all_logs: bool = False, custom_params: dict[str, Any] = None,
+  captured_output_store: dict[str, dict[str, str]] = None, disable_progress: bool = False
 ) -> list[capnp._DynamicStructReader]:
   if isinstance(cfg, Iterable):
     cfgs = list(cfg)

@@ -18,7 +18,7 @@ OPENAI_PROMPT = "You are a professional translator from English to {language} (I
                 "The following sentence or word is in the GUI of a software called openpilot, translate it accordingly."
 
 
-def get_language_files(languages: list[str] | None = None) -> dict[str, pathlib.Path]:
+def get_language_files(languages: list[str] = None) -> dict[str, pathlib.Path]:
   files = {}
 
   with open(TRANSLATIONS_LANGUAGES) as fp:

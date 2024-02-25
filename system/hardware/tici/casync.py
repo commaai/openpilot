@@ -145,7 +145,7 @@ def build_chunk_dict(chunks: list[Chunk]) -> ChunkDict:
 def extract(target: list[Chunk],
             sources: list[tuple[str, ChunkReader, ChunkDict]],
             out_path: str,
-            progress: Callable[[int], None] | None = None):
+            progress: Callable[[int], None] = None):
   stats: dict[str, int] = defaultdict(int)
 
   mode = 'rb+' if os.path.exists(out_path) else 'wb'

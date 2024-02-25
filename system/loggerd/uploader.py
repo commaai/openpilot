@@ -222,7 +222,7 @@ class Uploader:
     return self.upload(name, key, fn, network_type, metered)
 
 
-def main(exit_event: threading.Event | None = None) -> None:
+def main(exit_event: threading.Event = None) -> None:
   if exit_event is None:
     exit_event = threading.Event()
 
