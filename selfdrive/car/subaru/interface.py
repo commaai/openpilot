@@ -1,10 +1,10 @@
 from cereal import car
 from panda import Panda
 from openpilot.selfdrive.car import get_safety_config
-from openpilot.selfdrive.car.values import Platform
 from openpilot.selfdrive.car.disable_ecu import disable_ecu
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
-from openpilot.selfdrive.car.subaru.values import CAR, GLOBAL_ES_ADDR, LKAS_ANGLE, GLOBAL_GEN2, PREGLOBAL_CARS, HYBRID_CARS, SubaruFlags
+from openpilot.selfdrive.car.subaru.values import CAR, GLOBAL_ES_ADDR, GLOBAL_GEN2, HYBRID_CARS, LKAS_ANGLE, PREGLOBAL_CARS, SubaruFlags
+from openpilot.selfdrive.car.values import Platform
 
 
 class CarInterface(CarInterfaceBase):

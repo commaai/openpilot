@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-import pytest
 import time
-import numpy as np
-from flaky import flaky
 from collections import defaultdict
+
+import numpy as np
+import pytest
+from flaky import flaky
 
 import cereal.messaging as messaging
 from cereal import log

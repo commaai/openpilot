@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
+import signal
+import struct
 import sys
 import time
-import signal
-import serial
-import struct
-import requests
 import urllib.parse
 from datetime import datetime
 
+import requests
+import serial
+
 from cereal import messaging
+from openpilot.common.gpio import gpio_init, gpio_set
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import TICI
-from openpilot.common.gpio import gpio_init, gpio_set
 from openpilot.system.hardware.tici.pins import GPIO
 
 UBLOX_TTY = "/dev/ttyHS0"

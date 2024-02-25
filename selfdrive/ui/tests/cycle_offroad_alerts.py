@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
+import json
 import os
 import sys
 import time
-import json
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params

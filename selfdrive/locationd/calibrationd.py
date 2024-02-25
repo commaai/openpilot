@@ -8,17 +8,18 @@ and the image input into the neural network is not corrected for roll.
 
 import gc
 import os
-import capnp
-import numpy as np
 from typing import NoReturn
 
-from cereal import log
+import capnp
+import numpy as np
+
 import cereal.messaging as messaging
+from cereal import log
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_realtime_priority
-from openpilot.common.transformations.orientation import rot_from_euler, euler_from_rot
 from openpilot.common.swaglog import cloudlog
+from openpilot.common.transformations.orientation import euler_from_rot, rot_from_euler
 
 MIN_SPEED_FILTER = 15 * CV.MPH_TO_MS
 MAX_VEL_ANGLE_STD = np.radians(0.25)

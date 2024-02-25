@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-import capnp
 import copy
-from dataclasses import dataclass, field
 import struct
 from collections.abc import Callable
+from dataclasses import dataclass, field
+
+import capnp
 
 import panda.python.uds as uds
 

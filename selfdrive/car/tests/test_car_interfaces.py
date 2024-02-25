@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-import os
+import importlib
 import math
+import os
 import unittest
+
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
-import importlib
 from parameterized import parameterized
 
 from cereal import car, messaging

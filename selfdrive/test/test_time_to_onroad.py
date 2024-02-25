@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import os
-import pytest
-import time
 import subprocess
+import time
+
+import pytest
 
 import cereal.messaging as messaging
 from openpilot.common.basedir import BASEDIR

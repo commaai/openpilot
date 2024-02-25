@@ -1,4 +1,5 @@
 from math import cos, sin
+
 from cereal import car
 from opendbc.can.parser import CANParser
 from openpilot.common.conversions import Conversions as CV

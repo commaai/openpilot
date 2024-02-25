@@ -1,6 +1,6 @@
+import copy
 import re
 from collections import namedtuple
-import copy
 from dataclasses import dataclass, field
 from enum import Enum
 

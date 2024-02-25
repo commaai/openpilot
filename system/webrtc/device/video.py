@@ -1,10 +1,10 @@
 import asyncio
 
 import av
-from teleoprtc.tracks import TiciVideoStreamTrack
 
 from cereal import messaging
-from openpilot.common.realtime import DT_MDL, DT_DMON
+from teleoprtc.tracks import TiciVideoStreamTrack
+from openpilot.common.realtime import DT_DMON, DT_MDL
 
 
 class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):

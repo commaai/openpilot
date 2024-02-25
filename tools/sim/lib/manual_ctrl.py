@@ -136,7 +136,7 @@ def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
 
   # Enable FF
   import evdev
-  from evdev import ecodes, InputDevice
+  from evdev import InputDevice, ecodes
   device = evdev.list_devices()[0]
   evtdev = InputDevice(device)
   val = 24000

@@ -2,7 +2,7 @@ from cereal import car
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_driver_steer_torque_limits
 from openpilot.selfdrive.car.mazda import mazdacan
-from openpilot.selfdrive.car.mazda.values import CarControllerParams, Buttons
+from openpilot.selfdrive.car.mazda.values import Buttons, CarControllerParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 

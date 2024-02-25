@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+
 import tensorflow as tf
 
 with open(sys.argv[1], "rb") as f:

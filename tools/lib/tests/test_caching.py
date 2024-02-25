@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-from functools import partial
 import http.server
 import os
 import shutil
 import socket
 import unittest
+from functools import partial
 
 from parameterized import parameterized
+
 from openpilot.selfdrive.athena.tests.helpers import with_http_server
 from openpilot.system.hardware.hw import Paths
 from openpilot.tools.lib.url_file import URLFile

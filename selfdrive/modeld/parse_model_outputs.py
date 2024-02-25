@@ -1,5 +1,7 @@
 import numpy as np
+
 from openpilot.selfdrive.modeld.constants import ModelConstants
+
 
 def sigmoid(x):
   return 1. / (1. + np.exp(-x))

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # type: ignore
 
-from openpilot.selfdrive.locationd.test import ublox
 import struct
+
+from openpilot.selfdrive.locationd.test import ublox
 
 baudrate = 460800
 rate = 100  # send new data every 100ms

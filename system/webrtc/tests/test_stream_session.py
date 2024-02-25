@@ -1,23 +1,24 @@
 #!/usr/bin/env python3
 import asyncio
-import unittest
-from unittest.mock import Mock, MagicMock, patch
 import json
+import unittest
+
 # for aiortc and its dependencies
 import warnings
+from unittest.mock import MagicMock, Mock, patch
+
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-from aiortc import RTCDataChannel
-from aiortc.mediastreams import VIDEO_CLOCK_RATE, VIDEO_TIME_BASE
 import capnp
 import pyaudio
+from aiortc import RTCDataChannel
+from aiortc.mediastreams import VIDEO_CLOCK_RATE, VIDEO_TIME_BASE
 
-from cereal import messaging, log
-
-from openpilot.system.webrtc.webrtcd import CerealOutgoingMessageProxy, CerealIncomingMessageProxy
-from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
-from openpilot.system.webrtc.device.audio import AudioInputStreamTrack
+from cereal import log, messaging
 from openpilot.common.realtime import DT_DMON
+from openpilot.system.webrtc.device.audio import AudioInputStreamTrack
+from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
+from openpilot.system.webrtc.webrtcd import CerealIncomingMessageProxy, CerealOutgoingMessageProxy
 
 
 class TestStreamSession(unittest.TestCase):

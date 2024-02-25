@@ -1,10 +1,11 @@
 #!/usr/bin/env python
-import unittest
-import requests
 import tempfile
-
+import unittest
 from collections import defaultdict
+
 import numpy as np
+import requests
+
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.logreader import LogReader
 

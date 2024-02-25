@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-from cereal import car
 import cereal.messaging as messaging
+from cereal import car
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
+
 
 # mocked car interface for dashcam mode
 class CarInterface(CarInterfaceBase):

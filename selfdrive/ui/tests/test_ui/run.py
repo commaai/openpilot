@@ -1,20 +1,20 @@
-from collections import namedtuple
+import os
 import pathlib
 import shutil
 import sys
+import time
+import unittest
+from collections import namedtuple
+
 import jinja2
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 import pywinctl
-import time
-import unittest
-
 from parameterized import parameterized
-from cereal import messaging, car, log
-from cereal.visionipc import VisionIpcServer, VisionStreamType
 
-from cereal.messaging import SubMaster, PubMaster
+from cereal import car, log, messaging
+from cereal.messaging import PubMaster, SubMaster
+from cereal.visionipc import VisionIpcServer, VisionStreamType
 from openpilot.common.mock import mock_messages
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL

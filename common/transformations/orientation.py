@@ -1,14 +1,17 @@
-import numpy as np
 from collections.abc import Callable
 
-from openpilot.common.transformations.transformations import (ecef_euler_from_ned_single,
-                                                    euler2quat_single,
-                                                    euler2rot_single,
-                                                    ned_euler_from_ecef_single,
-                                                    quat2euler_single,
-                                                    quat2rot_single,
-                                                    rot2euler_single,
-                                                    rot2quat_single)
+import numpy as np
+
+from openpilot.common.transformations.transformations import (
+  ecef_euler_from_ned_single,
+  euler2quat_single,
+  euler2rot_single,
+  ned_euler_from_ecef_single,
+  quat2euler_single,
+  quat2rot_single,
+  rot2euler_single,
+  rot2quat_single,
+)
 
 
 def numpy_wrap(function, input_shape, output_shape) -> Callable[..., np.ndarray]:

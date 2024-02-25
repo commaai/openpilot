@@ -2,10 +2,9 @@ import os
 import shutil
 import uuid
 
-
 from openpilot.common.params import Params
-from openpilot.system.hardware.hw import Paths
-from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
+from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT, Paths
+
 
 class OpenpilotPrefix:
   def __init__(self, prefix: str | None = None, clean_dirs_on_exit: bool = True, shared_download_cache: bool = False):

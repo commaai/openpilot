@@ -1,9 +1,9 @@
 from math import atan2
 
 from cereal import car
+from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.numpy_fast import interp
 from openpilot.common.realtime import DT_DMON
-from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.stat_live import RunningStatFilter
 from openpilot.common.transformations.camera import tici_d_frame_size
 

@@ -1,30 +1,31 @@
 #!/usr/bin/env python3
-import numpy as np
 import os
-import re
 import random
+import re
 import string
 import subprocess
 import time
 from collections import defaultdict
 from pathlib import Path
+
+import numpy as np
 from flaky import flaky
 
 import cereal.messaging as messaging
 from cereal import log
 from cereal.services import SERVICE_LIST
+from cereal.visionipc import VisionIpcServer, VisionStreamType
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
-from openpilot.system.hardware.hw import Paths
-from openpilot.system.loggerd.xattr_cache import getxattr
-from openpilot.system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
+from openpilot.common.transformations.camera import tici_d_frame_size, tici_e_frame_size, tici_f_frame_size
 from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.hardware.hw import Paths
+from openpilot.system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
+from openpilot.system.loggerd.xattr_cache import getxattr
 from openpilot.system.version import get_version
 from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.logreader import LogReader
-from cereal.visionipc import VisionIpcServer, VisionStreamType
-from openpilot.common.transformations.camera import tici_f_frame_size, tici_d_frame_size, tici_e_frame_size
 
 SentinelType = log.Sentinel.SentinelType
 

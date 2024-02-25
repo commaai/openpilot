@@ -1,16 +1,16 @@
-import io
-import os
-import sys
 import copy
+import io
 import json
-import time
-import uuid
-import socket
 import logging
+import os
+import socket
+import sys
+import time
 import traceback
-from threading import local
+import uuid
 from collections import OrderedDict
 from contextlib import contextmanager
+from threading import local
 
 LOG_TIMESTAMPS = "LOG_TIMESTAMPS" in os.environ
 

@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-import time
-import numpy as np
-import os
-import pytest
-import unittest
-import requests
-import threading
 import http.server
-import cereal.messaging as messaging
-
+import os
+import threading
+import time
+import unittest
 from typing import Any
+
+import numpy as np
+import pytest
+import requests
+
+import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcClient, VisionStreamType
 from openpilot.common.mock.generators import LLK_DECIMATION, LOCATION1, LOCATION2, generate_liveLocationKalman
 from openpilot.selfdrive.test.helpers import with_processes

@@ -3,13 +3,19 @@ from cereal import car
 from panda import Panda
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import interp
-from openpilot.selfdrive.car.honda.hondacan import get_pt_bus
-from openpilot.selfdrive.car.honda.values import CarControllerParams, CruiseButtons, HondaFlags, CAR, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, \
-                                                 HONDA_BOSCH_RADARLESS
 from openpilot.selfdrive.car import create_button_events, get_safety_config
-from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.car.disable_ecu import disable_ecu
-
+from openpilot.selfdrive.car.honda.hondacan import get_pt_bus
+from openpilot.selfdrive.car.honda.values import (
+  CAR,
+  HONDA_BOSCH,
+  HONDA_BOSCH_RADARLESS,
+  HONDA_NIDEC_ALT_SCM_MESSAGES,
+  CarControllerParams,
+  CruiseButtons,
+  HondaFlags,
+)
+from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName

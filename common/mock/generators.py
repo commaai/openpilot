@@ -1,6 +1,5 @@
 from cereal import messaging
 
-
 LOCATION1 = (32.7174, -117.16277)
 LOCATION2 = (32.7558, -117.2037)
 

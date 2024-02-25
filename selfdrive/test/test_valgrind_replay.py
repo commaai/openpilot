@@ -1,22 +1,23 @@
 #!/usr/bin/env python3
 import os
+import signal
+import subprocess
 import threading
 import time
 import unittest
-import subprocess
-import signal
 
 if "CI" in os.environ:
   def tqdm(x):
     return x
 else:
-  from tqdm import tqdm   # type: ignore
+  from tqdm import tqdm  # type: ignore
+
+from collections import namedtuple
 
 import cereal.messaging as messaging
-from collections import namedtuple
+from openpilot.common.basedir import BASEDIR
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.openpilotci import get_url
-from openpilot.common.basedir import BASEDIR
 
 ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'command', 'path', 'segment', 'wait_for_response'])
 

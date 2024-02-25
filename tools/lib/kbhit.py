@@ -1,7 +1,7 @@
 #!/usr/bin/env python
+import atexit
 import sys
 import termios
-import atexit
 from select import select
 
 STDIN_FD = sys.stdin.fileno()

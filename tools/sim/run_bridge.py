@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 import argparse
-
-from typing import Any
 from multiprocessing import Queue
+from typing import Any
 
 from openpilot.tools.sim.bridge.metadrive.metadrive_bridge import MetaDriveBridge
+
 
 def create_bridge(dual_camera, high_quality):
   queue: Any = Queue()

@@ -1,7 +1,7 @@
 import os
 import sys
 from dataclasses import dataclass, fields
-from subprocess import check_output, CalledProcessError
+from subprocess import CalledProcessError, check_output
 from time import sleep
 from typing import NoReturn
 

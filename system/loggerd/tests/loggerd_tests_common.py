@@ -3,7 +3,6 @@ import random
 import unittest
 from pathlib import Path
 
-
 import openpilot.system.loggerd.deleter as deleter
 import openpilot.system.loggerd.uploader as uploader
 from openpilot.common.params import Params

@@ -2,8 +2,8 @@
 import json
 import random
 import unittest
-import numpy as np
 
+import numpy as np
 from parameterized import parameterized
 
 import cereal.messaging as messaging

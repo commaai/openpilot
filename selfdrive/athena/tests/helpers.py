@@ -1,6 +1,6 @@
 import http.server
-import threading
 import socket
+import threading
 from functools import wraps
 
 

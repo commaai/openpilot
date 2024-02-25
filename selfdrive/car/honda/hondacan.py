@@ -1,5 +1,5 @@
 from openpilot.common.conversions import Conversions as CV
-from openpilot.selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, CAR, CarControllerParams
+from openpilot.selfdrive.car.honda.values import CAR, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, CarControllerParams, HondaFlags
 
 # CAN bus layout with relay
 # 0 = ACC-CAN - radar side

@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 # simple boardd wrapper that updates the panda first
 import os
-import usb1
-import time
 import subprocess
-from typing import NoReturn
+import time
 from functools import cmp_to_key
+from typing import NoReturn
 
-from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
+import usb1
+
+from panda import FW_PATH, Panda, PandaDFU, PandaProtocolMismatch
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
+from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.boardd.set_time import set_time
 from openpilot.system.hardware import HARDWARE
-from openpilot.common.swaglog import cloudlog
 
 
 def get_expected_signature(panda: Panda) -> bytes:

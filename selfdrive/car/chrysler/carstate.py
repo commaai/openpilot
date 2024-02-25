@@ -1,9 +1,9 @@
 from cereal import car
-from openpilot.common.conversions import Conversions as CV
-from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
+from opendbc.can.parser import CANParser
+from openpilot.common.conversions import Conversions as CV
+from openpilot.selfdrive.car.chrysler.values import DBC, RAM_CARS, STEER_THRESHOLD
 from openpilot.selfdrive.car.interfaces import CarStateBase
-from openpilot.selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD, RAM_CARS
 
 
 class CarState(CarStateBase):

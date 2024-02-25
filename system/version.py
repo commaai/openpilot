@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import os
 import subprocess
-from typing import TypeVar
 from collections.abc import Callable
 from functools import lru_cache
+from typing import TypeVar
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog

@@ -8,7 +8,6 @@ from setproctitle import getproctitle
 
 from openpilot.system.hardware import PC
 
-
 # time step for each process
 DT_CTRL = 0.01  # controlsd
 DT_MDL = 0.05  # model

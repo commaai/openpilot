@@ -1,10 +1,10 @@
 from collections import defaultdict
 
 from cereal import messaging
-from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
+from panda import Panda
 from openpilot.selfdrive.car.toyota.values import EPS_SCALE
 from openpilot.selfdrive.manager.process_config import managed_processes
-from panda import Panda
+from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
 
 
 def migrate_all(lr, old_logtime=False, manager_states=False, panda_states=False, camera_states=False):

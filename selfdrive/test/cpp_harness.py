@@ -4,7 +4,6 @@ import sys
 
 from openpilot.common.prefix import OpenpilotPrefix
 
-
 with OpenpilotPrefix():
   ret = subprocess.call(sys.argv[1:])
 

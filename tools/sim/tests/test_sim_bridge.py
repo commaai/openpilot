@@ -2,7 +2,6 @@ import os
 import subprocess
 import time
 import unittest
-
 from multiprocessing import Queue
 
 from cereal import messaging

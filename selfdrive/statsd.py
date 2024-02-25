@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 import os
-import zmq
 import time
-from pathlib import Path
 from collections import defaultdict
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import NoReturn
 
-from openpilot.common.params import Params
+import zmq
+
 from cereal.messaging import SubMaster
-from openpilot.system.hardware.hw import Paths
+from openpilot.common.file_helpers import atomic_write_in_dir
+from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE
-from openpilot.common.file_helpers import atomic_write_in_dir
+from openpilot.system.hardware.hw import Paths
+from openpilot.system.loggerd.config import STATS_DIR_FILE_LIMIT, STATS_FLUSH_TIME_S, STATS_SOCKET
 from openpilot.system.version import get_normalized_origin, get_short_branch, get_short_version, is_dirty
-from openpilot.system.loggerd.config import STATS_DIR_FILE_LIMIT, STATS_SOCKET, STATS_FLUSH_TIME_S
 
 
 class METRIC_TYPE:

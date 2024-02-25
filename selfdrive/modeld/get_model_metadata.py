@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-import sys
-import pathlib
-import onnx
 import codecs
+import pathlib
 import pickle
+import sys
+
+import onnx
+
 
 def get_name_and_shape(value_info:onnx.ValueInfoProto) -> tuple[str, tuple[int,...]]:
   shape = tuple([int(dim.dim_value) for dim in value_info.type.tensor_type.shape.dim])

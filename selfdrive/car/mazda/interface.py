@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
-from openpilot.selfdrive.car.mazda.values import CAR, LKAS_LIMITS
 from openpilot.selfdrive.car import get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
+from openpilot.selfdrive.car.mazda.values import CAR, LKAS_LIMITS
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName

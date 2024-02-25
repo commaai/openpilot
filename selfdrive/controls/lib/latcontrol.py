@@ -1,4 +1,4 @@
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 
 from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import DT_CTRL

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import os
 import time
-import numpy as np
 
-from casadi import SX, vertcat, sin, cos
+import numpy as np
+from casadi import SX, cos, sin, vertcat
+
 # WARNING: imports outside of constants will not trigger a rebuild
 from openpilot.selfdrive.modeld.constants import ModelConstants
 

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import json
 import os
-import requests
 import xml.etree.ElementTree as ET
+
+import requests
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.ui.tests.test_translations import UNFINISHED_TRANSLATION_TAG

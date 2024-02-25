@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
+import cProfile
 import os
 import sys
-import cProfile
+
 import pprofile
 import pyprof2calltree
 
 from openpilot.common.params import Params
-from openpilot.tools.lib.logreader import LogReader
-from openpilot.selfdrive.test.profiling.lib import SubMaster, PubMaster, SubSocket, ReplayDone
-from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS
-from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
 from openpilot.selfdrive.car.honda.values import CAR as HONDA
+from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
 from openpilot.selfdrive.car.volkswagen.values import CAR as VW
+from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS
+from openpilot.selfdrive.test.profiling.lib import PubMaster, ReplayDone, SubMaster, SubSocket
+from openpilot.tools.lib.logreader import LogReader
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 
@@ -80,8 +81,8 @@ def profile(proc, func, car='toyota'):
 
 if __name__ == '__main__':
   from openpilot.selfdrive.controls.controlsd import main as controlsd_thread
-  from openpilot.selfdrive.locationd.paramsd import main as paramsd_thread
   from openpilot.selfdrive.controls.plannerd import main as plannerd_thread
+  from openpilot.selfdrive.locationd.paramsd import main as paramsd_thread
 
   procs = {
     'controlsd': controlsd_thread,

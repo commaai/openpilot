@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
+import bz2
 import os
 import sys
-import bz2
-import numpy as np
 
+import numpy as np
 import pyopencl as cl  # install with `PYOPENCL_CL_PRETEND_VERSION=2.0 pip install pyopencl`
 
-from openpilot.system.hardware import PC, TICI
 from openpilot.common.basedir import BASEDIR
-from openpilot.tools.lib.openpilotci import BASE_URL
-from openpilot.system.version import get_commit
 from openpilot.system.camerad.snapshot.snapshot import yuv_to_rgb
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.system.hardware import PC, TICI
+from openpilot.system.version import get_commit
 from openpilot.tools.lib.filereader import FileReader
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.openpilotci import BASE_URL
 
 TEST_ROUTE = "8345e3b82948d454|2022-05-04--13-45-33/0"
 

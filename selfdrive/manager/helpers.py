@@ -1,16 +1,17 @@
 import errno
 import fcntl
 import os
-import sys
 import pathlib
 import shutil
 import signal
 import subprocess
+import sys
 import tempfile
 import threading
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
+
 
 def unblock_stdout() -> None:
   # get a non-blocking stdout

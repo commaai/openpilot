@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import itertools
 import unittest
+
 from parameterized import parameterized_class
 
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import STOP_DISTANCE

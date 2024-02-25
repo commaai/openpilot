@@ -2,9 +2,8 @@
 import unittest
 
 import cereal.messaging as messaging
-
-from openpilot.selfdrive.test.process_replay import replay_process_with_name
 from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
+from openpilot.selfdrive.test.process_replay import replay_process_with_name
 
 
 class TestLeads(unittest.TestCase):

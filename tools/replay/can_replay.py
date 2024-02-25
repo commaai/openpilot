@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 import argparse
 import os
-import time
-import usb1
 import threading
+import time
+
+import usb1
 
 os.environ['FILEREADER_CACHE'] = '1'
 
-from openpilot.common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
+from panda import PandaJungle
+from openpilot.common.realtime import DT_CTRL, Ratekeeper, config_realtime_process
 from openpilot.selfdrive.boardd.boardd import can_capnp_to_can_list
 from openpilot.tools.lib.logreader import LogReader
-from panda import PandaJungle
 
 # set both to cycle power or ignition
 PWR_ON = int(os.getenv("PWR_ON", "0"))

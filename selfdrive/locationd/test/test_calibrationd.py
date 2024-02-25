@@ -7,8 +7,18 @@ import numpy as np
 import cereal.messaging as messaging
 from cereal import log
 from openpilot.common.params import Params
-from openpilot.selfdrive.locationd.calibrationd import Calibrator, INPUTS_NEEDED, INPUTS_WANTED, BLOCK_SIZE, MIN_SPEED_FILTER, \
-                                                         MAX_YAW_RATE_FILTER, SMOOTH_CYCLES, HEIGHT_INIT, MAX_ALLOWED_PITCH_SPREAD, MAX_ALLOWED_YAW_SPREAD
+from openpilot.selfdrive.locationd.calibrationd import (
+  BLOCK_SIZE,
+  HEIGHT_INIT,
+  INPUTS_NEEDED,
+  INPUTS_WANTED,
+  MAX_ALLOWED_PITCH_SPREAD,
+  MAX_ALLOWED_YAW_SPREAD,
+  MAX_YAW_RATE_FILTER,
+  MIN_SPEED_FILTER,
+  SMOOTH_CYCLES,
+  Calibrator,
+)
 
 
 def process_messages(c, cam_odo_calib, cycles,

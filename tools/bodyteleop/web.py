@@ -5,15 +5,14 @@ import logging
 import os
 import ssl
 import subprocess
+import wave
 
 import pyaudio
-import wave
-from aiohttp import web
-from aiohttp import ClientSession
+from aiohttp import ClientSession, web
 
 from openpilot.common.basedir import BASEDIR
-from openpilot.system.webrtc.webrtcd import StreamRequestBody
 from openpilot.common.params import Params
+from openpilot.system.webrtc.webrtcd import StreamRequestBody
 
 logger = logging.getLogger("bodyteleop")
 logging.basicConfig(level=logging.INFO)

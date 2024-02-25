@@ -2,18 +2,18 @@ import os
 import time
 from collections.abc import Callable
 
-from cereal import car
-from openpilot.common.params import Params
-from openpilot.common.basedir import BASEDIR
-from openpilot.selfdrive.car.values import PLATFORMS
-from openpilot.system.version import is_comma_remote, is_tested_branch
-from openpilot.selfdrive.car.interfaces import get_interface_attr
-from openpilot.selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
-from openpilot.selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
-from openpilot.selfdrive.car.fw_versions import get_fw_versions_ordered, get_present_ecus, match_fw_to_car, set_obd_multiplexing
-from openpilot.common.swaglog import cloudlog
 import cereal.messaging as messaging
+from cereal import car
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.params import Params
+from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.car import gen_empty_fingerprint
+from openpilot.selfdrive.car.fingerprints import all_legacy_fingerprint_cars, eliminate_incompatible_cars
+from openpilot.selfdrive.car.fw_versions import get_fw_versions_ordered, get_present_ecus, match_fw_to_car, set_obd_multiplexing
+from openpilot.selfdrive.car.interfaces import get_interface_attr
+from openpilot.selfdrive.car.values import PLATFORMS
+from openpilot.selfdrive.car.vin import VIN_UNKNOWN, get_vin, is_valid_vin
+from openpilot.system.version import is_comma_remote, is_tested_branch
 
 FRAME_FINGERPRINT = 100  # 1s
 

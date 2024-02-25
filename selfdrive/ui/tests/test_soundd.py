@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
+import time
 import unittest
 
-from cereal import car
-from cereal import messaging
-from cereal.messaging import SubMaster, PubMaster
+from cereal import car, messaging
+from cereal.messaging import PubMaster, SubMaster
 from openpilot.selfdrive.ui.soundd import CONTROLS_TIMEOUT, check_controls_timeout_alert
-
-import time
 
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 

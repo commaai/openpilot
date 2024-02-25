@@ -4,9 +4,8 @@ import unittest
 from cereal import car, log
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car.car_helpers import interfaces
-from openpilot.selfdrive.controls.controlsd import Controls, SOFT_DISABLE_TIME
-from openpilot.selfdrive.controls.lib.events import Events, ET, Alert, Priority, AlertSize, AlertStatus, VisualAlert, \
-                                          AudibleAlert, EVENTS
+from openpilot.selfdrive.controls.controlsd import SOFT_DISABLE_TIME, Controls
+from openpilot.selfdrive.controls.lib.events import ET, EVENTS, Alert, AlertSize, AlertStatus, AudibleAlert, Events, Priority, VisualAlert
 
 State = log.ControlsState.OpenpilotState
 

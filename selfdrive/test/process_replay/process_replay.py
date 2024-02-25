@@ -1,34 +1,35 @@
 #!/usr/bin/env python3
-import os
-import time
 import copy
-import json
 import heapq
-import signal
+import json
+import os
 import platform
+import signal
+import time
 from collections import OrderedDict
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from typing import Any
-from collections.abc import Callable, Iterable
-from tqdm import tqdm
+
 import capnp
+from tqdm import tqdm
 
 import cereal.messaging as messaging
 from cereal import car
 from cereal.services import SERVICE_LIST
 from cereal.visionipc import VisionIpcServer, get_endpoint_name as vipc_get_endpoint_name
+from panda.python import ALTERNATIVE_EXPERIENCE
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
-from openpilot.common.timeout import Timeout
 from openpilot.common.realtime import DT_CTRL
-from panda.python import ALTERNATIVE_EXPERIENCE
+from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.car.car_helpers import get_car, interfaces
 from openpilot.selfdrive.manager.process_config import managed_processes
-from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
-from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.selfdrive.test.process_replay.capture import ProcessOutputCapture
-from openpilot.tools.lib.logreader import LogIterable
+from openpilot.selfdrive.test.process_replay.migration import migrate_all
+from openpilot.selfdrive.test.process_replay.vision_meta import available_streams, meta_from_camera_state
 from openpilot.tools.lib.framereader import BaseFrameReader
+from openpilot.tools.lib.logreader import LogIterable
 
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7

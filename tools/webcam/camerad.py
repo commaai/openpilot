@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-import threading
 import os
+import threading
 from collections import namedtuple
 
-from cereal.visionipc import VisionIpcServer, VisionStreamType
 from cereal import messaging
-
-from openpilot.tools.webcam.camera import Camera
+from cereal.visionipc import VisionIpcServer, VisionStreamType
 from openpilot.common.realtime import Ratekeeper
+from openpilot.tools.webcam.camera import Camera
 
 DUAL_CAM = os.getenv("DUAL_CAMERA")
 CameraType = namedtuple("CameraType", ["msg_name", "stream_type", "cam_id"])

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 import json
 import unittest
-from Crypto.PublicKey import RSA
 from pathlib import Path
 from unittest import mock
 
+from Crypto.PublicKey import RSA
+
 from openpilot.common.params import Params
-from openpilot.selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
+from openpilot.selfdrive.athena.registration import UNREGISTERED_DONGLE_ID, register
 from openpilot.selfdrive.athena.tests.helpers import MockResponse
 from openpilot.system.hardware.hw import Paths
 

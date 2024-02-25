@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
+import datetime
 import sys
 import time
-import datetime
 
-from openpilot.common.realtime import Ratekeeper
 from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.realtime import Ratekeeper
 from openpilot.tools.zookeeper import Zookeeper
 
 if __name__ == "__main__":

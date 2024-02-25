@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import time
-from openpilot.tools.zookeeper import Zookeeper
 
+from openpilot.tools.zookeeper import Zookeeper
 
 if __name__ == "__main__":
   z = Zookeeper()

@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
+import ctypes
 import gc
 import math
 import time
-import ctypes
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 
 from cereal import messaging
 from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType
-from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_realtime_priority
+from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
 

@@ -1,8 +1,10 @@
 import os
+
 import capnp
 import numpy as np
+
 from cereal import log
-from openpilot.selfdrive.modeld.constants import ModelConstants, Plan, Meta
+from openpilot.selfdrive.modeld.constants import Meta, ModelConstants, Plan
 
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 

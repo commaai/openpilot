@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 import argparse
-import capnp
 from collections import defaultdict
+
+import capnp
 
 from cereal.messaging import SubMaster
 from openpilot.common.numpy_fast import mean
+
 
 def cputime_total(ct):
   return ct.user + ct.nice + ct.system + ct.idle + ct.iowait + ct.irq + ct.softirq

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-import requests
-from openpilot.common.params import Params
 import sys
 
+import requests
+
+from openpilot.common.params import Params
 
 if __name__ == "__main__":
   if len(sys.argv) < 2:

@@ -1,8 +1,9 @@
 import unittest
+
 import numpy as np
-from openpilot.selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc
+
 from openpilot.selfdrive.controls.lib.drive_helpers import CAR_ROTATION_RADIUS
-from openpilot.selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import N as LAT_MPC_N
+from openpilot.selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc, N as LAT_MPC_N
 
 
 def run_mpc(lat_mpc=None, v_ref=30., x_init=0., y_init=0., psi_init=0., curvature_init=0.,

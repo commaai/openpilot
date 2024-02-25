@@ -9,10 +9,9 @@ import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcClient, VisionStreamType
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL
-from openpilot.system.hardware import PC
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 from openpilot.selfdrive.manager.process_config import managed_processes
-
+from openpilot.system.hardware import PC
 
 VISION_STREAMS = {
   "roadCameraState": VisionStreamType.VISION_STREAM_ROAD,

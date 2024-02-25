@@ -1,9 +1,10 @@
-import onnx
 import itertools
 import os
 import sys
-import numpy as np
 from typing import Any
+
+import numpy as np
+import onnx
 
 from openpilot.selfdrive.modeld.runners.runmodel_pyx import RunModel
 

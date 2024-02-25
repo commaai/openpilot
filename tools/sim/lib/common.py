@@ -1,9 +1,9 @@
 import math
 import multiprocessing
-import numpy as np
-
 from abc import ABC, abstractmethod
 from collections import namedtuple
+
+import numpy as np
 
 W, H = 1928, 1208
 

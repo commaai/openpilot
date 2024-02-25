@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import math
 import os
-import pytest
 import random
 import shutil
 import subprocess
@@ -9,15 +8,16 @@ import time
 import unittest
 from pathlib import Path
 
+import pytest
 from parameterized import parameterized
 from tqdm import trange
 
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
-from openpilot.system.hardware import TICI
 from openpilot.selfdrive.manager.process_config import managed_processes
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.system.hardware import TICI
 from openpilot.system.hardware.hw import Paths
+from openpilot.tools.lib.logreader import LogReader
 
 SEGMENT_LENGTH = 2
 FULL_SIZE = 2507572

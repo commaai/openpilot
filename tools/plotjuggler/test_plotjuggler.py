@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import os
 import glob
+import os
 import signal
 import subprocess
 import time

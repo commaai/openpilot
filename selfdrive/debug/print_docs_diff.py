@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import argparse
-from collections import defaultdict
 import difflib
 import pickle
+from collections import defaultdict
 
 from openpilot.selfdrive.car.docs import get_all_car_info
 from openpilot.selfdrive.car.docs_definitions import Column

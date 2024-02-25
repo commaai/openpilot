@@ -1,14 +1,25 @@
 from cereal import car
 from panda import Panda
 from openpilot.common.conversions import Conversions as CV
-from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
-from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, CANFD_RADAR_SCC_CAR, \
-                                         CANFD_UNSUPPORTED_LONGITUDINAL_CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, \
-                                         UNSUPPORTED_LONGITUDINAL_CAR, Buttons
-from openpilot.selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from openpilot.selfdrive.car import create_button_events, get_safety_config
-from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.car.disable_ecu import disable_ecu
+from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
+from openpilot.selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
+from openpilot.selfdrive.car.hyundai.values import (
+  CAMERA_SCC_CAR,
+  CANFD_CAR,
+  CANFD_RADAR_SCC_CAR,
+  CANFD_UNSUPPORTED_LONGITUDINAL_CAR,
+  CAR,
+  DBC,
+  EV_CAR,
+  HYBRID_CAR,
+  LEGACY_SAFETY_MODE_CAR,
+  UNSUPPORTED_LONGITUDINAL_CAR,
+  Buttons,
+  HyundaiFlags,
+)
+from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 Ecu = car.CarParams.Ecu
 ButtonType = car.CarState.ButtonEvent.Type

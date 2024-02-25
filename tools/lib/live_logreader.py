@@ -1,9 +1,8 @@
 import os
+
 from cereal import log as capnp_log, messaging
 from cereal.services import SERVICE_LIST
-
 from openpilot.tools.lib.logreader import LogIterable, RawLogIterable
-
 
 ALL_SERVICES = list(SERVICE_LIST.keys())
 

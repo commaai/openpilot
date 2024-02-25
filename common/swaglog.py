@@ -2,12 +2,12 @@ import logging
 import os
 import time
 import warnings
-from pathlib import Path
 from logging.handlers import BaseRotatingHandler
+from pathlib import Path
 
 import zmq
 
-from openpilot.common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
+from openpilot.common.logging_extra import SwagFormatter, SwagLogFileFormatter, SwagLogger
 from openpilot.system.hardware.hw import Paths
 
 

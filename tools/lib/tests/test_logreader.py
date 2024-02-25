@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 import contextlib
 import io
+import os
 import shutil
 import tempfile
-import os
 import unittest
-import pytest
-import requests
-
-from parameterized import parameterized
 from unittest import mock
 
-from openpilot.tools.lib.logreader import LogIterable, LogReader, comma_api_source, parse_indirect, ReadMode, InternalUnavailableException
+import pytest
+import requests
+from parameterized import parameterized
+
+from openpilot.tools.lib.logreader import InternalUnavailableException, LogIterable, LogReader, ReadMode, comma_api_source, parse_indirect
 from openpilot.tools.lib.route import SegmentRange
 from openpilot.tools.lib.url_file import URLFileException
 

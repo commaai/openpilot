@@ -1,5 +1,6 @@
 import os
 import subprocess
+
 from openpilot.common.basedir import BASEDIR
 
 

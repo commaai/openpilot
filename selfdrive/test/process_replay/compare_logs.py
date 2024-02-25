@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-import sys
 import math
-import capnp
 import numbers
-import dictdiffer
+import sys
 from collections import Counter
+
+import capnp
+import dictdiffer
 
 from openpilot.tools.lib.logreader import LogReader
 

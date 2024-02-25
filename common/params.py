@@ -1,4 +1,5 @@
-from openpilot.common.params_pyx import Params, ParamKeyType, UnknownKeyName
+from openpilot.common.params_pyx import ParamKeyType, Params, UnknownKeyName
+
 assert Params
 assert ParamKeyType
 assert UnknownKeyName

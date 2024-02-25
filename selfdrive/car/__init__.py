@@ -9,7 +9,6 @@ from cereal import car
 from openpilot.common.numpy_fast import clip, interp
 from openpilot.selfdrive.car.docs_definitions import CarInfo
 
-
 # kg of standard extra cargo to count for drive, gas, etc...
 STD_CARGO_KG = 136.
 

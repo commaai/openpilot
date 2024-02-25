@@ -1,6 +1,7 @@
 import os
 from functools import lru_cache
 
+
 def gpio_init(pin: int, output: bool) -> None:
   try:
     with open(f"/sys/class/gpio/gpio{pin}/direction", 'wb') as f:

@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-import zmq
 from typing import NoReturn
+
+import zmq
 
 import cereal.messaging as messaging
 from openpilot.common.logging_extra import SwagLogFileFormatter
-from openpilot.system.hardware.hw import Paths
 from openpilot.common.swaglog import get_file_handler
+from openpilot.system.hardware.hw import Paths
 
 
 def main() -> NoReturn:

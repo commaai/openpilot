@@ -1,5 +1,6 @@
-import capnp
 from typing import Any
+
+import capnp
 
 
 def generate_type(type_walker, schema_walker) -> str | list[Any] | dict[str, Any]:

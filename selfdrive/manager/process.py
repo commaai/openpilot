@@ -2,16 +2,16 @@ import importlib
 import os
 import signal
 import struct
-import time
 import subprocess
-from collections.abc import Callable, ValuesView
+import time
 from abc import ABC, abstractmethod
+from collections.abc import Callable, ValuesView
 from multiprocessing import Process
 
 from setproctitle import setproctitle
 
-from cereal import car, log
 import cereal.messaging as messaging
+from cereal import car, log
 import openpilot.selfdrive.sentry as sentry
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params

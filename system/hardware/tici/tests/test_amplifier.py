@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-import time
 import random
-import unittest
 import subprocess
+import time
+import unittest
 
 from panda import Panda
-from openpilot.system.hardware import TICI, HARDWARE
-from openpilot.system.hardware.tici.hardware import Tici
+from openpilot.system.hardware import HARDWARE, TICI
 from openpilot.system.hardware.tici.amplifier import Amplifier
+from openpilot.system.hardware.tici.hardware import Tici
 
 
 class TestAmplifier(unittest.TestCase):

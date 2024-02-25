@@ -1,13 +1,14 @@
 #!/usr/bin/env python
-import os
 import argparse
+import os
 import threading
+
 from inputs import get_gamepad
 
 import cereal.messaging as messaging
-from openpilot.common.realtime import Ratekeeper
-from openpilot.common.numpy_fast import interp, clip
+from openpilot.common.numpy_fast import clip, interp
 from openpilot.common.params import Params
+from openpilot.common.realtime import Ratekeeper
 from openpilot.tools.lib.kbhit import KBHit
 
 

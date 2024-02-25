@@ -1,10 +1,10 @@
 import os
-from cffi import FFI
 
 import sip
+from cffi import FFI
 
-from openpilot.common.ffi_wrapper import suffix
 from openpilot.common.basedir import BASEDIR
+from openpilot.common.ffi_wrapper import suffix
 
 
 def get_ffi():

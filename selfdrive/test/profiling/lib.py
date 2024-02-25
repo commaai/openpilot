@@ -1,7 +1,9 @@
 from collections import defaultdict, deque
-from cereal.services import SERVICE_LIST
-import cereal.messaging as messaging
+
 import capnp
+
+import cereal.messaging as messaging
+from cereal.services import SERVICE_LIST
 
 
 class ReplayDone(Exception):

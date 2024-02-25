@@ -15,14 +15,15 @@ System tools like top/htop can only show current cpu usage values, so I write th
     boardd: 1.96%, min: 1.96%, max: 1.96%, acc: 1.96%
     ubloxd.py: 0.39%, min: 0.39%, max: 0.39%, acc: 0.39%
 '''
-import psutil
-import time
-import os
-import sys
-import numpy as np
 import argparse
+import os
 import re
+import sys
+import time
 from collections import defaultdict
+
+import numpy as np
+import psutil
 
 from openpilot.selfdrive.manager.process_config import managed_processes
 

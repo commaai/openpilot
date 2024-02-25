@@ -4,10 +4,10 @@ import time
 from multiprocessing import Process
 
 from openpilot.common.params import Params
-from openpilot.selfdrive.manager.process import launcher
 from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.manager.process import launcher
 from openpilot.system.hardware import HARDWARE
-from openpilot.system.version import get_version, get_normalized_origin, get_short_branch, get_commit, is_dirty
+from openpilot.system.version import get_commit, get_normalized_origin, get_short_branch, get_version, is_dirty
 
 ATHENA_MGR_PID_PARAM = "AthenadPid"
 

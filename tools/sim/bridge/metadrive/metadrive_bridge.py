@@ -1,14 +1,12 @@
 import numpy as np
-
-from metadrive.component.sensors.rgb_camera import RGBCamera
-from metadrive.component.sensors.base_camera import _cuda_enable
 from metadrive.component.map.pg_map import MapGenerateMethod
-from panda3d.core import Texture, GraphicsOutput
+from metadrive.component.sensors.base_camera import _cuda_enable
+from metadrive.component.sensors.rgb_camera import RGBCamera
+from panda3d.core import GraphicsOutput, Texture
 
 from openpilot.tools.sim.bridge.common import SimulatorBridge
 from openpilot.tools.sim.bridge.metadrive.metadrive_world import MetaDriveWorld
-from openpilot.tools.sim.lib.camerad import W, H
-
+from openpilot.tools.sim.lib.camerad import H, W
 
 
 class CopyRamRGBCamera(RGBCamera):

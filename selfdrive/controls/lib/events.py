@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 import math
 import os
-from enum import IntEnum
 from collections.abc import Callable
+from enum import IntEnum
 
-from cereal import log, car
 import cereal.messaging as messaging
+from cereal import car, log
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.locationd.calibrationd import MIN_SPEED_FILTER
@@ -961,8 +961,9 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
 if __name__ == '__main__':
   # print all alerts by type and priority
-  from cereal.services import SERVICE_LIST
   from collections import defaultdict
+
+  from cereal.services import SERVICE_LIST
 
   event_names = {v: k for k, v in EventName.schema.enumerants.items()}
   alerts_by_type: dict[str, dict[Priority, list[str]]] = defaultdict(lambda: defaultdict(list))

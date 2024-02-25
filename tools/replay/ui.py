@@ -8,16 +8,24 @@ import numpy as np
 import pygame
 
 import cereal.messaging as messaging
-from openpilot.common.numpy_fast import clip
-from openpilot.common.basedir import BASEDIR
-from openpilot.tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, UP,
-                                         _INTRINSICS, BLACK, GREEN,
-                                         YELLOW, Calibration,
-                                         get_blank_lid_overlay, init_plots,
-                                         maybe_update_radar_points, plot_lead,
-                                         plot_model,
-                                         pygame_modules_have_loaded)
 from cereal.visionipc import VisionIpcClient, VisionStreamType
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.numpy_fast import clip
+from openpilot.tools.replay.lib.ui_helpers import (
+  _BB_TO_FULL_FRAME,
+  _INTRINSICS,
+  BLACK,
+  GREEN,
+  UP,
+  YELLOW,
+  Calibration,
+  get_blank_lid_overlay,
+  init_plots,
+  maybe_update_radar_points,
+  plot_lead,
+  plot_model,
+  pygame_modules_have_loaded,
+)
 
 os.environ['BASEDIR'] = BASEDIR
 

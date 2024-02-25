@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
-import os
-import time
-import threading
-import unittest
-import logging
 import json
+import logging
+import os
+import threading
+import time
+import unittest
 from pathlib import Path
-from openpilot.system.hardware.hw import Paths
 
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.loggerd.uploader import main, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE
-
+from openpilot.system.hardware.hw import Paths
 from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase
+from openpilot.system.loggerd.uploader import UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE, main
 
 
 class FakeLogHandler(logging.Handler):

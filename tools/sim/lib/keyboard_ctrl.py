@@ -1,9 +1,7 @@
 import sys
 import termios
 import time
-
-from termios import (BRKINT, CS8, CSIZE, ECHO, ICANON, ICRNL, IEXTEN, INPCK,
-                     ISTRIP, IXON, PARENB, VMIN, VTIME)
+from termios import BRKINT, CS8, CSIZE, ECHO, ICANON, ICRNL, IEXTEN, INPCK, ISTRIP, IXON, PARENB, VMIN, VTIME
 from typing import NoReturn
 
 # Indexes for termios list.

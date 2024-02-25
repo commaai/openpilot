@@ -4,7 +4,6 @@ from functools import lru_cache
 from pathlib import Path
 from typing import IO
 
-
 TOKEN_PATH = Path("/data/azure_token")
 
 @lru_cache

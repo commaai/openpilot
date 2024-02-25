@@ -1,31 +1,29 @@
 #!/usr/bin/env python3
-from functools import partial, wraps
 import json
 import multiprocessing
 import os
-import requests
-import shutil
-import time
-import threading
 import queue
+import shutil
+import threading
+import time
 import unittest
 from dataclasses import asdict, replace
 from datetime import datetime, timedelta
-from parameterized import parameterized
-
+from functools import partial, wraps
 from unittest import mock
+
+import requests
+from parameterized import parameterized
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
 from cereal import messaging
-
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.athena import athenad
 from openpilot.selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
-from openpilot.selfdrive.athena.tests.helpers import MockWebsocket, MockApi, EchoSocket, with_http_server
+from openpilot.selfdrive.athena.tests.helpers import EchoSocket, HTTPRequestHandler, MockApi, MockWebsocket, with_http_server
 from openpilot.system.hardware.hw import Paths
-from openpilot.selfdrive.athena.tests.helpers import HTTPRequestHandler
 
 
 def seed_athena_server(host, port):

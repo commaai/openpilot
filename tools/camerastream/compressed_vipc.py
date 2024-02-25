@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-import av
+import argparse
+import multiprocessing
 import os
 import sys
-import argparse
-import numpy as np
-import multiprocessing
 import time
+
+import av
+import numpy as np
 
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcServer, VisionStreamType

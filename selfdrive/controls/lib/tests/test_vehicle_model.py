@@ -7,7 +7,7 @@ from control import StateSpace
 
 from openpilot.selfdrive.car.honda.interface import CarInterface
 from openpilot.selfdrive.car.honda.values import CAR
-from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel, dyn_ss_sol, create_dyn_state_matrices
+from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel, create_dyn_state_matrices, dyn_ss_sol
 
 
 class TestVehicleModel(unittest.TestCase):

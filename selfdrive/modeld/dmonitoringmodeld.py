@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
-import os
+import ctypes
 import gc
 import math
+import os
 import time
-import ctypes
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 
 from cereal import messaging
 from cereal.messaging import PubMaster, SubMaster
-from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
-from openpilot.common.swaglog import cloudlog
+from cereal.visionipc import VisionBuf, VisionIpcClient, VisionStreamType
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_realtime_priority
-from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
+from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import sigmoid
+from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
 
 CALIB_LEN = 3
 REG_SCALE = 0.25

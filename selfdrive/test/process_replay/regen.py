@@ -1,21 +1,28 @@
 #!/usr/bin/env python3
-import os
 import argparse
+import os
 import time
+from collections.abc import Iterable
+from typing import Any
+
 import capnp
 import numpy as np
 
-from typing import Any
-from collections.abc import Iterable
-
-from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, ProcessConfig, replay_process, get_process_config, \
-                                                                   check_openpilot_enabled, get_custom_params_from_lr
+from openpilot.selfdrive.test.process_replay.process_replay import (
+  CONFIGS,
+  FAKEDATA,
+  ProcessConfig,
+  check_openpilot_enabled,
+  get_custom_params_from_lr,
+  get_process_config,
+  replay_process,
+)
 from openpilot.selfdrive.test.process_replay.vision_meta import DRIVER_FRAME_SIZES
 from openpilot.selfdrive.test.update_ci_routes import upload_route
-from openpilot.tools.lib.route import Route
-from openpilot.tools.lib.framereader import FrameReader, BaseFrameReader, FrameType
-from openpilot.tools.lib.logreader import LogReader, LogIterable
+from openpilot.tools.lib.framereader import BaseFrameReader, FrameReader, FrameType
 from openpilot.tools.lib.helpers import save_log
+from openpilot.tools.lib.logreader import LogIterable, LogReader
+from openpilot.tools.lib.route import Route
 
 
 class DummyFrameReader(BaseFrameReader):

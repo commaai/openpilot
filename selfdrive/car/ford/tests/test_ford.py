@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 import unittest
-from parameterized import parameterized
 from collections.abc import Iterable
 
 import capnp
+from parameterized import parameterized
 
 from cereal import car
-from openpilot.selfdrive.car.ford.values import FW_QUERY_CONFIG
 from openpilot.selfdrive.car.ford.fingerprints import FW_VERSIONS
+from openpilot.selfdrive.car.ford.values import FW_QUERY_CONFIG
 
 Ecu = car.CarParams.Ecu
 

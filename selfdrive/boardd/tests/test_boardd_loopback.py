@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import os
 import copy
+import os
 import random
 import time
 import unittest
@@ -13,8 +13,8 @@ from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from openpilot.selfdrive.car import make_can_msg
-from openpilot.system.hardware import TICI
 from openpilot.selfdrive.test.helpers import phone_only, with_processes
+from openpilot.system.hardware import TICI
 
 
 class TestBoardd(unittest.TestCase):

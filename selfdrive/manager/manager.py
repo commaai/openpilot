@@ -5,21 +5,30 @@ import signal
 import sys
 import traceback
 
-from cereal import log
 import cereal.messaging as messaging
+from cereal import log
 import openpilot.selfdrive.sentry as sentry
-from openpilot.common.params import Params, ParamKeyType
+from openpilot.common.params import ParamKeyType, Params
+from openpilot.common.swaglog import add_file_handler, cloudlog
 from openpilot.common.text_window import TextWindow
-from openpilot.system.hardware import HARDWARE, PC
-from openpilot.selfdrive.manager.helpers import unblock_stdout, write_onroad_params, save_bootlog
+from openpilot.selfdrive.athena.registration import UNREGISTERED_DONGLE_ID, register
+from openpilot.selfdrive.manager.helpers import save_bootlog, unblock_stdout, write_onroad_params
 from openpilot.selfdrive.manager.process import ensure_running
 from openpilot.selfdrive.manager.process_config import managed_processes
-from openpilot.selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
-from openpilot.common.swaglog import cloudlog, add_file_handler
-from openpilot.system.version import is_dirty, get_commit, get_version, get_origin, get_short_branch, \
-                           get_normalized_origin, terms_version, training_version, \
-                           is_tested_branch, is_release_branch, get_commit_date
-
+from openpilot.system.hardware import HARDWARE, PC
+from openpilot.system.version import (
+  get_commit,
+  get_commit_date,
+  get_normalized_origin,
+  get_origin,
+  get_short_branch,
+  get_version,
+  is_dirty,
+  is_release_branch,
+  is_tested_branch,
+  terms_version,
+  training_version,
+)
 
 
 def manager_init() -> None:

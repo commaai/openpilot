@@ -5,14 +5,14 @@ from typing import Any
 
 import numpy as np
 
+from rednose.helpers.kalmanfilter import KalmanFilter
+from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.selfdrive.locationd.models.constants import ObservationKind
-from openpilot.common.swaglog import cloudlog
-
-from rednose.helpers.kalmanfilter import KalmanFilter
 
 if __name__ == '__main__':  # Generating sympy
   import sympy as sp
+
   from rednose.helpers.ekf_sym import gen_code
 else:
   from rednose.helpers.ekf_sym_pyx import EKF_sym_pyx

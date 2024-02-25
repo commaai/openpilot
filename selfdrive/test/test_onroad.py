@@ -1,29 +1,30 @@
 #!/usr/bin/env python3
 import bz2
-import math
 import json
+import math
 import os
 import pathlib
-import psutil
-import pytest
 import shutil
 import subprocess
 import time
-import numpy as np
 import unittest
 from collections import Counter, defaultdict
 from functools import cached_property
 from pathlib import Path
 
-from cereal import car
+import numpy as np
+import psutil
+import pytest
+
 import cereal.messaging as messaging
+from cereal import car
 from cereal.services import SERVICE_LIST
 from openpilot.common.basedir import BASEDIR
-from openpilot.common.timeout import Timeout
 from openpilot.common.params import Params
-from openpilot.selfdrive.controls.lib.events import EVENTS, ET
+from openpilot.common.timeout import Timeout
+from openpilot.selfdrive.controls.lib.events import ET, EVENTS
+from openpilot.selfdrive.test.helpers import release_only, set_params_enabled
 from openpilot.system.hardware import HARDWARE
-from openpilot.selfdrive.test.helpers import set_params_enabled, release_only
 from openpilot.system.hardware.hw import Paths
 from openpilot.tools.lib.logreader import LogReader
 

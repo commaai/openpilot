@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class RunningStat():
   # tracks realtime mean and standard deviation without storing any data
   def __init__(self, priors=None, max_trackable=-1):

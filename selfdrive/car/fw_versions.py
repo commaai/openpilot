@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-from typing import Any, TypeVar
 from collections.abc import Iterator
-from tqdm import tqdm
+from typing import Any, TypeVar
+
 import capnp
+from tqdm import tqdm
 
 import panda.python.uds as uds
 from cereal import car
 from openpilot.common.params import Params
+from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.car.ecu_addrs import get_ecu_addrs
+from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
 from openpilot.selfdrive.car.fw_query_definitions import AddrType, EcuAddrBusType, FwQueryConfig
 from openpilot.selfdrive.car.interfaces import get_interface_attr
-from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
 from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
-from openpilot.common.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
 ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
@@ -331,8 +332,9 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
 
 if __name__ == "__main__":
-  import time
   import argparse
+  import time
+
   import cereal.messaging as messaging
   from openpilot.selfdrive.car.vin import get_vin
 

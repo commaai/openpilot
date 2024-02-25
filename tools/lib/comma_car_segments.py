@@ -1,4 +1,5 @@
 import os
+
 import requests
 
 # Forks with additional car support can fork the commaCarSegments repo on huggingface or host the LFS files themselves

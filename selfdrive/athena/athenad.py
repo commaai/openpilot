@@ -15,17 +15,16 @@ import sys
 import tempfile
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial
 from queue import Queue
 from typing import cast
-from collections.abc import Callable
 
 import requests
 from jsonrpc import JSONRPCResponseManager, dispatcher
-from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutException,
-                       create_connection)
+from websocket import ABNF, WebSocket, WebSocketException, WebSocketTimeoutException, create_connection
 
 import cereal.messaging as messaging
 from cereal import log
@@ -34,12 +33,11 @@ from openpilot.common.api import Api
 from openpilot.common.file_helpers import CallbackReader
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
-from openpilot.system.hardware import HARDWARE, PC
-from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.version import get_commit, get_normalized_origin, get_short_branch, get_version
+from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.hardware.hw import Paths
-
+from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
+from openpilot.system.version import get_commit, get_normalized_origin, get_short_branch, get_version
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))

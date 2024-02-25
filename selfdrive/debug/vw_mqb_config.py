@@ -3,9 +3,10 @@
 import argparse
 import struct
 from enum import IntEnum
+
 from panda import Panda
-from panda.python.uds import UdsClient, MessageTimeoutError, NegativeResponseError, SESSION_TYPE,\
-  DATA_IDENTIFIER_TYPE, ACCESS_TYPE
+from panda.python.uds import ACCESS_TYPE, DATA_IDENTIFIER_TYPE, SESSION_TYPE, MessageTimeoutError, NegativeResponseError, UdsClient
+
 
 # TODO: extend UDS library to allow custom/vendor-defined data identifiers without ignoring type checks
 class VOLKSWAGEN_DATA_IDENTIFIER_TYPE(IntEnum):

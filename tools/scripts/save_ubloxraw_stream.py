@@ -2,6 +2,7 @@
 import argparse
 import os
 import sys
+
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.lib.logreader import LogReader
 

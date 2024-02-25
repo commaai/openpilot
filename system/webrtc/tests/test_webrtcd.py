@@ -2,15 +2,17 @@
 import asyncio
 import json
 import unittest
-from unittest.mock import MagicMock, AsyncMock
+
 # for aiortc and its dependencies
 import warnings
+from unittest.mock import AsyncMock, MagicMock
+
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-from openpilot.system.webrtc.webrtcd import get_stream
-
 import aiortc
+
 from teleoprtc import WebRTCOfferBuilder
+from openpilot.system.webrtc.webrtcd import get_stream
 
 
 class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):

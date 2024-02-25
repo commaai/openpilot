@@ -1,12 +1,25 @@
 from cereal import car
-from openpilot.common.conversions import Conversions as CV
 from panda import Panda
 from panda.python import uds
-from openpilot.selfdrive.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
-                                        MIN_ACC_SPEED, EPS_SCALE, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR
+from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car import get_safety_config
 from openpilot.selfdrive.car.disable_ecu import disable_ecu
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
+from openpilot.selfdrive.car.toyota.values import (
+  ANGLE_CONTROL_CAR,
+  CAR,
+  DBC,
+  EPS_SCALE,
+  MIN_ACC_SPEED,
+  NO_DSU_CAR,
+  NO_STOP_TIMER_CAR,
+  RADAR_ACC_CAR,
+  TSS2_CAR,
+  UNSUPPORTED_DSU_CAR,
+  CarControllerParams,
+  Ecu,
+  ToyotaFlags,
+)
 
 EventName = car.CarEvent.EventName
 SteerControlType = car.CarParams.SteerControlType

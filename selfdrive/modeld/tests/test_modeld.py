@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-import unittest
-import numpy as np
 import random
+import unittest
+
+import numpy as np
 
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcServer, VisionStreamType
-from openpilot.common.transformations.camera import tici_f_frame_size
 from openpilot.common.realtime import DT_MDL
+from openpilot.common.transformations.camera import tici_f_frame_size
 from openpilot.selfdrive.car.car_helpers import write_car_param
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state

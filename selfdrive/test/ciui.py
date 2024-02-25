@@ -6,8 +6,10 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 signal.signal(signal.SIGTERM, signal.SIG_DFL)
 
 from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel
+from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget
+
 from openpilot.selfdrive.ui.qt.python_helpers import set_main_window
+
 
 class Window(QWidget):
   def __init__(self, parent=None):

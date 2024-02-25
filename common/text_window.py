@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import os
-import time
 import subprocess
+import time
+
 from openpilot.common.basedir import BASEDIR
 
 

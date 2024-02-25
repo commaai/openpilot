@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 import argparse
-from collections import defaultdict
-import jinja2
 import os
+from collections import defaultdict
 from enum import Enum
+
+import jinja2
 from natsort import natsorted
 
 from cereal import car
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.car import gen_empty_fingerprint
+from openpilot.selfdrive.car.car_helpers import get_interface_attr, interfaces
 from openpilot.selfdrive.car.docs_definitions import CarInfo, Column, CommonFootnote, PartType
-from openpilot.selfdrive.car.car_helpers import interfaces, get_interface_attr
 
 
 def get_all_footnotes() -> dict[Enum, int]:

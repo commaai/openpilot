@@ -3,14 +3,23 @@ import random
 import time
 import unittest
 from collections import defaultdict
-from parameterized import parameterized
 from unittest import mock
+
+from parameterized import parameterized
 
 from cereal import car
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
-from openpilot.selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, \
-                                                match_fw_to_car, get_brand_ecu_matches, get_fw_versions, get_present_ecus
+from openpilot.selfdrive.car.fw_versions import (
+  FUZZY_EXCLUDE_ECUS,
+  FW_QUERY_CONFIGS,
+  VERSIONS,
+  build_fw_dict,
+  get_brand_ecu_matches,
+  get_fw_versions,
+  get_present_ecus,
+  match_fw_to_car,
+)
 from openpilot.selfdrive.car.vin import get_vin
 
 CarFw = car.CarParams.CarFw

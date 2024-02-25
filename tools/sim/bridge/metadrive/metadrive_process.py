@@ -1,19 +1,17 @@
 import math
-import numpy as np
-
 from collections import namedtuple
-from panda3d.core import Vec3
 from multiprocessing.connection import Connection
 
+import numpy as np
 from metadrive.engine.core.engine_core import EngineCore
 from metadrive.engine.core.image_buffer import ImageBuffer
 from metadrive.envs.metadrive_env import MetaDriveEnv
 from metadrive.obs.image_obs import ImageObservation
+from panda3d.core import Vec3
 
 from openpilot.common.realtime import Ratekeeper
-
+from openpilot.tools.sim.lib.camerad import H, W
 from openpilot.tools.sim.lib.common import vec3
-from openpilot.tools.sim.lib.camerad import W, H
 
 C3_POSITION = Vec3(0.0, 0, 1.22)
 C3_HPR = Vec3(0, 0,0)

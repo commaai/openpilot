@@ -3,9 +3,13 @@ import unittest
 from unittest.mock import patch
 
 from openpilot.common.params import Params
-from openpilot.selfdrive.thermald.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
-                                                CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING, DELAY_SHUTDOWN_TIME_S
-
+from openpilot.selfdrive.thermald.power_monitoring import (
+  CAR_CHARGING_RATE_W,
+  DELAY_SHUTDOWN_TIME_S,
+  VBATT_PAUSE_CHARGING,
+  CAR_BATTERY_CAPACITY_uWh,
+  PowerMonitoring,
+)
 
 # Create fake time
 ssb = 0.

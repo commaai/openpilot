@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import os
-import pytest
 import time
 import unittest
+from collections import defaultdict, namedtuple
+
 import numpy as np
-from collections import namedtuple, defaultdict
+import pytest
 
 import cereal.messaging as messaging
 from cereal import log

@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
-import numpy as np
 import unittest
 
-from openpilot.common.transformations.orientation import euler2quat, quat2euler, euler2rot, rot2euler, \
-                                               rot2quat, quat2rot, \
-                                               ned_euler_from_ecef
+import numpy as np
+
+from openpilot.common.transformations.orientation import euler2quat, euler2rot, ned_euler_from_ecef, quat2euler, quat2rot, rot2euler, rot2quat
 
 eulers = np.array([[ 1.46520501,  2.78688383,  2.92780854],
        [ 4.86909526,  3.60618161,  4.30648981],

@@ -3,11 +3,11 @@
 
 import os
 import time
+
 import numpy as np
 
 import cereal.messaging as messaging
 from openpilot.selfdrive.manager.process_config import managed_processes
-
 
 N = int(os.getenv("N", "5"))
 TIME = int(os.getenv("TIME", "30"))

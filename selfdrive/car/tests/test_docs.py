@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-from collections import defaultdict
 import os
 import re
 import unittest
+from collections import defaultdict
 
 from openpilot.common.basedir import BASEDIR
-from openpilot.selfdrive.car.car_helpers import interfaces, get_interface_attr
+from openpilot.selfdrive.car.car_helpers import get_interface_attr, interfaces
 from openpilot.selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_info
 from openpilot.selfdrive.car.docs_definitions import Cable, Column, PartType, Star
 from openpilot.selfdrive.car.honda.values import CAR as HONDA

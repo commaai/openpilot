@@ -1,13 +1,22 @@
 #!/usr/bin/env python3
-from hypothesis import given, settings, strategies as st
 import unittest
+
+from hypothesis import given, settings, strategies as st
 
 from cereal import car
 from openpilot.selfdrive.car.fw_versions import build_fw_dict
 from openpilot.selfdrive.car.toyota.fingerprints import FW_VERSIONS
-from openpilot.selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, RADAR_ACC_CAR, \
-                                                  FW_QUERY_CONFIG, PLATFORM_CODE_ECUS, FUZZY_EXCLUDED_PLATFORMS, \
-                                                  get_platform_codes
+from openpilot.selfdrive.car.toyota.values import (
+  ANGLE_CONTROL_CAR,
+  CAR,
+  DBC,
+  FUZZY_EXCLUDED_PLATFORMS,
+  FW_QUERY_CONFIG,
+  PLATFORM_CODE_ECUS,
+  RADAR_ACC_CAR,
+  TSS2_CAR,
+  get_platform_codes,
+)
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}

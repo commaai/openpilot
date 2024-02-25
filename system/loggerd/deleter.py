@@ -2,8 +2,9 @@
 import os
 import shutil
 import threading
-from openpilot.system.hardware.hw import Paths
+
 from openpilot.common.swaglog import cloudlog
+from openpilot.system.hardware.hw import Paths
 from openpilot.system.loggerd.config import get_available_bytes, get_available_percent
 from openpilot.system.loggerd.uploader import listdir_by_creation
 from openpilot.system.loggerd.xattr_cache import getxattr

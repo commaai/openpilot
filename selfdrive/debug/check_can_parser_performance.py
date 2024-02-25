@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-import numpy as np
 import time
+
+import numpy as np
 from tqdm import tqdm
 
 from cereal import car

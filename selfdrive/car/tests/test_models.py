@@ -1,31 +1,31 @@
 #!/usr/bin/env python3
-import capnp
-import os
 import importlib
-import pytest
+import os
 import random
 import unittest
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
+
+import capnp
 import hypothesis.strategies as st
+import pytest
 from hypothesis import Phase, given, settings
 from parameterized import parameterized_class
 
-from cereal import messaging, log, car
+from cereal import car, log, messaging
+from panda.tests.libpanda import libpanda_py
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import gen_empty_fingerprint
-from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
+from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
-from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
+from openpilot.selfdrive.car.tests.routes import CarTestRoute, non_tested_cars, routes
 from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
 from openpilot.tools.lib.logreader import LogReader, internal_source, openpilotci_source
 from openpilot.tools.lib.route import SegmentName
-
-from panda.tests.libpanda import libpanda_py
 
 EventName = car.CarEvent.EventName
 PandaType = log.PandaState.PandaType

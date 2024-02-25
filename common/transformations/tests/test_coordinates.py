@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-import numpy as np
 import unittest
+
+import numpy as np
 
 import openpilot.common.transformations.coordinates as coord
 

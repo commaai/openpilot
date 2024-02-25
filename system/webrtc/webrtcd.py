@@ -3,22 +3,24 @@
 import argparse
 import asyncio
 import json
-import uuid
 import logging
-from dataclasses import dataclass, field
-from typing import Any, TYPE_CHECKING
+import uuid
 
 # aiortc and its dependencies have lots of internal warnings :(
 import warnings
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
+
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import capnp
 from aiohttp import web
+
 if TYPE_CHECKING:
   from aiortc.rtcdatachannel import RTCDataChannel
 
+from cereal import log, messaging
 from openpilot.system.webrtc.schema import generate_field
-from cereal import messaging, log
 
 
 class CerealOutgoingMessageProxy:
@@ -104,12 +106,13 @@ class CerealProxyRunner:
 
 class StreamSession:
   def __init__(self, sdp: str, cameras: list[str], incoming_services: list[str], outgoing_services: list[str], debug_mode: bool = False):
-    from aiortc.mediastreams import VideoStreamTrack, AudioStreamTrack
     from aiortc.contrib.media import MediaBlackhole
-    from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
-    from openpilot.system.webrtc.device.audio import AudioInputStreamTrack, AudioOutputSpeaker
+    from aiortc.mediastreams import AudioStreamTrack, VideoStreamTrack
+
     from teleoprtc import WebRTCAnswerBuilder
     from teleoprtc.info import parse_info_from_offer
+    from openpilot.system.webrtc.device.audio import AudioInputStreamTrack, AudioOutputSpeaker
+    from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
 
     config = parse_info_from_offer(sdp)
     builder = WebRTCAnswerBuilder(sdp)

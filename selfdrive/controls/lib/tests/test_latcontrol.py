@@ -4,15 +4,15 @@ import unittest
 from parameterized import parameterized
 
 from cereal import car, log
+from openpilot.common.mock.generators import generate_liveLocationKalman
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.honda.values import CAR as HONDA
-from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
 from openpilot.selfdrive.car.nissan.values import CAR as NISSAN
+from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
+from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
-from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
-from openpilot.common.mock.generators import generate_liveLocationKalman
 
 
 class TestLatControl(unittest.TestCase):

@@ -2,12 +2,11 @@
 
 import argparse
 from collections import defaultdict
-from openpilot.selfdrive.debug.format_fingerprints import format_brand_fw_versions
 
 from openpilot.selfdrive.car.fw_versions import match_fw_to_car
 from openpilot.selfdrive.car.interfaces import get_interface_attr
+from openpilot.selfdrive.debug.format_fingerprints import format_brand_fw_versions
 from openpilot.tools.lib.logreader import LogReader, ReadMode
-
 
 ALL_FW_VERSIONS = get_interface_attr("FW_VERSIONS")
 ALL_CARS = get_interface_attr("CAR")

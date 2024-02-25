@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-from parameterized import parameterized
 import unittest
+
+from parameterized import parameterized
 
 from cereal import log, messaging
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, can_fingerprint

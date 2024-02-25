@@ -1,5 +1,5 @@
-import os
 import errno
+import os
 
 _cached_attributes: dict[tuple, bytes | None] = {}
 

@@ -1,10 +1,11 @@
 import os
 import threading
 import time
-import uuid
 import unittest
+import uuid
 
-from openpilot.common.params import Params, ParamKeyType, UnknownKeyName
+from openpilot.common.params import ParamKeyType, Params, UnknownKeyName
+
 
 class TestParams(unittest.TestCase):
   def setUp(self):

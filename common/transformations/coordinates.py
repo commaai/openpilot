@@ -1,7 +1,5 @@
 from openpilot.common.transformations.orientation import numpy_wrap
-from openpilot.common.transformations.transformations import (ecef2geodetic_single,
-                                                    geodetic2ecef_single)
-from openpilot.common.transformations.transformations import LocalCoord as LocalCoord_single
+from openpilot.common.transformations.transformations import LocalCoord as LocalCoord_single, ecef2geodetic_single, geodetic2ecef_single
 
 
 class LocalCoord(LocalCoord_single):

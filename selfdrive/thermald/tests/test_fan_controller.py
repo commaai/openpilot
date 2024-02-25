@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import unittest
 from unittest.mock import Mock, patch
+
 from parameterized import parameterized
 
 from openpilot.selfdrive.thermald.fan_controller import TiciFanController

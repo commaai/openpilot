@@ -1,6 +1,6 @@
 from cereal import car
-from openpilot.common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
+from openpilot.common.numpy_fast import clip
 from openpilot.selfdrive.car import apply_std_steer_angle_limits
 from openpilot.selfdrive.car.ford import fordcan
 from openpilot.selfdrive.car.ford.values import CANFD_CAR, CarControllerParams

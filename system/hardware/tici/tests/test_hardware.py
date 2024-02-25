@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-import pytest
 import time
 import unittest
+
 import numpy as np
+import pytest
 
 from openpilot.system.hardware.tici.hardware import Tici
 

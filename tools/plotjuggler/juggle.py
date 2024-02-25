@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
+import argparse
 import os
-import sys
 import platform
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
-import requests
-import argparse
 from functools import partial
+
+import requests
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.lib.helpers import save_log
-
 from openpilot.tools.lib.logreader import LogReader, ReadMode
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))

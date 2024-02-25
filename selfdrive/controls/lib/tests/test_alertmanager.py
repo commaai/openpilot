@@ -2,8 +2,8 @@
 import random
 import unittest
 
-from openpilot.selfdrive.controls.lib.events import Alert, EVENTS
 from openpilot.selfdrive.controls.lib.alertmanager import AlertManager
+from openpilot.selfdrive.controls.lib.events import EVENTS, Alert
 
 
 class TestAlertManager(unittest.TestCase):

@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-import os
-import math
-import time
 import binascii
+import math
+import os
+import subprocess
+import time
+
 import requests
 import serial
-import subprocess
 
 
 def post(url, payload):

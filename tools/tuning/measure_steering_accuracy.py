@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 # type: ignore
 
-import os
-import time
 import argparse
+import os
 import signal
+import time
 from collections import defaultdict
 
 import cereal.messaging as messaging
 from openpilot.tools.lib.logreader import LogReader
+
 
 def sigint_handler(signal, frame):
   exit(0)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import os
 import json
+import os
 import queue
 import threading
 import time
@@ -16,13 +16,13 @@ from openpilot.common.dict_helpers import strip_deprecated_keys
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_TRML
-from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
-from openpilot.system.hardware import HARDWARE, TICI, AGNOS
-from openpilot.system.loggerd.config import get_available_percent
-from openpilot.selfdrive.statsd import statlog
 from openpilot.common.swaglog import cloudlog
-from openpilot.selfdrive.thermald.power_monitoring import PowerMonitoring
+from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
+from openpilot.selfdrive.statsd import statlog
 from openpilot.selfdrive.thermald.fan_controller import TiciFanController
+from openpilot.selfdrive.thermald.power_monitoring import PowerMonitoring
+from openpilot.system.hardware import AGNOS, HARDWARE, TICI
+from openpilot.system.loggerd.config import get_available_percent
 from openpilot.system.version import terms_version, training_version
 
 ThermalStatus = log.DeviceState.ThermalStatus

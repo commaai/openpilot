@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import time
 import unittest
+
 import numpy as np
 
-from openpilot.selfdrive.test.helpers import with_processes, phone_only
+from openpilot.selfdrive.test.helpers import phone_only, with_processes
 from openpilot.system.camerad.snapshot.snapshot import get_snapshots
 
 TEST_TIME = 45

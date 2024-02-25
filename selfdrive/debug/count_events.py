@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-import sys
-import math
 import datetime
+import math
+import sys
 from collections import Counter
 from pprint import pprint
 from typing import cast

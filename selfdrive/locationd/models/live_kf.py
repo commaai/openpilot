@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
-import sys
-import os
-import numpy as np
-
-from openpilot.selfdrive.locationd.models.constants import ObservationKind
-
-import sympy as sp
 import inspect
-from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rotate
+import os
+import sys
+
+import numpy as np
+import sympy as sp
+
 from rednose.helpers.ekf_sym import gen_code
+from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rotate
+from openpilot.selfdrive.locationd.models.constants import ObservationKind
 
 EARTH_GM = 3.986005e14  # m^3/s^2 (gravitational constant * mass of earth)
 

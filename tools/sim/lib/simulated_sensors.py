@@ -1,14 +1,13 @@
 import time
+from typing import TYPE_CHECKING
 
-from cereal import log
 import cereal.messaging as messaging
-
+from cereal import log
 from openpilot.common.realtime import DT_DMON
 from openpilot.tools.sim.lib.camerad import Camerad
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-  from openpilot.tools.sim.lib.common import World, SimulatorState
+  from openpilot.tools.sim.lib.common import SimulatorState, World
 
 
 class SimulatedSensors:

@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 import datetime
 import os
-import pytest
-import time
-import tempfile
-import unittest
+import random
 import shutil
 import signal
 import subprocess
-import random
+import tempfile
+import time
+import unittest
+
+import pytest
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params

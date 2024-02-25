@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-import os
-import pytest
-import json
-import time
 import datetime
-import unittest
+import json
+import os
 import subprocess
+import time
+import unittest
+
+import pytest
 
 import cereal.messaging as messaging
-from openpilot.system.qcomgpsd.qcomgpsd import at_cmd, wait_for_modem
 from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.qcomgpsd.qcomgpsd import at_cmd, wait_for_modem
 
 GOOD_SIGNAL = bool(int(os.getenv("GOOD_SIGNAL", '0')))
 

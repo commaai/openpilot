@@ -1,6 +1,6 @@
+import contextlib
 import os
 import tempfile
-import contextlib
 
 
 class CallbackReader:

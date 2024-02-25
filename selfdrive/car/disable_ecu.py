@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 
 EXT_DIAG_REQUEST = b'\x10\x03'
 EXT_DIAG_RESPONSE = b'\x50\x03'
@@ -39,6 +39,7 @@ def disable_ecu(logcan, sendcan, bus=0, addr=0x7d0, sub_addr=None, com_cont_req=
 
 if __name__ == "__main__":
   import time
+
   import cereal.messaging as messaging
   sendcan = messaging.pub_sock('sendcan')
   logcan = messaging.sub_sock('can')

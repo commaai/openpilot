@@ -1,32 +1,43 @@
 #!/usr/bin/env python3
-import os
-import sys
-import signal
+import datetime
 import itertools
 import math
-import time
-import requests
+import os
 import shutil
+import signal
 import subprocess
-import datetime
-from multiprocessing import Process, Event
+import sys
+import time
+from multiprocessing import Event, Process
+from struct import calcsize, pack, unpack_from
 from typing import NoReturn
-from struct import unpack_from, calcsize, pack
 
-from cereal import log
+import requests
+
 import cereal.messaging as messaging
+from cereal import log
 from openpilot.common.gpio import gpio_init, gpio_set
 from openpilot.common.retry import retry
-from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.qcomgpsd.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
-from openpilot.system.qcomgpsd.structs import (dict_unpacker, position_report, relist,
-                                              gps_measurement_report, gps_measurement_report_sv,
-                                              glonass_measurement_report, glonass_measurement_report_sv,
-                                              oemdre_measurement_report, oemdre_measurement_report_sv, oemdre_svpoly_report,
-                                              LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT,
-                                              LOG_GNSS_POSITION_REPORT, LOG_GNSS_OEMDRE_MEASUREMENT_REPORT,
-                                              LOG_GNSS_OEMDRE_SVPOLY_REPORT)
+from openpilot.system.hardware.tici.pins import GPIO
+from openpilot.system.qcomgpsd.modemdiag import DIAG_LOG_F, ModemDiag, send_recv, setup_logs
+from openpilot.system.qcomgpsd.structs import (
+  LOG_GNSS_GLONASS_MEASUREMENT_REPORT,
+  LOG_GNSS_GPS_MEASUREMENT_REPORT,
+  LOG_GNSS_OEMDRE_MEASUREMENT_REPORT,
+  LOG_GNSS_OEMDRE_SVPOLY_REPORT,
+  LOG_GNSS_POSITION_REPORT,
+  dict_unpacker,
+  glonass_measurement_report,
+  glonass_measurement_report_sv,
+  gps_measurement_report,
+  gps_measurement_report_sv,
+  oemdre_measurement_report,
+  oemdre_measurement_report_sv,
+  oemdre_svpoly_report,
+  position_report,
+  relist,
+)
 
 DEBUG = int(os.getenv("DEBUG", "0"))==1
 ASSIST_DATA_FILE = '/tmp/xtra3grc.bin'

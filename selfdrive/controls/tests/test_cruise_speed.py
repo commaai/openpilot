@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 import itertools
-import numpy as np
 import unittest
 
+import numpy as np
 from parameterized import parameterized_class
-from cereal import log
-from openpilot.common.params import Params
-from openpilot.selfdrive.controls.lib.drive_helpers import VCruiseHelper, V_CRUISE_MIN, V_CRUISE_MAX, V_CRUISE_INITIAL, IMPERIAL_INCREMENT
-from cereal import car
+
+from cereal import car, log
 from openpilot.common.conversions import Conversions as CV
+from openpilot.common.params import Params
+from openpilot.selfdrive.controls.lib.drive_helpers import IMPERIAL_INCREMENT, V_CRUISE_INITIAL, V_CRUISE_MAX, V_CRUISE_MIN, VCruiseHelper
 from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
 ButtonEvent = car.CarState.ButtonEvent

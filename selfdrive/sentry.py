@@ -1,14 +1,14 @@
 """Install exception handler for process crash."""
-import sentry_sdk
 from enum import Enum
+
+import sentry_sdk
 from sentry_sdk.integrations.threading import ThreadingIntegration
 
 from openpilot.common.params import Params
+from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.athena.registration import is_registered_device
 from openpilot.system.hardware import HARDWARE, PC
-from openpilot.common.swaglog import cloudlog
-from openpilot.system.version import get_branch, get_commit, get_origin, get_version, \
-                              is_comma_remote, is_dirty, is_tested_branch
+from openpilot.system.version import get_branch, get_commit, get_origin, get_version, is_comma_remote, is_dirty, is_tested_branch
 
 
 class SentryProject(Enum):

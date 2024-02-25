@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
+import datetime
 import sys
 import time
-import datetime
-import numpy as np
 from collections import deque
 
-from openpilot.common.realtime import Ratekeeper
+import numpy as np
+
 from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.realtime import Ratekeeper
 
 
 def read_power():

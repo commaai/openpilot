@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 import os
-import pytest
 import signal
 import time
 import unittest
 
+import pytest
 from parameterized import parameterized
 
 from cereal import car
-from openpilot.common.params import Params
 import openpilot.selfdrive.manager.manager as manager
+from openpilot.common.params import Params
 from openpilot.selfdrive.manager.process import ensure_running
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.system.hardware import HARDWARE

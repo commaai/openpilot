@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-import sys
 import argparse
-import json
 import codecs
+import json
+import sys
 
 from hexdump import hexdump
+
 from cereal import log
 from cereal.services import SERVICE_LIST
 from openpilot.tools.lib.live_logreader import raw_live_logreader
-
 
 codecs.register_error("strict", codecs.backslashreplace_errors)
 

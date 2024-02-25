@@ -1,12 +1,13 @@
 import contextlib
 import gc
 import os
-import pytest
 import random
+
+import pytest
 
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.manager import manager
-from openpilot.system.hardware import TICI, HARDWARE
+from openpilot.system.hardware import HARDWARE, TICI
 
 
 def pytest_sessionstart(session):

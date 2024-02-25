@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-import pytest
 import unittest
-import numpy as np
 from collections import defaultdict
 from enum import Enum
 
-from openpilot.tools.lib.logreader import LogReader
+import numpy as np
+import pytest
+
 from openpilot.selfdrive.test.process_replay.process_replay import replay_process_with_name
+from openpilot.tools.lib.logreader import LogReader
 
 TEST_ROUTE = "ff2bd20623fcaeaa|2023-09-05--10-14-54/4"
 GPS_MESSAGES = ['gpsLocationExternal', 'gpsLocation']

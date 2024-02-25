@@ -4,7 +4,7 @@ from enum import StrEnum
 from cereal import car
 from panda.python import uds
 from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
-from openpilot.selfdrive.car.docs_definitions import CarInfo, CarHarness, CarParts
+from openpilot.selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu

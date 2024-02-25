@@ -1,19 +1,18 @@
+import functools
 import signal
 import threading
-import functools
-
-from multiprocessing import Process, Queue, Value
 from abc import ABC, abstractmethod
+from multiprocessing import Process, Queue, Value
 
-from openpilot.common.params import Params
 from openpilot.common.numpy_fast import clip
+from openpilot.common.params import Params
 from openpilot.common.realtime import Ratekeeper
-from openpilot.selfdrive.test.helpers import set_params_enabled
 from openpilot.selfdrive.car.honda.values import CruiseButtons
+from openpilot.selfdrive.test.helpers import set_params_enabled
 from openpilot.tools.sim.lib.common import SimulatorState, World
+from openpilot.tools.sim.lib.keyboard_ctrl import KEYBOARD_HELP
 from openpilot.tools.sim.lib.simulated_car import SimulatedCar
 from openpilot.tools.sim.lib.simulated_sensors import SimulatedSensors
-from openpilot.tools.sim.lib.keyboard_ctrl import KEYBOARD_HELP
 
 
 def rk_loop(function, hz, exit_event: threading.Event):

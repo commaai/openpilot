@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
+import datetime
+import fcntl
 import os
 import re
-import datetime
-import subprocess
-import psutil
 import shutil
 import signal
-import fcntl
-import time
+import subprocess
 import threading
+import time
 from collections import defaultdict
 from pathlib import Path
+
+import psutil
 from markdown_it import MarkdownIt
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
-from openpilot.common.time import system_time_valid
-from openpilot.system.hardware import AGNOS, HARDWARE
 from openpilot.common.swaglog import cloudlog
+from openpilot.common.time import system_time_valid
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
+from openpilot.system.hardware import AGNOS, HARDWARE
 from openpilot.system.version import is_tested_branch
 
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")

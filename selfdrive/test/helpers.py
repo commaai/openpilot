@@ -1,13 +1,12 @@
 import os
 import time
-
 from functools import wraps
 
 import cereal.messaging as messaging
 from openpilot.common.params import Params
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.system.hardware import PC
-from openpilot.system.version import training_version, terms_version
+from openpilot.system.version import terms_version, training_version
 
 
 def set_params_enabled():

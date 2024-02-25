@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 import os
 import time
-import numpy as np
 from multiprocessing import Process
+
+import numpy as np
 from setproctitle import setproctitle
+
 
 def waste(core):
   os.sched_setaffinity(0, [core,])

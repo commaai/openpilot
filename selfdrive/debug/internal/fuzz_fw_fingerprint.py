@@ -6,11 +6,10 @@ from collections import defaultdict
 from tqdm import tqdm
 
 from openpilot.selfdrive.car.fw_versions import match_fw_to_car_fuzzy
-from openpilot.selfdrive.car.toyota.values import FW_VERSIONS as TOYOTA_FW_VERSIONS
 from openpilot.selfdrive.car.honda.values import FW_VERSIONS as HONDA_FW_VERSIONS
 from openpilot.selfdrive.car.hyundai.values import FW_VERSIONS as HYUNDAI_FW_VERSIONS
+from openpilot.selfdrive.car.toyota.values import FW_VERSIONS as TOYOTA_FW_VERSIONS
 from openpilot.selfdrive.car.volkswagen.values import FW_VERSIONS as VW_FW_VERSIONS
-
 
 FWS = {}
 FWS.update(TOYOTA_FW_VERSIONS)

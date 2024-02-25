@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 import argparse
 import json
-import matplotlib.patches as mpatches
-import matplotlib.pyplot as plt
-import mpld3
 import sys
 from bisect import bisect_left, bisect_right
 from collections import defaultdict
+
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+import mpld3
 
 from openpilot.tools.lib.logreader import LogReader
 

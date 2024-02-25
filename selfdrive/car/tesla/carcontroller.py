@@ -1,8 +1,8 @@
-from openpilot.common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
+from openpilot.common.numpy_fast import clip
 from openpilot.selfdrive.car import apply_std_steer_angle_limits
 from openpilot.selfdrive.car.tesla.teslacan import TeslaCAN
-from openpilot.selfdrive.car.tesla.values import DBC, CANBUS, CarControllerParams
+from openpilot.selfdrive.car.tesla.values import CANBUS, DBC, CarControllerParams
 
 
 class CarController:

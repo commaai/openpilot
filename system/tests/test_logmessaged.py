@@ -5,9 +5,9 @@ import time
 import unittest
 
 import cereal.messaging as messaging
+from openpilot.common.swaglog import cloudlog, ipchandler
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.system.hardware.hw import Paths
-from openpilot.common.swaglog import cloudlog, ipchandler
 
 
 class TestLogmessaged(unittest.TestCase):

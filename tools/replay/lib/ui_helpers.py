@@ -4,14 +4,16 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 import pygame
-
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
-from openpilot.common.transformations.camera import (eon_f_frame_size, eon_f_focal_length,
-                                           tici_f_frame_size, tici_f_focal_length,
-                                           get_view_frame_from_calib_frame)
+from openpilot.common.transformations.camera import (
+  eon_f_focal_length,
+  eon_f_frame_size,
+  get_view_frame_from_calib_frame,
+  tici_f_focal_length,
+  tici_f_frame_size,
+)
 from openpilot.selfdrive.controls.radard import RADAR_TO_CAMERA
-
 
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)

@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 # type: ignore
 
-from collections import defaultdict
 import argparse
 import os
 import traceback
+from collections import defaultdict
+
 from tqdm import tqdm
-from openpilot.tools.lib.logreader import LogReader, ReadMode
-from openpilot.tools.lib.route import SegmentRange
+
 from openpilot.selfdrive.car.car_helpers import interface_names
 from openpilot.selfdrive.car.fw_versions import VERSIONS, match_fw_to_car
-
+from openpilot.tools.lib.logreader import LogReader, ReadMode
+from openpilot.tools.lib.route import SegmentRange
 
 NO_API = "NO_API" in os.environ
 SUPPORTED_BRANDS = VERSIONS.keys()

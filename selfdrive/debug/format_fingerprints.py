@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-import jinja2
 import os
+
+import jinja2
 
 from cereal import car
 from openpilot.common.basedir import BASEDIR

@@ -1,27 +1,29 @@
 #!/usr/bin/env python3
 import os
-import time
 import pickle
+import time
+from pathlib import Path
+
 import numpy as np
+from setproctitle import setproctitle
+
 import cereal.messaging as messaging
 from cereal import car, log
-from pathlib import Path
-from setproctitle import setproctitle
 from cereal.messaging import PubMaster, SubMaster
-from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
-from openpilot.common.swaglog import cloudlog
-from openpilot.common.params import Params
+from cereal.visionipc import VisionBuf, VisionIpcClient, VisionStreamType
 from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process
+from openpilot.common.swaglog import cloudlog
 from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive import sentry
 from openpilot.selfdrive.car.car_helpers import get_demo_car_params
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
-from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
-from openpilot.selfdrive.modeld.parse_model_outputs import Parser
-from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.selfdrive.modeld.constants import ModelConstants
-from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
+from openpilot.selfdrive.modeld.fill_model_msg import PublishState, fill_model_msg, fill_pose_msg
+from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext, ModelFrame
+from openpilot.selfdrive.modeld.parse_model_outputs import Parser
+from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')

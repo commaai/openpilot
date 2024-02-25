@@ -1,11 +1,12 @@
 import copy
+
 from cereal import car
-from openpilot.common.conversions import Conversions as CV
-from openpilot.common.numpy_fast import mean
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
+from openpilot.common.conversions import Conversions as CV
+from openpilot.common.numpy_fast import mean
+from openpilot.selfdrive.car.gm.values import DBC, STEER_THRESHOLD, AccState, CanBus
 from openpilot.selfdrive.car.interfaces import CarStateBase
-from openpilot.selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD
 
 TransmissionType = car.CarParams.TransmissionType
 NetworkLocation = car.CarParams.NetworkLocation

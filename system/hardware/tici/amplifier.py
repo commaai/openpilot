@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import time
-from smbus2 import SMBus
 from collections import namedtuple
+
+from smbus2 import SMBus
 
 # https://datasheets.maximintegrated.com/en/ds/MAX98089.pdf
 

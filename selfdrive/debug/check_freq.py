@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 import argparse
-import numpy as np
 import time
 from collections import defaultdict, deque
 from collections.abc import MutableSequence
 
-import cereal.messaging as messaging
+import numpy as np
 
+import cereal.messaging as messaging
 
 if __name__ == "__main__":
   context = messaging.Context()

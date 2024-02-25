@@ -1,5 +1,6 @@
-import numpy as np
 from numbers import Number
+
+import numpy as np
 
 from openpilot.common.numpy_fast import clip, interp
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import os
+
 from tqdm import tqdm
 
 from openpilot.tools.lib.logreader import LogReader

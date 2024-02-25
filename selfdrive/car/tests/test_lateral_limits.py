@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-from collections import defaultdict
 import importlib
-from parameterized import parameterized_class
 import sys
 import unittest
+from collections import defaultdict
+
+from parameterized import parameterized_class
 
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car.car_helpers import interfaces

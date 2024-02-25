@@ -1,25 +1,26 @@
 #!/usr/bin/env python3
 import bz2
+import datetime
 import io
 import json
 import os
 import random
-import requests
 import threading
 import time
 import traceback
-import datetime
-from typing import BinaryIO
 from collections.abc import Iterator
+from typing import BinaryIO
 
-from cereal import log
+import requests
+
 import cereal.messaging as messaging
+from cereal import log
 from openpilot.common.api import Api
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware.hw import Paths
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
-from openpilot.common.swaglog import cloudlog
 
 NetworkType = log.DeviceState.NetworkType
 UPLOAD_ATTR_NAME = 'user.upload'

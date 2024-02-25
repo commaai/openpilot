@@ -1,14 +1,28 @@
 #!/usr/bin/env python3
-from hypothesis import settings, given, strategies as st
 import unittest
+
+from hypothesis import given, settings, strategies as st
 
 from cereal import car
 from openpilot.selfdrive.car.fw_versions import build_fw_dict
-from openpilot.selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
-                                         HYBRID_CAR, EV_CAR, FW_QUERY_CONFIG, LEGACY_SAFETY_MODE_CAR, CANFD_FUZZY_WHITELIST, \
-                                         UNSUPPORTED_LONGITUDINAL_CAR, PLATFORM_CODE_ECUS, HYUNDAI_VERSION_REQUEST_LONG, \
-                                         get_platform_codes
 from openpilot.selfdrive.car.hyundai.fingerprints import FW_VERSIONS
+from openpilot.selfdrive.car.hyundai.values import (
+  CAMERA_SCC_CAR,
+  CAN_GEARS,
+  CANFD_CAR,
+  CANFD_FUZZY_WHITELIST,
+  CAR,
+  CHECKSUM,
+  DATE_FW_ECUS,
+  EV_CAR,
+  FW_QUERY_CONFIG,
+  HYBRID_CAR,
+  HYUNDAI_VERSION_REQUEST_LONG,
+  LEGACY_SAFETY_MODE_CAR,
+  PLATFORM_CODE_ECUS,
+  UNSUPPORTED_LONGITUDINAL_CAR,
+  get_platform_codes,
+)
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
