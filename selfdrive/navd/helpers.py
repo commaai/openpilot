@@ -106,7 +106,7 @@ def distance_along_geometry(geometry: list[Coordinate], pos: Coordinate) -> floa
   return total_distance_closest
 
 
-def coordinate_from_param(param: str, params: Params | None = None) -> Coordinate | None:
+def coordinate_from_param(param: str, params: Params = None) -> Coordinate | None:
   if params is None:
     params = Params()
 

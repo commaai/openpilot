@@ -39,7 +39,7 @@ def is_brand(brand: str, filter_brand: str | None) -> bool:
 
 
 def build_fw_dict(fw_versions: list[capnp.lib.capnp._DynamicStructBuilder],
-                  filter_brand: str | None = None) -> dict[AddrType, set[bytes]]:
+                  filter_brand: str = None) -> dict[AddrType, set[bytes]]:
   fw_versions_dict: defaultdict[AddrType, set[bytes]] = defaultdict(set)
   for fw in fw_versions:
     if is_brand(fw.brand, filter_brand) and not fw.logging:
