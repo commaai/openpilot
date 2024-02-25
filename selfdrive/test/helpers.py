@@ -72,7 +72,7 @@ def noop(*args, **kwargs):
 
 
 def read_segment_list(segment_list_path):
-  with open(segment_list_path, "r") as f:
+  with open(segment_list_path) as f:
     seg_list = f.read().splitlines()
 
   return [(platform[2:], segment) for platform, segment in zip(seg_list[::2], seg_list[1::2], strict=True)]

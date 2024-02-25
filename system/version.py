@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import os
 import subprocess
-from typing import List, Callable, TypeVar
+from typing import TypeVar
+from collections.abc import Callable
 from functools import lru_cache
 
 from openpilot.common.basedir import BASEDIR
@@ -18,11 +19,11 @@ def cache(user_function: Callable[..., _RT], /) -> Callable[..., _RT]:
   return lru_cache(maxsize=None)(user_function)
 
 
-def run_cmd(cmd: List[str]) -> str:
+def run_cmd(cmd: list[str]) -> str:
   return subprocess.check_output(cmd, encoding='utf8').strip()
 
 
-def run_cmd_default(cmd: List[str], default: str = "") -> str:
+def run_cmd_default(cmd: list[str], default: str = "") -> str:
   try:
     return run_cmd(cmd)
   except subprocess.CalledProcessError:

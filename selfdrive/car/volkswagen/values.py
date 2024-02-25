@@ -1,7 +1,6 @@
 from collections import defaultdict, namedtuple
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag, StrEnum
-from typing import Dict, List, Union
 
 from cereal import car
 from panda.python import uds
@@ -151,7 +150,7 @@ class CAR(StrEnum):
 PQ_CARS = {CAR.PASSAT_NMS, CAR.SHARAN_MK2}
 
 
-DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("vw_mqb_2010", None))
+DBC: dict[str, dict[str, str]] = defaultdict(lambda: dbc_dict("vw_mqb_2010", None))
 for car_type in PQ_CARS:
   DBC[car_type] = dbc_dict("vw_golf_mk4", None)
 
@@ -191,7 +190,7 @@ class VWCarInfo(CarInfo):
       self.car_parts = CarParts([Device.threex_angled_mount, CarHarness.j533])
 
 
-CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
+CAR_INFO: dict[str, VWCarInfo | list[VWCarInfo]] = {
   CAR.ARTEON_MK1: [
     VWCarInfo("Volkswagen Arteon 2018-23", video_link="https://youtu.be/FAomFKPFlDA"),
     VWCarInfo("Volkswagen Arteon R 2020-23", video_link="https://youtu.be/FAomFKPFlDA"),

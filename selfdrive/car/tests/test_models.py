@@ -8,7 +8,6 @@ import unittest
 from collections import defaultdict, Counter
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
-from typing import List, Optional, Tuple
 from parameterized import parameterized_class
 
 from cereal import messaging, log, car
@@ -40,7 +39,7 @@ MAX_EXAMPLES = int(os.environ.get("MAX_EXAMPLES", "300"))
 CI = os.environ.get("CI", None) is not None
 
 
-def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
+def get_test_cases() -> list[tuple[str, CarTestRoute | None]]:
   # build list of test cases
   test_cases = []
   if not len(INTERNAL_SEG_LIST):
@@ -65,14 +64,14 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
 @pytest.mark.slow
 @pytest.mark.shared_download_cache
 class TestCarModelBase(unittest.TestCase):
-  car_model: Optional[str] = None
-  test_route: Optional[CarTestRoute] = None
+  car_model: str | None = None
+  test_route: CarTestRoute | None = None
   test_route_on_bucket: bool = True  # whether the route is on the preserved CI bucket
 
-  can_msgs: List[capnp.lib.capnp._DynamicStructReader]
+  can_msgs: list[capnp.lib.capnp._DynamicStructReader]
   fingerprint: dict[int, dict[int, int]]
-  elm_frame: Optional[int]
-  car_safety_mode_frame: Optional[int]
+  elm_frame: int | None
+  car_safety_mode_frame: int | None
 
   @classmethod
   def get_testing_data_from_logreader(cls, lr):
@@ -408,7 +407,7 @@ class TestCarModelBase(unittest.TestCase):
 
     controls_allowed_prev = False
     CS_prev = car.CarState.new_message()
-    checks = defaultdict(lambda: 0)
+    checks = defaultdict(int)
     controlsd = Controls(CI=self.CI)
     controlsd.initialized = True
     for idx, can in enumerate(self.can_msgs):
