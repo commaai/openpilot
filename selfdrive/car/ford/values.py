@@ -89,8 +89,8 @@ class CAR(Platforms):
     [
       FordCarInfo("Ford Explorer 2020-23"),
       FordCarInfo("Ford Explorer Hybrid 2020-23"),  # Limited and Platinum only
-      FordCarInfo("Lincoln Aviator 2020-21", "Co-Pilot360 Plus"),
-      FordCarInfo("Lincoln Aviator Plug-in Hybrid 2020-21", "Co-Pilot360 Plus"),  # Grand Touring only
+      FordCarInfo("Lincoln Aviator 2020-23", "Co-Pilot360 Plus"),
+      FordCarInfo("Lincoln Aviator Plug-in Hybrid 2020-23", "Co-Pilot360 Plus"),  # Grand Touring only
     ],
   )
   F_150_MK14 = FordPlatformConfig(
