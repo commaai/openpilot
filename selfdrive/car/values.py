@@ -12,7 +12,7 @@ from openpilot.selfdrive.car.tesla.values import CAR as TESLA
 from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
 from openpilot.selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
 
-PLATFORM = Union[BODY, CHRYSLER, FORD, GM, HONDA, HYUNDAI, MAZDA, NISSAN, SUBARU, TESLA, TOYOTA, VOLKSWAGEN]
+Platform = Union[BODY, CHRYSLER, FORD, GM, HONDA, HYUNDAI, MAZDA, NISSAN, SUBARU, TESLA, TOYOTA, VOLKSWAGEN]
 BRANDS = [BODY, CHRYSLER, FORD, GM, HONDA, HYUNDAI, MAZDA, NISSAN, SUBARU, TESLA, TOYOTA, VOLKSWAGEN]
 
-PLATFORMS: Dict[str, PLATFORM] = {str(platform): platform for brand in BRANDS for platform in cast(List[PLATFORM], brand)}
+PLATFORMS: Dict[str, Platform] = {str(platform): platform for brand in BRANDS for platform in cast(List[Platform], brand)}
