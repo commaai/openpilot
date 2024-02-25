@@ -144,6 +144,7 @@ class Footnote(Enum):
     "in software, but doesn't yet have a harness available from the comma store.",
     Column.HARDWARE)
 
+
 @dataclass
 class VWCarInfo(CarInfo):
   package: str = "Adaptive Cruise Control (ACC) & Lane Assist"
