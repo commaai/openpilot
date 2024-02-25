@@ -1,4 +1,4 @@
-from typing import List, cast, Dict
+from typing import cast
 from openpilot.selfdrive.car.body.values import CAR as BODY
 from openpilot.selfdrive.car.chrysler.values import CAR as CHRYSLER
 from openpilot.selfdrive.car.ford.values import CAR as FORD
@@ -15,4 +15,4 @@ from openpilot.selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
 Platform = BODY | CHRYSLER | FORD | GM | HONDA | HYUNDAI | MAZDA | NISSAN | SUBARU | TESLA | TOYOTA | VOLKSWAGEN
 BRANDS = [BODY, CHRYSLER, FORD, GM, HONDA, HYUNDAI, MAZDA, NISSAN, SUBARU, TESLA, TOYOTA, VOLKSWAGEN]
 
-PLATFORMS: Dict[str, Platform] = {str(platform): platform for brand in BRANDS for platform in cast(List[Platform], brand)}
+PLATFORMS: dict[str, Platform] = {str(platform): platform for brand in BRANDS for platform in cast(list[Platform], brand)}
