@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 from cereal import car
-from openpilot.selfdrive.car import AngleRateLimit, dbc_dict, DbcDict, PlatformConfig, Platforms
+from openpilot.selfdrive.car import AngleRateLimit, CarSpecs, dbc_dict, DbcDict, PlatformConfig, Platforms
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
                                                      Device
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
@@ -72,6 +72,7 @@ class CAR(Platforms):
   BRONCO_SPORT_MK1 = FordPlatformConfig(
     "FORD BRONCO SPORT 1ST GEN",
     FordCarInfo("Ford Bronco Sport 2021-22"),
+    specs=CarSpecs(mass=1625, wheelbase=2.67, steerRatio=17.7),
   )
   ESCAPE_MK4 = FordPlatformConfig(
     "FORD ESCAPE 4TH GEN",
@@ -83,6 +84,7 @@ class CAR(Platforms):
       FordCarInfo("Ford Kuga Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
       FordCarInfo("Ford Kuga Plug-in Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
     ],
+    specs=CarSpecs(mass=1750, wheelbase=2.71, steerRatio=16.7),
   )
   EXPLORER_MK6 = FordPlatformConfig(
     "FORD EXPLORER 6TH GEN",
@@ -92,6 +94,7 @@ class CAR(Platforms):
       FordCarInfo("Lincoln Aviator 2020-23", "Co-Pilot360 Plus"),
       FordCarInfo("Lincoln Aviator Plug-in Hybrid 2020-23", "Co-Pilot360 Plus"),  # Grand Touring only
     ],
+    specs=CarSpecs(mass=2050, wheelbase=3.025, steerRatio=16.8),
   )
   F_150_MK14 = FordPlatformConfig(
     "FORD F-150 14TH GEN",
@@ -100,11 +103,13 @@ class CAR(Platforms):
       FordCarInfo("Ford F-150 Hybrid 2023", "Co-Pilot360 Active 2.0"),
     ],
     dbc_dict=dbc_dict('ford_lincoln_base_pt', None),
+    specs=CarSpecs(mass=2000, wheelbase=3.69, steerRatio=17.0),
   )
   F_150_LIGHTNING_MK1 = FordPlatformConfig(
     "FORD F-150 LIGHTNING 1ST GEN",
     FordCarInfo("Ford F-150 Lightning 2021-23", "Co-Pilot360 Active 2.0"),
     dbc_dict=dbc_dict('ford_lincoln_base_pt', None),
+    specs=CarSpecs(mass=2948, wheelbase=3.70, steerRatio=16.9),
   )
   FOCUS_MK4 = FordPlatformConfig(
     "FORD FOCUS 4TH GEN",
@@ -112,6 +117,7 @@ class CAR(Platforms):
       FordCarInfo("Ford Focus 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS]),
       FordCarInfo("Ford Focus Hybrid 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS]),  # mHEV only
     ],
+    specs=CarSpecs(mass=1350, wheelbase=2.7, steerRatio=15.0),
   )
   MAVERICK_MK1 = FordPlatformConfig(
     "FORD MAVERICK 1ST GEN",
@@ -121,11 +127,13 @@ class CAR(Platforms):
       FordCarInfo("Ford Maverick 2023", "Co-Pilot360 Assist"),
       FordCarInfo("Ford Maverick Hybrid 2023", "Co-Pilot360 Assist"),
     ],
+    specs=CarSpecs(mass=1650, wheelbase=3.076, steerRatio=17.0),
   )
   MUSTANG_MACH_E_MK1 = FordPlatformConfig(
     "FORD MUSTANG MACH-E 1ST GEN",
     FordCarInfo("Ford Mustang Mach-E 2021-23", "Co-Pilot360 Active 2.0"),
     dbc_dict=dbc_dict('ford_lincoln_base_pt', None),
+    specs=CarSpecs(mass=2200, wheelbase=2.984, steerRatio=17.0),  # TODO: check steer ratio
   )
 
 
