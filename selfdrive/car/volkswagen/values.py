@@ -317,7 +317,7 @@ class CAR(Platforms):
   SKODA_FABIA_MK4 = VolkswagenMQBPlatformConfig(
     "SKODA FABIA 4TH GEN",  # Chassis PJ
     VWCarInfo("Škoda Fabia 2022-23", footnotes=[Footnote.VW_MQB_A0]),
-    specs=VolkswagenCarSpecs(mass=1226, wheelbase=2.56),
+    specs=VolkswagenCarSpecs(mass=1266, wheelbase=2.56),
   )
   SKODA_KAMIQ_MK1 = VolkswagenMQBPlatformConfig(
     "SKODA KAMIQ 1ST GEN",  # Chassis NW
