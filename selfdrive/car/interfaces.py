@@ -14,7 +14,7 @@ from openpilot.common.simple_kalman import KF1D, get_kalman_gain
 from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import PlatformConfig, apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, STD_CARGO_KG
-from openpilot.selfdrive.car.values import PLATFORMS, Platform
+from openpilot.selfdrive.car.values import Platform
 from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_friction
 from openpilot.selfdrive.controls.lib.events import Events
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -112,15 +112,13 @@ class CarInterfaceBase(ABC):
   def get_params(cls, candidate: Platform, fingerprint: dict[int, dict[int, int]], car_fw: list[car.CarParams.CarFw], experimental_long: bool, docs: bool):
     ret = CarInterfaceBase.get_std_params(candidate)
 
-    if candidate in PLATFORMS:
-      platform = PLATFORMS[candidate]
-      if hasattr(platform, "config"):
-        platform_config = cast(PlatformConfig, platform.config)
-        if platform_config.specs is not None:
-          ret.mass = platform_config.specs.mass
-          ret.wheelbase = platform_config.specs.wheelbase
-          ret.steerRatio = platform_config.specs.steerRatio
-          ret.centerToFront = ret.wheelbase * platform_config.specs.centerToFrontRatio
+    if hasattr(candidate, "config"):
+      platform_config = cast(PlatformConfig, candidate.config)
+      if platform_config.specs is not None:
+        ret.mass = platform_config.specs.mass
+        ret.wheelbase = platform_config.specs.wheelbase
+        ret.steerRatio = platform_config.specs.steerRatio
+        ret.centerToFront = ret.wheelbase * platform_config.specs.centerToFrontRatio
 
     ret = cls._get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs)
 
