@@ -4,7 +4,7 @@ import os
 import usb1
 import time
 import subprocess
-from typing import List, NoReturn
+from typing import NoReturn
 from functools import cmp_to_key
 
 from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
@@ -124,7 +124,7 @@ def main() -> NoReturn:
       cloudlog.info(f"{len(panda_serials)} panda(s) found, connecting - {panda_serials}")
 
       # Flash pandas
-      pandas: List[Panda] = []
+      pandas: list[Panda] = []
       for serial in panda_serials:
         pandas.append(flash_panda(serial))
 
