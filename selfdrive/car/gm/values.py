@@ -1,7 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, StrEnum
-from typing import Dict, List, Union
 
 from cereal import car
 from openpilot.selfdrive.car import dbc_dict
@@ -98,7 +97,7 @@ class GMCarInfo(CarInfo):
       self.footnotes.append(Footnote.OBD_II)
 
 
-CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
+CAR_INFO: dict[str, GMCarInfo | list[GMCarInfo]] = {
   CAR.HOLDEN_ASTRA: GMCarInfo("Holden Astra 2017"),
   CAR.VOLT: GMCarInfo("Chevrolet Volt 2017-18", min_enable_speed=0, video_link="https://youtu.be/QeMCN_4TFfQ"),
   CAR.CADILLAC_ATS: GMCarInfo("Cadillac ATS Premium Performance 2018"),
@@ -181,7 +180,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
   extra_ecus=[(Ecu.fwdCamera, 0x24b, None)],
 )
 
-DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'))
+DBC: dict[str, dict[str, str]] = defaultdict(lambda: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'))
 
 EV_CAR = {CAR.VOLT, CAR.BOLT_EUV}
 

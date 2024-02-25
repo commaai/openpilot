@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import NoReturn, Union, List, Dict
+from typing import NoReturn
 
 from openpilot.common.params import Params
 from cereal.messaging import SubMaster
@@ -61,7 +61,7 @@ class StatLog:
 
 def main() -> NoReturn:
   dongle_id = Params().get("DongleId", encoding='utf-8')
-  def get_influxdb_line(measurement: str, value: Union[float, Dict[str, float]],  timestamp: datetime, tags: dict) -> str:
+  def get_influxdb_line(measurement: str, value: float | dict[str, float],  timestamp: datetime, tags: dict) -> str:
     res = f"{measurement}"
     for k, v in tags.items():
       res += f",{k}={str(v)}"
@@ -102,7 +102,7 @@ def main() -> NoReturn:
   idx = 0
   last_flush_time = time.monotonic()
   gauges = {}
-  samples: Dict[str, List[float]] = defaultdict(list)
+  samples: dict[str, list[float]] = defaultdict(list)
   try:
     while True:
       started_prev = sm['deviceState'].started

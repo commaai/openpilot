@@ -101,10 +101,6 @@ FW_VERSIONS = {
       b'39990-TVA-X040\x00\x00',
       b'39990-TVE-H130\x00\x00',
     ],
-    (Ecu.unknown, 0x18da3af1, None): [
-      b'39390-TVA-A020\x00\x00',
-      b'39390-TVA-A120\x00\x00',
-    ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TBX-H230\x00\x00',
       b'77959-TVA-A460\x00\x00',

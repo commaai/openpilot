@@ -11,7 +11,6 @@ from openpilot.system.version import training_version, terms_version
 
 
 def set_params_enabled():
-  os.environ['REPLAY'] = "1"
   os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
   os.environ['LOGPRINT'] = "debug"
 
@@ -73,7 +72,7 @@ def noop(*args, **kwargs):
 
 
 def read_segment_list(segment_list_path):
-  with open(segment_list_path, "r") as f:
+  with open(segment_list_path) as f:
     seg_list = f.read().splitlines()
 
   return [(platform[2:], segment) for platform, segment in zip(seg_list[::2], seg_list[1::2], strict=True)]
