@@ -208,7 +208,7 @@ class CAR(Platforms):
       VWCarInfo("Volkswagen Golf R 2015-19"),
       VWCarInfo("Volkswagen Golf SportsVan 2015-20"),
     ],
-    specs=VolkswagenCarSpecs(mass=1733, wheelbase=2.84),
+    specs=VolkswagenCarSpecs(mass=1397, wheelbase=2.62),
   )
   JETTA_MK7 = VolkswagenMQBPlatformConfig(
     "VOLKSWAGEN JETTA 7TH GEN",  # Chassis BU
