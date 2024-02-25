@@ -5,6 +5,7 @@ from collections.abc import Callable
 from cereal import car
 from openpilot.common.params import Params
 from openpilot.common.basedir import BASEDIR
+from openpilot.selfdrive.car.values import PLATFORMS
 from openpilot.system.version import is_comma_remote, is_tested_branch
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
@@ -185,6 +186,8 @@ def fingerprint(logcan, sendcan, num_pandas):
   if fixed_fingerprint:
     car_fingerprint = fixed_fingerprint
     source = car.CarParams.FingerprintSource.fixed
+
+  car_fingerprint = PLATFORMS[car_fingerprint]
 
   cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match, cached=cached,
                  fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, vin_rx_bus=vin_rx_bus,
