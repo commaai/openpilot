@@ -11,7 +11,7 @@ from openpilot.system.hardware.hw import Paths
 from openpilot.system.loggerd.xattr_cache import setxattr
 
 
-def create_random_file(file_path: Path, size_mb: float, lock: bool = False, upload_xattr: bytes | None = None) -> None:
+def create_random_file(file_path: Path, size_mb: float, lock: bool = False, upload_xattr: bytes = None) -> None:
   file_path.parent.mkdir(parents=True, exist_ok=True)
 
   if lock:
@@ -81,7 +81,7 @@ class UploaderTestCase(unittest.TestCase):
     self.params.put("DongleId", "0000000000000000")
 
   def make_file_with_data(self, f_dir: str, fn: str, size_mb: float = .1, lock: bool = False,
-                          upload_xattr: bytes | None = None, preserve_xattr: bytes | None = None) -> Path:
+                          upload_xattr: bytes = None, preserve_xattr: bytes = None) -> Path:
     file_path = Path(Paths.log_root()) / f_dir / fn
     create_random_file(file_path, size_mb, lock, upload_xattr)
 
