@@ -187,12 +187,13 @@ def fingerprint(logcan, sendcan, num_pandas):
     car_fingerprint = fixed_fingerprint
     source = car.CarParams.FingerprintSource.fixed
 
-  car_fingerprint = PLATFORMS[car_fingerprint]
-
   cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match, cached=cached,
                  fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, vin_rx_bus=vin_rx_bus,
                  fingerprints=repr(finger), fw_query_time=fw_query_time, error=True)
-  return car_fingerprint, finger, vin, car_fw, source, exact_match
+
+  car_platform = PLATFORMS.get(car_fingerprint, car_fingerprint)
+
+  return car_platform, finger, vin, car_fw, source, exact_match
 
 
 def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
