@@ -53,7 +53,7 @@ OS04C10::OS04C10() {
   for (int i = 0; i <= analog_gain_max_idx; i++) {
     sensor_analog_gains[i] = sensor_analog_gains_OS04C10[i];
   }
-  min_ev = (exposure_time_min + VS_TIME_MIN_OS04C10) * sensor_analog_gains[analog_gain_min_idx];
+  min_ev = (exposure_time_min) * sensor_analog_gains[analog_gain_min_idx];
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
   target_grey_factor = 0.01;
 }
@@ -61,6 +61,8 @@ OS04C10::OS04C10() {
 std::vector<i2c_random_wr_payload> OS04C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {
   uint32_t hcg_time = exposure_time;
   uint32_t real_gain = os04c10_analog_gains_reg[new_exp_g];
+
+  hcg_time *= 16; // shift 4 bits
 
   return {
     {0x3501, hcg_time>>8}, {0x3502, hcg_time&0xFF},
