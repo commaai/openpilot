@@ -1,6 +1,7 @@
 Version 0.9.7 (2024-XX-XX)
 ========================
 * New driving model
+* Support for many hybrid Ford models
 
 Version 0.9.6 (2024-02-27)
 ========================

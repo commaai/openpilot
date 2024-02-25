@@ -90,7 +90,7 @@ def read_logs(lr):
   return (data, frame_mismatches)
 
 # This is not needed in 3.10 as a "key" parameter is added to bisect
-class KeyifyList(object):
+class KeyifyList:
   def __init__(self, inner, key):
     self.inner = inner
     self.key = key
