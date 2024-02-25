@@ -23,7 +23,7 @@ class CarInterface(CarInterfaceBase):
     self.eps_timer_soft_disable_alert = False
 
   @staticmethod
-  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret, candidate, fingerprint, car_fw, car_data, experimental_long, docs):
     ret.carName = "volkswagen"
     ret.radarUnavailable = True
 

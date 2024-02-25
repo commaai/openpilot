@@ -76,6 +76,7 @@ class TestCarModelBase(unittest.TestCase):
   @classmethod
   def get_testing_data_from_logreader(cls, lr):
     car_fw = []
+    car_data = []
     can_msgs = []
     cls.elm_frame = None
     cls.car_safety_mode_frame = None
@@ -113,7 +114,7 @@ class TestCarModelBase(unittest.TestCase):
           cls.car_safety_mode_frame = len(can_msgs)
 
     if len(can_msgs) > int(50 / DT_CTRL):
-      return car_fw, can_msgs, experimental_long
+      return car_fw, car_data, can_msgs, experimental_long
 
     raise Exception("no can data found")
 
@@ -165,7 +166,7 @@ class TestCarModelBase(unittest.TestCase):
         raise unittest.SkipTest
       raise Exception(f"missing test route for {cls.car_model}")
 
-    car_fw, can_msgs, experimental_long = cls.get_testing_data()
+    car_fw, car_data, can_msgs, experimental_long = cls.get_testing_data()
 
     # if relay is expected to be open in the route
     cls.openpilot_enabled = cls.car_safety_mode_frame is not None
@@ -173,7 +174,7 @@ class TestCarModelBase(unittest.TestCase):
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
-    cls.CP = cls.CarInterface.get_params(cls.car_model, cls.fingerprint, car_fw, experimental_long, docs=False)
+    cls.CP = cls.CarInterface.get_params(cls.car_model, cls.fingerprint, car_fw, car_data, experimental_long, docs=False)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
 

@@ -12,7 +12,7 @@ class CarInterface(CarInterfaceBase):
     self.sm = messaging.SubMaster(['gpsLocation', 'gpsLocationExternal'])
 
   @staticmethod
-  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret, candidate, fingerprint, car_fw, car_data, experimental_long, docs):
     ret.carName = "mock"
     ret.mass = 1700.
     ret.wheelbase = 2.70

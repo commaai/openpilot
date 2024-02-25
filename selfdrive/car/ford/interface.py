@@ -12,7 +12,7 @@ GearShifter = car.CarState.GearShifter
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret, candidate, fingerprint, car_fw, car_data, experimental_long, docs):
     ret.carName = "ford"
     ret.dashcamOnly = candidate in CANFD_CAR
 

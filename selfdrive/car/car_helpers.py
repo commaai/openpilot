@@ -193,18 +193,18 @@ def fingerprint(logcan, sendcan, num_pandas):
 
   car_platform = PLATFORMS.get(car_fingerprint, car_fingerprint)
 
-  return car_platform, finger, vin, car_fw, source, exact_match
+  return car_platform, finger, vin, car_fw, list(), source, exact_match
 
 
 def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
-  candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, num_pandas)
+  candidate, fingerprints, vin, car_fw, car_data, source, exact_match = fingerprint(logcan, sendcan, num_pandas)
 
   if candidate is None:
     cloudlog.event("car doesn't match any fingerprints", fingerprints=repr(fingerprints), error=True)
     candidate = "mock"
 
   CarInterface, CarController, CarState = interfaces[candidate]
-  CP = CarInterface.get_params(candidate, fingerprints, car_fw, experimental_long_allowed, docs=False)
+  CP = CarInterface.get_params(candidate, fingerprints, car_fw, car_data, experimental_long_allowed, docs=False)
   CP.carVin = vin
   CP.carFw = car_fw
   CP.fingerprintSource = source
