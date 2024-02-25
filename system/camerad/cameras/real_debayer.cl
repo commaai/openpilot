@@ -18,8 +18,10 @@ float3 color_correct(float3 rgb) {
   x += rgb.z * (float3)(-0.25277411, -0.05627105, 1.45875782);
   #endif
 
-  #if IS_OX | IS_OS
+  #if IS_OX
   return -0.507089*exp(-12.54124638*x)+0.9655*powr(x,0.5)-0.472597*x+0.507089;
+  #elif IS_OS
+  return x;
   #else
   // tone mapping params
   const float gamma_k = 0.75;
