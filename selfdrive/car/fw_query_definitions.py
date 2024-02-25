@@ -87,6 +87,8 @@ class Request:
 @dataclass
 class FwQueryConfig:
   requests: list[Request]
+  # Additional requests for data collection after fingerprinting
+  data_requests: list[Request] = field(default_factory=list)
   # TODO: make this automatic and remove hardcoded lists, or do fingerprinting with ecus
   # Overrides and removes from essential ecus for specific models and ecus (exact matching)
   non_essential_ecus: dict[capnp.lib.capnp._EnumModule, list[str]] = field(default_factory=dict)
