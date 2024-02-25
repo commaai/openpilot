@@ -88,7 +88,7 @@ class CAR(Platforms):
   HOLDEN_ASTRA = GMPlatformConfig(
     "HOLDEN ASTRA RS-V BK 2017",
     GMCarInfo("Holden Astra 2017"),
-    specs=CarSpecs(mass=1363, wheelbase=2.662, steerRatio=15.7),
+    specs=CarSpecs(mass=1363, wheelbase=2.662, steerRatio=15.7, centerToFrontRatio=0.4),
   )
   VOLT = GMPlatformConfig(
     "CHEVROLET VOLT PREMIER 2017",
