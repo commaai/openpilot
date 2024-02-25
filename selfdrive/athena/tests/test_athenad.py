@@ -12,7 +12,6 @@ import unittest
 from dataclasses import asdict, replace
 from datetime import datetime, timedelta
 from parameterized import parameterized
-from typing import Optional
 
 from unittest import mock
 from websocket import ABNF
@@ -97,7 +96,7 @@ class TestAthenadMethods(unittest.TestCase):
         break
 
   @staticmethod
-  def _create_file(file: str, parent: Optional[str] = None, data: bytes = b'') -> str:
+  def _create_file(file: str, parent: str | None = None, data: bytes = b'') -> str:
     fn = os.path.join(Paths.log_root() if parent is None else parent, file)
     os.makedirs(os.path.dirname(fn), exist_ok=True)
     with open(fn, 'wb') as f:
