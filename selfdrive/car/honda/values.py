@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from enum import Enum, IntFlag, StrEnum
-from typing import Dict, List, Optional, Union
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
@@ -49,6 +48,7 @@ class CarControllerParams:
 class HondaFlags(IntFlag):
   # Bosch models with alternate set of LKAS_HUD messages
   BOSCH_EXT_HUD = 1
+  BOSCH_ALT_BRAKE = 2
 
 
 # Car button codes
@@ -115,7 +115,7 @@ class HondaCarInfo(CarInfo):
       self.car_parts = CarParts.common([CarHarness.nidec])
 
 
-CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
+CAR_INFO: dict[str, HondaCarInfo | list[HondaCarInfo] | None] = {
   CAR.ACCORD: [
     HondaCarInfo("Honda Accord 2018-22", "All", video_link="https://www.youtube.com/watch?v=mrUwlj3Mi58", min_steer_speed=3. * CV.MPH_TO_MS),
     HondaCarInfo("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS),
@@ -149,7 +149,7 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
     HondaCarInfo("Honda Pilot 2016-22", min_steer_speed=12. * CV.MPH_TO_MS),
     HondaCarInfo("Honda Passport 2019-23", "All", min_steer_speed=12. * CV.MPH_TO_MS),
   ],
-  CAR.RIDGELINE: HondaCarInfo("Honda Ridgeline 2017-23", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.RIDGELINE: HondaCarInfo("Honda Ridgeline 2017-24", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.INSIGHT: HondaCarInfo("Honda Insight 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
   CAR.HONDA_E: HondaCarInfo("Honda e 2020", "All", min_steer_speed=3. * CV.MPH_TO_MS),
 }
@@ -195,10 +195,19 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [StdQueries.UDS_VERSION_REQUEST],
       [StdQueries.UDS_VERSION_RESPONSE],
       bus=1,
-      logging=True,
       obd_multiplexing=False,
     ),
   ],
+  # We lose these ECUs without the comma power on these cars.
+  # Note that we still attempt to match with them when they are present
+  non_essential_ecus={
+    Ecu.programmedFuelInjection: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.transmission: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.vsa: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.combinationMeter: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.gateway: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.electricBrakeBooster: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
+  },
   extra_ecus=[
     # The only other ECU on PT bus accessible by camera on radarless Civic
     (Ecu.unknown, 0x18DAB3F1, None),
@@ -243,5 +252,4 @@ HONDA_NIDEC_ALT_SCM_MESSAGES = {CAR.ACURA_ILX, CAR.ACURA_RDX, CAR.CRV, CAR.CRV_E
                                 CAR.PILOT, CAR.RIDGELINE}
 HONDA_BOSCH = {CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G,
                CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022, CAR.HRV_3G}
-HONDA_BOSCH_ALT_BRAKE_SIGNAL = {CAR.ACCORD, CAR.CRV_5G, CAR.ACURA_RDX_3G, CAR.HRV_3G}
 HONDA_BOSCH_RADARLESS = {CAR.CIVIC_2022, CAR.HRV_3G}

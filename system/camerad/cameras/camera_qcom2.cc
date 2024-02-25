@@ -606,6 +606,7 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
   LOGD("start csiphy: %d", ret);
   ret = device_control(multi_cam_state->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle);
   LOGD("start isp: %d", ret);
+  assert(ret == 0);
 
   // TODO: this is unneeded, should we be doing the start i2c in a different way?
   //ret = device_control(sensor_fd, CAM_START_DEV, session_handle, sensor_dev_handle);

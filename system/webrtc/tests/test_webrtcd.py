@@ -18,13 +18,13 @@ class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
     try:
       async with asyncio.timeout(timeout):
         await awaitable
-    except asyncio.TimeoutError:
+    except TimeoutError:
       self.fail("Timeout while waiting for awaitable to complete")
 
   async def test_webrtcd(self):
     mock_request = MagicMock()
     async def connect(offer):
-      body = {'sdp': offer.sdp, 'cameras': offer.video, 'bridge_services_in': [], 'bridge_services_out': []}
+      body = {'sdp': offer.sdp, 'cameras': offer.video, 'bridge_services_in': [], 'bridge_services_out': ['carState']}
       mock_request.json.side_effect = AsyncMock(return_value=body)
       response = await get_stream(mock_request)
       response_json = json.loads(response.text)

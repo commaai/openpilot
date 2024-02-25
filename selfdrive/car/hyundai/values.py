@@ -1,7 +1,6 @@
 import re
 from dataclasses import dataclass
 from enum import Enum, IntFlag, StrEnum
-from typing import Dict, List, Optional, Set, Tuple, Union
 
 from cereal import car
 from panda.python import uds
@@ -157,7 +156,7 @@ class HyundaiCarInfo(CarInfo):
       self.footnotes.insert(0, Footnote.CANFD)
 
 
-CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
+CAR_INFO: dict[str, HyundaiCarInfo | list[HyundaiCarInfo] | None] = {
   CAR.AZERA_6TH_GEN: HyundaiCarInfo("Hyundai Azera 2022", "All", car_parts=CarParts.common([CarHarness.hyundai_k])),
   CAR.AZERA_HEV_6TH_GEN: [
     HyundaiCarInfo("Hyundai Azera Hybrid 2019", "All", car_parts=CarParts.common([CarHarness.hyundai_c])),
@@ -316,7 +315,7 @@ class Buttons:
   CANCEL = 4  # on newer models, this is a pause/resume button
 
 
-def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[bytes]]]:
+def get_platform_codes(fw_versions: list[bytes]) -> set[tuple[bytes, bytes | None]]:
   # Returns unique, platform-specific identification codes for a set of versions
   codes = set()  # (code-Optional[part], date)
   for fw in fw_versions:
@@ -335,12 +334,12 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[by
   return codes
 
 
-def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions) -> Set[str]:
+def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions) -> set[str]:
   # Non-electric CAN FD platforms often do not have platform code specifiers needed
   # to distinguish between hybrid and ICE. All EVs so far are either exclusively
   # electric or specify electric in the platform code.
   fuzzy_platform_blacklist = {str(c) for c in (CANFD_CAR - EV_CAR - CANFD_FUZZY_WHITELIST)}
-  candidates: Set[str] = set()
+  candidates: set[str] = set()
 
   for candidate, fws in offline_fw_versions.items():
     # Keep track of ECUs which pass all checks (platform codes, within date range)
@@ -396,6 +395,9 @@ HYUNDAI_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]
   p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_SOFTWARE_IDENTIFICATION) + \
   p16(0xf100)
 
+HYUNDAI_ECU_MANUFACTURING_DATE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.ECU_MANUFACTURING_DATE)
+
 HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
 
 # Regex patterns for parsing platform code, FW date, and part number from FW versions
@@ -413,6 +415,8 @@ PLATFORM_CODE_ECUS = [Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps]
 # So far we've only seen dates in fwdCamera
 # TODO: there are date codes in the ABS firmware versions in hex
 DATE_FW_ECUS = [Ecu.fwdCamera]
+
+ALL_HYUNDAI_ECUS = [Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.engine, Ecu.parkingAdas, Ecu.transmission, Ecu.adas, Ecu.hvac, Ecu.cornerRadar]
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
@@ -447,13 +451,52 @@ FW_QUERY_CONFIG = FwQueryConfig(
       obd_multiplexing=False,
     ),
 
-    # CAN-FD debugging queries
+    # CAN & CAN FD query to understand the three digit date code
+    # HDA2 cars usually use 6 digit date codes, so skip bus 1
+    Request(
+      [HYUNDAI_ECU_MANUFACTURING_DATE],
+      [HYUNDAI_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.fwdCamera],
+      bus=0,
+      auxiliary=True,
+      logging=True,
+    ),
+
+    # CAN & CAN FD logging queries (from camera)
+    Request(
+      [HYUNDAI_VERSION_REQUEST_LONG],
+      [HYUNDAI_VERSION_RESPONSE],
+      whitelist_ecus=ALL_HYUNDAI_ECUS,
+      bus=0,
+      auxiliary=True,
+      logging=True,
+    ),
+    Request(
+      [HYUNDAI_VERSION_REQUEST_MULTI],
+      [HYUNDAI_VERSION_RESPONSE],
+      whitelist_ecus=ALL_HYUNDAI_ECUS,
+      bus=0,
+      auxiliary=True,
+      logging=True,
+    ),
+    Request(
+      [HYUNDAI_VERSION_REQUEST_LONG],
+      [HYUNDAI_VERSION_RESPONSE],
+      whitelist_ecus=ALL_HYUNDAI_ECUS,
+      bus=1,
+      auxiliary=True,
+      obd_multiplexing=False,
+      logging=True,
+    ),
+
+    # CAN-FD alt request logging queries
     Request(
       [HYUNDAI_VERSION_REQUEST_ALT],
       [HYUNDAI_VERSION_RESPONSE],
       whitelist_ecus=[Ecu.parkingAdas, Ecu.hvac],
       bus=0,
       auxiliary=True,
+      logging=True,
     ),
     Request(
       [HYUNDAI_VERSION_REQUEST_ALT],
@@ -461,6 +504,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       whitelist_ecus=[Ecu.parkingAdas, Ecu.hvac],
       bus=1,
       auxiliary=True,
+      logging=True,
       obd_multiplexing=False,
     ),
   ],

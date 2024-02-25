@@ -95,6 +95,9 @@ class CarState(CarStateBase):
     ret.leftBlinker = cp.vl["BLINKERS_STATE"]["TURN_SIGNALS"] == 1
     ret.rightBlinker = cp.vl["BLINKERS_STATE"]["TURN_SIGNALS"] == 2
 
+    if self.CP.carFingerprint != CAR.MIRAI:
+      ret.engineRpm = cp.vl["ENGINE_RPM"]["RPM"]
+
     ret.steeringTorque = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]
     ret.steeringTorqueEps = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_EPS"] * self.eps_torque_scale
     # we could use the override bit from dbc, but it's triggered at too high torque values
@@ -179,6 +182,9 @@ class CarState(CarStateBase):
       ("PCM_CRUISE_SM", 1),
       ("STEER_TORQUE_SENSOR", 50),
     ]
+
+    if CP.carFingerprint != CAR.MIRAI:
+      messages.append(("ENGINE_RPM", 42))
 
     if CP.carFingerprint in UNSUPPORTED_DSU_CAR:
       messages.append(("DSU_CRUISE", 5))

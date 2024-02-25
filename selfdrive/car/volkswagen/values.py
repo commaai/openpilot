@@ -1,7 +1,6 @@
 from collections import defaultdict, namedtuple
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag, StrEnum
-from typing import Dict, List, Union
 
 from cereal import car
 from panda.python import uds
@@ -151,7 +150,7 @@ class CAR(StrEnum):
 PQ_CARS = {CAR.PASSAT_NMS, CAR.SHARAN_MK2}
 
 
-DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("vw_mqb_2010", None))
+DBC: dict[str, dict[str, str]] = defaultdict(lambda: dbc_dict("vw_mqb_2010", None))
 for car_type in PQ_CARS:
   DBC[car_type] = dbc_dict("vw_golf_mk4", None)
 
@@ -191,7 +190,7 @@ class VWCarInfo(CarInfo):
       self.car_parts = CarParts([Device.threex_angled_mount, CarHarness.j533])
 
 
-CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
+CAR_INFO: dict[str, VWCarInfo | list[VWCarInfo]] = {
   CAR.ARTEON_MK1: [
     VWCarInfo("Volkswagen Arteon 2018-23", video_link="https://youtu.be/FAomFKPFlDA"),
     VWCarInfo("Volkswagen Arteon R 2020-23", video_link="https://youtu.be/FAomFKPFlDA"),
@@ -293,17 +292,24 @@ VOLKSWAGEN_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 
 VOLKSWAGEN_RX_OFFSET = 0x6a
 
 FW_QUERY_CONFIG = FwQueryConfig(
-  requests=[
+  # TODO: add back whitelists after we gather enough data
+  requests=[request for bus, obd_multiplexing in [(1, True), (1, False), (0, False)] for request in [
     Request(
       [VOLKSWAGEN_VERSION_REQUEST_MULTI],
       [VOLKSWAGEN_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.srs, Ecu.eps, Ecu.fwdRadar],
+      # whitelist_ecus=[Ecu.srs, Ecu.eps, Ecu.fwdRadar],
       rx_offset=VOLKSWAGEN_RX_OFFSET,
+      bus=bus,
+      logging=(bus != 1 or not obd_multiplexing),
+      obd_multiplexing=obd_multiplexing,
     ),
     Request(
       [VOLKSWAGEN_VERSION_REQUEST_MULTI],
       [VOLKSWAGEN_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.engine, Ecu.transmission],
+      # whitelist_ecus=[Ecu.engine, Ecu.transmission],
+      bus=bus,
+      logging=(bus != 1 or not obd_multiplexing),
+      obd_multiplexing=obd_multiplexing,
     ),
-  ],
+  ]],
 )

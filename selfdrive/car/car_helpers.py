@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
 
 from cereal import car
 from openpilot.common.params import Params
@@ -63,7 +63,7 @@ def load_interfaces(brand_names):
   return ret
 
 
-def _get_interface_names() -> Dict[str, List[str]]:
+def _get_interface_names() -> dict[str, list[str]]:
   # returns a dict of brand name and its respective models
   brand_names = {}
   for brand_name, brand_models in get_interface_attr("CAR").items():
@@ -77,7 +77,7 @@ interface_names = _get_interface_names()
 interfaces = load_interfaces(interface_names)
 
 
-def can_fingerprint(next_can: Callable) -> Tuple[Optional[str], Dict[int, dict]]:
+def can_fingerprint(next_can: Callable) -> tuple[str | None, dict[int, dict]]:
   finger = gen_empty_fingerprint()
   candidate_cars = {i: all_legacy_fingerprint_cars() for i in [0, 1]}  # attempt fingerprint on both bus 0 and 1
   frame = 0
@@ -141,9 +141,10 @@ def fingerprint(logcan, sendcan, num_pandas):
       cached = True
     else:
       cloudlog.warning("Getting VIN & FW versions")
-      # enable OBD multiplexing for Vin query, also allows time for sendcan subscriber to connect
+      # enable OBD multiplexing for VIN query
+      # NOTE: this takes ~0.1s and is relied on to allow sendcan subscriber to connect in time
       set_obd_multiplexing(params, True)
-      # Vin query only reliably works through OBDII
+      # VIN query only reliably works through OBDII
       vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, (0, 1))
       ecu_rx_addrs = get_present_ecus(logcan, sendcan, num_pandas=num_pandas)
       car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, num_pandas=num_pandas)
@@ -161,7 +162,7 @@ def fingerprint(logcan, sendcan, num_pandas):
   cloudlog.warning("VIN %s", vin)
   params.put("CarVin", vin)
 
-  # disable OBD multiplexing for potential ECU knockouts
+  # disable OBD multiplexing for CAN fingerprinting and potential ECU knockouts
   set_obd_multiplexing(params, False)
   params.put_bool("FirmwareQueryDone", True)
 
