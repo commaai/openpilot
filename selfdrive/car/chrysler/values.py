@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 
 from cereal import car
 from panda.python import uds
-from openpilot.selfdrive.car import DbcDict, PlatformConfig, Platforms, dbc_dict
+from openpilot.selfdrive.car import CarSpecs, DbcDict, PlatformConfig, Platforms, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
@@ -24,47 +24,60 @@ class ChryslerPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('chrysler_pacifica_2017_hybrid_generated', None))
 
 
+@dataclass
+class ChryslerCarSpecs(CarSpecs):
+  minSteerSpeed: float = 3.8 # m/s
+
+
 class CAR(Platforms):
   # Chrysler
   PACIFICA_2017_HYBRID = ChryslerPlatformConfig(
     "CHRYSLER PACIFICA HYBRID 2017",
     ChryslerCarInfo("Chrysler Pacifica Hybrid 2017"),
+    specs=ChryslerCarSpecs(mass=2242., wheelbase=3.089, steerRatio=16.2),
   )
   PACIFICA_2018_HYBRID = ChryslerPlatformConfig(
     "CHRYSLER PACIFICA HYBRID 2018",
     ChryslerCarInfo("Chrysler Pacifica Hybrid 2018"),
+    specs=PACIFICA_2017_HYBRID.specs,
   )
   PACIFICA_2019_HYBRID = ChryslerPlatformConfig(
     "CHRYSLER PACIFICA HYBRID 2019",
     ChryslerCarInfo("Chrysler Pacifica Hybrid 2019-23"),
+    specs=PACIFICA_2017_HYBRID.specs,
   )
   PACIFICA_2018 = ChryslerPlatformConfig(
     "CHRYSLER PACIFICA 2018",
     ChryslerCarInfo("Chrysler Pacifica 2017-18"),
+    specs=PACIFICA_2017_HYBRID.specs,
   )
   PACIFICA_2020 = ChryslerPlatformConfig(
     "CHRYSLER PACIFICA 2020",
     [
       ChryslerCarInfo("Chrysler Pacifica 2019-20"),
       ChryslerCarInfo("Chrysler Pacifica 2021-23", package="All"),
-    ]
+    ],
+    specs=PACIFICA_2017_HYBRID.specs,
   )
 
   # Dodge
   DODGE_DURANGO = ChryslerPlatformConfig(
     "DODGE DURANGO 2021",
     ChryslerCarInfo("Dodge Durango 2020-21"),
+    specs=PACIFICA_2017_HYBRID.specs,
   )
 
   # Jeep
   JEEP_GRAND_CHEROKEE = ChryslerPlatformConfig( # includes 2017 Trailhawk
     "JEEP GRAND CHEROKEE V6 2018",
     ChryslerCarInfo("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk"),
+    specs=ChryslerCarSpecs(mass=1778., wheelbase=2.71, steerRatio=16.7),
   )
 
   JEEP_GRAND_CHEROKEE_2019 = ChryslerPlatformConfig(  # includes 2020 Trailhawk
     "JEEP GRAND CHEROKEE 2019",
     ChryslerCarInfo("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4"),
+    specs=JEEP_GRAND_CHEROKEE.specs,
   )
 
   # Ram
@@ -72,6 +85,7 @@ class CAR(Platforms):
     "RAM 1500 5TH GEN",
     ChryslerCarInfo("Ram 1500 2019-24", car_parts=CarParts.common([CarHarness.ram])),
     dbc_dict('chrysler_ram_dt_generated', None),
+    specs=ChryslerCarSpecs(mass=2493., wheelbase=3.88, steerRatio=16.3, minSteerSpeed=14.5),
   )
   RAM_HD = ChryslerPlatformConfig(
     "RAM HD 5TH GEN",
@@ -80,6 +94,7 @@ class CAR(Platforms):
       ChryslerCarInfo("Ram 3500 2019-22", car_parts=CarParts.common([CarHarness.ram])),
     ],
     dbc_dict('chrysler_ram_hd_generated', None),
+    specs=ChryslerCarSpecs(mass=3405., wheelbase=3.785, steerRatio=15.61, minSteerSpeed=16.),
   )
 
 
