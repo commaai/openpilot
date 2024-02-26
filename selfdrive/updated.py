@@ -71,7 +71,7 @@ def read_time_from_param(params, param) -> datetime.datetime | None:
     pass
   return None
 
-def run(cmd: list[str], cwd: str | None = None) -> str:
+def run(cmd: list[str], cwd: str = None) -> str:
   return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
 
 

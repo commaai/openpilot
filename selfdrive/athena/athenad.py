@@ -279,7 +279,7 @@ def upload_handler(end_event: threading.Event) -> None:
       cloudlog.exception("athena.upload_handler.exception")
 
 
-def _do_upload(upload_item: UploadItem, callback: Callable | None = None) -> requests.Response:
+def _do_upload(upload_item: UploadItem, callback: Callable = None) -> requests.Response:
   path = upload_item.path
   compress = False
 
@@ -328,7 +328,7 @@ def getVersion() -> dict[str, str]:
 
 
 @dispatcher.add_method
-def setNavDestination(latitude: int = 0, longitude: int = 0, place_name: str | None = None, place_details: str | None = None) -> dict[str, int]:
+def setNavDestination(latitude: int = 0, longitude: int = 0, place_name: str = None, place_details: str = None) -> dict[str, int]:
   destination = {
     "latitude": latitude,
     "longitude": longitude,
@@ -767,7 +767,7 @@ def backoff(retries: int) -> int:
   return random.randrange(0, min(128, int(2 ** retries)))
 
 
-def main(exit_event: threading.Event | None = None):
+def main(exit_event: threading.Event = None):
   try:
     set_core_affinity([0, 1, 2, 3])
   except Exception:
