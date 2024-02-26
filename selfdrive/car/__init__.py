@@ -1,6 +1,6 @@
 # functions common among cars
 from collections import namedtuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import ReprEnum
 
 import capnp
@@ -246,12 +246,14 @@ class CanSignalRateCalculator:
 CarInfos = CarInfo | list[CarInfo]
 
 
-@dataclass
+@dataclass(kw_only=True)
 class CarSpecs:
   mass: float
   wheelbase: float
   steerRatio: float
-  centerToFrontRatio: float = 0.5
+  centerToFrontRatio: float = field(default=0.5)
+  minSteerSpeed: float = field(default=0.)
+  minEnableSpeed: float = field(default=-1.)
 
 
 @dataclass(order=True)
