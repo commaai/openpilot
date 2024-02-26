@@ -26,7 +26,6 @@ VERSIONS = get_interface_attr('FW_VERSIONS', ignore_none=True)
 MODEL_TO_BRAND = {c: b for b, e in VERSIONS.items() for c in e}
 REQUESTS = [(brand, config, r) for brand, config in FW_QUERY_CONFIGS.items() for r in config.requests]
 
-CarFw = list[capnp.lib.capnp._DynamicStructBuilder]
 T = TypeVar('T')
 
 
@@ -40,7 +39,7 @@ def is_brand(brand: str, filter_brand: str | None) -> bool:
   return filter_brand is None or brand == filter_brand
 
 
-def build_fw_dict(fw_versions: CarFw, filter_brand: str = None) -> dict[AddrType, set[bytes]]:
+def build_fw_dict(fw_versions: list[capnp.lib.capnp._DynamicStructBuilder], filter_brand: str = None) -> dict[AddrType, set[bytes]]:
   fw_versions_dict: defaultdict[AddrType, set[bytes]] = defaultdict(set)
   for fw in fw_versions:
     if is_brand(fw.brand, filter_brand) and not fw.logging:
@@ -50,12 +49,11 @@ def build_fw_dict(fw_versions: CarFw, filter_brand: str = None) -> dict[AddrType
 
 
 class MatchFwToCar(Protocol):
-  def __call__(self, live_fw_versions: LiveFwVersions, match_brand: str | None = None, log: bool = True) -> set[str]:
+  def __call__(self, live_fw_versions: LiveFwVersions, match_brand: str = None, log: bool = True) -> set[str]:
     ...
 
 
-def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, match_brand: str | None = None, log: bool = True, \
-                          exclude: str | None = None) -> set[str]:
+def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, match_brand: str = None, log: bool = True, exclude: str = None) -> set[str]:
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
   the match is rejected."""
@@ -105,8 +103,7 @@ def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, match_brand: str | N
     return set()
 
 
-def match_fw_to_car_exact(live_fw_versions: LiveFwVersions, match_brand: str | None = None, log: bool = True, \
-                          extra_fw_versions: dict | None = None) -> set[str]:
+def match_fw_to_car_exact(live_fw_versions: LiveFwVersions, match_brand: str = None, log: bool = True, extra_fw_versions: dict = None) -> set[str]:
   """Do an exact FW match. Returns all cars that match the given
   FW versions for a list of "essential" ECUs. If an ECU is not considered
   essential the FW version can be missing to get a fingerprint, but if it's present it
@@ -147,7 +144,8 @@ def match_fw_to_car_exact(live_fw_versions: LiveFwVersions, match_brand: str | N
   return set(candidates.keys()) - invalid
 
 
-def match_fw_to_car(fw_versions: CarFw, allow_exact: bool = True, allow_fuzzy: bool = True, log: bool = True):
+def match_fw_to_car(fw_versions: list[capnp.lib.capnp._DynamicStructBuilder], allow_exact: bool = True, allow_fuzzy: bool = True, \
+                    log: bool = True) -> tuple[bool, set[str]]:
   # Try exact matching first
   exact_matches: list[tuple[bool, MatchFwToCar]] = []
   if allow_exact:
@@ -157,7 +155,7 @@ def match_fw_to_car(fw_versions: CarFw, allow_exact: bool = True, allow_fuzzy: b
 
   for exact_match, match_func in exact_matches:
     # For each brand, attempt to fingerprint using all FW returned from its queries
-    matches = set()
+    matches: set[str] = set()
     for brand in VERSIONS.keys():
       fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
       matches |= match_func(fw_versions_dict, match_brand=brand, log=log)
@@ -240,7 +238,7 @@ def set_obd_multiplexing(params: Params, obd_multiplexing: bool):
 
 
 def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs: set[EcuAddrBusType], timeout: float = 0.1, num_pandas: int = 1, \
-                            debug: bool = False, progress: bool = False) -> CarFw:
+                            debug: bool = False, progress: bool = False) -> list[capnp.lib.capnp._DynamicStructBuilder]:
   """Queries for FW versions ordering brands by likelihood, breaks when exact match is found"""
 
   all_car_fw = []
@@ -262,8 +260,8 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs: set[EcuAddrBusType], 
   return all_car_fw
 
 
-def get_fw_versions(logcan, sendcan, query_brand: str | None = None, extra: OfflineFwVersions | None = None, \
-                    timeout: float = 0.1, num_pandas: int = 1, debug: bool = False, progress: bool = False) -> CarFw:
+def get_fw_versions(logcan, sendcan, query_brand: str | None = None, extra: OfflineFwVersions | None = None, timeout: float = 0.1, \
+                    num_pandas: int = 1, debug: bool = False, progress: bool = False) -> list[capnp.lib.capnp._DynamicStructBuilder]:
   versions = VERSIONS.copy()
   params = Params()
 
