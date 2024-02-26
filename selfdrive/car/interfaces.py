@@ -118,6 +118,7 @@ class CarInterfaceBase(ABC):
         ret.mass = platform_config.specs.mass
         ret.wheelbase = platform_config.specs.wheelbase
         ret.steerRatio = platform_config.specs.steerRatio
+        ret.centerToFront = ret.wheelbase * platform_config.specs.centerToFrontRatio
         ret.minEnableSpeed = platform_config.specs.minEnableSpeed
         ret.minSteerSpeed = platform_config.specs.minSteerSpeed
 

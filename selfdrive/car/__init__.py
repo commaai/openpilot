@@ -251,6 +251,7 @@ class CarSpecs:
   mass: float
   wheelbase: float
   steerRatio: float
+  centerToFrontRatio: float = field(default=0.5)
   minSteerSpeed: float = field(default=0.)
   minEnableSpeed: float = field(default=-1.)
 

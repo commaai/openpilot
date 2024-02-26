@@ -41,9 +41,6 @@ class CarInterface(CarInterfaceBase):
     else:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-
-    ret.centerToFront = ret.wheelbase * 0.5
-
     if candidate in (CAR.ASCENT, CAR.ASCENT_2023):
       ret.steerActuatorDelay = 0.3   # end-to-end angle controller
       ret.lateralTuning.init('pid')
