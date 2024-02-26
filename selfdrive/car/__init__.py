@@ -261,6 +261,7 @@ class PlatformConfig:
   platform_str: str
   car_info: CarInfos
   dbc_dict: DbcDict
+  test_routes: list[str] = field(default_factory=list)
 
   specs: CarSpecs | None = None
 

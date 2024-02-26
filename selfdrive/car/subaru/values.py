@@ -119,6 +119,10 @@ class CAR(Platforms):
       SubaruCarInfo("Subaru XV 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26"),
     ],
     specs=CarSpecs(mass=1568, wheelbase=2.67, steerRatio=15),
+    test_routes=[
+      "791340bc01ed993d|2019-03-10--16-28-08",
+      "8de015561e1ea4a0|2023-08-29--17-08-31", # openpilot longitudinal
+    ]
   )
   IMPREZA_2020 = SubaruPlatformConfig(
     "SUBARU IMPREZA SPORT 2020",
@@ -128,6 +132,9 @@ class CAR(Platforms):
       SubaruCarInfo("Subaru XV 2020-21"),
     ],
     specs=CarSpecs(mass=1480, wheelbase=2.67, steerRatio=17),
+    test_routes=[
+      "8bf7e79a3ce64055|2021-05-24--09-36-27",
+    ]
   )
   # TODO: is there an XV and Impreza too?
   CROSSTREK_HYBRID = SubaruPlatformConfig(
