@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-from typing import Any, Protocol, TypeVar
 from collections.abc import Iterator
+from typing import Any, Protocol, TypeVar
+
 from tqdm import tqdm
+import capnp
 
 import panda.python.uds as uds
 from cereal import car
 from openpilot.common.params import Params
-from openpilot.selfdrive.car.ecu_addrs import get_ecu_addrs
-from openpilot.selfdrive.car.fw_query_definitions import AddrType, CarFw, EcuAddrBusType, FwQueryConfig, LiveFwVersions, OfflineFwVersions
-from openpilot.selfdrive.car.interfaces import get_interface_attr
-from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
-from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.car.ecu_addrs import get_ecu_addrs
+from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
+from openpilot.selfdrive.car.fw_query_definitions import AddrType, EcuAddrBusType, FwQueryConfig, LiveFwVersions, OfflineFwVersions
+from openpilot.selfdrive.car.interfaces import get_interface_attr
+from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 
 Ecu = car.CarParams.Ecu
 ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
@@ -24,6 +26,7 @@ VERSIONS = get_interface_attr('FW_VERSIONS', ignore_none=True)
 MODEL_TO_BRAND = {c: b for b, e in VERSIONS.items() for c in e}
 REQUESTS = [(brand, config, r) for brand, config in FW_QUERY_CONFIGS.items() for r in config.requests]
 
+CarFw = list[capnp.lib.capnp._DynamicStructBuilder]
 T = TypeVar('T')
 
 
