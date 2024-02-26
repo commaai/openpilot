@@ -260,8 +260,8 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs: set[EcuAddrBusType], 
   return all_car_fw
 
 
-def get_fw_versions(logcan, sendcan, query_brand: str | None = None, extra: OfflineFwVersions | None = None, timeout: float = 0.1, \
-                    num_pandas: int = 1, debug: bool = False, progress: bool = False) -> list[capnp.lib.capnp._DynamicStructBuilder]:
+def get_fw_versions(logcan, sendcan, query_brand: str = None, extra: OfflineFwVersions = None, timeout: float = 0.1, num_pandas: int = 1, \
+                    debug: bool = False, progress: bool = False) -> list[capnp.lib.capnp._DynamicStructBuilder]:
   versions = VERSIONS.copy()
   params = Params()
 
