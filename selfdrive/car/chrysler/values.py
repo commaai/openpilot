@@ -1,9 +1,9 @@
-from enum import IntFlag, StrEnum
+from enum import IntFlag
 from dataclasses import dataclass, field
 
 from cereal import car
 from panda.python import uds
-from openpilot.selfdrive.car import dbc_dict
+from openpilot.selfdrive.car import DbcDict, PlatformConfig, Platforms, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
@@ -13,25 +13,74 @@ Ecu = car.CarParams.Ecu
 class ChryslerFlags(IntFlag):
   HIGHER_MIN_STEERING_SPEED = 1
 
+@dataclass
+class ChryslerCarInfo(CarInfo):
+  package: str = "Adaptive Cruise Control (ACC)"
+  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.fca]))
 
-class CAR(StrEnum):
+
+@dataclass
+class ChryslerPlatformConfig(PlatformConfig):
+  dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('chrysler_pacifica_2017_hybrid_generated', None))
+
+
+class CAR(Platforms):
   # Chrysler
-  PACIFICA_2017_HYBRID = "CHRYSLER PACIFICA HYBRID 2017"
-  PACIFICA_2018_HYBRID = "CHRYSLER PACIFICA HYBRID 2018"
-  PACIFICA_2019_HYBRID = "CHRYSLER PACIFICA HYBRID 2019"
-  PACIFICA_2018 = "CHRYSLER PACIFICA 2018"
-  PACIFICA_2020 = "CHRYSLER PACIFICA 2020"
+  PACIFICA_2017_HYBRID = ChryslerPlatformConfig(
+    "CHRYSLER PACIFICA HYBRID 2017",
+    ChryslerCarInfo("Chrysler Pacifica Hybrid 2017"),
+  )
+  PACIFICA_2018_HYBRID = ChryslerPlatformConfig(
+    "CHRYSLER PACIFICA HYBRID 2018",
+    ChryslerCarInfo("Chrysler Pacifica Hybrid 2018"),
+  )
+  PACIFICA_2019_HYBRID = ChryslerPlatformConfig(
+    "CHRYSLER PACIFICA HYBRID 2019",
+    ChryslerCarInfo("Chrysler Pacifica Hybrid 2019-23"),
+  )
+  PACIFICA_2018 = ChryslerPlatformConfig(
+    "CHRYSLER PACIFICA 2018",
+    ChryslerCarInfo("Chrysler Pacifica 2017-18"),
+  )
+  PACIFICA_2020 = ChryslerPlatformConfig(
+    "CHRYSLER PACIFICA 2020",
+    [
+      ChryslerCarInfo("Chrysler Pacifica 2019-20"),
+      ChryslerCarInfo("Chrysler Pacifica 2021-23", package="All"),
+    ]
+  )
 
   # Dodge
-  DODGE_DURANGO = "DODGE DURANGO 2021"
+  DODGE_DURANGO = ChryslerPlatformConfig(
+    "DODGE DURANGO 2021",
+    ChryslerCarInfo("Dodge Durango 2020-21"),
+  )
 
   # Jeep
-  JEEP_GRAND_CHEROKEE = "JEEP GRAND CHEROKEE V6 2018"  # includes 2017 Trailhawk
-  JEEP_GRAND_CHEROKEE_2019 = "JEEP GRAND CHEROKEE 2019"  # includes 2020 Trailhawk
+  JEEP_GRAND_CHEROKEE = ChryslerPlatformConfig( # includes 2017 Trailhawk
+    "JEEP GRAND CHEROKEE V6 2018",
+    ChryslerCarInfo("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk"),
+  )
+
+  JEEP_GRAND_CHEROKEE_2019 = ChryslerPlatformConfig(  # includes 2020 Trailhawk
+    "JEEP GRAND CHEROKEE 2019",
+    ChryslerCarInfo("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4"),
+  )
 
   # Ram
-  RAM_1500 = "RAM 1500 5TH GEN"
-  RAM_HD = "RAM HD 5TH GEN"
+  RAM_1500 = ChryslerPlatformConfig(
+    "RAM 1500 5TH GEN",
+    ChryslerCarInfo("Ram 1500 2019-24", car_parts=CarParts.common([CarHarness.ram])),
+    dbc_dict('chrysler_ram_dt_generated', None),
+  )
+  RAM_HD = ChryslerPlatformConfig(
+    "RAM HD 5TH GEN",
+    [
+      ChryslerCarInfo("Ram 2500 2020-24", car_parts=CarParts.common([CarHarness.ram])),
+      ChryslerCarInfo("Ram 3500 2019-22", car_parts=CarParts.common([CarHarness.ram])),
+    ],
+    dbc_dict('chrysler_ram_hd_generated', None),
+  )
 
 
 class CarControllerParams:
@@ -57,32 +106,6 @@ STEER_THRESHOLD = 120
 RAM_DT = {CAR.RAM_1500, }
 RAM_HD = {CAR.RAM_HD, }
 RAM_CARS = RAM_DT | RAM_HD
-
-
-@dataclass
-class ChryslerCarInfo(CarInfo):
-  package: str = "Adaptive Cruise Control (ACC)"
-  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.fca]))
-
-
-CAR_INFO: dict[str, ChryslerCarInfo | list[ChryslerCarInfo] | None] = {
-  CAR.PACIFICA_2017_HYBRID: ChryslerCarInfo("Chrysler Pacifica Hybrid 2017"),
-  CAR.PACIFICA_2018_HYBRID: ChryslerCarInfo("Chrysler Pacifica Hybrid 2018"),
-  CAR.PACIFICA_2019_HYBRID: ChryslerCarInfo("Chrysler Pacifica Hybrid 2019-23"),
-  CAR.PACIFICA_2018: ChryslerCarInfo("Chrysler Pacifica 2017-18"),
-  CAR.PACIFICA_2020: [
-    ChryslerCarInfo("Chrysler Pacifica 2019-20"),
-    ChryslerCarInfo("Chrysler Pacifica 2021-23", package="All"),
-  ],
-  CAR.JEEP_GRAND_CHEROKEE: ChryslerCarInfo("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk"),
-  CAR.JEEP_GRAND_CHEROKEE_2019: ChryslerCarInfo("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4"),
-  CAR.DODGE_DURANGO: ChryslerCarInfo("Dodge Durango 2020-21"),
-  CAR.RAM_1500: ChryslerCarInfo("Ram 1500 2019-24", car_parts=CarParts.common([CarHarness.ram])),
-  CAR.RAM_HD: [
-    ChryslerCarInfo("Ram 2500 2020-24", car_parts=CarParts.common([CarHarness.ram])),
-    ChryslerCarInfo("Ram 3500 2019-22", car_parts=CarParts.common([CarHarness.ram])),
-  ],
-}
 
 
 CHRYSLER_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
@@ -124,16 +147,5 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
 )
 
-
-DBC = {
-  CAR.PACIFICA_2017_HYBRID: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
-  CAR.PACIFICA_2018: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
-  CAR.PACIFICA_2020: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
-  CAR.PACIFICA_2018_HYBRID: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
-  CAR.PACIFICA_2019_HYBRID: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
-  CAR.DODGE_DURANGO: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
-  CAR.JEEP_GRAND_CHEROKEE: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
-  CAR.JEEP_GRAND_CHEROKEE_2019: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
-  CAR.RAM_1500: dbc_dict('chrysler_ram_dt_generated', None),
-  CAR.RAM_HD: dbc_dict('chrysler_ram_hd_generated', None),
-}
+CAR_INFO = CAR.create_carinfo_map()
+DBC = CAR.create_dbc_map()
