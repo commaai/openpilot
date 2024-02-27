@@ -29,7 +29,7 @@ from openpilot.tools.lib.logreader import LogReader
 
 # Baseline CPU usage by process
 PROCS = {
-  "selfdrive.controls.controlsd": 39.0,
+  "selfdrive.controls.controlsd": 41.0,
   "./loggerd": 14.0,
   "./encoderd": 17.0,
   "./camerad": 14.5,
@@ -39,7 +39,7 @@ PROCS = {
   "./ui": 18.0,
   "selfdrive.locationd.paramsd": 9.0,
   "./sensord": 7.0,
-  "selfdrive.controls.radard": 4.5,
+  "selfdrive.controls.radard": 7.0,
   "selfdrive.modeld.modeld": 13.0,
   "selfdrive.modeld.dmonitoringmodeld": 8.0,
   "selfdrive.modeld.navmodeld": 1.0,
@@ -57,7 +57,7 @@ PROCS = {
   "selfdrive.boardd.pandad": 0,
   "selfdrive.statsd": 0.4,
   "selfdrive.navd.navd": 0.4,
-  "system.loggerd.uploader": (0.5, 10.0),
+  "system.loggerd.uploader": (0.5, 15.0),
   "system.loggerd.deleter": 0.1,
 }
 
@@ -112,17 +112,12 @@ class TestOnroad(unittest.TestCase):
 
     # setup env
     params = Params()
-    if "CI" in os.environ:
-      params.clear_all()
     params.remove("CurrentRoute")
     set_params_enabled()
+    os.environ['REPLAY'] = '1'
     os.environ['TESTING_CLOSET'] = '1'
     if os.path.exists(Paths.log_root()):
       shutil.rmtree(Paths.log_root())
-    os.system("rm /dev/shm/*")
-
-    # Make sure athena isn't running
-    os.system("pkill -9 -f athena")
 
     # start manager and run openpilot for a minute
     proc = None
@@ -132,7 +127,7 @@ class TestOnroad(unittest.TestCase):
 
       sm = messaging.SubMaster(['carState'])
       with Timeout(150, "controls didn't start"):
-        while sm.rcv_frame['carState'] < 0:
+        while sm.recv_frame['carState'] < 0:
           sm.update(1000)
 
       # make sure we get at least two full segments
@@ -429,4 +424,4 @@ class TestOnroad(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

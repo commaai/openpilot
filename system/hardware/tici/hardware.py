@@ -349,7 +349,6 @@ class Tici(HardwareBase):
                          gpu=(("gpu0-usr", "gpu1-usr"), 1000),
                          mem=("ddr-usr", 1000),
                          bat=(None, 1),
-                         ambient=("xo-therm-adc", 1000),
                          pmic=(("pm8998_tz", "pm8005_tz"), 1000))
 
   def set_screen_brightness(self, percentage):
@@ -457,23 +456,36 @@ class Tici(HardwareBase):
   def configure_modem(self):
     sim_id = self.get_sim_info().get('sim_id', '')
 
-    # configure modem as data-centric
-    cmds = [
-      'AT+QNVW=5280,0,"0102000000000000"',
-      'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
-      'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
-    ]
     modem = self.get_modem()
+    try:
+      manufacturer = str(modem.Get(MM_MODEM, 'Manufacturer', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
+    except Exception:
+      manufacturer = None
+
+    cmds = []
+    if manufacturer == 'Cavli Inc.':
+      cmds += [
+        # use sim slot
+        'AT^SIMSWAP=1',
+
+        # configure ECM mode
+        'AT$QCPCFG=usbNet,1'
+      ]
+    else:
+      cmds += [
+        # configure modem as data-centric
+        'AT+QNVW=5280,0,"0102000000000000"',
+        'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
+        'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
+      ]
+
+      # clear out old blue prime initial APN
+      os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn="')
     for cmd in cmds:
       try:
         modem.Command(cmd, math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
       except Exception:
         pass
-
-    # blue prime
-    blue_prime = sim_id.startswith('8901410')
-    initial_apn = "Broadband" if blue_prime else ""
-    os.system(f'mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn={initial_apn}"')
 
     # eSIM prime
     if sim_id.startswith('8985235'):

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from openpilot.selfdrive.car.chrysler.values import CAR as CHRYSLER
 from openpilot.selfdrive.car.gm.values import CAR as GM
@@ -20,7 +20,6 @@ non_tested_cars = [
   GM.CADILLAC_ATS,
   GM.HOLDEN_ASTRA,
   GM.MALIBU,
-  GM.EQUINOX,
   HYUNDAI.GENESIS_G90,
   HONDA.ODYSSEY_CHN,
   VOLKSWAGEN.CRAFTER_MK2,  # need a route from an ACC-equipped Crafter
@@ -30,8 +29,8 @@ non_tested_cars = [
 
 class CarTestRoute(NamedTuple):
   route: str
-  car_model: Optional[str]
-  segment: Optional[int] = None
+  car_model: str | None
+  segment: int | None = None
 
 
 routes = [
@@ -46,6 +45,7 @@ routes = [
   CarTestRoute("3d84727705fecd04|2021-05-25--08-38-56", CHRYSLER.PACIFICA_2020),
   CarTestRoute("221c253375af4ee9|2022-06-15--18-38-24", CHRYSLER.RAM_1500),
   CarTestRoute("8fb5eabf914632ae|2022-08-04--17-28-53", CHRYSLER.RAM_HD, segment=6),
+  CarTestRoute("3379c85aeedc8285|2023-12-07--17-49-39", CHRYSLER.DODGE_DURANGO),
 
   CarTestRoute("54827bf84c38b14f|2023-01-25--14-14-11", FORD.BRONCO_SPORT_MK1),
   CarTestRoute("f8eaaccd2a90aef8|2023-05-04--15-10-09", FORD.ESCAPE_MK4),
@@ -59,6 +59,7 @@ routes = [
   CarTestRoute("7cc2a8365b4dd8a9|2018-12-02--12-10-44", GM.ACADIA),
   CarTestRoute("aa20e335f61ba898|2019-02-05--16-59-04", GM.BUICK_REGAL),
   CarTestRoute("75a6bcb9b8b40373|2023-03-11--22-47-33", GM.BUICK_LACROSSE),
+  CarTestRoute("e746f59bc96fd789|2024-01-31--22-25-58", GM.EQUINOX),
   CarTestRoute("ef8f2185104d862e|2023-02-09--18-37-13", GM.ESCALADE),
   CarTestRoute("46460f0da08e621e|2021-10-26--07-21-46", GM.ESCALADE_ESV),
   CarTestRoute("168f8b3be57f66ae|2023-09-12--21-44-42", GM.ESCALADE_ESV_2019),
@@ -186,6 +187,7 @@ routes = [
   CarTestRoute("5f5afb36036506e4|2019-05-14--02-09-54", TOYOTA.COROLLA_TSS2),
   CarTestRoute("5ceff72287a5c86c|2019-10-19--10-59-02", TOYOTA.COROLLA_TSS2),  # hybrid
   CarTestRoute("d2525c22173da58b|2021-04-25--16-47-04", TOYOTA.PRIUS),
+  CarTestRoute("b14c5b4742e6fc85|2020-07-28--19-50-11", TOYOTA.RAV4),
   CarTestRoute("32a7df20486b0f70|2020-02-06--16-06-50", TOYOTA.RAV4H),
   CarTestRoute("cdf2f7de565d40ae|2019-04-25--03-53-41", TOYOTA.RAV4_TSS2),
   CarTestRoute("a5c341bb250ca2f0|2022-05-18--16-05-17", TOYOTA.RAV4_TSS2_2022),
@@ -207,6 +209,7 @@ routes = [
   CarTestRoute("ec429c0f37564e3c|2020-02-01--17-28-12", TOYOTA.LEXUS_NX),  # hybrid
   CarTestRoute("3fd5305f8b6ca765|2021-04-28--19-26-49", TOYOTA.LEXUS_NX_TSS2),
   CarTestRoute("09ae96064ed85a14|2022-06-09--12-22-31", TOYOTA.LEXUS_NX_TSS2),  # hybrid
+  CarTestRoute("4765fbbf59e3cd88|2024-02-06--17-45-32", TOYOTA.LEXUS_LC_TSS2),
   CarTestRoute("0a302ffddbb3e3d3|2020-02-08--16-19-08", TOYOTA.HIGHLANDER_TSS2),
   CarTestRoute("437e4d2402abf524|2021-05-25--07-58-50", TOYOTA.HIGHLANDER_TSS2),  # hybrid
   CarTestRoute("3183cd9b021e89ce|2021-05-25--10-34-44", TOYOTA.HIGHLANDER),
@@ -221,7 +224,7 @@ routes = [
   CarTestRoute("ea8fbe72b96a185c|2023-02-08--15-11-46", TOYOTA.CHR_TSS2),
   CarTestRoute("ea8fbe72b96a185c|2023-02-22--09-20-34", TOYOTA.CHR_TSS2),  # openpilot longitudinal, with smartDSU
   CarTestRoute("6719965b0e1d1737|2023-02-09--22-44-05", TOYOTA.CHR_TSS2),  # hybrid
-  # CarTestRoute("6719965b0e1d1737|2023-08-29--06-40-05", TOYOTA.CHR_TSS2),  # hybrid, openpilot longitudinal, radar disabled
+  CarTestRoute("6719965b0e1d1737|2023-08-29--06-40-05", TOYOTA.CHR_TSS2),  # hybrid, openpilot longitudinal, radar disabled
   CarTestRoute("14623aae37e549f3|2021-10-24--01-20-49", TOYOTA.PRIUS_V),
 
   CarTestRoute("202c40641158a6e5|2021-09-21--09-43-24", VOLKSWAGEN.ARTEON_MK1),
@@ -289,7 +292,6 @@ routes = [
   # Segments that test specific issues
   # Controls mismatch due to interceptor threshold
   CarTestRoute("cfb32f0fb91b173b|2022-04-06--14-54-45", HONDA.CIVIC, segment=21),
-  CarTestRoute("5a8762b91fc70467|2022-04-14--21-26-20", TOYOTA.RAV4, segment=2),
   # Controls mismatch due to standstill threshold
   CarTestRoute("bec2dcfde6a64235|2022-04-08--14-21-32", HONDA.CRV_HYBRID, segment=22),
 ]

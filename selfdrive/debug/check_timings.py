@@ -3,13 +3,13 @@
 import sys
 import time
 import numpy as np
-from typing import DefaultDict, MutableSequence
+from collections.abc import MutableSequence
 from collections import defaultdict, deque
 
 import cereal.messaging as messaging
 
 socks = {s: messaging.sub_sock(s, conflate=False) for s in sys.argv[1:]}
-ts: DefaultDict[str, MutableSequence[float]] = defaultdict(lambda: deque(maxlen=100))
+ts: defaultdict[str, MutableSequence[float]] = defaultdict(lambda: deque(maxlen=100))
 
 if __name__ == "__main__":
   while True:

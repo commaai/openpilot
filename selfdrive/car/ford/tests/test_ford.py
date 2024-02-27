@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import unittest
-from typing import Dict, Iterable, Optional, Tuple
+from collections.abc import Iterable
 
 import capnp
-from parameterized import parameterized
 from hypothesis import settings, given, strategies as st
+from parameterized import parameterized
 
 from cereal import car
 from openpilot.selfdrive.car.ford.values import CAR, FW_QUERY_CONFIG, get_platform_codes
@@ -48,7 +48,7 @@ class TestFordFW(unittest.TestCase):
       self.assertIsNone(subaddr, "Unexpected ECU subaddress")
 
   @parameterized.expand(FW_VERSIONS.items())
-  def test_fw_versions(self, car_model: str, fw_versions: Dict[Tuple[capnp.lib.capnp._EnumModule, int, Optional[int]], Iterable[bytes]]):
+  def test_fw_versions(self, car_model: str, fw_versions: dict[tuple[capnp.lib.capnp._EnumModule, int, int | None], Iterable[bytes]]):
     for (ecu, addr, subaddr), fws in fw_versions.items():
       self.assertIn(ecu, ECU_FW_CORE, "Unexpected ECU")
       self.assertEqual(addr, ECU_ADDRESSES[ecu], "ECU address mismatch")

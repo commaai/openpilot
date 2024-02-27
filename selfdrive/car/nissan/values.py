@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Dict, List, Optional, Union
 
 from cereal import car
 from panda.python import uds
@@ -37,7 +36,7 @@ class NissanCarInfo(CarInfo):
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.nissan_a]))
 
 
-CAR_INFO: Dict[str, Optional[Union[NissanCarInfo, List[NissanCarInfo]]]] = {
+CAR_INFO: dict[str, NissanCarInfo | list[NissanCarInfo] | None] = {
   CAR.XTRAIL: NissanCarInfo("Nissan X-Trail 2017"),
   CAR.LEAF: NissanCarInfo("Nissan Leaf 2018-23", video_link="https://youtu.be/vaMbtAh_0cY"),
   CAR.LEAF_IC: None,  # same platforms
@@ -59,7 +58,7 @@ NISSAN_VERSION_RESPONSE_KWP = b'\x61\x83'
 NISSAN_RX_OFFSET = 0x20
 
 FW_QUERY_CONFIG = FwQueryConfig(
-  requests=[request for bus, logging in ((0, True), (1, False)) for request in [
+  requests=[request for bus, logging in ((0, False), (1, True)) for request in [
     Request(
       [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
       [NISSAN_DIAGNOSTIC_RESPONSE_KWP, NISSAN_VERSION_RESPONSE_KWP],

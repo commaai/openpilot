@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List, Optional, Set
+from typing import Any, TypeVar
+from collections.abc import Iterator
 from tqdm import tqdm
 import capnp
 
@@ -8,7 +9,7 @@ import panda.python.uds as uds
 from cereal import car
 from openpilot.common.params import Params
 from openpilot.selfdrive.car.ecu_addrs import get_ecu_addrs
-from openpilot.selfdrive.car.fw_query_definitions import AddrType, EcuAddrBusType
+from openpilot.selfdrive.car.fw_query_definitions import AddrType, EcuAddrBusType, FwQueryConfig
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
 from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
@@ -18,26 +19,28 @@ Ecu = car.CarParams.Ecu
 ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
 FUZZY_EXCLUDE_ECUS = [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.debug]
 
-FW_QUERY_CONFIGS = get_interface_attr('FW_QUERY_CONFIG', ignore_none=True)
+FW_QUERY_CONFIGS: dict[str, FwQueryConfig] = get_interface_attr('FW_QUERY_CONFIG', ignore_none=True)
 VERSIONS = get_interface_attr('FW_VERSIONS', ignore_none=True)
 
 MODEL_TO_BRAND = {c: b for b, e in VERSIONS.items() for c in e}
 REQUESTS = [(brand, config, r) for brand, config in FW_QUERY_CONFIGS.items() for r in config.requests]
 
+T = TypeVar('T')
 
-def chunks(l, n=128):
+
+def chunks(l: list[T], n: int = 128) -> Iterator[list[T]]:
   for i in range(0, len(l), n):
     yield l[i:i + n]
 
 
-def is_brand(brand: str, filter_brand: Optional[str]) -> bool:
+def is_brand(brand: str, filter_brand: str | None) -> bool:
   """Returns if brand matches filter_brand or no brand filter is specified"""
   return filter_brand is None or brand == filter_brand
 
 
-def build_fw_dict(fw_versions: List[capnp.lib.capnp._DynamicStructBuilder],
-                  filter_brand: Optional[str] = None) -> Dict[AddrType, Set[bytes]]:
-  fw_versions_dict: DefaultDict[AddrType, Set[bytes]] = defaultdict(set)
+def build_fw_dict(fw_versions: list[capnp.lib.capnp._DynamicStructBuilder],
+                  filter_brand: str = None) -> dict[AddrType, set[bytes]]:
+  fw_versions_dict: defaultdict[AddrType, set[bytes]] = defaultdict(set)
   for fw in fw_versions:
     if is_brand(fw.brand, filter_brand) and not fw.logging:
       sub_addr = fw.subAddress if fw.subAddress != 0 else None
@@ -95,7 +98,7 @@ def match_fw_to_car_fuzzy(live_fw_versions, match_brand=None, log=True, exclude=
     return set()
 
 
-def match_fw_to_car_exact(live_fw_versions, match_brand=None, log=True, extra_fw_versions=None) -> Set[str]:
+def match_fw_to_car_exact(live_fw_versions, match_brand=None, log=True, extra_fw_versions=None) -> set[str]:
   """Do an exact FW match. Returns all cars that match the given
   FW versions for a list of "essential" ECUs. If an ECU is not considered
   essential the FW version can be missing to get a fingerprint, but if it's present it
@@ -162,11 +165,11 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True, log=True):
   return True, set()
 
 
-def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
+def get_present_ecus(logcan, sendcan, num_pandas=1) -> set[EcuAddrBusType]:
   params = Params()
   # queries are split by OBD multiplexing mode
-  queries: Dict[bool, List[List[EcuAddrBusType]]] = {True: [], False: []}
-  parallel_queries: Dict[bool, List[EcuAddrBusType]] = {True: [], False: []}
+  queries: dict[bool, list[list[EcuAddrBusType]]] = {True: [], False: []}
+  parallel_queries: dict[bool, list[EcuAddrBusType]] = {True: [], False: []}
   responses = set()
 
   for brand, config, r in REQUESTS:
@@ -201,12 +204,12 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
   return ecu_responses
 
 
-def get_brand_ecu_matches(ecu_rx_addrs):
+def get_brand_ecu_matches(ecu_rx_addrs: set[EcuAddrBusType]) -> dict[str, set[AddrType]]:
   """Returns dictionary of brands and matches with ECUs in their FW versions"""
 
-  brand_addrs = {brand: config.get_all_ecus(VERSIONS[brand], include_ecu_type=False) for
+  brand_addrs = {brand: {(addr, subaddr) for _, addr, subaddr in config.get_all_ecus(VERSIONS[brand])} for
                  brand, config in FW_QUERY_CONFIGS.items()}
-  brand_matches = {brand: set() for brand, _, _ in REQUESTS}
+  brand_matches: dict[str, set[AddrType]] = {brand: set() for brand, _, _ in REQUESTS}
 
   brand_rx_offsets = {(brand, r.rx_offset) for brand, _, r in REQUESTS}
   for addr, sub_addr, _ in ecu_rx_addrs:
@@ -229,7 +232,7 @@ def set_obd_multiplexing(params: Params, obd_multiplexing: bool):
 
 
 def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pandas=1, debug=False, progress=False) -> \
-  List[capnp.lib.capnp._DynamicStructBuilder]:
+  list[capnp.lib.capnp._DynamicStructBuilder]:
   """Queries for FW versions ordering brands by likelihood, breaks when exact match is found"""
 
   all_car_fw = []
@@ -252,7 +255,7 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
 
 
 def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, num_pandas=1, debug=False, progress=False) -> \
-  List[capnp.lib.capnp._DynamicStructBuilder]:
+  list[capnp.lib.capnp._DynamicStructBuilder]:
   versions = VERSIONS.copy()
   params = Params()
 
@@ -287,8 +290,8 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   # Get versions and build capnp list to put into CarParams
   car_fw = []
   requests = [(brand, config, r) for brand, config, r in REQUESTS if is_brand(brand, query_brand)]
-  for addr in tqdm(addrs, disable=not progress):
-    for addr_chunk in chunks(addr):
+  for addr_group in tqdm(addrs, disable=not progress):  # split by subaddr, if any
+    for addr_chunk in chunks(addr_group):
       for brand, config, r in requests:
         # Skip query if no panda available
         if r.bus > num_pandas * 4 - 1:
