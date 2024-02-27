@@ -268,6 +268,9 @@ class PlatformConfig:
   def __hash__(self) -> int:
     return hash(self.platform_str)
 
+  def init_config(self):
+    pass
+
 
 class Platforms(str, ReprEnum):
   config: PlatformConfig
@@ -277,6 +280,10 @@ class Platforms(str, ReprEnum):
     member.config = platform_config
     member._value_ = platform_config.platform_str
     return member
+
+  @classmethod
+  def init_configs(cls):
+    [p.config.init_config() for p in cls]
 
   @classmethod
   def create_dbc_map(cls) -> dict[str, DbcDict]:

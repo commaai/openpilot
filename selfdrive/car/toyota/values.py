@@ -61,8 +61,6 @@ class ToyotaCarInfo(CarInfo):
 
 @dataclass()
 class ToyotaPlatformConfig(PlatformConfig):
-  # dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('subaru_global_2017_generated', None))
-
   def init_config(self):
     if self.platform_str in TSS2_CAR:
       self.dbc_dict = dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas')
@@ -74,12 +72,6 @@ class ToyotaPlatformConfig(PlatformConfig):
       else:
         self.dbc_dict = dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas')
     return self
-
-  def __post_init__(self):
-    # if self.
-    print('here', dir(self))
-    # if self.platform_str == CAR.ALPHARD_TSS2:  # doesn't work
-    #   self.dbc_dict = dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas')
 
 
 class CAR(Platforms):

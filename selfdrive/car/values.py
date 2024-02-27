@@ -16,7 +16,3 @@ Platform = BODY | CHRYSLER | FORD | GM | HONDA | HYUNDAI | MAZDA | NISSAN | SUBA
 BRANDS = [BODY, CHRYSLER, FORD, GM, HONDA, HYUNDAI, MAZDA, NISSAN, SUBARU, TESLA, TOYOTA, VOLKSWAGEN]
 
 PLATFORMS: dict[str, Platform] = {str(platform): platform for brand in BRANDS for platform in cast(list[Platform], brand)}
-
-for platform in PLATFORMS.values():
-  if hasattr(platform, "config"):
-    platform.config.init_config()
