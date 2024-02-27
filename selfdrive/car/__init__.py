@@ -273,12 +273,9 @@ class Platforms(str, ReprEnum):
   config: PlatformConfig
 
   def __new__(cls, platform_config: PlatformConfig):
-    _str = platform_config
-    if type(_str) != str:
-      _str = platform_config.platform_str
-    member = str.__new__(cls, _str)
+    member = str.__new__(cls, platform_config.platform_str)
     member.config = platform_config
-    member._value_ = _str
+    member._value_ = platform_config.platform_str
     return member
 
   @classmethod

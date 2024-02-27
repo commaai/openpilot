@@ -113,8 +113,7 @@ class CarInterfaceBase(ABC):
     ret = CarInterfaceBase.get_std_params(candidate)
 
     if hasattr(candidate, "config"):
-      print(candidate.config)
-      if type(candidate.config) != str and candidate.config.specs is not None:
+      if candidate.config.specs is not None:
         ret.mass = candidate.config.specs.mass
         ret.wheelbase = candidate.config.specs.wheelbase
         ret.steerRatio = candidate.config.specs.steerRatio
