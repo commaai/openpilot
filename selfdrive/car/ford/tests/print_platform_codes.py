@@ -20,7 +20,7 @@ if __name__ == "__main__":
         cars_for_code[ecu][code].update({ car_model })
 
       print(f'  (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])}, {ecu[2]}):')
-      print(f'    Codes: {platform_codes}')
+      print(f'    Codes: {sorted(platform_codes)}')
     print()
 
   print('\nCar models vs. platform codes:')

@@ -1,4 +1,5 @@
 import re
+from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -6,7 +7,7 @@ from cereal import car
 from openpilot.selfdrive.car import AngleRateLimit, CarSpecs, dbc_dict, DbcDict, PlatformConfig, Platforms
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
                                                      Device
-from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, LiveFwVersions, OfflineFwVersions, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
 
@@ -146,58 +147,86 @@ CANFD_CAR = {CAR.F_150_MK14, CAR.F_150_LIGHTNING_MK1, CAR.MUSTANG_MACH_E_MK1}
 # A-Z except no I, O or W
 # e.g. NZ6A-14C204-AAA
 #      1222-333333-444
-# 1 = Model year (incremented for each model year)
+# 1 = Model year (can be incremented for each model year)
 # 2 = Platform hint
-# 3 = Part number (effectively maps to ECU)
-# 4 = Software version (reset to AA for each model year)
+# 3 = Part number
+# 4 = Software version
 FW_ALPHABET = b'A-HJ-NP-VX-Z'
-FW_RE = re.compile(b'^(?P<model_year>[' + FW_ALPHABET + b'])' +
+FW_RE = re.compile(b'^(?P<model_year_hint>[' + FW_ALPHABET + b'])' +
                    b'(?P<platform_hint>[0-9' + FW_ALPHABET + b']{3})-' +
                    b'(?P<part_number>[0-9' + FW_ALPHABET + b']{5,6})-' +
-                   b'(?P<revision>[' + FW_ALPHABET + b']{2,})$')
+                   b'(?P<software_revision>[' + FW_ALPHABET + b']{2,})$')
 
 
-def get_platform_codes(fw_versions: list[bytes]) -> set[bytes]:
-  codes = set()  # platform_hint-model_year
+def get_platform_codes(fw_versions: list[bytes] | set[bytes]) -> set[tuple[bytes, bytes]]:
+  codes = set()  # (platform_hint, model_year_hint)
 
   for firmware in fw_versions:
     m = FW_RE.match(firmware.rstrip(b'\0'))
     if m is None:
       continue
-    codes.add(b'-'.join([m.group('platform_hint'), m.group('model_year')]))
+    codes.add((m.group('platform_hint'), m.group('model_year_hint')))
 
   return codes
 
 
-def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions) -> set[str]:
+def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, offline_fw_versions: OfflineFwVersions) -> set[str]:
   candidates: set[str] = set()
+
+  def match_ecu_fw(offline_ecu_fws: list[bytes], live_ecu_fws: set[bytes]) -> bool:
+    expected_codes = get_platform_codes(offline_ecu_fws)
+    live_codes = get_platform_codes(live_ecu_fws)
+
+    for live_platform_hint, live_model_year_hint in live_codes:
+      expected_model_year_hints = {
+        model_year_hint for platform_hint, model_year_hint in expected_codes
+        if platform_hint == live_platform_hint
+      }
+      if not expected_model_year_hints:
+        continue
+
+      # TODO: check whether this can be expanded to the full range of model year hints
+      if min(expected_model_year_hints) <= live_model_year_hint <= max(expected_model_year_hints):
+        return True
+
+    return False
 
   for candidate, fws in offline_fw_versions.items():
     # Keep track of ECUs which pass all checks (platform codes, within version range)
-    valid_found_ecus = set()
-    valid_expected_ecus = {ecu[1:] for ecu in fws}
+    valid_expected_ecus = {ecu[1:] for ecu in fws if ecu[0] in PLATFORM_CODE_ECUS}
+
+    valid_found_ecus = {
+      addr[1:] for addr, ecu_fws in fws.items()
+      if match_ecu_fw(ecu_fws, live_fw_versions.get(addr[1:], set()))
+    }
+
     for ecu, ecu_fws in fws.items():
       addr = ecu[1:]
 
-      # Expected platform codes and versions
-      codes = get_platform_codes(ecu_fws)
-      expected_platform_codes = {code for code, _ in codes}
-      expected_versions = {version for _, version in codes}
+      # Expected platform and model year hints
+      expected_codes = get_platform_codes(ecu_fws)
+      expected_model_years_by_platform_hint = defaultdict(set)
+      for platform_hint, model_year_hint in expected_codes:
+        expected_model_years_by_platform_hint[platform_hint].add(model_year_hint)
 
-      # Live platform codes and versions
+      # Live platform and model year hints
       live_codes = get_platform_codes(live_fw_versions.get(addr, set()))
-      found_platform_codes = {code for code, _ in live_codes}
-      found_versions = {version for _, version in live_codes}
 
-      # Check platform hint + part number matches for any found firmware
-      if not any(found_code in expected_platform_codes for found_code in found_platform_codes):
-        break
+      # For each of the live platform hints, check if there is a matching expected platform hint
+      found = False
+      for live_platform_hint, live_model_year_hint in live_codes:
+        expected_model_year_hints = expected_model_years_by_platform_hint.get(live_platform_hint)
+        if not expected_model_year_hints:
+          continue
 
-      # Check version is within range expected range
-      if not any(min(expected_versions) <= found_version <= max(expected_versions) for found_version in found_versions):
-        break
+        # Check if the model year hint is within the expected range for this platform hint
+        # TODO: check whether this can be expanded to the full range of model year hints
+        if min(expected_model_year_hints) <= live_model_year_hint <= max(expected_model_year_hints):
+          found = True
+          break
 
-      valid_found_ecus.add(addr)
+      if found:
+        valid_found_ecus.add(addr)
 
     # If all live ECUs pass all checks for candidate, add it as a match
     if valid_expected_ecus.issubset(valid_found_ecus):
@@ -205,6 +234,8 @@ def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions) -> set[str]:
 
   return candidates
 
+# All of these ECUs must be present and are expected to have platform codes we can match
+PLATFORM_CODE_ECUS = (Ecu.abs, Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps)
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
