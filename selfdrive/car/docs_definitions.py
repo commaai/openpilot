@@ -117,14 +117,16 @@ class CarHarness(EnumBase):
   nissan_a = BaseCarHarness("Nissan A connector", parts=[Accessory.harness_box, Cable.rj45_cable_7ft, Cable.long_obdc_cable, Cable.usbc_coupler])
   nissan_b = BaseCarHarness("Nissan B connector", parts=[Accessory.harness_box, Cable.rj45_cable_7ft, Cable.long_obdc_cable, Cable.usbc_coupler])
   mazda = BaseCarHarness("Mazda connector")
-  ford_q3 = BaseCarHarness("Ford Q3 connector", parts=[Accessory.harness_box, Accessory.comma_power_v2, Cable.rj45_cable_7ft, Cable.right_angle_obd_c_cable_1_5ft])
+  ford_q3 = BaseCarHarness("Ford Q3 connector", parts=[Accessory.harness_box, Accessory.comma_power_v2, Cable.rj45_cable_7ft])
   ford_q4 = BaseCarHarness("Ford Q4 connector", parts=[Accessory.harness_box, Accessory.comma_power_v2, Cable.rj45_cable_7ft, Cable.long_obdc_cable])
 
 
 class Device(EnumBase):
   threex = BasePart("comma 3X", parts=[Mount.mount, Cable.right_angle_obd_c_cable_1_5ft])
   # variant of comma 3X with angled mounts
-  threex_angled_mount = BasePart("comma 3X", parts=[Mount.angled_mount_8_degrees, Cable.right_angle_obd_c_cable_1_5ft])
+  threex_angled_mount = BasePart("comma 3X", parts=[Mount.angled_mount_8_degrees, Cable.right_angle_obd_c_cable_1_5ft]
+  # Ford CANFD uses the long cable (9.5ft) and doesn't need the 1.5ft cable
+  threex_angled_mount_nocable = BasePart("comma 3X", parts=[Mount.angled_mount_8_degrees])
   red_panda = BasePart("red panda")
 
 
