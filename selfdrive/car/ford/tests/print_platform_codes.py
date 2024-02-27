@@ -10,16 +10,21 @@ ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
 
 if __name__ == "__main__":
+  cars_for_code: defaultdict = defaultdict(lambda: defaultdict(set))
+
   for car_model, ecus in FW_VERSIONS.items():
     print(car_model)
     for ecu in sorted(ecus, key=lambda x: int(x[0])):
       platform_codes = get_platform_codes(ecus[ecu])
-
-      code_versions = defaultdict(set)
-      for code, version in platform_codes:
-        code_versions[code].add(version)
+      for code in platform_codes:
+        cars_for_code[ecu][code].update({ car_model })
 
       print(f'  (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])}, {ecu[2]}):')
-      for code, versions in code_versions.items():
-        print(f'    {code.decode()}: {sorted({ version.decode() for version in versions })}')
+      print(f'    Codes: {platform_codes}')
     print()
+
+  print('\nCar models vs. platform codes:')
+  for ecu, codes in cars_for_code.items():
+    print(f'  (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])}, {ecu[2]}):')
+    for code, cars in codes.items():
+      print(f'    {code!r}: {sorted(map(str, cars))}')

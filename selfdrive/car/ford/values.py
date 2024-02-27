@@ -150,28 +150,21 @@ CANFD_CAR = {CAR.F_150_MK14, CAR.F_150_LIGHTNING_MK1, CAR.MUSTANG_MACH_E_MK1}
 # 2 = Platform hint
 # 3 = Part number (effectively maps to ECU)
 # 4 = Software version (reset to AA for each model year)
-# https://regexr.com/7qu7h
 FW_ALPHABET = b'A-HJ-NP-VX-Z'
 FW_RE = re.compile(b'^(?P<model_year>[' + FW_ALPHABET + b'])' +
                    b'(?P<platform_hint>[0-9' + FW_ALPHABET + b']{3})-' +
                    b'(?P<part_number>[0-9' + FW_ALPHABET + b']{5,6})-' +
-                   b'(?P<software_version>[' + FW_ALPHABET + b']{2,})$')
+                   b'(?P<revision>[' + FW_ALPHABET + b']{2,})$')
 
 
-def get_platform_codes(fw_versions: list[bytes]) -> set[tuple[bytes, bytes]]:
-  codes = set()  # (platform_hint, model_year-software_version)
+def get_platform_codes(fw_versions: list[bytes]) -> set[bytes]:
+  codes = set()  # platform_hint-model_year
 
   for firmware in fw_versions:
     m = FW_RE.match(firmware.rstrip(b'\0'))
     if m is None:
       continue
-
-    # since "AAA" is higher than "ZZ", prepend "A" to two-letter versions (i.e. "ZZ" -> "AZZ")
-    software_version = (b'A' + m.group('software_version'))[-3:]
-
-    code = m.group('platform_hint')
-    version = b'-'.join([m.group('model_year'), software_version])
-    codes.add((code, version))
+    codes.add(b'-'.join([m.group('platform_hint'), m.group('model_year')]))
 
   return codes
 
