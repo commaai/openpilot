@@ -23,6 +23,7 @@ common/.gitignore
 common/__init__.py
 common/*.py
 common/*.pyx
+common/mock/*
 
 common/transformations/__init__.py
 common/transformations/camera.py

@@ -91,7 +91,7 @@ repos:
         pass_filenames: false
         files: 'selfdrive/ui/translations/*'
 -   repo: https://github.com/python-poetry/poetry
-    rev: '1.7.0'
+    rev: '1.8.0'
     hooks:
     -   id: poetry-check
         name: validate poetry lock
