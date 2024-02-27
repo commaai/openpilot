@@ -125,6 +125,8 @@ class Device(EnumBase):
   threex = BasePart("comma 3X", parts=[Mount.mount, Cable.right_angle_obd_c_cable_1_5ft])
   # variant of comma 3X with angled mounts
   threex_angled_mount = BasePart("comma 3X", parts=[Mount.angled_mount_8_degrees, Cable.right_angle_obd_c_cable_1_5ft])
+  # variant of comma 3X without cable (some harness kits include an alternative cable)
+  threex_without_cable = BasePart("comma 3X", parts=[Mount.mount])
   red_panda = BasePart("red panda")
 
 

@@ -4,7 +4,7 @@ from enum import StrEnum
 from cereal import car
 from panda.python import uds
 from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
-from openpilot.selfdrive.car.docs_definitions import CarInfo, CarHarness, CarParts
+from openpilot.selfdrive.car.docs_definitions import CarInfo, CarHarness, CarParts, Device
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -33,7 +33,7 @@ class CAR(StrEnum):
 @dataclass
 class NissanCarInfo(CarInfo):
   package: str = "ProPILOT Assist"
-  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.nissan_a]))
+  car_parts: CarParts = field(default_factory=CarParts([Device.threex_without_cable, CarHarness.nissan_a]))
 
 
 CAR_INFO: dict[str, NissanCarInfo | list[NissanCarInfo] | None] = {
@@ -41,7 +41,7 @@ CAR_INFO: dict[str, NissanCarInfo | list[NissanCarInfo] | None] = {
   CAR.LEAF: NissanCarInfo("Nissan Leaf 2018-23", video_link="https://youtu.be/vaMbtAh_0cY"),
   CAR.LEAF_IC: None,  # same platforms
   CAR.ROGUE: NissanCarInfo("Nissan Rogue 2018-20"),
-  CAR.ALTIMA: NissanCarInfo("Nissan Altima 2019-20", car_parts=CarParts.common([CarHarness.nissan_b])),
+  CAR.ALTIMA: NissanCarInfo("Nissan Altima 2019-20", car_parts=CarParts([Device.threex_without_cable, CarHarness.nissan_b])),
 }
 
 # Default diagnostic session
