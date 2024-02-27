@@ -34,11 +34,7 @@ class CanBus(CanBusBase):
   def CAM(self):
     return self._cam
 
-
-def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_steer, apply_angle):
-
-  ret = []
-
+def create_angle_steering_messages(packer, CP, CAN, enabled, lat_active, apply_angle):
   values = {
     "LKA_MODE": 0,
     "LKA_ICON": 2 if enabled else 1,
@@ -53,6 +49,27 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_steer, 
     "LKAS_ANGLE_ACTIVE": 2 if lat_active else 1,
     "UNKNOWN": 50 if lat_active else 0,  # a torque scale value? ramps up when steering, highest seen is 234
   }
+
+  return create_steering_messages(packer, CP, CAN, values)
+
+
+def create_torque_steering_messages(packer, CP, CAN, enabled, lat_active, apply_steer):
+  values = {
+    "LKA_MODE": 2,
+    "LKA_ICON": 2 if enabled else 1,
+    "TORQUE_REQUEST": apply_steer,
+    "LKA_ASSIST": 0,
+    "STEER_REQ": 1 if lat_active else 0,
+    "STEER_MODE": 0,
+    "HAS_LANE_SAFETY": 0,  # hide LKAS settings
+    "NEW_SIGNAL_1": 0,  # this changes sometimes
+    "NEW_SIGNAL_2": 0
+  }
+
+  return create_steering_messages(packer, CP, CAN, values)
+
+def create_steering_messages(packer, CP, CAN, values):
+  ret = []
 
   if CP.flags & HyundaiFlags.CANFD_HDA2:
     hda2_lkas_msg = "LKAS_ALT" if CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING else "LKAS"
