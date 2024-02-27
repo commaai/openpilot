@@ -26,7 +26,7 @@ class ChryslerPlatformConfig(PlatformConfig):
 
 @dataclass
 class ChryslerCarSpecs(CarSpecs):
-  minSteerSpeed: float = 3.8 # m/s
+  minSteerSpeed: float = 3.8  # m/s
 
 
 class CAR(Platforms):
@@ -68,7 +68,7 @@ class CAR(Platforms):
   )
 
   # Jeep
-  JEEP_GRAND_CHEROKEE = ChryslerPlatformConfig( # includes 2017 Trailhawk
+  JEEP_GRAND_CHEROKEE = ChryslerPlatformConfig(  # includes 2017 Trailhawk
     "JEEP GRAND CHEROKEE V6 2018",
     ChryslerCarInfo("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk"),
     specs=ChryslerCarSpecs(mass=1778., wheelbase=2.71, steerRatio=16.7),
