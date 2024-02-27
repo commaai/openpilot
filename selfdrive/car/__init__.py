@@ -1,6 +1,6 @@
 # functions common among cars
 from collections import namedtuple
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import ReprEnum
 
 import capnp
@@ -266,6 +266,9 @@ class PlatformConfig:
 
   def __hash__(self) -> int:
     return hash(self.platform_str)
+
+  def override(self, **kwargs):
+    return replace(self, **kwargs)
 
 
 class Platforms(str, ReprEnum):
