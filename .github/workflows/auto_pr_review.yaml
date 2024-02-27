@@ -41,10 +41,15 @@ jobs:
         uses: thollander/actions-comment-pull-request@1d3973dc4b8e1399c0620d3f2b1aa5e795465308
         with:
           message: |
-              Thank you for your contribution. We will review as soon as we're able to.
-
-              Remember to check the [contributing docs](https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md).
-          comment_includes: "Thank you"
+              Thanks for contributing to openpilot! In order for us to review your PR as quickly as possible, check the following:
+              * Convert your PR to a draft unless it's ready to review
+              * Read the [contributing docs](https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md)
+              * Before marking as "ready for review", ensure:
+                * the goal is clearly stated in the description
+                * all the tests are passing
+                * the change is [something we merge](https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md#what-gets-merged)
+                * include a route or your device' dongle ID if relevant
+          comment_includes: "Thanks for"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   check-pr-template:
