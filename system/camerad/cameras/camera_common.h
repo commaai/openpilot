@@ -1,18 +1,12 @@
 #pragma once
 
-#include <cstdint>
-#include <cstdlib>
+#include <fcntl.h>
 #include <memory>
 #include <thread>
 
 #include "cereal/messaging/messaging.h"
-#include "cereal/visionipc/visionbuf.h"
-#include "cereal/visionipc/visionipc.h"
 #include "cereal/visionipc/visionipc_server.h"
-#include "common/mat.h"
 #include "common/queue.h"
-#include "common/swaglog.h"
-#include "system/hardware/hw.h"
 
 const int YUV_BUFFER_COUNT = 20;
 
@@ -32,6 +26,7 @@ const bool env_ctrl_exp_from_params = getenv("CTRL_EXP_FROM_PARAMS") != NULL;
 
 typedef struct FrameMetadata {
   uint32_t frame_id;
+  uint32_t request_id;
 
   // Timestamps
   uint64_t timestamp_sof;
@@ -55,7 +50,7 @@ class CameraBuf {
 private:
   VisionIpcServer *vipc_server;
   Debayer *debayer = nullptr;
-  VisionStreamType yuv_type;
+  VisionStreamType stream_type;
   int cur_buf_idx;
   SafeQueue<int> safe_queue;
   int frame_buf_count;
@@ -67,11 +62,11 @@ public:
   VisionBuf *cur_camera_buf;
   std::unique_ptr<VisionBuf[]> camera_bufs;
   std::unique_ptr<FrameMetadata[]> camera_bufs_metadata;
-  int rgb_width, rgb_height, rgb_stride;
+  int rgb_width, rgb_height;
 
   CameraBuf() = default;
   ~CameraBuf();
-  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType yuv_type);
+  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType type);
   bool acquire();
   void queue(size_t buf_idx);
 };

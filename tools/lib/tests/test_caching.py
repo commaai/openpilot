@@ -1,16 +1,68 @@
 #!/usr/bin/env python3
+from functools import partial
+import http.server
 import os
+import shutil
+import socket
 import unittest
 
-from pathlib import Path
 from parameterized import parameterized
-from unittest import mock
-
+from openpilot.selfdrive.test.helpers import with_http_server
 from openpilot.system.hardware.hw import Paths
 from openpilot.tools.lib.url_file import URLFile
 
 
+class CachingTestRequestHandler(http.server.BaseHTTPRequestHandler):
+  FILE_EXISTS = True
+
+  def do_GET(self):
+    if self.FILE_EXISTS:
+      self.send_response(206 if "Range" in self.headers else 200, b'1234')
+    else:
+      self.send_response(404)
+    self.end_headers()
+
+  def do_HEAD(self):
+    if self.FILE_EXISTS:
+      self.send_response(200)
+      self.send_header("Content-Length", "4")
+    else:
+      self.send_response(404)
+    self.end_headers()
+
+
+with_caching_server = partial(with_http_server, handler=CachingTestRequestHandler)
+
+
 class TestFileDownload(unittest.TestCase):
+
+  @with_caching_server
+  def test_pipeline_defaults(self, host):
+    # TODO: parameterize the defaults so we don't rely on hard-coded values in xx
+
+    self.assertEqual(URLFile.pool_manager().pools._maxsize, 10) # PoolManager num_pools param
+    pool_manager_defaults = {
+      "maxsize": 100,
+      "socket_options": [(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),],
+    }
+    for k, v in pool_manager_defaults.items():
+      self.assertEqual(URLFile.pool_manager().connection_pool_kw.get(k), v)
+
+    retry_defaults = {
+      "total": 5,
+      "backoff_factor": 0.5,
+      "status_forcelist": [409, 429, 503, 504],
+    }
+    for k, v in retry_defaults.items():
+      self.assertEqual(getattr(URLFile.pool_manager().connection_pool_kw["retries"], k), v)
+
+    # ensure caching off by default and cache dir doesn't get created
+    os.environ.pop("FILEREADER_CACHE", None)
+    if os.path.exists(Paths.download_cache_root()):
+      shutil.rmtree(Paths.download_cache_root())
+    URLFile(f"{host}/test.txt").get_length()
+    URLFile(f"{host}/test.txt").read()
+    self.assertEqual(os.path.exists(Paths.download_cache_root()), False)
 
   def compare_loads(self, url, start=0, length=None):
     """Compares range between cached and non cached version"""
@@ -66,32 +118,20 @@ class TestFileDownload(unittest.TestCase):
     self.compare_loads(large_file_url)
 
   @parameterized.expand([(True, ), (False, )])
-  def test_recover_from_missing_file(self, cache_enabled):
+  @with_caching_server
+  def test_recover_from_missing_file(self, cache_enabled, host):
     os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
 
-    file_url = "http://localhost:5001/test.png"
+    file_url = f"{host}/test.png"
 
-    file_exists = False
+    CachingTestRequestHandler.FILE_EXISTS = False
+    length = URLFile(file_url).get_length()
+    self.assertEqual(length, -1)
 
-    def get_length_online_mock(self):
-      if file_exists:
-        return 4
-      return -1
+    CachingTestRequestHandler.FILE_EXISTS = True
+    length = URLFile(file_url).get_length()
+    self.assertEqual(length, 4)
 
-    patch_length = mock.patch.object(URLFile, "get_length_online", get_length_online_mock)
-    patch_length.start()
-    try:
-      length = URLFile(file_url).get_length()
-      self.assertEqual(length, -1)
-
-      file_exists = True
-      length = URLFile(file_url).get_length()
-      self.assertEqual(length, 4)
-    finally:
-      tempfile_length = Path(Paths.download_cache_root()) / "ba2119904385654cb0105a2da174875f8e7648db175f202ecae6d6428b0e838f_length"
-      if tempfile_length.exists():
-        tempfile_length.unlink()
-      patch_length.stop()
 
 
 if __name__ == "__main__":

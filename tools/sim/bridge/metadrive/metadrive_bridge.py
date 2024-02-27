@@ -3,14 +3,12 @@ import numpy as np
 from metadrive.component.sensors.rgb_camera import RGBCamera
 from metadrive.component.sensors.base_camera import _cuda_enable
 from metadrive.component.map.pg_map import MapGenerateMethod
-from panda3d.core import Vec3, Texture, GraphicsOutput
+from panda3d.core import Texture, GraphicsOutput
 
 from openpilot.tools.sim.bridge.common import SimulatorBridge
 from openpilot.tools.sim.bridge.metadrive.metadrive_world import MetaDriveWorld
 from openpilot.tools.sim.lib.camerad import W, H
 
-
-C3_POSITION = Vec3(0, 0, 1)
 
 
 class CopyRamRGBCamera(RGBCamera):
@@ -32,19 +30,17 @@ class CopyRamRGBCamera(RGBCamera):
 
 class RGBCameraWide(CopyRamRGBCamera):
   def __init__(self, *args, **kwargs):
-    super(RGBCameraWide, self).__init__(*args, **kwargs)
-    cam = self.get_cam()
-    cam.setPos(C3_POSITION)
+    super().__init__(*args, **kwargs)
     lens = self.get_lens()
-    lens.setFov(160)
+    lens.setFov(120)
+    lens.setNear(0.1)
 
 class RGBCameraRoad(CopyRamRGBCamera):
   def __init__(self, *args, **kwargs):
-    super(RGBCameraRoad, self).__init__(*args, **kwargs)
-    cam = self.get_cam()
-    cam.setPos(C3_POSITION)
+    super().__init__(*args, **kwargs)
     lens = self.get_lens()
     lens.setFov(40)
+    lens.setNear(0.1)
 
 
 def straight_block(length):
@@ -64,14 +60,32 @@ def curve_block(length, angle=45, direction=0):
     "dir": direction
   }
 
+def create_map(track_size=60):
+  return dict(
+    type=MapGenerateMethod.PG_MAP_FILE,
+    lane_num=2,
+    lane_width=3.5,
+    config=[
+      None,
+      straight_block(track_size),
+      curve_block(track_size*2, 90),
+      straight_block(track_size),
+      curve_block(track_size*2, 90),
+      straight_block(track_size),
+      curve_block(track_size*2, 90),
+      straight_block(track_size),
+      curve_block(track_size*2, 90),
+    ]
+  )
+
 
 class MetaDriveBridge(SimulatorBridge):
   TICKS_PER_FRAME = 5
 
-  def __init__(self, args):
+  def __init__(self, dual_camera, high_quality):
     self.should_render = False
 
-    super(MetaDriveBridge, self).__init__(args)
+    super().__init__(dual_camera, high_quality)
 
   def spawn_world(self):
     sensors = {
@@ -86,7 +100,6 @@ class MetaDriveBridge(SimulatorBridge):
       vehicle_config=dict(
         enable_reverse=False,
         image_source="rgb_road",
-        spawn_longitude=15
       ),
       sensors=sensors,
       image_on_cuda=_cuda_enable,
@@ -97,23 +110,10 @@ class MetaDriveBridge(SimulatorBridge):
       crash_vehicle_done=False,
       crash_object_done=False,
       traffic_density=0.0, # traffic is incredibly expensive
-      map_config=dict(
-        type=MapGenerateMethod.PG_MAP_FILE,
-        config=[
-          None,
-          straight_block(120),
-          curve_block(240, 90),
-          straight_block(120),
-          curve_block(240, 90),
-          straight_block(120),
-          curve_block(240, 90),
-          straight_block(120),
-          curve_block(240, 90),
-        ]
-      ),
+      map_config=create_map(),
       decision_repeat=1,
       physics_world_step_size=self.TICKS_PER_FRAME/100,
       preload_models=False
     )
 
-    return MetaDriveWorld(config)
+    return MetaDriveWorld(config, self.dual_camera)

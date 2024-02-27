@@ -2,9 +2,8 @@ import signal
 import threading
 import functools
 
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, Value
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from openpilot.common.params import Params
 from openpilot.common.numpy_fast import clip
@@ -27,24 +26,24 @@ def rk_loop(function, hz, exit_event: threading.Event):
 class SimulatorBridge(ABC):
   TICKS_PER_FRAME = 5
 
-  def __init__(self, arguments):
+  def __init__(self, dual_camera, high_quality):
     set_params_enabled()
     self.params = Params()
 
     self.rk = Ratekeeper(100, None)
 
-    self.dual_camera = arguments.dual_camera
-    self.high_quality = arguments.high_quality
+    self.dual_camera = dual_camera
+    self.high_quality = high_quality
 
     self._exit_event = threading.Event()
     self._threads = []
     self._keep_alive = True
-    self.started = False
+    self.started = Value('i', False)
     signal.signal(signal.SIGTERM, self._on_shutdown)
     self._exit = threading.Event()
     self.simulator_state = SimulatorState()
 
-    self.world: Optional[World] = None
+    self.world: World | None = None
 
     self.past_startup_engaged = False
 
@@ -61,7 +60,7 @@ class SimulatorBridge(ABC):
       self.close()
 
   def close(self):
-    self.started = False
+    self.started.value = False
     self._exit_event.set()
 
     if self.world is not None:
@@ -147,7 +146,7 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
 
       self.simulator_state.user_brake = brake_manual
       self.simulator_state.user_gas = throttle_manual
-      self.simulator_state.user_torque = steer_manual * 10000
+      self.simulator_state.user_torque = steer_manual * -10000
 
       steer_manual = steer_manual * -40
 
@@ -181,6 +180,6 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
       if self.rk.frame % 25 == 0:
         self.print_status()
 
-      self.started = True
+      self.started.value = True
 
       self.rk.keep_time()

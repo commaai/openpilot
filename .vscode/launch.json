@@ -1,0 +1,47 @@
+{
+  "version": "0.2.0",
+  "inputs": [
+    {
+      "id": "python_process",
+      "type": "pickString",
+      "description": "Select the process to debug",
+      "options": [
+        "selfdrive/controls/controlsd.py",
+        "selfdrive/navd/navd.py",
+        "system/timed/timed.py",
+        "tools/sim/run_bridge.py"
+      ]
+    },
+    {
+      "id": "cpp_process",
+      "type": "pickString",
+      "description": "Select the process to debug",
+      "options": [
+        "selfdrive/ui/ui"
+      ]
+    },
+    {
+      "id": "args",
+      "description": "Arguments to pass to the process",
+      "type": "promptString"
+    }
+  ],
+  "configurations": [
+    {
+      "name": "Python: openpilot Process",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${input:python_process}",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "args": "${input:args}"
+    },
+    {
+      "name": "C++: openpilot Process",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/${input:cpp_process}",
+      "cwd": "${workspaceFolder}",
+    }
+  ]
+}

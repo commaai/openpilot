@@ -1,12 +1,7 @@
 #include "system/camerad/cameras/camera_common.h"
 
-#include <unistd.h>
-
 #include <cassert>
-#include <cstdio>
-#include <chrono>
 #include <string>
-#include <thread>
 
 #include "third_party/libyuv/include/libyuv.h"
 #include <jpeglib.h>
@@ -14,7 +9,6 @@
 #include "common/clutil.h"
 #include "common/swaglog.h"
 #include "common/util.h"
-#include "system/hardware/hw.h"
 #include "third_party/linux/include/msm_media_info.h"
 
 #include "system/camerad/cameras/camera_qcom2.h"
@@ -32,10 +26,10 @@ public:
     snprintf(args, sizeof(args),
              "-cl-fast-relaxed-math -cl-denorms-are-zero "
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
-             "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DRGB_STRIDE=%d -DYUV_STRIDE=%d -DUV_OFFSET=%d "
+             "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DYUV_STRIDE=%d -DUV_OFFSET=%d "
              "-DIS_OX=%d -DCAM_NUM=%d%s",
              ci->frame_width, ci->frame_height, ci->frame_stride, ci->frame_offset,
-             b->rgb_width, b->rgb_height, b->rgb_stride, buf_width, uv_offset,
+             b->rgb_width, b->rgb_height, buf_width, uv_offset,
              ci->image_sensor == cereal::FrameData::ImageSensor::OX03C10, s->camera_num, s->camera_num==1 ? " -DVIGNETTING" : "");
     const char *cl_file = "cameras/real_debayer.cl";
     cl_program prg_debayer = cl_program_from_file(context, device_id, cl_file, args);
@@ -61,9 +55,9 @@ private:
   cl_kernel krnl_;
 };
 
-void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType init_yuv_type) {
+void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType type) {
   vipc_server = v;
-  this->yuv_type = init_yuv_type;
+  stream_type = type;
   frame_buf_count = frame_cnt;
 
   const SensorInfo *ci = s->ci.get();
@@ -87,7 +81,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   assert(nv12_height/2 == VENUS_UV_SCANLINES(COLOR_FMT_NV12, rgb_height));
   size_t nv12_size = 2346 * nv12_width;  // comes from v4l2_format.fmt.pix_mp.plane_fmt[0].sizeimage
   size_t nv12_uv_offset = nv12_width * nv12_height;
-  vipc_server->create_buffers_with_sizes(yuv_type, YUV_BUFFER_COUNT, false, rgb_width, rgb_height, nv12_size, nv12_width, nv12_uv_offset);
+  vipc_server->create_buffers_with_sizes(stream_type, YUV_BUFFER_COUNT, false, rgb_width, rgb_height, nv12_size, nv12_width, nv12_uv_offset);
   LOGD("created %d YUV vipc buffers with size %dx%d", YUV_BUFFER_COUNT, nv12_width, nv12_height);
 
   debayer = new Debayer(device_id, context, this, s, nv12_width, nv12_uv_offset);
@@ -113,7 +107,7 @@ bool CameraBuf::acquire() {
   }
 
   cur_frame_data = camera_bufs_metadata[cur_buf_idx];
-  cur_yuv_buf = vipc_server->get_buffer(yuv_type);
+  cur_yuv_buf = vipc_server->get_buffer(stream_type);
   cur_camera_buf = &camera_bufs[cur_buf_idx];
 
   double start_time = millis_since_boot();
@@ -142,6 +136,7 @@ void CameraBuf::queue(size_t buf_idx) {
 
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, CameraState *c) {
   framed.setFrameId(frame_data.frame_id);
+  framed.setRequestId(frame_data.request_id);
   framed.setTimestampEof(frame_data.timestamp_eof);
   framed.setTimestampSof(frame_data.timestamp_sof);
   framed.setIntegLines(frame_data.integ_lines);

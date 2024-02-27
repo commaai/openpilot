@@ -62,12 +62,14 @@ private:
   ToggleControl* tetheringToggle;
   ToggleControl* roamingToggle;
   ButtonControl* editApnButton;
+  ButtonControl* hiddenNetworkButton;
   ToggleControl* meteredToggle;
   WifiManager* wifi = nullptr;
   Params params;
 
 signals:
   void backPress();
+  void requestWifiScreen();
 
 public slots:
   void toggleTethering(bool enabled);

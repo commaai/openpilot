@@ -3,7 +3,6 @@ import time
 from cereal import log
 import cereal.messaging as messaging
 
-from openpilot.common.params import Params
 from openpilot.common.realtime import DT_DMON
 from openpilot.tools.sim.lib.camerad import Camerad
 
@@ -44,11 +43,10 @@ class SimulatedSensors:
     if not simulator_state.valid:
       return
 
-    # transform vel from carla to NED
-    # north is -Y in CARLA
+    # transform from vel to NED
     velNED = [
-      -simulator_state.velocity.y,  # north/south component of NED is negative when moving south
-      simulator_state.velocity.x,  # positive when moving east, which is x in carla
+      -simulator_state.velocity.y,
+      simulator_state.velocity.x,
       simulator_state.velocity.z,
     ]
 
@@ -81,7 +79,6 @@ class SimulatedSensors:
       'current': 5678,
       'fanSpeedRpm': 1000
     }
-    Params().put_bool("ObdMultiplexingEnabled", False)
     self.pm.send('peripheralState', dat)
 
   def send_fake_driver_monitoring(self):
@@ -103,13 +100,13 @@ class SimulatedSensors:
     self.pm.send('driverMonitoringState', dat)
 
   def send_camera_images(self, world: 'World'):
-    with world.image_lock:
-      yuv = self.camerad.rgb_to_yuv(world.road_image)
-      self.camerad.cam_send_yuv_road(yuv)
+    world.image_lock.acquire()
+    yuv = self.camerad.rgb_to_yuv(world.road_image)
+    self.camerad.cam_send_yuv_road(yuv)
 
-      if world.dual_camera:
-        yuv = self.camerad.rgb_to_yuv(world.wide_road_image)
-        self.camerad.cam_send_yuv_wide_road(yuv)
+    if world.dual_camera:
+      yuv = self.camerad.rgb_to_yuv(world.wide_road_image)
+      self.camerad.cam_send_yuv_wide_road(yuv)
 
   def update(self, simulator_state: 'SimulatorState', world: 'World'):
     now = time.time()

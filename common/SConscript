@@ -2,7 +2,6 @@ Import('env', 'envCython', 'arch')
 
 common_libs = [
   'params.cc',
-  'statlog.cc',
   'swaglog.cc',
   'util.cc',
   'i2c.cc',
@@ -24,18 +23,17 @@ Export('_common', '_gpucommon')
 
 if GetOption('extras'):
   env.Program('tests/test_common',
-              ['tests/test_runner.cc', 'tests/test_util.cc', 'tests/test_swaglog.cc', 'tests/test_ratekeeper.cc'],
+              ['tests/test_runner.cc', 'tests/test_params.cc', 'tests/test_util.cc', 'tests/test_swaglog.cc'],
               LIBS=[_common, 'json11', 'zmq', 'pthread'])
 
 # Cython bindings
 params_python = envCython.Program('params_pyx.so', 'params_pyx.pyx', LIBS=envCython['LIBS'] + [_common, 'zmq', 'json11'])
 
 SConscript([
-  'kalman/SConscript',
-  'transformations/SConscript'  
+  'transformations/SConscript',
 ])
 
-Import('simple_kalman_python', 'transformations_python')
-common_python = [params_python, simple_kalman_python, transformations_python]
+Import('transformations_python')
+common_python = [params_python, transformations_python]
 
 Export('common_python')

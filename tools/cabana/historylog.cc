@@ -2,11 +2,12 @@
 
 #include <functional>
 
+#include <QFileDialog>
 #include <QPainter>
-#include <QPushButton>
 #include <QVBoxLayout>
 
 #include "tools/cabana/commands.h"
+#include "tools/cabana/utils/export.h"
 
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
   const bool show_signals = display_signals_mode && sigs.size() > 0;
@@ -220,6 +221,8 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   h->addWidget(filters_widget);
   h->addStretch(0);
   h->addWidget(dynamic_mode = new QCheckBox(tr("Dynamic")), 0, Qt::AlignRight);
+  ToolButton *export_btn = new ToolButton("filetype-csv", tr("Export to CSV file..."));
+  h->addWidget(export_btn, 0, Qt::AlignRight);
 
   display_type_cb->addItems({"Signal", "Hex"});
   display_type_cb->setToolTip(tr("Display signal value or raw hex value"));
@@ -252,6 +255,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   QObject::connect(signals_cb, SIGNAL(activated(int)), this, SLOT(setFilter()));
   QObject::connect(comp_box, SIGNAL(activated(int)), this, SLOT(setFilter()));
   QObject::connect(value_edit, &QLineEdit::textChanged, this, &LogsWidget::setFilter);
+  QObject::connect(export_btn, &QToolButton::clicked, this, &LogsWidget::exportToCSV);
   QObject::connect(can, &AbstractStream::seekedTo, model, &HistoryLogModel::refresh);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &LogsWidget::refresh);
   QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &LogsWidget::refresh);
@@ -302,5 +306,15 @@ void LogsWidget::updateState() {
 void LogsWidget::showEvent(QShowEvent *event) {
   if (dynamic_mode->isChecked() || model->canFetchMore({}) && model->rowCount() == 0) {
     model->refresh();
+  }
+}
+
+void LogsWidget::exportToCSV() {
+  QString dir = QString("%1/%2_%3.csv").arg(settings.last_dir).arg(can->routeName()).arg(msgName(model->msg_id));
+  QString fn = QFileDialog::getSaveFileName(this, QString("Export %1 to CSV file").arg(msgName(model->msg_id)),
+                                            dir, tr("csv (*.csv)"));
+  if (!fn.isEmpty()) {
+    const bool export_signals = model->display_signals_mode && model->sigs.size() > 0;
+    export_signals ? utils::exportSignalsToCSV(fn, model->msg_id) : utils::exportToCSV(fn, model->msg_id);
   }
 }

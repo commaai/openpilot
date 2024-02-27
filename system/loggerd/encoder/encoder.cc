@@ -2,6 +2,10 @@
 
 VideoEncoder::VideoEncoder(const EncoderInfo &encoder_info, int in_width, int in_height)
     : encoder_info(encoder_info), in_width(in_width), in_height(in_height) {
+
+  out_width = encoder_info.frame_width > 0 ? encoder_info.frame_width : in_width;
+  out_height = encoder_info.frame_height > 0 ? encoder_info.frame_height : in_height;
+
   pm.reset(new PubMaster({encoder_info.publish_name}));
 }
 
@@ -25,10 +29,15 @@ void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t 
   edata.setFlags(flags);
   edata.setLen(dat.size());
   edat.setData(dat);
+  edat.setWidth(out_width);
+  edat.setHeight(out_height);
   if (flags & V4L2_BUF_FLAG_KEYFRAME) edat.setHeader(header);
 
-  auto words = new kj::Array<capnp::word>(capnp::messageToFlatArray(msg));
-  auto bytes = words->asBytes();
-  e->pm->send(e->encoder_info.publish_name, bytes.begin(), bytes.size());
-  delete words;
+  uint32_t bytes_size = capnp::computeSerializedSizeInWords(msg) * sizeof(capnp::word);
+  if (e->msg_cache.size() < bytes_size) {
+    e->msg_cache.resize(bytes_size);
+  }
+  kj::ArrayOutputStream output_stream(kj::ArrayPtr<capnp::byte>(e->msg_cache.data(), bytes_size));
+  capnp::writeMessage(output_stream, msg);
+  e->pm->send(e->encoder_info.publish_name, e->msg_cache.data(), bytes_size);
 }
