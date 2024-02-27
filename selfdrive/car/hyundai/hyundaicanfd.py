@@ -51,7 +51,7 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_steer, 
     "NEW_SIGNAL_2": 0,
     "LKAS_ANGLE_CMD": apply_angle,
     "LKAS_ANGLE_ACTIVE": 2 if lat_active else 1,
-    "UNKNOWN": 234 if lat_active else 0,  # a torque scale value? ramps up when steering, highest seen is 234
+    "UNKNOWN": 50 if lat_active else 0,  # a torque scale value? ramps up when steering, highest seen is 234
   }
 
   if CP.flags & HyundaiFlags.CANFD_HDA2:
