@@ -144,6 +144,22 @@ CANFD_CAR = {CAR.F_150_MK14, CAR.F_150_LIGHTNING_MK1, CAR.MUSTANG_MACH_E_MK1}
 
 DATA_IDENTIFIER_FORD_ASBUILT = 0xDE
 
+ASBUILT_BLOCKS: list[tuple[int, list]] = [
+  (0, [Ecu.debug, Ecu.fwdCamera, Ecu.eps]),
+  (1, [Ecu.abs, Ecu.debug, Ecu.eps]),
+  (2, [Ecu.abs, Ecu.debug, Ecu.eps]),
+  (3, [Ecu.debug, Ecu.fwdCamera]),
+  (4, [Ecu.debug]),
+  (5, [Ecu.debug]),
+  (6, [Ecu.debug]),
+  (7, [Ecu.debug]),
+  (8, [Ecu.debug]),
+  (15, [Ecu.debug, Ecu.fwdCamera]),
+  (17, [Ecu.fwdCamera]),
+  (19, [Ecu.fwdCamera]),
+  (20, [Ecu.fwdCamera]),
+]
+
 def ford_asbuilt_block_request(block_id: int):
   return bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + p16(DATA_IDENTIFIER_FORD_ASBUILT + block_id)
 
@@ -168,84 +184,13 @@ FW_QUERY_CONFIG = FwQueryConfig(
       bus=0,
       auxiliary=True,
     ),
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(0)],
-      [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(0)],
-      whitelist_ecus=[Ecu.debug, Ecu.fwdCamera, Ecu.eps],
+    *[Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(block_id)],
+      [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(block_id)],
+      whitelist_ecus=ecus,
+      bus=0,
       logging=True,
-    ),
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(1)],
-      [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(1)],
-      whitelist_ecus=[Ecu.abs, Ecu.debug, Ecu.eps],
-      logging=True,
-    ),
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(2)],
-      [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(2)],
-      whitelist_ecus=[Ecu.abs, Ecu.debug, Ecu.eps],
-      logging=True,
-    ),
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(3)],
-      [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(3)],
-      whitelist_ecus=[Ecu.debug, Ecu.fwdCamera],
-      logging=True,
-    ),
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(4)],
-      [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(4)],
-      whitelist_ecus=[Ecu.debug],
-      logging=True,
-    ),
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(5)],
-      [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(5)],
-      whitelist_ecus=[Ecu.debug],
-      logging=True,
-    ),
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(6)],
-      [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(6)],
-      whitelist_ecus=[Ecu.debug],
-      logging=True,
-    ),
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(7)],
-      [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(7)],
-      whitelist_ecus=[Ecu.debug],
-      logging=True,
-    ),
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(8)],
-      [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(8)],
-      whitelist_ecus=[Ecu.debug],
-      logging=True,
-    ),
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(15)],
-      [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(15)],
-      whitelist_ecus=[Ecu.debug, Ecu.fwdCamera],
-      logging=True,
-    ),
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(17)],
-      [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(17)],
-      whitelist_ecus=[Ecu.fwdCamera],
-      logging=True,
-    ),
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(19)],
-      [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(19)],
-      whitelist_ecus=[Ecu.fwdCamera],
-      logging=True,
-    ),
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(20)],
-      [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(20)],
-      whitelist_ecus=[Ecu.fwdCamera],
-      logging=True,
-    ),
+    ) for block_id, ecus in ASBUILT_BLOCKS],
   ],
   extra_ecus=[
     (Ecu.engine, 0x7e0, None),        # Powertrain Control Module
