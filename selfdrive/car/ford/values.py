@@ -145,26 +145,26 @@ CANFD_CAR = {CAR.F_150_MK14, CAR.F_150_LIGHTNING_MK1, CAR.MUSTANG_MACH_E_MK1}
 DATA_IDENTIFIER_FORD_ASBUILT = 0xDE
 
 ASBUILT_BLOCKS: list[tuple[int, list]] = [
-  (0, [Ecu.debug, Ecu.fwdCamera, Ecu.eps]),
-  (1, [Ecu.abs, Ecu.debug, Ecu.eps]),
+  (1, [Ecu.debug, Ecu.fwdCamera, Ecu.eps]),
   (2, [Ecu.abs, Ecu.debug, Ecu.eps]),
-  (3, [Ecu.debug, Ecu.fwdCamera]),
-  (4, [Ecu.debug]),
+  (3, [Ecu.abs, Ecu.debug, Ecu.eps]),
+  (4, [Ecu.debug, Ecu.fwdCamera]),
   (5, [Ecu.debug]),
   (6, [Ecu.debug]),
   (7, [Ecu.debug]),
   (8, [Ecu.debug]),
-  (15, [Ecu.debug, Ecu.fwdCamera]),
-  (17, [Ecu.fwdCamera]),
-  (19, [Ecu.fwdCamera]),
+  (9, [Ecu.debug]),
+  (16, [Ecu.debug, Ecu.fwdCamera]),
+  (18, [Ecu.fwdCamera]),
   (20, [Ecu.fwdCamera]),
+  (21, [Ecu.fwdCamera]),
 ]
 
 def ford_asbuilt_block_request(block_id: int):
-  return bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + p16(DATA_IDENTIFIER_FORD_ASBUILT + block_id)
+  return bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + p16(DATA_IDENTIFIER_FORD_ASBUILT + block_id - 1)
 
 def ford_asbuilt_block_response(block_id: int):
-  return bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + p16(DATA_IDENTIFIER_FORD_ASBUILT + block_id)
+  return bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + p16(DATA_IDENTIFIER_FORD_ASBUILT + block_id - 1)
 
 
 FW_QUERY_CONFIG = FwQueryConfig(
