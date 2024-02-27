@@ -4,7 +4,7 @@ import numpy as np
 import tomllib
 from abc import abstractmethod, ABC
 from enum import StrEnum
-from typing import Any, NamedTuple, cast
+from typing import Any, NamedTuple
 from collections.abc import Callable
 
 from cereal import car
@@ -13,7 +13,7 @@ from openpilot.common.conversions import Conversions as CV
 from openpilot.common.simple_kalman import KF1D, get_kalman_gain
 from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import DT_CTRL
-from openpilot.selfdrive.car import PlatformConfig, apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, STD_CARGO_KG
+from openpilot.selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, STD_CARGO_KG
 from openpilot.selfdrive.car.values import Platform
 from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_friction
 from openpilot.selfdrive.controls.lib.events import Events
@@ -113,7 +113,7 @@ class CarInterfaceBase(ABC):
     ret = CarInterfaceBase.get_std_params(candidate)
 
     if hasattr(candidate, "config"):
-      platform_config = cast(PlatformConfig, candidate.config)
+      platform_config = candidate.config
       if platform_config.specs is not None:
         ret.mass = platform_config.specs.mass
         ret.wheelbase = platform_config.specs.wheelbase
