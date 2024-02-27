@@ -71,7 +71,6 @@ class ToyotaPlatformConfig(PlatformConfig):
         self.dbc_dict = dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas')
       else:
         self.dbc_dict = dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas')
-    return self
 
 
 class CAR(Platforms):
