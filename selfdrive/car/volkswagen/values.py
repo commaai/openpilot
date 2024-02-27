@@ -112,15 +112,15 @@ class CANBUS:
 class VolkswagenFlags(IntFlag):
   STOCK_HCA_PRESENT = 1
 
-@dataclass
+@dataclass(frozen=True)
 class VolkswagenMQBPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('vw_mqb_2010', None))
 
-@dataclass
+@dataclass(frozen=True)
 class VolkswagenPQPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('vw_golf_mk4', None))
 
-@dataclass(kw_only=True)
+@dataclass(frozen=True, kw_only=True)
 class VolkswagenCarSpecs(CarSpecs):
   steerRatio: float = field(default=15.6)
 
