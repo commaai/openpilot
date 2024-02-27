@@ -57,11 +57,14 @@ class FordCarInfo(CarInfo):
   package: str = "Co-Pilot360 Assist+"
 
   def init_make(self, CP: car.CarParams):
+    # Harness in docs_definitions.py includes additional car_parts for Q3 and Q4
     harness = CarHarness.ford_q4 if CP.carFingerprint in CANFD_CAR else CarHarness.ford_q3
-    if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1, CAR.F_150_MK14, CAR.F_150_LIGHTNING_MK1):
+    if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1):
       self.car_parts = CarParts([Device.threex_angled_mount, harness])
+    elif CP.carFingerprint in (CAR.F_150_MK14, CAR.F_150_LIGHTNING_MK1):
+      self.car_parts = CarParts([Device.threex_angled_mount_nocable, harness])
     elif CP.carFingerprint == CAR.MUSTANG_MACH_E_MK1:
-      self.car_parts = CarParts([Device.threex_angled_mount, harness, Cable.usbc_coupler])
+      self.car_parts = CarParts([Device.threex_angled_mount_nocable, harness, Cable.usbc_coupler])
     else:
       self.car_parts = CarParts([Device.threex, harness])
 
