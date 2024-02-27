@@ -1,11 +1,12 @@
 from dataclasses import dataclass, field
 from enum import Enum
 
+import panda.python.uds as uds
 from cereal import car
 from openpilot.selfdrive.car import AngleRateLimit, CarSpecs, dbc_dict, DbcDict, PlatformConfig, Platforms
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
                                                      Device
-from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
 
@@ -140,6 +141,33 @@ class CAR(Platforms):
 CANFD_CAR = {CAR.F_150_MK14, CAR.F_150_LIGHTNING_MK1, CAR.MUSTANG_MACH_E_MK1}
 
 
+DATA_IDENTIFIER_FORD_ASBUILT = 0xDE
+
+ASBUILT_BLOCKS: list[tuple[int, list]] = [
+  (1, [Ecu.debug, Ecu.fwdCamera, Ecu.eps]),
+  (2, [Ecu.abs, Ecu.debug, Ecu.eps]),
+  (3, [Ecu.abs, Ecu.debug, Ecu.eps]),
+  (4, [Ecu.debug, Ecu.fwdCamera]),
+  (5, [Ecu.debug]),
+  (6, [Ecu.debug]),
+  (7, [Ecu.debug]),
+  (8, [Ecu.debug]),
+  (9, [Ecu.debug]),
+  (16, [Ecu.debug, Ecu.fwdCamera]),
+  (18, [Ecu.fwdCamera]),
+  (20, [Ecu.fwdCamera]),
+  (21, [Ecu.fwdCamera]),
+]
+
+
+def ford_asbuilt_block_request(block_id: int):
+  return bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + p16(DATA_IDENTIFIER_FORD_ASBUILT + block_id - 1)
+
+
+def ford_asbuilt_block_response(block_id: int):
+  return bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + p16(DATA_IDENTIFIER_FORD_ASBUILT + block_id - 1)
+
+
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     # CAN and CAN FD queries are combined.
@@ -147,19 +175,29 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.abs, Ecu.debug, Ecu.engine, Ecu.eps, Ecu.fwdCamera, Ecu.fwdRadar, Ecu.shiftByWire],
       logging=True,
     ),
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.abs, Ecu.debug, Ecu.engine, Ecu.eps, Ecu.fwdCamera, Ecu.fwdRadar, Ecu.shiftByWire],
       bus=0,
       auxiliary=True,
     ),
+    *[Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(block_id)],
+      [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(block_id)],
+      whitelist_ecus=ecus,
+      bus=0,
+      logging=True,
+    ) for block_id, ecus in ASBUILT_BLOCKS],
   ],
   extra_ecus=[
-    # We are unlikely to get a response from the PCM from behind the gateway
-    (Ecu.engine, 0x7e0, None),
-    (Ecu.shiftByWire, 0x732, None),
+    (Ecu.engine, 0x7e0, None),        # Powertrain Control Module
+                                      # Note: We are unlikely to get a response from behind the gateway
+    (Ecu.shiftByWire, 0x732, None),   # Gear Shift Module
+    (Ecu.debug, 0x7d0, None),         # Accessory Protocol Interface Module
   ],
 )
 
