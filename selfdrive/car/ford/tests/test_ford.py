@@ -74,8 +74,7 @@ class TestFordFW(unittest.TestCase):
       b"PJ6T-14H102-ABJ\x00\x00\x00\x00\x00\x00\x00\x00\x00",
       b"LB5A-14C204-EAC\x00\x00\x00\x00\x00\x00\x00\x00\x00",
     ])
-    self.assertEqual(results, {(b"X6A-14C204", b"J-BPL"), (b"Z6T-14F397", b"N-AAC"),
-                               (b"J6T-14H102", b"P-ABJ"), (b"B5A-14C204", b"L-EAC")})
+    self.assertEqual(results, {(b"X6A", b"J"), (b"Z6T", b"N"), (b"J6T", b"P"), (b"B5A", b"L")})
 
   def test_match_fw_fuzzy(self):
     offline_fw = {
