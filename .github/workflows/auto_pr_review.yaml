@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: comment
-        uses: thollander/actions-comment-pull-request@1d3973dc4b8e1399c0620d3f2b1aa5e795465308
+        uses: thollander/actions-comment-pull-request@fabd468d3a1a0b97feee5f6b9e499eab0dd903f6
         with:
           message: |
               Thanks for contributing to openpilot! In order for us to review your PR as quickly as possible, check the following:
@@ -50,7 +50,6 @@ jobs:
                 * all the tests are passing
                 * the change is [something we merge](https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md#what-gets-merged)
                 * include a route or your device' dongle ID if relevant
-          comment_includes: "Thanks for"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   check-pr-template:
