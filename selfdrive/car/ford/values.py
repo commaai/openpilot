@@ -59,10 +59,10 @@ class FordCarInfo(CarInfo):
   def init_make(self, CP: car.CarParams):
     harness = CarHarness.ford_q4 if CP.carFingerprint in CANFD_CAR else CarHarness.ford_q3
     cable = Cable.long_obdc_cable if CP.carFingerprint in CANFD_CAR else Cable.right_angle_obd_c_cable_1_5ft
-    if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1, CAR.F_150_MK14):
-      self.car_parts = CarParts([Device.threex_angled_mount, harness])
+    if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1, CAR.F_150_MK14, CAR.MUSTANG_MACH_E_MK1, CAR.F_150_LIGHTNING_MK1):
+      self.car_parts = CarParts([Device.threex_angled_mount, harness, cable])
     else:
-      self.car_parts = CarParts([Device.threex, harness])
+      self.car_parts = CarParts([Device.threex, harness, cable])
 
 
 @dataclass(frozen=True)
