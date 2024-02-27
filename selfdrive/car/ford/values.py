@@ -42,6 +42,8 @@ class CarControllerParams:
 class FordFlags(IntFlag):
   # Static flags
   CANFD = 1
+  # Dynamic flags
+  LKAS_DISABLED = 2
 
 
 class RADAR:

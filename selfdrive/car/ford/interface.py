@@ -6,6 +6,7 @@ from openpilot.selfdrive.car.ford.fordcan import CanBus
 from openpilot.selfdrive.car.ford.values import Ecu, FordFlags
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
+EventName = car.CarEvent.EventName
 ButtonType = car.CarState.ButtonEvent.Type
 TransmissionType = car.CarParams.TransmissionType
 GearShifter = car.CarState.GearShifter
@@ -40,6 +41,13 @@ class CarInterface(CarInterfaceBase):
     if ret.flags & FordFlags.CANFD:
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_FORD_CANFD
 
+    pscm_config = next((fw for fw in car_fw if fw.ecu == Ecu.eps and b'DE01' in fw.request), None)
+    if pscm_config:
+      # Traffic Jam Assist (TJA) and Lane Centering Assist (LCA)
+      lkas_enabled = pscm_config.response[7] == 0xFF and pscm_config.response[8] == 0xFF
+      if not lkas_enabled:
+        ret.flags |= FordFlags.LKAS_DISABLED
+
     # Auto Transmission: 0x732 ECU or Gear_Shift_by_Wire_FD1
     found_ecus = [fw.ecu for fw in car_fw]
     if Ecu.shiftByWire in found_ecus or 0x5A in fingerprint[CAN.main] or docs:
@@ -65,8 +73,11 @@ class CarInterface(CarInterfaceBase):
     ret.buttonEvents = create_button_events(self.CS.distance_button, self.CS.prev_distance_button, {1: ButtonType.gapAdjustCruise})
 
     events = self.create_common_events(ret, extra_gears=[GearShifter.manumatic])
-    if not self.CS.vehicle_sensors_valid:
-      events.add(car.CarEvent.EventName.vehicleSensorsInvalid)
+
+    if self.CP.flags & FordFlags.LKAS_DISABLED:
+      events.add(EventName.lkasDisabled)
+    elif not self.CS.vehicle_sensors_valid:
+      events.add(EventName.vehicleSensorsInvalid)
 
     ret.events = events.to_msg()
 
