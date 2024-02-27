@@ -5,7 +5,7 @@ import panda.python.uds as uds
 from cereal import car
 from openpilot.selfdrive.car import AngleRateLimit, CarSpecs, dbc_dict, DbcDict, PlatformConfig, Platforms
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
-                                                     Device
+                                                     Device, Cable
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
@@ -58,8 +58,10 @@ class FordCarInfo(CarInfo):
 
   def init_make(self, CP: car.CarParams):
     harness = CarHarness.ford_q4 if CP.carFingerprint in CANFD_CAR else CarHarness.ford_q3
-    if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1, CAR.F_150_MK14, CAR.MUSTANG_MACH_E_MK1, CAR.F_150_LIGHTNING_MK1):
+    if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1, CAR.F_150_MK14, CAR.F_150_LIGHTNING_MK1):
       self.car_parts = CarParts([Device.threex_angled_mount, harness])
+    elif CP.carFingerprint == CAR.MUSTANG_MACH_E_MK1:
+      self.car_parts = CarParts([Device.threex_angled_mount, harness, Cable.usbc_coupler])
     else:
       self.car_parts = CarParts([Device.threex, harness])
 
