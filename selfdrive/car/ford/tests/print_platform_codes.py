@@ -21,5 +21,5 @@ if __name__ == "__main__":
 
       print(f'  (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])}, {ecu[2]}):')
       for code, versions in code_versions.items():
-        print(f'    {code!r}: {sorted(versions)}')
+        print(f'    {code.decode()}: {sorted({ version.decode() for version in versions })}')
     print()

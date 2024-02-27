@@ -159,7 +159,7 @@ FW_RE = re.compile(b'^(?P<model_year>[' + FW_ALPHABET + b'])' +
 
 
 def get_platform_codes(fw_versions: list[bytes]) -> set[tuple[bytes, bytes]]:
-  codes = set()  # (platform-part, year-version)
+  codes = set()  # (platform_hint, model_year-software_version)
 
   for firmware in fw_versions:
     m = FW_RE.match(firmware.rstrip(b'\0'))
@@ -169,7 +169,7 @@ def get_platform_codes(fw_versions: list[bytes]) -> set[tuple[bytes, bytes]]:
     # since "AAA" is higher than "ZZ", prepend "A" to two-letter versions (i.e. "ZZ" -> "AZZ")
     software_version = (b'A' + m.group('software_version'))[-3:]
 
-    code = b'-'.join([m.group('platform_hint'), m.group('part_number')])
+    code = m.group('platform_hint')
     version = b'-'.join([m.group('model_year'), software_version])
     codes.add((code, version))
 
