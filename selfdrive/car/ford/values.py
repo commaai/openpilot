@@ -125,10 +125,10 @@ CAR_INFO: dict[str, CarInfo | list[CarInfo]] = {
 DATA_IDENTIFIER_FORD_ASBUILT = 0xDE
 
 def ford_asbuilt_block_request(block_id: int):
-  return bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + p16(DATA_IDENTIFIER_FORD_ASBUILT + block_id - 1)
+  return bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + p16(DATA_IDENTIFIER_FORD_ASBUILT + block_id)
 
 def ford_asbuilt_block_response(block_id: int):
-  return bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + p16(DATA_IDENTIFIER_FORD_ASBUILT + block_id - 1)
+  return bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + p16(DATA_IDENTIFIER_FORD_ASBUILT + block_id)
 
 
 FW_QUERY_CONFIG = FwQueryConfig(
@@ -146,59 +146,78 @@ FW_QUERY_CONFIG = FwQueryConfig(
       bus=0,
       auxiliary=True,
     ),
-    # Ecu.abs: Wheel Base (response[0] & 0xF0), Payload (response[0] & 0xF),
-    #          Steering Gear (response[1] & 0b11), Cruise Control Mode (response[5] & 0xF)
-    # Ecu.eps: Lane Keeping Aid (LKA) (response[6] & 0xFF), Traffic Jam Assist (TJA) (response[7] & 0xFF),
-    #          Lane Centering Assist (LCA) (response[8] & 0xFF)
+    Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(0)],
+      [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(0)],
+      whitelist_ecus=[Ecu.debug, Ecu.fwdCamera, Ecu.eps],
+      logging=True,
+    ),
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(1)],
       [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(1)],
-      whitelist_ecus=[Ecu.abs, Ecu.eps],
+      whitelist_ecus=[Ecu.abs, Ecu.debug, Ecu.eps],
       logging=True,
     ),
-    # Ecu.abs: Stop and Go (response[0] & 0x80)
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(2)],
       [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(2)],
-      whitelist_ecus=[Ecu.abs],
+      whitelist_ecus=[Ecu.abs, Ecu.debug, Ecu.eps],
       logging=True,
     ),
-    # Ecu.debug: Wheel Base (response[4:6] & 0xFFFF)
+    Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(3)],
+      [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(3)],
+      whitelist_ecus=[Ecu.debug, Ecu.fwdCamera],
+      logging=True,
+    ),
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(4)],
       [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(4)],
       whitelist_ecus=[Ecu.debug],
       logging=True,
     ),
-    # Ecu.debug: Wheel Base (response[4:6] & 0xFFFF)
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(5)],
       [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(5)],
       whitelist_ecus=[Ecu.debug],
       logging=True,
     ),
-    # Ecu.debug: Vehicle Weight (response[0] & 0xFF)
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(6)],
       [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(6)],
       whitelist_ecus=[Ecu.debug],
       logging=True,
     ),
-    # Ecu.debug: Steering Gear Ratio (response[22] & 0x10)
+    Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(7)],
+      [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(7)],
+      whitelist_ecus=[Ecu.debug],
+      logging=True,
+    ),
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(8)],
       [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(8)],
       whitelist_ecus=[Ecu.debug],
       logging=True,
     ),
-    # Ecu.fwdCamera: VehicleCfg_SteeringRatio (response[1:3] & 0xFFF0)
+    Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(15)],
+      [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(15)],
+      whitelist_ecus=[Ecu.debug, Ecu.fwdCamera],
+      logging=True,
+    ),
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(17)],
       [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(17)],
       whitelist_ecus=[Ecu.fwdCamera],
       logging=True,
     ),
-    # Ecu.fwdCamera: VehicleCfg_Wheelbase (response[2:4] & 0xFFFF)
+    Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(19)],
+      [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(19)],
+      whitelist_ecus=[Ecu.fwdCamera],
+      logging=True,
+    ),
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(20)],
       [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(20)],
