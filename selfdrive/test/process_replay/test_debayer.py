@@ -30,7 +30,7 @@ def get_frame_fn(ref_commit, test_route, tici=True):
 
 
 def bzip_frames(frames):
-  data = bytes()
+  data = b''
   for y, u, v in frames:
     data += y.tobytes()
     data += u.tobytes()

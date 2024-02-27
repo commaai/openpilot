@@ -1,6 +1,5 @@
 from collections import namedtuple
 from enum import StrEnum
-from typing import Dict, List, Union
 
 from cereal import car
 from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
@@ -17,7 +16,7 @@ class CAR(StrEnum):
   AP2_MODELS = 'TESLA AP2 MODEL S'
 
 
-CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
+CAR_INFO: dict[str, CarInfo | list[CarInfo]] = {
   CAR.AP1_MODELS: CarInfo("Tesla AP1 Model S", "All"),
   CAR.AP2_MODELS: CarInfo("Tesla AP2 Model S", "All"),
 }

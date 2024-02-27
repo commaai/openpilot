@@ -3,7 +3,6 @@ import time
 from cereal import log
 import cereal.messaging as messaging
 
-from openpilot.common.params import Params
 from openpilot.common.realtime import DT_DMON
 from openpilot.tools.sim.lib.camerad import Camerad
 
@@ -80,7 +79,6 @@ class SimulatedSensors:
       'current': 5678,
       'fanSpeedRpm': 1000
     }
-    Params().put_bool("ObdMultiplexingEnabled", False)
     self.pm.send('peripheralState', dat)
 
   def send_fake_driver_monitoring(self):

@@ -26,7 +26,7 @@ import sys
 import pprint
 import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Any, Dict
+from typing import Any
 from urllib.parse import parse_qs, urlencode
 
 from openpilot.tools.lib.api import APIError, CommaApi, UnauthorizedError
@@ -36,7 +36,7 @@ PORT = 3000
 
 
 class ClientRedirectServer(HTTPServer):
-  query_params: Dict[str, Any] = {}
+  query_params: dict[str, Any] = {}
 
 
 class ClientRedirectHandler(BaseHTTPRequestHandler):

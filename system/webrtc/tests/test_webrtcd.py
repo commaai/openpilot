@@ -18,7 +18,7 @@ class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
     try:
       async with asyncio.timeout(timeout):
         await awaitable
-    except asyncio.TimeoutError:
+    except TimeoutError:
       self.fail("Timeout while waiting for awaitable to complete")
 
   async def test_webrtcd(self):

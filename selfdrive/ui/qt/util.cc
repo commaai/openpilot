@@ -5,6 +5,7 @@
 #include <vector>
 
 #include <QApplication>
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QHash>
@@ -113,6 +114,11 @@ void initApp(int argc, char *argv[], bool disable_hidpi) {
   }
 
   qputenv("QT_DBL_CLICK_DIST", QByteArray::number(150));
+
+  // ensure the current dir matches the exectuable's directory
+  QApplication tmp(argc, argv);
+  QString appDir = QCoreApplication::applicationDirPath();
+  QDir::setCurrent(appDir);
 
   setQtSurfaceFormat();
 }

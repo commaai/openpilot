@@ -3,7 +3,6 @@ import argparse
 import binascii
 import time
 from collections import defaultdict
-from typing import Optional
 
 import cereal.messaging as messaging
 from openpilot.selfdrive.debug.can_table import can_table
@@ -96,8 +95,8 @@ if __name__ == "__main__":
 
   args = parser.parse_args()
 
-  init_lr: Optional[LogIterable] = None
-  new_lr: Optional[LogIterable] = None
+  init_lr: LogIterable | None = None
+  new_lr: LogIterable | None = None
 
   if args.init:
     if args.init == '':

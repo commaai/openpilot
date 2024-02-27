@@ -67,7 +67,7 @@ def format_brand_fw_versions(brand, extra_fw_versions: None | dict[str, dict[tup
   extra_fw_versions = extra_fw_versions or {}
 
   fingerprints_file = os.path.join(BASEDIR, f"selfdrive/car/{brand}/fingerprints.py")
-  with open(fingerprints_file, "r") as f:
+  with open(fingerprints_file) as f:
     comments = [line for line in f.readlines() if line.startswith("#") and "noqa" not in line]
 
   with open(fingerprints_file, "w") as f:

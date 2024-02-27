@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Dict, List, Union
 
 from cereal import car
 from openpilot.selfdrive.car import dbc_dict
@@ -41,7 +40,7 @@ class MazdaCarInfo(CarInfo):
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.mazda]))
 
 
-CAR_INFO: Dict[str, Union[MazdaCarInfo, List[MazdaCarInfo]]] = {
+CAR_INFO: dict[str, MazdaCarInfo | list[MazdaCarInfo]] = {
   CAR.CX5: MazdaCarInfo("Mazda CX-5 2017-21"),
   CAR.CX9: MazdaCarInfo("Mazda CX-9 2016-20"),
   CAR.MAZDA3: MazdaCarInfo("Mazda 3 2017-18"),

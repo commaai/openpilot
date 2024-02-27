@@ -4,7 +4,6 @@ import os
 import signal
 import sys
 import traceback
-from typing import List, Tuple, Union
 
 from cereal import log
 import cereal.messaging as messaging
@@ -33,7 +32,7 @@ def manager_init() -> None:
   if is_release_branch():
     params.clear_all(ParamKeyType.DEVELOPMENT_ONLY)
 
-  default_params: List[Tuple[str, Union[str, bytes]]] = [
+  default_params: list[tuple[str, str | bytes]] = [
     ("CompletedTrainingVersion", "0"),
     ("DisengageOnAccelerator", "0"),
     ("GsmMetered", "1"),
@@ -121,7 +120,7 @@ def manager_thread() -> None:
 
   params = Params()
 
-  ignore: List[str] = []
+  ignore: list[str] = []
   if params.get("DongleId", encoding='utf8') in (None, UNREGISTERED_DONGLE_ID):
     ignore += ["manage_athenad", "uploader"]
   if os.getenv("NOBOARD") is not None:
@@ -154,7 +153,7 @@ def manager_thread() -> None:
 
     ensure_running(managed_processes.values(), started, params=params, CP=sm['carParams'], not_run=ignore)
 
-    running = ' '.join("%s%s\u001b[0m" % ("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
+    running = ' '.join("{}{}\u001b[0m".format("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
                        for p in managed_processes.values() if p.proc)
     print(running)
     cloudlog.debug(running)

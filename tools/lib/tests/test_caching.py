@@ -2,11 +2,13 @@
 from functools import partial
 import http.server
 import os
+import shutil
+import socket
 import unittest
 
 from parameterized import parameterized
-from openpilot.selfdrive.athena.tests.helpers import with_http_server
-
+from openpilot.selfdrive.test.helpers import with_http_server
+from openpilot.system.hardware.hw import Paths
 from openpilot.tools.lib.url_file import URLFile
 
 
@@ -15,7 +17,7 @@ class CachingTestRequestHandler(http.server.BaseHTTPRequestHandler):
 
   def do_GET(self):
     if self.FILE_EXISTS:
-      self.send_response(200, b'1234')
+      self.send_response(206 if "Range" in self.headers else 200, b'1234')
     else:
       self.send_response(404)
     self.end_headers()
@@ -33,6 +35,34 @@ with_caching_server = partial(with_http_server, handler=CachingTestRequestHandle
 
 
 class TestFileDownload(unittest.TestCase):
+
+  @with_caching_server
+  def test_pipeline_defaults(self, host):
+    # TODO: parameterize the defaults so we don't rely on hard-coded values in xx
+
+    self.assertEqual(URLFile.pool_manager().pools._maxsize, 10) # PoolManager num_pools param
+    pool_manager_defaults = {
+      "maxsize": 100,
+      "socket_options": [(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),],
+    }
+    for k, v in pool_manager_defaults.items():
+      self.assertEqual(URLFile.pool_manager().connection_pool_kw.get(k), v)
+
+    retry_defaults = {
+      "total": 5,
+      "backoff_factor": 0.5,
+      "status_forcelist": [409, 429, 503, 504],
+    }
+    for k, v in retry_defaults.items():
+      self.assertEqual(getattr(URLFile.pool_manager().connection_pool_kw["retries"], k), v)
+
+    # ensure caching off by default and cache dir doesn't get created
+    os.environ.pop("FILEREADER_CACHE", None)
+    if os.path.exists(Paths.download_cache_root()):
+      shutil.rmtree(Paths.download_cache_root())
+    URLFile(f"{host}/test.txt").get_length()
+    URLFile(f"{host}/test.txt").read()
+    self.assertEqual(os.path.exists(Paths.download_cache_root()), False)
 
   def compare_loads(self, url, start=0, length=None):
     """Compares range between cached and non cached version"""

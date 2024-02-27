@@ -1,7 +1,7 @@
 import os
 import sys
 
-from typing import Tuple, no_type_check
+from typing import no_type_check
 
 class FdRedirect:
   def __init__(self, file_prefix: str, fd: int):
@@ -53,7 +53,7 @@ class ProcessOutputCapture:
     self.stdout_redirect.link()
     self.stderr_redirect.link()
 
-  def read_outerr(self) -> Tuple[str, str]:
+  def read_outerr(self) -> tuple[str, str]:
     out_str = self.stdout_redirect.read().decode()
     err_str = self.stderr_redirect.read().decode()
     return out_str, err_str

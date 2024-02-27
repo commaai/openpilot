@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from openpilot.selfdrive.car.chrysler.values import CAR as CHRYSLER
 from openpilot.selfdrive.car.gm.values import CAR as GM
@@ -29,8 +29,8 @@ non_tested_cars = [
 
 class CarTestRoute(NamedTuple):
   route: str
-  car_model: Optional[str]
-  segment: Optional[int] = None
+  car_model: str | None
+  segment: int | None = None
 
 
 routes = [

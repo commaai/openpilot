@@ -12,7 +12,7 @@ from parameterized import parameterized_class
 
 from openpilot.selfdrive.ui.update_translations import TRANSLATIONS_DIR, LANGUAGES_FILE, update_translations
 
-with open(LANGUAGES_FILE, "r") as f:
+with open(LANGUAGES_FILE) as f:
   translation_files = json.load(f)
 
 UNFINISHED_TRANSLATION_TAG = "<translation type=\"unfinished\""  # non-empty translations can be marked unfinished
@@ -28,7 +28,7 @@ class TestTranslations(unittest.TestCase):
   @staticmethod
   def _read_translation_file(path, file):
     tr_file = os.path.join(path, f"{file}.ts")
-    with open(tr_file, "r") as f:
+    with open(tr_file) as f:
       return f.read()
 
   def test_missing_translation_files(self):
@@ -83,7 +83,7 @@ class TestTranslations(unittest.TestCase):
           for nf in numerusform:
             self.assertIsNotNone(nf, f"Ensure all plural translation forms are completed: {source_text}")
             self.assertIn("%n", nf, "Ensure numerus argument (%n) exists in translation.")
-            self.assertIsNone(FORMAT_ARG.search(nf), "Plural translations must use %n, not %1, %2, etc.: {}".format(numerusform))
+            self.assertIsNone(FORMAT_ARG.search(nf), f"Plural translations must use %n, not %1, %2, etc.: {numerusform}")
 
         else:
           self.assertIsNotNone(translation.text, f"Ensure translation is completed: {source_text}")

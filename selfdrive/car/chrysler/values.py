@@ -1,6 +1,5 @@
 from enum import IntFlag, StrEnum
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Union
 
 from cereal import car
 from panda.python import uds
@@ -66,7 +65,7 @@ class ChryslerCarInfo(CarInfo):
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.fca]))
 
 
-CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
+CAR_INFO: dict[str, ChryslerCarInfo | list[ChryslerCarInfo] | None] = {
   CAR.PACIFICA_2017_HYBRID: ChryslerCarInfo("Chrysler Pacifica Hybrid 2017"),
   CAR.PACIFICA_2018_HYBRID: ChryslerCarInfo("Chrysler Pacifica Hybrid 2018"),
   CAR.PACIFICA_2019_HYBRID: ChryslerCarInfo("Chrysler Pacifica Hybrid 2019-23"),

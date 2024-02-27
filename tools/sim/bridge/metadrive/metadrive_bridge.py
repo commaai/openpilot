@@ -30,14 +30,14 @@ class CopyRamRGBCamera(RGBCamera):
 
 class RGBCameraWide(CopyRamRGBCamera):
   def __init__(self, *args, **kwargs):
-    super(RGBCameraWide, self).__init__(*args, **kwargs)
+    super().__init__(*args, **kwargs)
     lens = self.get_lens()
     lens.setFov(120)
     lens.setNear(0.1)
 
 class RGBCameraRoad(CopyRamRGBCamera):
   def __init__(self, *args, **kwargs):
-    super(RGBCameraRoad, self).__init__(*args, **kwargs)
+    super().__init__(*args, **kwargs)
     lens = self.get_lens()
     lens.setFov(40)
     lens.setNear(0.1)
@@ -85,7 +85,7 @@ class MetaDriveBridge(SimulatorBridge):
   def __init__(self, dual_camera, high_quality):
     self.should_render = False
 
-    super(MetaDriveBridge, self).__init__(dual_camera, high_quality)
+    super().__init__(dual_camera, high_quality)
 
   def spawn_world(self):
     sensors = {

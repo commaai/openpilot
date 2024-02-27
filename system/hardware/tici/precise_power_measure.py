@@ -6,4 +6,4 @@ if __name__ == '__main__':
   print("measuring for 5 seconds")
   for _ in range(3):
     pwrs = sample_power()
-    print("mean %.2f std %.2f" % (np.mean(pwrs), np.std(pwrs)))
+    print(f"mean {np.mean(pwrs):.2f} std {np.std(pwrs):.2f}")

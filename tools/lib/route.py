@@ -4,7 +4,7 @@ from functools import cache
 from urllib.parse import urlparse
 from collections import defaultdict
 from itertools import chain
-from typing import Optional, cast
+from typing import cast
 
 from openpilot.tools.lib.auth_config import get_token
 from openpilot.tools.lib.api import CommaApi
@@ -231,7 +231,7 @@ class SegmentName:
   def route_name(self) -> RouteName: return self._route_name
 
   @property
-  def data_dir(self) -> Optional[str]: return self._data_dir
+  def data_dir(self) -> str | None: return self._data_dir
 
   def __str__(self) -> str: return self._canonical_name
 

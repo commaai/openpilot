@@ -6,7 +6,6 @@ import unittest
 import logging
 import json
 from pathlib import Path
-from typing import List, Optional
 from openpilot.system.hardware.hw import Paths
 
 from openpilot.common.swaglog import cloudlog
@@ -53,7 +52,7 @@ class TestUploader(UploaderTestCase):
     self.end_event.set()
     self.up_thread.join()
 
-  def gen_files(self, lock=False, xattr: Optional[bytes] = None, boot=True) -> List[Path]:
+  def gen_files(self, lock=False, xattr: bytes = None, boot=True) -> list[Path]:
     f_paths = []
     for t in ["qlog", "rlog", "dcamera.hevc", "fcamera.hevc"]:
       f_paths.append(self.make_file_with_data(self.seg_dir, t, 1, lock=lock, upload_xattr=xattr))
@@ -62,7 +61,7 @@ class TestUploader(UploaderTestCase):
       f_paths.append(self.make_file_with_data("boot", f"{self.seg_dir}", 1, lock=lock, upload_xattr=xattr))
     return f_paths
 
-  def gen_order(self, seg1: List[int], seg2: List[int], boot=True) -> List[str]:
+  def gen_order(self, seg1: list[int], seg2: list[int], boot=True) -> list[str]:
     keys = []
     if boot:
       keys += [f"boot/{self.seg_format.format(i)}.bz2" for i in seg1]

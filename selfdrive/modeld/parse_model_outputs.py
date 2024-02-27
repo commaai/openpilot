@@ -1,5 +1,4 @@
 import numpy as np
-from typing import Dict
 from openpilot.selfdrive.modeld.constants import ModelConstants
 
 def sigmoid(x):
@@ -82,7 +81,7 @@ class Parser:
     outs[name] = pred_mu_final.reshape(final_shape)
     outs[name + '_stds'] = pred_std_final.reshape(final_shape)
 
-  def parse_outputs(self, outs: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+  def parse_outputs(self, outs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     self.parse_mdn('plan', outs, in_N=ModelConstants.PLAN_MHP_N, out_N=ModelConstants.PLAN_MHP_SELECTION,
                    out_shape=(ModelConstants.IDX_N,ModelConstants.PLAN_WIDTH))
     self.parse_mdn('lane_lines', outs, in_N=0, out_N=0, out_shape=(ModelConstants.NUM_LANE_LINES,ModelConstants.IDX_N,ModelConstants.LANE_LINES_WIDTH))

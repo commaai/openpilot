@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 import cereal.messaging as messaging
-from typing import Optional
 
 if __name__ == "__main__":
   modeld_sock = messaging.sub_sock("modelV2")
 
   last_frame_id = None
-  start_t: Optional[int] = None
+  start_t: int | None = None
   frame_cnt = 0
   dropped = 0
 

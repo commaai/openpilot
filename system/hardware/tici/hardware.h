@@ -20,12 +20,12 @@ public:
   }
 
   static std::string get_name() {
-    std::string devicetree_model = util::read_file("/sys/firmware/devicetree/base/model");
-    return (devicetree_model.find("tizi") != std::string::npos) ? "tizi" : "tici";
+    std::string model = util::read_file("/sys/firmware/devicetree/base/model");
+    return model.substr(std::string("comma ").size());
   }
 
   static cereal::InitData::DeviceType get_device_type() {
-    return (get_name() == "tizi") ? cereal::InitData::DeviceType::TIZI : cereal::InitData::DeviceType::TICI;
+    return (get_name() == "tizi") ? cereal::InitData::DeviceType::TIZI : (get_name() == "mici" ? cereal::InitData::DeviceType::MICI : cereal::InitData::DeviceType::TICI);
   }
 
   static int get_voltage() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input").c_str()); }

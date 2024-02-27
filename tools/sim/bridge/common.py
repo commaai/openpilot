@@ -4,7 +4,6 @@ import functools
 
 from multiprocessing import Process, Queue, Value
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from openpilot.common.params import Params
 from openpilot.common.numpy_fast import clip
@@ -44,7 +43,7 @@ class SimulatorBridge(ABC):
     self._exit = threading.Event()
     self.simulator_state = SimulatorState()
 
-    self.world: Optional[World] = None
+    self.world: World | None = None
 
     self.past_startup_engaged = False
 

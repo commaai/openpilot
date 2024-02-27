@@ -2,7 +2,7 @@ import os
 from datetime import datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
-from typing import IO, Union
+from typing import IO
 
 
 TOKEN_PATH = Path("/data/azure_token")
@@ -57,7 +57,7 @@ class AzureContainer:
     ext = "hevc" if log_type.endswith('camera') else "bz2"
     return self.BASE_URL + f"{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
 
-  def upload_bytes(self, data: Union[bytes, IO], blob_name: str) -> str:
+  def upload_bytes(self, data: bytes | IO, blob_name: str) -> str:
     from azure.storage.blob import BlobClient
     blob = BlobClient(
       account_url=self.ACCOUNT_URL,
@@ -69,6 +69,6 @@ class AzureContainer:
     blob.upload_blob(data)
     return self.BASE_URL + blob_name
 
-  def upload_file(self, path: Union[str, os.PathLike], blob_name: str) -> str:
+  def upload_file(self, path: str | os.PathLike, blob_name: str) -> str:
     with open(path, "rb") as f:
       return self.upload_bytes(f, blob_name)

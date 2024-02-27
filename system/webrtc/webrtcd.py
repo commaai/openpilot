@@ -6,7 +6,7 @@ import json
 import uuid
 import logging
 from dataclasses import dataclass, field
-from typing import Any, List, Optional, Union, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 # aiortc and its dependencies have lots of internal warnings :(
 import warnings
@@ -24,7 +24,7 @@ from cereal import messaging, log
 class CerealOutgoingMessageProxy:
   def __init__(self, sm: messaging.SubMaster):
     self.sm = sm
-    self.channels: List['RTCDataChannel'] = []
+    self.channels: list['RTCDataChannel'] = []
 
   def add_channel(self, channel: 'RTCDataChannel'):
     self.channels.append(channel)
@@ -103,7 +103,7 @@ class CerealProxyRunner:
 
 
 class StreamSession:
-  def __init__(self, sdp: str, cameras: List[str], incoming_services: List[str], outgoing_services: List[str], debug_mode: bool = False):
+  def __init__(self, sdp: str, cameras: list[str], incoming_services: list[str], outgoing_services: list[str], debug_mode: bool = False):
     from aiortc.mediastreams import VideoStreamTrack, AudioStreamTrack
     from aiortc.contrib.media import MediaBlackhole
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
@@ -132,8 +132,8 @@ class StreamSession:
     self.incoming_bridge = CerealIncomingMessageProxy(messaging.PubMaster(incoming_services))
     self.outgoing_bridge_runner = CerealProxyRunner(self.outgoing_bridge)
 
-    self.audio_output: Optional[Union[AudioOutputSpeaker, MediaBlackhole]] = None
-    self.run_task: Optional[asyncio.Task] = None
+    self.audio_output: AudioOutputSpeaker | MediaBlackhole | None = None
+    self.run_task: asyncio.Task | None = None
     self.logger = logging.getLogger("webrtcd")
     self.logger.info("New stream session (%s), cameras %s, audio in %s out %s, incoming services %s, outgoing services %s",
                       self.identifier, cameras, config.incoming_audio_track, config.expected_audio_track, incoming_services, outgoing_services)
@@ -189,9 +189,9 @@ class StreamSession:
 @dataclass
 class StreamRequestBody:
   sdp: str
-  cameras: List[str]
-  bridge_services_in: List[str] = field(default_factory=list)
-  bridge_services_out: List[str] = field(default_factory=list)
+  cameras: list[str]
+  bridge_services_in: list[str] = field(default_factory=list)
+  bridge_services_out: list[str] = field(default_factory=list)
 
 
 async def get_stream(request: 'web.Request'):

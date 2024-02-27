@@ -26,7 +26,7 @@ MAX_STREAMING_BUFFER_SIZE = 1000
 
 def install():
   m = f"{platform.system()}-{platform.machine()}"
-  supported = ("Linux-x86_64", "Darwin-arm64", "Darwin-x86_64")
+  supported = ("Linux-x86_64", "Linux-aarch64", "Darwin-arm64", "Darwin-x86_64")
   if m not in supported:
     raise Exception(f"Unsupported platform: '{m}'. Supported platforms: {supported}")
 

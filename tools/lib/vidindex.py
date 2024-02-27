@@ -3,7 +3,6 @@ import argparse
 import os
 import struct
 from enum import IntEnum
-from typing import Tuple
 
 from openpilot.tools.lib.filereader import FileReader
 
@@ -120,7 +119,7 @@ HEVC_CODED_SLICE_SEGMENT_NAL_UNITS = (
 class VideoFileInvalid(Exception):
   pass
 
-def get_ue(dat: bytes, start_idx: int, skip_bits: int) -> Tuple[int, int]:
+def get_ue(dat: bytes, start_idx: int, skip_bits: int) -> tuple[int, int]:
   prefix_val = 0
   prefix_len = 0
   suffix_val = 0
@@ -184,7 +183,7 @@ def get_hevc_nal_unit_type(dat: bytes, nal_unit_start: int) -> HevcNalUnitType:
     print("  nal_unit_type:", nal_unit_type.name, f"({nal_unit_type.value})")
   return nal_unit_type
 
-def get_hevc_slice_type(dat: bytes, nal_unit_start: int, nal_unit_type: HevcNalUnitType) -> Tuple[int, bool]:
+def get_hevc_slice_type(dat: bytes, nal_unit_start: int, nal_unit_type: HevcNalUnitType) -> tuple[int, bool]:
   # 7.3.2.9 Slice segment layer RBSP syntax
   # slice_segment_layer_rbsp( ) {
   #   slice_segment_header( )
@@ -259,7 +258,7 @@ def get_hevc_slice_type(dat: bytes, nal_unit_start: int, nal_unit_type: HevcNalU
     raise VideoFileInvalid("slice_type must be 0, 1, or 2")
   return slice_type, is_first_slice
 
-def hevc_index(hevc_file_name: str, allow_corrupt: bool=False) -> Tuple[list, int, bytes]:
+def hevc_index(hevc_file_name: str, allow_corrupt: bool=False) -> tuple[list, int, bytes]:
   with FileReader(hevc_file_name) as f:
     dat = f.read()
 

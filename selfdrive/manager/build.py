@@ -2,7 +2,6 @@
 import os
 import subprocess
 from pathlib import Path
-from typing import List
 
 # NOTE: Do NOT import anything here that needs be built (e.g. params)
 from openpilot.common.basedir import BASEDIR
@@ -29,7 +28,7 @@ def build(spinner: Spinner, dirty: bool = False, minimal: bool = False) -> None:
 
   # building with all cores can result in using too
   # much memory, so retry with less parallelism
-  compile_output: List[bytes] = []
+  compile_output: list[bytes] = []
   for n in (nproc, nproc/2, 1):
     compile_output.clear()
     scons: subprocess.Popen = subprocess.Popen(["scons", f"-j{int(n)}", "--cache-populate", *extra_args], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)

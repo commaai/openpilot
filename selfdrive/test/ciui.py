@@ -11,7 +11,7 @@ from openpilot.selfdrive.ui.qt.python_helpers import set_main_window
 
 class Window(QWidget):
   def __init__(self, parent=None):
-    super(Window, self).__init__(parent)
+    super().__init__(parent)
 
     layout = QVBoxLayout()
     self.setLayout(layout)
@@ -47,7 +47,7 @@ class Window(QWidget):
 
   def update(self):
     for cmd, label in self.labels.items():
-      out = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+      out = subprocess.run(cmd, capture_output=True,
                            shell=True, check=False, encoding='utf8').stdout
       label.setText(out.strip())
 

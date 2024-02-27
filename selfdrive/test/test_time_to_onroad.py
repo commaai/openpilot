@@ -50,6 +50,7 @@ def test_time_to_onroad():
       sm.update(100)
       assert sm.all_alive(), sm.alive
       assert sm['controlsState'].engageable, f"events: {sm['onroadEvents']}"
+      assert sm['controlsState'].cumLagMs < 10.
   finally:
     proc.terminate()
     if proc.wait(20) is None:

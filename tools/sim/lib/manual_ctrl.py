@@ -4,7 +4,7 @@ import array
 import os
 import struct
 from fcntl import ioctl
-from typing import NoReturn, Dict, List
+from typing import NoReturn
 
 # Iterate over the joystick devices.
 print('Available devices:')
@@ -13,8 +13,8 @@ for fn in os.listdir('/dev/input'):
     print(f'  /dev/input/{fn}')
 
 # We'll store the states here.
-axis_states: Dict[str, float] = {}
-button_states: Dict[str, float] = {}
+axis_states: dict[str, float] = {}
+button_states: dict[str, float] = {}
 
 # These constants were borrowed from linux/input.h
 axis_names = {
@@ -88,8 +88,8 @@ button_names = {
   0x2c3 : 'dpad_down',
 }
 
-axis_name_list: List[str] = []
-button_name_list: List[str] = []
+axis_name_list: list[str] = []
+button_name_list: list[str] = []
 
 def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
   # Open the joystick device.
