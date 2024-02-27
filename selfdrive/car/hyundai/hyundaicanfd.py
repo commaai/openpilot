@@ -49,7 +49,7 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_steer, 
     "HAS_LANE_SAFETY": 0,  # hide LKAS settings
     "NEW_SIGNAL_1": 0,  # this changes sometimes
     "NEW_SIGNAL_2": 0,
-    "LKAS_ANGLE_CMD": apply_angle,
+    "LKAS_ANGLE_CMD": -(apply_angle), # Calculated angle seems to be opposite what the car expects
     "LKAS_ANGLE_ACTIVE": 2 if lat_active else 1,
     "UNKNOWN": 50 if lat_active else 0,  # a torque scale value? ramps up when steering, highest seen is 234
   }
