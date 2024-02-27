@@ -13,6 +13,7 @@ from openpilot.selfdrive.car.disable_ecu import disable_ecu
 Ecu = car.CarParams.Ecu
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
+SteerControlType = car.CarParams.SteerControlType
 ENABLE_BUTTONS = (Buttons.RES_ACCEL, Buttons.SET_DECEL, Buttons.CANCEL)
 BUTTONS_DICT = {Buttons.RES_ACCEL: ButtonType.accelCruise, Buttons.SET_DECEL: ButtonType.decelCruise,
                 Buttons.GAP_DIST: ButtonType.gapAdjustCruise, Buttons.CANCEL: ButtonType.cancel}
@@ -90,6 +91,9 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerLimitTimer = 0.4
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+    if candidate == CAR.KIA_EV9:
+      ret.steerControlType = SteerControlType.angle
 
     # *** longitudinal control ***
     if candidate in CANFD_CAR:
