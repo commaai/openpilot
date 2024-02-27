@@ -261,7 +261,7 @@ class CarSpecs:
 class PlatformConfig:
   platform_str: str
   car_info: CarInfos
-  dbc_dict: DbcDict = None  # needs a test
+  dbc_dict: DbcDict | None = None
 
   specs: CarSpecs | None = None
 
