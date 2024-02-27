@@ -66,7 +66,7 @@ class ToyotaPlatformConfig(PlatformConfig):
   def __post_init__(self):
     # if self.
     print('here', dir(self))
-    # if self.platform_str in TSS2_CAR:
+    # if self.platform_str == CAR.ALPHARD_TSS2:  # doesn't work
     #   self.dbc_dict = dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas')
 
 
@@ -87,7 +87,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota Avalon 2016", "Toyota Safety Sense P"),
       ToyotaCarInfo("Toyota Avalon 2017-18"),
     ],
-    dbc_dict('NOTDONE', 'NOTDONE'),
+    dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
     specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   AVALON_2019 = ToyotaPlatformConfig(
@@ -96,7 +96,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota Avalon 2019-21"),
       ToyotaCarInfo("Toyota Avalon Hybrid 2019-21"),
     ],
-    dbc_dict('NOTDONE', 'NOTDONE'),
+    dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
     specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   AVALON_TSS2 = ToyotaPlatformConfig(
