@@ -64,7 +64,7 @@ class FordCarInfo(CarInfo):
     elif CP.carFingerprint in (CAR.F_150_MK14, CAR.F_150_LIGHTNING_MK1):
       self.car_parts = CarParts([Device.threex_angled_mount_nocable, harness])
     elif CP.carFingerprint == CAR.MUSTANG_MACH_E_MK1:
-      self.car_parts = CarParts([Device.threex_angled_mount_nocable, harness, Cable.usbc_coupler])
+      self.car_parts = CarParts([Device.threex_nocable, harness, Cable.usbc_coupler])
     else:
       self.car_parts = CarParts([Device.threex, harness])
 
