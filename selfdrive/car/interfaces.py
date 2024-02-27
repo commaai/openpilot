@@ -113,14 +113,13 @@ class CarInterfaceBase(ABC):
     ret = CarInterfaceBase.get_std_params(candidate)
 
     if hasattr(candidate, "config"):
-      platform_config = candidate.config
-      if platform_config.specs is not None:
-        ret.mass = platform_config.specs.mass
-        ret.wheelbase = platform_config.specs.wheelbase
-        ret.steerRatio = platform_config.specs.steerRatio
-        ret.centerToFront = ret.wheelbase * platform_config.specs.centerToFrontRatio
-        ret.minEnableSpeed = platform_config.specs.minEnableSpeed
-        ret.minSteerSpeed = platform_config.specs.minSteerSpeed
+      if candidate.config.specs is not None:
+        ret.mass = candidate.config.specs.mass
+        ret.wheelbase = candidate.config.specs.wheelbase
+        ret.steerRatio = candidate.config.specs.steerRatio
+        ret.centerToFront = ret.wheelbase * candidate.config.specs.centerToFrontRatio
+        ret.minEnableSpeed = candidate.config.specs.minEnableSpeed
+        ret.minSteerSpeed = candidate.config.specs.minSteerSpeed
 
     ret = cls._get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs)
 
