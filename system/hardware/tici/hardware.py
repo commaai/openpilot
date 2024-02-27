@@ -126,7 +126,6 @@ class Tici(HardwareBase):
     return get_device_type()
 
   def get_sound_card_online(self):
-    return True
     if os.path.isfile('/proc/asound/card0/state'):
       with open('/proc/asound/card0/state') as f:
         return f.read().strip() == 'ONLINE'
