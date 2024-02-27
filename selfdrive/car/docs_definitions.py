@@ -124,7 +124,7 @@ class CarHarness(EnumBase):
 class Device(EnumBase):
   threex = BasePart("comma 3X", parts=[Mount.mount, Cable.right_angle_obd_c_cable_1_5ft])
   # variant of comma 3X with angled mounts
-  threex_angled_mount = BasePart("comma 3X", parts=[Mount.angled_mount_8_degrees, Cable.right_angle_obd_c_cable_1_5ft]
+  threex_angled_mount = BasePart("comma 3X", parts=[Mount.angled_mount_8_degrees, Cable.right_angle_obd_c_cable_1_5ft])
   # Ford CANFD uses the long cable (9.5ft) and doesn't need the 1.5ft cable
   threex_angled_mount_nocable = BasePart("comma 3X", parts=[Mount.angled_mount_8_degrees])
   red_panda = BasePart("red panda")
