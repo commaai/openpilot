@@ -141,7 +141,7 @@ class CAR(Platforms):
 CANFD_CAR = {CAR.F_150_MK14, CAR.F_150_LIGHTNING_MK1, CAR.MUSTANG_MACH_E_MK1}
 
 
-DATA_IDENTIFIER_FORD_ASBUILT = 0xDE
+DATA_IDENTIFIER_FORD_ASBUILT = 0xDE00
 
 ASBUILT_BLOCKS: list[tuple[int, list]] = [
   (1, [Ecu.debug, Ecu.fwdCamera, Ecu.eps]),
