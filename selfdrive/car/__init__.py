@@ -248,15 +248,16 @@ CarInfos = CarInfo | list[CarInfo]
 
 @dataclass(frozen=True, kw_only=True)
 class CarSpecs:
-  mass: float
-  wheelbase: float
+  mass: float  # kg
+  wheelbase: float  # m
   steerRatio: float
   centerToFrontRatio: float = field(default=0.5)
-  minSteerSpeed: float = field(default=0.)
-  minEnableSpeed: float = field(default=-1.)
+  minSteerSpeed: float = field(default=0.)  # m/s
+  minEnableSpeed: float = field(default=-1.)  # m/s
+  tireStiffnessFactor: float = field(default=1.)
 
 
-@dataclass(frozen=True, order=True)
+@dataclass(order=True)
 class PlatformConfig:
   platform_str: str
   car_info: CarInfos
@@ -272,9 +273,12 @@ class Platforms(str, ReprEnum):
   config: PlatformConfig
 
   def __new__(cls, platform_config: PlatformConfig):
-    member = str.__new__(cls, platform_config.platform_str)
+    _str = platform_config
+    if type(_str) != str:
+      _str = platform_config.platform_str
+    member = str.__new__(cls, _str)
     member.config = platform_config
-    member._value_ = platform_config.platform_str
+    member._value_ = _str
     return member
 
   @classmethod

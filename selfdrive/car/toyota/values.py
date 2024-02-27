@@ -5,6 +5,7 @@ from enum import Enum, IntFlag, StrEnum
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
+from openpilot.selfdrive.car import CarSpecs, DbcDict, PlatformConfig, Platforms
 from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, CarParts, CarHarness
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
@@ -46,47 +47,6 @@ class ToyotaFlags(IntFlag):
   DISABLE_RADAR = 4
 
 
-class CAR(StrEnum):
-  # Toyota
-  ALPHARD_TSS2 = "TOYOTA ALPHARD 2020"
-  AVALON = "TOYOTA AVALON 2016"
-  AVALON_2019 = "TOYOTA AVALON 2019"
-  AVALON_TSS2 = "TOYOTA AVALON 2022"  # TSS 2.5
-  CAMRY = "TOYOTA CAMRY 2018"
-  CAMRY_TSS2 = "TOYOTA CAMRY 2021"  # TSS 2.5
-  CHR = "TOYOTA C-HR 2018"
-  CHR_TSS2 = "TOYOTA C-HR 2021"
-  COROLLA = "TOYOTA COROLLA 2017"
-  # LSS2 Lexus UX Hybrid is same as a TSS2 Corolla Hybrid
-  COROLLA_TSS2 = "TOYOTA COROLLA TSS2 2019"
-  HIGHLANDER = "TOYOTA HIGHLANDER 2017"
-  HIGHLANDER_TSS2 = "TOYOTA HIGHLANDER 2020"
-  PRIUS = "TOYOTA PRIUS 2017"
-  PRIUS_V = "TOYOTA PRIUS v 2017"
-  PRIUS_TSS2 = "TOYOTA PRIUS TSS2 2021"
-  RAV4 = "TOYOTA RAV4 2017"
-  RAV4H = "TOYOTA RAV4 HYBRID 2017"
-  RAV4_TSS2 = "TOYOTA RAV4 2019"
-  RAV4_TSS2_2022 = "TOYOTA RAV4 2022"
-  RAV4_TSS2_2023 = "TOYOTA RAV4 2023"
-  MIRAI = "TOYOTA MIRAI 2021"  # TSS 2.5
-  SIENNA = "TOYOTA SIENNA 2018"
-
-  # Lexus
-  LEXUS_CTH = "LEXUS CT HYBRID 2018"
-  LEXUS_ES = "LEXUS ES 2018"
-  LEXUS_ES_TSS2 = "LEXUS ES 2019"
-  LEXUS_IS = "LEXUS IS 2018"
-  LEXUS_IS_TSS2 = "LEXUS IS 2023"
-  LEXUS_NX = "LEXUS NX 2018"
-  LEXUS_NX_TSS2 = "LEXUS NX 2020"
-  LEXUS_LC_TSS2 = "LEXUS LC 2024"
-  LEXUS_RC = "LEXUS RC 2020"
-  LEXUS_RX = "LEXUS RX 2016"
-  LEXUS_RX_TSS2 = "LEXUS RX 2020"
-  LEXUS_GS_F = "LEXUS GS F 2016"
-
-
 class Footnote(Enum):
   CAMRY = CarFootnote(
     "openpilot operates above 28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control.",
@@ -99,127 +59,312 @@ class ToyotaCarInfo(CarInfo):
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.toyota_a]))
 
 
-CAR_INFO: dict[str, ToyotaCarInfo | list[ToyotaCarInfo]] = {
+@dataclass()
+class ToyotaPlatformConfig(PlatformConfig):
+  # dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('subaru_global_2017_generated', None))
+
+  def __post_init__(self):
+    # if self.
+    print('here', dir(self))
+    # if self.platform_str in TSS2_CAR:
+    #   self.dbc_dict = dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas')
+
+
+class CAR(Platforms):
   # Toyota
-  CAR.ALPHARD_TSS2: [
-    ToyotaCarInfo("Toyota Alphard 2019-20"),
-    ToyotaCarInfo("Toyota Alphard Hybrid 2021"),
-  ],
-  CAR.AVALON: [
-    ToyotaCarInfo("Toyota Avalon 2016", "Toyota Safety Sense P"),
-    ToyotaCarInfo("Toyota Avalon 2017-18"),
-  ],
-  CAR.AVALON_2019: [
-    ToyotaCarInfo("Toyota Avalon 2019-21"),
-    ToyotaCarInfo("Toyota Avalon Hybrid 2019-21"),
-  ],
-  CAR.AVALON_TSS2: [
-    ToyotaCarInfo("Toyota Avalon 2022"),
-    ToyotaCarInfo("Toyota Avalon Hybrid 2022"),
-  ],
-  CAR.CAMRY: [
-    ToyotaCarInfo("Toyota Camry 2018-20", video_link="https://www.youtube.com/watch?v=fkcjviZY9CM", footnotes=[Footnote.CAMRY]),
-    ToyotaCarInfo("Toyota Camry Hybrid 2018-20", video_link="https://www.youtube.com/watch?v=Q2DYY0AWKgk"),
-  ],
-  CAR.CAMRY_TSS2: [
-    ToyotaCarInfo("Toyota Camry 2021-24", footnotes=[Footnote.CAMRY]),
-    ToyotaCarInfo("Toyota Camry Hybrid 2021-24"),
-  ],
-  CAR.CHR: [
-    ToyotaCarInfo("Toyota C-HR 2017-20"),
-    ToyotaCarInfo("Toyota C-HR Hybrid 2017-20"),
-  ],
-  CAR.CHR_TSS2: [
-    ToyotaCarInfo("Toyota C-HR 2021"),
-    ToyotaCarInfo("Toyota C-HR Hybrid 2021-22"),
-  ],
-  CAR.COROLLA: ToyotaCarInfo("Toyota Corolla 2017-19"),
-  CAR.COROLLA_TSS2: [
-    ToyotaCarInfo("Toyota Corolla 2020-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
-    ToyotaCarInfo("Toyota Corolla Cross (Non-US only) 2020-23", min_enable_speed=7.5),
-    ToyotaCarInfo("Toyota Corolla Hatchback 2019-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
-    # Hybrid platforms
-    ToyotaCarInfo("Toyota Corolla Hybrid 2020-22"),
-    ToyotaCarInfo("Toyota Corolla Hybrid (Non-US only) 2020-23", min_enable_speed=7.5),
-    ToyotaCarInfo("Toyota Corolla Cross Hybrid (Non-US only) 2020-22", min_enable_speed=7.5),
-    ToyotaCarInfo("Lexus UX Hybrid 2019-23"),
-  ],
-  CAR.HIGHLANDER: [
-    ToyotaCarInfo("Toyota Highlander 2017-19", video_link="https://www.youtube.com/watch?v=0wS0wXSLzoo"),
-    ToyotaCarInfo("Toyota Highlander Hybrid 2017-19"),
-  ],
-  CAR.HIGHLANDER_TSS2: [
-    ToyotaCarInfo("Toyota Highlander 2020-23"),
-    ToyotaCarInfo("Toyota Highlander Hybrid 2020-23"),
-  ],
-  CAR.PRIUS: [
-    ToyotaCarInfo("Toyota Prius 2016", "Toyota Safety Sense P", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0"),
-    ToyotaCarInfo("Toyota Prius 2017-20", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0"),
-    ToyotaCarInfo("Toyota Prius Prime 2017-20", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0"),
-  ],
-  CAR.PRIUS_V: ToyotaCarInfo("Toyota Prius v 2017", "Toyota Safety Sense P", min_enable_speed=MIN_ACC_SPEED),
-  CAR.PRIUS_TSS2: [
-    ToyotaCarInfo("Toyota Prius 2021-22", video_link="https://www.youtube.com/watch?v=J58TvCpUd4U"),
-    ToyotaCarInfo("Toyota Prius Prime 2021-22", video_link="https://www.youtube.com/watch?v=J58TvCpUd4U"),
-  ],
-  CAR.RAV4: [
-    ToyotaCarInfo("Toyota RAV4 2016", "Toyota Safety Sense P"),
-    ToyotaCarInfo("Toyota RAV4 2017-18")
-  ],
-  CAR.RAV4H: [
-    ToyotaCarInfo("Toyota RAV4 Hybrid 2016", "Toyota Safety Sense P", video_link="https://youtu.be/LhT5VzJVfNI?t=26"),
-    ToyotaCarInfo("Toyota RAV4 Hybrid 2017-18", video_link="https://youtu.be/LhT5VzJVfNI?t=26")
-  ],
-  CAR.RAV4_TSS2: [
-    ToyotaCarInfo("Toyota RAV4 2019-21", video_link="https://www.youtube.com/watch?v=wJxjDd42gGA"),
-    ToyotaCarInfo("Toyota RAV4 Hybrid 2019-21"),
-  ],
-  CAR.RAV4_TSS2_2022: [
-    ToyotaCarInfo("Toyota RAV4 2022"),
-    ToyotaCarInfo("Toyota RAV4 Hybrid 2022", video_link="https://youtu.be/U0nH9cnrFB0"),
-  ],
-  CAR.RAV4_TSS2_2023: [
-    ToyotaCarInfo("Toyota RAV4 2023-24"),
-    ToyotaCarInfo("Toyota RAV4 Hybrid 2023-24"),
-  ],
-  CAR.MIRAI: ToyotaCarInfo("Toyota Mirai 2021"),
-  CAR.SIENNA: ToyotaCarInfo("Toyota Sienna 2018-20", video_link="https://www.youtube.com/watch?v=q1UPOo4Sh68", min_enable_speed=MIN_ACC_SPEED),
+  ALPHARD_TSS2 = ToyotaPlatformConfig(
+    "TOYOTA ALPHARD 2020",
+    [
+      ToyotaCarInfo("Toyota Alphard 2019-20"),
+      ToyotaCarInfo("Toyota Alphard Hybrid 2021"),
+    ],
+    dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+    specs=CarSpecs(mass=4305. * CV.LB_TO_KG, wheelbase=3.0, steerRatio=14.2, tireStiffnessFactor=0.444)
+  ),
+  AVALON = ToyotaPlatformConfig(
+    "TOYOTA AVALON 2016",
+    [
+      ToyotaCarInfo("Toyota Avalon 2016", "Toyota Safety Sense P"),
+      ToyotaCarInfo("Toyota Avalon 2017-18"),
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  AVALON_2019 = ToyotaPlatformConfig(
+    "TOYOTA AVALON 2019",
+    [
+      ToyotaCarInfo("Toyota Avalon 2019-21"),
+      ToyotaCarInfo("Toyota Avalon Hybrid 2019-21"),
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  AVALON_TSS2 = ToyotaPlatformConfig(
+    "TOYOTA AVALON 2022",  # TSS 2.5
+    [
+      ToyotaCarInfo("Toyota Avalon 2022"),
+      ToyotaCarInfo("Toyota Avalon Hybrid 2022"),
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  CAMRY = ToyotaPlatformConfig(
+    "TOYOTA CAMRY 2018",
+    [
+      ToyotaCarInfo("Toyota Camry 2018-20", video_link="https://www.youtube.com/watch?v=fkcjviZY9CM", footnotes=[Footnote.CAMRY]),
+      ToyotaCarInfo("Toyota Camry Hybrid 2018-20", video_link="https://www.youtube.com/watch?v=Q2DYY0AWKgk"),
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  CAMRY_TSS2 = ToyotaPlatformConfig(
+    "TOYOTA CAMRY 2021",  # TSS 2.5
+    [
+      ToyotaCarInfo("Toyota Camry 2021-24", footnotes=[Footnote.CAMRY]),
+      ToyotaCarInfo("Toyota Camry Hybrid 2021-24"),
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  CHR = ToyotaPlatformConfig(
+    "TOYOTA C-HR 2018",
+    [
+      ToyotaCarInfo("Toyota C-HR 2017-20"),
+      ToyotaCarInfo("Toyota C-HR Hybrid 2017-20"),
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  CHR_TSS2 = ToyotaPlatformConfig(
+    "TOYOTA C-HR 2021",
+    [
+      ToyotaCarInfo("Toyota C-HR 2021"),
+      ToyotaCarInfo("Toyota C-HR Hybrid 2021-22"),
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  COROLLA = ToyotaPlatformConfig(
+    "TOYOTA COROLLA 2017",
+    ToyotaCarInfo("Toyota Corolla 2017-19"),
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  # LSS2 Lexus UX Hybrid is same as a TSS2 Corolla Hybrid
+  COROLLA_TSS2 = ToyotaPlatformConfig(
+    "TOYOTA COROLLA TSS2 2019",
+    [
+      ToyotaCarInfo("Toyota Corolla 2020-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
+      ToyotaCarInfo("Toyota Corolla Cross (Non-US only) 2020-23", min_enable_speed=7.5),
+      ToyotaCarInfo("Toyota Corolla Hatchback 2019-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
+      # Hybrid platforms
+      ToyotaCarInfo("Toyota Corolla Hybrid 2020-22"),
+      ToyotaCarInfo("Toyota Corolla Hybrid (Non-US only) 2020-23", min_enable_speed=7.5),
+      ToyotaCarInfo("Toyota Corolla Cross Hybrid (Non-US only) 2020-22", min_enable_speed=7.5),
+      ToyotaCarInfo("Lexus UX Hybrid 2019-23"),
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  HIGHLANDER = ToyotaPlatformConfig(
+    "TOYOTA HIGHLANDER 2017",
+    [
+      ToyotaCarInfo("Toyota Highlander 2017-19", video_link="https://www.youtube.com/watch?v=0wS0wXSLzoo"),
+      ToyotaCarInfo("Toyota Highlander Hybrid 2017-19"),
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  HIGHLANDER_TSS2 = ToyotaPlatformConfig(
+     "TOYOTA HIGHLANDER 2020",
+    [
+      ToyotaCarInfo("Toyota Highlander 2020-23"),
+      ToyotaCarInfo("Toyota Highlander Hybrid 2020-23"),
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  PRIUS = ToyotaPlatformConfig(
+    "TOYOTA PRIUS 2017",
+    [
+      ToyotaCarInfo("Toyota Prius 2016", "Toyota Safety Sense P", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0"),
+      ToyotaCarInfo("Toyota Prius 2017-20", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0"),
+      ToyotaCarInfo("Toyota Prius Prime 2017-20", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0"),
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  PRIUS_V = ToyotaPlatformConfig(
+    "TOYOTA PRIUS v 2017",
+    ToyotaCarInfo("Toyota Prius v 2017", "Toyota Safety Sense P", min_enable_speed=MIN_ACC_SPEED),
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  PRIUS_TSS2 = ToyotaPlatformConfig(
+    "TOYOTA PRIUS TSS2 2021",
+    [
+      ToyotaCarInfo("Toyota Prius 2021-22", video_link="https://www.youtube.com/watch?v=J58TvCpUd4U"),
+      ToyotaCarInfo("Toyota Prius Prime 2021-22", video_link="https://www.youtube.com/watch?v=J58TvCpUd4U"),
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  RAV4 = ToyotaPlatformConfig(
+    "TOYOTA RAV4 2017",
+    [
+      ToyotaCarInfo("Toyota RAV4 2016", "Toyota Safety Sense P"),
+      ToyotaCarInfo("Toyota RAV4 2017-18")
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  RAV4H = ToyotaPlatformConfig(
+    "TOYOTA RAV4 HYBRID 2017",
+    [
+      ToyotaCarInfo("Toyota RAV4 Hybrid 2016", "Toyota Safety Sense P", video_link="https://youtu.be/LhT5VzJVfNI?t=26"),
+      ToyotaCarInfo("Toyota RAV4 Hybrid 2017-18", video_link="https://youtu.be/LhT5VzJVfNI?t=26")
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  RAV4_TSS2 = ToyotaPlatformConfig(
+    "TOYOTA RAV4 2019",
+    [
+      ToyotaCarInfo("Toyota RAV4 2019-21", video_link="https://www.youtube.com/watch?v=wJxjDd42gGA"),
+      ToyotaCarInfo("Toyota RAV4 Hybrid 2019-21"),
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  RAV4_TSS2_2022 = ToyotaPlatformConfig(
+    "TOYOTA RAV4 2022",
+    [
+      ToyotaCarInfo("Toyota RAV4 2022"),
+      ToyotaCarInfo("Toyota RAV4 Hybrid 2022", video_link="https://youtu.be/U0nH9cnrFB0"),
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  RAV4_TSS2_2023 = ToyotaPlatformConfig(
+    "TOYOTA RAV4 2023",
+    [
+      ToyotaCarInfo("Toyota RAV4 2023-24"),
+      ToyotaCarInfo("Toyota RAV4 Hybrid 2023-24"),
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  MIRAI = ToyotaPlatformConfig(
+    "TOYOTA MIRAI 2021",  # TSS 2.5
+    ToyotaCarInfo("Toyota Mirai 2021"),
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  SIENNA = ToyotaPlatformConfig(
+    "TOYOTA SIENNA 2018",
+    ToyotaCarInfo("Toyota Sienna 2018-20", video_link="https://www.youtube.com/watch?v=q1UPOo4Sh68", min_enable_speed=MIN_ACC_SPEED),
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
 
   # Lexus
-  CAR.LEXUS_CTH: ToyotaCarInfo("Lexus CT Hybrid 2017-18", "Lexus Safety System+"),
-  CAR.LEXUS_ES: [
-    ToyotaCarInfo("Lexus ES 2017-18"),
-    ToyotaCarInfo("Lexus ES Hybrid 2017-18"),
-  ],
-  CAR.LEXUS_ES_TSS2: [
-    ToyotaCarInfo("Lexus ES 2019-24"),
-    ToyotaCarInfo("Lexus ES Hybrid 2019-24", video_link="https://youtu.be/BZ29osRVJeg?t=12"),
-  ],
-  CAR.LEXUS_IS: ToyotaCarInfo("Lexus IS 2017-19"),
-  CAR.LEXUS_IS_TSS2: ToyotaCarInfo("Lexus IS 2022-23"),
-  CAR.LEXUS_GS_F: ToyotaCarInfo("Lexus GS F 2016"),
-  CAR.LEXUS_NX: [
-    ToyotaCarInfo("Lexus NX 2018-19"),
-    ToyotaCarInfo("Lexus NX Hybrid 2018-19"),
-  ],
-  CAR.LEXUS_NX_TSS2: [
-    ToyotaCarInfo("Lexus NX 2020-21"),
-    ToyotaCarInfo("Lexus NX Hybrid 2020-21"),
-  ],
-  CAR.LEXUS_LC_TSS2: ToyotaCarInfo("Lexus LC 2024"),
-  CAR.LEXUS_RC: ToyotaCarInfo("Lexus RC 2018-20"),
-  CAR.LEXUS_RX: [
-    ToyotaCarInfo("Lexus RX 2016", "Lexus Safety System+"),
-    ToyotaCarInfo("Lexus RX 2017-19"),
-    # Hybrid platforms
-    ToyotaCarInfo("Lexus RX Hybrid 2016", "Lexus Safety System+"),
-    ToyotaCarInfo("Lexus RX Hybrid 2017-19"),
-  ],
-  CAR.LEXUS_RX_TSS2: [
-    ToyotaCarInfo("Lexus RX 2020-22"),
-    ToyotaCarInfo("Lexus RX Hybrid 2020-22"),
-  ],
-}
+  LEXUS_CTH = ToyotaPlatformConfig(
+    "LEXUS CT HYBRID 2018",
+    ToyotaCarInfo("Lexus CT Hybrid 2017-18", "Lexus Safety System+"),
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  LEXUS_ES = ToyotaPlatformConfig(
+    "LEXUS ES 2018",
+    [
+      ToyotaCarInfo("Lexus ES 2017-18"),
+      ToyotaCarInfo("Lexus ES Hybrid 2017-18"),
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  LEXUS_ES_TSS2 = ToyotaPlatformConfig(
+    "LEXUS ES 2019",
+    [
+      ToyotaCarInfo("Lexus ES 2019-24"),
+      ToyotaCarInfo("Lexus ES Hybrid 2019-24", video_link="https://youtu.be/BZ29osRVJeg?t=12"),
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  LEXUS_IS = ToyotaPlatformConfig(
+    "LEXUS IS 2018",
+    ToyotaCarInfo("Lexus IS 2017-19"),
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  LEXUS_IS_TSS2 = ToyotaPlatformConfig(
+    "LEXUS IS 2023",
+    ToyotaCarInfo("Lexus IS 2022-23"),
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  LEXUS_NX = ToyotaPlatformConfig(
+    "LEXUS NX 2018",
+    [
+      ToyotaCarInfo("Lexus NX 2018-19"),
+      ToyotaCarInfo("Lexus NX Hybrid 2018-19"),
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  LEXUS_NX_TSS2 = ToyotaPlatformConfig(
+    "LEXUS NX 2020",
+    [
+      ToyotaCarInfo("Lexus NX 2020-21"),
+      ToyotaCarInfo("Lexus NX Hybrid 2020-21"),
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  LEXUS_LC_TSS2 = ToyotaPlatformConfig(
+    "LEXUS LC 2024",
+    ToyotaCarInfo("Lexus LC 2024"),
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  LEXUS_RC = ToyotaPlatformConfig(
+    "LEXUS RC 2020",
+    ToyotaCarInfo("Lexus RC 2018-20"),
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  LEXUS_RX = ToyotaPlatformConfig(
+    "LEXUS RX 2016",
+    [
+      ToyotaCarInfo("Lexus RX 2016", "Lexus Safety System+"),
+      ToyotaCarInfo("Lexus RX 2017-19"),
+      # Hybrid platforms
+      ToyotaCarInfo("Lexus RX Hybrid 2016", "Lexus Safety System+"),
+      ToyotaCarInfo("Lexus RX Hybrid 2017-19"),
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  LEXUS_RX_TSS2 = ToyotaPlatformConfig(
+    "LEXUS RX 2020",
+    [
+      ToyotaCarInfo("Lexus RX 2020-22"),
+      ToyotaCarInfo("Lexus RX Hybrid 2020-22"),
+    ],
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+  LEXUS_GS_F = ToyotaPlatformConfig(
+    "LEXUS GS F 2016",
+    ToyotaCarInfo("Lexus GS F 2016"),
+    dbc_dict('NOTDONE', 'NOTDONE'),
+    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+  ),
+
+
+CAR_INFO = CAR.create_carinfo_map()
+DBC = CAR.create_dbc_map()
 
 # (addr, cars, bus, 1/freq*100, vl)
 STATIC_DSU_MSGS = [
@@ -439,42 +584,42 @@ FW_QUERY_CONFIG = FwQueryConfig(
 
 STEER_THRESHOLD = 100
 
-DBC = {
-  CAR.RAV4H: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-  CAR.RAV4: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-  CAR.PRIUS: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
-  CAR.PRIUS_V: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-  CAR.COROLLA: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-  CAR.LEXUS_LC_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.LEXUS_RC: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-  CAR.LEXUS_RX: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-  CAR.LEXUS_RX_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.CHR: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
-  CAR.CHR_TSS2: dbc_dict('toyota_nodsu_pt_generated', None),
-  CAR.CAMRY: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
-  CAR.CAMRY_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.HIGHLANDER: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-  CAR.HIGHLANDER_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.AVALON: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-  CAR.AVALON_2019: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
-  CAR.AVALON_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.RAV4_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.RAV4_TSS2_2022: dbc_dict('toyota_nodsu_pt_generated', None),
-  CAR.RAV4_TSS2_2023: dbc_dict('toyota_nodsu_pt_generated', None),
-  CAR.COROLLA_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.LEXUS_ES: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-  CAR.LEXUS_ES_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.SIENNA: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-  CAR.LEXUS_IS: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-  CAR.LEXUS_IS_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.LEXUS_CTH: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-  CAR.LEXUS_NX: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-  CAR.LEXUS_NX_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.PRIUS_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.MIRAI: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.ALPHARD_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
-  CAR.LEXUS_GS_F: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-}
+# DBC = {
+#   CAR.RAV4H: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
+#   CAR.RAV4: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
+#   CAR.PRIUS: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
+#   CAR.PRIUS_V: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
+#   CAR.COROLLA: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
+#   CAR.LEXUS_LC_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+#   CAR.LEXUS_RC: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
+#   CAR.LEXUS_RX: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
+#   CAR.LEXUS_RX_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+#   CAR.CHR: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
+#   CAR.CHR_TSS2: dbc_dict('toyota_nodsu_pt_generated', None),
+#   CAR.CAMRY: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
+#   CAR.CAMRY_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+#   CAR.HIGHLANDER: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
+#   CAR.HIGHLANDER_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+#   CAR.AVALON: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
+#   CAR.AVALON_2019: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
+#   CAR.AVALON_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+#   CAR.RAV4_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+#   CAR.RAV4_TSS2_2022: dbc_dict('toyota_nodsu_pt_generated', None),
+#   CAR.RAV4_TSS2_2023: dbc_dict('toyota_nodsu_pt_generated', None),
+#   CAR.COROLLA_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+#   CAR.LEXUS_ES: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
+#   CAR.LEXUS_ES_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+#   CAR.SIENNA: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
+#   CAR.LEXUS_IS: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
+#   CAR.LEXUS_IS_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+#   CAR.LEXUS_CTH: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
+#   CAR.LEXUS_NX: dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
+#   CAR.LEXUS_NX_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+#   CAR.PRIUS_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+#   CAR.MIRAI: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+#   CAR.ALPHARD_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+#   CAR.LEXUS_GS_F: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
+# }
 
 # These cars have non-standard EPS torque scale factors. All others are 73
 EPS_SCALE = defaultdict(lambda: 73, {CAR.PRIUS: 66, CAR.COROLLA: 88, CAR.LEXUS_IS: 77, CAR.LEXUS_RC: 77, CAR.LEXUS_CTH: 100, CAR.PRIUS_V: 100})
