@@ -401,6 +401,7 @@ FW_VERSIONS = {
       b'68527383AD',
       b'68527387AE',
       b'68527403AC',
+      b'68546047AF',
       b'68631938AA',
       b'68631942AA',
     ],
@@ -610,6 +611,36 @@ FW_VERSIONS = {
       b'68527616AD ',
       b'M2370131MB',
       b'M2421132MB',
+    ],
+  },
+  CAR.DODGE_DURANGO: {
+    (Ecu.combinationMeter, 0x742, None): [
+      b'68454261AD',
+      b'68471535AE',
+    ],
+    (Ecu.srs, 0x744, None): [
+      b'68355362AB',
+      b'68492238AD',
+    ],
+    (Ecu.abs, 0x747, None): [
+      b'68408639AD',
+      b'68499978AB',
+    ],
+    (Ecu.fwdRadar, 0x753, None): [
+      b'68440581AE',
+      b'68456722AC',
+    ],
+    (Ecu.eps, 0x75a, None): [
+      b'68453435AA',
+      b'68498477AA',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'05035786AE ',
+      b'68449476AE ',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'05035826AC',
+      b'68449265AC',
     ],
   },
 }

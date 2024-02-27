@@ -46,6 +46,7 @@ FW_VERSIONS = {
   CAR.LEAF: {
     (Ecu.abs, 0x740, None): [
       b'476605SA1C',
+      b'476605SA7D',
       b'476605SC2D',
       b'476606WK7B',
       b'476606WK9B',
@@ -65,6 +66,7 @@ FW_VERSIONS = {
     ],
     (Ecu.gateway, 0x18dad0f1, None): [
       b'284U25SA3C',
+      b'284U25SP0C',
       b'284U25SP1C',
       b'284U26WK0A',
       b'284U26WK0C',

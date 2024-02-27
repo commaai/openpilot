@@ -4,7 +4,6 @@ import os
 import signal
 import sys
 import traceback
-from typing import List, Tuple, Union
 
 from cereal import log
 import cereal.messaging as messaging
@@ -19,7 +18,7 @@ from openpilot.selfdrive.athena.registration import register, UNREGISTERED_DONGL
 from openpilot.common.swaglog import cloudlog, add_file_handler
 from openpilot.system.version import is_dirty, get_commit, get_version, get_origin, get_short_branch, \
                            get_normalized_origin, terms_version, training_version, \
-                           is_tested_branch, is_release_branch
+                           is_tested_branch, is_release_branch, get_commit_date
 
 
 
@@ -33,7 +32,7 @@ def manager_init() -> None:
   if is_release_branch():
     params.clear_all(ParamKeyType.DEVELOPMENT_ONLY)
 
-  default_params: List[Tuple[str, Union[str, bytes]]] = [
+  default_params: list[tuple[str, str | bytes]] = [
     ("CompletedTrainingVersion", "0"),
     ("DisengageOnAccelerator", "0"),
     ("GsmMetered", "1"),
@@ -66,6 +65,7 @@ def manager_init() -> None:
   params.put("TermsVersion", terms_version)
   params.put("TrainingVersion", training_version)
   params.put("GitCommit", get_commit())
+  params.put("GitCommitDate", get_commit_date())
   params.put("GitBranch", get_short_branch())
   params.put("GitRemote", get_origin())
   params.put_bool("IsTestedBranch", is_tested_branch())
@@ -120,14 +120,14 @@ def manager_thread() -> None:
 
   params = Params()
 
-  ignore: List[str] = []
+  ignore: list[str] = []
   if params.get("DongleId", encoding='utf8') in (None, UNREGISTERED_DONGLE_ID):
     ignore += ["manage_athenad", "uploader"]
   if os.getenv("NOBOARD") is not None:
     ignore.append("pandad")
   ignore += [x for x in os.getenv("BLOCK", "").split(",") if len(x) > 0]
 
-  sm = messaging.SubMaster(['deviceState', 'carParams'], poll=['deviceState'])
+  sm = messaging.SubMaster(['deviceState', 'carParams'], poll='deviceState')
   pm = messaging.PubMaster(['managerState'])
 
   write_onroad_params(False, params)
@@ -136,7 +136,7 @@ def manager_thread() -> None:
   started_prev = False
 
   while True:
-    sm.update()
+    sm.update(1000)
 
     started = sm['deviceState'].started
 
@@ -153,7 +153,7 @@ def manager_thread() -> None:
 
     ensure_running(managed_processes.values(), started, params=params, CP=sm['carParams'], not_run=ignore)
 
-    running = ' '.join("%s%s\u001b[0m" % ("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
+    running = ' '.join("{}{}\u001b[0m".format("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
                        for p in managed_processes.values() if p.proc)
     print(running)
     cloudlog.debug(running)
