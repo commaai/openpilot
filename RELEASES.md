@@ -14,7 +14,7 @@ Version 0.9.6 (2024-02-27)
 * AGNOS 9
 * comma body streaming and controls over WebRTC
 * Improved fuzzy fingerprinting for many makes and models
-* Alpha longitudinal support for new Toyota models
+* Alpha longitudinal support for select Radar-ACC Toyota models
 * Chevrolet Equinox 2019-22 support thanks to JasonJShuler and nworb-cire!
 * Dodge Durango 2020-21 support
 * Hyundai Staria 2023 support thanks to sunnyhaibin!
