@@ -14,6 +14,7 @@ from openpilot.selfdrive.car.disable_ecu import disable_ecu
 Ecu = car.CarParams.Ecu
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
+SteerControlType = car.CarParams.SteerControlType
 ENABLE_BUTTONS = (Buttons.RES_ACCEL, Buttons.SET_DECEL, Buttons.CANCEL)
 BUTTONS_DICT = {Buttons.RES_ACCEL: ButtonType.accelCruise, Buttons.SET_DECEL: ButtonType.decelCruise,
                 Buttons.GAP_DIST: ButtonType.gapAdjustCruise, Buttons.CANCEL: ButtonType.cancel}
@@ -250,6 +251,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.895
       ret.steerRatio = 13.27  # guesstimate from K5 platform
     elif candidate == CAR.KIA_EV9:
+      ret.steerControlType = SteerControlType.angle
       ret.mass = 2625
       ret.wheelbase = 3.1
       ret.steerRatio = 16.02
