@@ -6,7 +6,7 @@ from cereal import car
 from openpilot.selfdrive.car import AngleRateLimit, CarSpecs, dbc_dict, DbcDict, PlatformConfig, Platforms
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
                                                      Device
-from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, p16, Request, StdQueries
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
 
@@ -141,7 +141,6 @@ class CAR(Platforms):
 CANFD_CAR = {CAR.F_150_MK14, CAR.F_150_LIGHTNING_MK1, CAR.MUSTANG_MACH_E_MK1}
 
 
-
 DATA_IDENTIFIER_FORD_ASBUILT = 0xDE
 
 ASBUILT_BLOCKS: list[tuple[int, list]] = [
@@ -160,8 +159,10 @@ ASBUILT_BLOCKS: list[tuple[int, list]] = [
   (21, [Ecu.fwdCamera]),
 ]
 
+
 def ford_asbuilt_block_request(block_id: int):
   return bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + p16(DATA_IDENTIFIER_FORD_ASBUILT + block_id - 1)
+
 
 def ford_asbuilt_block_response(block_id: int):
   return bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + p16(DATA_IDENTIFIER_FORD_ASBUILT + block_id - 1)
