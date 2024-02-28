@@ -1404,4 +1404,12 @@ FW_VERSIONS = {
       b'37805-64S-AA10\x00\x00',
     ],
   },
+  CAR.PILOT_4G: {
+    (Ecu.fwdCamera, 0x18dab5f1, None): [
+      b'8S102-T90-A050\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'8S302-T90-A040\x00\x00',
+    ],
+  },
 }

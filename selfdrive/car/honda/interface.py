@@ -3,9 +3,9 @@ from cereal import car
 from panda import Panda
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import interp
-from openpilot.selfdrive.car.honda.hondacan import get_pt_bus
+from openpilot.selfdrive.car.honda.hondacan import CanBus
 from openpilot.selfdrive.car.honda.values import CarControllerParams, CruiseButtons, HondaFlags, CAR, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, \
-                                                 HONDA_BOSCH_RADARLESS
+                                                 HONDA_BOSCH_RADARLESS, CANFD_CAR
 from openpilot.selfdrive.car import create_button_events, get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.car.disable_ecu import disable_ecu
@@ -36,7 +36,16 @@ class CarInterface(CarInterfaceBase):
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "honda"
 
-    if candidate in HONDA_BOSCH:
+    CAN = CanBus(ret, fingerprint)
+
+    if candidate in CANFD_CAR:
+      cfgs = [get_safety_config(car.CarParams.SafetyModel.hondaBosch)]
+      if CAN.pt >= 4:
+        cfgs.insert(0, get_safety_config(car.CarParams.SafetyModel.noOutput))
+      ret.safetyConfigs = cfgs
+      ret.radarUnavailable = True
+      ret.openpilotLongitudinalControl = False
+    elif candidate in HONDA_BOSCH:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaBosch)]
       ret.radarUnavailable = True
       # Disable the radar and let openpilot control longitudinal
@@ -47,13 +56,13 @@ class CarInterface(CarInterfaceBase):
       ret.pcmCruise = not ret.openpilotLongitudinalControl
     else:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaNidec)]
-      ret.enableGasInterceptor = 0x201 in fingerprint[0]
+      ret.enableGasInterceptor = 0x201 in fingerprint[CAN.pt]
       ret.openpilotLongitudinalControl = True
 
       ret.pcmCruise = not ret.enableGasInterceptor
 
     if candidate == CAR.CRV_5G:
-      ret.enableBsm = 0x12f8bfa7 in fingerprint[0]
+      ret.enableBsm = 0x12f8bfa7 in fingerprint[CAN.pt]
 
     # Detect Bosch cars with new HUD msgs
     if any(0x33DA in f for f in fingerprint.values()):
@@ -236,7 +245,7 @@ class CarInterface(CarInterfaceBase):
       else:
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
 
-    elif candidate == CAR.PILOT:
+    elif candidate in (CAR.PILOT, CAR.PILOT_4G):
       ret.mass = 4278. * CV.LB_TO_KG  # average weight
       ret.wheelbase = 2.86
       ret.centerToFront = ret.wheelbase * 0.428
@@ -292,6 +301,9 @@ class CarInterface(CarInterfaceBase):
 
     if candidate in HONDA_BOSCH_RADARLESS:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_RADARLESS
+
+    if candidate in CANFD_CAR:
+      ret.safetyConfigs[-1].safetyParam |=Panda.FLAG_HONDA_RADARLESS
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter. Otherwise, add 0.5 mph margin to not
