@@ -393,6 +393,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       obd_multiplexing=obd_multiplexing,
     ),
   ]],
+  extra_ecus=[(Ecu.fwdCamera, 0x74f, None)],
 )
 
 CAR_INFO = CAR.create_carinfo_map()
