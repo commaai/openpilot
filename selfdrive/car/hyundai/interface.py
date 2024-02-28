@@ -5,7 +5,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
 from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, CANFD_RADAR_SCC_CAR, \
                                          CANFD_UNSUPPORTED_LONGITUDINAL_CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, \
-                                         UNSUPPORTED_LONGITUDINAL_CAR, ANGLE_STEERING, Buttons
+                                         UNSUPPORTED_LONGITUDINAL_CAR, Buttons
 from openpilot.selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from openpilot.selfdrive.car import create_button_events, get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
@@ -93,9 +93,6 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
     if candidate != CAR.KIA_EV9:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-
-    if candidate in ANGLE_STEERING:
-      ret.flags |= HyundaiFlags.ANGLE_STEERING.value
 
     if candidate in (CAR.AZERA_6TH_GEN, CAR.AZERA_HEV_6TH_GEN):
       ret.mass = 1600. if candidate == CAR.AZERA_6TH_GEN else 1675.  # ICE is ~average of 2.5L and 3.5L
