@@ -134,6 +134,7 @@ class CAR(StrEnum):
   GENESIS_GV60_EV_1ST_GEN = "GENESIS GV60 ELECTRIC 1ST GEN"
   GENESIS_G70 = "GENESIS G70 2018"
   GENESIS_G70_2020 = "GENESIS G70 2020"
+  GENESIS_G70_1ST_GEN_FL = "GENESIS G70 1ST GEN FACELIFT"
   GENESIS_GV70_1ST_GEN = "GENESIS GV70 1ST GEN"
   GENESIS_G80 = "GENESIS G80 2017"
   GENESIS_G90 = "GENESIS G90 2017"
@@ -298,6 +299,7 @@ CAR_INFO: dict[str, HyundaiCarInfo | list[HyundaiCarInfo] | None] = {
   ],
   CAR.GENESIS_G70: HyundaiCarInfo("Genesis G70 2018-19", "All", car_parts=CarParts.common([CarHarness.hyundai_f])),
   CAR.GENESIS_G70_2020: HyundaiCarInfo("Genesis G70 2020", "All", car_parts=CarParts.common([CarHarness.hyundai_f])),
+  CAR.GENESIS_G70_1ST_GEN_FL: HyundaiCarInfo("Genesis G70 2024", "All", car_parts=CarParts.common([CarHarness.hyundai_f])),
   CAR.GENESIS_GV70_1ST_GEN: [
     HyundaiCarInfo("Genesis GV70 (2.5T Trim) 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_l])),
     HyundaiCarInfo("Genesis GV70 (3.5T Trim) 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_m])),
@@ -632,4 +634,5 @@ DBC = {
   CAR.CUSTIN_1ST_GEN: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_NIRO_PHEV_2022: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
   CAR.STARIA_4TH_GEN: dbc_dict('hyundai_canfd', None),
+  CAR.GENESIS_G70_1ST_GEN_FL: dbc_dict('hyundai_kia_generic', None),
 }
