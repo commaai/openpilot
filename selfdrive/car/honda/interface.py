@@ -61,7 +61,7 @@ class CarInterface(CarInterfaceBase):
     if any(0x33DA in f for f in fingerprint.values()):
       ret.flags |= HondaFlags.BOSCH_EXT_HUD.value
 
-    # Accord 1.5T CVT has different gearbox message
+    # Accord ICE 1.5T CVT has different gearbox message
     if candidate == CAR.ACCORD and 0x191 in fingerprint[CAN.pt]:
       ret.transmissionType = TransmissionType.cvt
 
