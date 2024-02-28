@@ -56,7 +56,7 @@ def create_ssl_cert(cert_path: str, key_path: str):
   try:
     proc = subprocess.run(f'openssl req -x509 -newkey rsa:4096 -nodes -out {cert_path} -keyout {key_path} \
                           -days 365 -subj "/C=US/ST=California/O=commaai/OU=comma body"',
-                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                          capture_output=True, shell=True)
     proc.check_returncode()
   except subprocess.CalledProcessError as ex:
     raise ValueError(f"Error creating SSL certificate:\n[stdout]\n{proc.stdout.decode()}\n[stderr]\n{proc.stderr.decode()}") from ex
@@ -77,7 +77,7 @@ def create_ssl_context():
 
 ## ENDPOINTS
 async def index(request: 'web.Request'):
-  with open(os.path.join(TELEOPDIR, "static", "index.html"), "r") as f:
+  with open(os.path.join(TELEOPDIR, "static", "index.html")) as f:
     content = f.read()
     return web.Response(content_type="text/html", text=content)
 

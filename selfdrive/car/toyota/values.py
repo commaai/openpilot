@@ -2,7 +2,6 @@ import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag, StrEnum
-from typing import Dict, List, Set, Union
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
@@ -100,7 +99,7 @@ class ToyotaCarInfo(CarInfo):
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.toyota_a]))
 
 
-CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
+CAR_INFO: dict[str, ToyotaCarInfo | list[ToyotaCarInfo]] = {
   # Toyota
   CAR.ALPHARD_TSS2: [
     ToyotaCarInfo("Toyota Alphard 2019-20"),
@@ -253,7 +252,7 @@ STATIC_DSU_MSGS = [
 ]
 
 
-def get_platform_codes(fw_versions: List[bytes]) -> Dict[bytes, Set[bytes]]:
+def get_platform_codes(fw_versions: list[bytes]) -> dict[bytes, set[bytes]]:
   # Returns sub versions in a dict so comparisons can be made within part-platform-major_version combos
   codes = defaultdict(set)  # Optional[part]-platform-major_version: set of sub_version
   for fw in fw_versions:
@@ -297,7 +296,7 @@ def get_platform_codes(fw_versions: List[bytes]) -> Dict[bytes, Set[bytes]]:
   return dict(codes)
 
 
-def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions) -> Set[str]:
+def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions) -> set[str]:
   candidates = set()
 
   for candidate, fws in offline_fw_versions.items():

@@ -96,8 +96,6 @@ lenv = {
 rpath = lenv["LD_LIBRARY_PATH"].copy()
 
 if arch == "larch64":
-  lenv["LD_LIBRARY_PATH"] += ['/data/data/com.termux/files/usr/lib']
-
   cpppath = [
     "#third_party/opencl/include",
   ]
@@ -359,13 +357,6 @@ Export('common', 'gpucommon')
 
 # Build cereal and messaging
 SConscript(['cereal/SConscript'])
-
-cereal = [File('#cereal/libcereal.a')]
-messaging = [File('#cereal/libmessaging.a')]
-visionipc = [File('#cereal/libvisionipc.a')]
-messaging_python = [File('#cereal/messaging/messaging_pyx.so')]
-
-Export('cereal', 'messaging', 'messaging_python', 'visionipc')
 
 # Build other submodules
 SConscript([

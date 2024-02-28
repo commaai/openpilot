@@ -1,10 +1,11 @@
 import os
 import time
-from typing import Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
 
 from cereal import car
 from openpilot.common.params import Params
 from openpilot.common.basedir import BASEDIR
+from openpilot.selfdrive.car.values import PLATFORMS
 from openpilot.system.version import is_comma_remote, is_tested_branch
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
@@ -63,7 +64,7 @@ def load_interfaces(brand_names):
   return ret
 
 
-def _get_interface_names() -> Dict[str, List[str]]:
+def _get_interface_names() -> dict[str, list[str]]:
   # returns a dict of brand name and its respective models
   brand_names = {}
   for brand_name, brand_models in get_interface_attr("CAR").items():
@@ -77,7 +78,7 @@ interface_names = _get_interface_names()
 interfaces = load_interfaces(interface_names)
 
 
-def can_fingerprint(next_can: Callable) -> Tuple[Optional[str], Dict[int, dict]]:
+def can_fingerprint(next_can: Callable) -> tuple[str | None, dict[int, dict]]:
   finger = gen_empty_fingerprint()
   candidate_cars = {i: all_legacy_fingerprint_cars() for i in [0, 1]}  # attempt fingerprint on both bus 0 and 1
   frame = 0
@@ -189,7 +190,10 @@ def fingerprint(logcan, sendcan, num_pandas):
   cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match, cached=cached,
                  fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, vin_rx_bus=vin_rx_bus,
                  fingerprints=repr(finger), fw_query_time=fw_query_time, error=True)
-  return car_fingerprint, finger, vin, car_fw, source, exact_match
+
+  car_platform = PLATFORMS.get(car_fingerprint, car_fingerprint)
+
+  return car_platform, finger, vin, car_fw, source, exact_match
 
 
 def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
