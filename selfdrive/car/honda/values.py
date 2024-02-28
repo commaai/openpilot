@@ -187,7 +187,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [StdQueries.UDS_VERSION_REQUEST],
       [StdQueries.UDS_VERSION_RESPONSE],
       bus=0,
-      logging=True,
     ),
     # Bosch PT bus
     Request(
@@ -200,13 +199,13 @@ FW_QUERY_CONFIG = FwQueryConfig(
   # We lose these ECUs without the comma power on these cars.
   # Note that we still attempt to match with them when they are present
   non_essential_ecus={
-    Ecu.programmedFuelInjection: [CAR.ACCORD, CAR.CIVIC_BOSCH, CAR.CRV_5G],
-    Ecu.transmission: [CAR.ACCORD, CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.programmedFuelInjection: [CAR.ACCORD, CAR.CIVIC, CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.transmission: [CAR.ACCORD, CAR.CIVIC, CAR.CIVIC_BOSCH, CAR.CRV_5G],
     Ecu.srs: [CAR.ACCORD],
     Ecu.eps: [CAR.ACCORD],
-    Ecu.vsa: [CAR.ACCORD, CAR.CIVIC_BOSCH, CAR.CRV_5G],
-    Ecu.combinationMeter: [CAR.ACCORD, CAR.CIVIC_BOSCH, CAR.CRV_5G],
-    Ecu.gateway: [CAR.ACCORD, CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.vsa: [CAR.ACCORD, CAR.CIVIC, CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.combinationMeter: [CAR.ACCORD, CAR.CIVIC, CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.gateway: [CAR.ACCORD, CAR.CIVIC, CAR.CIVIC_BOSCH, CAR.CRV_5G],
     Ecu.electricBrakeBooster: [CAR.ACCORD, CAR.CIVIC_BOSCH, CAR.CRV_5G],
     Ecu.shiftByWire: [CAR.ACCORD],  # existence correlates with transmission type for ICE
     Ecu.hud: [CAR.ACCORD],  # existence correlates with trim level
