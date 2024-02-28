@@ -1,7 +1,6 @@
 import re
 from dataclasses import dataclass
 from enum import Enum, IntFlag, StrEnum
-from typing import Dict, List, Optional, Set, Tuple, Union
 
 from cereal import car
 from panda.python import uds
@@ -157,7 +156,7 @@ class HyundaiCarInfo(CarInfo):
       self.footnotes.insert(0, Footnote.CANFD)
 
 
-CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
+CAR_INFO: dict[str, HyundaiCarInfo | list[HyundaiCarInfo] | None] = {
   CAR.AZERA_6TH_GEN: HyundaiCarInfo("Hyundai Azera 2022", "All", car_parts=CarParts.common([CarHarness.hyundai_k])),
   CAR.AZERA_HEV_6TH_GEN: [
     HyundaiCarInfo("Hyundai Azera Hybrid 2019", "All", car_parts=CarParts.common([CarHarness.hyundai_c])),
@@ -316,7 +315,7 @@ class Buttons:
   CANCEL = 4  # on newer models, this is a pause/resume button
 
 
-def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[bytes]]]:
+def get_platform_codes(fw_versions: list[bytes]) -> set[tuple[bytes, bytes | None]]:
   # Returns unique, platform-specific identification codes for a set of versions
   codes = set()  # (code-Optional[part], date)
   for fw in fw_versions:
@@ -335,12 +334,12 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[by
   return codes
 
 
-def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions) -> Set[str]:
+def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions) -> set[str]:
   # Non-electric CAN FD platforms often do not have platform code specifiers needed
   # to distinguish between hybrid and ICE. All EVs so far are either exclusively
   # electric or specify electric in the platform code.
   fuzzy_platform_blacklist = {str(c) for c in (CANFD_CAR - EV_CAR - CANFD_FUZZY_WHITELIST)}
-  candidates: Set[str] = set()
+  candidates: set[str] = set()
 
   for candidate, fws in offline_fw_versions.items():
     # Keep track of ECUs which pass all checks (platform codes, within date range)
