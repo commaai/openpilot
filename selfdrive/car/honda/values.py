@@ -207,6 +207,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Ecu.combinationMeter: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
     Ecu.gateway: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
     Ecu.electricBrakeBooster: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.shiftByWire: [CAR.ACCORD],  # existence correlates with transmission type
+    Ecu.hud: [CAR.ACCORD],  # existence correlates with trim level
   },
   extra_ecus=[
     # The only other ECU on PT bus accessible by camera on radarless Civic
