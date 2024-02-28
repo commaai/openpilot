@@ -60,10 +60,8 @@ class CarInterface(CarInterfaceBase):
       ret.flags |= HondaFlags.BOSCH_EXT_HUD.value
 
     # Accord 1.5T CVT has different gearbox message
-    if candidate == CAR.ACCORD and 0x191 in fingerprint[1]:
+    if candidate == CAR.ACCORD and 0x191 in fingerprint[1]:  # test this
       ret.transmissionType = TransmissionType.cvt
-    if candidate == CAR.ACCORDH and 0x191 in fingerprint[1]:
-      assert False, "not supposed to be cvt"
 
     # Certain Hondas have an extra steering sensor at the bottom of the steering rack,
     # which improves controls quality as it removes the steering column torsion from feedback.
@@ -117,7 +115,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
 
-    elif candidate in (CAR.ACCORD, CAR.ACCORDH):
+    elif candidate == CAR.ACCORD:
       ret.mass = 3279. * CV.LB_TO_KG
       ret.wheelbase = 2.83
       ret.centerToFront = ret.wheelbase * 0.39
