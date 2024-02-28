@@ -5,7 +5,7 @@ from enum import Enum, IntFlag, StrEnum
 from cereal import car
 from panda.python import uds
 from openpilot.common.conversions import Conversions as CV
-from openpilot.selfdrive.car import dbc_dict
+from openpilot.selfdrive.car import dbc_dict, AngleRateLimit
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
@@ -15,6 +15,10 @@ Ecu = car.CarParams.Ecu
 class CarControllerParams:
   ACCEL_MIN = -3.5 # m/s
   ACCEL_MAX = 2.0 # m/s
+
+  # seen changing at 0.2 deg/frame down, 0.1 deg/frame up at 100Hz
+  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[5., .8, .15])
+  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[5., 3.5, 0.4])
 
   def __init__(self, CP):
     self.STEER_DELTA_UP = 3
@@ -129,6 +133,7 @@ class CAR(StrEnum):
   KIA_CEED = "KIA CEED INTRO ED 2019"
   KIA_EV6 = "KIA EV6 2022"
   KIA_CARNIVAL_4TH_GEN = "KIA CARNIVAL 4TH GEN"
+  KIA_EV9 = "KIA EV9 2023"
 
   # Genesis
   GENESIS_GV60_EV_1ST_GEN = "GENESIS GV60 ELECTRIC 1ST GEN"
@@ -289,6 +294,9 @@ CAR_INFO: dict[str, HyundaiCarInfo | list[HyundaiCarInfo] | None] = {
   CAR.KIA_CARNIVAL_4TH_GEN: [
     HyundaiCarInfo("Kia Carnival 2022-24", car_parts=CarParts.common([CarHarness.hyundai_a])),
     HyundaiCarInfo("Kia Carnival (China only) 2023", car_parts=CarParts.common([CarHarness.hyundai_k]))
+  ],
+  CAR.KIA_EV9: [
+    HyundaiCarInfo("Kia EV9 2023", car_parts=CarParts.common([CarHarness.hyundai_r])),
   ],
 
   # Genesis
@@ -535,7 +543,7 @@ CAN_GEARS = {
 CANFD_CAR = {CAR.KIA_EV6, CAR.IONIQ_5, CAR.IONIQ_6, CAR.TUCSON_4TH_GEN, CAR.SANTA_CRUZ_1ST_GEN, CAR.KIA_SPORTAGE_5TH_GEN, CAR.GENESIS_GV70_1ST_GEN,
              CAR.GENESIS_GV60_EV_1ST_GEN, CAR.KIA_SORENTO_4TH_GEN, CAR.KIA_NIRO_HEV_2ND_GEN, CAR.KIA_NIRO_EV_2ND_GEN,
              CAR.GENESIS_GV80, CAR.KIA_CARNIVAL_4TH_GEN, CAR.KIA_SORENTO_HEV_4TH_GEN, CAR.KONA_EV_2ND_GEN, CAR.KIA_K8_HEV_1ST_GEN,
-             CAR.STARIA_4TH_GEN}
+             CAR.STARIA_4TH_GEN, CAR.KIA_EV9}
 
 # The radar does SCC on these cars when HDA I, rather than the camera
 CANFD_RADAR_SCC_CAR = {CAR.GENESIS_GV70_1ST_GEN, CAR.KIA_SORENTO_4TH_GEN, CAR.GENESIS_GV80, CAR.KIA_CARNIVAL_4TH_GEN, CAR.KIA_SORENTO_HEV_4TH_GEN}
@@ -545,7 +553,7 @@ CANFD_RADAR_SCC_CAR = {CAR.GENESIS_GV70_1ST_GEN, CAR.KIA_SORENTO_4TH_GEN, CAR.GE
 CANFD_UNSUPPORTED_LONGITUDINAL_CAR = {CAR.IONIQ_6, CAR.KONA_EV_2ND_GEN}
 
 # The camera does SCC on these cars, rather than the radar
-CAMERA_SCC_CAR = {CAR.KONA_EV_2022, }
+CAMERA_SCC_CAR = {CAR.KONA_EV_2022}
 
 # these cars use a different gas signal
 HYBRID_CAR = {CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.KIA_NIRO_PHEV, CAR.KIA_NIRO_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.IONIQ,
@@ -553,7 +561,7 @@ HYBRID_CAR = {CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.KIA_NIRO_PHEV, CAR.KIA_N
               CAR.KIA_OPTIMA_H, CAR.KIA_OPTIMA_H_G4_FL, CAR.AZERA_HEV_6TH_GEN, CAR.KIA_NIRO_PHEV_2022}
 
 EV_CAR = {CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV, CAR.KIA_NIRO_EV_2ND_GEN, CAR.KONA_EV_2022,
-          CAR.KIA_EV6, CAR.IONIQ_5, CAR.IONIQ_6, CAR.GENESIS_GV60_EV_1ST_GEN, CAR.KONA_EV_2ND_GEN}
+          CAR.KIA_EV6, CAR.IONIQ_5, CAR.IONIQ_6, CAR.GENESIS_GV60_EV_1ST_GEN, CAR.KONA_EV_2ND_GEN, CAR.KIA_EV9}
 
 # these cars require a special panda safety mode due to missing counters and checksums in the messages
 LEGACY_SAFETY_MODE_CAR = {CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_LTD, CAR.KIA_OPTIMA_G4,
@@ -632,4 +640,5 @@ DBC = {
   CAR.CUSTIN_1ST_GEN: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_NIRO_PHEV_2022: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
   CAR.STARIA_4TH_GEN: dbc_dict('hyundai_canfd', None),
+  CAR.KIA_EV9: dbc_dict('hyundai_canfd', None),
 }
