@@ -60,9 +60,7 @@ class CarInterface(CarInterfaceBase):
       ret.flags |= HondaFlags.BOSCH_EXT_HUD.value
 
     # Accord ICE 1.5T CVT has different gearbox message
-    # if shiftByWire exists, transmission type is usually not CVT (except for 2 dongles)
-    # but we can't get this on PT bus so it doesn't matter
-    if candidate == CAR.ACCORD and 0x191 in fingerprint[1]:  # test this
+    if candidate == CAR.ACCORD and 0x191 in fingerprint[1]:
       ret.transmissionType = TransmissionType.cvt
 
     # Certain Hondas have an extra steering sensor at the bottom of the steering rack,
