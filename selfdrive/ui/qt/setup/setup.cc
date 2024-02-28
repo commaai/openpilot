@@ -272,12 +272,12 @@ QWidget * Setup::software_selection() {
 
   main_layout->addSpacing(50);
 
-  // dashcam + custom radio buttons
+  // openpilot + custom radio buttons
   QButtonGroup *group = new QButtonGroup(widget);
   group->setExclusive(true);
 
-  QWidget *dashcam = radio_button(tr("openpilot"), group);
-  main_layout->addWidget(dashcam);
+  QWidget *openpilot = radio_button(tr("openpilot"), group);
+  main_layout->addWidget(openpilot);
 
   main_layout->addSpacing(30);
 
@@ -308,7 +308,7 @@ QWidget * Setup::software_selection() {
       setCurrentWidget(downloading_widget);
     });
     QString url = OPENPILOT_URL;
-    if (group->checkedButton() != dashcam) {
+    if (group->checkedButton() != openpilot) {
       url = InputDialog::getText(tr("Enter URL"), this, tr("for Custom Software"));
     }
     if (!url.isEmpty()) {
