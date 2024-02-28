@@ -74,7 +74,6 @@ VISUAL_HUD = {
 
 class CAR(StrEnum):
   ACCORD = "HONDA ACCORD 2018"
-  ACCORDH = "HONDA ACCORD HYBRID 2018"
   CIVIC = "HONDA CIVIC 2016"
   CIVIC_BOSCH = "HONDA CIVIC (BOSCH) 2019"
   CIVIC_BOSCH_DIESEL = "HONDA CIVIC SEDAN 1.6 DIESEL 2019"
@@ -119,8 +118,8 @@ CAR_INFO: dict[str, HondaCarInfo | list[HondaCarInfo] | None] = {
   CAR.ACCORD: [
     HondaCarInfo("Honda Accord 2018-22", "All", video_link="https://www.youtube.com/watch?v=mrUwlj3Mi58", min_steer_speed=3. * CV.MPH_TO_MS),
     HondaCarInfo("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS),
+    HondaCarInfo("Honda Accord Hybrid 2018-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
   ],
-  CAR.ACCORDH: HondaCarInfo("Honda Accord Hybrid 2018-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
   CAR.CIVIC: HondaCarInfo("Honda Civic 2016-18", min_steer_speed=12. * CV.MPH_TO_MS, video_link="https://youtu.be/-IkImTe1NYE"),
   CAR.CIVIC_BOSCH: [
     HondaCarInfo("Honda Civic 2019-21", "All", video_link="https://www.youtube.com/watch?v=4Iz1Mz5LGF8",
@@ -201,14 +200,16 @@ FW_QUERY_CONFIG = FwQueryConfig(
   # We lose these ECUs without the comma power on these cars.
   # Note that we still attempt to match with them when they are present
   non_essential_ecus={
-    Ecu.programmedFuelInjection: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
-    Ecu.transmission: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
-    Ecu.vsa: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
-    Ecu.combinationMeter: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
-    Ecu.gateway: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
-    Ecu.electricBrakeBooster: [CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.programmedFuelInjection: [CAR.ACCORD, CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.transmission: [CAR.ACCORD, CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.srs: [CAR.ACCORD],
+    Ecu.eps: [CAR.ACCORD],
+    Ecu.vsa: [CAR.ACCORD, CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.combinationMeter: [CAR.ACCORD, CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.gateway: [CAR.ACCORD, CAR.CIVIC_BOSCH, CAR.CRV_5G],
+    Ecu.electricBrakeBooster: [CAR.ACCORD, CAR.CIVIC_BOSCH, CAR.CRV_5G],
     Ecu.shiftByWire: [CAR.ACCORD],  # existence correlates with transmission type for ICE
-    Ecu.hud: [CAR.ACCORD, CAR.ACCORDH],  # existence correlates with trim level
+    Ecu.hud: [CAR.ACCORD],  # existence correlates with trim level
   },
   extra_ecus=[
     # The only other ECU on PT bus accessible by camera on radarless Civic
@@ -219,7 +220,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
 
 DBC = {
   CAR.ACCORD: dbc_dict('honda_accord_2018_can_generated', None),
-  CAR.ACCORDH: dbc_dict('honda_accord_2018_can_generated', None),
   CAR.ACURA_ILX: dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.ACURA_RDX: dbc_dict('acura_rdx_2018_can_generated', 'acura_ilx_2016_nidec'),
   CAR.ACURA_RDX_3G: dbc_dict('acura_rdx_2020_can_generated', None),
@@ -252,6 +252,6 @@ STEER_THRESHOLD = {
 HONDA_NIDEC_ALT_PCM_ACCEL = {CAR.ODYSSEY}
 HONDA_NIDEC_ALT_SCM_MESSAGES = {CAR.ACURA_ILX, CAR.ACURA_RDX, CAR.CRV, CAR.CRV_EU, CAR.FIT, CAR.FREED, CAR.HRV, CAR.ODYSSEY_CHN,
                                 CAR.PILOT, CAR.RIDGELINE}
-HONDA_BOSCH = {CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G,
+HONDA_BOSCH = {CAR.ACCORD, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G,
                CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022, CAR.HRV_3G}
 HONDA_BOSCH_RADARLESS = {CAR.CIVIC_2022, CAR.HRV_3G}
