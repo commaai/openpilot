@@ -299,7 +299,7 @@ CAR_INFO: dict[str, HyundaiCarInfo | list[HyundaiCarInfo] | None] = {
   ],
   CAR.GENESIS_G70: HyundaiCarInfo("Genesis G70 2018-19", "All", car_parts=CarParts.common([CarHarness.hyundai_f])),
   CAR.GENESIS_G70_2020: HyundaiCarInfo("Genesis G70 2020", "All", car_parts=CarParts.common([CarHarness.hyundai_f])),
-  CAR.GENESIS_G70_1ST_GEN_FL: HyundaiCarInfo("Genesis G70 2024", "All", car_parts=CarParts.common([CarHarness.hyundai_f])),
+  CAR.GENESIS_G70_1ST_GEN_FL: HyundaiCarInfo("Genesis G70 2024", "All", car_parts=CarParts.common([CarHarness.hyundai_l])),
   CAR.GENESIS_GV70_1ST_GEN: [
     HyundaiCarInfo("Genesis GV70 (2.5T Trim) 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_l])),
     HyundaiCarInfo("Genesis GV70 (3.5T Trim) 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_m])),
