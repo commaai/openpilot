@@ -1,7 +1,8 @@
 # functions common among cars
 from collections import namedtuple
-from dataclasses import dataclass, field, replace
-from enum import ReprEnum
+from dataclasses import dataclass, field
+from enum import IntFlag, ReprEnum
+from dataclasses import replace
 
 import capnp
 
@@ -261,6 +262,7 @@ class PlatformConfig:
   platform_str: str
   car_info: CarInfos
   dbc_dict: DbcDict
+  flags: int = 0
 
   specs: CarSpecs | None = None
 
@@ -287,3 +289,7 @@ class Platforms(str, ReprEnum):
   @classmethod
   def create_carinfo_map(cls) -> dict[str, CarInfos]:
     return {p: p.config.car_info for p in cls}
+
+  @classmethod
+  def with_flags(cls, flags: IntFlag) -> set['Platforms']:
+    return {p for p in cls if p.config.flags & flags}

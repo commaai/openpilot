@@ -55,6 +55,11 @@ class CarControllerParams:
 class SubaruFlags(IntFlag):
   SEND_INFOTAINMENT = 1
   DISABLE_EYESIGHT = 2
+  GLOBAL_GEN2 = 4
+  STEER_RATE_LIMITED = 8
+  PREGLOBAL = 16
+  HYBRID = 32
+  LKAS_ANGLE = 64
 
 
 GLOBAL_ES_ADDR = 0x787
@@ -105,11 +110,13 @@ class CAR(Platforms):
     "SUBARU OUTBACK 6TH GEN",
     SubaruCarInfo("Subaru Outback 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b])),
     specs=CarSpecs(mass=1568, wheelbase=2.67, steerRatio=17),
+    flags=SubaruFlags.GLOBAL_GEN2 | SubaruFlags.STEER_RATE_LIMITED,
   )
   LEGACY = SubaruPlatformConfig(
     "SUBARU LEGACY 7TH GEN",
     SubaruCarInfo("Subaru Legacy 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b])),
     specs=OUTBACK.specs,
+    flags=SubaruFlags.GLOBAL_GEN2 | SubaruFlags.STEER_RATE_LIMITED,
   )
   IMPREZA = SubaruPlatformConfig(
     "SUBARU IMPREZA LIMITED 2019",
@@ -128,6 +135,7 @@ class CAR(Platforms):
       SubaruCarInfo("Subaru XV 2020-21"),
     ],
     specs=CarSpecs(mass=1480, wheelbase=2.67, steerRatio=17),
+    flags=SubaruFlags.STEER_RATE_LIMITED,
   )
   # TODO: is there an XV and Impreza too?
   CROSSTREK_HYBRID = SubaruPlatformConfig(
@@ -135,17 +143,20 @@ class CAR(Platforms):
     SubaruCarInfo("Subaru Crosstrek Hybrid 2020", car_parts=CarParts.common([CarHarness.subaru_b])),
     dbc_dict('subaru_global_2020_hybrid_generated', None),
     specs=CarSpecs(mass=1668, wheelbase=2.67, steerRatio=17),
+    flags=SubaruFlags.HYBRID,
   )
   FORESTER = SubaruPlatformConfig(
     "SUBARU FORESTER 2019",
     SubaruCarInfo("Subaru Forester 2019-21", "All"),
     specs=CarSpecs(mass=1568, wheelbase=2.67, steerRatio=17),
+    flags=SubaruFlags.STEER_RATE_LIMITED,
   )
   FORESTER_HYBRID = SubaruPlatformConfig(
     "SUBARU FORESTER HYBRID 2020",
     SubaruCarInfo("Subaru Forester Hybrid 2020"),
     dbc_dict('subaru_global_2020_hybrid_generated', None),
     specs=FORESTER.specs,
+    flags=SubaruFlags.HYBRID,
   )
   # Pre-global
   FORESTER_PREGLOBAL = SubaruPlatformConfig(
@@ -153,51 +164,58 @@ class CAR(Platforms):
     SubaruCarInfo("Subaru Forester 2017-18"),
     dbc_dict('subaru_forester_2017_generated', None),
     specs=CarSpecs(mass=1568, wheelbase=2.67, steerRatio=20),
+    flags=SubaruFlags.PREGLOBAL,
   )
   LEGACY_PREGLOBAL = SubaruPlatformConfig(
     "SUBARU LEGACY 2015 - 2018",
     SubaruCarInfo("Subaru Legacy 2015-18"),
     dbc_dict('subaru_outback_2015_generated', None),
     specs=CarSpecs(mass=1568, wheelbase=2.67, steerRatio=12.5),
+    flags=SubaruFlags.PREGLOBAL,
   )
   OUTBACK_PREGLOBAL = SubaruPlatformConfig(
     "SUBARU OUTBACK 2015 - 2017",
     SubaruCarInfo("Subaru Outback 2015-17"),
     dbc_dict('subaru_outback_2015_generated', None),
     specs=FORESTER_PREGLOBAL.specs,
+    flags=SubaruFlags.PREGLOBAL,
   )
   OUTBACK_PREGLOBAL_2018 = SubaruPlatformConfig(
     "SUBARU OUTBACK 2018 - 2019",
     SubaruCarInfo("Subaru Outback 2018-19"),
     dbc_dict('subaru_outback_2019_generated', None),
     specs=FORESTER_PREGLOBAL.specs,
+    flags=SubaruFlags.PREGLOBAL,
   )
   # Angle LKAS
   FORESTER_2022 = SubaruPlatformConfig(
     "SUBARU FORESTER 2022",
     SubaruCarInfo("Subaru Forester 2022-24", "All", car_parts=CarParts.common([CarHarness.subaru_c])),
     specs=FORESTER.specs,
+    flags=SubaruFlags.LKAS_ANGLE,
   )
   OUTBACK_2023 = SubaruPlatformConfig(
     "SUBARU OUTBACK 7TH GEN",
     SubaruCarInfo("Subaru Outback 2023", "All", car_parts=CarParts.common([CarHarness.subaru_d])),
     specs=OUTBACK.specs,
+    flags=SubaruFlags.GLOBAL_GEN2 | SubaruFlags.LKAS_ANGLE,
   )
   ASCENT_2023 = SubaruPlatformConfig(
     "SUBARU ASCENT 2023",
     SubaruCarInfo("Subaru Ascent 2023", "All", car_parts=CarParts.common([CarHarness.subaru_d])),
     specs=ASCENT.specs,
+    flags=SubaruFlags.GLOBAL_GEN2 | SubaruFlags.LKAS_ANGLE,
   )
 
 
-LKAS_ANGLE = {CAR.FORESTER_2022, CAR.OUTBACK_2023, CAR.ASCENT_2023}
-GLOBAL_GEN2 = {CAR.OUTBACK, CAR.LEGACY, CAR.OUTBACK_2023, CAR.ASCENT_2023}
-PREGLOBAL_CARS = {CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018}
-HYBRID_CARS = {CAR.CROSSTREK_HYBRID, CAR.FORESTER_HYBRID}
+LKAS_ANGLE = CAR.with_flags(SubaruFlags.LKAS_ANGLE)
+GLOBAL_GEN2 = CAR.with_flags(SubaruFlags.GLOBAL_GEN2)
+PREGLOBAL_CARS = CAR.with_flags(SubaruFlags.PREGLOBAL)
+HYBRID_CARS = CAR.with_flags(SubaruFlags.HYBRID)
 
 # Cars that temporarily fault when steering angle rate is greater than some threshold.
 # Appears to be all torque-based cars produced around 2019 - present
-STEER_RATE_LIMITED = GLOBAL_GEN2 | {CAR.IMPREZA_2020, CAR.FORESTER}
+STEER_RATE_LIMITED = CAR.with_flags(SubaruFlags.STEER_RATE_LIMITED)
 
 SUBARU_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
