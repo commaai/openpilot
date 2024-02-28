@@ -1,5 +1,5 @@
 from openpilot.common.conversions import Conversions as CV
-from openpilot.selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, CAR, CarControllerParams
+from openpilot.selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, CANFD_CAR, CAR, CarControllerParams
 from openpilot.selfdrive.car import CanBusBase
 
 # CAN bus layout with relay
@@ -31,7 +31,7 @@ class CanBus(CanBusBase):
     return self.offset + 2
 
 
-def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
+def get_lkas_cmd_bus(CAN, car_fingerprint, radar_disabled=False):
   no_radar = car_fingerprint in HONDA_BOSCH_RADARLESS
   if radar_disabled or no_radar or car_fingerprint in CANFD_CAR:
     # when radar is disabled, steering commands are sent directly to powertrain bus
