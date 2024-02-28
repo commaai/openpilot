@@ -41,7 +41,7 @@ jobs:
         uses: thollander/actions-comment-pull-request@fabd468d3a1a0b97feee5f6b9e499eab0dd903f6
         with:
           message: |
-              _(run_id **${{ github.run_id }}**)_
+              <!-- _(run_id **${{ github.run_id }}**)_ -->
               Thanks for contributing to openpilot! In order for us to review your PR as quickly as possible, check the following:
               * Convert your PR to a draft unless it's ready to review
               * Read the [contributing docs](https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md)
