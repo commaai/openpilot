@@ -24,7 +24,7 @@ OS04C10::OS04C10() {
 
   frame_width = 2688;
   frame_height = 1520;
-  frame_stride = (frame_width*10/8);
+  frame_stride = (frame_width*12/8);
 
   extra_height = 0;
   frame_offset = 0;
@@ -33,7 +33,7 @@ OS04C10::OS04C10() {
   init_reg_array.assign(std::begin(init_array_os04c10), std::end(init_array_os04c10));
   probe_reg_addr = 0x300a;
   probe_expected_data = 0x5304;
-  mipi_format = CAM_FORMAT_MIPI_RAW_10;
+  mipi_format = CAM_FORMAT_MIPI_RAW_12;
   frame_data_type = 0x2b;
   mclk_frequency = 24000000; // Hz
 
