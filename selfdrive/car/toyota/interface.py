@@ -130,24 +130,12 @@ class CarInterface(CarInterfaceBase):
           ret.lateralTuning.pid.kf = 0.00004
           break
 
-    elif candidate in (CAR.LEXUS_ES, CAR.LEXUS_ES_TSS2):
-      ret.wheelbase = 2.8702
-      ret.steerRatio = 16.0  # not optimized
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
-      ret.mass = 3677. * CV.LB_TO_KG  # mean between min and max
-
     elif candidate == CAR.SIENNA:
       stop_and_go = True
       ret.wheelbase = 3.03
       ret.steerRatio = 15.5
       ret.tireStiffnessFactor = 0.444
       ret.mass = 4590. * CV.LB_TO_KG
-
-    elif candidate in (CAR.LEXUS_IS, CAR.LEXUS_IS_TSS2, CAR.LEXUS_RC):
-      ret.wheelbase = 2.79908
-      ret.steerRatio = 13.3
-      ret.tireStiffnessFactor = 0.444
-      ret.mass = 3736.8 * CV.LB_TO_KG
 
     elif candidate == CAR.LEXUS_CTH:
       stop_and_go = True
