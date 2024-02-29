@@ -37,6 +37,9 @@ float3 color_correct(float3 rgb) {
 }
 
 float get_vignetting_s(float r) {
+  #if IS_OS
+    r = r / 1.50150;
+  #endif
   if (r < 62500) {
     return (1.0f + 0.0000008f*r);
   } else if (r < 490000) {
@@ -156,7 +159,7 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   #if VIGNETTING
     int gx = (gid_x*2 - RGB_WIDTH/2);
     int gy = (gid_y*2 - RGB_HEIGHT/2);
-    const float gain = get_vignetting_s(gx*gx + gy*gy); // TODO: os distance
+    const float gain = get_vignetting_s(gx*gx + gy*gy);
   #else
     const float gain = 1.0;
   #endif
