@@ -247,7 +247,6 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota RAV4 2022"),
       ToyotaCarInfo("Toyota RAV4 Hybrid 2022", video_link="https://youtu.be/U0nH9cnrFB0"),
     ],
-    dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
     flags=ToyotaFlags.RADAR_ACC,
     specs=RAV4_TSS2.specs,
   )
@@ -257,14 +256,12 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota RAV4 2023-24"),
       ToyotaCarInfo("Toyota RAV4 Hybrid 2023-24"),
     ],
-    dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
     flags=ToyotaFlags.RADAR_ACC | ToyotaFlags.ANGLE_CONTROL,
     specs=RAV4_TSS2.specs,
   )
   MIRAI = ToyotaTSS2PlatformConfig(
     "TOYOTA MIRAI 2021",  # TSS 2.5
     ToyotaCarInfo("Toyota Mirai 2021"),
-    dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
     specs=CarSpecs(mass=4300. * CV.LB_TO_KG, wheelbase=2.91, steerRatio=14.8, tireStiffnessFactor=0.8),
   )
   SIENNA = PlatformConfig(
