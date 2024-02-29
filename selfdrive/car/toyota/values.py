@@ -47,6 +47,16 @@ class ToyotaFlags(IntFlag):
   DISABLE_RADAR = 4
 
 
+class StaticToyotaFlags(IntFlag):
+  TSS2 = 1
+  NO_DSU = 2
+  UNSUPPORTED_DSU_CAR = 4
+  RADAR_ACC_CAR = 8
+  # these cars use the Lane Tracing Assist (LTA) message for lateral control
+  ANGLE_CONTROL_CAR = 16
+  NO_STOP_TIMER_CAR = 32
+
+
 class Footnote(Enum):
   CAMRY = CarFootnote(
     "openpilot operates above 28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control.",
@@ -59,7 +69,23 @@ class ToyotaCarInfo(CarInfo):
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.toyota_a]))
 
 
-@dataclass()
+@dataclass
+class ToyotaTSSPPlatformConfig(PlatformConfig):
+  dbc_dict: dict = field(default_factory=lambda: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'))
+
+
+@dataclass
+class ToyotaTSS2PlatformConfig(PlatformConfig):
+  dbc_dict: dict = field(default_factory=lambda: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'))
+
+
+@dataclass
+class ToyotaTSS2PlatformConfig(PlatformConfig):
+  dbc_dict: dict = field(default_factory=lambda: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'))
+  flags: int = ToyotaFlags.TSS2
+
+
+@dataclass
 class ToyotaPlatformConfig(PlatformConfig):
   def init_config(self):
     if self.platform_str in TSS2_CAR:
@@ -235,6 +261,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota RAV4 2023-24"),
       ToyotaCarInfo("Toyota RAV4 Hybrid 2023-24"),
     ],
+    flags=StaticToyotaFlags.ANGLE_CONTROL_CAR,
     specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   MIRAI = ToyotaPlatformConfig(
@@ -567,8 +594,7 @@ UNSUPPORTED_DSU_CAR = {CAR.LEXUS_IS, CAR.LEXUS_RC, CAR.LEXUS_GS_F}
 # these cars have a radar which sends ACC messages instead of the camera
 RADAR_ACC_CAR = {CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023, CAR.CHR_TSS2}
 
-# these cars use the Lane Tracing Assist (LTA) message for lateral control
-ANGLE_CONTROL_CAR = {CAR.RAV4_TSS2_2023}
+ANGLE_CONTROL_CAR = CAR.with_flags(StaticToyotaFlags.ANGLE_CONTROL_CAR)
 
 # no resume button press required
 NO_STOP_TIMER_CAR = TSS2_CAR | {CAR.PRIUS_V, CAR.RAV4H, CAR.HIGHLANDER, CAR.SIENNA}

@@ -265,6 +265,7 @@ class PlatformConfig:
   car_info: CarInfos
   dbc_dict: DbcDict | None = None
 
+  flags: int = 0
   specs: CarSpecs | None = None
 
   def __hash__(self) -> int:
