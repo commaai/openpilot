@@ -1,6 +1,6 @@
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car import CanBusBase
-from openpilot.selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, CAR, CarControllerParams
+from openpilot.selfdrive.car.honda.values import HondaFlags, CAR, CarControllerParams
 
 # CAN bus layout with relay
 # 0 = ACC-CAN - radar side
@@ -14,7 +14,7 @@ class CanBus(CanBusBase):
     # use fingerprint if specified
     super().__init__(CP if fingerprint is None else None, fingerprint)
 
-    if CP.carFingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS):
+    if (CP.flags & HondaFlags.BOSCH) and not (CP.flags & HondaFlags.BOSCH_RADARLESS):
       self._pt, self._radar = self.offset + 1, self.offset
     else:
       self._pt, self._radar = self.offset, self.offset + 1
@@ -32,8 +32,8 @@ class CanBus(CanBusBase):
     return self.offset + 2
 
 
-def get_lkas_cmd_bus(CAN, car_fingerprint, radar_disabled=False):
-  no_radar = car_fingerprint in HONDA_BOSCH_RADARLESS
+def get_lkas_cmd_bus(CAN, CP, radar_disabled=False):
+  no_radar = CP.flags & HondaFlags.BOSCH_RADARLESS
   if radar_disabled or no_radar:
     # when radar is disabled, steering commands are sent directly to powertrain bus
     return CAN.pt
@@ -41,9 +41,9 @@ def get_lkas_cmd_bus(CAN, car_fingerprint, radar_disabled=False):
   return 0
 
 
-def get_cruise_speed_conversion(car_fingerprint: str, is_metric: bool) -> float:
+def get_cruise_speed_conversion(CP, is_metric: bool) -> float:
   # on certain cars, CRUISE_SPEED changes to imperial with car's unit setting
-  return CV.MPH_TO_MS if car_fingerprint in HONDA_BOSCH_RADARLESS and not is_metric else CV.KPH_TO_MS
+  return CV.MPH_TO_MS if CP.flags & HondaFlags.BOSCH_RADARLESS and not is_metric else CV.KPH_TO_MS
 
 
 def create_brake_command(packer, CAN, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake):
@@ -70,7 +70,7 @@ def create_brake_command(packer, CAN, apply_brake, pump_on, pcm_override, pcm_ca
   return packer.make_can_msg("BRAKE_COMMAND", CAN.pt, values)
 
 
-def create_acc_commands(packer, CAN, enabled, active, accel, gas, stopping_counter, car_fingerprint):
+def create_acc_commands(packer, CAN, enabled, active, accel, gas, stopping_counter, CP):
   commands = []
   min_gas_accel = CarControllerParams.BOSCH_GAS_LOOKUP_BP[0]
 
@@ -87,7 +87,7 @@ def create_acc_commands(packer, CAN, enabled, active, accel, gas, stopping_count
     'STANDSTILL': standstill,
   }
 
-  if car_fingerprint in HONDA_BOSCH_RADARLESS:
+  if CP.flags & HondaFlags.BOSCH_RADARLESS:
     acc_control_values.update({
       "CONTROL_ON": enabled,
       "IDLESTOP_ALLOW": stopping_counter > 200,  # allow idle stop after 4 seconds (50 Hz)
@@ -136,7 +136,7 @@ def create_bosch_supplemental_1(packer, CAN, car_fingerprint):
 
 def create_ui_commands(packer, CAN, CP, enabled, pcm_speed, hud, is_metric, acc_hud, lkas_hud):
   commands = []
-  radar_disabled = CP.carFingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS) and CP.openpilotLongitudinalControl
+  radar_disabled = (CP.flags & HondaFlags.BOSCH) and not (CP.flags & HondaFlags.BOSCH_RADARLESS) and CP.openpilotLongitudinalControl
   bus_lkas = get_lkas_cmd_bus(CAN, CP.carFingerprint, radar_disabled)
 
   if CP.openpilotLongitudinalControl:
@@ -149,7 +149,7 @@ def create_ui_commands(packer, CAN, CP, enabled, pcm_speed, hud, is_metric, acc_
       'SET_ME_X01_2': 1,
     }
 
-    if CP.carFingerprint in HONDA_BOSCH:
+    if CP.flags & HondaFlags.BOSCH:
       acc_hud_values['ACC_ON'] = int(enabled)
       acc_hud_values['FCM_OFF'] = 1
       acc_hud_values['FCM_OFF_2'] = 1
@@ -170,7 +170,7 @@ def create_ui_commands(packer, CAN, CP, enabled, pcm_speed, hud, is_metric, acc_
     'BEEP': 0,
   }
 
-  if CP.carFingerprint in HONDA_BOSCH_RADARLESS:
+  if CP.flags & HondaFlags.BOSCH_RADARLESS:
     lkas_hud_values['LANE_LINES'] = 3
     lkas_hud_values['DASHED_LANES'] = hud.lanes_visible
     # car likely needs to see LKAS_PROBLEM fall within a specific time frame, so forward from camera
@@ -198,11 +198,11 @@ def create_ui_commands(packer, CAN, CP, enabled, pcm_speed, hud, is_metric, acc_
   return commands
 
 
-def spam_buttons_command(packer, CAN, button_val, car_fingerprint):
+def spam_buttons_command(packer, CAN, button_val, CP):
   values = {
     'CRUISE_BUTTONS': button_val,
     'CRUISE_SETTING': 0,
   }
   # send buttons to camera on radarless cars
-  bus = CAN.camera if car_fingerprint in HONDA_BOSCH_RADARLESS else CAN.pt
+  bus = CAN.camera if CP.flags & HondaFlags.BOSCH_RADARLESS else CAN.pt
   return packer.make_can_msg("SCM_BUTTONS", bus, values)
