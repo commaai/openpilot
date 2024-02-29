@@ -245,7 +245,7 @@ class CanSignalRateCalculator:
     return self.rate
 
 
-CarInfos = CarInfo | list[CarInfo]
+CarInfos = CarInfo | list[CarInfo] | None
 
 
 @dataclass(frozen=True, kw_only=True)
