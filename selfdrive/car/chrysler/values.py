@@ -11,6 +11,7 @@ Ecu = car.CarParams.Ecu
 
 
 class ChryslerFlags(IntFlag):
+  # Detected flags
   HIGHER_MIN_STEERING_SPEED = 1
 
 @dataclass

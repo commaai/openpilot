@@ -53,6 +53,7 @@ class CarControllerParams:
 
 
 class SubaruFlags(IntFlag):
+  # Detected flags
   SEND_INFOTAINMENT = 1
   DISABLE_EYESIGHT = 2
 

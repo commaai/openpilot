@@ -33,6 +33,7 @@ class MazdaCarInfo(CarInfo):
 
 
 class MazdaFlags(IntFlag):
+  # Static flags
   # Gen 1 hardware: same CAN messages and same camera
   GEN1 = 1
 
