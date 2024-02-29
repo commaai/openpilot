@@ -67,10 +67,10 @@ class HyundaiFlags(IntFlag):
   HYBRID = 1024
   EV = 2048
 
+  # Static Flags
+
   # If 0x500 is present on bus 1 it probably has a Mando radar outputting radar points.
   # If no points are outputted by default it might be possible to turn it on using  selfdrive/debug/hyundai_enable_radar_points.py
-
-  # Static Flags
   MANDO_RADAR = 4096
   CANFD = 8192
   RADAR_SCC = 16384
