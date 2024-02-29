@@ -109,6 +109,7 @@ class SubaruPlatformConfig(PlatformConfig):
 @dataclass
 class SubaruGen2PlatformConfig(SubaruPlatformConfig):
   def init(self):
+    super().init()
     self.flags |= SubaruFlags.GLOBAL_GEN2
     if not (self.flags & SubaruFlags.LKAS_ANGLE):
       self.flags |= SubaruFlags.STEER_RATE_LIMITED
