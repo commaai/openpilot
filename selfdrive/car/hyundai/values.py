@@ -371,7 +371,7 @@ class CAR(Platforms):
       HyundaiCarInfo("Kia Niro Plug-in Hybrid 2021", "All", car_parts=CarParts.common([CarHarness.hyundai_d])),
       HyundaiCarInfo("Kia Niro Plug-in Hybrid 2022", "All", car_parts=CarParts.common([CarHarness.hyundai_f])),
     ],
-    flags=HyundaiFlags.HYBRID
+    flags=HyundaiFlags.HYBRID | HyundaiFlags.MANDO_RADAR
   )
   KIA_NIRO_HEV_2021 = HyundaiPlatformConfig(
     "KIA NIRO HYBRID 2021",
