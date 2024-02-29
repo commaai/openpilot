@@ -97,6 +97,7 @@ CONFIGS = {
     AmpConfig("Right DAC input mixer: DAI2 right", 0b1, 0x22, 0, 0b00000001),
     AmpConfig("Volume adjustment smoothing disabled", 0b1, 0x49, 6, 0b01000000),
   ],
+  "mici": [],
 }
 
 class Amplifier:
