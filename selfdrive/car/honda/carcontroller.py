@@ -202,7 +202,7 @@ class CarController(CarControllerBase):
       pcm_accel = int(clip((accel / 1.44) / max_accel, 0.0, 1.0) * self.params.NIDEC_GAS_MAX)
 
     if not self.CP.openpilotLongitudinalControl:
-      if self.frame % 2 == 0 and self.CP.flags & HondaFlags.BOSCH_RADARLESS:  # radarless cars don't have supplemental message
+      if self.frame % 2 == 0 and not (self.CP.flags & HondaFlags.BOSCH_RADARLESS):  # radarless cars don't have supplemental message
         can_sends.append(hondacan.create_bosch_supplemental_1(self.packer, self.CAN, self.CP))
       # If using stock ACC, spam cancel command to kill gas when OP disengages.
       if pcm_cancel_cmd:
