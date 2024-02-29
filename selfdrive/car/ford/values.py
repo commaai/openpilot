@@ -60,13 +60,13 @@ class FordCarInfo(CarInfo):
 
   def init_make(self, CP: car.CarParams):
     harness = CarHarness.ford_q4 if CP.carFingerprint in CANFD_CAR else CarHarness.ford_q3
-    if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1, CAR.F_150_MK14):
+    if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1, CAR.F_150_MK14, CAR.F_150_LIGHTNING_MK1):
       self.car_parts = CarParts([Device.threex_angled_mount, harness])
     else:
       self.car_parts = CarParts([Device.threex, harness])
 
 
-@dataclass(frozen=True)
+@dataclass
 class FordPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('ford_lincoln_base_pt', RADAR.DELPHI_MRR))
 
@@ -238,7 +238,7 @@ def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, offline_fw_versions:
 # All of these ECUs must be present and are expected to have platform codes we can match
 PLATFORM_CODE_ECUS = (Ecu.abs, Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps)
 
-DATA_IDENTIFIER_FORD_ASBUILT = 0xDE
+DATA_IDENTIFIER_FORD_ASBUILT = 0xDE00
 
 ASBUILT_BLOCKS: list[tuple[int, list]] = [
   (1, [Ecu.debug, Ecu.fwdCamera, Ecu.eps]),

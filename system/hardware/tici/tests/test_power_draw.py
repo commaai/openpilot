@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from collections import defaultdict, deque
-import sys
 import pytest
 import unittest
 import time
@@ -132,4 +131,4 @@ class TestPowerDraw(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  pytest.main(sys.argv)
+  unittest.main()
