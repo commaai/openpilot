@@ -46,19 +46,21 @@ class CarControllerParams:
 
 
 class HondaFlags(IntFlag):
+  # Detected flags
   # Bosch models with alternate set of LKAS_HUD messages
   BOSCH_EXT_HUD = 1
   BOSCH_ALT_BRAKE = 2
+
+  # Static flags
   BOSCH = 4
   BOSCH_RADARLESS = 8
 
   NIDEC = 16
   NIDEC_ALT_PCM_ACCEL = 32
   NIDEC_ALT_SCM_MESSAGES = 64
-  NIDEC_RADARLESS = 128
 
-  AUTORESUME_SNG = 256
-  ELECTRIC_PARKING_BRAKE = 512
+  AUTORESUME_SNG = 128
+  ELECTRIC_PARKING_BRAKE = 256
 
 # Car button codes
 class CruiseButtons:
@@ -326,6 +328,11 @@ STEER_THRESHOLD = {
   CAR.ACURA_RDX: 400,
   CAR.CRV_EU: 400,
 }
+
+HONDA_NIDEC_ALT_PCM_ACCEL = CAR.with_flags(HondaFlags.NIDEC_ALT_PCM_ACCEL)
+HONDA_NIDEC_ALT_SCM_MESSAGES = CAR.with_flags(HondaFlags.NIDEC_ALT_SCM_MESSAGES)
+HONDA_BOSCH = CAR.with_flags(HondaFlags.BOSCH)
+HONDA_BOSCH_RADARLESS = CAR.with_flags(HondaFlags.BOSCH_RADARLESS)
 
 CAR_INFO = CAR.create_carinfo_map()
 DBC = CAR.create_dbc_map()

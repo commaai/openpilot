@@ -4,7 +4,8 @@ from panda import Panda
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import interp
 from openpilot.selfdrive.car.honda.hondacan import CanBus
-from openpilot.selfdrive.car.honda.values import CarControllerParams, CruiseButtons, HondaFlags, CAR
+from openpilot.selfdrive.car.honda.values import CarControllerParams, CruiseButtons, HondaFlags, CAR, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, \
+                                                 HONDA_BOSCH_RADARLESS
 from openpilot.selfdrive.car import create_button_events, get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.car.disable_ecu import disable_ecu
@@ -20,7 +21,7 @@ BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.D
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
-    if CP.flags & HondaFlags.BOSCH:
+    if CP.carFingerprint in HONDA_BOSCH:
       return CarControllerParams.BOSCH_ACCEL_MIN, CarControllerParams.BOSCH_ACCEL_MAX
     elif CP.enableGasInterceptor:
       return CarControllerParams.NIDEC_ACCEL_MIN, CarControllerParams.NIDEC_ACCEL_MAX
@@ -32,12 +33,12 @@ class CarInterface(CarInterfaceBase):
       return CarControllerParams.NIDEC_ACCEL_MIN, interp(current_speed, ACCEL_MAX_BP, ACCEL_MAX_VALS)
 
   @staticmethod
-  def _get_params(ret, candidate: CAR, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "honda"
 
     CAN = CanBus(ret, fingerprint)
 
-    if candidate.config.flags & HondaFlags.BOSCH:
+    if candidate in HONDA_BOSCH:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaBosch)]
       ret.radarUnavailable = True
       # Disable the radar and let openpilot control longitudinal
@@ -72,11 +73,11 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
     ret.lateralTuning.pid.kf = 0.00006  # conservative feed-forward
 
-    if candidate.config.flags & HondaFlags.BOSCH:
+    if candidate in HONDA_BOSCH:
       ret.longitudinalTuning.kpV = [0.25]
       ret.longitudinalTuning.kiV = [0.05]
       ret.longitudinalActuatorDelayUpperBound = 0.5 # s
-      if candidate.config.flags & HondaFlags.BOSCH_RADARLESS:
+      if candidate in HONDA_BOSCH_RADARLESS:
         ret.stopAccel = CarControllerParams.BOSCH_ACCEL_MIN  # stock uses -4.0 m/s^2 once stopped but limited by safety model
     else:
       # default longitudinal tuning for all hondas
@@ -277,27 +278,27 @@ class CarInterface(CarInterfaceBase):
       raise ValueError(f"unsupported car {candidate}")
 
     # These cars use alternate user brake msg (0x1BE)
-    if 0x1BE in fingerprint[CAN.pt] and candidate.config.flags & HondaFlags.BOSCH:
+    if 0x1BE in fingerprint[CAN.pt] and candidate in HONDA_BOSCH:
       ret.flags |= HondaFlags.BOSCH_ALT_BRAKE.value
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_ALT_BRAKE
 
     # These cars use alternate SCM messages (SCM_FEEDBACK AND SCM_BUTTON)
-    if candidate.config.flags & HondaFlags.NIDEC_ALT_SCM_MESSAGES:
+    if candidate in HONDA_NIDEC_ALT_SCM_MESSAGES:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_NIDEC_ALT
 
-    if ret.openpilotLongitudinalControl and candidate.config.flags & HondaFlags.BOSCH:
+    if ret.openpilotLongitudinalControl and candidate in HONDA_BOSCH:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_BOSCH_LONG
 
-    if ret.enableGasInterceptor and candidate.config.flags & HondaFlags.BOSCH:
+    if ret.enableGasInterceptor and candidate not in HONDA_BOSCH:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_GAS_INTERCEPTOR
 
-    if candidate.config.flags & HondaFlags.BOSCH_RADARLESS:
+    if candidate in HONDA_BOSCH_RADARLESS:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_RADARLESS
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter. Otherwise, add 0.5 mph margin to not
     # conflict with PCM acc
-    ret.autoResumeSng = bool(candidate.config.flags & HondaFlags.AUTORESUME_SNG) or ret.enableGasInterceptor
+    ret.autoResumeSng = candidate in (HONDA_BOSCH | {CAR.CIVIC}) or ret.enableGasInterceptor
     ret.minEnableSpeed = -1. if ret.autoResumeSng else 25.5 * CV.MPH_TO_MS
 
     ret.steerActuatorDelay = 0.1
@@ -307,7 +308,7 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def init(CP, logcan, sendcan):
-    if (CP.flags & HondaFlags.BOSCH) and not (CP.flags & HondaFlags.BOSCH_RADARLESS) and CP.openpilotLongitudinalControl:
+    if CP.carFingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS) and CP.openpilotLongitudinalControl:
       disable_ecu(logcan, sendcan, bus=1, addr=0x18DAB0F1, com_cont_req=b'\x28\x83\x03')
 
   # returns a car.CarState
