@@ -3,7 +3,7 @@ from panda import Panda
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car import get_safety_config
 from openpilot.selfdrive.car.ford.fordcan import CanBus
-from openpilot.selfdrive.car.ford.values import CANFD_CAR, Ecu
+from openpilot.selfdrive.car.ford.values import CANFD_CAR, DBC, Ecu
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 TransmissionType = car.CarParams.TransmissionType
@@ -16,7 +16,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "ford"
     ret.dashcamOnly = candidate in CANFD_CAR
 
-    ret.radarUnavailable = True
+    ret.radarUnavailable = DBC[candidate]['radar'] is None
     ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.steerActuatorDelay = 0.2
     ret.steerLimitTimer = 1.0
