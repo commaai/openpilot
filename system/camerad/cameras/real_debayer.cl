@@ -114,39 +114,41 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   const int gid_x = get_global_id(0);
   const int gid_y = get_global_id(1);
 
-  const int y_top_mod = (gid_y == 0) ? 2: 0;
-  const int y_bot_mod = (gid_y == (RGB_HEIGHT/2 - 1)) ? 1: 3;
+  const int row_before_offset = (gid_y == 0) ? 2 : 0;
+  const int row_after_offset = (gid_y == (RGB_HEIGHT/2 - 1)) ? 1 : 3;
 
   float3 rgb;
   uchar3 rgb_out[4];
 
-  int start;
-  #if IS_OS
+  int start_idx;
+  #if IS_10BIT
     bool aligned10;
-
     if (gid_x % 2 == 0) {
       aligned10 = true;
-      start = (2 * gid_y - 1) * FRAME_STRIDE + (5 * gid_x / 2 - 2) + (FRAME_STRIDE * FRAME_OFFSET);
+      start_idx = (2 * gid_y - 1) * FRAME_STRIDE + (5 * gid_x / 2 - 2) + (FRAME_STRIDE * FRAME_OFFSET);
     } else {
       aligned10 = false;
-      start = (2 * gid_y - 1) * FRAME_STRIDE + (5 * (gid_x - 1) / 2 + 1) + (FRAME_STRIDE * FRAME_OFFSET);
+      start_idx = (2 * gid_y - 1) * FRAME_STRIDE + (5 * (gid_x - 1) / 2 + 1) + (FRAME_STRIDE * FRAME_OFFSET);
     }
   #else
-    start = (2 * gid_y - 1) * FRAME_STRIDE + (3 * gid_x - 2) + (FRAME_STRIDE * FRAME_OFFSET);
+    start_idx = (2 * gid_y - 1) * FRAME_STRIDE + (3 * gid_x - 2) + (FRAME_STRIDE * FRAME_OFFSET);
   #endif
+
   // read in 8x4 chars
   uchar8 dat[4];
-  uchar extra[4];
-  dat[0] = vload8(0, in + start + FRAME_STRIDE*y_top_mod);
-  dat[1] = vload8(0, in + start + FRAME_STRIDE*1);
-  dat[2] = vload8(0, in + start + FRAME_STRIDE*2);
-  dat[3] = vload8(0, in + start + FRAME_STRIDE*y_bot_mod);
-  #if IS_OS
+  dat[0] = vload8(0, in + start_idx + FRAME_STRIDE*row_before_offset);
+  dat[1] = vload8(0, in + start_idx + FRAME_STRIDE*1);
+  dat[2] = vload8(0, in + start_idx + FRAME_STRIDE*2);
+  dat[3] = vload8(0, in + start_idx + FRAME_STRIDE*row_after_offset);
+
+  // need extra bit for 10-bit
+  #if IS_10BIT
+    uchar extra[4];
     if (!aligned10) {
-      extra[0] = in[start + FRAME_STRIDE*y_top_mod + 8];
-      extra[1] = in[start + FRAME_STRIDE*1 + 8];
-      extra[2] = in[start + FRAME_STRIDE*2 + 8];
-      extra[3] = in[start + FRAME_STRIDE*y_bot_mod + 8];
+      extra[0] = in[start_idx + FRAME_STRIDE*row_before_offset + 8];
+      extra[1] = in[start_idx + FRAME_STRIDE*1 + 8];
+      extra[2] = in[start_idx + FRAME_STRIDE*2 + 8];
+      extra[3] = in[start_idx + FRAME_STRIDE*row_after_offset + 8];
 		}
   #endif
 
@@ -154,24 +156,39 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   #if VIGNETTING
     int gx = (gid_x*2 - RGB_WIDTH/2);
     int gy = (gid_y*2 - RGB_HEIGHT/2);
-    const float gain = get_vignetting_s(gx*gx + gy*gy);
+    const float gain = get_vignetting_s(gx*gx + gy*gy); // TODO: os distance
   #else
     const float gain = 1.0;
   #endif
 
-  // process them to floats
-  #if IS_OS
-    float4 vd = val4_from_10(dat[0], extra[0], aligned10, 1.0);
-    float4 vc = val4_from_10(dat[1], extra[1], aligned10, 1.0);
-    float4 vb = val4_from_10(dat[2], extra[2], aligned10, 1.0);
-    float4 va = val4_from_10(dat[3], extra[3], aligned10, 1.0);
+  // parse into floats
+  #if IS_10BIT
+    #if IS_BGGR
+      float4 vd = val4_from_10(dat[0], extra[0], aligned10, 1.0);
+      float4 vc = val4_from_10(dat[1], extra[1], aligned10, 1.0);
+      float4 vb = val4_from_10(dat[2], extra[2], aligned10, 1.0);
+      float4 va = val4_from_10(dat[3], extra[3], aligned10, 1.0);
+    #else
+      float4 va = val4_from_10(dat[0], extra[0], aligned10, 1.0);
+      float4 vb = val4_from_10(dat[1], extra[1], aligned10, 1.0);
+      float4 vc = val4_from_10(dat[2], extra[2], aligned10, 1.0);
+      float4 vd = val4_from_10(dat[3], extra[3], aligned10, 1.0);
+    #endif
   #else
-    float4 va = val4_from_12(dat[0], gain);
-    float4 vb = val4_from_12(dat[1], gain);
-    float4 vc = val4_from_12(dat[2], gain);
-    float4 vd = val4_from_12(dat[3], gain);
+    #if IS_BGGR
+      float4 vd = val4_from_12(dat[0], gain);
+      float4 vc = val4_from_12(dat[1], gain);
+      float4 vb = val4_from_12(dat[2], gain);
+      float4 va = val4_from_12(dat[3], gain);
+    #else
+      float4 va = val4_from_12(dat[0], gain);
+      float4 vb = val4_from_12(dat[1], gain);
+      float4 vc = val4_from_12(dat[2], gain);
+      float4 vd = val4_from_12(dat[3], gain);
+    #endif
   #endif
 
+  // mirror padding
   if (gid_x == 0) {
     va.s0 = va.s2;
     vb.s0 = vb.s2;
@@ -192,7 +209,7 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   rgb.x = (k02*vb.s2+k04*vb.s0)/(k02+k04); // R_G1
   rgb.y = vb.s1; // G1(R)
   rgb.z = (k01*va.s1+k03*vc.s1)/(k01+k03); // B_G1
-  #if IS_OS
+  #if IS_BGGR
     rgb_out[2] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
   #else
     rgb_out[0] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
@@ -205,7 +222,7 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   rgb.x = vb.s2; // R
   rgb.y = (k11*(va.s2+vc.s2)*0.5+k13*(vb.s3+vb.s1)*0.5)/(k11+k13); // G_R
   rgb.z = (k12*(va.s3+vc.s1)*0.5+k14*(va.s1+vc.s3)*0.5)/(k12+k14); // B_R
-  #if IS_OS
+  #if IS_BGGR
     rgb_out[3] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
   #else
     rgb_out[1] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
@@ -218,7 +235,7 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   rgb.x = (k22*(vb.s2+vd.s0)*0.5+k24*(vb.s0+vd.s2)*0.5)/(k22+k24); // R_B
   rgb.y = (k21*(vb.s1+vd.s1)*0.5+k23*(vc.s2+vc.s0)*0.5)/(k21+k23); // G_B
   rgb.z = vc.s1; // B
-  #if IS_OS
+  #if IS_BGGR
     rgb_out[0] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
   #else
     rgb_out[2] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
@@ -231,7 +248,7 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   rgb.x = (k31*vb.s2+k33*vd.s2)/(k31+k33); // R_G2
   rgb.y = vc.s2; // G2(B)
   rgb.z = (k32*vc.s3+k34*vc.s1)/(k32+k34); // B_G2
-  #if IS_OS
+  #if IS_BGGR
     rgb_out[1] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
   #else
     rgb_out[3] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
