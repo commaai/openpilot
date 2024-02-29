@@ -55,6 +55,8 @@ class CarControllerParams:
 class SubaruFlags(IntFlag):
   SEND_INFOTAINMENT = 1
   DISABLE_EYESIGHT = 2
+
+  # Static flags
   GLOBAL_GEN2 = 4
 
   # Cars that temporarily fault when steering angle rate is greater than some threshold.
