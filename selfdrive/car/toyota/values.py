@@ -264,7 +264,7 @@ class CAR(Platforms):
   MIRAI = ToyotaTSS2PlatformConfig(
     "TOYOTA MIRAI 2021",  # TSS 2.5
     ToyotaCarInfo("Toyota Mirai 2021"),
-    dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
+    dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
     specs=CarSpecs(mass=4300. * CV.LB_TO_KG, wheelbase=2.91, steerRatio=14.8, tireStiffnessFactor=0.8),
   )
   SIENNA = PlatformConfig(
