@@ -31,7 +31,7 @@ class NissanCarSpecs(CarSpecs):
   steerRatio: float = 17.
 
 
-@dataclass(frozen=True)
+@dataclass
 class NissanPlaformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('nissan_x_trail_2017_generated', None))
 
