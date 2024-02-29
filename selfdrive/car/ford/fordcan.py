@@ -5,9 +5,6 @@ HUDControl = car.CarControl.HUDControl
 
 
 class CanBus(CanBusBase):
-  def __init__(self, CP=None, fingerprint=None) -> None:
-    super().__init__(CP, fingerprint)
-
   @property
   def main(self) -> int:
     return self.offset
