@@ -731,6 +731,10 @@ FW_QUERY_CONFIG = FwQueryConfig(
   match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
 )
 
+CHECKSUM = {
+  "crc8": CAR.with_flags(HyundaiFlags.CHECKSUM_CRC8),
+  "6b": CAR.with_flags(HyundaiFlags.CHECKSUM_6B),
+}
 
 CAN_GEARS = {
   # which message has the gear. hybrid and EV use ELECT_GEAR
