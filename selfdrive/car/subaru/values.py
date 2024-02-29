@@ -262,3 +262,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
 
 CAR_INFO = CAR.create_carinfo_map()
 DBC = CAR.create_dbc_map()
+
+
+if __name__ == "__main__":
+  CAR.print_debug(SubaruFlags)
