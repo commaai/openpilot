@@ -25,10 +25,9 @@ def is_registered_device() -> bool:
 def register(show_spinner=False) -> str | None:
   params = Params()
 
-  IMEI = params.get("IMEI", encoding='utf8')
   HardwareSerial = params.get("HardwareSerial", encoding='utf8')
   dongle_id: str | None = params.get("DongleId", encoding='utf8')
-  needs_registration = None in (IMEI, HardwareSerial, dongle_id)
+  needs_registration = None in (HardwareSerial, dongle_id)
 
   pubkey = Path(Paths.persist_root()+"/comma/id_rsa.pub")
   if not pubkey.is_file():
@@ -59,7 +58,6 @@ def register(show_spinner=False) -> str | None:
       if time.monotonic() - start_time > 60 and show_spinner:
         spinner.update(f"registering device - serial: {serial}, IMEI: ({imei1}, {imei2})")
 
-    params.put("IMEI", imei1)
     params.put("HardwareSerial", serial)
 
     backoff = 0

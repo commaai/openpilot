@@ -34,7 +34,6 @@ class TestRegistration(unittest.TestCase):
 
   def test_valid_cache(self):
     # if all params are written, return the cached dongle id
-    self.params.put("IMEI", "imei")
     self.params.put("HardwareSerial", "serial")
     self._generate_keys()
 
