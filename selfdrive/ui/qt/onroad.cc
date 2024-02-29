@@ -37,7 +37,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   nvg = new AnnotatedCameraWidget(VISION_STREAM_ROAD, this);
 
-  QWidget * split_wrapper = new QWidget;
+  QWidget *split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
   split->setContentsMargins(0, 0, 0, 0);
   split->setSpacing(0);
