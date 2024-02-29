@@ -133,6 +133,15 @@ class CAR(Platforms):
     dbc_dict('honda_accord_2018_can_generated', None),
     flags=HondaFlags.BOSCH
   )
+  CIVIC_2022 = HondaPlatformConfig(
+    "HONDA CIVIC 2022",
+    [
+      HondaCarInfo("Honda Civic 2022-23", "All", video_link="https://youtu.be/ytiOT5lcp6Q"),
+      HondaCarInfo("Honda Civic Hatchback 2022-23", "All", video_link="https://youtu.be/ytiOT5lcp6Q"),
+    ],
+    dbc_dict('honda_civic_ex_2022_can_generated', None),
+    flags=HondaFlags.BOSCH | HondaFlags.BOSCH_RADARLESS,
+  )
   CRV_5G = HondaPlatformConfig(
     "HONDA CR-V 2017",
     HondaCarInfo("Honda CR-V 2017-22", min_steer_speed=12. * CV.MPH_TO_MS),
@@ -171,15 +180,6 @@ class CAR(Platforms):
   )
 
   # Nidec Cars
-  CIVIC_2022 = HondaPlatformConfig(
-    "HONDA CIVIC 2022",
-    [
-      HondaCarInfo("Honda Civic 2022-23", "All", video_link="https://youtu.be/ytiOT5lcp6Q"),
-      HondaCarInfo("Honda Civic Hatchback 2022-23", "All", video_link="https://youtu.be/ytiOT5lcp6Q"),
-    ],
-    dbc_dict('honda_civic_ex_2022_can_generated', None),
-    flags=HondaFlags.NIDEC | HondaFlags.NIDEC_RADARLESS,
-  )
   ACURA_ILX = HondaPlatformConfig(
     "ACURA ILX 2016",
     HondaCarInfo("Acura ILX 2016-19", "AcuraWatch Plus", min_steer_speed=25. * CV.MPH_TO_MS),
@@ -226,7 +226,7 @@ class CAR(Platforms):
     "HONDA ODYSSEY CHN 2019",
     None, # Chinese version of Odyssey, don't show in docs
     dbc_dict('honda_odyssey_extreme_edition_2018_china_can_generated', 'acura_ilx_2016_nidec'),
-    flags=HondaFlags.NIDEC | HondaFlags.NIDEC_ALT_PCM_ACCEL
+    flags=HondaFlags.NIDEC | HondaFlags.NIDEC_ALT_SCM_MESSAGES
   )
   ACURA_RDX = HondaPlatformConfig(
     "ACURA RDX 2018",

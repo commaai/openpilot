@@ -114,30 +114,30 @@ def create_acc_commands(packer, CAN, enabled, active, accel, gas, stopping_count
   return commands
 
 
-def create_steering_control(packer, CAN, apply_steer, lkas_active, car_fingerprint, radar_disabled):
+def create_steering_control(packer, CAN, apply_steer, lkas_active, CP, radar_disabled):
   values = {
     "STEER_TORQUE": apply_steer if lkas_active else 0,
     "STEER_TORQUE_REQUEST": lkas_active,
   }
-  bus = get_lkas_cmd_bus(CAN, car_fingerprint, radar_disabled)
+  bus = get_lkas_cmd_bus(CAN, CP, radar_disabled)
   return packer.make_can_msg("STEERING_CONTROL", bus, values)
 
 
-def create_bosch_supplemental_1(packer, CAN, car_fingerprint):
+def create_bosch_supplemental_1(packer, CAN, CP):
   # non-active params
   values = {
     "SET_ME_X04": 0x04,
     "SET_ME_X80": 0x80,
     "SET_ME_X10": 0x10,
   }
-  bus = get_lkas_cmd_bus(CAN, car_fingerprint)
+  bus = get_lkas_cmd_bus(CAN, CP)
   return packer.make_can_msg("BOSCH_SUPPLEMENTAL_1", bus, values)
 
 
 def create_ui_commands(packer, CAN, CP, enabled, pcm_speed, hud, is_metric, acc_hud, lkas_hud):
   commands = []
   radar_disabled = (CP.flags & HondaFlags.BOSCH) and not (CP.flags & HondaFlags.BOSCH_RADARLESS) and CP.openpilotLongitudinalControl
-  bus_lkas = get_lkas_cmd_bus(CAN, CP.carFingerprint, radar_disabled)
+  bus_lkas = get_lkas_cmd_bus(CAN, CP, radar_disabled)
 
   if CP.openpilotLongitudinalControl:
     acc_hud_values = {

@@ -129,13 +129,13 @@ class CarController(CarControllerBase):
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
-    conversion = hondacan.get_cruise_speed_conversion(self.CP.carFingerprint, CS.is_metric)
+    conversion = hondacan.get_cruise_speed_conversion(self.CP, CS.is_metric)
     hud_v_cruise = hud_control.setSpeed / conversion if hud_control.speedVisible else 255
     pcm_cancel_cmd = CC.cruiseControl.cancel
 
     if CC.longActive:
       accel = actuators.accel
-      gas, brake = compute_gas_brake(actuators.accel, CS.out.vEgo, self.CP.carFingerprint)
+      gas, brake = compute_gas_brake(actuators.accel, CS.out.vEgo, self.CP)
     else:
       accel = 0.0
       gas, brake = 0.0, 0.0
@@ -146,7 +146,7 @@ class CarController(CarControllerBase):
 
     # *** apply brake hysteresis ***
     pre_limit_brake, self.braking, self.brake_steady = actuator_hysteresis(brake, self.braking, self.brake_steady,
-                                                                           CS.out.vEgo, self.CP.carFingerprint)
+                                                                           CS.out.vEgo, self.CP)
 
     # *** rate limit after the enable check ***
     self.brake_last = rate_limit(pre_limit_brake, self.brake_last, -2., DT_CTRL)
@@ -169,7 +169,7 @@ class CarController(CarControllerBase):
         can_sends.append((0x18DAB0F1, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 1))
 
     # Send steering command.
-    can_sends.append(hondacan.create_steering_control(self.packer, self.CAN, apply_steer, CC.latActive, self.CP.carFingerprint,
+    can_sends.append(hondacan.create_steering_control(self.packer, self.CAN, apply_steer, CC.latActive, self.CP,
                                                       CS.CP.openpilotLongitudinalControl))
 
     # wind brake from air resistance decel at high speed
@@ -203,12 +203,12 @@ class CarController(CarControllerBase):
 
     if not self.CP.openpilotLongitudinalControl:
       if self.frame % 2 == 0 and self.CP.flags & HondaFlags.BOSCH_RADARLESS:  # radarless cars don't have supplemental message
-        can_sends.append(hondacan.create_bosch_supplemental_1(self.packer, self.CAN, self.CP.carFingerprint))
+        can_sends.append(hondacan.create_bosch_supplemental_1(self.packer, self.CAN, self.CP))
       # If using stock ACC, spam cancel command to kill gas when OP disengages.
       if pcm_cancel_cmd:
-        can_sends.append(hondacan.spam_buttons_command(self.packer, self.CAN, CruiseButtons.CANCEL, self.CP.carFingerprint))
+        can_sends.append(hondacan.spam_buttons_command(self.packer, self.CAN, CruiseButtons.CANCEL, self.CP))
       elif CC.cruiseControl.resume:
-        can_sends.append(hondacan.spam_buttons_command(self.packer, self.CAN, CruiseButtons.RES_ACCEL, self.CP.carFingerprint))
+        can_sends.append(hondacan.spam_buttons_command(self.packer, self.CAN, CruiseButtons.RES_ACCEL, self.CP))
 
     else:
       # Send gas and brake commands.
@@ -222,7 +222,7 @@ class CarController(CarControllerBase):
           stopping = actuators.longControlState == LongCtrlState.stopping
           self.stopping_counter = self.stopping_counter + 1 if stopping else 0
           can_sends.extend(hondacan.create_acc_commands(self.packer, self.CAN, CC.enabled, CC.longActive, self.accel, self.gas,
-                                                        self.stopping_counter, self.CP.carFingerprint))
+                                                        self.stopping_counter, self.CP))
         else:
           apply_brake = clip(self.brake_last - wind_brake, 0.0, 1.0)
           apply_brake = int(clip(apply_brake * self.params.NIDEC_BRAKE_MAX, 0, self.params.NIDEC_BRAKE_MAX - 1))
@@ -231,7 +231,7 @@ class CarController(CarControllerBase):
           pcm_override = True
           can_sends.append(hondacan.create_brake_command(self.packer, self.CAN, apply_brake, pump_on,
                                                          pcm_override, pcm_cancel_cmd, fcw_display,
-                                                         self.CP.carFingerprint, CS.stock_brake))
+                                                         self.CP, CS.stock_brake))
           self.apply_brake_last = apply_brake
           self.brake = apply_brake / self.params.NIDEC_BRAKE_MAX
 

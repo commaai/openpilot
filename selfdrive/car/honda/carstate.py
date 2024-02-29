@@ -37,15 +37,12 @@ def get_can_messages(CP, gearbox_msg):
       ("SCM_BUTTONS", 25),
     ]
 
-  if CP.carFingerprint in (CAR.CRV_HYBRID, CAR.CIVIC_BOSCH_DIESEL, CAR.ACURA_RDX_3G, CAR.HONDA_E):
-    messages.append((gearbox_msg, 50))
-  else:
-    messages.append((gearbox_msg, 100))
+  messages.append((gearbox_msg, 50))
 
   if CP.flags & HondaFlags.BOSCH_ALT_BRAKE:
     messages.append(("BRAKE_MODULE", 50))
 
-  if CP.flags & HondaFlags.BOSCH | HondaFlags.ELECTRIC_PARKING_BRAKE:
+  if CP.flags & (HondaFlags.BOSCH | HondaFlags.ELECTRIC_PARKING_BRAKE):
     messages.append(("EPB_STATUS", 50))
 
   if CP.flags & HondaFlags.BOSCH:
@@ -208,7 +205,7 @@ class CarState(CarStateBase):
         ret.cruiseState.nonAdaptive = acc_hud["CRUISE_CONTROL_LABEL"] != 0
         ret.cruiseState.standstill = acc_hud["CRUISE_SPEED"] == 252.
 
-        conversion = get_cruise_speed_conversion(self.CP.carFingerprint, self.is_metric)
+        conversion = get_cruise_speed_conversion(self.CP, self.is_metric)
         # On set, cruise set speed pulses between 254~255 and the set speed prev is set to avoid this.
         ret.cruiseState.speed = self.v_cruise_pcm_prev if acc_hud["CRUISE_SPEED"] > 160.0 else acc_hud["CRUISE_SPEED"] * conversion
         self.v_cruise_pcm_prev = ret.cruiseState.speed
@@ -278,7 +275,7 @@ class CarState(CarStateBase):
       if not CP.openpilotLongitudinalControl:
         messages.append(("ACC_HUD", 10))
 
-    elif CP.flags & HondaFlags.BOSCH:
+    elif not (CP.flags & HondaFlags.BOSCH):
       messages += [
         ("ACC_HUD", 10),
         ("LKAS_HUD", 10),
