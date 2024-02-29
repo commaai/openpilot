@@ -241,7 +241,7 @@ class CAR(Platforms):
     ],
     specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
-  RAV4_TSS2_2022 = PlatformConfig(
+  RAV4_TSS2_2022 = ToyotaTSS2PlatformConfig(
     "TOYOTA RAV4 2022",
     [
       ToyotaCarInfo("Toyota RAV4 2022"),
@@ -251,7 +251,7 @@ class CAR(Platforms):
     flags=ToyotaFlags.RADAR_ACC,
     specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
-  RAV4_TSS2_2023 = PlatformConfig(
+  RAV4_TSS2_2023 = ToyotaTSS2PlatformConfig(
     "TOYOTA RAV4 2023",
     [
       ToyotaCarInfo("Toyota RAV4 2023-24"),
