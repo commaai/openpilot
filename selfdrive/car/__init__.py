@@ -260,19 +260,26 @@ class CarSpecs:
 
 
 @dataclass(order=True)
-class PlatformConfig:
+class PlatformConfig(Freezable):
   platform_str: str
   car_info: CarInfos
-  dbc_dict: DbcDict | None = None
-
+  dbc_dict: DbcDict
   flags: int = 0
+
   specs: CarSpecs | None = None
 
   def __hash__(self) -> int:
     return hash(self.platform_str)
 
-  def init_config(self):
+  def override(self, **kwargs):
+    return replace(self, **kwargs)
+
+  def init(self):
     pass
+
+  def __post_init__(self):
+    self.init()
+    self.freeze()
 
 
 class Platforms(str, ReprEnum):
