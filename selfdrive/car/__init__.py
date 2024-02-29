@@ -251,11 +251,11 @@ CarInfos = CarInfo | list[CarInfo]
 @dataclass(frozen=True, kw_only=True)
 class CarSpecs:
   mass: float  # kg, curb weight
-  wheelbase: float
+  wheelbase: float  # meters
   steerRatio: float
   centerToFrontRatio: float = 0.5
-  minSteerSpeed: float = 0.0
-  minEnableSpeed: float = -1.0
+  minSteerSpeed: float = 0.0  # m/s
+  minEnableSpeed: float = -1.0  # m/s
 
 
 @dataclass(order=True)
