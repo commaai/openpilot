@@ -42,12 +42,12 @@ class CarController(CarControllerBase):
       if not CC.latActive:
         apply_steer = 0
 
-      if self.CP.flags & SubaruFlags.PREGLOBAL:
+      if SubaruFlags.PREGLOBAL.check(self.CP.flags):
         can_sends.append(subarucan.create_preglobal_steering_control(self.packer, self.frame // self.p.STEER_STEP, apply_steer, CC.latActive))
       else:
         apply_steer_req = CC.latActive
 
-        if self.CP.flags & SubaruFlags.STEER_RATE_LIMITED:
+        if SubaruFlags.STEER_RATE_LIMITED.check(self.CP.flags):
           # Steering rate fault prevention
           self.steer_rate_counter, apply_steer_req = \
             common_fault_avoidance(abs(CS.out.steeringRateDeg) > MAX_STEER_RATE, apply_steer_req,
@@ -74,7 +74,7 @@ class CarController(CarControllerBase):
       cruise_brake = CarControllerParams.BRAKE_MIN
 
     # *** alerts and pcm cancel ***
-    if self.CP.flags & SubaruFlags.PREGLOBAL:
+    if SubaruFlags.PREGLOBAL.check(self.CP.flags):
       if self.frame % 5 == 0:
         # 1 = main, 2 = set shallow, 3 = set deep, 4 = resume shallow, 5 = resume deep
         # disengage ACC when OP is disengaged
@@ -102,7 +102,7 @@ class CarController(CarControllerBase):
                                                         hud_control.leftLaneVisible, hud_control.rightLaneVisible,
                                                         hud_control.leftLaneDepart, hud_control.rightLaneDepart))
 
-        if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
+        if SubaruFlags.SEND_INFOTAINMENT.check(self.CP.flags):
           can_sends.append(subarucan.create_es_infotainment(self.packer, self.frame // 10, CS.es_infotainment_msg, hud_control.visualAlert))
 
       if self.CP.openpilotLongitudinalControl:
@@ -117,11 +117,11 @@ class CarController(CarControllerBase):
                                                         self.CP.openpilotLongitudinalControl, cruise_brake > 0, cruise_throttle))
       else:
         if pcm_cancel_cmd:
-          if not (self.CP.flags & SubaruFlags.HYBRID):
-            bus = CanBus.alt if self.CP.flags & SubaruFlags.GLOBAL_GEN2 else CanBus.main
+          if not SubaruFlags.HYBRID.check(self.CP.flags):
+            bus = CanBus.alt if SubaruFlags.GLOBAL_GEN2.check(self.CP.flags) else CanBus.main
             can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg["COUNTER"] + 1, CS.es_distance_msg, bus, pcm_cancel_cmd))
 
-      if self.CP.flags & SubaruFlags.DISABLE_EYESIGHT:
+      if SubaruFlags.DISABLE_EYESIGHT.check(self.CP.flags):
         # Tester present (keeps eyesight disabled)
         if self.frame % 100 == 0:
           can_sends.append([GLOBAL_ES_ADDR, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", CanBus.camera])

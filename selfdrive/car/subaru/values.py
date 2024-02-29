@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
-from enum import Enum, IntFlag
+from enum import Enum
 
 from cereal import car
 from panda.python import uds
-from openpilot.selfdrive.car import CarSpecs, DbcDict, PlatformConfig, Platforms, dbc_dict
+from openpilot.selfdrive.car import CarFlags, CarSpecs, DbcDict, PlatformConfig, Platforms, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Tool, Column
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
@@ -19,7 +19,7 @@ class CarControllerParams:
     self.STEER_DRIVER_MULTIPLIER = 50  # weight driver torque heavily
     self.STEER_DRIVER_FACTOR = 1       # from dbc
 
-    if CP.flags & SubaruFlags.GLOBAL_GEN2:
+    if SubaruFlags.GLOBAL_GEN2.check(CP.flags):
       self.STEER_MAX = 1000
       self.STEER_DELTA_UP = 40
       self.STEER_DELTA_DOWN = 40
@@ -52,7 +52,7 @@ class CarControllerParams:
   BRAKE_LOOKUP_V = [BRAKE_MAX, BRAKE_MIN]
 
 
-class SubaruFlags(IntFlag):
+class SubaruFlags(CarFlags):
   SEND_INFOTAINMENT = 1
   DISABLE_EYESIGHT = 2
   GLOBAL_GEN2 = 4
@@ -96,13 +96,12 @@ class SubaruCarInfo(CarInfo):
     if CP.experimentalLongitudinalAvailable:
       self.footnotes.append(Footnote.EXP_LONG)
 
-
 @dataclass
 class SubaruPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('subaru_global_2017_generated', None))
 
   def init(self):
-    if self.flags & SubaruFlags.HYBRID:
+    if SubaruFlags.HYBRID.check(self.flags):
       self.dbc_dict = dbc_dict('subaru_global_2020_hybrid_generated', None)
 
 

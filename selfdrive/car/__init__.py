@@ -301,3 +301,8 @@ class Platforms(str, ReprEnum):
   @classmethod
   def with_flags(cls, flags: IntFlag) -> set['Platforms']:
     return {p for p in cls if p.config.flags & flags}
+
+
+class CarFlags(IntFlag):
+  def check(self, flag) -> bool:
+    return bool(self & flag)
