@@ -65,7 +65,7 @@ legend = ["LAT_ACCEL_FACTOR", "MAX_LAT_ACCEL_MEASURED", "FRICTION"]
 "HYUNDAI CUSTIN 1ST GEN" = [2.5, 2.5, 0.1]
 "LEXUS GS F 2016" = [2.5, 2.5, 0.08]
 "HYUNDAI STARIA 4TH GEN" = [1.8, 2.0, 0.15]
-"GENESIS G70 1ST GEN FACELIFT" = [2.5, 2.5, 0.1]
+"GENESIS G70 1ST GEN FACELIFT" = [3.0, 3.0, 0.05]
 
 # Dashcam or fallback configured as ideal car
 "mock" = [10.0, 10, 0.0]
