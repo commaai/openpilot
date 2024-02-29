@@ -455,11 +455,19 @@ class Controls:
 
       if self.sm['modelV2'].frameDropPerc > 20:
         self.events.add(EventName.modeldLagging)
+
+  '''
+ _____ _____ _     _____ __  __ _____ _____ ____  ___    _
+|_   _| ____| |   | ____|  \/  | ____|_   _|  _ \|_ _|  / \
+  | | |  _| | |   |  _| | |\/| |  _|   | | | |_) || |  / _ \
+  | | | |___| |___| |___| |  | | |___  | | |  _ < | | / ___ \
+  |_| |_____|_____|_____|_|  |_|_____| |_| |_| \_\___/_/   \_\ 
+  '''
   # Cola
   info_tlmtry_q = queue.Queue()
   
   # Colocar mensaje en la cola antes de iniciar el productor
-  info_tlmtry_q.put({"velocidad": "120 km/h"})
+  info_tlmtry_q.put({"velocidad": CS.vEgo + " km/h"})
   info_tlmtry_q.put({"accelerador": "0.4"})
   info_tlmtry_q.put({"freno": "0.0"})
   info_tlmtry_q.put({"proximo destino": "a 10km"})
