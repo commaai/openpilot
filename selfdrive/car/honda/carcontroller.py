@@ -164,7 +164,7 @@ class CarController(CarControllerBase):
     can_sends = []
 
     # tester present - w/ no response (keeps radar disabled)
-    if (self.CP.flags & HondaFlags.BOSCH) & (not self.CP.flags & HondaFlags.BOSCH_RADARLESS) and self.CP.openpilotLongitudinalControl:
+    if (self.CP.flags & HondaFlags.BOSCH) and (not self.CP.flags & HondaFlags.BOSCH_RADARLESS) and self.CP.openpilotLongitudinalControl:
       if self.frame % 10 == 0:
         can_sends.append((0x18DAB0F1, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 1))
 
@@ -254,7 +254,7 @@ class CarController(CarControllerBase):
                     hud_control.lanesVisible, fcw_display, acc_alert, steer_required)
       can_sends.extend(hondacan.create_ui_commands(self.packer, self.CAN, self.CP, CC.enabled, pcm_speed, hud, CS.is_metric, CS.acc_hud, CS.lkas_hud))
 
-      if self.CP.openpilotLongitudinalControl and self.CP.flags & HondaFlags.BOSCH:
+      if self.CP.openpilotLongitudinalControl and not (self.CP.flags & HondaFlags.BOSCH):
         self.speed = pcm_speed
 
         if not self.CP.enableGasInterceptor:
