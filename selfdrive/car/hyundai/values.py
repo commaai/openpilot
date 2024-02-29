@@ -190,6 +190,7 @@ class CAR(Platforms):
   IONIQ_PHEV = HyundaiPlatformConfig(
     "HYUNDAI IONIQ PHEV 2020",
     HyundaiCarInfo("Hyundai Ioniq Plug-in Hybrid 2020-22", "All", car_parts=CarParts.common([CarHarness.hyundai_h])),
+    flags=HyundaiFlags.HYBRID
   )
   KONA = HyundaiPlatformConfig(
     "HYUNDAI KONA 2020",
