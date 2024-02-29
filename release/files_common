@@ -60,6 +60,8 @@ system/logmessaged.py
 system/micd.py
 system/version.py
 
+selfdrive/SConscript
+
 selfdrive/athena/__init__.py
 selfdrive/athena/athenad.py
 selfdrive/athena/manage_athenad.py
