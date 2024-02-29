@@ -106,6 +106,15 @@ class SubaruPlatformConfig(PlatformConfig):
       self.dbc_dict = dbc_dict('subaru_global_2020_hybrid_generated', None)
 
 
+@dataclass
+class SubaruGen2PlatformConfig(SubaruPlatformConfig):
+  def init(self):
+    super().init()
+    self.flags |= SubaruFlags.GLOBAL_GEN2
+    if not (self.flags & SubaruFlags.LKAS_ANGLE):
+      self.flags |= SubaruFlags.STEER_RATE_LIMITED
+
+
 class CAR(Platforms):
   # Global platform
   ASCENT = SubaruPlatformConfig(
@@ -113,17 +122,15 @@ class CAR(Platforms):
     SubaruCarInfo("Subaru Ascent 2019-21", "All"),
     specs=CarSpecs(mass=2031, wheelbase=2.89, steerRatio=13.5),
   )
-  OUTBACK = SubaruPlatformConfig(
+  OUTBACK = SubaruGen2PlatformConfig(
     "SUBARU OUTBACK 6TH GEN",
     SubaruCarInfo("Subaru Outback 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b])),
     specs=CarSpecs(mass=1568, wheelbase=2.67, steerRatio=17),
-    flags=SubaruFlags.GLOBAL_GEN2 | SubaruFlags.STEER_RATE_LIMITED,
   )
-  LEGACY = SubaruPlatformConfig(
+  LEGACY = SubaruGen2PlatformConfig(
     "SUBARU LEGACY 7TH GEN",
     SubaruCarInfo("Subaru Legacy 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b])),
     specs=OUTBACK.specs,
-    flags=SubaruFlags.GLOBAL_GEN2 | SubaruFlags.STEER_RATE_LIMITED,
   )
   IMPREZA = SubaruPlatformConfig(
     "SUBARU IMPREZA LIMITED 2019",
@@ -199,17 +206,17 @@ class CAR(Platforms):
     specs=FORESTER.specs,
     flags=SubaruFlags.LKAS_ANGLE,
   )
-  OUTBACK_2023 = SubaruPlatformConfig(
+  OUTBACK_2023 = SubaruGen2PlatformConfig(
     "SUBARU OUTBACK 7TH GEN",
     SubaruCarInfo("Subaru Outback 2023", "All", car_parts=CarParts.common([CarHarness.subaru_d])),
     specs=OUTBACK.specs,
-    flags=SubaruFlags.GLOBAL_GEN2 | SubaruFlags.LKAS_ANGLE,
+    flags=SubaruFlags.LKAS_ANGLE,
   )
-  ASCENT_2023 = SubaruPlatformConfig(
+  ASCENT_2023 = SubaruGen2PlatformConfig(
     "SUBARU ASCENT 2023",
     SubaruCarInfo("Subaru Ascent 2023", "All", car_parts=CarParts.common([CarHarness.subaru_d])),
     specs=ASCENT.specs,
-    flags=SubaruFlags.GLOBAL_GEN2 | SubaruFlags.LKAS_ANGLE,
+    flags=SubaruFlags.LKAS_ANGLE,
   )
 
 
