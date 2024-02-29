@@ -62,14 +62,16 @@ OS04C10::OS04C10() {
 }
 
 std::vector<i2c_random_wr_payload> OS04C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {
-  uint32_t hcg_time = exposure_time;
+  uint32_t long_time = exposure_time;
   uint32_t real_gain = os04c10_analog_gains_reg[new_exp_g];
 
-  // hcg_time *= 16; // shift 4 bits
+  uint32_t short_time = long_time > exposure_time_min*8 ? long_time / 8 : exposure_time_min;
 
   return {
-    {0x3501, hcg_time>>8}, {0x3502, hcg_time&0xFF},
+    {0x3501, long_time>>8}, {0x3502, long_time&0xFF},
+    {0x3511, short_time>>8}, {0x3512, short_time&0xFF},
     {0x3508, real_gain>>8}, {0x3509, real_gain&0xFF},
+    {0x350c, real_gain>>8}, {0x350d, real_gain&0xFF},
   };
 }
 
