@@ -84,7 +84,7 @@ class CarState(CarStateBase):
                         cp.vl["BodyInfo"]["DOOR_OPEN_FL"]])
     ret.steerFaultPermanent = cp.vl["Steering_Torque"]["Steer_Error_1"] == 1
 
-    cp_es_distance = cp_body if (SubaruFlags.GLOBAL_GEN2 | SubaruFlags.HYBRID).check(self.CP.flags) else cp_cam
+    cp_es_distance = cp_body if (SubaruFlags.GLOBAL_GEN2 | SubaruFlags.HYBRID).check_any(self.CP.flags) else cp_cam
     if SubaruFlags.PREGLOBAL.check(self.CP.flags):
       self.cruise_button = cp_cam.vl["ES_Distance"]["Cruise_Button"]
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]

@@ -305,4 +305,7 @@ class Platforms(str, ReprEnum):
 
 class CarFlags(IntFlag):
   def check(self, flag) -> bool:
+    return bool((self & flag) == self)
+
+  def check_any(self, flag) -> bool:
     return bool(self & flag)
