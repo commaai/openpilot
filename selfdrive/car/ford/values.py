@@ -64,7 +64,7 @@ class FordCarInfo(CarInfo):
       self.car_parts = CarParts([Device.threex, harness])
 
 
-@dataclass(frozen=True)
+@dataclass
 class FordPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('ford_lincoln_base_pt', RADAR.DELPHI_MRR))
 

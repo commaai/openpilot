@@ -247,7 +247,7 @@ class CanSignalRateCalculator:
 CarInfos = CarInfo | list[CarInfo]
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class CarSpecs:
   mass: float
   wheelbase: float
@@ -257,7 +257,7 @@ class CarSpecs:
   minEnableSpeed: float = field(default=-1.)
 
 
-@dataclass(frozen=True, order=True)
+@dataclass(order=True)
 class PlatformConfig:
   platform_str: str
   car_info: CarInfos

@@ -25,13 +25,13 @@ class NissanCarInfo(CarInfo):
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.nissan_a]))
 
 
-@dataclass(frozen=True)
+@dataclass
 class NissanCarSpecs(CarSpecs):
   centerToFrontRatio: float = 0.44
   steerRatio: float = 17.
 
 
-@dataclass(frozen=True)
+@dataclass
 class NissanPlaformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('nissan_x_trail_2017_generated', None))
 

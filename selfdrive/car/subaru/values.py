@@ -97,9 +97,13 @@ class SubaruCarInfo(CarInfo):
       self.footnotes.append(Footnote.EXP_LONG)
 
 
-@dataclass(frozen=True)
+@dataclass
 class SubaruPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('subaru_global_2017_generated', None))
+
+  def __post_init__(self):
+    if self.flags & SubaruFlags.HYBRID:
+      self.dbc_dict = dbc_dict('subaru_global_2020_hybrid_generated', None)
 
 
 class CAR(Platforms):
@@ -144,7 +148,6 @@ class CAR(Platforms):
   CROSSTREK_HYBRID = SubaruPlatformConfig(
     "SUBARU CROSSTREK HYBRID 2020",
     SubaruCarInfo("Subaru Crosstrek Hybrid 2020", car_parts=CarParts.common([CarHarness.subaru_b])),
-    dbc_dict('subaru_global_2020_hybrid_generated', None),
     specs=CarSpecs(mass=1668, wheelbase=2.67, steerRatio=17),
     flags=SubaruFlags.HYBRID,
   )
@@ -157,7 +160,6 @@ class CAR(Platforms):
   FORESTER_HYBRID = SubaruPlatformConfig(
     "SUBARU FORESTER HYBRID 2020",
     SubaruCarInfo("Subaru Forester Hybrid 2020"),
-    dbc_dict('subaru_global_2020_hybrid_generated', None),
     specs=FORESTER.specs,
     flags=SubaruFlags.HYBRID,
   )
