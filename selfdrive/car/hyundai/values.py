@@ -90,6 +90,9 @@ class HyundaiFlags(IntFlag):
 
   CANFD_NO_RADAR_DISABLE = 1048576
 
+  CLUSTER_GEARS = 2097152
+  TCU_GEARS = 4194304
+
 
 @dataclass
 class HyundaiCarInfo(CarInfo):
@@ -132,7 +135,7 @@ class CAR(Platforms):
       HyundaiCarInfo("Hyundai Elantra 2017-18", min_enable_speed=19 * CV.MPH_TO_MS, car_parts=CarParts.common([CarHarness.hyundai_b])),
       HyundaiCarInfo("Hyundai Elantra 2019", min_enable_speed=19 * CV.MPH_TO_MS, car_parts=CarParts.common([CarHarness.hyundai_g])),
     ],
-    flags=HyundaiFlags.LEGACY
+    flags=HyundaiFlags.LEGACY | HyundaiFlags.CLUSTER_GEARS
   )
   ELANTRA_GT_I30 = HyundaiPlatformConfig(
     "HYUNDAI I30 N LINE 2019 & GT 2018 DCT",
@@ -140,7 +143,7 @@ class CAR(Platforms):
       HyundaiCarInfo("Hyundai Elantra GT 2017-19", car_parts=CarParts.common([CarHarness.hyundai_e])),
       HyundaiCarInfo("Hyundai i30 2017-19", car_parts=CarParts.common([CarHarness.hyundai_e])),
     ],
-    flags=HyundaiFlags.LEGACY
+    flags=HyundaiFlags.LEGACY | HyundaiFlags.CLUSTER_GEARS
   )
   ELANTRA_2021 = HyundaiPlatformConfig(
     "HYUNDAI ELANTRA 2021",
@@ -194,7 +197,8 @@ class CAR(Platforms):
   )
   KONA = HyundaiPlatformConfig(
     "HYUNDAI KONA 2020",
-    HyundaiCarInfo("Hyundai Kona 2020", car_parts=CarParts.common([CarHarness.hyundai_b]))
+    HyundaiCarInfo("Hyundai Kona 2020", car_parts=CarParts.common([CarHarness.hyundai_b])),
+    flags=HyundaiFlags.CLUSTER_GEARS
   )
   KONA_EV = HyundaiPlatformConfig(
     "HYUNDAI KONA ELECTRIC 2019",
@@ -248,7 +252,7 @@ class CAR(Platforms):
   SONATA_LF = HyundaiPlatformConfig(
     "HYUNDAI SONATA 2019",
     HyundaiCarInfo("Hyundai Sonata 2018-19", car_parts=CarParts.common([CarHarness.hyundai_e])),
-    flags=HyundaiFlags.UNSUPPORTED_LONGITUDINAL
+    flags=HyundaiFlags.UNSUPPORTED_LONGITUDINAL | HyundaiFlags.TCU_GEARS
   )
   STARIA_4TH_GEN = HyundaiPlatformConfig(
     "HYUNDAI STARIA 4TH GEN",
@@ -260,7 +264,8 @@ class CAR(Platforms):
     [
       HyundaiCarInfo("Hyundai Tucson 2021", min_enable_speed=19 * CV.MPH_TO_MS, car_parts=CarParts.common([CarHarness.hyundai_l])),
       HyundaiCarInfo("Hyundai Tucson Diesel 2019", car_parts=CarParts.common([CarHarness.hyundai_l])),
-    ]
+    ],
+    flags=HyundaiFlags.TCU_GEARS
   )
   PALISADE = HyundaiPlatformConfig(
     "HYUNDAI PALISADE 2020",
@@ -273,7 +278,7 @@ class CAR(Platforms):
   VELOSTER = HyundaiPlatformConfig(
     "HYUNDAI VELOSTER 2019",
     HyundaiCarInfo("Hyundai Veloster 2019-20", min_enable_speed=5. * CV.MPH_TO_MS, car_parts=CarParts.common([CarHarness.hyundai_e])),
-    flags=HyundaiFlags.LEGACY
+    flags=HyundaiFlags.LEGACY | HyundaiFlags.TCU_GEARS
   )
   SONATA_HYBRID = HyundaiPlatformConfig(
     "HYUNDAI SONATA HYBRID 2021",
@@ -385,12 +390,12 @@ class CAR(Platforms):
     "KIA OPTIMA 4TH GEN",
     HyundaiCarInfo("Kia Optima 2017", "Advanced Smart Cruise Control",
                                     car_parts=CarParts.common([CarHarness.hyundai_b])),  # TODO: may support 2016, 2018
-    flags=HyundaiFlags.LEGACY
+    flags=HyundaiFlags.LEGACY | HyundaiFlags.TCU_GEARS
   )
   KIA_OPTIMA_G4_FL = HyundaiPlatformConfig(
     "KIA OPTIMA 4TH GEN FACELIFT",
     HyundaiCarInfo("Kia Optima 2019-20", car_parts=CarParts.common([CarHarness.hyundai_g])),
-    flags=HyundaiFlags.UNSUPPORTED_LONGITUDINAL
+    flags=HyundaiFlags.UNSUPPORTED_LONGITUDINAL | HyundaiFlags.TCU_GEARS
   )
   # TODO: may support adjacent years. may have a non-zero minimum steering speed
   KIA_OPTIMA_H = HyundaiPlatformConfig(
@@ -738,8 +743,8 @@ CHECKSUM = {
 
 CAN_GEARS = {
   # which message has the gear. hybrid and EV use ELECT_GEAR
-  "use_cluster_gears": {CAR.ELANTRA, CAR.ELANTRA_GT_I30, CAR.KONA},
-  "use_tcu_gears": {CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL, CAR.SONATA_LF, CAR.VELOSTER, CAR.TUCSON},
+  "use_cluster_gears": CAR.with_flags(HyundaiFlags.CLUSTER_GEARS),
+  "use_tcu_gears": CAR.with_flags(HyundaiFlags.TCU_GEARS),
 }
 
 CANFD_CAR = CAR.with_flags(HyundaiFlags.CANFD)
