@@ -39,6 +39,7 @@ jobs:
     steps:
       - name: comment
         uses: thollander/actions-comment-pull-request@fabd468d3a1a0b97feee5f6b9e499eab0dd903f6
+        if: github.event.pull_request.head.repo.full_name != 'commaai/openpilot'
         with:
           message: |
               <!-- _(run_id **${{ github.run_id }}**)_ -->
