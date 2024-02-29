@@ -360,8 +360,14 @@ def scan_dir(path: str, prefix: str) -> list[str]:
   return files
 
 @dispatcher.add_method
-def listDataDirectory(prefix='') -> list[str]:
-  return scan_dir(Paths.log_root(), prefix)
+def listDataDirectory(start: str, limit: int, prefix='') -> list[str]:
+  files = sorted(scan_dir(Paths.log_root(), prefix))
+  start_index = 0
+  if start in files:
+    start_index = files.index(start) + 1
+  batch = files[start_index:start_index+limit]
+  start_index += limit
+  return batch
 
 
 @dispatcher.add_method

@@ -142,34 +142,62 @@ class TestAthenadMethods(unittest.TestCase):
     for file in files:
       self._create_file(file)
 
-    resp = dispatcher["listDataDirectory"]()
+    batch1 = ['2021-03-29--13-32-47--0/dcamera.hevc', '2021-03-29--13-32-47--0/ecamera.hevc', '2021-03-29--13-32-47--0/fcamera.hevc',
+              '2021-03-29--13-32-47--0/qcamera.ts', '2021-03-29--13-32-47--0/qlog', '2021-03-29--13-32-47--0/rlog', '2021-03-29--13-32-47--1/dcamera.hevc',
+                '2021-03-29--13-32-47--1/ecamera.hevc', '2021-03-29--13-32-47--1/fcamera.hevc', '2021-03-29--13-32-47--1/qcamera.ts']
+    batch2 = ['2021-03-29--13-32-47--1/qlog', '2021-03-29--13-32-47--1/rlog', '2021-03-29--13-32-47--11/dcamera.hevc', '2021-03-29--13-32-47--11/ecamera.hevc',
+               '2021-03-29--13-32-47--11/fcamera.hevc', '2021-03-29--13-32-47--11/qcamera.ts', '2021-03-29--13-32-47--11/qlog',
+                 '2021-03-29--13-32-47--11/rlog', '2021-03-29--13-32-47--2/dcamera.hevc', '2021-03-29--13-32-47--2/ecamera.hevc']
+    batch3 = ['2021-03-29--13-32-47--2/fcamera.hevc', '2021-03-29--13-32-47--2/qcamera.ts', '2021-03-29--13-32-47--2/qlog', '2021-03-29--13-32-47--2/rlog',
+               '2021-03-29--13-32-47--3/dcamera.hevc', '2021-03-29--13-32-47--3/ecamera.hevc', '2021-03-29--13-32-47--3/fcamera.hevc',
+                 '2021-03-29--13-32-47--3/qcamera.ts', '2021-03-29--13-32-47--3/qlog', '2021-03-29--13-32-47--3/rlog']
+
+    resp = dispatcher["listDataDirectory"]('', 50)
     self.assertTrue(resp, 'list empty!')
     self.assertCountEqual(resp, files)
 
-    resp = dispatcher["listDataDirectory"](f'{route}--123')
+    resp = dispatcher["listDataDirectory"]('', 0)
+    self.assertCountEqual(resp, [])
+
+    resp = dispatcher["listDataDirectory"]('', 10)
+    self.assertTrue(resp, 'list empty!')
+    self.assertCountEqual(resp, batch1)
+
+    resp = dispatcher["listDataDirectory"]('2021-03-29--13-32-47--1/qcamera.ts', 10)
+    self.assertTrue(resp, 'list empty!')
+    self.assertCountEqual(resp, batch2)
+
+    resp = dispatcher["listDataDirectory"]('2021-03-29--13-32-47--2/ecamera.hevc', 10)
+    self.assertTrue(resp, 'list empty!')
+    self.assertCountEqual(resp, batch3)
+
+    resp = dispatcher["listDataDirectory"]('2021-03-29--13-32-47--3/rlog', 10)
+    self.assertCountEqual(resp, [])
+
+    resp = dispatcher["listDataDirectory"]('', 50, f'{route}--123')
     self.assertCountEqual(resp, [])
 
     prefix = f'{route}'
     expected = filter(lambda f: f.startswith(prefix), files)
-    resp = dispatcher["listDataDirectory"](prefix)
+    resp = dispatcher["listDataDirectory"]('', 50, prefix)
     self.assertTrue(resp, 'list empty!')
     self.assertCountEqual(resp, expected)
 
     prefix = f'{route}--1'
     expected = filter(lambda f: f.startswith(prefix), files)
-    resp = dispatcher["listDataDirectory"](prefix)
+    resp = dispatcher["listDataDirectory"]('', 50, prefix)
     self.assertTrue(resp, 'list empty!')
     self.assertCountEqual(resp, expected)
 
     prefix = f'{route}--1/'
     expected = filter(lambda f: f.startswith(prefix), files)
-    resp = dispatcher["listDataDirectory"](prefix)
+    resp = dispatcher["listDataDirectory"]('', 50, prefix)
     self.assertTrue(resp, 'list empty!')
     self.assertCountEqual(resp, expected)
 
     prefix = f'{route}--1/q'
     expected = filter(lambda f: f.startswith(prefix), files)
-    resp = dispatcher["listDataDirectory"](prefix)
+    resp = dispatcher["listDataDirectory"]('', 50, prefix)
     self.assertTrue(resp, 'list empty!')
     self.assertCountEqual(resp, expected)
 
