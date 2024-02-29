@@ -76,6 +76,9 @@ class HyundaiFlags(IntFlag):
 
   # The radar does SCC on these cars when HDA I, rather than the camera
   RADAR_SCC = 16384
+  CAMERA_SCC = 32768
+  CHECKSUM_CRC8 = 65536
+  CHECKSUM_6B = 131072
 
 
 @dataclass
@@ -129,11 +132,13 @@ class CAR(Platforms):
   ELANTRA_2021 = HyundaiPlatformConfig(
     "HYUNDAI ELANTRA 2021",
     HyundaiCarInfo("Hyundai Elantra 2021-23", video_link="https://youtu.be/_EdYQtV52-c", car_parts=CarParts.common([CarHarness.hyundai_k])),
+    flags=HyundaiFlags.CHECKSUM_CRC8
   )
   ELANTRA_HEV_2021 = HyundaiPlatformConfig(
     "HYUNDAI ELANTRA HYBRID 2021",
     HyundaiCarInfo("Hyundai Elantra Hybrid 2021-23", video_link="https://youtu.be/_EdYQtV52-c",
                                        car_parts=CarParts.common([CarHarness.hyundai_k])),
+    flags=HyundaiFlags.CHECKSUM_CRC8
   )
   HYUNDAI_GENESIS = HyundaiPlatformConfig(
     "HYUNDAI GENESIS 2015-2016",
@@ -141,7 +146,8 @@ class CAR(Platforms):
       # TODO: check 2015 packages
       HyundaiCarInfo("Hyundai Genesis 2015-16", min_enable_speed=19 * CV.MPH_TO_MS, car_parts=CarParts.common([CarHarness.hyundai_j])),
       HyundaiCarInfo("Genesis G80 2017", "All", min_enable_speed=19 * CV.MPH_TO_MS, car_parts=CarParts.common([CarHarness.hyundai_j])),
-    ]
+    ],
+    flags=HyundaiFlags.CHECKSUM_6B
   )
   IONIQ = HyundaiPlatformConfig(
     "HYUNDAI IONIQ HYBRID 2017-2019",
@@ -194,26 +200,29 @@ class CAR(Platforms):
     "HYUNDAI SANTA FE 2019",
     HyundaiCarInfo("Hyundai Santa Fe 2019-20", "All", video_link="https://youtu.be/bjDR0YjM__s",
                                car_parts=CarParts.common([CarHarness.hyundai_d])),
-    flags=HyundaiFlags.MANDO_RADAR
+    flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8
   )
   SANTA_FE_2022 = HyundaiPlatformConfig(
     "HYUNDAI SANTA FE 2022",
      HyundaiCarInfo("Hyundai Santa Fe 2021-23", "All", video_link="https://youtu.be/VnHzSTygTS4",
-                                    car_parts=CarParts.common([CarHarness.hyundai_l]))
+                                    car_parts=CarParts.common([CarHarness.hyundai_l])),
+    flags=HyundaiFlags.CHECKSUM_CRC8
   )
   SANTA_FE_HEV_2022 = HyundaiPlatformConfig(
     "HYUNDAI SANTA FE HYBRID 2022",
     HyundaiCarInfo("Hyundai Santa Fe Hybrid 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_l])),
+    flags=HyundaiFlags.CHECKSUM_CRC8
   )
   SANTA_FE_PHEV_2022 = HyundaiPlatformConfig(
     "HYUNDAI SANTA FE PlUG-IN HYBRID 2022",
     HyundaiCarInfo("Hyundai Santa Fe Plug-in Hybrid 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_l])),
+    flags=HyundaiFlags.CHECKSUM_CRC8
   )
   SONATA = HyundaiPlatformConfig(
     "HYUNDAI SONATA 2020",
     HyundaiCarInfo("Hyundai Sonata 2020-23", "All", video_link="https://www.youtube.com/watch?v=ix63r9kE3Fw",
                              car_parts=CarParts.common([CarHarness.hyundai_a])),
-    flags=HyundaiFlags.MANDO_RADAR
+    flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8
   )
   SONATA_LF = HyundaiPlatformConfig(
     "HYUNDAI SONATA 2019",
@@ -237,7 +246,7 @@ class CAR(Platforms):
       HyundaiCarInfo("Hyundai Palisade 2020-22", "All", video_link="https://youtu.be/TAnDqjF4fDY?t=456", car_parts=CarParts.common([CarHarness.hyundai_h])),
       HyundaiCarInfo("Kia Telluride 2020-22", "All", car_parts=CarParts.common([CarHarness.hyundai_h])),
     ],
-    flags=HyundaiFlags.MANDO_RADAR
+    flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8
   )
   VELOSTER = HyundaiPlatformConfig(
     "HYUNDAI VELOSTER 2019",
@@ -246,7 +255,7 @@ class CAR(Platforms):
   SONATA_HYBRID = HyundaiPlatformConfig(
     "HYUNDAI SONATA HYBRID 2021",
     HyundaiCarInfo("Hyundai Sonata Hybrid 2020-23", "All", car_parts=CarParts.common([CarHarness.hyundai_a])),
-    flags=HyundaiFlags.MANDO_RADAR
+    flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8
   )
   IONIQ_5 = HyundaiPlatformConfig(
     "HYUNDAI IONIQ 5 2022",
@@ -279,6 +288,7 @@ class CAR(Platforms):
   CUSTIN_1ST_GEN = HyundaiPlatformConfig(
     "HYUNDAI CUSTIN 1ST GEN",
     HyundaiCarInfo("Hyundai Custin 2023", "All", car_parts=CarParts.common([CarHarness.hyundai_k])),
+    flags=HyundaiFlags.CHECKSUM_CRC8
   )
 
   # Kia
@@ -292,11 +302,12 @@ class CAR(Platforms):
   KIA_K5_2021 = HyundaiPlatformConfig(
     "KIA K5 2021",
     HyundaiCarInfo("Kia K5 2021-24", car_parts=CarParts.common([CarHarness.hyundai_a])),
+    flags=HyundaiFlags.CHECKSUM_CRC8
   )
   KIA_K5_HEV_2020 = HyundaiPlatformConfig(
     "KIA K5 HYBRID 2020",
     HyundaiCarInfo("Kia K5 Hybrid 2020-22", car_parts=CarParts.common([CarHarness.hyundai_a])),
-    flags=HyundaiFlags.MANDO_RADAR
+    flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8
   )
   KIA_K8_HEV_1ST_GEN = HyundaiPlatformConfig(
     "KIA K8 HYBRID 1ST GEN",
@@ -366,6 +377,7 @@ class CAR(Platforms):
   KIA_SELTOS = HyundaiPlatformConfig(
     "KIA SELTOS 2021",
     HyundaiCarInfo("Kia Seltos 2021", car_parts=CarParts.common([CarHarness.hyundai_a])),
+    flags=HyundaiFlags.CHECKSUM_CRC8
   )
   KIA_SPORTAGE_5TH_GEN = HyundaiPlatformConfig(
     "KIA SPORTAGE 5TH GEN",
@@ -381,7 +393,8 @@ class CAR(Platforms):
       HyundaiCarInfo("Kia Sorento 2018", "Advanced Smart Cruise Control & LKAS", video_link="https://www.youtube.com/watch?v=Fkh3s6WHJz8",
                    car_parts=CarParts.common([CarHarness.hyundai_e])),
       HyundaiCarInfo("Kia Sorento 2019", video_link="https://www.youtube.com/watch?v=Fkh3s6WHJz8", car_parts=CarParts.common([CarHarness.hyundai_e])),
-    ]
+    ],
+    flags=HyundaiFlags.CHECKSUM_6B
   )
   KIA_SORENTO_4TH_GEN = HyundaiPlatformConfig(
     "KIA SORENTO 4TH GEN",
@@ -686,13 +699,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
   match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
 )
 
-
-CHECKSUM = {
-  "crc8": [CAR.SANTA_FE, CAR.SONATA, CAR.PALISADE, CAR.KIA_SELTOS, CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021,
-           CAR.SONATA_HYBRID, CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022,
-           CAR.KIA_K5_HEV_2020, CAR.CUSTIN_1ST_GEN],
-  "6B": [CAR.KIA_SORENTO, CAR.HYUNDAI_GENESIS],
-}
 
 CAN_GEARS = {
   # which message has the gear. hybrid and EV use ELECT_GEAR
