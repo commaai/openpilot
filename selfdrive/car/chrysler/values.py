@@ -19,7 +19,7 @@ class ChryslerCarInfo(CarInfo):
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.fca]))
 
 
-@dataclass(frozen=True)
+@dataclass
 class ChryslerPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('chrysler_pacifica_2017_hybrid_generated', None))
 

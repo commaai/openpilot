@@ -120,6 +120,7 @@ class CarInterfaceBase(ABC):
         ret.centerToFront = ret.wheelbase * candidate.config.specs.centerToFrontRatio
         ret.minEnableSpeed = candidate.config.specs.minEnableSpeed
         ret.minSteerSpeed = candidate.config.specs.minSteerSpeed
+      ret.flags |= int(candidate.config.flags)
 
     ret = cls._get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs)
 
@@ -135,7 +136,7 @@ class CarInterfaceBase(ABC):
 
   @staticmethod
   @abstractmethod
-  def _get_params(ret: car.CarParams, candidate: Platform, fingerprint: dict[int, dict[int, int]],
+  def _get_params(ret: car.CarParams, candidate, fingerprint: dict[int, dict[int, int]],
                   car_fw: list[car.CarParams.CarFw], experimental_long: bool, docs: bool):
     raise NotImplementedError
 

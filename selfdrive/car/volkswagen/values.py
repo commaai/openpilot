@@ -112,11 +112,11 @@ class CANBUS:
 class VolkswagenFlags(IntFlag):
   STOCK_HCA_PRESENT = 1
 
-@dataclass(frozen=True)
+@dataclass
 class VolkswagenMQBPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('vw_mqb_2010', None))
 
-@dataclass(frozen=True)
+@dataclass
 class VolkswagenPQPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('vw_golf_mk4', None))
 
