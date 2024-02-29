@@ -10,47 +10,45 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def _get_params(ret, candidate: CAR, fingerprint, car_fw, experimental_long, docs):
-    platform_flags = candidate.config.flags
-
     ret.carName = "subaru"
     ret.radarUnavailable = True
     # for HYBRID CARS to be upstreamed, we need:
     # - replacement for ES_Distance so we can cancel the cruise control
     # - to find the Cruise_Activated bit from the car
     # - proper panda safety setup (use the correct cruise_activated bit, throttle from Throttle_Hybrid, etc)
-    ret.dashcamOnly = bool(platform_flags & (SubaruFlags.PREGLOBAL | SubaruFlags.LKAS_ANGLE | SubaruFlags.HYBRID))
+    ret.dashcamOnly = bool(ret.flags & (SubaruFlags.PREGLOBAL | SubaruFlags.LKAS_ANGLE | SubaruFlags.HYBRID))
     ret.autoResumeSng = False
 
     # Detect infotainment message sent from the camera
-    if not (platform_flags & SubaruFlags.PREGLOBAL) and 0x323 in fingerprint[2]:
+    if not (ret.flags & SubaruFlags.PREGLOBAL) and 0x323 in fingerprint[2]:
       ret.flags |= SubaruFlags.SEND_INFOTAINMENT.value
 
-    if platform_flags & SubaruFlags.PREGLOBAL:
+    if ret.flags & SubaruFlags.PREGLOBAL:
       ret.enableBsm = 0x25c in fingerprint[0]
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.subaruPreglobal)]
     else:
       ret.enableBsm = 0x228 in fingerprint[0]
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.subaru)]
-      if platform_flags & SubaruFlags.GLOBAL_GEN2:
+      if ret.flags & SubaruFlags.GLOBAL_GEN2:
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_SUBARU_GEN2
 
     ret.steerLimitTimer = 0.4
     ret.steerActuatorDelay = 0.1
 
-    if platform_flags & SubaruFlags.LKAS_ANGLE:
+    if ret.flags & SubaruFlags.LKAS_ANGLE:
       ret.steerControlType = car.CarParams.SteerControlType.angle
     else:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     if candidate in (CAR.ASCENT, CAR.ASCENT_2023):
-      ret.steerActuatorDelay = 0.3   # end-to-end angle controller
+      ret.steerActuatorDelay = 0.3  # end-to-end angle controller
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kf = 0.00003
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 20.], [0., 20.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.0025, 0.1], [0.00025, 0.01]]
 
     elif candidate == CAR.IMPREZA:
-      ret.steerActuatorDelay = 0.4   # end-to-end angle controller
+      ret.steerActuatorDelay = 0.4  # end-to-end angle controller
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kf = 0.00005
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 20.], [0., 20.]]
@@ -85,12 +83,11 @@ class CarInterface(CarInterfaceBase):
     else:
       raise ValueError(f"unknown car: {candidate}")
 
-    LONG_UNAVAILABLE = SubaruFlags.GLOBAL_GEN2 | SubaruFlags.PREGLOBAL| SubaruFlags.LKAS_ANGLE | SubaruFlags.HYBRID
-
-    ret.experimentalLongitudinalAvailable = not (platform_flags & LONG_UNAVAILABLE)
+    ret.experimentalLongitudinalAvailable = not (ret.flags & (SubaruFlags.GLOBAL_GEN2 | SubaruFlags.PREGLOBAL |
+                                                              SubaruFlags.LKAS_ANGLE | SubaruFlags.HYBRID))
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
 
-    if platform_flags & SubaruFlags.GLOBAL_GEN2 and ret.openpilotLongitudinalControl:
+    if ret.flags & SubaruFlags.GLOBAL_GEN2 and ret.openpilotLongitudinalControl:
       ret.flags |= SubaruFlags.DISABLE_EYESIGHT.value
 
     if ret.openpilotLongitudinalControl:
