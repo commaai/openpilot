@@ -73,6 +73,8 @@ class HyundaiFlags(IntFlag):
   # If no points are outputted by default it might be possible to turn it on using  selfdrive/debug/hyundai_enable_radar_points.py
   MANDO_RADAR = 4096
   CANFD = 8192
+
+  # The radar does SCC on these cars when HDA I, rather than the camera
   RADAR_SCC = 16384
 
 
@@ -699,9 +701,6 @@ CAN_GEARS = {
 }
 
 CANFD_CAR = CAR.with_flags(HyundaiFlags.CANFD)
-
-
-# The radar does SCC on these cars when HDA I, rather than the camera
 CANFD_RADAR_SCC_CAR = CAR.with_flags(HyundaiFlags.RADAR_SCC)
 
 # These CAN FD cars do not accept communication control to disable the ADAS ECU,
