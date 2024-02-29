@@ -8,6 +8,7 @@ import capnp
 
 from cereal import car
 from openpilot.common.numpy_fast import clip, interp
+from openpilot.common.utils import Freezable
 from openpilot.selfdrive.car.docs_definitions import CarInfo
 
 
@@ -245,20 +246,6 @@ class CanSignalRateCalculator:
 
 
 CarInfos = CarInfo | list[CarInfo]
-
-
-
-class Freezable:
-  FROZEN: bool = False
-
-  def freeze(self):
-    if not self.FROZEN:
-      self.FROZEN = True
-
-  def __setattr__(self, *args, **kwargs):
-    if self.FROZEN:
-      raise Exception("cannot modify frozen object")
-    super().__setattr__(*args, **kwargs)
 
 
 @dataclass(frozen=True, kw_only=True)
