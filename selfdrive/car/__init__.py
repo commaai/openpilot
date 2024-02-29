@@ -292,10 +292,6 @@ class Platforms(str, ReprEnum):
     return member
 
   @classmethod
-  def init_configs(cls):
-    [p.config.init_config() for p in cls]
-
-  @classmethod
   def create_dbc_map(cls) -> dict[str, DbcDict]:
     return {p: p.config.dbc_dict for p in cls}
 

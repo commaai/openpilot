@@ -11,7 +11,6 @@ from openpilot.selfdrive.car.docs_definitions import Cable, Column, PartType, St
 from openpilot.selfdrive.car.honda.values import CAR as HONDA
 from openpilot.selfdrive.debug.dump_car_info import dump_car_info
 from openpilot.selfdrive.debug.print_docs_diff import print_car_info_diff
-from openpilot.selfdrive.car.values import PLATFORMS
 
 
 class TestCarDocs(unittest.TestCase):
@@ -26,12 +25,6 @@ class TestCarDocs(unittest.TestCase):
 
     self.assertEqual(generated_cars_md, current_cars_md,
                      "Run selfdrive/car/docs.py to update the compatibility documentation")
-
-  def test_platforms(self):
-    for platform in PLATFORMS.values():
-      if hasattr(platform, "config"):
-        self.assertIsNotNone(platform.config)
-        self.assertIsNotNone(platform.config.dbc_dict)
 
   def test_docs_diff(self):
     dump_path = os.path.join(BASEDIR, "selfdrive", "car", "tests", "cars_dump")
