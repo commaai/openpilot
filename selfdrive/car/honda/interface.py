@@ -55,7 +55,7 @@ class CarInterface(CarInterfaceBase):
       ret.pcmCruise = not ret.enableGasInterceptor
 
     if candidate == CAR.CRV_5G:
-      ret.enableBsm = 0x12f8bfa7 in fingerprint[CAN.pt]
+      ret.enableBsm = 0x12f8bfa7 in fingerprint[CAN.radar]
 
     # Detect Bosch cars with new HUD msgs
     if any(0x33DA in f for f in fingerprint.values()):
