@@ -33,6 +33,7 @@ class MazdaCarInfo(CarInfo):
 
 
 class MazdaFlags(IntFlag):
+  # Static flags
   # Gen 1 hardware: same CAN messages and same camera
   GEN1 = 1
 
@@ -40,7 +41,7 @@ class MazdaFlags(IntFlag):
 @dataclass
 class MazdaPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('mazda_2017', None))
-  flags: int = field(default=MazdaFlags.GEN1)
+  flags: int = MazdaFlags.GEN1
 
 
 class CAR(Platforms):
