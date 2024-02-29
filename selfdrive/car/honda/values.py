@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from enum import Enum, IntFlag, StrEnum
+from enum import Enum, IntFlag
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
 from panda.python import uds
-from openpilot.selfdrive.car import dbc_dict
+from openpilot.selfdrive.car import PlatformConfig, Platforms, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
@@ -46,10 +46,21 @@ class CarControllerParams:
 
 
 class HondaFlags(IntFlag):
+  # Detected flags
   # Bosch models with alternate set of LKAS_HUD messages
   BOSCH_EXT_HUD = 1
   BOSCH_ALT_BRAKE = 2
 
+  # Static flags
+  BOSCH = 4
+  BOSCH_RADARLESS = 8
+
+  NIDEC = 16
+  NIDEC_ALT_PCM_ACCEL = 32
+  NIDEC_ALT_SCM_MESSAGES = 64
+
+  AUTORESUME_SNG = 128
+  ELECTRIC_PARKING_BRAKE = 256
 
 # Car button codes
 class CruiseButtons:
@@ -72,29 +83,15 @@ VISUAL_HUD = {
 }
 
 
-class CAR(StrEnum):
-  ACCORD = "HONDA ACCORD 2018"
-  CIVIC = "HONDA CIVIC 2016"
-  CIVIC_BOSCH = "HONDA CIVIC (BOSCH) 2019"
-  CIVIC_BOSCH_DIESEL = "HONDA CIVIC SEDAN 1.6 DIESEL 2019"
-  CIVIC_2022 = "HONDA CIVIC 2022"
-  ACURA_ILX = "ACURA ILX 2016"
-  CRV = "HONDA CR-V 2016"
-  CRV_5G = "HONDA CR-V 2017"
-  CRV_EU = "HONDA CR-V EU 2016"
-  CRV_HYBRID = "HONDA CR-V HYBRID 2019"
-  FIT = "HONDA FIT 2018"
-  FREED = "HONDA FREED 2020"
-  HRV = "HONDA HRV 2019"
-  HRV_3G = "HONDA HR-V 2023"
-  ODYSSEY = "HONDA ODYSSEY 2018"
-  ODYSSEY_CHN = "HONDA ODYSSEY CHN 2019"
-  ACURA_RDX = "ACURA RDX 2018"
-  ACURA_RDX_3G = "ACURA RDX 2020"
-  PILOT = "HONDA PILOT 2017"
-  RIDGELINE = "HONDA RIDGELINE 2017"
-  INSIGHT = "HONDA INSIGHT 2019"
-  HONDA_E = "HONDA E 2020"
+@dataclass
+class HondaCarInfo(CarInfo):
+  package: str = "Honda Sensing"
+
+  def init_make(self, CP: car.CarParams):
+    if CP.flags & HondaFlags.BOSCH:
+      self.car_parts = CarParts.common([CarHarness.bosch_b]) if CP.flags & HondaFlags.BOSCH_RADARLESS else CarParts.common([CarHarness.bosch_a])
+    else:
+      self.car_parts = CarParts.common([CarHarness.nidec])
 
 
 class Footnote(Enum):
@@ -103,55 +100,164 @@ class Footnote(Enum):
     Column.FSR_STEERING)
 
 
-@dataclass
-class HondaCarInfo(CarInfo):
-  package: str = "Honda Sensing"
-
-  def init_make(self, CP: car.CarParams):
-    if CP.carFingerprint in HONDA_BOSCH:
-      self.car_parts = CarParts.common([CarHarness.bosch_b]) if CP.carFingerprint in HONDA_BOSCH_RADARLESS else CarParts.common([CarHarness.bosch_a])
-    else:
-      self.car_parts = CarParts.common([CarHarness.nidec])
+class HondaPlatformConfig(PlatformConfig):
+  def init(self):
+    if self.flags & HondaFlags.BOSCH:
+      self.flags |= HondaFlags.AUTORESUME_SNG
+      self.flags |= HondaFlags.ELECTRIC_PARKING_BRAKE
 
 
-CAR_INFO: dict[str, HondaCarInfo | list[HondaCarInfo] | None] = {
-  CAR.ACCORD: [
-    HondaCarInfo("Honda Accord 2018-22", "All", video_link="https://www.youtube.com/watch?v=mrUwlj3Mi58", min_steer_speed=3. * CV.MPH_TO_MS),
-    HondaCarInfo("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS),
-    HondaCarInfo("Honda Accord Hybrid 2018-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
-  ],
-  CAR.CIVIC: HondaCarInfo("Honda Civic 2016-18", min_steer_speed=12. * CV.MPH_TO_MS, video_link="https://youtu.be/-IkImTe1NYE"),
-  CAR.CIVIC_BOSCH: [
-    HondaCarInfo("Honda Civic 2019-21", "All", video_link="https://www.youtube.com/watch?v=4Iz1Mz5LGF8",
-                 footnotes=[Footnote.CIVIC_DIESEL], min_steer_speed=2. * CV.MPH_TO_MS),
-    HondaCarInfo("Honda Civic Hatchback 2017-21", min_steer_speed=12. * CV.MPH_TO_MS),
-  ],
-  CAR.CIVIC_BOSCH_DIESEL: None,  # same platform
-  CAR.CIVIC_2022: [
-    HondaCarInfo("Honda Civic 2022-23", "All", video_link="https://youtu.be/ytiOT5lcp6Q"),
-    HondaCarInfo("Honda Civic Hatchback 2022-23", "All", video_link="https://youtu.be/ytiOT5lcp6Q"),
-  ],
-  CAR.ACURA_ILX: HondaCarInfo("Acura ILX 2016-19", "AcuraWatch Plus", min_steer_speed=25. * CV.MPH_TO_MS),
-  CAR.CRV: HondaCarInfo("Honda CR-V 2015-16", "Touring Trim", min_steer_speed=12. * CV.MPH_TO_MS),
-  CAR.CRV_5G: HondaCarInfo("Honda CR-V 2017-22", min_steer_speed=12. * CV.MPH_TO_MS),
-  CAR.CRV_EU: None,  # HondaCarInfo("Honda CR-V EU", "Touring"),  # Euro version of CRV Touring
-  CAR.CRV_HYBRID: HondaCarInfo("Honda CR-V Hybrid 2017-20", min_steer_speed=12. * CV.MPH_TO_MS),
-  CAR.FIT: HondaCarInfo("Honda Fit 2018-20", min_steer_speed=12. * CV.MPH_TO_MS),
-  CAR.FREED: HondaCarInfo("Honda Freed 2020", min_steer_speed=12. * CV.MPH_TO_MS),
-  CAR.HRV: HondaCarInfo("Honda HR-V 2019-22", min_steer_speed=12. * CV.MPH_TO_MS),
-  CAR.HRV_3G: HondaCarInfo("Honda HR-V 2023", "All"),
-  CAR.ODYSSEY: HondaCarInfo("Honda Odyssey 2018-20"),
-  CAR.ODYSSEY_CHN: None,  # Chinese version of Odyssey
-  CAR.ACURA_RDX: HondaCarInfo("Acura RDX 2016-18", "AcuraWatch Plus", min_steer_speed=12. * CV.MPH_TO_MS),
-  CAR.ACURA_RDX_3G: HondaCarInfo("Acura RDX 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
-  CAR.PILOT: [
-    HondaCarInfo("Honda Pilot 2016-22", min_steer_speed=12. * CV.MPH_TO_MS),
-    HondaCarInfo("Honda Passport 2019-23", "All", min_steer_speed=12. * CV.MPH_TO_MS),
-  ],
-  CAR.RIDGELINE: HondaCarInfo("Honda Ridgeline 2017-24", min_steer_speed=12. * CV.MPH_TO_MS),
-  CAR.INSIGHT: HondaCarInfo("Honda Insight 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
-  CAR.HONDA_E: HondaCarInfo("Honda e 2020", "All", min_steer_speed=3. * CV.MPH_TO_MS),
-}
+class CAR(Platforms):
+  # Bosch Cars
+  ACCORD = HondaPlatformConfig(
+    "HONDA ACCORD 2018",
+    [
+      HondaCarInfo("Honda Accord 2018-22", "All", video_link="https://www.youtube.com/watch?v=mrUwlj3Mi58", min_steer_speed=3. * CV.MPH_TO_MS),
+      HondaCarInfo("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS),
+      HondaCarInfo("Honda Accord Hybrid 2018-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
+    ],
+    dbc_dict('honda_accord_2018_can_generated', None),
+    flags=HondaFlags.BOSCH,
+  )
+  CIVIC_BOSCH = HondaPlatformConfig(
+    "HONDA CIVIC (BOSCH) 2019",
+    [
+      HondaCarInfo("Honda Civic 2019-21", "All", video_link="https://www.youtube.com/watch?v=4Iz1Mz5LGF8",
+                   footnotes=[Footnote.CIVIC_DIESEL], min_steer_speed=2. * CV.MPH_TO_MS),
+      HondaCarInfo("Honda Civic Hatchback 2017-21", min_steer_speed=12. * CV.MPH_TO_MS),
+    ],
+    dbc_dict('honda_civic_hatchback_ex_2017_can_generated', None),
+    flags=HondaFlags.BOSCH
+  )
+  CIVIC_BOSCH_DIESEL = HondaPlatformConfig(
+    "HONDA CIVIC SEDAN 1.6 DIESEL 2019",
+    None, # don't show in docs
+    dbc_dict('honda_accord_2018_can_generated', None),
+    flags=HondaFlags.BOSCH
+  )
+  CIVIC_2022 = HondaPlatformConfig(
+    "HONDA CIVIC 2022",
+    [
+      HondaCarInfo("Honda Civic 2022-23", "All", video_link="https://youtu.be/ytiOT5lcp6Q"),
+      HondaCarInfo("Honda Civic Hatchback 2022-23", "All", video_link="https://youtu.be/ytiOT5lcp6Q"),
+    ],
+    dbc_dict('honda_civic_ex_2022_can_generated', None),
+    flags=HondaFlags.BOSCH | HondaFlags.BOSCH_RADARLESS,
+  )
+  CRV_5G = HondaPlatformConfig(
+    "HONDA CR-V 2017",
+    HondaCarInfo("Honda CR-V 2017-22", min_steer_speed=12. * CV.MPH_TO_MS),
+    dbc_dict('honda_crv_ex_2017_can_generated', None, body_dbc='honda_crv_ex_2017_body_generated'),
+    flags=HondaFlags.BOSCH,
+  )
+  CRV_HYBRID = HondaPlatformConfig(
+    "HONDA CR-V HYBRID 2019",
+    HondaCarInfo("Honda CR-V Hybrid 2017-20", min_steer_speed=12. * CV.MPH_TO_MS),
+    dbc_dict('honda_accord_2018_can_generated', None),
+    flags=HondaFlags.BOSCH
+  )
+  HRV_3G = HondaPlatformConfig(
+    "HONDA HR-V 2023",
+    HondaCarInfo("Honda HR-V 2023", "All"),
+    dbc_dict('honda_civic_ex_2022_can_generated', None),
+    flags=HondaFlags.BOSCH | HondaFlags.BOSCH_RADARLESS
+  )
+  ACURA_RDX_3G = HondaPlatformConfig(
+    "ACURA RDX 2020",
+    HondaCarInfo("Acura RDX 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
+    dbc_dict('acura_rdx_2020_can_generated', None),
+    flags=HondaFlags.BOSCH
+  )
+  INSIGHT = HondaPlatformConfig(
+    "HONDA INSIGHT 2019",
+    HondaCarInfo("Honda Insight 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
+    dbc_dict('honda_insight_ex_2019_can_generated', None),
+    flags=HondaFlags.BOSCH
+  )
+  HONDA_E = HondaPlatformConfig(
+    "HONDA E 2020",
+    HondaCarInfo("Honda e 2020", "All", min_steer_speed=3. * CV.MPH_TO_MS),
+    dbc_dict('acura_rdx_2020_can_generated', None),
+    flags=HondaFlags.BOSCH
+  )
+
+  # Nidec Cars
+  ACURA_ILX = HondaPlatformConfig(
+    "ACURA ILX 2016",
+    HondaCarInfo("Acura ILX 2016-19", "AcuraWatch Plus", min_steer_speed=25. * CV.MPH_TO_MS),
+    dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
+    flags=HondaFlags.NIDEC | HondaFlags.NIDEC_ALT_SCM_MESSAGES,
+  )
+  CRV = HondaPlatformConfig(
+    "HONDA CR-V 2016",
+    HondaCarInfo("Honda CR-V 2015-16", "Touring Trim", min_steer_speed=12. * CV.MPH_TO_MS),
+    dbc_dict('honda_crv_touring_2016_can_generated', 'acura_ilx_2016_nidec'),
+    flags=HondaFlags.NIDEC | HondaFlags.NIDEC_ALT_SCM_MESSAGES,
+  )
+  CRV_EU = HondaPlatformConfig(
+    "HONDA CR-V EU 2016",
+    None, # Euro version of CRV Touring, don't show in docs
+    dbc_dict('honda_crv_executive_2016_can_generated', 'acura_ilx_2016_nidec'),
+    flags=HondaFlags.NIDEC | HondaFlags.NIDEC_ALT_SCM_MESSAGES,
+  )
+  FIT = HondaPlatformConfig(
+    "HONDA FIT 2018",
+    HondaCarInfo("Honda Fit 2018-20", min_steer_speed=12. * CV.MPH_TO_MS),
+    dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
+    flags=HondaFlags.NIDEC | HondaFlags.NIDEC_ALT_SCM_MESSAGES,
+  )
+  FREED = HondaPlatformConfig(
+    "HONDA FREED 2020",
+    HondaCarInfo("Honda Freed 2020", min_steer_speed=12. * CV.MPH_TO_MS),
+    dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
+    flags=HondaFlags.NIDEC | HondaFlags.NIDEC_ALT_SCM_MESSAGES,
+  )
+  HRV = HondaPlatformConfig(
+    "HONDA HRV 2019",
+    HondaCarInfo("Honda HR-V 2019-22", min_steer_speed=12. * CV.MPH_TO_MS),
+    dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
+    flags=HondaFlags.NIDEC | HondaFlags.NIDEC_ALT_SCM_MESSAGES,
+  )
+  ODYSSEY = HondaPlatformConfig(
+    "HONDA ODYSSEY 2018",
+    HondaCarInfo("Honda Odyssey 2018-20"),
+    dbc_dict('honda_odyssey_exl_2018_generated', 'acura_ilx_2016_nidec'),
+    flags=HondaFlags.NIDEC | HondaFlags.NIDEC_ALT_PCM_ACCEL
+  )
+  ODYSSEY_CHN = HondaPlatformConfig(
+    "HONDA ODYSSEY CHN 2019",
+    None, # Chinese version of Odyssey, don't show in docs
+    dbc_dict('honda_odyssey_extreme_edition_2018_china_can_generated', 'acura_ilx_2016_nidec'),
+    flags=HondaFlags.NIDEC | HondaFlags.NIDEC_ALT_SCM_MESSAGES
+  )
+  ACURA_RDX = HondaPlatformConfig(
+    "ACURA RDX 2018",
+    HondaCarInfo("Acura RDX 2016-18", "AcuraWatch Plus", min_steer_speed=12. * CV.MPH_TO_MS),
+    dbc_dict('acura_rdx_2018_can_generated', 'acura_ilx_2016_nidec'),
+    flags=HondaFlags.NIDEC | HondaFlags.NIDEC_ALT_SCM_MESSAGES,
+  )
+  PILOT = HondaPlatformConfig(
+    "HONDA PILOT 2017",
+    [
+      HondaCarInfo("Honda Pilot 2016-22", min_steer_speed=12. * CV.MPH_TO_MS),
+      HondaCarInfo("Honda Passport 2019-23", "All", min_steer_speed=12. * CV.MPH_TO_MS),
+    ],
+    dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
+    flags=HondaFlags.NIDEC | HondaFlags.NIDEC_ALT_SCM_MESSAGES,
+  )
+  RIDGELINE = HondaPlatformConfig(
+    "HONDA RIDGELINE 2017",
+    HondaCarInfo("Honda Ridgeline 2017-24", min_steer_speed=12. * CV.MPH_TO_MS),
+    dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
+    flags=HondaFlags.NIDEC | HondaFlags.NIDEC_ALT_SCM_MESSAGES,
+  )
+  CIVIC = HondaPlatformConfig(
+    "HONDA CIVIC 2016",
+    HondaCarInfo("Honda Civic 2016-18", min_steer_speed=12. * CV.MPH_TO_MS, video_link="https://youtu.be/-IkImTe1NYE"),
+    dbc_dict('honda_civic_touring_2016_can_generated', 'acura_ilx_2016_nidec'),
+    flags=HondaFlags.NIDEC | HondaFlags.AUTORESUME_SNG | HondaFlags.ELECTRIC_PARKING_BRAKE,
+  )
+
 
 HONDA_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(0xF112)
@@ -217,40 +323,16 @@ FW_QUERY_CONFIG = FwQueryConfig(
 )
 
 
-DBC = {
-  CAR.ACCORD: dbc_dict('honda_accord_2018_can_generated', None),
-  CAR.ACURA_ILX: dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.ACURA_RDX: dbc_dict('acura_rdx_2018_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.ACURA_RDX_3G: dbc_dict('acura_rdx_2020_can_generated', None),
-  CAR.CIVIC: dbc_dict('honda_civic_touring_2016_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.CIVIC_BOSCH: dbc_dict('honda_civic_hatchback_ex_2017_can_generated', None),
-  CAR.CIVIC_BOSCH_DIESEL: dbc_dict('honda_accord_2018_can_generated', None),
-  CAR.CRV: dbc_dict('honda_crv_touring_2016_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.CRV_5G: dbc_dict('honda_crv_ex_2017_can_generated', None, body_dbc='honda_crv_ex_2017_body_generated'),
-  CAR.CRV_EU: dbc_dict('honda_crv_executive_2016_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.CRV_HYBRID: dbc_dict('honda_accord_2018_can_generated', None),
-  CAR.FIT: dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.FREED: dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.HRV: dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.HRV_3G: dbc_dict('honda_civic_ex_2022_can_generated', None),
-  CAR.ODYSSEY: dbc_dict('honda_odyssey_exl_2018_generated', 'acura_ilx_2016_nidec'),
-  CAR.ODYSSEY_CHN: dbc_dict('honda_odyssey_extreme_edition_2018_china_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.PILOT: dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.RIDGELINE: dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.INSIGHT: dbc_dict('honda_insight_ex_2019_can_generated', None),
-  CAR.HONDA_E: dbc_dict('acura_rdx_2020_can_generated', None),
-  CAR.CIVIC_2022: dbc_dict('honda_civic_ex_2022_can_generated', None),
-}
-
 STEER_THRESHOLD = {
   # default is 1200, overrides go here
   CAR.ACURA_RDX: 400,
   CAR.CRV_EU: 400,
 }
 
-HONDA_NIDEC_ALT_PCM_ACCEL = {CAR.ODYSSEY}
-HONDA_NIDEC_ALT_SCM_MESSAGES = {CAR.ACURA_ILX, CAR.ACURA_RDX, CAR.CRV, CAR.CRV_EU, CAR.FIT, CAR.FREED, CAR.HRV, CAR.ODYSSEY_CHN,
-                                CAR.PILOT, CAR.RIDGELINE}
-HONDA_BOSCH = {CAR.ACCORD, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G,
-               CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022, CAR.HRV_3G}
-HONDA_BOSCH_RADARLESS = {CAR.CIVIC_2022, CAR.HRV_3G}
+HONDA_NIDEC_ALT_PCM_ACCEL = CAR.with_flags(HondaFlags.NIDEC_ALT_PCM_ACCEL)
+HONDA_NIDEC_ALT_SCM_MESSAGES = CAR.with_flags(HondaFlags.NIDEC_ALT_SCM_MESSAGES)
+HONDA_BOSCH = CAR.with_flags(HondaFlags.BOSCH)
+HONDA_BOSCH_RADARLESS = CAR.with_flags(HondaFlags.BOSCH_RADARLESS)
+
+CAR_INFO = CAR.create_carinfo_map()
+DBC = CAR.create_dbc_map()
