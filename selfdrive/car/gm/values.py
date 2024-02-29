@@ -196,6 +196,7 @@ GM_SOFTWARE_MODULE_3_REQUEST = b'\x1a\xc3'
 
 # Part number of XML data file that is used to configure ECU
 GM_XML_DATA_FILE_PART_NUMBER = b'\x1a\x9c'
+GM_XML_CONFIG_COMPAT_ID = b'\x1a\x9b'  # used to know if XML file is compatible with ECU
 
 # This DID is for identifying the part number that reflects the mix of hardware,
 # software, and calibrations in the ECU when it first arrives at the vehicle assembly plant.
@@ -212,6 +213,7 @@ GM_FW_REQUESTS = [
   GM_SOFTWARE_MODULE_2_REQUEST,
   GM_SOFTWARE_MODULE_3_REQUEST,
   GM_XML_DATA_FILE_PART_NUMBER,
+  GM_XML_CONFIG_COMPAT_ID,
   GM_END_MODEL_PART_NUMBER_REQUEST,
   GM_END_MODEL_PART_NUMBER_ALPHA_CODE_REQUEST,
   GM_BASE_MODEL_PART_NUMBER_REQUEST,
