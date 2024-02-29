@@ -22,7 +22,7 @@ class CarInterface(CarInterfaceBase):
     ret.autoResumeSng = False
 
     # Detect infotainment message sent from the camera
-    if platform_flags & SubaruFlags.PREGLOBAL and 0x323 in fingerprint[2]:
+    if not (platform_flags & SubaruFlags.PREGLOBAL) and 0x323 in fingerprint[2]:
       ret.flags |= SubaruFlags.SEND_INFOTAINMENT.value
 
     if platform_flags & SubaruFlags.PREGLOBAL:
