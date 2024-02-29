@@ -68,23 +68,23 @@
     </message>
     <message>
         <source>Hidden Network</source>
-        <translation type="unfinished"></translation>
+        <translation>隱藏的網路</translation>
     </message>
     <message>
         <source>CONNECT</source>
-        <translation type="unfinished">雲端服務</translation>
+        <translation>連線</translation>
     </message>
     <message>
         <source>Enter SSID</source>
-        <translation type="unfinished">輸入 SSID</translation>
+        <translation>輸入 SSID</translation>
     </message>
     <message>
         <source>Enter password</source>
-        <translation type="unfinished">輸入密碼</translation>
+        <translation>輸入密碼</translation>
     </message>
     <message>
         <source>for &quot;%1&quot;</source>
-        <translation type="unfinished">給 &quot;%1&quot;</translation>
+        <translation>給 &quot;%1&quot;</translation>
     </message>
 </context>
 <context>
@@ -634,7 +634,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation type="unfinished"></translation>
+        <translation>系統重設已啟動。按下「確認」以清除所有內容和設定，或按下「取消」以繼續開機。</translation>
     </message>
 </context>
 <context>
@@ -744,15 +744,15 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Choose Software to Install</source>
-        <translation type="unfinished"></translation>
+        <translation>選擇要安裝的軟體</translation>
     </message>
     <message>
         <source>openpilot</source>
-        <translation type="unfinished">openpilot</translation>
+        <translation>openpilot</translation>
     </message>
     <message>
         <source>Custom Software</source>
-        <translation type="unfinished"></translation>
+        <translation>自訂軟體</translation>
     </message>
 </context>
 <context>
