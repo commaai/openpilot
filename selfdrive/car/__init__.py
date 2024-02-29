@@ -267,8 +267,6 @@ class PlatformConfig(Freezable):
 
   specs: CarSpecs | None = None
 
-  FROZEN: bool = False
-
   def __hash__(self) -> int:
     return hash(self.platform_str)
 
