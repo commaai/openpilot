@@ -16,7 +16,7 @@ class CarInterface(CarInterfaceBase):
     # - replacement for ES_Distance so we can cancel the cruise control
     # - to find the Cruise_Activated bit from the car
     # - proper panda safety setup (use the correct cruise_activated bit, throttle from Throttle_Hybrid, etc)
-    ret.dashcamOnly = (SubaruFlags.PREGLOBAL | SubaruFlags.LKAS_ANGLE | SubaruFlags.HYBRID).check_any(ret.flags)
+    ret.dashcamOnly = (SubaruFlags.PREGLOBAL | SubaruFlags.LKAS_ANGLE | SubaruFlags.HYBRID).any(ret.flags)
     ret.autoResumeSng = False
 
     # Detect infotainment message sent from the camera
@@ -84,7 +84,7 @@ class CarInterface(CarInterfaceBase):
       raise ValueError(f"unknown car: {candidate}")
 
     ret.experimentalLongitudinalAvailable = \
-      not (SubaruFlags.GLOBAL_GEN2 | SubaruFlags.PREGLOBAL | SubaruFlags.LKAS_ANGLE | SubaruFlags.HYBRID).check_any(ret.flags)
+      not (SubaruFlags.GLOBAL_GEN2 | SubaruFlags.PREGLOBAL | SubaruFlags.LKAS_ANGLE | SubaruFlags.HYBRID).any(ret.flags)
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
 
     if SubaruFlags.GLOBAL_GEN2.check(ret.flags) and ret.openpilotLongitudinalControl:

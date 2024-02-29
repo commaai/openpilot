@@ -304,8 +304,10 @@ class Platforms(str, ReprEnum):
 
 
 class CarFlags(IntFlag):
-  def check(self, flag) -> bool:
-    return bool((self & flag) == self)
+  def check(self, flags: int) -> bool:
+    if self not in [f.value for f in self.__class__]:
+      raise ValueError(f"invalid flag: {self}, this helper is only for checking if a single flag is set")
+    return bool((self & flags) == self)
 
-  def check_any(self, flag) -> bool:
-    return bool(self & flag)
+  def any(self, flags: int) -> bool:
+    return bool(self & flags)
