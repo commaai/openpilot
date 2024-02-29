@@ -58,10 +58,6 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.PRIUS_V:
       stop_and_go = True
-      ret.wheelbase = 2.78
-      ret.steerRatio = 17.4
-      ret.tireStiffnessFactor = 0.5533
-      ret.mass = 3340. * CV.LB_TO_KG
 
     elif candidate in (CAR.RAV4, CAR.RAV4H):
       stop_and_go = True if (candidate in CAR.RAV4H) else False
@@ -80,17 +76,9 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in (CAR.CHR, CAR.CHR_TSS2):
       stop_and_go = True
-      ret.wheelbase = 2.63906
-      ret.steerRatio = 13.6
-      ret.tireStiffnessFactor = 0.7933
-      ret.mass = 3300. * CV.LB_TO_KG
 
     elif candidate in (CAR.CAMRY, CAR.CAMRY_TSS2):
       stop_and_go = True
-      ret.wheelbase = 2.82448
-      ret.steerRatio = 13.7
-      ret.tireStiffnessFactor = 0.7933
-      ret.mass = 3400. * CV.LB_TO_KG  # mean between normal and hybrid
 
     elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDER_TSS2):
       # TODO: TSS-P models can do stop and go, but unclear if it requires sDSU or unplugging DSU
@@ -132,17 +120,9 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.SIENNA:
       stop_and_go = True
-      ret.wheelbase = 3.03
-      ret.steerRatio = 15.5
-      ret.tireStiffnessFactor = 0.444
-      ret.mass = 4590. * CV.LB_TO_KG
 
     elif candidate == CAR.LEXUS_CTH:
       stop_and_go = True
-      ret.wheelbase = 2.60
-      ret.steerRatio = 18.6
-      ret.tireStiffnessFactor = 0.517
-      ret.mass = 3108 * CV.LB_TO_KG  # mean between min and max
 
     elif candidate in (CAR.LEXUS_NX, CAR.LEXUS_NX_TSS2):
       stop_and_go = True
@@ -153,10 +133,6 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.MIRAI:
       stop_and_go = True
-      ret.wheelbase = 2.91
-      ret.steerRatio = 14.8
-      ret.tireStiffnessFactor = 0.8
-      ret.mass = 4300. * CV.LB_TO_KG
 
     ret.centerToFront = ret.wheelbase * 0.44
 
