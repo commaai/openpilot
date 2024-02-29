@@ -381,7 +381,7 @@ class TestCarModelBase(unittest.TestCase):
       if self.safety.get_vehicle_moving() != prev_panda_vehicle_moving:
         self.assertEqual(not CS.standstill, self.safety.get_vehicle_moving())
 
-      if not (self.CP.carName == "honda" and self.CP.flags & HondaFlags.BOSCH):
+      if not (self.CP.carName == "honda" and not (self.CP.flags & HondaFlags.BOSCH)):
         if self.safety.get_cruise_engaged_prev() != prev_panda_cruise_engaged:
           self.assertEqual(CS.cruiseState.enabled, self.safety.get_cruise_engaged_prev())
 
