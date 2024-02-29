@@ -12,11 +12,8 @@ from openpilot.system.hardware.hw import Paths
 
 
 class TestRegistration(unittest.TestCase):
-
   def setUp(self):
-    # clear params and setup key paths
     self.params = Params()
-    self.params.clear_all()
 
     persist_dir = Path(Paths.persist_root()) / "comma"
     persist_dir.mkdir(parents=True, exist_ok=True)
@@ -32,24 +29,23 @@ class TestRegistration(unittest.TestCase):
     with open(self.pub_key, "wb") as f:
       f.write(k.publickey().export_key())
 
-  def test_valid_cache(self):
-    # if all params are written, return the cached dongle id
-    self.params.put("HardwareSerial", "serial")
-    self._generate_keys()
+  def _register(self, expected_dongle):
+    assert register() == expected_dongle
+    assert self.params.get("DongleId", encoding='utf-8') == expected_dongle
 
+  def test_valid_cache(self):
+    self._generate_keys()
     with mock.patch("openpilot.selfdrive.athena.registration.api_get", autospec=True) as m:
       dongle = "DONGLE_ID_123"
       self.params.put("DongleId", dongle)
-      self.assertEqual(register(), dongle)
-      self.assertFalse(m.called)
+      self._register(dongle)
+      assert not m.called
 
   def test_no_keys(self):
     # missing pubkey
     with mock.patch("openpilot.selfdrive.athena.registration.api_get", autospec=True) as m:
-      dongle = register()
-      self.assertEqual(m.call_count, 0)
-      self.assertEqual(dongle, UNREGISTERED_DONGLE_ID)
-    self.assertEqual(self.params.get("DongleId", encoding='utf-8'), dongle)
+      self._register(UNREGISTERED_DONGLE_ID)
+      assert m.call_count == 0
 
   def test_missing_cache(self):
     # keys exist but no dongle id
@@ -57,23 +53,20 @@ class TestRegistration(unittest.TestCase):
     with mock.patch("openpilot.selfdrive.athena.registration.api_get", autospec=True) as m:
       dongle = "DONGLE_ID_123"
       m.return_value = MockResponse(json.dumps({'dongle_id': dongle}), 200)
-      self.assertEqual(register(), dongle)
-      self.assertEqual(m.call_count, 1)
+      self._register(dongle)
+      assert m.call_count == 1
 
       # call again, shouldn't hit the API this time
-      self.assertEqual(register(), dongle)
-      self.assertEqual(m.call_count, 1)
-    self.assertEqual(self.params.get("DongleId", encoding='utf-8'), dongle)
+      self._register(dongle)
+      assert m.call_count == 1
 
   def test_unregistered(self):
     # keys exist, but unregistered
     self._generate_keys()
     with mock.patch("openpilot.selfdrive.athena.registration.api_get", autospec=True) as m:
       m.return_value = MockResponse(None, 402)
-      dongle = register()
-      self.assertEqual(m.call_count, 1)
-      self.assertEqual(dongle, UNREGISTERED_DONGLE_ID)
-    self.assertEqual(self.params.get("DongleId", encoding='utf-8'), dongle)
+      self._register(UNREGISTERED_DONGLE_ID)
+      assert m.call_count == 1
 
 
 if __name__ == "__main__":

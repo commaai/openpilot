@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import time
 import json
 import jwt
@@ -10,14 +11,14 @@ from openpilot.common.api import api_get
 from openpilot.common.params import Params
 from openpilot.common.spinner import Spinner
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
-from openpilot.system.hardware import HARDWARE, PC
+from openpilot.system.hardware import HARDWARE, PC, AGNOS
 from openpilot.system.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog
 
 
 UNREGISTERED_DONGLE_ID = "UnregisteredDevice"
 
-DONGLE_PATH = Paths().persist_root / "comma/dongle_id"
+DONGLE_PATH = Paths.persist_root() + "/comma/dongle_id"
 
 def is_registered_device() -> bool:
   dongle = Params().get("DongleId", encoding='utf-8')
@@ -42,7 +43,7 @@ def write_dongle_id(dongle):
   except subprocess.CalledProcessError:
     cloudlog.exception("failed to write dongle id to persist")
 
-def network_register(show_spinner=False) -> str | None:
+def network_register(show_spinner=False) -> str:
   # this is only used for older devices that didn't have their dongle id
   # written out to /persist from the factory
 
@@ -71,6 +72,7 @@ def network_register(show_spinner=False) -> str | None:
       spinner.update(f"registering device - serial: {serial}, IMEI: ({imei1}, {imei2})")
 
   backoff = 0
+  dongle_id: str
   start_time = time.monotonic()
   while True:
     try:
@@ -97,6 +99,7 @@ def network_register(show_spinner=False) -> str | None:
   if show_spinner:
     spinner.close()
 
+  return dongle_id
 
 
 def register(show_spinner=False) -> str | None:
@@ -107,8 +110,7 @@ def register(show_spinner=False) -> str | None:
   if not pubkey.is_file():
     dongle_id = UNREGISTERED_DONGLE_ID
     cloudlog.warning(f"missing public key: {pubkey}")
-
-  if dongle_id is None:
+  elif dongle_id is None:
     if os.path.exists(DONGLE_PATH):
       with open(DONGLE_PATH) as f:
         dongle_id = f.read().strip()
@@ -117,7 +119,7 @@ def register(show_spinner=False) -> str | None:
 
   if dongle_id:
     params.put("DongleId", dongle_id)
-    set_offroad_alert("Offroad_UnofficialHardware", (dongle_id == UNREGISTERED_DONGLE_ID) and not PC)
+    set_offroad_alert("Offroad_UnofficialHardware", (dongle_id == UNREGISTERED_DONGLE_ID) and AGNOS)
     if AGNOS and not os.path.exists(DONGLE_PATH):
       write_dongle_id(dongle_id)
 
