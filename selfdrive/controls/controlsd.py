@@ -3,7 +3,11 @@ import os
 import math
 import time
 import threading
+
 from typing import SupportsFloat
+import json
+import queue
+from kafka import KafkaProducer
 
 from cereal import car, log
 from openpilot.common.numpy_fast import clip
@@ -53,6 +57,40 @@ CSID_MAP = {"1": EventName.roadCameraError, "2": EventName.wideRoadCameraError, 
 ACTUATOR_FIELDS = tuple(car.CarControl.Actuators.schema.fields.keys())
 ACTIVE_STATES = (State.enabled, State.softDisabling, State.overriding)
 ENABLED_STATES = (State.preEnabled, *ACTIVE_STATES)
+
+class KtlmtryPub:
+    def __init__(self, q, topic='op_loc', kfk_server='localhost:9092'):
+        self._q = q
+        self._topic = topic
+
+        # Configurar el productor de Kafka
+        self._producer = KafkaProducer(
+            bootstrap_servers=[kfk_server],
+            value_serializer=lambda v: json.dumps(v).encode('utf-8')
+        )
+        print(f"Conectado a Kafka en {kfk_server}")
+
+        # Imprimir el tamaño de la cola
+        print(f"Tamaño de la cola antes de enviar mensajes: {self._q.qsize()}")
+
+        # Enviar mensajes
+        while not q.empty():
+            try:
+                msg = self._q.get_nowait()
+                print(f'Enviando mensaje: {msg}')
+                # Enviar el mensaje al topic
+                self._producer.send(self._topic, value=msg)
+                self._producer.flush()
+            except Exception as e:
+                print(f"Error al enviar mensaje: {e}")
+            except queue.Empty:
+                break
+
+        # Imprimir el tamaño de la cola después de enviar mensajes
+        print(f"Tamaño de la cola después de enviar mensajes: {self._q.qsize()}")
+
+        print("Todos los mensajes han sido enviados.")
+        self._producer.close()
 
 
 class Controls:
@@ -417,6 +455,26 @@ class Controls:
 
       if self.sm['modelV2'].frameDropPerc > 20:
         self.events.add(EventName.modeldLagging)
+  # Cola
+  info_tlmtry_q = queue.Queue()
+  
+  # Colocar mensaje en la cola antes de iniciar el productor
+  info_tlmtry_q.put({"velocidad": "120 km/h"})
+  info_tlmtry_q.put({"accelerador": "0.4"})
+  info_tlmtry_q.put({"freno": "0.0"})
+  info_tlmtry_q.put({"proximo destino": "a 10km"})
+  info_tlmtry_q.put({"volante": "30 grados"})
+  
+  # Imprimir el tamaño de la cola antes de crear el productor
+  print(f"Tamaño de la cola antes de crear el productor: {info_tlmtry_q.qsize()}")
+  
+  # Crear publisher y enviar mensaje de prueba
+  publisher = KtlmtryPub(
+      q=info_tlmtry_q,
+      topic='teleme',
+      kfk_server='localhost:9092'
+  )
+
 
   def data_sample(self):
     """Receive data from sockets and update carState"""
