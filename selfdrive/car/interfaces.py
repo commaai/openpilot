@@ -136,7 +136,7 @@ class CarInterfaceBase(ABC):
 
   @staticmethod
   @abstractmethod
-  def _get_params(ret: car.CarParams, candidate: Platform, fingerprint: dict[int, dict[int, int]],
+  def _get_params(ret: car.CarParams, candidate, fingerprint: dict[int, dict[int, int]],
                   car_fw: list[car.CarParams.CarFw], experimental_long: bool, docs: bool):
     raise NotImplementedError
 

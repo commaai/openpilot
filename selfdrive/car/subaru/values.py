@@ -19,7 +19,7 @@ class CarControllerParams:
     self.STEER_DRIVER_MULTIPLIER = 50  # weight driver torque heavily
     self.STEER_DRIVER_FACTOR = 1       # from dbc
 
-    if CP.carFingerprint in GLOBAL_GEN2:
+    if CP.flags & SubaruFlags.GLOBAL_GEN2:
       self.STEER_MAX = 1000
       self.STEER_DELTA_UP = 40
       self.STEER_DELTA_DOWN = 40
@@ -56,6 +56,9 @@ class SubaruFlags(IntFlag):
   SEND_INFOTAINMENT = 1
   DISABLE_EYESIGHT = 2
   GLOBAL_GEN2 = 4
+
+  # Cars that temporarily fault when steering angle rate is greater than some threshold.
+  # Appears to be all torque-based cars produced around 2019 - present
   STEER_RATE_LIMITED = 8
   PREGLOBAL = 16
   HYBRID = 32
@@ -208,15 +211,6 @@ class CAR(Platforms):
   )
 
 
-LKAS_ANGLE = CAR.with_flags(SubaruFlags.LKAS_ANGLE)
-GLOBAL_GEN2 = CAR.with_flags(SubaruFlags.GLOBAL_GEN2)
-PREGLOBAL_CARS = CAR.with_flags(SubaruFlags.PREGLOBAL)
-HYBRID_CARS = CAR.with_flags(SubaruFlags.HYBRID)
-
-# Cars that temporarily fault when steering angle rate is greater than some threshold.
-# Appears to be all torque-based cars produced around 2019 - present
-STEER_RATE_LIMITED = CAR.with_flags(SubaruFlags.STEER_RATE_LIMITED)
-
 SUBARU_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
 SUBARU_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
@@ -253,7 +247,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
   # We don't get the EPS from non-OBD queries on GEN2 cars. Note that we still attempt to match when it exists
   non_essential_ecus={
-    Ecu.eps: list(GLOBAL_GEN2),
+    Ecu.eps: list(CAR.with_flags(SubaruFlags.GLOBAL_GEN2)),
   }
 )
 
