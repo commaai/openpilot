@@ -103,7 +103,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota Avalon Hybrid 2019-21"),
     ],
     dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
-    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444),
+    specs=AVALON.specs,
   )
   AVALON_TSS2 = ToyotaTSS2PlatformConfig(
     "TOYOTA AVALON 2022",  # TSS 2.5
@@ -111,7 +111,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota Avalon 2022"),
       ToyotaCarInfo("Toyota Avalon Hybrid 2022"),
     ],
-    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444),
+    specs=AVALON.specs,
   )
   CAMRY = PlatformConfig(
     "TOYOTA CAMRY 2018",
