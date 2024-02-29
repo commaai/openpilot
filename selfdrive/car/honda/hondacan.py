@@ -11,6 +11,7 @@ from openpilot.selfdrive.car import CanBusBase
 
 class CanBus(CanBusBase):
   def __init__(self, CP=None, fingerprint=None) -> None:
+    # use fingerprint if specified
     super().__init__(CP if fingerprint is None else None, fingerprint)
 
     if CP.carFingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS):
