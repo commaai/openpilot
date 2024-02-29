@@ -70,12 +70,6 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.5533
       ret.mass = 3650. * CV.LB_TO_KG  # mean between normal and hybrid
 
-    elif candidate == CAR.COROLLA:
-      ret.wheelbase = 2.70
-      ret.steerRatio = 18.27
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
-      ret.mass = 2860. * CV.LB_TO_KG  # mean between normal and hybrid
-
     elif candidate in (CAR.LEXUS_RX, CAR.LEXUS_RX_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.79
@@ -136,12 +130,6 @@ class CarInterface(CarInterfaceBase):
           ret.lateralTuning.pid.kf = 0.00004
           break
 
-    elif candidate == CAR.COROLLA_TSS2:
-      ret.wheelbase = 2.67  # Average between 2.70 for sedan and 2.64 for hatchback
-      ret.steerRatio = 13.9
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
-      ret.mass = 3060. * CV.LB_TO_KG
-
     elif candidate in (CAR.LEXUS_ES, CAR.LEXUS_ES_TSS2):
       ret.wheelbase = 2.8702
       ret.steerRatio = 16.0  # not optimized
@@ -161,12 +149,6 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.444
       ret.mass = 3736.8 * CV.LB_TO_KG
 
-    elif candidate == CAR.LEXUS_GS_F:
-      ret.wheelbase = 2.84988
-      ret.steerRatio = 13.3
-      ret.tireStiffnessFactor = 0.444
-      ret.mass = 4034. * CV.LB_TO_KG
-
     elif candidate == CAR.LEXUS_CTH:
       stop_and_go = True
       ret.wheelbase = 2.60
@@ -181,30 +163,12 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 0.444  # not optimized yet
       ret.mass = 4070 * CV.LB_TO_KG
 
-    elif candidate == CAR.LEXUS_LC_TSS2:
-      ret.wheelbase = 2.87
-      ret.steerRatio = 13.0
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
-      ret.mass = 4500 * CV.LB_TO_KG
-
-    elif candidate == CAR.PRIUS_TSS2:
-      ret.wheelbase = 2.70002  # from toyota online sepc.
-      ret.steerRatio = 13.4   # True steerRatio from older prius
-      ret.tireStiffnessFactor = 0.6371   # hand-tune
-      ret.mass = 3115. * CV.LB_TO_KG
-
     elif candidate == CAR.MIRAI:
       stop_and_go = True
       ret.wheelbase = 2.91
       ret.steerRatio = 14.8
       ret.tireStiffnessFactor = 0.8
       ret.mass = 4300. * CV.LB_TO_KG
-
-    elif candidate == CAR.ALPHARD_TSS2:
-      ret.wheelbase = 3.00
-      ret.steerRatio = 14.2
-      ret.tireStiffnessFactor = 0.444
-      ret.mass = 4305. * CV.LB_TO_KG
 
     ret.centerToFront = ret.wheelbase * 0.44
 

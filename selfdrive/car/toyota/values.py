@@ -94,7 +94,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota Avalon 2017-18"),
     ],
     dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   AVALON_2019 = PlatformConfig(
     "TOYOTA AVALON 2019",
@@ -103,7 +103,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota Avalon Hybrid 2019-21"),
     ],
     dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   AVALON_TSS2 = ToyotaTSS2PlatformConfig(
     "TOYOTA AVALON 2022",  # TSS 2.5
@@ -111,7 +111,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota Avalon 2022"),
       ToyotaCarInfo("Toyota Avalon Hybrid 2022"),
     ],
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   CAMRY = PlatformConfig(
     "TOYOTA CAMRY 2018",
@@ -121,7 +121,7 @@ class CAR(Platforms):
     ],
     dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
     flags=ToyotaFlags.NO_DSU,
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   CAMRY_TSS2 = ToyotaTSS2PlatformConfig(
     "TOYOTA CAMRY 2021",  # TSS 2.5
@@ -129,7 +129,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota Camry 2021-24", footnotes=[Footnote.CAMRY]),
       ToyotaCarInfo("Toyota Camry Hybrid 2021-24"),
     ],
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   CHR = PlatformConfig(
     "TOYOTA C-HR 2018",
@@ -139,7 +139,7 @@ class CAR(Platforms):
     ],
     dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
     flags=ToyotaFlags.NO_DSU,
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   CHR_TSS2 = ToyotaTSS2PlatformConfig(
     "TOYOTA C-HR 2021",
@@ -148,13 +148,13 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota C-HR Hybrid 2021-22"),
     ],
     flags=ToyotaFlags.RADAR_ACC,
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   COROLLA = PlatformConfig(
     "TOYOTA COROLLA 2017",
     ToyotaCarInfo("Toyota Corolla 2017-19"),
     dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=2860. * CV.LB_TO_KG, wheelbase=2.7, steerRatio=18.27, tireStiffnessFactor=0.444)
   ),
   # LSS2 Lexus UX Hybrid is same as a TSS2 Corolla Hybrid
   COROLLA_TSS2 = ToyotaTSS2PlatformConfig(
@@ -169,7 +169,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota Corolla Cross Hybrid (Non-US only) 2020-22", min_enable_speed=7.5),
       ToyotaCarInfo("Lexus UX Hybrid 2019-23"),
     ],
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=3060. * CV.LB_TO_KG, wheelbase=2.67, steerRatio=13.9, tireStiffnessFactor=0.444)
   ),
   HIGHLANDER = PlatformConfig(
     "TOYOTA HIGHLANDER 2017",
@@ -179,7 +179,7 @@ class CAR(Platforms):
     ],
     dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
     flags=ToyotaFlags.NO_STOP_TIMER,
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   HIGHLANDER_TSS2 = ToyotaTSS2PlatformConfig(
     "TOYOTA HIGHLANDER 2020",
@@ -187,7 +187,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota Highlander 2020-23"),
       ToyotaCarInfo("Toyota Highlander Hybrid 2020-23"),
     ],
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   PRIUS = PlatformConfig(
     "TOYOTA PRIUS 2017",
@@ -212,7 +212,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota Prius 2021-22", video_link="https://www.youtube.com/watch?v=J58TvCpUd4U"),
       ToyotaCarInfo("Toyota Prius Prime 2021-22", video_link="https://www.youtube.com/watch?v=J58TvCpUd4U"),
     ],
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=3115. * CV.LB_TO_KG, wheelbase=2.7, steerRatio=13.4, tireStiffnessFactor=0.6371)
   ),
   RAV4 = PlatformConfig(
     "TOYOTA RAV4 2017",
@@ -221,7 +221,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota RAV4 2017-18")
     ],
     dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   RAV4H = PlatformConfig(
     "TOYOTA RAV4 HYBRID 2017",
@@ -231,7 +231,7 @@ class CAR(Platforms):
     ],
     dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
     flags=ToyotaFlags.NO_STOP_TIMER,
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   RAV4_TSS2 = ToyotaTSS2PlatformConfig(
     "TOYOTA RAV4 2019",
@@ -239,7 +239,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota RAV4 2019-21", video_link="https://www.youtube.com/watch?v=wJxjDd42gGA"),
       ToyotaCarInfo("Toyota RAV4 Hybrid 2019-21"),
     ],
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   RAV4_TSS2_2022 = ToyotaTSS2PlatformConfig(
     "TOYOTA RAV4 2022",
@@ -249,7 +249,7 @@ class CAR(Platforms):
     ],
     dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
     flags=ToyotaFlags.RADAR_ACC,
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   RAV4_TSS2_2023 = ToyotaTSS2PlatformConfig(
     "TOYOTA RAV4 2023",
@@ -259,20 +259,20 @@ class CAR(Platforms):
     ],
     dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
     flags=ToyotaFlags.RADAR_ACC | ToyotaFlags.ANGLE_CONTROL,
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   MIRAI = ToyotaTSS2PlatformConfig(
     "TOYOTA MIRAI 2021",  # TSS 2.5
     ToyotaCarInfo("Toyota Mirai 2021"),
     dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=4300. * CV.LB_TO_KG, wheelbase=2.91, steerRatio=14.8, tireStiffnessFactor=0.8)
   ),
   SIENNA = PlatformConfig(
     "TOYOTA SIENNA 2018",
     ToyotaCarInfo("Toyota Sienna 2018-20", video_link="https://www.youtube.com/watch?v=q1UPOo4Sh68", min_enable_speed=MIN_ACC_SPEED),
     dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
     flags=ToyotaFlags.NO_STOP_TIMER,
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
 
   # Lexus
@@ -280,7 +280,7 @@ class CAR(Platforms):
     "LEXUS CT HYBRID 2018",
     ToyotaCarInfo("Lexus CT Hybrid 2017-18", "Lexus Safety System+"),
     dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   LEXUS_ES = PlatformConfig(
     "LEXUS ES 2018",
@@ -289,7 +289,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Lexus ES Hybrid 2017-18"),
     ],
     dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   LEXUS_ES_TSS2 = ToyotaTSS2PlatformConfig(
     "LEXUS ES 2019",
@@ -297,19 +297,19 @@ class CAR(Platforms):
       ToyotaCarInfo("Lexus ES 2019-24"),
       ToyotaCarInfo("Lexus ES Hybrid 2019-24", video_link="https://youtu.be/BZ29osRVJeg?t=12"),
     ],
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   LEXUS_IS = PlatformConfig(
     "LEXUS IS 2018",
     ToyotaCarInfo("Lexus IS 2017-19"),
     dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
     flags=ToyotaFlags.UNSUPPORTED_DSU,
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   LEXUS_IS_TSS2 = ToyotaTSS2PlatformConfig(
     "LEXUS IS 2023",
     ToyotaCarInfo("Lexus IS 2022-23"),
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   LEXUS_NX = PlatformConfig(
     "LEXUS NX 2018",
@@ -318,7 +318,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Lexus NX Hybrid 2018-19"),
     ],
     dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   LEXUS_NX_TSS2 = ToyotaTSS2PlatformConfig(
     "LEXUS NX 2020",
@@ -326,19 +326,19 @@ class CAR(Platforms):
       ToyotaCarInfo("Lexus NX 2020-21"),
       ToyotaCarInfo("Lexus NX Hybrid 2020-21"),
     ],
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   LEXUS_LC_TSS2 = ToyotaTSS2PlatformConfig(
     "LEXUS LC 2024",
     ToyotaCarInfo("Lexus LC 2024"),
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=4500. * CV.LB_TO_KG, wheelbase=2.87, steerRatio=13.0, tireStiffnessFactor=0.444)
   ),
   LEXUS_RC = PlatformConfig(
     "LEXUS RC 2020",
     ToyotaCarInfo("Lexus RC 2018-20"),
     dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
     flags=ToyotaFlags.UNSUPPORTED_DSU,
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   LEXUS_RX = PlatformConfig(
     "LEXUS RX 2016",
@@ -350,7 +350,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Lexus RX Hybrid 2017-19"),
     ],
     dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   LEXUS_RX_TSS2 = ToyotaTSS2PlatformConfig(
     "LEXUS RX 2020",
@@ -358,14 +358,14 @@ class CAR(Platforms):
       ToyotaCarInfo("Lexus RX 2020-22"),
       ToyotaCarInfo("Lexus RX Hybrid 2020-22"),
     ],
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=0000. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   LEXUS_GS_F = PlatformConfig(
     "LEXUS GS F 2016",
     ToyotaCarInfo("Lexus GS F 2016"),
     dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
     flags=ToyotaFlags.UNSUPPORTED_DSU,
-    specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
+    specs=CarSpecs(mass=4034. * CV.LB_TO_KG, wheelbase=2.84988, steerRatio=13.3, tireStiffnessFactor=0.444)
   ),
 
 
