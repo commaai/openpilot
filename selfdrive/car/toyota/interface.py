@@ -46,10 +46,6 @@ class CarInterface(CarInterfaceBase):
 
     if candidate == CAR.PRIUS:
       stop_and_go = True
-      ret.wheelbase = 2.70
-      ret.steerRatio = 15.74   # unknown end-to-end spec
-      ret.tireStiffnessFactor = 0.6371   # hand-tune
-      ret.mass = 3045. * CV.LB_TO_KG
       # Only give steer angle deadzone to for bad angle sensor prius
       for fw in car_fw:
         if fw.ecu == "eps" and not fw.fwVersion == b'8965B47060\x00\x00\x00\x00\x00\x00':
@@ -61,18 +57,10 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in (CAR.RAV4, CAR.RAV4H):
       stop_and_go = True if (candidate in CAR.RAV4H) else False
-      ret.wheelbase = 2.65
-      ret.steerRatio = 16.88   # 14.5 is spec end-to-end
-      ret.tireStiffnessFactor = 0.5533
-      ret.mass = 3650. * CV.LB_TO_KG  # mean between normal and hybrid
 
     elif candidate in (CAR.LEXUS_RX, CAR.LEXUS_RX_TSS2):
       stop_and_go = True
-      ret.wheelbase = 2.79
-      ret.steerRatio = 16.  # 14.8 is spec end-to-end
       ret.wheelSpeedFactor = 1.035
-      ret.tireStiffnessFactor = 0.5533
-      ret.mass = 4481. * CV.LB_TO_KG  # mean between min and max
 
     elif candidate in (CAR.CHR, CAR.CHR_TSS2):
       stop_and_go = True
@@ -83,25 +71,13 @@ class CarInterface(CarInterfaceBase):
     elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDER_TSS2):
       # TODO: TSS-P models can do stop and go, but unclear if it requires sDSU or unplugging DSU
       stop_and_go = True
-      ret.wheelbase = 2.8194  # average of 109.8 and 112.2 in
-      ret.steerRatio = 16.0
-      ret.tireStiffnessFactor = 0.8
-      ret.mass = 4516. * CV.LB_TO_KG  # mean between normal and hybrid
 
     elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALON_TSS2):
       # starting from 2019, all Avalon variants have stop and go
       # https://engage.toyota.com/static/images/toyota_safety_sense/TSS_Applicability_Chart.pdf
       stop_and_go = candidate != CAR.AVALON
-      ret.wheelbase = 2.82
-      ret.steerRatio = 14.8  # Found at https://pressroom.toyota.com/releases/2016+avalon+product+specs.download
-      ret.tireStiffnessFactor = 0.7983
-      ret.mass = 3505. * CV.LB_TO_KG  # mean between normal and hybrid
 
     elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023):
-      ret.wheelbase = 2.68986
-      ret.steerRatio = 14.3
-      ret.tireStiffnessFactor = 0.7933
-      ret.mass = 3585. * CV.LB_TO_KG  # Average between ICE and Hybrid
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP = [0.0]
       ret.lateralTuning.pid.kpBP = [0.0]
@@ -126,10 +102,6 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in (CAR.LEXUS_NX, CAR.LEXUS_NX_TSS2):
       stop_and_go = True
-      ret.wheelbase = 2.66
-      ret.steerRatio = 14.7
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
-      ret.mass = 4070 * CV.LB_TO_KG
 
     elif candidate == CAR.MIRAI:
       stop_and_go = True
