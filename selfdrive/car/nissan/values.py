@@ -25,7 +25,7 @@ class NissanCarInfo(CarInfo):
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.nissan_a]))
 
 
-@dataclass
+@dataclass(frozen=True)
 class NissanCarSpecs(CarSpecs):
   centerToFrontRatio: float = 0.44
   steerRatio: float = 17.

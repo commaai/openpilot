@@ -247,7 +247,21 @@ class CanSignalRateCalculator:
 CarInfos = CarInfo | list[CarInfo]
 
 
-@dataclass(kw_only=True)
+
+class Freezable:
+  FROZEN: bool = False
+
+  def freeze(self):
+    if not self.FROZEN:
+      self.FROZEN = True
+
+  def __setattr__(self, *args, **kwargs):
+    if self.FROZEN:
+      raise Exception("cannot modify frozen object")
+    super().__setattr__(*args, **kwargs)
+
+
+@dataclass(frozen=True, kw_only=True)
 class CarSpecs:
   mass: float
   wheelbase: float
@@ -258,7 +272,7 @@ class CarSpecs:
 
 
 @dataclass(order=True)
-class PlatformConfig:
+class PlatformConfig(Freezable):
   platform_str: str
   car_info: CarInfos
   dbc_dict: DbcDict
@@ -266,11 +280,20 @@ class PlatformConfig:
 
   specs: CarSpecs | None = None
 
+  FROZEN: bool = False
+
   def __hash__(self) -> int:
     return hash(self.platform_str)
 
   def override(self, **kwargs):
     return replace(self, **kwargs)
+
+  def init(self):
+    pass
+
+  def __post_init__(self):
+    self.init()
+    self.freeze()
 
 
 class Platforms(str, ReprEnum):
