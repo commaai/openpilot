@@ -38,7 +38,7 @@ float3 color_correct(float3 rgb) {
 
 float get_vignetting_s(float r) {
   #if IS_OS
-    r = r / 1.50150;
+    r = r / 2.2545f;
   #endif
   if (r < 62500) {
     return (1.0f + 0.0000008f*r);
