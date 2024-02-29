@@ -24,7 +24,7 @@ OS04C10::OS04C10() {
 
   frame_width = 2688;
   frame_height = 1520;
-  frame_stride = (frame_width*12/8);
+  frame_stride = (frame_width*12/8); // no alignment
 
   extra_height = 0;
   frame_offset = 0;
@@ -34,7 +34,7 @@ OS04C10::OS04C10() {
   probe_reg_addr = 0x300a;
   probe_expected_data = 0x5304;
   mipi_format = CAM_FORMAT_MIPI_RAW_12;
-  frame_data_type = 0x2b;
+  frame_data_type = 0x2c;
   mclk_frequency = 24000000; // Hz
 
   dc_gain_factor = 1;
