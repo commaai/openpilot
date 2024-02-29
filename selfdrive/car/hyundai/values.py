@@ -738,7 +738,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
 
 CHECKSUM = {
   "crc8": CAR.with_flags(HyundaiFlags.CHECKSUM_CRC8),
-  "6b": CAR.with_flags(HyundaiFlags.CHECKSUM_6B),
+  "6B": CAR.with_flags(HyundaiFlags.CHECKSUM_6B),
 }
 
 CAN_GEARS = {
