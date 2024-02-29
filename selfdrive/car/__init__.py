@@ -1,6 +1,6 @@
 # functions common among cars
 from collections import namedtuple
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import IntFlag, ReprEnum
 from dataclasses import replace
 
@@ -250,12 +250,12 @@ CarInfos = CarInfo | list[CarInfo]
 
 @dataclass(frozen=True, kw_only=True)
 class CarSpecs:
-  mass: float
+  mass: float  # kg, curb weight
   wheelbase: float
   steerRatio: float
-  centerToFrontRatio: float = field(default=0.5)
-  minSteerSpeed: float = field(default=0.)
-  minEnableSpeed: float = field(default=-1.)
+  centerToFrontRatio: float = 0.5
+  minSteerSpeed: float = 0.0
+  minEnableSpeed: float = -1.0
 
 
 @dataclass(order=True)
