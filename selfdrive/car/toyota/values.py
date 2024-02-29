@@ -70,11 +70,6 @@ class ToyotaCarInfo(CarInfo):
 
 
 @dataclass
-class ToyotaTSSPPlatformConfig(PlatformConfig):
-  dbc_dict: dict = field(default_factory=lambda: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'))
-
-
-@dataclass
 class ToyotaTSS2PlatformConfig(PlatformConfig):
   dbc_dict: dict = field(default_factory=lambda: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'))
 
