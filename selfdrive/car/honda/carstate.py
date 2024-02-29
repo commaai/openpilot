@@ -5,7 +5,7 @@ from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import interp
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
-from openpilot.selfdrive.car.honda.hondacan import get_cruise_speed_conversion, get_pt_bus
+from openpilot.selfdrive.car.honda.hondacan import CanBus, get_cruise_speed_conversion
 from openpilot.selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, \
                                                  HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_RADARLESS, \
                                                  HondaFlags
@@ -267,7 +267,7 @@ class CarState(CarStateBase):
 
   def get_can_parser(self, CP):
     messages = get_can_messages(CP, self.gearbox_msg)
-    return CANParser(DBC[CP.carFingerprint]["pt"], messages, get_pt_bus(CP.carFingerprint))
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus(CP).pt)
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -287,7 +287,7 @@ class CarState(CarStateBase):
         ("BRAKE_COMMAND", 50),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus(CP).camera)
 
   @staticmethod
   def get_body_can_parser(CP):
@@ -296,6 +296,6 @@ class CarState(CarStateBase):
         ("BSM_STATUS_LEFT", 3),
         ("BSM_STATUS_RIGHT", 3),
       ]
-      bus_body = 0 # B-CAN is forwarded to ACC-CAN radar side (CAN 0 on fake ethernet port)
+      bus_body = CanBus(CP).radar # B-CAN is forwarded to ACC-CAN radar side (CAN 0 on fake ethernet port)
       return CANParser(DBC[CP.carFingerprint]["body"], messages, bus_body)
     return None
