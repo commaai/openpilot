@@ -112,17 +112,21 @@ class CANBUS:
 class VolkswagenFlags(IntFlag):
   STOCK_HCA_PRESENT = 1
 
+
 @dataclass
 class VolkswagenMQBPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('vw_mqb_2010', None))
+
 
 @dataclass
 class VolkswagenPQPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('vw_golf_mk4', None))
 
+
 @dataclass(frozen=True, kw_only=True)
 class VolkswagenCarSpecs(CarSpecs):
-  steerRatio: float = field(default=15.6)
+  steerRatio: float = 15.6
+
 
 class Footnote(Enum):
   KAMIQ = CarFootnote(
@@ -157,6 +161,7 @@ class VWCarInfo(CarInfo):
 
     if CP.carFingerprint in (CAR.CRAFTER_MK2, CAR.TRANSPORTER_T61):
       self.car_parts = CarParts([Device.threex_angled_mount, CarHarness.j533])
+
 
 # Check the 7th and 8th characters of the VIN before adding a new CAR. If the
 # chassis code is already listed below, don't add a new CAR, just add to the
@@ -352,6 +357,7 @@ class CAR(Platforms):
     VWCarInfo("Škoda Superb 2015-22"),
     specs=VolkswagenCarSpecs(mass=1505, wheelbase=2.84),
   )
+
 
 PQ_CARS = {CAR.PASSAT_NMS, CAR.SHARAN_MK2}
 
