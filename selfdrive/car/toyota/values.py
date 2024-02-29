@@ -42,19 +42,19 @@ class CarControllerParams:
 
 
 class ToyotaFlags(IntFlag):
+  # Detected flags
   HYBRID = 1
   SMART_DSU = 2
   DISABLE_RADAR = 4
 
-
-class ToyotaPlatformFlags(IntFlag):
-  TSS2 = 1
-  NO_DSU = 2
-  UNSUPPORTED_DSU = 4
-  RADAR_ACC = 8
+  # Static flags
+  TSS2 = 8
+  NO_DSU = 16
+  UNSUPPORTED_DSU = 32
+  RADAR_ACC = 64
   # these cars use the Lane Tracing Assist (LTA) message for lateral control
-  ANGLE_CONTROL = 16
-  NO_STOP_TIMER = 32
+  ANGLE_CONTROL = 128
+  NO_STOP_TIMER = 256
 
 
 class Footnote(Enum):
@@ -74,7 +74,7 @@ class ToyotaTSS2PlatformConfig(PlatformConfig):
   dbc_dict: dict = field(default_factory=lambda: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'))
 
   def init(self):
-    self.flags |= ToyotaPlatformFlags.TSS2 | ToyotaPlatformFlags.NO_STOP_TIMER | ToyotaPlatformFlags.NO_DSU
+    self.flags |= ToyotaFlags.TSS2 | ToyotaFlags.NO_STOP_TIMER | ToyotaFlags.NO_DSU
 
 
 class CAR(Platforms):
@@ -120,7 +120,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota Camry Hybrid 2018-20", video_link="https://www.youtube.com/watch?v=Q2DYY0AWKgk"),
     ],
     dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
-    flags=ToyotaPlatformFlags.NO_DSU,
+    flags=ToyotaFlags.NO_DSU,
     specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   CAMRY_TSS2 = ToyotaTSS2PlatformConfig(
@@ -138,7 +138,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota C-HR Hybrid 2017-20"),
     ],
     dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
-    flags=ToyotaPlatformFlags.NO_DSU,
+    flags=ToyotaFlags.NO_DSU,
     specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   CHR_TSS2 = ToyotaTSS2PlatformConfig(
@@ -147,7 +147,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota C-HR 2021"),
       ToyotaCarInfo("Toyota C-HR Hybrid 2021-22"),
     ],
-    flags=ToyotaPlatformFlags.RADAR_ACC,
+    flags=ToyotaFlags.RADAR_ACC,
     specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   COROLLA = PlatformConfig(
@@ -178,7 +178,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota Highlander Hybrid 2017-19"),
     ],
     dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-    flags=ToyotaPlatformFlags.NO_STOP_TIMER,
+    flags=ToyotaFlags.NO_STOP_TIMER,
     specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   HIGHLANDER_TSS2 = ToyotaTSS2PlatformConfig(
@@ -203,7 +203,7 @@ class CAR(Platforms):
     "TOYOTA PRIUS v 2017",
     ToyotaCarInfo("Toyota Prius v 2017", "Toyota Safety Sense P", min_enable_speed=MIN_ACC_SPEED),
     dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-    flags=ToyotaPlatformFlags.NO_STOP_TIMER,
+    flags=ToyotaFlags.NO_STOP_TIMER,
     specs=CarSpecs(mass=3340. * CV.LB_TO_KG, wheelbase=2.78, steerRatio=17.4, tireStiffnessFactor=0.5533)
   ),
   PRIUS_TSS2 = ToyotaTSS2PlatformConfig(
@@ -230,7 +230,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota RAV4 Hybrid 2017-18", video_link="https://youtu.be/LhT5VzJVfNI?t=26")
     ],
     dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-    flags=ToyotaPlatformFlags.NO_STOP_TIMER,
+    flags=ToyotaFlags.NO_STOP_TIMER,
     specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   RAV4_TSS2 = ToyotaTSS2PlatformConfig(
@@ -248,7 +248,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota RAV4 Hybrid 2022", video_link="https://youtu.be/U0nH9cnrFB0"),
     ],
     dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-    flags=ToyotaPlatformFlags.RADAR_ACC,
+    flags=ToyotaFlags.RADAR_ACC,
     specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   RAV4_TSS2_2023 = PlatformConfig(
@@ -258,7 +258,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota RAV4 Hybrid 2023-24"),
     ],
     dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-    flags=ToyotaPlatformFlags.RADAR_ACC | ToyotaPlatformFlags.ANGLE_CONTROL,
+    flags=ToyotaFlags.RADAR_ACC | ToyotaFlags.ANGLE_CONTROL,
     specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   MIRAI = PlatformConfig(
@@ -271,7 +271,7 @@ class CAR(Platforms):
     "TOYOTA SIENNA 2018",
     ToyotaCarInfo("Toyota Sienna 2018-20", video_link="https://www.youtube.com/watch?v=q1UPOo4Sh68", min_enable_speed=MIN_ACC_SPEED),
     dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-    flags=ToyotaPlatformFlags.NO_STOP_TIMER,
+    flags=ToyotaFlags.NO_STOP_TIMER,
     specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
 
@@ -303,7 +303,7 @@ class CAR(Platforms):
     "LEXUS IS 2018",
     ToyotaCarInfo("Lexus IS 2017-19"),
     dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-    flags=ToyotaPlatformFlags.UNSUPPORTED_DSU,
+    flags=ToyotaFlags.UNSUPPORTED_DSU,
     specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   LEXUS_IS_TSS2 = ToyotaTSS2PlatformConfig(
@@ -337,7 +337,7 @@ class CAR(Platforms):
     "LEXUS RC 2020",
     ToyotaCarInfo("Lexus RC 2018-20"),
     dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-    flags=ToyotaPlatformFlags.UNSUPPORTED_DSU,
+    flags=ToyotaFlags.UNSUPPORTED_DSU,
     specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
   LEXUS_RX = PlatformConfig(
@@ -364,7 +364,7 @@ class CAR(Platforms):
     "LEXUS GS F 2016",
     ToyotaCarInfo("Lexus GS F 2016"),
     dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-    flags=ToyotaPlatformFlags.UNSUPPORTED_DSU,
+    flags=ToyotaFlags.UNSUPPORTED_DSU,
     specs=CarSpecs(mass=0. * CV.LB_TO_KG, wheelbase=0, steerRatio=0, tireStiffnessFactor=0.444)
   ),
 
@@ -596,18 +596,18 @@ TSS2_CAR = {CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023, CAR.COROLLA_T
             CAR.MIRAI, CAR.LEXUS_NX_TSS2, CAR.LEXUS_LC_TSS2, CAR.ALPHARD_TSS2, CAR.AVALON_TSS2,
             CAR.CHR_TSS2}
 
-NO_DSU_CAR = CAR.with_flags(ToyotaPlatformFlags.NO_DSU)
+NO_DSU_CAR = CAR.with_flags(ToyotaFlags.NO_DSU)
 
 # the DSU uses the AEB message for longitudinal on these cars
-UNSUPPORTED_DSU_CAR = CAR.with_flags(ToyotaPlatformFlags.UNSUPPORTED_DSU)
+UNSUPPORTED_DSU_CAR = CAR.with_flags(ToyotaFlags.UNSUPPORTED_DSU)
 
 # these cars have a radar which sends ACC messages instead of the camera
-RADAR_ACC_CAR = CAR.with_flags(ToyotaPlatformFlags.RADAR_ACC)
+RADAR_ACC_CAR = CAR.with_flags(ToyotaFlags.RADAR_ACC)
 
-ANGLE_CONTROL_CAR = CAR.with_flags(ToyotaPlatformFlags.ANGLE_CONTROL)
+ANGLE_CONTROL_CAR = CAR.with_flags(ToyotaFlags.ANGLE_CONTROL)
 
 # no resume button press required
-NO_STOP_TIMER_CAR = CAR.with_flags(ToyotaPlatformFlags.NO_STOP_TIMER)
+NO_STOP_TIMER_CAR = CAR.with_flags(ToyotaFlags.NO_STOP_TIMER)
 
 CAR_INFO = CAR.create_carinfo_map()
 DBC = CAR.create_dbc_map()
