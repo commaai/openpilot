@@ -157,7 +157,7 @@ class CAR(Platforms):
       HyundaiCarInfo("Hyundai Elantra 2019", min_enable_speed=19 * CV.MPH_TO_MS, car_parts=CarParts.common([CarHarness.hyundai_g])),
     ],
     specs=CarSpecs(mass=1275, wheelbase=2.7, steerRatio=15.4),  # 14 is Stock | Settled Params Learner values are steerRatio: 15.401566348670535
-    flags=HyundaiFlags.LEGACY | HyundaiFlags.CLUSTER_GEARS
+    flags=HyundaiFlags.LEGACY | HyundaiFlags.CLUSTER_GEARS | HyundaiFlags.MIN_STEER_32_MPH
   )
   ELANTRA_GT_I30 = HyundaiPlatformConfig(
     "HYUNDAI I30 N LINE 2019 & GT 2018 DCT",
@@ -166,7 +166,7 @@ class CAR(Platforms):
       HyundaiCarInfo("Hyundai i30 2017-19", car_parts=CarParts.common([CarHarness.hyundai_e])),
     ],
     specs=ELANTRA.specs,
-    flags=HyundaiFlags.LEGACY | HyundaiFlags.CLUSTER_GEARS
+    flags=HyundaiFlags.LEGACY | HyundaiFlags.CLUSTER_GEARS | HyundaiFlags.MIN_STEER_32_MPH
   )
   ELANTRA_2021 = HyundaiPlatformConfig(
     "HYUNDAI ELANTRA 2021",
@@ -201,7 +201,7 @@ class CAR(Platforms):
     "HYUNDAI IONIQ HYBRID 2020-2022",
     HyundaiCarInfo("Hyundai Ioniq Hybrid 2020-22", car_parts=CarParts.common([CarHarness.hyundai_h])),  # TODO: confirm 2020-21 harness,
     specs=IONIQ.specs,
-    flags=HyundaiFlags.HYBRID | HyundaiFlags.LEGACY
+    flags=HyundaiFlags.HYBRID | HyundaiFlags.LEGACY | HyundaiFlags.MIN_STEER_32_MPH
   )
   IONIQ_EV_LTD = HyundaiPlatformConfig(
     "HYUNDAI IONIQ ELECTRIC LIMITED 2019",
@@ -213,7 +213,7 @@ class CAR(Platforms):
     "HYUNDAI IONIQ ELECTRIC 2020",
     HyundaiCarInfo("Hyundai Ioniq Electric 2020", "All", car_parts=CarParts.common([CarHarness.hyundai_h])),
     specs=IONIQ.specs,
-    flags=HyundaiFlags.EV
+    flags=HyundaiFlags.EV | HyundaiFlags.MIN_STEER_32_MPH
   )
   IONIQ_PHEV_2019 = HyundaiPlatformConfig(
     "HYUNDAI IONIQ PLUG-IN HYBRID 2019",
@@ -309,7 +309,7 @@ class CAR(Platforms):
       HyundaiCarInfo("Hyundai Tucson 2021", min_enable_speed=19 * CV.MPH_TO_MS, car_parts=CarParts.common([CarHarness.hyundai_l])),
       HyundaiCarInfo("Hyundai Tucson Diesel 2019", car_parts=CarParts.common([CarHarness.hyundai_l])),
     ],
-    specs=CarSpecs(mass=3520 * CV.LB_TO_KG, wheelbase=2.756, steerRatio=16),
+    specs=CarSpecs(mass=3520 * CV.LB_TO_KG, wheelbase=2.67, steerRatio=16.1),
     flags=HyundaiFlags.TCU_GEARS
   )
   PALISADE = HyundaiPlatformConfig(
