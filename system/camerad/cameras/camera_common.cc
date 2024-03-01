@@ -41,15 +41,7 @@ public:
 
   }
 
-  void queue(cl_command_queue q, VisionBuf cam_buff, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, cl_event *debayer_event, bool todump) {
-    if (todump && false) {
-      uint8_t *cam_buf = (uint8_t *)cam_buff.addr;
-      printf("queueing buf %zu \n", cam_buff.len);
-      FILE *dump_raw_file = fopen("/tmp/os.raw", "wb");
-      fwrite(cam_buf, cam_buff.len, sizeof(uint8_t), dump_raw_file);
-      fclose(dump_raw_file);
-    }
-
+  void queue(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, cl_event *debayer_event) {
     CL_CHECK(clSetKernelArg(krnl_, 0, sizeof(cl_mem), &cam_buf_cl));
     CL_CHECK(clSetKernelArg(krnl_, 1, sizeof(cl_mem), &buf_cl));
 
@@ -124,7 +116,7 @@ bool CameraBuf::acquire() {
 
   double start_time = millis_since_boot();
   cl_event event;
-  debayer->queue(q, camera_bufs[cur_buf_idx], camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, &event, (stream_type==0));
+  debayer->queue(q, camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, &event);
   clWaitForEvents(1, &event);
   CL_CHECK(clReleaseEvent(event));
   cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
