@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
   CP = sr.first("carParams")
 
-  print(f"carFingerprint (for hardcoding fingerprint): {CP.carFingerprint}")
+  print(f"carFingerprint (for hardcoding fingerprint): '{CP.carFingerprint}'")
 
   CAN_MSGS = sr.run_across_segments(24, process)
 
