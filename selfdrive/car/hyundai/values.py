@@ -255,7 +255,7 @@ class CAR(Platforms):
   KONA_HEV = HyundaiPlatformConfig(
     "HYUNDAI KONA HYBRID 2020",
     HyundaiCarInfo("Hyundai Kona Hybrid 2020", car_parts=CarParts.common([CarHarness.hyundai_i])),  # TODO: check packages,
-    specs=CarSpecs(mass=1561, wheelbase=2.6, steerRatio=13.42),
+    specs=CarSpecs(mass=1425, wheelbase=2.6, steerRatio=13.42),
     flags=HyundaiFlags.HYBRID
   )
   SANTA_FE = HyundaiPlatformConfig(
