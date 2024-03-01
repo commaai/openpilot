@@ -266,10 +266,11 @@ class CarSpecs:
 class PlatformConfig(Freezable):
   platform_str: str
   car_info: CarInfos
-  dbc_dict: DbcDict
-  flags: int = 0
+  specs: CarSpecs
 
-  specs: CarSpecs | None = None
+  dbc_dict: DbcDict
+
+  flags: int = 0
 
   def __hash__(self) -> int:
     return hash(self.platform_str)
