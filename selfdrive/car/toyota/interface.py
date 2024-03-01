@@ -120,6 +120,9 @@ class CarInterface(CarInterfaceBase):
     # TODO: make an adas dbc file for dsu-less models
     ret.radarUnavailable = DBC[candidate]['radar'] is None or candidate in (NO_DSU_CAR - TSS2_CAR)
 
+    detected_unsupported_dsu = (1009 in fingerprint[0] or 1009 in fingerprint[2])
+    # assert (candidate in UNSUPPORTED_DSU_CAR) == detected_unsupported_dsu
+
     # In TSS2 cars, the camera does long control
     found_ecus = [fw.ecu for fw in car_fw]
     ret.enableDsu = len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR) \
