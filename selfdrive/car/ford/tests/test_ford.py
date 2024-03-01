@@ -19,6 +19,7 @@ ECU_ADDRESSES = {
   Ecu.fwdCamera: 0x706,    # Image Processing Module A (IPMA)
   Ecu.engine: 0x7E0,       # Powertrain Control Module (PCM)
   Ecu.shiftByWire: 0x732,  # Gear Shift Module (GSM)
+  Ecu.debug: 0x7D0,        # Accessory Protocol Interface Module (APIM)
 }
 
 
