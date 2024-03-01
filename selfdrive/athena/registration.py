@@ -31,15 +31,10 @@ def write_dongle_id(dongle):
   # this is for devices that didn't ship with it written out
   if AGNOS:
     cloudlog.warning("writing dongle id to persist")
-    try:
-      subprocess.run([
-        ["sudo", "mount", "-o", "rw,remount", "/persist"],
-        ["echo", "-n", f"'{dongle}'", ">", persist_dongle_path()],
-        ["sudo", "mount", "-o", "ro,remount", "/persist"],
-      ])
-      cloudlog.warning("successfully wrote dongle id to persist")
-    except subprocess.CalledProcessError:
-      cloudlog.exception("failed to write dongle id to persist")
+    ret = subprocess.run(f"sudo mount -o rw,remount /persist && \
+                           echo -n '{dongle}' > {persist_dongle_path()} && \
+                           sudo mount -o ro,remount /persist", shell=True)
+    cloudlog.warning(f"dongle id write exited with {ret.returncode}")
   else:
     with open(persist_dongle_path(), 'w') as f:
       f.write(dongle)
@@ -131,4 +126,4 @@ def register(show_spinner=False) -> str | None:
 
 
 if __name__ == "__main__":
-  print(register())
+  print(register(True))
