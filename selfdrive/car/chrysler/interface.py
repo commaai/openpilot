@@ -64,9 +64,16 @@ class CarInterface(CarInterfaceBase):
       raise ValueError(f"Unsupported car: {candidate}")
 
     if ret.flags & ChryslerFlags.HIGHER_MIN_STEERING_SPEED:
-      # TODO: allow these cars to steer down to 13 m/s if already engaged.
-      # TODO: Durango 2020 may be able to steer to zero once above 38 kph
-      ret.minSteerSpeed = 17.5  # m/s 17 on the way up, 13 on the way down once engaged.
+      if ret.flags & ChryslerFlags.HIGHER_MIN_STEERING_SPEED:
+      if candidate in (CAR.PACIFICA_2017_HYBRID, CAR.PACIFICA_2018, CAR.PACIFICA_2018_HYBRID):
+        ret.minSteerSpeed = 17.5
+        ret.minEnableSpeed = 4
+      elif candidate == CAR.RAM_1500:
+        ret.minSteerSpeed = 17.5
+        ret.minEnableSpeed = 0	  
+      else
+        ret.minSteerSpeed = 17.5
+        ret.minEnableSpeed = 13
 
     ret.centerToFront = ret.wheelbase * 0.44
     ret.enableBsm = 720 in fingerprint[0]
