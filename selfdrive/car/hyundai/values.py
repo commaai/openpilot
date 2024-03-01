@@ -99,7 +99,7 @@ class HyundaiCarInfo(CarInfo):
   package: str = "Smart Cruise Control (SCC)"
 
   def init_make(self, CP: car.CarParams):
-    if CP.carFingerprint in CANFD_CAR:
+    if CP.flags & HyundaiFlags.CANFD:
       self.footnotes.insert(0, Footnote.CANFD)
 
 
