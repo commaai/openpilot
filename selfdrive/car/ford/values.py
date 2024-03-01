@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import Enum, IntFlag
 
 import panda.python.uds as uds
 from cereal import car
@@ -39,6 +39,11 @@ class CarControllerParams:
     pass
 
 
+class FordFlags(IntFlag):
+  # Static flags
+  CANFD = 1
+
+
 class RADAR:
   DELPHI_ESR = 'ford_fusion_2018_adas'
   DELPHI_MRR = 'FORD_CADS'
@@ -57,7 +62,7 @@ class FordCarInfo(CarInfo):
   package: str = "Co-Pilot360 Assist+"
 
   def init_make(self, CP: car.CarParams):
-    harness = CarHarness.ford_q4 if CP.carFingerprint in CANFD_CAR else CarHarness.ford_q3
+    harness = CarHarness.ford_q4 if CP.flags & FordFlags.CANFD else CarHarness.ford_q3
     if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1, CAR.F_150_MK14, CAR.F_150_LIGHTNING_MK1):
       self.car_parts = CarParts([Device.threex_angled_mount, harness])
     else:
@@ -67,6 +72,15 @@ class FordCarInfo(CarInfo):
 @dataclass
 class FordPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('ford_lincoln_base_pt', RADAR.DELPHI_MRR))
+
+
+@dataclass
+class FordCANFDPlatformConfig(FordPlatformConfig):
+  dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('ford_lincoln_base_pt', None))
+
+  def init(self):
+    super().init()
+    self.flags |= FordFlags.CANFD
 
 
 class CAR(Platforms):
@@ -97,19 +111,17 @@ class CAR(Platforms):
     ],
     specs=CarSpecs(mass=2050, wheelbase=3.025, steerRatio=16.8),
   )
-  F_150_MK14 = FordPlatformConfig(
+  F_150_MK14 = FordCANFDPlatformConfig(
     "FORD F-150 14TH GEN",
     [
       FordCarInfo("Ford F-150 2023", "Co-Pilot360 Active 2.0"),
       FordCarInfo("Ford F-150 Hybrid 2023", "Co-Pilot360 Active 2.0"),
     ],
-    dbc_dict=dbc_dict('ford_lincoln_base_pt', None),
     specs=CarSpecs(mass=2000, wheelbase=3.69, steerRatio=17.0),
   )
-  F_150_LIGHTNING_MK1 = FordPlatformConfig(
+  F_150_LIGHTNING_MK1 = FordCANFDPlatformConfig(
     "FORD F-150 LIGHTNING 1ST GEN",
     FordCarInfo("Ford F-150 Lightning 2021-23", "Co-Pilot360 Active 2.0"),
-    dbc_dict=dbc_dict('ford_lincoln_base_pt', None),
     specs=CarSpecs(mass=2948, wheelbase=3.70, steerRatio=16.9),
   )
   FOCUS_MK4 = FordPlatformConfig(
@@ -130,15 +142,11 @@ class CAR(Platforms):
     ],
     specs=CarSpecs(mass=1650, wheelbase=3.076, steerRatio=17.0),
   )
-  MUSTANG_MACH_E_MK1 = FordPlatformConfig(
+  MUSTANG_MACH_E_MK1 = FordCANFDPlatformConfig(
     "FORD MUSTANG MACH-E 1ST GEN",
     FordCarInfo("Ford Mustang Mach-E 2021-23", "Co-Pilot360 Active 2.0"),
-    dbc_dict=dbc_dict('ford_lincoln_base_pt', None),
     specs=CarSpecs(mass=2200, wheelbase=2.984, steerRatio=17.0),  # TODO: check steer ratio
   )
-
-
-CANFD_CAR = {CAR.F_150_MK14, CAR.F_150_LIGHTNING_MK1, CAR.MUSTANG_MACH_E_MK1}
 
 
 DATA_IDENTIFIER_FORD_ASBUILT = 0xDE00
