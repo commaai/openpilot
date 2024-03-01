@@ -11,7 +11,7 @@ from openpilot.common.api import api_get
 from openpilot.common.params import Params
 from openpilot.common.spinner import Spinner
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
-from openpilot.system.hardware import HARDWARE, PC, AGNOS
+from openpilot.system.hardware import HARDWARE, AGNOS
 from openpilot.system.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog
 
@@ -102,6 +102,7 @@ def network_register(show_spinner=False) -> str:
 def register(show_spinner=False) -> str | None:
   params = Params()
 
+  dongle_id: str | None = None
   if os.path.exists(persist_dongle_path()):
     with open(persist_dongle_path()) as f:
       dongle_id = f.read().strip()
