@@ -166,6 +166,7 @@ class CAR(Platforms):
     "HONDA HR-V 2023",
     HondaCarInfo("Honda HR-V 2023", "All"),
     dbc_dict('honda_civic_ex_2022_can_generated', None),
+    specs=CarSpecs(mass=3125 * CV.LB_TO_KG, wheelbase=2.61, steerRatio=15.2, centerToFrontRatio=0.41),
     flags=HondaFlags.BOSCH | HondaFlags.BOSCH_RADARLESS
   )
   ACURA_RDX_3G = HondaPlatformConfig(
@@ -230,7 +231,7 @@ class CAR(Platforms):
     "HONDA HRV 2019",
     HondaCarInfo("Honda HR-V 2019-22", min_steer_speed=12. * CV.MPH_TO_MS),
     dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
-    specs=CarSpecs(mass=3125 * CV.LB_TO_KG, wheelbase=2.61, steerRatio=15.2, centerToFrontRatio=0.41),
+    specs=HRV_3G.specs,
     flags=HondaFlags.NIDEC | HondaFlags.NIDEC_ALT_SCM_MESSAGES,
   )
   ODYSSEY = HondaPlatformConfig(
