@@ -312,4 +312,4 @@ class Platforms(str, ReprEnum):
           platforms_with_flag[flag.name].append(platform)
 
     for flag, platforms in platforms_with_flag.items():
-      print(f"{flag:20s}: {', '.join(p.name for p in platforms)}")
+      print(f"{flag:32s}: {', '.join(p.name for p in platforms)}")
