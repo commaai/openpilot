@@ -213,14 +213,14 @@ def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
 
   return CarInterface(CP, CarController, CarState), CP
 
-def write_car_param(fingerprint="mock"):
+def write_car_param(platform=MOCK.MOCK):
   params = Params()
-  CarInterface, _, _ = interfaces[fingerprint]
-  CP = CarInterface.get_non_essential_params(fingerprint)
+  CarInterface, _, _ = interfaces[platform]
+  CP = CarInterface.get_non_essential_params(platform)
   params.put("CarParams", CP.to_bytes())
 
 def get_demo_car_params():
-  fingerprint="mock"
-  CarInterface, _, _ = interfaces[fingerprint]
-  CP = CarInterface.get_non_essential_params(fingerprint)
+  platform = MOCK.MOCK
+  CarInterface, _, _ = interfaces[platform]
+  CP = CarInterface.get_non_essential_params(platform)
   return CP
