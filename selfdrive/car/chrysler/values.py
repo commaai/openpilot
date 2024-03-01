@@ -11,6 +11,7 @@ Ecu = car.CarParams.Ecu
 
 
 class ChryslerFlags(IntFlag):
+  # Detected flags
   HIGHER_MIN_STEERING_SPEED = 1
 
 @dataclass
@@ -21,7 +22,7 @@ class ChryslerCarInfo(CarInfo):
 
 @dataclass
 class ChryslerPlatformConfig(PlatformConfig):
-  dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('chrysler_pacifica_2017_hybrid_generated', None))
+  dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'))
 
 
 @dataclass(frozen=True)
