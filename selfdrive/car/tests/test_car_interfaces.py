@@ -22,13 +22,13 @@ from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
 ALL_ECUS = list({ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()})
 
-MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '1500'))
+MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '100'))
 
 
 def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
   # Fuzzy CAN fingerprints and FW versions to test more states of the CarInterface
   fingerprint_strategy = st.fixed_dictionaries({key: st.dictionaries(st.integers(min_value=0, max_value=0x800),
-                                                                     st.integers(min_value=0, max_value=64), max_size=20) for key in
+                                                                     st.integers(min_value=0, max_value=64)) for key in
                                                 gen_empty_fingerprint()})
 
   # only pick from possible ecus to reduce search space
@@ -41,27 +41,20 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
   })
 
   params: dict = draw(params_strategy)
-  print([len(v) for k, v in params['fingerprints'].items()])
   params['car_fw'] = [car.CarParams.CarFw(ecu=fw[0], address=fw[1], subAddress=fw[2] or 0) for fw in params['car_fw']]
   return params
-
-
-here = 0
 
 
 class TestCarInterfaces(unittest.TestCase):
   # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
   #  many generated examples to overrun when max_examples > ~20, don't use it
-  @parameterized.expand([(car,) for car in sorted(all_known_cars()) if car in ('HONDA CIVIC (BOSCH) 2019', )])
+  @parameterized.expand([(car,) for car in sorted(all_known_cars())])
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
   def test_car_interfaces(self, car_name, data):
-    global here
     CarInterface, CarController, CarState = interfaces[car_name]
 
-    here += 1
-    print('here', here)
     args = get_fuzzy_car_interface_args(data.draw)
 
     car_params = CarInterface.get_params(car_name, args['fingerprints'], args['car_fw'],
