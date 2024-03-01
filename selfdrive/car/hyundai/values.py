@@ -458,14 +458,14 @@ class CAR(Platforms):
     "KIA OPTIMA 4TH GEN FACELIFT",
     HyundaiCarInfo("Kia Optima 2019-20", car_parts=CarParts.common([CarHarness.hyundai_g])),
     specs=KIA_OPTIMA_G4.specs,
-    flags=HyundaiFlags.UNSUPPORTED_LONGITUDINAL | HyundaiFlags.TCU_GEARS
+    flags=HyundaiFlags.UNSUPPORTED_LONGITUDINAL | HyundaiFlags.TCU_GEARS | HyundaiFlags.MIN_STEER_32_MPH
   )
   # TODO: may support adjacent years. may have a non-zero minimum steering speed
   KIA_OPTIMA_H = HyundaiPlatformConfig(
     "KIA OPTIMA HYBRID 2017 & SPORTS 2019",
     HyundaiCarInfo("Kia Optima Hybrid 2017", "Advanced Smart Cruise Control", car_parts=CarParts.common([CarHarness.hyundai_c])),
     specs=KIA_OPTIMA_G4.specs,
-    flags=HyundaiFlags.HYBRID | HyundaiFlags.LEGACY
+    flags=HyundaiFlags.HYBRID | HyundaiFlags.LEGACY | HyundaiFlags.MIN_STEER_32_MPH
   )
   KIA_OPTIMA_H_G4_FL = HyundaiPlatformConfig(
     "KIA OPTIMA HYBRID 4TH GEN FACELIFT",
