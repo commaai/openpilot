@@ -215,7 +215,7 @@ class CAR(Platforms):
       ToyotaCarInfo("Toyota Prius 2021-22", video_link="https://www.youtube.com/watch?v=J58TvCpUd4U"),
       ToyotaCarInfo("Toyota Prius Prime 2021-22", video_link="https://www.youtube.com/watch?v=J58TvCpUd4U"),
     ],
-    specs=CarSpecs(mass=3115. * CV.LB_TO_KG, wheelbase=2.7, steerRatio=13.4, tireStiffnessFactor=0.6371),
+    specs=CarSpecs(mass=3115. * CV.LB_TO_KG, wheelbase=2.70002, steerRatio=13.4, tireStiffnessFactor=0.6371),
   )
   RAV4 = PlatformConfig(
     "TOYOTA RAV4 2017",
