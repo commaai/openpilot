@@ -115,8 +115,6 @@ class HyundaiPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict("hyundai_kia_generic", None))
 
   def init(self):
-    if self.flags & HyundaiFlags.CANFD:
-      self.dbc_dict = dbc_dict('hyundai_canfd', None)
     if self.flags & HyundaiFlags.MANDO_RADAR:
       self.dbc_dict = dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated')
 
@@ -124,8 +122,10 @@ class HyundaiPlatformConfig(PlatformConfig):
 @dataclass
 class HyundaiCanFDPlatformConfig(HyundaiPlatformConfig):
   def init(self):
-    self.flags |= HyundaiFlags.CANFD
     super().init()
+    self.flags |= HyundaiFlags.CANFD
+    self.dbc_dict = dbc_dict('hyundai_canfd', None)
+
 
 
 class CAR(Platforms):
