@@ -94,6 +94,13 @@ class HyundaiFlags(IntFlag):
   TCU_GEARS = 2**22
 
 
+class Footnote(Enum):
+  CANFD = CarFootnote(
+    "Requires a <a href=\"https://comma.ai/shop/can-fd-panda-kit\" target=\"_blank\">CAN FD panda kit</a> if not using " +
+    "comma 3X for this <a href=\"https://en.wikipedia.org/wiki/CAN_FD\" target=\"_blank\">CAN FD car</a>.",
+    Column.MODEL, shop_footnote=False)
+
+
 @dataclass
 class HyundaiCarInfo(CarInfo):
   package: str = "Smart Cruise Control (SCC)"
@@ -516,13 +523,6 @@ class CAR(Platforms):
     HyundaiCarInfo("Genesis GV80 2023", "All", car_parts=CarParts.common([CarHarness.hyundai_m])),
     flags=HyundaiFlags.CANFD | HyundaiFlags.RADAR_SCC
   )
-
-
-class Footnote(Enum):
-  CANFD = CarFootnote(
-    "Requires a <a href=\"https://comma.ai/shop/can-fd-panda-kit\" target=\"_blank\">CAN FD panda kit</a> if not using " +
-    "comma 3X for this <a href=\"https://en.wikipedia.org/wiki/CAN_FD\" target=\"_blank\">CAN FD car</a>.",
-    Column.MODEL, shop_footnote=False)
 
 
 class Buttons:
