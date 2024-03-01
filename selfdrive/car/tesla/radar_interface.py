@@ -13,9 +13,11 @@ class RadarInterface(RadarInterfaceBase):
     if CP.carFingerprint == CAR.MODELS_RAVEN:
       messages = [('RadarStatus', 16)]
       self.num_points = 40
+      self.trigger_msg = 1119
     else:
       messages = [('TeslaRadarSguInfo', 10)]
       self.num_points = 32
+      self.trigger_msg = 878
 
     for i in range(self.num_points):
       messages.extend([
@@ -26,7 +28,6 @@ class RadarInterface(RadarInterfaceBase):
     self.rcp = CANParser(DBC[CP.carFingerprint]['radar'], messages, CANBUS.radar)
     self.updated_messages = set()
     self.track_id = 0
-    self.trigger_msg = 1119
 
   def update(self, can_strings):
     if self.rcp is None:
