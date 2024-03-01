@@ -11,6 +11,7 @@ from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from openpilot.selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
 from openpilot.selfdrive.car.fw_versions import get_fw_versions_ordered, get_present_ecus, match_fw_to_car, set_obd_multiplexing
+from openpilot.selfdrive.car.mock.values import CAR as MOCK
 from openpilot.common.swaglog import cloudlog
 import cereal.messaging as messaging
 from openpilot.selfdrive.car import gen_empty_fingerprint
@@ -191,7 +192,7 @@ def fingerprint(logcan, sendcan, num_pandas):
                  fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, vin_rx_bus=vin_rx_bus,
                  fingerprints=repr(finger), fw_query_time=fw_query_time, error=True)
 
-  car_platform = PLATFORMS.get(car_fingerprint, car_fingerprint)
+  car_platform = PLATFORMS.get(car_fingerprint, MOCK.MOCK)
 
   return car_platform, finger, vin, car_fw, source, exact_match
 
@@ -212,14 +213,14 @@ def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
 
   return CarInterface(CP, CarController, CarState), CP
 
-def write_car_param(fingerprint="mock"):
+def write_car_param(platform=MOCK.MOCK):
   params = Params()
-  CarInterface, _, _ = interfaces[fingerprint]
-  CP = CarInterface.get_non_essential_params(fingerprint)
+  CarInterface, _, _ = interfaces[platform]
+  CP = CarInterface.get_non_essential_params(platform)
   params.put("CarParams", CP.to_bytes())
 
 def get_demo_car_params():
-  fingerprint="mock"
-  CarInterface, _, _ = interfaces[fingerprint]
-  CP = CarInterface.get_non_essential_params(fingerprint)
+  platform = MOCK.MOCK
+  CarInterface, _, _ = interfaces[platform]
+  CP = CarInterface.get_non_essential_params(platform)
   return CP
