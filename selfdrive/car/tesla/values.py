@@ -20,12 +20,12 @@ class CAR(Platforms):
   AP1_MODELS = TeslaPlatformConfig(
     'TESLA AP1 MODEL S',
     CarInfo("Tesla AP1 Model S", "All"),
-    specs=CarSpecs(mass=2100., wheelbase=2.959, steerRatio=15.0)
+    CarSpecs(mass=2100., wheelbase=2.959, steerRatio=15.0)
   )
   AP2_MODELS = TeslaPlatformConfig(
     'TESLA AP2 MODEL S',
     CarInfo("Tesla AP2 Model S", "All"),
-    specs=AP1_MODELS.specs
+    AP1_MODELS.specs
   )
 
 
