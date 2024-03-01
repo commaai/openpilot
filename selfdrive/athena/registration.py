@@ -18,7 +18,8 @@ from openpilot.common.swaglog import cloudlog
 
 UNREGISTERED_DONGLE_ID = "UnregisteredDevice"
 
-DONGLE_PATH = Paths.persist_root() + "/comma/dongle_id"
+def persist_dongle_path():
+  return Paths.persist_root() + "/comma/dongle_id"
 
 def is_registered_device() -> bool:
   dongle = Params().get("DongleId", encoding='utf-8')
@@ -28,20 +29,21 @@ def is_registered_device() -> bool:
 def write_dongle_id(dongle):
   # factory provisioning now writes out the dongle id to persist;
   # this is for devices that didn't ship with it written out
+  if AGNOS:
+    cloudlog.warning("writing dongle id to persist")
+    try:
+      subprocess.run([
+        ["sudo", "mount", "-o", "rw,remount", "/persist"],
+        ["echo", "-n", f"'{dongle}'", ">", persist_dongle_path()],
+        ["sudo", "mount", "-o", "ro,remount", "/persist"],
+      ])
+      cloudlog.warning("successfully wrote dongle id to persist")
+    except subprocess.CalledProcessError:
+      cloudlog.exception("failed to write dongle id to persist")
+  else:
+    with open(persist_dongle_path(), 'w') as f:
+      f.write(dongle)
 
-  if not AGNOS:
-    return
-
-  cloudlog.warning("writing dongle id to persist")
-  try:
-    subprocess.run([
-      ["sudo", "mount", "-o", "rw,remount", "/persist"],
-      ["echo", "-n", f"'{dongle}'", ">", DONGLE_PATH],
-      ["sudo", "mount", "-o", "ro,remount", "/persist"],
-    ])
-    cloudlog.warning("successfully wrote dongle id to persist")
-  except subprocess.CalledProcessError:
-    cloudlog.exception("failed to write dongle id to persist")
 
 def network_register(show_spinner=False) -> str:
   # this is only used for older devices that didn't have their dongle id
@@ -104,23 +106,25 @@ def network_register(show_spinner=False) -> str:
 
 def register(show_spinner=False) -> str | None:
   params = Params()
-  dongle_id = params.get("DongleId", encoding='utf8')
+
+  if os.path.exists(persist_dongle_path()):
+    with open(persist_dongle_path()) as f:
+      dongle_id = f.read().strip()
+  else:
+    dongle_id = params.get("DongleId", encoding='utf8')
 
   pubkey = Path(Paths.persist_root()+"/comma/id_rsa.pub")
   if not pubkey.is_file():
     dongle_id = UNREGISTERED_DONGLE_ID
     cloudlog.warning(f"missing public key: {pubkey}")
-  elif dongle_id is None:
-    if os.path.exists(DONGLE_PATH):
-      with open(DONGLE_PATH) as f:
-        dongle_id = f.read().strip()
-    else:
-      dongle_id = network_register(show_spinner)
+
+  if dongle_id is None:
+    dongle_id = network_register(show_spinner)
 
   if dongle_id:
     params.put("DongleId", dongle_id)
     set_offroad_alert("Offroad_UnofficialHardware", (dongle_id == UNREGISTERED_DONGLE_ID) and AGNOS)
-    if AGNOS and not os.path.exists(DONGLE_PATH):
+    if not os.path.exists(persist_dongle_path()):
       write_dongle_id(dongle_id)
 
   return dongle_id

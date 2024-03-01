@@ -20,6 +20,7 @@ class TestRegistration(unittest.TestCase):
 
     self.priv_key = persist_dir / "id_rsa"
     self.pub_key = persist_dir / "id_rsa.pub"
+    self.persist_dongle = persist_dir / "dongle_id"
 
   def _generate_keys(self):
     self.pub_key.touch()
@@ -32,8 +33,19 @@ class TestRegistration(unittest.TestCase):
   def _register(self, expected_dongle):
     assert register() == expected_dongle
     assert self.params.get("DongleId", encoding='utf-8') == expected_dongle
+    with open(self.persist_dongle) as f:
+      assert f.read().strip() == expected_dongle
 
-  def test_valid_cache(self):
+  def test_valid_cache_persist(self):
+    self._generate_keys()
+    dongle = "DONGLE_ID_123"
+    with open(self.persist_dongle, 'w') as f:
+      f.write(dongle)
+    with mock.patch("openpilot.selfdrive.athena.registration.api_get", autospec=True) as m:
+      self._register(dongle)
+      assert not m.called
+
+  def test_valid_cache_params(self):
     self._generate_keys()
     with mock.patch("openpilot.selfdrive.athena.registration.api_get", autospec=True) as m:
       dongle = "DONGLE_ID_123"
