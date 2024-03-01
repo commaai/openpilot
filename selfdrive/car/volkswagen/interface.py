@@ -100,11 +100,8 @@ class CarInterface(CarInterfaceBase):
     ret.vEgoStopping = 0.5
     ret.longitudinalTuning.kpV = [0.1]
     ret.longitudinalTuning.kiV = [0.0]
-
-    # Per-chassis tuning values, override tuning defaults here if desired
-
     ret.autoResumeSng = ret.minEnableSpeed == -1
-    ret.centerToFront = ret.wheelbase * 0.45
+
     return ret
 
   # returns a car.CarState
