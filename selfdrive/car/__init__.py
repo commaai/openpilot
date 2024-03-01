@@ -256,6 +256,7 @@ class CarSpecs:
   centerToFrontRatio: float = 0.5
   minSteerSpeed: float = 0.0  # m/s
   minEnableSpeed: float = -1.0  # m/s
+  tireStiffnessFactor: float = 1.0
 
 
 @dataclass(order=True)
