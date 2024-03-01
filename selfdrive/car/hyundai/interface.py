@@ -1,6 +1,5 @@
 from cereal import car
 from panda import Panda
-from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
 from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, CANFD_RADAR_SCC_CAR, \
                                          CANFD_UNSUPPORTED_LONGITUDINAL_CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, \
@@ -75,53 +74,6 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerLimitTimer = 0.4
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-
-    if candidate in (CAR.SANTA_FE, CAR.SANTA_FE_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022):
-      ret.tireStiffnessFactor = 0.82
-    elif candidate in (CAR.SONATA, CAR.SONATA_HYBRID):
-      ret.tireStiffnessFactor = 0.65
-    elif candidate == CAR.SONATA_LF:
-      pass
-    elif candidate == CAR.PALISADE:
-      ret.tireStiffnessFactor = 0.63
-    elif candidate in (CAR.ELANTRA, CAR.ELANTRA_GT_I30):
-      ret.tireStiffnessFactor = 0.385    # stiffnessFactor settled on 1.0081302973865127
-    elif candidate == CAR.ELANTRA_2021:
-      ret.tireStiffnessFactor = 0.65
-    elif candidate == CAR.ELANTRA_HEV_2021:
-      ret.tireStiffnessFactor = 0.65
-    elif candidate == CAR.HYUNDAI_GENESIS:
-      ret.minSteerSpeed = 60 * CV.KPH_TO_MS
-    elif candidate in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022, CAR.KONA_EV_2ND_GEN):
-      ret.tireStiffnessFactor = 0.385
-    elif candidate in (CAR.IONIQ, CAR.IONIQ_EV_LTD, CAR.IONIQ_PHEV_2019, CAR.IONIQ_HEV_2022, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV):
-      ret.tireStiffnessFactor = 0.385
-    elif candidate in (CAR.IONIQ_5, CAR.IONIQ_6):
-      ret.tireStiffnessFactor = 0.65
-    elif candidate == CAR.VELOSTER:
-      ret.tireStiffnessFactor = 0.5
-    elif candidate == CAR.TUCSON:
-      ret.tireStiffnessFactor = 0.385
-    elif candidate == CAR.TUCSON_4TH_GEN:
-      ret.tireStiffnessFactor = 0.385
-
-    # Kia
-    elif candidate in (CAR.KIA_NIRO_EV, CAR.KIA_NIRO_EV_2ND_GEN, CAR.KIA_NIRO_PHEV, CAR.KIA_NIRO_HEV_2021, CAR.KIA_NIRO_HEV_2ND_GEN, CAR.KIA_NIRO_PHEV_2022):
-      ret.tireStiffnessFactor = 0.385
-    elif candidate in (CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL, CAR.KIA_OPTIMA_H, CAR.KIA_OPTIMA_H_G4_FL):
-      ret.tireStiffnessFactor = 0.5
-    elif candidate == CAR.KIA_FORTE:
-      ret.tireStiffnessFactor = 0.5
-    elif candidate == CAR.KIA_CEED:
-      ret.tireStiffnessFactor = 0.5
-    elif candidate in (CAR.KIA_K5_2021, CAR.KIA_K5_HEV_2020):
-      ret.tireStiffnessFactor = 0.5
-    elif candidate == CAR.KIA_EV6:
-      ret.tireStiffnessFactor = 0.65
-
-    # Genesis
-    elif candidate == CAR.GENESIS_G70:
-      ret.steerActuatorDelay = 0.1
 
     # *** longitudinal control ***
     if candidate in CANFD_CAR:
