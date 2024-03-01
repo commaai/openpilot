@@ -127,7 +127,6 @@ class HyundaiCanFDPlatformConfig(HyundaiPlatformConfig):
     self.dbc_dict = dbc_dict('hyundai_canfd', None)
 
 
-
 class CAR(Platforms):
   # Hyundai
   AZERA_6TH_GEN = HyundaiPlatformConfig(
