@@ -22,7 +22,7 @@ from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
 ALL_ECUS = list({ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()})
 
-MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '300'))
+MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '1500'))
 
 
 def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
@@ -46,16 +46,22 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
   return params
 
 
+here = 0
+
+
 class TestCarInterfaces(unittest.TestCase):
   # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
   #  many generated examples to overrun when max_examples > ~20, don't use it
-  @parameterized.expand([(car,) for car in sorted(all_known_cars()) if car in ('HONDA CIVIC (BOSCH) 2019', 'HONDA INSIGHT 2019')])
+  @parameterized.expand([(car,) for car in sorted(all_known_cars()) if car in ('HONDA CIVIC (BOSCH) 2019', )])
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
   def test_car_interfaces(self, car_name, data):
+    global here
     CarInterface, CarController, CarState = interfaces[car_name]
 
+    here += 1
+    print('here', here)
     args = get_fuzzy_car_interface_args(data.draw)
 
     car_params = CarInterface.get_params(car_name, args['fingerprints'], args['car_fw'],
