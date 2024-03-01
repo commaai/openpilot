@@ -1,5 +1,4 @@
 from collections import namedtuple
-from dataclasses import dataclass, field
 
 from cereal import car
 from openpilot.selfdrive.car import AngleRateLimit, CarSpecs, PlatformConfig, Platforms, dbc_dict
