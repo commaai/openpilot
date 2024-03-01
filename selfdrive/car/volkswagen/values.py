@@ -110,6 +110,7 @@ class CANBUS:
 
 
 class VolkswagenFlags(IntFlag):
+  # Detected flags
   STOCK_HCA_PRESENT = 1
 
 
