@@ -9,8 +9,6 @@ from collections import defaultdict, Counter
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 from parameterized import parameterized_class
-import sys
-import pickle
 
 from cereal import messaging, log, car
 from openpilot.common.basedir import BASEDIR
@@ -47,8 +45,6 @@ def get_test_cases() -> list[tuple[str, CarTestRoute | None]]:
   if not len(INTERNAL_SEG_LIST):
     routes_by_car = defaultdict(set)
     for r in routes:
-      if r.car_model in routes_by_car:
-        continue
       routes_by_car[r.car_model].add(r)
 
     for i, c in enumerate(sorted(all_known_cars())):
@@ -202,12 +198,6 @@ class TestCarModelBase(unittest.TestCase):
     self.safety.init_tests()
 
   def test_car_params(self):
-
-    with open(f'/home/batman/toyota_data_temp/{self.CP.carFingerprint}', 'wb') as f:
-      pickle.dump(self.CP, f)
-
-    return
-    # raise Exception(self.CP.carFingerprint)
     if self.CP.dashcamOnly:
       self.skipTest("no need to check carParams for dashcamOnly")
 

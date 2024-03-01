@@ -44,7 +44,6 @@ TorqueFromLateralAccelCallbackType = Callable[[LatControlInputs, car.CarParams.L
 
 
 def get_torque_params(candidate):
-  candidate = candidate.replace('TOYOTA_OLD', 'TOYOTA').replace('LEXUS_OLD', 'LEXUS')
   with open(TORQUE_SUBSTITUTE_PATH, 'rb') as f:
     sub = tomllib.load(f)
   if candidate in sub:
