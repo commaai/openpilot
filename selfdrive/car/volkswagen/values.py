@@ -198,6 +198,14 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=2011, wheelbase=2.98),
   )
+  CADDY_MK3 = VolkswagenPQPlatformConfig(
+    "VOLKSWAGEN CADDY 3RD GEN",  # Chassis 2K
+    [
+      VWCarInfo("Volkswagen Caddy 2019"),
+      VWCarInfo("Volkswagen Caddy Maxi 2019"),
+    ],
+    VolkswagenCarSpecs(mass=1613, wheelbase=2.6, minSteerSpeed=21 * CV.KPH_TO_MS),
+  )
   CRAFTER_MK2 = VolkswagenMQBPlatformConfig(
     "VOLKSWAGEN CRAFTER 2ND GEN",  # Chassis SY/SZ
     [
