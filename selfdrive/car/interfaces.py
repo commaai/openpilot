@@ -1,11 +1,11 @@
 import json
 import os
-import time
 import numpy as np
 import tomllib
 from abc import abstractmethod, ABC
 from enum import StrEnum
-from typing import Any, Dict, Optional, Tuple, List, Callable, NamedTuple
+from typing import Any, NamedTuple
+from collections.abc import Callable
 
 from cereal import car
 from openpilot.common.basedir import BASEDIR
@@ -14,6 +14,7 @@ from openpilot.common.simple_kalman import KF1D, get_kalman_gain
 from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, STD_CARGO_KG
+from openpilot.selfdrive.car.values import Platform
 from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_friction
 from openpilot.selfdrive.controls.lib.events import Events
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -101,15 +102,25 @@ class CarInterfaceBase(ABC):
     return ACCEL_MIN, ACCEL_MAX
 
   @classmethod
-  def get_non_essential_params(cls, candidate: str):
+  def get_non_essential_params(cls, candidate: Platform):
     """
     Parameters essential to controlling the car may be incomplete or wrong without FW versions or fingerprints.
     """
     return cls.get_params(candidate, gen_empty_fingerprint(), list(), False, False)
 
   @classmethod
-  def get_params(cls, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], experimental_long: bool, docs: bool):
+  def get_params(cls, candidate: Platform, fingerprint: dict[int, dict[int, int]], car_fw: list[car.CarParams.CarFw], experimental_long: bool, docs: bool):
     ret = CarInterfaceBase.get_std_params(candidate)
+
+    ret.mass = candidate.config.specs.mass
+    ret.wheelbase = candidate.config.specs.wheelbase
+    ret.steerRatio = candidate.config.specs.steerRatio
+    ret.centerToFront = ret.wheelbase * candidate.config.specs.centerToFrontRatio
+    ret.minEnableSpeed = candidate.config.specs.minEnableSpeed
+    ret.minSteerSpeed = candidate.config.specs.minSteerSpeed
+    ret.tireStiffnessFactor = candidate.config.specs.tireStiffnessFactor
+    ret.flags |= int(candidate.config.flags)
+
     ret = cls._get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs)
 
     # Vehicle mass is published curb weight plus assumed payload such as a human driver; notCars have no assumed payload
@@ -124,8 +135,8 @@ class CarInterfaceBase(ABC):
 
   @staticmethod
   @abstractmethod
-  def _get_params(ret: car.CarParams, candidate: str, fingerprint: Dict[int, Dict[int, int]],
-                  car_fw: List[car.CarParams.CarFw], experimental_long: bool, docs: bool):
+  def _get_params(ret: car.CarParams, candidate, fingerprint: dict[int, dict[int, int]],
+                  car_fw: list[car.CarParams.CarFw], experimental_long: bool, docs: bool):
     raise NotImplementedError
 
   @staticmethod
@@ -205,7 +216,7 @@ class CarInterfaceBase(ABC):
   def _update(self, c: car.CarControl) -> car.CarState:
     pass
 
-  def update(self, c: car.CarControl, can_strings: List[bytes]) -> car.CarState:
+  def update(self, c: car.CarControl, can_strings: list[bytes]) -> car.CarState:
     # parse can
     for cp in self.can_parsers:
       if cp is not None:
@@ -239,7 +250,7 @@ class CarInterfaceBase(ABC):
     return reader
 
   @abstractmethod
-  def apply(self, c: car.CarControl, now_nanos: int) -> Tuple[car.CarControl.Actuators, List[bytes]]:
+  def apply(self, c: car.CarControl, now_nanos: int) -> tuple[car.CarControl.Actuators, list[bytes]]:
     pass
 
   def create_common_events(self, cs_out, extra_gears=None, pcm_enable=True, allow_enable=True,
@@ -322,13 +333,14 @@ class RadarInterfaceBase(ABC):
     self.pts = {}
     self.delay = 0
     self.radar_ts = CP.radarTimeStep
+    self.frame = 0
     self.no_radar_sleep = 'NO_RADAR_SLEEP' in os.environ
 
   def update(self, can_strings):
-    ret = car.RadarData.new_message()
-    if not self.no_radar_sleep:
-      time.sleep(self.radar_ts)  # radard runs on RI updates
-    return ret
+    self.frame += 1
+    if (self.frame % int(100 * self.radar_ts)) == 0:
+      return car.RadarData.new_message()
+    return None
 
 
 class CarStateBase(ABC):
@@ -409,11 +421,11 @@ class CarStateBase(ABC):
     return bool(left_blinker_stalk or self.left_blinker_cnt > 0), bool(right_blinker_stalk or self.right_blinker_cnt > 0)
 
   @staticmethod
-  def parse_gear_shifter(gear: Optional[str]) -> car.CarState.GearShifter:
+  def parse_gear_shifter(gear: str | None) -> car.CarState.GearShifter:
     if gear is None:
       return GearShifter.unknown
 
-    d: Dict[str, car.CarState.GearShifter] = {
+    d: dict[str, car.CarState.GearShifter] = {
       'P': GearShifter.park, 'PARK': GearShifter.park,
       'R': GearShifter.reverse, 'REVERSE': GearShifter.reverse,
       'N': GearShifter.neutral, 'NEUTRAL': GearShifter.neutral,
@@ -443,6 +455,15 @@ class CarStateBase(ABC):
     return None
 
 
+SendCan = tuple[int, int, bytes, int]
+
+
+class CarControllerBase(ABC):
+  @abstractmethod
+  def update(self, CC, CS, now_nanos) -> tuple[car.CarControl.Actuators, list[SendCan]]:
+    pass
+
+
 INTERFACE_ATTR_FILE = {
   "FINGERPRINTS": "fingerprints",
   "FW_VERSIONS": "fingerprints",
@@ -450,7 +471,7 @@ INTERFACE_ATTR_FILE = {
 
 # interface-specific helpers
 
-def get_interface_attr(attr: str, combine_brands: bool = False, ignore_none: bool = False) -> Dict[str | StrEnum, Any]:
+def get_interface_attr(attr: str, combine_brands: bool = False, ignore_none: bool = False) -> dict[str | StrEnum, Any]:
   # read all the folders in selfdrive/car and return a dict where:
   # - keys are all the car models or brand names
   # - values are attr values from all car folders
@@ -483,7 +504,7 @@ class NanoFFModel:
     self.load_weights(platform)
 
   def load_weights(self, platform: str):
-    with open(self.weights_loc, 'r') as fob:
+    with open(self.weights_loc) as fob:
       self.weights = {k: np.array(v) for k, v in json.load(fob)[platform].items()}
 
   def relu(self, x: np.ndarray):
@@ -498,7 +519,7 @@ class NanoFFModel:
     x = np.dot(x, self.weights['w_4']) + self.weights['b_4']
     return x
 
-  def predict(self, x: List[float], do_sample: bool = False):
+  def predict(self, x: list[float], do_sample: bool = False):
     x = self.forward(np.array(x))
     if do_sample:
       pred = np.random.laplace(x[0], np.exp(x[1]) / self.weights['temperature'])

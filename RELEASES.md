@@ -1,4 +1,9 @@
-Version 0.9.6 (2024-02-XX)
+Version 0.9.7 (2024-XX-XX)
+========================
+* New driving model
+* Support for many hybrid Ford models
+
+Version 0.9.6 (2024-02-27)
 ========================
 * New driving model
   * Vision model trained on more data
@@ -9,8 +14,9 @@ Version 0.9.6 (2024-02-XX)
 * AGNOS 9
 * comma body streaming and controls over WebRTC
 * Improved fuzzy fingerprinting for many makes and models
+* Alpha longitudinal support for new Toyota models
 * Chevrolet Equinox 2019-22 support thanks to JasonJShuler and nworb-cire!
-* Dodge Duranago 2020-21 support
+* Dodge Durango 2020-21 support
 * Hyundai Staria 2023 support thanks to sunnyhaibin!
 * Kia Niro Plug-in Hybrid 2022 support thanks to sunnyhaibin!
 * Lexus LC 2024 support thanks to nelsonjchen!
