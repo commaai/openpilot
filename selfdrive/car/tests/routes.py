@@ -10,6 +10,7 @@ from openpilot.selfdrive.car.nissan.values import CAR as NISSAN
 from openpilot.selfdrive.car.mazda.values import CAR as MAZDA
 from openpilot.selfdrive.car.subaru.values import CAR as SUBARU
 from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
+from openpilot.selfdrive.car.toyota_old.values import CAR as TOYOTA_OLD
 from openpilot.selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
 from openpilot.selfdrive.car.tesla.values import CAR as TESLA
 from openpilot.selfdrive.car.body.values import CAR as COMMA
@@ -295,3 +296,10 @@ routes = [
   # Controls mismatch due to standstill threshold
   CarTestRoute("bec2dcfde6a64235|2022-04-08--14-21-32", HONDA.CRV_HYBRID, segment=22),
 ]
+
+import copy
+
+for rt in copy.deepcopy(routes):
+  if rt.car_model.startswith(('TOYOTA', 'LEXUS')):
+    # add for TOYOTA_OLD, a copy
+    routes.append(CarTestRoute(rt.route, rt.car_model.replace('TOYOTA', 'TOYOTA_OLD').replace('LEXUS', 'LEXUS_OLD'), rt.segment))
