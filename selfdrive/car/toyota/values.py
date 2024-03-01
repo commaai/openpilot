@@ -46,11 +46,11 @@ class ToyotaFlags(IntFlag):
   HYBRID = 1
   SMART_DSU = 2
   DISABLE_RADAR = 4
-  UNSUPPORTED_DSU = 32
 
   # Static flags
   TSS2 = 8
   NO_DSU = 16
+  UNSUPPORTED_DSU = 32
   RADAR_ACC = 64
   # these cars use the Lane Tracing Assist (LTA) message for lateral control
   ANGLE_CONTROL = 128
@@ -300,7 +300,7 @@ class CAR(Platforms):
     "LEXUS IS 2018",
     ToyotaCarInfo("Lexus IS 2017-19"),
     dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-    # flags=ToyotaFlags.UNSUPPORTED_DSU,
+    flags=ToyotaFlags.UNSUPPORTED_DSU,
     specs=CarSpecs(mass=3736.8 * CV.LB_TO_KG, wheelbase=2.79908, steerRatio=13.3, tireStiffnessFactor=0.444),
   )
   LEXUS_IS_TSS2 = ToyotaTSS2PlatformConfig(
@@ -334,7 +334,7 @@ class CAR(Platforms):
     "LEXUS RC 2020",
     ToyotaCarInfo("Lexus RC 2018-20"),
     dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-    # flags=ToyotaFlags.UNSUPPORTED_DSU,
+    flags=ToyotaFlags.UNSUPPORTED_DSU,
     specs=LEXUS_IS.specs,
   )
   LEXUS_RX = PlatformConfig(
@@ -361,7 +361,7 @@ class CAR(Platforms):
     "LEXUS GS F 2016",
     ToyotaCarInfo("Lexus GS F 2016"),
     dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-    # flags=ToyotaFlags.UNSUPPORTED_DSU,
+    flags=ToyotaFlags.UNSUPPORTED_DSU,
     specs=CarSpecs(mass=4034. * CV.LB_TO_KG, wheelbase=2.84988, steerRatio=13.3, tireStiffnessFactor=0.444),
   )
 
@@ -605,31 +605,3 @@ NO_STOP_TIMER_CAR = CAR.with_flags(ToyotaFlags.NO_STOP_TIMER)
 
 CAR_INFO = CAR.create_carinfo_map()
 DBC = CAR.create_dbc_map()
-
-# OLD
-# Toyota/Lexus Safety Sense 2.0 and 2.5
-TSS2_CAR_OLD = {CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023, CAR.COROLLA_TSS2, CAR.LEXUS_ES_TSS2,
-            CAR.LEXUS_RX_TSS2, CAR.HIGHLANDER_TSS2, CAR.PRIUS_TSS2, CAR.CAMRY_TSS2, CAR.LEXUS_IS_TSS2,
-            CAR.MIRAI, CAR.LEXUS_NX_TSS2, CAR.LEXUS_LC_TSS2, CAR.ALPHARD_TSS2, CAR.AVALON_TSS2,
-            CAR.CHR_TSS2}
-
-NO_DSU_CAR_OLD = TSS2_CAR | {CAR.CHR, CAR.CAMRY}
-
-# the DSU uses the AEB message for longitudinal on these cars
-UNSUPPORTED_DSU_CAR_OLD = {CAR.LEXUS_IS, CAR.LEXUS_RC, CAR.LEXUS_GS_F}
-
-# these cars have a radar which sends ACC messages instead of the camera
-RADAR_ACC_CAR_OLD = {CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023, CAR.CHR_TSS2}
-
-# these cars use the Lane Tracing Assist (LTA) message for lateral control
-ANGLE_CONTROL_CAR_OLD = {CAR.RAV4_TSS2_2023}
-
-# no resume button press required
-NO_STOP_TIMER_CAR_OLD = TSS2_CAR | {CAR.PRIUS_V, CAR.RAV4H, CAR.HIGHLANDER, CAR.SIENNA}
-
-# assert TSS2_CAR_OLD == TSS2_CAR
-# assert NO_DSU_CAR_OLD == NO_DSU_CAR
-# assert UNSUPPORTED_DSU_CAR_OLD == UNSUPPORTED_DSU_CAR
-# assert RADAR_ACC_CAR_OLD == RADAR_ACC_CAR
-# assert ANGLE_CONTROL_CAR_OLD == ANGLE_CONTROL_CAR
-# assert NO_STOP_TIMER_CAR_OLD == NO_STOP_TIMER_CAR
