@@ -55,43 +55,43 @@ class HyundaiFlags(IntFlag):
   # Dynamic Flags
   CANFD_HDA2 = 1
   CANFD_ALT_BUTTONS = 2
-  CANFD_ALT_GEARS = 2**2
-  CANFD_CAMERA_SCC = 2**3
+  CANFD_ALT_GEARS = 2 ** 2
+  CANFD_CAMERA_SCC = 2 ** 3
 
-  ALT_LIMITS = 2**4
-  ENABLE_BLINKERS = 2**5
-  CANFD_ALT_GEARS_2 = 2**6
-  SEND_LFA = 2**7
-  USE_FCA = 2**8
-  CANFD_HDA2_ALT_STEERING = 2**9
+  ALT_LIMITS = 2 ** 4
+  ENABLE_BLINKERS = 2 ** 5
+  CANFD_ALT_GEARS_2 = 2 ** 6
+  SEND_LFA = 2 ** 7
+  USE_FCA = 2 ** 8
+  CANFD_HDA2_ALT_STEERING = 2 ** 9
 
   # these cars use a different gas signal
-  HYBRID = 2**10
-  EV = 2**11
+  HYBRID = 2 ** 10
+  EV = 2 ** 11
 
   # Static Flags
 
   # If 0x500 is present on bus 1 it probably has a Mando radar outputting radar points.
   # If no points are outputted by default it might be possible to turn it on using  selfdrive/debug/hyundai_enable_radar_points.py
-  MANDO_RADAR = 2**12
-  CANFD = 2**13
+  MANDO_RADAR = 2 ** 12
+  CANFD = 2 ** 13
 
   # The radar does SCC on these cars when HDA I, rather than the camera
-  RADAR_SCC = 2**14
-  CAMERA_SCC = 2**15
-  CHECKSUM_CRC8 = 2**16
-  CHECKSUM_6B = 2**17
+  RADAR_SCC = 2 ** 14
+  CAMERA_SCC = 2 ** 15
+  CHECKSUM_CRC8 = 2 ** 16
+  CHECKSUM_6B = 2 ** 17
 
   # these cars require a special panda safety mode due to missing counters and checksums in the messages
-  LEGACY = 2**18
+  LEGACY = 2 ** 18
 
   # these cars have not been verified to work with longitudinal yet - radar disable, sending correct messages, etc.
-  UNSUPPORTED_LONGITUDINAL = 2**19
+  UNSUPPORTED_LONGITUDINAL = 2 ** 19
 
-  CANFD_NO_RADAR_DISABLE = 2**20
+  CANFD_NO_RADAR_DISABLE = 2 ** 20
 
-  CLUSTER_GEARS = 2**21
-  TCU_GEARS = 2**22
+  CLUSTER_GEARS = 2 ** 21
+  TCU_GEARS = 2 ** 22
 
 
 @dataclass
