@@ -20,22 +20,22 @@ class CarInterface(CarInterfaceBase):
     ret.autoResumeSng = False
 
     # Detect infotainment message sent from the camera
-    if not SubaruFlags.PREGLOBAL.check(ret.flags) and 0x323 in fingerprint[2]:
+    if not SubaruFlags.PREGLOBAL.all(ret.flags) and 0x323 in fingerprint[2]:
       ret.flags |= SubaruFlags.SEND_INFOTAINMENT.value
 
-    if SubaruFlags.PREGLOBAL.check(ret.flags):
+    if SubaruFlags.PREGLOBAL.all(ret.flags):
       ret.enableBsm = 0x25c in fingerprint[0]
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.subaruPreglobal)]
     else:
       ret.enableBsm = 0x228 in fingerprint[0]
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.subaru)]
-      if SubaruFlags.GLOBAL_GEN2.check(ret.flags):
+      if SubaruFlags.GLOBAL_GEN2.all(ret.flags):
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_SUBARU_GEN2
 
     ret.steerLimitTimer = 0.4
     ret.steerActuatorDelay = 0.1
 
-    if SubaruFlags.LKAS_ANGLE.check(ret.flags):
+    if SubaruFlags.LKAS_ANGLE.all(ret.flags):
       ret.steerControlType = car.CarParams.SteerControlType.angle
     else:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
@@ -87,7 +87,7 @@ class CarInterface(CarInterfaceBase):
       not (SubaruFlags.GLOBAL_GEN2 | SubaruFlags.PREGLOBAL | SubaruFlags.LKAS_ANGLE | SubaruFlags.HYBRID).any(ret.flags)
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
 
-    if SubaruFlags.GLOBAL_GEN2.check(ret.flags) and ret.openpilotLongitudinalControl:
+    if SubaruFlags.GLOBAL_GEN2.all(ret.flags) and ret.openpilotLongitudinalControl:
       ret.flags |= SubaruFlags.DISABLE_EYESIGHT.value
 
     if ret.openpilotLongitudinalControl:

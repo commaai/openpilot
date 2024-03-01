@@ -104,7 +104,7 @@ class SubaruPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('subaru_global_2017_generated', None))
 
   def init(self):
-    if SubaruFlags.HYBRID.check(self.flags):
+    if SubaruFlags.HYBRID.all(self.flags):
       self.dbc_dict = dbc_dict('subaru_global_2020_hybrid_generated', None)
 
 
