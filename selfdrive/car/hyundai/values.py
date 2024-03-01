@@ -172,7 +172,7 @@ class CAR(Platforms):
   ELANTRA_2021 = HyundaiPlatformConfig(
     "HYUNDAI ELANTRA 2021",
     HyundaiCarInfo("Hyundai Elantra 2021-23", video_link="https://youtu.be/_EdYQtV52-c", car_parts=CarParts.common([CarHarness.hyundai_k])),
-    specs=CarSpecs(mass=2800*CV.LB_TO_KG, wheelbase=2.72, steerRatio=12.9),
+    specs=CarSpecs(mass=2800*CV.LB_TO_KG, wheelbase=2.72, steerRatio=12.9, tireStiffnessFactor=0.65),
     flags=HyundaiFlags.CHECKSUM_CRC8
   )
   ELANTRA_HEV_2021 = HyundaiPlatformConfig(
@@ -195,31 +195,31 @@ class CAR(Platforms):
   IONIQ = HyundaiPlatformConfig(
     "HYUNDAI IONIQ HYBRID 2017-2019",
     HyundaiCarInfo("Hyundai Ioniq Hybrid 2017-19", car_parts=CarParts.common([CarHarness.hyundai_c])),
-    specs=CarSpecs(mass=1490, wheelbase=2.7, steerRatio=13.73),
+    specs=CarSpecs(mass=1490, wheelbase=2.7, steerRatio=13.73, tireStiffnessFactor=0.385),
     flags=HyundaiFlags.HYBRID | HyundaiFlags.MIN_STEER_32_MPH,
   )
   IONIQ_HEV_2022 = HyundaiPlatformConfig(
     "HYUNDAI IONIQ HYBRID 2020-2022",
     HyundaiCarInfo("Hyundai Ioniq Hybrid 2020-22", car_parts=CarParts.common([CarHarness.hyundai_h])),  # TODO: confirm 2020-21 harness,
-    specs=CarSpecs(mass=1490, wheelbase=2.7, steerRatio=13.73),
+    specs=CarSpecs(mass=1490, wheelbase=2.7, steerRatio=13.73, tireStiffnessFactor=0.385),
     flags=HyundaiFlags.HYBRID | HyundaiFlags.LEGACY
   )
   IONIQ_EV_LTD = HyundaiPlatformConfig(
     "HYUNDAI IONIQ ELECTRIC LIMITED 2019",
     HyundaiCarInfo("Hyundai Ioniq Electric 2019", car_parts=CarParts.common([CarHarness.hyundai_c])),
-    specs=CarSpecs(mass=1490, wheelbase=2.7, steerRatio=13.73),
+    specs=CarSpecs(mass=1490, wheelbase=2.7, steerRatio=13.73, tireStiffnessFactor=0.385),
     flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.EV | HyundaiFlags.LEGACY | HyundaiFlags.MIN_STEER_32_MPH
   )
   IONIQ_EV_2020 = HyundaiPlatformConfig(
     "HYUNDAI IONIQ ELECTRIC 2020",
     HyundaiCarInfo("Hyundai Ioniq Electric 2020", "All", car_parts=CarParts.common([CarHarness.hyundai_h])),
-    specs=CarSpecs(mass=1490, wheelbase=2.7, steerRatio=13.73),
+    specs=CarSpecs(mass=1490, wheelbase=2.7, steerRatio=13.73, tireStiffnessFactor=0.385),
     flags=HyundaiFlags.EV
   )
   IONIQ_PHEV_2019 = HyundaiPlatformConfig(
     "HYUNDAI IONIQ PLUG-IN HYBRID 2019",
     HyundaiCarInfo("Hyundai Ioniq Plug-in Hybrid 2019", car_parts=CarParts.common([CarHarness.hyundai_c])),
-    specs=CarSpecs(mass=1490, wheelbase=2.7, steerRatio=13.73),
+    specs=CarSpecs(mass=1490, wheelbase=2.7, steerRatio=13.73, tireStiffnessFactor=0.385),
     flags=HyundaiFlags.HYBRID | HyundaiFlags.MIN_STEER_32_MPH
   )
   IONIQ_PHEV = HyundaiPlatformConfig(
@@ -310,7 +310,7 @@ class CAR(Platforms):
       HyundaiCarInfo("Hyundai Tucson 2021", min_enable_speed=19 * CV.MPH_TO_MS, car_parts=CarParts.common([CarHarness.hyundai_l])),
       HyundaiCarInfo("Hyundai Tucson Diesel 2019", car_parts=CarParts.common([CarHarness.hyundai_l])),
     ],
-    specs=CarSpecs(mass=3520 * CV.LB_TO_KG, wheelbase=2.67, steerRatio=16.1),
+    specs=CarSpecs(mass=3520 * CV.LB_TO_KG, wheelbase=2.67, steerRatio=16.1, tireStiffnessFactor=0.385),
     flags=HyundaiFlags.TCU_GEARS
   )
   PALISADE = HyundaiPlatformConfig(
