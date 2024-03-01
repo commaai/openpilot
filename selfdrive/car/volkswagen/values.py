@@ -40,7 +40,7 @@ class CarControllerParams:
   def __init__(self, CP):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
 
-    if CP.carFingerprint in PQ_CARS:
+    if CP.flags & VolkswagenFlags.PQ:
       self.LDW_STEP = 5                   # LDW_1 message frequency 20Hz
       self.ACC_HUD_STEP = 4               # ACC_GRA_Anzeige frequency 25Hz
       self.STEER_DRIVER_ALLOWANCE = 80    # Driver intervention threshold 0.8 Nm
@@ -113,6 +113,9 @@ class VolkswagenFlags(IntFlag):
   # Detected flags
   STOCK_HCA_PRESENT = 1
 
+  # Static Flags
+  PQ = 2
+
 
 @dataclass
 class VolkswagenMQBPlatformConfig(PlatformConfig):
@@ -122,6 +125,9 @@ class VolkswagenMQBPlatformConfig(PlatformConfig):
 @dataclass
 class VolkswagenPQPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('vw_golf_mk4', None))
+
+  def init(self):
+    self.flags |= VolkswagenFlags.PQ
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -359,8 +365,6 @@ class CAR(Platforms):
     specs=VolkswagenCarSpecs(mass=1505, wheelbase=2.84),
   )
 
-
-PQ_CARS = {CAR.PASSAT_NMS, CAR.SHARAN_MK2}
 
 # All supported cars should return FW from the engine, srs, eps, and fwdRadar. Cars
 # with a manual trans won't return transmission firmware, but all other cars will.
