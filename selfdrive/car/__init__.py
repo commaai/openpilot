@@ -1,5 +1,5 @@
 # functions common among cars
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from dataclasses import dataclass
 from enum import IntFlag, ReprEnum
 from dataclasses import replace
@@ -245,17 +245,17 @@ class CanSignalRateCalculator:
     return self.rate
 
 
-CarInfos = CarInfo | list[CarInfo]
+CarInfos = CarInfo | list[CarInfo] | None
 
 
 @dataclass(frozen=True, kw_only=True)
 class CarSpecs:
   mass: float  # kg, curb weight
-  wheelbase: float
+  wheelbase: float  # meters
   steerRatio: float
   centerToFrontRatio: float = 0.5
-  minSteerSpeed: float = 0.0
-  minEnableSpeed: float = -1.0
+  minSteerSpeed: float = 0.0  # m/s
+  minEnableSpeed: float = -1.0  # m/s
   tireStiffnessFactor: float = 1.0
 
 
@@ -302,3 +302,15 @@ class Platforms(str, ReprEnum):
   @classmethod
   def with_flags(cls, flags: IntFlag) -> set['Platforms']:
     return {p for p in cls if p.config.flags & flags}
+
+  @classmethod
+  def print_debug(cls, flags):
+    platforms_with_flag = defaultdict(list)
+    for flag in flags:
+      for platform in cls:
+        if platform.config.flags & flag:
+          assert flag.name is not None
+          platforms_with_flag[flag.name].append(platform)
+
+    for flag, platforms in platforms_with_flag.items():
+      print(f"{flag:32s}: {', '.join(p.name for p in platforms)}")

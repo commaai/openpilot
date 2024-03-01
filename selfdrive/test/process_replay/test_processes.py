@@ -156,7 +156,8 @@ if __name__ == "__main__":
     assert full_test, "Need to run full test when updating refs"
 
   try:
-    ref_commit = open(REF_COMMIT_FN).read().strip()
+    with open(REF_COMMIT_FN) as f:
+      ref_commit = f.read().strip()
   except FileNotFoundError:
     print("Couldn't find reference commit")
     sys.exit(1)
