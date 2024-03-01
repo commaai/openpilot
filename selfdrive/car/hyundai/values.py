@@ -195,36 +195,36 @@ class CAR(Platforms):
     "HYUNDAI IONIQ HYBRID 2017-2019",
     HyundaiCarInfo("Hyundai Ioniq Hybrid 2017-19", car_parts=CarParts.common([CarHarness.hyundai_c])),
     specs=CarSpecs(mass=1490, wheelbase=2.7, steerRatio=13.73),
-    flags=HyundaiFlags.HYBRID | HyundaiFlags.MIN_STEER_32_MPH,
+    flags=HyundaiFlags.HYBRID,
   )
   IONIQ_HEV_2022 = HyundaiPlatformConfig(
     "HYUNDAI IONIQ HYBRID 2020-2022",
     HyundaiCarInfo("Hyundai Ioniq Hybrid 2020-22", car_parts=CarParts.common([CarHarness.hyundai_h])),  # TODO: confirm 2020-21 harness,
-    specs=IONIQ.specs,
+    specs=CarSpecs(mass=1490, wheelbase=2.7, steerRatio=13.73),
     flags=HyundaiFlags.HYBRID | HyundaiFlags.LEGACY
   )
   IONIQ_EV_LTD = HyundaiPlatformConfig(
     "HYUNDAI IONIQ ELECTRIC LIMITED 2019",
     HyundaiCarInfo("Hyundai Ioniq Electric 2019", car_parts=CarParts.common([CarHarness.hyundai_c])),
-    specs=IONIQ.specs,
+    specs=CarSpecs(mass=1490, wheelbase=2.7, steerRatio=13.73),
     flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.EV | HyundaiFlags.LEGACY | HyundaiFlags.MIN_STEER_32_MPH
   )
   IONIQ_EV_2020 = HyundaiPlatformConfig(
     "HYUNDAI IONIQ ELECTRIC 2020",
     HyundaiCarInfo("Hyundai Ioniq Electric 2020", "All", car_parts=CarParts.common([CarHarness.hyundai_h])),
-    specs=IONIQ.specs,
+    specs=CarSpecs(mass=1490, wheelbase=2.7, steerRatio=13.73),
     flags=HyundaiFlags.EV
   )
   IONIQ_PHEV_2019 = HyundaiPlatformConfig(
     "HYUNDAI IONIQ PLUG-IN HYBRID 2019",
     HyundaiCarInfo("Hyundai Ioniq Plug-in Hybrid 2019", car_parts=CarParts.common([CarHarness.hyundai_c])),
-    specs=IONIQ.specs,
+    specs=CarSpecs(mass=1490, wheelbase=2.7, steerRatio=13.73),
     flags=HyundaiFlags.HYBRID | HyundaiFlags.MIN_STEER_32_MPH
   )
   IONIQ_PHEV = HyundaiPlatformConfig(
     "HYUNDAI IONIQ PHEV 2020",
     HyundaiCarInfo("Hyundai Ioniq Plug-in Hybrid 2020-22", "All", car_parts=CarParts.common([CarHarness.hyundai_h])),
-    specs=IONIQ.specs,
+    specs=CarSpecs(mass=1490, wheelbase=2.7, steerRatio=13.73),
     flags=HyundaiFlags.HYBRID
   )
   KONA = HyundaiPlatformConfig(
