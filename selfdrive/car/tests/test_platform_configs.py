@@ -16,7 +16,6 @@ class TestPlatformConfigs(unittest.TestCase):
           self.assertIn("pt", platform.config.dbc_dict)
           self.assertTrue(len(platform.config.platform_str) > 0)
 
-          # enable when all cars have specs
           self.assertIsNotNone(platform.config.specs)
 
 
