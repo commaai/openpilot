@@ -121,7 +121,6 @@ class VolkswagenFlags(IntFlag):
 class VolkswagenMQBPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('vw_mqb_2010', None))
 
-
 @dataclass
 class VolkswagenPQPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('vw_golf_mk4', None))
@@ -132,6 +131,7 @@ class VolkswagenPQPlatformConfig(PlatformConfig):
 
 @dataclass(frozen=True, kw_only=True)
 class VolkswagenCarSpecs(CarSpecs):
+  centerToFrontRatio: float = 0.45
   steerRatio: float = 15.6
 
 
