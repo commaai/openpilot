@@ -201,7 +201,7 @@ class CAR(Platforms):
     "HYUNDAI IONIQ HYBRID 2020-2022",
     HyundaiCarInfo("Hyundai Ioniq Hybrid 2020-22", car_parts=CarParts.common([CarHarness.hyundai_h])),  # TODO: confirm 2020-21 harness,
     specs=IONIQ.specs,
-    flags=HyundaiFlags.HYBRID | HyundaiFlags.LEGACY | HyundaiFlags.MIN_STEER_32_MPH
+    flags=HyundaiFlags.HYBRID | HyundaiFlags.LEGACY
   )
   IONIQ_EV_LTD = HyundaiPlatformConfig(
     "HYUNDAI IONIQ ELECTRIC LIMITED 2019",
@@ -213,7 +213,7 @@ class CAR(Platforms):
     "HYUNDAI IONIQ ELECTRIC 2020",
     HyundaiCarInfo("Hyundai Ioniq Electric 2020", "All", car_parts=CarParts.common([CarHarness.hyundai_h])),
     specs=IONIQ.specs,
-    flags=HyundaiFlags.EV | HyundaiFlags.MIN_STEER_32_MPH
+    flags=HyundaiFlags.EV
   )
   IONIQ_PHEV_2019 = HyundaiPlatformConfig(
     "HYUNDAI IONIQ PLUG-IN HYBRID 2019",
@@ -255,7 +255,7 @@ class CAR(Platforms):
   KONA_HEV = HyundaiPlatformConfig(
     "HYUNDAI KONA HYBRID 2020",
     HyundaiCarInfo("Hyundai Kona Hybrid 2020", car_parts=CarParts.common([CarHarness.hyundai_i])),  # TODO: check packages,
-    specs=CarSpecs(mass=1743, wheelbase=2.6, steerRatio=13.42),
+    specs=CarSpecs(mass=1561, wheelbase=2.6, steerRatio=13.42),
     flags=HyundaiFlags.HYBRID
   )
   SANTA_FE = HyundaiPlatformConfig(
