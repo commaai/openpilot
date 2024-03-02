@@ -173,7 +173,7 @@ class VWCarInfo(CarInfo):
     if CP.carFingerprint in (CAR.CRAFTER_MK2, CAR.TRANSPORTER_T61):
       self.car_parts = CarParts([Device.threex_angled_mount, CarHarness.j533])
 
-    if round(CP.minSteerSpeed, 1) < 1.0 * CV.MPH_TO_MS:
+    if CP.minSteerSpeed < 1.0 * CV.MPH_TO_MS:
       self.min_steer_speed = 0
 
 
