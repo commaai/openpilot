@@ -98,6 +98,10 @@ if __name__ == "__main__":
 
   sr = LogReader(args.route_or_segment_name)
 
+  CP = sr.first("carParams")
+
+  print(f"carFingerprint (for hardcoding fingerprint): '{CP.carFingerprint}'")
+
   CAN_MSGS = sr.run_across_segments(24, process)
 
   print("Finished loading...")

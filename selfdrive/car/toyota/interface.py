@@ -1,5 +1,4 @@
 from cereal import car
-from openpilot.common.conversions import Conversions as CV
 from panda import Panda
 from panda.python import uds
 from openpilot.selfdrive.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
@@ -46,10 +45,6 @@ class CarInterface(CarInterfaceBase):
 
     if candidate == CAR.PRIUS:
       stop_and_go = True
-      ret.wheelbase = 2.70
-      ret.steerRatio = 15.74   # unknown end-to-end spec
-      ret.tireStiffnessFactor = 0.6371   # hand-tune
-      ret.mass = 3045. * CV.LB_TO_KG
       # Only give steer angle deadzone to for bad angle sensor prius
       for fw in car_fw:
         if fw.ecu == "eps" and not fw.fwVersion == b'8965B47060\x00\x00\x00\x00\x00\x00':
@@ -58,68 +53,30 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.PRIUS_V:
       stop_and_go = True
-      ret.wheelbase = 2.78
-      ret.steerRatio = 17.4
-      ret.tireStiffnessFactor = 0.5533
-      ret.mass = 3340. * CV.LB_TO_KG
 
     elif candidate in (CAR.RAV4, CAR.RAV4H):
       stop_and_go = True if (candidate in CAR.RAV4H) else False
-      ret.wheelbase = 2.65
-      ret.steerRatio = 16.88   # 14.5 is spec end-to-end
-      ret.tireStiffnessFactor = 0.5533
-      ret.mass = 3650. * CV.LB_TO_KG  # mean between normal and hybrid
-
-    elif candidate == CAR.COROLLA:
-      ret.wheelbase = 2.70
-      ret.steerRatio = 18.27
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
-      ret.mass = 2860. * CV.LB_TO_KG  # mean between normal and hybrid
 
     elif candidate in (CAR.LEXUS_RX, CAR.LEXUS_RX_TSS2):
       stop_and_go = True
-      ret.wheelbase = 2.79
-      ret.steerRatio = 16.  # 14.8 is spec end-to-end
       ret.wheelSpeedFactor = 1.035
-      ret.tireStiffnessFactor = 0.5533
-      ret.mass = 4481. * CV.LB_TO_KG  # mean between min and max
 
     elif candidate in (CAR.CHR, CAR.CHR_TSS2):
       stop_and_go = True
-      ret.wheelbase = 2.63906
-      ret.steerRatio = 13.6
-      ret.tireStiffnessFactor = 0.7933
-      ret.mass = 3300. * CV.LB_TO_KG
 
     elif candidate in (CAR.CAMRY, CAR.CAMRY_TSS2):
       stop_and_go = True
-      ret.wheelbase = 2.82448
-      ret.steerRatio = 13.7
-      ret.tireStiffnessFactor = 0.7933
-      ret.mass = 3400. * CV.LB_TO_KG  # mean between normal and hybrid
 
     elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDER_TSS2):
       # TODO: TSS-P models can do stop and go, but unclear if it requires sDSU or unplugging DSU
       stop_and_go = True
-      ret.wheelbase = 2.8194  # average of 109.8 and 112.2 in
-      ret.steerRatio = 16.0
-      ret.tireStiffnessFactor = 0.8
-      ret.mass = 4516. * CV.LB_TO_KG  # mean between normal and hybrid
 
     elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALON_TSS2):
       # starting from 2019, all Avalon variants have stop and go
       # https://engage.toyota.com/static/images/toyota_safety_sense/TSS_Applicability_Chart.pdf
       stop_and_go = candidate != CAR.AVALON
-      ret.wheelbase = 2.82
-      ret.steerRatio = 14.8  # Found at https://pressroom.toyota.com/releases/2016+avalon+product+specs.download
-      ret.tireStiffnessFactor = 0.7983
-      ret.mass = 3505. * CV.LB_TO_KG  # mean between normal and hybrid
 
     elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023):
-      ret.wheelbase = 2.68986
-      ret.steerRatio = 14.3
-      ret.tireStiffnessFactor = 0.7933
-      ret.mass = 3585. * CV.LB_TO_KG  # Average between ICE and Hybrid
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP = [0.0]
       ret.lateralTuning.pid.kpBP = [0.0]
@@ -136,75 +93,17 @@ class CarInterface(CarInterfaceBase):
           ret.lateralTuning.pid.kf = 0.00004
           break
 
-    elif candidate == CAR.COROLLA_TSS2:
-      ret.wheelbase = 2.67  # Average between 2.70 for sedan and 2.64 for hatchback
-      ret.steerRatio = 13.9
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
-      ret.mass = 3060. * CV.LB_TO_KG
-
-    elif candidate in (CAR.LEXUS_ES, CAR.LEXUS_ES_TSS2):
-      ret.wheelbase = 2.8702
-      ret.steerRatio = 16.0  # not optimized
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
-      ret.mass = 3677. * CV.LB_TO_KG  # mean between min and max
-
     elif candidate == CAR.SIENNA:
       stop_and_go = True
-      ret.wheelbase = 3.03
-      ret.steerRatio = 15.5
-      ret.tireStiffnessFactor = 0.444
-      ret.mass = 4590. * CV.LB_TO_KG
-
-    elif candidate in (CAR.LEXUS_IS, CAR.LEXUS_IS_TSS2, CAR.LEXUS_RC):
-      ret.wheelbase = 2.79908
-      ret.steerRatio = 13.3
-      ret.tireStiffnessFactor = 0.444
-      ret.mass = 3736.8 * CV.LB_TO_KG
-
-    elif candidate == CAR.LEXUS_GS_F:
-      ret.wheelbase = 2.84988
-      ret.steerRatio = 13.3
-      ret.tireStiffnessFactor = 0.444
-      ret.mass = 4034. * CV.LB_TO_KG
 
     elif candidate == CAR.LEXUS_CTH:
       stop_and_go = True
-      ret.wheelbase = 2.60
-      ret.steerRatio = 18.6
-      ret.tireStiffnessFactor = 0.517
-      ret.mass = 3108 * CV.LB_TO_KG  # mean between min and max
 
     elif candidate in (CAR.LEXUS_NX, CAR.LEXUS_NX_TSS2):
       stop_and_go = True
-      ret.wheelbase = 2.66
-      ret.steerRatio = 14.7
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
-      ret.mass = 4070 * CV.LB_TO_KG
-
-    elif candidate == CAR.LEXUS_LC_TSS2:
-      ret.wheelbase = 2.87
-      ret.steerRatio = 13.0
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
-      ret.mass = 4500 * CV.LB_TO_KG
-
-    elif candidate == CAR.PRIUS_TSS2:
-      ret.wheelbase = 2.70002  # from toyota online sepc.
-      ret.steerRatio = 13.4   # True steerRatio from older prius
-      ret.tireStiffnessFactor = 0.6371   # hand-tune
-      ret.mass = 3115. * CV.LB_TO_KG
 
     elif candidate == CAR.MIRAI:
       stop_and_go = True
-      ret.wheelbase = 2.91
-      ret.steerRatio = 14.8
-      ret.tireStiffnessFactor = 0.8
-      ret.mass = 4300. * CV.LB_TO_KG
-
-    elif candidate == CAR.ALPHARD_TSS2:
-      ret.wheelbase = 3.00
-      ret.steerRatio = 14.2
-      ret.tireStiffnessFactor = 0.444
-      ret.mass = 4305. * CV.LB_TO_KG
 
     ret.centerToFront = ret.wheelbase * 0.44
 
