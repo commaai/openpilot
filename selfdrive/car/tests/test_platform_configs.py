@@ -17,7 +17,6 @@ class TestPlatformConfigs(unittest.TestCase):
         self.assertIsNotNone(platform.config.specs)
 
 
-
 class SampleCarFlags(CarFlags):
   FLAG1 = 1
   FLAG2 = 2
