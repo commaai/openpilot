@@ -116,7 +116,7 @@ class CAR(Platforms):
       HondaCarInfo("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS),
       HondaCarInfo("Honda Accord Hybrid 2018-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
     ],
-    CarSpecs(mass=3279 * CV.LB_TO_KG, wheelbase=2.83, steerRatio=16.33, centerToFrontRatio=0.39),  # steerRatio: 11.82 is spec end-to-end
+    CarSpecs(mass=3279 * CV.LB_TO_KG, wheelbase=2.83, steerRatio=16.33, centerToFrontRatio=0.39, tireStiffnessFactor=0.8467),  # steerRatio: 11.82 is spec end-to-end
     dbc_dict('honda_accord_2018_can_generated', None),
     flags=HondaFlags.BOSCH,
   )

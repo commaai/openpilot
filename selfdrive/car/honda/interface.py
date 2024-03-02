@@ -111,7 +111,6 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.ACCORD:
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
-      ret.tireStiffnessFactor = 0.8467
 
       if eps_modified:
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.09]]
