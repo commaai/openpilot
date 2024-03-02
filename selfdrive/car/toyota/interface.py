@@ -121,6 +121,8 @@ class CarInterface(CarInterfaceBase):
     ret.radarUnavailable = DBC[candidate]['radar'] is None or candidate in (NO_DSU_CAR - TSS2_CAR)
 
     detected_unsupported_dsu = (1009 in fingerprint[0] or 1009 in fingerprint[2])
+    if detected_unsupported_dsu:
+      ret.flags |= ToyotaFlags.UNSUPPORTED_DSU.value
     # assert (candidate in UNSUPPORTED_DSU_CAR) == detected_unsupported_dsu
 
     # In TSS2 cars, the camera does long control
