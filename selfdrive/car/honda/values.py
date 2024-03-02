@@ -168,14 +168,14 @@ class CAR(Platforms):
     HondaCarInfo("Honda HR-V 2023", "All"),
     CarSpecs(mass=3125 * CV.LB_TO_KG, wheelbase=2.61, steerRatio=15.2, centerToFrontRatio=0.41),
     dbc_dict('honda_civic_ex_2022_can_generated', None),
-    flags=HondaFlags.BOSCH_RADARLESS | HondaFlags.BOSCH_ALT_BRAKE
+    flags=HondaFlags.BOSCH_RADARLESS | HondaFlags.BOSCH_ALT_BRAKE,
   )
   ACURA_RDX_3G = HondaBoschPlatformConfig(
     "ACURA RDX 2020",
     HondaCarInfo("Acura RDX 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
     CarSpecs(mass=4068 * CV.LB_TO_KG, wheelbase=2.75, steerRatio=11.95, centerToFrontRatio=0.41),  # as spec
     dbc_dict('acura_rdx_2020_can_generated', None),
-    flags=HondaFlags.BOSCH_ALT_BRAKE
+    flags=HondaFlags.BOSCH_ALT_BRAKE,
   )
   INSIGHT = HondaBoschPlatformConfig(
     "HONDA INSIGHT 2019",
@@ -238,14 +238,14 @@ class CAR(Platforms):
     HondaCarInfo("Honda Odyssey 2018-20"),
     CarSpecs(mass=1900, wheelbase=3.0, steerRatio=14.35, centerToFrontRatio=0.41),
     dbc_dict('honda_odyssey_exl_2018_generated', 'acura_ilx_2016_nidec'),
-    flags=HondaFlags.NIDEC_ALT_PCM_ACCEL
+    flags=HondaFlags.NIDEC_ALT_PCM_ACCEL,
   )
   ODYSSEY_CHN = HondaNidecPlatformConfig(
     "HONDA ODYSSEY CHN 2019",
     None,  # Chinese version of Odyssey, don't show in docs
     ODYSSEY.specs,
     dbc_dict('honda_odyssey_extreme_edition_2018_china_can_generated', 'acura_ilx_2016_nidec'),
-    flags=HondaFlags.NIDEC_ALT_SCM_MESSAGES
+    flags=HondaFlags.NIDEC_ALT_SCM_MESSAGES,
   )
   ACURA_RDX = HondaNidecPlatformConfig(
     "ACURA RDX 2018",
