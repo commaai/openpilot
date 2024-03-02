@@ -43,10 +43,6 @@ class MazdaPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('mazda_2017', None))
   flags: int = MazdaFlags.GEN1
 
-  def init(self):
-    # TODO: standardize default specs via subclass (MazdaCarSpecs)
-    self.specs.override(tireStiffnessFactor=0.7)
-
 
 class CAR(Platforms):
   CX5 = MazdaPlatformConfig(

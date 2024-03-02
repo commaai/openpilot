@@ -20,6 +20,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.8
+    ret.tireStiffnessFactor = 0.70   # not optimized yet
 
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
