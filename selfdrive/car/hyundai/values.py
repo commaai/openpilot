@@ -94,16 +94,6 @@ class HyundaiFlags(IntFlag):
   TCU_GEARS = 2 ** 22
 
   MIN_STEER_32_MPH = 2 ** 23
-  MIN_STEER_32_MPH1 = 2 ** 24
-  MIN_STEER_32_MPH2 = 2 ** 25
-  MIN_STEER_32_MPH3 = 2 ** 26
-  MIN_STEER_32_MPH4 = 2 ** 27
-  MIN_STEER_32_MPH5 = 2 ** 28
-  MIN_STEER_32_MPH6 = 2 ** 29
-  MIN_STEER_32_MPH7 = 2 ** 30
-  MIN_STEER_32_MPH8 = 2 ** 31
-  MIN_STEER_32_MPH9 = 2 ** 32
-  MIN_STEER_32_MPH10 = 2 ** 33
 
 
 class Footnote(Enum):
@@ -157,7 +147,7 @@ class CAR(Platforms):
       HyundaiCarInfo("Hyundai Azera Hybrid 2020", "All", car_parts=CarParts.common([CarHarness.hyundai_k])),
     ],
     CarSpecs(mass=1675, wheelbase=2.885, steerRatio=14.5),
-    flags=HyundaiFlags.HYBRID | HyundaiFlags.MIN_STEER_32_MPH10,
+    flags=HyundaiFlags.HYBRID
   )
   ELANTRA = HyundaiPlatformConfig(
     "HYUNDAI ELANTRA 2017",
