@@ -133,7 +133,7 @@ class CAR(Platforms):
   )
   CIVIC_BOSCH_DIESEL = HondaPlatformConfig(
     "HONDA CIVIC SEDAN 1.6 DIESEL 2019",
-    None, # don't show in docs
+    None,  # don't show in docs
     CIVIC_BOSCH.specs,
     dbc_dict('honda_accord_2018_can_generated', None),
     flags=HondaFlags.BOSCH
@@ -153,7 +153,7 @@ class CAR(Platforms):
     HondaCarInfo("Honda CR-V 2017-22", min_steer_speed=12. * CV.MPH_TO_MS),
     CarSpecs(mass=3410 * CV.LB_TO_KG, wheelbase=2.66, steerRatio=16.0, centerToFrontRatio=0.41),  # steerRatio: 12.3 is spec end-to-end
     dbc_dict('honda_crv_ex_2017_can_generated', None, body_dbc='honda_crv_ex_2017_body_generated'),
-    flags=HondaFlags.BOSCH,
+    flags=HondaFlags.BOSCH | HondaFlags.BOSCH_ALT_BRAKE,
   )
   CRV_HYBRID = HondaPlatformConfig(
     "HONDA CR-V HYBRID 2019",
@@ -167,14 +167,14 @@ class CAR(Platforms):
     HondaCarInfo("Honda HR-V 2023", "All"),
     CarSpecs(mass=3125 * CV.LB_TO_KG, wheelbase=2.61, steerRatio=15.2, centerToFrontRatio=0.41),
     dbc_dict('honda_civic_ex_2022_can_generated', None),
-    flags=HondaFlags.BOSCH | HondaFlags.BOSCH_RADARLESS
+    flags=HondaFlags.BOSCH | HondaFlags.BOSCH_RADARLESS | HondaFlags.BOSCH_ALT_BRAKE
   )
   ACURA_RDX_3G = HondaPlatformConfig(
     "ACURA RDX 2020",
     HondaCarInfo("Acura RDX 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
     CarSpecs(mass=4068 * CV.LB_TO_KG, wheelbase=2.75, steerRatio=11.95, centerToFrontRatio=0.41),  # as spec
     dbc_dict('acura_rdx_2020_can_generated', None),
-    flags=HondaFlags.BOSCH
+    flags=HondaFlags.BOSCH | HondaFlags.BOSCH_ALT_BRAKE
   )
   INSIGHT = HondaPlatformConfig(
     "HONDA INSIGHT 2019",
@@ -208,7 +208,7 @@ class CAR(Platforms):
   )
   CRV_EU = HondaPlatformConfig(
     "HONDA CR-V EU 2016",
-    None, # Euro version of CRV Touring, don't show in docs
+    None,  # Euro version of CRV Touring, don't show in docs
     CRV.specs,
     dbc_dict('honda_crv_executive_2016_can_generated', 'acura_ilx_2016_nidec'),
     flags=HondaFlags.NIDEC | HondaFlags.NIDEC_ALT_SCM_MESSAGES,
@@ -243,7 +243,7 @@ class CAR(Platforms):
   )
   ODYSSEY_CHN = HondaPlatformConfig(
     "HONDA ODYSSEY CHN 2019",
-    None, # Chinese version of Odyssey, don't show in docs
+    None,  # Chinese version of Odyssey, don't show in docs
     ODYSSEY.specs,
     dbc_dict('honda_odyssey_extreme_edition_2018_china_can_generated', 'acura_ilx_2016_nidec'),
     flags=HondaFlags.NIDEC | HondaFlags.NIDEC_ALT_SCM_MESSAGES
@@ -343,7 +343,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.unknown, 0x18DAB3F1, None),
   ],
 )
-
 
 STEER_THRESHOLD = {
   # default is 1200, overrides go here

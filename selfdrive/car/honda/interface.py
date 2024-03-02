@@ -209,8 +209,11 @@ class CarInterface(CarInterfaceBase):
       raise ValueError(f"unsupported car {candidate}")
 
     # These cars use alternate user brake msg (0x1BE)
-    if 0x1BE in fingerprint[CAN.pt] and candidate in HONDA_BOSCH:
+    # TODO: Only detect feature for Accord/Accord Hybrid, not all Bosch DBCs have BRAKE_MODULE
+    if 0x1BE in fingerprint[CAN.pt] and candidate == CAR.ACCORD:
       ret.flags |= HondaFlags.BOSCH_ALT_BRAKE.value
+
+    if ret.flags & HondaFlags.BOSCH_ALT_BRAKE:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_ALT_BRAKE
 
     # These cars use alternate SCM messages (SCM_FEEDBACK AND SCM_BUTTON)
