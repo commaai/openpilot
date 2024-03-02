@@ -102,9 +102,7 @@ class Footnote(Enum):
 
 class HondaBoschPlatformConfig(PlatformConfig):
   def init(self):
-    self.flags |= HondaFlags.BOSCH
-    self.flags |= HondaFlags.AUTORESUME_SNG
-    self.flags |= HondaFlags.ELECTRIC_PARKING_BRAKE
+    self.flags |= HondaFlags.BOSCH | HondaFlags.AUTORESUME_SNG | HondaFlags.ELECTRIC_PARKING_BRAKE
 
 
 class HondaNidecPlatformConfig(PlatformConfig):
