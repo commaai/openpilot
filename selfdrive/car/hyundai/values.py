@@ -121,7 +121,7 @@ class HyundaiPlatformConfig(PlatformConfig):
       self.dbc_dict = dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated')
 
     if self.flags & HyundaiFlags.MIN_STEER_32_MPH:
-      self.specs = self.specs.override(minSteerSpeed = 32 * CV.MPH_TO_MS)
+      self.specs = self.specs.override(minSteerSpeed=32 * CV.MPH_TO_MS)
 
 
 @dataclass
@@ -172,13 +172,13 @@ class CAR(Platforms):
   ELANTRA_2021 = HyundaiPlatformConfig(
     "HYUNDAI ELANTRA 2021",
     HyundaiCarInfo("Hyundai Elantra 2021-23", video_link="https://youtu.be/_EdYQtV52-c", car_parts=CarParts.common([CarHarness.hyundai_k])),
-    CarSpecs(mass=2800*CV.LB_TO_KG, wheelbase=2.72, steerRatio=12.9, tireStiffnessFactor=0.65),
+    CarSpecs(mass=2800 * CV.LB_TO_KG, wheelbase=2.72, steerRatio=12.9, tireStiffnessFactor=0.65),
     flags=HyundaiFlags.CHECKSUM_CRC8
   )
   ELANTRA_HEV_2021 = HyundaiPlatformConfig(
     "HYUNDAI ELANTRA HYBRID 2021",
     HyundaiCarInfo("Hyundai Elantra Hybrid 2021-23", video_link="https://youtu.be/_EdYQtV52-c",
-                                       car_parts=CarParts.common([CarHarness.hyundai_k])),
+                   car_parts=CarParts.common([CarHarness.hyundai_k])),
     CarSpecs(mass=3017 * CV.LB_TO_KG, wheelbase=2.72, steerRatio=12.9, tireStiffnessFactor=0.65),
     flags=HyundaiFlags.CHECKSUM_CRC8 | HyundaiFlags.HYBRID
   )
@@ -249,7 +249,7 @@ class CAR(Platforms):
   KONA_EV_2ND_GEN = HyundaiCanFDPlatformConfig(
     "HYUNDAI KONA ELECTRIC 2ND GEN",
     HyundaiCarInfo("Hyundai Kona Electric (with HDA II, Korea only) 2023", video_link="https://www.youtube.com/watch?v=U2fOCmcQ8hw",
-                                      car_parts=CarParts.common([CarHarness.hyundai_r])),
+                   car_parts=CarParts.common([CarHarness.hyundai_r])),
     CarSpecs(mass=1740, wheelbase=2.66, steerRatio=13.6, tireStiffnessFactor=0.385),
     flags=HyundaiFlags.EV | HyundaiFlags.CANFD_NO_RADAR_DISABLE
   )
@@ -262,14 +262,14 @@ class CAR(Platforms):
   SANTA_FE = HyundaiPlatformConfig(
     "HYUNDAI SANTA FE 2019",
     HyundaiCarInfo("Hyundai Santa Fe 2019-20", "All", video_link="https://youtu.be/bjDR0YjM__s",
-                               car_parts=CarParts.common([CarHarness.hyundai_d])),
+                   car_parts=CarParts.common([CarHarness.hyundai_d])),
     CarSpecs(mass=3982 * CV.LB_TO_KG, wheelbase=2.766, steerRatio=16.55, tireStiffnessFactor=0.82),
     flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8
   )
   SANTA_FE_2022 = HyundaiPlatformConfig(
     "HYUNDAI SANTA FE 2022",
-     HyundaiCarInfo("Hyundai Santa Fe 2021-23", "All", video_link="https://youtu.be/VnHzSTygTS4",
-                                    car_parts=CarParts.common([CarHarness.hyundai_l])),
+    HyundaiCarInfo("Hyundai Santa Fe 2021-23", "All", video_link="https://youtu.be/VnHzSTygTS4",
+                   car_parts=CarParts.common([CarHarness.hyundai_l])),
     SANTA_FE.specs,
     flags=HyundaiFlags.CHECKSUM_CRC8
   )
@@ -288,7 +288,7 @@ class CAR(Platforms):
   SONATA = HyundaiPlatformConfig(
     "HYUNDAI SONATA 2020",
     HyundaiCarInfo("Hyundai Sonata 2020-23", "All", video_link="https://www.youtube.com/watch?v=ix63r9kE3Fw",
-                             car_parts=CarParts.common([CarHarness.hyundai_a])),
+                   car_parts=CarParts.common([CarHarness.hyundai_a])),
     CarSpecs(mass=1513, wheelbase=2.84, steerRatio=13.27 * 1.15, tireStiffnessFactor=0.65),  # 15% higher at the center seems reasonable
     flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8
   )
@@ -325,7 +325,7 @@ class CAR(Platforms):
   VELOSTER = HyundaiPlatformConfig(
     "HYUNDAI VELOSTER 2019",
     HyundaiCarInfo("Hyundai Veloster 2019-20", min_enable_speed=5. * CV.MPH_TO_MS, car_parts=CarParts.common([CarHarness.hyundai_e])),
-    CarSpecs(mass=2917 * CV.LB_TO_KG, wheelbase=2.8, steerRatio=13.75 * 1.15, tireStiffnessFactor = 0.5),
+    CarSpecs(mass=2917 * CV.LB_TO_KG, wheelbase=2.8, steerRatio=13.75 * 1.15, tireStiffnessFactor=0.5),
     flags=HyundaiFlags.LEGACY | HyundaiFlags.TCU_GEARS
   )
   SONATA_HYBRID = HyundaiPlatformConfig(
@@ -368,7 +368,7 @@ class CAR(Platforms):
   CUSTIN_1ST_GEN = HyundaiPlatformConfig(
     "HYUNDAI CUSTIN 1ST GEN",
     HyundaiCarInfo("Hyundai Custin 2023", "All", car_parts=CarParts.common([CarHarness.hyundai_k])),
-    CarSpecs(mass=1690, wheelbase=3.055, steerRatio=17), # mass: from https://www.hyundai-motor.com.tw/clicktobuy/custin#spec_0, steerRatio: from learner
+    CarSpecs(mass=1690, wheelbase=3.055, steerRatio=17),  # mass: from https://www.hyundai-motor.com.tw/clicktobuy/custin#spec_0, steerRatio: from learner
     flags=HyundaiFlags.CHECKSUM_CRC8
   )
 
@@ -451,7 +451,7 @@ class CAR(Platforms):
   KIA_OPTIMA_G4 = HyundaiPlatformConfig(
     "KIA OPTIMA 4TH GEN",
     HyundaiCarInfo("Kia Optima 2017", "Advanced Smart Cruise Control",
-                                    car_parts=CarParts.common([CarHarness.hyundai_b])),  # TODO: may support 2016, 2018
+                   car_parts=CarParts.common([CarHarness.hyundai_b])),  # TODO: may support 2016, 2018
     CarSpecs(mass=3558 * CV.LB_TO_KG, wheelbase=2.8, steerRatio=13.75, tireStiffnessFactor=0.5),
     flags=HyundaiFlags.LEGACY | HyundaiFlags.TCU_GEARS | HyundaiFlags.MIN_STEER_32_MPH
   )
@@ -493,7 +493,7 @@ class CAR(Platforms):
     "KIA SORENTO GT LINE 2018",
     [
       HyundaiCarInfo("Kia Sorento 2018", "Advanced Smart Cruise Control & LKAS", video_link="https://www.youtube.com/watch?v=Fkh3s6WHJz8",
-                   car_parts=CarParts.common([CarHarness.hyundai_e])),
+                     car_parts=CarParts.common([CarHarness.hyundai_e])),
       HyundaiCarInfo("Kia Sorento 2019", video_link="https://www.youtube.com/watch?v=Fkh3s6WHJz8", car_parts=CarParts.common([CarHarness.hyundai_e])),
     ],
     CarSpecs(mass=1985, wheelbase=2.78, steerRatio=14.4 * 1.1),  # 10% higher at the center seems reasonable
@@ -502,7 +502,7 @@ class CAR(Platforms):
   KIA_SORENTO_4TH_GEN = HyundaiCanFDPlatformConfig(
     "KIA SORENTO 4TH GEN",
     HyundaiCarInfo("Kia Sorento 2021-23", car_parts=CarParts.common([CarHarness.hyundai_k])),
-    CarSpecs(mass=3957 * CV.LB_TO_KG, wheelbase=2.81, steerRatio=13.5), # average of the platforms
+    CarSpecs(mass=3957 * CV.LB_TO_KG, wheelbase=2.81, steerRatio=13.5),  # average of the platforms
     flags=HyundaiFlags.RADAR_SCC
   )
   KIA_SORENTO_HEV_4TH_GEN = HyundaiCanFDPlatformConfig(
@@ -511,13 +511,13 @@ class CAR(Platforms):
       HyundaiCarInfo("Kia Sorento Hybrid 2021-23", "All", car_parts=CarParts.common([CarHarness.hyundai_a])),
       HyundaiCarInfo("Kia Sorento Plug-in Hybrid 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_a])),
     ],
-    CarSpecs(mass=4395 * CV.LB_TO_KG, wheelbase=2.81, steerRatio=13.5), # average of the platforms
+    CarSpecs(mass=4395 * CV.LB_TO_KG, wheelbase=2.81, steerRatio=13.5),  # average of the platforms
     flags=HyundaiFlags.RADAR_SCC
   )
   KIA_STINGER = HyundaiPlatformConfig(
     "KIA STINGER GT2 2018",
     HyundaiCarInfo("Kia Stinger 2018-20", video_link="https://www.youtube.com/watch?v=MJ94qoofYw0",
-                                  car_parts=CarParts.common([CarHarness.hyundai_c])),
+                   car_parts=CarParts.common([CarHarness.hyundai_c])),
     CarSpecs(mass=1825, wheelbase=2.78, steerRatio=14.4 * 1.15)  # 15% higher at the center seems reasonable
   )
   KIA_STINGER_2022 = HyundaiPlatformConfig(
