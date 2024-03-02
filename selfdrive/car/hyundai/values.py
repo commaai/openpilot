@@ -125,11 +125,10 @@ class HyundaiPlatformConfig(PlatformConfig):
 
 
 @dataclass
-class HyundaiCanFDPlatformConfig(HyundaiPlatformConfig):
+class HyundaiCanFDPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict("hyundai_canfd", None))
 
   def init(self):
-    super().init()
     self.flags |= HyundaiFlags.CANFD
 
 
