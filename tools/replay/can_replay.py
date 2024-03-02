@@ -26,12 +26,10 @@ def send_thread(j: PandaJungle, flock):
     with flock:
       j.flash()
 
+  j.reset()
   for i in [0, 1, 2, 3, 0xFFFF]:
     j.can_clear(i)
     j.set_can_speed_kbps(i, 500)
-    j.set_can_data_speed_kbps(i, 500)
-  j.set_ignition(False)
-  time.sleep(5)
   j.set_ignition(True)
   j.set_panda_power(True)
   j.set_can_loopback(False)
