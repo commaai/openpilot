@@ -79,6 +79,11 @@ class GMCarInfo(CarInfo):
       self.footnotes.append(Footnote.OBD_II)
 
 
+@dataclass(frozen=True, kw_only=True)
+class GMCarSpecs(CarSpecs):
+  tireStiffnessFactor: float = 0.4  # not optimized yet
+
+
 @dataclass
 class GMPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'))
@@ -93,7 +98,7 @@ class CAR(Platforms):
   VOLT = GMPlatformConfig(
     "CHEVROLET VOLT PREMIER 2017",
     GMCarInfo("Chevrolet Volt 2017-18", min_enable_speed=0, video_link="https://youtu.be/QeMCN_4TFfQ"),
-    CarSpecs(mass=1607, wheelbase=2.69, steerRatio=17.7, centerToFrontRatio=0.45),
+    CarSpecs(mass=1607, wheelbase=2.69, steerRatio=17.7, centerToFrontRatio=0.45, tireStiffnessFactor=0.469),
   )
   CADILLAC_ATS = GMPlatformConfig(
     "CADILLAC ATS Premium Performance 2018",
@@ -128,7 +133,7 @@ class CAR(Platforms):
   ESCALADE_ESV = GMPlatformConfig(
     "CADILLAC ESCALADE ESV 2016",
     GMCarInfo("Cadillac Escalade ESV 2016", "Adaptive Cruise Control (ACC) & LKAS"),
-    CarSpecs(mass=2739, wheelbase=3.302, steerRatio=17.3),
+    CarSpecs(mass=2739, wheelbase=3.302, steerRatio=17.3, tireStiffnessFactor=1.0),
   )
   ESCALADE_ESV_2019 = GMPlatformConfig(
     "CADILLAC ESCALADE ESV 2019",
@@ -141,7 +146,7 @@ class CAR(Platforms):
       GMCarInfo("Chevrolet Bolt EUV 2022-23", "Premier or Premier Redline Trim without Super Cruise Package", video_link="https://youtu.be/xvwzGMUA210"),
       GMCarInfo("Chevrolet Bolt EV 2022-23", "2LT Trim with Adaptive Cruise Control Package"),
     ],
-    CarSpecs(mass=1669, wheelbase=2.63779, steerRatio=16.8, centerToFrontRatio=0.4),
+    CarSpecs(mass=1669, wheelbase=2.63779, steerRatio=16.8, centerToFrontRatio=0.4, tireStiffnessFactor=1.0),
   )
   SILVERADO = GMPlatformConfig(
     "CHEVROLET SILVERADO 1500 2020",
@@ -149,7 +154,7 @@ class CAR(Platforms):
       GMCarInfo("Chevrolet Silverado 1500 2020-21", "Safety Package II"),
       GMCarInfo("GMC Sierra 1500 2020-21", "Driver Alert Package II", video_link="https://youtu.be/5HbNoBLzRwE"),
     ],
-    CarSpecs(mass=2450, wheelbase=3.75, steerRatio=16.3),
+    CarSpecs(mass=2450, wheelbase=3.75, steerRatio=16.3, tireStiffnessFactor=1.0),
   )
   EQUINOX = GMPlatformConfig(
     "CHEVROLET EQUINOX 2019",
@@ -159,7 +164,7 @@ class CAR(Platforms):
   TRAILBLAZER = GMPlatformConfig(
     "CHEVROLET TRAILBLAZER 2021",
     GMCarInfo("Chevrolet Trailblazer 2021-22"),
-    CarSpecs(mass=1345, wheelbase=2.64, steerRatio=16.8, centerToFrontRatio=0.4),
+    CarSpecs(mass=1345, wheelbase=2.64, steerRatio=16.8, centerToFrontRatio=0.4, tireStiffnessFactor=1.0),
   )
 
 
