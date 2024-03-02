@@ -19,7 +19,7 @@ class CarControllerParams:
     self.STEER_DRIVER_MULTIPLIER = 50  # weight driver torque heavily
     self.STEER_DRIVER_FACTOR = 1       # from dbc
 
-    if SubaruFlags.GLOBAL_GEN2.any(CP.flags):
+    if SubaruFlags.GLOBAL_GEN2.is_set(CP.flags):
       self.STEER_MAX = 1000
       self.STEER_DELTA_UP = 40
       self.STEER_DELTA_DOWN = 40
@@ -104,7 +104,7 @@ class SubaruPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('subaru_global_2017_generated', None))
 
   def init(self):
-    if SubaruFlags.HYBRID.all(self.flags):
+    if SubaruFlags.HYBRID.is_set(self.flags):
       self.dbc_dict = dbc_dict('subaru_global_2020_hybrid_generated', None)
 
 
