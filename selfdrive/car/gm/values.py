@@ -81,7 +81,7 @@ class GMCarInfo(CarInfo):
 
 @dataclass(frozen=True, kw_only=True)
 class GMCarSpecs(CarSpecs):
-  tireStiffnessFactor: float = 0.4  # not optimized yet
+  tireStiffnessFactor: float = 0.444  # not optimized yet
 
 
 @dataclass
