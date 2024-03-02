@@ -116,7 +116,8 @@ class CAR(Platforms):
       HondaCarInfo("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS),
       HondaCarInfo("Honda Accord Hybrid 2018-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
     ],
-    CarSpecs(mass=3279 * CV.LB_TO_KG, wheelbase=2.83, steerRatio=16.33, centerToFrontRatio=0.39, tireStiffnessFactor=0.8467),  # steerRatio: 11.82 is spec end-to-end
+    # steerRatio: 11.82 is spec end-to-end
+    CarSpecs(mass=3279 * CV.LB_TO_KG, wheelbase=2.83, steerRatio=16.33, centerToFrontRatio=0.39, tireStiffnessFactor=0.8467),
     dbc_dict('honda_accord_2018_can_generated', None),
     flags=HondaFlags.BOSCH,
   )
@@ -151,14 +152,16 @@ class CAR(Platforms):
   CRV_5G = HondaPlatformConfig(
     "HONDA CR-V 2017",
     HondaCarInfo("Honda CR-V 2017-22", min_steer_speed=12. * CV.MPH_TO_MS),
-    CarSpecs(mass=3410 * CV.LB_TO_KG, wheelbase=2.66, steerRatio=16.0, centerToFrontRatio=0.41, tireStiffnessFactor=0.677),  # steerRatio: 12.3 is spec end-to-end
+    # steerRatio: 12.3 is spec end-to-end
+    CarSpecs(mass=3410 * CV.LB_TO_KG, wheelbase=2.66, steerRatio=16.0, centerToFrontRatio=0.41, tireStiffnessFactor=0.677),
     dbc_dict('honda_crv_ex_2017_can_generated', None, body_dbc='honda_crv_ex_2017_body_generated'),
     flags=HondaFlags.BOSCH | HondaFlags.BOSCH_ALT_BRAKE,
   )
   CRV_HYBRID = HondaPlatformConfig(
     "HONDA CR-V HYBRID 2019",
     HondaCarInfo("Honda CR-V Hybrid 2017-20", min_steer_speed=12. * CV.MPH_TO_MS),
-    CarSpecs(mass=1667, wheelbase=2.66, steerRatio=16, centerToFrontRatio=0.41, tireStiffnessFactor=0.677),  # mass: mean of 4 models in kg, steerRatio: 12.3 is spec end-to-end
+    # mass: mean of 4 models in kg, steerRatio: 12.3 is spec end-to-end
+    CarSpecs(mass=1667, wheelbase=2.66, steerRatio=16, centerToFrontRatio=0.41, tireStiffnessFactor=0.677),
     dbc_dict('honda_accord_2018_can_generated', None),
     flags=HondaFlags.BOSCH
   )
