@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor, as_completed
 import jinja2
 import os
 from enum import Enum
@@ -12,12 +13,9 @@ from cereal import car
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.car import gen_empty_fingerprint
 from openpilot.selfdrive.car.tests.routes import routes
-from openpilot.selfdrive.car.tests.test_models import TestCarModel, TestCarModelBase
+from openpilot.selfdrive.car.tests.test_models import TestCarModel
 from openpilot.selfdrive.car.docs_definitions import CarInfo, Column, CommonFootnote, PartType
 from openpilot.selfdrive.car.car_helpers import interfaces, get_interface_attr
-from openpilot.tools.lib.logreader import LogReader
-from multiprocessing import Pool
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
 
 
 def get_all_footnotes() -> dict[Enum, int]:
@@ -77,7 +75,7 @@ def get_all_car_info() -> list[CarInfo]:
   """
 
   all_car_info: list[CarInfo] = []
-  with ProcessPoolExecutor(max_workers=24) as executor:
+  with ProcessPoolExecutor() as executor:
     futures = []
     for model, car_info in get_interface_attr("CAR_INFO", combine_brands=True).items():
       futures.append(executor.submit(init_car_info_for_model, model, car_info))
