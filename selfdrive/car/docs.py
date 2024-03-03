@@ -57,10 +57,9 @@ def init_car_info_for_model(model: str, car_info: CarInfo | list[CarInfo]) -> li
     return []
 
   # A platform can include multiple car models
-  if not isinstance(car_info, list):
-    car_info = (car_info,)
+  car_info_list = car_info if isinstance(car_info, list) else [car_info]
 
-  for _car_info in car_info:
+  for _car_info in car_info_list:
     if not hasattr(_car_info, "row"):
       _car_info.init_make(CP)
       _car_info.init(CP, footnotes)
