@@ -19,7 +19,7 @@ class ModelRunner(RunModel):
       from openpilot.selfdrive.modeld.runners.snpemodel_pyx import SNPEModel as Runner
       runner_type = ModelRunner.SNPE
     elif ModelRunner.ONNX in paths:
-      from openpilot.selfdrive.modeld.runners.onnxmodel_pyx import ONNXModel as Runner
+      from openpilot.selfdrive.modeld.runners.onnxmodel import ONNXModel as Runner
       runner_type = ModelRunner.ONNX
     else:
       raise Exception("Couldn't select a model runner, make sure to pass at least one valid model path")

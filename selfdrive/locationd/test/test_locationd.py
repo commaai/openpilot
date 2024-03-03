@@ -6,7 +6,7 @@ import time
 import capnp
 
 import cereal.messaging as messaging
-from cereal.services import service_list
+from cereal.services import SERVICE_LIST
 from openpilot.common.params import Params
 from openpilot.common.transformations.coordinates import ecef2geodetic
 
@@ -60,6 +60,7 @@ class TestLocationdProc(unittest.TestCase):
       msg.cameraOdometry.trans = [0.0, 0.0, 0.0]
       msg.cameraOdometry.transStd = [0.0, 0.0, 0.0]
     msg.logMonoTime = t
+    msg.valid = True
     return msg
 
   def test_params_gps(self):
@@ -74,8 +75,8 @@ class TestLocationdProc(unittest.TestCase):
     msgs = []
     for sec in range(65):
       for name in self.LLD_MSGS:
-        for j in range(int(service_list[name].frequency)):
-          msgs.append(self.get_msg(name, int((sec + j / service_list[name].frequency) * 1e9)))
+        for j in range(int(SERVICE_LIST[name].frequency)):
+          msgs.append(self.get_msg(name, int((sec + j / SERVICE_LIST[name].frequency) * 1e9)))
 
     for msg in sorted(msgs, key=lambda x: x.logMonoTime):
       self.pm.send(msg.which(), msg)

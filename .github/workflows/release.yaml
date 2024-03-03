@@ -1,7 +1,7 @@
 name: release
 on:
   schedule:
-    - cron: '0 * * * *'
+    - cron: '0 10 * * *'
   workflow_dispatch:
 
 jobs:
@@ -14,6 +14,9 @@ jobs:
       image: ghcr.io/commaai/openpilot-base:latest
     runs-on: ubuntu-20.04
     if: github.repository == 'commaai/openpilot'
+    permissions:
+      checks: read
+      contents: write
     steps:
     - name: Install wait-on-check-action dependencies
       run: |
@@ -21,13 +24,14 @@ jobs:
         sudo apt-get install -y libyaml-dev
     - name: Wait for green check mark
       if: ${{ github.event_name != 'workflow_dispatch' }}
-      uses: lewagon/wait-on-check-action@e2558238c09778af25867eb5de5a3ce4bbae3dcd
+      uses: lewagon/wait-on-check-action@595dabb3acf442d47e29c9ec9ba44db0c6bdd18f
       with:
         ref: master
         wait-interval: 30
         running-workflow-name: 'build master-ci'
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
         check-regexp: ^((?!.*(build prebuilt).*).)*$
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
         fetch-depth: 0
@@ -43,7 +47,7 @@ jobs:
         export PYTHONPATH=$TARGET_DIR
         cd $TARGET_DIR
         scons -j$(nproc)
-        selfdrive/car/tests/test_car_interfaces.py
+        pytest -n logical selfdrive/car/tests/test_car_interfaces.py
     - name: Push master-ci
       run: |
         unset TARGET_DIR

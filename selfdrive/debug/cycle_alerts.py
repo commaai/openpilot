@@ -25,7 +25,8 @@ def cycle_alerts(duration=200, is_metric=False):
     (EventName.buttonCancel, ET.USER_DISABLE),
     (EventName.wrongGear, ET.NO_ENTRY),
 
-    (EventName.vehicleModelInvalid, ET.SOFT_DISABLE),
+    (EventName.locationdTemporaryError, ET.SOFT_DISABLE),
+    (EventName.paramsdTemporaryError, ET.SOFT_DISABLE),
     (EventName.accFaulted, ET.IMMEDIATE_DISABLE),
 
     # DM sequence
@@ -53,7 +54,7 @@ def cycle_alerts(duration=200, is_metric=False):
   CS = car.CarState.new_message()
   CP = CarInterface.get_non_essential_params("HONDA CIVIC 2016")
   sm = messaging.SubMaster(['deviceState', 'pandaStates', 'roadCameraState', 'modelV2', 'liveCalibration',
-                            'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
+                            'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman',
                             'managerState'] + cameras)
 
   pm = messaging.PubMaster(['controlsState', 'pandaStates', 'deviceState'])

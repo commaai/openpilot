@@ -1,12 +1,11 @@
 import os
 import urllib.parse
-from openpilot.common.file_helpers import mkdirs_exists_ok
 
-DEFAULT_CACHE_DIR = os.path.expanduser("~/.commacache")
+DEFAULT_CACHE_DIR = os.getenv("CACHE_ROOT", os.path.expanduser("~/.commacache"))
 
-def cache_path_for_file_path(fn, cache_prefix=None):
-  dir_ = os.path.join(DEFAULT_CACHE_DIR, "local")
-  mkdirs_exists_ok(dir_)
+def cache_path_for_file_path(fn, cache_dir=DEFAULT_CACHE_DIR):
+  dir_ = os.path.join(cache_dir, "local")
+  os.makedirs(dir_, exist_ok=True)
   fn_parsed = urllib.parse.urlparse(fn)
   if fn_parsed.scheme == '':
     cache_fn = os.path.abspath(fn).replace("/", "_")

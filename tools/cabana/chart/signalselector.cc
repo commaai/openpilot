@@ -44,9 +44,9 @@ SignalSelector::SignalSelector(QString title, QWidget *parent) : QDialog(parent)
   auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   main_layout->addWidget(buttonBox, 3, 2);
 
-  for (auto it = can->last_msgs.cbegin(); it != can->last_msgs.cend(); ++it) {
-    if (auto m = dbc()->msg(it.key())) {
-      msgs_combo->addItem(QString("%1 (%2)").arg(m->name).arg(it.key().toString()), QVariant::fromValue(it.key()));
+  for (const auto &[id, _] : can->lastMessages()) {
+    if (auto m = dbc()->msg(id)) {
+      msgs_combo->addItem(QString("%1 (%2)").arg(m->name).arg(id.toString()), QVariant::fromValue(id));
     }
   }
   msgs_combo->model()->sort(0);

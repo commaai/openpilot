@@ -1,13 +1,14 @@
 name: 'openpilot env setup, with retry on failure'
 
 inputs:
-  git_lfs:
-    description: 'Whether or not to pull the git lfs'
+  docker_hub_pat:
+    description: 'Auth token for Docker Hub, required for BuildJet jobs'
     required: false
-    default: 'true'
-
-env:
-  SLEEP_TIME: 30 # Time to sleep between retries
+    default: ''
+  sleep_time:
+    description: 'Time to sleep between retries'
+    required: false
+    default: 30
 
 runs:
   using: "composite"
@@ -16,24 +17,24 @@ runs:
       uses: ./.github/workflows/setup
       continue-on-error: true
       with:
-        git_lfs: ${{ inputs.git_lfs }}
+        docker_hub_pat: ${{ inputs.docker_hub_pat }}
         is_retried: true
     - if: steps.setup1.outcome == 'failure'
       shell: bash
-      run: sleep ${{ env.SLEEP_TIME }}
+      run: sleep ${{ inputs.sleep_time }}
     - id: setup2
       if: steps.setup1.outcome == 'failure'
       uses: ./.github/workflows/setup
       continue-on-error: true
       with:
-        git_lfs: ${{ inputs.git_lfs }}
+        docker_hub_pat: ${{ inputs.docker_hub_pat }}
         is_retried: true
     - if: steps.setup2.outcome == 'failure'
       shell: bash
-      run: sleep ${{ env.SLEEP_TIME }}
+      run: sleep ${{ inputs.sleep_time }}
     - id: setup3
       if: steps.setup2.outcome == 'failure'
       uses: ./.github/workflows/setup
       with:
-        git_lfs: ${{ inputs.git_lfs }}
+        docker_hub_pat: ${{ inputs.docker_hub_pat }}
         is_retried: true

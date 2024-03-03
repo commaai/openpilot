@@ -7,9 +7,6 @@
 #include <QRegExp>
 #include <QtConcurrent>
 #include <array>
-#include <memory>
-#include <set>
-#include <string>
 
 #include "selfdrive/ui/qt/api.h"
 #include "system/hardware/hw.h"
@@ -47,7 +44,7 @@ bool Route::loadFromServer() {
 
     loop.exit(success ? loadFromJson(json) : 0);
   });
-  http.sendRequest("https://api.commadotai.com/v1/route/" + route_.str + "/files");
+  http.sendRequest(CommaApi::BASE_URL + "/v1/route/" + route_.str + "/files");
   return loop.exec();
 }
 
@@ -102,9 +99,7 @@ void Route::addFileToSegment(int n, const QString &file) {
 
 // class Segment
 
-Segment::Segment(int n, const SegmentFile &files, uint32_t flags,
-                 const std::set<cereal::Event::Which> &allow)
-    : seg_num(n), flags(flags), allow(allow) {
+Segment::Segment(int n, const SegmentFile &files, uint32_t flags) : seg_num(n), flags(flags) {
   // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
   const std::array file_list = {
       (flags & REPLAY_FLAG_QCAMERA) || files.road_cam.isEmpty() ? files.qcamera : files.road_cam,
@@ -135,7 +130,7 @@ void Segment::loadFile(int id, const std::string file) {
     success = frames[id]->load(file, flags & REPLAY_FLAG_NO_HW_DECODER, &abort_, local_cache, 20 * 1024 * 1024, 3);
   } else {
     log = std::make_unique<LogReader>();
-    success = log->load(file, &abort_, allow, local_cache, 0, 3);
+    success = log->load(file, &abort_, local_cache, 0, 3);
   }
 
   if (!success) {

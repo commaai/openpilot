@@ -3,7 +3,6 @@ import os
 import pickle
 import struct
 import subprocess
-import tempfile
 import threading
 from enum import IntEnum
 from functools import wraps
@@ -12,11 +11,12 @@ import numpy as np
 from lru import LRU
 
 import _io
-from openpilot.tools.lib.cache import cache_path_for_file_path
+from openpilot.tools.lib.cache import cache_path_for_file_path, DEFAULT_CACHE_DIR
 from openpilot.tools.lib.exceptions import DataUnreadableError
+from openpilot.tools.lib.vidindex import hevc_index
 from openpilot.common.file_helpers import atomic_write_in_dir
 
-from openpilot.tools.lib.filereader import FileReader
+from openpilot.tools.lib.filereader import FileReader, resolve_name
 
 HEVC_SLICE_B = 0
 HEVC_SLICE_P = 1
@@ -59,45 +59,19 @@ def fingerprint_video(fn):
 
 
 def ffprobe(fn, fmt=None):
-  cmd = ["ffprobe",
-         "-v", "quiet",
-         "-print_format", "json",
-         "-show_format", "-show_streams"]
+  fn = resolve_name(fn)
+  cmd = ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", "-show_streams"]
   if fmt:
     cmd += ["-f", fmt]
-  cmd += [fn]
+  cmd += ["-i", "-"]
 
   try:
-    ffprobe_output = subprocess.check_output(cmd)
+    with FileReader(fn) as f:
+      ffprobe_output = subprocess.check_output(cmd, input=f.read(4096))
   except subprocess.CalledProcessError as e:
     raise DataUnreadableError(fn) from e
 
   return json.loads(ffprobe_output)
-
-
-def vidindex(fn, typ):
-  vidindex_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "vidindex")
-  vidindex = os.path.join(vidindex_dir, "vidindex")
-
-  subprocess.check_call(["make"], cwd=vidindex_dir, stdout=subprocess.DEVNULL)
-
-  with tempfile.NamedTemporaryFile() as prefix_f, \
-       tempfile.NamedTemporaryFile() as index_f:
-    try:
-      subprocess.check_call([vidindex, typ, fn, prefix_f.name, index_f.name])
-    except subprocess.CalledProcessError as e:
-      raise DataUnreadableError(f"vidindex failed on file {fn}") from e
-    with open(index_f.name, "rb") as f:
-      index = f.read()
-    with open(prefix_f.name, "rb") as f:
-      prefix = f.read()
-
-  index = np.frombuffer(index, np.uint32).reshape(-1, 2)
-
-  assert index[-1, 0] == 0xFFFFFFFF
-  assert index[-1, 1] == os.path.getsize(fn)
-
-  return index, prefix
 
 
 def cache_fn(func):
@@ -106,15 +80,14 @@ def cache_fn(func):
     if kwargs.pop('no_cache', None):
       cache_path = None
     else:
-      cache_prefix = kwargs.pop('cache_prefix', None)
-      cache_path = cache_path_for_file_path(fn, cache_prefix)
+      cache_dir = kwargs.pop('cache_dir', DEFAULT_CACHE_DIR)
+      cache_path = cache_path_for_file_path(fn, cache_dir)
 
     if cache_path and os.path.exists(cache_path):
       with open(cache_path, "rb") as cache_file:
         cache_value = pickle.load(cache_file)
     else:
       cache_value = func(fn, *args, **kwargs)
-
       if cache_path:
         with atomic_write_in_dir(cache_path, mode="wb", overwrite=True) as cache_file:
           pickle.dump(cache_value, cache_file, -1)
@@ -125,13 +98,13 @@ def cache_fn(func):
 
 
 @cache_fn
-def index_stream(fn, typ):
-  assert typ in ("hevc", )
+def index_stream(fn, ft):
+  if ft != FrameType.h265_stream:
+    raise NotImplementedError("Only h265 supported")
 
-  with FileReader(fn) as f:
-    assert os.path.exists(f.name), fn
-    index, prefix = vidindex(f.name, typ)
-    probe = ffprobe(f.name, typ)
+  frame_types, dat_len, prefix = hevc_index(fn)
+  index = np.array(frame_types + [(0xFFFFFFFF, dat_len)], dtype=np.uint32)
+  probe = ffprobe(fn, "hevc")
 
   return {
     'index': index,
@@ -140,42 +113,8 @@ def index_stream(fn, typ):
   }
 
 
-def index_videos(camera_paths, cache_prefix=None):
-  """Requires that paths in camera_paths are contiguous and of the same type."""
-  if len(camera_paths) < 1:
-    raise ValueError("must provide at least one video to index")
-
-  frame_type = fingerprint_video(camera_paths[0])
-  for fn in camera_paths:
-    index_video(fn, frame_type, cache_prefix)
-
-
-def index_video(fn, frame_type=None, cache_prefix=None):
-  cache_path = cache_path_for_file_path(fn, cache_prefix)
-
-  if os.path.exists(cache_path):
-    return
-
-  if frame_type is None:
-    frame_type = fingerprint_video(fn[0])
-
-  if frame_type == FrameType.h265_stream:
-    index_stream(fn, "hevc", cache_prefix=cache_prefix)
-  else:
-    raise NotImplementedError("Only h265 supported")
-
-
-def get_video_index(fn, frame_type, cache_prefix=None):
-  cache_path = cache_path_for_file_path(fn, cache_prefix)
-
-  if not os.path.exists(cache_path):
-    index_video(fn, frame_type, cache_prefix)
-
-  if not os.path.exists(cache_path):
-    return None
-  with open(cache_path, "rb") as cache_file:
-    return pickle.load(cache_file)
-
+def get_video_index(fn, frame_type, cache_dir=DEFAULT_CACHE_DIR):
+  return index_stream(fn, frame_type, cache_dir=cache_dir)
 
 def read_file_check_size(f, sz, cookie):
   buff = bytearray(sz)
@@ -228,31 +167,21 @@ def rgb24tonv12(rgb):
 
 
 def decompress_video_data(rawdat, vid_fmt, w, h, pix_fmt):
-  # using a tempfile is much faster than proc.communicate for some reason
-
-  with tempfile.TemporaryFile() as tmpf:
-    tmpf.write(rawdat)
-    tmpf.seek(0)
-
-    threads = os.getenv("FFMPEG_THREADS", "0")
-    cuda = os.getenv("FFMPEG_CUDA", "0") == "1"
-    args = ["ffmpeg",
-            "-threads", threads,
-            "-hwaccel", "none" if not cuda else "cuda",
-            "-c:v", "hevc",
-            "-vsync", "0",
-            "-f", vid_fmt,
-            "-flags2", "showall",
-            "-i", "pipe:0",
-            "-threads", threads,
-            "-f", "rawvideo",
-            "-pix_fmt", pix_fmt,
-            "pipe:1"]
-    with subprocess.Popen(args, stdin=tmpf, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL) as proc:
-      # dat = proc.communicate()[0]
-      dat = proc.stdout.read()
-      if proc.wait() != 0:
-        raise DataUnreadableError("ffmpeg failed")
+  threads = os.getenv("FFMPEG_THREADS", "0")
+  cuda = os.getenv("FFMPEG_CUDA", "0") == "1"
+  args = ["ffmpeg", "-v", "quiet",
+          "-threads", threads,
+          "-hwaccel", "none" if not cuda else "cuda",
+          "-c:v", "hevc",
+          "-vsync", "0",
+          "-f", vid_fmt,
+          "-flags2", "showall",
+          "-i", "-",
+          "-threads", threads,
+          "-f", "rawvideo",
+          "-pix_fmt", pix_fmt,
+          "-"]
+  dat = subprocess.check_output(args, input=rawdat)
 
   if pix_fmt == "rgb24":
     ret = np.frombuffer(dat, dtype=np.uint8).reshape(-1, h, w, 3)
@@ -284,13 +213,13 @@ class BaseFrameReader:
     raise NotImplementedError
 
 
-def FrameReader(fn, cache_prefix=None, readahead=False, readbehind=False, index_data=None):
+def FrameReader(fn, cache_dir=DEFAULT_CACHE_DIR, readahead=False, readbehind=False, index_data=None):
   frame_type = fingerprint_video(fn)
   if frame_type == FrameType.raw:
     return RawFrameReader(fn)
   elif frame_type in (FrameType.h265_stream,):
     if not index_data:
-      index_data = get_video_index(fn, frame_type, cache_prefix)
+      index_data = get_video_index(fn, frame_type, cache_dir)
     return StreamFrameReader(fn, frame_type, index_data, readahead=readahead, readbehind=readbehind)
   else:
     raise NotImplementedError(frame_type)

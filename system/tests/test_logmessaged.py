@@ -7,7 +7,7 @@ import unittest
 import cereal.messaging as messaging
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.system.hardware.hw import Paths
-from openpilot.system.swaglog import cloudlog, ipchandler
+from openpilot.common.swaglog import cloudlog, ipchandler
 
 
 class TestLogmessaged(unittest.TestCase):
@@ -21,7 +21,7 @@ class TestLogmessaged(unittest.TestCase):
     self.error_sock = messaging.sub_sock("logMessage", timeout=1000, conflate=False)
 
     # ensure sockets are connected
-    time.sleep(0.2)
+    time.sleep(1)
     messaging.drain_sock(self.sock)
     messaging.drain_sock(self.error_sock)
 

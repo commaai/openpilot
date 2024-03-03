@@ -9,10 +9,9 @@ import time
 import glob
 from typing import NoReturn
 
-from openpilot.common.file_helpers import mkdirs_exists_ok
 import openpilot.selfdrive.sentry as sentry
 from openpilot.system.hardware.hw import Paths
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_commit
 
 MAX_SIZE = 1_000_000 * 100  # allow up to 100M
@@ -46,19 +45,16 @@ def get_apport_stacktrace(fn):
 
 
 def get_tombstones():
-  """Returns list of (filename, ctime) for all tombstones in /data/tombstones
-  and apport crashlogs in /var/crash"""
+  """Returns list of (filename, ctime) for all crashlogs"""
   files = []
-  for folder in [TOMBSTONE_DIR, APPORT_DIR]:
-    if os.path.exists(folder):
-      with os.scandir(folder) as d:
-
-        # Loop over first 1000 directory entries
-        for _, f in zip(range(1000), d, strict=False):
-          if f.name.startswith("tombstone"):
-            files.append((f.path, int(f.stat().st_ctime)))
-          elif f.name.endswith(".crash") and f.stat().st_mode == 0o100640:
-            files.append((f.path, int(f.stat().st_ctime)))
+  if os.path.exists(APPORT_DIR):
+    with os.scandir(APPORT_DIR) as d:
+      # Loop over first 1000 directory entries
+      for _, f in zip(range(1000), d, strict=False):
+        if f.name.startswith("tombstone"):
+          files.append((f.path, int(f.stat().st_ctime)))
+        elif f.name.endswith(".crash") and f.stat().st_mode == 0o100640:
+          files.append((f.path, int(f.stat().st_ctime)))
   return files
 
 
@@ -128,10 +124,10 @@ def report_tombstone_apport(fn):
   clean_path = path.replace('/', '_')
   date = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
 
-  new_fn = f"{date}_{get_commit(default='nocommit')[:8]}_{safe_fn(clean_path)}"[:MAX_TOMBSTONE_FN_LEN]
+  new_fn = f"{date}_{(get_commit() or 'nocommit')[:8]}_{safe_fn(clean_path)}"[:MAX_TOMBSTONE_FN_LEN]
 
   crashlog_dir = os.path.join(Paths.log_root(), "crash")
-  mkdirs_exists_ok(crashlog_dir)
+  os.makedirs(crashlog_dir, exist_ok=True)
 
   # Files could be on different filesystems, copy, then delete
   shutil.copy(fn, os.path.join(crashlog_dir, new_fn))
@@ -143,7 +139,7 @@ def report_tombstone_apport(fn):
 
 
 def main() -> NoReturn:
-  sentry.init(sentry.SentryProject.SELFDRIVE_NATIVE)
+  should_report = sentry.init(sentry.SentryProject.SELFDRIVE_NATIVE)
 
   # Clear apport folder on start, otherwise duplicate crashes won't register
   clear_apport_folder()
@@ -153,6 +149,14 @@ def main() -> NoReturn:
     now_tombstones = set(get_tombstones())
 
     for fn, _ in (now_tombstones - initial_tombstones):
+      # clear logs if we're not interested in them
+      if not should_report:
+        try:
+          os.remove(fn)
+        except Exception:
+          pass
+        continue
+
       try:
         cloudlog.info(f"reporting new tombstone {fn}")
         if fn.endswith(".crash"):

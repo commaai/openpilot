@@ -1,22 +1,16 @@
 #!/usr/bin/env python3
+import pytest
 import time
 import unittest
 import numpy as np
 
-from openpilot.system.hardware import TICI
 from openpilot.system.hardware.tici.hardware import Tici
 
 HARDWARE = Tici()
 
+
+@pytest.mark.tici
 class TestHardware(unittest.TestCase):
-
-  @classmethod
-  def setUpClass(cls):
-    if not TICI:
-      raise unittest.SkipTest
-
-    HARDWARE.initialize_hardware()
-    HARDWARE.set_power_save(False)
 
   def test_power_save_time(self):
     ts = []

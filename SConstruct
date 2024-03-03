@@ -9,10 +9,15 @@ import SCons.Errors
 
 SCons.Warnings.warningAsException(True)
 
+# pending upstream fix - https://github.com/SCons/scons/issues/4461
+#SetOption('warn', 'all')
+
 TICI = os.path.isfile('/TICI')
 AGNOS = TICI
 
 Decider('MD5-timestamp')
+
+SetOption('num_jobs', int(os.cpu_count()/2))
 
 AddOption('--kaitai',
           action='store_true',
@@ -26,6 +31,10 @@ AddOption('--ubsan',
           action='store_true',
           help='turn on UBSan')
 
+AddOption('--coverage',
+          action='store_true',
+          help='build with test coverage options')
+
 AddOption('--clazy',
           action='store_true',
           help='build with clazy')
@@ -33,6 +42,12 @@ AddOption('--clazy',
 AddOption('--compile_db',
           action='store_true',
           help='build clang compilation database')
+
+AddOption('--ccflags',
+          action='store',
+          type='string',
+          default='',
+          help='pass arbitrary flags over the command line')
 
 AddOption('--snpe',
           action='store_true',
@@ -52,7 +67,7 @@ AddOption('--pc-thneed',
 AddOption('--minimal',
           action='store_false',
           dest='extras',
-          default=os.path.islink(Dir('#laika/').abspath),
+          default=os.path.islink(Dir('#rednose/').abspath), # minimal by default on release branch (where rednose is not a link)
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
 ## Architecture name breakdown (arch)
@@ -81,8 +96,6 @@ lenv = {
 rpath = lenv["LD_LIBRARY_PATH"].copy()
 
 if arch == "larch64":
-  lenv["LD_LIBRARY_PATH"] += ['/data/data/com.termux/files/usr/lib']
-
   cpppath = [
     "#third_party/opencl/include",
   ]
@@ -106,10 +119,7 @@ else:
   cflags = []
   cxxflags = []
   cpppath = []
-  rpath += [
-    Dir("#cereal").abspath,
-    Dir("#common").abspath
-  ]
+  rpath += []
 
   # MacOS
   if arch == "Darwin":
@@ -133,9 +143,6 @@ else:
     libpath = [
       f"#third_party/acados/{arch}/lib",
       f"#third_party/libyuv/{arch}/lib",
-      f"#third_party/mapbox-gl-native-qt/{arch}",
-      "#cereal",
-      "#common",
       "/usr/lib",
       "/usr/local/lib",
     ]
@@ -166,6 +173,10 @@ if arch != "Darwin":
 cflags += ['-DSWAGLOG="\\"common/swaglog.h\\""']
 cxxflags += ['-DSWAGLOG="\\"common/swaglog.h\\""']
 
+ccflags_option = GetOption('ccflags')
+if ccflags_option:
+  ccflags += ccflags_option.split(' ')
+
 env = Environment(
   ENV=lenv,
   CCFLAGS=[
@@ -194,11 +205,12 @@ env = Environment(
     "#third_party/json11",
     "#third_party/linux/include",
     "#third_party/snpe/include",
-    "#third_party/mapbox-gl-native-qt/include",
     "#third_party/qrcode",
     "#third_party",
     "#cereal",
     "#opendbc/can",
+    "#third_party/maplibre-native-qt/include",
+    f"#third_party/maplibre-native-qt/{arch}/include"
   ],
 
   CC='clang',
@@ -215,10 +227,13 @@ env = Environment(
     "#opendbc/can",
     "#selfdrive/boardd",
     "#common",
+    "#rednose/helpers",
   ],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
-  tools=["default", "cython", "compilation_db"],
+  REDNOSE_ROOT="#",
+  tools=["default", "cython", "compilation_db", "rednose_filter"],
+  toolpath=["#rednose_repo/site_scons/site_tools"],
 )
 
 if arch == "Darwin":
@@ -243,18 +258,6 @@ def progress_function(node):
 
 if os.environ.get('SCONS_PROGRESS'):
   Progress(progress_function, interval=node_interval)
-
-SHARED = False
-
-# TODO: this can probably be removed
-def abspath(x):
-  if arch == 'aarch64':
-    pth = os.path.join("/data/pythonpath", x[0].path)
-    env.Depends(pth, x)
-    return File(pth)
-  else:
-    # rpath works elsewhere
-    return x[0].path.rsplit("/", 1)[1][:-3]
 
 # Cython build environment
 py_include = sysconfig.get_paths()['include']
@@ -292,8 +295,11 @@ else:
   qt_env['QTDIR'] = qt_install_prefix
   qt_dirs = [
     f"{qt_install_headers}",
-    f"{qt_install_headers}/QtGui/5.12.8/QtGui",
   ]
+
+  qt_gui_path = os.path.join(qt_install_headers, "QtGui")
+  qt_gui_dirs = [d for d in os.listdir(qt_gui_path) if os.path.isdir(os.path.join(qt_gui_path, d))]
+  qt_dirs += [f"{qt_install_headers}/QtGui/{qt_gui_dirs[0]}/QtGui", ] if qt_gui_dirs else []
   qt_dirs += [f"{qt_install_headers}/Qt{m}" for m in qt_modules]
 
   qt_libs = [f"Qt5{m}" for m in qt_modules]
@@ -310,7 +316,7 @@ try:
 except SCons.Errors.UserError:
   qt_env.Tool('qt')
 
-qt_env['CPPPATH'] += qt_dirs + ["#selfdrive/ui/qt/"]
+qt_env['CPPPATH'] += qt_dirs# + ["#selfdrive/ui/qt/"]
 qt_flags = [
   "-D_REENTRANT",
   "-DQT_NO_DEBUG",
@@ -323,7 +329,8 @@ qt_flags = [
   "-DQT_MESSAGELOGCONTEXT",
 ]
 qt_env['CXXFLAGS'] += qt_flags
-qt_env['LIBPATH'] += ['#selfdrive/ui']
+qt_env['LIBPATH'] += ['#selfdrive/ui', f"#third_party/maplibre-native-qt/{arch}/lib"]
+qt_env['RPATH'] += [Dir(f"#third_party/maplibre-native-qt/{arch}/lib").srcnode().abspath]
 qt_env['LIBS'] = qt_libs
 
 if GetOption("clazy"):
@@ -337,63 +344,32 @@ if GetOption("clazy"):
   qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
   qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
 
-Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED')
+Export('env', 'qt_env', 'arch', 'real_arch')
 
+# Build common module
 SConscript(['common/SConscript'])
 Import('_common', '_gpucommon')
 
-if SHARED:
-  common, gpucommon = abspath(common), abspath(gpucommon)
-else:
-  common = [_common, 'json11']
-  gpucommon = [_gpucommon]
+common = [_common, 'json11']
+gpucommon = [_gpucommon]
 
 Export('common', 'gpucommon')
 
-# cereal and messaging are shared with the system
+# Build cereal and messaging
 SConscript(['cereal/SConscript'])
-if SHARED:
-  cereal = abspath([File('cereal/libcereal_shared.so')])
-  messaging = abspath([File('cereal/libmessaging_shared.so')])
-else:
-  cereal = [File('#cereal/libcereal.a')]
-  messaging = [File('#cereal/libmessaging.a')]
-  visionipc = [File('#cereal/libvisionipc.a')]
-messaging_python = [File('#cereal/messaging/messaging_pyx.so')]
 
-Export('cereal', 'messaging', 'messaging_python', 'visionipc')
+# Build other submodules
+SConscript([
+  'body/board/SConscript',
+  'opendbc/can/SConscript',
+  'panda/SConscript',
+])
 
-# Build rednose library and ekf models
-
-rednose_deps = [
-  "#selfdrive/locationd/models/constants.py",
-  "#selfdrive/locationd/models/gnss_helpers.py",
-]
-
-rednose_config = {
-  'generated_folder': '#selfdrive/locationd/models/generated',
-  'to_build': {
-    'gnss': ('#selfdrive/locationd/models/gnss_kf.py', True, [], rednose_deps),
-    'live': ('#selfdrive/locationd/models/live_kf.py', True, ['live_kf_constants.h'], rednose_deps),
-    'car': ('#selfdrive/locationd/models/car_kf.py', True, [], rednose_deps),
-  },
-}
-
-if arch != "larch64":
-  rednose_config['to_build'].update({
-    'loc_4': ('#selfdrive/locationd/models/loc_kf.py', True, [], rednose_deps),
-    'lane': ('#selfdrive/locationd/models/lane_kf.py', True, [], rednose_deps),
-    'pos_computer_4': ('#rednose/helpers/lst_sq_computer.py', False, [], []),
-    'pos_computer_5': ('#rednose/helpers/lst_sq_computer.py', False, [], []),
-    'feature_handler_5': ('#rednose/helpers/feature_handler.py', False, [], []),
-  })
-
-Export('rednose_config')
+# Build rednose library
 SConscript(['rednose/SConscript'])
 
 # Build system services
 SConscript([
-  'system/clocksd/SConscript',
   'system/proclogd/SConscript',
   'system/ubloxd/SConscript',
   'system/loggerd/SConscript',
@@ -406,26 +382,11 @@ if arch != "Darwin":
   ])
 
 # Build openpilot
-
-# build submodules
-SConscript([
-  'body/board/SConscript',
-  'cereal/SConscript',
-  'opendbc/can/SConscript',
-  'panda/SConscript',
-])
-
 SConscript(['third_party/SConscript'])
 
-SConscript(['selfdrive/boardd/SConscript'])
-SConscript(['selfdrive/controls/lib/lateral_mpc_lib/SConscript'])
-SConscript(['selfdrive/controls/lib/longitudinal_mpc_lib/SConscript'])
-SConscript(['selfdrive/locationd/SConscript'])
-SConscript(['selfdrive/navd/SConscript'])
-SConscript(['selfdrive/modeld/SConscript'])
-SConscript(['selfdrive/ui/SConscript'])
+SConscript(['selfdrive/SConscript'])
 
-if arch in ['x86_64', 'aarch64', 'Darwin'] and Dir('#tools/cabana/').exists() and GetOption('extras'):
+if Dir('#tools/cabana/').exists() and GetOption('extras'):
   SConscript(['tools/replay/SConscript'])
   SConscript(['tools/cabana/SConscript'])
 

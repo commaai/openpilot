@@ -5,7 +5,6 @@
 
 #include <QComboBox>
 #include <QFormLayout>
-#include <QVBoxLayout>
 
 #include "tools/cabana/streams/livestream.h"
 #include "selfdrive/boardd/panda.h"

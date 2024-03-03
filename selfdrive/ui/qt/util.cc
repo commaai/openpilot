@@ -5,6 +5,7 @@
 #include <vector>
 
 #include <QApplication>
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QHash>
@@ -25,7 +26,7 @@ QString getVersion() {
 }
 
 QString getBrand() {
-  return Params().getBool("Passive") ? QObject::tr("dashcam") : QObject::tr("openpilot");
+  return QObject::tr("openpilot");
 }
 
 QString getUserAgent() {
@@ -111,6 +112,13 @@ void initApp(int argc, char *argv[], bool disable_hidpi) {
     qputenv("QT_SCALE_FACTOR", QString::number(1.0 / tmp.devicePixelRatio() ).toLocal8Bit());
 #endif
   }
+
+  qputenv("QT_DBL_CLICK_DIST", QByteArray::number(150));
+
+  // ensure the current dir matches the exectuable's directory
+  QApplication tmp(argc, argv);
+  QString appDir = QCoreApplication::applicationDirPath();
+  QDir::setCurrent(appDir);
 
   setQtSurfaceFormat();
 }

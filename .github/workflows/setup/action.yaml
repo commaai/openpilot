@@ -1,10 +1,10 @@
 name: 'openpilot env setup'
 
 inputs:
-  git_lfs:
-    description: 'Whether or not to pull the git lfs'
-    required: false
-    default: 'true'
+  docker_hub_pat:
+    description: 'Auth token for Docker Hub, required for BuildJet jobs'
+    required: true
+    default: ''
   is_retried:
     description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
     required: false
@@ -22,8 +22,20 @@ runs:
 
     # do this after checkout to ensure our custom LFS config is used to pull from GitLab
     - shell: bash
-      if: ${{ inputs.git_lfs == 'true' }}
       run: git lfs pull
+
+    # on BuildJet runners, must be logged into DockerHub to avoid rate limiting
+    # https://buildjet.com/for-github-actions/docs/guides/docker
+    - shell: bash
+      if: ${{ contains(runner.name, 'buildjet') && inputs.docker_hub_pat == '' }}
+      run: |
+        echo "Need to set the Docker Hub PAT secret as an input to this action"
+        exit 1
+    - name: Login to Docker Hub
+      if: contains(runner.name, 'buildjet')
+      shell: bash
+      run: |
+        docker login -u adeebshihadeh -p ${{ inputs.docker_hub_pat }}
 
     # build cache
     - id: date
@@ -31,19 +43,14 @@ runs:
       run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
     - shell: bash
       run: echo "$CACHE_COMMIT_DATE"
-    - id: restore-scons-cache
-      uses: actions/cache/restore@v3
+    - id: scons-cache
+      uses: ./.github/workflows/auto-cache
       with:
         path: .ci_cache/scons_cache
-        key: scons-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
         restore-keys: |
-          scons-${{ env.CACHE_COMMIT_DATE }}-
-          scons-
-    # if we didn't get a cache hit, make the directory manually so it doesn't fail on future steps
-    - id: scons-cache-setup
-      shell: bash
-      if: steps.restore-scons-cache.outputs.cache-hit != 'true'
-      run: mkdir -p $GITHUB_WORKSPACE/.ci_cache/scons_cache
+          scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
+          scons-${{ runner.arch }}
     # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
     - id: normalize-file-permissions
       shell: bash
@@ -51,12 +58,6 @@ runs:
       run: |
         find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
         find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
-    - id: setup-buildx-action
-      if: contains(runner.name, 'buildjet')
-      name: Set up Docker Buildx on buildjet to ensure a consistent cache
-      uses: docker/setup-buildx-action@v2
-      with:
-        driver: docker-container
     # build our docker image
     - shell: bash
       run: eval ${{ env.BUILD }}

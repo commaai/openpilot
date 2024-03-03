@@ -1,4 +1,6 @@
+import http.server
 import os
+import threading
 import time
 
 from functools import wraps
@@ -9,11 +11,8 @@ from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.system.hardware import PC
 from openpilot.system.version import training_version, terms_version
 
-SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
 def set_params_enabled():
-  os.environ['PASSIVE'] = "0"
-  os.environ['REPLAY'] = "1"
   os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
   os.environ['LOGPRINT'] = "debug"
 
@@ -21,7 +20,6 @@ def set_params_enabled():
   params.put("HasAcceptedTerms", terms_version)
   params.put("CompletedTrainingVersion", training_version)
   params.put_bool("OpenpilotEnabledToggle", True)
-  params.put_bool("Passive", False)
 
   # valid calib
   msg = messaging.new_message('liveCalibration')
@@ -69,3 +67,36 @@ def with_processes(processes, init_time=0, ignore_stopped=None):
 
     return wrap
   return wrapper
+
+
+def noop(*args, **kwargs):
+  pass
+
+
+def read_segment_list(segment_list_path):
+  with open(segment_list_path) as f:
+    seg_list = f.read().splitlines()
+
+  return [(platform[2:], segment) for platform, segment in zip(seg_list[::2], seg_list[1::2], strict=True)]
+
+
+def with_http_server(func, handler=http.server.BaseHTTPRequestHandler, setup=None):
+  @wraps(func)
+  def inner(*args, **kwargs):
+    host = '127.0.0.1'
+    server = http.server.HTTPServer((host, 0), handler)
+    port = server.server_port
+    t = threading.Thread(target=server.serve_forever)
+    t.start()
+
+    if setup is not None:
+      setup(host, port)
+
+    try:
+      return func(*args, f'http://{host}:{port}', **kwargs)
+    finally:
+      server.shutdown()
+      server.server_close()
+      t.join()
+
+  return inner

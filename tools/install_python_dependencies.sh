@@ -54,8 +54,8 @@ fi
 eval "$(pyenv init --path)"
 
 echo "update pip"
-pip install pip==23.2.1
-pip install poetry==1.5.1
+pip install pip==23.3
+pip install poetry==1.6.1
 
 poetry config virtualenvs.prefer-active-python true --local
 poetry config virtualenvs.in-project true --local
@@ -75,12 +75,8 @@ pyenv rehash
 
 [ -n "$POETRY_VIRTUALENVS_CREATE" ] && RUN="" || RUN="poetry run"
 
-if [ "$(uname)" != "Darwin" ]; then
+if [ "$(uname)" != "Darwin" ] && [ -e "$ROOT/.git" ]; then
   echo "pre-commit hooks install..."
-  shopt -s nullglob
-  for f in .pre-commit-config.yaml */.pre-commit-config.yaml; do
-    if [ -e "$ROOT/$(dirname $f)/.git" ]; then
-      $RUN pre-commit install -c "$f"
-    fi
-  done
+  $RUN pre-commit install
+  $RUN git submodule foreach pre-commit install
 fi

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <set>
 
 #include <QAbstractItemModel>
 #include <QLabel>
@@ -17,7 +18,7 @@ class SignalModel : public QAbstractItemModel {
   Q_OBJECT
 public:
   struct Item {
-    enum Type {Root, Sig, Name, Size, Endian, Signed, Offset, Factor, SignalType, MultiplexValue, ExtraInfo, Unit, Comment, Min, Max, Desc };
+    enum Type {Root, Sig, Name, Size, Node, Endian, Signed, Offset, Factor, SignalType, MultiplexValue, ExtraInfo, Unit, Comment, Min, Max, Desc };
     ~Item() { qDeleteAll(children); }
     inline int row() { return parent->children.indexOf(this); }
 
@@ -82,12 +83,12 @@ class SignalItemDelegate : public QStyledItemDelegate {
 public:
   SignalItemDelegate(QObject *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-  QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
+  QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const override;
 
-  QValidator *name_validator, *double_validator;
+  QValidator *name_validator, *double_validator, *node_validator;
   QFont label_font, minmax_font;
   const int color_label_width = 18;
   mutable QSize button_size;
@@ -117,7 +118,7 @@ private:
   void setSparklineRange(int value);
   void handleSignalAdded(MessageId id, const cabana::Signal *sig);
   void handleSignalUpdated(const cabana::Signal *sig);
-  void updateState(const QHash<MessageId, CanData> *msgs = nullptr);
+  void updateState(const std::set<MessageId> *msgs = nullptr);
 
   struct TreeView : public QTreeView {
     TreeView(QWidget *parent) : QTreeView(parent) {}
@@ -136,6 +137,7 @@ private:
     }
   };
   int max_value_width = 0;
+  int value_column_width = 0;
   TreeView *tree;
   QLabel *sparkline_label;
   QSlider *sparkline_range_slider;

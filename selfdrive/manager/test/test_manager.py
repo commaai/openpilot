@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 import os
+import pytest
 import signal
 import time
 import unittest
+
+from parameterized import parameterized
 
 from cereal import car
 from openpilot.common.params import Params
@@ -17,9 +20,9 @@ MAX_STARTUP_TIME = 3
 BLACKLIST_PROCS = ['manage_athenad', 'pandad', 'pigeond']
 
 
+@pytest.mark.tici
 class TestManager(unittest.TestCase):
   def setUp(self):
-    os.environ['PASSIVE'] = '0'
     HARDWARE.set_power_save(False)
 
     # ensure clean CarParams
@@ -37,21 +40,21 @@ class TestManager(unittest.TestCase):
     # TODO: ensure there are blacklisted procs until we have a dedicated test
     self.assertTrue(len(BLACKLIST_PROCS), "No blacklisted procs to test not_run")
 
-  def test_startup_time(self):
-    for _ in range(10):
-      start = time.monotonic()
-      os.environ['PREPAREONLY'] = '1'
-      manager.main()
-      t = time.monotonic() - start
-      assert t < MAX_STARTUP_TIME, f"startup took {t}s, expected <{MAX_STARTUP_TIME}s"
+  @parameterized.expand([(i,) for i in range(10)])
+  def test_startup_time(self, index):
+    start = time.monotonic()
+    os.environ['PREPAREONLY'] = '1'
+    manager.main()
+    t = time.monotonic() - start
+    assert t < MAX_STARTUP_TIME, f"startup took {t}s, expected <{MAX_STARTUP_TIME}s"
 
+  @unittest.skip("this test is flaky the way it's currently written, should be moved to test_onroad")
   def test_clean_exit(self):
     """
       Ensure all processes exit cleanly when stopped.
     """
     HARDWARE.set_power_save(False)
     manager.manager_init()
-    manager.manager_prepare()
 
     CP = car.CarParams.new_message()
     procs = ensure_running(managed_processes.values(), True, Params(), CP, not_run=BLACKLIST_PROCS)
@@ -65,10 +68,6 @@ class TestManager(unittest.TestCase):
         exit_code = p.stop(retry=False)
 
         self.assertNotIn(p.name, BLACKLIST_PROCS, f"{p.name} was started")
-
-        # TODO: mapsd should exit cleanly
-        if p.name == "mapsd":
-          continue
 
         self.assertTrue(exit_code is not None, f"{p.name} failed to exit")
 

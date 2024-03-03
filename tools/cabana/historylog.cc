@@ -2,12 +2,12 @@
 
 #include <functional>
 
+#include <QFileDialog>
 #include <QPainter>
-#include <QPushButton>
 #include <QVBoxLayout>
 
 #include "tools/cabana/commands.h"
-// HistoryLogModel
+#include "tools/cabana/utils/export.h"
 
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
   const bool show_signals = display_signals_mode && sigs.size() > 0;
@@ -17,11 +17,11 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
       return QString::number((m.mono_time / (double)1e9) - can->routeStartTime(), 'f', 2);
     }
     int i = index.column() - 1;
-    return show_signals ? QString::number(m.sig_values[i], 'f', sigs[i]->precision) : toHex(m.data);
+    return show_signals ? QString::number(m.sig_values[i], 'f', sigs[i]->precision) : QString();
   } else if (role == ColorsRole) {
-    return QVariant::fromValue(m.colors);
+    return QVariant::fromValue((void *)(&m.colors));
   } else if (role == BytesRole) {
-    return m.data;
+    return QVariant::fromValue((void *)(&m.data));
   } else if (role == Qt::TextAlignmentRole) {
     return (uint32_t)(Qt::AlignRight | Qt::AlignVCenter);
   }
@@ -123,7 +123,7 @@ void HistoryLogModel::fetchMore(const QModelIndex &parent) {
 template <class InputIt>
 std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, InputIt last, uint64_t min_time) {
   std::deque<HistoryLogModel::Message> msgs;
-  QVector<double> values(sigs.size());
+  std::vector<double> values(sigs.size());
   for (; first != last && (*first)->mono_time > min_time; ++first) {
     const CanEvent *e = *first;
     for (int i = 0; i < sigs.size(); ++i) {
@@ -132,7 +132,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, I
     if (!filter_cmp || filter_cmp(values[filter_sig_idx], filter_value)) {
       auto &m = msgs.emplace_back();
       m.mono_time = e->mono_time;
-      m.data = QByteArray((const char *)e->dat, e->size);
+      m.data.assign(e->dat, e->dat + e->size);
       m.sig_values = values;
       if (msgs.size() >= batch_size && min_time == 0) {
         return msgs;
@@ -146,7 +146,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_ti
   const auto &events = can->events(msg_id);
   const auto freq = can->lastMessage(msg_id).freq;
   const bool update_colors = !display_signals_mode || sigs.empty();
-
+  const std::vector<uint8_t> no_mask;
   const auto speed = can->getSpeed();
   if (dynamic_mode) {
     auto first = std::upper_bound(events.rbegin(), events.rend(), from_time, [](uint64_t ts, auto e) {
@@ -155,20 +155,18 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_ti
     auto msgs = fetchData(first, events.rend(), min_time);
     if (update_colors && (min_time > 0 || messages.empty())) {
       for (auto it = msgs.rbegin(); it != msgs.rend(); ++it) {
-        hex_colors.compute(msg_id, it->data.data(), it->data.size(), it->mono_time / (double)1e9, speed, nullptr, freq);
+        hex_colors.compute(msg_id, it->data.data(), it->data.size(), it->mono_time / (double)1e9, speed, no_mask, freq);
         it->colors = hex_colors.colors;
       }
     }
     return msgs;
   } else {
     assert(min_time == 0);
-    auto first = std::upper_bound(events.cbegin(), events.cend(), from_time, [](uint64_t ts, auto e) {
-      return ts < e->mono_time;
-    });
+    auto first = std::upper_bound(events.cbegin(), events.cend(), from_time, CompareCanEvent());
     auto msgs = fetchData(first, events.cend(), 0);
     if (update_colors) {
       for (auto it = msgs.begin(); it != msgs.end(); ++it) {
-        hex_colors.compute(msg_id, it->data.data(), it->data.size(), it->mono_time / (double)1e9, speed, nullptr, freq);
+        hex_colors.compute(msg_id, it->data.data(), it->data.size(), it->mono_time / (double)1e9, speed, no_mask, freq);
         it->colors = hex_colors.colors;
       }
     }
@@ -179,7 +177,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_ti
 // HeaderView
 
 QSize HeaderView::sectionSizeFromContents(int logicalIndex) const {
-  static QSize time_col_size = fontMetrics().boundingRect({0, 0, 200, 200}, defaultAlignment(), "000000.000").size() + QSize(10, 6);
+  static const QSize time_col_size = fontMetrics().boundingRect({0, 0, 200, 200}, defaultAlignment(), "000000.000").size() + QSize(10, 6);
   if (logicalIndex == 0) {
     return time_col_size;
   } else {
@@ -223,6 +221,8 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   h->addWidget(filters_widget);
   h->addStretch(0);
   h->addWidget(dynamic_mode = new QCheckBox(tr("Dynamic")), 0, Qt::AlignRight);
+  ToolButton *export_btn = new ToolButton("filetype-csv", tr("Export to CSV file..."));
+  h->addWidget(export_btn, 0, Qt::AlignRight);
 
   display_type_cb->addItems({"Signal", "Hex"});
   display_type_cb->setToolTip(tr("Display signal value or raw hex value"));
@@ -239,10 +239,11 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   main_layout->addWidget(logs = new QTableView(this));
   logs->setModel(model = new HistoryLogModel(this));
   delegate = new MessageBytesDelegate(this);
-  logs->setItemDelegateForColumn(1, new MessageBytesDelegate(this));
   logs->setHorizontalHeader(new HeaderView(Qt::Horizontal, this));
   logs->horizontalHeader()->setDefaultAlignment(Qt::AlignRight | (Qt::Alignment)Qt::TextWordWrap);
   logs->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+  logs->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+  logs->verticalHeader()->setDefaultSectionSize(delegate->sizeForBytes(8).height());
   logs->verticalHeader()->setVisible(false);
   logs->setFrameShape(QFrame::NoFrame);
 
@@ -254,6 +255,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   QObject::connect(signals_cb, SIGNAL(activated(int)), this, SLOT(setFilter()));
   QObject::connect(comp_box, SIGNAL(activated(int)), this, SLOT(setFilter()));
   QObject::connect(value_edit, &QLineEdit::textChanged, this, &LogsWidget::setFilter);
+  QObject::connect(export_btn, &QToolButton::clicked, this, &LogsWidget::exportToCSV);
   QObject::connect(can, &AbstractStream::seekedTo, model, &HistoryLogModel::refresh);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &LogsWidget::refresh);
   QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &LogsWidget::refresh);
@@ -304,5 +306,15 @@ void LogsWidget::updateState() {
 void LogsWidget::showEvent(QShowEvent *event) {
   if (dynamic_mode->isChecked() || model->canFetchMore({}) && model->rowCount() == 0) {
     model->refresh();
+  }
+}
+
+void LogsWidget::exportToCSV() {
+  QString dir = QString("%1/%2_%3.csv").arg(settings.last_dir).arg(can->routeName()).arg(msgName(model->msg_id));
+  QString fn = QFileDialog::getSaveFileName(this, QString("Export %1 to CSV file").arg(msgName(model->msg_id)),
+                                            dir, tr("csv (*.csv)"));
+  if (!fn.isEmpty()) {
+    const bool export_signals = model->display_signals_mode && model->sigs.size() > 0;
+    export_signals ? utils::exportSignalsToCSV(fn, model->msg_id) : utils::exportToCSV(fn, model->msg_id);
   }
 }

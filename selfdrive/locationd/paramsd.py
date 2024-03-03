@@ -7,12 +7,12 @@ import numpy as np
 import cereal.messaging as messaging
 from cereal import car
 from cereal import log
-from openpilot.common.params import Params, put_nonblocking
+from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.common.numpy_fast import clip
 from openpilot.selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
 from openpilot.selfdrive.locationd.models.constants import GENERATED_DIR
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 
 
 MAX_ANGLE_OFFSET_DELTA = 20 * DT_MDL  # Max 20 deg/s
@@ -23,6 +23,8 @@ ROLL_STD_MAX = math.radians(1.5)
 LATERAL_ACC_SENSOR_THRESHOLD = 4.0
 OFFSET_MAX = 10.0
 OFFSET_LOWERED_MAX = 8.0
+MIN_ACTIVE_SPEED = 1.0
+LOW_ACTIVE_SPEED = 10.0
 
 
 class ParamsLearner:
@@ -95,7 +97,7 @@ class ParamsLearner:
       self.speed = msg.vEgo
 
       in_linear_region = abs(self.steering_angle) < 45
-      self.active = self.speed > 1 and in_linear_region
+      self.active = self.speed > MIN_ACTIVE_SPEED and in_linear_region
 
       if self.active:
         self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[math.radians(msg.steeringAngleDeg)]]))
@@ -115,16 +117,14 @@ def check_valid_with_hysteresis(current_valid: bool, val: float, threshold: floa
   return current_valid
 
 
-def main(sm=None, pm=None):
+def main():
   config_realtime_process([0, 1, 2, 3], 5)
 
   DEBUG = bool(int(os.getenv("DEBUG", "0")))
   REPLAY = bool(int(os.getenv("REPLAY", "0")))
 
-  if sm is None:
-    sm = messaging.SubMaster(['liveLocationKalman', 'carState'], poll=['liveLocationKalman'])
-  if pm is None:
-    pm = messaging.PubMaster(['liveParameters'])
+  pm = messaging.PubMaster(['liveParameters'])
+  sm = messaging.SubMaster(['liveLocationKalman', 'carState'], poll='liveLocationKalman')
 
   params_reader = Params()
   # wait for stats about the car to come in from controls
@@ -204,8 +204,12 @@ def main(sm=None, pm=None):
                           angle_offset - MAX_ANGLE_OFFSET_DELTA, angle_offset + MAX_ANGLE_OFFSET_DELTA)
       roll = clip(float(x[States.ROAD_ROLL].item()), roll - ROLL_MAX_DELTA, roll + ROLL_MAX_DELTA)
       roll_std = float(P[States.ROAD_ROLL].item())
-      # Account for the opposite signs of the yaw rates
-      sensors_valid = bool(abs(learner.speed * (x[States.YAW_RATE].item() + learner.yaw_rate)) < LATERAL_ACC_SENSOR_THRESHOLD)
+      if learner.active and learner.speed > LOW_ACTIVE_SPEED:
+        # Account for the opposite signs of the yaw rates
+        # At low speeds, bumping into a curb can cause the yaw rate to be very high
+        sensors_valid = bool(abs(learner.speed * (x[States.YAW_RATE].item() + learner.yaw_rate)) < LATERAL_ACC_SENSOR_THRESHOLD)
+      else:
+        sensors_valid = True
       avg_offset_valid = check_valid_with_hysteresis(avg_offset_valid, angle_offset_average, OFFSET_MAX, OFFSET_LOWERED_MAX)
       total_offset_valid = check_valid_with_hysteresis(total_offset_valid, angle_offset, OFFSET_MAX, OFFSET_LOWERED_MAX)
       roll_valid = check_valid_with_hysteresis(roll_valid, roll, ROLL_MAX, ROLL_LOWERED_MAX)
@@ -247,7 +251,7 @@ def main(sm=None, pm=None):
           'stiffnessFactor': liveParameters.stiffnessFactor,
           'angleOffsetAverageDeg': liveParameters.angleOffsetAverageDeg,
         }
-        put_nonblocking("LiveParameters", json.dumps(params))
+        params_reader.put_nonblocking("LiveParameters", json.dumps(params))
 
       pm.send('liveParameters', msg)
 

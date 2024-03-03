@@ -13,7 +13,7 @@ for d in ["cereal", "common", "scripts", "selfdrive", "tools"]:
       if f.endswith(".py"):
         pyf.append(os.path.join(root, f))
 
-imps = set()
+imps: set[str] = set()
 
 class Analyzer(ast.NodeVisitor):
   def visit_Import(self, node):

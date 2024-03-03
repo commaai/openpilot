@@ -3,8 +3,8 @@ from cereal import car
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
-from openpilot.selfdrive.car.volkswagen.values import DBC, CANBUS, PQ_CARS, NetworkLocation, TransmissionType, GearShifter, \
-                                            CarControllerParams
+from openpilot.selfdrive.car.volkswagen.values import DBC, CANBUS, NetworkLocation, TransmissionType, GearShifter, \
+                                            CarControllerParams, VolkswagenFlags
 
 
 class CarState(CarStateBase):
@@ -14,6 +14,7 @@ class CarState(CarStateBase):
     self.button_states = {button.event_type: False for button in self.CCP.BUTTONS}
     self.esp_hold_confirmation = False
     self.upscale_lead_car_signal = False
+    self.eps_stock_values = False
 
   def create_button_events(self, pt_cp, buttons):
     button_events = []
@@ -30,7 +31,7 @@ class CarState(CarStateBase):
     return button_events
 
   def update(self, pt_cp, cam_cp, ext_cp, trans_type):
-    if self.CP.carFingerprint in PQ_CARS:
+    if self.CP.flags & VolkswagenFlags.PQ:
       return self.update_pq(pt_cp, cam_cp, ext_cp, trans_type)
 
     ret = car.CarState.new_message()
@@ -58,6 +59,11 @@ class CarState(CarStateBase):
     hca_status = self.CCP.hca_status_values.get(pt_cp.vl["LH_EPS_03"]["EPS_HCA_Status"])
     ret.steerFaultPermanent = hca_status in ("DISABLED", "FAULT")
     ret.steerFaultTemporary = hca_status in ("INITIALIZING", "REJECTED")
+
+    # VW Emergency Assist status tracking and mitigation
+    self.eps_stock_values = pt_cp.vl["LH_EPS_03"]
+    if self.CP.flags & VolkswagenFlags.STOCK_HCA_PRESENT:
+      ret.carFaultedNonCritical = bool(cam_cp.vl["HCA_01"]["EA_Ruckfreigabe"]) or cam_cp.vl["HCA_01"]["EA_ACC_Sollstatus"] > 0
 
     # Update gas, brakes, and gearshift.
     ret.gas = pt_cp.vl["Motor_20"]["MO_Fahrpedalrohwert_01"] / 100.0
@@ -251,7 +257,7 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parser(CP):
-    if CP.carFingerprint in PQ_CARS:
+    if CP.flags & VolkswagenFlags.PQ:
       return CarState.get_can_parser_pq(CP)
 
     messages = [
@@ -288,10 +294,15 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser(CP):
-    if CP.carFingerprint in PQ_CARS:
+    if CP.flags & VolkswagenFlags.PQ:
       return CarState.get_cam_can_parser_pq(CP)
 
     messages = []
+
+    if CP.flags & VolkswagenFlags.STOCK_HCA_PRESENT:
+      messages += [
+        ("HCA_01", 1),  # From R242 Driver assistance camera, 50Hz if steering/1Hz if not
+      ]
 
     if CP.networkLocation == NetworkLocation.fwdCamera:
       messages += [

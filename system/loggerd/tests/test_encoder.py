@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import math
 import os
+import pytest
 import random
 import shutil
 import subprocess
@@ -16,7 +17,7 @@ from openpilot.common.timeout import Timeout
 from openpilot.system.hardware import TICI
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.tools.lib.logreader import LogReader
-from openpilot.selfdrive.hardware.hw import Paths
+from openpilot.system.hardware.hw import Paths
 
 SEGMENT_LENGTH = 2
 FULL_SIZE = 2507572
@@ -31,13 +32,8 @@ CAMERAS = [
 FILE_SIZE_TOLERANCE = 0.5
 
 
+@pytest.mark.tici # TODO: all of loggerd should work on PC
 class TestEncoder(unittest.TestCase):
-
-  # TODO: all of loggerd should work on PC
-  @classmethod
-  def setUpClass(cls):
-    if not TICI:
-      raise unittest.SkipTest
 
   def setUp(self):
     self._clear_logs()

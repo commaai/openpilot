@@ -6,7 +6,7 @@ from cereal import log
 import cereal.messaging as messaging
 from openpilot.common.realtime import Ratekeeper, DT_MDL
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
-from openpilot.selfdrive.modeld.constants import T_IDXS
+from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
 from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU
 
@@ -100,13 +100,13 @@ class Plant:
     # this is to ensure lead policy is effective when model
     # does not predict slowdown in e2e mode
     position = log.XYZTData.new_message()
-    position.x = [float(x) for x in (self.speed + 0.5) * np.array(T_IDXS)]
+    position.x = [float(x) for x in (self.speed + 0.5) * np.array(ModelConstants.T_IDXS)]
     model.modelV2.position = position
     velocity = log.XYZTData.new_message()
-    velocity.x = [float(x) for x in (self.speed + 0.5) * np.ones_like(T_IDXS)]
+    velocity.x = [float(x) for x in (self.speed + 0.5) * np.ones_like(ModelConstants.T_IDXS)]
     model.modelV2.velocity = velocity
     acceleration = log.XYZTData.new_message()
-    acceleration.x = [float(x) for x in np.zeros_like(T_IDXS)]
+    acceleration.x = [float(x) for x in np.zeros_like(ModelConstants.T_IDXS)]
     model.modelV2.acceleration = acceleration
 
     control.controlsState.longControlState = LongCtrlState.pid if self.enabled else LongCtrlState.off

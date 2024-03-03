@@ -38,7 +38,8 @@ TEST_CASE("util::read_file") {
     std::string content = random_bytes(64 * 1024);
     write(fd, content.c_str(), content.size());
     std::string ret = util::read_file(filename);
-    REQUIRE(ret == content);
+    bool equal = (ret == content);
+    REQUIRE(equal);
     close(fd);
   }
   SECTION("read directory") {
@@ -108,7 +109,8 @@ TEST_CASE("util::safe_fwrite") {
   REQUIRE(ret == 0);
   ret = fclose(f);
   REQUIRE(ret == 0);
-  REQUIRE(dat == util::read_file(filename));
+  bool equal = (dat == util::read_file(filename));
+  REQUIRE(equal);
 }
 
 TEST_CASE("util::create_directories") {

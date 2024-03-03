@@ -3,6 +3,7 @@ import math
 import os
 import subprocess
 import time
+import tempfile
 from enum import IntEnum
 from functools import cached_property, lru_cache
 from pathlib import Path
@@ -73,6 +74,11 @@ def sudo_write(val, path):
       # fallback for debugfs files
       os.system(f"sudo su -c 'echo {val} > {path}'")
 
+def sudo_read(path: str) -> str:
+  try:
+    return subprocess.check_output(f"sudo cat {path}", shell=True, encoding='utf8')
+  except Exception:
+    return ""
 
 def affine_irq(val, action):
   irqs = get_irqs_for_action(action)
@@ -88,11 +94,7 @@ def get_device_type():
   # lru_cache and cache can cause memory leaks when used in classes
   with open("/sys/firmware/devicetree/base/model") as f:
     model = f.read().strip('\x00')
-  model = model.split('comma ')[-1]
-  # TODO: remove this with AGNOS 7+
-  if model.startswith('Qualcomm'):
-    model = 'tici'
-  return model
+  return model.split('comma ')[-1]
 
 class Tici(HardwareBase):
   @cached_property
@@ -104,12 +106,14 @@ class Tici(HardwareBase):
   def nm(self):
     return self.bus.get_object(NM, '/org/freedesktop/NetworkManager')
 
-  @cached_property
+  @property # this should not be cached, in case the modemmanager restarts
   def mm(self):
     return self.bus.get_object(MM, '/org/freedesktop/ModemManager1')
 
   @cached_property
   def amplifier(self):
+    if self.get_device_type() == "mici":
+      return None
     return Amplifier()
 
   def get_os_version(self):
@@ -200,9 +204,6 @@ class Tici(HardwareBase):
         'data_connected': modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT) == MM_MODEM_STATE.CONNECTED,
       }
 
-  def get_subscriber_info(self):
-    return ""
-
   def get_imei(self, slot):
     if slot != 0:
       return ""
@@ -210,8 +211,8 @@ class Tici(HardwareBase):
     return str(self.get_modem().Get(MM_MODEM, 'EquipmentIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
 
   def get_network_info(self):
-    modem = self.get_modem()
     try:
+      modem = self.get_modem()
       info = modem.Command("AT+QNWINFO", math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
       extra = modem.Command('AT+QENG="servingcell"', math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
       state = modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
@@ -292,67 +293,6 @@ class Tici(HardwareBase):
 
     return super().get_network_metered(network_type)
 
-  @staticmethod
-  def set_bandwidth_limit(upload_speed_kbps: int, download_speed_kbps: int) -> None:
-    upload_speed_kbps = int(upload_speed_kbps)  # Ensure integer value
-    download_speed_kbps = int(download_speed_kbps)  # Ensure integer value
-
-    adapter = "wwan0"
-    ifb = "ifb0"
-
-    sudo = ["sudo"]
-    tc = sudo + ["tc"]
-
-    # check, cmd
-    cleanup = [
-      # Clean up old rules
-      (False, tc + ["qdisc", "del", "dev", adapter, "root"]),
-      (False, tc + ["qdisc", "del", "dev", ifb, "root"]),
-      (False, tc + ["qdisc", "del", "dev", adapter, "ingress"]),
-      (False, tc + ["qdisc", "del", "dev", ifb, "ingress"]),
-
-      # Bring ifb0 down
-      (False, sudo + ["ip", "link", "set", "dev", ifb, "down"]),
-    ]
-
-    upload = [
-      # Create root Hierarchy Token Bucket that sends all traffic to 1:20
-      (True, tc + ["qdisc", "add", "dev", adapter, "root", "handle", "1:", "htb", "default", "20"]),
-
-      # Create class 1:20 with specified rate limit
-      (True, tc + ["class", "add", "dev", adapter, "parent", "1:", "classid", "1:20", "htb", "rate", f"{upload_speed_kbps}kbit"]),
-
-      # Create universal 32 bit filter on adapter that sends all outbound ip traffic through the class
-      (True, tc + ["filter", "add", "dev", adapter, "parent", "1:", "protocol", "ip", "prio", \
-                   "10", "u32", "match", "ip", "dst", "0.0.0.0/0", "flowid", "1:20"]),
-    ]
-
-    download = [
-      # Bring ifb0 up
-      (True, sudo + ["ip", "link", "set", "dev", ifb, "up"]),
-
-      # Redirect ingress (incoming) to egress ifb0
-      (True, tc + ["qdisc", "add", "dev", adapter, "handle", "ffff:", "ingress"]),
-      (True, tc + ["filter", "add", "dev", adapter, "parent", "ffff:", "protocol", "ip", "u32", \
-                   "match", "u32", "0", "0", "action", "mirred", "egress", "redirect", "dev", ifb]),
-
-      # Add class and rules for virtual interface
-      (True, tc + ["qdisc", "add", "dev", ifb, "root", "handle", "2:", "htb"]),
-      (True, tc + ["class", "add", "dev", ifb, "parent", "2:", "classid", "2:1", "htb", "rate", f"{download_speed_kbps}kbit"]),
-
-      # Add filter to rule for IP address
-      (True, tc + ["filter", "add", "dev", ifb, "protocol", "ip", "parent", "2:", "prio", "1", "u32", "match", "ip", "src", "0.0.0.0/0", "flowid", "2:1"]),
-    ]
-
-    commands = cleanup
-    if upload_speed_kbps != -1:
-      commands += upload
-    if download_speed_kbps != -1:
-      commands += download
-
-    for check, cmd in commands:
-      subprocess.run(cmd, check=check)
-
   def get_modem_version(self):
     try:
       modem = self.get_modem()
@@ -392,10 +332,6 @@ class Tici(HardwareBase):
       pass
     return ret
 
-  def get_usb_present(self):
-    # Not sure if relevant on tici, but the file exists
-    return self.read_param_file("/sys/class/power_supply/usb/present", lambda x: bool(int(x)), False)
-
   def get_current_power_draw(self):
     return (self.read_param_file("/sys/class/hwmon/hwmon1/power1_input", int) / 1e6)
 
@@ -411,7 +347,6 @@ class Tici(HardwareBase):
                          gpu=(("gpu0-usr", "gpu1-usr"), 1000),
                          mem=("ddr-usr", 1000),
                          bat=(None, 1),
-                         ambient=("xo-therm-adc", 1000),
                          pmic=(("pm8998_tz", "pm8005_tz"), 1000))
 
   def set_screen_brightness(self, percentage):
@@ -437,9 +372,10 @@ class Tici(HardwareBase):
 
   def set_power_save(self, powersave_enabled):
     # amplifier, 100mW at idle
-    self.amplifier.set_global_shutdown(amp_disabled=powersave_enabled)
-    if not powersave_enabled:
-      self.amplifier.initialize_configuration(self.get_device_type())
+    if self.amplifier is not None:
+      self.amplifier.set_global_shutdown(amp_disabled=powersave_enabled)
+      if not powersave_enabled:
+        self.amplifier.initialize_configuration(self.get_device_type())
 
     # *** CPU config ***
 
@@ -477,7 +413,8 @@ class Tici(HardwareBase):
       return 0
 
   def initialize_hardware(self):
-    self.amplifier.initialize_configuration(self.get_device_type())
+    if self.amplifier is not None:
+      self.amplifier.initialize_configuration(self.get_device_type())
 
     # Allow thermald to write engagement status to kmsg
     os.system("sudo chmod a+w /dev/kmsg")
@@ -505,7 +442,7 @@ class Tici(HardwareBase):
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_rail_on")
     sudo_write("1000", "/sys/class/kgsl/kgsl-3d0/idle_timer")
     sudo_write("performance", "/sys/class/kgsl/kgsl-3d0/devfreq/governor")
-    sudo_write("596", "/sys/class/kgsl/kgsl-3d0/max_clock_mhz")
+    sudo_write("710", "/sys/class/kgsl/kgsl-3d0/max_clock_mhz")
 
     # setup governors
     sudo_write("performance", "/sys/class/devfreq/soc:qcom,cpubw/governor")
@@ -519,22 +456,55 @@ class Tici(HardwareBase):
   def configure_modem(self):
     sim_id = self.get_sim_info().get('sim_id', '')
 
-    # configure modem as data-centric
-    cmds = [
-      'AT+QNVW=5280,0,"0102000000000000"',
-      'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
-      'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
-    ]
     modem = self.get_modem()
+    try:
+      manufacturer = str(modem.Get(MM_MODEM, 'Manufacturer', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
+    except Exception:
+      manufacturer = None
+
+    cmds = []
+    if manufacturer == 'Cavli Inc.':
+      cmds += [
+        # use sim slot
+        'AT^SIMSWAP=1',
+
+        # configure ECM mode
+        'AT$QCPCFG=usbNet,1'
+      ]
+    else:
+      cmds += [
+        # configure modem as data-centric
+        'AT+QNVW=5280,0,"0102000000000000"',
+        'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
+        'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
+      ]
+      if self.get_device_type() == "tizi":
+        cmds += [
+          # SIM hot swap
+          'AT+QSIMDET=1,0',
+          'AT+QSIMSTAT=1',
+        ]
+
+      # clear out old blue prime initial APN
+      os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn="')
     for cmd in cmds:
       try:
         modem.Command(cmd, math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
       except Exception:
         pass
 
-    # blue prime config
-    if sim_id.startswith('8901410'):
-      os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn=Broadband"')
+    # eSIM prime
+    if sim_id.startswith('8985235'):
+      dest = "/etc/NetworkManager/system-connections/esim.nmconnection"
+      with open(Path(__file__).parent/'esim.nmconnection') as f, tempfile.NamedTemporaryFile(mode='w') as tf:
+        dat = f.read()
+        dat = dat.replace("sim-id=", f"sim-id={sim_id}")
+        tf.write(dat)
+        tf.flush()
+
+        # needs to be root
+        os.system(f"sudo cp {tf.name} {dest}")
+      os.system(f"sudo nmcli con load {dest}")
 
   def get_networks(self):
     r = {}
@@ -600,8 +570,15 @@ class Tici(HardwareBase):
     time.sleep(0.5)
     gpio_set(GPIO.STM_BOOT0, 0)
 
+  def booted(self):
+    # this normally boots within 8s, but on rare occasions takes 30+s
+    encoder_state = sudo_read("/sys/kernel/debug/msm_vidc/core0/info")
+    if "Core state: 0" in encoder_state and (time.monotonic() < 60*2):
+      return False
+    return True
 
 if __name__ == "__main__":
   t = Tici()
+  t.configure_modem()
   t.initialize_hardware()
   t.set_power_save(False)
