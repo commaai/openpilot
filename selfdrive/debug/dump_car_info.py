@@ -5,9 +5,9 @@ import pickle
 from openpilot.selfdrive.car.docs import get_all_car_info
 
 
-def dump_car_info(path):
+def dump_car_info(path, car_info=None):
   with open(path, 'wb') as f:
-    pickle.dump(get_all_car_info(), f)
+    pickle.dump(car_info or get_all_car_info(), f)
   print(f'Dumping car info to {path}')
 
 

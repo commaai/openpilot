@@ -28,8 +28,8 @@ class TestCarDocs(unittest.TestCase):
 
   def test_docs_diff(self):
     dump_path = os.path.join(BASEDIR, "selfdrive", "car", "tests", "cars_dump")
-    dump_car_info(dump_path)
-    print_car_info_diff(dump_path)
+    dump_car_info(dump_path, self.all_cars)
+    print_car_info_diff(dump_path, self.all_cars)
     os.remove(dump_path)
 
   def test_duplicate_years(self):

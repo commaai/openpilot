@@ -57,13 +57,13 @@ def format_row(builder):
   return "|" + "|".join(builder) + "|"
 
 
-def print_car_info_diff(path):
+def print_car_info_diff(path, all_car_info=None):
   base_car_info = defaultdict(list)
   new_car_info = defaultdict(list)
 
   for car in load_base_car_info(path):
     base_car_info[car.car_fingerprint].append(car)
-  for car in get_all_car_info():
+  for car in all_car_info or get_all_car_info():
     new_car_info[car.car_fingerprint].append(car)
 
   # Add new platforms to base cars so we can detect additions and removals in one pass
