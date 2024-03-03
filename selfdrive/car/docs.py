@@ -37,8 +37,8 @@ def init_car_info_for_model(model: str, car_info: CarInfo | list[CarInfo]) -> li
   fingerprint = gen_empty_fingerprint()
   car_fw = [car.CarParams.CarFw(ecu="unknown")]
 
+  # Use test route to consider live detected features if available
   test_route = next((rt for rt in routes if rt.car_model == model), None)
-  # print(model, test_route)
   if test_route is not None:
     test_case_args = {"car_model": test_route.car_model, "test_route": test_route}
     tcm = cast(TestCarModel, type("CarModelTestCase", (TestCarModel,), test_case_args))
