@@ -31,9 +31,7 @@ CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
 CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 
 
-
-def get_car_info_for_model(model: str, car_info: list[CarInfo]) -> list[CarInfo]:
-  all_car_info: list[CarInfo] = []
+def init_car_info_for_model(model: str, car_info: CarInfo | list[CarInfo]) -> list[CarInfo]:
   footnotes = get_all_footnotes()
   # If available, uses experimental longitudinal limits for the docs
   fingerprint = gen_empty_fingerprint()
@@ -44,10 +42,8 @@ def get_car_info_for_model(model: str, car_info: list[CarInfo]) -> list[CarInfo]
   if test_route is not None:
     test_case_args = {"car_model": test_route.car_model, "test_route": test_route}
     tcm = cast(TestCarModel, type("CarModelTestCase", (TestCarModel,), test_case_args))
-    car_fw, can_msgs, experimental_long = tcm.get_testing_data()
+    car_fw, _, _ = tcm.get_testing_data()
     fingerprint = tcm.fingerprint
-
-    # lr = LogReader(test_route.route + '/0/r')
 
   CP = interfaces[model][0].get_params(model, fingerprint=fingerprint,
                                        car_fw=car_fw, experimental_long=True, docs=True)
@@ -63,61 +59,24 @@ def get_car_info_for_model(model: str, car_info: list[CarInfo]) -> list[CarInfo]
     if not hasattr(_car_info, "row"):
       _car_info.init_make(CP)
       _car_info.init(CP, footnotes)
-    all_car_info.append(_car_info)
 
-  return all_car_info
+  return car_info
 
 
-def get_all_car_info_new() -> list[CarInfo]:
+def get_all_car_info() -> list[CarInfo]:
+  """
+  This function uses the CAN fingerprints and FW from each make
+  to generate accurate car docs considering live detected features
+  """
+
   all_car_info: list[CarInfo] = []
   with ProcessPoolExecutor(max_workers=24) as executor:
     futures = []
     for model, car_info in get_interface_attr("CAR_INFO", combine_brands=True).items():
-      futures.append(executor.submit(get_car_info_for_model, model, car_info))
+      futures.append(executor.submit(init_car_info_for_model, model, car_info))
 
     for future in tqdm(as_completed(futures), total=len(futures)):
       all_car_info.extend(future.result())
-
-  # Sort cars by make and model + year
-  sorted_cars: list[CarInfo] = natsorted(all_car_info, key=lambda car: car.name.lower())
-  return sorted_cars
-
-
-def get_all_car_info() -> list[CarInfo]:
-  return get_all_car_info_new()
-  all_car_info: list[CarInfo] = []
-  footnotes = get_all_footnotes()
-  for model, car_info in tqdm(get_interface_attr("CAR_INFO", combine_brands=True).items()):
-    # If available, uses experimental longitudinal limits for the docs
-    fingerprint = gen_empty_fingerprint()
-    car_fw = [car.CarParams.CarFw(ecu="unknown")]
-
-    test_route = next((rt for rt in routes if rt.car_model == model), None)
-    print(model, test_route)
-    if test_route is not None:
-      test_case_args = {"car_model": test_route.car_model, "test_route": test_route}
-      tcm = cast(TestCarModel, type("CarModelTestCase", (TestCarModel,), test_case_args))
-      car_fw, can_msgs, experimental_long = tcm.get_testing_data()
-      fingerprint = tcm.fingerprint
-
-
-      # lr = LogReader(test_route.route + '/0/r')
-
-    CP = interfaces[model][0].get_params(model, fingerprint=fingerprint,
-                                         car_fw=car_fw, experimental_long=True, docs=True)
-
-    if CP.dashcamOnly or car_info is None:
-      continue
-
-    # A platform can include multiple car models
-    if not isinstance(car_info, list):
-      car_info = (car_info,)
-
-    for _car_info in car_info:
-      if not hasattr(_car_info, "row"):
-        _car_info.init_make(CP)
-        _car_info.init(CP, footnotes)
-      all_car_info.append(_car_info)
 
   # Sort cars by make and model + year
   sorted_cars: list[CarInfo] = natsorted(all_car_info, key=lambda car: car.name.lower())
