@@ -345,8 +345,8 @@ class CAR(Platforms):
   AUDI_A4_MK4 = VolkswagenMLBPlatformConfig(
     "AUDI A4 4TH GEN",  # Chassis FL
     [
-    VWCarInfo("Audi A4 2015-16"),
-    VWCarInfo("Audi S4 2015-16"),
+      VWCarInfo("Audi A4 2015-16"),
+      VWCarInfo("Audi S4 2015-16"),
     ],
     VolkswagenCarSpecs(mass=1650, wheelbase=2.81),
   )
