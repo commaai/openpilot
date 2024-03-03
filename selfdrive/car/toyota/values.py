@@ -46,6 +46,7 @@ class ToyotaFlags(IntFlag):
   HYBRID = 1
   SMART_DSU = 2
   DISABLE_RADAR = 4
+  # the DSU uses the AEB message for longitudinal on these cars
   UNSUPPORTED_DSU = 32
 
   # Static flags
@@ -594,9 +595,6 @@ EPS_SCALE = defaultdict(lambda: 73, {CAR.PRIUS: 66, CAR.COROLLA: 88, CAR.LEXUS_I
 TSS2_CAR = CAR.with_flags(ToyotaFlags.TSS2)
 
 NO_DSU_CAR = CAR.with_flags(ToyotaFlags.NO_DSU)
-
-# the DSU uses the AEB message for longitudinal on these cars
-UNSUPPORTED_DSU_CAR = CAR.with_flags(ToyotaFlags.UNSUPPORTED_DSU)
 
 # these cars have a radar which sends ACC messages instead of the camera
 RADAR_ACC_CAR = CAR.with_flags(ToyotaFlags.RADAR_ACC)
