@@ -113,7 +113,7 @@ class VolkswagenFlags(IntFlag):
   # Detected flags
   STOCK_HCA_PRESENT = 1
 
-  # Static Flags
+  # Static flags
   PQ = 2
 
 
