@@ -64,7 +64,7 @@ def init_car_info_for_model(model: str, car_info: CarInfo | list[CarInfo]) -> li
       _car_info.init_make(CP)
       _car_info.init(CP, footnotes)
 
-  return car_info
+  return car_info_list
 
 
 def get_all_car_info() -> list[CarInfo]:
