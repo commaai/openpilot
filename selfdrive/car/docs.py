@@ -35,7 +35,7 @@ def init_car_info_for_model(model: str, car_info: CarInfo | list[CarInfo]) -> li
   footnotes = get_all_footnotes()
   # If available, uses experimental longitudinal limits for the docs
   fingerprint = gen_empty_fingerprint()
-  car_fw = [car.CarParams.CarFw(ecu="unknown")]
+  car_fw = []
 
   # Use test route to consider live detected features if available
   test_route = next((rt for rt in routes if rt.car_model == model), None)
@@ -43,13 +43,15 @@ def init_car_info_for_model(model: str, car_info: CarInfo | list[CarInfo]) -> li
     test_case_args = {"car_model": test_route.car_model, "test_route": test_route}
     tcm = cast(TestCarModel, type("CarModelTestCase", (TestCarModel,), test_case_args))
     car_fw, _, _ = tcm.get_testing_data()
-    # tcm.get_testing_data()
     fingerprint = tcm.fingerprint
-    # remove DSU from FW versions so enableDsu=True
-    # remove gas interceptor from the fingerprints so Honda doesn't show 0 mph enable speed
-    fingerprint = {b: {a: l for a, l in f.items() if a != 0x201} for b, f in fingerprint.items()}
+    # - remove gas interceptor so Honda doesn't show 0 mph enable speed
+    # - remove smart DSU so Toyota longitudinal col is correct
+    # - remove DSU from FW versions so enableDsu=True
+    fingerprint = {b: {a: l for a, l in f.items() if a not in (0x201, 0x2FF, 0x2AA)} for b, f in fingerprint.items()}
     car_fw = [fw for fw in car_fw if fw.ecu != 'dsu']
 
+  # in case of older or no route
+  car_fw.append(car.CarParams.CarFw(ecu="unknown"))
   CP = interfaces[model][0].get_params(model, fingerprint=fingerprint,
                                        car_fw=car_fw, experimental_long=True, docs=True)
 
