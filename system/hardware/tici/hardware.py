@@ -94,11 +94,7 @@ def get_device_type():
   # lru_cache and cache can cause memory leaks when used in classes
   with open("/sys/firmware/devicetree/base/model") as f:
     model = f.read().strip('\x00')
-  model = model.split('comma ')[-1]
-  # TODO: remove this with AGNOS 7+
-  if model.startswith('Qualcomm'):
-    model = 'tici'
-  return model
+  return model.split('comma ')[-1]
 
 class Tici(HardwareBase):
   @cached_property
@@ -116,6 +112,8 @@ class Tici(HardwareBase):
 
   @cached_property
   def amplifier(self):
+    if self.get_device_type() == "mici":
+      return None
     return Amplifier()
 
   def get_os_version(self):
@@ -349,7 +347,6 @@ class Tici(HardwareBase):
                          gpu=(("gpu0-usr", "gpu1-usr"), 1000),
                          mem=("ddr-usr", 1000),
                          bat=(None, 1),
-                         ambient=("xo-therm-adc", 1000),
                          pmic=(("pm8998_tz", "pm8005_tz"), 1000))
 
   def set_screen_brightness(self, percentage):
@@ -375,9 +372,10 @@ class Tici(HardwareBase):
 
   def set_power_save(self, powersave_enabled):
     # amplifier, 100mW at idle
-    self.amplifier.set_global_shutdown(amp_disabled=powersave_enabled)
-    if not powersave_enabled:
-      self.amplifier.initialize_configuration(self.get_device_type())
+    if self.amplifier is not None:
+      self.amplifier.set_global_shutdown(amp_disabled=powersave_enabled)
+      if not powersave_enabled:
+        self.amplifier.initialize_configuration(self.get_device_type())
 
     # *** CPU config ***
 
@@ -415,7 +413,8 @@ class Tici(HardwareBase):
       return 0
 
   def initialize_hardware(self):
-    self.amplifier.initialize_configuration(self.get_device_type())
+    if self.amplifier is not None:
+      self.amplifier.initialize_configuration(self.get_device_type())
 
     # Allow thermald to write engagement status to kmsg
     os.system("sudo chmod a+w /dev/kmsg")
@@ -479,6 +478,12 @@ class Tici(HardwareBase):
         'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
         'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
       ]
+      if self.get_device_type() == "tizi":
+        cmds += [
+          # SIM hot swap
+          'AT+QSIMDET=1,0',
+          'AT+QSIMSTAT=1',
+        ]
 
       # clear out old blue prime initial APN
       os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn="')

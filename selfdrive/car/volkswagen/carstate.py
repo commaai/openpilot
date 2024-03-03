@@ -3,8 +3,8 @@ from cereal import car
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
-from openpilot.selfdrive.car.volkswagen.values import DBC, CANBUS, PQ_CARS, MLB_CARS, NetworkLocation, TransmissionType, \
-                                                      GearShifter, CarControllerParams, VolkswagenFlags
+from openpilot.selfdrive.car.volkswagen.values import DBC, CANBUS, NetworkLocation, TransmissionType, GearShifter, \
+                                            CarControllerParams, VolkswagenFlags
 
 
 class CarState(CarStateBase):
@@ -32,12 +32,12 @@ class CarState(CarStateBase):
     return button_events
 
   def update(self, pt_cp, cam_cp, ext_cp, trans_type):
-    if self.CP.carFingerprint in PQ_CARS:
+    if self.CP.flags & VolkswagenFlags.PQ:
       return self.update_pq(pt_cp, cam_cp, ext_cp, trans_type)
 
     ret = car.CarState.new_message()
 
-    if self.CP.carFingerprint in MLB_CARS:
+    if self.CP.flags & VolkswagenFlags.MLB:
       # MLB platform specific signals
       ret.wheelSpeeds = self.get_wheel_speeds(
         pt_cp.vl["ESP_03"]["ESP_VL_Radgeschw"],
@@ -194,7 +194,7 @@ class CarState(CarStateBase):
     # Update ACC setpoint. When the setpoint is zero or there's an error, the
     # radar sends a set-speed of ~90.69 m/s / 203mph.
     # TODO: ugly hack while testing CC-only S4
-    if self.CP.pcmCruise and self.CP.carFingerprint not in MLB_CARS:
+    if self.CP.pcmCruise and not self.CP.flags & VolkswagenFlags.MLB:
       ret.cruiseState.speed = ext_cp.vl["ACC_02"]["ACC_Wunschgeschw_02"] * CV.KPH_TO_MS
       if ret.cruiseState.speed > 90:
         ret.cruiseState.speed = 0
@@ -308,9 +308,9 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parser(CP):
-    if CP.carFingerprint in PQ_CARS:
+    if CP.flags & VolkswagenFlags.PQ:
       return CarState.get_can_parser_pq(CP)
-    elif CP.carFingerprint in MLB_CARS:
+    elif CP.flags & VolkswagenFlags.MLB:
       return CarState.get_can_parser_mlb(CP)
 
     messages = [
@@ -347,9 +347,9 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser(CP):
-    if CP.carFingerprint in PQ_CARS:
+    if CP.flags & VolkswagenFlags.PQ:
       return CarState.get_cam_can_parser_pq(CP)
-    elif CP.carFingerprint in MLB_CARS:
+    elif CP.flags & VolkswagenFlags.MLB:
       return CarState.get_cam_can_parser_mlb(CP)
 
     messages = []
