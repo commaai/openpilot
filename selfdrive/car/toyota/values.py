@@ -305,7 +305,6 @@ class CAR(Platforms):
     ToyotaCarInfo("Lexus IS 2017-19"),
     CarSpecs(mass=3736.8 * CV.LB_TO_KG, wheelbase=2.79908, steerRatio=13.3, tireStiffnessFactor=0.444),
     dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-    # flags=ToyotaFlags.UNSUPPORTED_DSU,
   )
   LEXUS_IS_TSS2 = ToyotaTSS2PlatformConfig(
     "LEXUS IS 2023",
@@ -339,7 +338,6 @@ class CAR(Platforms):
     ToyotaCarInfo("Lexus RC 2018-20"),
     LEXUS_IS.specs,
     dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-    # flags=ToyotaFlags.UNSUPPORTED_DSU,
   )
   LEXUS_RX = PlatformConfig(
     "LEXUS RX 2016",
@@ -366,7 +364,6 @@ class CAR(Platforms):
     ToyotaCarInfo("Lexus GS F 2016"),
     CarSpecs(mass=4034. * CV.LB_TO_KG, wheelbase=2.84988, steerRatio=13.3, tireStiffnessFactor=0.444),
     dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
-    # flags=ToyotaFlags.UNSUPPORTED_DSU,
   )
 
 
