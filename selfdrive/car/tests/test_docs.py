@@ -16,7 +16,7 @@ from openpilot.selfdrive.debug.print_docs_diff import print_car_info_diff
 class TestCarDocs(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
-    cls.all_cars = get_all_car_info()
+    cls.all_cars = get_all_car_info(live=False)
 
   def test_generator(self):
     generated_cars_md = generate_cars_md(self.all_cars, CARS_MD_TEMPLATE)

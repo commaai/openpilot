@@ -29,7 +29,7 @@ CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
 CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 
 
-def init_car_info_for_model(model: str, car_info: CarInfo | list[CarInfo]) -> list[CarInfo]:
+def init_car_info_for_model(model: str, car_info: CarInfo | list[CarInfo], live: bool) -> list[CarInfo]:
   footnotes = get_all_footnotes()
   # If available, uses experimental longitudinal limits for the docs
   fingerprint = gen_empty_fingerprint()
@@ -37,7 +37,7 @@ def init_car_info_for_model(model: str, car_info: CarInfo | list[CarInfo]) -> li
 
   # Use test route to consider live detected features if available
   test_route = next((rt for rt in routes if rt.car_model == model), None)
-  if test_route is not None:
+  if test_route is not None and live:
     test_case_args = {"car_model": test_route.car_model, "test_route": test_route}
     tcm = cast(TestCarModel, type("CarModelTestCase", (TestCarModel,), test_case_args))
     car_fw, _, _ = tcm.get_testing_data()
@@ -67,7 +67,7 @@ def init_car_info_for_model(model: str, car_info: CarInfo | list[CarInfo]) -> li
   return car_info_list
 
 
-def get_all_car_info() -> list[CarInfo]:
+def get_all_car_info(live=True) -> list[CarInfo]:
   """
   This function uses the CAN fingerprints and FW from each make
   to generate accurate car docs considering live detected features
@@ -77,7 +77,7 @@ def get_all_car_info() -> list[CarInfo]:
   with ProcessPoolExecutor() as executor:
     futures = []
     for model, car_info in get_interface_attr("CAR_INFO", combine_brands=True).items():
-      futures.append(executor.submit(init_car_info_for_model, model, car_info))
+      futures.append(executor.submit(init_car_info_for_model, model, car_info, live))
 
     for future in tqdm(as_completed(futures), total=len(futures)):
       all_car_info.extend(future.result())
