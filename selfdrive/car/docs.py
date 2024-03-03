@@ -43,11 +43,11 @@ def init_car_info_for_model(model: str, car_info: CarInfo | list[CarInfo]) -> li
     test_case_args = {"car_model": test_route.car_model, "test_route": test_route}
     tcm = cast(TestCarModel, type("CarModelTestCase", (TestCarModel,), test_case_args))
     car_fw, _, _ = tcm.get_testing_data()
-    fingerprint = tcm.fingerprint
-    # - remove gas interceptor so Honda doesn't show 0 mph enable speed
-    # - remove smart DSU so Toyota longitudinal col is correct
-    # - remove DSU from FW versions so enableDsu=True
-    fingerprint = {b: {a: l for a, l in f.items() if a not in (0x201, 0x2FF, 0x2AA)} for b, f in fingerprint.items()}
+
+    # remove non-standard features:
+    # - gas interceptor so Honda doesn't show 0 mph enable speed
+    # - smart DSU & DSU from FW versions so Toyota longitudinal column is "available"
+    fingerprint = {b: {a: l for a, l in f.items() if a not in (0x201, 0x2FF, 0x2AA)} for b, f in tcm.fingerprint.items()}
     car_fw = [fw for fw in car_fw if fw.ecu != 'dsu']
 
   # in case of older or no route
