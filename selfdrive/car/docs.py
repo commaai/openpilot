@@ -45,6 +45,10 @@ def init_car_info_for_model(model: str, car_info: CarInfo | list[CarInfo]) -> li
     # car_fw, _, _ = tcm.get_testing_data()
     tcm.get_testing_data()
     fingerprint = tcm.fingerprint
+    # remove DSU from FW versions so enableDsu=True
+    # remove gas interceptor from the fingerprints so Honda doesn't show 0 mph enable speed
+    fingerprint = {b: {a: l for a, l in f.items() if a != 0x201} for b, f in fingerprint.items()}
+    car_fw = [fw for fw in car_fw if fw.ecu != 'dsu']
 
   CP = interfaces[model][0].get_params(model, fingerprint=fingerprint,
                                        car_fw=car_fw, experimental_long=True, docs=True)
