@@ -5,12 +5,17 @@ import jinja2
 import os
 from enum import Enum
 from natsort import natsorted
+from typing import cast
+from tqdm import tqdm
 
 from cereal import car
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.car import gen_empty_fingerprint
+from openpilot.selfdrive.car.tests.routes import routes
+from openpilot.selfdrive.car.tests.test_models import TestCarModel, TestCarModelBase
 from openpilot.selfdrive.car.docs_definitions import CarInfo, Column, CommonFootnote, PartType
 from openpilot.selfdrive.car.car_helpers import interfaces, get_interface_attr
+from openpilot.tools.lib.logreader import LogReader
 
 
 def get_all_footnotes() -> dict[Enum, int]:
@@ -27,10 +32,24 @@ CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 def get_all_car_info() -> list[CarInfo]:
   all_car_info: list[CarInfo] = []
   footnotes = get_all_footnotes()
-  for model, car_info in get_interface_attr("CAR_INFO", combine_brands=True).items():
+  for model, car_info in tqdm(get_interface_attr("CAR_INFO", combine_brands=True).items()):
     # If available, uses experimental longitudinal limits for the docs
-    CP = interfaces[model][0].get_params(model, fingerprint=gen_empty_fingerprint(),
-                                         car_fw=[car.CarParams.CarFw(ecu="unknown")], experimental_long=True, docs=True)
+    fingerprint = gen_empty_fingerprint()
+    car_fw = [car.CarParams.CarFw(ecu="unknown")]
+
+    test_route = next((rt for rt in routes if rt.car_model == model), None)
+    print(model, test_route)
+    if test_route is not None:
+      test_case_args = {"car_model": test_route.car_model, "test_route": test_route}
+      tcm = cast(TestCarModel, type("CarModelTestCase", (TestCarModel,), test_case_args))
+      car_fw, can_msgs, experimental_long = tcm.get_testing_data()
+      fingerprint = tcm.fingerprint
+
+
+      # lr = LogReader(test_route.route + '/0/r')
+
+    CP = interfaces[model][0].get_params(model, fingerprint=fingerprint,
+                                         car_fw=car_fw, experimental_long=True, docs=True)
 
     if CP.dashcamOnly or car_info is None:
       continue
