@@ -42,7 +42,8 @@ def init_car_info_for_model(model: str, car_info: CarInfo | list[CarInfo]) -> li
   if test_route is not None:
     test_case_args = {"car_model": test_route.car_model, "test_route": test_route}
     tcm = cast(TestCarModel, type("CarModelTestCase", (TestCarModel,), test_case_args))
-    car_fw, _, _ = tcm.get_testing_data()
+    # car_fw, _, _ = tcm.get_testing_data()
+    tcm.get_testing_data()
     fingerprint = tcm.fingerprint
 
   CP = interfaces[model][0].get_params(model, fingerprint=fingerprint,
