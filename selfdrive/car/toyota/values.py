@@ -330,7 +330,7 @@ class CAR(Platforms):
   )
   LEXUS_LC_TSS2 = ToyotaTSS2PlatformConfig(
     "LEXUS LC 2024",
-    ToyotaCarInfo("Lexus LC 2024"),
+    ToyotaCarInfo("Lexus LC 2024", "without Dynamic Handling Package"),
     CarSpecs(mass=4500. * CV.LB_TO_KG, wheelbase=2.87, steerRatio=13.0, tireStiffnessFactor=0.444),
   )
   LEXUS_RC = PlatformConfig(
