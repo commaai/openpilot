@@ -164,8 +164,11 @@ class GitUpdateStrategy(UpdateStrategy):
   def get_branch(self, path: str) -> str:
     return run(["git", "rev-parse", "--abbrev-ref", "HEAD"], path).rstrip()
 
-  def get_commit_hash(self, path: str = OVERLAY_MERGED) -> str:
+  def get_commit_hash(self, path) -> str:
     return run(["git", "rev-parse", "HEAD"], path).rstrip()
+
+  def get_current_channel(self) -> str:
+    return self.get_branch(BASEDIR)
 
   @property
   def target_channel(self) -> str:

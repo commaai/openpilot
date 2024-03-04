@@ -8,14 +8,10 @@ import psutil
 import signal
 import fcntl
 import threading
-from collections import defaultdict
-from markdown_it import MarkdownIt
 
-from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.time import system_time_valid
-from openpilot.selfdrive.updated.common import LOCK_FILE, OVERLAY_INIT, STAGING_ROOT, UpdateStrategy, run, set_consistent_flag
-from openpilot.selfdrive.updated.updated import OVERLAY_MERGED
+from openpilot.selfdrive.updated.common import LOCK_FILE, OVERLAY_INIT, STAGING_ROOT, UpdateStrategy, run, set_consistent_flag, OVERLAY_MERGED
 from openpilot.system.hardware import AGNOS, HARDWARE
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert

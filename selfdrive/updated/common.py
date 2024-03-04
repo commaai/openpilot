@@ -38,17 +38,12 @@ class UpdateStrategy(abc.ABC):
     pass
 
   @abc.abstractmethod
-  def set_channel(self, channel: str) -> None:
-    """Set the desired channel to install"""
-    pass
-
-  @abc.abstractmethod
   def update_ready(self) -> bool:
     """Check if an update is ready to be installed"""
     pass
 
   @abc.abstractmethod
-  def update_avaiable(self) -> bool:
+  def update_available(self) -> bool:
     """Check if an update is available for the current channel"""
     pass
 
