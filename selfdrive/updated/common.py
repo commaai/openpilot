@@ -32,12 +32,10 @@ class UpdateStrategy(abc.ABC):
   @abc.abstractmethod
   def get_available_channels(self) -> List[str]:
     """List of available channels to install, (branches, releases, etc)"""
-    pass
 
   @abc.abstractmethod
   def current_channel(self) -> str:
     """Current channel installed"""
-    pass
 
   @property
   def target_channel(self) -> str:
@@ -50,20 +48,16 @@ class UpdateStrategy(abc.ABC):
   @abc.abstractmethod
   def update_ready(self) -> bool:
     """Check if an update is ready to be installed"""
-    pass
 
   @abc.abstractmethod
   def update_available(self) -> bool:
     """Check if an update is available for the current channel"""
-    pass
 
   def describe_current_channel(self) -> tuple[str, str]:
     """Describe the current channel installed, (description, release_notes)"""
-    pass
 
   def describe_ready_channel(self) -> tuple[str, str]:
     """Describe the channel that is ready to be installed, (description, release_notes)"""
-    pass
 
   def fetch_update(self) -> None:
     pass

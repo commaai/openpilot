@@ -12,7 +12,8 @@ from typing import List
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
-from openpilot.selfdrive.updated.common import FINALIZED, OVERLAY_METADATA, OVERLAY_UPPER, STAGING_ROOT, UpdateStrategy, OVERLAY_MERGED, parse_release_notes, set_consistent_flag, run, OVERLAY_INIT
+from openpilot.selfdrive.updated.common import FINALIZED, OVERLAY_MERGED, OVERLAY_METADATA, OVERLAY_UPPER, OVERLAY_INIT, STAGING_ROOT, \
+                                              UpdateStrategy, parse_release_notes, set_consistent_flag, run
 
 
 def setup_git_options(cwd: str) -> None:

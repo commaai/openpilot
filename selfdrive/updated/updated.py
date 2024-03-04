@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 from pathlib import Path
-import re
 import datetime
 import subprocess
 import psutil
@@ -16,7 +15,7 @@ from openpilot.system.hardware import AGNOS, HARDWARE
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 from openpilot.system.version import is_tested_branch
-from selfdrive.updated.git import GitUpdateStrategy, init_overlay
+from openpilot.selfdrive.updated.git import GitUpdateStrategy, init_overlay
 
 DAYS_NO_CONNECTIVITY_MAX = 14     # do not allow to engage after this many days
 DAYS_NO_CONNECTIVITY_PROMPT = 10  # send an offroad prompt after this many days
@@ -101,9 +100,9 @@ class Updater:
 
     self.params.put_bool("UpdaterFetchAvailable", self.strategy.update_available)
 
-    avaiable_channels = self.strategy.get_available_channels()
+    available_channels = self.strategy.get_available_channels()
 
-    if avaiable_channels != None:
+    if available_channels is None:
       self.params.put("UpdaterAvailableBranches", ','.join(self.strategy.get_available_channels()))
 
     last_update = datetime.datetime.utcnow()
