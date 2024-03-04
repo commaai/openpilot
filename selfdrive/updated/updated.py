@@ -101,9 +101,7 @@ class Updater:
     self.params.put_bool("UpdaterFetchAvailable", self.strategy.update_available)
 
     available_channels = self.strategy.get_available_channels()
-
-    if available_channels is None:
-      self.params.put("UpdaterAvailableBranches", ','.join(self.strategy.get_available_channels()))
+    self.params.put("UpdaterAvailableBranches", ','.join(available_channels))
 
     last_update = datetime.datetime.utcnow()
     if update_success:

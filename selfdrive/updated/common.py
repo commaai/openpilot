@@ -53,15 +53,19 @@ class UpdateStrategy(abc.ABC):
   def update_available(self) -> bool:
     """Check if an update is available for the current channel"""
 
+  @abc.abstractmethod
   def describe_current_channel(self) -> tuple[str, str]:
     """Describe the current channel installed, (description, release_notes)"""
 
+  @abc.abstractmethod
   def describe_ready_channel(self) -> tuple[str, str]:
     """Describe the channel that is ready to be installed, (description, release_notes)"""
 
+  @abc.abstractmethod
   def fetch_update(self) -> None:
     pass
 
+  @abc.abstractmethod
   def finalize_update(self) -> None:
     pass
 
@@ -76,15 +80,15 @@ def set_consistent_flag(consistent: bool) -> None:
   os.sync()
 
 
-def parse_release_notes(releases_md: str) -> bytes:
+def parse_release_notes(releases_md: str) -> str:
   try:
-    r = releases_md.split(b'\n\n', 1)[0]  # Slice latest release notes
+    r = releases_md.split('\n\n', 1)[0]  # Slice latest release notes
     try:
-      return bytes(MarkdownIt().render(r.decode("utf-8")), encoding="utf-8")
+      return str(MarkdownIt().render(r))
     except Exception:
-      return r + b"\n"
+      return r + "\n"
   except FileNotFoundError:
     pass
   except Exception:
     cloudlog.exception("failed to parse release notes")
-  return b""
+  return ""

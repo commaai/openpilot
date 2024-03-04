@@ -165,7 +165,7 @@ class GitUpdateStrategy(UpdateStrategy):
     return f"{version} / {branch} / {commit} / {commit_date}"
 
   def release_notes_branch(self, basedir) -> str:
-    with open(os.path.join(basedir, "RELEASES.md"), "rb") as f:
+    with open(os.path.join(basedir, "RELEASES.md"), "r") as f:
       return parse_release_notes(f.read())
 
   def describe_current_channel(self) -> tuple[str, str]:
