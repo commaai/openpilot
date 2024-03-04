@@ -1,3 +1,8 @@
+#!/usr/bin/env python
+
+from typing import Any
+from multiprocessing import Queue
+
 from metadrive.component.sensors.base_camera import _cuda_enable
 from metadrive.component.map.pg_map import MapGenerateMethod
 
@@ -7,38 +12,25 @@ from openpilot.tools.sim.bridge.metadrive.metadrive_world import MetaDriveWorld
 from openpilot.tools.sim.lib.camerad import W, H
 
 
-def straight_block(length):
-  return {
-    "id": "S",
-    "pre_block_socket_index": 0,
-    "length": length
-  }
-
-def curve_block(length, angle=45, direction=0):
-  return {
-    "id": "C",
-    "pre_block_socket_index": 0,
-    "length": length,
-    "radius": length,
-    "angle": angle,
-    "dir": direction
-  }
-
-def create_map(track_size=60):
+def create_map():
   return dict(
     type=MapGenerateMethod.PG_MAP_FILE,
     lane_num=2,
     lane_width=3.5,
     config=[
-      None,
-      straight_block(track_size),
-      curve_block(track_size*2, 90),
-      straight_block(track_size),
-      curve_block(track_size*2, 90),
-      straight_block(track_size),
-      curve_block(track_size*2, 90),
-      straight_block(track_size),
-      curve_block(track_size*2, 90),
+      {
+        "id": "S",
+        "pre_block_socket_index": 0,
+        "length": 60,
+      },
+      {
+        "id": "C",
+        "pre_block_socket_index": 0,
+        "length": 60,
+        "radius": 600,
+        "angle": 45,
+        "dir": 0,
+      },
     ]
   )
 
@@ -69,11 +61,11 @@ class MetaDriveBridge(SimulatorBridge):
       image_on_cuda=_cuda_enable,
       image_observation=True,
       interface_panel=[],
-      out_of_route_done=False,
-      on_continuous_line_done=False,
-      crash_vehicle_done=False,
-      crash_object_done=False,
-      traffic_density=0.0, # traffic is incredibly expensive
+      out_of_route_done=True,
+      on_continuous_line_done=True,
+      crash_vehicle_done=True,
+      crash_object_done=True,
+      traffic_density=0.0,
       map_config=create_map(),
       decision_repeat=1,
       physics_world_step_size=self.TICKS_PER_FRAME/100,
@@ -81,3 +73,10 @@ class MetaDriveBridge(SimulatorBridge):
     )
 
     return MetaDriveWorld(config, self.dual_camera)
+
+
+if __name__ == "__main__":
+  queue: Any = Queue()
+  simulator_bridge = MetaDriveBridge(True, False)
+  simulator_process = simulator_bridge.run(queue)
+  simulator_process.join()
