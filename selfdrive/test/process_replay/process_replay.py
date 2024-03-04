@@ -317,7 +317,7 @@ class ProcessContainer:
     return output_msgs
 
 
-def controlsd_fingerprint_callback(rc, pm, msgs, fingerprint):
+def fingerprint_callback(rc, pm, msgs, fingerprint):
   print("start fingerprinting")
   params = Params()
   canmsgs = [msg for msg in msgs if msg.which() == "can"][:300]
@@ -457,23 +457,47 @@ def locationd_config_pubsub_callback(params, cfg, lr):
   cfg.pubs = set(cfg.pubs) - sub_keys
 
 
+def card_rcv_callback(msg, cfg, frame):
+  if msg.which() != "can":
+    return False
+
+  socks = [
+    s for s in cfg.subs if
+    frame % int(SERVICE_LIST[msg.which()].frequency / SERVICE_LIST[s].frequency) == 0
+  ]
+  if "sendcan" in socks and (frame - 1) < 2000:
+    socks.remove("sendcan")
+  return len(socks) > 0
+
+
 CONFIGS = [
+  ProcessConfig(
+    proc_name="card",
+    pubs=["can", "carControl", "pandaStates"],
+    subs=["carState", "sendcan"],
+    ignore=["logMonoTime", "valid"],
+    config_callback=controlsd_config_callback,
+    init_callback=fingerprint_callback,
+    should_recv_callback=card_rcv_callback,
+    tolerance=NUMPY_TOLERANCE,
+    processing_time=0.004,
+    main_pub="can",
+  ),
   ProcessConfig(
     proc_name="controlsd",
     pubs=[
-      "can", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
+      "carState", "carOutput", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
       "longitudinalPlan", "liveLocationKalman", "liveParameters", "radarState",
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
       "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope"
     ],
-    subs=["controlsState", "carState", "carControl", "sendcan", "onroadEvents", "carParams"],
+    subs=["controlsState", "carControl", "sendcan", "onroadEvents", "carParams"],
     ignore=["logMonoTime", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     config_callback=controlsd_config_callback,
-    init_callback=controlsd_fingerprint_callback,
-    should_recv_callback=controlsd_rcv_callback,
+    init_callback=get_car_params_callback,
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
-    main_pub="can",
+    main_pub="carState",
   ),
   ProcessConfig(
     proc_name="radard",
