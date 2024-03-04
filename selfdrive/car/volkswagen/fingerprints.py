@@ -795,6 +795,25 @@ FW_VERSIONS = {
       b'\xf1\x875Q0907572P \xf1\x890682',
     ],
   },
+  CAR.AUDI_A4_MK4: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x878K5907551G \xf1\x890007',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x878K5927156D \xf1\x890003',
+    ],
+    # SRS needs to be probed on the test car
+    # (Ecu.srs, 0x715, None): [
+    #  b'\xf1\x875Q0959655BD\xf1\x890336\xf1\x82\x1311111111111100311211011231129321312111',
+    # ],
+    (Ecu.eps, 0x712, None): [
+      b'\xf1\x878K0909144J \xf1\x890509\xf1\x82\x01\n\x1a',
+    ],
+    # Test car lacks a radar
+    # (Ecu.fwdRadar, 0x757, None): [
+    #  b'\xf1\x872Q0907572M \xf1\x890233',
+    # ],
+  },
   CAR.AUDI_Q2_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704E906027JT\xf1\x894145',

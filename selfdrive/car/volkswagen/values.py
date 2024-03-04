@@ -72,24 +72,42 @@ class CarControllerParams:
     else:
       self.LDW_STEP = 10                  # LDW_02 message frequency 10Hz
       self.ACC_HUD_STEP = 6               # ACC_02 message frequency 16Hz
-      self.STEER_DRIVER_ALLOWANCE = 80    # Driver intervention threshold 0.8 Nm
-      self.STEER_DELTA_UP = 4             # Max HCA reached in 1.50s (STEER_MAX / (50Hz * 1.50))
-      self.STEER_DELTA_DOWN = 10          # Min HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
 
-      if CP.transmissionType == TransmissionType.automatic:
-        self.shifter_values = can_define.dv["Getriebe_11"]["GE_Fahrstufe"]
-      elif CP.transmissionType == TransmissionType.direct:
-        self.shifter_values = can_define.dv["EV_Gearshift"]["GearPosition"]
       self.hca_status_values = can_define.dv["LH_EPS_03"]["EPS_HCA_Status"]
 
-      self.BUTTONS = [
-        Button(car.CarState.ButtonEvent.Type.setCruise, "GRA_ACC_01", "GRA_Tip_Setzen", [1]),
-        Button(car.CarState.ButtonEvent.Type.resumeCruise, "GRA_ACC_01", "GRA_Tip_Wiederaufnahme", [1]),
-        Button(car.CarState.ButtonEvent.Type.accelCruise, "GRA_ACC_01", "GRA_Tip_Hoch", [1]),
-        Button(car.CarState.ButtonEvent.Type.decelCruise, "GRA_ACC_01", "GRA_Tip_Runter", [1]),
-        Button(car.CarState.ButtonEvent.Type.cancel, "GRA_ACC_01", "GRA_Abbrechen", [1]),
-        Button(car.CarState.ButtonEvent.Type.gapAdjustCruise, "GRA_ACC_01", "GRA_Verstellung_Zeitluecke", [1]),
-      ]
+      if CP.flags & VolkswagenFlags.MLB:
+        self.STEER_DRIVER_ALLOWANCE = 60  # Driver intervention threshold 0.6 Nm
+        self.STEER_DELTA_UP = 10  # Max HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
+        self.STEER_DELTA_DOWN = 10  # Min HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
+
+        # TODO: populate shifter enums
+        self.shifter_values = None
+        self.BUTTONS = [
+          Button(car.CarState.ButtonEvent.Type.setCruise, "LS_01", "LS_Tip_Setzen", [1]),
+          Button(car.CarState.ButtonEvent.Type.resumeCruise, "LS_01", "LS_Tip_Wiederaufnahme", [1]),
+          Button(car.CarState.ButtonEvent.Type.accelCruise, "LS_01", "LS_Tip_Hoch", [1]),
+          Button(car.CarState.ButtonEvent.Type.decelCruise, "LS_01", "LS_Tip_Runter", [1]),
+          Button(car.CarState.ButtonEvent.Type.cancel, "LS_01", "LS_Abbrechen", [1]),
+          Button(car.CarState.ButtonEvent.Type.gapAdjustCruise, "LS_01", "LS_Verstellung_Zeitluecke", [1]),
+        ]
+      else:
+        self.STEER_DRIVER_ALLOWANCE = 80  # Driver intervention threshold 0.8 Nm
+        self.STEER_DELTA_UP = 4  # Max HCA reached in 1.50s (STEER_MAX / (50Hz * 1.50))
+        self.STEER_DELTA_DOWN = 10  # Min HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
+
+        if CP.transmissionType == TransmissionType.automatic:
+          self.shifter_values = can_define.dv["Getriebe_11"]["GE_Fahrstufe"]
+        elif CP.transmissionType == TransmissionType.direct:
+          self.shifter_values = can_define.dv["EV_Gearshift"]["GearPosition"]
+
+        self.BUTTONS = [
+          Button(car.CarState.ButtonEvent.Type.setCruise, "GRA_ACC_01", "GRA_Tip_Setzen", [1]),
+          Button(car.CarState.ButtonEvent.Type.resumeCruise, "GRA_ACC_01", "GRA_Tip_Wiederaufnahme", [1]),
+          Button(car.CarState.ButtonEvent.Type.accelCruise, "GRA_ACC_01", "GRA_Tip_Hoch", [1]),
+          Button(car.CarState.ButtonEvent.Type.decelCruise, "GRA_ACC_01", "GRA_Tip_Runter", [1]),
+          Button(car.CarState.ButtonEvent.Type.cancel, "GRA_ACC_01", "GRA_Abbrechen", [1]),
+          Button(car.CarState.ButtonEvent.Type.gapAdjustCruise, "GRA_ACC_01", "GRA_Verstellung_Zeitluecke", [1]),
+        ]
 
       self.LDW_MESSAGES = {
         "none": 0,                            # Nothing to display
@@ -115,6 +133,15 @@ class VolkswagenFlags(IntFlag):
 
   # Static flags
   PQ = 2
+  MLB = 4
+
+
+@dataclass
+class VolkswagenMLBPlatformConfig(PlatformConfig):
+  dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('vw_mlb', None))
+
+  def init(self):
+    self.flags |= VolkswagenFlags.MLB
 
 
 @dataclass
@@ -314,6 +341,14 @@ class CAR(Platforms):
       VWCarInfo("Audi S3 2015-17"),
     ],
     VolkswagenCarSpecs(mass=1335, wheelbase=2.61),
+  )
+  AUDI_A4_MK4 = VolkswagenMLBPlatformConfig(
+    "AUDI A4 4TH GEN",  # Chassis FL
+    [
+      VWCarInfo("Audi A4 2015-16"),
+      VWCarInfo("Audi S4 2015-16"),
+    ],
+    VolkswagenCarSpecs(mass=1650, wheelbase=2.81),
   )
   AUDI_Q2_MK1 = VolkswagenMQBPlatformConfig(
     "AUDI Q2 1ST GEN",  # Chassis GA

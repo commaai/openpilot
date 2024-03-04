@@ -49,6 +49,19 @@ class CarInterface(CarInterfaceBase):
       # Panda ALLOW_DEBUG firmware required.
       ret.dashcamOnly = True
 
+    elif ret.flags & VolkswagenFlags.MLB:
+      # Set global MLB parameters
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagenMlb)]
+      ret.enableBsm = 0x30F in fingerprint[0]  # SWA_01
+
+      # TODO: trans message/gear position ID
+      ret.transmissionType = TransmissionType.automatic
+
+      if any(msg in fingerprint[1] for msg in (0x40, 0x86, 0x103)):  # Airbag_01, LWI_01, ESP_03
+        ret.networkLocation = NetworkLocation.gateway
+      else:
+        ret.networkLocation = NetworkLocation.fwdCamera
+
     else:
       # Set global MQB parameters
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagen)]
@@ -85,7 +98,7 @@ class CarInterface(CarInterfaceBase):
 
     # Global longitudinal tuning defaults, can be overridden per-vehicle
 
-    ret.experimentalLongitudinalAvailable = ret.networkLocation == NetworkLocation.gateway or docs
+    ret.experimentalLongitudinalAvailable = not ret.flags & VolkswagenFlags.MLB and (ret.networkLocation == NetworkLocation.gateway or docs)
     if experimental_long:
       # Proof-of-concept, prep for E2E only. No radar points available. Panda ALLOW_DEBUG firmware required.
       ret.openpilotLongitudinalControl = True
