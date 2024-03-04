@@ -9,7 +9,7 @@ from cereal import car
 from panda import ALTERNATIVE_EXPERIENCE
 
 from openpilot.common.params import Params
-from openpilot.common.realtime import DT_CTRL
+from openpilot.common.realtime import DT_CTRL, Priority, config_realtime_process
 
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
@@ -25,7 +25,7 @@ class CarD:
 
   def __init__(self, CI=None):
     self.can_sock = messaging.sub_sock('can', timeout=20)
-    self.sm = messaging.SubMaster(['pandaStates'])
+    self.sm = messaging.SubMaster(['carControl', 'pandaStates'])
     self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput'])
 
     self.can_rcv_timeout_counter = 0      # conseuctive timeout count
@@ -76,9 +76,12 @@ class CarD:
     self.params.put_nonblocking("CarParamsCache", cp_bytes)
     self.params.put_nonblocking("CarParamsPersistent", cp_bytes)
 
+    self.initialized = False
+
   def initialize(self):
     """Initialize CarInterface, once controls are ready"""
     self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
+    self.initialized = True
 
   def state_update(self):
     """carState update loop, driven by can"""
@@ -102,8 +105,6 @@ class CarD:
 
     if can_rcv_valid and REPLAY:
       self.can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
-
-    self.state_publish()
 
     return self.CS
 
@@ -130,13 +131,35 @@ class CarD:
       co_send.carOutput.actuatorsOutput = self.last_actuators
     self.pm.send('carOutput', co_send)
 
-  def controls_update(self, CC: car.CarControl):
+  def controls_update(self):
     """control update loop, driven by carControl"""
+
+    CC = self.sm["carControl"]
 
     # send car controls over can
     now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
-    self.last_actuators, can_sends = self.CI.apply(CC, now_nanos)
+    self.last_actuators, can_sends = self.CI.apply(CC.as_builder(), now_nanos)
     self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=self.CS.canValid))
 
     self.CC_prev = CC
 
+  def card_thread(self):
+    while True:
+      self.state_update()
+      self.state_publish()
+
+      if not self.initialized and self.params.get_bool('ControlsReady'):
+        self.initialize()
+
+      if self.initialized:
+        self.controls_update()
+
+
+def main():
+  config_realtime_process(4, Priority.CTRL_HIGH)
+  card = CarD()
+  card.card_thread()
+
+
+if __name__ == "__main__":
+  main()
