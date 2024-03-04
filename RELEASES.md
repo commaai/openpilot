@@ -2,6 +2,8 @@ Version 0.9.7 (2024-XX-XX)
 ========================
 * New driving model
 * Support for hybrid variants of supported Ford models
+* Hyundai Palisade (with HDA II) 2023-24 support thanks to sunnyhaibin!
+* Kia Telluride (with HDA II) 2023-24 support thanks to sunnyhaibin!
 
 Version 0.9.6 (2024-02-27)
 ========================

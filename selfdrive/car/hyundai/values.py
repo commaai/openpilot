@@ -33,6 +33,11 @@ class CarControllerParams:
       self.STEER_DELTA_UP = 2
       self.STEER_DELTA_DOWN = 3
 
+    elif CP.carFingerprint in CAN_CANFD_CAR:
+      self.STEER_MAX = 270
+      self.STEER_DELTA_UP = 2
+      self.STEER_DELTA_DOWN = 3
+
     # To determine the limit for your car, find the maximum value that the stock LKAS will request.
     # If the max stock LKAS request is <384, add your car to this list.
     elif CP.carFingerprint in (CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.ELANTRA, CAR.ELANTRA_GT_I30, CAR.IONIQ,
@@ -95,6 +100,9 @@ class HyundaiFlags(IntFlag):
 
   MIN_STEER_32_MPH = 2 ** 23
 
+  # CAN CAN-FD
+  CAN_CANFD = 2 ** 24
+
 
 class Footnote(Enum):
   CANFD = CarFootnote(
@@ -123,10 +131,13 @@ class HyundaiPlatformConfig(PlatformConfig):
     if self.flags & HyundaiFlags.MIN_STEER_32_MPH:
       self.specs = self.specs.override(minSteerSpeed=32 * CV.MPH_TO_MS)
 
+    if self.flags & HyundaiFlags.CAN_CANFD:
+      self.dbc_dict = dbc_dict('hyundai_palisade_2023_generated', None)
+
 
 @dataclass
 class HyundaiCanFDPlatformConfig(PlatformConfig):
-  dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict("hyundai_canfd", None))
+  dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict("hyundai_canfd_generated", None))
 
   def init(self):
     self.flags |= HyundaiFlags.CANFD
@@ -320,6 +331,15 @@ class CAR(Platforms):
     ],
     CarSpecs(mass=1999, wheelbase=2.9, steerRatio=15.6 * 1.15, tireStiffnessFactor=0.63),
     flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8,
+  )
+  PALISADE_2023 = HyundaiPlatformConfig(
+    "HYUNDAI PALISADE 2023",
+    [
+      HyundaiCarInfo("Hyundai Palisade (with HDA II) 2023-24", "All", car_parts=CarParts.common([CarHarness.hyundai_r])),
+      HyundaiCarInfo("Kia Telluride (with HDA II) 2023-24", "All", car_parts=CarParts.common([CarHarness.hyundai_p])),
+    ],
+    PALISADE.specs,
+    flags=HyundaiFlags.CHECKSUM_CRC8 | HyundaiFlags.CAN_CANFD | HyundaiFlags.RADAR_SCC,
   )
   VELOSTER = HyundaiPlatformConfig(
     "HYUNDAI VELOSTER 2019",
@@ -824,6 +844,7 @@ CAN_GEARS = {
 
 CANFD_CAR = CAR.with_flags(HyundaiFlags.CANFD)
 CANFD_RADAR_SCC_CAR = CAR.with_flags(HyundaiFlags.RADAR_SCC)
+CAN_CANFD_CAR = CAR.with_flags(HyundaiFlags.CAN_CANFD)
 
 # These CAN FD cars do not accept communication control to disable the ADAS ECU,
 # responds with 0x7F2822 - 'conditions not correct'

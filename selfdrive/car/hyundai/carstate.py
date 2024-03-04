@@ -107,11 +107,12 @@ class CarState(CarStateBase):
       ret.cruiseState.standstill = False
       ret.cruiseState.nonAdaptive = False
     else:
-      ret.cruiseState.available = cp_cruise.vl["SCC11"]["MainMode_ACC"] == 1
+      scc_bus = "SCC12" if self.CP.flags & HyundaiFlags.CAN_CANFD else "SCC11"
+      ret.cruiseState.available = cp_cruise.vl[scc_bus]["MainMode_ACC"] == 1
       ret.cruiseState.enabled = cp_cruise.vl["SCC12"]["ACCMode"] != 0
-      ret.cruiseState.standstill = cp_cruise.vl["SCC11"]["SCCInfoDisplay"] == 4.
-      ret.cruiseState.nonAdaptive = cp_cruise.vl["SCC11"]["SCCInfoDisplay"] == 2.  # Shows 'Cruise Control' on dash
-      ret.cruiseState.speed = cp_cruise.vl["SCC11"]["VSetDis"] * speed_conv
+      ret.cruiseState.standstill = cp_cruise.vl[scc_bus]["SCCInfoDisplay"] == 4.
+      ret.cruiseState.nonAdaptive = cp_cruise.vl[scc_bus]["SCCInfoDisplay"] == 2.  # Shows 'Cruise Control' on dash
+      ret.cruiseState.speed = cp_cruise.vl[scc_bus]["VSetDis"] * speed_conv
 
     # TODO: Find brake pressure
     ret.brake = 0
@@ -143,7 +144,7 @@ class CarState(CarStateBase):
 
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
 
-    if not self.CP.openpilotLongitudinalControl:
+    if not self.CP.openpilotLongitudinalControl and not (self.CP.flags & HyundaiFlags.CAN_CANFD.value):
       aeb_src = "FCA11" if self.CP.flags & HyundaiFlags.USE_FCA.value else "SCC12"
       aeb_sig = "FCA_CmdAct" if self.CP.flags & HyundaiFlags.USE_FCA.value else "AEB_CmdAct"
       aeb_warning = cp_cruise.vl[aeb_src]["CF_VSM_Warn"] != 0
@@ -157,8 +158,11 @@ class CarState(CarStateBase):
       ret.rightBlindspot = cp.vl["LCA11"]["CF_Lca_IndRight"] != 0
 
     # save the entire LKAS11 and CLU11
-    self.lkas11 = copy.copy(cp_cam.vl["LKAS11"])
+    if not self.CP.flags & HyundaiFlags.CAN_CANFD:
+      self.lkas11 = copy.copy(cp_cam.vl["LKAS11"])
     self.clu11 = copy.copy(cp.vl["CLU11"])
+    if self.CP.flags & HyundaiFlags.CAN_CANFD and self.CP.flags & HyundaiFlags.CANFD_HDA2:
+      self.hda2_lfa_block_msg = copy.copy(cp_cam.vl["CAM_0x2a4"])
     self.steer_state = cp.vl["MDPS12"]["CF_Mdps_ToiActive"]  # 0 NOT ACTIVE, 1 ACTIVE
     self.prev_cruise_buttons = self.cruise_buttons[-1]
     self.cruise_buttons.extend(cp.vl_all["CLU11"]["CF_Clu_CruiseSwState"])
@@ -254,7 +258,7 @@ class CarState(CarStateBase):
 
     messages = [
       # address, frequency
-      ("MDPS12", 50),
+      ("MDPS12", 100 if CP.flags & HyundaiFlags.CAN_CANFD else 50),
       ("TCS13", 50),
       ("TCS15", 10),
       ("CLU11", 50),
@@ -267,16 +271,19 @@ class CarState(CarStateBase):
       ("SAS11", 100),
     ]
 
-    if not CP.openpilotLongitudinalControl and CP.carFingerprint not in CAMERA_SCC_CAR:
-      messages += [
-        ("SCC11", 50),
-        ("SCC12", 50),
-      ]
-      if CP.flags & HyundaiFlags.USE_FCA.value:
-        messages.append(("FCA11", 50))
+    if not CP.openpilotLongitudinalControl:
+      if CP.flags & HyundaiFlags.CAN_CANFD:
+        messages.append(("SCC12", 50))
+      elif CP.carFingerprint not in CAMERA_SCC_CAR:
+        messages += [
+          ("SCC11", 50),
+          ("SCC12", 50),
+        ]
+        if CP.flags & HyundaiFlags.USE_FCA.value:
+          messages.append(("FCA11", 50))
 
     if CP.enableBsm:
-      messages.append(("LCA11", 50))
+      messages.append(("LCA11", 20 if CP.flags & HyundaiFlags.CAN_CANFD else 50))
 
     if CP.flags & (HyundaiFlags.HYBRID | HyundaiFlags.EV):
       messages.append(("E_EMS11", 50))
@@ -295,16 +302,20 @@ class CarState(CarStateBase):
     else:
       messages.append(("LVR12", 100))
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
+    bus = CanBus(CP).ECAN if CP.flags & HyundaiFlags.CAN_CANFD.value else 0
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, bus)
 
   @staticmethod
   def get_cam_can_parser(CP):
     if CP.carFingerprint in CANFD_CAR:
       return CarState.get_cam_can_parser_canfd(CP)
 
-    messages = [
-      ("LKAS11", 100)
-    ]
+    messages = []
+
+    if CP.flags & HyundaiFlags.CAN_CANFD:
+      messages.append(("CAM_0x2a4", 20))
+    else:
+      messages.append(("LKAS11", 100))
 
     if not CP.openpilotLongitudinalControl and CP.carFingerprint in CAMERA_SCC_CAR:
       messages += [
@@ -315,7 +326,8 @@ class CarState(CarStateBase):
       if CP.flags & HyundaiFlags.USE_FCA.value:
         messages.append(("FCA11", 50))
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)
+    bus = CanBus(CP).CAM if CP.flags & HyundaiFlags.CAN_CANFD else 2
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, bus)
 
   def get_can_parser_canfd(self, CP):
     messages = [
