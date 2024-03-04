@@ -117,16 +117,16 @@ class GitUpdateStrategy(UpdateStrategy):
   def update_ready(self) -> bool:
     consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
     if consistent_file.is_file():
-      hash_mismatch = self.get_commit_hash(BASEDIR) != self.branches[self.target_branch]
-      branch_mismatch = self.get_branch(BASEDIR) != self.target_branch
-      on_target_branch = self.get_branch(FINALIZED) == self.target_branch
-      return ((hash_mismatch or branch_mismatch) and on_target_branch)
+      hash_mismatch = self.get_commit_hash(BASEDIR) != self.branches[self.target_channel]
+      branch_mismatch = self.get_branch(BASEDIR) != self.target_channel
+      on_target_channel = self.get_branch(FINALIZED) == self.target_channel
+      return ((hash_mismatch or branch_mismatch) and on_target_channel)
     return False
 
   def update_available(self) -> bool:
     if os.path.isdir(OVERLAY_MERGED) and len(self.get_available_channels()) > 0:
-      hash_mismatch = self.get_commit_hash(OVERLAY_MERGED) != self.branches[self.target_branch]
-      branch_mismatch = self.get_branch(OVERLAY_MERGED) != self.get_target_channel()
+      hash_mismatch = self.get_commit_hash(OVERLAY_MERGED) != self.branches[self.target_channel]
+      branch_mismatch = self.get_branch(OVERLAY_MERGED) != self.target_channel
       return hash_mismatch or branch_mismatch
     return False
 

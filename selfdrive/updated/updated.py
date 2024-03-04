@@ -89,12 +89,6 @@ class Updater:
 
     self.strategy: UpdateStrategy = GitUpdateStrategy()
 
-  def target_channel(self) -> str:
-    b: str | None = self.params.get("UpdaterTargetBranch", encoding='utf-8')
-    if b is None:
-      b = self.strategy.current_channel()
-    return b
-
   @property
   def has_internet(self) -> bool:
     return self._has_internet
@@ -103,7 +97,7 @@ class Updater:
     self.params.put("UpdateFailedCount", str(failed_count))
 
     if self.params.get("UpdaterTargetBranch") == "":
-      self.params.put("UpdaterTargetBranch", self.strategy.get_current_channel())
+      self.params.put("UpdaterTargetBranch", self.strategy.current_channel())
 
     self.params.put_bool("UpdaterFetchAvailable", self.strategy.update_available)
 
@@ -156,7 +150,7 @@ class Updater:
   def check_for_update(self) -> None:
     cloudlog.info("checking for updates")
 
-    self.strategy.update_avaiable()
+    self.strategy.update_available()
 
     excluded_branches = ('release2', 'release2-staging')
 

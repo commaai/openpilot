@@ -6,7 +6,7 @@ import subprocess
 from typing import List
 
 from markdown_it import MarkdownIt
-
+from openpilot.common.params import Params
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
 
@@ -26,6 +26,8 @@ def run(cmd: list[str], cwd: str = None) -> str:
 
 
 class UpdateStrategy(abc.ABC):
+  def __init__(self):
+    self.params = Params()
 
   @abc.abstractmethod
   def get_available_channels(self) -> List[str]:
@@ -36,6 +38,14 @@ class UpdateStrategy(abc.ABC):
   def current_channel(self) -> str:
     """Current channel installed"""
     pass
+
+  @property
+  def target_channel(self) -> str:
+    """Target Channel"""
+    b: str | None = self.params.get("UpdaterTargetBranch", encoding='utf-8')
+    if b is None:
+      b = self.current_channel()
+    return b
 
   @abc.abstractmethod
   def update_ready(self) -> bool:
