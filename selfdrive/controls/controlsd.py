@@ -63,14 +63,14 @@ class Controls:
 
     self.params = Params()
 
-    with car.CarParams.from_bytes(self.params.get("CarParams", block=True)) as msg:
-      # TODO: this shouldn't need to be a builder
-      self.CP = msg.as_builder()
-
     if CI is None:
-      self.CI = get_car_interface(self.CP)
+      with car.CarParams.from_bytes(self.params.get("CarParams", block=True)) as msg:
+        # TODO: this shouldn't need to be a builder
+        self.CP = msg.as_builder()
+        self.CI = get_car_interface(self.CP)
     else:
       self.CI = CI
+      self.CP = CI.CP
 
     # Ensure the current branch is cached, otherwise the first iteration of controlsd lags
     self.branch = get_short_branch()
