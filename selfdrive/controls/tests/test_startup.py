@@ -86,6 +86,7 @@ def test_startup_alert(expected_event, car_model, fw_versions, brand):
   else:
     os.environ['SKIP_FW_QUERY'] = '1'
 
+  managed_processes['card'].start()
   managed_processes['controlsd'].start()
 
   assert pm.wait_for_readers_to_update('can', 5)
