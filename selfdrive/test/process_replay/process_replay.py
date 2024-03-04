@@ -469,7 +469,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="controlsd",
     pubs=[
-      "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
+      "carOutput", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
       "longitudinalPlan", "liveLocationKalman", "liveParameters", "radarState",
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
       "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope", "carState",
@@ -485,7 +485,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="card",
     pubs=["can", "carControl", "pandaStates"],
-    subs=["carState", "sendcan"],
+    subs=["carState", "sendcan", "carOutput"],
     ignore=["logMonoTime", "valid"],
     config_callback=controlsd_config_callback,
     init_callback=fingerprint_callback,
