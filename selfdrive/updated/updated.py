@@ -151,8 +151,6 @@ class Updater:
 
     self.strategy.update_available()
 
-    excluded_branches = ('release2', 'release2-staging')
-
   def fetch_update(self) -> None:
     cloudlog.info("attempting git fetch inside staging overlay")
 
