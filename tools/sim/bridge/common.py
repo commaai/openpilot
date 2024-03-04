@@ -4,7 +4,6 @@ import functools
 
 from multiprocessing import Process, Queue, Value
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from openpilot.common.params import Params
 from openpilot.common.numpy_fast import clip
@@ -44,7 +43,7 @@ class SimulatorBridge(ABC):
     self._exit = threading.Event()
     self.simulator_state = SimulatorState()
 
-    self.world: Optional[World] = None
+    self.world: World | None = None
 
     self.past_startup_engaged = False
 
@@ -172,7 +171,11 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
       steer_out = steer_op if self.simulator_state.is_engaged else steer_manual
 
       self.world.apply_controls(steer_out, throttle_out, brake_out)
+      self.world.read_state()
       self.world.read_sensors(self.simulator_state)
+
+      if self.world.exit_event.is_set():
+        self.shutdown()
 
       if self.rk.frame % self.TICKS_PER_FRAME == 0:
         self.world.tick()

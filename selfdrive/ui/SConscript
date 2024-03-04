@@ -72,8 +72,8 @@ asset_obj = qt_env.Object("assets", assets)
 qt_env.SharedLibrary("qt/python_helpers", ["qt/qt_window.cc"], LIBS=qt_libs)
 
 # spinner and text window
-qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
-qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_libs)
+qt_env.Program("_text", ["qt/text.cc"], LIBS=qt_libs)
+qt_env.Program("_spinner", ["qt/spinner.cc"], LIBS=qt_libs)
 
 # build main UI
 qt_env.Program("ui", qt_src + [asset_obj], LIBS=qt_libs)
