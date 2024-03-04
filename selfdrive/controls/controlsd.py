@@ -798,9 +798,13 @@ class Controls:
     cloudlog.timestamp("Events updated")
 
     if not self.CP.passive and self.initialized:
+      # Update control state
       self.state_transition(CS)
 
+    # Compute actuators (runs PID loops and lateral MPC)
     CC, lac_log = self.state_control(CS)
+
+    # Publish data
     self.publish_logs(CS, start_time, CC, lac_log)
 
     self.CS_prev = CS
