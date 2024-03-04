@@ -31,7 +31,7 @@ class CarD:
     self.can_rcv_timeout_counter = 0      # conseuctive timeout count
     self.can_rcv_cum_timeout_counter = 0  # cumulative timeout count
 
-    self.CC_prev = car.CarState.new_message()
+    self.CC_prev = car.CarControl.new_message()
 
     self.last_actuators = None
 
