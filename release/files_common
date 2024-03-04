@@ -86,6 +86,7 @@ selfdrive/boardd/pandad.py
 selfdrive/boardd/tests/test_boardd_loopback.py
 
 selfdrive/car/__init__.py
+selfdrive/car/card.py
 selfdrive/car/docs_definitions.py
 selfdrive/car/car_helpers.py
 selfdrive/car/fingerprints.py
