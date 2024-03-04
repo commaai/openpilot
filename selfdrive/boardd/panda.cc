@@ -284,6 +284,13 @@ bool Panda::unpack_can_buffer(uint8_t *data, uint32_t &size, std::vector<can_fra
       break;
     }
 
+    if (calculate_checksum(&data[pos], sizeof(can_header) + data_len) != 0) {
+      // TODO: also reset CAN comms?
+      LOGE("Panda CAN checksum failed");
+      size = 0;
+      return false;
+    }
+
     can_frame &canData = out_vec.emplace_back();
     canData.busTime = 0;
     canData.address = header.addr;
@@ -293,12 +300,6 @@ bool Panda::unpack_can_buffer(uint8_t *data, uint32_t &size, std::vector<can_fra
     }
     if (header.returned) {
       canData.src += CAN_RETURNED_BUS_OFFSET;
-    }
-
-    if (calculate_checksum(&data[pos], sizeof(can_header) + data_len) != 0) {
-      LOGE("Panda CAN checksum failed");
-      size = 0;
-      return false;
     }
 
     canData.dat.assign((char *)&data[pos + sizeof(can_header)], data_len);
