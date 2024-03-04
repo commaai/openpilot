@@ -1,35 +1,26 @@
 #!/usr/bin/env python3
 import os
+from pathlib import Path
 import re
 import datetime
 import subprocess
 import psutil
-import shutil
 import signal
 import fcntl
-import time
 import threading
 from collections import defaultdict
-from pathlib import Path
 from markdown_it import MarkdownIt
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.time import system_time_valid
+from openpilot.selfdrive.updated.common import LOCK_FILE, OVERLAY_INIT, STAGING_ROOT, UpdateStrategy, run, set_consistent_flag
+from openpilot.selfdrive.updated.updated import OVERLAY_MERGED
 from openpilot.system.hardware import AGNOS, HARDWARE
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 from openpilot.system.version import is_tested_branch
-
-LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
-STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
-
-OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
-OVERLAY_METADATA = os.path.join(STAGING_ROOT, "metadata")
-OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
-FINALIZED = os.path.join(STAGING_ROOT, "finalized")
-
-OVERLAY_INIT = Path(os.path.join(BASEDIR, ".overlay_init"))
+from selfdrive.updated.git import GitUpdateStrategy, finalize_update, init_overlay
 
 DAYS_NO_CONNECTIVITY_MAX = 14     # do not allow to engage after this many days
 DAYS_NO_CONNECTIVITY_PROMPT = 10  # send an offroad prompt after this many days
@@ -71,140 +62,6 @@ def read_time_from_param(params, param) -> datetime.datetime | None:
     pass
   return None
 
-def run(cmd: list[str], cwd: str = None) -> str:
-  return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
-
-
-def set_consistent_flag(consistent: bool) -> None:
-  os.sync()
-  consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
-  if consistent:
-    consistent_file.touch()
-  elif not consistent:
-    consistent_file.unlink(missing_ok=True)
-  os.sync()
-
-def parse_release_notes(basedir: str) -> bytes:
-  try:
-    with open(os.path.join(basedir, "RELEASES.md"), "rb") as f:
-      r = f.read().split(b'\n\n', 1)[0]  # Slice latest release notes
-    try:
-      return bytes(MarkdownIt().render(r.decode("utf-8")), encoding="utf-8")
-    except Exception:
-      return r + b"\n"
-  except FileNotFoundError:
-    pass
-  except Exception:
-    cloudlog.exception("failed to parse release notes")
-  return b""
-
-def setup_git_options(cwd: str) -> None:
-  # We sync FS object atimes (which NEOS doesn't use) and mtimes, but ctimes
-  # are outside user control. Make sure Git is set up to ignore system ctimes,
-  # because they change when we make hard links during finalize. Otherwise,
-  # there is a lot of unnecessary churn. This appears to be a common need on
-  # OSX as well: https://www.git-tower.com/blog/make-git-rebase-safe-on-osx/
-
-  # We are using copytree to copy the directory, which also changes
-  # inode numbers. Ignore those changes too.
-
-  # Set protocol to the new version (default after git 2.26) to reduce data
-  # usage on git fetch --dry-run from about 400KB to 18KB.
-  git_cfg = [
-    ("core.trustctime", "false"),
-    ("core.checkStat", "minimal"),
-    ("protocol.version", "2"),
-    ("gc.auto", "0"),
-    ("gc.autoDetach", "false"),
-  ]
-  for option, value in git_cfg:
-    run(["git", "config", option, value], cwd)
-
-
-def dismount_overlay() -> None:
-  if os.path.ismount(OVERLAY_MERGED):
-    cloudlog.info("unmounting existing overlay")
-    run(["sudo", "umount", "-l", OVERLAY_MERGED])
-
-
-def init_overlay() -> None:
-
-  # Re-create the overlay if BASEDIR/.git has changed since we created the overlay
-  if OVERLAY_INIT.is_file() and os.path.ismount(OVERLAY_MERGED):
-    git_dir_path = os.path.join(BASEDIR, ".git")
-    new_files = run(["find", git_dir_path, "-newer", str(OVERLAY_INIT)])
-    if not len(new_files.splitlines()):
-      # A valid overlay already exists
-      return
-    else:
-      cloudlog.info(".git directory changed, recreating overlay")
-
-  cloudlog.info("preparing new safe staging area")
-
-  params = Params()
-  params.put_bool("UpdateAvailable", False)
-  set_consistent_flag(False)
-  dismount_overlay()
-  run(["sudo", "rm", "-rf", STAGING_ROOT])
-  if os.path.isdir(STAGING_ROOT):
-    shutil.rmtree(STAGING_ROOT)
-
-  for dirname in [STAGING_ROOT, OVERLAY_UPPER, OVERLAY_METADATA, OVERLAY_MERGED]:
-    os.mkdir(dirname, 0o755)
-
-  if os.lstat(BASEDIR).st_dev != os.lstat(OVERLAY_MERGED).st_dev:
-    raise RuntimeError("base and overlay merge directories are on different filesystems; not valid for overlay FS!")
-
-  # Leave a timestamped canary in BASEDIR to check at startup. The device clock
-  # should be correct by the time we get here. If the init file disappears, or
-  # critical mtimes in BASEDIR are newer than .overlay_init, continue.sh can
-  # assume that BASEDIR has used for local development or otherwise modified,
-  # and skips the update activation attempt.
-  consistent_file = Path(os.path.join(BASEDIR, ".overlay_consistent"))
-  if consistent_file.is_file():
-    consistent_file.unlink()
-  OVERLAY_INIT.touch()
-
-  os.sync()
-  overlay_opts = f"lowerdir={BASEDIR},upperdir={OVERLAY_UPPER},workdir={OVERLAY_METADATA}"
-
-  mount_cmd = ["mount", "-t", "overlay", "-o", overlay_opts, "none", OVERLAY_MERGED]
-  run(["sudo"] + mount_cmd)
-  run(["sudo", "chmod", "755", os.path.join(OVERLAY_METADATA, "work")])
-
-  git_diff = run(["git", "diff"], OVERLAY_MERGED)
-  params.put("GitDiff", git_diff)
-  cloudlog.info(f"git diff output:\n{git_diff}")
-
-
-def finalize_update() -> None:
-  """Take the current OverlayFS merged view and finalize a copy outside of
-  OverlayFS, ready to be swapped-in at BASEDIR. Copy using shutil.copytree"""
-
-  # Remove the update ready flag and any old updates
-  cloudlog.info("creating finalized version of the overlay")
-  set_consistent_flag(False)
-
-  # Copy the merged overlay view and set the update ready flag
-  if os.path.exists(FINALIZED):
-    shutil.rmtree(FINALIZED)
-  shutil.copytree(OVERLAY_MERGED, FINALIZED, symlinks=True)
-
-  run(["git", "reset", "--hard"], FINALIZED)
-  run(["git", "submodule", "foreach", "--recursive", "git", "reset", "--hard"], FINALIZED)
-
-  cloudlog.info("Starting git cleanup in finalized update")
-  t = time.monotonic()
-  try:
-    run(["git", "gc"], FINALIZED)
-    run(["git", "lfs", "prune"], FINALIZED)
-    cloudlog.event("Done git cleanup", duration=time.monotonic() - t)
-  except subprocess.CalledProcessError:
-    cloudlog.exception(f"Failed git cleanup, took {time.monotonic() - t:.3f} s")
-
-  set_consistent_flag(True)
-  cloudlog.info("done finalizing overlay")
-
 
 def handle_agnos_update() -> None:
   from openpilot.system.hardware.tici.agnos import flash_agnos_update, get_target_slot_number
@@ -229,47 +86,17 @@ def handle_agnos_update() -> None:
   set_offroad_alert("Offroad_NeosUpdate", False)
 
 
-
 class Updater:
   def __init__(self):
     self.params = Params()
-    self.branches = defaultdict(str)
+    self.channels = []
     self._has_internet: bool = False
+
+    self.strategy: UpdateStrategy = GitUpdateStrategy()
 
   @property
   def has_internet(self) -> bool:
     return self._has_internet
-
-  @property
-  def target_branch(self) -> str:
-    b: str | None = self.params.get("UpdaterTargetBranch", encoding='utf-8')
-    if b is None:
-      b = self.get_branch(BASEDIR)
-    return b
-
-  @property
-  def update_ready(self) -> bool:
-    consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
-    if consistent_file.is_file():
-      hash_mismatch = self.get_commit_hash(BASEDIR) != self.branches[self.target_branch]
-      branch_mismatch = self.get_branch(BASEDIR) != self.target_branch
-      on_target_branch = self.get_branch(FINALIZED) == self.target_branch
-      return ((hash_mismatch or branch_mismatch) and on_target_branch)
-    return False
-
-  @property
-  def update_available(self) -> bool:
-    if os.path.isdir(OVERLAY_MERGED) and len(self.branches) > 0:
-      hash_mismatch = self.get_commit_hash(OVERLAY_MERGED) != self.branches[self.target_branch]
-      branch_mismatch = self.get_branch(OVERLAY_MERGED) != self.target_branch
-      return hash_mismatch or branch_mismatch
-    return False
-
-  def get_branch(self, path: str) -> str:
-    return run(["git", "rev-parse", "--abbrev-ref", "HEAD"], path).rstrip()
-
-  def get_commit_hash(self, path: str = OVERLAY_MERGED) -> str:
-    return run(["git", "rev-parse", "HEAD"], path).rstrip()
 
   def set_params(self, update_success: bool, failed_count: int, exception: str | None) -> None:
     self.params.put("UpdateFailedCount", str(failed_count))
@@ -292,31 +119,13 @@ class Updater:
     else:
       self.params.put("LastUpdateException", exception)
 
-    # Write out current and new version info
-    def get_description(basedir: str) -> str:
-      if not os.path.exists(basedir):
-        return ""
+    description_current, release_notes_current = self.strategy.describe_current_channel()
+    description_ready, release_notes_ready = self.strategy.describe_ready_channel()
 
-      version = ""
-      branch = ""
-      commit = ""
-      commit_date = ""
-      try:
-        branch = self.get_branch(basedir)
-        commit = self.get_commit_hash(basedir)[:7]
-        with open(os.path.join(basedir, "common", "version.h")) as f:
-          version = f.read().split('"')[1]
-
-        commit_unix_ts = run(["git", "show", "-s", "--format=%ct", "HEAD"], basedir).rstrip()
-        dt = datetime.datetime.fromtimestamp(int(commit_unix_ts))
-        commit_date = dt.strftime("%b %d")
-      except Exception:
-        cloudlog.exception("updater.get_description")
-      return f"{version} / {branch} / {commit} / {commit_date}"
-    self.params.put("UpdaterCurrentDescription", get_description(BASEDIR))
-    self.params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR))
-    self.params.put("UpdaterNewDescription", get_description(FINALIZED))
-    self.params.put("UpdaterNewReleaseNotes", parse_release_notes(FINALIZED))
+    self.params.put("UpdaterCurrentDescription", description_current)
+    self.params.put("UpdaterCurrentReleaseNotes", release_notes_current)
+    self.params.put("UpdaterNewDescription", description_ready)
+    self.params.put("UpdaterNewReleaseNotes", release_notes_ready)
     self.params.put_bool("UpdateAvailable", self.update_ready)
 
     # Handle user prompt
@@ -341,32 +150,9 @@ class Updater:
   def check_for_update(self) -> None:
     cloudlog.info("checking for updates")
 
+    self.strategy.update_avaiable()
+
     excluded_branches = ('release2', 'release2-staging')
-
-    try:
-      run(["git", "ls-remote", "origin", "HEAD"], OVERLAY_MERGED)
-      self._has_internet = True
-    except subprocess.CalledProcessError:
-      self._has_internet = False
-
-    setup_git_options(OVERLAY_MERGED)
-    output = run(["git", "ls-remote", "--heads"], OVERLAY_MERGED)
-
-    self.branches = defaultdict(lambda: None)
-    for line in output.split('\n'):
-      ls_remotes_re = r'(?P<commit_sha>\b[0-9a-f]{5,40}\b)(\s+)(refs\/heads\/)(?P<branch_name>.*$)'
-      x = re.fullmatch(ls_remotes_re, line.strip())
-      if x is not None and x.group('branch_name') not in excluded_branches:
-        self.branches[x.group('branch_name')] = x.group('commit_sha')
-
-    cur_branch = self.get_branch(OVERLAY_MERGED)
-    cur_commit = self.get_commit_hash(OVERLAY_MERGED)
-    new_branch = self.target_branch
-    new_commit = self.branches[new_branch]
-    if (cur_branch, cur_commit) != (new_branch, new_commit):
-      cloudlog.info(f"update available, {cur_branch} ({str(cur_commit)[:7]}) -> {new_branch} ({str(new_commit)[:7]})")
-    else:
-      cloudlog.info(f"up to date on {cur_branch} ({str(cur_commit)[:7]})")
 
   def fetch_update(self) -> None:
     cloudlog.info("attempting git fetch inside staging overlay")
