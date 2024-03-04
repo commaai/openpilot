@@ -260,7 +260,7 @@ class CarController(CarControllerBase):
         if not self.CP.enableGasInterceptor:
           self.gas = pcm_accel / self.params.NIDEC_GAS_MAX
 
-    new_actuators = actuators.copy()
+    new_actuators = actuators.as_builder().copy()
     new_actuators.speed = self.speed
     new_actuators.accel = self.accel
     new_actuators.gas = self.gas
