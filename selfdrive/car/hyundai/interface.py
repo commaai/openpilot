@@ -125,7 +125,7 @@ class CarInterface(CarInterfaceBase):
         ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_CAMERA_SCC
     else:
       if ret.flags & HyundaiFlags.CAN_CANFD:
-        cfgs = [get_safety_config(car.CarParams.SafetyModel.hyundaiCanfd), ]
+        cfgs = [get_safety_config(car.CarParams.SafetyModel.hyundai), ]
         if CAN.ECAN >= 4:
           cfgs.insert(0, get_safety_config(car.CarParams.SafetyModel.noOutput))
         ret.safetyConfigs = cfgs
