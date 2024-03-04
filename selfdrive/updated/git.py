@@ -94,35 +94,6 @@ def init_overlay() -> None:
   cloudlog.info(f"git diff output:\n{git_diff}")
 
 
-def finalize_update() -> None:
-  """Take the current OverlayFS merged view and finalize a copy outside of
-  OverlayFS, ready to be swapped-in at BASEDIR. Copy using shutil.copytree"""
-
-  # Remove the update ready flag and any old updates
-  cloudlog.info("creating finalized version of the overlay")
-  set_consistent_flag(False)
-
-  # Copy the merged overlay view and set the update ready flag
-  if os.path.exists(FINALIZED):
-    shutil.rmtree(FINALIZED)
-  shutil.copytree(OVERLAY_MERGED, FINALIZED, symlinks=True)
-
-  run(["git", "reset", "--hard"], FINALIZED)
-  run(["git", "submodule", "foreach", "--recursive", "git", "reset", "--hard"], FINALIZED)
-
-  cloudlog.info("Starting git cleanup in finalized update")
-  t = time.monotonic()
-  try:
-    run(["git", "gc"], FINALIZED)
-    run(["git", "lfs", "prune"], FINALIZED)
-    cloudlog.event("Done git cleanup", duration=time.monotonic() - t)
-  except subprocess.CalledProcessError:
-    cloudlog.exception(f"Failed git cleanup, took {time.monotonic() - t:.3f} s")
-
-  set_consistent_flag(True)
-  cloudlog.info("done finalizing overlay")
-
-
 class GitUpdateStrategy(UpdateStrategy):
 
   def sync_branches(self):
@@ -143,7 +114,6 @@ class GitUpdateStrategy(UpdateStrategy):
     self.sync_branches()
     return list(self.branches.keys())
 
-  @property
   def update_ready(self) -> bool:
     consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
     if consistent_file.is_file():
@@ -153,11 +123,10 @@ class GitUpdateStrategy(UpdateStrategy):
       return ((hash_mismatch or branch_mismatch) and on_target_branch)
     return False
 
-  @property
   def update_available(self) -> bool:
-    if os.path.isdir(OVERLAY_MERGED) and len(self.branches) > 0:
+    if os.path.isdir(OVERLAY_MERGED) and len(self.get_available_channels()) > 0:
       hash_mismatch = self.get_commit_hash(OVERLAY_MERGED) != self.branches[self.target_branch]
-      branch_mismatch = self.get_branch(OVERLAY_MERGED) != self.target_branch
+      branch_mismatch = self.get_branch(OVERLAY_MERGED) != self.get_target_channel()
       return hash_mismatch or branch_mismatch
     return False
 
@@ -170,12 +139,8 @@ class GitUpdateStrategy(UpdateStrategy):
   def get_current_channel(self) -> str:
     return self.get_branch(BASEDIR)
 
-  @property
-  def target_channel(self) -> str:
-    b: str | None = self.params.get("UpdaterTargetBranch", encoding='utf-8')
-    if b is None:
-      b = self.get_branch(BASEDIR)
-    return b
+  def current_channel(self) -> str:
+    return self.get_branch(BASEDIR)
 
   def describe_branch(self, basedir) -> str:
     if not os.path.exists(basedir):
@@ -207,3 +172,52 @@ class GitUpdateStrategy(UpdateStrategy):
 
   def describe_ready_channel(self) -> tuple[str, str]:
     return self.describe_branch(FINALIZED), self.release_notes_branch(BASEDIR)
+
+  def fetch_update(self):
+    # TODO: cleanly interrupt this and invalidate old update
+    set_consistent_flag(False)
+    setup_git_options(OVERLAY_MERGED)
+
+    branch = self.target_channel
+    git_fetch_output = run(["git", "fetch", "origin", branch], OVERLAY_MERGED)
+    cloudlog.info("git fetch success: %s", git_fetch_output)
+
+    cloudlog.info("git reset in progress")
+    cmds = [
+      ["git", "checkout", "--force", "--no-recurse-submodules", "-B", branch, "FETCH_HEAD"],
+      ["git", "reset", "--hard"],
+      ["git", "clean", "-xdff"],
+      ["git", "submodule", "sync"],
+      ["git", "submodule", "update", "--init", "--recursive"],
+      ["git", "submodule", "foreach", "--recursive", "git", "reset", "--hard"],
+    ]
+    r = [run(cmd, OVERLAY_MERGED) for cmd in cmds]
+    cloudlog.info("git reset success: %s", '\n'.join(r))
+
+  def finalize_update(self) -> None:
+    """Take the current OverlayFS merged view and finalize a copy outside of
+    OverlayFS, ready to be swapped-in at BASEDIR. Copy using shutil.copytree"""
+
+    # Remove the update ready flag and any old updates
+    cloudlog.info("creating finalized version of the overlay")
+    set_consistent_flag(False)
+
+    # Copy the merged overlay view and set the update ready flag
+    if os.path.exists(FINALIZED):
+      shutil.rmtree(FINALIZED)
+    shutil.copytree(OVERLAY_MERGED, FINALIZED, symlinks=True)
+
+    run(["git", "reset", "--hard"], FINALIZED)
+    run(["git", "submodule", "foreach", "--recursive", "git", "reset", "--hard"], FINALIZED)
+
+    cloudlog.info("Starting git cleanup in finalized update")
+    t = time.monotonic()
+    try:
+      run(["git", "gc"], FINALIZED)
+      run(["git", "lfs", "prune"], FINALIZED)
+      cloudlog.event("Done git cleanup", duration=time.monotonic() - t)
+    except subprocess.CalledProcessError:
+      cloudlog.exception(f"Failed git cleanup, took {time.monotonic() - t:.3f} s")
+
+    set_consistent_flag(True)
+    cloudlog.info("done finalizing overlay")

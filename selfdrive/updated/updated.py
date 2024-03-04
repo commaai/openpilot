@@ -16,7 +16,7 @@ from openpilot.system.hardware import AGNOS, HARDWARE
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 from openpilot.system.version import is_tested_branch
-from selfdrive.updated.git import GitUpdateStrategy, finalize_update, init_overlay
+from selfdrive.updated.git import GitUpdateStrategy, init_overlay
 
 DAYS_NO_CONNECTIVITY_MAX = 14     # do not allow to engage after this many days
 DAYS_NO_CONNECTIVITY_PROMPT = 10  # send an offroad prompt after this many days
@@ -85,10 +85,15 @@ def handle_agnos_update() -> None:
 class Updater:
   def __init__(self):
     self.params = Params()
-    self.channels = []
     self._has_internet: bool = False
 
     self.strategy: UpdateStrategy = GitUpdateStrategy()
+
+  def target_channel(self) -> str:
+    b: str | None = self.params.get("UpdaterTargetBranch", encoding='utf-8')
+    if b is None:
+      b = self.strategy.current_channel()
+    return b
 
   @property
   def has_internet(self) -> bool:
@@ -96,11 +101,16 @@ class Updater:
 
   def set_params(self, update_success: bool, failed_count: int, exception: str | None) -> None:
     self.params.put("UpdateFailedCount", str(failed_count))
-    self.params.put("UpdaterTargetBranch", self.target_branch)
 
-    self.params.put_bool("UpdaterFetchAvailable", self.update_available)
-    if len(self.branches):
-      self.params.put("UpdaterAvailableBranches", ','.join(self.branches.keys()))
+    if self.params.get("UpdaterTargetBranch") == "":
+      self.params.put("UpdaterTargetBranch", self.strategy.get_current_channel())
+
+    self.params.put_bool("UpdaterFetchAvailable", self.strategy.update_available)
+
+    avaiable_channels = self.strategy.get_available_channels()
+
+    if avaiable_channels != None:
+      self.params.put("UpdaterAvailableBranches", ','.join(self.strategy.get_available_channels()))
 
     last_update = datetime.datetime.utcnow()
     if update_success:
@@ -122,7 +132,7 @@ class Updater:
     self.params.put("UpdaterCurrentReleaseNotes", release_notes_current)
     self.params.put("UpdaterNewDescription", description_ready)
     self.params.put("UpdaterNewReleaseNotes", release_notes_ready)
-    self.params.put_bool("UpdateAvailable", self.update_ready)
+    self.params.put_bool("UpdateAvailable", self.strategy.update_ready())
 
     # Handle user prompt
     for alert in ("Offroad_UpdateFailed", "Offroad_ConnectivityNeeded", "Offroad_ConnectivityNeededPrompt"):
@@ -154,28 +164,9 @@ class Updater:
     cloudlog.info("attempting git fetch inside staging overlay")
 
     self.params.put("UpdaterState", "downloading...")
-
-    # TODO: cleanly interrupt this and invalidate old update
-    set_consistent_flag(False)
     self.params.put_bool("UpdateAvailable", False)
 
-    setup_git_options(OVERLAY_MERGED)
-
-    branch = self.target_branch
-    git_fetch_output = run(["git", "fetch", "origin", branch], OVERLAY_MERGED)
-    cloudlog.info("git fetch success: %s", git_fetch_output)
-
-    cloudlog.info("git reset in progress")
-    cmds = [
-      ["git", "checkout", "--force", "--no-recurse-submodules", "-B", branch, "FETCH_HEAD"],
-      ["git", "reset", "--hard"],
-      ["git", "clean", "-xdff"],
-      ["git", "submodule", "sync"],
-      ["git", "submodule", "update", "--init", "--recursive"],
-      ["git", "submodule", "foreach", "--recursive", "git", "reset", "--hard"],
-    ]
-    r = [run(cmd, OVERLAY_MERGED) for cmd in cmds]
-    cloudlog.info("git reset success: %s", '\n'.join(r))
+    self.strategy.fetch_update()
 
     # TODO: show agnos download progress
     if AGNOS:
@@ -183,7 +174,7 @@ class Updater:
 
     # Create the finalized, ready-to-swap update
     self.params.put("UpdaterState", "finalizing update...")
-    finalize_update()
+    self.strategy.finalize_update()
     cloudlog.info("finalize success!")
 
 

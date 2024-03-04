@@ -33,7 +33,7 @@ class UpdateStrategy(abc.ABC):
     pass
 
   @abc.abstractmethod
-  def get_current_channel(self) -> str:
+  def current_channel(self) -> str:
     """Current channel installed"""
     pass
 
@@ -53,6 +53,12 @@ class UpdateStrategy(abc.ABC):
 
   def describe_ready_channel(self) -> tuple[str, str]:
     """Describe the channel that is ready to be installed, (description, release_notes)"""
+    pass
+
+  def fetch_update(self) -> None:
+    pass
+
+  def finalize_update(self) -> None:
     pass
 
 
