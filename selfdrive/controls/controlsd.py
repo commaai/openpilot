@@ -68,10 +68,14 @@ class CarD:
   def __init__(self, CI=None):
     self.can_sock = messaging.sub_sock('can', timeout=20)
     self.sm = messaging.SubMaster(['pandaStates'])
-    self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams'])
+    self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput'])
 
     self.can_rcv_timeout_counter = 0      # conseuctive timeout count
     self.can_rcv_cum_timeout_counter = 0  # cumulative timeout count
+
+    self.CC_prev = car.CarState.new_message()
+
+    self.last_actuators = None
 
     self.params = Params()
 
@@ -118,14 +122,12 @@ class CarD:
     """Initialize CarInterface, once controls are ready"""
     self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
 
-  def state_update(self, CC: car.CarControl):
+  def state_update(self):
     """carState update loop, driven by can"""
-
-    # TODO: This should not depend on carControl
 
     # Update carState from CAN
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
-    self.CS = self.CI.update(CC, can_strs)
+    self.CS = self.CI.update(self.CC_prev, can_strs)
 
     self.sm.update(0)
 
@@ -143,18 +145,17 @@ class CarD:
     if can_rcv_valid and REPLAY:
       self.can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
 
+    self.state_publish()
+
     return self.CS
 
-  def state_publish(self, car_events):
+  def state_publish(self):
     """carState and carParams publish loop"""
-
-    # TODO: carState should be independent of the event loop
 
     # carState
     cs_send = messaging.new_message('carState')
     cs_send.valid = self.CS.canValid
     cs_send.carState = self.CS
-    cs_send.carState.events = car_events
     self.pm.send('carState', cs_send)
 
     # carParams - logged every 50 seconds (> 1 per segment)
@@ -164,25 +165,36 @@ class CarD:
       cp_send.carParams = self.CP
       self.pm.send('carParams', cp_send)
 
+    # publish new carOutput
+    co_send = messaging.new_message('carOutput')
+    co_send.valid = True
+    if self.last_actuators is not None:
+      co_send.carOutput.actuatorsOutput = self.last_actuators
+    self.pm.send('carOutput', co_send)
+
   def controls_update(self, CC: car.CarControl):
     """control update loop, driven by carControl"""
 
     # send car controls over can
     now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
-    actuators_output, can_sends = self.CI.apply(CC, now_nanos)
+    self.last_actuators, can_sends = self.CI.apply(CC, now_nanos)
     self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=self.CS.canValid))
 
-    return actuators_output
+    self.CC_prev = CC
 
 
 class Controls:
   def __init__(self, CI=None):
     self.card = CarD(CI)
 
-    self.CP = self.card.CP
+    self.params = Params()
+
+    with car.CarParams.from_bytes(self.params.get("CarParams", block=True)) as msg:
+      # TODO: this shouldn't need to be a builder
+      self.CP = msg.as_builder()
+
     self.CI = self.card.CI
 
-    config_realtime_process(4, Priority.CTRL_HIGH)
 
     # Ensure the current branch is cached, otherwise the first iteration of controlsd lags
     self.branch = get_short_branch()
@@ -195,12 +207,11 @@ class Controls:
 
     self.log_sock = messaging.sub_sock('androidLog')
 
-    self.params = Params()
     ignore = self.sensor_packets + ['testJoystick']
     if SIMULATION:
       ignore += ['driverCameraState', 'managerState']
     self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
-                                   'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman',
+                                   'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman',
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
                                    'testJoystick'] + self.camera_packets + self.sensor_packets,
                                   ignore_alive=ignore, ignore_avg_freq=ignore+['radarState', 'testJoystick'], ignore_valid=['testJoystick', ],
@@ -212,14 +223,11 @@ class Controls:
     self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
     self.is_metric = self.params.get_bool("IsMetric")
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
-    openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
 
     # detect sound card presence and ensure successful init
     sounds_available = HARDWARE.get_sound_card_online()
 
     car_recognized = self.CP.carName != 'mock'
-
-    controller_available = self.CI.CC is not None and openpilot_enabled_toggle and not self.CP.dashcamOnly
 
     # cleanup old params
     if not self.CP.experimentalLongitudinalAvailable:
@@ -267,7 +275,7 @@ class Controls:
 
     self.can_log_mono_time = 0
 
-    self.startup_event = get_startup_event(car_recognized, controller_available, len(self.CP.carFw) > 0)
+    self.startup_event = get_startup_event(car_recognized, not self.CP.passive, len(self.CP.carFw) > 0)
 
     if not sounds_available:
       self.events.add(EventName.soundsUnavailable, static=True)
@@ -513,7 +521,7 @@ class Controls:
   def data_sample(self):
     """Receive data from sockets and update carState"""
 
-    CS = self.card.state_update(self.CC)
+    CS = self.card.state_update()
 
     self.sm.update(0)
 
@@ -771,6 +779,8 @@ class Controls:
   def publish_logs(self, CS, start_time, CC, lac_log):
     """Send actuators and hud commands to the car, send controlsstate and MPC logging"""
 
+    CO = self.sm['carOutput']
+
     # Orientation and angle rates can be useful for carcontroller
     # Only calibrated (car) frame is relevant for the carcontroller
     orientation_value = list(self.sm['liveLocationKalman'].calibratedOrientationNED.value)
@@ -833,13 +843,12 @@ class Controls:
       hudControl.visualAlert = current_alert.visual_alert
 
     if not self.CP.passive and self.initialized:
-      self.last_actuators = self.card.controls_update(CC)
-      CC.actuatorsOutput = self.last_actuators
+      self.card.controls_update(CC)
       if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
-        self.steer_limited = abs(CC.actuators.steeringAngleDeg - CC.actuatorsOutput.steeringAngleDeg) > \
+        self.steer_limited = abs(CC.actuators.steeringAngleDeg - CO.actuatorsOutput.steeringAngleDeg) > \
                              STEER_ANGLE_SATURATION_THRESHOLD
       else:
-        self.steer_limited = abs(CC.actuators.steer - CC.actuatorsOutput.steer) > 1e-2
+        self.steer_limited = abs(CC.actuators.steer - CO.actuatorsOutput.steer) > 1e-2
 
     force_decel = (self.sm['driverMonitoringState'].awarenessStatus < 0.) or \
                   (self.state == State.softDisabling)
@@ -896,15 +905,11 @@ class Controls:
 
     self.pm.send('controlsState', dat)
 
-    car_events = self.events.to_msg()
-
-    self.card.state_publish(car_events)
-
     # onroadEvents - logged every second or on change
     if (self.sm.frame % int(1. / DT_CTRL) == 0) or (self.events.names != self.events_prev):
       ce_send = messaging.new_message('onroadEvents', len(self.events))
       ce_send.valid = True
-      ce_send.onroadEvents = car_events
+      ce_send.onroadEvents = self.events.to_msg()
       self.pm.send('onroadEvents', ce_send)
     self.events_prev = self.events.names.copy()
 
@@ -961,6 +966,7 @@ class Controls:
 
 
 def main():
+  config_realtime_process(4, Priority.CTRL_HIGH)
   controls = Controls()
   controls.controlsd_thread()
 
