@@ -59,7 +59,7 @@ ENABLED_STATES = (State.preEnabled, *ACTIVE_STATES)
 
 
 class Controls:
-  def __init__(self):
+  def __init__(self, CI=None):
 
     self.params = Params()
 
@@ -67,7 +67,10 @@ class Controls:
       # TODO: this shouldn't need to be a builder
       self.CP = msg.as_builder()
 
-    self.CI = get_car_interface(self.CP)
+    if CI is None:
+      self.CI = get_car_interface(self.CP)
+    else:
+      self.CI = CI
 
     # Ensure the current branch is cached, otherwise the first iteration of controlsd lags
     self.branch = get_short_branch()
