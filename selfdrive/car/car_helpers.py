@@ -210,7 +210,6 @@ def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
     candidate = "mock"
 
   CarInterface, _, _ = interfaces[candidate]
-  CarInterface, _, _ = interfaces[candidate]
   CP = CarInterface.get_params(candidate, fingerprints, car_fw, experimental_long_allowed, docs=False)
   CP.carVin = vin
   CP.carFw = car_fw
