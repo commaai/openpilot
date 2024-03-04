@@ -40,7 +40,8 @@ class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
     builder = WebRTCOfferBuilder(connect)
     builder.offer_to_receive_video_stream("road")
     builder.offer_to_receive_audio_stream()
-    builder.add_messaging()
+    if len(in_services) > 0 or len(out_services) > 0:
+      builder.add_messaging()
 
     stream = builder.stream()
 
@@ -49,7 +50,7 @@ class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
 
     self.assertTrue(stream.has_incoming_video_track("road"))
     self.assertTrue(stream.has_incoming_audio_track())
-    self.assertTrue(stream.has_messaging_channel())
+    self.assertEqual(stream.has_messaging_channel(), len(in_services) > 0 or len(out_services) > 0)
 
     video_track, audio_track = stream.get_incoming_video_track("road"), stream.get_incoming_audio_track()
     await self.assertCompletesWithTimeout(video_track.recv())
