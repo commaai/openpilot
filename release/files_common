@@ -53,7 +53,7 @@ tools/replay/*.h
 selfdrive/__init__.py
 selfdrive/sentry.py
 selfdrive/tombstoned.py
-selfdrive/updated.py
+selfdrive/updated/*
 selfdrive/statsd.py
 
 system/logmessaged.py
