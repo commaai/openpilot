@@ -332,7 +332,7 @@ class CAR(Platforms):
     CarSpecs(mass=1999, wheelbase=2.9, steerRatio=15.6 * 1.15, tireStiffnessFactor=0.63),
     flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8,
   )
-  PALISADE_2023 = HyundaiCanFDPlatformConfig(
+  PALISADE_2023 = HyundaiPlatformConfig(
     "HYUNDAI PALISADE 2023",
     [
       HyundaiCarInfo("Hyundai Palisade (with HDA II) 2023-24", "All", car_parts=CarParts.common([CarHarness.hyundai_r])),
