@@ -95,7 +95,7 @@ class Updater:
   def set_params(self, update_success: bool, failed_count: int, exception: str | None) -> None:
     self.params.put("UpdateFailedCount", str(failed_count))
 
-    if self.params.get("UpdaterTargetBranch") == "":
+    if self.params.get("UpdaterTargetBranch") is None:
       self.params.put("UpdaterTargetBranch", self.strategy.current_channel())
 
     self.params.put_bool("UpdaterFetchAvailable", self.strategy.update_available)
