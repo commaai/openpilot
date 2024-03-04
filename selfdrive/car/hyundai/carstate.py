@@ -162,7 +162,7 @@ class CarState(CarStateBase):
       self.lkas11 = copy.copy(cp_cam.vl["LKAS11"])
     self.clu11 = copy.copy(cp.vl["CLU11"])
     if self.CP.flags & HyundaiFlags.CAN_CANFD and self.CP.flags & HyundaiFlags.CANFD_HDA2:
-      self.hda2_lfa_block_msg = self.get_hda2_lfa_block_msg(cp_cam, self.CP)
+      self.hda2_lfa_block_msg = copy.copy(cp_cam.vl["CAM_0x2a4"])
     self.steer_state = cp.vl["MDPS12"]["CF_Mdps_ToiActive"]  # 0 NOT ACTIVE, 1 ACTIVE
     self.prev_cruise_buttons = self.cruise_buttons[-1]
     self.cruise_buttons.extend(cp.vl_all["CLU11"]["CF_Clu_CruiseSwState"])
