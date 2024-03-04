@@ -159,8 +159,9 @@ class TorqueEstimator(ParameterEstimator):
   def handle_log(self, t, which, msg):
     if which == "carControl":
       self.raw_points["carControl_t"].append(t + self.lag)
-      self.raw_points["steer_torque"].append(-msg.actuatorsOutput.steer)
       self.raw_points["active"].append(msg.latActive)
+    elif which == "carOutput":
+      self.raw_points["steer_torque"].append(-msg.actuatorsOutput.steer)
     elif which == "carState":
       self.raw_points["carState_t"].append(t + self.lag)
       self.raw_points["vego"].append(msg.vEgo)
@@ -218,7 +219,7 @@ def main(demo=False):
   config_realtime_process([0, 1, 2, 3], 5)
 
   pm = messaging.PubMaster(['liveTorqueParameters'])
-  sm = messaging.SubMaster(['carControl', 'carState', 'liveLocationKalman'], poll='liveLocationKalman')
+  sm = messaging.SubMaster(['carControl', 'carOutput', 'carState', 'liveLocationKalman'], poll='liveLocationKalman')
 
   params = Params()
   with car.CarParams.from_bytes(params.get("CarParams", block=True)) as CP:
