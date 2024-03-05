@@ -144,7 +144,7 @@ def match_fw_to_car_exact(live_fw_versions: LiveFwVersions, match_brand: str = N
   return set(candidates.keys()) - invalid
 
 
-def match_fw_to_car(fw_versions: list[capnp.lib.capnp._DynamicStructBuilder], allow_exact: bool = True, allow_fuzzy: bool = True, \
+def match_fw_to_car(fw_versions: list[capnp.lib.capnp._DynamicStructBuilder], allow_exact: bool = True, allow_fuzzy: bool = True,
                     log: bool = True) -> tuple[bool, set[str]]:
   # Try exact matching first
   exact_matches: list[tuple[bool, MatchFwToCar]] = []
