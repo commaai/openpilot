@@ -7,7 +7,7 @@ import threading
 from typing import SupportsFloat
 import json
 import queue
-from kafka import KafkaProducer
+from kafkalib/kafka import KafkaProducer
 
 from cereal import car, log
 from openpilot.common.numpy_fast import clip
