@@ -140,10 +140,7 @@ class CarInterface(CarInterfaceBase):
     ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL} or \
                       (ret.networkLocation == NetworkLocation.gateway and ret.radarUnavailable)
 
-    # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
-    ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-    ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.00]]
-    ret.lateralTuning.pid.kf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
+    CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
     ret.tireStiffnessFactor = 0.444  # not optimized yet
 
@@ -154,6 +151,7 @@ class CarInterface(CarInterfaceBase):
     if candidate == CAR.VOLT:
       ret.tireStiffnessFactor = 0.469  # Stock Michelin Energy Saver A/S, LiveParameters
 
+      ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kpBP = [0., 40.]
       ret.lateralTuning.pid.kpV = [0., 0.17]
       ret.lateralTuning.pid.kiBP = [0.]
@@ -164,31 +162,25 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.ACADIA:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
       ret.steerActuatorDelay = 0.2
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-
-    elif candidate == CAR.BUICK_LACROSSE:
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.ESCALADE:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate in (CAR.ESCALADE_ESV, CAR.ESCALADE_ESV_2019):
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
       ret.tireStiffnessFactor = 1.0
 
       if candidate == CAR.ESCALADE_ESV:
+        ret.lateralTuning.init('pid')
         ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
         ret.lateralTuning.pid.kf = 0.000045
       else:
         ret.steerActuatorDelay = 0.2
-        CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.BOLT_EUV:
       ret.tireStiffnessFactor = 1.0
       ret.steerActuatorDelay = 0.2
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.SILVERADO:
       ret.tireStiffnessFactor = 1.0
@@ -197,15 +189,10 @@ class CarInterface(CarInterfaceBase):
       # TODO: check if this is split by EV/ICE with more platforms in the future
       if ret.openpilotLongitudinalControl:
         ret.minEnableSpeed = -1.
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-
-    elif candidate == CAR.EQUINOX:
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.TRAILBLAZER:
       ret.tireStiffnessFactor = 1.0
       ret.steerActuatorDelay = 0.2
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     return ret
 
