@@ -150,8 +150,6 @@ class Updater:
     self.strategy.update_available()
 
   def fetch_update(self) -> None:
-    cloudlog.info("attempting git fetch inside staging overlay")
-
     self.params.put("UpdaterState", "downloading...")
     self.params.put_bool("UpdateAvailable", False)
 

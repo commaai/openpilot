@@ -175,6 +175,8 @@ class GitUpdateStrategy(UpdateStrategy):
     return self.describe_branch(FINALIZED), self.release_notes_branch(BASEDIR)
 
   def fetch_update(self):
+    cloudlog.info("attempting git fetch inside staging overlay")
+
     # TODO: cleanly interrupt this and invalidate old update
     set_consistent_flag(False)
     setup_git_options(OVERLAY_MERGED)
