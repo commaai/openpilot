@@ -102,7 +102,8 @@ class CAR(Platforms):
   VOLT = GMPlatformConfig(
     "CHEVROLET VOLT PREMIER 2017",
     GMCarInfo("Chevrolet Volt 2017-18", min_enable_speed=0, video_link="https://youtu.be/QeMCN_4TFfQ"),
-    GMCarSpecs(mass=1607, wheelbase=2.69, steerRatio=17.7, centerToFrontRatio=0.45, tireStiffnessFactor=0.469,  # Stock Michelin Energy Saver A/S, LiveParameters
+    GMCarSpecs(mass=1607, wheelbase=2.69, steerRatio=17.7, centerToFrontRatio=0.45,
+               tireStiffnessFactor=0.469,  # Stock Michelin Energy Saver A/S, LiveParameters
                steerActuatorDelay=0.2, minEnableSpeed=18 * CV.MPH_TO_MS,  # supports stop and go, but initial engage must (conservatively) be above 18mph
                minSteerSpeed=7 * CV.MPH_TO_MS),
   )
