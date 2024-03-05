@@ -102,8 +102,9 @@ class CAR(Platforms):
   VOLT = GMPlatformConfig(
     "CHEVROLET VOLT PREMIER 2017",
     GMCarInfo("Chevrolet Volt 2017-18", min_enable_speed=0, video_link="https://youtu.be/QeMCN_4TFfQ"),
-    GMCarSpecs(mass=1607, wheelbase=2.69, steerRatio=17.7, centerToFrontRatio=0.45, tireStiffnessFactor=0.469,
-               steerActuatorDelay=0.2, minEnableSpeed=18 * CV.MPH_TO_MS, minSteerSpeed=7 * CV.MPH_TO_MS),
+    GMCarSpecs(mass=1607, wheelbase=2.69, steerRatio=17.7, centerToFrontRatio=0.45, tireStiffnessFactor=0.469,  # Stock Michelin Energy Saver A/S, LiveParameters
+               steerActuatorDelay=0.2, minEnableSpeed=18 * CV.MPH_TO_MS,  # supports stop and go, but initial engage must (conservatively) be above 18mph
+               minSteerSpeed=7 * CV.MPH_TO_MS),
   )
   CADILLAC_ATS = GMPlatformConfig(
     "CADILLAC ATS Premium Performance 2018",
@@ -118,7 +119,8 @@ class CAR(Platforms):
   ACADIA = GMPlatformConfig(
     "GMC ACADIA DENALI 2018",
     GMCarInfo("GMC Acadia 2018", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo"),
-    GMCarSpecs(mass=1975, wheelbase=2.86, steerRatio=14.4, centerToFrontRatio=0.4, minEnableSpeed=-1.0, steerActuatorDelay=0.2, minSteerSpeed=7 * CV.MPH_TO_MS),
+    GMCarSpecs(mass=1975, wheelbase=2.86, steerRatio=14.4, centerToFrontRatio=0.4, minEnableSpeed=-1.0,  # engage speed is decided by pcm
+               steerActuatorDelay=0.2, minSteerSpeed=7 * CV.MPH_TO_MS),
   )
   BUICK_LACROSSE = GMPlatformConfig(
     "BUICK LACROSSE 2017",
@@ -133,12 +135,14 @@ class CAR(Platforms):
   ESCALADE = GMPlatformConfig(
     "CADILLAC ESCALADE 2017",
     GMCarInfo("Cadillac Escalade 2017", "Driver Assist Package"),
-    GMCarSpecs(mass=2564, wheelbase=2.95, steerRatio=17.3, minEnableSpeed=-1.0, minSteerSpeed=7 * CV.MPH_TO_MS),
+    GMCarSpecs(mass=2564, wheelbase=2.95, steerRatio=17.3, minEnableSpeed=-1.0,  # engage speed is decided by pcm
+               minSteerSpeed=7 * CV.MPH_TO_MS),
   )
   ESCALADE_ESV = GMPlatformConfig(
     "CADILLAC ESCALADE ESV 2016",
     GMCarInfo("Cadillac Escalade ESV 2016", "Adaptive Cruise Control (ACC) & LKAS"),
-    GMCarSpecs(mass=2739, wheelbase=3.302, steerRatio=17.3, minEnableSpeed=-1.0, tireStiffnessFactor=1.0, minSteerSpeed=7 * CV.MPH_TO_MS),
+    GMCarSpecs(mass=2739, wheelbase=3.302, steerRatio=17.3, minEnableSpeed=-1.0,  # engage speed is decided by pcm
+               tireStiffnessFactor=1.0, minSteerSpeed=7 * CV.MPH_TO_MS),
   )
   ESCALADE_ESV_2019 = GMPlatformConfig(
     "CADILLAC ESCALADE ESV 2019",
