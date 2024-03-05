@@ -98,7 +98,7 @@ class CAR(Platforms):
   VOLT = GMPlatformConfig(
     "CHEVROLET VOLT PREMIER 2017",
     GMCarInfo("Chevrolet Volt 2017-18", min_enable_speed=0, video_link="https://youtu.be/QeMCN_4TFfQ"),
-    GMCarSpecs(mass=1607, wheelbase=2.69, steerRatio=17.7, centerToFrontRatio=0.45, tireStiffnessFactor=0.469),
+    GMCarSpecs(mass=1607, wheelbase=2.69, steerRatio=17.7, centerToFrontRatio=0.45, tireStiffnessFactor=0.469, steerActuatorDelay=0.2),
   )
   CADILLAC_ATS = GMPlatformConfig(
     "CADILLAC ATS Premium Performance 2018",
@@ -113,7 +113,7 @@ class CAR(Platforms):
   ACADIA = GMPlatformConfig(
     "GMC ACADIA DENALI 2018",
     GMCarInfo("GMC Acadia 2018", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo"),
-    GMCarSpecs(mass=1975, wheelbase=2.86, steerRatio=14.4, centerToFrontRatio=0.4, minEnableSpeed=-1.0),
+    GMCarSpecs(mass=1975, wheelbase=2.86, steerRatio=14.4, centerToFrontRatio=0.4, minEnableSpeed=-1.0, steerActuatorDelay=0.2),
   )
   BUICK_LACROSSE = GMPlatformConfig(
     "BUICK LACROSSE 2017",
@@ -138,7 +138,7 @@ class CAR(Platforms):
   ESCALADE_ESV_2019 = GMPlatformConfig(
     "CADILLAC ESCALADE ESV 2019",
     GMCarInfo("Cadillac Escalade ESV 2019", "Adaptive Cruise Control (ACC) & LKAS"),
-    ESCALADE_ESV.specs,
+    ESCALADE_ESV.specs.replace(steerActuatorDelay=0.2),
   )
   BOLT_EUV = GMPlatformConfig(
     "CHEVROLET BOLT EUV 2022",
@@ -146,7 +146,7 @@ class CAR(Platforms):
       GMCarInfo("Chevrolet Bolt EUV 2022-23", "Premier or Premier Redline Trim without Super Cruise Package", video_link="https://youtu.be/xvwzGMUA210"),
       GMCarInfo("Chevrolet Bolt EV 2022-23", "2LT Trim with Adaptive Cruise Control Package"),
     ],
-    GMCarSpecs(mass=1669, wheelbase=2.63779, steerRatio=16.8, centerToFrontRatio=0.4, tireStiffnessFactor=1.0),
+    GMCarSpecs(mass=1669, wheelbase=2.63779, steerRatio=16.8, centerToFrontRatio=0.4, tireStiffnessFactor=1.0, steerActuatorDelay=0.2),
   )
   SILVERADO = GMPlatformConfig(
     "CHEVROLET SILVERADO 1500 2020",
@@ -164,7 +164,7 @@ class CAR(Platforms):
   TRAILBLAZER = GMPlatformConfig(
     "CHEVROLET TRAILBLAZER 2021",
     GMCarInfo("Chevrolet Trailblazer 2021-22"),
-    GMCarSpecs(mass=1345, wheelbase=2.64, steerRatio=16.8, centerToFrontRatio=0.4, tireStiffnessFactor=1.0),
+    GMCarSpecs(mass=1345, wheelbase=2.64, steerRatio=16.8, centerToFrontRatio=0.4, tireStiffnessFactor=1.0, steerActuatorDelay=0.2),
   )
 
 

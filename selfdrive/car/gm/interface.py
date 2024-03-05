@@ -141,7 +141,6 @@ class CarInterface(CarInterfaceBase):
                       (ret.networkLocation == NetworkLocation.gateway and ret.radarUnavailable)
 
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-    ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
 
     ret.steerLimitTimer = 0.4
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
@@ -154,10 +153,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP = [0.]
       ret.lateralTuning.pid.kiV = [0.]
       ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_volt()
-      ret.steerActuatorDelay = 0.2
-
-    elif candidate == CAR.ACADIA:
-      ret.steerActuatorDelay = 0.2
 
     elif candidate == CAR.ESCALADE_ESV:
       ret.lateralTuning.init('pid')
@@ -165,21 +160,12 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
       ret.lateralTuning.pid.kf = 0.000045
 
-    elif candidate == CAR.ESCALADE_ESV_2019:
-      ret.steerActuatorDelay = 0.2
-
-    elif candidate == CAR.BOLT_EUV:
-      ret.steerActuatorDelay = 0.2
-
     elif candidate == CAR.SILVERADO:
       # On the Bolt, the ECM and camera independently check that you are either above 5 kph or at a stop
       # with foot on brake to allow engagement, but this platform only has that check in the camera.
       # TODO: check if this is split by EV/ICE with more platforms in the future
       if ret.openpilotLongitudinalControl:
         ret.minEnableSpeed = -1.
-
-    elif candidate == CAR.TRAILBLAZER:
-      ret.steerActuatorDelay = 0.2
 
     return ret
 
