@@ -32,6 +32,11 @@ class MazdaCarInfo(CarInfo):
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.mazda]))
 
 
+@dataclass(frozen=True, kw_only=True)
+class MazdaCarSpecs(CarSpecs):
+  tireStiffnessFactor: float = 0.7  # not optimized yet
+
+
 class MazdaFlags(IntFlag):
   # Static flags
   # Gen 1 hardware: same CAN messages and same camera
@@ -48,22 +53,22 @@ class CAR(Platforms):
   CX5 = MazdaPlatformConfig(
     "MAZDA CX-5",
     MazdaCarInfo("Mazda CX-5 2017-21"),
-    CarSpecs(mass=3655 * CV.LB_TO_KG, wheelbase=2.7, steerRatio=15.5)
+    MazdaCarSpecs(mass=3655 * CV.LB_TO_KG, wheelbase=2.7, steerRatio=15.5)
   )
   CX9 = MazdaPlatformConfig(
     "MAZDA CX-9",
     MazdaCarInfo("Mazda CX-9 2016-20"),
-    CarSpecs(mass=4217 * CV.LB_TO_KG, wheelbase=3.1, steerRatio=17.6)
+    MazdaCarSpecs(mass=4217 * CV.LB_TO_KG, wheelbase=3.1, steerRatio=17.6)
   )
   MAZDA3 = MazdaPlatformConfig(
     "MAZDA 3",
     MazdaCarInfo("Mazda 3 2017-18"),
-    CarSpecs(mass=2875 * CV.LB_TO_KG, wheelbase=2.7, steerRatio=14.0)
+    MazdaCarSpecs(mass=2875 * CV.LB_TO_KG, wheelbase=2.7, steerRatio=14.0)
   )
   MAZDA6 = MazdaPlatformConfig(
     "MAZDA 6",
     MazdaCarInfo("Mazda 6 2017-20"),
-    CarSpecs(mass=3443 * CV.LB_TO_KG, wheelbase=2.83, steerRatio=15.5)
+    MazdaCarSpecs(mass=3443 * CV.LB_TO_KG, wheelbase=2.83, steerRatio=15.5)
   )
   CX9_2021 = MazdaPlatformConfig(
     "MAZDA CX-9 2021",
