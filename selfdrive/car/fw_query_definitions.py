@@ -3,21 +3,21 @@ import capnp
 import copy
 from dataclasses import dataclass, field
 import struct
-from typing import Callable, Dict, List, Optional, Set, Tuple
+from collections.abc import Callable
 
 import panda.python.uds as uds
 
-AddrType = Tuple[int, Optional[int]]
-EcuAddrBusType = Tuple[int, Optional[int], int]
-EcuAddrSubAddr = Tuple[int, int, Optional[int]]
+AddrType = tuple[int, int | None]
+EcuAddrBusType = tuple[int, int | None, int]
+EcuAddrSubAddr = tuple[int, int, int | None]
 
-LiveFwVersions = Dict[AddrType, Set[bytes]]
-OfflineFwVersions = Dict[str, Dict[EcuAddrSubAddr, List[bytes]]]
+LiveFwVersions = dict[AddrType, set[bytes]]
+OfflineFwVersions = dict[str, dict[EcuAddrSubAddr, list[bytes]]]
 
 # A global list of addresses we will only ever consider for VIN responses
 # engine, hybrid controller, Ford abs, Hyundai CAN FD cluster, 29-bit engine, PGM-FI
 # TODO: move these to each brand's FW query config
-STANDARD_VIN_ADDRS = [0x7e0, 0x7e2, 0x760, 0x7c4, 0x18da10f1, 0x18da0ef1]
+STANDARD_VIN_ADDRS = [0x7e0, 0x7e2, 0x760, 0x7c6, 0x18da10f1, 0x18da0ef1]
 
 
 def p16(val):
@@ -65,12 +65,15 @@ class StdQueries:
   GM_VIN_REQUEST = b'\x1a\x90'
   GM_VIN_RESPONSE = b'\x5a\x90'
 
+  KWP_VIN_REQUEST = b'\x21\x81'
+  KWP_VIN_RESPONSE = b'\x61\x81'
+
 
 @dataclass
 class Request:
-  request: List[bytes]
-  response: List[bytes]
-  whitelist_ecus: List[int] = field(default_factory=list)
+  request: list[bytes]
+  response: list[bytes]
+  whitelist_ecus: list[int] = field(default_factory=list)
   rx_offset: int = 0x8
   bus: int = 1
   # Whether this query should be run on the first auxiliary panda (CAN FD cars for example)
@@ -83,15 +86,15 @@ class Request:
 
 @dataclass
 class FwQueryConfig:
-  requests: List[Request]
+  requests: list[Request]
   # TODO: make this automatic and remove hardcoded lists, or do fingerprinting with ecus
   # Overrides and removes from essential ecus for specific models and ecus (exact matching)
-  non_essential_ecus: Dict[capnp.lib.capnp._EnumModule, List[str]] = field(default_factory=dict)
+  non_essential_ecus: dict[capnp.lib.capnp._EnumModule, list[str]] = field(default_factory=dict)
   # Ecus added for data collection, not to be fingerprinted on
-  extra_ecus: List[Tuple[capnp.lib.capnp._EnumModule, int, Optional[int]]] = field(default_factory=list)
+  extra_ecus: list[tuple[capnp.lib.capnp._EnumModule, int, int | None]] = field(default_factory=list)
   # Function a brand can implement to provide better fuzzy matching. Takes in FW versions,
   # returns set of candidates. Only will match if one candidate is returned
-  match_fw_to_car_fuzzy: Optional[Callable[[LiveFwVersions, OfflineFwVersions], Set[str]]] = None
+  match_fw_to_car_fuzzy: Callable[[LiveFwVersions, OfflineFwVersions], set[str]] | None = None
 
   def __post_init__(self):
     for i in range(len(self.requests)):

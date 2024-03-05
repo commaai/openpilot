@@ -3,8 +3,9 @@ from cereal import car
 from panda import Panda
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import interp
+from openpilot.selfdrive.car.honda.hondacan import CanBus
 from openpilot.selfdrive.car.honda.values import CarControllerParams, CruiseButtons, HondaFlags, CAR, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, \
-                                                                                            HONDA_BOSCH_ALT_BRAKE_SIGNAL, HONDA_BOSCH_RADARLESS
+                                                 HONDA_BOSCH_RADARLESS
 from openpilot.selfdrive.car import create_button_events, get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.car.disable_ecu import disable_ecu
@@ -35,6 +36,8 @@ class CarInterface(CarInterfaceBase):
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "honda"
 
+    CAN = CanBus(ret, fingerprint)
+
     if candidate in HONDA_BOSCH:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaBosch)]
       ret.radarUnavailable = True
@@ -46,20 +49,20 @@ class CarInterface(CarInterfaceBase):
       ret.pcmCruise = not ret.openpilotLongitudinalControl
     else:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaNidec)]
-      ret.enableGasInterceptor = 0x201 in fingerprint[0]
+      ret.enableGasInterceptor = 0x201 in fingerprint[CAN.pt]
       ret.openpilotLongitudinalControl = True
 
       ret.pcmCruise = not ret.enableGasInterceptor
 
     if candidate == CAR.CRV_5G:
-      ret.enableBsm = 0x12f8bfa7 in fingerprint[0]
+      ret.enableBsm = 0x12f8bfa7 in fingerprint[CAN.radar]
 
     # Detect Bosch cars with new HUD msgs
     if any(0x33DA in f for f in fingerprint.values()):
       ret.flags |= HondaFlags.BOSCH_EXT_HUD.value
 
-    # Accord 1.5T CVT has different gearbox message
-    if candidate == CAR.ACCORD and 0x191 in fingerprint[1]:
+    # Accord ICE 1.5T CVT has different gearbox message
+    if candidate == CAR.ACCORD and 0x191 in fingerprint[CAN.pt]:
       ret.transmissionType = TransmissionType.cvt
 
     # Certain Hondas have an extra steering sensor at the bottom of the steering rack,
@@ -89,10 +92,6 @@ class CarInterface(CarInterfaceBase):
         eps_modified = True
 
     if candidate == CAR.CIVIC:
-      ret.mass = 1326.
-      ret.wheelbase = 2.70
-      ret.centerToFront = ret.wheelbase * 0.4
-      ret.steerRatio = 15.38  # 10.93 is end-to-end spec
       if eps_modified:
         # stock request input values:     0x0000, 0x00DE, 0x014D, 0x01EF, 0x0290, 0x0377, 0x0454, 0x0610, 0x06EE
         # stock request output values:    0x0000, 0x0917, 0x0DC5, 0x1017, 0x119F, 0x140B, 0x1680, 0x1680, 0x1680
@@ -107,18 +106,10 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[1.1], [0.33]]
 
     elif candidate in (CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CIVIC_2022):
-      ret.mass = 1326.
-      ret.wheelbase = 2.70
-      ret.centerToFront = ret.wheelbase * 0.4
-      ret.steerRatio = 15.38  # 10.93 is end-to-end spec
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
 
-    elif candidate in (CAR.ACCORD, CAR.ACCORDH):
-      ret.mass = 3279. * CV.LB_TO_KG
-      ret.wheelbase = 2.83
-      ret.centerToFront = ret.wheelbase * 0.39
-      ret.steerRatio = 16.33  # 11.82 is spec end-to-end
+    elif candidate == CAR.ACCORD:
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       ret.tireStiffnessFactor = 0.8467
 
@@ -128,29 +119,17 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
 
     elif candidate == CAR.ACURA_ILX:
-      ret.mass = 3095. * CV.LB_TO_KG
-      ret.wheelbase = 2.67
-      ret.centerToFront = ret.wheelbase * 0.37
-      ret.steerRatio = 18.61  # 15.3 is spec end-to-end
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]  # TODO: determine if there is a dead zone at the top end
       ret.tireStiffnessFactor = 0.72
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
 
     elif candidate in (CAR.CRV, CAR.CRV_EU):
-      ret.mass = 3572. * CV.LB_TO_KG
-      ret.wheelbase = 2.62
-      ret.centerToFront = ret.wheelbase * 0.41
-      ret.steerRatio = 16.89  # as spec
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 1000], [0, 1000]]  # TODO: determine if there is a dead zone at the top end
       ret.tireStiffnessFactor = 0.444
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
       ret.wheelSpeedFactor = 1.025
 
     elif candidate == CAR.CRV_5G:
-      ret.mass = 3410. * CV.LB_TO_KG
-      ret.wheelbase = 2.66
-      ret.centerToFront = ret.wheelbase * 0.41
-      ret.steerRatio = 16.0  # 12.3 is spec end-to-end
       if eps_modified:
         # stock request input values:     0x0000, 0x00DB, 0x01BB, 0x0296, 0x0377, 0x0454, 0x0532, 0x0610, 0x067F
         # stock request output values:    0x0000, 0x0500, 0x0A15, 0x0E6D, 0x1100, 0x1200, 0x129A, 0x134D, 0x1400
@@ -164,39 +143,22 @@ class CarInterface(CarInterfaceBase):
       ret.wheelSpeedFactor = 1.025
 
     elif candidate == CAR.CRV_HYBRID:
-      ret.mass = 1667.  # mean of 4 models in kg
-      ret.wheelbase = 2.66
-      ret.centerToFront = ret.wheelbase * 0.41
-      ret.steerRatio = 16.0  # 12.3 is spec end-to-end
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       ret.tireStiffnessFactor = 0.677
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
       ret.wheelSpeedFactor = 1.025
 
     elif candidate == CAR.FIT:
-      ret.mass = 2644. * CV.LB_TO_KG
-      ret.wheelbase = 2.53
-      ret.centerToFront = ret.wheelbase * 0.39
-      ret.steerRatio = 13.06
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       ret.tireStiffnessFactor = 0.75
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
 
     elif candidate == CAR.FREED:
-      ret.mass = 3086. * CV.LB_TO_KG
-      ret.wheelbase = 2.74
-      # the remaining parameters were copied from FIT
-      ret.centerToFront = ret.wheelbase * 0.39
-      ret.steerRatio = 13.06
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]
       ret.tireStiffnessFactor = 0.75
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
 
     elif candidate in (CAR.HRV, CAR.HRV_3G):
-      ret.mass = 3125 * CV.LB_TO_KG
-      ret.wheelbase = 2.61
-      ret.centerToFront = ret.wheelbase * 0.41
-      ret.steerRatio = 15.2
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]
       ret.tireStiffnessFactor = 0.5
       if candidate == CAR.HRV:
@@ -206,28 +168,16 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]  # TODO: can probably use some tuning
 
     elif candidate == CAR.ACURA_RDX:
-      ret.mass = 3935. * CV.LB_TO_KG
-      ret.wheelbase = 2.68
-      ret.centerToFront = ret.wheelbase * 0.38
-      ret.steerRatio = 15.0  # as spec
       ret.tireStiffnessFactor = 0.444
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 1000], [0, 1000]]  # TODO: determine if there is a dead zone at the top end
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
 
     elif candidate == CAR.ACURA_RDX_3G:
-      ret.mass = 4068. * CV.LB_TO_KG
-      ret.wheelbase = 2.75
-      ret.centerToFront = ret.wheelbase * 0.41
-      ret.steerRatio = 11.95  # as spec
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.06]]
       ret.tireStiffnessFactor = 0.677
 
     elif candidate in (CAR.ODYSSEY, CAR.ODYSSEY_CHN):
-      ret.mass = 1900.
-      ret.wheelbase = 3.00
-      ret.centerToFront = ret.wheelbase * 0.41
-      ret.steerRatio = 14.35  # as spec
       ret.tireStiffnessFactor = 0.82
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.28], [0.08]]
       if candidate == CAR.ODYSSEY_CHN:
@@ -236,37 +186,21 @@ class CarInterface(CarInterfaceBase):
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
 
     elif candidate == CAR.PILOT:
-      ret.mass = 4278. * CV.LB_TO_KG  # average weight
-      ret.wheelbase = 2.86
-      ret.centerToFront = ret.wheelbase * 0.428
-      ret.steerRatio = 16.0  # as spec
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       ret.tireStiffnessFactor = 0.444
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.38], [0.11]]
 
     elif candidate == CAR.RIDGELINE:
-      ret.mass = 4515. * CV.LB_TO_KG
-      ret.wheelbase = 3.18
-      ret.centerToFront = ret.wheelbase * 0.41
-      ret.steerRatio = 15.59  # as spec
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       ret.tireStiffnessFactor = 0.444
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.38], [0.11]]
 
     elif candidate == CAR.INSIGHT:
-      ret.mass = 2987. * CV.LB_TO_KG
-      ret.wheelbase = 2.7
-      ret.centerToFront = ret.wheelbase * 0.39
-      ret.steerRatio = 15.0  # 12.58 is spec end-to-end
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       ret.tireStiffnessFactor = 0.82
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
 
     elif candidate == CAR.HONDA_E:
-      ret.mass = 3338.8 * CV.LB_TO_KG
-      ret.wheelbase = 2.5
-      ret.centerToFront = ret.wheelbase * 0.5
-      ret.steerRatio = 16.71
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       ret.tireStiffnessFactor = 0.82
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]] # TODO: can probably use some tuning
@@ -275,7 +209,11 @@ class CarInterface(CarInterfaceBase):
       raise ValueError(f"unsupported car {candidate}")
 
     # These cars use alternate user brake msg (0x1BE)
-    if candidate in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
+    # TODO: Only detect feature for Accord/Accord Hybrid, not all Bosch DBCs have BRAKE_MODULE
+    if 0x1BE in fingerprint[CAN.pt] and candidate == CAR.ACCORD:
+      ret.flags |= HondaFlags.BOSCH_ALT_BRAKE.value
+
+    if ret.flags & HondaFlags.BOSCH_ALT_BRAKE:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_ALT_BRAKE
 
     # These cars use alternate SCM messages (SCM_FEEDBACK AND SCM_BUTTON)

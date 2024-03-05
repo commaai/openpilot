@@ -38,6 +38,7 @@ FW_VERSIONS = {
       b'68227902AF',
       b'68227902AG',
       b'68227902AH',
+      b'68227905AG',
       b'68360252AC',
     ],
     (Ecu.srs, 0x744, None): [
@@ -67,9 +68,11 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'68267018AO ',
       b'68267020AJ ',
+      b'68303534AJ ',
       b'68340762AD ',
       b'68340764AD ',
       b'68352652AE ',
+      b'68352654AE ',
       b'68366851AH ',
       b'68366853AE ',
       b'68372861AF ',
@@ -299,9 +302,11 @@ FW_VERSIONS = {
   CAR.JEEP_GRAND_CHEROKEE_2019: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68402703AB',
+      b'68402704AB',
       b'68402708AB',
       b'68402971AD',
       b'68454144AD',
+      b'68454145AB',
       b'68454152AB',
       b'68454156AB',
       b'68516650AB',
@@ -326,6 +331,7 @@ FW_VERSIONS = {
     (Ecu.eps, 0x75a, None): [
       b'68417279AA',
       b'68417280AA',
+      b'68417281AA',
       b'68453431AA',
       b'68453433AA',
       b'68453435AA',
@@ -336,6 +342,7 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'05035674AB ',
       b'68412635AG ',
+      b'68412660AD ',
       b'68422860AB',
       b'68449435AE ',
       b'68496223AA ',
@@ -346,6 +353,7 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [
       b'05035707AA',
       b'68419672AC',
+      b'68419678AB',
       b'68423905AB',
       b'68449258AC',
       b'68495807AA',
@@ -396,6 +404,7 @@ FW_VERSIONS = {
       b'68527383AD',
       b'68527387AE',
       b'68527403AC',
+      b'68546047AF',
       b'68631938AA',
       b'68631942AA',
     ],
@@ -605,6 +614,36 @@ FW_VERSIONS = {
       b'68527616AD ',
       b'M2370131MB',
       b'M2421132MB',
+    ],
+  },
+  CAR.DODGE_DURANGO: {
+    (Ecu.combinationMeter, 0x742, None): [
+      b'68454261AD',
+      b'68471535AE',
+    ],
+    (Ecu.srs, 0x744, None): [
+      b'68355362AB',
+      b'68492238AD',
+    ],
+    (Ecu.abs, 0x747, None): [
+      b'68408639AD',
+      b'68499978AB',
+    ],
+    (Ecu.fwdRadar, 0x753, None): [
+      b'68440581AE',
+      b'68456722AC',
+    ],
+    (Ecu.eps, 0x75a, None): [
+      b'68453435AA',
+      b'68498477AA',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'05035786AE ',
+      b'68449476AE ',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'05035826AC',
+      b'68449265AC',
     ],
   },
 }

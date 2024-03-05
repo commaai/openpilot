@@ -44,6 +44,7 @@ kj::Array<capnp::word> logger_build_init_data() {
   std::map<std::string, std::string> params_map = params.readAll();
 
   init.setGitCommit(params_map["GitCommit"]);
+  init.setGitCommitDate(params_map["GitCommitDate"]);
   init.setGitBranch(params_map["GitBranch"]);
   init.setGitRemote(params_map["GitRemote"]);
   init.setPassive(false);

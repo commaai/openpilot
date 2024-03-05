@@ -3,7 +3,7 @@ from openpilot.common.conversions import Conversions as CV
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.interfaces import CarStateBase
-from openpilot.selfdrive.car.mazda.values import DBC, LKAS_LIMITS, GEN1
+from openpilot.selfdrive.car.mazda.values import DBC, LKAS_LIMITS, MazdaFlags
 
 class CarState(CarStateBase):
   def __init__(self, CP):
@@ -32,7 +32,7 @@ class CarState(CarStateBase):
 
     # Match panda speed reading
     speed_kph = cp.vl["ENGINE_DATA"]["SPEED"]
-    ret.standstill = speed_kph < .1
+    ret.standstill = speed_kph <= .1
 
     can_gear = int(cp.vl["GEAR"]["GEAR"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
@@ -116,7 +116,7 @@ class CarState(CarStateBase):
       ("WHEEL_SPEEDS", 100),
     ]
 
-    if CP.carFingerprint in GEN1:
+    if CP.flags & MazdaFlags.GEN1:
       messages += [
         ("ENGINE_DATA", 100),
         ("CRZ_CTRL", 50),
@@ -136,7 +136,7 @@ class CarState(CarStateBase):
   def get_cam_can_parser(CP):
     messages = []
 
-    if CP.carFingerprint in GEN1:
+    if CP.flags & MazdaFlags.GEN1:
       messages += [
         # sig_address, frequency
         ("CAM_LANEINFO", 2),
