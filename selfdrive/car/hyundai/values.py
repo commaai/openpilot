@@ -576,7 +576,8 @@ class CAR(Platforms):
     "GENESIS GV70 1ST GEN",
     [
       HyundaiCarInfo("Genesis GV70 (2.5T Trim) 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_l])),
-      HyundaiCarInfo("Genesis GV70 (3.5T Trim) 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_m])),
+      HyundaiCarInfo("Genesis GV70 (3.5T Trim) 2022-23", "Highway Driving Assist", car_parts=CarParts.common([CarHarness.hyundai_m])),
+      HyundaiCarInfo("Genesis GV70 (3.5T Trim) 2022-23", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_l])),
     ],
     CarSpecs(mass=1950, wheelbase=2.87, steerRatio=14.6),
     flags=HyundaiFlags.RADAR_SCC,
