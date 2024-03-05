@@ -116,6 +116,10 @@ class CarInterface(CarInterfaceBase):
     if 0x2FF in fingerprint[0] or (0x2AA in fingerprint[0] and candidate in NO_DSU_CAR):
       ret.flags |= ToyotaFlags.SMART_DSU.value
 
+    # 0x343 should not be present on bus 2 on cars other than TSS2_CAR unless we are re-routing DSU
+    if 0x343 in fingerprint[2] and candidate not in TSS2_CAR:
+      ret.flags |= ToyotaFlags.DSU_BYPASS.value
+
     # No radar dbc for cars without DSU which are not TSS 2.0
     # TODO: make an adas dbc file for dsu-less models
     ret.radarUnavailable = DBC[candidate]['radar'] is None or candidate in (NO_DSU_CAR - TSS2_CAR)
@@ -146,7 +150,8 @@ class CarInterface(CarInterfaceBase):
     #  - TSS2 radar ACC cars w/ smartDSU installed
     #  - TSS2 radar ACC cars w/o smartDSU installed (disables radar)
     #  - TSS-P DSU-less cars w/ CAN filter installed (no radar parser yet)
-    ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR) or bool(ret.flags & ToyotaFlags.DISABLE_RADAR.value)
+    ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR) or \
+                                       bool(ret.flags & ToyotaFlags.DISABLE_RADAR.value) or bool(ret.flags & ToyotaFlags.DSU_BYPASS.value)
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
     ret.enableGasInterceptor = 0x201 in fingerprint[0] and ret.openpilotLongitudinalControl
 

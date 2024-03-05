@@ -46,6 +46,8 @@ class ToyotaFlags(IntFlag):
   HYBRID = 1
   SMART_DSU = 2
   DISABLE_RADAR = 4
+  SECONDARY_STEER_ANGLE = 8
+  DSU_BYPASS = 512
 
   # Static flags
   TSS2 = 8
