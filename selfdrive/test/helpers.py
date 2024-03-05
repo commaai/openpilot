@@ -1,4 +1,6 @@
+import http.server
 import os
+import threading
 import time
 
 from functools import wraps
@@ -72,7 +74,29 @@ def noop(*args, **kwargs):
 
 
 def read_segment_list(segment_list_path):
-  with open(segment_list_path, "r") as f:
+  with open(segment_list_path) as f:
     seg_list = f.read().splitlines()
 
   return [(platform[2:], segment) for platform, segment in zip(seg_list[::2], seg_list[1::2], strict=True)]
+
+
+def with_http_server(func, handler=http.server.BaseHTTPRequestHandler, setup=None):
+  @wraps(func)
+  def inner(*args, **kwargs):
+    host = '127.0.0.1'
+    server = http.server.HTTPServer((host, 0), handler)
+    port = server.server_port
+    t = threading.Thread(target=server.serve_forever)
+    t.start()
+
+    if setup is not None:
+      setup(host, port)
+
+    try:
+      return func(*args, f'http://{host}:{port}', **kwargs)
+    finally:
+      server.shutdown()
+      server.server_close()
+      t.join()
+
+  return inner

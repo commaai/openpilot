@@ -29,7 +29,7 @@ from openpilot.tools.lib.logreader import LogReader
 
 # Baseline CPU usage by process
 PROCS = {
-  "selfdrive.controls.controlsd": 41.0,
+  "selfdrive.controls.controlsd": 46.0,
   "./loggerd": 14.0,
   "./encoderd": 17.0,
   "./camerad": 14.5,
@@ -424,4 +424,4 @@ class TestOnroad(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  pytest.main()
+  unittest.main()

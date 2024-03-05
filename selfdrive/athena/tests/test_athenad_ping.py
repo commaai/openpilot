@@ -3,7 +3,7 @@ import subprocess
 import threading
 import time
 import unittest
-from typing import cast, Optional
+from typing import cast
 from unittest import mock
 
 from openpilot.common.params import Params
@@ -29,8 +29,8 @@ class TestAthenadPing(unittest.TestCase):
   athenad: threading.Thread
   exit_event: threading.Event
 
-  def _get_ping_time(self) -> Optional[str]:
-    return cast(Optional[str], self.params.get("LastAthenaPingTime", encoding="utf-8"))
+  def _get_ping_time(self) -> str | None:
+    return cast(str | None, self.params.get("LastAthenaPingTime", encoding="utf-8"))
 
   def _clear_ping_time(self) -> None:
     self.params.remove("LastAthenaPingTime")

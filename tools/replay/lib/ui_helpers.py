@@ -1,5 +1,5 @@
 import itertools
-from typing import Any, Dict, Tuple
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -84,7 +84,7 @@ class Calibration:
     return pts / self.zoom
 
 
-_COLOR_CACHE : Dict[Tuple[int, int, int], Any] = {}
+_COLOR_CACHE : dict[tuple[int, int, int], Any] = {}
 def find_color(lidar_surface, color):
   if color in _COLOR_CACHE:
     return _COLOR_CACHE[color]

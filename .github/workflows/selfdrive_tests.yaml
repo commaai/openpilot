@@ -117,7 +117,7 @@ jobs:
     - name: Merge x64 and arm64 tags
       run: |
         export PUSH_IMAGE=true
-        selfdrive/test/docker_tag_multiarch.sh base x86_64 aarch64
+        scripts/retry.sh selfdrive/test/docker_tag_multiarch.sh base x86_64 aarch64
 
   static_analysis:
     name: static analysis

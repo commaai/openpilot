@@ -1,6 +1,7 @@
 Version 0.9.7 (2024-XX-XX)
 ========================
 * New driving model
+* Support for hybrid variants of supported Ford models
 
 Version 0.9.6 (2024-02-27)
 ========================
@@ -10,6 +11,9 @@ Version 0.9.6 (2024-02-27)
   * Directly outputs curvature for lateral control
 * New driver monitoring model
   * Trained on larger dataset
+* Model path UI
+  * Shows where driving model wants to be
+  * Shows what model is seeing more clearly, but more jittery
 * AGNOS 9
 * comma body streaming and controls over WebRTC
 * Improved fuzzy fingerprinting for many makes and models

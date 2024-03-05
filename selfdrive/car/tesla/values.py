@@ -1,9 +1,8 @@
 from collections import namedtuple
-from enum import StrEnum
-from typing import Dict, List, Union
+from dataclasses import dataclass, field
 
 from cereal import car
-from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
+from openpilot.selfdrive.car import AngleRateLimit, CarSpecs, DbcDict, PlatformConfig, Platforms, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarInfo
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
@@ -12,21 +11,23 @@ Ecu = car.CarParams.Ecu
 Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 
 
-class CAR(StrEnum):
-  AP1_MODELS = 'TESLA AP1 MODEL S'
-  AP2_MODELS = 'TESLA AP2 MODEL S'
+@dataclass
+class TeslaPlatformConfig(PlatformConfig):
+  dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('tesla_powertrain', 'tesla_radar', chassis_dbc='tesla_can'))
 
 
-CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
-  CAR.AP1_MODELS: CarInfo("Tesla AP1 Model S", "All"),
-  CAR.AP2_MODELS: CarInfo("Tesla AP2 Model S", "All"),
-}
+class CAR(Platforms):
+  AP1_MODELS = TeslaPlatformConfig(
+    'TESLA AP1 MODEL S',
+    CarInfo("Tesla AP1 Model S", "All"),
+    CarSpecs(mass=2100., wheelbase=2.959, steerRatio=15.0)
+  )
+  AP2_MODELS = TeslaPlatformConfig(
+    'TESLA AP2 MODEL S',
+    CarInfo("Tesla AP2 Model S", "All"),
+    AP1_MODELS.specs
+  )
 
-
-DBC = {
-  CAR.AP2_MODELS: dbc_dict('tesla_powertrain', 'tesla_radar', chassis_dbc='tesla_can'),
-  CAR.AP1_MODELS: dbc_dict('tesla_powertrain', 'tesla_radar', chassis_dbc='tesla_can'),
-}
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
@@ -89,3 +90,7 @@ class CarControllerParams:
 
   def __init__(self, CP):
     pass
+
+
+CAR_INFO = CAR.create_carinfo_map()
+DBC = CAR.create_dbc_map()
