@@ -87,6 +87,7 @@ class GMPlatformConfig(PlatformConfig):
 @dataclass(frozen=True, kw_only=True)
 class GMCarSpecs(CarSpecs):
   tireStiffnessFactor = 0.444
+  steerActuatorDelay = 0.1
 
 
 class CAR(Platforms):
