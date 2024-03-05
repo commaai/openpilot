@@ -108,7 +108,7 @@ class CAR(Platforms):
   ACADIA = GMPlatformConfig(
     "GMC ACADIA DENALI 2018",
     GMCarInfo("GMC Acadia 2018", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo"),
-    CarSpecs(mass=1975, wheelbase=2.86, steerRatio=14.4, centerToFrontRatio=0.4),
+    CarSpecs(mass=1975, wheelbase=2.86, steerRatio=14.4, centerToFrontRatio=0.4, minEnableSpeed=-1.0),
   )
   BUICK_LACROSSE = GMPlatformConfig(
     "BUICK LACROSSE 2017",
@@ -123,12 +123,12 @@ class CAR(Platforms):
   ESCALADE = GMPlatformConfig(
     "CADILLAC ESCALADE 2017",
     GMCarInfo("Cadillac Escalade 2017", "Driver Assist Package"),
-    CarSpecs(mass=2564, wheelbase=2.95, steerRatio=17.3),
+    CarSpecs(mass=2564, wheelbase=2.95, steerRatio=17.3, minEnableSpeed=-1.0),
   )
   ESCALADE_ESV = GMPlatformConfig(
     "CADILLAC ESCALADE ESV 2016",
     GMCarInfo("Cadillac Escalade ESV 2016", "Adaptive Cruise Control (ACC) & LKAS"),
-    CarSpecs(mass=2739, wheelbase=3.302, steerRatio=17.3),
+    CarSpecs(mass=2739, wheelbase=3.302, steerRatio=17.3, minEnableSpeed=-1.0),
   )
   ESCALADE_ESV_2019 = GMPlatformConfig(
     "CADILLAC ESCALADE ESV 2019",

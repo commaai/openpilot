@@ -160,14 +160,9 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.2
 
     elif candidate == CAR.ACADIA:
-      ret.minEnableSpeed = -1.  # engage speed is decided by pcm
       ret.steerActuatorDelay = 0.2
 
-    elif candidate == CAR.ESCALADE:
-      ret.minEnableSpeed = -1.  # engage speed is decided by pcm
-
     elif candidate in (CAR.ESCALADE_ESV, CAR.ESCALADE_ESV_2019):
-      ret.minEnableSpeed = -1.  # engage speed is decided by pcm
       ret.tireStiffnessFactor = 1.0
 
       if candidate == CAR.ESCALADE_ESV:
