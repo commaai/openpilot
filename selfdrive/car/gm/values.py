@@ -138,7 +138,7 @@ class CAR(Platforms):
   ESCALADE_ESV_2019 = GMPlatformConfig(
     "CADILLAC ESCALADE ESV 2019",
     GMCarInfo("Cadillac Escalade ESV 2019", "Adaptive Cruise Control (ACC) & LKAS"),
-    ESCALADE_ESV.specs.replace(steerActuatorDelay=0.2),
+    ESCALADE_ESV.specs.override(steerActuatorDelay=0.2),
   )
   BOLT_EUV = GMPlatformConfig(
     "CHEVROLET BOLT EUV 2022",
