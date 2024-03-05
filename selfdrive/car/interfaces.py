@@ -119,6 +119,7 @@ class CarInterfaceBase(ABC):
     ret.minEnableSpeed = candidate.config.specs.minEnableSpeed
     ret.minSteerSpeed = candidate.config.specs.minSteerSpeed
     ret.tireStiffnessFactor = candidate.config.specs.tireStiffnessFactor
+    ret.steerActuatorDelay = candidate.config.specs.steerActuatorDelay
     ret.flags |= int(candidate.config.flags)
 
     ret = cls._get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs)
