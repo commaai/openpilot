@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import os
 import pathlib
 import shutil
@@ -163,3 +164,7 @@ class TestUpdateD(unittest.TestCase):
 
       self._test_params("master", False, True)
       self._test_update_params("master", *self.MOCK_RELEASES["master"])
+
+
+if __name__ == "__main__":
+  unittest.main()
