@@ -11,4 +11,4 @@ class CAR(Platforms):
   )
 
 
-CAR_INFO = CAR.create_carinfo_map()
+
