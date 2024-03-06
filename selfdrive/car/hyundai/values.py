@@ -650,9 +650,15 @@ def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions) -> set[str]:
       expected_dates = {date for _, date in codes if date is not None}
 
       # Found platform codes & dates
-      codes = get_platform_codes(live_fw_versions.get(addr, set()))
+      found_versions = live_fw_versions.get(addr, set())
+      codes = get_platform_codes(found_versions)
       found_platform_codes = {code for code, _ in codes}
       found_dates = {date for _, date in codes if date is not None}
+
+      # Some models are missing ECUs
+      if not len(found_versions) and candidate in FW_QUERY_CONFIG.non_essential_ecus.get(ecu[0], []):
+        valid_found_ecus.add(addr)
+        continue
 
       # Check platform code + part number matches for any found versions
       if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
@@ -801,6 +807,13 @@ FW_QUERY_CONFIG = FwQueryConfig(
       obd_multiplexing=False,
     ),
   ],
+  # We lose these ECUs without the comma power on these cars.
+  # Note that we still attempt to match with them when they are present
+  non_essential_ecus={
+    Ecu.eps: [CAR.AZERA_6TH_GEN, CAR.AZERA_HEV_6TH_GEN],  # FIXME: EPS responds on a few cars from PT
+    Ecu.transmission: [CAR.AZERA_6TH_GEN, CAR.AZERA_HEV_6TH_GEN],
+    Ecu.engine: [CAR.AZERA_6TH_GEN, CAR.AZERA_HEV_6TH_GEN],
+  },
   extra_ecus=[
     (Ecu.adas, 0x730, None),         # ADAS Driving ECU on HDA2 platforms
     (Ecu.parkingAdas, 0x7b1, None),  # ADAS Parking ECU (may exist on all platforms)
