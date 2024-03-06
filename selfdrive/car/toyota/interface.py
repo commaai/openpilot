@@ -43,6 +43,11 @@ class CarInterface(CarInterfaceBase):
 
     stop_and_go = candidate in TSS2_CAR
 
+    # Detect smartDSU, which intercepts ACC_CMD from the DSU (or radar) allowing openpilot to send it
+    # 0x2AA is sent by a similar device which intercepts the radar instead of DSU on NO_DSU_CARs
+    if 0x2FF in fingerprint[0] or (0x2AA in fingerprint[0] and candidate in NO_DSU_CAR):
+      ret.flags |= ToyotaFlags.SMART_DSU.value
+
     if candidate == CAR.PRIUS:
       stop_and_go = True
       # Only give steer angle deadzone to for bad angle sensor prius
@@ -68,8 +73,9 @@ class CarInterface(CarInterfaceBase):
       stop_and_go = True
 
     elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDER_TSS2):
-      # TODO: TSS-P models can do stop and go, but unclear if it requires sDSU or unplugging DSU
-      stop_and_go = True
+      # TODO: TSS-P models can do stop and go, but unclear if it requires sDSU or unplugging DSU.
+      #  For now, don't list stop and go functionality in the docs
+      stop_and_go = stop_and_go or bool(ret.flags & ToyotaFlags.SMART_DSU.value)
 
     elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALON_TSS2):
       # starting from 2019, all Avalon variants have stop and go
@@ -110,11 +116,6 @@ class CarInterface(CarInterfaceBase):
     # TODO: Some TSS-P platforms have BSM, but are flipped based on region or driving direction.
     # Detect flipped signals and enable for C-HR and others
     ret.enableBsm = 0x3F6 in fingerprint[0] and candidate in TSS2_CAR
-
-    # Detect smartDSU, which intercepts ACC_CMD from the DSU (or radar) allowing openpilot to send it
-    # 0x2AA is sent by a similar device which intercepts the radar instead of DSU on NO_DSU_CARs
-    if 0x2FF in fingerprint[0] or (0x2AA in fingerprint[0] and candidate in NO_DSU_CAR):
-      ret.flags |= ToyotaFlags.SMART_DSU.value
 
     # No radar dbc for cars without DSU which are not TSS 2.0
     # TODO: make an adas dbc file for dsu-less models
