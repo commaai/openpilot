@@ -83,7 +83,7 @@ class TestUpdateD(unittest.TestCase):
 
   def _test_update_params(self, branch, version, release_notes):
     self.assertTrue(self.params.get("UpdaterNewDescription", encoding="utf-8").startswith(f"{version} / {branch}"))
-    self.assertEqual(self.params.get("UpdaterNewReleaseNotes", encoding="utf-8"), f"</p>{release_notes}</p>")
+    self.assertEqual(self.params.get("UpdaterNewReleaseNotes", encoding="utf-8"), f"</p>{release_notes}</p>\n")
 
   def test_new_release(self):
     self.setup_remote_release("release3")
