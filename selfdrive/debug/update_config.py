@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import ast
 import inspect
 from dataclasses import MISSING, fields
