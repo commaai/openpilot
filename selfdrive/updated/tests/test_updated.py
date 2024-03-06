@@ -7,6 +7,8 @@ import time
 import unittest
 from unittest import mock
 
+import pytest
+
 
 from openpilot.selfdrive.test.helpers import processes_context
 from openpilot.common.params import Params
@@ -29,6 +31,7 @@ def update_release(directory, name, version, release_notes):
   run(["git", "commit", "-m", f"openpilot release {version}"], cwd=directory)
 
 
+@pytest.mark.slow # TODO: can we test overlayfs in GHA?
 class TestUpdateD(unittest.TestCase):
   def setUp(self):
     self.tmpdir = tempfile.mkdtemp()
@@ -55,12 +58,15 @@ class TestUpdateD(unittest.TestCase):
 
     self.MOCK_RELEASES = {
       "release3": ("0.1.2", "0.1.2 release notes"),
-      "master-ci": ("0.1.3", "0.1.3 release notes"),
+      "master": ("0.1.3", "0.1.3 release notes"),
     }
+
+  def set_target_branch(self, branch):
+    self.params.put("UpdaterTargetBranch", branch)
 
   def setup_basedir_release(self, release):
     self.params = Params()
-    self.params.put("UpdaterTargetBranch", release)
+    self.set_target_branch(release)
     run(["git", "clone", "-b", release, self.remote_dir, self.basedir])
 
   def update_remote_release(self, release):
@@ -116,3 +122,4 @@ class TestUpdateD(unittest.TestCase):
 
       self._test_params("release3", False, True)
       self._test_update_params("release3", *self.MOCK_RELEASES["release3"])
+
