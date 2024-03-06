@@ -117,12 +117,13 @@ class TestUpdateD(unittest.TestCase):
       time.sleep(1)
 
   def test_new_release(self):
+    # Start on release3, simulate a release3 commit, ensure we fetch that update properly
     self.setup_remote_release("release3")
     self.setup_basedir_release("release3")
 
     with processes_context(["updated"]) as [updated]:
       self._test_params("release3", False, False)
-      self.wait_for_idle()
+      time.sleep(1)
       self._test_params("release3", False, False)
 
       self.MOCK_RELEASES["release3"] = ("0.1.3", "0.1.3 release notes")
@@ -142,6 +143,7 @@ class TestUpdateD(unittest.TestCase):
       self._test_update_params("release3", *self.MOCK_RELEASES["release3"])
 
   def test_switch_branches(self):
+    # Start on release3, request to switch to master manually, ensure we switched
     self.setup_remote_release("release3")
     self.setup_remote_release("master")
     self.setup_basedir_release("release3")
