@@ -707,8 +707,10 @@ FW_VERSIONS = {
       b'\xf1\x875Q0909144AA\xf1\x891081\xf1\x82\x0521060403A1',
       b'\xf1\x875Q0909144AB\xf1\x891082\xf1\x82\x0521060405A1',
       b'\xf1\x875WA907144M \xf1\x891051\xf1\x82\x001T06081T7N',
+      b'\xf1\x875WA907144Q \xf1\x891063\xf1\x82\x001O06081OOM',
     ],
     (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572AA\xf1\x890396',
       b'\xf1\x872Q0907572M \xf1\x890233',
       b'\xf1\x872Q0907572T \xf1\x890383',
     ],
