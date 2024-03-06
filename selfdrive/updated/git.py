@@ -172,7 +172,10 @@ class GitUpdateStrategy(UpdateStrategy):
     return self.describe_branch(BASEDIR), self.release_notes_branch(BASEDIR)
 
   def describe_ready_channel(self) -> tuple[str, str]:
-    return self.describe_branch(FINALIZED), self.release_notes_branch(FINALIZED)
+    if self.update_ready():
+      return self.describe_branch(FINALIZED), self.release_notes_branch(FINALIZED)
+
+    return "", ""
 
   def fetch_update(self):
     cloudlog.info("attempting git fetch inside staging overlay")
