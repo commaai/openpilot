@@ -801,6 +801,13 @@ FW_QUERY_CONFIG = FwQueryConfig(
       obd_multiplexing=False,
     ),
   ],
+  # We lose these ECUs without the comma power on these cars.
+  # Note that we still attempt to match with them when they are present
+  non_essential_ecus={
+    Ecu.eps: [CAR.AZERA_6TH_GEN],
+    Ecu.transmission: [CAR.AZERA_6TH_GEN],
+    Ecu.engine: [CAR.AZERA_6TH_GEN],
+  },
   extra_ecus=[
     (Ecu.adas, 0x730, None),         # ADAS Driving ECU on HDA2 platforms
     (Ecu.parkingAdas, 0x7b1, None),  # ADAS Parking ECU (may exist on all platforms)
