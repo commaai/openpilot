@@ -4,7 +4,7 @@ from enum import Enum
 from cereal import car
 from openpilot.selfdrive.car import dbc_dict, PlatformConfig, DbcDict, Platforms, CarSpecs
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
-from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, VinRequest, StdQueries
 
 Ecu = car.CarParams.Ecu
 
@@ -237,6 +237,14 @@ FW_QUERY_CONFIG = FwQueryConfig(
       logging=True,
     ),
   ]],
+  vin_request=VinRequest(
+    b'\x1a\x90',
+    b'\x5a\x90',
+    addrs=[0x24b],
+    functional=False,
+    rx_offset=GM_RX_OFFSET,
+    buses=(0,),
+  ),
   extra_ecus=[(Ecu.fwdCamera, 0x24b, None)],
 )
 

@@ -68,7 +68,6 @@ class StdQueries:
   KWP_VIN_REQUEST = b'\x21\x81'
   KWP_VIN_RESPONSE = b'\x61\x81'
 
-
 @dataclass
 class Request:
   request: list[bytes]
@@ -85,8 +84,20 @@ class Request:
 
 
 @dataclass
+class VinRequest:
+  request: bytes
+  response: bytes
+  addrs: List[int]
+  functional: bool = True
+  rx_offset: int = 0x8
+  buses: list[int] = field(default_factory=lambda: [0, 1])
+  obd_multiplexing: bool = True
+
+
+@dataclass
 class FwQueryConfig:
-  requests: list[Request]
+  requests: List[Request]
+  vin_requests: list[VinRequest] = field(default_factory=list)
   # TODO: make this automatic and remove hardcoded lists, or do fingerprinting with ecus
   # Overrides and removes from essential ecus for specific models and ecus (exact matching)
   non_essential_ecus: dict[capnp.lib.capnp._EnumModule, list[str]] = field(default_factory=dict)
