@@ -98,9 +98,6 @@ FW_VERSIONS = {
     ],
   },
   CAR.AZERA_HEV_6TH_GEN: {
-    (Ecu.cornerRadar, 0x7b7, None): [
-      b'\xf1\x00IG BSD LH 1.00 , 1.00 (Y\x05T\x19\x01\x01\x069',
-    ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00IGH MFC  AT KOR LHD 1.00 1.00 99211-G8000 180903',
       b'\xf1\x00IGH MFC  AT KOR LHD 1.00 1.01 99211-G8000 181109',
