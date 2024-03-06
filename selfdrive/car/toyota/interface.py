@@ -61,17 +61,17 @@ class CarInterface(CarInterfaceBase):
           ret.steerActuatorDelay = 0.25
           CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, steering_angle_deadzone_deg=0.2)
 
-    elif candidate in (CAR.RAV4, CAR.RAV4H):
-      stop_and_go = True if (candidate in CAR.RAV4H) else False
+    elif candidate == CAR.RAV4H:
+      stop_and_go = True
 
     elif candidate in (CAR.LEXUS_RX, CAR.LEXUS_RX_TSS2):
       stop_and_go = True
       ret.wheelSpeedFactor = 1.035
 
-    elif candidate in (CAR.CHR, CAR.CHR_TSS2):
+    elif candidate == CAR.CHR:
       stop_and_go = True
 
-    elif candidate in (CAR.CAMRY, CAR.CAMRY_TSS2):
+    elif candidate == CAR.CAMRY:
       stop_and_go = True
 
     elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALON_TSS2):
@@ -102,10 +102,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.LEXUS_CTH:
       stop_and_go = True
 
-    elif candidate in (CAR.LEXUS_NX, CAR.LEXUS_NX_TSS2):
-      stop_and_go = True
-
-    elif candidate == CAR.MIRAI:
+    elif candidate == CAR.LEXUS_NX:
       stop_and_go = True
 
     # TODO: these models can do stop and go, but unclear if it requires sDSU or unplugging DSU.
