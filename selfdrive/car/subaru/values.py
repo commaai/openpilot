@@ -158,7 +158,7 @@ class CAR(Platforms):
   CROSSTREK_HYBRID = SubaruPlatformConfig(
     "SUBARU CROSSTREK HYBRID 2020",
     SubaruCarInfo("Subaru Crosstrek Hybrid 2020", car_parts=CarParts.common([CarHarness.subaru_b])),
-    CarSpecs(mass=0, wheelbase=2.67, steerRatio=123),
+    CarSpecs(mass=0, wheelbase=2.67, steerRatio=123, centerToFrontRatio=1.0, minEnableSpeed=99, tireStiffnessFactor=0.66),
     flags=SubaruFlags.STEER_RATE_LIMITED | SubaruFlags.HYBRID,
   )
   FORESTER = SubaruPlatformConfig(

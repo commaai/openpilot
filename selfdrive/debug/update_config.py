@@ -86,7 +86,12 @@ if __name__ == '__main__':
 
   original_config = CAR_SUBARU.CROSSTREK_HYBRID.config
 
-  new_specs = replace(original_config.specs, mass=0, steerRatio=123)
+  new_specs = replace(original_config.specs,
+                      mass=0,
+                      steerRatio=123,
+                      centerToFrontRatio=1.0,
+                      tireStiffnessFactor=0.66,
+                      minEnableSpeed=99)
   new_config = replace(original_config,
                        specs=new_specs,
                        flags=SubaruFlags.HYBRID | SubaruFlags.STEER_RATE_LIMITED)
