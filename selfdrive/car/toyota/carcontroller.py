@@ -141,10 +141,11 @@ class CarController(CarControllerBase):
       lead = hud_control.leadVisible or CS.out.vEgo < 12.  # at low speed we always assume the lead is present so ACC can be engaged
 
       # Press distance button until we are at the correct bar length
-      if CS.distance_lines_values.get(CS.distance_lines, "UNKNOWN") != "FAR":
-        self.distance_button = not self.distance_button
-      else:
-        self.distance_button = 0
+      if self.frame % 6 == 0:
+        if CS.distance_lines_values.get(CS.distance_lines, "UNKNOWN") != "FAR":
+          self.distance_button = not self.distance_button
+        else:
+          self.distance_button = 0
 
       # Lexus IS uses a different cancellation message
       if pcm_cancel_cmd and self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
