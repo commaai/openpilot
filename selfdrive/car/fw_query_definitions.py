@@ -90,13 +90,14 @@ class VinRequest:
   addrs: List[int]
   functional: bool = True
   rx_offset: int = 0x8
-  buses: tuple[int] = (0, 1)
+  buses: list[int] = field(default_factory=lambda: [0, 1])
+  obd_multiplexing: bool = True
 
 
 @dataclass
 class FwQueryConfig:
   requests: List[Request]
-  vin_request: Optional[VinRequest] = None
+  vin_requests: list[VinRequest] = field(default_factory=list)
   # TODO: make this automatic and remove hardcoded lists, or do fingerprinting with ecus
   # Overrides and removes from essential ecus for specific models and ecus (exact matching)
   non_essential_ecus: dict[capnp.lib.capnp._EnumModule, list[str]] = field(default_factory=dict)
