@@ -4,6 +4,7 @@ from cereal import car
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import mean
 from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
@@ -41,6 +42,7 @@ class CarState(CarStateBase):
     self.angle_offset = FirstOrderFilter(None, 60.0, DT_CTRL, initialized=False)
 
     self.low_speed_lockout = False
+    self.profile_restored = False  # Used to restore the previous personality on start since the stock "personality" defaults to "relaxed"
     self.acc_type = 1
     self.lkas_hud = {}
 
@@ -163,6 +165,27 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint != CAR.PRIUS_V:
       self.lkas_hud = copy.copy(cp_cam.vl["LKAS_HUD"])
 
+    # Convert distance lines (3, 2, 1) to personality profiles (2, 1, 0)
+    personality = cp.vl["PCM_CRUISE_SM"]["DISTANCE_LINES"] - 1
+
+    # Restore the previous drive's personality to the dash
+    if personality == self.previous_personality:
+      self.profile_restored = True
+    elif not self.profile_restored:
+      # Can send a distance pressed command every other frame to quickly restore the previous drive's personality profile
+      self.distance_button = not self.distance_button
+
+    elif self.CP.flags & ToyotaFlags.SMART_DSU:
+      self.distance_button = cp.vl["SDSU"]["FD_BUTTON"] == 1
+    # This may need some additional checks or can even simply be an "else" statement if all cars already have it mapped out
+    elif self.CP.openpilotLongitudinalControl:
+      self.distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"] == 1
+
+    if personality != self.previous_personality and personality >= 0:  # The dash likes to send a "personality" of "-1" on ignition off
+      Params().put("LongitudinalPersonality", personality)
+
+    self.previous_personality = personality
+
     return ret
 
   @staticmethod
@@ -212,6 +235,9 @@ class CarState(CarStateBase):
       messages += [
         ("PRE_COLLISION", 33),
       ]
+
+    if CP.flags & ToyotaFlags.SMART_DSU:
+      messages.append(("SDSU", 33))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
 
