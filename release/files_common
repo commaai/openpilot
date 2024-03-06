@@ -542,7 +542,8 @@ opendbc/vw_golf_mk4.dbc
 opendbc/vw_mqb_2010.dbc
 
 opendbc/tesla_can.dbc
-opendbc/tesla_radar.dbc
+opendbc/tesla_radar_bosch_generated.dbc
+opendbc/tesla_radar_continental_generated.dbc
 opendbc/tesla_powertrain.dbc
 
 tinygrad_repo/openpilot/compile2.py
