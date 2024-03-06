@@ -61,18 +61,9 @@ class CarInterface(CarInterfaceBase):
           ret.steerActuatorDelay = 0.25
           CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, steering_angle_deadzone_deg=0.2)
 
-    elif candidate in (CAR.RAV4, CAR.RAV4H):
-      stop_and_go = True if (candidate in CAR.RAV4H) else False
-
     elif candidate in (CAR.LEXUS_RX, CAR.LEXUS_RX_TSS2):
       stop_and_go = True
       ret.wheelSpeedFactor = 1.035
-
-    elif candidate in (CAR.CHR, CAR.CHR_TSS2):
-      stop_and_go = True
-
-    elif candidate in (CAR.CAMRY, CAR.CAMRY_TSS2):
-      stop_and_go = True
 
     elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALON_TSS2):
       # starting from 2019, all Avalon variants have stop and go
@@ -96,13 +87,8 @@ class CarInterface(CarInterfaceBase):
           ret.lateralTuning.pid.kf = 0.00004
           break
 
-    elif candidate == CAR.SIENNA:
-      stop_and_go = True
-
-    elif candidate == CAR.LEXUS_CTH:
-      stop_and_go = True
-
-    elif candidate in (CAR.LEXUS_NX, CAR.LEXUS_NX_TSS2):
+    elif candidate in (CAR.RAV4H, CAR.CHR, CAR.CAMRY, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_NX):
+      # TODO: Some of these platforms are not advertised to have full range ACC, are they similar to SNG_WITHOUT_DSU cars?
       stop_and_go = True
 
     # TODO: these models can do stop and go, but unclear if it requires sDSU or unplugging DSU.
