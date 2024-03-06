@@ -140,7 +140,7 @@ class CarController(CarControllerBase):
     if (self.frame % 3 == 0 and self.CP.openpilotLongitudinalControl) or pcm_cancel_cmd:
       lead = hud_control.leadVisible or CS.out.vEgo < 12.  # at low speed we always assume the lead is present so ACC can be engaged
 
-      # Press distance button until we are at the correct bar length
+      # Press distance button until we are at the correct bar length. The distance cannot be changed without cruise available
       if self.frame % 6 == 0:
         if CS.distance_lines_values.get(CS.distance_lines, "UNKNOWN") != "FAR" and CS.out.cruiseState.enabled:
           self.distance_button = not self.distance_button
