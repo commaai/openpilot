@@ -122,7 +122,7 @@ class TestUpdateD(unittest.TestCase):
 
     with processes_context(["updated"]) as [updated]:
       self._test_params("release3", False, False)
-      time.sleep(1)
+      self.wait_for_idle()
       self._test_params("release3", False, False)
 
       self.MOCK_RELEASES["release3"] = ("0.1.3", "0.1.3 release notes")
