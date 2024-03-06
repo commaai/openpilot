@@ -166,6 +166,7 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint != CAR.PRIUS_V:
       self.lkas_hud = copy.copy(cp_cam.vl["LKAS_HUD"])
 
+    # distance button is wired to the ACC module (camera or radar)
     if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
       self.prev_distance_button = self.distance_button
       self.distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
