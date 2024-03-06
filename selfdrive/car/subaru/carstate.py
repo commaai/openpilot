@@ -19,8 +19,6 @@ class CarState(CarStateBase):
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
 
-    cp_es_distance = cp_body if self.CP.flags & (SubaruFlags.GLOBAL_GEN2 | SubaruFlags.HYBRID) else cp_cam
-
     throttle_msg = cp.vl["Throttle"] if not (self.CP.flags & SubaruFlags.HYBRID) else cp_body.vl["Throttle_Hybrid"]
     ret.gas = throttle_msg["Throttle_Pedal"] / 255.
 
@@ -31,6 +29,7 @@ class CarState(CarStateBase):
       cp_brakes = cp_body if self.CP.flags & SubaruFlags.GLOBAL_GEN2 else cp
       ret.brakePressed = cp_brakes.vl["Brake_Status"]["Brake"] == 1
 
+    cp_es_distance = cp_body if self.CP.flags & (SubaruFlags.GLOBAL_GEN2 | SubaruFlags.HYBRID) else cp_cam
     if not (self.CP.flags & SubaruFlags.HYBRID):
       eyesight_fault = bool(cp_es_distance.vl["ES_Distance"]["Cruise_Fault"])
 
