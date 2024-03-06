@@ -174,7 +174,7 @@ class CarState(CarStateBase):
       self.prev_distance_button = self.distance_button
       self.distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
 
-      self.distance_lines = cp_acc.vl["PCM_CRUISE_SM"]["DISTANCE_LINES"]
+      self.distance_lines = cp.vl["PCM_CRUISE_SM"]["DISTANCE_LINES"]
 
     return ret
 
