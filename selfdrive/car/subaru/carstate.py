@@ -34,10 +34,12 @@ class CarState(CarStateBase):
     if not (self.CP.flags & SubaruFlags.HYBRID):
       eyesight_fault = bool(cp_es_distance.vl["ES_Distance"]["Cruise_Fault"])
 
+
+      # if openpilot is controlling long, an eyesight fault is a non-critical fault. otherwise it's an ACC fault
       if self.CP.openpilotLongitudinalControl:
         ret.carFaultedNonCritical = eyesight_fault
       else:
-        ret.accFaulted = eyesight_fault # if openpilot isn't controlling long, an eyesight fault is an acc fault
+        ret.accFaulted = eyesight_fault
 
     cp_wheels = cp_body if self.CP.flags & SubaruFlags.GLOBAL_GEN2 else cp
     ret.wheelSpeeds = self.get_wheel_speeds(
