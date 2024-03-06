@@ -7,13 +7,12 @@ from enum import StrEnum
 from typing import Any, NamedTuple
 from collections.abc import Callable
 
-from cereal import car, log
+from cereal import car
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.conversions import Conversions as CV
-from openpilot.common.numpy_fast import clip
-from openpilot.common.params import Params
-from openpilot.common.realtime import DT_CTRL
 from openpilot.common.simple_kalman import KF1D, get_kalman_gain
+from openpilot.common.numpy_fast import clip
+from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, STD_CARGO_KG
 from openpilot.selfdrive.car.values import Platform
 from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_friction
@@ -351,10 +350,8 @@ class CarStateBase(ABC):
 
     self.cruise_buttons = 0
     self.left_blinker_cnt = 0
-    self.previous_personality = str(log.LongitudinalPersonality.standard)
     self.right_blinker_cnt = 0
     self.steering_pressed_cnt = 0
-    self.distance_button = False
     self.left_blinker_prev = False
     self.right_blinker_prev = False
     self.cluster_speed_hyst_gap = 0.0
