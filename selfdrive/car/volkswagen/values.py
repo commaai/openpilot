@@ -302,7 +302,7 @@ class CAR(Platforms):
   )
   TROC_MK1 = VolkswagenMQBPlatformConfig(
     "VOLKSWAGEN T-ROC 1ST GEN",  # Chassis A1
-    VWCarInfo("Volkswagen T-Roc 2018-22", footnotes=[Footnote.VW_MQB_A0]),
+    VWCarInfo("Volkswagen T-Roc 2018-23"),
     VolkswagenCarSpecs(mass=1413, wheelbase=2.63),
   )
   AUDI_A3_MK3 = VolkswagenMQBPlatformConfig(
