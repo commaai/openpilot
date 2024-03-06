@@ -136,12 +136,13 @@ class CarD:
 
     CC = self.sm["carControl"]
 
-    # send car controls over can
-    now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
-    self.last_actuators, can_sends = self.CI.apply(CC.as_builder(), now_nanos)
-    self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=self.CS.canValid))
+    if self.sm.all_checks(['carControl']):
+      # send car controls over can
+      now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
+      self.last_actuators, can_sends = self.CI.apply(CC.as_builder(), now_nanos)
+      self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=self.CS.canValid))
 
-    self.CC_prev = CC
+      self.CC_prev = CC
 
   def card_thread(self):
     while True:
