@@ -90,15 +90,13 @@ class TestLogReader(unittest.TestCase):
   @mock.patch("openpilot.tools.lib.logreader.file_exists")
   def test_direct_parsing(self, cache_enabled, file_exists_mock):
     os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
-    qlog = tempfile.NamedTemporaryFile(mode='wb', delete=False)
+    with tempfile.NamedTemporaryFile(mode='wb', delete=True) as qlog:
+      with requests.get(QLOG_FILE, stream=True) as r:
+        shutil.copyfileobj(r.raw, qlog)
 
-    with requests.get(QLOG_FILE, stream=True) as r:
-      with qlog as f:
-        shutil.copyfileobj(r.raw, f)
-
-    for f in [QLOG_FILE, qlog.name]:
-      l = len(list(LogReader(f)))
-      self.assertGreater(l, 100)
+      for f in [QLOG_FILE, qlog.name]:
+        l = len(list(LogReader(f)))
+        self.assertGreater(l, 100)
 
     with self.assertRaises(URLFileException) if not cache_enabled else self.assertRaises(AssertionError):
       l = len(list(LogReader(QLOG_FILE.replace("/3/", "/200/"))))
@@ -215,6 +213,17 @@ class TestLogReader(unittest.TestCase):
       lr = LogReader(f"{TEST_ROUTE}/0/q")
       log_len = len(list(lr))
       self.assertEqual(qlog_len, log_len)
+
+  @pytest.mark.slow
+  def test_sort_by_time(self):
+    def in_order(msgs):
+      return all(msgs[i].logMonoTime <= msgs[i + 1].logMonoTime for i in range(len(msgs) - 1))
+
+    msgs = list(LogReader(f"{TEST_ROUTE}/0/q"))
+    self.assertFalse(in_order(msgs))
+
+    msgs = list(LogReader(f"{TEST_ROUTE}/0/q", sort_by_time=True))
+    self.assertTrue(in_order(msgs))
 
 
 if __name__ == "__main__":
