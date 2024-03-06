@@ -1094,6 +1094,7 @@ FW_VERSIONS = {
       b'\xf1\x00OS  MDPS C 1.00 1.03 56310/K4550 4OEDC103',
       b'\xf1\x00OS  MDPS C 1.00 1.04 56310K4000\x00 4OEDC104',
       b'\xf1\x00OS  MDPS C 1.00 1.04 56310K4050\x00 4OEDC104',
+      b'\xf1\x00OS  MDPS C 1.00 1.04 56310-XX000 4OEDC104',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00OSev SCC F-CUP      1.00 1.00 99110-K4000         ',
