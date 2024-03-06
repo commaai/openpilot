@@ -100,15 +100,18 @@ FW_VERSIONS = {
   CAR.AZERA_HEV_6TH_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00IGH MFC  AT KOR LHD 1.00 1.00 99211-G8000 180903',
+      b'\xf1\x00IGH MFC  AT KOR LHD 1.00 1.01 99211-G8000 181109',
       b'\xf1\x00IGH MFC  AT KOR LHD 1.00 1.02 99211-G8100 191029',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00IG  MDPS C 1.00 1.00 56310M9600\x00 4IHSC100',
       b'\xf1\x00IG  MDPS C 1.00 1.01 56310M9350\x00 4IH8C101',
+      b'\xf1\x00IG  MDPS C 1.00 1.02 56310M9350\x00 4IH8C102',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00IGhe SCC FHCUP      1.00 1.00 99110-M9100         ',
       b'\xf1\x00IGhe SCC FHCUP      1.00 1.01 99110-M9000         ',
+      b'\xf1\x00IGhe SCC FHCUP      1.00 1.02 99110-M9000         ',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x006T7N0_C2\x00\x006T7Q2051\x00\x00TIG2H24KA2\x12@\x11\xb7',
