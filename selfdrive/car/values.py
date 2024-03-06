@@ -18,7 +18,6 @@ BRANDS = [BODY, CHRYSLER, FORD, GM, HONDA, HYUNDAI, MAZDA, MOCK, NISSAN, SUBARU,
 
 PLATFORMS: dict[str, Platform] = {str(platform): platform for brand in BRANDS for platform in cast(list[Platform], brand)}
 
-
 MapFunc = Callable[[Platform], Any]
 
 

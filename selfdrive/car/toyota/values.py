@@ -608,5 +608,4 @@ ANGLE_CONTROL_CAR = CAR.with_flags(ToyotaFlags.ANGLE_CONTROL)
 # no resume button press required
 NO_STOP_TIMER_CAR = CAR.with_flags(ToyotaFlags.NO_STOP_TIMER)
 
-
 DBC = CAR.create_dbc_map()
