@@ -56,23 +56,23 @@ def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
     for (bus, vin_addrs), bus_queries in queries.items():
       for request, response, functional_addrs, rx_offset in bus_queries:
         try:
-          query = IsoTpParallelQuery(sendcan, logcan, bus, vin_addrs, [request, ], [response, ], response_offset=rx_offset,
+          query = IsoTpParallelQuery(sendcan, logcan, bus, tx_addrs, [request, ], [response, ], response_offset=rx_offset,
                                      functional_addrs=functional_addrs, debug=debug)
           results = query.get_data(timeout)
 
           for addr in vin_addrs:
             vin = results.get((addr, None))
             if vin is not None:
-              # Ford pads with null bytes
-              if len(vin) == 24:
+              # Ford and Nissan pads with null bytes
+              if len(vin) in (19, 24):
                 vin = re.sub(b'\x00*$', b'', vin)
 
               # Honda Bosch response starts with a length, trim to correct length
               if vin.startswith(b'\x11'):
                 vin = vin[1:18]
 
-              cloudlog.warning(f"got vin with {request=}")
-              return get_rx_addr_for_tx_addr(addr), bus, vin.decode()
+              cloudlog.error(f"got vin with {request=}")
+              return get_rx_addr_for_tx_addr(addr, rx_offset=rx_offset), bus, vin.decode()
         except Exception:
           cloudlog.exception("VIN query exception")
 

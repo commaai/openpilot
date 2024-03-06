@@ -1,5 +1,4 @@
-
-
+import pytest
 import unittest
 
 import requests
@@ -8,6 +7,7 @@ from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import SegmentRange
 
 
+@pytest.mark.skip(reason="huggingface is flaky, run this test manually to check for issues")
 class TestCommaCarSegments(unittest.TestCase):
   def test_database(self):
     database = get_comma_car_segments_database()
@@ -25,7 +25,7 @@ class TestCommaCarSegments(unittest.TestCase):
 
     sr = SegmentRange(segment)
 
-    url = get_url(sr.route_name, sr._slice)
+    url = get_url(sr.route_name, sr.slice)
 
     resp = requests.get(url)
     self.assertEqual(resp.status_code, 200)

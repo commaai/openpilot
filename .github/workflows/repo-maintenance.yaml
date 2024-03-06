@@ -2,7 +2,7 @@ name: repo maintenance
 
 on:
   schedule:
-    - cron: "0 12 * * 1" # every Monday at 12am UTC (4am PST)
+    - cron: "0 14 * * 1" # every Monday at 2am UTC (6am PST)
   workflow_dispatch:
 
 jobs:
@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-20.04
     container:
       image: ghcr.io/commaai/openpilot-base:latest
+    if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v4
       with:
@@ -36,6 +37,7 @@ jobs:
     runs-on: ubuntu-20.04
     container:
       image: ghcr.io/commaai/openpilot-base:latest
+    if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v4
     - name: poetry lock

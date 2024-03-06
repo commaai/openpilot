@@ -2,13 +2,13 @@
 import importlib
 import math
 from collections import deque
-from typing import Optional, Dict, Any
+from typing import Any, Optional
 
 import capnp
 from cereal import messaging, log, car
 from openpilot.common.numpy_fast import interp
 from openpilot.common.params import Params
-from openpilot.common.realtime import Ratekeeper, Priority, config_realtime_process
+from openpilot.common.realtime import DT_CTRL, Ratekeeper, Priority, config_realtime_process
 from openpilot.common.swaglog import cloudlog
 
 from openpilot.common.simple_kalman import KF1D
@@ -125,7 +125,7 @@ def laplacian_pdf(x: float, mu: float, b: float):
   return math.exp(-abs(x-mu)/b)
 
 
-def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks: Dict[int, Track]):
+def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks: dict[int, Track]):
   offset_vision_dist = lead.x[0] - RADAR_TO_CAMERA
 
   def prob(c):
@@ -166,8 +166,8 @@ def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, v_ego: floa
   }
 
 
-def get_lead(v_ego: float, ready: bool, tracks: Dict[int, Track], lead_msg: capnp._DynamicStructReader,
-             model_v_ego: float, low_speed_override: bool = True) -> Dict[str, Any]:
+def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], lead_msg: capnp._DynamicStructReader,
+             model_v_ego: float, low_speed_override: bool = True) -> dict[str, Any]:
   # Determine leads, this is where the essential logic happens
   if len(tracks) > 0 and ready and lead_msg.prob > .5:
     track = match_vision_to_track(v_ego, lead_msg, tracks)
@@ -196,18 +196,20 @@ class RadarD:
   def __init__(self, radar_ts: float, delay: int = 0):
     self.current_time = 0.0
 
-    self.tracks: Dict[int, Track] = {}
+    self.tracks: dict[int, Track] = {}
     self.kalman_params = KalmanParams(radar_ts)
 
     self.v_ego = 0.0
     self.v_ego_hist = deque([0.0], maxlen=delay+1)
+    self.last_v_ego_frame = -1
 
-    self.radar_state: Optional[capnp._DynamicStructBuilder] = None
+    self.radar_state: capnp._DynamicStructBuilder | None = None
     self.radar_state_valid = False
 
     self.ready = False
 
   def update(self, sm: messaging.SubMaster, rr: Optional[car.RadarData]):
+    self.ready = sm.seen['modelV2']
     self.current_time = 1e-9*max(sm.logMonoTime.values())
 
     radar_points = []
@@ -216,11 +218,10 @@ class RadarD:
       radar_points = rr.points
       radar_errors = rr.errors
 
-    if sm.updated['carState']:
+    if sm.recv_frame['carState'] != self.last_v_ego_frame:
       self.v_ego = sm['carState'].vEgo
       self.v_ego_hist.append(self.v_ego)
-    if sm.updated['modelV2']:
-      self.ready = True
+      self.last_v_ego_frame = sm.recv_frame['carState']
 
     ar_pts = {}
     for pt in radar_points:
@@ -282,7 +283,7 @@ class RadarD:
 
 
 # fuses camera and radar data for best lead detection
-def radard_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[messaging.PubMaster] = None, can_sock: Optional[messaging.SubSocket] = None):
+def main():
   config_realtime_process(5, Priority.CTRL_LOW)
 
   # wait for stats about the car to come in from controls
@@ -296,12 +297,9 @@ def radard_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[messagi
   RadarInterface = importlib.import_module(f'selfdrive.car.{CP.carName}.radar_interface').RadarInterface
 
   # *** setup messaging
-  if can_sock is None:
-    can_sock = messaging.sub_sock('can')
-  if sm is None:
-    sm = messaging.SubMaster(['modelV2', 'carState'], ignore_avg_freq=['modelV2', 'carState'])  # Can't check average frequency, since radar determines timing
-  if pm is None:
-    pm = messaging.PubMaster(['radarState', 'liveTracks'])
+  can_sock = messaging.sub_sock('can')
+  sm = messaging.SubMaster(['modelV2', 'carState'], frequency=int(1./DT_CTRL))
+  pm = messaging.PubMaster(['radarState', 'liveTracks'])
 
   RI = RadarInterface(CP)
 
@@ -311,20 +309,14 @@ def radard_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[messagi
   while 1:
     can_strings = messaging.drain_sock_raw(can_sock, wait_for_one=True)
     rr = RI.update(can_strings)
-
+    sm.update(0)
     if rr is None:
       continue
-
-    sm.update(0)
 
     RD.update(sm, rr)
     RD.publish(pm, -rk.remaining*1000.0)
 
     rk.monitor_time()
-
-
-def main(sm: Optional[messaging.SubMaster] = None, pm: Optional[messaging.PubMaster] = None, can_sock: messaging.SubSocket = None):
-  radard_thread(sm, pm, can_sock)
 
 
 if __name__ == "__main__":

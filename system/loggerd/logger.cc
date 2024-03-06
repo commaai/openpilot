@@ -40,10 +40,11 @@ kj::Array<capnp::word> logger_build_init_data() {
   init.setOsVersion(util::read_file("/VERSION"));
 
   // log params
-  auto params = Params();
+  auto params = Params(util::getenv("PARAMS_COPY_PATH", ""));
   std::map<std::string, std::string> params_map = params.readAll();
 
   init.setGitCommit(params_map["GitCommit"]);
+  init.setGitCommitDate(params_map["GitCommitDate"]);
   init.setGitBranch(params_map["GitBranch"]);
   init.setGitRemote(params_map["GitRemote"]);
   init.setPassive(false);

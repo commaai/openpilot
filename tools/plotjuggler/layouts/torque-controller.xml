@@ -24,8 +24,8 @@
       <plot style="Lines" flip_x="false" flip_y="false" mode="TimeSeries">
        <range bottom="-1.134948" top="1.052072" left="825.563261" right="1415.827546"/>
        <limitY/>
-       <curve name="/carControl/actuatorsOutput/steer" color="#9467bd">
-        <transform name="Scale/Offset" alias="/carControl/actuatorsOutput/steer[Scale/Offset]">
+       <curve name="/carOutput/actuatorsOutput/steer" color="#9467bd">
+        <transform name="Scale/Offset" alias="/carOutput/actuatorsOutput/steer[Scale/Offset]">
          <options time_offset="0" value_scale="-1" value_offset="0"/>
         </transform>
        </curve>

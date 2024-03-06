@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import pytest
 import random
 import time
 import unittest
@@ -34,18 +33,29 @@ class TestFwFingerprint(unittest.TestCase):
     self.assertEqual(len(candidates), 1, f"got more than one candidate: {candidates}")
     self.assertEqual(candidates[0], expected)
 
-  @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
-  def test_exact_match(self, brand, car_model, ecus):
+  @parameterized.expand([(b, c, e[c], n) for b, e in VERSIONS.items() for c in e for n in (True, False)])
+  def test_exact_match(self, brand, car_model, ecus, test_non_essential):
+    config = FW_QUERY_CONFIGS[brand]
     CP = car.CarParams.new_message()
-    for _ in range(200):
+    for _ in range(100):
       fw = []
       for ecu, fw_versions in ecus.items():
+        # Assume non-essential ECUs apply to all cars, so we catch cases where Car A with
+        # missing ECUs won't match to Car B where only Car B has labeled non-essential ECUs
+        if ecu[0] in config.non_essential_ecus and test_non_essential:
+          continue
+
         ecu_name, addr, sub_addr = ecu
         fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
       CP.carFw = fw
       _, matches = match_fw_to_car(CP.carFw, allow_fuzzy=False)
-      self.assertFingerprints(matches, car_model)
+      if not test_non_essential:
+        self.assertFingerprints(matches, car_model)
+      else:
+        # if we're removing ECUs we expect some match loss, but it shouldn't mismatch
+        if len(matches) != 0:
+          self.assertFingerprints(matches, car_model)
 
   @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
   def test_custom_fuzzy_match(self, brand, car_model, ecus):
@@ -226,7 +236,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
   def test_startup_timing(self):
     # Tests worse-case VIN query time and typical present ECU query time
-    vin_ref_times = {'worst': 1.5, 'best': 0.5}  # best assumes we go through all queries to get a match
+    vin_ref_times = {'worst': 1.2, 'best': 0.6}  # best assumes we go through all queries to get a match
     present_ecu_ref_time = 0.75
 
     def fake_get_ecu_addrs(*_, timeout):
@@ -252,48 +262,50 @@ class TestFwFingerprintTiming(unittest.TestCase):
         self._assert_timing(self.total_time / self.N, vin_ref_times[name])
         print(f'get_vin {name} case, query time={self.total_time / self.N} seconds')
 
-  @pytest.mark.timeout(60)
   def test_fw_query_timing(self):
-    total_ref_time = 7.0
+    total_ref_time = {1: 8.3, 2: 9.2}
     brand_ref_times = {
       1: {
-        'gm': 0.5,
+        'gm': 1.0,
         'body': 0.1,
         'chrysler': 0.3,
-        'ford': 0.2,
+        'ford': 1.5,
         'honda': 0.55,
-        'hyundai': 0.65,
+        'hyundai': 1.05,
         'mazda': 0.1,
         'nissan': 0.8,
         'subaru': 0.45,
         'tesla': 0.2,
         'toyota': 1.6,
-        'volkswagen': 0.2,
+        'volkswagen': 0.65,
       },
       2: {
-        'ford': 0.3,
-        'hyundai': 1.05,
+        'ford': 1.6,
+        'hyundai': 1.85,
       }
     }
 
-    total_time = 0
+    total_times = {1: 0.0, 2: 0.0}
     for num_pandas in (1, 2):
       for brand, config in FW_QUERY_CONFIGS.items():
         with self.subTest(brand=brand, num_pandas=num_pandas):
-          multi_panda_requests = [r for r in config.requests if r.bus > 3]
-          if not len(multi_panda_requests) and num_pandas > 1:
-            raise unittest.SkipTest("No multi-panda FW queries")
-
           avg_time = self._benchmark_brand(brand, num_pandas)
-          total_time += avg_time
+          total_times[num_pandas] += avg_time
           avg_time = round(avg_time, 2)
-          self._assert_timing(avg_time, brand_ref_times[num_pandas][brand])
+
+          ref_time = brand_ref_times[num_pandas].get(brand)
+          if ref_time is None:
+            # ref time should be same as 1 panda if no aux queries
+            ref_time = brand_ref_times[num_pandas - 1][brand]
+
+          self._assert_timing(avg_time, ref_time)
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
 
-    with self.subTest(brand='all_brands'):
-      total_time = round(total_time, 2)
-      self._assert_timing(total_time, total_ref_time)
-      print(f'all brands, total FW query time={total_time} seconds')
+    for num_pandas in (1, 2):
+      with self.subTest(brand='all_brands', num_pandas=num_pandas):
+        total_time = round(total_times[num_pandas], 2)
+        self._assert_timing(total_time, total_ref_time[num_pandas])
+        print(f'all brands, total FW query time={total_time} seconds')
 
 
 if __name__ == "__main__":
