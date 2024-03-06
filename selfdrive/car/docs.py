@@ -28,10 +28,10 @@ CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 def get_all_car_info() -> list[CarInfo]:
   all_car_info: list[CarInfo] = []
   footnotes = get_all_footnotes()
-  for name, platform in PLATFORMS.items():
+  for model, platform in PLATFORMS.items():
     car_info = platform.config.car_info
     # If available, uses experimental longitudinal limits for the docs
-    CP = interfaces[name][0].get_params(platform, fingerprint=gen_empty_fingerprint(),
+    CP = interfaces[model][0].get_params(platform, fingerprint=gen_empty_fingerprint(),
                                          car_fw=[car.CarParams.CarFw(ecu="unknown")], experimental_long=True, docs=True)
 
     if CP.dashcamOnly or car_info is None:
