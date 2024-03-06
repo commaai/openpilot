@@ -1,6 +1,7 @@
 import os
 import pathlib
 import shutil
+import signal
 import subprocess
 import tempfile
 import time
@@ -8,6 +9,7 @@ import unittest
 from unittest import mock
 
 import pytest
+from openpilot.selfdrive.manager.process import ManagerProcess
 
 
 from openpilot.selfdrive.test.helpers import processes_context
@@ -83,11 +85,11 @@ class TestUpdateD(unittest.TestCase):
     run(["sudo", "umount", "-l", self.tmpdir])
     shutil.rmtree(self.tmpdir)
 
-  def send_check_for_updates_signal(self):
-    subprocess.run(["pkill", "-SIGUSR1", "-f", "selfdrive.updated.updated"], check=False)
+  def send_check_for_updates_signal(self, updated: ManagerProcess):
+    updated.signal(signal.SIGUSR1.value)
 
-  def send_download_signal(self):
-    subprocess.run(["pkill", "-SIGHUP", "-f", "selfdrive.updated.updated"], check=False)
+  def send_download_signal(self, updated: ManagerProcess):
+    updated.signal(signal.SIGHUP.value)
 
   def _test_params(self, branch, fetch_available, update_available):
     self.assertEqual(self.params.get("UpdaterTargetBranch", encoding="utf-8"), branch)
@@ -98,11 +100,26 @@ class TestUpdateD(unittest.TestCase):
     self.assertTrue(self.params.get("UpdaterNewDescription", encoding="utf-8").startswith(f"{version} / {branch}"))
     self.assertEqual(self.params.get("UpdaterNewReleaseNotes", encoding="utf-8"), f"<p>{release_notes}</p>\n")
 
+  def wait_for_idle(self, timeout=5, min_wait_time=2):
+    start = time.monotonic()
+    time.sleep(min_wait_time)
+
+    while True:
+      waited = time.monotonic() - start
+      if self.params.get("UpdaterState", encoding="utf-8") == "idle":
+        print(f"waited {waited}s for idle")
+        break
+
+      if waited > timeout:
+        raise TimeoutError("timed out waiting for idle")
+
+      time.sleep(1)
+
   def test_new_release(self):
     self.setup_remote_release("release3")
     self.setup_basedir_release("release3")
 
-    with processes_context(["updated"]):
+    with processes_context(["updated"]) as [updated]:
       self._test_params("release3", False, False)
       time.sleep(1)
       self._test_params("release3", False, False)
@@ -110,16 +127,39 @@ class TestUpdateD(unittest.TestCase):
       self.MOCK_RELEASES["release3"] = ("0.1.3", "0.1.3 release notes")
       self.update_remote_release("release3")
 
-      self.send_check_for_updates_signal()
+      self.send_check_for_updates_signal(updated)
 
-      time.sleep(3)
+      self.wait_for_idle()
 
       self._test_params("release3", True, False)
 
-      self.send_download_signal()
+      self.send_download_signal(updated)
 
-      time.sleep(4)
+      self.wait_for_idle()
 
       self._test_params("release3", False, True)
       self._test_update_params("release3", *self.MOCK_RELEASES["release3"])
 
+  def test_switch_branches(self):
+    self.setup_remote_release("release3")
+    self.setup_remote_release("master")
+    self.setup_basedir_release("release3")
+
+    with processes_context(["updated"]) as [updated]:
+      self._test_params("release3", False, False)
+      self.wait_for_idle()
+      self._test_params("release3", False, False)
+
+      self.set_target_branch("master")
+      self.send_check_for_updates_signal(updated)
+
+      self.wait_for_idle()
+
+      self._test_params("master", True, False)
+
+      self.send_download_signal(updated)
+
+      self.wait_for_idle()
+
+      self._test_params("master", False, True)
+      self._test_update_params("master", *self.MOCK_RELEASES["master"])
