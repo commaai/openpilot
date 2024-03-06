@@ -105,9 +105,6 @@ class CarInterface(CarInterfaceBase):
     elif candidate in (CAR.LEXUS_NX, CAR.LEXUS_NX_TSS2):
       stop_and_go = True
 
-    elif candidate == CAR.MIRAI:
-      stop_and_go = True
-
     # TODO: these models can do stop and go, but unclear if it requires sDSU or unplugging DSU.
     #  For now, don't list stop and go functionality in the docs
     if ret.flags & ToyotaFlags.SNG_WITHOUT_DSU:
