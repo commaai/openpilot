@@ -43,6 +43,9 @@ class CarState(CarStateBase):
     self.prev_distance_button = 0
     self.distance_button = 0
 
+    self.distance_lines = 0
+    self.distance_lines_values = can_define.dv['PCM_CRUISE_SM']['DISTANCE_LINES']
+
     self.low_speed_lockout = False
     self.acc_type = 1
     self.lkas_hud = {}
@@ -170,6 +173,8 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
       self.prev_distance_button = self.distance_button
       self.distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
+
+      self.distance_lines = cp_acc.vl["PCM_CRUISE_SM"]["DISTANCE_LINES"]
 
     return ret
 
