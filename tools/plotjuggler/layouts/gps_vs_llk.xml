@@ -32,7 +32,7 @@
        <plot mode="TimeSeries" style="Lines" flip_y="false" flip_x="false">
         <range bottom="-0.449385" right="196.811937" left="76.646983" top="7.160833"/>
         <limitY/>
-        <curve name="/gpsLocationExternal/accuracy" color="#ff7f0e"/>
+        <curve name="/gpsLocationExternal/horizontalAccuracy" color="#ff7f0e"/>
         <curve name="/gpsLocationExternal/verticalAccuracy" color="#f14cc1"/>
         <curve name="/gpsLocationExternal/speedAccuracy" color="#9467bd"/>
        </plot>

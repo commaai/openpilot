@@ -7,7 +7,7 @@ import numpy as np
 import cereal.messaging as messaging
 from cereal import car
 from cereal import log
-from openpilot.common.params import Params, put_nonblocking
+from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.common.numpy_fast import clip
 from openpilot.selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
@@ -124,7 +124,7 @@ def main():
   REPLAY = bool(int(os.getenv("REPLAY", "0")))
 
   pm = messaging.PubMaster(['liveParameters'])
-  sm = messaging.SubMaster(['liveLocationKalman', 'carState'], poll=['liveLocationKalman'])
+  sm = messaging.SubMaster(['liveLocationKalman', 'carState'], poll='liveLocationKalman')
 
   params_reader = Params()
   # wait for stats about the car to come in from controls
@@ -251,7 +251,7 @@ def main():
           'stiffnessFactor': liveParameters.stiffnessFactor,
           'angleOffsetAverageDeg': liveParameters.angleOffsetAverageDeg,
         }
-        put_nonblocking("LiveParameters", json.dumps(params))
+        params_reader.put_nonblocking("LiveParameters", json.dumps(params))
 
       pm.send('liveParameters', msg)
 

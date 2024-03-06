@@ -3,7 +3,6 @@ import time
 from cereal import log
 import cereal.messaging as messaging
 
-from openpilot.common.params import Params
 from openpilot.common.realtime import DT_DMON
 from openpilot.tools.sim.lib.camerad import Camerad
 
@@ -56,7 +55,7 @@ class SimulatedSensors:
       dat.gpsLocationExternal = {
         "unixTimestampMillis": int(time.time() * 1000),
         "flags": 1,  # valid fix
-        "accuracy": 1.0,
+        "horizontalAccuracy": 1.0,
         "verticalAccuracy": 1.0,
         "speedAccuracy": 0.1,
         "bearingAccuracyDeg": 0.1,
@@ -80,7 +79,6 @@ class SimulatedSensors:
       'current': 5678,
       'fanSpeedRpm': 1000
     }
-    Params().put_bool("ObdMultiplexingEnabled", False)
     self.pm.send('peripheralState', dat)
 
   def send_fake_driver_monitoring(self):
@@ -102,13 +100,13 @@ class SimulatedSensors:
     self.pm.send('driverMonitoringState', dat)
 
   def send_camera_images(self, world: 'World'):
-    with world.image_lock:
-      yuv = self.camerad.rgb_to_yuv(world.road_image)
-      self.camerad.cam_send_yuv_road(yuv)
+    world.image_lock.acquire()
+    yuv = self.camerad.rgb_to_yuv(world.road_image)
+    self.camerad.cam_send_yuv_road(yuv)
 
-      if world.dual_camera:
-        yuv = self.camerad.rgb_to_yuv(world.wide_road_image)
-        self.camerad.cam_send_yuv_wide_road(yuv)
+    if world.dual_camera:
+      yuv = self.camerad.rgb_to_yuv(world.wide_road_image)
+      self.camerad.cam_send_yuv_wide_road(yuv)
 
   def update(self, simulator_state: 'SimulatorState', world: 'World'):
     now = time.time()

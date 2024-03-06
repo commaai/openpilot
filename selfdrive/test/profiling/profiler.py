@@ -80,12 +80,10 @@ def profile(proc, func, car='toyota'):
 
 if __name__ == '__main__':
   from openpilot.selfdrive.controls.controlsd import main as controlsd_thread
-  from openpilot.selfdrive.controls.radard import radard_thread
   from openpilot.selfdrive.locationd.paramsd import main as paramsd_thread
   from openpilot.selfdrive.controls.plannerd import main as plannerd_thread
 
   procs = {
-    'radard': radard_thread,
     'controlsd': controlsd_thread,
     'paramsd': paramsd_thread,
     'plannerd': plannerd_thread,

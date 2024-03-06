@@ -3,7 +3,6 @@ from collections import defaultdict
 import importlib
 from parameterized import parameterized_class
 import sys
-from typing import DefaultDict, Dict
 import unittest
 
 from openpilot.common.realtime import DT_CTRL
@@ -29,7 +28,7 @@ ABOVE_LIMITS_CARS = [
   SUBARU.OUTBACK,
 ]
 
-car_model_jerks: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
+car_model_jerks: defaultdict[str, dict[str, float]] = defaultdict(dict)
 
 
 @parameterized_class('car_model', [(c,) for c in sorted(CAR_MODELS)])
@@ -95,8 +94,8 @@ if __name__ == "__main__":
                 _jerks["down_jerk"] > MAX_LAT_JERK_DOWN
     violation_str = " - VIOLATION" if violation else ""
 
-    print(f"{car_model:{max_car_model_len}} - up jerk: {round(_jerks['up_jerk'], 2):5} \
-              m/s^3, down jerk: {round(_jerks['down_jerk'], 2):5} m/s^3{violation_str}")
+    print(f"{car_model:{max_car_model_len}} - up jerk: {round(_jerks['up_jerk'], 2):5} " +
+          f"m/s^3, down jerk: {round(_jerks['down_jerk'], 2):5} m/s^3{violation_str}")
 
   # exit with test result
   sys.exit(not result.result.wasSuccessful())

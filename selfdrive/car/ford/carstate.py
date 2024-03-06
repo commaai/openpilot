@@ -1,10 +1,10 @@
 from cereal import car
-from openpilot.common.conversions import Conversions as CV
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
-from openpilot.selfdrive.car.interfaces import CarStateBase
+from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car.ford.fordcan import CanBus
-from openpilot.selfdrive.car.ford.values import CANFD_CAR, CarControllerParams, DBC
+from openpilot.selfdrive.car.ford.values import DBC, CarControllerParams, FordFlags
+from openpilot.selfdrive.car.interfaces import CarStateBase
 
 GearShifter = car.CarState.GearShifter
 TransmissionType = car.CarParams.TransmissionType
@@ -18,16 +18,9 @@ class CarState(CarStateBase):
       self.shifter_values = can_define.dv["Gear_Shift_by_Wire_FD1"]["TrnRng_D_RqGsm"]
 
     self.vehicle_sensors_valid = False
-    self.unsupported_platform = False
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
-
-    # Ford Q3 hybrid variants experience a bug where a message from the PCM sends invalid checksums,
-    # this must be root-caused before enabling support. Ford Q4 hybrids do not have this problem.
-    # TrnAin_Tq_Actl and its quality flag are only set on ICE platform variants
-    self.unsupported_platform = (cp.vl["VehicleOperatingModes"]["TrnAinTq_D_Qf"] == 0 and
-                                 self.CP.carFingerprint not in CANFD_CAR)
 
     # Occasionally on startup, the ABS module recalibrates the steering pinion offset, so we need to block engagement
     # The vehicle usually recovers out of this state within a minute of normal driving
@@ -54,9 +47,9 @@ class CarState(CarStateBase):
     ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > CarControllerParams.STEER_DRIVER_ALLOWANCE, 5)
     ret.steerFaultTemporary = cp.vl["EPAS_INFO"]["EPAS_Failure"] == 1
     ret.steerFaultPermanent = cp.vl["EPAS_INFO"]["EPAS_Failure"] in (2, 3)
-    # ret.espDisabled = False  # TODO: find traction control signal
+    ret.espDisabled = cp.vl["Cluster_Info1_FD1"]["DrvSlipCtlMde_D_Rq"] != 0  # 0 is default mode
 
-    if self.CP.carFingerprint in CANFD_CAR:
+    if self.CP.flags & FordFlags.CANFD:
       # this signal is always 0 on non-CAN FD cars
       ret.steerFaultTemporary |= cp.vl["Lane_Assist_Data3_FD1"]["LatCtlSte_D_Stat"] not in (1, 2, 3)
 
@@ -98,7 +91,7 @@ class CarState(CarStateBase):
 
     # blindspot sensors
     if self.CP.enableBsm:
-      cp_bsm = cp_cam if self.CP.carFingerprint in CANFD_CAR else cp
+      cp_bsm = cp_cam if self.CP.flags & FordFlags.CANFD else cp
       ret.leftBlindspot = cp_bsm.vl["Side_Detect_L_Stat"]["SodDetctLeft_D_Stat"] != 0
       ret.rightBlindspot = cp_bsm.vl["Side_Detect_R_Stat"]["SodDetctRight_D_Stat"] != 0
 
@@ -129,7 +122,7 @@ class CarState(CarStateBase):
       ("RCMStatusMessage2_FD1", 10),
     ]
 
-    if CP.carFingerprint in CANFD_CAR:
+    if CP.flags & FordFlags.CANFD:
       messages += [
         ("Lane_Assist_Data3_FD1", 33),
       ]
@@ -144,7 +137,7 @@ class CarState(CarStateBase):
         ("BCM_Lamp_Stat_FD1", 1),
       ]
 
-    if CP.enableBsm and CP.carFingerprint not in CANFD_CAR:
+    if CP.enableBsm and not (CP.flags & FordFlags.CANFD):
       messages += [
         ("Side_Detect_L_Stat", 5),
         ("Side_Detect_R_Stat", 5),
@@ -162,7 +155,7 @@ class CarState(CarStateBase):
       ("IPMA_Data", 1),
     ]
 
-    if CP.enableBsm and CP.carFingerprint in CANFD_CAR:
+    if CP.enableBsm and CP.flags & FordFlags.CANFD:
       messages += [
         ("Side_Detect_L_Stat", 5),
         ("Side_Detect_R_Stat", 5),

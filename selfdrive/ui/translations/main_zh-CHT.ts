@@ -66,6 +66,26 @@
         <source>Prevent large data uploads when on a metered connection</source>
         <translation>防止使用行動網路上傳大量的數據</translation>
     </message>
+    <message>
+        <source>Hidden Network</source>
+        <translation>隱藏的網路</translation>
+    </message>
+    <message>
+        <source>CONNECT</source>
+        <translation>連線</translation>
+    </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation>輸入 SSID</translation>
+    </message>
+    <message>
+        <source>Enter password</source>
+        <translation>輸入密碼</translation>
+    </message>
+    <message>
+        <source>for &quot;%1&quot;</source>
+        <translation>給 &quot;%1&quot;</translation>
+    </message>
 </context>
 <context>
     <name>AnnotatedCameraWidget</name>
@@ -538,10 +558,6 @@
         <translation>離開</translation>
     </message>
     <message>
-        <source>dashcam</source>
-        <translation>行車記錄器</translation>
-    </message>
-    <message>
         <source>openpilot</source>
         <translation>openpilot</translation>
     </message>
@@ -611,14 +627,14 @@
         <translation>無法掛載資料分割區。分割區可能已經毀損。請確認是否要刪除並重新設定。</translation>
     </message>
     <message>
-        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>按下確認以刪除所有內容及設定。按下取消來繼續開機。</translation>
-    </message>
-    <message>
         <source>Resetting device...
 This may take up to a minute.</source>
         <translation>設備重設中…
 這可能需要一分鐘的時間。</translation>
+    </message>
+    <message>
+        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <translation>系統重設已啟動。按下「確認」以清除所有內容和設定，或按下「取消」以繼續開機。</translation>
     </message>
 </context>
 <context>
@@ -725,6 +741,18 @@ This may take up to a minute.</source>
     <message>
         <source>Select a language</source>
         <translation>選擇語言</translation>
+    </message>
+    <message>
+        <source>Choose Software to Install</source>
+        <translation>選擇要安裝的軟體</translation>
+    </message>
+    <message>
+        <source>openpilot</source>
+        <translation>openpilot</translation>
+    </message>
+    <message>
+        <source>Custom Software</source>
+        <translation>自訂軟體</translation>
     </message>
 </context>
 <context>

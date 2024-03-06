@@ -6,21 +6,24 @@ import pytest
 import random
 import unittest
 from collections import defaultdict, Counter
-from typing import List, Optional, Tuple
+import hypothesis.strategies as st
+from hypothesis import Phase, given, settings
 from parameterized import parameterized_class
 
-from cereal import log, car
+from cereal import messaging, log, car
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
+from openpilot.selfdrive.car import gen_empty_fingerprint
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
-from openpilot.selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
+from openpilot.selfdrive.car.honda.values import CAR as HONDA, HondaFlags
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from openpilot.selfdrive.controls.controlsd import Controls
-from openpilot.selfdrive.test.openpilotci import get_url
-from openpilot.tools.lib.logreader import LogReader
-from openpilot.tools.lib.route import Route, SegmentName, RouteName
+from openpilot.selfdrive.test.helpers import read_segment_list
+from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
+from openpilot.tools.lib.logreader import LogReader, internal_source, openpilotci_source
+from openpilot.tools.lib.route import SegmentName
 
 from panda.tests.libpanda import libpanda_py
 
@@ -32,9 +35,11 @@ NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
 INTERNAL_SEG_LIST = os.environ.get("INTERNAL_SEG_LIST", "")
 INTERNAL_SEG_CNT = int(os.environ.get("INTERNAL_SEG_CNT", "0"))
+MAX_EXAMPLES = int(os.environ.get("MAX_EXAMPLES", "300"))
+CI = os.environ.get("CI", None) is not None
 
 
-def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
+def get_test_cases() -> list[tuple[str, CarTestRoute | None]]:
   # build list of test cases
   test_cases = []
   if not len(INTERNAL_SEG_LIST):
@@ -44,15 +49,12 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
 
     for i, c in enumerate(sorted(all_known_cars())):
       if i % NUM_JOBS == JOB_ID:
-        test_cases.extend(sorted((c.value, r) for r in routes_by_car.get(c, (None,))))
+        test_cases.extend(sorted((c, r) for r in routes_by_car.get(c, (None,))))
 
   else:
-    with open(os.path.join(BASEDIR, INTERNAL_SEG_LIST), "r") as f:
-      seg_list = f.read().splitlines()
-
-    seg_list_grouped = [(platform[2:], segment) for platform, segment in zip(seg_list[::2], seg_list[1::2], strict=True)]
-    seg_list_grouped = random.sample(seg_list_grouped, INTERNAL_SEG_CNT or len(seg_list_grouped))
-    for platform, segment in seg_list_grouped:
+    segment_list = read_segment_list(os.path.join(BASEDIR, INTERNAL_SEG_LIST))
+    segment_list = random.sample(segment_list, INTERNAL_SEG_CNT or len(segment_list))
+    for platform, segment in segment_list:
       segment_name = SegmentName(segment)
       test_cases.append((platform, CarTestRoute(segment_name.route_name.canonical_name, platform,
                                                 segment=segment_name.segment_num)))
@@ -60,14 +62,93 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
 
 
 @pytest.mark.slow
+@pytest.mark.shared_download_cache
 class TestCarModelBase(unittest.TestCase):
-  car_model: Optional[str] = None
-  test_route: Optional[CarTestRoute] = None
-  ci: bool = True
+  car_model: str | None = None
+  test_route: CarTestRoute | None = None
+  test_route_on_bucket: bool = True  # whether the route is on the preserved CI bucket
 
-  can_msgs: List[capnp.lib.capnp._DynamicStructReader]
-  elm_frame: Optional[int]
-  car_safety_mode_frame: Optional[int]
+  can_msgs: list[capnp.lib.capnp._DynamicStructReader]
+  fingerprint: dict[int, dict[int, int]]
+  elm_frame: int | None
+  car_safety_mode_frame: int | None
+
+  @classmethod
+  def get_testing_data_from_logreader(cls, lr):
+    car_fw = []
+    can_msgs = []
+    cls.elm_frame = None
+    cls.car_safety_mode_frame = None
+    cls.fingerprint = gen_empty_fingerprint()
+    experimental_long = False
+    for msg in lr:
+      if msg.which() == "can":
+        can_msgs.append(msg)
+        if len(can_msgs) <= FRAME_FINGERPRINT:
+          for m in msg.can:
+            if m.src < 64:
+              cls.fingerprint[m.src][m.address] = len(m.dat)
+
+      elif msg.which() == "carParams":
+        car_fw = msg.carParams.carFw
+        if msg.carParams.openpilotLongitudinalControl:
+          experimental_long = True
+        if cls.car_model is None and not cls.ci:
+          cls.car_model = msg.carParams.carFingerprint
+
+      # Log which can frame the panda safety mode left ELM327, for CAN validity checks
+      elif msg.which() == 'pandaStates':
+        for ps in msg.pandaStates:
+          if cls.elm_frame is None and ps.safetyModel != SafetyModel.elm327:
+            cls.elm_frame = len(can_msgs)
+          if cls.car_safety_mode_frame is None and ps.safetyModel not in \
+            (SafetyModel.elm327, SafetyModel.noOutput):
+            cls.car_safety_mode_frame = len(can_msgs)
+
+      elif msg.which() == 'pandaStateDEPRECATED':
+        if cls.elm_frame is None and msg.pandaStateDEPRECATED.safetyModel != SafetyModel.elm327:
+          cls.elm_frame = len(can_msgs)
+        if cls.car_safety_mode_frame is None and msg.pandaStateDEPRECATED.safetyModel not in \
+          (SafetyModel.elm327, SafetyModel.noOutput):
+          cls.car_safety_mode_frame = len(can_msgs)
+
+    if len(can_msgs) > int(50 / DT_CTRL):
+      return car_fw, can_msgs, experimental_long
+
+    raise Exception("no can data found")
+
+  @classmethod
+  def get_testing_data(cls):
+    test_segs = (2, 1, 0)
+    if cls.test_route.segment is not None:
+      test_segs = (cls.test_route.segment,)
+
+    is_internal = len(INTERNAL_SEG_LIST)
+
+    for seg in test_segs:
+      segment_range = f"{cls.test_route.route}/{seg}"
+
+      try:
+        lr = LogReader(segment_range, default_source=internal_source if is_internal else openpilotci_source)
+        return cls.get_testing_data_from_logreader(lr)
+      except Exception:
+        pass
+
+    # Route is not in CI bucket, assume either user has access (private), or it is public
+    # test_route_on_ci_bucket will fail when running in CI
+    if not is_internal:
+      cls.test_route_on_bucket = False
+
+      for seg in test_segs:
+        segment_range = f"{cls.test_route.route}/{seg}"
+        try:
+          lr = LogReader(segment_range)
+          return cls.get_testing_data_from_logreader(lr)
+        except Exception:
+          pass
+
+    raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded and public?")
+
 
   @classmethod
   def setUpClass(cls):
@@ -84,63 +165,7 @@ class TestCarModelBase(unittest.TestCase):
         raise unittest.SkipTest
       raise Exception(f"missing test route for {cls.car_model}")
 
-    test_segs = (2, 1, 0)
-    if cls.test_route.segment is not None:
-      test_segs = (cls.test_route.segment,)
-
-    for seg in test_segs:
-      try:
-        if len(INTERNAL_SEG_LIST):
-          route_name = RouteName(cls.test_route.route)
-          lr = LogReader(f"cd:/{route_name.dongle_id}/{route_name.time_str}/{seg}/rlog.bz2")
-        elif cls.ci:
-          lr = LogReader(get_url(cls.test_route.route, seg))
-        else:
-          lr = LogReader(Route(cls.test_route.route).log_paths()[seg])
-      except Exception:
-        continue
-
-      car_fw = []
-      can_msgs = []
-      cls.elm_frame = None
-      cls.car_safety_mode_frame = None
-      fingerprint = defaultdict(dict)
-      experimental_long = False
-      for msg in lr:
-        if msg.which() == "can":
-          can_msgs.append(msg)
-          if len(can_msgs) <= FRAME_FINGERPRINT:
-            for m in msg.can:
-              if m.src < 64:
-                fingerprint[m.src][m.address] = len(m.dat)
-
-        elif msg.which() == "carParams":
-          car_fw = msg.carParams.carFw
-          if msg.carParams.openpilotLongitudinalControl:
-            experimental_long = True
-          if cls.car_model is None and not cls.ci:
-            cls.car_model = msg.carParams.carFingerprint
-
-        # Log which can frame the panda safety mode left ELM327, for CAN validity checks
-        elif msg.which() == 'pandaStates':
-          for ps in msg.pandaStates:
-            if cls.elm_frame is None and ps.safetyModel != SafetyModel.elm327:
-              cls.elm_frame = len(can_msgs)
-            if cls.car_safety_mode_frame is None and ps.safetyModel not in \
-              (SafetyModel.elm327, SafetyModel.noOutput):
-              cls.car_safety_mode_frame = len(can_msgs)
-
-        elif msg.which() == 'pandaStateDEPRECATED':
-          if cls.elm_frame is None and msg.pandaStateDEPRECATED.safetyModel != SafetyModel.elm327:
-            cls.elm_frame = len(can_msgs)
-          if cls.car_safety_mode_frame is None and msg.pandaStateDEPRECATED.safetyModel not in \
-            (SafetyModel.elm327, SafetyModel.noOutput):
-            cls.car_safety_mode_frame = len(can_msgs)
-
-      if len(can_msgs) > int(50 / DT_CTRL):
-        break
-    else:
-      raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded?")
+    car_fw, can_msgs, experimental_long = cls.get_testing_data()
 
     # if relay is expected to be open in the route
     cls.openpilot_enabled = cls.car_safety_mode_frame is not None
@@ -148,9 +173,11 @@ class TestCarModelBase(unittest.TestCase):
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
-    cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, car_fw, experimental_long, docs=False)
+    cls.CP = cls.CarInterface.get_params(cls.car_model, cls.fingerprint, car_fw, experimental_long, docs=False)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
+
+    os.environ["COMMA_CACHE"] = DEFAULT_DOWNLOAD_CACHE_ROOT
 
   @classmethod
   def tearDownClass(cls):
@@ -206,7 +233,6 @@ class TestCarModelBase(unittest.TestCase):
     self.assertEqual(can_invalid_cnt, 0)
 
   def test_radar_interface(self):
-    os.environ['NO_RADAR_SLEEP'] = "1"
     RadarInterface = importlib.import_module(f'selfdrive.car.{self.CP.carName}.radar_interface').RadarInterface
     RI = RadarInterface(self.CP)
     assert RI
@@ -296,6 +322,73 @@ class TestCarModelBase(unittest.TestCase):
     CC = car.CarControl.new_message(cruiseControl={'resume': True})
     test_car_controller(CC)
 
+  # Skip stdout/stderr capture with pytest, causes elevated memory usage
+  @pytest.mark.nocapture
+  @settings(max_examples=MAX_EXAMPLES, deadline=None,
+            phases=(Phase.reuse, Phase.generate, Phase.shrink))
+  @given(data=st.data())
+  def test_panda_safety_carstate_fuzzy(self, data):
+    """
+      For each example, pick a random CAN message on the bus and fuzz its data,
+      checking for panda state mismatches.
+    """
+
+    if self.CP.dashcamOnly:
+      self.skipTest("no need to check panda safety for dashcamOnly")
+
+    valid_addrs = [(addr, bus, size) for bus, addrs in self.fingerprint.items() for addr, size in addrs.items()]
+    address, bus, size = data.draw(st.sampled_from(valid_addrs))
+
+    msg_strategy = st.binary(min_size=size, max_size=size)
+    msgs = data.draw(st.lists(msg_strategy, min_size=20))
+
+    CC = car.CarControl.new_message()
+
+    for dat in msgs:
+      # due to panda updating state selectively, only edges are expected to match
+      # TODO: warm up CarState with real CAN messages to check edge of both sources
+      #  (eg. toyota's gasPressed is the inverse of a signal being set)
+      prev_panda_gas = self.safety.get_gas_pressed_prev()
+      prev_panda_brake = self.safety.get_brake_pressed_prev()
+      prev_panda_regen_braking = self.safety.get_regen_braking_prev()
+      prev_panda_vehicle_moving = self.safety.get_vehicle_moving()
+      prev_panda_cruise_engaged = self.safety.get_cruise_engaged_prev()
+      prev_panda_acc_main_on = self.safety.get_acc_main_on()
+
+      to_send = libpanda_py.make_CANPacket(address, bus, dat)
+      self.safety.safety_rx_hook(to_send)
+
+      can = messaging.new_message('can', 1)
+      can.can = [log.CanData(address=address, dat=dat, src=bus)]
+
+      CS = self.CI.update(CC, (can.to_bytes(),))
+
+      if self.safety.get_gas_pressed_prev() != prev_panda_gas:
+        self.assertEqual(CS.gasPressed, self.safety.get_gas_pressed_prev())
+
+      if self.safety.get_brake_pressed_prev() != prev_panda_brake:
+        # TODO: remove this exception once this mismatch is resolved
+        brake_pressed = CS.brakePressed
+        if CS.brakePressed and not self.safety.get_brake_pressed_prev():
+          if self.CP.carFingerprint in (HONDA.PILOT, HONDA.RIDGELINE) and CS.brake > 0.05:
+            brake_pressed = False
+
+        self.assertEqual(brake_pressed, self.safety.get_brake_pressed_prev())
+
+      if self.safety.get_regen_braking_prev() != prev_panda_regen_braking:
+        self.assertEqual(CS.regenBraking, self.safety.get_regen_braking_prev())
+
+      if self.safety.get_vehicle_moving() != prev_panda_vehicle_moving:
+        self.assertEqual(not CS.standstill, self.safety.get_vehicle_moving())
+
+      if not (self.CP.carName == "honda" and not (self.CP.flags & HondaFlags.BOSCH)):
+        if self.safety.get_cruise_engaged_prev() != prev_panda_cruise_engaged:
+          self.assertEqual(CS.cruiseState.enabled, self.safety.get_cruise_engaged_prev())
+
+      if self.CP.carName == "honda":
+        if self.safety.get_acc_main_on() != prev_panda_acc_main_on:
+          self.assertEqual(CS.cruiseState.available, self.safety.get_acc_main_on())
+
   def test_panda_safety_carstate(self):
     """
       Assert that panda safety matches openpilot's carState
@@ -314,7 +407,7 @@ class TestCarModelBase(unittest.TestCase):
 
     controls_allowed_prev = False
     CS_prev = car.CarState.new_message()
-    checks = defaultdict(lambda: 0)
+    checks = defaultdict(int)
     controlsd = Controls(CI=self.CI)
     controlsd.initialized = True
     for idx, can in enumerate(self.can_msgs):
@@ -349,7 +442,7 @@ class TestCarModelBase(unittest.TestCase):
         # On most pcmCruise cars, openpilot's state is always tied to the PCM's cruise state.
         # On Honda Nidec, we always engage on the rising edge of the PCM cruise state, but
         # openpilot brakes to zero even if the min ACC speed is non-zero (i.e. the PCM disengages).
-        if self.CP.carName == "honda" and self.CP.carFingerprint not in HONDA_BOSCH:
+        if self.CP.carName == "honda" and not (self.CP.flags & HondaFlags.BOSCH):
           # only the rising edges are expected to match
           if CS.cruiseState.enabled and not CS_prev.cruiseState.enabled:
             checks['controlsAllowed'] += not self.safety.get_controls_allowed()
@@ -378,6 +471,11 @@ class TestCarModelBase(unittest.TestCase):
 
     failed_checks = {k: v for k, v in checks.items() if v > 0}
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
+
+  @unittest.skipIf(not CI, "Accessing non CI-bucket routes is allowed only when not in CI")
+  def test_route_on_ci_bucket(self):
+    self.assertTrue(self.test_route_on_bucket, "Route not on CI bucket. " +
+                    "This is fine to fail for WIP car ports, just let us know and we can upload your routes to the CI bucket.")
 
 
 @parameterized_class(('car_model', 'test_route'), get_test_cases())

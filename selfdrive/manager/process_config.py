@@ -49,7 +49,7 @@ procs = [
   NativeProcess("proclogd", "system/proclogd", ["./proclogd"], only_onroad),
   PythonProcess("logmessaged", "system.logmessaged", always_run),
   PythonProcess("micd", "system.micd", iscar),
-  PythonProcess("timezoned", "system.timezoned", always_run, enabled=not PC),
+  PythonProcess("timed", "system.timed", always_run, enabled=not PC),
 
   PythonProcess("dmonitoringmodeld", "selfdrive.modeld.dmonitoringmodeld", driverview, enabled=(not PC or WEBCAM)),
   NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad),
@@ -78,7 +78,7 @@ procs = [
   PythonProcess("radard", "selfdrive.controls.radard", only_onroad),
   PythonProcess("thermald", "selfdrive.thermald.thermald", always_run),
   PythonProcess("tombstoned", "selfdrive.tombstoned", always_run, enabled=not PC),
-  PythonProcess("updated", "selfdrive.updated", only_offroad, enabled=not PC),
+  PythonProcess("updated", "selfdrive.updated.updated", only_offroad, enabled=not PC),
   PythonProcess("uploader", "system.loggerd.uploader", always_run),
   PythonProcess("statsd", "selfdrive.statsd", always_run),
 

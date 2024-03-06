@@ -1,13 +1,30 @@
-Version 0.9.6 (2023-12-14)
+Version 0.9.7 (2024-XX-XX)
+========================
+* New driving model
+* Support for hybrid variants of supported Ford models
+
+Version 0.9.6 (2024-02-27)
 ========================
 * New driving model
   * Vision model trained on more data
   * Improved driving performance
+  * Directly outputs curvature for lateral control
+* New driver monitoring model
+  * Trained on larger dataset
+* Model path UI
+  * Shows where driving model wants to be
+  * Shows what model is seeing more clearly, but more jittery
 * AGNOS 9
 * comma body streaming and controls over WebRTC
+* Improved fuzzy fingerprinting for many makes and models
+* Alpha longitudinal support for new Toyota models
+* Chevrolet Equinox 2019-22 support thanks to JasonJShuler and nworb-cire!
+* Dodge Durango 2020-21 support
+* Hyundai Staria 2023 support thanks to sunnyhaibin!
 * Kia Niro Plug-in Hybrid 2022 support thanks to sunnyhaibin!
-* Toyota RAV4 2023 support
-* Toyota RAV4 Hybrid 2023 support
+* Lexus LC 2024 support thanks to nelsonjchen!
+* Toyota RAV4 2023-24 support
+* Toyota RAV4 Hybrid 2023-24 support
 
 Version 0.9.5 (2023-11-17)
 ========================
