@@ -16,7 +16,7 @@ def run(args, **kwargs):
   return subprocess.run(args, **kwargs, check=True)
 
 
-def create_mock_release(directory, name, version, release_notes):
+def update_release(directory, name, version, release_notes):
   with open(directory / "RELEASES.md", "w") as f:
     f.write(release_notes)
 
@@ -25,7 +25,6 @@ def create_mock_release(directory, name, version, release_notes):
   with open(directory / "common" / "version.h", "w") as f:
     f.write(f'#define COMMA_VERSION "{version}"')
 
-  run(["git", "init", f"--initial-branch={name}"], cwd=directory)
   run(["git", "add", "."], cwd=directory)
   run(["git", "commit", "-m", f"openpilot release {version}"], cwd=directory)
 
@@ -33,6 +32,8 @@ def create_mock_release(directory, name, version, release_notes):
 class TestUpdateD(unittest.TestCase):
   def setUp(self):
     self.tmpdir = tempfile.mkdtemp()
+
+    run(["sudo", "mount", "-t", "tmpfs", "tmpfs", self.tmpdir]) # overlayfs doesn't work inside of docker unless this is a tmpfs
 
     self.mock_update_path = pathlib.Path(self.tmpdir)
 
@@ -62,12 +63,18 @@ class TestUpdateD(unittest.TestCase):
     self.params.put("UpdaterTargetBranch", release)
     run(["git", "clone", "-b", release, self.remote_dir, self.basedir])
 
+  def update_remote_release(self, release):
+    update_release(self.remote_dir, release, *self.MOCK_RELEASES[release])
+
   def setup_remote_release(self, release):
-    create_mock_release(self.remote_dir, release, *self.MOCK_RELEASES[release])
+    run(["git", "init"], cwd=self.remote_dir)
+    run(["git", "checkout", "-b", release], cwd=self.remote_dir)
+    self.update_remote_release(release)
 
   def tearDown(self):
     mock.patch.stopall()
     run(["sudo", "umount", "-l", str(self.staging_root / "merged")])
+    run(["sudo", "umount", "-l", self.tmpdir])
     shutil.rmtree(self.tmpdir)
 
   def send_check_for_updates_signal(self):
@@ -95,17 +102,17 @@ class TestUpdateD(unittest.TestCase):
       self._test_params("release3", False, False)
 
       self.MOCK_RELEASES["release3"] = ("0.1.3", "0.1.3 release notes")
-      self.setup_remote_release("release3")
+      self.update_remote_release("release3")
 
       self.send_check_for_updates_signal()
 
-      time.sleep(2)
+      time.sleep(3)
 
       self._test_params("release3", True, False)
 
       self.send_download_signal()
 
-      time.sleep(3)
+      time.sleep(4)
 
       self._test_params("release3", False, True)
       self._test_update_params("release3", *self.MOCK_RELEASES["release3"])
