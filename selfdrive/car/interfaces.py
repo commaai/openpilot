@@ -7,7 +7,7 @@ from enum import StrEnum
 from typing import Any, NamedTuple
 from collections.abc import Callable
 
-from cereal import car
+from cereal import car, log
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import clip
@@ -351,7 +351,7 @@ class CarStateBase(ABC):
 
     self.cruise_buttons = 0
     self.left_blinker_cnt = 0
-    self.previous_personality = int(Params().get('LongitudinalPersonality'))
+    self.previous_personality = str(log.LongitudinalPersonality.standard)
     self.right_blinker_cnt = 0
     self.steering_pressed_cnt = 0
     self.distance_button = False
