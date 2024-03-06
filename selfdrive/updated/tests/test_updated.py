@@ -81,6 +81,10 @@ class TestUpdateD(unittest.TestCase):
     self.assertEqual(self.params.get_bool("UpdaterFetchAvailable"), fetch_available)
     self.assertEqual(self.params.get_bool("UpdateAvailable"), update_available)
 
+  def _test_update_params(self, branch, version, release_notes):
+    self.assertTrue(self.params.get("UpdaterNewDescription", encoding="utf-8").startswith(f"{version} / {branch}"))
+    self.assertEqual(self.params.get("UpdaterNewReleaseNotes", encoding="utf-8"), f"</p>{release_notes}</p>")
+
   def test_new_release(self):
     self.setup_remote_release("release3")
     self.setup_basedir_release("release3")
@@ -104,3 +108,4 @@ class TestUpdateD(unittest.TestCase):
       time.sleep(3)
 
       self._test_params("release3", False, True)
+      self._test_update_params("release3", *self.MOCK_RELEASES["release3"])
