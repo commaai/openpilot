@@ -2,6 +2,7 @@ Version 0.9.7 (2024-XX-XX)
 ========================
 * New driving model
 * Support for hybrid variants of supported Ford models
+* Hyundai Kona 2024 support
 
 Version 0.9.6 (2024-02-27)
 ========================
@@ -25,7 +26,6 @@ Version 0.9.6 (2024-02-27)
 * Lexus LC 2024 support thanks to nelsonjchen!
 * Toyota RAV4 2023-24 support
 * Toyota RAV4 Hybrid 2023-24 support
-* Hyundai Kona 2024 support
 
 Version 0.9.5 (2023-11-17)
 ========================
