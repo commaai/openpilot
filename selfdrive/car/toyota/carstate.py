@@ -168,9 +168,10 @@ class CarState(CarStateBase):
 
     # distance button is wired to the ACC module (camera or radar)
     if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
-      self.prev_distance_button = self.distance_button
       self.distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
-
+    elif self.CP.flags & ToyotaFlags.SMART_DSU:
+      self.distance_button = cp.vl['SDSU']['FD_BUTTON'] or cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
+    self.prev_distance_button = self.distance_button
     return ret
 
   @staticmethod
@@ -219,6 +220,12 @@ class CarState(CarStateBase):
     if CP.carFingerprint not in (TSS2_CAR - RADAR_ACC_CAR) and not CP.enableDsu and not CP.flags & ToyotaFlags.DISABLE_RADAR.value:
       messages += [
         ("PRE_COLLISION", 33),
+      ]
+
+    if CP.flags & ToyotaFlags.SMART_DSU:
+      messages += [
+        ("SDSU", 0),
+        ("ACC_CONTROL", 33),
       ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
