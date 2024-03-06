@@ -949,6 +949,7 @@ FW_VERSIONS = {
   },
   CAR.SKODA_KAROQ_MK1: {
     (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8705E906013CL\xf1\x892541',
       b'\xf1\x8705E906013H \xf1\x892407',
       b'\xf1\x8705E906018P \xf1\x895472',
       b'\xf1\x8705E906018P \xf1\x896020',
@@ -969,6 +970,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0910143B \xf1\x892201\xf1\x82\x0563T6090500',
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567T6100500',
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567T6100700',
+      b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567T6100600',
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x872Q0907572AA\xf1\x890396',
