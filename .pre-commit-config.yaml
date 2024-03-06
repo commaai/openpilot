@@ -10,7 +10,7 @@ repos:
     -   id: check-ast
         exclude: '^(third_party)/'
     -   id: check-json
-        exclude: '.devcontainer/devcontainer.json' # this supports JSON with comments
+        exclude: '.devcontainer/devcontainer.json|.vscode/'  # these support JSON with comments
     -   id: check-toml
     -   id: check-xml
     -   id: check-yaml
@@ -91,7 +91,7 @@ repos:
         pass_filenames: false
         files: 'selfdrive/ui/translations/*'
 -   repo: https://github.com/python-poetry/poetry
-    rev: '1.7.0'
+    rev: '1.8.0'
     hooks:
     -   id: poetry-check
         name: validate poetry lock
