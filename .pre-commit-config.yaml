@@ -10,7 +10,7 @@ repos:
     -   id: check-ast
         exclude: '^(third_party)/'
     -   id: check-json
-        exclude: '.devcontainer/devcontainer.json' # this supports JSON with comments
+        exclude: '.devcontainer/devcontainer.json|.vscode/'  # these support JSON with comments
     -   id: check-toml
     -   id: check-xml
     -   id: check-yaml
@@ -19,18 +19,24 @@ repos:
     -   id: check-executables-have-shebangs
     -   id: check-shebang-scripts-are-executable
     -   id: check-added-large-files
+        exclude: '(docs/CARS.md)|(poetry.lock)|(third_party/acados/include/blasfeo/include/blasfeo_d_kernel.h)'
         args:
-        - --maxkb=500
+        - --maxkb=120
         - --enforce-all
 -   repo: https://github.com/codespell-project/codespell
     rev: v2.2.6
     hooks:
     -   id: codespell
-        exclude: '^(third_party/)|(body/)|(cereal/)|(panda/)|(opendbc/)|(rednose/)|(rednose_repo/)|(selfdrive/ui/translations/.*.ts)|(poetry.lock)'
+        exclude: '^(third_party/)|(body/)|(cereal/)|(panda/)|(opendbc/)|(rednose/)|(rednose_repo/)|(teleoprtc/)|(teleoprtc_repo/)|(selfdrive/ui/translations/.*.ts)|(poetry.lock)'
         args:
         # if you've got a short variable name that's getting flagged, add it here
         - -L bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints
         - --builtins clear,rare,informal,usage,code,names,en-GB_to_en-US
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.2.2
+    hooks:
+    -   id: ruff
+        exclude: '^(third_party/)|(cereal/)|(panda/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(teleoprtc/)|(teleoprtc_repo/)'
 -   repo: local
     hooks:
     -   id: mypy
@@ -38,13 +44,10 @@ repos:
         entry: mypy
         language: system
         types: [python]
-        args: ['--explicit-package-bases', '--local-partial-types']
-        exclude: '^(third_party/)|(cereal/)|(opendbc/)|(panda/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(xx/)'
--   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.6
-    hooks:
-    -   id: ruff
-        exclude: '^(third_party/)|(cereal/)|(panda/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)'
+        args:
+        - --local-partial-types
+        - --explicit-package-bases
+        exclude: '^(third_party/)|(cereal/)|(opendbc/)|(panda/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(teleoprtc/)|(teleoprtc_repo/)|(xx/)'
 -   repo: local
     hooks:
     -   id: cppcheck
@@ -71,6 +74,14 @@ repos:
         # https://google.github.io/styleguide/cppguide.html
         # relevant rules are whitelisted, see all options with: cpplint --filter=
         - --filter=-build,-legal,-readability,-runtime,-whitespace,+build/include_subdir,+build/forward_decl,+build/include_what_you_use,+build/deprecated,+whitespace/comma,+whitespace/line_length,+whitespace/empty_if_body,+whitespace/empty_loop_body,+whitespace/empty_conditional_body,+whitespace/forcolon,+whitespace/parens,+whitespace/semicolon,+whitespace/tab,+readability/braces
+-   repo: https://github.com/MarcoGorelli/cython-lint
+    rev: v0.16.0
+    hooks:
+    -   id: cython-lint
+        exclude: '^(third_party/)|(cereal/)|(body/)|(rednose/)|(rednose_repo/)|(opendbc/)|(panda/)|(generated/)'
+        args:
+        - --max-line-length=240
+        - --ignore=E111, E302, E305
 -   repo: local
     hooks:
     -   id: test_translations
@@ -78,14 +89,15 @@ repos:
         entry: selfdrive/ui/tests/test_translations.py
         language: script
         pass_filenames: false
+        files: 'selfdrive/ui/translations/*'
 -   repo: https://github.com/python-poetry/poetry
-    rev: '1.7.0'
+    rev: '1.8.0'
     hooks:
     -   id: poetry-check
         name: validate poetry lock
         args:
         - --lock
 -   repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.27.1
+    rev: 0.28.0
     hooks:
     -   id: check-github-workflows

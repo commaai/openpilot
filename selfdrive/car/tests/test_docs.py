@@ -20,7 +20,7 @@ class TestCarDocs(unittest.TestCase):
 
   def test_generator(self):
     generated_cars_md = generate_cars_md(self.all_cars, CARS_MD_TEMPLATE)
-    with open(CARS_MD_OUT, "r") as f:
+    with open(CARS_MD_OUT) as f:
       current_cars_md = f.read()
 
     self.assertEqual(generated_cars_md, current_cars_md,
@@ -45,7 +45,7 @@ class TestCarDocs(unittest.TestCase):
     all_car_info_platforms = get_interface_attr("CAR_INFO", combine_brands=True).keys()
     for platform in sorted(interfaces.keys()):
       with self.subTest(platform=platform):
-        self.assertTrue(platform in all_car_info_platforms, "Platform: {} doesn't exist in CarInfo".format(platform))
+        self.assertTrue(platform in all_car_info_platforms, f"Platform: {platform} doesn't exist in CarInfo")
 
   def test_naming_conventions(self):
     # Asserts market-standard car naming conventions by brand

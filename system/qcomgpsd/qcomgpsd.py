@@ -5,19 +5,20 @@ import signal
 import itertools
 import math
 import time
-import pycurl
+import requests
 import shutil
 import subprocess
 import datetime
 from multiprocessing import Process, Event
-from typing import NoReturn, Optional
+from typing import NoReturn
 from struct import unpack_from, calcsize, pack
 
 from cereal import log
 import cereal.messaging as messaging
 from openpilot.common.gpio import gpio_init, gpio_set
+from openpilot.common.retry import retry
 from openpilot.system.hardware.tici.pins import GPIO
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.qcomgpsd.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
 from openpilot.system.qcomgpsd.structs import (dict_unpacker, position_report, relist,
                                               gps_measurement_report, gps_measurement_report_sv,
@@ -84,58 +85,31 @@ measurementStatusGlonassFields = {
   "glonassTimeMarkValid": 17
 }
 
+@retry(attempts=10, delay=1.0)
+def try_setup_logs(diag, logs):
+  return setup_logs(diag, logs)
 
-def try_setup_logs(diag, log_types):
-  for _ in range(10):
-    try:
-      setup_logs(diag, log_types)
-      break
-    except Exception:
-      cloudlog.exception("setup logs failed, trying again")
-      time.sleep(1.0)
-  else:
-    raise Exception(f"setup logs failed, {log_types=}")
-
-def at_cmd(cmd: str) -> Optional[str]:
-  for _ in range(3):
-    try:
-      return subprocess.check_output(f"mmcli -m any --timeout 30 --command='{cmd}'", shell=True, encoding='utf8')
-    except subprocess.CalledProcessError:
-      cloudlog.exception("qcomgps.mmcli_command_failed")
-      time.sleep(1.0)
-  raise Exception(f"failed to execute mmcli command {cmd=}")
-
+@retry(attempts=3, delay=1.0)
+def at_cmd(cmd: str) -> str | None:
+  return subprocess.check_output(f"mmcli -m any --timeout 30 --command='{cmd}'", shell=True, encoding='utf8')
 
 def gps_enabled() -> bool:
-  try:
-    p = subprocess.check_output("mmcli -m any --command=\"AT+QGPS?\"", shell=True)
-    return b"QGPS: 1" in p
-  except subprocess.CalledProcessError as exc:
-    raise Exception("failed to execute QGPS mmcli command") from exc
+  return "QGPS: 1" in at_cmd("AT+QGPS?")
 
 def download_assistance():
   try:
-    c = pycurl.Curl()
-    c.setopt(pycurl.URL, ASSISTANCE_URL)
-    c.setopt(pycurl.NOBODY, 1)
-    c.setopt(pycurl.CONNECTTIMEOUT, 2)
-    c.perform()
-    bytes_n = c.getinfo(pycurl.CONTENT_LENGTH_DOWNLOAD)
-    c.close()
-    if bytes_n > 1e5:
-      cloudlog.error("Qcom assistance data larger than expected")
-      return
+    response = requests.get(ASSISTANCE_URL, timeout=5, stream=True)
 
     with open(ASSIST_DATA_FILE_DOWNLOAD, 'wb') as fp:
-      c = pycurl.Curl()
-      c.setopt(pycurl.URL, ASSISTANCE_URL)
-      c.setopt(pycurl.CONNECTTIMEOUT, 5)
+      for chunk in response.iter_content(chunk_size=8192):
+        fp.write(chunk)
+        if fp.tell() > 1e5:
+          cloudlog.error("Qcom assistance data larger than expected")
+          return
 
-      c.setopt(pycurl.WRITEDATA, fp)
-      c.perform()
-      c.close()
-      os.rename(ASSIST_DATA_FILE_DOWNLOAD, ASSIST_DATA_FILE)
-  except pycurl.error:
+    os.rename(ASSIST_DATA_FILE_DOWNLOAD, ASSIST_DATA_FILE)
+
+  except requests.exceptions.RequestException:
     cloudlog.exception("Failed to download assistance file")
     return
 
@@ -154,24 +128,13 @@ def downloader_loop(event):
   except KeyboardInterrupt:
     pass
 
+@retry(attempts=5, delay=0.2, ignore_failure=True)
 def inject_assistance():
-  for _ in range(5):
-    try:
-      cmd = f"mmcli -m any --timeout 30 --location-inject-assistance-data={ASSIST_DATA_FILE}"
-      subprocess.check_output(cmd, stderr=subprocess.PIPE, shell=True)
-      cloudlog.info("successfully loaded assistance data")
-      return
-    except subprocess.CalledProcessError as e:
-      cloudlog.event(
-        "qcomgps.assistance_loading_failed",
-        error=True,
-        cmd=e.cmd,
-        output=e.output,
-        returncode=e.returncode
-      )
-    time.sleep(0.2)
-  cloudlog.error("failed to load assistance after retry")
+  cmd = f"mmcli -m any --timeout 30 --location-inject-assistance-data={ASSIST_DATA_FILE}"
+  subprocess.check_output(cmd, stderr=subprocess.PIPE, shell=True)
+  cloudlog.info("successfully loaded assistance data")
 
+@retry(attempts=5, delay=1.0)
 def setup_quectel(diag: ModemDiag) -> bool:
   ret = False
 
@@ -321,7 +284,7 @@ def main() -> NoReturn:
       print("%.4f: got log: %x len %d" % (time.time(), log_type, len(log_payload)))
 
     if log_type == LOG_GNSS_OEMDRE_MEASUREMENT_REPORT:
-      msg = messaging.new_message('qcomGnss')
+      msg = messaging.new_message('qcomGnss', valid=True)
 
       gnss = msg.qcomGnss
       gnss.logTs = log_time
@@ -370,7 +333,7 @@ def main() -> NoReturn:
       vNED = [report["q_FltVelEnuMps[1]"], report["q_FltVelEnuMps[0]"], -report["q_FltVelEnuMps[2]"]]
       vNEDsigma = [report["q_FltVelSigmaMps[1]"], report["q_FltVelSigmaMps[0]"], -report["q_FltVelSigmaMps[2]"]]
 
-      msg = messaging.new_message('gpsLocation')
+      msg = messaging.new_message('gpsLocation', valid=True)
       gps = msg.gpsLocation
       gps.latitude = report["t_DblFinalPosLatLon[0]"] * 180/math.pi
       gps.longitude = report["t_DblFinalPosLatLon[1]"] * 180/math.pi
@@ -379,7 +342,7 @@ def main() -> NoReturn:
       gps.bearingDeg = report["q_FltHeadingRad"] * 180/math.pi
 
       # TODO needs update if there is another leap second, after june 2024?
-      dt_timestamp = (datetime.datetime(1980, 1, 6, 0, 0, 0, 0, datetime.timezone.utc) +
+      dt_timestamp = (datetime.datetime(1980, 1, 6, 0, 0, 0, 0, datetime.UTC) +
                       datetime.timedelta(weeks=report['w_GpsWeekNumber']) +
                       datetime.timedelta(seconds=(1e-3*report['q_GpsFixTimeMs'] - 18)))
       gps.unixTimestampMillis = dt_timestamp.timestamp()*1e3
@@ -396,7 +359,7 @@ def main() -> NoReturn:
       pm.send('gpsLocation', msg)
 
     elif log_type == LOG_GNSS_OEMDRE_SVPOLY_REPORT:
-      msg = messaging.new_message('qcomGnss')
+      msg = messaging.new_message('qcomGnss', valid=True)
       dat = unpack_svpoly(log_payload)
       dat = relist(dat)
       gnss = msg.qcomGnss
@@ -433,7 +396,7 @@ def main() -> NoReturn:
       pm.send('qcomGnss', msg)
 
     elif log_type in [LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT]:
-      msg = messaging.new_message('qcomGnss')
+      msg = messaging.new_message('qcomGnss', valid=True)
 
       gnss = msg.qcomGnss
       gnss.logTs = log_time

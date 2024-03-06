@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 import unittest
 from parameterized import parameterized
-from typing import Dict, Iterable, Optional, Tuple
+from collections.abc import Iterable
 
 import capnp
 
 from cereal import car
-from openpilot.selfdrive.car.ford.values import FW_QUERY_CONFIG, FW_VERSIONS
+from openpilot.selfdrive.car.ford.values import FW_QUERY_CONFIG
+from openpilot.selfdrive.car.ford.fingerprints import FW_VERSIONS
 
 Ecu = car.CarParams.Ecu
 
@@ -18,6 +19,7 @@ ECU_ADDRESSES = {
   Ecu.fwdCamera: 0x706,    # Image Processing Module A (IPMA)
   Ecu.engine: 0x7E0,       # Powertrain Control Module (PCM)
   Ecu.shiftByWire: 0x732,  # Gear Shift Module (GSM)
+  Ecu.debug: 0x7D0,        # Accessory Protocol Interface Module (APIM)
 }
 
 
@@ -49,9 +51,9 @@ class TestFordFW(unittest.TestCase):
       self.assertIsNone(subaddr, "Unexpected ECU subaddress")
 
   @parameterized.expand(FW_VERSIONS.items())
-  def test_fw_versions(self, car_model: str, fw_versions: Dict[Tuple[capnp.lib.capnp._EnumModule, int, Optional[int]], Iterable[bytes]]):
+  def test_fw_versions(self, car_model: str, fw_versions: dict[tuple[capnp.lib.capnp._EnumModule, int, int | None], Iterable[bytes]]):
     for (ecu, addr, subaddr), fws in fw_versions.items():
-      self.assertIn(ecu, ECU_ADDRESSES, "Unknown ECU")
+      self.assertIn(ecu, ECU_FW_CORE, "Unexpected ECU")
       self.assertEqual(addr, ECU_ADDRESSES[ecu], "ECU address mismatch")
       self.assertIsNone(subaddr, "Unexpected ECU subaddress")
 

@@ -13,14 +13,6 @@ public:
   static bool TICI() { return util::getenv("TICI", 0) == 1; }
   static bool AGNOS() { return util::getenv("TICI", 0) == 1; }
 
-  static void set_volume(float volume) {
-    volume = util::map_val(volume, 0.f, 1.f, MIN_VOLUME, MAX_VOLUME);
-
-    char volume_str[6];
-    snprintf(volume_str, sizeof(volume_str), "%.3f", volume);
-    std::system(("pactl set-sink-volume @DEFAULT_SINK@ " + std::string(volume_str)).c_str());
-  }
-
   static void config_cpu_rendering(bool offscreen) {
     if (offscreen) {
       setenv("QT_QPA_PLATFORM", "offscreen", 1);

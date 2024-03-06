@@ -49,7 +49,7 @@ procs = [
   NativeProcess("proclogd", "system/proclogd", ["./proclogd"], only_onroad),
   PythonProcess("logmessaged", "system.logmessaged", always_run),
   PythonProcess("micd", "system.micd", iscar),
-  PythonProcess("timezoned", "system.timezoned", always_run, enabled=not PC),
+  PythonProcess("timed", "system.timed", always_run, enabled=not PC),
 
   PythonProcess("dmonitoringmodeld", "selfdrive.modeld.dmonitoringmodeld", driverview, enabled=(not PC or WEBCAM)),
   NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad),
@@ -60,7 +60,7 @@ procs = [
   PythonProcess("navmodeld", "selfdrive.modeld.navmodeld", only_onroad),
   NativeProcess("sensord", "system/sensord", ["./sensord"], only_onroad, enabled=not PC),
   NativeProcess("ui", "selfdrive/ui", ["./ui"], always_run, watchdog_max_dt=(5 if not PC else None)),
-  NativeProcess("soundd", "selfdrive/ui/soundd", ["./soundd"], only_onroad),
+  PythonProcess("soundd", "selfdrive.ui.soundd", only_onroad),
   NativeProcess("locationd", "selfdrive/locationd", ["./locationd"], only_onroad),
   NativeProcess("boardd", "selfdrive/boardd", ["./boardd"], always_run, enabled=False),
   PythonProcess("calibrationd", "selfdrive.locationd.calibrationd", only_onroad),
@@ -78,12 +78,13 @@ procs = [
   PythonProcess("radard", "selfdrive.controls.radard", only_onroad),
   PythonProcess("thermald", "selfdrive.thermald.thermald", always_run),
   PythonProcess("tombstoned", "selfdrive.tombstoned", always_run, enabled=not PC),
-  PythonProcess("updated", "selfdrive.updated", only_offroad, enabled=not PC),
+  PythonProcess("updated", "selfdrive.updated.updated", only_offroad, enabled=not PC),
   PythonProcess("uploader", "system.loggerd.uploader", always_run),
   PythonProcess("statsd", "selfdrive.statsd", always_run),
 
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
+  PythonProcess("webrtcd", "system.webrtc.webrtcd", notcar),
   PythonProcess("webjoystick", "tools.bodyteleop.web", notcar),
 ]
 

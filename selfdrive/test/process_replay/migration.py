@@ -40,7 +40,7 @@ def migrate_pandaStates(lr):
   # TODO: safety param migration should be handled automatically
   safety_param_migration = {
     "TOYOTA PRIUS 2017": EPS_SCALE["TOYOTA PRIUS 2017"] | Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL,
-    "TOYOTA RAV4 2017": EPS_SCALE["TOYOTA RAV4 2017"] | Panda.FLAG_TOYOTA_ALT_BRAKE,
+    "TOYOTA RAV4 2017": EPS_SCALE["TOYOTA RAV4 2017"] | Panda.FLAG_TOYOTA_ALT_BRAKE | Panda.FLAG_TOYOTA_GAS_INTERCEPTOR,
     "KIA EV6 2022": Panda.FLAG_HYUNDAI_EV_GAS | Panda.FLAG_HYUNDAI_CANFD_HDA2,
   }
 
@@ -85,6 +85,7 @@ def migrate_peripheralState(lr):
       continue
 
     new_msg = messaging.new_message("peripheralState")
+    new_msg.valid = msg.valid
     new_msg.logMonoTime = msg.logMonoTime
     all_msg.append(new_msg.as_reader())
 
@@ -149,6 +150,7 @@ def migrate_carParams(lr, old_logtime=False):
   for msg in lr:
     if msg.which() == 'carParams':
       CP = messaging.new_message('carParams')
+      CP.valid = True
       CP.carParams = msg.carParams.as_builder()
       for car_fw in CP.carParams.carFw:
         car_fw.brand = CP.carParams.carName

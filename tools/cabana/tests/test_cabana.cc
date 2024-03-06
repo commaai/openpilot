@@ -1,9 +1,9 @@
 
 #undef INFO
+#include <QDir>
+
 #include "catch2/catch.hpp"
-#include "tools/replay/logreader.h"
 #include "tools/cabana/dbc/dbcmanager.h"
-#include "tools/cabana/streams/abstractstream.h"
 
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
 
@@ -12,7 +12,7 @@ TEST_CASE("DBCFile::generateDBC") {
   DBCFile dbc_origin(fn);
   DBCFile dbc_from_generated("", dbc_origin.generateDBC());
 
-  REQUIRE(dbc_origin.msgCount() == dbc_from_generated.msgCount());
+  REQUIRE(dbc_origin.getMessages().size() == dbc_from_generated.getMessages().size());
   auto &msgs = dbc_origin.getMessages();
   auto &new_msgs = dbc_from_generated.getMessages();
   for (auto &[id, m] : msgs) {
@@ -84,4 +84,18 @@ CM_ SG_ 160 signal_2 "multiple line comment
   REQUIRE(msg->sigs[1]->start_bit == 12);
   REQUIRE(msg->sigs[1]->size == 1);
   REQUIRE(msg->sigs[1]->receiver_name == "XXX");
+}
+
+TEST_CASE("parse_opendbc") {
+  QDir dir(OPENDBC_FILE_PATH);
+  QStringList errors;
+  for (auto fn : dir.entryList({"*.dbc"}, QDir::Files, QDir::Name)) {
+    try {
+      auto dbc = DBCFile(dir.filePath(fn));
+    } catch (std::exception &e) {
+      errors.push_back(e.what());
+    }
+  }
+  INFO(errors.join("\n").toStdString());
+  REQUIRE(errors.empty());
 }

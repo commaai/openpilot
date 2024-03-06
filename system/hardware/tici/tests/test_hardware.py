@@ -12,11 +12,6 @@ HARDWARE = Tici()
 @pytest.mark.tici
 class TestHardware(unittest.TestCase):
 
-  @classmethod
-  def setUpClass(cls):
-    HARDWARE.initialize_hardware()
-    HARDWARE.set_power_save(False)
-
   def test_power_save_time(self):
     ts = []
     for _ in range(5):

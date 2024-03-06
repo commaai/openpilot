@@ -6,11 +6,10 @@ import unittest
 import logging
 import json
 from pathlib import Path
-from typing import List, Optional
 from openpilot.system.hardware.hw import Paths
 
-from openpilot.system.swaglog import cloudlog
-from openpilot.system.loggerd.uploader import uploader_fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE
+from openpilot.common.swaglog import cloudlog
+from openpilot.system.loggerd.uploader import main, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE
 
 from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase
 
@@ -45,7 +44,7 @@ class TestUploader(UploaderTestCase):
 
   def start_thread(self):
     self.end_event = threading.Event()
-    self.up_thread = threading.Thread(target=uploader_fn, args=[self.end_event])
+    self.up_thread = threading.Thread(target=main, args=[self.end_event])
     self.up_thread.daemon = True
     self.up_thread.start()
 
@@ -53,7 +52,7 @@ class TestUploader(UploaderTestCase):
     self.end_event.set()
     self.up_thread.join()
 
-  def gen_files(self, lock=False, xattr: Optional[bytes] = None, boot=True) -> List[Path]:
+  def gen_files(self, lock=False, xattr: bytes = None, boot=True) -> list[Path]:
     f_paths = []
     for t in ["qlog", "rlog", "dcamera.hevc", "fcamera.hevc"]:
       f_paths.append(self.make_file_with_data(self.seg_dir, t, 1, lock=lock, upload_xattr=xattr))
@@ -62,7 +61,7 @@ class TestUploader(UploaderTestCase):
       f_paths.append(self.make_file_with_data("boot", f"{self.seg_dir}", 1, lock=lock, upload_xattr=xattr))
     return f_paths
 
-  def gen_order(self, seg1: List[int], seg2: List[int], boot=True) -> List[str]:
+  def gen_order(self, seg1: list[int], seg2: list[int], boot=True) -> list[str]:
     keys = []
     if boot:
       keys += [f"boot/{self.seg_format.format(i)}.bz2" for i in seg1]

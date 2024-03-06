@@ -7,11 +7,10 @@ import struct
 import requests
 import urllib.parse
 from datetime import datetime
-from typing import List, Optional, Tuple
 
 from cereal import messaging
 from openpilot.common.params import Params
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import TICI
 from openpilot.common.gpio import gpio_init, gpio_set
 from openpilot.system.hardware.tici.pins import GPIO
@@ -41,7 +40,7 @@ def add_ubx_checksum(msg: bytes) -> bytes:
     B = (B + A) % 256
   return msg + bytes([A, B])
 
-def get_assistnow_messages(token: bytes) -> List[bytes]:
+def get_assistnow_messages(token: bytes) -> list[bytes]:
   # make request
   # TODO: implement adding the last known location
   r = requests.get("https://online-live2.services.u-blox.com/GetOnlineData.ashx", params=urllib.parse.urlencode({
@@ -238,7 +237,7 @@ def initialize_pigeon(pigeon: TTYPigeon) -> bool:
     return False
   return True
 
-def deinitialize_and_exit(pigeon: Optional[TTYPigeon]):
+def deinitialize_and_exit(pigeon: TTYPigeon | None):
   cloudlog.warning("Storing almanac in ublox flash")
 
   if pigeon is not None:
@@ -259,7 +258,7 @@ def deinitialize_and_exit(pigeon: Optional[TTYPigeon]):
   set_power(False)
   sys.exit(0)
 
-def create_pigeon() -> Tuple[TTYPigeon, messaging.PubMaster]:
+def create_pigeon() -> tuple[TTYPigeon, messaging.PubMaster]:
   pigeon = None
 
   # register exit handler
@@ -291,7 +290,7 @@ def run_receiving(pigeon: TTYPigeon, pm: messaging.PubMaster, duration: int = 0)
         continue
 
       # send out to socket
-      msg = messaging.new_message('ubloxRaw', len(dat))
+      msg = messaging.new_message('ubloxRaw', len(dat), valid=True)
       msg.ubloxRaw = dat[:]
       pm.send('ubloxRaw', msg)
     else:

@@ -13,6 +13,9 @@
 [submodule "body"]
   path = body
   url = ../../commaai/body.git
+[submodule "teleoprtc_repo"]
+  path = teleoprtc_repo
+  url = ../../commaai/teleoprtc
 [submodule "tinygrad"]
   path = tinygrad_repo
   url = https://github.com/geohot/tinygrad.git

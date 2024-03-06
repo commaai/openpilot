@@ -10,7 +10,7 @@ if ! [[ -z "$MOUNT_OPENPILOT" ]]; then
 fi
 
 if [[ "$CI" ]]; then
-  CMD="CI=1 ${OPENPILOT_DIR}/tools/sim/tests/test_carla_integration.py"
+  CMD="CI=1 ${OPENPILOT_DIR}/tools/sim/tests/test_metadrive_integration.py"
 else
   # expose X to the container
   xhost +local:root

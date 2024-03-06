@@ -3,16 +3,15 @@ import time
 import json
 import jwt
 from pathlib import Path
-from typing import Optional
 
 from datetime import datetime, timedelta
 from openpilot.common.api import api_get
 from openpilot.common.params import Params
 from openpilot.common.spinner import Spinner
-from openpilot.common.basedir import PERSIST
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 from openpilot.system.hardware import HARDWARE, PC
-from openpilot.system.swaglog import cloudlog
+from openpilot.system.hardware.hw import Paths
+from openpilot.common.swaglog import cloudlog
 
 
 UNREGISTERED_DONGLE_ID = "UnregisteredDevice"
@@ -23,16 +22,15 @@ def is_registered_device() -> bool:
   return dongle not in (None, UNREGISTERED_DONGLE_ID)
 
 
-def register(show_spinner=False) -> Optional[str]:
+def register(show_spinner=False) -> str | None:
   params = Params()
-  params.put("SubscriberInfo", HARDWARE.get_subscriber_info())
 
   IMEI = params.get("IMEI", encoding='utf8')
   HardwareSerial = params.get("HardwareSerial", encoding='utf8')
-  dongle_id: Optional[str] = params.get("DongleId", encoding='utf8')
+  dongle_id: str | None = params.get("DongleId", encoding='utf8')
   needs_registration = None in (IMEI, HardwareSerial, dongle_id)
 
-  pubkey = Path(PERSIST+"/comma/id_rsa.pub")
+  pubkey = Path(Paths.persist_root()+"/comma/id_rsa.pub")
   if not pubkey.is_file():
     dongle_id = UNREGISTERED_DONGLE_ID
     cloudlog.warning(f"missing public key: {pubkey}")
@@ -42,15 +40,15 @@ def register(show_spinner=False) -> Optional[str]:
       spinner.update("registering device")
 
     # Create registration token, in the future, this key will make JWTs directly
-    with open(PERSIST+"/comma/id_rsa.pub") as f1, open(PERSIST+"/comma/id_rsa") as f2:
+    with open(Paths.persist_root()+"/comma/id_rsa.pub") as f1, open(Paths.persist_root()+"/comma/id_rsa") as f2:
       public_key = f1.read()
       private_key = f2.read()
 
     # Block until we get the imei
     serial = HARDWARE.get_serial()
     start_time = time.monotonic()
-    imei1: Optional[str] = None
-    imei2: Optional[str] = None
+    imei1: str | None = None
+    imei2: str | None = None
     while imei1 is None and imei2 is None:
       try:
         imei1, imei2 = HARDWARE.get_imei(0), HARDWARE.get_imei(1)

@@ -5,15 +5,16 @@ import time
 from pathlib import Path
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import NoReturn, Union, List, Dict
+from typing import NoReturn
 
 from openpilot.common.params import Params
 from cereal.messaging import SubMaster
-from openpilot.system.swaglog import cloudlog
+from openpilot.system.hardware.hw import Paths
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE
 from openpilot.common.file_helpers import atomic_write_in_dir
 from openpilot.system.version import get_normalized_origin, get_short_branch, get_short_version, is_dirty
-from openpilot.system.loggerd.config import STATS_DIR, STATS_DIR_FILE_LIMIT, STATS_SOCKET, STATS_FLUSH_TIME_S
+from openpilot.system.loggerd.config import STATS_DIR_FILE_LIMIT, STATS_SOCKET, STATS_FLUSH_TIME_S
 
 
 class METRIC_TYPE:
@@ -60,7 +61,7 @@ class StatLog:
 
 def main() -> NoReturn:
   dongle_id = Params().get("DongleId", encoding='utf-8')
-  def get_influxdb_line(measurement: str, value: Union[float, Dict[str, float]],  timestamp: datetime, tags: dict) -> str:
+  def get_influxdb_line(measurement: str, value: float | dict[str, float],  timestamp: datetime, tags: dict) -> str:
     res = f"{measurement}"
     for k, v in tags.items():
       res += f",{k}={str(v)}"
@@ -79,6 +80,8 @@ def main() -> NoReturn:
   ctx = zmq.Context.instance()
   sock = ctx.socket(zmq.PULL)
   sock.bind(STATS_SOCKET)
+
+  STATS_DIR = Paths.stats_root()
 
   # initialize stats directory
   Path(STATS_DIR).mkdir(parents=True, exist_ok=True)
@@ -99,7 +102,7 @@ def main() -> NoReturn:
   idx = 0
   last_flush_time = time.monotonic()
   gauges = {}
-  samples: Dict[str, List[float]] = defaultdict(list)
+  samples: dict[str, list[float]] = defaultdict(list)
   try:
     while True:
       started_prev = sm['deviceState'].started

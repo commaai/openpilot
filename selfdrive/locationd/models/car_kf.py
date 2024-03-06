@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 import math
 import sys
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 
 from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.selfdrive.locationd.models.constants import ObservationKind
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 
 from rednose.helpers.kalmanfilter import KalmanFilter
 
@@ -70,7 +70,7 @@ class CarKalman(KalmanFilter):
   ])
   P_initial = Q.copy()
 
-  obs_noise: Dict[int, Any] = {
+  obs_noise: dict[int, Any] = {
     ObservationKind.STEER_ANGLE: np.atleast_2d(math.radians(0.05)**2),
     ObservationKind.ANGLE_OFFSET_FAST: np.atleast_2d(math.radians(10.0)**2),
     ObservationKind.ROAD_ROLL: np.atleast_2d(math.radians(1.0)**2),
