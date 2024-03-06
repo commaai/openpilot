@@ -144,7 +144,6 @@ class TestUpdateD(unittest.TestCase):
 
   def test_switch_branches(self):
     # Start on release3, request to switch to master manually, ensure we switched
-
     self.setup_remote_release("release3")
     self.setup_remote_release("master")
     self.setup_basedir_release("release3")
