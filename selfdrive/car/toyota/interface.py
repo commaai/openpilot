@@ -75,7 +75,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDER_TSS2):
       # TODO: TSS-P models can do stop and go, but unclear if it requires sDSU or unplugging DSU.
       #  For now, don't list stop and go functionalities in the docs
-      stop_and_go = bool(ret.flags & ToyotaFlags.SMART_DSU.value)
+      stop_and_go = stop_and_go or bool(ret.flags & ToyotaFlags.SMART_DSU.value)
 
     elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALON_TSS2):
       # starting from 2019, all Avalon variants have stop and go
