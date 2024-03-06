@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import ast
+import importlib
 import inspect
 from dataclasses import MISSING, fields
 
@@ -11,6 +12,8 @@ class PlatformConfigFinder(ast.NodeVisitor):
     self.target_node = None
 
   def visit_Assign(self, node):
+    if self.target_node is not None:
+      return
     for target in node.targets:
       if isinstance(target, ast.Name) and target.id == self.platform.name:
         self.target_node = node
@@ -27,12 +30,12 @@ def dataclass_to_string(value):
   return f'{value.__class__.__name__}({s})'
 
 
-def update_field(updates, field, node, config):
-  # TODO: support updating car_info, flags
-  if field.name == 'platform_str':
-    new_text = f'"{config.platform_str}"'
-  elif field.name == 'specs':
+def update_field(updates, field, node, config, BrandFlags):
+  # TODO: support updating car_info
+  if field.name == 'specs':
     new_text = dataclass_to_string(config.specs)
+  elif field.name == 'flags':
+    new_text = ' | '.join(f'{BrandFlags.__name__}.{flag}' for flag in BrandFlags(config.flags).name.split('|'))
   else:
     print(f'Warning: Updating {field.name} is not supported')
     return
@@ -42,6 +45,10 @@ def update_field(updates, field, node, config):
 def update_config(platform, config):
   car = type(platform)
   source_file = inspect.getsourcefile(car)
+
+  brand = platform.__module__.split('.')[-2]
+  brand = brand[0].upper() + brand[1:]
+  BrandFlags = importlib.import_module(car.__module__).__getattribute__(f'{brand}Flags')
 
   with open(source_file, 'r') as f:
     source = f.read()
@@ -57,10 +64,9 @@ def update_config(platform, config):
 
   updates = []
   for field, arg in zip(platform_fields, target_node.value.args, strict=False):
-    update_field(updates, field, arg, config)
+    update_field(updates, field, arg, config, BrandFlags)
   for kwarg in target_node.value.keywords:
-    update_field(updates, platform_fields_by_name[kwarg.arg], kwarg.value, config)
-  print(updates)
+    update_field(updates, platform_fields_by_name[kwarg.arg], kwarg.value, config, BrandFlags)
 
   source = source.split('\n')
   for (line, (start, end)), new_text in updates:
@@ -76,11 +82,13 @@ def update_config(platform, config):
 if __name__ == '__main__':
   from dataclasses import replace
 
-  from openpilot.selfdrive.car.subaru.values import CAR as CAR_SUBARU
+  from openpilot.selfdrive.car.subaru.values import CAR as CAR_SUBARU, SubaruFlags
 
   original_config = CAR_SUBARU.CROSSTREK_HYBRID.config
 
   new_specs = replace(original_config.specs, mass=0, steerRatio=123)
-  new_config = replace(original_config, platform_str='TEST TEST TEST TEST TEST', specs=new_specs)
+  new_config = replace(original_config,
+                       specs=new_specs,
+                       flags=SubaruFlags.HYBRID | SubaruFlags.STEER_RATE_LIMITED)
 
   update_config(CAR_SUBARU.CROSSTREK_HYBRID, new_config)
