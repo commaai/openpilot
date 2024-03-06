@@ -7,13 +7,9 @@ from dataclasses import MISSING, fields
 
 class PlatformConfigFinder(ast.NodeVisitor):
   def __init__(self, platform):
-    super().__init__()
     self.platform = platform
-    self.target_node = None
 
   def visit_Assign(self, node):
-    if self.target_node is not None:
-      return
     for target in node.targets:
       if isinstance(target, ast.Name) and target.id == self.platform.name:
         self.target_node = node
