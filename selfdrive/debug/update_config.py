@@ -26,27 +26,24 @@ def dataclass_to_string(value):
   return f'{value.__class__.__name__}({s})'
 
 
-def replace_colspan(source_lines, line, start, end, new_text):
-  source_lines[line] = source_lines[line][:start] + new_text + source_lines[line][end:]
-
-
-def update_field(source, field, node, config):
+def update_field(updates, field, node, config):
   # TODO: support updating car_info, flags
   if field.name == 'platform_str':
-    new_text = config.platform_str
+    new_text = f'"{config.platform_str}"'
   elif field.name == 'specs':
     new_text = dataclass_to_string(config.specs)
   else:
-    print(f"Warning: Updating {field.name} is not supported")
-    return source
-  return replace_colspan(source, node.lineno, node.col_offset, node.end_col_offset, new_text)
+    print(f'Warning: Updating {field.name} is not supported')
+    return
+  updates.append(((node.lineno, (node.col_offset, node.end_col_offset)), new_text))
 
 
 def update_config(platform, config):
   car = type(platform)
-  source, starting_line = inspect.getsourcelines(car)
-  source = ''.join(source)
   source_file = inspect.getsourcefile(car)
+
+  with open(source_file, 'r') as f:
+    source = f.read()
 
   tree = ast.parse(source)
   finder = PlatformConfigFinder(platform)
@@ -57,19 +54,32 @@ def update_config(platform, config):
   platform_fields = fields(config)
   platform_fields_by_name = {field.name: field for field in platform_fields}
 
+  updates = []
   for field, arg in zip(platform_fields, target_node.value.args, strict=False):
-    source = update_field(source, field, arg, config)
+    update_field(updates, field, arg, config)
   for kwarg in target_node.value.keywords:
-    source = update_field(source, platform_fields_by_name[kwarg.arg], kwarg.value, config)
+    update_field(updates, platform_fields_by_name[kwarg.arg], kwarg.value, config)
+  print(updates)
+
+  source = source.split('\n')
+  for (line, (start, end)), new_text in updates:
+    source[line - 1] = source[line - 1][:start] + new_text + source[line - 1][end:]
+  source = '\n'.join(source)
 
   with open(source_file, 'w') as f:
-    values = f.read()
-    values = replace_colspan(
-      values,
-      (starting_line + target_node.lineno - 1, target_node.col_offset),
-      (starting_line + target_node.end_lineno - 1, target_node.end_col_offset),
-      source,
-    )
-    f.write(values)
+    f.write(source)
 
   return source
+
+
+if __name__ == '__main__':
+  from dataclasses import replace
+
+  from openpilot.selfdrive.car.subaru.values import CAR as CAR_SUBARU
+
+  original_config = CAR_SUBARU.CROSSTREK_HYBRID.config
+
+  new_specs = replace(original_config.specs, mass=0, steerRatio=123)
+  new_config = replace(original_config, platform_str='TEST TEST TEST TEST TEST', specs=new_specs)
+
+  update_config(CAR_SUBARU.CROSSTREK_HYBRID, new_config)
