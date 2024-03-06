@@ -100,15 +100,18 @@ FW_VERSIONS = {
   CAR.AZERA_HEV_6TH_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00IGH MFC  AT KOR LHD 1.00 1.00 99211-G8000 180903',
+      b'\xf1\x00IGH MFC  AT KOR LHD 1.00 1.01 99211-G8000 181109',
       b'\xf1\x00IGH MFC  AT KOR LHD 1.00 1.02 99211-G8100 191029',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00IG  MDPS C 1.00 1.00 56310M9600\x00 4IHSC100',
       b'\xf1\x00IG  MDPS C 1.00 1.01 56310M9350\x00 4IH8C101',
+      b'\xf1\x00IG  MDPS C 1.00 1.02 56310M9350\x00 4IH8C102',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00IGhe SCC FHCUP      1.00 1.00 99110-M9100         ',
       b'\xf1\x00IGhe SCC FHCUP      1.00 1.01 99110-M9000         ',
+      b'\xf1\x00IGhe SCC FHCUP      1.00 1.02 99110-M9000         ',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x006T7N0_C2\x00\x006T7Q2051\x00\x00TIG2H24KA2\x12@\x11\xb7',
@@ -1476,11 +1479,13 @@ FW_VERSIONS = {
   CAR.SONATA_HYBRID: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00DNhe SCC F-CUP      1.00 1.02 99110-L5000         ',
+      b'\xf1\x00DNhe SCC FHCUP      1.00 1.00 99110-L5000         ',
       b'\xf1\x00DNhe SCC FHCUP      1.00 1.02 99110-L5000         ',
       b'\xf1\x8799110L5000\xf1\x00DNhe SCC F-CUP      1.00 1.02 99110-L5000         ',
       b'\xf1\x8799110L5000\xf1\x00DNhe SCC FHCUP      1.00 1.02 99110-L5000         ',
     ],
     (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00DN8 MDPS C 1.00 1.01 56310-L5000 4DNHC101',
       b'\xf1\x00DN8 MDPS C 1.00 1.03 56310L5450\x00 4DNHC104',
       b'\xf1\x8756310-L5450\xf1\x00DN8 MDPS C 1.00 1.02 56310-L5450 4DNHC102',
       b'\xf1\x8756310-L5450\xf1\x00DN8 MDPS C 1.00 1.03 56310-L5450 4DNHC103',
@@ -1488,12 +1493,14 @@ FW_VERSIONS = {
       b'\xf1\x8756310L5450\x00\xf1\x00DN8 MDPS C 1.00 1.03 56310L5450\x00 4DNHC104',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00DN8HMFC  AT KOR LHD 1.00 1.03 99211-L1000 190705',
       b'\xf1\x00DN8HMFC  AT USA LHD 1.00 1.04 99211-L1000 191016',
       b'\xf1\x00DN8HMFC  AT USA LHD 1.00 1.05 99211-L1000 201109',
       b'\xf1\x00DN8HMFC  AT USA LHD 1.00 1.06 99211-L1000 210325',
       b'\xf1\x00DN8HMFC  AT USA LHD 1.00 1.07 99211-L1000 211223',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x00PSBG2314  E07\x00\x00\x00\x00\x00\x00\x00TDN2H20KA5\xba\x82\xc7\xc3',
       b'\xf1\x00PSBG2323  E09\x00\x00\x00\x00\x00\x00\x00TDN2H20SA5\x97R\x88\x9e',
       b'\xf1\x00PSBG2333  E14\x00\x00\x00\x00\x00\x00\x00TDN2H20SA6N\xc2\xeeW',
       b'\xf1\x00PSBG2333  E16\x00\x00\x00\x00\x00\x00\x00TDN2H20SA7\x1a3\xf9\xab',
@@ -1503,6 +1510,7 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x87391062J002',
+      b'\xf1\x87391162J011',
       b'\xf1\x87391162J012',
       b'\xf1\x87391162J013',
       b'\xf1\x87391162J014',
