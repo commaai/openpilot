@@ -289,6 +289,7 @@ routes = [
 
   CarTestRoute("6c14ee12b74823ce|2021-06-30--11-49-02", TESLA.AP1_MODELS),
   CarTestRoute("bb50caf5f0945ab1|2021-06-19--17-20-18", TESLA.AP2_MODELS),
+  CarTestRoute("66c1699b7697267d/2024-03-03--13-09-53", TESLA.MODELS_RAVEN),
 
   # Segments that test specific issues
   # Controls mismatch due to interceptor threshold
