@@ -556,7 +556,7 @@ class CAR(Platforms):
   KIA_EV9 = HyundaiCanFDPlatformConfig(
     "KIA EV9 2024",
     [
-      HyundaiCarInfo("Kia EV9 2023", car_parts=CarParts.common([CarHarness.hyundai_r]))
+      HyundaiCarInfo("Kia EV9 2024", car_parts=CarParts.common([CarHarness.hyundai_r]))
     ],
     CarSpecs(mass=2625, wheelbase=3.1, steerRatio=16.02),
     flags=HyundaiFlags.EV,
