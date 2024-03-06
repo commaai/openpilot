@@ -1,8 +1,5 @@
-from enum import StrEnum
-from typing import Dict
-
 from cereal import car
-from openpilot.selfdrive.car import dbc_dict
+from openpilot.selfdrive.car import CarSpecs, PlatformConfig, Platforms, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarInfo
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
@@ -22,13 +19,13 @@ class CarControllerParams:
     pass
 
 
-class CAR(StrEnum):
-  BODY = "COMMA BODY"
-
-
-CAR_INFO: Dict[str, CarInfo] = {
-  CAR.BODY: CarInfo("comma body", package="All"),
-}
+class CAR(Platforms):
+  BODY = PlatformConfig(
+    "COMMA BODY",
+    CarInfo("comma body", package="All"),
+    CarSpecs(mass=9, wheelbase=0.406, steerRatio=0.5, centerToFrontRatio=0.44),
+    dbc_dict('comma_body', None),
+  )
 
 
 FW_QUERY_CONFIG = FwQueryConfig(
@@ -41,7 +38,5 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
 )
 
-
-DBC = {
-  CAR.BODY: dbc_dict('comma_body', None),
-}
+CAR_INFO = CAR.create_carinfo_map()
+DBC = CAR.create_dbc_map()

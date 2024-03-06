@@ -11,7 +11,7 @@ import tqdm
 import urllib.parse
 import warnings
 
-from typing import Callable, Dict, Iterable, Iterator, List, Optional, Type
+from collections.abc import Callable, Iterable, Iterator
 from urllib.parse import parse_qs, urlparse
 
 from cereal import log as capnp_log
@@ -21,7 +21,7 @@ from openpilot.tools.lib.openpilotci import get_url
 from openpilot.tools.lib.filereader import FileReader, file_exists, internal_source_available
 from openpilot.tools.lib.route import Route, SegmentRange
 
-LogMessage = Type[capnp._DynamicStructReader]
+LogMessage = type[capnp._DynamicStructReader]
 LogIterable = Iterable[LogMessage]
 RawLogIterable = Iterable[bytes]
 
@@ -73,13 +73,15 @@ class ReadMode(enum.StrEnum):
   QLOG = "q"  # only read qlogs
   SANITIZED = "s"  # read from the commaCarSegments database
   AUTO = "a"  # default to rlogs, fallback to qlogs
-  AUTO_INTERACIVE = "i"  # default to rlogs, fallback to qlogs with a prompt from the user
+  AUTO_INTERACTIVE = "i"  # default to rlogs, fallback to qlogs with a prompt from the user
 
 
-LogPath = Optional[str]
-LogPaths = List[LogPath]
+LogPath = str | None
+LogPaths = list[LogPath]
 ValidFileCallable = Callable[[LogPath], bool]
 Source = Callable[[SegmentRange, ReadMode], LogPaths]
+
+InternalUnavailableException = Exception("Internal source not available")
 
 def default_valid_file(fn: LogPath) -> bool:
   return fn is not None and file_exists(fn)
@@ -106,7 +108,7 @@ def apply_strategy(mode: ReadMode, rlog_paths: LogPaths, qlog_paths: LogPaths, v
     return qlog_paths
   elif mode == ReadMode.AUTO:
     return auto_strategy(rlog_paths, qlog_paths, False, valid_file)
-  elif mode == ReadMode.AUTO_INTERACIVE:
+  elif mode == ReadMode.AUTO_INTERACTIVE:
     return auto_strategy(rlog_paths, qlog_paths, True, valid_file)
   raise Exception(f"invalid mode: {mode}")
 
@@ -126,7 +128,7 @@ def comma_api_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
 
 def internal_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
   if not internal_source_available():
-    raise Exception("Internal source not available")
+    raise InternalUnavailableException
 
   def get_internal_url(sr: SegmentRange, seg, file):
     return f"cd:/{sr.dongle_id}/{sr.timestamp}/{seg}/{file}.bz2"
@@ -160,7 +162,7 @@ def get_invalid_files(files):
 
 def check_source(source: Source, *args) -> LogPaths:
   files = source(*args)
-  assert next(get_invalid_files(files), None) is None
+  assert next(get_invalid_files(files), False) is False
   return files
 
 
@@ -168,7 +170,7 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
   if mode == ReadMode.SANITIZED:
     return comma_car_segments_source(sr, mode)
 
-  SOURCES: List[Source] = [internal_source, openpilotci_source, comma_api_source, comma_car_segments_source,]
+  SOURCES: list[Source] = [internal_source, openpilotci_source, comma_api_source, comma_car_segments_source,]
   exceptions = []
   # Automatically determine viable source
   for source in SOURCES:
@@ -210,7 +212,7 @@ def parse_indirect(identifier: str):
 
 
 class LogReader:
-  def _parse_identifiers(self, identifier: str | List[str]):
+  def _parse_identifiers(self, identifier: str | list[str]):
     if isinstance(identifier, list):
       return [i for j in identifier for i in self._parse_identifiers(j)]
 
@@ -232,7 +234,7 @@ class LogReader:
 are uploaded or auto fallback to qlogs with '/a' selector at the end of the route name."
     return identifiers
 
-  def __init__(self, identifier: str | List[str], default_mode: ReadMode = ReadMode.RLOG,
+  def __init__(self, identifier: str | list[str], default_mode: ReadMode = ReadMode.RLOG,
                default_source=auto_source, sort_by_time=False, only_union_types=False):
     self.default_mode = default_mode
     self.default_source = default_source
@@ -241,7 +243,7 @@ are uploaded or auto fallback to qlogs with '/a' selector at the end of the rout
     self.sort_by_time = sort_by_time
     self.only_union_types = only_union_types
 
-    self.__lrs: Dict[int, _LogFileReader] = {}
+    self.__lrs: dict[int, _LogFileReader] = {}
     self.reset()
 
   def _get_lr(self, i):

@@ -742,6 +742,18 @@ This may take up to a minute.</source>
         <source>Select a language</source>
         <translation>เลือกภาษา</translation>
     </message>
+    <message>
+        <source>Choose Software to Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot</source>
+        <translation type="unfinished">openpilot</translation>
+    </message>
+    <message>
+        <source>Custom Software</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SetupWidget</name>

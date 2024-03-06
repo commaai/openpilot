@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from openpilot.selfdrive.car.chrysler.values import CAR as CHRYSLER
 from openpilot.selfdrive.car.gm.values import CAR as GM
@@ -29,8 +29,8 @@ non_tested_cars = [
 
 class CarTestRoute(NamedTuple):
   route: str
-  car_model: Optional[str]
-  segment: Optional[int] = None
+  car_model: str | None
+  segment: int | None = None
 
 
 routes = [
@@ -82,8 +82,8 @@ routes = [
   CarTestRoute("08a3deb07573f157|2020-03-06--16-11-19", HONDA.ACCORD),  # 1.5T
   CarTestRoute("1da5847ac2488106|2021-05-24--19-31-50", HONDA.ACCORD),  # 2.0T
   CarTestRoute("085ac1d942c35910|2021-03-25--20-11-15", HONDA.ACCORD),  # 2021 with new style HUD msgs
-  CarTestRoute("07585b0da3c88459|2021-05-26--18-52-04", HONDA.ACCORDH),
-  CarTestRoute("f29e2b57a55e7ad5|2021-03-24--20-52-38", HONDA.ACCORDH), # 2021 with new style HUD msgs
+  CarTestRoute("07585b0da3c88459|2021-05-26--18-52-04", HONDA.ACCORD),  # hybrid
+  CarTestRoute("f29e2b57a55e7ad5|2021-03-24--20-52-38", HONDA.ACCORD),  # hybrid, 2021 with new style HUD msgs
   CarTestRoute("1ad763dd22ef1a0e|2020-02-29--18-37-03", HONDA.CRV_5G),
   CarTestRoute("0a96f86fcfe35964|2020-02-05--07-25-51", HONDA.ODYSSEY),
   CarTestRoute("d83f36766f8012a5|2020-02-05--18-42-21", HONDA.CIVIC_BOSCH_DIESEL),
@@ -229,6 +229,7 @@ routes = [
 
   CarTestRoute("202c40641158a6e5|2021-09-21--09-43-24", VOLKSWAGEN.ARTEON_MK1),
   CarTestRoute("2c68dda277d887ac|2021-05-11--15-22-20", VOLKSWAGEN.ATLAS_MK1),
+  CarTestRoute("ffcd23abbbd02219|2024-02-28--14-59-38", VOLKSWAGEN.CADDY_MK3),
   CarTestRoute("cae14e88932eb364|2021-03-26--14-43-28", VOLKSWAGEN.GOLF_MK7),  # Stock ACC
   CarTestRoute("3cfdec54aa035f3f|2022-10-13--14-58-58", VOLKSWAGEN.GOLF_MK7),  # openpilot longitudinal
   CarTestRoute("58a7d3b707987d65|2021-03-25--17-26-37", VOLKSWAGEN.JETTA_MK7),
