@@ -768,12 +768,12 @@ FW_VERSIONS = {
     ],
   },
   CAR.LEXUS_IS_TSS2: {
-    (Ecu.engine, 0x7e0, None): [
-      b'\x02353U0000\x00\x00\x00\x00\x00\x00\x00\x0052422000\x00\x00\x00\x00\x00\x00\x00\x00'
-    ],
     (Ecu.engine, 0x700, None): [
       b'\x018966353S1000\x00\x00\x00\x00',
       b'\x018966353S2000\x00\x00\x00\x00',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\x02353U0000\x00\x00\x00\x00\x00\x00\x00\x0052422000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
       b'\x01F15265337200\x00\x00\x00\x00',
