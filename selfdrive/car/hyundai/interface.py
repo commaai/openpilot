@@ -25,6 +25,9 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "hyundai"
     ret.radarUnavailable = RADAR_START_ADDR not in fingerprint[1] or DBC[ret.carFingerprint]["radar"] is None
 
+    if candidate == CAR.KIA_EV9:
+      ret.steerControlType = SteerControlType.angle
+
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
@@ -92,9 +95,6 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
     if candidate != CAR.KIA_EV9:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-
-    if candidate == CAR.KIA_EV9:
-      ret.steerControlType = SteerControlType.angle
 
     # *** longitudinal control ***
     if candidate in CANFD_CAR:
