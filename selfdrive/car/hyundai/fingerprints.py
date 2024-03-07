@@ -1176,10 +1176,10 @@ FW_VERSIONS = {
   },
   CAR.KIA_NIRO_PHEV: {
     (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x816H6D0051\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x816H6D1051\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x816H6F4051\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x816H6F6051\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'\xf1\x816H6D0051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x006U3H0_C2\x00\x006U3G0051\x00\x00HDE0G16NS2\x00\x00\x00\x00',
@@ -1192,7 +1192,6 @@ FW_VERSIONS = {
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00DE  MDPS C 1.00 1.01 56310G5520\x00 4DEPC101',
       b'\xf1\x00DE  MDPS C 1.00 1.09 56310G5301\x00 4DEHC109',
-      b'\xf1\x00DE  MDPS C 1.00 1.09 56310G5301\x00 4DEHC109',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00DEH MFC  AT USA LHD 1.00 1.00 95740-G5010 170117',
@@ -1202,7 +1201,6 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00DEhe SCC F-CUP      1.00 1.02 99110-G5100         ',
-      b'\xf1\x00DEhe SCC H-CUP      1.01 1.02 96400-G5100         ',
       b'\xf1\x00DEhe SCC H-CUP      1.01 1.02 96400-G5100         ',
     ],
   },
