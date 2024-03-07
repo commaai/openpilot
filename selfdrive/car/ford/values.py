@@ -42,6 +42,7 @@ class CarControllerParams:
 class FordFlags(IntFlag):
   # Static flags
   CANFD = 1
+  ALT_STEER_ANGLE = 2
 
 
 class RADAR:
@@ -88,6 +89,12 @@ class CAR(Platforms):
     "FORD BRONCO SPORT 1ST GEN",
     FordCarInfo("Ford Bronco Sport 2021-22"),
     CarSpecs(mass=1625, wheelbase=2.67, steerRatio=17.7),
+  )
+  EDGE_MK2 = FordPlatformConfig(
+    "FORD EDGE 2ND GEN",
+    FordCarInfo("Ford Edge 2022"),
+    CarSpecs(mass=1933, steerRatio=15.3, wheelbase=2.824),
+    flags=FordFlags.ALT_STEER_ANGLE,
   )
   ESCAPE_MK4 = FordPlatformConfig(
     "FORD ESCAPE 4TH GEN",
