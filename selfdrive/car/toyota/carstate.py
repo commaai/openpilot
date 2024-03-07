@@ -171,7 +171,7 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
       self.distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
 
-    elif self.CP.flags & ToyotaFlags.SMART_DSU:
+    elif self.CP.flags & ToyotaFlags.SMART_DSU and not self.CP.flags & ToyotaFlags.RADAR_CAN_FILTER.value:
       self.distance_button = cp.vl["SDSU"]["FD_BUTTON"]
 
     return ret
@@ -224,7 +224,7 @@ class CarState(CarStateBase):
         ("PRE_COLLISION", 33),
       ]
 
-    if CP.flags & ToyotaFlags.SMART_DSU:
+    if CP.flags & ToyotaFlags.SMART_DSU and not CP.flags & ToyotaFlags.RADAR_CAN_FILTER.value:
       messages += [
         ("SDSU", 100),
       ]
