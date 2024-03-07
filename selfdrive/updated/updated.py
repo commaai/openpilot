@@ -162,10 +162,11 @@ class Updater:
 
   def fetch_update(self) -> None:
     self.params.put("UpdaterState", "downloading...")
-    self.params.put_bool("UpdateAvailable", False)
 
     # TODO: cleanly interrupt this and invalidate old update
     set_consistent_flag(False)
+    self.params.put_bool("UpdateAvailable", False)
+
     self.strategy.fetch_update()
 
     # TODO: show agnos download progress
