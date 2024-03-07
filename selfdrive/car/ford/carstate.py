@@ -49,7 +49,7 @@ class CarState(CarStateBase):
 
     # steering wheel
     if self.CP.flags & FordFlags.ALT_STEER_ANGLE:
-      ret.steeringAngleDeg = cp.vl["ParkAid_Data"]["ExtSteeringAngleReq2"]
+      ret.steeringAngleDeg = cp_cam.vl["ParkAid_Data"]["ExtSteeringAngleReq2"]
     else:
       ret.steeringAngleDeg = cp.vl["SteeringPinion_Data"]["StePinComp_An_Est"]
     ret.steeringTorque = cp.vl["EPAS_INFO"]["SteeringColumnTorque"]
