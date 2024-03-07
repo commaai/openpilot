@@ -11,6 +11,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.car import gen_empty_fingerprint
 from openpilot.selfdrive.car.docs_definitions import CarInfo, Column, CommonFootnote, PartType
 from openpilot.selfdrive.car.car_helpers import interfaces, get_interface_attr
+from openpilot.selfdrive.car.values import PLATFORMS
 
 
 def get_all_footnotes() -> dict[Enum, int]:
@@ -27,9 +28,10 @@ CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 def get_all_car_info() -> list[CarInfo]:
   all_car_info: list[CarInfo] = []
   footnotes = get_all_footnotes()
-  for model, car_info in get_interface_attr("CAR_INFO", combine_brands=True).items():
+  for model, platform in PLATFORMS.items():
+    car_info = platform.config.car_info
     # If available, uses experimental longitudinal limits for the docs
-    CP = interfaces[model][0].get_params(model, fingerprint=gen_empty_fingerprint(),
+    CP = interfaces[model][0].get_params(platform, fingerprint=gen_empty_fingerprint(),
                                          car_fw=[car.CarParams.CarFw(ecu="unknown")], experimental_long=True, docs=True)
 
     if CP.dashcamOnly or car_info is None:
@@ -37,7 +39,7 @@ def get_all_car_info() -> list[CarInfo]:
 
     # A platform can include multiple car models
     if not isinstance(car_info, list):
-      car_info = (car_info,)
+      car_info = [car_info,]
 
     for _car_info in car_info:
       if not hasattr(_car_info, "row"):
