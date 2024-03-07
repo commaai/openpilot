@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from typing import Any
 from multiprocessing import Queue
 
 from metadrive.component.sensors.base_camera import _cuda_enable
@@ -38,7 +37,8 @@ def create_map():
 class MetaDriveBridge(SimulatorBridge):
   TICKS_PER_FRAME = 5
 
-  def __init__(self, dual_camera, high_quality):
+  def __init__(self, world_status_q, dual_camera, high_quality):
+    self.world_status_q = world_status_q
     self.should_render = False
 
     super().__init__(dual_camera, high_quality)
@@ -72,11 +72,19 @@ class MetaDriveBridge(SimulatorBridge):
       preload_models=False
     )
 
-    return MetaDriveWorld(config, self.dual_camera)
+    return MetaDriveWorld(world_status_q, config, self.dual_camera)
 
 
 if __name__ == "__main__":
-  queue: Any = Queue()
-  simulator_bridge = MetaDriveBridge(True, False)
-  simulator_process = simulator_bridge.run(queue)
+  command_queue: Queue = Queue()
+  world_status_q: Queue = Queue()
+  simulator_bridge = MetaDriveBridge(world_status_q, True, False)
+  simulator_process = simulator_bridge.run(command_queue)
+
+  while True:
+    world_status = world_status_q.get()
+    print(f"World Status: {str(world_status)}")
+    if world_status["status"] == "terminating":
+      break
+
   simulator_process.join()

@@ -416,5 +416,4 @@ FW_QUERY_CONFIG = FwQueryConfig(
   extra_ecus=[(Ecu.fwdCamera, 0x74f, None)],
 )
 
-
 DBC = CAR.create_dbc_map()

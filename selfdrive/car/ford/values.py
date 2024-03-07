@@ -209,5 +209,4 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
 )
 
-
 DBC = CAR.create_dbc_map()
