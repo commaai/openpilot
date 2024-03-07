@@ -99,34 +99,21 @@ class TestHyundaiFingerprint(unittest.TestCase):
     get_platform_codes(fws)
 
   def test_expected_platform_codes(self):
-    # Ensures we don't accidentally add multiple platform codes for car unless it is intentional
+    # Ensures we don't accidentally add multiple platform codes for a car unless it is intentional
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model.value):
-        codes = {code.split(b"-")[0][:2] for ecu, fws in ecus.items() for
-                  code, _ in get_platform_codes(fws) if ecu[0] in PLATFORM_CODE_ECUS}
+        for ecu, fws in ecus.items():
+          if ecu[0] not in PLATFORM_CODE_ECUS:
+            continue
 
-        if car_model == CAR.PALISADE:
-          self.assertEqual(codes, {b"LX", b"ON"}, f"Car has unexpected platform codes: {car_model} {codes}")
-        elif car_model == CAR.KONA_EV:
-          self.assertEqual(codes, {b"OE", b"OS"}, f"Car has unexpected platform codes: {car_model} {codes}")
-        elif car_model == CAR.KONA_EV_2022:
-          self.assertEqual(codes, {b"OS", b"YB"}, f"Car has unexpected platform codes: {car_model} {codes}")
-        else:
-          self.assertEqual(len(codes), 1, f"Car has multiple platform codes: {car_model} {codes}")
-
-        # for ecu, fws in ecus.items():
-        #   if ecu[0] not in PLATFORM_CODE_ECUS:
-        #     continue
-        #
-        #   codes = {code.split(b"-")[0].upper() for code, _ in get_platform_codes(fws)}
-        #   if car_model == CAR.KIA_CARNIVAL_4TH_GEN:
-        #     self.assertEqual(codes, {b"KA4", b"KA4C"}, f"Car has unexpected platform codes: {car_model} {codes}")
-        #   elif car_model == CAR.ELANTRA:
-        #     self.assertEqual(codes, {b"AD", b"ADP"}, f"Car has unexpected platform codes: {car_model} {codes}")
-        #   # elif car_model ==
-        #   else:
-        #     self.assertEqual(len(codes), 1, f"Car has multiple platform codes: {car_model} {codes}")
-
+          # Third and fourth character are usually EV/hybrid identifiers
+          codes = {code.split(b"-")[0][:2] for code, _ in get_platform_codes(fws)}
+          if car_model == CAR.PALISADE:
+            self.assertEqual(codes, {b"LX", b"ON"}, f"Car has unexpected platform codes: {car_model} {codes}")
+          elif car_model == CAR.KONA_EV and ecu[0] == Ecu.fwdCamera:
+            self.assertEqual(codes, {b"OE", b"OS"}, f"Car has unexpected platform codes: {car_model} {codes}")
+          else:
+            self.assertEqual(len(codes), 1, f"Car has multiple platform codes: {car_model} {codes}")
 
   # Tests for platform codes, part numbers, and FW dates which Hyundai will use to fuzzy
   # fingerprint in the absence of full FW matches:
