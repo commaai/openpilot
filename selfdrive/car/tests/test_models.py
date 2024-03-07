@@ -19,6 +19,7 @@ from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HondaFlags
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
+from openpilot.selfdrive.car.values import Platform
 from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
@@ -64,7 +65,7 @@ def get_test_cases() -> list[tuple[str, CarTestRoute | None]]:
 @pytest.mark.slow
 @pytest.mark.shared_download_cache
 class TestCarModelBase(unittest.TestCase):
-  car_model: str | None = None
+  car_model: Platform | None = None
   test_route: CarTestRoute | None = None
   test_route_on_bucket: bool = True  # whether the route is on the preserved CI bucket
 
