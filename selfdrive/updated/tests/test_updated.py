@@ -21,7 +21,7 @@ def run(args, **kwargs):
   return subprocess.run(args, **kwargs, check=True)
 
 
-def update_release(directory, name, version, release_notes):
+def update_release(directory, name, version, agnos_version, release_notes):
   with open(directory / "RELEASES.md", "w") as f:
     f.write(release_notes)
 
@@ -29,6 +29,9 @@ def update_release(directory, name, version, release_notes):
 
   with open(directory / "common" / "version.h", "w") as f:
     f.write(f'#define COMMA_VERSION "{version}"')
+
+  with open(directory / "launch_env.sh", "w") as f:
+    f.write(f'export AGNOS_VERSION="{agnos_version}"')
 
   run(["git", "add", "."], cwd=directory)
   run(["git", "commit", "-m", f"openpilot release {version}"], cwd=directory)
@@ -60,8 +63,8 @@ class TestUpdateD(unittest.TestCase):
     os.environ["UPDATER_LOCK_FILE"] = str(self.mock_update_path / "safe_staging_overlay.lock")
 
     self.MOCK_RELEASES = {
-      "release3": ("0.1.2", "0.1.2 release notes"),
-      "master": ("0.1.3", "0.1.3 release notes"),
+      "release3": ("0.1.2", "1.2", "0.1.2 release notes"),
+      "master": ("0.1.3", "1.2", "0.1.3 release notes"),
     }
 
   def set_target_branch(self, branch):
@@ -97,7 +100,7 @@ class TestUpdateD(unittest.TestCase):
     self.assertEqual(self.params.get_bool("UpdaterFetchAvailable"), fetch_available)
     self.assertEqual(self.params.get_bool("UpdateAvailable"), update_available)
 
-  def _test_update_params(self, branch, version, release_notes):
+  def _test_update_params(self, branch, version, agnos_version, release_notes):
     self.assertTrue(self.params.get("UpdaterNewDescription", encoding="utf-8").startswith(f"{version} / {branch}"))
     self.assertEqual(self.params.get("UpdaterNewReleaseNotes", encoding="utf-8"), f"<p>{release_notes}</p>\n")
 
@@ -142,7 +145,7 @@ class TestUpdateD(unittest.TestCase):
       time.sleep(1)
       self._test_params("release3", False, False)
 
-      self.MOCK_RELEASES["release3"] = ("0.1.3", "0.1.3 release notes")
+      self.MOCK_RELEASES["release3"] = ("0.1.3", "1.2", "0.1.3 release notes")
       self.update_remote_release("release3")
 
       self.send_check_for_updates_signal(updated)
@@ -182,6 +185,37 @@ class TestUpdateD(unittest.TestCase):
 
       self._test_params("master", False, True)
       self._test_update_params("master", *self.MOCK_RELEASES["master"])
+
+  def test_agnos_update(self):
+    # Start on release3, push an update with an agnos change
+    self.setup_remote_release("release3")
+    self.setup_basedir_release("release3")
+
+    with mock.patch("openpilot.system.hardware.AGNOS", "True"), \
+         mock.patch("openpilot.system.hardware.tici.hardware.Tici.get_os_version", "1.2"), \
+         mock.patch("openpilot.system.hardware.tici.agnos.get_target_slot_number"), \
+         mock.patch("openpilot.system.hardware.tici.agnos.flash_agnos_update"), \
+          processes_context(["updated"]) as [updated]:
+
+      self._test_params("release3", False, False)
+      time.sleep(1)
+      self._test_params("release3", False, False)
+
+      self.MOCK_RELEASES["release3"] = ("0.1.3", "1.3", "0.1.3 release notes")
+      self.update_remote_release("release3")
+
+      self.send_check_for_updates_signal(updated)
+
+      self.wait_for_idle()
+
+      self._test_params("release3", True, False)
+
+      self.send_download_signal(updated)
+
+      self.wait_for_idle()
+
+      self._test_params("release3", False, True)
+      self._test_update_params("release3", *self.MOCK_RELEASES["release3"])
 
 
 if __name__ == "__main__":
