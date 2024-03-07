@@ -12,8 +12,13 @@ from typing import List
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
-from openpilot.selfdrive.updated.common import FINALIZED, OVERLAY_MERGED, OVERLAY_METADATA, OVERLAY_UPPER, OVERLAY_INIT, STAGING_ROOT, \
-                                              UpdateStrategy, parse_release_notes, set_consistent_flag, run
+from openpilot.selfdrive.updated.common import FINALIZED, STAGING_ROOT, UpdateStrategy, parse_release_notes, set_consistent_flag, run
+
+
+OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
+OVERLAY_METADATA = os.path.join(STAGING_ROOT, "metadata")
+OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
+OVERLAY_INIT = Path(os.path.join(BASEDIR, ".overlay_init"))
 
 
 def setup_git_options(cwd: str) -> None:
@@ -96,6 +101,12 @@ def init_overlay() -> None:
 
 
 class GitUpdateStrategy(UpdateStrategy):
+
+  def init(self) -> None:
+    init_overlay()
+
+  def cleanup(self) -> None:
+    OVERLAY_INIT.unlink(missing_ok=True)
 
   def sync_branches(self):
     excluded_branches = ('release2', 'release2-staging')
@@ -199,6 +210,9 @@ class GitUpdateStrategy(UpdateStrategy):
     ]
     r = [run(cmd, OVERLAY_MERGED) for cmd in cmds]
     cloudlog.info("git reset success: %s", '\n'.join(r))
+
+  def fetched_path(self):
+    return str(OVERLAY_MERGED)
 
   def finalize_update(self) -> None:
     """Take the current OverlayFS merged view and finalize a copy outside of

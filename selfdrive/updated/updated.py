@@ -10,12 +10,12 @@ import threading
 
 from openpilot.common.params import Params
 from openpilot.common.time import system_time_valid
-from openpilot.selfdrive.updated.common import LOCK_FILE, OVERLAY_INIT, STAGING_ROOT, UpdateStrategy, run, set_consistent_flag, OVERLAY_MERGED
+from openpilot.selfdrive.updated.common import LOCK_FILE, STAGING_ROOT, UpdateStrategy, run, set_consistent_flag
 from openpilot.system.hardware import AGNOS, HARDWARE
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 from openpilot.system.version import is_tested_branch
-from openpilot.selfdrive.updated.git import GitUpdateStrategy, init_overlay
+from openpilot.selfdrive.updated.git import GitUpdateStrategy
 
 DAYS_NO_CONNECTIVITY_MAX = 14     # do not allow to engage after this many days
 DAYS_NO_CONNECTIVITY_PROMPT = 10  # send an offroad prompt after this many days
@@ -58,12 +58,12 @@ def read_time_from_param(params, param) -> datetime.datetime | None:
   return None
 
 
-def handle_agnos_update() -> None:
+def handle_agnos_update(fetched_path) -> None:
   from openpilot.system.hardware.tici.agnos import flash_agnos_update, get_target_slot_number
 
   cur_version = HARDWARE.get_os_version()
   updated_version = run(["bash", "-c", r"unset AGNOS_VERSION && source launch_env.sh && \
-                          echo -n $AGNOS_VERSION"], OVERLAY_MERGED).strip()
+                          echo -n $AGNOS_VERSION"], fetched_path).strip()
 
   cloudlog.info(f"AGNOS version check: {cur_version} vs {updated_version}")
   if cur_version == updated_version:
@@ -75,7 +75,7 @@ def handle_agnos_update() -> None:
   cloudlog.info(f"Beginning background installation for AGNOS {updated_version}")
   set_offroad_alert("Offroad_NeosUpdate", True)
 
-  manifest_path = os.path.join(OVERLAY_MERGED, "system/hardware/tici/agnos.json")
+  manifest_path = os.path.join(fetched_path, "system/hardware/tici/agnos.json")
   target_slot_number = get_target_slot_number()
   flash_agnos_update(manifest_path, target_slot_number, cloudlog)
   set_offroad_alert("Offroad_NeosUpdate", False)
@@ -96,6 +96,12 @@ class Updater:
   @property
   def has_internet(self) -> bool:
     return self._has_internet
+
+  def init(self):
+    self.strategy.init()
+
+  def cleanup(self):
+    self.strategy.cleanup()
 
   def set_params(self, update_success: bool, failed_count: int, exception: str | None) -> None:
     self.params.put("UpdateFailedCount", str(failed_count))
@@ -162,7 +168,7 @@ class Updater:
 
     # TODO: show agnos download progress
     if AGNOS:
-      handle_agnos_update()
+      handle_agnos_update(self.strategy.fetched_path())
 
     # Create the finalized, ready-to-swap update
     self.params.put("UpdaterState", "finalizing update...")
@@ -215,7 +221,7 @@ def main() -> None:
       exception = None
       try:
         # TODO: reuse overlay from previous updated instance if it looks clean
-        init_overlay()
+        updater.init()
 
         # ensure we have some params written soon after startup
         updater.set_params(False, update_failed_count, exception)
@@ -251,11 +257,11 @@ def main() -> None:
           returncode=e.returncode
         )
         exception = f"command failed: {e.cmd}\n{e.output}"
-        OVERLAY_INIT.unlink(missing_ok=True)
+        updater.cleanup()
       except Exception as e:
         cloudlog.exception("uncaught updated exception, shouldn't happen")
         exception = str(e)
-        OVERLAY_INIT.unlink(missing_ok=True)
+        updater.cleanup()
 
       try:
         params.put("UpdaterState", "idle")

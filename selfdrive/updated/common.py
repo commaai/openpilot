@@ -7,18 +7,12 @@ from typing import List
 
 from markdown_it import MarkdownIt
 from openpilot.common.params import Params
-from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
 
 
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
-OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
-OVERLAY_METADATA = os.path.join(STAGING_ROOT, "metadata")
-OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
 FINALIZED = os.path.join(STAGING_ROOT, "finalized")
-
-OVERLAY_INIT = Path(os.path.join(BASEDIR, ".overlay_init"))
 
 
 def run(cmd: list[str], cwd: str = None) -> str:
@@ -30,12 +24,24 @@ class UpdateStrategy(abc.ABC):
     self.params = Params()
 
   @abc.abstractmethod
+  def init(self) -> None:
+    pass
+
+  @abc.abstractmethod
+  def cleanup(self) -> None:
+    pass
+
+  @abc.abstractmethod
   def get_available_channels(self) -> List[str]:
     """List of available channels to install, (branches, releases, etc)"""
 
   @abc.abstractmethod
   def current_channel(self) -> str:
     """Current channel installed"""
+
+  @abc.abstractmethod
+  def fetched_path(self) -> str:
+    """Path to the fetched update"""
 
   @property
   def target_channel(self) -> str:
