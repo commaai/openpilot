@@ -80,11 +80,6 @@ class GMCarInfo(CarInfo):
       self.footnotes.append(Footnote.OBD_II)
 
 
-@dataclass(frozen=True, kw_only=True)
-class GMCarSpecs(CarSpecs):
-  tireStiffnessFactor: float = 0.444  # not optimized yet
-
-
 @dataclass
 class GMPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'))
@@ -92,7 +87,7 @@ class GMPlatformConfig(PlatformConfig):
 
 @dataclass(frozen=True, kw_only=True)
 class GMCarSpecs(CarSpecs):
-  tireStiffnessFactor: float = 0.444
+  tireStiffnessFactor: float = 0.444  # not optimized yet
   steerActuatorDelay: float = 0.1
   minEnableSpeed: float = 5 * CV.KPH_TO_MS
   minSteerSpeed: float = 10 * CV.KPH_TO_MS
