@@ -70,7 +70,7 @@ class CarD:
     if prev_cp is not None:
       self.params.put("CarParamsPrevRoute", prev_cp)
 
-    # Write CarParams for radard
+    # Write CarParams for controls and radard
     cp_bytes = self.CP.to_bytes()
     self.params.put("CarParams", cp_bytes)
     self.params.put_nonblocking("CarParamsCache", cp_bytes)
