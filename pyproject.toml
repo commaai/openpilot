@@ -197,4 +197,4 @@ lint.flake8-implicit-str-concat.allow-multiline=false
 [tool.coverage.run]
 concurrency = ["multiprocessing", "thread"]
 [tool.ruff.format]
-quote-style = "single"
+quote-style = "preserve"
