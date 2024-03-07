@@ -191,8 +191,6 @@ class GitUpdateStrategy(UpdateStrategy):
   def fetch_update(self):
     cloudlog.info("attempting git fetch inside staging overlay")
 
-    # TODO: cleanly interrupt this and invalidate old update
-    set_consistent_flag(False)
     setup_git_options(OVERLAY_MERGED)
 
     branch = self.target_channel
