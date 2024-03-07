@@ -1,28 +1,25 @@
-FROM ghcr.io/commaai/openpilot-base:latest
+FROM openpilot-base:latest
 
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONUNBUFFERED=1 \
+    OPENPILOT_PATH=/home/batman/openpilot \
+    PYTHONPATH=/home/batman/openpilot:$PYTHONPATH
 
-ENV OPENPILOT_PATH /home/batman/openpilot
-ENV PYTHONPATH ${OPENPILOT_PATH}:${PYTHONPATH}
+WORKDIR $OPENPILOT_PATH
 
-RUN mkdir -p ${OPENPILOT_PATH}
-WORKDIR ${OPENPILOT_PATH}
-
-COPY SConstruct ${OPENPILOT_PATH}
-
-COPY ./openpilot ${OPENPILOT_PATH}/openpilot
-COPY ./third_party ${OPENPILOT_PATH}/third_party
-COPY ./site_scons ${OPENPILOT_PATH}/site_scons
-COPY ./rednose ${OPENPILOT_PATH}/rednose
-COPY ./rednose_repo/site_scons ${OPENPILOT_PATH}/rednose_repo/site_scons
-COPY ./tools ${OPENPILOT_PATH}/tools
-COPY ./release ${OPENPILOT_PATH}/release
-COPY ./common ${OPENPILOT_PATH}/common
-COPY ./opendbc ${OPENPILOT_PATH}/opendbc
-COPY ./cereal ${OPENPILOT_PATH}/cereal
-COPY ./panda ${OPENPILOT_PATH}/panda
-COPY ./selfdrive ${OPENPILOT_PATH}/selfdrive
-COPY ./system ${OPENPILOT_PATH}/system
-COPY ./body ${OPENPILOT_PATH}/body
+COPY SConstruct ./
+COPY ./openpilot ./openpilot
+COPY ./third_party ./third_party
+COPY ./site_scons ./site_scons
+COPY ./rednose ./rednose
+COPY ./rednose_repo/site_scons ./rednose_repo/site_scons
+COPY ./tools ./tools
+COPY ./release ./release
+COPY ./common ./common
+COPY ./opendbc ./opendbc
+COPY ./cereal ./cereal
+COPY ./panda ./panda
+COPY ./selfdrive ./selfdrive
+COPY ./system ./system
+COPY ./body ./body
 
 RUN scons --cache-readonly -j$(nproc)
