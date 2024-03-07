@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
-from enum import Enum, IntFlag
+from enum import Enum
 
 from cereal import car
 from panda.python import uds
-from openpilot.selfdrive.car import CarSpecs, DbcDict, PlatformConfig, Platforms, dbc_dict
+from openpilot.selfdrive.car import CarSpecs, DbcDict, PlatformConfig, Platforms, PlatformFlags, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Tool, Column
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
@@ -52,7 +52,7 @@ class CarControllerParams:
   BRAKE_LOOKUP_V = [BRAKE_MAX, BRAKE_MIN]
 
 
-class SubaruFlags(IntFlag):
+class SubaruFlags(PlatformFlags):
   # Detected flags
   SEND_INFOTAINMENT = 1
   DISABLE_EYESIGHT = 2
