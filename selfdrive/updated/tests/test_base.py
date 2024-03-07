@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import os
 import pathlib
 import shutil
@@ -30,12 +29,14 @@ def update_release(directory, name, version, release_notes):
   with open(directory / "common" / "version.h", "w") as f:
     f.write(f'#define COMMA_VERSION "{version}"')
 
-  run(["git", "add", "."], cwd=directory)
-  run(["git", "commit", "-m", f"openpilot release {version}"], cwd=directory)
-
 
 @pytest.mark.slow # TODO: can we test overlayfs in GHA?
-class TestUpdateD(unittest.TestCase):
+class BaseUpdateTest(unittest.TestCase):
+  @classmethod
+  def setUpClass(cls):
+    if "Base" in cls.__name__:
+      raise unittest.SkipTest
+
   def setUp(self):
     self.tmpdir = tempfile.mkdtemp()
 
@@ -70,15 +71,15 @@ class TestUpdateD(unittest.TestCase):
   def setup_basedir_release(self, release):
     self.params = Params()
     self.set_target_branch(release)
-    run(["git", "clone", "-b", release, self.remote_dir, self.basedir])
 
   def update_remote_release(self, release):
-    update_release(self.remote_dir, release, *self.MOCK_RELEASES[release])
+    raise NotImplementedError("")
 
   def setup_remote_release(self, release):
-    run(["git", "init"], cwd=self.remote_dir)
-    run(["git", "checkout", "-b", release], cwd=self.remote_dir)
-    self.update_remote_release(release)
+    raise NotImplementedError("")
+
+  def additional_context(self):
+    raise NotImplementedError("")
 
   def tearDown(self):
     mock.patch.stopall()
@@ -116,12 +117,28 @@ class TestUpdateD(unittest.TestCase):
 
       time.sleep(1)
 
+  def test_no_release(self):
+    # Start on release3, ensure we don't fetch any updates
+    self.setup_remote_release("release3")
+    self.setup_basedir_release("release3")
+
+    with self.additional_context(), processes_context(["updated"]) as [updated]:
+      self._test_params("release3", False, False)
+      time.sleep(1)
+      self._test_params("release3", False, False)
+
+      self.send_check_for_updates_signal(updated)
+
+      self.wait_for_idle()
+
+      self._test_params("release3", False, False)
+
   def test_new_release(self):
     # Start on release3, simulate a release3 commit, ensure we fetch that update properly
     self.setup_remote_release("release3")
     self.setup_basedir_release("release3")
 
-    with processes_context(["updated"]) as [updated]:
+    with self.additional_context(), processes_context(["updated"]) as [updated]:
       self._test_params("release3", False, False)
       time.sleep(1)
       self._test_params("release3", False, False)
@@ -148,7 +165,7 @@ class TestUpdateD(unittest.TestCase):
     self.setup_remote_release("master")
     self.setup_basedir_release("release3")
 
-    with processes_context(["updated"]) as [updated]:
+    with self.additional_context(), processes_context(["updated"]) as [updated]:
       self._test_params("release3", False, False)
       self.wait_for_idle()
       self._test_params("release3", False, False)
@@ -166,7 +183,3 @@ class TestUpdateD(unittest.TestCase):
 
       self._test_params("master", False, True)
       self._test_update_params("master", *self.MOCK_RELEASES["master"])
-
-
-if __name__ == "__main__":
-  unittest.main()
