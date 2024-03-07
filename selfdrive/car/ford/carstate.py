@@ -19,6 +19,9 @@ class CarState(CarStateBase):
 
     self.vehicle_sensors_valid = False
 
+    self.prev_distance_button = 0
+    self.distance_button = 0
+
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
@@ -83,6 +86,8 @@ class CarState(CarStateBase):
     ret.rightBlinker = cp.vl["Steering_Data_FD1"]["TurnLghtSwtch_D_Stat"] == 2
     # TODO: block this going to the camera otherwise it will enable stock TJA
     ret.genericToggle = bool(cp.vl["Steering_Data_FD1"]["TjaButtnOnOffPress"])
+    self.prev_distance_button = self.distance_button
+    self.distance_button = cp.vl["Steering_Data_FD1"]["AccButtnGapTogglePress"]
 
     # lock info
     ret.doorOpen = any([cp.vl["BodyInfo_3_FD1"]["DrStatDrv_B_Actl"], cp.vl["BodyInfo_3_FD1"]["DrStatPsngr_B_Actl"],
