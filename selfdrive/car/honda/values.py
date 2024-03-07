@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from enum import Enum, IntFlag
+from enum import Enum
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
 from panda.python import uds
-from openpilot.selfdrive.car import CarSpecs, PlatformConfig, Platforms, dbc_dict
+from openpilot.selfdrive.car import CarSpecs, PlatformConfig, PlatformFlags, Platforms, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
@@ -45,7 +45,7 @@ class CarControllerParams:
     self.STEER_LOOKUP_V = [v * -1 for v in CP.lateralParams.torqueV][1:][::-1] + list(CP.lateralParams.torqueV)
 
 
-class HondaFlags(IntFlag):
+class HondaFlags(PlatformFlags):
   # Detected flags
   # Bosch models with alternate set of LKAS_HUD messages
   BOSCH_EXT_HUD = 1
