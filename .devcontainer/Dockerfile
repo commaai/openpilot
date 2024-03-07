@@ -14,5 +14,6 @@ RUN apt update && \
 
 USER batman
 
-RUN curl -O https://raw.githubusercontent.com/commaai/agnos-builder/master/userspace/home/.tmux.conf && \
+RUN cd $HOME && \
+    curl -O https://raw.githubusercontent.com/commaai/agnos-builder/master/userspace/home/.tmux.conf && \
     curl -O https://raw.githubusercontent.com/commaai/agnos-builder/master/userspace/home/.vimrc
