@@ -1,3 +1,4 @@
+import contextlib
 import http.server
 import os
 import threading
@@ -43,27 +44,34 @@ def release_only(f):
     f(self, *args, **kwargs)
   return wrap
 
-def with_processes(processes, init_time=0, ignore_stopped=None):
+
+@contextlib.contextmanager
+def processes_context(processes, init_time=0, ignore_stopped=None):
   ignore_stopped = [] if ignore_stopped is None else ignore_stopped
 
+  # start and assert started
+  for n, p in enumerate(processes):
+    managed_processes[p].start()
+    if n < len(processes) - 1:
+      time.sleep(init_time)
+
+  assert all(managed_processes[name].proc.exitcode is None for name in processes)
+
+  try:
+    yield [managed_processes[name] for name in processes]
+    # assert processes are still started
+    assert all(managed_processes[name].proc.exitcode is None for name in processes if name not in ignore_stopped)
+  finally:
+    for p in processes:
+      managed_processes[p].stop()
+
+
+def with_processes(processes, init_time=0, ignore_stopped=None):
   def wrapper(func):
     @wraps(func)
     def wrap(*args, **kwargs):
-      # start and assert started
-      for n, p in enumerate(processes):
-        managed_processes[p].start()
-        if n < len(processes) - 1:
-          time.sleep(init_time)
-      assert all(managed_processes[name].proc.exitcode is None for name in processes)
-
-      # call the function
-      try:
-        func(*args, **kwargs)
-        # assert processes are still started
-        assert all(managed_processes[name].proc.exitcode is None for name in processes if name not in ignore_stopped)
-      finally:
-        for p in processes:
-          managed_processes[p].stop()
+      with processes_context(processes, init_time, ignore_stopped):
+        return func(*args, **kwargs)
 
     return wrap
   return wrapper

@@ -53,8 +53,11 @@ class CarControllerParams:
 
 
 class SubaruFlags(IntFlag):
+  # Detected flags
   SEND_INFOTAINMENT = 1
   DISABLE_EYESIGHT = 2
+
+  # Static flags
   GLOBAL_GEN2 = 4
 
   # Cars that temporarily fault when steering angle rate is greater than some threshold.
@@ -106,24 +109,31 @@ class SubaruPlatformConfig(PlatformConfig):
       self.dbc_dict = dbc_dict('subaru_global_2020_hybrid_generated', None)
 
 
+@dataclass
+class SubaruGen2PlatformConfig(SubaruPlatformConfig):
+  def init(self):
+    super().init()
+    self.flags |= SubaruFlags.GLOBAL_GEN2
+    if not (self.flags & SubaruFlags.LKAS_ANGLE):
+      self.flags |= SubaruFlags.STEER_RATE_LIMITED
+
+
 class CAR(Platforms):
   # Global platform
   ASCENT = SubaruPlatformConfig(
     "SUBARU ASCENT LIMITED 2019",
     SubaruCarInfo("Subaru Ascent 2019-21", "All"),
-    specs=CarSpecs(mass=2031, wheelbase=2.89, steerRatio=13.5),
+    CarSpecs(mass=2031, wheelbase=2.89, steerRatio=13.5),
   )
-  OUTBACK = SubaruPlatformConfig(
+  OUTBACK = SubaruGen2PlatformConfig(
     "SUBARU OUTBACK 6TH GEN",
     SubaruCarInfo("Subaru Outback 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b])),
-    specs=CarSpecs(mass=1568, wheelbase=2.67, steerRatio=17),
-    flags=SubaruFlags.GLOBAL_GEN2 | SubaruFlags.STEER_RATE_LIMITED,
+    CarSpecs(mass=1568, wheelbase=2.67, steerRatio=17),
   )
-  LEGACY = SubaruPlatformConfig(
+  LEGACY = SubaruGen2PlatformConfig(
     "SUBARU LEGACY 7TH GEN",
     SubaruCarInfo("Subaru Legacy 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b])),
-    specs=OUTBACK.specs,
-    flags=SubaruFlags.GLOBAL_GEN2 | SubaruFlags.STEER_RATE_LIMITED,
+    OUTBACK.specs,
   )
   IMPREZA = SubaruPlatformConfig(
     "SUBARU IMPREZA LIMITED 2019",
@@ -132,7 +142,7 @@ class CAR(Platforms):
       SubaruCarInfo("Subaru Crosstrek 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26"),
       SubaruCarInfo("Subaru XV 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26"),
     ],
-    specs=CarSpecs(mass=1568, wheelbase=2.67, steerRatio=15),
+    CarSpecs(mass=1568, wheelbase=2.67, steerRatio=15),
   )
   IMPREZA_2020 = SubaruPlatformConfig(
     "SUBARU IMPREZA SPORT 2020",
@@ -141,75 +151,75 @@ class CAR(Platforms):
       SubaruCarInfo("Subaru Crosstrek 2020-23"),
       SubaruCarInfo("Subaru XV 2020-21"),
     ],
-    specs=CarSpecs(mass=1480, wheelbase=2.67, steerRatio=17),
+    CarSpecs(mass=1480, wheelbase=2.67, steerRatio=17),
     flags=SubaruFlags.STEER_RATE_LIMITED,
   )
   # TODO: is there an XV and Impreza too?
   CROSSTREK_HYBRID = SubaruPlatformConfig(
     "SUBARU CROSSTREK HYBRID 2020",
     SubaruCarInfo("Subaru Crosstrek Hybrid 2020", car_parts=CarParts.common([CarHarness.subaru_b])),
-    specs=CarSpecs(mass=1668, wheelbase=2.67, steerRatio=17),
+    CarSpecs(mass=1668, wheelbase=2.67, steerRatio=17),
     flags=SubaruFlags.HYBRID,
   )
   FORESTER = SubaruPlatformConfig(
     "SUBARU FORESTER 2019",
     SubaruCarInfo("Subaru Forester 2019-21", "All"),
-    specs=CarSpecs(mass=1568, wheelbase=2.67, steerRatio=17),
+    CarSpecs(mass=1568, wheelbase=2.67, steerRatio=17),
     flags=SubaruFlags.STEER_RATE_LIMITED,
   )
   FORESTER_HYBRID = SubaruPlatformConfig(
     "SUBARU FORESTER HYBRID 2020",
     SubaruCarInfo("Subaru Forester Hybrid 2020"),
-    specs=FORESTER.specs,
+    FORESTER.specs,
     flags=SubaruFlags.HYBRID,
   )
   # Pre-global
   FORESTER_PREGLOBAL = SubaruPlatformConfig(
     "SUBARU FORESTER 2017 - 2018",
     SubaruCarInfo("Subaru Forester 2017-18"),
+    CarSpecs(mass=1568, wheelbase=2.67, steerRatio=20),
     dbc_dict('subaru_forester_2017_generated', None),
-    specs=CarSpecs(mass=1568, wheelbase=2.67, steerRatio=20),
     flags=SubaruFlags.PREGLOBAL,
   )
   LEGACY_PREGLOBAL = SubaruPlatformConfig(
     "SUBARU LEGACY 2015 - 2018",
     SubaruCarInfo("Subaru Legacy 2015-18"),
+    CarSpecs(mass=1568, wheelbase=2.67, steerRatio=12.5),
     dbc_dict('subaru_outback_2015_generated', None),
-    specs=CarSpecs(mass=1568, wheelbase=2.67, steerRatio=12.5),
     flags=SubaruFlags.PREGLOBAL,
   )
   OUTBACK_PREGLOBAL = SubaruPlatformConfig(
     "SUBARU OUTBACK 2015 - 2017",
     SubaruCarInfo("Subaru Outback 2015-17"),
+    FORESTER_PREGLOBAL.specs,
     dbc_dict('subaru_outback_2015_generated', None),
-    specs=FORESTER_PREGLOBAL.specs,
     flags=SubaruFlags.PREGLOBAL,
   )
   OUTBACK_PREGLOBAL_2018 = SubaruPlatformConfig(
     "SUBARU OUTBACK 2018 - 2019",
     SubaruCarInfo("Subaru Outback 2018-19"),
+    FORESTER_PREGLOBAL.specs,
     dbc_dict('subaru_outback_2019_generated', None),
-    specs=FORESTER_PREGLOBAL.specs,
     flags=SubaruFlags.PREGLOBAL,
   )
   # Angle LKAS
   FORESTER_2022 = SubaruPlatformConfig(
     "SUBARU FORESTER 2022",
     SubaruCarInfo("Subaru Forester 2022-24", "All", car_parts=CarParts.common([CarHarness.subaru_c])),
-    specs=FORESTER.specs,
+    FORESTER.specs,
     flags=SubaruFlags.LKAS_ANGLE,
   )
-  OUTBACK_2023 = SubaruPlatformConfig(
+  OUTBACK_2023 = SubaruGen2PlatformConfig(
     "SUBARU OUTBACK 7TH GEN",
     SubaruCarInfo("Subaru Outback 2023", "All", car_parts=CarParts.common([CarHarness.subaru_d])),
-    specs=OUTBACK.specs,
-    flags=SubaruFlags.GLOBAL_GEN2 | SubaruFlags.LKAS_ANGLE,
+    OUTBACK.specs,
+    flags=SubaruFlags.LKAS_ANGLE,
   )
-  ASCENT_2023 = SubaruPlatformConfig(
+  ASCENT_2023 = SubaruGen2PlatformConfig(
     "SUBARU ASCENT 2023",
     SubaruCarInfo("Subaru Ascent 2023", "All", car_parts=CarParts.common([CarHarness.subaru_d])),
-    specs=ASCENT.specs,
-    flags=SubaruFlags.GLOBAL_GEN2 | SubaruFlags.LKAS_ANGLE,
+    ASCENT.specs,
+    flags=SubaruFlags.LKAS_ANGLE,
   )
 
 
@@ -253,5 +263,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
   }
 )
 
-CAR_INFO = CAR.create_carinfo_map()
 DBC = CAR.create_dbc_map()
+
+if __name__ == "__main__":
+  CAR.print_debug(SubaruFlags)

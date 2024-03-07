@@ -25,4 +25,15 @@ FW_VERSIONS = {
       b'\x10#\x01',
     ],
   },
+  CAR.MODELS_RAVEN: {
+    (Ecu.electricBrakeBooster, 0x64d, None): [
+      b'1037123-00-A',
+    ],
+    (Ecu.fwdRadar, 0x671, None): [
+      b'\x01\x00\x99\x02\x01\x00\x10\x00\x00AP8.3.03\x00\x10',
+    ],
+    (Ecu.eps, 0x730, None): [
+      b'SX_0.0.0 (99),SR013.7',
+    ],
+  },
 }
