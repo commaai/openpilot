@@ -19,7 +19,8 @@ C3_POSITION = Vec3(0.0, 0, 1.22)
 C3_HPR = Vec3(0, 0,0)
 
 
-metadrive_state = namedtuple("metadrive_state", ["velocity", "position", "bearing", "steering_angle"])
+metadrive_simulation_state = namedtuple("metadrive_simulation_state", ["running", "done", "done_info"])
+metadrive_vehicle_state = namedtuple("metadrive_vehicle_state", ["velocity", "position", "bearing", "steering_angle"])
 
 def apply_metadrive_patches():
   # By default, metadrive won't try to use cuda images unless it's used as a sensor for vehicles, so patch that in
@@ -46,7 +47,8 @@ def apply_metadrive_patches():
   MetaDriveEnv._is_arrive_destination = arrive_destination_patch
 
 def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera_array, image_lock,
-                      controls_recv: Connection, state_send: Connection, exit_event):
+                      controls_recv: Connection, simulation_state_send: Connection, vehicle_state_send: Connection,
+                      exit_event):
   apply_metadrive_patches()
 
   road_image = np.frombuffer(camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
@@ -59,6 +61,13 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
   def reset():
     env.reset()
     env.vehicle.config["max_speed_km_h"] = 1000
+
+    simulation_state = metadrive_simulation_state(
+      running=True,
+      done=False,
+      done_info=None,
+    )
+    simulation_state_send.send(simulation_state)
 
   reset()
 
@@ -78,14 +87,14 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
   vc = [0,0]
 
   while not exit_event.is_set():
-    state = metadrive_state(
+    vehicle_state = metadrive_vehicle_state(
       velocity=vec3(x=float(env.vehicle.velocity[0]), y=float(env.vehicle.velocity[1]), z=0),
       position=env.vehicle.position,
       bearing=float(math.degrees(env.vehicle.heading_theta)),
       steering_angle=env.vehicle.steering * env.vehicle.MAX_STEERING
     )
 
-    state_send.send(state)
+    vehicle_state_send.send(vehicle_state)
 
     if controls_recv.poll(0):
       while controls_recv.poll(0):
@@ -103,7 +112,13 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
       obs, _, terminated, _, info = env.step(vc)
 
       if terminated:
-        reset()
+        done_result = env.done_function("default_agent")
+        simulation_state = metadrive_simulation_state(
+          running=False,
+          done=done_result[0],
+          done_info=done_result[1],
+        )
+        simulation_state_send.send(simulation_state)
 
       if dual_camera:
         wide_road_image[...] = get_cam_as_rgb("rgb_wide")

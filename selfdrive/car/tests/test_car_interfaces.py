@@ -22,7 +22,7 @@ from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
 ALL_ECUS = list({ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()})
 
-MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '20'))
+MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '40'))
 
 
 def get_fuzzy_car_interface_args(draw: DrawType) -> dict:

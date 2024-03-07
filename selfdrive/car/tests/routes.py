@@ -229,6 +229,7 @@ routes = [
 
   CarTestRoute("202c40641158a6e5|2021-09-21--09-43-24", VOLKSWAGEN.ARTEON_MK1),
   CarTestRoute("2c68dda277d887ac|2021-05-11--15-22-20", VOLKSWAGEN.ATLAS_MK1),
+  CarTestRoute("ffcd23abbbd02219|2024-02-28--14-59-38", VOLKSWAGEN.CADDY_MK3),
   CarTestRoute("cae14e88932eb364|2021-03-26--14-43-28", VOLKSWAGEN.GOLF_MK7),  # Stock ACC
   CarTestRoute("3cfdec54aa035f3f|2022-10-13--14-58-58", VOLKSWAGEN.GOLF_MK7),  # openpilot longitudinal
   CarTestRoute("58a7d3b707987d65|2021-03-25--17-26-37", VOLKSWAGEN.JETTA_MK7),
@@ -288,6 +289,7 @@ routes = [
 
   CarTestRoute("6c14ee12b74823ce|2021-06-30--11-49-02", TESLA.AP1_MODELS),
   CarTestRoute("bb50caf5f0945ab1|2021-06-19--17-20-18", TESLA.AP2_MODELS),
+  CarTestRoute("66c1699b7697267d/2024-03-03--13-09-53", TESLA.MODELS_RAVEN),
 
   # Segments that test specific issues
   # Controls mismatch due to interceptor threshold
