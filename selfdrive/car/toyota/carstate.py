@@ -170,7 +170,8 @@ class CarState(CarStateBase):
       self.lkas_hud = copy.copy(cp_cam.vl["LKAS_HUD"])
 
     if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) or (self.CP.flags & ToyotaFlags.SMART_DSU and not self.CP.flags & ToyotaFlags.RADAR_CAN_FILTER):
-      self.pcm_follow_distance = cp.vl["PCM_CRUISE_2"]["PCM_FOLLOW_DISTANCE"]
+      if self.CP.carFingerprint not in UNSUPPORTED_DSU_CAR:
+        self.pcm_follow_distance = cp.vl["PCM_CRUISE_2"]["PCM_FOLLOW_DISTANCE"]
 
       # distance button is wired to the ACC module (camera or radar)
       self.prev_distance_button = self.distance_button
