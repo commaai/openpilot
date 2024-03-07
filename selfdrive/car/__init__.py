@@ -321,4 +321,5 @@ class Platforms(str, ReprEnum):
 
 
 class PlatformFlags(IntFlag):
-  pass
+  def __init__(self, value: int):
+    assert value < 2**32, "undefined behaviour with >32 bit flags"
