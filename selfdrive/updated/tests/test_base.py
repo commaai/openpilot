@@ -117,7 +117,7 @@ class BaseUpdateTest(unittest.TestCase):
 
       time.sleep(1)
 
-  def test_no_release(self):
+  def test_no_update(self):
     # Start on release3, ensure we don't fetch any updates
     self.setup_remote_release("release3")
     self.setup_basedir_release("release3")

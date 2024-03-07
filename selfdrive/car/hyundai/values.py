@@ -418,6 +418,7 @@ class CAR(Platforms):
   KIA_NIRO_PHEV = HyundaiPlatformConfig(
     "KIA NIRO HYBRID 2019",
     [
+      HyundaiCarInfo("Kia Niro Hybrid 2018", "All", min_enable_speed=10. * CV.MPH_TO_MS, car_parts=CarParts.common([CarHarness.hyundai_c])),
       HyundaiCarInfo("Kia Niro Plug-in Hybrid 2018-19", "All", min_enable_speed=10. * CV.MPH_TO_MS, car_parts=CarParts.common([CarHarness.hyundai_c])),
       HyundaiCarInfo("Kia Niro Plug-in Hybrid 2020", "All", car_parts=CarParts.common([CarHarness.hyundai_d])),
     ],
@@ -804,9 +805,9 @@ FW_QUERY_CONFIG = FwQueryConfig(
   # We lose these ECUs without the comma power on these cars.
   # Note that we still attempt to match with them when they are present
   non_essential_ecus={
-    Ecu.transmission: [CAR.AZERA_6TH_GEN, CAR.AZERA_HEV_6TH_GEN, CAR.SONATA],
-    Ecu.engine: [CAR.AZERA_6TH_GEN, CAR.AZERA_HEV_6TH_GEN, CAR.SONATA],
-    Ecu.abs: [CAR.SONATA],
+    Ecu.transmission: [CAR.AZERA_6TH_GEN, CAR.AZERA_HEV_6TH_GEN, CAR.PALISADE, CAR.SONATA],
+    Ecu.engine: [CAR.AZERA_6TH_GEN, CAR.AZERA_HEV_6TH_GEN, CAR.PALISADE, CAR.SONATA],
+    Ecu.abs: [CAR.PALISADE, CAR.SONATA],
   },
   extra_ecus=[
     (Ecu.adas, 0x730, None),         # ADAS Driving ECU on HDA2 platforms

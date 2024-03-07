@@ -1,3 +1,5 @@
+from multiprocessing import Queue
+
 from metadrive.component.sensors.base_camera import _cuda_enable
 from metadrive.component.map.pg_map import MapGenerateMethod
 
@@ -80,4 +82,4 @@ class MetaDriveBridge(SimulatorBridge):
       preload_models=False
     )
 
-    return MetaDriveWorld(config, self.dual_camera)
+    return MetaDriveWorld(Queue(), config, self.dual_camera)

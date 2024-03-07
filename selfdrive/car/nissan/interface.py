@@ -30,11 +30,6 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_adas, self.cp_cam)
 
-    buttonEvents = []
-    be = car.CarState.ButtonEvent.new_message()
-    be.type = car.CarState.ButtonEvent.Type.accelCruise
-    buttonEvents.append(be)
-
     events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.brake])
 
     if self.CS.lkas_enabled:
