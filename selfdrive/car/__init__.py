@@ -320,7 +320,6 @@ class Platforms(str, ReprEnum):
       print(f"{flag:32s}: {', '.join(p.name for p in platforms)}")
 
 
-
 class PlatformFlags(IntFlag):
   def __init__(self, value: int):
     assert value < 2**32, "undefined behaviour with >32 bit flags"
