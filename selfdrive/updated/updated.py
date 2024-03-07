@@ -81,12 +81,17 @@ def handle_agnos_update() -> None:
   set_offroad_alert("Offroad_NeosUpdate", False)
 
 
+STRATEGY = {
+  "git": GitUpdateStrategy,
+}
+
+
 class Updater:
   def __init__(self):
     self.params = Params()
     self._has_internet: bool = False
 
-    self.strategy: UpdateStrategy = GitUpdateStrategy()
+    self.strategy: UpdateStrategy = STRATEGY[os.environ.get("UPDATER_STRATEGY", "git")]()
 
   @property
   def has_internet(self) -> bool:
