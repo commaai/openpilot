@@ -12,5 +12,15 @@
     "**/.git": true,
     "**/.venv": true,
     "**/__pycache__": true
-  }
+  },
+  "python.analysis.exclude": [
+    "**/.git",
+    "**/.venv",
+    "**/__pycache__",
+    // exclude directories should be using the symlinked version
+    "common/**",
+    "selfdrive/**",
+    "system/**",
+    "tools/**",
+  ]
 }
