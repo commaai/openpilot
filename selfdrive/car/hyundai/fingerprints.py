@@ -874,6 +874,7 @@ FW_VERSIONS = {
   CAR.GENESIS_G80: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00DH__ SCC F-CUP      1.00 1.01 96400-B1120         ',
+      b'\xf1\x00DH__ SCC F-CUP      1.00 1.02 96400-B1120         ',
       b'\xf1\x00DH__ SCC FHCUP      1.00 1.01 96400-B1110         ',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
@@ -881,10 +882,12 @@ FW_VERSIONS = {
       b'\xf1\x00DH  LKAS AT USA LHD 1.01 1.01 95895-B1500 161014',
       b'\xf1\x00DH  LKAS AT USA LHD 1.01 1.02 95895-B1500 170810',
       b'\xf1\x00DH  LKAS AT USA LHD 1.01 1.03 95895-B1500 180713',
+      b'\xf1\x00DH  LKAS AT USA LHD 1.01 1.04 95895-B1500 181213',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x00bcsh8p54  E18\x00\x00\x00\x00\x00\x00\x00SDH0G33KH2\xae\xde\xd5!',
       b'\xf1\x00bcsh8p54  E18\x00\x00\x00\x00\x00\x00\x00SDH0G38NH2j\x9dA\x1c',
+      b'\xf1\x00bcsh8p54  E18\x00\x00\x00\x00\x00\x00\x00SDH0G38NH3\xaf\x1a7\xe2',
       b'\xf1\x00bcsh8p54  E18\x00\x00\x00\x00\x00\x00\x00SDH0T33NH3\x97\xe6\xbc\xb8',
       b'\xf1\x00bcsh8p54  E18\x00\x00\x00\x00\x00\x00\x00TDH0G38NH3:-\xa9n',
       b'\xf1\x00bcsh8p54  E21\x00\x00\x00\x00\x00\x00\x00SDH0T33NH4\xd7O\x9e\xc9',
@@ -1503,15 +1506,18 @@ FW_VERSIONS = {
   },
   CAR.KIA_SORENTO: {
     (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00UMP LKAS AT USA LHD 1.00 1.00 95740-C6550 d00',
       b'\xf1\x00UMP LKAS AT USA LHD 1.01 1.01 95740-C6550 d01',
     ],
     (Ecu.abs, 0x7d1, None): [
+      b'\xf1\x00UM ESC \x02 12 \x18\x05\x05 58910-C6300',
       b'\xf1\x00UM ESC \x0c 12 \x18\x05\x06 58910-C6330',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00UM__ SCC F-CUP      1.00 1.00 96400-C6500         ',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x00bcsh8p54  U834\x00\x00\x00\x00\x00\x00TUM2G33NL7K\xae\xdd\x1d',
       b'\xf1\x87LDKUAA0348164HE3\x87www\x87www\x88\x88\xa8\x88w\x88\x97xw\x88\x97x\x86o\xf8\xff\x87f\x7f\xff\x15\xe0\xf1\x81U811\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U811\x00\x00\x00\x00\x00\x00TUM4G33NL3V|DG',
     ],
     (Ecu.engine, 0x7e0, None): [
