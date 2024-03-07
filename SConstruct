@@ -245,7 +245,8 @@ if GetOption('compile_db'):
   env.CompilationDatabase('compile_commands.json')
 
 # Setup cache dir
-cache_dir = '/data/scons_cache' if AGNOS else '/tmp/scons_cache'
+default_cache_dir = '/data/scons_cache' if AGNOS else '/tmp/scons_cache'
+cache_dir = ARGUMENTS.get('cache_dir', default_cache_dir)
 CacheDir(cache_dir)
 Clean(["."], cache_dir)
 
@@ -384,7 +385,13 @@ if arch != "Darwin":
 # Build openpilot
 SConscript(['third_party/SConscript'])
 
-SConscript(['selfdrive/SConscript'])
+SConscript(['selfdrive/boardd/SConscript'])
+SConscript(['selfdrive/controls/lib/lateral_mpc_lib/SConscript'])
+SConscript(['selfdrive/controls/lib/longitudinal_mpc_lib/SConscript'])
+SConscript(['selfdrive/locationd/SConscript'])
+SConscript(['selfdrive/navd/SConscript'])
+SConscript(['selfdrive/modeld/SConscript'])
+SConscript(['selfdrive/ui/SConscript'])
 
 if arch in ['x86_64', 'aarch64', 'Darwin'] and Dir('#tools/cabana/').exists() and GetOption('extras'):
   SConscript(['tools/replay/SConscript'])
