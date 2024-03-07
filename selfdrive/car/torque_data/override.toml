@@ -18,6 +18,7 @@ legend = ["LAT_ACCEL_FACTOR", "MAX_LAT_ACCEL_MEASURED", "FRICTION"]
 # Tesla has high torque
 "TESLA AP1 MODEL S" = [nan, 2.5, nan]
 "TESLA AP2 MODEL S" = [nan, 2.5, nan]
+"TESLA MODEL S RAVEN" = [nan, 2.5, nan]
 
 # Guess
 "FORD BRONCO SPORT 1ST GEN" = [nan, 1.5, nan]
