@@ -116,6 +116,22 @@ class TestUpdateD(unittest.TestCase):
 
       time.sleep(1)
 
+  def test_no_update(self):
+    # Start on release3, ensure we don't fetch any updates
+    self.setup_remote_release("release3")
+    self.setup_basedir_release("release3")
+
+    with processes_context(["updated"]) as [updated]:
+      self._test_params("release3", False, False)
+      time.sleep(1)
+      self._test_params("release3", False, False)
+
+      self.send_check_for_updates_signal(updated)
+
+      self.wait_for_idle()
+
+      self._test_params("release3", False, False)
+
   def test_new_release(self):
     # Start on release3, simulate a release3 commit, ensure we fetch that update properly
     self.setup_remote_release("release3")
