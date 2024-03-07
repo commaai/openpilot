@@ -26,8 +26,8 @@ OS04C10::OS04C10() {
   data_word = false;
 
   frame_width = OS04C10_FRAME_WIDTH;
-  frame_height = OS04C10_FRAME_HEIGHT*2;
-  frame_stride = (OS04C10_FRAME_WIDTH * 12 / 8); // no alignment
+  frame_height = OS04C10_FRAME_HEIGHT * 2 + 40; // stagger separated by 40 rows
+  frame_stride = (OS04C10_FRAME_WIDTH * 10 / 8); // no alignment
 
   extra_height = 0;
   frame_offset = 0;
@@ -46,7 +46,7 @@ OS04C10::OS04C10() {
   dc_gain_on_grey = 0.9;
   dc_gain_off_grey = 1.0;
   exposure_time_min = 2;  // 1x
-  exposure_time_max = 2200;
+  exposure_time_max = 2400;
   analog_gain_min_idx = 0x0;
   analog_gain_rec_idx = 0x0;  // 1x
   analog_gain_max_idx = 0x36;
