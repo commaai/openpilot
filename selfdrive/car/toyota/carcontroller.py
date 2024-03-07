@@ -142,7 +142,9 @@ class CarController(CarControllerBase):
 
       # Press distance button until we are at the correct bar length. The distance cannot be changed without cruise available
       if self.frame % 6 == 0:
-        if CS.pcm_follow_distance_values.get(CS.pcm_follow_distance, "UNKNOWN") != "FAR" and CS.out.cruiseState.available:
+
+        desired_distance = 4 - CC.hudControl.distanceLines  # this is flipped
+        if CS.pcm_follow_distance_values != desired_distance and CS.out.cruiseState.available:
           self.distance_button = not self.distance_button
         else:
           self.distance_button = 0
