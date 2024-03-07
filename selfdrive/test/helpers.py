@@ -110,6 +110,6 @@ def http_server_context(handler, setup=None):
 def with_http_server(func, handler=http.server.BaseHTTPRequestHandler, setup=None):
   @wraps(func)
   def inner(*args, **kwargs):
-    with http_server_context(http.server.BaseHTTPRequestHandler, setup) as (host, port):
+    with http_server_context(handler, setup) as (host, port):
       return func(*args, f"http://{host}:{port}", **kwargs)
   return inner
