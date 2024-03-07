@@ -63,7 +63,6 @@ class CAR(Platforms):
   )
 
 
-
 DBC = CAR.create_dbc_map()
 
 # Default diagnostic session
