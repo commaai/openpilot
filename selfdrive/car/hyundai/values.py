@@ -1,11 +1,11 @@
 import re
 from dataclasses import dataclass, field
-from enum import Enum, IntFlag
+from enum import Enum
 
 from cereal import car
 from panda.python import uds
 from openpilot.common.conversions import Conversions as CV
-from openpilot.selfdrive.car import CarSpecs, DbcDict, PlatformConfig, Platforms, dbc_dict
+from openpilot.selfdrive.car import CarSpecs, DbcDict, PlatformConfig, PlatformFlags, Platforms, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
@@ -51,7 +51,7 @@ class CarControllerParams:
       self.STEER_MAX = 384
 
 
-class HyundaiFlags(IntFlag):
+class HyundaiFlags(PlatformFlags):
   # Dynamic Flags
   CANFD_HDA2 = 1
   CANFD_ALT_BUTTONS = 2
