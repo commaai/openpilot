@@ -28,7 +28,7 @@ class CarState(CarStateBase):
     # Occasionally on startup, the ABS module recalibrates the steering pinion offset, so we need to block engagement
     # The vehicle usually recovers out of this state within a minute of normal driving
     if self.CP.flags & FordFlags.ALT_STEER_ANGLE:
-      self.vehicle_sensors_valid = ((cp_cam.vl["ParkAid_Data"]["ExtSteeringAngleReq2"] + 1000) * 10) < 32766
+      self.vehicle_sensors_valid = ((cp.vl["ParkAid_Data"]["ExtSteeringAngleReq2"] + 1000) * 10) < 32766
     else:
       self.vehicle_sensors_valid = cp.vl["SteeringPinion_Data"]["StePinCompAnEst_D_Qf"] == 3
 
@@ -49,7 +49,7 @@ class CarState(CarStateBase):
 
     # steering wheel
     if self.CP.flags & FordFlags.ALT_STEER_ANGLE:
-      ret.steeringAngleDeg = cp_cam.vl["ParkAid_Data"]["ExtSteeringAngleReq2"]
+      ret.steeringAngleDeg = cp.vl["ParkAid_Data"]["ExtSteeringAngleReq2"]
     else:
       ret.steeringAngleDeg = cp.vl["SteeringPinion_Data"]["StePinComp_An_Est"]
     ret.steeringTorque = cp.vl["EPAS_INFO"]["SteeringColumnTorque"]
@@ -132,7 +132,11 @@ class CarState(CarStateBase):
       ("RCMStatusMessage2_FD1", 10),
     ]
 
-    if not (CP.flags & FordFlags.ALT_STEER_ANGLE):
+    if CP.flags & FordFlags.ALT_STEER_ANGLE:
+      messages += [
+        ("ParkAid_Data", 50),
+      ]
+    else:
       messages += [
         ("SteeringPinion_Data", 100),
       ]
@@ -169,11 +173,6 @@ class CarState(CarStateBase):
       ("ACCDATA_3", 5),
       ("IPMA_Data", 1),
     ]
-
-    if CP.flags & FordFlags.ALT_STEER_ANGLE:
-      messages += [
-        ("ParkAid_Data", 50),
-      ]
 
     if CP.enableBsm and CP.flags & FordFlags.CANFD:
       messages += [
