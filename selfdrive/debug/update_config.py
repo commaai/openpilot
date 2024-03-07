@@ -2,7 +2,8 @@
 import ast
 import importlib
 import inspect
-from dataclasses import MISSING, fields
+from dataclasses import MISSING, fields, is_dataclass
+from enum import Enum
 
 
 class PlatformConfigFinder(ast.NodeVisitor):
@@ -16,62 +17,97 @@ class PlatformConfigFinder(ast.NodeVisitor):
         return
 
 
-def dataclass_to_string(value):
+# def items_to_string(items, indent):
+
+
+def stringify(value):
+  if isinstance(value, str):
+    return f'"{value}"'
+  elif isinstance(value, list):
+    # TODO: support indentation
+    return f'[{", ".join(stringify(item) for item in value)}]'
+  elif isinstance(value, Enum):
+    return f'{value.__class__.__name__}.{value.name}'
+  elif is_dataclass(value):
+    return dataclass_to_string(value)
+  elif isinstance(value, (int, float, bool)):
+    return str(value)
+  elif value is None:
+    return 'None'
+  else:
+    raise ValueError(f'Unsupported type {type(value)}')
+
+
+def dataclass_to_string(value, forcekw=False):
   def is_default_value(field):
     default_value = field.default if field.default_factory is MISSING else field.default_factory()
     return getattr(value, field.name) == default_value
 
-  s = ', '.join(f'{field.name}={getattr(value, field.name)!r}'
-                for field in fields(value) if not is_default_value(field))
-  return f'{value.__class__.__name__}({s})'
+  items = []
+  usekw = forcekw
+  for field in fields(value):
+    if is_default_value(field):
+      usekw = True
+      continue
+    items.append((f'{field.name}=' if usekw else '') + stringify(getattr(value, field.name)))
+
+  return f'{value.__class__.__name__}({", ".join(items)})'
 
 
-def update_field(updates, field, node, config, BrandFlags):
+def update_field(updates, field, node, config, BrandFlags, debug):
   # TODO: support updating car_info
-  if field.name == 'specs':
-    new_text = dataclass_to_string(config.specs)
+  if field.name == 'car_info':
+    new_text = dataclass_to_string(config.car_info)
+  elif field.name == 'specs':
+    new_text = dataclass_to_string(config.specs, forcekw=True)
   elif field.name == 'flags':
     new_text = ' | '.join(f'{BrandFlags.__name__}.{flag}' for flag in BrandFlags(config.flags).name.split('|'))
   else:
-    print(f'Warning: Updating {field.name} is not supported')
+    if debug: print(f'Warning: Updating {field.name} is not supported')
+    return
+  if ast.unparse(node) == new_text:
+    if debug: print(f'{field.name} is already up to date')
     return
   updates.append(((node.lineno, (node.col_offset, node.end_col_offset)), new_text))
 
 
-def update_config(platform, config):
+def update_config(platform, config, debug=True):
   car = type(platform)
-  source_file = inspect.getsourcefile(car)
 
-  brand = platform.__module__.split('.')[-2]
-  brand = brand[0].upper() + brand[1:]
-  BrandFlags = importlib.import_module(car.__module__).__getattribute__(f'{brand}Flags')
+  try:
+    brand = platform.__module__.split('.')[-2]
+    brand = brand[0].upper() + brand[1:]
+    BrandFlags = importlib.import_module(car.__module__).__getattribute__(f'{brand}Flags')
+  except AttributeError:
+    BrandFlags = None
 
-  with open(source_file, 'r') as f:
+  values_file = inspect.getsourcefile(car)
+  with open(values_file) as f:
     source = f.read()
 
   tree = ast.parse(source)
   finder = PlatformConfigFinder(platform)
   finder.visit(tree)
 
-  target_node = finder.target_node
-
   platform_fields = fields(config)
   platform_fields_by_name = {field.name: field for field in platform_fields}
 
   updates = []
+  target_node = finder.target_node
   for field, arg in zip(platform_fields, target_node.value.args, strict=False):
-    update_field(updates, field, arg, config, BrandFlags)
+    update_field(updates, field, arg, config, BrandFlags, debug)
   for kwarg in target_node.value.keywords:
-    update_field(updates, platform_fields_by_name[kwarg.arg], kwarg.value, config, BrandFlags)
+    update_field(updates, platform_fields_by_name[kwarg.arg], kwarg.value, config, BrandFlags, debug)
 
   source = source.split('\n')
   for (line, (start, end)), new_text in updates:
     source[line - 1] = source[line - 1][:start] + new_text + source[line - 1][end:]
   source = '\n'.join(source)
 
-  with open(source_file, 'w') as f:
+  with open(values_file, 'w') as f:
     f.write(source)
 
+  if debug: print(f'Made {len(updates)} updates to {values_file}')
   return source
 
 

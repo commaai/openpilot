@@ -157,7 +157,7 @@ class CAR(Platforms):
   # TODO: is there an XV and Impreza too?
   CROSSTREK_HYBRID = SubaruPlatformConfig(
     "SUBARU CROSSTREK HYBRID 2020",
-    SubaruCarInfo("Subaru Crosstrek Hybrid 2020", car_parts=CarParts.common([CarHarness.subaru_b])),
+    SubaruCarInfo("Subaru Crosstrek Hybrid 2020", car_parts=CarParts([CarHarness.subaru_b, Device.threex])),
     CarSpecs(mass=0, wheelbase=2.67, steerRatio=123, centerToFrontRatio=1.0, minEnableSpeed=99, tireStiffnessFactor=0.66),
     flags=SubaruFlags.STEER_RATE_LIMITED | SubaruFlags.HYBRID,
   )
