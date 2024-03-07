@@ -88,23 +88,28 @@ def read_segment_list(segment_list_path):
   return [(platform[2:], segment) for platform, segment in zip(seg_list[::2], seg_list[1::2], strict=True)]
 
 
+@contextlib.contextmanager
+def http_server_context(handler, setup=None):
+  host = '127.0.0.1'
+  server = http.server.HTTPServer((host, 0), handler)
+  port = server.server_port
+  t = threading.Thread(target=server.serve_forever)
+  t.start()
+
+  if setup is not None:
+    setup(host, port)
+
+  try:
+    yield (host, port)
+  finally:
+    server.shutdown()
+    server.server_close()
+    t.join()
+
+
 def with_http_server(func, handler=http.server.BaseHTTPRequestHandler, setup=None):
   @wraps(func)
   def inner(*args, **kwargs):
-    host = '127.0.0.1'
-    server = http.server.HTTPServer((host, 0), handler)
-    port = server.server_port
-    t = threading.Thread(target=server.serve_forever)
-    t.start()
-
-    if setup is not None:
-      setup(host, port)
-
-    try:
-      return func(*args, f'http://{host}:{port}', **kwargs)
-    finally:
-      server.shutdown()
-      server.server_close()
-      t.join()
-
+    with http_server_context(handler, setup) as (host, port):
+      return func(*args, f"http://{host}:{port}", **kwargs)
   return inner
