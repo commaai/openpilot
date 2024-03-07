@@ -142,7 +142,7 @@ class CarController(CarControllerBase):
 
       # Press distance button until we are at the correct bar length. Only change while enabled to avoid skipping startup popup
       if self.frame % 6 == 0:
-        desired_distance = 4 - hud_control.distanceBars  # this is flipped
+        desired_distance = 4 - hud_control.distanceBars
         if CS.pcm_follow_distance != desired_distance and CS.out.cruiseState.enabled and self.CP.carFingerprint not in UNSUPPORTED_DSU_CAR:
           self.distance_button = not self.distance_button
         else:
