@@ -334,7 +334,6 @@ class RadarInterfaceBase(ABC):
     self.delay = 0
     self.radar_ts = CP.radarTimeStep
     self.frame = 0
-    self.no_radar_sleep = 'NO_RADAR_SLEEP' in os.environ
 
   def update(self, can_strings):
     self.frame += 1

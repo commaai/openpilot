@@ -731,7 +731,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.cornerRadar, Ecu.hvac],
+      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.cornerRadar, Ecu.hvac, Ecu.eps],
       bus=0,
       auxiliary=True,
     ),
@@ -801,6 +801,13 @@ FW_QUERY_CONFIG = FwQueryConfig(
       obd_multiplexing=False,
     ),
   ],
+  # We lose these ECUs without the comma power on these cars.
+  # Note that we still attempt to match with them when they are present
+  non_essential_ecus={
+    Ecu.transmission: [CAR.AZERA_6TH_GEN, CAR.AZERA_HEV_6TH_GEN, CAR.SONATA],
+    Ecu.engine: [CAR.AZERA_6TH_GEN, CAR.AZERA_HEV_6TH_GEN, CAR.SONATA],
+    Ecu.abs: [CAR.SONATA],
+  },
   extra_ecus=[
     (Ecu.adas, 0x730, None),         # ADAS Driving ECU on HDA2 platforms
     (Ecu.parkingAdas, 0x7b1, None),  # ADAS Parking ECU (may exist on all platforms)
@@ -840,7 +847,6 @@ LEGACY_SAFETY_MODE_CAR = CAR.with_flags(HyundaiFlags.LEGACY)
 
 UNSUPPORTED_LONGITUDINAL_CAR = CAR.with_flags(HyundaiFlags.LEGACY) | CAR.with_flags(HyundaiFlags.UNSUPPORTED_LONGITUDINAL)
 
-CAR_INFO = CAR.create_carinfo_map()
 DBC = CAR.create_dbc_map()
 
 if __name__ == "__main__":

@@ -5,10 +5,11 @@ import re
 import unittest
 
 from openpilot.common.basedir import BASEDIR
-from openpilot.selfdrive.car.car_helpers import interfaces, get_interface_attr
+from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_info
 from openpilot.selfdrive.car.docs_definitions import Cable, Column, PartType, Star
 from openpilot.selfdrive.car.honda.values import CAR as HONDA
+from openpilot.selfdrive.car.values import PLATFORMS
 from openpilot.selfdrive.debug.dump_car_info import dump_car_info
 from openpilot.selfdrive.debug.print_docs_diff import print_car_info_diff
 
@@ -42,10 +43,10 @@ class TestCarDocs(unittest.TestCase):
           make_model_years[make_model].append(year)
 
   def test_missing_car_info(self):
-    all_car_info_platforms = get_interface_attr("CAR_INFO", combine_brands=True).keys()
+    all_car_info_platforms = [name for name, config in PLATFORMS.items()]
     for platform in sorted(interfaces.keys()):
       with self.subTest(platform=platform):
-        self.assertTrue(platform in all_car_info_platforms, f"Platform: {platform} doesn't exist in CarInfo")
+        self.assertTrue(platform in all_car_info_platforms, f"Platform: {platform} doesn't have a CarInfo entry")
 
   def test_naming_conventions(self):
     # Asserts market-standard car naming conventions by brand
