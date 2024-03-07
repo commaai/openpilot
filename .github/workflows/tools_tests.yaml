@@ -25,6 +25,10 @@ env:
 
 
 jobs:
+  print:
+    name: Print current working directory
+    run: echo "Current working directory is $PWD"
+
   plotjuggler:
     name: plotjuggler
     runs-on: ubuntu-20.04
