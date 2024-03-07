@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import time
+import datetime
 
+from cereal import log
 import cereal.messaging as messaging
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.qcomgpsd.qcomgpsd import at_cmd, wait_for_modem
@@ -31,15 +33,16 @@ def main():
 
   # enable GPS
   cmds = [
-    "AT+CGPS=0",
+    #"AT+CGPS=0",
     "AT+GPSPORT=1",
     "AT+CGPS=1",
   ]
-  #for c in cmds:
-  #  at_cmd(c)
+  for c in cmds:
+    at_cmd(c)
 
   pm = messaging.PubMaster(['gpsLocation'])
   while True:
+    time.sleep(1)
     try:
       # TODO: read from streaming AT port instead of polling
       out = at_cmd("AT+CGPS?")
@@ -60,11 +63,10 @@ def main():
       msg = messaging.new_message('gpsLocation', valid=True)
       gps = msg.gpsLocation
       gps.latitude = (float(gnrmc[3][:2]) + (float(gnrmc[3][2:]) / 60)) * (1 if gnrmc[4] == "N" else -1)
-      gps.longitude = (float(gnrmc[5][:3]) + (float(gnrmc[5][3:]) / 60)) * (1 if gnrmc[4] == "N" else -1)
+      gps.longitude = (float(gnrmc[5][:3]) + (float(gnrmc[5][3:]) / 60)) * (1 if gnrmc[6] == "E" else -1)
 
-			time = gnrmc[1]
-			date = gnrmc[9][:6]
-			dt = datetime.strptime(f"{date} {time}", '%d%m%y %H%M%S')
+      date = gnrmc[9][:6]
+      dt = datetime.datetime.strptime(f"{date} {gnrmc[1]}", '%d%m%y %H%M%S.%f')
       gps.unixTimestampMillis = dt.timestamp()*1e3
 
       #gps.hasFix = gnrmc[1] == 'A'
@@ -88,7 +90,6 @@ def main():
 
     except Exception:
       cloudlog.exception("gps.issue")
-    time.sleep(1)
 
 
 if __name__ == "__main__":
