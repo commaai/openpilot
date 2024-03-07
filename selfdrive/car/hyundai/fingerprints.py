@@ -750,6 +750,7 @@ FW_VERSIONS = {
       b'\xf1\x00LX2 MDPS C 1.00 1.04 56310-S8020 4LXDC104',
       b'\xf1\x00ON  MDPS C 1.00 1.00 56340-S9000 8B13',
       b'\xf1\x00ON  MDPS C 1.00 1.01 56340-S9000 9201',
+      b'\xf1\x00LX2 MDPS R 1.00 1.02 56370-S8300 9318',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.00 99211-S8110 210226',
@@ -760,6 +761,7 @@ FW_VERSIONS = {
       b'\xf1\x00ON  MFC  AT USA LHD 1.00 1.01 99211-S9100 181105',
       b'\xf1\x00ON  MFC  AT USA LHD 1.00 1.03 99211-S9100 200720',
       b'\xf1\x00ON  MFC  AT USA LHD 1.00 1.04 99211-S9100 211227',
+      b'\xf1\x00LX2 MFC  AT KOR LHD 1.00 1.08 99211-S8100 200903',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x00bcsh8p54  U872\x00\x00\x00\x00\x00\x00TON4G38NB1\x96z28',
