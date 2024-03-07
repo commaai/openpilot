@@ -144,7 +144,7 @@ class CarController(CarControllerBase):
       if self.frame % 6 == 0:
 
         desired_distance = 4 - hud_control.distanceBars  # this is flipped
-        if CS.pcm_follow_distance_values != desired_distance and CS.out.cruiseState.enabled:
+        if CS.pcm_follow_distance != desired_distance and CS.out.cruiseState.enabled:
           self.distance_button = not self.distance_button
         else:
           self.distance_button = 0
