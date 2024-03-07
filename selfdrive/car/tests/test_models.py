@@ -475,7 +475,7 @@ class TestCarModelBase(unittest.TestCase):
                     "This is fine to fail for WIP car ports, just let us know and we can upload your routes to the CI bucket.")
 
 
-@parameterized_class(('car_model', 'test_route'), get_test_cases())
+@parameterized_class(('platform', 'test_route'), get_test_cases())
 @pytest.mark.xdist_group_class_property('test_route')
 class TestCarModel(TestCarModelBase):
   pass
