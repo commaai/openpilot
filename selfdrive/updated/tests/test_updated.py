@@ -85,9 +85,12 @@ class TestUpdateD(unittest.TestCase):
 
   def tearDown(self):
     mock.patch.stopall()
-    run(["sudo", "umount", "-l", str(self.staging_root / "merged")])
-    run(["sudo", "umount", "-l", self.tmpdir])
-    shutil.rmtree(self.tmpdir)
+    try:
+      run(["sudo", "umount", "-l", str(self.staging_root / "merged")])
+      run(["sudo", "umount", "-l", self.tmpdir])
+      shutil.rmtree(self.tmpdir)
+    except Exception:
+      print("cleanup failed...")
 
   def send_check_for_updates_signal(self, updated: ManagerProcess):
     updated.signal(signal.SIGUSR1.value)
@@ -104,20 +107,27 @@ class TestUpdateD(unittest.TestCase):
     self.assertTrue(self.params.get("UpdaterNewDescription", encoding="utf-8").startswith(f"{version} / {branch}"))
     self.assertEqual(self.params.get("UpdaterNewReleaseNotes", encoding="utf-8"), f"<p>{release_notes}</p>\n")
 
-  def wait_for_idle(self, timeout=5, min_wait_time=2):
+  def wait_for_condition(self, condition, timeout=12):
     start = time.monotonic()
-    time.sleep(min_wait_time)
-
     while True:
       waited = time.monotonic() - start
-      if self.params.get("UpdaterState", encoding="utf-8") == "idle":
-        print(f"waited {waited}s for idle")
-        break
+      if condition():
+        print(f"waited {waited}s for condition ")
+        return waited
 
       if waited > timeout:
-        raise TimeoutError("timed out waiting for idle")
+        raise TimeoutError("timed out waiting for condition")
 
       time.sleep(1)
+
+  def wait_for_idle(self):
+    self.wait_for_condition(lambda: self.params.get("UpdaterState", encoding="utf-8") == "idle")
+
+  def wait_for_fetch_available(self):
+    self.wait_for_condition(lambda: self.params.get_bool("UpdaterFetchAvailable"))
+
+  def wait_for_update_available(self):
+    self.wait_for_condition(lambda: self.params.get_bool("UpdateAvailable"))
 
   def test_no_update(self):
     # Start on release3, ensure we don't fetch any updates
@@ -126,7 +136,7 @@ class TestUpdateD(unittest.TestCase):
 
     with processes_context(["updated"]) as [updated]:
       self._test_params("release3", False, False)
-      time.sleep(1)
+      self.wait_for_idle()
       self._test_params("release3", False, False)
 
       self.send_check_for_updates_signal(updated)
@@ -142,7 +152,7 @@ class TestUpdateD(unittest.TestCase):
 
     with processes_context(["updated"]) as [updated]:
       self._test_params("release3", False, False)
-      time.sleep(1)
+      self.wait_for_idle()
       self._test_params("release3", False, False)
 
       self.MOCK_RELEASES["release3"] = ("0.1.3", "1.2", "0.1.3 release notes")
@@ -150,13 +160,13 @@ class TestUpdateD(unittest.TestCase):
 
       self.send_check_for_updates_signal(updated)
 
-      self.wait_for_idle()
+      self.wait_for_fetch_available()
 
       self._test_params("release3", True, False)
 
       self.send_download_signal(updated)
 
-      self.wait_for_idle()
+      self.wait_for_update_available()
 
       self._test_params("release3", False, True)
       self._test_update_params("release3", *self.MOCK_RELEASES["release3"])
@@ -175,13 +185,13 @@ class TestUpdateD(unittest.TestCase):
       self.set_target_branch("master")
       self.send_check_for_updates_signal(updated)
 
-      self.wait_for_idle()
+      self.wait_for_fetch_available()
 
       self._test_params("master", True, False)
 
       self.send_download_signal(updated)
 
-      self.wait_for_idle()
+      self.wait_for_update_available()
 
       self._test_params("master", False, True)
       self._test_update_params("master", *self.MOCK_RELEASES["master"])
@@ -198,7 +208,7 @@ class TestUpdateD(unittest.TestCase):
           processes_context(["updated"]) as [updated]:
 
       self._test_params("release3", False, False)
-      time.sleep(1)
+      self.wait_for_idle()
       self._test_params("release3", False, False)
 
       self.MOCK_RELEASES["release3"] = ("0.1.3", "1.3", "0.1.3 release notes")
@@ -206,13 +216,13 @@ class TestUpdateD(unittest.TestCase):
 
       self.send_check_for_updates_signal(updated)
 
-      self.wait_for_idle()
+      self.wait_for_fetch_available()
 
       self._test_params("release3", True, False)
 
       self.send_download_signal(updated)
 
-      self.wait_for_idle()
+      self.wait_for_update_available()
 
       self._test_params("release3", False, True)
       self._test_update_params("release3", *self.MOCK_RELEASES["release3"])
