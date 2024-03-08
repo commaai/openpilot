@@ -233,28 +233,44 @@ class TestLogReader(unittest.TestCase):
     # non_union_msg = log.Map.new_message()
     # print(non_union_msg.to_bytes())
 
-    base_msgs = list(LogReader(QLOG_FILE))
+    # base_msgs = list(LogReader(QLOG_FILE))
 
     # WORD_SIZE = 8
 
+    # event_msg.init('initData')
+
+    num_msgs = 100
+
+    msgs = [log.Event.new_message() for _ in range(num_msgs)]
+
     event_msg = log.Event.new_message()
-    event_msg.init('initData')
     non_union_bytes = bytearray(event_msg.to_bytes())
-    # non_union_bytes[event_msg.total_size.word_count * 8] = 0xff
+    non_union_bytes[event_msg.total_size.word_count * 8] = 0xff
     print(non_union_bytes)
 
-    qlog = tempfile.NamedTemporaryFile(mode='wb', delete=False)
-    with requests.get(QLOG_FILE, stream=True) as r:
-      with qlog as f:
-        # print(r.content)
-        # shutil.copyfileobj(r.raw, f)
-        f.write(bz2.decompress(r.content) + bytes(non_union_bytes))
-    print(qlog.name)
+    # qlog = tempfile.NamedTemporaryFile(mode='ab', delete=False)
+    qlog_file = tempfile.mktemp()
+    with open(qlog_file, 'wb') as f:
+      f.write(b"".join(msg.to_bytes() for msg in msgs))
 
-    msgs = list(LogReader(qlog.name))
-    print(len(msgs), len(base_msgs))
+      # print(qlog.name)
+
+    msgs = list(LogReader(qlog_file))
+    self.assertEqual(len(msgs), num_msgs)
     [m.which() for m in msgs]
 
+    # insert non-union message
+    with open(qlog_file, 'ab') as f:
+      f.write(non_union_bytes)
+
+    msgs = list(LogReader(qlog_file))
+    self.assertEqual(len(msgs), num_msgs + 1)
+    with self.assertRaises(capnp.KjException):
+      [m.which() for m in msgs]
+
+    msgs = list(LogReader(qlog_file, only_union_types=True))
+    self.assertEqual(len(msgs), num_msgs)
+    [m.which() for m in msgs]
 
 
 
