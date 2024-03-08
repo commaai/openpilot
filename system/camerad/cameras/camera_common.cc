@@ -28,7 +28,7 @@ public:
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
              "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DYUV_STRIDE=%d -DUV_OFFSET=%d "
              "-DIS_OX=%d -DIS_OS=%d -DIS_10BIT -DIS_BGGR=%d -DCAM_NUM=%d%s",
-             ci->frame_width, ci->frame_height, ci->frame_stride, ci->frame_offset,
+             ci->frame_width, ci->frame_height, ci->frame_stride * 2, ci->frame_offset,
              b->rgb_width, b->rgb_height, buf_width, uv_offset,
              ci->image_sensor == cereal::FrameData::ImageSensor::OX03C10,
              ci->image_sensor == cereal::FrameData::ImageSensor::OS04C10,
@@ -85,7 +85,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   LOGD("allocated %d CL buffers", frame_buf_count);
 
   rgb_width = ci->frame_width;
-  rgb_height = ci->frame_height;
+  rgb_height = 1520;//ci->frame_height;
 
   int nv12_width = VENUS_Y_STRIDE(COLOR_FMT_NV12, rgb_width);
   int nv12_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, rgb_height);
