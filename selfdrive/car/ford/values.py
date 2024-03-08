@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import Enum, IntFlag
 
 import panda.python.uds as uds
 from cereal import car
-from openpilot.selfdrive.car import AngleRateLimit, CarSpecs, PlatformFlags, dbc_dict, DbcDict, PlatformConfig, Platforms
+from openpilot.selfdrive.car import AngleRateLimit, CarSpecs, dbc_dict, DbcDict, PlatformConfig, Platforms
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
                                                      Device
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
@@ -39,7 +39,7 @@ class CarControllerParams:
     pass
 
 
-class FordFlags(PlatformFlags):
+class FordFlags(IntFlag):
   # Static flags
   CANFD = 1
 

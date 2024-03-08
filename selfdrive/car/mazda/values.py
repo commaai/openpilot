@@ -1,8 +1,9 @@
 from dataclasses import dataclass, field
+from enum import IntFlag
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
-from openpilot.selfdrive.car import CarSpecs, DbcDict, PlatformConfig, PlatformFlags, Platforms, dbc_dict
+from openpilot.selfdrive.car import CarSpecs, DbcDict, PlatformConfig, Platforms, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
@@ -36,7 +37,7 @@ class MazdaCarSpecs(CarSpecs):
   tireStiffnessFactor: float = 0.7  # not optimized yet
 
 
-class MazdaFlags(PlatformFlags):
+class MazdaFlags(IntFlag):
   # Static flags
   # Gen 1 hardware: same CAN messages and same camera
   GEN1 = 1

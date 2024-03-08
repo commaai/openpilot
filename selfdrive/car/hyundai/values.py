@@ -1,11 +1,11 @@
 import re
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import Enum, IntFlag
 
 from cereal import car
 from panda.python import uds
 from openpilot.common.conversions import Conversions as CV
-from openpilot.selfdrive.car import CarSpecs, DbcDict, PlatformConfig, PlatformFlags, Platforms, dbc_dict
+from openpilot.selfdrive.car import CarSpecs, DbcDict, PlatformConfig, Platforms, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
@@ -51,7 +51,7 @@ class CarControllerParams:
       self.STEER_MAX = 384
 
 
-class HyundaiFlags(PlatformFlags):
+class HyundaiFlags(IntFlag):
   # Dynamic Flags
   CANFD_HDA2 = 1
   CANFD_ALT_BUTTONS = 2
@@ -710,7 +710,8 @@ PLATFORM_CODE_ECUS = [Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps]
 # TODO: there are date codes in the ABS firmware versions in hex
 DATE_FW_ECUS = [Ecu.fwdCamera]
 
-ALL_HYUNDAI_ECUS = [Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.engine, Ecu.parkingAdas, Ecu.transmission, Ecu.adas, Ecu.hvac, Ecu.cornerRadar]
+ALL_HYUNDAI_ECUS = [Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.engine, Ecu.parkingAdas,
+                    Ecu.transmission, Ecu.adas, Ecu.hvac, Ecu.cornerRadar, Ecu.combinationMeter]
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
@@ -810,10 +811,11 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Ecu.abs: [CAR.PALISADE, CAR.SONATA],
   },
   extra_ecus=[
-    (Ecu.adas, 0x730, None),         # ADAS Driving ECU on HDA2 platforms
-    (Ecu.parkingAdas, 0x7b1, None),  # ADAS Parking ECU (may exist on all platforms)
-    (Ecu.hvac, 0x7b3, None),         # HVAC Control Assembly
+    (Ecu.adas, 0x730, None),              # ADAS Driving ECU on HDA2 platforms
+    (Ecu.parkingAdas, 0x7b1, None),       # ADAS Parking ECU (may exist on all platforms)
+    (Ecu.hvac, 0x7b3, None),              # HVAC Control Assembly
     (Ecu.cornerRadar, 0x7b7, None),
+    (Ecu.combinationMeter, 0x7c6, None),  # CAN FD Instrument cluster
   ],
   # Custom fuzzy fingerprinting function using platform codes, part numbers + FW dates:
   match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
