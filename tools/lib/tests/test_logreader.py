@@ -218,6 +218,7 @@ class TestLogReader(unittest.TestCase):
       log_len = len(list(lr))
       self.assertEqual(qlog_len, log_len)
 
+  @pytest.mark.slow
   def test_sort_by_time(self):
     msgs = list(LogReader(f"{TEST_ROUTE}/0/q"))
     self.assertNotEqual(msgs, sorted(msgs, key=lambda m: m.logMonoTime))
