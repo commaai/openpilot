@@ -710,7 +710,8 @@ PLATFORM_CODE_ECUS = [Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps]
 # TODO: there are date codes in the ABS firmware versions in hex
 DATE_FW_ECUS = [Ecu.fwdCamera]
 
-ALL_HYUNDAI_ECUS = [Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.engine, Ecu.parkingAdas, Ecu.transmission, Ecu.adas, Ecu.hvac, Ecu.cornerRadar]
+ALL_HYUNDAI_ECUS = [Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.engine, Ecu.parkingAdas,
+                    Ecu.transmission, Ecu.adas, Ecu.hvac, Ecu.cornerRadar, Ecu.combinationMeter]
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
