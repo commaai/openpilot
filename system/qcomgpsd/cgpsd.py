@@ -28,6 +28,11 @@ AT+CGPSGPOS=5
 response: '$GNRMC,220216.00,A,3245.09531,N,11711.76043,W,,,070324,,,A,V*20'
 """
 
+
+def sfloat(n: str):
+  return float(n) if len(n) > 0 else 0
+
+
 def main():
   wait_for_modem("AT+CGPS?")
   print("got modem")
@@ -62,39 +67,43 @@ def main():
 
       gnrmc = nmea['$GNRMC']
       print(gnrmc)
-      if gnrmc.count('') > 5:
-        print("no fix :(")
-        continue
+      #if gnrmc.count('') > 5:
+      #  print("no fix :(")
+      #  continue
 
       msg = messaging.new_message('gpsLocation', valid=True)
       gps = msg.gpsLocation
-      gps.latitude = (float(gnrmc[3][:2]) + (float(gnrmc[3][2:]) / 60)) * (1 if gnrmc[4] == "N" else -2)
-      gps.longitude = (float(gnrmc[5][:3]) + (float(gnrmc[5][3:]) / 60)) * (1 if gnrmc[6] == "E" else -1)
+      gps.latitude = (sfloat(gnrmc[3][:2]) + (sfloat(gnrmc[3][2:]) / 60)) * (1 if gnrmc[4] == "N" else -2)
+      gps.longitude = (sfloat(gnrmc[5][:3]) + (sfloat(gnrmc[5][3:]) / 60)) * (1 if gnrmc[6] == "E" else -1)
 
       date = gnrmc[9][:6]
       dt = datetime.datetime.strptime(f"{date} {gnrmc[1]}", '%d%m%y %H%M%S.%f')
       gps.unixTimestampMillis = dt.timestamp()*1e3
 
-      #gps.hasFix = gnrmc[1] == 'A'
       gps.flags = 1 if gnrmc[1] == 'A' else 0
 
       # TODO: make our own source
       gps.source = log.GpsLocationData.SensorSource.qcomdiag
 
+      gps.speed = sfloat(gnrmc[7])
+      gps.bearingDeg = sfloat(gnrmc[8])
+
       if len(nmea['$GNGGA']):
         gngga = nmea['$GNGGA']
         if gngga[10] == 'M':
-          gps.altitude = float(nmea['$GNGGA'][9])
+          gps.altitude = sfloat(nmea['$GNGGA'][9])
+
+
+      # TODO: set these from the module
+      gps.horizontalAccuracy = 3.
+      gps.verticalAccuracy =  3.
+      gps.bearingAccuracyDeg = 5.
+      gps.speedAccuracy = 3.
 
       """
-      gps.altitude = report["q_FltFinalPosAlt"]
       gps.speed = math.sqrt(sum([x**2 for x in vNED]))
       gps.bearingDeg = report["q_FltHeadingRad"] * 180/math.pi
-
       gps.vNED = vNED
-      gps.verticalAccuracy = report["q_FltVdop"]
-      gps.bearingAccuracyDeg = report["q_FltHeadingUncRad"] * 180/math.pi if (report["q_FltHeadingUncRad"] != 0) else 180
-      gps.speedAccuracy = math.sqrt(sum([x**2 for x in vNEDsigma]))
       """
 
       pm.send('gpsLocation', msg)
