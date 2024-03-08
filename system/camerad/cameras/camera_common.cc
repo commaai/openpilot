@@ -27,7 +27,7 @@ public:
              "-cl-fast-relaxed-math -cl-denorms-are-zero "
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
              "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DYUV_STRIDE=%d -DUV_OFFSET=%d "
-             "-DIS_OX=%d -DIS_OS=%d -DIS_BGGR=%d -DCAM_NUM=%d%s",
+             "-DIS_OX=%d -DIS_OS=%d -DIS_10BIT -DIS_BGGR=%d -DCAM_NUM=%d%s",
              ci->frame_width, ci->frame_height, ci->frame_stride, ci->frame_offset,
              b->rgb_width, b->rgb_height, buf_width, uv_offset,
              ci->image_sensor == cereal::FrameData::ImageSensor::OX03C10,
