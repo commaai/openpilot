@@ -229,9 +229,8 @@ class TestLogReader(unittest.TestCase):
     with tempfile.NamedTemporaryFile() as qlog:
       # write valid Event messages
       num_msgs = 100
-      msgs = [log.Event.new_message() for _ in range(num_msgs)]
       with open(qlog.name, "wb") as f:
-        f.write(b"".join(msg.to_bytes() for msg in msgs))
+        f.write(b"".join(log.Event.new_message().to_bytes() for _ in range(num_msgs)))
 
       msgs = list(LogReader(qlog.name))
       self.assertEqual(len(msgs), num_msgs)
