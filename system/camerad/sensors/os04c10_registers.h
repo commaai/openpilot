@@ -4,6 +4,7 @@ const struct i2c_random_wr_payload start_reg_array_os04c10[] = {{0x100, 1}};
 const struct i2c_random_wr_payload stop_reg_array_os04c10[] = {{0x100, 0}};
 
 const struct i2c_random_wr_payload init_array_os04c10[] = {
+  // OS04C10_AA_00_02_17_wAO_2688x1524_MIPI728Mbps_Linear12bit_20FPS_4Lane_MCLK24MHz
   {0x0103, 0x01},
 
   // PLL
