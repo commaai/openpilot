@@ -8,6 +8,7 @@ import cereal.messaging as messaging
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.qcomgpsd.qcomgpsd import at_cmd, wait_for_modem
 
+# https://campar.in.tum.de/twiki/pub/Chair/NaviGpsDemon/nmea.html#RMC
 """
 AT+CGPSGPOS=1
 response: '$GNGGA,220212.00,3245.09188,N,11711.76362,W,1,06,24.54,0.0,M,,M,,*77'
@@ -32,6 +33,11 @@ response: '$GNRMC,220216.00,A,3245.09531,N,11711.76043,W,,,070324,,,A,V*20'
 def sfloat(n: str):
   return float(n) if len(n) > 0 else 0
 
+def checksum(s: str):
+  ret = 0
+  for c in s[1:-3]:
+    ret ^= ord(c)
+  return format(ret, '02X')
 
 def main():
   wait_for_modem("AT+CGPS?")
@@ -58,6 +64,13 @@ def main():
         print(f"no GNRMC:\n{out}\n")
         continue
 
+      # validate checksums
+      for s in nmea.values():
+        sent = ','.join(s)
+        if checksum(sent) != s[-1].split('*')[1]:
+          cloudlog.error(f"invalid checksum: {repr(sent)}")
+          continue
+
       gnrmc = nmea['$GNRMC']
       #print(gnrmc)
 
@@ -81,11 +94,15 @@ def main():
       if len(nmea['$GNGGA']):
         gngga = nmea['$GNGGA']
         if gngga[10] == 'M':
-          gps.altitude = sfloat(nmea['$GNGGA'][9])
+          gps.altitude = sfloat(gngga[9])
+
+      if len(nmea['$GNGSA']):
+        # TODO: this is only for GPS sats
+        gngsa = nmea['$GNGSA']
+        gps.horizontalAccuracy = sfloat(gngsa[4])
+        gps.verticalAccuracy = sfloat(gngsa[5])
 
       # TODO: set these from the module
-      gps.horizontalAccuracy = 3.
-      gps.verticalAccuracy =  3.
       gps.bearingAccuracyDeg = 5.
       gps.speedAccuracy = 3.
 
