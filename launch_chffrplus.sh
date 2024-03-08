@@ -73,6 +73,7 @@ function apply_overlay_update {
   fi
 }
 
+
 function launch {
   # Remove orphaned git lock if it exists on boot
   [ -f "$DIR/.git/index.lock" ] && rm -f $DIR/.git/index.lock
