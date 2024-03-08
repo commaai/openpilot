@@ -96,17 +96,22 @@ FW_VERSIONS = {
   CAR.IONIQ: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ',
+      b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2100         ',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00AE  MDPS C 1.00 1.07 56310/G2301 4AEHC107',
+      b'\xf1\x00AE  MDPS C 1.00 1.07 56310/G2501 4AEHC107',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00AEH MFC  AT EUR LHD 1.00 1.00 95740-G2400 180222',
+      b'\xf1\x00AEH MFC  AT USA LHD 1.00 1.00 95740-G2400 180222',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x816H6F2051\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\xf1\x816H6F6051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x006U3H0_C2\x00\x006U3J2051\x00\x00HAE0G16NS4L\xfad\x91',
       b'\xf1\x816U3H1051\x00\x00\xf1\x006U3H0_C2\x00\x006U3H1051\x00\x00HAE0G16US2\x00\x00\x00\x00',
     ],
   },
@@ -167,9 +172,11 @@ FW_VERSIONS = {
       b'\xf1\x00AEev SCC F-CUP      1.00 1.00 99110-G7200         ',
       b'\xf1\x00AEev SCC F-CUP      1.00 1.00 99110-G7500         ',
       b'\xf1\x00AEev SCC F-CUP      1.00 1.01 99110-G7000         ',
+      b'\xf1\x00AEev SCC F-CUP      1.00 1.01 99110-G7100         ',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00AE  MDPS C 1.00 1.01 56310/G7310 4APEC101',
+      b'\xf1\x00AE  MDPS C 1.00 1.01 56310/G7510 4APEC101',
       b'\xf1\x00AE  MDPS C 1.00 1.01 56310/G7560 4APEC101',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
@@ -178,6 +185,7 @@ FW_VERSIONS = {
       b'\xf1\x00AEE MFC  AT EUR LHD 1.00 1.01 95740-G2600 190819',
       b'\xf1\x00AEE MFC  AT EUR LHD 1.00 1.03 95740-G2500 190516',
       b'\xf1\x00AEE MFC  AT EUR RHD 1.00 1.01 95740-G2600 190819',
+      b'\xf1\x00AEE MFC  AT USA LHD 1.00 1.01 95740-G2600 190819',
     ],
   },
   CAR.IONIQ_EV_LTD: {
@@ -1050,6 +1058,7 @@ FW_VERSIONS = {
   CAR.KONA_EV: {
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00OS IEB \x01 212 \x11\x13 58520-K4000',
+      b'\xf1\x00OS IEB \x02 210 \x02\x14 58520-K4000',
       b'\xf1\x00OS IEB \x02 212 \x11\x13 58520-K4000',
       b'\xf1\x00OS IEB \x03 210 \x02\x14 58520-K4000',
       b'\xf1\x00OS IEB \x03 212 \x11\x13 58520-K4000',
@@ -1060,6 +1069,7 @@ FW_VERSIONS = {
       b'\xf1\x00OSE LKAS AT EUR LHD 1.00 1.00 95740-K4100 W40',
       b'\xf1\x00OSE LKAS AT EUR RHD 1.00 1.00 95740-K4100 W40',
       b'\xf1\x00OSE LKAS AT KOR LHD 1.00 1.00 95740-K4100 W40',
+      b'\xf1\x00OSE LKAS AT USA LHD 1.00 1.00 95740-K4100 W40',
       b'\xf1\x00OSE LKAS AT USA LHD 1.00 1.00 95740-K4300 W50',
     ],
     (Ecu.eps, 0x7d4, None): [
@@ -1115,6 +1125,7 @@ FW_VERSIONS = {
   CAR.KIA_NIRO_EV: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4000         ',
+      b'\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4500         ',
       b'\xf1\x00DEev SCC F-CUP      1.00 1.02 96400-Q4000         ',
       b'\xf1\x00DEev SCC F-CUP      1.00 1.02 96400-Q4100         ',
       b'\xf1\x00DEev SCC F-CUP      1.00 1.03 96400-Q4100         ',
@@ -1130,11 +1141,13 @@ FW_VERSIONS = {
       b'\xf1\x00DE  MDPS C 1.00 1.04 56310Q4100\x00 4DEEC104',
       b'\xf1\x00DE  MDPS C 1.00 1.05 56310Q4000\x00 4DEEC105',
       b'\xf1\x00DE  MDPS C 1.00 1.05 56310Q4100\x00 4DEEC105',
+      b'\xf1\x00DE  MDPS C 1.00 1.05 56310Q4150\x00 4DEEC105',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00DEE MFC  AT EUR LHD 1.00 1.00 99211-Q4000 191211',
       b'\xf1\x00DEE MFC  AT EUR LHD 1.00 1.00 99211-Q4100 200706',
       b'\xf1\x00DEE MFC  AT EUR LHD 1.00 1.03 95740-Q4000 180821',
+      b'\xf1\x00DEE MFC  AT EUR RHD 1.00 1.00 99211-Q4100 200706',
       b'\xf1\x00DEE MFC  AT KOR LHD 1.00 1.03 95740-Q4000 180821',
       b'\xf1\x00DEE MFC  AT USA LHD 1.00 1.00 99211-Q4000 191211',
       b'\xf1\x00DEE MFC  AT USA LHD 1.00 1.01 99211-Q4500 210428',
