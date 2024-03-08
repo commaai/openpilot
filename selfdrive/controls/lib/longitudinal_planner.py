@@ -3,7 +3,7 @@ import math
 import numpy as np
 from openpilot.common.numpy_fast import clip, interp
 from openpilot.common.params import Params
-from cereal import car, log
+from cereal import log
 
 import cereal.messaging as messaging
 from openpilot.common.conversions import Conversions as CV
@@ -16,8 +16,6 @@ from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import Longi
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
 from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N, get_speed_error
 from openpilot.common.swaglog import cloudlog
-
-ButtonType = car.CarState.ButtonEvent.Type
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
 A_CRUISE_MIN = -1.2
@@ -65,8 +63,8 @@ class LongitudinalPlanner:
     self.solverExecutionTime = 0.0
     self.params = Params()
     self.param_read_counter = 0
-    self.personality = log.LongitudinalPersonality.standard
     self.read_param()
+    self.personality = log.LongitudinalPersonality.standard
 
   def read_param(self):
     try:
@@ -90,14 +88,9 @@ class LongitudinalPlanner:
       j = np.zeros(len(T_IDXS_MPC))
     return x, v, a, j
 
-  def update(self, sm, carState_sock):
-    # if self.param_read_counter % 50 == 0:
-    #   self.read_param()
-    # decrement personality on button press (Toyota can only decrement)
-    for m in messaging.drain_sock(carState_sock, wait_for_one=False):
-      if any(not be.pressed and be.type == ButtonType.gapAdjustCruise for be in m.carState.buttonEvents):
-        self.personality = (self.personality - 1) % 3
-
+  def update(self, sm):
+    if self.param_read_counter % 50 == 0:
+      self.read_param()
     self.param_read_counter += 1
     self.mpc.mode = 'blended' if sm['controlsState'].experimentalMode else 'acc'
 
