@@ -239,38 +239,35 @@ class TestLogReader(unittest.TestCase):
 
     # event_msg.init('initData')
 
-    num_msgs = 100
 
-    msgs = [log.Event.new_message() for _ in range(num_msgs)]
 
-    event_msg = log.Event.new_message()
-    non_union_bytes = bytearray(event_msg.to_bytes())
-    non_union_bytes[event_msg.total_size.word_count * 8] = 0xff
-    print(non_union_bytes)
+    with tempfile.NamedTemporaryFile() as qlog:
+      # write valid Event messages
+      num_msgs = 100
+      msgs = [log.Event.new_message() for _ in range(num_msgs)]
+      with open(qlog.name, 'wb') as f:
+        f.write(b"".join(msg.to_bytes() for msg in msgs))
 
-    # qlog = tempfile.NamedTemporaryFile(mode='ab', delete=False)
-    qlog_file = tempfile.mktemp()
-    with open(qlog_file, 'wb') as f:
-      f.write(b"".join(msg.to_bytes() for msg in msgs))
-
-      # print(qlog.name)
-
-    msgs = list(LogReader(qlog_file))
-    self.assertEqual(len(msgs), num_msgs)
-    [m.which() for m in msgs]
-
-    # insert non-union message
-    with open(qlog_file, 'ab') as f:
-      f.write(non_union_bytes)
-
-    msgs = list(LogReader(qlog_file))
-    self.assertEqual(len(msgs), num_msgs + 1)
-    with self.assertRaises(capnp.KjException):
+      msgs = list(LogReader(qlog.name))
+      self.assertEqual(len(msgs), num_msgs)
       [m.which() for m in msgs]
 
-    msgs = list(LogReader(qlog_file, only_union_types=True))
-    self.assertEqual(len(msgs), num_msgs)
-    [m.which() for m in msgs]
+      # append non-union Event message
+      event_msg = log.Event.new_message()
+      non_union_bytes = bytearray(event_msg.to_bytes())
+      non_union_bytes[event_msg.total_size.word_count * 8] = 0xff  # set discriminant value out of range using Event word offset
+      with open(qlog.name, 'ab') as f:
+        f.write(non_union_bytes)
+
+      # ensure new message should be added, but is not a union type. then ensure it is not added when only_union_types=True
+      msgs = list(LogReader(qlog.name))
+      self.assertEqual(len(msgs), num_msgs + 1)
+      with self.assertRaises(capnp.KjException):
+        [m.which() for m in msgs]
+
+      msgs = list(LogReader(qlog.name, only_union_types=True))
+      self.assertEqual(len(msgs), num_msgs)
+      [m.which() for m in msgs]
 
 
 
