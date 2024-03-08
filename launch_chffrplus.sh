@@ -31,10 +31,7 @@ function agnos_init {
   fi
 }
 
-function launch {
-  # Remove orphaned git lock if it exists on boot
-  [ -f "$DIR/.git/index.lock" ] && rm -f $DIR/.git/index.lock
-
+function apply_staged_update {
   # Check to see if there's a valid overlay-based update available. Conditions
   # are as follows:
   #
@@ -68,6 +65,13 @@ function launch {
       fi
     fi
   fi
+}
+
+function launch {
+  # Remove orphaned git lock if it exists on boot
+  [ -f "$DIR/.git/index.lock" ] && rm -f $DIR/.git/index.lock
+
+  apply_staged_update
 
   # handle pythonpath
   ln -sfn $(pwd) /data/pythonpath
