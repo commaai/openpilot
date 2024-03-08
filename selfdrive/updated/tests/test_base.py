@@ -104,9 +104,11 @@ class BaseUpdateTest(unittest.TestCase):
     self.assertEqual(self.params.get_bool("UpdaterFetchAvailable"), fetch_available)
     self.assertEqual(self.params.get_bool("UpdateAvailable"), update_available)
 
-  def _test_update_params(self, branch, version, agnos_version, release_notes):
+  def _test_finalized_update(self, branch, version, agnos_version, release_notes):
+    from openpilot.selfdrive.updated.common import get_version # this needs to be inline because common uses environment variables
     self.assertTrue(self.params.get("UpdaterNewDescription", encoding="utf-8").startswith(f"{version} / {branch}"))
     self.assertEqual(self.params.get("UpdaterNewReleaseNotes", encoding="utf-8"), f"<p>{release_notes}</p>\n")
+    self.assertEqual(get_version(str(self.staging_root / "finalized")), version)
 
   def wait_for_condition(self, condition, timeout=12):
     start = time.monotonic()
@@ -170,7 +172,7 @@ class BaseUpdateTest(unittest.TestCase):
       self.wait_for_update_available()
 
       self._test_params("release3", False, True)
-      self._test_update_params("release3", *self.MOCK_RELEASES["release3"])
+      self._test_finalized_update("release3", *self.MOCK_RELEASES["release3"])
 
   def test_switch_branches(self):
     # Start on release3, request to switch to master manually, ensure we switched
@@ -195,7 +197,7 @@ class BaseUpdateTest(unittest.TestCase):
       self.wait_for_update_available()
 
       self._test_params("master", False, True)
-      self._test_update_params("master", *self.MOCK_RELEASES["master"])
+      self._test_finalized_update("master", *self.MOCK_RELEASES["master"])
 
   def test_agnos_update(self):
     # Start on release3, push an update with an agnos change
@@ -227,4 +229,4 @@ class BaseUpdateTest(unittest.TestCase):
       self.wait_for_update_available()
 
       self._test_params("release3", False, True)
-      self._test_update_params("release3", *self.MOCK_RELEASES["release3"])
+      self._test_finalized_update("release3", *self.MOCK_RELEASES["release3"])
