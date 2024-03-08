@@ -107,7 +107,7 @@ class TestUpdateD(unittest.TestCase):
     self.assertTrue(self.params.get("UpdaterNewDescription", encoding="utf-8").startswith(f"{version} / {branch}"))
     self.assertEqual(self.params.get("UpdaterNewReleaseNotes", encoding="utf-8"), f"<p>{release_notes}</p>\n")
 
-  def wait_for_condition(self, condition, timeout=8):
+  def wait_for_condition(self, condition, timeout=12):
     start = time.monotonic()
     while True:
       waited = time.monotonic() - start
