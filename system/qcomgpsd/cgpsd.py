@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import time
 import datetime
+from collections import defaultdict
 
 from cereal import log
 import cereal.messaging as messaging
@@ -40,29 +41,34 @@ def main():
   for c in cmds:
     at_cmd(c)
 
+  nmea = defaultdict(list)
   pm = messaging.PubMaster(['gpsLocation'])
   while True:
     time.sleep(1)
     try:
       # TODO: read from streaming AT port instead of polling
       out = at_cmd("AT+CGPS?")
-      nmea_sentences = out.split("'")[1].splitlines()
-      gnrmc_sentences = [l for l in nmea_sentences if l.startswith('$GNRMC')]
-      if len(gnrmc_sentences) == 0:
+
+      publish = False
+      for line in out.split("'")[1].splitlines():
+        if line.startswith('$G'):
+          st = line.split(',')
+          nmea[st[0]] = st
+          publish = publish or (st[0] == '$GNRMC')
+
+      if not publish:
         print(f"no GNRMC:\n{out}\n")
         continue
 
-      gnrmc = gnrmc_sentences[-1].split(",")
-      print(gnrmc_sentences[-1], gnrmc)
-      assert gnrmc[0] == "$GNRMC"
-
+      gnrmc = nmea['$GNRMC']
+      print(gnrmc)
       if gnrmc.count('') > 5:
         print("no fix :(")
         continue
 
       msg = messaging.new_message('gpsLocation', valid=True)
       gps = msg.gpsLocation
-      gps.latitude = (float(gnrmc[3][:2]) + (float(gnrmc[3][2:]) / 60)) * (1 if gnrmc[4] == "N" else -1)
+      gps.latitude = (float(gnrmc[3][:2]) + (float(gnrmc[3][2:]) / 60)) * (1 if gnrmc[4] == "N" else -2)
       gps.longitude = (float(gnrmc[5][:3]) + (float(gnrmc[5][3:]) / 60)) * (1 if gnrmc[6] == "E" else -1)
 
       date = gnrmc[9][:6]
@@ -74,6 +80,11 @@ def main():
 
       # TODO: make our own source
       gps.source = log.GpsLocationData.SensorSource.qcomdiag
+
+      if len(nmea['$GNGGA']):
+        gngga = nmea['$GNGGA']
+        if gngga[10] == 'M':
+          gps.altitude = float(nmea['$GNGGA'][9])
 
       """
       gps.altitude = report["q_FltFinalPosAlt"]
