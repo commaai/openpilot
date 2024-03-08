@@ -1,6 +1,12 @@
+from cereal import log
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car import CanBusBase
-from openpilot.selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, CAR, CarControllerParams
+from openpilot.selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, CAR, CarControllerParams, HudDistance
+
+LongitudinalPersonality = log.LongitudinalPersonality
+
+PERSONALITY = [LongitudinalPersonality.relaxed, LongitudinalPersonality.standard, LongitudinalPersonality.aggressive]
+HUD_DISTANCE = [HudDistance.BAR_4, HudDistance.BAR_3, HudDistance.BAR_2]
 
 # CAN bus layout with relay
 # 0 = ACC-CAN - radar side
@@ -44,6 +50,10 @@ def get_lkas_cmd_bus(CAN, car_fingerprint, radar_disabled=False):
 def get_cruise_speed_conversion(car_fingerprint: str, is_metric: bool) -> float:
   # on certain cars, CRUISE_SPEED changes to imperial with car's unit setting
   return CV.MPH_TO_MS if car_fingerprint in HONDA_BOSCH_RADARLESS and not is_metric else CV.KPH_TO_MS
+
+
+def get_hud_distance(personality):
+  return HUD_DISTANCE[PERSONALITY.index(personality)]
 
 
 def create_brake_command(packer, CAN, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake):
@@ -138,12 +148,13 @@ def create_ui_commands(packer, CAN, CP, enabled, pcm_speed, hud, is_metric, acc_
   commands = []
   radar_disabled = CP.carFingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS) and CP.openpilotLongitudinalControl
   bus_lkas = get_lkas_cmd_bus(CAN, CP.carFingerprint, radar_disabled)
+  distance = get_hud_distance(hud.lead_distance_bars)
 
   if CP.openpilotLongitudinalControl:
     acc_hud_values = {
       'CRUISE_SPEED': hud.v_cruise,
       'ENABLE_MINI_CAR': 1 if enabled else 0,
-      'HUD_DISTANCE': 0,  # max distance setting on display
+      'HUD_DISTANCE': distance,
       'IMPERIAL_UNIT': int(not is_metric),
       'HUD_LEAD': 2 if enabled and hud.lead_visible else 1 if enabled else 0,
       'SET_ME_X01_2': 1,
