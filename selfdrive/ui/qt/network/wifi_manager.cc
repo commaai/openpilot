@@ -176,7 +176,7 @@ void WifiManager::connect(const Network &n, const QString &password, const QStri
   connection["connection"]["autoconnect-retries"] = 0;
 
   connection["802-11-wireless"]["ssid"] = n.ssid;
-  connection["802-11-wireless"]["hidden"] = true
+  connection["802-11-wireless"]["hidden"] = true;
   connection["802-11-wireless"]["mode"] = "infrastructure";
 
   if (n.security_type == SecurityType::WPA) {
