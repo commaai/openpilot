@@ -31,7 +31,29 @@ function agnos_init {
   fi
 }
 
-function apply_staged_update {
+
+function apply_finalized_update {
+  if [ -f "${STAGING_ROOT}/finalized/.overlay_consistent" ]; then
+    if [ ! -d /data/safe_staging/old_openpilot ]; then
+      echo "Valid overlay update found, installing"
+      LAUNCHER_LOCATION="${BASH_SOURCE[0]}"
+
+      mv $BASEDIR /data/safe_staging/old_openpilot
+      mv "${STAGING_ROOT}/finalized" $BASEDIR
+      cd $BASEDIR
+
+      echo "Restarting launch script ${LAUNCHER_LOCATION}"
+      unset AGNOS_VERSION
+      exec "${LAUNCHER_LOCATION}"
+    else
+      echo "openpilot backup found, not updating"
+      # TODO: restore backup? This means the updater didn't start after swapping
+    fi
+  fi
+}
+
+
+function apply_overlay_update {
   # Check to see if there's a valid overlay-based update available. Conditions
   # are as follows:
   #
@@ -46,23 +68,7 @@ function apply_staged_update {
     if [ $? -eq 0 ]; then
       echo "${BASEDIR} has been modified, skipping overlay update installation"
     else
-      if [ -f "${STAGING_ROOT}/finalized/.overlay_consistent" ]; then
-        if [ ! -d /data/safe_staging/old_openpilot ]; then
-          echo "Valid overlay update found, installing"
-          LAUNCHER_LOCATION="${BASH_SOURCE[0]}"
-
-          mv $BASEDIR /data/safe_staging/old_openpilot
-          mv "${STAGING_ROOT}/finalized" $BASEDIR
-          cd $BASEDIR
-
-          echo "Restarting launch script ${LAUNCHER_LOCATION}"
-          unset AGNOS_VERSION
-          exec "${LAUNCHER_LOCATION}"
-        else
-          echo "openpilot backup found, not updating"
-          # TODO: restore backup? This means the updater didn't start after swapping
-        fi
-      fi
+      apply_finalized_update
     fi
   fi
 }
@@ -71,7 +77,7 @@ function launch {
   # Remove orphaned git lock if it exists on boot
   [ -f "$DIR/.git/index.lock" ] && rm -f $DIR/.git/index.lock
 
-  apply_staged_update
+  apply_overlay_update
 
   # handle pythonpath
   ln -sfn $(pwd) /data/pythonpath
