@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import capnp
-import bz2
 import contextlib
 import io
 import shutil
@@ -13,9 +12,7 @@ import requests
 from parameterized import parameterized
 from unittest import mock
 
-from cereal import messaging
 from cereal import log
-
 from openpilot.tools.lib.logreader import LogIterable, LogReader, comma_api_source, parse_indirect, ReadMode, InternalUnavailableException
 from openpilot.tools.lib.route import SegmentRange
 from openpilot.tools.lib.url_file import URLFileException
@@ -105,8 +102,8 @@ class TestLogReader(unittest.TestCase):
       l = len(list(LogReader(f)))
       self.assertGreater(l, 100)
 
-    with self.assertRaises(URLFileException if not cache_enabled else AssertionError):
-      list(LogReader(QLOG_FILE.replace("/3/", "/200/")))
+    with self.assertRaises(URLFileException) if not cache_enabled else self.assertRaises(AssertionError):
+      l = len(list(LogReader(QLOG_FILE.replace("/3/", "/200/"))))
 
     # file_exists should not be called for direct files
     self.assertEqual(file_exists_mock.call_count, 0)
