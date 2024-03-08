@@ -251,7 +251,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       whitelist_ecus=[Ecu.abs, Ecu.eps, Ecu.fwdCamera, Ecu.engine, Ecu.transmission],
       bus=0,
     ),
-    # query on powertrain bus for GEN2
+    # GEN2 powertrain bus query
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
