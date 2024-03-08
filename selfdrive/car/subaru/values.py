@@ -243,12 +243,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
       whitelist_ecus=[Ecu.fwdCamera],
     ),
     Request(
-      [StdQueries.SHORT_TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
-      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.fwdCamera],
-      logging=True,
-    ),
-    Request(
       [StdQueries.DEFAULT_DIAGNOSTIC_REQUEST, StdQueries.TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
       [StdQueries.DEFAULT_DIAGNOSTIC_RESPONSE, StdQueries.TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
       whitelist_ecus=[Ecu.fwdCamera],
