@@ -1,12 +1,12 @@
 from collections import namedtuple
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import Enum, IntFlag
 
 from cereal import car
 from panda.python import uds
 from opendbc.can.can_define import CANDefine
 from openpilot.common.conversions import Conversions as CV
-from openpilot.selfdrive.car import PlatformFlags, dbc_dict, CarSpecs, DbcDict, PlatformConfig, Platforms
+from openpilot.selfdrive.car import dbc_dict, CarSpecs, DbcDict, PlatformConfig, Platforms
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
                                            Device
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
@@ -109,7 +109,7 @@ class CANBUS:
   cam = 2
 
 
-class VolkswagenFlags(PlatformFlags):
+class VolkswagenFlags(IntFlag):
   # Detected flags
   STOCK_HCA_PRESENT = 1
 

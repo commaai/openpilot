@@ -1,11 +1,11 @@
 import re
 from collections import defaultdict
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import Enum, IntFlag
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
-from openpilot.selfdrive.car import CarSpecs, PlatformConfig, PlatformFlags, Platforms
+from openpilot.selfdrive.car import CarSpecs, PlatformConfig, Platforms
 from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, CarParts, CarHarness
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
@@ -41,7 +41,7 @@ class CarControllerParams:
       self.STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
 
 
-class ToyotaFlags(PlatformFlags):
+class ToyotaFlags(IntFlag):
   # Detected flags
   HYBRID = 1
   SMART_DSU = 2
