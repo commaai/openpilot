@@ -105,10 +105,11 @@ class BaseUpdateTest(unittest.TestCase):
     self.assertEqual(self.params.get_bool("UpdateAvailable"), update_available)
 
   def _test_finalized_update(self, branch, version, agnos_version, release_notes):
-    from openpilot.selfdrive.updated.common import get_version # this needs to be inline because common uses environment variables
+    from openpilot.selfdrive.updated.common import get_version, get_consistent_flag # this needs to be inline because common uses environment variables
     self.assertTrue(self.params.get("UpdaterNewDescription", encoding="utf-8").startswith(f"{version} / {branch}"))
     self.assertEqual(self.params.get("UpdaterNewReleaseNotes", encoding="utf-8"), f"<p>{release_notes}</p>\n")
     self.assertEqual(get_version(str(self.staging_root / "finalized")), version)
+    self.assertEqual(get_consistent_flag(), True)
 
   def wait_for_condition(self, condition, timeout=12):
     start = time.monotonic()
