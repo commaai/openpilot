@@ -7,8 +7,6 @@
 
 namespace {
 
-const size_t AR0231_FRAME_WIDTH = 1928;
-const size_t AR0231_FRAME_HEIGHT = 1208;
 const size_t AR0231_REGISTERS_HEIGHT = 2;
 // TODO: this extra height is universal and doesn't apply per camera
 const size_t AR0231_STATS_HEIGHT = 2 + 8;
@@ -82,14 +80,14 @@ float ar0231_parse_temp_sensor(uint16_t calib1, uint16_t calib2, uint16_t data_r
 AR0231::AR0231() {
   image_sensor = cereal::FrameData::ImageSensor::AR0231;
   data_word = true;
-  frame_width = AR0231_FRAME_WIDTH;
-  frame_height = AR0231_FRAME_HEIGHT;
-  frame_stride = (AR0231_FRAME_WIDTH * 12 / 8) + 4;
+  frame_width = 1928;
+  frame_height = 1208;
+  frame_stride = (frame_width * 12 / 8) + 4;
   extra_height = AR0231_REGISTERS_HEIGHT + AR0231_STATS_HEIGHT;
 
   registers_offset = 0;
   frame_offset = AR0231_REGISTERS_HEIGHT;
-  stats_offset = AR0231_REGISTERS_HEIGHT + AR0231_FRAME_HEIGHT;
+  stats_offset = AR0231_REGISTERS_HEIGHT + frame_height;
 
   start_reg_array.assign(std::begin(start_reg_array_ar0231), std::end(start_reg_array_ar0231));
   init_reg_array.assign(std::begin(init_array_ar0231), std::end(init_array_ar0231));

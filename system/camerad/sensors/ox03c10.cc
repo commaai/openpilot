@@ -2,9 +2,6 @@
 
 namespace {
 
-const size_t OX03C10_FRAME_WIDTH = 1928;
-const size_t OX03C10_FRAME_HEIGHT = 1208;
-
 const float sensor_analog_gains_OX03C10[] = {
     1.0, 1.0625, 1.125, 1.1875, 1.25, 1.3125, 1.375, 1.4375, 1.5, 1.5625, 1.6875,
     1.8125, 1.9375, 2.0, 2.125, 2.25, 2.375, 2.5, 2.625, 2.75, 2.875, 3.0,
@@ -27,9 +24,9 @@ const uint32_t VS_TIME_MAX_OX03C10 = 34;  // vs < 35
 OX03C10::OX03C10() {
   image_sensor = cereal::FrameData::ImageSensor::OX03C10;
   data_word = false;
-  frame_width = OX03C10_FRAME_WIDTH;
-  frame_height = OX03C10_FRAME_HEIGHT;
-  frame_stride = (OX03C10_FRAME_WIDTH * 12 / 8) + 4;
+  frame_width = 1928;
+  frame_height = 1208;
+  frame_stride = (frame_width * 12 / 8) + 4;
   extra_height = 16;            // top 2 + bot 14
   frame_offset = 2;
 
