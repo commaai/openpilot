@@ -35,11 +35,8 @@ def sfloat(n: str):
 
 def main():
   wait_for_modem("AT+CGPS?")
-  print("got modem")
 
-  # enable GPS
   cmds = [
-    #"AT+CGPS=0",
     "AT+GPSPORT=1",
     "AT+CGPS=1",
   ]
@@ -54,22 +51,15 @@ def main():
       # TODO: read from streaming AT port instead of polling
       out = at_cmd("AT+CGPS?")
 
-      publish = False
-      for line in out.split("'")[1].splitlines():
-        if line.startswith('$G'):
-          st = line.split(',')
-          nmea[st[0]] = st
-          publish = publish or (st[0] == '$GNRMC')
-
-      if not publish:
+      sentences = out.split("'")[1].splitlines()
+      new = {l.split(',')[0]: l.split(',') for l in sentences if l.startswith('$G')}
+      nmea.update(new)
+      if '$GNRMC' not in new:
         print(f"no GNRMC:\n{out}\n")
         continue
 
       gnrmc = nmea['$GNRMC']
-      print(gnrmc)
-      #if gnrmc.count('') > 5:
-      #  print("no fix :(")
-      #  continue
+      #print(gnrmc)
 
       msg = messaging.new_message('gpsLocation', valid=True)
       gps = msg.gpsLocation
@@ -93,18 +83,14 @@ def main():
         if gngga[10] == 'M':
           gps.altitude = sfloat(nmea['$GNGGA'][9])
 
-
       # TODO: set these from the module
       gps.horizontalAccuracy = 3.
       gps.verticalAccuracy =  3.
       gps.bearingAccuracyDeg = 5.
       gps.speedAccuracy = 3.
 
-      """
-      gps.speed = math.sqrt(sum([x**2 for x in vNED]))
-      gps.bearingDeg = report["q_FltHeadingRad"] * 180/math.pi
-      gps.vNED = vNED
-      """
+      # TODO: can we get this from the NMEA sentences?
+      #gps.vNED = vNED
 
       pm.send('gpsLocation', msg)
 
