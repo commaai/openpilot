@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import capnp
+import bz2
 import contextlib
 import io
 import shutil
@@ -10,6 +12,9 @@ import requests
 
 from parameterized import parameterized
 from unittest import mock
+
+from cereal import messaging
+from cereal import log
 
 from openpilot.tools.lib.logreader import LogIterable, LogReader, comma_api_source, parse_indirect, ReadMode, InternalUnavailableException
 from openpilot.tools.lib.route import SegmentRange
@@ -222,6 +227,55 @@ class TestLogReader(unittest.TestCase):
 
     msgs = list(LogReader(f"{TEST_ROUTE}/0/q", sort_by_time=True))
     self.assertEqual(msgs, sorted(msgs, key=lambda m: m.logMonoTime))
+
+  def test_only_union_types(self):
+    # fake_segment = "fake_segment"
+    # non_union_msg = log.Map.new_message()
+    # print(non_union_msg.to_bytes())
+
+    base_msgs = list(LogReader(QLOG_FILE))
+
+    # WORD_SIZE = 8
+
+    event_msg = log.Event.new_message()
+    event_msg.init('initData')
+    non_union_bytes = bytearray(event_msg.to_bytes())
+    # non_union_bytes[event_msg.total_size.word_count * 8] = 0xff
+    print(non_union_bytes)
+
+    qlog = tempfile.NamedTemporaryFile(mode='wb', delete=False)
+    with requests.get(QLOG_FILE, stream=True) as r:
+      with qlog as f:
+        # print(r.content)
+        # shutil.copyfileobj(r.raw, f)
+        f.write(bz2.decompress(r.content) + bytes(non_union_bytes))
+    print(qlog.name)
+
+    msgs = list(LogReader(qlog.name))
+    print(len(msgs), len(base_msgs))
+    [m.which() for m in msgs]
+
+
+
+
+    # dat = b"".join(msg.as_builder().to_bytes() for msg in msgs)
+    # list(LogReader.from_bytes(dat))
+    #
+    # dat += non_union_bytes
+    # with self.assertRaises(capnp.KjException):
+    #   list(LogReader.from_bytes(dat))
+    #
+    #
+    # list(LogReader.from_bytes(dat, only_union_types=True))
+
+    # l = list(LogReader.from_bytes(dat))
+    # print(l[-5:])
+    # print([m.which() for m in l[-5:]])
+    #
+    #
+    # # e.init('initfsdfd')
+    # # fake_msgs = messaging.new_message()
+    # # msgs = list(LogReader.from_bytes(dat))
 
 
 if __name__ == "__main__":
