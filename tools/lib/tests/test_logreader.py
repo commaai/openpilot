@@ -105,8 +105,8 @@ class TestLogReader(unittest.TestCase):
       l = len(list(LogReader(f)))
       self.assertGreater(l, 100)
 
-    with self.assertRaises(URLFileException) if not cache_enabled else self.assertRaises(AssertionError):
-      l = len(list(LogReader(QLOG_FILE.replace("/3/", "/200/"))))
+    with self.assertRaises(URLFileException if not cache_enabled else AssertionError):
+      list(LogReader(QLOG_FILE.replace("/3/", "/200/")))
 
     # file_exists should not be called for direct files
     self.assertEqual(file_exists_mock.call_count, 0)
@@ -229,23 +229,11 @@ class TestLogReader(unittest.TestCase):
     self.assertEqual(msgs, sorted(msgs, key=lambda m: m.logMonoTime))
 
   def test_only_union_types(self):
-    # fake_segment = "fake_segment"
-    # non_union_msg = log.Map.new_message()
-    # print(non_union_msg.to_bytes())
-
-    # base_msgs = list(LogReader(QLOG_FILE))
-
-    # WORD_SIZE = 8
-
-    # event_msg.init('initData')
-
-
-
     with tempfile.NamedTemporaryFile() as qlog:
       # write valid Event messages
       num_msgs = 100
       msgs = [log.Event.new_message() for _ in range(num_msgs)]
-      with open(qlog.name, 'wb') as f:
+      with open(qlog.name, "wb") as f:
         f.write(b"".join(msg.to_bytes() for msg in msgs))
 
       msgs = list(LogReader(qlog.name))
@@ -256,39 +244,19 @@ class TestLogReader(unittest.TestCase):
       event_msg = log.Event.new_message()
       non_union_bytes = bytearray(event_msg.to_bytes())
       non_union_bytes[event_msg.total_size.word_count * 8] = 0xff  # set discriminant value out of range using Event word offset
-      with open(qlog.name, 'ab') as f:
+      with open(qlog.name, "ab") as f:
         f.write(non_union_bytes)
 
-      # ensure new message should be added, but is not a union type. then ensure it is not added when only_union_types=True
+      # ensure new message is added, but is not a union type
       msgs = list(LogReader(qlog.name))
       self.assertEqual(len(msgs), num_msgs + 1)
       with self.assertRaises(capnp.KjException):
         [m.which() for m in msgs]
 
+      # should not be added when only_union_types=True
       msgs = list(LogReader(qlog.name, only_union_types=True))
       self.assertEqual(len(msgs), num_msgs)
       [m.which() for m in msgs]
-
-
-
-    # dat = b"".join(msg.as_builder().to_bytes() for msg in msgs)
-    # list(LogReader.from_bytes(dat))
-    #
-    # dat += non_union_bytes
-    # with self.assertRaises(capnp.KjException):
-    #   list(LogReader.from_bytes(dat))
-    #
-    #
-    # list(LogReader.from_bytes(dat, only_union_types=True))
-
-    # l = list(LogReader.from_bytes(dat))
-    # print(l[-5:])
-    # print([m.which() for m in l[-5:]])
-    #
-    #
-    # # e.init('initfsdfd')
-    # # fake_msgs = messaging.new_message()
-    # # msgs = list(LogReader.from_bytes(dat))
 
 
 if __name__ == "__main__":
