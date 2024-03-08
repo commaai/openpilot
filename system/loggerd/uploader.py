@@ -44,7 +44,9 @@ class FakeResponse:
 
 
 def get_directory_sort(d: str) -> list[str]:
-  return [s.rjust(10, '0') for s in d.rsplit('--', 1)]
+  # ensure old format is sorted sooner
+  o = ["0", ] if d.startswith("2024-") else ["1", ]
+  return o + [s.rjust(10, '0') for s in d.rsplit('--', 1)]
 
 def listdir_by_creation(d: str) -> list[str]:
   if not os.path.isdir(d):
