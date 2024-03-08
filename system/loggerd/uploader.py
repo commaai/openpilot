@@ -268,5 +268,4 @@ def main(exit_event: threading.Event = None) -> None:
 
 
 if __name__ == "__main__":
-  #main()
-  print(listdir_by_creation(Paths.log_root()))
+  main()
