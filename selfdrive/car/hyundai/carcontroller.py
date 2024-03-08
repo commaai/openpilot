@@ -148,7 +148,7 @@ class CarController(CarControllerBase):
         jerk = 3.0 if actuators.longControlState == LongCtrlState.pid else 1.0
         use_fca = self.CP.flags & HyundaiFlags.USE_FCA.value
         can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, jerk, int(self.frame / 2),
-                                                        hud_control.leadVisible, set_speed_in_units, stopping,
+                                                        hud_control, set_speed_in_units, stopping,
                                                         CC.cruiseControl.override, use_fca))
 
       # 20 Hz LFA MFA message
