@@ -96,8 +96,11 @@ def main():
         if gngga[10] == 'M':
           gps.altitude = sfloat(gngga[9])
 
-      #gps.horizontalAccuracy = sfloat(gnrmc[])
-      #gps.verticalAccuracy =  sfloat()
+      if len(nmea['$GNGSA']):
+        # TODO: this is only for GPS sats
+        gngsa = nmea['$GNGSA']
+        gps.horizontalAccuracy = sfloat(gngsa[4])
+        gps.verticalAccuracy = sfloat(gngsa[5])
 
       # TODO: set these from the module
       gps.bearingAccuracyDeg = 5.
