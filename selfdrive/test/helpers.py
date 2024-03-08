@@ -113,3 +113,12 @@ def with_http_server(func, handler=http.server.BaseHTTPRequestHandler, setup=Non
     with http_server_context(handler, setup) as (host, port):
       return func(*args, f"http://{host}:{port}", **kwargs)
   return inner
+
+
+def DirectoryHttpServer(directory) -> type[http.server.SimpleHTTPRequestHandler]:
+  # creates an http server that serves files from directory
+  class Handler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+      super().__init__(*args, directory=str(directory), **kwargs)
+
+  return Handler
