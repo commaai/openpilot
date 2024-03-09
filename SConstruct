@@ -304,7 +304,7 @@ else:
   qt_libs = [f"Qt5{m}" for m in qt_modules]
   if arch == "larch64":
     qt_libs += ["GLESv2", "wayland-client"]
-    qt_env.PrependENVPath('PATH', Dir("#third_party/qt5/larch64/bin/").abspath)
+    qt_env.PrependENVPath('PATH', Dir("#third_party/qt5/larch64/bin/").relpath)
   elif arch != "Darwin":
     qt_libs += ["GL"]
 qt_env['QT3DIR'] = qt_env['QTDIR']
@@ -329,7 +329,7 @@ qt_flags = [
 ]
 qt_env['CXXFLAGS'] += qt_flags
 qt_env['LIBPATH'] += ['#selfdrive/ui', f"#third_party/maplibre-native-qt/{arch}/lib"]
-qt_env['RPATH'] += [Dir(f"#third_party/maplibre-native-qt/{arch}/lib").srcnode().abspath]
+qt_env['RPATH'] += [Dir(f"#third_party/maplibre-native-qt/{arch}/lib").srcnode().relpath]
 qt_env['LIBS'] = qt_libs
 
 if GetOption("clazy"):
