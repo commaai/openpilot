@@ -129,6 +129,7 @@ void TogglesPanel::showEvent(QShowEvent *event) {
 }
 
 void TogglesPanel::updatePersonalitySetting(int personality) {
+  // Update the personality setting in the UI + write param
   qDebug() << "updatePersonalitySetting" << personality;
   long_personality_setting->setActiveButton(personality);
 }
@@ -373,7 +374,6 @@ void SettingsWindow::updateState(const UIState &s) {
       qDebug() << "Personality updated";
       emit updatePersonalitySetting(static_cast<int>(personality));
     }
-//    s.scene.personality = personality;
     uiState()->scene.personality = personality;
   }
 }
