@@ -67,7 +67,7 @@ AddOption('--pc-thneed',
 AddOption('--minimal',
           action='store_false',
           dest='extras',
-          default=os.path.islink(Dir('#rednose/').abspath), # minimal by default on release branch (where rednose is not a link)
+          default=os.path.islink(Dir('#rednose/').relpath), # minimal by default on release branch (where rednose is not a link)
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
 ## Architecture name breakdown (arch)
@@ -85,10 +85,9 @@ assert arch in ["larch64", "aarch64", "x86_64", "Darwin"]
 
 lenv = {
   "PATH": os.environ['PATH'],
-  "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").abspath],
+  "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").relpath],
   "PYTHONPATH": Dir("#").abspath + ':' + Dir(f"#third_party/acados").abspath,
-
-  "ACADOS_SOURCE_DIR": Dir("#third_party/acados").abspath,
+  "ACADOS_SOURCE_DIR": Dir("#third_party/acados").relpath,
   "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
   "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
 }
@@ -152,7 +151,7 @@ else:
         f"#third_party/snpe/{arch}"
       ]
       rpath += [
-        Dir(f"#third_party/snpe/{arch}").abspath,
+        Dir(f"#third_party/snpe/{arch}").relpath,
       ]
 
 if GetOption('asan'):
