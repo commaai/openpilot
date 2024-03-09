@@ -65,19 +65,14 @@ class LongitudinalPlanner:
     self.solverExecutionTime = 0.0
     self.params = Params()
     self.param_read_counter = 0
-    self.personality = None
-    self.param_personality = None
+    self.personality = log.LongitudinalPersonality.standard
     self.read_param()
 
   def read_param(self):
     try:
-      param_personality = int(self.params.get('LongitudinalPersonality'))
+      self.personality = int(self.params.get('LongitudinalPersonality'))
     except (ValueError, TypeError):
-      param_personality = log.LongitudinalPersonality.standard
-
-    if self.param_personality != param_personality:
-      self.param_personality = param_personality
-      self.personality = param_personality
+      self.personality = log.LongitudinalPersonality.standard
 
   @staticmethod
   def parse_model(model_msg, model_error):
