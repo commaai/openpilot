@@ -135,20 +135,6 @@ void TogglesPanel::updatePersonalitySetting(int personality) {
 }
 
 void TogglesPanel::updateToggles() {
-  // personality setting
-//  long_personality_setting;
-
-  std::string personality = params.get("LongitudinalPersonality");
-  if (!personality.empty()) {
-    long_personality_setting->setActiveButton(std::stoi(personality));
-  }
-//  qDebug() << "personality" << QString::fromStdString(personality);
-//  auto test = static_cast<cereal::LongitudinalPersonality>(3);
-//  qDebug() << cereal::LongitudinalPersonality::Max;
-//  qDebug() << "personality" << static_cast<int>(test);
-//  cereal::LongitudinalPersonality;
-
-  // experimental mode
   auto experimental_mode_toggle = toggles["ExperimentalMode"];
   auto op_long_toggle = toggles["ExperimentalLongitudinalEnabled"];
   const QString e2e_description = QString("%1<br>"
