@@ -348,12 +348,11 @@ void SettingsWindow::setCurrentPanel(int index, const QString &param) {
 }
 
 void SettingsWindow::updateState(const UIState &s) {
-  qDebug() << "updateState" << static_cast<int>(s.scene.personality);
   const SubMaster &sm = *(s.sm);
+
   if (sm.updated("longitudinalPlan")) {
     auto personality = sm["longitudinalPlan"].getLongitudinalPlan().getPersonality();
     if (personality != s.scene.personality && s.scene.started) {
-      qDebug() << "Personality updated";
       emit updatePersonalitySetting(static_cast<int>(personality));
     }
     uiState()->scene.personality = personality;
