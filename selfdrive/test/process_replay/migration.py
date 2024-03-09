@@ -7,9 +7,11 @@ from openpilot.selfdrive.manager.process_config import managed_processes
 from panda import Panda
 
 
+# TODO: message migration should happen in-place
 def migrate_all(lr, old_logtime=False, manager_states=False, panda_states=False, camera_states=False):
   msgs = migrate_sensorEvents(lr, old_logtime)
   msgs = migrate_carParams(msgs, old_logtime)
+  msgs = migrate_gpsLocation(msgs)
   if manager_states:
     msgs = migrate_managerState(msgs)
   if panda_states:
@@ -32,6 +34,21 @@ def migrate_managerState(lr):
     new_msg.managerState.processes = [{'name': name, 'running': True} for name in managed_processes]
     all_msgs.append(new_msg.as_reader())
 
+  return all_msgs
+
+
+def migrate_gpsLocation(lr):
+  all_msgs = []
+  for msg in lr:
+    if msg.which() in ('gpsLocation', 'gpsLocationExternal'):
+      new_msg = msg.as_builder()
+      g = getattr(new_msg, new_msg.which())
+      # hasFix is a newer field
+      if not g.hasFix and g.flags == 1:
+        g.hasFix = True
+      all_msgs.append(new_msg.as_reader())
+    else:
+      all_msgs.append(msg)
   return all_msgs
 
 
