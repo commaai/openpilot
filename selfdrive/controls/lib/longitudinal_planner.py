@@ -91,9 +91,7 @@ class LongitudinalPlanner:
     return x, v, a, j
 
   def update(self, sm, carState_sock):
-    # if self.param_read_counter % 50 == 0:
-    #   self.read_param()
-    # decrement personality on button press (Toyota can only decrement)
+    # decrement personality on distance button press
     for m in messaging.drain_sock(carState_sock, wait_for_one=False):
       if any(not be.pressed and be.type == ButtonType.gapAdjustCruise for be in m.carState.buttonEvents):
         self.personality = (self.personality - 1) % 3
