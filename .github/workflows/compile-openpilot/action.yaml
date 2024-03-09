@@ -11,7 +11,7 @@ runs:
     - shell: bash
       name: Test for absolute paths
       run: |
-          ${{ env.RUN }} "python3 test_relcache.py"
+          ${{ env.RUN }} "python3 test_relcache.py build.log $PWD"
     - shell: bash
       name: Cleanup scons cache and rebuild
       run: |
