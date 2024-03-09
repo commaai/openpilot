@@ -22,6 +22,9 @@ public:
   explicit SettingsWindow(QWidget *parent = 0);
   void setCurrentPanel(int index, const QString &param = "");
 
+//public slots:
+//  void updatePersonalitySetting(int);
+
 protected:
   void showEvent(QShowEvent *event) override;
 
@@ -30,6 +33,8 @@ signals:
   void reviewTrainingGuide();
   void showDriverView();
   void expandToggleDescription(const QString &param);
+  void updatePersonalitySetting(int personality);
+//  void updatePersonalitySetting1(int personality);
 
 private:
   QPushButton *sidebar_alert_widget;
@@ -63,6 +68,11 @@ public:
 
 public slots:
   void expandToggleDescription(const QString &param);
+  void updatePersonalitySetting(int);
+//  void updateState(const UIState &s);
+
+//private slots:
+//  void updateState(const UIState &s);
 
 private:
   Params params;

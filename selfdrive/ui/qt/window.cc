@@ -4,9 +4,17 @@
 
 #include "system/hardware/hw.h"
 
+void MainWindow::updateState(const UIState &s) {
+  qDebug() << "updateState" << static_cast<int>(s.scene.personality);
+  emit updatePersonalitySetting(static_cast<int>(s.scene.personality));
+//  settingsWindow->updatePersonalitySetting(static_cast<int>(s.scene.personality));
+}
+
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout(this);
   main_layout->setMargin(0);
+
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &MainWindow::updateState);
 
   homeWindow = new HomeWindow(this);
   main_layout->addWidget(homeWindow);
@@ -15,6 +23,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 
   settingsWindow = new SettingsWindow(this);
   main_layout->addWidget(settingsWindow);
+  QObject::connect(this, &MainWindow::updatePersonalitySetting, settingsWindow, &SettingsWindow::updatePersonalitySetting);
   QObject::connect(settingsWindow, &SettingsWindow::closeSettings, this, &MainWindow::closeSettings);
   QObject::connect(settingsWindow, &SettingsWindow::reviewTrainingGuide, [=]() {
     onboardingWindow->showTrainingGuide();

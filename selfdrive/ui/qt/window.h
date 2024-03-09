@@ -13,6 +13,12 @@ class MainWindow : public QWidget {
 public:
   explicit MainWindow(QWidget *parent = 0);
 
+private slots:
+  void updateState(const UIState &s);
+
+signals:
+  void updatePersonalitySetting(int);
+
 private:
   bool eventFilter(QObject *obj, QEvent *event) override;
   void openSettings(int index = 0, const QString &param = "");

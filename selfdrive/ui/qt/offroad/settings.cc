@@ -128,6 +128,11 @@ void TogglesPanel::showEvent(QShowEvent *event) {
   updateToggles();
 }
 
+void TogglesPanel::updatePersonalitySetting(int personality) {
+  qDebug() << "updatePersonalitySetting" << personality;
+  long_personality_setting->setActiveButton(personality);
+}
+
 void TogglesPanel::updateToggles() {
   auto experimental_mode_toggle = toggles["ExperimentalMode"];
   auto op_long_toggle = toggles["ExperimentalLongitudinalEnabled"];
@@ -341,6 +346,10 @@ void SettingsWindow::setCurrentPanel(int index, const QString &param) {
   }
 }
 
+//void SettingsWindow::updatePersonalitySetting(int personality) {
+//  emit updatePersonalitySetting1(personality);
+//}
+
 SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
   // setup two main layouts
@@ -374,6 +383,14 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
   TogglesPanel *toggles = new TogglesPanel(this);
   QObject::connect(this, &SettingsWindow::expandToggleDescription, toggles, &TogglesPanel::expandToggleDescription);
+//  QObject::connect(this, &SettingsWindow::updatePersonalitySetting, toggles, [toggles](int personality) {
+////    qDebug() << "HERE";
+////    emit updatePersonalitySetting(personality);
+//    toggles->updatePersonalitySetting(personality);
+//  });
+  QObject::connect(this, &SettingsWindow::updatePersonalitySetting, toggles, &TogglesPanel::updatePersonalitySetting);
+
+//  QObject::connect(uiState(), &UIState::uiUpdate, this, &TogglesPanel::updateState);
 
   QList<QPair<QString, QWidget *>> panels = {
     {tr("Device"), device},

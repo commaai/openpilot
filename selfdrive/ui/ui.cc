@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <iostream>
 
 #include <QtConcurrent>
 
@@ -206,6 +207,11 @@ static void update_state(UIState *s) {
     float scale = (cam_state.getSensor() == cereal::FrameData::ImageSensor::AR0231) ? 6.0f : 1.0f;
     scene.light_sensor = std::max(100.0f - scale * cam_state.getExposureValPercent(), 0.0f);
   }
+  if (sm.updated("longitudinalPlan")) {
+    auto plan = sm["longitudinalPlan"].getLongitudinalPlan();
+    scene.personality = plan.getPersonality();
+    std::cout << "Personality: " << static_cast<int>(scene.personality) << std::endl;
+  }
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
 
   scene.world_objects_visible = scene.world_objects_visible ||
@@ -248,7 +254,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState",
     "pandaStates", "carParams", "driverMonitoringState", "carState", "liveLocationKalman", "driverStateV2",
-    "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "uiPlan",
+    "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "uiPlan", "longitudinalPlan",
   });
 
   Params params;

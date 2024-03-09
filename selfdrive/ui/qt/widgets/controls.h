@@ -230,6 +230,10 @@ public:
     });
   }
 
+  void setActiveButton(int id) {
+    button_group->button(id)->setChecked(true);
+  }
+
   void setEnabled(bool enable) {
     for (auto btn : button_group->buttons()) {
       btn->setEnabled(enable);
