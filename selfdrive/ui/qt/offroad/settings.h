@@ -11,6 +11,7 @@
 #include <QWidget>
 
 
+#include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 
@@ -21,6 +22,9 @@ class SettingsWindow : public QFrame {
 public:
   explicit SettingsWindow(QWidget *parent = 0);
   void setCurrentPanel(int index, const QString &param = "");
+
+private slots:
+  void updateState(const UIState &s);
 
 protected:
   void showEvent(QShowEvent *event) override;

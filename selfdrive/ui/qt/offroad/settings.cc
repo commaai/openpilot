@@ -346,11 +346,17 @@ void SettingsWindow::setCurrentPanel(int index, const QString &param) {
   }
 }
 
-//void SettingsWindow::updatePersonalitySetting(int personality) {
-//  emit updatePersonalitySetting1(personality);
-//}
+void SettingsWindow::updateState(const UIState &s) {
+  qDebug() << "updateState" << static_cast<int>(s.scene.personality);
+  const SubMaster &sm = *(s.sm);
+  if (s.scene.started && sm.updated("longitudinalPlan")) {
+    emit updatePersonalitySetting(static_cast<int>(s.scene.personality));
+  }
+}
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
+
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &SettingsWindow::updateState);
 
   // setup two main layouts
   sidebar_widget = new QWidget;

@@ -13,8 +13,8 @@ class MainWindow : public QWidget {
 public:
   explicit MainWindow(QWidget *parent = 0);
 
-private slots:
-  void updateState(const UIState &s);
+//private slots:
+//  void updateState(const UIState &s);
 
 signals:
   void updatePersonalitySetting(int personality);

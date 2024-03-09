@@ -208,9 +208,7 @@ static void update_state(UIState *s) {
     scene.light_sensor = std::max(100.0f - scale * cam_state.getExposureValPercent(), 0.0f);
   }
   if (sm.updated("longitudinalPlan")) {
-    auto plan = sm["longitudinalPlan"].getLongitudinalPlan();
-    scene.personality = plan.getPersonality();
-    std::cout << "Personality: " << static_cast<int>(scene.personality) << std::endl;
+    scene.personality = sm["longitudinalPlan"].getLongitudinalPlan().getPersonality();
   }
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
 
