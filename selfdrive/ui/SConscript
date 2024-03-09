@@ -42,7 +42,7 @@ qt_src = ["main.cc", "qt/sidebar.cc", "qt/onroad.cc", "qt/body.cc",
           "qt/offroad/driverview.cc", "qt/offroad/experimental_mode.cc"]
 
 # build translation files
-with open(File("translations/languages.json").abspath) as f:
+with open(File("#translations/languages.json").relpath) as f:
   languages = json.loads(f.read())
 translation_sources = [f"#selfdrive/ui/translations/{l}.ts" for l in languages.values()]
 translation_targets = [src.replace(".ts", ".qm") for src in translation_sources]
