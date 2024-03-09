@@ -638,7 +638,7 @@ Isso pode levar até um minuto.</translation>
     </message>
     <message>
         <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation type="unfinished">Reinicialização do sistema acionada. Pressione confirmar para apagar todo o conteúdo e configurações. Pressione cancel para retomar a inicialização.</translation>
+        <translation>Reinicialização do sistema acionada. Pressione confirmar para apagar todo o conteúdo e configurações. Pressione cancel para retomar a inicialização.</translation>
     </message>
 </context>
 <context>
@@ -745,6 +745,18 @@ Isso pode levar até um minuto.</translation>
     <message>
         <source>Select a language</source>
         <translation>Selecione o Idioma</translation>
+    </message>
+    <message>
+        <source>Choose Software to Install</source>
+        <translation>Escolha o Software a ser Instalado</translation>
+    </message>
+    <message>
+        <source>openpilot</source>
+        <translation>openpilot</translation>
+    </message>
+    <message>
+        <source>Custom Software</source>
+        <translation>Software Customizado</translation>
     </message>
 </context>
 <context>

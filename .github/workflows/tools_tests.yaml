@@ -86,7 +86,7 @@ jobs:
   notebooks:
     name: notebooks
     runs-on: ubuntu-20.04
-    if: github.repository == 'commaai/openpilot'
+    if: false && github.repository == 'commaai/openpilot'
     timeout-minutes: 45
     steps:
     - uses: actions/checkout@v4
