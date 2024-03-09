@@ -1,23 +1,30 @@
 #!/bin/bash
-set -ex
+# set -ex
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 cd $DIR
 
 SRC=/tmp/openpilot/
-SRC_ARCHIVE=/tmp/openpilot-release-archive/
+SRC_CLONE=/tmp/openpilot-clone/
+# SRC_ARCHIVE=/tmp/openpilot-release-archive/
 OUT=/tmp/smallpilot/
 
-wget -O /tmp/git-filter-repo https://raw.githubusercontent.com/newren/git-filter-repo/main/git-filter-repo
-chmod +x /tmp/git-filter-repo
+if [ ! -f /tmp/git-filter-repo ]; then
+  wget -O /tmp/git-filter-repo https://raw.githubusercontent.com/newren/git-filter-repo/main/git-filter-repo
+  chmod +x /tmp/git-filter-repo
+fi
 
 if [ ! -d $SRC ]; then
   git clone --bare --mirror https://github.com/commaai/openpilot.git $SRC
 fi
 
-if [ ! -d $SRC_ARCHIVE ]; then
-  git clone --bare --mirror https://github.com/commaai/openpilot-release-archive.git $SRC_ARCHIVE
+if [ ! -d $SRC_CLONE ]; then
+  git clone $SRC $SRC_CLONE
 fi
+
+# if [ ! -d $SRC_ARCHIVE ]; then
+#   git clone --bare --mirror https://github.com/commaai/openpilot-release-archive.git $SRC_ARCHIVE
+# fi
 
 cd $SRC
 
@@ -28,11 +35,13 @@ git remote update
 # the git-filter-repo analysis is bliss - can be found in the repo root/filter-repo/analysis
 /tmp/git-filter-repo --force --analyze
 
-# Add openpilot-release-archive as a remote
-git remote add archive $SRC_ARCHIVE
+# # Add openpilot-release-archive as a remote
+# git remote add archive $SRC_ARCHIVE
 
-# Fetch the content from the archive remote
-git fetch archive
+# # Fetch the content from the archive remote
+# git fetch archive
+
+cd $SRC_CLONE
 
 # git checkout --track origin/devel
 # WIP: seems we might not need the archive repo at all - since we already have the history of the tags in the main repo
@@ -51,7 +60,41 @@ git checkout master
 
 # rebase previous "devel" history
 # WIP - this doesn't complete, it currently errors after ~20 commits rebased
+# git rebase -X ours archive
+handle_conflicts() {
+  # If there's a conflict, find deleted files and delete them
+  git status --porcelain | grep '^UD' | cut -c4- | while read -r file; do
+    git rm -- "$file"
+  done
+  # Add all changes (this will mark conflicts as resolved)
+  git add -u
+}
+
 git rebase -X ours archive
+
+# Start with an infinite loop
+while true; do
+  # Attempt to continue the rebase
+  GIT_EDITOR=true git rebase --continue
+
+  # Check the exit status of the rebase command
+  if [ $? -eq 0 ]; then
+    # If the rebase was successful, break out of the loop
+    break
+  else
+    # If there was an error (e.g., a conflict), handle the conflict
+    handle_conflicts
+  fi
+done
+
+# # While there are conflicts, try to resolve them and continue the rebase
+# while [ $? -ne 0 ]; do
+#   handle_conflicts
+#   # Continue the rebase without opening an editor
+#   git rebase --continue --no-edit
+# done
+
+exit
 
 # push to archive repo
 # WIP - push it when rebase is done without errors
