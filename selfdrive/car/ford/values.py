@@ -155,7 +155,7 @@ class CAR(Platforms):
 # A-Z except no I, O or W
 # e.g. NZ6A-14C204-AAA
 #      1222-333333-444
-# 1 = Model year (can be incremented for each model year)
+# 1 = Model year hint (approximates model year/generation)
 # 2 = Platform hint
 # 3 = Part number
 # 4 = Software version
@@ -166,6 +166,8 @@ FW_RE = re.compile(b'^(?P<model_year_hint>[' + FW_ALPHABET + b'])' +
                    b'(?P<software_revision>[' + FW_ALPHABET + b']{2,})$')
 
 
+# We use the `platform_hint` to identify the model and the `model_year_hint` to distinguish between
+# generations.
 def get_platform_codes(fw_versions: list[bytes] | set[bytes]) -> set[tuple[bytes, bytes]]:
   codes = set()  # (platform_hint, model_year_hint)
 
@@ -200,7 +202,7 @@ def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, offline_fw_versions:
     return False
 
   for candidate, fws in offline_fw_versions.items():
-    # Keep track of ECUs which pass all checks (platform codes, within version range)
+    # Keep track of ECUs which pass all checks
     valid_expected_ecus = {ecu[1:] for ecu in fws if ecu[0] in PLATFORM_CODE_ECUS}
 
     valid_found_ecus = {

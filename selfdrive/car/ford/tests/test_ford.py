@@ -115,6 +115,14 @@ class TestFordFW(unittest.TestCase):
     })
     self.assertEqual(candidates, {expected_fingerprint})
 
+    # change one of the fw to have a new unseen model year hint
+    live_fw[(0x760, None)] = {b"M1MC-2D053-BA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"}
+
+    candidates = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(live_fw, {
+      expected_fingerprint: offline_fw,
+    })
+    self.assertEqual(candidates, {}, "Should not match new model year hint")
+
 
 if __name__ == "__main__":
   unittest.main()
