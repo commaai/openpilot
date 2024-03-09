@@ -1,5 +1,4 @@
 import re
-from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag
 
@@ -169,14 +168,12 @@ FW_RE = re.compile(b'^(?P<model_year_hint>[' + FW_ALPHABET + b'])' +
 # We use the `platform_hint` to identify the model and the `model_year_hint` to distinguish between
 # generations.
 def get_platform_codes(fw_versions: list[bytes] | set[bytes]) -> set[tuple[bytes, bytes]]:
-  codes = set()  # (platform_hint, model_year_hint)
-
+  codes = set()
   for firmware in fw_versions:
     m = FW_RE.match(firmware.rstrip(b'\x00'))
     if m is None:
       continue
     codes.add((m.group('platform_hint'), m.group('model_year_hint')))
-
   return codes
 
 
@@ -188,6 +185,7 @@ def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, offline_fw_versions:
     live_codes = get_platform_codes(live_ecu_fws)
 
     for live_platform_hint, live_model_year_hint in live_codes:
+      # Check for platform hint match
       expected_model_year_hints = {
         model_year_hint for platform_hint, model_year_hint in expected_codes
         if platform_hint == live_platform_hint
@@ -195,50 +193,23 @@ def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, offline_fw_versions:
       if not expected_model_year_hints:
         continue
 
-      # TODO: check whether this can be expanded to the full range of model year hints
+      # Check model year hint for this platform hint is in the expected range
+      # TODO: can this range be expanded to the full range of model year hints for this ECU instead of platform-hint specific?
+      #       some models have more than one platform hint per ECU.
       if min(expected_model_year_hints) <= live_model_year_hint <= max(expected_model_year_hints):
         return True
 
     return False
 
   for candidate, fws in offline_fw_versions.items():
-    # Keep track of ECUs which pass all checks
-    valid_expected_ecus = {ecu[1:] for ecu in fws if ecu[0] in PLATFORM_CODE_ECUS}
-
+    # All ECUs with a matching platform hint and model year hint in the expected range
     valid_found_ecus = {
       addr[1:] for addr, ecu_fws in fws.items()
       if match_ecu_fw(ecu_fws, live_fw_versions.get(addr[1:], set()))
     }
 
-    for ecu, ecu_fws in fws.items():
-      addr = ecu[1:]
-
-      # Expected platform and model year hints
-      expected_codes = get_platform_codes(ecu_fws)
-      expected_model_years_by_platform_hint = defaultdict(set)
-      for platform_hint, model_year_hint in expected_codes:
-        expected_model_years_by_platform_hint[platform_hint].add(model_year_hint)
-
-      # Live platform and model year hints
-      live_codes = get_platform_codes(live_fw_versions.get(addr, set()))
-
-      # For each of the live platform hints, check if there is a matching expected platform hint
-      found = False
-      for live_platform_hint, live_model_year_hint in live_codes:
-        expected_model_year_hints = expected_model_years_by_platform_hint.get(live_platform_hint)
-        if not expected_model_year_hints:
-          continue
-
-        # Check if the model year hint is within the expected range for this platform hint
-        # TODO: check whether this can be expanded to the full range of model year hints
-        if min(expected_model_year_hints) <= live_model_year_hint <= max(expected_model_year_hints):
-          found = True
-          break
-
-      if found:
-        valid_found_ecus.add(addr)
-
     # If all live ECUs pass all checks for candidate, add it as a match
+    valid_expected_ecus = {ecu[1:] for ecu in fws if ecu[0] in PLATFORM_CODE_ECUS}
     if valid_expected_ecus.issubset(valid_found_ecus):
       candidates.add(candidate)
 
