@@ -131,7 +131,7 @@ void TogglesPanel::showEvent(QShowEvent *event) {
 void TogglesPanel::updatePersonalitySetting(int personality) {
   // Update the personality setting in the UI + write param
   qDebug() << "updatePersonalitySetting" << personality;
-  long_personality_setting->setActiveButton(personality);
+  long_personality_setting->setCheckedButton(personality);
 }
 
 void TogglesPanel::updateToggles() {

@@ -234,7 +234,7 @@ public:
     }
   }
 
-  void setActiveButton(int id) {
+  void setCheckedButton(int id) {
     button_group->button(id)->setChecked(true);
   }
 
