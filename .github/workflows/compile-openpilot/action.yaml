@@ -6,8 +6,12 @@ runs:
     - shell: bash
       name: Build openpilot with all flags
       run: |
-        ${{ env.RUN }} "scons -j$(nproc)"
+        ${{ env.RUN }} "scons -j$(nproc) | tee build.log"
         ${{ env.RUN }} "release/check-dirty.sh"
+    - shell: bash
+      name: Test for absolute paths
+      run: |
+          ${{ env.RUN }} "python3 test_relcache.py"
     - shell: bash
       name: Cleanup scons cache and rebuild
       run: |
