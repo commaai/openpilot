@@ -361,6 +361,7 @@ void SettingsWindow::updateState(const UIState &s) {
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
+  // setup uiState updates
   QObject::connect(uiState(), &UIState::uiUpdate, this, &SettingsWindow::updateState);
 
   // setup two main layouts
