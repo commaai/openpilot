@@ -17,7 +17,7 @@ private slots:
   void updateState(const UIState &s);
 
 signals:
-  void updatePersonalitySetting(int);
+  void updatePersonalitySetting(int personality);
 
 private:
   bool eventFilter(QObject *obj, QEvent *event) override;
