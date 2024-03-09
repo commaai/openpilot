@@ -141,9 +141,9 @@ class CarController(CarControllerBase):
       lead = hud_control.leadVisible or CS.out.vEgo < 12.  # at low speed we always assume the lead is present so ACC can be engaged
 
       # Press distance button until we are at the correct bar length. Only change while enabled to avoid skipping startup popup
-      if self.frame % 6 == 0:
+      if self.frame % 6 == 0 and self.CP.openpilotLongitudinalControl:
         desired_distance = 4 - hud_control.leadDistanceBars
-        if CS.pcm_follow_distance != desired_distance and CS.out.cruiseState.enabled and self.CP.carFingerprint not in UNSUPPORTED_DSU_CAR:
+        if CS.out.cruiseState.enabled and CS.pcm_follow_distance != desired_distance:
           self.distance_button = not self.distance_button
         else:
           self.distance_button = 0
