@@ -17,8 +17,9 @@ from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import gen_empty_fingerprint
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
-from openpilot.selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
+from openpilot.selfdrive.car.honda.values import CAR as HONDA, HondaFlags
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
+from openpilot.selfdrive.car.values import PLATFORMS, Platform
 from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
@@ -64,7 +65,7 @@ def get_test_cases() -> list[tuple[str, CarTestRoute | None]]:
 @pytest.mark.slow
 @pytest.mark.shared_download_cache
 class TestCarModelBase(unittest.TestCase):
-  car_model: str | None = None
+  platform: Platform | None = None
   test_route: CarTestRoute | None = None
   test_route_on_bucket: bool = True  # whether the route is on the preserved CI bucket
 
@@ -93,8 +94,8 @@ class TestCarModelBase(unittest.TestCase):
         car_fw = msg.carParams.carFw
         if msg.carParams.openpilotLongitudinalControl:
           experimental_long = True
-        if cls.car_model is None and not cls.ci:
-          cls.car_model = msg.carParams.carFingerprint
+        if cls.platform is None and not cls.ci:
+          cls.platform = PLATFORMS.get(msg.carParams.carFingerprint)
 
       # Log which can frame the panda safety mode left ELM327, for CAN validity checks
       elif msg.which() == 'pandaStates':
@@ -155,15 +156,11 @@ class TestCarModelBase(unittest.TestCase):
     if cls.__name__ == 'TestCarModel' or cls.__name__.endswith('Base'):
       raise unittest.SkipTest
 
-    if 'FILTER' in os.environ:
-      if not cls.car_model.startswith(tuple(os.environ.get('FILTER').split(','))):
-        raise unittest.SkipTest
-
     if cls.test_route is None:
-      if cls.car_model in non_tested_cars:
-        print(f"Skipping tests for {cls.car_model}: missing route")
+      if cls.platform in non_tested_cars:
+        print(f"Skipping tests for {cls.platform}: missing route")
         raise unittest.SkipTest
-      raise Exception(f"missing test route for {cls.car_model}")
+      raise Exception(f"missing test route for {cls.platform}")
 
     car_fw, can_msgs, experimental_long = cls.get_testing_data()
 
@@ -172,10 +169,10 @@ class TestCarModelBase(unittest.TestCase):
 
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
-    cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
-    cls.CP = cls.CarInterface.get_params(cls.car_model, cls.fingerprint, car_fw, experimental_long, docs=False)
+    cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.platform]
+    cls.CP = cls.CarInterface.get_params(cls.platform,  cls.fingerprint, car_fw, experimental_long, docs=False)
     assert cls.CP
-    assert cls.CP.carFingerprint == cls.car_model
+    assert cls.CP.carFingerprint == cls.platform
 
     os.environ["COMMA_CACHE"] = DEFAULT_DOWNLOAD_CACHE_ROOT
 
@@ -381,7 +378,7 @@ class TestCarModelBase(unittest.TestCase):
       if self.safety.get_vehicle_moving() != prev_panda_vehicle_moving:
         self.assertEqual(not CS.standstill, self.safety.get_vehicle_moving())
 
-      if not (self.CP.carName == "honda" and self.CP.carFingerprint not in HONDA_BOSCH):
+      if not (self.CP.carName == "honda" and not (self.CP.flags & HondaFlags.BOSCH)):
         if self.safety.get_cruise_engaged_prev() != prev_panda_cruise_engaged:
           self.assertEqual(CS.cruiseState.enabled, self.safety.get_cruise_engaged_prev())
 
@@ -442,7 +439,7 @@ class TestCarModelBase(unittest.TestCase):
         # On most pcmCruise cars, openpilot's state is always tied to the PCM's cruise state.
         # On Honda Nidec, we always engage on the rising edge of the PCM cruise state, but
         # openpilot brakes to zero even if the min ACC speed is non-zero (i.e. the PCM disengages).
-        if self.CP.carName == "honda" and self.CP.carFingerprint not in HONDA_BOSCH:
+        if self.CP.carName == "honda" and not (self.CP.flags & HondaFlags.BOSCH):
           # only the rising edges are expected to match
           if CS.cruiseState.enabled and not CS_prev.cruiseState.enabled:
             checks['controlsAllowed'] += not self.safety.get_controls_allowed()
@@ -478,7 +475,7 @@ class TestCarModelBase(unittest.TestCase):
                     "This is fine to fail for WIP car ports, just let us know and we can upload your routes to the CI bucket.")
 
 
-@parameterized_class(('car_model', 'test_route'), get_test_cases())
+@parameterized_class(('platform', 'test_route'), get_test_cases())
 @pytest.mark.xdist_group_class_property('test_route')
 class TestCarModel(TestCarModelBase):
   pass

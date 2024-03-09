@@ -1,12 +1,14 @@
 # functions common among cars
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from dataclasses import dataclass
-from enum import ReprEnum
+from enum import IntFlag, ReprEnum
+from dataclasses import replace
 
 import capnp
 
 from cereal import car
 from openpilot.common.numpy_fast import clip, interp
+from openpilot.common.utils import Freezable
 from openpilot.selfdrive.car.docs_definitions import CarInfo
 
 
@@ -243,26 +245,45 @@ class CanSignalRateCalculator:
     return self.rate
 
 
-CarInfos = CarInfo | list[CarInfo]
+CarInfos = CarInfo | list[CarInfo] | None
 
 
-@dataclass
+@dataclass(frozen=True, kw_only=True)
 class CarSpecs:
-  mass: float
-  wheelbase: float
+  mass: float  # kg, curb weight
+  wheelbase: float  # meters
   steerRatio: float
+  centerToFrontRatio: float = 0.5
+  minSteerSpeed: float = 0.0  # m/s
+  minEnableSpeed: float = -1.0  # m/s
+  tireStiffnessFactor: float = 1.0
+
+  def override(self, **kwargs):
+    return replace(self, **kwargs)
 
 
 @dataclass(order=True)
-class PlatformConfig:
+class PlatformConfig(Freezable):
   platform_str: str
   car_info: CarInfos
+  specs: CarSpecs
+
   dbc_dict: DbcDict
 
-  specs: CarSpecs | None = None
+  flags: int = 0
 
   def __hash__(self) -> int:
     return hash(self.platform_str)
+
+  def override(self, **kwargs):
+    return replace(self, **kwargs)
+
+  def init(self):
+    pass
+
+  def __post_init__(self):
+    self.init()
+    self.freeze()
 
 
 class Platforms(str, ReprEnum):
@@ -279,5 +300,21 @@ class Platforms(str, ReprEnum):
     return {p: p.config.dbc_dict for p in cls}
 
   @classmethod
-  def create_carinfo_map(cls) -> dict[str, CarInfos]:
-    return {p: p.config.car_info for p in cls}
+  def with_flags(cls, flags: IntFlag) -> set['Platforms']:
+    return {p for p in cls if p.config.flags & flags}
+
+  @classmethod
+  def without_flags(cls, flags: IntFlag) -> set['Platforms']:
+    return {p for p in cls if not (p.config.flags & flags)}
+
+  @classmethod
+  def print_debug(cls, flags):
+    platforms_with_flag = defaultdict(list)
+    for flag in flags:
+      for platform in cls:
+        if platform.config.flags & flag:
+          assert flag.name is not None
+          platforms_with_flag[flag.name].append(platform)
+
+    for flag, platforms in platforms_with_flag.items():
+      print(f"{flag:32s}: {', '.join(p.name for p in platforms)}")

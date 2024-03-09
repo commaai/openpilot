@@ -41,7 +41,7 @@ class DummyFrameReader(BaseFrameReader):
 
 
 def regen_segment(
-  lr: LogIterable, frs: dict[str, Any] | None = None,
+  lr: LogIterable, frs: dict[str, Any] = None,
   processes: Iterable[ProcessConfig] = CONFIGS, disable_tqdm: bool = False
 ) -> list[capnp._DynamicStructReader]:
   all_msgs = sorted(lr, key=lambda m: m.logMonoTime)

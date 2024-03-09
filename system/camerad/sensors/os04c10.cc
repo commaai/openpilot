@@ -2,9 +2,6 @@
 
 namespace {
 
-const size_t OS04C10_FRAME_WIDTH = 2688;
-const size_t OS04C10_FRAME_HEIGHT = 1520;
-
 const float sensor_analog_gains_OS04C10[] = {
     1.0, 1.0625, 1.125, 1.1875, 1.25, 1.3125, 1.375, 1.4375, 1.5, 1.5625, 1.6875,
     1.8125, 1.9375, 2.0, 2.125, 2.25, 2.375, 2.5, 2.625, 2.75, 2.875, 3.0,
@@ -25,9 +22,9 @@ OS04C10::OS04C10() {
   image_sensor = cereal::FrameData::ImageSensor::OS04C10;
   data_word = false;
 
-  frame_width = OS04C10_FRAME_WIDTH;
-  frame_height = OS04C10_FRAME_HEIGHT * 2 + 40; // stagger separated by 40 rows
-  frame_stride = (OS04C10_FRAME_WIDTH * 10 / 8); // no alignment
+  frame_width = 2688;
+  frame_height = 1520 * 2 + 40; // stagger separated by 40 rows
+  frame_stride = (frame_width * 10 / 8); // no alignment
 
   extra_height = 0;
   frame_offset = 0;
