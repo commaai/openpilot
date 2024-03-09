@@ -74,6 +74,9 @@ class LongitudinalPlanner:
     except (ValueError, TypeError):
       self.personality = log.LongitudinalPersonality.standard
 
+  def write_param(self):
+    self.params.put('LongitudinalPersonality', self.personality)
+
   @staticmethod
   def parse_model(model_msg, model_error):
     if (len(model_msg.position.x) == 33 and
@@ -91,10 +94,14 @@ class LongitudinalPlanner:
     return x, v, a, j
 
   def update(self, sm, carState_sock):
+    if self.param_read_counter % 50 == 0:
+      self.read_param()
+
     # decrement personality on distance button press
     for m in messaging.drain_sock(carState_sock, wait_for_one=False):
       if any(not be.pressed and be.type == ButtonType.gapAdjustCruise for be in m.carState.buttonEvents):
         self.personality = (self.personality - 1) % 3
+        self.write_param()
 
     self.param_read_counter += 1
     self.mpc.mode = 'blended' if sm['controlsState'].experimentalMode else 'acc'

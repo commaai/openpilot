@@ -134,6 +134,20 @@ void TogglesPanel::updatePersonalitySetting(int personality) {
 }
 
 void TogglesPanel::updateToggles() {
+  // personality setting
+//  long_personality_setting;
+
+  std::string personality = params.get("LongitudinalPersonality");
+  if (!personality.empty()) {
+    long_personality_setting->setActiveButton(std::stoi(personality));
+  }
+//  qDebug() << "personality" << QString::fromStdString(personality);
+//  auto test = static_cast<cereal::LongitudinalPersonality>(3);
+//  qDebug() << cereal::LongitudinalPersonality::Max;
+//  qDebug() << "personality" << static_cast<int>(test);
+//  cereal::LongitudinalPersonality;
+
+  // experimental mode
   auto experimental_mode_toggle = toggles["ExperimentalMode"];
   auto op_long_toggle = toggles["ExperimentalLongitudinalEnabled"];
   const QString e2e_description = QString("%1<br>"
@@ -349,8 +363,18 @@ void SettingsWindow::setCurrentPanel(int index, const QString &param) {
 void SettingsWindow::updateState(const UIState &s) {
   qDebug() << "updateState" << static_cast<int>(s.scene.personality);
   const SubMaster &sm = *(s.sm);
-  if (s.scene.started && sm.updated("longitudinalPlan")) {
-    emit updatePersonalitySetting(static_cast<int>(s.scene.personality));
+//  if (s.scene.started && sm.updated("longitudinalPlan")) {
+//
+//    emit updatePersonalitySetting(static_cast<int>(s.scene.personality));
+//  }
+  if (sm.updated("longitudinalPlan")) {
+    auto personality = sm["longitudinalPlan"].getLongitudinalPlan().getPersonality();
+    if (personality != s.scene.personality && s.scene.started) {
+      qDebug() << "Personality updated";
+      emit updatePersonalitySetting(static_cast<int>(personality));
+    }
+//    s.scene.personality = personality;
+    uiState()->scene.personality = personality;
   }
 }
 
