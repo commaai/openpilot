@@ -86,7 +86,7 @@ class FordCANFDPlatformConfig(FordPlatformConfig):
 class CAR(Platforms):
   BRONCO_SPORT_MK1 = FordPlatformConfig(
     "FORD BRONCO SPORT 1ST GEN",
-    FordCarInfo("Ford Bronco Sport 2021-22"),
+    FordCarInfo("Ford Bronco Sport 2021-23"),
     CarSpecs(mass=1625, wheelbase=2.67, steerRatio=17.7),
   )
   ESCAPE_MK4 = FordPlatformConfig(
