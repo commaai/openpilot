@@ -7,7 +7,7 @@ from hypothesis import settings, given, strategies as st
 from parameterized import parameterized
 
 from cereal import car
-from openpilot.selfdrive.car.ford.values import CAR, FW_QUERY_CONFIG, get_platform_codes
+from openpilot.selfdrive.car.ford.values import CAR, FW_QUERY_CONFIG, FW_RE, get_platform_codes
 from openpilot.selfdrive.car.ford.fingerprints import FW_VERSIONS
 
 Ecu = car.CarParams.Ecu
@@ -24,7 +24,7 @@ ECU_ADDRESSES = {
 }
 
 
-ECU_FW_CORE = {
+ECU_PART_NUMBER = {
   Ecu.eps: [
     b"14D003",
   ],
@@ -51,11 +51,19 @@ class TestFordFW(unittest.TestCase):
   @parameterized.expand(FW_VERSIONS.items())
   def test_fw_versions(self, car_model: str, fw_versions: dict[tuple[capnp.lib.capnp._EnumModule, int, int | None], Iterable[bytes]]):
     for (ecu, addr, subaddr), fws in fw_versions.items():
-      self.assertIn(ecu, ECU_FW_CORE, "Unexpected ECU")
+      self.assertIn(ecu, ECU_PART_NUMBER, "Unexpected ECU")
       self.assertEqual(addr, ECU_ADDRESSES[ecu], "ECU address mismatch")
       self.assertIsNone(subaddr, "Unexpected ECU subaddress")
 
       for fw in fws:
+        self.assertEqual(len(fw), 24, "Expected ECU response to be 24 bytes")
+
+        m = FW_RE.match(fw.rstrip(b'\x00'))
+        self.assertIsNotNone(m, f"Unable to parse FW: {fw!r}")
+        if m:
+          part_number = m.group("part_number")
+          self.assertIn(part_number, ECU_PART_NUMBER[ecu], f"Unexpected part number for {fw!r}")
+
         codes = get_platform_codes([fw])
         self.assertEqual(1, len(codes), f"Unable to parse FW: {fw!r}")
 
@@ -121,7 +129,7 @@ class TestFordFW(unittest.TestCase):
     candidates = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(live_fw, {
       expected_fingerprint: offline_fw,
     })
-    self.assertEqual(candidates, {}, "Should not match new model year hint")
+    self.assertEqual(len(candidates), 0, "Should not match new model year hint")
 
 
 if __name__ == "__main__":

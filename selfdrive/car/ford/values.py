@@ -172,7 +172,7 @@ def get_platform_codes(fw_versions: list[bytes] | set[bytes]) -> set[tuple[bytes
   codes = set()  # (platform_hint, model_year_hint)
 
   for firmware in fw_versions:
-    m = FW_RE.match(firmware.rstrip(b'\0'))
+    m = FW_RE.match(firmware.rstrip(b'\x00'))
     if m is None:
       continue
     codes.add((m.group('platform_hint'), m.group('model_year_hint')))
