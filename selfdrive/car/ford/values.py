@@ -165,8 +165,6 @@ FW_RE = re.compile(b'^(?P<model_year_hint>[' + FW_ALPHABET + b'])' +
                    b'(?P<software_revision>[' + FW_ALPHABET + b']{2,})$')
 
 
-# We use the `platform_hint` to identify the model and the `model_year_hint` to distinguish between
-# generations.
 def get_platform_codes(fw_versions: list[bytes] | set[bytes]) -> set[tuple[bytes, bytes]]:
   codes = set()
   for firmware in fw_versions:
