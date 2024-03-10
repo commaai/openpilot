@@ -30,14 +30,18 @@ def plannerd_thread():
   pm = messaging.PubMaster(['longitudinalPlan', 'uiPlan'])
   sm = messaging.SubMaster(['carControl', 'carState', 'controlsState', 'radarState', 'modelV2'],
                            poll='modelV2', ignore_avg_freq=['radarState'])
-  carState_sock = messaging.sub_sock('carState')
+
+  buttonEvents = []
 
   while True:
     sm.update()
+    if sm.updated['carState']:
+      buttonEvents.extend(sm['carState'].buttonEvents)
     if sm.updated['modelV2']:
-      longitudinal_planner.update(sm, carState_sock)
+      longitudinal_planner.update(sm, buttonEvents)
       longitudinal_planner.publish(sm, pm)
       publish_ui_plan(sm, pm, longitudinal_planner)
+      buttonEvents.clear()
 
 def main():
   plannerd_thread()
