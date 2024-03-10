@@ -142,7 +142,7 @@ class TestLoggerd:
     os.environ["LOGGERD_TEST"] = "1"
     Params().put("RecordFront", "1")
 
-    d = DEVICE_CAMERA_PARAMS[("three", "ar0231")]
+    d = DEVICE_CAMERA_PARAMS[("tici", "ar0231")]
     expected_files = {"rlog", "qlog", "qcamera.ts", "fcamera.hevc", "dcamera.hevc", "ecamera.hevc"}
     streams = [(VisionStreamType.VISION_STREAM_ROAD, (d.fcam.width, d.fcam.height, 2048*2346, 2048, 2048*1216), "roadCameraState"),
                (VisionStreamType.VISION_STREAM_DRIVER, (d.dcam.width, d.dcam.height, 2048*2346, 2048, 2048*1216), "driverCameraState"),
