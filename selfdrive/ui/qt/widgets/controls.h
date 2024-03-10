@@ -8,7 +8,6 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPainter>
-#include <QDebug>
 #include <QPushButton>
 
 #include "common/params.h"
