@@ -35,16 +35,14 @@ eon_config = DeviceCameraConfig(CameraConfig(1164, 874, 910.0), CameraConfig(816
 three_fisheye = CameraConfig(1928, 1208, 567.0)  # focal length probably wrong? magnification is not consistent across frame
 three_config = DeviceCameraConfig(CameraConfig(1928, 1208, 2648.0), three_fisheye, three_fisheye)
 
-hw_params = {
+DEVICE_CAMERA_PARAMS = {
   # (device type, sensor)
-  ("three", "ar0231"): three_config,
-  ("three", "ox03c10"): three_config,
-  ("threex", "ar0231"): three_config,
-  ("threex", "ox03c10"): three_config,
-
-  # sensor type wasn't set on eon
-  ("eon", "unknown"): eon_config,
-  ("two", "unknown"): eon_config,
+  ("neo", "unknown"): eon_config,     # sensor type was never set on eon/neo/two
+  ("tici", "unknown"): three_config,  # unknown here is AR0231, field was added with OX03C10 support
+  ("tici", "ar0231"): three_config,
+  ("tici", "ox03c10"): three_config,
+  ("tizi", "ar0231"): three_config,
+  ("tizi", "ox03c10"): three_config,
 }
 
 
@@ -90,7 +88,7 @@ def roll_from_ke(m):
                     -(m[0, 0] - m[0, 1] * m[2, 0] / m[2, 1]))
 
 
-def normalize(img_pts, intrinsics=fcam_intrinsics):
+def normalize(img_pts, intrinsics):
   # normalizes image coordinates
   # accepts single pt or array of pts
   intrinsics_inv = np.linalg.inv(intrinsics)
@@ -103,7 +101,7 @@ def normalize(img_pts, intrinsics=fcam_intrinsics):
   return img_pts_normalized[:, :2].reshape(input_shape)
 
 
-def denormalize(img_pts, intrinsics=fcam_intrinsics, width=np.inf, height=np.inf):
+def denormalize(img_pts, intrinsics, width=np.inf, height=np.inf):
   # denormalizes image coordinates
   # accepts single pt or array of pts
   img_pts = np.array(img_pts)
@@ -120,7 +118,7 @@ def denormalize(img_pts, intrinsics=fcam_intrinsics, width=np.inf, height=np.inf
   return img_pts_denormalized[:, :2].reshape(input_shape)
 
 
-def get_calib_from_vp(vp, intrinsics=fcam_intrinsics):
+def get_calib_from_vp(vp, intrinsics):
   vp_norm = normalize(vp, intrinsics)
   yaw_calib = np.arctan(vp_norm[0])
   pitch_calib = -np.arctan(vp_norm[1]*np.cos(yaw_calib))
