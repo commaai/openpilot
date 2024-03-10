@@ -12,6 +12,7 @@ def migrate_all(lr, old_logtime=False, manager_states=False, panda_states=False,
   msgs = migrate_sensorEvents(lr, old_logtime)
   msgs = migrate_carParams(msgs, old_logtime)
   msgs = migrate_gpsLocation(msgs)
+  msgs = migrate_deviceState(msgs)
   if manager_states:
     msgs = migrate_managerState(msgs)
   if panda_states:
@@ -47,6 +48,21 @@ def migrate_gpsLocation(lr):
       if not g.hasFix and g.flags == 1:
         g.hasFix = True
       all_msgs.append(new_msg.as_reader())
+    else:
+      all_msgs.append(msg)
+  return all_msgs
+
+
+def migrate_deviceState(lr):
+  all_msgs = []
+  dt = None
+  for msg in lr:
+    if msg.which() == 'initData':
+      dt = msg.initData.deviceType
+    if msg.which() == 'deviceState':
+      n = msg.as_builder()
+      n.deviceState.deviceType = dt
+      all_msgs.append(n.as_reader())
     else:
       all_msgs.append(msg)
   return all_msgs
