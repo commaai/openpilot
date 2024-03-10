@@ -12,7 +12,8 @@ from typing import List
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
-from openpilot.selfdrive.updated.common import FINALIZED, STAGING_ROOT, UpdateStrategy, parse_release_notes, set_consistent_flag, run
+from openpilot.selfdrive.updated.common import FINALIZED, STAGING_ROOT, UpdateStrategy, \
+                                               get_consistent_flag, get_release_notes, get_version, set_consistent_flag, run
 
 
 OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
@@ -127,8 +128,7 @@ class GitUpdateStrategy(UpdateStrategy):
     return list(self.branches.keys())
 
   def update_ready(self) -> bool:
-    consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
-    if consistent_file.is_file():
+    if get_consistent_flag():
       hash_mismatch = self.get_commit_hash(BASEDIR) != self.branches[self.target_channel]
       branch_mismatch = self.get_branch(BASEDIR) != self.target_channel
       on_target_channel = self.get_branch(FINALIZED) == self.target_channel
@@ -165,8 +165,7 @@ class GitUpdateStrategy(UpdateStrategy):
     try:
       branch = self.get_branch(basedir)
       commit = self.get_commit_hash(basedir)[:7]
-      with open(os.path.join(basedir, "common", "version.h")) as f:
-        version = f.read().split('"')[1]
+      version = get_version(basedir)
 
       commit_unix_ts = run(["git", "show", "-s", "--format=%ct", "HEAD"], basedir).rstrip()
       dt = datetime.datetime.fromtimestamp(int(commit_unix_ts))
@@ -175,16 +174,12 @@ class GitUpdateStrategy(UpdateStrategy):
       cloudlog.exception("updater.get_description")
     return f"{version} / {branch} / {commit} / {commit_date}"
 
-  def release_notes_branch(self, basedir) -> str:
-    with open(os.path.join(basedir, "RELEASES.md"), "r") as f:
-      return parse_release_notes(f.read())
-
   def describe_current_channel(self) -> tuple[str, str]:
-    return self.describe_branch(BASEDIR), self.release_notes_branch(BASEDIR)
+    return self.describe_branch(BASEDIR), get_release_notes(BASEDIR)
 
   def describe_ready_channel(self) -> tuple[str, str]:
     if self.update_ready():
-      return self.describe_branch(FINALIZED), self.release_notes_branch(FINALIZED)
+      return self.describe_branch(FINALIZED), get_release_notes(FINALIZED)
 
     return "", ""
 

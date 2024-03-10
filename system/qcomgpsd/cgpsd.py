@@ -83,7 +83,7 @@ def main():
       dt = datetime.datetime.strptime(f"{date} {gnrmc[1]}", '%d%m%y %H%M%S.%f')
       gps.unixTimestampMillis = dt.timestamp()*1e3
 
-      gps.flags = 1 if gnrmc[1] == 'A' else 0
+      gps.hasFix = gnrmc[1] == 'A'
 
       # TODO: make our own source
       gps.source = log.GpsLocationData.SensorSource.qcomdiag
