@@ -109,7 +109,7 @@ def create_acc_dashboard_command(packer, bus, enabled, target_speed_kph, hud_con
     "ACCAlwaysOne": 1,
     "ACCResumeButton": 0,
     "ACCSpeedSetpoint": target_speed,
-    "ACCGapLevel": (hud_control.leadDistanceBars + 1) * enabled,  # 3 "far", 0 "inactive"
+    "ACCGapLevel": hud_control.leadDistanceBars * enabled,  # 3 "far", 0 "inactive"
     "ACCCmdActive": enabled,
     "ACCAlwaysOne2": 1,
     "ACCLeadCar": hud_control.leadVisible,
