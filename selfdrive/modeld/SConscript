@@ -51,10 +51,10 @@ lenvCython.Program('runners/snpemodel_pyx.so', 'runners/snpemodel_pyx.pyx', LIBS
 lenvCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=[commonmodel_lib, *cython_libs], FRAMEWORKS=frameworks)
 
 # Get model metadata
-fn = File("models/supercombo").relpath
-cmd = f'python3 {Dir("#selfdrive/modeld").relpath}/get_model_metadata.py {fn}.onnx'
+fn = File("#models/supercombo").relpath
+cmd = f'python3 {File("#selfdrive/modeld/get_model_metadata.py").relpath} {fn}.onnx'
 files = sum([lenv.Glob(f"${x}") for x in open(File("#../../release/files_common").relpath).read().split("\n") if x.endswith("get_model_metadata.py")], [])
-lenv.Command(f"#{fn}_metadata.pkl", [f"#{fn}.onnx"]+files, cmd)
+lenv.Command(f"{File('#supercombo').relpath}_metadata.pkl", [f"#{fn}.onnx"]+files, cmd)
 
 # Build thneed model
 if arch == "larch64" or GetOption('pc_thneed'):
@@ -62,7 +62,8 @@ if arch == "larch64" or GetOption('pc_thneed'):
   if not GetOption('pc_thneed'):
     # use FLOAT16 on device for speed + don't cache the CL kernels for space
     tinygrad_opts += ["FLOAT16=1", "PYOPENCL_NO_CACHE=1"]
-  cmd = f"cd {Dir('#').relpath}/tinygrad_repo && " + ' '.join(tinygrad_opts) + f" python3 openpilot/compile2.py {fn}.onnx {fn}.thneed"
+  fn_tinygrad = File("#../selfdrive/modeld/models/supercombo").relpath
+  cmd = f"cd {Dir('#').relpath}/tinygrad_repo && " + ' '.join(tinygrad_opts) + f" python3 openpilot/compile2.py {fn_tinygrad}.onnx {fn_tinygrad}.thneed"
 
   tinygrad_files = sum([lenv.Glob("#"+x) for x in open(File("#../../release/files_common").relpath).read().split("\n") if x.startswith("tinygrad_repo/")], [])
   lenv.Command(fn + ".thneed", [fn + ".onnx"] + tinygrad_files, cmd)
