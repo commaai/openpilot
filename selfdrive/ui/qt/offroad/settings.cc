@@ -95,6 +95,17 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
                                              "your steering wheel distance button."),
                                           "../assets/offroad/icon_speed_limit.png",
                                           longi_button_texts);
+
+  // Watch param to update the personality setting in the UI
+  ParamWatcher *lp_watch = new ParamWatcher(this);
+  lp_watch->addParam("LongitudinalPersonality");
+  QObject::connect(lp_watch, &ParamWatcher::paramChanged, [=](const QString &param_name, const QString &param_value) {
+    lp_watch->addParam("LongitudinalPersonality");
+    if (isVisible()) {
+      long_personality_setting->refresh();
+    }
+  });
+
   for (auto &[param, title, desc, icon] : toggle_defs) {
     auto toggle = new ParamControl(param, title, desc, icon, this);
 
@@ -126,11 +137,6 @@ void TogglesPanel::expandToggleDescription(const QString &param) {
 
 void TogglesPanel::showEvent(QShowEvent *event) {
   updateToggles();
-}
-
-void TogglesPanel::updatePersonalitySetting(int personality) {
-  // Update the personality setting in the UI
-  long_personality_setting->setCheckedButton(personality);
 }
 
 void TogglesPanel::updateToggles() {
@@ -346,22 +352,7 @@ void SettingsWindow::setCurrentPanel(int index, const QString &param) {
   }
 }
 
-void SettingsWindow::updateState(const UIState &s) {
-  const SubMaster &sm = *(s.sm);
-
-  if (sm.updated("longitudinalPlan")) {
-    auto personality = sm["longitudinalPlan"].getLongitudinalPlan().getPersonality();
-    if (personality != s.scene.personality && s.scene.started) {
-      emit updatePersonalitySetting(static_cast<int>(personality));
-    }
-    uiState()->scene.personality = personality;
-  }
-}
-
 SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
-
-  // setup uiState updates
-  QObject::connect(uiState(), &UIState::uiUpdate, this, &SettingsWindow::updateState);
 
   // setup two main layouts
   sidebar_widget = new QWidget;
@@ -394,7 +385,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
   TogglesPanel *toggles = new TogglesPanel(this);
   QObject::connect(this, &SettingsWindow::expandToggleDescription, toggles, &TogglesPanel::expandToggleDescription);
-  QObject::connect(this, &SettingsWindow::updatePersonalitySetting, toggles, &TogglesPanel::updatePersonalitySetting);
 
   QList<QPair<QString, QWidget *>> panels = {
     {tr("Device"), device},

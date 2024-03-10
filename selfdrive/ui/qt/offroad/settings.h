@@ -11,7 +11,6 @@
 #include <QWidget>
 
 
-#include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 
@@ -23,9 +22,6 @@ public:
   explicit SettingsWindow(QWidget *parent = 0);
   void setCurrentPanel(int index, const QString &param = "");
 
-private slots:
-  void updateState(const UIState &s);
-
 protected:
   void showEvent(QShowEvent *event) override;
 
@@ -34,7 +30,6 @@ signals:
   void reviewTrainingGuide();
   void showDriverView();
   void expandToggleDescription(const QString &param);
-  void updatePersonalitySetting(int personality);
 
 private:
   QPushButton *sidebar_alert_widget;
@@ -68,7 +63,6 @@ public:
 
 public slots:
   void expandToggleDescription(const QString &param);
-  void updatePersonalitySetting(int personality);
 
 private:
   Params params;

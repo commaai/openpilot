@@ -158,7 +158,6 @@ typedef struct UIScene {
 
   float light_sensor;
   bool started, ignition, is_metric, map_on_left, longitudinal_control;
-  cereal::LongitudinalPersonality personality;
   bool world_objects_visible = false;
   uint64_t started_frame;
 } UIScene;
