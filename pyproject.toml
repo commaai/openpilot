@@ -177,6 +177,8 @@ lint.ignore = ["E741", "E402", "C408", "ISC003", "B027", "B024"]
 line-length = 160
 target-version="py311"
 exclude = [
+  "body",
+  "cereal",
   "panda",
   "opendbc",
   "rednose_repo",
