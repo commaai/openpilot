@@ -329,7 +329,7 @@ qt_flags = [
 ]
 qt_env['CXXFLAGS'] += qt_flags
 qt_env['LIBPATH'] += ['#selfdrive/ui', f"#third_party/maplibre-native-qt/{arch}/lib"]
-qt_env['RPATH'] += [Literal(f'\\$$ORIGIN/../../third_party/maplibre-native-qt/{arch}/lib'), Literal(f'\\$$ORIGIN/third_party/maplibre-native-qt/{arch}/lib')]
+qt_env['RPATH'] += Literal(f'\\$$ORIGIN/../../third_party/maplibre-native-qt/{arch}/lib'), Literal(f'\\$$ORIGIN/third_party/maplibre-native-qt/{arch}/lib')
 qt_env['LIBS'] = qt_libs
 
 if GetOption("clazy"):
