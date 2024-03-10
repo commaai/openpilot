@@ -98,10 +98,11 @@ class LongitudinalPlanner:
       self.read_param()
 
     # decrement personality on distance button press
-    for m in messaging.drain_sock(carState_sock, wait_for_one=False):
-      if any(not be.pressed and be.type == ButtonType.gapAdjustCruise for be in m.carState.buttonEvents):
-        self.personality = (self.personality - 1) % 3
-        self.write_param()
+    if self.CP.openpilotLongitudinalControl:
+      for m in messaging.drain_sock(carState_sock, wait_for_one=False):
+        if any(not be.pressed and be.type == ButtonType.gapAdjustCruise for be in m.carState.buttonEvents):
+          self.personality = (self.personality - 1) % 3
+          self.write_param()
 
     self.param_read_counter += 1
     self.mpc.mode = 'blended' if sm['controlsState'].experimentalMode else 'acc'
