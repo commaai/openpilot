@@ -75,7 +75,7 @@ class LongitudinalPlanner:
       self.personality = log.LongitudinalPersonality.standard
 
   def write_param(self):
-    self.params.put('LongitudinalPersonality', int(self.personality))
+    self.params.put('LongitudinalPersonality', str(self.personality))
 
   @staticmethod
   def parse_model(model_msg, model_error):
