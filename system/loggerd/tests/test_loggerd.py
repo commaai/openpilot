@@ -24,7 +24,7 @@ from openpilot.system.version import get_version
 from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.logreader import LogReader
 from cereal.visionipc import VisionIpcServer, VisionStreamType
-from openpilot.common.transformations.camera import tici_f_frame_size, tici_d_frame_size, tici_e_frame_size
+from openpilot.common.transformations.camera import DEVICE_CAMERAS
 
 SentinelType = log.Sentinel.SentinelType
 
@@ -142,10 +142,11 @@ class TestLoggerd:
     os.environ["LOGGERD_TEST"] = "1"
     Params().put("RecordFront", "1")
 
+    d = DEVICE_CAMERAS[("tici", "ar0231")]
     expected_files = {"rlog", "qlog", "qcamera.ts", "fcamera.hevc", "dcamera.hevc", "ecamera.hevc"}
-    streams = [(VisionStreamType.VISION_STREAM_ROAD, (*tici_f_frame_size, 2048*2346, 2048, 2048*1216), "roadCameraState"),
-               (VisionStreamType.VISION_STREAM_DRIVER, (*tici_d_frame_size, 2048*2346, 2048, 2048*1216), "driverCameraState"),
-               (VisionStreamType.VISION_STREAM_WIDE_ROAD, (*tici_e_frame_size, 2048*2346, 2048, 2048*1216), "wideRoadCameraState")]
+    streams = [(VisionStreamType.VISION_STREAM_ROAD, (d.fcam.width, d.fcam.height, 2048*2346, 2048, 2048*1216), "roadCameraState"),
+               (VisionStreamType.VISION_STREAM_DRIVER, (d.dcam.width, d.dcam.height, 2048*2346, 2048, 2048*1216), "driverCameraState"),
+               (VisionStreamType.VISION_STREAM_WIDE_ROAD, (d.ecam.width, d.ecam.height, 2048*2346, 2048, 2048*1216), "wideRoadCameraState")]
 
     pm = messaging.PubMaster(["roadCameraState", "driverCameraState", "wideRoadCameraState"])
     vipc_server = VisionIpcServer("camerad")
