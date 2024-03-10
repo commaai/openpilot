@@ -50,6 +50,7 @@ class Plant:
     from openpilot.selfdrive.car.honda.interface import CarInterface
 
     self.planner = LongitudinalPlanner(CarInterface.get_non_essential_params(CAR.CIVIC), init_v=self.speed)
+    self.carState_sock = messaging.sub_sock('carState')
 
   @property
   def current_time(self):
@@ -121,7 +122,7 @@ class Plant:
           'carState': car_state.carState,
           'controlsState': control.controlsState,
           'modelV2': model.modelV2}
-    self.planner.update(sm, [])
+    self.planner.update(sm, self.carState_sock)
     self.speed = self.planner.v_desired_filter.x
     self.acceleration = self.planner.a_desired
     self.speeds = self.planner.v_desired_trajectory.tolist()

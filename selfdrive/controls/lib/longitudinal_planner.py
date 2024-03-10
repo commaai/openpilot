@@ -93,14 +93,15 @@ class LongitudinalPlanner:
       j = np.zeros(len(T_IDXS_MPC))
     return x, v, a, j
 
-  def update(self, sm, buttonEvents):
+  def update(self, sm, carState_sock):
     if self.param_read_counter % 50 == 0:
       self.read_param()
 
     # decrement personality on distance button press
-    if any(not be.pressed and be.type == ButtonType.gapAdjustCruise for be in buttonEvents):
-      self.personality = (self.personality - 1) % 3
-      self.write_param()
+    for m in messaging.drain_sock(carState_sock, wait_for_one=False):
+      if any(not be.pressed and be.type == ButtonType.gapAdjustCruise for be in m.carState.buttonEvents):
+        self.personality = (self.personality - 1) % 3
+        self.write_param()
 
     self.param_read_counter += 1
     self.mpc.mode = 'blended' if sm['controlsState'].experimentalMode else 'acc'
