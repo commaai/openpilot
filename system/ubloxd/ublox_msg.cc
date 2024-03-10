@@ -127,6 +127,7 @@ kj::Array<capnp::word> UbloxMsgParser::gen_nav_pvt(ubx_t::nav_pvt_t *msg) {
   auto gpsLoc = msg_builder.initEvent().initGpsLocationExternal();
   gpsLoc.setSource(cereal::GpsLocationData::SensorSource::UBLOX);
   gpsLoc.setFlags(msg->flags());
+  gpsLoc.setHasFix((msg->flags() % 2) == 1);
   gpsLoc.setLatitude(msg->lat() * 1e-07);
   gpsLoc.setLongitude(msg->lon() * 1e-07);
   gpsLoc.setAltitude(msg->height() * 1e-03);

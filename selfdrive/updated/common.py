@@ -86,6 +86,11 @@ def set_consistent_flag(consistent: bool) -> None:
   os.sync()
 
 
+def get_consistent_flag() -> bool:
+  consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
+  return consistent_file.is_file()
+
+
 def parse_release_notes(releases_md: str) -> str:
   try:
     r = releases_md.split('\n\n', 1)[0]  # Slice latest release notes
@@ -98,3 +103,13 @@ def parse_release_notes(releases_md: str) -> str:
   except Exception:
     cloudlog.exception("failed to parse release notes")
   return ""
+
+
+def get_version(path) -> str:
+  with open(os.path.join(path, "common", "version.h")) as f:
+    return f.read().split('"')[1]
+
+
+def get_release_notes(path) -> str:
+  with open(os.path.join(path, "RELEASES.md"), "r") as f:
+    return parse_release_notes(f.read())
