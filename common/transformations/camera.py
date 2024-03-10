@@ -1,3 +1,4 @@
+import itertools
 import numpy as np
 from dataclasses import dataclass
 
@@ -28,23 +29,27 @@ class CameraConfig:
 class DeviceCameraConfig:
   fcam: CameraConfig
   dcam: CameraConfig
-  ecam: CameraConfig | None
+  ecam: CameraConfig
 
-eon_config = DeviceCameraConfig(CameraConfig(1164, 874, 910.0), CameraConfig(816, 612, 650.0), None)
-
-three_fisheye = CameraConfig(1928, 1208, 567.0)  # focal length probably wrong? magnification is not consistent across frame
-three_config = DeviceCameraConfig(CameraConfig(1928, 1208, 2648.0), three_fisheye, three_fisheye)
+ar_ox_fisheye = CameraConfig(1928, 1208, 567.0)  # focal length probably wrong? magnification is not consistent across frame
+ar_ox_config = DeviceCameraConfig(CameraConfig(1928, 1208, 2648.0), ar_ox_fisheye, ar_ox_fisheye)
+os_fisheye = CameraConfig(2688, 1520, 567.0 / 2 * 3)
+os_config = DeviceCameraConfig(CameraConfig(2688, 1520, 2648.0 * 2 / 3), os_fisheye, os_fisheye)
 
 DEVICE_CAMERA_PARAMS = {
-  # (device type, sensor)
-  ("neo", "unknown"): eon_config,     # sensor type was never set on eon/neo/two
-  ("tici", "unknown"): three_config,  # unknown here is AR0231, field was added with OX03C10 support
-  ("tici", "ar0231"): three_config,
-  ("tici", "ox03c10"): three_config,
-  ("tizi", "ar0231"): three_config,
-  ("tizi", "ox03c10"): three_config,
-}
+  # A "device camera" is defined by a device type and sensor
 
+  # sensor type was never set on eon/neo/two
+  ("neo", "unknown"): DeviceCameraConfig(CameraConfig(1164, 874, 910.0), CameraConfig(816, 612, 650.0), CameraConfig(0, 0, 0.)),
+  # unknown here is AR0231, field was added with OX03C10 support
+  ("tici", "unknown"): ar_ox_config,
+
+  # before deviceState.deviceType was set, assume tici AR config
+  ("unknown", "ar0231"): ar_ox_config,
+  ("unknown", "ox03c10"): ar_ox_config,
+}
+prods = itertools.product(('tici', 'tizi', 'mici'), (('ar0231', ar_ox_config), ('ox03c10', ar_ox_config), ('os04c10', os_config)))
+DEVICE_CAMERA_PARAMS.update({(d, c[0]): c[1] for d, c in prods})
 
 # device/mesh : x->forward, y-> right, z->down
 # view : x->right, y->down, z->forward
