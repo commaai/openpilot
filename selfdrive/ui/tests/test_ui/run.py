@@ -69,7 +69,7 @@ def setup_onroad(click, pm: PubMaster):
 
   pm.send("pandaStates", dat)
 
-  d = DEVICE_CAMERA_PARAMS[("three", "ar0231")]
+  d = DEVICE_CAMERA_PARAMS[("tici", "ar0231")]
   server = VisionIpcServer("camerad")
   server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, d.fcam.width, d.fcam.height)
   server.create_buffers(VisionStreamType.VISION_STREAM_DRIVER, 40, False, d.dcam.width, d.dcam.height)

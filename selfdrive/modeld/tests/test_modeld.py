@@ -11,7 +11,7 @@ from openpilot.selfdrive.car.car_helpers import write_car_param
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state
 
-CAM = DEVICE_CAMERA_PARAMS[("three", "ar0231")].fcam
+CAM = DEVICE_CAMERA_PARAMS[("tici", "ar0231")].fcam
 IMG = np.zeros(int(CAM.width*CAM.height*(3/2)), dtype=np.uint8)
 IMG_BYTES = IMG.flatten().tobytes()
 
