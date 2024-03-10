@@ -214,10 +214,8 @@ def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, offline_fw_versions:
   return candidates
 
 
-# All of these ECUs must be present and are expected to have platform codes we can match.
-# ABS and IPMA are the best for uniquely matching, and the radar is always required to be compatible.
-# We can remove the radar later if compatibility != fingerprinting.
-PLATFORM_CODE_ECUS = (Ecu.abs, Ecu.fwdCamera, Ecu.fwdRadar)
+# All of these ECUs must be present and are expected to have platform codes we can match
+PLATFORM_CODE_ECUS = (Ecu.abs, Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps)
 
 DATA_IDENTIFIER_FORD_ASBUILT = 0xDE00
 
