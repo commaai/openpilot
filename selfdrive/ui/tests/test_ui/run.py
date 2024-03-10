@@ -18,7 +18,7 @@ from cereal.messaging import SubMaster, PubMaster
 from openpilot.common.mock import mock_messages
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL
-from openpilot.common.transformations.camera import DEVICE_CAMERA_PARAMS
+from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state
 from openpilot.tools.webcam.camera import Camera
@@ -69,7 +69,7 @@ def setup_onroad(click, pm: PubMaster):
 
   pm.send("pandaStates", dat)
 
-  d = DEVICE_CAMERA_PARAMS[("tici", "ar0231")]
+  d = DEVICE_CAMERAS[("tici", "ar0231")]
   server = VisionIpcServer("camerad")
   server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, d.fcam.width, d.fcam.height)
   server.create_buffers(VisionStreamType.VISION_STREAM_DRIVER, 40, False, d.dcam.width, d.dcam.height)

@@ -24,7 +24,7 @@ from openpilot.system.version import get_version
 from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.logreader import LogReader
 from cereal.visionipc import VisionIpcServer, VisionStreamType
-from openpilot.common.transformations.camera import DEVICE_CAMERA_PARAMS
+from openpilot.common.transformations.camera import DEVICE_CAMERAS
 
 SentinelType = log.Sentinel.SentinelType
 
@@ -142,7 +142,7 @@ class TestLoggerd:
     os.environ["LOGGERD_TEST"] = "1"
     Params().put("RecordFront", "1")
 
-    d = DEVICE_CAMERA_PARAMS[("tici", "ar0231")]
+    d = DEVICE_CAMERAS[("tici", "ar0231")]
     expected_files = {"rlog", "qlog", "qcamera.ts", "fcamera.hevc", "dcamera.hevc", "ecamera.hevc"}
     streams = [(VisionStreamType.VISION_STREAM_ROAD, (d.fcam.width, d.fcam.height, 2048*2346, 2048, 2048*1216), "roadCameraState"),
                (VisionStreamType.VISION_STREAM_DRIVER, (d.dcam.width, d.dcam.height, 2048*2346, 2048, 2048*1216), "driverCameraState"),

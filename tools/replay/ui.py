@@ -10,7 +10,7 @@ import pygame
 import cereal.messaging as messaging
 from openpilot.common.numpy_fast import clip
 from openpilot.common.basedir import BASEDIR
-from openpilot.common.transformations.camera import DEVICE_CAMERA_PARAMS
+from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.tools.replay.lib.ui_helpers import (UP,
                                          BLACK, GREEN,
                                          YELLOW, Calibration,
@@ -118,7 +118,7 @@ def ui_thread(addr):
 
     sm.update(0)
 
-    camera = DEVICE_CAMERA_PARAMS[("three", str(sm['roadCameraState'].sensor))]
+    camera = DEVICE_CAMERAS[("three", str(sm['roadCameraState'].sensor))]
 
     imgff = np.frombuffer(yuv_img_raw.data, dtype=np.uint8).reshape((len(yuv_img_raw.data) // vipc_client.stride, vipc_client.stride))
     num_px = vipc_client.width * vipc_client.height

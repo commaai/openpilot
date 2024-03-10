@@ -1,12 +1,12 @@
 from collections import namedtuple
 from cereal.visionipc import VisionStreamType
 from openpilot.common.realtime import DT_MDL, DT_DMON
-from openpilot.common.transformations.camera import DEVICE_CAMERA_PARAMS
+from openpilot.common.transformations.camera import DEVICE_CAMERAS
 
 VideoStreamMeta = namedtuple("VideoStreamMeta", ["camera_state", "encode_index", "stream", "dt", "frame_sizes"])
-ROAD_CAMERA_FRAME_SIZES = {k: (v.dcam.width, v.dcam.height) for k, v in DEVICE_CAMERA_PARAMS.items()}
-WIDE_ROAD_CAMERA_FRAME_SIZES = {k: (v.ecam.width, v.ecam.height) for k, v in DEVICE_CAMERA_PARAMS.items() if v.ecam is not None}
-DRIVER_CAMERA_FRAME_SIZES = {k: (v.dcam.width, v.dcam.height) for k, v in DEVICE_CAMERA_PARAMS.items()}
+ROAD_CAMERA_FRAME_SIZES = {k: (v.dcam.width, v.dcam.height) for k, v in DEVICE_CAMERAS.items()}
+WIDE_ROAD_CAMERA_FRAME_SIZES = {k: (v.ecam.width, v.ecam.height) for k, v in DEVICE_CAMERAS.items() if v.ecam is not None}
+DRIVER_CAMERA_FRAME_SIZES = {k: (v.dcam.width, v.dcam.height) for k, v in DEVICE_CAMERAS.items()}
 VIPC_STREAM_METADATA = [
   # metadata: (state_msg_type, encode_msg_type, stream_type, dt, frame_sizes)
   ("roadCameraState", "roadEncodeIdx", VisionStreamType.VISION_STREAM_ROAD, DT_MDL, ROAD_CAMERA_FRAME_SIZES),

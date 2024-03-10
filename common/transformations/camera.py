@@ -36,7 +36,7 @@ ar_ox_config = DeviceCameraConfig(CameraConfig(1928, 1208, 2648.0), ar_ox_fishey
 os_fisheye = CameraConfig(2688, 1520, 567.0 / 2 * 3)
 os_config = DeviceCameraConfig(CameraConfig(2688, 1520, 2648.0 * 2 / 3), os_fisheye, os_fisheye)
 
-DEVICE_CAMERA_PARAMS = {
+DEVICE_CAMERAS = {
   # A "device camera" is defined by a device type and sensor
 
   # sensor type was never set on eon/neo/two
@@ -49,7 +49,7 @@ DEVICE_CAMERA_PARAMS = {
   ("unknown", "ox03c10"): ar_ox_config,
 }
 prods = itertools.product(('tici', 'tizi', 'mici'), (('ar0231', ar_ox_config), ('ox03c10', ar_ox_config), ('os04c10', os_config)))
-DEVICE_CAMERA_PARAMS.update({(d, c[0]): c[1] for d, c in prods})
+DEVICE_CAMERAS.update({(d, c[0]): c[1] for d, c in prods})
 
 # device/mesh : x->forward, y-> right, z->down
 # view : x->right, y->down, z->forward
