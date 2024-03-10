@@ -51,10 +51,10 @@ lenvCython.Program('runners/snpemodel_pyx.so', 'runners/snpemodel_pyx.pyx', LIBS
 lenvCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=[commonmodel_lib, *cython_libs], FRAMEWORKS=frameworks)
 
 # Get model metadata
-fn = File("#models/supercombo").relpath
-cmd = f'python3 {File("#selfdrive/modeld/get_model_metadata.py").relpath} {fn}.onnx'
+selfdrive_modeld_dir = Dir("#selfdrive/modeld").relpath
+cmd = f'python3 {selfdrive_modeld_dir}/get_model_metadata.py {selfdrive_modeld_dir}/models/supercombo.onnx'
 files = sum([lenv.Glob(f"${x}") for x in open(File("#../../release/files_common").relpath).read().split("\n") if x.endswith("get_model_metadata.py")], [])
-lenv.Command(f"{File('#supercombo').relpath}_metadata.pkl", [f"#{fn}.onnx"]+files, cmd)
+lenv.Command(File("#supercombo_metadata.pkl").relpath, [File("#models/supercombo.onnx").relpath]+files, cmd)
 
 # Build thneed model
 if arch == "larch64" or GetOption('pc_thneed'):
