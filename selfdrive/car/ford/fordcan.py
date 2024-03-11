@@ -143,7 +143,7 @@ def create_acc_msg(packer, CAN: CanBus, long_active: bool, gas: float, accel: fl
   return packer.make_can_msg("ACCDATA", CAN.main, values)
 
 
-def create_acc_ui_msg(packer, CAN: CanBus, CP, main_on: bool, enabled: bool, fcw_alert: bool, standstill: bool, lead_distance_bars_dsply: bool,
+def create_acc_ui_msg(packer, CAN: CanBus, CP, main_on: bool, enabled: bool, fcw_alert: bool, standstill: bool,
                       hud_control, stock_values: dict):
   """
   Creates a CAN message for the Ford IPC adaptive cruise, forward collision warning and traffic jam
@@ -208,7 +208,7 @@ def create_acc_ui_msg(packer, CAN: CanBus, CP, main_on: bool, enabled: bool, fcw
     values.update({
       "AccStopStat_D_Dsply": 2 if standstill else 0,              # Stopping status text
       "AccMsgTxt_D2_Rq": 0,                                       # ACC text
-      "AccTGap_B_Dsply": 1 if lead_distance_bars_dsply else 0,    # Show time gap control UI
+      "AccTGap_B_Dsply": 0,                                       # Show time gap control UI
       "AccFllwMde_B_Dsply": 1 if hud_control.leadVisible else 0,  # Lead indicator
       "AccStopMde_B_Dsply": 1 if standstill else 0,
       "AccWarn_D_Dsply": 0,                                       # ACC warning

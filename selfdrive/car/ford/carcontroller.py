@@ -1,7 +1,6 @@
 from cereal import car
 from opendbc.can.packer import CANPacker
 from openpilot.common.numpy_fast import clip
-from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import apply_std_steer_angle_limits
 from openpilot.selfdrive.car.ford import fordcan
 from openpilot.selfdrive.car.ford.values import CarControllerParams, FordFlags
@@ -36,8 +35,6 @@ class CarController(CarControllerBase):
     self.main_on_last = False
     self.lkas_enabled_last = False
     self.steer_alert_last = False
-    self.lead_distance_bars_last = None
-    self.lead_distance_bars_changed = 0
 
   def update(self, CC, CS, now_nanos):
     can_sends = []
@@ -101,18 +98,11 @@ class CarController(CarControllerBase):
     # send lkas ui msg at 1Hz or if ui state changes
     if (self.frame % CarControllerParams.LKAS_UI_STEP) == 0 or send_ui:
       can_sends.append(fordcan.create_lkas_ui_msg(self.packer, self.CAN, main_on, CC.latActive, steer_alert, hud_control, CS.lkas_status_stock_values))
-
     # send acc ui msg at 5Hz or if ui state changes
-    if self.lead_distance_bars_last and hud_control.leadDistanceBars != self.lead_distance_bars_last:
-      self.lead_distance_bars_changed = self.frame
-      send_ui = True
-    self.lead_distance_bars_last = hud_control.leadDistanceBars
-
     if (self.frame % CarControllerParams.ACC_UI_STEP) == 0 or send_ui:
-      # display lead distance bars for 2 seconds after they change
-      lead_distance_bars_dsply = (self.frame - self.lead_distance_bars_changed) * DT_CTRL < 2.0
-      can_sends.append(fordcan.create_acc_ui_msg(self.packer, self.CAN, self.CP, main_on, CC.latActive, fcw_alert, CS.out.cruiseState.standstill,
-                                                 lead_distance_bars_dsply, hud_control, CS.acc_tja_status_stock_values))
+      can_sends.append(fordcan.create_acc_ui_msg(self.packer, self.CAN, self.CP, main_on, CC.latActive,
+                                         fcw_alert, CS.out.cruiseState.standstill, hud_control,
+                                         CS.acc_tja_status_stock_values))
 
     self.main_on_last = main_on
     self.lkas_enabled_last = CC.latActive
