@@ -64,12 +64,12 @@ class TestSimBridgeBase(unittest.TestCase):
 
       q.put("cruise_down")  # Try engaging
 
-      if sm.all_alive() and sm['controlsState'].enabled:
+      if sm.all_alive() and sm['controlsState'].active:
         control_active += 1
-
         if control_active == min_counts_control_active:
           break
-
+      else:
+        sm.update()
     self.assertEqual(min_counts_control_active, control_active, f"Simulator did not engage a minimal of {min_counts_control_active} steps was {control_active}")
 
   def tearDown(self):
