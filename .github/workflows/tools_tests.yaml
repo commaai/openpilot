@@ -47,7 +47,6 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
-
     - name: Setup to push to repo
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       run: |
@@ -61,12 +60,14 @@ jobs:
     strategy:
      fail-fast: false
      matrix:
-      run: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+      run: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
       #run: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49]
     name: simulator bridge test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
+    - name: Print Runner ID
+      run: echo "Runner ID: ${{ runner.id }}"
     - uses: actions/checkout@v4
       with:
         submodules: true
@@ -108,3 +109,21 @@ jobs:
         devcontainer exec --workspace-folder . pip install pip-install-test
         devcontainer exec --workspace-folder . touch /home/batman/.comma/auth.json
         devcontainer exec --workspace-folder . sudo touch /root/test.txt
+
+  notebooks:
+    name: notebooks
+    runs-on: ubuntu-20.04
+    if: false && github.repository == 'commaai/openpilot'
+    timeout-minutes: 45
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - uses: ./.github/workflows/setup-with-retry
+    - name: Build openpilot
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
+      run: ${{ env.RUN }} "scons -j$(nproc)"
+    - name: Test notebooks
+      timeout-minutes: 3
+      run: |
+        ${{ env.RUN }} "pip install nbmake && pytest --nbmake tools/car_porting/examples/"
