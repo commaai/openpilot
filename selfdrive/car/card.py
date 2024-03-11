@@ -113,7 +113,7 @@ class CarD:
 
     # carState
     cs_send = messaging.new_message('carState')
-    cs_send.valid = self.CS.canValid
+    cs_send.valid = self.CS.canValid and not self.can_rcv_timeout
     cs_send.carState = self.CS
     self.pm.send('carState', cs_send)
 
