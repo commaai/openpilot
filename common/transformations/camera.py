@@ -47,6 +47,9 @@ DEVICE_CAMERAS = {
   # before deviceState.deviceType was set, assume tici AR config
   ("unknown", "ar0231"): ar_ox_config,
   ("unknown", "ox03c10"): ar_ox_config,
+
+  # simulator (emulates a tici)
+  ("pc", "unknown"): ar_ox_config,
 }
 prods = itertools.product(('tici', 'tizi', 'mici'), (('ar0231', ar_ox_config), ('ox03c10', ar_ox_config), ('os04c10', os_config)))
 DEVICE_CAMERAS.update({(d, c[0]): c[1] for d, c in prods})
