@@ -300,12 +300,12 @@ class Platforms(str, ReprEnum):
     return {p: p.config.dbc_dict for p in cls}
 
   @classmethod
-  def create_carinfo_map(cls) -> dict[str, CarInfos]:
-    return {p: p.config.car_info for p in cls}
-
-  @classmethod
   def with_flags(cls, flags: IntFlag) -> set['Platforms']:
     return {p for p in cls if p.config.flags & flags}
+
+  @classmethod
+  def without_flags(cls, flags: IntFlag) -> set['Platforms']:
+    return {p for p in cls if not (p.config.flags & flags)}
 
   @classmethod
   def print_debug(cls, flags):
