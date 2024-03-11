@@ -101,7 +101,7 @@ class CarController(CarControllerBase):
       can_sends.append(fordcan.create_lkas_ui_msg(self.packer, self.CAN, main_on, CC.latActive, steer_alert, hud_control, CS.lkas_status_stock_values))
 
     # send acc ui msg at 5Hz or if ui state changes
-    if self.lead_distance_bars_last and hud_control.leadDistanceBars != self.lead_distance_bars_last:
+    if hud_control.leadDistanceBars != self.lead_distance_bars_last:
       send_ui = True
     if (self.frame % CarControllerParams.ACC_UI_STEP) == 0 or send_ui:
       can_sends.append(fordcan.create_acc_ui_msg(self.packer, self.CAN, self.CP, main_on, CC.latActive,
