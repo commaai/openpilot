@@ -6,34 +6,27 @@ import json
 import uuid
 import logging
 from dataclasses import dataclass, field
-from typing import Any, List, Optional, Union
+from typing import Any, TYPE_CHECKING
 
 # aiortc and its dependencies have lots of internal warnings :(
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-import aiortc
-from aiortc.mediastreams import VideoStreamTrack, AudioStreamTrack
-from aiortc.contrib.media import MediaBlackhole
-from aiortc.exceptions import InvalidStateError
-from aiohttp import web
 import capnp
-from teleoprtc import WebRTCAnswerBuilder
-from teleoprtc.info import parse_info_from_offer
+from aiohttp import web
+if TYPE_CHECKING:
+  from aiortc.rtcdatachannel import RTCDataChannel
 
-from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
-from openpilot.system.webrtc.device.audio import AudioInputStreamTrack, AudioOutputSpeaker
 from openpilot.system.webrtc.schema import generate_field
-
 from cereal import messaging, log
 
 
 class CerealOutgoingMessageProxy:
   def __init__(self, sm: messaging.SubMaster):
     self.sm = sm
-    self.channels: List[aiortc.RTCDataChannel] = []
+    self.channels: list['RTCDataChannel'] = []
 
-  def add_channel(self, channel: aiortc.RTCDataChannel):
+  def add_channel(self, channel: 'RTCDataChannel'):
     self.channels.append(channel)
 
   def to_json(self, msg_content: Any):
@@ -96,6 +89,8 @@ class CerealProxyRunner:
     self.task = None
 
   async def run(self):
+    from aiortc.exceptions import InvalidStateError
+
     while True:
       try:
         self.proxy.update()
@@ -107,8 +102,29 @@ class CerealProxyRunner:
       await asyncio.sleep(0.01)
 
 
+class DynamicPubMaster(messaging.PubMaster):
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.lock = asyncio.Lock()
+
+  async def add_services_if_needed(self, services):
+    async with self.lock:
+      for service in services:
+        if service not in self.sock:
+          self.sock[service] = messaging.pub_sock(service)
+
+
 class StreamSession:
-  def __init__(self, sdp: str, cameras: List[str], incoming_services: List[str], outgoing_services: List[str], debug_mode: bool = False):
+  shared_pub_master = DynamicPubMaster([])
+
+  def __init__(self, sdp: str, cameras: list[str], incoming_services: list[str], outgoing_services: list[str], debug_mode: bool = False):
+    from aiortc.mediastreams import VideoStreamTrack, AudioStreamTrack
+    from aiortc.contrib.media import MediaBlackhole
+    from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
+    from openpilot.system.webrtc.device.audio import AudioInputStreamTrack, AudioOutputSpeaker
+    from teleoprtc import WebRTCAnswerBuilder
+    from teleoprtc.info import parse_info_from_offer
+
     config = parse_info_from_offer(sdp)
     builder = WebRTCAnswerBuilder(sdp)
 
@@ -126,12 +142,18 @@ class StreamSession:
     self.stream = builder.stream()
     self.identifier = str(uuid.uuid4())
 
-    self.outgoing_bridge = CerealOutgoingMessageProxy(messaging.SubMaster(outgoing_services))
-    self.incoming_bridge = CerealIncomingMessageProxy(messaging.PubMaster(incoming_services))
-    self.outgoing_bridge_runner = CerealProxyRunner(self.outgoing_bridge)
+    self.incoming_bridge: CerealIncomingMessageProxy | None = None
+    self.incoming_bridge_services = incoming_services
+    self.outgoing_bridge: CerealOutgoingMessageProxy | None = None
+    self.outgoing_bridge_runner: CerealProxyRunner | None = None
+    if len(incoming_services) > 0:
+      self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master)
+    if len(outgoing_services) > 0:
+      self.outgoing_bridge = CerealOutgoingMessageProxy(messaging.SubMaster(outgoing_services))
+      self.outgoing_bridge_runner = CerealProxyRunner(self.outgoing_bridge)
 
-    self.audio_output: Optional[Union[AudioOutputSpeaker, MediaBlackhole]] = None
-    self.run_task: Optional[asyncio.Task] = None
+    self.audio_output: AudioOutputSpeaker | MediaBlackhole | None = None
+    self.run_task: asyncio.Task | None = None
     self.logger = logging.getLogger("webrtcd")
     self.logger.info("New stream session (%s), cameras %s, audio in %s out %s, incoming services %s, outgoing services %s",
                       self.identifier, cameras, config.incoming_audio_track, config.expected_audio_track, incoming_services, outgoing_services)
@@ -150,6 +172,7 @@ class StreamSession:
     return await self.stream.start()
 
   async def message_handler(self, message: bytes):
+    assert self.incoming_bridge is not None
     try:
       self.incoming_bridge.send(message)
     except Exception as ex:
@@ -159,10 +182,13 @@ class StreamSession:
     try:
       await self.stream.wait_for_connection()
       if self.stream.has_messaging_channel():
-        self.stream.set_message_handler(self.message_handler)
-        channel = self.stream.get_messaging_channel()
-        self.outgoing_bridge_runner.proxy.add_channel(channel)
-        self.outgoing_bridge_runner.start()
+        if self.incoming_bridge is not None:
+          await self.shared_pub_master.add_services_if_needed(self.incoming_bridge_services)
+          self.stream.set_message_handler(self.message_handler)
+        if self.outgoing_bridge_runner is not None:
+          channel = self.stream.get_messaging_channel()
+          self.outgoing_bridge_runner.proxy.add_channel(channel)
+          self.outgoing_bridge_runner.start()
       if self.stream.has_incoming_audio_track():
         track = self.stream.get_incoming_audio_track(buffered=False)
         self.audio_output = self.audio_output_cls()
@@ -179,7 +205,8 @@ class StreamSession:
 
   async def post_run_cleanup(self):
     await self.stream.stop()
-    self.outgoing_bridge_runner.stop()
+    if self.outgoing_bridge is not None:
+      self.outgoing_bridge_runner.stop()
     if self.audio_output:
       self.audio_output.stop()
 
@@ -187,12 +214,12 @@ class StreamSession:
 @dataclass
 class StreamRequestBody:
   sdp: str
-  cameras: List[str]
-  bridge_services_in: List[str] = field(default_factory=list)
-  bridge_services_out: List[str] = field(default_factory=list)
+  cameras: list[str]
+  bridge_services_in: list[str] = field(default_factory=list)
+  bridge_services_out: list[str] = field(default_factory=list)
 
 
-async def get_stream(request: web.Request):
+async def get_stream(request: 'web.Request'):
   stream_dict, debug_mode = request.app['streams'], request.app['debug']
   raw_body = await request.json()
   body = StreamRequestBody(**raw_body)
@@ -206,7 +233,7 @@ async def get_stream(request: web.Request):
   return web.json_response({"sdp": answer.sdp, "type": answer.type})
 
 
-async def get_schema(request: web.Request):
+async def get_schema(request: 'web.Request'):
   services = request.query["services"].split(",")
   services = [s for s in services if s]
   assert all(s in log.Event.schema.fields and not s.endswith("DEPRECATED") for s in services), "Invalid service name"
@@ -214,7 +241,7 @@ async def get_schema(request: web.Request):
   return web.json_response(schema_dict)
 
 
-async def on_shutdown(app: web.Application):
+async def on_shutdown(app: 'web.Application'):
   for session in app['streams'].values():
     session.stop()
   del app['streams']

@@ -15,8 +15,6 @@ ISPEED = 4
 OSPEED = 5
 CC = 6
 
-STDIN_FD = sys.stdin.fileno()
-
 
 KEYBOARD_HELP = """
   | key  |   functionality       |
@@ -32,6 +30,7 @@ KEYBOARD_HELP = """
 
 
 def getch() -> str:
+  STDIN_FD = sys.stdin.fileno()
   old_settings = termios.tcgetattr(STDIN_FD)
   try:
     # set
@@ -50,7 +49,12 @@ def getch() -> str:
     termios.tcsetattr(STDIN_FD, termios.TCSADRAIN, old_settings)
   return ch
 
+def print_keyboard_help():
+  print(f"Keyboard Commands:\n{KEYBOARD_HELP}")
+
 def keyboard_poll_thread(q: 'Queue[str]'):
+  print_keyboard_help()
+
   while True:
     c = getch()
     if c == '1':
@@ -78,6 +82,8 @@ def keyboard_poll_thread(q: 'Queue[str]'):
     elif c == 'q':
       q.put("quit")
       break
+    else:
+      print_keyboard_help()
 
 def test(q: 'Queue[str]') -> NoReturn:
   while True:

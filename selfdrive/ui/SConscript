@@ -11,13 +11,12 @@ if arch == 'larch64':
 
 maps = arch in ['larch64', 'aarch64', 'x86_64']
 
-if maps and arch != 'larch64':
-  rpath = [Dir(f"#third_party/mapbox-gl-native-qt/{arch}").srcnode().abspath]
-  qt_env["RPATH"] += rpath
-
 if arch == "Darwin":
   del base_libs[base_libs.index('OpenCL')]
   qt_env['FRAMEWORKS'] += ['OpenCL']
+
+# FIXME: remove this once we're on 5.15 (24.04)
+qt_env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
 
 qt_util = qt_env.Library("qt_util", ["#selfdrive/ui/qt/api.cc", "#selfdrive/ui/qt/util.cc"], LIBS=base_libs)
 widgets_src = ["ui.cc", "qt/widgets/input.cc", "qt/widgets/wifi.cc",
@@ -28,7 +27,7 @@ widgets_src = ["ui.cc", "qt/widgets/input.cc", "qt/widgets/wifi.cc",
 
 qt_env['CPPDEFINES'] = []
 if maps:
-  base_libs += ['qmapboxgl']
+  base_libs += ['QMapLibre']
   widgets_src += ["qt/maps/map_helpers.cc", "qt/maps/map_settings.cc", "qt/maps/map.cc", "qt/maps/map_panel.cc",
                   "qt/maps/map_eta.cc", "qt/maps/map_instructions.cc"]
   qt_env['CPPDEFINES'] += ["ENABLE_MAPS"]
@@ -73,8 +72,8 @@ asset_obj = qt_env.Object("assets", assets)
 qt_env.SharedLibrary("qt/python_helpers", ["qt/qt_window.cc"], LIBS=qt_libs)
 
 # spinner and text window
-qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
-qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_libs)
+qt_env.Program("_text", ["qt/text.cc"], LIBS=qt_libs)
+qt_env.Program("_spinner", ["qt/spinner.cc"], LIBS=qt_libs)
 
 # build main UI
 qt_env.Program("ui", qt_src + [asset_obj], LIBS=qt_libs)
@@ -93,28 +92,25 @@ if GetOption('extras') and arch != "Darwin":
   # build updater UI
   qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
 
+  # build mui
+  qt_env.Program("mui", ["mui.cc"], LIBS=qt_libs)
+
   # build installers
   senv = qt_env.Clone()
   senv['LINKFLAGS'].append('-Wl,-strip-debug')
 
   release = "release3"
-  dashcam = "dashcam3"
   installers = [
     ("openpilot", release),
     ("openpilot_test", f"{release}-staging"),
     ("openpilot_nightly", "nightly"),
     ("openpilot_internal", "master"),
-    ("dashcam", dashcam),
-    ("dashcam_test", f"{dashcam}-staging"),
   ]
 
-  cont = {}
-  for brand in ("openpilot", "dashcam"):
-    cont[brand] = senv.Command(f"installer/continue_{brand}.o", f"installer/continue_{brand}.sh",
-                               "ld -r -b binary -o $TARGET $SOURCE")
+  cont = senv.Command(f"installer/continue_openpilot.o", f"installer/continue_openpilot.sh",
+                      "ld -r -b binary -o $TARGET $SOURCE")
   for name, branch in installers:
-    brand = "dashcam" if "dashcam" in branch else "openpilot"
-    d = {'BRANCH': f"'\"{branch}\"'", 'BRAND': f"'\"{brand}\"'"}
+    d = {'BRANCH': f"'\"{branch}\"'"}
     if "internal" in name:
       d['INTERNAL'] = "1"
 
@@ -123,7 +119,7 @@ if GetOption('extras') and arch != "Darwin":
       r.raise_for_status()
       d['SSH_KEYS'] = f'\\"{r.text.strip()}\\"'
     obj = senv.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
-    f = senv.Program(f"installer/installers/installer_{name}", [obj, cont[brand]], LIBS=qt_libs)
+    f = senv.Program(f"installer/installers/installer_{name}", [obj, cont], LIBS=qt_libs)
     # keep installers small
     assert f[0].get_size() < 350*1e3
 

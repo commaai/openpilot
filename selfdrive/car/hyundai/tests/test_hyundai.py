@@ -5,9 +5,10 @@ import unittest
 from cereal import car
 from openpilot.selfdrive.car.fw_versions import build_fw_dict
 from openpilot.selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
-                                         HYBRID_CAR, EV_CAR, FW_QUERY_CONFIG, FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, \
+                                         HYBRID_CAR, EV_CAR, FW_QUERY_CONFIG, LEGACY_SAFETY_MODE_CAR, CANFD_FUZZY_WHITELIST, \
                                          UNSUPPORTED_LONGITUDINAL_CAR, PLATFORM_CODE_ECUS, HYUNDAI_VERSION_REQUEST_LONG, \
                                          get_platform_codes
+from openpilot.selfdrive.car.hyundai.fingerprints import FW_VERSIONS
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
@@ -17,10 +18,8 @@ ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 NO_DATES_PLATFORMS = {
   # CAN FD
   CAR.KIA_SPORTAGE_5TH_GEN,
-  CAR.KIA_SPORTAGE_HYBRID_5TH_GEN,
   CAR.SANTA_CRUZ_1ST_GEN,
   CAR.TUCSON_4TH_GEN,
-  CAR.TUCSON_HYBRID_4TH_GEN,
   # CAN
   CAR.ELANTRA,
   CAR.ELANTRA_GT_I30,
@@ -47,6 +46,10 @@ class TestHyundaiFingerprint(unittest.TestCase):
     can_specific_feature_list = set.union(*CAN_GEARS.values(), *CHECKSUM.values(), LEGACY_SAFETY_MODE_CAR, UNSUPPORTED_LONGITUDINAL_CAR, CAMERA_SCC_CAR)
     for car_model in CANFD_CAR:
       self.assertNotIn(car_model, can_specific_feature_list, "CAN FD car unexpectedly found in a CAN feature list")
+
+  def test_hybrid_ev_sets(self):
+    self.assertEqual(HYBRID_CAR & EV_CAR, set(), "Shared cars between hybrid and EV")
+    self.assertEqual(CANFD_CAR & HYBRID_CAR, set(), "Hard coding CAN FD cars as hybrid is no longer supported")
 
   def test_auxiliary_request_ecu_whitelist(self):
     # Asserts only auxiliary Ecus can exist in database for CAN-FD cars
@@ -94,6 +97,23 @@ class TestHyundaiFingerprint(unittest.TestCase):
     fw_strategy = st.lists(st.binary())
     fws = data.draw(fw_strategy)
     get_platform_codes(fws)
+
+  def test_expected_platform_codes(self):
+    # Ensures we don't accidentally add multiple platform codes for a car unless it is intentional
+    for car_model, ecus in FW_VERSIONS.items():
+      with self.subTest(car_model=car_model.value):
+        for ecu, fws in ecus.items():
+          if ecu[0] not in PLATFORM_CODE_ECUS:
+            continue
+
+          # Third and fourth character are usually EV/hybrid identifiers
+          codes = {code.split(b"-")[0][:2] for code, _ in get_platform_codes(fws)}
+          if car_model == CAR.PALISADE:
+            self.assertEqual(codes, {b"LX", b"ON"}, f"Car has unexpected platform codes: {car_model} {codes}")
+          elif car_model == CAR.KONA_EV and ecu[0] == Ecu.fwdCamera:
+            self.assertEqual(codes, {b"OE", b"OS"}, f"Car has unexpected platform codes: {car_model} {codes}")
+          else:
+            self.assertEqual(len(codes), 1, f"Car has multiple platform codes: {car_model} {codes}")
 
   # Tests for platform codes, part numbers, and FW dates which Hyundai will use to fuzzy
   # fingerprint in the absence of full FW matches:
@@ -177,10 +197,8 @@ class TestHyundaiFingerprint(unittest.TestCase):
     excluded_platforms = {
       CAR.GENESIS_G70,            # shared platform code, part number, and date
       CAR.GENESIS_G70_2020,
-      CAR.TUCSON_4TH_GEN,         # shared platform code and part number
-      CAR.TUCSON_HYBRID_4TH_GEN,
     }
-    excluded_platforms |= CANFD_CAR - EV_CAR  # shared platform codes
+    excluded_platforms |= CANFD_CAR - EV_CAR - CANFD_FUZZY_WHITELIST  # shared platform codes
     excluded_platforms |= NO_DATES_PLATFORMS  # date codes are required to match
 
     platforms_with_shared_codes = set()
@@ -193,7 +211,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
                          "subAddress": 0 if sub_addr is None else sub_addr})
 
       CP = car.CarParams.new_message(carFw=car_fw)
-      matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw))
+      matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw), FW_VERSIONS)
       if len(matches) == 1:
         self.assertEqual(list(matches)[0], platform)
       else:

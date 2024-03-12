@@ -1,5 +1,6 @@
 #include <cassert>
 
+#include "common/swaglog.h"
 #include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/cameras/camera_qcom2.h"
 #include "system/camerad/sensors/sensor.h"
@@ -79,21 +80,22 @@ float ar0231_parse_temp_sensor(uint16_t calib1, uint16_t calib2, uint16_t data_r
 AR0231::AR0231() {
   image_sensor = cereal::FrameData::ImageSensor::AR0231;
   data_word = true;
-  frame_width = FRAME_WIDTH;
-  frame_height = FRAME_HEIGHT;
-  frame_stride = FRAME_STRIDE;
+  frame_width = 1928;
+  frame_height = 1208;
+  frame_stride = (frame_width * 12 / 8) + 4;
   extra_height = AR0231_REGISTERS_HEIGHT + AR0231_STATS_HEIGHT;
 
   registers_offset = 0;
   frame_offset = AR0231_REGISTERS_HEIGHT;
-  stats_offset = AR0231_REGISTERS_HEIGHT + FRAME_HEIGHT;
+  stats_offset = AR0231_REGISTERS_HEIGHT + frame_height;
 
   start_reg_array.assign(std::begin(start_reg_array_ar0231), std::end(start_reg_array_ar0231));
   init_reg_array.assign(std::begin(init_array_ar0231), std::end(init_array_ar0231));
   probe_reg_addr = 0x3000;
   probe_expected_data = 0x354;
-  in_port_info_dt = 0x12;  // Changing stats to 0x2C doesn't work, so change pixels to 0x12 instead
-  power_config_val_low = 19200000; //Hz
+  mipi_format = CAM_FORMAT_MIPI_RAW_12;
+  frame_data_type = 0x12;  // Changing stats to 0x2C doesn't work, so change pixels to 0x12 instead
+  mclk_frequency = 19200000; //Hz
 
   dc_gain_factor = 2.5;
   dc_gain_min_weight = 0;

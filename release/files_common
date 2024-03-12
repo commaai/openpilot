@@ -23,9 +23,7 @@ common/.gitignore
 common/__init__.py
 common/*.py
 common/*.pyx
-
-common/kalman/.gitignore
-common/kalman/*
+common/mock/*
 
 common/transformations/__init__.py
 common/transformations/camera.py
@@ -55,12 +53,15 @@ tools/replay/*.h
 selfdrive/__init__.py
 selfdrive/sentry.py
 selfdrive/tombstoned.py
-selfdrive/updated.py
 selfdrive/statsd.py
+
+selfdrive/updated/*
 
 system/logmessaged.py
 system/micd.py
 system/version.py
+
+selfdrive/SConscript
 
 selfdrive/athena/__init__.py
 selfdrive/athena/athenad.py
@@ -81,15 +82,16 @@ selfdrive/boardd/panda.h
 selfdrive/boardd/spi.cc
 selfdrive/boardd/panda_comms.h
 selfdrive/boardd/panda_comms.cc
-selfdrive/boardd/set_time.py
 selfdrive/boardd/pandad.py
 selfdrive/boardd/tests/test_boardd_loopback.py
 
 selfdrive/car/__init__.py
+selfdrive/car/card.py
 selfdrive/car/docs_definitions.py
 selfdrive/car/car_helpers.py
 selfdrive/car/fingerprints.py
 selfdrive/car/interfaces.py
+selfdrive/car/values.py
 selfdrive/car/vin.py
 selfdrive/car/disable_ecu.py
 selfdrive/car/fw_versions.py
@@ -98,9 +100,7 @@ selfdrive/car/ecu_addrs.py
 selfdrive/car/isotp_parallel_query.py
 selfdrive/car/tests/__init__.py
 selfdrive/car/tests/test_car_interfaces.py
-selfdrive/car/torque_data/params.yaml
-selfdrive/car/torque_data/substitute.yaml
-selfdrive/car/torque_data/override.yaml
+selfdrive/car/torque_data/*
 
 selfdrive/car/body/*.py
 selfdrive/car/chrysler/*.py
@@ -120,6 +120,7 @@ selfdrive/debug/can_printer.py
 selfdrive/debug/check_freq.py
 selfdrive/debug/dump.py
 selfdrive/debug/filter_log_message.py
+selfdrive/debug/format_fingerprints.py
 selfdrive/debug/get_fingerprint.py
 selfdrive/debug/uiview.py
 
@@ -129,30 +130,8 @@ selfdrive/debug/vw_mqb_config.py
 common/SConscript
 common/version.h
 
-common/prefix.h
-common/swaglog.h
-common/swaglog.cc
-common/statlog.h
-common/statlog.cc
-common/util.cc
-common/util.h
-common/queue.h
-common/clutil.cc
-common/clutil.h
-common/params.h
-common/params.cc
-common/ratekeeper.cc
-common/ratekeeper.h
-common/watchdog.cc
-common/watchdog.h
-
-common/mat.h
-common/timing.h
-
-common/gpio.cc
-common/gpio.h
-common/i2c.cc
-common/i2c.h
+common/*.h
+common/*.cc
 
 selfdrive/controls/__init__.py
 selfdrive/controls/controlsd.py
@@ -168,7 +147,6 @@ selfdrive/controls/lib/latcontrol_angle.py
 selfdrive/controls/lib/latcontrol_torque.py
 selfdrive/controls/lib/latcontrol_pid.py
 selfdrive/controls/lib/latcontrol.py
-selfdrive/controls/lib/lateral_planner.py
 selfdrive/controls/lib/longcontrol.py
 selfdrive/controls/lib/longitudinal_planner.py
 selfdrive/controls/lib/pid.py
@@ -180,6 +158,7 @@ selfdrive/controls/lib/lateral_mpc_lib/*
 selfdrive/controls/lib/longitudinal_mpc_lib/*
 
 system/__init__.py
+system/*.py
 
 system/hardware/__init__.py
 system/hardware/base.h
@@ -317,11 +296,8 @@ system/camerad/main.cc
 system/camerad/snapshot/*
 system/camerad/cameras/camera_common.h
 system/camerad/cameras/camera_common.cc
-system/camerad/sensors/ar0231.cc
-system/camerad/sensors/ar0231_registers.h
-system/camerad/sensors/ox03c10.cc
-system/camerad/sensors/ox03c10_registers.h
-system/camerad/sensors/sensor.h
+system/camerad/sensors/*.h
+system/camerad/sensors/*.cc
 
 selfdrive/manager/__init__.py
 selfdrive/manager/build.py
@@ -423,6 +399,7 @@ third_party/acados/acados_template/**
 
 third_party/bootstrap/**
 third_party/qt5/larch64/bin/**
+third_party/maplibre-native-qt/**
 
 scripts/update_now.sh
 scripts/stop_updater.sh
@@ -564,7 +541,8 @@ opendbc/vw_golf_mk4.dbc
 opendbc/vw_mqb_2010.dbc
 
 opendbc/tesla_can.dbc
-opendbc/tesla_radar.dbc
+opendbc/tesla_radar_bosch_generated.dbc
+opendbc/tesla_radar_continental_generated.dbc
 opendbc/tesla_powertrain.dbc
 
 tinygrad_repo/openpilot/compile2.py
