@@ -127,8 +127,8 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
 void TogglesPanel::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
 
-  if (sm.updated("longitudinalPlan")) {
-    auto personality = sm["longitudinalPlan"].getLongitudinalPlan().getPersonalityDEPRECATED();
+  if (sm.updated("controlsState")) {
+    auto personality = sm["controlsState"].getControlsState().getPersonality();
     if (personality != s.scene.personality && s.scene.started && isVisible()) {
       long_personality_setting->setCheckedButton(static_cast<int>(personality));
     }
