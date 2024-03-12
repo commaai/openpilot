@@ -104,7 +104,7 @@ float4 val4_from_10(uchar8 pvs, uchar ext, bool aligned, float gain) {
                      ((uint)pvs.s4 << 2) + ((ext & 0b11000000) / 64));
   }
 
-  float4 pv = convert_float4(parsed) / 1024.0;
+  float4 pv = (convert_float4(parsed) - 64.0) / (1024.0 - 64.0);
   return clamp(pv*gain, 0.0, 1.0);
 }
 
