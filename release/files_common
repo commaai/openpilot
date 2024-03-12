@@ -82,7 +82,6 @@ selfdrive/boardd/panda.h
 selfdrive/boardd/spi.cc
 selfdrive/boardd/panda_comms.h
 selfdrive/boardd/panda_comms.cc
-selfdrive/boardd/set_time.py
 selfdrive/boardd/pandad.py
 selfdrive/boardd/tests/test_boardd_loopback.py
 

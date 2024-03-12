@@ -50,7 +50,6 @@ public:
   Panda(std::string serial="", uint32_t bus_offset=0);
 
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
-  bool has_rtc = false;
   const uint32_t bus_offset;
 
   bool connected();
@@ -64,8 +63,6 @@ public:
   cereal::PandaState::PandaType get_hw_type();
   void set_safety_model(cereal::CarParams::SafetyModel safety_model, uint16_t safety_param=0U);
   void set_alternative_experience(uint16_t alternative_experience);
-  void set_rtc(struct tm sys_time);
-  struct tm get_rtc();
   void set_fan_speed(uint16_t fan_speed);
   uint16_t get_fan_speed();
   void set_ir_pwr(uint16_t ir_pwr);
