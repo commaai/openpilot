@@ -1,0 +1,40 @@
+name: 'openpilot env setup-mau, with retry on failure'
+
+inputs:
+  docker_hub_pat:
+    description: 'Auth token for Docker Hub, required for BuildJet jobs'
+    required: false
+    default: ''
+  sleep_time:
+    description: 'Time to sleep between retries'
+    required: false
+    default: 30
+
+runs:
+  using: "composite"
+  steps:
+    - id: setup-mau1
+      uses: ./.github/workflows/setup-mau
+      continue-on-error: true
+      with:
+        docker_hub_pat: ${{ inputs.docker_hub_pat }}
+        is_retried: true
+    - if: steps.setup-mau1.outcome == 'failure'
+      shell: bash
+      run: sleep ${{ inputs.sleep_time }}
+    - id: setup-mau2
+      if: steps.setup-mau1.outcome == 'failure'
+      uses: ./.github/workflows/setup-mau
+      continue-on-error: true
+      with:
+        docker_hub_pat: ${{ inputs.docker_hub_pat }}
+        is_retried: true
+    - if: steps.setup-mau2.outcome == 'failure'
+      shell: bash
+      run: sleep ${{ inputs.sleep_time }}
+    - id: setup-mau3
+      if: steps.setup-mau2.outcome == 'failure'
+      uses: ./.github/workflows/setup-mau
+      with:
+        docker_hub_pat: ${{ inputs.docker_hub_pat }}
+        is_retried: true
