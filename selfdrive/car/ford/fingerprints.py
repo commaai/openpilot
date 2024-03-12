@@ -86,6 +86,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x706, None): [
       b'PJ6T-14H102-ABJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'ML3T-14H102-ABR\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.F_150_LIGHTNING_MK1: {
