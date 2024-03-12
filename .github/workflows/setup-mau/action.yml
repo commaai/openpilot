@@ -30,3 +30,7 @@ runs:
         restore-keys: |
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}
+    - id: Setup Apt Packages
+      uses: awalsh128/cache-apt-pkgs-action@master
+      with:
+        packages: ${{ env.APT_PACKAGES }}

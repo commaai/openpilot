@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PYTHON_VERSION: 3.11
+  PYTHON_VERSION: 3.11.4
   APT_PACKAGES: autoconf build-essential ca-certificates casync clang cmake make
     cppcheck libtool gcc-arm-none-eabi bzip2 liblzma-dev libarchive-dev libbz2-dev capnproto libcapnp-dev curl libcurl4-openssl-dev git
     git-lfs ffmpeg libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libavfilter-dev libeigen3-dev libffi-dev libglew-dev libgles2-mesa-dev
@@ -30,7 +30,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: ./.github/workflows/setup-with-retry
+    - uses: ./.github/workflows/setup-with-retry-mau
     - name: Build openpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
