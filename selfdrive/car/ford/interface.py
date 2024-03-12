@@ -6,7 +6,6 @@ from openpilot.selfdrive.car.ford.fordcan import CanBus
 from openpilot.selfdrive.car.ford.values import Ecu, FordFlags
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
-EventName = car.CarEvent.EventName
 ButtonType = car.CarState.ButtonEvent.Type
 TransmissionType = car.CarParams.TransmissionType
 GearShifter = car.CarState.GearShifter
@@ -81,9 +80,8 @@ class CarInterface(CarInterfaceBase):
     ret.buttonEvents = create_button_events(self.CS.distance_button, self.CS.prev_distance_button, {1: ButtonType.gapAdjustCruise})
 
     events = self.create_common_events(ret, extra_gears=[GearShifter.manumatic])
-
     if not self.CS.vehicle_sensors_valid:
-      events.add(EventName.vehicleSensorsInvalid)
+      events.add(car.CarEvent.EventName.vehicleSensorsInvalid)
 
     ret.events = events.to_msg()
 
