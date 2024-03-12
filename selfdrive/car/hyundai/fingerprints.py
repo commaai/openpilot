@@ -1600,7 +1600,6 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NX4__               1.00 1.00 99110-K5000         ',
       b'\xf1\x00NX4__               1.01 1.00 99110-K5000         ',
-      b'\xf1\x00NX4__               1.01 1.00 99110-K5000         ',
     ],
   },
   CAR.KIA_SPORTAGE_5TH_GEN: {
