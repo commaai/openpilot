@@ -12,14 +12,13 @@ concurrency:
 
 env:
   PYTHON_VERSION: 3.11.4
-  APT_PACKAGES: autoconf build-essential ca-certificates casync clang cmake make
-    cppcheck libtool gcc-arm-none-eabi bzip2 liblzma-dev libarchive-dev libbz2-dev capnproto libcapnp-dev curl libcurl4-openssl-dev git
-    git-lfs ffmpeg libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libavfilter-dev libeigen3-dev libffi-dev libglew-dev libgles2-mesa-dev
-    libglfw3-dev libglib2.0-0 libncurses5-dev libncursesw5-dev libomp-dev libopencv-dev libpng16-16 libportaudio2 libssl-dev
-    libsqlite3-dev libusb-1.0-0-dev libzmq3-dev libsystemd-dev locales opencl-headers ocl-icd-libopencl1 ocl-icd-opencl-dev clinfo portaudio19-dev
+  APT_PACKAGES: ca-certificates casync clang cmake make
+    cppcheck bzip2 capnproto curl git
+    git-lfs ffmpeg libffi-dev
+    libssl-dev libsystemd-dev locales opencl-headers ocl-icd-libopencl1 ocl-icd-opencl-dev clinfo portaudio19-dev
     qml-module-qtquick2 qtmultimedia5-dev qtlocation5-dev qtpositioning5-dev qttools5-dev-tools libqt5sql5-sqlite libqt5svg5-dev
     libqt5charts5-dev libqt5serialbus5-dev  libqt5x11extras5-dev libreadline-dev libdw1 valgrind
-    apt-utils alien unzip tar xz-utils dbus gcc-arm-none-eabi tmux lsb-core libx11-6
+    apt-utils alien unzip tar xz-utils dbus tmux lsb-core libx11-6
 
 jobs:
   docs:
