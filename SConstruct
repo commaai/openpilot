@@ -96,8 +96,6 @@ lenv = {
 rpath = lenv["LD_LIBRARY_PATH"].copy()
 
 if arch == "larch64":
-  lenv["LD_LIBRARY_PATH"] += ['/data/data/com.termux/files/usr/lib']
-
   cpppath = [
     "#third_party/opencl/include",
   ]
@@ -360,13 +358,6 @@ Export('common', 'gpucommon')
 # Build cereal and messaging
 SConscript(['cereal/SConscript'])
 
-cereal = [File('#cereal/libcereal.a')]
-messaging = [File('#cereal/libmessaging.a')]
-visionipc = [File('#cereal/libvisionipc.a')]
-messaging_python = [File('#cereal/messaging/messaging_pyx.so')]
-
-Export('cereal', 'messaging', 'messaging_python', 'visionipc')
-
 # Build other submodules
 SConscript([
   'body/board/SConscript',
@@ -393,17 +384,12 @@ if arch != "Darwin":
 # Build openpilot
 SConscript(['third_party/SConscript'])
 
-SConscript(['selfdrive/boardd/SConscript'])
-SConscript(['selfdrive/controls/lib/lateral_mpc_lib/SConscript'])
-SConscript(['selfdrive/controls/lib/longitudinal_mpc_lib/SConscript'])
-SConscript(['selfdrive/locationd/SConscript'])
-SConscript(['selfdrive/navd/SConscript'])
-SConscript(['selfdrive/modeld/SConscript'])
-SConscript(['selfdrive/ui/SConscript'])
+SConscript(['selfdrive/SConscript'])
 
-if arch in ['x86_64', 'aarch64', 'Darwin'] and Dir('#tools/cabana/').exists() and GetOption('extras'):
+if Dir('#tools/cabana/').exists() and GetOption('extras'):
   SConscript(['tools/replay/SConscript'])
-  SConscript(['tools/cabana/SConscript'])
+  if arch != "larch64":
+    SConscript(['tools/cabana/SConscript'])
 
 external_sconscript = GetOption('external_sconscript')
 if external_sconscript:

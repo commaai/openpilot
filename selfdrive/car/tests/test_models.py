@@ -8,7 +8,6 @@ import unittest
 from collections import defaultdict, Counter
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
-from typing import List, Optional, Tuple
 from parameterized import parameterized_class
 
 from cereal import messaging, log, car
@@ -18,8 +17,9 @@ from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import gen_empty_fingerprint
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
-from openpilot.selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
+from openpilot.selfdrive.car.honda.values import CAR as HONDA, HondaFlags
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
+from openpilot.selfdrive.car.values import PLATFORMS, Platform
 from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
@@ -36,11 +36,11 @@ NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
 INTERNAL_SEG_LIST = os.environ.get("INTERNAL_SEG_LIST", "")
 INTERNAL_SEG_CNT = int(os.environ.get("INTERNAL_SEG_CNT", "0"))
-MAX_EXAMPLES = int(os.environ.get("MAX_EXAMPLES", "50"))
+MAX_EXAMPLES = int(os.environ.get("MAX_EXAMPLES", "300"))
 CI = os.environ.get("CI", None) is not None
 
 
-def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
+def get_test_cases() -> list[tuple[str, CarTestRoute | None]]:
   # build list of test cases
   test_cases = []
   if not len(INTERNAL_SEG_LIST):
@@ -50,7 +50,7 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
 
     for i, c in enumerate(sorted(all_known_cars())):
       if i % NUM_JOBS == JOB_ID:
-        test_cases.extend(sorted((c.value, r) for r in routes_by_car.get(c, (None,))))
+        test_cases.extend(sorted((c, r) for r in routes_by_car.get(c, (None,))))
 
   else:
     segment_list = read_segment_list(os.path.join(BASEDIR, INTERNAL_SEG_LIST))
@@ -65,14 +65,14 @@ def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
 @pytest.mark.slow
 @pytest.mark.shared_download_cache
 class TestCarModelBase(unittest.TestCase):
-  car_model: Optional[str] = None
-  test_route: Optional[CarTestRoute] = None
+  platform: Platform | None = None
+  test_route: CarTestRoute | None = None
   test_route_on_bucket: bool = True  # whether the route is on the preserved CI bucket
 
-  can_msgs: List[capnp.lib.capnp._DynamicStructReader]
+  can_msgs: list[capnp.lib.capnp._DynamicStructReader]
   fingerprint: dict[int, dict[int, int]]
-  elm_frame: Optional[int]
-  car_safety_mode_frame: Optional[int]
+  elm_frame: int | None
+  car_safety_mode_frame: int | None
 
   @classmethod
   def get_testing_data_from_logreader(cls, lr):
@@ -94,8 +94,8 @@ class TestCarModelBase(unittest.TestCase):
         car_fw = msg.carParams.carFw
         if msg.carParams.openpilotLongitudinalControl:
           experimental_long = True
-        if cls.car_model is None and not cls.ci:
-          cls.car_model = msg.carParams.carFingerprint
+        if cls.platform is None and not cls.ci:
+          cls.platform = PLATFORMS.get(msg.carParams.carFingerprint)
 
       # Log which can frame the panda safety mode left ELM327, for CAN validity checks
       elif msg.which() == 'pandaStates':
@@ -156,15 +156,11 @@ class TestCarModelBase(unittest.TestCase):
     if cls.__name__ == 'TestCarModel' or cls.__name__.endswith('Base'):
       raise unittest.SkipTest
 
-    if 'FILTER' in os.environ:
-      if not cls.car_model.startswith(tuple(os.environ.get('FILTER').split(','))):
-        raise unittest.SkipTest
-
     if cls.test_route is None:
-      if cls.car_model in non_tested_cars:
-        print(f"Skipping tests for {cls.car_model}: missing route")
+      if cls.platform in non_tested_cars:
+        print(f"Skipping tests for {cls.platform}: missing route")
         raise unittest.SkipTest
-      raise Exception(f"missing test route for {cls.car_model}")
+      raise Exception(f"missing test route for {cls.platform}")
 
     car_fw, can_msgs, experimental_long = cls.get_testing_data()
 
@@ -173,10 +169,10 @@ class TestCarModelBase(unittest.TestCase):
 
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
-    cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
-    cls.CP = cls.CarInterface.get_params(cls.car_model, cls.fingerprint, car_fw, experimental_long, docs=False)
+    cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.platform]
+    cls.CP = cls.CarInterface.get_params(cls.platform,  cls.fingerprint, car_fw, experimental_long, docs=False)
     assert cls.CP
-    assert cls.CP.carFingerprint == cls.car_model
+    assert cls.CP.carFingerprint == cls.platform
 
     os.environ["COMMA_CACHE"] = DEFAULT_DOWNLOAD_CACHE_ROOT
 
@@ -234,7 +230,6 @@ class TestCarModelBase(unittest.TestCase):
     self.assertEqual(can_invalid_cnt, 0)
 
   def test_radar_interface(self):
-    os.environ['NO_RADAR_SLEEP'] = "1"
     RadarInterface = importlib.import_module(f'selfdrive.car.{self.CP.carName}.radar_interface').RadarInterface
     RI = RadarInterface(self.CP)
     assert RI
@@ -383,7 +378,7 @@ class TestCarModelBase(unittest.TestCase):
       if self.safety.get_vehicle_moving() != prev_panda_vehicle_moving:
         self.assertEqual(not CS.standstill, self.safety.get_vehicle_moving())
 
-      if not (self.CP.carName == "honda" and self.CP.carFingerprint not in HONDA_BOSCH):
+      if not (self.CP.carName == "honda" and not (self.CP.flags & HondaFlags.BOSCH)):
         if self.safety.get_cruise_engaged_prev() != prev_panda_cruise_engaged:
           self.assertEqual(CS.cruiseState.enabled, self.safety.get_cruise_engaged_prev())
 
@@ -409,7 +404,7 @@ class TestCarModelBase(unittest.TestCase):
 
     controls_allowed_prev = False
     CS_prev = car.CarState.new_message()
-    checks = defaultdict(lambda: 0)
+    checks = defaultdict(int)
     controlsd = Controls(CI=self.CI)
     controlsd.initialized = True
     for idx, can in enumerate(self.can_msgs):
@@ -444,7 +439,7 @@ class TestCarModelBase(unittest.TestCase):
         # On most pcmCruise cars, openpilot's state is always tied to the PCM's cruise state.
         # On Honda Nidec, we always engage on the rising edge of the PCM cruise state, but
         # openpilot brakes to zero even if the min ACC speed is non-zero (i.e. the PCM disengages).
-        if self.CP.carName == "honda" and self.CP.carFingerprint not in HONDA_BOSCH:
+        if self.CP.carName == "honda" and not (self.CP.flags & HondaFlags.BOSCH):
           # only the rising edges are expected to match
           if CS.cruiseState.enabled and not CS_prev.cruiseState.enabled:
             checks['controlsAllowed'] += not self.safety.get_controls_allowed()
@@ -480,7 +475,7 @@ class TestCarModelBase(unittest.TestCase):
                     "This is fine to fail for WIP car ports, just let us know and we can upload your routes to the CI bucket.")
 
 
-@parameterized_class(('car_model', 'test_route'), get_test_cases())
+@parameterized_class(('platform', 'test_route'), get_test_cases())
 @pytest.mark.xdist_group_class_property('test_route')
 class TestCarModel(TestCarModelBase):
   pass
