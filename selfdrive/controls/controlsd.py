@@ -146,7 +146,7 @@ class Controls:
     self.steer_limited = False
     self.desired_curvature = 0.0
     self.experimental_mode = False
-    self.personality = log.LongitudinalPersonality.standard
+    self.personality = self.read_personality_param()
     self.v_cruise_helper = VCruiseHelper(self.CP)
     self.recalibrating_seen = False
 
@@ -829,14 +829,17 @@ class Controls:
 
     self.CS_prev = CS
 
+  def read_personality_param(self):
+    try:
+      self.personality = int(self.params.get('LongitudinalPersonality'))
+    except (ValueError, TypeError):
+      self.personality = log.LongitudinalPersonality.standard
+
   def params_thread(self, evt):
     while not evt.is_set():
       self.is_metric = self.params.get_bool("IsMetric")
       self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
-      try:
-        self.personality = int(self.params.get('LongitudinalPersonality'))
-      except (ValueError, TypeError):
-        self.personality = log.LongitudinalPersonality.standard
+      self.personality = self.read_personality_param()
       if self.CP.notCar:
         self.joystick_mode = self.params.get_bool("JoystickDebugMode")
       time.sleep(0.1)
