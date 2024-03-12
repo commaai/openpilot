@@ -68,8 +68,9 @@ class TestSimBridgeBase(unittest.TestCase):
         control_active += 1
         if control_active == min_counts_control_active:
           break
-      else:
-        sm.update()
+        else:
+          sm['controlsState'].getControlsState().getEnabled()
+
     self.assertEqual(min_counts_control_active, control_active, f"Simulator did not engage a minimal of {min_counts_control_active} steps was {control_active}")
 
   def tearDown(self):
