@@ -32,6 +32,10 @@ def update_release(directory, name, version, agnos_version, release_notes):
   with open(directory / "launch_env.sh", "w") as f:
     f.write(f'export AGNOS_VERSION="{agnos_version}"')
 
+  test_symlink = directory / "test_symlink"
+  if not os.path.exists(str(test_symlink)):
+    os.symlink("common/version.h", test_symlink)
+
 
 @pytest.mark.slow # TODO: can we test overlayfs in GHA?
 class BaseUpdateTest(unittest.TestCase):
@@ -110,6 +114,9 @@ class BaseUpdateTest(unittest.TestCase):
     self.assertEqual(self.params.get("UpdaterNewReleaseNotes", encoding="utf-8"), f"<p>{release_notes}</p>\n")
     self.assertEqual(get_version(str(self.staging_root / "finalized")), version)
     self.assertEqual(get_consistent_flag(), True)
+
+    with open(self.staging_root / "finalized" / "test_symlink") as f:
+      self.assertIn(version, f.read())
 
   def wait_for_condition(self, condition, timeout=12):
     start = time.monotonic()
