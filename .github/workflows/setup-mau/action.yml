@@ -35,4 +35,4 @@ runs:
       uses: awalsh128/cache-apt-pkgs-action@master
       with:
         packages: ${{ env.APT_PACKAGES }}
-        version: 1.3
+        version: 1.0.3
