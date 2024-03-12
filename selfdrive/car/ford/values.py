@@ -137,8 +137,8 @@ class CAR(Platforms):
     [
       FordCarInfo("Ford Maverick 2022", "LARIAT Luxury"),
       FordCarInfo("Ford Maverick Hybrid 2022", "LARIAT Luxury"),
-      FordCarInfo("Ford Maverick 2023", "Co-Pilot360 Assist"),
-      FordCarInfo("Ford Maverick Hybrid 2023", "Co-Pilot360 Assist"),
+      FordCarInfo("Ford Maverick 2023-24", "Co-Pilot360 Assist"),
+      FordCarInfo("Ford Maverick Hybrid 2023-24", "Co-Pilot360 Assist"),
     ],
     CarSpecs(mass=1650, wheelbase=3.076, steerRatio=17.0),
   )
