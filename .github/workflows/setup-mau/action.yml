@@ -2,8 +2,9 @@ name: setup-mau-test
 
 inputs:
   is_retried:
-  description: 'Mock Param asserting we use setup-with-retry instead of just the action by itself'
-
+    description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
+    required: false
+    default: 'false'
 runs:
   using: "composite"
   steps:
