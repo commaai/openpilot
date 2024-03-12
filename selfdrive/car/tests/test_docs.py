@@ -53,14 +53,13 @@ class TestCarDocs(unittest.TestCase):
     for car in self.all_cars:
       with self.subTest(car=car):
         tokens = car.model.lower().split(" ")
-        if car.car_name == "hyundai":
-          self.assertNotIn("phev", tokens, "Use `Plug-in Hybrid`")
-          self.assertNotIn("hev", tokens, "Use `Hybrid`")
-          if "plug-in hybrid" in car.model.lower():
-            self.assertIn("Plug-in Hybrid", car.model, "Use correct capitalization")
-          if car.make != "Kia":
-            self.assertNotIn("ev", tokens, "Use `Electric`")
-        elif car.car_name == "toyota":
+        self.assertNotIn("phev", tokens, "Use `Plug-in Hybrid`")
+        self.assertNotIn("hev", tokens, "Use `Hybrid`")
+        if "plug-in hybrid" in car.model.lower():
+          self.assertIn("Plug-in Hybrid", car.model, "Use correct capitalization")
+        if car.make not in ("Chevrolet", "Kia"):
+          self.assertNotIn("ev", tokens, "Use `Electric`")
+        elif car.make == "Toyota":
           if "rav4" in tokens:
             self.assertIn("RAV4", car.model, "Use correct capitalization")
 
@@ -71,7 +70,7 @@ class TestCarDocs(unittest.TestCase):
         # honda sanity check, it's the definition of a no torque star
         if car.car_fingerprint in (HONDA.ACCORD, HONDA.CIVIC, HONDA.CRV, HONDA.ODYSSEY, HONDA.PILOT):
           self.assertEqual(car.row[Column.STEERING_TORQUE], Star.EMPTY, f"{car.name} has full torque star")
-        elif car.car_name in ("toyota", "hyundai"):
+        elif car.make in ("Toyota", "Hyundai"):
           self.assertNotEqual(car.row[Column.STEERING_TORQUE], Star.EMPTY, f"{car.name} has no torque star")
 
   def test_year_format(self):
