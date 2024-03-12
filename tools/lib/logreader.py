@@ -178,8 +178,8 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
     for source in SOURCES:
       try:
         return check_source(source, sr, ReadMode.RLOG)
-      except Exception as e:
-        exceptions.append(e)
+      except Exception:
+        pass
 
   # Automatically determine viable source
   for source in SOURCES:
