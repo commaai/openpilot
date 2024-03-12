@@ -234,6 +234,10 @@ public:
     }
   }
 
+  void setCheckedButton(int id) {
+    button_group->button(id)->setChecked(true);
+  }
+
   void refresh() {
     int value = atoi(params.get(key).c_str());
     button_group->button(value)->setChecked(true);

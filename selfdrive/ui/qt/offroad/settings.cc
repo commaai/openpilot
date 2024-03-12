@@ -96,15 +96,8 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
                                           "../assets/offroad/icon_speed_limit.png",
                                           longi_button_texts);
 
-  // Watch param to update the personality setting in the UI
-  ParamWatcher *lp_watch = new ParamWatcher(this);
-  lp_watch->addParam("LongitudinalPersonality");
-  QObject::connect(lp_watch, &ParamWatcher::paramChanged, [=](const QString &param_name, const QString &param_value) {
-    lp_watch->addParam("LongitudinalPersonality");
-    if (isVisible()) {
-      long_personality_setting->refresh();
-    }
-  });
+  // set up uiState update for personality setting
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &TogglesPanel::updateState);
 
   for (auto &[param, title, desc, icon] : toggle_defs) {
     auto toggle = new ParamControl(param, title, desc, icon, this);
@@ -129,6 +122,18 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   connect(toggles["ExperimentalLongitudinalEnabled"], &ToggleControl::toggleFlipped, [=]() {
     updateToggles();
   });
+}
+
+void TogglesPanel::updateState(const UIState &s) {
+  const SubMaster &sm = *(s.sm);
+
+  if (sm.updated("longitudinalPlan")) {
+    auto personality = sm["longitudinalPlan"].getLongitudinalPlan().getPersonalityDEPRECATED();
+    if (personality != s.scene.personality && s.scene.started && isVisible()) {
+      long_personality_setting->setCheckedButton(static_cast<int>(personality));
+    }
+    uiState()->scene.personality = personality;
+  }
 }
 
 void TogglesPanel::expandToggleDescription(const QString &param) {
