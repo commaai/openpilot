@@ -41,12 +41,20 @@ class CarInterface(CarInterfaceBase):
     if ret.flags & FordFlags.CANFD:
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_FORD_CANFD
 
-    pscm_config = next((fw for fw in car_fw if fw.ecu == Ecu.eps and b'DE01' in fw.request), None)
+    pscm_config = next((fw for fw in car_fw if fw.ecu == Ecu.eps and b'\x22\xDE\x01' in fw.request), None)
     if pscm_config:
-      # Traffic Jam Assist (TJA) and Lane Centering Assist (LCA)
-      lkas_enabled = pscm_config.response[7] == 0xFF and pscm_config.response[8] == 0xFF
-      if not lkas_enabled:
-        ret.flags |= FordFlags.LKAS_DISABLED
+      if len(pscm_config.response) != 24:
+        # Unexpected length
+        ret.dashcamOnly = True
+      else:
+        config_tja = pscm_config.response[7]  # Traffic Jam Assist
+        config_lca = pscm_config.response[8]  # Lane Centering Assist
+        if config_tja not in (0x00, 0xFF) or config_lca not in (0x00, 0xFF):
+          # Unexpected value
+          ret.dashcamOnly = True
+        elif config_tja == 0x00 or config_lca == 0x00:
+          # TJA or LCA not enabled
+          ret.dashcamOnly = True
 
     # Auto Transmission: 0x732 ECU or Gear_Shift_by_Wire_FD1
     found_ecus = [fw.ecu for fw in car_fw]
@@ -74,9 +82,7 @@ class CarInterface(CarInterfaceBase):
 
     events = self.create_common_events(ret, extra_gears=[GearShifter.manumatic])
 
-    if self.CP.flags & FordFlags.LKAS_DISABLED:
-      events.add(EventName.lkasDisabled)
-    elif not self.CS.vehicle_sensors_valid:
+    if not self.CS.vehicle_sensors_valid:
       events.add(EventName.vehicleSensorsInvalid)
 
     ret.events = events.to_msg()
