@@ -32,7 +32,6 @@ runs:
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}
     - id: setup-apt-packages
-      uses: awalsh128/cache-apt-pkgs-action@master
+      uses: awalsh128/cache-apt-pkgs-action@1.0.3
       with:
         packages: ${{ env.APT_PACKAGES }}
-        version: 1.0.3
