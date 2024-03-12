@@ -115,7 +115,7 @@ class CAR(Platforms):
     "FORD F-150 14TH GEN",
     [
       FordCarInfo("Ford F-150 2022-23", "Co-Pilot360 Active 2.0"),
-      FordCarInfo("Ford F-150 Hybrid 2023", "Co-Pilot360 Active 2.0"),
+      FordCarInfo("Ford F-150 Hybrid 2022-23", "Co-Pilot360 Active 2.0"),
     ],
     CarSpecs(mass=2000, wheelbase=3.69, steerRatio=17.0),
   )
