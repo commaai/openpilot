@@ -182,7 +182,7 @@ system/hardware/pc/hardware.py
 
 system/ubloxd/.gitignore
 system/ubloxd/SConscript
-system/sensord/pigeond.py
+system/ubloxd/pigeond.py
 system/ubloxd/generated/*
 system/ubloxd/*.h
 system/ubloxd/*.cc
