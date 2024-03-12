@@ -829,11 +829,11 @@ class Controls:
 
     self.CS_prev = CS
 
-  def read_personality_param(self):
+  def read_personality_param(self) -> int:
     try:
-      self.personality = int(self.params.get('LongitudinalPersonality'))
+      return int(self.params.get('LongitudinalPersonality'))
     except (ValueError, TypeError):
-      self.personality = log.LongitudinalPersonality.standard
+      return log.LongitudinalPersonality.standard
 
   def params_thread(self, evt):
     while not evt.is_set():
