@@ -30,7 +30,7 @@ class CameraConfig:
     return np.linalg.inv(self.intrinsics)
 
 @dataclass(frozen=True)
-class FakeCameraConfig(CameraConfig):
+class _NoneCameraConfig(CameraConfig):
   width: int = 0
   height: int = 0
   focal_length: float = 0
@@ -43,14 +43,14 @@ class DeviceCameraConfig:
 
   def all_cams(self):
     for cam in ['fcam', 'dcam', 'ecam']:
-      if not isinstance(getattr(self, cam), FakeCameraConfig):
+      if not isinstance(getattr(self, cam), _NoneCameraConfig):
         yield cam, getattr(self, cam)
 
 _ar_ox_fisheye = CameraConfig(1928, 1208, 567.0)  # focal length probably wrong? magnification is not consistent across frame
 _os_fisheye = CameraConfig(2688, 1520, 567.0 / 2 * 3)
 _ar_ox_config = DeviceCameraConfig(CameraConfig(1928, 1208, 2648.0), _ar_ox_fisheye, _ar_ox_fisheye)
 _os_config = DeviceCameraConfig(CameraConfig(2688, 1520, 2648.0 * 2 / 3), _os_fisheye, _os_fisheye)
-_neo_config = DeviceCameraConfig(CameraConfig(1164, 874, 910.0), CameraConfig(816, 612, 650.0), FakeCameraConfig())
+_neo_config = DeviceCameraConfig(CameraConfig(1164, 874, 910.0), CameraConfig(816, 612, 650.0), _NoneCameraConfig())
 
 DEVICE_CAMERAS = {
   # A "device camera" is defined by a device type and sensor
