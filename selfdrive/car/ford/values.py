@@ -175,6 +175,7 @@ def ford_asbuilt_block_request(block_id: int):
 def ford_asbuilt_block_response(block_id: int):
   return bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + p16(DATA_IDENTIFIER_FORD_ASBUILT + block_id - 1)
 
+
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     # CAN and CAN FD queries are combined.
