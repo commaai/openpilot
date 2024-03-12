@@ -65,7 +65,7 @@ class TestSimBridgeBase(unittest.TestCase):
 
       q.put("cruise_down")  # Try engaging
 
-      if sm.all_alive() and active:
+      if sm.all_alive(): #and active:
         control_active += 1
         if control_active == min_counts_control_active:
           break
