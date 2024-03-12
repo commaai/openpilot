@@ -35,12 +35,13 @@ ar_ox_fisheye = CameraConfig(1928, 1208, 567.0)  # focal length probably wrong? 
 ar_ox_config = DeviceCameraConfig(CameraConfig(1928, 1208, 2648.0), ar_ox_fisheye, ar_ox_fisheye)
 os_fisheye = CameraConfig(2688, 1520, 567.0 / 2 * 3)
 os_config = DeviceCameraConfig(CameraConfig(2688, 1520, 2648.0 * 2 / 3), os_fisheye, os_fisheye)
+neo_config = DeviceCameraConfig(CameraConfig(1164, 874, 910.0), CameraConfig(816, 612, 650.0), CameraConfig(0, 0, 0.))
 
 DEVICE_CAMERAS = {
   # A "device camera" is defined by a device type and sensor
 
   # sensor type was never set on eon/neo/two
-  ("neo", "unknown"): DeviceCameraConfig(CameraConfig(1164, 874, 910.0), CameraConfig(816, 612, 650.0), CameraConfig(0, 0, 0.)),
+  ("neo", "unknown"): neo_config,
   # unknown here is AR0231, field was added with OX03C10 support
   ("tici", "unknown"): ar_ox_config,
 
