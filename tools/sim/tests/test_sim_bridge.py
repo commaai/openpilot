@@ -61,15 +61,14 @@ class TestSimBridgeBase(unittest.TestCase):
 
     while time.monotonic() < start_time + max_time_per_step:
       sm.update()
+      active = sm['controlsState'].active
 
       q.put("cruise_down")  # Try engaging
 
-      if sm.all_alive() and sm['controlsState'].active:
+      if sm.all_alive() and active:
         control_active += 1
         if control_active == min_counts_control_active:
           break
-        else:
-          sm['controlsState'].getControlsState().getEnabled()
 
     self.assertEqual(min_counts_control_active, control_active, f"Simulator did not engage a minimal of {min_counts_control_active} steps was {control_active}")
 
