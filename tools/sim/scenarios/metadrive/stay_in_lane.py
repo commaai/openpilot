@@ -65,8 +65,10 @@ class MetaDriveBridge(SimulatorBridge):
       on_continuous_line_done=True,
       crash_vehicle_done=True,
       crash_object_done=True,
+      arrive_dest_done=True,
       traffic_density=0.0,
       map_config=create_map(),
+      map_region_size=2048,
       decision_repeat=1,
       physics_world_step_size=self.TICKS_PER_FRAME/100,
       preload_models=False

@@ -44,7 +44,6 @@ class CarState(CarStateBase):
     self.distance_button = 0
 
     self.pcm_follow_distance = 0
-    self.pcm_follow_distance_values = can_define.dv['PCM_CRUISE_2']['PCM_FOLLOW_DISTANCE']
 
     self.low_speed_lockout = False
     self.acc_type = 1

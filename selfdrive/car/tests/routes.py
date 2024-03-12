@@ -10,6 +10,7 @@ from openpilot.selfdrive.car.nissan.values import CAR as NISSAN
 from openpilot.selfdrive.car.mazda.values import CAR as MAZDA
 from openpilot.selfdrive.car.subaru.values import CAR as SUBARU
 from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
+from openpilot.selfdrive.car.values import Platform
 from openpilot.selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
 from openpilot.selfdrive.car.tesla.values import CAR as TESLA
 from openpilot.selfdrive.car.body.values import CAR as COMMA
@@ -29,7 +30,7 @@ non_tested_cars = [
 
 class CarTestRoute(NamedTuple):
   route: str
-  car_model: str | None
+  car_model: Platform | None
   segment: int | None = None
 
 

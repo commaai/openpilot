@@ -68,6 +68,11 @@ class CruiseButtons:
   MAIN = 1
 
 
+class CruiseSettings:
+  DISTANCE = 3
+  LKAS = 1
+
+
 # See dbc files for info on values
 VISUAL_HUD = {
   VisualAlert.none: 0,
