@@ -5,11 +5,12 @@ import time
 import capnp
 import numpy as np
 
-from typing import Union, Iterable, Optional, List, Any, Dict, Tuple
+from typing import Any
+from collections.abc import Iterable
 
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, ProcessConfig, replay_process, get_process_config, \
                                                                    check_openpilot_enabled, get_custom_params_from_lr
-from openpilot.selfdrive.test.process_replay.vision_meta import DRIVER_FRAME_SIZES
+from openpilot.selfdrive.test.process_replay.vision_meta import DRIVER_CAMERA_FRAME_SIZES
 from openpilot.selfdrive.test.update_ci_routes import upload_route
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.framereader import FrameReader, BaseFrameReader, FrameType
@@ -36,13 +37,13 @@ class DummyFrameReader(BaseFrameReader):
 
   @staticmethod
   def zero_dcamera():
-    return DummyFrameReader(*DRIVER_FRAME_SIZES["tici"], 1200, 0)
+    return DummyFrameReader(*DRIVER_CAMERA_FRAME_SIZES[("tici", "ar0231")], 1200, 0)
 
 
 def regen_segment(
-  lr: LogIterable, frs: Optional[Dict[str, Any]] = None,
+  lr: LogIterable, frs: dict[str, Any] = None,
   processes: Iterable[ProcessConfig] = CONFIGS, disable_tqdm: bool = False
-) -> List[capnp._DynamicStructReader]:
+) -> list[capnp._DynamicStructReader]:
   all_msgs = sorted(lr, key=lambda m: m.logMonoTime)
   custom_params = get_custom_params_from_lr(all_msgs)
 
@@ -57,7 +58,7 @@ def regen_segment(
 def setup_data_readers(
     route: str, sidx: int, use_route_meta: bool,
     needs_driver_cam: bool = True, needs_road_cam: bool = True, dummy_driver_cam: bool = False
-) -> Tuple[LogReader, Dict[str, Any]]:
+) -> tuple[LogReader, dict[str, Any]]:
   if use_route_meta:
     r = Route(route)
     lr = LogReader(r.log_paths()[sidx])
@@ -92,7 +93,7 @@ def setup_data_readers(
 
 
 def regen_and_save(
-  route: str, sidx: int, processes: Union[str, Iterable[str]] = "all", outdir: str = FAKEDATA,
+  route: str, sidx: int, processes: str | Iterable[str] = "all", outdir: str = FAKEDATA,
   upload: bool = False, use_route_meta: bool = False, disable_tqdm: bool = False, dummy_driver_cam: bool = False
 ) -> str:
   if not isinstance(processes, str) and not hasattr(processes, "__iter__"):

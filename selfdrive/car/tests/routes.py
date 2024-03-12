@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from openpilot.selfdrive.car.chrysler.values import CAR as CHRYSLER
 from openpilot.selfdrive.car.gm.values import CAR as GM
@@ -10,6 +10,7 @@ from openpilot.selfdrive.car.nissan.values import CAR as NISSAN
 from openpilot.selfdrive.car.mazda.values import CAR as MAZDA
 from openpilot.selfdrive.car.subaru.values import CAR as SUBARU
 from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
+from openpilot.selfdrive.car.values import Platform
 from openpilot.selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
 from openpilot.selfdrive.car.tesla.values import CAR as TESLA
 from openpilot.selfdrive.car.body.values import CAR as COMMA
@@ -29,8 +30,8 @@ non_tested_cars = [
 
 class CarTestRoute(NamedTuple):
   route: str
-  car_model: Optional[str]
-  segment: Optional[int] = None
+  car_model: Platform | None
+  segment: int | None = None
 
 
 routes = [
@@ -82,8 +83,8 @@ routes = [
   CarTestRoute("08a3deb07573f157|2020-03-06--16-11-19", HONDA.ACCORD),  # 1.5T
   CarTestRoute("1da5847ac2488106|2021-05-24--19-31-50", HONDA.ACCORD),  # 2.0T
   CarTestRoute("085ac1d942c35910|2021-03-25--20-11-15", HONDA.ACCORD),  # 2021 with new style HUD msgs
-  CarTestRoute("07585b0da3c88459|2021-05-26--18-52-04", HONDA.ACCORDH),
-  CarTestRoute("f29e2b57a55e7ad5|2021-03-24--20-52-38", HONDA.ACCORDH), # 2021 with new style HUD msgs
+  CarTestRoute("07585b0da3c88459|2021-05-26--18-52-04", HONDA.ACCORD),  # hybrid
+  CarTestRoute("f29e2b57a55e7ad5|2021-03-24--20-52-38", HONDA.ACCORD),  # hybrid, 2021 with new style HUD msgs
   CarTestRoute("1ad763dd22ef1a0e|2020-02-29--18-37-03", HONDA.CRV_5G),
   CarTestRoute("0a96f86fcfe35964|2020-02-05--07-25-51", HONDA.ODYSSEY),
   CarTestRoute("d83f36766f8012a5|2020-02-05--18-42-21", HONDA.CIVIC_BOSCH_DIESEL),
@@ -187,6 +188,7 @@ routes = [
   CarTestRoute("5f5afb36036506e4|2019-05-14--02-09-54", TOYOTA.COROLLA_TSS2),
   CarTestRoute("5ceff72287a5c86c|2019-10-19--10-59-02", TOYOTA.COROLLA_TSS2),  # hybrid
   CarTestRoute("d2525c22173da58b|2021-04-25--16-47-04", TOYOTA.PRIUS),
+  CarTestRoute("b14c5b4742e6fc85|2020-07-28--19-50-11", TOYOTA.RAV4),
   CarTestRoute("32a7df20486b0f70|2020-02-06--16-06-50", TOYOTA.RAV4H),
   CarTestRoute("cdf2f7de565d40ae|2019-04-25--03-53-41", TOYOTA.RAV4_TSS2),
   CarTestRoute("a5c341bb250ca2f0|2022-05-18--16-05-17", TOYOTA.RAV4_TSS2_2022),
@@ -223,11 +225,12 @@ routes = [
   CarTestRoute("ea8fbe72b96a185c|2023-02-08--15-11-46", TOYOTA.CHR_TSS2),
   CarTestRoute("ea8fbe72b96a185c|2023-02-22--09-20-34", TOYOTA.CHR_TSS2),  # openpilot longitudinal, with smartDSU
   CarTestRoute("6719965b0e1d1737|2023-02-09--22-44-05", TOYOTA.CHR_TSS2),  # hybrid
-  # CarTestRoute("6719965b0e1d1737|2023-08-29--06-40-05", TOYOTA.CHR_TSS2),  # hybrid, openpilot longitudinal, radar disabled
+  CarTestRoute("6719965b0e1d1737|2023-08-29--06-40-05", TOYOTA.CHR_TSS2),  # hybrid, openpilot longitudinal, radar disabled
   CarTestRoute("14623aae37e549f3|2021-10-24--01-20-49", TOYOTA.PRIUS_V),
 
   CarTestRoute("202c40641158a6e5|2021-09-21--09-43-24", VOLKSWAGEN.ARTEON_MK1),
   CarTestRoute("2c68dda277d887ac|2021-05-11--15-22-20", VOLKSWAGEN.ATLAS_MK1),
+  CarTestRoute("ffcd23abbbd02219|2024-02-28--14-59-38", VOLKSWAGEN.CADDY_MK3),
   CarTestRoute("cae14e88932eb364|2021-03-26--14-43-28", VOLKSWAGEN.GOLF_MK7),  # Stock ACC
   CarTestRoute("3cfdec54aa035f3f|2022-10-13--14-58-58", VOLKSWAGEN.GOLF_MK7),  # openpilot longitudinal
   CarTestRoute("58a7d3b707987d65|2021-03-25--17-26-37", VOLKSWAGEN.JETTA_MK7),
@@ -287,11 +290,11 @@ routes = [
 
   CarTestRoute("6c14ee12b74823ce|2021-06-30--11-49-02", TESLA.AP1_MODELS),
   CarTestRoute("bb50caf5f0945ab1|2021-06-19--17-20-18", TESLA.AP2_MODELS),
+  CarTestRoute("66c1699b7697267d/2024-03-03--13-09-53", TESLA.MODELS_RAVEN),
 
   # Segments that test specific issues
   # Controls mismatch due to interceptor threshold
   CarTestRoute("cfb32f0fb91b173b|2022-04-06--14-54-45", HONDA.CIVIC, segment=21),
-  CarTestRoute("5a8762b91fc70467|2022-04-14--21-26-20", TOYOTA.RAV4, segment=2),
   # Controls mismatch due to standstill threshold
   CarTestRoute("bec2dcfde6a64235|2022-04-08--14-21-32", HONDA.CRV_HYBRID, segment=22),
 ]

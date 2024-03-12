@@ -5,10 +5,10 @@ from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import interp
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
-from openpilot.selfdrive.car.honda.hondacan import get_cruise_speed_conversion, get_pt_bus
+from openpilot.selfdrive.car.honda.hondacan import CanBus, get_cruise_speed_conversion
 from openpilot.selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, \
-                                                 HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL, \
-                                                 HONDA_BOSCH_RADARLESS
+                                                 HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_RADARLESS, \
+                                                 HondaFlags
 from openpilot.selfdrive.car.interfaces import CarStateBase
 
 TransmissionType = car.CarParams.TransmissionType
@@ -44,7 +44,7 @@ def get_can_messages(CP, gearbox_msg):
   else:
     messages.append((gearbox_msg, 100))
 
-  if CP.carFingerprint in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
+  if CP.flags & HondaFlags.BOSCH_ALT_BRAKE:
     messages.append(("BRAKE_MODULE", 50))
 
   if CP.carFingerprint in (HONDA_BOSCH | {CAR.CIVIC, CAR.ODYSSEY, CAR.ODYSSEY_CHN}):
@@ -64,7 +64,7 @@ def get_can_messages(CP, gearbox_msg):
       messages.append(("CRUISE_PARAMS", 50))
 
   # TODO: clean this up
-  if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT,
+  if CP.carFingerprint in (CAR.ACCORD, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT,
                            CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022, CAR.HRV_3G):
     pass
   elif CP.carFingerprint in (CAR.ODYSSEY_CHN, CAR.FREED, CAR.HRV):
@@ -129,7 +129,7 @@ class CarState(CarStateBase):
     # panda checks if the signal is non-zero
     ret.standstill = cp.vl["ENGINE_DATA"]["XMISSION_SPEED"] < 1e-5
     # TODO: find a common signal across all cars
-    if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT,
+    if self.CP.carFingerprint in (CAR.ACCORD, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT,
                                   CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022, CAR.HRV_3G):
       ret.doorOpen = bool(cp.vl["SCM_FEEDBACK"]["DRIVERS_DOOR_OPEN"])
     elif self.CP.carFingerprint in (CAR.ODYSSEY_CHN, CAR.FREED, CAR.HRV):
@@ -217,7 +217,7 @@ class CarState(CarStateBase):
     else:
       ret.cruiseState.speed = cp.vl["CRUISE"]["CRUISE_SPEED_PCM"] * CV.KPH_TO_MS
 
-    if self.CP.carFingerprint in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
+    if self.CP.flags & HondaFlags.BOSCH_ALT_BRAKE:
       ret.brakePressed = cp.vl["BRAKE_MODULE"]["BRAKE_PRESSED"] != 0
     else:
       # brake switch has shown some single time step noise, so only considered when
@@ -267,7 +267,7 @@ class CarState(CarStateBase):
 
   def get_can_parser(self, CP):
     messages = get_can_messages(CP, self.gearbox_msg)
-    return CANParser(DBC[CP.carFingerprint]["pt"], messages, get_pt_bus(CP.carFingerprint))
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus(CP).pt)
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -287,7 +287,7 @@ class CarState(CarStateBase):
         ("BRAKE_COMMAND", 50),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus(CP).camera)
 
   @staticmethod
   def get_body_can_parser(CP):
@@ -296,6 +296,6 @@ class CarState(CarStateBase):
         ("BSM_STATUS_LEFT", 3),
         ("BSM_STATUS_RIGHT", 3),
       ]
-      bus_body = 0 # B-CAN is forwarded to ACC-CAN radar side (CAN 0 on fake ethernet port)
+      bus_body = CanBus(CP).radar # B-CAN is forwarded to ACC-CAN radar side (CAN 0 on fake ethernet port)
       return CANParser(DBC[CP.carFingerprint]["body"], messages, bus_body)
     return None

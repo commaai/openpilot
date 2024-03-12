@@ -68,13 +68,14 @@ class TestRawgpsd(unittest.TestCase):
 
   def test_turns_off_gnss(self):
     for s in (0.1, 1, 5):
-      managed_processes['qcomgpsd'].start()
-      time.sleep(s)
-      managed_processes['qcomgpsd'].stop()
+      with self.subTest(runtime=s):
+        managed_processes['qcomgpsd'].start()
+        time.sleep(s)
+        managed_processes['qcomgpsd'].stop()
 
-      ls = subprocess.check_output("mmcli -m any --location-status --output-json", shell=True, encoding='utf-8')
-      loc_status = json.loads(ls)
-      assert set(loc_status['modem']['location']['enabled']) <= {'3gpp-lac-ci'}
+        ls = subprocess.check_output("mmcli -m any --location-status --output-json", shell=True, encoding='utf-8')
+        loc_status = json.loads(ls)
+        assert set(loc_status['modem']['location']['enabled']) <= {'3gpp-lac-ci'}
 
 
   def check_assistance(self, should_be_loaded):
