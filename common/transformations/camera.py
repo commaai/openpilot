@@ -31,9 +31,9 @@ class CameraConfig:
 
 @dataclass(frozen=True)
 class DeviceCameraConfig:
-  fcam: CameraConfig
-  dcam: CameraConfig
-  ecam: CameraConfig
+  fcam: CameraConfig | None
+  dcam: CameraConfig | None
+  ecam: CameraConfig | None
 
   def all_cams(self):
     for cam in ['fcam', 'dcam', 'ecam']:
