@@ -146,6 +146,7 @@ class Controls:
     self.steer_limited = False
     self.desired_curvature = 0.0
     self.experimental_mode = False
+    self.personality = self.read_personality_param()
     self.v_cruise_helper = VCruiseHelper(self.CP)
     self.recalibrating_seen = False
 
@@ -680,7 +681,7 @@ class Controls:
     hudControl.speedVisible = self.enabled
     hudControl.lanesVisible = self.enabled
     hudControl.leadVisible = self.sm['longitudinalPlan'].hasLead
-    hudControl.leadDistanceBars = self.sm['longitudinalPlan'].personality.raw + 1
+    hudControl.leadDistanceBars = self.personality + 1
 
     hudControl.rightLaneVisible = True
     hudControl.leftLaneVisible = True
@@ -769,6 +770,7 @@ class Controls:
     controlsState.forceDecel = bool(force_decel)
     controlsState.canErrorCounter = self.card.can_rcv_cum_timeout_counter
     controlsState.experimentalMode = self.experimental_mode
+    controlsState.personality = self.personality
 
     lat_tuning = self.CP.lateralTuning.which()
     if self.joystick_mode:
@@ -821,10 +823,17 @@ class Controls:
 
     self.CS_prev = CS
 
+  def read_personality_param(self):
+    try:
+      return int(self.params.get('LongitudinalPersonality'))
+    except (ValueError, TypeError):
+      return log.LongitudinalPersonality.standard
+
   def params_thread(self, evt):
     while not evt.is_set():
       self.is_metric = self.params.get_bool("IsMetric")
       self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+      self.personality = self.read_personality_param()
       if self.CP.notCar:
         self.joystick_mode = self.params.get_bool("JoystickDebugMode")
       time.sleep(0.1)
