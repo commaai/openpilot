@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
+import os
 import time
 import traceback
 import serial
 import datetime
-import math
 import numpy as np
 from collections import defaultdict
 
@@ -14,7 +14,6 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.system.qcomgpsd.qcomgpsd import at_cmd, wait_for_modem
 
 
-
 def sfloat(n: str):
   return float(n) if len(n) > 0 else 0
 
@@ -23,7 +22,6 @@ def checksum(s: str):
   for c in s[1:-3]:
     ret ^= ord(c)
   return format(ret, '02X')
-
 
 class Unicore:
   def __init__(self):
@@ -47,7 +45,10 @@ class Unicore:
     return self.s.readline()
 
 def build_msg(state):
-  # NMEA: https://campar.in.tum.de/twiki/pub/Chair/NaviGpsDemon/nmea.html#RMC
+  """
+    NMEA sentences:
+      https://campar.in.tum.de/twiki/pub/Chair/NaviGpsDemon/nmea.html#RMC
+  """
 
   msg = messaging.new_message('gpsLocation', valid=True)
   gps = msg.gpsLocation
@@ -103,7 +104,7 @@ def build_msg(state):
 
     vNED = [float(x) for x in R.dot(vECEF)]
     gps.vNED = vNED
-    gps.speed = math.sqrt(sum([x**2 for x in vNED]))
+    gps.speed = np.linalg.norm(vNED)
 
   # TODO: set these from the module
   gps.bearingAccuracyDeg = 5.
@@ -111,50 +112,48 @@ def build_msg(state):
 
   return msg
 
+
+@retry(attempts=10, delay=0.1)
+def setup(u):
+  at_cmd('AT+CGPS=0')
+  at_cmd('AT+CGPS=1')
+  time.sleep(1.0)
+
+  # setup NAVXXX outputs
+  for i in range(4):
+    u.send(f"$CFGMSG,1,{i},1")
+  for i in (1, 3):
+    u.send(f"$CFGMSG,3,{i},1")
+
+  # 10Hz NAV outputs
+  u.send("$CFGNAV,100,100,1000")
+
+
 def main():
   wait_for_modem("AT+CGPS?")
 
   u = Unicore()
-
-  @retry(attempts=10, delay=0.1)
-  def setup():
-    for cmd in ['ATE', 'AT+CGPS=0', 'AT+CGPS=1']:
-      at_cmd(cmd)
-    time.sleep(1.0)
-
-    # setup NAVXXX outputs
-    for i in range(4):
-      u.send(f"$CFGMSG,1,{i},1")
-    for i in (1, 3):
-      u.send(f"$CFGMSG,3,{i},1")
-
-    # 10Hz NAV outputs
-    u.send("$CFGNAV,100,100,1000")
-
-  setup()
+  setup(u)
 
   state = defaultdict(list)
   pm = messaging.PubMaster(['gpsLocation'])
   while True:
     try:
       msg = u.recv().decode('utf8').strip()
-      print(repr(msg))
+      if "DEBUG" in os.environ:
+        print(repr(msg))
 
-      if len(msg) == 0:
-        continue
+      if len(msg) > 0:
+        if checksum(msg) != msg.split('*')[1]:
+          cloudlog.error(f"invalid checksum: {repr(msg)}")
+          continue
 
-      if checksum(msg) != msg.split('*')[1]:
-        cloudlog.error(f"invalid checksum: {repr(msg)}")
-        continue
+        k = msg.split(',')[0]
+        state[k] = msg.split(',')
+        if '$GNRMC' not in msg:
+          continue
 
-      k = msg.split(',')[0]
-      state[k] = msg.split(',')
-      if '$GNRMC' not in msg:
-        print(f"no GNRMC:\n{msg}\n")
-        continue
-
-      pm.send('gpsLocation', build_msg(state))
-
+        pm.send('gpsLocation', build_msg(state))
     except Exception:
       traceback.print_exc()
       cloudlog.exception("gps.issue")
