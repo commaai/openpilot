@@ -204,15 +204,18 @@ class CarState(CarStateBase):
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD.get(self.CP.carFingerprint, 1200)
 
     if self.CP.carFingerprint in HONDA_BOSCH:
+      cp_acc = cp if self.CP.carFingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS) else cp_cam
+      # The PCM always manages its own cruise control state, but doesn't publish it
+      if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS:
+        ret.cruiseState.nonAdaptive = cp_acc.vl["ACC_HUD"]["CRUISE_CONTROL_LABEL"] != 0
+
       if not self.CP.openpilotLongitudinalControl:
-        # ACC_HUD is on camera bus on radarless cars
-        acc_hud = cp_cam.vl["ACC_HUD"] if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS else cp.vl["ACC_HUD"]
-        ret.cruiseState.nonAdaptive = acc_hud["CRUISE_CONTROL_LABEL"] != 0
-        ret.cruiseState.standstill = acc_hud["CRUISE_SPEED"] == 252.
+        ret.cruiseState.nonAdaptive = cp_acc.vl["ACC_HUD"]["CRUISE_CONTROL_LABEL"] != 0
+        ret.cruiseState.standstill = cp_acc.vl["ACC_HUD"]["CRUISE_SPEED"] == 252.
 
         conversion = get_cruise_speed_conversion(self.CP.carFingerprint, self.is_metric)
         # On set, cruise set speed pulses between 254~255 and the set speed prev is set to avoid this.
-        ret.cruiseState.speed = self.v_cruise_pcm_prev if acc_hud["CRUISE_SPEED"] > 160.0 else acc_hud["CRUISE_SPEED"] * conversion
+        ret.cruiseState.speed = self.v_cruise_pcm_prev if cp_acc.vl["ACC_HUD"]["CRUISE_SPEED"] > 160.0 else cp_acc.vl["ACC_HUD"]["CRUISE_SPEED"] * conversion
         self.v_cruise_pcm_prev = ret.cruiseState.speed
     else:
       ret.cruiseState.speed = cp.vl["CRUISE"]["CRUISE_SPEED_PCM"] * CV.KPH_TO_MS
