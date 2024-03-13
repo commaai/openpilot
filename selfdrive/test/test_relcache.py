@@ -17,7 +17,7 @@ class Test_RelCached(unittest.TestCase):
           words = line.split(" ")
           for wrd in words:
             if WORKSPACE in wrd:
-                self.fail(f"Contains absolute path ({wrd}) in line {index+1}\n")
+                self.fail(f"Contains absolute path ({wrd}) in line '{line}' at {index+1}\n")
 
 if __name__ == "__main__":
   del sys.argv[1:]

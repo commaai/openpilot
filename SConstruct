@@ -85,7 +85,7 @@ assert arch in ["larch64", "aarch64", "x86_64", "Darwin"]
 
 lenv = {
   "PATH": os.environ['PATH'],
-  "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").relpath],
+  "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").relpath,Dir(f"#../../third_party/acados/{arch}/lib").relpath],
   "PYTHONPATH": Dir("#").abspath + ':' + Dir(f"#third_party/acados").abspath,
   "ACADOS_SOURCE_DIR": Dir("#third_party/acados").relpath,
   "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
