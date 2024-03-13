@@ -63,7 +63,7 @@ def build_msg(state):
     date = gnrmc[9][:6]
     dt = datetime.datetime.strptime(f"{date} {gnrmc[1]}", '%d%m%y %H%M%S.%f')
     gps.unixTimestampMillis = dt.timestamp()*1e3
-  except:
+  except Exception:
     pass
 
   gps.bearingDeg = sfloat(gnrmc[8])
