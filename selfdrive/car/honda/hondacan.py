@@ -149,12 +149,6 @@ def create_ui_commands(packer, CAN, CP, enabled, pcm_speed, hud, is_metric, acc_
       'SET_ME_X01_2': 1,
     }
 
-    if CP.carFingerprint in HONDA_BOSCH_RADARLESS:
-      # Ensure Honda Bosch Radarless
-      # The camera can still enter non-adaptive cruise mode via sending this bit, make sure we block it
-      # TODO: Untested on other architectures, check to see if we need to set send this
-      acc_hud_values['CRUISE_CONTROL_LABEL'] = 0
-
     if CP.carFingerprint in HONDA_BOSCH:
       acc_hud_values['ACC_ON'] = int(enabled)
       acc_hud_values['FCM_OFF'] = 1
