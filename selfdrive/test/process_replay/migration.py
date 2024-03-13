@@ -13,7 +13,6 @@ def migrate_all(lr, old_logtime=False, manager_states=False, panda_states=False,
   msgs = migrate_carParams(msgs, old_logtime)
   msgs = migrate_gpsLocation(msgs)
   msgs = migrate_deviceState(msgs)
-  msgs = migrate_controlsState(msgs)
   if manager_states:
     msgs = migrate_managerState(msgs)
   if panda_states:
@@ -63,22 +62,6 @@ def migrate_deviceState(lr):
     if msg.which() == 'deviceState':
       n = msg.as_builder()
       n.deviceState.deviceType = dt
-      all_msgs.append(n.as_reader())
-    else:
-      all_msgs.append(msg)
-  return all_msgs
-
-
-def migrate_controlsState(lr):
-  all_msgs = []
-  personality = None
-  for msg in lr:
-    if msg.which() == 'longitudinalPlan':
-      personality = msg.longitudinalPlan.personalityDEPRECATED
-    # Detect old logs with personality in longitidunalPlan
-    if msg.which() == 'controlsState' and msg.controlsState.personality == 0 and personality is not None:
-      n = msg.as_builder()
-      n.controlsState.personality = personality
       all_msgs.append(n.as_reader())
     else:
       all_msgs.append(msg)
