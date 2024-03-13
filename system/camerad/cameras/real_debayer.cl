@@ -152,7 +152,13 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   // read in 8x4 chars
   uchar8 dat[4];
   dat[0] = vload8(0, in + start_idx + FRAME_STRIDE*row_before_offset);
-  dat[1] = vload8(0, in + start_idx + FRAME_STRIDE*1);
+  if (gid_x == 0 && gid_y == 0) {
+    // this wasn't a problem due to extra rows
+    dat[1] = vload8(0, in + start_idx + FRAME_STRIDE*1 + 2);
+    dat[1] = (uchar8)(0, 0, dat[1].s0, dat[1].s1, dat[1].s2, dat[1].s3, dat[1].s4, dat[1].s5);
+  } else {
+    dat[1] = vload8(0, in + start_idx + FRAME_STRIDE*1);
+  }
   dat[2] = vload8(0, in + start_idx + FRAME_STRIDE*2);
   dat[3] = vload8(0, in + start_idx + FRAME_STRIDE*row_after_offset);
 
