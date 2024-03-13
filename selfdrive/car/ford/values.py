@@ -114,8 +114,8 @@ class CAR(Platforms):
   F_150_MK14 = FordCANFDPlatformConfig(
     "FORD F-150 14TH GEN",
     [
-      FordCarInfo("Ford F-150 2023", "Co-Pilot360 Active 2.0"),
-      FordCarInfo("Ford F-150 Hybrid 2023", "Co-Pilot360 Active 2.0"),
+      FordCarInfo("Ford F-150 2022-23", "Co-Pilot360 Active 2.0"),
+      FordCarInfo("Ford F-150 Hybrid 2022-23", "Co-Pilot360 Active 2.0"),
     ],
     CarSpecs(mass=2000, wheelbase=3.69, steerRatio=17.0),
   )
@@ -137,8 +137,8 @@ class CAR(Platforms):
     [
       FordCarInfo("Ford Maverick 2022", "LARIAT Luxury"),
       FordCarInfo("Ford Maverick Hybrid 2022", "LARIAT Luxury"),
-      FordCarInfo("Ford Maverick 2023", "Co-Pilot360 Assist"),
-      FordCarInfo("Ford Maverick Hybrid 2023", "Co-Pilot360 Assist"),
+      FordCarInfo("Ford Maverick 2023-24", "Co-Pilot360 Assist"),
+      FordCarInfo("Ford Maverick Hybrid 2023-24", "Co-Pilot360 Assist"),
     ],
     CarSpecs(mass=1650, wheelbase=3.076, steerRatio=17.0),
   )

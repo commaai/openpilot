@@ -569,7 +569,7 @@ class CAR(Platforms):
   )
   GENESIS_G70_2020 = HyundaiPlatformConfig(
     "GENESIS G70 2020",
-    HyundaiCarInfo("Genesis G70 2020", "All", car_parts=CarParts.common([CarHarness.hyundai_f])),
+    HyundaiCarInfo("Genesis G70 2020-23", "All", car_parts=CarParts.common([CarHarness.hyundai_f])),
     CarSpecs(mass=3673 * CV.LB_TO_KG, wheelbase=2.83, steerRatio=12.9),
     flags=HyundaiFlags.MANDO_RADAR,
   )
