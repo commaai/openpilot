@@ -28,7 +28,8 @@
       "installOhMyZsh": false,
       "upgradePackages": false,
       "username": "batman"
-    }
+    },
+    "ghcr.io/devcontainers-contrib/features/gh-cli:1" {}
   },
   "containerUser": "batman",
   "remoteUser": "batman",
