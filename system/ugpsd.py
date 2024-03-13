@@ -14,6 +14,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.system.qcomgpsd.qcomgpsd import at_cmd, wait_for_modem
 
 
+
 def sfloat(n: str):
   return float(n) if len(n) > 0 else 0
 
@@ -34,7 +35,6 @@ class Unicore:
     self.s.flush()
     self.s.reset_input_buffer()
     self.s.reset_output_buffer()
-
     self.s.read(2048)
 
   def send(self, cmd):
@@ -55,7 +55,7 @@ def build_msg(state):
   gnrmc = state['$GNRMC']
   gps.hasFix = gnrmc[1] == 'A'
   gps.source = log.GpsLocationData.SensorSource.unicore
-  gps.latitude = (sfloat(gnrmc[3][:2]) + (sfloat(gnrmc[3][2:]) / 60)) * (1 if gnrmc[4] == "N" else -2)
+  gps.latitude = (sfloat(gnrmc[3][:2]) + (sfloat(gnrmc[3][2:]) / 60)) * (1 if gnrmc[4] == "N" else -1)
   gps.longitude = (sfloat(gnrmc[5][:3]) + (sfloat(gnrmc[5][3:]) / 60)) * (1 if gnrmc[6] == "E" else -1)
 
   try:
@@ -115,7 +115,6 @@ def main():
   wait_for_modem("AT+CGPS?")
 
   u = Unicore()
-  u.s.read(2048)
 
   @retry(attempts=10, delay=0.1)
   def setup():
